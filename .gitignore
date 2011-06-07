@@ -1,6 +1,28 @@
-# Ignore configuration files that may contain sensitive information.
-sites/*/settings*.php
+# Drupal #
+##########
+sites/*/files/*
+files/*
 
-# Ignore paths that contain user-generated content.
-sites/*/files
-sites/*/private
+# Packages #
+############
+*.7z
+*.dmg
+*.gz
+*.iso
+*.jar
+*.rar
+*.tar
+*.zip
+
+# Logs and databases #
+######################
+*.log
+*.sql
+
+# OS generated files #
+######################
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
+._*
