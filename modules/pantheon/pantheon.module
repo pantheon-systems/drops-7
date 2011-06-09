@@ -27,7 +27,7 @@ function pantheon_menu() {
   );
   // OPTIONAL: Fill in additional static menu items
   */
-  return $items;
+  // return $items;
 }
 
 function pantheon_load_api() {
