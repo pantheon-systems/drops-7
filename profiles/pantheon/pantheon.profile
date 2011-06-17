@@ -37,7 +37,7 @@ function pantheon_configure() {
       // Environment definitions
       $solr_environment['env_id'] = $env->solr->apachesolr_default_server;
       $solr_environment['name'] = ucwords("$project $env_name");
-      $solr_environment['url'] = 'http://' . $env->solr->solr_host . ':' . $env->solr->solr_port . '/' . $env->solr->solr_path;
+      $solr_environment['url'] = 'http://' . $env->solr->solr_host . ':' . $env->solr->solr_port . $env->solr->solr_path;
       db_insert('apachesolr_environment')->fields($solr_environment)->execute();
       // Environment variables
       $solr_environment_variable['env_id'] = $env->solr->apachesolr_default_server;
