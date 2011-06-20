@@ -10,7 +10,7 @@
  *
  * TODO: implement an admin login system via YGG tokens.
  */
-function pantheon_menu() { 
+function pantheon_api_menu() {
   /*
   $items['TODO: Enter path'] = array(
     'title' => 'TODO: Enter menu item title',
@@ -22,14 +22,14 @@ function pantheon_menu() {
     'weight' => 0,
     'type' => MENU_NORMAL_ITEM, // One of MENU_NORMAL_ITEM / MENU_CALLBACK / MENU_SUGGESTED_ITEM / MENU_LOCAL_TASK / MENU_DEFAULT_LOCAL_TASK
     'menu_name' => '', // Menu to place this item in.
-    'title callback' => '', // Function to generate the title, defaults to t(). 
-    'title arguments' => '', // Arguments to send to t() or your custom callback. 
+    'title callback' => '', // Function to generate the title, defaults to t().
+    'title arguments' => '', // Arguments to send to t() or your custom callback.
   );
   // OPTIONAL: Fill in additional static menu items
   */
   // return $items;
 }
 
-function pantheon_load_api() {
-  include('pantheon.api.inc');
+function pantheon_api_load_ygg() {
+  include_once('pantheon_api.inc');
 }
