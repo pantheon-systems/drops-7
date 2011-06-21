@@ -17,9 +17,3 @@ files[] = tests/Dummy_Solr.php
 files[] = tests/solr_index_and_search.test
 files[] = tests/solr_base_query.test
 
-; Information added by drupal.org packaging script on 2011-06-14
-version = "7.x-1.0-beta8"
-core = "7.x"
-project = "apachesolr"
-datestamp = "1308019914"
-

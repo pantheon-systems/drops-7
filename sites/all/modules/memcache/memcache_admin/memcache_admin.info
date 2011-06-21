@@ -4,9 +4,3 @@ package = Caching
 core = 7.x
 files[] = memcache_admin.module
 
-; Information added by drupal.org packaging script on 2011-05-27
-version = "7.x-1.0-beta4"
-core = "7.x"
-project = "memcache"
-datestamp = "1306500116"
-

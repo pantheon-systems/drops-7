@@ -7,9 +7,3 @@ core = 7.x
 
 files[] = apachesolr_taxonomy.module
 
-; Information added by drupal.org packaging script on 2011-06-14
-version = "7.x-1.0-beta8"
-core = "7.x"
-project = "apachesolr"
-datestamp = "1308019914"
-
