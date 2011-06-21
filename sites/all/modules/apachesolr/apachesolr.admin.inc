@@ -9,7 +9,7 @@
  * Form builder for adding/editing a Solr environment used as a menu callback.
  */
 function apachesolr_environment_delete_page($environment) {
-  $is_default = $environment['env_id'] == variable_get('apachesolr_default_environment', 'solr');
+  $is_default = $environment['env_id'] == apachesolr_default_environment();
   if ($is_default) {
     return MENU_ACCESS_DENIED;
   }
@@ -55,7 +55,7 @@ function apachesolr_environment_edit_form($form, &$form_state, $environment = NU
     '#description' => t('URL that identifies the Solr server and request path to be used. E.g. http://localhost:8983/solr'),
     '#required' => TRUE,
   );
-  $is_default = $environment['env_id'] == variable_get('apachesolr_default_environment', 'solr');
+  $is_default = $environment['env_id'] == apachesolr_default_environment();
   $form['make_default'] = array(
     '#type' => 'checkbox',
     '#title' => t('Make this Solr search environment the default'),
@@ -207,7 +207,7 @@ function apachesolr_settings($form, &$form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => $collapse_host,
   );
-  $id = variable_get('apachesolr_default_environment', 'solr');
+  $id = apachesolr_default_environment();
   $environments = apachesolr_load_all_environments();
   $rows = array();
   $headers = array(
@@ -217,7 +217,7 @@ function apachesolr_settings($form, &$form_state) {
     t('URL'),
   );
   foreach ($environments as $environment_id => $data) {
-    $is_default = $environment_id == variable_get('apachesolr_default_environment', 'solr');
+    $is_default = $environment_id == apachesolr_default_environment();
     if ($is_default) {
       $type = 'selected';
       $delete_link = '';
@@ -364,7 +364,12 @@ function apachesolr_index_page($env_id = NULL) {
     try {
       $stats_summary = $solr->getStatsSummary();
       $solr_msg = '<p>' . t('Using schema.xml version: <strong>@schema_version</strong>', $stats_summary);
-      if ($stats_summary['@core_name']) {
+      // We need a schema version greater than beta3. This is mostly to catch
+      // people using the Drupal 6 schema.
+      if (version_compare($stats_summary['@schema_version'], 'drupal-3.0-beta3', '<=')) {
+        drupal_set_message(t('Your schema.xml version is too old. You must update it and re-index your content.'), 'error');
+      }
+      if (!empty($stats_summary['@core_name'])) {
         $solr_msg .= '<br />' . t('Solr core name: <strong>@core_name</strong>', $stats_summary);
       }
       $delay_msg = '<br />' . t('<em>The server has a @autocommit_time delay before updates are processed.</em>', $stats_summary) . "</p>\n";
@@ -374,7 +379,7 @@ function apachesolr_index_page($env_id = NULL) {
       watchdog('Apache Solr', nl2br(check_plain($e->getMessage())), NULL, WATCHDOG_ERROR);
     }
     $status_header .= $solr_msg . $delay_msg;
-    $pending_msg = $stats_summary['@pending_docs'] ? t('(@pending_docs sent but not yet processed)', $stats_summary) : '';
+    $pending_msg = isset($stats_summary['@pending_docs']) ? t('(@pending_docs sent but not yet processed)', $stats_summary) : '';
     $num_docs = '<p>' . t('Number of documents in index: @num !pending', array('@num' => $data->index->numDocs, '!pending' => $pending_msg)) . "</p>\n";
     $status_header .= $num_docs . $delete_msg;
   }
@@ -783,9 +788,9 @@ function apachesolr_mlt_block_form($delta = NULL) {
   $form['restrictions']['mlt_type_filters'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Content Types'),
-    '#default_value' => is_array($block['mlt_type_filters']) ? $block['mlt_type_filters'] : array_keys($type_options),
+    '#default_value' => is_array($block['mlt_type_filters']) ? $block['mlt_type_filters'] : array(),
     '#options' => $type_options,
-    '#description' => t('Select the content types that similarity suggestions should be restricted to. Multiple types are joined with an OR query, so selecting more types results in more recommendations.'),
+    '#description' => t('Select the content types that similarity suggestions should be restricted to. Multiple types are joined with an OR query, so selecting more types results in more recommendations. If none are selected, no filter will be applied.'),
     '#weight' => '-2',
   );
 
@@ -823,7 +828,7 @@ function apachesolr_mlt_block_defaults($block = array()) {
     'mlt_minwl' => '3',
     'mlt_maxwl' => '15',
     'mlt_maxqt' => '20',
-    'mlt_type_filters' => array_keys(node_type_get_types()),
+    'mlt_type_filters' => array(),
     'mlt_custom_filters' => '',
   );
 }

@@ -16,7 +16,7 @@
  limitations under the License.
 -->
 
-<config name="drupal-3.0-beta4">
+<config name="drupal-3.0-beta7">
 
   <!-- Set this to 'false' if you want solr to continue working after it has 
        encountered an severe configuration error.  In a production environment, 
@@ -407,6 +407,7 @@
     <!-- default values for query parameters -->
      <lst name="defaults">
        <str name="echoParams">explicit</str>
+       <bool name="omitHeader">true</bool>
        <!--
        <int name="rows">10</int>
        <str name="fl">*</str>
@@ -445,6 +446,7 @@
     <lst name="defaults">
      <str name="defType">dismax</str>
      <str name="echoParams">explicit</str>
+     <bool name="omitHeader">true</bool>
     </lst>
   </requestHandler>
 
@@ -455,6 +457,7 @@
     <lst name="defaults">
      <str name="defType">dismax</str>
      <str name="echoParams">explicit</str>
+     <bool name="omitHeader">true</bool>
      <float name="tie">0.01</float>
      <str name="pf">
         content^2.0

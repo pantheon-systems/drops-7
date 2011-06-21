@@ -25,16 +25,21 @@ Installation
 
 Prerequisite: Java 5 or higher (a.k.a. 1.5.x).  PHP 5.2.4 or higher.
 
-Install the Apache Solr Drupal module as you would any Drupal module.
+Install the Apache Solr Drupal module as you would any Drupal module. Note
+that the Drupal 7.x-1.x branch does not require the SolrPhpClient to
+be installed. All necessary code is now included with this module.
 
-Before enabling it, you must have a working Solr server, or be subscribed
-to a service like Acquia Search.
+Before enabling the module, you must have a working Solr server, or be
+subscribed to a service like Acquia Search.
+
+The Debian/Ubuntu packages for Solr should NOT be used to install Solr.
+For example, do NOT install the solr or solr-jetty packages.
 
 Download the latest Solr 1.4.x release (e.g. 1.4.1) from:
 http://www.apache.org/dyn/closer.cgi/lucene/solr/
 
-Unpack the tarball somewhere not visible to the web (not in your apache docroot
-and not inside of your drupal directory).
+Unpack the tarball somewhere not visible to the web (not in your webserver
+docroot and not inside of your Drupal directory).
 
 The Solr download comes with an example application that you can use for
 testing, development, and even for smaller production sites. This

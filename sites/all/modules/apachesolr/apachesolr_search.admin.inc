@@ -165,7 +165,6 @@ function apachesolr_search_page_settings_form($form, &$form_state, $search_page 
   $form['page_id']['#description'] = t('A unique machine-readable identifier for the search page configuration. It must only contain lowercase letters, numbers, and underscores.');
   $form['info']['description']['#description'] = t('The description of the search page configuration.');
 
-  $id = variable_get('apachesolr_default_environment', 'solr');
   $environments = apachesolr_load_all_environments();
 
   $options = array('' => t('<Disabled>'));

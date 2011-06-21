@@ -14,7 +14,7 @@
  * before it.
  *
  * @param $query
- *  An object implementing DrupalSolrQueryInterface.  No need for &.
+ *  An object implementing DrupalSolrQueryInterface. No need for &.
  */
 function HOOK_apachesolr_query_prepare($query) {
   // Add a sort on the node ID.
@@ -31,11 +31,11 @@ function HOOK_apachesolr_query_prepare($query) {
  * drupal_alter('apachesolr_query', $query). That function then invokes
  * this hook. It allows modules to modify the query object and its params.
  *
- * A module implementing HOOK_apachesolr_modify_query() may set
+ * A module implementing HOOK_apachesolr_query_alter() may set
  * $query->abort_search to TRUE to flag the query to be aborted.
  *
  * @param $query
- *  An object implementing DrupalSolrQueryInterface.  No need for &.
+ *  An object implementing DrupalSolrQueryInterface. No need for &.
  */
 function HOOK_apachesolr_query_alter($query) {
   // I only want to see articles by the admin!
@@ -129,12 +129,12 @@ function HOOK_apachesolr_sort_links_alter(&$sort_links) {
 /**
  * Respond to search environment deletion.
  *
- * This hook is invoked from apachesolr_server_delete() after the server is removed
+ * This hook is invoked from apachesolr_environment_delete() after the environment is removed
  * from the database.
  *
- * @param $server
- *   The server object that is being deleted.
+ * @param $environment
+ *   The environment object that is being deleted.
  */
-function HOOK_apachesolr_environment_delete($server) {
+function HOOK_apachesolr_environment_delete($environment) {
 }
 

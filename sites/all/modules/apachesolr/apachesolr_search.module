@@ -35,7 +35,7 @@ function apachesolr_search_help($section) {
  */
 function apachesolr_search_menu() {
   $items['admin/config/search/apachesolr/search-pages'] = array(
-    'title'            => 'Search Pages',
+    'title'            => 'Search pages',
     'description'      => t('Configure search pages.'),
     'page callback'    => 'apachesolr_search_page_list_page',
     'access arguments' => array('administer search'),
@@ -74,7 +74,7 @@ function apachesolr_search_menu() {
     'file'             => 'apachesolr_search.admin.inc',
   );
   $items['admin/config/search/apachesolr/content-bias'] = array(
-    'title'            => 'Content bias settings',
+    'title'            => 'Content bias',
     'page callback'    => 'apachesolr_boost_settings_page',
     'access arguments' => array('administer search'),
     'weight'           => 1,
@@ -596,7 +596,7 @@ function apachesolr_search_process_response($response, DrupalSolrQueryInterface 
 
       // Call entity-type-specific callbacks for extra handling.
       $function = apachesolr_entity_get_callback($doc->entity_type, 'result callback');
-      if (function_exists($function)) {
+      if (is_callable($function)) {
         $function($doc, $result, $extra);
       }
 
@@ -697,63 +697,6 @@ function apachesolr_search_preprocess_search_results(&$variables) {
       '@total' => $total,
     ));
   }
-}
-
-function apachesolr_search_date_range(DrupalSolrQueryInterface $query, $facet_field) {
-  foreach ($query->get_filters($facet_field) as $filter) {
-    // If we had an ISO date library we could use ISO dates
-    // directly.  Instead, we convert to Unix timestamps for comparison.
-    // Only use dates if we are able to parse into timestamps.
-    $start = strtotime($filter['#start']);
-    $end = strtotime($filter['#end']);
-    if ($start && $end && ($start < $end)) {
-        $start_iso = $filter['#start'];
-        $end_iso = $filter['#end'];
-      // Determine the drilldown gap for this range.
-      $gap = apachesolr_date_gap_drilldown(apachesolr_date_find_query_gap($start_iso, $end_iso));
-    }
-  }
-  // If there is no $delta field in query object, get initial
-  // facet.date.* params from the DB and determine the best search
-  // gap to use. This callback assumes $facet_field is 'ds_changed' or
-  // 'ds_created'.
-  switch ($facet_field) {
-    case 'ds_created' :
-      $field = 'created';
-      break;
-    case 'ds_changed' :
-      $field = 'changed';
-      break;
-  }
-  if (!isset($start_iso)) {
-    $start_iso = apachesolr_date_iso(db_query("SELECT MIN($field) FROM {node} WHERE status = 1")->fetchField());
-    // Subtract one second, so that this range's $end_iso is not equal to the
-    // next range's $start_iso.
-    $end_iso = apachesolr_date_iso(db_query("SELECT MAX($field) FROM {node} WHERE status = 1")->fetchField() - 1);
-    $gap = apachesolr_date_determine_gap($start_iso, $end_iso);
-  }
-  // Return a query range from the beginning of a gap period to the beginning
-  // of the next gap period.  We ALWAYS generate query ranges of this form
-  // and the apachesolr_date_*() helper functions require it.
-  return array("$start_iso/$gap", "$end_iso+1$gap/$gap", "+1$gap");
-}
-
-/**
- * Helper function, finds node types that are tagged by the specified vocabulary
- */
-
-function apachesolr_search_vocabulary_content_types($vid) {
-  $fields = field_info_fields();
-  $types = array();
-  foreach (field_info_instances('node') as $bundle_name => $bundle) {
-    foreach ($bundle as $field_name => $inst) {
-      $f = $fields[$field_name];
-      if ($f['type'] == 'taxonomy_term_reference' && $f['settings']['allowed_values'][0]['vid'] == $vid) {
-        $types[] = $bundle_name;
-      }
-    }
-  }
-  return array_unique($types);
 }
 
 /**
@@ -924,17 +867,6 @@ function apachesolr_search_theme() {
       'variables' => array('links' => NULL),
     ),
   );
-}
-
-/**
- * Proxy theme function for 'created' and 'changed' date fields.
- */
-function theme_apachesolr_breadcrumb_date_range($vars) {
-  $field = $vars['field'];
-  if (preg_match('@[\[\{](\S+) TO (\S+)[\]\}]@', $field['#value'], $match)) {
-    return apachesolr_date_format_range($match[1], $match[2]);
-  }
-  return $field['#value'];
 }
 
 /**

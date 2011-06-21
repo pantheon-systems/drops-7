@@ -5,6 +5,31 @@ Apache Solr integration 7.x-1.x-xxxx, xxxx-xx-xx
 Apache Solr integration 7.x-1.0-xxxx, 2011-xx-xx
 ------------------------------
 
+Apache Solr integration 7.x-1.0-beta8, 2011-06-13
+------------------------------
+#1174960 by pwolanin: fix critical indexing bug from DBTNG error in apachesolr_cron_check_node_table().
+#1148612 by pwolanin: fix regression; Clicking "Relevancy" has no effect after choosing another sort.
+
+Apache Solr integration 7.x-1.0-beta7, 2011-05-24
+------------------------------
+#1162600 by pwolanin: Display an error if the schema version in use is incompatible.
+#1162078 by jpmckinney: fix for Undefined variable: stats_summary.
+#1159172 by jpmckinney: Remove unused facet functions.
+#1167172 by cpliakas: Improve the breadcrumb handling for facet settings forms.
+#1157864 by cpliakas: Integrate with Facet API's depencency plugin system.
+#912758  by pwolanin: use Facet API's support for faceting missing values.
+#1098860 by jpmckinney: Add apachesolr_cron_check_node_table back to cron.
+#1159172 by cpliakas: Remove unused facet functions.
+#926564  by jpmckinney: Add get_subqueries().
+#1064972 by jpmckinney: Use is_callable not function_exists, where applicable.
+#1097988 by pwolanin: Add omitHeader to save on bandwidth.
+#1154770 by jpmckinney, pwolanin: Must double quote filter query values if containing space or colon.
+#1152382 by cpliakas, pwolanin: Modify Facet API adapter for api changes.
+#1131288 by jpmckinney: Fix install and other follow-ups for renaming "server" to "search environment".
+#1150988 by pwolanin: Fix for facet blocks based on custom fields displaying field keys instead of labels.
+#1150220 by pwolanin: Fix for MLT requests are not going through query alter.
+#1150306 by pwolanin: fix for double URL encoding of plus sign (+) on search, after changing sort filters.
+
 Apache Solr integration 7.x-1.0-beta6, 2011-05-06
 ------------------------------
 #1148768 by pwolanin: move the read-only index setting to the environment edit page.

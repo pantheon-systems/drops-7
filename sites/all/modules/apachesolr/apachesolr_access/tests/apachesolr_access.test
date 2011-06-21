@@ -101,5 +101,25 @@ class DrupalApacheSolrNodeAccess extends DrupalWebTestCase {
     }
 
     $this->assertEqual($expected_criterion, $found_criterion, 'All Criteria was accounted for in fields. If not accounted for, Unaccounted Criteria [' . var_export(array_diff($expected_criterion, $found_criterion), 1) . ']');
+    // Run a query through the MLT code to be sure access filters are added.
+    module_load_include('inc', 'apachesolr', 'apachesolr.admin');
+    $solr = new DummySolr();
+    $settings = apachesolr_mlt_block_defaults();
+    // Dummy value
+    $id = apachesolr_document_id($author_restricted_node->nid);
+    drupal_save_session(FALSE);
+    $GLOBALS['user'] = $basic_user;
+    $response = apachesolr_mlt_suggestions($settings, $id, $solr);
+    $search = $solr->getLastSearch();
+    // Should only be one fq
+    $this->assertEqual(count($search['params']['fq']), 1, 'One fq param found');
+    // Do some manipulation to avoid having to guess the order.
+    $filter = trim(end($search['params']['fq']), ')(');
+    $parts = explode(' OR ', $filter);
+    $this->assertEqual(count($expected_criterion), count($parts), 'Number of parts is the same as the numebr of critera');
+    foreach ($expected_criterion as $k => $v) {
+      $this->assertTrue(in_array("$k:$v", $parts), "Filter $k:$v found in the parts");
+    }
   }
 }
+

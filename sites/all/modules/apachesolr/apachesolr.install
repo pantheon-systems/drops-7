@@ -15,27 +15,27 @@ function apachesolr_requirements($phase) {
   }
   // Ensure translations don't break at install time
   $t = get_t();
-  $has_server_settings = FALSE;
-  $env_id = variable_get('apachesolr_default_server', 'solr');
-  $server = apachesolr_environment_load($env_id);
-  if (!$server || empty($server['url'])) {
+  $has_settings = FALSE;
+  $id = apachesolr_default_environment();
+  $environment = apachesolr_environment_load($id);
+  if (!$environment || empty($environment['url'])) {
     $requirements['apachesolr'] = array(
       'title' => $t('Apache Solr'),
-      'value' => $t('Missing server configuration'),
-      'description' => $t('Missing or invalid Solr server record for the default server ID %id.', array('%id' => $env_id)),
+      'value' => $t('Missing environment configuration'),
+      'description' => $t('Missing or invalid Solr environment record for the default environment ID %id.', array('%id' => $id)),
       'severity' => REQUIREMENT_ERROR,
     );
   }
   else {
-    $has_server_settings = TRUE;
+    $has_settings = TRUE;
   }
 
-  if ($has_server_settings) {
+  if ($has_settings) {
     $ping = FALSE;
     try {
-      $solr = apachesolr_get_solr($env_id);
+      $solr = apachesolr_get_solr($id);
       $ping = @$solr->ping(variable_get('apachesolr_ping_timeout', 4));
-      // If there is no $solr object, there is no server available, so don't continue.
+      // If there is no $solr object, there is no instance available, so don't continue.
       if (!$ping) {
         throw new Exception(t('No Solr instance available when checking requirements.'));
       }
@@ -48,7 +48,7 @@ function apachesolr_requirements($phase) {
     $requirements['apachesolr'] = array(
       'title' => $t('Apache Solr'),
       'value' => $value,
-      'description' => $t('Default server url: <br/> %url',  array('%url' => $server['url'])),
+      'description' => $t('Default environment url: <br/> %url',  array('%url' => $environment['url'])),
       'severity' => $severity,
     );
   }
@@ -64,7 +64,6 @@ function apachesolr_install() {
   require_once(drupal_get_path('module', 'apachesolr') . '/apachesolr.admin.inc');
   apachesolr_mlt_save_block(array('name' => st('More like this')));
   db_insert('apachesolr_environment')->fields(array('env_id' => 'solr', 'name' => 'localhost server', 'url' => 'http://localhost:8983/solr'))->execute();
-  variable_set('apachesolr_default_server', 'solr');
   drupal_set_message(st('Apache Solr is enabled. Visit the <a href="!settings_link">settings page</a>.', array('!settings_link' => url('admin/config/search/apachesolr'))));
 }
 
@@ -176,7 +175,7 @@ function apachesolr_schema() {
  */
 function apachesolr_uninstall() {
   // Remove variables.
-  variable_del('apachesolr_default_server');
+  variable_del('apachesolr_default_environment');
   variable_del('apachesolr_rows');
   variable_del('apachesolr_site_hash');
   variable_del('apachesolr_index_last');
@@ -435,9 +434,20 @@ function apachesolr_update_7007() {
    );
    db_add_primary_key('apachesolr_environment', array('env_id'));
    db_add_primary_key('apachesolr_environment_variable', array('env_id', 'name'));
-   $env_id = variable_get('apachesolr_default_server', NULL);
-   if (isset($env_id)) {
-     variable_get('apachesolr_default_environment', $env_id);
+   $id = variable_get('apachesolr_default_server', NULL);
+   if (isset($id)) {
+     variable_set('apachesolr_default_environment', $id);
    }
    variable_del('apachesolr_default_server');
+}
+
+/**
+ * Remove more facet-related variable deprecated by the Facet API integration.
+ */
+function apachesolr_update_7008() {
+  variable_del('apachesolr_facet_missing');
+  variable_del('apachesolr_facet_query_initial_limits');
+  variable_del('apachesolr_facet_query_sorts');
+  variable_del('apachesolr_facet_sort_active');
+  variable_del('apachesolr_operator');
 }

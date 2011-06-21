@@ -24,57 +24,20 @@ class ApacheSolrFacetapiAdapter extends FacetapiAdapter {
   }
 
   /**
-   * Requests facets and applies facet filters to the query.
+   * Allows the backend to initialize its query object before adding the facet
+   * filters.
    *
-   * @param stdClass $query
-   *   The query in the backend's native API.
+   * @param mixed $query
+   *   The backend's native object.
    */
-  function addFacetsFilters($query) {
+  function initActiveFilters($query) {
     $enabled_facets = facetapi_get_enabled_facets($this->info['name']);
     if ($enabled_facets) {
       $query->addParam('facet', 'true');
       $query->addParam('facet.sort', 'count');
       $query->addParam('facet.mincount', '1');
-      foreach ($enabled_facets as $facet) {
-        $this->addFacetQuery($facet, $query);
-        $this->addActiveFilters($facet, $query);
-      }
     }
   }
-
-  /**
-   * Back-end specific function for adding filters.
-   *
-   * Typically will call $this->getActiveItems($facet);
-   *
-   * @param array $facet
-   *   The facet definition.
-   * @param mixed $query
-   *   A mixed value containing the query in the backend's native API.
-   *
-   * @return FacetapiFacet
-   *   The facet rendering object object.
-   */
-   public function addActiveFilters(array $facet, $query) {
-
-     $active = $this->getActiveItems($facet);
-     $settings = $this->getFacet($facet)->getSettings();
-     $operator = $settings->settings['operator'];
-
-     if (FACETAPI_OPERATOR_OR != $operator) {
-       foreach ($active as $value => $item) {
-         $query->addFilter($facet['field'], $value);
-       }
-     }
-     else {
-       // OR facet.
-       $local = "tag={$facet['field']}";
-       $values = array_keys($active);
-       if ($values) {
-         $query->addFilter($facet['field'], '(' . implode(' OR ', $values) . ')', FALSE, $local);
-       }
-     }
-   }
 
   /**
    * Returns a boolean flagging whether $this->_searcher executed a search.
@@ -117,5 +80,12 @@ class ApacheSolrFacetapiAdapter extends FacetapiAdapter {
     if ($response) {
       return $response->response->numFound;
     }
+  }
+
+  /**
+   * Allows for backend specific overrides to the settings form.
+   */
+  public function settingsForm(&$form, &$form_state) {
+    $form['#validate'][] = 'apachesolr_facet_form_validate';
   }
 }

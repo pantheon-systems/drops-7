@@ -12,7 +12,7 @@ class DrupalSolrWebTestCase extends DrupalWebTestCase {
   function setUp() {
     parent::setUp('apachesolr', 'apachesolr_search', 'search');
     // Load the default server.
-    $env_id = variable_get('apachesolr_default_environment', 'solr');
+    $env_id = apachesolr_default_environment();
     $environment = apachesolr_environment_load($env_id);
     // We will use a core named after the simpltest prefix.
     // Normal base URL will be http://loclahost:8983/solr

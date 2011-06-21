@@ -33,9 +33,35 @@ class ApacheSolrFacetapiTerm extends FacetapiQueryType implements FacetapiQueryT
     $ex = (FACETAPI_OPERATOR_OR != $operator) ? '' : "{!ex={$this->facet['field']}}";
     $query->addParam('facet.field', $ex . $this->facet['field']);
 
+    if (!empty($settings->settings['facet_missing'])) {
+      $query->addParam('f.' . $this->facet['field'] . '.facet.missing', 'true');
+    }
     // Adds "hard limit" parameter to prevent too many return values.
     $limit = empty($settings->settings['hard_limit']) ? 20 : (int) $settings->settings['hard_limit'];
     $query->addParam('f.' . $this->facet['field'] . '.facet.limit', $limit);
+
+    $active = $this->adapter->getActiveItems($this->facet);
+
+    // Adds filter based on the operator.
+    if (FACETAPI_OPERATOR_OR != $operator) {
+      foreach ($active as $value => $item) {
+        // Handle facet missing:
+        if ($value == '_empty_' && !empty($settings->settings['facet_missing'])) {
+          $query->addFilter($this->facet['field'], '[* TO *]', TRUE);
+        }
+        else {
+          $query->addFilter($this->facet['field'], $value);
+        }
+      }
+    }
+    else {
+      // OR facet.
+      $local = "tag={$this->facet['field']}";
+      $values = array_keys($active);
+      if ($values) {
+        $query->addFilter($this->facet['field'], '(' . implode(' OR ', $values) . ')', FALSE, $local);
+      }
+    }
   }
 
   /**
@@ -50,7 +76,10 @@ class ApacheSolrFacetapiTerm extends FacetapiQueryType implements FacetapiQueryT
       if (isset($response->facet_counts->facet_fields->{$this->facet['field']})) {
         $values = (array) $response->facet_counts->facet_fields->{$this->facet['field']};
         foreach ($values as $value => $count) {
-          $build[$value] = array('#count' => $count);
+          // Facet missing may return 0 even if mincount is 1.
+          if ($count) {
+            $build[$value] = array('#count' => $count);
+          }
         }
       }
     }

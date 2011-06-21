@@ -76,7 +76,7 @@ function apachesolr_node_to_document($node, $namespace) {
     }
     $document->ds_created = apachesolr_date_iso($node->created);
     $document->ds_changed = apachesolr_date_iso($node->changed);
-    if (isset($node->last_comment_timestamp)) {
+    if (isset($node->last_comment_timestamp) && !empty($node->comment_count)) {
       $document->ds_last_comment_timestamp = apachesolr_date_iso($node->last_comment_timestamp);
       $document->ds_last_comment_or_change = apachesolr_date_iso(max($node->last_comment_timestamp, $node->changed));
     }
@@ -93,7 +93,7 @@ function apachesolr_node_to_document($node, $namespace) {
       if (isset($node->{$field_name})) {
         // Got a field.
         $function = $field_info['indexing_callback'];
-        if ($function && function_exists($function)) {
+        if ($function && is_callable($function)) {
           // NOTE: This function should always return an array.  One
           // node field may be indexed to multiple Solr fields.
           $fields = $function($node, $field_name, $index_key, $field_info);
@@ -245,6 +245,9 @@ function apachesolr_fields_list_indexing_callback($entity, $field_name, $index_k
   return $fields;
 }
 
+/**
+ *  @see http://drupal.org/node/1059372
+ */
 function apachesolr_cck_nodereference_indexing_callback($node, $field_name, $index_key, $cck_info) {
   $fields = array();
   if (!empty($node->{$field_name})) {
@@ -261,6 +264,9 @@ function apachesolr_cck_nodereference_indexing_callback($node, $field_name, $ind
   return $fields;
 }
 
+/**
+ *  @see http://drupal.org/node/1059372
+ */
 function apachesolr_cck_userreference_indexing_callback($node, $field_name, $index_key, $cck_info) {
   $fields = array();
   if (!empty($node->$field_name)) {
@@ -320,31 +326,19 @@ function apachesolr_add_tags_to_document($document, $text) {
 
 /**
  * hook_cron() helper to try to make {apachesolr_search_node} consistent with {node}.
- * TODO: this function is never used
  */
 function apachesolr_cron_check_node_table() {
   // Check for unpublished content that wasn't deleted from the index.
   $query = db_select('apachesolr_search_node', 'asn')
     ->fields('n', array('nid', 'status'))
-    ->condition('asn.status', 'n.status', '<>');
+    ->where('asn.status <> n.status');
   $query->innerJoin('node', 'n', 'n.nid = asn.nid');
-  $result = $query->execute();
+  $nodes = $query->execute()->fetchAllAssoc('nid');
 
-  $node_lists = array();
-  $nodes = array();
   // Update or delete at most this many in each Solr query.
   $limit = variable_get('apachesolr_cron_mass_limit', 500);
-  foreach ($result as $node) {
-    $nodes[$node->nid] = $node;
-    if (count($nodes) == $limit) {
-      $node_lists[] = $nodes;
-      $nodes = array();
-    }
-  }
-  // Any remaning ones if the limit is not reached.
-  if (count($nodes)) {
-    $node_lists[] = $nodes;
-  }
+  $node_lists = array_chunk($nodes, $limit, TRUE);
+
   foreach ($node_lists as $nodes) {
     watchdog('Apache Solr', 'On cron running apachesolr_nodeapi_mass_update() on nids @nids', array('@nids' => implode(',', array_keys($nodes))), WATCHDOG_WARNING);
     if (!apachesolr_nodeapi_mass_update($nodes)) {
@@ -357,21 +351,9 @@ function apachesolr_cron_check_node_table() {
     ->fields('asn', array('nid'))
     ->isNull('n.nid');
   $query->leftJoin('node', 'n', 'n.nid = asn.nid');
-  $result = $query->execute();
+  $nodes = $query->execute()->fetchAllAssoc('nid');
+  $node_lists = array_chunk($nodes, $limit, TRUE);
 
-  $node_lists = array();
-  $nodes = array();
-  foreach ($result as $node) {
-    $nodes[$node->nid] = $node;
-    if (count($nodes) == $limit) {
-      $node_lists[] = $nodes;
-      $nodes = array();
-    }
-  }
-  // Any remaning ones if the limit is not reached.
-  if (count($nodes)) {
-    $node_lists[] = $nodes;
-  }
   foreach ($node_lists as $nodes) {
     watchdog('Apache Solr', 'On cron running apachesolr_nodeapi_mass_delete() on nids @nids', array('@nids' => implode(',', array_keys($nodes))), WATCHDOG_WARNING);
     if (!apachesolr_nodeapi_mass_delete($nodes)) {
@@ -386,7 +368,7 @@ function apachesolr_nodeapi_mass_update($nodes) {
     return TRUE;
   }
 
-  if (apachesolr_server_variable_get(apachesolr_default_server(), 'apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_ONLY) {
+  if (apachesolr_environment_variable_get(apachesolr_default_environment(), 'apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_ONLY) {
     return TRUE;
   }
 
@@ -425,7 +407,7 @@ function apachesolr_nodeapi_mass_delete($nodes) {
     return TRUE;
   }
 
-  if (apachesolr_server_variable_get(apachesolr_default_server(), 'apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_ONLY) {
+  if (apachesolr_environment_variable_get(apachesolr_default_environment(), 'apachesolr_read_only', APACHESOLR_READ_WRITE) == APACHESOLR_READ_ONLY) {
     return TRUE;
   }
 

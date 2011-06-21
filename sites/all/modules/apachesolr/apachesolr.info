@@ -13,12 +13,13 @@ files[] = Solr_Base_Query.php
 files[] = plugins/facetapi/adapter.inc
 files[] = plugins/facetapi/query_type_date.inc
 files[] = plugins/facetapi/query_type_term.inc
+files[] = tests/Dummy_Solr.php
 files[] = tests/solr_index_and_search.test
 files[] = tests/solr_base_query.test
 
-; Information added by drupal.org packaging script on 2011-05-06
-version = "7.x-1.0-beta6"
+; Information added by drupal.org packaging script on 2011-06-14
+version = "7.x-1.0-beta8"
 core = "7.x"
 project = "apachesolr"
-datestamp = "1304689615"
+datestamp = "1308019914"
 
