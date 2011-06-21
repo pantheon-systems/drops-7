@@ -1,5 +1,4 @@
 <?php
-// $Id: dmemcache.inc,v 1.1.4.14 2010/09/29 15:03:26 robertDouglass Exp $
 
 /*
  * Core dmemcache functions required by:
@@ -328,6 +327,11 @@ function dmemcache_key($key, $bin = 'cache') {
   if (empty($prefix)) {
     if ($prefix = variable_get('memcache_key_prefix', '')) {
       $prefix .= '-';
+    }
+    // When simpletest is running, emulate the simpletest database prefix here
+    // to avoid the child site setting cache entries in the parent site.
+    if (isset($GLOBALS['drupal_test_info']['test_run_id'])) {
+      $prefix .= $GLOBALS['drupal_test_info']['test_run_id'];
     }
   }
   $full_key = urlencode($prefix . $bin . '-' . $key);

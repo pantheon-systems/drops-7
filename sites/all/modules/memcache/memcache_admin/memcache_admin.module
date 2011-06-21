@@ -1,5 +1,4 @@
 <?php
-// $Id: memcache_admin.module,v 1.5.2.5 2010/10/14 01:57:32 Jeremy Exp $
 
 /**
  * For the collection of memcache stats. This small .js file makes sure that the
@@ -76,7 +75,7 @@ function memcache_admin_menu() {
       $count++;
 
       $sub_count = 0;
-      foreach (array('default', 'reset', 'malloc', 'maps', 'slabs', 'items', 'sizes') as $type) {
+      foreach (array('default', 'malloc', 'maps', 'slabs', 'items', 'sizes') as $type) {
         $items['admin/reports/memcache/'. $cluster .'/'. $type] = array(
           'type' => $type == 'default' ? MENU_DEFAULT_LOCAL_TASK : MENU_LOCAL_TASK,
           'page callback' => 'memcache_admin_stats',
@@ -109,7 +108,7 @@ function memcache_admin_admin_settings() {
  * Memcahe Stats page
  *
  * @param string $cluster - which cluster to view?
- * @param string $type - which type of stat, eg: default, reset, malloc, maps, cachedump, slabs, items or sizes
+ * @param string $type - which type of stat, eg: default, malloc, maps, cachedump, slabs, items or sizes
  * @return string
  */
 function memcache_admin_stats($cluster = 'default', $type = 'default') {

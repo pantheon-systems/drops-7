@@ -1,4 +1,3 @@
-// $Id: README.txt,v 1.11.2.4 2010/09/29 15:03:26 robertDouglass Exp $
 
 ## REQUIREMENTS ##
 
@@ -34,9 +33,6 @@ http://www.lullabot.com/articles/how_install_memcache_debian_etch
 
 For instructions on 1 and 2 above, please see the INSTALLATION.txt file that
 comes with the memcache module download.
-
-At this time, only memcache.inc is available in Drupal 7.  The memcache.inc.db
-file has not yet been ported.
 
 http://www.lullabot.com/files/memcache-inc.png
 

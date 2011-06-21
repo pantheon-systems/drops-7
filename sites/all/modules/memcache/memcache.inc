@@ -1,5 +1,4 @@
 <?php
-// $Id: memcache.inc,v 1.28.2.18 2010/10/13 03:18:49 Jeremy Exp $
 
 require_once 'dmemcache.inc';
 
@@ -133,7 +132,14 @@ class MemCacheDrupal implements DrupalCacheInterface {
 
   function clear($cid = NULL, $wildcard = FALSE) {
     if (empty($cid) || $wildcard === TRUE) {
-      if ($cid == '*') {
+      // system_cron() flushes all cache bins returned by hook_flush_caches()
+      // with cache_clear_all(NULL, $bin); This is for garbage collection with
+      // the database cache, but serves no purpose with memcache. So return
+      // early here.
+      if (!isset($cid)) {
+        return;
+      }
+      elseif ($cid == '*') {
         $cid = '';
       }
       if ($this->cache_lifetime && empty($cid)) {

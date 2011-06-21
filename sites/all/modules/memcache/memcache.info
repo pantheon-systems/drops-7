@@ -1,4 +1,3 @@
-; $Id: memcache.info,v 1.2.2.2 2010/04/13 20:35:08 Jeremy Exp $
 name = Memcache
 description = High performance integration with memcache.
 package = Caching
@@ -7,9 +6,9 @@ files[] = memcache.inc
 files[] = memcache.module
 files[] = memcache.test
 
-; Information added by drupal.org packaging script on 2010-10-18
-version = "7.x-1.0-beta3"
+; Information added by drupal.org packaging script on 2011-05-27
+version = "7.x-1.0-beta4"
 core = "7.x"
 project = "memcache"
-datestamp = "1287443185"
+datestamp = "1306500116"
 

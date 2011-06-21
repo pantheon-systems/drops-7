@@ -1,4 +1,3 @@
-// $Id: INSTALLATION.txt,v 1.4.2.1 2009/12/05 00:26:30 Jeremy Exp $
 
 For instructions on how to compile memcached on Debian Etch, see here:
 
@@ -64,7 +63,7 @@ Starting httpd:                                            [  OK  ]
       memcache
       memcache support	enabled
       Active persistent connections 	0
-      Revision 	$Revision: 1.4.2.1 $
+      Revision 	$Revision$
 
 6) Optional. Install and enable 'devel' module. Configure it to show SQL
 queries being executed.  Log in, and check out / and /admin - see how many
