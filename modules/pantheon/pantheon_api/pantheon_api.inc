@@ -91,7 +91,7 @@ function pantheon_api_get_authorization($token) {
   if (is_object($poison)) {
     return FALSE;
   }
-  $url = YGG_API . 'sites/self/authorizations/'. $token;
+  $url = YGG_API . '/sites/self/authorizations/'. $token;
   $result = pantheon_api_curl($url);
   if (strpos($result['headers'], 'HTTP/1.1 200') !== FALSE) {
     $authorization = json_decode($result['body']);
