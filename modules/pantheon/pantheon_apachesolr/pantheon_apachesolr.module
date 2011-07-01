@@ -3,7 +3,7 @@
 /**
  * @file
  * Pantheon ApacheSolr module.
- * 
+ *
  * We need this to locate our Class
  */
 
@@ -15,9 +15,9 @@ function pantheon_apachesolr_update_schema($schema) {
   $path = variable_get('apachesolr_path', 'sites/self/environments/dev/index');
   $client_cert = '/etc/pantheon/system.pem';
   $url = 'https://'. $host .'/'. $path;
-  
+
   $file = fopen($schema, 'r');
-  
+
   // set URL and other appropriate options
   $opts = array(
     CURLOPT_URL => $url,
@@ -38,4 +38,17 @@ function pantheon_apachesolr_update_schema($schema) {
   }
   fclose($file);
   return $response;
+}
+
+/**
+ * Implementation of hook_form_FORM_ID_alter()
+ *
+ * Hides unnecessary settings from apachesolr.admin.inc.
+ */
+function pantheon_apachesolr_form_apachesolr_settings_alter(&$form, &$form_state, $form_id) {
+  $form['apachesolr_host_settings'] = array(
+    '#type' => 'item',
+    '#title' => t('Solr Environment Settings'),
+    '#markup' => '<p>'. t('No need to configure environments: Pantheon is managing your Solr settings.') .'</p>',
+  );
 }
