@@ -415,18 +415,20 @@ class PantheonApacheSolrService {
     curl_setopt_array($ch, $opts);
 
     // If we are doing a delete request...
-    if ($options['method'] == 'DELETE') {
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+    if (isset($options['method'])) {
+      if ($options['method'] == 'DELETE') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+      }
+      // If we are doing a put request...
+      if ($options['method'] == 'PUT') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+      }
+      // If we are doing a put request...
+      if ($options['method'] == 'POST') {
+        curl_setopt($ch, CURLOPT_POST, 1);
+      }
     }
-    // If we are doing a put request...
-    if ($options['method'] == 'PUT') {
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-    }
-    // If we are doing a put request...
-    if ($options['method'] == 'POST') {
-      curl_setopt($ch, CURLOPT_POST, 1);
-    }
-    if ($options['data'] != '') {
+    if (isset($options['data'])) {
       curl_setopt($ch, CURLOPT_POSTFIELDS, $options['data']);
     }
 
@@ -456,8 +458,6 @@ class PantheonApacheSolrService {
         }
       }
     }
-
-    $result = drupal_http_request($url, $options);
 
     if (!isset($result->code) || $result->code < 0) {
       $result->code = 0;
