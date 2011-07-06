@@ -27,18 +27,23 @@ function pantheon_configure() {
     'path' => '',
    );
 
-  // Remove existing apachesolr servers
-  db_delete('apachesolr_server')->execute();
+  // Remove existing apachesolr environment and variables
+  db_delete('apachesolr_environment')->execute();
+  db_delete('apachesolr_environment_variable')->execute();
 
   // Create solr server entries for each environment.
   foreach ($config as $project => $data) {
     foreach ($data->environments as $env_name => $env) {
-      $solr_server['server_id'] = $env->solr->apachesolr_default_server;
-      $solr_server['name'] = ucwords("$project $env_name");
-      $solr_server['path'] = $env->solr->solr_path;
-      $solr_server['host'] = $env->solr->solr_host;
-      $solr_server['port'] = $env->solr->solr_port;
-      db_insert('apachesolr_server')->fields($solr_server)->execute();
+      // Environment definitions
+      $solr_environment['env_id'] = $env->solr->apachesolr_default_server;
+      $solr_environment['name'] = ucwords("$project $env_name");
+      $solr_environment['url'] = 'http://' . $env->solr->solr_host . ':' . $env->solr->solr_port . $env->solr->solr_path;
+      db_insert('apachesolr_environment')->fields($solr_environment)->execute();
+      // Environment variables
+      $solr_environment_variable['env_id'] = $env->solr->apachesolr_default_server;
+      $solr_environment_variable['name'] = 'apachesolr_read_only';
+      $solr_environment_variable['value'] = serialize('0');
+      db_insert('apachesolr_environment_variable')->fields($solr_environment_variable)->execute();
     }
   }
 

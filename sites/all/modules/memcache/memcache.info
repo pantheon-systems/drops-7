@@ -1,0 +1,8 @@
+name = Memcache
+description = High performance integration with memcache.
+package = Caching
+core = 7.x
+files[] = memcache.inc
+files[] = memcache.module
+files[] = memcache.test
+

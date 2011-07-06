@@ -1,0 +1,6 @@
+name = Memcache Admin
+description = Adds a User Interface to monitor the Memcache for this site.
+package = Caching
+core = 7.x
+files[] = memcache_admin.module
+

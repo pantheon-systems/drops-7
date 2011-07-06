@@ -1,0 +1,74 @@
+<?php
+
+/**
+ * @file
+ *   Override handling of taxonomy/term/X links.
+ *   Deprecated in favor of Views integration.
+ */
+
+ /**
+ * Implements hook_menu_alter().
+ */
+function apachesolr_taxonomy_menu_alter(&$menu) {
+  if (isset($menu['taxonomy/term/%taxonomy_term'])) {
+    $menu['taxonomy/term/%taxonomy_term']['page callback'] = 'apachesolr_taxonomy_term_page';
+    $menu['taxonomy/term/%taxonomy_term']['file path'] = NULL;
+    $menu['taxonomy/term/%taxonomy_term']['file'] = NULL;
+  }
+}
+
+/**
+ * Overrides taxonomy/term/X links
+ */
+//function apachesolr_search_taxonomy_term_page($str_tids = '', $depth = 0, $op = 'page') {
+function apachesolr_taxonomy_term_page($term) {
+  // Build breadcrumb based on the hierarchy of the term.
+  $current = clone $term;
+  // @todo This overrides any other possible breadcrumb and is a pure hard-coded
+  // presumption. Make this behavior configurable per vocabulary or term.
+  $breadcrumb = array();
+  while ($parents = taxonomy_get_parents($current->tid)) {
+    $current = array_shift($parents);
+    $breadcrumb[] = l($current->name, 'taxonomy/term/' . $current->tid);
+  }
+  $breadcrumb[] = l(t('Home'), NULL);
+  $breadcrumb = array_reverse($breadcrumb);
+  drupal_set_breadcrumb($breadcrumb);
+  drupal_add_feed(url('taxonomy/term/' . $term->tid . '/feed'), 'RSS - ' . $term->name);
+
+  $build = array();
+  // Add term heading if the term has a description
+  if (!empty($term->description)) {
+    $build['term_heading'] = array(
+      '#prefix' => '<div class="term-listing-heading">',
+      '#suffix' => '</div>',
+      'term' => taxonomy_term_view($term, 'full'),
+    );
+  }
+
+  if (user_access('search content')) {
+    $_GET['retain-filters'] = 1; // Encourages the user to keep the taxonomy filter on next search.
+    $results = apachesolr_search_run('', 'tid:' . $term->tid, variable_get('apachesolr_search_taxonomy_sort', 'ds_created desc'), 'search/apachesolr_search', isset($_GET['page']) ? $_GET['page'] : 0);
+
+    if ($results) {
+      foreach ($results as $entry) {
+        $output[] = $entry;
+      }
+      $build['content'] = array(
+        '#markup' => theme('search_results', array(
+          'results' => $output,
+          'module' => 'apachesolr_search',
+        )),
+      );
+      return $build;
+    }
+  }
+
+  $build['no_content'] = array(
+    '#prefix' => '<p>',
+    '#markup' => t('There is currently no content classified with this term.'),
+    '#suffix' => '</p>',
+  );
+  return $build;
+}
+
