@@ -62,7 +62,7 @@
  * methods for pinging, adding, deleting, committing, optimizing and searching.
  */
 
-class DrupalApacheSolrService {
+class PantheonApacheSolrService {
   /**
    * How NamedLists should be formatted in the output.  This specifically effects facet counts. Valid values
    * are 'map' (default) or 'flat'.
@@ -281,6 +281,8 @@ class DrupalApacheSolrService {
   /**
    * Constructor
    *
+   * On Pantheon, we trash the provided $url value and use our settings instead.
+   *
    * @param $url
    *   The URL to the Solr server, possibly including a core name.  E.g. http://localhost:8983/solr/
    *   or https://search.example.com/solr/core99/
@@ -290,6 +292,16 @@ class DrupalApacheSolrService {
    */
   public function __construct($url, $env_id = NULL) {
     $this->env_id = $env_id;
+
+    // Pantheon-specific URL settings.
+    // Note: we don't pass a port or https at this time, because the parent
+    // SolrPHPClient library assumes http. This data is added later in the
+    // _makeHttpRequest() method.
+    $host = variable_get('apachesolr_host', 'index.getpantheon.com');
+    $path = variable_get('apachesolr_path', 'sites/self/environments/dev/index');
+    $url = 'http://'. $host .'/'. $path;
+
+
     $this->setUrl($url);
 
     // determine our default http timeout from ini settings
@@ -387,11 +399,11 @@ class DrupalApacheSolrService {
     $client_cert = '/etc/pantheon/system.pem';
     $port = variable_get('apachesolr_port', '443');
     $ch = curl_init();
-    // Janktastic, but the SolrClient assumes http
+    // Janktastic, but the parent PHPSolrClient library assumes http
     $url = str_replace('http://', 'https://', $url);
     curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
 
-        
+
     // set URL and other appropriate options
     $opts = array(
       CURLOPT_URL => $url,
@@ -401,20 +413,22 @@ class DrupalApacheSolrService {
       CURLOPT_HTTPHEADER => array('Content-type:text/xml; charset=utf-8'),
     );
     curl_setopt_array($ch, $opts);
-    
+
     // If we are doing a delete request...
-    if ($options['method'] == 'DELETE') {
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+    if (isset($options['method'])) {
+      if ($options['method'] == 'DELETE') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+      }
+      // If we are doing a put request...
+      if ($options['method'] == 'PUT') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+      }
+      // If we are doing a put request...
+      if ($options['method'] == 'POST') {
+        curl_setopt($ch, CURLOPT_POST, 1);
+      }
     }
-    // If we are doing a put request...
-    if ($options['method'] == 'PUT') {
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-    }
-    // If we are doing a put request...
-    if ($options['method'] == 'POST') {
-      curl_setopt($ch, CURLOPT_POST, 1);
-    }
-    if ($options['data'] != '') {
+    if (isset($options['data'])) {
       curl_setopt($ch, CURLOPT_POSTFIELDS, $options['data']);
     }
 
@@ -444,8 +458,6 @@ class DrupalApacheSolrService {
         }
       }
     }
-
-    $result = drupal_http_request($url, $options);
 
     if (!isset($result->code) || $result->code < 0) {
       $result->code = 0;
