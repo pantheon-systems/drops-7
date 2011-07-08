@@ -1,6 +1,6 @@
 ; $Id$
-name = pantheon
-description = Install with commonly used features pre-configured.
+name = Pantheon
+description = Install with pre-configured integration for the Pantheon Platform
 version = VERSION
 core = 7.x
 dependencies[] = block
@@ -27,5 +27,6 @@ dependencies[] = rdf
 
 dependencies[] = apachesolr
 dependencies[] = apachesolr_search
-dependencies[] = pantheon
+dependencies[] = pantheon_api
+dependencies[] = pantheon_login
 files[] = pantheon.profile
