@@ -1,5 +1,5 @@
 ; $Id$
-name = EXPERIMENTAL: Pantheon Apache Solr
+name = Pantheon Apache Solr
 description = Allows the use of Pantheon's ApacheSolr infrastructure
 package = Pantheon
 dependencies[] = apachesolr
@@ -7,4 +7,4 @@ dependencies[] = pantheon_api
 files[] = Pantheon_Apache_Solr_Service.php
 core = 7.x
 php = 5.2
-varsion = "7.x-alpha1"
+varsion = "7.x-beta1"

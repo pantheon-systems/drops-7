@@ -29,4 +29,5 @@ dependencies[] = apachesolr
 dependencies[] = apachesolr_search
 dependencies[] = pantheon_api
 dependencies[] = pantheon_login
+dependencies[] = pantheon_apachesolr
 files[] = pantheon.profile
