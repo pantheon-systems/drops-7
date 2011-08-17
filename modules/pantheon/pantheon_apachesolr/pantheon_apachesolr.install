@@ -26,9 +26,9 @@ function pantheon_apachesolr_disable() {
   variable_del('apachesolr_service_class');
 }
 
-function pantheon_apachesolr_update_6001() {
+function pantheon_apachesolr_update_7001() {
   $ret = array();
-  $schema = drupal_get_path('module', 'apachesolr') .'/schema.xml';
+  $schema = drupal_get_path('module', 'pantheon_apachesolr') .'/schema.xml';
   $response = pantheon_apachesolr_update_schema($schema);
   $ret[] = array('success' => $response != NULL, 'query' => 'Response: '. print_r($response, 1));
 
