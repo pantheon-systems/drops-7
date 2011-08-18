@@ -400,7 +400,7 @@ class PantheonApacheSolrService {
     $port = variable_get('apachesolr_port', '443');
     $ch = curl_init();
     // Janktastic, but the parent PHPSolrClient library assumes http
-    if (strpos($url, 'index.gotpantheon.com') !== FALSE) {
+    if (strpos($url, 'index.getpantheon.com') !== FALSE) {
       $url = str_replace('http://', 'https://', $url);
       curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
     }

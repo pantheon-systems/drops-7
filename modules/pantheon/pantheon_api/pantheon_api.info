@@ -2,6 +2,5 @@
 name = Pantheon Platform API
 description = Integration with the Pantheon Platform
 package = Pantheon
-hidden = TRUE
 core = 7.x
 php = 5.2
