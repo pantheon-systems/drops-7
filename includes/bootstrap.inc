@@ -531,6 +531,26 @@ function drupal_settings_initialize() {
   if (file_exists(DRUPAL_ROOT . '/' . conf_path() . '/settings.php')) {
     include_once DRUPAL_ROOT . '/' . conf_path() . '/settings.php';
   }
+
+  // Load environmental config, if present.
+  if (isset($_SERVER['PRESSFLOW_CONFIG'])) {
+    $pressflow_config = json_decode($_SERVER['PRESSFLOW_CONFIG'], TRUE);
+    foreach ($pressflow_config as $key => $value) {
+      // One level of depth should be enough for $conf and $database.
+      if (is_array($value)) {
+        if (is_array($$key)) {
+          $$key = array_merge_recursive($$key, $value);
+        }
+        else{
+          $$key = $value;
+        }
+      }
+      else {
+        $$key = $value;
+      }
+    }
+  }
+
   $is_https = isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on';
 
   if (isset($base_url)) {
