@@ -721,30 +721,11 @@ function drupal_settings_initialize() {
     include_once DRUPAL_ROOT . '/' . conf_path() . '/settings.php';
   }
 
-  // Load environmental config, if present.
-  if (isset($_SERVER['PRESSFLOW_CONFIG'])) {
-    $pressflow_config = json_decode($_SERVER['PRESSFLOW_CONFIG'], TRUE);
-    foreach ($pressflow_config as $key => $value) {
-      // One level of depth should be enough for $conf and $database.
-      if (is_array($value)) {
-        if (is_array($$key)) {
-          $$key = array_merge_recursive($$key, $value);
-        }
-        else{
-          $$key = $value;
-        }
-      }
-      else {
-        $$key = $value;
-      }
-    }
-  }
-
   $is_https = isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on';
 
   // Load environmental config, if present.
   if (isset($_SERVER['PRESSFLOW_SETTINGS'])) {
-    $pressflow_settings = json_decode($_SERVER['PRESSFLOW_SETTINGS']);
+    $pressflow_settings = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
     foreach ($pressflow_settings as $key => $value) {
       // One level of depth should be enough for $conf and $database.
       if ($key == 'conf') {
