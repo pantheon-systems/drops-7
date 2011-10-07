@@ -1,5 +1,6 @@
 # Drupal #
 ##########
+sites/*/files
 sites/*/files/*
 files/*
 
