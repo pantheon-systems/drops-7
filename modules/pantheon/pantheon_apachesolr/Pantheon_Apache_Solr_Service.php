@@ -411,7 +411,7 @@ class PantheonApacheSolrService {
       CURLOPT_HEADER => 1,
       CURLOPT_PORT => $port,
       CURLOPT_RETURNTRANSFER => 1,
-      CURLOPT_HTTPHEADER => array('Content-type:text/xml; charset=utf-8'),
+      CURLOPT_HTTPHEADER => array('Content-type:text/xml; charset=utf-8', 'Expect:'),
     );
     curl_setopt_array($ch, $opts);
 
