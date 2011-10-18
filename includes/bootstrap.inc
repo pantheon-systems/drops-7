@@ -730,7 +730,7 @@ function drupal_settings_initialize() {
       // One level of depth should be enough for $conf and $database.
       if ($key == 'conf') {
         foreach($value as $conf_key => $conf_value) {
-          $conf[$conf_key] = $value;
+          $conf[$conf_key] = $conf_value;
         }
       }
       else {
