@@ -1,0 +1,8 @@
+; $Id$
+name = Pantheon Login
+description = Allows users to log in as user #1 from their Pantheon Control Panel
+package = Pantheon
+dependencies[] = pantheon_api
+hidden = TRUE
+core = 7.x
+php = 5.2

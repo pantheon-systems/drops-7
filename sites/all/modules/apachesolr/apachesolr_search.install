@@ -1,0 +1,228 @@
+<?php
+
+/**
+ * @file
+ *   Install and related hooks for apachesolr_search.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function apachesolr_search_enable() {
+  $active = variable_get('search_active_modules', array('node', 'user'));
+  $active[] = 'apachesolr_search';
+  variable_set('search_active_modules', array_unique($active));
+}
+
+/**
+ * Implements hook_schema().
+ */
+function apachesolr_search_schema() {
+  $schema = array();
+
+  $schema['apachesolr_search_page'] = array(
+    'description' => 'Apache Solr Search search page settings.',
+    'export' => array(
+      'key' => 'page_id',
+      'identifier' => 'searcher',
+      'default hook' => 'apachesolr_search_default_searchers',
+      'status' => 'apachesolr_search_page_status',
+      'api' => array(
+        'owner' => 'apachesolr_search',
+        'api' => 'apachesolr_search_defaults',
+        'minimum_version' => 3,
+        'current_version' => 3,
+      ),
+      'export callback' => 'apachesolr_search_page_settings_export',
+    ),
+    'fields' => array(
+      'page_id' => array(
+        'description' => 'The machine readable name of the search page.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'label' => array(
+        'description' => 'The human readable name of the search page.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'The description of the search page.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'search_path' => array(
+        'description' => 'The path to the search page.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'page_title' => array(
+        'description' => 'The title of the search page.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'env_id' => array(
+        'description' => 'The machine name of the search environment.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'settings' => array(
+        'description' => 'Serialized storage of general settings.',
+        'type' => 'text',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('page_id'),
+    'indexes' => array(
+      'env_id' => array('env_id'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function apachesolr_search_uninstall() {
+  $stored = variable_get('apachesolr_index_last', array());
+  unset($stored['apachesolr_search']);
+  variable_set('apachesolr_index_last', $stored);
+
+  $active = variable_get('search_active_modules', array('node', 'user'));
+  $idx = array_search('apachesolr_search', $active);
+  if ($idx !== FALSE) {
+    unset($active[$idx]);
+    variable_set('search_active_modules', $active);
+  }
+  // Remove variables.
+  variable_del('apachesolr_search_browse');
+  variable_del('apachesolr_search_spellcheck');
+}
+
+/**
+ * Various updates for Drupal 7.
+ */
+function apachesolr_search_update_7000() {
+  $taxo_links = variable_get('apachesolr_search_taxonomy_links', 0);
+  // TODO - enable the new contrib module?
+  variable_del('apachesolr_search_taxonomy_links');
+  // TODO - possibly rename block deltas, etc.
+  $active = variable_get('search_active_modules', array('node', 'user'));
+  $active[] = 'apachesolr_search';
+  variable_set('search_active_modules', array_unique($active));
+  if (variable_get('apachesolr_search_make_default', 0)) {
+    variable_set('search_default_module', 'apachesolr_search');
+  }
+  variable_del('apachesolr_search_make_default');
+}
+
+/**
+ * Add apachesolr_search_page table.
+ */
+function apachesolr_search_update_7001() {
+  // Moved to 7002
+}
+
+/**
+ * Add apachesolr_search_page table for real.
+ */
+function apachesolr_search_update_7002() {
+
+  $schema['apachesolr_search_page'] = array(
+    'description' => 'Apache Solr Search search page settings.',
+    'export' => array(
+      'key' => 'page_id',
+      'identifier' => 'searcher',
+      'default hook' => 'apachesolr_search_default_searchers',
+      'status' => 'apachesolr_search_page_status',
+      'api' => array(
+        'owner' => 'apachesolr_search',
+        'api' => 'apachesolr_search_defaults',
+        'minimum_version' => 3,
+        'current_version' => 3,
+      ),
+      'export callback' => 'apachesolr_search_page_settings_export',
+    ),
+    'fields' => array(
+      'page_id' => array(
+        'description' => 'The machine readable name of the search page.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'label' => array(
+        'description' => 'The human readable name of the search page.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'The description of the search page.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'search_path' => array(
+        'description' => 'The path to the search page.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'page_title' => array(
+        'description' => 'The title of the search page.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'env_id' => array(
+        'description' => 'The machine name of the search environment.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'settings' => array(
+        'description' => 'Serialized storage of general settings.',
+        'type' => 'text',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('page_id'),
+    'indexes' => array(
+      'env_id' => array('env_id'),
+    ),
+  );
+  if (db_table_exists('apachesolr_search_page')) {
+    // Just in case you are chasing HEAD.
+    db_drop_table('apachesolr_search_page');
+  }
+  db_create_table('apachesolr_search_page', $schema['apachesolr_search_page']);
+}
+
+
+/**
+ * Delete all Apache Solr Search blocks - they moved to Facet API.
+ */
+function apachesolr_search_update_7003() {
+  // Remove blocks.
+  db_delete('block')->condition('module', 'apachesolr_search')->execute();
+}
+

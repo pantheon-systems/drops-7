@@ -1,0 +1,71 @@
+<?php
+
+/**
+ * Unit tests for query object methods.
+ */
+class SolrBaseQueryTests extends DrupalUnitTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Query object base functionality',
+      'description' => 'Tests query object methods individually.',
+      'group' => 'ApacheSolr',
+    );
+  }
+
+  protected function setUp() {
+    parent::setUp();
+    // The auto-loading doesn't seem to work in the context of a unit test.
+    require_once dirname(dirname(__FILE__)) . '/Solr_Base_Query.php';
+    require_once dirname(__FILE__) . '/Dummy_Solr.php';
+  }
+
+  /**
+   * Test ordering of parsed filter positions.
+   *
+   * Regression test for http://drupal.org/node/891962
+   */
+  function testParseFilters() {
+    $fq = array('tid:3', 'sort_label:hello', 'tid:11', 'tid:1', 'tid:12', 'label:hello');
+    // Setup dummy Solr object.
+    $query = new SolrBaseQuery("apachesolr_tests", new DummySolr(), array('q' => 'mykeys', 'fq' => $fq), 'sort_label asc', 'search/test');
+    // Check sortsort
+    $this->assertEqual(array('solrsort' => 'sort_label asc'), $query->getSolrsortUrlQuery());
+    $query->setSolrsort('sort_name', 'desc');
+    $this->assertEqual(array('solrsort' => 'sort_name desc'), $query->getSolrsortUrlQuery());
+    $query->setSolrsort('score', 'desc');
+    $this->assertEqual(array(), $query->getSolrsortUrlQuery());
+    // Check getPath() functionality
+    $this->assertEqual('search/test/mykeys', $query->getPath());
+    $this->assertEqual('search/test/newkeys', $query->getPath('newkeys'));
+    // Check hasFilter functionality
+    $this->assertFalse($query->hasFilter('label', 'Jello'), "hasFilter('label', 'Jello') is FALSE");
+    $this->assertTrue($query->hasFilter('label', 'hello'), "hasFilter('label', 'hello') is TRUE");
+    $this->assertTrue($query->hasFilter('label', 'hello', FALSE), "hasFilter('label', 'hello', FALSE) is TRUE");
+    $this->assertFalse($query->hasFilter('label', 'hello', TRUE), "hasFilter('label', 'hello', TRUE) is FALSE");
+    $filters = $query->getFilters();
+    $this->assertEqual(count($filters), 6, count($filters) . ' filters found, expected 6 filters');
+    // Check positions of filters
+    foreach ($fq as $idx => $filter) {
+      $this->assertEqual($filter, $query->makeFilterQuery($filters[$idx]));
+    }
+    // Check that the query string is re-assembled correctly
+    $this->assertEqual($fq, $query->getParam('fq'));
+    $this->assertEqual('mykeys', $query->getParam('q'));
+    $query->removeFilter('tid', '11');
+    $filters = $query->getFilters();
+    $this->assertEqual(count($filters), 5, count($filters) . ' filters found, expected 5 filters');
+    $this->assertEqual(array('tid:3', 'sort_label:hello', 'tid:1', 'tid:12', 'label:hello'), $query->getParam('fq'));
+    $query->removeFilter('tid');
+    $filters = $query->getFilters();
+    $this->assertEqual(count($filters), 2, count($filters) . ' filters found, expected 2 filters');
+    $this->assertEqual(array('sort_label:hello', 'label:hello'), $query->getParam('fq'));
+
+    $subquery = new SolrFilterSubQuery();
+    $subquery->addFilter('access__all', 0);
+    $subquery->addFilter('hash', apachesolr_site_hash());
+    $query->addFilterSubQuery($subquery);
+    $this->assertEqual(count($query->getParam('fq')), 3, count($query->getParam('fq')) . ' fq params found, expected 3 after adding subquery');
+    $this->assertEqual(array('sort_label:hello', 'label:hello', '(access__all:0 OR hash:'. apachesolr_site_hash() .')'), $query->getParam('fq'));
+  }
+}
+
