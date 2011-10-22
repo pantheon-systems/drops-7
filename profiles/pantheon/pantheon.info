@@ -25,9 +25,9 @@ dependencies[] = field_ui
 dependencies[] = file
 dependencies[] = rdf
 
-dependencies[] = apachesolr
-dependencies[] = apachesolr_search
+;dependencies[] = apachesolr
+;dependencies[] = apachesolr_search
 dependencies[] = pantheon_api
 dependencies[] = pantheon_login
-dependencies[] = pantheon_apachesolr
+;dependencies[] = pantheon_apachesolr
 files[] = pantheon.profile
