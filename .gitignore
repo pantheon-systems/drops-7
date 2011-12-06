@@ -1,19 +1,22 @@
-# Drupal #
-##########
+# Ignore paths that contain user-generated content.
 sites/*/files
+sites/*/private
 sites/*/files/*
 files/*
+cache
 
 # Packages #
 ############
 *.7z
 *.dmg
 *.gz
+*.bz2
 *.iso
 *.jar
 *.rar
 *.tar
 *.zip
+*.tgz
 
 # Logs and databases #
 ######################
