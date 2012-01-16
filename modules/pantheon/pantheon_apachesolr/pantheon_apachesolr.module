@@ -1,11 +1,23 @@
 <?php
-
 /**
  * @file
  * Pantheon ApacheSolr module.
  *
- * We need this to locate our Class
+ * Handles communication with the hyperion search system and associated settings.
  */
+
+function pantheon_apachesolr_menu() {
+  $items = array();
+  $items['admin/config/search/pantheon'] = array(
+    'title'              => 'Pantheon Solr Settings',
+    'description'        => 'Configure Pantheon\'s Apache Solr, including selecting your schema.xml.',
+    'page callback'      => 'drupal_get_form',
+    'page arguments'     => array('pantheon_apachesolr_settings'),
+    'access arguments'   => array('administer search'),
+    'weight'             => -8,
+  );
+  return $items;
+}
 
 function pantheon_apachesolr_update_schema($schema) {
   $ch = curl_init();
@@ -17,7 +29,6 @@ function pantheon_apachesolr_update_schema($schema) {
   $url = 'https://'. $host .'/'. $path;
 
   $file = fopen($schema, 'r');
-
   // set URL and other appropriate options
   $opts = array(
     CURLOPT_URL => $url,
@@ -31,12 +42,15 @@ function pantheon_apachesolr_update_schema($schema) {
     CURLOPT_INFILESIZE => filesize($schema),
   );
   curl_setopt_array($ch, $opts);
-
   $response = curl_exec($ch);
+  fclose($file);
   if ($response == NULL) {
     watchdog('pantheon_apachesolr', "Error !error posting !schema to !url", array('!error' => curl_error($ch), '!schema' => $schema, '!url' => $url), WATCHDOG_ERROR);
   }
-  fclose($file);
+  else {
+    variable_set('pantheon_apachesolr_shema', $schema);
+  }
+
   return $response;
 }
 
@@ -51,15 +65,59 @@ function pantheon_apachesolr_form_apachesolr_settings_alter(&$form, &$form_state
     '#title' => t('Solr Environment Settings'),
     '#markup' => '<p>'. t('No need to configure environments: Pantheon is managing your Solr settings.') .'</p>',
   );
+}
 
-  $schemas = file_scan_directory('sites/all/modules', '/schema.*\.xml/');
+/**
+ * Settings form for Pantheon's hyperion.
+ *
+ * Lets you choose a shema.xml file.
+ */
+function pantheon_apachesolr_settings($form, &$form_state) {
+  $files = drupal_system_listing("/schema\.xml$/", "modules", 'name', 0);
+  $schemas = array();
+  foreach($files as $file => $data) {
+    $schemas[$data->uri] = $data->uri;
+  }
   $form['schemas'] = array(
-    '#type' => 'item',
-    '#title' => t('Solr Schema Files'),
-    '#markup' => '<p>'. t('Pantheon found the following Solr schema files in your installation. You will need to choose one to get started.') .'</p>',
+    '#type' => 'fieldset',
+    '#title' => t('Solr Schema File'),
+    '#description' => t('Pantheon identified the following schema.xml files in your Drupal installation. Select the one you want to use.'),
     '#weight' => -10,
   );
-  foreach($schemas as $file => $data) {
-    // Let the user pick a schema?
+  if (count($schemas) > 0) {
+    $form['schemas']['pantheon_apachesolr_shema'] = array(
+      '#type' => 'radios',
+      '#title' => t('Found schemas:'),
+      '#options' => $schemas,
+      '#default_value' => variable_get('pantheon_apachesolr_shema', ''),
+    );
+  }
+  else {
+    drupal_set_message(t('No schema.xml files found in your codebase! Are you sure you have the appropriate apachesolr module(s) installed?'), 'error');
+  }
+  $form['schemas']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Post shema'),
+    '#options' => $schemas,
+    '#submit' => array('pantheon_apachesolr_post_schema'),
+  );
+
+  // TODO: allow a file upload.
+
+  return $form;
+}
+
+/**
+ * Form submit handler.
+ *
+ * Post the schema, set the variable.
+ */
+function pantheon_apachesolr_post_schema($form, &$form_state) {
+  $result = pantheon_apachesolr_update_schema($form_state['values']['pantheon_apachesolr_shema']);
+  if ($result != NULL) {
+    drupal_set_message(t('Updated Solr search schema.'));
+  }
+  else {
+    drupal_set_message(t('There was an error updating the Solr search schema.'), 'error');
   }
 }
