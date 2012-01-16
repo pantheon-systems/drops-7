@@ -6,9 +6,8 @@
  */
 
 define('YGG_API_PORT', 8443);
-define('YGG_API', 'https://api.getpantheon.com');
-define('HELIOS_CA_CERT', '/usr/share/ca-certificates/pantheon.crt');
-define('PANTHEON_SYSTEM_CERT', '/etc/pantheon/system.pem');
+define('YGG_API', 'https://api.live.getpantheon.com');
+define('PANTHEON_SYSTEM_CERT', '../certs/binding.pem');
 
 /**
  * External API function to put config data in the Ygg API
@@ -121,7 +120,6 @@ function pantheon_api_curl($url, $data = NULL, $port = 443, $datamethod = 'POST'
     CURLOPT_PORT => $port,
     CURLOPT_RETURNTRANSFER => 1,
     CURLOPT_SSLCERT => PANTHEON_SYSTEM_CERT,
-    CURLOPT_CAINFO => HELIOS_CA_CERT,
     CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
   );
   curl_setopt_array($ch, $opts);

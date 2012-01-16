@@ -9,11 +9,11 @@
 
 function pantheon_apachesolr_update_schema($schema) {
   $ch = curl_init();
-  $host = variable_get('apachesolr_host', 'index.getpantheon.com');
-  $port = variable_get('apachesolr_port', '443');
+  $host = 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com';
+  $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
+  $port = 449;
   // Figure out env var
-  $path = variable_get('apachesolr_path', 'sites/self/environments/dev/index');
-  $client_cert = '/etc/pantheon/system.pem';
+  $client_cert = '../certs/binding.pem';
   $url = 'https://'. $host .'/'. $path;
 
   $file = fopen($schema, 'r');
@@ -51,4 +51,15 @@ function pantheon_apachesolr_form_apachesolr_settings_alter(&$form, &$form_state
     '#title' => t('Solr Environment Settings'),
     '#markup' => '<p>'. t('No need to configure environments: Pantheon is managing your Solr settings.') .'</p>',
   );
+
+  $schemas = file_scan_directory('sites/all/modules', '/schema.*\.xml/');
+  $form['schemas'] = array(
+    '#type' => 'item',
+    '#title' => t('Solr Schema Files'),
+    '#markup' => '<p>'. t('Pantheon found the following Solr schema files in your installation. You will need to choose one to get started.') .'</p>',
+    '#weight' => -10,
+  );
+  foreach($schemas as $file => $data) {
+    // Let the user pick a schema?
+  }
 }
