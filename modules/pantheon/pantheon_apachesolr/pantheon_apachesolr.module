@@ -73,7 +73,7 @@ function pantheon_apachesolr_form_apachesolr_settings_alter(&$form, &$form_state
  * Lets you choose a shema.xml file.
  */
 function pantheon_apachesolr_settings($form, &$form_state) {
-  $files = drupal_system_listing("/schema\.xml$/", "modules", 'name', 0);
+  $files = drupal_system_listing("/schema.*\.xml$/", "modules", 'uri', 0);
   $schemas = array();
   foreach($files as $file => $data) {
     $schemas[$data->uri] = $data->uri;
