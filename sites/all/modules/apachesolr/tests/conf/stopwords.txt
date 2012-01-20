@@ -1,6 +1,0 @@
-# Incomplete example set for testing
-a
-an
-of
-the
-to
