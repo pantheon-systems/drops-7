@@ -396,6 +396,67 @@ class UserLoginTestCase extends DrupalWebTestCase {
   }
 
   /**
+    * Test that flood events are removed after an account has been updated.
+    */
+   function testUpdatedUserFloodControl() {
+     // Set a high global limit out so that it is not relevant in the test.
+     variable_set('user_failed_login_ip_limit', 4000);
+     // Set the per-user login limit.
+     variable_set('user_failed_login_user_limit', 3);
+
+     $user1 = $this->drupalCreateUser(array('administer users'));
+     $user2 = $this->drupalCreateUser(array());
+     $user2->pass_raw .= 'incorrect';
+
+     // Try 3 failed logins.
+     for ($i = 0; $i < 3; $i++) {
+       $this->assertFailedLogin($user2);
+     }
+
+     // The next login trial should result in an user-based flood error message.
+     $this->assertFailedLogin($user2, 'user');
+
+     // Update the account and assert the user can login again.
+     $this->drupalLogin($user1);
+     $user2->pass_raw = 'goodpass';
+     $edit = array(
+       'pass[pass1]' => $user2->pass_raw,
+       'pass[pass2]' => $user2->pass_raw,
+     );
+     $this->drupalPost('user/' . $user2->uid . '/edit', $edit, t('Save'));
+     $this->drupalLogout();
+     $this->drupalLogin($user2);
+   }
+
+   /**
+    * Test that flood events are removed after password reset.
+    */
+   function testResetPasswordFloodControl() {
+     // Set a high global limit out so that it is not relevant in the test.
+     variable_set('user_failed_login_ip_limit', 4000);
+     // Set the per-user login limit.
+     variable_set('user_failed_login_user_limit', 3);
+
+     $user1 = $this->drupalCreateUser();
+     $correct = $user1->pass_raw;
+     $user1->pass_raw .= 'incorrect';
+
+     // Try 3 failed logins.
+     for ($i = 0; $i < 3; $i++) {
+       $this->assertFailedLogin($user1);
+     }
+
+     // The next login trial should result in an user-based flood error message.
+     $this->assertFailedLogin($user1, 'user');
+
+     // Request new password, logout and login.
+     $this->drupalPost(user_pass_reset_url($user1), array(), t('Log in'));
+     $this->drupalLogout();
+     $user1->pass_raw = $correct;
+     $this->drupalLogin($user1);
+   }
+
+  /**
    * Test that user password is re-hashed upon login after changing $count_log2.
    */
   function testPasswordRehashOnLogin() {

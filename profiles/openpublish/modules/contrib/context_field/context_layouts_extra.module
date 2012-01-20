@@ -1,0 +1,15 @@
+<?php
+
+function context_layouts_extra_context_layouts() {
+  $info['columns']['name'] = "3 columns";
+  $info['columns']['description'] = "Three column page.";
+  $info['columns']['stylesheet'] = "layout-columns.css";
+  $info['columns']['template'] = "layout-columns";
+  $info['columns']['regions'][] = "left";
+  $info['columns']['regions'][] = "content";
+  $info['columns']['regions'][] = "right";
+  $info['columns']['regions'][] = "footer";
+  return $info;
+}
+
+

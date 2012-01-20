@@ -1,0 +1,14 @@
+name = "Boxes"
+description = "Provides exports for custom blocks and spaces integration."
+core = 7.x
+dependencies[] = "ctools"
+
+files[] = boxes.module
+files[] = tests/boxes.test
+
+; Information added by drupal.org packaging script on 2011-09-27
+version = "7.x-1.0-beta6"
+core = "7.x"
+project = "boxes"
+datestamp = "1317144100"
+

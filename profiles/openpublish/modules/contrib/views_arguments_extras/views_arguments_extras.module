@@ -1,0 +1,85 @@
+<?php
+
+/*
+ * implemnation of hook_view_api
+ */
+function views_arguments_extras_views_api() {
+  return array('api' => '2.0');
+}
+
+/*
+ * implementation of hook_views_plugins
+ */
+function views_arguments_extras_views_plugins() {
+  $plugins = array(
+    'argument default' => array(
+      'field' => array(
+        'title' => t('Field Value from Current Node/Term'),
+        'handler' => 'views_plugin_argument_default_field',
+        'parent' => 'node',
+      ),
+      'request_params' => array(
+        'title' => t('Request Params (GET or PULL)'),
+        'handler' => 'views_plugin_argument_default_request_params',
+        'parent' => 'node',
+      ),
+    ),
+  );
+  return $plugins;
+}
+
+
+/*
+ * implemnation of hook_view_handlers
+ *
+ * Register our Sort handler
+ */
+function views_arguments_extras_views_handlers() {
+  return array(
+    'handlers' => array(
+      'views_sort_by_arg_order_handler_sort' => array(
+        'parent' => 'views_handler_sort',
+      ),
+    ),
+  );
+}
+
+
+/*
+ * implemnation of hook_view_data
+ *
+ * Register our Sort options
+ */
+function views_arguments_extras_views_data() {
+  $data['views_sort_by_arg_order']['table']['group']  = t('Arguments');
+  $data['views_sort_by_arg_order']['table']['join']  = array(
+    '#global' => array(),
+  );
+
+  $data['views_sort_by_arg_order']['weight'] = array(
+    'title' => t('Multi-item Argument Order'),
+    'help' => t('Sort by the order of items in an multi-item argument'),
+    'sort' => array(
+      'handler' => 'views_sort_by_arg_order_handler_sort',
+    ),
+  );
+  return $data;
+}
+
+
+function views_arguments_extras_ctools_plugin_type() {
+  return array('default' => array());
+}
+/*
+ * implimentation of hook_ctools_plugin_directory
+ */
+function views_arguments_extras_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'views_arguments_extras') {
+    return 'default_field_plugins';
+  }
+}
+
+function views_plugin_argument_default_field_field_callback($form, $form_state) {
+  return "bob";
+  return $form['settings'];
+}

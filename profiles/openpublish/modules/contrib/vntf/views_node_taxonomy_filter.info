@@ -1,0 +1,13 @@
+name = Views Node Taxonomy Filter
+description = Adds support to Views to filter a block on a node page by that node's taxonomy terms.
+dependencies[] = views
+dependencies[] = taxonomy
+files[] = views_node_taxonomy_filter_handler_filter_tid.inc
+core = 7.x
+package = "Other"
+; Information added by drupal.org packaging script on 2011-05-25
+version = "7.x-1.0-beta5"
+core = "7.x"
+project = "vntf"
+datestamp = "1306354017"
+

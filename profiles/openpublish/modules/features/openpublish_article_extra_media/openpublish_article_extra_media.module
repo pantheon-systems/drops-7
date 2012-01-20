@@ -1,0 +1,6 @@
+<?php
+/**
+ * @file
+ */
+
+include_once('openpublish_article_extra_media.features.inc');

@@ -1,0 +1,186 @@
+<?php
+// $Id: addthis.module,v 1.17.2.2 2010/10/21 14:38:41 wesku Exp $
+
+/**
+ * @file
+ * Stand alone module file to handle AddThis button integration
+ */
+
+/**
+ * Implement hook_permission().
+ */
+function addthis_permission() {
+  return array(
+    'administer addthis' => array(
+      'title' => 'Administer Addthis sharing widget',
+      'description' => 'Change which services are shown, color, etc and add addthis.com usename',
+    ),
+    'view addthis' => array(
+      'title' => 'View the addthis widget',
+      'description' => 'User can see the button which allows them to share posts',
+    ),
+  );
+}
+
+/**
+ * Implement hook_node_view().
+ */
+function addthis_node_view($node, $build_mode) {
+  $links = array();
+  if (user_access('view addthis')) {
+    if (($node && variable_get('addthis_nodetype_' . $node->type, 1)) &&
+      (($build_mode == 'teaser' && variable_get('addthis_display_in_teasers', '0')) ||
+      ($build_mode == 'full' && variable_get('addthis_display_in_links', '0')))) {
+      $node->content['addthis'] = array(
+        '#markup' => _addthis_create_button(array('build_mode' => $build_mode))
+      );
+    }
+  }
+}
+
+/**
+ * Implement of hook_menu().
+ */
+function addthis_menu() {
+  $items = array();
+
+  $items['admin/config/system/addthis'] = array(
+    'title'            => t('AddThis'),
+    'description'      => t('Set username and customize look and feel for <a href="http://www.addthis.com/">AddThis</a> button.'),
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('addthis_admin_settings'),
+    'access arguments' => array('administer addthis'),
+    'file'             => 'addthis.admin.inc',
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implement hook_block_info();
+ */
+function addthis_block_info() {
+  return array(
+    'addthis' => array (
+      'info' => t('Add this button'),
+      'cache' => DRUPAL_CACHE_PER_PAGE, 
+    )
+  );
+}
+
+/**
+ * Implement hook_block_view();
+ */
+function addthis_block_view($delta) {
+  if ($delta != 'addthis' || !user_access('view addthis')) {
+    return;
+  }
+  return array(
+    'subject' => t('Addthis'),
+    'content' => _addthis_create_button(array('build_mode' => 'block')),
+  );
+}
+
+/**
+ * Implement hook_form_FORM_ID_alter().
+ */
+function addthis_form_node_type_form_alter(&$form, $form_state) {
+  $form['addthis'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Addthis settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#group' => 'additional_settings',
+  );
+  $form['addthis']['addthis_nodetype'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show AddThis button on this type of node'),
+    '#default_value' => variable_get('addthis_nodetype_' . $form['#node_type']->type, 1),
+    '#description' => t('Select whether the AddThis button should be shown or not on this type of node.'),
+  );
+}
+
+/**
+ * Implement of hook_theme().
+ */
+function addthis_theme() {
+  return array(
+    'addthis_button' => array(
+      'arguments' => array(
+        'node' => NULL,
+        'teaser' => NULL,
+      ),
+    ),
+  );
+}
+
+/**
+ * Internal function to generate code for AddThis button
+ *
+ * @return
+ *   String containing html code for the button
+ */
+function _addthis_create_button($build_mode) {
+  global $_addthis_counter;
+  $_addthis_counter++;
+  if ($_addthis_counter == 1) {
+      drupal_add_css((drupal_get_path('module', 'addthis') .'/addthis.css'));
+      drupal_add_js(sprintf('
+	    addthis_pub = \'%s\';
+	    addthis_logo = \'%s\';
+	    addthis_logo_background = \'%s\';
+	    addthis_logo_color = \'%s\';
+	    addthis_brand = \'%s\';
+	    addthis_options = \'%s\';
+	    addthis_disable_flash = \'%s\';
+	',
+        addslashes(check_plain(variable_get('addthis_username', 'my-username'))),
+        addslashes(check_plain(variable_get('addthis_logo', 'http://www.addthis.com/images/yourlogo.png'))),
+        addslashes(check_plain(variable_get('addthis_logo_background', 'EFEFFF'))),
+        addslashes(check_plain(variable_get('addthis_logo_color', '666699'))),
+        addslashes(check_plain(variable_get('addthis_brand', 'Your Site'))),
+        addslashes(check_plain(variable_get('addthis_options', 'favorites, email, digg, delicious, myspace, facebook, google, live, more'))),
+        variable_get('addthis_options', FALSE) ? 'true' : 'false'
+      ), 'inline');
+  }
+
+  return theme('addthis_button', array('build_mode' => $build_mode));
+}
+
+/**
+ * Theme the AddThis button.
+ */
+function theme_addthis_button($variables) {
+  $build_mode = $variables['build_mode'];
+  $https = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] == 'on';
+  if (variable_get('addthis_dropdown_disabled', '0')) {
+    return ( sprintf('
+      <a href="http://www.addthis.com/bookmark.php"
+        onclick="addthis_url   = location.href; addthis_title = document.title; return addthis_click(this);">
+      <img src="%s" width="%d" height="%d" %s /></a>
+      ',
+      $https ? addslashes(variable_get('addthis_image_secure', 'https://secure.addthis.com/button1-share.gif')) : addslashes(variable_get('addthis_image', 'http://s9.addthis.com/button1-share.gif')),
+      addslashes(variable_get('addthis_image_width', '125')),
+      addslashes(variable_get('addthis_image_height', '16')),
+      addslashes(variable_get('addthis_image_attributes', 'alt=""'))
+    ));
+  }
+  else {
+    return ( sprintf('
+      <a href="http://www.addthis.com/bookmark.php"
+        onmouseover="return addthis_open(this, \'\', \'%s\', \'%s\')"
+        onmouseout="addthis_close()"
+        onclick="return addthis_sendto()"><img src="%s" width="%d" height="%d" %s /></a>
+      <script type="text/javascript" src="%s/js/' . variable_get('addthis_widget_version', '152') . '/addthis_widget.js"></script>
+      ',
+      ($build_mode == 'teaser') ? url('node/'. $node->nid, array('absolute' => 1) ) : '[URL]',
+      ($build_mode == 'teaser') ? addslashes($node->title) : '[TITLE]',
+      $https == 'on' ? addslashes(check_plain(variable_get('addthis_image_secure', 'https://secure.addthis.com/button1-share.gif'))) : addslashes(check_plain(variable_get('addthis_image', 'http://s9.addthis.com/button1-share.gif'))),
+      addslashes(variable_get('addthis_image_width', '125')),
+      addslashes(variable_get('addthis_image_height', '16')),
+      filter_xss(variable_get('addthis_image_attributes', 'alt=""')),
+      $https == 'on' ? 'https://secure.addthis.com' : 'http://s7.addthis.com'
+    ));
+  }
+}

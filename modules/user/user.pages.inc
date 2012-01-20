@@ -137,6 +137,16 @@ function user_pass_reset($form, &$form_state, $uid, $timestamp, $hashed_pass, $a
           // Let the user's password be changed without the current password check.
           $token = drupal_hash_base64(drupal_random_bytes(55));
           $_SESSION['pass_reset_' . $user->uid] = $token;
+          //clear out flood event for user trying to log in too many times
+          if (variable_get('user_failed_login_identifier_uid_only', FALSE)) {
+            $identifier = $account->uid;
+          }
+          else {
+            $identifier = $account->uid . '-' . ip_address();
+          }
+          flood_clear_event('failed_login_attempt_user', $identifier);
+          //also clear out the ip attempts for that user
+          flood_clear_event('failed_login_attempt_ip');
           drupal_goto('user/' . $user->uid . '/edit', array('query' => array('pass-reset-token' => $token)));
         }
         else {
@@ -321,6 +331,15 @@ function user_profile_form_submit($form, &$form_state) {
     // Remove the password reset tag since a new password was saved.
     unset($_SESSION['pass_reset_'. $account->uid]);
   }
+
+  // Clear the flood table. Since we don't know the IP address for this user
+  // we can't use flood_clear_event because we need to use the LIKE operator.
+  $identifier = $account->uid .'-%';
+  db_delete('flood')
+    ->condition('event', 'failed_login_attempt_user')
+    ->condition('identifier', $identifier, 'LIKE')
+    ->execute();
+
   // Clear the page cache because pages can contain usernames and/or profile information:
   cache_clear_all();
 

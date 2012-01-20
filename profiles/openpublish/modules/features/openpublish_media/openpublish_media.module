@@ -1,0 +1,20 @@
+<?php
+/**
+ * @file
+ * Code for the Media feature.
+ */
+
+include_once('openpublish_media.features.inc');
+
+
+/**
+ * Implements hook_form_FORM_ID_alter()
+ * 
+ * Disable WYSIWYG on this field
+ */
+function openpublish_media_form_openpublish_video_node_form_alter(&$form, &$form_state, $form_id) {
+  if (module_exists('wysiwyg') && isset($form['field_op_video_embed_code'])) {
+    $lang = $form['field_op_video_embed_code']['#language'];    
+    $form['field_op_video_embed_code'][$lang][0]['#wysiwyg'] = FALSE;
+  }
+}

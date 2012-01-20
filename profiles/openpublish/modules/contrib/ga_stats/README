@@ -1,0 +1,8 @@
+Google Analytics Statistics - @author jcaldwell aka jec006
+
+A Drupal 7 module that provides views integration for the Google Analytics Data Export API.
+
+This allows you to use Google Analytics directly through views to do things like Most Popular, Most Read ect.  
+You can combine the statistics to create interesting results.
+
+After you install the module - go to /admin/config/ga_stats to configure your Google Analytics account information and begin pulling statistics.

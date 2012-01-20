@@ -1,0 +1,34 @@
+<?php
+
+/**
+ * Implements hook_field_formatter_info().
+ * 
+ * Provides a field formatter for the Twitter username.
+ */
+function openpublish_author_field_formatter_info() {
+  return array(
+    'twitter_user' => array(
+      'label' => t('Twitter Account'),
+      'field types' => array('text'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ * 
+ * Provides a field formatter for the Twitter username.
+ */
+function openpublish_author_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $settings = $display['settings'];
+    
+  foreach ($items as $delta => $item) {
+    $user = $item['value'];
+    if (strpos($user, '@') === 0) {
+      $user = trim($user, '@');
+    }
+    $element[$delta] = array('#markup' => l('@' . $user, 'http://twitter.com/#!/' . $user));
+  }
+  return $element;
+}

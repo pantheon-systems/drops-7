@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Blog Post - Extra Media Fields feature.
+ */
+
+include_once('openpublish_blog_post_extra_media.features.inc');

@@ -1,0 +1,48 @@
+<?php
+
+
+/**
+ * Placeholder for potential Drupal 6 upgrade path
+ */
+function nodeblock_update_7100() {
+
+}
+
+/**
+ * Remove variable settings for nodes where blocks are not enabled.
+ */
+function nodeblock_update_7101() {
+  $variables = variable_initialize();
+  foreach($variables as $name => $value) {
+    if(strpos($name, 'nodeblock') !== false) {
+      if(strpos($name, 'nodeblock_block_') !== false) {
+        $blocks[str_replace('nodeblock_block_', '', $name)] = $name;  
+      } 
+      else if(strpos($name, 'nodeblock_comment_link_') === false && strpos($name, 'nodeblock_node_link_') === false && strpos($name, 'nodeblock_view_mode_') === false) {
+        if((bool)$value) {
+          $content_types[] = str_replace('nodeblock_', '', $name);
+        }
+      }
+    }
+  }
+  if(!empty($content_types) && !empty($blocks)) {
+    $query = db_select('node', 'n')
+         ->fields('n', array ('nid'))
+         ->condition('n.type', $content_types);
+    $result = $query->execute()->fetchAll();
+    
+    if(!empty($result)) {
+      foreach($result as $value) {
+        $nids[$value->nid] = $value->nid;
+      }
+      if(!empty($nids)) {
+        $blocks = array_diff_key($blocks, $nids);
+        if(!empty($blocks)) {
+          foreach($blocks as $name) {
+            variable_del($name);
+          }
+        }
+      }
+    }       
+  }
+}

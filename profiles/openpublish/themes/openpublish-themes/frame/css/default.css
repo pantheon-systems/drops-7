@@ -1,0 +1,540 @@
+/**
+  * @file default.css
+  * default.css contains all the default CSS styling for theme(s) based on OpenPublish Wireframe.
+  * This includes the mobile-first stlying that will/can be overwritten by 
+  * additional responsive layout css files and global.css in your subtheme.
+  */
+  
+body {
+  color: #787878;
+  font: 62.5%/1.8 "Helvetica Nueue", Helvetica, Geneva, Arial, Verdana, sans-serif;
+}
+
+a, a:link, a:visited, a:active {
+  color: #787878;
+  border-bottom: 1px dotted #787878;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: none;
+  color: #00578a;
+  border-bottom: 0;
+}
+
+.contextual-links-wrapper a {
+  border-bottom: 0;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  margin: 1em 0 0.5em 0;
+  font-family: Georgia, serif;
+  font-variant: small-caps;
+  font-weight: normal;
+  letter-spacing: normal;
+}
+
+h1 a, h1 a:link, h1 a:visited,
+h2 a, h2 a:link, h2 a:visited,
+h3 a, h3 a:link, h3 a:visited,
+h4 a, h4 a:link, h4 a:visited,
+h5 a, h5 a:link, h5 a:visited,
+h6 a, h6 a:link, h6 a:visited {
+  color: #00578a;
+  border-bottom: none;
+  text-decoration: none;
+}
+.views-field-title a {
+  font-size: 15px;
+}
+.region-content .view-op-recent-content .views-field-title a,
+.region-content .view-op-recent-content .views-field-title a:link,
+.region-content .view-op-recent-content .views-field-title a:visited {
+  color: #00578a;
+  border-bottom: none;
+  text-decoration: none;
+  font-size: 30px;
+  font-family: Georgia, serif;
+  font-variant: small-caps;
+  font-weight: normal;
+  letter-spacing: normal;
+}
+
+h1 a:hover,
+h2 a:hover,
+h3 a:hover,
+h4 a:hover,
+h5 a:hover,
+h6 a:hover {
+  color: #787878;
+}
+
+.region-content .view-op-recent-content .views-field-title a:hover {
+  color: #787878;
+}
+
+h1 {
+  font-size: 36px;
+}
+
+h2 {
+  font-size: 30px;
+}
+
+/* Make site titles the same size if it's an H1 (home) or H2 (internal) */
+h1.site-name,
+h2.site-name {
+  font-size: 40px;
+  margin-bottom: 0;
+}
+
+/* Make it a bit smaller for block headers */
+h2.block-title {
+  font-size: 24px;
+  margin: 0;	
+}
+
+h3 {
+  font-size: 20px;
+}
+
+h4 {
+  font-size: 18px;
+}
+
+h5 {
+  font-size: 16px;
+}
+
+h6 {
+  font-size: 14px;
+}
+h6.site-slogan {
+  margin-top: 0;
+}
+p, ul, ol {
+  font-size: 14px;
+}
+ul ul, ol ol, ul ol, ol ul {
+  font-size: 1em;
+  margin-bottom: 0;
+}
+ul {
+  list-style-type: square;
+}
+ol {
+  list-style-type: decimal;
+}
+blockquote {
+  font-style: italic;
+  font-size: 0.9em;
+  margin-left: 5em;
+  margin-bottom: 1.5em;
+  padding: 20px;
+  background: #EEEEEE;
+  border: 1px solid #DDDDDD;
+}
+
+blockquote p:last-child {
+  margin-bottom: 0;
+}
+
+ul.inline,
+ul.links.inline {
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* Responsive Images */
+img {
+  max-width: 100%;
+  height: auto;
+}
+label {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+ul, ul.menu, ol {
+  margin-left: 1em;
+}
+
+p, dl, hr, ol, ul, pre, table, address, fieldset {
+  margin-bottom: 1em;
+}
+
+/* Main Nav */
+.navigation {
+  margin-top: 1em;
+}
+ul.main-menu,
+ul.secondary-menu {
+  font-size: 1em;
+  margin-left: 0;
+  font-variant: small-caps;
+}
+ul.main-menu {
+  font-size: 1.4em;
+}
+
+ul.main-menu li,
+ul.secondary-menu li {
+  margin: 0;
+  padding: 0.25em 0.5em;
+  border-right: 1px dotted #CCC;
+}
+ul.main-menu li.first,
+ul.secondary-menu li.first {
+  padding-left: 0;
+}
+ul.main-menu li.last,
+ul.secondary-menu li.last {
+  border-right: 0;
+}
+/* Node Specifics */
+
+h2.node-title {
+  margin: 0;
+}
+
+.node-teaser {
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px dotted #CCC;
+}
+
+.node-links ul {
+  margin: 0;
+  padding: 0;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+.node-links ul li {
+  margin: 00;
+  padding: 0.25em 0.75em;
+  border-right: 1px dotted #CCC;
+}
+.node-links ul li.first {
+  padding-left: 0;
+}
+.node-links ul li.last {
+  border-right: 0;
+}
+.node-links a {
+  border-bottom: 0;
+}
+.user-picture {
+  float: left;
+  width: 24px;
+  height: 24px;
+  margin-right: 10px;
+}
+
+.submitted {
+  line-height: 24px;
+  margin-bottom: 10px;
+  font-size: 11px;
+}
+
+ul.primary {
+  border-bottom: 0;
+  line-height: normal;
+  list-style: none outside none;
+  margin: 5px;
+  padding: 0;
+  white-space: nowrap;
+  display: block;
+}
+ul.primary li {
+  display: block;
+  float: left;
+}
+ul.primary li a {
+  background-color: #DDDDDD;
+  border-color: #BBBBBB;
+  border-style: solid;
+  border-width: 1px;
+  height: auto;
+  margin-right: 0.5em;
+  padding: 0.5em 1em;
+  text-decoration: none;
+  display: block;
+}
+ul.primary li a,
+ul.primary li.active a,
+ul.primary li a:hover {
+  border: 1px solid #BBBBBB;
+}
+ul.primary li a:hover {
+  background: #EEEEEE;
+}
+/* Forms */
+input.form-text,
+input[type="text"],
+input[type="password"] {
+  width: 100%;
+  box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  height: 3em;
+  line-height: 3em;
+  padding: 0;
+  text-indent: 0.5em;
+  font-size: 1.5em;
+  margin: 0;
+  border: 1px solid #DDDDDD;
+}
+input.form-submit,
+input[type="submit"] {
+  padding: 0.5em 1em;
+  font-size: 1.5em;
+  background-color: #DDDDDD;
+  border-color: #BBBBBB;
+  border-style: solid;
+  border-width: 1px;
+  cursor: pointer;
+  color: #787878;
+}
+
+input.form-submit:hover,
+input[type="submit"]:hover {
+  background: #EEEEEE;
+}
+/* Login & Registration Defaults */
+.block-login .item-list ul {
+  text-align: center;
+  display: block;
+  
+}
+.block-login .item-list li {
+  margin-left: 0;
+  display: inline;
+  padding: 0 0.5em;
+  border-right: 1px dotted #CCC;
+}
+.block-login .item-list ul.openid-links {
+  margin-bottom: 0;
+}
+.block-login .item-list ul.openid-links li {
+  border-right: 0;
+}
+.block-login .item-list a {
+  font-size: 10px;
+}
+.block-login .item-list li.last,
+.block-login .item-list li:last-child {
+  border-right: 0;
+}
+
+/* search form(s) and results */
+.zone-branding .block-search-form {
+  margin-top: 20px;
+}
+.block-search input.form-text,
+.search-form #edit-keys {
+  background: url('../i/search.png') no-repeat center right;
+}
+.block-search div.form-actions,
+.search-form #edit-submit {
+  display: none;
+}
+.search-results {
+  margin-left: 0;
+}
+.search-results .title {
+  font-size: 1.5em;
+}
+.search-snippet-info {
+  padding: 20px;
+  font-size: 0.9em;
+  margin-left: 1em;
+  background: #EEEEEE;
+  border: 1px solid #DDDDDD;
+}
+.search-snippet-info p.search-info {
+  margin-bottom: 0;
+}
+.search-snippet {
+  font-size: 1em;
+}
+
+/* Node Styles */
+.node .field {
+  margin: 1em 0 0.5em 0;
+}
+.node .field-label {
+  margin: 0;
+  font-family: Georgia, serif;
+  font-variant: small-caps;
+  font-weight: normal;
+  letter-spacing: normal;
+  font-size: 20px;
+  line-height: 1.2em;
+}
+.node .field .field-items {
+  margin-bottom: 0;
+}
+
+.node .field-type-node-reference .field-items,
+.node .field-type-taxonomy-term-reference .field-items,
+.node .field-type-node-reference .field-items {
+  font-size: 15px;
+}
+
+.node .field-name-field-op-main-image {
+  display: block;
+  float: left;
+  clear: none;
+  margin-right: 20px;
+}
+
+#edit-actions input {
+  margin-right: 0.5em;
+}
+/* Comments */
+#comments article {
+  padding: 20px;
+  background: #fdfdfd;
+  border: 1px dashed #DDDDDD;
+  margin-bottom: 20px;
+}
+#comments article header h3 {
+  margin-top: 0;
+}
+#comments article.comment-unpublished {
+  background: #fdebeb;
+  border: 1px dashed #FF0000;
+}
+#comments article.comment-unpublished header h3 {
+  margin-top: 20px;
+}
+#comments header {
+  position: relative;
+}
+#comments header .new {
+  position: absolute;
+  right: 0;
+  top: 0;
+  font-size: 1.5em;
+  color: #FF0000;
+}
+#comments header .unpublished {
+  position: absolute;
+  top: -15px;
+  left: 0;
+  font-family: Georgia, serif;
+  font-variant: small-caps;
+  font-weight: normal;
+  letter-spacing: normal;
+  font-size: 1.5em;
+  font-weight: normal;
+  color: #FF0000;
+}
+#comments .comment nav {
+  text-align: right;
+}
+#comments .comment nav ul {
+  margin: 0;
+}
+
+/* Gallery page */
+
+.node-openpublish-photo-gallery {
+ 
+}
+.node-openpublish-photo-gallery .field-name-field-op-gallery-image:after {
+  clear: both;
+  content: ".";
+  display: block;
+  height: 0;
+  visibility: hidden;
+}
+.node-openpublish-photo-gallery .field-type-image .field-label,
+.node-openpublish-photo-gallery .field-name-field-op-gallery-image .field-label {
+  display: none;
+}
+.node-openpublish-photo-gallery .field-collection-view {
+  margin: 0;
+  padding: 0;
+  padding-bottom: 20px;
+}
+.node-openpublish-photo-gallery .field-name-field-op-gallery-image > .field-items > .field-item {
+  float: left;
+  width: 32%;
+  margin-right: 2%;
+}
+.node-openpublish-photo-gallery .field-name-field-op-gallery-image > .field-items > .field-item:nth-child(3n+3) {
+  margin-right: 0;
+}
+
+.node-openpublish-photo-gallery .field-item p:last-child {
+  margin-bottom: 0;
+}
+
+.node-openpublish-photo-gallery  ul.field-collection-view-links, 
+.node-openpublish-photo-gallery  ul.action-links {
+  font-size: 1em;
+}
+
+/* Video Page */
+.node-openpublish-video {
+
+}
+
+.node-openpublish-video .field-type-image .field-label,
+.node-openpublish-video .field-type-video-embed-field .field-label,
+.node-openpublish-video .field-name-field-op-video-embed-code .field-label {
+  display: none;
+}
+
+/* Commented out a few items to remove a gap between the body and the iframe */
+.node-openpublish-video .field-name-field-op-video-embed .field-items, 
+.node-openpublish-video .field-name-field-op-video-embed-code .field-items {
+  max-width: 100%;
+}
+.node-openpublish-video .field-name-field-op-video-embed .field-items .field-item,
+.node-openpublish-video .field-name-field-op-video-embed-code .field-items .field-item {
+/*  height: 0; */
+  overflow: hidden;
+/*  padding-bottom: 56.25%; */
+  padding-top: 10px;
+  position: relative;
+}
+
+.node-openpublish-video .field-name-field-op-video-embed .field-items .field-item iframe,
+.node-openpublish-video .field-name-field-op-video-embed-code .field-items .field-item iframe {
+  max-height: 100%;
+  left: 0;
+  /* position: absolute; */
+  top: 0;
+  max-width: 100%;
+}
+
+/* Teaser Styles */
+
+.node-teaser .field {
+  margin-top: .5em;
+  margin-bottom:  .25em;
+}
+
+.node-teaser .field-name-field-op-video-embed {
+  display: block;
+  float: left;
+  clear: none;
+  margin-right: 20px;
+  margin-top: 0px;
+}
+
+.node-teaser .field-name-field-op-video-embed .field-items .field-item {
+  padding-top: 5px;
+}
+
+.node-teaser h2.node-title {
+  font-size: 20px;
+  line-height: 26px;
+}
+
+.node-teaser .submitted {
+  line-height: 14px;
+  margin-bottom: 0px;
+}

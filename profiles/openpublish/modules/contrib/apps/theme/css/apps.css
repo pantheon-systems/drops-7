@@ -1,0 +1,297 @@
+body .path-admin-apps span.icon {
+  background: transparent url('../images/icon.png');
+}
+
+#apps-featured-panel {
+  background: #eee;
+  padding: 10px;
+  border: 1px solid #ccc;
+  min-width: 960px;
+}
+
+#apps-featured-wrapper {
+  background: transparent url('../images/feature-background-repeat.jpg') repeat-x;
+  border: 1px solid #ccc;
+}
+
+#apps-featured {
+
+  background: transparent url('../images/feature-background.png') no-repeat;
+  clear: both;
+  position: relative;
+  display: block;
+
+  height: 315px;
+  overflow: hidden;
+}
+
+#apps-featured .app-logo {
+  display: none;
+}
+
+#apps-featured .left {
+  padding: 10px;
+  float: left;
+  display: inline-block;
+  padding-left: 50px;
+  padding-top: 50px;
+}
+
+.app-screenshot img {
+  position: relative;
+  left: 7px;
+  top: 50px;
+
+}
+
+.screenshot-shadow {
+  height: 275px;
+  width: 548px;
+  z-index: 10;
+  -moz-box-shadow: inset 0 0 10px #333;
+  -webkit-box-shadow: inset 0px 0px 8px #333;
+  box-shadow: inset -5px 0 5px #333;
+  display: inline-block;
+  position: absolute;
+  top: 48px;
+  left: 318px;
+}
+
+#apps-featured h1, #apps-featured h1 a {
+  font-size: 36px;
+  font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
+  font-weight: normal;
+  color: #000;
+  line-height: normal;
+  letter-spacing: -2px;
+  width: 250px;
+}
+
+#apps-featured .app-description {
+  font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
+  margin-top: 20px;
+  font-size: 12px;
+  height: 100px;
+  overflow: hidden;
+  width:230px;
+}
+
+#apps-list {
+  margin-top: 20px;
+  margin-bottom:30px;
+  border: 1px solid #ccc;
+  background: #eee;
+  clear: both;
+  padding: 6px 5px 0px;
+  min-width: 970px;
+}
+
+#apps-list .item-list {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  margin: 0;
+}
+
+#apps-list ul {
+  clear: both;
+  padding: 0;
+  display: inline-block;
+  margin: 0;
+}
+
+#apps-list ul li {
+  float: left;
+  display: block;
+  height: 110px;
+  width: 350px;
+  border: 1px solid #ccc;
+  background: #fff;
+  margin: 5px;
+  padding: 10px;
+}
+
+.app-logo {
+  float: left;
+  display: inline-block;
+  height: 120px;
+  width: 120px;
+}
+
+.app-teaser {
+  float: left;
+  display: inline-block;
+  padding: 10px 15px;
+}
+
+.app-teaser h2, .app-teaser h2 a{
+  font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
+  font-size: 16px;
+  color: #000;
+  letter-spacing: -1px;
+}
+
+.app-teaser .app-status {
+  text-transform: uppercase;
+  color: #218aa1;
+  font-family: "Lucida Sans", Arial, Helvetica, sans-serif;
+  font-weight: bold;
+  font-size: 10px;
+}
+
+.app-rating {
+  background: transparent url('../images/stars.png') no-repeat -3px 0 ;
+  padding-left: 100px;
+  padding-top: 2px;
+  color: #666;
+  font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
+  font-size: 10px;
+  text-transform: uppercase;
+  min-width: 100px;
+}
+
+.app-rating.five {
+  background: transparent url('../images/stars.png') no-repeat -3px 0 ;
+}
+
+.app-rating.four{
+  background: transparent url('../images/stars.png') no-repeat -19px 0 ;
+}
+
+.app-rating.three{
+  background: transparent url('../images/stars.png') no-repeat -40px 0 ;
+}
+
+.app-rating.two{
+  background: transparent url('../images/stars.png') no-repeat -57px 0 ;
+}
+
+.app-rating.one{
+  background: transparent url('../images/stars.png') no-repeat -78px 0 ;
+}
+
+.app-teaser .app-action {
+  background: transparent url('../images/button.png') no-repeat;
+  width: 60px;
+  padding: 2px 5px;
+  text-align: center;
+  color: #000;
+  text-transform: capitalize;
+  font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
+  margin-top: 10px;
+}
+
+.app-teaser .app-action a {
+  color: #000;
+}
+
+.app-logo-small {
+  float: left;
+  display: inline-block;
+  margin-right: 5px;
+}
+
+#apps-featured .app-rating {
+  position: relative;
+  margin-top: 20px;
+}
+
+#app-wrapper {
+  border: 1px solid #ddd;
+  font-size: 11px;
+  border-radius:4px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  padding: 10px;
+  clear: both;
+  min-width:960px;
+  margin-bottom:30px;
+}
+
+#sidebar {
+  font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
+  float: left;
+  display: inline-block;
+  height: 400px;
+  width: 220px;
+  border: 1px solid #ddd;
+  padding: 0px 10px;
+  font-size: 11px;
+  border-radius:4px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  margin-right: 20px;
+}
+
+#sidebar .divider {
+  border-bottom: 1px solid #ddd;
+  width: 170px;
+  margin: 20px auto;
+}
+
+#app-wrapper h2 {
+  margin: 10px 0px 0px;
+  font-size: 11px;
+  text-transform: uppercase;  
+}
+
+#sidebar h3 {
+  font-weight: normal;
+}
+
+#app-wrapper h1 {
+  font-size: 46px;
+  font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
+  font-weight: bolder;
+  color: #000;
+  line-height: normal;
+  letter-spacing: -2px;
+  display: inline-block;
+  padding: 3px 0;
+}
+
+#app-top {
+  margin-top: 10px;
+}
+
+#app-wrapper .app-description {
+  margin: 30px 0px;
+  display:block;
+}
+
+#app-wrapper .app-description h2 {
+  margin-bottom: 5px;
+}
+
+#app-wrapper .app-screenshot img {
+  padding: 10px 10px 10px;
+  border: 1px solid #ddd;
+  border-radius:4px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  left: 0;
+  top: 0;
+}
+
+
+#app-wrapper .app-screenshot{
+  position: relative;
+}
+
+#app-wrapper .app-screenshot .screenshot-shadow {
+  top: 11px;
+  left: 272px;
+  width: 590px;
+  height: 370px;
+}
+
+.block #apps-list ul {
+  display: block;
+}
+.block #apps-list ul li {
+  float: none;
+  width: auto;
+}
+.block #apps-list {
+  min-width:0;
+}

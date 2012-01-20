@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the OP Section Fronts feature.
+ */
+
+include_once('openpublish_section_fronts.features.inc');

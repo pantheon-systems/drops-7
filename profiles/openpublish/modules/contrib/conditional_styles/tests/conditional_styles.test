@@ -1,0 +1,54 @@
+<?php
+/**
+ * @file
+ * Tests for conditional stylesheets.
+ */
+
+/**
+ * Test the Conditional Stylesheets module.
+ */
+class ConditionalStylesheetsTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Conditional stylesheets',
+      'description' => 'Tests adding conditional stylesheets via a .info file.',
+      'group' => 'Conditional Stylesheets',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('conditional_styles_test');
+  }
+
+  /**
+   * Test that stylesheets in theme .info files are loaded.
+   */
+  function testThemeInfo() {
+    // Since we can't include our own test themes with this module, load core's.
+    // See conditional_styles_test_system_info_alter() for the dirty truth.
+    theme_enable(array('update_test_basetheme'));
+    variable_set('theme_default', 'update_test_basetheme');
+
+    $this->drupalGet('');
+
+    // Verify common_test.css is in an IE conditional comment.
+    $pattern = '/<!--\[if\ gte\ IE\ 1\]>.*system.base\.css.*<!\[endif\]-->/simx';
+    $this->assertPattern($pattern, t('Conditional stylesheet added via theme .info file was found.'));
+  }
+
+  /**
+   * Test that stylesheets in base theme .info files are loaded.
+   */
+  function testBaseThemeInfo() {
+    // Since we can't include our own test themes with this module, load core's.
+    // See conditional_styles_test_system_info_alter() for the dirty truth.
+    theme_enable(array('update_test_subtheme'));
+    variable_set('theme_default', 'update_test_subtheme');
+
+    $this->drupalGet('');
+
+    // Verify common_test.css is in an IE conditional comment.
+    $pattern = '/<!--\[if\ gte\ IE\ 1\]>.*system.base\.css.*common_test\.css.*<!\[endif\]-->/simx';
+    $this->assertPattern($pattern, t('Conditional stylesheet added via base theme .info file was found.'));
+  }
+}

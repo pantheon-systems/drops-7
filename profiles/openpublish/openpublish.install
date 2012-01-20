@@ -1,0 +1,185 @@
+<?php
+// $Id$
+
+/**
+ * Implements hook_install().
+ *
+ * Perform actions to set up the site for this profile.
+ */
+function openpublish_install() {
+  // Set the default and admin themes
+  variable_set("theme_default", "frame");
+  variable_set("admin_theme", "rubik");
+  variable_set("node_admin_theme", '1');
+  theme_enable(array("frame"));
+  
+  openpublish_add_default_text_formats_and_perms();
+
+  if (module_exists('wysiwyg')) {
+    openpublish_set_wysiwyg_settings();
+  }
+  
+  // Allow visitor account creation with administrative approval.
+  variable_set('user_register', USER_REGISTER_VISITORS_ADMINISTRATIVE_APPROVAL);
+}
+
+/**
+ * Provides default text formats for OpenPublish
+ */
+function openpublish_add_default_text_formats_and_perms() {
+  // Add text formats.
+  $filtered_html_format = array(
+    'format' => 'filtered_html',
+    'name' => 'Filtered HTML',
+    'weight' => 0,
+    'filters' => array(
+      // URL filter.
+      'filter_url' => array(
+        'weight' => 0,
+        'status' => 1,
+      ),
+      // HTML filter.
+      'filter_html' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // Line break filter.
+      'filter_autop' => array(
+        'weight' => 2,
+        'status' => 1,
+      ),
+      // HTML corrector filter.
+      'filter_htmlcorrector' => array(
+        'weight' => 10,
+        'status' => 1,
+      ),
+    ),
+  );
+  $filtered_html_format = (object) $filtered_html_format;
+  filter_format_save($filtered_html_format);
+
+  $full_html_format = array(
+    'format' => 'full_html',
+    'name' => 'Full HTML',
+    'weight' => 1,
+    'filters' => array(
+      // URL filter.
+      'filter_url' => array(
+        'weight' => 0,
+        'status' => 1,
+      ),
+      // Line break filter.
+      'filter_autop' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // HTML corrector filter.
+      'filter_htmlcorrector' => array(
+        'weight' => 10,
+        'status' => 1,
+      ),
+    ),
+  );
+  $full_html_format = (object) $full_html_format;
+  filter_format_save($full_html_format);
+  
+  // Enable default permissions for system roles.
+  $filtered_html_permission = filter_permission_name($filtered_html_format);
+  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('access content', $filtered_html_permission));
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('access content', $filtered_html_permission));
+
+  // Create a default role for site administrators, with all available permissions assigned.
+  $admin_role = new stdClass();
+  $admin_role->name = 'administrator';
+  $admin_role->weight = 2;
+  user_role_save($admin_role);
+  user_role_grant_permissions($admin_role->rid, array_keys(module_invoke_all('permission')));
+  
+  // Set this as the administrator role.
+  variable_set('user_admin_role', $admin_role->rid);
+
+  // Assign user 1 the "administrator" role.
+  db_insert('users_roles')
+    ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
+    ->execute();
+}
+
+/**
+ * Sets default WYSIWYG settings for OpenPublish
+ */
+function openpublish_set_wysiwyg_settings() {
+  $settings = array(
+    'default' => 1,
+    'user_choose' => 1,
+    'show_toggle' => 1,
+    'theme' => 'advanced',
+    'language' => 'en',
+    'buttons' => array(
+      'default' => array(
+        'Bold' => 1,
+        'Italic' => 1,
+        'Underline' => 1,
+        'Strike' => 1,
+        'JustifyLeft' => 1,
+        'JustifyCenter' => 1,
+        'JustifyRight' => 1,
+        'BulletedList' => 1,
+        'NumberedList' => 1,
+        'Undo' => 1,
+        'Redo' => 1,
+        'Link' => 1,
+        'Unlink' => 1,
+        'Anchor' => 1,
+        'Image' => 1,
+        'Superscript' => 1,
+        'Subscript' => 1,
+        'Blockquote' => 1,
+        'HorizontalRule' => 1,
+        'Cut' => 1,
+        'Copy' => 1,
+        'Paste' => 1,
+        'PasteFromWord' => 1,
+        'RemoveFormat' => 1,
+        'SpecialChar' => 1,
+        'Format' => 1,
+        'Table' => 1,
+        'Maximize' => 1,
+      ),
+      'imce' => array(
+        'imce' => 1,
+      ),
+    ),
+    'toolbar_loc' => 'top',
+    'toolbar_align' => 'left',
+    'path_loc' => 'bottom',
+    'resizing' => 1,
+    'verify_html' => 1,
+    'preformatted' => 0,
+    'convert_fonts_to_spans' => 1,
+    'remove_linebreaks' => 1,
+    'apply_source_formatting' => 0,
+    'paste_auto_cleanup_on_paste' => 1,
+    'block_formats' => 'p,address,pre,h2,h3,h4,h5,h6,div',
+    'css_setting' => 'self',
+    'css_path' => '%t/css/editor.css',
+    'css_classes' => '',
+  );
+  
+  $fields = array(
+    'format' => 'full_html',
+    'editor' => 'ckeditor',
+    'settings' => serialize($settings),
+  );
+
+  db_insert('wysiwyg')->fields($fields)->execute();
+  
+  db_update('filter_format')
+  ->condition('format', 'filtered_html')
+  ->fields(array('weight' => 1))
+  ->execute();
+  
+  db_update('filter_format')
+  ->condition('format', 'full_html')
+  ->fields(array('weight' => 0))
+  ->execute();
+}

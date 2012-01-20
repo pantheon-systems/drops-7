@@ -1,0 +1,35 @@
+<?php
+// $Id$
+
+/**
+*
+* @file
+* Tests for the AppStore module
+*/
+
+class AppstoreUnitTestCase extends DrupalUnitTestCase {
+
+  public function setUp() {
+    parent::setUp('apps');
+
+    $logfile = conf_path() . '/files/test.log';
+    ini_set('log_errors', 1);
+    ini_set('error_log', $logfile);
+  }
+
+  public function getInfo() {
+    return array(
+      'name'  => 'AppStore First Unit Test Case',
+      'description' => '',
+      'group' => 'apps',
+    );
+  }
+
+
+  public function testStuff() {
+    error_log("some test message");
+    $this->assertEqual(1, 1, t('Trivial Test'));
+  }
+
+
+}

@@ -1,0 +1,37 @@
+#context_field-context-ui {
+	width: 550px;
+	display:none;
+}
+
+#context_field-context-ui ul {
+	margin: 0;
+}
+#context_field-context-ui ul li {
+	padding: 0;
+	list-style: none;
+}
+#context_field-context-ui div.admin-pane-condition,
+#context_field-context-ui div.admin-pane-reaction-theme,
+#context_field-context-ui div.admin-pane-reaction-theme_html {
+	display: none;
+}
+
+.boxes-box-editing {
+  background: none repeat scroll 0 0 #EEEEDD;
+  display: inline-block;
+  padding: 3px;
+}
+
+body.context-editing div.contextual-links-wrapper {
+	right: 0;
+	top: 40px;
+}
+
+form.context-editing li.context-editable {
+  opacity: .2;
+}
+form.context-editing li.context-editing {
+  visibility : visible;
+  display : list-item;
+  opacity: 1;
+}

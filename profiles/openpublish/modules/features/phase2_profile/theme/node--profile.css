@@ -1,0 +1,93 @@
+.staff-page {}
+
+  .staff-page .views-row {
+    border-bottom: 1px solid #ebebeb;
+    clear: both;
+    min-height: 100px;
+    overflow: hidden;
+    padding: 15px 15px 15px 0;
+  }
+  
+  .staff-page .staff-photo {
+    float: left;
+    width: 120px;
+  }
+    .staff-page .staff-photo img {
+      border: 4px solid #dcdcde;
+    }
+  
+  .staff-page h4 {
+    font-family: Arial, sans-serif;
+    font-size: 1.417em;
+    margin: 0 0 5px;
+    padding: 9px 0 0;
+  }
+    .staff-page h4 a {
+      color: #00436f;
+    }
+  .staff-page .exec {
+    background: #f5fafb;
+  }
+  .page-node .leadership-status,
+  .staff-page .field-name-field-profile-leadership {
+    background: url("icon-exec.png") no-repeat;
+    float: left;
+    height: 20px;
+    margin: 4px 4px 0 0;
+    overflow: hidden;
+    text-indent: -9999px;
+    width: 31px;
+  }
+  .page-node .leadership-status {
+    margin: 0 4px 0 0;
+  }
+  .staff-page .no-exec .field-name-field-profile-leadership {
+    display: none;
+  }
+
+  .staff-page .staff-position {
+    color: #999;
+    font-family: Georgia, serif;
+    font-size: 1.167em;
+    font-style: italic;
+    margin: 0 0 10px;
+  }
+    .staff-page .staff-position p {
+      font-size: 0.917em;
+      margin: 0;
+      line-height: 1;
+    }
+    
+  .staff-page .views-field-entity-id p {
+    color: #666;
+    font-size: 0.917em;
+    font-family: Arial, sans-serif;
+    line-height: 1;
+  }
+
+.leadership-section {
+  overflow: hidden;
+  padding: 10px 15px;
+}
+  .leadership-section .exec {
+    border-bottom: 1px solid #e5e5e5;
+    clear: both;
+    min-height: 90px;
+    padding: 10px 0;
+  }
+  .leadership-section .staff-photo {
+    width: 100px;
+  }
+  .leadership-section h4 {
+    padding-top: 15px;
+  }
+    .leadership-section h4 a {
+      color: #00436f;
+    }
+  .leadership-section .staff-position {
+    color: #999;
+    font-style: italic;
+    font-family: Georgia,serif;
+    font-size: 1em;
+  }
+  

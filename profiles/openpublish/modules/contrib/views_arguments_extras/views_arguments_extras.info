@@ -1,0 +1,20 @@
+name = "Views Arguments Extras"
+description = "Adds extra to Views around arguments"
+core = "7.x"
+dependencies[] = views
+dependencies[] = ctools
+files[] = views_plugin_argument_default_field.inc
+files[] = views_plugin_argument_default_request_params.inc
+files[] = views_sort_by_arg_order_handler_sort.inc
+
+package = "Views"
+
+
+
+
+; Information added by drupal.org packaging script on 2011-09-09
+version = "7.x-1.0-beta1"
+core = "7.x"
+project = "views_arguments_extras"
+datestamp = "1315576007"
+

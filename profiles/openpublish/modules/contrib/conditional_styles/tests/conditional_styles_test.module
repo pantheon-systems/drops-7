@@ -1,0 +1,22 @@
+<?php
+/**
+ * @file
+ * Test module for conditional stylesheets.
+ */
+
+/**
+ * Implements hook_system_info_alter().
+ */
+function conditional_styles_test_system_info_alter(&$info, $file, $type) {
+  // @todo Hack our testing themes into the system somehow, or wait until core
+  // provides support for testing themes provided by modules.
+  if ($type == 'theme') {
+    if ($file->name == 'update_test_basetheme') {
+      // The file must exist, but none of core's test themes have CSS files.
+      $info['stylesheets-conditional']['gte IE 1']['all'][] = '../../../modules/simpletest/tests/system.base.css';
+    }
+    elseif ($file->name == 'update_test_subtheme') {
+      $info['stylesheets-conditional']['gte IE 1']['all'][] = '../../../modules/simpletest/tests/common_test.css';
+    }
+  }
+}

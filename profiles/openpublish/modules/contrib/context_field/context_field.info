@@ -1,0 +1,15 @@
+name = Context Field
+description = "Provides a Field which manages a Context per entity"
+core = 7.x
+dependencies[] = "context"
+dependencies[] = "context_ui"
+dependencies[] = "boxes"
+dependencies[] = "views_boxes"
+file[] = "plugins/context_field_context_condition.inc"
+
+; Information added by drupal.org packaging script on 2011-09-27
+version = "7.x-1.0-beta2"
+core = "7.x"
+project = "context_field"
+datestamp = "1317145301"
+

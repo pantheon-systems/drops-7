@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the OpenPublish General feature.
+ */
+
+include_once('openpublish_general.features.inc');

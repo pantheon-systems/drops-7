@@ -1,0 +1,23 @@
+form div.nodeconnect-edit input,
+form div.nodeconnect-add input{
+  background: url(add.png) no-repeat;
+  text-indent: -1000px;
+  width: 16px;
+  height : 16px;
+  border:0px;
+  -moz-box-shadow: none;
+}
+form div.nodeconnect-edit input {
+  background: url(pencil.png) no-repeat;
+}
+.nodeconnect-edit,
+.nodeconnect-add{
+  float: right;
+  padding: 3px;
+  width: 16px;
+  height : 16px;
+}
+.nodeconnect-edit input[disabled] {
+  
+  background: none;
+}

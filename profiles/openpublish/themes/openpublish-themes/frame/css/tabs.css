@@ -1,0 +1,55 @@
+/*
+ * Move tabs
+ */
+body.toolbar-drawer ul.action-links{
+  position: fixed;
+  right: 140px;
+  top: 28px;
+  z-index: 10000000;
+  display: block;
+}
+body.toolbar-drawer ul.tabs.primary{
+  position: fixed;
+  right: 230px;
+  top: 28px;
+  z-index: 10000000;
+}
+
+body.toolbar-drawer div.tabs ul.tabs.primary, body.toolbar-drawer ul.action-links{
+  padding: 0; margin: 0; border: 0;
+}
+
+body.toolbar-drawer div.tabs ul.tabs.primary li, body.toolbar-drawer ul.action-links li {
+  margin-top: 5px;
+  padding: 4px;
+}
+
+body.toolbar-drawer ul.action-links {
+  list-style: none;
+}
+
+body.toolbar-drawer ul.action-links li {
+  padding-top: 2px;
+}
+
+body.toolbar-drawer div.tabs ul.tabs.primary li a, body.toolbar-drawer ul.action-links li a {
+  background-color: inherit;
+  border: 0;
+  padding-top: 5px;
+  color: #FFF;
+  font-size: 11px;
+}
+
+body.toolbar-drawer div#page ul.action-links li a {
+  background: none !important;
+}
+
+body.toolbar-drawer div.tabs ul.tabs.primary li a.active, body.toolbar-drawer ul.action-links li a.active {
+  font-weight: bold;
+  text-decoration: underline;
+  padding-top: 5px;
+}
+
+body.toolbar-drawer div.tabs ul.tabs.primary li a:hover, body.toolbar-drawer ul.action-links li a:hover {
+  text-decoration: underline;
+}

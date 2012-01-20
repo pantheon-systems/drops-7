@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the openpublish_related_content feature.
+ */
+
+include_once('openpublish_related_content.features.inc');

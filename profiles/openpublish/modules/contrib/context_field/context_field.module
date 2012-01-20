@@ -1,0 +1,661 @@
+<?php
+
+
+/**
+ * Implement hook_permission().
+ */
+function context_field_permission() {
+  return array(
+    'use context field editor' => array(
+      'title' => t('Use Context Field Editor'),
+      'description' => t('Use the Context Field Editor to administer layout.'),
+    ),
+  );
+}
+
+/**
+ *  * Implementation of hook_ctools_plugin_api().
+ *   */
+function context_field_ctools_plugin_api() {
+  list($module, $api) = func_get_args();
+  if ($module == "context" && $api == "context") {
+    return array("version" => 3);
+  }
+}
+
+/**
+ * Implementation of hook_menu()
+ */
+function context_field_menu() {
+  $items['node/%node/context_field'] = array(    
+    'title' => 'Configure Layout',
+    'access callback' => 'context_field_access_loader',
+    'access arguments' => array(1),
+    'page callback' => 'context_field_node_page_view',
+    'page arguments' => array(1),
+    'type' => MENU_LOCAL_ACTION,
+  );
+  $items['taxonomy/term/%taxonomy_term/context_field'] = array(    
+    'title' => 'Configure Layout',
+    'access callback' => 'context_field_access_loader',
+    'access arguments' => array(2),
+    'page callback' => 'context_field_term_page_view',
+    'page arguments' => array(2),
+    'type' => MENU_LOCAL_ACTION,
+  );
+  $items['context_field/autocomplete/node'] = array(
+    'title' => 'Node Autocomplete',
+    'access arguments' => TRUE,
+    'page callback' => 'context_field_node_autocomplete',
+    'type' => MENU_CALLBACK
+  );
+  $items['context_field/autocomplete/context'] = array(
+    'title' => 'Node Autocomplete',
+    'access arguments' => TRUE,
+    'page callback' => 'context_field_autocomplete',
+    'type' => MENU_CALLBACK
+  );
+  return $items;
+}
+
+/**
+ * Custom access callback used to restrict Context Field tab to content types with the field.
+ * This needs to be not based on a fixed field name.
+ */
+function context_field_access_loader($entity) {
+  if (user_access('use context field editor') == FALSE) {
+    return FALSE;
+  }
+  else {
+    return TRUE;
+  }
+}
+
+/**
+ * Custom callback for the Context Field tab
+ * Essentially a slightly altered node view with a modified version of the Context UI editor
+ */
+function context_field_node_page_view($node) {
+  // Only append this when no additional params are set so as not
+  // to break any existing behavior (ie when context_block or boxes_delta are set)
+  if (sizeof($_GET) === 1) {
+    // let context_ui know that we are doing an edit
+    context_set('context_ui', 'context_ui_editor_present', TRUE);
+  }
+  return node_page_view($node);
+}
+/**
+ * Custom callback for the Context Field tab
+ * Essentially a slightly altered term view with a modified version of the Context UI editor
+ */
+function context_field_term_page_view($term) {
+  // Only append this when no additional params are set so as not
+  // to break any existing behavior (ie when context_block or boxes_delta are set)
+  if (sizeof($_GET) === 1) {
+    // let context_ui know that we are doing an edit
+    context_set('context_ui', 'context_ui_editor_present', TRUE);
+  }
+  global $language;
+  return taxonomy_term_view($term, 'full', $language);
+}
+
+
+/**
+ * Implementation of hook_context_plugins()
+ */
+function context_field_context_plugins() {
+  $plugins = array();
+  $plugins['context_field_context_condition'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'context_field') . '/plugins',
+      'file' => 'context_field_context_condition.inc',
+      'class' => 'context_field_context_condition',
+      'parent' => 'context_condition',
+    ),
+  );
+  return $plugins;
+}
+
+/**
+ * Implementation of hook_context_registry()
+ */
+function context_field_context_registry() {
+  return array(
+    'conditions' => array(
+      'context_field' => array(
+        'title' => t('Context Field'),
+        'plugin' => 'context_field_context_condition',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_field_info()
+ */
+function context_field_field_info() {
+  return array(
+    'context_field' => array(
+      'label' => t('Context'), 
+      'description' => t('This field create a Context for the entity view'), 
+      'settings' => array('global_setting' => 255), 
+      // Additional configuration can be done through this part
+      'instance_settings' => array('allowed_blocks' => array(), 'default_context' => 'context_field_default_context', 'use_default' => 0), 
+      'default_widget' => 'context_field',
+      'default_formatter' => 'context_field_context',
+      // might turn this on later
+      'no_ui' => FALSE,
+    ), 
+  );
+}
+
+
+function context_field_clone_default($default_name, $custom_name, $description = 'custom', $category = FALSE) {     
+      $context = context_load($default_name);
+      $context->name = $custom_name;
+      $context->description = $description;
+      $context->tag = 'Context Field Custom';
+      if ($category) {
+        $context->conditions['context_field']['options']['context_field_category'] = $category;
+      }
+      unset($context->conditions['context_field']['values'][2]);
+      context_save($context);
+}
+
+/**
+ * Implements hook_field_instance_settings_form()
+ */
+function context_field_field_instance_settings_form($field, $instance) {
+  $settings = $instance['settings'];
+
+  $options = array();
+  foreach (module_implements("block_info") as $module) {
+    foreach (module_invoke($module, "block_info") as $block) {
+      $block = (object) $block;
+      $group = isset($block->context_group) ? $block->context_group : $module;
+      $options[$group] = $group;
+    }
+  }
+  $form['allowed_blocks'] = array(
+    '#type' => 'checkboxes',
+    '#title' => 'Allowed Block Groups',
+    '#options' => $options,
+    '#description' => 'Use this field to limit the kinds of blocks that can be add to the context for the ui',
+    '#default_value' => $settings['allowed_blocks'],
+  );
+
+  $contexts = context_load();
+  foreach ($contexts as $key => $context) {
+    if (isset($context->conditions['context_field']['values'][2])) {
+      $context_options[$key] = $context->description ? $context->description : $key;
+    }
+  }
+  $form['default_context'] = array(
+    '#type' => 'select',
+    '#title' => 'Defaut Context',
+    '#options' => $context_options,
+    '#default_value' => $settings['default_context'],
+  );
+  $form['use_default'] = array(
+    '#type' => 'radios',
+    '#title' => 'Default Context Use',
+    '#options' => array(
+      0 => "Clone Default context on Entity Creation",
+      1 => "Always use Default Context",
+    ),
+    '#default_value' => $settings['use_default'],
+  );
+  return $form;
+}
+
+/**
+ * implements hook_preprocess_context_block_browser()
+ *
+ * the types of blocks in the inline editor are set in the
+ * preprocess_context_block_browser.  So we are jumping in here
+ * and limiting it based on a context value (this value is set
+ * by the formatter for context_fields)
+ */
+function context_field_preprocess_context_block_browser(&$vars) {
+  /*
+   * as we are allowing mutiple context now this need to be done with js
+   * TODO: remove this
+  $allowed_values = context_get("context_field","allowed_blocks");
+  if(!empty($allowed_values)) {
+    foreach($vars['categories']['#options'] as $key => $value) {
+      if(isset($allowed_values[$key]) && !$allowed_values[$key]) {
+        //unset($vars['categories']['#options'][$key]);
+      }
+    }
+  }
+  */
+}
+
+
+/**
+ * Implementation of hook_field_is_empty()
+ */
+function context_field_field_is_empty($item, $field) {
+  TRUE;
+}
+
+/**
+ * Implementation of hook_field_validate()
+ */
+function context_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  TRUE;
+}
+
+/**
+ * Implementation of hook_field_widget_info()
+ */
+function context_field_field_widget_info() {
+  return array(
+    'context_field' => array(
+      'label' => t('Auto Create'),
+      'field types' => array('context_field'),
+      'settings' => array('form_element' => array('user_toggle' => 0)), 
+      'behaviors' => array(
+         'multiple values' => FIELD_BEHAVIOR_DEFAULT, 
+         'default value' => FIELD_BEHAVIOR_DEFAULT,
+      ),
+    ),
+    'context_field_default' => array(
+      'label' => t('Use Default'),
+      'field types' => array('context_field'),
+      'settings' => array('form_element' => array('user_toggle' => 0)), 
+      'behaviors' => array(
+         'multiple values' => FIELD_BEHAVIOR_DEFAULT, 
+         'default value' => FIELD_BEHAVIOR_DEFAULT,
+      ),
+    ),
+    'context_field_autocomplete' => array(
+      'label' => t('Autocomplete'),
+      'field types' => array('context_field'),
+      'settings' => array('form_element' => array('allow_create' => 0, 'category' => '')), 
+      'behaviors' => array(
+         'multiple values' => FIELD_BEHAVIOR_DEFAULT, 
+         'default value' => FIELD_BEHAVIOR_NONE,
+      ),
+    ),
+    'context_field_select' => array(
+      'label' => t('Select'),
+      'field types' => array('context_field'),
+      'settings' => array('form_element' => array('allow_create' => 0, 'category' => '')), 
+      'behaviors' => array(
+         'multiple values' => FIELD_BEHAVIOR_DEFAULT, 
+         'default value' => FIELD_BEHAVIOR_NONE,
+      ),
+    ),
+  );
+}
+
+/*
+ * 
+ */
+function context_field_field_widget_settings_form($field, $instance) {
+  $settings = $instance['widget']['settings'];
+  $form = array();
+  switch ($instance['widget']['type']) {
+    case 'context_field_select' :
+    case 'context_field_autocomplete' :
+      $form['form_element'] = array(
+        '#type' => 'fieldset',
+        '#title' => 'Widget Settings',
+      );
+      $form['form_element']['allow_create'] = array(
+        '#type' => 'checkbox',
+        '#title' => 'Allow Creation of new Context',
+        '#default_value' => $settings['form_element']['allow_create'],
+      );
+      $form['form_element']['category'] = array(
+        '#type' => 'textfield',
+        '#title' => 'Category',
+        '#default_value' => $settings['form_element']['category'],
+      );
+         
+    break;
+    case 'context_field':
+    case 'context_field_default':
+      $form['form_element'] = array(
+        '#type' => 'fieldset',
+        '#title' => 'Widget Settings',
+      );
+      $form['form_element']['user_toggle'] = array(
+        '#type' => 'checkbox',
+        '#title' => 'Allow User to toggle if there is a context or not',
+        '#default_value' => $settings['form_element']['user_toggle'],
+      );
+      
+    break;
+
+    default :
+  }
+  return $form;
+}
+
+
+function context_field_autocomplete($cat, $string = '') {
+
+  $contexts = context_load();
+  $context_options[''] = "No Context Selected";
+
+  foreach ($contexts as $key => $context) {
+    if (isset($context->conditions['context_field']['values'][1]) &&
+      isset($context->conditions['context_field']['options']['context_field_category'])&&
+      ($context->conditions['context_field']['options']['context_field_category'] == $cat)
+    ) {
+      $canidate = "{$context->description} [$key]";
+      $canidates[$canidate] = $canidate;
+    }
+  }
+  $matches = preg_grep("/$string/", $canidates);
+  drupal_json_output($matches);
+}
+
+function context_field_select_callback($form, $form_state) {
+  $return = $form;
+  //find the field on which we were invoked
+  foreach ($form_state['triggering_element']['#array_parents'] as $key) {
+    $return = $return[$key];
+  }
+  return $return;
+}
+
+/*
+ * Implements hook_field_widget_form()
+ *
+ * Set the context param as a value so that it gets passed through.
+ */
+function context_field_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  switch ($instance['widget']['type']) {
+    // Find all Context that are in our category and make a select list to pick from
+    case 'context_field_autocomplete' :
+      $cat = $instance['widget']['settings']['form_element']['category'];
+      $default_value = ($context = context_load(isset($items[$delta]['context']) ? $items[$delta]['context'] : '')) ?
+        $default_value = "{$context->description} [{$context->name}]":
+        '';
+
+
+      $field_form['context'] = array(
+        '#title' => $instance['label'],
+        '#type' => 'textfield',
+        '#autocomplete_path' => "context_field/autocomplete/context/$cat",
+        '#default_value' => $default_value,
+      );
+      return $field_form;
+    break;
+    case 'context_field_select' :
+      $contexts = context_load();
+      $context_options[''] = "No Context Selected";
+      $cat = $instance['widget']['settings']['form_element']['category'];
+      foreach ($contexts as $key => $context) {
+        if (isset($context->conditions['context_field']['values'][1]) &&
+          (isset($context->conditions['context_field']['options']['context_field_category'])) &&
+          ($context->conditions['context_field']['options']['context_field_category'] == $cat) ){
+          $context_options[$key] = $context->description ? $context->description : $key;
+        }
+      }
+      $field_form['context'] = array(
+        '#title' => $instance['label'],
+        '#type' => 'select',
+        '#options' => $context_options,
+       '#autocomplete_path' => "context_field/autocomplete/context/tesme",
+       // '#ajax' => array(
+       //   'callback' => 'context_field_select_callback',
+       //   'wrapper' => 'context_field_wrapper',
+       //   'method' => 'replace',
+       //   'effect' => 'fade',
+       // ),
+        '#default_value' => isset($items[$delta]['context']) ? $items[$delta]['context'] : '',
+        //'#prefix' => "<div id = 'context_field_wrapper'>",
+        //'#suffix' => "</div>",
+      );
+      // if someone want to create a new field turn the box into a textfield
+      /*
+      if ($form_state['values'][$instance['field_name']][$langcode][$delta]['context'] == 'createa') {
+        $form_state['values'][$instance['field_name']][$langcode][$delta]['context'] = '';
+        $form_state['input'][$instance['field_name']][$langcode][$delta]['context'] = '';
+        $field_form['context']['#type'] = 'textfield';
+        $field_form['context']['#default_value'] = '';
+        $field_form['context']['#ajax']['event'] = 'cancel';
+        //$field_form['context']['description'] = "<a class='context-field-cancel'>cancel</a>";
+        //@TODO: add cancel on text field
+        //$field_form['context']['#suffix'] = "<a class='context-field-cancel'>cancel</a></div>";
+      }
+      */
+      /*
+      $form['context_create'] = array(
+        '#type'=> 'button',
+        '#value' => $create_new_title,
+        '#ajax' => array(
+          'callback' => 'context_field_select_callback',
+          'wrapper' => 'context_field_wrapper',
+          'method' => 'replace',
+          'effect' => 'fade',
+        ),
+      );
+      */
+      return $field_form;
+    break;
+    case 'context_field':
+    case 'context_field_default':
+      if($instance['widget']['settings']['form_element']['user_toggle']) {
+        $default_value = isset($items[$delta]['context']) ? (bool) $items[$delta]['context'] : 0;
+        $field_form['context'] = array(
+          '#type' => 'checkbox',
+          '#title' => $instance['label'],
+          '#description' => $instance['description'],
+          '#default_value' => $default_value,
+        );
+      }
+      else {
+        $field_form['context'] = array(
+          '#type' => 'hidden',
+          '#value' => isset($items[$delta]['context']) ? $items[$delta]['context'] : '',
+        );
+      }
+      return $field_form;
+    break;
+
+    default :
+      $field_form['context'] = array(
+        '#type' => 'hidden',
+        '#value' => isset($items[$delta]['context']) ? $items[$delta]['context'] : '',
+      );
+      return $field_form;
+    break;
+  }
+}
+
+
+/*
+ * implements hook_field_update()
+ */
+function context_field_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  context_field_field_insert($entity_type, $entity, $field, $instance, $langcode, $items);
+}
+
+/*
+ * implements hook_field_insert()
+ *
+ * we set the related context name to context_field-ENTITYTYPE-ID
+ * if we are using the auto create widget
+ */
+function context_field_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  $entity_info = entity_get_info($entity_type);
+  $id_field = $entity_info['entity keys']['id'];
+  $id = $entity->{$id_field};
+  if (empty($items)) {
+    $items[0] = array();
+  }
+  $default_name = $instance['settings']['default_context'];
+  switch ($instance['widget']['type']) {
+    case 'context_field_autocomplete' :
+      foreach($items as $id =>$value) {
+        $string = $items[$id]['context'];
+        if (preg_match("/\[(.*)\]/", $string, $matches)) {
+          $items[$id]['context'] = $matches[1];
+        }
+        elseif(!empty($string) && $instance['widget']['settings']['form_element']['allow_create']) {
+          $items[$id]['context'] = preg_replace("/[^a-z0-9_]+/", "_", strtolower($string));
+
+          $context = context_load($item[$id]['context']);
+          if (is_array($context)) {
+            $cat = $instance['widget']['settings']['form_element']['category'];
+            context_field_clone_default($default_name, $items[$id]['context'], $string, $cat );
+          }
+        }
+      }
+    break;
+    case 'context_field_default' :
+    break;
+    case 'context_field' :
+      //set the context name to a entity spacific name
+      $custom_name = "context_field-{$entity_type}-{$id}";
+      //lets see if we already have a context
+      $context = context_load($custom_name);
+      // If user toggle is enabled then we need to create or delete the 
+      // context bases on the setting of the context
+      if($instance['widget']['settings']['form_element']['user_toggle']) {
+        if ($items[0]['context']) {
+          //set the context to our custom name
+          $items[0]['context'] = $custom_name;
+          if (!$context) {
+            context_field_clone_default($default_name, $custom_name); 
+          }
+        }
+        else {
+          //set context to false as we do not have one
+          $items[0]['context'] = FALSE;
+          // if there is a context delete it
+          if ($context) {
+            context_delete($context);
+          }
+        }
+
+      }
+      //If we are not toggling then we create unless it already exists
+      else {
+        $items[0]['context'] = $custom_name;
+        if (!context_load($custom_name)) {
+          context_field_clone_default($default_name, $custom_name);  
+        }
+      }
+    break;
+  }
+}
+
+/*
+ * implements hook_field_load()
+ *
+ * We need to set the context if we are using the use default widget
+ */
+function context_field_field_load($entity_type, &$entities, $field, $instances, $langcode, &$items,  $age) {
+  foreach ($instances as $instance) {
+    switch ($instance['widget']['type']) {
+      case 'context_field_select' :
+      break;
+      // If we are using the default context set it now
+      case 'context_field_default' :
+        foreach ($items as $id => $item) {
+           
+          if(!$instance['widget']['settings']['form_element']['user_toggle'] || (isset($items[$id][0]['context']) && $items[$id][0]['context'])) {
+            $context = $instance['settings']['default_context'];
+            $items[$id] = array(0 => array('context' => $context));
+          }
+          else {
+            $items[$id] = array(0 => array('context' => FALSE));
+          }
+        }
+      break;
+      case 'context_field' :
+      break;
+    }
+  }
+}
+
+/*
+ * Implements hook_field_delete()
+ */
+function context_field_field_delete($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  //should remove context
+}
+
+/*
+ * Implements hook_field_formatter_info()
+ */
+function context_field_field_formatter_info() {
+  return array(
+    'context_field_context' => array(
+      'label' => 'Set Context',
+      'field types' => array('context_field'),
+    ),
+  );
+}
+/*
+ * Implements hook_field_formatter_view()
+ *
+ * For the formatter we are setting the context saved in the field
+ * and returning an empty array
+ */
+
+function context_field_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $path = drupal_get_path("module", 'context_field');
+  drupal_add_css($path . '/context_field.css');
+  $entity_info = entity_get_info($entity_type);
+  $id_field = $entity_info['entity keys']['id'];
+  $id = $entity->{$id_field};
+
+  if (isset($entity->{$instance['field_name']}[$langcode]) &&
+     ($plugin = context_get_plugin('condition', 'context_field'))
+  ) {
+    foreach ($entity->{$instance['field_name']}[$langcode] as $field_value) {
+      if ($instance['settings']['use_default']) {
+        $plugin->execute($instance['settings']['default_context']);
+      }
+      else {
+        $plugin->execute($field_value['context']);
+      }
+      
+      // if we are using the context_ui add which blocks should be allowed
+      // to Drupal.settings
+      if (context_isset('context_ui', 'context_ui_editor_present')) {
+        // set a value for which blocks should be allowed in the inline editor
+        // we are setting this in js
+        // TODO: use js to limit these values
+        $allowed_blocks = &drupal_static(__FUNCTION__);
+        $allowed_blocks[$field_value['context']] = $instance['settings']['allowed_blocks'];
+        drupal_add_js(array("context_field_allowed_blocks" => $allowed_blocks), 'setting');
+      }
+    }
+  }
+ 
+  return array();
+}
+
+function context_field_page_alter(&$page) {
+  $contexts = context_active_contexts();
+  if (context_isset('context_ui', 'context_ui_editor_present')) {
+    // set a value for which blocks should be allowed in the inline editor
+    //context_set("context_field","allowed_blocks", $instance['settings']['allowed_blocks']);
+
+    //build a inline editor 
+    //$context = context_load($field_value['context']);
+    $contexts = context_active_contexts();
+    $form = drupal_get_form('context_ui_editor', $contexts);
+    //$form = drupal_get_form('context_ui_editor', array($context));
+    $path = drupal_get_path("module", 'context_field');
+    drupal_add_library('system', 'ui.dialog');
+    drupal_add_js($path . '/context_field.js', array('type' => 'file', 'weight' => 50)); 
+    drupal_add_css($path . '/context_field.css');
+
+    $page['content']['context_ui_editor'] = array(
+      0 => array(
+        '#type' => 'markup',
+        '#markup' => '<div style="display:none;" id="context_field-context-ui">' . drupal_render($form) . '</div>',
+      ),
+    );
+  }
+
+}

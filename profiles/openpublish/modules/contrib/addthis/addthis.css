@@ -1,0 +1,10 @@
+/* $Id: addthis.css,v 1.4 2009/11/14 09:52:55 wesku Exp $ */
+
+.addthis {
+  display:inline;
+}
+
+.addthis img {
+  vertical-align: bottom;
+  margin-bottom: 2px;
+}

@@ -1,0 +1,57 @@
+<?php
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function views_boxes_ctools_plugin_api($module, $api) {
+  if ($module == 'boxes' && $api == 'plugins') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_boxes_plugins().
+ */
+function views_boxes_boxes_plugins() {
+  $info = array();
+  $path = drupal_get_path('module', 'views_boxes') . '/plugins';
+  $info['view'] = array(
+    'title' => 'View Box',
+    'handler' => array(
+      'parent' => 'box',
+      'class' => 'views_boxes_view',
+      'file' => 'views_boxes_view.inc',
+      'path' => $path,
+    ),
+  );
+  return $info;
+}
+
+function views_boxes_view_id_callback($form, $form_state) {
+  $key = $form_state['clicked_button']['#key'];
+  $return['settings'] = $form['options']['settings']["{$key}_group"];
+  return $return;
+}
+
+function views_boxes_view_settings_callback($form, $form_state) {
+  $return['settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Settings',
+    '#prefix' => '<div id="view_settings">',
+    '#suffix' => '</div>',
+    'reload' => array(
+    '#markup' => t('Please save and edit again to select settings'),
+    ),
+  ); 
+  $return['settings'] = $form['options']['settings'];
+  return $return;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function views_boxes_views_api() {
+  return array(
+    'api' => views_api_version(), //should not be using this
+  );
+}

@@ -1,0 +1,11 @@
+<?php
+
+include_once('phase2_profile.features.inc');
+include_once('phase2_profile.theme.inc');
+
+function phase2_profile_form_node_form_alter(&$form, &$form_state) {
+  if ($form['type']['#value'] == 'profile') {
+    $form['title']['#attributes']['readonly'] = TRUE;
+    $form['title']['#description'] = t('This is set by entering the First and Last name or Organization name. It will be filled in automatically, and used as the display name throughout the site.');
+  }
+}

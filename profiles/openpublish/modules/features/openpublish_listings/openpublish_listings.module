@@ -1,0 +1,30 @@
+<?php
+/**
+ * @file
+ * Code for the OpenPublish Listings feature.
+ */
+
+include_once('openpublish_listings.features.inc');
+
+/**
+ * implements hook_views_query_alter()
+ * 
+ * ignore the current node being viewed for the related content
+ * carousel
+ */ 
+function openpublish_listings_views_query_alter(&$view, &$query) {
+	
+	if ($view->name == "op_recent_content" && 
+		($view->current_display == "block_5" || $view->current_display == "block_6")) {
+		$item = menu_get_item();
+		
+		if (!empty($item['page_arguments'][0]->nid)) {
+			$nid = $item['page_arguments'][0]->nid;
+			$query->where[0]['conditions'][] = array(
+				'field' => 'node.nid',
+				'value' => $nid,
+				'operator' => '<>',
+			);
+		}
+	}
+}

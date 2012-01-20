@@ -1,0 +1,16 @@
+; $Id: addthis.info,v 1.7 2009/11/14 09:52:55 wesku Exp $
+name = AddThis
+description = Creates AddThis button as a block, to be used in themes and to node links.
+core = 7.x
+project = "addthis"
+datestamp = "1242663607"
+files[] = "addthis.module"
+files[] = "addthis.admin.inc"
+
+
+; Information added by drupal.org packaging script on 2010-10-21
+version = "7.x-2.1-beta1"
+core = "7.x"
+project = "addthis"
+datestamp = "1287691291"
+

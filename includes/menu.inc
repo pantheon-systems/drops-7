@@ -3555,7 +3555,7 @@ function _menu_router_build($callbacks) {
       $sort[$path] = $number_parts;
     }
   }
-  array_multisort($sort, SORT_NUMERIC, $menu);
+  array_multisort($sort, SORT_NUMERIC, $menu, SORT_STRING);
   // Apply inheritance rules.
   foreach ($menu as $path => $v) {
     $item = &$menu[$path];

@@ -1,0 +1,82 @@
+; $Id $
+name = OpenPublish
+description = Install OpenPublish.
+core = 7.x
+
+; Core
+dependencies[] = block
+dependencies[] = contextual
+dependencies[] = dashboard
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = taxonomy
+dependencies[] = syslog
+dependencies[] = search
+dependencies[] = shortcut
+dependencies[] = toolbar
+dependencies[] = overlay
+dependencies[] = field
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = rdf
+
+
+; Contrib
+;dependencies[] = addthis
+dependencies[] = apps
+dependencies[] = conditional_styles
+dependencies[] = context
+dependencies[] = ctools
+dependencies[] = date
+dependencies[] = delta
+dependencies[] = diff
+dependencies[] = entity
+dependencies[] = entitycache
+dependencies[] = features
+dependencies[] = field_group
+dependencies[] = googleanalytics
+dependencies[] = imce
+dependencies[] = imce_wysiwyg
+dependencies[] = nodeblock
+dependencies[] = nodeconnect
+dependencies[] = nodequeue
+dependencies[] = omega_tools
+dependencies[] = openidadmin
+dependencies[] = pathauto
+dependencies[] = node_reference
+dependencies[] = strongarm
+dependencies[] = token
+dependencies[] = views
+dependencies[] = views_arguments_extras
+dependencies[] = views_content
+dependencies[] = views_ui
+dependencies[] = wysiwyg
+dependencies[] = xmlsitemap
+dependencies[] = filefield_sources
+dependencies[] = video_embed_field
+dependencies[] = views_node_taxonomy_filter
+; dependencies[] = ga_stats
+dependencies[] = views_infinite_scroll
+dependencies[] = libraries
+
+
+; OpenPublish
+dependencies[] = openpublish_article
+dependencies[] = openpublish_author
+dependencies[] = openpublish_blog_post
+dependencies[] = openpublish_site_page
+dependencies[] = openpublish_media
+dependencies[] = phase2_profile
+dependencies[] = context_field
+dependencies[] = openpublish_section_fronts
+dependencies[] = openpublish_general
+
+libraries[ckeditor][download][type] = get
+libraries[ckeditor][download][url] = http://download.cksource.com/CKEditor/CKEditor/CKEditor%203.5/ckeditor_3.5.tar.gz
+libraries[colorbox][download][type] = get
+libraries[colorbox][download][url] = http://colorpowered.com/colorbox/colorbox.zip

@@ -1,0 +1,64 @@
+<?php
+/**
+ * Implementation of hook_schema()
+ *
+ * create tables ga_stats_metrics and ga_stats_count
+ */
+function ga_stats_schema() {
+  $schema = array();
+  $schema['ga_stats_count'] = array(
+    'description' => 'Stores counts for different metics',
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'not null' => FALSE,
+        'description' => 'nid of related node',
+      ),
+      'url' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => FALSE,
+        'description' => 'url of page',
+      ),
+      'metric' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => FALSE,
+        'description' => 'name of metric',
+      ),
+      'timeframe' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => FALSE,
+        'description' => 'timeframe of metric'
+      ),
+      'count' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'number of reads',
+      ),
+    ),
+    'indexes' => array(
+      'ga_stats_metric' => array('metric'), 
+      'ga_stats_timeframe' => array('timeframe'),
+      'ga_stats_nid' => array('nid')
+    ) 
+  );
+  return $schema;
+}
+
+/*
+ * Implementation of hook_install
+ */
+function ga_stats_install() {
+ 
+}
+
+/*
+ * Implementation of hook_uninstall
+ */
+function ga_stats_uninstall() {
+  variable_del('ga_stats_email');
+  variable_del('ga_stats_password');
+  variable_del('ga_stats_profile');
+}

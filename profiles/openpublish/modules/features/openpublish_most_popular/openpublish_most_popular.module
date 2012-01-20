@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the OpenPublish Most Popular feature.
+ */
+
+include_once('openpublish_most_popular.features.inc');

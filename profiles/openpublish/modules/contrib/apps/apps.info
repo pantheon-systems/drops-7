@@ -1,0 +1,17 @@
+name = Apps
+description = Provides Interface for Install Apps from A drupal app server
+package = Distribution Management
+version = 7.x-1.0
+core = 7.x
+
+files[] = apps.module
+files[] = apps.updater.inc
+files[] = apps.installer.inc
+files[] = apps.test
+
+; Information added by drupal.org packaging script on 2011-09-30
+version = "7.x-1.0-beta4"
+core = "7.x"
+project = "apps"
+datestamp = "1317417700"
+

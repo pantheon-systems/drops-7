@@ -1,0 +1,91 @@
+<?php
+// $Id: openidadmin.module,v 1.2.4.1 2010/09/15 16:52:02 jmiccolis Exp $ 
+
+/**
+ * @file
+ * OpenID Admin module
+ *
+ * Bulk adding of OpenIDs for Drupal accounts
+ * 
+ * By Jose A. Reyero
+ * Development Seed, http://www.developmentseed.org
+ * 
+ */
+
+/**
+ * Implementation of hook_permission()
+ */
+function openidadmin_permission() {
+  return array(
+    'add list of open ids' => array(
+      'title' => t('Add list of open ids'),
+      'description' => t('Add list of open ids')
+    )
+  );
+}
+
+/**
+ * Implementation of hook_form_alter() for openid_user_add.
+ */
+function openidadmin_form_openid_user_add_alter(&$form, $form_state) {
+  // We may be in some different location in the menu tree. Try both loaders.
+  $account = menu_get_object('user') ? menu_get_object('user') : menu_get_object('user_category');
+  if ($account && user_edit_access($account) && user_access('add list of open ids')) {
+    $form['openid_identifier']['#access'] = FALSE;
+    $form['account'] = array('#type' => 'value', '#value' => $account);
+    $form['list'] = array(
+      '#weight' => -1,
+      '#type' => 'textarea',
+      '#title' => t('List of OpenIDs'),
+      '#required' => TRUE,
+      '#description' => t('Add a list of OpenIDs for this account, one per line.'),
+      '#element_validate' => array('openidadmin_list_form_validate'),
+    );
+    $form['submit']['#value'] = t('Add');
+    $form['actions']['submit']['#submit'][] = 'openidadmin_list_form_submit';
+  }
+}
+
+/**
+ * Form callback. List validation
+ */
+function openidadmin_list_form_validate($element, &$form_state) {
+  foreach (openidadmin_normalize_list($element['#value']) as $claimed_id) {
+    // Check for existing entries.
+    if ($uid = db_query("SELECT uid FROM {authmap} WHERE authname = :claimed_id", array(':claimed_id' => $claimed_id,))->fetchField()) {
+      $account = user_load($uid);
+      form_set_error('list', t('The OpenID %identity is already in use on this site for the user !name.'));
+    }
+  }
+}
+
+/**
+ * Form callback. List submission
+ */
+function openidadmin_list_form_submit($form, &$form_state) {
+  $account = $form_state['values']['account'];
+  $add_list = openidadmin_normalize_list($form_state['values']['list']);
+  foreach ($add_list as $claimed_id) {
+    db_query("INSERT INTO {authmap}(uid, authname, module) VALUES(:uid, :claimed_id, 'openid')", array(':uid' => $account->uid, ':claimed_id' => $claimed_id));
+  }
+  drupal_set_message(format_plural(count($add_list), 'One OpenID has been added.', '@count OpenIDs have been added.'));
+  return "user/$account->uid/openid";
+}
+
+/**
+ * Helper function. Convert text area into normalized list removing duplicates
+ */
+function openidadmin_normalize_list($text) {
+  module_load_include('inc', 'openid');
+  
+  $list = explode("\n", $text);
+  $normalized = array();
+  foreach ($list as $identity) {
+    if ($identity = trim($identity)) {
+      $claimed_id = openid_normalize($identity);
+      // This will take care of duplicates
+      $normalized[$claimed_id] = $claimed_id;
+    }   
+  }
+  return $normalized;
+}
