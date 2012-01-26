@@ -48,7 +48,7 @@ function pantheon_apachesolr_update_schema($schema) {
     watchdog('pantheon_apachesolr', "Error !error posting !schema to !url", array('!error' => curl_error($ch), '!schema' => $schema, '!url' => $url), WATCHDOG_ERROR);
   }
   else {
-    variable_set('pantheon_apachesolr_shema', $schema);
+    variable_set('pantheon_apachesolr_schema', $schema);
   }
 
   return $response;
@@ -70,7 +70,7 @@ function pantheon_apachesolr_form_apachesolr_settings_alter(&$form, &$form_state
 /**
  * Settings form for Pantheon's hyperion.
  *
- * Lets you choose a shema.xml file.
+ * Lets you choose a schema.xml file.
  */
 function pantheon_apachesolr_settings($form, &$form_state) {
   $files = drupal_system_listing("/schema.*\.xml$/", "modules", 'uri', 0);
@@ -85,11 +85,11 @@ function pantheon_apachesolr_settings($form, &$form_state) {
     '#weight' => -10,
   );
   if (count($schemas) > 0) {
-    $form['schemas']['pantheon_apachesolr_shema'] = array(
+    $form['schemas']['pantheon_apachesolr_schema'] = array(
       '#type' => 'radios',
       '#title' => t('Found schemas:'),
       '#options' => $schemas,
-      '#default_value' => variable_get('pantheon_apachesolr_shema', ''),
+      '#default_value' => variable_get('pantheon_apachesolr_schema', ''),
     );
   }
   else {
@@ -97,7 +97,7 @@ function pantheon_apachesolr_settings($form, &$form_state) {
   }
   $form['schemas']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Post shema'),
+    '#value' => t('Post schema'),
     '#options' => $schemas,
     '#submit' => array('pantheon_apachesolr_post_schema'),
   );
@@ -113,7 +113,7 @@ function pantheon_apachesolr_settings($form, &$form_state) {
  * Post the schema, set the variable.
  */
 function pantheon_apachesolr_post_schema($form, &$form_state) {
-  $result = pantheon_apachesolr_update_schema($form_state['values']['pantheon_apachesolr_shema']);
+  $result = pantheon_apachesolr_update_schema($form_state['values']['pantheon_apachesolr_schema']);
   if ($result != NULL) {
     drupal_set_message(t('Updated Solr search schema.'));
   }
