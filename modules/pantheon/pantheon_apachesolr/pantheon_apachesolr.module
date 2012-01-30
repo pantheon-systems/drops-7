@@ -60,12 +60,32 @@ function pantheon_apachesolr_update_schema($schema) {
  * Hides unnecessary settings from apachesolr.admin.inc.
  */
 function pantheon_apachesolr_form_apachesolr_settings_alter(&$form, &$form_state, $form_id) {
-  $form['apachesolr_host_settings'] = array(
+  $form['apachesolr_host_settings']['note'] = array(
     '#type' => 'item',
-    '#title' => t('Solr Environment Settings'),
-    '#markup' => '<p>'. t('No need to configure environments: Pantheon is managing your Solr settings.') .'</p>',
+    '#title' => t('Pantheon Notice'),
+    '#markup' => '<p>'. t('You should not need to configure solr host connections: Pantheon is managing your Solr connection settings. However, you can use this admin interface to configure bias, facets, etc.') .'</p>',
+    '#weight' => -10,
   );
+  // We remove the "operations" part of the table, which was "edit" and "clone".
+  // These aren't supported.
+  unset($form['apachesolr_host_settings']['table']['#header'][3]);
+  foreach($form['apachesolr_host_settings']['table']['#rows'] as $rid => $row) {
+    unset($form['apachesolr_host_settings']['table']['#rows'][$rid]['data']['edit']);
+    unset($form['apachesolr_host_settings']['table']['#rows'][$rid]['data']['clone']);
+    unset($form['apachesolr_host_settings']['table']['#rows'][$rid]['data']['delete']);
+  }
 }
+
+function pantheon_apachesolr_form_apachesolr_environment_edit_form_alter(&$form, &$form_state, $form_id) {
+  $form['note'] = array(
+    '#type' => 'item',
+    '#title' => t('Pantheon Notice'),
+    '#markup' => '<p>'. t('You should not need to configure solr host connections: Pantheon is managing your Solr connection settings. However, you can use this admin interface to configure bias, facets, etc.') .'</p>',
+    '#weight' => -10,
+  );
+  unset($form['actions']['save']);
+}
+
 
 /**
  * Settings form for Pantheon's hyperion.
