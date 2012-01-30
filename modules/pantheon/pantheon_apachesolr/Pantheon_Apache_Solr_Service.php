@@ -812,6 +812,15 @@ class PantheonApacheSolrService {
       }
       else {
         $params[] = $key . '=' . rawurlencode($value);
+        if ($key == 'hl.fl') {
+          $params[] = 'hl=true';
+          $params[] = 'hl.simple.pre=' . rawurlencode('<strong>');
+          $params[] = 'hl.simple.post=' . rawurlencode('</strong>');
+          $params[] = 'hl.snippets=3';
+          $params[] = 'f.content.hl.alternateField=teaser';
+          $params[] = 'f.content.hl.maxAlternateFieldLength=256';
+          //$params[] = 'f.content.hl.fragmenter=regex';
+        }
       }
     }
 
