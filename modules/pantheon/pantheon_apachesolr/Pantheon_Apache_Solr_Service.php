@@ -478,7 +478,6 @@ class PantheonApacheSolrService {
     else {
       // mimick the $result object from drupal_http_request()
       // TODO; better error handling
-      watchdog('pantheon_apachesolr', "Hyperion result: !result", array('!result' => print_r($response, 1)), WATCHDOG_INFO);
       $result = new stdClass();
       list($split, $result->data) = explode("\r\n\r\n", $response, 2);
       $split = preg_split("/\r\n|\n|\r/", $split);
