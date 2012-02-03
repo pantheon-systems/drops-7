@@ -13,7 +13,7 @@ function pantheon_apachesolr_enable() {
   variable_del('apachesolr_service_class');
   variable_set('apachesolr_service_class', 'PantheonApacheSolrService');
   drupal_set_message(t("Pantheon ApacheSolr module enabled. Please !link.",
-                        array('!link' => l('admin/config/search/pantheon'))));
+                        array('!link' => l(t('configure it now'), 'admin/config/search/pantheon'))));
 }
 
 function pantheon_apachesolr_disable() {
