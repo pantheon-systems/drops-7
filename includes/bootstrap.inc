@@ -2384,11 +2384,11 @@ function _drupal_bootstrap_variables() {
     } catch (PDOException $e) {
       if ($e->getCode() == '2003') {
         header('Status: 550 Database Offline');
-       	exit();
+        exit();
       }
       elseif ($e->getCode() == '42S02') {
         include_once DRUPAL_ROOT . '/includes/install.inc';
-       	install_goto('install.php');
+        install_goto('install.php');
       }
     }
   }
