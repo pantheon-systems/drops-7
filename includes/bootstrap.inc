@@ -2381,10 +2381,15 @@ function _drupal_bootstrap_variables() {
   if (!empty($GLOBALS['databases']) && variable_get('pressflow_smart_start', FALSE)) {
     try {
       $result = db_query('SELECT s.name FROM {system} s WHERE s.name = :name', array(':name' => 'system'));
-    } catch (Exception $e) {
-      // Redirect to the installer if an essential table is missing.
-      include_once DRUPAL_ROOT . '/includes/install.inc';
-      install_goto('install.php');
+    } catch (PDOException $e) {
+      if ($e->getCode() == '2003') {
+        header('Status: 550 Database Offline');
+       	exit();
+      }
+      elseif ($e->getCode() == '42S02') {
+        include_once DRUPAL_ROOT . '/includes/install.inc';
+       	install_goto('install.php');
+      }
     }
   }
 
