@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 CKEDITOR.dialog.add( 'select', function( editor )
@@ -188,6 +188,7 @@ CKEDITOR.dialog.add( 'select', function( editor )
 						label : editor.lang.common.name,
 						'default' : '',
 						accessKey : 'N',
+						align : 'center',
 						style : 'width:350px',
 						setup : function( name, element )
 						{
@@ -236,11 +237,13 @@ CKEDITOR.dialog.add( 'select', function( editor )
 					{
 						type : 'hbox',
 						widths : [ '175px', '170px' ],
+						align : 'center',
 						children :
 						[
 							{
 								id : 'txtSize',
 								type : 'text',
+								align : 'center',
 								labelLayout : 'horizontal',
 								label : editor.lang.select.size,
 								'default' : '',
@@ -279,6 +282,7 @@ CKEDITOR.dialog.add( 'select', function( editor )
 					{
 						type : 'hbox',
 						widths : [ '115px', '115px' ,'100px' ],
+						align : 'top',
 						children :
 						[
 							{
@@ -404,7 +408,6 @@ CKEDITOR.dialog.add( 'select', function( editor )
 								[
 									{
 										type : 'button',
-										id : 'btnAdd',
 										style : '',
 										label : editor.lang.select.btnAdd,
 										title : editor.lang.select.btnAdd,
@@ -428,7 +431,6 @@ CKEDITOR.dialog.add( 'select', function( editor )
 									},
 									{
 										type : 'button',
-										id : 'btnModify',
 										label : editor.lang.select.btnModify,
 										title : editor.lang.select.btnModify,
 										style : 'width:100%;',
@@ -451,7 +453,6 @@ CKEDITOR.dialog.add( 'select', function( editor )
 									},
 									{
 										type : 'button',
-										id : 'btnUp',
 										style : 'width:100%;',
 										label : editor.lang.select.btnUp,
 										title : editor.lang.select.btnUp,
@@ -468,7 +469,6 @@ CKEDITOR.dialog.add( 'select', function( editor )
 									},
 									{
 										type : 'button',
-										id : 'btnDown',
 										style : 'width:100%;',
 										label : editor.lang.select.btnDown,
 										title : editor.lang.select.btnDown,
@@ -494,7 +494,6 @@ CKEDITOR.dialog.add( 'select', function( editor )
 						[
 							{
 								type : 'button',
-								id : 'btnSetValue',
 								label : editor.lang.select.btnSetValue,
 								title : editor.lang.select.btnSetValue,
 								onClick : function()
@@ -508,7 +507,6 @@ CKEDITOR.dialog.add( 'select', function( editor )
 							},
 							{
 								type : 'button',
-								id : 'btnDelete',
 								label : editor.lang.select.btnDelete,
 								title : editor.lang.select.btnDelete,
 								onClick : function()

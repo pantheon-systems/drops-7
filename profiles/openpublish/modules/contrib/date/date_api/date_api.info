@@ -7,15 +7,11 @@ php = 5.2
 stylesheets[all][] = date.css
 
 files[] = date_api.module
-files[] = date_api_elements.inc
-files[] = date_api_ical.inc
 files[] = date_api_sql.inc
-files[] = date_api.admin.inc
-files[] = date_api.install
-files[] = theme/theme.inc
-; Information added by drupal.org packaging script on 2011-12-20
-version = "7.x-2.0-rc1"
+
+; Information added by drupal.org packaging script on 2012-02-14
+version = "7.x-2.1"
 core = "7.x"
 project = "date"
-datestamp = "1324415138"
+datestamp = "1329214840"
 

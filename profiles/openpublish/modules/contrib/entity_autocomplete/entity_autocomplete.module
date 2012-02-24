@@ -63,12 +63,7 @@ function entity_autocomplete($type, $string = '') {
  * Autocomplete callback for all entity types restricted by bundle
  */
 function entity_autocomplete_by_bundle($type, $bundles_in, $string = '') {
-  $bundles = array();
-  foreach(explode("+", $bundles_in) as $bundle) {
-    $bundles[] = "'$bundle'";
-  }
-  $bundle_string = implode(',', $bundles);
-
+  
   $entity_type = entity_get_info($type);
   $table = $entity_type['base table'];
   $id_field = $entity_type['entity keys']['id'];
@@ -77,12 +72,38 @@ function entity_autocomplete_by_bundle($type, $bundles_in, $string = '') {
 
   $matches = array();
   if ($string) {
+    //Handle taxonomy seperately as its bundles work differently
+    if($type == 'taxonomy_term') {
+      $vocabs = taxonomy_get_vocabularies();
+      $vids = array();
+      foreach($vocabs as $vid=>$vocab){
+        $vids[$vocab->machine_name] = $vid;
+      }
+
+      $bundles = array();
+      foreach(explode("+", $bundles_in) as $bundle) {
+        if(isset($vids[$bundle])) {
+          $bundles[] = "'$vids[$bundle]'";
+        }
+      }
+
+      $bundle_field = 'vid';
+    } else {
+      $bundles = array();
+      foreach(explode("+", $bundles_in) as $bundle) {
+        $bundles[] = "'$bundle'";
+      }
+     
+    }
+    $bundle_string = implode(',', $bundles);
     $query = db_select($table, 'n');
     $query->addField('n', $id_field, 'id');
     $query->addField('n', $label_field, 'label');
     $query->condition('n.'.$label_field, '%' . $string . '%', 'LIKE');
-    $query->where("n.$bundle_field in ($bundle_string)");
-
+    
+    if ($bundle_string) {
+      $query->where("n.$bundle_field in ($bundle_string)");
+    }  
     $result = $query->execute();
     $data = array();
     foreach ($result->fetchAll() as $entity) {

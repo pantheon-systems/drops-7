@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -34,8 +34,8 @@ CKEDITOR.lang['ro'] =
 	editorTitle : 'Rich text editor, %1, press ALT 0 for help.', // MISSING
 
 	// ARIA descriptions.
-	toolbars	: 'Editor toolbars', // MISSING
-	editor		: 'Rich Text Editor', // MISSING
+	toolbar	: 'Toolbar', // MISSING
+	editor	: 'Rich Text Editor', // MISSING
 
 	// Toolbar buttons without dialogs.
 	source			: 'Sursa',
@@ -121,8 +121,6 @@ CKEDITOR.lang['ro'] =
 		alignBottom		: 'Jos',
 		invalidHeight	: 'Height must be a number.', // MISSING
 		invalidWidth	: 'Width must be a number.', // MISSING
-		invalidCssLength	: 'Value specified for the "%1" field must be a positive number with or without a valid CSS measurement unit (px, %, in, cm, mm, em, ex, pt, or pc).', // MISSING
-		invalidHtmlLength	: 'Value specified for the "%1" field must be a positive number with or without a valid HTML measurement unit (px or %).', // MISSING
 
 		// Put the voice-only part of the label in the span.
 		unavailable		: '%1<span class="cke_accessibility">, unavailable</span>' // MISSING
@@ -177,19 +175,18 @@ CKEDITOR.lang['ro'] =
 		langDirRTL		: 'dreapta-stânga (RTL)',
 		acccessKey		: 'Tasta de acces',
 		name			: 'Nume',
-		langCode			: 'Direcţia cuvintelor',
-		tabIndex			: 'Indexul tabului',
-		advisoryTitle		: 'Titlul consultativ',
+		langCode		: 'Direcţia cuvintelor',
+		tabIndex		: 'Indexul tabului',
+		advisoryTitle	: 'Titlul consultativ',
 		advisoryContentType	: 'Tipul consultativ al titlului',
 		cssClasses		: 'Clasele cu stilul paginii (CSS)',
 		charset			: 'Setul de caractere al resursei legate',
 		styles			: 'Stil',
-		rel			: 'Relationship', // MISSING
-		selectAnchor		: 'Selectaţi o ancoră',
+		selectAnchor	: 'Selectaţi o ancoră',
 		anchorName		: 'după numele ancorei',
-		anchorId			: 'după Id-ul elementului',
-		emailAddress		: 'Adresă de e-mail',
-		emailSubject		: 'Subiectul mesajului',
+		anchorId		: 'după Id-ul elementului',
+		emailAddress	: 'Adresă de e-mail',
+		emailSubject	: 'Subiectul mesajului',
 		emailBody		: 'Conţinutul mesajului',
 		noAnchors		: '(Nicio ancoră disponibilă în document)',
 		noUrl			: 'Vă rugăm să scrieţi URL-ul',
@@ -203,8 +200,7 @@ CKEDITOR.lang['ro'] =
 		menu		: 'Proprietăţi ancoră',
 		title		: 'Proprietăţi ancoră',
 		name		: 'Numele ancorei',
-		errorName	: 'Vă rugăm scrieţi numele ancorei',
-		remove		: 'Remove Anchor' // MISSING
+		errorName	: 'Vă rugăm scrieţi numele ancorei'
 	},
 
 	// List style dialog
@@ -274,8 +270,8 @@ CKEDITOR.lang['ro'] =
 		invalidBorder	: 'Border size must be a number.', // MISSING
 		invalidWidth	: 'Table width must be a number.', // MISSING
 		invalidHeight	: 'Table height must be a number.', // MISSING
-		invalidCellSpacing	: 'Cell spacing must be a positive number.', // MISSING
-		invalidCellPadding	: 'Cell padding must be a positive number.', // MISSING
+		invalidCellSpacing	: 'Cell spacing must be a number.', // MISSING
+		invalidCellPadding	: 'Cell padding must be a number.', // MISSING
 
 		cell :
 		{
@@ -416,6 +412,7 @@ CKEDITOR.lang['ro'] =
 		upload		: 'Încarcă',
 		alt			: 'Text alternativ',
 		lockRatio	: 'Păstrează proporţiile',
+		unlockRatio	: 'Unlock Ratio', // MISSING
 		resetSize	: 'Resetează mărimea',
 		border		: 'Margine',
 		hSpace		: 'HSpace',
@@ -604,9 +601,9 @@ CKEDITOR.lang['ro'] =
 
 	iframe :
 	{
-		title		: 'IFrame Properties', // MISSING
-		toolbar		: 'IFrame', // MISSING
-		noUrl		: 'Please type the iframe URL', // MISSING
+		title		: 'iFrame Properties', // MISSING
+		toolbar		: 'iFrame', // MISSING
+		noUrl		: 'Please type the iFrame URL', // MISSING
 		scrolling	: 'Enable scrollbars', // MISSING
 		border		: 'Show frame border' // MISSING
 	},
@@ -717,8 +714,6 @@ CKEDITOR.lang['ro'] =
 	{
 		title		: 'About CKEditor', // MISSING
 		dlgTitle	: 'About CKEditor', // MISSING
-		help	: 'Check $1 for help.', // MISSING
-		userGuide : 'CKEditor User\'s Guide', // MISSING
 		moreInfo	: 'For licensing information please visit our web site:', // MISSING
 		copy		: 'Copyright &copy; $1. All rights reserved.' // MISSING
 	},
@@ -730,7 +725,7 @@ CKEDITOR.lang['ro'] =
 	{
 		anchor		: 'Anchor', // MISSING
 		flash		: 'Flash Animation', // MISSING
-		iframe		: 'IFrame', // MISSING
+		iframe		: 'iFrame', // MISSING
 		hiddenfield	: 'Hidden Field', // MISSING
 		unknown		: 'Unknown Object' // MISSING
 	},
@@ -749,64 +744,9 @@ CKEDITOR.lang['ro'] =
 	toolbarCollapse	: 'Collapse Toolbar', // MISSING
 	toolbarExpand	: 'Expand Toolbar', // MISSING
 
-	toolbarGroups :
-	{
-		document : 'Document', // MISSING
-		clipboard : 'Clipboard/Undo', // MISSING
-		editing : 'Editing', // MISSING
-		forms : 'Forms', // MISSING
-		basicstyles : 'Basic Styles', // MISSING
-		paragraph : 'Paragraph', // MISSING
-		links : 'Links', // MISSING
-		insert : 'Insert', // MISSING
-		styles : 'Styles', // MISSING
-		colors : 'Colors', // MISSING
-		tools : 'Tools' // MISSING
-	},
-
 	bidi :
 	{
 		ltr : 'Text direction from left to right', // MISSING
 		rtl : 'Text direction from right to left' // MISSING
-	},
-
-	docprops :
-	{
-		label : 'Proprietăţile documentului',
-		title : 'Proprietăţile documentului',
-		design : 'Design', // MISSING
-		meta : 'Meta Tags', // MISSING
-		chooseColor : 'Choose', // MISSING
-		other : '<alt>',
-		docTitle :	'Titlul paginii',
-		charset : 	'Encoding setului de caractere',
-		charsetOther : 'Alt encoding al setului de caractere',
-		charsetASCII : 'ASCII', // MISSING
-		charsetCE : 'Central European', // MISSING
-		charsetCT : 'Chinezesc tradiţional (Big5)',
-		charsetCR : 'Chirilic',
-		charsetGR : 'Grecesc',
-		charsetJP : 'Japonez',
-		charsetKR : 'Corean',
-		charsetTR : 'Turcesc',
-		charsetUN : 'Unicode (UTF-8)', // MISSING
-		charsetWE : 'Vest european',
-		docType : 'Document Type Heading', // MISSING
-		docTypeOther : 'Alt Document Type Heading',
-		xhtmlDec : 'Include declaraţii XHTML',
-		bgColor : 'Culoarea fundalului (Background Color)',
-		bgImage : 'URL-ul imaginii din fundal (Background Image URL)',
-		bgFixed : 'Fundal neflotant, fix (Non-scrolling Background)',
-		txtColor : 'Culoarea textului',
-		margin : 'Marginile paginii',
-		marginTop : 'Sus',
-		marginLeft : 'Stânga',
-		marginRight : 'Dreapta',
-		marginBottom : 'Jos',
-		metaKeywords : 'Cuvinte cheie după care se va indexa documentul (separate prin virgulă)',
-		metaDescription : 'Descrierea documentului',
-		metaAuthor : 'Autor',
-		metaCopyright : 'Drepturi de autor',
-		previewHtml : '<p>This is some <strong>sample text</strong>. You are using <a href="javascript:void(0)">CKEditor</a>.</p>' // MISSING
 	}
 };

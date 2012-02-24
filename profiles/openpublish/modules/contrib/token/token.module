@@ -273,6 +273,7 @@ function token_clear_cache() {
   drupal_static_reset('_token_profile_fields');
   drupal_static_reset('token_menu_link_load');
   drupal_static_reset('token_book_link_load');
+  drupal_static_reset('token_node_menu_link_load');
   drupal_static_reset('_token_field_info');
 }
 
@@ -1083,4 +1084,80 @@ function token_render_cache_set(&$markup, $elements) {
   $_SERVER['REQUEST_METHOD'] = 'GET';
   drupal_render_cache_set($markup, $elements);
   $_SERVER['REQUEST_METHOD'] = $original_method;
+}
+
+function token_menu_link_load_all_parents($mlid) {
+  $cache = &drupal_static(__FUNCTION__, array());
+
+  if (!is_numeric($mlid)) {
+    return array();
+  }
+
+  if (!isset($cache[$mlid])) {
+    $cache[$mlid] = array();
+    $plid = db_query("SELECT plid FROM {menu_links} WHERE mlid = :mlid", array(':mlid' => $mlid))->fetchField();
+    while ($plid && $parent = token_menu_link_load($plid)) {
+      $cache[$mlid] = array($plid => $parent['title']) + $cache[$mlid];
+      $plid = $parent['plid'];
+    }
+  }
+
+  return $cache[$mlid];
+}
+
+function token_taxonomy_term_load_all_parents($tid) {
+  $cache = &drupal_static(__FUNCTION__, array());
+
+  if (!is_numeric($tid)) {
+    return array();
+  }
+
+  if (!isset($cache[$tid])) {
+    $cache[$tid] = array();
+    $parents = taxonomy_get_parents_all($tid);
+    array_shift($parents); // Remove this term from the array.
+    $parents = array_reverse($parents);
+    foreach ($parents as $term) {
+      $cache[$tid][$term->tid] = entity_label('taxonomy_term', $term);
+    }
+  }
+
+  return $cache[$tid];
+}
+
+/**
+ * Load the preferred menu link associated with a node.
+ *
+ * @param $node
+ *   A node object.
+ *
+ * @return
+ *   A menu link array from token_menu_link_load() or FALSE if a menu link was
+ *   not found.
+ *
+ * @see menu_node_prepare()
+ * @see token_menu_link_load()
+ */
+function token_node_menu_link_load($node) {
+  $cache = &drupal_static(__FUNCTIon__, array());
+
+  if (!isset($cache[$node->nid])) {
+    $mlid = FALSE;
+
+    // Nodes do not have their menu links loaded via menu_node_load().
+    if (!isset($node->menu)) {
+      // We need to clone the node as menu_node_prepare() may cause data loss.
+      // @see http://drupal.org/node/1317926
+      $menu_node = clone $node;
+      menu_node_prepare($menu_node);
+      $mlid = !empty($menu_node->menu['mlid']) ? $menu_node->menu['mlid'] : FALSE;
+    }
+    else {
+      $mlid = !empty($node->menu['mlid']) ? $node->menu['mlid'] : FALSE;
+    }
+
+    $cache[$node->nid] = $mlid;
+  }
+
+  return $cache[$node->nid] ? token_menu_link_load($cache[$node->nid]) : FALSE;
 }

@@ -28,6 +28,7 @@ function video_embed_field_video_embed_handler_info() {
       'rel' => 0,
       'autohide' => 2,
       'showinfo' => 1,
+      'modestbranding' => 0,
       'theme' => 'dark',
     ),
   );
@@ -66,14 +67,20 @@ function _video_embed_field_get_youtube_id($url){
   
   $pos = strripos($url, 'v=');
   if ($pos!== FALSE) { 
-    $pos += 2; 
+    $pos += 2;
     $pos2 = stripos($url, '&', $pos);
+    $pos_hash = stripos($url, '#', $pos);
+
+    $pos2 = _video_embed_get_min($pos2, $pos_hash);
   }
   else { 
     $pos = strripos($url, '/');
     if ($pos !== FALSE) { 
       $pos++; 
       $pos2 = stripos($url, '?', $pos);
+      $pos_hash = stripos($url, '#', $pos);
+      
+      $pos2 = _video_embed_get_min($pos2, $pos_hash);
     }
   }
   
@@ -96,6 +103,17 @@ function _video_embed_field_get_youtube_id($url){
  */
 function video_embed_field_handle_youtube($url, $settings) {
   $output = array();
+
+  //Grab the minutes and seconds, and just convert it down to seconds
+  preg_match('/#t=((?P<min>\d+)m)?((?P<sec>\d+)s)?/', $url, $matches);
+
+  //Give it some default data in case there is no #t=...
+  $matches += array(
+  	"min" => 0,
+  	"sec" => 0,
+  );
+  $time = ($matches["min"] * 60) + $matches["sec"];
+  $settings['start'] = $time;
   
   $id = _video_embed_field_get_youtube_id($url);
   if (!$id) {
@@ -107,8 +125,8 @@ function video_embed_field_handle_youtube($url, $settings) {
   $settings['wmode'] = 'opaque';
   $settings_str = _video_embed_code_get_settings_str($settings);
   
-  $output['#markup'] = '<iframe style="width:' . $settings['width'] . 'px; height:' . $settings['height'] . 'px;" src="http://www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
-  
+  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://www.youtube.com/embed/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+
   return $output;
 }
 
@@ -119,6 +137,7 @@ function video_embed_field_handle_youtube_thumbnail($video_url){
   $info = array();
   
   $id = _video_embed_field_get_youtube_id($video_url);
+  
   if ($id) {
     $info['id'] = $id;
     $info['url'] = 'http://img.youtube.com/vi/'.$id.'/0.jpg';
@@ -179,6 +198,12 @@ function video_embed_field_handler_youtube_form($defaults) {
     '#description' => t('Display information like the video title and rating before the video starts playing.'),
     '#default_value' => $defaults['showinfo'],
   );
+  $form['modestbranding'] = array(
+  	'#type' => 'checkbox',
+  	'#title' => t('Hide Youtube logo'),
+  	'#description' => t('Hide the Youtube logo button on the player'),
+  	'#default_value' => $defaults['modestbranding']
+  );
   $form['autohide'] = array(
     '#type' => 'radios',
     '#options' => array(
@@ -215,7 +240,7 @@ function video_embed_field_handle_vimeo($url, $settings) {
   $settings['portrait'] = 0;
   $settings_str = _video_embed_code_get_settings_str($settings);
   
-  $output['#markup'] = '<iframe style="width:' . $settings['width'] . 'px; height:' . $settings['height'] . 'px;" src="http://player.vimeo.com/video/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
+  $output['#markup'] = '<iframe width="' . $settings['width'] . '" height="' . $settings['height'] . '" src="http://player.vimeo.com/video/' . $id . '?' . $settings_str . '" frameborder="0" allowfullscreen></iframe>';
   
   return $output;
 }
@@ -287,4 +312,17 @@ function video_embed_field_handler_vimeo_form($defaults) {
   );
   
   return $form;
+}
+
+/**
+ *  Calculate the min index for use in finding the id of a youtube video
+ */
+function _video_embed_get_min($pos1, $pos2) {
+  if(!$pos1) {
+    return $pos2;
+  } else if(!$pos2) {
+    return $pos1;
+  } else {
+    return min($pos1, $pos2);
+  }
 }

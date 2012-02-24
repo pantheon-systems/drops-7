@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -34,8 +34,8 @@ CKEDITOR.lang['km'] =
 	editorTitle : 'Rich text editor, %1, press ALT 0 for help.', // MISSING
 
 	// ARIA descriptions.
-	toolbars	: 'Editor toolbars', // MISSING
-	editor		: 'Rich Text Editor', // MISSING
+	toolbar	: 'Toolbar', // MISSING
+	editor	: 'Rich Text Editor', // MISSING
 
 	// Toolbar buttons without dialogs.
 	source			: 'កូត',
@@ -121,8 +121,6 @@ CKEDITOR.lang['km'] =
 		alignBottom		: 'ខាងក្រោម',
 		invalidHeight	: 'Height must be a number.', // MISSING
 		invalidWidth	: 'Width must be a number.', // MISSING
-		invalidCssLength	: 'Value specified for the "%1" field must be a positive number with or without a valid CSS measurement unit (px, %, in, cm, mm, em, ex, pt, or pc).', // MISSING
-		invalidHtmlLength	: 'Value specified for the "%1" field must be a positive number with or without a valid HTML measurement unit (px or %).', // MISSING
 
 		// Put the voice-only part of the label in the span.
 		unavailable		: '%1<span class="cke_accessibility">, unavailable</span>' // MISSING
@@ -177,19 +175,18 @@ CKEDITOR.lang['km'] =
 		langDirRTL		: 'ពីស្តាំទៅឆ្វេង(RTL)',
 		acccessKey		: 'ឃី សំរាប់ចូល',
 		name			: 'ឈ្មោះ',
-		langCode			: 'ទិសដៅភាសា',
-		tabIndex			: 'លេខ Tab',
-		advisoryTitle		: 'ចំណងជើង ប្រឹក្សា',
+		langCode		: 'ទិសដៅភាសា',
+		tabIndex		: 'លេខ Tab',
+		advisoryTitle	: 'ចំណងជើង ប្រឹក្សា',
 		advisoryContentType	: 'ប្រភេទអត្ថបទ ប្រឹក្សា',
 		cssClasses		: 'Stylesheet Classes',
 		charset			: 'លេខកូតអក្សររបស់ឈ្នាប់',
 		styles			: 'ម៉ូត',
-		rel			: 'Relationship', // MISSING
-		selectAnchor		: 'ជ្រើសរើសយុថ្កា',
+		selectAnchor	: 'ជ្រើសរើសយុថ្កា',
 		anchorName		: 'តាមឈ្មោះរបស់យុថ្កា',
-		anchorId			: 'តាម Id',
-		emailAddress		: 'អ៊ីមែល',
-		emailSubject		: 'ចំណងជើងអត្ថបទ',
+		anchorId		: 'តាម Id',
+		emailAddress	: 'អ៊ីមែល',
+		emailSubject	: 'ចំណងជើងអត្ថបទ',
 		emailBody		: 'អត្ថបទ',
 		noAnchors		: '(No anchors available in the document)', // MISSING
 		noUrl			: 'សូមសរសេរ អាស័យដ្ឋាន URL',
@@ -203,8 +200,7 @@ CKEDITOR.lang['km'] =
 		menu		: 'ការកំណត់យុថ្កា',
 		title		: 'ការកំណត់យុថ្កា',
 		name		: 'ឈ្មោះយុទ្ធថ្កា',
-		errorName	: 'សូមសរសេរ ឈ្មោះយុទ្ធថ្កា',
-		remove		: 'Remove Anchor' // MISSING
+		errorName	: 'សូមសរសេរ ឈ្មោះយុទ្ធថ្កា'
 	},
 
 	// List style dialog
@@ -274,8 +270,8 @@ CKEDITOR.lang['km'] =
 		invalidBorder	: 'Border size must be a number.', // MISSING
 		invalidWidth	: 'Table width must be a number.', // MISSING
 		invalidHeight	: 'Table height must be a number.', // MISSING
-		invalidCellSpacing	: 'Cell spacing must be a positive number.', // MISSING
-		invalidCellPadding	: 'Cell padding must be a positive number.', // MISSING
+		invalidCellSpacing	: 'Cell spacing must be a number.', // MISSING
+		invalidCellPadding	: 'Cell padding must be a number.', // MISSING
 
 		cell :
 		{
@@ -416,6 +412,7 @@ CKEDITOR.lang['km'] =
 		upload		: 'ទាញយក',
 		alt			: 'អត្ថបទជំនួស',
 		lockRatio	: 'អត្រាឡុក',
+		unlockRatio	: 'Unlock Ratio', // MISSING
 		resetSize	: 'កំណត់ទំហំឡើងវិញ',
 		border		: 'ស៊ុម',
 		hSpace		: 'គំលាតទទឹង',
@@ -604,9 +601,9 @@ CKEDITOR.lang['km'] =
 
 	iframe :
 	{
-		title		: 'IFrame Properties', // MISSING
-		toolbar		: 'IFrame', // MISSING
-		noUrl		: 'Please type the iframe URL', // MISSING
+		title		: 'iFrame Properties', // MISSING
+		toolbar		: 'iFrame', // MISSING
+		noUrl		: 'Please type the iFrame URL', // MISSING
 		scrolling	: 'Enable scrollbars', // MISSING
 		border		: 'Show frame border' // MISSING
 	},
@@ -717,8 +714,6 @@ CKEDITOR.lang['km'] =
 	{
 		title		: 'About CKEditor', // MISSING
 		dlgTitle	: 'About CKEditor', // MISSING
-		help	: 'Check $1 for help.', // MISSING
-		userGuide : 'CKEditor User\'s Guide', // MISSING
 		moreInfo	: 'For licensing information please visit our web site:', // MISSING
 		copy		: 'Copyright &copy; $1. All rights reserved.' // MISSING
 	},
@@ -730,7 +725,7 @@ CKEDITOR.lang['km'] =
 	{
 		anchor		: 'Anchor', // MISSING
 		flash		: 'Flash Animation', // MISSING
-		iframe		: 'IFrame', // MISSING
+		iframe		: 'iFrame', // MISSING
 		hiddenfield	: 'Hidden Field', // MISSING
 		unknown		: 'Unknown Object' // MISSING
 	},
@@ -749,64 +744,9 @@ CKEDITOR.lang['km'] =
 	toolbarCollapse	: 'Collapse Toolbar', // MISSING
 	toolbarExpand	: 'Expand Toolbar', // MISSING
 
-	toolbarGroups :
-	{
-		document : 'Document', // MISSING
-		clipboard : 'Clipboard/Undo', // MISSING
-		editing : 'Editing', // MISSING
-		forms : 'Forms', // MISSING
-		basicstyles : 'Basic Styles', // MISSING
-		paragraph : 'Paragraph', // MISSING
-		links : 'Links', // MISSING
-		insert : 'Insert', // MISSING
-		styles : 'Styles', // MISSING
-		colors : 'Colors', // MISSING
-		tools : 'Tools' // MISSING
-	},
-
 	bidi :
 	{
 		ltr : 'Text direction from left to right', // MISSING
 		rtl : 'Text direction from right to left' // MISSING
-	},
-
-	docprops :
-	{
-		label : 'ការកំណត់ ឯកសារ',
-		title : 'ការកំណត់ ឯកសារ',
-		design : 'Design', // MISSING
-		meta : 'ទិន្នន័យមេ',
-		chooseColor : 'Choose', // MISSING
-		other : '<other>',
-		docTitle :	'ចំណងជើងទំព័រ',
-		charset : 	'កំណត់លេខកូតភាសា',
-		charsetOther : 'កំណត់លេខកូតភាសាផ្សេងទៀត',
-		charsetASCII : 'ASCII', // MISSING
-		charsetCE : 'Central European', // MISSING
-		charsetCT : 'Chinese Traditional (Big5)', // MISSING
-		charsetCR : 'Cyrillic', // MISSING
-		charsetGR : 'Greek', // MISSING
-		charsetJP : 'Japanese', // MISSING
-		charsetKR : 'Korean', // MISSING
-		charsetTR : 'Turkish', // MISSING
-		charsetUN : 'Unicode (UTF-8)', // MISSING
-		charsetWE : 'Western European', // MISSING
-		docType : 'ប្រភេទក្បាលទំព័រ',
-		docTypeOther : 'ប្រភេទក្បាលទំព័រផ្សេងទៀត',
-		xhtmlDec : 'បញ្ជូល XHTML',
-		bgColor : 'ពណ៌ខាងក្រោម',
-		bgImage : 'URL របស់រូបភាពខាងក្រោម',
-		bgFixed : 'ទំព័រក្រោមមិនប្តូរ',
-		txtColor : 'ពណ៌អក្សរ',
-		margin : 'ស៊ុមទំព័រ',
-		marginTop : 'លើ',
-		marginLeft : 'ឆ្វេង',
-		marginRight : 'ស្ដាំ',
-		marginBottom : 'ក្រោម',
-		metaKeywords : 'ពាក្យនៅក្នុងឯកសារ (ផ្តាច់ពីគ្នាដោយក្បៀស)',
-		metaDescription : 'សេចក្តីអត្ថាធិប្បាយអំពីឯកសារ',
-		metaAuthor : 'អ្នកនិពន្ធ',
-		metaCopyright : 'រក្សាសិទ្ធិ៏',
-		previewHtml : '<p>This is some <strong>sample text</strong>. You are using <a href="javascript:void(0)">CKEditor</a>.</p>' // MISSING
 	}
 };

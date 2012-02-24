@@ -1,5 +1,4 @@
 <?php
-// $Id: nodeconnect.menu.inc,v 1.1 2011/01/19 22:21:39 e2thex Exp $
 /**
  * @file
  * Handles all nodeconnect menu item page callbacks

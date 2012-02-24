@@ -1,90 +1,19 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
 /**
- * Creates a CKEDITOR.dom.range instance that can be used inside a specific
- * DOM Document.
- * @class Represents a delimited piece of content in a DOM Document.
- * It is contiguous in the sense that it can be characterized as selecting all
- * of the content between a pair of boundary-points.<br>
- * <br>
- * This class shares much of the W3C
- * <a href="http://www.w3.org/TR/DOM-Level-2-Traversal-Range/ranges.html">Document Object Model Range</a>
- * ideas and features, adding several range manipulation tools to it, but it's
- * not intended to be compatible with it.
- * @param {CKEDITOR.dom.document} document The document into which the range
- *		features will be available.
- * @example
- * // Create a range for the entire contents of the editor document body.
- * var range = new CKEDITOR.dom.range( editor.document );
- * range.selectNodeContents( editor.document.getBody() );
- * // Delete the contents.
- * range.deleteContents();
+ * @class
  */
 CKEDITOR.dom.range = function( document )
 {
-	/**
-	 * Node within which the range begins.
-	 * @type {CKEDITOR.NODE_ELEMENT|CKEDITOR.NODE_TEXT}
-	 * @example
-	 * var range = new CKEDITOR.dom.range( editor.document );
-	 * range.selectNodeContents( editor.document.getBody() );
-	 * alert( range.startContainer.getName() );  // "body"
-	 */
 	this.startContainer	= null;
-
-	/**
-	 * Offset within the starting node of the range.
-	 * @type {Number}
-	 * @example
-	 * var range = new CKEDITOR.dom.range( editor.document );
-	 * range.selectNodeContents( editor.document.getBody() );
-	 * alert( range.startOffset );  // "0"
-	 */
 	this.startOffset	= null;
-
-	/**
-	 * Node within which the range ends.
-	 * @type {CKEDITOR.NODE_ELEMENT|CKEDITOR.NODE_TEXT}
-	 * @example
-	 * var range = new CKEDITOR.dom.range( editor.document );
-	 * range.selectNodeContents( editor.document.getBody() );
-	 * alert( range.endContainer.getName() );  // "body"
-	 */
 	this.endContainer	= null;
-
-	/**
-	 * Offset within the ending node of the range.
-	 * @type {Number}
-	 * @example
-	 * var range = new CKEDITOR.dom.range( editor.document );
-	 * range.selectNodeContents( editor.document.getBody() );
-	 * alert( range.endOffset );  // == editor.document.getBody().getChildCount()
-	 */
 	this.endOffset		= null;
-
-	/**
-	 * Indicates that this is a collapsed range. A collapsed range has it's
-	 * start and end boudaries at the very same point so nothing is contained
-	 * in it.
-	 * @example
-	 * var range = new CKEDITOR.dom.range( editor.document );
-	 * range.selectNodeContents( editor.document.getBody() );
-	 * alert( range.collapsed );  // "false"
-	 * range.collapse();
-	 * alert( range.collapsed );  // "true"
-	 */
 	this.collapsed		= true;
 
-	/**
-	 * The document within which the range can be used.
-	 * @type {CKEDITOR.dom.document}
-	 * @example
-	 * // Selects the body contents of the range document.
-	 * range.selectNodeContents( range.document.getBody() );
-	 */
 	this.document = document;
 };
 
@@ -103,7 +32,7 @@ CKEDITOR.dom.range = function( document )
 	// This is a shared function used to delete, extract and clone the range
 	// contents.
 	// V2
-	var execContentsAction = function( range, action, docFrag, mergeThen )
+	var execContentsAction = function( range, action, docFrag )
 	{
 		range.optimizeBookmark();
 
@@ -318,17 +247,7 @@ CKEDITOR.dom.range = function( document )
 				if ( removeStartNode && topEnd.$.parentNode == startNode.$.parentNode )
 					endIndex--;
 
-				// Merge splitted parents.
-				if ( mergeThen && topStart.type == CKEDITOR.NODE_ELEMENT )
-				{
-					var span = CKEDITOR.dom.element.createFromHtml( '<span ' +
-						'data-cke-bookmark="1" style="display:none">&nbsp;</span>', range.document );
-					span.insertAfter( topStart );
-					topStart.mergeSiblings( false );
-					range.moveToBookmark( { startNode : span } );
-				}
-				else
-					range.setStart( topEnd.getParent(), endIndex );
+				range.setStart( topEnd.getParent(), endIndex );
 			}
 
 			// Collapse it to the start.
@@ -359,7 +278,7 @@ CKEDITOR.dom.range = function( document )
 			if ( node.type == CKEDITOR.NODE_TEXT )
 			{
 				// If there's any visible text, then we're not at the start.
-				if ( node.hasAscendant( 'pre' ) || CKEDITOR.tools.trim( node.getText() ).length )
+				if ( CKEDITOR.tools.trim( node.getText() ).length )
 					return false;
 			}
 			else if ( node.type == CKEDITOR.NODE_ELEMENT )
@@ -448,27 +367,25 @@ CKEDITOR.dom.range = function( document )
 
 		/**
 		 * Deletes the content nodes of the range permanently from the DOM tree.
-		 * @param {Boolean} [mergeThen] Merge any splitted elements result in DOM true due to partial selection.
 		 */
-		deleteContents : function( mergeThen )
+		deleteContents : function()
 		{
 			if ( this.collapsed )
 				return;
 
-			execContentsAction( this, 0, null, mergeThen );
+			execContentsAction( this, 0 );
 		},
 
 		/**
 		 *  The content nodes of the range are cloned and added to a document fragment,
 		 * meanwhile they're removed permanently from the DOM tree.
-		 * @param {Boolean} [mergeThen] Merge any splitted elements result in DOM true due to partial selection.
 		 */
-		extractContents : function( mergeThen )
+		extractContents : function()
 		{
 			var docFrag = new CKEDITOR.dom.documentFragment( this.document );
 
 			if ( !this.collapsed )
-				execContentsAction( this, 1, docFrag, mergeThen );
+				execContentsAction( this, 1, docFrag );
 
 			return docFrag;
 		},
@@ -589,10 +506,6 @@ CKEDITOR.dom.range = function( document )
 						startContainer = child;
 						startOffset = 0;
 					}
-
-					// Get the normalized offset.
-					if ( child && child.type == CKEDITOR.NODE_ELEMENT )
-						startOffset = child.getIndex( 1 );
 				}
 
 				// Normalize the start.
@@ -621,10 +534,6 @@ CKEDITOR.dom.range = function( document )
 							endContainer = child;
 							endOffset = 0;
 						}
-
-						// Get the normalized offset.
-						if ( child && child.type == CKEDITOR.NODE_ELEMENT )
-							endOffset = child.getIndex( 1 );
 					}
 
 					// Normalize the end.
@@ -902,12 +811,7 @@ CKEDITOR.dom.range = function( document )
 			}
 		},
 
-		/**
-		 * Expands the range so that partial units are completely contained.
-		 * @param unit {Number} The unit type to expand with.
-		 * @param {Boolean} [excludeBrs=false] Whether include line-breaks when expanding.
-		 */
-		enlarge : function( unit, excludeBrs )
+		enlarge : function( unit )
 		{
 			switch ( unit )
 			{
@@ -1028,8 +932,7 @@ CKEDITOR.dom.range = function( document )
 								// If this is a visible element.
 								// We need to check for the bookmark attribute because IE insists on
 								// rendering the display:none nodes we use for bookmarks. (#3363)
-								// Line-breaks (br) are rendered with zero width, which we don't want to include. (#7041)
-								if ( ( sibling.$.offsetWidth > 0 || excludeBrs && sibling.is( 'br' ) ) && !sibling.data( 'cke-bookmark' ) )
+								if ( sibling.$.offsetWidth > 0 && !sibling.data( 'cke-bookmark' ) )
 								{
 									// We'll accept it only if we need
 									// whitespace, and this is an inline
@@ -1188,8 +1091,7 @@ CKEDITOR.dom.range = function( document )
 								// If this is a visible element.
 								// We need to check for the bookmark attribute because IE insists on
 								// rendering the display:none nodes we use for bookmarks. (#3363)
-								// Line-breaks (br) are rendered with zero width, which we don't want to include. (#7041)
-								if ( ( sibling.$.offsetWidth > 0 || excludeBrs && sibling.is( 'br' ) ) && !sibling.data( 'cke-bookmark' ) )
+								if ( sibling.$.offsetWidth > 0 && !sibling.data( 'cke-bookmark' ) )
 								{
 									// We'll accept it only if we need
 									// whitespace, and this is an inline
@@ -1851,47 +1753,6 @@ CKEDITOR.dom.range = function( document )
 
 			return walker.checkForward();
 		},
-
-		/**
-		 * Check if elements at which the range boundaries anchor are read-only,
-		 * with respect to "contenteditable" attribute.
-		 */
-		checkReadOnly : ( function()
-		{
-			function checkNodesEditable( node, anotherEnd )
-			{
-				while( node )
-				{
-					if ( node.type == CKEDITOR.NODE_ELEMENT )
-					{
-						if ( node.getAttribute( 'contentEditable' ) == 'false'
-							&& !node.data( 'cke-editable' ) )
-						{
-							return 0;
-						}
-						// Range enclosed entirely in an editable element.
-						else if ( node.is( 'html' )
-							|| node.getAttribute( 'contentEditable' ) == 'true'
-							&& ( node.contains( anotherEnd ) || node.equals( anotherEnd ) ) )
-						{
-							break;
-						}
-					}
-					node = node.getParent();
-				}
-
-				return 1;
-			}
-
-			return function()
-			{
-				var startNode = this.startContainer,
-					endNode = this.endContainer;
-
-				// Check if elements path at both boundaries are editable.
-				return !( checkNodesEditable( startNode, endNode ) && checkNodesEditable( endNode, startNode ) );
-			};
-		})(),
 
 		/**
 		 * Moves the range boundaries to the first/end editing point inside an

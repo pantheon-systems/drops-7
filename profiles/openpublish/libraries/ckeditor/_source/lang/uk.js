@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -34,8 +34,8 @@ CKEDITOR.lang['uk'] =
 	editorTitle : 'Текстовий редактор, %1, натисніть ALT 0 для довідки.',
 
 	// ARIA descriptions.
-	toolbars	: 'Editor toolbars', // MISSING
-	editor		: 'Текстовий редактор',
+	toolbar	: 'Панель інструментів',
+	editor	: 'Текстовий редактор',
 
 	// Toolbar buttons without dialogs.
 	source			: 'Джерело',
@@ -121,8 +121,6 @@ CKEDITOR.lang['uk'] =
 		alignBottom		: 'По нижньому краю',
 		invalidHeight	: 'Висота повинна бути цілим числом.',
 		invalidWidth	: 'Ширина повинна бути цілим числом.',
-		invalidCssLength	: 'Value specified for the "%1" field must be a positive number with or without a valid CSS measurement unit (px, %, in, cm, mm, em, ex, pt, or pc).', // MISSING
-		invalidHtmlLength	: 'Value specified for the "%1" field must be a positive number with or without a valid HTML measurement unit (px or %).', // MISSING
 
 		// Put the voice-only part of the label in the span.
 		unavailable		: '%1<span class="cke_accessibility">, не доступне</span>'
@@ -177,19 +175,18 @@ CKEDITOR.lang['uk'] =
 		langDirRTL		: 'Справа наліво (RTL)',
 		acccessKey		: 'Гаряча клавіша',
 		name			: 'Ім\'я',
-		langCode			: 'Код мови',
-		tabIndex			: 'Послідовність переходу',
-		advisoryTitle		: 'Заголовок',
+		langCode		: 'Код мови',
+		tabIndex		: 'Послідовність переходу',
+		advisoryTitle	: 'Заголовок',
 		advisoryContentType	: 'Тип вмісту',
 		cssClasses		: 'Клас CSS',
 		charset			: 'Кодування',
 		styles			: 'Стиль CSS',
-		rel			: 'Relationship', // MISSING
-		selectAnchor		: 'Оберіть якір',
+		selectAnchor	: 'Оберіть якір',
 		anchorName		: 'За ім\'ям елементу',
-		anchorId			: 'За ідентифікатором елементу',
-		emailAddress		: 'Адреса ел. пошти',
-		emailSubject		: 'Тема листа',
+		anchorId		: 'За ідентифікатором елементу',
+		emailAddress	: 'Адреса ел. пошти',
+		emailSubject	: 'Тема листа',
 		emailBody		: 'Тіло повідомлення',
 		noAnchors		: '(В цьому документі немає якорів)',
 		noUrl			: 'Будь ласка, вкажіть URL посилання',
@@ -203,8 +200,7 @@ CKEDITOR.lang['uk'] =
 		menu		: 'Властивості якоря',
 		title		: 'Властивості якоря',
 		name		: 'Ім\'я якоря',
-		errorName	: 'Будь ласка, вкажіть ім\'я якоря',
-		remove		: 'Remove Anchor' // MISSING
+		errorName	: 'Будь ласка, вкажіть ім\'я якоря'
 	},
 
 	// List style dialog
@@ -416,6 +412,7 @@ CKEDITOR.lang['uk'] =
 		upload		: 'Надіслати',
 		alt			: 'Альтернативний текст',
 		lockRatio	: 'Зберегти пропорції',
+		unlockRatio	: 'Не зберігати пропорції',
 		resetSize	: 'Очистити поля розмірів',
 		border		: 'Рамка',
 		hSpace		: 'Гориз. відступ',
@@ -604,9 +601,9 @@ CKEDITOR.lang['uk'] =
 
 	iframe :
 	{
-		title		: 'IFrame Properties', // MISSING
-		toolbar		: 'IFrame', // MISSING
-		noUrl		: 'Please type the iframe URL', // MISSING
+		title		: 'iFrame Properties', // MISSING
+		toolbar		: 'iFrame', // MISSING
+		noUrl		: 'Please type the iFrame URL', // MISSING
 		scrolling	: 'Enable scrollbars', // MISSING
 		border		: 'Show frame border' // MISSING
 	},
@@ -717,8 +714,6 @@ CKEDITOR.lang['uk'] =
 	{
 		title		: 'Про CKEditor',
 		dlgTitle	: 'Про CKEditor',
-		help	: 'Check $1 for help.', // MISSING
-		userGuide : 'CKEditor User\'s Guide', // MISSING
 		moreInfo	: 'Щодо інформації з ліцензування завітайте на наш сайт:',
 		copy		: 'Copyright &copy; $1. Всі права застережено.'
 	},
@@ -730,7 +725,7 @@ CKEDITOR.lang['uk'] =
 	{
 		anchor		: 'Якір',
 		flash		: 'Flash-анімація',
-		iframe		: 'IFrame', // MISSING
+		iframe		: 'iFrame', // MISSING
 		hiddenfield	: 'Hidden Field', // MISSING
 		unknown		: 'Невідомий об\'єкт'
 	},
@@ -749,64 +744,9 @@ CKEDITOR.lang['uk'] =
 	toolbarCollapse	: 'Згорнути панель інструментів',
 	toolbarExpand	: 'Розгорнути панель інструментів',
 
-	toolbarGroups :
-	{
-		document : 'Document', // MISSING
-		clipboard : 'Clipboard/Undo', // MISSING
-		editing : 'Editing', // MISSING
-		forms : 'Forms', // MISSING
-		basicstyles : 'Basic Styles', // MISSING
-		paragraph : 'Paragraph', // MISSING
-		links : 'Links', // MISSING
-		insert : 'Insert', // MISSING
-		styles : 'Styles', // MISSING
-		colors : 'Colors', // MISSING
-		tools : 'Tools' // MISSING
-	},
-
 	bidi :
 	{
 		ltr : 'Напрямок тексту зліва направо',
 		rtl : 'Напрямок тексту справа наліво'
-	},
-
-	docprops :
-	{
-		label : 'Властивості документа',
-		title : 'Властивості документа',
-		design : 'Design', // MISSING
-		meta : 'Мета дані',
-		chooseColor : 'Обрати',
-		other : '<інший>',
-		docTitle :	'Заголовок сторінки',
-		charset : 	'Кодування набору символів',
-		charsetOther : 'Інше кодування набору символів',
-		charsetASCII : 'ASCII', // MISSING
-		charsetCE : 'Центрально-європейська',
-		charsetCT : 'Китайська традиційна (Big5)',
-		charsetCR : 'Кирилиця',
-		charsetGR : 'Грецька',
-		charsetJP : 'Японська',
-		charsetKR : 'Корейська',
-		charsetTR : 'Турецька',
-		charsetUN : 'Юнікод (UTF-8)',
-		charsetWE : 'Західно-европейская',
-		docType : 'Заголовок типу документу',
-		docTypeOther : 'Інший заголовок типу документу',
-		xhtmlDec : 'Ввімкнути XHTML оголошення',
-		bgColor : 'Колір тла',
-		bgImage : 'URL зображення тла',
-		bgFixed : 'Тло без прокрутки',
-		txtColor : 'Колір тексту',
-		margin : 'Відступи сторінки',
-		marginTop : 'Верхній',
-		marginLeft : 'Лівий',
-		marginRight : 'Правий',
-		marginBottom : 'Нижній',
-		metaKeywords : 'Ключові слова документа (розділені комами)',
-		metaDescription : 'Опис документа',
-		metaAuthor : 'Автор',
-		metaCopyright : 'Авторські права',
-		previewHtml : '<p>This is some <strong>sample text</strong>. You are using <a href="javascript:void(0)">CKEditor</a>.</p>' // MISSING
 	}
 };

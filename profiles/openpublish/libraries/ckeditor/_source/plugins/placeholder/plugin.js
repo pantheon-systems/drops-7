@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -14,7 +14,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	CKEDITOR.plugins.add( 'placeholder',
 	{
 		requires : [ 'dialog' ],
-		lang : [ 'en', 'he' ],
+		lang : [ 'en' ],
 		init : function( editor )
 		{
 			var lang = editor.lang.placeholder;
@@ -58,7 +58,8 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 			editor.on( 'doubleclick', function( evt )
 				{
-					if ( CKEDITOR.plugins.placeholder.getSelectedPlaceHoder( editor ) )
+					var element = evt.data.element;
+					if ( element.data( 'cke-placeholder' ) )
 						evt.data.dialog = 'editplaceholder';
 				});
 
@@ -155,17 +156,5 @@ CKEDITOR.plugins.placeholder =
 		}
 		else
 			editor.insertElement( element );
-
-		return null;
-	},
-
-	getSelectedPlaceHoder : function( editor )
-	{
-		var range = editor.getSelection().getRanges()[ 0 ];
-		range.shrink( CKEDITOR.SHRINK_TEXT );
-		var node = range.startContainer;
-		while( node && !( node.type == CKEDITOR.NODE_ELEMENT && node.data( 'cke-placeholder' ) ) )
-			node = node.getParent();
-		return node;
 	}
 };

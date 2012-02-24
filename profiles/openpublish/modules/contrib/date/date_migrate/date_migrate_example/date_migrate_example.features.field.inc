@@ -1,11 +1,12 @@
 <?php
+
 /**
  * @file
  * Examples and test folder for migration into date fields.
  */
 
 /**
- * Implementation of hook_field_default_fields().
+ * Implements hook_field_default_fields().
  */
 function date_migrate_example_field_default_fields() {
   $fields = array();

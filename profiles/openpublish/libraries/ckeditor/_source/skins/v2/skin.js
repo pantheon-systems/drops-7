@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -8,7 +8,6 @@ CKEDITOR.skins.add( 'v2', (function()
 	return {
 		editor		: { css : [ 'editor.css' ] },
 		dialog		: { css : [ 'dialog.css' ] },
-		separator		: { canGroup: false },
 		templates	: { css : [ 'templates.css' ] },
 		margins		: [ 0, 14, 18, 14 ]
 	};
@@ -37,32 +36,30 @@ CKEDITOR.skins.add( 'v2', (function()
 						height : height + 'px'
 					});
 
-				if ( !CKEDITOR.env.ie || CKEDITOR.env.ie9Compat )
+				if ( !CKEDITOR.env.ie )
 					return;
 
 				// Fix the size of the elements which have flexible lengths.
 				setTimeout( function()
 					{
 						var innerDialog = dialog.parts.dialog.getChild( [ 0, 0, 0 ] ),
-							body = innerDialog.getChild( 0 ),
-							bodyWidth = body.getSize( 'width' );
-						height += body.getChild( 0 ).getSize( 'height' ) + 1;
+							body = innerDialog.getChild( 0 );
 
 						// tc
 						var el = innerDialog.getChild( 2 );
-						el.setSize( 'width', bodyWidth );
+						el.setStyle( 'width', ( body.$.offsetWidth ) + 'px' );
 
 						// bc
 						el = innerDialog.getChild( 7 );
-						el.setSize( 'width', bodyWidth - 28 );
+						el.setStyle( 'width', ( body.$.offsetWidth - 28 ) + 'px' );
 
 						// ml
 						el = innerDialog.getChild( 4 );
-						el.setSize( 'height', height );
+						el.setStyle( 'height', ( height + body.getChild(0).$.offsetHeight ) + 'px' );
 
 						// mr
 						el = innerDialog.getChild( 5 );
-						el.setSize( 'height', height );
+						el.setStyle( 'height', ( height + body.getChild(0).$.offsetHeight ) + 'px' );
 					},
 					100 );
 			});

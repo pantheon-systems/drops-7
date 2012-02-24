@@ -66,6 +66,10 @@ function boxes_schema() {
  * Implements hook_uninstall().
  */
 function boxes_uninstall() {
+  $result = db_query("SELECT bid FROM {block} WHERE module='boxes'");
+  foreach ($result as $data) {
+    db_query("DELETE FROM {block} WHERE bid = :bid", array(':bid' => $data->bid));
+  }
   variable_del('boxes_edit_location');
 }
 

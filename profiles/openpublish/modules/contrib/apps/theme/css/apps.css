@@ -122,6 +122,7 @@ body .path-admin-apps span.icon {
   float: left;
   display: inline-block;
   padding: 10px 15px;
+  width: 200px;
 }
 
 .app-teaser h2, .app-teaser h2 a{

@@ -71,7 +71,6 @@ function video_embed_field_field_widget_form(&$form, &$form_state, $field, $inst
   $element['video_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Video URL'),
-    '#description' => $element['#description'],
     '#attributes' => array('class' => array('video_embed_url')),
     '#attached' => array( 
       'css' => array( 
@@ -139,15 +138,22 @@ function video_embed_field_field_presave($entity_type, $entity, $field, $instanc
   foreach($items as $delta => $item){
   
     $info = video_embed_field_thumbnail_url($item['video_url']);
-
+    
     if (isset($info['url']) && $info['url']) {
       $thumb_url = $info['url'];
-      
+
       $local_path = 'public://video_embed_field_thumbnails/' . $info['handler'] . '/' . $info['id'] . '.jpg';
       if (!file_exists($local_path)) {
         $dirname = drupal_dirname($local_path);
         file_prepare_directory($dirname, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
-        @copy($thumb_url, $local_path);
+
+        $response = drupal_http_request($thumb_url);
+        if (!isset($response->error)) {
+           file_save_data($response->data, $local_path, TRUE);
+        }
+        else{
+           @copy($thumb_url, $local_path);
+        }
       }
       
       $items[$delta]['thumbnail_path'] = $local_path;
@@ -169,7 +175,7 @@ function video_embed_field_field_is_empty($item, $field){
  * Implements hook_field_formatter_info().
  */
 function video_embed_field_field_formatter_info() {
-  return array(
+  $info = array(
     'video_embed_field' => array(
       'label' => t('Video Player'),
       'field types' => array('video_embed_field'),
@@ -178,9 +184,21 @@ function video_embed_field_field_formatter_info() {
     'video_embed_field_thumbnail' => array(
       'label' => t('Thumbnail Preview'),
       'field types' => array('video_embed_field'),
-      'settings' => array('image_style' => 'none', 'description' => 1),
+      'settings' => array(
+      	'image_style' => 'none',
+      	'description' => 1,
+      	'image_link' => 'none',
+      ),
     ),
   );
+  if( module_exists('colorbox')  ) {
+    $info['video_embed_field_thumbnail_colorbox'] = array(
+      'label' => t('Thumbnail Preview w/Colorbox'),
+      'field types' => array('video_embed_field'),
+      'settings' => array('video_style' => 'normal', 'image_style' => 'none', 'description' => 1),
+    );
+  }
+  return $info;
 }
 
 /**
@@ -191,7 +209,7 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
   $settings = $display['settings'];
   $element = array();
   
-  if ($display['type'] == 'video_embed_field') {
+  if ($display['type'] == 'video_embed_field' || $display['type'] == 'video_embed_field_thumbnail_colorbox') {
     $video_styles = video_embed_field_video_style_options(FALSE);
     $element['video_style'] = array(
       '#title' => t('Video style'),
@@ -200,7 +218,7 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
       '#options' => $video_styles,
     );
   } 
-  else if ($display['type'] == 'video_embed_field_thumbnail') {
+  if ($display['type'] == 'video_embed_field_thumbnail' || $display['type'] == 'video_embed_field_thumbnail_colorbox') {
     $element['image_style'] = array(
       '#title' => t('Image style'),
       '#type' => 'select',
@@ -210,12 +228,25 @@ function video_embed_field_field_formatter_settings_form($field, $instance, $vie
     ); 
   }
   
+  if($display['type'] == 'video_embed_field_thumbnail'){
+  	$link_types = array(
+    	'node' => t('Node'),
+    	'source' => t('Video Source'),
+  	);
+  	$element['image_link'] = array(
+	    '#title' => t('Link thumbnail to'),
+	    '#type' => 'select',
+	    '#default_value' => $settings['image_link'],
+	    '#empty_option' => t('Nothing'),
+	    '#options' => $link_types,
+  	);
+  }
+  
   if ($instance['settings']['description_field']) {
     $element['description'] = array(
       '#title' => t('Show description'),
-      '#type' => 'select',
+      '#type' => 'checkbox',
       '#default_value' => $settings['description'],
-      '#options' => array(1 => t('Yes'), 0 => t('No')),
     );
   }
   return $element;
@@ -229,7 +260,7 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
   $settings = $display['settings'];
 
   $summary = array();
-  if($display['type'] == 'video_embed_field'){
+  if($display['type'] == 'video_embed_field' || $display['type'] == 'video_embed_field_thumbnail_colorbox'){
     $video_styles = video_embed_field_video_style_options(FALSE);
     // Styles could be lost because of enabled/disabled modules that defines
     // their styles in code.
@@ -237,7 +268,7 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
       $summary[] = t('Video style: @style', array('@style' => $video_styles[$settings['video_style']]));
     }
   } 
-  else if ($display['type'] == 'video_embed_field_thumbnail') {
+  if ($display['type'] == 'video_embed_field_thumbnail' || $display['type'] == 'video_embed_field_thumbnail_colorbox') {
     $image_styles = image_style_options(FALSE);
     if (isset($image_styles[$settings['image_style']])) {
       $summary[] = t('Image style: @style', array('@style' => $image_styles[$settings['image_style']]));
@@ -245,10 +276,19 @@ function video_embed_field_field_formatter_settings_summary($field, $instance, $
     else {
       $summary[] = t('Original Image.');
     }
+    if($settings['image_link'] != null){
+    	$summary[] = t('Image link: ' . $settings['image_link']);
+    }
+    else{
+    	$summary[] = t('Image link: none');
+    }
   }
   
   if ($settings['description'] && $instance['settings']['description_field']) {
     $summary[] = t('Show description');
+  }
+  else{
+  	$summary[] = t('Hide description');
   }
   
   return implode('<br />', $summary);
@@ -262,7 +302,7 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
   
   foreach ($items as $delta => $item) {
     //create the render array for the description
-    if (!empty($item['description']) && $display['settings']['description'] && $instance['settings']['description_field']) {
+    if (isset($item['description']) && $item['description'] && $display['settings']['description'] && $instance['settings']['description_field']) {
       $description = array(
         '#prefix' => '<div class="video-embed-description">',
         '#markup' => $item['description'],
@@ -280,37 +320,74 @@ function video_embed_field_field_formatter_view($entity_type, $entity, $field, $
           '#url' => $item['video_url'],
           '#style' => $display['settings']['video_style'],
         ),
-        $description,
       );
     }
     else if ($display['type'] == 'video_embed_field_thumbnail') {
-      $image_style = $display['settings']['image_style'];
-      if (isset($item['thumbnail_path']) && ($image_style == 'none' || $image_style == '')) {
-        $element[$delta] = array(
-          array(
-            '#theme' => 'image',
-            '#path' => $item['thumbnail_path'],
-          ),
-          $description,
-        );  
-      }
-      else if (isset($item['thumbnail_path'])) {
-        $element[$delta] = array(
-          array(
-            '#theme' => 'image_style',
-            '#path' => $item['thumbnail_path'],
-            '#style_name' => $image_style,
-          ),
-          $description,
-        );
+      if (isset($item['thumbnail_path'])) {
+        if($display['settings']['image_style'] == 'none'){
+          $element[$delta] = array(
+            array(
+              '#theme' => 'image',
+              '#path' => $item['thumbnail_path'],
+            ),
+          );
+        }
+        else {
+          $element[$delta] = array(
+            array(
+              '#theme' => 'image_style',
+              '#path' => $item['thumbnail_path'],
+              '#style_name' => $display['settings']['image_style'],
+            ),
+          );
+        }
+        if($display['settings']['image_link'] == 'source'){
+			  	$element[$delta]['#prefix'] = '<a href="' . $item['video_url'] . '">';
+			  	$element[$delta]['#suffix'] = '</a>';
+			  }
+			  else if($display['settings']['image_link'] == 'node'){
+			  	$nid = $entity->nid;
+			  	$base_path = $GLOBALS['base_path'];
+			  	$element[$delta]['#prefix'] = '<a href="' . $base_path . 'node/'. $nid . '">';
+			  	$element[$delta]['#suffix'] = '</a>';
+			  }
       } //incase no thumbnail was downloaded / provider doesn't support thumbnails
       else {
         $element[$delta] = array(
-          $description,
         );    
       }
     }
+    else if ($display['type'] == 'video_embed_field_thumbnail_colorbox') {
+      if (isset($item['thumbnail_path'])) {
+        $element[$delta] = array(          
+          array(
+            '#theme' => 'video_embed_field_colorbox_code',
+            '#image_url' => $item['thumbnail_path'],
+            '#image_style' => $display['settings']['image_style'],
+            '#video_url' => $item['video_url'],
+            '#video_style' => $display['settings']['video_style'],
+          ),
+        );      
+      }//incase no thumbnail was downloaded / provider doesn't support thumbnails
+      else {
+        $element[$delta] = array(
+        );    
+      }
+    }
+    //Get the HTML instead of the array, because we append it to the suffix.
+    //This way, the thumbnail link wrapper doesn't make the description a link as well.
+    $description_html = drupal_render($description);
+    
+    //No need to check to add, as we set it to blank above if it's set to not display.
+    //The if/else is so that it doesn't show an error in case there's no suffix.
+    if(isset($element[$delta]['#suffix'])){
+      $element[$delta]['#suffix'] .= $description_html;
+    }
+    else{
+      $element[$delta]['#suffix'] = $description_html;
+    }
   }
-
+  
+  
   return $element;
 }

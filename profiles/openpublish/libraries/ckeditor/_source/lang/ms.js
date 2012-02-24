@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -34,8 +34,8 @@ CKEDITOR.lang['ms'] =
 	editorTitle : 'Rich text editor, %1, press ALT 0 for help.', // MISSING
 
 	// ARIA descriptions.
-	toolbars	: 'Editor toolbars', // MISSING
-	editor		: 'Rich Text Editor', // MISSING
+	toolbar	: 'Toolbar', // MISSING
+	editor	: 'Rich Text Editor', // MISSING
 
 	// Toolbar buttons without dialogs.
 	source			: 'Sumber',
@@ -121,8 +121,6 @@ CKEDITOR.lang['ms'] =
 		alignBottom		: 'Bawah',
 		invalidHeight	: 'Height must be a number.', // MISSING
 		invalidWidth	: 'Width must be a number.', // MISSING
-		invalidCssLength	: 'Value specified for the "%1" field must be a positive number with or without a valid CSS measurement unit (px, %, in, cm, mm, em, ex, pt, or pc).', // MISSING
-		invalidHtmlLength	: 'Value specified for the "%1" field must be a positive number with or without a valid HTML measurement unit (px or %).', // MISSING
 
 		// Put the voice-only part of the label in the span.
 		unavailable		: '%1<span class="cke_accessibility">, unavailable</span>' // MISSING
@@ -177,19 +175,18 @@ CKEDITOR.lang['ms'] =
 		langDirRTL		: 'Kanan ke Kiri (RTL)',
 		acccessKey		: 'Kunci Akses',
 		name			: 'Nama',
-		langCode			: 'Arah Tulisan',
-		tabIndex			: 'Indeks Tab ',
-		advisoryTitle		: 'Tajuk Makluman',
+		langCode		: 'Arah Tulisan',
+		tabIndex		: 'Indeks Tab ',
+		advisoryTitle	: 'Tajuk Makluman',
 		advisoryContentType	: 'Jenis Kandungan Makluman',
 		cssClasses		: 'Kelas-kelas Stylesheet',
 		charset			: 'Linked Resource Charset',
 		styles			: 'Stail',
-		rel			: 'Relationship', // MISSING
-		selectAnchor		: 'Sila pilih pautan',
+		selectAnchor	: 'Sila pilih pautan',
 		anchorName		: 'dengan menggunakan nama pautan',
-		anchorId			: 'dengan menggunakan ID elemen',
-		emailAddress		: 'Alamat E-Mail',
-		emailSubject		: 'Subjek Mesej',
+		anchorId		: 'dengan menggunakan ID elemen',
+		emailAddress	: 'Alamat E-Mail',
+		emailSubject	: 'Subjek Mesej',
 		emailBody		: 'Isi Kandungan Mesej',
 		noAnchors		: '(Tiada pautan terdapat dalam dokumen ini)',
 		noUrl			: 'Sila taip sambungan URL',
@@ -203,8 +200,7 @@ CKEDITOR.lang['ms'] =
 		menu		: 'Ciri-ciri Pautan',
 		title		: 'Ciri-ciri Pautan',
 		name		: 'Nama Pautan',
-		errorName	: 'Sila taip nama pautan',
-		remove		: 'Remove Anchor' // MISSING
+		errorName	: 'Sila taip nama pautan'
 	},
 
 	// List style dialog
@@ -274,8 +270,8 @@ CKEDITOR.lang['ms'] =
 		invalidBorder	: 'Border size must be a number.', // MISSING
 		invalidWidth	: 'Table width must be a number.', // MISSING
 		invalidHeight	: 'Table height must be a number.', // MISSING
-		invalidCellSpacing	: 'Cell spacing must be a positive number.', // MISSING
-		invalidCellPadding	: 'Cell padding must be a positive number.', // MISSING
+		invalidCellSpacing	: 'Cell spacing must be a number.', // MISSING
+		invalidCellPadding	: 'Cell padding must be a number.', // MISSING
 
 		cell :
 		{
@@ -416,6 +412,7 @@ CKEDITOR.lang['ms'] =
 		upload		: 'Muat Naik',
 		alt			: 'Text Alternatif',
 		lockRatio	: 'Tetapkan Nisbah',
+		unlockRatio	: 'Unlock Ratio', // MISSING
 		resetSize	: 'Saiz Set Semula',
 		border		: 'Border',
 		hSpace		: 'Ruang Melintang',
@@ -604,9 +601,9 @@ CKEDITOR.lang['ms'] =
 
 	iframe :
 	{
-		title		: 'IFrame Properties', // MISSING
-		toolbar		: 'IFrame', // MISSING
-		noUrl		: 'Please type the iframe URL', // MISSING
+		title		: 'iFrame Properties', // MISSING
+		toolbar		: 'iFrame', // MISSING
+		noUrl		: 'Please type the iFrame URL', // MISSING
 		scrolling	: 'Enable scrollbars', // MISSING
 		border		: 'Show frame border' // MISSING
 	},
@@ -717,8 +714,6 @@ CKEDITOR.lang['ms'] =
 	{
 		title		: 'About CKEditor', // MISSING
 		dlgTitle	: 'About CKEditor', // MISSING
-		help	: 'Check $1 for help.', // MISSING
-		userGuide : 'CKEditor User\'s Guide', // MISSING
 		moreInfo	: 'For licensing information please visit our web site:', // MISSING
 		copy		: 'Copyright &copy; $1. All rights reserved.' // MISSING
 	},
@@ -730,7 +725,7 @@ CKEDITOR.lang['ms'] =
 	{
 		anchor		: 'Anchor', // MISSING
 		flash		: 'Flash Animation', // MISSING
-		iframe		: 'IFrame', // MISSING
+		iframe		: 'iFrame', // MISSING
 		hiddenfield	: 'Hidden Field', // MISSING
 		unknown		: 'Unknown Object' // MISSING
 	},
@@ -749,64 +744,9 @@ CKEDITOR.lang['ms'] =
 	toolbarCollapse	: 'Collapse Toolbar', // MISSING
 	toolbarExpand	: 'Expand Toolbar', // MISSING
 
-	toolbarGroups :
-	{
-		document : 'Document', // MISSING
-		clipboard : 'Clipboard/Undo', // MISSING
-		editing : 'Editing', // MISSING
-		forms : 'Forms', // MISSING
-		basicstyles : 'Basic Styles', // MISSING
-		paragraph : 'Paragraph', // MISSING
-		links : 'Links', // MISSING
-		insert : 'Insert', // MISSING
-		styles : 'Styles', // MISSING
-		colors : 'Colors', // MISSING
-		tools : 'Tools' // MISSING
-	},
-
 	bidi :
 	{
 		ltr : 'Text direction from left to right', // MISSING
 		rtl : 'Text direction from right to left' // MISSING
-	},
-
-	docprops :
-	{
-		label : 'Ciri-ciri dokumen',
-		title : 'Ciri-ciri dokumen',
-		design : 'Design', // MISSING
-		meta : 'Data Meta',
-		chooseColor : 'Choose', // MISSING
-		other : '<lain>',
-		docTitle :	'Tajuk Muka Surat',
-		charset : 	'Enkod Set Huruf',
-		charsetOther : 'Enkod Set Huruf yang Lain',
-		charsetASCII : 'ASCII', // MISSING
-		charsetCE : 'Central European', // MISSING
-		charsetCT : 'Chinese Traditional (Big5)', // MISSING
-		charsetCR : 'Cyrillic', // MISSING
-		charsetGR : 'Greek', // MISSING
-		charsetJP : 'Japanese', // MISSING
-		charsetKR : 'Korean', // MISSING
-		charsetTR : 'Turkish', // MISSING
-		charsetUN : 'Unicode (UTF-8)', // MISSING
-		charsetWE : 'Western European', // MISSING
-		docType : 'Jenis Kepala Dokumen',
-		docTypeOther : 'Jenis Kepala Dokumen yang Lain',
-		xhtmlDec : 'Masukkan pemula kod XHTML',
-		bgColor : 'Warna Latarbelakang',
-		bgImage : 'URL Gambar Latarbelakang',
-		bgFixed : 'Imej Latarbelakang tanpa Skrol',
-		txtColor : 'Warna Text',
-		margin : 'Margin Muka Surat',
-		marginTop : 'Atas',
-		marginLeft : 'Kiri',
-		marginRight : 'Kanan',
-		marginBottom : 'Bawah',
-		metaKeywords : 'Kata Kunci Indeks Dokumen (dipisahkan oleh koma)',
-		metaDescription : 'Keterangan Dokumen',
-		metaAuthor : 'Penulis',
-		metaCopyright : 'Hakcipta',
-		previewHtml : '<p>This is some <strong>sample text</strong>. You are using <a href="javascript:void(0)">CKEditor</a>.</p>' // MISSING
 	}
 };

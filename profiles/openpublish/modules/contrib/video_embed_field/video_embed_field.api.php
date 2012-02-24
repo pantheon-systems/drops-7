@@ -1,39 +1,21 @@
 <?php
 
 /**
- * @file
- * Hooks provided by the Video Embed Field module.
+ * API Info for video_embed_field module
  */
 
 /**
- * Define a video handler that decodes a video provider URL into a video player or thumbnail
- * 
- * You can define a handler like this:
- *
- * @code
- *   $handler['vimeo'] = array(
- *     'title' => 'Vimeo',
- *     'function' => 'vimeo_handler',
- *     'thumbnail_function' => 'vimeo_thumbnail',
- *     'form' => 'vimeo_form',
- *     'domains' => array(
- *       'vimeo.com'
- *     ),
- *     'defaults' => array(
- *        'width' => 640,
- *        'height' => 360',
- *     ),
- *   );
- * @endcode
- *
- * @return
- *   Embed handlers:
- *   - "title": The name of the handler - will be wrapped with t().
- *   - "function": Function to return embed code from a URL and video style array.
- *   - "thumbnail_function": Function to return a video frame image.
- *   - "form": Function to create a settings form (optional).
- *   - "domains": Array of domains this handler will created embed codes for
- *   - "defaults": Array of default settings.
+ * Creates a hook that other modules can implement to get handlers - 
+ * hook_video_embed_handler_info
+ * Can be used to add more handlers if needed - from other modules and such
+ * Handler should be an array of the form
+ * array(
+ *   'title' => 'Title', //The title of the handler - to be used as the field group header - will be wrapped with t()
+ *   'function' => 'function_name_to_call', //should be of the signature function_name($url, $settings) and should return the embed code
+ *   'form' => 'function_name_for_form', //function to create settings form (optional)
+ *   'domains' => array('youtube.com'), //the domains that this handler will create embed code for
+ *   'defaults' => array(), //The default settings for the module, used for both the form and the callback function
+ * );
  */
 function hook_video_embed_handler_info() {
 

@@ -17,6 +17,7 @@ module_load_include('inc', 'video_embed_field', 'video_embed_field.field');
 module_load_include('inc', 'video_embed_field', 'video_embed_field.admin');
 // Load our default handlers
 module_load_include('inc', 'video_embed_field', 'video_embed_field.handlers');
+
 /**
  * Implementation of hook_ctools_plugin_directory().
  */
@@ -69,6 +70,22 @@ function video_embed_field_default_video_embed_styles() {
   return array($normal, $teaser);
 }
 
+/**
+ * Implements hook_menu().
+ */
+function video_embed_field_menu() {
+  $items = array();
+  
+  $items['vef/load/%'] = array(
+    'title' => 'Video Embed Field - Load Video',
+    'page callback' => '_video_embed_field_show_video',
+    'page arguments' => array(2),
+    'access callback' => TRUE, 
+    'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+}
 
 /**
  * Get an array of all styles and their settings.
@@ -149,8 +166,15 @@ function video_embed_field_permission() {
  */
 function video_embed_field_theme() {
   return array(
+    // Theme functions in video_embed_field.admin.inc.
+    'video_embed_field_video_style_list' => array(
+      'variables' => array('styles' => NULL),
+    ),
     'video_embed_field_embed_code' => array(
       'variables' => array('url' => NULL, 'style' => 'normal'),
+    ),
+    'video_embed_field_colorbox_code' => array(
+      'variables' => array('image_url' => NULL, 'image_style' => 'normal', 'video_url' => NULL, 'video_style' => NULL ),
     ),
   );
 }
@@ -319,10 +343,63 @@ function theme_video_embed_field_embed_code($variables) {
   if ($handler && isset($handler['function']) && function_exists($handler['function'])) {
     $output['embed_code'] = call_user_func($handler['function'], $url, $style->data[$handler['name']]);
   } else {
-    $output['#markup'] = l($item['video_url'], $item['video_url']);
+    $output['#markup'] = l($variables['url'], $variables['url']);
   }
   
   return drupal_render($output);
+}
+/**
+ * Returns image style image with a link to 
+ * an embedded video in colorbox.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - image_url: The image URL.
+ *   - image_style: The image style to use.
+ *   - video_url: The video URL.
+ *   - video_style: The video style to use.
+ *
+ * @ingroup themeable
+ */
+function theme_video_embed_field_colorbox_code($variables) {
+  $style = video_embed_field_video_style_load($variables['video_style']);
+  
+  // If there was an issue load in the default style
+  if ($style == FALSE) {
+    $style = video_embed_field_video_style_load('normal');
+  }
+  
+  $handler = video_embed_get_handler($variables['video_url']);
+  
+  $data = $style->data[$handler['name']];
+  
+  //Create a unique ID for colorbox inline
+  $id = uniqid('video_embed_field-' . rand());
+  
+  if($variables['image_style'] == 'none'){
+    $image = array(
+      array(
+        '#theme' => 'image',
+        '#path' => $variables['image_url'],
+      ),
+    );
+  }
+  else {
+    $image = array(
+      '#theme' => 'image_style',
+      '#path' => $variables['image_url'], 
+      '#style_name' => $variables['image_style'],
+    );
+  }
+  
+  $image = drupal_render($image);
+  
+  // Write values for later AJAX load
+  $hash = _video_embed_field_store_video($variables['video_url'], $variables['video_style']);
+  
+  $output = l($image, base_path() . '?q=vef/load/' . $hash . '&width=' . ($data['width']) . '&height=' . ($data['height']+3), array('html' => true, 'external' => true, 'attributes' => array('class' => array('colorbox-load'))));  
+  
+  return $output;
 }
 
 /**
@@ -369,4 +446,78 @@ function _video_embed_code_get_settings_str($settings = array()) {
   }
   
   return implode('&amp;', $values);
+}
+
+//used to array filter in video_embed_field_requirements
+function _video_embed_field_array_filter($item) {
+  return (isset($item['type']) && $item['type'] == 'video_embed_field');
+}
+
+/**
+ *  Store a video to be loaded later from an _video_embed_field_load_video
+ */
+function _video_embed_field_store_video($video_url, $video_style) {
+  //create a hash key
+  $hash = _video_embed_field_hash($video_url, $video_style);
+  
+  //check that is record doesn't already exist before saving it
+  if(!_video_embed_field_load_video($hash)){    
+    $record = array(
+      'vhash' => $hash,
+      'video_url' => $video_url,
+      'video_style' => $video_style,
+    );
+    
+    cache_set('vef-store-'.$hash, $record);
+    
+    //add it to our static cache so we won't have to go to the database
+    $static_cache = &drupal_static('vef_video_store', array());
+    $static_cache[$hash] = $record;
+  }
+  return $hash;
+}
+
+/**
+ *  Callback to render a video for an Ajax call
+ */
+function _video_embed_field_show_video($hash){
+  $data = _video_embed_field_load_video($hash);
+  $video = array(
+    '#theme' => 'video_embed_field_embed_code',
+    '#style' => $data['video_style'],
+    '#url' => $data['video_url'],
+  );
+  
+  print drupal_render($video);
+  return NULL;
+}
+
+/**
+ * Loads a video from the video store given its hash
+ * Returns either the data - an array with hash, video_url and video_style keys
+ */
+function _video_embed_field_load_video($hash) {
+  $static_cache = &drupal_static('vef_video_store', array());
+  //check if we've already loaded it
+  if (isset($static_cache[$hash])) {
+    return $static_cache[$hash];
+  } else {
+    
+    $result = cache_get('vef-store-'.$hash);
+    if ($result) {
+      //cache it before returning
+      $data = $result->data;
+      $static_cache[$hash] = $data;
+      return $data;
+    } else {
+      return FALSE;
+    }
+  }
+}
+
+/**
+ *  Creates a hash for storing or looking up a video in the store table
+ */
+function _video_embed_field_hash($video_url, $video_style){
+  return md5('vef' . $video_url . $video_style);
 }

@@ -1,12 +1,19 @@
 <?php
+
 /**
  * @file
  * A form to change the type of date used in date fields.
  */
+
+/**
+ * Form constructor for the date type change form.
+ *
+ * @see date_tools_change_type_form_validate()
+ * @see date_tools_change_type_form_submit()
+ */
 function date_tools_change_type_form() {
   $form = array();
-  // This is broken, still needs to be adjusted
-  // for the D6->D7 changes.
+  // This is broken, still needs to be adjusted for the D6->D7 changes.
   drupal_set_message(t('This operation does not yet work for the Drupal 7 version.'), 'error');
   return $form;
   $fields = content_fields();
@@ -34,7 +41,7 @@ function date_tools_change_type_form() {
     '#title' => t('Date field'),
     '#default_value' => '',
     '#description' => t('The date field which whose type should be changed.'),
-    );
+  );
   $form['type'] = array(
     '#type' => 'radios',
     '#options' => $type_options,
@@ -47,6 +54,11 @@ function date_tools_change_type_form() {
   return $form;
 }
 
+/**
+ * Form validation handler for date_tools_change_type_form().
+ *
+ * @see date_tools_change_type_form_submit()
+ */
 function date_tools_change_type_form_validate($form, &$form_state) {
   $field_name = $form_state['values']['date_field'];
   $new_type = $form_state['values']['type'];
@@ -57,6 +69,11 @@ function date_tools_change_type_form_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Form submission handler for date_tools_change_type_form().
+ *
+ * @see date_tools_change_type_form_validate()
+ */
 function date_tools_change_type_form_submit($form, &$form_state) {
   $field_name = $form_state['values']['date_field'];
   $new_type = $form_state['values']['type'];
@@ -87,7 +104,7 @@ function date_tools_change_type_form_submit($form, &$form_state) {
 
   // Change the field definition to the new type.
   $field['type'] = $new_type;
-  require_once('./' . drupal_get_path('module', 'content') . '/includes/content.crud.inc');
+  require_once './' . drupal_get_path('module', 'content') . '/includes/content.crud.inc';
   content_field_instance_update($field, FALSE);
   content_clear_type_cache();
 
@@ -98,10 +115,9 @@ function date_tools_change_type_form_submit($form, &$form_state) {
     return;
   }
 
-  // Replace old values with modified values, massaging the
-  // original values as necessary for the new type.
-
-  require_once('./' . drupal_get_path('module', 'date_api') . '/date_api_sql.inc');
+  // Replace old values with modified values, massaging the original values as
+  // necessary for the new type.
+  require_once './' . drupal_get_path('module', 'date_api') . '/date_api_sql.inc';
   $date_handler = new date_sql_handler();
   $date_handler->granularity = $field['granularity'];
   $date_handler->date_type = $old_type;
@@ -158,12 +174,9 @@ function date_tools_change_type_form_submit($form, &$form_state) {
   $date_handler->set_db_timezone();
 
   // Make the replacement.
-  $sql = 'REPLACE INTO {' . $table . '} (' . implode(', ', $old_columns) . ') ' .
-    ' SELECT ' . implode(', ', $new_columns) . ' FROM {' . $temp_table . '}';
+  $sql = 'REPLACE INTO {' . $table . '} (' . implode(', ', $old_columns) . ') ' . ' SELECT ' . implode(', ', $new_columns) . ' FROM {' . $temp_table . '}';
   db_query($sql);
   db_query("DROP TABLE {" . $temp_table . "}");
 
-  drupal_set_message(t('The field @field_name has been changed from @old_type to @new_type.', array(
-    '@field_name' => $field['widget']['label'], '@old_type' => $labels[$old_type], '@new_type' => $labels[$new_type])));
-
+  drupal_set_message(t('The field @field_name has been changed from @old_type to @new_type.', array('@field_name' => $field['widget']['label'], '@old_type' => $labels[$old_type], '@new_type' => $labels[$new_type])));
 }

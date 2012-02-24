@@ -7,7 +7,7 @@ function omega_tools_menu() {
   foreach (list_themes() as $theme) {
     $items['admin/appearance/settings/' . $theme->name . '/reset'] = array(
       'title' => $theme->info['name'],
-      'page callback' => array('drupal_get_form'),
+      'page callback' => 'drupal_get_form',
       'page arguments' => array('omega_tools_theme_reset_confirm', $theme->name),    
       'type' => MENU_CALLBACK,
       'access callback' => '_system_themes_access',
@@ -17,7 +17,7 @@ function omega_tools_menu() {
     
     $items['admin/appearance/omega-tools/download/' . $theme->name] = array(
       'title' => $theme->info['name'],
-      'page callback' => array('omega_tools_theme_download'),
+      'page callback' => 'omega_tools_theme_download',
       'page arguments' => array($theme->name),    
       'type' => MENU_CALLBACK,
       'access callback' => 'user_access',
@@ -27,7 +27,7 @@ function omega_tools_menu() {
   
     $items['admin/appearance/settings/' . $theme->name . '/export'] = array(
       'title' => $theme->info['name'],
-      'page callback' => array('drupal_get_form'),
+      'page callback' => 'drupal_get_form',
       'page arguments' => array('omega_tools_theme_export', $theme->name),    
       'type' => MENU_CALLBACK,
       'access callback' => '_system_themes_access',
@@ -38,7 +38,7 @@ function omega_tools_menu() {
     
   $items['admin/appearance/omega-tools/add'] = array(
     'title' => 'Create new Omega subtheme',
-    'page callback' => array('drupal_get_form'),
+    'page callback' => 'drupal_get_form',
     'page arguments' => array('omega_tools_subtheme_add'),
     'type' => MENU_LOCAL_ACTION,
     'access arguments' => array('administer themes'),
@@ -48,10 +48,10 @@ function omega_tools_menu() {
   
   $items['admin/appearance/omega-tools/edit/%omega_tools_cache'] = array(
     'title' => 'Configure subtheme',
-    'page callback' => array('omega_tools_subtheme_wizard'),
+    'page callback' => 'omega_tools_subtheme_wizard',
     'page arguments' => array(4),
     'type' => MENU_CALLBACK,
-    'access callback' => array('_omega_tools_theme_access'),
+    'access callback' => '_omega_tools_theme_access',
     'access arguments' => array(4),
     'file' => 'includes/omega_tools.wizard.inc',
   );
@@ -346,13 +346,13 @@ function omega_tools_replace_contents($file, $search, $replace) {
  */
 function omega_tools_build_info_file($array, $prefix = FALSE) {
   $info = '';
-  
+
   foreach ($array as $key => $value) {
     if (is_array($value)) {
       $info .= omega_tools_build_info_file($value, (!$prefix ? $key : "{$prefix}[{$key}]"));
     }
     else {
-      $info .= $prefix ? ("{$prefix}[" . (is_int($key) ? '' : $key) .']') : $key;
+      $info .= $prefix ? ("{$prefix}[" . $key .']') : $key;
       $info .= " = '" . str_replace("'", "\'", $value) . "'\n";
     }
   }

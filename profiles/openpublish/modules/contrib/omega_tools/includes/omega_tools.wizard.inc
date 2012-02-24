@@ -14,30 +14,18 @@ function omega_tools_subtheme_wizard($subtheme, $step = NULL) {
     'show back' => TRUE,
     'show cancel' => TRUE,
     'show return' => FALSE,
-    'next text' => t('Proceed'),
+    'next text' => t('Continue'),
     'next callback' => 'omega_tools_subtheme_wizard_next',
     'finish callback' => 'omega_tools_subtheme_wizard_finish',
     'cancel callback' => 'omega_tools_subtheme_wizard_cancel',
     'finish text' => t('Finish'),
     'order' => array(
-      'info' => t('Step 1: Theme information'),
-      'grid' => t('Step 2: Grids'),
-      'structure' => t('Step 3: Structure'),
-      'settings' => t('Step 4: Default settings'),      
-      'finalize' => t('Step 5: Finalize'),
+      'info' => t('Step 1: Theme information'),   
+      'finalize' => t('Step 2: Finalize'),
     ),
     'forms' => array(
       'info' => array(
         'form id' => 'omega_tools_subtheme_wizard_info_form',
-      ),
-      'grid' => array(
-        'form id' => 'omega_tools_subtheme_wizard_grid_form',
-      ),
-      'structure' => array(
-        'form id' => 'omega_tools_subtheme_wizard_structure_form',
-      ),
-      'settings' => array(
-        'form id' => 'omega_tools_subtheme_wizard_settings_form',
       ),
       'finalize' => array(
         'form id' => 'omega_tools_subtheme_wizard_finalize_form',
@@ -96,7 +84,7 @@ function omega_tools_subtheme_wizard_finish(&$form_state) {
     omega_tools_subtheme_process($subtheme);
   }
   
-  $form_state['redirect'] = $subtheme->automated ? 'admin/appearance' : 'admin/appearance/omega-tools/edit/' . $subtheme->name . '/finished';
+  $form_state['redirect'] = $subtheme->automated ? 'admin/appearance' : 'admin/appearance/omega-tools/edit/' . $subtheme->machine_name . '/finished';
   
   drupal_set_message(t('The configuration options have been saved.'));
 }
@@ -149,57 +137,6 @@ function omega_tools_subtheme_wizard_info_form_submit($form, &$form_state) {
   $subtheme->info['name'] = $values['name'];
   $subtheme->info['description'] = $values['description'];
   $subtheme->info['version'] = $values['version'];
-}
-
-/**
- * @todo
- */
-function omega_tools_subtheme_wizard_grid_form($form, &$form_state) {
-  $subtheme = &$form_state['subtheme'];
-  
-  $form['grid'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Custom grids'),
-    '#description' => '<div class="messages warning">' . t('Step 2, 3 and 4 of this subtheme wizard are still in development and will be added shortly. Once they are added you will be able to configure your regions, zones and CSS files on the fly. There will also be a grid generator for you to easily build and integrate your own custom grids.') . '</div>',
-  );
-  
-  $form['buttons']['next']['#next'] = $form_state['next'];
-  
-  return $form;
-}
-
-/**
- * @todo
- */
-function omega_tools_subtheme_wizard_structure_form($form, &$form_state) {
-  $subtheme = &$form_state['subtheme'];
-  
-  $form['structure'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Custom regions and zones'),
-    '#description' => '<div class="messages warning">' . t('Step 2, 3 and 4 of this subtheme wizard are still in development and will be added shortly. Once they are added you will be able to configure your regions, zones and CSS files on the fly. There will also be a grid generator for you to easily build and integrate your own custom grids.') . '</div>',
-  );
-  
-  $form['buttons']['next']['#next'] = $form_state['next'];
-  
-  return $form;
-}
-
-/**
- * @todo
- */
-function omega_tools_subtheme_wizard_settings_form($form, &$form_state) {
-  $subtheme = &$form_state['subtheme'];
-  
-  $form['settings'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Default settings'),
-    '#description' => '<div class="messages warning">' . t('Step 2, 3 and 4 of this subtheme wizard are still in development and will be added shortly. Once they are added you will be able to configure your regions, zones and CSS files on the fly. There will also be a grid generator for you to easily build and integrate your own custom grids.') . '</div>',
-  );
-  
-  $form['buttons']['next']['#next'] = $form_state['next'];
-  
-  return $form;
 }
 
 /**

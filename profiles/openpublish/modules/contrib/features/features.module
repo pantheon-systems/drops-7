@@ -315,8 +315,10 @@ function features_include($reset = FALSE) {
       }
     }
 
-    // Finally, add ctools eval'd implementations.
-    ctools_features_declare_functions();
+    if (module_exists('ctools')) {
+      // Finally, add ctools eval'd implementations.
+      ctools_features_declare_functions();
+    }
 
     // Clear static cache, since we've now included new implementers.
     module_implements('features_api', FALSE, TRUE);

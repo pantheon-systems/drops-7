@@ -167,10 +167,12 @@ function tao_preprocess_node(&$vars) {
     unset($vars['content']['comments']);
   }
 
-  $vars['submitted'] = t('Submitted by !username on !datetime', array(
-    '!username' => $vars['name'],
-    '!datetime' => $vars['date'],
-  ));
+  if ($vars['display_submitted']) {
+    $vars['submitted'] = t('Submitted by !username on !datetime', array(
+      '!username' => $vars['name'],
+      '!datetime' => $vars['date'],
+    ));
+  }
 }
 
 /**
@@ -201,10 +203,14 @@ function tao_preprocess_comment(&$vars) {
  */
 function tao_preprocess_fieldset(&$vars) {
   $element = $vars['element'];
-  $vars['attributes'] = $element['#attributes'];
+  _form_set_class($element, array('form-wrapper'));
+  $vars['attributes'] = isset($element['#attributes']) ? $element['#attributes'] : array();
   $vars['attributes']['class'][] = 'fieldset';
   if (!empty($element['#title'])) {
     $vars['attributes']['class'][] = 'titled';
+  }
+  if (!empty($element['#id'])) {
+    $vars['attributes']['id'] = $element['#id'];
   }
 
   $description = !empty($element['#description']) ? "<div class='description'>{$element['#description']}</div>" : '';

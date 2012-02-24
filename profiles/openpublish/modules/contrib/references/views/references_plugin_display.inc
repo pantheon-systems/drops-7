@@ -14,7 +14,7 @@ class references_plugin_display extends views_plugin_display {
     $options['style_plugin']['default'] = 'references_style';
     $options['defaults']['default']['style_plugin'] = FALSE;
     $options['defaults']['default']['style_options'] = FALSE;
-    $options['row_plugin']['default'] = 'fields';
+    $options['row_plugin']['default'] = 'references_fields';
     $options['defaults']['default']['row_plugin'] = FALSE;
     $options['defaults']['default']['row_options'] = FALSE;
 

@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -45,7 +45,7 @@ CKEDITOR.plugins.add( 'format',
 						var label = lang[ 'tag_' + tag ];
 
 						// Add the tag entry to the panel list.
-						this.add( tag, styles[tag].buildPreview( label ), label );
+						this.add( tag, '<' + tag + '>' + label + '</' + tag + '>', label );
 					}
 				},
 
@@ -54,10 +54,7 @@ CKEDITOR.plugins.add( 'format',
 					editor.focus();
 					editor.fire( 'saveSnapshot' );
 
-					var style = styles[ value ],
-						elementPath = new CKEDITOR.dom.elementPath( editor.getSelection().getStartElement() );
-
-					style[ style.checkActive( elementPath ) ? 'remove' : 'apply' ]( editor.document );
+					styles[ value ].apply( editor.document );
 
 					// Save the undo snapshot after all changes are affected. (#4899)
 					setTimeout( function()
@@ -111,7 +108,7 @@ CKEDITOR.config.format_tags = 'p;h1;h2;h3;h4;h5;h6;pre;address;div';
  * @type Object
  * @default { element : 'p' }
  * @example
- * config.format_p = { element : 'p', attributes : { 'class' : 'normalPara' } };
+ * config.format_p = { element : 'p', attributes : { class : 'normalPara' } };
  */
 CKEDITOR.config.format_p = { element : 'p' };
 
@@ -120,7 +117,7 @@ CKEDITOR.config.format_p = { element : 'p' };
  * @type Object
  * @default { element : 'div' }
  * @example
- * config.format_div = { element : 'div', attributes : { 'class' : 'normalDiv' } };
+ * config.format_div = { element : 'div', attributes : { class : 'normalDiv' } };
  */
 CKEDITOR.config.format_div = { element : 'div' };
 
@@ -129,7 +126,7 @@ CKEDITOR.config.format_div = { element : 'div' };
  * @type Object
  * @default { element : 'pre' }
  * @example
- * config.format_pre = { element : 'pre', attributes : { 'class' : 'code' } };
+ * config.format_pre = { element : 'pre', attributes : { class : 'code' } };
  */
 CKEDITOR.config.format_pre = { element : 'pre' };
 
@@ -138,7 +135,7 @@ CKEDITOR.config.format_pre = { element : 'pre' };
  * @type Object
  * @default { element : 'address' }
  * @example
- * config.format_address = { element : 'address', attributes : { 'class' : 'styledAddress' } };
+ * config.format_address = { element : 'address', attributes : { class : 'styledAddress' } };
  */
 CKEDITOR.config.format_address = { element : 'address' };
 
@@ -147,7 +144,7 @@ CKEDITOR.config.format_address = { element : 'address' };
  * @type Object
  * @default { element : 'h1' }
  * @example
- * config.format_h1 = { element : 'h1', attributes : { 'class' : 'contentTitle1' } };
+ * config.format_h1 = { element : 'h1', attributes : { class : 'contentTitle1' } };
  */
 CKEDITOR.config.format_h1 = { element : 'h1' };
 
@@ -156,7 +153,7 @@ CKEDITOR.config.format_h1 = { element : 'h1' };
  * @type Object
  * @default { element : 'h2' }
  * @example
- * config.format_h2 = { element : 'h2', attributes : { 'class' : 'contentTitle2' } };
+ * config.format_h2 = { element : 'h2', attributes : { class : 'contentTitle2' } };
  */
 CKEDITOR.config.format_h2 = { element : 'h2' };
 
@@ -165,7 +162,7 @@ CKEDITOR.config.format_h2 = { element : 'h2' };
  * @type Object
  * @default { element : 'h3' }
  * @example
- * config.format_h3 = { element : 'h3', attributes : { 'class' : 'contentTitle3' } };
+ * config.format_h3 = { element : 'h3', attributes : { class : 'contentTitle3' } };
  */
 CKEDITOR.config.format_h3 = { element : 'h3' };
 
@@ -174,7 +171,7 @@ CKEDITOR.config.format_h3 = { element : 'h3' };
  * @type Object
  * @default { element : 'h4' }
  * @example
- * config.format_h4 = { element : 'h4', attributes : { 'class' : 'contentTitle4' } };
+ * config.format_h4 = { element : 'h4', attributes : { class : 'contentTitle4' } };
  */
 CKEDITOR.config.format_h4 = { element : 'h4' };
 
@@ -183,7 +180,7 @@ CKEDITOR.config.format_h4 = { element : 'h4' };
  * @type Object
  * @default { element : 'h5' }
  * @example
- * config.format_h5 = { element : 'h5', attributes : { 'class' : 'contentTitle5' } };
+ * config.format_h5 = { element : 'h5', attributes : { class : 'contentTitle5' } };
  */
 CKEDITOR.config.format_h5 = { element : 'h5' };
 
@@ -192,6 +189,6 @@ CKEDITOR.config.format_h5 = { element : 'h5' };
  * @type Object
  * @default { element : 'h6' }
  * @example
- * config.format_h6 = { element : 'h6', attributes : { 'class' : 'contentTitle6' } };
+ * config.format_h6 = { element : 'h6', attributes : { class : 'contentTitle6' } };
  */
 CKEDITOR.config.format_h6 = { element : 'h6' };

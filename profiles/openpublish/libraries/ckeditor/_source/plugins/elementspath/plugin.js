@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -14,8 +14,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	{
 		toolbarFocus :
 		{
-			editorFocus : false,
-			readOnly : 1,
 			exec : function( editor )
 			{
 				var idBase = editor._.elementsPath.idBase;
@@ -125,30 +123,24 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 					while ( element )
 					{
-						var ignore = 0,
-							name;
-
-						if ( element.data( 'cke-display-name' ) )
-							name = element.data( 'cke-display-name' );
-						else if ( element.data( 'cke-real-element-type' ) )
-							name = element.data( 'cke-real-element-type' );
-						else
-							name = element.getName();
-
+						var ignore = 0;
 						for ( var i = 0; i < filters.length; i++ )
 						{
-							var ret = filters[ i ]( element, name );
-							if ( ret === false )
+							if ( filters[ i ]( element ) === false )
 							{
 								ignore = 1;
 								break;
 							}
-							name = ret || name;
 						}
 
 						if ( !ignore )
 						{
 							var index = elementsList.push( element ) - 1;
+							var name;
+							if ( element.data( 'cke-real-element-type' ) )
+								name = element.data( 'cke-real-element-type' );
+							else
+								name = element.getName();
 
 							// Use this variable to add conditional stuff to the
 							// HTML (because we are doing it in reverse order... unshift).
@@ -196,23 +188,14 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 					editor.fire( 'elementsPathUpdate', { space : space } );
 				});
 
-			function empty()
-			{
-				spaceElement && spaceElement.setHtml( emptyHtml );
-				delete editor._.elementsPath.list;
-			}
-
-			editor.on( 'readOnly', empty );
-			editor.on( 'contentDomUnload', empty );
+			editor.on( 'contentDomUnload', function()
+				{
+					// If the spaceElement hasn't been initialized, don't try to do it at this time
+					// Only reuse existing reference.
+					spaceElement && spaceElement.setHtml( emptyHtml );
+				});
 
 			editor.addCommand( 'elementsPathFocus', commands.toolbarFocus );
 		}
 	});
 })();
-
-/**
- * Fired when the contents of the elementsPath are changed
- * @name CKEDITOR.editor#elementsPathUpdate
- * @event
- * @param {Object} eventData.space The elementsPath container
- */

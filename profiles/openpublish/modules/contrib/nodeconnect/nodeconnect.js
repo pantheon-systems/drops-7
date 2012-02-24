@@ -5,10 +5,6 @@
       $(".nodeconnect-add.single-value", context).each( function() {
         $(this).insertAfter($(this).next().find("label"));
       });
-      $(".nodeconnect-add", context).each( function() {
-        text = $(this).siblings("[type='text']");
-        text.css("width", text.width() - 19);
-      });
       $(".nodeconnect-edit.single-value", context).each( function() {
         $(this).insertAfter($(this).next().find("label"));
       });
@@ -19,7 +15,6 @@
           text = $(this).siblings().find("[type='text']");
         }
         text
-          .css("width", text.width() - 19)
           .bind('change', function(e) {
             if($(this).val() == '') {
               $(edit).attr('disabled', 'disabled');

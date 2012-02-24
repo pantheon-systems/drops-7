@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -9,8 +9,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 (function(){
 	var resizeEditor = function( editor )
 	{
-		if ( !editor.window )
-			return;
 		var doc = editor.document,
 			currentHeight = editor.window.getViewPaneSize().height,
 			newHeight;
@@ -80,7 +78,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 /**
  * Fired when the AutoGrow plugin is about to change the size of the editor.
- * @name CKEDITOR.editor#autogrow
+ * @name CKEDITOR#autogrow
  * @event
  * @param {Number} data.currentHeight The current height of the editor (before the resizing).
  * @param {Number} data.newHeight The new height of the editor (after the resizing). It can be changed

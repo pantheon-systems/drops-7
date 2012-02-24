@@ -1,8 +1,10 @@
 <?php
+
 /**
  * @file
  * Test Date Repeat calculations.
  */
+
 class DateRepeatTestCase extends DrupalWebTestCase {
   public static function getInfo() {
     return array(
@@ -13,7 +15,7 @@ class DateRepeatTestCase extends DrupalWebTestCase {
   }
 
   /**
-   * Implementation of setUp().
+   * Implements setUp().
    */
   public function setUp() {
     // Load the date_repeat module.

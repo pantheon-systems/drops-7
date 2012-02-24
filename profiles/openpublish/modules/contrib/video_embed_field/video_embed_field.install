@@ -87,7 +87,6 @@ function video_embed_field_schema(){
       'name' => array('name')
     ),
   );
-  
   return $schema;
 }
 
@@ -176,4 +175,19 @@ function video_embed_field_update_7002() {
   }
   
   return t('Thumbnail column added.');
+}
+
+/**
+ *  Enable inline colorbox support if colorbox is installed [NO LONGER NEEDED - This update hook does nothing]
+ */
+function video_embed_field_update_7003() {
+  //this is no longer needed
+  //variable_set('colorbox_inline', 1);
+}
+
+/**
+ *  Enable colorbox load support if colorbox is installed, we no longer need inline support
+ */
+function video_embed_field_update_7004() {
+  variable_set('colorbox_load', 1);
 }

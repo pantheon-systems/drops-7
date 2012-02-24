@@ -253,7 +253,7 @@ function token_autocomplete_type($string = '') {
   foreach ($types as $type => $info) {
     if (!$string || strpos($type, $string) === 0) {
       $type_key = "[{$type}:";
-       $matches[$type_key] = levenshtein($type, $string);
+      $matches[$type_key] = levenshtein($type, $string);
     }
   }
 

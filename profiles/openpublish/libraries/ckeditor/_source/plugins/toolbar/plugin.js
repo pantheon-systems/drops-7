@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -36,7 +36,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 		toolbarFocus :
 		{
 			modes : { wysiwyg : 1, source : 1 },
-			readOnly : 1,
 
 			exec : function( editor )
 			{
@@ -59,95 +58,84 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	{
 		init : function( editor )
 		{
-			var endFlag;
-
 			var itemKeystroke = function( item, keystroke )
 			{
-				var next, toolbar;
-				var rtl = editor.lang.dir == 'rtl',
-					toolbarGroupCycling = editor.config.toolbarGroupCycling;
-
-				toolbarGroupCycling = toolbarGroupCycling === undefined || toolbarGroupCycling;
+				var next, nextToolGroup, groupItemsCount;
+				var rtl = editor.lang.dir == 'rtl';
 
 				switch ( keystroke )
 				{
+					case rtl ? 37 : 39 :					// RIGHT-ARROW
 					case 9 :					// TAB
-					case CKEDITOR.SHIFT + 9 :	// SHIFT + TAB
-						// Cycle through the toolbars, starting from the one
-						// closest to the current item.
-						while ( !toolbar || !toolbar.items.length )
-						{
-							toolbar = keystroke == 9 ?
-								( ( toolbar ? toolbar.next : item.toolbar.next ) || editor.toolbox.toolbars[ 0 ] ) :
-								( ( toolbar ? toolbar.previous : item.toolbar.previous ) || editor.toolbox.toolbars[ editor.toolbox.toolbars.length - 1 ] );
-
-							// Look for the first item that accepts focus.
-							if ( toolbar.items.length )
-							{
-								item = toolbar.items[ endFlag ? ( toolbar.items.length - 1 ) : 0 ];
-								while ( item && !item.focus )
-								{
-									item = endFlag ? item.previous : item.next;
-
-									if ( !item )
-										toolbar = 0;
-								}
-							}
-						}
-
-						if ( item )
-							item.focus();
-
-						return false;
-
-					case rtl ? 37 : 39 :		// RIGHT-ARROW
-					case 40 :					// DOWN-ARROW
-						next = item;
 						do
 						{
 							// Look for the next item in the toolbar.
-							next = next.next;
+							next = item.next;
 
-							// If it's the last item, cycle to the first one.
-							if ( !next && toolbarGroupCycling )
-								next = item.toolbar.items[ 0 ];
+							if ( !next )
+							{
+								nextToolGroup = item.toolbar.next;
+								groupItemsCount = nextToolGroup && nextToolGroup.items.length;
+
+								// Bypass the empty toolgroups.
+								while ( groupItemsCount === 0 )
+								{
+									nextToolGroup = nextToolGroup.next;
+									groupItemsCount = nextToolGroup && nextToolGroup.items.length;
+								}
+
+								if ( nextToolGroup )
+									next = nextToolGroup.items[ 0 ];
+							}
+
+							item = next;
 						}
-						while ( next && !next.focus )
+						while ( item && !item.focus )
 
 						// If available, just focus it, otherwise focus the
 						// first one.
-						if ( next )
-							next.focus();
+						if ( item )
+							item.focus();
 						else
-							// Send a TAB.
-							itemKeystroke( item, 9 );
+							editor.toolbox.focus();
 
 						return false;
 
-					case rtl ? 39 : 37 :		// LEFT-ARROW
-					case 38 :					// UP-ARROW
-						next = item;
+					case rtl ? 39 : 37 :					// LEFT-ARROW
+					case CKEDITOR.SHIFT + 9 :	// SHIFT + TAB
 						do
 						{
 							// Look for the previous item in the toolbar.
-							next = next.previous;
+							next = item.previous;
 
-							// If it's the first item, cycle to the last one.
-							if ( !next && toolbarGroupCycling )
-								next = item.toolbar.items[ item.toolbar.items.length - 1 ];
+							if ( !next )
+							{
+								nextToolGroup = item.toolbar.previous;
+								groupItemsCount = nextToolGroup && nextToolGroup.items.length;
+
+								// Bypass the empty toolgroups.
+								while ( groupItemsCount === 0 )
+								{
+									nextToolGroup = nextToolGroup.previous;
+									groupItemsCount = nextToolGroup && nextToolGroup.items.length;
+								}
+
+								if ( nextToolGroup )
+									next = nextToolGroup.items[ groupItemsCount - 1 ];
+							}
+
+							item = next;
 						}
-						while ( next && !next.focus )
+						while ( item && !item.focus )
 
 						// If available, just focus it, otherwise focus the
 						// last one.
-						if ( next )
-							next.focus();
+						if ( item )
+							item.focus();
 						else
 						{
-							endFlag = 1;
-							// Send a SHIFT + TAB.
-							itemKeystroke( item, CKEDITOR.SHIFT + 9 );
-							endFlag = 0;
+							var lastToolbarItems = editor.toolbox.toolbars[ editor.toolbox.toolbars.length - 1 ].items;
+							lastToolbarItems[ lastToolbarItems.length - 1 ].focus();
 						}
 
 						return false;
@@ -172,14 +160,14 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 						var labelId = CKEDITOR.tools.getNextId();
 
-						var output = [ '<div class="cke_toolbox" role="group" aria-labelledby="', labelId, '" onmousedown="return false;"' ],
+						var output = [ '<div class="cke_toolbox" role="toolbar" aria-labelledby="', labelId, '" onmousedown="return false;"' ],
 							expanded =  editor.config.toolbarStartupExpanded !== false,
 							groupStarted;
 
 						output.push( expanded ? '>' : ' style="display:none">' );
 
 						// Sends the ARIA label.
-						output.push( '<span id="', labelId, '" class="cke_voice_label">', editor.lang.toolbars, '</span>' );
+						output.push( '<span id="', labelId, '" class="cke_voice_label">', editor.lang.toolbar, '</span>' );
 
 						var toolbars = editor.toolbox.toolbars,
 							toolbar =
@@ -190,11 +178,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 						for ( var r = 0 ; r < toolbar.length ; r++ )
 						{
-							var toolbarId,
-								toolbarObj = 0,
-								toolbarName,
-								row = toolbar[ r ],
-								items;
+							var row = toolbar[ r ];
 
 							// It's better to check if the row object is really
 							// available because it's a common mistake to leave
@@ -203,6 +187,9 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 							// at all in IE. (#3983)
 							if ( !row )
 								continue;
+
+							var toolbarId = CKEDITOR.tools.getNextId(),
+								toolbarObj = { id : toolbarId, items : [] };
 
 							if ( groupStarted )
 							{
@@ -216,52 +203,33 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 								continue;
 							}
 
-							items = row.items || row;
+							output.push( '<span id="', toolbarId, '" class="cke_toolbar" role="presentation"><span class="cke_toolbar_start"></span>' );
+
+							// Add the toolbar to the "editor.toolbox.toolbars"
+							// array.
+							var index = toolbars.push( toolbarObj ) - 1;
+
+							// Create the next/previous reference.
+							if ( index > 0 )
+							{
+								toolbarObj.previous = toolbars[ index - 1 ];
+								toolbarObj.previous.next = toolbarObj;
+							}
 
 							// Create all items defined for this toolbar.
-							for ( var i = 0 ; i < items.length ; i++ )
+							for ( var i = 0 ; i < row.length ; i++ )
 							{
 								var item,
-									itemName = items[ i ],
-									canGroup;
+									itemName = row[ i ];
 
-								item = editor.ui.create( itemName );
+								if ( itemName == '-' )
+									item = CKEDITOR.ui.separator;
+								else
+									item = editor.ui.create( itemName );
 
 								if ( item )
 								{
-									canGroup = item.canGroup !== false;
-
-									// Initialize the toolbar first, if needed.
-									if ( !toolbarObj )
-									{
-										// Create the basic toolbar object.
-										toolbarId = CKEDITOR.tools.getNextId();
-										toolbarObj = { id : toolbarId, items : [] };
-										toolbarName = row.name && ( editor.lang.toolbarGroups[ row.name ] || row.name );
-
-										// Output the toolbar opener.
-										output.push( '<span id="', toolbarId, '" class="cke_toolbar"',
-											( toolbarName ? ' aria-labelledby="'+ toolbarId +  '_label"' : '' ),
-											' role="toolbar">' );
-
-										// If a toolbar name is available, send the voice label.
-										toolbarName && output.push( '<span id="', toolbarId, '_label" class="cke_voice_label">', toolbarName, '</span>' );
-
-										output.push( '<span class="cke_toolbar_start"></span>' );
-
-										// Add the toolbar to the "editor.toolbox.toolbars"
-										// array.
-										var index = toolbars.push( toolbarObj ) - 1;
-
-										// Create the next/previous reference.
-										if ( index > 0 )
-										{
-											toolbarObj.previous = toolbars[ index - 1 ];
-											toolbarObj.previous.next = toolbarObj;
-										}
-									}
-
-									if ( canGroup )
+									if ( item.canGroup )
 									{
 										if ( !groupStarted )
 										{
@@ -305,8 +273,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 								groupStarted = 0;
 							}
 
-							if ( toolbarObj )
-								output.push( '<span class="cke_toolbar_end"></span></span>' );
+							output.push( '<span class="cke_toolbar_end"></span></span>' );
 						}
 
 						output.push( '</div>' );
@@ -327,7 +294,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 							editor.addCommand( 'toolbarCollapse',
 								{
-									readOnly : 1,
 									exec : function( editor )
 									{
 										var collapser = CKEDITOR.document.getById( collapserId ),
@@ -380,44 +346,24 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 					}
 				});
 
-			editor.on( 'destroy', function()
-			{
-				var toolbars, index = 0, i,
-						items, instance;
-				toolbars = this.toolbox.toolbars;
-				for ( ; index < toolbars.length; index++ )
-				{
-					items = toolbars[ index ].items;
-					for ( i = 0; i < items.length; i++ )
-					{
-						instance = items[ i ];
-						if ( instance.clickFn ) CKEDITOR.tools.removeFunction( instance.clickFn );
-						if ( instance.keyDownFn ) CKEDITOR.tools.removeFunction( instance.keyDownFn );
-					}
-				}
-			});
-
 			editor.addCommand( 'toolbarFocus', commands.toolbarFocus );
-
-			editor.ui.add( '-', CKEDITOR.UI_SEPARATOR, {} );
-			editor.ui.addHandler( CKEDITOR.UI_SEPARATOR,
-			{
-				create: function()
-				{
-					return {
-						render : function( editor, output )
-						{
-							output.push( '<span class="cke_separator" role="separator"></span>' );
-							return {};
-						}
-					};
-				}
-			});
 		}
 	});
 })();
 
-CKEDITOR.UI_SEPARATOR = 'separator';
+/**
+ * The UI element that renders a toolbar separator.
+ * @type Object
+ * @example
+ */
+CKEDITOR.ui.separator =
+{
+	render : function( editor, output )
+	{
+		output.push( '<span class="cke_separator" role="separator"></span>' );
+		return {};
+	}
+};
 
 /**
  * The "theme space" to which rendering the toolbar. For the default theme,
@@ -462,36 +408,40 @@ CKEDITOR.config.toolbar_Basic =
  * // This is actually the default value.
  * config.toolbar_Full =
  * [
- *     { name: 'document',    items : [ 'Source','-','Save','NewPage','DocProps','Preview','Print','-','Templates' ] },
- *     { name: 'clipboard',   items : [ 'Cut','Copy','Paste','PasteText','PasteFromWord','-','Undo','Redo' ] },
- *     { name: 'editing',     items : [ 'Find','Replace','-','SelectAll','-','SpellChecker', 'Scayt' ] },
- *     { name: 'forms',       items : [ 'Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton', 'HiddenField' ] },
+ *     ['Source','-','Save','NewPage','Preview','-','Templates'],
+ *     ['Cut','Copy','Paste','PasteText','PasteFromWord','-','Print', 'SpellChecker', 'Scayt'],
+ *     ['Undo','Redo','-','Find','Replace','-','SelectAll','RemoveFormat'],
+ *     ['Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton', 'HiddenField'],
  *     '/',
- *     { name: 'basicstyles', items : [ 'Bold','Italic','Underline','Strike','Subscript','Superscript','-','RemoveFormat' ] },
- *     { name: 'paragraph',   items : [ 'NumberedList','BulletedList','-','Outdent','Indent','-','Blockquote','CreateDiv','-','JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock','-','BidiLtr','BidiRtl' ] },
- *     { name: 'links',       items : [ 'Link','Unlink','Anchor' ] },
- *     { name: 'insert',      items : [ 'Image','Flash','Table','HorizontalRule','Smiley','SpecialChar','PageBreak' ] },
+ *     ['Bold','Italic','Underline','Strike','-','Subscript','Superscript'],
+ *     ['NumberedList','BulletedList','-','Outdent','Indent','Blockquote','CreateDiv'],
+ *     ['JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock'],
+ *     ['BidiLtr', 'BidiRtl' ],
+ *     ['Link','Unlink','Anchor'],
+ *     ['Image','Flash','Table','HorizontalRule','Smiley','SpecialChar','PageBreak','Iframe'],
  *     '/',
- *     { name: 'styles',      items : [ 'Styles','Format','Font','FontSize' ] },
- *     { name: 'colors',      items : [ 'TextColor','BGColor' ] },
- *     { name: 'tools',       items : [ 'Maximize', 'ShowBlocks','-','About' ] }
+ *     ['Styles','Format','Font','FontSize'],
+ *     ['TextColor','BGColor'],
+ *     ['Maximize', 'ShowBlocks','-','About']
  * ];
  */
 CKEDITOR.config.toolbar_Full =
 [
-	{ name: 'document',		items : [ 'Source','-','Save','NewPage','DocProps','Preview','Print','-','Templates' ] },
-	{ name: 'clipboard',	items : [ 'Cut','Copy','Paste','PasteText','PasteFromWord','-','Undo','Redo' ] },
-	{ name: 'editing',		items : [ 'Find','Replace','-','SelectAll','-','SpellChecker', 'Scayt' ] },
-	{ name: 'forms',		items : [ 'Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton', 'HiddenField' ] },
+	['Source','-','Save','NewPage','Preview','-','Templates'],
+	['Cut','Copy','Paste','PasteText','PasteFromWord','-','Print', 'SpellChecker', 'Scayt'],
+	['Undo','Redo','-','Find','Replace','-','SelectAll','RemoveFormat'],
+	['Form', 'Checkbox', 'Radio', 'TextField', 'Textarea', 'Select', 'Button', 'ImageButton', 'HiddenField'],
 	'/',
-	{ name: 'basicstyles',	items : [ 'Bold','Italic','Underline','Strike','Subscript','Superscript','-','RemoveFormat' ] },
-	{ name: 'paragraph',	items : [ 'NumberedList','BulletedList','-','Outdent','Indent','-','Blockquote','CreateDiv','-','JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock','-','BidiLtr','BidiRtl' ] },
-	{ name: 'links',		items : [ 'Link','Unlink','Anchor' ] },
-	{ name: 'insert',		items : [ 'Image','Flash','Table','HorizontalRule','Smiley','SpecialChar','PageBreak','Iframe' ] },
+	['Bold','Italic','Underline','Strike','-','Subscript','Superscript'],
+	['NumberedList','BulletedList','-','Outdent','Indent','Blockquote','CreateDiv'],
+	['JustifyLeft','JustifyCenter','JustifyRight','JustifyBlock'],
+	['BidiLtr', 'BidiRtl' ],
+	['Link','Unlink','Anchor'],
+	['Image','Flash','Table','HorizontalRule','Smiley','SpecialChar','PageBreak','Iframe'],
 	'/',
-	{ name: 'styles',		items : [ 'Styles','Format','Font','FontSize' ] },
-	{ name: 'colors',		items : [ 'TextColor','BGColor' ] },
-	{ name: 'tools',		items : [ 'Maximize', 'ShowBlocks','-','About' ] }
+	['Styles','Format','Font','FontSize'],
+	['TextColor','BGColor'],
+	['Maximize', 'ShowBlocks','-','About']
 ];
 
 /**
@@ -529,17 +479,4 @@ CKEDITOR.config.toolbarCanCollapse = true;
  * @default true
  * @example
  * config.toolbarStartupExpanded = false;
- */
-
-/**
- * When enabled, makes the arrow keys navigation cycle within the current
- * toolbar group. Otherwise the arrows will move trought all items available in
- * the toolbar. The TAB key will still be used to quickly jump among the
- * toolbar groups.
- * @name CKEDITOR.config.toolbarGroupCycling
- * @since 3.6
- * @type Boolean
- * @default true
- * @example
- * config.toolbarGroupCycling = false;
  */

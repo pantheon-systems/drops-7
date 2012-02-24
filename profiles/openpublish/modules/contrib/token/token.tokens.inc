@@ -133,6 +133,11 @@ function token_token_info() {
       'description' => t("The URL of the taxonomy term's edit page."),
       //'type' => 'url',
     );
+    $info['tokens']['term']['parents'] = array(
+      'name' => t('Parents'),
+      'description' => t("An array of all the term's parents, starting with the root."),
+      'type' => 'array',
+    );
     $info['tokens']['term']['root'] = array(
       'name' => t('Root term'),
       'description' => t("The root term of the taxonomy term."),
@@ -216,6 +221,11 @@ function token_token_info() {
     'name' => t('Parent'),
     'description' => t("The menu link's parent."),
     'type' => 'menu-link',
+  );
+  $info['tokens']['menu-link']['parents'] = array(
+    'name' => t('Parents'),
+    'description' => t("An array of all the menu link's parents, starting with the root."),
+    'type' => 'array',
   );
   $info['tokens']['menu-link']['root'] = array(
     'name' => t('Root'),
@@ -457,6 +467,12 @@ function token_tokens($type, $tokens, array $data = array(), array $options = ar
           $replacements[$original] = url("taxonomy/term/{$term->tid}/edit", $url_options);
           break;
 
+        case 'parents':
+          if ($parents = token_taxonomy_term_load_all_parents($term->tid)) {
+            $replacements[$original] = token_render_array($parents, $options);
+          }
+          break;
+
         case 'root':
           $parents = taxonomy_get_parents_all($term->tid);
           $root_term = end($parents);
@@ -470,6 +486,12 @@ function token_tokens($type, $tokens, array $data = array(), array $options = ar
     // Chained token relationships.
     if (($url_tokens = token_find_with_prefix($tokens, 'url'))) {
       $replacements += token_generate('url', $url_tokens, entity_uri('taxonomy_term', $term), $options);
+    }
+    // [term:parents:*] chained tokens.
+    if ($parents_tokens = token_find_with_prefix($tokens, 'parents')) {
+      if ($parents = token_taxonomy_term_load_all_parents($term->tid)) {
+        $replacements += token_generate('array', $parents_tokens, array('array' => $parents), $options);
+      }
     }
     if ($root_tokens = token_find_with_prefix($tokens, 'root')) {
       $parents = taxonomy_get_parents_all($term->tid);
@@ -588,6 +610,11 @@ function token_tokens($type, $tokens, array $data = array(), array $options = ar
             $replacements[$original] = $sanitize ? check_plain($parent['title']) : $parent['title'];
           }
           break;
+        case 'parents':
+          if ($parents = token_menu_link_load_all_parents($link['mlid'])) {
+            $replacements[$original] = token_render_array($parents, $options);
+          }
+          break;
         case 'root';
           if (!empty($link['p1']) && $link['p1'] != $link['mlid'] && $root = token_menu_link_load($link['p1'])) {
             $replacements[$original] = $sanitize ? check_plain($root['title']) : $root['title'];
@@ -599,6 +626,12 @@ function token_tokens($type, $tokens, array $data = array(), array $options = ar
     // Chained token relationships.
     if (!empty($link['plid']) && ($source_tokens = token_find_with_prefix($tokens, 'parent')) && $parent = token_menu_link_load($link['plid'])) {
       $replacements += token_generate('menu-link', $source_tokens, array('menu-link' => $parent), $options);
+    }
+    // [menu-link:parents:*] chained tokens.
+    if ($parents_tokens = token_find_with_prefix($tokens, 'parents')) {
+      if ($parents = token_menu_link_load_all_parents($link['mlid'])) {
+        $replacements += token_generate('array', $parents_tokens, array('array' => $parents), $options);
+      }
     }
     if (!empty($link['p1']) && $link['p1'] != $link['mlid'] && ($root_tokens = token_find_with_prefix($tokens, 'root')) && $root = token_menu_link_load($link['p1'])) {
       $replacements += token_generate('menu-link', $root_tokens, array('menu-link' => $root), $options);
@@ -861,14 +894,8 @@ function token_tokens($type, $tokens, array $data = array(), array $options = ar
 function token_tokens_alter(array &$replacements, array $context) {
   $options = $context['options'];
 
-  if (isset($options['language'])) {
-    $url_options['language'] = $options['language'];
-    $language_code = $options['language']->language;
-  }
-  else {
-    $language_code = NULL;
-  }
   $sanitize = !empty($options['sanitize']);
+  $langcode = !empty($options['language']->language) ? $options['language']->language : NULL;
 
   // Comment token fixes.
   if ($context['type'] == 'comment' && !empty($context['data']['comment'])) {
@@ -900,10 +927,12 @@ function token_tokens_alter(array &$replacements, array $context) {
     foreach ($context['tokens'] as $name => $original) {
       switch ($name) {
         case 'author':
-          // @todo Remove when http://drupal.org/node/1185842 is fixed.
-          $account = user_load($node->uid);
-          $name = format_username($account);
-          $replacements[$original] = $sanitize ? check_plain($name) : $name;
+          // http://drupal.org/node/1185842 was fixed in core release 7.9.
+          if (version_compare(VERSION, '7.9', '<')) {
+            $account = user_load($node->uid);
+            $name = format_username($account);
+            $replacements[$original] = $sanitize ? check_plain($name) : $name;
+          }
           break;
       }
     }
@@ -916,10 +945,12 @@ function token_tokens_alter(array &$replacements, array $context) {
     foreach ($context['tokens'] as $name => $original) {
       switch ($name) {
         case 'owner':
-          // @todo Remove when http://drupal.org/node/978028 is fixed.
-          $account = user_load($file->uid);
-          $name = format_username($account);
-          $replacements[$original] = $sanitize ? check_plain($name) : $name;
+          // http://drupal.org/node/978028 was fixed in core release 7.7.
+          if (version_compare(VERSION, '7.7', '<')) {
+            $account = user_load($file->uid);
+            $name = format_username($account);
+            $replacements[$original] = $sanitize ? check_plain($name) : $name;
+          }
           break;
       }
     }
@@ -1038,29 +1069,22 @@ function menu_tokens($type, $tokens, array $data = array(), array $options = arr
 
   // Node tokens.
   if ($type == 'node' && !empty($data['node'])) {
-    // We need to clone the node as menu_node_prepare() may cause data loss.
-    // @see http://drupal.org/node/1317926
-    $node = clone $data['node'];
+    $node = $data['node'];
 
-    if (!isset($node->menu)) {
-      // Nodes do not have their menu links loaded via menu_node_load().
-      menu_node_prepare($node);
-    }
-
-    if (!empty($node->menu['mlid'])) {
-      $link = token_menu_link_load($node->menu['mlid']);
-
-      foreach ($tokens as $name => $original) {
-        switch ($name) {
-          case 'menu-link':
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'menu-link':
+          if ($link = token_node_menu_link_load($node)) {
             $replacements[$original] = $sanitize ? check_plain($link['title']) : $link['title'];
-            break;
-        }
+          }
+          break;
       }
 
       // Chained token relationships.
       if ($menu_tokens = token_find_with_prefix($tokens, 'menu-link')) {
-        $replacements += token_generate('menu-link', $menu_tokens, array('menu-link' => $link), $options);
+        if ($link = token_node_menu_link_load($node)) {
+          $replacements += token_generate('menu-link', $menu_tokens, array('menu-link' => $link), $options);
+        }
       }
     }
   }

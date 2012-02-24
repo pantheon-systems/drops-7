@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Install, update and uninstall functions for the token module.
+ */
+
+/**
  * Implements hook_requirements().
  */
 function token_requirements($phase = 'runtime') {

@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -338,9 +338,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 	CKEDITOR.dom.element.prototype.isBlockBoundary = function( customNodeNames )
 	{
-		var nodeNameMatches = customNodeNames ?
-			CKEDITOR.tools.extend( {}, CKEDITOR.dtd.$block, customNodeNames || {} ) :
-			CKEDITOR.dtd.$block;
+		var nodeNameMatches = CKEDITOR.tools.extend( {}, CKEDITOR.dtd.$block, customNodeNames || {} );
 
 		// Don't consider floated formatting as block boundary, fall back to dtd check in that case. (#6297)
 		return this.getComputedStyle( 'float' ) == 'none' && blockBoundaryDisplayMatch[ this.getComputedStyle( 'display' ) ]
@@ -423,34 +421,18 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 		};
 	};
 
-	CKEDITOR.dom.walker.nodeType = function( type, isReject )
-	{
-		return function( node )
-		{
-			return !! ( isReject ^ ( node.type == type ) );
-		};
-	};
-
 	var tailNbspRegex = /^[\t\r\n ]*(?:&nbsp;|\xa0)$/,
-		isWhitespaces = CKEDITOR.dom.walker.whitespaces(),
-		isBookmark = CKEDITOR.dom.walker.bookmark(),
-		toSkip = function( node )
+		isNotWhitespaces = CKEDITOR.dom.walker.whitespaces( 1 ),
+		isNotBookmark = CKEDITOR.dom.walker.bookmark( 0, 1 ),
+		fillerEvaluator = function( element )
 		{
-			return isBookmark( node )
-					|| isWhitespaces( node )
-					|| node.type == CKEDITOR.NODE_ELEMENT
-					&& node.getName() in CKEDITOR.dtd.$inline
-					&& !( node.getName() in CKEDITOR.dtd.$empty );
+			return isNotBookmark( element ) && isNotWhitespaces( element );
 		};
 
 	// Check if there's a filler node at the end of an element, and return it.
 	CKEDITOR.dom.element.prototype.getBogus = function()
 	{
-		// Bogus are not always at the end, e.g. <p><a>text<br /></a></p> (#7070).
-		var tail = this;
-		do { tail = tail.getPreviousSourceNode(); }
-		while ( toSkip( tail ) )
-
+		var tail = this.getLast( fillerEvaluator );
 		if ( tail && ( !CKEDITOR.env.ie ? tail.is && tail.is( 'br' )
 				: tail.getText && tailNbspRegex.test( tail.getText() ) ) )
 		{

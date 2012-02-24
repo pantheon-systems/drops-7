@@ -24,16 +24,16 @@
       // and set up an update whenever a field is left
       $(".id-group", context).each(function () {
         $(this, context).find(".id-field").focusout(function (e){
-          valueid = $(this).attr("key");
+          valueid = $(this).attr("key").replace(/_/g,"-");
           $("#edit-" + valueid).trigger("update");
         });
         $(this, context).find("input.form-submit").click(function (e){
-          valueid = $(this).attr("key");
+          valueid = $(this).attr("key").replace(/_/g,"-");
           $("#edit-" + valueid).trigger("update");
         });
         $(this, context).find(".id-sortable", context).sortable({
           stop: function(event, ui) {
-            valueid = $(this).attr("key");
+          valueid = $(this).attr("key").replace(/_/g,"-");
           $("#edit-" + valueid).trigger("update");
           }
         });
@@ -44,7 +44,7 @@
         Drupal.jsAC.prototype.select = function (node) {
           this.input.value = $(node).data('autocompleteValue');
           $(this.popup).css({ visibility: 'hidden' });
-          valueid = $(this.input).attr("key");          
+          valueid = $(this.input).attr("key").replace(/_/g,"-");
           $("#edit-" + valueid).trigger("update");
         };      	
       }

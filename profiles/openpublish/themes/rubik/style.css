@@ -11,7 +11,7 @@ body.tao {
   }
 
 a {
-  color:#59a;
+  color:#008eb1;
   text-decoration:none;
   }
 
@@ -259,6 +259,7 @@ div.pager {
   border-radius:3px;
   -moz-border-radius:3px;
   -webkit-border-radius:3px;
+  z-index: 1;
   }
 
 .secondary-tabs:hover {

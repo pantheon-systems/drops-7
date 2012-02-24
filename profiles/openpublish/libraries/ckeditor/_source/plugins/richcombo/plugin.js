@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -18,7 +18,7 @@ CKEDITOR.plugins.add( 'richcombo',
  * @constant
  * @example
  */
-CKEDITOR.UI_RICHCOMBO = 'richcombo';
+CKEDITOR.UI_RICHCOMBO = 3;
 
 CKEDITOR.ui.richCombo = CKEDITOR.tools.createClass(
 {
@@ -128,16 +128,11 @@ CKEDITOR.ui.richCombo = CKEDITOR.tools.createClass(
 				clickFn : clickFn
 			};
 
-			function updateState()
-			{
-				var state = this.modes[ editor.mode ] ? CKEDITOR.TRISTATE_OFF : CKEDITOR.TRISTATE_DISABLED;
-				this.setState( editor.readOnly && !this.readOnly ? CKEDITOR.TRISTATE_DISABLED : state );
-				this.setValue( '' );
-			}
-
-			editor.on( 'mode', updateState, this );
-			// If this combo is sensitive to readOnly state, update it accordingly.
-			!this.readOnly && editor.on( 'readOnly', updateState, this);
+			editor.on( 'mode', function()
+				{
+					this.setState( this.modes[ editor.mode ] ? CKEDITOR.TRISTATE_OFF : CKEDITOR.TRISTATE_DISABLED );
+				},
+				this );
 
 			var keyDownFn = CKEDITOR.tools.addFunction( function( ev, element )
 				{
@@ -161,20 +156,18 @@ CKEDITOR.ui.richCombo = CKEDITOR.tools.createClass(
 					ev.preventDefault();
 				});
 
-			var focusFn = CKEDITOR.tools.addFunction( function() { instance.onfocus && instance.onfocus(); } );
-
 			// For clean up
 			instance.keyDownFn = keyDownFn;
 
 			output.push(
-				'<span class="cke_rcombo" role="presentation">',
+				'<span class="cke_rcombo">',
 				'<span id=', id );
 
 			if ( this.className )
 				output.push( ' class="', this.className, ' cke_off"');
 
 			output.push(
-				' role="presentation">',
+				'>',
 					'<span id="' + id+ '_label" class=cke_label>', this.label, '</span>',
 					'<a hidefocus=true title="', this.title, '" tabindex="-1"',
 						env.gecko && env.version >= 10900 && !env.hc ? '' : ' href="javascript:void(\'' + this.label + '\')"',
@@ -199,13 +192,11 @@ CKEDITOR.ui.richCombo = CKEDITOR.tools.createClass(
 
 			output.push(
 					' onkeydown="CKEDITOR.tools.callFunction( ', keyDownFn, ', event, this );"' +
-					' onfocus="return CKEDITOR.tools.callFunction(', focusFn, ', event);" ' +
-					( CKEDITOR.env.ie ? 'onclick="return false;" onmouseup' : 'onclick' ) +		// #188
-						'="CKEDITOR.tools.callFunction(', clickFn, ', this); return false;">' +
+					' onclick="CKEDITOR.tools.callFunction(', clickFn, ', this); return false;">' +
 						'<span>' +
 							'<span id="' + id + '_text" class="cke_text cke_inline_label">' + this.label + '</span>' +
 						'</span>' +
-						'<span class=cke_openbutton><span class=cke_icon>' + ( CKEDITOR.env.hc ? '&#9660;' : CKEDITOR.env.air ?  '&nbsp;' : '' ) + '</span></span>' +	// BLACK DOWN-POINTING TRIANGLE
+						'<span class=cke_openbutton>' + ( CKEDITOR.env.hc ? '<span>&#9660;</span>' : CKEDITOR.env.air ?  '&nbsp;' : '' ) + '</span>' +	// BLACK DOWN-POINTING TRIANGLE
 					'</a>' +
 				'</span>' +
 				'</span>' );
@@ -259,6 +250,7 @@ CKEDITOR.ui.richCombo = CKEDITOR.tools.createClass(
 			panel.onEscape = function()
 				{
 					panel.hide();
+					me.document.getById( 'cke_' + me.id ).getFirst().getNext().focus();
 				};
 
 			list.onClick = function( value, marked )
@@ -276,7 +268,7 @@ CKEDITOR.ui.richCombo = CKEDITOR.tools.createClass(
 					else
 						me.setValue( '' );
 
-					panel.hide( false );
+					panel.hide();
 				};
 
 			this._.panel = panel;
@@ -297,18 +289,16 @@ CKEDITOR.ui.richCombo = CKEDITOR.tools.createClass(
 			this._.value = value;
 
 			var textElement = this.document.getById( 'cke_' + this.id + '_text' );
-			if ( textElement )
-			{
-				if ( !( value || text ) )
-				{
-					text = this.label;
-					textElement.addClass( 'cke_inline_label' );
-				}
-				else
-					textElement.removeClass( 'cke_inline_label' );
 
-				textElement.setHtml( typeof text != 'undefined' ? text : value );
+			if ( !( value || text ) )
+			{
+				text = this.label;
+				textElement.addClass( 'cke_inline_label' );
 			}
+			else
+				textElement.removeClass( 'cke_inline_label' );
+
+			textElement.setHtml( typeof text != 'undefined' ? text : value );
 		},
 
 		getValue : function()

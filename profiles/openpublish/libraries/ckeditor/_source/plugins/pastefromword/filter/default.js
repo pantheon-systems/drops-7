@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -118,107 +118,70 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 		return result;
 	};
 
-	// 1. move consistent list item styles up to list root.
-	// 2. clear out unnecessary list item numbering.
-	function postProcessList( list )
-	{
-		var children = list.children,
-			child,
-			attrs,
-			count = list.children.length,
-			match,
-			mergeStyle,
-			styleTypeRegexp = /list-style-type:(.*?)(?:;|$)/,
-			stylesFilter = CKEDITOR.plugins.pastefromword.filters.stylesFilter;
-
-		attrs = list.attributes;
-		if ( styleTypeRegexp.exec( attrs.style ) )
-			return;
-
-		for ( var i = 0; i < count; i++ )
-		{
-			child = children[ i ];
-
-			if ( child.attributes.value && Number( child.attributes.value ) == i + 1 )
-				delete child.attributes.value;
-
-			match = styleTypeRegexp.exec( child.attributes.style );
-
-			if ( match )
-			{
-				if ( match[ 1 ] == mergeStyle || !mergeStyle )
-					mergeStyle = match[ 1 ];
-				else
-				{
-					mergeStyle = null;
-					break;
-				}
-			}
-		}
-
-		if ( mergeStyle )
-		{
-			for ( i = 0; i < count; i++ )
-			{
-				attrs = children[ i ].attributes;
-				attrs.style && ( attrs.style = stylesFilter( [ [ 'list-style-type'] ] )( attrs.style ) || '' );
-			}
-
-			list.addStyle( 'list-style-type', mergeStyle );
-		}
-	}
-
 	var cssLengthRelativeUnit = /^([.\d]*)+(em|ex|px|gd|rem|vw|vh|vm|ch|mm|cm|in|pt|pc|deg|rad|ms|s|hz|khz){1}?/i;
 	var emptyMarginRegex = /^(?:\b0[^\s]*\s*){1,4}$/;		// e.g. 0px 0pt 0px
 	var romanLiternalPattern = '^m{0,4}(cm|cd|d?c{0,3})(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$',
 		lowerRomanLiteralRegex = new RegExp( romanLiternalPattern ),
 		upperRomanLiteralRegex = new RegExp( romanLiternalPattern.toUpperCase() );
 
-	var orderedPatterns = { 'decimal' : /\d+/, 'lower-roman': lowerRomanLiteralRegex, 'upper-roman': upperRomanLiteralRegex, 'lower-alpha' : /^[a-z]+$/, 'upper-alpha': /^[A-Z]+$/ },
-		unorderedPatterns = { 'disc' : /[l\u00B7\u2002]/, 'circle' : /[\u006F\u00D8]/,'square' : /[\u006E\u25C6]/},
-		listMarkerPatterns = { 'ol' : orderedPatterns, 'ul' : unorderedPatterns },
-		romans = [ [1000, 'M'], [900, 'CM'], [500, 'D'], [400, 'CD'], [100, 'C'], [90, 'XC'], [50, 'L'], [40, 'XL'], [10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I'] ],
-		alpahbets = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-
-	// Convert roman numbering back to decimal.
-	function fromRoman( str )
-	 {
-		 str = str.toUpperCase();
-		 var l = romans.length, retVal = 0;
-		 for ( var i = 0; i < l; ++i )
-		 {
-			 for ( var j = romans[i], k = j[1].length; str.substr( 0, k ) == j[1]; str = str.substr( k ) )
-				 retVal += j[ 0 ];
-		 }
-		 return retVal;
-	 }
-
-	// Convert alphabet numbering back to decimal.
-	function fromAlphabet( str )
-	{
-		str = str.toUpperCase();
-		var l = alpahbets.length, retVal = 1;
-		for ( var x = 1; str.length > 0; x *= l )
-		{
-			retVal += alpahbets.indexOf( str.charAt( str.length - 1 ) ) * x;
-			str = str.substr( 0, str.length - 1 );
-		}
-		return retVal;
-	}
-
 	var listBaseIndent = 0,
-		previousListItemMargin = null,
-		previousListId;
+		 previousListItemMargin;
 
-	var plugin = ( CKEDITOR.plugins.pastefromword =
+	CKEDITOR.plugins.pastefromword =
 	{
 		utils :
 		{
 			// Create a <cke:listbullet> which indicate an list item type.
-			createListBulletMarker : function ( bullet, bulletText )
+			createListBulletMarker : function ( bulletStyle, bulletText )
 			{
-				var marker = new CKEDITOR.htmlParser.element( 'cke:listbullet' );
-				marker.attributes = { 'cke:listsymbol' : bullet[ 0 ] };
+				var marker = new CKEDITOR.htmlParser.element( 'cke:listbullet' ),
+					listType;
+
+				// TODO: Support more list style type from MS-Word.
+				if ( !bulletStyle )
+				{
+					bulletStyle = 'decimal';
+					listType = 'ol';
+				}
+				else if ( bulletStyle[ 2 ] )
+				{
+					if ( !isNaN( bulletStyle[ 1 ] ) )
+						bulletStyle = 'decimal';
+					else if ( lowerRomanLiteralRegex.test( bulletStyle[ 1 ] ) )
+						bulletStyle = 'lower-roman';
+					else if ( upperRomanLiteralRegex.test( bulletStyle[ 1 ] ) )
+						bulletStyle = 'upper-roman';
+					else if ( /^[a-z]+$/.test( bulletStyle[ 1 ] ) )
+						bulletStyle = 'lower-alpha';
+					else if ( /^[A-Z]+$/.test( bulletStyle[ 1 ] ) )
+						bulletStyle = 'upper-alpha';
+					// Simply use decimal for the rest forms of unrepresentable
+					// numerals, e.g. Chinese...
+					else
+						bulletStyle = 'decimal';
+
+					listType = 'ol';
+				}
+				else
+				{
+					if ( /[l\u00B7\u2002]/.test( bulletStyle[ 1 ] ) )
+						bulletStyle = 'disc';
+					else if ( /[\u006F\u00D8]/.test( bulletStyle[ 1 ] ) )
+						bulletStyle = 'circle';
+					else if ( /[\u006E\u25C6]/.test( bulletStyle[ 1 ] ) )
+						bulletStyle = 'square';
+					else
+						bulletStyle = 'disc';
+
+					listType = 'ul';
+				}
+
+				// Represent list type as CSS style.
+				marker.attributes =
+				{
+					'cke:listtype' : listType,
+					'style' : 'list-style-type:' + bulletStyle + ';'
+				};
 				marker.add( new CKEDITOR.htmlParser.text( bulletText ) );
 				return marker;
 			},
@@ -244,70 +207,67 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 					listMarker;
 
 				if ( ( listMarker = element.removeAnyChildWithName( 'cke:listbullet' ) )
-						&& listMarker.length
-						&& ( listMarker = listMarker[ 0 ] ) )
+					  && listMarker.length
+					  && ( listMarker = listMarker[ 0 ] ) )
 				{
 					element.name = 'cke:li';
 
 					if ( attrs.style )
 					{
-						attrs.style = plugin.filters.stylesFilter(
+						attrs.style = CKEDITOR.plugins.pastefromword.filters.stylesFilter(
 								[
 									// Text-indent is not representing list item level any more.
 									[ 'text-indent' ],
 									[ 'line-height' ],
-									// First attempt is to resolve indent level from on a constant margin increment.
+									// Resolve indent level from 'margin-left' value.
 									[ ( /^margin(:?-left)?$/ ), null, function( margin )
 									{
-										// Deal with component/short-hand form.
+										// Be able to deal with component/short-hand form style.
 										var values = margin.split( ' ' );
-										margin = CKEDITOR.tools.convertToPx( values[ 3 ] || values[ 1 ] || values [ 0 ] );
+										margin = CKEDITOR.plugins.pastefromword.utils.convertToPx( values[ 3 ] || values[ 1 ] || values [ 0 ] );
+										margin = parseInt( margin, 10 );
 
-										// Figure out the indent unit by checking the first time of incrementation.
-										if ( !listBaseIndent && previousListItemMargin !== null && margin > previousListItemMargin )
+										// Figure out the indent unit by looking at the first increament.
+										if ( !listBaseIndent && previousListItemMargin && margin > previousListItemMargin )
 											listBaseIndent = margin - previousListItemMargin;
 
-										previousListItemMargin = margin;
-
-										attrs[ 'cke:indent' ] = listBaseIndent && ( Math.ceil( margin / listBaseIndent ) + 1 ) || 1;
-									} ],
-									// The best situation: "mso-list:l0 level1 lfo2" tells the belonged list root, list item indentation, etc.
-									[ ( /^mso-list$/ ), null, function( val )
-									{
-										val = val.split( ' ' );
-										var listId = Number( val[ 0 ].match( /\d+/ ) ),
-											indent = Number( val[ 1 ].match( /\d+/ ) );
-
-										if ( indent == 1 )
-										{
-											listId !== previousListId && ( attrs[ 'cke:reset' ] = 1 );
-											previousListId = listId;
-										}
-										attrs[ 'cke:indent' ] = indent;
+										attrs[ 'cke:margin' ] = previousListItemMargin = margin;
 									} ]
-								] )( attrs.style, element ) || '';
+							] )( attrs.style, element ) || '' ;
 					}
 
-					// First level list item might be presented without a margin.
+					// Inherit list-type-style from bullet.
+					var listBulletAttrs = listMarker.attributes,
+						listBulletStyle = listBulletAttrs.style;
 
-
-					// In case all above doesn't apply.
-					if ( !attrs[ 'cke:indent' ] )
-					{
-						previousListItemMargin = 0;
-						attrs[ 'cke:indent' ] = 1;
-					}
-
-					// Inherit attributes from bullet.
-					CKEDITOR.tools.extend( attrs, listMarker.attributes );
+					element.addStyle( listBulletStyle );
+					CKEDITOR.tools.extend( attrs, listBulletAttrs );
 					return true;
 				}
-				// Current list disconnected.
-				else
-					previousListId = previousListItemMargin = listBaseIndent = null;
 
 				return false;
 			},
+
+			// Convert various length units to 'px' in ignorance of DPI.
+			convertToPx : ( function ()
+			{
+				var calculator = CKEDITOR.dom.element.createFromHtml(
+								'<div style="position:absolute;left:-9999px;' +
+								'top:-9999px;margin:0px;padding:0px;border:0px;"' +
+								'></div>', CKEDITOR.document );
+				CKEDITOR.document.getBody().append( calculator );
+
+				return function( cssLength )
+				{
+					if ( cssLengthRelativeUnit.test( cssLength ) )
+					{
+						calculator.setStyle( 'width', cssLength );
+						return calculator.$.clientWidth + 'px';
+					}
+
+					return cssLength;
+				};
+			} )(),
 
 			// Providing a shorthand style then retrieve one or more style component values.
 			getStyleComponents : ( function()
@@ -338,21 +298,26 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 				// E.g. <ul><li>level1<ol><li>level2</li></ol></li> =>
 				// <cke:li cke:listtype="ul" cke:indent="1">level1</cke:li>
 				// <cke:li cke:listtype="ol" cke:indent="2">level2</cke:li>
-				flattenList : function( element, level )
+				flattenList : function( element )
 				{
-					level = typeof level == 'number' ? level : 1;
-
 					var	attrs = element.attributes,
-						listStyleType;
+						parent = element.parent;
+
+					var listStyleType,
+						indentLevel = 1;
+
+					// Resolve how many level nested.
+					while ( parent )
+					{
+						parent.attributes && parent.attributes[ 'cke:list'] && indentLevel++;
+						parent = parent.parent;
+					}
 
 					// All list items are of the same type.
 					switch ( attrs.type )
 					{
 						case 'a' :
 							listStyleType = 'lower-alpha';
-							break;
-						case '1' :
-							listStyleType = 'decimal';
 							break;
 						// TODO: Support more list style type from MS-Word.
 					}
@@ -363,58 +328,30 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 					for ( var i = 0; i < children.length; i++ )
 					{
 						child = children[ i ];
+						var attributes = child.attributes;
 
 						if ( child.name in CKEDITOR.dtd.$listItem )
 						{
-							var attributes = child.attributes,
-								listItemChildren = child.children,
+							var listItemChildren = child.children,
 								count = listItemChildren.length,
 								last = listItemChildren[ count - 1 ];
 
 							// Move out nested list.
 							if ( last.name in CKEDITOR.dtd.$list )
 							{
-								element.add( last, i + 1 );
+								children.splice( i + 1, 0, last );
+								last.parent = element;
 
 								// Remove the parent list item if it's just a holder.
 								if ( !--listItemChildren.length )
-									children.splice( i--, 1 );
+									children.splice( i, 1 );
 							}
 
 							child.name = 'cke:li';
-
-							// Inherit numbering from list root on the first list item.
-							attrs.start && !i && ( attributes.value = attrs.start );
-
-							plugin.filters.stylesFilter(
-								[
-									[ 'tab-stops', null, function( val )
-									{
-										var margin = val.split( ' ' )[ 1 ].match( cssLengthRelativeUnit );
-										margin && ( previousListItemMargin = CKEDITOR.tools.convertToPx( margin[ 0 ] ) );
-									} ],
-									( level == 1 ? [ 'mso-list', null, function( val )
-									{
-										val = val.split( ' ' );
-										var listId = Number( val[ 0 ].match( /\d+/ ) );
-										listId !== previousListId && ( attributes[ 'cke:reset' ] = 1 );
-										previousListId = listId;
-									 } ] : null )
-								] )( attributes.style );
-
-							attributes[ 'cke:indent' ] = level;
+							attributes[ 'cke:indent' ] = indentLevel;
+							previousListItemMargin = 0;
 							attributes[ 'cke:listtype' ] = element.name;
-							attributes[ 'cke:list-style-type' ] = listStyleType;
-						}
-						// Flatten sub list.
-						else if ( child.name in CKEDITOR.dtd.$list )
-						{
-							// Absorb sub list children.
-							arguments.callee.apply( this, [ child, level + 1 ] );
-							children = children.slice( 0, i ).concat( child.children ).concat( children.slice( i + 1 ) );
-							element.children = [];
-							for ( var j = 0, num = children.length; j < num ; j++ )
-								element.add( children[ j ] );
+							listStyleType && child.addStyle( 'list-style-type', listStyleType, true );
 						}
 					}
 
@@ -434,19 +371,11 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 					var children = element.children, child,
 							listItem,   // The current processing cke:li element.
 							listItemAttrs,
+							listType,   // Determine the root type of the list.
 							listItemIndent, // Indent level of current list item.
-							lastIndent,
 							lastListItem, // The previous one just been added to the list.
-							list, // Current staging list and it's parent list if any.
-							openedLists = [],
-							previousListStyleType,
-							previousListType;
-
-					// Properties of the list item are to be resolved from the list bullet.
-					var bullet,
-						listType,
-						listStyleType,
-						itemNumeric;
+							list, parentList, // Current staging list and it's parent list if any.
+							indent;
 
 					for ( var i = 0; i < children.length; i++ )
 					{
@@ -457,128 +386,43 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 							child.name = 'li';
 							listItem = child;
 							listItemAttrs = listItem.attributes;
-							bullet = listItemAttrs[ 'cke:listsymbol' ];
-							bullet = bullet && bullet.match( /^(?:[(]?)([^\s]+?)([.)]?)$/ );
-							listType = listStyleType = itemNumeric = null;
-
-							if ( listItemAttrs[ 'cke:ignored' ] )
-							{
-								children.splice( i--, 1 );
-								continue;
-							}
-
-
-							// This's from a new list root.
-							listItemAttrs[ 'cke:reset' ] && ( list = lastIndent = lastListItem = null );
+							listType = listItem.attributes[ 'cke:listtype' ];
 
 							// List item indent level might come from a real list indentation or
 							// been resolved from a pseudo list item's margin value, even get
 							// no indentation at all.
-							listItemIndent = Number( listItemAttrs[ 'cke:indent' ] );
+							listItemIndent = parseInt( listItemAttrs[ 'cke:indent' ], 10 )
+													|| listBaseIndent && ( Math.ceil( listItemAttrs[ 'cke:margin' ] / listBaseIndent ) )
+													|| 1;
 
-							// We're moving out of the current list, cleaning up.
-							if ( listItemIndent != lastIndent )
-								previousListType = previousListStyleType = null;
+							// Ignore the 'list-style-type' attribute if it's matched with
+							// the list root element's default style type.
+							listItemAttrs.style && ( listItemAttrs.style =
+							        CKEDITOR.plugins.pastefromword.filters.stylesFilter(
+									[
+										[ 'list-style-type', listType == 'ol' ? 'decimal' : 'disc' ]
+									] )( listItemAttrs.style )
+									|| '' );
 
-							// List type and item style are already resolved.
-							if ( !bullet )
-							{
-								listType = listItemAttrs[ 'cke:listtype' ] || 'ol';
-								listStyleType = listItemAttrs[ 'cke:list-style-type' ];
-							}
-							else
-							{
-								// Probably share the same list style type with previous list item,
-								// give it priority to avoid ambiguous between C(Alpha) and C.(Roman).
-								if ( previousListType && listMarkerPatterns[ previousListType ] [ previousListStyleType ].test( bullet[ 1 ] ) )
-								{
-									listType = previousListType;
-									listStyleType = previousListStyleType;
-								}
-								else
-								{
-									for ( var type in listMarkerPatterns )
-									{
-										for ( var style in listMarkerPatterns[ type ] )
-										{
-											if ( listMarkerPatterns[ type ][ style ].test( bullet[ 1 ] ) )
-											{
-												// Small numbering has higher priority, when dealing with ambiguous
-												// between C(Alpha) and C.(Roman).
-												if ( type == 'ol' && ( /alpha|roman/ ).test( style ) )
-												{
-													var num = /roman/.test( style ) ? fromRoman( bullet[ 1 ] ) : fromAlphabet( bullet[ 1 ] );
-													if ( !itemNumeric || num < itemNumeric )
-													{
-														itemNumeric = num;
-														listType = type;
-														listStyleType = style;
-													}
-												}
-												else
-												{
-													listType = type;
-													listStyleType = style;
-													break;
-												}
-											}
-										}
-									}
-								}
-
-								// Simply use decimal/disc for the rest forms of unrepresentable
-								// numerals, e.g. Chinese..., but as long as there a second part
-								// included, it has a bigger chance of being a order list ;)
-								!listType && ( listType = bullet[ 2 ] ? 'ol' : 'ul' );
-							}
-
-							previousListType = listType;
-							previousListStyleType = listStyleType || ( listType == 'ol' ? 'decimal' : 'disc' );
-							if ( listStyleType && listStyleType != ( listType == 'ol' ? 'decimal' : 'disc' ) )
-								listItem.addStyle( 'list-style-type', listStyleType );
-
-							// Figure out start numbering.
-							if ( listType == 'ol' && bullet )
-							{
-								switch ( listStyleType )
-								{
-									case 'decimal' :
-										itemNumeric = Number( bullet[ 1 ] );
-										break;
-									case 'lower-roman':
-									case 'upper-roman':
-										itemNumeric = fromRoman( bullet[ 1 ] );
-										break;
-									case 'lower-alpha':
-									case 'upper-alpha':
-										itemNumeric = fromAlphabet( bullet[ 1 ] );
-										break;
-								}
-
-								// Always create the numbering, swipe out unnecessary ones later.
-								listItem.attributes.value = itemNumeric;
-							}
-
-							// Start the list construction.
 							if ( !list )
 							{
-								openedLists.push( list = new CKEDITOR.htmlParser.element( listType ) );
+								list = new CKEDITOR.htmlParser.element( listType );
 								list.add( listItem );
 								children[ i ] = list;
 							}
 							else
 							{
-								if ( listItemIndent > lastIndent )
+								if ( listItemIndent > indent )
 								{
-									openedLists.push( list = new CKEDITOR.htmlParser.element( listType ) );
+									list = new CKEDITOR.htmlParser.element( listType );
 									list.add( listItem );
 									lastListItem.add( list );
 								}
-								else if ( listItemIndent < lastIndent )
+								else if ( listItemIndent < indent )
 								{
 									// There might be a negative gap between two list levels. (#4944)
-									var diff = lastIndent - listItemIndent,
-											parent;
+									var diff = indent - listItemIndent,
+										parent;
 									while ( diff-- && ( parent = list.parent ) )
 										list = parent.parent;
 
@@ -591,16 +435,13 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 							}
 
 							lastListItem = listItem;
-							lastIndent = listItemIndent;
+							indent = listItemIndent;
 						}
-						else if ( list )
-							list = lastIndent = lastListItem = null;
+						else
+							list = null;
 					}
 
-					for ( i = 0; i < openedLists.length; i++ )
-						postProcessList( openedLists[ i ] );
-
-					list = lastIndent = lastListItem = previousListId = previousListItemMargin = listBaseIndent = null;
+					listBaseIndent = 0;
 				},
 
 				/**
@@ -626,7 +467,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 						// html-encoded quote might be introduced by 'font-family'
 						// from MS-Word which confused the following regexp. e.g.
 						//'font-family: &quot;Lucida, Console&quot;'
-						( styleText || '' )
+						 styleText
 							.replace( /&quot;/g, '"' )
 							.replace( /\s*([^ :;]+)\s*:\s*([^;]+)\s*(?=;|$)/g,
 								 function( match, name, value )
@@ -756,11 +597,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 				isListBulletIndicator = this.utils.isListBulletIndicator,
 				containsNothingButSpaces = this.utils.isContainingOnlySpaces,
 				resolveListItem = this.utils.resolveList,
-				convertToPx = function( value )
-					{
-						value = CKEDITOR.tools.convertToPx( value );
-						return isNaN( value ) ? value : value + 'px';
-					},
+				convertToPx = this.utils.convertToPx,
 				getStyleComponents = this.utils.getStyleComponents,
 				listDtdParents = this.utils.listDtdParents,
 				removeFontStyles = config.pasteFromWordRemoveFontStyles !== false,
@@ -918,20 +755,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 					'p' : function( element )
 					{
-						// This's a fall-back approach to recognize list item in FF3.6,
-						// as it's not perfect as not all list style (e.g. "heading list") is shipped
-						// with this pattern. (#6662)
-						if ( /MsoListParagraph/.exec( element.attributes[ 'class' ] ) )
-						{
-							var bulletText = element.firstChild( function( node )
-							{
-								return node.type == CKEDITOR.NODE_TEXT && !containsNothingButSpaces( node.parent );
-							});
-							var bullet = bulletText && bulletText.parent,
-								bulletAttrs = bullet && bullet.attributes;
-							bulletAttrs && !bulletAttrs.style && ( bulletAttrs.style = 'mso-list: Ignore;' );
-						}
-
 						element.filterChildren();
 
 						// Is the paragraph actually a list item?
@@ -984,8 +807,8 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 					'font' : function( element )
 					{
-						// Drop the font tag if it comes from list bullet text.
-						if ( isListBulletIndicator( element.parent ) )
+						// IE/Safari: drop the font tag if it comes from list bullet text.
+						if ( !CKEDITOR.env.gecko && isListBulletIndicator( element.parent ) )
 						{
 							delete element.name;
 							return;
@@ -1036,8 +859,8 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 					'span' : function( element )
 					{
-						// Remove the span if it comes from list bullet text.
-						if ( isListBulletIndicator( element.parent ) )
+						// IE/Safari: remove the span if it comes from list bullet text.
+						if ( !CKEDITOR.env.gecko && isListBulletIndicator( element.parent ) )
 							return false;
 
 						element.filterChildren();
@@ -1047,9 +870,9 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 							return null;
 						}
 
-						// List item bullet type is supposed to be indicated by
+						// For IE/Safari: List item bullet type is supposed to be indicated by
 						// the text of a span with style 'mso-list : Ignore' or an image.
-						if ( isListBulletIndicator( element ) )
+						if ( !CKEDITOR.env.gecko && isListBulletIndicator( element ) )
 						{
 							var listSymbolNode = element.firstChild( function( node )
 							{
@@ -1057,18 +880,8 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 							});
 
 							var listSymbol =  listSymbolNode && ( listSymbolNode.value || 'l.' ),
-								listType = listSymbol && listSymbol.match( /^(?:[(]?)([^\s]+?)([.)]?)$/ );
-
-							if ( listType )
-							{
-								var marker = createListBulletMarker( listType, listSymbol );
-								// Some non-existed list items might be carried by an inconsequential list, indicate by "mso-hide:all/display:none",
-								// those are to be removed later, now mark it with "cke:ignored".
-								var ancestor = element.getAncestor( 'span' );
-								if ( ancestor && (/ mso-hide:\s*all|display:\s*none /).test( ancestor.attributes.style ) )
-									marker.attributes[ 'cke:ignored' ] = 1;
-								return marker;
-							}
+								listType = listSymbol.match( /^([^\s]+?)([.)]?)$/ );
+							return createListBulletMarker( listType, listSymbol );
 						}
 
 						// Update the src attribute of image element with href.
@@ -1109,14 +922,12 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 						var attrs = element.attributes;
 						if ( attrs && !attrs.href && attrs.name )
 							delete element.name;
-						else if ( CKEDITOR.env.webkit && attrs.href && attrs.href.match( /file:\/\/\/[\S]+#/i ) )
-							attrs.href = attrs.href.replace( /file:\/\/\/[^#]+/i,'' );
 					},
 					'cke:listbullet' : function( element )
 					{
 						if ( element.getAncestor( /h\d/ ) && !config.pasteFromWordNumberedHeadingToList )
 							delete element.name;
-					}
+						}
 				},
 
 				attributeNames :
@@ -1138,9 +949,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 					// Provide a white-list of styles that we preserve, those should
 					// be the ones that could later be altered with editor tools.
 					[
-						// Leave list-style-type
-						[ ( /^list-style-type$/ ), null ],
-
 						// Preserve margin-left/right which used as default indent style in the editor.
 						[ ( /^margin$|^margin-(?!bottom|top)/ ), null, function( value, element, name )
 							{
@@ -1247,7 +1055,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 							{
 								// Bullet symbol could be either text or an image.
 								var listSymbol = listInfo[ 1 ] || ( imageInfo && 'l.' ),
-									listType = listSymbol && listSymbol.match( />(?:[(]?)([^\s]+?)([.)]?)</ );
+									listType = listSymbol && listSymbol.match( />([^\s]+?)([.)]?)</ );
 								return createListBulletMarker( listType, listSymbol );
 							}
 
@@ -1270,7 +1078,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 					: falsyFilter
 			};
 		}
-	});
+	};
 
 	// The paste processor here is just a reduced copy of html data processor.
 	var pasteProcessor = function()

@@ -1,5 +1,5 @@
 /*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -79,15 +79,14 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	background-position: 4px -1408px; /* +2px +3px */
 }
 
+.cke_skin_kama .cke_toolbar
+{
+	display: inline;
+}
+
 .cke_skin_kama .cke_separator
 {
-	display: inline-block;
-	border-left: solid 1px #D3D3D3;
-	margin: 3px 2px 0;
-	height: 16px;
-
-	/* These are for IE < 8, but it's ok for the others */
-	vertical-align: top;
+	display: none;
 }
 
 .cke_skin_kama .cke_break
@@ -127,6 +126,12 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	float: right;
 	margin-right: 0;
 	margin-left: 6px;
+}
+
+.cke_skin_kama .cke_toolgroup
+{
+	display: block;
+	height: 22px;
 }
 
 .cke_skin_kama .cke_button a,
@@ -192,8 +197,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod='scale'), alpha(opacity=30);
 }
 .cke_skin_kama .cke_browser_ie6 .cke_button a.cke_disabled *,
-.cke_skin_kama .cke_browser_ie6 a:hover.cke_button .cke_disabled *,
-.cke_skin_kama .cke_browser_ie .cke_button.cke_noalphafix a.cke_disabled *
+.cke_skin_kama .cke_browser_ie6 a:hover.cke_button .cke_disabled *
 {
 	filter: alpha(opacity=30);
 }
@@ -248,6 +252,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	width: 16px;
 	height: 16px;
 	display: inline-block;
+	float: left;
 	cursor: default;
 }
 
@@ -265,13 +270,15 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(sizingMethod='scale');
 }
 .cke_skin_kama .cke_browser_ie6 .cke_button .cke_icon,
-.cke_skin_kama .cke_browser_ie6 .cke_rtl .cke_button .cke_icon,
-.cke_skin_kama .cke_browser_ie .cke_button.cke_noalphafix .cke_icon,
-.cke_skin_kama .cke_browser_ie .cke_rtl .cke_button.cke_noalphafix .cke_icon
+.cke_skin_kama .cke_browser_ie6 .cke_rtl .cke_button .cke_icon
 {
 	filter: ;
 }
 
+.cke_skin_kama .cke_rtl .cke_button .cke_icon
+{
+	float: right;
+}
 
 .cke_skin_kama .cke_button .cke_label
 {
@@ -279,6 +286,15 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	display: none;
 	padding-left: 3px;
 	line-height: 18px;
+	vertical-align: middle;
+	float: left;
+}
+
+.cke_skin_kama .cke_rtl .cke_button .cke_label
+{
+	padding-left: 0;
+	padding-right: 3px;
+	float: right;
 }
 
 .cke_skin_kama .cke_hc .cke_button .cke_label
@@ -310,6 +326,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 	background-image: url(images/sprites.png);
 	_background-image: url(images/sprites_ie6.png);
 	background-repeat: no-repeat;
+	float: left;
 	cursor: default;
 }
 
@@ -321,6 +338,12 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 .cke_skin_kama .cke_browser_ie6 .cke_button .cke_buttonarrow
 {
 	filter: ;
+}
+
+.cke_skin_kama .cke_rtl .cke_button .cke_buttonarrow
+{
+	background-position: 0 -1469px; /* (0, -5) */
+	float: right;
 }
 
 /*** Firefox 2 ***/
@@ -347,7 +370,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 .cke_skin_kama .cke_browser_gecko .cke_rtl.cke_button a.cke_off,
 .cke_skin_kama .cke_browser_gecko .cke_rtl .cke_button .cke_icon,
 .cke_skin_kama .cke_browser_gecko .cke_rtl .cke_button .cke_buttonarrow,
-.cke_skin_kama .cke_browser_gecko .cke_rtl .cke_separator,
 .cke_skin_kama .cke_browser_gecko .cke_rtl .cke_toolbar_start
 {
 	float: right;
@@ -363,6 +385,18 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 .cke_skin_kama .cke_browser_gecko .cke_rtl .cke_break
 {
 	float: right;
+}
+
+/*** IE ***/
+
+/* The biggest problem with IE is the RTL support (and float:right). It's
+   totally broken, and quite delicate. IE8 fixed these issues. */
+
+.cke_skin_kama .cke_browser_ie .cke_rtl .cke_button .cke_icon,
+.cke_skin_kama .cke_browser_ie .cke_rtl .cke_button .cke_label,
+.cke_skin_kama .cke_browser_ie .cke_rtl .cke_button .cke_buttonarrow
+{
+	float: none;
 }
 
 /*** WebKit ***/
@@ -383,9 +417,17 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 /*** Mixed Fixes ***/
 
-.cke_skin_kama .cke_browser_ie .cke_button .cke_label
+.cke_skin_kama .cke_browser_ie8 .cke_button .cke_label,
+.cke_skin_kama .cke_browser_opera .cke_button .cke_label,
+.cke_skin_kama .cke_browser_webkit .cke_button .cke_label
 {
-	line-height: 16px;
+	line-height: 20px;
+}
+
+.cke_skin_kama .cke_browser_opera.cke_browser_quirks .cke_button .cke_label,
+.cke_skin_kama .cke_browser_iequirks .cke_button .cke_label
+{
+	line-height: 17px;
 }
 
 /* Fix cursor shape consistency on toolbar combos (#4031) */

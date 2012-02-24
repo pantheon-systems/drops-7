@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -31,220 +31,216 @@ CKEDITOR.lang['af'] =
 	 * Screenreader titles. Please note that screenreaders are not always capable
 	 * of reading non-English words. So be careful while translating it.
 	 */
-	editorTitle : 'Teksverwerker, %1, druk op ALT 0 vir hulp.',
+	editorTitle : 'Rich text editor, %1, press ALT 0 for help.', // MISSING
 
 	// ARIA descriptions.
-	toolbars	: 'Editor toolbars', // MISSING
-	editor		: 'Teksverwerker',
+	toolbar	: 'Toolbar', // MISSING
+	editor	: 'Rich Text Editor', // MISSING
 
 	// Toolbar buttons without dialogs.
-	source			: 'Bron',
-	newPage			: 'Nuwe bladsy',
+	source			: 'Source',
+	newPage			: 'Nuwe Bladsy',
 	save			: 'Bewaar',
-	preview			: 'Voorbeeld',
-	cut				: 'Knip',
-	copy			: 'Kopiëer',
-	paste			: 'Plak',
+	preview			: 'Voorskou',
+	cut				: 'Uitsny ',
+	copy			: 'Kopieer',
+	paste			: 'Byvoeg',
 	print			: 'Druk',
 	underline		: 'Onderstreep',
 	bold			: 'Vet',
 	italic			: 'Skuins',
 	selectAll		: 'Selekteer alles',
-	removeFormat	: 'Verwyder opmaak',
-	strike			: 'Deurstreep',
-	subscript		: 'Onderskrif',
-	superscript		: 'Bo-skrif',
-	horizontalrule	: 'Horisontale lyn invoeg',
-	pagebreak		: 'Bladsy-einde invoeg',
-	pagebreakAlt		: 'Bladsy-einde',
-	unlink			: 'Verwyder skakel',
-	undo			: 'Ontdoen',
-	redo			: 'Oordoen',
+	removeFormat	: 'Formaat verweider',
+	strike			: 'Gestreik',
+	subscript		: 'Subscript',
+	superscript		: 'Superscript',
+	horizontalrule	: 'Horisontale lyn byvoeg',
+	pagebreak		: 'Bladsy breek byvoeg',
+	pagebreakAlt		: 'Page Break', // MISSING
+	unlink			: 'Skakel verweider',
+	undo			: 'Ont-skep',
+	redo			: 'Her-skep',
 
 	// Common messages and labels.
 	common :
 	{
-		browseServer	: 'Blaai op bediener',
+		browseServer	: 'Server deurblaai',
 		url				: 'URL',
 		protocol		: 'Protokol',
 		upload			: 'Oplaai',
-		uploadSubmit	: 'Stuur na bediener',
-		image			: 'Afbeelding',
+		uploadSubmit	: 'Stuur dit na die Server',
+		image			: 'Beeld',
 		flash			: 'Flash',
-		form			: 'Vorm',
-		checkbox		: 'Merkhokkie',
-		radio			: 'Radioknoppie',
-		textField		: 'Teksveld',
-		textarea		: 'Teks-area',
-		hiddenField		: 'Blinde veld',
+		form			: 'Form',
+		checkbox		: 'HakBox',
+		radio			: 'PuntBox',
+		textField		: 'Byvoegbare karakter strook',
+		textarea		: 'Byvoegbare karakter area',
+		hiddenField		: 'Blinde strook',
 		button			: 'Knop',
-		select			: 'Keuseveld',
-		imageButton		: 'Afbeeldingsknop',
+		select			: 'Opklapbare keuse strook',
+		imageButton		: 'Beeld knop',
 		notSet			: '<geen instelling>',
 		id				: 'Id',
 		name			: 'Naam',
-		langDir			: 'Skryfrigting',
+		langDir			: 'Taal rigting',
 		langDirLtr		: 'Links na regs (LTR)',
 		langDirRtl		: 'Regs na links (RTL)',
-		langCode		: 'Taalkode',
-		longDescr		: 'Lang beskrywing URL',
-		cssClass		: 'CSS klasse',
-		advisoryTitle	: 'Aanbevole titel',
+		langCode		: 'Taal kode',
+		longDescr		: 'Lang beskreiwing URL',
+		cssClass		: 'Skakel Tiepe',
+		advisoryTitle	: 'Voorbeveelings Titel',
 		cssStyle		: 'Styl',
 		ok				: 'OK',
-		cancel			: 'Kanselleer',
-		close			: 'Sluit',
-		preview			: 'Voorbeeld',
-		generalTab		: 'Algemeen',
-		advancedTab		: 'Gevorderd',
-		validateNumberFailed : 'Hierdie waarde is nie \'n getal nie.',
-		confirmNewPage	: 'Alle wysiginge sal verlore gaan. Is u seker dat u \'n nuwe bladsy wil laai?',
-		confirmCancel	: 'Sommige opsies is gewysig. Is u seker dat u hierdie dialoogvenster wil sluit?',
-		options			: 'Opsies',
-		target			: 'Doel',
-		targetNew		: 'Nuwe venster (_blank)',
-		targetTop		: 'Boonste venster (_top)',
-		targetSelf		: 'Selfde venster (_self)',
-		targetParent	: 'Oorspronklike venster (_parent)',
-		langDirLTR		: 'Links na Regs (LTR)',
-		langDirRTL		: 'Regs na Links (RTL)',
-		styles			: 'Styl',
-		cssClasses		: 'CSS klasse',
-		width			: 'Breedte',
-		height			: 'Hoogte',
-		align			: 'Oplyn',
+		cancel			: 'Kanseleer',
+		close			: 'Close', // MISSING
+		preview			: 'Preview', // MISSING
+		generalTab		: 'General', // MISSING
+		advancedTab		: 'Ingewikkeld',
+		validateNumberFailed : 'This value is not a number.', // MISSING
+		confirmNewPage	: 'Any unsaved changes to this content will be lost. Are you sure you want to load new page?', // MISSING
+		confirmCancel	: 'Some of the options have been changed. Are you sure to close the dialog?', // MISSING
+		options			: 'Options', // MISSING
+		target			: 'Target', // MISSING
+		targetNew		: 'New Window (_blank)', // MISSING
+		targetTop		: 'Topmost Window (_top)', // MISSING
+		targetSelf		: 'Same Window (_self)', // MISSING
+		targetParent	: 'Parent Window (_parent)', // MISSING
+		langDirLTR		: 'Left to Right (LTR)', // MISSING
+		langDirRTL		: 'Right to Left (RTL)', // MISSING
+		styles			: 'Style', // MISSING
+		cssClasses		: 'Stylesheet Classes', // MISSING
+		width			: 'Weidte',
+		height			: 'Hoogde',
+		align			: 'Paradeer',
 		alignLeft		: 'Links',
 		alignRight		: 'Regs',
-		alignCenter		: 'Sentreer',
+		alignCenter		: 'Middel',
 		alignTop		: 'Bo',
 		alignMiddle		: 'Middel',
 		alignBottom		: 'Onder',
-		invalidHeight	: 'Hoogte moet \'n getal wees',
-		invalidWidth	: 'Breedte moet \'n getal wees.',
-		invalidCssLength	: 'Value specified for the "%1" field must be a positive number with or without a valid CSS measurement unit (px, %, in, cm, mm, em, ex, pt, or pc).', // MISSING
-		invalidHtmlLength	: 'Value specified for the "%1" field must be a positive number with or without a valid HTML measurement unit (px or %).', // MISSING
+		invalidHeight	: 'Height must be a number.', // MISSING
+		invalidWidth	: 'Width must be a number.', // MISSING
 
 		// Put the voice-only part of the label in the span.
-		unavailable		: '%1<span class="cke_accessibility">, nie beskikbaar nie</span>'
+		unavailable		: '%1<span class="cke_accessibility">, unavailable</span>' // MISSING
 	},
 
 	contextmenu :
 	{
-		options : 'Konteks Spyskaart-opsies'
+		options : 'Context Menu Options' // MISSING
 	},
 
 	// Special char dialog.
 	specialChar		:
 	{
-		toolbar		: 'Voeg spesiaale karakter in',
+		toolbar		: 'Spesiaale Karakter byvoeg',
 		title		: 'Kies spesiale karakter',
-		options : 'Spesiale karakter-opsies'
+		options : 'Special Character Options' // MISSING
 	},
 
 	// Link dialog.
 	link :
 	{
-		toolbar		: 'Skakel invoeg/wysig',
+		toolbar		: 'Skakel byvoeg/verander',
 		other 		: '<ander>',
-		menu		: 'Wysig skakel',
+		menu		: 'Verander skakel',
 		title		: 'Skakel',
 		info		: 'Skakel informasie',
-		target		: 'Doel',
+		target		: 'Mikpunt',
 		upload		: 'Oplaai',
-		advanced	: 'Gevorderd',
-		type		: 'Skakelsoort',
-		toUrl		: 'URL',
-		toAnchor	: 'Anker in bladsy',
-		toEmail		: 'E-pos',
+		advanced	: 'Ingewikkeld',
+		type		: 'Skakel soort',
+		toUrl		: 'URL', // MISSING
+		toAnchor	: 'Skakel na plekhouers in text',
+		toEmail		: 'E-Mail',
 		targetFrame		: '<raam>',
-		targetPopup		: '<opspringvenster>',
-		targetFrameName	: 'Naam van doelraam',
-		targetPopupName	: 'Naam van opspringvenster',
-		popupFeatures	: 'Eienskappe van opspringvenster',
-		popupResizable	: 'Herskaalbaar',
-		popupStatusBar	: 'Statusbalk',
-		popupLocationBar: 'Adresbalk',
-		popupToolbar	: 'Werkbalk',
-		popupMenuBar	: 'Spyskaartbalk',
-		popupFullScreen	: 'Volskerm (IE)',
-		popupScrollBars	: 'Skuifbalke',
+		targetPopup		: '<popup venster>',
+		targetFrameName	: 'Mikpunt Venster Naam',
+		targetPopupName	: 'Popup Venster Naam',
+		popupFeatures	: 'Popup Venster Geaartheid',
+		popupResizable	: 'Resizable', // MISSING
+		popupStatusBar	: 'Status Balk',
+		popupLocationBar: 'Adres Balk',
+		popupToolbar	: 'Gereedskap Balk',
+		popupMenuBar	: 'Menu Balk',
+		popupFullScreen	: 'Voll Skerm (IE)',
+		popupScrollBars	: 'Gleibalkstuk',
 		popupDependent	: 'Afhanklik (Netscape)',
-		popupLeft		: 'Posisie links',
-		popupTop		: 'Posisie bo',
-		id				: 'Id',
-		langDir			: 'Skryfrigting',
+		popupLeft		: 'Links Posisie',
+		popupTop		: 'Bo Posisie',
+		id				: 'Id', // MISSING
+		langDir			: 'Taal rigting',
 		langDirLTR		: 'Links na regs (LTR)',
 		langDirRTL		: 'Regs na links (RTL)',
-		acccessKey		: 'Toegangsleutel',
+		acccessKey		: 'Toegang sleutel',
 		name			: 'Naam',
-		langCode			: 'Taalkode',
-		tabIndex			: 'Tab indeks',
-		advisoryTitle		: 'Aanbevole titel',
-		advisoryContentType	: 'Aanbevole inhoudstipe',
-		cssClasses		: 'CSS klasse',
-		charset			: 'Karakterstel van geskakelde bron',
+		langCode		: 'Taal rigting',
+		tabIndex		: 'Tab Index',
+		advisoryTitle	: 'Voorbeveelings Titel',
+		advisoryContentType	: 'Voorbeveelings inhoud soort',
+		cssClasses		: 'Skakel Tiepe',
+		charset			: 'Geskakelde voorbeeld karakterstel',
 		styles			: 'Styl',
-		rel			: 'Relationship', // MISSING
-		selectAnchor		: 'Kies \'n anker',
-		anchorName		: 'Op ankernaam',
-		anchorId			: 'Op element Id',
-		emailAddress		: 'E-posadres',
-		emailSubject		: 'Berig-onderwerp',
-		emailBody		: 'Berig-inhoud',
-		noAnchors		: '(Geen ankers beskikbaar in dokument)',
-		noUrl			: 'Gee die skakel se URL',
-		noEmail			: 'Gee die e-posadres'
+		selectAnchor	: 'Kies \'n plekhouer',
+		anchorName		: 'Volgens plekhouer naam',
+		anchorId		: 'Volgens element Id',
+		emailAddress	: 'E-Mail Adres',
+		emailSubject	: 'Boodskap Opskrif',
+		emailBody		: 'Boodskap Inhoud',
+		noAnchors		: '(Geen plekhouers beskikbaar in dokument}',
+		noUrl			: 'Voeg asseblief die URL in',
+		noEmail			: 'Voeg asseblief die e-mail adres in'
 	},
 
 	// Anchor dialog
 	anchor :
 	{
-		toolbar		: 'Anker byvoeg/verander',
-		menu		: 'Anker-eienskappe',
-		title		: 'Anker-eienskappe',
-		name		: 'Ankernaam',
-		errorName	: 'Voltooi die ankernaam asseblief',
-		remove		: 'Remove Anchor' // MISSING
+		toolbar		: 'Plekhouer byvoeg/verander',
+		menu		: 'Plekhouer eienskappe',
+		title		: 'Plekhouer eienskappe',
+		name		: 'Plekhouer Naam',
+		errorName	: 'Voltooi die plekhouer naam asseblief'
 	},
 
 	// List style dialog
 	list:
 	{
-		numberedTitle		: 'Eienskappe van genommerde lys',
-		bulletedTitle		: 'Eienskappe van ongenommerde lys',
-		type				: 'Tipe',
-		start				: 'Begin',
-		validateStartNumber				:'Beginnommer van lys moet \'n heelgetal wees.',
-		circle				: 'Sirkel',
-		disc				: 'Skyf',
-		square				: 'Vierkant',
-		none				: 'Geen',
-		notset				: '<nie ingestel nie>',
-		armenian			: 'Armeense nommering',
-		georgian			: 'Georgiese nommering (an, ban, gan, ens.)',
-		lowerRoman			: 'Romeinse kleinletters (i, ii, iii, iv, v, ens.)',
-		upperRoman			: 'Romeinse hoofletters (I, II, III, IV, V, ens.)',
-		lowerAlpha			: 'Kleinletters (a, b, c, d, e, ens.)',
-		upperAlpha			: 'Hoofletters (A, B, C, D, E, ens.)',
-		lowerGreek			: 'Griekse kleinletters (alpha, beta, gamma, ens.)',
-		decimal				: 'Desimale syfers (1, 2, 3, ens.)',
-		decimalLeadingZero	: 'Desimale syfers met voorloopnul (01, 02, 03, ens.)'
+		numberedTitle		: 'Numbered List Properties', // MISSING
+		bulletedTitle		: 'Bulleted List Properties', // MISSING
+		type				: 'Type', // MISSING
+		start				: 'Start', // MISSING
+		validateStartNumber				:'List start number must be a whole number.', // MISSING
+		circle				: 'Circle', // MISSING
+		disc				: 'Disc', // MISSING
+		square				: 'Square', // MISSING
+		none				: 'None', // MISSING
+		notset				: '<not set>', // MISSING
+		armenian			: 'Armenian numbering', // MISSING
+		georgian			: 'Georgian numbering (an, ban, gan, etc.)', // MISSING
+		lowerRoman			: 'Lower Roman (i, ii, iii, iv, v, etc.)', // MISSING
+		upperRoman			: 'Upper Roman (I, II, III, IV, V, etc.)', // MISSING
+		lowerAlpha			: 'Lower Alpha (a, b, c, d, e, etc.)', // MISSING
+		upperAlpha			: 'Upper Alpha (A, B, C, D, E, etc.)', // MISSING
+		lowerGreek			: 'Lower Greek (alpha, beta, gamma, etc.)', // MISSING
+		decimal				: 'Decimal (1, 2, 3, etc.)', // MISSING
+		decimalLeadingZero	: 'Decimal leading zero (01, 02, 03, etc.)' // MISSING
 	},
 
 	// Find And Replace Dialog
 	findAndReplace :
 	{
-		title				: 'Soek en vervang',
-		find				: 'Soek',
+		title				: 'Find and Replace', // MISSING
+		find				: 'Vind',
 		replace				: 'Vervang',
-		findWhat			: 'Soek na:',
+		findWhat			: 'Soek wat:',
 		replaceWith			: 'Vervang met:',
-		notFoundMsg			: 'Teks nie gevind nie.',
-		matchCase			: 'Hoof/kleinletter sensitief',
-		matchWord			: 'Hele woord moet voorkom',
-		matchCyclic			: 'Soek deurlopend',
+		notFoundMsg			: 'Die gespesifiseerde karakters word nie gevind nie.',
+		matchCase			: 'Vergelyk karakter skryfweise',
+		matchWord			: 'Vergelyk komplete woord',
+		matchCyclic			: 'Match cyclic', // MISSING
 		replaceAll			: 'Vervang alles',
-		replaceSuccessMsg	: '%1 voorkoms(te) vervang.'
+		replaceSuccessMsg	: '%1 occurrence(s) replaced.' // MISSING
 	},
 
 	// Table Dialog
@@ -253,76 +249,76 @@ CKEDITOR.lang['af'] =
 		toolbar		: 'Tabel',
 		title		: 'Tabel eienskappe',
 		menu		: 'Tabel eienskappe',
-		deleteTable	: 'Verwyder tabel',
-		rows		: 'Rye',
-		columns		: 'Kolomme',
-		border		: 'Randbreedte',
-		widthPx		: 'piksels',
-		widthPc		: 'persent',
-		widthUnit	: 'breedte-eenheid',
-		cellSpace	: 'Sel-afstand',
-		cellPad		: 'Sel-spasie',
-		caption		: 'Naam',
+		deleteTable	: 'Tabel verweider',
+		rows		: 'Reie',
+		columns		: 'Kolome',
+		border		: 'Kant groote',
+		widthPx		: 'pixels',
+		widthPc		: 'percent',
+		widthUnit	: 'width unit', // MISSING
+		cellSpace	: 'Cell spasieering',
+		cellPad		: 'Cell buffer',
+		caption		: 'Beskreiwing',
 		summary		: 'Opsomming',
-		headers		: 'Opskrifte',
-		headersNone		: 'Geen',
-		headersColumn	: 'Eerste kolom',
-		headersRow		: 'Eerste ry',
-		headersBoth		: 'Beide    ',
-		invalidRows		: 'Aantal rye moet \'n getal groter as 0 wees.',
-		invalidCols		: 'Aantal kolomme moet \'n getal groter as 0 wees.',
-		invalidBorder	: 'Randbreedte moet \'n getal wees.',
-		invalidWidth	: 'Tabelbreedte moet \'n getal wees.',
-		invalidHeight	: 'Tabelhoogte moet \'n getal wees.',
-		invalidCellSpacing	: 'Sel-afstand moet \'n getal wees.',
-		invalidCellPadding	: 'Sel-spasie moet \'n getal wees.',
+		headers		: 'Headers', // MISSING
+		headersNone		: 'None', // MISSING
+		headersColumn	: 'First column', // MISSING
+		headersRow		: 'First Row', // MISSING
+		headersBoth		: 'Both', // MISSING
+		invalidRows		: 'Number of rows must be a number greater than 0.', // MISSING
+		invalidCols		: 'Number of columns must be a number greater than 0.', // MISSING
+		invalidBorder	: 'Border size must be a number.', // MISSING
+		invalidWidth	: 'Table width must be a number.', // MISSING
+		invalidHeight	: 'Table height must be a number.', // MISSING
+		invalidCellSpacing	: 'Cell spacing must be a number.', // MISSING
+		invalidCellPadding	: 'Cell padding must be a number.', // MISSING
 
 		cell :
 		{
-			menu			: 'Sel',
-			insertBefore	: 'Voeg sel in voor',
-			insertAfter		: 'Voeg sel in na',
-			deleteCell		: 'Verwyder sel',
-			merge			: 'Voeg selle saam',
-			mergeRight		: 'Voeg saam na regs',
-			mergeDown		: 'Voeg saam ondertoe',
-			splitHorizontal	: 'Splits sel horisontaal',
-			splitVertical	: 'Splits sel vertikaal',
-			title			: 'Sel eienskappe',
-			cellType		: 'Sel tipe',
-			rowSpan			: 'Omspan rye',
-			colSpan			: 'Omspan kolomme',
-			wordWrap		: 'Woord terugloop',
-			hAlign			: 'Horisontale oplyning',
-			vAlign			: 'Vertikale oplyning',
-			alignBaseline	: 'Basislyn',
-			bgColor			: 'Agtergrondkleur',
-			borderColor		: 'Randkleur',
-			data			: 'Inhoud',
-			header			: 'Opskrif',
-			yes				: 'Ja',
-			no				: 'Nee',
-			invalidWidth	: 'Selbreedte moet \'n getal wees.',
-			invalidHeight	: 'Selhoogte moet \'n getal wees.',
-			invalidRowSpan	: 'Omspan rye moet \'n heelgetal wees.',
-			invalidColSpan	: 'Omspan kolomme moet \'n heelgetal wees.',
-			chooseColor		: 'Kies'
+			menu			: 'Cell',
+			insertBefore	: 'Insert Cell Before', // MISSING
+			insertAfter		: 'Insert Cell After', // MISSING
+			deleteCell		: 'Cell verweider',
+			merge			: 'Cell verenig',
+			mergeRight		: 'Merge Right', // MISSING
+			mergeDown		: 'Merge Down', // MISSING
+			splitHorizontal	: 'Split Cell Horizontally', // MISSING
+			splitVertical	: 'Split Cell Vertically', // MISSING
+			title			: 'Cell Properties', // MISSING
+			cellType		: 'Cell Type', // MISSING
+			rowSpan			: 'Rows Span', // MISSING
+			colSpan			: 'Columns Span', // MISSING
+			wordWrap		: 'Word Wrap', // MISSING
+			hAlign			: 'Horizontal Alignment', // MISSING
+			vAlign			: 'Vertical Alignment', // MISSING
+			alignBaseline	: 'Baseline', // MISSING
+			bgColor			: 'Background Color', // MISSING
+			borderColor		: 'Border Color', // MISSING
+			data			: 'Data', // MISSING
+			header			: 'Header', // MISSING
+			yes				: 'Yes', // MISSING
+			no				: 'No', // MISSING
+			invalidWidth	: 'Cell width must be a number.', // MISSING
+			invalidHeight	: 'Cell height must be a number.', // MISSING
+			invalidRowSpan	: 'Rows span must be a whole number.', // MISSING
+			invalidColSpan	: 'Columns span must be a whole number.', // MISSING
+			chooseColor		: 'Choose' // MISSING
 		},
 
 		row :
 		{
 			menu			: 'Ry',
-			insertBefore	: 'Voeg ry in voor',
-			insertAfter		: 'Voeg ry in na',
-			deleteRow		: 'Verwyder ry'
+			insertBefore	: 'Insert Row Before', // MISSING
+			insertAfter		: 'Insert Row After', // MISSING
+			deleteRow		: 'Ry verweider'
 		},
 
 		column :
 		{
 			menu			: 'Kolom',
-			insertBefore	: 'Voeg kolom in voor',
-			insertAfter		: 'Voeg kolom in na',
-			deleteColumn	: 'Verwyder kolom'
+			insertBefore	: 'Insert Column Before', // MISSING
+			insertAfter		: 'Insert Column After', // MISSING
+			deleteColumn	: 'Kolom verweider'
 		}
 	},
 
@@ -330,77 +326,77 @@ CKEDITOR.lang['af'] =
 	button :
 	{
 		title		: 'Knop eienskappe',
-		text		: 'Teks (Waarde)',
+		text		: 'Karakters (Waarde)',
 		type		: 'Soort',
 		typeBtn		: 'Knop',
-		typeSbm		: 'Stuur',
-		typeRst		: 'Maak leeg'
+		typeSbm		: 'Indien',
+		typeRst		: 'Reset'
 	},
 
 	// Checkbox and Radio Button Dialogs.
 	checkboxAndRadio :
 	{
-		checkboxTitle : 'Merkhokkie eienskappe',
-		radioTitle	: 'Radioknoppie eienskappe',
+		checkboxTitle : 'HakBox eienskappe',
+		radioTitle	: 'PuntBox eienskappe',
 		value		: 'Waarde',
-		selected	: 'Geselekteer'
+		selected	: 'Uitgekies'
 	},
 
 	// Form Dialog.
 	form :
 	{
-		title		: 'Vorm eienskappe',
-		menu		: 'Vorm eienskappe',
+		title		: 'Form eienskappe',
+		menu		: 'Form eienskappe',
 		action		: 'Aksie',
 		method		: 'Metode',
-		encoding	: 'Kodering'
+		encoding	: 'Encoding' // MISSING
 	},
 
 	// Select Field Dialog.
 	select :
 	{
-		title		: 'Keuseveld eienskappe',
+		title		: 'Opklapbare keuse strook eienskappe',
 		selectInfo	: 'Info',
-		opAvail		: 'Beskikbare opsies',
+		opAvail		: 'Beskikbare Opsies',
 		value		: 'Waarde',
-		size		: 'Grootte',
-		lines		: 'Lyne',
-		chkMulti	: 'Laat meer as een keuse toe',
-		opText		: 'Teks',
+		size		: 'Grote',
+		lines		: 'lyne',
+		chkMulti	: 'Laat meerere keuses toe',
+		opText		: 'Karakters',
 		opValue		: 'Waarde',
 		btnAdd		: 'Byvoeg',
-		btnModify	: 'Wysig',
+		btnModify	: 'Verander',
 		btnUp		: 'Op',
 		btnDown		: 'Af',
-		btnSetValue : 'Stel as geselekteerde waarde',
-		btnDelete	: 'Verwyder'
+		btnSetValue : 'Stel as uitgekiesde waarde',
+		btnDelete	: 'Verweider'
 	},
 
 	// Textarea Dialog.
 	textarea :
 	{
-		title		: 'Teks-area eienskappe',
-		cols		: 'Kolomme',
-		rows		: 'Rye'
+		title		: 'Karakter area eienskappe',
+		cols		: 'Kolom',
+		rows		: 'Reie'
 	},
 
 	// Text Field Dialog.
 	textfield :
 	{
-		title		: 'Teksveld eienskappe',
+		title		: 'Karakter strook eienskappe',
 		name		: 'Naam',
 		value		: 'Waarde',
-		charWidth	: 'Breedte (karakters)',
-		maxChars	: 'Maksimum karakters',
+		charWidth	: 'Karakter weite',
+		maxChars	: 'Maximale karakters',
 		type		: 'Soort',
-		typeText	: 'Teks',
+		typeText	: 'Karakters',
 		typePass	: 'Wagwoord'
 	},
 
 	// Hidden Field Dialog.
 	hidden :
 	{
-		title	: 'Verborge veld eienskappe',
+		title	: 'Blinde strook eienskappe',
 		name	: 'Naam',
 		value	: 'Waarde'
 	},
@@ -408,173 +404,174 @@ CKEDITOR.lang['af'] =
 	// Image Dialog.
 	image :
 	{
-		title		: 'Afbeelding eienskappe',
-		titleButton	: 'Afbeeldingsknop eienskappe',
-		menu		: 'Afbeelding eienskappe',
-		infoTab		: 'Afbeelding informasie',
-		btnUpload	: 'Stuur na bediener',
-		upload		: 'Oplaai',
-		alt			: 'Alternatiewe teks',
-		lockRatio	: 'Vaste proporsie',
-		resetSize	: 'Herstel grootte',
-		border		: 'Rand',
+		title		: 'Beeld eienskappe',
+		titleButton	: 'Beeld knop eienskappe',
+		menu		: 'Beeld eienskappe',
+		infoTab		: 'Beeld informasie',
+		btnUpload	: 'Stuur dit na die Server',
+		upload		: 'Uplaai',
+		alt			: 'Alternatiewe beskrywing',
+		lockRatio	: 'Behou preporsie',
+		unlockRatio	: 'Unlock Ratio', // MISSING
+		resetSize	: 'Herstel groote',
+		border		: 'Kant',
 		hSpace		: 'HSpasie',
 		vSpace		: 'VSpasie',
-		alertUrl	: 'Gee URL van afbeelding.',
+		alertUrl	: 'Voeg asseblief Beeld URL in.',
 		linkTab		: 'Skakel',
-		button2Img	: 'Wil u die geselekteerde afbeeldingsknop vervang met \'n eenvoudige afbeelding?',
-		img2Button	: 'Wil u die geselekteerde afbeelding vervang met \'n afbeeldingsknop?',
-		urlMissing	: 'Die URL na die afbeelding ontbreek.',
-		validateBorder	: 'Rand moet \'n heelgetal wees.',
-		validateHSpace	: 'HSpasie moet \'n heelgetal wees.',
-		validateVSpace	: 'VSpasie moet \'n heelgetal wees.'
+		button2Img	: 'Do you want to transform the selected image button on a simple image?', // MISSING
+		img2Button	: 'Do you want to transform the selected image on a image button?', // MISSING
+		urlMissing	: 'Image source URL is missing.', // MISSING
+		validateBorder	: 'Border must be a whole number.', // MISSING
+		validateHSpace	: 'HSpace must be a whole number.', // MISSING
+		validateVSpace	: 'VSpace must be a whole number.' // MISSING
 	},
 
 	// Flash Dialog
 	flash :
 	{
 		properties		: 'Flash eienskappe',
-		propertiesTab	: 'Eienskappe',
+		propertiesTab	: 'Properties', // MISSING
 		title			: 'Flash eienskappe',
-		chkPlay			: 'Speel outomaties',
-		chkLoop			: 'Herhaal',
-		chkMenu			: 'Flash spyskaart aan',
-		chkFull			: 'Laat volledige skerm toe',
- 		scale			: 'Skaal',
+		chkPlay			: 'Automaties Speel',
+		chkLoop			: 'Herhaling',
+		chkMenu			: 'Laat Flash Menu toe',
+		chkFull			: 'Allow Fullscreen', // MISSING
+ 		scale			: 'Scale',
 		scaleAll		: 'Wys alles',
-		scaleNoBorder	: 'Geen rand',
+		scaleNoBorder	: 'Geen kante',
 		scaleFit		: 'Presiese pas',
-		access			: 'Skrip toegang',
-		accessAlways	: 'Altyd',
-		accessSameDomain: 'Selfde domeinnaam',
-		accessNever		: 'Nooit',
-		alignAbsBottom	: 'Absoluut-onder',
-		alignAbsMiddle	: 'Absoluut-middel',
-		alignBaseline	: 'Basislyn',
-		alignTextTop	: 'Teks bo',
-		quality			: 'Kwaliteit',
-		qualityBest		: 'Beste',
-		qualityHigh		: 'Hoog',
-		qualityAutoHigh	: 'Outomaties hoog',
-		qualityMedium	: 'Gemiddeld',
-		qualityAutoLow	: 'Outomaties laag',
-		qualityLow		: 'Laag',
-		windowModeWindow: 'Venster',
-		windowModeOpaque: 'Ondeursigtig',
-		windowModeTransparent : 'Deursigtig',
-		windowMode		: 'Venster modus',
-		flashvars		: 'Veranderlikes vir Flash',
-		bgcolor			: 'Agtergrondkleur',
+		access			: 'Script Access', // MISSING
+		accessAlways	: 'Always', // MISSING
+		accessSameDomain: 'Same domain', // MISSING
+		accessNever		: 'Never', // MISSING
+		alignAbsBottom	: 'Abs Onder',
+		alignAbsMiddle	: 'Abs Middel',
+		alignBaseline	: 'Baseline',
+		alignTextTop	: 'Text Bo',
+		quality			: 'Quality', // MISSING
+		qualityBest		: 'Best', // MISSING
+		qualityHigh		: 'High', // MISSING
+		qualityAutoHigh	: 'Auto High', // MISSING
+		qualityMedium	: 'Medium', // MISSING
+		qualityAutoLow	: 'Auto Low', // MISSING
+		qualityLow		: 'Low', // MISSING
+		windowModeWindow: 'Window', // MISSING
+		windowModeOpaque: 'Opaque', // MISSING
+		windowModeTransparent : 'Transparent', // MISSING
+		windowMode		: 'Window mode', // MISSING
+		flashvars		: 'Variables for Flash', // MISSING
+		bgcolor			: 'Agtergrond kleur',
 		hSpace			: 'HSpasie',
 		vSpace			: 'VSpasie',
-		validateSrc		: 'Voeg die URL in',
-		validateHSpace	: 'HSpasie moet \'n heelgetal wees.',
-		validateVSpace	: 'VSpasie moet \'n heelgetal wees.'
+		validateSrc		: 'Voeg asseblief die URL in',
+		validateHSpace	: 'HSpace must be a number.', // MISSING
+		validateVSpace	: 'VSpace must be a number.' // MISSING
 	},
 
 	// Speller Pages Dialog
 	spellCheck :
 	{
-		toolbar			: 'Speltoets',
-		title			: 'Speltoetser',
-		notAvailable	: 'Jammer, hierdie diens is nie nou beskikbaar nie.',
-		errorLoading	: 'Fout by inlaai van diens: %s.',
+		toolbar			: 'Spelling nagaan',
+		title			: 'Spell Check', // MISSING
+		notAvailable	: 'Sorry, but service is unavailable now.', // MISSING
+		errorLoading	: 'Error loading application service host: %s.', // MISSING
 		notInDic		: 'Nie in woordeboek nie',
 		changeTo		: 'Verander na',
 		btnIgnore		: 'Ignoreer',
-		btnIgnoreAll	: 'Ignoreer alles',
+		btnIgnoreAll	: 'Ignoreer na-volgende',
 		btnReplace		: 'Vervang',
-		btnReplaceAll	: 'vervang alles',
-		btnUndo			: 'Ontdoen',
+		btnReplaceAll	: 'vervang na-volgende',
+		btnUndo			: 'Ont-skep',
 		noSuggestions	: '- Geen voorstel -',
-		progress		: 'Spelling word getoets...',
-		noMispell		: 'Klaar met speltoets: Geen foute nie',
-		noChanges		: 'Klaar met speltoets: Geen woorde verander nie',
-		oneChange		: 'Klaar met speltoets: Een woord verander',
-		manyChanges		: 'Klaar met speltoets: %1 woorde verander',
-		ieSpellDownload	: 'Speltoetser is nie geïnstalleer nie. Wil u dit nou aflaai?'
+		progress		: 'Spelling word beproef...',
+		noMispell		: 'Spellproef kompleet: Geen foute',
+		noChanges		: 'Spellproef kompleet: Geen woord veranderings',
+		oneChange		: 'Spellproef kompleet: Een woord verander',
+		manyChanges		: 'Spellproef kompleet: %1 woorde verander',
+		ieSpellDownload	: 'Geen Spellproefer geinstaleer nie. Wil U dit aflaai?'
 	},
 
 	smiley :
 	{
-		toolbar	: 'Lagbekkie',
-		title	: 'Voeg lagbekkie by',
-		options : 'Lagbekkie opsies'
+		toolbar	: 'Smiley',
+		title	: 'Voeg Smiley by',
+		options : 'Smiley Options' // MISSING
 	},
 
 	elementsPath :
 	{
-		eleLabel : 'Elemente-pad',
-		eleTitle : '%1 element'
+		eleLabel : 'Elements path', // MISSING
+		eleTitle : '%1 element' // MISSING
 	},
 
 	numberedlist	: 'Genommerde lys',
-	bulletedlist	: 'Ongenommerde lys',
-	indent			: 'Vergroot inspring',
-	outdent			: 'Verklein inspring',
+	bulletedlist	: 'Gepunkte lys',
+	indent			: 'Paradeering verleng',
+	outdent			: 'Paradeering verkort',
 
 	justify :
 	{
-		left	: 'Links oplyn',
-		center	: 'Sentreer',
-		right	: 'Regs oplyn',
-		block	: 'Uitvul'
+		left	: 'Links rig',
+		center	: 'Rig Middel',
+		right	: 'Regs rig',
+		block	: 'Blok paradeer'
 	},
 
-	blockquote : 'Sitaatblok',
+	blockquote : 'Block Quote', // MISSING
 
 	clipboard :
 	{
 		title		: 'Byvoeg',
-		cutError	: 'U blaaier se sekuriteitsinstelling belet die outomatiese knip-aksie. Gebruik die sleutelbordkombinasie (Ctrl/Cmd+X).',
-		copyError	: 'U blaaier se sekuriteitsinstelling belet die kopiëringsaksie. Gebruik die sleutelbordkombinasie (Ctrl/Cmd+C).',
-		pasteMsg	: 'Plak die teks in die volgende teks-area met die sleutelbordkombinasie (<STRONG>Ctrl/Cmd+V</STRONG>) en druk <STRONG>OK</STRONG>.',
-		securityMsg	: 'Weens u blaaier se sekuriteitsinstelling is data op die knipbord nie toeganklik nie. U kan dit eers weer in hierdie venster plak.',
-		pasteArea	: 'Plak-area'
+		cutError	: 'U browser se sekuriteit instelling behinder die uitsny aksie. Gebruik asseblief die sleutel kombenasie(Ctrl/Cmd+X).',
+		copyError	: 'U browser se sekuriteit instelling behinder die kopieerings aksie. Gebruik asseblief die sleutel kombenasie(Ctrl/Cmd+C).',
+		pasteMsg	: 'Voeg asseblief die inhoud in die gegewe box by met sleutel kombenasie(<STRONG>Ctrl/Cmd+V</STRONG>) en druk <STRONG>OK</STRONG>.',
+		securityMsg	: 'Because of your browser security settings, the editor is not able to access your clipboard data directly. You are required to paste it again in this window.', // MISSING
+		pasteArea	: 'Paste Area' // MISSING
 	},
 
 	pastefromword :
 	{
-		confirmCleanup	: 'Die teks wat u wil plak lyk asof dit uit Word gekopiëer is. Wil u dit eers skoonmaak voordat dit geplak word?',
-		toolbar			: 'Plak vanuit Word',
-		title			: 'Plak vanuit Word',
-		error			: 'Die geplakte teks kon nie skoongemaak word nie, weens \'n interne fout'
+		confirmCleanup	: 'The text you want to paste seems to be copied from Word. Do you want to clean it before pasting?', // MISSING
+		toolbar			: 'Van Word af byvoeg',
+		title			: 'Van Word af byvoeg',
+		error			: 'It was not possible to clean up the pasted data due to an internal error' // MISSING
 	},
 
 	pasteText :
 	{
-		button	: 'Plak as eenvoudige teks',
-		title	: 'Plak as eenvoudige teks'
+		button	: 'Voeg slegs karakters by',
+		title	: 'Voeg slegs karakters by'
 	},
 
 	templates :
 	{
-		button			: 'Sjablone',
-		title			: 'Inhoud Sjablone',
-		options : 'Sjabloon opsies',
-		insertOption	: 'Vervang huidige inhoud',
-		selectPromptMsg	: 'Kies die sjabloon om te gebruik in die redigeerder (huidige inhoud gaan verlore):',
-		emptyListMsg	: '(Geen sjablone gedefineer nie)'
+		button			: 'Templates',
+		title			: 'Inhoud Templates',
+		options : 'Template Options', // MISSING
+		insertOption	: 'Vervang bestaande inhoud',
+		selectPromptMsg	: 'Kies die template om te gebruik in die editor<br>(Inhoud word vervang!):',
+		emptyListMsg	: '(Geen templates gedefinieerd)'
 	},
 
-	showBlocks : 'Toon blokke',
+	showBlocks : 'Show Blocks', // MISSING
 
 	stylesCombo :
 	{
 		label		: 'Styl',
-		panelTitle	: 'Opmaak style',
-		panelTitle1	: 'Blok style',
-		panelTitle2	: 'Inlyn style',
-		panelTitle3	: 'Objek style'
+		panelTitle	: 'Formatting Styles', // MISSING
+		panelTitle1	: 'Block Styles', // MISSING
+		panelTitle2	: 'Inline Styles', // MISSING
+		panelTitle3	: 'Object Styles' // MISSING
 	},
 
 	format :
 	{
-		label		: 'Opmaak',
-		panelTitle	: 'Opmaak',
+		label		: 'Karakter formaat',
+		panelTitle	: 'Karakter formaat',
 
 		tag_p		: 'Normaal',
-		tag_pre		: 'Opgemaak',
+		tag_pre		: 'Geformateerd',
 		tag_address	: 'Adres',
 		tag_h1		: 'Opskrif 1',
 		tag_h2		: 'Opskrif 2',
@@ -587,226 +584,169 @@ CKEDITOR.lang['af'] =
 
 	div :
 	{
-		title				: 'Skep Div houer',
-		toolbar				: 'Skep Div houer',
-		cssClassInputLabel	: 'CSS klasse',
-		styleSelectLabel	: 'Styl',
-		IdInputLabel		: 'Id',
-		languageCodeInputLabel	: ' Taalkode',
-		inlineStyleInputLabel	: 'Inlyn Styl',
-		advisoryTitleInputLabel	: 'Aanbevole Titel',
-		langDirLabel		: 'Skryfrigting',
-		langDirLTRLabel		: 'Links na regs (LTR)',
-		langDirRTLLabel		: 'Regs na links (RTL)',
-		edit				: 'Wysig Div',
-		remove				: 'Verwyder Div'
+		title				: 'Create Div Container', // MISSING
+		toolbar				: 'Create Div Container', // MISSING
+		cssClassInputLabel	: 'Stylesheet Classes', // MISSING
+		styleSelectLabel	: 'Style', // MISSING
+		IdInputLabel		: 'Id', // MISSING
+		languageCodeInputLabel	: ' Language Code', // MISSING
+		inlineStyleInputLabel	: 'Inline Style', // MISSING
+		advisoryTitleInputLabel	: 'Advisory Title', // MISSING
+		langDirLabel		: 'Language Direction', // MISSING
+		langDirLTRLabel		: 'Left to Right (LTR)', // MISSING
+		langDirRTLLabel		: 'Right to Left (RTL)', // MISSING
+		edit				: 'Edit Div', // MISSING
+		remove				: 'Remove Div' // MISSING
   	},
 
 	iframe :
 	{
-		title		: 'IFrame Eienskappe',
-		toolbar		: 'IFrame',
-		noUrl		: 'Gee die iframe URL',
-		scrolling	: 'Skuifbalke aan',
-		border		: 'Wys rand van raam'
+		title		: 'iFrame Properties', // MISSING
+		toolbar		: 'iFrame', // MISSING
+		noUrl		: 'Please type the iFrame URL', // MISSING
+		scrolling	: 'Enable scrollbars', // MISSING
+		border		: 'Show frame border' // MISSING
 	},
 
 	font :
 	{
-		label		: 'Font',
-		voiceLabel	: 'Font',
-		panelTitle	: 'Fontnaam'
+		label		: 'Karakters',
+		voiceLabel	: 'Font', // MISSING
+		panelTitle	: 'Karakters'
 	},
 
 	fontSize :
 	{
-		label		: 'Grootte',
-		voiceLabel	: 'Fontgrootte',
-		panelTitle	: 'Fontgrootte'
+		label		: 'Karakter grote',
+		voiceLabel	: 'Font Size', // MISSING
+		panelTitle	: 'Karakter grote'
 	},
 
 	colorButton :
 	{
-		textColorTitle	: 'Tekskleur',
-		bgColorTitle	: 'Agtergrondkleur',
-		panelTitle		: 'Kleure',
-		auto			: 'Outomaties',
+		textColorTitle	: 'Karakter kleur',
+		bgColorTitle	: 'Agtergrond kleur',
+		panelTitle		: 'Colors', // MISSING
+		auto			: 'Automaties',
 		more			: 'Meer Kleure...'
 	},
 
 	colors :
 	{
-		'000' : 'Swart',
-		'800000' : 'Meroen',
-		'8B4513' : 'Sjokoladebruin',
-		'2F4F4F' : 'Donkerleisteengrys',
-		'008080' : 'Blougroen',
-		'000080' : 'Vlootblou',
-		'4B0082' : 'Indigo',
-		'696969' : 'Donkergrys',
-		'B22222' : 'Rooibaksteen',
-		'A52A2A' : 'Bruin',
-		'DAA520' : 'Donkergeel',
-		'006400' : 'Donkergroen',
-		'40E0D0' : 'Turkoois',
-		'0000CD' : 'Middelblou',
-		'800080' : 'Pers',
-		'808080' : 'Grys',
-		'F00' : 'Rooi',
-		'FF8C00' : 'Donkeroranje',
-		'FFD700' : 'Goud',
-		'008000' : 'Groen',
-		'0FF' : 'Siaan',
-		'00F' : 'Blou',
-		'EE82EE' : 'Viooltjieblou',
-		'A9A9A9' : 'Donkergrys',
-		'FFA07A' : 'Ligsalm',
-		'FFA500' : 'Oranje',
-		'FFFF00' : 'Geel',
-		'00FF00' : 'Lemmetjie',
-		'AFEEEE' : 'Ligturkoois',
-		'ADD8E6' : 'Ligblou',
-		'DDA0DD' : 'Pruim',
-		'D3D3D3' : 'Liggrys',
-		'FFF0F5' : 'Linne',
-		'FAEBD7' : 'Ivoor',
-		'FFFFE0' : 'Liggeel',
-		'F0FFF0' : 'Heuningdou',
-		'F0FFFF' : 'Asuur',
-		'F0F8FF' : 'Ligte hemelsblou',
-		'E6E6FA' : 'Laventel',
-		'FFF' : 'Wit'
+		'000' : 'Black', // MISSING
+		'800000' : 'Maroon', // MISSING
+		'8B4513' : 'Saddle Brown', // MISSING
+		'2F4F4F' : 'Dark Slate Gray', // MISSING
+		'008080' : 'Teal', // MISSING
+		'000080' : 'Navy', // MISSING
+		'4B0082' : 'Indigo', // MISSING
+		'696969' : 'Dark Gray', // MISSING
+		'B22222' : 'Fire Brick', // MISSING
+		'A52A2A' : 'Brown', // MISSING
+		'DAA520' : 'Golden Rod', // MISSING
+		'006400' : 'Dark Green', // MISSING
+		'40E0D0' : 'Turquoise', // MISSING
+		'0000CD' : 'Medium Blue', // MISSING
+		'800080' : 'Purple', // MISSING
+		'808080' : 'Gray', // MISSING
+		'F00' : 'Red', // MISSING
+		'FF8C00' : 'Dark Orange', // MISSING
+		'FFD700' : 'Gold', // MISSING
+		'008000' : 'Green', // MISSING
+		'0FF' : 'Cyan', // MISSING
+		'00F' : 'Blue', // MISSING
+		'EE82EE' : 'Violet', // MISSING
+		'A9A9A9' : 'Dim Gray', // MISSING
+		'FFA07A' : 'Light Salmon', // MISSING
+		'FFA500' : 'Orange', // MISSING
+		'FFFF00' : 'Yellow', // MISSING
+		'00FF00' : 'Lime', // MISSING
+		'AFEEEE' : 'Pale Turquoise', // MISSING
+		'ADD8E6' : 'Light Blue', // MISSING
+		'DDA0DD' : 'Plum', // MISSING
+		'D3D3D3' : 'Light Grey', // MISSING
+		'FFF0F5' : 'Lavender Blush', // MISSING
+		'FAEBD7' : 'Antique White', // MISSING
+		'FFFFE0' : 'Light Yellow', // MISSING
+		'F0FFF0' : 'Honeydew', // MISSING
+		'F0FFFF' : 'Azure', // MISSING
+		'F0F8FF' : 'Alice Blue', // MISSING
+		'E6E6FA' : 'Lavender', // MISSING
+		'FFF' : 'White' // MISSING
 	},
 
 	scayt :
 	{
-		title			: 'Speltoets terwyl u tik',
-		opera_title		: 'Nie ondersteun deur Opera nie',
-		enable			: 'SCAYT aan',
-		disable			: 'SCAYT af',
-		about			: 'SCAYT info',
-		toggle			: 'SCAYT wissel aan/af',
-		options			: 'Opsies',
-		langs			: 'Tale',
-		moreSuggestions	: 'Meer voorstelle',
-		ignore			: 'Ignoreer',
-		ignoreAll		: 'Ignoreer alles',
-		addWord			: 'Voeg woord by',
-		emptyDic		: 'Woordeboeknaam mag nie leeg wees nie.',
+		title			: 'Spell Check As You Type', // MISSING
+		opera_title		: 'Not supported by Opera', // MISSING
+		enable			: 'Enable SCAYT', // MISSING
+		disable			: 'Disable SCAYT', // MISSING
+		about			: 'About SCAYT', // MISSING
+		toggle			: 'Toggle SCAYT', // MISSING
+		options			: 'Options', // MISSING
+		langs			: 'Languages', // MISSING
+		moreSuggestions	: 'More suggestions', // MISSING
+		ignore			: 'Ignore', // MISSING
+		ignoreAll		: 'Ignore All', // MISSING
+		addWord			: 'Add Word', // MISSING
+		emptyDic		: 'Dictionary name should not be empty.', // MISSING
 
-		optionsTab		: 'Opsies',
-		allCaps			: 'Ignoreer woorde in hoofletters',
-		ignoreDomainNames : 'Ignoreer domeinname',
-		mixedCase		: 'Ignoreer woorde met hoof- en kleinletters',
-		mixedWithDigits	: 'Ignoreer woorde met syfers',
+		optionsTab		: 'Options', // MISSING
+		allCaps			: 'Ignore All-Caps Words', // MISSING
+		ignoreDomainNames : 'Ignore Domain Names', // MISSING
+		mixedCase		: 'Ignore Words with Mixed Case', // MISSING
+		mixedWithDigits	: 'Ignore Words with Numbers', // MISSING
 
-		languagesTab	: 'Tale',
+		languagesTab	: 'Languages', // MISSING
 
-		dictionariesTab	: 'Woordeboeke',
-		dic_field_name	: 'Naam van woordeboek',
-		dic_create		: 'Skep',
-		dic_restore		: 'Herstel',
-		dic_delete		: 'Verwijder',
-		dic_rename		: 'Hernoem',
-		dic_info		: 'Aanvanklik word die gebruikerswoordeboek in \'n koekie gestoor. Koekies is egter beperk in grootte. Wanneer die gebruikerswoordeboek te groot vir \'n koekie geword het, kan dit op ons bediener gestoor word. Om u persoonlike woordeboek op ons bediener te stoor, gee asb. \'n naam vir u woordeboek. Indien u alreeds \'n gestoorde woordeboek het, tik die naam en kliek op die Herstel knop.',
+		dictionariesTab	: 'Dictionaries', // MISSING
+		dic_field_name	: 'Dictionary name', // MISSING
+		dic_create		: 'Create', // MISSING
+		dic_restore		: 'Restore', // MISSING
+		dic_delete		: 'Delete', // MISSING
+		dic_rename		: 'Rename', // MISSING
+		dic_info		: 'Initially the User Dictionary is stored in a Cookie. However, Cookies are limited in size. When the User Dictionary grows to a point where it cannot be stored in a Cookie, then the dictionary may be stored on our server. To store your personal dictionary on our server you should specify a name for your dictionary. If you already have a stored dictionary, please type its name and click the Restore button.', // MISSING
 
-		aboutTab		: 'Info'
+		aboutTab		: 'About' // MISSING
 	},
 
 	about :
 	{
-		title		: 'Info oor CKEditor',
-		dlgTitle	: 'Info oor CKEditor',
-		help	: 'Check $1 for help.', // MISSING
-		userGuide : 'CKEditor User\'s Guide', // MISSING
-		moreInfo	: 'Vir lisensie-informasie, besoek asb. ons webwerf:',
-		copy		: 'Kopiereg &copy; $1. Alle regte voorbehou.'
+		title		: 'About CKEditor', // MISSING
+		dlgTitle	: 'About CKEditor', // MISSING
+		moreInfo	: 'For licensing information please visit our web site:', // MISSING
+		copy		: 'Copyright &copy; $1. All rights reserved.' // MISSING
 	},
 
-	maximize : 'Maksimaliseer',
-	minimize : 'Minimaliseer',
+	maximize : 'Maximize', // MISSING
+	minimize : 'Minimize', // MISSING
 
 	fakeobjects :
 	{
-		anchor		: 'Anker',
-		flash		: 'Flash animasie',
-		iframe		: 'IFrame',
-		hiddenfield	: 'Verborge veld',
-		unknown		: 'Onbekende objek'
+		anchor		: 'Anchor', // MISSING
+		flash		: 'Flash Animation', // MISSING
+		iframe		: 'iFrame', // MISSING
+		hiddenfield	: 'Hidden Field', // MISSING
+		unknown		: 'Unknown Object' // MISSING
 	},
 
-	resize : 'Sleep om te herskaal',
+	resize : 'Drag to resize', // MISSING
 
 	colordialog :
 	{
-		title		: 'Kies kleur',
-		options	:	'Kleuropsies',
-		highlight	: 'Aktief',
-		selected	: 'Geselekteer',
-		clear		: 'Herstel'
+		title		: 'Select color', // MISSING
+		options	:	'Color Options', // MISSING
+		highlight	: 'Highlight', // MISSING
+		selected	: 'Selected Color', // MISSING
+		clear		: 'Clear' // MISSING
 	},
 
-	toolbarCollapse	: 'Verklein werkbalk',
-	toolbarExpand	: 'Vergroot werkbalk',
-
-	toolbarGroups :
-	{
-		document : 'Document', // MISSING
-		clipboard : 'Clipboard/Undo', // MISSING
-		editing : 'Editing', // MISSING
-		forms : 'Forms', // MISSING
-		basicstyles : 'Basic Styles', // MISSING
-		paragraph : 'Paragraph', // MISSING
-		links : 'Links', // MISSING
-		insert : 'Insert', // MISSING
-		styles : 'Styles', // MISSING
-		colors : 'Colors', // MISSING
-		tools : 'Tools' // MISSING
-	},
+	toolbarCollapse	: 'Collapse Toolbar', // MISSING
+	toolbarExpand	: 'Expand Toolbar', // MISSING
 
 	bidi :
 	{
-		ltr : 'Skryfrigting van links na regs',
-		rtl : 'Skryfrigting van regs na links'
-	},
-
-	docprops :
-	{
-		label : 'Dokument Eienskappe',
-		title : 'Dokument Eienskappe',
-		design : 'Design', // MISSING
-		meta : 'Meta Data',
-		chooseColor : 'Kies',
-		other : '<ander>',
-		docTitle :	'Bladsy Opskrif',
-		charset : 	'Karakterstel Kodeering',
-		charsetOther : 'Ander Karakterstel Kodeering',
-		charsetASCII : 'ASCII', // MISSING
-		charsetCE : 'Sentraal Europa',
-		charsetCT : 'Chinees Traditioneel (Big5)',
-		charsetCR : 'Cyrillic', // MISSING
-		charsetGR : 'Grieks',
-		charsetJP : 'Japanees',
-		charsetKR : 'Koreans',
-		charsetTR : 'Turks',
-		charsetUN : 'Unicode (UTF-8)', // MISSING
-		charsetWE : 'Western European', // MISSING
-		docType : 'Dokument Opskrif Soort',
-		docTypeOther : 'Ander Dokument Opskrif Soort',
-		xhtmlDec : 'Voeg XHTML verklaring by',
-		bgColor : 'Agtergrond kleur',
-		bgImage : 'Agtergrond Beeld URL',
-		bgFixed : 'Vasgeklemde Agtergrond',
-		txtColor : 'Tekskleur',
-		margin : 'Bladsy Rante',
-		marginTop : 'Bo',
-		marginLeft : 'Links',
-		marginRight : 'Regs',
-		marginBottom : 'Onder',
-		metaKeywords : 'Dokument Index Sleutelwoorde(comma verdeelt)',
-		metaDescription : 'Dokument Beskrywing',
-		metaAuthor : 'Skrywer',
-		metaCopyright : 'Kopiereg',
-		previewHtml : '<p>This is some <strong>sample text</strong>. You are using <a href="javascript:void(0)">CKEditor</a>.</p>' // MISSING
+		ltr : 'Text direction from left to right', // MISSING
+		rtl : 'Text direction from right to left' // MISSING
 	}
 };

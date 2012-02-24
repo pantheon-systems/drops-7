@@ -1,5 +1,4 @@
 <?php
-// $Id: nodeconnect.module,v 1.1 2011/01/19 22:21:39 e2thex Exp $
 /**
  * @file
  * Handles the main hooks used by nodeconnect
@@ -90,6 +89,7 @@ function nodeconnect_form_node_form_alter(&$form, &$form_state, $form_id) {
   // so this will get cuaght in the rebuild
   if (isset($form_state['#nodeconnect_child_form'])) {
     $cache = $form_state['#nodeconnect_child_form'];
+    module_load_include('inc', 'nodeconnect', 'nodeconnect.form');
     nodeconnect_child_node_form_alter($form, $form_state, $form_id, $cache->cid, $cache);
   }
 }

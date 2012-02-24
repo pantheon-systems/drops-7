@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -25,10 +25,7 @@ CKEDITOR.dialog.add( 'specialchar', function( editor )
 			target.removeClass( "cke_light_background" );
 			dialog.hide();
 
-			// We must use "insertText" here to keep text styled.
-			var span = editor.document.createElement( 'span' );
-			span.setHtml( value );
-			editor.insertText( span.getText() );
+			editor.insertHtml( value );
 		}
 	};
 

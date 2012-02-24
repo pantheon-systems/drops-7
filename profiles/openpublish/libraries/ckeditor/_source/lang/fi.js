@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -34,8 +34,8 @@ CKEDITOR.lang['fi'] =
 	editorTitle : 'Rikastekstieditori, %1, paina ALT 0 nähdäksesi ohjeen.',
 
 	// ARIA descriptions.
-	toolbars	: 'Editor toolbars', // MISSING
-	editor		: 'Rikastekstieditori',
+	toolbar	: 'Työkalupalkki',
+	editor	: 'Rikastekstieditori',
 
 	// Toolbar buttons without dialogs.
 	source			: 'Koodi',
@@ -55,8 +55,8 @@ CKEDITOR.lang['fi'] =
 	subscript		: 'Alaindeksi',
 	superscript		: 'Yläindeksi',
 	horizontalrule	: 'Lisää murtoviiva',
-	pagebreak		: 'Lisää sivunvaihto',
-	pagebreakAlt		: 'Sivunvaihto',
+	pagebreak		: 'Lisää sivun vaihto',
+	pagebreakAlt		: 'Page Break', // MISSING
 	unlink			: 'Poista linkki',
 	undo			: 'Kumoa',
 	redo			: 'Toista',
@@ -121,8 +121,6 @@ CKEDITOR.lang['fi'] =
 		alignBottom		: 'Alas',
 		invalidHeight	: 'Korkeuden täytyy olla numero.',
 		invalidWidth	: 'Leveyden täytyy olla numero.',
-		invalidCssLength	: 'Value specified for the "%1" field must be a positive number with or without a valid CSS measurement unit (px, %, in, cm, mm, em, ex, pt, or pc).', // MISSING
-		invalidHtmlLength	: 'Value specified for the "%1" field must be a positive number with or without a valid HTML measurement unit (px or %).', // MISSING
 
 		// Put the voice-only part of the label in the span.
 		unavailable		: '%1<span class="cke_accessibility">, ei saatavissa</span>'
@@ -177,19 +175,18 @@ CKEDITOR.lang['fi'] =
 		langDirRTL		: 'Oikealta vasemmalle (RTL)',
 		acccessKey		: 'Pikanäppäin',
 		name			: 'Nimi',
-		langCode			: 'Kielen suunta',
-		tabIndex			: 'Tabulaattori indeksi',
-		advisoryTitle		: 'Avustava otsikko',
+		langCode		: 'Kielen suunta',
+		tabIndex		: 'Tabulaattori indeksi',
+		advisoryTitle	: 'Avustava otsikko',
 		advisoryContentType	: 'Avustava sisällön tyyppi',
 		cssClasses		: 'Tyyliluokat',
 		charset			: 'Linkitetty kirjaimisto',
 		styles			: 'Tyyli',
-		rel			: 'Suhde',
-		selectAnchor		: 'Valitse ankkuri',
+		selectAnchor	: 'Valitse ankkuri',
 		anchorName		: 'Ankkurin nimen mukaan',
-		anchorId			: 'Ankkurin ID:n mukaan',
-		emailAddress		: 'Sähköpostiosoite',
-		emailSubject		: 'Aihe',
+		anchorId		: 'Ankkurin ID:n mukaan',
+		emailAddress	: 'Sähköpostiosoite',
+		emailSubject	: 'Aihe',
 		emailBody		: 'Viesti',
 		noAnchors		: '(Ei ankkureita tässä dokumentissa)',
 		noUrl			: 'Linkille on kirjoitettava URL',
@@ -203,8 +200,7 @@ CKEDITOR.lang['fi'] =
 		menu		: 'Ankkurin ominaisuudet',
 		title		: 'Ankkurin ominaisuudet',
 		name		: 'Nimi',
-		errorName	: 'Ankkurille on kirjoitettava nimi',
-		remove		: 'Remove Anchor' // MISSING
+		errorName	: 'Ankkurille on kirjoitettava nimi'
 	},
 
 	// List style dialog
@@ -416,6 +412,7 @@ CKEDITOR.lang['fi'] =
 		upload		: 'Lisää kuva',
 		alt			: 'Vaihtoehtoinen teksti',
 		lockRatio	: 'Lukitse suhteet',
+		unlockRatio	: 'Vapauta suhteet',
 		resetSize	: 'Alkuperäinen koko',
 		border		: 'Kehys',
 		hSpace		: 'Vaakatila',
@@ -604,11 +601,11 @@ CKEDITOR.lang['fi'] =
 
 	iframe :
 	{
-		title		: 'IFrame-kehyksen ominaisuudet',
-		toolbar		: 'IFrame-kehys',
-		noUrl		: 'Anna IFrame-kehykselle lähdeosoite (src)',
-		scrolling	: 'Näytä vierityspalkit',
-		border		: 'Näytä kehyksen reunat'
+		title		: 'iFrame Properties', // MISSING
+		toolbar		: 'iFrame', // MISSING
+		noUrl		: 'Please type the iFrame URL', // MISSING
+		scrolling	: 'Enable scrollbars', // MISSING
+		border		: 'Show frame border' // MISSING
 	},
 
 	font :
@@ -717,8 +714,6 @@ CKEDITOR.lang['fi'] =
 	{
 		title		: 'Tietoa CKEditorista',
 		dlgTitle	: 'Tietoa CKEditorista',
-		help	: 'Check $1 for help.', // MISSING
-		userGuide : 'CKEditor User\'s Guide', // MISSING
 		moreInfo	: 'Lisenssitiedot löytyvät kotisivuiltamme:',
 		copy		: 'Copyright &copy; $1. Kaikki oikeuden pidätetään.'
 	},
@@ -730,8 +725,8 @@ CKEDITOR.lang['fi'] =
 	{
 		anchor		: 'Ankkuri',
 		flash		: 'Flash animaatio',
-		iframe		: 'IFrame-kehys',
-		hiddenfield	: 'Piilokenttä',
+		iframe		: 'iFrame', // MISSING
+		hiddenfield	: 'Hidden Field', // MISSING
 		unknown		: 'Tuntematon objekti'
 	},
 
@@ -749,64 +744,9 @@ CKEDITOR.lang['fi'] =
 	toolbarCollapse	: 'Kutista työkalupalkki',
 	toolbarExpand	: 'Laajenna työkalupalkki',
 
-	toolbarGroups :
-	{
-		document : 'Document', // MISSING
-		clipboard : 'Clipboard/Undo', // MISSING
-		editing : 'Editing', // MISSING
-		forms : 'Forms', // MISSING
-		basicstyles : 'Basic Styles', // MISSING
-		paragraph : 'Paragraph', // MISSING
-		links : 'Links', // MISSING
-		insert : 'Insert', // MISSING
-		styles : 'Styles', // MISSING
-		colors : 'Colors', // MISSING
-		tools : 'Tools' // MISSING
-	},
-
 	bidi :
 	{
 		ltr : 'Tekstin suunta vasemmalta oikealle',
 		rtl : 'Tekstin suunta oikealta vasemmalle'
-	},
-
-	docprops :
-	{
-		label : 'Dokumentin ominaisuudet',
-		title : 'Dokumentin ominaisuudet',
-		design : 'Design', // MISSING
-		meta : 'Meta-tieto',
-		chooseColor : 'Valitse',
-		other : '<muu>',
-		docTitle :	'Sivun nimi',
-		charset : 	'Merkistökoodaus',
-		charsetOther : 'Muu merkistökoodaus',
-		charsetASCII : 'ASCII', // MISSING
-		charsetCE : 'Keskieurooppalainen',
-		charsetCT : 'Kiina, perinteinen (Big5)',
-		charsetCR : 'Kyrillinen',
-		charsetGR : 'Kreikka',
-		charsetJP : 'Japani',
-		charsetKR : 'Korealainen',
-		charsetTR : 'Turkkilainen',
-		charsetUN : 'Unicode (UTF-8)', // MISSING
-		charsetWE : 'Länsieurooppalainen',
-		docType : 'Dokumentin tyyppi',
-		docTypeOther : 'Muu dokumentin tyyppi',
-		xhtmlDec : 'Lisää XHTML julistukset',
-		bgColor : 'Taustaväri',
-		bgImage : 'Taustakuva',
-		bgFixed : 'Paikallaanpysyvä tausta',
-		txtColor : 'Tekstiväri',
-		margin : 'Sivun marginaalit',
-		marginTop : 'Ylä',
-		marginLeft : 'Vasen',
-		marginRight : 'Oikea',
-		marginBottom : 'Ala',
-		metaKeywords : 'Hakusanat (pilkulla erotettuna)',
-		metaDescription : 'Kuvaus',
-		metaAuthor : 'Tekijä',
-		metaCopyright : 'Tekijänoikeudet',
-		previewHtml : '<p>This is some <strong>sample text</strong>. You are using <a href="javascript:void(0)">CKEditor</a>.</p>' // MISSING
 	}
 };

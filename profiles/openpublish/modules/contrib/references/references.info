@@ -8,10 +8,11 @@ files[] = views/references_handler_relationship.inc
 files[] = views/references_handler_argument.inc
 files[] = views/references_plugin_display.inc
 files[] = views/references_plugin_style.inc
+files[] = views/references_plugin_row_fields.inc
 
-; Information added by drupal.org packaging script on 2011-05-12
-version = "7.x-2.0-beta3"
+; Information added by drupal.org packaging script on 2011-12-22
+version = "7.x-2.0"
 core = "7.x"
 project = "references"
-datestamp = "1305236816"
+datestamp = "1324596643"
 

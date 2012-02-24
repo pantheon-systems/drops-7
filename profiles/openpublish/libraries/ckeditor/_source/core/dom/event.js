@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -120,26 +120,23 @@ CKEDITOR.dom.event.prototype =
 	}
 };
 
-// For the followind constants, we need to go over the Unicode boundaries
-// (0x10FFFF) to avoid collision.
-
 /**
- * CTRL key (0x110000).
+ * CTRL key (1000).
  * @constant
  * @example
  */
-CKEDITOR.CTRL = 0x110000;
+CKEDITOR.CTRL = 1000;
 
 /**
- * SHIFT key (0x220000).
+ * SHIFT key (2000).
  * @constant
  * @example
  */
-CKEDITOR.SHIFT = 0x220000;
+CKEDITOR.SHIFT = 2000;
 
 /**
- * ALT key (0x440000).
+ * ALT key (4000).
  * @constant
  * @example
  */
-CKEDITOR.ALT = 0x440000;
+CKEDITOR.ALT = 4000;

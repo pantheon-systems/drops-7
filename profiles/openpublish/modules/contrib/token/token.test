@@ -1,14 +1,23 @@
 <?php
 
 /**
+ * @file
+ * Test integration for the token module.
+ */
+
+/**
  * Helper test class with some added functions for testing.
  */
 class TokenTestHelper extends DrupalWebTestCase {
+  protected $profile = 'testing';
+
   function setUp($modules = array()) {
     $modules[] = 'path';
     $modules[] = 'token';
     $modules[] = 'token_test';
     parent::setUp($modules);
+
+    variable_set('clean_url', 1);
   }
 
   function assertToken($type, array $data, $token, $expected, array $options = array()) {
@@ -160,7 +169,6 @@ class TokenUnitTestCase extends TokenTestHelper {
         '[site:name]',
         '[site:slogan]',
         '[user:uid]',
-        '[comment:cid]',
         '[current-date:short]',
         '[current-user:uid]',
       ),
@@ -171,6 +179,7 @@ class TokenUnitTestCase extends TokenTestHelper {
         '[invalid:title]',
         '[site:invalid]',
         '[user:ip-address]',
+        '[comment:cid]',
         // Deprecated tokens
         '[node:tnid]',
         '[node:type]',
@@ -204,7 +213,6 @@ class TokenURLTestCase extends TokenTestHelper {
   function setUp($modules = array()) {
     parent::setUp($modules);
     $this->saveAlias('node/1', 'first-node');
-    variable_set('clean_url', 1);
   }
 
   function testURLTokens() {
@@ -237,6 +245,11 @@ class TokenCommentTestCase extends TokenTestHelper {
       'description' => 'Test the comment tokens.',
       'group' => 'Token',
     );
+  }
+
+  function setUp($modules = array()) {
+    $modules[] = 'comment';
+    parent::setUp($modules);
   }
 
   function testCommentTokens() {
@@ -287,6 +300,8 @@ class TokenCommentTestCase extends TokenTestHelper {
 }
 
 class TokenNodeTestCase extends TokenTestHelper {
+  protected $profile = 'standard';
+
   public static function getInfo() {
     return array(
       'name' => 'Node and content type token tests',
@@ -384,7 +399,7 @@ class TokenMenuTestCase extends TokenTestHelper {
       'menu:name' => 'Main menu',
       'menu:machine-name' => 'main-menu',
       'menu:description' => 'The <em>Main</em> menu is used on many sites to show the major sections of the site, often in a top navigation bar.',
-      'menu:menu-link-count' => 3, // Standard install creates one link.
+      'menu:menu-link-count' => 2,
       'menu:edit-url' => url("admin/structure/menu/manage/main-menu", array('absolute' => TRUE)),
       'url' => url('root/parent', array('absolute' => TRUE)),
       'url:absolute' => url('root/parent', array('absolute' => TRUE)),
@@ -397,6 +412,9 @@ class TokenMenuTestCase extends TokenTestHelper {
       'parent:title' => 'Root link',
       'parent:menu' => 'Main menu',
       'parent:parent' => NULL,
+      'parents' => 'Root link',
+      'parents:count' => 1,
+      'parents:keys' => $root_link['mlid'],
       'root' => 'Root link',
       'root:mlid' => $root_link['mlid'],
       'root:parent' => NULL,
@@ -426,6 +444,9 @@ class TokenMenuTestCase extends TokenTestHelper {
       'menu-link:parent' => 'Parent link',
       'menu-link:parent:mlid' => $node->menu['plid'],
       'menu-link:parent:mlid' => $parent_link['mlid'],
+      'menu-link:parents' => 'Root link, Parent link',
+      'menu-link:parents:count' => 2,
+      'menu-link:parents:keys' => $root_link['mlid'] . ', ' . $parent_link['mlid'],
       'menu-link:root' => 'Root link',
       'menu-link:root:mlid' => $root_link['mlid'],
     );
@@ -455,42 +476,62 @@ class TokenTaxonomyTestCase extends TokenTestHelper {
   function setUp($modules = array()) {
     $modules[] = 'taxonomy';
     parent::setUp($modules);
-    // Use the default 'Tags' taxonomy included with the standard install profile.
-    $this->vocab = taxonomy_vocabulary_machine_name_load('tags');
+
+    // Create the default tags vocabulary.
+    $vocabulary = (object) array(
+      'name' => 'Tags',
+      'machine_name' => 'tags',
+    );
+    taxonomy_vocabulary_save($vocabulary);
+    $this->vocab = $vocabulary;
   }
 
   /**
    * Test the additional taxonomy term tokens.
    */
   function testTaxonomyTokens() {
-    $parent_term = $this->addTerm($this->vocab, array('path' => array('alias' => 'parent-term')));
-    $parent_term_tokens = array(
+    $root_term = $this->addTerm($this->vocab, array('name' => 'Root term', 'path' => array('alias' => 'root-term')));
+    $tokens = array(
+      'url' => url("taxonomy/term/{$root_term->tid}", array('absolute' => TRUE)),
+      'url:absolute' => url("taxonomy/term/{$root_term->tid}", array('absolute' => TRUE)),
+      'url:relative' => url("taxonomy/term/{$root_term->tid}", array('absolute' => FALSE)),
+      'url:path' => 'root-term',
+      'url:unaliased:path' => "taxonomy/term/{$root_term->tid}",
+      'edit-url' => url("taxonomy/term/{$root_term->tid}/edit", array('absolute' => TRUE)),
+      'parents' => NULL,
+      'parents:count' => NULL,
+      'parents:keys' => NULL,
+      'root' => NULL,
+      // Deprecated tokens
+      'url:alias' => 'root-term',
+    );
+    $this->assertTokens('term', array('term' => $root_term), $tokens);
+
+    $parent_term = $this->addTerm($this->vocab, array('name' => 'Parent term', 'parent' => $root_term->tid));
+    $tokens = array(
       'url' => url("taxonomy/term/{$parent_term->tid}", array('absolute' => TRUE)),
       'url:absolute' => url("taxonomy/term/{$parent_term->tid}", array('absolute' => TRUE)),
       'url:relative' => url("taxonomy/term/{$parent_term->tid}", array('absolute' => FALSE)),
-      'url:path' => 'parent-term',
+      'url:path' => "taxonomy/term/{$parent_term->tid}",
       'url:unaliased:path' => "taxonomy/term/{$parent_term->tid}",
       'edit-url' => url("taxonomy/term/{$parent_term->tid}/edit", array('absolute' => TRUE)),
-      'root' => NULL,
+      'parents' => 'Root term',
+      'parents:count' => 1,
+      'parents:keys' => $root_term->tid,
+      'root' => check_plain($root_term->name),
+      'root:tid' => $root_term->tid,
       // Deprecated tokens
-      'url:alias' => 'parent-term',
+      'url:alias' => "taxonomy/term/{$parent_term->tid}",
     );
-    $this->assertTokens('term', array('term' => $parent_term), $parent_term_tokens);
+    $this->assertTokens('term', array('term' => $parent_term), $tokens);
 
-    $child_term = $this->addTerm($this->vocab, array('parent' => $parent_term->tid));
-    $child_term_tokens = array(
-      'url' => url("taxonomy/term/{$child_term->tid}", array('absolute' => TRUE)),
-      'url:absolute' => url("taxonomy/term/{$child_term->tid}", array('absolute' => TRUE)),
-      'url:relative' => url("taxonomy/term/{$child_term->tid}", array('absolute' => FALSE)),
-      'url:path' => "taxonomy/term/{$child_term->tid}",
-      'url:unaliased:path' => "taxonomy/term/{$child_term->tid}",
-      'edit-url' => url("taxonomy/term/{$child_term->tid}/edit", array('absolute' => TRUE)),
-      'root' => check_plain($parent_term->name),
-      'root:tid' => $parent_term->tid,
-      // Deprecated tokens
-      'url:alias' => "taxonomy/term/{$child_term->tid}",
+    $term = $this->addTerm($this->vocab, array('name' => 'Test term', 'parent' => $parent_term->tid));
+    $tokens = array(
+      'parents' => 'Root term, Parent term',
+      'parents:count' => 2,
+      'parents:keys' => implode(', ', array($root_term->tid, $parent_term->tid)),
     );
-    $this->assertTokens('term', array('term' => $child_term), $child_term_tokens);
+    $this->assertTokens('term', array('term' => $term), $tokens);
   }
 
   /**
@@ -620,6 +661,14 @@ class TokenEntityTestCase extends TokenTestHelper {
   function setUp($modules = array()) {
     $modules[] = 'taxonomy';
     parent::setUp($modules);
+
+    // Create the default tags vocabulary.
+    $vocabulary = (object) array(
+      'name' => 'Tags',
+      'machine_name' => 'tags',
+    );
+    taxonomy_vocabulary_save($vocabulary);
+    $this->vocab = $vocabulary;
   }
 
   function testEntityMapping() {
@@ -759,25 +808,13 @@ class TokenProfileTestCase extends TokenTestHelper {
       'required' => 0,
       'register' => 0,
     );
-
-    // Submit the profile field using drupal_form_submit().
-    $form_state = array();
-    $form_state['values'] = $field;
-    $form_state['values']['op'] = 'Save field';
-    $form_state['build_info']['args'] = array($type);
-    drupal_form_submit('profile_field_form', $form_state);
+    drupal_write_record('profile_field', $field);
 
     // Verify the profile field was created successfully.
     $saved_field = db_query("SELECT * FROM {profile_field} WHERE type = :type AND name = :name", array(':type' => $type, ':name' => $field['name']))->fetchObject();
-    $this->assertTrue($saved_field, t('Profile field @name created.', array('@name' => $saved_field->name)));
-
-    // Why in the hell these fields get saved with not the explict values
-    // for autocomplete, register and required that we tell it, I have no idea.
-    // So we need to manually save it again. Stupid profile module...
-    $saved_field->autocomplete = $field['autocomplete'];
-    $saved_field->required = $field['required'];
-    $saved_field->register = $field['register'];
-    drupal_write_record('profile_field', $saved_field, array('fid'));
+    if (empty($saved_field)) {
+      $this->fail(t('Failed to create profile field @name.', array('@name' => $saved_field->name)));
+    }
 
     return $saved_field;
   }

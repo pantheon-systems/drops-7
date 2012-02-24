@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Test for using date fields with Migrate module.
@@ -8,6 +9,10 @@
  * Test date migration.
  */
 class DateMigrateExampleUnitTest extends DrupalWebTestCase {
+
+  /**
+   * Provides information about this test.
+   */
   public static function getInfo() {
     return array(
       'name' => 'Date2 migration',
@@ -16,18 +21,21 @@ class DateMigrateExampleUnitTest extends DrupalWebTestCase {
     );
   }
 
+  /**
+   * Declars the module dependencies for the test.
+   */
   function setUp() {
-    parent::setUp('migrate', 'features', 'date', 'date_repeat', 'date_repeat_field',
-      'date_migrate_example');
+    parent::setUp('migrate', 'features', 'date', 'date_repeat', 'date_repeat_field', 'date_migrate_example');
   }
 
   /**
-   * Verify that date fields are imported correctly. When no timezone is explicitly
-   * provided with the source data, we want the displayed time on the Drupal site
-   * to match that in the source data. To validate that, we make sure we have set
-   * a consistent timezone at the PHP and Drupal levels, and that the format used
-   * on the page is not locale-dependent (no day or month names). Then, we can just
-   * look for the desired date/time strings in the node page.
+   * Verify that date fields are imported correctly. When no timezone is
+   * explicitly provided with the source data, we want the displayed time on the
+   * Drupal site to match that in the source data. To validate that, we make
+   * sure we have set a consistent timezone at the PHP and Drupal levels, and
+   * that the format used on the page is not locale-dependent (no day or month
+   * names). Then, we can just look for the desired date/time strings in the
+   * node page.
    */
   function testDateImport() {
     date_default_timezone_set('America/Los_Angeles');
@@ -35,8 +43,7 @@ class DateMigrateExampleUnitTest extends DrupalWebTestCase {
     variable_set('date_format_medium', 'Y-m-d H:i');
     $migration = Migration::getInstance('DateExample');
     $result = $migration->processImport();
-    $this->assertEqual($result, Migration::RESULT_COMPLETED,
-      t('Variety term import returned RESULT_COMPLETED'));
+    $this->assertEqual($result, Migration::RESULT_COMPLETED, t('Variety term import returned RESULT_COMPLETED'));
     $rawnodes = node_load_multiple(FALSE, array('type' => 'date_migrate_example'), TRUE);
     $this->assertEqual(count($rawnodes), 2, t('Two sample nodes created'));
     $node = reset($rawnodes);

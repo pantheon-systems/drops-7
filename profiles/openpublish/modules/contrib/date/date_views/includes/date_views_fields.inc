@@ -27,6 +27,9 @@ function _date_views_fields($base = 'node') {
   // fields of interest.
   $all_fields = date_views_views_fetch_fields($base, 'filter');
 
+  // Unset the date filter to avoid ugly recursion and broken values.
+  unset($all_fields[$base . '.date_filter']);
+
   // Iterate over all the fields that Views knows about.
   $fields = array();
   foreach ((array) $all_fields as $alias => $val) {

@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -59,10 +59,9 @@ CKEDITOR.add = function( editor )
 };
 
 /**
- * Removes an editor instance from the global {@link CKEDITOR} object. This function
- * is available for internal use only. External code must use {@link CKEDITOR.editor.prototype.destroy}
- * to avoid memory leaks.
- * @param {CKEDITOR.editor} editor The editor instance to be removed.
+ * Removes and editor instance from the global {@link CKEDITOR} object. his function
+ * is available for internal use mainly.
+ * @param {CKEDITOR.editor} editor The editor instance to be added.
  * @example
  */
 CKEDITOR.remove = function( editor )
@@ -131,11 +130,4 @@ CKEDITOR.TRISTATE_DISABLED = 0;
  *     {
  *         editor = CKEDITOR.currentInstance;
  *     });
- */
-
-/**
- * Fired when the last instance has been destroyed. This event is used to perform
- * global memory clean up.
- * @name CKEDITOR#reset
- * @event
  */

@@ -13,15 +13,15 @@ scripts[] = js/rubik.js
 stylesheets[screen][] = core.css
 stylesheets[screen][] = icons.css
 stylesheets[screen][] = style.css
-stylesheets[screen][] = views-admin-rubik.css
+stylesheets[print][] = print.css
 
 ; Support shortcut module links
 settings[shortcut_module_link] = 1
 
 
-; Information added by drupal.org packaging script on 2011-07-11
-version = "7.x-4.0-beta6"
+; Information added by drupal.org packaging script on 2012-02-22
+version = "7.x-4.0-beta8"
 core = "7.x"
 project = "rubik"
-datestamp = "1310408820"
+datestamp = "1329953445"
 

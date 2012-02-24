@@ -1,9 +1,14 @@
 <?php
 
-include_once('date_migrate_example.features.inc');
+/**
+ * @file
+ * Migration integration for Date Migrate Example.
+ */
 
-/*
- * Implementation of hook_migrate_api().
+include_once 'date_migrate_example.features.inc';
+
+/**
+ * Implements hook_migrate_api().
  */
 function date_migrate_example_migrate_api() {
   $api = array(

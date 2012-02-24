@@ -23,7 +23,6 @@ hr { display:none; }
 div.messages {
   color:#036;
   background-color:#f8f8f8;
-  padding:9px;
   border:1px solid #ccc;
   margin:0px 0px 10px;
   }
@@ -183,7 +182,12 @@ table tr.region td { background:#f8f8f8; }
 
 /* Hide tabledrag markers */
 table tr.draggable span.tabledrag-changed { display:none; }
-
+ 
+/* Stripe administrative tables */
+.page-admin table tr.even, .page-admin table tr.even td {
+  background: #f9f9f9;
+}
+               
 /**
  * Forms ==============================================================
  */
@@ -222,7 +226,8 @@ table .item-list,
 .form-item .form-item,
 .form-item .form-type-radio,
 .form.item .form-type-checkbox,
-.form-checkboxes .form-type-checkbox {
+.form-checkboxes .form-type-checkbox,
+.text-format-wrapper .fieldset .form-item {
     background:transparent;
     padding:0px;
     border:0px;
@@ -239,10 +244,20 @@ table .item-list,
   .form.item .form-type-checkbox,
   .form-checkboxes .form-type-checkbox { margin-bottom:0px; }
 
+.text-format-wrapper .form-item {
+  background:#fff;
+  margin:0px 0px 10px;
+
+  border-width:1px;
+  border-style:solid;
+  border-color:#ddd;
+  padding: 9px;
+  }
+
 .form-item label {
   margin:0px;
   padding:0px;
-  color:#999;
+  color:#666;
   font-weight:bold;
   font-size:10px;
   text-transform:uppercase;
@@ -347,7 +362,7 @@ select.form-select {
   padding:3px;
   border-width:1px;
   border-style:solid;
-  border-color:#eee;
+  border-color:#ccc;
   background:#fff;
   color:#666;
   max-width:100%;
@@ -383,23 +398,24 @@ select.form-select {
 .fieldset-title a,
 .fieldset-content { display:block; }
 
-.fieldset { margin:0px 0px 10px; }
-
-.fieldset.titled {
+.fieldset {
+  margin:0px 0px 10px;
   display:block;
   position:relative;
-  min-height:30px;
+  min-height:28px;
+  border: 1px solid #CCCCCC;
   }
+fieldset legend {
+  display: block;
+  float: left;
+  width: 100%;
+}
+body.page-admin div.vertical-tabs .vertical-tabs-panes .vertical-tabs-pane fieldset {
+  padding:0;
+}
 
 .fieldset-legend {
   display:block;
-  position:absolute;
-  left:0px;
-  right:0px;
-  top:0px;
-  border-width:1px;
-  border-style:solid;
-  border-color:#ddd #ddd #eee;
   }
 
 .container-inline .fieldset-legend .fieldset-content,
@@ -417,7 +433,7 @@ select.form-select {
   margin:0px;
   padding:4px 9px 5px;
   color:#333;
-  background:#f4f4f4;
+  background:#f6f6f6;
   }
 
   .fieldset-legend,
@@ -443,7 +459,7 @@ select.form-select {
 
   .collapsed .fieldset-legend a {
     background:#eee;
-    color:#999;
+    color:#484848;
     }
 
   .collapsed .fieldset-legend a:hover { color:#666; }
@@ -462,14 +478,6 @@ select.form-select {
   background:#fff;
   }
 
-  .container-inline .fieldset-content,
-  .fieldset-content {
-    border-width:1px;
-    border-style:solid;
-    border-color:#ddd;
-    }
-
-  .titled .fieldset-content { border-width:0px 1px 1px; }
 
   html.js .collapsed .fieldset-content { display:none; }
 
@@ -479,9 +487,11 @@ select.form-select {
 .filter-wrapper {
   font-size:11px;
   margin-top:-10px;
+  border-top:none; 
   }
 
-.filter-wrapper .fieldset-content {
+.filter-wrapper .fieldset-content,
+.fieldset .fieldset.filter-wrapper .fieldset-content  {
   background:#f8f8f8;
   border-top:0px;
   height:20px;
@@ -602,7 +612,7 @@ form .form-actions {
 
 .system-themes-list-disabled .theme-selector {
   background:#eee;
-  color:#999;
+  color:#676767;
   }
 
 /* admin/content/node & admin/user/user */
@@ -744,13 +754,16 @@ body.tao #admin-toolbar a.menu-hover span.menu-description span.icon {
   border:0px;
   padding:10px;
   }
+.vertical-tabs .fieldset-content .fieldset-content {
+  margin-top: 20px;
+}
 
 .vertical-tabs-list li a {
   display:block;
   text-shadow:#fff 0px 1px 0px;
   padding:5px 10px 4px 10px;
   border-bottom:1px solid #ddd;
-  color:#999;
+  color:#666;
   }
 
 .vertical-tabs-list .selected a {

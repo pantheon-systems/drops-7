@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -34,8 +34,8 @@ CKEDITOR.lang['da'] =
 	editorTitle : 'Rich text editor, %1, press ALT 0 for help.', // MISSING
 
 	// ARIA descriptions.
-	toolbars	: 'Editor toolbars', // MISSING
-	editor		: 'Rich Text Editor', // MISSING
+	toolbar	: 'Toolbar', // MISSING
+	editor	: 'Rich Text Editor', // MISSING
 
 	// Toolbar buttons without dialogs.
 	source			: 'Kilde',
@@ -121,8 +121,6 @@ CKEDITOR.lang['da'] =
 		alignBottom		: 'Nederst',
 		invalidHeight	: 'Højde skal være et tal.',
 		invalidWidth	: 'Bredde skal være et tal.',
-		invalidCssLength	: 'Value specified for the "%1" field must be a positive number with or without a valid CSS measurement unit (px, %, in, cm, mm, em, ex, pt, or pc).', // MISSING
-		invalidHtmlLength	: 'Value specified for the "%1" field must be a positive number with or without a valid HTML measurement unit (px or %).', // MISSING
 
 		// Put the voice-only part of the label in the span.
 		unavailable		: '%1<span class="cke_accessibility">, ikke tilgængelig</span>'
@@ -177,19 +175,18 @@ CKEDITOR.lang['da'] =
 		langDirRTL		: 'Fra højre mod venstre (RTL)',
 		acccessKey		: 'Genvejstast',
 		name			: 'Navn',
-		langCode			: 'Tekstretning',
-		tabIndex			: 'Tabulator indeks',
-		advisoryTitle		: 'Titel',
+		langCode		: 'Tekstretning',
+		tabIndex		: 'Tabulator indeks',
+		advisoryTitle	: 'Titel',
 		advisoryContentType	: 'Indholdstype',
 		cssClasses		: 'Typografiark',
 		charset			: 'Tegnsæt',
 		styles			: 'Typografi',
-		rel			: 'Relationship', // MISSING
-		selectAnchor		: 'Vælg et anker',
+		selectAnchor	: 'Vælg et anker',
 		anchorName		: 'Efter anker navn',
-		anchorId			: 'Efter element Id',
-		emailAddress		: 'E-mail adresse',
-		emailSubject		: 'Emne',
+		anchorId		: 'Efter element Id',
+		emailAddress	: 'E-mail adresse',
+		emailSubject	: 'Emne',
 		emailBody		: 'Besked',
 		noAnchors		: '(Ingen bogmærker i dokumentet)',
 		noUrl			: 'Indtast hyperlink URL!',
@@ -203,8 +200,7 @@ CKEDITOR.lang['da'] =
 		menu		: 'Egenskaber for bogmærke',
 		title		: 'Egenskaber for bogmærke',
 		name		: 'Bogmærke navn',
-		errorName	: 'Indtast bogmærke navn',
-		remove		: 'Remove Anchor' // MISSING
+		errorName	: 'Indtast bogmærke navn'
 	},
 
 	// List style dialog
@@ -416,6 +412,7 @@ CKEDITOR.lang['da'] =
 		upload		: 'Upload',
 		alt			: 'Alternativ tekst',
 		lockRatio	: 'Lås størrelsesforhold',
+		unlockRatio	: 'Unlock Ratio', // MISSING
 		resetSize	: 'Nulstil størrelse',
 		border		: 'Ramme',
 		hSpace		: 'Vandret margen',
@@ -604,9 +601,9 @@ CKEDITOR.lang['da'] =
 
 	iframe :
 	{
-		title		: 'IFrame Properties', // MISSING
-		toolbar		: 'IFrame', // MISSING
-		noUrl		: 'Please type the iframe URL', // MISSING
+		title		: 'iFrame Properties', // MISSING
+		toolbar		: 'iFrame', // MISSING
+		noUrl		: 'Please type the iFrame URL', // MISSING
 		scrolling	: 'Enable scrollbars', // MISSING
 		border		: 'Show frame border' // MISSING
 	},
@@ -717,8 +714,6 @@ CKEDITOR.lang['da'] =
 	{
 		title		: 'Om CKEditor',
 		dlgTitle	: 'Om CKEditor',
-		help	: 'Check $1 for help.', // MISSING
-		userGuide : 'CKEditor User\'s Guide', // MISSING
 		moreInfo	: 'For informationer omkring licens, se venligst vores hjemmeside (på engelsk):',
 		copy		: 'Copyright &copy; $1. Alle rettigheder forbeholdes.'
 	},
@@ -730,7 +725,7 @@ CKEDITOR.lang['da'] =
 	{
 		anchor		: 'Anker',
 		flash		: 'Flashanimation',
-		iframe		: 'IFrame', // MISSING
+		iframe		: 'iFrame', // MISSING
 		hiddenfield	: 'Hidden Field', // MISSING
 		unknown		: 'Ukendt objekt'
 	},
@@ -749,64 +744,9 @@ CKEDITOR.lang['da'] =
 	toolbarCollapse	: 'Collapse Toolbar', // MISSING
 	toolbarExpand	: 'Expand Toolbar', // MISSING
 
-	toolbarGroups :
-	{
-		document : 'Document', // MISSING
-		clipboard : 'Clipboard/Undo', // MISSING
-		editing : 'Editing', // MISSING
-		forms : 'Forms', // MISSING
-		basicstyles : 'Basic Styles', // MISSING
-		paragraph : 'Paragraph', // MISSING
-		links : 'Links', // MISSING
-		insert : 'Insert', // MISSING
-		styles : 'Styles', // MISSING
-		colors : 'Colors', // MISSING
-		tools : 'Tools' // MISSING
-	},
-
 	bidi :
 	{
 		ltr : 'Text direction from left to right', // MISSING
 		rtl : 'Text direction from right to left' // MISSING
-	},
-
-	docprops :
-	{
-		label : 'Egenskaber for dokument',
-		title : 'Egenskaber for dokument',
-		design : 'Design', // MISSING
-		meta : 'Meta Tags', // MISSING
-		chooseColor : 'Choose', // MISSING
-		other : '<anden>',
-		docTitle :	'Sidetitel',
-		charset : 	'Tegnsæt kode',
-		charsetOther : 'Anden tegnsæt kode',
-		charsetASCII : 'ASCII', // MISSING
-		charsetCE : 'Centraleuropæisk',
-		charsetCT : 'Traditionel kinesisk (Big5)',
-		charsetCR : 'Kyrillisk',
-		charsetGR : 'Græsk',
-		charsetJP : 'Japansk',
-		charsetKR : 'Koreansk',
-		charsetTR : 'Tyrkisk',
-		charsetUN : 'Unicode (UTF-8)', // MISSING
-		charsetWE : 'Vesteuropæisk',
-		docType : 'Dokumenttype kategori',
-		docTypeOther : 'Anden dokumenttype kategori',
-		xhtmlDec : 'Inkludere XHTML deklartion',
-		bgColor : 'Baggrundsfarve',
-		bgImage : 'Baggrundsbillede URL',
-		bgFixed : 'Fastlåst baggrund',
-		txtColor : 'Tekstfarve',
-		margin : 'Sidemargen',
-		marginTop : 'Øverst',
-		marginLeft : 'Venstre',
-		marginRight : 'Højre',
-		marginBottom : 'Nederst',
-		metaKeywords : 'Dokument index nøgleord (kommasepareret)',
-		metaDescription : 'Dokument beskrivelse',
-		metaAuthor : 'Forfatter',
-		metaCopyright : 'Copyright', // MISSING
-		previewHtml : '<p>This is some <strong>sample text</strong>. You are using <a href="javascript:void(0)">CKEditor</a>.</p>' // MISSING
 	}
 };

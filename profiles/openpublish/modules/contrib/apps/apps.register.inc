@@ -162,7 +162,7 @@ function _apps_menu() {
 
   $menu['admin/config/system/apps'] = array(
     'page callback' => 'apps_config_page',
-    'title' => 'Apps Configuation',
+    'title' => 'Apps Configuration',
     'description' => 'Setting for the App Console',
         'type'=> MENU_NORMAL_ITEM,
   ) + $common;

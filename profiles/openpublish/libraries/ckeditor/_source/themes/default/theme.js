@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -10,8 +10,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 CKEDITOR.themes.add( 'default', (function()
 {
-	var hiddenSkins = {};
-
 	function checkSharedSpace( editor, spaceName )
 	{
 		var container,
@@ -28,9 +26,7 @@ CKEDITOR.themes.add( 'default', (function()
 		{
 			// Creates an HTML structure that reproduces the editor class hierarchy.
 			var html =
-				'<span class="cke_shared "' +
-				' dir="'+ editor.lang.dir + '"' +
-				'>' +
+				'<span class="cke_shared">' +
 				'<span class="' + editor.skinClass + ' ' + editor.id + ' cke_editor_' + editor.name + '">' +
 				'<span class="' + CKEDITOR.env.cssClass + '">' +
 				'<span class="cke_wrapper cke_' + editor.lang.dir + '">' +
@@ -123,12 +119,6 @@ CKEDITOR.themes.add( 'default', (function()
 			sharedTop		&& ( sharedTop.setHtml( topHtml )		, topHtml = '' );
 			sharedBottoms	&& ( sharedBottoms.setHtml( bottomHtml ), bottomHtml = '' );
 
-			var hideSkin = '<style>.' + editor.skinClass + '{visibility:hidden;}</style>';
-			if ( hiddenSkins[ editor.skinClass ] )
-				hideSkin = '';
-			else
-				hiddenSkins[ editor.skinClass ] = 1;
-
 			var container = CKEDITOR.dom.element.createFromHtml( [
 				'<span' +
 					' id="cke_', name, '"' +
@@ -150,7 +140,7 @@ CKEDITOR.themes.add( 'default', (function()
 								'<tr', bottomHtml	? '' : ' style="display:none"', ' role="presentation"><td id="cke_bottom_'	, name, '" class="cke_bottom" role="presentation">'	, bottomHtml	, '</td></tr>' +
 							'</tbody></table>' +
 							//Hide the container when loading skins, later restored by skin css.
-							hideSkin +
+							'<style>.', editor.skinClass, '{visibility:hidden;}</style>' +
 						'</span>' +
 					'</span>' +
 				'</span>' ].join( '' ) );
@@ -175,18 +165,6 @@ CKEDITOR.themes.add( 'default', (function()
 
 			// Disable browser context menu for editor's chrome.
 			container.disableContextMenu();
-
-			// Use a class to indicate that the current selection is in different direction than the UI.
-			editor.on( 'contentDirChanged', function( evt )
-			{
-				var func = ( editor.lang.dir != evt.data ? 'add' : 'remove' ) + 'Class';
-
-				container.getChild( 1 )[ func ]( 'cke_mixed_dir_content' );
-
-				// Put the mixed direction class on the respective element also for shared spaces.
-				var toolbarSpace = this.sharedSpaces && this.sharedSpaces[ this.config.toolbarLocation ];
-				toolbarSpace && toolbarSpace.getParent().getParent()[ func ]( 'cke_mixed_dir_content' );
-			});
 
 			editor.fireOnce( 'themeLoaded' );
 			editor.fireOnce( 'uiReady' );
@@ -263,21 +241,17 @@ CKEDITOR.themes.add( 'default', (function()
 
 		destroy : function( editor )
 		{
-			var container = editor.container,
-				element = editor.element;
+			var container = editor.container;
+			container.clearCustomData();
+			editor.element.clearCustomData();
 
 			if ( container )
-			{
-				container.clearCustomData();
 				container.remove();
-			}
 
-			if ( element )
-			{
-				element.clearCustomData();
-				editor.elementMode == CKEDITOR.ELEMENT_MODE_REPLACE && element.show();
-				delete editor.element;
-			}
+			if ( editor.elementMode == CKEDITOR.ELEMENT_MODE_REPLACE )
+				editor.element.show();
+
+			delete editor.element;
 		}
 	};
 })() );
@@ -352,13 +326,12 @@ CKEDITOR.editor.prototype.resize = function( width, height, isContentHeight, res
  * Gets the element that can be freely used to check the editor size. This method
  * is mainly used by the resize plugin, which adds a UI handle that can be used
  * to resize the editor.
- * @param {Boolean} forContents Whether to return the "contents" part of the theme instead of the container.
  * @returns {CKEDITOR.dom.element} The resizable element.
  * @example
  */
-CKEDITOR.editor.prototype.getResizable = function( forContents )
+CKEDITOR.editor.prototype.getResizable = function()
 {
-	return forContents ? CKEDITOR.document.getById( 'cke_contents_' + this.name ) : this.container;
+	return this.container.getChild( 1 );
 };
 
 /**
@@ -390,6 +363,6 @@ CKEDITOR.editor.prototype.getResizable = function( forContents )
 /**
  * Fired after the editor instance is resized through
  * the {@link CKEDITOR.editor.prototype.resize} method.
- * @name CKEDITOR.editor#resize
+ * @name CKEDITOR#resize
  * @event
  */

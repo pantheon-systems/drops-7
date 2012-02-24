@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -124,7 +124,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * @extends CKEDITOR.ui.dialog.uiElement
 			 * @param {CKEDITOR.dialog} dialog
 			 * Parent dialog object.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>label</strong> (Required) The label string.</li>
@@ -158,10 +158,10 @@ CKEDITOR.plugins.add( 'dialogui' );
 						html.push( '<label class="cke_dialog_ui_labeled_label' + requiredClass + '" ',
 								' id="'+  _.labelId + '"',
 								' for="' + _.inputId + '"',
-								( elementDefinition.labelStyle ? ' style="' + elementDefinition.labelStyle + '"' : '' ) +'>',
+								' style="' + elementDefinition.labelStyle + '">',
 								elementDefinition.label,
 								'</label>',
-								'<div class="cke_dialog_ui_labeled_content"' + ( elementDefinition.controlStyle ? ' style="' + elementDefinition.controlStyle + '"' : '' ) + ' role="presentation">',
+								'<div class="cke_dialog_ui_labeled_content" role="presentation">',
 								contentHtml.call( this, dialog, elementDefinition ),
 								'</div>' );
 					else
@@ -177,13 +177,13 @@ CKEDITOR.plugins.add( 'dialogui' );
 									html : '<label class="cke_dialog_ui_labeled_label' + requiredClass + '"' +
 										' id="' + _.labelId + '"' +
 										' for="' + _.inputId + '"' +
-										( elementDefinition.labelStyle ? ' style="' + elementDefinition.labelStyle + '"' : '' ) +'>' +
+										' style="' + elementDefinition.labelStyle + '">' +
 										   CKEDITOR.tools.htmlEncode( elementDefinition.label ) +
 										'</span>'
 								},
 								{
 									type : 'html',
-									html : '<span class="cke_dialog_ui_labeled_content"' + ( elementDefinition.controlStyle ? ' style="' + elementDefinition.controlStyle + '"' : '' ) + '>' +
+									html : '<span class="cke_dialog_ui_labeled_content">' +
 										contentHtml.call( this, dialog, elementDefinition ) +
 										'</span>'
 								}
@@ -204,7 +204,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * @extends CKEDITOR.ui.dialog.labeledElement
 			 * @param {CKEDITOR.dialog} dialog
 			 * Parent dialog object.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>default</strong> (Optional) The default value.</li>
@@ -237,8 +237,8 @@ CKEDITOR.plugins.add( 'dialogui' );
 				if ( elementDefinition.size )
 					attributes.size = elementDefinition.size;
 
-				if ( elementDefinition.inputStyle )
-					attributes.style = elementDefinition.inputStyle;
+				if ( elementDefinition.controlStyle )
+					attributes.style = elementDefinition.controlStyle;
 
 				// If user presses Enter in a text box, it implies clicking OK for the dialog.
 				var me = this, keyPressedOnMe = false;
@@ -293,7 +293,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * @example
 			 * @param {CKEDITOR.dialog} dialog
 			 * Parent dialog object.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>rows</strong> (Optional) The number of rows displayed.
@@ -323,10 +323,6 @@ CKEDITOR.plugins.add( 'dialogui' );
 				attributes.rows = elementDefinition.rows || 5;
 				attributes.cols = elementDefinition.cols || 20;
 
-				if ( typeof elementDefinition.inputStyle != 'undefined' )
-					attributes.style = elementDefinition.inputStyle;
-
-
 				/** @ignore */
 				var innerHTML = function()
 				{
@@ -348,7 +344,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * @example
 			 * @param {CKEDITOR.dialog} dialog
 			 * Parent dialog object.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>checked</strong> (Optional) Whether the checkbox is checked
@@ -384,11 +380,11 @@ CKEDITOR.plugins.add( 'dialogui' );
 					if ( elementDefinition[ 'default' ] )
 						attributes.checked = 'checked';
 
-					if ( typeof myDefinition.inputStyle != 'undefined' )
-						myDefinition.style = myDefinition.inputStyle;
+					if ( typeof myDefinition.controlStyle != 'undefined' )
+						myDefinition.style = myDefinition.controlStyle;
 
 					_.checkbox = new CKEDITOR.ui.dialog.uiElement( dialog, myDefinition, html, 'input', null, attributes );
-					html.push( ' <label id="', labelId, '" for="', attributes.id, '"' + ( elementDefinition.labelStyle ? ' style="' + elementDefinition.labelStyle + '"' : '' ) + '>',
+					html.push( ' <label id="', labelId, '" for="', attributes.id, '">',
 							CKEDITOR.tools.htmlEncode( elementDefinition.label ),
 							'</label>' );
 					return html.join( '' );
@@ -404,7 +400,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * @extends CKEDITOR.ui.dialog.labeledElement
 			 * @param {CKEDITOR.dialog} dialog
 			 * Parent dialog object.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>default</strong> (Required) The default value.</li>
@@ -466,8 +462,8 @@ CKEDITOR.plugins.add( 'dialogui' );
 						cleanInnerDefinition( inputDefinition );
 						cleanInnerDefinition( labelDefinition );
 
-						if ( typeof inputDefinition.inputStyle != 'undefined' )
-							inputDefinition.style = inputDefinition.inputStyle;
+						if ( typeof inputDefinition.controlStyle != 'undefined' )
+							inputDefinition.style = inputDefinition.controlStyle;
 
 						children.push( new CKEDITOR.ui.dialog.uiElement( dialog, inputDefinition, inputHtml, 'input', null, inputAttributes ) );
 						inputHtml.push( ' ' );
@@ -490,7 +486,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * @extends CKEDITOR.ui.dialog.uiElement
 			 * @param {CKEDITOR.dialog} dialog
 			 * Parent dialog object.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>label</strong> (Required) The button label.</li>
@@ -573,7 +569,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * @constructor
 			 * @param {CKEDITOR.dialog} dialog
 			 * Parent dialog object.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>default</strong> (Required) The default value.</li>
@@ -622,12 +618,12 @@ CKEDITOR.plugins.add( 'dialogui' );
 					for ( var i = 0, item ; i < elementDefinition.items.length && ( item = elementDefinition.items[i] ) ; i++ )
 					{
 						innerHTML.push( '<option value="',
-							CKEDITOR.tools.htmlEncode( item[1] !== undefined ? item[1] : item[0] ).replace( /"/g, '&quot;' ), '" /> ',
+							CKEDITOR.tools.htmlEncode( item[1] !== undefined ? item[1] : item[0] ), '" /> ',
 							CKEDITOR.tools.htmlEncode( item[0] ) );
 					}
 
-					if ( typeof myDefinition.inputStyle != 'undefined' )
-						myDefinition.style = myDefinition.inputStyle;
+					if ( typeof myDefinition.controlStyle != 'undefined' )
+						myDefinition.style = myDefinition.controlStyle;
 
 					_.select = new CKEDITOR.ui.dialog.uiElement( dialog, myDefinition, html, 'select', null, attributes, innerHTML.join( '' ) );
 					return html.join( '' );
@@ -643,7 +639,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * @constructor
 			 * @param {CKEDITOR.dialog} dialog
 			 * Parent dialog object.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>validate</strong> (Optional) The validation function.</li>
@@ -716,7 +712,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * @constructor
 			 * @param {CKEDITOR.dialog} dialog
 			 * Parent dialog object.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>for</strong> (Required) The file input's page and element Id
@@ -769,7 +765,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 				 * @extends CKEDITOR.ui.dialog.uiElement
 				 * @name CKEDITOR.ui.dialog.html
 				 * @param {CKEDITOR.dialog} dialog Parent dialog object.
-				 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition Element definition.
+				 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition Element definition.
 				 * Accepted fields:
 				 * <ul>
 				 * 	<li><strong>html</strong> (Required) HTML code of this element.</li>
@@ -841,7 +837,7 @@ CKEDITOR.plugins.add( 'dialogui' );
 			 * objects in childObjList.
 			 * @param {Array} htmlList
 			 * Array of HTML code that this element will output to.
-			 * @param {CKEDITOR.dialog.definition.uiElement} elementDefinition
+			 * @param {CKEDITOR.dialog.uiElementDefinition} elementDefinition
 			 * The element definition. Accepted fields:
 			 * <ul>
 			 * 	<li><strong>label</strong> (Optional) The legend of the this fieldset.</li>
@@ -1525,17 +1521,3 @@ CKEDITOR.plugins.add( 'dialogui' );
 	CKEDITOR.dialog.addUIElement( 'html', commonBuilder );
 	CKEDITOR.dialog.addUIElement( 'fieldset', containerBuilder );
 })();
-
-/**
- * Fired when the value of the uiElement is changed
- * @name CKEDITOR.ui.dialog.uiElement#change
- * @event
- */
-
-/**
- * Fired when the inner frame created by the element is ready.
- * Each time the button is used or the dialog is loaded a new
- * form might be created.
- * @name CKEDITOR.ui.dialog.fileButton#formLoaded
- * @event
- */

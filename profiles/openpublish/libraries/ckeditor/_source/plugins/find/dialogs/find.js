@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -604,7 +604,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 			title : lang.title,
 			resizable : CKEDITOR.DIALOG_RESIZE_NONE,
 			minWidth : 350,
-			minHeight : 170,
+			minHeight : 165,
 			buttons : [ CKEDITOR.dialog.cancelButton ],		// Cancel button only.
 			contents : [
 				{
@@ -628,7 +628,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 								},
 								{
 									type : 'button',
-									id : 'btnFind',
 									align : 'left',
 									style : 'width:100%',
 									label : lang.find,
@@ -694,7 +693,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 								},
 								{
 									type : 'button',
-									id : 'btnFindReplace',
 									align : 'left',
 									style : 'width:100%',
 									label : lang.replace,
@@ -728,7 +726,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 								},
 								{
 									type : 'button',
-									id : 'btnReplaceAll',
 									align : 'left',
 									style : 'width:100%',
 									label : lang.replaceAll,
@@ -853,17 +850,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 				// Establish initial searching start position.
 				finder.searchRange = getSearchRange();
 
-				// Fill in the find field with selected text.
-				var selectedText = this.getParentEditor().getSelection().getSelectedText(),
-					patternFieldId = ( startupPage == 'find' ? 'txtFindFind' : 'txtFindReplace' );
-
-				var field = this.getContentElement( startupPage, patternFieldId );
-				field.setValue( selectedText );
-				field.select();
-
 				this.selectPage( startupPage );
-
-				this[ ( startupPage == 'find' && this._.editor.readOnly? 'hide' : 'show' ) + 'Page' ]( 'replace');
 			},
 			onHide : function()
 			{

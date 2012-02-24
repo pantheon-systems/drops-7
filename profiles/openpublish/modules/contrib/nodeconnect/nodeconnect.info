@@ -5,9 +5,9 @@ description = Allows for referenced nodes to be created and edited from the node
 core = "7.x"
 dependencies[] = node_reference
 
-; Information added by drupal.org packaging script on January 1, 1970 - 00:00
-version = "7.x-1.0-alpha1"
+; Information added by drupal.org packaging script on 2012-02-16
+version = "7.x-1.0-alpha2"
 core = "7.x"
 project = "nodeconnect"
-datestamp = "1295634820"
+datestamp = "1329363043"
 

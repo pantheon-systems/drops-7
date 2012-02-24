@@ -201,6 +201,7 @@ class views_boxes_view extends boxes_box {
         // We then update the original field with JS.
         $re = "/\[(.*)\]/";
         $entity_type = FALSE;
+        unset($bundles);
 
         // Check for the following format of the admin title
         // [entity type]
@@ -384,7 +385,6 @@ class views_boxes_view extends boxes_box {
       $view->set_exposed_input($this->options['settings']);
       $view->exposed_data = $this->options['settings'];
       $view->set_display($display_name);
-      $view->load($display_name);
 
       // Set arguments
       $args = array();

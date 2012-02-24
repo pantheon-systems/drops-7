@@ -38,7 +38,9 @@
 
   <div id='main-content' class='clearfix'>
     <?php if ($breadcrumb) print $breadcrumb; ?>
+    <?php print render($title_prefix); ?>
     <?php if ($title): ?><h1 class='page-title'><?php print $title ?></h1><?php endif; ?>
+    <?php print render($title_suffix); ?>
     <?php if ($primary_local_tasks): ?><ul class='links clearfix'><?php print render($primary_local_tasks) ?></ul><?php endif; ?>
     <?php if ($secondary_local_tasks): ?><ul class='links clearfix'><?php print render($secondary_local_tasks) ?></ul><?php endif; ?>
     <?php if ($action_links): ?><ul class='links clearfix'><?php print render($action_links); ?></ul><?php endif; ?>

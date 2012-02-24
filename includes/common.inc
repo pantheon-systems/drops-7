@@ -5219,8 +5219,6 @@ function drupal_cron_cleanup() {
 function drupal_system_listing($mask, $directory, $key = 'name', $min_depth = 1) {
   $config = conf_path();
 
-  $profile = drupal_get_profile();
-
   $searchdir = array($directory);
   $files = array();
 
@@ -5228,8 +5226,14 @@ function drupal_system_listing($mask, $directory, $key = 'name', $min_depth = 1)
   // themes as organized by a distribution. It is pristine in the same way
   // that /modules is pristine for core; users should avoid changing anything
   // there in favor of sites/all or sites/<domain> directories.
-  if (file_exists("profiles/$profile/$directory")) {
-    $searchdir[] = "profiles/$profile/$directory";
+  //
+  // For SimpleTest to be able to test modules packaged together with a
+  // distribution we need to include the parent profile's search path.
+  $profiles = array(drupal_get_profile(), variable_get('simpletest_parent_profile', ''));
+  foreach ($profiles as $profile) {
+    if ($profile && file_exists("profiles/$profile/$directory")) {
+      $searchdir[] = "profiles/$profile/$directory";
+    }
   }
 
   // Always search sites/all/* as well as the global directories.

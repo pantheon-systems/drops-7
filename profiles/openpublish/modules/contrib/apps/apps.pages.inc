@@ -65,6 +65,19 @@ function apps_app_config_page($server_name, $app_name) {
   if(apps_app_callback($app, "demo content enable callback")) {
     $element[] = drupal_get_form('apps_demo_content_form', $app);
   }
+
+  // check for a status table
+  if($data_callback = apps_app_callback($app, "status callback")) {
+    $data = $data_callback();
+    $header = isset($data['header']) ? $data['header'] : NULL;
+    $title = isset($data['title']) ? $data['title'] : 'Status';
+    $items = isset($data['items']) ? $data['items'] : array();
+    $element[] = array(
+      '#type' => 'fieldset',
+      '#title' => 'status',
+      'table' => apps_app_status_report($items, $header),
+    );
+  }
   if($form = apps_app_callback($app, "configure form")) {
     $element[] =  drupal_get_form($form);
   }
@@ -157,10 +170,6 @@ function apps_app_install($server_name, $app_name) {
   $action = arg(APPSERVER_BASEPATH_DEPTH + 5);
   $apps = apps_apps($server_name , array('machine_name' => $app_name)) ;
   $app = $apps[$app_name];
-  if (!is_writeable(conf_path())) {
-      drupal_set_message("To install an app, web server needs write access to the Drupal sites folder. Please adjust and try again.", 'error');
-      drupal_goto(apps_app_page_path($app));
-  }
   switch ($action) {
     case FALSE:
       $next = apps_app_page_path($app, 'install/install');
@@ -281,4 +290,89 @@ function apps_config_form() {
 
 function apps_config_form_submit() {
   drupal_flush_all_caches();
+}
+
+
+/**
+ * apps_app_status_report()
+ *
+ * @PARAM items: an array of items to display the keys of which should be the 
+ * keys of the $header param or use the default.
+ * The default are severity, title, description and action.  Severity is expected to be
+ * an int in (REQUIREMENT_INFO, REQUIREMENT_OK, REQUIREMENT_WARNING, REQUIREMENT_ERROR)
+ * @PARAM header: an array of header titles, the keys of which should match the keys in $items
+ * there is a default for this value
+ *
+ * @RETURN: a render array for the status report table
+ */
+function apps_app_status_report($items, $header = NULL) {
+  
+  if(!isset($header)) {
+    $header = array(
+      'severity' => 'Status',
+      'title' => 'Title',
+      'description' => 'Description',
+      'action' => 'Action',
+    );
+  }
+  $rows = array();
+    $ok_image = array('#theme'=>"image", "#path" => "misc/message-24-ok.png", "#alt"=>"OK");
+    $info_image = array('#theme'=>"image", "#path" => "misc/message-24-info.png", "#alt"=>"OK");
+    $error_image = array('#theme'=>"image", "#path" => "misc/message-24-error.png", "#alt"=>"OK");
+    $warning_image = array('#theme'=>"image", "#path" => "misc/message-24-warning.png", "#alt"=>"OK");
+    //$ok_image = array('#theme'=>"image", "#path" => "misc/watchdog-ok.png", "#alt"=>"OK");
+    //$info_image = array('#theme'=>"image", "#path" => "misc/watchdog-info.png", "#alt"=>"OK");
+    //$error_image = array('#theme'=>"image", "#path" => "misc/watchdog-error.png", "#alt"=>"OK");
+    //$warning_image = array('#theme'=>"image", "#path" => "misc/watchdog-warning.png", "#alt"=>"OK");
+  $severities = array(
+    REQUIREMENT_INFO => array(
+      'title' => t('Info'),
+      'class' => 'info',
+      'image' => render($info_image),
+    ),
+    REQUIREMENT_OK => array(
+      'title' => t('OK'),
+      'class' => 'ok',
+      'image' => render($ok_image),
+    ),
+    REQUIREMENT_WARNING => array(
+      'title' => t('Warning'),
+      'class' => 'warning',
+      'image' => render($warning_image),
+    ),
+    REQUIREMENT_ERROR => array(
+      'title' => t('Error'),
+      'class' => 'error',
+      'image' => render($error_image),
+    ),
+  );
+  foreach($items as $item) {
+    $row = array();
+    foreach(array_keys($header) as $key) {
+      if(isset($item[$key])) {
+        if($key =='severity') {
+          $row['data'][] = $severities[$item[$key]]['image'];
+          $row['class'][] = $severities[$item[$key]]['class'];
+        }
+        elseif($key == 'action') {
+          $row['data'][] = theme('item_list', array("items" => $item[$key]));
+        
+        }
+        else {
+          $row['data'][] = $item[$key];
+        }
+      }
+      else {
+          $row['data'][] = '';
+      }
+    }
+    $rows[] = $row;
+  }
+  return array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+  );
+
+
 }

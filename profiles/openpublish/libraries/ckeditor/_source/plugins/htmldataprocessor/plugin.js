@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -80,9 +80,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 	var dtd = CKEDITOR.dtd;
 
-	// Define orders of table elements.
-	var tableOrder = [ 'caption', 'colgroup', 'col', 'thead', 'tfoot', 'tbody' ];
-
 	// Find out the list of block-like tags that can contain <br>.
 	var blockLikeTags = CKEDITOR.tools.extend( {}, dtd.$block, dtd.$listItem, dtd.$tableContent );
 	for ( var i in blockLikeTags )
@@ -125,8 +122,8 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 				// Attributes saved for changes and protected attributes.
 				[ ( /^data-cke-(saved|pa)-/ ), '' ],
 
-				// All "data-cke-" attributes are to be ignored.
-				[ ( /^data-cke-.*/ ), '' ],
+				// All "data-cke" attributes are to be ignored.
+				[ ( /^data-cke.*/ ), '' ],
 
 				[ 'hidefocus', '' ]
 			],
@@ -154,17 +151,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 					}
 
 					return element;
-				},
-
-				// The contents of table should be in correct order (#4809).
-				table : function( element )
-				{
-					var children = element.children;
-					children.sort( function ( node1, node2 )
-								   {
-									   return node1.type == CKEDITOR.NODE_ELEMENT && node2.type == node1.type ?
-											CKEDITOR.tools.indexOf( tableOrder, node1.name )  > CKEDITOR.tools.indexOf( tableOrder, node2.name ) ? 1 : -1 : 0;
-								   } );
 				},
 
 				embed : function( element )
@@ -207,9 +193,6 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 						delete element.name;
 				},
 
-				// Empty <pre> in IE is reported with filler node (&nbsp;).
-				pre : function( element ) { CKEDITOR.env.ie && trimFillers( element ); },
-
 				html : function( element )
 				{
 					delete element.attributes.contenteditable;
@@ -245,41 +228,43 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 					// Remove all class names starting with "cke_".
 					return CKEDITOR.tools.ltrim( value.replace( /(?:^|\s+)cke_[^\s]*/g, '' ) ) || false;
 				}
+			},
+
+			comment : function( contents )
+			{
+				// If this is a comment for protected source.
+				if ( contents.substr( 0, protectedSourceMarker.length ) == protectedSourceMarker )
+				{
+					// Remove the extra marker for real comments from it.
+					if ( contents.substr( protectedSourceMarker.length, 3 ) == '{C}' )
+						contents = contents.substr( protectedSourceMarker.length + 3 );
+					else
+						contents = contents.substr( protectedSourceMarker.length );
+
+					return new CKEDITOR.htmlParser.cdata( decodeURIComponent( contents ) );
+				}
+
+				return contents;
 			}
 		};
 
 	if ( CKEDITOR.env.ie )
 	{
 		// IE outputs style attribute in capital letters. We should convert
-		// them back to lower case, while not hurting the values (#5930)
+		// them back to lower case.
 		defaultHtmlFilterRules.attributes.style = function( value, element )
 		{
-			return value.replace( /(^|;)([^\:]+)/g, function( match )
-				{
-					return match.toLowerCase();
-				});
+			return value.toLowerCase();
 		};
 	}
 
 	function protectReadOnly( element )
 	{
-		var attrs = element.attributes;
-
-		// We should flag that the element was locked by our code so
-		// it'll be editable by the editor functions (#6046).
-		if ( attrs.contenteditable != "false" )
-			attrs[ 'data-cke-editable' ] = attrs.contenteditable ? 'true' : 1;
-
-		attrs.contenteditable = "false";
+		element.attributes.contenteditable = "false";
 	}
 	function unprotectReadyOnly( element )
 	{
-		var attrs = element.attributes;
-		switch( attrs[ 'data-cke-editable' ] )
-		{
-			case 'true':	attrs.contenteditable = 'true';	break;
-			case '1':		delete attrs.contenteditable;	break;
-		}
+		delete element.attributes.contenteditable;
 	}
 	// Disable form elements editing mode provided by some browers. (#5746)
 	for ( i in { input : 1, textarea : 1 } )
@@ -288,8 +273,8 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 		defaultHtmlFilterRules.elements[ i ] = unprotectReadyOnly;
 	}
 
-	var protectElementRegex = /<(a|area|img|input)\b([^>]*)>/gi,
-		protectAttributeRegex = /\b(href|src|name)\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|(?:[^ "'>]+))/gi;
+	var protectAttributeRegex = /<((?:a|area|img|input)\b[\s\S]*?\s)((href|src|name)\s*=\s*(?:(?:"[^"]*")|(?:'[^']*')|(?:[^ "'>]+)))([^>]*)>/gi,
+		findSavedSrcRegex = /\sdata-cke-saved-src\s*=/;
 
 	var protectElementsRegex = /(?:<style(?=[ >])[^>]*>[\s\S]*<\/style>)|(?:<(:?link|meta|base)[^>]*>)/gi,
 		encodedElementsRegex = /<cke:encoded>([^<]*)<\/cke:encoded>/gi;
@@ -301,17 +286,14 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 	function protectAttributes( html )
 	{
-		return html.replace( protectElementRegex, function( element, tag, attributes )
-		{
-			return '<' +  tag + attributes.replace( protectAttributeRegex, function( fullAttr, attrName )
+		return html.replace( protectAttributeRegex, function( tag, beginning, fullAttr, attrName, end )
 			{
-				// We should not rewrite the existed protected attributes, e.g. clipboard content from editor. (#5218)
-				if ( attributes.indexOf( 'data-cke-saved-' + attrName ) == -1 )
-					return ' data-cke-saved-' + fullAttr + ' ' + fullAttr;
-
-				return fullAttr;
-			}) + '>';
-		});
+				// We should not rewrite the _cke_saved_src attribute (#5218)
+				if ( attrName == 'src' && findSavedSrcRegex.test( tag ) )
+					return tag;
+				else
+					return '<' + beginning + fullAttr + ' data-cke-saved-' + fullAttr + end + '>';
+			});
 	}
 
 	function protectElements( html )
@@ -369,24 +351,9 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 			});
 	}
 
-	function unprotectSource( html, editor )
-	{
-		var store = editor._.dataStore;
-
-		return html.replace( /<!--\{cke_protected\}([\s\S]+?)-->/g, function( match, data )
-			{
-				return decodeURIComponent( data );
-			}).replace( /\{cke_protected_(\d+)\}/g, function( match, id )
-			{
-				return store && store[ id ] || '';
-			});
-	}
-
-	function protectSource( data, editor )
+	function protectSource( data, protectRegexes )
 	{
 		var protectedHtml = [],
-			protectRegexes = editor.config.protectedSource,
-			store = editor._.dataStore || ( editor._.dataStore = { id : 1 } ),
 			tempRegex = /<\!--\{cke_temp(comment)?\}(\d*?)-->/g;
 
 		var regexes =
@@ -419,10 +386,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 							return protectedHtml[ id ];
 						}
 					);
-
-					// Avoid protecting over protected, e.g. /\{.*?\}/
-					return ( /cke_temp(comment)?/ ).test( match ) ? match
-						: '<!--{cke_temp}' + ( protectedHtml.push( match ) - 1 ) + '-->';
+					return  '<!--{cke_temp}' + ( protectedHtml.push( match ) - 1 ) + '-->';
 				});
 		}
 		data = data.replace( tempRegex,	function( $, isComment, id )
@@ -433,17 +397,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 						'-->';
 			}
 		);
-
-		// Different protection pattern is used for those that
-		// live in attributes to avoid from being HTML encoded.
-		return data.replace( /(['"]).*?\1/g, function ( match )
-		{
-			return match.replace( /<!--\{cke_protected\}([\s\S]+?)-->/g, function( match, data )
-			{
-				store[ store.id ] = decodeURIComponent( data );
-				return '{cke_protected_'+ ( store.id++ )  + '}';
-			});
-		});
+		return data;
 	}
 
 	CKEDITOR.plugins.add( 'htmldataprocessor',
@@ -489,7 +443,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 			// The source data is already HTML, but we need to clean
 			// it up and apply the filter.
 
-			data = protectSource( data, this.editor );
+			data = protectSource( data, this.editor.config.protectedSource );
 
 			// Before anything, we must protect the URL attributes as the
 			// browser may changing them when setting the innerHTML later in
@@ -551,13 +505,7 @@ For licensing, see LICENSE.html or http://ckeditor.com/license
 
 			fragment.writeHtml( writer, this.htmlFilter );
 
-			var data = writer.getHtml( true );
-
-			// Restore those non-HTML protected source. (#4475,#4880)
-			data = unprotectRealComments( data );
-			data = unprotectSource( data, this.editor );
-
-			return data;
+			return writer.getHtml( true );
 		}
 	};
 })();

@@ -21,9 +21,9 @@ stylesheets[all][] = reset.css
 stylesheets[all][] = base.css
 stylesheets[screen][] = drupal.css
 
-; Information added by drupal.org packaging script on 2010-09-30
-version = "7.x-3.0-beta3"
+; Information added by drupal.org packaging script on 2011-09-21
+version = "7.x-3.0-beta4"
 core = "7.x"
 project = "tao"
-datestamp = "1285858563"
+datestamp = "1316616407"
 

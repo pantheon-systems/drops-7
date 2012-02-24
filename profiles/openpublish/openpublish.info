@@ -61,7 +61,6 @@ dependencies[] = filefield_sources
 dependencies[] = video_embed_field
 dependencies[] = views_node_taxonomy_filter
 ; dependencies[] = ga_stats
-dependencies[] = views_infinite_scroll
 dependencies[] = libraries
 
 

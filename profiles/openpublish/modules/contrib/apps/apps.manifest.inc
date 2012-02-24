@@ -298,9 +298,9 @@ function apps_retrieve_app_image($url, $title = FALSE, $alt = FALSE) {
  *TODO: Cache status data and clear on changes to any module status
  */
 function apps_manifest($server) {
-  $manifest = &drupal_static(__function__);
+  $manifests = &drupal_static(__function__);
   require_once DRUPAL_ROOT . '/includes/install.inc';
-  if (!$manifest && !isset($manifest['error'])) {
+  if (!$manifests[$server['name']] && !isset($manifests[$server['name']]['error'])) {
     // Get manifest from server
     $manifest = apps_request_manifest($server);
     //if there is an error with the manifest jump out now
@@ -319,6 +319,7 @@ function apps_manifest($server) {
       $app['featured'] = ($app['machine_name'] == $manifest['featured app']);
       $app['server'] = $server;
       $app['dependencies'] = isset($app['dependencies']) ? $app['dependencies'] : array();
+      $app['libraries'] = isset($app['libraries']) ? $app['libraries'] : array();
       // Add info to dependencies
       foreach($app['dependencies'] as $name_version => $downloadable) {
         //Parse dep versions
@@ -362,7 +363,7 @@ function apps_manifest($server) {
             'enabled' => 0,
             'installed' =>  is_dir(DRUPAL_ROOT . "/sites/all/libraries/$name_version"),
           );
-          $app['dependencies'][$name_version] = $info;
+          $app['libraries'][$name_version] = $info;
         }
       }
       $app['status'] = $app['incompatable'] ? INCOMPATABLE : (!$app['installed'] || !$app['dep_installed'] ? INSTALLABLE : ($app['enabled'] ? ENABLED : DISABLED));
@@ -372,8 +373,9 @@ function apps_manifest($server) {
     //overide json apps with our inhanced apps
     apps_add_app_info($apps);
     $manifest['apps'] = $apps;
+    $manifests[$server['name']] = $manifest;
   }
-  return $manifest;
+  return $manifests[$server['name']];
 }
 
 function apps_add_app_info(&$apps) {
@@ -392,7 +394,7 @@ function apps_add_app_info(&$apps) {
     //add defaults
     $info_defaults = array(
       'configure form' => $app['machine_name'] . "_apps_app_configure_form",
-      'demo content description' => "Enabling the demo content will add content to the site that should help to understand how the app functions.  When it is disable all of that content will be removed.",
+      'demo content description' => "Enabling the demo content will add content to the site that can help to understand how the app functions.  When it is disabled all of the demo content will be removed.",
     );
     $apps[$id] += $info_defaults;
     
@@ -468,7 +470,7 @@ function apps_demo_content_form($form, &$form_state, $app) {
     '#title' => "Demo Content for {$app['name']}",
   );
   $form['demo_content_group']['demo_content_current'] = array(
-    '#markup' => $app['demo content description']. " <i>Demo content for {$app['name']} is currently " . ($enabled ? 'enabled' : 'disable') . ".</i><br /><br />",
+    '#markup' => $app['demo content description']. " <i>Demo content for {$app['name']} is currently " . ($enabled ? 'enabled' : 'disabled') . ".</i><br /><br />",
   );
   $form['demo_content_action'] = array(
     '#type' => 'value',

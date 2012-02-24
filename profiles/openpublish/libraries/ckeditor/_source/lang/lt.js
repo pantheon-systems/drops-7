@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -34,8 +34,8 @@ CKEDITOR.lang['lt'] =
 	editorTitle : 'Rich text editor, %1, press ALT 0 for help.', // MISSING
 
 	// ARIA descriptions.
-	toolbars	: 'Editor toolbars', // MISSING
-	editor		: 'Rich Text Editor', // MISSING
+	toolbar	: 'Toolbar', // MISSING
+	editor	: 'Rich Text Editor', // MISSING
 
 	// Toolbar buttons without dialogs.
 	source			: 'Šaltinis',
@@ -121,8 +121,6 @@ CKEDITOR.lang['lt'] =
 		alignBottom		: 'Apačią',
 		invalidHeight	: 'Height must be a number.', // MISSING
 		invalidWidth	: 'Width must be a number.', // MISSING
-		invalidCssLength	: 'Value specified for the "%1" field must be a positive number with or without a valid CSS measurement unit (px, %, in, cm, mm, em, ex, pt, or pc).', // MISSING
-		invalidHtmlLength	: 'Value specified for the "%1" field must be a positive number with or without a valid HTML measurement unit (px or %).', // MISSING
 
 		// Put the voice-only part of the label in the span.
 		unavailable		: '%1<span class="cke_accessibility">, unavailable</span>' // MISSING
@@ -177,19 +175,18 @@ CKEDITOR.lang['lt'] =
 		langDirRTL		: 'Iš dešinės į kairę (RTL)',
 		acccessKey		: 'Prieigos raktas',
 		name			: 'Vardas',
-		langCode			: 'Teksto kryptis',
-		tabIndex			: 'Tabuliavimo indeksas',
-		advisoryTitle		: 'Konsultacinė antraštė',
+		langCode		: 'Teksto kryptis',
+		tabIndex		: 'Tabuliavimo indeksas',
+		advisoryTitle	: 'Konsultacinė antraštė',
 		advisoryContentType	: 'Konsultacinio turinio tipas',
 		cssClasses		: 'Stilių lentelės klasės',
 		charset			: 'Susietų išteklių simbolių lentelė',
 		styles			: 'Stilius',
-		rel			: 'Relationship', // MISSING
-		selectAnchor		: 'Pasirinkite žymę',
+		selectAnchor	: 'Pasirinkite žymę',
 		anchorName		: 'Pagal žymės vardą',
-		anchorId			: 'Pagal žymės Id',
-		emailAddress		: 'El.pašto adresas',
-		emailSubject		: 'Žinutės tema',
+		anchorId		: 'Pagal žymės Id',
+		emailAddress	: 'El.pašto adresas',
+		emailSubject	: 'Žinutės tema',
 		emailBody		: 'Žinutės turinys',
 		noAnchors		: '(Šiame dokumente žymių nėra)',
 		noUrl			: 'Prašome įvesti nuorodos URL',
@@ -203,8 +200,7 @@ CKEDITOR.lang['lt'] =
 		menu		: 'Žymės savybės',
 		title		: 'Žymės savybės',
 		name		: 'Žymės vardas',
-		errorName	: 'Prašome įvesti žymės vardą',
-		remove		: 'Remove Anchor' // MISSING
+		errorName	: 'Prašome įvesti žymės vardą'
 	},
 
 	// List style dialog
@@ -274,8 +270,8 @@ CKEDITOR.lang['lt'] =
 		invalidBorder	: 'Border size must be a number.', // MISSING
 		invalidWidth	: 'Table width must be a number.', // MISSING
 		invalidHeight	: 'Table height must be a number.', // MISSING
-		invalidCellSpacing	: 'Cell spacing must be a positive number.', // MISSING
-		invalidCellPadding	: 'Cell padding must be a positive number.', // MISSING
+		invalidCellSpacing	: 'Cell spacing must be a number.', // MISSING
+		invalidCellPadding	: 'Cell padding must be a number.', // MISSING
 
 		cell :
 		{
@@ -416,6 +412,7 @@ CKEDITOR.lang['lt'] =
 		upload		: 'Nusiųsti',
 		alt			: 'Alternatyvus Tekstas',
 		lockRatio	: 'Išlaikyti proporciją',
+		unlockRatio	: 'Unlock Ratio', // MISSING
 		resetSize	: 'Atstatyti dydį',
 		border		: 'Rėmelis',
 		hSpace		: 'Hor.Erdvė',
@@ -604,9 +601,9 @@ CKEDITOR.lang['lt'] =
 
 	iframe :
 	{
-		title		: 'IFrame Properties', // MISSING
-		toolbar		: 'IFrame', // MISSING
-		noUrl		: 'Please type the iframe URL', // MISSING
+		title		: 'iFrame Properties', // MISSING
+		toolbar		: 'iFrame', // MISSING
+		noUrl		: 'Please type the iFrame URL', // MISSING
 		scrolling	: 'Enable scrollbars', // MISSING
 		border		: 'Show frame border' // MISSING
 	},
@@ -717,8 +714,6 @@ CKEDITOR.lang['lt'] =
 	{
 		title		: 'About CKEditor', // MISSING
 		dlgTitle	: 'About CKEditor', // MISSING
-		help	: 'Check $1 for help.', // MISSING
-		userGuide : 'CKEditor User\'s Guide', // MISSING
 		moreInfo	: 'For licensing information please visit our web site:', // MISSING
 		copy		: 'Copyright &copy; $1. All rights reserved.' // MISSING
 	},
@@ -730,7 +725,7 @@ CKEDITOR.lang['lt'] =
 	{
 		anchor		: 'Anchor', // MISSING
 		flash		: 'Flash Animation', // MISSING
-		iframe		: 'IFrame', // MISSING
+		iframe		: 'iFrame', // MISSING
 		hiddenfield	: 'Hidden Field', // MISSING
 		unknown		: 'Unknown Object' // MISSING
 	},
@@ -749,64 +744,9 @@ CKEDITOR.lang['lt'] =
 	toolbarCollapse	: 'Collapse Toolbar', // MISSING
 	toolbarExpand	: 'Expand Toolbar', // MISSING
 
-	toolbarGroups :
-	{
-		document : 'Document', // MISSING
-		clipboard : 'Clipboard/Undo', // MISSING
-		editing : 'Editing', // MISSING
-		forms : 'Forms', // MISSING
-		basicstyles : 'Basic Styles', // MISSING
-		paragraph : 'Paragraph', // MISSING
-		links : 'Links', // MISSING
-		insert : 'Insert', // MISSING
-		styles : 'Styles', // MISSING
-		colors : 'Colors', // MISSING
-		tools : 'Tools' // MISSING
-	},
-
 	bidi :
 	{
 		ltr : 'Text direction from left to right', // MISSING
 		rtl : 'Text direction from right to left' // MISSING
-	},
-
-	docprops :
-	{
-		label : 'Dokumento savybės',
-		title : 'Dokumento savybės',
-		design : 'Design', // MISSING
-		meta : 'Meta duomenys',
-		chooseColor : 'Choose', // MISSING
-		other : '<kitas>',
-		docTitle :	'Puslapio antraštė',
-		charset : 	'Simbolių kodavimo lentelė',
-		charsetOther : 'Kita simbolių kodavimo lentelė',
-		charsetASCII : 'ASCII', // MISSING
-		charsetCE : 'Centrinės Europos',
-		charsetCT : 'Tradicinės kinų (Big5)',
-		charsetCR : 'Kirilica',
-		charsetGR : 'Graikų',
-		charsetJP : 'Japonų',
-		charsetKR : 'Korėjiečių',
-		charsetTR : 'Turkų',
-		charsetUN : 'Unikodas (UTF-8)',
-		charsetWE : 'Vakarų Europos',
-		docType : 'Dokumento tipo antraštė',
-		docTypeOther : 'Kita dokumento tipo antraštė',
-		xhtmlDec : 'Įtraukti XHTML deklaracijas',
-		bgColor : 'Fono spalva',
-		bgImage : 'Fono paveikslėlio nuoroda (URL)',
-		bgFixed : 'Neslenkantis fonas',
-		txtColor : 'Teksto spalva',
-		margin : 'Puslapio kraštinės',
-		marginTop : 'Viršuje',
-		marginLeft : 'Kairėje',
-		marginRight : 'Dešinėje',
-		marginBottom : 'Apačioje',
-		metaKeywords : 'Dokumento indeksavimo raktiniai žodžiai (atskirti kableliais)',
-		metaDescription : 'Dokumento apibūdinimas',
-		metaAuthor : 'Autorius',
-		metaCopyright : 'Autorinės teisės',
-		previewHtml : '<p>This is some <strong>sample text</strong>. You are using <a href="javascript:void(0)">CKEditor</a>.</p>' // MISSING
 	}
 };

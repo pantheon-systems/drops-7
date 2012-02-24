@@ -1,9 +1,13 @@
 <?php
+/**
+ * @file apps.module
+ */
+
 define("APPSERVER_BASEPATH", 'admin/apps');
 define("APPSERVER_BASEPATH_DEPTH", 1);
 
 /**
- * Implements hook_permission
+ * Implements hook_permission().
  */
 function apps_permission() {
   apps_include('register');
@@ -11,7 +15,7 @@ function apps_permission() {
 }
 
 /**
- * Implements hook_menu
+ * Implements hook_menu().
  */
 function apps_menu() {
   apps_include('register');
@@ -19,17 +23,20 @@ function apps_menu() {
 }
 
 /**
- * Implements hook_theme
+ * Implements hook_theme().
  */
-function apps_theme () {
+function apps_theme() {
   apps_include('register');
   return _apps_theme();
 }
 
 
 /**
-* Trick to make page refresh when app installs. @TODO clean this.
-*/
+ * Implements hook_admin_paths().
+ *
+ * Trick to make page refresh when app installs.
+ * @TODO clean this up
+ */
 function apps_admin_paths() {
   $paths = array(
     'admin/apps/*/app/*/enable' => FALSE, 
@@ -40,7 +47,7 @@ function apps_admin_paths() {
 
 
 /**
- * Implementation of hook_image_default_styles().
+ * Implements hook_image_default_styles().
  */
 function apps_image_default_styles() { 
   apps_include('register');
@@ -48,7 +55,7 @@ function apps_image_default_styles() {
 }
 
 /**
- * Implementation of hook_cron().
+ * Implements hook_cron().
  *
  * Cache Manifest so we are not pulling
  * images and manifest when we hit the page
@@ -61,7 +68,7 @@ function apps_cron() {
 }
 
 /**
- * Implemnts hook_hook_info
+ * Implements hook_hook_info().
  */
 function apps_hook_info() {
   return array(
@@ -71,7 +78,7 @@ function apps_hook_info() {
 }
 
 /**
- * Implments hook_block_info()
+ * Implements hook_block_info().
  */
 function apps_block_info() {
   apps_include('manifest');
@@ -85,6 +92,9 @@ function apps_block_info() {
   return $blocks;
 }
 
+/**
+ * Implements hook_block_view().
+ */
 function apps_block_view($delta) {
   apps_include('manifest');
   apps_include('pages');
@@ -105,8 +115,7 @@ function apps_block_view($delta) {
  */
 function apps_include($group) {
   if($group == 'theme') {
-  module_load_include("inc", "apps", "theme/apps.$group");
-     
+    module_load_include("inc", "apps", "theme/apps.$group");
   }
   module_load_include("inc", "apps", "apps.$group");
 }
@@ -116,9 +125,10 @@ function apps_include($group) {
  *
  * Used to place menu access callbacks in the .page.inc file
  *
- * PARAM group : a group name to apps_include
- * PARAM callback : the name of the function to all
- * RETURN : the return of callback
+ * @param $group
+ *    a group name to apps_include
+ * @param callback
+ *    the name of the function to all
  */
 function apps_tunnel($group, $callback) {
   $args = func_get_args();
@@ -128,11 +138,17 @@ function apps_tunnel($group, $callback) {
   return call_user_func_array($callback, $args);
 }
 
+/**
+ * Handle the submissions of the filetransfer form.
+ */
 function apps_authorize_filetransfer_form_submit() {
-      require_once DRUPAL_ROOT . '/includes/authorize.inc';
-      $form = drupal_get_form('authorize_filetransfer_form');
+  require_once DRUPAL_ROOT . '/includes/authorize.inc';
+  $form = drupal_get_form('authorize_filetransfer_form');
 }
 
+/**
+ * Implements hook_updater_info().
+ */
 function apps_updater_info() {
   return array(
     'library' => array(
@@ -141,12 +157,5 @@ function apps_updater_info() {
       'weight' => -10,
     ), 
   );
-}
-function apps_updater_info_alter(&$updaters) {
-  //unset($updaters['module']);
-  //unset($updaters['theme']);
-}
-
-function apps_init() {
 }
 

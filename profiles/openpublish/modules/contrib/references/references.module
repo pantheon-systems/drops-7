@@ -20,6 +20,16 @@ function reference_autocomplete_access($entity_type, $bundle, $field_name, $enti
 }
 
 /**
+ * Implements hook_init().
+ */
+function references_init() {
+  // Include feeds.module integration.
+  if (module_exists('feeds')) {
+    module_load_include('inc','references','references.feeds');
+  }
+}
+
+/**
  * Implements hook_views_api().
  */
 function references_views_api() {
@@ -60,8 +70,23 @@ function references_views_plugins() {
         'theme' => 'views_view_unformatted',
         'uses row plugin' => TRUE,
         'uses fields' => TRUE,
+        'uses options' => TRUE,
+        'uses grouping' => TRUE,
         'type' => 'references',
         'even empty' => TRUE,
+      ),
+    ),
+    'row' => array(
+      'references_fields' => array(
+        'title' => t('Inline fields'),
+        'help' => t('Displays the fields with an optional template.'),
+        'handler' => 'references_plugin_row_fields',
+        'theme' => 'views_view_fields',
+        'theme path' => drupal_get_path('module', 'views') . '/theme',
+        'theme file' => 'theme.inc',
+        'uses fields' => TRUE,
+        'uses options' => TRUE,
+        'type' => 'references',
       ),
     ),
   );
@@ -130,6 +155,12 @@ function references_potential_references_view($entity_type, $view_name, $display
     return FALSE;
   }
 
+  // If we have no access to the View an empty result should be returned to
+  // avoid triggering the fallback results.
+  if  (!$view->access(array($display_name))) {
+    return array();
+  }
+
   // Temporary backwards compatibility for fields migrated from CCK D6: accept
   // 'default' display, but dynamically add a 'references' display out of it.
   if ($display_name == 'default') {
@@ -149,33 +180,23 @@ function references_potential_references_view($entity_type, $view_name, $display
     'ids' => $options['ids'],
     'title_field' => $options['title_field'],
     'string' => $options['string'],
-    'match' => $options['string'],
+    'match' => $options['match'],
   );
   $view->display_handler->set_option('references_options', $references_options);
 
-  // We do need the title field, so add it if not present (unlikely, but...)
+  // We need the title field for autocomplete widgets, so add it (hidden) if not
+  // present.
   $fields = $view->get_items('field', $display_name);
   if (!isset($fields[$options['title_field']])) {
     $label_options = array(
-      'label' => '',
-      'link_to_node' => 0,
+      'exclude' => 1,
     );
-    $view->add_item($display_name, 'field', 'node', $options['title_field'], $label_options);
+    $view->add_item($display_name, 'field', $entity_info['base table'], $options['title_field'], $label_options);
   }
 
   // Limit result set size.
   $limit = !empty($options['limit']) ? $options['limit'] : 0;
   $view->display_handler->set_option('pager', array('type' => 'some', 'options' => array('items_per_page' => $limit)));
-
-  // If not set, make all fields inline and define a separator.
-  $row_options = $view->display_handler->get_option('row_options');
-  if (empty($row_options['inline'])) {
-    $row_options['inline'] = drupal_map_assoc(array_keys($view->get_items('field', $display_name)));
-  }
-  if (empty($row_options['separator'])) {
-    $row_options['separator'] = '-';
-  }
-  $view->display_handler->set_option('row_options', $row_options);
 
   // Make sure the query is not cached
   $view->is_cacheable = FALSE;

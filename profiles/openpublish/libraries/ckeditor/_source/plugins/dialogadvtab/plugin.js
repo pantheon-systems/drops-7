@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -35,6 +35,14 @@ function commitAdvParams()
 	{
 		var attrName = this.att,
 			value = this.getValue();
+
+		// Broadcast Lang Dir change
+		if ( attrName == 'dir' )
+		{
+			var dir = element.getAttribute( attrName );
+			if ( dir != value && element.getParent() )
+				this._.dialog._.editor.fire( 'dirChanged', { node : element, dir : value || element.getDirection( 1 ) } );
+		}
 
 		if ( value )
 			element.setAttribute( attrName, value );
@@ -132,11 +140,9 @@ CKEDITOR.plugins.add( 'dialogadvtab',
 						label : lang.styles,
 						'default' : '',
 
-						onChange : function(){},
-
 						getStyle : function( name, defaultValue )
 						{
-							var match = this.getValue().match( new RegExp( name + '\\s*:\\s*([^;]*)', 'i') );
+							var match = this.getValue().match( new RegExp( name + '\\s*:\s*([^;]*)', 'i') );
 							return match ? match[ 1 ] : defaultValue;
 						},
 

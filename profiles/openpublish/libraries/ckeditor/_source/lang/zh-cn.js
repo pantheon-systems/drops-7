@@ -1,5 +1,5 @@
 ﻿/*
-Copyright (c) 2003-2011, CKSource - Frederico Knabben. All rights reserved.
+Copyright (c) 2003-2010, CKSource - Frederico Knabben. All rights reserved.
 For licensing, see LICENSE.html or http://ckeditor.com/license
 */
 
@@ -34,8 +34,8 @@ CKEDITOR.lang['zh-cn'] =
 	editorTitle : '所见即所得编辑器, %1, 按 ALT+0 查看帮助。',
 
 	// ARIA descriptions.
-	toolbars	: 'Editor toolbars', // MISSING
-	editor		: '所见即所得编辑器',
+	toolbar	: '工具栏',
+	editor	: '所见即所得编辑器',
 
 	// Toolbar buttons without dialogs.
 	source			: '源码',
@@ -121,8 +121,6 @@ CKEDITOR.lang['zh-cn'] =
 		alignBottom		: '底部',
 		invalidHeight	: '高度必须为数字格式',
 		invalidWidth	: '宽度必须为数字格式',
-		invalidCssLength	: 'Value specified for the "%1" field must be a positive number with or without a valid CSS measurement unit (px, %, in, cm, mm, em, ex, pt, or pc).', // MISSING
-		invalidHtmlLength	: 'Value specified for the "%1" field must be a positive number with or without a valid HTML measurement unit (px or %).', // MISSING
 
 		// Put the voice-only part of the label in the span.
 		unavailable		: '%1<span class="cke_accessibility">, 不可用</span>'
@@ -177,19 +175,18 @@ CKEDITOR.lang['zh-cn'] =
 		langDirRTL		: '从右到左 (RTL)',
 		acccessKey		: '访问键',
 		name			: '名称',
-		langCode			: '语言代码',
-		tabIndex			: 'Tab 键次序',
-		advisoryTitle		: '标题',
+		langCode		: '语言代码',
+		tabIndex		: 'Tab 键次序',
+		advisoryTitle	: '标题',
 		advisoryContentType	: '内容类型',
 		cssClasses		: '样式类名称',
 		charset			: '字符编码',
 		styles			: '行内样式',
-		rel			: 'Relationship', // MISSING
-		selectAnchor		: '选择一个锚点',
+		selectAnchor	: '选择一个锚点',
 		anchorName		: '按锚点名称',
-		anchorId			: '按锚点 ID',
-		emailAddress		: '地址',
-		emailSubject		: '主题',
+		anchorId		: '按锚点 ID',
+		emailAddress	: '地址',
+		emailSubject	: '主题',
 		emailBody		: '内容',
 		noAnchors		: '(此文档没有可用的锚点)',
 		noUrl			: '请输入超链接地址',
@@ -203,8 +200,7 @@ CKEDITOR.lang['zh-cn'] =
 		menu		: '锚点链接属性',
 		title		: '锚点链接属性',
 		name		: '锚点名称',
-		errorName	: '请输入锚点名称',
-		remove		: 'Remove Anchor' // MISSING
+		errorName	: '请输入锚点名称'
 	},
 
 	// List style dialog
@@ -416,6 +412,7 @@ CKEDITOR.lang['zh-cn'] =
 		upload		: '上传',
 		alt			: '替换文本',
 		lockRatio	: '锁定比例',
+		unlockRatio	: '不锁定比例',
 		resetSize	: '原始尺寸',
 		border		: '边框大小',
 		hSpace		: '水平间距',
@@ -717,8 +714,6 @@ CKEDITOR.lang['zh-cn'] =
 	{
 		title		: '关于CKEditor',
 		dlgTitle	: '关于CKEditor',
-		help	: 'Check $1 for help.', // MISSING
-		userGuide : 'CKEditor User\'s Guide', // MISSING
 		moreInfo	: '访问我们的网站以获取更多关于协议的信息',
 		copy		: 'Copyright &copy; $1. All rights reserved.'
 	},
@@ -730,7 +725,7 @@ CKEDITOR.lang['zh-cn'] =
 	{
 		anchor		: '锚点',
 		flash		: 'Flash 动画',
-		iframe		: 'IFrame', // MISSING
+		iframe		: 'iFrame', // MISSING
 		hiddenfield	: 'Hidden Field', // MISSING
 		unknown		: '未知对象'
 	},
@@ -749,64 +744,9 @@ CKEDITOR.lang['zh-cn'] =
 	toolbarCollapse	: '折叠工具栏',
 	toolbarExpand	: '展开工具栏',
 
-	toolbarGroups :
-	{
-		document : 'Document', // MISSING
-		clipboard : 'Clipboard/Undo', // MISSING
-		editing : 'Editing', // MISSING
-		forms : 'Forms', // MISSING
-		basicstyles : 'Basic Styles', // MISSING
-		paragraph : 'Paragraph', // MISSING
-		links : 'Links', // MISSING
-		insert : 'Insert', // MISSING
-		styles : 'Styles', // MISSING
-		colors : 'Colors', // MISSING
-		tools : 'Tools' // MISSING
-	},
-
 	bidi :
 	{
 		ltr : '文字方向为从左至右',
 		rtl : '文字方向为从右至左'
-	},
-
-	docprops :
-	{
-		label : '页面属性',
-		title : '页面属性',
-		design : 'Design', // MISSING
-		meta : 'Meta 数据',
-		chooseColor : '选择',
-		other : '<其他>',
-		docTitle :	'页面标题',
-		charset : 	'字符编码',
-		charsetOther : '其它字符编码',
-		charsetASCII : 'ASCII', // MISSING
-		charsetCE : '中欧',
-		charsetCT : '繁体中文 (Big5)',
-		charsetCR : '西里尔文',
-		charsetGR : '希腊文',
-		charsetJP : '日文',
-		charsetKR : '韩文',
-		charsetTR : '土耳其文',
-		charsetUN : 'Unicode (UTF-8)', // MISSING
-		charsetWE : '西欧',
-		docType : '文档类型',
-		docTypeOther : '其它文档类型',
-		xhtmlDec : '包含 XHTML 声明',
-		bgColor : '背景颜色',
-		bgImage : '背景图像',
-		bgFixed : '不滚动背景图像',
-		txtColor : '文本颜色',
-		margin : '页面边距',
-		marginTop : '上',
-		marginLeft : '左',
-		marginRight : '右',
-		marginBottom : '下',
-		metaKeywords : '页面索引关键字 (用半角逗号[,]分隔)',
-		metaDescription : '页面说明',
-		metaAuthor : '作者',
-		metaCopyright : '版权',
-		previewHtml : '<p>This is some <strong>sample text</strong>. You are using <a href="javascript:void(0)">CKEditor</a>.</p>' // MISSING
 	}
 };

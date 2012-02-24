@@ -10,43 +10,63 @@
  *
  */
 function apps_download_apps($app) {
-  $downloads = array();
-  // find all downloads needed for dependencies
-  foreach($app['dependencies'] as $dep) {
-    if(!$dep['installed']) {
-      $downloads[$dep['downloadable']]['for'][] = $dep['version']['name'];
+  $download_batch = apps_download_apps_batch(array($app));
+  batch_set($download_batch);
+  batch_process($_SESSION['apps_install_next']);
+}
+
+/** 
+ * Make the batch for downloading modules for app.
+ * 
+ * Split out for use in apps.profile.inc
+ */
+function apps_download_apps_batch($apps) {
+  $download_commands = array();
+  foreach ($apps as $app) {
+    $downloads = array();
+    // find all downloads needed for dependencies
+    foreach($app['dependencies'] as $dep) {
+      if(!$dep['installed']) {
+        $downloads[$dep['downloadable']]['for'][] = $dep['version']['name'];
+        $downloads[$dep['downloadable']]['type'] = 'module';
+      }
+    }
+    foreach($app['libraries'] as $lib) {
+      if(!$lib['installed']) {
+        $downloads[$lib['downloadable']]['for'][] = $lib['version']['name'];
+        $downloads[$lib['downloadable']]['type'] = 'library';
+      }
+    }
+    // add our core modules download
+    if(!$app['installed']) {
+      $downloads[$app['downloadable']]['for'][] = $app['machine_name'];
+      $downloads[$app['downloadable']]['type'] = 'app';
+    }
+    //foreach download find the url
+    foreach($downloads as $key => $download) {
+      $downloads[$key]['url'] = $app['downloadables'][$key];
+      // do a quick dirty pull of the name from the key
+      $downloads[$key]['name'] = ($e = strpos($key, " ")) ? substr($key, 0, $e) : $key;
+    }
+    foreach($downloads as $download) {
+      $download_commands[] = array(
+        'apps_download_batch',
+        array(
+          $download['name'],
+          $download['url'],
+          $download['type']
+        ),
+      );
     }
   }
-  // add our core modules download
-  if(!$app['installed']) {
-    $downloads[$app['downloadable']]['for'][] = $app['machine_name'];
-  }
-  //foreach download find the url
-  foreach($downloads as $key => $download) {
-    $downloads[$key]['url'] = $app['downloadables'][$key];
-    // do a quick dirty pull of the name from the key 
-    $downloads[$key]['name'] = ($e = strpos($key, " ")) ? substr($key, 0, $e) : $key;
-  }
-  $download_commands = array();
-  $install_commands = array();
-  foreach($downloads as $download) {
-    $download_commands[] = array(
-      'apps_download_batch',
-      array(
-        $download['name'],
-        $download['url']
-      ),
-    );
-  }
-  $download_batch = array(
+  $batch = array(
     'operations' => $download_commands,
     'file' => drupal_get_path('module', 'apps') . '/apps.installer.inc',
     'title' => t('Downloading modules'),
     'init_message' => t('Preparing to download needed modules'),
     'finished' => 'apps_download_batch_finished',
   );
-  batch_set($download_batch);
-  batch_process($_SESSION['apps_install_next']);
+  return $batch;
 }
 
 /**
@@ -67,7 +87,7 @@ function apps_download_batch_finished($success, $results) {
  * we need this becuase in a batch set the file param is for bouth the operations as well
  * as the other callbackes
  */
-function apps_download_batch($project, $url, &$context) {
+function apps_download_batch($project, $url, $type, &$context) {
   //$args = func_get_args();
   module_load_include("inc", "update", "update.manager");
   //return call_user_func_array('update_manager_batch_project_get', $args);
@@ -87,7 +107,7 @@ function apps_download_batch($project, $url, &$context) {
   }
 
   // Extract it.
-  $extract_directory = _update_manager_extract_directory();
+  $extract_directory = apps_extract_directory($type);
   try {
     update_manager_archive_extract($local_cache, $extract_directory);
   }
@@ -109,8 +129,26 @@ function apps_download_batch($project, $url, &$context) {
   }
 
   // Yay, success.
-  $context['results']['projects'][$project] = $url;
+  $context['results']['projects'][$type][$project] = $url;
   $context['finished'] = 1;
+}
+
+/**
+ * Wrapper for _update_manager_extract_directory()
+ * 
+ * Since libraries and modules can live in the same location, we need to 
+ * namespace the types so they don't collide like the colorbox module.
+ */
+function apps_extract_directory($type = '') {
+  $directory = _update_manager_extract_directory();
+  if ($type) {
+    $directory .= '/' . $type;
+    if (!file_exists($directory)) {
+      mkdir($directory);
+    }
+  }
+  return $directory;
+
 }
 
 /**
@@ -128,18 +166,19 @@ function apps_install_downloads() {
     drupal_get_updaters();
 
     $updates = array();
-    $directory = _update_manager_extract_directory();
-
-    $projects = $_SESSION['update_manager_update_projects'];
-    foreach ($projects as $project => $url) {
-      $project_location = $directory . '/' . $project;
-      $updater = Updater::factory($project_location);
-      $project_real_location = drupal_realpath($project_location);
-      $updates[] = array(
-        'project' => $project,
-        'updater_name' => get_class($updater),
-        'local_url' => $project_real_location,
-      );
+    $project_types = $_SESSION['update_manager_update_projects'];
+    foreach($project_types as $type => $projects) {
+      $directory = apps_extract_directory($type);
+      foreach ($projects as $project => $url) {
+        $project_location = $directory . '/' . $project;
+        $updater = Updater::factory($project_location);
+        $project_real_location = drupal_realpath($project_location);
+        $updates[] = array(
+          'project' => $project,
+          'updater_name' => get_class($updater),
+          'local_url' => $project_real_location,
+        );
+      }
     }
 
     // If the owner of the last directory we extracted is the same as the
@@ -158,13 +197,12 @@ function apps_install_downloads() {
     // credentials and invoke update_authorize_run_update() indirectly with
     // whatever FileTransfer object authorize.php creates for us.
     else {
-      drupal_set_message("For the App Store to install apps, the web server needs access to the drupal sites dir", 'error');
+      // Set the $_SESSION variables so that authorize form knows what to do after authorization.
       system_authorized_init('apps_run_install', drupal_get_path('module', 'apps') . '/apps.installer.inc', array($updates), t('Update manager'));
       require_once DRUPAL_ROOT . '/includes/authorize.inc';
+      // Get the authorize form.
       $form = drupal_get_form('authorize_filetransfer_form');
-      array_unshift($form['#submit'], 'apps_authorize_filetransfer_form_submit');
-      //unset($_SESSION['update_manager_update_projects']);
-      //return $form;
+      return $form;
     }
   }
 }

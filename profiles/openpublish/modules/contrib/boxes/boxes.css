@@ -20,3 +20,12 @@
 .boxes-box-editor {
   width: 100%;
 }
+
+.box-empty .boxes-box-content {
+  text-align: center;
+  padding: 10px;
+  opacity:.5;
+  filter: alpha(opacity=5); /* For IE8 and earlier */
+  background:#fff;
+  color: #666;
+}

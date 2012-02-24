@@ -11,9 +11,9 @@ files[] = plugins/views_boxes_context_list.inc
 files[] = handlers/views_boxes_handler_argument_limit.inc
 files[] = handlers/views_boxes_handler_filter_sort.inc
 
-; Information added by drupal.org packaging script on 2011-09-27
-version = "7.x-1.0-beta6"
+; Information added by drupal.org packaging script on 2012-02-13
+version = "7.x-1.0-beta8"
 core = "7.x"
 project = "views_boxes"
-datestamp = "1317144108"
+datestamp = "1329171345"
 

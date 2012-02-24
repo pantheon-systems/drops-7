@@ -3,7 +3,7 @@
 <div class='<?php print $classes ?> clearfix' <?php print ($attributes) ?>>
   <?php if (!empty($title_prefix)) print render($title_prefix); ?>
 
-  <?php if (!empty($title)): ?>
+  <?php if (!$page && !empty($title)): ?>
     <h2 <?php if (!empty($title_attributes)) print $title_attributes ?>>
       <?php if (!empty($new)): ?><span class='new'><?php print $new ?></span><?php endif; ?>
       <a href="<?php print $node_url ?>"><?php print $title ?></a>
