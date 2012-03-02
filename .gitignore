@@ -3,7 +3,7 @@ sites/*/files
 sites/*/private
 sites/*/files/*
 files/*
-cache
+/cache
 
 # Packages #
 ############
@@ -25,8 +25,16 @@ cache
 
 # OS generated files #
 ######################
-.DS_Store?
+.DS_Store*
 ehthumbs.db
 Icon?
 Thumbs.db
 ._*
+
+# Vim generated files #
+######################
+*.un~
+
+# SASS #
+##########
+.sass-cache
