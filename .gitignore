@@ -1,9 +1,12 @@
 # Ignore paths that contain user-generated content.
-sites/*/files
-sites/*/private
-sites/*/files/*
-files/*
-cache
+/sites/*/files
+/sites/*/private
+/files/*
+/cache
+
+# ** Only works in OSs that support newer versions of fnmatch (Bash 4+)
+/sites/default/**/files
+/sites/default/**/private
 
 # Packages #
 ############
@@ -25,8 +28,16 @@ cache
 
 # OS generated files #
 ######################
-.DS_Store?
+.DS_Store*
 ehthumbs.db
 Icon?
 Thumbs.db
 ._*
+
+# Vim generated files #
+######################
+*.un~
+
+# SASS #
+##########
+.sass-cache
