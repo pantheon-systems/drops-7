@@ -7,9 +7,9 @@ files[] = conditional_styles.install
 files[] = conditional_styles.module
 files[] = tests/conditional_styles.test
 
-; Information added by drupal.org packaging script on January 1, 1970 - 00:00
-version = "7.x-2.0"
+; Information added by drupal.org packaging script on 2012-03-12
+version = "7.x-2.1"
 core = "7.x"
 project = "conditional_styles"
-datestamp = "1295358738"
+datestamp = "1331537446"
 

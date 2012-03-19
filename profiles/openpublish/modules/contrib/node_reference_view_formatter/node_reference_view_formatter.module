@@ -1,0 +1,86 @@
+<?php
+// $Id$
+/*
+ * implementation of hook_field_formatter_info()
+ *
+ * creating new formatter for node_references that will render them in a view
+ */
+function node_reference_view_formatter_field_formatter_info() {
+  $info = array();
+  $info['node_reference_view'] = array(
+    'label' => 'Rendered View',
+    'field types' => array('node_reference'),
+    'settings' => array('view' => ''),
+  );
+  return $info;
+}
+
+/*
+ * implementation of hook_field_formatter_settings_from()
+ *
+ * we find all views and displays and make a select field with them
+ */
+function node_reference_view_formatter_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $options = array();
+  $views = views_get_all_views();
+  foreach ($views as $name => $view) {
+    foreach ($view->display as $display_name => $display) {
+      $options["$name $display_name"] = "$name -- " . $display->display_title . " ($display_name)";
+    }
+  }
+  $form['view'] = array(
+    '#type' => 'select',
+    '#title' => 'View',
+    '#options' => $options,
+    '#default_value' => $settings['view']
+  );
+  return $form;
+}
+
+/*
+ * implemantation of hook_field_formatter_settings_summary()
+ *
+ * we display the name of the view and display that has been selected
+ */
+function node_reference_view_formatter_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  list($view_name, $display_name) = explode(" ", $settings['view']);
+  $view = views_get_view($view_name);
+  $display = $view->display[$display_name];
+  return "View: $view_name <BR />Display: " . $display->display_title . " ($display_name)";
+}
+
+/*
+ * implemantation of hook_field_formatter_view()
+ *
+ * We are going to find the view that was set in settings and render it with the field nids and the node nid as arguments
+ * this is then put into #markeup so that drupal render can render it
+ *
+ * TODO:  need to make this multi lang
+ * TODO:  WOULD be nice if we were not generating the makeup at this stage so that others could mess with it before it is rendered.
+ */
+function node_reference_view_formatter_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch ($display['type']) {
+    case 'node_reference_view':
+      $field_data = $entity->{$field['field_name']};
+      if(isset($field_data[$langcode])) {
+        $items = $field_data[$langcode];
+        $nids = implode(",", array_map(create_function('$v', ' return $v["nid"];'), $items));
+        $settings = $display['settings'];
+        list($view_name, $view_display_name) = explode(" ", $settings['view']);
+        $element[0]['#markup'] = views_embed_view($view_name, $view_display_name, $nids, $entity->nid);
+      }
+      else {
+        $element[0]['#markup'] = '';
+      }
+      return $element;
+      break;
+  }
+}
+

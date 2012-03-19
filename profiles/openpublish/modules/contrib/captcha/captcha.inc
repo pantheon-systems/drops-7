@@ -264,20 +264,11 @@ function _captcha_get_captcha_placement($form_id, $form) {
     $placement_map = variable_get('captcha_placement_map_cache', NULL);
 
     if ($placement_map === NULL) {
-      // If second level cache missed: start from a fresh placement map.
-      $placement_map = array();
-      // Prefill with some hard coded default entries.
-
-      // The comment form can have a 'Preview' button, or both a 'Submit' and 'Preview' button,
-      // which is tricky for automatic placement detection. Luckily, Drupal core sets their
-      // weight (19 and 20), so we just have to specify a slightly smaller weight.
-      $placement_map['comment_form'] = array('path' => array(), 'key' => NULL, 'weight' => 18.9);
-      // Additional note: the node forms also have the posibility to only show a 'Preview' button.
-      // However, the 'Submit' button is always present, but is just not rendered ('#access' = FALSE)
-      // in those cases. The the automatic button detection should be sufficient for node forms.
-
-      // $placement_map['user_login'] = array('path' => array(), 'key' => NULL, 'weight' => 1.9);
-      // TODO: also make the placement 'overridable' from the admin UI?
+      // If second level cache missed: initialize the placement map
+      // and let other modules hook into this with the hook_captcha_placement_map hook.
+      // By default however, probably all Drupal core forms are already correctly
+      // handled with the best effort guess based on the 'actions' element (see below).
+      $placement_map = module_invoke_all('captcha_placement_map');
     }
   }
 
@@ -285,21 +276,32 @@ function _captcha_get_captcha_placement($form_id, $form) {
   if (array_key_exists($form_id, $placement_map)) {
     $placement = $placement_map[$form_id];
   }
-  // If no placement info is available in placement map:
-  // search the form for buttons and guess placement from it.
+  // If no placement info is available in placement map: make a best effort guess.
   else {
-    $buttons = _captcha_search_buttons($form);
-    if (count($buttons)) {
-      // Pick first button.
-      // TODO: make this more sofisticated? Use cases needed.
-      $placement = $buttons[0];
+    // If there is an "actions" button group, a good placement is just before that.
+    if (isset($form['actions']) && isset($form['actions']['#type']) && $form['actions']['#type'] === 'actions') {
+      $placement = array(
+        'path' => array(),
+        'key' => 'actions',
+        // #type 'actions' defaults to 100.
+        'weight' => (isset($form['actions']['#weight']) ? $form['actions']['#weight'] - 1 : 99),
+      );
     }
     else {
-      // Use NULL when no buttons were found.
-      $placement = NULL;
+      // Search the form for buttons and guess placement from it.
+      $buttons = _captcha_search_buttons($form);
+      if (count($buttons)) {
+        // Pick first button.
+        // TODO: make this more sofisticated? Use cases needed.
+        $placement = $buttons[0];
+      }
+      else {
+        // Use NULL when no buttons were found.
+        $placement = NULL;
+      }
     }
 
-    // Store calculated placement in caches.
+    // Store calculated placement in cache.
     $placement_map[$form_id] = $placement;
     variable_set('captcha_placement_map_cache', $placement_map);
   }
@@ -347,7 +349,7 @@ function _captcha_search_buttons($form) {
  *       CAPTCHA element should be inserted.
  *     - 'key': the key of the element before which the CAPTCHA element
  *       should be inserted. If the field 'key' is undefined or NULL, the CAPTCHA will
- *       just be appended to the container.
+ *       just be appended in the container.
  *     - 'weight': if 'key' is not NULL: should be the weight of the element defined by 'key'.
  *       If 'key' is NULL and weight is not NULL: set the weight property of the CAPTCHA element
  *       to this value.

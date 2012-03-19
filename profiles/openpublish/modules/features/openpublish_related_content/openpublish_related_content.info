@@ -12,3 +12,10 @@ features[views_view][] = "openpublish_related_content"
 name = "OpenPublish Related Content"
 package = "Features"
 php = "5.2.4"
+
+; Information added by drupal.org packaging script on 2012-03-13
+version = "7.x-1.0-alpha7"
+core = "7.x"
+project = "openpublish"
+datestamp = "1331655949"
+

@@ -9,9 +9,9 @@ stylesheets[all][] = date.css
 files[] = date_api.module
 files[] = date_api_sql.inc
 
-; Information added by drupal.org packaging script on 2012-02-14
-version = "7.x-2.1"
+; Information added by drupal.org packaging script on 2012-02-24
+version = "7.x-2.2"
 core = "7.x"
 project = "date"
-datestamp = "1329214840"
+datestamp = "1330089942"
 

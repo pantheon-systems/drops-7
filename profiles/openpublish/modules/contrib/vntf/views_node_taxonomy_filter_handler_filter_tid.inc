@@ -53,16 +53,16 @@ class views_node_taxonomy_filter_handler_filter_tid extends views_handler_filter
       '#title' => t('Vocabulary'),
       '#options' => $vocabs,
       '#default_value' => $default_vocab,
-      '#description' => t('Select the Vocabulary.'),
+      '#description' => t('Select the vocabulary.'),
       '#multiple' => TRUE,
     );
     $form['value'][] = array(
       '#type' => 'checkbox',
-      '#title' => t('Include child Terms?'),
+      '#title' => t('Include child terms?'),
       '#default_value' => $default_child,
       '#multiple' => FALSE,
     );
-
+    
     $form['value'][] = array(
       '#type' => 'checkbox',
       '#title' => t('Require matching value'),
@@ -180,7 +180,7 @@ class views_node_taxonomy_filter_handler_filter_tid extends views_handler_filter
     } else {
       $tids = implode(',', $tids);
     }
-     
+        
     $alias = $this->query->ensure_table('taxonomy_index');
     $this->query->add_where_expression($this->options['group'], "$alias.tid IN ($tids)");
   }

@@ -1,5 +1,5 @@
 /* Make the profile title field look disabled */
-.node-form .form-item-title input {
+.node-form .form-item-title input.disabled {
   background-color: #EEE;
   border: 1px solid #DDD;
 }

@@ -3,3 +3,10 @@ description = Displays the Drupal administration interface in an overlay.
 package = Core
 version = VERSION
 core = 7.x
+
+
+; Information added by drush on 2012-03-19
+version = "master-dev"
+project = "drupal"
+datestamp = "1332131114"
+

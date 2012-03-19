@@ -242,7 +242,8 @@ function boxes_footer() {
    // page load, or ckeditor will set it incorrectly to the root.
    // while this is loaded on every page it is just a single set of a variable.
    if (module_exists("wysiwyg") && ($editor = wysiwyg_get_editor('ckeditor'))) {
-     drupal_add_js("window.CKEDITOR_BASEPATH = '/{$editor['library path']}/'", 'inline');
+     $base = base_path();
+     drupal_add_js("window.CKEDITOR_BASEPATH = '$base{$editor['library path']}/'", 'inline');
    }
 
   // Besure the page isn't a 404 or 403.

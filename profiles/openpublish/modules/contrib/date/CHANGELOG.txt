@@ -6,7 +6,24 @@ Version 7.x-2.x-dev
 ===================
 
 ======================
-Version 7.x-2.0
+Version 7.x-2.2
+======================
+
+- Issue #1423364 by emptyvoid, Move Date context plugin into its own file.
+- Issue #1447372 by yched, Memory friendlier version of date_repeat_field_bundles().
+- Issue #1447140 by tim.plunkett: Remove iCal-related theme functions/files.
+- Issue #1284170 by benjifisher, Lots of cleanup of the iCal export and its template to be sure all day items are exported correctly.
+- Issue #1346424, The calendar title got left out of the latest ical template changes.
+- Add more information to the date_views_base_tables() function about why we can't use the entity type from views_fetch_data().
+- Additional handling is needed so that revisions are handled correctly in Views.
+- Remove date_field_get_sql_handler() function which isn't being used anywhere.
+- Rework the Date Views hooks that queue up the right fields and base tables so they work better across all types of entities.
+- Fix the hooks for file tables, it is file_managed, not files.
+- Add a helper function to map entity types to Views base tables to make it easier to know what type of entity is being used on a view.
+- Add status information to Date help screen, hide the non-working change tab on the Date Tools screen, and remove some code that goes to the calendar module from Date Tools.
+
+======================
+Version 7.x-2.1
 ======================
 
 - Issue #1437242 by zerbash, Remove extraneous leading slashes in module_load_include().

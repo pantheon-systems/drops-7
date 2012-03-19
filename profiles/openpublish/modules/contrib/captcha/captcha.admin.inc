@@ -221,7 +221,8 @@ function captcha_admin_settings() {
   );
 
   // Submit button.
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save configuration'),
   );
@@ -416,7 +417,8 @@ function captcha_point_admin_form($form, $form_state, $captcha_point_form_id=NUL
   // redirect to general CAPTCHA settings page after submission
   $form['#redirect'] = 'admin/config/people/captcha';
   // submit button
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save'),
   );

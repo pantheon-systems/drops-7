@@ -1344,10 +1344,7 @@ class DrupalWebTestCase extends DrupalTestCase {
     variable_set('file_private_path', $private_files_directory);
     variable_set('file_temporary_path', $temp_files_directory);
 
-    // Include the testing profile and set the simpletest_parent_profile
-    // variable which is used to add the parent profile's search path to the
-    // child site's search paths. See drupal_system_listing().
-    variable_set('simpletest_parent_profile', $this->originalProfile);
+    // Include the testing profile.
     variable_set('install_profile', $this->profile);
     $profile_details = install_profile_info($this->profile, 'en');
 
@@ -1542,9 +1539,6 @@ class DrupalWebTestCase extends DrupalTestCase {
     if ($this->originalLanguageDefault) {
       $GLOBALS['conf']['language_default'] = $this->originalLanguageDefault;
     }
-
-    // Delete 'simpletest_parent_profile' variable.
-    variable_del('simpletest_parent_profile');
 
     // Close the CURL handler.
     $this->curlClose();

@@ -54,3 +54,10 @@ features[variable][] = "node_preview_openpublish_photo_gallery"
 features[variable][] = "node_preview_openpublish_video"
 features[variable][] = "node_submitted_openpublish_photo_gallery"
 features[variable][] = "node_submitted_openpublish_video"
+
+; Information added by drupal.org packaging script on 2012-03-13
+version = "7.x-1.0-alpha7"
+core = "7.x"
+project = "openpublish"
+datestamp = "1331655949"
+

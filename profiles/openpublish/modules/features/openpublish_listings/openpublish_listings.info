@@ -11,3 +11,10 @@ features[box][] = "op_top_stories"
 features[ctools][] = "boxes:box:1"
 features[ctools][] = "views:views_default:3.0"
 features[views_view][] = "op_recent_content"
+
+; Information added by drupal.org packaging script on 2012-03-13
+version = "7.x-1.0-alpha7"
+core = "7.x"
+project = "openpublish"
+datestamp = "1331655949"
+

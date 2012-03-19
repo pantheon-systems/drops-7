@@ -48,9 +48,67 @@ define('DATE_REGEX_ICAL_DATETIME', '/(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})
 function date_help($path, $arg) {
   switch ($path) {
     case 'admin/help#date':
-      return '<p>' . t('Complete documentation for the Date and Date API modules is available at <a href="@link">http://drupal.org/node/92460</a>.', array('@link' => 'http://drupal.org/node/262062')) . '</p>';
+      $output = '';
+      $messages = date_api_status();
+      $output = '<h2>Date API Status</h2>';
+      if (!empty($messages['success'])) {
+        $output .= '<ul><li>' . implode('</li><li>', $messages['success']) . '</li></ul>';
+      }
+      if (!empty($messages['errors'])) {
+        $output .= '<h3>Errors</h3><ul class="error"><li>' . implode('</li><li>', $messages['errors']) . '</li></ul>';
+      }
+
+      if (module_exists('date_tools')) {
+        $output .= '<h3>Date Tools</h3>' . t('Dates and calendars can be complicated to set up. The !date_wizard makes it easy to create a simple date content type and with a date field. ', array('!date_wizard' => l(t('Date wizard'), 'admin/config/date/tools/date_wizard')));
+      }
+      else {
+        $output .= '<h3>Date Tools</h3>' . t('Dates and calendars can be complicated to set up. If you enable the Date Tools module, it provides a Date Wizard that makes it easy to create a simple date content type with a date field. ');
+      }
+
+      $output .= '<h2>More Information</h2><p>' . t('Complete documentation for the Date and Date API modules is available at <a href="@link">http://drupal.org/node/92460</a>.', array('@link' => 'http://drupal.org/node/262062')) . '</p>';
+
+      return $output;
       break;
   }
+}
+
+/**
+ * Helper function to retun the status of required date variables.
+ */
+function date_api_status() {
+  $t = get_t();
+
+  $error_messages = array();
+  $success_messages = array();
+
+  $value = variable_get('date_default_timezone');
+  if (isset($value)) {
+    $success_messages[] = $t('The timezone has been set to !value_link.', array('!value_link' => l($value, 'admin/config/regional/settings')));
+  }
+  else {
+    $error_messages[] = $t('The Date API requires that you set up the !timezone_link to function correctly.', array('!timezone_link' => l($t('site timezone'), 'admin/config/regional/settings')));
+  }
+
+  $value = variable_get('date_first_day');
+  if (isset($value)) {
+    $days = date_week_days();
+    $success_messages[] = $t('The first day of the week has been set to !value_link.', array('!value_link' => l($days[$value], 'admin/config/regional/settings')));
+  }
+  else {
+    $error_messages[] = $t('The Date API requires that you set up the !first_day_link to function correctly.', array('!first_day_link' => l($t('site first day of week settings'), 'admin/config/regional/settings')));
+  }
+
+  $value = variable_get('date_format_medium');
+  if (isset($value)) {
+    $now = date_now();
+    $success_messages[] = $t('The medium date format type has been set to to @value. You may find it helpful to add new format types like Date, Time, Month, or Year, with appropriate formats, at !value_link.', array('@value' => $now->format($value), '!value_link' => l(t('Date and time'), 'admin/config/regional/date-time')));
+  }
+  else {
+    $error_messages[] = $t('The Date API requires that you set up the !format_link to function correctly.', array('!format_link' => l($t('system date formats'), 'admin/config/regional/date-time')));
+  }
+
+  return array('errors', $error_messages, 'success' => $success_messages);
+
 }
 
 /**
@@ -2189,9 +2247,6 @@ function date_api_theme($existing, $type, $theme, $path) {
   );
   return array(
     'date_nav_title' => $base + array('variables' => array('granularity' => NULL, 'view' => NULL, 'link' => NULL, 'format' => NULL)),
-    'date_vcalendar' => $base + array('variables' => array('events' => NULL, 'calname' => NULL)),
-    'date_vevent' => $base + array('variables' => array('event' => NULL)),
-    'date_valarm' => $base + array('variables' => array('alarm' => NULL)),
     'date_timezone' => $base + array('render element' => 'element'),
     'date_select' => $base + array('render element' => 'element'),
     'date_text' => $base + array('render element' => 'element'),
@@ -2399,9 +2454,9 @@ function date_range_string($years) {
 /**
  * Temporary helper to re-create equivalent of content_database_info().
  */
-function date_api_database_info($field) {
+function date_api_database_info($field, $revision = FIELD_LOAD_CURRENT) {
   return array(
-    'columns' => $field['storage']['details']['sql'][FIELD_LOAD_CURRENT],
+    'columns' => $field['storage']['details']['sql'][$revision],
     'table' => _field_sql_storage_tablename($field),
   );
 }

@@ -23,7 +23,7 @@ THEME DEVELOPERS
 ----------------
 
 Without this module, the only way to have IE conditional stylesheets was to add
-35 lines of code (more if you want to add more than one stylesheet) in two
+37 lines of code (more if you want to add more than one stylesheet) in two
 horribly-difficult-to-remember function calls to your theme's template.php file:
 
   /**
@@ -32,13 +32,14 @@ horribly-difficult-to-remember function calls to your theme's template.php file:
   function MYTHEME_preprocess_html(&$variables) {
     // Add conditional stylesheets for IE.
     drupal_add_css(
-      path_to_theme() . '/css/ie.css',
+      drupal_get_path('theme', 'mytheme') . '/css/ie.css',
       array(
         'group' => CSS_THEME,
         'browsers' => array(
           'IE' => 'lte IE 7',
           '!IE' => FALSE,
         ),
+        'weight' => 999,
         'every_page' => TRUE,
       )
     );
@@ -50,13 +51,14 @@ horribly-difficult-to-remember function calls to your theme's template.php file:
   function MYTHEME_preprocess_maintenance_page(&$variables) {
     // Add conditional stylesheets for IE.
     drupal_add_css(
-      path_to_theme() . '/css/ie.css',
+      drupal_get_path('theme', 'mytheme') . '/css/ie.css',
       array(
         'group' => CSS_THEME,
         'browsers' => array(
           'IE' => 'lte IE 7',
           '!IE' => FALSE,
         ),
+        'weight' => 999,
         'every_page' => TRUE,
       )
     );

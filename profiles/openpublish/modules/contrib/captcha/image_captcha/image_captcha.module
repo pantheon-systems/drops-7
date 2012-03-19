@@ -150,17 +150,9 @@ function _image_captcha_check_setup($check_fonts=TRUE) {
   // Start clean.
   $status = 0;
   // Check if we can use the GD library.
-  // Note that we are only checking
-  // for the existence of the imagejpeg function.
-  // We could also check for imagepng, which can also be used
-  // (optionally) for the image CAPTCHA by the site admin.
-  // However, this incurs extra complexity in the setup checking
-  // (more constants to define) and in the caller functions
-  // (more situations to check for).
-  // We take this shortcut (only checking for imagejpeg) because
-  // it's probably pretty safe to assume that imagepng
-  // is available when imagejpeg is available.
-  if (!function_exists('imagejpeg')) {
+  // We need at least the imagepng function (for font previews on the settings page).
+  // Note that the imagejpg function is optionally also used, but not required.
+  if (!function_exists('imagepng')) {
     $status = $status | IMAGE_CAPTCHA_ERROR_NO_GDLIB;
   }
   if (!function_exists('imagettftext')) {

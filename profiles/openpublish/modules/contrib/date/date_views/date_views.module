@@ -13,9 +13,6 @@ function date_views_theme() {
   );
   return array(
     'date_nav_title' => $base + array('variables' => array('granularity' => NULL, 'view' => NULL, 'link' => NULL, 'format' => NULL)),
-    'date_vcalendar' => $base + array('variables' => array('events' => NULL, 'calname' => NULL)),
-    'date_vevent' => $base + array('variables' => array('event' => NULL)),
-    'date_valarm' => $base + array('variables' => array('alarm' => NULL)),
     'date_views_filter_form' => $base + array('template' => 'date-views-filter-form', 'render element' => 'form'),
     'date_calendar_day' => $base + array('variables' => array('date' => NULL)),
 
@@ -68,10 +65,52 @@ function date_views_fields($base = 'node', $reset = FALSE) {
 }
 
 /**
- * Implements hook_date_api_tables().
+ * Implements hook_date_views_entities().
+ * Map extra Views tables to the entity that holds its date fields,
+ * needed for Views tables other than the primary tables identified in entity_info().
  */
-function date_views_date_views_tables() {
-  return array('node', 'comments', 'users', 'files');
+function date_views_date_views_extra_tables() {
+  return array(
+    'node_revision' => 'node',
+  );
+}
+
+/**
+ * Helper function to map entity types to the Views base table they use,
+ * to make it easier to infer the entity type from a base table.
+ *
+ * Views has a new handler called views_handler_field_entity() that loads
+ * entities, and you can use something like the following to get the
+ * entity type from a view, but not all our base tables contain the
+ * entity information we need, (i.e. revisions) so it won't work here
+ * and we resort to creating information from entity_get_info().
+ *
+ *   // A method to get the entity type for a base table.
+ *   $table_data = views_fetch_data($base_table);
+ *   if (!isset($table_data['table']['base']['entity type'])) {
+ *     return FALSE;
+ *   }
+ *   $entity_type = $table_data['table']['base']['entity type'];
+ */
+function date_views_base_tables() {
+  $base_tables = &drupal_static(__FILE__, array());
+
+  if (empty($base_tables)) {
+
+    // First we get the base tables we can learn about from entity_info.
+    $entity_info = entity_get_info();
+    foreach ($entity_info as $entity_type => $info) {
+      $base_tables[$info['base table']] = $entity_type;
+      if (!empty($info['revision table'])) {
+        $base_tables[$info['revision table']] = $entity_type;
+      }
+    }
+
+    // Then we let other modules tell us about other entity tables that hold date fields.
+    $base_tables += module_invoke_all('date_views_extra_tables');
+  }
+
+  return $base_tables;
 }
 
 /**
@@ -106,12 +145,9 @@ function date_views_date_views_fields($field) {
     case 'users.login':
     case 'node.created':
     case 'node.changed':
-    case 'node_revisions.timestamp':
-    case 'files.timestamp':
-    case 'node_counter.timestamp':
-    case 'accesslog.timestamp':
-    case 'comments.timestamp':
-    case 'node_comment_statistics.last_comment_timestamp':
+    case 'node_revision.timestamp':
+    case 'file_managed.timestamp':
+    case 'comment.timestamp':
       return $values;
   }
 }

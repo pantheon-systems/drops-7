@@ -520,46 +520,6 @@ function date_prepare_entity($formatter, $entity_type, $entity, $field, $instanc
 }
 
 /**
- * Generates a Date API SQL handler for the given date field.
- *
- * The handler will be set up to make the correct timezone adjustments
- * for the field settings.
- *
- * @param array $field
- *   The $field array.
- * @param string $compare_tz
- *   The timezone used for comparison values in the SQL.
- */
-function date_field_get_sql_handler($field, $compare_tz = NULL) {
-  module_load_include('inc', 'date_api', 'date_api_sql');
-
-  $db_info = date_api_database_info($field);
-
-  // Create a DateAPI SQL handler class for this field type.
-  $handler = new date_sql_handler($field['type']);
-
-  // If this date field stores a timezone in the DB, tell the handler about it.
-  if ($field['settings']['tz_handling'] == 'date') {
-    $handler->db_timezone_field = $db_info['columns']['timezone']['column'];
-  }
-  else {
-    $handler->db_timezone = date_get_timezone_db($field['settings']['tz_handling']);
-  }
-
-  if (empty($compare_tz)) {
-    $compare_tz = date_get_timezone($field['settings']['tz_handling']);
-  }
-  $handler->local_timezone = $compare_tz;
-
-  // Now that the handler is properly initialized, force the DB
-  // to use UTC so no timezone conversions get added to things like
-  // NOW() or FROM_UNIXTIME().
-  $handler->set_db_timezone();
-
-  return $handler;
-}
-
-/**
  * Callback to alter the property info of date fields.
  *
  * @see date_field_info()

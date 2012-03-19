@@ -5,3 +5,10 @@ version = VERSION
 core = 7.x
 files[] = file_test.module
 hidden = TRUE
+
+
+; Information added by drush on 2012-03-19
+version = "master-dev"
+project = "drupal"
+datestamp = "1332131114"
+

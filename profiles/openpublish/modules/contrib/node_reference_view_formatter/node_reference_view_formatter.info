@@ -1,0 +1,15 @@
+core = "7.x"
+description = "Add a field formatter for node reference that will display a view of the data"
+name = "Node Reference View Formatter"
+package = "View"
+
+dependancies[] = "views"
+dependencies[] = "node_reference"
+
+
+; Information added by drupal.org packaging script on 2011-08-16
+version = "7.x-1.0-beta2"
+core = "7.x"
+project = "node_reference_view_formatter"
+datestamp = "1313510520"
+

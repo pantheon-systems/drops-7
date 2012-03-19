@@ -88,9 +88,9 @@ function date_views_views_plugins() {
 function date_views_views_data() {
   $data = array();
 
-  $tables = module_invoke_all('date_views_tables');
+  $tables = date_views_base_tables();
 
-  foreach ($tables as $base_table) {
+  foreach ($tables as $base_table => $entity) {
     // The flexible date argument.
     $data[$base_table]['date_argument'] = array(
       'group' => t('Date'),

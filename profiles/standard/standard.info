@@ -25,3 +25,10 @@ dependencies[] = field_ui
 dependencies[] = file
 dependencies[] = rdf
 files[] = standard.profile
+
+
+; Information added by drush on 2012-03-19
+version = "master-dev"
+project = "drupal"
+datestamp = "1332131114"
+

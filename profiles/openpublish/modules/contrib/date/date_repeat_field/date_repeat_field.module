@@ -119,9 +119,7 @@ function date_repeat_field_permission() {
  */
 function date_repeat_field_show($entity_type = 'node', $entity = NULL) {
   $bundle = date_get_entity_bundle($entity_type, $entity);
-  $fields = field_info_instances($entity_type, $bundle);
-  foreach ($fields as $field_name => $data) {
-    $field = field_info_field($field_name);
+  foreach (field_info_fields() as $field_name => $field) {
     if (in_array($field['type'], array('date', 'datestamp', 'datetime')) && date_is_repeat_field($field)) {
       return user_access('view date repeats');
     }
@@ -140,9 +138,7 @@ function date_repeat_field_page($entity_type = 'node', $entity = NULL) {
   $entity->date_repeat_show_all = TRUE;
   $entity->content = array();
   $output = '';
-  $fields = field_info_instances($entity_type, $bundle);
-  foreach ($fields as $field_name => $data) {
-    $field = field_info_field($field_name);
+  foreach (field_info_fields() as $field_name => $field) {
     if (in_array($field['type'], array('date', 'datestamp', 'datetime')) && date_is_repeat_field($field)) {
       $field = field_view_field($entity_type, $entity, $field_name, 'full');
       $output .= drupal_render($field);
@@ -156,12 +152,10 @@ function date_repeat_field_page($entity_type = 'node', $entity = NULL) {
  */
 function date_repeat_field_bundles() {
   $values = array();
-  $items = field_info_instances();
-  foreach ($items as $entity_type => $bundles) {
-    foreach ($bundles as $bundle => $widgets) {
-      foreach ($widgets as $field_name => $widget) {
-        $field = field_info_field($field_name);
-        if (in_array($field['type'], array('date', 'datestamp', 'datetime')) && $field['settings']['repeat']) {
+  foreach (field_info_fields() as $field_name => $field) {
+    if (in_array($field['type'], array('date', 'datestamp', 'datetime')) && $field['settings']['repeat']) {
+      foreach ($field['bundles'] as $entity_type => $bundles) {
+        foreach ($bundles as $bundle) {
           $values[$entity_type][$bundle][] = $field_name;
         }
       }

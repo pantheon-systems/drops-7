@@ -6,3 +6,10 @@ dependencies[] = pantheon_api
 hidden = TRUE
 core = 7.x
 php = 5.2
+
+
+; Information added by drush on 2012-03-19
+version = "master-dev"
+project = "drupal"
+datestamp = "1332131114"
+

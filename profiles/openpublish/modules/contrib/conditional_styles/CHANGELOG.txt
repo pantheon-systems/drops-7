@@ -1,3 +1,7 @@
+Conditional Styles 7.x-2.1, 2012-03-12
+--------------------------------------
+- #1478242: Weight needed for conditional stylesheets added via drupal_add_css()
+
 Conditional Styles 7.x-2.0, 2011-01-18
 --------------------------------------
 - #1030830: Add tests

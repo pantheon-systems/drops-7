@@ -21,6 +21,7 @@ function conditional_styles_preprocess_html(&$vars, $hook) {
                   'IE' => $condition,
                   '!IE' => FALSE,
                 ),
+                'weight' => 999,
                 'every_page' => TRUE,
               )
             );

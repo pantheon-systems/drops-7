@@ -8,8 +8,8 @@
  * Implementation of hook_views_api().
  */
 function views_node_taxonomy_filter_views_api() {
-  list($module, $api) = func_get_args();
-  if ($module == "views" && $api == "views_default") {
-    return array("version" => 3.0);
-  }
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'views_node_taxonomy_filter'),
+  );
 }

@@ -48,3 +48,10 @@ files[] = tests/upgrade/upgrade.taxonomy.test
 files[] = tests/upgrade/upgrade.translatable.test
 files[] = tests/upgrade/upgrade.upload.test
 files[] = tests/upgrade/upgrade.user.test
+
+
+; Information added by drush on 2012-03-19
+version = "master-dev"
+project = "drupal"
+datestamp = "1332131114"
+

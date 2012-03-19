@@ -7,3 +7,10 @@ files[] = search.extender.inc
 files[] = search.test
 configure = admin/config/search/settings
 stylesheets[all][] = search.css
+
+
+; Information added by drush on 2012-03-19
+version = "master-dev"
+project = "drupal"
+datestamp = "1332131114"
+

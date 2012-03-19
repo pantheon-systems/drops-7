@@ -176,3 +176,44 @@ function foo_captcha_custom_validation($solution, $response, $element, $form_sta
 These extra arguments are the $element and $form_state arguments of the validation function
 of the #captcha element. See captcha_validate() in captcha.module for more info about this.
 
+
+
+=== Hook into CAPTCHA placement ===
+The CAPTCHA module attempts to place the CAPTCHA element in an appropriate spot
+at the bottom of the targeted form, but this automatic detection may be insufficient
+for complex forms.
+The hook_captcha_placement_map hook allows to define the placement of the CAPTCHA element
+as desired. The hook should return an array, mapping form IDs to placement arrays, which are
+associative arrays with the following fields:
+  - 'path': path (array of path items) of the form's container element in which the
+    CAPTCHA element should be inserted.
+  - 'key': the key of the element before which the CAPTCHA element
+    should be inserted. If the field 'key' is undefined or NULL, the CAPTCHA will
+    just be appended in the container.
+  - 'weight': if 'key' is not NULL: should be the weight of the element defined by 'key'.
+    If 'key' is NULL and weight is not NULL/unset: set the weight property of the CAPTCHA element
+    to this value.
+
+For example:
+"""
+/**
+ * Implementation of hook_captcha_placement_map
+ */
+function hook_captcha_placement_map() {
+  return array(
+    'my_fancy_form' => array(
+      'path' => array('items', 'buttons'),
+      'key' => 'savebutton',
+    ),
+    'another_form' => array(
+      'path' => array(),
+      'weight' => 34,
+    ),
+  );
+}
+"""
+This will place the CAPTCHA element
+  - in the 'my_fancy_form' form inside the container $form['items']['buttons'],
+    just before the element $form['items']['buttons']['sacebutton'].
+  - in the 'another_form' form at the toplevel of the form, with a weight 34.
+
