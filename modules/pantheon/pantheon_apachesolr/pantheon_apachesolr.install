@@ -4,9 +4,9 @@
  */
 
 function pantheon_apachesolr_install() {
-  // Make our Class active.
-  $class = 'PantheonApacheSolrService';
-  variable_set('apachesolr_service_class', $class);
+  // Make our Class(es) active.
+  variable_set('apachesolr_service_class', 'PantheonApacheSolrService');
+  variable_set('search_api_solr_service_class', 'PantheonSearchApiSolrService');
 }
 
 function pantheon_apachesolr_enable() {
