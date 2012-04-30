@@ -479,6 +479,11 @@ function file_ensure_htaccess() {
  *   The default is TRUE which indicates a private and protected directory.
  */
 function file_create_htaccess($directory, $private = TRUE) {
+  if (isset($_SERVER['PANTHEON_ENVIRONMENT'])) {
+    // Skip on Pantheon since we use nginx and this can hang.
+    return;
+  }
+
   if (file_uri_scheme($directory)) {
     $directory = file_stream_wrapper_uri_normalize($directory);
   }
