@@ -525,7 +525,7 @@ function update_mail($key, &$message, $params) {
     $dashboard = 'https://dashboard.getpantheon.com/account';
     $text = t('Drupal core updates should be performed directly from <a href="@link">your Pantheon dashboard</a>.', array('@link' => $dashboard));
     array_unshift($message['body'], $text);
-    $message['body'][] = t('Core updates should be performed directly from your Pantheon dashboard:', array(), $langcode) ."\n$dashboard";
+    $message['body'][] = t('Core updates should be performed directly from your Pantheon dashboard:', array(), array('langcode' => $langcode)) ."\n$dashboard";
   }
 }
 
