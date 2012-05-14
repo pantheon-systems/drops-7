@@ -750,6 +750,12 @@ function drupal_settings_initialize() {
           $conf[$conf_key] = $conf_value;
         }
       }
+      elseif ($key == 'databases') {
+        // Protect default configuration but allow the specification of
+        // additional databases. Also, allows fun things with 'prefix' if they
+        // want to try multisite.
+        $databases = array_replace_recursive($databases, $value);
+      }
       else {
         $$key = $value;
       }
