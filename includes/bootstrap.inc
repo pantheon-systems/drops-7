@@ -754,6 +754,9 @@ function drupal_settings_initialize() {
         // Protect default configuration but allow the specification of
         // additional databases. Also, allows fun things with 'prefix' if they
         // want to try multisite.
+        if (!isset($databases) || !is_array($databases)) {
+          $databases = array();
+        }
         $databases = array_replace_recursive($databases, $value);
       }
       else {
