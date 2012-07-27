@@ -442,13 +442,10 @@ class PantheonApacheSolrService {
     curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
 
     // set URL and other appropriate options
-    $opts = array(
-      CURLOPT_URL => $url,
-      CURLOPT_HEADER => 1,
-      CURLOPT_PORT => $port,
-      CURLOPT_RETURNTRANSFER => 1,
-      CURLOPT_HTTPHEADER => array('Content-type:text/xml;', 'Expect:'),
-    );
+    $opts = pantheon_apachesolr_curlopts();
+    $opts[CURLOPT_URL] = $url;
+    $opts[CURLOPT_PORT] = $port;
+
     curl_setopt_array($ch, $opts);
 
     // If we are doing a delete request...
