@@ -693,7 +693,7 @@ abstract class DrupalLocalStreamWrapper implements DrupalStreamWrapperInterface 
 
     $this->uri = $uri;
 
-    if (strpos($uri, 'public://') === 0 && function_exists('pantheon_stat')) {
+    if ($uri != 'public://' && strpos($uri, 'public://') === 0 && function_exists('pantheon_stat')) {
       $path = $this->getTarget($uri);
       $stat = pantheon_stat($path);
     }
