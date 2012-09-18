@@ -409,7 +409,20 @@ class PantheonApacheSolrService {
    * Central method for making a GET operation against this Solr Server
    */
   protected function _sendRawGet($url, $options = array()) {
-    $response = $this->_makeHttpRequest($url, $options);
+    $cache_id = hash('sha1', $url);
+
+    # Check if this query is cached
+    $query_cache = cache_get($cache_id, 'solr_query_cache');
+    if (!$query_cache) {
+      $response = $this->_makeHttpRequest($url, $options);
+
+      // Solr query cache expiration in second(s)
+      $solr_expire_cache = time() + variable_get('solr_cache_expire', 15);
+      cache_set($cache_id, $response, 'solr_query_cache', $solr_expire_cache);
+    }
+    else {
+      $response = $query_cache->data;
+    }
     return $this->checkResponse($response);
   }
 
