@@ -434,19 +434,20 @@ class PantheonApacheSolrService {
   protected function _makeHttpRequest($url, $options = array()) {
     // Hacking starts here.
     // $result = drupal_http_request($url, $headers, $method, $content);
+    static $ch;
     $client_cert = '../certs/binding.pem';
     $port = 449;
-    $ch = curl_init();
-    // Janktastic, but the parent PHPSolrClient library assumes http
-    // $url = str_replace('http://', 'https://', $url);
-    curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
 
-    // set URL and other appropriate options
-    $opts = pantheon_apachesolr_curlopts();
-    $opts[CURLOPT_URL] = $url;
-    $opts[CURLOPT_PORT] = $port;
-
-    curl_setopt_array($ch, $opts);
+    if (!isset($ch)) {
+      $ch = curl_init();
+      // Janktastic, but the parent PHPSolrClient library assumes http
+      // $url = str_replace('http://', 'https://', $url);
+      curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
+      $opts = pantheon_apachesolr_curlopts();
+      $opts[CURLOPT_PORT] = $port;
+      curl_setopt_array($ch, $opts);
+    }
+    curl_setopt($ch, CURLOPT_URL, $url);
 
     // If we are doing a delete request...
     if (isset($options['method'])) {
