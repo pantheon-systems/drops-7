@@ -356,7 +356,7 @@ class PantheonApacheSolrService {
   }
 
   /**
-   * Check the reponse code and thow an exception if it's not 200.
+   * Check the response code and throw an exception if it's not 200.
    *
    * @param stdClass $response
    *   response object.
@@ -461,16 +461,16 @@ class PantheonApacheSolrService {
 
     curl_setopt_array($ch, $opts);
 
-    // If we are doing a delete request...
+    // If we are doing a DELETE request...
     if (isset($options['method'])) {
       if ($options['method'] == 'DELETE') {
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
       }
-      // If we are doing a put request...
+      // If we are doing a PUT request...
       if ($options['method'] == 'PUT') {
         curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
       }
-      // If we are doing a put request...
+      // If we are doing a POST request...
       if ($options['method'] == 'POST') {
         curl_setopt($ch, CURLOPT_POST, 1);
       }
