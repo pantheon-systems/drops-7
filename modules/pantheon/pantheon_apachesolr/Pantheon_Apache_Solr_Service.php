@@ -417,7 +417,7 @@ class PantheonApacheSolrService {
       $response = $this->_makeHttpRequest($url, $options);
 
       // Solr query cache expiration in second(s)
-      $solr_expire_cache = time() + variable_get('solr_cache_expire', 15);
+      $solr_expire_cache = REQUEST_TIME + variable_get('solr_cache_expire', 15);
       cache_set($cache_id, $response, 'solr_query_cache', $solr_expire_cache);
     }
     else {
