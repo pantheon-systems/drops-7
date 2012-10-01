@@ -62,7 +62,7 @@
  * methods for pinging, adding, deleting, committing, optimizing and searching.
  */
 
-class PantheonApacheSolrService {
+class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
   /**
    * How NamedLists should be formatted in the output.  This specifically effects facet counts. Valid values
    * are 'map' (default) or 'flat'.
@@ -853,7 +853,7 @@ class PantheonApacheSolrService {
    *
    * @throws Exception If an error occurs during the service call
    */
-  public function search($query = '', $params = array(), $method = 'GET') {
+  public function search($query = '', array $params = array(), $method = 'GET') {
     if (!is_array($params)) {
       $params = array();
     }
