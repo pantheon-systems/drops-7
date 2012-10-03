@@ -453,7 +453,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
    *
    * This is just a wrapper around drupal_http_request().
    */
-  protected function _makeHttpRequest($url, $options = array()) {
+  protected function _makeHttpRequest($url, array $options = array()) {
     // Hacking starts here.
     // $result = drupal_http_request($url, $headers, $method, $content);
     static $ch;
