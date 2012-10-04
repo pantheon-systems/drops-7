@@ -6,7 +6,7 @@
  */
 
 /**
- * @ingroup database
+ * @addtogroup database
  * @{
  */
 
@@ -37,7 +37,7 @@ class DatabaseConnection_sqlite extends DatabaseConnection {
   /**
    * All databases attached to the current database. This is used to allow
    * prefixes to be safely handled without locking the table
-   * 
+   *
    * @var array
    */
   protected $attachedDatabases = array();
@@ -46,10 +46,10 @@ class DatabaseConnection_sqlite extends DatabaseConnection {
    * Whether or not a table has been dropped this request: the destructor will
    * only try to get rid of unnecessary databases if there is potential of them
    * being empty.
-   * 
+   *
    * This variable is set to public because DatabaseSchema_sqlite needs to
    * access it. However, it should not be manually set.
-   * 
+   *
    * @var boolean
    */
   var $tableDropped = FALSE;
@@ -68,8 +68,6 @@ class DatabaseConnection_sqlite extends DatabaseConnection {
       'pdo' => array(),
     );
     $connection_options['pdo'] += array(
-      // Force column names to lower case.
-      PDO::ATTR_CASE => PDO::CASE_LOWER,
       // Convert numeric values to strings when fetching.
       PDO::ATTR_STRINGIFY_FETCHES => TRUE,
     );
@@ -517,5 +515,5 @@ class DatabaseStatement_sqlite extends DatabaseStatementPrefetch implements Iter
 }
 
 /**
- * @} End of "ingroup database".
+ * @} End of "addtogroup database".
  */

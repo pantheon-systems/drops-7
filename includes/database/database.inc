@@ -41,7 +41,7 @@
  * $result = db_query_range('SELECT n.nid, n.title, n.created
  *   FROM {node} n WHERE n.uid = :uid', 0, 10, array(':uid' => $uid));
  * foreach ($result as $record) {
- *   // Perform operations on $node->title, etc. here.
+ *   // Perform operations on $record->title, etc. here.
  * }
  * @endcode
  * Curly braces are used around "node" to provide table prefixing via
@@ -988,6 +988,9 @@ abstract class DatabaseConnection extends PDO {
    * @param $name
    *   Optional name of the savepoint.
    *
+   * @return DatabaseTransaction
+   *   A DatabaseTransaction object.
+   *
    * @see DatabaseTransaction
    */
   public function startTransaction($name = '') {
@@ -1429,9 +1432,6 @@ abstract class Database {
 
   /**
    * Gets the connection object for the specified database key and target.
-   *
-   * Note: do not use the setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE) on the
-   * returned object because of http://bugs.php.net/bug.php?id=43139.
    *
    * @param $target
    *   The database target name.
@@ -2672,7 +2672,7 @@ function db_condition($conjunction) {
 
 
 /**
- * @ingroup schemaapi
+ * @addtogroup schemaapi
  * @{
  */
 
@@ -2989,7 +2989,7 @@ function db_change_field($table, $field, $field_new, $spec, $keys_new = array())
 }
 
 /**
- * @} End of "ingroup schemaapi".
+ * @} End of "addtogroup schemaapi".
  */
 
 /**

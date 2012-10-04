@@ -4,9 +4,9 @@
  */
 
 function pantheon_apachesolr_install() {
-  // Make our Class active.
-  $class = 'PantheonApacheSolrService';
-  variable_set('apachesolr_service_class', $class);
+  // Make our Class(es) active.
+  variable_set('apachesolr_service_class', 'PantheonApacheSolrService');
+  variable_set('search_api_solr_connection_class', 'PantheonSearchApiSolrService');
 }
 
 function pantheon_apachesolr_enable() {
@@ -19,4 +19,11 @@ function pantheon_apachesolr_enable() {
 function pantheon_apachesolr_disable() {
   // restore stock solrserviceclass
   variable_del('apachesolr_service_class');
+}
+
+/**
+ * Update the Search API Solr Connection Class Variable for Pantheon Compatibility 
+ */
+function pantheon_apachesolr_update_7001(&$sandbox) {
+  variable_set('search_api_solr_connection_class', 'PantheonSearchApiSolrService');
 }

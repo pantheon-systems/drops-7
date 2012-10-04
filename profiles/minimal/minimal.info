@@ -5,4 +5,3 @@ core = 7.x
 hidden = TRUE
 dependencies[] = block
 dependencies[] = dblog
-

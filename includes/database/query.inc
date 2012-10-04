@@ -1,7 +1,7 @@
 <?php
 
 /**
- * @ingroup database
+ * @addtogroup database
  * @{
  */
 
@@ -1898,7 +1898,7 @@ class DatabaseCondition implements QueryConditionInterface, Countable {
   function __clone() {
     $this->changed = TRUE;
     foreach ($this->conditions as $key => $condition) {
-      if ($condition['field'] instanceOf QueryConditionInterface) {
+      if ($key !== '#conjunction' && $condition['field'] instanceOf QueryConditionInterface) {
         $this->conditions[$key]['field'] = clone($condition['field']);
       }
     }
@@ -1955,5 +1955,5 @@ class DatabaseCondition implements QueryConditionInterface, Countable {
 }
 
 /**
- * @} End of "ingroup database".
+ * @} End of "addtogroup database".
  */

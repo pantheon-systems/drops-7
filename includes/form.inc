@@ -1,4 +1,8 @@
 <?php
+ /**
+ * @file
+ * Functions for form and batch generation and processing.
+ */
 
 /**
  * @defgroup forms Form builder functions
@@ -90,7 +94,11 @@
  */
 
 /**
- * Wrapper for drupal_build_form() for use when $form_state is not needed.
+ * Returns a renderable form array for a given form ID.
+ *
+ * This function should be used instead of drupal_build_form() when $form_state
+ * is not needed (i.e., when initially rendering the form) and is often
+ * used as a menu callback.
  *
  * @param $form_id
  *   The unique string identifying the desired form. If a function with that
@@ -98,7 +106,7 @@
  *   generate the same form (or very similar forms) using different $form_ids
  *   can implement hook_forms(), which maps different $form_id values to the
  *   proper form constructor function. Examples may be found in node_forms(),
- *   search_forms(), and user_forms().
+ *   and search_forms().
  * @param ...
  *   Any additional arguments are passed on to the functions called by
  *   drupal_get_form(), including the unique form constructor function. For
@@ -124,7 +132,7 @@ function drupal_get_form($form_id) {
 }
 
 /**
- * Build and process a form based on a form id.
+ * Builds and process a form based on a form id.
  *
  * The form may also be retrieved from the cache if the form was built in a
  * previous page-load. The form is then passed on for processing, validation
@@ -136,7 +144,7 @@ function drupal_get_form($form_id) {
  *   generate the same form (or very similar forms) using different $form_ids
  *   can implement hook_forms(), which maps different $form_id values to the
  *   proper form constructor function. Examples may be found in node_forms(),
- *   search_forms(), and user_forms().
+ *   and search_forms().
  * @param $form_state
  *   An array which stores information about the form. This is passed as a
  *   reference so that the caller can use it to examine what in the form changed
@@ -156,6 +164,8 @@ function drupal_get_form($form_id) {
  *       automatically loaded by form_get_cache(). By default the current menu
  *       router item's 'file' definition is added, if any. Use
  *       form_load_include() to add include files from a form constructor.
+ *     - form_id: Identification of the primary form being constructed and
+ *       processed.
  *     - base_form_id: Identification for a base form, as declared in a
  *       hook_forms() implementation.
  *   - rebuild_info: Internal. Similar to 'build_info', but pertaining to
@@ -207,8 +217,8 @@ function drupal_get_form($form_id) {
  *     validation functions and submit functions use this array for nearly all
  *     their decision making. (Note that
  *     @link http://api.drupal.org/api/drupal/developer--topics--forms_api_reference.html/7#tree #tree @endlink
- *     determines whether the values are a flat array or an array whose structure
- *     parallels the $form array.)
+ *     determines whether the values are a flat array or an array whose
+ *     structure parallels the $form array.)
  *   - input: The array of values as they were submitted by the user. These are
  *     raw and unvalidated, so should not be used without a thorough
  *     understanding of security implications. In almost all cases, code should
@@ -377,7 +387,7 @@ function drupal_build_form($form_id, &$form_state) {
 }
 
 /**
- * Retrieve default values for the $form_state array.
+ * Retrieves default values for the $form_state array.
  */
 function form_state_defaults() {
   return array(
@@ -422,7 +432,7 @@ function form_state_defaults() {
  *   Modules that need to generate the same form (or very similar forms)
  *   using different $form_ids can implement hook_forms(), which maps
  *   different $form_id values to the proper form constructor function. Examples
- *   may be found in node_forms(), search_forms(), and user_forms().
+ *   may be found in node_forms() and search_forms().
  * @param $form_state
  *   A keyed array containing the current state of the form.
  * @param $old_form
@@ -483,7 +493,7 @@ function drupal_rebuild_form($form_id, &$form_state, $old_form = NULL) {
 }
 
 /**
- * Fetch a form from cache.
+ * Fetches a form from cache.
  */
 function form_get_cache($form_build_id, &$form_state) {
   if ($cached = cache_get('form_' . $form_build_id, 'cache_form')) {
@@ -514,7 +524,7 @@ function form_get_cache($form_build_id, &$form_state) {
 }
 
 /**
- * Store a form in the cache.
+ * Stores a form in the cache.
  */
 function form_set_cache($form_build_id, $form, $form_state) {
   // 6 hours cache life time for forms should be plenty.
@@ -564,7 +574,7 @@ function form_state_keys_no_cache() {
 }
 
 /**
- * Loads an include file and makes sure it is loaded whenever the form is processed.
+ * Ensures an include file is loaded whenever the form is processed.
  *
  * Example:
  * @code
@@ -628,7 +638,7 @@ function form_load_include(&$form_state, $type, $module, $name = NULL) {
  *   Modules that need to generate the same form (or very similar forms)
  *   using different $form_ids can implement hook_forms(), which maps
  *   different $form_id values to the proper form constructor function. Examples
- *   may be found in node_forms(), search_forms(), and user_forms().
+ *   may be found in node_forms() and search_forms().
  * @param $form_state
  *   A keyed array containing the current state of the form. Most important is
  *   the $form_state['values'] collection, a tree of data used to simulate the
@@ -712,6 +722,9 @@ function drupal_form_submit($form_id, &$form_state) {
  */
 function drupal_retrieve_form($form_id, &$form_state) {
   $forms = &drupal_static(__FUNCTION__);
+
+  // Record the $form_id.
+  $form_state['build_info']['form_id'] = $form_id;
 
   // Record the filepath of the include file containing the original form, so
   // the form builder callbacks can be loaded when the form is being rebuilt
@@ -930,9 +943,10 @@ function drupal_process_form($form_id, &$form, &$form_state) {
 }
 
 /**
- * Prepares a structured form array by adding required elements,
- * executing any hook_form_alter functions, and optionally inserting
- * a validation token to prevent tampering.
+ * Prepares a structured form array.
+ *
+ * Adds required elements, executes any hook_form_alter functions, and
+ * optionally inserts a validation token to prevent tampering.
  *
  * @param $form_id
  *   A unique string identifying the form for validation, submission,
@@ -968,6 +982,10 @@ function drupal_prepare_form($form_id, &$form, &$form_state) {
     '#value' => $form['#build_id'],
     '#id' => $form['#build_id'],
     '#name' => 'form_build_id',
+    // Form processing and validation requires this value, so ensure the
+    // submitted form value appears literally, regardless of custom #tree
+    // and #parents being set elsewhere.
+    '#parents' => array('form_build_id'),
   );
 
   // Add a token, based on either #token or form_id, to any form displayed to
@@ -991,6 +1009,10 @@ function drupal_prepare_form($form_id, &$form, &$form_state) {
         '#id' => drupal_html_id('edit-' . $form_id . '-form-token'),
         '#type' => 'token',
         '#default_value' => drupal_get_token($form['#token']),
+        // Form processing and validation requires this value, so ensure the
+        // submitted form value appears literally, regardless of custom #tree
+        // and #parents being set elsewhere.
+        '#parents' => array('form_token'),
       );
     }
   }
@@ -1000,6 +1022,10 @@ function drupal_prepare_form($form_id, &$form, &$form_state) {
       '#type' => 'hidden',
       '#value' => $form_id,
       '#id' => drupal_html_id("edit-$form_id"),
+      // Form processing and validation requires this value, so ensure the
+      // submitted form value appears literally, regardless of custom #tree
+      // and #parents being set elsewhere.
+      '#parents' => array('form_id'),
     );
   }
   if (!isset($form['#id'])) {
@@ -1060,8 +1086,7 @@ function drupal_prepare_form($form_id, &$form, &$form_state) {
 
 
 /**
- * Validates user-submitted form data from the $form_state using
- * the validate functions defined in a structured form array.
+ * Validates user-submitted form data in the $form_state array.
  *
  * @param $form_id
  *   A unique string identifying the form for validation, submission,
@@ -1078,7 +1103,7 @@ function drupal_prepare_form($form_id, &$form, &$form_state) {
  *   A keyed array containing the current state of the form. The current
  *   user-submitted data is stored in $form_state['values'], though
  *   form validation functions are passed an explicit copy of the
- *   values for the sake of simplicity. Validation handlers can also
+ *   values for the sake of simplicity. Validation handlers can also use
  *   $form_state to pass information on to submit handlers. For example:
  *     $form_state['data_for_submission'] = $data;
  *   This technique is useful when validation requires file parsing,
@@ -1235,9 +1260,11 @@ function drupal_redirect_form($form_state) {
 }
 
 /**
- * Performs validation on form elements. First ensures required fields are
- * completed, #maxlength is not exceeded, and selected options were in the
- * list of options given to the user. Then calls user-defined validators.
+ * Performs validation on form elements.
+ *
+ * First ensures required fields are completed, #maxlength is not exceeded, and
+ * selected options were in the list of options given to the user. Then calls
+ * user-defined validators.
  *
  * @param $elements
  *   An associative array containing the structure of the form.
@@ -1389,9 +1416,10 @@ function _form_validate(&$elements, &$form_state, $form_id = NULL) {
 }
 
 /**
- * A helper function used to execute custom validation and submission
- * handlers for a given form. Button-specific handlers are checked
- * first. If none exist, the function falls back to form-level handlers.
+ * Executes custom validation and submission handlers for a given form.
+ *
+ * Button-specific handlers are checked first. If none exist, the function
+ * falls back to form-level handlers.
  *
  * @param $type
  *   The type of handler to execute. 'validate' or 'submit' are the
@@ -1513,8 +1541,6 @@ function form_execute_handlers($type, &$form, &$form_state) {
  * doing anything with that data that requires it to be valid, PHP errors
  * would be triggered if the input processing and validation steps were fully
  * skipped.
- * @see http://drupal.org/node/370537
- * @see http://drupal.org/node/763376
  *
  * @param $name
  *   The name of the form element. If the #parents property of your form
@@ -1530,6 +1556,9 @@ function form_execute_handlers($type, &$form, &$form_state) {
  * @return
  *   Return value is for internal use only. To get a list of errors, use
  *   form_get_errors() or form_get_error().
+ *
+ * @see http://drupal.org/node/370537
+ * @see http://drupal.org/node/763376
  */
 function form_set_error($name = NULL, $message = '', $limit_validation_errors = NULL) {
   $form = &drupal_static(__FUNCTION__, array());
@@ -1575,14 +1604,14 @@ function form_set_error($name = NULL, $message = '', $limit_validation_errors = 
 }
 
 /**
- * Clear all errors against all form elements made by form_set_error().
+ * Clears all errors against all form elements made by form_set_error().
  */
 function form_clear_error() {
   drupal_static_reset('form_set_error');
 }
 
 /**
- * Return an associative array of all errors.
+ * Returns an associative array of all errors.
  */
 function form_get_errors() {
   $form = form_set_error();
@@ -1610,16 +1639,18 @@ function form_get_error($element) {
 }
 
 /**
- * Flag an element as having an error.
+ * Flags an element as having an error.
  */
 function form_error(&$element, $message = '') {
   form_set_error(implode('][', $element['#parents']), $message);
 }
 
 /**
- * Walk through the structured form array, adding any required properties to
- * each element and mapping the incoming input data to the proper elements.
- * Also, execute any #process handlers attached to a specific element.
+ * Builds and processes all elements in the structured form array.
+ *
+ * Adds any required properties to each element, maps the incoming input data
+ * to the proper elements, and executes any #process handlers attached to a
+ * specific element.
  *
  * This is one of the three primary functions that recursively iterates a form
  * array. This one does it for completing the form building process. The other
@@ -1891,8 +1922,7 @@ function form_builder($form_id, &$element, &$form_state) {
 }
 
 /**
- * Populate the #value and #name properties of input elements so they
- * can be processed and rendered.
+ * Adds the #name and #value properties of an input element before rendering.
  */
 function _form_builder_handle_input_element($form_id, &$element, &$form_state) {
   if (!isset($element['#name'])) {
@@ -2031,7 +2061,7 @@ function _form_builder_handle_input_element($form_id, &$element, &$form_state) {
 }
 
 /**
- * Helper function to handle the convoluted logic of button click detection.
+ * Detects if an element triggered the form submission via Ajax.
  *
  * This detects button or non-button controls that trigger a form submission via
  * Ajax or some other scriptable environment. These environments can set the
@@ -2051,7 +2081,7 @@ function _form_element_triggered_scripted_submission($element, &$form_state) {
 }
 
 /**
- * Helper function to handle the convoluted logic of button click detection.
+ * Determines if a given button triggered the form submission.
  *
  * This detects button controls that trigger a form submission by being clicked
  * and having the click processed by the browser rather than being captured by
@@ -2136,17 +2166,17 @@ function form_state_values_clean(&$form_state) {
     // $form_state['values']['foo']['bar'], which is the level where we can
     // unset 'baz' (that is stored in $last_parent).
     $parents = $button['#parents'];
-    $values = &$form_state['values'];
     $last_parent = array_pop($parents);
-    foreach ($parents as $parent) {
-      $values = &$values[$parent];
+    $key_exists = NULL;
+    $values = &drupal_array_get_nested_value($form_state['values'], $parents, $key_exists);
+    if ($key_exists && is_array($values)) {
+      unset($values[$last_parent]);
     }
-    unset($values[$last_parent]);
   }
 }
 
 /**
- * Helper function to determine the value for an image button form element.
+ * Determines the value for an image button form element.
  *
  * @param $form
  *   The form element whose value is being populated.
@@ -2155,6 +2185,7 @@ function form_state_values_clean(&$form_state) {
  *   the element's default value should be returned.
  * @param $form_state
  *   A keyed array containing the current state of the form.
+ *
  * @return
  *   The data that will appear in the $form_state['values'] collection
  *   for this element. Return nothing to use the default.
@@ -2193,13 +2224,14 @@ function form_type_image_button_value($form, $input, $form_state) {
 }
 
 /**
- * Helper function to determine the value for a checkbox form element.
+ * Determines the value for a checkbox form element.
  *
  * @param $form
  *   The form element whose value is being populated.
-*  @param $input
+ * @param $input
  *   The incoming input to populate the form element. If this is FALSE,
  *   the element's default value should be returned.
+ *
  * @return
  *   The data that will appear in the $element_state['values'] collection
  *   for this element. Return nothing to use the default.
@@ -2233,13 +2265,14 @@ function form_type_checkbox_value($element, $input = FALSE) {
 }
 
 /**
- * Helper function to determine the value for a checkboxes form element.
+ * Determines the value for a checkboxes form element.
  *
  * @param $element
  *   The form element whose value is being populated.
  * @param $input
  *   The incoming input to populate the form element. If this is FALSE,
  *   the element's default value should be returned.
+ *
  * @return
  *   The data that will appear in the $element_state['values'] collection
  *   for this element. Return nothing to use the default.
@@ -2273,13 +2306,14 @@ function form_type_checkboxes_value($element, $input = FALSE) {
 }
 
 /**
- * Helper function to determine the value for a tableselect form element.
+ * Determines the value for a tableselect form element.
  *
  * @param $element
  *   The form element whose value is being populated.
  * @param $input
  *   The incoming input to populate the form element. If this is FALSE,
  *   the element's default value should be returned.
+ *
  * @return
  *   The data that will appear in the $element_state['values'] collection
  *   for this element. Return nothing to use the default.
@@ -2308,14 +2342,53 @@ function form_type_tableselect_value($element, $input = FALSE) {
 }
 
 /**
- * Helper function to determine the value for a password_confirm form
- * element.
+ * Form value callback: Determines the value for a #type radios form element.
+ *
+ * @param $element
+ *   The form element whose value is being populated.
+ * @param $input
+ *   (optional) The incoming input to populate the form element. If FALSE, the
+ *   element's default value is returned. Defaults to FALSE.
+ *
+ * @return
+ *   The data that will appear in the $element_state['values'] collection for
+ *   this element.
+ */
+function form_type_radios_value(&$element, $input = FALSE) {
+  if ($input !== FALSE) {
+    // When there's user input (including NULL), return it as the value.
+    // However, if NULL is submitted, _form_builder_handle_input_element() will
+    // apply the default value, and we want that validated against #options
+    // unless it's empty. (An empty #default_value, such as NULL or FALSE, can
+    // be used to indicate that no radio button is selected by default.)
+    if (!isset($input) && !empty($element['#default_value'])) {
+      $element['#needs_validation'] = TRUE;
+    }
+    return $input;
+  }
+  else {
+    // For default value handling, simply return #default_value. Additionally,
+    // for a NULL default value, set #has_garbage_value to prevent
+    // _form_builder_handle_input_element() converting the NULL to an empty
+    // string, so that code can distinguish between nothing selected and the
+    // selection of a radio button whose value is an empty string.
+    $value = isset($element['#default_value']) ? $element['#default_value'] : NULL;
+    if (!isset($value)) {
+      $element['#has_garbage_value'] = TRUE;
+    }
+    return $value;
+  }
+}
+
+/**
+ * Determines the value for a password_confirm form element.
  *
  * @param $element
  *   The form element whose value is being populated.
  * @param $input
  *   The incoming input to populate the form element. If this is FALSE,
  *   the element's default value should be returned.
+ *
  * @return
  *   The data that will appear in the $element_state['values'] collection
  *   for this element. Return nothing to use the default.
@@ -2328,13 +2401,14 @@ function form_type_password_confirm_value($element, $input = FALSE) {
 }
 
 /**
- * Helper function to determine the value for a select form element.
+ * Determines the value for a select form element.
  *
  * @param $element
  *   The form element whose value is being populated.
  * @param $input
  *   The incoming input to populate the form element. If this is FALSE,
  *   the element's default value should be returned.
+ *
  * @return
  *   The data that will appear in the $element_state['values'] collection
  *   for this element. Return nothing to use the default.
@@ -2368,13 +2442,14 @@ function form_type_select_value($element, $input = FALSE) {
 }
 
 /**
- * Helper function to determine the value for a textfield form element.
+ * Determines the value for a textfield form element.
  *
  * @param $element
  *   The form element whose value is being populated.
  * @param $input
  *   The incoming input to populate the form element. If this is FALSE,
  *   the element's default value should be returned.
+ *
  * @return
  *   The data that will appear in the $element_state['values'] collection
  *   for this element. Return nothing to use the default.
@@ -2388,13 +2463,14 @@ function form_type_textfield_value($element, $input = FALSE) {
 }
 
 /**
- * Helper function to determine the value for form's token value.
+ * Determines the value for form's token value.
  *
  * @param $element
  *   The form element whose value is being populated.
  * @param $input
  *   The incoming input to populate the form element. If this is FALSE,
  *   the element's default value should be returned.
+ *
  * @return
  *   The data that will appear in the $element_state['values'] collection
  *   for this element. Return nothing to use the default.
@@ -2406,7 +2482,7 @@ function form_type_token_value($element, $input = FALSE) {
 }
 
 /**
- * Changes submitted form values in $form_state.
+ * Changes submitted form values during form validation.
  *
  * Use this function to change the submitted value of a form element in a form
  * validation function, so that the changed value persists in $form_state
@@ -2458,11 +2534,9 @@ function form_options_flatten($array) {
 }
 
 /**
- * Helper function for form_options_flatten().
+ * Iterates over an array and returns a flat array with duplicate keys removed.
  *
- * Iterates over arrays which may share common values and produces a flat
- * array that has removed duplicate keys. Also handles cases where objects
- * are passed as array values.
+ * This function also handles cases where objects are passed as array values.
  */
 function _form_options_flatten($array) {
   $return = &drupal_static(__FUNCTION__);
@@ -2572,7 +2646,7 @@ function theme_select($variables) {
 }
 
 /**
- * Converts a select form element's options array into an HTML.
+ * Converts a select form element's options array into HTML.
  *
  * @param $element
  *   An associative array containing the properties of the element.
@@ -2580,6 +2654,7 @@ function theme_select($variables) {
  *   Mixed: Either an associative array of items to list as choices, or an
  *   object with an 'option' member that is an associative array. This
  *   parameter is only used internally and should not be passed.
+ *
  * @return
  *   An HTML string of options for the select form element.
  */
@@ -2616,8 +2691,7 @@ function form_select_options($element, $choices = NULL) {
 }
 
 /**
- * Traverses a select element's #option array looking for any values
- * that hold the given key. Returns an array of indexes that match.
+ * Returns the indexes of a select element's options matching a given key.
  *
  * This function is useful if you need to modify the options that are
  * already in a form element; for example, to remove choices which are
@@ -2643,6 +2717,7 @@ function form_select_options($element, $choices = NULL) {
  *   The select element to search.
  * @param $key
  *   The key to look for.
+ *
  * @return
  *   An array of indexes that match the given $key. Array will be
  *   empty if no elements were found. FALSE if optgroups were found.
@@ -2747,6 +2822,9 @@ function theme_radios($variables) {
   if (!empty($element['#attributes']['class'])) {
     $attributes['class'] .= ' ' . implode(' ', $element['#attributes']['class']);
   }
+  if (isset($element['#attributes']['title'])) {
+    $attributes['title'] = $element['#attributes']['title'];
+  }
   return '<div' . drupal_attributes($attributes) . '>' . (!empty($element['#children']) ? $element['#children'] : '') . '</div>';
 }
 
@@ -2779,7 +2857,7 @@ function form_process_password_confirm($element) {
 }
 
 /**
- * Validate password_confirm element.
+ * Validates a password_confirm element.
  */
 function password_confirm_validate($element, &$element_state) {
   $pass1 = trim($element['pass1']['#value']);
@@ -2830,7 +2908,7 @@ function theme_date($variables) {
 }
 
 /**
- * Roll out a single date element.
+ * Expands a date element into year, month, and day select elements.
  */
 function form_process_date($element) {
   // Default to current date
@@ -2886,7 +2964,7 @@ function form_process_date($element) {
 }
 
 /**
- * Validates the date type to stop dates like February 30, 2006.
+ * Validates the date type to prevent invalid dates (e.g., February 30, 2006).
  */
 function date_validate($element) {
   if (!checkdate($element['#value']['month'], $element['#value']['day'], $element['#value']['year'])) {
@@ -2916,7 +2994,7 @@ function map_month($month) {
 }
 
 /**
- * If no default value is set for weight select boxes, use 0.
+ * Sets the value for a weight element, with zero as a default.
  */
 function weight_value(&$form) {
   if (isset($form['#default_value'])) {
@@ -2928,8 +3006,7 @@ function weight_value(&$form) {
 }
 
 /**
- * Roll out a single radios element to a list of radios,
- * using the options array as index.
+ * Expands a radios element into individual radio elements.
  */
 function form_process_radios($element) {
   if (count($element['#options']) > 0) {
@@ -2950,7 +3027,9 @@ function form_process_radios($element) {
         // The key is sanitized in drupal_attributes() during output from the
         // theme function.
         '#return_value' => $key,
-        '#default_value' => isset($element['#default_value']) ? $element['#default_value'] : NULL,
+        // Use default or FALSE. A value of FALSE means that the radio button is
+        // not 'checked'.
+        '#default_value' => isset($element['#default_value']) ? $element['#default_value'] : FALSE,
         '#attributes' => $element['#attributes'],
         '#parents' => $element['#parents'],
         '#id' => drupal_html_id('edit-' . implode('-', $parents_for_id)),
@@ -2969,7 +3048,7 @@ function form_process_radios($element) {
  *   An associative array containing:
  *   - element: An associative array containing the properties of the element.
  *     Properties used: #title, #value, #return_value, #description, #required,
- *     #attributes.
+ *     #attributes, #checked.
  *
  * @ingroup themeable
  */
@@ -3008,15 +3087,19 @@ function theme_checkboxes($variables) {
   if (!empty($element['#attributes']['class'])) {
     $attributes['class'] = array_merge($attributes['class'], $element['#attributes']['class']);
   }
+  if (isset($element['#attributes']['title'])) {
+    $attributes['title'] = $element['#attributes']['title'];
+  }
   return '<div' . drupal_attributes($attributes) . '>' . (!empty($element['#children']) ? $element['#children'] : '') . '</div>';
 }
 
 /**
- * Add form_element theming to an element if title or description is set.
+ * Adds form element theming to an element if its title or description is set.
  *
  * This is used as a pre render function for checkboxes and radios.
  */
 function form_pre_render_conditional_form_element($element) {
+  $t = get_t();
   // Set the element's title attribute to show #title as a tooltip, if needed.
   if (isset($element['#title']) && $element['#title_display'] == 'attribute') {
     $element['#attributes']['title'] = $element['#title'];
@@ -3059,6 +3142,9 @@ function form_process_checkbox($element, $form_state) {
   return $element;
 }
 
+/**
+ * Processes a checkboxes form element.
+ */
 function form_process_checkboxes($element) {
   $value = is_array($element['#value']) ? $element['#value'] : array();
   $element['#tree'] = TRUE;
@@ -3120,6 +3206,7 @@ function form_process_actions($element, &$form_state) {
  *   container.
  * @param $form_state
  *   The $form_state array for the form this element belongs to.
+ *
  * @return
  *   The processed element.
  */
@@ -3230,11 +3317,12 @@ function theme_tableselect($variables) {
 }
 
 /**
- * Create the correct amount of checkbox or radio elements to populate the table.
+ * Creates checkbox or radio elements to populate a tableselect table.
  *
  * @param $element
  *   An associative array containing the properties and children of the
  *   tableselect element.
+ *
  * @return
  *   The processed element.
  */
@@ -3244,7 +3332,7 @@ function form_process_tableselect($element) {
     $value = is_array($element['#value']) ? $element['#value'] : array();
   }
   else {
-    // Advanced selection behaviour make no sense for radios.
+    // Advanced selection behavior makes no sense for radios.
     $element['#js_select'] = FALSE;
   }
 
@@ -3328,6 +3416,9 @@ function form_process_tableselect($element) {
  *       different character, 'replace_pattern' needs to be set accordingly.
  *     - error: (optional) A custom form error message string to show, if the
  *       machine name contains disallowed characters.
+ *     - standalone: (optional) Whether the live preview should stay in its own
+ *       form element rather than in the suffix of the source element. Defaults
+ *       to FALSE.
  *   - #maxlength: (optional) Should be set to the maximum allowed length of the
  *     machine name. Defaults to 64.
  *   - #disabled: (optional) Should be set to TRUE in case an existing machine
@@ -3339,6 +3430,9 @@ function form_process_machine_name($element, &$form_state) {
     '#title' => t('Machine-readable name'),
     '#description' => t('A unique machine-readable name. Can only contain lowercase letters, numbers, and underscores.'),
     '#machine_name' => array(),
+    '#field_prefix' => '',
+    '#field_suffix' => '',
+    '#suffix' => '',
   );
   // A form element that only wants to set one #machine_name property (usually
   // 'source' only) would leave all other properties undefined, if the defaults
@@ -3349,6 +3443,9 @@ function form_process_machine_name($element, &$form_state) {
     'label' => t('Machine name'),
     'replace_pattern' => '[^a-z0-9_]+',
     'replace' => '_',
+    'standalone' => FALSE,
+    'field_prefix' => $element['#field_prefix'],
+    'field_suffix' => $element['#field_suffix'],
   );
 
   // By default, machine names are restricted to Latin alphanumeric characters.
@@ -3364,7 +3461,7 @@ function form_process_machine_name($element, &$form_state) {
   }
 
   // Retrieve the form element containing the human-readable name from the
-  // complete form in $form_state. By reference, because we need to append
+  // complete form in $form_state. By reference, because we may need to append
   // a #field_suffix that will hold the live preview.
   $key_exists = NULL;
   $source = drupal_array_get_nested_value($form_state['complete form'], $element['#machine_name']['source'], $key_exists);
@@ -3372,16 +3469,21 @@ function form_process_machine_name($element, &$form_state) {
     return $element;
   }
 
-  // Append a field suffix to the source form element, which will contain
-  // the live preview of the machine name.
   $suffix_id = $source['#id'] . '-machine-name-suffix';
-  $source += array('#field_suffix' => '');
-  $source['#field_suffix'] .= ' <small id="' . $suffix_id . '">&nbsp;</small>';
-
-  $parents = array_merge($element['#machine_name']['source'], array('#field_suffix'));
-  drupal_array_set_nested_value($form_state['complete form'], $parents, $source['#field_suffix']);
-
   $element['#machine_name']['suffix'] = '#' . $suffix_id;
+
+  if ($element['#machine_name']['standalone']) {
+    $element['#suffix'] .= ' <small id="' . $suffix_id . '">&nbsp;</small>';
+  }
+  else {
+    // Append a field suffix to the source form element, which will contain
+    // the live preview of the machine name.
+    $source += array('#field_suffix' => '');
+    $source['#field_suffix'] .= ' <small id="' . $suffix_id . '">&nbsp;</small>';
+
+    $parents = array_merge($element['#machine_name']['source'], array('#field_suffix'));
+    drupal_array_set_nested_value($form_state['complete form'], $parents, $source['#field_suffix']);
+  }
 
   $js_settings = array(
     'type' => 'setting',
@@ -3398,7 +3500,7 @@ function form_process_machine_name($element, &$form_state) {
 }
 
 /**
- * Form element validation handler for #type 'machine_name'.
+ * Form element validation handler for machine_name elements.
  *
  * Note that #maxlength is validated by _form_validate() already.
  */
@@ -3436,8 +3538,7 @@ function form_validate_machine_name(&$element, &$form_state) {
 }
 
 /**
- * Adds fieldsets to the specified group or adds group members to this
- * fieldset.
+ * Arranges fieldsets into groups.
  *
  * @param $element
  *   An associative array containing the properties and children of the
@@ -3445,6 +3546,7 @@ function form_validate_machine_name(&$element, &$form_state) {
  *   child elements are taken over into $form_state.
  * @param $form_state
  *   The $form_state array for the form this fieldset belongs to.
+ *
  * @return
  *   The processed element.
  */
@@ -3548,6 +3650,7 @@ function form_pre_render_fieldset($element) {
  *   fieldset.
  * @param $form_state
  *   The $form_state array for the form this vertical tab widget belongs to.
+ *
  * @return
  *   The processed element.
  */
@@ -3582,8 +3685,8 @@ function form_process_vertical_tabs($element, &$form_state) {
  *
  * @param $variables
  *   An associative array containing:
- *   - element: An associative array containing the properties and children of the
- *     fieldset. Properties used: #children.
+ *   - element: An associative array containing the properties and children of
+ *     the fieldset. Properties used: #children.
  *
  * @ingroup themeable
  */
@@ -3792,7 +3895,7 @@ function theme_password($variables) {
 }
 
 /**
- * Expand weight elements into selects.
+ * Expands a weight element into a select element.
  */
 function form_process_weight($element) {
   $element['#is_weight'] = TRUE;
@@ -3976,7 +4079,8 @@ function theme_form_required_marker($variables) {
  *
  * Form element labels include the #title and a #required marker. The label is
  * associated with the element itself by the element #id. Labels may appear
- * before or after elements, depending on theme_form_element() and #title_display.
+ * before or after elements, depending on theme_form_element() and
+ * #title_display.
  *
  * This function will not be called for elements with no labels, depending on
  * #title_display. For elements that have an empty #title and are not required,
@@ -4055,7 +4159,7 @@ function _form_set_class(&$element, $class = array()) {
 }
 
 /**
- * Helper form element validator: integer.
+ * Form element validation handler for integer elements.
  */
 function element_validate_integer($element, &$form_state) {
   $value = $element['#value'];
@@ -4065,7 +4169,7 @@ function element_validate_integer($element, &$form_state) {
 }
 
 /**
- * Helper form element validator: integer > 0.
+ * Form element validation handler for integer elements that must be positive.
  */
 function element_validate_integer_positive($element, &$form_state) {
   $value = $element['#value'];
@@ -4075,7 +4179,7 @@ function element_validate_integer_positive($element, &$form_state) {
 }
 
 /**
- * Helper form element validator: number.
+ * Form element validation handler for number elements.
  */
 function element_validate_number($element, &$form_state) {
   $value = $element['#value'];
@@ -4091,7 +4195,7 @@ function element_validate_number($element, &$form_state) {
 /**
  * @defgroup batch Batch operations
  * @{
- * Create and process batch operations.
+ * Creates and processes batch operations.
  *
  * Functions allowing forms processing to be spread out over several page
  * requests, thus ensuring that the processing does not get interrupted
@@ -4200,13 +4304,24 @@ function element_validate_number($element, &$form_state) {
  */
 
 /**
- * Opens a new batch.
+ * Adds a new batch.
  *
- * @param $batch
- *   An array defining the batch. The following keys can be used -- only
- *   'operations' is required, and batch_init() provides default values for
- *   the messages.
- *   - 'operations': Array of function calls to be performed.
+ * Batch operations are added as new batch sets. Batch sets are used to spread
+ * processing (primarily, but not exclusively, forms processing) over several
+ * page requests. This helps to ensure that the processing is not interrupted
+ * due to PHP timeouts, while users are still able to receive feedback on the
+ * progress of the ongoing operations. Combining related operations into
+ * distinct batch sets provides clean code independence for each batch set,
+ * ensuring that two or more batches, submitted independently, can be processed
+ * without mutual interference. Each batch set may specify its own set of
+ * operations and results, produce its own UI messages, and trigger its own
+ * 'finished' callback. Batch sets are processed sequentially, with the progress
+ * bar starting afresh for each new set.
+ *
+ * @param $batch_definition
+ *   An associative array defining the batch, with the following elements (all
+ *   are optional except as noted):
+ *   - operations: (required) Array of function calls to be performed.
  *     Example:
  *     @code
  *     array(
@@ -4214,35 +4329,26 @@ function element_validate_number($element, &$form_state) {
  *       array('my_function_2', array($arg2_1, $arg2_2)),
  *     )
  *     @endcode
- *   - 'title': Title for the progress page. Only safe strings should be passed.
- *     Defaults to t('Processing').
- *   - 'init_message': Message displayed while the processing is initialized.
+ *   - title: A safe, translated string to use as the title for the progress
+ *     page. Defaults to t('Processing').
+ *   - init_message: Message displayed while the processing is initialized.
  *     Defaults to t('Initializing.').
- *   - 'progress_message': Message displayed while processing the batch.
- *     Available placeholders are @current, @remaining, @total, @percentage,
- *     @estimate and @elapsed. Defaults to t('Completed @current of @total.').
- *   - 'error_message': Message displayed if an error occurred while processing
+ *   - progress_message: Message displayed while processing the batch. Available
+ *     placeholders are @current, @remaining, @total, @percentage, @estimate and
+ *     @elapsed. Defaults to t('Completed @current of @total.').
+ *   - error_message: Message displayed if an error occurred while processing
  *     the batch. Defaults to t('An error has occurred.').
- *   - 'finished': Name of a function to be executed after the batch has
- *     completed. This should be used to perform any result massaging that
- *     may be needed, and possibly save data in $_SESSION for display after
- *     final page redirection.
- *   - 'file': Path to the file containing the definitions of the
- *     'operations' and 'finished' functions, for instance if they don't
- *     reside in the main .module file. The path should be relative to
- *     base_path(), and thus should be built using drupal_get_path().
- *   - 'css': Array of paths to CSS files to be used on the progress page.
- *   - 'url_options': options passed to url() when constructing redirect
- *     URLs for the batch.
- *
- * Operations are added as new batch sets. Batch sets are used to ensure
- * clean code independence, ensuring that several batches submitted by
- * different parts of the code (core / contrib modules) can be processed
- * correctly while not interfering or having to cope with each other. Each
- * batch set gets to specify his own UI messages, operates on its own set
- * of operations and results, and triggers its own 'finished' callback.
- * Batch sets are processed sequentially, with the progress bar starting
- * fresh for every new set.
+ *   - finished: Name of a function to be executed after the batch has
+ *     completed. This should be used to perform any result massaging that may
+ *     be needed, and possibly save data in $_SESSION for display after final
+ *     page redirection.
+ *   - file: Path to the file containing the definitions of the 'operations' and
+ *     'finished' functions, for instance if they don't reside in the main
+ *     .module file. The path should be relative to base_path(), and thus should
+ *     be built using drupal_get_path().
+ *   - css: Array of paths to CSS files to be used on the progress page.
+ *   - url_options: options passed to url() when constructing redirect URLs for
+ *     the batch.
  */
 function batch_set($batch_definition) {
   if ($batch_definition) {
@@ -4422,6 +4528,7 @@ function &batch_get() {
  *   The batch array.
  * @param $set_id
  *   The id of the set to process.
+ *
  * @return
  *   The name and class of the queue are added by reference to the batch set.
  */
@@ -4451,6 +4558,7 @@ function _batch_populate_queue(&$batch, $set_id) {
  *
  * @param $batch_set
  *   The batch set.
+ *
  * @return
  *   The queue object.
  */
