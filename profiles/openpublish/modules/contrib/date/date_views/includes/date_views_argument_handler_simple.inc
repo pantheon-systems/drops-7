@@ -29,6 +29,9 @@ class date_views_argument_handler_simple extends views_handler_argument_date {
       $this->date_handler->local_timezone = date_get_timezone($field['settings']['tz_handling']);
     }
     $this->date_handler->granularity = $this->options['granularity'];
+    // This value needs to be initialized so it exists even if the query doesn't run.
+    $this->date_handler->placeholders = array();
+
     $this->format = $this->date_handler->views_formats($this->date_handler->granularity, 'display');
     $this->sql_format = $this->date_handler->views_formats($this->date_handler->granularity, 'sql');
     // $this->arg_format is the format the parent date handler will use to create a default argument.
@@ -54,17 +57,23 @@ class date_views_argument_handler_simple extends views_handler_argument_date {
    * formatted appropriately for this argument.
    */
   function get_default_argument($raw = FALSE) {
+    $is_default = FALSE;
+
     if (!$raw && $this->options['default_argument_type'] == 'date') {
       $granularity = $this->options['granularity'];
       if ($granularity == 'week') {
         $now = date_now();
         $week = date_week(date_format($now, 'Y-m-d'));
-        return date_format($now, 'Y') . '-W' . $week;
+        $value = date_format($now, 'Y') . '-W' . $week;
       }
       else {
-        return date($this->arg_format, REQUEST_TIME);
+        $value = date($this->arg_format, REQUEST_TIME);
       }
+      drupal_alter('date_default_argument', $this, $value);
+
+      return $value;
     }
+
     // Let the parent argument handle options like node created date.
     return parent::get_default_argument($raw);
   }
@@ -270,6 +279,9 @@ class date_views_argument_handler_simple extends views_handler_argument_date {
     // If requested, add the delta field to the view so we can later find the value that matched our query.
     if (!empty($this->options['add_delta']) && (substr($this->real_field, -6) == '_value' || substr($this->real_field, -7) == '_value2')) {
       $this->query->add_field($this->table_alias, 'delta');
+      $real_field_name = str_replace(array('_value', '_value2'), '', $this->real_field);
+      $this->query->add_field($this->table_alias, 'entity_id', 'date_id_' . $real_field_name);
+      $this->query->add_field($this->table_alias, 'delta', 'date_delta_' . $real_field_name);
     }
 
     $format = $this->date_handler->granularity == 'week' ? DATE_FORMAT_DATETIME : $this->sql_format;
@@ -324,7 +336,7 @@ class date_views_argument_handler_simple extends views_handler_argument_date {
     // See if we're outside the allowed date range for our argument.
     if (date_format($this->min_date, 'Y') < $this->limit[0] || date_format($this->max_date, 'Y') > $this->limit[1]) {
       $this->forbid = TRUE;
-      $this->query->add_where_expression($group, "0=1", array());
+      $this->view->build_info['fail'] = TRUE;
       return TRUE;
     }
     return FALSE;

@@ -9,12 +9,38 @@ include_once('openpublish_media.features.inc');
 
 /**
  * Implements hook_form_FORM_ID_alter()
- * 
+ *
  * Disable WYSIWYG on this field
  */
 function openpublish_media_form_openpublish_video_node_form_alter(&$form, &$form_state, $form_id) {
   if (module_exists('wysiwyg') && isset($form['field_op_video_embed_code'])) {
-    $lang = $form['field_op_video_embed_code']['#language'];    
+    $lang = $form['field_op_video_embed_code']['#language'];
     $form['field_op_video_embed_code'][$lang][0]['#wysiwyg'] = FALSE;
   }
+}
+
+/**
+ *  Implementation of hook_preprocess_entity
+ *  Add the caption as the title for each image
+ */
+function openpublish_media_preprocess_field(&$vars) {
+  if ($vars['element']['#field_name'] == 'field_op_gallery_image') {
+    foreach ($vars['element']['#items'] as $index => $item) {
+      $entity = &$vars['items'][$index]['entity']['field_collection_item'][$item['value']];
+
+      $title = empty($entity['field_op_gallery_image_caption'][0]['#markup']) ?
+        '' :
+        $entity['field_op_gallery_image_caption'][0]['#markup'];
+
+      $entity['field_op_gallery_image_image'][0]['#item']['title'] = $title;
+    }
+  }
+}
+
+function openpublish_media_preprocess_html(&$vars) {
+  $path = libraries_get_path('photoswipe');
+  drupal_add_js($path . '/lib/klass.min.js', array('group' => -101, 'weight' => 0));
+  drupal_add_js($path . '/code.photoswipe-3.0.5.js');
+  drupal_add_js(drupal_get_path('module', 'openpublish_media') . '/js/photo-gallery.js');
+  drupal_add_css($path . '/photoswipe.css');
 }

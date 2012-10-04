@@ -73,6 +73,9 @@ function feeds_cron_job_scheduler_info() {
   $info['feeds_importer_expire'] = array(
     'queue name' => 'feeds_importer_expire',
   );
+  $info['feeds_push_unsubscribe'] = array(
+    'queue name' => 'feeds_push_unsubscribe',
+  );
   return $info;
 }
 
@@ -91,6 +94,10 @@ function feeds_cron_queue_info() {
   );
   $queues['feeds_importer_expire'] = array(
     'worker callback' => 'feeds_importer_expire',
+    'time' => 15,
+  );
+  $queues['feeds_push_unsubscribe'] = array(
+    'worker callback' => 'feeds_push_unsubscribe',
     'time' => 15,
   );
   return $queues;
@@ -145,6 +152,15 @@ function feeds_importer_expire($job) {
     $importer->log('expire', $e->getMessage(), array(), WATCHDOG_ERROR);
   }
   $importer->scheduleExpire();
+}
+
+/**
+ * Scheduler callback for unsubscribing from PuSH hubs.
+ */
+function feeds_push_unsubscribe($job) {
+  $source = feeds_source($job['type'], $job['id']);
+  $fetcher = feeds_plugin('FeedsHTTPFetcher', $source->importer->id);
+  $fetcher->unsubscribe($source);
 }
 
 /**
@@ -395,6 +411,15 @@ function feeds_page_access() {
  * Implements hook_exit().
  */
 function feeds_exit() {
+  // Process any pending PuSH subscriptions.
+  $jobs = feeds_get_subscription_jobs();
+  foreach ($jobs as $job) {
+    if (!isset($job['fetcher']) || !isset($job['source'])) {
+      continue;
+     }
+    $job['fetcher']->subscribe($job['source']);
+  }
+
   if (drupal_static('feeds_log_error', FALSE)) {
     watchdog('feeds', 'Feeds reported errors, visit the Feeds log for details.', array(), WATCHDOG_ERROR, 'admin/reports/dblog/feeds');
   }
@@ -547,7 +572,7 @@ function feeds_node_presave($node) {
 function feeds_node_insert($node) {
   // Source attached to node.
   feeds_node_update($node);
-  if ($importer_id = feeds_get_importer_id($node->type)) {
+  if (isset($node->feeds) && $importer_id = feeds_get_importer_id($node->type)) {
     $source = feeds_source($importer_id, $node->nid);
     // Start import if requested.
     if (feeds_importer($importer_id)->config['import_on_create'] && !isset($node->feeds['suppress_import'])) {
@@ -564,7 +589,7 @@ function feeds_node_insert($node) {
  */
 function feeds_node_update($node) {
   // Source attached to node.
-  if ($importer_id = feeds_get_importer_id($node->type)) {
+  if (isset($node->feeds) && $importer_id = feeds_get_importer_id($node->type)) {
     $source = feeds_source($importer_id, $node->nid);
     $source->addConfig($node->feeds);
     $source->save();
@@ -871,7 +896,7 @@ function feeds_plugin($plugin, $id) {
   }
   $args = array('%plugin' => $plugin, '@id' => $id);
   if (user_access('administer feeds')) {
-    $args['@link'] = url('admin/structure/feeds/edit/' . $id);
+    $args['@link'] = url('admin/structure/feeds/' . $id);
     drupal_set_message(t('Missing Feeds plugin %plugin. See <a href="@link">@id</a>. Check whether all required libraries and modules are installed properly.', $args), 'warning');
   }
   else {
@@ -902,7 +927,14 @@ function feeds_plugin($plugin, $id) {
  */
 function feeds_include_library($file, $library) {
   static $included = array();
+  static $ignore_deprecated = array('simplepie');
   if (!isset($included[$file])) {
+    // Disable deprecated warning for libraries known for throwing them
+    if (in_array($library, $ignore_deprecated)) {
+       $level = error_reporting();
+       // We can safely use E_DEPRECATED since Drupal 7 requires PHP 5.3+
+       error_reporting($level & ~E_DEPRECATED);
+    }
     // Try first whether libraries module is present and load the file from
     // there. If this fails, require the library from the local path.
     if (module_exists('libraries') && file_exists(libraries_get_path($library) . "/$file")) {
@@ -912,6 +944,10 @@ function feeds_include_library($file, $library) {
       // @todo: Throws "Deprecated function: Assigning the return value of new
       // by reference is deprecated."
       require DRUPAL_ROOT . '/' . drupal_get_path('module', 'feeds') . "/libraries/$file";
+    }
+    // Restore error reporting level
+    if (isset($level)) {
+      error_reporting($level);
     }
   }
   $included[$file] = TRUE;
@@ -943,6 +979,8 @@ function feeds_library_exists($file, $library) {
  * - None of that 'multiple parameters by ref' crazyness.
  * - Don't use module_implements() to allow hot including on behalf
  *   implementations (see mappers/).
+ *
+ * @todo This needs to be removed and drupal_alter() used. This is crazy dumb.
  */
 function feeds_alter($type, &$data) {
   $args = array(&$data);
@@ -951,10 +989,10 @@ function feeds_alter($type, &$data) {
   array_shift($additional_args);
   $args = array_merge($args, $additional_args);
 
+  $hook = $type . '_alter';
   foreach (module_list() as $module) {
-    $function = "{$module}_{$type}_alter";
-    if (function_exists($function)) {
-      call_user_func_array($function, $args);
+    if (module_hook($module, $hook)) {
+      call_user_func_array($module . '_' . $hook, $args);
     }
   }
 }
@@ -992,4 +1030,37 @@ function feeds_valid_url($url, $absolute = FALSE) {
   else {
     return (bool) preg_match("/^(?:[\w#!:\.\?\+=&@$'~*,;\/\(\)\[\]\-]|%[0-9a-f]{2})+$/i", $url);
   }
+}
+
+/**
+ * Registers a feed subscription job for execution on feeds_exit().
+ *
+ * @param array $job
+ *   Information about a new job to queue; or if set to NULL (default), leaves
+ *   the current queued jobs unchanged.
+ *
+ * @return
+ *   An array of subscribe jobs to process.
+ *
+ * @see feeds_exit()
+ * @see feeds_get_subscription_jobs()
+ */
+function feeds_set_subscription_job(array $job = NULL) {
+  $jobs = &drupal_static(__FUNCTION__, array());
+  if (isset($job)) {
+    $jobs[] = $job;
+  }
+  return $jobs;
+}
+
+/**
+ * Returns the list of queued jobs to be run.
+ *
+ * @return
+ *   An array of subscribe jobs to process.
+ *
+ * @see feeds_set_subscription_job()
+ */
+function feeds_get_subscription_jobs() {
+  return feeds_set_subscription_job();
 }

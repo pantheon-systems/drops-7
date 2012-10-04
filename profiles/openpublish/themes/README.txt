@@ -1,1 +1,0 @@
-Placeholder README.txt to being omega subtheme integration for OpenPublish.

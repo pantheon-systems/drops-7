@@ -5,3 +5,10 @@ base theme = test_basetheme
 hidden = TRUE
 
 settings[subtheme_override] = subtheme value
+
+
+; Information added by drush on 2012-10-04
+version = "master-dev"
+project = "drupal"
+datestamp = "1349370005"
+

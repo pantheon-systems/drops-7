@@ -1,20 +1,25 @@
-name = "OpenPublish Listings"
-description = "A basic set of views to list recent / curated content."
-core = "7.x"
-package = "Features"
-php = "5.2.4"
-dependencies[] = "boxes"
-dependencies[] = "jcarousel"
-dependencies[] = "views"
-features[box][] = "op_recent_videos"
-features[box][] = "op_top_stories"
-features[ctools][] = "boxes:box:1"
-features[ctools][] = "views:views_default:3.0"
-features[views_view][] = "op_recent_content"
+name = OpenPublish Listings
+description = A basic set of views to list recent / curated content.
+core = 7.x
+package = Features
+php = 5.2.4
+dependencies[] = boxes
+dependencies[] = image
+dependencies[] = views
+dependencies[] = views_boxes
+features[box][] = op_recent_videos
+features[box][] = op_top_stories
+features[ctools][] = boxes:box:1
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:1
+features[image][] = featured_story
+features[image][] = image_gallery_list_thumbnail
+features[image][] = video_thumbnail
+features[views_view][] = op_recent_content
 
-; Information added by drupal.org packaging script on 2012-03-13
-version = "7.x-1.0-alpha7"
+; Information added by drupal.org packaging script on 2012-10-04
+version = "7.x-1.0-beta5"
 core = "7.x"
 project = "openpublish"
-datestamp = "1331655949"
+datestamp = "1349368017"
 

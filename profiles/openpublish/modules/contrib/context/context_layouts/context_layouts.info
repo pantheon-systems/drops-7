@@ -4,9 +4,9 @@ dependencies[] = context
 package = Context
 core = 7.x
 
-; Information added by drupal.org packaging script on 2011-09-09
-version = "7.x-3.0-beta2"
-core = "7.x"
+
+; Information added by drush on 2012-10-04
+version = ""
 project = "context"
-datestamp = "1315543301"
+datestamp = "1349370015"
 

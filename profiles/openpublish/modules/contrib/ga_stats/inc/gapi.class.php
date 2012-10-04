@@ -29,8 +29,8 @@ class gapi
   const http_interface = 'auto'; //'auto': autodetect, 'curl' or 'fopen'
   
   const client_login_url = 'https://www.google.com/accounts/ClientLogin';
-  const account_data_url = 'https://www.google.com/analytics/feeds/accounts/default';
-  const report_data_url = 'https://www.google.com/analytics/feeds/data';
+  const account_data_url = 'https://www.googleapis.com/analytics/v2.4/management/accounts/~all/webproperties/~all/profiles';
+  const report_data_url = 'https://www.googleapis.com/analytics/v2.4/data';
   const interface_name = 'GAPI-1.3';
   const dev_mode = false;
   
@@ -45,13 +45,15 @@ class gapi
    * Constructor function for all new gapi instances
    * 
    * Set up authenticate with Google and get auth_token
-   *
+   * 
+   * Updated by arpieb to allow explicit type to be optionally passed in 
+   * 
    * @param String $email
    * @param String $password
    * @param String $token
    * @return gapi
    */
-  public function __construct($email, $password, $token=null)
+  public function __construct($email, $password, $token=null, $type = NULL)
   {
     if($token !== null)
     {
@@ -59,7 +61,7 @@ class gapi
     }
     else 
     {
-      $this->authenticateUser($email,$password);
+      $this->authenticateUser($email,$password, $type);
     }
   }
   
@@ -398,14 +400,17 @@ class gapi
    * @param String $email
    * @param String $password
    */
-  protected function authenticateUser($email, $password)
+  protected function authenticateUser($email, $password, $type = NULL)
   {
-	// Updated by jec006 to handle apps accounts also
-	if( stristr($email, 'gmail.com') || stristr($email, 'mail.google.com') ) {
-		$type = 'GOOGLE';
-	} else {
-		$type = 'HOSTED';
-	}
+    // Updated by arpieb to allow explicit type to be optionally passed in 
+    if (!$type) {
+      // Updated by jec006 to handle apps accounts also
+      if( stristr($email, 'gmail.com') || stristr($email, 'mail.google.com') ) {
+        $type = 'GOOGLE';
+      } else {
+        $type = 'HOSTED';
+      }
+    }
 	
     $post_variables = array(
       'accountType' => $type,

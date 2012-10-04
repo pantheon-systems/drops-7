@@ -6,6 +6,53 @@
  */
 
 /**
+ * Alter the default value for a date argument.
+ *
+ * @param object $argument
+ *   The argument object.
+ * @param string $value
+ *   The default value created by the argument handler.
+ */
+function hook_date_default_argument_alter(&$argument, &$value) {
+  $style_options = $style_options = $argument->view->display_handler->get_option('style_options');
+  if (!empty($style_options['track_date'])) {
+    $default_date = date_now();
+    $value = $default_date->format($argument->arg_format);
+  }
+}
+
+/**
+ * Alter the entity before formatting it.
+ *
+ * @param object $entity
+ *   The entity object being viewed.
+ * @param array $variables
+ *   The variables passed to the formatter.
+ *   - entity: The $entity object.
+ *   - entity_type: The $entity_type.
+ *   - field: The $field array.
+ *   - instance: The $instance array.
+ *   - langcode: The $langcode.
+ *   - items: The $items array.
+ *   - display: The $display array.
+ *   - dates: The processed dates array, empty at this point.
+ *   - attributes: The attributes array, empty at this point.
+ *   - rdf_mapping: The RDF mapping array.
+ *   - add_rdf: If module_exists('rdf').
+ */
+function hook_date_formatter_pre_view_alter(&$entity, &$variables) {
+  if (!empty($entity->view)) {
+    $field = $variables['field'];
+    $date_id = 'date_id_' . $field['field_name'];
+    $date_delta = 'date_delta_' . $field['field_name'];
+    $date_item = $entity->view->result[$entity->view->row_index];
+    if (!empty($date_item->$date_id)) {
+      $entity->date_id = 'date.' . $date_item->$date_id . '.' . $field['field_name'] . '.' . $date_item->$date_delta . '.0';
+    }
+  }
+}
+
+/**
  * Alter the dates array created by date_formatter_process().
  *
  * @param array $dates

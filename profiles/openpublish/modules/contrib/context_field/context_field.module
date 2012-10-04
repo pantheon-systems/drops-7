@@ -27,22 +27,6 @@ function context_field_ctools_plugin_api() {
  * Implementation of hook_menu()
  */
 function context_field_menu() {
-  $items['node/%node/context_field'] = array(    
-    'title' => 'Configure Layout',
-    'access callback' => 'context_field_access_loader',
-    'access arguments' => array(1),
-    'page callback' => 'context_field_node_page_view',
-    'page arguments' => array(1),
-    'type' => MENU_LOCAL_ACTION,
-  );
-  $items['taxonomy/term/%taxonomy_term/context_field'] = array(    
-    'title' => 'Configure Layout',
-    'access callback' => 'context_field_access_loader',
-    'access arguments' => array(2),
-    'page callback' => 'context_field_term_page_view',
-    'page arguments' => array(2),
-    'type' => MENU_LOCAL_ACTION,
-  );
   $items['context_field/autocomplete/node'] = array(
     'title' => 'Node Autocomplete',
     'access arguments' => TRUE,
@@ -57,48 +41,6 @@ function context_field_menu() {
   );
   return $items;
 }
-
-/**
- * Custom access callback used to restrict Context Field tab to content types with the field.
- * This needs to be not based on a fixed field name.
- */
-function context_field_access_loader($entity) {
-  if (user_access('use context field editor') == FALSE) {
-    return FALSE;
-  }
-  else {
-    return TRUE;
-  }
-}
-
-/**
- * Custom callback for the Context Field tab
- * Essentially a slightly altered node view with a modified version of the Context UI editor
- */
-function context_field_node_page_view($node) {
-  // Only append this when no additional params are set so as not
-  // to break any existing behavior (ie when context_block or boxes_delta are set)
-  if (sizeof($_GET) === 1) {
-    // let context_ui know that we are doing an edit
-    context_set('context_ui', 'context_ui_editor_present', TRUE);
-  }
-  return node_page_view($node);
-}
-/**
- * Custom callback for the Context Field tab
- * Essentially a slightly altered term view with a modified version of the Context UI editor
- */
-function context_field_term_page_view($term) {
-  // Only append this when no additional params are set so as not
-  // to break any existing behavior (ie when context_block or boxes_delta are set)
-  if (sizeof($_GET) === 1) {
-    // let context_ui know that we are doing an edit
-    context_set('context_ui', 'context_ui_editor_present', TRUE);
-  }
-  global $language;
-  return taxonomy_term_view($term, 'full', $language);
-}
-
 
 /**
  * Implementation of hook_context_plugins()
@@ -128,6 +70,28 @@ function context_field_context_registry() {
       ),
     ),
   );
+}
+
+/**
+ * Implementation of hook_help()
+ */
+function context_field_help($path, $arg) {
+  switch($path) {
+    case 'admin/help#context_field':
+      $output = '';
+      $output .= '<h3>' . t("About").'</h3>';
+      $output .= '<p>' . t("Context field provides users to select a context based on the value of a field for a given node type. This unlocks the power of context and allows content creators the ability to select which context is used for a given piece of content.  This allows non-technical site users the ability to accomplish anything normally accomplished by a context by selecting the context from a field.", array()) . '</p>';
+
+      $output .= '<h3>' . t("Usage") . '</h3>';
+      $output .= '<p>' . t("Go to <a href=@build>`admin/build/context/add`</a> and create a new context.  The name of the context will be what the user sees as the field value, so choose this name carefully.  To make a context available as a context field, select 'Context Field' from the list of conditions and check the first checkbox.  The second checkbox makes the context available as a default field value.  Finally, the category text field allows contexts to be separated into categories and will allow different groups of contexts to work in different fields.", array('@build' => '../../admin/structure/context/add')) . '<p>';
+      $output .= '<p>' . t("After creating the desired contexts, create the context field for the desired content type and select `Context` as the field type,  select an appropriate widget and save the field. Enter the relevant category and select the default context.") . '</p>';
+      $output .= '<h4>' . t("Basic example") . '</h4>';
+      $output .= '<p>' . t(" To borrow from the example used in <a href=@context>context</a>, with context field enabled, adding nodes to the pressroom would be as simple as marking the context field `Newsroom` and hitting save.  This would fire the newsroom context instead of, for example, the blog context.  This would eliminate the need to have designated node types for newsroom and blogs simply to fire a given context." , array('@context' => '/admin/help/context')) . '</p>';
+//      $output .= '<p>' . t("",array()).'</p>';
+      $output .= '<h3>' . t("Resources").'</h3>';
+      $output .= '<p>' . t("Besides the documentation on the context field <a href='@project_page'>project page</a>, there's a blog post by one of the module authors that provides a more <a href='@agile_approach'> in-depth example.</a>", array('@project_page' => 'http://drupal.org/project/context_field' , '@agile_approach' => 'http://www.agileapproach.com/blog-entry/context-field')).'</p>';
+      return $output;
+  }
 }
 
 /**
@@ -180,7 +144,7 @@ function context_field_field_instance_settings_form($field, $instance) {
     '#type' => 'checkboxes',
     '#title' => 'Allowed Block Groups',
     '#options' => $options,
-    '#description' => 'Use this field to limit the kinds of blocks that can be add to the context for the ui',
+    '#description' => t('Use this field to limit the kinds of blocks that can be added to the context through the UI'),
     '#default_value' => $settings['allowed_blocks'],
   );
 
@@ -200,8 +164,8 @@ function context_field_field_instance_settings_form($field, $instance) {
     '#type' => 'radios',
     '#title' => 'Default Context Use',
     '#options' => array(
-      0 => "Clone Default context on Entity Creation",
-      1 => "Always use Default Context",
+      0 => t("Clone Default context on Entity Creation"),
+      1 => t("Always use Default Context"),
     ),
     '#default_value' => $settings['use_default'],
   );
@@ -312,6 +276,7 @@ function context_field_field_widget_settings_form($field, $instance) {
         '#type' => 'textfield',
         '#title' => 'Category',
         '#default_value' => $settings['form_element']['category'],
+        '#description' => t('The subset of context fields you\'d like to utilize for this instance of context field. For example, a blog category for contexts that belong to a blog, or profile contexts for a profile page.')
       );
          
     break;
@@ -382,9 +347,11 @@ function context_field_field_widget_form(&$form, &$form_state, $field, $instance
         '#type' => 'textfield',
         '#autocomplete_path' => "context_field/autocomplete/context/$cat",
         '#default_value' => $default_value,
+        '#description' => $instance['description'],
       );
       return $field_form;
     break;
+    
     case 'context_field_select' :
       $contexts = context_load();
       $context_options[''] = "No Context Selected";
@@ -400,16 +367,8 @@ function context_field_field_widget_form(&$form, &$form_state, $field, $instance
         '#title' => $instance['label'],
         '#type' => 'select',
         '#options' => $context_options,
-       '#autocomplete_path' => "context_field/autocomplete/context/tesme",
-       // '#ajax' => array(
-       //   'callback' => 'context_field_select_callback',
-       //   'wrapper' => 'context_field_wrapper',
-       //   'method' => 'replace',
-       //   'effect' => 'fade',
-       // ),
-        '#default_value' => isset($items[$delta]['context']) ? $items[$delta]['context'] : '',
-        //'#prefix' => "<div id = 'context_field_wrapper'>",
-        //'#suffix' => "</div>",
+        '#default_value' => isset($items[$delta]['context']) ? $items[$delta]['context'] : $instance['settings']['default_context'],
+        '#description' => $instance['description'],
       );
       // if someone want to create a new field turn the box into a textfield
       /*
@@ -438,6 +397,7 @@ function context_field_field_widget_form(&$form, &$form_state, $field, $instance
       */
       return $field_form;
     break;
+    
     case 'context_field':
     case 'context_field_default':
       if($instance['widget']['settings']['form_element']['user_toggle']) {
@@ -492,24 +452,25 @@ function context_field_field_insert($entity_type, $entity, $field, $instance, $l
   $default_name = $instance['settings']['default_context'];
   switch ($instance['widget']['type']) {
     case 'context_field_autocomplete' :
-      foreach($items as $id =>$value) {
+      foreach ($items as $id => $value) {
         $string = $items[$id]['context'];
         if (preg_match("/\[(.*)\]/", $string, $matches)) {
           $items[$id]['context'] = $matches[1];
         }
-        elseif(!empty($string) && $instance['widget']['settings']['form_element']['allow_create']) {
+        elseif (!empty($string) && $instance['widget']['settings']['form_element']['allow_create']) {
           $items[$id]['context'] = preg_replace("/[^a-z0-9_]+/", "_", strtolower($string));
-
-          $context = context_load($item[$id]['context']);
-          if (is_array($context)) {
+          $context = context_load($items[$id]['context']);
+          if (is_array($context) || empty($context)) {
             $cat = $instance['widget']['settings']['form_element']['category'];
             context_field_clone_default($default_name, $items[$id]['context'], $string, $cat );
           }
         }
       }
     break;
+    
     case 'context_field_default' :
     break;
+      
     case 'context_field' :
       //set the context name to a entity spacific name
       $custom_name = "context_field-{$entity_type}-{$id}";
@@ -517,7 +478,7 @@ function context_field_field_insert($entity_type, $entity, $field, $instance, $l
       $context = context_load($custom_name);
       // If user toggle is enabled then we need to create or delete the 
       // context bases on the setting of the context
-      if($instance['widget']['settings']['form_element']['user_toggle']) {
+      if ($instance['widget']['settings']['form_element']['user_toggle']) {
         if ($items[0]['context']) {
           //set the context to our custom name
           $items[0]['context'] = $custom_name;
@@ -560,7 +521,7 @@ function context_field_field_load($entity_type, &$entities, $field, $instances, 
       case 'context_field_default' :
         foreach ($items as $id => $item) {
            
-          if(!$instance['widget']['settings']['form_element']['user_toggle'] || (isset($items[$id][0]['context']) && $items[$id][0]['context'])) {
+          if (!$instance['widget']['settings']['form_element']['user_toggle'] || (isset($items[$id][0]['context']) && $items[$id][0]['context'])) {
             $context = $instance['settings']['default_context'];
             $items[$id] = array(0 => array('context' => $context));
           }
@@ -632,30 +593,4 @@ function context_field_field_formatter_view($entity_type, $entity, $field, $inst
   }
  
   return array();
-}
-
-function context_field_page_alter(&$page) {
-  $contexts = context_active_contexts();
-  if (context_isset('context_ui', 'context_ui_editor_present')) {
-    // set a value for which blocks should be allowed in the inline editor
-    //context_set("context_field","allowed_blocks", $instance['settings']['allowed_blocks']);
-
-    //build a inline editor 
-    //$context = context_load($field_value['context']);
-    $contexts = context_active_contexts();
-    $form = drupal_get_form('context_ui_editor', $contexts);
-    //$form = drupal_get_form('context_ui_editor', array($context));
-    $path = drupal_get_path("module", 'context_field');
-    drupal_add_library('system', 'ui.dialog');
-    drupal_add_js($path . '/context_field.js', array('type' => 'file', 'weight' => 50)); 
-    drupal_add_css($path . '/context_field.css');
-
-    $page['content']['context_ui_editor'] = array(
-      0 => array(
-        '#type' => 'markup',
-        '#markup' => '<div style="display:none;" id="context_field-context-ui">' . drupal_render($form) . '</div>',
-      ),
-    );
-  }
-
 }

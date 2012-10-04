@@ -1,12 +1,17 @@
 <?php
 
 /**
+ * @file
+ * Enhances the token API in core: adds a browseable UI, missing tokens, etc.
+ */
+
+/**
  * The maximum depth for token tree recursion.
  */
 define('TOKEN_MAX_DEPTH', 9);
 
 /**
- * Impelements hook_help().
+ * Implements hook_help().
  */
 function token_help($path, $arg) {
   if ($path == 'admin/help#token') {
@@ -67,6 +72,13 @@ function token_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'token.pages.inc',
   );*/
+
+  $items['token/tree'] = array(
+    'page callback' => 'token_page_output_tree',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+    'file' => 'token.pages.inc',
+  );
 
   // Devel token pages.
   if (module_exists('devel')) {
@@ -141,16 +153,37 @@ function token_type_load($token_type) {
  * Implements hook_theme().
  */
 function token_theme() {
-  return array(
-    'tree_table' => array(
-      'variables' => array('header' => array(), 'rows' => array(), 'attributes' => array(), 'empty' => '', 'caption' => ''),
-      'file' => 'token.pages.inc',
+  $info['tree_table'] = array(
+    'variables' => array(
+      'header' => array(),
+      'rows' => array(),
+      'attributes' => array(),
+      'empty' => '',
+      'caption' => '',
     ),
-    'token_tree' => array(
-      'variables' => array('token_types' => array(), 'global_types' => TRUE, 'click_insert' => TRUE, 'show_restricted' => FALSE, 'recursion_limit' => 3),
-      'file' => 'token.pages.inc',
-    ),
+    'file' => 'token.pages.inc',
   );
+  $info['token_tree'] = array(
+    'variables' => array(
+      'token_types' => array(),
+      'global_types' => TRUE,
+      'click_insert' => TRUE,
+      'show_restricted' => FALSE,
+      'recursion_limit' => 3,
+      'dialog' => FALSE,
+    ),
+    'file' => 'token.pages.inc',
+  );
+  $info['token_tree_link'] = array(
+    'variables' => array(
+      'text' => NULL,
+      'options' => array(),
+      'dialog' => TRUE,
+    ),
+    'file' => 'token.pages.inc',
+  );
+
+  return $info;
 }
 
 /**
@@ -167,6 +200,17 @@ function token_library() {
     ),
     'css' => array(
       drupal_get_path('module', 'token') . '/jquery.treeTable.css' => array(),
+    ),
+  );
+
+  $libraries['dialog'] = array(
+    'title' => 'Token dialog',
+    'version' => '1.0',
+    'js' => array(
+      drupal_get_path('module', 'token') . '/token.js' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'ui.dialog'),
     ),
   );
 
@@ -197,6 +241,43 @@ function token_form_alter(&$form, $form_state, $form_id) {
 }
 
 /**
+ * Implements hook_block_view_alter().
+ */
+function token_block_view_alter(&$data, $block) {
+  if (!empty($block->title) && $block->title != '<none>') {
+    // Perform unsanitized token replacement since _block_render_blocks() will
+    // call check_plain() on $block->title.
+    $block->title = token_replace($block->title, array(), array('sanitize' => FALSE));
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function token_form_block_add_block_form_alter(&$form, $form_state) {
+  token_form_block_admin_configure_alter($form, $form_state);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function token_form_block_admin_configure_alter(&$form, $form_state) {
+  $form['settings']['title']['#description'] .= ' ' . t('This field supports tokens.');
+  // @todo Figure out why this token validation does not seem to be working here.
+  $form['settings']['title']['#element_validate'][] = 'token_element_validate';
+  $form['settings']['title']['#token_types'] = array();
+}
+
+/**
+ * Implements hook_widget_form_alter().
+ */
+function token_field_widget_form_alter(&$element, &$form_state, $context) {
+  if (!empty($element['#description']) && is_string($element['#description'])) {
+    $element['#description'] = filter_xss_admin(token_replace($element['#description']));
+  }
+}
+
+/**
  * Implements hook_field_info_alter().
  */
 function token_field_info_alter(&$info) {
@@ -210,6 +291,10 @@ function token_field_info_alter(&$info) {
     'text' => 'text_default',
     'text_long' => 'text_default',
     'text_with_summary' => 'text_default',
+    'list_integer' => 'list_default',
+    'list_float' => 'list_default',
+    'list_text' => 'list_default',
+    'list_boolean' => 'list_default',
   );
   foreach ($defaults as $field_type => $default_token_formatter) {
     if (isset($info[$field_type])) {
@@ -228,14 +313,17 @@ function token_field_display_alter(&$display, $context) {
     // use the default token formatter.
     if (empty($view_mode_settings[$context['view_mode']]['custom_settings'])) {
       $field_type_info = field_info_field_types($context['field']['type']);
-      if (!empty($field_type_info['default_token_formatter'])) {
-        $display['type'] = $field_type_info['default_token_formatter'];
 
-        $formatter_info = field_info_formatter_types($display['type']);
-        $display['settings'] = isset($formatter_info['settings']) ? $formatter_info['settings'] : array();
-        $display['settings']['label'] = 'hidden';
-        $display['module'] = $formatter_info['module'];
-      }
+      // If the field has specified a specific formatter to be used by default
+      // with tokens, use that, otherwise use the default formatter.
+      $formatter = !empty($field_type_info['default_token_formatter']) ? $field_type_info['default_token_formatter'] : $field_type_info['default_formatter'];
+
+      // Now that we have a formatter, fill in all the settings.
+      $display['type'] = $formatter;
+      $formatter_info = field_info_formatter_types($formatter);
+      $display['settings'] = isset($formatter_info['settings']) ? $formatter_info['settings'] : array();
+      $display['settings']['label'] = 'hidden';
+      $display['module'] = $formatter_info['module'];
     }
   }
 }
@@ -265,7 +353,9 @@ function token_field_delete_instance($instance) {
  * Clear token caches and static variables.
  */
 function token_clear_cache() {
-  cache_clear_all('*', 'cache_token', TRUE);
+  if (db_table_exists('cache_token')) {
+    cache_clear_all('*', 'cache_token', TRUE);
+  }
   drupal_static_reset('token_get_info');
   drupal_static_reset('token_get_global_token_types');
   drupal_static_reset('token_get_entity_mapping');
@@ -352,10 +442,12 @@ function token_entity_info_alter(&$info) {
  * Adds missing token support for core modules.
  */
 function token_module_implements_alter(&$implementations, $hook) {
-  if ($hook == 'tokens' || $hook == 'token_info') {
+  module_load_include('inc', 'token', 'token.tokens');
+
+  if ($hook == 'tokens' || $hook == 'token_info' || $hook == 'token_info_alter' || $hook == 'tokens_alter') {
     foreach (_token_core_supported_modules() as $module) {
-      if (module_exists($module)) {
-        $implementations[$module] = TRUE;
+      if (module_exists($module) && function_exists($module . '_' . $hook)) {
+        $implementations[$module] = FALSE;
       }
     }
     // Move token.module to get included first since it is responsible for
@@ -369,7 +461,9 @@ function token_module_implements_alter(&$implementations, $hook) {
  * Implements hook_flush_caches().
  */
 function token_flush_caches() {
-  return array('cache_token');
+  if (db_table_exists('cache_token')) {
+    return array('cache_token');
+  }
 }
 
 /**
@@ -448,8 +542,16 @@ function token_get_info($token_type = NULL, $token = NULL) {
 }
 
 /**
- * Return the module responsible for a token if defined in
- * $info['tokens']['type']['module'].
+ * Return the module responsible for a token.
+ *
+ * @param string $type
+ *   The token type.
+ * @param string $name
+ *   The token name.
+ *
+ * @return mixed
+ *   The value of $info['tokens'][$type][$name]['module'] from token_get_info(),
+ *   or NULL if the value does not exist.
  */
 function _token_module($type, $name) {
   $token_info = token_get_info($type, $name);
@@ -616,7 +718,7 @@ function token_element_validate(&$element, &$form_state) {
   }
 
   // Check if the field defines specific token types.
-  if (!empty($element['#token_types'])) {
+  if (isset($element['#token_types'])) {
     $invalid_tokens = token_get_invalid_tokens_by_context($tokens, $element['#token_types']);
     if ($invalid_tokens) {
       form_error($element, t('The %element-title is using the following invalid tokens: @invalid-tokens.', array('%element-title' => $title, '@invalid-tokens' => implode(', ', $invalid_tokens))));
@@ -637,6 +739,10 @@ function token_element_validate_token_context(&$element, &$form_state) {
  * Implements hook_form_FORM_ID_alter().
  */
 function token_form_field_ui_field_edit_form_alter(&$form, $form_state) {
+  if (!isset($form['instance'])) {
+    return;
+  }
+
   if (($form['#field']['type'] == 'file' || $form['#field']['type'] == 'image') && isset($form['instance']['settings']['file_directory']) && !module_exists('filefield_paths')) {
     // GAH! We can only support global tokens in the upload file directory path.
     $form['instance']['settings']['file_directory']['#element_validate'][] = 'token_element_validate';
@@ -646,7 +752,11 @@ function token_form_field_ui_field_edit_form_alter(&$form, $form_state) {
       '#token_types' => array(),
       '#weight' => $form['instance']['settings']['file_directory']['#weight'] + 0.5,
     );
+    $form['instance']['settings']['file_directory']['#description'] .= ' ' . t('This field supports tokens.');
   }
+
+  // Note that the description is tokenized via token_field_widget_form_alter().
+  $form['instance']['description']['#description'] .= '<br />' . t('This field supports tokens.');
 }
 
 /**
@@ -825,7 +935,7 @@ function token_flatten_tree($tree) {
     $result[$token] = $token_info;
     if (isset($token_info['children']) && is_array($token_info['children'])) {
       $result += token_flatten_tree($token_info['children']);
-      //unset($result[$token]['children']);
+      // unset($result[$token]['children']);
     }
   }
   return $result;

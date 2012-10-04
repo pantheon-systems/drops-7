@@ -6,8 +6,90 @@ Version 7.x-2.x-dev
 ===================
 
 ======================
+Version 7.x-2.6
+======================
+
+- Issue #1423364 by catmat, Add file and path to hook_context_plugins().
+- Issue #1713248, Remove incorrect use of date_popup() function in previous commit.
+- Issue #1143680 by kristiaanvandeneynde, Make Date Popup widget able to accept custom settings.
+- Issue #1596546 by applicity_sam, Make sure incorrect month name creates validation error.
+- Issue #1432702, Fix some miscellaneous problems with date example dates and formats.
+- Issue #1512464 by Liam Moreland, Allow for undefined formatter in Date upgrade handling.
+- Issue #1659638 by bojanz, Hide install message if Drupal is not installed (i.e. in install profiles).
+- Issue #1605158 by covenantd, Be sure value2 is initiated in Date Context handler.
+- Issue #1355256 by barraponto develCuy and KarenS, set default value for date text widget increment to 1, and update existing fields.
+- Issue #1561306 by Cyberwolf, Date pager replacement was not working correctly when used with multiple dates.
+- Issue #1541740 by hass, Make Date requirements more easily translatable.
+- Issue #1543524 by iamEAP, Add update hook to remove the D6 date_timezone field from users.
+- Issue #1603640 by bevan, Don't return anything for empty date interval.
+- Issue #1235508, Make sure that ISO strings with '00' in the month and/or day don't create dates for the previous month and day.
+- Issue #1289270 by pdrake: Fixed date arguments and filters do not work with relationships.
+- Issue #895760 by Reinette: Added RFC2447 option 'STATUS' to date_api_ical().inc.
+- Issue #606658 by johnmunro and KarenS, Make sure ical import processes multi-day all-day events correctly.
+- Issue #1408216 follow up, Need to be sure that NULL is the default state for the sql functions.
+- Issue #1540410, Update the Date Tools calendar creation wizard to use the new calendar path.
+
+======================
+Version 7.x-2.5
+======================
+
+- Fix nasty errors on views that have no row indexes, like the frontage view.
+
+======================
+Version 7.x-2.4
+======================
+
+- Issue #1534342 by bass, Make name of clean pager option easier to translate.
+- Add a hook to alter the default date for a Date argument.
+- Issue #1531904, Make sure that multiple value dates that have the delta set only display the selected value.
+- Revert Issue #1266688 by fago, This change broke Entity token support.
+
+======================
+Version 7.x-2.3
+======================
+
+- Issue #1444804, Remove html placeholder on text widget.
+- Issue #1286230, Clean up date pager documentation, it contains deprecated information.
+- Issue #1469020, Make sure page not found is working right for dates outside the specified range.
+- Issue #1111626, Fix some problems caused by passing in a date string with an offset.
+- Issue #1477860, Avoid undefined index errors in date_views_select_validate().
+- Issue #1469038, Add some clarity to the BYDAY description options and make sure a valid value is selected.
+- Issue #1405364 by snufkin, Add display options to format_interval to match Views interval options.
+- Issue #1266688 by linclark, Add microdata support to Date metadata.
+- Issue #1509434 by casey, Add timezone info in hook_field_presave() instead of hook_field_insert() and hook_field_update().
+- Issue #1509012, Fix fatal error when viewing repeat tab.
+- Issue #1037174 by dealancer, More work to allow ajax to work on other widgets.
+- Issue #1473592 by zabelc, Make sure migrated date with missing end date still gets imported correctly.
+- Issue #1442718 by jastraat and bones, Make sure show end date checkbox does not display when end date is empty.
+- Issue #1504556, Fix invalid access permission name in Date API configuration menu.
+- Issue #1484458, Vega timepicker code was incorrectly computing the default date because of the wrong format for the value passed to it.
+- Issue #1459668, Add back Remove date_field_get_sql_handler() function temporarily since Signup module is still using it. Mark it deprecated.
+- Issue #1478296, Display longer abbreviations for day names in date repeat widget so they can be translated.
+- Issue #1488662 by martin.heidegger, Make error message more easily translatable.
+- Issue #1478848 by onelittleant, Don't set default values on new translation entities.
+- Issue #1360672, Fix limit format code to remove leftover non-ascii text as well as leftover ascii text.
+- Issue #1464280 by geerlingguy Georgique and dealancer: Fix notice when using exposed between filter.
+- Issue #1484640 by onelittleant, Some entities may not have base tables.
+- Issue #1472966, Get rid of notice that appears for entities without repeats.
+- Move pager css around. Some code in Calendar and Date API belongs in Date Views.
+- Fix Date Popup default format which was ending up using 24 hour time no matter what format was used for short format.
+- Remove outdated _repeat widget name from Date Tools.
+- Date Tools is defaulting to creating a calendar even if Calendar module is not enabled.
+- Issue #1472148 by arlinsandbulte: wvega jQuery time-picker doesn't show scrollbar.
+- Issue #1392128 by kidrobot, tim.plunkett, willvincent: Fixed Repeats tab shows on nodes with non-repeating dates.
+- Issue #1452882 by coredumperror: Fixed Date Migrate Example doesn't deregister it's migration when disabled.
+- Issue #1452408 by reglogge: Fixed Trailing dots are removed from date formats even if they are needed for the format.
+- Issue #1285260 by Steven Jones: Fixed 'Starting from' display option.
+- Issue #1467244 by bluetegu: Fixed Recurring Sunday errors.
+- Issue #1442718, Empty default values were getting populated by the code that tried to fix default values on hidden fields.
+- Make sure date_handler->placeholders gets initialized even for queries that don't execute so the pager won't throw an exception if the value is missing.
+
+======================
 Version 7.x-2.2
 ======================
+
+NOTES:
+The iCal templates were removed and moved to the new Date iCal module (http://drupal.org/project/date_ical).
 
 - Issue #1423364 by emptyvoid, Move Date context plugin into its own file.
 - Issue #1447372 by yched, Memory friendlier version of date_repeat_field_bundles().

@@ -10,8 +10,8 @@ php = 5.2
 varsion = "7.x-beta1"
 
 
-; Information added by drush on 2012-03-19
+; Information added by drush on 2012-10-04
 version = "master-dev"
 project = "drupal"
-datestamp = "1332131114"
+datestamp = "1349370005"
 

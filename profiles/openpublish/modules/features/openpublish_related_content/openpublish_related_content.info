@@ -1,21 +1,22 @@
-core = "7.x"
-dependencies[] = "features"
-dependencies[] = "node_reference"
-dependencies[] = "views"
-description = "Creates related content fields and views for article, blog post, photo gallery and video content types"
-features[ctools][] = "views:views_default:3.0"
-features[field][] = "node-openpublish_article-field_op_related_nref"
-features[field][] = "node-openpublish_blog_post-field_op_related_nref"
-features[field][] = "node-openpublish_photo_gallery-field_op_related_nref"
-features[field][] = "node-openpublish_video-field_op_related_nref"
-features[views_view][] = "openpublish_related_content"
-name = "OpenPublish Related Content"
-package = "Features"
-php = "5.2.4"
+name = OpenPublish Related Content
+description = Creates related content fields and views for article, blog post, photo gallery and video content types
+core = 7.x
+package = Features
+php = 5.2.4
+dependencies[] = features
+dependencies[] = node_reference
+dependencies[] = views
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:1
+features[field][] = node-openpublish_article-field_op_related_nref
+features[field][] = node-openpublish_blog_post-field_op_related_nref
+features[field][] = node-openpublish_photo_gallery-field_op_related_nref
+features[field][] = node-openpublish_video-field_op_related_nref
+features[views_view][] = openpublish_related_content
 
-; Information added by drupal.org packaging script on 2012-03-13
-version = "7.x-1.0-alpha7"
+; Information added by drupal.org packaging script on 2012-10-04
+version = "7.x-1.0-beta5"
 core = "7.x"
 project = "openpublish"
-datestamp = "1331655949"
+datestamp = "1349368017"
 

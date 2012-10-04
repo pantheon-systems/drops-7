@@ -148,6 +148,18 @@ function ga_stats_admin_settings() {
     '#title' => t('Account Password'),
     '#description' => t('The password you use to log in to Google Analytics'),
   );
+  
+  $form['ga_stats_login']['ga_stats_acct_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Account Type'),
+    '#description' => t('The account type you use to log in to Google Analytics'),
+    '#options' => array(
+      'GOOGLE' => t('Google'),
+      'HOSTED' => t('Hosted'),
+    ),
+    '#default_value' => variable_get('ga_stats_acct_type', NULL),
+  );
+  
   $form['ga_stats_accounts'] = array(
     '#type' => 'fieldset',
     '#title' => t('Google Analytics Tracking Accounts'),

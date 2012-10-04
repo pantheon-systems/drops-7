@@ -1,55 +1,39 @@
 /*
- * Move tabs
+ * Style page tabs in toolbar drawer
  */
-body.toolbar-drawer ul.action-links{
-  position: fixed;
-  right: 140px;
-  top: 28px;
-  z-index: 10000000;
-  display: block;
-}
-body.toolbar-drawer ul.tabs.primary{
-  position: fixed;
-  right: 230px;
-  top: 28px;
-  z-index: 10000000;
-}
 
-body.toolbar-drawer div.tabs ul.tabs.primary, body.toolbar-drawer ul.action-links{
-  padding: 0; margin: 0; border: 0;
-}
-
-body.toolbar-drawer div.tabs ul.tabs.primary li, body.toolbar-drawer ul.action-links li {
-  margin-top: 5px;
-  padding: 4px;
-}
-
-body.toolbar-drawer ul.action-links {
-  list-style: none;
-}
-
-body.toolbar-drawer ul.action-links li {
-  padding-top: 2px;
-}
-
-body.toolbar-drawer div.tabs ul.tabs.primary li a, body.toolbar-drawer ul.action-links li a {
-  background-color: inherit;
+#toolbar ul.tabs.primary{
+  padding: 5px 0 2px;
+  height: 28px;
+  line-height: 24px;
+  margin: 0 15px 0 0;
   border: 0;
-  padding-top: 5px;
-  color: #FFF;
-  font-size: 11px;
+  float:right;
+}
+#toolbar ul.tabs.primary li a,
+div#toolbar a#edit-shortcuts {
+  background-color: inherit;
+  border-radius: 5px 5px 5px 5px;
+  margin-right: 5px;
+  padding: 0 5px;
+}
+div#toolbar a#edit-shortcuts {
+  margin-top:5px;
+}
+#toolbar ul.tabs.primary li a:hover,
+div#toolbar a#edit-shortcuts:hover {
+  background: #555;
+  text-decoration:none;
+}
+#toolbar ul.tabs.primary li a.active,
+div#toolbar a#edit-shortcuts.active {
+  background: #000;
 }
 
-body.toolbar-drawer div#page ul.action-links li a {
-  background: none !important;
-}
-
-body.toolbar-drawer div.tabs ul.tabs.primary li a.active, body.toolbar-drawer ul.action-links li a.active {
-  font-weight: bold;
-  text-decoration: underline;
-  padding-top: 5px;
-}
-
-body.toolbar-drawer div.tabs ul.tabs.primary li a:hover, body.toolbar-drawer ul.action-links li a:hover {
-  text-decoration: underline;
+/*
+ * Hide page tabs
+ */
+#page div.tabs,
+#page ul.action-links {
+  display:none;
 }

@@ -13,7 +13,7 @@ function openpublish_blog_post_taxonomy_default_vocabularies() {
       'name' => 'Blog',
       'machine_name' => 'blog',
       'description' => 'Organizational vocabulary for blog contributors or sections',
-      'hierarchy' => '0',
+      'hierarchy' => '1',
       'module' => 'taxonomy',
       'weight' => '0',
       'rdf_mapping' => array(

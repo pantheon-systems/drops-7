@@ -55,8 +55,8 @@ files[] = tests/upgrade/update.user.test
 files[] = tests/upgrade/upgrade.user.test
 
 
-; Information added by drush on 2012-03-19
+; Information added by drush on 2012-10-04
 version = "master-dev"
 project = "drupal"
-datestamp = "1332131114"
+datestamp = "1349370005"
 

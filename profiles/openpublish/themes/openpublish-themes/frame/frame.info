@@ -40,8 +40,8 @@ css[default.css][name] = 'Frame - Default Styles'
 css[default.css][description] = 'Default CSS styles for OpenPublish Wireframe.'
 css[default.css][options][weight] = '10'
 
-css[tabs.css][name] = 'Frame - Move Tabs'
-css[tabs.css][description] = 'Move the tabs and action links to the toolbar drawer (if it exists).'
+css[tabs.css][name] = 'Frame - Style Page Tabs'
+css[tabs.css][description] = 'Style the tabs and action links in the toolbar drawer.'
 css[tabs.css][options][weight] = '11'
 
 settings[toggle_logo] = '1'
@@ -444,9 +444,9 @@ settings[alpha_region_footer_second_css] = ''
 settings[alpha_region_footer_second_equal_height_element] = '0'
 settings[alpha_region_footer_second_equal_height_container] = '0'
 
-; Information added by drupal.org packaging script on 2012-03-13
-version = "7.x-1.0-alpha7"
+; Information added by drupal.org packaging script on 2012-10-04
+version = "7.x-1.0-beta5"
 core = "7.x"
 project = "openpublish"
-datestamp = "1331655949"
+datestamp = "1349368017"
 

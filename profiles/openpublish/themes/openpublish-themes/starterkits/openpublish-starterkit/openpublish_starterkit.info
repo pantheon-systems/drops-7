@@ -3,7 +3,7 @@ description = Default starterkit for <a href="http://drupal.org/project/omega">O
 core = 7.x
 engine = phptemplate
 screenshot = screenshot.png
-base theme = openpublish_wireframe
+base theme = frame
 
 ; IMPORTANT: DELETE THESE TWO LINES IN YOUR SUBTHEME
 
@@ -450,9 +450,9 @@ settings[alpha_region_footer_second_css] = ''
 settings[alpha_region_footer_second_equal_height_element] = '0'
 settings[alpha_region_footer_second_equal_height_container] = '0'
 
-; Information added by drupal.org packaging script on 2012-03-13
-version = "7.x-1.0-alpha7"
+; Information added by drupal.org packaging script on 2012-10-04
+version = "7.x-1.0-beta5"
 core = "7.x"
 project = "openpublish"
-datestamp = "1331655949"
+datestamp = "1349368017"
 

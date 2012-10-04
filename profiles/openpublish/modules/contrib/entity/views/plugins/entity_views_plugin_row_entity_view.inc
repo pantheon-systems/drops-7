@@ -67,7 +67,7 @@ class entity_views_plugin_row_entity_view extends views_plugin_row {
     return $form;
   }
 
-  public function pre_render(&$values) {
+  public function pre_render($values) {
     if (!empty($values)) {
       list($this->entity_type, $this->entities) = $this->view->query->get_result_entities($values, !empty($this->relationship) ? $this->relationship : NULL, isset($this->field_alias) ? $this->field_alias : NULL);
     }

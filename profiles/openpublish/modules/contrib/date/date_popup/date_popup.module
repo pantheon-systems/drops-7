@@ -185,6 +185,15 @@ function date_popup_theme() {
  *   The number of years to go back and forward in a year selector,
  *   default is -3:+3 (3 back and 3 forward).
  *
+ * #datepicker_options
+ *   An associative array representing the jQuery datepicker options you want
+ *   to set for this element. Use the jQuery datepicker option names as keys.
+ *   Hard coded defaults are:
+ *   - changeMonth => TRUE
+ *   - changeYear => TRUE
+ *   - autoPopUp => 'focus'
+ *   - closeAtTop => FALSE
+ *   - speed => 'immediate'
  */
 function date_popup_element_info() {
   $timepicker = date_popup_get_preferred_timepicker();
@@ -194,6 +203,7 @@ function date_popup_element_info() {
     '#date_timezone' => date_default_timezone(),
     '#date_flexible' => 0,
     '#date_format' => variable_get('date_format_short', 'm/d/Y - H:i'),
+    '#datepicker_options' => array(),
     '#timepicker' => variable_get('date_popup_timepicker', $timepicker),
     '#date_increment' => 1,
     '#date_year_range' => '-3:+3',
@@ -272,7 +282,7 @@ function date_popup_element_process($element, &$form_state, $form) {
   $element['#tree'] = TRUE;
   $element['#theme_wrappers'] = array('date_popup');
 
-  if (isset($element['#ajax'])) {
+  if (!empty($element['#ajax'])) {
     $element['#ajax'] += array(
       'trigger_as' => array('name' =>$element['#name']),
       'event' => 'change',
@@ -317,20 +327,22 @@ function date_popup_process_date_part(&$element) {
   $range = date_range_years($element['#date_year_range'], $date);
   $year_range = date_range_string($range);
 
-  $settings = array(
+  // Add the dynamic datepicker options. Allow element-specific datepicker
+  // preferences to override these options for whatever reason they see fit.
+  $settings = $element['#datepicker_options'] + array(
     'changeMonth' => TRUE,
     'changeYear' => TRUE,
-    'firstDay' => intval(variable_get('date_first_day', 0)),
-    //'buttonImage' => base_path() . drupal_get_path('module', 'date_api') ."/images/calendar.png",
-    //'buttonImageOnly' => TRUE,
     'autoPopUp' => 'focus',
     'closeAtTop' => FALSE,
     'speed' => 'immediate',
+    'firstDay' => intval(variable_get('date_first_day', 0)),
+    //'buttonImage' => base_path() . drupal_get_path('module', 'date_api') ."/images/calendar.png",
+    //'buttonImageOnly' => TRUE,
     'dateFormat' => date_popup_format_to_popup(date_popup_date_format($element), 'datepicker'),
     'yearRange' => $year_range,
     // Custom setting, will be expanded in Drupal.behaviors.date_popup()
     'fromTo' => isset($fromto),
-    );
+  );
 
   // Create a unique id for each set of custom settings.
   $id = date_popup_js_settings_id($element['#id'], 'datepicker', $settings);
@@ -353,7 +365,7 @@ function date_popup_process_date_part(&$element) {
   );
   $sub_element['#value'] = $sub_element['#default_value'];
   // TODO, figure out exactly when we want this description. In many places it is not desired.
-  $sub_element['#description'] = ' '. t('E.g., @date', array('@date' => date_format_date(date_now(), 'custom', date_popup_date_format($element))));
+  $sub_element['#description'] = ' '. t('E.g., @date', array('@date' => date_format_date(date_example_date(), 'custom', date_popup_date_format($element))));
 
   return $sub_element;
 }
@@ -391,13 +403,14 @@ function date_popup_process_time_part(&$element) {
       // The first value in the dropdown list should be the same as the element
       // default_value, but it needs to be in JS format (i.e. milliseconds since
       // the epoch).
-      $start_time = new DateObject($element['#default_value'], $element['#date_timezone'], $element['#date_format']);
+      $start_time = new DateObject($element['#default_value'], $element['#date_timezone'], DATE_FORMAT_DATETIME);
       date_increment_round($start_time, $element['#date_increment']);
       $start_time = $start_time->format(DATE_FORMAT_UNIX) * 1000;
       $settings = array(
         'timeFormat' => $format,
         'interval' => $element['#date_increment'],
         'startTime' => $start_time,
+        'scrollbar' => TRUE,
       );
       break;
     default:

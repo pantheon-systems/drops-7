@@ -10,7 +10,7 @@
 function openpublish_media_field_default_fields() {
   $fields = array();
 
-  // Exported field: 'field_collection_item-field_op_gallery_image-field_op_gallery_image_caption'
+  // Exported field: 'field_collection_item-field_op_gallery_image-field_op_gallery_image_caption'.
   $fields['field_collection_item-field_op_gallery_image-field_op_gallery_image_caption'] = array(
     'field_config' => array(
       'active' => '1',
@@ -31,6 +31,7 @@ function openpublish_media_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(),
       'translatable' => '0',
@@ -70,7 +71,7 @@ function openpublish_media_field_default_fields() {
     ),
   );
 
-  // Exported field: 'field_collection_item-field_op_gallery_image-field_op_gallery_image_image'
+  // Exported field: 'field_collection_item-field_op_gallery_image-field_op_gallery_image_image'.
   $fields['field_collection_item-field_op_gallery_image-field_op_gallery_image_image'] = array(
     'field_config' => array(
       'active' => '1',
@@ -91,6 +92,7 @@ function openpublish_media_field_default_fields() {
           0 => 'fid',
         ),
       ),
+      'locked' => '0',
       'module' => 'image',
       'settings' => array(
         'default_image' => 0,
@@ -109,7 +111,7 @@ function openpublish_media_field_default_fields() {
           'module' => 'image',
           'settings' => array(
             'image_link' => 'file',
-            'image_style' => 'large',
+            'image_style' => '',
           ),
           'type' => 'image',
           'weight' => '0',
@@ -121,6 +123,7 @@ function openpublish_media_field_default_fields() {
       'required' => 0,
       'settings' => array(
         'alt_field' => 1,
+        'default_image' => 0,
         'file_directory' => '',
         'file_extensions' => 'png gif jpg jpeg',
         'max_filesize' => '',
@@ -158,7 +161,7 @@ function openpublish_media_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_photo_gallery-body'
+  // Exported field: 'node-openpublish_photo_gallery-body'.
   $fields['node-openpublish_photo_gallery-body'] = array(
     'field_config' => array(
       'active' => '1',
@@ -181,6 +184,7 @@ function openpublish_media_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(),
       'translatable' => '1',
@@ -197,7 +201,7 @@ function openpublish_media_field_default_fields() {
           'module' => 'text',
           'settings' => array(),
           'type' => 'text_default',
-          'weight' => '2',
+          'weight' => '0',
         ),
         'teaser' => array(
           'label' => 'hidden',
@@ -232,7 +236,7 @@ function openpublish_media_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_photo_gallery-field_op_author'
+  // Exported field: 'node-openpublish_photo_gallery-field_op_author'.
   $fields['node-openpublish_photo_gallery-field_op_author'] = array(
     'field_config' => array(
       'active' => '1',
@@ -253,12 +257,12 @@ function openpublish_media_field_default_fields() {
           0 => 'nid',
         ),
       ),
+      'locked' => '0',
       'module' => 'node_reference',
       'settings' => array(
         'referenceable_types' => array(
           'openpublish_article' => 0,
           'openpublish_blog_post' => 0,
-          'openpublish_photo' => 0,
           'openpublish_photo_gallery' => 0,
           'openpublish_site_page' => 0,
           'openpublish_video' => 0,
@@ -282,10 +286,9 @@ function openpublish_media_field_default_fields() {
       'display' => array(
         'default' => array(
           'label' => 'inline',
-          'module' => 'node_reference',
           'settings' => array(),
-          'type' => 'node_reference_default',
-          'weight' => '0',
+          'type' => 'hidden',
+          'weight' => '3',
         ),
         'teaser' => array(
           'label' => 'above',
@@ -307,6 +310,10 @@ function openpublish_media_field_default_fields() {
         'settings' => array(
           'autocomplete_match' => 'contains',
           'autocomplete_path' => 'node_reference/autocomplete',
+          'references_dialog_add' => 1,
+          'references_dialog_edit' => 1,
+          'references_dialog_search' => 0,
+          'references_dialog_search_view' => '',
           'size' => '60',
         ),
         'type' => 'node_reference_autocomplete',
@@ -315,7 +322,7 @@ function openpublish_media_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_photo_gallery-field_op_gallery_image'
+  // Exported field: 'node-openpublish_photo_gallery-field_op_gallery_image'.
   $fields['node-openpublish_photo_gallery-field_op_gallery_image'] = array(
     'field_config' => array(
       'active' => '1',
@@ -325,6 +332,7 @@ function openpublish_media_field_default_fields() {
       'field_name' => 'field_op_gallery_image',
       'foreign keys' => array(),
       'indexes' => array(),
+      'locked' => '0',
       'module' => 'field_collection',
       'settings' => array(
         'path' => '',
@@ -342,14 +350,14 @@ function openpublish_media_field_default_fields() {
           'label' => 'hidden',
           'module' => 'field_collection',
           'settings' => array(
-            'add' => '',
-            'delete' => '',
-            'description' => 0,
-            'edit' => '',
+            'add' => 'Add',
+            'delete' => 'Delete',
+            'description' => 1,
+            'edit' => 'Edit',
             'view_mode' => 'full',
           ),
           'type' => 'field_collection_view',
-          'weight' => '1',
+          'weight' => '2',
         ),
         'teaser' => array(
           'label' => 'above',
@@ -375,7 +383,7 @@ function openpublish_media_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_photo_gallery-field_op_main_image'
+  // Exported field: 'node-openpublish_photo_gallery-field_op_main_image'.
   $fields['node-openpublish_photo_gallery-field_op_main_image'] = array(
     'field_config' => array(
       'active' => '1',
@@ -396,6 +404,7 @@ function openpublish_media_field_default_fields() {
           0 => 'fid',
         ),
       ),
+      'locked' => '0',
       'module' => 'image',
       'settings' => array(
         'default_image' => 0,
@@ -411,9 +420,13 @@ function openpublish_media_field_default_fields() {
       'display' => array(
         'default' => array(
           'label' => 'hidden',
-          'settings' => array(),
-          'type' => 'hidden',
-          'weight' => '3',
+          'module' => 'image',
+          'settings' => array(
+            'image_link' => 'file',
+            'image_style' => '',
+          ),
+          'type' => 'image',
+          'weight' => '1',
         ),
         'teaser' => array(
           'label' => 'hidden',
@@ -432,6 +445,7 @@ function openpublish_media_field_default_fields() {
       'required' => 0,
       'settings' => array(
         'alt_field' => 1,
+        'default_image' => 0,
         'file_directory' => 'galleries',
         'file_extensions' => 'png gif jpg jpeg',
         'max_filesize' => '',
@@ -469,7 +483,7 @@ function openpublish_media_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_video-body'
+  // Exported field: 'node-openpublish_video-body'.
   $fields['node-openpublish_video-body'] = array(
     'field_config' => array(
       'active' => '1',
@@ -492,6 +506,7 @@ function openpublish_media_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(),
       'translatable' => '1',
@@ -543,7 +558,7 @@ function openpublish_media_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_video-field_op_author'
+  // Exported field: 'node-openpublish_video-field_op_author'.
   $fields['node-openpublish_video-field_op_author'] = array(
     'field_config' => array(
       'active' => '1',
@@ -564,12 +579,12 @@ function openpublish_media_field_default_fields() {
           0 => 'nid',
         ),
       ),
+      'locked' => '0',
       'module' => 'node_reference',
       'settings' => array(
         'referenceable_types' => array(
           'openpublish_article' => 0,
           'openpublish_blog_post' => 0,
-          'openpublish_photo' => 0,
           'openpublish_photo_gallery' => 0,
           'openpublish_site_page' => 0,
           'openpublish_video' => 0,
@@ -618,6 +633,10 @@ function openpublish_media_field_default_fields() {
         'settings' => array(
           'autocomplete_match' => 'contains',
           'autocomplete_path' => 'node_reference/autocomplete',
+          'references_dialog_add' => 1,
+          'references_dialog_edit' => 1,
+          'references_dialog_search' => 0,
+          'references_dialog_search_view' => '',
           'size' => '60',
         ),
         'type' => 'node_reference_autocomplete',
@@ -626,7 +645,7 @@ function openpublish_media_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_video-field_op_video_embed'
+  // Exported field: 'node-openpublish_video-field_op_video_embed'.
   $fields['node-openpublish_video-field_op_video_embed'] = array(
     'field_config' => array(
       'active' => '1',
@@ -636,6 +655,7 @@ function openpublish_media_field_default_fields() {
       'field_name' => 'field_op_video_embed',
       'foreign keys' => array(),
       'indexes' => array(),
+      'locked' => '0',
       'module' => 'video_embed_field',
       'settings' => array(),
       'translatable' => '0',

@@ -135,21 +135,22 @@ function wysiwyg_profile_form($form, &$form_state, $profile) {
           }
           $icon = file_exists($img_src) ? '<img src="' . base_path() . $img_src . '" title="' . $button . '" style="border: 1px solid grey; vertical-align: middle;" />' : '';
         }
-        $title = (isset($meta['url']) ? l($title, $meta['url'], array('target' => '_blank')) : $title);
-        $title = (!empty($icon) ? $icon . ' ' . $title : $title);
+        $title = (!empty($icon) ? $icon . ' ' . check_plain($title) : check_plain($title));
         $form['buttons'][$name][$button] = array(
           '#type' => 'checkbox',
           '#title' => $title,
           '#default_value' => !empty($profile->settings['buttons'][$name][$button]) ? $profile->settings['buttons'][$name][$button] : FALSE,
+          '#description' => isset($meta['url']) ? l($meta['url'], $meta['url']) : NULL,
         );
       }
     }
-    else if (isset($meta['extensions']) && is_array($meta['extensions'])) {
+    elseif (isset($meta['extensions']) && is_array($meta['extensions'])) {
       foreach ($meta['extensions'] as $extension => $title) {
         $form['buttons'][$name][$extension] = array(
           '#type' => 'checkbox',
-          '#title' => isset($meta['url']) ? l($title, $meta['url'], array('target' => '_blank')) : $title,
+          '#title' => check_plain($title),
           '#default_value' => !empty($profile->settings['buttons'][$name][$extension]) ? $profile->settings['buttons'][$name][$extension] : FALSE,
+          '#description' => isset($meta['url']) ? l($meta['url'], $meta['url']) : NULL,
         );
       }
     }
@@ -299,6 +300,19 @@ function wysiwyg_profile_form($form, &$form_state, $profile) {
     '#weight' => 110,
   );
 
+  // Supply contextual information for other callbacks and handlers.
+  // @todo Modernize this form for D7+ and declare these earlier.
+  // $profile is the primary object of this form, and as an entity, usually
+  // expected to live in $form_state[$entity_type].
+  $form_state['wysiwyg_profile'] = $profile;
+  $form_state['wysiwyg']['editor'] = $editor;
+  $form_state['wysiwyg']['plugins'] = $plugins;
+
+  // Allow editor library specific changes to be made to the form.
+  if (isset($editor['settings form callback'])) {
+    $editor['settings form callback']($form, $form_state);
+  }
+
   return $form;
 }
 
@@ -363,14 +377,11 @@ function theme_wysiwyg_admin_button_table($variables) {
   // Split checkboxes into rows with 3 columns.
   $total = count($buttons);
   $rows = array();
-  for ($i = 0; $i < $total; $i++) {
+  for ($i = 0; $i < $total; $i += 3) {
     $row = array();
-    $row[] = array('data' => $buttons[$i]);
-    if (isset($buttons[++$i])) {
-      $row[] = array('data' => $buttons[$i]);
-    }
-    if (isset($buttons[++$i])) {
-      $row[] = array('data' => $buttons[$i]);
+    $row_buttons = array_slice($buttons, $i, 3) + array_fill(0, 3, array());
+    foreach ($row_buttons as $row_button) {
+      $row[] = array('data' => $row_button);
     }
     $rows[] = $row;
   }
@@ -416,6 +427,11 @@ function wysiwyg_profile_overview($form, &$form_state) {
       $instructions = '<p>' . t('Extract the archive and copy its contents into a new folder in the following location:<br /><code>@editor-path</code>', $targs) . '</p>';
       $instructions .= '<p>' . t('So the actual library can be found at:<br /><code>@library-filepath</code>', $targs) . '</p>';
 
+      // Add any install notes.
+      if (!empty($editor['install note callback']) && function_exists($editor['install note callback'])) {
+        $instructions .= '<div class="editor-install-note">' . $editor['install note callback']() . '</div>';
+      }
+
       $status[$name]['description'] .= $instructions;
       $count--;
     }
@@ -457,9 +473,20 @@ function wysiwyg_profile_overview($form, &$form_state) {
     // Only display editor selection for associated input formats to avoid
     // confusion about disabled selection.
     if (isset($profiles[$id]) && !empty($profiles[$id]->editor)) {
+      $editor_name = $profiles[$id]->editor;
+      $installed = !empty($editors[$editor_name]['installed']);
       $form['formats'][$id]['editor'] = array(
-        '#markup' => $options[$profiles[$id]->editor],
+        '#wysiwyg-editor-name' => $editor_name,
       );
+      if ($installed) {
+        $form['formats'][$id]['editor']['#markup'] = $options[$editor_name];
+      }
+      else {
+        drupal_set_message(t('Missing %editor library for %format format. Re-install the %editor library or delete the editor profile.', array(
+          '%editor' => $editors[$editor_name]['title'],
+          '%format' => $format->name,
+        )), 'warning');
+      }
     }
     else {
       $form['formats'][$id]['editor'] = array(
@@ -494,17 +521,28 @@ function theme_wysiwyg_profile_overview($variables) {
   if (!isset($form['formats'])) {
     return;
   }
+  $editors = wysiwyg_get_all_editors();
   $output = '';
-  $header = array(t('Input format'), t('Editor'), array('data' => t('Operations'), 'colspan' => 2));
+  $header = array(t('Text format'), t('Editor'), array('data' => t('Operations'), 'colspan' => 2));
   $rows = array();
   foreach (element_children($form['formats']) as $item) {
     $format = &$form['formats'][$item];
-    $rows[] = array(
-      drupal_render($format['name']),
-      drupal_render($format['editor']),
-      isset($format['edit']) ? drupal_render($format['edit']) : '',
-      isset($format['delete']) ? drupal_render($format['delete']) : '',
+    $row = array(
+      'data' => array(
+        drupal_render($format['name']),
+        drupal_render($format['editor']),
+        isset($format['edit']) ? drupal_render($format['edit']) : '',
+        isset($format['delete']) ? drupal_render($format['delete']) : '',
+      ),
     );
+    if (empty($row['data'][1])) {
+      $row['data'][1] = array(
+        'data' => t('Missing library: @library', array('@library' => $editors[$format['editor']['#wysiwyg-editor-name']]['title'])),
+        'class' => 'error',
+      );
+      $row['class'] = array('error');
+    }
+    $rows[] = $row;
   }
   $form['formats']['table']['#markup'] = theme('table', array('header' => $header, 'rows' => $rows));
   $output .= drupal_render_children($form);
@@ -554,4 +592,3 @@ function wysiwyg_profile_delete_confirm_submit($form, &$form_state) {
   drupal_set_message(t('Wysiwyg profile for %name has been deleted.', array('%name' => $format->name)));
   $form_state['redirect'] = 'admin/config/content/wysiwyg';
 }
-

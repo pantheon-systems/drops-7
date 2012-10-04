@@ -71,14 +71,13 @@ function node_reference_view_formatter_field_formatter_view($entity_type, $entit
       $field_data = $entity->{$field['field_name']};
       if(isset($field_data[$langcode])) {
         $items = $field_data[$langcode];
-        $nids = implode(",", array_map(create_function('$v', ' return $v["nid"];'), $items));
+        $nids = implode("+", array_map(create_function('$v', ' return $v["nid"];'), $items));
         $settings = $display['settings'];
         list($view_name, $view_display_name) = explode(" ", $settings['view']);
-        $element[0]['#markup'] = views_embed_view($view_name, $view_display_name, $nids, $entity->nid);
+        $entity_info = entity_get_info($entity_type);        
+        $element[0]['#markup'] = views_embed_view($view_name, $view_display_name, $nids, $entity->{$entity_info['entity keys']['id']});
       }
-      else {
-        $element[0]['#markup'] = '';
-      }
+
       return $element;
       break;
   }

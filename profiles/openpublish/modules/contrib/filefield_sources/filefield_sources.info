@@ -4,9 +4,9 @@ dependencies[] = file
 package = Fields
 core = 7.x
 
-; Information added by drupal.org packaging script on 2011-04-29
-version = "7.x-1.4"
+; Information added by drupal.org packaging script on 2012-09-19
+version = "7.x-1.6"
 core = "7.x"
 project = "filefield_sources"
-datestamp = "1304045215"
+datestamp = "1348074830"
 

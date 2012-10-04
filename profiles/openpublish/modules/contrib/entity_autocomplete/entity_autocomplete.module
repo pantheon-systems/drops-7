@@ -107,13 +107,26 @@ function entity_autocomplete_by_bundle($type, $bundles_in, $string = '') {
     $result = $query->execute();
     $data = array();
     foreach ($result->fetchAll() as $entity) {
-      $label = check_plain($entity->label);
-      $label .= ' [id:' . $entity->id . ']';
+      $label = entity_autocomplete_get_label($entity->label, $entity->id);
       $matches[$label] = $label;
     }
   }
   drupal_json_output($matches);
 
+}
+
+/* function to properly build the label to be return to the calling textbox
+ * makign sure it is 128 chars max in length
+ */
+function entity_autocomplete_get_label($label, $id){
+  $label = check_plain($label);
+  $max = 123;
+  $ref_id = ' [id:' . $id . ']';
+  $ref_id_length = strlen($ref_id);
+  if (strlen($label) >= ( $max - $ref_id_length )) {
+    $label = substr_replace($label, ' ...', ($max - $ref_id_length));
+  }
+  return $label . $ref_id;
 }
 
 /*

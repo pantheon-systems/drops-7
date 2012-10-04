@@ -8,26 +8,30 @@ function ga_stats_views_data() {
   $data = array();
   
   
-  $times = ga_stats_ga_timeframes(TRUE);
+  $times = ga_stats_ga_timeframes(true);
   $metrics = ga_stats_ga_metrics();
   
-  foreach ($metrics as $mk => $mv) {
-    foreach ($times as $tk => $tv) {
-      $data['ga_stats_count_' . $mk . '_' . $tk]['table']['group']  = t('Statistics');
-      $data['ga_stats_count_' . $mk . '_' . $tk]['table']['join']  = array(
+  foreach($metrics as $mk=>$mv){
+    
+    //this is used because views currently lowercases field names but we're getting camelCase from google.
+    $mkl = strtolower($mk); 
+    
+    foreach($times as $tk=>$tv){
+      $data['ga_stats_count_'.$mkl.'_'.$tk]['table']['group']  = t('Statistics');
+      $data['ga_stats_count_'.$mkl.'_'.$tk]['table']['join']  = array(
         'node' => array(
           'table' => 'ga_stats_count',
           'left_field' => 'nid',
           'field' => 'nid',
           'type' => 'LEFT OUTER',
-          'extra' => 'ga_stats_count_' . $mk . '_' . $tk . '.metric=\'' . $mk . '\' AND ga_stats_count_' . $mk . '_' . $tk . '.timeframe=\'' . $tk . '\''
+          'extra' => 'ga_stats_count_'.$mkl.'_'.$tk.'.metric=\''.$mk.'\' AND ga_stats_count_'.$mkl.'_'.$tk.'.timeframe=\''.$tk.'\''
         )
       );
-      $data['ga_stats_count_' . $mk . '_' . $tk]['count'] = array(
+      $data['ga_stats_count_'.$mkl.'_'.$tk]['count'] = array(
         'title' => t("$mv $tv"),
         'help' => t('Information retrieved from Google Analytics'),
         'field' => array(
-          'handler' => 'views_handler_field_numeric',
+          'handler'=> 'views_handler_field_numeric',
         ),
         'sort' => array(
           'handler' => 'views_handler_sort',
@@ -41,3 +45,4 @@ function ga_stats_views_data() {
    
   return $data;
 }
+

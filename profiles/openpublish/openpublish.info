@@ -38,17 +38,19 @@ dependencies[] = diff
 dependencies[] = entity
 dependencies[] = entitycache
 dependencies[] = features
+dependencies[] = features_override
 dependencies[] = field_group
 dependencies[] = googleanalytics
 dependencies[] = imce
 dependencies[] = imce_wysiwyg
 dependencies[] = nodeblock
-dependencies[] = nodeconnect
+dependencies[] = references_dialog
 dependencies[] = nodequeue
 dependencies[] = omega_tools
 dependencies[] = openidadmin
 dependencies[] = pathauto
 dependencies[] = node_reference
+dependencies[] = node_reference_view_formatter
 dependencies[] = strongarm
 dependencies[] = token
 dependencies[] = views
@@ -80,9 +82,9 @@ libraries[ckeditor][download][url] = http://download.cksource.com/CKEditor/CKEdi
 libraries[colorbox][download][type] = get
 libraries[colorbox][download][url] = http://colorpowered.com/colorbox/colorbox.zip
 
-; Information added by drupal.org packaging script on 2012-03-13
-version = "7.x-1.0-alpha7"
+; Information added by drupal.org packaging script on 2012-10-04
+version = "7.x-1.0-beta5"
 core = "7.x"
 project = "openpublish"
-datestamp = "1331655949"
+datestamp = "1349368017"
 

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Helper module for token tests.
+ */
+
+/**
  * Implements hook_exit().
  */
 function token_test_exit() {

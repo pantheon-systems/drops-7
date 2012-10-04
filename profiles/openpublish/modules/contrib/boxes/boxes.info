@@ -2,6 +2,7 @@ name = "Boxes"
 description = "Provides exports for custom blocks and spaces integration."
 core = 7.x
 dependencies[] = "ctools"
+dependencies[] = "block"
 
 files[] = boxes.module
 files[] = boxes.admin.inc
@@ -10,9 +11,9 @@ files[] = plugins/boxes_simple.inc
 files[] = plugins/spaces_controller_boxes.inc
 files[] = tests/boxes.test
 
-; Information added by drupal.org packaging script on 2012-01-27
-version = "7.x-1.0-beta7"
+; Information added by drupal.org packaging script on 2012-05-01
+version = "7.x-1.0"
 core = "7.x"
 project = "boxes"
-datestamp = "1327641937"
+datestamp = "1335895551"
 

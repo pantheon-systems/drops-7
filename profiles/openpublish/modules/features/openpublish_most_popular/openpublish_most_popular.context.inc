@@ -26,10 +26,16 @@ function openpublish_most_popular_context_default_contexts() {
   $context->reactions = array(
     'block' => array(
       'blocks' => array(
+        'boxes-ad_300x250_1' => array(
+          'module' => 'boxes',
+          'delta' => 'ad_300x250_1',
+          'region' => 'sidebar_second',
+          'weight' => '-10',
+        ),
         'boxes-box-4cc2a9f2' => array(
           'module' => 'boxes',
           'delta' => 'box-4cc2a9f2',
-          'region' => 'sidebar_first',
+          'region' => 'sidebar_second',
           'weight' => '-10',
         ),
       ),

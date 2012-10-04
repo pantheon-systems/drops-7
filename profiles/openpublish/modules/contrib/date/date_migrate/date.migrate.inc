@@ -117,6 +117,11 @@ class DateMigrateFieldHandler extends MigrateFieldHandler {
         return $return;
       }
 
+      // If there is no 'to' date, just use the 'from' date.
+      if (!empty($field_info['settings']['todate']) && empty($to)) {
+        $to = $from;
+      }
+
       // If we have a value, work from a timestamp.
       $from = MigrationBase::timestamp($from);
       if ($to) {

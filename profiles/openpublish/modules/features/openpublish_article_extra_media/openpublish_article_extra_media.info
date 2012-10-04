@@ -1,18 +1,18 @@
+name = "Article - Extra Media Fields"
+description = "Enhances the article content type with some additional fields to reference a video or a photo gallery."
 core = "7.x"
+package = "Features"
+php = "5.2.4"
+dependencies[] = "ctools"
 dependencies[] = "features"
 dependencies[] = "field_group"
 dependencies[] = "node_reference"
-description = "Enhances the article content type with some additional fields to reference a video or a photo gallery."
 features[ctools][] = "field_group:field_group:1"
 features[field][] = "node-openpublish_article-field_op_caption"
-features[field_group][] = "group_op_article_media|node|openpublish_article|form"
-name = "Article - Extra Media Fields"
-package = "Features"
-php = "5.2.4"
 
-; Information added by drupal.org packaging script on 2012-03-13
-version = "7.x-1.0-alpha7"
+; Information added by drupal.org packaging script on 2012-10-04
+version = "7.x-1.0-beta5"
 core = "7.x"
 project = "openpublish"
-datestamp = "1331655949"
+datestamp = "1349368017"
 

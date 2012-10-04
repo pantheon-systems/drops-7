@@ -119,6 +119,9 @@ class date_views_filter_handler_simple extends views_handler_filter_date {
     list($table_name, $field_name) = explode('.', $field);
     if (!empty($this->options['add_delta']) && (substr($field_name, -6) == '_value' || substr($field_name, -7) == '_value2')) {
       $this->query->add_field($table_name, 'delta');
+      $real_field_name = str_replace(array('_value', '_value2'), '', $this->real_field);
+      $this->query->add_field($table_name, 'entity_id', 'date_id_' . $real_field_name);
+      $this->query->add_field($table_name, 'delta', 'date_delta_' . $real_field_name);
     }
 
     $min_value = $this->get_filter_value('min', $this->value['min']);
@@ -146,6 +149,9 @@ class date_views_filter_handler_simple extends views_handler_filter_date {
     list($table_name, $field_name) = explode('.', $field);
     if (!empty($this->options['add_delta']) && (substr($field_name, -6) == '_value' || substr($field_name, -7) == '_value2')) {
       $this->query->add_field($table_name, 'delta');
+      $real_field_name = str_replace(array('_value', '_value2'), '', $this->real_field);
+      $this->query->add_field($table_name, 'entity_id', 'date_id_' . $real_field_name);
+      $this->query->add_field($table_name, 'delta', 'date_delta_' . $real_field_name);
     }
 
     $value = $this->get_filter_value('value', $this->value['value']);

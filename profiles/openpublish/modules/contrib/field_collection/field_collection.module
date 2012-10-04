@@ -140,20 +140,34 @@ class FieldCollectionItemEntity extends Entity {
   }
 
   /**
+   * Returns the field instance label translated to interface language.
+   */
+  public function translatedInstanceLabel($langcode = NULL) {
+    if ($info = $this->instanceInfo()) {
+      if (module_exists('i18n_field')) {
+        return i18n_string("field:{$this->field_name}:{$info['bundle']}:label", $info['label'], array('langcode' => $langcode));
+      }
+      return $info['label'];
+    }
+  }
+
+  /**
    * Specifies the default label, which is picked up by label() by default.
    */
   public function defaultLabel() {
     // @todo make configurable.
-    if ($instance = $this->instanceInfo()) {
+    if ($this->fetchHostDetails()) {
       $field = $this->fieldInfo();
+      $label = $this->translatedInstanceLabel();
+
       if ($field['cardinality'] == 1) {
-        return $instance['label'];
+        return $label;
       }
       elseif ($this->item_id) {
-        return t('!instance_label @count', array('!instance_label' => $instance['label'], '@count' => $this->delta() + 1));
+        return t('!instance_label @count', array('!instance_label' => $label, '@count' => $this->delta() + 1));
       }
       else {
-        return t('New !instance_label', array('!instance_label' => $instance['label']));
+        return t('New !instance_label', array('!instance_label' => $label));
       }
     }
     return t('Unconnected field collection item');
@@ -728,7 +742,7 @@ function field_collection_field_formatter_settings_form($field, $instance, $view
   $settings = $display['settings'];
   $elements = array();
 
-  if ($display['type'] !== 'field_collection_fields') {
+  if ($display['type'] != 'field_collection_fields') {
     $elements['edit'] = array(
       '#type' => 'textfield',
       '#title' => t('Edit link title'),
@@ -820,7 +834,8 @@ function field_collection_field_formatter_view($entity_type, $entity, $field, $i
           $links = array();
           foreach (array('edit', 'delete') as $op) {
             if ($settings[$op] && field_collection_item_access($op == 'edit' ? 'update' : $op, $field_collection)) {
-              $links[] = l($settings[$op], $field_collection->path() . '/' . $op, array('query' => drupal_get_destination()));
+              $title = entity_i18n_string("field:{$field['field_name']}:{$instance['bundle']}:setting_$op", $settings[$op]);
+              $links[] = l($title, $field_collection->path() . '/' . $op, array('query' => drupal_get_destination()));
             }
           }
           if ($links) {
@@ -851,7 +866,7 @@ function field_collection_field_formatter_view($entity_type, $entity, $field, $i
           foreach (array('edit', 'delete') as $op) {
             if ($settings[$op] && field_collection_item_access($op == 'edit' ? 'update' : $op, $field_collection)) {
               $links['#links'][$op] = array(
-                'title' => $settings[$op],
+                'title' => entity_i18n_string("field:{$field['field_name']}:{$instance['bundle']}:setting_$op", $settings[$op]),
                 'href' => $field_collection->path() . '/' . $op,
                 'query' => drupal_get_destination(),
               );
@@ -887,6 +902,7 @@ function field_collection_field_formatter_links(&$element, $entity_type, $entity
     // Check whether the current is allowed to create a new item.
     $field_collection_item = entity_create('field_collection_item', array('field_name' => $field['field_name']));
     $field_collection_item->setHostEntity($entity_type, $entity, LANGUAGE_NONE, FALSE);
+
     if (field_collection_item_access('create', $field_collection_item)) {
       $path = field_collection_field_get_path($field);
       list($id) = entity_extract_ids($entity_type, $entity);
@@ -894,8 +910,11 @@ function field_collection_field_formatter_links(&$element, $entity_type, $entity
       if (!empty($settings['description'])) {
         $element['#suffix'] .= '<div class="description field-collection-description">' . field_filter_xss($instance['description']) . '</div>';
       }
+      $title = entity_i18n_string("field:{$field['field_name']}:{$instance['bundle']}:setting_add", $settings['add']);
       $add_path = $path . '/add/' . $entity_type . '/' . $id;
-      $element['#suffix'] .= '<ul class="action-links action-links-field-collection-add"><li>' . l($settings['add'], $add_path, array('query' => drupal_get_destination())) . "</li></ul>";
+      $element['#suffix'] .= '<ul class="action-links action-links-field-collection-add"><li>';
+      $element['#suffix'] .= l($title, $add_path, array('query' => drupal_get_destination()));
+      $element['#suffix'] .= '</li></ul>';
     }
   }
   // If there is no add link, add a special class to the last item.
@@ -1280,7 +1299,10 @@ function field_collection_field_create_field($field) {
 
     // Clear caches.
     entity_info_cache_clear();
-    menu_rebuild();
+    // Do not directly issue menu rebuilds here to avoid potentially multiple
+    // rebuilds. Instead, let menu_get_item() issue the rebuild on the next
+    // request.
+    variable_set('menu_rebuild_needed', TRUE);
   }
 }
 
@@ -1294,7 +1316,41 @@ function field_collection_field_delete_field($field) {
 
     // Clear caches.
     entity_info_cache_clear();
-    menu_rebuild();
+    // Do not directly issue menu rebuilds here to avoid potentially multiple
+    // rebuilds. Instead, let menu_get_item() issue the rebuild on the next
+    // request.
+    variable_set('menu_rebuild_needed', TRUE);
+  }
+}
+
+/**
+ * Implements hook_i18n_string_list_{textgroup}_alter().
+ */
+function field_collection_i18n_string_list_field_alter(&$properties, $type, $instance) {
+  if ($type == 'field_instance') {
+    $field = field_info_field($instance['field_name']);
+
+    if ($field['type'] == 'field_collection' && !empty($instance['display'])) {
+
+      foreach ($instance['display'] as $view_mode => $display) {
+        if ($display['type'] != 'field_collection_fields') {
+          $display['settings'] += array('edit' => 'edit', 'delete' => 'delete', 'add' => 'add');
+
+          $properties['field'][$instance['field_name']][$instance['bundle']]['setting_edit'] = array(
+            'title' => t('Edit link title'),
+            'string' => $display['settings']['edit'],
+          );
+          $properties['field'][$instance['field_name']][$instance['bundle']]['setting_delete'] = array(
+            'title' => t('Delete link title'),
+            'string' => $display['settings']['delete'],
+          );
+          $properties['field'][$instance['field_name']][$instance['bundle']]['setting_add'] = array(
+            'title' => t('Add link title'),
+            'string' => $display['settings']['add'],
+          );
+        }
+      }
+    }
   }
 }
 

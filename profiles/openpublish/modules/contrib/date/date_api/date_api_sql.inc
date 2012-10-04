@@ -598,7 +598,7 @@ class date_sql_handler {
    * @return string
    *   SQL for the where clause for this operation.
    */
-  function sql_where_date($type, $field, $operator, $value, $adjustment = 0) {
+  function sql_where_date($type, $field, $operator, $value, $adjustment = NULL) {
     $type = strtoupper($type);
     if (strtoupper($value) == 'NOW') {
       $value = $this->sql_field('NOW', $adjustment);
@@ -644,12 +644,12 @@ class date_sql_handler {
    * @return string
    *   SQL for the where clause for this operation.
    */
-  function sql_where_extract($part, $field, $operator, $value) {
-    if ($this->local_timezone != $this->db_timezone) {
+  function sql_where_extract($part, $field, $operator, $value, $adjustment = NULL) {
+    if (empty($adjustment) && $this->local_timezone != $this->db_timezone) {
       $field = $this->sql_field($field);
     }
     else {
-      $field = $this->sql_field($field, 0);
+      $field = $this->sql_field($field, $adjustment);
     }
     return $this->sql_extract($part, $field) . " $operator $value";
   }
@@ -670,12 +670,12 @@ class date_sql_handler {
    * @return string
    *   SQL for the where clause for this operation.
    */
-  function sql_where_format($format, $field, $operator, $value) {
-    if ($this->local_timezone != $this->db_timezone) {
+  function sql_where_format($format, $field, $operator, $value, $adjustment = NULL) {
+    if (empty($adjustment) && $this->local_timezone != $this->db_timezone) {
       $field = $this->sql_field($field);
     }
     else {
-      $field = $this->sql_field($field, 0);
+      $field = $this->sql_field($field, $adjustment);
     }
     return $this->sql_format($format, $field) . " $operator '$value'";
   }

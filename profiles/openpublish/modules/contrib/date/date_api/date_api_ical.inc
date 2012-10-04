@@ -215,15 +215,31 @@ function date_ical_parse($icaldatafolded = array()) {
             // even when you are working with only a portion of the VEVENT
             // array, like in Feed API parsers.
             $subgroup['all_day'] = FALSE;
-            if (!empty($subgroup['DTSTART']) && (!empty($subgroup['DTSTART']['all_day']) ||
-              (empty($subgroup['DTEND']) && empty($subgroup['RRULE']) && empty($subgroup['RRULE']['COUNT'])))) {
-              // Many programs output DTEND for an all day event as the
-              // following day, reset this to the same day for internal use.
-              $subgroup['all_day'] = TRUE;
+
+            // iCal spec states 'The "DTEND" property for a "VEVENT" calendar
+            // component specifies the non-inclusive end of the event'. Adjust
+            // multi-day events to remove the extra day because the Date code
+            // assumes the end date is inclusive.
+            if (!empty($subgroup['DTEND']) && (!empty($subgroup['DTEND']['all_day']))) {
+              // Make the end date one day earlier.
+              $date = new DateObject ($subgroup['DTEND']['datetime'] . ' 00:00:00', $subgroup['DTEND']['tz']);
+              date_modify($date, '-1 day');
+              $subgroup['DTEND']['datetime'] = date_format($date,  'Y-m-d');
+            }
+            // If a start datetime is defined AND there is no definition for
+            // the end datetime THEN make the end datetime equal the start
+            // datetime and if it is an all day event define the entire event
+            // as a single all day event.
+            if (!empty($subgroup['DTSTART']) &&
+               (empty($subgroup['DTEND']) && empty($subgroup['RRULE']) && empty($subgroup['RRULE']['COUNT']))) {
               $subgroup['DTEND'] = $subgroup['DTSTART'];
             }
             // Add this element to the parent as an array under the component
             // name.
+            if (!empty($subgroup['DTSTART']['all_day'])) {
+              $subgroup['all_day'] = TRUE;
+            }
+            // Add this element to the parent as an array under the
             prev($subgroups);
             $parent = &$subgroups[key($subgroups)];
 
@@ -291,6 +307,7 @@ function date_ical_parse($icaldatafolded = array()) {
           $parse_result = date_ical_parse_rrule($field, $data);
           break;
 
+        case 'STATUS':
         case 'SUMMARY':
         case 'DESCRIPTION':
           $parse_result = date_ical_parse_text($field, $data);
@@ -712,9 +729,12 @@ function date_api_ical_build_rrule($form_values) {
     // We only collect a date for UNTIL, but we need it to be inclusive, so
     // force it to a full datetime element at the last second of the day.
     if (!is_object($form_values['UNTIL']['datetime'])) {
-      $form_values['UNTIL']['datetime'] .= ' 23:59:59';
-      $form_values['UNTIL']['granularity'] = serialize(drupal_map_assoc(array('year', 'month', 'day', 'hour', 'minute', 'second')));
-      $form_values['UNTIL']['all_day'] = 0;
+      // If this is a date without time, give it time.
+      if (strlen($form_values['UNTIL']['datetime']) < 11) {
+        $form_values['UNTIL']['datetime'] .= ' 23:59:59';
+        $form_values['UNTIL']['granularity'] = serialize(drupal_map_assoc(array('year', 'month', 'day', 'hour', 'minute', 'second')));
+        $form_values['UNTIL']['all_day'] = FALSE;
+      }
       $until = date_ical_date($form_values['UNTIL'], 'UTC');
     }
     else {
@@ -745,7 +765,7 @@ function date_api_ical_build_rrule($form_values) {
     foreach ($form_values['EXDATE'] as $value) {
       if (!empty($value['datetime'])) {
         $date = !is_object($value['datetime']) ? date_ical_date($value, 'UTC') : $value['datetime'];
-        $ex_date = !empty($date) ? $date->format(DATE_FORMAT_ICAL) . 'Z': '';
+        $ex_date = !empty($date) ? date_format($date, DATE_FORMAT_ICAL) . 'Z': '';
         if (!empty($ex_date)) {
           $ex_dates[] = $ex_date;
         }
@@ -765,7 +785,7 @@ function date_api_ical_build_rrule($form_values) {
     $ex_dates = array();
     foreach ($form_values['RDATE'] as $value) {
       $date = !is_object($value['datetime']) ? date_ical_date($value, 'UTC') : $value['datetime'];
-      $ex_date = !empty($date) ? $date->format(DATE_FORMAT_ICAL) . 'Z': '';
+      $ex_date = !empty($date) ? date_format($date, DATE_FORMAT_ICAL) . 'Z': '';
       if (!empty($ex_date)) {
         $ex_dates[] = $ex_date;
       }

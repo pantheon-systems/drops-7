@@ -62,6 +62,16 @@ function token_token_info_alter(&$info) {
         'type' => 'url',
       );
     }
+
+    // Add [entity:original] tokens if they do not already exist.
+    if (!isset($info['tokens'][$token_type]['original'])) {
+      $info['tokens'][$token_type]['original'] = array(
+        'name' => t('Original @entity', array('@entity' => drupal_strtolower($entity_info['label']))),
+        'description' => t('The original @entity data if the @entity is being updated or saved.', array('@entity' => drupal_strtolower($entity_info['label']))),
+        'module' => 'token',
+        'type' => $token_type,
+      );
+    }
   }
 
   // Add support for custom date formats.
@@ -123,7 +133,7 @@ function token_token_info() {
   $info['tokens']['content-type']['edit-url'] = array(
     'name' => t('Edit URL'),
     'description' => t("The URL of the content type's edit page."),
-    //'type' => 'url',
+    // 'type' => 'url',
   );
 
   // Taxonomy term and vocabulary tokens.
@@ -131,7 +141,7 @@ function token_token_info() {
     $info['tokens']['term']['edit-url'] = array(
       'name' => t('Edit URL'),
       'description' => t("The URL of the taxonomy term's edit page."),
-      //'type' => 'url',
+      // 'type' => 'url',
     );
     $info['tokens']['term']['parents'] = array(
       'name' => t('Parents'),
@@ -151,11 +161,15 @@ function token_token_info() {
     $info['tokens']['vocabulary']['edit-url'] = array(
       'name' => t('Edit URL'),
       'description' => t("The URL of the vocabulary's edit page."),
-      //'type' => 'url',
+      // 'type' => 'url',
     );
   }
 
   // File tokens.
+  $info['tokens']['file']['basename'] = array(
+    'name' => t('Base name'),
+    'description' => t('The base name of the file.'),
+  );
   $info['tokens']['file']['extension'] = array(
     'name' => t('Extension'),
     'description' => t('The extension of the file.'),
@@ -171,13 +185,13 @@ function token_token_info() {
     'name' => t('Account cancellation URL'),
     'description' => t('The URL of the confirm delete page for the user account.'),
     'restricted' => TRUE,
-    //'type' => 'url',
+    // 'type' => 'url',
   );
   $info['tokens']['user']['one-time-login-url'] = array(
     'name' => t('One-time login URL'),
     'description' => t('The URL of the one-time login page for the user account.'),
     'restricted' => TRUE,
-    //'type' => 'url',
+    // 'type' => 'url',
   );
   if (variable_get('user_pictures', 0)) {
     $info['tokens']['user']['picture'] = array(
@@ -525,8 +539,12 @@ function token_tokens($type, $tokens, array $data = array(), array $options = ar
 
     foreach ($tokens as $name => $original) {
       switch ($name) {
+        case 'basename':
+          $basename = pathinfo($file->uri, PATHINFO_BASENAME);
+          $replacements[$original] = $sanitize ? check_plain($basename) : $basename;
+          break;
         case 'extension':
-          $extension = pathinfo($file->filename, PATHINFO_EXTENSION);
+          $extension = pathinfo($file->uri, PATHINFO_EXTENSION);
           $replacements[$original] = $sanitize ? check_plain($extension) : $extension;
           break;
         case 'size-raw':
@@ -762,12 +780,24 @@ function token_tokens($type, $tokens, array $data = array(), array $options = ar
             $replacements[$original] = url($uri['path'], $uri['options']);
           }
           break;
+
+        case 'original':
+          if (_token_module($type, 'original') == 'token' && !empty($entity->original)) {
+            $label = entity_label($entity_type, $entity->original);
+            $replacements[$original] = $sanitize ? check_plain($label) : $label;
+          }
+          break;
       }
     }
 
-    // Chained token relationships.
+    // [entity:url:*] chained tokens.
     if (($url_tokens = token_find_with_prefix($tokens, 'url')) && _token_module($type, 'url') == 'token') {
       $replacements += token_generate('url', $url_tokens, entity_uri($entity_type, $entity), $options);
+    }
+
+    // [entity:original:*] chained tokens.
+    if (($original_tokens = token_find_with_prefix($tokens, 'original')) && _token_module($type, 'original') == 'token' && !empty($entity->original)) {
+      $replacements += token_generate($type, $original_tokens, array($type => $entity->original), $options);
     }
 
     // Pass through to an generic 'entity' token type generation.
@@ -1298,7 +1328,7 @@ function _token_field_info($field_name = NULL) {
         if (isset($info[$key])) {
           $labels = array_count_values($info[$key]['labels']);
           arsort($labels);
-          $info[$key]['label'] = key($labels);
+          $info[$key]['label'] = check_plain(key($labels));
 
           // Generate a description for the token.
           $info[$key]['description'] = t('@type field.', array('@type' => $type_info[$field['type']]['label']));
@@ -1348,6 +1378,7 @@ function field_token_info_alter(&$info) {
       }
 
       $info['tokens'][$token_type][$field_name] = array(
+        // Note that label and description have already been sanitized by _token_field_info().
         'name' => $field['label'],
         'description' => $field['description'],
         'module' => 'token',
@@ -1367,8 +1398,13 @@ function field_tokens($type, $tokens, array $data = array(), array $options = ar
   // Entity tokens.
   if ($type == 'entity' && !empty($data['entity_type']) && !empty($data['entity']) && !empty($data['token_type'])) {
     $entity_type = $data['entity_type'];
+
     // The field API does weird stuff to the entity, so let's clone it.
     $entity = clone $data['entity'];
+
+    // Reset the prepared view flag in case token generation is called from
+    // inside field_attach_view().
+    unset($entity->_field_view_prepared);
 
     list(, , $bundle) = entity_extract_ids($entity_type, $entity);
     $fields = field_info_instances($entity_type, $bundle);
@@ -1379,15 +1415,10 @@ function field_tokens($type, $tokens, array $data = array(), array $options = ar
         continue;
       }
 
-      // Replace the [entity:field-name] token.
-      if (isset($tokens[$field_name])) {
+      // Replace the [entity:field-name] token only if token module added this
+      // token.
+      if (isset($tokens[$field_name]) && _token_module($data['token_type'], $field_name) == 'token') {
         $original = $tokens[$field_name];
-
-        // Assert that this field was added by token.module.
-        $token_info = token_get_info($data['token_type'], $field_name);
-        if (!isset($token_info['module']) || $token_info['module'] != 'token') {
-          continue;
-        }
 
         $field_output = field_view_field($entity_type, $entity, $field_name, 'token', $langcode);
         $field_output['#token_options'] = $options;

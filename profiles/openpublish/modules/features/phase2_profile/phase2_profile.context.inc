@@ -10,7 +10,7 @@
 function phase2_profile_context_default_contexts() {
   $export = array();
 
-  $context = new stdClass;
+  $context = new stdClass();
   $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
   $context->api_version = 3;
   $context->name = 'profile_detail_page';
@@ -29,11 +29,17 @@ function phase2_profile_context_default_contexts() {
   $context->reactions = array(
     'block' => array(
       'blocks' => array(
+        'boxes-ad_300x250_1' => array(
+          'module' => 'boxes',
+          'delta' => 'ad_300x250_1',
+          'region' => 'sidebar_second',
+          'weight' => '-10',
+        ),
         'views-op_recent_content-block_2' => array(
           'module' => 'views',
           'delta' => 'op_recent_content-block_2',
           'region' => 'sidebar_second',
-          'weight' => '-10',
+          'weight' => '-9',
         ),
       ),
     ),

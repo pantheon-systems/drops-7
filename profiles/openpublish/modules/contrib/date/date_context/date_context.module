@@ -30,6 +30,8 @@ function date_context_context_plugins() {
     'handler' => array(
       'class' => 'date_context_date_condition',
       'parent' => 'context_condition_node',
+      'path' => drupal_get_path('module', 'date_context') . '/plugins',
+      'file' => 'date_context_date_condition.inc',
     ),
   );
   return $plugins;

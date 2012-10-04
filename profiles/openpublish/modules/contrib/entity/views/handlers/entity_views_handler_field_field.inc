@@ -79,7 +79,7 @@ class entity_views_handler_field_field extends views_handler_field_field {
     // We need special handling for lists of entities as the base.
     $entities = EntityFieldHandlerHelper::get_value($this, $values, 'entity object');
     if (!is_array($entities)) {
-      $entities = array($entities);
+      $entities = $entities ? array($entities) : array();
     }
     foreach ($entities as $entity) {
       // Only try to render the field if it is even present on this bundle.
@@ -87,7 +87,7 @@ class entity_views_handler_field_field extends views_handler_field_field {
       list (, , $bundle) = entity_extract_ids($this->entity_type, $entity);
       if (field_info_instance($this->entity_type, $this->definition['field_name'], $bundle)) {
         // Set the currently rendered entity.
-        $values->_field_data[$this->field_alias]['entity'] = $this->entity = $entity;
+        $values->_field_data[$this->field_alias]['entity'] = $entity;
         $items = array_merge($items, $this->set_items($values, $this->view->row_index));
       }
     }
@@ -95,15 +95,11 @@ class entity_views_handler_field_field extends views_handler_field_field {
   }
 
   /**
-   * Overridden to get the entity and put it where it is assumed to be.
+   * Overridden to force displaying multiple values in a single row.
    */
-  public function get_value($values, $field = NULL) {
-    if (!$this->entity) {
-      return NULL;
-    }
-    if ($field == 'entity') {
-      return $this->entity;
-    }
-    return parent::get_value($values, $field);
+  function multiple_options_form(&$form, &$form_state) {
+    parent::multiple_options_form($form, $form_state);
+    $form['group_rows']['#default_value'] = TRUE;
+    $form['group_rows']['#disabled'] = TRUE;
   }
 }

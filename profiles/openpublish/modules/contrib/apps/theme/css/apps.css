@@ -6,7 +6,6 @@ body .path-admin-apps span.icon {
   background: #eee;
   padding: 10px;
   border: 1px solid #ccc;
-  min-width: 960px;
 }
 
 #apps-featured-wrapper {
@@ -83,7 +82,11 @@ body .path-admin-apps span.icon {
   background: #eee;
   clear: both;
   padding: 6px 5px 0px;
-  min-width: 970px;
+}
+
+#apps-list h2 {
+  margin-top: 0;
+  width: 300px;
 }
 
 #apps-list .item-list {
@@ -96,7 +99,6 @@ body .path-admin-apps span.icon {
 #apps-list ul {
   clear: both;
   padding: 0;
-  display: inline-block;
   margin: 0;
 }
 
@@ -104,11 +106,16 @@ body .path-admin-apps span.icon {
   float: left;
   display: block;
   height: 110px;
-  width: 350px;
+  width: 46.5%;
+  max-width:450px;
   border: 1px solid #ccc;
   background: #fff;
-  margin: 5px;
+  margin: 5px 5px 10px;
   padding: 10px;
+}
+/* This is specifically for tao based themes to make things wrap a bit better*/
+body.tao #apps-list ul li {
+  max-width:350px;
 }
 
 .app-logo {
@@ -121,7 +128,7 @@ body .path-admin-apps span.icon {
 .app-teaser {
   float: left;
   display: inline-block;
-  padding: 10px 15px;
+  padding: 5px 15px 10px 15px;
   width: 200px;
 }
 
@@ -141,34 +148,43 @@ body .path-admin-apps span.icon {
 }
 
 .app-rating {
-  background: transparent url('../images/stars.png') no-repeat -3px 0 ;
-  padding-left: 100px;
   padding-top: 2px;
   color: #666;
   font-family: "Lucida Grande", Arial, Helvetica, sans-serif;
   font-size: 10px;
   text-transform: uppercase;
-  min-width: 100px;
 }
 
-.app-rating.five {
-  background: transparent url('../images/stars.png') no-repeat -3px 0 ;
+.app-rating .no-vote {
+  display: none;
 }
 
-.app-rating.four{
-  background: transparent url('../images/stars.png') no-repeat -19px 0 ;
+.app-rating .app-user-rating {
+  clear:left;
 }
 
-.app-rating.three{
-  background: transparent url('../images/stars.png') no-repeat -40px 0 ;
+.app-stars-holder {
+  position: relative;
+  width:100px;
+  display:inline-block;
+  height:23px;
+  padding:0;
+  background: transparent url('../images/stars-grey.png') no-repeat;
+  float:left;
 }
 
-.app-rating.two{
-  background: transparent url('../images/stars.png') no-repeat -57px 0 ;
+.app-stars {
+  background: transparent url('../images/stars.png') no-repeat;
+  position: relative;
+  height:23px;
+  padding:0;
+  display:block;
+  overflow: hidden;
 }
 
-.app-rating.one{
-  background: transparent url('../images/stars.png') no-repeat -78px 0 ;
+.app-rating-count {
+  padding: 2px 10px;
+  float: left;
 }
 
 .app-teaser .app-action {
@@ -207,6 +223,11 @@ body .path-admin-apps span.icon {
   clear: both;
   min-width:960px;
   margin-bottom:30px;
+}
+
+.app-main {
+  float:left;
+  max-width:70%;
 }
 
 #sidebar {
@@ -281,7 +302,7 @@ body .path-admin-apps span.icon {
 
 #app-wrapper .app-screenshot .screenshot-shadow {
   top: 11px;
-  left: 272px;
+  left: 11px;
   width: 590px;
   height: 370px;
 }
@@ -289,10 +310,11 @@ body .path-admin-apps span.icon {
 .block #apps-list ul {
   display: block;
 }
-.block #apps-list ul li {
-  float: none;
-  width: auto;
-}
+
 .block #apps-list {
   min-width:0;
+}
+
+#apps-voting-error {
+  clear:both;
 }

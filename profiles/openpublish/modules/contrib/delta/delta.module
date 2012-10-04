@@ -117,7 +117,7 @@ function delta_load_all($reset = FALSE) {
  */
 function delta_enabled($name) {
   $template = delta_load($name);
-  
+
   return $template && (!isset($template->disabled) || !$template->disabled);
 }
 
@@ -157,7 +157,7 @@ function delta_inject($name) {
   if ($name && $delta = delta_load($name)) {
     $pointer = &drupal_static(__FUNCTION__);
     $before = delta_reset($delta->theme);
-    
+
     foreach (delta_get_plugins($name) as $plugin) {
       $plugin->inject();
     }
@@ -165,7 +165,7 @@ function delta_inject($name) {
     $pointer[$delta->theme] = $name;
 
     module_invoke_all('delta_inject', $delta->theme, $name);
-    
+
     return $before;
   }
 }
@@ -188,7 +188,7 @@ function delta_get_plugin($name, $plugin) {
  */
 function delta_get_plugins($name) {
   $cache = &drupal_static(__FUNCTION__);
-  
+
   if (!isset($cache[$name])) {
     $cache[$name] = array();
 
@@ -207,7 +207,7 @@ function delta_get_plugins($name) {
 
   return $cache[$name];
 }
-  
+
 /**
  * @todo
  */
@@ -226,8 +226,8 @@ function delta_ancestors($name) {
 
   if ($template = delta_load($name)) {
     $ancestors[$template->machine_name] = $template;
-    
-    if (!empty($delta->parent)) {      
+
+    if (!empty($template->parent)) {
       $ancestors = array_merge($ancestors, delta_ancestors($template->parent));
     }
   }
@@ -241,39 +241,27 @@ function delta_ancestors($name) {
 function delta_merge($first, $second) {
   if (is_array($first) && is_array($second)) {
     return array_merge($first, $second);
-  }  
-  
+  }
+
   if (is_object($first) && is_object($second)) {
     return (object) array_merge((array) $first, (array) $second);
   }
-  
+
   return $second;
 }
 
 /**
  * @todo
  */
-function delta_reduce($first, $second) {
-  if (is_array($first) && is_array($second)) {
-    foreach ($first as $name => $value) {
-      if (isset($second[$name]) && $first[$name] === $second[$name]) {
-        unset($first[$name]);
-      }
+function delta_reduce(array $first, array $second) {
+  if ($first === $second) {
+    return NULL;
+  }
+  foreach ($first as $name => $value) {
+    if (($first[$name] === NULL && !isset($second[$name])) || (isset($second[$name]) && $value === $second[$name])) {
+      unset($first[$name]);
     }
   }
-  else if (is_object($first) && is_object($second)) {
-    foreach ($first as $name => $value) {
-      if (isset($second->$name) && $first->$name === $second->$name) {
-        unset($first->$name);
-      }
-    }
-  }
-  else {
-    if ($first === $second) {
-      $first = NULL;
-    }
-  }
-
   return $first;
 }
 
@@ -281,10 +269,10 @@ function delta_reduce($first, $second) {
  * @todo
  */
 function delta_theme_settings($key) {
-  $backup = delta_reset($key);  
-  $form = drupal_get_form('system_theme_settings', $key);  
+  $backup = delta_reset($key);
+  $form = drupal_get_form('system_theme_settings', $key);
 
   delta_inject($backup);
-  
+
   return $form;
 }

@@ -33,14 +33,8 @@ function date_get_entity_bundle($entity_type, $entity) {
  * Gets the default date format for the given field widget.
  */
 function date_default_format($type) {
-  if (stristr($type, 'date_popup') && module_exists('date_popup')) {
-    $formats = date_popup_formats();
-    $default_format = array_shift($formats);
-  }
-  else {
-    // Example input formats must show all possible date parts, so add seconds.
-    $default_format = str_replace('i', 'i:s', variable_get('date_format_short', 'm/d/Y - H:i'));
-  }
+  // Example input formats must show all possible date parts, so add seconds.
+  $default_format = str_replace('i', 'i:s', variable_get('date_format_short', 'm/d/Y - H:i'));
   return $default_format;
 }
 
@@ -268,6 +262,7 @@ function date_formatter_process($formatter, $entity_type, $entity, $field, $inst
       }
     }
   }
+
   if (empty($dates['value2'])) {
     $dates['value2'] = $dates['value'];
   }
@@ -668,7 +663,7 @@ function date_entity_metadata_struct_setter(&$item, $name, $value, $langcode, $t
  * the Date All Day module. Copy left here to avoid breaking other
  * modules that use this function.
  *
- * Deprecated, will be removed at some time in the future.
+ * DEPRECATED!, will be removed at some time in the future.
  */
 function date_field_all_day($field, $instance, $date1, $date2 = NULL) {
   if (empty($date1) || !is_object($date1)) {
@@ -686,6 +681,47 @@ function date_field_all_day($field, $instance, $date1, $date2 = NULL) {
   return date_is_all_day(date_format($date1, DATE_FORMAT_DATETIME), date_format($date2, DATE_FORMAT_DATETIME), $granularity, $increment);
 }
 
+/**
+ * Generates a Date API SQL handler for the given date field.
+ *
+ * The handler will be set up to make the correct timezone adjustments
+ * for the field settings.
+ *
+ * @param array $field
+ *   The $field array.
+ * @param string $compare_tz
+ *   The timezone used for comparison values in the SQL.
+ *
+ * DEPRECATED!, will be removed at some time in the future.
+ */
+function date_field_get_sql_handler($field, $compare_tz = NULL) {
+  module_load_include('inc', 'date_api', 'date_api_sql');
+
+  $db_info = date_api_database_info($field);
+
+  // Create a DateAPI SQL handler class for this field type.
+  $handler = new date_sql_handler($field['type']);
+
+  // If this date field stores a timezone in the DB, tell the handler about it.
+  if ($field['settings']['tz_handling'] == 'date') {
+    $handler->db_timezone_field = $db_info['columns']['timezone']['column'];
+  }
+  else {
+    $handler->db_timezone = date_get_timezone_db($field['settings']['tz_handling']);
+  }
+
+  if (empty($compare_tz)) {
+    $compare_tz = date_get_timezone($field['settings']['tz_handling']);
+  }
+  $handler->local_timezone = $compare_tz;
+
+  // Now that the handler is properly initialized, force the DB
+  // to use UTC so no timezone conversions get added to things like
+  // NOW() or FROM_UNIXTIME().
+  $handler->set_db_timezone();
+
+  return $handler;
+}
 
 /**
  * Implements hook_field_widget_properties_alter().

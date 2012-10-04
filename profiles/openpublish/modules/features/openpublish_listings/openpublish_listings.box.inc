@@ -10,7 +10,7 @@
 function openpublish_listings_default_box() {
   $export = array();
 
-  $box = new stdClass;
+  $box = new stdClass();
   $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
   $box->api_version = 1;
   $box->delta = 'op_recent_videos';
@@ -30,7 +30,7 @@ function openpublish_listings_default_box() {
   );
   $export['op_recent_videos'] = $box;
 
-  $box = new stdClass;
+  $box = new stdClass();
   $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
   $box->api_version = 1;
   $box->delta = 'op_top_stories';

@@ -4,6 +4,10 @@
   margin-left: 19px;
 }
 
+.ui-dialog-content .token-tree {
+  margin-left: 0;
+}
+
 .token-tree td, .token-tree th {
   padding-top: 0;
   padding-bottom: 0;

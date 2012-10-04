@@ -140,11 +140,11 @@ function _apps_app_access($perm, $server_name, $action, $app_name) {
       case FALSE:
         return TRUE;
       case 'enable':
-        return ($app['status'] === DISABLED);
+        return ($app['status'] === APPS_DISABLED);
       case 'disable':
-        return ($app['status'] === ENABLED);
+        return ($app['status'] === APPS_ENABLED);
       case 'install':
-        return ($app['status'] === INSTALLABLE);
+        return ($app['status'] === APPS_INSTALLABLE);
       case 'configure-action':
       case 'configure': 
         return (bool) apps_app_callback($app, "configure form") || apps_app_callback($app, "demo content enabled callback");
@@ -270,24 +270,31 @@ function apps_app_uninstall($server_name, $app_name) {
 }
 
 /**
- * Callback for app configure page
+ * Admin settings form for Apps.
  */
-function apps_config_page() {
-return drupal_get_form('apps_config_form');
-}
-
 function apps_config_form() {
   $form = array();
-  $form['apps_enable_developement_console'] = array(
-    '#title' => 'Enable Developement Console',
+  $form['apps_enable_dev_console'] = array(
+    '#title' => t('Enable Development Console'),
+    '#description' => t('Allows local Apps to be displayed in a development app server.'),
     '#type' => 'checkbox',
-    '#default_value'=> variable_get('apps_enable_developement_console', FALSE),
+    '#default_value'=> variable_get('apps_enable_dev_console', FALSE),
+  );
+  $form['apps_allow_voting'] = array(
+    '#title' => t('Allow Voting'),
+    '#description' => t('Allow users who can install apps to also rate them.  Requires that the appserver is running the appserver module.'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('apps_allow_voting', TRUE),
   );
   $form = system_settings_form($form);
   $form['#submit'][] = 'apps_config_form_submit';
   return $form;
 }
 
+/**
+ * Once the settings are saved, flush all caches. This will trigger the
+ * Apps dev server to appear in the Apps console.
+ */
 function apps_config_form_submit() {
   drupal_flush_all_caches();
 }

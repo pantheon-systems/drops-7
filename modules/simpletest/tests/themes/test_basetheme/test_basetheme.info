@@ -5,3 +5,10 @@ hidden = TRUE
 
 settings[basetheme_only] = base theme value
 settings[subtheme_override] = base theme value
+
+
+; Information added by drush on 2012-10-04
+version = "master-dev"
+project = "drupal"
+datestamp = "1349370005"
+

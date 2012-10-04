@@ -15,17 +15,23 @@ function video_embed_field_field_schema($field){
         'video_url' => array(
           'type' => 'varchar',
           'length' => 512,
-          'default' => ''
+          'default' => '',
         ),
         'thumbnail_path' => array(
           'type' => 'varchar',
           'length' => 512,
-          'default' => ''
+          'default' => '',
+        ),
+        'video_data' => array(
+          'type' => 'blob',
+          'not null' => FALSE,
+          'size' => 'big',
+          'serialize' => TRUE,
         ),
         'embed_code' => array(
           'type' => 'varchar',
           'length' => 1024,
-          'default' => ''
+          'default' => '',
         ),
         'description' => array(
           'type' => 'text',
@@ -35,7 +41,7 @@ function video_embed_field_field_schema($field){
       $indexes = array();
     break;
   }
-  
+
   return array(
     'columns' => $columns,
     'indexes' => $indexes
@@ -190,4 +196,43 @@ function video_embed_field_update_7003() {
  */
 function video_embed_field_update_7004() {
   variable_set('colorbox_load', 1);
+}
+
+/**
+ *  Add data column to field database.
+ */
+function video_embed_field_update_7005() {
+  // Get the list of fields of type 'video_embed_field'.
+  $video_embed_fields = array();
+  foreach (field_info_fields() as $field_name => $field_info) {
+    if ($field_info['type'] == 'video_embed_field') {
+      $video_embed_fields[$field_name] = field_read_field($field_name);
+    }
+  }
+
+  foreach ($video_embed_fields as $field) {
+    if ($field['deleted']) {
+      $table = "field_deleted_data_{$field['id']}";
+      $revision_table = "field_deleted_revision_{$field['id']}";
+    }
+    else {
+      $table = "field_data_{$field['field_name']}";
+      $revision_table = "field_revision_{$field['field_name']}";
+    }
+    $column = $field['field_name'] . '_' . 'video_data';
+    db_add_field($table, $column, array(
+      'type' => 'blob',
+      'not null' => FALSE,
+      'size' => 'big',
+      'serialize' => TRUE
+    ));
+    db_add_field($revision_table, $column, array(
+      'type' => 'blob',
+      'not null' => FALSE,
+      'size' => 'big',
+      'serialize' => TRUE
+    ));
+  }
+
+  return t('Data column added. Please clear cache.');
 }

@@ -183,3 +183,10 @@ function openpublish_set_wysiwyg_settings() {
   ->fields(array('weight' => 0))
   ->execute();
 }
+
+/**
+ * Enable field_collection_bulkupload
+ */
+function openpublish_update_7001() {
+  module_enable(array('field_collection_bulkupload'));
+}

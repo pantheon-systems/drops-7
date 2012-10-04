@@ -85,10 +85,10 @@ function drush_apps_list() {
     foreach ($apps as $k => $app) {
       $status = '';
       switch($app['status']) {
-        CASE INCOMPATABLE : $status = 'Incompatable'; break;
-        CASE DISABLED : $status = 'Disabled'; break;
-        CASE ENABLED : $status = 'Enabled'; break;
-        CASE INSTALLABLE : $status = 'Installable'; break;
+        CASE APPS_INCOMPATIBLE : $status = 'Incompatible'; break;
+        CASE APPS_DISABLED : $status = 'Disabled'; break;
+        CASE APPS_ENABLED : $status = 'Enabled'; break;
+        CASE APPS_INSTALLABLE : $status = 'Installable'; break;
       }
       $rows[] = array(
         $k,
@@ -104,15 +104,54 @@ function drush_apps_list() {
 }
 
 /**
+ * Return a list of all apps available for installation.
+ */
+function drush_apps_installable_apps() {
+  module_load_include('inc', 'apps', 'apps.manifest');
+
+  $apps_list = array();
+  $servers = apps_servers();
+  foreach ($servers as $server) {
+    $apps = apps_apps($server);
+    foreach ($apps as $key => $app) {
+      if ($app['status'] == APPS_DISABLED || $app['status'] == APPS_INSTALLABLE) {
+        $apps_list[$key] = $app['server']['name'];
+      }
+    }
+  }
+  return $apps_list;
+}
+
+/**
  * Install an app, or list.
  */
 function drush_apps_install() {
   $apps = func_get_args();
-  if (empty($apps)) {
-    drush_log(dt('No Apps were specified to install'), 'error');
-    return;
+  $installable = drush_apps_installable_apps();
+  $to_install = array();
+  if (!empty($apps)) {
+    foreach ($apps as $app) {
+      if (array_key_exists($app, $installable)) {
+        $to_install[$app] = $installable[$app];
+      }
+      else {
+        drush_log(dt('App @app is not available for installation', array('@app' => $app)), 'error');
+      }
+    }
   }
-  drush_print(dt('Apps to install: @apps', array('@apps' => implode(', ', $apps))));
-  drush_print(dt('Not Implemented'));
+
+  if (empty($to_install)) {
+    $type = drush_choice($installable, 'Enter a number to choose which App to install.', '!key');
+    if ($type === FALSE) {
+      return;
+    }
+    $to_install[$type] = $installable[$type];
+  }
+
+  foreach ($to_install as $app => $server) {
+    drush_print(dt('Install @app for server @server', array('@app' => $app, '@server' => $server)));
+  }
+
+  drush_print(dt('Install not implemented yet.'));
 }
 

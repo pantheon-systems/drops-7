@@ -11,7 +11,7 @@
 class TokenTestHelper extends DrupalWebTestCase {
   protected $profile = 'testing';
 
-  function setUp($modules = array()) {
+  public function setUp($modules = array()) {
     $modules[] = 'path';
     $modules[] = 'token';
     $modules[] = 'token_test';
@@ -210,7 +210,7 @@ class TokenURLTestCase extends TokenTestHelper {
     );
   }
 
-  function setUp($modules = array()) {
+  public function setUp($modules = array()) {
     parent::setUp($modules);
     $this->saveAlias('node/1', 'first-node');
   }
@@ -247,7 +247,7 @@ class TokenCommentTestCase extends TokenTestHelper {
     );
   }
 
-  function setUp($modules = array()) {
+  public function setUp($modules = array()) {
     $modules[] = 'comment';
     parent::setUp($modules);
   }
@@ -368,7 +368,7 @@ class TokenMenuTestCase extends TokenTestHelper {
     );
   }
 
-  function setUp($modules = array()) {
+  public function setUp($modules = array()) {
     $modules[] = 'menu';
     parent::setUp($modules);
   }
@@ -473,7 +473,7 @@ class TokenTaxonomyTestCase extends TokenTestHelper {
     );
   }
 
-  function setUp($modules = array()) {
+  public function setUp($modules = array()) {
     $modules[] = 'taxonomy';
     parent::setUp($modules);
 
@@ -578,12 +578,12 @@ class TokenUserTestCase extends TokenTestHelper {
     );
   }
 
-  function setUp($modules = array()) {
+  public function setUp($modules = array()) {
     parent::setUp($modules);
 
     // Enable user pictures.
     variable_set('user_pictures', 1);
-    variable_set('user_picture_file_size', 0);
+    variable_set('user_picture_file_size', '');
 
     // Set up the pictures directory.
     $picture_path = file_default_scheme() . '://' . variable_get('user_picture_path', 'pictures');
@@ -658,7 +658,7 @@ class TokenEntityTestCase extends TokenTestHelper {
     );
   }
 
-  function setUp($modules = array()) {
+  public function setUp($modules = array()) {
     $modules[] = 'taxonomy';
     parent::setUp($modules);
 
@@ -698,6 +698,34 @@ class TokenEntityTestCase extends TokenTestHelper {
     taxonomy_term_save($term);
     return $term;
   }
+
+  /**
+   * Test the [entity:original:*] tokens.
+   */
+  function testEntityOriginal() {
+    $node = $this->drupalCreateNode(array('title' => 'Original title'));
+
+    $tokens = array(
+      'nid' => $node->nid,
+      'title' => 'Original title',
+      'original' => NULL,
+      'original:nid' => NULL,
+    );
+    $this->assertTokens('node', array('node' => $node), $tokens);
+
+    // Emulate the original entity property that would be available from
+    // node_save() and change the title for the node.
+    $node->original = entity_load_unchanged('node', $node->nid);
+    $node->title = 'New title';
+
+    $tokens = array(
+      'nid' => $node->nid,
+      'title' => 'New title',
+      'original' => 'Original title',
+      'original:nid' => $node->nid,
+    );
+    $this->assertTokens('node', array('node' => $node), $tokens);
+  }
 }
 
 /**
@@ -714,7 +742,7 @@ class TokenProfileTestCase extends TokenTestHelper {
     );
   }
 
-  function setUp($modules = array()) {
+  public function setUp($modules = array()) {
     $modules[] = 'profile';
     parent::setUp($modules);
     $this->account = $this->drupalCreateUser(array('administer users'));
@@ -982,5 +1010,84 @@ class TokenDateTestCase extends TokenTestHelper {
     );
 
     $this->assertTokens('date', array('date' => 453859200), $tokens);
+  }
+}
+
+class TokenFileTestCase extends TokenTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'File token tests',
+      'description' => 'Test the file tokens.',
+      'group' => 'Token',
+    );
+  }
+
+  function testFileTokens() {
+    // Create a test file object.
+    $file = new stdClass();
+    $file->fid = 1;
+    $file->filename = 'test.png';
+    $file->filesize = 100;
+    $file->uri = 'public://images/test.png';
+    $file->filemime = 'image/png';
+
+    $tokens = array(
+      'basename' => 'test.png',
+      'extension' => 'png',
+      'size-raw' => 100,
+    );
+    $this->assertTokens('file', array('file' => $file), $tokens);
+
+    // Test a file with no extension and a fake name.
+    $file->filename = 'Test PNG image';
+    $file->uri = 'public://images/test';
+
+    $tokens = array(
+      'basename' => 'test',
+      'extension' => '',
+      'size-raw' => 100,
+    );
+    $this->assertTokens('file', array('file' => $file), $tokens);
+  }
+}
+
+class TokenBlockTestCase extends TokenTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'Block token tests',
+      'description' => 'Test the block title token replacement.',
+      'group' => 'Token',
+    );
+  }
+
+  public function setUp($modules = array()) {
+    $modules[] = 'block';
+    parent::setUp($modules);
+
+    $this->admin_user = $this->drupalCreateUser(array('access content', 'administer blocks'));
+    $this->drupalLogin($this->admin_user);
+  }
+
+  public function testBlockTitleTokens() {
+    $edit['title'] = '[user:name]';
+    $edit['info'] = 'Test token title block';
+    $edit['body[value]'] = 'This is the test token title block.';
+    $this->drupalPost('admin/structure/block/add', $edit, 'Save block');
+    // Ensure token validation is working on the block.
+    $this->assertText('The Block title is using the following invalid tokens: [user:name].');
+
+    // Create the block for real now with a valid title.
+    $edit['title'] = '[current-page:title] block title';
+    $edit['regions[bartik]'] = 'sidebar_first';
+    $this->drupalPost(NULL, $edit, 'Save block');
+
+    $this->drupalGet('node');
+    $this->assertText('Welcome to ' . variable_get('site_name', 'Drupal') . ' block title');
+
+    // Ensure that tokens are not double-escaped when output as a block title.
+    $node = $this->drupalCreateNode(array('title' => "Site's first node"));
+    $this->drupalGet('node/' . $node->nid);
+    // The apostraphe should only be escaped once via check_plain().
+    $this->assertRaw("Site&#039;s first node block title");
   }
 }

@@ -4,3 +4,10 @@ package = Testing
 version = VERSION
 core = 7.x
 hidden = TRUE
+
+
+; Information added by drush on 2012-10-04
+version = "master-dev"
+project = "drupal"
+datestamp = "1349370005"
+
