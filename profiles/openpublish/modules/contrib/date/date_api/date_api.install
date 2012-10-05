@@ -61,17 +61,20 @@ function date_api_requirements($phase) {
  * Implements hook_install().
  */
 function date_api_install() {
-  // Ensure translations don't break at install time.
-  $t = get_t();
+  // Only set the message if Drupal itself is already installed.
+  if (variable_get('install_task') == 'done') {
+    // Ensure translations don't break at install time.
+    $t = get_t();
 
-  // date_api_set_variables can install date_timezone. The
-  // date_timezone_install() function does a module_enable('date_api'). This
-  // means that date_api_enable() can be called before date_api_install()
-  // finishes! So the date_api schema needs to be installed before this line!
-  date_api_set_variables();
+    // date_api_set_variables can install date_timezone. The
+    // date_timezone_install() function does a module_enable('date_api'). This
+    // means that date_api_enable() can be called before date_api_install()
+    // finishes! So the date_api schema needs to be installed before this line!
+    date_api_set_variables();
 
-  $message = $t('The Date API requires that you set up the !timezone_link and the !format_link to function correctly.', array('!timezone_link' => l($t('site timezone and first day of week settings'), 'admin/config/regional/settings'), '!format_link' => l($t('date format settings'), 'admin/config/regional/date-time')));
-  drupal_set_message(filter_xss_admin($message), 'warning');
+    $message = $t('The Date API requires that you set up the <a href="@regional_settings">site timezone and first day of week settings</a> and the <a href="@regional_date_time">date format settings</a> to function correctly.', array('@regional_settings' => url('admin/config/regional/settings'), '@regional_date_time' => url('admin/config/regional/date-time')));
+    drupal_set_message(filter_xss_admin($message), 'warning');
+  }
 }
 
 /**
@@ -235,5 +238,15 @@ function date_api_update_7000() {
 
     // Drop the old table.
     db_drop_table('d6_date_format_locale');
+  }
+}
+
+
+/**
+ * Drop D6 timezone_name field on {users} after upgrading to D7.
+ */
+function date_api_update_7001() {
+  if (db_field_exists('users', 'timezone_name')) {
+    db_drop_field('users', 'timezone_name');
   }
 }

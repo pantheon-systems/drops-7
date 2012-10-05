@@ -275,7 +275,7 @@ class PathautoUnitTestCase extends PathautoTestHelper {
    * Test the handling of path vs non-path tokens in pathauto_clean_token_values().
    */
   function testPathTokens() {
-    variable_set('pathauto_taxonomy_term_pattern', '[term:parent:url:alias]/[term:name]');
+    variable_set('pathauto_taxonomy_term_pattern', '[term:parent:url:path]/[term:name]');
     $vocab = $this->addVocabulary();
 
     $term1 = $this->addTerm($vocab, array('name' => 'Parent term'));
@@ -385,10 +385,17 @@ class PathautoFunctionalTestCase extends PathautoFunctionalTestHelper {
    * Basic functional testing of Pathauto.
    */
   function testNodeEditing() {
+    // Delete the default node pattern. Only the page content type will have a pattern.
+    variable_del('pathauto_node_pattern');
+
+    // Ensure that the Pathauto checkbox is checked by default on the node add form.
+    $this->drupalGet('node/add/page');
+    $this->assertFieldChecked('edit-path-pathauto');
+
     // Create node for testing by previewing and saving the node form.
     $title = ' Testing: node title [';
     $automatic_alias = 'content/testing-node-title';
-    $this->drupalPost('node/add/page', array('title' => $title), 'Preview');
+    $this->drupalPost(NULL, array('title' => $title), 'Preview');
     $this->drupalPost(NULL, array(), 'Save');
     $node = $this->drupalGetNodeByTitle($title);
 
@@ -425,6 +432,23 @@ class PathautoFunctionalTestCase extends PathautoFunctionalTestHelper {
     $this->assertResponse(404, 'Node not accessible through automatic alias.');
     $this->drupalGet($manual_alias);
     $this->assertText($title, 'Node accessible through manual alias.');
+
+    // Now attempt to create a node that has no pattern (article content type).
+    // The Pathauto checkbox should not exist.
+    $this->drupalGet('node/add/article');
+    $this->assertNoFieldById('edit-path-pathauto');
+    $this->assertFieldByName('path[alias]', '');
+
+    $edit = array();
+    $edit['title'] = 'My test article';
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $node = $this->drupalGetNodeByTitle($edit['title']);
+
+    // Pathauto checkbox should still not exist.
+    $this->drupalGet('node/' . $node->nid . '/edit');
+    $this->assertNoFieldById('edit-path-pathauto');
+    $this->assertFieldByName('path[alias]', '');
+    $this->assertNoEntityAlias('node', $node);
   }
 
   /**
@@ -499,6 +523,15 @@ class PathautoFunctionalTestCase extends PathautoFunctionalTestHelper {
   }
 
   /**
+   * Basic functional testing of Pathauto with users.
+   */
+  function testUserEditing() {
+    // There should be no Pathauto checkbox on user forms.
+    $this->drupalGet('user/' . $this->admin_user->uid . '/edit');
+    $this->assertNoFieldById('edit-path-pathauto');
+  }
+
+  /**
    * Test user operations.
    */
   function testUserOperations() {
@@ -561,6 +594,26 @@ class PathautoFunctionalTestCase extends PathautoFunctionalTestHelper {
     $edit['pathauto_node_article_pattern'] = '';
     $this->drupalPost('admin/config/search/path/patterns', $edit, 'Save configuration');
     $this->assertText('The configuration options have been saved.');
+  }
+
+  /**
+   * Test programmatic entity creation for aliases.
+   */
+  function testProgrammaticEntityCreation() {
+    $node = $this->drupalCreateNode(array('title' => 'Test node', 'path' => array('pathauto' => TRUE)));
+    $this->assertEntityAlias('node', $node, 'content/test-node');
+
+    $vocabulary = $this->addVocabulary(array('name' => 'Tags'));
+    $term = $this->addTerm($vocabulary, array('name' => 'Test term', 'path' => array('pathauto' => TRUE)));
+    $this->assertEntityAlias('taxonomy_term', $term, 'tags/test-term');
+
+    $edit['name'] = 'Test user';
+    $edit['mail'] = 'test-user@example.com';
+    $edit['pass']   = user_password();
+    $edit['path'] = array('pathauto' => TRUE);
+    $edit['status'] = 1;
+    $account = user_save(drupal_anonymous_user(), $edit);
+    $this->assertEntityAlias('user', $account, 'users/test-user');
   }
 }
 
@@ -670,5 +723,71 @@ class PathautoBulkUpdateTestCase extends PathautoFunctionalTestHelper {
     $this->assertText('Generated 1 URL alias.'); // 1 node + 0 users
 
     $this->assertEntityAliasExists('node', $new_node);
+  }
+}
+
+/**
+ * Token functionality tests.
+ */
+class PathautoTokenTestCase extends PathautoFunctionalTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'Pathauto tokens',
+      'description' => 'Tests tokens provided by Pathauto.',
+      'group' => 'Pathauto',
+      'dependencies' => array('token'),
+    );
+  }
+
+  function testPathautoTokens() {
+    $array = array(
+      'test first arg',
+      'The Array / value',
+    );
+
+    $tokens = array(
+      'join-path' => 'test-first-arg/array-value',
+    );
+    $data['array'] = $array;
+    $replacements = $this->assertTokens('array', $data, $tokens);
+
+    // Ensure that the pathauto_clean_token_values() function does not alter
+    // this token value.
+    module_load_include('inc', 'pathauto');
+    pathauto_clean_token_values($replacements, $data, array());
+    $this->assertEqual($replacements['[array:join-path]'], 'test-first-arg/array-value');
+  }
+
+  /**
+   * Function copied from TokenTestHelper::assertTokens().
+   */
+  function assertTokens($type, array $data, array $tokens, array $options = array()) {
+    $input = $this->mapTokenNames($type, array_keys($tokens));
+    $replacements = token_generate($type, $input, $data, $options);
+    foreach ($tokens as $name => $expected) {
+      $token = $input[$name];
+      if (!isset($expected)) {
+        $this->assertTrue(!isset($values[$token]), t("Token value for @token was not generated.", array('@type' => $type, '@token' => $token)));
+      }
+      elseif (!isset($replacements[$token])) {
+        $this->fail(t("Token value for @token was not generated.", array('@type' => $type, '@token' => $token)));
+      }
+      elseif (!empty($options['regex'])) {
+        $this->assertTrue(preg_match('/^' . $expected . '$/', $replacements[$token]), t("Token value for @token was '@actual', matching regular expression pattern '@expected'.", array('@type' => $type, '@token' => $token, '@actual' => $replacements[$token], '@expected' => $expected)));
+      }
+      else {
+        $this->assertIdentical($replacements[$token], $expected, t("Token value for @token was '@actual', expected value '@expected'.", array('@type' => $type, '@token' => $token, '@actual' => $replacements[$token], '@expected' => $expected)));
+      }
+    }
+
+    return $replacements;
+  }
+
+  function mapTokenNames($type, array $tokens = array()) {
+    $return = array();
+    foreach ($tokens as $token) {
+      $return[$token] = "[$type:$token]";
+    }
+    return $return;
   }
 }

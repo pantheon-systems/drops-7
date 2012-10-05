@@ -1,0 +1,13 @@
+<?php
+/**
+ * @file apps.install
+ */
+
+/**
+ * Fix typo in the dev console variable
+ */
+function apps_update_7001() {
+  $dev = variable_get('apps_enable_developement_console', FALSE);
+  variable_set('apps_enable_dev_console', $dev);
+  variable_del('apps_enable_developement_console');
+}

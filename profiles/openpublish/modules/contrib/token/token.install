@@ -52,9 +52,11 @@ function token_schema() {
  * Add the cache_token table.
  */
 function token_update_7000() {
-  $schema['cache_token'] = drupal_get_schema_unprocessed('system', 'cache');
-  $schema['cache_token']['description'] = 'Cache table for token information.';
-  db_create_table('cache_token', $schema['cache_token']);
+  if (!db_table_exists('cache_token')) {
+    $schema = drupal_get_schema_unprocessed('system', 'cache');
+    $schema['description'] = 'Cache table for token information.';
+    db_create_table('cache_token', $schema);
+  }
 }
 
 /**
@@ -218,11 +220,11 @@ function _token_upgrade_token_date_list($old_token, $new_token) {
  * @return
  *   A string with the tokens upgraded
  *
- * @see _token_upgrade_token_list();
+ * @see _token_upgrade_token_list()
  */
 function token_update_token_text($text, $updates = array(), $leading = '[', $trailing = ']') {
   $updates += _token_upgrade_token_list();
-  $regex = '/' . preg_quote($leading, '/') . '([^\s]*)' . preg_quote($trailing, '/') . ']/';
+  $regex = '/' . preg_quote($leading, '/') . '([^\s]*)' . preg_quote($trailing, '/') . '/';
   preg_match_all($regex, $text, $matches);
 
   foreach ($matches[1] as $index => $old_token) {
@@ -273,7 +275,7 @@ function token_get_token_problems() {
       'label' => t('The following tokens or token types are not defined as arrays:'),
     ),
     'missing-info' => array(
-      'label' => t('The following tokens or token types are missing required name and description information:'),
+      'label' => t('The following tokens or token types are missing required name and/or description information:'),
     ),
     'type-no-tokens' => array(
       'label' => t('The following token types do not have any tokens defined:'),

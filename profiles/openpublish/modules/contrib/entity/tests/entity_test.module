@@ -29,6 +29,7 @@ function entity_test_entity_info() {
       'bundle keys' => array(
         'bundle' => 'name',
       ),
+      'module' => 'entity_test',
     ),
     'entity_test_type' => array(
       'label' => t('Test entity type'),
@@ -42,6 +43,7 @@ function entity_test_entity_info() {
         'id' => 'id',
         'name' => 'name',
       ),
+      'module' => 'entity_test',
     ),
   );
 

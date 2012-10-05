@@ -11,7 +11,6 @@ Drupal.wysiwygInit = function() {
   if (/KDE/.test(navigator.vendor)) {
     return;
   }
-
   jQuery.each(Drupal.wysiwyg.editor.init, function(editor) {
     // Clone, so original settings are not overwritten.
     this(jQuery.extend(true, {}, Drupal.settings.wysiwyg.configs[editor]));
@@ -38,13 +37,13 @@ Drupal.wysiwygInit = function() {
  *   A DOM element, supplied by Drupal.attachBehaviors().
  */
 Drupal.behaviors.attachWysiwyg = {
-  attach: function(context, settings) {
+  attach: function (context, settings) {
     // This breaks in Konqueror. Prevent it from running.
     if (/KDE/.test(navigator.vendor)) {
       return;
     }
 
-    $('.wysiwyg', context).once('wysiwyg', function() {
+    $('.wysiwyg', context).once('wysiwyg', function () {
       if (!this.id || typeof Drupal.settings.wysiwyg.triggers[this.id] === 'undefined') {
         return;
       }
@@ -76,8 +75,26 @@ Drupal.behaviors.attachWysiwyg = {
         if (event.isDefaultPrevented()) {
           return;
         }
-        Drupal.wysiwygDetach(context, params[format]);
+        Drupal.wysiwygDetach(context, params[format], 'serialize');
       });
+    });
+  },
+
+  detach: function (context, settings, trigger) {
+    var wysiwygs;
+    // The 'serialize' trigger indicates that we should simply update the
+    // underlying element with the new text, without destroying the editor.
+    if (trigger == 'serialize') {
+      // Removing the wysiwyg-processed class guarantees that the editor will
+      // be reattached. Only do this if we're planning to destroy the editor.
+      wysiwygs = $('.wysiwyg-processed', context);
+    }
+    else {
+      wysiwygs = $('.wysiwyg', context).removeOnce('wysiwyg');
+    }
+    wysiwygs.each(function () {
+      var params = Drupal.settings.wysiwyg.triggers[this.id];
+      Drupal.wysiwygDetach(context, params, trigger);
     });
   }
 };
@@ -136,11 +153,20 @@ Drupal.wysiwygAttach = function(context, params) {
  *   A DOM element, supplied by Drupal.attachBehaviors().
  * @param params
  *   An object containing input format parameters.
+ * @param trigger
+ *   A string describing what is causing the editor to be detached.
+ *
+ * @see Drupal.detachBehaviors
  */
-Drupal.wysiwygDetach = function(context, params) {
+Drupal.wysiwygDetach = function (context, params, trigger) {
+  // Do not attempt to detach an unknown editor instance (Ajax).
+  if (typeof Drupal.wysiwyg.instances[params.field] == 'undefined') {
+    return;
+  }
+  trigger = trigger || 'unload';
   var editor = Drupal.wysiwyg.instances[params.field].editor;
   if (jQuery.isFunction(Drupal.wysiwyg.editor.detach[editor])) {
-    Drupal.wysiwyg.editor.detach[editor](context, params);
+    Drupal.wysiwyg.editor.detach[editor](context, params, trigger);
   }
 };
 
@@ -187,6 +213,7 @@ Drupal.wysiwyg.toggleWysiwyg = function (event) {
     Drupal.wysiwyg.editor.attach.none(context, params);
     Drupal.wysiwyg.instances[params.field] = Drupal.wysiwyg.editor.instance.none;
     Drupal.wysiwyg.instances[params.field].editor = 'none';
+    Drupal.wysiwyg.instances[params.field].field = params.field;
     $(this).html(Drupal.settings.wysiwyg.enable).blur();
   }
   else {
@@ -233,5 +260,10 @@ Drupal.wysiwyg.getParams = function(element, params) {
  * Allow certain editor libraries to initialize before the DOM is loaded.
  */
 Drupal.wysiwygInit();
+
+// Respond to CTools detach behaviors event.
+$(document).bind('CToolsDetachBehaviors', function(event, context) {
+  Drupal.behaviors.attachWysiwyg.detach(context, {}, 'unload');
+});
 
 })(jQuery);

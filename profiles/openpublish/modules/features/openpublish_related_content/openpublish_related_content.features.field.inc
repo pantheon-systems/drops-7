@@ -10,7 +10,7 @@
 function openpublish_related_content_field_default_fields() {
   $fields = array();
 
-  // Exported field: 'node-openpublish_article-field_op_related_nref'
+  // Exported field: 'node-openpublish_article-field_op_related_nref'.
   $fields['node-openpublish_article-field_op_related_nref'] = array(
     'field_config' => array(
       'active' => '1',
@@ -31,12 +31,12 @@ function openpublish_related_content_field_default_fields() {
           0 => 'nid',
         ),
       ),
+      'locked' => '0',
       'module' => 'node_reference',
       'settings' => array(
         'referenceable_types' => array(
           'openpublish_article' => 'openpublish_article',
           'openpublish_blog_post' => 'openpublish_blog_post',
-          'openpublish_photo' => 0,
           'openpublish_photo_gallery' => 'openpublish_photo_gallery',
           'openpublish_site_page' => 0,
           'openpublish_video' => 'openpublish_video',
@@ -84,6 +84,10 @@ function openpublish_related_content_field_default_fields() {
         'settings' => array(
           'autocomplete_match' => 'contains',
           'autocomplete_path' => 'node_reference/autocomplete',
+          'references_dialog_add' => 1,
+          'references_dialog_edit' => 1,
+          'references_dialog_search' => 0,
+          'references_dialog_search_view' => '',
           'size' => '60',
         ),
         'type' => 'node_reference_autocomplete',
@@ -92,7 +96,7 @@ function openpublish_related_content_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_blog_post-field_op_related_nref'
+  // Exported field: 'node-openpublish_blog_post-field_op_related_nref'.
   $fields['node-openpublish_blog_post-field_op_related_nref'] = array(
     'field_config' => array(
       'active' => '1',
@@ -113,12 +117,12 @@ function openpublish_related_content_field_default_fields() {
           0 => 'nid',
         ),
       ),
+      'locked' => '0',
       'module' => 'node_reference',
       'settings' => array(
         'referenceable_types' => array(
           'openpublish_article' => 'openpublish_article',
           'openpublish_blog_post' => 'openpublish_blog_post',
-          'openpublish_photo' => 0,
           'openpublish_photo_gallery' => 'openpublish_photo_gallery',
           'openpublish_site_page' => 0,
           'openpublish_video' => 'openpublish_video',
@@ -166,6 +170,10 @@ function openpublish_related_content_field_default_fields() {
         'settings' => array(
           'autocomplete_match' => 'contains',
           'autocomplete_path' => 'node_reference/autocomplete',
+          'references_dialog_add' => 1,
+          'references_dialog_edit' => 1,
+          'references_dialog_search' => 0,
+          'references_dialog_search_view' => '',
           'size' => '60',
         ),
         'type' => 'node_reference_autocomplete',
@@ -174,7 +182,7 @@ function openpublish_related_content_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_photo_gallery-field_op_related_nref'
+  // Exported field: 'node-openpublish_photo_gallery-field_op_related_nref'.
   $fields['node-openpublish_photo_gallery-field_op_related_nref'] = array(
     'field_config' => array(
       'active' => '1',
@@ -195,12 +203,12 @@ function openpublish_related_content_field_default_fields() {
           0 => 'nid',
         ),
       ),
+      'locked' => '0',
       'module' => 'node_reference',
       'settings' => array(
         'referenceable_types' => array(
           'openpublish_article' => 'openpublish_article',
           'openpublish_blog_post' => 'openpublish_blog_post',
-          'openpublish_photo' => 0,
           'openpublish_photo_gallery' => 'openpublish_photo_gallery',
           'openpublish_site_page' => 0,
           'openpublish_video' => 'openpublish_video',
@@ -248,6 +256,10 @@ function openpublish_related_content_field_default_fields() {
         'settings' => array(
           'autocomplete_match' => 'contains',
           'autocomplete_path' => 'node_reference/autocomplete',
+          'references_dialog_add' => 1,
+          'references_dialog_edit' => 1,
+          'references_dialog_search' => 0,
+          'references_dialog_search_view' => '',
           'size' => '60',
         ),
         'type' => 'node_reference_autocomplete',
@@ -256,7 +268,7 @@ function openpublish_related_content_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_video-field_op_related_nref'
+  // Exported field: 'node-openpublish_video-field_op_related_nref'.
   $fields['node-openpublish_video-field_op_related_nref'] = array(
     'field_config' => array(
       'active' => '1',
@@ -277,12 +289,12 @@ function openpublish_related_content_field_default_fields() {
           0 => 'nid',
         ),
       ),
+      'locked' => '0',
       'module' => 'node_reference',
       'settings' => array(
         'referenceable_types' => array(
           'openpublish_article' => 'openpublish_article',
           'openpublish_blog_post' => 'openpublish_blog_post',
-          'openpublish_photo' => 0,
           'openpublish_photo_gallery' => 'openpublish_photo_gallery',
           'openpublish_site_page' => 0,
           'openpublish_video' => 'openpublish_video',
@@ -330,6 +342,10 @@ function openpublish_related_content_field_default_fields() {
         'settings' => array(
           'autocomplete_match' => 'contains',
           'autocomplete_path' => 'node_reference/autocomplete',
+          'references_dialog_add' => 1,
+          'references_dialog_edit' => 1,
+          'references_dialog_search' => 0,
+          'references_dialog_search_view' => '',
           'size' => '60',
         ),
         'type' => 'node_reference_autocomplete',

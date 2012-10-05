@@ -5,10 +5,10 @@
  *
  */
 
-define ("ENABLED", 1);
-define ("DISABLED", 0);
-define ("INCOMPATABLE", -1);
-define ("INSTALLABLE", 2);
+define("APPS_ENABLED", 1);
+define("APPS_DISABLED", 0);
+define("APPS_INCOMPATIBLE", -1);
+define("APPS_INSTALLABLE", 2);
 
 
 function apps_server_local($server) {
@@ -55,10 +55,10 @@ function apps_servers($server_name = FALSE) {
     }
   }
   // if we have the dev console turned on add it as a server
-  if (variable_get('apps_enable_developement_console', FALSE)) {
+  if (variable_get('apps_enable_dev_console', FALSE)) {
     $servers['development'] = array(
       'name' => 'development',
-      'description' => 'Local Apps in Developement',
+      'description' => 'Local Apps in Development',
       'title' => 'Development',
       'manifest' => FALSE,
       'featured app' => FALSE,
@@ -146,49 +146,47 @@ function apps_client_id() {
  *
  * TODO: Handle lack of server presense OPIC-374
  */
-function apps_request_manifest($server) { 
-  //$manifest_cache = cache_get("apps_manifest_{$server['name']}");
-  $manifest_cache = false;
-  $manifest = $manifest_cache ? $manifest_cache->data : FALSE;
+function apps_request_manifest($server) {
+  if ($cache = cache_get("apps_manifest_{$server['name']}")) {
+    return $cache->data;
+  }
 
-  if(!$manifest) {
-    if(!$server['manifest']) {
-       $apps = apps_server_local($server);
-       $manifest = $server;
-       $manifest['apps'] = $apps;
-       apps_request_manifest_image_process($manifest);
-       return $manifest;
-    }
-    $info =  drupal_parse_info_file(dirname(__file__) . '/apps.info');
-    $rest_data = array(
-      'client_id' => apps_client_id(),
-      'apps_version' => $info['version'],
-      'format' => 'json',
-    ) + $server;
-    //I would like to do a post request but it is not happening
-    //$request = drupal_http_request($server['manifest'], array('method' => 'POST', 'data' => drupal_http_build_query($rest_data)));
-    $request = drupal_http_request($server['manifest'] . "?" . drupal_http_build_query($rest_data));
+  if(!$server['manifest']) {
+     $apps = apps_server_local($server);
+     $manifest = $server;
+     $manifest['apps'] = $apps;
+     apps_request_manifest_image_process($manifest);
+     return $manifest;
+  }
+  $info =  drupal_parse_info_file(dirname(__file__) . '/apps.info');
+  $rest_data = array(
+    'client_id' => apps_client_id(),
+    'apps_version' => $info['version'],
+    'format' => 'json',
+  ) + $server;
+  //I would like to do a post request but it is not happening
+  //$request = drupal_http_request($server['manifest'], array('method' => 'POST', 'data' => drupal_http_build_query($rest_data)));
+  $request = drupal_http_request($server['manifest'] . "?" . drupal_http_build_query($rest_data));
 
-    if (isset($request->error)) {
-      $manifest = array(
-        'error' =>"Manifest: {$server['manifest']} {$request->error}",
-        'request' => $request,
-        'apps' => array(),
-      );
-    }
-    else if ($manifest = json_decode($request->data, TRUE)) {
-      // add any local apps
-      //$manifest['apps'] = $manifest['apps'] + $apps;
-      apps_request_manifest_image_process($manifest);
-      cache_set("apps_manifest_{$server['name']}", $manifest, 'cache', time() + 60 +30);
-    }
-    else {
-      $manifest = array(
-        'error' =>"Manifest: {$server['manifest']} json not parsable",
-        'request' => $request,
-        'apps' => array(),
-      );
-    }
+  if (isset($request->error)) {
+    $manifest = array(
+      'error' =>"Manifest: {$server['manifest']} {$request->error}",
+      'request' => $request,
+      'apps' => array(),
+    );
+  }
+  else if ($manifest = json_decode($request->data, TRUE)) {
+    // add any local apps
+    //$manifest['apps'] = $manifest['apps'] + $apps;
+    apps_request_manifest_image_process($manifest);
+    cache_set("apps_manifest_{$server['name']}", $manifest, 'cache', REQUEST_TIME + 60 +30);
+  }
+  else {
+    $manifest = array(
+      'error' =>"Manifest: {$server['manifest']} json not parsable",
+      'request' => $request,
+      'apps' => array(),
+    );
   }
 
   return $manifest;
@@ -199,7 +197,6 @@ function apps_request_manifest($server) {
  */
 function apps_request_manifest_image_process(&$manifest) {
   foreach($manifest['apps'] as $id => $app) {
-    
     //Get Logo
     $logo_uri = $app['logo'];
     $logo = (array) apps_retrieve_app_image($app['logo'], "{$app['name']} Logo");
@@ -254,12 +251,14 @@ function apps_retrieve_app_image($url, $title = FALSE, $alt = FALSE) {
   if (!empty($fids) && isset($fids[0]) && is_numeric($fids[0])) {
     $current = file_load($fids[0]);
   }
-   //check to see if the remote file is newer than the one that we have
-  if($current){
-    $remote = get_headers($url, 1); //get the remote headers
-    $remote_timestamp = strtotime($remote['Last-Modified']);
-    
-    if($remote_timestamp <= $current->timestamp && $remote['Content-Length'] == $current->filesize){
+   //check to see if the remote file is newer than the one that we have and that the one we have
+   // still exists
+  if($current && file_exists($current->uri)){
+    $remote = drupal_http_request($url, array('method' => 'HEAD')); //get the remote headers
+    $remote = $remote->headers;
+    $remote_timestamp = strtotime($remote['last-modified']);
+
+    if($remote_timestamp <= $current->timestamp && !empty($remote['content-length']) && $remote['content-length'] == $current->filesize){
       //TODO make this a file 
       $current->path = $current->uri;
       $current->title = $title ? $title : '';
@@ -274,7 +273,7 @@ function apps_retrieve_app_image($url, $title = FALSE, $alt = FALSE) {
     if (!file_exists(drupal_realpath(file_build_uri('apps')))) {
       drupal_mkdir(file_build_uri('apps'));
     }
-    $file = file_save_data($request->data, $uri, FILE_EXISTS_REPLACE);
+    $file = file_save_data($request->data, $uri, FILE_EXISTS_RENAME);
     if ($current) {
       $file->fid = $current->fid;
     }
@@ -298,9 +297,9 @@ function apps_retrieve_app_image($url, $title = FALSE, $alt = FALSE) {
  *TODO: Cache status data and clear on changes to any module status
  */
 function apps_manifest($server) {
-  $manifests = &drupal_static(__function__);
+  $manifests = &drupal_static(__FUNCTION__);
   require_once DRUPAL_ROOT . '/includes/install.inc';
-  if (!$manifests[$server['name']] && !isset($manifests[$server['name']]['error'])) {
+  if (empty($manifests[$server['name']]) && !isset($manifests[$server['name']]['error'])) {
     // Get manifest from server
     $manifest = apps_request_manifest($server);
     //if there is an error with the manifest jump out now
@@ -331,13 +330,13 @@ function apps_manifest($server) {
         $incompatable = $current ? (bool) drupal_check_incompatibility($version, $current->info['version']) : FALSE;
         $installed = (bool) $current;
         $enabled = $current && $current->status;
-        $status = $incompatable ? INCOMPATABLE : (!$installed ? INSTALLABLE : ($enabled ? ENABLED : DISABLED));
+        $status = $incompatable ? APPS_INCOMPATIBLE : (!$installed ? APPS_INSTALLABLE : ($enabled ? APPS_ENABLED : APPS_DISABLED));
 
-        if($status == INCOMPATABLE) {
+        if($status == APPS_INCOMPATIBLE) {
           //if any one module is incompatable then the app is incompatable
           $app['incompatable'] = TRUE;
         }
-        if($status == INSTALLABLE) {
+        if($status == APPS_INSTALLABLE) {
           //if any one module is installable then we are not installed yet
           $app['dep_installed'] = FALSE;
         }
@@ -354,19 +353,21 @@ function apps_manifest($server) {
         $app['dependencies'][$version['name']] = $info;
       }
       if (isset($app['libraries'])) {
+        $profile = variable_get('install_profile', 'standard');
+        $profile_path = drupal_get_path('profile', $profile);
         foreach($app['libraries'] as $name_version => $downloadable) {
           $info = array(
             'downloadable' => $downloadable,
             'version' => array('name'=>$name_version),
-            'status' => INSTALLABLE,
+            'status' => APPS_INSTALLABLE,
             'incompatable' => 0,
             'enabled' => 0,
-            'installed' =>  is_dir(DRUPAL_ROOT . "/sites/all/libraries/$name_version"),
+            'installed' =>  is_dir(DRUPAL_ROOT . "/sites/all/libraries/$name_version") || is_dir($profile_path . "/libraries/$name_version"),
           );
           $app['libraries'][$name_version] = $info;
         }
       }
-      $app['status'] = $app['incompatable'] ? INCOMPATABLE : (!$app['installed'] || !$app['dep_installed'] ? INSTALLABLE : ($app['enabled'] ? ENABLED : DISABLED));
+      $app['status'] = $app['incompatable'] ? APPS_INCOMPATIBLE : (!$app['installed'] || !$app['dep_installed'] ? APPS_INSTALLABLE : ($app['enabled'] ? APPS_ENABLED : APPS_DISABLED));
       $apps[$app['machine_name']] = $app;
       
     }

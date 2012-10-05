@@ -1,0 +1,14 @@
+name = Schema.org UI
+description = User interface for setting the schema.org module mappings.
+package = "Schema.org"
+dependencies[] = rdf
+dependencies[] = schemaorg
+core = 7.x
+files[] = schemaorg.test
+
+; Information added by drupal.org packaging script on 2012-05-21
+version = "7.x-1.0-beta3"
+core = "7.x"
+project = "schemaorg"
+datestamp = "1337625394"
+

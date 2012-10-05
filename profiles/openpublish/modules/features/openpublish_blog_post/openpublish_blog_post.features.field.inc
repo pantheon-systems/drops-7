@@ -10,7 +10,7 @@
 function openpublish_blog_post_field_default_fields() {
   $fields = array();
 
-  // Exported field: 'node-openpublish_blog_post-body'
+  // Exported field: 'node-openpublish_blog_post-body'.
   $fields['node-openpublish_blog_post-body'] = array(
     'field_config' => array(
       'active' => '1',
@@ -33,6 +33,7 @@ function openpublish_blog_post_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(),
       'translatable' => '1',
@@ -49,7 +50,7 @@ function openpublish_blog_post_field_default_fields() {
           'module' => 'text',
           'settings' => array(),
           'type' => 'text_default',
-          'weight' => '4',
+          'weight' => '3',
         ),
         'teaser' => array(
           'label' => 'hidden',
@@ -84,7 +85,7 @@ function openpublish_blog_post_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_blog_post-field_op_author'
+  // Exported field: 'node-openpublish_blog_post-field_op_author'.
   $fields['node-openpublish_blog_post-field_op_author'] = array(
     'field_config' => array(
       'active' => '1',
@@ -105,12 +106,12 @@ function openpublish_blog_post_field_default_fields() {
           0 => 'nid',
         ),
       ),
+      'locked' => '0',
       'module' => 'node_reference',
       'settings' => array(
         'referenceable_types' => array(
           'openpublish_article' => 0,
           'openpublish_blog_post' => 0,
-          'openpublish_photo' => 0,
           'openpublish_photo_gallery' => 0,
           'openpublish_site_page' => 0,
           'openpublish_video' => 0,
@@ -133,11 +134,13 @@ function openpublish_blog_post_field_default_fields() {
       'description' => 'Create and/or reference one or more Profile nodes that represent the Author(s) of this Blog Post.',
       'display' => array(
         'default' => array(
-          'label' => 'inline',
-          'module' => 'node_reference',
-          'settings' => array(),
-          'type' => 'node_reference_default',
-          'weight' => '1',
+          'label' => 'hidden',
+          'module' => 'node_reference_view_formatter',
+          'settings' => array(
+            'view' => 'openpublish_related_content block_1',
+          ),
+          'type' => 'node_reference_view',
+          'weight' => '0',
         ),
         'teaser' => array(
           'label' => 'inline',
@@ -160,6 +163,10 @@ function openpublish_blog_post_field_default_fields() {
         'settings' => array(
           'autocomplete_match' => 'contains',
           'autocomplete_path' => 'node_reference/autocomplete',
+          'references_dialog_add' => 1,
+          'references_dialog_edit' => 1,
+          'references_dialog_search' => 0,
+          'references_dialog_search_view' => '',
           'size' => '60',
         ),
         'type' => 'node_reference_autocomplete',
@@ -168,7 +175,7 @@ function openpublish_blog_post_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_blog_post-field_op_blogpost_blog'
+  // Exported field: 'node-openpublish_blog_post-field_op_blogpost_blog'.
   $fields['node-openpublish_blog_post-field_op_blogpost_blog'] = array(
     'field_config' => array(
       'active' => '1',
@@ -189,6 +196,7 @@ function openpublish_blog_post_field_default_fields() {
           0 => 'tid',
         ),
       ),
+      'locked' => '0',
       'module' => 'taxonomy',
       'settings' => array(
         'allowed_values' => array(
@@ -209,10 +217,9 @@ function openpublish_blog_post_field_default_fields() {
       'display' => array(
         'default' => array(
           'label' => 'hidden',
-          'module' => 'taxonomy',
           'settings' => array(),
-          'type' => 'taxonomy_term_reference_link',
-          'weight' => '0',
+          'type' => 'hidden',
+          'weight' => '4',
         ),
         'teaser' => array(
           'label' => 'inline',
@@ -239,7 +246,7 @@ function openpublish_blog_post_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-openpublish_blog_post-field_op_main_image'
+  // Exported field: 'node-openpublish_blog_post-field_op_main_image'.
   $fields['node-openpublish_blog_post-field_op_main_image'] = array(
     'field_config' => array(
       'active' => '1',
@@ -260,6 +267,7 @@ function openpublish_blog_post_field_default_fields() {
           0 => 'fid',
         ),
       ),
+      'locked' => '0',
       'module' => 'image',
       'settings' => array(
         'default_image' => 0,
@@ -278,10 +286,10 @@ function openpublish_blog_post_field_default_fields() {
           'module' => 'image',
           'settings' => array(
             'image_link' => '',
-            'image_style' => 'large',
+            'image_style' => '620px_wide',
           ),
           'type' => 'image',
-          'weight' => '2',
+          'weight' => '1',
         ),
         'teaser' => array(
           'label' => 'above',
@@ -296,6 +304,7 @@ function openpublish_blog_post_field_default_fields() {
       'required' => 0,
       'settings' => array(
         'alt_field' => 1,
+        'default_image' => 0,
         'file_directory' => 'main/blogposts',
         'file_extensions' => 'png gif jpg jpeg',
         'max_filesize' => '',

@@ -27,8 +27,11 @@ function wysiwyg_ckeditor_editor() {
         ),
       ),
     ),
+    'install note callback' => 'wysiwyg_ckeditor_install_note',
     'version callback' => 'wysiwyg_ckeditor_version',
     'themes callback' => 'wysiwyg_ckeditor_themes',
+    'settings form callback' => 'wysiwyg_ckeditor_settings_form',
+    'init callback' => 'wysiwyg_ckeditor_init',
     'settings callback' => 'wysiwyg_ckeditor_settings',
     'plugin callback' => 'wysiwyg_ckeditor_plugins',
     'plugin settings callback' => 'wysiwyg_ckeditor_plugin_settings',
@@ -46,6 +49,13 @@ function wysiwyg_ckeditor_editor() {
     ),
   );
   return $editor;
+}
+
+/**
+ * Return an install note.
+ */
+function wysiwyg_ckeditor_install_note() {
+  return '<p class="warning">' . t('Do NOT download the "CKEditor for Drupal" edition.') . '</p>';
 }
 
 /**
@@ -112,6 +122,69 @@ function wysiwyg_ckeditor_themes($editor, $profile) {
 }
 
 /**
+ * Enhances the editor profile settings form for CKEditor.
+ *
+ * Adds support for CKEditor's advanced stylesSets, which are a more advanced
+ * implementation and combination of block formats and font styles that allow
+ * to adjust the HTML element, attributes, and CSS styles at once.
+ *
+ * @see http://docs.cksource.com/CKEditor_3.x/Developers_Guide/Styles
+ * @see http://docs.cksource.com/ckeditor_api/symbols/CKEDITOR.config.html#.stylesSet
+ */
+function wysiwyg_ckeditor_settings_form(&$form, &$form_state) {
+  if (version_compare($form_state['wysiwyg']['editor']['installed version'], '3.2.1', '>=')) {
+    // Replace CSS classes element description to explain the advanced syntax.
+    $form['css']['css_classes']['#description'] = t('Optionally define CSS classes for the "Font style" dropdown list.<br />Enter one class on each line in the format: !format. Example: !example<br />If left blank, CSS classes are automatically imported from loaded stylesheet(s).', array(
+      '!format' => '<code>[label]=[element].[class]</code>',
+      '!example' => '<code>Title=h1.title</code>',
+    ));
+    $form['css']['css_classes']['#element_validate'][] = 'wysiwyg_ckeditor_settings_form_validate_css_classes';
+  }
+  else {
+    // Versions below 3.2.1 do not support Font styles at all.
+    $form['css']['css_classes']['#access'] = FALSE;
+  }
+}
+
+/**
+ * #element_validate handler for CSS classes element altered by wysiwyg_ckeditor_settings_form().
+ */
+function wysiwyg_ckeditor_settings_form_validate_css_classes($element, &$form_state) {
+  if (wysiwyg_ckeditor_settings_parse_styles($element['#value']) === FALSE) {
+    form_error($element, t('The specified CSS classes are syntactically incorrect.'));
+  }
+}
+
+/**
+ * Returns an initialization JavaScript for this editor library.
+ *
+ * @param array $editor
+ *   The editor library definition.
+ * @param string $library
+ *   The library variant key from $editor['libraries'].
+ * @param object $profile
+ *   The (first) wysiwyg editor profile.
+ *
+ * @return string
+ *   A string containing inline JavaScript to execute before the editor library
+ *   script is loaded.
+ */
+function wysiwyg_ckeditor_init($editor) {
+  // CKEditor unconditionally searches for its library filename in SCRIPT tags
+  // on the page upon loading the library in order to determine the base path to
+  // itself. When JavaScript aggregation is enabled, this search fails and all
+  // relative constructed paths within CKEditor are broken. The library has a
+  // CKEditor.basePath property, but it is not publicly documented and thus not
+  // reliable. The official documentation suggests to solve the issue through
+  // the global window variable.
+  // @see http://docs.cksource.com/CKEditor_3.x/Developers_Guide/Specifying_the_Editor_Path
+  $library_path = base_path() . $editor['library path'] . '/';
+  return <<<EOL
+window.CKEDITOR_BASEPATH = '$library_path';
+EOL;
+}
+
+/**
  * Return runtime editor settings for a given wysiwyg profile.
  *
  * @param $editor
@@ -127,8 +200,7 @@ function wysiwyg_ckeditor_themes($editor, $profile) {
  */
 function wysiwyg_ckeditor_settings($editor, $config, $theme) {
   $settings = array(
-    'baseHref' => $GLOBALS['base_url'] . '/',
-    'width' => '100%',
+    'width' => 'auto',
     // For better compatibility with smaller textareas.
     'resize_minWidth' => 450,
     'height' => 420,
@@ -161,15 +233,13 @@ function wysiwyg_ckeditor_settings($editor, $config, $theme) {
   }
 
   if (isset($config['css_setting'])) {
-    global $custom_theme;
-    $themekey = (!empty($custom_theme)) ? $custom_theme : variable_get('theme_default', 'bartik');
     // Versions below 3.0.1 could only handle one stylesheet.
     if (version_compare($editor['installed version'], '3.0.1.4391', '<')) {
       if ($config['css_setting'] == 'theme') {
         $settings['contentsCss'] = reset(wysiwyg_get_css());
       }
       elseif ($config['css_setting'] == 'self' && isset($config['css_path'])) {
-        $settings['contentsCss'] = strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', $themekey)));
+        $settings['contentsCss'] = strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', variable_get('theme_default', NULL))));
       }
     }
     else {
@@ -177,8 +247,17 @@ function wysiwyg_ckeditor_settings($editor, $config, $theme) {
         $settings['contentsCss'] = wysiwyg_get_css();
       }
       elseif ($config['css_setting'] == 'self' && isset($config['css_path'])) {
-        $settings['contentsCss'] = explode(',', strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', $themekey))));
+        $settings['contentsCss'] = explode(',', strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', variable_get('theme_default', NULL)))));
       }
+    }
+  }
+
+  // Parse and define the styles set for the Styles plugin (3.2.1+).
+  // @todo This should be a plugin setting, but Wysiwyg does not support
+  //   plugin-specific settings yet.
+  if (!empty($config['buttons']['default']['Styles']) && version_compare($editor['installed version'], '3.2.1', '>=')) {
+    if ($styles = wysiwyg_ckeditor_settings_parse_styles($config['css_classes'])) {
+      $settings['stylesSet'] = $styles;
     }
   }
 
@@ -186,7 +265,7 @@ function wysiwyg_ckeditor_settings($editor, $config, $theme) {
     $settings['language'] = $config['language'];
   }
   if (isset($config['resizing'])) {
-    // CKEditor tests "!== false", so ensure it is a Boolean.
+    // CKEditor performs a type-agnostic comparison on this particular setting.
     $settings['resize_enabled'] = (bool) $config['resizing'];
   }
   if (isset($config['toolbar_loc'])) {
@@ -243,6 +322,51 @@ function wysiwyg_ckeditor_settings($editor, $config, $theme) {
 }
 
 /**
+ * Parses CSS classes settings string into a stylesSet JavaScript settings array.
+ *
+ * @param string $css_classes
+ *   A string containing CSS class definitions to add to the Style dropdown
+ *   list, separated by newlines.
+ *
+ * @return array|false
+ *   An array containing the parsed stylesSet definition, or FALSE on parse
+ *   error.
+ *
+ * @see wysiwyg_ckeditor_settings_form()
+ * @see wysiwyg_ckeditor_settings_form_validate_css_classes()
+ *
+ * @todo This should be a plugin setting, but Wysiwyg does not support
+ *   plugin-specific settings yet.
+ */
+function wysiwyg_ckeditor_settings_parse_styles($css_classes) {
+  $set = array();
+  $input = trim($css_classes);
+  if (empty($input)) {
+    return $set;
+  }
+  // Handle both Unix and Windows line-endings.
+  foreach (explode("\n", str_replace("\r", '', $input)) as $line) {
+    $line = trim($line);
+    // [label]=[element].[class][.[class]][...] pattern expected.
+    if (!preg_match('@^.+= *[a-zA-Z0-9]+(\.[a-zA-Z0-9_ -]+)*$@', $line)) {
+      return FALSE;
+    }
+    list($label, $selector) = explode('=', $line, 2);
+    $classes = explode('.', $selector);
+    $element = array_shift($classes);
+
+    $style = array();
+    $style['name'] = trim($label);
+    $style['element'] = trim($element);
+    if (!empty($classes)) {
+      $style['attributes']['class'] = implode(' ', array_map('trim', $classes));
+    }
+    $set[] = $style;
+  }
+  return $set;
+}
+
+/**
  * Build a JS settings array of native external plugins that need to be loaded separately.
  */
 function wysiwyg_ckeditor_plugin_settings($editor, $profile, $plugins) {
@@ -296,6 +420,7 @@ function wysiwyg_ckeditor_plugins($editor) {
         'Bold' => t('Bold'), 'Italic' => t('Italic'), 'Underline' => t('Underline'),
         'Strike' => t('Strike-through'),
         'JustifyLeft' => t('Align left'), 'JustifyCenter' => t('Align center'), 'JustifyRight' => t('Align right'), 'JustifyBlock' => t('Justify'),
+        'BidiLtr' => t('Left-to-right'), 'BidiRtl' => t('Right-to-left'),
         'BulletedList' => t('Bullet list'), 'NumberedList' => t('Numbered list'),
         'Outdent' => t('Outdent'), 'Indent' => t('Indent'),
         'Undo' => t('Undo'), 'Redo' => t('Redo'),
@@ -326,6 +451,10 @@ function wysiwyg_ckeditor_plugins($editor) {
 
   if (version_compare($editor['installed version'], '3.1.0.4885', '<')) {
     unset($plugins['default']['buttons']['CreateDiv']);
+  }
+  if (version_compare($editor['installed version'], '3.4.0.5808', '<')) {
+    unset($plugins['default']['buttons']['BidiLtr']);
+    unset($plugins['default']['buttons']['BidiRtl']);
   }
   if (version_compare($editor['installed version'], '3.5.0.6260', '<')) {
     unset($plugins['default']['buttons']['Iframe']);

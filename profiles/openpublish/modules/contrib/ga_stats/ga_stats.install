@@ -39,10 +39,11 @@ function ga_stats_schema() {
       ),
     ),
     'indexes' => array(
-      'ga_stats_metric' => array('metric'), 
+      'ga_stats_metric' => array('metric'),
       'ga_stats_timeframe' => array('timeframe'),
-      'ga_stats_nid' => array('nid')
-    ) 
+      'ga_stats_nid' => array('nid'),
+      'ga_stats_count' => array('count'),
+    )
   );
   return $schema;
 }
@@ -51,7 +52,7 @@ function ga_stats_schema() {
  * Implementation of hook_install
  */
 function ga_stats_install() {
- 
+
 }
 
 /*
@@ -61,4 +62,16 @@ function ga_stats_uninstall() {
   variable_del('ga_stats_email');
   variable_del('ga_stats_password');
   variable_del('ga_stats_profile');
+  variable_del('ga_stats_acct_type');
+}
+
+/**
+ * Add an index to the published date value field
+ */
+function ga_stats_update_7101(&$sandbox) {
+  try {
+    db_add_index('ga_stats_count', 'ga_stats_count', array('count'));
+  } catch (FieldException $e) {
+    throw new DrupalUpdateException($e->getMessage());
+  }
 }

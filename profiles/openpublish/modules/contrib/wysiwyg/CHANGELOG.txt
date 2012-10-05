@@ -1,6 +1,25 @@
 
 Wysiwyg 7.x-2.x, xxxx-xx-xx
 ---------------------------
+#1388224 by ksenzee, sun, TwoD: Fixed editors detaching on form submissions.
+#682160 by n_vashenko, TwoD: Fixed lists plugin support for TinyMCE.
+#1414354 by Merco: Fixed none.js breaks if textarea.js is not loaded.
+#1064600 by TwoD: Fixed maximized editors hidden under Drupal's toolbar.
+#1405786 by logaritmisk: Fixed CKEditor being wider than parent elements.
+#1531896 by Chi: Fixed strict warning for WYMeditor.
+#1442226 by robertom: Fixed inverted list button names for WYMeditor.
+#1352426 by TwoD, sun: Added install notes (CKEditor edition clarification).
+#1112212 by timdiacon, TwoD: Added language direction buttons for CKEditor.
+#1398560 by markwittens: Fixed TinyMCE removing the longdesc attribute.
+#970452 by smk-ka, sun, TwoD, drzraf: Fixed outdated TinyMCE plugin info.
+#1155678 by james.elliott, Jody Lynn, sun: Add Drupal.detachBehaviors support.
+#624018 by smk-ka, quartsize, dagmar, nedjo, rickvug, catch, sun: Added Features support.
+#1238766 by Dave Reid: Fixed Missing cells in profile plugins table.
+#1073106 by scottrouse: Fixed 'Input Format' should be 'Text Format'.
+#1153458 by TwoD: Fixed TinyMCE 'Verify HTML' setting ignored.
+#1125582 by TwoD: Fixed TinyMCE fullscreen plugin deletes content.
+#1078834 by sun: Fixed coding standards errors.
+#1173476 by jim0203, sun: Fixed installation instructions in README.txt.
 
 
 Wysiwyg 7.x-2.1, 2011-06-19

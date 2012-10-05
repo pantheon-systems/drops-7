@@ -82,6 +82,9 @@ class date_context_date_condition extends context_condition_node {
               $date = new DateObject($item['value'], $timezone_db);
               date_timezone_set($date, timezone_open($timezone));
               $date1 = $date->format(DATE_FORMAT_DATETIME);
+              if (empty($item['value2'])) {
+                $item['value2'] = $item['value'];
+              }
               $date = new DateObject($item['value2'], $timezone_db);
               date_timezone_set($date, timezone_open($timezone));
               $date2 = $date->format(DATE_FORMAT_DATETIME);

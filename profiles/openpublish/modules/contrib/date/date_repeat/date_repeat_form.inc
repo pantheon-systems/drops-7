@@ -197,7 +197,7 @@ function _date_repeat_rrule_process($element, &$form_state, $form) {
     '#field_prefix' => $prefix,
     '#field_suffix' => $suffix,
   );
-  $options = date_repeat_dow_day_options_abbr(TRUE, 1);
+  $options = date_repeat_dow_day_options_abbr(TRUE);
   $options = date_repeat_dow_day_options_ordered($options);
   $element['weekly']['BYDAY'] = array(
     '#type' => 'checkboxes',

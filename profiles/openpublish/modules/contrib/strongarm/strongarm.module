@@ -203,6 +203,7 @@ function strongarm_features_pipe_node_alter(&$pipe, $data, $export) {
       'comment_form_location',
       'comment_preview',
       'comment_subject_field',
+      'field_bundle_settings_node_',
       'language_content_type',
       'menu_options',
       'menu_parent',

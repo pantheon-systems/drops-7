@@ -6,7 +6,7 @@
  */
 
 /**
- * @ingroup database
+ * @addtogroup database
  * @{
  */
 
@@ -62,8 +62,6 @@ class DatabaseConnection_pgsql extends DatabaseConnection {
       PDO::ATTR_EMULATE_PREPARES => TRUE,
       // Convert numeric values to strings when fetching.
       PDO::ATTR_STRINGIFY_FETCHES => TRUE,
-      // Force column names to lower case.
-      PDO::ATTR_CASE => PDO::CASE_LOWER,
     );
     parent::__construct($dsn, $connection_options['username'], $connection_options['password'], $connection_options['pdo']);
 
@@ -210,5 +208,5 @@ class DatabaseConnection_pgsql extends DatabaseConnection {
 }
 
 /**
- * @} End of "ingroup database".
+ * @} End of "addtogroup database".
  */

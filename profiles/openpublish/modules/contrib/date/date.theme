@@ -299,8 +299,15 @@ function theme_date_display_interval($variables) {
     'start_date' => $dates['value']['local']['object'],
     'end_date' => $dates['value2']['local']['object'],
     'interval' => $options['interval'],
+    'interval_display' => $options['interval_display'],
   );
-  return '<span class="date-display-interval"' . drupal_attributes($attributes) . '>' . theme('date_time_ago', $time_ago_vars) . '</span>';
+
+  if ($return = theme('date_time_ago', $time_ago_vars)) {
+    return '<span class="date-display-interval"' . drupal_attributes($attributes) . ">$return</span>";
+  }
+  else {
+    return '';
+  }
 }
 
 /**

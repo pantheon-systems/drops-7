@@ -388,6 +388,14 @@ class DateAPITestCase extends DrupalWebTestCase {
     foreach ($invalid as $range) {
       $this->assertFalse(date_range_valid($range), "$range recognized as an invalid date range.");
     }
+
+    // Test for invalid month names when we are using a short version of the month
+    $input = '23 abc 2012';
+    $timezone = NULL;
+    $format = 'd M Y';
+    $date = new dateObject($input, $timezone, $format);
+    $this->assertNotEqual(count($date->errors), 0, '23 abc 2012 should be an invalid date');
+
   }
 
   /**

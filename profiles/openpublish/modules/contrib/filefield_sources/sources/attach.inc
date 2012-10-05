@@ -63,6 +63,10 @@ function filefield_source_attach_settings($op, $instance) {
       '#maxlength' => 128,
       '#description' => t('The directory within the <em>File attach location</em> that will contain attachable files.'),
     );
+    $return['source_attach']['tokens'] = array(
+      '#theme' => 'token_tree',
+      '#token_types' => array('user'),
+    );
     $return['source_attach']['absolute'] = array(
       '#type' => 'radios',
       '#title' => t('File attach location'),
@@ -82,17 +86,6 @@ function filefield_source_attach_settings($op, $instance) {
       ),
       '#default_value' => isset($settings['source_attach']['attach_mode']) ? $settings['source_attach']['attach_mode'] : 'move',
     );
-    $return['source_attach']['tokens'] = array(
-      '#type' => 'markup',
-      '#value' => theme('token_help', 'user'),
-    );
-
-    // Temporary placeholder until this feature works again in Drupal 7.
-    // TODO: Figure out how to re-introduce this feature.
-    // See filefield_source_attach_value().
-    $return['source_attach']['attach_mode']['#disabled'] = TRUE;
-    $return['source_attach']['attach_mode']['#default_value'] = 'copy';
-    $return['source_attach']['attach_mode']['#description'] = '<em>' . t('This feature is not yet supported on Drupal 7. All fields will by set to the "copy" mode, leaving the original file unmoved.') . '</em>';
   }
   elseif ($op == 'save') {
     $return['source_attach']['path'] = 'file_attach';
@@ -104,6 +97,11 @@ function filefield_source_attach_settings($op, $instance) {
 }
 
 function _filefield_source_attach_file_path_validate($element, &$form_state) {
+  // Only validate if this source is enabled.
+  if (!$form_state['values']['instance']['widget']['settings']['filefield_sources']['filefield_sources']['attach']) {
+    return;
+  }
+
   // Strip slashes from the end of the file path.
   $filepath = rtrim($element['path']['#value'], '\\/');
   form_set_value($element['path'], $filepath, $form_state);
@@ -130,6 +128,18 @@ function filefield_source_attach_process($element, &$form_state, $form) {
 
   $path = _filefield_source_attach_directory($instance);
   $options = _filefield_source_attach_options($path);
+
+  // If we have built this element before, append the list of options that we
+  // had previously. This allows files to be deleted after copying them and
+  // still be considered a valid option during the validation and submit.
+  if (!isset($form_state['triggering_element']) && isset($form_state['filefield_sources'][$instance['field_name']]['attach_options'])) {
+    $options = $options + $form_state['filefield_sources'][$instance['field_name']]['attach_options'];
+  }
+  // On initial form build and rebuilds after processing input, save the
+  // original list of options so they can be restored in the line above.
+  else {
+    $form_state['filefield_sources'][$instance['field_name']]['attach_options'] = $options;
+  }
 
   $description = t('This method may be used to attach files that exceed the file size limit. Files may be attached from the %directory directory on the server, usually uploaded through FTP.', array('%directory' => realpath($path)));
 
@@ -193,7 +203,7 @@ function _filefield_source_attach_options($path) {
     $options = array('' => t('-- Select file --'));
     foreach ($file_attach as $filename => $fileinfo) {
       $filename = basename($filename);
-      $options[$fileinfo->uri] = $fileinfo->filename;
+      $options[$fileinfo->uri] = str_replace($path . '/', '', $fileinfo->uri);
     }
   }
 
@@ -211,7 +221,11 @@ function filefield_source_attach_value($element, &$item) {
 
     // Check that the destination is writable.
     $directory = $element['#upload_location'];
-    if (!file_prepare_directory($directory, FILE_CREATE_DIRECTORY)) {
+    $mode = variable_get('file_chmod_directory', 0775);
+
+    // This first chmod check is for other systems such as S3, which don't work
+    // with file_prepare_directory().
+    if (!drupal_chmod($directory, $mode) && !file_prepare_directory($directory, FILE_CREATE_DIRECTORY)) {
       watchdog('file', 'File %file could not be copied, because the destination directory %destination is not configured correctly.', array('%file' => $filepath, '%destination' => drupal_realpath($directory)));
       drupal_set_message(t('The specified file %file could not be copied, because the destination directory is not properly configured. This may be caused by a problem with file or directory permissions. More information is available in the system log.', array('%file' => $filepath)), 'error');
       return;
@@ -235,10 +249,7 @@ function filefield_source_attach_value($element, &$item) {
 
       // Delete the original file if "moving" the file instead of copying.
       if ($instance['widget']['settings']['filefield_sources']['source_attach']['attach_mode'] !== 'copy') {
-        // TODO: Figure out a way to re-introduce this feature. By unlinking the
-        // file it causes the option to be removed from the select list on the
-        // form rebuild, thus throwing an illegal option error.
-        //@unlink($filepath);
+        @unlink($filepath);
       }
     }
 
@@ -285,5 +296,5 @@ function _filefield_source_attach_directory($instance, $account = NULL) {
     $path = token_replace($path, array('user' => $account));
   }
 
-  return $absolute ? $path : file_default_scheme($field['settings']['uri_scheme']) . '://' . $path;;
+  return $absolute ? $path : file_default_scheme() . '://' . $path;
 }

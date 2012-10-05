@@ -1,0 +1,87 @@
+/* This file will hold styles 
+ * that are loaded using the 
+ * medium layout.
+ */
+
+/*
+ * Page structure
+ */
+#region-branding,
+#region-menu {
+  width:98%;
+}
+#region-user-first {
+  width:98%;
+  padding:0;
+}
+#zone-user-wrapper {
+  padding-top: 0;
+}
+#zone-branding-wrapper,
+#zone-branding-wrapper .zone-wrapper-inner,
+#zone-branding {
+  height:auto;
+}
+.site-name-slogan {
+  float: none;
+  text-align:center;
+}
+h1.site-name,
+h2.site-name {
+  font-size:80px;
+}
+#region-footer-second {
+  background: none;
+}
+#block-system-user-menu {
+  float:right;
+  margin:0;
+}
+#block-system-user-menu ul.menu {
+  padding: 2px;
+}
+#block-system-user-menu ul.menu li.leaf {
+  display: inline;
+  font-size: 10px;
+  text-transform: uppercase;
+  line-height: 22px;
+}
+#block-system-user-menu ul.menu li.leaf a {
+  color:#323232;
+}
+/* Featured Story */
+.view-id-op_recent_content.view-display-id-block_7 .views-field-view-node {
+  display:none;
+}
+
+
+.view-id-op_recent_content.view-display-id-block_recent_articles .views-row-even .row-wrapper-1,
+.view-id-op_recent_content.view-display-id-block_recent_articles_taxonomy .views-row-even .row-wrapper-1,
+.view-id-op_recent_content.view-display-id-block_5 .views-row-even .row-wrapper-1,
+.view-id-op_recent_content.view-display-id-block_recent_articles .views-row-odd .row-wrapper-1,
+.view-id-op_recent_content.view-display-id-block_recent_articles_taxonomy .row-wrapper-1,
+.view-id-op_recent_content.view-display-id-block_5 .row-wrapper-1 {
+  background-image: none;
+}
+
+/* Photo gallery view */
+.view-id-op_recent_content.view-display-id-block_recent_galleries_section .views-row,
+.view-id-op_recent_content.view-display-id-block_more_galleries .views-row {
+  float: none;
+  width: auto;
+  margin-right: 0;
+  padding-top: 15px;
+}
+.view-id-op_recent_content.view-display-id-block_recent_galleries_section .views-field-field-op-main-image,
+.view-id-op_recent_content.view-display-id-block_more_galleries .views-field-field-op-main-image {
+  float:left;
+  width:26%;
+  margin-right: 4%;
+}
+.region-content .view-id-op_recent_content.view-display-id-block_recent_galleries_section .views-field-title,
+.region-content .view-id-op_recent_content.view-display-id-block_more_galleries .views-field-title,
+.region-content .view-id-op_recent_content.view-display-id-block_recent_galleries_section .views-field-body,
+.region-content .view-id-op_recent_content.view-display-id-block_more_galleries .views-field-body {
+  float:left;
+  width:70%;
+}

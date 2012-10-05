@@ -24,7 +24,7 @@ function openpublish_media_ctools_plugin_api() {
 function openpublish_media_image_default_styles() {
   $styles = array();
 
-  // Exported image style: full_width
+  // Exported image style: full_width.
   $styles['full_width'] = array(
     'name' => 'full_width',
     'effects' => array(
@@ -73,4 +73,89 @@ function openpublish_media_node_info() {
     ),
   );
   return $items;
+}
+
+/**
+ * Implements hook_rdf_default_mappings().
+ */
+function openpublish_media_rdf_default_mappings() {
+  $schemaorg = array();
+
+  // Exported RDF mapping: openpublish_video
+  $schemaorg['node']['openpublish_video'] = array(
+    'rdftype' => array(
+      0 => 'rnews:VideoObject',
+      1 => 'schema:VideoObject',
+    ),
+    'title' => array(
+      'predicates' => array(
+        0 => 'rnews:name',
+        1 => 'schema:name',
+      ),
+      'type' => 'property',
+    ),
+    'created' => array(
+      'predicates' => array(
+        0 => 'rnews:dateCreated',
+        1 => 'schema:dateCreated',
+      ),
+      'datatype' => 'xsd:dateTime',
+      'callback' => 'date_iso8601',
+    ),
+    'changed' => array(
+      'predicates' => array(
+        0 => 'rnews:dateModified',
+        1 => 'schema:dateModified',
+      ),
+      'datatype' => 'xsd:dateTime',
+      'callback' => 'date_iso8601',
+    ),
+    'body' => array(
+      'predicates' => array(
+        0 => 'rnews:description',
+        1 => 'schema:description',
+      ),
+      'type' => 'property',
+    ),
+    'uid' => array(
+      'predicates' => array(
+        0 => 'sioc:has_creator',
+      ),
+      'type' => 'rel',
+    ),
+    'name' => array(
+      'predicates' => array(
+        0 => 'foaf:name',
+      ),
+    ),
+    'comment_count' => array(
+      'predicates' => array(
+        0 => 'sioc:num_replies',
+      ),
+      'datatype' => 'xsd:integer',
+    ),
+    'last_activity' => array(
+      'predicates' => array(
+        0 => 'sioc:last_activity_date',
+      ),
+      'datatype' => 'xsd:dateTime',
+      'callback' => 'date_iso8601',
+    ),
+    'field_op_related_nref' => array(
+      'type' => 'rel',
+      'predicates' => array(
+        0 => 'rnews:associatedArticle',
+        1 => 'schema:associatedArticle',
+      ),
+    ),
+    'field_op_author' => array(
+      'type' => 'rel',
+      'predicates' => array(
+        0 => 'rnews:creator',
+        1 => 'schema:creator',
+      ),
+    ),
+  );
+
+  return $schemaorg;
 }

@@ -28,9 +28,16 @@
         .dialog({
           modal : true,
           close: function(e){
-             //handle someone closing the box without clicking any buttons             
-             $(response.selector).removeClass('hasPopup');
-             $(this).remove();
+            //handle someone closing the box without clicking any buttons
+            if (Drupal.wysiwygDetach && $('.wysiwyg', this).val()) {
+              var item = $('.wysiwyg', this)[0];
+              var params = Drupal.settings.wysiwyg.triggers[item.id];
+              Drupal.wysiwygDetach(this, params['format'+$(item).val()])
+            }
+
+            $(response.selector).removeClass('hasPopup').html(Drupal.t('Loading...'));
+            $('.boxes-ajax.use-ajax-submit.form-submit[value="Cancel"]').click();
+            $(this).dialog('destroy').remove();
           },
           open: function(ui, event){
             $(this).siblings('.ui-dialog-titlebar').children('.ui-dialog-titlebar-close').click(function(e){
@@ -51,7 +58,6 @@
 
   Drupal.behaviors.boxes = { 
     attach: function(context, settings) {
-      
       $('div.boxes-box-controls a:not(.boxes-processed)')
         .addClass('boxes-processed')
         .click(function() {

@@ -57,7 +57,7 @@ function ga_stats_ga_metrics($all=FALSE) {
   if (!$all) {
     $enabled = variable_get('ga_stats_enabled_metrics', array('pageviews'));
     foreach ($metrics as $k => $v) {
-      if (!$enabled[$k]) {
+      if (!isset($enabled[$k]) || !$enabled[$k]) {
         unset($metrics[$k]);
       }
     }
@@ -95,7 +95,7 @@ function ga_stats_ga_timeframes($just_keys=FALSE, $all=FALSE) {
   if (!$all) {
     $enabled = variable_get('ga_stats_enabled_timeframes', array('today', 'month'));
     foreach ($timeframes as $k => $v) {
-      if (!$enabled[$k]) {
+      if (!isset($enabled[$k]) || !$enabled[$k]) {
         unset($timeframes[$k]);
       }
     }
@@ -121,10 +121,11 @@ function ga_stats_ga_get_accounts() {
   
   $user = variable_get('ga_stats_email', '');
   $password = variable_get('ga_stats_password', '');
+  $type = variable_get('ga_stats_acct_type', NULL);
     
   if ($user && $password) {
     try{
-      $ga = new gapi($user, $password);
+      $ga = new gapi($user, $password, NULL, $type);
       $accounts = $ga->requestAccountData(1, 5000); 
       return $accounts;
     } catch (Exception $e) {
@@ -151,10 +152,11 @@ function ga_stats_query_data($request) {
   $user = variable_get('ga_stats_email', '');
   $password = variable_get('ga_stats_password', '');
   $aid = variable_get('ga_stats_profile', '');
+  $type = variable_get('ga_stats_acct_type', NULL);
   
   if ($user && $password) {
     try{
-      $ga = new gapi($user, $password);
+      $ga = new gapi($user, $password, NULL, $type);
       $data = $ga->requestReportData($aid, $request['dimensions'], $request['metrics'], $request['sort_metric'], NULL, $request['start_date'], $request['end_date'], 1, $request['max_results']);
     } catch (Exception $e) {
       drupal_set_message(t('Invalid Google Analytics login.'), 'error');

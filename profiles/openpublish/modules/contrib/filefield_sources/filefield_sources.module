@@ -14,14 +14,6 @@ function filefield_sources_menu() {
 }
 
 /**
- * Implements hook_init().
- */
-function filefield_sources_init() {
-  // Currently needed for IMCE to set a custom variable.
-  filefield_sources_includes();
-}
-
-/**
  * Implements hook_element_info().
  */
 function filefield_sources_element_info() {
@@ -64,7 +56,12 @@ function filefield_sources_filefield_sources_widgets() {
 function filefield_sources_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
   $instance = $form['#instance'];
   if (in_array($instance['widget']['type'], module_invoke_all('filefield_sources_widgets'))) {
-    $form['instance']['widget']['settings'] += filefield_sources_form($instance);
+    if (!empty($form['instance']['widget']['settings'])) {
+      $form['instance']['widget']['settings'] += filefield_sources_form($instance);
+    }
+    else {
+      $form['instance']['widget']['settings'] = filefield_sources_form($instance);
+    }
   }
 }
 
@@ -78,7 +75,9 @@ function filefield_sources_field_widget_info_alter(&$info) {
   foreach (module_invoke_all('filefield_sources_widgets') as $widget) {
     $params = array('save', $widget);
     $widget_settings = array_merge($settings, filefield_sources_invoke_all('settings', $params));
-    $info[$widget]['settings']['filefield_sources'] = $widget_settings;
+    if (isset($info[$widget])) {
+      $info[$widget]['settings']['filefield_sources'] = $widget_settings;
+    }
   }
 }
 
@@ -123,7 +122,7 @@ function filefield_sources_field_process($element, &$form_state, $form) {
   static $js_added;
 
   // If not a recognized field instance, do not process.
-  if (!isset($element['#field_name']) || !($instance = field_widget_instance($element, $form_state))) {
+  if (!isset($element['#field_name']) || !($instance = field_widget_instance($element, $form_state)) || !isset($instance['widget']['settings']['filefield_sources']['filefield_sources'])) {
     return $element;
   }
 
@@ -224,8 +223,41 @@ function filefield_sources_field_validate($element, &$form_state, $form) {
  * A #submit handler added to all FileField Source buttons.
  */
 function filefield_sources_field_submit(&$form, &$form_state) {
-  $parents = array_slice($form_state['triggering_element']['#parents'], 0, -3);
-  drupal_array_set_nested_value($form_state['input'], $parents, NULL);
+
+  $parents = array_slice($form_state['triggering_element']['#array_parents'], 0, -3);
+  $element = drupal_array_get_nested_value($form, $parents);
+  $field_name = $element['#field_name'];
+  $langcode = $element['#language'];
+
+  // Get exisitng file values.
+  // File Field items are stored in the field state after ajax reloads starting
+  // from Drupal 7.8. We try to support all releases by merging the items.
+  $field_state = field_form_get_state($element['#field_parents'], $field_name, $langcode, $form_state);
+  $field_values = drupal_array_get_nested_value($form_state['values'], $parents);
+
+  if (isset($field_values) && isset($field_state['items'])) {
+    $field_values += $field_state['items'];
+  }
+  elseif (isset($field_state['items'])) {
+    $field_values = $field_state['items'];
+  }
+
+  if (isset($field_values)) {
+    // Update sort order according to weight. Note that this is always stored in
+    // form state. Sort does not work using regular upload, but that is a core
+    // bug.
+    usort($field_values, '_field_sort_items_helper');
+
+    // Update form_state values.
+    drupal_array_set_nested_value($form_state['values'], $parents, $field_values);
+
+    // Update items.
+    $field_state['items'] = $field_values;
+    field_form_set_state($element['#field_parents'], $field_name, $langcode, $form_state, $field_state);
+  }
+
+  // Clear out input as it will need to be rebuildt.
+  drupal_array_set_nested_value($form_state['input'], $element['#parents'], NULL);
   $form_state['rebuild'] = TRUE;
 }
 
@@ -434,7 +466,7 @@ function filefield_sources_save_file($filepath, $validators = array(), $destinat
   // directory. This overcomes open_basedir restrictions for future file
   // operations.
   $file->uri = $file->destination;
-  if (!file_unmanaged_copy($filepath, $file->uri)) {
+  if (!file_unmanaged_copy($filepath, $file->uri, $replace)) {
     drupal_set_message(t('File upload error. Could not move uploaded file.'), 'error');
     watchdog('file', 'Upload error. Could not move uploaded file %file to destination %destination.', array('%file' => $file->filename, '%destination' => $file->uri));
     return FALSE;

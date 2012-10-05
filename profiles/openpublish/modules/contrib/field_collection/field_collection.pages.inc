@@ -120,15 +120,15 @@ function field_collection_item_add($field_name, $entity_type, $entity_id, $revis
     return '';
   }
 
-  $title = ($field['cardinality'] == 1) ? $instance['label'] : t('Add new !instance_label', array('!instance_label' => drupal_strtolower($instance['label'])));
-  drupal_set_title($title);
-
   $field_collection_item = entity_create('field_collection_item', array('field_name' => $field_name));
   // Do not link the field collection item with the host entity at this point,
   // as during the form-workflow we have multiple field collection item entity
   // instances, which we don't want link all with the host.
   // That way the link is going to be created when the item is saved.
   $field_collection_item->setHostEntity($entity_type, $entity, LANGUAGE_NONE, FALSE);
+
+  $title = ($field['cardinality'] == 1) ? $instance['label'] : t('Add new !instance_label', array('!instance_label' => $field_collection_item->translatedInstanceLabel()));
+  drupal_set_title($title);
 
   // Make sure the current user has access to create a field collection item.
   if (!field_collection_item_access('create', $field_collection_item)) {

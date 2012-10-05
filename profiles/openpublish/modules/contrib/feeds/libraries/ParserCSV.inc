@@ -214,6 +214,8 @@ class ParserCSV {
       $currentField = '';
       $fields = array();
 
+      // We must use strlen() as we're parsing byte by byte using strpos(), so
+      // drupal_strlen() will not work properly.
       while ($currentIndex <= strlen($line)) {
         if ($quoted) {
           $nextQuoteIndex = strpos($line, '"', $currentIndex);

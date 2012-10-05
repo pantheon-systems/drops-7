@@ -71,9 +71,21 @@ function hook_apps_servers_info() {
  * apps. Set the App Server key and any default selected apps.
  */
 function hook_install_tasks($install_state) {
-  require_once(drupal_get_path('module', 'apps') . '/apps.profile.inc');
   $tasks = array();
-  $tasks = $tasks + apps_profile_install_tasks($install_state, 'APP_SERVER_NAME', array('default_app1', 'default_app2'));
+  require_once(drupal_get_path('module', 'apps') . '/apps.profile.inc');
+  $server = array(
+    'title' => 'App Server Name'
+    'machine name' => 'apps_server_machine_name',
+    'default apps' => array(
+      'app_machine_name_1',
+      'app_machine_name_2',
+    ),
+    'required apps' => array(
+
+    ),
+    'default content callback' => 'distro_default_content',
+  );
+  $tasks = $tasks + apps_profile_install_tasks($install_state, $server);
   return $tasks;
 }
 

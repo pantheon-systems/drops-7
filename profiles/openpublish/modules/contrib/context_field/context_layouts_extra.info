@@ -1,9 +1,9 @@
 name = Context Layouts Extra
 core = 7.x
 
-; Information added by drupal.org packaging script on 2011-09-27
-version = "7.x-1.0-beta2"
+; Information added by drupal.org packaging script on 2012-09-11
+version = "7.x-1.0-beta4"
 core = "7.x"
 project = "context_field"
-datestamp = "1317145301"
+datestamp = "1347392535"
 

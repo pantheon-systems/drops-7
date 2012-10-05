@@ -55,8 +55,13 @@ function date_field_widget_form(&$form, &$form_state, $field, $instance, $langco
   // if $items is empty, because it might have been set that way on purpose.
   // @see date_field_widget_properties_alter() where we flagged if this is a new entity.
 
+  // We check !isset($items[$delta]['value']) because entity translation may create
+  // a new translation entity for an existing entity and we don't want to clobber
+  // values that were already set in that case.
+  // @see http://drupal.org/node/1478848.
+
   $is_default = FALSE;
-  if (!empty($instance['widget']['is_new'])) {
+  if (!empty($instance['widget']['is_new']) && !isset($items[$delta]['value'])) {
     $items = date_default_value($field, $instance, $langcode);
     $is_default = TRUE;
   }
@@ -181,7 +186,7 @@ function date_default_value($field, $instance, $langcode) {
   $item[0]['timezone'] = date_get_timezone($field['settings']['tz_handling']);
   $item[0]['timezone_db'] = date_get_timezone_db($field['settings']['tz_handling']);
   $item[0]['date_type'] = $field['type'];
-  if (empty($item[0]['value2'])) {
+  if (!isset($item[0]['value2'])) {
     $item[0]['value2'] = $item[0]['value'];
   }
   return $item;
@@ -236,8 +241,13 @@ function date_default_value_part($item, $field, $instance, $langcode, $part = 'v
  * Process an individual date element.
  */
 function date_combo_element_process($element, &$form_state, $form) {
-
+    
   if (date_hidden_element($element)) {
+    // A hidden value for a new entity that had its end date set to blank
+    // will not get processed later to populate the end date, so set it here.
+    if (isset($element['#value']['value2']) && empty($element['#value']['value2'])) {
+      $element['#value']['value2'] = $element['#value']['value'];
+    }
     return $element;
   }
 
@@ -291,7 +301,7 @@ function date_combo_element_process($element, &$form_state, $form) {
     unset($element['#default_value'][$to_field]);
   }
 
-  $show_todate = !empty($form_state['values']['show_todate']) || !empty($element['#default_value'][$to_field]) || $instance['required'];
+  $show_todate = !empty($form_state['values']['show_todate']) || !empty($element['#default_value'][$to_field]) || $field['settings']['todate'] == 'required';
   $element['show_todate'] = array(
     '#title' => t('Show End Date'),
     '#type' => 'checkbox',
@@ -334,14 +344,17 @@ function date_combo_element_process($element, &$form_state, $form) {
       $element[$from_field]['#type'] = 'date_select';
       $element[$from_field]['#theme_wrappers'] = array('date_select');
       $element['#attached']['js'][] = drupal_get_path('module', 'date') . '/date.js';
+      $element[$from_field]['#ajax'] = !empty($element['#ajax']) ? $element['#ajax'] : FALSE;
       break;
     case 'date_popup':
       $element[$from_field]['#type'] = 'date_popup';
       $element[$from_field]['#theme_wrappers'] = array('date_popup');
+      $element[$from_field]['#ajax'] = !empty($element['#ajax']) ? $element['#ajax'] : FALSE;
       break;
     default:
       $element[$from_field]['#type'] = 'date_text';
       $element[$from_field]['#theme_wrappers'] = array('date_text');
+      $element[$from_field]['#ajax'] = !empty($element['#ajax']) ? $element['#ajax'] : FALSE;
       break;
   }
 

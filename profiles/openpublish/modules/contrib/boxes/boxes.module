@@ -133,9 +133,6 @@ function boxes_block_configure($delta) {
  * Implements hook_block_save().
  */
 function boxes_block_save($delta, $edit) {
-  $edit['delta'] = $delta;
-  $box = boxes_factory($edit['plugin_key'], $edit);
-  $box->save();
 }
 
 /**
@@ -186,7 +183,7 @@ function boxes_block_view($delta) {
           'title' => t('Edit Box'),
           'href' => $_GET['q'],
           'query' => array(
-            'plugin_key' => '',
+            'plugin_key' => $box->plugin_key,
             'boxes_delta' => $block['delta'],
           ),
           'attributes' => array('class' => array('use-ajax')),
@@ -320,7 +317,7 @@ function boxes_footer() {
       $block = (object) $block;
 
       $renderable = _block_get_renderable_array(_block_render_blocks(array('boxes_' . $_GET['boxes_delta'] => $block)));
-      $markup = drupal_render($renderable);
+      $markup = trim(drupal_render($renderable));
 
       $id = 'block-boxes-' . $_GET['boxes_delta'];
       // We cannot use drupal_html_id() here because it will increment the id on
@@ -378,8 +375,10 @@ function boxes_box_load($delta = NULL) {
   $boxes = array();
   foreach (ctools_export_load_object('box') as $box) {
     $box = boxes_box::load($box->delta);
-    drupal_alter('boxes_box_load', $box, $delta);
-    $boxes[$box->delta] = $box;
+    if($box) {
+      drupal_alter('boxes_box_load', $box, $delta);
+      $boxes[$box->delta] = $box;
+    }
   }
   return $boxes;
 }
@@ -487,7 +486,7 @@ function boxes_form_alter(&$form, &$form_state, $form_id) {
   }
   
   // Use the Box form submit handler and properly redirect to the correct admin page
-  $form['#submit'][0] = 'boxes_box_form_submit';
+  array_unshift($form['#submit'], 'boxes_box_form_submit');
   $form['#action'] = '?destination=admin/structure/block';
   
   // Cancel behavior is different here
@@ -569,26 +568,31 @@ function boxes_block_cancel_submit($form, &$form_state) {
  * @see http://drupal.org/node/1354
  */
 function boxes_block_delete_submit($form, &$form_state) {
-  drupal_goto('admin/structure/block/manage/boxes/' . $form_state['values']['delta'] . '/delete');
+  // $form_state['redirect'] will not work here since we are using $form['#action'] with destination
+  $_GET['destination'] = 'admin/structure/block/manage/boxes/' . $form_state['values']['delta'] . '/delete';
 }
 
 /**
  * Alters the block admin form to add delete links next to boxes blocks.
  */
 function boxes_form_block_admin_display_form_alter(&$form, $form_state) {
-  foreach (element_children($form) as $i) {
-    if (isset($form[$i]['module']['#value']) && $form[$i]['module']['#value'] == 'boxes') {
-      $delta = $form[$i]['delta']['#value'];
+  foreach (element_children($form['blocks']) as $i) {
+    if (isset($form['blocks'][$i]['module']['#value']) && $form['blocks'][$i]['module']['#value'] == 'boxes') {
+      $delta = $form['blocks'][$i]['delta']['#value'];
       if (strpos($delta, 'boxes_add__') !== 0) {
         $box = boxes_box_load($delta);
         if (($box->export_type & EXPORT_IN_DATABASE) && ($box->export_type & EXPORT_IN_CODE)) {
-          $form[$i]['delete'] = array(
-            '#value' => l(t('revert'), 'admin/structure/block/configure/boxes/' . $delta . '/delete'),
+          $form['blocks'][$i]['delete'] = array(
+            '#title' => t('revert'),
+            '#type' => 'link',
+            '#href' => 'admin/structure/block/manage/boxes/' . $delta . '/delete'
           );
         }
         elseif (!($box->export_type & EXPORT_IN_CODE)) {
-          $form[$i]['delete'] = array(
-            '#value' => l(t('delete'), 'admin/structure/block/configure/boxes/' . $delta . '/delete'),
+          $form['blocks'][$i]['delete'] = array(
+            '#title' => t('delete'),
+            '#type' => 'link',
+            '#href' => 'admin/structure/block/manage/boxes/' . $delta . '/delete'
           );
         }
       }
@@ -737,6 +741,9 @@ function boxes_context_block_info_alter(&$blocks) {
  * Provides spaces integration for per-space overrides of a given box.
  */
 function boxes_boxes_box_load_alter(&$box, $delta) {
+  if (!$delta) {
+    $delta = $box->delta;
+  }
   if (module_exists('spaces') && $space = spaces_get_space()) {
     if ($space_box = $space->controllers->boxes->get($delta)) {
       // Some older overrides may be stored as an array, check for these and
@@ -812,3 +819,29 @@ function boxes_preprocess_block(&$vars) {
     $vars['classes_array'] = array_merge($vars['classes_array'], explode(' ', $vars['block']->additional_classes));
   }
 }
+
+/**
+ * Preprocessor for theme('panels_pane').
+ */
+function boxes_preprocess_panels_pane(&$vars) {
+  if ($vars['pane']->type == 'block') {
+    list($module, $delta) = explode('-', $vars['pane']->subtype, 2);
+    // Load up the actual box to check for additional classes.
+    $box = boxes_box_load($delta);
+
+    if (isset($box->plugin_key)) {
+      $vars['classes_array'][] = 'block-boxes-' . $box->plugin_key;
+    }
+    if (isset($box->options['additional_classes'])) {
+      $vars['classes_array'] = array_merge($vars['classes_array'], explode(' ', $box->options['additional_classes']));
+    }
+  }
+}
+
+/**
+ * Implements hook_ctools_block_info().
+ */
+function boxes_ctools_block_info($module, $delta, &$info) {
+  $info['category'] = t('Boxes');
+}
+

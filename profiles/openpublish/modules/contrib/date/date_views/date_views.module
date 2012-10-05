@@ -100,7 +100,9 @@ function date_views_base_tables() {
     // First we get the base tables we can learn about from entity_info.
     $entity_info = entity_get_info();
     foreach ($entity_info as $entity_type => $info) {
-      $base_tables[$info['base table']] = $entity_type;
+      if (!empty($info['base table'])) {
+        $base_tables[$info['base table']] = $entity_type;
+      }
       if (!empty($info['revision table'])) {
         $base_tables[$info['revision table']] = $entity_type;
       }
@@ -368,7 +370,11 @@ function date_views_handler_is_date($handler, $type = 'argument') {
  * not just some parts. Only needed for the select widget.
  */
 function date_views_select_validate(&$form, &$form_state) {
-  $granularity = date_format_order($form['value']['#date_format']);
+  // If there are no values just return.
+  if (empty($form['value']) && empty($form['min'])) {
+    return;
+  }
+  $granularity = (!empty($form['min']['#date_format'])) ? date_format_order($form['min']['#date_format']) : date_format_order($form['value']['#date_format']);
   $filled = array();
   $value = drupal_array_get_nested_value($form_state['input'], $form['#parents']);
   foreach ($granularity as $part) {
@@ -379,7 +385,45 @@ function date_views_select_validate(&$form, &$form_state) {
   if (!empty($filled) && count($filled) != count($granularity)) {
     $unfilled = array_diff($granularity, $filled);
     foreach ($unfilled as $part) {
-      form_error($form['value'][$part], t('Please choose a @part.', array('@part' => $part)), $form_state);
+      switch ($part) {
+        case 'year':
+          form_error($form['value'][$part], t('Please choose a year.'), $form_state);
+          break;
+        case 'month':
+          form_error($form['value'][$part], t('Please choose a month.'), $form_state);
+          break;
+        case 'day':
+          form_error($form['value'][$part], t('Please choose a day.'), $form_state);
+          break;
+        case 'hour':
+          form_error($form['value'][$part], t('Please choose an hour.'), $form_state);
+          break;
+        case 'minute':
+          form_error($form['value'][$part], t('Please choose a minute.'), $form_state);
+          break;
+        case 'second':
+          form_error($form['value'][$part], t('Please choose a second.'), $form_state);
+          break;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_date_formatter_view_alter().
+ *
+ * If we are displaying a date from a view, see if we have information about
+ * which multiple value to display. If so, set the date_id in the entity.
+ */
+function date_views_date_formatter_pre_view_alter(&$entity, &$variables) {
+  // Some views have no row index.
+  if (!empty($entity->view) && isset($entity->view->row_index)) {
+    $field = $variables['field'];
+    $date_id = 'date_id_' . $field['field_name'];
+    $date_delta = 'date_delta_' . $field['field_name'];
+    $date_item = $entity->view->result[$entity->view->row_index];
+    if (!empty($date_item->$date_id)) {
+      $entity->date_id = 'date.' . $date_item->$date_id . '.' . $field['field_name'] . '.' . $date_item->$date_delta . '.0';
     }
   }
 }

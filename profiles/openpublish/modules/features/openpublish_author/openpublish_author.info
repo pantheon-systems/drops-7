@@ -1,19 +1,19 @@
+name = "OpenPublish Author"
+description = "An extension to Phase2 Profile, to add additional fields for author attributes."
 core = "7.x"
+package = "Features"
+php = "5.2.4"
+version = "7.x-1.0"
+project = "openpublish_author"
 dependencies[] = "features"
 dependencies[] = "link"
-description = "An extension to Phase2 Profile, to add additional fields for author attributes."
 features[field][] = "node-profile-field_facebook_url"
 features[field][] = "node-profile-field_profile_job_title"
 features[field][] = "node-profile-field_twitter"
-name = "OpenPublish Author"
-package = "Features"
-php = "5.2.4"
-project = "openpublish_author"
-version = "7.x-1.0"
 
-; Information added by drupal.org packaging script on 2012-03-13
-version = "7.x-1.0-alpha7"
+; Information added by drupal.org packaging script on 2012-10-04
+version = "7.x-1.0-beta5"
 core = "7.x"
 project = "openpublish"
-datestamp = "1331655949"
+datestamp = "1349368017"
 

@@ -3,4 +3,11 @@ description = Provides contextual links to perform actions related to elements o
 package = Core
 version = VERSION
 core = 7.x
+files[] = contextual.test
+
+
+; Information added by drush on 2012-10-04
+version = "master-dev"
+project = "drupal"
+datestamp = "1349370005"
 

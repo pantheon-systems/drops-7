@@ -483,6 +483,7 @@ class EntityStructureWrapper extends EntityMetadataWrapper implements IteratorAg
 
       // If the setter has not thrown any exceptions, proceed and apply the
       // update to the current and any parent wrappers as necessary.
+      $data = $this->info['type'] == 'entity' ? $this : $data;
       $this->set($data);
 
       // Clear the cache of properties dependent on this value.
@@ -675,7 +676,10 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
 
     if ($this->bundle && isset($this->propertyInfo['bundles'][$this->bundle])) {
       $bundle_info = (array) $this->propertyInfo['bundles'][$this->bundle] + array('properties' => array());
-      $this->propertyInfo['properties'] += $bundle_info['properties'];
+      // Allow bundles to re-define existing properties, such that the bundle
+      // can add in more bundle-specific details like the bundle of a referenced
+      // entity.
+      $this->propertyInfo['properties'] = $bundle_info['properties'] + $this->propertyInfo['properties'];
     }
   }
 
@@ -730,6 +734,10 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
     if (!$this->validate($value)) {
       throw new EntityMetadataWrapperException('Invalid data value given. Be sure it matches the required data type and format.');
     }
+    if ($this->info['type'] == 'entity' && $value === $this) {
+      // Nothing to do.
+      return $this;
+    }
     $previous_id = $this->id;
     $previous_type = $this->type;
     // Set value, so we get the identifier and pass it to the normal setter.
@@ -760,10 +768,13 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    */
   public function clear() {
     $this->id = NULL;
-    // Reset entity info / property info based upon the info provided during
-    // the creation of the wrapper.
-    $this->type = $this->info['type'];
-    $this->setUp();
+    $this->bundle = isset($this->info['bundle']) ? $this->info['bundle'] : NULL;
+    if ($this->type != $this->info['type']) {
+      // Reset entity info / property info based upon the info provided during
+      // the creation of the wrapper.
+      $this->type = $this->info['type'];
+      $this->setUp();
+    }
     parent::clear();
   }
 
@@ -777,7 +788,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
       try {
         $this->value(array('identifier' => TRUE));
       }
-      catch (EntityMetadataWrapper $e) {
+      catch (EntityMetadataWrapperException $e) {
         // If loading data fails, we cannot determine the concrete entity type.
       }
     }
@@ -797,6 +808,9 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
   /**
    * Permanently save the wrapped entity.
    *
+   * @throws EntityMetadataWrapperException
+   *   If the entity type does not support saving.
+   *
    * @return EntityDrupalWrapper
    */
   public function save() {
@@ -804,7 +818,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
       if (!entity_type_supports($this->type, 'save')) {
         throw new EntityMetadataWrapperException("There is no information about how to save entities of type " . check_plain($this->type) . '.');
       }
-      $return = entity_save($this->type, $this->data);
+      entity_save($this->type, $this->data);
       // On insert, update the identifier afterwards.
       if (!$this->id) {
         list($this->id, , ) = entity_extract_ids($this->type, $this->data);
@@ -891,9 +905,30 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
  */
 class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggregate, ArrayAccess, Countable {
 
-  protected function itemType() {
-    $type = entity_property_list_extract_type($this->type);
-    return $type ? $type : 'unknown';
+  /**
+   * The type of contained items.
+   */
+  protected $itemType;
+
+  /**
+   * Whether this is a list of entities with a known entity type, i.e. for
+   * generic list of entities (list<entity>) this is FALSE.
+   */
+  protected $isEntityList;
+
+
+  public function __construct($type, $data = NULL, $info = array()) {
+    parent::__construct($type, NULL, $info);
+
+    $this->itemType = entity_property_list_extract_type($this->type);
+    if (!$this->itemType) {
+      $this->itemType = 'unknown';
+    }
+    $this->isEntityList = (bool) entity_get_info($this->itemType);
+
+    if (isset($data)) {
+      $this->set($data);
+    }
   }
 
   /**
@@ -912,7 +947,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
       }
       if (is_numeric($delta)) {
         $info = array('parent' => $this, 'name' => $delta) + $this->info;
-        $this->cache[$delta] = entity_metadata_wrapper($this->itemType(), NULL, $info);
+        $this->cache[$delta] = entity_metadata_wrapper($this->itemType, NULL, $info);
       }
       else {
         throw new EntityMetadataWrapperException('There can be only numerical keyed items in a list.');
@@ -963,7 +998,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   public function value(array $options = array()) {
     // For lists of entities fetch full entity objects before returning.
     // Generic entity-wrappers need to be handled separately though.
-    if ($this->get(0) instanceof EntityDrupalWrapper && $this->itemType() != 'entity' && empty($options['identifier']) && $this->dataAvailable()) {
+    if ($this->isEntityList && empty($options['identifier']) && $this->dataAvailable()) {
       $list = parent::value();
       $entities = $list ? entity_load($this->get(0)->type, $list) : array();
       // Make sure to keep the array keys as present in the list.
@@ -979,9 +1014,9 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
 
   public function set($values) {
     // Support setting lists of fully loaded entities.
-    if ($this->get(0) instanceof EntityDrupalWrapper && $this->itemType() != 'entity' && $values && is_object(reset($values))) {
+    if ($this->isEntityList && $values && is_object(reset($values))) {
       foreach ($values as $key => $value) {
-        list($id, $vid, $bundle) = entity_extract_ids($this->get(0)->type, $value);
+        list($id, $vid, $bundle) = entity_extract_ids($this->itemType, $value);
         $values[$key] = $id;
       }
     }
@@ -1004,7 +1039,7 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
   }
 
   public function offsetExists($delta) {
-    return $this->dataAvailable() && ($data = $this->value()) && isset($data[$delta]);
+    return $this->dataAvailable() && ($data = $this->value()) && array_key_exists($delta, $data);
   }
 
   public function offsetSet($delta, $value) {
@@ -1096,11 +1131,11 @@ class EntityMetadataWrapperIterator implements RecursiveIterator {
     return isset($this->keys[$this->position]);
   }
 
-  public function hasChildren () {
+  public function hasChildren() {
     return $this->current() instanceof IteratorAggregate;
   }
 
-  public function getChildren () {
+  public function getChildren() {
     return $this->current()->getIterator();
   }
 }
@@ -1129,7 +1164,7 @@ class EntityMetadataArrayObject implements ArrayAccess, Countable, IteratorAggre
   }
 
   public function offsetExists($delta) {
-    return isset($this->data[$delta]);
+    return array_key_exists($delta, $this->data);
   }
 
   public function offsetSet($delta, $value) {

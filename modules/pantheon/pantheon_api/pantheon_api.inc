@@ -5,139 +5,49 @@
  * API functions for Pantheon
  */
 
-define('YGG_API_PORT', 8443);
-define('YGG_API', 'https://api.live.getpantheon.com');
-define('PANTHEON_SYSTEM_CERT', '../certs/binding.pem');
+define('YGGDRASIL_PORT', 8443);
+define('VALHALLA_PORT', 448);
 
 /**
- * External API function to put config data in the Ygg API
+ * Bulk delete in valhalla.
  *
- * @params
- *
- * $site_uuid the site to hit
- *
- * Returns: an object of configuration
+ * @variable $paths = an array of file paths
  */
-function pantheon_api_ygg_config_get($site_uuid = 'self', $reset = FALSE) {
-  static $config = array();
-  if (!$config[$site_uuid] && !$reset) {
-    $url = YGG_API ."/sites/$site_uuid/configuration";
-    $result = pantheon_api_curl($url, NULL, YGG_API_PORT);
-
-    // TODO: error checking?
-    $config[$site_uuid] = json_decode($result['body']);
-  }
-
-   return $config[$site_uuid];
-}
-
-
-/**
- * External API function to put config data in the Ygg API
- *
- * @params
- *
- * $site_uuid the site to hit
- *
- * $path the REST url behind /sites/<site-uuid> to query
- *
- * $data an array or object that will be JSONified and PUT
- *
- */
-function pantheon_api_ygg_config_set($site_uuid = 'self', $data) {
-  $url = YGG_API ."/sites/$site_uuid/configuration";
-  $json = json_encode($data);
-  $result = pantheon_api_curl($url, $json, YGG_API_PORT, 'PUT');
-
-  return $result;
-}
-
-/**
- * Post events to Ygg api.
- */
-function pantheon_api_ygg_event_post($site_uuid = 'self', $data) {
-  $url = YGG_API ."/sites/$site_uuid/events/";
-  $json = json_encode($data);
-  $result = pantheon_api_curl($url, $json, YGG_API_PORT, 'POST');
-
-  return $result;
-}
-
-/**
- * Ygg API call to pull the services status.
- */
-function pantheon_api_ygg_services_get($site_uuid = 'self', $reset = FALSE) {
-  static $services = array();
-  if (!isset($services[$site_uuid]) && !$reset) {
-    $url = YGG_API ."/sites/$site_uuid/services";
-    $result = pantheon_api_curl($url, NULL, YGG_API_PORT);
-
-    // TODO: error checking?
-    $services[$site_uuid] = json_decode($result['body']);
-  }
-
-   return $services[$site_uuid];
-}
-
-/**
- * Function to get an authorization token
- *
- * This will only allow a site to get tokens for itself, not other sites.
- */
-function pantheon_api_get_authorization($token) {
-  $token = check_plain($token);
-  $poison = cache_get('pantheon-poison-'. $token);
-  if (is_object($poison)) {
-    return FALSE;
-  }
-  $url = YGG_API . '/sites/self/authorizations/'. $token;
-  $result = pantheon_api_curl($url, NULL, YGG_API_PORT);
-  if (strpos($result['headers'], 'HTTP/1.1 200') !== FALSE) {
-    $authorization = json_decode($result['body']);
-    if ($authorization->expires < time() || $authorization->headers->{'X-AuthProxy-Request-Service'} != 'drupal_login') {
-      return FALSE;
-    }
-    else {
-      return $authorization;
-    }
-  }
-  else {
-    return FALSE;
-  }
+function pantheon_api_bulk_file_delete($paths) {
+  $host = 'files.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com';
+  $url = "https://$host/sites/self/environments/self/files";
+  $data = json_encode($paths);
+  $result = pantheon_api_curl($url, $data, VALHALLA_PORT, 'DELETE');
 }
 
 /**
  * Helper function for running CURLs
  */
-function pantheon_api_curl($url, $data = NULL, $port = 443, $datamethod = 'POST') {
+function pantheon_api_curl($url, $data = NULL, $port = 443, $verb = 'GET') {
   // create a new cURL resource
   $ch = curl_init();
 
   // set URL and other appropriate options
+  $cert_path = '/srv/bindings/'. variable_get('pantheon_binding') .'/certs/binding.pem';
   $opts = array(
     CURLOPT_URL => $url,
     CURLOPT_HEADER => 1,
     CURLOPT_PORT => $port,
     CURLOPT_RETURNTRANSFER => 1,
-    CURLOPT_SSLCERT => PANTHEON_SYSTEM_CERT,
+    CURLOPT_SSLCERT => $cert_path,
     CURLOPT_HTTPHEADER => array('Content-Type: application/json'),
   );
   curl_setopt_array($ch, $opts);
 
   // If we are posting data...
   if ($data) {
-    if ($datamethod == 'POST') {
+    if ($verb == 'POST') {
       curl_setopt($ch, CURLOPT_POST, 1);
-    }
-    else {
-      // This is sorta janky, but I want to re-use most of this function
-      // As per:
-      // http://www.lornajane.net/posts/2009/PUTting-data-fields-with-PHP-cURL
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, 'PUT');
     }
     curl_setopt($ch, CURLOPT_POSTFIELDS, $data);
   }
 
+  curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $verb);
 
   // grab URL and pass it to the browser
   $result = curl_exec($ch);
@@ -145,7 +55,7 @@ function pantheon_api_curl($url, $data = NULL, $port = 443, $datamethod = 'POST'
   if (curl_errno($ch) != 0) {
     $error = curl_error($ch);
     curl_close($ch);
-    watchdog('pantheon', 'Fatal error contacting API: !error', array('!error' => $error), WATCHDOG_EMERGENCY);
+    watchdog('pantheon', 'Error contacting API: !error', array('!error' => $error), WATCHDOG_EMERGENCY);
     return FALSE;
   }
 
@@ -163,15 +73,4 @@ function pantheon_api_curl($url, $data = NULL, $port = 443, $datamethod = 'POST'
   curl_close($ch);
 
   return $return;
-}
-
-/**
- * Helper function to get uuid for "self" from the cert.
- */
-function pantheon_api_get_self_uuid() {
-  $cert = file_get_contents(PANTHEON_SYSTEM_CERT);
-  $ssl = openssl_x509_parse($cert);
-  $uuid = array_shift(explode('.', $ssl['subject']['CN']));
-
-  return $uuid;
 }

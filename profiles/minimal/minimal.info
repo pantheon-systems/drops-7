@@ -6,3 +6,9 @@ hidden = TRUE
 dependencies[] = block
 dependencies[] = dblog
 
+
+; Information added by drush on 2012-10-04
+version = "master-dev"
+project = "drupal"
+datestamp = "1349370005"
+

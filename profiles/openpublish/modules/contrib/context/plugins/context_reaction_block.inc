@@ -117,6 +117,7 @@ class context_reaction_block extends context_reaction {
     drupal_add_library('system', 'ui.droppable');
     drupal_add_library('system', 'ui.sortable');
     drupal_add_js(drupal_get_path('module', 'context_ui') . '/json2.js');
+    drupal_add_js(drupal_get_path('module', 'context_ui') . '/theme/filter.js');
     drupal_add_js(drupal_get_path('module', 'context') . '/plugins/context_reaction_block.js');
     drupal_add_css(drupal_get_path('module', 'context') . '/plugins/context_reaction_block.css');
 
@@ -124,7 +125,7 @@ class context_reaction_block extends context_reaction {
     static $once;
     if (!isset($once)) {
       $settings = array(
-        'path' => url($_GET['q']),
+        'path' => drupal_is_front_page() ? base_path() : url($_GET['q']),
         'params' => (object) array_diff_key($_GET, array('q' => '')),
         'scriptPlaceholder' => theme('context_block_script_placeholder', array('text' => '')),
       );
@@ -220,7 +221,29 @@ class context_reaction_block extends context_reaction {
     foreach (array_keys($all_regions) as $region) {
       if ($this->is_enabled_region($region)) {
         if ($blocks = $this->block_get_blocks_by_region($region)) {
-          $page[$region] = isset($page[$region]) ? array_merge($page[$region], $blocks) : $blocks;
+
+          // Are the blocks already sorted.
+          $blocks_sorted = TRUE;
+
+          // If blocks have already been placed in this region (most likely by
+          // Block module), then merge in blocks from Context.
+          if (isset($page[$region])) {
+            $page[$region] = array_merge($page[$region], $blocks);
+
+            // Restore the weights that Block module manufactured
+            // @see _block_get_renderable_array()
+            foreach ($page[$region] as &$block) {
+              if (isset($block['#block']->weight)) {
+                $block['#weight'] = $block['#block']->weight;
+                $blocks_sorted = FALSE;
+              }
+            }
+          }
+          else {
+            $page[$region] = $blocks;
+          }
+
+          $page[$region]['#sorted'] = $blocks_sorted;
         }
       }
     }
@@ -275,7 +298,7 @@ class context_reaction_block extends context_reaction {
    * Add markup for making a block editable.
    */
   protected function editable_block($block) {
-    if (!empty($block->content['#markup']) || element_children($block->content)) {
+    if (!empty($block->content)) {
       $block->content = array(
         'content' => $block->content,
         'context' => array('#markup' => "<a id='context-block-{$block->module}-{$block->delta}' class='context-block editable edit-{$block->context}'></a>"),
@@ -285,6 +308,12 @@ class context_reaction_block extends context_reaction {
         $block->content['#contextual_links'] = $block->content['content']['#contextual_links'];
         unset($block->content['content']['#contextual_links']);
       }
+    }
+    else {
+      // the block alter in context.module should ensure that blocks are never
+      // empty if the inline editor is present but in the case that they are,
+      // warn that editing the context is likely to cause this block to be dropped
+      drupal_set_message(t('The block with delta @delta from module @module is not compatible with the inline editor and will be dropped from the context containing it if you edit contexts here', array('@delta' => $block->delta, '@module' => $block->module)), 'warning');
     }
     return $block;
   }
@@ -301,8 +330,17 @@ class context_reaction_block extends context_reaction {
       global $theme;
       $regions = system_region_list($theme);
       $name = isset($regions[$region]) ? $regions[$region] : $region;
-      $build['context']['#markup'] = "<a class='context-block-region' id='context-block-region-{$region}'>{$name}</a>";
+      // The negative weight + sorted will push our region marker to the top of the region
+      $build['context'] = array(
+        '#prefix' => "<div class='context-block-region' id='context-block-region-{$region}'>",
+        '#markup' => "<span class='region-name'>{$name}</span>" .
+                     "<a class='context-ui-add-link'>" . t('Add a block here.') . '</a>',
+        '#suffix' => '</div>',
+        '#weight' => -100,
+      );
+      $build['#sorted'] = FALSE;
     }
+
     return $build;
   }
 
@@ -336,13 +374,15 @@ class context_reaction_block extends context_reaction {
       foreach ($contexts as $context) {
         $options = $this->fetch_from_context($context);
         if (!empty($options['blocks'])) {
-          foreach ($options['blocks'] as $block) {
-            $block = (object) $block;
-            $block->context = $context->name;
-            $block->bid = "{$block->module}-{$block->delta}";
-            $block->title = isset($info[$block->bid]->title) ? $info[$block->bid]->title : NULL;
-            $block->cache = isset($info[$block->bid]->cache) ? $info[$block->bid]->cache : DRUPAL_NO_CACHE;
-            $context_blocks[$block->region][$block->bid] = $block;
+          foreach ($options['blocks'] as $context_block) {
+            $bid = "{$context_block['module']}-{$context_block['delta']}";
+            if (isset($info[$bid])) {
+              $block = (object) array_merge((array) $info[$bid], $context_block);
+              $block->context = $context->name;
+              $block->title = isset($info[$block->bid]->title) ? $info[$block->bid]->title : NULL;
+              $block->cache = isset($info[$block->bid]->cache) ? $info[$block->bid]->cache : DRUPAL_NO_CACHE;
+              $context_blocks[$block->region][$block->bid] = $block;
+            }
           }
         }
       }
@@ -429,6 +469,7 @@ class context_reaction_block extends context_reaction {
    */
   function get_blocks($region = NULL, $context = NULL, $reset = FALSE) {
     static $block_info;
+    $theme_key = variable_get('theme_default', 'garland');
 
     if (!isset($block_info) || $reset) {
       $block_info = array();
@@ -436,16 +477,29 @@ class context_reaction_block extends context_reaction {
         $block_info = context_cache_get('block_info');
       }
       if (empty($block_info)) {
-        $block_info = array();
-        foreach (module_implements('block_info') as $module) {
-          $module_blocks = module_invoke($module, 'block_info');
-          if (!empty($module_blocks)) {
-            foreach ($module_blocks as $delta => $block) {
-              $block = (object) $block;
-              $block->module = $module;
-              $block->delta = $delta;
-              $block->bid = "{$block->module}-{$block->delta}";
-              $block_info[$block->bid] = $block;
+        if (module_exists('block')) {
+          $block_blocks = _block_rehash($theme_key);
+          $block_info = array();
+          // Change from numeric keys to module-delta.
+          foreach ($block_blocks as $block) {
+            $block = (object) $block;
+            unset($block->theme, $block->status, $block->weight, $block->region, $block->custom, $block->visibility, $block->pages);
+            $block->bid = "{$block->module}-{$block->delta}";
+            $block_info[$block->bid] = $block;
+          }
+        }
+        else {
+          $block_info = array();
+          foreach (module_implements('block_info') as $module) {
+            $module_blocks = module_invoke($module, 'block_info');
+            if (!empty($module_blocks)) {
+              foreach ($module_blocks as $delta => $block) {
+                $block = (object) $block;
+                $block->module = $module;
+                $block->delta = $delta;
+                $block->bid = "{$block->module}-{$block->delta}";
+                $block_info[$block->bid] = $block;
+              }
             }
           }
         }
@@ -457,7 +511,6 @@ class context_reaction_block extends context_reaction {
 
       // Gather only region info from the database.
       if (module_exists('block')) {
-        $theme_key = variable_get('theme_default', 'garland');
         $result = db_select('block')
           ->fields('block', array('module', 'weight', 'delta', 'region', 'title'))
           ->condition('theme', $theme_key)

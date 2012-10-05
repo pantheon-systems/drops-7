@@ -19,6 +19,16 @@ function pantheon_apachesolr_menu() {
   return $items;
 }
 
+function pantheon_apachesolr_curlopts() {
+  return array(
+    CURLOPT_HEADER => 1,
+    CURLOPT_RETURNTRANSFER => 1,
+    CURLOPT_TIMEOUT_MS => 5000,
+    CURLOPT_CONNECTTIMEOUT_MS => 5000,
+    CURLOPT_HTTPHEADER => array('Content-type:text/xml;', 'Expect:'),
+  );
+}
+
 function pantheon_apachesolr_update_schema($schema) {
   $ch = curl_init();
   $host = 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com';

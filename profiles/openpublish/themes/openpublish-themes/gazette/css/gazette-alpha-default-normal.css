@@ -1,0 +1,122 @@
+/* This file will hold styles 
+ * that are loaded using the 
+ * 960px layout. 
+ */
+
+/*
+ * Header
+ */
+h1.site-name,
+h2.site-name {
+  font-size: 132px;
+  padding:0;
+}
+#region-user-second {
+  display:block;
+}
+ul.main-menu li {
+  background: url(../img/bg-nav-item.png) no-repeat top right;
+}
+#main-menu {
+  margin: -23px 0 0 0;
+  text-align:left;
+}
+#block-system-user-menu {
+  display:none;
+}
+
+/*
+ * Featured photo
+ */
+.view-id-op_recent_content.view-display-id-block_7 .views-field-field-op-main-image {
+  float: left;
+}
+
+/*
+ * Listings
+ */
+.view-id-op_recent_content.view-display-id-block_recent_articles .views-field-body,
+.view-id-op_recent_content.view-display-id-block_recent_articles_taxonomy .views-field-body,
+.view-id-op_recent_content.view-display-id-block_5 .views-field-body {
+  display:block;
+  background: url(../img/border-double-line-horizontal.png) repeat-x top;
+  padding-top: 24px;
+  margin-top: 15px;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-fieldgroup-text .views-field-view-node,
+.view-id-op_recent_content.view-display-id-block_recent_articles .views-field-view-node,
+.view-id-op_recent_content.view-display-id-block_recent_articles_taxonomy .views-field-view-node,
+.node-links ul li.node-readmore,
+.view-id-op_recent_content.view-display-id-block_5 .views-field-view-node {
+  display:block;
+}
+.node-openpublish-blog-post.node-teaser .field-name-body {
+  display: block;
+}
+
+/* Featured Story */
+
+.view-id-op_recent_content.view-display-id-block_7 .views-field-field-op-main-image {
+  float: left;
+  margin-right: 11px;
+  border:0;
+  width:626px;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-field-field-op-main-image img {
+  border: 1px solid #202020;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-fieldgroup-text {
+  float: left;
+  width: 277px;
+  height: 389px;
+  padding: 30px 14px;
+  background: #ebebeb url(../img/bg-header.png) repeat;
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+  box-shadow:0 0px 10px rgba(0, 0, 0, 0.15) inset;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-fieldgroup-text .views-field {
+  padding: 0 12px;
+  background: none;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-field-title {
+  font-family: League Gothic, Arial, Helvetica, sans-serif;
+  line-height: normal;
+  margin-bottom: 10px;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-field-title a {
+  color: #333;
+  font-size: 31px;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-fieldgroup-text .views-field-field-op-author {
+  padding: 0 0 0 30px;
+  background: url(../img/arrow-featured-story.png) no-repeat 12px center;
+  float:none;
+  clear:none;
+  width:auto;
+  color:#333;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-fieldgroup-text .views-field-created {
+  float:none;
+  clear:none;
+  width:auto;
+  color:#333;
+  display:block;
+  padding:0 0 0 30px;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-fieldgroup-text .views-field-body {
+  background: url(../img/divider-featured-story.png) no-repeat center top;
+  margin-top: 15px;
+  padding-top:20px;
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-fieldgroup-text .views-field-body p {
+  font-size: 13px;
+  line-height: 17px;
+  
+}
+.view-id-op_recent_content.view-display-id-block_7 .views-fieldgroup-text .views-field-view-node {
+  background: url(../img/border-horizontal.png) repeat-x top;
+  text-align: center;
+  padding-top: 12px;
+}

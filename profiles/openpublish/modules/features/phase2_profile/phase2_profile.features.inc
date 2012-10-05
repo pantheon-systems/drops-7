@@ -87,3 +87,95 @@ function phase2_profile_node_info() {
   );
   return $items;
 }
+
+/**
+ * Implements hook_rdf_default_mappings().
+ */
+function phase2_profile_rdf_default_mappings() {
+  $schemaorg = array();
+
+  // Exported RDF mapping: profile
+  $schemaorg['node']['profile'] = array(
+    'rdftype' => array(
+      0 => 'rnews:Person',
+      1 => 'schema:Person',
+    ),
+    'title' => array(
+      'predicates' => array(
+        0 => 'rnews:name',
+        1 => 'schema:name',
+      ),
+      'type' => 'property',
+    ),
+    'created' => array(
+      'predicates' => array(
+        0 => 'dc:date',
+        1 => 'dc:created',
+      ),
+      'datatype' => 'xsd:dateTime',
+      'callback' => 'date_iso8601',
+    ),
+    'changed' => array(
+      'predicates' => array(
+        0 => 'dc:modified',
+      ),
+      'datatype' => 'xsd:dateTime',
+      'callback' => 'date_iso8601',
+    ),
+    'body' => array(
+      'predicates' => array(
+        0 => 'content:encoded',
+      ),
+      'type' => 'property',
+    ),
+    'uid' => array(
+      'predicates' => array(
+        0 => 'sioc:has_creator',
+      ),
+      'type' => 'rel',
+    ),
+    'name' => array(
+      'predicates' => array(
+        0 => 'foaf:name',
+      ),
+    ),
+    'comment_count' => array(
+      'predicates' => array(
+        0 => 'sioc:num_replies',
+      ),
+      'datatype' => 'xsd:integer',
+    ),
+    'last_activity' => array(
+      'predicates' => array(
+        0 => 'sioc:last_activity_date',
+      ),
+      'datatype' => 'xsd:dateTime',
+      'callback' => 'date_iso8601',
+    ),
+    'field_profile_first_name' => array(
+      'type' => 'property',
+      'predicates' => array(
+        0 => 'rnews:givenName',
+        1 => 'schema:givenName',
+      ),
+    ),
+    'field_profile_last_name' => array(
+      'type' => 'property',
+      'predicates' => array(
+        0 => 'rnews:familyName',
+        1 => 'schema:familyName',
+      ),
+    ),
+  );
+
+  return $schemaorg;
+}
+
+/**
+ * Implements hook_rdf_namespaces().
+ */
+function phase2_profile_rdf_namespaces() {
+  return array(
+    'rnews'  => 'http://iptc.org/std/rNews/2011-10-07#',
+  );
+}

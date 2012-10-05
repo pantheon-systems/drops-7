@@ -28,6 +28,7 @@ function wysiwyg_tinymce_editor() {
     ),
     'version callback' => 'wysiwyg_tinymce_version',
     'themes callback' => 'wysiwyg_tinymce_themes',
+    'init callback' => 'wysiwyg_tinymce_init',
     'settings callback' => 'wysiwyg_tinymce_settings',
     'plugin callback' => 'wysiwyg_tinymce_plugins',
     'plugin settings callback' => 'wysiwyg_tinymce_plugin_settings',
@@ -126,6 +127,40 @@ function wysiwyg_tinymce_themes($editor, $profile) {
 }
 
 /**
+ * Returns an initialization JavaScript for this editor library.
+ *
+ * @param array $editor
+ *   The editor library definition.
+ * @param string $library
+ *   The library variant key from $editor['libraries'].
+ * @param object $profile
+ *   The (first) wysiwyg editor profile.
+ *
+ * @return string
+ *   A string containing inline JavaScript to execute before the editor library
+ *   script is loaded.
+ */
+function wysiwyg_tinymce_init($editor, $library) {
+  // TinyMCE unconditionally searches for its library filename in SCRIPT tags on
+  // on the page upon loading the library in order to determine the base path to
+  // itself. When JavaScript aggregation is enabled, this search fails and all
+  // relative constructed paths within TinyMCE are broken. The library has a
+  // tinyMCE.baseURL property, but it is not publicly documented and thus not
+  // reliable. The official support forum suggests to solve the issue through
+  // the global window.tinyMCEPreInit variable also used by various serverside
+  // compressor scrips available from the official website.
+  // @see http://www.tinymce.com/forum/viewtopic.php?id=23286
+  $settings = drupal_json_encode(array(
+    'base' => base_path() . $editor['library path'],
+    'suffix' => (strpos($library, 'src') !== FALSE || strpos($library, 'dev') !== FALSE ? '_src' : ''),
+    'query' => '',
+  ));
+  return <<<EOL
+window.tinyMCEPreInit = $settings;
+EOL;
+}
+
+/**
  * Return runtime editor settings for a given wysiwyg profile.
  *
  * @param $editor
@@ -178,6 +213,7 @@ function wysiwyg_tinymce_settings($editor, $config, $theme) {
     $settings['remove_linebreaks'] = $config['remove_linebreaks'];
   }
   if (isset($config['verify_html'])) {
+    // TinyMCE performs a type-agnostic comparison on this particular setting.
     $settings['verify_html'] = (bool) $config['verify_html'];
   }
 
@@ -189,10 +225,8 @@ function wysiwyg_tinymce_settings($editor, $config, $theme) {
     if ($config['css_setting'] == 'theme') {
       $settings['content_css'] = implode(',', wysiwyg_get_css());
     }
-    else if ($config['css_setting'] == 'self' && isset($config['css_path'])) {
-    global $custom_theme;
-    $themekey = (!empty($custom_theme)) ? $custom_theme : variable_get('theme_default', 'bartik');
-      $settings['content_css'] = strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', $themekey)));
+    elseif ($config['css_setting'] == 'self' && isset($config['css_path'])) {
+      $settings['content_css'] = strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', variable_get('theme_default', NULL))));
     }
   }
 
@@ -231,15 +265,15 @@ function wysiwyg_tinymce_settings($editor, $config, $theme) {
             $settings['extensions'][_wysiwyg_tinymce_plugin_name('add', $button)] = 1;
           }
           // Add external plugins to the list of extensions.
-          else if ($type == 'buttons' && empty($plugins[$plugin]['internal'])) {
+          elseif ($type == 'buttons' && empty($plugins[$plugin]['internal'])) {
             $settings['extensions'][_wysiwyg_tinymce_plugin_name('add', $plugin)] = 1;
           }
           // Add internal buttons that also need to be loaded as extension.
-          else if ($type == 'buttons' && !empty($plugins[$plugin]['load'])) {
+          elseif ($type == 'buttons' && !empty($plugins[$plugin]['load'])) {
             $settings['extensions'][$plugin] = 1;
           }
           // Add plain extensions.
-          else if ($type == 'extensions' && !empty($plugins[$plugin]['load'])) {
+          elseif ($type == 'extensions' && !empty($plugins[$plugin]['load'])) {
             $settings['extensions'][$plugin] = 1;
           }
           // Allow plugins to add valid HTML elements.
@@ -267,7 +301,7 @@ function wysiwyg_tinymce_settings($editor, $config, $theme) {
       $settings += array(
         'theme_advanced_resize_horizontal' => FALSE,
         'theme_advanced_resizing_use_cookie' => FALSE,
-        'theme_advanced_path_location' => isset($config['path_loc']) ? $config['path_loc'] : 'bottom',
+        'theme_advanced_statusbar_location' => isset($config['path_loc']) ? $config['path_loc'] : 'bottom',
         'theme_advanced_resizing' => isset($config['resizing']) ? $config['resizing'] : 1,
         'theme_advanced_toolbar_location' => isset($config['toolbar_loc']) ? $config['toolbar_loc'] : 'top',
         'theme_advanced_toolbar_align' => isset($config['toolbar_align']) ? $config['toolbar_align'] : 'left',
@@ -360,7 +394,7 @@ function _wysiwyg_tinymce_plugin_name($op, $name) {
     }
     return $name;
   }
-  else if ($op == 'remove') {
+  elseif ($op == 'remove') {
     if (strpos($name, '-') === 0) {
       return substr($name, 1);
     }
@@ -385,6 +419,8 @@ function wysiwyg_tinymce_plugins($editor) {
         'link' => t('Link'), 'unlink' => t('Unlink'), 'anchor' => t('Anchor'),
         'image' => t('Image'),
         'cleanup' => t('Clean-up'),
+        'formatselect' => t('Block format'), 'styleselect' => t('Styles'),
+        'fontselect' => t('Font'), 'fontsizeselect' => t('Font size'),
         'forecolor' => t('Forecolor'), 'backcolor' => t('Backcolor'),
         'sup' => t('Superscript'), 'sub' => t('Subscript'),
         'blockquote' => t('Blockquote'), 'code' => t('Source code'),
@@ -401,15 +437,15 @@ function wysiwyg_tinymce_plugins($editor) {
       'path' => $editor['library path'] . '/plugins/advhr',
       'buttons' => array('advhr' => t('Advanced horizontal rule')),
       'extended_valid_elements' => array('hr[class|width|size|noshade]'),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/advhr',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:advhr',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'advimage' => array(
       'path' => $editor['library path'] . '/plugins/advimage',
       'extensions' => array('advimage' => t('Advanced image')),
-      'extended_valid_elements' => array('img[src|alt|title|align|width|height|usemap|hspace|vspace|border|style|class|onmouseover|onmouseout|id|name]'),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/advimage',
+      'extended_valid_elements' => array('img[src|alt|title|align|width|height|usemap|hspace|vspace|border|style|class|onmouseover|onmouseout|id|name|longdesc]'),
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:advimage',
       'internal' => TRUE,
       'load' => TRUE,
     ),
@@ -417,49 +453,42 @@ function wysiwyg_tinymce_plugins($editor) {
       'path' => $editor['library path'] . '/plugins/advlink',
       'extensions' => array('advlink' => t('Advanced link')),
       'extended_valid_elements' => array('a[name|href|target|title|class|onfocus|onblur|onclick|ondlbclick|onmousedown|onmouseup|onmouseover|onmouseout|onkeypress|onkeydown|onkeyup|id|style|rel]'),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/advlink',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:advlink',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'autosave' => array(
       'path' => $editor['library path'] . '/plugins/autosave',
       'extensions' => array('autosave' => t('Auto save')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/autosave',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:autosave',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'contextmenu' => array(
       'path' => $editor['library path'] . '/plugins/contextmenu',
       'extensions' => array('contextmenu' => t('Context menu')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/contextmenu',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:contextmenu',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'directionality' => array(
       'path' => $editor['library path'] . '/plugins/directionality',
       'buttons' => array('ltr' => t('Left-to-right'), 'rtl' => t('Right-to-left')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/directionality',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:directionality',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'emotions' => array(
       'path' => $editor['library path'] . '/plugins/emotions',
       'buttons' => array('emotions' => t('Emotions')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/emotions',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:emotions',
       'internal' => TRUE,
       'load' => TRUE,
-    ),
-    'font' => array(
-      'path' => $editor['library path'] . '/plugins/font',
-      'buttons' => array('formatselect' => t('HTML block format'), 'fontselect' => t('Font'), 'fontsizeselect' => t('Font size'), 'styleselect' => t('Font style')),
-      'extended_valid_elements' => array('font[face|size|color|style],span[class|align|style]'),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/font',
-      'internal' => TRUE,
     ),
     'fullscreen' => array(
       'path' => $editor['library path'] . '/plugins/fullscreen',
       'buttons' => array('fullscreen' => t('Fullscreen')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/fullscreen',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:fullscreen',
       'internal' => TRUE,
       'load' => TRUE,
     ),
@@ -469,7 +498,7 @@ function wysiwyg_tinymce_plugins($editor) {
       'options' => array(
         'dialog_type' => array('modal'),
       ),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/inlinepopups',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:inlinepopups',
       'internal' => TRUE,
       'load' => TRUE,
     ),
@@ -480,56 +509,56 @@ function wysiwyg_tinymce_plugins($editor) {
         'plugin_insertdate_dateFormat' => '%Y-%m-%d',
         'plugin_insertdate_timeFormat' => '%H:%M:%S',
       ),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/insertdatetime',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:insertdatetime',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'layer' => array(
       'path' => $editor['library path'] . '/plugins/layer',
       'buttons' => array('insertlayer' => t('Insert layer'), 'moveforward' => t('Move forward'), 'movebackward' => t('Move backward'), 'absolute' => t('Absolute')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/layer',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:layer',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'paste' => array(
       'path' => $editor['library path'] . '/plugins/paste',
       'buttons' => array('pastetext' => t('Paste text'), 'pasteword' => t('Paste from Word'), 'selectall' => t('Select all')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/paste',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:paste',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'preview' => array(
       'path' => $editor['library path'] . '/plugins/preview',
       'buttons' => array('preview' => t('Preview')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/preview',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:preview',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'print' => array(
       'path' => $editor['library path'] . '/plugins/print',
       'buttons' => array('print' => t('Print')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/print',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:print',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'searchreplace' => array(
       'path' => $editor['library path'] . '/plugins/searchreplace',
       'buttons' => array('search' => t('Search'), 'replace' => t('Replace')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/searchreplace',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:searchreplace',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'style' => array(
       'path' => $editor['library path'] . '/plugins/style',
-      'buttons' => array('styleprops' => t('Style properties')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/style',
+      'buttons' => array('styleprops' => t('Advanced CSS styles')),
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:style',
       'internal' => TRUE,
       'load' => TRUE,
     ),
     'table' => array(
       'path' => $editor['library path'] . '/plugins/table',
       'buttons' => array('tablecontrols' => t('Table')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/table',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:table',
       'internal' => TRUE,
       'load' => TRUE,
     ),
@@ -539,7 +568,6 @@ function wysiwyg_tinymce_plugins($editor) {
       'path' => $editor['library path'] . '/plugins/flash',
       'buttons' => array('flash' => t('Flash')),
       'extended_valid_elements' => array('img[class|src|alt|title|hspace|vspace|width|height|align|onmouseover|onmouseout|name|obj|param|embed]'),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/flash',
       'internal' => TRUE,
       'load' => TRUE,
     );
@@ -548,14 +576,14 @@ function wysiwyg_tinymce_plugins($editor) {
     $plugins['media'] = array(
       'path' => $editor['library path'] . '/plugins/media',
       'buttons' => array('media' => t('Media')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/media',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:media',
       'internal' => TRUE,
       'load' => TRUE,
     );
     $plugins['xhtmlxtras'] = array(
       'path' => $editor['library path'] . '/plugins/xhtmlxtras',
       'buttons' => array('cite' => t('Citation'), 'del' => t('Deleted'), 'abbr' => t('Abbreviation'), 'acronym' => t('Acronym'), 'ins' => t('Inserted'), 'attribs' => t('HTML attributes')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/xhtmlxtras',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:xhtmlxtras',
       'internal' => TRUE,
       'load' => TRUE,
     );
@@ -564,7 +592,7 @@ function wysiwyg_tinymce_plugins($editor) {
     $plugins['bbcode'] = array(
       'path' => $editor['library path'] . '/plugins/bbcode',
       'extensions' => array('bbcode' => t('BBCode')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/bbcode',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:bbcode',
       'internal' => TRUE,
       'load' => TRUE,
     );
@@ -572,7 +600,6 @@ function wysiwyg_tinymce_plugins($editor) {
       $plugins['safari'] = array(
         'path' => $editor['library path'] . '/plugins/safari',
         'extensions' => array('safari' => t('Safari compatibility')),
-        'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/safari',
         'internal' => TRUE,
         'load' => TRUE,
       );
@@ -582,7 +609,7 @@ function wysiwyg_tinymce_plugins($editor) {
     $plugins['autoresize'] = array(
       'path' => $editor['library path'] . '/plugins/autoresize',
       'extensions' => array('autoresize' => t('Auto resize')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/autoresize',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:autoresize',
       'internal' => TRUE,
       'load' => TRUE,
     );
@@ -591,7 +618,7 @@ function wysiwyg_tinymce_plugins($editor) {
     $plugins['advlist'] = array(
       'path' => $editor['library path'] . '/plugins/advlist',
       'extensions' => array('advlist' => t('Advanced list')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/advlist',
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:advlist',
       'internal' => TRUE,
       'load' => TRUE,
     );
@@ -600,9 +627,22 @@ function wysiwyg_tinymce_plugins($editor) {
     $plugins['wordcount'] = array(
       'path' => $editor['library path'] . '/plugins/wordcount',
       'extensions' => array('wordcount' => t('Word count')),
-      'url' => 'http://wiki.moxiecode.com/index.php/TinyMCE:Plugins/wordcount',
       'internal' => TRUE,
       'load' => TRUE,
+    );
+  }
+  if (version_compare($editor['installed version'], '3.4.1', '>=')) {
+    $plugins['lists'] = array(
+      'path' => $editor['library path'] . 'plugins/lists',
+      'extensions' => array('lists' => t('List normalizer')),
+      'url' => 'http://www.tinymce.com/wiki.php/Plugin:lists',
+      'internal' => TRUE,
+      'load' => TRUE,
+      'extended_valid_elements' => array(
+        'li[class|dir|id|lang|onclick|ondblclick|onkeydown|onkeypress|onkeyup|onmousedown|onmousemove|onmouseout|onmouseover|onmouseup|style|title|type|value]',
+        'ol[class|compact|dir|id|lang|onclick|ondblclick|onkeydown|onkeypress|onkeyup|onmousedown|onmousemove|onmouseout|onmouseover|onmouseup|start|style|title|type]',
+        'ul[class|compact|dir|id|lang|onclick|ondblclick|onkeydown|onkeypress|onkeyup|onmousedown|onmousemove|onmouseout|onmouseover|onmouseup|style|title|type]',
+      ),
     );
   }
   return $plugins;

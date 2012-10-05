@@ -53,7 +53,7 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
     $property = $instance['property info'] + array(
       'label' => $instance['label'],
       'type' => $field_type['property_type'],
-      'description' => t('Field "@name"', array('@name' => $name)),
+      'description' => t('Field "@name".', array('@name' => $name)),
       'getter callback' => 'entity_metadata_field_property_get',
       'setter callback' => 'entity_metadata_field_property_set',
       'access callback' => 'entity_metadata_field_access_callback',
@@ -92,15 +92,16 @@ function entity_metadata_field_text_property_callback(&$info, $entity_type, $fie
 
     if (empty($instance['settings']['text_processing'])) {
       $property['property info'] =  entity_property_field_item_textsummary_info();
-      // Enable auto-creation of the item, so that it is possible to just set
-      // the textual or summary value.
-      $property['auto creation'] = 'entity_property_create_array';
     }
     else {
       // For formatted text we use the type name 'text_formatted'.
       $property['type'] = ($field['cardinality'] != 1) ? 'list<text_formatted>' : 'text_formatted';
       $property['property info'] = entity_property_text_formatted_info();
     }
+    // Enable auto-creation of the item, so that it is possible to just set
+    // the textual or summary value.
+    $property['auto creation'] = 'entity_property_create_array';
+
     if ($field['type'] != 'text_with_summary') {
       unset($property['property info']['summary']);
     }
@@ -122,7 +123,6 @@ function entity_metadata_field_term_reference_callback(&$info, $entity_type, $fi
   if ($instance['widget']['type'] != 'taxonomy_autocomplete') {
     $property['options list'] = 'entity_metadata_field_options_list';
   }
-  unset($property['query callback']);
 }
 
 /**

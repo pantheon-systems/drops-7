@@ -160,3 +160,35 @@ function date_update_7003() {
     module_enable(array('date_repeat_field'));
   }
 }
+
+/**
+ * Date text widgets should always use an increment of 1.
+ */
+function date_update_7004() {
+
+  // Select date fields.
+  $query = db_select('field_config_instance', 'fci', array('fetch' => PDO::FETCH_ASSOC));
+  $query->join('field_config', 'fc', 'fc.id = fci.field_id');
+  $query->fields('fci');
+  $query->condition(db_or()->condition('fc.type', 'date')->condition('fc.type', 'datestamp')->condition('fc.type', 'datetime'));
+  $results = $query->execute();
+
+  // Find the ones that use the date_text widget.
+  foreach ($results as $record) {
+    $instance = unserialize($record['data']);
+    if (in_array($instance['widget']['type'], array('date_text'))) {
+      $instance['widget']['settings']['increment'] = 1;
+      db_update('field_config_instance')
+        ->fields(array(
+          'data' => serialize($instance),
+        ))
+        ->condition('field_name', $record['field_name'])
+        ->condition('entity_type', $record['entity_type'])
+        ->condition('bundle', $record['bundle'])
+        ->execute();
+    }
+  }
+  field_cache_clear();
+  drupal_set_message(t('Date text widgets have been updated to use an increment of 1.'));
+}
+

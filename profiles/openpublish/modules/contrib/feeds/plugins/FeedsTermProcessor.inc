@@ -54,8 +54,19 @@ class FeedsTermProcessor extends FeedsProcessor {
 
   /**
    * Saves a term.
+   *
+   * We de-array parent fields with only one item.
+   * This stops leftandright module from freaking out.
    */
   protected function entitySave($term) {
+    if (isset($term->parent)) {
+      if (is_array($term->parent) && count($term->parent) == 1) {
+        $term->parent = reset($term->parent);
+      }
+      if (isset($term->tid) && ($term->parent == $term->tid || (is_array($term->parent) && in_array($term->tid, $term->parent)))) {
+        throw new FeedsValidationException(t("A term can't be its own child. GUID:@guid", array('@guid' => $term->feeds_item->guid)));
+      }
+    }
     taxonomy_term_save($term);
   }
 
@@ -74,6 +85,7 @@ class FeedsTermProcessor extends FeedsProcessor {
   public function configDefaults() {
     return array(
       'vocabulary' => 0,
+      'force_update' => TRUE,
     ) + parent::configDefaults();
   }
 
@@ -83,7 +95,7 @@ class FeedsTermProcessor extends FeedsProcessor {
   public function configForm(&$form_state) {
     $options = array(0 => t('Select a vocabulary'));
     foreach (taxonomy_get_vocabularies() as $vocab) {
-      $options[$vocab->machine_name] = check_plain($vocab->name);
+      $options[$vocab->machine_name] = $vocab->name;
     }
     $form = parent::configForm($form_state);
     $form['vocabulary'] = array(
@@ -92,6 +104,12 @@ class FeedsTermProcessor extends FeedsProcessor {
       '#description' => t('Choose the vocabulary to import into. <strong>CAUTION:</strong> when deleting terms through the "Delete items" tab, Feeds will delete <em>all</em> terms from this vocabulary.'),
       '#options' => $options,
       '#default_value' => $this->config['vocabulary'],
+    );
+    $form['force_update'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Force update'),
+      '#description' => t('Force update of imported terms even if no data change. For import of <strong>term parents</strong> you need to import twice and set this in the second pass.'),
+      '#default_value' => $this->config['force_update'],
     );
     return $form;
   }
@@ -102,6 +120,57 @@ class FeedsTermProcessor extends FeedsProcessor {
   public function configFormValidate(&$values) {
     if (empty($values['vocabulary'])) {
       form_set_error('vocabulary', t('Choose a vocabulary'));
+    }
+  }
+
+
+ /**
+  * Override setTargetElement to operate on a target item that is a term.
+  */
+  public function setTargetElement(FeedsSource $source, $target_node, $target_element, $value) {
+
+    switch ($target_element) {
+      case 'parent':
+        if (!empty($value)) {
+          $terms = taxonomy_get_term_by_name($value);
+          $parent_tid = '';
+          foreach ($terms as $term) {
+            if ($term->vid == $target_node->vid) {
+              $parent_tid = $term->tid;
+            }
+          }
+          if (!empty($parent_tid)) {
+            $target_node->parent[] = $parent_tid;
+          }
+          else {
+            $target_node->parent[] = 0;
+          }
+        }
+        else {
+          $target_node->parent[] = 0;
+        }
+        break;
+      case 'parentguid':
+        // value is parent_guid field value
+        $query = db_select('feeds_item')
+          ->fields('feeds_item', array('entity_id'))
+          ->condition('entity_type', $this->entityType());
+        $parent_tid = $query->condition('guid', $value)->execute()->fetchField();
+        $target_node->parent[] = ($parent_tid) ? $parent_tid : 0;
+
+        break;
+      case 'weight':
+        if (!empty($value)) {
+          $weight = intval($value);
+        }
+        else {
+          $weight = 0;
+        }
+        $target_node->weight = $weight;
+        break;
+      default:
+        parent::setTargetElement($source, $target_node, $target_element, $value);
+        break;
     }
   }
 
@@ -116,6 +185,21 @@ class FeedsTermProcessor extends FeedsProcessor {
         'description' => t('Name of the taxonomy term.'),
         'optional_unique' => TRUE,
        ),
+      'parent' => array(
+        'name' => t('Parent Term Name'),
+        'description' => t('Name of the Parent Term.'),
+        'optional_unique' => TRUE,
+      ),
+      'parentguid' => array(
+        'name' => t('Parent GUID'),
+        'description' => t('The globally unique identifier of the item\'s parent term.'),
+        'optional_unique' => TRUE,
+      ),
+      'weight' => array(
+        'name' => t('Term Weight'),
+        'description' => t('Weight of the Term.'),
+        'optional_unique' => TRUE,
+      ),
       'description' => array(
         'name' => t('Term description'),
         'description' => t('Description of the taxonomy term.'),
@@ -147,6 +231,12 @@ class FeedsTermProcessor extends FeedsProcessor {
         if ($tid = db_query("SELECT tid FROM {taxonomy_term_data} WHERE name = :name AND vid = :vid", array(':name' => $value, ':vid' => $vocabulary->vid))->fetchField()) {
           return $tid;
         }
+      } else if($target == 'guid') {
+        $query = db_select('feeds_item')
+          ->fields('feeds_item', array('entity_id'))
+          ->condition('entity_type', 'taxonomy_term');
+        $tid = $query->condition('guid', $value)->execute()->fetchField();
+        return ($tid) ? $tid : 0;
       }
     }
     return 0;
@@ -162,5 +252,18 @@ class FeedsTermProcessor extends FeedsProcessor {
       }
     }
     throw new Exception(t('No vocabulary defined for Taxonomy Term processor.'));
+  }
+
+  /**
+   * Override getHash()
+   *
+   * @return string
+   */
+  protected function getHash($entity_id) {
+    if($this->config['force_update']) {
+      return ''; // dummy to always update
+    } else {
+      return parent::getHash($entity_id);
+    }
   }
 }

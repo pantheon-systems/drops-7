@@ -287,7 +287,7 @@ function pathauto_field_attach_form($entity_type, $entity, &$form, &$form_state,
   }
 
   $pattern = pathauto_pattern_load_by_entity($entity_type, $bundle, $langcode);
-  if (!$pattern) {
+  if (empty($pattern)) {
     return;
   }
 
@@ -356,6 +356,65 @@ function pathauto_entity_presave($entity, $type) {
      */
     $entity->path['alias'] = $entity->path['old_alias'];
   }
+
+  // Help prevent errors with progromatically creating entities by defining
+  // path['alias'] as an empty string.
+  // @see http://drupal.org/node/1328180
+  // @see http://drupal.org/node/1576552
+  if (isset($entity->path['pathauto']) && !isset($entity->path['alias'])) {
+    $entity->path['alias'] = '';
+  }
+}
+
+/**
+ * Implements hook_action_info().
+ */
+function pathauto_action_info() {
+  $info['pathauto_node_update_action'] = array(
+    'type' => 'node',
+    'label' => t('Update node alias'),
+    'configurable' => FALSE,
+  );
+  $info['pathauto_taxonomy_term_update_action'] = array(
+    'type' => 'taxonomy_term',
+    'label' => t('Update taxonomy term alias'),
+    'configurable' => FALSE,
+  );
+  $info['pathauto_user_update_action'] = array(
+    'type' => 'user',
+    'label' => t('Update user alias'),
+    'configurable' => FALSE,
+  );
+
+  return $info;
+}
+
+/**
+ * Returns the language code of the given entity.
+ *
+ * Backward compatibility layer to ensure that installations running an older
+ * version of core where entity_language() is not avilable do not break.
+ *
+ * @param string $entity_type
+ *   An entity type.
+ * @param object $entity
+ *   An entity object.
+ * @param bool $check_language_property
+ *   A boolean if TRUE, will attempt to fetch the language code from
+ *   $entity->language if the entity_language() function failed or does not
+ *   exist. Default is TRUE.
+ */
+function pathauto_entity_language($entity_type, $entity, $check_language_property = TRUE) {
+  $langcode = NULL;
+
+  if (function_exists('entity_language')) {
+    $langcode = entity_language($entity_type, $entity);
+  }
+  elseif ($check_language_property && !empty($entity->language)) {
+    $langcode = $entity->language;
+  }
+
+  return !empty($langcode) ? $langcode : LANGUAGE_NONE;
 }
 
 if (!function_exists('path_field_extra_fields')) {
@@ -430,7 +489,8 @@ function pathauto_node_delete($node) {
  */
 function pathauto_form_node_form_alter(&$form, &$form_state) {
   $node = $form_state['node'];
-  pathauto_field_attach_form('node', $node, $form, $form_state, $node->language);
+  $langcode = pathauto_entity_language('node', $node);
+  pathauto_field_attach_form('node', $node, $form, $form_state, $langcode);
 }
 
 /**
@@ -461,9 +521,7 @@ function pathauto_node_update_alias(stdClass $node, $op, array $options = array(
     return;
   }
 
-  $options += array(
-    'language' => isset($node->language) ? $node->language : LANGUAGE_NONE,
-  );
+  $options += array('language' => pathauto_entity_language('node', $node));
 
   // Skip processing if the node has no pattern.
   if (!pathauto_pattern_load_by_entity('node', $node->type, $options['language'])) {
@@ -497,6 +555,13 @@ function pathauto_node_update_alias_multiple(array $nids, $op, array $options = 
   if (!empty($options['message'])) {
     drupal_set_message(format_plural(count($nids), 'Updated URL alias for 1 node.', 'Updated URL aliases for @count nodes.'));
   }
+}
+
+/**
+ * Update action wrapper for pathauto_node_update_alias().
+ */
+function pathauto_node_update_action($node, $context = array()) {
+  pathauto_node_update_alias($node, 'bulkupdate', array('message' => TRUE));
 }
 
 /**
@@ -536,7 +601,7 @@ function pathauto_taxonomy_term_delete($term) {
  */
 function pathauto_form_taxonomy_form_term_alter(&$form, $form_state) {
   $term = $form_state['term'];
-  $langcode = isset($term->language) ? $term->language : LANGUAGE_NONE;
+  $langcode = pathauto_entity_language('taxonomy_term', $term);
   pathauto_field_attach_form('taxonomy_term', $term, $form, $form_state, $langcode);
 }
 
@@ -556,11 +621,6 @@ function pathauto_taxonomy_term_update_alias(stdClass $term, $op, array $options
     return;
   }
 
-  $options += array(
-    'alias children' => FALSE,
-    'language' => isset($term->language) ? $term->language : LANGUAGE_NONE,
-  );
-
   $module = 'taxonomy_term';
   if ($term->vid == variable_get('forum_nav_vocabulary', '')) {
     if (module_exists('forum')) {
@@ -576,6 +636,11 @@ function pathauto_taxonomy_term_update_alias(stdClass $term, $op, array $options
     $vocabulary = taxonomy_vocabulary_load($term->vid);
     $term->vocabulary_machine_name = $vocabulary->machine_name;
   }
+
+  $options += array(
+    'alias children' => FALSE,
+    'language' => pathauto_entity_language('taxonomy_term', $term),
+  );
 
   // Skip processing if the term has no pattern.
   if (!pathauto_pattern_load_by_entity($module, $term->vocabulary_machine_name)) {
@@ -618,6 +683,13 @@ function pathauto_taxonomy_term_update_alias_multiple(array $tids, $op, array $o
   if (!empty($options['message'])) {
     drupal_set_message(format_plural(count($tids), 'Updated URL alias for 1 term.', 'Updated URL aliases for @count terms.'));
   }
+}
+
+/**
+ * Update action wrapper for pathauto_taxonomy_term_update_alias().
+ */
+function pathauto_taxonomy_term_update_action($term, $context = array()) {
+  pathauto_taxonomy_term_update_alias($term, 'bulkupdate', array('message' => TRUE));
 }
 
 /**
@@ -682,7 +754,9 @@ function pathauto_user_update_alias(stdClass $account, $op, array $options = arr
 
   $options += array(
     'alias blog' => module_exists('blog'),
-    'language' => LANGUAGE_NONE,
+    // $user->language is not the user entity language, thus we need to skip
+    // the property fallback check.
+    'language' => pathauto_entity_language('user', $account, FALSE),
   );
 
   // Skip processing if the account has no pattern.
@@ -722,6 +796,13 @@ function pathauto_user_update_alias_multiple(array $uids, $op, array $options = 
   if (!empty($options['message'])) {
     drupal_set_message(format_plural(count($uids), 'Updated URL alias for 1 user account.', 'Updated URL aliases for @count user accounts.'));
   }
+}
+
+/**
+ * Update action wrapper for pathauto_user_update_alias().
+ */
+function pathauto_user_update_action($account, $context = array()) {
+  pathauto_user_update_alias($account, 'bulkupdate', array('message' => TRUE));
 }
 
 /**

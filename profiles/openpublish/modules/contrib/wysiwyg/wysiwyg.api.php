@@ -173,6 +173,83 @@ function hook_INCLUDE_plugin() {
 }
 
 /**
+ * Define a Wysiwyg editor library.
+ *
+ * @todo Complete this documentation.
+ */
+function hook_INCLUDE_editor() {
+  $editor['ckeditor'] = array(
+    // The official, human-readable label of the editor library.
+    'title' => 'CKEditor',
+    // The URL to the library's homepage.
+    'vendor url' => 'http://ckeditor.com',
+    // The URL to the library's download page.
+    'download url' => 'http://ckeditor.com/download',
+    // A definition of available variants for the editor library.
+    // The first defined is used by default.
+    'libraries' => array(
+      '' => array(
+        'title' => 'Default',
+        'files' => array(
+          'ckeditor.js' => array('preprocess' => FALSE),
+        ),
+      ),
+      'src' => array(
+        'title' => 'Source',
+        'files' => array(
+          'ckeditor_source.js' => array('preprocess' => FALSE),
+        ),
+      ),
+    ),
+    // (optional) A callback to invoke to return additional notes for installing
+    // the editor library in the administrative list/overview.
+    'install note callback' => 'wysiwyg_ckeditor_install_note',
+    // A callback to determine the library's version.
+    'version callback' => 'wysiwyg_ckeditor_version',
+    // A callback to return available themes/skins for the editor library.
+    'themes callback' => 'wysiwyg_ckeditor_themes',
+    // (optional) A callback to perform editor-specific adjustments or
+    // enhancements for the administrative editor profile settings form.
+    'settings form callback' => 'wysiwyg_ckeditor_settings_form',
+    // (optional) A callback to return an initialization JavaScript snippet for
+    // this editor library, loaded before the actual library files. The returned
+    // JavaScript is executed as inline script in a primitive environment,
+    // before the DOM is loaded; typically used to prime a base path and other
+    // global window variables for the editor library before it is loaded.
+    // All implementations should verbosely document what they are doing and
+    // why that is required.
+    'init callback' => 'wysiwyg_ckeditor_init',
+    // A callback to convert administrative profile/editor settings into
+    // JavaScript settings.
+    'settings callback' => 'wysiwyg_ckeditor_settings',
+    // A callback to supply definitions of available editor plugins.
+    'plugin callback' => 'wysiwyg_ckeditor_plugins',
+    // A callback to convert administrative plugin settings for a editor profile
+    // into JavaScript settings.
+    'plugin settings callback' => 'wysiwyg_ckeditor_plugin_settings',
+    // (optional) Defines the proxy plugin that handles plugins provided by
+    // Drupal modules, which work in all editors that support proxy plugins.
+    'proxy plugin' => array(
+      'drupal' => array(
+        'load' => TRUE,
+        'proxy' => TRUE,
+      ),
+    ),
+    // (optional) A callback to convert proxy plugin settings into JavaScript
+    // settings.
+    'proxy plugin settings callback' => 'wysiwyg_ckeditor_proxy_plugin_settings',
+    // Defines the list of supported (minimum) versions of the editor library,
+    // and the respective Drupal integration files to load.
+    'versions' => array(
+      '3.0.0.3665' => array(
+        'js files' => array('ckeditor-3.0.js'),
+      ),
+    ),
+  );
+  return $editor;
+}
+
+/**
  * Act on editor profile settings.
  *
  * This hook is invoked from wysiwyg_get_editor_config() after the JavaScript

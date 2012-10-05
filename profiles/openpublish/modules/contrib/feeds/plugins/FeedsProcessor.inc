@@ -126,14 +126,23 @@ abstract class FeedsProcessor extends FeedsPlugin {
           }
           $this->map($source, $parser_result, $entity);
           $this->entityValidate($entity);
-          $this->entitySave($entity);
 
-          // Track progress.
-          if (empty($entity_id)) {
-            $state->created++;
+          // Allow modules to alter the entity before saving.
+          module_invoke_all('feeds_presave', $source, $entity);
+          if (module_exists('rules')) {
+            rules_invoke_event('feeds_import_'. $source->importer()->id, $entity);
           }
-          else {
-            $state->updated++;
+
+          // Enable modules to skip saving at all.
+          if (empty($entity->feeds_item->skip)) {
+            $this->entitySave($entity);
+            // Track progress.
+            if (empty($entity_id)) {
+              $state->created++;
+            }
+            else {
+              $state->updated++;
+            }
           }
         }
         catch (Exception $e) {
@@ -358,8 +367,8 @@ abstract class FeedsProcessor extends FeedsPlugin {
     // need to clear target elements of each item before mapping in case we are
     // mapping on a prepopulated item such as an existing node.
     foreach ($this->config['mappings'] as $mapping) {
-      if (isset($targets[$mapping['target']]['real_target'])) {
-        unset($target_item->{$targets[$mapping['target']]['real_target']});
+      if (isset($targets[$this->id][$mapping['target']]['real_target'])) {
+        unset($target_item->{$targets[$this->id][$mapping['target']]['real_target']});
       }
       elseif (isset($target_item->{$mapping['target']})) {
         unset($target_item->{$mapping['target']});
@@ -444,7 +453,7 @@ abstract class FeedsProcessor extends FeedsPlugin {
     global $user;
     $formats = filter_formats($user);
     foreach ($formats as $format) {
-      $format_options[$format->format] = check_plain($format->name);
+      $format_options[$format->format] = $format->name;
     }
     $form['input_format'] = array(
       '#type' => 'select',

@@ -9,13 +9,12 @@
  * Implementation of hook_install().
  */
 function pantheon_api_install() {
-  include_once('pantheon_api.inc');
-  pantheon_api_ygg_event_post('self', array('Drupal' => 'New Site Installed!'));
+  // Nothing yet
 }
 
 /**
  * Implementation of hook_enable().
  */
 function pantheon_api_enable() {
-
+  // Nothing yet
 }

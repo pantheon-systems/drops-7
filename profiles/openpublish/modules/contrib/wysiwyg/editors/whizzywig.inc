@@ -103,16 +103,14 @@ function wysiwyg_whizzywig_settings($editor, $config, $theme) {
 
   // Add editor content stylesheet.
   if (isset($config['css_setting'])) {
-    global $custom_theme;
-    $themekey = (!empty($custom_theme)) ? $custom_theme : variable_get('theme_default', 'bartik');
     if ($config['css_setting'] == 'theme') {
-      $css = drupal_get_path('theme', $themekey) . '/style.css';
+      $css = drupal_get_path('theme', variable_get('theme_default', NULL)) . '/style.css';
       if (file_exists($css)) {
         $settings['externalCSS'] = base_path() . $css;
       }
     }
-    else if ($config['css_setting'] == 'self' && isset($config['css_path'])) {
-      $settings['externalCSS'] = strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', $themekey)));
+    elseif ($config['css_setting'] == 'self' && isset($config['css_path'])) {
+      $settings['externalCSS'] = strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', variable_get('theme_default', NULL))));
     }
   }
 

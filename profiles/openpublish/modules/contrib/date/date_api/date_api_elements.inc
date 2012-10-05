@@ -294,7 +294,7 @@ function date_text_element_value_callback($element, $input = FALSE, &$form_state
     $date = date_default_date($element);
   }
   if (date_is_date($date)) {
-    $return['date'] = $date->format($element['#date_format']);
+    $return['date'] = date_format_date($date, 'custom', $element['#date_format']);
   }
   return $return;
 }
@@ -320,8 +320,8 @@ function date_text_element_process($element, &$form_state, $form) {
   $element['date']['#weight'] = !empty($element['date']['#weight']) ? $element['date']['#weight'] : $element['#weight'];
   $element['date']['#attributes'] = array('class' => isset($element['#attributes']['class']) ? $element['#attributes']['class'] += array('date-date') : array('date-date'));
   $now = date_example_date();
-  $element['date']['#attributes']['placeholder'] = array(date_format_date($now, 'custom', $element['#date_format']));
-  $element['date']['#description'] = ' ' . t('Format: @date', array('@date' => date_now()->format($element['#date_format'])));
+  $element['date']['#description'] = ' ' . t('Format: @date', array('@date' => date_format_date(date_example_date(), 'custom', $element['#date_format'])));
+  $element['date']['#ajax'] = !empty($element['#ajax']) ? $element['#ajax'] : FALSE;
 
   // Keep the system from creating an error message for the sub-element.
   // We'll set our own message on the parent element.
@@ -476,7 +476,7 @@ function date_select_element_process($element, &$form_state, $form) {
       $element[$field] = array(
         '#type' => 'value',
         '#value' => 0,
-        );
+      );
     }
   }
   if (isset($element['#element_validate'])) {
@@ -531,7 +531,8 @@ function date_parts_element($element, $date, $format) {
       '#weight' => $order[$field],
       '#required' => $part_required,
       '#attributes' => array('class' => isset($element['#attributes']['class']) ? $element['#attributes']['class'] += array('date-' . $field) : array('date-' . $field)),
-      );
+      '#ajax' => !empty($element['#ajax']) ? $element['#ajax'] : FALSE,
+    );
     switch ($field) {
       case 'year':
         $range = date_range_years($element['#date_year_range'], $date);

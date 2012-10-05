@@ -9,6 +9,32 @@ Drupal.behaviors.tokenTree = {
   }
 };
 
+Drupal.behaviors.tokenDialog = {
+  attach: function (context, settings) {
+    $('a.token-dialog', context).once('token-dialog').click(function() {
+      var url = $(this).attr('href');
+      var dialog = $('<div style="display: none" class="loading">' + Drupal.t('Loading token browser...') + '</div>').appendTo('body');
+      dialog.dialog({
+        title: $(this).attr('title') || Drupal.t('Available tokens'),
+        width: 700,
+        close: function(event, ui) {
+          dialog.remove();
+        }
+      });
+      // Load the token tree using AJAX.
+      dialog.load(
+        url,
+        {},
+        function (responseText, textStatus, XMLHttpRequest) {
+          dialog.removeClass('loading');
+        }
+      );
+      // Prevent browser from following the link.
+      return false;
+    });
+  }
+}
+
 Drupal.behaviors.tokenInsert = {
   attach: function (context, settings) {
     // Keep track of which textfield was last selected/focused.

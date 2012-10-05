@@ -28,7 +28,7 @@ abstract class boxes_box {
         self::$boxes[$delta]->new = FALSE;
       }
     }
-    return isset(self::$boxes[$delta]) ? self::$boxes[$delta] : NULL;
+    return isset(self::$boxes[$delta]) && get_class(self::$boxes[$delta]) != 'stdClass' ? self::$boxes[$delta] : NULL;
   }
 
   /**

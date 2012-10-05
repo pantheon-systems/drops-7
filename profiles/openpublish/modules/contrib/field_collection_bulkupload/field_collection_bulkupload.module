@@ -1,0 +1,315 @@
+<?php
+
+/**
+ * This module is intended to extend gallery implementations which make use of field_collections
+ * to allow images to have captions and other meta-data per gallery.  It allows for bulk
+ * uploading of images when the fields are contained inside of field collections.
+ *
+ * Much code and inspiration taken from fieldfield_sources_plupload.  Many thanks.
+ */
+
+/**
+ * Implements hook_filefield_sources_info().
+ */
+function field_collection_bulkupload_filefield_sources_info() {
+  $source = array();
+  $source['fc_plupload'] = array(
+    'name' => t('Bulk Upload'),
+    'label' => t('Bulk upload'),
+    'description' => t('Upload in bulk using PL Upload.'),
+    'process' => 'field_collection_bulkupload_source_process',
+  );
+  return $source;
+}
+
+/**
+ * Implements hook_field_attach_form().
+ *
+ * Adds our form to the proper field_collection_items
+ */
+function field_collection_bulkupload_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
+  $fields = field_info_instances($entity_type, $form['#bundle']);
+  foreach($fields as $name => $field) {
+    if ($field['widget']['type'] == 'field_collection_embed') {
+      $build_id = $form_state['build_info']['form_id'];
+      field_collection_bulkupload_add_form($form[$name], $name, $langcode, $build_id);
+    }
+  }
+}
+
+/**
+ * Implements hook_field_widget_WIDGET_TYPE_form_alter()
+ *
+ * Add the proper upload stuff to field_collections which want it.
+ */
+function field_collection_bulkupload_add_form(&$element, $name, $language, $build_id) {
+  $item = $element[$language][0];
+  $instance = field_collection_bulkupload_get_imagefield($item['#bundle']);
+
+  if ($instance) {
+    $max_filesize = !empty($instance['settings']['max_filesize']) ? parse_size($instance['settings']['max_filesize']) : parse_size(file_upload_max_size());
+    $id = 'edit-' . str_replace('_', '-', $instance['field_name']);
+
+    $element['field_collection_bulkupload'] = array(
+      '#weight' => -100,
+      // Required for proper theming.
+      '#filefield_source' => TRUE,
+      '#prefix' => '<div class="field_collection_bulkupload clear-block">',
+      '#suffix' => '</div>',
+      '#type' => 'fieldset',
+      '#process' => array('field_collection_bulkupload_element_process'),
+    );
+    $element['field_collection_bulkupload']['pud'] = array(
+      '#type' => 'plupload',
+      '#title' => t('Select one or more files to upload'),
+      // Even though filefield does validation on submit, this is required for
+      // client side validation as well as proper file munging during upload.
+      '#upload_validators' => $item[$instance['field_name']][$language][0]['#upload_validators'],
+      '#plupload_settings' => array(
+          'max_file_size' => $max_filesize,
+          'chunk_size' => '1mb',
+          'runtimes' => 'html5,flash,silverlight,html4',
+        ),
+      '#field_name' => $instance['field_name'],
+      '#value_callback' => 'field_collection_bulkupload_element_value',
+    );
+    $element['field_collection_bulkupload']['upload_button'] = array(
+      '#name' => $name . '_transfer',
+      '#type' => 'submit',
+      '#value' => t('Start upload'),
+      '#validate' => array(),
+      '#submit' => array('field_collection_bulkupload_submit'),
+      '#ajax' => array(
+        'path' => '', //updated in process when we have all the data
+        'wrapper' => 'edit-' . str_replace('_', '-', $name),
+        'method' => 'replace',
+        'effect' => 'fade',
+        'event' => 'fbc_pud_update',
+      ),
+      '#attributes' => array(
+        'class' => array('.teaser-button')
+      ),
+    );
+    // file_ajax_upload assumes that the element will have a suffix.
+    if (empty($element['#suffix'])) {
+      $element['#suffix'] = '';
+    }
+  }
+}
+
+function field_collection_bulkupload_element_process($element, &$form, &$form_state) {
+  $module_path = drupal_get_path('module', 'field_collection_bulkupload');
+  $element['#attached']['js'] = array($module_path . '/js/plupload.js');
+  $element['upload_button']['#name'] = implode('_', $element['#array_parents']) . '_transfer';
+  $parents = array_slice($element['#array_parents'], 0, -1);
+  $element['upload_button']['#ajax']['path'] = 'file/ajax/' . implode('/', $parents) . '/' . $form_state['form_build_id']['#value'];
+
+  return $element;
+}
+
+/**
+ * A value callback for the bulkuploader so we can properly save the data and prep it for
+ * submission.
+ */
+function field_collection_bulkupload_element_value($element, $input = FALSE, &$form_state = NULL) {
+  if (isset($input) && $input === FALSE) {
+    return array();
+  }
+
+  $pud_value = &drupal_static('field_collection_bulkupload_' . hash('md5', print_r($element, TRUE)), FALSE);
+  if ($pud_value) {
+    return $pud_value;
+  }
+
+  // We rely on Plupload Integration module to handle the actual field values.
+  $pud_value = plupload_element_value($element, $input, $form_state);
+
+  if (empty($pud_value)) {
+   $pud_value = array();
+   return $pud_value;
+  }
+
+  $field_name = $element['#field_name'];
+  $field_parents = array_slice($element['#array_parents'], 0, -2);
+  $coll_field = $field_parents[count($field_parents) - 1];
+
+  $collection = drupal_array_get_nested_value($form_state['complete form'], $field_parents);
+  $langcode = $collection['#language'];
+
+  $field_parents[] = $langcode;
+  $items = $collection[$langcode];
+
+  $upload_delta = empty($items['#max_delta']) ? 0 : $items['#max_delta'];
+
+  // find the validators
+  $field_element = $items[$upload_delta][$field_name];
+  $cur_item = isset($field_element[$langcode][$upload_delta]) ? $field_element[$langcode][$upload_delta] : array();
+  $upload_location = isset($cur_item['#upload_location']) ? $cur_item['#upload_location'] : file_default_scheme() . '://';
+  $upload_validators = isset($cur_item['#upload_validators']) ? $cur_item['#upload_validators'] : array();
+
+  // A URI may already have a trailing slash or look like "public://".
+  if (drupal_substr($upload_location, -1) != '/') {
+    $upload_location .= '/';
+  }
+  if (!file_prepare_directory($upload_location, FILE_CREATE_DIRECTORY)) {
+    watchdog('file', 'The upload directory %directory for the file field !name could not be created or is not accessible. A newly uploaded file could not be saved in this directory as a consequence, and the upload was canceled.', array('%directory' => $upload_location, '!name' => $field_name));
+    form_set_error($field_name, t('The file could not be uploaded.'));
+    return FALSE;
+  }
+
+  // Validate, clean up and move the files into it's destination, then register
+  // as managed files (status = 0 until entity is saved).
+  $saved_files = array();
+  foreach ($pud_value as $uploaded_file) {
+    if ($uploaded_file['status'] == 'done') {
+      $source = $uploaded_file['tmppath'];
+      $extensions = !empty($upload_validators['file_validate_extensions'][0]) ? $upload_validators['file_validate_extensions'][0] : array();
+
+      $filename = field_collection_bulkupload_clean_filename($uploaded_file['name'], $extensions);
+      // Move the file to a temporary destination using final base file name.
+      $temp_destination = file_stream_wrapper_uri_normalize('temporary://' . $filename);
+      $temp_filepath = file_unmanaged_move($source, $temp_destination, FILE_EXISTS_RENAME);
+      // Save the files to their final destination.
+      if ($file = filefield_sources_save_file($temp_filepath, $upload_validators, $upload_location)) {
+        $saved_files[] = $file;
+      }
+    }
+    else {
+      form_set_error('pud', t('Upload of %name failed.', array('%name' => $uploaded_file['name'])));
+    }
+  }
+
+  $coll_parents = array_slice($element['#array_parents'], 0, -3);
+  // Update field values with new files.
+  foreach ($saved_files as $saved_file) {
+    $path = $field_parents;
+    $path[] = $upload_delta;
+    $path[] = $field_name;
+
+    $field_values[$upload_delta] = (array) $saved_file;
+    $field_values[$upload_delta]['_weight'] = $upload_delta;
+
+    // Update form_state values.
+    drupal_array_set_nested_value($form_state['values'], $path, $field_values[$upload_delta]);
+
+    //Update the field collection
+    $col = field_form_get_state($coll_parents, $coll_field, $langcode, $form_state);
+    $col['items_count'] = isset($col['items_count']) ? $col['items_count']+1 : 1;
+    field_form_set_state($coll_parents, $coll_field, $langcode, $form_state, $col);
+
+    $upload_delta++;
+  }
+
+  return $pud_value;
+}
+
+/**
+ * We need our own submit handler until the following issue gets resolved:
+ * http://drupal.org/node/1329056
+ *
+ */
+function field_collection_bulkupload_submit(&$form, &$form_state) {
+  $parents = array_slice($form_state['triggering_element']['#array_parents'], 0, -2);
+  $element = drupal_array_get_nested_value($form, $parents);
+  $langcode = $element['#language'];
+  $field = $parents[count($parents) - 1];
+
+  $field_name = $element['field_collection_bulkupload']['pud']['#field_name'];
+  $col = field_form_get_state(array_slice($parents, 0, -1), $field, $langcode, $form_state);
+  $field_values = drupal_array_get_nested_value($form_state['values'], $parents);
+
+  $field_values = $field_values[$langcode];
+  $instance = field_collection_bulkupload_get_imagefield($col['instance']['field_name']);
+
+  foreach ($field_values as $delta => $value) {
+    if (!is_numeric($delta)) {
+      continue;
+    }
+
+    $path = $parents;
+    $path[] = $langcode;
+    $path[] = $delta;
+    $field_path = $path;
+    $path[] = $field_name;
+
+    // Update form_state values.
+    drupal_array_set_nested_value($form_state['values'], $path, $value[$field_name]);
+
+    $field_state = field_form_get_state($field_path, $field_name, $langcode, $form_state);
+
+    $field_state['items'] = array($value[$field_name]);
+    $field_state['items_count'] = isset($field_state['items_count']) ? $field_state['items_count']+1 : 1;
+
+    // make sure the instance and field data gets added in for items that don't have it so all the right hooks
+    // get called.
+    if (!isset($field_state['instance'])) {
+      $field_state['instance'] = $instance;
+      $fields = field_collection_bulkupload_get_imagefields();
+      $field_state['field'] = $fields[$instance['field_name']];
+    }
+
+    field_form_set_state($field_path, $field_name, $langcode, $form_state, $field_state);
+
+    // Clear out input as it will need to be rebuildt.
+    drupal_array_set_nested_value($form_state['input'], $parents, NULL);
+  }
+  drupal_set_message(t('Files added, you may now fill out other data for each item.'));
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Helper function to try to find an imagefield in a field_collection_item
+ */
+function field_collection_bulkupload_get_imagefield($bundle) {
+  $imagefields = field_collection_bulkupload_get_imagefields();
+  $instances = field_read_instances(array('entity_type' => 'field_collection_item', 'bundle' => $bundle));
+  foreach ($instances as $instance) {
+    if (isset($imagefields[$instance['field_name']])) {
+      return $instance;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Helper function to get all the imagefields.
+ * Statically caches list for performance.
+ */
+function field_collection_bulkupload_get_imagefields() {
+  $imagefields = &drupal_static('field_collection_bulkupload_imagefields');
+  if (!$imagefields) {
+    $imagefields = field_read_fields(array('type' => array('image', 'file')));
+  }
+  return $imagefields;
+}
+
+/**
+ * Clean up a filename based on allowed extensions, taken from filefield_sources
+ */
+function field_collection_bulkupload_clean_filename($filepath, $extensions) {
+  global $user;
+
+  $filename = basename($filepath);
+
+  if (module_exists('transliteration')) {
+    module_load_include('inc', 'transliteration');
+
+    $langcode = NULL;
+    if (!empty($_POST['language'])) {
+      $languages = language_list();
+      $langcode = isset($languages[$_POST['language']]) ? $_POST['language'] : NULL;
+    }
+    $filename = transliteration_clean_filename($filename, $langcode);
+  }
+
+  // Because this transfer mechanism does not use file_save_upload(), we need
+  // to manually munge the filename to prevent dangerous extensions.
+  // See file_save_upload().
+  if (empty($extensions)) {
+    $extensions = 'jpg jpeg gif png txt doc xls pdf ppt pps odt ods odp';
+  }
+  $filename = file_munge_filename($filename, $extensions);
+  $directory = drupal_dirname($filepath);
+  return ($directory != '.' ? $directory . '/' : '') . $filename;
+}

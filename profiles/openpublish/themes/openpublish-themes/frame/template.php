@@ -27,3 +27,12 @@ function frame_form_search_block_form_alter(&$form, &$form_state) {
 function frame_form_search_form_alter (&$form, &$form_state, $form_id) {
   drupal_add_js(drupal_get_path('theme', 'frame') . '/js/search.js');
 }
+
+/**
+ * Implements template_preprocess_toolbar()
+ * Put the node tabs and local actions into the top admin toolbar area
+ */
+function frame_preprocess_toolbar(&$vars) {
+  $vars['toolbar']['toolbar_drawer'][0]['menu_local_tabs'] = menu_local_tabs();
+  $vars['toolbar']['toolbar_drawer'][0]['menu_local_tabs']['#primary'][] = menu_local_actions();
+}

@@ -10,7 +10,7 @@
 function phase2_profile_field_default_fields() {
   $fields = array();
 
-  // Exported field: 'node-profile-body'
+  // Exported field: 'node-profile-body'.
   $fields['node-profile-body'] = array(
     'field_config' => array(
       'active' => '1',
@@ -33,6 +33,7 @@ function phase2_profile_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(),
       'translatable' => '1',
@@ -90,7 +91,7 @@ function phase2_profile_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-profile-field_profile_address'
+  // Exported field: 'node-profile-field_profile_address'.
   $fields['node-profile-field_profile_address'] = array(
     'field_config' => array(
       'active' => '1',
@@ -111,6 +112,7 @@ function phase2_profile_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(),
       'translatable' => '1',
@@ -127,7 +129,7 @@ function phase2_profile_field_default_fields() {
           'module' => 'text',
           'settings' => array(),
           'type' => 'text_default',
-          'weight' => '2',
+          'weight' => '3',
         ),
         'editors_choice' => array(
           'label' => 'above',
@@ -163,7 +165,7 @@ function phase2_profile_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-profile-field_profile_email'
+  // Exported field: 'node-profile-field_profile_email'.
   $fields['node-profile-field_profile_email'] = array(
     'field_config' => array(
       'active' => '1',
@@ -184,6 +186,7 @@ function phase2_profile_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(
         'max_length' => '60',
@@ -237,7 +240,7 @@ function phase2_profile_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-profile-field_profile_first_name'
+  // Exported field: 'node-profile-field_profile_first_name'.
   $fields['node-profile-field_profile_first_name'] = array(
     'field_config' => array(
       'active' => '1',
@@ -258,6 +261,7 @@ function phase2_profile_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(
         'max_length' => '60',
@@ -310,7 +314,7 @@ function phase2_profile_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-profile-field_profile_last_name'
+  // Exported field: 'node-profile-field_profile_last_name'.
   $fields['node-profile-field_profile_last_name'] = array(
     'field_config' => array(
       'active' => '1',
@@ -331,6 +335,7 @@ function phase2_profile_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(
         'max_length' => '60',
@@ -384,7 +389,7 @@ function phase2_profile_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-profile-field_profile_organization'
+  // Exported field: 'node-profile-field_profile_organization'.
   $fields['node-profile-field_profile_organization'] = array(
     'field_config' => array(
       'active' => '1',
@@ -405,6 +410,7 @@ function phase2_profile_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(
         'max_length' => '60',
@@ -423,7 +429,7 @@ function phase2_profile_field_default_fields() {
           'module' => 'text',
           'settings' => array(),
           'type' => 'text_default',
-          'weight' => '1',
+          'weight' => '2',
         ),
         'editors_choice' => array(
           'label' => 'above',
@@ -458,7 +464,7 @@ function phase2_profile_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-profile-field_profile_phone'
+  // Exported field: 'node-profile-field_profile_phone'.
   $fields['node-profile-field_profile_phone'] = array(
     'field_config' => array(
       'active' => '1',
@@ -479,6 +485,7 @@ function phase2_profile_field_default_fields() {
           0 => 'format',
         ),
       ),
+      'locked' => '0',
       'module' => 'text',
       'settings' => array(
         'max_length' => '20',
@@ -532,7 +539,7 @@ function phase2_profile_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-profile-field_profile_photo'
+  // Exported field: 'node-profile-field_profile_photo'.
   $fields['node-profile-field_profile_photo'] = array(
     'field_config' => array(
       'active' => '1',
@@ -553,6 +560,7 @@ function phase2_profile_field_default_fields() {
           0 => 'fid',
         ),
       ),
+      'locked' => '0',
       'module' => 'image',
       'settings' => array(
         'default_image' => 0,
@@ -574,7 +582,7 @@ function phase2_profile_field_default_fields() {
             'image_style' => 'medium',
           ),
           'type' => 'image',
-          'weight' => '3',
+          'weight' => '0',
         ),
         'editors_choice' => array(
           'label' => 'hidden',
@@ -599,6 +607,7 @@ function phase2_profile_field_default_fields() {
       'required' => 0,
       'settings' => array(
         'alt_field' => 1,
+        'default_image' => 0,
         'file_directory' => 'profiles/photos',
         'file_extensions' => 'png gif jpg jpeg',
         'max_filesize' => '',
@@ -636,7 +645,7 @@ function phase2_profile_field_default_fields() {
     ),
   );
 
-  // Exported field: 'node-profile-field_profile_user'
+  // Exported field: 'node-profile-field_profile_user'.
   $fields['node-profile-field_profile_user'] = array(
     'field_config' => array(
       'active' => '1',
@@ -657,6 +666,7 @@ function phase2_profile_field_default_fields() {
           0 => 'uid',
         ),
       ),
+      'locked' => '0',
       'module' => 'user_reference',
       'settings' => array(
         'referenceable_roles' => array(
@@ -714,6 +724,10 @@ function phase2_profile_field_default_fields() {
         'settings' => array(
           'autocomplete_match' => 'contains',
           'autocomplete_path' => 'user_reference/autocomplete',
+          'references_dialog_add' => 1,
+          'references_dialog_edit' => 1,
+          'references_dialog_search' => 0,
+          'references_dialog_search_view' => '',
           'size' => '60',
         ),
         'type' => 'user_reference_autocomplete',

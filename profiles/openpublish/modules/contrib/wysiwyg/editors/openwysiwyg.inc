@@ -102,10 +102,8 @@ function wysiwyg_openwysiwyg_settings($editor, $config, $theme) {
     if ($config['css_setting'] == 'theme') {
       $settings['CSSFile'] = reset(wysiwyg_get_css());
     }
-    else if ($config['css_setting'] == 'self' && isset($config['css_path'])) {
-    global $custom_theme;
-    $themekey = (!empty($custom_theme)) ? $custom_theme : variable_get('theme_default', 'bartik');
-      $settings['CSSFile'] = strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', $themekey)));
+    elseif ($config['css_setting'] == 'self' && isset($config['css_path'])) {
+      $settings['CSSFile'] = strtr($config['css_path'], array('%b' => base_path(), '%t' => drupal_get_path('theme', variable_get('theme_default', NULL))));
     }
   }
 

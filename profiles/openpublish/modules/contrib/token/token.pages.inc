@@ -6,6 +6,63 @@
  */
 
 /**
+ * Theme a link to a token tree either as a regular link or a dialog.
+ */
+function theme_token_tree_link($variables) {
+  if (empty($variables['text'])) {
+    $variables['text'] = t('Browse available tokens.');
+  }
+
+  if (!empty($variables['dialog'])) {
+    drupal_add_library('token', 'dialog');
+    $variables['options']['attributes']['class'][] = 'token-dialog';
+  }
+
+  $info = token_theme();
+  $variables['options']['query']['options'] = array_intersect_key($variables, $info['token_tree']['variables']);
+
+  // We should never pass the dialog option to theme_token_tree(). It is only
+  // used for this function.
+  unset($variables['options']['query']['options']['dialog']);
+
+  // Add a security token so that the tree page should only work when used
+  // when the dialog link is output with theme('token_tree_link').
+  $variables['options']['query']['token'] = drupal_get_token('token-tree:' . serialize($variables['options']['query']['options']));
+
+  // Because PHP converts query strings with arrays into a different syntax on
+  // the next request, the options have to be encoded with JSON in the query
+  // string so that we can reliably decode it for token comparison.
+  $variables['options']['query']['options'] = drupal_json_encode($variables['options']['query']['options']);
+
+  // Set the token tree to open in a separate window.
+  $variables['options']['attributes'] + array('target' => '_blank');
+
+  return l($variables['text'], 'token/tree', $variables['options']);
+}
+
+/**
+ * Page callback to output a token tree as an empty page.
+ */
+function token_page_output_tree() {
+  $options = isset($_GET['options']) ? drupal_json_decode($_GET['options']) : array();
+
+  // Check the token against the serialized options to prevent random access to
+  // the token browser page.
+  if (!isset($_GET['token']) || !drupal_valid_token($_GET['token'], 'token-tree:' . serialize($options))) {
+    return MENU_ACCESS_DENIED;
+  }
+
+  // Force the dialog option to be false so we're not creating a dialog within
+  // a dialog.
+  $options['dialog'] = FALSE;
+
+  $output = theme('token_tree', $options);
+  print '<html><head><title></title>' . drupal_get_css() . drupal_get_js() . '</head>';
+  print '<body class="token-tree">' . $output . '</body></html>';
+  drupal_exit();
+}
+
+/**
  * Theme a tree table.
  *
  * @ingroup themeable
@@ -32,6 +89,10 @@ function theme_tree_table($variables) {
  * @ingroup themeable
  */
 function theme_token_tree($variables) {
+  if (!empty($variables['dialog'])) {
+    return theme_token_tree_link($variables);
+  }
+
   $token_types = $variables['token_types'];
   $info = token_get_info();
 
@@ -163,7 +224,7 @@ function _token_token_tree_format_row($token, array $token_info, $is_group = FAL
  * @see drupal_clean_css_identifier()
  */
 function _token_clean_css_identifier($id) {
-  static $replacements = array(' ' => '-', '_' => '-', '/' => '-', '[' => '-', ']' => '', ':' => '--', '?' => '');
+  static $replacements = array(' ' => '-', '_' => '-', '/' => '-', '[' => '-', ']' => '', ':' => '--', '?' => '', '<' => '-', '>' => '-');
   return 'token-' . rtrim(strtr(trim($id, '[]'), $replacements), '-');
 }
 
