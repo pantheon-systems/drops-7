@@ -386,12 +386,26 @@ function image_load($file, $toolkit = FALSE) {
     $toolkit = image_get_toolkit();
   }
   if ($toolkit) {
+    // With a networked file system,  a cache request is always preferable to a
+    // file load operation.
+    //
+    // TODO: consider specifying this as a durable cache since it could be
+    //       very expensive to regenerate?
+    //
+    // TODO: consider caching all image_load()s together?
+    $cid = "image_load:$toolkit:$file";
+    if (function_exists('pantheon_cache_get') && $cache = pantheon_cache_get($cid)) {
+      return $cache;
+    }
     $image = new stdClass();
     $image->source = $file;
     $image->info = image_get_info($file, $toolkit);
     if (isset($image->info) && is_array($image->info)) {
       $image->toolkit = $toolkit;
       if (image_toolkit_invoke('load', $image)) {
+        if (function_exists('pantheon_cache_get')) {
+          pantheon_cache_set($cid, $image);
+        }
         return $image;
       }
     }
