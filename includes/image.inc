@@ -395,7 +395,14 @@ function image_load($file, $toolkit = FALSE) {
     // TODO: consider caching all image_load()s together?
     $cid = "image_load:$toolkit:$file";
     if (function_exists('pantheon_cache_get') && $cache = pantheon_cache_get($cid)) {
-      return $cache;
+      // We do a stat check to make sure the image didn't change.
+      list($scheme, $target) = explode('://', $file, 2);
+      // Remove erroneous leading or trailing, forward-slashes and backslashes.
+      $filepath = trim($target, '\/');
+      $stat = pantheon_stat($filepath);
+      if ($stat['size']	== $cache->info['file_size']) {
+        return $cache;
+      }
     }
     $image = new stdClass();
     $image->source = $file;
