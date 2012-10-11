@@ -127,7 +127,7 @@ function image_get_info($filepath, $toolkit = FALSE) {
     list($scheme, $target) = explode('://', $filepath, 2);
     $filepath = trim($target, '\/');
     $stat = pantheon_stat($filepath);
-    if ($stat['size']	== $cache->info['file_size']) {
+    if ($stat['size']	== $cache['file_size']) {
       return $cache;
     }
   }
