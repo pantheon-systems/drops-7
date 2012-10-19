@@ -4,7 +4,8 @@
  * @file
  * Download via HTTP.
  *
- * Support caching, HTTP Basic Authentication, detection of RSS/Atom feeds, redirects.
+ * Support caching, HTTP Basic Authentication, detection of RSS/Atom feeds,
+ * redirects.
  */
 
 /**
@@ -26,23 +27,19 @@ class HRCurlException extends Exception {}
  * Discover RSS or atom feeds at the given URL. If document in given URL is an
  * HTML document, function attempts to discover RSS or Atom feeds.
  *
- * @param $url
- * @param null $settings
- * @return bool|string string - the discovered feed, FALSE - if the URL is not reachable or there
+ * @param string $url
+ *   The url of the feed to retrieve.
+ * @param array $settings
+ *   An optional array of settings. Valid options are: accept_invalid_cert.
+ *
+ * @return bool|string
+ *   The discovered feed, or FALSE if the URL is not reachable or there was an
+ *   error.
  */
 function http_request_get_common_syndication($url, $settings = NULL) {
-  $password = $username = NULL;
-  if (feeds_valid_url($url, TRUE)) {
-    // Handle password protected feeds.
-    $url_parts = parse_url($url);
-    if (!empty($url_parts['user'])) {
-      $password = $url_parts['pass'];
-      $username = $url_parts['user'];
-    }
-  }
 
   $accept_invalid_cert = isset($settings['accept_invalid_cert']) ? $settings['accept_invalid_cert'] : FALSE;
-  $download = http_request_get($url, $username, $password, $accept_invalid_cert);
+  $download = http_request_get($url, NULL, NULL, $accept_invalid_cert);
 
   // Cannot get the feed, return.
   // http_request_get() always returns 200 even if its 304.
@@ -72,22 +69,35 @@ function http_request_get_common_syndication($url, $settings = NULL) {
 /**
  * Get the content from the given URL.
  *
- * @param $url
- *  A valid URL (not only web URLs).
- * @param $username
- *  If the URL use authentication, here you can supply the username for this.
- * @param $password
- *  If the URL use authentication, here you can supply the password for this.
+ * @param string $url
+ *   A valid URL (not only web URLs).
+ * @param string $username
+ *   If the URL uses authentication, supply the username.
+ * @param string $password
+ *   If the URL uses authentication, supply the password.
  * @param bool $accept_invalid_cert
- * @return object A stdClass object that describes the data downloaded from $url. The object's
+ *   Whether to accept invalid certificates.
+
+ * @return stdClass
+ *   An object that describes the data downloaded from $url.
  */
 function http_request_get($url, $username = NULL, $password = NULL, $accept_invalid_cert = FALSE) {
-  // Intra-pagedownload cache, avoid to download the same content twice within one page download
-  // (it's possible, compatible and parse calls).
+  // Intra-pagedownload cache, avoid to download the same content twice within
+  // one page download (it's possible, compatible and parse calls).
   static $download_cache = array();
   if (isset($download_cache[$url])) {
     return $download_cache[$url];
   }
+
+  if (!$username && valid_url($url, TRUE)) {
+    // Handle password protected feeds.
+    $url_parts = parse_url($url);
+    if (!empty($url_parts['user'])) {
+      $password = $url_parts['pass'];
+      $username = $url_parts['user'];
+    }
+  }
+
   $curl = http_request_use_curl();
 
   // Only download and parse data if really needs refresh.
@@ -152,12 +162,13 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
       curl_setopt($download, CURLOPT_FOLLOWLOCATION, TRUE);
       if (!empty($username)) {
         curl_setopt($download, CURLOPT_USERPWD, "{$username}:{$password}");
+        curl_setopt($download, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
       }
       curl_setopt($download, CURLOPT_HTTPHEADER, $headers);
       curl_setopt($download, CURLOPT_HEADER, TRUE);
       curl_setopt($download, CURLOPT_RETURNTRANSFER, TRUE);
       curl_setopt($download, CURLOPT_ENCODING, '');
-      curl_setopt($download, CURLOPT_TIMEOUT, variable_get('http_request_timeout', 15));
+      curl_setopt($download, CURLOPT_TIMEOUT, variable_get('http_request_timeout', 30));
       if ($accept_invalid_cert) {
         curl_setopt($download, CURLOPT_SSL_VERIFYPEER, 0);
       }
@@ -201,7 +212,7 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
     }
   }
   else {
-    $result = drupal_http_request($url, array('headers' => $headers));
+    $result = drupal_http_request($url, array('headers' => $headers, 'timeout' => variable_get('http_request_timeout', 30)));
   }
 
   $result->code = isset($result->code) ? $result->code : 200;
@@ -231,7 +242,7 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
 /**
  * Decides if it's possible to use cURL or not.
  *
- * @return
+ * @return bool
  *   TRUE if curl is available, FALSE otherwise.
  */
 function http_request_use_curl() {
@@ -261,7 +272,7 @@ function http_request_clear_cache($url) {
  * @param string $data
  *  The actual data from the http request.
  *
- * @return boolean
+ * @return bool
  *  Returns TRUE if this is a parsable feed.
  */
 function http_request_is_feed($content_type, $data) {
@@ -274,7 +285,8 @@ function http_request_is_feed($content_type, $data) {
     return TRUE;
   }
 
-  // @TODO: Sometimes the content-type can be text/html but still be a valid feed.
+  // @TODO: Sometimes the content-type can be text/html but still be a valid
+  // feed.
   return FALSE;
 }
 
@@ -284,7 +296,7 @@ function http_request_is_feed($content_type, $data) {
  * @param string $html
  *  The html string to search.
  *
- * @return array()
+ * @return array
  *  An array of href to feeds.
  */
 function http_request_find_feeds($html) {
@@ -300,7 +312,8 @@ function http_request_find_feeds($html) {
 
     preg_match_all(HTTP_REQUEST_PCRE_TAG_ATTRIBUTES, $link_tag, $attributes, PREG_SET_ORDER);
     foreach ($attributes as $attribute) {
-      // Find the key value pairs, attribute[1] is key and attribute[2] is the value.
+      // Find the key value pairs, attribute[1] is key and attribute[2] is the
+      // value.
       if (!empty($attribute[1]) && !empty($attribute[2])) {
         $candidate[drupal_strtolower($attribute[1])] = drupal_strtolower(decode_entities($attribute[2]));
       }
@@ -323,13 +336,12 @@ function http_request_find_feeds($html) {
  * Create an absolute url.
  *
  * @param string $url
- *  The href to transform.
- *
- * @param $base_url
- *  The url to be used as the base for a relative $url.
+ *   The href to transform.
+ * @param string $base_url
+ *   The url to be used as the base for a relative $url.
  *
  * @return string
- *  an absolute url
+ *   An absolute url
  */
 function http_request_create_absolute_url($url, $base_url) {
   $url = trim($url);
@@ -340,7 +352,8 @@ function http_request_create_absolute_url($url, $base_url) {
 
   // Turn relative url into absolute.
   if (valid_url($url, FALSE)) {
-    // Produces variables $scheme, $host, $user, $pass, $path, $query and $fragment.
+    // Produces variables $scheme, $host, $user, $pass, $path, $query and
+    // $fragment.
     $parsed_url = parse_url($base_url);
 
     $path = dirname($parsed_url['path']);

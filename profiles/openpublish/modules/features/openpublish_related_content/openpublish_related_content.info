@@ -14,9 +14,9 @@ features[field][] = node-openpublish_photo_gallery-field_op_related_nref
 features[field][] = node-openpublish_video-field_op_related_nref
 features[views_view][] = openpublish_related_content
 
-; Information added by drupal.org packaging script on 2012-10-04
-version = "7.x-1.0-beta5"
+; Information added by drupal.org packaging script on 2012-10-18
+version = "7.x-1.0-beta6"
 core = "7.x"
 project = "openpublish"
-datestamp = "1349368017"
+datestamp = "1350596519"
 

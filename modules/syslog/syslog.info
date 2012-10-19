@@ -6,8 +6,8 @@ core = 7.x
 files[] = syslog.test
 
 
-; Information added by drush on 2012-10-04
+; Information added by drush on 2012-10-19
 version = "master-dev"
 project = "drupal"
-datestamp = "1349370005"
+datestamp = "1350659937"
 

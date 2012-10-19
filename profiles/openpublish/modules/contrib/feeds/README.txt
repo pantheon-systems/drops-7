@@ -49,8 +49,9 @@ Installation
   Feeds News, Feeds Import, Feeds Fast News (more info below).
 - Make sure cron is correctly configured http://drupal.org/cron
 - Go to import/ to import data.
-- To use SimplePie parser, download SimplePie and place simplepie.inc into
-  feeds/libraries. Recommended version: 1.2.
+- To use SimplePie parser, download either the compiled or minified SimplePie 
+  and place simplepie_[version].compiled.php into feeds/libraries as 
+  simplepie.compiled.php. Recommended version: 1.3.
   http://simplepie.org/
 
 Feature modules

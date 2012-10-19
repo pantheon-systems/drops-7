@@ -88,7 +88,7 @@ projects[captcha][subdir] = contrib
 projects[captcha][patch][] = http://drupal.org/files/issues/825088-19-captcha_ctools_export.patch
 
 projects[recaptcha][subdir] = contrib
-projects[recaptcha][version] = 1.7
+projects[recaptcha][version] = 1.8
 
 projects[link][subdir] = contrib
 projects[link][version] = 1.0
@@ -137,7 +137,7 @@ projects[views_arguments_extras][subdir] = contrib
 projects[views_arguments_extras][version] = 1.0-beta1
 
 projects[feeds][subdir] = contrib
-projects[feeds][version] = 2.0-alpha5
+projects[feeds][version] = 2.0-alpha6
 
 projects[job_scheduler][subdir] = contrib
 projects[job_scheduler][version] = 2.0-alpha3

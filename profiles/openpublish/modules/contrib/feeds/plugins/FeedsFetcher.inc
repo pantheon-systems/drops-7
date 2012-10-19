@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Contains the FeedsFetcher and related classes.
+ */
+
+/**
  * Base class for all fetcher results.
  */
 class FeedsFetcherResult extends FeedsResult {

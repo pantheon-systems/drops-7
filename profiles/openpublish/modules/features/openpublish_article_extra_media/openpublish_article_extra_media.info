@@ -10,9 +10,9 @@ dependencies[] = "node_reference"
 features[ctools][] = "field_group:field_group:1"
 features[field][] = "node-openpublish_article-field_op_caption"
 
-; Information added by drupal.org packaging script on 2012-10-04
-version = "7.x-1.0-beta5"
+; Information added by drupal.org packaging script on 2012-10-18
+version = "7.x-1.0-beta6"
 core = "7.x"
 project = "openpublish"
-datestamp = "1349368017"
+datestamp = "1350596519"
 

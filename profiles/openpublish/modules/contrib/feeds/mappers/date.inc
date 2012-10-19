@@ -59,5 +59,4 @@ function date_feeds_set_target($source, $entity, $target, $feed_element) {
     }
   }
   $feed_element->buildDateField($entity, $field_name);
-
 }

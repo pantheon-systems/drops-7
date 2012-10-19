@@ -85,27 +85,24 @@ class FeedsMapperTaxonomyTestCase extends FeedsMapperTestCase {
     $this->createImporterConfiguration('Syndication', 'syndication');
     $this->addMappings('syndication',
       array(
-        array(
+        0 => array(
           'source' => 'title',
           'target' => 'title',
-          'unique' => FALSE,
         ),
-        array(
+        1 => array(
           'source' => 'description',
           'target' => 'body',
-          'unique' => FALSE,
         ),
-        array(
+        2 => array(
           'source' => 'timestamp',
           'target' => 'created',
-          'unique' => FALSE,
         ),
-        array(
+        3 => array(
           'source' => 'url',
           'target' => 'url',
           'unique' => TRUE,
         ),
-        array(
+        4 => array(
           'source' => 'guid',
           'target' => 'guid',
           'unique' => TRUE,
@@ -125,15 +122,13 @@ class FeedsMapperTaxonomyTestCase extends FeedsMapperTestCase {
     $this->assertText('Do not import on submission');
 
     // Map feed node's taxonomy to feed item node's taxonomy.
-    $this->addMappings('syndication',
-      array(
-        array(
-          'source' => 'parent:taxonomy:tags',
-          'target' => 'field_tags',
-          'unique' => FALSE,
-        ),
-      )
+    $mappings = array(
+      5 => array(
+        'source' => 'parent:taxonomy:tags',
+        'target' => 'field_tags',
+      ),
     );
+    $this->addMappings('syndication', $mappings);
 
     // Create feed node and add term term1.
     $langcode = LANGUAGE_NONE;
@@ -271,6 +266,6 @@ class FeedsMapperTaxonomyTestCase extends FeedsMapperTestCase {
    */
   public function assertTaxonomyTerm($term) {
     $term = check_plain($term);
-    $this->assertPattern('/<a href="(.*?)\/taxonomy\/term\/([0-9]*?)"(.*)>' . $term . '<\/a>/', 'Found ' . $term);
+    $this->assertPattern('/<a href="\/.*taxonomy\/term\/[0-9]+">' . $term . '<\/a>/', 'Found ' . $term);
   }
 }

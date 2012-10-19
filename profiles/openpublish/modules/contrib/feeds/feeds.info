@@ -16,7 +16,10 @@ files[] = tests/feeds_date_time.test
 files[] = tests/feeds_mapper_date.test
 files[] = tests/feeds_mapper_field.test
 files[] = tests/feeds_mapper_file.test
+files[] = tests/feeds_mapper_path.test
+files[] = tests/feeds_mapper_profile.test
 files[] = tests/feeds_mapper.test
+files[] = tests/feeds_mapper_config.test
 files[] = tests/feeds_fetcher_file.test
 files[] = tests/feeds_processor_node.test
 files[] = tests/feeds_processor_term.test
@@ -32,9 +35,9 @@ files[] = views/feeds_views_handler_field_severity.inc
 files[] = views/feeds_views_handler_field_source.inc
 files[] = views/feeds_views_handler_filter_severity.inc
 
-; Information added by drupal.org packaging script on 2012-05-28
-version = "7.x-2.0-alpha5"
+; Information added by drupal.org packaging script on 2012-10-10
+version = "7.x-2.0-alpha6"
 core = "7.x"
 project = "feeds"
-datestamp = "1338228956"
+datestamp = "1349851321"
 
