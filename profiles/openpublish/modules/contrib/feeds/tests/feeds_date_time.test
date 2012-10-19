@@ -12,7 +12,7 @@
  * Not inheriting from Feeds base class as ParserCSV should be moved out of
  * Feeds at some time.
  */
-class FeedsDateTimeTest extends FeedsWebTestCase {
+class FeedsDateTimeTest extends FeedsUnitTestHelper {
   protected $profile = 'testing';
 
   public static function getInfo() {
@@ -21,6 +21,11 @@ class FeedsDateTimeTest extends FeedsWebTestCase {
       'description' => 'Unit tests for Feeds date handling.',
       'group' => 'Feeds',
     );
+  }
+
+  public function setUp() {
+    parent::setUp();
+    module_load_include('inc', 'feeds' , 'plugins/FeedsParser');
   }
 
   /**

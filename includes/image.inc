@@ -122,6 +122,15 @@ function image_toolkit_invoke($method, stdClass $image, array $params = array())
  *   - "file_size": File size in bytes.
  */
 function image_get_info($filepath, $toolkit = FALSE) {
+  $cid = "image_get_info:$toolkit:$filepath";
+  if (function_exists('pantheon_cache_get') && $cache = pantheon_cache_get($cid)) {
+    list($scheme, $target) = explode('://', $filepath, 2);
+    $filepath = trim($target, '\/');
+    $stat = pantheon_stat($filepath);
+    if ($stat['size']	== $cache['file_size']) {
+      return $cache;
+    }
+  }
   $details = FALSE;
   if (!is_file($filepath) && !is_uploaded_file($filepath)) {
     return $details;
@@ -139,7 +148,9 @@ function image_get_info($filepath, $toolkit = FALSE) {
       $details['file_size'] = filesize($filepath);
     }
   }
-
+  if (function_exists('pantheon_cache_get')) {
+    pantheon_cache_set($cid, $details);
+  }
   return $details;
 }
 

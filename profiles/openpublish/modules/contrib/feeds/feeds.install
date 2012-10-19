@@ -33,7 +33,8 @@ function feeds_schema() {
         'description' => 'Id of the fields object.',
       ),
       'config' => array(
-        'type' => 'text',
+        'type' => 'blob',
+        'size' => 'big',
         'not null' => FALSE,
         'description' => 'Configuration of the feeds object.',
         'serialize' => TRUE,
@@ -59,7 +60,8 @@ function feeds_schema() {
         'description' => 'Node nid if this particular source is attached to a feed node.',
       ),
       'config' => array(
-        'type' => 'text',
+        'type' => 'blob',
+        'size' => 'big',
         'not null' => FALSE,
         'description' => 'Configuration of the source.',
         'serialize' => TRUE,
@@ -535,6 +537,27 @@ function feeds_update_7206() {
     'size' => 'big',
     'not null' => FALSE,
     'description' => 'Cache for fetcher result.',
+    'serialize' => TRUE,
+  ));
+}
+
+/**
+ * Change config fields from text to big blobs.
+ */
+function feeds_update_7207() {
+  db_change_field('feeds_importer', 'config', 'config', array(
+    'type' => 'blob',
+    'size' => 'big',
+    'not null' => FALSE,
+    'description' => 'Configuration of the feeds object.',
+    'serialize' => TRUE,
+  ));
+
+  db_change_field('feeds_source', 'config', 'config', array(
+    'type' => 'blob',
+    'size' => 'big',
+    'not null' => FALSE,
+    'description' => 'Configuration of the feeds object.',
     'serialize' => TRUE,
   ));
 }

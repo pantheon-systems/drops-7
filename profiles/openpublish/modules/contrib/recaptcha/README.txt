@@ -1,11 +1,10 @@
-
 reCAPTCHA for Drupal
 ====================
 
 The reCAPTCHA module uses the reCAPTCHA web service to
 improve the CAPTCHA system and protect email addresses. For
 more information on what reCAPTCHA is, please visit:
-    http://recaptcha.net
+    http://www.google.com/recaptcha
 
 
 INSTALLATION
@@ -17,7 +16,7 @@ INSTALLATION
 
 CONFIGURATION
 -------------
-   
+
 1. Enable reCAPTCHA and CAPTCHA modules in:
        admin/build/modules
 
@@ -26,7 +25,7 @@ CONFIGURATION
        admin/config/people/captcha/recaptcha
 
 3. Register for a public and private reCAPTCHA key at:
-       http://recaptcha.net/api/getkey
+       http://www.google.com/recaptcha/whyrecaptcha
 
 4. Input the keys into the reCAPTCHA settings. The rest of
    the settings should be fine as their defaults.
@@ -52,10 +51,10 @@ you use that input filter:
 
 3. Edit your default input format and add the reCAPTCHA
    Mailhide filter.
-   
+
 4. Click on the Configure tab and put in a public and
    private Mailhide key obtained from:
-       http://mailhide.recaptcha.net/apikey
+       http://www.google.com/recaptcha/mailhide/apikey
 
 5. Use the Rearrange tab to rearrange the weight of the
    filter depending on what filters already exist.  Make
@@ -96,7 +95,7 @@ If you don't implement this function, it is still quite
 easily customizable through manipulating the CSS.
 
 For more information on this, visit:
-http://recaptcha.net/apidocs/captcha/client.html#customization
+http://code.google.com/apis/recaptcha/docs/customization.html
 
 
 CHANGELOG
@@ -110,4 +109,4 @@ THANK YOU
 
  * Thank you goes to the reCAPTCHA team for all their
    help, support and their amazing Captcha solution
-       http://www.recaptcha.net
+       http://www.google.com/recaptcha

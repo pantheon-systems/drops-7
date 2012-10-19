@@ -46,19 +46,19 @@ class FeedsMapperDateTestCase extends FeedsMapperTestCase {
     $this->setPlugin('daterss', 'FeedsSyndicationParser');
     $this->setSettings('daterss', 'FeedsNodeProcessor', array('content_type' => $typename));
     $this->addMappings('daterss', array(
-      array(
+      0 => array(
         'source' => 'title',
         'target' => 'title',
       ),
-      array(
+      1 => array(
         'source' => 'description',
         'target' => 'body',
       ),
-      array(
+      2 => array(
         'source' => 'timestamp',
         'target' => 'field_date:start',
       ),
-      array(
+      3 => array(
         'source' => 'timestamp',
         'target' => 'field_datestamp:start',
       ),

@@ -106,7 +106,7 @@ function _feeds_feeds_plugins() {
       'path' => $path,
     ),
   );
-  if (feeds_library_exists('simplepie.inc', 'simplepie')) {
+  if (feeds_simplepie_exists()) {
     $info['FeedsSimplePieParser'] = array(
       'name' => 'SimplePie parser',
       'description' => 'Parse RSS and Atom feeds.',

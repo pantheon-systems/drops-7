@@ -41,6 +41,12 @@ function recaptcha_admin_settings() {
     '#default_value' => variable_get('recaptcha_ajax_api', FALSE),
     '#description' => t('Use the AJAX API to display reCAPTCHA.'),
   );
+  $form['recaptcha_nocookies'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable Client-Side Cookies'),
+    '#default_value' => variable_get('recaptcha_nocookies', FALSE),
+    '#description' => t('Add flag to disable third-party cookies set by reCAPTCHA.'),
+  );
   $form['recaptcha_theme_settings'] = array(
     '#type' => 'fieldset',
     '#title' => t('Theme Settings'),

@@ -147,6 +147,8 @@ class FeedsHTTPFetcher extends FeedsFetcher {
    * Override parent::sourceFormValidate().
    */
   public function sourceFormValidate(&$values) {
+    $values['source'] = trim($values['source']);
+
     if (!feeds_valid_url($values['source'], TRUE)) {
       $form_key = 'feeds][' . get_class($this) . '][source';
       form_set_error($form_key, t('The URL %source is invalid.', array('%source' => $values['source'])));
@@ -306,7 +308,7 @@ class PuSHEnvironment implements PuSHSubscriberEnvironmentInterface {
    * Implements PuSHSubscriberEnvironmentInterface::msg().
    */
   public function msg($msg, $level = 'status') {
-    drupal_set_message($msg, $level);
+    drupal_set_message(check_plain($msg), $level);
   }
 
   /**

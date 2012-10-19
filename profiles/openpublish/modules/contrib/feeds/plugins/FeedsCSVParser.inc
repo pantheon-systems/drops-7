@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Contains the FeedsCSVParser class.
+ */
+
+/**
  * Parses a given file as a CSV file.
  */
 class FeedsCSVParser extends FeedsParser {

@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @file
+ * Contains FeedsProcessor and related classes.
+ */
 
 // Update mode for existing items.
 define('FEEDS_SKIP_EXISTING', 0);
@@ -14,6 +18,11 @@ define('FEEDS_PROCESS_LIMIT', 50);
  * Thrown if a validation fails.
  */
 class FeedsValidationException extends Exception {}
+
+/**
+ * Thrown if a an access check fails.
+ */
+class FeedsAccessException extends Exception {}
 
 /**
  * Abstract class, defines interface for processors.
@@ -61,10 +70,21 @@ abstract class FeedsProcessor extends FeedsPlugin {
   protected function entityValidate($entity) {}
 
   /**
+   * Access check for saving an enity.
+   *
+   * @param $entity
+   *   Entity to be saved.
+   *
+   * @throws FeedsAccessException $e
+   *   If the access check fails.
+   */
+  protected function entitySaveAccess($entity) {}
+
+  /**
    * Save an entity.
    *
    * @param $entity
-   *   Entity to b saved.
+   *   Entity to be saved.
    */
   protected abstract function entitySave($entity);
 
@@ -102,59 +122,82 @@ abstract class FeedsProcessor extends FeedsPlugin {
     $state = $source->state(FEEDS_PROCESS);
 
     while ($item = $parser_result->shiftItem()) {
-      if (!($entity_id = $this->existingEntityId($source, $parser_result)) ||
-           ($this->config['update_existing'] != FEEDS_SKIP_EXISTING)) {
 
-        // Only proceed if item has actually changed.
-        $hash = $this->hash($item);
-        if (!empty($entity_id) && $hash == $this->getHash($entity_id)) {
+      // Check if this item already exists.
+      $entity_id = $this->existingEntityId($source, $parser_result);
+      $skip_existing = $this->config['update_existing'] == FEEDS_SKIP_EXISTING;
+
+      // If it exists, and we are not updating, pass onto the next item.
+      if ($entity_id && $skip_existing) {
+        continue;
+      }
+
+      $hash = $this->hash($item);
+      $changed = ($hash !== $this->getHash($entity_id));
+      $force_update = $this->config['skip_hash_check'];
+
+      // Do not proceed if the item exists, has not changed, and we're not
+      // forcing the update.
+      if ($entity_id && !$changed && !$force_update) {
+        continue;
+      }
+
+      try {
+
+        // Build a new entity.
+        if (empty($entity_id)) {
+          $entity = $this->newEntity($source);
+          $this->newItemInfo($entity, $source->feed_nid, $hash);
+        }
+
+        // Load an existing entity.
+        else {
+          $entity = $this->entityLoad($source, $entity_id);
+
+          // The feeds_item table is always updated with the info for the most recently processed entity.
+          // The only carryover is the entity_id.
+          $this->newItemInfo($entity, $source->feed_nid, $hash);
+          $entity->feeds_item->entity_id = $entity_id;
+        }
+
+        // Set property and field values.
+        $this->map($source, $parser_result, $entity);
+        $this->entityValidate($entity);
+
+        // Allow modules to alter the entity before saving.
+        module_invoke_all('feeds_presave', $source, $entity, $item);
+        if (module_exists('rules')) {
+          rules_invoke_event('feeds_import_'. $source->importer()->id, $entity);
+        }
+
+        // Enable modules to skip saving at all.
+        if (!empty($entity->feeds_item->skip)) {
           continue;
         }
 
-        try {
-          // Assemble node, map item to it, save.
-          if (empty($entity_id)) {
-            $entity = $this->newEntity($source);
-            $this->newItemInfo($entity, $source->feed_nid, $hash);
-          }
-          else {
-            $entity = $this->entityLoad($source, $entity_id);
-            // The feeds_item table is always updated with the info for the most recently processed entity.
-            // The only carryover is the entity_id.
-            $this->newItemInfo($entity, $source->feed_nid, $hash);
-            $entity->feeds_item->entity_id = $entity_id;
-          }
-          $this->map($source, $parser_result, $entity);
-          $this->entityValidate($entity);
+        // This will throw an exception on failure.
+        $this->entitySaveAccess($entity);
+        $this->entitySave($entity);
 
-          // Allow modules to alter the entity before saving.
-          module_invoke_all('feeds_presave', $source, $entity);
-          if (module_exists('rules')) {
-            rules_invoke_event('feeds_import_'. $source->importer()->id, $entity);
-          }
+        // Track progress.
+        if (empty($entity_id)) {
+          $state->created++;
+        }
+        else {
+          $state->updated++;
+        }
+      }
 
-          // Enable modules to skip saving at all.
-          if (empty($entity->feeds_item->skip)) {
-            $this->entitySave($entity);
-            // Track progress.
-            if (empty($entity_id)) {
-              $state->created++;
-            }
-            else {
-              $state->updated++;
-            }
-          }
-        }
-        catch (Exception $e) {
-          $state->failed++;
-          drupal_set_message($e->getMessage(), 'warning');
-          $message = $e->getMessage();
-          $message .= '<h3>Original item</h3>';
-          $message .= '<pre>' . var_export($item, TRUE) . '</pre>';
-          $message .= '<h3>Entity</h3>';
-          $message .= '<pre>' . var_export($entity, TRUE) . '</pre>';
-          $source->log('import', $message, array(), WATCHDOG_ERROR);
-        }
+      // Something bad happened, log it.
+      catch (Exception $e) {
+        $state->failed++;
+        drupal_set_message($e->getMessage(), 'warning');
+        $message = $e->getMessage();
+        $message .= '<h3>Original item</h3>';
+        $message .= '<pre>' . var_export($item, TRUE) . '</pre>';
+        $message .= '<h3>Entity</h3>';
+        $message .= '<pre>' . var_export($entity, TRUE) . '</pre>';
+        $source->log('import', $message, array(), WATCHDOG_ERROR);
       }
     }
 
@@ -404,10 +447,10 @@ abstract class FeedsProcessor extends FeedsPlugin {
           isset($targets[$this->id][$mapping['target']]['callback']) &&
           function_exists($targets[$this->id][$mapping['target']]['callback'])) {
         $callback = $targets[$this->id][$mapping['target']]['callback'];
-        $callback($source, $target_item, $mapping['target'], $value);
+        $callback($source, $target_item, $mapping['target'], $value, $mapping);
       }
       else {
-        $this->setTargetElement($source, $target_item, $mapping['target'], $value);
+        $this->setTargetElement($source, $target_item, $mapping['target'], $value, $mapping);
       }
     }
     return $target_item;
@@ -428,7 +471,8 @@ abstract class FeedsProcessor extends FeedsPlugin {
     return array(
       'mappings' => array(),
       'update_existing' => FEEDS_SKIP_EXISTING,
-      'input_format' => NULL
+      'input_format' => NULL,
+      'skip_hash_check' => FALSE,
     );
   }
 
@@ -455,6 +499,12 @@ abstract class FeedsProcessor extends FeedsPlugin {
     foreach ($formats as $format) {
       $format_options[$format->format] = $format->name;
     }
+    $form['skip_hash_check'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Skip hash check'),
+      '#description' => t('Force update of items even if item source data did not change.'),
+      '#default_value' => $this->config['skip_hash_check'],
+    );
     $form['input_format'] = array(
       '#type' => 'select',
       '#title' => t('Text format'),
@@ -639,10 +689,13 @@ abstract class FeedsProcessor extends FeedsPlugin {
   }
 
   /**
-   * Retrieve MD5 hash of $entity_id from DB.
-   * @return Empty string if no item is found, hash otherwise.
+   * Retrieves the MD5 hash of $entity_id from the database.
+   *
+   * @return string
+   *   Empty string if no item is found, hash otherwise.
    */
   protected function getHash($entity_id) {
+
     if ($hash = db_query("SELECT hash FROM {feeds_item} WHERE entity_type = :type AND entity_id = :id", array(':type' => $this->entityType(), ':id' => $entity_id))->fetchField()) {
       // Return with the hash.
       return $hash;

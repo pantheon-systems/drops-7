@@ -11,9 +11,9 @@ features[field][] = "node-profile-field_facebook_url"
 features[field][] = "node-profile-field_profile_job_title"
 features[field][] = "node-profile-field_twitter"
 
-; Information added by drupal.org packaging script on 2012-10-04
-version = "7.x-1.0-beta5"
+; Information added by drupal.org packaging script on 2012-10-18
+version = "7.x-1.0-beta6"
 core = "7.x"
 project = "openpublish"
-datestamp = "1349368017"
+datestamp = "1350596519"
 
