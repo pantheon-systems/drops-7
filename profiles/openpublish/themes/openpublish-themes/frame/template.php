@@ -36,3 +36,12 @@ function frame_preprocess_toolbar(&$vars) {
   $vars['toolbar']['toolbar_drawer'][0]['menu_local_tabs'] = menu_local_tabs();
   $vars['toolbar']['toolbar_drawer'][0]['menu_local_tabs']['#primary'][] = menu_local_actions();
 }
+
+function frame_preprocess_field(&$vars) {
+  if ($vars['element']['#field_name'] == 'field_op_gallery_image') {
+    for ($i = 2; $i < count($vars['items']); $i+=3) {
+      $vars['items'][$i]['#attributes']['class'][] = 'row-end';
+      $vars['items'][$i]['#suffix'] = '<br class="clearfix" />';
+    }
+  }
+}
