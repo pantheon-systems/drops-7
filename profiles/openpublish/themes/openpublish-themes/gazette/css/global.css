@@ -949,10 +949,8 @@ section.block .view-openpublish-related-content .views-row a {
 .node-type-openpublish-photo-gallery #block-views-ec0f800b3db8af0ee17f07e48a1161df {
   width: auto;
 }
-.node-openpublish-photo-gallery .field-name-field-op-gallery-image-image img,
-.node-openpublish-photo-gallery .field-name-field-op-main-image img {
+.node-openpublish-photo-gallery .field-name-field-op-gallery-image-image img {
   height:auto;
-  width:auto;
 }
 .node-type-openpublish-photo-gallery .node,
 .node-type-openpublish-photo-gallery h1#page-title {
