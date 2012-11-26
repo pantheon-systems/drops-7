@@ -878,9 +878,15 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // PHP's built in http_build_query() doesn't give us the format Solr wants.
     $queryString = $this->httpBuildQuery($params);
     // Check string length of the query string, change method to POST
-    // if longer than 4000 characters (typical server handles 4096 max).
-    // @todo - make this a per-server setting.
-    if (strlen($queryString) > variable_get('apachesolr_search_post_threshold', 4000)) {
+    $len = strlen($queryString);
+    // Fetch our threshold to find out when to flip to POST
+    $max_len = apachesolr_environment_variable_get($this->env_id, 'apachesolr_search_post_threshold', 3600);
+
+    // if longer than $max_len (default 3600) characters
+    // we should switch to POST (a typical server handles 4096 max).
+    // If this class is used independently (without environments), we switch automatically to POST at an
+    // limit of 1800 chars.
+    if (($len > 1800) && (empty($this->env_id) || ($len > $max_len))) {
       $method = 'POST';
     }
 
