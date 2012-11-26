@@ -553,7 +553,7 @@ abstract class DrupalLocalStreamWrapper implements DrupalStreamWrapperInterface 
    * Support for unlink().
    *
    * @param $uri
-   *   A string containing the uri to the resource to delete.
+   *   A string containing the URI to the resource to delete.
    *
    * @return
    *   TRUE if resource was successfully deleted.
@@ -569,9 +569,9 @@ abstract class DrupalLocalStreamWrapper implements DrupalStreamWrapperInterface 
    * Support for rename().
    *
    * @param $from_uri,
-   *   The uri to the file to rename.
+   *   The URI to the file to rename.
    * @param $to_uri
-   *   The new uri for file.
+   *   The new URI for file.
    *
    * @return
    *   TRUE if file was successfully renamed.
@@ -683,8 +683,8 @@ abstract class DrupalLocalStreamWrapper implements DrupalStreamWrapperInterface 
   public function url_stat($uri, $flags) {
     // Cache existence checks for ctools_css_retrieve.
     $store_to_cache = FALSE;
-    if (strpos($uri, 'public://ctools/css/') === 0 && function_exists('apc_fetch')) {
-      $stat = apc_fetch('file_stat_' . $uri);
+    if (strpos($uri, 'public://ctools/css/') === 0 && function_exists('pantheon_cache_get')) {
+      $stat = pantheon_cache_get('file_stat_' . $uri);
       if ($stat !== FALSE) {
         return $stat;
       }
@@ -710,7 +710,7 @@ abstract class DrupalLocalStreamWrapper implements DrupalStreamWrapperInterface 
     }
 
     if ($store_to_cache && $stat !== FALSE) {
-      apc_store('file_stat_' . $uri, $stat, 86400);
+      pantheon_cache_set('file_stat_' . $uri, $stat, 86400);
     }
 
     return $stat;
