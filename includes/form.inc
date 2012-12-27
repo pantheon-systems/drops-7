@@ -1130,6 +1130,10 @@ function drupal_validate_form($form_id, &$form, &$form_state) {
       form_set_error('form_token', t('The form has become outdated. Copy any unsaved work in the form below and then <a href="@link">reload this page</a>.', array('@link' => $url)));
     }
   }
+  // Ensure the correct protocol when #https is set.
+  if (!empty($form['#https']) && !$GLOBALS['is_https']) {
+    form_set_error(NULL, t('This form requires HTTPS.  Contact the site administrator if the problem persists.'));
+  }
 
   _form_validate($form, $form_state, $form_id);
   $validated_forms[$form_id] = TRUE;
