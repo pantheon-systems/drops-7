@@ -1,7 +1,7 @@
 ; $Id$
 name = Pantheon Platform API
 description = Integration with the Pantheon Platform
-version = 7.0
+version = "7.x-1.0"
 package = Pantheon
 core = 7.x
 php = 5.2
