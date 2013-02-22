@@ -2,9 +2,10 @@
 name = Pantheon Apache Solr
 description = Allows the use of Pantheon's ApacheSolr infrastructure
 package = Pantheon
+varsion = "7.x-rc3"
 dependencies[] = pantheon_api
 files[] = Pantheon_Apache_Solr_Service.php
 files[] = Pantheon_Search_Api_Solr_Service.php
 core = 7.x
 php = 5.2
-varsion = "7.x-beta1"
+
