@@ -1,0 +1,38 @@
+name = CiviCRM Starter Kit
+description = "Install Drupal and CiviCRM with commonly used modules included, but not enabled or configured.  
+Use the CiviCRM Checklist to complete the configuration."
+distribution_name = CiviCRM Starter Kit
+
+core = 7.x
+dependencies[] = block
+dependencies[] = color
+dependencies[] = comment
+dependencies[] = contextual
+dependencies[] = dashboard
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = taxonomy
+dependencies[] = dblog
+dependencies[] = search
+dependencies[] = shortcut
+dependencies[] = toolbar
+dependencies[] = overlay
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = rdf
+dependencies[] = civicrm
+dependencies[] = civicrmtheme
+
+
+
+; Information added by drupal.org packaging script on 2013-03-11
+version = "7.x-2.8-rc2"
+core = "7.x"
+project = "civicrm_starterkit"
+datestamp = "1363006520"
+
