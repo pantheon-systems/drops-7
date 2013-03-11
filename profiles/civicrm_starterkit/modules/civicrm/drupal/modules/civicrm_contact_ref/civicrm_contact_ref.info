@@ -1,0 +1,16 @@
+; id rajan
+name = CiviCRM Contact Reference Field
+description = Makes a CiviCRM Contact Reference Field
+package = CiviCRM
+core = 7.x
+version = 4.3
+php = 5.2
+
+dependencies[] = civicrm
+dependencies[] = text
+dependencies[] = list
+
+files[] = civicrm_contact_ref.install
+files[] = civicrm_contact_ref.module
+files[] = civicrm_contact_ref.feeds.inc
+

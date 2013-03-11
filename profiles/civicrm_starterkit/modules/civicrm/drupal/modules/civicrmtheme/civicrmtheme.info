@@ -1,0 +1,10 @@
+name = CiviCRM Theme
+description =  Define alternate themes for CiviCRM.
+core = 7.x
+version = 4.3
+package = CiviCRM
+
+dependencies[] = civicrm
+
+files[] = civicrmtheme.module
+files[] = civicrmtheme.install

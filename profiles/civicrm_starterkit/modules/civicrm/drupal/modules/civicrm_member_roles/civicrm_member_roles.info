@@ -1,0 +1,14 @@
+;
+; Copyright (C) Neil Goodman 2010
+; @license GNU General Public License version 2 or later
+;
+
+name = CiviMember Roles Sync
+description = "Synchronize CiviCRM Contacts with Membership Status to a specified Drupal Role both automatically and manually."
+dependencies[] = civicrm
+package = CiviCRM
+core = 7.x
+version = 4.3
+configure = admin/config/civicrm/civicrm_member_roles
+files[] = civicrm_member_roles.module
+files[] = civicrm_member_roles.install
