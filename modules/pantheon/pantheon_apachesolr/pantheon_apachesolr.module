@@ -13,7 +13,7 @@ function pantheon_apachesolr_menu() {
     'description'        => 'Configure Pantheon\'s Apache Solr, including selecting your schema.xml.',
     'page callback'      => 'drupal_get_form',
     'page arguments'     => array('pantheon_apachesolr_settings'),
-    'access arguments'   => array('administer search'),
+    'access arguments'   => array('access administration pages'),
     'weight'             => -8,
   );
   return $items;
