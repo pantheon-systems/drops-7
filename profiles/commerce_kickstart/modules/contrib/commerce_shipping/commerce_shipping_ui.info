@@ -1,0 +1,15 @@
+name = Shipping UI
+description = Provides an interface for viewing and managing shipping methods and services.
+package = Commerce (shipping)
+dependencies[] = rules
+dependencies[] = commerce
+dependencies[] = commerce_shipping
+core = 7.x
+configure = admin/commerce/config/shipping
+
+; Information added by drupal.org packaging script on 2012-11-15
+version = "7.x-2.0"
+core = "7.x"
+project = "commerce_shipping"
+datestamp = "1353011121"
+

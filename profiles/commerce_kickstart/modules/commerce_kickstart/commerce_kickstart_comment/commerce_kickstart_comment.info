@@ -1,0 +1,5 @@
+name = Commerce Kickstart Comment
+description = Provides Kickstart-specific comment customizations.
+package = Commerce Kickstart
+core = 7.x
+dependencies[] = comment

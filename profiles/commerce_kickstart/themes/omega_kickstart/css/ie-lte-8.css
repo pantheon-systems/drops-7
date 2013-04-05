@@ -1,0 +1,93 @@
+img {
+  max-width: inherit;
+  width: auto; }
+
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+.view-collection-products .view-header,
+.view-collection-taxonomy-term .view-header {
+  height: auto; }
+
+/**********************************************
+* 5.2. All products page
+**********************************************/
+.page-products .view-display-products {
+  clear: both;
+  margin-top: 40px;
+  width: 700px; }
+  .page-products .view-display-products li.views-row {
+    display: block;
+    margin-right: 5px;
+    width: 225px; }
+
+/**
+* Add to cart popin.
+*/
+div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper {
+  width: 25%; }
+div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display .view-content {
+  width: 180px !important; }
+
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/* Cloud zoom */
+.node-product-type .cloud-zoom-container {
+  margin-left: 130px;
+  position: relative; }
+  .node-product-type .cloud-zoom-container .cloud-zoom-gallery-thumbs {
+    position: absolute;
+    top: 0;
+    left: -130px;
+    width: 120px; }
+    .node-product-type .cloud-zoom-container .cloud-zoom-gallery-thumbs .cloud-zoom-gallery img {
+      max-width: none; }
+
+/**********************************************
+* 5.4. Checkout process
+**********************************************/
+/**
+* Checkout progress
+*/
+ul.inline.commerce-checkout-progress li,
+ol.inline.commerce-checkout-progress li {
+  padding-right: 50px;
+  padding-left: 25px; }
+  ul.inline.commerce-checkout-progress li:after, ul.inline.commerce-checkout-progress li.active:after,
+  ol.inline.commerce-checkout-progress li:after,
+  ol.inline.commerce-checkout-progress li.active:after {
+    background-image: url("../images/bg_checkout_progress_ie.png");
+    background-position: right center;
+    background-repeat: no-repeat;
+    right: -5px; }
+  ul.inline.commerce-checkout-progress li.last:after,
+  ol.inline.commerce-checkout-progress li.last:after {
+    background-image: url("../images/bg_checkout_progress_ie_last.png");
+    background-position: right center;
+    background-repeat: no-repeat; }
+  ul.inline.commerce-checkout-progress li.last.active,
+  ol.inline.commerce-checkout-progress li.last.active {
+    background-image: url("../images/bg_checkout_progress_ie_active_last.png");
+    background-position: left center;
+    background-repeat: no-repeat;
+    left: -25px;
+    padding-left: 40px; }
+    ul.inline.commerce-checkout-progress li.last.active:after,
+    ol.inline.commerce-checkout-progress li.last.active:after {
+      background-image: url("../images/bg_checkout_progress_ie_last.png");
+      background-position: right center;
+      background-repeat: no-repeat; }
+  ul.inline.commerce-checkout-progress li.previous:after,
+  ol.inline.commerce-checkout-progress li.previous:after {
+    background-image: url("../images/bg_checkout_progress_ie_visited.png");
+    background-position: right center;
+    background-repeat: no-repeat; }

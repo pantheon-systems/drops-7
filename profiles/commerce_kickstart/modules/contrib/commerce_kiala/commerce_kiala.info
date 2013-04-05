@@ -1,0 +1,23 @@
+name = Kiala
+description = Integrates Kiala with Commerce Shipping to select a Kiala Point during checkout.
+package = Commerce (shipping)
+core = 7.x
+
+configure = admin/commerce/config/shipping/methods/kiala/edit
+
+dependencies[] = commerce
+dependencies[] = commerce_shipping
+dependencies[] = commerce_order
+dependencies[] = image
+dependencies[] = remote_stream_wrapper
+
+; Kiala includes
+files[] = includes/kiala/commerce_kiala.api.inc
+files[] = includes/kiala/commerce_kiala.api.locateselect.inc
+
+; Information added by drupal.org packaging script on 2013-03-11
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "commerce_kiala"
+datestamp = "1363011015"
+

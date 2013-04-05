@@ -1,0 +1,9 @@
+name = Commerce Kickstart Migrate
+description = Provides Kickstart-specific Migrate handlers and base migrations.
+package = Commerce Kickstart
+core = 7.x
+dependencies[] = migrate
+dependencies[] = commerce_migrate
+
+files[] = commerce_kickstart_migrate.migrate.inc
+files[] = plugins/destinations/fields.inc

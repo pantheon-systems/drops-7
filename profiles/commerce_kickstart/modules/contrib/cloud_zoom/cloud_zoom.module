@@ -1,0 +1,603 @@
+<?php
+
+/**
+ * @file
+ * This module integrates the Cloud Zoom JQuery library from:
+ * http://www.professorcloud.com/mainsite/cloud-zoom.htm
+ */
+
+define('CLOUD_ZOOM_DOWNLOAD_URI', 'http://www.professorcloud.com/downloads/cloud-zoom.1.0.3.zip');
+
+
+/**
+ * Implements hook_libraries_info().
+ */
+function cloud_zoom_libraries_info() {
+  $libraries['cloud-zoom'] = array(
+    'name' => 'Cloud Zoom',
+    'vendor url' => 'http://www.professorcloud.com/mainsite/cloud-zoom.htm',
+    'download url' => CLOUD_ZOOM_DOWNLOAD_URI,
+  );
+  return $libraries;
+}
+
+
+/**
+ * Implements hook_library()
+ */
+function cloud_zoom_library() {
+  if ($path = _cloud_zoom_get_path()) {
+    $module_path = drupal_get_path('module', 'cloud_zoom');
+    $library = _cloud_zoom_check_path($path);
+    $library_base = basename($library->uri);
+
+    return array(
+      'cloud-zoom' => array(
+        'title' => 'Cloud Zoom',
+        'website' => 'http://www.professorcloud.com/mainsite/cloud-zoom.htm',
+        'version' => $library->cz_version,
+        'js' => array(
+          $library->uri => array('group' => JS_LIBRARY),
+          $module_path .'/js/cloud_zoom.js' => array(),
+        ),
+        'css' => array(
+          $library_base .'/cloud-zoom.css' => array('group' => JS_LIBRARY),
+          $module_path .'/css/cloud_zoom.css' => array(),
+        ),
+        'dependencies' => array(
+          array('system', 'jquery'),
+        ),
+      ),
+    );
+  }
+  return;
+}
+
+
+/**
+ * Internal function for checking for the cloud zoom JS in a path
+ */
+function _cloud_zoom_check_path($path) {
+  // Use advanged static caching
+  static $cache;
+  if (!isset($cache)) {
+    $cache['paths'] = &drupal_static(__FUNCTION__);
+  }
+
+  // If this path hasn't been checked, check it now.
+  if (!isset($cache['paths'][$path])) {
+    // Scan the path for the file pattern
+    if ($file = file_scan_directory($path, '/cloud-zoom\..+\.min\.js/')) {
+      // If found, shift the entry out of the single-item (hopefully) array.
+      $file = array_shift($file);
+
+      // Now parse the JS for version
+      $content = file_get_contents($file->uri);
+      preg_match('#Cloud Zoom V(?P<version>[0-9\.]+)#', $content, $matches);
+      $file->cz_version = isset($matches['version']) ? $matches['version'] : FALSE;
+
+      // Store it in the cache
+      $cache['paths'][$path] = $file;
+    }
+    else {
+      // No JS foundm store false so its statically cached
+      $cache['paths'][$path] = FALSE;
+    }
+  }
+
+  // Return the item from the cache
+  return $cache['paths'][$path];
+}
+
+
+/**
+ * Retrieve the expected path to the example library.
+ *
+ * @return
+ *   The path where the example library is to be expected to be installed.
+ *   Returns FALSE if the library is not found.
+ */
+function _cloud_zoom_get_path() {
+  static $path = NULL;
+
+  if (isset($path)) {
+    return $path;
+  }
+
+  $path = FALSE;
+
+  // Check if the libraries module is installed and if the example library is
+  // being supplied through the libraries module.
+  if (module_exists('libraries')) {
+    // Check if the library is found. If no library is found libraries_get_path()
+    // will still return sites/all/libraries as a path.
+    $libraries = libraries_get_libraries();
+    if (isset($libraries['cloud-zoom'])) {
+      $libraries_path = libraries_get_path('cloud-zoom');
+      if (_cloud_zoom_check_path($libraries_path)) {
+        $path = $libraries_path;
+      }
+    }
+  }
+
+  // Check in the cloud-zoom directory within the module directory.
+  if (!$path) {
+    $module_path = drupal_get_path('module', 'cloud_zoom') .'/cloud-zoom';
+    if (_cloud_zoom_check_path($module_path)) {
+      $path = $module_path;
+    }
+  }
+
+  // Check if the example library is in the include path.
+  if (!$path) {
+    $include_paths = explode(PATH_SEPARATOR, get_include_path());
+      foreach ($include_paths as $include_path) {
+        if (is_dir($include_path .'/example')) {
+          $path = $include_path .'/example';
+          continue;
+        }
+      }
+  }
+
+  return $path;
+}
+
+
+/**
+ * Get all Cloud zoom settings info.
+ *
+ * Array keyed with Cloud zoom's option name, and array of values:
+ * - title: The human readable name of the option.
+ * - id: The cloud zoom option ID. If FALSE it means it should not be added to
+ *   the "rel" in the HTML.
+ * - description: Settings description.
+ * - default_value - Default value of setting.
+ * - form_type - The form element type displayed in the settings page.
+ *
+ */
+function cloud_zoom_settings_info() {
+  $settings = array(
+    'slide_style' => array(
+      'title' => t('Slide image style'),
+      'id' => FALSE,
+      'description' => '',
+      'default_value' =>  0,
+      'form_type' => 'select',
+     ),
+    'zoom_style' => array(
+      'title' => t('Zoom area image style'),
+      'id' => FALSE,
+      'description' => '',
+      'default_value' =>  0,
+      'form_type' => 'select',
+     ),
+    'gallery_filedset' => array(
+      'title' => t('Gallery settings'),
+      'id' => FALSE,
+      'description' => t('Gallery mode settings'),
+      'default_value' =>  FALSE,
+      'form_type' => 'fieldset',
+     ),
+    'gallery_mode' => array(
+      'title' => t('Gallery mode'),
+      'id' => FALSE,
+      'description' => t('Set formatter as gallery mode with thumbs'),
+      'default_value' =>  FALSE,
+      'form_type' => 'checkbox',
+      'fieldset' => 'gallery_filedset',
+     ),
+    'thumb_style' => array(
+      'title' => t('Thumbnails image style'),
+      'id' => FALSE,
+      'description' => '',
+      'default_value' =>  0,
+      'form_type' => 'select',
+      'fieldset' => 'gallery_filedset',
+     ),
+    'zoom_position_fieldset' => array(
+      'title' => t('Zoom area possition'),
+      'id' => FALSE,
+      'description' => t('Zoom area location settings'),
+      'default_value' =>  FALSE,
+      'form_type' => 'fieldset',
+     ),
+    'zoom_width' => array(
+      'title' => t('Zoom width'),
+      'id' => 'zoomWidth',
+      'description' => t("The width of the zoom window in pixels.</br> If 'auto' is specified, the width will be the same as the small image."),
+      'default_value' =>  'auto',
+      'form_type' => 'textfield',
+      'fieldset' => 'zoom_position_fieldset',
+      'add_quote' => TRUE,
+     ),
+     'zoom_height' => array(
+       'title' => t('Zoom height'),
+       'id' =>'zoomHeight',
+       'description' => t("The height of the zoom window in pixels.</br> If 'auto' is specified, the height will be the same as the small image."),
+       'default_value' => 'auto',
+       'form_type' => 'textfield',
+       'fieldset' => 'zoom_position_fieldset',
+       'add_quote' => TRUE,
+     ),
+     'position' => array(
+       'title' => t('Position'),
+       'id' =>'position',
+       'description' => t("Specifies the position of the zoom window relative to the small image.</br> Allowable values are 'left', 'right', 'top', 'bottom', 'inside',</br> or you can specifiy the id of an html element to place the zoom window in e.g. position: 'element1"),
+       'default_value' => 'right',
+       'form_type' => 'textfield',
+       'fieldset' => 'zoom_position_fieldset',
+       'add_quote' => TRUE,
+       ),
+     'adjust_x' => array(
+       'title' => t('Adjust X'),
+       'id' => 'adjustX',
+       'description' => t('Allows you to fine tune the x-position of the zoom window in pixels.'),
+       'default_value' => 0,
+       'form_type' => 'textfield',
+       'fieldset' => 'zoom_position_fieldset',
+       'add_quote' => FALSE,
+     ),
+     'adjust_y' => array(
+       'title' => t('Adjust Y'),
+       'id' => 'adjustY',
+       'description' => t('Allows you to fine tune the y-position of the zoom window in pixels.'),
+       'default_value' => 0,
+       'form_type' => 'textfield',
+       'fieldset' => 'zoom_position_fieldset',
+       'add_quote' => FALSE,
+     ),
+     'zoom_style_fieldset' => array(
+       'title' => t('Zoom style'),
+       'id' => FALSE,
+       'description' => t('Zoom area styling and effects settings'),
+       'default_value' =>  FALSE,
+       'form_type' => 'fieldset',
+     ),
+     'tint' => array(
+       'title' => t('Tint'),
+       'id' => 'tint',
+       'description' => t("Specifies a tint colour which will cover the small image.</br> Colours should be specified in hex format,</br> e.g. '#aa00aa'. Does not work with softFocus."),
+       'default_value' => 'false',
+       'form_type' => 'textfield',
+       'fieldset' => 'zoom_style_fieldset',
+       'add_quote' => TRUE,
+      ),
+     'tint_opacity' => array(
+       'title' => t('Tint opacity'),
+       'id' =>'tintOpacity',
+       'description' => t('Opacity of the tint, where 0 is fully transparent, and 1 is fully opaque.'),
+       'default_value' => 0.5,
+       'form_type' => 'textfield',
+       'fieldset' => 'zoom_style_fieldset',
+       'add_quote' => TRUE,
+     ),
+     'lens_opacity' => array(
+       'title' => t('Lens opacity'),
+       'id' =>'lensOpacity',
+       'description' => t('Opacity of the lens mouse pointer, where 0 is fully transparent,</br> and 1 is fully opaque. In tint and soft-focus modes, it will always be transparent.'),
+       'default_value' => 0.5,
+       'form_type' => 'textfield',
+       'fieldset' => 'zoom_style_fieldset',
+       'add_quote' => TRUE,
+     ),
+     'soft_focus' => array(
+       'title' => t('Soft focus'),
+       'id' =>'softFocus' ,
+       'description' => t('Applies a subtle blur effect to the small image.</br> Set to true or false. Does not work with tint.'),
+       'default_value' => FALSE,
+       'form_type' => 'checkbox',
+       'fieldset' => 'zoom_style_fieldset',
+     ),
+     'smooth_move' => array(
+       'title' => t('Smooth move'),
+       'id' =>'smoothMove',
+       'description' => t('Amount of smoothness/drift of the zoom image as it moves.</br> The higher the number, the smoother/more drifty the movement will be. 1 = no smoothing.'),
+       'default_value' => 3,
+       'form_type' => 'textfield',
+       'fieldset' => 'zoom_style_fieldset',
+       'add_quote' => TRUE,
+     ),
+     'Show title' => array(
+       'title' => t('Show title'),
+       'id' =>'showTitle' ,
+       'description' => t('Shows the title tag of the image. True or false.'),
+       'default_value' => TRUE,
+       'form_type' => 'checkbox',
+       'fieldset' => 'zoom_style_fieldset',
+     ),
+     'title_opacity' => array(
+       'title' => t('Title opacity'),
+       'id' =>'titleOpacity',
+       'description' => t('Specifies the opacity of the title if displayed,</br> where 0 is fully transparent, and 1 is fully opaque.'),
+       'default_value' => 0.5,
+       'form_type' => 'textfield',
+       'fieldset' => 'zoom_style_fieldset',
+       'add_quote' => TRUE,
+     ),
+   );
+
+  return $settings;
+}
+
+
+
+/**
+ * Implements hook_field_formatter()
+ */
+function cloud_zoom_field_formatter_info() {
+  $formatters = array();
+
+  $cloud_zoom_settings = cloud_zoom_settings_info('default_value');
+  $default_settings = array();
+  // Return a single depth array with the given key as value.
+  foreach ($cloud_zoom_settings as $key => $setting) {
+    if (isset($setting['fieldset'])) {
+      $default_settings[$setting['fieldset']][$key] = $setting['default_value'];
+    }
+    else {
+      $default_settings[$key] = $setting['default_value'];
+    }
+  }
+
+  $formatters['cloud_zoom'] = array(
+    'label' => t('Cloud zoom'),
+    'field types' => array('image'),
+    'settings' => $default_settings,
+  );
+
+  return $formatters;
+}
+
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function cloud_zoom_field_formatter_settings_form($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $form = array();
+
+  // Get a list of all style names for our form options.
+  $options = array(t('None (original image)'),);
+  foreach (image_styles() as $id => $style) {
+     $options[$id] = $id;
+  }
+
+  $cloud_zoom_settings = cloud_zoom_settings_info();
+
+  foreach ($cloud_zoom_settings as $key => $form_element) {
+    if ($form_element['form_type'] == 'fieldset') {
+      $form[$key] = array(
+        '#type' => $form_element['form_type'],
+        '#title' => $form_element['title'],
+        '#description' => $form_element['description'],
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+      );
+    }
+    else {
+      $default_value = empty($form_element['fieldset']) ? $settings[$key] : $settings[$form_element['fieldset']][$key];
+      $form_settings = array(
+        '#type' => $form_element['form_type'],
+        '#title' => $form_element['title'],
+        '#default_value' => $default_value,
+        '#description' => $form_element['description'],
+      );
+      // Get the right option for select list.
+      if ($form_element['form_type'] == 'select') {
+        if (isset($form_element['options'])) {
+           $form_settings['#options'] = $form_element['options'];
+        }
+        else {
+           $form_settings['#options'] =  $options;
+        }
+      }
+      // Add element to fieldset or to main form.
+      if (!empty($form_element['fieldset'])) {
+        $form[$form_element['fieldset']][$key] = $form_settings;
+      }
+      else {
+        $form[$key] = $form_settings;
+      }
+    }
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function cloud_zoom_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $cloud_zoom_settings = cloud_zoom_settings_info();
+  $summary = array();
+  foreach ($cloud_zoom_settings as $key => $info) {
+    $summary_info = !empty($info['fieldset']) ? $settings[$info['fieldset']][$key] : $settings[$key];
+    $summary_info = $info['form_type'] == 'fieldset' ? '' : $summary_info;
+    $title = ($info['form_type'] == 'fieldset') ?  '<strong>' . $info['title'] . '</strong>' : $info['title'] . ' : ';
+    $summary[] = $title .  $summary_info;
+  }
+
+  return implode ('<br />', $summary);
+}
+
+
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function cloud_zoom_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $settings = $display['settings'];
+
+  $cloud_zoom_settings = cloud_zoom_settings_info();
+  $variables = array();
+  foreach ($cloud_zoom_settings as $key => $info) {
+    $variables['#' . $key] = !empty($info['fieldset']) ? $settings[$info['fieldset']][$key] : $settings[$key];
+  }
+
+  if (!$settings['gallery_filedset']['gallery_mode']) {
+    // Build elements for each item.
+    foreach ($items as $delta => $item) {
+      $element[$delta] = array(
+        '#theme' => 'cloud_zoom_image',
+        '#item' => $item,
+      );
+      $element[$delta] += $variables;
+    }
+  }
+  // Gallery mode.
+  else {
+    $element = array(
+      '#theme' => 'cloud_zoom_image_gallery',
+      '#items' => $items,
+    );
+
+    $element += $variables;
+  }
+
+  return $element;
+}
+
+
+/**
+ * Implementation of hook_theme().
+ */
+function cloud_zoom_theme() {
+  $theme_info = array(
+    'cloud_zoom_image' => array(
+      'variables' => array(
+        'item' => NULL,
+      ),
+    ),
+    'cloud_zoom_image_gallery' => array(
+      'variables' => array(
+        'items' => 0,
+      ),
+    ),
+  );
+
+  // Pass default settings values.
+  $cloud_zoom_settings = cloud_zoom_settings_info('default_value');
+  $theme_info['cloud_zoom_image']['variables'] +=  $cloud_zoom_settings;
+  $theme_info['cloud_zoom_image_gallery']['variables'] +=  $cloud_zoom_settings;
+
+  return $theme_info;
+}
+
+
+/**
+ * Build rel string.
+ *
+ * This is used to prepare the HTML Cloud zoom is expecting.
+ */
+function cloud_zoom_get_rel_string($variables) {
+  $output = array();
+  $cloud_zoom_settings = cloud_zoom_settings_info();
+  foreach ($cloud_zoom_settings as $key => $setting) {
+    if ($setting['id']) {
+      $value = $setting['form_type'] == 'checkbox' ? ($variables[$key] ? 'true' : 'false') :  (!empty($setting['add_quote']) ? '\'' : '') . $variables[$key] .  (!empty($setting['add_quote']) ? '\'' : '');
+      $output[] = $setting['id'] . ':' . $value;
+    }
+  }
+  $output = implode(', ', $output);
+  return $output;
+}
+
+
+/**
+ * Get rendered img tag.
+ */
+function cloud_zoom_get_img_tag($style_name, $item) {
+  $image = array(
+    'path' => $item['uri'],
+    'alt' => $item['alt'],
+    'style_name' => $style_name,
+  );
+
+  // Do not output an empty 'title' attribute.
+  if (!empty($item['title'])) {
+    $image['title'] = $item['title'];
+  }
+
+  return !empty($style_name) ? theme('image_style', $image) : theme('image', $image);
+}
+
+
+/**
+ * Theme handler for the cloud_zoom (no gallery)
+ */
+function theme_cloud_zoom_image($variables) {
+  // Add the Cloud Zoom Library
+  drupal_add_library('cloud_zoom', 'cloud-zoom');
+
+  $item = $variables['item'];
+
+  $slide = cloud_zoom_get_img_tag($variables['slide_style'], $item);
+
+  // Build a Zoomed In URL path
+  $zoomed = $variables['zoom_style'] ? image_style_url($variables['zoom_style'], $item['uri']) : file_create_url($item['uri']);
+  $rel = cloud_zoom_get_rel_string($variables);
+
+
+  // Return the preview image as a link to the larger image with a cloud-zoom CSS class
+  return l($slide, $zoomed, array('html' => TRUE, 'attributes' => array('class' => 'cloud-zoom', 'rel' => $rel)));
+}
+
+
+/**
+ * Theme handler for the cloud_zoom effect with gallery
+ */
+function theme_cloud_zoom_image_gallery($variables) {
+  // Add the Cloud Zoom Library
+  drupal_add_library('cloud_zoom', 'cloud-zoom');
+
+  $items = $variables['items'];
+
+  // Create the gallery thumb syntax of cloud zoom.
+  $gallery_item = '<div class="cloud-zoom-gallery-thumbs">';
+  $options_rel = cloud_zoom_get_rel_string($variables);
+  $main_item = '';
+
+  $id = drupal_html_id('cloud-zoom');
+
+  foreach ($items as $delta => $item) {
+    // Build images.
+    $zoomed = $variables['zoom_style'] ? image_style_url($variables['zoom_style'], $item['uri']) : file_create_url($item['uri']);
+    $slide = cloud_zoom_get_img_tag($variables['slide_style'], $item);
+    $thumb = cloud_zoom_get_img_tag($variables['thumb_style'], $item);
+
+    $slide_url = $variables['slide_style'] ? image_style_url($variables['slide_style'], $item['uri']) : $item['uri'];
+
+    if ($delta == 0) {
+      // This is the large image.
+      $options = array(
+        'html' => TRUE,
+        'attributes' => array(
+          'class' => 'cloud-zoom',
+          'id' => $id,
+          'rel' =>  $options_rel ,
+        ),
+      );
+      $main_item = l($slide, $zoomed, $options);
+    }
+
+    // These are the thumbnail.
+    $options = array(
+      'html' => TRUE,
+      'attributes' => array(
+        'class' => 'cloud-zoom-gallery',
+        'rel' =>'useZoom: \'' . $id . '\',smallImage: \'' . $slide_url . '\'',
+      ),
+    );
+    $gallery_item .= l($thumb, $zoomed, $options);
+  }
+  $gallery_item .= '</div>';
+
+  // Return the preview image as a link to the larger image with a cloud-zoom
+  // CSS class.
+  return '<div class="cloud-zoom-container">' . $main_item . $gallery_item . '</div>';
+}

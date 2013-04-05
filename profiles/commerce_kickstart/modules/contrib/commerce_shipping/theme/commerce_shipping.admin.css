@@ -1,0 +1,16 @@
+/**
+ * Admin styles for Commerce Shipping.
+ */
+
+.commerce-shipping-rate {
+  margin-bottom: 2em;
+}
+
+.commerce-shipping-rate .form-item {
+  display: inline;
+  margin-right: 1em;
+}
+
+.links.operations {
+  text-transform: lowercase;
+}

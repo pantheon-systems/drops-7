@@ -1,0 +1,6 @@
+name = Commerce Kickstart Payment Example
+description = Provides an example payment method for Commerce Kickstart.
+package = Commerce Kickstart
+dependencies[] = commerce
+dependencies[] = commerce_payment
+core = 7.x

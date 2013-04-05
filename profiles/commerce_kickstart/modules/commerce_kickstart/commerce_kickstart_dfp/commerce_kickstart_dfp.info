@@ -1,0 +1,4 @@
+name = Commerce Kickstart DFP
+description = Provides in-distribution content for Commerce Kickstart.
+core = 7.x
+package = Commerce Kickstart

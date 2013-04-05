@@ -1,0 +1,146 @@
+/* Include Default Variables & Mixins */
+@import "variables.scss";
+@import "mixins.scss";
+/* End Variables & Mixins */
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.1. Zone user
+**********************************************/
+/*******************************************
+* 2.1.1. Region user first
+*******************************************/
+.block-menu-user-menu .block-inner {
+  float: right;
+  margin-right: 10px;
+}
+
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/*******************************************
+* 3.2.1. Sidebar first
+*******************************************/
+/* Price range */
+#search-api-ranges-block-slider-view-form {
+  .range-box-left {
+    #edit-range-from {
+      text-align: left; /* RTL */
+    }
+  }
+}
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+#block-views-demo-content-slideshow-block-1 {
+  /* HP blocks: Slideshow */
+  .bx-prev {
+    margin-right: 0;/* RTL */
+    margin-left: auto;
+    float: right !important;
+    right: 0;  /* RTL */
+    left: auto !important;
+  }
+  .bx-next {
+    margin-right: auto;
+    margin-left: 0;/* RTL */
+    float: left !important;
+    right: auto !important;
+    left: 0; /* RTL */
+  }
+}
+/**********************************************
+* 3.3. Zone postscript
+**********************************************/
+#zone-postscript {
+  .view-ad-push .views-row .views-field-field-tagline .field-content,
+  .block-blog-block .views-field-title .field-content {
+    font-size: 18px;
+    line-height: 26px;
+  }
+}
+/**************************************************
+* --
+* 4. Section footer
+* --
+**************************************************/
+/**********************************************
+* 4.1. Zone footer
+**********************************************/
+/**
+* Connect with us
+*/
+#block-menu-menu-social-connection h2 {
+  line-height: inherit;
+  padding: 0 25px 22px 0;
+}
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+.view-collection-products .view-header,
+.view-collection-taxonomy-term .view-header {
+  .taxonomy-title {
+    font-size: 3em;
+  }
+  .collection-terms .view-content .item-list {
+    display: block;
+    float: none;
+  }
+}
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+div.messages.commerce-add-to-cart-confirmation {
+  .message-inner {
+    .added-product-title {
+      float: right;
+
+    }
+
+    .view-confirm-message-product-display {
+      //float: right; /* LTR */
+      .view-content {
+        margin-left: 0px;
+        margin-right: 130px;
+
+        .views-field-commerce-product .content {
+          .field-name-field-images {
+            left: auto;
+            right: -115px;
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Cloud zoom */
+.node-product-type {
+  .cloud-zoom-container {
+    .cloud-zoom-gallery-thumbs {
+      float: none !important;
+    }
+  }
+
+  .field-name-field-product {
+    form.commerce-add-to-cart label {
+      float: right;
+    }
+  }
+}

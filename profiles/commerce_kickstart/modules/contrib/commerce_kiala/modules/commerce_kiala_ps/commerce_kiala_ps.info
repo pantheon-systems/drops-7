@@ -1,0 +1,29 @@
+name = Kiala Pack & Ship Integration
+description = Integrates Kiala Pack & Ship with Commerce Kiala.
+package = Commerce (shipping)
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = rules
+dependencies[] = commerce
+dependencies[] = commerce_order
+dependencies[] = commerce_kiala
+dependencies[] = commerce_physical
+
+; Kiala includes
+files[] = includes/kiala/commerce_kiala_ps.ws.inc
+
+; Entity includes
+files[] = includes/commerce_kiala_ps_ws_log.entity.inc
+files[] = includes/commerce_kiala_ps_ws_log.controller.inc
+files[] = includes/commerce_kiala_ps_ws_log.metadatacontroller.inc
+
+; Views handlers
+files[] = includes/views/handlers/commerce_kiala_ps_handler_field_ws_log_operations.inc
+
+; Information added by drupal.org packaging script on 2013-03-11
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "commerce_kiala"
+datestamp = "1363011015"
+

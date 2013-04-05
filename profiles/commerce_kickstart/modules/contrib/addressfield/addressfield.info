@@ -1,0 +1,15 @@
+name = Address Field
+description = Manage a flexible address field, implementing the xNAL standard.
+core = 7.x
+package = Fields
+
+dependencies[] = ctools
+
+files[] = views/addressfield_views_handler_filter_country.inc
+
+; Information added by drupal.org packaging script on 2012-05-29
+version = "7.x-1.0-beta3"
+core = "7.x"
+project = "addressfield"
+datestamp = "1338304248"
+

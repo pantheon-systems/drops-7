@@ -1,0 +1,18 @@
+This module provides:
+- A formatter for reference fields
+- A views field for reference fields (called "Field extracted from entity referenced through $field")
+
+The formatter / views field determines the entity type of the entities being referenced,
+and allows you to select a field available on that entity type, as well as the formatter
+to be used for displaying that field.
+Then, during display, the values of that field are taken from all referenced entities,
+passed to the selected formatter, and displayed.
+
+This means that if a node references three products:
+- Product A (20$, Color: Red, Size: Small)
+- Product B (30$, Color: Green, Size: Medium)
+- Product C (40%, Color: Blue, Size: Large)
+Showing the product reference field with the "Field Extractor" formatter
+will output all the prices available (or all colors, or all sizes, etc).
+
+The supported reference fields are: commerce_product_reference, entityreference, taxonomy_term_reference.

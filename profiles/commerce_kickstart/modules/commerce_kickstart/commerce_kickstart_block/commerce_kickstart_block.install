@@ -1,0 +1,127 @@
+<?php
+/**
+ * @file
+ * Performs some additional configuration when installing/enabling the module.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_kickstart_block_enable() {
+  // Rebuild the features static caches.
+  features_include(TRUE);
+
+  $module = 'commerce_kickstart_block';
+  $feature = feature_load($module);
+  $items[$module] = array_keys($feature->info['features']);
+  _features_restore('enable', $items);
+  _features_restore('rebuild', $items);
+
+  // For some unknown reason, we need to manually trigger the rebuild of the
+  // menu links, in features otherwise they won't appear.
+  // @todo Investigate.
+  features_revert(array($module => array('menu_links')));
+
+  $default_theme = variable_get('theme_default', 'omega_kickstart');
+  // Make sure that the region list is populated for our theme.
+  drupal_static_reset();
+  _block_rehash($default_theme);
+
+  $admin_theme = variable_get('admin_theme', 'commerce_kickstart_admin');
+  _block_rehash($admin_theme);
+
+  // Footer navigation.
+  db_update('block')
+    ->fields(array(
+      'region' => 'footer_first',
+      'status' => (int) '1',
+      'title' => '<none>',
+    ))
+    ->condition('module', 'menu')
+    ->condition('delta', 'menu-footer-navigation')
+    ->condition('theme', $default_theme)
+    ->execute();
+  // Payment-methods menu block.
+  $fields = array(
+    'region' => 'footer2_second',
+    'status' => 1,
+    'visibility' => 0,
+    'pages' => '',
+  );
+  db_update('block')
+    ->fields($fields)
+    ->condition('module', 'menu')
+    ->condition('delta', 'menu-payment-methods')
+    ->condition('theme', $default_theme)
+    ->execute();
+  if (variable_get('commerce_kickstart_demo_store', FALSE)) {
+    // Promotional banner block.
+    db_update('block')
+      ->fields(array(
+        'region' => 'content',
+        'status' => '1',
+        'visibility' => '1',
+        'pages' => 'node',
+        'weight' => -9,
+      ))
+      ->condition('module', 'commerce_kickstart_block')
+      ->condition('delta', 'promotional_banner')
+      ->condition('theme', $default_theme)
+      ->execute();
+    // Shipping discount block.
+    db_update('block')
+      ->fields(array(
+        'region' => 'content',
+        'status' => '1',
+        'visibility' => '1',
+        'pages' => 'node',
+        'weight' => 1,
+      ))
+      ->condition('module', 'commerce_kickstart_block')
+      ->condition('delta', 'shipping_discount')
+      ->condition('theme', $default_theme)
+      ->execute();
+  }
+
+  // Powered by Drupal Commerce block.
+  db_update('block')
+    ->fields(array(
+      'region' => 'footer2_first',
+      'status' => '1',
+      'visibility' => '0',
+      'pages' => '',
+      'weight' => -30,
+    ))
+    ->condition('module', 'commerce_kickstart_block')
+    ->condition('delta', 'powered_drupal_commerce')
+    ->condition('theme', $default_theme)
+    ->execute();
+
+  // Powered by Drupal Commerce block for admin.
+  db_update('block')
+    ->fields(array(
+      'region' => 'footer',
+      'status' => '1',
+      'visibility' => '0',
+      'pages' => '',
+      'weight' => -30,
+    ))
+    ->condition('module', 'commerce_kickstart_block')
+    ->condition('delta', 'powered_drupal_commerce')
+    ->condition('theme', $admin_theme)
+    ->execute();
+
+  // Proudly built by CG block.
+  db_update('block')
+    ->fields(array(
+      'region' => 'footer',
+      'status' => '1',
+      'visibility' => '0',
+      'pages' => '',
+      'weight' => -31,
+    ))
+    ->condition('module', 'commerce_kickstart_block')
+    ->condition('delta', 'proudly_built_by_cg')
+    ->condition('theme', $admin_theme)
+    ->execute();
+}

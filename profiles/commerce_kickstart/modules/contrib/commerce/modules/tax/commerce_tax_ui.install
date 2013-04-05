@@ -1,0 +1,206 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function commerce_tax_ui_install() {
+  // Create the basic sales tax type.
+  $tax_type = commerce_tax_ui_tax_type_new();
+
+  $tax_type['name'] = 'sales_tax';
+  $tax_type['title'] = t('Sales tax');
+  $tax_type['display_title'] = t('Sales tax');
+  $tax_type['description'] = t('A basic type for taxes that do not display inclusive with product prices.');
+
+  commerce_tax_ui_tax_type_save($tax_type);
+
+  // Create the basic VAT type.
+  $tax_type = commerce_tax_ui_tax_type_new();
+
+  $tax_type['name'] = 'vat';
+  $tax_type['title'] = t('VAT');
+  $tax_type['display_title'] = t('VAT');
+  $tax_type['description'] = t('A basic type for taxes that display inclusive with product prices.');
+  $tax_type['display_inclusive'] = TRUE;
+  $tax_type['round_mode'] = COMMERCE_ROUND_HALF_UP;
+
+  commerce_tax_ui_tax_type_save($tax_type);
+}
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_tax_ui_schema() {
+  $schema = array();
+
+  $schema['commerce_tax_type'] = array(
+    'description' => 'Stores information about tax types created via Tax UI.',
+    'fields' => array(
+      'name' => array(
+        'description' => 'The machine-name of this type.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'title' => array(
+        'description' => 'The administrative title of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'display_title' => array(
+        'description' => 'The front end display title of this type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'A brief description of this type.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+      ),
+      'display_inclusive' => array(
+        'description' => 'Boolean indicating whether or not taxes of this type display inclusively in product prices.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'round_mode' => array(
+        'description' => 'Integer indicating what type of rounding (if any) should be done for taxes of this type.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'module' => array(
+        'description' => 'The name of the module that defines this tax type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('name'),
+  );
+
+  $schema['commerce_tax_rate'] = array(
+    'description' => 'Stores information about tax rates created via Tax UI.',
+    'fields' => array(
+      'name' => array(
+        'description' => 'The machine-name of this rate.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'title' => array(
+        'description' => 'The administrative title of this rate.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'display_title' => array(
+        'description' => 'The front end display title of this rate.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'A brief description of this rate.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+      ),
+      'rate' => array(
+        'description' => 'The percentage used to calculate this tax expressed as a decimal.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '0',
+      ),
+      'type' => array(
+        'description' => "The machine-name of the rate's {commerce_tax_type}.",
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'default_rules_component' => array(
+        'description' => 'Boolean indicating whether or not this rate should have a default Rules component for applying it to products.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'module' => array(
+        'description' => 'The name of the module that defines this tax type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('name'),
+    'indexes' => array(
+      'type' => array('type'),
+    ),
+    'foreign keys' => array(
+      'tax_type' => array(
+        'table' => 'commerce_tax_type',
+        'columns' => array('type' => 'name'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Add a rounding mode column to the tax type table.
+ */
+function commerce_tax_ui_update_7000() {
+  // Define and add the new database column.
+  $spec = array(
+    'description' => 'Integer indicating what type of rounding (if any) should be done for taxes of this type.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+
+  db_add_field('commerce_tax_type', 'round_mode', $spec);
+
+  // Update the default VAT tax type to round the half up.
+  db_update('commerce_tax_type')
+    ->fields(array('round_mode' => COMMERCE_ROUND_HALF_UP))
+    ->condition('name', 'vat')
+    ->execute();
+
+  return t('A new rounding mode option has been added to tax types, letting you specify how taxes of a given type should be rounded.');
+}
+
+/**
+ * Change the name of the property indicating the Tax module should create a
+ * default Rules component for tax rates.
+ */
+function commerce_tax_ui_update_7001() {
+  $spec = array(
+    'description' => 'Boolean indicating whether or not this rate should have a default Rules component for applying it to products.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  );
+
+  // Change the rules_component column to default_rules_component.
+  db_change_field('commerce_tax_rate', 'rules_component', 'default_rules_component', $spec);
+
+  return t('The tax rate table has been updated properly.');
+}

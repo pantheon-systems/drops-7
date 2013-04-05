@@ -1,0 +1,116 @@
+
+.commerce-backoffice-view .vbo-views-form .views-field-operations-dropbutton .quick-edit {
+  padding-right: 10px;
+  position: relative;
+}
+.commerce-backoffice-view .vbo-views-form .views-field-operations-dropbutton .quick-edit .ajax-progress-throbber {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.commerce-backoffice-view .vbo-views-form .views-table {
+  margin-top: 0;
+}
+/* Filter Styles */
+.commerce-backoffice-view .views-exposed-form {
+  border-bottom: 1px solid #E2E2DC;
+  position: relative;
+}
+.commerce-backoffice-view .views-exposed-form .views-exposed-widget {
+  width: auto;
+}
+.commerce-backoffice-view .views-exposed-form label,
+.commerce-backoffice-view .views-exposed-form #edit-date-filter-min-wrapper,
+.commerce-backoffice-view .views-exposed-form #edit-date-filter-max-wrapper {
+  float: left;
+  margin-right: 10px;
+}
+.commerce-backoffice-view .views-exposed-form .views-exposed-widgets {
+  margin-bottom: 1em;
+}
+.commerce-backoffice-view .views-exposed-form .views-widget,
+.commerce-backoffice-view .views-exposed-form .date-padding {
+  float: left;
+  max-width: 210px;
+}
+.commerce-backoffice-view .views-exposed-form #edit-date-filter-wrapper .views-widget {
+  max-width: 624px;
+}
+.commerce-backoffice-view .views-exposed-form .date-padding .form-item input {
+  background: white url("images/calendar.png") no-repeat 95% center;
+}
+.commerce-backoffice-view .views-exposed-form .views-widget select {
+  max-height: 60px;
+}
+.commerce-backoffice-view .views-exposed-form .form-item,
+.commerce-backoffice-view .views-exposed-form .form-submit {
+  margin: 0;
+  padding: 0;
+}
+/* Filter Search Field */
+.commerce-backoffice-view .views-exposed-form .views-widget-filter-combine {
+  padding: 1em 0;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 1;
+}
+.commerce-backoffice-view .views-exposed-form .views-widget-filter-combine input {
+  background: white url("images/search.png") no-repeat right center;
+  padding: 7px 20px 7px 5px;
+}
+/* Hide Placeholder Text on Focus */
+.commerce-backoffice-view .views-exposed-form .views-widget-filter-combine input:focus::-webkit-input-placeholder {
+  color: transparent;
+  font: 0/0 none;
+}
+/* Action Links */
+.commerce-backoffice-view ul.action-links {
+  margin: .8em 0;
+}
+/* Table Styles */
+.commerce-backoffice-view .views-field-views-bulk-operations {
+  width: 20px;
+}
+/* VBO Apply Form */
+.commerce-backoffice-view .vbo-views-form #edit-select {
+  background: transparent url("images/vbo-arrow.png") no-repeat 12px 1px;
+  border: 0;
+  padding: 0 0 0 28px;
+}
+.commerce-backoffice-view .vbo-views-form select {
+  float: left;
+  height: 25px;
+  margin: 2px 10px 2px 0;
+}
+.commerce-backoffice-view .vbo-views-form input.form-submit {
+  position: relative;
+}
+.commerce-backoffice-view .vbo-views-form #edit-select select {
+  height: 25px;
+}
+/* Mega Row Styles */
+.commerce-backoffice-view div.views-megarow-content {
+  border-bottom: 11px solid #CCC;
+}
+.commerce-backoffice-view div.views-megarow-content {
+  padding-top: 0;
+}
+.commerce-backoffice-view div.views-megarow-content .container-inline .form-item {
+  float: left;
+}
+.commerce-backoffice-view div.views-megarow-content .megarow-header {
+  background: transparent url("images/mega-arrow.png") no-repeat 50px -1px;
+  margin-top: -1px;
+  position: relative;
+}
+/* Adjustments for when using Chosen Module */
+.commerce-backoffice-view .chzn-container-single .chzn-single {
+  height: 27px;
+}
+.commerce-backoffice-view .chzn-container-single .chzn-single span {
+  margin-top: 1px;
+}
+.commerce-backoffice-view .chzn-container-single .chzn-single div b {
+  background-position: 0 2px;
+}

@@ -1,0 +1,376 @@
+<?php
+
+/**
+ * Implements hook_help().
+ */
+function search_api_sorts_help($path, array $arg) {
+  if ($path == 'admin/config/search/search_api/index/%/sorts') {
+    return t('Select the indexed fields for which you want to enable sorting. ' . 'Before the sort blocks is actually displayed, you will have to enable and configure it at the <a href="!url">block administration page</a>.', array('!url' => url('admin/structure/block')));
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function search_api_sorts_menu() {
+  $items['admin/config/search/search_api/index/%search_api_index/sorts'] = array(
+    'title' => 'Sorts',
+    'description' => 'Select the sort fields to display.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array(
+      'search_api_sorts_index_select',
+      5
+    ),
+    'access arguments' => array('administer search_api'),
+    'weight' => -1,
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE | MENU_CONTEXT_PAGE,
+    'file' => 'search_api_sorts.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function search_api_sorts_theme() {
+  $themes['search_api_sorts_form_table'] = array(
+    'render element' => 'element',
+    'file' => 'search_api_sorts.admin.inc',
+  );
+  $themes['search_api_sorts_list'] = array(
+    'variables' => array(
+      'items' => array(),
+      'options' => array(),
+    ),
+    'file' => 'search_api_sorts.theme.inc',
+  );
+  $themes['search_api_sorts_sort'] = array(
+    'variables' => array(
+      'name' => '',
+      'path' => NULL,
+      'options' => array(),
+      'order_options' => array(),
+      'active' => FALSE,
+      'default_sort' => FALSE,
+    ),
+    'file' => 'search_api_sorts.theme.inc',
+  );
+
+  return $themes;
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function search_api_sorts_entity_info() {
+  $info['search_api_sort'] = array(
+    'label' => t('Search sort'),
+    'controller class' => 'EntityAPIControllerExportable',
+    'entity class' => 'SearchApiSort',
+    'base table' => 'search_api_sort',
+    'uri callback' => 'search_api_sort_url',
+    'label callback' => 'search_api_sort_label',
+    'module' => 'search_api_sorts',
+    'exportable' => TRUE,
+    'entity keys' => array(
+      'id' => 'id',
+      'name' => 'identifier',
+      'label' => 'name',
+    ),
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function search_api_sorts_permission() {
+  return array('use search_api_sorts' => array('title' => t('Use search sorts'), ), );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function search_api_sorts_block_info() {
+  $blocks = array('search-sorts' => array(
+      'info' => t('Search sorts'),
+      'cache' => DRUPAL_NO_CACHE,
+      'weight' => 4,
+    ), );
+  return $blocks;
+}
+
+/**
+ * Implements hook_ctools_block_info().
+ *
+ * @see http://drupal.org/node/1763954
+ */
+function search_api_sorts_ctools_block_info($module, $delta, &$info) {
+  // Give the Search API Sorts block it's own category.
+  $info['category'] = t('Search API Sorts');
+  // Allow blocks to be used before the search results in Panels.
+  $info['render last'] = TRUE;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function search_api_sorts_block_view($delta = '') {
+  if (!user_access('use search_api_sorts')) {
+    return;
+  }
+  if ($delta == 'search-sorts') {
+    return search_api_sorts_block_search_sorts_view();
+  }
+}
+
+/**
+ * Get a list of sorts field names for the current search index id
+ *
+ * @return a cached query object
+ */
+function search_api_sorts_search_sorts($index_id, $enabled = 1, $reset = FALSE) {
+  $cache = &drupal_static(__FUNCTION__, array());
+  if (!isset($cache[$index_id . '_' . $enabled]) || $reset) {
+    $query = db_select('search_api_sort', 's')->fields('s', array(
+      'field',
+      'name',
+      'default_sort',
+      'default_sort_no_terms',
+      'default_order',
+      'weight'
+    ))->condition('index_id', $index_id)->condition('enabled', $enabled)->orderby('weight', 'ASC')->execute();
+
+    $data = array();
+    while ($row = $query->fetch()) {
+      $data[] = $row;
+    }
+
+    $cache[$index_id . '_' . $enabled] = $data;
+  }
+  return $cache[$index_id . '_' . $enabled];
+}
+
+/**
+ * View the "Search sorts" block.
+ */
+function search_api_sorts_block_search_sorts_view() {
+  $query = drupal_static('search_api_sorts_search_api_query_alter', array());
+  if (!$query) {
+    return;
+  }
+
+  $search_sorts = search_api_sorts_search_sorts($query->getIndex()->machine_name);
+  if (empty($search_sorts)) {
+    return;
+  }
+
+  $item = menu_get_item();
+  $path = $item['href'];
+  $current_sort = $query->getSort();
+  
+  $params = drupal_get_query_parameters($_GET, array(
+    'q',
+    'page'
+  ));
+
+  //Override the path if facetapi_pretty_paths is enabled
+  if (module_exists('facetapi_pretty_paths')) {
+    // Get the facet api adapter by the machine readable name of searcher.
+    $adapter = facetapi_adapter_load('search_api@' . $query->getIndex()->machine_name);
+    // Get the url processor and check if it uses pretty paths.
+    $urlProcessor = $adapter->getUrlProcessor();
+    if ($urlProcessor instanceof FacetapiUrlProcessorPrettyPaths) {
+      // Retrieve the full path from the url processor.
+      $path = $urlProcessor->getFullPath();
+    }
+  }
+
+  if (isset($params['search_api_views_fulltext'])) {
+    $default_sort = _search_api_sorts_get_default_sort($search_sorts, $params['search_api_views_fulltext']);
+  }
+  else {
+    $default_sort = _search_api_sorts_get_default_sort($search_sorts);
+  }
+
+  $tmp = array_keys($query->getSort());
+  if (!$sort = strtolower(reset($tmp))) {
+    $sort = $default_sort->field;
+  }
+
+  $tmp = reset($query->getSort());
+  if (!$order = strtolower($tmp)) {
+    $order = $default_sort->default_order;
+  }
+
+  $items = array();
+  foreach ($search_sorts as $key => $data) {
+    $options = array(
+      'query' => array(
+        'sort' => $data->field,
+        'order' => $data->default_order,
+      ) + $params,
+      'attributes' => array('class' => array('sort-item'), ),
+    );
+
+    // active sort field logic
+    if ($sort == $data->field) {
+
+      // add some extra classes
+      $options['attributes']['class'] += array(
+        'active',
+        'sort-' . $order
+      );
+
+      // create a copy of the options, for use in the order-link
+      $order_options = $options;
+
+      // with sort order flipped
+      $order_options['query']['order'] = ($order == 'asc') ? 'desc' : 'asc';
+
+      // remove sort and order for the link, because clicking on the
+      // active should remove the sort.
+      unset($options['query']['sort']);
+      unset($options['query']['order']);
+
+      $items[] = array(
+        '#theme' => 'search_api_sorts_sort',
+        '#name' => t($data->name),
+        '#path' => $path,
+        '#options' => $options,
+        '#order_options' => $order_options,
+        '#active' => TRUE,
+        '#default_sort' => $default_sort->field,
+      );
+    }
+    else {
+
+      // regular sort field logic
+      $items[] = array(
+        '#theme' => 'search_api_sorts_sort',
+        '#name' => t($data->name),
+        '#path' => $path,
+        '#options' => $options,
+        '#active' => FALSE,
+        '#default_sort' => $default_sort->field,
+      );
+    }
+  }
+
+  return array(
+    'subject' => t('Sort by'),
+    'content' => array(
+      '#theme' => 'search_api_sorts_list',
+      '#items' => $items,
+      '#options' => array('attributes' => array('class' => array('search-api-sorts')))
+    ),
+  );
+}
+
+/**
+ * entity_label callback.
+ */
+function search_api_sort_label($sort) {
+  static $indices = NULL;
+  if (empty($indices)) {
+    $indices = search_api_index_load_multiple(FALSE);
+  }
+  return $indices[$sort->index_id]->name . ' - ' . $sort->name;
+}
+
+/**
+ * Load multiple sorts at once, determined by IDs or deltas, or by other
+ * conditions.
+ *
+ * @see entity_load()
+ *
+ * @param $ids
+ *   An array of sort IDs or machine names.
+ * @param $conditions
+ *   An array of conditions on the {search_api_sort} table in the form
+ *   'field' => $value.
+ * @param $reset
+ *   Whether to reset the internal entity_load cache.
+ *
+ * @return array
+ *   An array of SearchApiSort objects keyed by machine name.
+ */
+function search_api_sorts_load_multiple($ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('search_api_sort', $ids, $conditions, $reset);
+}
+
+/**
+ * Implements hook_search_api_query_alter().
+ */
+function search_api_sorts_search_api_query_alter(SearchApiQueryInterface $query) {
+  if (!user_access('use search_api_sorts')) {
+    return;
+  }
+
+  // Static save current search query
+  $_query = &drupal_static(__FUNCTION__, array());
+  $_query = $query;
+
+  // There's already an existing sort, so abort!
+  $existing = $query->getSort();
+  if (!empty($existing)) {
+    return;
+  }
+
+  $search_sorts = search_api_sorts_search_sorts($query->getIndex()->machine_name);
+  if (empty($search_sorts)) {
+    return;
+  }
+  $default_sort = _search_api_sorts_get_default_sort($search_sorts, $query->getKeys());
+
+  // alter sort field and sort order
+  $sort = $default_sort->field;
+  $params = drupal_get_query_parameters($_GET, array(
+    'q',
+    'page'
+  ));
+  if (isset($params['sort']) && !empty($params['sort'])) {
+    $sort = $params['sort'];
+  }
+
+  $order = $default_sort->default_order;
+  if (isset($params['order']) && !empty($params['order'])) {
+    $order = $params['order'];
+  }
+
+  if (!empty($order) && !empty($sort)) {
+    $query->sort($sort, $order);
+  }
+}
+
+/*
+ * Helper function to get the default sort field
+ */
+function _search_api_sorts_get_default_sort($search_sorts, $keys = NULL) {
+  // If there are no keys set, return the default for no keys if set
+  if (empty($keys)) {
+    foreach ($search_sorts as $sort) {
+      if ($sort->default_sort_no_terms) {
+        $sort->active = TRUE;
+        return $sort;
+      }
+    }
+  }
+  // Return the default if set
+  foreach ($search_sorts as $sort) {
+    if ($sort->default_sort) {
+      $sort->active = TRUE;
+      return $sort;
+    }
+  }
+  // Return relevance if no defaults are set
+  return (object) array(
+    'field' => 'search_api_relevance',
+    'name' => t('Relevence'),
+    'default_order' => 'desc',
+    'active' => TRUE,
+  );
+}

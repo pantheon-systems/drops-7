@@ -1,0 +1,122 @@
+<?php
+
+/**
+ * Implements hook_views_bulk_operations_form_alter().
+ *
+ * Tweaks the appearance of the VBO selector.
+ */
+function commerce_backoffice_views_bulk_operations_form_alter(&$form, &$form_state, $vbo) {
+  if ($form_state['step'] == 'views_form_views_form' && strpos($vbo->view->name, 'commerce_backoffice_') !== FALSE) {
+    $form['select']['#title'] = '';
+    $form['select']['#collapsible'] = FALSE;
+    $form['select']['submit']['#value'] = t('Apply');
+    $form['select']['operation']['#options'][0] = t('Bulk operations');
+    $form['select']['#weight'] = 99999;
+  }
+}
+
+/**
+ * Removes the action links from pages containing backoffice views, they
+ * will be rendered as a part of the view itself.
+ */
+function commerce_backoffice_preprocess_page(&$vars) {
+  $view = views_get_page_view();
+  if (!empty($view) && strpos($view->name, 'commerce_backoffice_') !== FALSE) {
+    $vars['action_links'] = '';
+  }
+}
+
+/**
+ * Adds the action links to $attachment_before (below the exposed filters).
+ */
+function commerce_backoffice_views_pre_build(&$view) {
+  if (strpos($view->name, 'commerce_backoffice_') !== FALSE) {
+    $actions = menu_local_actions();
+    $view->attachment_before = '<ul class="action-links">' . drupal_render($actions) . '</ul>';
+  }
+}
+
+/**
+ * Implement hook_views_pre_render().
+ */
+function commerce_backoffice_views_pre_render(&$view) {
+  if (strpos($view->name, 'commerce_backoffice_') !== FALSE) {
+    drupal_add_css(drupal_get_path('module', 'commerce_backoffice') . '/theme/commerce-backoffice.css');
+  }
+}
+
+/**
+ * Returns an array of vocabulary entities.
+ *
+ * @param $product_display
+ *   Boolean indicating whether to return vocabularies used by product display
+ *   node types, or regular node types.
+ */
+function commerce_backoffice_get_vocabularies($product_display = FALSE) {
+  $fields = field_info_fields();
+  $product_display_node_types = commerce_product_reference_node_types();
+  if ($product_display) {
+    $node_types = $product_display_node_types;
+  }
+  else {
+    $all_node_types = node_type_get_types();
+    // Create a list of node types that are not product displays.
+    $node_types = array();
+    foreach ($all_node_types as $type => $node_type) {
+      if (!isset($product_display_node_types[$type])) {
+        $node_types[$type] = $node_type;
+      }
+    }
+  }
+
+  $voc_names = array();
+  foreach ($fields as $field) {
+    if ($field['type'] == 'taxonomy_term_reference' && isset($field['bundles']['node']) && array_intersect($field['bundles']['node'], array_keys($node_types))) {
+      $voc_names[$field['settings']['allowed_values'][0]['vocabulary']] = $field['settings']['allowed_values'][0]['vocabulary'];
+    }
+  }
+
+  if (!empty($voc_names)) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'taxonomy_vocabulary')
+      ->propertyCondition('machine_name', $voc_names, 'IN');
+    $result = $query->execute();
+    return taxonomy_vocabulary_load_multiple(array_keys($result['taxonomy_vocabulary']));
+  }
+  return array();
+}
+
+/**
+ * Move form elements into fieldsets for presentation purposes.
+ *
+ * Entity forms use #tree = TRUE to keep their values in a hierarchy for
+ * easier storage. Moving the form elements into fieldsets during form building
+ * would break up that hierarchy, so it's not an option for Field API fields.
+ * Therefore, we wait until the pre_render stage, where any changes we make
+ * affect presentation only and aren't reflected in $form_state['values'].
+ */
+function commerce_backoffice_pre_render_add_fieldset_markup($form) {
+  $sort = array();
+  foreach (element_children($form) as $key) {
+    $element = $form[$key];
+    // In our form builder functions, we added an arbitrary #fieldset property
+    // to any element that belongs in a fieldset. If this form element has that
+    // property, move it into its fieldset.
+    if (isset($element['#fieldset']) && isset($form[$element['#fieldset']])) {
+      $form[$element['#fieldset']][$key] = $element;
+      // Remove the original element this duplicates.
+      unset($form[$key]);
+      // Mark the fieldset for sorting.
+      if (!in_array($key, $sort)) {
+        $sort[] = $element['#fieldset'];
+      }
+    }
+  }
+
+  // Sort all fieldsets, so that element #weight stays respected.
+  foreach ($sort as $key) {
+    uasort($form[$key], 'element_sort');
+  }
+
+  return $form;
+}

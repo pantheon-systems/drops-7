@@ -1,0 +1,30 @@
+@import url(//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,800);
+@import url(//fonts.googleapis.com/css?family=Gentium+Basic:400,700);
+/* Include Default Variables & Mixins */
+/**
+* Navigation
+*/
+.navigation .primary-menu ul li.first a,
+.navigation .second-menu ul li.first a {
+  -moz-border-radius: 0 8px 8px 0 !important;
+  -webkit-border-radius: 0 8px 8px 0 !important;
+  -khtml-border-radius: 0 8px 8px 0 !important;
+  border-radius: 0 8px 8px 0 !important; }
+.navigation .primary-menu ul li.last a,
+.navigation .second-menu ul li.last a {
+  -moz-border-radius: 8px 0 0 8px !important;
+  -webkit-border-radius: 8px 0 0 8px !important;
+  -khtml-border-radius: 8px 0 0 8px !important;
+  border-radius: 8px 0 0 8px !important; }
+
+/**
+* Blocks
+*/
+/* HP blocks: Top advert */
+#promotional_banner {
+  left: auto;
+  right: -10px; }
+
+.block-shipping-discount {
+  left: auto;
+  right: -50px; }

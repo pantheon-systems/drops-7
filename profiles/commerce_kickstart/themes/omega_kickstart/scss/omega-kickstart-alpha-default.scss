@@ -1,0 +1,460 @@
+/* Include Default Variables & Mixins */
+@import "variables.scss";
+@import "mixins.scss";
+/* End Variables & Mixins */
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.1. Zone user
+**********************************************/
+.zone-user-wrapper {
+  position: fixed;
+  z-index: 200;
+}
+/*******************************************
+* 2.1.2. Region user second
+*******************************************/
+#region-user-second {
+  background-color: transparent;
+}
+.block-views-shopping-cart-block {
+  margin: 0;
+}
+/**********************************************
+* 2.2. Zone branding
+**********************************************/
+.zone-branding .region-branding {
+  clear: both;
+
+  .logo-img {
+    float: left; /* LTR */
+    text-align: left; /* LTR */
+  }
+}
+/**
+* Search block
+*/
+#block-views-exp-display-products-page {
+  float: right; /* LTR */
+  padding-top: 10px;
+  margin-bottom: 10px;
+}
+#block-views-exp-display-products-page .views-exposed-widgets {
+  position: relative;
+  width: 300px;
+  float: none;
+  margin-right: 10px; /* LTR */
+  margin-bottom: 0;
+}
+/**********************************************
+* 2.3. Zone menu
+**********************************************/
+.menu-toggle {
+  display: none;
+}
+
+.navigation {
+  background: $tabletmenubg;
+  display: block !important;
+  margin: 26px 0;
+  padding-bottom: 0;
+
+  h2 {
+    display: none;
+  }
+  .primary-menu ul,
+  .second-menu ul {
+    display: block;
+    float: left; /* LTR */
+    margin: 0;
+    width: 100%;
+
+    li {
+      font-size: 0.8em;
+      margin-right: -4px; /* LTR */
+      width: auto;
+
+      a {
+        display: inline;
+        border-left-width: 0;
+        border-right-width: 0;
+
+        &.active,
+        &:hover {
+          border-left-width: 0;
+          border-right-width: 0;
+        }
+      }
+
+      &.first a {
+        border-left: $mainmenuitemborder; /* LTR */
+      }
+      &.last a {
+        border-right: $mainmenuitemborder; /* LTR */
+        margin-right: 0; /* LTR */
+        margin-left: -2px; /* LTR */
+      }
+    }
+  }
+  /* Main menu */
+  .primary-menu {
+    float: left; /* LTR */
+    margin-right: 12px; /* LTR */
+    margin-left: 0; /* LTR */
+  }
+  /* Secondary menu */
+  .second-menu {
+    clear: inherit;
+    float: right; /* LTR */
+    margin-right: 0;
+  }
+}
+
+
+.zone-menu {
+  .block-menu {
+    h2.block-title {
+      margin-bottom: 1em;
+    }
+    ul.menu {
+      li {
+        font-size: 0.8em;
+        width: auto;
+
+        a {
+          display: inline;
+          border-left-width: 0;
+          border-right-width: 0;
+          &.active,
+          &:hover {
+            border-left-width: 0;
+            border-right-width: 0;
+          }
+        }
+
+        &.first a {
+          border-left: $mainmenuitemborder;
+        }
+        &.last a {
+          border-right: $mainmenuitemborder;
+        }
+      }
+    }
+  }
+}
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+/*******************************************
+* 3.2.1. Sidebar first
+*******************************************/
+/* Price range */
+#search-api-ranges-block-slider-view-form .range-slider-box {
+  margin: 0 auto;
+  width: 90%;
+}
+#search-api-ranges-block-slider-view-form .range-box {
+  float: inherit;
+}
+#search-api-ranges-block-slider-view-form label {
+  float: left; /* LTR */
+}
+#search-api-ranges-block-slider-view-form #edit-range-from,
+#search-api-ranges-block-slider-view-form #edit-range-to {
+  float: inherit;
+}
+#search-api-ranges-block-slider-view-form #edit-submit {
+  margin-top: 0;
+}
+/*******************************************
+* 3.2.2. Content
+*******************************************/
+/**
+* Blocks
+*/
+#block-views-demo-content-slideshow-block-1 {
+  /* HP blocks: Slideshow */
+  @include clearfix;
+}
+/**********************************************
+* 3.3. Zone postscript
+**********************************************/
+.zone-postscript .grid-8 {
+  margin: 0 10px;
+  width: inherit;
+}
+#zone-postscript {
+  /* Adverts blocks */
+  .view-ad-push .views-row,
+  .block-blog-block .block-inner {
+    position: relative;
+    img {
+      height: auto;
+      max-width: 100%;
+    }
+  }
+  .view-ad-push .views-row .views-field-field-tagline,
+  .block-blog-block .block-inner .content .views-field-title {
+    position: absolute;
+    bottom: 10%;
+    left: 7%;
+    width: 86%;
+    a {
+      border: 0;
+    }
+  }
+  
+  .block-blog-block .block-inner .block-title {
+    display: block;
+  }
+
+  .view-ad-push .views-row .views-field-field-tagline .field-content,
+  .block-blog-block .views-field-title .field-content {
+    a {
+      min-height: 60px;
+      padding: 15px 10px;
+    }
+  }
+}
+/**************************************************
+* --
+* 4. Section footer
+* --
+**************************************************/
+/**********************************************
+* 4.1. Zone footer
+**********************************************/
+/**
+* Menu footer navigation
+*/
+.section-footer ul.menu {
+
+  li.expanded {
+        display: inline;
+        float: left; /* LTR */
+  }
+}
+/**********************************************
+* 4.2. Zone footer2
+**********************************************/
+#block-menu-menu-payment-methods {
+  @include rounded-corners(8px);
+}
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+.view-collection-products .view-header,
+.view-collection-taxonomy-term .view-header {
+  background-size: cover;
+  .taxonomy-title {
+    position: relative;
+  }
+  .view-collection-products,
+  .collection-terms {
+    float: right;
+    margin: 5px;
+    padding-top: 0;
+  }
+}
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+.view-confirm-message-product-display {
+  clear: both;
+  float: none;
+  width: auto;
+}
+
+div.messages.commerce-add-to-cart-confirmation .message-inner {
+  .added-product-title {
+    float: left; /* LTR */
+    width: 180px;
+  }
+  .button-wrapper {
+    //float: none;
+    height: 100%;
+    position: absolute;
+    right: 0; /* LTR */
+  }
+  .view-confirm-message-product-display {
+    float: left; /* LTR */
+    padding-bottom: 20px;
+    .view-content {
+      //margin-left: 115px; /* LTR */
+      .views-field-commerce-product .content {
+        .field-name-field-images {
+          position: relative;
+          left: 0;
+        }
+      }
+    }
+  }
+}
+/* Product details */
+.node-product-type {
+  /* Cloud zoom */
+  .cloud-zoom-container {
+    .cloud-zoom-big,
+    .mousetrap,
+    .cloud-zoom-lens {
+      display: inherit !important;
+    }
+  }
+  .field-name-field-product form.commerce-add-to-cart label {
+    float: none;
+  }
+}
+.service-links {
+  width: auto;
+}
+/**********************************************
+* 5.4. Checkout process
+**********************************************/
+/**
+* Checkout page
+* Shipping page
+*/
+.page-checkout {
+  #commerce-checkout-form-checkout,
+  #commerce-checkout-form-review {
+    fieldset {
+
+      label {
+        float: left; /* LTR */
+        width: 20%;
+      }
+      .commerce-customer-profile-copy {
+        label {
+          float: none;
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+.page-cart .entity-commerce-product .content .field-name-field-images {
+  display: inline;
+  float: left;
+  margin-right: 8px;
+}
+/**************************************************
+* --
+* 7. Blog
+* --
+**************************************************/
+.page-blog .region-content .view-content {
+  .views-row {
+    clear: left;
+    float: left;
+    width: 49%;
+  }
+  .views-row-even {
+    clear: right;
+    float: right;
+  }
+}
+/**************************************************
+* --
+* 9. User account
+* --
+**************************************************/
+.page-user,
+.page-checkout {
+
+  #user_register_form,
+  #user_login_form,
+  .create-account,
+  #user_pass_form {
+    clear: none;
+    float: left;
+    width: 45%;
+  }
+  /* Registration form */
+  form#user-register-form,
+  form#user-profile-form {
+    .form-item-pass {
+      margin-bottom: auto;
+      .password-parent {
+        position: relative;
+        width: 36.3em;
+        .password-strength {
+          position: absolute;
+          right: 15px;
+          bottom: -12px;
+          width: 17em;
+        }
+      }
+      .confirm-parent {
+        position: relative;
+        width: 36.3em;
+        div.password-confirm {
+          right: 15px;
+          bottom: 8px;
+          width: 17em;
+        }
+      }
+      .password-suggestions {
+        width: 38.5em;
+      }
+    }
+    .form-actions {
+      clear: both;
+      margin-top: 0;
+      margin-bottom: 100px;
+      width: 70%;
+    }
+  }
+  #user_pass_form {
+    width: auto;
+  }
+
+  /* Login form, create an account block */
+  form#user-login {
+    #user_login_form {
+      border: 0;
+      border-right: 1px solid #444;
+      padding-right: 20px;
+      padding-bottom: 0;
+    }
+    .create-account {
+      margin: 0;
+      padding: 0 20px 20px 20px;
+    }
+  }
+  /* User home */
+  .profile {
+    ul {
+      &.user-information {
+        li {
+          border-bottom: 0;
+          width: 33%;
+        }
+      }
+    }
+  }
+}
+/* Address book */
+.page-user-addressbook {
+  .view-commerce-addressbook td {
+    display: table-cell;
+  }
+}

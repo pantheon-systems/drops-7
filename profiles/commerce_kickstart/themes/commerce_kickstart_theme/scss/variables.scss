@@ -1,0 +1,49 @@
+@import url(//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,800);
+@import url(//fonts.googleapis.com/css?family=Gentium+Basic:400,700);
+
+$bodybg: #FFF;
+$headerfont: 'Open Sans', sans-serif;
+$altheaderfont: 'Gentium Basic', serif;
+
+//text color
+$color1: #2698F2;
+$color2: #FFF;
+
+
+
+// mobile specific elements
+$mobilemenubg: #444;
+$tabletmenubg: transparent;
+// User Zone
+$topbarbackground: #888;
+// shopping cart block (in user zone)
+$cartceckoutbg: #999;
+$cartceckoutcolor: #FFF;
+// main menu
+$mainmenuitembg: #EEE;
+$mainmenuitemborder: 1px solid #CCC;
+$mainmenulinkcolor: #888;
+$mainmenuitembghover: #FFF;
+$mainmenuitemborderhover: 1px solid #CCC;
+$mainmenuitemfonthover: #999;
+$mainmenuitemfontactive: #000;
+// secondary menu
+$secondarymenuitembg: #EEE;
+$secondarymenuitemborder: 1px solid #CCC;
+$secondarymenulinkcolor: #888;
+$secondarymenuitembghover: #FFF;
+$secondarymenuitemborderhover: 1px solid #CCC;
+$secondarymenuitemfonthover: #999;
+$secondarymenuitemfontactive: #000;
+// promotional banner
+$promobannerbg: #999;
+$promobannercolor: #FFF;
+$promobannerbuttonbg: #888;
+$promobannerbuttoncolor: #FFF;
+$promobannerbuttonborder: 1px solid #CCC;
+// footer
+$footerbg: #FFF;
+$footermenuheadercolor: #666;
+$footermenulinkcolor: #999;
+
+$footer2bg: #CCC;

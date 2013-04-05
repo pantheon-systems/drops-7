@@ -1,0 +1,121 @@
+@import url(//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,800);
+@import url(//fonts.googleapis.com/css?family=Gentium+Basic:400,700);
+/* This file will hold styles for all layouts using the alpha grid (i.e. not the mobile layout). */
+/* Include Default Variables & Mixins */
+/* End Variables & Mixins */
+/**************************************************
+* --
+* 1. Global
+* --
+**************************************************/
+.selectnav {
+  display: none; }
+
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.3. Zone menu
+**********************************************/
+.zone-menu .region-menu {
+  margin: 0 !important;
+  width: 100% !important; }
+
+/**
+* Navigation
+*/
+.navigation {
+  margin: 0;
+  /* Main menu */
+  /* Secondary menu */ }
+  .navigation .primary-menu ul,
+  .navigation .second-menu ul {
+    margin: 26px 0px; }
+    .navigation .primary-menu ul li.first a,
+    .navigation .second-menu ul li.first a {
+      -moz-border-radius: 8px 0 0 8px;
+      -webkit-border-radius: 8px 0 0 8px;
+      -khtml-border-radius: 8px 0 0 8px;
+      border-radius: 8px 0 0 8px;
+      /* LTR */ }
+    .navigation .primary-menu ul li.last a,
+    .navigation .second-menu ul li.last a {
+      -moz-border-radius: 0 8px 8px 0;
+      -webkit-border-radius: 0 8px 8px 0;
+      -khtml-border-radius: 0 8px 8px 0;
+      border-radius: 0 8px 8px 0;
+      /* LTR */ }
+  .navigation .primary-menu ul li a {
+    background-color: #000000;
+    color: #ffffff; }
+    .navigation .primary-menu ul li a.active, .navigation .primary-menu ul li a:hover {
+      background-color: #ffffff; }
+    .navigation .primary-menu ul li a.active {
+      color: #2698F2; }
+    .navigation .primary-menu ul li a:hover {
+      color: #000000; }
+  .navigation .second-menu ul li a {
+    background-color: #ffffff;
+    color: #000000; }
+    .navigation .second-menu ul li a.active, .navigation .second-menu ul li a:hover {
+      background-color: #000000; }
+    .navigation .second-menu ul li a.active {
+      color: #2698F2; }
+    .navigation .second-menu ul li a:hover {
+      color: #ffffff; }
+
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+/*******************************************
+* 3.2.2. Content
+*******************************************/
+/**
+* Blocks
+*/
+/* HP blocks: Top advert */
+#promotional_banner {
+  padding-bottom: 10px;
+  left: -10px;
+  /* LTR */
+  width: 100%; }
+
+.block-shipping-discount {
+  /* HP blocks: Side advert */
+  position: absolute;
+  left: -50px;
+  /* LTR */
+  top: 85px;
+  z-index: 100; }
+  .block-shipping-discount #shipping {
+    border-color: #FFF;
+    -moz-border-radius: 80px;
+    -webkit-border-radius: 80px;
+    -khtml-border-radius: 80px;
+    border-radius: 80px;
+    height: 120px;
+    line-height: 24px;
+    padding: 10px 5px;
+    margin-top: 0;
+    width: 130px; }
+
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+.view-collection-taxonomy-term .view-content .item-list h3 span {
+  top: -90px; }

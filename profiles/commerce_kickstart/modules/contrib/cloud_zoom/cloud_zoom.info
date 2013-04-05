@@ -1,0 +1,15 @@
+name = Cloud Zoom
+description = Cloud Zoom (Professor Cloud) integration
+core = 7.x
+package = Cloud Zoom
+
+dependencies[] = image
+
+files[] = cloud_zoom.module
+
+; Information added by drupal.org packaging script on 2012-10-17
+version = "7.x-1.1+1-dev"
+core = "7.x"
+project = "cloud_zoom"
+datestamp = "1350477688"
+

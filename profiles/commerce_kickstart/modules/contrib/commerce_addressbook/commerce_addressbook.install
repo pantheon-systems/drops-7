@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_addressbook_schema() {
+  $schema = array();
+
+  $schema['commerce_addressbook_defaults'] = array(
+    'description' => 'Stores addressbook defaults by customer profile type.',
+    'fields' => array(
+      'cad_id' => array(
+        'description' => 'Serial numeric ID of the default customer profile of a specific type.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'profile_id' => array(
+        'description' => 'Serial numeric ID of the customer profile in the local database.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'type' => array(
+        'description' => 'The customer profile type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that owns this profile-.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('cad_id'),
+    'foreign keys' => array(
+      'profile_id' => array(
+        'table' => 'commerce_customer_profile',
+        'columns'=> array('profile_id' => 'profile_id'),
+      ),
+      'uid' => array(
+        'table' => 'users',
+        'columns'=> array('uid' => 'uid'),
+      ),
+    ),
+    'indexes' => array(
+      'profile_id' => array('profile_id'),
+      'uid' => array('uid'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_addressbook_uninstall() {
+  // Ensure the commerce_checkout module is loaded.
+  drupal_load('module', 'commerce_checkout');
+  foreach (commerce_checkout_panes() as $pane_id => $checkout_pane) {
+    variable_del('commerce_' . $pane_id . '_addressbook');
+  }
+}
+
+/**
+ * Creates the defaults table and removes any saved profile fields.
+ */
+function commerce_addressbook_update_7200() {
+  // Only run this update if the defaults table does not exist.
+  if (!db_table_exists('commerce_addressbook_defaults')) {
+    db_create_table('commerce_addressbook_defaults',
+      drupal_get_schema_unprocessed('commerce_addressbook', 'commerce_addressbook_defaults'));
+
+    // Delete any saved profile fields.
+    commerce_delete_fields('commerce_addressbook_saved_profiles');
+
+    return t('Created the commerce_addressbook_defaults table and deleted all saved profile fields.');
+  }
+}

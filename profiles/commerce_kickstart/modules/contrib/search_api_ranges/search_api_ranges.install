@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall functions.
+ */
+
+/**
+ * Implements hook_update_N().
+ *
+ * After migrating to Facet API, we clean up old tables and variables.
+ */
+function search_api_ranges_7100() {
+  variable_del('search_api_ranges_search_ids');
+
+  $table = 'search_api_ranges';
+  if (db_table_exists($table)) {
+    db_drop_table($table);
+  }
+}

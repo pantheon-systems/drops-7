@@ -1,0 +1,379 @@
+@import url(//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,800);
+@import url(//fonts.googleapis.com/css?family=Gentium+Basic:400,700);
+/* This file will hold styles for the mobile version of your website (mobile first). */
+/* This also can include ANY global CSS that applies site-wide. Unless overwritten by a more specific style rule, CSS declarations in global.css will apply site-wide. */
+/* Override Omega */
+/* Include Default Variables & Mixins */
+/* End Variables & Mixins */
+/*------------------------------------------------
+[Table of contents]
+0. Reset
+1. Global
+  1.1. Zones
+  1.2. Regions
+2. Section header
+  2.1. Zone user
+    2.1.1. Region user first
+    2.1.2. Region user second
+  2.2. Zone branding
+  2.3. Zone menu
+  2.4. Zone header
+3. Section content
+  3.1. Zone preface
+  3.2. Zone content
+    3.2.1. Sidebar first
+    3.2.2. Content
+    3.2.3. Sidebar second
+  3.3. Zone postscript
+4. Section footer
+  4.1. Zone footer
+  4.2. Zone footer2
+5. Commerce specific
+  5.1. Search & Collection page
+  5.2. All products page
+  5.3. Product page
+  5.4. Checkout process
+6. Kickstart specific
+  6.1. Homepage elements
+7. Blog
+  7.1. Blog comments
+8. User account
+------------------------------------------------*/
+/**************************************************
+* --
+* 1. Global
+* --
+**************************************************/
+body {
+  background: #ececec url("../images/bg.png") left top; }
+
+.responsive-layout-mobile .facetapi-lists {
+  display: none; }
+.responsive-layout-mobile .selectnav {
+  display: block; }
+
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.1. Zone user
+**********************************************/
+.zone-user-wrapper {
+  background-color: #8e8e8e; }
+
+/*******************************************
+* 2.1.1. Region user first
+*******************************************/
+/* User menu */
+.block-menu-user-menu .content ul.menu li.first {
+  border-right: 1px solid #ffffff;
+  /* LTR */
+  padding-right: 7px;
+  /* LTR */ }
+.block-menu-user-menu .content ul.menu li.last {
+  padding-left: 7px;
+  /* LTR */ }
+.block-menu-user-menu .content ul.menu li a.active {
+  background-color: #cecece;
+  color: #000;
+  text-decoration: none; }
+.block-menu-user-menu .content ul.menu li a.active:hover,
+.block-menu-user-menu .content ul.menu li a:hover {
+  background-color: #717171;
+  text-decoration: none; }
+
+/*******************************************
+* 2.1.2. Region user second
+*******************************************/
+/**
+* Cart block
+*/
+.block-shopping-cart-block .content {
+  background-color: #ffffff;
+  background-image: url("../images/picto_cart.png"); }
+  .block-shopping-cart-block .content .view-shopping-cart .line-item-summary ul.links {
+    background-color: #2698F2; }
+
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/**********************************************
+* 3.1. Zone preface
+**********************************************/
+/**
+* Pseudo Breadcrumb
+*/
+#region-breadcrumb .pseudo-breadcrumb li a {
+  background: url("../images/btn_close.png") left center no-repeat;
+  /* LTR */ }
+
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+.zone-content-wrapper .zone-content {
+  background-color: #FFFFFF; }
+
+.front .zone-content-wrapper .zone-content {
+  padding-top: 0; }
+
+/*******************************************
+* 3.2.1. Sidebar first
+*******************************************/
+/* Search api facet blocks */
+.region-sidebar-first .block-facetapi ul li a.facetapi-inactive {
+  padding-left: 0px;
+  /* LTR */ }
+
+/*******************************************
+* 3.2.2. Content
+*******************************************/
+/**
+* Blocks
+*/
+#promotional_banner {
+  /* HP blocks: Top advert */
+  background-color: #2698F2;
+  color: #FFFFFF;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 16px;
+  padding: 5px 10px 20px 10px;
+  position: relative;
+  top: 0; }
+  #promotional_banner .promotional_banner_saving {
+    display: block;
+    font-size: 28px;
+    font-weight: 900;
+    line-height: 38px;
+    padding: 0;
+    text-transform: uppercase;
+    width: 100%; }
+  #promotional_banner .promotional_banner_special_offer {
+    background-color: #FFFFFF;
+    border: 1px solid #CCC;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    -khtml-border-radius: 4px;
+    border-radius: 4px;
+    color: #2698F2;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 4px 12px;
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    /* LTR */
+    text-transform: capitalize; }
+
+.block-shipping-discount {
+  /* HP blocks: Side advert */ }
+  .block-shipping-discount #shipping {
+    background-color: #000000;
+    border: 6px solid #ffffff;
+    color: #2698F2;
+    display: block;
+    font-size: 13px;
+    line-height: 24px;
+    text-align: center;
+    margin-top: 20px;
+    padding: 10px 5px 20px 5px; }
+  .block-shipping-discount #shipping #shipping_message span {
+    border-bottom: 1px solid #ffffff;
+    display: block;
+    color: white;
+    font-size: 20px;
+    padding: 10px 0 4px 0;
+    text-transform: uppercase; }
+  .block-shipping-discount #shipping #shipping_message span em {
+    font-size: 27px;
+    font-style: normal; }
+  .block-shipping-discount #shipping #shipping_currency {
+    display: block;
+    font-size: 27px;
+    margin-top: 2px; }
+  .block-shipping-discount #shipping #shipping_message {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 400; }
+  .block-shipping-discount #shipping #shipping_message span,
+  .block-shipping-discount #shipping #shipping_message span em,
+  .block-shipping-discount #shipping #shipping_currency {
+    font-family: "Open Sans", sans-serif;
+    font-weight: 700; }
+
+#zone-postscript .view-ad-push .views-row .views-field-field-tagline .field-content,
+#zone-postscript .block-blog-block .views-field-title .field-content {
+  border: 1px solid #5f5f5f;
+  background: transparent url("../images/bg_ad_push_headline.png") left top; }
+  #zone-postscript .view-ad-push .views-row .views-field-field-tagline .field-content a,
+  #zone-postscript .block-blog-block .views-field-title .field-content a {
+    background: none; }
+    #zone-postscript .view-ad-push .views-row .views-field-field-tagline .field-content a:hover,
+    #zone-postscript .block-blog-block .views-field-title .field-content a:hover {
+      background: transparent url("../images/bg_blog_headline.png") left top; }
+#zone-postscript .view-ad-push .views-row:hover .views-field-field-tagline .field-content a,
+#zone-postscript .block-blog-block:hover .views-field-title .field-content a {
+  background: transparent url("../images/bg_blog_headline.png") left top; }
+
+/**************************************************
+* --
+* 4. Section footer
+* --
+**************************************************/
+.section-footer {
+  background-color: #3f3f3f; }
+
+/**********************************************
+* 4.1. Zone footer
+**********************************************/
+.zone-footer-wrapper {
+  background-color: #494949; }
+
+/**
+* Menu footer navigation
+*/
+.section-footer ul.menu li.expanded span,
+.section-footer ul.menu li.expanded a {
+  color: #ffffff; }
+.section-footer ul.menu li.expanded ul.menu li a {
+  color: #c1c1c1; }
+
+/**
+* Connect with us
+*/
+#block-menu-menu-social-connection h2 {
+  background-color: #262626;
+  color: #eeeeee; }
+#block-menu-menu-social-connection .content ul.menu li {
+  color: #eeeeee; }
+  #block-menu-menu-social-connection .content ul.menu li:hover {
+    background-color: #cecece;
+    -moz-border-radius: 4px;
+    -webkit-border-radius: 4px;
+    -khtml-border-radius: 4px;
+    border-radius: 4px; }
+  #block-menu-menu-social-connection .content ul.menu li span,
+  #block-menu-menu-social-connection .content ul.menu li a {
+    color: #eeeeee; }
+  #block-menu-menu-social-connection .content ul.menu li a.facebook {
+    background: url("../images/icon_facebook.png") 2% 50% no-repeat;
+    /* LTR */ }
+  #block-menu-menu-social-connection .content ul.menu li a.twitter {
+    background: url("../images/icon_twitter.png") 2% 50% no-repeat;
+    /* LTR */ }
+  #block-menu-menu-social-connection .content ul.menu li a.pinterest {
+    background: url("../images/icon_pinterest.png") 2% 50% no-repeat;
+    /* LTR */ }
+
+/**********************************************
+* 4.2. Zone footer2
+**********************************************/
+.zone-footer2-wrapper {
+  background-color: #3f3f3f;
+  color: #eeeeee; }
+
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+.view-collection-taxonomy-term .products-per-collection li header,
+.page-products .view-display-products li header {
+  background: url("../images/bg_product_attributes_top.png") center top no-repeat; }
+
+.view-collection-taxonomy-term .view-content .item-list {
+  clear: both; }
+  .view-collection-taxonomy-term .view-content .item-list h3 {
+    position: relative; }
+    .view-collection-taxonomy-term .view-content .item-list h3 span {
+      display: block;
+      position: absolute;
+      top: 0px; }
+    .view-collection-taxonomy-term .view-content .item-list h3 .collection {
+      background: url("../images/bg.png") repeat scroll left top #ececec;
+      font-size: 0.8em;
+      padding: 0 0 4px;
+      text-transform: uppercase; }
+      .view-collection-taxonomy-term .view-content .item-list h3 .collection a {
+        background-color: #FFFFFF;
+        color: #B8B8B8;
+        display: block;
+        padding: 5px; }
+  .view-collection-taxonomy-term .view-content .item-list .products-per-collection li.views-row {
+    display: inline;
+    height: auto;
+    margin: 0;
+    padding-right: 5px;
+    /* LTR */
+    padding-bottom: 30px;
+    width: 230px; }
+    .view-collection-taxonomy-term .view-content .item-list .products-per-collection li.views-row:nth-child(4n+5) {
+      clear: left;
+      /* LTR */
+      float: left;
+      /* LTR */ }
+    .view-collection-taxonomy-term .view-content .item-list .products-per-collection li.views-row h2 {
+      font-size: 14px;
+      height: 35px;
+      line-height: 16px;
+      margin: 0 4px; }
+
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+div.messages.commerce-add-to-cart-confirmation {
+  background-color: #d6e5ec;
+  border-color: #6bb0cb; }
+  div.messages.commerce-add-to-cart-confirmation .message-inner .added-product-title {
+    color: #2698f2; }
+  div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button.checkout {
+    background-color: #2698F2; }
+  div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper .button.continue {
+    background-color: #b3b3b3; }
+  div.messages.commerce-add-to-cart-confirmation .message-inner .commerce-kickstart-add-to-cart-close {
+    background: url("../images/btn_add-to-cart-close.png") no-repeat 0 0; }
+  div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display .view-content {
+    margin-left: inherit; }
+
+/**************************************************
+* --
+* 8. Comments
+* --
+**************************************************/
+.node-teaser .links.node-links .links .node-readmore a {
+  background: transparent url("../images/icon_read-more.png") 95% center no-repeat;
+  color: #4386be;
+  padding-right: 15px;
+  /* LTR */ }
+.node-teaser .links.node-links .links .comment-comments a {
+  background: transparent url("../images/icon_chat.png") 15% center no-repeat;
+  padding-left: 20px;
+  /* LTR */ }
+  .node-teaser .links.node-links .links .comment-comments a span {
+    display: block;
+    float: left;
+    /* LTR */
+    text-indent: -9999px; }
+
+/**************************************************
+* --
+* 9. User account
+* --
+**************************************************/
+.not-logged-in #block-connector-one-click-block #edit-oauthconnector-facebook {
+  background: url("../images/btn_facebook.png") no-repeat; }
+.not-logged-in #block-connector-one-click-block #edit-oauthconnector-twitter {
+  background: url("../images/btn_twitter.png") no-repeat; }
+.not-logged-in #block-connector-one-click-block #edit-oauthconnector-google {
+  background: url("../images/btn_google.png") no-repeat; }

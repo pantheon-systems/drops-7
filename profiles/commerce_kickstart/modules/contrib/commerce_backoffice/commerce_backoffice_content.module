@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_backoffice_content_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_backoffice') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_form_views_form_alter().
+ */
+function commerce_backoffice_form_alter(&$form, &$form_state, $form_id) {
+  // Alter the exposed filters for the content view.
+  if (isset($form['submit']['#id']) && $form['submit']['#id'] == 'edit-submit-commerce-backoffice-content') {
+    $form['non_product_display_node_type']['#attributes'] = array('data-placeholder' => array(t('All content types')));
+    $form['status']['#options']['All'] = t('All statuses');
+    $form['combine']['#attributes'] = array('placeholder' => array(t('Search by title or author')));
+  }
+  // Alter the exposed filters for the comments view.
+  if (isset($form['submit']['#id']) && $form['submit']['#id'] == 'edit-submit-commerce-backoffice-comments') {
+    $form['combine']['#attributes'] = array('placeholder' => array(t('Search by subject or author')));
+  }
+}

@@ -17,5 +17,17 @@
 define('DRUPAL_ROOT', getcwd());
 
 require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
-drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+
+try {
+  drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
+}
+catch (PDOException $e) {
+  // A PDO exception might mean that we are running on an empty database. In
+  // that case, just redirect the user to install.php.
+  if (!db_table_exists('variable')) {
+    include_once DRUPAL_ROOT . '/includes/install.inc';
+    install_goto('install.php');
+  }
+  throw $e;
+}
 menu_execute_active_handler();

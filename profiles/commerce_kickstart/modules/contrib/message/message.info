@@ -1,0 +1,30 @@
+; $Id: message.info,v 1.3 2010/06/07 10:54:11 amitaibu Exp $
+name = Message
+description = "A general message logging utility."
+core = 7.x
+package = Message
+dependencies[] = entity
+
+; Entity API includes
+files[] = message.info.inc
+files[] = includes/message.admin.inc
+files[] = includes/message.exception.inc
+files[] = includes/message.message_type_category.inc
+files[] = includes/message.message_type.inc
+files[] = includes/message.message.inc
+
+; Tests
+files[] = message.test
+
+; Views includes
+files[] = includes/views/message.views.inc
+files[] = includes/views/handlers/message_handler_field_message_render.inc
+files[] = includes/views/handlers/message_handler_filter_message_type.inc
+files[] = includes/views/handlers/message_handler_filter_message_type_category.inc
+
+; Information added by drupal.org packaging script on 2012-12-13
+version = "7.x-1.7"
+core = "7.x"
+project = "message"
+datestamp = "1355398352"
+

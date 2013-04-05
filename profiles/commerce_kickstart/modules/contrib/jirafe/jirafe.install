@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * Implements hook_uninstall().
+ */
+function jirafe_uninstall() {
+  variable_del('jirafe_config');
+  variable_del('jirafe_create_account_link');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function jirafe_requirements($phase) {
+  $t = get_t();
+  $requirements = array();
+  if ($phase != 'runtime') {
+    return $requirements;
+  }
+
+  $requirements['jirafe'] = array('title' => $t('Jirafe'));
+
+  $config = variable_get('jirafe_config');
+  if (!empty($config['token']) && !empty($config['app_id'])) {
+    $requirements['jirafe']['value'] = $t('Token: @token, Application ID: @app_id', array('@token' => $config['token'], '@app_id' => $config['app_id']));
+  }
+  else {
+    global $base_url;
+    $requirements['jirafe']['value'] = $t('Jirafe credentials are not set. Get your credentials at !link', array('!link' => variable_get('jirafe_create_account_link', l('Jirafe', url('https://marketplace.commerceguys.com/service/jirafe', array('query' => array('source' => $base_url)))))));
+    $requirements['jirafe']['severity'] = REQUIREMENT_WARNING;
+  }
+  return $requirements;
+}
+
+/**
+ * Synchronize jirafe's configuration between actual site and Jirafe's servers.
+ */
+function jirafe_update_7001() {
+  $config = variable_get('jirafe_config', array(
+    'token' => NULL,
+    'app_id' => NULL,
+    'sites' => NULL,
+    'users' => NULL,
+  ));
+  // Only run the update if jirafe is already configured.
+  if (!empty($config['token']) && !empty($config['app_id'])) {
+    // Since we need the site's uri when sunchronizing data, ensure that the user
+    // use the --uri option if we run this update with drush.
+    if (drupal_is_cli()) {
+      if (drush_get_option('uri') == 'http://default') {
+        throw new DrupalUpdateException('You need to use the --uri option when doing this update with drush.');
+      }
+    }
+    // Only run the sync if we don't already have correct values.
+    if (empty($config['sites']) || empty($config['users'])) {
+      module_load_include('inc', 'jirafe', 'jirafe.jirafe');
+      try {
+        jirafe_synchronize();
+      }
+      catch (Exception $e) {
+        drupal_set_message($e->getMessage(), 'warning');
+      }
+    }
+  }
+}

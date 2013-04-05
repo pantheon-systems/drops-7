@@ -1,0 +1,204 @@
+<?php
+
+/**
+ * @file
+ * Provides features integration for Commerce modules.
+ */
+
+/**
+ * Implements hook_features_api().
+ */
+function commerce_features_features_api() {
+  $features = array();
+
+  if (module_exists('commerce_product') && module_exists('commerce_product_ui')) {
+    $features['commerce_product_type'] = array(
+      'name' => t('Commerce product types'),
+      'feature_source' => TRUE,
+      'default_hook' => 'commerce_product_default_types',
+      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_product_type.features.inc',
+    );
+  }
+  if (module_exists('commerce_tax')) {
+    $features['commerce_tax_type']
+        = array(
+      'name' => t('Commerce tax types'),
+      'feature_source' => TRUE,
+      'default_hook' => 'commerce_tax_default_types',
+      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_tax_type.features.inc',
+    );
+    $features['commerce_tax_rate'] = array(
+      'name' => t('Commerce tax rates'),
+      'feature_source' => TRUE,
+      'default_hook' => 'commerce_tax_default_rates',
+      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_tax_rate.features.inc',
+    );
+  }
+  if (module_exists('commerce_line_item') && module_exists('commerce_custom_product')) {
+    $features['commerce_line_item_type'] = array(
+      'name' => t('Commerce line item types'),
+      'feature_source' => TRUE,
+      'default_hook' => 'commerce_line_item_default_types',
+      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_line_item_type.features.inc',
+    );
+  }
+  if (module_exists('commerce_coupon')) {
+    $features['commerce_coupon_type'] = array(
+      'name' => t('Commerce coupon types'),
+      'feature_source' => TRUE,
+      'default_hook' => 'commerce_coupon_default_types',
+      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_coupon_type.features.inc',
+    );
+  }
+  if (module_exists('commerce_customer')) {
+    $features['commerce_customer'] = array(
+      'name' => t('Commerce customer profile types'),
+      'features_source' => TRUE,
+      'default_hook' => 'commerce_customer_default_types',
+      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_customer.features.inc',
+    );
+  }
+  if (module_exists('commerce_flat_rate'))  {
+    $features['commerce_flat_rate_services'] = array(
+      'name' => t('Commerce flat rate services'),
+      'features_source' => TRUE,
+      'default_hook' => 'commerce_flat_rate_default_services',
+      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_flat_rate_services.features.inc',
+    );
+  }
+
+  return $features;
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * Those product types provided by features shall not be deleted.
+ */
+function commerce_features_menu_alter(&$items) {
+  foreach (module_implements('commerce_product_default_types') as $module) {
+    foreach (module_invoke($module, 'commerce_product_default_types') as $type => $product_type) {
+      $type_arg = strtr($type, '_', '-');
+      unset($items['admin/commerce/products/types/' . $type_arg . '/delete']);
+    }
+  }
+
+  foreach (module_implements('commerce_tax_default_rates') as $module) {
+    foreach (module_invoke($module, 'commerce_tax_default_rates') as $name => $tax_rate) {
+      $name_arg = strtr($name, '_', '-');
+      $items['admin/commerce/config/taxes/rates/' . $name_arg] = array(
+        'title callback' => 'commerce_tax_ui_tax_rate_title',
+        'title arguments' => array($name),
+        'description' => 'Edit a tax rate.',
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('commerce_tax_ui_tax_rate_form', $tax_rate),
+        'access arguments' => array('administer taxes'),
+        'file' => drupal_get_path('module', 'commerce_tax') . '/includes/commerce_tax_ui.admin.inc',
+      );
+      $items['admin/commerce/config/taxes/rates/' . $name_arg . '/edit'] = array(
+        'title' => 'Edit',
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+        'weight' => 0,
+      );
+      unset($items['admin/commerce/config/taxes/rates/' . $name_arg . '/delete']);
+    }
+  }
+
+  foreach (module_implements('commerce_tax_default_types') as $module) {
+    foreach (module_invoke($module, 'commerce_tax_default_types') as $name => $tax_type) {
+      $name_arg = strtr($name, '_', '-');
+      unset($items['admin/commerce/config/taxes/types/' . $name_arg . '/delete']);
+    }
+  }
+
+  foreach (module_implements('commerce_line_item_default_types') as $module) {
+    foreach (module_invoke($module, 'commerce_line_item_default_types') as $type => $line_item_type) {
+      $type_arg = strtr($type, '_', '-');
+      unset($items['admin/commerce/config/line-items/' . $type_arg . '/delete']);
+    }
+  }
+
+  foreach (module_implements('commerce_coupon_default_types') as $module) {
+    foreach (module_invoke($module, 'commerce_coupon_default_types') as $type => $coupon_type) {
+      $type_arg = strtr($type, '_', '-');
+      unset($items['admin/commerce/coupons/types/' . $type_arg . '/delete']);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for Product Types.
+ */
+function commerce_features_form_commerce_product_ui_product_type_form_alter(&$form, &$form_state) {
+  $commerce_product_default_types = module_invoke_all('commerce_product_default_types');
+  if (isset($commerce_product_default_types[$form_state['product_type']['type']])) {
+    $form['actions']['delete']['#access'] = FALSE;
+    $form['actions']['submit']['#suffix'] = $form['actions']['delete']['#suffix'];
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for Tax Types.
+ */
+function commerce_features_form_commerce_tax_ui_tax_type_form_alter(&$form, &$form_state) {
+  $commerce_tax_default_types = module_invoke_all('commerce_tax_default_types');
+  if (isset($commerce_tax_default_types[$form_state['tax_type']['name']])) {
+    $form['actions']['delete']['#access'] = FALSE;
+    $form['actions']['submit']['#suffix'] = $form['actions']['delete']['#suffix'];
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for Tax Rates.
+ */
+function commerce_features_form_commerce_tax_ui_tax_rate_form_alter(&$form, &$form_state) {
+  $commerce_tax_default_rates = module_invoke_all('commerce_tax_default_rates');
+  if (isset($commerce_tax_default_rates[$form_state['tax_rate']['name']])) {
+    $form['actions']['delete']['#access'] = FALSE;
+    $form['actions']['submit']['#suffix'] = $form['actions']['delete']['#suffix'];
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for Line item types.
+ */
+function commerce_features_form_commerce_custom_product_line_item_type_form_alter(&$form, &$form_state) {
+  $commerce_line_item_default_types = module_invoke_all('commerce_line_item_default_types');
+  if (isset($commerce_line_item_default_types[$form_state['line_item_type']['type']])) {
+    $form['actions']['delete']['#access'] = FALSE;
+    $form['actions']['submit']['#suffix'] = $form['actions']['delete']['#suffix'];
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for Coupon Types.
+ */
+function commerce_features_form_commerce_coupon_ui_type_form_alter(&$form, &$form_state) {
+  $commerce_coupon_default_types = module_invoke_all('commerce_coupon_default_types');
+  if (isset($commerce_coupon_default_types[$form_state['coupon_type']->type])) {
+    $form['actions']['delete']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_commerce_tax_rate_info_alter().
+ */
+function commerce_features_commerce_tax_rate_info_alter(&$tax_rates) {
+  // Default all commerce_features defined rates to appear in the admin list.
+  foreach ($tax_rates as $name => &$tax_rate) {
+    if ($tax_rate['module'] == 'commerce_features') {
+      $tax_rate += array('admin_list' => ($tax_rate['module'] == 'commerce_features'));
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_line_item_type_info_alter().
+ */
+function commerce_features_commerce_line_item_type_info_alter(&$info) {
+  foreach (module_implements('commerce_line_item_default_types') as $module) {
+    $types = module_invoke($module, 'commerce_line_item_default_types');
+    $info += $types;
+  }
+}

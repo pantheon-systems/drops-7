@@ -1,0 +1,98 @@
+<?php
+
+/**
+ * @file
+ * Provides an example payment method for Drupal Commerce for testing and
+ *   development.
+ */
+
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_payment_example_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['commerce_payment_example'] = array(
+    'title' => t('Example payment'),
+    'description' => t('Demonstrates complete payment during checkout and serves as a development example.'),
+    'active' => TRUE,
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Payment method callback: submit form.
+ */
+function commerce_payment_example_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  $form = array();
+
+  // Merge in values from the order.
+  if (!empty($order->data['commerce_payment_example'])) {
+    $pane_values += $order->data['commerce_payment_example'];
+  }
+
+  // Merge in default values.
+  $pane_values += array(
+    'name' => '',
+  );
+
+  $form['name'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Name'),
+    '#description' => t('This is a demonstration field coded to fail validation for single character values.'),
+    '#default_value' => $pane_values['name'],
+    '#required' => TRUE,
+  );
+
+  return $form;
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function commerce_payment_example_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  // Throw an error if a long enough name was not provided.
+  if (strlen($pane_values['name']) < 2) {
+    form_set_error(implode('][', array_merge($form_parents, array('name'))), t('You must enter a name two or more characters long.'));
+
+    // Even though the form error is enough to stop the submission of the form,
+    // it's not enough to stop it from a Commerce standpoint because of the
+    // combined validation / submission going on per-pane in the checkout form.
+    return FALSE;
+  }
+}
+
+/**
+ * Payment method callback: submit form submission.
+ */
+function commerce_payment_example_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  $order->data['commerce_payment_example'] = $pane_values;
+
+  commerce_payment_example_transaction($payment_method, $order, $charge, $pane_values['name']);
+}
+
+/**
+ * Creates an example payment transaction for the specified charge amount.
+ *
+ * @param $payment_method
+ *   The payment method instance object used to charge this payment.
+ * @param $order
+ *   The order object the payment applies to.
+ * @param $charge
+ *   An array indicating the amount and currency code to charge.
+ * @param $name
+ *   The name entered on the submission form.
+ */
+function commerce_payment_example_transaction($payment_method, $order, $charge, $name) {
+  $transaction = commerce_payment_transaction_new('commerce_payment_example', $order->order_id);
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->amount = $charge['amount'];
+  $transaction->currency_code = $charge['currency_code'];
+  $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+  $transaction->message = 'Name: @name';
+  $transaction->message_variables = array('@name' => $name);
+
+  commerce_payment_transaction_save($transaction);
+}

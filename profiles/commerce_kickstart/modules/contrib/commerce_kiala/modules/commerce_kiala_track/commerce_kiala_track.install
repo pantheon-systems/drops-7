@@ -1,0 +1,41 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_kiala_track_schema() {
+  $schema = array();
+  
+  $schema['commerce_kiala_tracking'] = array(
+    'description' => 'Stores information about tracking on shipping line items',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for an tracking item.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'order_id' => array(
+        'description' => 'The primary identifier for a line item.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'tracking_number' => array(
+        'description' => 'The Kiala tracking number.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),        
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'order_id' => array('order_id'),
+      'tracking_number' => array('tracking_number'),
+    )      
+  );
+  
+  return $schema;
+}

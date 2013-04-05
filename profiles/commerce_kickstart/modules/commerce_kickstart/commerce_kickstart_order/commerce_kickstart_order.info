@@ -1,0 +1,9 @@
+name = Commerce Kickstart Order
+description = Provides Kickstart-specific cart and order customizations.
+core = 7.x
+package = Commerce Kickstart
+
+dependencies[] = views
+dependencies[] = commerce_message
+dependencies[] = commerce_cart
+dependencies[] = ctools

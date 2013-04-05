@@ -1,0 +1,54 @@
+
+/**
+ * @file
+ * Basic styling for the Commerce Checkout module.
+ */
+
+/**
+ * Make the cancel/back buttons appear as links.
+ */
+.checkout-buttons .checkout-cancel,
+.checkout-buttons .checkout-back {
+  border: 0;
+  background: none;
+  color: #0071B3;
+  padding: 4px 6px;
+}
+
+.checkout-buttons .checkout-cancel:focus,
+.checkout-buttons .checkout-back:focus,
+.checkout-buttons .checkout-cancel:hover,
+.checkout-buttons .checkout-back:hover {
+  background: none;
+  color: #018fe2;
+  text-decoration: underline;
+}
+
+/**
+ * Tweak review page layout.
+ */
+table.checkout-review .pane-title td {
+  padding-left: 1em; /* LTR */
+  font-weight: bold;
+}
+
+table.checkout-review tr.pane-data {
+  vertical-align: top;
+}
+
+table.checkout-review .pane-data-key {
+  font-weight: bold;
+  text-align: right; /* LTR */
+  white-space: nowrap;
+  padding-left: 3em; /* LTR */
+  width: 50%;
+}
+
+table.checkout-review .pane-data-value {
+  padding-right: 3em; /* LTR */
+}
+
+table.checkout-review .pane-data-full {
+  padding-left: 1em;
+  padding-right: 1em;
+}

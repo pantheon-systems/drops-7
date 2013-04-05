@@ -1,0 +1,1547 @@
+<?php
+
+/**
+ * @file
+ * Defines the core Commerce line item entity and API functions interact with
+ * line items on orders.
+ */
+
+/**
+ * Implements hook_entity_info().
+ */
+function commerce_line_item_entity_info() {
+  $return = array(
+    'commerce_line_item' => array(
+      'label' => t('Commerce Line item'),
+      'controller class' => 'CommerceLineItemEntityController',
+      'base table' => 'commerce_line_item',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'line_item_id',
+        'bundle' => 'type',
+        'label' => 'line_item_id', // TODO: Update to use a custom callback.
+      ),
+      'bundle keys' => array(
+        'bundle' => 'type',
+      ),
+      'bundles' => array(),
+      'load hook' => 'commerce_line_item_load',
+      'view modes' => array(
+        'display' => array(
+          'label' => t('Display'),
+          'custom settings' => FALSE,
+        ),
+      ),
+      'access callback' => 'commerce_line_item_access',
+      'metadata controller class' => '',
+      'token type' => 'commerce-line-item',
+      'permission labels' => array(
+        'singular' => t('line item'),
+        'plural' => t('line items'),
+      ),
+    ),
+  );
+
+  foreach (commerce_line_item_type_get_name() as $type => $name) {
+    $return['commerce_line_item']['bundles'][$type] = array(
+      'label' => $name,
+    );
+  }
+
+  return $return;
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function commerce_line_item_hook_info() {
+  $hooks = array(
+    'commerce_line_item_type_info' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_line_item_type_info_alter' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_line_item_summary_link_info' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_line_item_summary_link_info_alter' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_line_item_access' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_line_item_update' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_line_item_insert' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_line_item_delete' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_line_item_rebase_unit_price' => array(
+      'group' => 'commerce',
+    ),
+  );
+
+  return $hooks;
+}
+
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Alter the views form with functionality specific to line items.
+ * This form currently only supports line items from a single order, and it
+ * determines which order the line items are for based on a Views argument.
+ */
+function commerce_line_item_form_alter(&$form, &$form_state, $form_id) {
+  $line_item_form = FALSE;
+  // Is this a views form?
+  if (strpos($form_id, 'views_form_') === 0) {
+    $view = $form_state['build_info']['args'][0];
+    // Does the view contain one of the line item edit fields?
+    foreach ($view->field as $field_name => $field) {
+      if ($field instanceof commerce_line_item_handler_field_edit_delete || $field instanceof commerce_line_item_handler_field_edit_quantity) {
+        $line_item_form = TRUE;
+      }
+    }
+  }
+  // This is not the form we are looking for.
+  if (!$line_item_form) {
+    return;
+  }
+  // Require the existence of an order_id argument (and its value).
+  if (empty($view->argument['order_id']) || empty($view->argument['order_id']->value)) {
+    return;
+  }
+
+  $form['#attached']['css'][] = drupal_get_path('module', 'commerce_line_item') . '/theme/commerce_line_item.theme.css';
+  $form['#attached']['js'][] = drupal_get_path('module', 'commerce_line_item') . '/commerce_line_item.js';
+  $form['#submit'][] = 'commerce_line_item_line_item_views_form_submit';
+
+  // Wrap the form in a div so we can add CSS and javascript behaviors to it.
+  $form['#prefix'] = '<div class="commerce-line-item-views-form">';
+  $form['#suffix'] = '</div>';
+
+  // Add an additional class to the actions wrapper.
+  $form['actions']['#attributes']['class'][] = 'commerce-line-item-actions';
+
+  // Load the order from the Views argument.
+  $order = commerce_order_load($view->argument['order_id']->value[0]);
+  $form_state['order'] = $order;
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function commerce_line_item_field_extra_fields() {
+  $extra = array();
+
+  foreach (commerce_line_item_types() as $type => $line_item_type) {
+    $extra['commerce_line_item'][$type] = array(
+      'form' => array(
+        'label' => array(
+          'label' => t('Line item label'),
+          'description' => t('Line item module label form element'),
+          'weight' => -10,
+        ),
+        'quantity' => array(
+          'label' => t('Quantity'),
+          'description' => t('Line item module quantity form element'),
+          'weight' => -5,
+        ),
+      ),
+      'display' => array(
+        'label' => array(
+          'label' => t('Line item label'),
+          'description' => t('Short descriptive label for the line item'),
+          'weight' => -10,
+        ),
+        'quantity' => array(
+          'label' => t('Quantity'),
+          'description' => t('Quantity associated with this line item'),
+          'weight' => -5,
+        ),
+      ),
+    );
+  }
+
+  return $extra;
+}
+
+/**
+ * Implements hook_field_access().
+ */
+function commerce_line_item_field_access($op, $field, $entity_type, $entity, $account) {
+  // Block field edit access to line item fields that are computed only.
+  if ($op == 'edit' && $entity_type == 'commerce_line_item') {
+    // Build an array of computed field names.
+    $computed_fields = array('commerce_total');
+
+    if (in_array($field['field_name'], $computed_fields)) {
+      return FALSE;
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_line_item_theme() {
+  return array(
+    'commerce_line_item_manager' => array(
+      'render element' => 'form',
+    ),
+    'commerce_line_item_summary' => array(
+      'variables' => array('quantity_raw' => NULL, 'quantity_label' => NULL, 'quantity' => NULL, 'total_raw' => NULL, 'total' => NULL, 'links' => NULL, 'view' => NULL),
+      'path' => drupal_get_path('module', 'commerce_line_item') . '/theme',
+      'template' => 'commerce-line-item-summary',
+    ),
+  );
+}
+
+/**
+ * Submit handler used when clicking the remove button.
+ */
+function commerce_line_item_line_item_views_delete_form_submit($form, &$form_state) {
+  drupal_set_message(t('Line item removed.'));
+}
+
+/**
+ * Submit handler used when clicking the update button.
+ */
+function commerce_line_item_line_item_views_form_submit($form, &$form_state) {
+  drupal_set_message(t('Line items saved.'));
+}
+
+/**
+ * Adds the necessary CSS for the line item summary template.
+ */
+function template_preprocess_commerce_line_item_summary(&$variables) {
+  drupal_add_css(drupal_get_path('module', 'commerce_line_item') . '/theme/commerce_line_item.theme.css');
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_line_item_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_line_item') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_line_item_enable() {
+  commerce_line_item_configure_line_item_types();
+}
+
+/**
+ * Implements hook_modules_enabled().
+ */
+function commerce_line_item_modules_enabled($modules) {
+  commerce_line_item_configure_line_item_fields($modules);
+}
+
+/**
+ * Configures line item types defined by enabled modules.
+ */
+function commerce_line_item_configure_line_item_types() {
+  foreach (commerce_line_item_types() as $line_item_type) {
+    commerce_line_item_configure_line_item_type($line_item_type);
+  }
+}
+
+/**
+ * Configures a line item type by adding default price fields and then calling
+ * its configuration callback.
+ *
+ * @param $line_item_type
+ *   The fully loaded line item type array to configure.
+ */
+function commerce_line_item_configure_line_item_type($line_item_type) {
+  // Add the default price fields to the line item type.
+  $weight = 0;
+
+  foreach (array('commerce_unit_price' => t('Unit price'), 'commerce_total' => t('Total')) as $field_name => $label) {
+    commerce_price_create_instance($field_name, 'commerce_line_item', $line_item_type['type'], $label, $weight++);
+  }
+
+  // If this line item type specifies a configuration callback...
+  if ($callback = commerce_line_item_type_callback($line_item_type, 'configuration')) {
+    // Invoke it now.
+    $callback($line_item_type);
+  }
+}
+
+/**
+ * Configures line item types defined by other modules that are enabled after
+ * the Line Item module.
+ *
+ * @param $modules
+ *   An array of module names whose line item type fields should be configured;
+ *   if left NULL, will default to all modules that implement
+ *   hook_commerce_line_item_type_info().
+ */
+function commerce_line_item_configure_line_item_fields($modules = NULL) {
+  // If no modules array is passed, recheck the fields for all line item types
+  // defined by enabled modules.
+  if (empty($modules)) {
+    $modules = module_implements('commerce_line_item_type_info');
+  }
+
+  // Reset the line item type cache to get types added by newly enabled modules.
+  commerce_line_item_types_reset();
+
+  // Loop through all the enabled modules.
+  foreach ($modules as $module) {
+    // If the module implements hook_commerce_line_item_type_info()...
+    if (module_hook($module, 'commerce_line_item_type_info')) {
+      // Loop through and configure the line item types defined by the module.
+      foreach (module_invoke($module, 'commerce_line_item_type_info') as $type => $line_item_type) {
+        // Load the line item type to ensure we have callbacks set.
+        $line_item_type = commerce_line_item_type_load($type);
+        commerce_line_item_configure_line_item_type($line_item_type);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_line_item_permission() {
+  $permissions = array(
+    'administer line item types' => array(
+      'title' => t('Administer line item types'),
+      'description' => t('View and configure fields attached to module defined line item types.'),
+      'restrict access' => TRUE,
+    ),
+    'administer line items' => array(
+      'title' => t('Administer line items'),
+      'description' => t('Update and delete any line item on the site.'),
+      'restrict access' => TRUE,
+    ),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_field_attach_delete().
+ *
+ * When an entity is deleted, this hook is invoked so any attached fields can
+ * do necessary clean-up. Because line items can't exist apart from a line item
+ * reference field, this function checks the entity being deleted for any
+ * referenced line items that are orphaned and deletes them.
+ */
+function commerce_line_item_field_attach_delete($entity_type, $entity) {
+  $wrapper = entity_metadata_wrapper($entity_type, $entity);
+  $entity_info = entity_get_info($entity_type);
+
+  // If the entity being deleted has a bundle...
+  if (!empty($entity_info['entity keys']['bundle'])) {
+    // Extract the bundle name using the specified property.
+    $property = $entity_info['entity keys']['bundle'];
+    $bundle = $entity->{$property};
+  }
+  else {
+    // Otherwise use the entity type as the bundle name.
+    $bundle = $entity_type;
+  }
+
+  // Find any line item reference fields on this entity and delete any orphan
+  // referenced line items.
+  $line_item_ids = array();
+
+  foreach (field_info_instances($entity_type, $bundle) as $field_name => $field) {
+    // Only examine line item reference fields using the manager widget.
+    if ($field['widget']['type'] == 'commerce_line_item_manager' && $wrapper->{$field_name}->count() > 0) {
+      // Loop over each line item referenced on this field...
+      foreach ($wrapper->{$field_name} as $delta => $line_item_wrapper) {
+        // To determine if it's still an orphan (i.e. no other entities reference
+        // this line item through any line item reference field).
+        $orphan = TRUE;
+
+        // Loop over each line item reference field to look for references.
+        foreach (commerce_info_fields('commerce_line_item_reference') as $key => $value) {
+          $query = new EntityFieldQuery();
+          $query->fieldCondition($key, 'line_item_id', $line_item_wrapper->line_item_id->value(), '=')->count();
+
+          // If some entity still references this line item through this field...
+          if ($query->execute() > 0) {
+            // It is not an orphan.
+            $orphan = FALSE;
+          }
+        }
+
+        // If this line item is an orphan, add it to the array of line items to
+        // be deleted.
+        if ($orphan) {
+          $line_item_ids[] = $line_item_wrapper->line_item_id->value();
+        }
+      }
+    }
+  }
+
+  // Delete the line items if any were found.
+  if (!empty($line_item_ids)) {
+    commerce_line_item_delete_multiple($line_item_ids);
+  }
+}
+
+/**
+ * Returns an array of line item type arrays keyed by type.
+ */
+function commerce_line_item_types() {
+  // First check the static cache for a line item types array.
+  $line_item_types = &drupal_static(__FUNCTION__);
+
+  // If it did not exist, fetch the types now.
+  if (!isset($line_item_types)) {
+    $line_item_types = module_invoke_all('commerce_line_item_type_info');
+    drupal_alter('commerce_line_item_type_info', $line_item_types);
+
+    foreach ($line_item_types as $type => &$line_item_type) {
+      $defaults = array(
+        'type' => $type,
+        'product' => FALSE,
+        'base' => $type,
+        'callbacks' => array(),
+      );
+
+      $line_item_type += $defaults;
+
+      // Merge in default callbacks.
+      foreach (array('configuration', 'title', 'add_form', 'add_form_submit') as $callback) {
+        if (!isset($line_item_type['callbacks'][$callback])) {
+          $line_item_type['callbacks'][$callback] = $line_item_type['base'] . '_' . $callback;
+        }
+      }
+    }
+  }
+
+  return $line_item_types;
+}
+
+/**
+ * Returns a single line item type array.
+ *
+ * @param $type
+ *   The machine-readable name of the line item type.
+ *
+ * @return
+ *   The specified line item type array or FALSE if it does not exist.
+ */
+function commerce_line_item_type_load($type) {
+  $line_item_types = commerce_line_item_types();
+
+  return isset($line_item_types[$type]) ? $line_item_types[$type] : FALSE;
+}
+
+/**
+ * Resets the cached list of line item types.
+ */
+function commerce_line_item_types_reset() {
+  $line_item_types = &drupal_static('commerce_line_item_types');
+  $line_item_types = NULL;
+  entity_info_cache_clear();
+}
+
+/**
+ * Returns the human readable name of any or all line item types.
+ *
+ * @param $type
+ *   Optional parameter specifying the type whose name to return.
+ *
+ * @return
+ *   Either an array of all line item type names keyed by the machine name or a
+ *     string containing the human readable name for the specified type. If a
+ *     type is specified that does not exist, this function returns FALSE.
+ */
+function commerce_line_item_type_get_name($type = NULL) {
+  $line_item_types = commerce_line_item_types();
+
+  // Return a type name if specified and it exists.
+  if (!empty($type)) {
+    if (isset($line_item_types[$type])) {
+      return $line_item_types[$type]['name'];
+    }
+    else {
+      // Return FALSE if it does not exist.
+      return FALSE;
+    }
+  }
+
+  // Otherwise turn the array values into the type name only.
+  $line_item_type_names = array();
+
+  foreach ((array) $line_item_types as $key => $value) {
+    $line_item_type_names[$key] = $value['name'];
+  }
+
+  return $line_item_type_names;
+}
+
+/**
+ * Wraps commerce_line_item_type_get_name() for the Entity module.
+ */
+function commerce_line_item_type_options_list() {
+  return commerce_line_item_type_get_name();
+}
+
+/**
+ * Title callback: return the human-readable line item type name.
+ */
+function commerce_line_item_type_title($line_item_type) {
+  return $line_item_type['name'];
+}
+
+/**
+ * Returns a path argument from a line item type.
+ */
+function commerce_line_item_type_to_arg($type) {
+  return $type;
+}
+
+/**
+ * Returns the specified callback for the given line item type if one exists.
+ *
+ * @param $line_item_type
+ *   The line item type array.
+ * @param $callback
+ *   The callback function to return, one of:
+ *   - configuration
+ *   - title
+ *   - add_form
+ *   - add_form_validate
+ *   - add_form_submit
+ *
+ * @return
+ *   A string containing the name of the callback function or FALSE if it could
+ *     not be found.
+ */
+function commerce_line_item_type_callback($line_item_type, $callback) {
+  // If the specified callback function exists, return it.
+  if (!empty($line_item_type['callbacks'][$callback]) &&
+      function_exists($line_item_type['callbacks'][$callback])) {
+    return $line_item_type['callbacks'][$callback];
+  }
+
+  // Otherwise return FALSE.
+  return FALSE;
+}
+
+/**
+ * Returns an initialized line item object.
+ *
+ * @param $type
+ *   The machine-readable type of the line item.
+ * @param $order_id
+ *   The ID of the order the line item belongs to (if available).
+ *
+ * @return
+ *   A line item object with all default fields initialized.
+ */
+function commerce_line_item_new($type = '', $order_id = 0) {
+  return entity_get_controller('commerce_line_item')->create(array(
+    'type' => $type,
+    'order_id' => $order_id,
+  ));
+}
+
+/**
+ * Saves a line item.
+ *
+ * @param $line_item
+ *   The full line item object to save.
+ *
+ * @return
+ *   SAVED_NEW or SAVED_UPDATED depending on the operation performed.
+ */
+function commerce_line_item_save($line_item) {
+  return entity_get_controller('commerce_line_item')->save($line_item);
+}
+
+/**
+ * Loads a line item by ID.
+ */
+function commerce_line_item_load($line_item_id) {
+  $line_items = commerce_line_item_load_multiple(array($line_item_id), array());
+  return $line_items ? reset($line_items) : FALSE;
+}
+
+/**
+ * Loads multiple line items by ID or based on a set of matching conditions.
+ *
+ * @see entity_load()
+ *
+ * @param $line_item_ids
+ *   An array of line item IDs.
+ * @param $conditions
+ *   An array of conditions on the {commerce_line_item} table in the form
+ *     'field' => $value.
+ * @param $reset
+ *   Whether to reset the internal line item loading cache.
+ *
+ * @return
+ *   An array of line item objects indexed by line_item_id.
+ */
+function commerce_line_item_load_multiple($line_item_ids = array(), $conditions = array(), $reset = FALSE) {
+  return entity_load('commerce_line_item', $line_item_ids, $conditions, $reset);
+}
+
+/**
+ * Deletes a line item by ID.
+ *
+ * @param $line_item_id
+ *   The ID of the line item to delete.
+ *
+ * @return
+ *   TRUE on success, FALSE otherwise.
+ */
+function commerce_line_item_delete($line_item_id) {
+  return commerce_line_item_delete_multiple(array($line_item_id));
+}
+
+/**
+ * Deletes multiple line items by ID.
+ *
+ * @param $line_item_ids
+ *   An array of line item IDs to delete.
+ *
+ * @return
+ *   TRUE on success, FALSE otherwise.
+ */
+function commerce_line_item_delete_multiple($line_item_ids) {
+  return entity_get_controller('commerce_line_item')->delete($line_item_ids);
+}
+
+/**
+ * Deletes any references to the given line item.
+ */
+function commerce_line_item_delete_references($line_item) {
+  // Check the data in every line item reference field.
+  foreach (commerce_info_fields('commerce_line_item_reference') as $field_name => $field) {
+    // Query for any entity referencing the deleted line item in this field.
+    $query = new EntityFieldQuery();
+    $query->fieldCondition($field_name, 'line_item_id', $line_item->line_item_id, '=');
+    $result = $query->execute();
+
+    // If results were returned...
+    if (!empty($result)) {
+      // Loop over results for each type of entity returned.
+      foreach ($result as $entity_type => $data) {
+        // Load the entities of the current type.
+        $entities = entity_load($entity_type, array_keys($data));
+
+        // Loop over each entity and remove the reference to the deleted line item.
+        foreach ($entities as $entity_id => $entity) {
+          commerce_entity_reference_delete($entity, $field_name, 'line_item_id', $line_item->line_item_id);
+
+          entity_save($entity_type, $entity);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Determines access to perform an operation on a particular line item.
+ *
+ * @param $op
+ *   The operation to perform on the line item, either 'update' or 'delete'.
+ * @param $line_item
+ *   The line item object in question.
+ * @param $account
+ *   The user account whose access should be checked; defaults to the current
+ *   user if left NULL.
+ *
+ * @return
+ *   TRUE or FALSE indicating whether or not access should be granted.
+ */
+function commerce_line_item_access($op, $line_item, $account = NULL) {
+  global $user;
+  $account = isset($account) ? $account : clone($user);
+
+  // If the user has the administration permission, return TRUE now.
+  if (user_access('administer line items', $account)) {
+    return TRUE;
+  }
+
+  // For users who don't have the general administration permission, we have to
+  // determine access to update or delete a given line item through a connection
+  // to an Order.
+  if (!empty($line_item->order_id) && module_exists('commerce_order')) {
+    $order = commerce_order_load($line_item->order_id);
+    return commerce_order_access($op, $order, $account);
+  }
+
+  // Issue a blanket refusal of access in the event the order module is not
+  // enabled, as we have no other way of determining line item access outside of
+  // the 'administer line items' permission.
+  return FALSE;
+}
+
+/**
+ * Implementation of hook_query_commerce_line_item_access_alter().
+ *
+ * Implement access control on line items. This is different from other entities
+ * because the access to a line item is totally delegated to its order.
+ */
+function commerce_line_item_query_commerce_line_item_access_alter(QueryAlterableInterface $query) {
+  // Read the meta-data from the query.
+  if (!$account = $query->getMetaData('account')) {
+    global $user;
+    $account = $user;
+  }
+
+  // If the user has the administration permission, nothing to do.
+  if (user_access('administer line items', $account)) {
+    return;
+  }
+
+  // Join the line items to their orders.
+  if (module_exists('commerce_order')) {
+    $tables = &$query->getTables();
+
+    // Look for an existing commerce_order table.
+    foreach ($tables as $table) {
+      if ($table['table'] === 'commerce_order') {
+        $order_alias = $table['alias'];
+        break;
+      }
+    }
+
+    // If not found, attempt a join against the first table.
+    if (!isset($order_alias)) {
+      reset($tables);
+      $base_table = key($tables);
+      $order_alias = $query->innerJoin('commerce_order', 'co', '%alias.order_id = ' . $base_table . '.order_id');
+    }
+
+    // Perform the access control on the order.
+    commerce_entity_access_query_alter($query, 'commerce_order', $order_alias);
+  }
+  else {
+    // The user has access to no line item.
+    $query->where('1 = 0');
+  }
+}
+
+/**
+ * Returns the title of a line item based on its type.
+ *
+ * Titles are returned sanitized and so do not need to be sanitized again prior
+ * to display.
+ *
+ * @param $line_item
+ *   The line item object whose title should be returned.
+ *
+ * @return
+ *   The type-dependent title of the line item.
+ */
+function commerce_line_item_title($line_item) {
+  // Find the line item type's title callback.
+  $line_item_type = commerce_line_item_type_load($line_item->type);
+  $title_callback = commerce_line_item_type_callback($line_item_type, 'title');
+
+  return $title_callback ? $title_callback($line_item) : '';
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function commerce_line_item_field_info() {
+  return array(
+    'commerce_line_item_reference' => array(
+      'label' => t('Line item reference'),
+      'description' => t('This field stores the ID of a related line item as an integer value.'),
+      'settings' => array(),
+      'instance_settings' => array(),
+      'default_widget' => 'commerce_line_item_manager',
+      'default_formatter' => 'commerce_line_item_reference_view',
+      'property_type' => 'commerce_line_item',
+      'property_callbacks' => array('commerce_line_item_property_info_callback'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_validate().
+ *
+ * Possible error codes:
+ * - 'invalid_line_item_id': line_item_id is not valid for the field (not a
+ *                           valid line item ID).
+ */
+function commerce_line_item_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  // Extract line_item_ids to check.
+  $line_item_ids = array();
+
+  // First check non-numeric line_item_id's to avoid losing time with them.
+  foreach ($items as $delta => $item) {
+    if (is_array($item) && !empty($item['line_item_id'])) {
+      if (is_numeric($item['line_item_id'])) {
+        $line_item_ids[] = $item['line_item_id'];
+      }
+      else {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'invalid_line_item_id',
+          'message' => t('%name: you have specified an invalid line item for this field.', array('%name' => $instance['label'])),
+        );
+      }
+    }
+  }
+
+  // Prevent performance hog if there are no ids to check.
+  if ($line_item_ids) {
+    $line_items = commerce_line_item_load_multiple($line_item_ids);
+
+    foreach ($items as $delta => $item) {
+      if (is_array($item)) {
+        if (!empty($item['line_item_id']) && !isset($line_items[$item['line_item_id']])) {
+          $errors[$field['field_name']][$langcode][$delta][] = array(
+            'error' => 'invalid_line_item_id',
+            'message' => t('%name: you have specified an invalid line item for this reference field.', array('%name' => $instance['label'])),
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function commerce_line_item_field_is_empty($item, $field) {
+  // line_item_id = 0 is empty too, which is exactly what we want.
+  return empty($item['line_item_id']);
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function commerce_line_item_field_formatter_info() {
+  return array(
+    'commerce_line_item_reference_view' => array(
+      'label' => t('Line item View'),
+      'description' => t('Display the line items via a default View.'),
+      'field types' => array('commerce_line_item_reference'),
+      'settings' => array(
+        'view' => 'commerce_line_item_table|default',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function commerce_line_item_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $element = array();
+
+  if ($display['type'] == 'commerce_line_item_reference_view') {
+    // Build an options array of Views available for the order contents pane.
+    $options = array();
+
+     // Generate an option list from all user defined and module defined views.
+     foreach (views_get_all_views() as $name => $view) {
+      // Only include line item Views.
+      if ($view->base_table == 'commerce_line_item') {
+         foreach ($view->display as $display_name => $display) {
+          $options[check_plain($name)][$name .'|'. $display_name] = $display->display_title;
+        }
+       }
+     }
+
+    $element['view'] = array(
+      '#type' => 'select',
+      '#title' => t('Order contents View'),
+      '#description' => t('Specify the View to use to display the line items referenced by this field.'),
+      '#options' => $options,
+      '#default_value' => $settings['view'],
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function commerce_line_item_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+
+  if ($display['type'] == 'commerce_line_item_reference_view') {
+    // Load the View and display its information in the summary.
+    list($name, $display_name) = explode('|', $display['settings']['view']);
+    $view = views_get_view($name);
+
+    $summary = t('View: @name - @display', array('@name' => $view->name, '@display' => $view->display[$display_name]->display_title));
+  }
+
+  return $summary;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function commerce_line_item_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $result = array();
+
+  // Collect the list of line item IDs.
+  $line_item_ids = array();
+
+  foreach ($items as $delta => $item) {
+    $line_item_ids[] = $item['line_item_id'];
+  }
+
+  switch ($display['type']) {
+    case 'commerce_line_item_reference_view':
+      // Extract the View and display ID from the setting.
+      list($view_id, $display_id) = explode('|', $display['settings']['view']);
+
+      $result[0] = array(
+        '#markup' => commerce_embed_view($view_id, $display_id, array(implode(',', $line_item_ids))),
+      );
+
+      break;
+  }
+
+  return $result;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ *
+ * Defines widgets available for use with field types as specified in each
+ * widget's $info['field types'] array.
+ */
+function commerce_line_item_field_widget_info() {
+  $widgets = array();
+
+  // Define the creation / reference widget for line items.
+  $widgets['commerce_line_item_manager'] = array(
+    'label' => t('Line item manager'),
+    'description' => t('Use a complex widget to manager the line items referenced by this object.'),
+    'field types' => array('commerce_line_item_reference'),
+    'settings' => array(),
+    'behaviors' => array(
+      'multiple values' => FIELD_BEHAVIOR_CUSTOM,
+      'default value' => FIELD_BEHAVIOR_NONE,
+    ),
+  );
+
+  // Do not show the widget on forms; useful in cases where line item reference
+  // fields will be attached to non-order entities and managed by code.
+  $widgets['commerce_line_item_reference_hidden'] = array(
+    'label' => t('Do not show a widget'),
+    'description' => t('Will not display the line item reference field on forms. Use only if you maintain line item references some other way.'),
+    'field types' => array('commerce_line_item_reference'),
+    'settings' => array(),
+    'behaviors' => array(
+      'multiple values' => FIELD_BEHAVIOR_CUSTOM,
+    ),
+  );
+
+  return $widgets;
+}
+
+/**
+ * Implements hook_field_widget_form().
+ *
+ * Used to define the form element for custom widgets.
+ */
+function commerce_line_item_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  // Define the complex line item reference field widget.
+  if ($instance['widget']['type'] == 'commerce_line_item_manager') {
+    $line_item_ids = array();
+
+    // Build an array of line item IDs from this field's values.
+    foreach ($items as $item) {
+      $line_item_ids[] = $item['line_item_id'];
+    }
+
+    // Load the line items for temporary storage in the form array.
+    $line_items = commerce_line_item_load_multiple($line_item_ids);
+
+    // Update the base form element array to use the proper theme and validate
+    // functions and to include header information for the line item table.
+    $element += array(
+      '#theme' => 'commerce_line_item_manager',
+      '#element_validate' => array('commerce_line_item_manager_validate'),
+      '#header' => array(t('Remove'), t('Title'), t('SKU'), t('Unit price'), t('Quantity'), t('Total')),
+      '#empty' => t('No line items found.'),
+      'line_items' => array(),
+    );
+
+    if (!empty($form_state['line_item_save_warning'])) {
+      drupal_set_message(t('New line items on this order will not be saved until the <em>Save order</em> button is clicked.'), 'warning');
+    }
+
+    // Add a set of elements to the form for each referenced line item.
+    foreach ($line_items as $line_item_id => $line_item) {
+      // Store the original line item for later comparison.
+      $element['line_items'][$line_item_id]['line_item'] = array(
+        '#type' => 'value',
+        '#value' => $line_item,
+      );
+
+      // This checkbox will be overridden with a clickable delete image.
+      $element['line_items'][$line_item_id]['remove'] = array(
+        '#type' => 'checkbox',
+        '#default_value' => FALSE,
+      );
+
+      $element['line_items'][$line_item_id]['title'] = array(
+        '#markup' => commerce_line_item_title($line_item),
+      );
+
+      $element['line_items'][$line_item_id]['line_item_label'] = array(
+        '#markup' => check_plain($line_item->line_item_label),
+      );
+
+      // Retrieve the widget form for just the unit price.
+      $widget_form = _field_invoke_default('form', 'commerce_line_item', $line_item, $form, $form_state, array('field_name' => 'commerce_unit_price'));
+
+      // Unset the title and description and add it to the line item form.
+      $language = $widget_form['commerce_unit_price']['#language'];
+      unset($widget_form['commerce_unit_price'][$language][0]['amount']['#title']);
+      unset($widget_form['commerce_unit_price'][$language][0]['amount']['#description']);
+
+      $element['line_items'][$line_item_id]['commerce_unit_price'] = $widget_form['commerce_unit_price'];
+      $quantity = round($line_item->quantity);
+
+      $element['line_items'][$line_item_id]['quantity'] = array(
+        '#type' => 'textfield',
+        '#datatype' => 'integer',
+        '#default_value' => $quantity,
+        '#size' => 4,
+        '#maxlength' => max(4, strlen($quantity)),
+      );
+
+      // Wrap the line item and add its formatted total to the form.
+      $wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+      $element['line_items'][$line_item_id]['commerce_total'] = array(
+        '#markup' => commerce_currency_format($wrapper->commerce_total->amount->value(), $wrapper->commerce_total->currency_code->value(), $line_item),
+      );
+    }
+
+    // If the the form has been instructed to add a line item...
+    if (!empty($form_state['line_item_add'])) {
+      // Load the info object for the selected line item type.
+      $line_item_type = commerce_line_item_type_load($form_state['line_item_add']);
+
+      // Store the line item info object in the form array.
+      $element['actions']['line_item_type'] = array(
+        '#type' => 'value',
+        '#value' => $line_item_type,
+      );
+
+      // If this type specifies a valid add form callback function...
+      if ($callback = commerce_line_item_type_callback($line_item_type, 'add_form')) {
+        // Load in the appropriate form elements to the actions array.
+        $element['actions'] += $callback($element, $form_state);
+      }
+
+      // Add a default save button.
+      $element['actions'] += array(
+        'save_line_item' => array(
+          '#type' => 'submit',
+          '#value' => !empty($line_item_type['add_form_submit_value']) ? $line_item_type['add_form_submit_value'] : t('Save'),
+          '#ajax' => array(
+            'callback' => 'commerce_line_item_manager_refresh',
+            'wrapper' => 'line-item-manager',
+          ),
+        ),
+      );
+
+      $element['actions']['cancel'] = array(
+        '#type' => 'submit',
+        '#value' => t('Cancel'),
+        '#ajax' => array(
+          'callback' => 'commerce_line_item_manager_refresh',
+          'wrapper' => 'line-item-manager',
+        ),
+      );
+    }
+    else {
+      // Otherwise display the select list to add a new line item.
+      $options = commerce_line_item_type_get_name();
+
+      // Only display the line item selector if line item types exist.
+      if (!empty($options)) {
+        $element['actions']['line_item_type'] = array(
+          '#type' => 'select',
+          '#options' => commerce_line_item_type_get_name(),
+          '#prefix' => '<div class="add-line-item">',
+        );
+        $element['actions']['line_item_add'] = array(
+          '#type' => 'submit',
+          '#value' => t('Add line item'),
+          '#ajax' => array(
+            'callback' => 'commerce_line_item_manager_refresh',
+            'wrapper' => 'line-item-manager',
+          ),
+          '#suffix' => '</div>',
+        );
+      }
+    }
+
+    return $element;
+  }
+  elseif ($instance['widget']['type'] == 'commerce_line_item_reference_hidden') {
+    return array();
+  }
+}
+
+/**
+ * Returns the line item manager element for display via AJAX.
+ */
+function commerce_line_item_manager_refresh($form, $form_state) {
+  // Reverse the array parents of the triggering element, because we know the
+  // part of the form to return will be 3 elements up from the triggering element.
+  $parents = array_reverse($form_state['triggering_element']['#array_parents']);
+  return $form[$parents[3]][$form[$parents[3]]['#language']];
+}
+
+/**
+ * Themes the line item manager widget form element.
+ */
+function theme_commerce_line_item_manager($variables) {
+  drupal_add_css(drupal_get_path('module', 'commerce_line_item') . '/theme/commerce_line_item.admin.css');
+
+  $form = $variables['form'];
+  $rows = array();
+
+  // Add each line item to the table.
+  foreach (element_children($form['line_items']) as $line_item_id) {
+    $row = array(
+      drupal_render($form['line_items'][$line_item_id]['remove']),
+      drupal_render($form['line_items'][$line_item_id]['title']),
+      drupal_render($form['line_items'][$line_item_id]['line_item_label']),
+      drupal_render($form['line_items'][$line_item_id]['commerce_unit_price']),
+      drupal_render($form['line_items'][$line_item_id]['quantity']),
+      drupal_render($form['line_items'][$line_item_id]['commerce_total']),
+    );
+
+    $rows[] = $row;
+  }
+
+  // Setup the table's variables array and build the output.
+  $table_variables = array(
+    'caption' => check_plain($form['#title']),
+    'header' => $form['#header'],
+    'rows' => $rows,
+    'empty' => $form['#empty'],
+  );
+
+  $output = theme('table', $table_variables) . drupal_render($form['actions']);
+
+  return '<div id="line-item-manager" class="clearfix">' . $output . '</div>';
+}
+
+/**
+ * Validation callback for a commerce_line_item_manager element.
+ *
+ * When the form is submitted, the line item reference field stores the line
+ * item IDs as derived from the $element['line_items'] array and updates any
+ * referenced line items based on the extra form elements.
+ */
+function commerce_line_item_manager_validate($element, &$form_state, $form) {
+  $value = array();
+
+  // Loop through the line items in the manager table.
+  foreach (element_children($element['line_items']) as $line_item_id) {
+    // If the line item has been marked for deletion...
+    if ($element['line_items'][$line_item_id]['remove']['#value']) {
+      // Delete the line item now and don't include it from the $value array.
+      commerce_line_item_delete($line_item_id);
+    }
+    else {
+      // Add the line item ID to the current value of the reference field.
+      $value[] = array('line_item_id' => $line_item_id);
+
+      // Update the line item based on the values in the additional elements.
+      $line_item = clone($element['line_items'][$line_item_id]['line_item']['#value']);
+
+      // Validate the quantity of each line item.
+      $element_name = implode('][', $element['line_items'][$line_item_id]['quantity']['#parents']);
+      $quantity = $element['line_items'][$line_item_id]['quantity']['#value'];
+
+      if (!is_numeric($quantity) || $quantity <= 0) {
+        form_set_error($element_name, t('You must specify a positive number for the quantity'));
+      }
+      elseif ($element['line_items'][$line_item_id]['quantity']['#datatype'] == 'integer' &&
+        (int) $quantity != $quantity) {
+        form_set_error($element_name, t('You must specify a whole number for the quantity.'));
+      }
+      else {
+        $line_item->quantity = $quantity;
+      }
+
+      // Manually validate the unit price of each line item.
+      $unit_price = $form_state['values'][$element['#field_name']][$element['#language']]['line_items'][$line_item_id]['commerce_unit_price'];
+      $amount = $unit_price[$element['#language']][0]['amount'];
+      $currency_code = $unit_price[$element['#language']][0]['currency_code'];
+
+      // Display an error message for a non-numeric unit price.
+      if (!is_numeric($amount)) {
+        $name = implode('][', array_merge($element['line_items'][$line_item_id]['commerce_unit_price']['#parents'], array($element['#language'], 0, 'amount')));
+        form_set_error($name, 'You must enter a numeric value for the unit price.');
+      }
+      elseif ($amount <> $line_item->commerce_unit_price[$element['#language']][0]['amount'] ||
+        $currency_code <> $line_item->commerce_unit_price[$element['#language']][0]['currency_code']) {
+        // Otherwise update the unit price amount if it has changed.
+        $line_item->commerce_unit_price = $unit_price;
+
+        // Rebuild the price components array.
+        commerce_line_item_rebase_unit_price($line_item);
+      }
+
+      // Only save if values were actually changed.
+      if ($line_item != $element['line_items'][$line_item_id]['line_item']['#value']) {
+        commerce_line_item_save($line_item);
+      }
+    }
+  }
+
+  // If the "Add line item" button was clicked, store the line item type in the
+  // $form_state for the rebuild of the $form array.
+  if (!empty($form_state['triggering_element'])) {
+    if ($form_state['triggering_element']['#value'] == t('Add line item')) {
+      $form_state['line_item_add'] = $element['actions']['line_item_type']['#value'];
+      $form_state['rebuild'] = TRUE;
+    }
+    else {
+      unset($form_state['line_item_add']);
+
+      $parent = end($form_state['triggering_element']['#parents']);
+
+      // If the save button was clicked from the line item type action form...
+      if ($parent == 'save_line_item') {
+        $line_item_type = $element['actions']['line_item_type']['#value'];
+
+        // Extract an order ID from the form if present.
+        $order_id = 0;
+
+        if (!empty($form_state['commerce_order'])) {
+          $order_id = $form_state['commerce_order']->order_id;
+        }
+
+        // Create the new line item.
+        $line_item = commerce_line_item_new($line_item_type['type'], $order_id);
+
+        // If this type specifies a valid add form callback function...
+        if ($callback = commerce_line_item_type_callback($line_item_type, 'add_form_submit')) {
+          // Allow the callback to alter data onto the line item to be saved and
+          // to return an error message if something goes wrong.
+          $error = $callback($line_item, $element, $form_state, $form);
+        }
+        else {
+          // Assume no error if the callback isn't specified.
+          $error = FALSE;
+        }
+
+        // If we didn't end up with any errors...
+        if (empty($error)) {
+          // Save it and add it to the line item reference field's values array.
+          commerce_line_item_save($line_item);
+
+          // If the item is saved, we set a variable to notify the user the
+          // need of saving the order.
+          $form_state['line_item_save_warning'] = TRUE;
+
+          $value[] = array('line_item_id' => $line_item->line_item_id);
+        }
+        else {
+          // Otherwise display the error message; note this is not using
+          // form_set_error() on purpose, because a failed addition of a line item
+          // doesn't affect the rest of the form submission process.
+          drupal_set_message($error, 'error');
+        }
+
+        $form_state['rebuild'] = TRUE;
+      }
+      elseif ($parent == 'cancel') {
+        // If the cancel button was clicked refresh without action.
+        $form_state['rebuild'] = TRUE;
+      }
+    }
+  }
+
+  form_set_value($element, $value, $form_state);
+}
+
+/**
+ * Implements hook_field_widget_error().
+ */
+function commerce_line_item_field_widget_error($element, $error) {
+  form_error($element, $error['message']);
+}
+
+/**
+ * Recalculates the price components of the given line item's unit price based
+ * on its current amount and currency code.
+ *
+ * When a line item's unit price is adjusted via the line item manager widget,
+ * its components need to be recalculated using the given price as the new base
+ * price. Otherwise old component data will be used when calculating the total
+ * of the order, causing it not to match with the actual line item total.
+ *
+ * This function recalculates components by using the new unit price amount as
+ * the base price and allowing other modules to add additional components to the
+ * new components array as required based on the prior components.
+ *
+ * @param $line_item
+ *   The line item object whose unit price components should be recalculated.
+ *   The unit price amount and currency code should already be set to their new
+ *   value.
+ *
+ * @see hook_commerce_line_item_rebase_unit_price()
+ */
+function commerce_line_item_rebase_unit_price($line_item) {
+  // Prepare a line item wrapper.
+  $wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $price = $wrapper->commerce_unit_price->value();
+
+  // Extract the old components array and reset the current one.
+  $old_components = array();
+  $component_type = 'base_price';
+
+  if (!empty($price['data']['components'])) {
+    $old_components = $price['data']['components'];
+
+    // Find the base price component type used so line items that don't use the
+    // base_price component can preserve their own initial component type.
+    $base_component = reset($old_components);
+    $component_type = $base_component['name'];
+
+    if (!commerce_price_component_type_load($component_type)) {
+      $component_type = 'base_price';
+    }
+  }
+
+  // Set the current price as the new base price.
+  $price['data']['components'] = array();
+  $price['data'] = commerce_price_component_add($price, $component_type, $price, TRUE, FALSE);
+
+  // Set the unit price to the current price array.
+  $wrapper->commerce_unit_price = $price;
+
+  // Give other modules a chance to add components to the array.
+  foreach (module_implements('commerce_line_item_rebase_unit_price') as $module) {
+    $function = $module . '_commerce_line_item_rebase_unit_price';
+    $function($price, $old_components, $line_item);
+  }
+
+  // Set the unit price once again to the price with any additional components.
+  $wrapper->commerce_unit_price = $price;
+}
+
+/**
+ * Callback for getting line item properties.
+ *
+ * @see commerce_line_item_entity_property_info()
+ */
+function commerce_line_item_get_properties($line_item, array $options, $name) {
+  switch ($name) {
+    case 'order':
+      return !empty($line_item->order_id) ? $line_item->order_id : commerce_order_new();
+  }
+}
+
+/**
+ * Callback for setting line item properties.
+ *
+ * @see commerce_line_item_entity_property_info()
+ */
+function commerce_line_item_set_properties($line_item, $name, $value) {
+  switch ($name) {
+    case 'order':
+      $line_item->order_id = $value;
+      break;
+  }
+}
+
+/**
+ * Callback to alter the property info of the reference field.
+ *
+ * @see commerce_line_item_field_info().
+ */
+function commerce_line_item_property_info_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+  $property['options list'] = 'entity_metadata_field_options_list';
+}
+
+/**
+ * Returns the total quantity of an array of line items.
+ *
+ * @param $line_items
+ *   The array of line items whose quantities you want to count; also accepts an
+ *   EntityListWrapper of a line item reference field.
+ * @param $types
+ *   An array of line item types to filter by before counting.
+ *
+ * @return
+ *   The total quantity of all the matching line items.
+ */
+function commerce_line_items_quantity($line_items, $types = array()) {
+  // Sum up the quantity of all matching line items.
+  $quantity = 0;
+
+  foreach ($line_items as $line_item) {
+    if (!$line_item instanceof EntityMetadataWrapper) {
+      $line_item = entity_metadata_wrapper('commerce_line_item', $line_item);
+    }
+
+    if (empty($types) || in_array($line_item->type->value(), $types)) {
+      $quantity += $line_item->quantity->value();
+    }
+  }
+
+  return $quantity;
+}
+
+/**
+ * Returns the total price amount and currency of an array of line items.
+ *
+ * @param $line_items
+ *   The array of line items whose quantities you want to count; also accepts an
+ *   EntityListWrapper of a line item reference field.
+ * @param $types
+ *   An array of line item types to filter by before totaling.
+ *
+ * @return
+ *   An associative array of containing the total 'amount' and 'currency_code'
+ *   the line items.
+ *
+ * @see commerce_order_calculate_total()
+ */
+function commerce_line_items_total($line_items, $types = array()) {
+  // First determine the currency to use for the order total. This code has
+  // been copied and modifed from commerce_order_calculate_total(). It is worth
+  // considering abstracting this code into a separate API function that both
+  // functions can use.
+  $currency_code = commerce_default_currency();
+  $currencies = array();
+
+  // Populate an array of how many line items on the order use each currency.
+  foreach ($line_items as $delta => $line_item_wrapper) {
+    // Convert the line item to a wrapper if necessary.
+    if (!$line_item_wrapper instanceof EntityMetadataWrapper) {
+      $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item_wrapper);
+    }
+
+    $line_item_currency_code = $line_item_wrapper->commerce_total->currency_code->value();
+
+    if (!in_array($line_item_currency_code, array_keys($currencies))) {
+      $currencies[$line_item_currency_code] = 1;
+    }
+    else {
+      $currencies[$line_item_currency_code]++;
+    }
+  }
+
+  reset($currencies);
+
+  // If only one currency is present, use that to calculate the total.
+  if (count($currencies) == 1) {
+    $currency_code = key($currencies);
+  }
+  elseif (in_array(commerce_default_currency(), array_keys($currencies))) {
+    // Otherwise use the site default currency if it's in the array.
+    $currency_code = commerce_default_currency();
+  }
+  elseif (count($currencies) > 1) {
+    // Otherwise use the first currency in the array.
+    $currency_code = key($currencies);
+  }
+
+  // Sum up the total price of all matching line items.
+  $total = 0;
+
+  foreach ($line_items as $line_item_wrapper) {
+    // Convert the line item to a wrapper if necessary.
+    if (!$line_item_wrapper instanceof EntityMetadataWrapper) {
+      $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item_wrapper);
+    }
+
+    if (empty($types) || in_array($line_item_wrapper->type->value(), $types)) {
+      $total += commerce_currency_convert(
+        $line_item_wrapper->commerce_total->amount->value(),
+        $line_item_wrapper->commerce_total->currency_code->value(),
+        $currency_code
+      );
+    }
+  }
+
+  return array('amount' => $total, 'currency_code' => $currency_code);
+}
+
+/**
+ * Returns a sorted array of line item summary links.
+ *
+ * @see hook_commerce_line_item_summary_link_info()
+ */
+function commerce_line_item_summary_links() {
+  // Retrieve links defined by the hook and allow other modules to alter them.
+  $links = module_invoke_all('commerce_line_item_summary_link_info');
+
+  // Merge in default values for our custom properties.
+  foreach ($links as $key => &$link) {
+    $link += array(
+      'weight' => 0,
+      'access' => TRUE,
+    );
+  }
+
+  drupal_alter('commerce_line_item_summary_link_info', $links);
+
+  // Sort the links by weight and return the array.
+  uasort($links, 'drupal_sort_weight');
+
+  return $links;
+}
+
+/**
+ * Implements hook_field_views_data().
+ */
+function commerce_line_item_field_views_data($field) {
+  $data = field_views_field_default_views_data($field);
+
+  // Build an array of bundles the field appears on.
+  $bundles = array();
+
+  foreach ($field['bundles'] as $entity => $entity_bundles) {
+    $bundles[] = $entity . ' (' . implode(', ', $entity_bundles) . ')';
+  }
+
+  foreach ($data as $table_name => $table_data) {
+    foreach ($table_data as $field_name => $field_data) {
+      if (isset($field_data['filter']['field_name']) && $field_name != 'delta') {
+        $data[$table_name][$field_name]['relationship'] = array(
+          'title' => t('Referenced line item'),
+          'help' => t('Appears in: @bundles.', array('@bundles' => implode(', ', $bundles))),
+          'base' => 'commerce_line_item',
+          'base field' => 'line_item_id',
+          'handler' => 'views_handler_relationship',
+          'label' => t('Line Item'),
+        );
+      }
+    }
+  }
+
+  return $data;
+}

@@ -1,0 +1,16 @@
+name = Http Client OAuth
+description = Provides a OAuth authentication mechanism for the Http Client
+dependencies[] = oauth_common
+dependencies[] = http_client
+
+files[] = includes/HttpClientOAuth.inc
+
+package = Services - clients
+core = 7.x
+
+; Information added by drupal.org packaging script on 2012-08-22
+version = "7.x-2.4"
+core = "7.x"
+project = "http_client"
+datestamp = "1345646840"
+

@@ -1,0 +1,9 @@
+
+.commerce-flat-rate-base-rate .form-item {
+  float: left;
+  margin-right: 1em;
+}
+
+#commerce-flat-rate-service-form .form-actions {
+  clear: left;
+}

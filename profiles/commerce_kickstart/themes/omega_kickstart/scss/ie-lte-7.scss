@@ -1,0 +1,229 @@
+/* Include Default Variables & Mixins */
+@import "variables.scss";
+@import "mixins.scss";
+/* End Variables & Mixins */
+/**************************************************
+* --
+* 1. Global
+* --
+**************************************************/
+img {
+  width: auto;
+}
+#messages {
+  z-index: 1000; /*Fix for z-index stacking*/
+}
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.1. Zone user
+**********************************************/
+.zone-user-wrapper {
+  width: inherit !important;
+}
+/*******************************************
+* 2.1.1. Region user first
+*******************************************/
+/* User menu */
+.block-menu-user-menu .content {
+  width: auto;
+}
+/**********************************************
+* 2.2. Zone branding
+**********************************************/
+/**
+* Search block
+*/
+#block-views-exp-display-products-page .views-exposed-widgets {
+  position: relative;
+}
+#block-views-exp-display-products-page .views-exposed-widget {
+  padding: 0;
+  position: relative;
+  left: 0px;
+}
+#block-views-exp-display-products-page #edit-search-api-views-fulltext {
+  height: 18px;
+  padding: 5px;
+}
+#block-views-exp-display-products-page .views-submit-button {
+  position: absolute;
+  right: 0;
+  .form-submit {
+    float: right;
+    width: 24px;
+    height: 24px;
+  }
+}
+
+/**********************************************
+* 2.3. Zone menu
+**********************************************/
+/**
+* Navigation
+*/
+.navigation .primary-menu,
+.navigation .second-menu,
+.zone-menu .block-menu {
+  ul li {
+    display: inline;
+    float: left;
+    margin-right: 0;
+    margin-left: 0;
+    a {
+      display: block;
+      float: left;
+      min-height: 100%;
+      height: 28px;
+    }
+  }
+}
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+.section-content {
+  min-height: auto;
+  height: auto;
+}
+/*******************************************
+* 3.2.1. Sidebar first
+*******************************************/
+/* Search api facet blocks */
+.region-sidebar-first .block-facetapi {
+  margin-left: 5px;
+}
+#search-api-ranges-block-slider-view-form {
+  margin-top: 15px;
+}
+/* Category */
+.region-sidebar-first .block-facetapi.field_category .item-list {
+  border: none !important;
+  height: auto !important;
+  padding: 0 !important;
+  overflow-y: visible !important;
+}
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+
+.view-collection-products .view-header .view-collection-products,
+.view-collection-taxonomy-term .view-header .collection-terms {
+  padding-bottom: 5px;
+}
+.view-collection-products .view-content .item-list .products-per-collection li,
+.view-collection-taxonomy-term .view-content .item-list .products-per-collection li {
+  header {
+    display: block !important;
+  }
+  .field-type-commerce-price {
+    .price_prefix p {
+      padding-right: 5px;
+    }
+  }
+}
+/**********************************************
+* 5.2. All products page
+**********************************************/
+.page-products .view-display-products {
+  clear: both;
+  margin-top: 40px;
+  width: 700px;
+
+  ul li {
+   &.views-row {
+     display: block;
+     height: auto;
+     margin: 0;
+     width: 225px;
+   }
+    header {
+      display: block;
+    }
+    .content {
+
+      .field-name-commerce-price {
+        .price_prefix p {
+          padding-right: 5px;
+        }
+      }
+    }
+  }
+}
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+div.commerce_add_to_cart_confirmation_overlay {
+  display: none;
+}
+div.messages.commerce-add-to-cart-confirmation {
+  .message-inner {
+    .view-confirm-message-product-display {
+      .view-content {
+        width: 180px !important;
+      }
+    }
+  }
+}
+/**********************************************
+* 5.4. Checkout process
+**********************************************/
+/**
+* Checkout progress
+*/
+ul.inline.commerce-checkout-progress,
+ol.inline.commerce-checkout-progress {
+  li {
+    background-image: url('../images/bg_checkout_progress_ie.png');
+    background-position: right center; /* LTR */
+    background-repeat: no-repeat;
+    padding-right: 50px; /* LTR */
+    padding-left: 25px; /* LTR */
+    right: -5px; /* LTR */
+    &.active {
+      background-image: url('../images/bg_checkout_progress_ie.png');
+    }
+    &.previous {
+      background-image: url('../images/bg_checkout_progress_ie_visited.png');
+    }
+    &.last {
+      background-image: url('../images/bg_checkout_progress_ie_last.png');
+    }
+  }
+}
+/**************************************************
+* --
+* 9. User account
+* --
+**************************************************/
+.page-user,
+.page-checkout {
+  .section-footer {
+    @include clearfix;
+  }
+}
+
+/* Address book */
+.page-user-addressbook {
+  .field-name-commerce-customer-address {
+    .addressfield-container-inline > div.form-item {
+      float: none;
+      margin: 0;
+    }
+  }
+}

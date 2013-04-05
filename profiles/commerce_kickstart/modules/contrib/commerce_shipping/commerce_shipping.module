@@ -1,0 +1,1173 @@
+<?php
+
+/**
+ * @file
+ * Defines a system for calculating shipping costs associated with an order.
+ *
+ * The Shipping system includes the following components:
+ * - Shipping methods: ways of determining available shipping rates for orders.
+ * - Shipping services: individual options for shipping made available via a
+ *   shipping method (e.g. UPS Ground vs. 2nd Day Air).
+ * - Shipping line items: the representation of a shipping rate on an order
+ *   using a service specific price component.
+ * - Shipping information customer profile type: used to collect a shipping
+ *   address separate from the billing address.
+ * - Rules integration for determining the availability of shipping services for
+ *   an order during the checkout process.
+ */
+
+
+/**
+ * Implements hook_hook_info().
+ */
+function commerce_shipping_hook_info() {
+  $hooks = array(
+    'commerce_shipping_method_info' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_shipping_method_info_alter' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_shipping_service_info' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_shipping_service_info_alter' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_shipping_method_collect_rates' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_shipping_service_calculate_rate' => array(
+      'group' => 'commerce',
+    ),
+  );
+
+  return $hooks;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_shipping_permission() {
+  return array(
+    'administer shipping' => array(
+      'title' => t('Administer shipping methods and services'),
+      'description' => t('Allows users to configure enabled shipping methods and their available services.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_customer_profile_type_info().
+ */
+function commerce_shipping_commerce_customer_profile_type_info() {
+  $profile_types = array();
+
+  $profile_types['shipping'] = array(
+    'type' => 'shipping',
+    'name' => t('Shipping information'),
+    'description' => t('The profile used to collect shipping information on the checkout and order forms.'),
+    'help' => '',
+    'checkout_pane_weight' => 0,
+  );
+
+  return $profile_types;
+}
+
+/**
+ * Implements hook_commerce_checkout_page_info().
+ */
+function commerce_shipping_commerce_checkout_page_info() {
+  $checkout_pages = array();
+
+  $checkout_pages['shipping'] = array(
+    'title' => t('Shipping'),
+    'weight' => 5,
+  );
+
+  return $checkout_pages;
+}
+
+/**
+ * Implements hook_commerce_checkout_pane_info().
+ */
+function commerce_shipping_commerce_checkout_pane_info() {
+  $checkout_panes = array();
+
+  $checkout_panes['commerce_shipping'] = array(
+    'title' => t('Shipping service'),
+    'base' => 'commerce_shipping_pane',
+    'file' => 'includes/commerce_shipping.checkout_pane.inc',
+    'page' => 'shipping',
+    'weight' => 2,
+    'review' => FALSE,
+  );
+
+  return $checkout_panes;
+}
+
+/**
+ * Implements hook_commerce_price_component_type_info().
+ */
+function commerce_shipping_commerce_price_component_type_info() {
+  $components = array();
+
+  // Define a generic shipping price component type.
+  $components['shipping'] = array(
+    'title' => t('Shipping'),
+    'weight' => 20,
+  );
+
+  // Add a price component type for each shipping service that specifies it.
+  foreach (commerce_shipping_services() as $name => $shipping_service) {
+    if ($shipping_service['price_component'] && empty($components[$shipping_service['price_component']])) {
+      $components[$shipping_service['price_component']] = array(
+        'title' => $shipping_service['title'],
+        'display_title' => $shipping_service['display_title'],
+        'shipping_service' => $name,
+        'weight' => 20,
+      );
+    }
+  }
+
+  return $components;
+}
+
+/**
+ * Implements hook_modules_enabled().
+ */
+function commerce_shipping_modules_enabled($modules) {
+  commerce_shipping_methods_reset();
+  commerce_shipping_services_reset();
+  _commerce_shipping_default_rules_reset($modules);
+}
+
+/**
+ * Resets default Rules if necessary when modules are enabled or disabled.
+ *
+ * @param $modules
+ *   An array of module names that have been enabled or disabled.
+ */
+function _commerce_shipping_default_rules_reset($modules) {
+  $reset_default_rules = FALSE;
+
+  // Look for any module defining a new shipping method or service.
+  foreach ($modules as $module) {
+    if (function_exists($module . '_commerce_shipping_method_info') ||
+      function_exists($module . '_commerce_shipping_service_info')) {
+      $reset_default_rules = TRUE;
+    }
+  }
+
+  // If we found a module defining a new shipping method or service, we need to
+  // rebuild the default Rules especially for this module so the default rules
+  // and components will appear properly for this module.
+  if ($reset_default_rules) {
+    entity_defaults_rebuild();
+    rules_clear_cache(TRUE);
+    variable_set('menu_rebuild_needed', TRUE);
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function commerce_shipping_module_implements_alter(&$implementations, $hook) {
+  // To allow the default rules defined by this module to be overridden by other
+  // modules (such as Features produced modules), we need to ensure that this
+  // module's hook_default_rules_configuration() is invoked before theirs.
+  if ($hook == 'default_rules_configuration') {
+    // Extract this module's entry from the hook implementations array.
+    $group = $implementations['commerce_shipping'];
+    unset($implementations['commerce_shipping']);
+
+    // And re-add it by prepending it back onto the array.
+    $implementations = array('commerce_shipping' => $group) + $implementations;
+  }
+}
+
+/**
+ * Returns an array of shipping methods defined by enabled modules.
+ *
+ * @return
+ *   An associative array of shipping method arrays keyed by the method_id.
+ */
+function commerce_shipping_methods() {
+  $shipping_methods = &drupal_static(__FUNCTION__);
+
+  // If the shipping methods haven't been defined yet, do so now.
+  if (!isset($shipping_methods)) {
+    $shipping_methods = array();
+
+    // Build the shipping methods array, including module names for the purpose
+    // of including files if necessary.
+    foreach (module_implements('commerce_shipping_method_info') as $module) {
+      foreach (module_invoke($module, 'commerce_shipping_method_info') as $name => $shipping_method) {
+        $shipping_method['name'] = $name;
+        $shipping_method['module'] = $module;
+        $shipping_methods[$name] = $shipping_method;
+      }
+    }
+
+    drupal_alter('commerce_shipping_method_info', $shipping_methods);
+
+    foreach ($shipping_methods as $name => &$shipping_method) {
+      $defaults = array(
+        'name' => $name,
+        'display_title' => $shipping_method['title'],
+        'description' => '',
+        'active' => TRUE,
+      );
+
+      $shipping_method += $defaults;
+    }
+  }
+
+  return $shipping_methods;
+}
+
+/**
+ * Resets the cached list of shipping methods.
+ */
+function commerce_shipping_methods_reset() {
+  $shipping_methods = &drupal_static('commerce_shipping_methods');
+  $shipping_methods = NULL;
+}
+
+/**
+ * Returns a shipping method array.
+ *
+ * @param $name
+ *   The machine-name of the shipping method to return.
+ *
+ * @return
+ *   The fully loaded shipping method array or FALSE if not found.
+ */
+function commerce_shipping_method_load($name) {
+  $shipping_methods = commerce_shipping_methods();
+  return isset($shipping_methods[$name]) ? $shipping_methods[$name] : FALSE;
+}
+
+/**
+ * Returns the human readable title of any or all shipping methods.
+ *
+ * @param $name
+ *   The machine-name of the shipping method whose title should be returned. If
+ *   left NULL, an array of all titles will be returned.
+ * @param $title_type
+ *   The type of title to return: 'title' or 'display_title'.
+ *
+ * @return
+ *   Either an array of all shipping method titles keyed by the machine-name or
+ *   a string containing the human readable title for the specified method. If a
+ *   method is specified that does not exist, this function returns FALSE.
+ */
+function commerce_shipping_method_get_title($name = NULL, $title_type = 'title') {
+  $shipping_methods = commerce_shipping_methods();
+
+  // Return a method title if specified and it exists.
+  if (!empty($name)) {
+    if (isset($shipping_methods[$name])) {
+      return $shipping_methods[$name][$title_type];
+    }
+    else {
+      // Return FALSE if it does not exist.
+      return FALSE;
+    }
+  }
+
+  // Otherwise turn the array values into the method title only.
+  $shipping_method_titles = array();
+
+  foreach ((array) $shipping_methods as $key => $value) {
+    $shipping_method_titles[$key] = $value[$title_type];
+  }
+
+  return $shipping_method_titles;
+}
+
+/**
+ * Wraps commerce_shipping_method_get_title() for the Entity module and Field API.
+ *
+ * @return
+ *   An array of shipping method titles keyed by machine-name for use in options
+ *   lists and allowed values lists.
+ */
+function commerce_shipping_method_options_list() {
+  return commerce_shipping_method_get_title();
+}
+
+/**
+ * Returns an array of shipping services keyed by name.
+ *
+ * @param $method
+ *   The machine-name of a shipping method to filter the return value by.
+ */
+function commerce_shipping_services($method = NULL) {
+  // First check the static cache for a shipping services array.
+  $shipping_services = &drupal_static(__FUNCTION__);
+
+  // If it did not exist, fetch the services now.
+  if (!isset($shipping_services)) {
+    $shipping_services = array();
+
+    // Find shipping services defined by hook_commerce_shipping_service_info().
+    $weight = 0;
+
+    foreach (module_implements('commerce_shipping_service_info') as $module) {
+      foreach ((array) module_invoke($module, 'commerce_shipping_service_info') as $name => $shipping_service) {
+        // Initialize shipping service properties if necessary.
+        $defaults = array(
+          'name' => $name,
+          'base' => $name,
+          'display_title' => $shipping_service['title'],
+          'description' => '',
+          'shipping_method' => '',
+          'rules_component' => TRUE,
+          'price_component' => $name,
+          'weight' => $weight++,
+          'callbacks' => array(),
+          'module' => $module,
+        );
+
+        $shipping_service = array_merge($defaults, $shipping_service);
+
+        // Merge in default callbacks.
+        foreach (array('rate', 'details_form', 'details_form_validate', 'details_form_submit') as $callback) {
+          if (!isset($shipping_service['callbacks'][$callback])) {
+            $shipping_service['callbacks'][$callback] = $shipping_service['base'] . '_' . $callback;
+          }
+        }
+
+        $shipping_services[$name] = $shipping_service;
+      }
+    }
+
+    // Last allow the info to be altered by other modules.
+    drupal_alter('commerce_shipping_service_info', $shipping_services);
+  }
+
+  // Filter out services that don't match the specified shipping method filter.
+  if (!empty($method)) {
+    $filtered_services = $shipping_services;
+
+    foreach ($filtered_services as $name => $shipping_service) {
+      if ($shipping_service['shipping_method'] != $method) {
+        unset($filtered_services[$name]);
+      }
+    }
+
+    return $filtered_services;
+  }
+
+  return $shipping_services;
+}
+
+/**
+ * Resets the cached list of shipping services.
+ */
+function commerce_shipping_services_reset() {
+  $shipping_services = &drupal_static('commerce_shipping_services');
+  $shipping_services = NULL;
+}
+
+/**
+ * Returns a single shipping service array.
+ *
+ * @param $name
+ *   The machine-name of the shipping service to return.
+ *
+ * @return
+ *   The specified shipping service array or FALSE if it did not exist.
+ */
+function commerce_shipping_service_load($name) {
+  $shipping_services= commerce_shipping_services();
+  return empty($shipping_services[$name]) ? FALSE : $shipping_services[$name];
+}
+
+/**
+ * Returns the human readable title of any or all shipping services.
+ *
+ * @param $name
+ *   The machine-name of the shipping service whose title should be returned. If
+ *   left NULL, an array of all titles will be returned.
+ * @param $title_type
+ *   The type of title to return: 'title' or 'display_title'.
+ *
+ * @return
+ *   Either an array of all shipping service titles keyed by the machine-name or
+ *   a string containing the human readable title for the specified service. If
+ *   a service is specified that does not exist, this function returns FALSE.
+ */
+function commerce_shipping_service_get_title($name = NULL, $title_type = 'title') {
+  $shipping_services = commerce_shipping_services();
+
+  // Return a service title if specified and it exists.
+  if (!empty($name)) {
+    if (isset($shipping_services[$name])) {
+      return $shipping_services[$name][$title_type];
+    }
+    else {
+      // Return FALSE if it does not exist.
+      return FALSE;
+    }
+  }
+
+  // Otherwise turn the array values into the service title only.
+  $shipping_service_titles = array();
+
+  foreach ((array) $shipping_services as $key => $value) {
+    $method_title = commerce_shipping_method_get_title($value['shipping_method']);
+    $shipping_service_titles[$method_title][$key] = $value[$title_type];
+  }
+
+  // Sort the title groups by method title.
+  ksort($shipping_service_titles);
+
+  return $shipping_service_titles;
+}
+
+/**
+ * Wraps commerce_shipping_service_get_title() for the Entity module.
+ *
+ * @return
+ *   An array of shipping service titles keyed by machine-name as needed for
+ *   options lists.
+ */
+function commerce_shipping_service_options_list() {
+  return commerce_shipping_service_get_title();
+}
+
+
+/**
+ * Returns the specified callback for the given shipping service if one exists.
+ *
+ * @param $shipping_service
+ *   The shipping service info array.
+ * @param $callback
+ *   The callback function to return, one of:
+ *   - rate
+ *   - details_form
+ *   - details_form_validate
+ *   - details_form_submit
+ *
+ * @return
+ *   A string containing the name of the callback function or FALSE if it could
+ *   not be found.
+ */
+function commerce_shipping_service_callback($shipping_service, $callback) {
+  // If the specified callback function exists, return it.
+  if (!empty($shipping_service['callbacks'][$callback]) &&
+    function_exists($shipping_service['callbacks'][$callback])) {
+    return $shipping_service['callbacks'][$callback];
+  }
+
+  // Otherwise return FALSE.
+  return FALSE;
+}
+
+/**
+ * Collects available shipping rates for an order, adding them to the order
+ * object via an unsaved shipping_rates property.
+ *
+ * @param $order
+ *   The order for which rates will be collected.
+ */
+function commerce_shipping_collect_rates($order) {
+  $order->shipping_rates = array();
+  rules_invoke_all('commerce_shipping_collect_rates', $order);
+
+  // Sort rates by the weight value of their line items. This value is derived
+  // from the related shipping service's rate but may be overridden via
+  // hook_commerce_shipping_method_collect_rates().
+  uasort($order->shipping_rates, 'commerce_shipping_sort_rates');
+}
+
+/**
+ * Sorts shipping rates based on the weight property added to shipping line
+ * items in an order's data array.
+ */
+function commerce_shipping_sort_rates($a, $b) {
+  $a_weight = isset($a->weight) ? $a->weight : 0;
+  $b_weight = isset($b->weight) ? $b->weight : 0;
+
+  if ($a_weight == $b_weight) {
+    return 0;
+  }
+
+  return ($a_weight < $b_weight) ? -1 : 1;
+}
+
+/**
+ * Collects available shipping services of the specified method for an order.
+ *
+ * This function is typically called via the Rules action "Collect rates for a
+ * shipping method" attached to a default Rule.
+ *
+ * @param $method
+ *   The machine-name of the shipping method whose services should be collected.
+ * @param $order
+ *   The order to which the services should be made available.
+ */
+function commerce_shipping_method_collect_rates($method, $order) {
+  // Load all the rule components.
+  $components = rules_get_components(FALSE, 'action');
+
+  // Loop over each shipping service in search of matching components.
+  foreach (commerce_shipping_services() as $name => $shipping_service) {
+    // If the current service matches the method and specifies a default component...
+    if ($shipping_service['shipping_method'] == $method && $shipping_service['rules_component']) {
+      $component_name = 'commerce_shipping_service_' . $name;
+
+      // If we found the current service's component...
+      if (!empty($components[$component_name])) {
+        // Invoke it with the order.
+        rules_invoke_component($component_name, $order);
+      }
+    }
+  }
+
+  // Allow modules handling shipping service calculation on their own to return
+  // services for this method, too.
+  module_invoke_all('commerce_shipping_method_collect_rates', $method, $order);
+}
+
+/**
+ * Adds a shipping rate to the given order object for the specified service.
+ *
+ * @param $service
+ *   The machine-name of the shipping service to rate.
+ * @param $order
+ *   The order for which the shipping service should be rated.
+ */
+function commerce_shipping_service_rate_order($service, $order) {
+  // Load the full shipping service info array.
+  $shipping_service = commerce_shipping_service_load($service);
+
+  // If the service specifies a rate callback...
+  if ($callback = commerce_shipping_service_callback($shipping_service, 'rate')) {
+    // Get the base rate price for the shipping service.
+    $price = $callback($shipping_service, $order);
+
+    // If we got a base price...
+    if ($price) {
+      // Create a calculated shipping line item out of it.
+      $line_item = commerce_shipping_service_rate_calculate($service, $price, $order->order_id);
+      $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+      // Add the rate to the order as long as it doesn't have a NULL price amount.
+      if (!is_null($line_item_wrapper->commerce_unit_price->amount->value())) {
+        // Include a weight property on the line item object from the shipping
+        // service for sorting rates.
+        $line_item->weight = empty($shipping_service['weight']) ? 0 : $shipping_service['weight'];
+        $order->shipping_rates[$service] = $line_item;
+      }
+    }
+  }
+}
+
+/**
+ * Creates a shipping line item with the specified initial price and passes it
+ * through Rules for additional calculation.
+ *
+ * @param $service
+ *   The machine-name of the shipping service the rate is for.
+ * @param $price
+ *   A price array used to establish the base unit price for the shipping.
+ * @param $order
+ *   If available, the order to which the shipping line item will belong.
+ *
+ * @return
+ *   The shipping line item with a calculated shipping rate.
+ */
+function commerce_shipping_service_rate_calculate($service, $price, $order_id = 0) {
+  $shipping_service = commerce_shipping_service_load($service);
+
+  // Create the new line item for the service rate.
+  $line_item = commerce_shipping_line_item_new($service, $price, $order_id);
+
+  // Set the price component of the unit price if it hasn't already been done.
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $data = $line_item_wrapper->commerce_unit_price->data->value();
+
+  if (empty($data['components'])) {
+    $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add(
+      $line_item_wrapper->commerce_unit_price->value(),
+      $shipping_service['price_component'],
+      $line_item_wrapper->commerce_unit_price->value(),
+      TRUE,
+      FALSE
+    );
+  }
+
+  rules_invoke_all('commerce_shipping_calculate_rate', $line_item);
+
+  return $line_item;
+}
+
+/**
+ * Turns an array of shipping rates into a form element options array.
+ *
+ * @param $order
+ *   An order object with a shipping_rates property defined as an array of
+ *   shipping rate price arrays keyed by shipping service name.
+ *
+ * @return
+ *   An options array of calculated shipping rates labeled using the display
+ *   title of the shipping services.
+ */
+function commerce_shipping_service_rate_options($order) {
+  $options = array();
+
+  foreach ($order->shipping_rates as $name => $line_item) {
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+    $options[$name] = t('!shipping_service: !price', array(
+      '!shipping_service' => commerce_shipping_service_get_title($name, 'display_title'),
+      '!price' => commerce_currency_format($line_item_wrapper->commerce_unit_price->amount->value(), $line_item_wrapper->commerce_unit_price->currency_code->value()),
+    ));
+  }
+
+  // Allow modules to alter the options array generated for the rates.
+  drupal_alter('commerce_shipping_service_rate_options', $options, $order);
+
+  return $options;
+}
+
+/**
+ * Caches shipping rates for an order.
+ *
+ * @param $method
+ *   The name of the shipping method the rates are being cached for.
+ * @param $order
+ *   The order the rates were calculated for.
+ * @param $rates
+ *   An array of base rate price arrays keyed by shipping service name.
+ */
+function commerce_shipping_rates_cache_set($method, $order, $rates) {
+  cache_set($order->order_id . ':' . $method, $rates, 'cache_commerce_shipping_rates', CACHE_TEMPORARY);
+}
+
+/**
+ * Retrieves cached shipping rates for an order.
+ *
+ * @param $method
+ *   The name of the shipping method the rates are being cached for.
+ * @param $order
+ *   The order the rates were calculated for.
+ * @param $timeout
+ *   Number of seconds after which cached rates should be considered invalid.
+ *   Defaults to 0, meaning cached rates are only good for the current page
+ *   request.
+ *
+ * @return
+ *   A cached array of base rate price arrays keyed by shipping service name or
+ *   FALSE if no cache existed or the cache is invalid based on the timeout
+ *   parameter if specified.
+ */
+function commerce_shipping_rates_cache_get($method, $order, $timeout = 0) {
+  $cache = cache_get($order->order_id . ':' . $method, 'cache_commerce_shipping_rates');
+
+  // If no data was retrieved, return FALSE.
+  if (empty($cache)) {
+    return FALSE;
+  }
+
+  // If a timeout value was specified...
+  if ($cache->created < REQUEST_TIME - $timeout) {
+    return FALSE;
+  }
+
+  return $cache->data;
+}
+
+/**
+ * Clears the shipping rates cache for the specified order.
+ */
+function commerce_shipping_rates_cache_clear($order) {
+  cache_clear_all($order->order_id . ':', 'cache_commerce_shipping_rates', TRUE);
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function commerce_shipping_flush_caches() {
+  return array('cache_commerce_shipping_rates');
+}
+
+/**
+ * Implements hook_commerce_line_item_type_info().
+ */
+function commerce_shipping_commerce_line_item_type_info() {
+  $line_item_types = array();
+
+  $line_item_types['shipping'] = array(
+    'name' => t('Shipping'),
+    'description' => t('References a shipping method and displays the rate with the selected service title.'),
+    'add_form_submit_value' => t('Add shipping'),
+    'base' => 'commerce_shipping_line_item',
+  );
+
+  return $line_item_types;
+}
+
+/**
+ * Line item callback: configures the shipping line item type on module enable.
+ */
+function commerce_shipping_line_item_configuration($line_item_type) {
+  $field_name = 'commerce_shipping_service';
+  $type = $line_item_type['type'];
+
+  $field = field_info_field($field_name);
+  $instance = field_info_instance('commerce_line_item', $field_name, $type);
+
+  if (empty($field)) {
+    $field = array(
+      'field_name' => $field_name,
+      'type' => 'list_text',
+      'cardinality' => 1,
+      'entity_types' => array('commerce_line_item'),
+      'translatable' => FALSE,
+      'locked' => TRUE,
+      'settings' => array(
+        'allowed_values_function' => 'commerce_shipping_service_options_list',
+      ),
+    );
+    $field = field_create_field($field);
+  }
+
+  if (empty($instance)) {
+    $instance = array(
+      'field_name' => $field_name,
+      'entity_type' => 'commerce_line_item',
+      'bundle' => $type,
+      'label' => t('Shipping service'),
+      'required' => TRUE,
+      'settings' => array(),
+
+      'widget' => array(
+        'type' => 'options_select',
+        'weight' => 0,
+      ),
+
+      'display' => array(
+        'display' => array(
+          'label' => 'hidden',
+          'weight' => 0,
+        ),
+      ),
+    );
+    field_create_instance($instance);
+  }
+}
+
+/**
+ * Returns the title of a shipping line item's related shipping service.
+ */
+function commerce_shipping_line_item_title($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+  // First try to get the title from the line item's data array.
+  if (!empty($line_item->data['shipping_service']['display_title'])) {
+    return $line_item->data['shipping_service']['display_title'];
+  }
+  // Then try to get the title from the shipping service.
+  elseif ($title = commerce_shipping_service_get_title($line_item_wrapper->commerce_shipping_service->value(), 'display_title')) {
+    return $title;
+  }
+
+  // Fallback to the line item label.
+  return $line_item->line_item_label;
+}
+
+/**
+ * Returns the elements necessary to add a shipping line item through the line
+ * item manager widget.
+ */
+function commerce_shipping_line_item_add_form($form, &$form_state) {
+  // Collect the available shipping rates for this order.
+  $order = $form_state['commerce_order'];
+  commerce_shipping_collect_rates($order);
+
+  // Store the available rates in the form.
+  $form = array();
+
+  $form['#attached']['css'][] = drupal_get_path('module', 'commerce_shipping') . '/theme/commerce_shipping.admin.css';
+
+  $form['shipping_rates'] = array(
+    '#type' => 'value',
+    '#value' => $order->shipping_rates,
+  );
+
+  // Create an options array based on the rated services.
+  $options = commerce_shipping_service_rate_options($order);
+  $options['manual'] = t('Manually specify a shipping service and rate.');
+
+  $form['shipping_service'] = array(
+    '#type' => 'radios',
+    '#title' => t('Shipping service'),
+    '#options' => $options,
+    '#default_value' => key($options),
+  );
+
+  $form['custom_rate'] = array(
+    '#type' => 'container',
+    '#states' => array(
+      'visible' => array(
+        ':input[name="commerce_line_items[und][actions][shipping_service]"]' => array('value' => 'manual'),
+      ),
+    ),
+  );
+
+  $form['custom_rate']['shipping_service'] = array(
+    '#type' => 'select',
+    '#title' => t('Shipping service'),
+    '#options' => commerce_shipping_service_options_list(),
+  );
+
+  $form['custom_rate']['amount'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Shipping rate'),
+    '#default_value' => '',
+    '#size' => 10,
+    '#prefix' => '<div class="commerce-shipping-rate">',
+    '#states' => array(
+      'visible' => array(
+        ':input[name="commerce_line_items[und][actions][shipping_service]"]' => array('value' => 'manual'),
+      ),
+    ),
+  );
+
+  $form['custom_rate']['currency_code'] = array(
+    '#type' => 'select',
+    '#options' => commerce_currency_code_options_list(),
+    '#default_value' => commerce_default_currency(),
+    '#suffix' => '</div>',
+  );
+
+  return $form;
+}
+
+/**
+ * Adds the selected shipping information to a new shipping line item.
+ *
+ * @param $line_item
+ *   The newly created line item object.
+ * @param $element
+ *   The array representing the widget form element.
+ * @param $form_state
+ *   The present state of the form upon the latest submission.
+ * @param $form
+ *   The actual form array.
+ *
+ * @return
+ *   NULL if all is well or an error message if something goes wrong.
+ */
+function commerce_shipping_line_item_add_form_submit($line_item, $element, &$form_state, $form) {
+  $order = $form_state['commerce_order'];
+
+  // Ensure a quantity of 1.
+  $line_item->quantity = 1;
+
+  // Use a custom service and rate amount if specified.
+  if ($element['actions']['shipping_service']['#value'] == 'manual') {
+    $service = $element['actions']['custom_rate']['shipping_service']['#value'];
+    $shipping_service = commerce_shipping_service_load($service);
+
+    // Build the custom unit price array.
+    $unit_price = array(
+      'amount' => commerce_currency_decimal_to_amount($element['actions']['custom_rate']['amount']['#value'], $element['actions']['custom_rate']['currency_code']['#value']),
+      'currency_code' => $element['actions']['custom_rate']['currency_code']['#value'],
+      'data' => array(),
+    );
+
+    // Add a price component for the custom amount.
+    $unit_price['data'] = commerce_price_component_add(
+      $unit_price,
+      $shipping_service['price_component'],
+      $unit_price,
+      TRUE,
+      FALSE
+    );
+  }
+  else {
+    // Otherwise use the values for the selected calculated service.
+    $service = $element['actions']['shipping_service']['#value'];
+
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $element['actions']['shipping_rates']['#value'][$service]);
+    $unit_price = $line_item_wrapper->commerce_unit_price->value();
+  }
+
+  // Populate the line item with the appropriate data.
+  commerce_shipping_line_item_populate($line_item, $service, $unit_price);
+}
+
+/**
+ * Creates a new shipping line item populated with the proper shipping values.
+ *
+ * @param $service
+ *   The machine-name of the shipping service the line item represents.
+ * @param $unit_price
+ *   A price array used to initialize the value of the line item's unit price.
+ * @param $order_id
+ *   The ID of the order the line item belongs to.
+ * @param $data
+ *   An array value to initialize the line item's data array with.
+ * @param $type
+ *   The name of the line item type being created; defaults to 'shipping'.
+ *
+ * @return
+ *   The shipping line item for the specified service initialized to the given
+ *   unit price.
+ */
+function commerce_shipping_line_item_new($service, $unit_price, $order_id = 0, $data = array(), $type = 'shipping') {
+  // Ensure a default product line item type.
+  if (empty($type)) {
+    $type = 'shipping';
+  }
+
+  // Create the new line item.
+  $line_item = entity_create('commerce_line_item', array(
+    'type' => $type,
+    'order_id' => $order_id,
+    'quantity' => 1,
+    'data' => $data,
+  ));
+
+  // Populate it with the shipping service and unit price data.
+  commerce_shipping_line_item_populate($line_item, $service, $unit_price);
+
+  // Allow other modules to add additional data to the line item if necessary.
+  drupal_alter('commerce_shipping_line_item_new', $line_item);
+
+  // Return the line item.
+  return $line_item;
+}
+
+/**
+ * Populates a shipping line item with the specified values.
+ *
+ * @param $service
+ *   The machine-name of the shipping service the line item represents.
+ * @param $unit_price
+ *   A price array used to initialize the value of the line item's unit price.
+ */
+function commerce_shipping_line_item_populate($line_item, $service, $unit_price) {
+  // Use the label to store the display title of the shipping service.
+  $line_item->line_item_label = commerce_shipping_service_get_title($service, 'display_title');
+  $line_item->quantity = 1;
+
+  // Store the full shipping status object in the data array.
+  $line_item->data['shipping_service'] = commerce_shipping_service_load($service);
+
+  // Set the service textfield and unit price.
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $line_item_wrapper->commerce_shipping_service = $service;
+  $line_item_wrapper->commerce_unit_price = $unit_price;
+}
+
+/**
+ * Deletes all shipping line items on an order.
+ *
+ * @param $order
+ *  The order object to delete the shipping line items from.
+ * @param $skip_save
+ *   Boolean indicating whether or not to skip saving the order in this function.
+ */
+function commerce_shipping_delete_shipping_line_items($order, $skip_save = FALSE) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // When deleting more than one line item, metadata_wrapper will give problems
+  // if deleting while looping through the line items. So first remove from order
+  // and then delete the line items.
+  $line_item_ids = array();
+
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // If this line item is a shipping line item...
+    if ($line_item_wrapper->type->value() == 'shipping') {
+      // Store its ID for later deletion and remove the reference from the line
+      // item reference field.
+      $line_item_ids[] = $line_item_wrapper->line_item_id->value();
+      $order_wrapper->commerce_line_items->offsetUnset($delta);
+    }
+  }
+
+  // If we found any shipping line items...
+  if (!empty($line_item_ids)) {
+    // First save the order to update the line item reference field value.
+    if (!$skip_save) {
+      commerce_order_save($order);
+    }
+
+    // Then delete the line items.
+    commerce_line_item_delete_multiple($line_item_ids);
+  }
+}
+
+/**
+ * Implements hook_commerce_order_update().
+ *
+ * When an order is updated, we have no way of knowing if new information on the
+ * order demands a recalculation of shipping rates. To be safe, we simply clear
+ * the cached rates for an order any time that order is updated.
+ */
+function commerce_shipping_commerce_order_update($order) {
+  commerce_shipping_rates_cache_clear($order);
+}
+
+/**
+ * Adds a shipping line item to an order.
+ *
+ * @param $line_item
+ *   An unsaved shipping line item that should be added to the order.
+ * @param $order
+ *   The order to add the shipping line item to.
+ * @param $skip_save
+ *   Boolean indicating whether or not to skip saving the order in this function.
+ *
+ * @return
+ *   The saved shipping line item object or FALSE on failure.
+ */
+function commerce_shipping_add_shipping_line_item($line_item, $order, $skip_save = FALSE) {
+  // Do not proceed without a valid order.
+  if (empty($order)) {
+    return FALSE;
+  }
+
+  // Save the incoming line item now so we get its ID.
+  commerce_line_item_save($line_item);
+
+  // Add it to the order's line item reference value.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  $order_wrapper->commerce_line_items[] = $line_item;
+
+  // Save the updated order.
+  if (!$skip_save) {
+    commerce_order_save($order);
+  }
+  // Otherwise, we still need to update the order total to take for account
+  // added shipping line item.
+  else {
+    commerce_order_calculate_total($order);
+  }
+
+  return $line_item;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_shipping_form_commerce_checkout_form_alter(&$form, &$form_state) {
+  // Attach the JavaScript to the page to recalculate services if it is enabled
+  // for this form. We do this in a form alter instead of the checkout pane's
+  // form callback to ensure the whole initial form has been built.
+  if (commerce_shipping_recalculate_services($form)) {
+    // Build an array to limit validation errors to customer profile data and
+    // the currently selected shipping service.
+    $limit_validation = array(array('commerce_shipping', 'shipping_service'));
+
+    foreach (commerce_customer_profile_types() as $type => $profile_type) {
+      $limit_validation[] = array('customer_profile_' . $type);
+    }
+
+    // Add a hidden submit button to the page that we'll use to recalculate
+    // shipping when the form is updated or a non-JS customer clicks the button.
+    $form['commerce_shipping']['recalculate'] = array(
+      '#type' => 'submit',
+      '#value' => t('Recalculate shipping'),
+      '#limit_validation_errors' => $limit_validation,
+      '#validate' => array('commerce_shipping_recalculate_services_validate'),
+      '#submit' => array('commerce_shipping_recalculate_services_submit'),
+      '#weight' => -10,
+      '#ajax' => array(
+        'callback' => 'commerce_shipping_recalculate_services_refresh',
+        'wrapper' => 'commerce-shipping-service-ajax-wrapper',
+        'event' => 'click',
+      ),
+      '#attached' => array(
+        'js' => array(drupal_get_path('module', 'commerce_shipping') . '/commerce_shipping.js'),
+      ),
+    );
+
+    // Hide the recalculation button via JavaScript if there are shipping rate
+    // options or if there aren't any options and shipping service selection is
+    // required for checkout.
+    if (!empty($form['commerce_shipping']['shipping_rates']['#value']) || !variable_get('commerce_shipping_pane_require_service', FALSE)) {
+      $form['commerce_shipping']['recalculate']['#states'] = array(
+        'invisible' => array(
+          ':input[id^="edit-commerce-shipping-recalculate"]' => array('value' => t('Recalculate shipping')),
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_customer_profile_copy_refresh_alter().
+ */
+function commerce_shipping_commerce_customer_profile_copy_refresh_alter(&$commands, $form, $form_state) {
+  // Add an AJAX command to click the shipping recalculation button after the
+  // customer clicks a profile copy button.
+  if (!empty($form['commerce_shipping']['recalculate'])) {
+    $commands[] = ajax_command_invoke(NULL, 'commerceCheckShippingRecalculation', array());
+  }
+}
+
+/**
+ * Determines whether or not automatic shipping service recalculation is valid
+ * for the given form.
+ */
+function commerce_shipping_recalculate_services($form, $form_state = NULL, $ignore_shipping = FALSE) {
+  // If the shipping services pane is on the form and it has been configured to
+  // support automatic recalculation...
+  if ((!empty($form['commerce_shipping']) || $ignore_shipping) && variable_get('commerce_shipping_recalculate_services', TRUE)) {
+    // If no form state was passed in, we only need to determine whether or not
+    // there is a customer profile pane on the current form that might trigger
+    // shipping rate recalculation if its form elements are changed.
+    if (empty($form_state)) {
+      // Loop over all of the customer profile types.
+      foreach (commerce_customer_profile_types() as $type => $profile_type) {
+        // If its pane is on the current form...
+        if (!empty($form['customer_profile_' . $type])) {
+          // Enable shipping service recalculation on the form.
+          return TRUE;
+        }
+      }
+      return FALSE;
+    }
+    else {
+      // If we did get a form state, extract the order from it.
+      $order = $form_state['order'];
+
+      // Loop over the customer profile types looking for any represented on the
+      // current checkout form.
+      foreach (commerce_customer_profile_types() as $type => $profile_type) {
+        // If the current type is on the form...
+        if (!empty($form['customer_profile_' . $type])) {
+          // Load the checkout pane to find its checkout pane validate callback.
+          $checkout_pane = commerce_checkout_pane_load($pane_id);
+
+          // If it has a validate callback...
+          if ($callback = commerce_checkout_pane_callback($checkout_pane, 'checkout_form_validate')) {
+            // Disallow shipping service recalculation on the current form build
+            // if the current form state values do not pass validation.
+            $validate = !empty($form_state['values'][$checkout_pane['pane_id']]) && $callback($form, $form_state, $checkout_pane, $order);
+
+            if (!$validate) {
+              return FALSE;
+            }
+          }
+        }
+      }
+
+      // Otherwise enable recalculation since we'll have the data we need to
+      // update or insert the customer profiles represented on the form, giving
+      // us the address data we need to recalculate shipping services.
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}

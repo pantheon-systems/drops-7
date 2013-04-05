@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * @file
+ * Ensures users have cURL enabled prior to installation.
+ */
+
+/**
+ * Implements of hook_requirements().
+ */
+function commerce_hosted_pci_requirements($phase) {
+  // Skip the requirements check if SimpleTest is installed to avoid multiple
+  // cURL rows.
+  if (module_exists('simpletest')) {
+    return;
+  }
+
+  $t = get_t();
+
+  $has_curl = function_exists('curl_init');
+
+  $requirements['commerce_hosted_pci'] = array(
+    'title' => $t('cURL'),
+    'value' => $has_curl ? $t('Enabled') : $t('Not found'),
+  );
+
+  if (!$has_curl) {
+    $requirements['commerce_hosted_pci'] += array(
+      'severity' => REQUIREMENT_ERROR,
+      'description' => $t("Hosted Pci requires the PHP <a href='!curl_url'>cURL</a> library.", array('!curl_url' => 'http://php.net/manual/en/curl.setup.php')),
+    );
+  }
+
+  return $requirements;
+}

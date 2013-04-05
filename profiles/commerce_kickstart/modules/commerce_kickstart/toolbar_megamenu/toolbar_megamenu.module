@@ -1,0 +1,282 @@
+<?php
+
+/**
+ * Implements hook_page_build().
+ */
+function toolbar_megamenu_page_build(&$page) {
+  if (isset($page['page_top']['toolbar'])) {
+    $page['page_top']['toolbar']['#pre_render'] = array('toolbar_megamenu_pre_render');
+  }
+}
+
+/**
+ * Prerender function for the toolbar.
+ */
+function toolbar_megamenu_pre_render($toolbar) {
+  $toolbar = array_merge($toolbar, toolbar_megamenu_view());
+  return $toolbar;
+}
+
+/**
+ * Builds the admin menu as a structured array ready for drupal_render().
+ *
+ * @return
+ *   Array of links and settings relating to the admin menu.
+ */
+function toolbar_megamenu_view() {
+  global $user;
+
+  $module_path = drupal_get_path('module', 'toolbar');
+  $megamenu_path = drupal_get_path('module', 'toolbar_megamenu');
+  $build = array(
+    '#theme' => 'toolbar',
+    '#attached'=> array(
+      'js' => array(
+        $module_path . '/toolbar.js',
+        array(
+          'data' => array('tableHeaderOffset' => 'Drupal.toolbar.height'),
+          'type' => 'setting'
+        ),
+      ),
+      'css' => array(
+        $module_path . '/toolbar.css',
+        $megamenu_path . '/toolbar_megamenu.css',
+      ),
+      'library' => array(array('system', 'jquery.cookie')),
+    ),
+  );
+
+  // Retrieve the admin menu from the database.
+  $build['toolbar_menu'] = toolbar_megamenu_tree_output(toolbar_megamenu_get_menu_tree());
+  $build['toolbar_menu']['#prefix'] .= '<h2 class="element-invisible">' . t('Administrative toolbar') . '</h2>';
+
+  // Add logout & user account links or login link.
+  if ($user->uid) {
+    $links = array(
+      'account' => array(
+        'title' => t('Hello <strong>@username</strong>', array('@username' => format_username($user))),
+        'href' => 'user',
+        'html' => TRUE,
+        'attributes' => array('title' => t('User account')),
+      ),
+      'logout' => array(
+        'title' => t('Log out'),
+        'href' => 'user/logout',
+      ),
+    );
+  }
+  else {
+     $links = array(
+      'login' => array(
+        'title' => t('Log in'),
+        'href' => 'user',
+      ),
+    );
+  }
+  $build['toolbar_user'] = array(
+    '#theme' => 'links__toolbar_user',
+    '#links' => $links,
+    '#attributes' => array('id' => 'toolbar-user'),
+  );
+
+  // Add a "home" link.
+  $link = array(
+    'home' => array(
+      'title' => '<span class="home-link">Home</span>',
+      'href' => '<front>',
+      'html' => TRUE,
+      'attributes' => array('title' => t('Home')),
+    ),
+  );
+  $build['toolbar_home'] = array(
+    '#theme' => 'links',
+    '#links' => $link,
+    '#attributes' => array('id' => 'toolbar-home'),
+  );
+
+  // Add an anchor to be able to toggle the visibility of the drawer.
+  $build['toolbar_toggle'] = array(
+    '#theme' => 'toolbar_toggle',
+    '#collapsed' => _toolbar_is_collapsed(),
+    '#attributes' => array('class' => array('toggle')),
+  );
+
+  // Prepare the drawer links CSS classes.
+  $toolbar_drawer_classes = array(
+    'toolbar-drawer',
+    'clearfix',
+  );
+  if (_toolbar_is_collapsed()) {
+    $toolbar_drawer_classes[] = 'collapsed';
+  }
+  $build['toolbar_drawer_classes'] = implode(' ', $toolbar_drawer_classes);
+
+  return $build;
+}
+
+/**
+ * Gets the main items below the admin path.
+ */
+function toolbar_megamenu_get_menu_tree() {
+  $tree = array();
+  $admin_link = db_query('SELECT * FROM {menu_links} WHERE menu_name = :menu_name AND module = :module AND link_path = :path', array(':menu_name' => 'management', ':module' => 'system', ':path' => 'admin'))->fetchAssoc();
+  if ($admin_link) {
+    $tree = menu_build_tree('management', array(
+      'expanded' => array_merge(array($admin_link['mlid']), array_keys(variable_get('toolbar_megamenu', array()))),
+      'min_depth' => $admin_link['depth'] + 1,
+      'max_depth' => $admin_link['depth'] + 3,
+    ));
+  }
+
+  return $tree;
+}
+
+function toolbar_megamenu_tree_output($tree, $balance = TRUE) {
+  $build = array();
+  $groups = array();
+
+  // Build the groups up-front so that we get proper grouping and accurate
+  // counts for the first/last classes.
+  $current_group = 0;
+  foreach ($tree as $data) {
+    // Break to a new group (even for non-visible items), but only if the
+    // current group is not empty.
+    if (!empty($data['link']['options']['toolbar_break']) && !empty($groups[$current_group])) {
+      $current_group++;
+    }
+    if ($data['link']['access'] && !$data['link']['hidden']) {
+      $groups[$current_group][] = $data;
+    }
+  }
+
+  $router_item = menu_get_item();
+  foreach ($groups as $current_group => $items) {
+    $num_items = count($items);
+    foreach ($items as $i => $data) {
+      $class = array();
+      if ($i == 0) {
+        $class[] = 'first';
+      }
+      if ($i == $num_items - 1) {
+        $class[] = 'last';
+      }
+      // Set a class for the <li>-tag. Since $data['below'] may contain local
+      // tasks, only set 'expanded' class if the link also has children within
+      // the current menu.
+      if ($data['link']['has_children'] && $data['below']) {
+        $class[] = 'expanded';
+      }
+      elseif ($data['link']['has_children']) {
+        $class[] = 'collapsed';
+      }
+      else {
+        $class[] = 'leaf';
+      }
+      // Set a class if the link is in the active trail.
+      if ($data['link']['in_active_trail']) {
+        $class[] = 'active-trail';
+        $data['link']['localized_options']['attributes']['class'][] = 'active-trail';
+      }
+      // Normally, l() compares the href of every link with $_GET['q'] and sets
+      // the active class accordingly. But local tasks do not appear in menu
+      // trees, so if the current path is a local task, and this link is its
+      // tab root, then we have to set the class manually.
+      if ($data['link']['href'] == $router_item['tab_root_href'] && $data['link']['href'] != $_GET['q']) {
+        $data['link']['localized_options']['attributes']['class'][] = 'active';
+      }
+
+      // Allow menu-specific theme overrides.
+      $element['#theme'] = 'menu_link__' . strtr($data['link']['menu_name'], '-', '_');
+      $element['#attributes']['class'] = $class;
+      $element['#title'] = $data['link']['title'];
+      $element['#href'] = $data['link']['href'];
+      $element['#localized_options'] = !empty($data['link']['localized_options']) ? $data['link']['localized_options'] : array();
+      $element['#below'] = $data['below'] ? toolbar_megamenu_tree_output($data['below'], FALSE) : $data['below'];
+      $element['#original_link'] = $data['link'];
+      // Index using the link's unique mlid.
+      $build[$current_group][$data['link']['mlid']] = $element;
+    }
+  }
+  if ($build) {
+    foreach (element_children($build) as $group_id) {
+      $mlid = key($build[$group_id]);
+      $css_class = $group_id;
+      if (isset($build[$group_id][$mlid]['#localized_options']['toolbar_css'])) {
+        $css_class = $build[$group_id][$mlid]['#localized_options']['toolbar_css'];
+      }
+      $build[$group_id] += array(
+        '#sorted' => TRUE,
+        '#prefix' => '<ul class="menu group group-' . $group_id . ' toolbar-menu-' . $css_class . '">',
+        '#suffix' => '</ul>',
+      );
+    }
+    // Make sure drupal_render() does not re-order the links.
+    $build['#sorted'] = TRUE;
+    // Add the theme wrapper for outer markup.
+    // Allow menu-specific theme overrides.
+    $build += array(
+      '#prefix' => '<div class="toolbar-menu-wrapper">',
+      '#suffix' => '</div>',
+    );
+  }
+
+  return $build;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * @see menu_edit_item().
+ */
+function toolbar_megamenu_form_menu_edit_item_alter(&$form, &$form_state) {
+  $item = $form['original_item']['#value'];
+  $item['options'] += array(
+    'toolbar_expanded' => FALSE,
+    'toolbar_break' => FALSE,
+  );
+
+  $form['toolbar'] = array('#tree' => TRUE, '#weight' => 10);
+  $form['actions']['#weight'] = 200;
+  $form['toolbar']['toolbar_expanded'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show as expanded in the toolbar'),
+    '#default_value' => $item['options']['toolbar_expanded'],
+  );
+  $form['toolbar']['toolbar_break'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Break column in the toolbar'),
+    '#default_value' => $item['options']['toolbar_break'],
+  );
+  $form['toolbar']['#element_validate'] = array('toolbar_megamenu_form_menu_edit_item_validate');
+}
+
+function toolbar_megamenu_form_menu_edit_item_validate($element, &$form_state, &$form) {
+  $form_state['values']['options']['toolbar_expanded'] = $element['toolbar_expanded']['#value'];
+  $form_state['values']['options']['toolbar_break'] = $element['toolbar_break']['#value'];
+}
+
+/**
+ * Implements hook_menu_link_insert().
+ */
+function toolbar_megamenu_menu_link_insert($link) {
+  _toolbar_megamenu_maintain_expanded_list($link);
+}
+
+/**
+ * Implements hook_menu_link_update().
+ */
+function toolbar_megamenu_menu_link_update($link) {
+  _toolbar_megamenu_maintain_expanded_list($link);
+}
+
+function _toolbar_megamenu_maintain_expanded_list($link) {
+  $expanded = variable_get('toolbar_megamenu', array());
+  if (!empty($link['options']['toolbar_expanded']) && empty($expanded[$link['mlid']])) {
+    $expanded[$link['mlid']] = TRUE;
+    variable_set('toolbar_megamenu', $expanded);
+  }
+  elseif (empty($link['options']['toolbar_expanded']) && !empty($expanded[$link['mlid']])) {
+    unset($expanded[$link['mlid']]);
+    variable_set('toolbar_megamenu', $expanded);
+  }
+}

@@ -1,0 +1,441 @@
+<?php
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_backoffice_product_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_backoffice_product') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_backoffice_product_menu() {
+  // Megarow callbacks.
+  $items['commerce_backoffice/variations/%node'] = array(
+    'page callback' => 'commerce_backoffice_product_variations_view',
+    'page arguments' => array(2),
+    'delivery callback' => 'ajax_deliver',
+    'access arguments' => array('administer commerce_product entities'),
+  );
+
+  // The overriden node/add type listing.
+  $base = array(
+    'page callback' => 'node_add_page',
+    'access callback' => '_node_add_access',
+    'file' => 'node.pages.inc',
+    'file path' => drupal_get_path('module', 'node'),
+  );
+  $items['node/add/add-content'] = array(
+    'title' => 'Add content',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  ) + $base;
+  $items['node/add/add-product'] = array(
+    'title' => 'Add product',
+    'type' => MENU_LOCAL_TASK,
+  ) + $base;
+
+  // Product variation types UI.
+  $items['admin/commerce/config/product-variation-types'] = array(
+    'title' => 'Product variation types',
+    'description' => 'Manage product variation types.',
+    'page callback' => 'commerce_backoffice_product_variation_types_overview',
+    'access arguments' => array('administer product types'),
+    'file' => 'includes/commerce_backoffice_product.product_variation_types.inc',
+  );
+  $items['admin/commerce/config/product-variation-types/add'] = array(
+    'title' => 'Add product variation type',
+    'page callback' => 'commerce_backoffice_product_variation_type_form_wrapper',
+    'page arguments' => array(commerce_product_ui_product_type_new()),
+    'access arguments' => array('administer product types'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'includes/commerce_backoffice_product.product_variation_types.inc',
+  );
+  foreach (commerce_product_types() as $type => $product_type) {
+    // Convert underscores to hyphens for the menu item argument.
+    $type_arg = strtr($type, '_', '-');
+
+    $items['admin/commerce/config/product-variation-types/' . $type_arg] = array(
+      'title' => $product_type['name'],
+      'page callback' => 'commerce_backoffice_product_variation_type_form_wrapper',
+      'page arguments' => array($type),
+      'access arguments' => array('administer product types'),
+      'file' => 'includes/commerce_backoffice_product.product_variation_types.inc',
+    );
+
+    if ($product_type['module'] == 'commerce_product_ui') {
+      $items['admin/commerce/config/product-variation-types/' . $type_arg . '/edit'] = array(
+        'title' => 'Edit',
+        'access callback' => 'commerce_product_ui_product_type_update_access',
+        'access arguments' => array($type),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+      );
+      $items['admin/commerce/config/product-variation-types/' . $type_arg . '/delete'] = array(
+        'title' => 'Delete',
+        'page callback' => 'commerce_backoffice_product_variation_type_delete_form_wrapper',
+        'page arguments' => array($type),
+        'access callback' => 'commerce_product_ui_product_type_update_access',
+        'access arguments' => array($type),
+        'type' => MENU_LOCAL_TASK,
+        'context' => MENU_CONTEXT_INLINE,
+        'weight' => 10,
+        'file' => 'includes/commerce_backoffice_product.product_variation_types.inc',
+      );
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function commerce_backoffice_product_admin_paths() {
+  // The variations view should use the admin theme.
+  $paths = array(
+    'commerce_backoffice/variations/*' => TRUE,
+  );
+  return $paths;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function commerce_backoffice_product_menu_alter(&$items) {
+  $items['admin/structure/types']['page callback'] = 'commerce_backoffice_product_node_overview_types';
+
+  // Remove the Commerce product types UI.
+  foreach ($items as $path => $item) {
+    if (strpos($path, 'admin/commerce/products/types') === 0) {
+      unset($items[$path]);
+    }
+  }
+
+  // Transform the field UI tabs into contextual links.
+  foreach (commerce_product_types() as $type => $product_type) {
+    // Convert underscores to hyphens for the menu item argument.
+    $type_arg = strtr($type, '_', '-');
+
+    $items['admin/commerce/config/product-variation-types/' . $type_arg . '/fields']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
+    $items['admin/commerce/config/product-variation-types/' . $type_arg . '/display']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function commerce_backoffice_product_entity_info_alter(&$entity_info) {
+  foreach ($entity_info['commerce_product']['bundles'] as $type => &$bundle) {
+    $bundle['admin'] = array(
+      'path' => 'admin/commerce/config/product-variation-types/' . strtr($type, '_', '-'),
+      'access arguments' => array('administer product types'),
+    );
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Override the help text added by
+ * commerce_product_reference_form_field_ui_display_overview_form_alter().
+ */
+function commerce_backoffice_product_form_field_ui_display_overview_form_alter(&$form, &$form_state) {
+  $entity_type = $form['#entity_type'];
+  $bundle = $form['#bundle'];
+  $product_fields = commerce_product_reference_field_extra_fields();
+
+  if (isset($product_fields[$entity_type][$bundle])) {
+    foreach ($product_fields[$entity_type][$bundle]['display'] as $field_name => $field) {
+      if (!empty($field['configurable'])) {
+        $form['fields'][$field_name]['format']['type']['#description'] = t('Modify the settings for this field on the <a href="!url">product variation type "manage display" configuration</a>.', array('!url' => url('admin/commerce/config/product-variation-types')));
+      }
+      else {
+        $form['fields'][$field_name]['format']['type']['#description'] = t('The visibility of this field may also need to be toggled in the <a href="!url">product variation type "manage display" configuration</a>.', array('!url' => url('admin/commerce/config/product-variation-types')));
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function commerce_backoffice_product_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Replace add-product action link with add-content.
+  if ($root_path == 'admin/commerce/products') {
+    $link = menu_get_item('node/add');
+    $link['title'] = t('Add product');
+    $link['href'] = 'node/add/add-product';
+    foreach ($data['actions']['output'] as $key => $output) {
+      if ($output['#link']['href'] == 'admin/commerce/products/add') {
+        $data['actions']['output'][$key] = array(
+          '#theme' => 'menu_local_action',
+          '#link' => $link,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_backoffice_product_permission() {
+  $perms = array(
+    'administer product display types' => array(
+      'title' => t('Administer product display types'),
+      'restrict access' => TRUE,
+    ),
+  );
+
+  return $perms;
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function commerce_backoffice_product_theme_registry_alter(&$theme_registry) {
+  $theme_registry['node_add_list']['function'] = 'theme_commerce_backoffice_product_node_add_list';
+}
+
+/**
+ * Override node_add_list theme.
+ *
+ * Based on the url, filters the list of node types to only include
+ * product node types, or non-product display types.
+ */
+function theme_commerce_backoffice_product_node_add_list($variables) {
+  $item = menu_get_item();
+
+  $product_display_types = commerce_product_reference_node_types();
+  $product_display_types = array_keys($product_display_types);
+  $content = &$variables['content'];
+
+  foreach ($content as $key => $value) {
+    $node_type = unserialize($value['page_arguments']);
+    $node_type = $node_type[0];
+    $show_product = $item['path'] == 'node/add/add-product';
+    if (!in_array($node_type, $product_display_types) && $show_product) {
+      unset($content[$key]);
+    }
+    elseif (in_array($node_type, $product_display_types) && !$show_product) {
+      unset($content[$key]);
+    }
+  }
+
+  return theme_node_add_list($variables);
+}
+
+/**
+ * Implements hook_form_views_form_alter().
+ */
+function commerce_backoffice_product_form_alter(&$form, &$form_state, $form_id) {
+  // Alter the node edit form to group the categories in a vertical tab.
+  if (isset($form['#node_edit_form'])) {
+    $product_node_types = commerce_product_reference_node_types();
+    if (in_array($form['#node']->type, array_keys($product_node_types))) {
+      // Enable the #fieldset key.
+      $form['#pre_render'][] = 'commerce_backoffice_pre_render_add_fieldset_markup';
+      // Add a new vertical tab.
+      $form['product_catalog'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Product catalog'),
+        '#group' => 'additional_settings',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#weight' => -10,
+      );
+
+      // Assign all taxonomy reference fields to the new vertical tab.
+      foreach (field_info_instances('node', $form['#node']->type) as $field_name => $instance) {
+        $field = field_info_field($field_name);
+
+        if ($field['type'] == 'taxonomy_term_reference') {
+          $form[$field_name]['#fieldset'] = 'product_catalog';
+        }
+      }
+    }
+  }
+  // Alter the Exposed Filters for products page
+  if (isset($form['submit']['#id']) && $form['submit']['#id'] == 'edit-submit-commerce-backoffice-products') {
+    $form['product_display_node_type']['#attributes'] = array('data-placeholder' => array(t('All product types')));
+    $form['product_display_term_node_tid_multiple']['#attributes'] = array('data-placeholder' => array(t('All categories')));
+    $form['status']['#options']['All'] = t('All statuses');
+    $form['combine']['#attributes'] = array('placeholder' => array(t('Search by title or SKU')));
+  }
+  // Alter the exposed filters for all product variations view.
+  if (isset($form['submit']['#id']) && $form['submit']['#id'] == 'edit-submit-commerce-backoffice-all-product-variations') {
+    $form['type']['#attributes'] = array('data-placeholder' => array(t('Variation types')));
+    $form['combine']['#attributes'] = array('placeholder' => array(t('Search by title or SKU')));
+    $form['status']['#options']['All'] = t('All statuses');
+  }
+}
+
+/**
+ * Implement hook_views_pre_render().
+ */
+function commerce_backoffice_product_views_pre_render(&$view) {
+  if (in_array($view->name, array('commerce_backoffice_products', 'commerce_backoffice_all_product_variations'))) {
+    drupal_add_css(drupal_get_path('module', 'commerce_backoffice_product') . '/theme/commerce-backoffice-products.css');
+  }
+}
+
+/**
+ * Displays a view of products referenced from the given node, in a megarow.
+ */
+function commerce_backoffice_product_variations_view($node) {
+  $title = t('Variations for product %title', array('%title' => $node->title));
+  $output = views_embed_view('commerce_backoffice_product_variations', 'default', $node->nid);
+
+  return views_megarow_display($title, $output, $node->nid);
+}
+
+/**
+ * Form callback: Returns the form for modifying the product price and status.
+ */
+function commerce_backoffice_product_quick_edit_form($form, &$form_state, $product) {
+  $form_state['product'] = $product;
+  $price_array = $product->commerce_price[LANGUAGE_NONE][0];
+  $currency = commerce_currency_load($price_array['currency_code']);
+  $amount = commerce_currency_amount_to_decimal($price_array['amount'], $price_array['currency_code']);
+  $price = number_format(commerce_currency_round(abs($amount), $currency), $currency['decimals'], $currency['decimal_separator'], $currency['thousands_separator']);
+
+  $wrapper = drupal_html_id('commerce-backoffice-product-quick-edit-form');
+  $form['#prefix'] = '<div class="container-inline" id="' . $wrapper . '">';
+  $form['#suffix'] = '</div>';
+
+  $form['price'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Price'),
+    '#title_display' => 'invisible',
+    '#default_value' => $price,
+    '#size' => 5,
+  );
+  $form['status'] = array(
+    '#type' => 'select',
+    '#title' => t('Status'),
+    '#title_display' => 'invisible',
+    '#options' => array(0 => t('Disabled'), 1 => t('Active')),
+    '#default_value' => $product->status,
+  );
+  $form['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+    '#ajax' => array(
+      'callback' => 'commerce_backoffice_product_quick_edit_form_ajax',
+      'wrapper' => $wrapper,
+    ),
+  );
+  if (!empty($form_state['product_saved'])) {
+    $form['save']['#suffix'] = t('Saved');
+  }
+
+  return $form;
+}
+
+/**
+ * Ajax callback for commerce_backoffice_product_quick_edit_form.
+ */
+function commerce_backoffice_product_quick_edit_form_ajax($form, &$form_state) {
+  return $form;
+}
+
+/**
+ * Submit callback for commerce_backoffice_product_quick_edit_form.
+ */
+function commerce_backoffice_product_quick_edit_form_submit($form, &$form_state) {
+  $product = $form_state['product'];
+  $currency_code = $product->commerce_price[LANGUAGE_NONE][0]['currency_code'];
+  $product->commerce_price[LANGUAGE_NONE][0]['amount'] = commerce_currency_decimal_to_amount($form_state['values']['price'], $currency_code);
+  $product->status = $form_state['values']['status'];
+  commerce_product_save($product);
+
+  $form_state['rebuild'] = TRUE;
+  $form_state['product_saved'] = TRUE;
+}
+
+/**
+ * Override of node_overview_types().
+ *
+ * @see node_overview_types()
+ */
+function commerce_backoffice_product_node_overview_types() {
+  module_load_include('inc', 'node', 'content_types');
+
+  $types = node_type_get_types();
+  $product_node_types = commerce_product_reference_node_types();
+  $names = node_type_get_names();
+  $field_ui = module_exists('field_ui');
+  $header = array(t('Name'), t('Product display'), array('data' => t('Operations'), 'colspan' => $field_ui ? '4' : '2'));
+  $rows = array();
+
+  foreach ($names as $key => $name) {
+    $type = $types[$key];
+    if (node_hook($type->type, 'form')) {
+      $type_url_str = str_replace('_', '-', $type->type);
+      $row = array(theme('node_admin_overview', array('name' => $name, 'type' => $type)));
+      // Set the product display column.
+      $row[] = isset($product_node_types[$key]) ? t('Yes') : t('No');
+      // Set the edit column.
+      $row[] = array('data' => l(t('edit'), 'admin/structure/types/manage/' . $type_url_str));
+
+      if ($field_ui) {
+        // Manage fields.
+        $row[] = array('data' => l(t('manage fields'), 'admin/structure/types/manage/' . $type_url_str . '/fields'));
+
+        // Display fields.
+        $row[] = array('data' => l(t('manage display'), 'admin/structure/types/manage/' . $type_url_str . '/display'));
+      }
+
+      // Set the delete column.
+      if ($type->custom) {
+        $row[] = array('data' => l(t('delete'), 'admin/structure/types/manage/' . $type_url_str . '/delete'));
+      }
+      else {
+        $row[] = array('data' => '');
+      }
+
+      $rows[] = $row;
+    }
+  }
+
+  $args = array(
+    '!variation_type' => l(t('product variation type'), 'admin/commerce/config/product-variation-types'),
+  );
+  $build['help'] = array(
+    '#markup' => '<p>' . t('Each piece of content on the site (blog post, page, product) is of a specific type.') . ' <br />' .
+                 t('Different types have different fields, used for storing additional information, or categorizing the content.') . '</p>' .
+                 '<p>' . t('Each product display type has a matching !variation_type, since each product display must have one or more product variations.', $args) .
+                 '<br />' . t('Start by creating a new !variation_type, which will then create the matching product display type.', $args) .
+                 '</p>',
+  );
+  $build['node_table'] = array(
+    '#theme' => 'table',
+    '#header' => $header,
+    '#rows' => $rows,
+    '#empty' => t('No content types available. <a href="@link">Add content type</a>.', array('@link' => url('admin/structure/types/add'))),
+  );
+
+  return $build;
+}
+
+/**
+ * Get the Product Displays Vocabularies.
+ */
+function _commerce_backoffice_product_display_vocabularies() {
+  $fields = field_info_fields();
+  $product_displays = commerce_product_reference_node_types();
+  $voc_names = array();
+  foreach ($fields as $field) {
+    if ($field['type'] == 'taxonomy_term_reference' && isset($field['bundles']['node']) && array_intersect($field['bundles']['node'], array_keys($product_displays))) {
+      $voc_names[$field['settings']['allowed_values'][0]['vocabulary']] = $field['settings']['allowed_values'][0]['vocabulary'];
+    }
+  }
+  if (!empty($voc_names)) {
+    return _views_taxonomy_get_vocabularies_by_names($voc_names);
+  }
+  return array();
+}

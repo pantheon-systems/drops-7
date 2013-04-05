@@ -1,0 +1,69 @@
+/**************************************************
+* --
+* 4. Section footer
+* --
+**************************************************/
+/**********************************************
+* 4.1. Zone footer
+**********************************************/
+/**
+* Menu footer navigation
+*/
+.section-footer ul.menu li {
+  padding-right: 15px; /* LTR */
+}
+/**
+* Connect with us
+*/
+.block-social h2 {
+  line-height: 22px;
+}
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.2. All products page
+**********************************************/
+.page-products .view-display-products {
+  clear: both;
+  width: 700px;
+  margin-top: 40px;
+}
+.page-products .view-display-products ul li.views-row {
+  display: block;
+  height: auto;
+  margin: 0;
+  padding-right: 5px; /* LTR */
+  width: 225px;
+}
+/**********************************************
+* 5.3. Product page
+**********************************************/
+.commerce-add-to-cart-confirmation .field-type-taxonomy-term-reference:after {
+  clear: none !important;
+}
+.commerce-add-to-cart-confirmation .field-name-field-images img {
+  max-width: none;
+}
+/* Cloud zoom */
+.node-product-type .cloud-zoom-gallery-thumbs {
+  position: absolute;
+  top: 0;
+  left: -130px; /* LTR */
+  width: 120px;
+}
+.node-product-type .cloud-zoom-container {
+  margin-left: 130px; /* LTR */
+  position: relative;
+}
+.commerce-add-to-cart-confirmation .message-inner {
+  position: relative;
+}
+/**********************************************
+* 5.4. Checkout process
+**********************************************/
+.page-cart .entity-commerce-product .content .field-name-field-images img {
+  max-width: none;
+}

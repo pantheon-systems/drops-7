@@ -1,0 +1,64 @@
+
+#eula-accept {
+  background: #f4f4f4;
+  border: 1px solid #edebeb;
+  max-width: 600px;
+  padding: 0 20px 10px;
+  font-size: .9em;
+  line-height: 1.5em;
+}
+
+#eula-accept ul {
+  margin-bottom: 20px;
+}
+
+#eula-accept ul li {
+  margin-bottom: 10px;
+}
+
+#eula-accept .form-type-checkbox label.option {
+  line-height: 2em;
+}
+
+#dfp-wrapper {
+  float: right;
+}
+
+#dfp-wrapper .dfp-unit {
+  background: transparent url("offline.png") no-repeat 0 0;
+}
+
+#title-wrapper #dfp-wrapper {
+  margin: 0 0 10px 0;
+}
+
+/* Overlay Specific Styles */
+.commerce-kickstart-dfp-processed h1.page-title,
+.commerce-kickstart-dfp-processed h1#overlay-title {
+  padding-top: 35px;
+  padding-bottom: 0;
+}
+#overlay-titlebar #title-wrapper #dfp-wrapper {
+  margin: 10px 65px 0 0;
+}
+
+.page-admin-commerce-customer-profiles #overlay-titlebar #title-wrapper #dfp-wrapper {
+  margin: 10px 65px 10px 0;
+}
+
+/* DFP Page Specific Styles */
+
+/* 468x60 Style Sizes */
+.dfp-unit {
+  height: 60px;
+  width: 468px;
+}
+
+.dfp-jirafe {
+  height: 540px;
+  width: 960px;
+}
+.page-admin-commerce-jirafe #dfp-wrapper {
+  float: none;
+  padding-top: 20px;
+}

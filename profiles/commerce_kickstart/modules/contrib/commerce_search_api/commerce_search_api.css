@@ -1,0 +1,37 @@
+ul.facetapi-commerce-search-api-fancy li {
+  border: 1px solid #c0c0c0;
+  display: block;
+  float: left;
+  margin: 0 10px 5px 0 !important;
+}
+ul.facetapi-commerce-search-api-fancy li.last {
+  margin-right: 0;
+}
+.commerce-search-api-fancy-attributes-color {
+  border: 3px solid #FFF;
+  color: white;
+  display: block;
+  height: 28px;
+  line-height: 35px;
+  padding: 2px;
+  position: relative;
+  text-align: center;
+  width: 28px;
+}
+.commerce-search-api-fancy-attributes-color span {
+  -khtml-border-radius: 6px;
+  -moz-border-radius: 6px;
+  -webkit-border-radius: 6px;
+  background: #000;
+  border-radius: 6px;
+  display: none;
+  font-size: 80%;
+  left: -6px;
+  line-height: normal;
+  padding: 1px 4px;
+  position: absolute;
+  top: -6px;
+}
+.commerce-search-api-fancy-attributes-color:hover span {
+  display: block;
+}

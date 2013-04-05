@@ -1283,6 +1283,7 @@ function install_profile_info($profile, $locale = 'en') {
       'version' => NULL,
       'hidden' => FALSE,
       'php' => DRUPAL_MINIMUM_PHP,
+      'php_memory_limit' => DRUPAL_MINIMUM_PHP_MEMORY_LIMIT,
     );
     $info = drupal_parse_info_file("profiles/$profile/$profile.info") + $defaults;
     $info['dependencies'] = array_unique(array_merge(

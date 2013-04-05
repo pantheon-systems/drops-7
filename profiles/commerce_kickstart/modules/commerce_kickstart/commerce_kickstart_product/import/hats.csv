@@ -1,0 +1,3 @@
+"title","SKU","Color","Size","Price","Images", "Hexadecimal"
+Hat 1,HAT1-GRY-OS,Gray,One Size,16.00,"hat1_v1.jpg, hat1_v2.jpg, hat1_v3.jpg", "field_category_color|#777777"
+Hat 2,HAT2-BLK-OS,Black,One Size,12.00,"hat-2v1.jpg, hat-2v2.jpg, hat-2v3.jpg", "field_category_color|#000000"

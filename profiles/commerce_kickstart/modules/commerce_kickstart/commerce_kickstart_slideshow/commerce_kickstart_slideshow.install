@@ -1,0 +1,44 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ *
+ * Rebuilds the feature immediately after it's enabled.
+ */
+function commerce_kickstart_slideshow_enable() {
+  // Rebuild the features static caches.
+  features_include(TRUE);
+
+  $module = 'commerce_kickstart_slideshow';
+  $feature = feature_load($module);
+  $items[$module] = array_keys($feature->info['features']);
+  _features_restore('enable', $items);
+  _features_restore('rebuild', $items);
+}
+
+/**
+ * Implements hook_install().
+ */
+function commerce_kickstart_slideshow_install() {
+  drupal_static_reset();
+  $default_theme = variable_get('theme_default', 'omega_kickstart');
+  _block_rehash($default_theme);
+  try {
+    // HP Slideshow.
+    db_update('block')
+      ->fields(array(
+        'region' => 'content',
+        'status' => (int) '1',
+        'visibility' => '1',
+        'pages' => 'node',
+        'title' => '<none>',
+      ))
+      ->condition('module', 'views')
+      ->condition('delta', 'demo_content_slideshow-block_1')
+      ->condition('theme', $default_theme)
+      ->execute();
+  } catch (Exception $e) {
+    watchdog_exception('block', $e);
+    throw $e;
+  }
+}

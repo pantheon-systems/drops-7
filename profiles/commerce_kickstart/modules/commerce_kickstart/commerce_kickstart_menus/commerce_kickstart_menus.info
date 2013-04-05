@@ -1,0 +1,7 @@
+name = Commerce Kickstart Menus
+description = Provides a Kickstart-specific administration menu.
+core = 7.x
+package = Commerce Kickstart
+dependencies[] = toolbar_megamenu
+
+stylesheets[all][] = commerce_kickstart_menus.css

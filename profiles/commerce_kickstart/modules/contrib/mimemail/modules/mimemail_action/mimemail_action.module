@@ -1,0 +1,168 @@
+<?php
+
+/**
+ * @file
+ * Provide actions for Mime Mail.
+ */
+
+/**
+ * Implements hook_action_info().
+ */
+function mimemail_action_info() {
+  return array(
+    'mimemail_send_email_action' => array(
+      'type' => 'system',
+      'label' => t('Send HTML e-mail'),
+      'configurable' => TRUE,
+      'triggers' => array('any'),
+    ),
+  );
+}
+
+/**
+ * Implements a configurable Drupal action. Sends an email.
+ */
+function mimemail_send_email_action($entity, $context) {
+  if (empty($context['node'])) {
+    $context['node'] = $entity;
+  }
+
+  $to = token_replace($context['to'], $context);
+
+  // If the recipient is a registered user with a language preference, use
+  // the recipient's preferred language. Otherwise, use the system default
+  // language.
+  $account = user_load_by_mail($to);
+  if ($account) {
+    $language = user_preferred_language($account);
+  }
+  else {
+    $language = language_default();
+  }
+
+  $params = array(
+    'context' => array(
+      'subject' => $context['subject'],
+      'body' => $context['body'],
+    ),
+    'cc' => $context['cc'],
+    'bcc' => $context['bcc'],
+    'plaintext' => $context['plaintext'],
+    'attachments' => $context['attachments'],
+  );
+
+  drupal_mail('mimemail', 'action_send_email', $to, $language, $params);
+}
+
+/**
+ * Form for configurable Drupal action to send an HTML mail.
+ */
+function mimemail_send_email_action_form($context) {
+  $context += array(
+    'to' => '',
+    'cc' => '',
+    'bcc' => '',
+    'subject' => '',
+    'body' => '',
+    'format' => filter_fallback_format(),
+    'plaintext' => '',
+    'attachments' => ''
+  );
+
+  $form['to'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Recipient'),
+    '#default_value' => $context['to'],
+    '#maxlength' => 254,
+    '#description' => t('The email address to which the message should be sent OR enter [node:author:mail], [comment:author:mail], etc. if you would like to send an e-mail to the author of the original post.'),
+    '#required' => TRUE,
+  );
+  $form['cc'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CC Recipient'),
+    '#default_value' => $context['cc'],
+    '#description' => t("The mail's carbon copy address. You may separate multiple addresses with comma."),
+    '#required' => FALSE,
+  );
+  $form['bcc'] = array(
+    '#type' => 'textfield',
+    '#title' => t('BCC Recipient'),
+    '#default_value' => $context['bcc'],
+    '#description' => t("The mail's blind carbon copy address. You may separate multiple addresses with comma."),
+    '#required' => FALSE,
+  );
+  $form['subject'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Subject'),
+    '#maxlength' => 254,
+    '#default_value' => $context['subject'],
+    '#description' => t("The subject of the message."),
+  );
+  $form['body'] = array(
+    '#type' => 'text_format',
+    '#title' => t('Body'),
+    '#default_value' => $context['body'],
+    '#format' => $context['format'],
+    '#description' => t('The HTML message that should be sent. You may include placeholders like [node:title], [user:name], and [comment:body] to represent data that will be different each time message is sent. Not all placeholders will be available in all contexts.'),
+  );
+  $form['plaintext'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Plain text body'),
+    '#default_value' => $context['plaintext'],
+    '#description' => t('Optional plaintext portion of a multipart message. You may include placeholders like [node:title], [user:name], and [comment:body] to represent data that will be different each time message is sent. Not all placeholders will be available in all contexts.'),
+  );
+  $form['attachments'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Attachments'),
+    '#default_value' => $context['attachments'],
+    '#description' => t('A list of attachments, one file per line e.g. "files/images/mypic.png" without quotes.'),
+  );
+
+  return $form;
+}
+
+/**
+ * Validate the action form.
+ */
+function mimemail_send_email_action_validate($form, $form_state) {
+  $to = trim($form_state['values']['to']);
+  if (!valid_email_address($to) && strpos($to, ':mail') === FALSE) {
+    form_set_error('to', t('Enter a valid email address or use a token e-mail address such as %author.', array('%author' => '[node:author:mail]')));
+  }
+
+  $cc = explode(',', $form_state['values']['cc']);
+  foreach ($cc as $recipient) {
+    $recipient = trim($recipient);
+    if (!empty($recipient) && !valid_email_address($recipient) && strpos($recipient, ':mail') === FALSE) {
+      form_set_error('cc', t('Enter a valid email address or use a token e-mail address such as %author.', array('%author' => '[node:author:mail]')));
+    }
+  }
+
+  $bcc = explode(',', $form_state['values']['bcc']);
+  foreach ($bcc as $recipient) {
+    $recipient = trim($recipient);
+    if (!empty($recipient) && !valid_email_address($recipient) && strpos($recipient, ':mail') === FALSE) {
+      form_set_error('bcc', t('Enter a valid email address or use a token e-mail address such as %author.', array('%author' => '[node:author:mail]')));
+    }
+  }
+}
+
+/**
+ * Handle submission of the action form.
+ */
+function mimemail_send_email_action_submit($form, $form_state) {
+  $form_values = $form_state['values'];
+
+  $params = array(
+    'to' => $form_values['to'],
+    'cc' => $form_values['cc'],
+    'bcc' => $form_values['bcc'],
+    'subject' => $form_values['subject'],
+    'body' => $form_values['body']['value'],
+    'format' => $form_values['body']['format'],
+    'plaintext' => $form_values['plaintext'],
+    'attachments' => $form_values['attachments'],
+  );
+
+  return $params;
+}

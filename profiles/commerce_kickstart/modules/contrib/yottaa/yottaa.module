@@ -1,0 +1,74 @@
+<?php
+
+/**
+ * Implements hook_permission().
+ */
+function yottaa_permission() {
+  return array(
+    'administer yottaa' => array(
+      'title' => t('Administer Yottaa'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function yottaa_menu() {
+  $items = array();
+
+  $items['admin/config/services/yottaa'] = array(
+    'title' => 'Yottaa API',
+    'description' => 'Yottaa Optimization',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('yottaa_setup_form'),
+    'file' => 'yottaa.admin.inc',
+    'access arguments' => array('administer yottaa'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/services/yottaa/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Configure Yottaa User ID, Site ID and API Key',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('yottaa_setup_form'),
+    'access arguments' => array('administer yottaa'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+    'file' => 'yottaa.admin.inc',
+  );
+
+  $items['admin/config/services/yottaa/register'] = array(
+    'title' => 'Register',
+    'description' => 'Register',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('yottaa_register_form'),
+    'file' => 'yottaa.admin.inc',
+    'access arguments' => array('administer yottaa'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 1,
+  );
+
+  return $items;
+}
+
+/**
+ * Impliments hook_commerce_kickstart_service_provider().
+ */
+function yottaa_commerce_kickstart_service_provider() {
+  return array(
+    'yottaa' => array(
+      'logo_path' => drupal_get_path('module', 'yottaa') . '/img/logo320.png',
+      'title' => t('Yottaa Site Optimizer'),
+      'module_path' => '',
+      'category' => t('Optimization'),
+      'teaser' => t('Yottaa Site Optimizer: Accelerates Drupal-based Ecommerce sites, improves user experience/conversion - Start your free trial!'),
+      'description' => t('Yottaa Site Optimizer: Yottaa Site Optimizer automatically accelerates Drupal-based Ecommerce sites – providing site-wide performance gains, better user experience and higher conversions.  Start your free trial!'),
+      'requirements' => t('Requires configuration API code to be set.'),
+      'link' => 'http://yottaa.com',
+      'installation_proccess' => '1. <a href="/admin/config/services/yottaa/register">Register</a> <br />2. Fill in <a href="/admin/config/services/yottaa">API Key</a>',
+      'weight' => 1,
+      'requirements_callback' => '',
+    ),
+  );
+}

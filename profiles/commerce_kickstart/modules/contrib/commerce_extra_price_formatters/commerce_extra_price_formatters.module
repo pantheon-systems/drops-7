@@ -1,0 +1,499 @@
+<?php
+
+/**
+ * @file
+ * Defines the additional price formatters for Drupal Commerce
+ */
+
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function commerce_extra_price_formatters_field_formatter_info() {
+  return array(
+    'commerce_price_rrp_your_price' => array(
+      'label' => t('RRP / Your Price'),
+      'field types' => array('commerce_price'),
+      'settings' => array(
+        'check_for_same_price' => TRUE,
+        'show_saving' => FALSE,
+        'calculation' => TRUE,
+        'include_tax_in_rrp' => TRUE,
+        'rrp_label' => t('RRP'),
+        'saving_label' => t('You Save'),
+        'offer_label' => t('Offer Price'),
+        'whole_numbers_only' => FALSE,
+      ),
+    ),
+
+    'commerce_price_prefix_suffix' => array(
+      'label' => t('Price with Prefix / Suffix'),
+      'field types' => array('commerce_price'),
+      'settings' => array(
+        'prefix' => '',
+        'suffix' => '',
+        'text_format' => NULL,
+        'calculation' => TRUE,
+        'whole_numbers_only' => FALSE,
+        'alternative_text_for_zero_price' => '',
+      ),
+    ),
+
+    'commerce_price_no_decimals' => array(
+      'label' => t('Price with no decimal places'),
+      'field types' => array('commerce_price'),
+      'settings' => array(
+        'calculation' => TRUE,
+        'alternative_text_for_zero_price' => '',
+        'text_format' => NULL,
+        'raw' => FALSE,
+      ),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function commerce_extra_price_formatters_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $element = array();
+
+  switch ($display['type']) {
+    case 'commerce_price_rrp_your_price':
+      $element['calculation'] = array(
+        '#type' => 'value',
+        '#value' => TRUE
+      );
+
+      $element['check_for_same_price'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Show simple price if RRP and Customer price are the same'),
+          '#default_value' => empty($settings['check_for_same_price']) ? '0' : $settings['check_for_same_price'],
+      );
+
+      $element['show_saving'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Show the amount the customer is saving compared to RRP'),
+          '#default_value' => empty($settings['show_saving']) ? '0' : $settings['show_saving'],
+      );
+
+      $element['include_tax_in_rrp'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Include tax in the RRP'),
+          '#default_value' => empty($settings['include_tax_in_rrp']) ? '0' : $settings['include_tax_in_rrp'],
+      );
+
+      $element['rrp_label'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Label for RRP'),
+        '#default_value' => empty($settings['rrp_label']) ? 'RRP' : $settings['rrp_label'],
+      );
+
+      $element['offer_label'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Label for Offer Price'),
+        '#default_value' => empty($settings['offer_label']) ? 'Offer Price' : $settings['offer_label'],
+      );
+
+      $element['saving_label'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Label for Saving'),
+        '#default_value' => empty($settings['saving_label']) ? 'You Save' : $settings['saving_label'],
+      );
+
+      $element['whole_numbers_only'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Display whole numbers only (no decimal places)'),
+        '#default_value' => empty($settings['whole_numbers_only']) ? '0' : $settings['whole_numbers_only'],
+      );
+
+
+    break;
+
+    case 'commerce_price_prefix_suffix':
+      $element['calculation'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Show calculated price'),
+        '#default_value' => empty($settings['calculation']) ? 'TRUE' : $settings['calculation'],
+      );
+
+      $element['prefix'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Prefix'),
+        '#description' => t('Text will be shown before the price'),
+        '#default_value' => empty($settings['prefix']) ? '' : $settings['prefix'],
+      );
+
+      $element['suffix'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Suffix'),
+        '#description' => t('Text will be shown after the price'),
+        '#default_value' => empty($settings['suffix']) ? '' : $settings['suffix'],
+      );
+
+      // Check which text filters the current user is permitted to use.
+      global $_commerce_extra_price_formatters_account;
+      $filter_options = array();
+      foreach (filter_formats($_commerce_extra_price_formatters_account) as $key => $values) {
+        $filter_options[$key] = $values->name;
+      }
+
+      $element['text_format'] = array(
+        '#type' => 'select',
+        '#title' => t('Text Format'),
+        '#options' => $filter_options,
+        '#description' => t('The text format filter that will be applied. The same filter will be applied to prefix and suffix.'),
+        '#default_value' => empty($settings['text_format']) ? '' : $settings['text_format'],
+      );
+
+      $element['whole_numbers_only'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Display whole numbers only (no decimal places)'),
+          '#default_value' => empty($settings['whole_numbers_only']) ? '0' : $settings['whole_numbers_only'],
+      );
+
+      $element['alternative_text_for_zero_price'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Alternative text for zero price'),
+        '#default_value' => empty($settings['alternative_text_for_zero_price']) ? '' : $settings['alternative_text_for_zero_price'],
+      );
+
+    break;
+
+    case 'commerce_price_no_decimals':
+      $element['calculation'] = array(
+        '#type' => 'checkbox',
+        '#value' => TRUE,
+        '#title' => t('Show calculated price'),
+        '#default_value' => empty($settings['calculation']) ? 'TRUE' : $settings['calculation'],
+      );
+
+       $element['alternative_text_for_zero_price'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Alternative text for zero price'),
+        '#default_value' => empty($settings['alternative_text_for_zero_price']) ? '' : $settings['alternative_text_for_zero_price'],
+      );
+
+      // Check which text filters the current user is permitted to use.
+      global $_commerce_extra_price_formatters_account;
+      $filter_options = array();
+      foreach (filter_formats($_commerce_extra_price_formatters_account) as $key => $values) {
+        $filter_options[$key] = $values->name;
+      }
+
+      $element['text_format'] = array(
+        '#type' => 'select',
+        '#title' => t('Text Format'),
+        '#options' => $filter_options,
+        '#description' => t('The text format filter that will be applied. The same filter will be applied to prefix and suffix.'),
+        '#default_value' => empty($settings['text_format']) ? '' : $settings['text_format'],
+      );
+
+      $element['raw'] = array(
+       '#type' => 'checkbox',
+        '#title' => t('Show raw (unformatted) value'),
+        '#default_value' => empty($settings['raw']) ? 'FALSE' : $settings['raw'],
+      );
+
+
+      break;
+
+  }
+
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function commerce_extra_price_formatters_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $summary = array();
+
+  switch ($display['type']) {
+    case 'commerce_price_rrp_your_price':
+      if ($settings['check_for_same_price'] == TRUE) {
+        $summary[] = t('Check if RRP and Customer Price are the same');
+      }
+      else {
+        $summary[] = t('Display components even if RRP and Customer Price are the same.');
+      }
+
+      if ($settings['show_saving'] == TRUE) {
+        $summary[] = t('Show customer saving.');
+      }
+
+      if ($settings['whole_numbers_only'] == TRUE) {
+        $summary[] = t('No decimal places');
+      }
+    break;
+
+    case 'commerce_price_prefix_suffix':
+
+      $text_format = empty($display['settings']['text_format']) ? NULL : $display['settings']['text_format'];
+
+      if ($settings['calculation'] == TRUE) {
+        $summary[] = t('Show calculated price with prefix <em>') . check_markup($settings['prefix'], $text_format) . t('</em> and suffix <em>') . check_markup($settings['suffix'], 'filtered_html') . '</em>';
+      }
+      else {
+        $summary[] = t('Show base price with prefix <em>') . check_markup($settings['prefix'], $text_format) . t('</em> and suffix <em>') . check_markup($settings['suffix'], $text_format) . '</em>';
+      }
+
+      if ($settings['whole_numbers_only'] == TRUE) {
+        $summary[] = t('No decimal places');
+      }
+    break;
+
+    case 'commerce_price_no_decimals':
+      if ($settings['calculation'] == TRUE) {
+        $summary[] = t('Show calculated price with no decimals.');
+      }
+      else {
+        $summary[] = t('Show base price with no decimals.');
+      }
+    break;
+  }
+  return implode('<br />', $summary);
+}
+
+/**
+ * Implements hook_field_formatter_prepare_view().
+ */
+function commerce_extra_price_formatters_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays) {
+  // TODO: Loop over the instances and pass them to this hook individually so we
+  // can enforce prices displaying with components as not being altered.
+
+  // Allow other modules to prepare the item values prior to formatting.
+  foreach (module_implements('commerce_price_field_formatter_prepare_view') as $module) {
+    $function = $module . '_commerce_price_field_formatter_prepare_view';
+    $function($entity_type, $entities, $field, $instances, $langcode, $items, $displays);
+  }
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function commerce_extra_price_formatters_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  // Loop through each price value in this field.
+  foreach ($items as $delta => $item) {
+    // Theme the display of the price based on the display type.
+    switch ($display['type']) {
+
+      case 'commerce_price_rrp_your_price':
+        module_load_include('inc', 'commerce_extra_price_formatters', 'includes/extra_functions');
+        $components = array();
+        $weight = 0;
+
+        foreach ($item['data']['components'] as $key => $component) {
+          $component_type = commerce_price_component_type_load($component['name']);
+
+          if (empty($components[$component['name']])) {
+            $components[$component['name']] = array(
+              'title' => $component_type['display_title'],
+              'price' => commerce_price_component_total($item, $component['name']),
+              'weight' => $component_type['weight'],
+            );
+
+            $weight = max($weight, $component_type['weight']);
+          }
+        }
+
+        // Add the actual field value to the array.
+        $components['commerce_price_rrp_your_price'] = array(
+          'title' => check_plain($instance['label']),
+          'price' => $item,
+          'weight' => $weight + 1,
+        );
+
+        // Sort the components by weight.
+        uasort($components, 'drupal_sort_weight');
+
+        // Format the prices for display.
+        foreach ($components as $key => &$component) {
+          $component['formatted_price'] = commerce_currency_format(
+            $component['price']['amount'],
+            $component['price']['currency_code'],
+            $entity
+          );
+        }
+
+        $element[$delta] = array(
+          '#markup' => theme('commerce_price_rrp_your_price', array('components' => $components, 'price' => $item, 'options' => $display['settings'])),
+        );
+        break;
+
+        case 'commerce_price_prefix_suffix':
+          module_load_include('inc', 'commerce_extra_price_formatters', 'includes/extra_functions');
+          $markup = '';
+          $text_format = empty($display['settings']['text_format']) ? NULL : $display['settings']['text_format'];
+
+          if (!empty($display['settings']['prefix'])) {
+            $markup .= '<span class="price_prefix">' . check_markup($display['settings']['prefix'], $text_format) . '</span> ';
+          }
+          if ($display['settings']['alternative_text_for_zero_price'] && $item['amount'] == 0){
+            $markup .= check_markup($display['settings']['alternative_text_for_zero_price'], $text_format);
+          } else {
+            if ($display['settings']['whole_numbers_only'] == TRUE) {
+              $markup .= commerce_extra_price_no_decimal_currency_format($item['amount'], $item['currency_code'], $entity);
+            } else {
+              $markup .= commerce_currency_format($item['amount'], $item['currency_code'], $entity);
+            }
+          }
+
+          if (!empty($display['settings']['suffix'])) {
+            $markup .= ' <span class="price_suffix">' . check_markup($display['settings']['suffix'], $text_format) . '</span>';
+          }
+
+          $element[$delta] = array(
+            '#markup' => $markup,
+          );
+        break;
+
+        case 'commerce_price_no_decimals':
+          module_load_include('inc', 'commerce_extra_price_formatters', 'includes/extra_functions');
+          $markup = '';
+
+          $text_format = empty($display['settings']['text_format']) ? NULL : $display['settings']['text_format'];
+
+          if (!empty($display['settings']['prefix'])) {
+            $markup .= '<span class="price_prefix">' . check_markup($display['settings']['prefix'], $text_format) . '</span> ';
+          }
+          if ($display['settings']['alternative_text_for_zero_price'] && $item['amount'] == 0){
+            $markup .= check_markup($display['settings']['alternative_text_for_zero_price'], $text_format);
+          } else {
+
+            $markup .= commerce_extra_price_no_decimal_currency_format($item['amount'], $item['currency_code'], $entity, TRUE, $display['settings']);
+          }
+          $element[$delta] = array(
+            '#markup' => $markup,
+          );
+        break;
+    }
+  }
+
+  return $element;
+}
+
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_extra_price_formatters_theme() {
+  return array(
+    'commerce_price_rrp_your_price' => array(
+      'variables' => array('components' => array(), 'price' => array(), 'options' => array()),
+    ),
+  );
+}
+
+
+/**
+ * Themes a price components table.
+ *
+ * @param $variables
+ *   Includes the 'components' array and original 'price' array as well as display options.
+ */
+function theme_commerce_price_rrp_your_price($variables) {
+  drupal_add_css(drupal_get_path('module', 'commerce_extra_price_formatters') . '/theme/your_price.theme.css');
+
+
+  // Build table rows out of the components.
+  $rows = array();
+
+  $web_price = $variables['components']['commerce_price_rrp_your_price']['formatted_price'];
+  $rrp = $variables['components']['base_price']['price']['amount'];
+
+  if ($variables['options']['include_tax_in_rrp'] == TRUE) {
+    foreach ($variables['components'] as $component_name => $component_value) {
+      if (substr($component_name, 0, 3) == 'tax') {
+        $rrp += $component_value['price']['amount'];
+      }
+    }
+  }
+
+  $whole_numbers_only = $variables['options']['whole_numbers_only'];
+
+  if ($whole_numbers_only){
+    $rrp = commerce_extra_price_no_decimal_currency_format($rrp, $variables['components']['base_price']['price']['currency_code']);
+    $web_price = commerce_extra_price_no_decimal_currency_format($variables['components']['commerce_price_rrp_your_price']['price']['amount'], $variables['components']['commerce_price_rrp_your_price']['price']['currency_code']);
+  } else {
+    $rrp = commerce_currency_format($rrp, $variables['components']['base_price']['price']['currency_code']);
+  }
+
+  if (isset($variables['components']['discount']) && $whole_numbers_only){
+    $saving = commerce_extra_price_no_decimal_currency_format(-$variables['components']['discount']['price']['amount'], $variables['components']['discount']['price']['currency_code']);
+  } else if (isset($variables['components']['discount'])) {
+    $saving = commerce_currency_format(-$variables['components']['discount']['price']['amount'], $variables['components']['discount']['price']['currency_code']);
+  }
+
+  $check_for_same_price = $variables['options']['check_for_same_price'];
+
+  if ($check_for_same_price == 1 && $web_price != $rrp) {
+
+    $rows[] = array(
+      'data' => array(
+        array(
+          'data' => check_plain($variables['options']['rrp_label']),
+          'class' => array('rrp-title'),
+        ),
+        array(
+          'data' => $rrp,
+          'class' => array('rrp-total'),
+        ),
+      ),
+    );
+
+
+    $rows[] = array(
+      'data' => array(
+        array(
+          'data' => check_plain($variables['options']['offer_label']),
+          'class' => array('webprice-title'),
+        ),
+        array(
+          'data' => $web_price,
+          'class' => array('webprice-total'),
+        ),
+      ),
+    );
+
+
+    if ($variables['options']['show_saving'] == 1 && isset($saving)) {
+      $rows[] = array(
+        'data' => array(
+          array(
+            'data' => check_plain($variables['options']['saving_label']),
+            'class' => array('saving-title'),
+          ),
+          array(
+            'data' => $saving,
+            'class' => array('saving-total'),
+          ),
+        )
+      );
+    }
+  }
+
+  else {
+    $rows[] = array(
+      'data' => array(
+        array(
+          'data' => t('Price'),
+          'class' => array('webprice-title'),
+        ),
+        array(
+          'data' => $web_price,
+          'class' => array('webprice-total'),
+        ),
+      ),
+    );
+  }
+
+  return  theme('table', array('rows' => $rows, 'attributes' => array('class' => array('commerce-price-rrp-your-price'))));
+}

@@ -1,0 +1,10 @@
+name = Commerce Kickstart Taxonomy
+description = Provides Kickstart-specific taxonomy customizations..
+core = 7.x
+package = Commerce Kickstart
+php = 5.2.4
+dependencies[] = taxonomy_menu
+dependencies[] = commerce_kickstart_search
+dependencies[] = views
+; Views files
+files[] = includes/views/handlers/commerce_kickstart_taxonomy_handler_field_text.inc

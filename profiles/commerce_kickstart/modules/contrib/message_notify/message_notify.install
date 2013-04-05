@@ -1,0 +1,97 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the message notify module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function message_notify_uninstall() {
+  $instance = field_info_instance('message_type', 'message_text_subject', 'message_type_email');
+  field_delete_instance($instance);
+  field_delete_field('message_text_subject');
+}
+
+/**
+ * Mark message-text field as renderable using getText().
+ */
+function message_notify_update_7000() {
+  $field = field_info_field('message_text_subject');
+  $field['settings']['message_text'] = TRUE;
+  field_update_field($field);
+}
+
+/**
+ * Explain about using View-modes.
+ */
+function message_notify_update_7001() {
+  return t('Message notify now works with view modes - assign the fields that should be renderd in the "Manage display" of each message-type.');
+}
+
+/**
+ * Mark message-text field as renderable using getText().
+ */
+function message_notify_update_7002() {
+  $field = field_info_field('message_text_subject');
+  $field['settings']['message_text'] = TRUE;
+  field_update_field($field);
+}
+
+/**
+ * Remove the deprecated "Subject" field.
+ */
+function message_notify_update_7003(&$sandbox) {
+  $field = field_info_field('message_text');
+  if ($field['storage']['type'] !== 'field_sql_storage') {
+    // Field doesn't use SQL storage, we cannot modify the schema.
+    return;
+  }
+
+  $count = db_select('message_type')
+    ->condition('category', 'message_type_email')
+    ->countQuery()
+    ->execute()
+    ->fetchField();
+
+  if (!$count) {
+    return;
+  }
+
+  // Add 1 to the delta, so we can add the subject field as delta 0.
+  $table_name = _field_sql_storage_tablename($field);
+  $revision_name = _field_sql_storage_revision_tablename($field);
+  foreach (array($table_name, $revision_name) as $table) {
+    db_query("UPDATE {$table} SET delta = delta + 1 WHERE bundle = 'message_type_email' ORDER BY entity_type, entity_id, language, delta DESC;");
+  }
+
+  $subject_field = field_info_field('message_text_subject');
+  $subject_table_name =  _field_sql_storage_tablename($subject_field);
+
+  $result = db_select($subject_table_name)
+  ->fields($subject_table_name)
+  ->execute()
+  ->fetchAll();
+
+  foreach ($result as $row) {
+    // Move the subject field values into the message-text field, as the
+    // first delta.
+    $row->message_text_value = $row->message_text_subject_value;
+    $row->message_text_format = $row->message_text_subject_format;
+    drupal_write_record($table_name, $row);
+    drupal_write_record($revision_name, $row);
+  }
+
+  // Change the message-type bundle.
+  db_update('message_type')
+    ->condition('category', 'message_type_email')
+    ->fields(array('category' => 'message_type'))
+    ->execute();
+
+  // Delete the subject field.
+  $instance = field_info_instance('message_type', 'message_text_subject', 'message_type_email');
+  field_delete_instance($instance);
+
+  return ('"Email" mesage-type category was deleted. All the values from the "Subject" field were migrated into "Message-text" field. You should adjust the Email related view-modes under "Manage display" tab of each message-type.');
+}

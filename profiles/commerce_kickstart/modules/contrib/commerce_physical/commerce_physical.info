@@ -1,0 +1,16 @@
+name = Physical Product
+description = Provides API support for working with physical product types in Drupal Commerce.
+package = Commerce (contrib)
+dependencies[] = commerce_line_item
+dependencies[] = commerce_order
+dependencies[] = commerce_product
+dependencies[] = commerce_product_reference
+dependencies[] = physical
+core = 7.x
+
+; Information added by drupal.org packaging script on 2011-10-23
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "commerce_physical"
+datestamp = "1319371413"
+

@@ -1,0 +1,13 @@
+name = Field Extractor
+description = Provides a formatter that displays a field from the referenced entities.
+core = 7.x
+dependencies[] = ctools
+
+files[] = views/field_extractor_handler_field.inc
+
+; Information added by drupal.org packaging script on 2013-02-11
+version = "7.x-1.3"
+core = "7.x"
+project = "field_extractor"
+datestamp = "1360578234"
+

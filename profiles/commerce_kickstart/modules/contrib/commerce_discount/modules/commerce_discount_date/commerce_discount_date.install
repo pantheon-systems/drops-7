@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * Implements hook_install().
+ *
+ * Create a date field for commerce discounts.
+ * The instance will be added for every newley created bundle.
+ *
+ * @see commerce_discount_modules_enabled()
+ */
+function commerce_discount_date_install() {
+  // Clear field info cache, so entity reference field can be used.
+  field_info_cache_clear();
+  $field = array(
+    'entity_types' => array('commerce_discount'),
+    'settings' => array(
+      'granularity' => array(
+        'month' => 'month',
+        'day' => 'day',
+        'year' => 'year',
+      ),
+      'tz_handling' => 'none',
+      'timezone_db' => '',
+      'todate' => 'optional',
+      'handler' => 'base',
+      'target_type' => 'commerce_discount',
+      'handler_settings' => array(
+        'target_bundles' => array(),
+      ),
+    ),
+    'field_name' => 'commerce_discount_date',
+    'type' => 'datestamp',
+    'locked' => TRUE,
+  );
+  field_create_field($field);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_discount_date_uninstall() {
+  field_delete_field('commerce_discount_date');
+}

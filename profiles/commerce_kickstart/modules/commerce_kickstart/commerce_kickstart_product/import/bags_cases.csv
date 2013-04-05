@@ -1,0 +1,7 @@
+Title,SKU,Color,Size,Price,Images, "Hexadecimal"
+Tote Bag 1,TOT1-GRN-OS,Green,One Size,16.00,"tote-1v1.jpg, tote-1v2.jpg, tote-1v3.jpg", "field_category_color|#00FF00"
+Messenger Bag 1,MES1-BLU-OS,Blue,One Size,62.00,"messenger-1v1.jpg, messenger-1v2.jpg, messenger-1v3.jpg, messenger-1v4.jpg", "field_category_color|#0000FF"
+Laptop Bag 1,LAP1-BLK-13,Black,"13""",42.00,"laptopbag1v1.jpg, laptopbag1v2.jpg, laptopbag1v3.jpg", "field_category_color|#000000"
+Laptop Bag 1,LAP1-BLK-15,Black,"15""",48.00,"laptopbag1v1.jpg, laptopbag1v2.jpg, laptopbag1v3.jpg", "field_category_color|#000000"
+Laptop Bag 1,LAP1-BLK-17,Black,"17""",52.00,"laptopbag1v1.jpg, laptopbag1v2.jpg, laptopbag1v3.jpg", "field_category_color|#000000"
+iPhone Case 1,IPH1-BLK-OS,Black,One Size,22.00,"iphone-case-1v1.jpg, iphone-case-1v2.jpg, iphone-case-1v3.jpg", "field_category_color|#000000"

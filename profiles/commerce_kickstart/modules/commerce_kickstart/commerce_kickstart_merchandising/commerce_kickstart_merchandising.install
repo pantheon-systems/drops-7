@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_kickstart_merchandising_enable() {
+  // Rebuild the feature.
+  features_include(TRUE);
+  $module = 'commerce_kickstart_merchandising';
+  $feature = feature_load($module);
+  $items[$module] = array_keys($feature->info['features']);
+  _features_restore('enable', $items);
+  _features_restore('rebuild', $items);
+
+  drupal_static_reset();
+  $default_theme = variable_get('theme_default', 'omega_kickstart');
+  _block_rehash($default_theme);
+  try {
+    // Ad push block 1.
+    db_update('block')
+      ->fields(array(
+        'region' => 'postscript_first',
+        'status' => (int) '1',
+        'visibility' => '1',
+        'pages' => '<front>',
+      ))
+      ->condition('module', 'views')
+      ->condition('delta', 'ad_push-block_1')
+      ->condition('theme', $default_theme)
+      ->execute();
+    // Ad push block 2.
+    db_update('block')
+      ->fields(array(
+        'region' => 'postscript_second',
+        'status' => (int) '1',
+        'visibility' => '1',
+        'pages' => '<front>',
+      ))
+      ->condition('module', 'views')
+      ->condition('delta', 'ad_push-block_2')
+      ->condition('theme', $default_theme)
+      ->execute();
+  }
+  catch (Exception $e) {
+    watchdog_exception('block', $e);
+    throw $e;
+  }
+}
+

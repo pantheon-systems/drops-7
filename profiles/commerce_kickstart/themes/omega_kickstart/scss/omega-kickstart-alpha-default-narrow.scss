@@ -1,0 +1,90 @@
+/* This file will hold styles that are loaded using the same media query as the narrow grid. */
+/* If you are using the default media queries provided by Omega, these styles will also
+ *  apply to the normal and widescreen layouts. You may override these styles in the normal
+ *  and widescreen CSS files as appropriate. */
+
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+/*******************************************
+* 3.2.1. Sidebar first
+*******************************************/
+/* Price range */
+#search-api-ranges-block-slider-view-form label {
+  float: none;
+}
+/*******************************************
+* 3.2.2. Content
+*******************************************/
+#promotional_banner .promotional_banner_special_offer {
+  float: right; /* LTR */
+  line-height: 22px;
+  margin-top: 4px;
+}
+
+#block-views-demo-content-slideshow-block-1 {
+  /* HP blocks: Slideshow */
+  .bx-wrapper,
+  .bx-wrapper .bx-window {
+    padding-bottom: 0;
+  }
+}
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+.view-collection-products .view-header .collection-terms .view-content .item-list,
+.view-collection-taxonomy-term .view-header .collection-terms .view-content .item-list {
+  display: block;
+  float: none;
+}
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+div.messages.commerce-add-to-cart-confirmation .message-inner {
+  .added-product-title {
+    float: left; /* LTR */
+    width: 180px;
+  }
+  .button-wrapper {
+    //float: none;
+    height: 100%;
+    position: absolute;
+    right: 0; /* LTR */
+  }
+  .view-confirm-message-product-display {
+    float: left; /* LTR */
+    .view-content .views-field-commerce-product .content {
+      .field-name-field-images {
+        clear: left; /* LTR */
+        float: left; /* LTR */
+      }
+    }
+  }
+}
+.node-product-type {
+  .cloud-zoom-container {
+    #wrap {
+      float: right !important; /* LTR */
+    }
+    .cloud-zoom-gallery-thumbs {
+      clear: none;
+      float: none !important;
+      .cloud-zoom-gallery {
+        margin: 5px;
+      }
+    }
+  }
+}

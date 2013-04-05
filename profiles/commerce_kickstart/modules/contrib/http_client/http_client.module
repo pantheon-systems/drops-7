@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * Factory method for the HttpClient. Use this if you don't want to select a
+ * Http client delegate yourself.
+ *
+ * @param object $authentication
+ * @param object $formatter
+ * @param object $request_alter
+ * @param object $delegate
+ * @return HttpClient
+ */
+function http_client($authentication = NULL, $formatter = NULL, $request_alter = NULL, $delegate = NULL) {
+  // Allow other modules to specify the delegate.
+  if (!$delegate) {
+    $delegates = array();
+    foreach (module_implements('http_client_delegates') as $module) {
+      $res = call_user_func($module . '_http_client_delegates');
+      if (is_array($res)) {
+        $delegates = $res + $delegates;
+      }
+    }
+    drupal_alter('http_client_delegates', $delegates);
+    if (!empty($delegates)) {
+      $delegate = array_pop($delegates);
+    }
+  }
+  return new HttpClient($authentication, $formatter, $request_alter, $delegate);
+}
+
+/**
+ * Implements hook_http_client_delegates().
+ */
+function http_client_http_client_delegates() {
+  $delegates = array();
+  if (function_exists('curl_init')) {
+    $delegates['curl'] = new HttpClientCurlDelegate();
+  }
+  return $delegates;
+}

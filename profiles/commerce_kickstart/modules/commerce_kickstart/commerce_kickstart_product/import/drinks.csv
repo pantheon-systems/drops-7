@@ -1,0 +1,5 @@
+"Title","SKU","Color","Price","Images", "Hexadecimal"
+Coffee Mug 1,MG1-BLU-OS,Blue,8.00,"mug-1v1.jpg, mug-1v2.jpg, mug-1v3.jpg", "field_category_color|#0000FF"
+Coffee Mug 2,MG2-YLW-OS,Yellow,8.00,"mug-2v1.jpg, mug-2v2.jpg, mug-2v3.jpg", "field_category_color|#FFFF00"
+Travel Mug 1,TMG-SIL-OS,Silver,12.00,"travel-mug-1v1.jpg, travel-mug-1v2.jpg, travel-mug-1v3.jpg", "field_category_color|#C0C0C0"
+Water Bottle 1,WTR-BLU-OS,Blue,16.00,"water-bottle-1v1.jpg, water-bottle-1v2.jpg, water-bottle-1v3.jpg", "field_category_color|#0000FF"

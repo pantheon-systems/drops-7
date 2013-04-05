@@ -1,0 +1,302 @@
+/* Import Mixins and Variables */
+@import "_base.scss";
+
+/* CG Credits in footer */
+#credit {
+  float: right; /* LTR */
+  padding: 20px 0 40px;
+}
+#powered_by_drupal_commerce {
+  float: left; /* LTR */
+  padding-top: 20px;
+}
+body.in-maintenance #credit {
+  color: #fff;
+  margin: 0 auto;
+  width: 960px;
+}
+#credit .message {
+  clear: right; /* LTR */
+  float: right; /* LTR */
+  margin-bottom: 20px;
+  width: 180px;
+}
+/* CG Logo on White */
+#credit .logo a {
+  background: transparent url("../images/logo-cg2.png") no-repeat 0 0;
+  clear: right; /* LTR */
+  float: right; /* LTR */
+  height: 0;
+  overflow: hidden;
+  padding: 50px 0 0;
+  width: 180px;
+}
+/* CG Logo on Blue */
+body.in-maintenance #credit .logo a {
+  background: transparent url("../images/logo-cg3.png") no-repeat 0 0;
+}
+/* CG Logo on Black */
+#overlay #overlay-content #credit .logo a {
+  background: transparent url("../images/logo-cg.png") no-repeat 0 0;
+}
+
+/* Installation/Maintenance Page */
+body.in-maintenance {
+  background: #256ba7 url("../images/installation-bg.png") repeat 0 0;
+
+  .body-wrapper {
+    @include gradient-vertical(#569ad4,#256ba7);
+
+    .page-outer {
+      background: transparent url("../images/installation-bg.png") repeat 0 0;
+      padding: 40px 0;
+
+    }
+  }
+
+  #branding {
+    @include round-corners(5px,5px,0,0);
+    box-shadow: none;
+    background: #f4f4f4;
+    border: 1px solid #edebeb;
+    margin: 0;
+    padding: 30px 40px;
+    width: 960px;
+
+    h1.page-title {
+      color: #747474;
+      float: right; /* LTR */
+      font-size: 32px;
+      font-weight: 100;
+      line-height: 1em;
+      padding: 10px 0;
+      width: 550px;
+    }
+  }
+
+  #page {
+    @include box-shadow(0,5px,5px,rgba(0,0,0,.28));
+    @include round-corners(5px,5px,5px,5px);
+    background: transparent;
+    background: #ffffff;
+    padding: 0;
+    width: 960px;
+    overflow: hidden;
+  }
+
+  .page-wrapper {
+    padding: 40px;
+    width: 960px;
+  }
+
+  .logo-wrapper {
+    float: left; /*LTR */
+  }
+
+  #logo {
+    margin: 0;
+    max-width: 100%;
+  }
+
+  #sidebar-first {
+    width: 270px;
+  }
+
+  fieldset .fieldset-wrapper,
+  fieldset.collapsible  {
+    border: 1px solid #ccc;
+    padding: 15px;
+  }
+
+  ol.task-list {
+    background: transparent url("../images/wizard-bg.png") repeat-y 0 0;
+
+    li {
+      background: transparent url("../images/tasks-inactive.png") no-repeat 5px 4px;
+      color: #9a9a9a;
+      font: normal 400 16px/18px "Open Sans", Arial, sans-serif;
+      height: 30px;
+      padding: 6px 0 0 40px; /* LTR */
+      margin: 0 0 22px 0; /* LTR */
+    }
+
+    li.active {
+      background: transparent url("../images/tasks-active.png") no-repeat 5px 4px;
+      color: #2e87cd;
+    }
+
+    li.done {
+      background: transparent url("../images/tasks-complete.png") no-repeat 5px 4px;
+      color: #75cd27;
+    }
+  }
+
+  .form-item-install-demo-store {
+
+    .form-radios {
+      float: left; /* LTR */
+    }
+    .description {
+      background: transparent url("../images/small-pointer.png") no-repeat 0 3px;
+      margin-left: 80px; /* LTR */
+      padding: 3px 5px 5px 23px; /* LTR */
+    }
+  }
+
+  div.form-type-password {
+    width: 500px;
+  }
+
+  .password-strength {
+    width: 15em;
+  }
+
+  .form-item-extras label[for=edit-extras] {
+    clear: both;
+  }
+
+  /* Welcome Page Styles */
+  #edit-submit.form-disabled {
+    opacity: .5;
+    cursor: auto;
+  }
+  #install-welcome > div > p {
+    margin-top: 0;
+  }
+  #eula-installation-welcome {
+    background: #f4f4f4;
+    border: 1px solid #edebeb;
+    padding: 0 20px 10px;
+    font-size: .9em;
+    line-height: 1.5em;
+
+    ul {
+      margin-bottom: 20px;
+      li {
+        margin-bottom: 10px;
+      }
+    }
+    .form-item-eula-accept label.option {
+      line-height: 2em;
+    }
+  }
+
+  /* DFP Styles */
+  #progress {
+    margin-bottom: 50px;
+  }
+  #dfp-wrapper {
+    background: transparent url("../images/install-dfp-message.png") no-repeat 0 45px;
+    min-height: 250px;
+  }
+  .dfp-install-ad {
+    background: transparent url("../images/dfp-offline.png") no-repeat center center;
+    box-shadow: 0 0 1px #333;
+    float: right;
+    height: 250px;
+    width: 300px;
+  }
+}
+
+body.installing-demo-store ol.task-list,
+body.importing-content ol.task-list,
+body.installing-additional-functionality ol.task-list {
+  background: transparent url("../images/wizard-bg2.png") repeat-y 0 0;
+}
+
+/* Installation Page Field Styles */
+#edit-account-commerce-kickstart-name,
+#edit-account-commerce-kickstart-password {
+  font-weight: 700;
+}
+#edit-account-commerce-kickstart-name label,
+#edit-account-commerce-kickstart-password label {
+  color:#333;
+  float: left; /* LTR */
+  margin-right: 8px; /* LTR */
+  font-weight: 500;
+}
+/* Make the Username & Password stand out from the label */
+#edit-account-commerce-kickstart-name,
+#edit-account-commerce-kickstart-password {
+  color: black;
+  font-weight: bold;
+}
+
+/* Commerce Kickstart Help */
+#commerce-kickstart-inline-help {
+  position: relative;
+}
+#edit-commerce-kickstart-inline-help-button {
+  padding: 5px 15px;
+}
+#commerce-kickstart-inline-help #edit-commerce-kickstart-inline-help-close-button {
+  padding: 5px 15px;
+  position: absolute;
+  right: 0; /* LTR */
+  top: 10px;
+}
+#commerce-kickstart-inline-help .advanced-help-topic {
+  background: #fef2c4;
+  border: 1px solid #efb120;
+  -moz-box-shadow: inset 0 0 10px #fff;
+  -webkit-box-shadow: inset 0 0 10px #fff;
+  box-shadow: inset 0 0 10px #fff;
+  margin-bottom: 30px;
+  padding: 15px;
+}
+.page-admin-getting-started .advanced-help-topic {
+  background: transparent;
+  border: 0;
+  padding: 0;
+}
+.page-admin-getting-started .advanced-help-topic a {
+  color: #36A2F6;
+}
+#block-commerce-kickstart-help-commerce-kickstart-ressources,
+#block-commerce-kickstart-help-commerce-kickstart-community {
+  background: #fefefe;
+  border: 1px solid #efb120;
+  @include round-corners(15px,15px,15px,15px);
+  margin: 0;
+  min-height: 250px;
+  padding: 10px 30px;
+  width: 48.27586%; /* 420px/870px */
+}
+.block-commerce-kickstart-help h2 {
+  color: #acacac;
+  font: normal 600 26px/26px "Open Sans", Arial, sans-serif;
+}
+#commerce-kickstart-inline-help-form-ajax .ajax-progress {
+  padding-top: 10px;
+}
+#commerce-kickstart-inline-close-help-form-ajax .ajax-progress {
+  position: absolute;
+  right: 100px; /* LTR */
+  top: 10px;
+}
+#commerce-kickstart-inline-help-form-ajax #edit-commerce-kickstart-inline-help-button {
+  float: right; /* LTR */
+}
+/* Help Overrides */
+#-commerce-kickstart-help-store .search .form-item {
+  width: 85%;
+}
+#-commerce-kickstart-help-store a.search-submit {
+  margin-top: 0;
+}
+html.js #-commerce-kickstart-help-store fieldset.collapsible {
+  min-height: 55px;
+}
+/* Reports Jirafe */
+.page-admin-commerce-jirafe #overlay #overlay-content #page {
+  padding: 0 0 30px;
+}
+/* Customer Profiles Fix */
+.view-commerce-customer-profiles .views-exposed-form #edit-name-wrapper {
+  width: 520px;
+}
+.view-commerce-customer-profiles .views-exposed-form label {
+  float: left;
+  margin-right:15px;
+}

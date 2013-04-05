@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * Implements hook_install().
+ *
+ * Create uses and max_uses fields for commerce discounts.
+ * The instance will be added for every newley created bundle.
+ *
+ * @see commerce_discount_usage_modules_enabled()
+ */
+function commerce_discount_usage_install() {
+  // Clear field info cache, so entity reference field can be used.
+  field_info_cache_clear();
+
+  $field = array(
+    'entity_types' => array('commerce_discount'),
+    'field_name' => 'commerce_discount_uses',
+    'type' => 'number_integer',
+  );
+  field_create_field($field);
+
+  $field = array(
+    'entity_types' => array('commerce_discount'),
+    'field_name' => 'commerce_discount_max_uses',
+    'type' => 'number_integer',
+  );
+  field_create_field($field);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_discount_usage_uninstall() {
+  field_delete_field('commerce_discount_uses');
+  field_delete_field('commerce_discount_max_uses');
+}

@@ -1,0 +1,354 @@
+<?php
+
+/**
+ * @file
+ * Provides a formatter that displays a field from the referenced entities.
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function field_extractor_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'field_extractor') . '/views',
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function field_extractor_field_formatter_info() {
+  $formatters = array(
+    'field_extractor' => array(
+      'label' => t('Field Extractor'),
+      'field types' => array('commerce_product_reference', 'entityreference', 'taxonomy_term_reference'),
+      'module' => 'field_extractor',
+      'settings' => array(
+        'field_name' => '',
+        'formatter' => '',
+        'settings' => array(),
+      ),
+    ),
+  );
+
+  return $formatters;
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function field_extractor_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $settings = field_extractor_settings($field, $instance);
+  $display = $instance['display'][$view_mode];
+  $extractor_settings = $display['settings'];
+  // If the form was rebuilt via AJAX, use the values from the form state.
+  if (!empty($form_state['values']['fields']['field_product']['settings_edit_form'])) {
+    $defaults = array(
+      'field_name' => '',
+      'formatter' => '',
+      'settings' => array(),
+    );
+    $extractor_settings = $form_state['values']['fields']['field_product']['settings_edit_form']['settings'] + $defaults;
+  }
+  // Build a list of available fields for all bundles available to the field.
+  $fields = array();
+  foreach (field_info_instances($settings['entity_type']) as $bundle => $instances) {
+    if (in_array($bundle, $settings['bundles'])) {
+      foreach ($instances as $field_name => $field_instance) {
+        $fields[$field_name] = $field_name;
+      }
+    }
+  }
+  // If no field has been selected yet, or the current one is no longer
+  // available, default to the first one.
+  if (empty($extractor_settings['field_name']) || !isset($fields[$extractor_settings['field_name']])) {
+    $field_names = array_keys($fields);
+    $extractor_settings['field_name'] = reset($field_names);
+  }
+  // Determine if the formatter settings are being embedded inside Views.
+  // That is not supported.
+  if ($instance['entity_type'] == 'ctools' && $instance['bundle'] == 'ctools') {
+    return array('#markup' => t("This formatter can't be used inside Views. Use the provided Views field instead."));
+  }
+
+  $id = 'field-extractor-' . $instance['entity_type'] . '-' . $field['field_name'];
+  $element = array();
+  $element['#prefix'] = '<div id="' . $id . '">';
+  $element['#suffix'] = '</div>';
+  $element['field_name'] = array(
+    '#type' => 'select',
+    '#title' => t('Field'),
+    '#options' => $fields,
+    '#default_value' => $extractor_settings['field_name'],
+    '#ajax' => array(
+      'wrapper' => $id,
+      'callback' => 'field_extractor_ajax',
+    ),
+    // Data for the #ajax callback.
+    '#reference_field' => $field['field_name'],
+  );
+
+  $selected_field = field_info_field($extractor_settings['field_name']);
+  $formatters = _field_extractor_formatters($selected_field['type']);
+  // No recursion.
+  unset($formatters['field_extractor']);
+  // If no formatter has been selected yet, or doesn't fit the current field,
+  // default to the first one.
+  if (empty($extractor_settings['formatter']) || !isset($formatters[$extractor_settings['formatter']])) {
+    $formatter_names = array_keys($formatters);
+    $extractor_settings['formatter'] = reset($formatter_names);
+  }
+
+  $element['formatter'] = array(
+    '#type' => 'select',
+    '#title' => t('Formatter'),
+    '#options' => $formatters,
+    '#default_value' => $extractor_settings['formatter'],
+    '#ajax' => array(
+      'wrapper' => $id,
+      'callback' => 'field_extractor_ajax',
+    ),
+    // Data for the #ajax callback.
+    '#reference_field' => $field['field_name'],
+  );
+
+  $formatter = field_info_formatter_types($extractor_settings['formatter']);
+  $formatter_settings = $extractor_settings['settings'] + field_info_formatter_settings($extractor_settings['formatter']);
+  // Provide an instance array for hook_field_formatter_settings_form().
+  ctools_include('fields');
+  $instance = ctools_fields_fake_field_instance($extractor_settings['field_name'], '_dummy', $formatter, $formatter_settings);
+  // Store the settings in a '_dummy' view mode.
+  $instance['display']['_dummy'] = array(
+    'type' => $extractor_settings['formatter'],
+    'settings' => $formatter_settings,
+  );
+
+  // Get the settings form.
+  $settings_form = array('#value' => array());
+  $function = $formatter['module'] . '_field_formatter_settings_form';
+  if (function_exists($function)) {
+    $settings_form = $function($selected_field, $instance, '_dummy', $element, $form_state);
+  }
+  $element['settings'] = $settings_form;
+
+  return $element;
+}
+
+/**
+ * #ajax callback: Returns the updated formatter settings form.
+ */
+function field_extractor_ajax($form, $form_state) {
+  $field_name = $form_state['triggering_element']['#reference_field'];
+  return $form['fields'][$field_name]['format']['settings_edit_form']['settings'];
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function field_extractor_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  if (!empty($settings['field_name']) && !empty($settings['formatter'])) {
+    $field = field_info_field($settings['field_name']);
+    $formatters = _field_extractor_formatters($field['type']);
+    $formatter = $formatters[$settings['formatter']];
+
+    return t('Field: %field_name. Formatter: %formatter', array('%field_name' => $settings['field_name'], '%formatter' => $formatter));
+  }
+  else {
+    return t('No field selected.');
+  }
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function field_extractor_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $settings = field_extractor_settings($field, $instance);
+  $extractor_settings = $display['settings'];
+  // The formatter hasn't been configured, abort.
+  if (empty($extractor_settings['field_name']) || empty($extractor_settings['formatter'])) {
+    return array();
+  }
+
+  // Extract the entity IDs from the items array and load the entities.
+  $entity_ids = array();
+  foreach ($items as $item) {
+    $entity_ids[] = $item[$settings['column']];
+  }
+  // No entities found, nothing to do here.
+  if (empty($entity_ids)) {
+    return array();
+  }
+  // Retrieve the weight and the label from the view mode settings.
+  $instance_display = array(
+    'label' => $display['label'],
+    'weight' => $display['weight'],
+  );
+
+  // Build an alterable EFQ.
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', $settings['entity_type'])
+    ->entityCondition('entity_id', $entity_ids)
+    ->addTag('field_extractor')
+    ->addMetaData('field_extractor_entity', $entity);
+  $results = $query->execute();
+  if (empty($results[$settings['entity_type']])) {
+    return array();
+  }
+  $entities = entity_load($settings['entity_type'], array_keys($results[$settings['entity_type']]));
+  return field_extractor_build_element($entities, $settings['entity_type'], $extractor_settings, $instance_display);
+}
+
+/**
+ * Implements hook_entity_query_alter().
+ */
+function field_extractor_entity_query_alter($query) {
+  if (!empty($query->tags) && isset($query->tags['field_extractor'])) {
+    switch ($query->entityConditions['entity_type']['value']) {
+      case 'commerce_product':
+      case 'node':
+        $query->propertyCondition('status', 1);
+    }
+  }
+}
+
+/**
+ * Builds a renderable array representing the extracted field.
+ *
+ * @param $entities
+ *   An array of entities from which the field data will be taken.
+ * @param $entity_type
+ *   The type of passed $entities.
+ * @param $extractor_settings
+ *   An array of settings ('field_name', 'formatter', 'settings', 'langcode').
+ * @param $instance_display
+ *   The display settings to use, as found in the 'display' entry of instance
+ *   definitions.
+ */
+function field_extractor_build_element($entities, $entity_type, $extractor_settings, $instance_display = array()) {
+  $field_name = $extractor_settings['field_name'];
+  $formatter_name = $extractor_settings['formatter'];
+  $formatter_settings = $extractor_settings['settings'];
+
+  $element = array();
+  foreach ($entities as $loaded_entity) {
+    if (!empty($loaded_entity->{$field_name})) {
+      $formatter = field_info_formatter_types($formatter_name);
+      $field_display = $instance_display + array(
+        'label' => 'hidden',
+        'type' => $formatter_name,
+        'settings' => $formatter_settings + $formatter['settings'],
+        'module' => $formatter['module'],
+        'weight' => 0,
+      );
+      // Call the formatter for the selected field on the loaded entity.
+      $field_element = field_view_field($entity_type, $loaded_entity, $field_name, $field_display);
+
+      // Use the first returned element as the base, append all next.
+      if (empty($element)) {
+        $element = $field_element;
+      }
+      else {
+        foreach (element_children($field_element) as $key) {
+          if (!empty($field_element['#items'])) {
+            // This item already exists, skip it.
+            if (in_array($field_element['#items'][$key], $element['#items'], TRUE)) {
+              continue;
+            }
+            $element['#items'][] = $field_element['#items'][$key];
+          }
+          $element[] = $field_element[$key];
+        }
+      }
+    }
+  }
+
+  return $element;
+}
+
+/**
+ * Introspects field and instance settings, and determines the correct settings
+ * for the functioning of the formatter.
+ *
+ * Settings:
+ *   - entity_type - The entity_type being loaded.
+ *   - bundles - Bundles available to be referenced.
+ *   - column - The name of the ref. field column that stores the entity id.
+ */
+function field_extractor_settings($field, $instance) {
+  $settings = array(
+    'entity_type' => NULL,
+    'bundles' => array(),
+    'column' => NULL,
+  );
+
+  if ($field['type'] == 'commerce_product_reference') {
+    $settings['entity_type'] = 'commerce_product';
+    $settings['column'] = 'product_id';
+    // Make sure 'referenceable_types' is set.
+    $instance['settings'] += array('referenceable_types' => array());
+
+    // The product reference field has its bundle setting, use it.
+    $types = array_filter($instance['settings']['referenceable_types']);
+    if (!empty($types)) {
+      $settings['bundles'] = array_values($types);
+    }
+  }
+  elseif ($field['type'] == 'entityreference') {
+    $settings['entity_type'] = $field['settings']['target_type'];
+    $settings['column'] = 'target_id';
+
+    if (!empty($field['settings']['handler_settings']['target_bundles'])) {
+      $bundles = array_filter($field['settings']['handler_settings']['target_bundles']);
+      if (!empty($bundles)) {
+        $settings['bundles'] = array_values($bundles);
+      }
+    }
+  }
+  elseif ($field['type'] == 'taxonomy_term_reference') {
+    $settings['entity_type'] = 'taxonomy_term';
+    $settings['column'] = 'tid';
+  }
+
+  // By default, allow entities of all bundles to be created.
+  if (empty($settings['bundles'])) {
+    $info = entity_get_info($settings['entity_type']);
+    if (!empty($info['bundles'])) {
+      foreach ($info['bundles'] as $bundle_name => $bundle_info) {
+        $settings['bundles'][] = $bundle_name;
+      }
+    }
+  }
+
+  return $settings;
+}
+
+/**
+ * Helper function: Return an array of formatters for a field type.
+ *
+ * Borrowed from views.
+ */
+function _field_extractor_formatters($field_type = NULL) {
+  $options = &drupal_static(__FUNCTION__);
+
+  if (!isset($options)) {
+    $field_types = field_info_field_types();
+    $options = array();
+    foreach (field_info_formatter_types() as $name => $formatter) {
+      foreach ($formatter['field types'] as $formatter_field_type) {
+        // Check that the field type exists.
+        if (isset($field_types[$formatter_field_type])) {
+          $options[$formatter_field_type][$name] = $formatter['label'];
+        }
+      }
+    }
+  }
+
+  if ($field_type) {
+    return !empty($options[$field_type]) ? $options[$field_type] : array();
+  }
+  return $options;
+}

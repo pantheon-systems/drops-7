@@ -1,0 +1,85 @@
+<?php
+
+/**
+ * @file
+ * Database and updating for the connector module
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function connector_schema() {
+  $schema['connector_info'] = _connector_info_schema_1();
+  $schema['connector_user'] = _connector_user_schema_1();
+  return $schema;
+}
+
+function _connector_info_schema_1() {
+  return array(
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The id of the user',
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 80,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => "The type of property - eg. 'real name'",
+      ),
+      'value' => array(
+        'type' => 'varchar',
+        'length' => 80,
+        'not null' => FALSE,
+        'default' => '',
+        'description' => 'The value of the property',
+      ),
+      'max_life' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => 0,
+        'description' => 'The Unix timestamp when info latest needs to be refreshed',
+      ),
+      'failure_level' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => 0,
+        'description' => 'The level of failure',
+      ),
+    ),
+    'primary key' => array('uid', 'type'),
+    'indexes' => array(
+      'refresh' => array('type', 'max_life'),
+      'max_life' => array('max_life'),
+    ),
+  );
+}
+
+function _connector_user_schema_1() {
+  return array(
+    'fields' => array(
+      'uid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The id of the user',
+      ),
+      'primary_connection' => array(
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The primary connection for the user',
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+}

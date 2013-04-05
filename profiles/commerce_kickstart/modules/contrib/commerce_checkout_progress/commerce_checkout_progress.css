@@ -1,0 +1,12 @@
+.commerce-checkout-progress li.active {
+  font-weight:bold;
+}
+
+/**
+ * display:inline will remove the numbers from the list
+ * To keep the ol as expected. Width assumes up to 6 pages.
+ */
+ol.inline.commerce-checkout-progress li {
+  float: left;
+  width: 16%;
+}

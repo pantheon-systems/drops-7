@@ -1,0 +1,32 @@
+name = "Lingotek"
+description = "Extends Drupal's multilingual features using the Lingotek Collaborative Translation Platform."
+package = Multilingual
+core = "7.x"
+version = "7.x-2.x"
+php = "5.2"
+configure = admin/config/lingotek/setup
+
+dependencies[] = locale
+dependencies[] = translation
+dependencies[] = field_ui
+dependencies[] = title
+
+files[] = lib/Drupal/lingotek/Lingotek.php
+files[] = lib/Drupal/lingotek/LingotekApi.php
+files[] = lib/Drupal/lingotek/LingotekAccount.php
+files[] = lib/Drupal/lingotek/LingotekComment.php
+files[] = lib/Drupal/lingotek/LingotekDocument.php
+files[] = lib/Drupal/lingotek/LingotekNode.php
+files[] = lib/Drupal/lingotek/LingotekPhase.php
+files[] = lib/Drupal/lingotek/LingotekTranslatableEntity.php
+
+files[] = tests/lingotek.base.test
+files[] = tests/lingotek.access.test
+files[] = tests/lingotek.advanced_parsing.test
+
+; Information added by drupal.org packaging script on 2013-04-01
+version = "7.x-2.72"
+core = "7.x"
+project = "lingotek"
+datestamp = "1364853614"
+

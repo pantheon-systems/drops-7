@@ -1,0 +1,7 @@
+name = Commerce Kickstart Product UI
+description = Provides product-related views and other UI elements.
+core = 7.x
+package = Commerce Kickstart
+php = 5.2.4
+dependencies[] = commerce_product
+dependencies[] = views

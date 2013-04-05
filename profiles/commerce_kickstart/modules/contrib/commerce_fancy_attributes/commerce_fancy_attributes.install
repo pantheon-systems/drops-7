@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function commerce_fancy_attributes_install() {
+  // Increase module's weight to avoid problems with modifying Commerce info.
+  db_update('system')
+    ->fields(array(
+      'weight' => 1,
+    ))
+    ->condition('name', 'commerce_fancy_attributes', '=')
+    ->execute();
+}

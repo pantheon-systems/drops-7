@@ -1,0 +1,35 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_kickstart_user_enable() {
+  // Rebuild the feature.
+  features_include(TRUE);
+  $module = 'commerce_kickstart_user';
+  $feature = feature_load($module);
+  $items[$module] = array_keys($feature->info['features']);
+  _features_restore('enable', $items);
+  _features_restore('rebuild', $items);
+
+  drupal_static_reset();
+  $default_theme = variable_get('theme_default', 'omega_kickstart');
+  _block_rehash($default_theme);
+  try {
+    db_update('block')
+      ->fields(array(
+        'region' => 'user_first',
+        'status' => (int) '1',
+        'visibility' => '0',
+        'pages' => '',
+        'title' => '<none>',
+      ))
+      ->condition('module', 'menu')
+      ->condition('delta', 'menu-user-menu')
+      ->condition('theme', $default_theme)
+      ->execute();
+  } catch (Exception $e) {
+    watchdog_exception('block', $e);
+    throw $e;
+  }
+}

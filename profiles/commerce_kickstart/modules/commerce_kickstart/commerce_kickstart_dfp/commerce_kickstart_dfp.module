@@ -1,0 +1,167 @@
+<?php
+/**
+ * @file
+ * Creates a "Commerce Kickstart DFP" Page to accept the EULA.
+ * Also checks that EULA is accepted before displaying DFP information.
+ */
+
+/**
+ * Implements hook_page_build().
+ */
+function commerce_kickstart_dfp_page_build(&$page) {
+  // Check that the dfp eula has been accepted.
+  if (variable_get('commerce_kickstart_dfp_eula', FALSE)) {
+    $current_path = current_path();
+    $dfp_settings = module_invoke_all('commerce_kickstart_dfp_paths');
+    // Check if it's a DFP path.
+    if (!empty($dfp_settings[$current_path])) {
+      // Add defaults settings.
+      $dfp_settings[$current_path] += array(
+        'dfp_id' => drupal_html_id('div-gpt-ad-' . REQUEST_TIME),
+        'dfp_position' => 'before',
+        'dfp_height' => 60,
+        'dfp_width' => 468,
+      );
+      drupal_add_css(drupal_get_path('module', 'commerce_kickstart_dfp') . '/theme/commerce_kickstart_dfp.css');
+      drupal_add_js('//www.googletagservices.com/tag/js/gpt.js');
+      drupal_add_js(array(
+        'dfp' => $dfp_settings[$current_path],
+      ), 'setting');
+      drupal_add_js(drupal_get_path('module', 'commerce_kickstart_dfp') . '/js/commerce_kickstart_dfp.js');
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_kickstart_dfp_paths().
+ */
+function commerce_kickstart_dfp_commerce_kickstart_dfp_paths() {
+  // List of paths that display dfp content and campaign information.
+  $dfp_settings = array(
+    'admin/commerce/products' => array(
+      'dfp_selector' => '.page-admin-commerce-products #title-wrapper',
+      'dfp_class' => array('dfp-products'),
+      'dfp_unit' => 'Kickstart_Products_Admin',
+    ),
+    'admin/commerce/orders' => array(
+      'dfp_selector' => '.page-admin-commerce-orders #title-wrapper',
+      'dfp_class' => array('dfp-orders'),
+      'dfp_unit' => 'Kickstart_Orders_Admin',
+    ),
+    'admin/commerce/jirafe' => array(
+      'dfp_selector' => '.page-admin-commerce-jirafe #block-system-main .content:not(:has(#jirafe))',
+      'dfp_class' => array('dfp-jirafe'),
+      'dfp_position' => 'after',
+      'dfp_height' => 540,
+      'dfp_width' => 960,
+      'dfp_unit' => 'Kickstart_Jirafe',
+    ),
+    'admin/commerce/customer-profiles' => array(
+      'dfp_selector' => '.page-admin-commerce-customer-profiles #title-wrapper',
+      'dfp_class' => array('dfp-customer-profiles'),
+      'dfp_unit' => 'Kickstart_Customer_Profile',
+    ),
+    'admin/commerce/config/shipping' => array(
+      'dfp_selector' => '.page-admin-commerce-config-shipping ul.action-links',
+      'dfp_class' => array('dfp-shipping'),
+      'dfp_unit' => 'Kickstart_Shipping',
+    ),
+    'admin/commerce/config/taxes' => array(
+      'dfp_selector' => '.page-admin-commerce-config-taxes ul.action-links',
+      'dfp_class' => array('dfp-taxes'),
+      'dfp_position' => 'before',
+      'dfp_unit' => 'Kickstart_Taxes',
+    ),
+    'admin/commerce/config/payment-methods' => array(
+      'dfp_selector' => '.page-admin-commerce-config-payment-methods ul.action-links',
+      'dfp_class' => array('dfp-payment-methods'),
+      'dfp_unit' => 'Kickstart_Payment_Methods',
+    ),
+  );
+  return $dfp_settings;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_kickstart_dfp_menu() {
+  $items['admin/config/services/dfp'] = array(
+    'title' => 'Commerce Kickstart DFP',
+    'description' => 'Enable or disable the DFP media.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_kickstart_dfp_settings_form'),
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Creates the DFP Acceptance form.
+ */
+function commerce_kickstart_dfp_settings_form($form, &$form_state) {
+  $form['#attached']['css'] = array(
+    drupal_get_path('module', 'commerce_kickstart_dfp') . '/theme/commerce_kickstart_dfp.css',
+  );
+  $eula = '<p>' . t('While we have a rather long, boring Privacy Policy just like any other technology company, here is a short summary of some key items we feel are important:') . '</p>';
+  $items = array();
+  $dfp_link = l("Google's DoubleClick for Publishers (\"DFP\")", "http://www.google.com/dfp/info/sb/index.html", array('attributes' => array('target' => '_blank')));
+  $items[] = t("Commerce Kickstart makes use of !dfp;", array('!dfp' => $dfp_link));
+  $items[] = t('We use DFP to show you content relevant to Drupal Commerce at various points and places in Commerce Kickstart, including during installation;');
+  $items[] = t('DFP is a third-party technology. It uses audience management tags which collect and use certain data;');
+  $items[] = t('Commerce Guys does not collect any personally identifiable information;');
+  $items[] = t('If at any time after installation you do not want us to utilize DFP through Commerce Kickstart, you can easily opt out of it;');
+  $eula .= theme('item_list', array('items' => $items));
+  $eula_link = l('Privacy Policy and User Agreement', 'https://marketplace.commerceguys.com/privacy/commerce-kickstart', array('attributes' => array('target' => '_blank')));
+  $eula .= '<p>' . t('That is it for the main points. The full !policy can be viewed on our website.  Thank you again for choosing Commerce Kickstart!', array('!policy' => $eula_link)) . '</p>';
+
+  $form['description'] = array(
+    '#type' => 'item',
+    '#title' => t('For Commerce Kickstart DFP to work, you must accept the Privacy Policy and User Agreement.'),
+  );
+  $form['eula'] = array(
+    '#prefix' => '<div id="eula-accept">',
+    '#markup' => $eula,
+  );
+  $form['commerce_kickstart_dfp_eula'] = array(
+    '#title' => t('I agree to the Privacy Policy and User Agreement'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('commerce_kickstart_dfp_eula', FALSE),
+    '#suffix' => '</div>',
+  );
+  $form['actions'] = array(
+    '#type' => 'actions',
+  );
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t("Save"),
+    '#weight' => 10,
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function commerce_kickstart_dfp_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime') {
+    // Check that the EULA Agreement is accepted.
+    if (variable_get('commerce_kickstart_dfp_eula', FALSE)) {
+      $requirements['dfp'] = array(
+        'title' => t('Commerce Kickstart DFP'),
+        'value' => t('End User License Agreement Accepted'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['dfp'] = array(
+        'title' => t('Commerce Kickstart DFP'),
+        'value' => t('Acceptance Required'),
+        'severity' => REQUIREMENT_WARNING,
+        'description' => t('You can not display DFP content until the <a href="@url">End User License Agreement</a> has been accepted', array('@url' => url('admin/config/services/dfp'))),
+      );
+    }
+  }
+  return $requirements;
+}

@@ -1,0 +1,279 @@
+/* Include Default Variables & Mixins */
+@import "variables.scss";
+@import "mixins.scss";
+/* End Variables & Mixins */
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.1. Zone user
+**********************************************/
+/*******************************************
+* 2.1.1. Region user first
+*******************************************/
+.block-menu-user-menu .block-inner {
+  float: right;
+  margin-right: 10px;
+}
+
+/**********************************************
+* 2.4. Zone header
+**********************************************/
+/**
+* Navigation
+*/
+.navigation {
+  .primary-menu,
+  .second-menu {
+    .links li {
+      font-size: 1em;
+    }
+  }
+}
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+.zone-content-wrapper {
+  .zone-content {
+    .region-content-inner {
+      margin-bottom: 10px;
+    }
+  }
+}
+/*******************************************
+* 3.2.1. Sidebar first
+*******************************************/
+/* Price range */
+#search-api-ranges-block-slider-view-form {
+  .range-box-left .form-item,
+  .range-box-right .form-item {
+    margin-top: 0;
+  }
+  .range-box-left,
+  .range-box-right {
+    position: absolute;
+    top: -30px;
+    label {
+      display: none;
+    }
+  }
+  .range-box-left {
+    left: 0;
+  }
+  .range-box-right {
+    right: 0;
+    #edit-range-to {
+      text-align: right;
+    }
+  }
+  .range-slider-box {
+    display: block;
+    margin-top: 25px;
+  }
+  #edit-range-from,
+  #edit-range-to {
+    background: none;
+    border: none;
+    font-size: 16px;
+    font-weight: 300;
+    padding: 0;
+    width: auto;
+  }
+  #edit-submit {
+    display: none;
+  }
+}
+/* Category */
+.region-sidebar-first .block-facetapi.field_category .item-list {
+  border: 1px solid #d9d9d9;
+  height: 220px;
+  padding: 10px 15px;
+  overflow-y: scroll;
+}
+
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+/* HP blocks: Top advert */
+#promotional_banner .promotional_banner_saving {
+  display: inline-block;
+  width: auto;
+  padding: 0 22px 0 12px;
+  margin: 10px 0 0 0;
+  line-height: 38px;
+}
+#promotional_banner .promotional_banner_special_offer {
+  top: 15px;
+}
+
+#block-views-demo-content-slideshow-block-1 {
+  /* HP blocks: Slideshow */
+  .bx-wrapper {
+    padding-bottom: 100px;
+  }
+
+  .bx-wrapper ul.event-slider {
+    li {
+      overflow: visible;
+    }
+  }
+  .views-field-nothing {
+    background: #888;
+    border: 1px solid #CCC;
+    color: #ffffff;
+    padding-bottom: 5px;
+    position: absolute;
+    bottom: -100px;
+    left: 34%;
+  }
+  .bx-prev,
+  .bx-next {
+    color: #000000;
+    background: #EEE;
+    border: 1px solid #CCC;
+    text-decoration: none;
+    display: block;
+    margin-top: 15px;
+    padding-bottom: 5px;
+    &:hover {
+      background: #FFF;
+    }
+  }
+
+  .views-field-nothing,
+  .bx-prev,
+  .bx-next {
+    display: block;
+    height: 80px;
+    text-align: center;
+    text-indent: 0;
+    width: 32%;
+    margin-right: 2%;
+
+    span.field-content {
+      display: block;
+      font-family: $headerfont;
+      font-weight: 300;
+      font-size: 21px;
+      height: 80px;
+      line-height: 28px;
+      padding: 10px 25px 0;
+      overflow: hidden;
+
+      em {
+        font-family: $headerfont;
+        font-size: 32px;
+        font-style: normal;
+        font-weight: 900;
+        text-decoration: none;
+        text-transform: uppercase;
+      }
+    }
+  }
+  .bx-prev {
+    margin-left: 0;/* LTR */
+    float: left; /* LTR */
+    position: absolute;
+    bottom: 0;
+    left: 0; /* LTR */
+  }
+  .bx-next {
+    margin-right: 0;/* LTR */
+    float: right; /* LTR */
+    position: absolute;
+    bottom: 0;
+    right: 0; /* LTR */
+  }
+}
+/**********************************************
+* 3.3. Zone postscript
+**********************************************/
+#zone-postscript {
+  .view-ad-push .views-row .views-field-field-tagline .field-content,
+  .block-blog-block .views-field-title .field-content {
+    font-size: 18px;
+    line-height: 26px;
+  }
+}
+/**************************************************
+* --
+* 4. Section footer
+* --
+**************************************************/
+/**********************************************
+* 4.1. Zone footer
+**********************************************/
+/**
+* Connect with us
+*/
+#block-menu-menu-social-connection h2 {
+  line-height: inherit;
+  padding: 0 0 22px 25px;
+}
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+.view-collection-products .view-header,
+.view-collection-taxonomy-term .view-header {
+  .taxonomy-title {
+    font-size: 3em;
+  }
+  .collection-terms .view-content .item-list {
+    display: block;
+    float: none;
+  }
+}
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+div.messages.commerce-add-to-cart-confirmation {
+  .message-inner {
+    .added-product-title {
+      width: auto;
+    }
+    .view-confirm-message-product-display {
+      .view-content {
+        margin-left: 130px; /* LTR */
+        width: 65%;
+        .views-field-commerce-product .content {
+          .field-name-field-images {
+            position: absolute;
+            left: -115px; /* LTR */
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Cloud zoom */
+.node-product-type {
+  .cloud-zoom-container .cloud-zoom-gallery-thumbs {
+    .cloud-zoom-gallery {
+      margin: 5px 0;
+    }
+  }
+  .field-name-field-product {
+    form.commerce-add-to-cart label {
+      float: left;
+    }
+  }
+}

@@ -1,0 +1,522 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the message module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function message_install() {
+  // Create the field holding the message text.
+  $field = array(
+    'field_name' => MESSAGE_FIELD_MESSAGE_TEXT,
+    'type' => 'text_long',
+    'entity_types' => array('message_type'),
+    'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+    'translatable' => TRUE,
+    'locked' => TRUE,
+    'settings' => array(
+      // Mark that this field can be rendered using Message::getText().
+      'message_text' => TRUE,
+    ),
+  );
+  $field = field_create_field($field);
+  $instance = array(
+    'field_name' => MESSAGE_FIELD_MESSAGE_TEXT,
+    'bundle' => 'message_type',
+    'entity_type' => 'message_type',
+    'label' => t('Message text'),
+    'description' => t('This is the text of all messages of this type.'),
+    'required' => TRUE,
+    'settings' => array(
+      'text_processing' => 1,
+    ),
+  );
+  field_create_instance($instance);
+
+  variable_del('message_entity_delete_cleanup');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function message_uninstall() {
+  $instance = field_info_instance('message_type', 'message_text', 'message_type');
+  field_delete_instance($instance);
+  field_delete_field('message_text');
+
+  variable_del('message_delete_cron_limit');
+  variable_del('message_purge_enable');
+  variable_del('message_purge_quota');
+  variable_del('message_purge_days');
+  variable_del('message_delete_on_entity_delete');
+}
+
+/**
+ * Implements hook_schema()
+ */
+function message_schema() {
+  $schema['message_type_category'] = array(
+    'description' => 'Storage for user-defined message category.',
+    'fields' => array(
+      // Although the "category" should be enough as the primary key, the
+      // numeric ID is required for the internal use of entity API.
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Numeric message type category ID.',
+      ),
+      'category' => array(
+        'description' => 'The unified identifier for a message type category.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'Description for this message type category.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'language' => array(
+        'description' => 'The {languages}.language of this message type category.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'category' => array('category'),
+    ),
+  );
+
+  $schema['message_type'] = array(
+    'description' => 'Storage for user-defined message templates.',
+    'fields' => array(
+      // Although the "name" should be enough as the primary key, the numeric ID
+      // is required for the internal use of entity API.
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Numeric message type ID.',
+      ),
+      'name' => array(
+        'description' => 'The unified identifier for a message type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'category' => array(
+        'description' => 'Reference to a message type category.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => 'message_type',
+      ),
+      'description' => array(
+        'description' => 'Description for this message type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'argument_keys' => array(
+        'description' => 'Serialized array with the argument keys',
+        'type' => 'text',
+        'serialize' => TRUE,
+      ),
+      'language' => array(
+        'description' => 'The {languages}.language of this message type.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'arguments' => array(
+        'description' => 'Serialized array with the arguments.',
+        'type' => 'text',
+        'serialize' => TRUE,
+      ),
+      'data' => array(
+        'description' => 'Serialized array with general data.',
+        'type' => 'text',
+        'serialize' => TRUE,
+        'size' => 'big',
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+  );
+
+  $schema['message'] = array(
+    'description' => 'An instance of a message type (e.g. like a node is an instance of a node type).',
+    'fields' => array(
+      'mid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'description' => 'The Unique ID of the message.',
+      ),
+      'type' => array(
+        'description' => 'Reference to a message a type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'arguments' => array(
+        'description' => 'Serialized array with the arguments',
+        'type' => 'text',
+        'serialize' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'The user ID of the acting user.',
+        'type' => 'int',
+        'default value' => NULL,
+        'unsigned' => TRUE,
+      ),
+      'timestamp' => array(
+        'description' => 'When the message instance was recorded.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+      'language' => array(
+        'description' => 'The {languages}.language of this message.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'foreign keys' => array(
+      'message_type' => array(
+        'table' => 'message_type',
+        'columns' => array('type' => 'name'),
+      ),
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+    'primary key' => array('mid'),
+    'indexes' => array(
+      'type' => array('type'),
+      'timestamp' => array('timestamp'),
+    ),
+  );
+
+  // Cache bins for Entity-cache module.
+  $cache_schema = drupal_get_schema_unprocessed('system', 'cache');
+  $types = array(
+    'message_type_category',
+    'message_type',
+    'message',
+  );
+
+  foreach ($types as $type) {
+    $schema["cache_entity_$type"] = $cache_schema;
+    $schema["cache_entity_$type"]['description'] = "Cache table used to store $type entity records.";
+  }
+
+  return $schema;
+}
+
+
+/**
+ * Add in the exportable entity db columns as required by the entity API.
+ */
+function message_update_7000() {
+  db_add_field('message_type', 'status', array(
+    'type' => 'int',
+    'not null' => TRUE,
+    // Set the default to ENTITY_CUSTOM without using the constant as it is
+    // not safe to use it at this point.
+    'default' => 0x01,
+    'size' => 'tiny',
+    'description' => 'The exportable status of the entity.',
+  ));
+  db_add_field('message_type', 'module', array(
+    'description' => 'The name of the providing module if the entity has been defined in code.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+  ));
+}
+
+/**
+ * Add the argument keys column of a message type.
+ */
+function message_update_7001() {
+  db_add_field('message_type', 'argument_keys', array(
+    'description' => 'Serialized array with the argument keys',
+    'type' => 'text',
+    'serialize' => TRUE,
+  ));
+}
+
+/**
+ * Update the message type text field to have text processing.
+ */
+function message_update_7002() {
+  $instance = array(
+    'field_name' => MESSAGE_FIELD_MESSAGE_TEXT,
+    'bundle' => 'message_type',
+    'entity_type' => 'message_type',
+    'label' => t('Message text'),
+    'description' => t('This is the text of all messages of this type.'),
+    'required' => TRUE,
+    'settings' => array(
+      'text_processing' => 1,
+    ),
+  );
+  field_update_instance($instance);
+}
+
+/**
+ * Add message type category.
+ */
+function message_update_7003() {
+  $schema['message_type_category'] = array(
+    'description' => 'Storage for user-defined message category.',
+    'fields' => array(
+      // Although the "category" should be enough as the primary key, the
+      // numeric ID is required for the internal use of entity API.
+      'id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'Primary Key: Numeric message type category ID.',
+      ),
+      'category' => array(
+        'description' => 'The unified identifier for a message type category.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'Description for this message type category.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'unique keys' => array(
+      'category' => array('category'),
+    ),
+  );
+  db_create_table('message_type_category', $schema['message_type_category']);
+
+  db_add_field('message_type', 'category', array(
+    'description' => 'Reference to a message type category.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => 'message_type',
+  ));
+}
+
+/**
+ * Rename the 'name' column to 'type' in {Message}.
+ */
+function message_update_7004() {
+  $column = array(
+      'description' => 'Reference to a message a type.',
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => '',
+  );
+  db_change_field('message', 'name', 'type', $column);
+}
+
+
+/**
+ * Add "arguments" column to message-type.
+ */
+function message_update_7005() {
+  $column = array(
+    'description' => 'Serialized array with the arguments',
+    'type' => 'text',
+    'serialize' => TRUE,
+  );
+  db_add_field('message_type', 'arguments', $column);
+}
+
+/**
+ * Add "data" column to message-type.
+ */
+function message_update_7006() {
+  $column = array(
+    'description' => 'Serialized array with general data.',
+    'type' => 'text',
+    'serialize' => TRUE,
+    'size' => 'big',
+  );
+  db_add_field('message_type', 'data', $column);
+}
+
+/**
+ * Add "language" column to all Message's related entities.
+ */
+function message_update_7007(&$sandbox) {
+  // Update the existing entities, with the default language.
+  $langcode = language_default()->language;
+
+  $tables = array(
+    'message_type_category',
+    'message_type',
+    'message',
+  );
+
+  if (!isset($sandbox['total'])) {
+    foreach ($tables as $key => $table) {
+      $name = str_replace('_', ' ', $table);
+      $column = array(
+        'description' => "The {languages}.language of this $name.",
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      );
+      db_add_field($table, 'language', $column);
+
+      if ($table == 'message') {
+        // We don't want to time out when updating messages, so we will
+        // process it using batches.
+        $query = db_select($table);
+        $sandbox['last'] = 0;
+        $sandbox['total'] = $query->countQuery()->execute()->fetchField();
+        $sandbox['#finished'] = 0;
+      }
+      else {
+        db_update($table)
+          ->fields(array(
+            'language' => $langcode,
+          ))
+          ->execute();
+      }
+    }
+  }
+  elseif ($sandbox['total'] && $sandbox['last'] <= $sandbox['total']) {
+    // Update messages.
+    $batch_size = 200;
+    db_update('message')
+      ->fields(array(
+        'language' => $langcode,
+      ))
+      ->condition('mid', $sandbox['last'], '>')
+      ->range(0, $batch_size)
+      ->execute();
+
+    $sandbox['last'] += $batch_size;
+    $sandbox['#finished'] = min(0.99, $sandbox['last'] / $sandbox['total']);
+  }
+  else {
+    // Finished processing.
+    $sandbox['#finished'] = 1;
+  }
+}
+
+/**
+ * Make message-text field cardinality unlimited.
+ */
+function message_update_7008() {
+  $field = field_info_field(MESSAGE_FIELD_MESSAGE_TEXT);
+  $field['cardinality'] = FIELD_CARDINALITY_UNLIMITED;
+  field_update_field($field);
+}
+
+/**
+ * Mark message-text field as renderable using getText().
+ */
+function message_update_7009() {
+  $field = field_info_field(MESSAGE_FIELD_MESSAGE_TEXT);
+  $field['settings']['message_text'] = TRUE;
+  field_update_field($field);
+}
+
+/**
+ * Create cache bins for Entity-cache module.
+ */
+function message_update_7010() {
+  $cache_schema = drupal_get_schema_unprocessed('system', 'cache');
+  $types = array(
+    'message_type_category',
+    'message_type',
+    'message',
+  );
+
+  foreach ($types as $type) {
+    $schema["cache_entity_$type"] = $cache_schema;
+    $schema["cache_entity_$type"]['description'] = "Cache table used to store $type entity records.";
+  }
+
+  foreach ($schema as $name => $table) {
+    db_create_table($name, $table);
+  }
+}
+
+/**
+ * Add an index to message.type and message.timestamp.
+ */
+function message_update_7011() {
+  db_add_index('message', 'type', array('type'));
+  db_add_index('message', 'timestamp', array('timestamp'));
+}
+

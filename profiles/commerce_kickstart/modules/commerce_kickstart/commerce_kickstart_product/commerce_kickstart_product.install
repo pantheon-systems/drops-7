@@ -1,0 +1,40 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ *
+ * Rebuilds the feature immediately after it's enabled.
+ */
+function commerce_kickstart_product_enable() {
+  // Rebuild the features static caches.
+  features_include(TRUE);
+
+  $module = 'commerce_kickstart_product';
+  $feature = feature_load($module);
+  $items[$module] = array_keys($feature->info['features']);
+  _features_restore('enable', $items);
+  _features_restore('rebuild', $items);
+
+  // Setup AutoSKU for product types provided by this module.
+  foreach (commerce_kickstart_product_commerce_product_default_types() as $type => $type_info) {
+    $record = new stdClass();
+    $record->product_type = $type;
+    $record->pattern = '[commerce-product:title]';
+    $record->advanced = array(
+      'update_existing' => 0,
+      'hide_sku' => 1,
+      'case' => 'uppercase',
+    );
+    drupal_write_record('commerce_autosku_patterns', $record, 'product_type');
+  }
+}
+
+/**
+ * Implements of hook_install()
+ */
+function commerce_kickstart_product_install() {
+  db_update('system')
+    ->fields(array('weight' => 10))
+    ->condition('name', 'commerce_kickstart_product')
+    ->execute();
+}

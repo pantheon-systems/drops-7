@@ -1,0 +1,14 @@
+name = Flat Rate
+description = Allows you to define any number of flat rate shipping services for customers to choose during checkout.
+package = Commerce (shipping)
+dependencies[] = commerce
+dependencies[] = commerce_shipping
+dependencies[] = commerce_shipping_ui
+core = 7.x
+
+; Information added by drupal.org packaging script on 2012-11-17
+version = "7.x-1.0-beta2"
+core = "7.x"
+project = "commerce_flat_rate"
+datestamp = "1353122757"
+

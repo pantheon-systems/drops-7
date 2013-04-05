@@ -1,0 +1,580 @@
+<?php
+
+/**
+ * @file
+ * Integrates Moneybookers' Quick Checkout service with Drupal Commerce.
+ */
+
+define('MONEYBOOKERS_QUICKCHECKOUT_TXN_MODE_LIVE', 'live');
+define('MONEYBOOKERS_QUICKCHECKOUT_TXN_MODE_TEST', 'test');
+define('MONEYBOOKERS_SERVER_QUICKCHECKOUT_LIVE', 'https://www.moneybookers.com/app/payment.pl');
+define('MONEYBOOKERS_SERVER_QUICKCHECKOUT_TEST', 'http://www.moneybookers.com/app/test_payment.pl');
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_moneybookers_quickcheckout_menu() {
+  $items = array();
+
+  // Define a path for the payment gateway to call back to update an order
+  // status.
+  $items['commerce_moneybookers/quickcheckout_status/%commerce_order/%commerce_payment_method_instance'] = array(
+    'title' => 'Moneybookers status callback',
+    'description' => 'Page callback for Quick Checkout status POSTs.',
+    'page callback' => 'commerce_moneybookers_quickcheckout_status_callback',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  // Define a path for a waiting page displayed whilst the iframe is loading.
+  $items['commerce_moneybookers/quickcheckout_waiting_page'] = array(
+    'page callback' => 'commerce_moneybookers_quickcheckout_waiting_page',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ *
+ * Defines Moneybookers' Quick Checkout payment method.
+ */
+function commerce_moneybookers_quickcheckout_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['commerce_moneybookers_quickcheckout'] = array(
+    'title' => t('Credit / Debit cards, instant banking and Moneybookers ewallet'),
+    'description' => t('Integration with Moneybookers using Quick Checkout gateway'),
+    'active' => FALSE, // Default to disabled on first install.
+    'offsite' => TRUE,
+    'offsite_autoredirect' => FALSE,
+    'active' => TRUE,
+    'callbacks' => array(),
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Builds the Moneybookers Quick Checkout method settings form.
+ *
+ * @ingroup forms
+ */
+function commerce_moneybookers_quickcheckout_settings_form($settings = NULL) {
+  $form = array();
+
+  // Set defaults for first time load.
+  $settings = (array) $settings + array(
+    'merchant_id' => '',
+    'merchant_email' => '',
+    'password' => '',
+    'mode' => 0,
+    'payment_methods' => array('acc', 'wlt'),
+    'secret' => '',
+    'hide_login' => 0,
+    'show_payment_methods' => 0,
+  );
+  $form['sign_up'] = array(
+    '#type' => 'markup',
+    '#markup' => '<a href="http://www.moneybookers.com/ads/partners/index.html?p=Drupalcommerce">Sign up</a> for a free MoneyBookers account.',
+  );
+  $form['merchant_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Merchant ID'),
+    '#description' => t('The merchant ID for the Moneybookers Quick Checkout account.'),
+    '#default_value' => $settings['merchant_id'],
+    '#required' => TRUE,
+  );
+  $form['merchant_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Moneybookers merchant email address'),
+    '#description' => t('The email address associated with your Moneybookers Quick Checkout account.'),
+    '#default_value' => $settings['merchant_email'],
+    '#required' => TRUE,
+  );
+  $form['password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#description' => t('The password associated with your Moneybookers Quick Checkout account.'),
+    '#default_value' => $settings['password'],
+    '#required' => TRUE,
+  );
+  $form['secret'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Secret word'),
+    '#description' => t('You can create your secret word under "Merchant tools" on your Moneybookers account page.'),
+    '#default_value' => $settings['secret'],
+    '#required' => TRUE,
+  );
+  $form['mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Transaction mode'),
+    '#description' => t('When testing chose the test option, select live for using the real account (adjust credentials accordingly).'),
+    '#options' => array(
+      MONEYBOOKERS_QUICKCHECKOUT_TXN_MODE_LIVE => t('Live transactions in a live account'),
+      MONEYBOOKERS_QUICKCHECKOUT_TXN_MODE_TEST => t('Test transactions in a test account'),
+    ),
+    '#default_value' => $settings['mode'],
+  );
+  $form['show_payment_methods'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show available payment methods on payment page'),
+    '#description' => t('Show the customer a list of payment methods - if unticked, the customer will be prompted to select a payment method on the Moneybookers site.'),
+    '#default_value' => $settings['show_payment_methods'],
+  );
+  $form['payment_methods'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Available payment methods'),
+    '#description' => t('Select which payment methods you would like to be make available to the customer.'),
+    '#required' => TRUE,
+    '#options' => array(
+      'acc' => t('Credit Card'),
+      'wlt' => t('Moneybookers eWallet'),
+      'did' => t('Lastschrift (ELV)'),
+      'gir' => t('Giropay'),
+      'sft' => t('Sofortueberweisung'),
+      'mae' => t('Maestro'),
+      'slo' => t('Solo'),
+      'lsr' => t('Laser'),
+      'gcb' => t('Carte Bleue'),
+      'dnk' => t('Dankort'),
+      'psp' => t('Postepay'),
+      'csi' => t('CartaSi'),
+      'amx' => t('American Express'),
+      'vsa' => t('VISA (Euro 6000)'),
+      'msc' => t('MASTERCARD (EURO 6000/4B)'),
+      'ent' => t('eNETS'),
+      'ebt' => t('Nordea Solo (Sweden)'),
+      'so2' => t('Nordea Solo (Finland)'),
+      'idl' => t('iDeal'),
+      'npy' => t('EPS'),
+      'pli' => t('POLi'),
+      'pwy' => t('Przelewy'),
+    ),
+    '#default_value' => $settings['payment_methods'],
+  );
+  $form['hide_login'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide login form on Moneybookers payment page.'),
+    '#default_value' => $settings['hide_login'],
+    '#description' => t('Users have the option to register for Moneybookers on the payment page - check this box to remove this option.'),
+  );
+
+  return $form;
+}
+
+/**
+ * Provides the callback for Quick Checkout to post the payment status update.
+ */
+function commerce_moneybookers_quickcheckout_status_callback($order, $payment_method) {
+  // Calculate the md5 of the status.
+  if (!isset($_POST['merchant_id'])) {
+    exit;
+  }
+
+  $verify_hash = strtoupper(md5($_POST['merchant_id'] . $_POST['transaction_id'] . strtoupper(md5($payment_method['settings']['secret'])) . $_POST['mb_amount'] . $_POST['mb_currency'] . $_POST['status']));
+
+  if ($_POST['md5sig'] != $verify_hash) {
+    // If the hash doesn't match log an error.
+    watchdog('commerce_moneybookers_quickcheckout', t('Returned security hash does not match the one made out of the returned order.'), array(), WATCHDOG_ERROR);
+    exit;
+  }
+
+  $transaction = commerce_payment_transaction_new('commerce_moneybookers_quickcheckout', $order->order_id);
+  $transaction->remote_id = $_POST['mb_transaction_id'];
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->amount = commerce_currency_decimal_to_amount($_POST['amount'], $_POST['currency']);
+  $transaction->currency_code = $_POST['currency'];
+
+  switch ($_POST['status']) {
+    case -2: // Failed.
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->message = t('Payment failed with reason: %message', array('%message' => _commerce_moneybookers_quickcheckout_lookup_error_code($_POST['failed_reason_code'])));
+      break;
+    case 2: // Processed.
+      $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $transaction->message = t('Payment successful.');
+      break;
+    case 0: // Pending.
+      $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+      $transaction->message = t('Payment pending');
+      break;
+    case -1: // Cancelled.
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->message = t('Payment failed because it was cancelled.');
+      break;
+  }
+
+  commerce_payment_transaction_save($transaction);
+}
+
+/**
+ * Defines the checkout form.
+ *
+ * @ingroup forms
+ * @see commerce_moneybookers_quickcheckout_submit_form_validate()
+ * @see commerce_moneybookers_quickcheckout_submit_form_submit()
+ */
+function commerce_moneybookers_quickcheckout_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  $form = array();
+
+  $settings = $payment_method['settings'];
+  // Only show payment method options if the setting is selected.
+  $form['quickcheckout_method'] = array(
+    '#type' => 'radios',
+    '#title' => t('Payment method'),
+    '#description' => t('Select your preferred payment method.'),
+    '#default_value' => 'acc',
+    '#options' => commerce_moneybookers_quickcheckout_enabled_methods($payment_method['settings']),
+    '#required' => TRUE,
+    '#access' => (isset($settings['show_payment_methods']) && $settings['show_payment_methods'] == 1),
+  );
+
+  return $form;
+}
+
+/**
+ * Handles submission of the checkout form.
+ *
+ * @see commerce_moneybookers_quickcheckout_submit_form()
+ */
+function commerce_moneybookers_quickcheckout_submit_form_submit($payment_method, $pane_form, $pane_values, &$order, $charge) {
+  // Merge in values from the order.
+  $order->data['quickcheckout']['quickcheckout_method'] = $pane_values['quickcheckout_method'];
+}
+
+/**
+ * Redirects the user to the hosted payment page.
+ */
+function commerce_moneybookers_quickcheckout_redirect_form($form, &$form_state, $order, $payment_method) {
+  // Return an error if the merchant ID is not set.
+  if (empty($payment_method['settings']['merchant_id'])) {
+    drupal_set_message(t('Moneybookers Quick Checkout Merchant ID has not been specified.'), 'error');
+    return array();
+  }
+  // Return an error if the secret word is not set.
+  if (empty($payment_method['settings']['secret'])) {
+    drupal_set_message(t('Moneybookers Quick Checkout secret word needs to be set.'), 'error');
+    return array();
+  }
+
+  $settings = array(
+    // Callback for updating the transacton.
+    'status' => url('commerce_moneybookers/quickcheckout_status/' . $order->order_id . '/' . $payment_method['instance_id'], array('absolute' => TRUE)),
+
+    // Return to the previous page when the payment is cancelled.
+    'cancel_return' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+
+    // Return to the payment redirect page for processing successful payments.
+    'return' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+  );
+
+  return commerce_moneybookers_quickcheckout_order_form($form, $form_state, $order, $payment_method['settings'] + $settings);
+}
+
+
+/**
+ * Builds a Quick Checkout form and related iframe from an order object.
+ *
+ * @param $order
+ *   The fully loaded order being paid for.
+ * @param $settings
+ *   An array of settings used to build out the form, including:
+ *   - status: the URL MoneyBookers should call when the transaction is complete
+ *   - cancel_return: the URL MoneyBookers should send the user to on cancellation
+ *   - return: the URL MoneyBookers should send the user to on successful payment
+ *
+ * @return
+ *   A renderable form array.
+ */
+function commerce_moneybookers_quickcheckout_order_form($form, &$form_state, $order, $settings) {
+  // Add JavaScript to auto-submit the form we are about to create.
+  // Very similar to commerce_payment.js, except it also hides our submit button.
+  drupal_add_js(drupal_get_path('module', 'commerce_moneybookers_quickcheckout') . '/commerce_moneybookers_quickcheckout.js');
+
+  // Load the customer profile for the order.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $address = $order_wrapper->commerce_customer_billing->commerce_customer_address->value();
+
+  // Prepare the order details.
+  $data = array();
+  $data['pay_to_email'] = $settings['merchant_email'];
+  $data['recipient_description'] = variable_get('site_name', '');
+
+  // Add the customer's e-mail address.
+  $data['pay_from_email'] = $order->mail;
+
+  // Get the customer's name. Depending on how the addressfield field is
+  // configured, it might be set to full name, or first name and last name.
+  $full_name = $address['name_line'];
+  if ($full_name) {
+    $arr_full_name = explode(' ', $full_name);
+    $data['firstname'] = $arr_full_name[0];
+    $data['lastname'] = $arr_full_name[1];
+  }
+  else {
+    // If the full name field is empty, assume the form is configured for first
+    // name and last name.
+    $data['firstname'] = $address['first_name'];
+    $data['lastname'] = $address['last_name'];
+  }
+  $data['address'] = $address['thoroughfare'];
+  $data['address2'] = $address['premise'];
+  $data['postal_code'] = $address['postal_code'];
+  $data['city'] =  $address['locality'];
+  $data['country'] = $address['country'];
+
+  // Take the amount from the order balance.
+  $balance = commerce_payment_order_balance($order);
+  $data['amount'] = commerce_currency_amount_to_decimal($balance['amount'], $balance['currency_code']);
+  $data['currency'] = $balance['currency_code'];
+
+  $data['hide_login'] = $settings['hide_login'];
+  $data['status_url'] = $settings['status'];
+  $data['return_url'] = $settings['return'];
+  $data['cancel_url'] = $settings['cancel_return'];
+  $data['language'] = _commerce_moneybookers_quickcheckout_get_language();
+  // Tracking code supplied by moneybookers.
+  $data['merchant_fields'] = 'platform';
+  $data['platform'] = '21477204';
+
+  // Only show the payment method options if the setting is selected.
+  if (isset($settings['show_payment_methods']) && $settings['show_payment_methods'] == 1) {
+    $data['payment_methods'] = strtoupper($order->data['quickcheckout']['quickcheckout_method']);
+  }
+
+  switch ($settings['mode']) {
+    case MONEYBOOKERS_QUICKCHECKOUT_TXN_MODE_LIVE:
+      $data['server_url'] = MONEYBOOKERS_SERVER_QUICKCHECKOUT_LIVE;
+      break;
+    case MONEYBOOKERS_QUICKCHECKOUT_TXN_MODE_TEST:
+      $data['server_url'] = MONEYBOOKERS_SERVER_QUICKCHECKOUT_TEST;
+      break;
+  }
+
+  $form['#action'] = MONEYBOOKERS_SERVER_QUICKCHECKOUT_LIVE;
+  $form['#attributes']['target'] = 'iframe_moneybookers';
+
+  foreach ($data as $key => $value) {
+    $form[$key] = array(
+      '#type' => 'hidden',
+      '#default_value' => $value,
+    );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Proceed to Moneybookers'),
+  );
+
+  $form['iframe_moneybookers'] = array(
+    '#markup' => '<iframe width="600" height="800" scrolling="no" frameborder="0" name="iframe_moneybookers" id="iframe_moneybookers" src="' . url('commerce_moneybookers/quickcheckout_waiting_page') . '"></iframe>',
+  );
+
+  return $form;
+}
+
+/**
+ * Returns the language to be passed to MoneyBookers by comparing the current
+ * language with the list of languages supported by MoneyBookers.
+ */
+function _commerce_moneybookers_quickcheckout_get_language() {
+  global $language;
+
+  $supported_languages = array(
+    'en', 'de', 'es', 'fr',
+    'it', 'pl', 'gr', 'ro',
+    'ru', 'tr', 'cn', 'cz',
+    'nl', 'da', 'sv', 'fi'
+  );
+  $current_language = substr($language->language, 0, 2);
+
+  // If the current language is supported, return it.
+  // Otherwise, fall back to English.
+  return in_array($current_language, $supported_languages) ? $current_language : 'en';
+}
+
+/**
+ * Returns an array of enabled payment methods.
+ */
+function commerce_moneybookers_quickcheckout_enabled_methods($settings) {
+  $payment_choices = array();
+
+  foreach ($settings['payment_methods'] as $payment_method) {
+    if ($payment_method != '0') {
+      $payment_type_details = _commerce_moneybookers_quickcheckout_lookup_payment_type_details($payment_method);
+      $payment_choices[$payment_method] = $payment_type_details;
+    }
+  }
+
+  return $payment_choices;
+}
+
+/**
+ * Looks up the name for each payment type abbreviation.
+ */
+function _commerce_moneybookers_quickcheckout_lookup_payment_type_details($payment_type) {
+  $module_path = drupal_get_path('module', 'commerce_moneybookers_quickcheckout');
+  switch($payment_type) {
+    case 'acc':
+      $name = t('Credit Card');
+      break;
+    case 'wlt':
+      $name = t('Moneybookers eWallet');
+      break;
+    case 'did':
+      $name = t('Lastschrift (ELV)');
+      break;
+    case 'gir':
+      $name = t('Giropay');
+      break;
+    case 'sft':
+      $name = t('Sofortueberweisung');
+      break;
+    case 'mae':
+      $name = t('Maestro');
+      break;
+    case 'slo':
+      $name = t('Solo');
+      break;
+    case 'lsr':
+      $name = t('Laser');
+      break;
+    case 'gcb':
+      $name = t('Carte Bleue');
+      break;
+    case 'dnk':
+      $name = t('Dankort');
+      break;
+    case 'psp':
+      $name = t('Postepay');
+      break;
+    case 'csi':
+      $name = t('CartaSi');
+      break;
+    case 'amx':
+      $name = t('American Express');
+      break;
+    case 'vsa':
+      $name = t('VISA (Euro 6000)');
+      break;
+    case 'msc':
+      $name = t('MASTERCARD (EURO 6000/4B)');
+      break;
+    case 'ent':
+      $name = t('eNETS');
+      break;
+    case 'ebt':
+      $name = t('Nordea Solo');
+      break;
+    case 'so2':
+      $name = t('Nordea Solo');
+      break;
+    case 'idl':
+      $name = t('iDeal');
+      break;
+    case 'npy':
+      $name = t('EPS');
+      break;
+    case 'pli':
+      $name = t('POLi');
+      break;
+    case 'pwy':
+      $name = t('Przelewy');
+      break;
+    default:
+      $name = 'Unknown payment method (' . $payment_method . ')';
+  }
+
+  // @todo Where are the images? Why does it use hardcoded HTML?
+  return '<span class="' . $payment_type . '"><img src = "/' . $module_path . '/images/' . $payment_type . '.png" />  ' .  $name . '</span>';
+}
+
+/**
+ * Looks up the error message based on a supplied code.
+ */
+function _commerce_moneybookers_quickcheckout_lookup_error_code($error_code) {
+  switch ($error_code) {
+    case 1: $msg = 'Referred'; break;
+    case 2: $msg = 'Invalid Merchant Number'; break;
+    case 3: $msg = 'Pick-up card'; break;
+    case 4: $msg = 'Authorisation Declined'; break;
+    case 5: $msg = 'Other Error'; break;
+    case 6: $msg = 'CVV is mandatory, but not set or invalid'; break;
+    case 7: $msg = 'Approved authorisation, honour with identification'; break;
+    case 8: $msg = 'Delayed Processing'; break;
+    case 9: $msg = 'Invalid Transaction'; break;
+    case 10: $msg = 'Invalid Currency'; break;
+    case 11: $msg = 'Invalid Amount/Available Limit Exceeded/Amount too high'; break;
+    case 12: $msg = 'Invalid credit card or bank account'; break;
+    case 13: $msg = 'Invalid Card Issuer'; break;
+    case 14: $msg = 'Annulation by client'; break;
+    case 15: $msg = 'Duplicate transaction'; break;
+    case 16: $msg = 'Acquirer Error'; break;
+    case 17: $msg = 'Reversal not processed, matching authorisation not found'; break;
+    case 18: $msg = 'File Transfer not available/unsuccessful'; break;
+    case 19: $msg = 'Reference number error'; break;
+    case 20: $msg = 'Access Denied'; break;
+    case 21: $msg = 'File Transfer failed'; break;
+    case 22: $msg = 'Format Error'; break;
+    case 23: $msg = 'Unknown Acquirer'; break;
+    case 24: $msg = 'Card expired'; break;
+    case 25: $msg = 'Fraud Suspicion'; break;
+    case 26: $msg = 'Security code expired'; break;
+    case 27: $msg = 'Requested function not available'; break;
+    case 28: $msg = 'Lost/Stolen card'; break;
+    case 29: $msg = 'Stolen card, Pick up'; break;
+    case 30: $msg = 'Duplicate Authorisation'; break;
+    case 31: $msg = 'Limit Exceeded'; break;
+    case 32: $msg = 'Invalid Security Code'; break;
+    case 33: $msg = 'Unknown or Invalid Card/Bank account'; break;
+    case 34: $msg = 'Illegal Transaction'; break;
+    case 35: $msg = 'Transaction Not Permitted'; break;
+    case 36: $msg = 'Card blocked in local blacklist'; break;
+    case 37: $msg = 'Restricted card/bank account'; break;
+    case 38: $msg = 'Security Rules Violation'; break;
+    case 39: $msg = 'The transaction amount of the referencing transaction is higher than the transaction amount of the original transaction'; break;
+    case 40: $msg = 'Transaction frequency limit exceeded, override is possible'; break;
+    case 41: $msg = 'Incorrect usage count in the Authorisation System exceeded'; break;
+    case 42: $msg = 'Card blocked'; break;
+    case 43: $msg = 'Rejected by Credit Card Issuer'; break;
+    case 44: $msg = 'Card Issuing Bank or Network is not available'; break;
+    case 45: $msg = 'The card type is not processed by the authorisation centre / Authorisation System has determined incorrect Routing'; break;
+    case 47: $msg = 'Processing temporarily not possible'; break;
+    case 48: $msg = 'Security Breach'; break;
+    case 49: $msg = 'Date / time not plausible, trace-no. not increasing'; break;
+    case 50: $msg = 'Error in PAC encryption detected'; break;
+    case 51: $msg = 'System Error'; break;
+    case 52: $msg = 'MB Denied - potential fraud'; break;
+    case 53: $msg = 'Mobile verification failed'; break;
+    case 54: $msg = 'Failed due to internal security restrictions'; break;
+    case 55: $msg = 'Communication or verification problem'; break;
+    case 56: $msg = '3D verification failed'; break;
+    case 57: $msg = 'AVS check failed'; break;
+    case 58: $msg = 'Invalid bank code'; break;
+    case 59: $msg = 'Invalid account code'; break;
+    case 60: $msg = 'Card not authorised'; break;
+    case 61: $msg = 'No credit worthiness'; break;
+    case 62: $msg = 'Communication error'; break;
+    case 63: $msg = 'Transaction not allowed for cardholder'; break;
+    case 64: $msg = 'Invalid Data in Request'; break;
+    case 65: $msg = 'Blocked bank code'; break;
+    case 66: $msg = 'CVV2/CVC2 Failure'; break;
+  }
+
+  return $msg;
+}
+
+/**
+ * Outputs a temporary page before the Moneybookers form is submitted.
+ *
+ * Since the form is submitted via a JavaScript call, this page is only really
+ * visible to those that have JS turned off.
+ */
+function commerce_moneybookers_quickcheckout_waiting_page() {
+  print ('<html><head><title></title></head><body><p>');
+  print t('Please wait to be redirected to Moneybookers.');
+  print ('</p></body></html>');
+}

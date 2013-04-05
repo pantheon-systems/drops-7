@@ -1,0 +1,16 @@
+name = Commerce Checkout Progress
+description = Provides an ordered list which shows the Commerce checkout progress, from start to completion.
+package = Commerce (contrib)
+dependencies[] = commerce_checkout
+configure = admin/commerce/config/checkout
+core = 7.x
+
+; Files containing class or interface declarations
+; files[] =
+
+; Information added by drupal.org packaging script on 2012-07-06
+version = "7.x-1.2"
+core = "7.x"
+project = "commerce_checkout_progress"
+datestamp = "1341583883"
+

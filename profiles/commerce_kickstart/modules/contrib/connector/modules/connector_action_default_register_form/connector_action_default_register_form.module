@@ -1,0 +1,111 @@
+<?php
+/**
+ * TODO
+ * - velden mappen in connector.module
+ */
+
+/**
+ * Implements hook_connector_action_alter().
+ *
+ * We change the default connector to redirect to our own action.
+ */
+function connector_action_default_register_form_connector_action_alter(&$connector_actions) {
+  $connector_actions['default']['create account callback'] = '_save_connector_state_and_redirect_to_register';
+}
+
+/**
+ * Redirect to register if we can may add a user.
+ */
+function _save_connector_state_and_redirect_to_register($connector_name, $cid = NULL, $consumer = NULL, $access_token = NULL, $request_token = NULL) {
+  $connector = _connector_get_connectors($connector_name);
+  if (!$connector) {
+    return FALSE;
+  }
+  $authname = $connector_name . '__' . $cid;
+
+  if (variable_get('user_register', 1)) {
+
+    $info = array();
+    if (!empty($connector['information callback']) && is_callable($connector['information callback'])) {
+      $info = $connector['information callback']($connector, $cid, array(), $access_token);
+    }
+    $_SESSION['connector_action_info'] = $info;
+    $_SESSION['connector_action_connector'] = $connector_name;
+    $_SESSION['connector_action_access_token'] = $access_token->tid;
+
+    drupal_goto('user/register');
+
+  }
+  else {
+    drupal_set_message(t('Only site administrators can create new user accounts.'), 'error');
+    if (isset($connector['logout callback']) && is_callable($connector['logout callback'])) {
+      call_user_func($connector['logout callback'], $connector, $connection->cid);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORMID_alter().
+ *
+ * Form user_register_form is prefilled with values from the connector.
+ */
+function connector_action_default_register_form_form_user_register_form_alter(&$form, &$form_state) {
+  $connector = NULL;
+  $info = NULL;
+  $access_token = NULL;
+  if (!empty($_SESSION['connector_action_info'])) {
+    $info = $_SESSION['connector_action_info'];
+  }
+  if (!empty($_SESSION['connector_action_connector'])) {
+    $connector = $_SESSION['connector_action_connector'];
+  }
+  if (!empty($_SESSION['connector_action_access_token'])) {
+    $access_token = DrupalOAuthToken::loadByID($_SESSION['connector_action_access_token'], FALSE);
+  }
+
+  // Go away when we do not have all info.
+  if (empty($info) || !count($info)) {
+    return $form;
+  }
+  module_load_include('inc', 'connector', 'connector.pages');
+  // Prefil the form.
+  _connector_prefill_user_form($form, $info);
+
+  $form['#submit'][] = '_connect_user_after_register';
+}
+
+/**
+ * Submit callback to add a connection after user register.
+ */
+function _connect_user_after_register($form, &$form_state) {
+  global $user;
+
+  // Get connector and id.
+  $connector = NULL;
+  $info = NULL;
+  if (!empty($_SESSION['connector_action_info'])) {
+    $info = $_SESSION['connector_action_info'];
+  }
+  if (!empty($_SESSION['connector_action_connector'])) {
+    $connector = $_SESSION['connector_action_connector'];
+  }
+
+  // Get out, we cannot connect when we don't have all info.
+  if (empty($info) || !count($info) || empty($connector)) {
+    return $form;
+  }
+
+  // Did we have a uid in the $info?
+  $remote_id = (isset($info['uid']['value'])?$info['uid']['value']:NULL);
+
+  // What is the new uid?
+  $uid = $form_state['user']->uid;
+
+  // let's connect.
+  _connector_add_connection($connector, $remote_id, $uid);
+
+  // Unset session vars.
+  unset($_SESSION['connector_action_info']);
+  unset($_SESSION['connector_action_connector']);
+  unset($_SESSION['connector_action_access_token']);
+}

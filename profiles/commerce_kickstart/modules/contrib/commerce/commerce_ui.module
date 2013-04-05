@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * @file
+ * Defines menu items common to the various Drupal Commerce UI modules.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_ui_menu() {
+  $items = array();
+
+  // Top level "Store" container.
+  $items['admin/commerce'] = array(
+    'title' => 'Store',
+    'description' => 'Administer your store.',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'file path' => drupal_get_path('module', 'system'),
+    'file' => 'system.admin.inc',
+    'weight' => -7,
+  );
+  $items['admin/commerce/config'] = array(
+    'title' => 'Configuration',
+    'description' => 'Configure settings and business rules for your store.',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('access administration pages'),
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 50,
+    'file path' => drupal_get_path('module', 'system'),
+    'file' => 'system.admin.inc',
+  );
+  $items['admin/commerce/config/currency'] = array(
+    'title' => 'Currency settings',
+    'description' => 'Configure the default currency and display settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_currency_settings_form'),
+    'access arguments' => array('configure store'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'includes/commerce_ui.admin.inc',
+  );
+
+  return $items;
+}

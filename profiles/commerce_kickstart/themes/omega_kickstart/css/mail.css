@@ -1,0 +1,107 @@
+.message-wrapper {
+  width: 800px; }
+
+.message-wrapper .header,
+.message-wrapper .body {
+  padding: 10px; }
+
+.message-wrapper .header {
+  background-color: #FFF;
+  color: #000000;
+  height: 100px; }
+
+.message-wrapper .header .logo {
+  float: left; }
+
+.message-wrapper .header .thank-you {
+  float: right;
+  margin-top: 65px;
+  font-size: 25px;
+  font-weight: bold; }
+
+.message-wrapper .body {
+  border: solid 1px #E9E9E9;
+  padding: 10px; }
+
+.message-wrapper .detail {
+  color: #b2b2b2;
+  padding-bottom: 15px;
+  font-size: 18px; }
+
+.message-wrapper .detail span {
+  color: #00a0da; }
+
+.message-wrapper .view-order-status {
+  margin-bottom: 10px; }
+
+.message-wrapper .view-order-status a {
+  background-color: #009bd4;
+  width: auto;
+  color: white;
+  font-weight: bold;
+  padding: 10px 30px;
+  border-radius: 50px; }
+
+.message-wrapper .ship-to {
+  float: left; }
+
+.message-wrapper .ship-to .ship-to-title,
+.message-wrapper .ship-method .ship-method-title,
+.message-wrapper .order-summary-wrapper p.items-title {
+  font-weight: bold;
+  font-size: 20px;
+  color: black; }
+
+.message-wrapper .ship-method .express-delivery,
+.message-wrapper .ship-method p,
+.message-wrapper .ship-to .addressfield-container-inline.name-block,
+.message-wrapper .ship-to .street-block,
+.message-wrapper .ship-to .country {
+  color: #90847c;
+  font-size: 17px; }
+
+.message-wrapper .ship-to .first-name,
+.message-wrapper .ship-to .last-name,
+.message-wrapper .ship-to .name-block,
+.message-wrapper .ship-method .express-delivery {
+  font-weight: bold; }
+
+.message-wrapper .ship-method {
+  float: right;
+  /* LTR */ }
+
+.message-wrapper .shipping-wrapper,
+.message-wrapper .order-summary-wrapper {
+  clear: both; }
+
+.message-wrapper .order-summary-wrapper .view-commerce-cart-summary table {
+  border: none;
+  border-collapse: collapse;
+  width: 100%; }
+
+.message-wrapper .order-summary-wrapper .view-commerce-cart-summary th {
+  border: none;
+  background: transparent;
+  border-bottom: #AAAAAA solid 1px;
+  text-transform: none;
+  font-weight: bold;
+  text-align: left; }
+
+.message-wrapper .order-summary-wrapper .view-commerce-cart-summary tr,
+.message-wrapper .order-summary-wrapper .view-commerce-cart-summary td {
+  border: none;
+  background: transparent;
+  padding: 10px;
+  text-align: left; }
+
+.message-wrapper .order-summary-wrapper table.commerce-price-formatted-components {
+  width: 25%;
+  float: right;
+  /* LTR */ }
+
+.message-wrapper .order-summary-wrapper table.commerce-price-formatted-components td {
+  text-align: right;
+  /* LTR */ }
+
+.message-wrapper .question {
+  clear: both; }

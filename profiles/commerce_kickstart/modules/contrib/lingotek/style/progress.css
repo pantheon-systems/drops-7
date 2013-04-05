@@ -1,0 +1,9 @@
+
+
+div.lingotekProgress {
+  background: url("progress-bar.png") no-repeat scroll 0 0 transparent;
+  background-color: #66c;
+  width: 98px;
+  padding: 1px;
+  text-align: center;
+}

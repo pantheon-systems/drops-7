@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file
+ * Install file - this currently houses the requirements hook, so its not loaded on ALL page loads.
+ */
+
+
+/**
+ * Implementation of hook_requirements().
+ */
+function cloud_zoom_requirements($phase) {
+  if ($phase == 'runtime') {
+    $path = _cloud_zoom_get_path();
+
+    if ($path) {
+      // TODO - what if returned FALSE?
+      $file = _cloud_zoom_check_path($path);
+    }
+
+    return array(
+      'cloud_zoom_sourcefiles' => array(
+        'title' => t('Cloud Zoom'),
+        'value' => $path ? check_plain($file->cz_version) : t('Files Missing'),
+        'description' => $path ? t('Source files found in %path.', array('%path' => $path)) : t('Have the sourcecode files for Cloud Zoom been downloaded from !link?', array('!link' => l('Professor Cloud', CLOUD_ZOOM_DOWNLOAD_URI, array('external' => TRUE)))),
+        'severity' => $path ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+      ),
+    );
+  }
+}
+
+
+

@@ -1,0 +1,102 @@
+<?php
+
+// Until Entity API can load this itself.
+require_once dirname(__FILE__) . '/includes/commerce_message.message.inc';
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_message_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_message') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_message_menu() {
+  // History tab on orders.
+  $items['admin/commerce/orders/%commerce_order/history'] = array(
+    'title' => t('History'),
+    'page callback' => 'commerce_message_history',
+    'page arguments' => array(3),
+    'access callback' => 'commerce_order_access',
+    'access arguments' => array('view', 3),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 11,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ * Move commerce_message_default_message_type_alter()
+ * to the end of the "hook_default_message_type_alter" hooks (execution) list.
+ */
+function commerce_message_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'default_message_type_alter') {
+    $group = $implementations['commerce_message'];
+    unset($implementations['commerce_message']);
+    $implementations['commerce_message'] = $group;
+  }
+}
+
+/**
+ * Implements hook_message_presave().
+ *
+ * We cannot use a token to show the order-summary, since both Token and
+ * Entity API modules invoke token_generate() which results with an array
+ * instead of a string with the replacement text.
+ *
+ * Instead, upon saving the message for the first time we inject an
+ * argument with a callback, that will return the order summary.
+ *
+ * @link http://drupal.org/node/1272560
+ */
+function commerce_message_message_presave($message) {
+  if (!empty($message->mid) || $message->type != 'commerce_order_order_confirmation') {
+    return;
+  }
+
+  $message->arguments['!order-summary'] = array(
+    'callback' => 'commerce_message_order_summary',
+    'pass message' => TRUE,
+  );
+}
+
+/**
+ * Message callback; Show order summary.
+ *
+ * @param $message
+ *   The Message entity.
+ */
+function commerce_message_order_summary(Message $message) {
+  $wrapper = entity_metadata_wrapper('message', $message);
+  $view = views_get_view('commerce_cart_summary');
+  $view->set_arguments(array($wrapper->message_commerce_order->getIdentifier()));
+  $view->hide_admin_links = TRUE;
+  return $view->preview();
+}
+
+/**
+ * Displays the complete history for the given order.
+ */
+function commerce_message_history($order) {
+  $arguments = array($order->order_id);
+  $view = views_get_view('commerce_message_messages');
+  $view->set_display('block_1');
+  $view->set_arguments($arguments);
+  $view->override_url = $_GET['q'];
+
+  return $view->preview();
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function commerce_message_flush_caches() {
+  commerce_message_message_field_refresh();
+}

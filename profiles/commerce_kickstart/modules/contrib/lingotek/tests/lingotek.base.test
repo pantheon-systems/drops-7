@@ -1,0 +1,90 @@
+<?php
+
+/**
+ * @file
+ * Declares a parent class to be used with Lingotek automated tests.
+ */
+
+/**
+ * A parent class for Lingotek autoamted tests.
+ */
+class LingotekFunctionalTest extends DrupalWebTestCase {
+  /**
+   * The username of a Lingotek account.
+   *
+   * Note: Fill in these values when testing on a local instance.
+   * Do not commit any actual credentials to Git.
+   *
+   * @todo: Read this data from some pre-determined place in the file system
+   * or some other non-source-controlled location.
+   */
+  const LINGOTEK_USERNAME = '';
+
+  /**
+   * The password for a Lingotek account.
+   *
+   * Note: Fill in this value when testing on a local instance.
+   * Do not commit any actual credentials to Git.
+   *
+   * @todo: Read this data from some pre-determined place in the file system
+   * or some other non-source-controlled location.
+   */
+  const LINGOTEK_PASSWORD = '';
+  
+  /**
+   * The connection URL for a Lingotek account.
+   *
+   * Note: Fill in this value when testing on a local instance.
+   * Do not commit any actual data to Git.
+   *
+   * @todo: Read this data from some pre-determined place in the file system
+   * or some other non-source-controlled location.
+   */
+  const LINGOTEK_URL = '';
+
+  /**
+   * The user object for an unprivileged Drupal user.
+   *
+   * @var stdClass
+   */
+  protected $unprivileged_user;
+
+  /**
+   * The user for a privileged Drupal user that has all of the Lingotek-provided permissions.
+   *
+   * @var stdClass
+   */
+  protected $privileged_user;
+
+  /**
+   * Does general setup for all Lingotek tests.
+   */
+  public function setUp() {
+    parent::setUp('lingotek');
+    
+    variable_set('language_content_type_page', LINGOTEK_ENABLED);
+
+    $unprivileged_permissions = array_keys(node_permission());
+    $this->unprivileged_user = $this->drupalCreateUser($unprivileged_permissions);
+    
+    $privileged_permissions = array_merge($unprivileged_permissions, array_keys(lingotek_permission()));
+    $this->privileged_user = $this->drupalCreateUser($privileged_permissions);
+
+    $this->connectToLingotek();
+  }
+
+  /**
+   * Sets up the association between this test instance and the Lingotek system.
+   */
+  protected function connectToLingotek() {
+    $this->drupalLogin($this->privileged_user);
+
+    $form_values = array(
+      'lingotek_login_id' => self::LINGOTEK_USERNAME,
+      'lingotek_password' => self::LINGOTEK_PASSWORD,
+    );
+
+    $this->drupalPost(LINGOTEK_BASE_URL, $form_values, t('Save configuration'));
+    $this->drupalLogout();
+  }
+}

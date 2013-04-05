@@ -1,0 +1,101 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ *
+ * Rebuilds the feature immediately after it's enabled.
+ */
+function commerce_kickstart_lite_product_enable() {
+  // Rebuild the features static caches.
+  features_include(TRUE);
+
+  $module = 'commerce_kickstart_lite_product';
+  $feature = feature_load($module);
+  $items[$module] = array_keys($feature->info['features']);
+  _features_restore('enable', $items);
+  _features_restore('rebuild', $items);
+
+  // Set up the zoom if it's enabled.
+  if (variable_get('commerce_kickstart_product_zoom_enabled', FALSE)) {
+    $settings = array(
+      'label' => 'hidden',
+      'module' => 'cloud_zoom',
+      'settings' =>
+      array(
+        'gallery_filedset' =>
+        array(
+          'gallery_mode' => 1,
+          'thumb_style' => 'product_thumbnail',
+        ),
+        'slide_style' => 'product_full',
+        'zoom_position_fieldset' =>
+        array(
+          'adjust_x' => '0',
+          'adjust_y' => '0',
+          'position' => 'inside',
+          'zoom_height' => 'auto',
+          'zoom_width' => 'auto',
+        ),
+        'zoom_style' => '0',
+        'zoom_style_fieldset' =>
+        array(
+          'Show title' => 1,
+          'lens_opacity' => '0.5',
+          'smooth_move' => '3',
+          'soft_focus' => 0,
+          'tint' => 'false',
+          'tint_opacity' => '0.5',
+          'title_opacity' => '0.5',
+        ),
+      ),
+      'type' => 'cloud_zoom',
+      'weight' => '3',
+    );
+    $settings_node_product_list = array(
+      'label' => 'hidden',
+      'module' => 'image_delta_formatter',
+      'settings' => array(
+        'deltas' => '0',
+        'deltas_reversed' => 0,
+        'image_link' => 'content',
+        'image_style' => 'product_medium',
+      ),
+      'type' => 'image_delta',
+      'weight' => '3',
+    );
+    $instance = array(
+      'entity_type' => 'commerce_product',
+      'bundle' => 'product',
+      'field_name' => 'field_images',
+      'display' => array(
+        'default' => $settings,
+        'node_product_list' => $settings_node_product_list,
+        ),
+      );
+    $field_instance = field_read_instance('commerce_product', 'field_images', 'product');
+    $field_settings = $field_instance['display']['default'];
+    variable_set('commerce_kickstart_product_zoom_settings', $field_settings);
+    field_update_instance($instance);
+  }
+}
+
+/**
+ * Implementation of hook_install()
+ */
+function commerce_kickstart_lite_product_install() {
+  db_update('system')
+    ->fields(array('weight' => 10))
+    ->condition('name', 'commerce_kickstart_lite_product')
+    ->execute();
+
+  // Create a "Free shipping" service so that the shipping pane is not empty.
+  $shipping_service = commerce_flat_rate_service_new();
+  $shipping_service['name'] = 'free_shipping';
+  $shipping_service['title'] = 'Free shipping';
+  $shipping_service['base_rate'] = array(
+    'amount' => 0,
+    'currency_code' => commerce_default_currency(),
+    'data' => array(),
+  );
+  commerce_flat_rate_service_save($shipping_service);
+}

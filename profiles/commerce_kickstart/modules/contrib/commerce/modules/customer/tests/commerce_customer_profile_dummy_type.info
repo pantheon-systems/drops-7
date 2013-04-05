@@ -1,0 +1,13 @@
+name = "Commerce Customer Dummy Profile"
+description = Defines a dummy customer profile type for use in certain Customer module tests.
+package = Testing
+version = VERSION
+core = 7.x
+hidden = TRUE
+
+; Information added by drupal.org packaging script on 2013-02-13
+version = "7.x-1.5"
+core = "7.x"
+project = "commerce"
+datestamp = "1360749319"
+

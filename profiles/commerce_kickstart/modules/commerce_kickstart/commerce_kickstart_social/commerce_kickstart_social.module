@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * Social features for Commerce kickstart.
+ */
+
+include_once 'commerce_kickstart_social.features.inc';
+
+/**
+ * Implements hook_block_view_MODULE_DELTA_alter().
+ */
+function commerce_kickstart_social_block_view_connector_one_click_block_alter(&$data) {
+  $data['subject'] = t('Log in with your account');
+}

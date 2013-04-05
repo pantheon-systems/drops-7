@@ -1,0 +1,4 @@
+name = Toolbar Megamenu
+description = "Extension of Toolbar to support dropdown megamenus."
+core = 7.x
+dependencies[] = toolbar

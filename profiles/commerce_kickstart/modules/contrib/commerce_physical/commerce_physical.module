@@ -1,0 +1,395 @@
+<?php
+
+/**
+ * @file
+ * Provides API support for working with physical product types in Drupal Commerce.
+ */
+
+
+/**
+ * Determines the weight field to use for a given entity.
+ *
+ * @param $entity_type
+ *   The type of entity passed to the function.
+ * @param $entity
+ *   The actual entity whose weight field name should be determined.
+ *
+ * @return
+ *   The name of the field to use on the entity to find a weight value or NULL
+ *   if none was found.
+ */
+function commerce_physical_entity_weight_field_name($entity_type, $entity) {
+  $bundle = field_extract_bundle($entity_type, $entity);
+  $field_name = NULL;
+
+  // Look for the first weight field available for the entity.
+  foreach (field_info_instances($entity_type, $bundle) as $instance_name => $instance) {
+    // Load the field info for the current instance.
+    $field = field_info_field($instance['field_name']);
+
+    // If it's of the proper type...
+    if ($field['type'] == 'physical_weight') {
+      // Save its name and exit the loop.
+      $field_name = $instance_name;
+      break;
+    }
+  }
+
+  // Allow other modules to specify a different field name.
+  drupal_alter('commerce_physical_entity_weight_field_name', $field_name, $entity_type, $entity);
+
+  return $field_name;
+}
+
+/**
+ * Determines the weight to use for a product line item on an order.
+ *
+ * @param $line_item
+ *   A product line item whose weight should be determined.
+ *
+ * @return
+ *   A weight field value array representing the weight of the product line item
+ *   or NULL if none was found.
+ */
+function commerce_physical_product_line_item_weight($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $weight = NULL;
+
+  // If the line item references a valid product...
+  if (!empty($line_item_wrapper->commerce_product)) {
+    $product = $line_item_wrapper->commerce_product->value();
+
+    if (!empty($product)) {
+      // If the product has a valid weight field...
+      $field_name = commerce_physical_entity_weight_field_name('commerce_product', $product);
+
+      if (!empty($field_name) && !empty($product->{$field_name})) {
+        // Extract the weight value from the product.
+        $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
+        $weight = $product_wrapper->{$field_name}->value();
+
+        // Multiply the weight value by the quantity of the line item.
+        $weight['weight'] *= $line_item->quantity;
+      }
+    }
+  }
+
+  // Allow other modules to alter the weight if necessary.
+  drupal_alter('commerce_physical_product_line_item_weight', $weight, $line_item);
+
+  return $weight;
+}
+
+/**
+ * Determines the weight of an entire order.
+ *
+ * @param $order
+ *   The order object whose weight value should be calculated.
+ * @param $unit
+ *   The unit of measurement to use for the returned weight of the order.
+ *
+ * @return
+ *   A weight field value array representing the total weight of the order using
+ *   the specified unit of measurement or NULL if no weight could be determined.
+ */
+function commerce_physical_order_weight($order, $unit = 'lb') {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $weight = NULL;
+
+  // Loop over each line item on the order.
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // Get the weight value of product line items.
+    if (in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
+      $line_item_weight = commerce_physical_product_line_item_weight($line_item_wrapper->value());
+
+      // Add it to the running total converting it to the required weight unit.
+      if (!empty($line_item_weight['weight'])) {
+        $converted_weight = physical_weight_convert($line_item_weight, $unit);
+
+        if (empty($weight['weight'])) {
+          $weight = $converted_weight;
+        }
+        else {
+          $weight['weight'] += $converted_weight['weight'];
+        }
+      }
+    }
+  }
+
+  // Allow other modules to alter the weight if necessary.
+  drupal_alter('commerce_physical_order_weight', $weight, $order, $unit);
+
+  return $weight;
+}
+
+
+/**
+ * Determines the dimensions field to use for a given entity.
+ *
+ * @param $entity_type
+ *   The type of entity passed to the function.
+ * @param $entity
+ *   The actual entity whose dimensions field name should be determined.
+ *
+ * @return
+ *   The name of the field to use on the entity to find a dimensions value or
+ *   NULL if none was found.
+ */
+function commerce_physical_entity_dimensions_field_name($entity_type, $entity) {
+  $bundle = field_extract_bundle($entity_type, $entity);
+  $field_name = NULL;
+
+  // Look for the first dimensions field available for the entity.
+  foreach (field_info_instances($entity_type, $bundle) as $instance_name => $instance) {
+    // Load the field info for the current instance.
+    $field = field_info_field($instance['field_name']);
+
+    // If it's of the proper type...
+    if ($field['type'] == 'physical_dimensions') {
+      // Save its name and exit the loop.
+      $field_name = $instance_name;
+      break;
+    }
+  }
+
+  // Allow other modules to specify a different field name.
+  drupal_alter('commerce_physical_entity_dimensions_field_name', $field_name, $entity_type, $entity);
+
+  return $field_name;
+}
+
+/**
+ * Determines the dimensions to use for a product line item on an order.
+ *
+ * @param $line_item
+ *   A product line item whose single quantity dimensions should be determined.
+ *
+ * @return
+ *   A dimensions field value array representing the dimensions of a single
+ *   product referenced by the line item or NULL if no dimensions were found.
+ */
+function commerce_physical_product_line_item_dimensions($line_item) {
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $dimensions = NULL;
+
+  // If the line item references a valid product...
+  if (!empty($line_item_wrapper->commerce_product)) {
+    $product = $line_item_wrapper->commerce_product->value();
+
+    if (!empty($product)) {
+      // If the product has a valid dimensions field...
+      $field_name = commerce_physical_entity_dimensions_field_name('commerce_product', $product);
+
+      if (!empty($field_name) && !empty($product->{$field_name})) {
+        // Extract the dimensions value from the product.
+        $product_wrapper = entity_metadata_wrapper('commerce_product', $product);
+        $dimensions = $product_wrapper->{$field_name}->value();
+      }
+    }
+  }
+
+  // Allow other modules to alter the volume if necessary.
+  drupal_alter('commerce_physical_product_line_item_dimensions', $dimensions, $line_item);
+
+  return $dimensions;
+}
+
+/**
+ * Determines the volume of an entire order.
+ *
+ * @param $order
+ *   The order object whose volume should be calculated.
+ * @param $unit
+ *   The unit of measurement to convert dimensions to before calculating the
+ *   volume of the order in the related cubic unit.
+ *
+ * @return
+ *   A volume value array with keys representing the total 'volume' of the order
+ *   in the 'unit' specified or NULL if no volume could be determined.
+ */
+function commerce_physical_order_volume($order, $unit = 'in') {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $volume = NULL;
+
+  // Loop over each line item on the order.
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // Get the dimensions value of product line items.
+    if (in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
+      $line_item_dimensions = commerce_physical_product_line_item_dimensions($line_item_wrapper->value());
+
+      // Add it to the running total converting it to the required weight unit.
+      if (!physical_field_is_empty($line_item_dimensions, array('type' => 'physical_dimensions'))) {
+        $converted_dimensions = physical_dimensions_convert($line_item_dimensions, $unit);
+        $converted_dimensions['volume'] = $converted_dimensions['width'] * $converted_dimensions['length'] * $converted_dimensions['height'] * $line_item_wrapper->quantity->value();
+
+        if (empty($volume['volume'])) {
+          // Create a volume value array using the converted unit type.
+          $volume = array(
+            'volume' => $converted_dimensions['volume'],
+            'unit' => $unit,
+          );
+        }
+        else {
+          $volume['volume'] += $converted_dimensions['volume'];
+        }
+      }
+    }
+  }
+
+  // Allow other modules to alter the volume if necessary.
+  drupal_alter('commerce_physical_order_volume', $volume, $order, $unit);
+
+  return $volume;
+}
+
+/**
+ * Determines whether or not a line item should be considered shippable.
+ *
+ * @param $line_item
+ *   The line item object whose shippability is being determined.
+ *
+ * @return
+ *   Boolean indicating whether or not the given line item represents something
+ *   shippable; defaults to FALSE unless the line item represents a product line
+ *   item with a discernible weight.
+ */
+function commerce_physical_line_item_shippable($line_item) {
+  $shippable = FALSE;
+
+  // If this is a product line item...
+  if (in_array($line_item->type, commerce_product_line_item_types())) {
+    // Mark this line item as shippable if we can determine its weight.
+    $weight = commerce_physical_product_line_item_weight($line_item);
+
+    if (!empty($weight)) {
+      $shippable = TRUE;
+    }
+  }
+
+  // Allow other modules to alter the shippability of the line item.
+  drupal_alter('commerce_physical_line_item_shippable', $shippable, $line_item);
+
+  return $shippable;
+}
+
+/**
+ * Determines whether or not an order should be considered shippable.
+ *
+ * @param $order
+ *   The order object whose shippability should be determined.
+ *
+ * @return
+ *   Boolean indicating whether or not the given order is shippable; defaults to
+ *   FALSE unless any line item on the order is determined to be shippable.
+ */
+function commerce_physical_order_shippable($order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $shippable = FALSE;
+
+  // Loop over all the line items on the order.
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // Mark the order as shippable if the current line item is determined to be
+    // shippable.
+    if (commerce_physical_line_item_shippable($line_item_wrapper->value())) {
+      $shippable = TRUE;
+    }
+  }
+
+  // Allow other modules to alter the shippability of the line item.
+  drupal_alter('commerce_physical_order_shippable', $shippable, $order);
+
+  return $shippable;
+}
+
+/**
+ * Determines the name of the shipping customer profile reference field for the
+ * given order.
+ *
+ * @param $order
+ *   The order whose shipping customer profile reference field name should be
+ *   determined.
+ *
+ * @return
+ *   The name of the field to use on the order to find shipping information or
+ *   NULL if none was found; defaults to commerce_customer_shipping if available
+ *   or another customer profile reference if not (preferring profiles other
+ *   than the default billing profile if available).
+ */
+function commerce_physical_order_shipping_field_name($order) {
+  $field_name = NULL;
+
+  if (!empty($order->commerce_customer_shipping)) {
+    $field_name = 'commerce_customer_shipping';
+  }
+  else {
+    // Look for customer profile references fields available for the order.
+    foreach (field_info_instances('commerce_order', $order->type) as $instance_name => $instance) {
+      // Load the field info for the current instance.
+      $field = field_info_field($instance['field_name']);
+
+      // If it's of the proper type...
+      if ($field['type'] == 'commerce_customer_profile_reference') {
+        // Save its name and exit the loop if it isn't the billing profile.
+        $field_name = $instance_name;
+
+        if ($field_name != 'commerce_customer_billing') {
+          break;
+        }
+      }
+    }
+  }
+
+  // Allow other modules to specify a different field name.
+  drupal_alter('commerce_physical_order_shipping_field_name', $field_name, $order);
+
+  return $field_name;
+}
+
+/**
+ * Determines the name of the phone number field of a customer profile.
+ *
+ * @param $profile
+ *   The customer profile whose phone number field name should be determined.
+ *
+ * @return
+ *   The name of the field to use on the customer profile to find a phone number
+ *   or NULL if none was found. Defaults to field_phone or field_phone_number if
+ *   available; otherwise it's up to you to alter it in a custom module since we
+ *   don't want to depend on an actual phone number field.
+ */
+function commerce_physical_customer_profile_phone_number_field_name($profile) {
+  if (!empty($profile->field_phone)) {
+    $field_name = 'field_phone';
+  }
+  elseif (!empty($profile->field_phone_number)) {
+    $field_name = 'field_phone_number';
+  }
+  else {
+    $field_name = '';
+  }
+
+  // Allow other modules to specify a different field name.
+  drupal_alter('commerce_physical_customer_profile_phone_number_field_name', $field_name, $profile);
+
+  return $field_name;
+}
+
+/**
+ * Determines whether or not a shipping customer profile should be considered as
+ * a residential address.
+ *
+ * @param $profile
+ *   The customer profile whose residential status should be determined.
+ *
+ * @return
+ *   Boolean indicating whether or not the given profile has a residential
+ *   address; defaults to TRUE unless otherwise determined by a custom module.
+ */
+function commerce_physical_customer_profile_residential($profile) {
+  $residential = TRUE;
+
+  // Allow other modules to determine if the profile has a residential address.
+  drupal_alter('commerce_physical_customer_profile_residential', $residential, $profile);
+
+  return $residential;
+}

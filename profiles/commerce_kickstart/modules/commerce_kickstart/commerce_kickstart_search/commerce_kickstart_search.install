@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function commerce_kickstart_search_install() {
+  // Grant permissions for using the sorts.
+  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('use search_api_sorts'));
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('use search_api_sorts'));
+
+  entity_defaults_rebuild();
+  drupal_static_reset();
+  $default_theme = variable_get('theme_default', 'omega_kickstart');
+  _block_rehash($default_theme);
+  try {
+    // Current search.
+    db_update('block')
+      ->fields(array(
+        'region' => 'breadcrumb',
+        'weight' => -10,
+        'status' => (int) '1',
+        'title' => '<none>'
+      ))
+      ->condition('module', 'current_search')
+      ->condition('delta', 'kickstart_search')
+      ->condition('theme', $default_theme)
+      ->execute();
+    // Search block.
+    db_update('block')
+      ->fields(array(
+        'region' => 'branding',
+        'status' => (int) '1',
+      ))
+      ->condition('module', 'views')
+      ->condition('delta', '-exp-display_products-page')
+      ->condition('theme', $default_theme)
+      ->execute();
+    // Put the facets blocks in the right place.
+    db_update('block')
+      ->fields(array(
+        'region' => 'sidebar_first',
+        'pages' => 'products',
+        'visibility' => BLOCK_VISIBILITY_LISTED,
+        'status' => (int) '1',
+      ))
+      ->condition('module', 'facetapi')
+      ->condition('delta', '0', '<>')
+      ->condition('theme', $default_theme)
+      ->execute();
+    // Set the Price facet block weight.
+    db_update('block')
+      ->fields(array(
+        'weight' => '-1',
+      ))
+      ->condition('module', 'facetapi')
+      ->condition('delta', 'TFVaQKSORCPdrULxfXDnLQZ40xH0Nper')
+      ->condition('theme', $default_theme)
+      ->execute();
+  }
+  catch (Exception $e) {
+    watchdog_exception('block', $e);
+    throw $e;
+  }
+
+}

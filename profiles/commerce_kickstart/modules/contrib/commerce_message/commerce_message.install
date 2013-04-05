@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function commerce_message_install() {
+  // Create the message text field for our message type category.
+  $instance = array(
+    'field_name' => MESSAGE_FIELD_MESSAGE_TEXT,
+    'bundle' => 'commerce_order_message',
+    'entity_type' => 'message_type',
+    'label' => t('Message text'),
+    'description' => t('This is the text of all messages of this type.'),
+    'required' => TRUE,
+    'settings' => array(
+      'text_processing' => 1,
+      // Mark that this field can be rendered using Message::getText().
+      'message_text' => TRUE,
+    ),
+  );
+  if ($existing_instance = field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
+    field_update_instance($instance);
+  }
+  else {
+    field_create_instance($instance);
+  }
+
+  // Add a display name field.
+  $field = array(
+    'field_name' => 'message_order_display_name',
+    'type' => 'text',
+    'module' => 'text',
+    'cardinality' => '1',
+    'translatable' => TRUE,
+    'settings' => array(
+      'max_length' => '255',
+      // Mark that this field can be rendered using Message::getText().
+      'message_text' => TRUE,
+    ),
+  );
+  if (field_info_field($field['field_name'])) {
+    field_update_field($field);
+  }
+  else {
+    field_create_field($field);
+  }
+  $instance = array(
+    'field_name' => $field['field_name'],
+    'bundle' => 'commerce_order_message',
+    'entity_type' => 'message_type',
+    'label' => t('Display name'),
+    'description' => t('The name of this message type as displayed in logs.'),
+    'required' => TRUE,
+    'settings' => array(
+      'text_processing' => 0,
+    ),
+  );
+  if ($existing_instance = field_info_instance($instance['entity_type'], $instance['field_name'], $instance['bundle'])) {
+    field_update_instance($instance);
+  }
+  else {
+    field_create_instance($instance);
+  }
+
+  // Add text format if it doesn't exist.
+  if (!filter_format_load('commerce_order_message')) {
+    $format = (object) array(
+      'format' => 'commerce_order_message',
+      'name' => 'Commerce Order Message',
+      'weight' => 0,
+      'filters' => array(
+        // HTML filter.
+        'filter_html' => array(
+          'weight' => 1,
+          'status' => 1,
+        ),
+      ),
+    );
+    filter_format_save($format);
+  }
+
+  // Clean up after the old Backoffice Order module if needed.
+  if (module_exists('commerce_backoffice_order')) {
+    // Move any overridden message types.
+    db_update('message_type')
+      ->fields(array('module' => 'commerce_message'))
+      ->condition('module', 'commerce_backoffice_order')
+      ->execute();
+
+    // Move any overridden rules.
+    db_update('rules_config')
+      ->fields(array('module' => 'commerce_message'))
+      ->condition('module', 'commerce_backoffice_order')
+      ->condition('name', array(
+        'rules_rules_commerce_order_message_create_order',
+        'rules_commerce_order_message_changing_status',
+        'rules_commerce_order_message_payment_entered',
+        'commerce_order_payment_full',
+        'rules_commerce_order_message_cart_add',
+        'rules_commerce_order_message_cart_remove',
+        'rules_commerce_order_message_order_notification'))
+      ->execute();
+  }
+}

@@ -1,0 +1,16 @@
+name = Mime Mail CSS Compressor
+description = Converts CSS to inline styles in an HTML message. (Requires the PHP DOM extension.)
+package = Mail
+dependencies[] = mimemail
+core = 7.x
+
+files[] = mimemail_compress.inc
+files[] = mimemail_compress.install
+files[] = mimemail_compress.module
+
+; Information added by drupal.org packaging script on 2012-08-22
+version = "7.x-1.0-alpha2"
+core = "7.x"
+project = "mimemail"
+datestamp = "1345634537"
+

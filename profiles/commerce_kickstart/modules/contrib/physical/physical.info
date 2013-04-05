@@ -1,0 +1,11 @@
+name = Physical Fields
+description = Defines fields (e.g. weight and dimensions) to support describing the physical attributes of entities.
+package = Fields
+core = 7.x
+
+; Information added by drupal.org packaging script on 2011-09-28
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "physical"
+datestamp = "1317170125"
+

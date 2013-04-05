@@ -1,0 +1,325 @@
+/* First Steps */
+.first-steps-left {
+  float: left; /* LTR */
+  width: 60%;
+}
+.first-steps-right {
+  float: left; /* LTR */
+  width: 35%;
+}
+
+.first-steps-column.first-steps-right {
+  float: right; /* LTR */
+}
+.first-steps-blocks h2 {
+  background-color: #ccc;
+  padding: 5px;
+  margin-top: 0;
+}
+.first-steps-videos .first-steps-blocks-inner {
+  height: 450px;
+  text-align: center;
+}
+
+.first-steps-videos iframe {
+  height: 90%;
+  width: 90%;
+  margin: 0 auto;
+}
+
+.documentation-steps {
+  width: 45%;
+  float: left; /* LTR */
+  list-style: none;
+  font-weight: bold;
+}
+
+#kickstart-help-topic ul {
+  margin-left: 0;
+  padding-left: 0;
+  list-style: none;
+}
+
+.documentation-steps ul li {
+  list-style: none;
+  font-weight: normal;
+}
+
+.first-steps-blocks {
+  margin: 2px;
+}
+
+.first-steps-blocks-inner {
+  padding: 5px;
+}
+
+.documentation-websites {
+  border-top: 1px solid #ccc;
+  background-color: #ddd;
+}
+
+.first-steps-quick .first-steps-blocks-inner {
+  padding: 0;
+}
+.first-steps-quick ul li {
+  border-top: 1px solid #ccc;
+  line-height: 2em;
+  padding: 4px;
+}
+
+.first-steps-quick ul li.first {
+  border-top: none;
+}
+
+#commerce-kickstart-help {
+  margin: 0 auto;
+  width: 400px;
+}
+#commerce-kickstart-help-button {
+  margin: 0 auto;
+  width: 134px;
+}
+/* Help Block */
+#block-commerce-kickstart-help-commerce-kickstart-ressources {
+  float: left; /* LTR */
+}
+#block-commerce-kickstart-help-commerce-kickstart-community {
+  float: right; /* LTR */
+}
+#block-commerce-kickstart-help-commerce-kickstart-ressources,
+#block-commerce-kickstart-help-commerce-kickstart-community {
+  width: 47%;
+  border: 1px solid #aaa;
+  background-color: #fafafa;
+  min-height: 150px;
+  margin: 5px 10px;
+  padding-left: 30px;
+  padding-top: 10px;
+}
+#block-commerce-kickstart-help-commerce-kickstart-ressources h2,
+#block-commerce-kickstart-help-commerce-kickstart-community h2 {
+  background: transparent url("../images/help-lg.png") no-repeat 0 0;
+  padding: 5px 0 5px 40px; /* LTR */
+}
+#block-commerce-kickstart-help-commerce-kickstart-ressources .content,
+#block-commerce-kickstart-help-commerce-kickstart-community .content {
+  padding-left: 40px; /* LTR */
+}
+
+/* Getting started */
+#-commerce-kickstart-help-store {
+  -webkit-font-smoothing: antialiased;
+}
+#-commerce-kickstart-help-store .search {
+  background: #ccc;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+  padding: 15px;
+}
+#-commerce-kickstart-help-store .search .form-item {
+  margin-top: 0;
+  float: left; /* LTR */
+  width: 80%;
+}
+#-commerce-kickstart-help-store .search .form-item input.form-text {
+  border: 1px solid #999;
+  font: normal 500 1em/1em "Open Sans", Arial, sans-serif;
+  line-height: normal;
+  outline: 0;
+  margin: 1px;
+  max-width: 100%;
+  padding: 5px;
+  width: 100%;
+  -webkit-font-smoothing: antialiased;
+}
+#-commerce-kickstart-help-store a.search-submit {
+  background: #2F88CD;
+  background-image: -webkit-gradient(linear, 0% 0%, 0% 100%, from(#36A2F6), to(#2F88CD));
+  background-image: -webkit-linear-gradient(top, #36A2F6, #2F88CD);
+  background-image: -moz-linear-gradient(top, #36A2F6, #2F88CD);
+  background-image: -ms-linear-gradient(top, #36A2F6, #2F88CD);
+  background-image: -o-linear-gradient(top, #36A2F6, #2F88CD);
+  background-image: linear-gradient(to bottom, #36A2F6, #2F88CD);
+  border: 1px solid #2F88CD;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+  -moz-box-shadow: 0 1px 2px #ccc, inset 0 1px 1px #7bb8ef;
+  -webkit-box-shadow: 0 1px 2px #CCC, inset 0 1px 1px #7BB8EF;
+  box-shadow: 0 1px 2px #CCC, inset 0 1px 1px #7BB8EF;
+  color: white;
+  float: right; /* LTR */
+  font: normal 16px/21px "Open Sans", Arial, sans-serif;
+  padding: 4px 15px;
+  margin-top: 9px;
+  text-align: center;
+  width: 13%;
+}
+#-commerce-kickstart-help-store a.search-submit:hover {
+  background: #4f9fea;
+  -moz-box-shadow: 0 1px 2px #ccc, inset 0 -1px 1px #427ed2;
+  -webkit-box-shadow: 0 1px 2px #ccc, inset 0 -1px 1px #427ed2;
+  box-shadow: 0 1px 2px #ccc, inset 0 -1px 1px #427ed2;
+  text-decoration: none;
+}
+#-commerce-kickstart-help-store .fieldset-title {
+  color: #0879bf;
+}
+#-commerce-kickstart-help-store .fieldset-title .sub-title {
+  color: #8d8d8d;
+}
+#-commerce-kickstart-help-store label {
+  margin: 45px 0 15px;
+}
+html.js #-commerce-kickstart-help-store fieldset.collapsible {
+  background: #efefef;
+  border: 0;
+  margin: 0 0 10px 0;
+  outline: 0;
+}
+html.js #-commerce-kickstart-help-store fieldset.collapsible .fieldset-wrapper,
+html.js #-commerce-kickstart-help-store fieldset.collapsible p {
+  font-size: 14px;
+  font-weight: 500;
+}
+.product-management #edit-product-management-title label {
+  background: url('../images/products.png') 0 0 no-repeat;
+  border-bottom: 1px solid #dfdfdf;
+  font-size: 22px;
+  line-height: 1em;
+  padding: 0 0 10px 40px; /* LTR */
+  overflow: hidden;
+}
+.order-management #edit-order-management-title label {
+  background: url('../images/content.png') 0 0 no-repeat;
+  border-bottom: 1px solid #dfdfdf;
+  font-size: 22px;
+  line-height: 1em;
+  padding: 0 0 10px 40px; /* LTR */
+  overflow: hidden;
+}
+.store-settings #edit-store-settings-title label {
+  background: url('../images/store.png') 0 0 no-repeat;
+  border-bottom: 1px solid #dfdfdf;
+  font-size: 22px;
+  line-height: 1em;
+  padding: 0 0 10px 40px; /* LTR */
+  overflow: hidden;
+}
+.prices-payments-taxes #edit-prices-payments-taxes-title label {
+  background: url('../images/prices.png') 0 0 no-repeat;
+  border-bottom: 1px solid #dfdfdf;
+  font-size: 22px;
+  line-height: 1em;
+  padding: 0 0 10px 40px; /* LTR */
+  overflow: hidden;
+}
+.demo-store-features #edit-demo-store-featuress-title label {
+  background: url('../images/demo.png') 0 0 no-repeat;
+  border-bottom: 1px solid #dfdfdf;
+  font-size: 22px;
+  line-height: 1em;
+  padding: 0 0 10px 40px; /* LTR */
+  overflow: hidden;
+}
+
+html.js #-commerce-kickstart-help-store fieldset.collapsible .fieldset-legend {
+  background: transparent url("../images/expandable.png") no-repeat 0 -13px;
+  font-size: 16px;
+  margin: 15px 0 0 25px; /* LTR */
+  padding-left: 25px; /* LTR */
+}
+html.js #-commerce-kickstart-help-store fieldset.collapsed .fieldset-legend {
+  background-position: 0 9px;
+}
+#kickstart-help-topic .first-steps-left {
+  width: 63%;
+}
+#kickstart-help-topic .first-steps-blocks {
+  margin-bottom: 30px;
+  padding: 0;
+}
+#kickstart-help-topic .first-steps-blocks-inner,
+#kickstart-help-topic .first-steps-documentation .documentation-help,
+#kickstart-help-topic .first-steps-documentation .documentation-websites,
+#kickstart-help-topic .first-steps-quick .first-steps-blocks-inner {
+  padding: 15px;
+}
+#kickstart-help-topic .first-steps-documentation .first-steps-blocks-inner,
+#kickstart-help-topic .first-steps-quick .first-steps-blocks-inner {
+  padding: 0;
+}
+#kickstart-help-topic .first-steps-quick ul li {
+  border: 0;
+  clear: left; /* LTR */
+  float: left; /* LTR */
+  margin-bottom: 5px;
+  padding: 0;
+  width: 100%;
+}
+#kickstart-help-topic .first-steps-quick ul li a {
+  background: #ffffff url("../images/quicklinks.png") no-repeat 8px center; /* LTR */
+  clear: left; /* LTR */
+  float: left; /* LTR */
+  padding: 0 5px 0 25px; /* LTR */
+  width: 100%;
+}
+#kickstart-help-topic .first-steps-blocks h2 {
+  background: transparent url("../images/icons-get-started.png") no-repeat 0 0;
+  border-bottom: 1px solid #dfdfdf;
+  font-weight: 500;
+  padding: 5px 15px 10px 40px; /* LTR */
+}
+/* Specific Help Block Styles */
+#kickstart-help-topic .first-steps-videos .first-steps-blocks-inner {
+  padding: 0;
+}
+#kickstart-help-topic .first-steps-documentation h2 {
+  background-position: 0 1px;
+  border-bottom: 0;
+  padding-bottom: 5px;
+}
+#kickstart-help-topic .first-steps-documentation .first-steps-blocks-inner {
+  background: #ffffff;
+  border: 1px solid #cccccc;
+}
+#kickstart-help-topic .first-steps-quick h2 {
+  background-position: 0 -26px;
+}
+#kickstart-help-topic .first-steps-services h2 {
+  background-position: 0 -55px;
+  margin-bottom: 0;
+}
+#kickstart-help-topic .first-steps-services .first-steps-blocks-inner {
+  background: #ffffff;
+}
+#kickstart-help-topic .first-steps-mode h2 {
+  background-position: 0 -90px;
+  margin-bottom: 0;
+}
+html.js #-commerce-kickstart-help-store fieldset.collapsible .fieldset-legend {
+  border-bottom: 0;
+  font-weight: 500;
+  padding: 0 0 0 25px; /* LTR */
+}
+#-commerce-kickstart-help-store div > .form-wrapper > .form-item label {
+  border-bottom: 1px solid #DFDFDF;
+  font-size: 22px;
+  line-height: 1em;
+  padding: 0 0 10px 40px; /* LTR */
+  overflow: hidden;
+}
+html.js #-commerce-kickstart-help-store fieldset.collapsible {
+  margin-top: 15px;
+  min-height: 25px;
+}
+.fieldset-wrapper {
+  padding: 0 42px 25px;
+}
+#prices-payments-taxes-title label {
+  background: transparent url("../images/icons-get-started.png") no-repeat 0 0;
+}
+#kickstart-help-topic {
+  padding-top: 30px;
+}

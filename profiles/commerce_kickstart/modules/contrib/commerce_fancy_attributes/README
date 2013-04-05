@@ -1,0 +1,33 @@
+This module provides a "Rendered term" attribute mode, that
+shows the rendered term instead of a radio button (degrades to a normal
+radio button when JS is off).
+
+Example usage:
+0) Enable this module.
+1) Create a Color vocabulary, add a text field called "Color" that will hold
+hex values. Go to "Manage Display", click the tab called "Add to Cart form - Attribute",
+enable only the color field (with the label hidden).
+2) Create several terms with matching hex colors (Black: #cccccc, White: #ffffff, etc).
+3) Add a Color taxonomy_term_reference field to a product type.
+4) On the Field UI edit page for the Color field, select "Rendered term" as
+the attribute type.
+
+The Add To Cart form will now show the colors.
+
+Extras
+------
+The same color blocks can also be shown on the product display, representing
+each color present on the referenced products.
+
+A good match for this module is Field Extractor (http://drupal.org/project/field_extractor).
+Together with this module, it allows you to show the same color representation
+on a product display.
+
+0) Install Entityreference 7.x-1.x-dev and Field Extractor 7.x-1.x-dev.
+Patch entityreference with the patch from http://drupal.org/node/1580348.
+This will give you the "Rendered entity" formatter on the taxonomy term fields.
+1) Select the Field Extractor formatter for the product reference field, or
+add the Field Extractor views field to a view.
+2) In the settings, select the color reference field that you've added to the
+product type. Then select "Rendered entity" as the formatter, and
+"Add to Cart form - Attribute" as the view mode.

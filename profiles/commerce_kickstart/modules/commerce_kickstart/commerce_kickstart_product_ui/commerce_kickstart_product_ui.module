@@ -1,0 +1,218 @@
+<?php
+/**
+ * @file
+ * Code for the Demo Store Content architecture feature.
+ */
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * Create new view mode for product display, commerce product.
+ */
+function commerce_kickstart_product_ui_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['product_list'] = array(
+    'label' => t('Product list'),
+    'custom settings' => TRUE,
+  );
+  $entity_info['commerce_product']['view modes']['node_product_list'] = array(
+    'label' => t('Node: Product list'),
+    'custom settings' => TRUE,
+  );
+  $entity_info['commerce_product']['view modes']['product_in_cart'] = array(
+    'label' => t('Product in cart'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_kickstart_product_ui_theme(&$existing) {
+  $themes = array(
+    'node__product__type' => array(
+      'path' => drupal_get_path('module', 'commerce_kickstart_product_ui') . '/theme',
+      'render element' => 'elements',
+      'template' => 'node--product--type',
+    ),
+    'node__product__type__product__list' => array(
+      'path' => drupal_get_path('module', 'commerce_kickstart_product_ui') . '/theme',
+      'render element' => 'elements',
+      'template' => 'node--product--type--product--list',
+    ),
+    'commerce_product__product_in_cart' => array(
+      'path' => drupal_get_path('module', 'commerce_kickstart_product_ui') . '/theme',
+      'render element' => 'elements',
+      'template' => 'commerce_product__product_in_cart',
+    ),
+  );
+  return $themes;
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function commerce_kickstart_product_ui_theme_registry_alter(&$theme_registry) {
+  $path = drupal_get_path('module', 'commerce_kickstart_product_ui') . '/theme';
+  // Only alter the template if it is not already overridden in a theme
+  // Remove commerce product label.
+  if (strpos($theme_registry['commerce_product_title']['theme path'], "themes/") == FALSE) {
+    $theme_registry['commerce_product_title']['theme path'] = $path;
+  }
+  // Remove cart block total label & add cart link on item.
+  if (strpos($theme_registry['commerce_line_item_summary']['theme path'], "themes/") == FALSE) {
+    $theme_registry['commerce_line_item_summary']['theme path'] = $path;
+  }
+}
+
+/**
+ * Override or insert variables into the page template.
+ */
+function commerce_kickstart_product_ui_preprocess_page(&$vars) {
+  $product_display_types = commerce_product_reference_node_types();
+  if (!empty($vars['node']) && isset($product_display_types[$vars['node']->type])) {
+    $vars['title'] = "";
+  }
+}
+/**
+ * Override or insert variables into the node template.
+ */
+function commerce_kickstart_product_ui_preprocess_node(&$vars) {
+  $product_display_types = commerce_product_reference_node_types();
+  if (isset($vars['type']) && isset($product_display_types[$vars['node']->type])) {
+    $vars['theme_hook_suggestions'][] = 'node__product__type';
+    $vars['classes_array'][] = 'node-product-type';
+    $vars['theme_hook_suggestions'][] = 'node__' . $vars['node']->type;
+    $vars['classes_array'][] = drupal_html_class('node-' . $vars['node']->type);
+    $vars['theme_hook_suggestions'][] = 'node__product__type__' . $vars['view_mode'];
+    // Backward compatibiliy with node--product--type--product--view_mode.
+    $vars['theme_hook_suggestions'][] = 'node__product__type__' . str_replace('_', '__', $vars['view_mode']);
+    $vars['classes_array'][] = drupal_html_class('node-product-type-' . $vars['view_mode']);
+    $vars['theme_hook_suggestions'][] = 'node__' . $vars['node']->type . '__'  . $vars['view_mode'];
+    $vars['classes_array'][] = drupal_html_class('node-' . $vars['node']->type . '-' . $vars['view_mode']);
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ * Link cart block items to cart.
+ */
+function commerce_kickstart_product_ui_preprocess_commerce_line_item_summary(&$variable) {
+  $variable['cart_items'] = l($variable['quantity'], 'cart', array('attributes' => array('class' => array('line-item-quantity'))));
+}
+
+/**
+ * Implements hook_library().
+ */
+function commerce_kickstart_product_ui_library() {
+  $libraries['jquery_ui_spinner'] = array(
+    'title' => 'jQuery Spinner',
+    'website' => 'http://github.com/btburnett3/jquery.ui.spinner/',
+    'version' => '1.8',
+    'js' => array(
+      libraries_get_path('jquery_ui_spinner') . '/ui.spinner.min.js' => array(),
+    ),
+    'css' => array(
+      libraries_get_path('jquery_ui_spinner') . '/ui.spinner.css' => array(),
+    ),
+    'dependencies' => array(
+      array('system', 'ui.widget'),
+    ),
+  );
+  $libraries['jquery_expander'] = array(
+    'title' => 'jQuery Expander',
+    'website' => 'http://plugins.learningjquery.com/expander/',
+    'version' => '1.4.2',
+    'js' => array(
+      libraries_get_path('jquery_expander') . '/jquery.expander.min.js' => array(),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function commerce_kickstart_product_ui_form_alter(&$form, &$form_state, $form_id) {
+  if (strstr($form_id, 'commerce_cart_add_to_cart_form')) {
+    // Add quantity spinner widget & read more link
+    $form['#attached']['library'][] = array('commerce_kickstart_product_ui', 'jquery_expander');
+    $form['#attached']['library'][] = array('commerce_kickstart_product_ui', 'jquery_ui_spinner');
+    $form['#attached']['js'][] = drupal_get_path('module', 'commerce_kickstart_product_ui') . '/commerce_kickstart_product_ui.js';
+
+    // Rename add-to-cart form fields label (quantity, color, size)
+    $form['quantity']['#title'] = t('Enter Quantity');
+    $form['attributes']['field_color']['#title'] = t('Select Color');
+
+    foreach(array_keys($form['attributes']) as $field_name) {
+      if (strstr($field_name, 'size')) {
+        $form['attributes'][$field_name]['#title'] = t('Select Size');
+        break;
+      }
+    }
+  }
+  if ($form_id == 'views_exposed_form') {
+    $form['search_api_views_fulltext']['#size'] = 26;
+    $form['search_api_views_fulltext']['#attributes']['placeholder'] = t('Search');
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function commerce_kickstart_product_ui_page_alter(&$page) {
+  // Disable breadcumb on user, checkout and cart pages.
+  $current_path = current_path();
+  $exclude_path = "user*\ncheckout/*\ncart";
+  $match = drupal_match_path(drupal_strtolower($current_path), drupal_strtolower($exclude_path));
+  if ($match) {
+    drupal_set_breadcrumb(array());
+  }
+}
+
+/*
+ * Process variables for entity.tpl.php.
+ */
+function commerce_kickstart_product_ui_preprocess_entity(&$variables) {
+  if ($variables['entity_type'] == 'commerce_product' && $variables['view_mode'] == 'product_in_cart') {
+    $variables['title'] = "";
+    $variables['url'] = "";
+    // Need to remove the clearfix class from default entity.tpl.php for IE7/8...
+    $variables['theme_hook_suggestions'][] = $variables['elements']['#entity_type'] . '__' . $variables['elements']['#view_mode'];
+  }
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ *
+ * Hide the title if the title_field is not empty.
+ */
+function commerce_kickstart_product_ui_entity_view_alter(&$build, $type) {
+  if ($type == 'commerce_product') {
+    if (!empty($build['#entity']->title_field) && isset($build['title'])) {
+      $build['title']['#access'] = FALSE;
+    }
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_kickstart_product_ui_views_api() {
+  return array(
+    'version' => 3,
+    'path' => drupal_get_path('module', 'commerce_kickstart_product_ui') . '/includes',
+  );
+}
+
+/**
+ * Implements hook_field_create_instance().
+ *
+ * Apply the h2 wrapper for title fields.
+ */
+function commerce_kickstart_product_ui_field_create_instance($instance) {
+  if (!module_exists('title') || !title_field_replacement_info($instance['entity_type'], $instance['field_name'])) {
+    return;
+  }
+  $instance['fences_wrapper'] = 'h2';
+  field_update_instance($instance);
+}

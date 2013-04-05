@@ -1,0 +1,164 @@
+<?php
+
+/**
+ * @file
+ * Provides an imagefield formatter that allows the user to specify which delta
+ * (or several deltas) should be displayed.
+ */
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function image_delta_formatter_field_formatter_info() {
+  $formatters = array(
+    'image_delta' => array(
+      'label' => t('Image Delta'),
+      'field types' => array('image'),
+      'settings' => array(
+        'deltas' => 0,
+        'deltas_reversed' => FALSE,
+        'image_style' => '',
+        'image_link' => '',
+      ),
+    ),
+  );
+
+  return $formatters;
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function image_delta_formatter_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $element['deltas'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Delta'),
+    '#description' => t('Enter a delta, or a comma-separated list of deltas that should be shown. For example: 0, 1, 4.'),
+    '#size' => 10,
+    '#default_value' => $settings['deltas'],
+    '#required' => TRUE,
+  );
+  $element['deltas_reversed'] = array(
+    '#title' => t('Reversed'),
+    '#type' => 'checkbox',
+    '#default_value' => $settings['deltas_reversed'],
+    '#description' => t('Start from the last values.'),
+  );
+
+  $image_styles = image_style_options(FALSE);
+  $element['image_style'] = array(
+    '#title' => t('Image style'),
+    '#type' => 'select',
+    '#default_value' => $settings['image_style'],
+    '#empty_option' => t('None (original image)'),
+    '#options' => $image_styles,
+  );
+
+  $link_types = array(
+    'content' => t('Content'),
+    'file' => t('File'),
+  );
+  $element['image_link'] = array(
+    '#title' => t('Link image to'),
+    '#type' => 'select',
+    '#default_value' => $settings['image_link'],
+    '#empty_option' => t('Nothing'),
+    '#options' => $link_types,
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function image_delta_formatter_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = array();
+
+  $delta_label = strpos($settings['deltas'], ',') ? 'Deltas' : 'Delta';
+  $deltas = t($delta_label . ': @deltas', array('@deltas' => trim($settings['deltas'])));
+  if ($settings['deltas_reversed']) {
+    $deltas .= '. ' . t('Reversed.');
+  }
+  $summary[] = $deltas;
+
+  $image_styles = image_style_options(FALSE);
+  // Unset possible 'No defined styles' option.
+  unset($image_styles['']);
+  // Styles could be lost because of enabled/disabled modules that defines
+  // their styles in code.
+  if (isset($image_styles[$settings['image_style']])) {
+    $summary[] = t('Image style: @style', array('@style' => $image_styles[$settings['image_style']]));
+  }
+  else {
+    $summary[] = t('Original image');
+  }
+
+  $link_types = array(
+    'content' => t('Linked to content'),
+    'file' => t('Linked to file'),
+  );
+  // Display this setting only if image is linked.
+  if (isset($link_types[$settings['image_link']])) {
+    $summary[] = $link_types[$settings['image_link']];
+  }
+
+  return implode('<br />', $summary);
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function image_delta_formatter_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  // Check if the formatter involves a link.
+  if ($display['settings']['image_link'] == 'content') {
+    $uri = entity_uri($entity_type, $entity);
+  }
+  elseif ($display['settings']['image_link'] == 'file') {
+    $link_file = TRUE;
+  }
+
+  // Prepare an array of selected deltas from the entered string.
+  if (strpos($display['settings']['deltas'], ',')) {
+    $deltas = explode(',', $display['settings']['deltas']);
+    $deltas = array_map('trim', $deltas);
+  }
+  else {
+    $delta = trim($display['settings']['deltas']);
+    $deltas = array($delta);
+  }
+  // Reverse the items if needed.
+  if ($display['settings']['deltas_reversed']) {
+    $items = array_reverse($items);
+  }
+
+  foreach ($items as $delta => $item) {
+    // Skip deltas that weren't selected for display.
+    if (!in_array($delta, $deltas)) {
+      continue;
+    }
+
+    if (isset($link_file)) {
+      $uri = array(
+        'path' => file_create_url($item['uri']),
+        'options' => array(),
+      );
+    }
+    $element[$delta] = array(
+      '#theme' => 'image_formatter',
+      '#item' => $item,
+      '#image_style' => $display['settings']['image_style'],
+      '#path' => isset($uri) ? $uri : '',
+    );
+  }
+
+  return $element;
+}

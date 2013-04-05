@@ -1,0 +1,214 @@
+<?php
+
+/**
+ * @file
+ * Module hooks and helper functions for commerce_autosku
+ */
+
+define('COMMERCE_AUTOSKU_DISALLOWED', '@[^A-Z|a-z|0-9|\-|_]@');
+define('COMMERCE_AUTOSKU_REPLACEMENT', '');
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_autosku_form_commerce_product_ui_product_type_form_alter(&$form, &$form_state) {
+  if (isset($form_state['product_type']['autosku']['pattern'])) {
+    $pattern = $form_state['product_type']['autosku']['pattern'];
+    $advanced = $form_state['product_type']['autosku']['advanced'];
+  }
+  else {
+    $pattern = NULL;
+    $advanced = array();
+  }
+  $advanced += _commerce_autosku_default_settings();
+
+  $form['product_type']['autosku_status'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Automatically Generate SKU'),
+    '#default_value' => !empty($pattern),
+  );
+  $autosku =& $form['product_type']['autosku'];
+  $autosku = array(
+    '#type' => 'fieldset',
+    '#title' => t('AutoSKU Parameters'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="product_type[autosku_status]"]' => array('checked' => TRUE),
+      )
+    ),
+  );
+  $autosku['pattern'] = array(
+    '#type' => 'textfield',
+    '#title' => t('SKU Pattern'),
+    '#default_value' => $pattern,
+    '#states' => array(
+      'required' => array(
+        ':input[name="product_type[autosku_status]"]' => array('checked' => TRUE),
+      )
+    ),
+    '#element_validate' => array('commerce_autosku_element_validate_sku_pattern'),
+  );
+  if (module_exists('token')) {
+    $autosku['pattern']['#element_validate'][] = 'token_element_validate';
+    $autosku['pattern']['#token_type'] = array('commerce-product');
+    $autosku['pattern']['#min_tokens'] = 1;
+    $autosku['help'] = array(
+      '#type' => 'item',
+      '#theme' => 'token_tree',
+      '#token_types' => array('commerce-product'),
+    );
+  }
+  else {
+    $token_list = array();
+    $tokens = token_info();
+    $product_tokens = $tokens['tokens']['commerce-product'];
+    unset($product_tokens['sku']);
+    foreach (array_keys($product_tokens) as $token) {
+      $token_list[] = '<b>[commerce-product:' . check_plain($token) . ']</b> ' . filter_xss_admin($product_tokens[$token]['description']);
+    }
+    $autosku['help'] = array(
+      '#type' => 'markup',
+      '#title' => 'Valid tokens:',
+      '#theme' => 'item_list',
+      '#items' => $token_list,
+      '#description' => 'test',
+    );
+  }
+  $autosku['advanced'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Advanced'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $autosku['advanced']['update_existing'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Always regenerate SKU'),
+    '#default_value' => $advanced['update_existing'],
+    '#description' => t('If enabled, the SKU will be regenerated each time the product is saved.  Disable this if you prefer that SKUs stay the same regardless of any changes to the product.'),
+  );
+  $autosku['advanced']['hide_sku'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide SKU Field'),
+    '#default_value' => $advanced['hide_sku'],
+    '#description' => t('If enabled, the SKU field will not be shown the product form.'),
+  );
+  $autosku['advanced']['case'] = array(
+    '#type' => 'select',
+    '#title' => t('SKU Case'),
+    '#options' => array(
+      0 => t('Do not change'),
+      'uppercase' => t('Uppercase'),
+      'lowercase' => t('Lowercase'),
+    ),
+    '#default_value' => $advanced['case'],
+  );
+}
+
+function commerce_autosku_element_validate_sku_pattern(&$element, &$form_state) {
+  if ($form_state['values']['product_type']['autosku_status']) {
+    $tokens = token_scan($element['#value']);
+    if (empty($tokens)) {
+      form_error($element, t('SKU pattern must contain at least one valid token.'));
+      return;
+    }
+    if (isset($tokens['commerce-product']['sku'])) {
+      form_error($element, t('You may not use the SKU token in the SKU Pattern.'));
+      return;
+    }
+    if (!module_exists('token') && drupal_strlen($element['#value'])) {
+      if (!isset($tokens['commerce-product']) || count($tokens) > 1) {
+        form_error($element, t('You must have one or more product tokens, and no other kinds of tokens in the SKU Pattern.'));
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_autosku_form_commerce_product_product_form_alter(&$form, &$form_state) {
+  if ($settings = commerce_autosku_get_settings($form_state['commerce_product'])) {
+    $form['sku']['#required'] = FALSE;
+    $form['sku']['#disabled'] = TRUE;
+    if ($settings['advanced']['hide_sku']) {
+      $form['sku']['#access'] = FALSE;
+    }
+    else {
+      $form['sku']['#description'] = t('SKU will be automatically generated.');
+    }
+
+    $product = $form_state['commerce_product'];
+
+    //@todo: See http://drupal.org/node/733332
+    if (isset($form['sku']['#element_validate'])) {
+      unset($form['sku']['#element_validate']);
+    }
+  }
+}
+
+/**
+ * Generate a random, temporary SKU to use when saving a new node.
+ */
+function _commerce_autosku_get_temporary_sku() {
+  return 'temporary:' . mt_rand(1, 9999999);
+}
+
+/**
+ * Check to see if a given SKU is one we generated.
+ */
+function _commerce_autosku_is_temporary_sku($sku) {
+  return substr($sku, 0, 10) == 'temporary:';
+}
+
+/**
+ * Check if a product needs a temporary value.
+ */
+function _commerce_autosku_needs_temporary_sku($product, $settings) {
+  if (isset($product->is_new) && $product->is_new) {
+    $tokens = token_scan($settings['pattern']);
+    return isset($tokens['commerce-product']['product-id']);
+  }
+  return FALSE;
+}
+
+/**
+ * API Helper to get AutoSKU settings for a given product.
+ */
+function commerce_autosku_get_settings($product) {
+  $types = commerce_product_types();
+  return empty($types[$product->type]['autosku']['pattern']) ? FALSE : $types[$product->type]['autosku'];
+}
+
+/**
+ * Centralized storage of defaults for the advanced array.
+ */
+function _commerce_autosku_default_settings() {
+  return array(
+    'update_existing' => TRUE,
+    'hide_sku' => TRUE,
+    'case' => 0,
+  );
+}
+
+/**
+ * API helper to reduce a SKU to a set of allowed characters.
+ */
+function commerce_autosku_cleanstring($string) {
+  if (module_exists('transliteration')) {
+    $string = transliteration_get($string);
+  }
+  return preg_replace(COMMERCE_AUTOSKU_DISALLOWED, COMMERCE_AUTOSKU_REPLACEMENT, $string);
+}
+
+/**
+ * Implements hook_features_pipe_COMPONENT_alter().
+ *
+ * Add the autosku settings to the export when the product type is selected.
+ */
+function commerce_autosku_features_pipe_commerce_product_type_alter(&$pipe, $data, $export) {
+  if($export['component'] == 'commerce_product_type') {
+    foreach($data as $type) {
+      $pipe['commerce_autosku_patterns'][] = $type;
+    }
+  }
+}

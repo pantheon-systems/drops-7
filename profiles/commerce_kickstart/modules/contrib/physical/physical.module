@@ -1,0 +1,926 @@
+<?php
+
+/**
+ * @file
+ * Defines fields (e.g. weight and dimensions) to support describing the
+ * physical attributes of entities.
+ */
+
+
+/**
+ * Implements hook_field_info().
+ */
+function physical_field_info() {
+  return array(
+    'physical_weight' => array(
+      'label' => t('Physical weight'),
+      'description' => t('This field stores the a physical weight amount and unit of measure.'),
+      'settings' => array(),
+      'instance_settings' => array(),
+      'default_widget' => 'physical_weight_textfield',
+      'default_formatter' => 'physical_weight_formatted',
+      'property_type' => 'physical_weight',
+      'property_callbacks' => array('physical_weight_property_info_callback'),
+    ),
+    'physical_dimensions' => array(
+      'label' => t('Physical dimensions'),
+      'description' => t('This field stores a set of physical dimensions and unit of measure.'),
+      'settings' => array(),
+      'instance_settings' => array(),
+      'default_widget' => 'physical_dimensions_textfields',
+      'default_formatter' => 'physical_dimensions_formatted',
+      'property_type' => 'physical_dimensions',
+      'property_callbacks' => array('physical_dimensions_property_info_callback'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_validate().
+ */
+function physical_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  if ($field['type'] == 'physical_weight') {
+    // Ensure only numeric values are entered in weight fields.
+    foreach ($items as $delta => &$item) {
+      if (!empty($item['weight']) && !is_numeric($item['weight'])) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'physical_weight',
+          'message' => t('%name: you must enter a numeric weight value.', array('%name' => $instance['label'])),
+        );
+      }
+    }
+  }
+  elseif ($field['type'] == 'physical_dimensions') {
+    // Ensure only numeric values are entered in dimension fields.
+    foreach ($items as $delta => &$item) {
+      // Keep track of which dimensions have data.
+      $has_data = array();
+
+      foreach (physical_dimensions() as $key => $dimension) {
+        // The current dimension has data if it is set and not NULL.
+        if (isset($item[$key]) && $item[$key] != NULL) {
+          $has_data[] = $key;
+        }
+
+        // Throw an error if the value is not numeric.
+        if (!empty($item[$key]) && !is_numeric($item[$key])) {
+          $errors[$field['field_name']][$langcode][$delta][] = array(
+            'error' => 'physical_dimensions',
+            'message' => t('%name: you must enter a numeric !dimension value.', array('%name' => $instance['label'], '!dimension' => drupal_strtolower($dimension['name']))),
+            'dimension' => $key,
+          );
+        }
+      }
+
+      // If one dimension had data, they all must. Set an error for fields that
+      // need data.
+      if (count($has_data) > 0) {
+        foreach (physical_dimensions() as $key => $dimension) {
+          if (!isset($item[$key]) || $item[$key] == NULL) {
+            $errors[$field['field_name']][$langcode][$delta][] = array(
+              'error' => 'physical_dimensions',
+              'message' => t('%name: you must supply a !dimension value.', array('%name' => $instance['label'], '!dimension' => drupal_strtolower($dimension['name']))),
+              'dimension' => $key,
+            );
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_widget_error().
+ */
+function physical_field_widget_error($element, $error, $form, &$form_state) {
+  if ($error['error'] == 'physical_weight') {
+    form_error($element['weight'], $error['message']);
+  }
+  elseif ($error['error'] == 'physical_dimensions') {
+    form_error($element[$error['dimension']], $error['message']);
+  }
+}
+
+/**
+ * Implements of hook_field_is_empty().
+ */
+function physical_field_is_empty($item, $field) {
+  if ($field['type'] == 'physical_weight') {
+    return !isset($item['weight']) || $item['weight'] == NULL;
+  }
+  elseif ($field['type'] == 'physical_dimensions') {
+    // If any of the dimensions are missing, consider the field empty.
+    foreach (physical_dimensions() as $key => $dimension) {
+      if (!isset($item[$key]) || $item[$key] == NULL) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function physical_field_widget_info() {
+  return array(
+    'physical_weight_textfield' => array(
+      'label' => t('Weight textfield'),
+      'field types' => array('physical_weight'),
+      'settings' => array(
+        'default_unit' => 'lb',
+        'unit_select_list' => TRUE,
+      ),
+    ),
+    'physical_dimensions_textfields' => array(
+      'label' => t('Dimensions textfields'),
+      'field types' => array('physical_dimensions'),
+      'settings' => array(
+        'default_unit' => 'in',
+        'unit_select_list' => TRUE,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_settings_form().
+ */
+function physical_field_widget_settings_form($field, $instance) {
+  $widget = $instance['widget'];
+  $settings = array_merge(field_info_widget_settings($widget['type']), $widget['settings']);
+
+  $form = array();
+
+  // Build the settings for the weight textfield widget.
+  if ($widget['type'] == 'physical_weight_textfield') {
+    $form['default_unit'] = array(
+      '#type' => 'select',
+      '#title' => t('Unit of measurement'),
+      '#options' => physical_weight_unit_options(),
+      '#default_value' => $settings['default_unit'],
+    );
+    $form['unit_select_list'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow the user to select a different unit of measurement on forms.'),
+      '#default_value' => $settings['unit_select_list'],
+    );
+  }
+  elseif ($widget['type'] == 'physical_dimensions_textfields') {
+    $form['default_unit'] = array(
+      '#type' => 'select',
+      '#title' => t('Unit of measurement'),
+      '#options' => physical_dimension_unit_options(),
+      '#default_value' => $settings['default_unit'],
+    );
+    $form['unit_select_list'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow the user to select a different unit of measurement on forms.'),
+      '#default_value' => $settings['unit_select_list'],
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function physical_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $widget = $instance['widget'];
+  $settings = array_merge(field_info_widget_settings($widget['type']), $widget['settings']);
+
+  // Return the weight textfield widget.
+  if ($widget['type'] == 'physical_weight_textfield') {
+    // Determine the default weight value.
+    if (isset($items[$delta]['weight'])) {
+      $weight = round($items[$delta]['weight'], 5);
+    }
+    elseif (isset($instance['default_value'][0]['weight']) && ($delta == 0 || $field['cardinality'] > 0)) {
+      $weight = round($instance['default_value'][0]['weight'], 5);
+    }
+    else {
+      $weight = '';
+    }
+
+    // Add a textfield for the actual weight value.
+    $element['weight'] = array(
+      '#type' => 'textfield',
+      '#title' => $element['#title'],
+      '#default_value' => $weight,
+      '#size' => 15,
+      '#maxlength' => 16,
+      '#required' => $instance['required'] && ($delta == 0 || $field['cardinality'] > 0),
+    );
+
+    // Determine the unit of measurement.
+    if (!empty($items[$delta]['unit'])) {
+      $unit = $items[$delta]['unit'];
+    }
+    elseif (!empty($settings['unit_select_list']) && !empty($instance['default_value'][0]['unit'])) {
+      $unit = $instance['default_value'][0]['unit'];
+    }
+    else {
+      $unit = $settings['default_unit'];
+    }
+
+    // If the user cannot select a different unit of measurement and the current
+    // unit is the same as the default...
+    if (empty($settings['unit_select_list']) && $unit == $settings['default_unit']) {
+      // Display the unit of measurement after the textfield.
+      $element['weight']['#field_suffix'] = physical_weight_unit_abbreviation($unit);
+
+      if (!empty($element['#description'])) {
+        $element['weight']['#suffix'] = '<div class="description">' . $element['#description'] . '</div>';
+      }
+
+      // Add a hidden value for the default unit of measurement.
+      $element['unit'] = array(
+        '#type' => 'value',
+        '#value' => $unit,
+      );
+    }
+    else {
+      // Get an options list of weight units of measurement.
+      $options = physical_weight_unit_options(FALSE);
+
+      // If the user isn't supposed to have access to select a unit of
+      // measurement, only allow the default and the current unit.
+      if (empty($settings['unit_select_list'])) {
+        $options = array_intersect_key($options, drupal_map_assoc(array($unit, $settings['default_unit'])));
+      }
+
+      // Display a unit of measurement select list after the textfield.
+      $element['#attached']['css'][] = drupal_get_path('module', 'physical') . '/theme/physical.css';
+      $element['weight']['#prefix'] = '<div class="physical-weight-textfield">';
+
+      $element['unit'] = array(
+        '#type' => 'select',
+        '#options' => $options,
+        '#default_value' => $unit,
+        '#suffix' => '</div>',
+      );
+
+      if (!empty($element['#description'])) {
+        $element['unit']['#suffix'] = '<div class="description">' . $element['#description'] . '</div></div>';
+      }
+    }
+
+    return $element;
+  }
+
+  // Return the dimensions textfields widget.
+  if ($widget['type'] == 'physical_dimensions_textfields') {
+    // Determine the default dimensions value.
+    $value = array();
+
+    if (isset($items[$delta]['length'])) {
+      $value = array(
+        'length' => round($items[$delta]['length'], 5),
+        'width' => round($items[$delta]['width'], 5),
+        'height' => round($items[$delta]['height'], 5),
+        'unit' => $items[$delta]['unit'],
+      );
+    }
+    elseif (isset($instance['default_value'][0]['length']) && ($delta == 0 || $field['cardinality'] > 0)) {
+      $value = $instance['default_value'][0];
+
+      if (empty($settings['unit_select_list'])) {
+        unset($value['unit']);
+      }
+    }
+
+    // Ensure the value array defines every expected key.
+    foreach (physical_dimensions() as $key => $dimension) {
+      $value += array($key => '');
+    }
+
+    $value += array('unit' => $settings['default_unit']);
+
+    // Add textfields for the dimensions values.
+    $element['#type'] = 'fieldset';
+    $element['#attributes']['class'][] = 'physical-dimensions-textfields';
+
+    $element['#attached']['css'][] = drupal_get_path('module', 'physical') . '/theme/physical.css';
+
+    foreach (physical_dimensions() as $key => $dimension) {
+      $element[$key] = array(
+        '#type' => 'textfield',
+        '#title' => $dimension['name'],
+        '#default_value' => $value[$key],
+        '#size' => 15,
+        '#maxlength' => 16,
+        '#required' => $instance['required'] && ($delta == 0 || $field['cardinality'] > 0),
+        '#field_suffix' => '&times;',
+        '#prefix' => '<div class="physical-dimension-form-item">',
+        '#suffix' => '</div>',
+      );
+    }
+
+    // Remove the suffix from the last dimension element.
+    unset($element[$key]['#field_suffix']);
+
+    // If the user cannot select a different unit of measurement and the current
+    // unit is the same as the default...
+    if (empty($settings['unit_select_list']) && $value['unit'] == $settings['default_unit']) {
+      // Display the unit of measurement after the textfield.
+      $element['height']['#field_suffix'] = physical_dimension_unit_abbreviation($value['unit']);
+
+      // Add a hidden value for the default unit of measurement.
+      $element['unit'] = array(
+        '#type' => 'value',
+        '#value' => $value['unit'],
+      );
+    }
+    else {
+      // Get an options list of dimension units of measurement.
+      $options = physical_dimension_unit_options(FALSE);
+
+      // If the user isn't supposed to have access to select a unit of
+      // measurement, only allow the default and the current unit.
+      if (empty($settings['unit_select_list'])) {
+        $options = array_intersect_key($options, drupal_map_assoc(array($value['unit'], $settings['default_unit'])));
+      }
+
+      // Display a unit of measurement select list after the textfield.
+      $element['unit'] = array(
+        '#type' => 'select',
+        '#options' => $options,
+        '#default_value' => $value['unit'],
+        '#prefix' => '<div class="physical-dimensions-unit-form-item">',
+        '#suffix' => '</div>',
+      );
+    }
+
+    return $element;
+  }
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function physical_field_formatter_info() {
+  return array(
+    'physical_weight_formatted' => array(
+      'label' => t('Formatted weight'),
+      'field types' => array('physical_weight'),
+      'settings' => array(),
+    ),
+    'physical_dimensions_formatted' => array(
+      'label' => t('Formatted dimensions'),
+      'field types' => array('physical_dimensions'),
+      'settings' => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function physical_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $settings = array_merge(field_info_formatter_settings($display['type']), $display['settings']);
+
+  $element = array();
+
+  // Loop through each item in this field.
+  foreach ($items as $delta => $item) {
+    // Generate the HTML based on the formatter.
+    switch ($display['type']) {
+      case 'physical_weight_formatted':
+        $html = physical_weight_format($item);
+        break;
+
+      case 'physical_dimensions_formatted':
+        $html = physical_dimensions_format($item);
+        break;
+    }
+
+    // Add the link to the returned element array.
+    $element[$delta] = array(
+      '#markup' => $html,
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Returns an associative array of weight units of measurement.
+ */
+function physical_weight_units() {
+  $units = array(
+    'lb' => array(
+      'name' => t('Pounds'),
+      'abbreviation' => t('lb'),
+    ),
+    'oz' => array(
+      'name' => t('Ounces'),
+      'abbreviation' => t('oz'),
+    ),
+    'kg' => array(
+      'name' => t('Kilograms'),
+      'abbreviation' => t('kg'),
+    ),
+    'g' => array(
+      'name' => t('Grams'),
+      'abbreviation' => t('g'),
+    ),
+  );
+
+  drupal_alter('physical_weight_unit_info', $units);
+
+  return $units;
+}
+
+/**
+ * Returns the name of a weight unit of measurement.
+ *
+ * @param $type
+ *   The type of weight unit whose name should be returned; by default this can
+ *   be lb, oz, kg, or g.
+ *
+ * @return
+ *   The name of the specified unit of measurement or FALSE if not found.
+ */
+function physical_weight_unit_name($type) {
+  $units = physical_weight_units();
+
+  if (!empty($units[$type]['name'])) {
+    return $units[$type]['name'];
+  }
+
+  return FALSE;
+}
+
+/**
+ * Returns the translated abbreviation of a weight unit of measurement.
+ *
+ * @param $unit
+ *   The weight unit of measurement whose translated abbreviation should be
+ *   returned; by default this can be lb, oz, kg, or g.
+ *
+ * @return
+ *   The translated abbreviation of the specified unit of measurement or FALSE
+ *   if not found.
+ */
+function physical_weight_unit_abbreviation($unit) {
+  $units = physical_weight_units();
+
+  if (!empty($units[$unit]['abbreviation'])) {
+    return $units[$unit]['abbreviation'];
+  }
+
+  return FALSE;
+}
+
+/**
+ * Returns an options array of weight units of measurement.
+ *
+ * @param $name
+ *   Boolean indicating whether or not the value should be the human readable
+ *   name of the unit of measurement instead of the abbreviation.
+ */
+function physical_weight_unit_options($name = TRUE) {
+  $options = array();
+
+  foreach (physical_weight_units() as $key => $value) {
+    $options[$key] = $name ? $value['name'] : $value['abbreviation'];
+  }
+
+  return $options;
+}
+
+/**
+ * Returns the formatted weight string for the given weight value array.
+ *
+ * @param $value
+ *   A weight field value array containing weight and unit keys.
+ */
+function physical_weight_format($value) {
+  return t('@weight @unit', array('@weight' => round($value['weight'], 5), '@unit' => physical_weight_unit_abbreviation($value['unit'])));
+}
+
+/**
+ * Converts a weight field value array to the specified unit.
+ *
+ * @param $weight
+ *   A weight field value array including the 'weight' and 'unit'.
+ * @param $unit
+ *   The weight unit type to convert to.
+ *
+ * @return
+ *   A weight field value array including the converted 'weight' amount in the
+ *   target 'unit' type.
+ */
+function physical_weight_convert($weight, $unit) {
+  if ($weight['unit'] == $unit) {
+    return $weight;
+  }
+
+  // Convert the weight amount based on the target and source unit type.
+  switch ($unit) {
+    case 'lb':
+      if ($weight['unit'] == 'oz') {
+        $multiplier = .0625;
+      }
+      elseif ($weight['unit'] == 'kg') {
+        $multiplier = 2.20462262;
+      }
+      elseif ($weight['unit'] == 'g') {
+        $multiplier = .00220462262;
+      }
+      break;
+
+    case 'oz':
+      if ($weight['unit'] == 'lb') {
+        $multiplier = 16;
+      }
+      elseif ($weight['unit'] == 'kg') {
+        $multiplier = 35.2739619;
+      }
+      elseif ($weight['unit'] == 'g') {
+        $multiplier = .0352739619;
+      }
+      break;
+
+    case 'kg':
+      if ($weight['unit'] == 'lb') {
+        $multiplier = .45359237;
+      }
+      elseif ($weight['unit'] == 'oz') {
+        $multiplier = .0283495231;
+      }
+      elseif ($weight['unit'] == 'g') {
+        $multiplier = .001;
+      }
+      break;
+
+    case 'g':
+      if ($weight['unit'] == 'lb') {
+        $multiplier = 453.59237;
+      }
+      elseif ($weight['unit'] == 'oz') {
+        $multiplier = 28.3495231;
+      }
+      elseif ($weight['unit'] == 'kg') {
+        $multiplier = 1000;
+      }
+      break;
+  }
+
+  // Update the weight amount using the multiplier.
+  $weight['weight'] *= $multiplier;
+
+  // Update the unit type to the target type.
+  $weight['unit'] = $unit;
+
+  return $weight;
+}
+
+/**
+ * Callback to alter the property info of weight fields.
+ *
+ * @see physical_field_info().
+ */
+function physical_weight_property_info_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  $name = $field['field_name'];
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+
+  $property['type'] = ($field['cardinality'] != 1) ? 'list<physical_weight>' : 'physical_weight';
+  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+  $property['auto creation'] = 'physical_weight_field_data_auto_creation';
+  $property['property info'] = physical_weight_field_data_property_info();
+
+  unset($property['query callback']);
+}
+
+/**
+ * Returns the default array structure for a Weight field for use when creating
+ * new data arrays through an entity metadata wrapper.
+ */
+function physical_weight_field_data_auto_creation() {
+  return array('weight' => 0, 'unit' => 'lb');
+}
+
+/**
+ * Defines info for the properties of the Weight field data structure.
+ */
+function physical_weight_field_data_property_info($name = NULL) {
+  return array(
+    'weight' => array(
+      'label' => t('Weight'),
+      'description' => !empty($name) ? t('Weight value of field %name', array('%name' => $name)) : '',
+      'type' => 'decimal',
+      'getter callback' => 'entity_property_verbatim_get',
+      'setter callback' => 'entity_property_verbatim_set',
+    ),
+    'unit' => array(
+      'label' => t('Unit of measurement'),
+      'description' => !empty($name) ? t('Unit of measurement of field %name', array('%name' => $name)) : '',
+      'type' => 'text',
+      'getter callback' => 'entity_property_verbatim_get',
+      'setter callback' => 'entity_property_verbatim_set',
+      'options list' => 'physical_weight_unit_options',
+    ),
+  );
+}
+
+/**
+ * Returns an associative array of dimensions.
+ */
+function physical_dimensions() {
+  $dimensions = array(
+    'length' => array(
+      'name' => t('Length'),
+    ),
+    'width' => array(
+      'name' => t('Width'),
+    ),
+    'height' => array(
+      'name' => t('Height'),
+    ),
+  );
+
+  drupal_alter('physical_dimension_info', $dimensions);
+
+  return $dimensions;
+}
+
+/**
+ * Returns an associative array of dimensions units of measurement.
+ */
+function physical_dimension_units() {
+  $units = array(
+    'in' => array(
+      'name' => t('Inches'),
+      'abbreviation' => t('in'),
+    ),
+    'ft' => array(
+      'name' => t('Feet'),
+      'abbreviation' => t('ft'),
+    ),
+    'mm' => array(
+      'name' => t('Millimeters'),
+      'abbreviation' => t('mm'),
+    ),
+    'cm' => array(
+      'name' => t('Centimeters'),
+      'abbreviation' => t('cm'),
+    ),
+    'm' => array(
+      'name' => t('Meters'),
+      'abbreviation' => t('m'),
+    ),
+  );
+
+  drupal_alter('physical_dimension_unit_info', $units);
+
+  return $units;
+}
+
+/**
+ * Returns the name of a dimension unit of measurement.
+ *
+ * @param $type
+ *   The type of dimension unit whose name should be returned; by default this
+ *   can be in, ft, mm, cm, or m.
+ *
+ * @return
+ *   The name of the specified unit of measurement or FALSE if not found.
+ */
+function physical_dimension_unit_name($type) {
+  $units = physical_dimension_units();
+
+  if (!empty($units[$type]['name'])) {
+    return $units[$type]['name'];
+  }
+
+  return FALSE;
+}
+
+/**
+ * Returns the translated abbreviation of a dimension unit of measurement.
+ *
+ * @param $unit
+ *   The dimension unit of measurement whose translated abbreviation should be
+ *   returned; by default this can be in, ft, mm, cm, or m.
+ *
+ * @return
+ *   The translated abbreviation of the specified unit of measurement or FALSE
+ *   if not found.
+ */
+function physical_dimension_unit_abbreviation($unit) {
+  $units = physical_dimension_units();
+
+  if (!empty($units[$unit]['abbreviation'])) {
+    return $units[$unit]['abbreviation'];
+  }
+
+  return FALSE;
+}
+
+/**
+ * Returns an options array of dimension units of measurement.
+ *
+ * @param $name
+ *   Boolean indicating whether or not the value should be the human readable
+ *   name of the unit of measurement instead of the abbreviation.
+ */
+function physical_dimension_unit_options($name = TRUE) {
+  $options = array();
+
+  foreach (physical_dimension_units() as $key => $value) {
+    $options[$key] = $name ? $value['name'] : $value['abbreviation'];
+  }
+
+  return $options;
+}
+
+/**
+ * Returns the formatted dimensions string for the given dimensions value array.
+ *
+ * @param $value
+ *   A dimension field value array containing length, width, height, and unit keys.
+ */
+function physical_dimensions_format($value) {
+  // Create an array of rounded values.
+  $data = array();
+
+  foreach (physical_dimensions() as $key => $dimension) {
+    $data[] = round($value[$key], 5);
+  }
+
+  // Return the rounded values joined together with the unit abbreviation appended.
+  return implode(' &times; ', $data) . ' ' . physical_dimension_unit_abbreviation($value['unit']);
+}
+
+/**
+ * Converts a dimension field value array to the specified unit.
+ *
+ * @param $dimensions
+ *   A dimension field value array including the 'length', 'width', 'height' and
+ *   'unit'.
+ * @param $unit
+ *   The dimensions unit type to convert to.
+ *
+ * @return
+ *   A dimension field value array including the converted 'length', 'width',
+ *   and 'height' amounts in the target 'unit' type.
+ */
+function physical_dimensions_convert($dimensions, $unit) {
+  if ($dimensions['unit'] == $unit) {
+    return $dimensions;
+  }
+
+  // Convert the dimension amounts based on the target and source unit type.
+  switch ($unit) {
+    case 'in':
+      if ($dimensions['unit'] == 'ft') {
+        $multiplier = 12;
+      }
+      elseif ($dimensions['unit'] == 'mm') {
+        $multiplier = .0393700787;
+      }
+      elseif ($dimensions['unit'] == 'cm') {
+        $multiplier = .393700787;
+      }
+      elseif ($dimensions['unit'] == 'm') {
+        $multiplier = 39.3700787;
+      }
+      break;
+
+    case 'ft':
+      if ($dimensions['unit'] == 'in') {
+        $multiplier = .0833333333;
+      }
+      elseif ($dimensions['unit'] == 'mm') {
+        $multiplier = .0032808399;
+      }
+      elseif ($dimensions['unit'] == 'cm') {
+        $multiplier = .032808399;
+      }
+      elseif ($dimensions['unit'] == 'm') {
+        $multiplier = 3.2808399;
+      }
+      break;
+
+    case 'mm':
+      if ($dimensions['unit'] == 'in') {
+        $multiplier = 25.4;
+      }
+      elseif ($dimensions['unit'] == 'ft') {
+        $multiplier = 304.8;
+      }
+      elseif ($dimensions['unit'] == 'cm') {
+        $multiplier = 10;
+      }
+      elseif ($dimensions['unit'] == 'm') {
+        $multiplier = 1000;
+      }
+      break;
+
+    case 'cm':
+      if ($dimensions['unit'] == 'in') {
+        $multiplier = 2.54;
+      }
+      elseif ($dimensions['unit'] == 'ft') {
+        $multiplier = 30.48;
+      }
+      elseif ($dimensions['unit'] == 'mm') {
+        $multiplier = .1;
+      }
+      elseif ($dimensions['unit'] == 'm') {
+        $multiplier = 100;
+      }
+      break;
+
+    case 'm':
+      if ($dimensions['unit'] == 'in') {
+        $multiplier = .0254;
+      }
+      elseif ($dimensions['unit'] == 'ft') {
+        $multiplier = .3048;
+      }
+      elseif ($dimensions['unit'] == 'mm') {
+        $multiplier = .001;
+      }
+      elseif ($dimensions['unit'] == 'cm') {
+        $multiplier = .01;
+      }
+      break;
+  }
+
+  // Update each of the dimensions using the multiplier.
+  $dimensions['length'] *= $multiplier;
+  $dimensions['width'] *= $multiplier;
+  $dimensions['height'] *= $multiplier;
+
+  // Update the unit type to the target type.
+  $dimensions['unit'] = $unit;
+
+  return $dimensions;
+}
+
+/**
+ * Callback to alter the property info of Dimensions fields.
+ *
+ * @see physical_field_info().
+ */
+function physical_dimensions_property_info_callback(&$info, $entity_type, $field, $instance, $field_type) {
+  $name = $field['field_name'];
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+
+  $property['type'] = ($field['cardinality'] != 1) ? 'list<physical_dimensions>' : 'physical_dimensions';
+  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+  $property['auto creation'] = 'physical_dimensions_field_data_auto_creation';
+  $property['property info'] = physical_dimensions_field_data_property_info();
+
+  unset($property['query callback']);
+}
+
+/**
+ * Returns the default array structure for a Dimensions field for use when
+ * creating new data arrays through an entity metadata wrapper.
+ */
+function physical_dimensions_field_data_auto_creation() {
+  return array('length' => 0, 'width' => 0, 'height' => 0, 'unit' => 'in');
+}
+
+/**
+ * Defines info for the properties of the Dimensions field data structure.
+ */
+function physical_dimensions_field_data_property_info($name = NULL) {
+  return array(
+    'length' => array(
+      'label' => t('Length'),
+      'description' => !empty($name) ? t('Length value of field %name', array('%name' => $name)) : '',
+      'type' => 'decimal',
+      'getter callback' => 'entity_property_verbatim_get',
+      'setter callback' => 'entity_property_verbatim_set',
+    ),
+    'width' => array(
+      'label' => t('Width'),
+      'description' => !empty($name) ? t('Width value of field %name', array('%name' => $name)) : '',
+      'type' => 'decimal',
+      'getter callback' => 'entity_property_verbatim_get',
+      'setter callback' => 'entity_property_verbatim_set',
+    ),
+    'height' => array(
+      'label' => t('Height'),
+      'description' => !empty($name) ? t('Height value of field %name', array('%name' => $name)) : '',
+      'type' => 'decimal',
+      'getter callback' => 'entity_property_verbatim_get',
+      'setter callback' => 'entity_property_verbatim_set',
+    ),
+    'unit' => array(
+      'label' => t('Unit of measurement'),
+      'description' => !empty($name) ? t('Unit of measurement of field %name', array('%name' => $name)) : '',
+      'type' => 'text',
+      'getter callback' => 'entity_property_verbatim_get',
+      'setter callback' => 'entity_property_verbatim_set',
+      'options list' => 'physical_dimensions_unit_options',
+    ),
+  );
+}

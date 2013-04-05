@@ -1,0 +1,194 @@
+<?php
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function commerce_fancy_attributes_entity_info_alter(&$entity_info) {
+  $entity_info['taxonomy_term']['view modes']['add_to_cart_form'] = array(
+    'label' => t('Add to Cart form - Attribute'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Hide the taxonomy term title on the "add to cart form" view mode.
+ */
+function commerce_fancy_attributes_preprocess_taxonomy_term(&$variables) {
+  if ($variables['view_mode'] == 'add_to_cart_form') {
+    $variables['page'] = TRUE;
+  }
+}
+
+/**
+ * Implements hook_form_id_form_alter().
+ *
+ * Alters the attribute options in the Field UI for eligible fields attached
+ * to commerce_product.
+ */
+function commerce_fancy_attributes_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
+  $field = $form['#field'];
+  $instance = $form['#instance'];
+
+  // Add our "Rendered term" option for taxonomy_term attributes.
+  // @todo Support entityreference
+  if (empty($form['locked']) && $instance['entity_type'] == 'commerce_product' &&
+    commerce_cart_field_attribute_eligible($field) && $field['type'] == 'taxonomy_term_reference') {
+    $form['instance']['commerce_cart_settings']['attribute_widget']['#options']['commerce_fancy_attributes'] = t('Rendered term');
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Adds relevant JS and CSS to the add to cart form.
+ */
+function commerce_fancy_attributes_form_alter(&$form, &$form_state, $form_id) {
+  if (strpos($form_id, 'commerce_cart_add_to_cart_form_') === 0) {
+    $form['#attached']['css'][] = drupal_get_path('module', 'commerce_fancy_attributes') . '/commerce_fancy_attributes.css';
+    $form['#attached']['js'][] = drupal_get_path('module', 'commerce_fancy_attributes') . '/commerce_fancy_attributes.js';
+  }
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function commerce_fancy_attributes_element_info() {
+  // Add an element type similar to radios but using a custom process function
+  // to display the render of the base field as description of the radio button.
+  return array(
+    'commerce_fancy_attributes' => array(
+      '#input' => TRUE,
+      '#process' => array('commerce_fancy_attributes_process_radios'),
+      '#theme_wrappers' => array('radios'),
+      '#pre_render' => array('form_pre_render_conditional_form_element'),
+    ),
+  );
+}
+
+/**
+ * Process function for the commerce_fancy_attributes element.
+ *
+ * Each radio button gets a description containing the rendered term.
+ * This description is hidden by default. Then, if JS is enabled,
+ * the radio button and label are hidden, the rendered term in the
+ * description is shown and made clickable.
+ */
+function commerce_fancy_attributes_process_radios($element, &$form_state, $complete_form = NULL) {
+  if (isset($element['#options']) && count($element['#options']) > 0) {
+    $tids = array_keys($element['#options']);
+    $terms = entity_load('taxonomy_term', $tids);
+    $render_terms = entity_view('taxonomy_term', $terms, 'add_to_cart_form');
+    $render_terms = $render_terms['taxonomy_term'];
+
+    $weight = 0;
+    foreach ($element['#options'] as $key => $choice) {
+      // Maintain order of options as defined in #options, in case the element
+      // defines custom option sub-elements, but does not define all option
+      // sub-elements.
+      $weight += 0.001;
+      $element += array($key => array());
+      // Generate the parents as the autogenerator does, so we will have a
+      // unique id for each radio button.
+      $parents_for_id = array_merge($element['#parents'], array($key));
+      // Render only the visible children of the render array, to prevent
+      // unneeded markup.
+      $render = array();
+      foreach (element_get_visible_children($render_terms[$key]) as $child) {
+        $render[$child] = $render_terms[$key][$child];
+      }
+      $output = drupal_render($render);
+
+      $default_value = isset($element['#default_value']) ? $element['#default_value'] : NULL;
+      // This is the currently selected radio, wrap the rendered term into
+      // a div with a special class so that it's themable.
+      if ($key == $default_value) {
+        $output = '<div class="description-selected">' . $output . '</div>';
+      }
+
+      $element[$key] += array(
+        '#type' => 'radio',
+        '#title' => $choice,
+        // The key is sanitized in drupal_attributes() during output from the
+        // theme function.
+        '#return_value' => $key,
+        '#default_value' => $default_value,
+        '#attributes' => $element['#attributes'],
+        '#parents' => $element['#parents'],
+        '#id' => drupal_html_id('edit-' . implode('-', $parents_for_id)),
+        '#ajax' => isset($element['#ajax']) ? $element['#ajax'] : NULL,
+        '#weight' => $weight,
+        '#description' => $output,
+      );
+    }
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_info()
+ */
+function commerce_fancy_attributes_field_formatter_info() {
+  return array(
+    'commerce_fancy_attributes_color' => array(
+      'label' => t('Color'),
+      'field types' => array('text'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function commerce_fancy_attributes_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  switch($display['type']) {
+    case 'commerce_fancy_attributes_color':
+      $element = array(
+        '#attached' => array(
+          'css' => array(
+            drupal_get_path('module', 'commerce_fancy_attributes') . '/commerce_fancy_attributes.css',
+          ),
+        ),
+      );
+      $title = entity_label($entity_type, $entity);
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          '#markup' => theme('commerce_fancy_attributes_color', array('title' => $title, 'hex' => $item['value'])),
+        );
+      }
+
+      return $element;
+      break;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_fancy_attributes_theme() {
+  return array(
+    'commerce_fancy_attributes_color' => array(
+      'variables' => array(
+        'title' => '',
+        'hex' => NULL,
+      ),
+    ),
+  );
+}
+
+/**
+ * Return a <div> tag representing the passed-in color.
+ *
+ * @param $variables
+ *   Variables available for this theming function:
+ *     - hex: Hex representation of the color to display.
+ *     - title: The name of the color, added as the title attribute.
+ * @return string
+ */
+function theme_commerce_fancy_attributes_color($variables) {
+  // Make sure the value is prefixed by #.
+  if (!substr($variables['hex'], 0, 1) == '#') {
+    $variables['hex'] = '#' . $variables['hex'];
+  }
+
+  return '<div title="' . $variables['title'] . '" style="background-color: ' . $variables['hex'] . ';" class="commerce-fancy-attributes-color"></div>';
+}

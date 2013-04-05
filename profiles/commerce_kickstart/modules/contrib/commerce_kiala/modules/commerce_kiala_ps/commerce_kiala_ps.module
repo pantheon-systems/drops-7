@@ -1,0 +1,1006 @@
+<?php
+
+/**
+ * @file
+ * Allows you to define any number of Kiala shipping services
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_kiala_ps_menu() {
+  $items = array();
+
+  $items['admin/commerce/orders/%commerce_order/kiala-packship-desktop-export'] = array(
+    'title' => 'P&S Desktop Export',
+    'page callback' => 'commerce_kiala_ps_desktop_order_export_page',
+    'page arguments' => array(3),
+    'access callback' => 'commerce_kiala_ps_desktop_order_export_page_access',
+    'access arguments' => array(3),
+    'type' => MENU_LOCAL_ACTION,
+    'weight' => 20,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );
+
+  $items['admin/commerce/orders/%commerce_order/kiala-packship-ws'] = array(
+    'title' => 'Pack and Ship',
+    'page callback' => 'commerce_kiala_ps_ws_order_page',
+    'page arguments' => array(3),
+    'access callback' => 'commerce_kiala_ps_ws_order_page_access',
+    'access arguments' => array(3),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 25,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'file' => 'includes/commerce_kiala_ps.admin.inc',
+  );
+  $items['admin/commerce/orders/%commerce_order/kiala-packship-ws/dashboard'] = array(
+    'title' => 'Dashboard',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'weight' => 0,
+  );
+
+  $items['admin/commerce/orders/%commerce_order/kiala-packship-ws/desktop-export'] = $items['admin/commerce/orders/%commerce_order/kiala-packship-desktop-export'];
+
+  $items['admin/commerce/orders/%commerce_order/kiala-packship-ws/logs/%commerce_kiala_ps_ws_log'] = array(
+    'title callback' => 'commerce_kiala_ps_ws_log_title',
+    'title arguments' => array(6),
+    'page callback' => 'commerce_kiala_ps_ws_log_view',
+    'page arguments' => array(6, 'administrator'),
+    'access callback' => 'commerce_kiala_ps_ws_log_access',
+    'access arguments' => array('view', 6),
+  );
+  $items['admin/commerce/orders/%commerce_order/kiala-packship-ws/logs/%commerce_kiala_ps_ws_log/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'weight' => 0,
+  );
+  $items['admin/commerce/orders/%commerce_order/kiala-packship-ws/logs/%commerce_kiala_ps_ws_log/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'commerce_kiala_ps_ws_log_delete_form_wrapper',
+    'page arguments' => array(3, 6),
+    'access callback' => 'commerce_kiala_ps_ws_log_access',
+    'access arguments' => array('delete', 6),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 10,
+    'file' => 'includes/commerce_kiala_ps.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_kiala_ps_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_kiala_ps') . '/includes/views',
+  );
+}
+
+/**
+ * Implementation of hook_action_info().
+ */
+function commerce_kiala_ps_action_info() {
+   $action = array(
+    'commerce_kiala_ps_bulk_export' => array(
+      'label' => t('Bulk export of Kiala orders'),
+      'type' => 'entity',
+      'aggregate' => TRUE,
+      'configurable' => FALSE,
+      'triggers' => array('any'),
+    ),
+ );
+ return $action;
+}
+
+/**
+ * Action function for commerce_kiala_ps_bulk_export.
+ */
+function commerce_kiala_ps_bulk_export(&$entities, $context = array()) {
+  $current_time = time();
+  // send response headers to the browser
+  drupal_add_http_header('Content-Type', 'text/csv');
+  drupal_add_http_header('Content-Disposition', 'attachment;filename=orders-' . format_date($current_time, 'custom', 'Ymd') . '.csv');
+
+  $fp = fopen('php://output', 'w');
+  $export_string = '';
+  foreach($entities as $entity){
+    if (!empty($export_string)) {
+      $export_string .= "\n";
+    }
+    $export_string .= commerce_kiala_ps_build_desktop_export(array($entity));
+  }
+  fputs($fp, $export_string);
+  fclose($fp);
+  drupal_exit('admin/commerce/orders/kiala');
+  return '';
+}
+
+/**
+ * Access callback for packship export page
+ */
+function commerce_kiala_ps_desktop_order_export_page_access($order) {
+  if (!user_access('administer kiala services')) {
+    return FALSE;
+  }
+
+  return commerce_kiala_ps_desktop_order_export_access($order, TRUE);
+}
+
+/**
+ * Returns TRUE if order can use Kiala P&S Desktop
+ */
+function commerce_kiala_ps_desktop_order_export_access($order, $exclude_warnings = FALSE) {
+  $settings = commerce_kiala_settings(array(
+    'include_passwords' => TRUE,
+  ));
+
+  // DENY if not basic pack ship order access
+  if (!commerce_kiala_ps_order_access($order, $exclude_warnings)) {
+    return FALSE;
+  }
+
+  // DENY if any warnings exist
+  if (empty($exclude_warnings)) {
+    $warnings = commerce_kiala_ps_desktop_order_warnings($order);
+    if (!empty($warnings)) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Returns an array of warnings for Pack & Ship WS for the given order
+ */
+function commerce_kiala_ps_desktop_order_warnings($order) {
+  $warnings = array();
+/** @todo: any specifc to the desktop ??? ****/
+  return $warnings;
+}
+
+/**
+ * Menu access callback for P&S web service page
+ */
+function commerce_kiala_ps_ws_order_page_access($order) {
+  if (!user_access('administer kiala packship ws')) {
+    return FALSE;
+  }
+
+  // return order access without weight check
+  return commerce_kiala_ps_ws_order_access($order, TRUE);
+}
+
+/**
+ * Returns TRUE if order can use Kiala P&S Web Service
+ */
+function commerce_kiala_ps_ws_order_access($order, $exclude_warnings = FALSE) {
+  $settings = commerce_kiala_settings(array(
+    'include_passwords' => TRUE,
+  ));
+
+  // DENY if packship type is not desktop
+  if (!isset($settings['packship_type']) || $settings['packship_type'] != 'ws') {
+    return FALSE;
+  }
+
+  // DENY if not enough information provided
+  if (empty($settings['packship_ws_sender_id']) || empty($settings['packship_ws_password']) ||
+      empty($settings['packship_ws_url'])) {
+    return FALSE;
+  }
+
+  // DENY if not basic pack ship order access
+  if (!commerce_kiala_ps_order_access($order, $exclude_warnings)) {
+    return FALSE;
+  }
+
+  // DENY if any warnings exist
+  if (empty($exclude_warnings)) {
+    $warnings = commerce_kiala_ps_ws_order_warnings($order);
+    if (!empty($warnings)) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Returns an array of warnings for Pack & Ship WS for the given order
+ */
+function commerce_kiala_ps_ws_order_warnings($order) {
+  $warnings = array();
+  $settings = commerce_kiala_settings();
+
+  // check against max weight
+  if (!empty($settings['packship_ws_max_weight'])) {
+    $weight = commerce_physical_order_weight($order, 'kg');
+    if (empty($weight['weight']) || $weight['weight'] > $settings['packship_ws_max_weight']) {
+      $warnings['max_weight'] = t('The weight of this order is over the maximum allowed @max_weight kg, current weight is @weight kg.', array(
+        '@weight' => sprintf("%01.3f", round($weight['weight'], 3)),
+        '@max_weight' => sprintf("%01.3f", round($settings['packship_ws_max_weight'], 3)),
+      ));
+    }
+  }
+
+  return $warnings;
+}
+
+/**
+ * Returns TRUE if order can use Kiala P&S
+ */
+function commerce_kiala_ps_order_access($order, $exclude_warnings = FALSE) {
+  if (empty($order->order_id)) {
+    return FALSE;
+  }
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // DENY if no kiala point associated with the order
+  $point_id = $order_wrapper->kiala_point_id->value();
+  if (empty($point_id)) {
+    return FALSE;
+  }
+
+  $settings = commerce_kiala_settings();
+
+  // DENY if no sender country
+  if (empty($settings['country'])) {
+    return FALSE;
+  }
+
+  // DENY if order has not completed checkout
+  if (!commerce_kiala_order_completed_date($order)) {
+    return FALSE;
+  }
+
+  // DENY if there is no order weight
+  $weight = commerce_physical_order_weight($order, 'kg');
+  if (empty($weight['weight'])) {
+    return FALSE;
+  }
+
+  // DENY if no recipient address
+  $recipient_address = commerce_kiala_order_recipient_addressfield($order);
+  if (empty($recipient_address) || empty($recipient_address['country']) ||
+      empty($recipient_address['postal_code']) || empty($recipient_address['last_name'])) {
+    return FALSE;
+  }
+
+  // DENY if any warnings exist
+  if (empty($exclude_warnings)) {
+    $warnings = commerce_kiala_ps_order_warnings($order);
+    if (!empty($warnings)) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Returns an array of warnings for Pack & Ship for the given order
+ */
+function commerce_kiala_ps_order_warnings($order) {
+  $warnings = array();
+  $recipient_address = commerce_kiala_order_recipient_addressfield($order);
+
+  // WARN if language mis-match
+  $language = language_default()->language;
+  if (!commerce_kiala_ps_language_combinations_match($language, $recipient_address['country'])) {
+    $warnings['language'] = t('Language is not supported in the recipient\'s country.');
+  }
+
+/** @todo: check from and to country combinations *********************/
+/*
+  if (FALSE) {
+    $warnings['language'] = t('Cannot ship to the recipient\'s country.');
+  }
+*/
+
+  return $warnings;
+}
+
+/*
+ * Render callback for packship export page
+ */
+function commerce_kiala_ps_desktop_order_export_page($order) {
+  $wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $export = $wrapper->kiala_packship_desktop_export->value();
+
+  if (is_string($export)) {
+    // Deliver the raw export text
+    drupal_add_http_header('Content-Type', 'text/csv');
+    drupal_add_http_header('Content-disposition', 'attachment; filename=order-' . $order->order_id . '.csv');
+    echo $export;
+  }
+  else {
+    foreach ($export['errors'] as $error_msg) {
+      drupal_set_message($error_msg, 'error');
+    }
+
+    return t('Export failed.');
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter()
+ */
+function commerce_kiala_ps_form_commerce_kiala_settings_form_alter(&$form, &$form_state, $form_id) {
+  $kiala_contact_mail = 'e-commerce@kiala.com';
+  $settings_info = commerce_kiala_settings_info();
+  $default_values = commerce_kiala_settings(array(
+    'include_passwords' => FALSE,
+    'decrypt' => TRUE,
+  ));
+  $password_hashes = commerce_kiala_settings(array(
+    'include_passwords' => TRUE,
+    'conditions' => array('password' => TRUE),
+  ));
+
+
+  $form['commerce_kiala_packship'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Pack and Ship'),
+    '#collapsible' => TRUE,
+    '#group' => 'groups',
+    '#weight' => 1,
+    '#description' => t('In order to use Pack and Ship, you must have an account with Kiala. You can contact Kiala at !mail', array('!mail' => $kiala_contact_mail)),
+  );
+  $form_packship = &$form['commerce_kiala_packship'];
+
+  $form_packship['packship_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Pack and Ship type'),
+    '#default_value' => isset($default_values['packship_type']) ? $default_values['packship_type'] : '',
+    '#required' => TRUE,
+    '#options' => array(
+      'desktop' => t('Desktop / Web (Kextranet)'),
+      'ws' => t('Web Service'),
+    ),
+    '#description' => t('In order to use Desktop or Web, please contact Kiala at !mail', array('!mail' => $kiala_contact_mail)),
+  );
+
+  $packship_active_states = array(
+    'ws' => array(
+      ':input[name*="packship_type"]' => array('value' => 'ws')
+    ),
+    'desktop' => array(
+      ':input[name*="packship_type"]' => array('value' => 'desktop')
+    ),
+  );
+
+
+  $form_packship['packship_ws'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Web Service Settings'),
+    '#states' => array(
+      'visible' => $packship_active_states['ws'],
+    ),
+  );
+  $form_packship['packship_ws']['packship_ws_sender_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Sender ID'),
+    '#default_value' => isset($default_values['packship_ws_sender_id']) ? $default_values['packship_ws_sender_id'] : '',
+    '#description' => t('Maximum 32 characters.'),
+    '#maxlength' => 32,
+    '#states' => array(
+      'required' => $packship_active_states['ws'],
+    ),
+  );
+  $form_packship['packship_ws']['packship_ws_password'] = array(
+    '#type' => 'password',
+    '#title' => t('Password'),
+    '#description' => t('Please leave blank if you do not want to update your password at this time.'),
+  );
+  if (empty($password_hashes['packship_ws_password'])) {
+    $form_packship['packship_ws']['packship_ws_password']['#states'] = array(
+      'required' => $packship_active_states['ws'],
+    );
+  }
+  $form_packship['packship_ws']['packship_ws_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API URL'),
+    '#default_value' => isset($default_values['packship_ws_url']) ? $default_values['packship_ws_url'] : '',
+    '#description' => t('The SOAP API url. Example: @url', array('@url' => $settings_info['packship_ws_url']['default'])),
+    //'#disabled' => TRUE,
+    '#states' => array(
+      'required' => $packship_active_states['ws'],
+    ),
+  );
+  $form_packship['packship_ws']['packship_ws_max_weight'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Max Weight'),
+    '#description' => t('If the parcel exceeds the maximum weight allowed by Kiala,
+        then Kiala will not be able to handle your shipments. To know the exact restrictions, please contact Kiala.<br />
+        Leave blank to ignore the max weight restriction.'),
+    '#field_suffix' => t('kg'),
+    '#default_value' => isset($default_values['packship_ws_max_weight']) ? $default_values['packship_ws_max_weight'] : '',
+    '#size' => 5,
+  );
+
+  if (!empty($default_values['packship_ws_params'])) {
+    $form_packship['packship_ws']['packship_ws_params'] = commerce_kiala_admin_settings_params_element($default_values['packship_ws_params']);
+  }
+
+
+  $form['#validate'][] = 'commerce_kiala_ps_settings_form_validate';
+}
+
+/**
+ * Validate callback for commerce_kiala_settings_form()
+ */
+function commerce_kiala_ps_settings_form_validate($form, &$form_state) {
+  $values = &$form_state['values'];
+
+  // get the stored passwords untouched from the database
+  $current_password_hashes = commerce_kiala_settings(array(
+    'include_passwords' => TRUE,
+    'decrypt' => FALSE,
+    'conditions' => array('password' => TRUE),
+  ));
+
+  // Pack & Ship conditional validation
+  if (isset($values['packship_type']) && $values['packship_type'] == 'ws') {
+    if ($values['packship_ws_max_weight'] != '') {
+      $max_weight = $values['packship_ws_max_weight'];
+      if (!is_numeric($max_weight) || $max_weight < 0) {
+        form_set_error('packship_ws_max_weight', t('Max weight must be a positive number.'));
+      }
+    }
+
+    if (empty($values['packship_ws_sender_id'])) {
+      form_set_error('packship_ws_sender_id', t('You must enter a Sender ID for the Pack & Ship Web Service.'));
+      return;
+    }
+
+    if (empty($values['packship_ws_password'])) {
+      if (empty($current_password_hashes['packship_ws_password'])) {
+        form_set_error('packship_ws_password', t('You must enter a password for the Pack & Ship Web Service.'));
+        return;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_kiala_ps_theme() {
+  return array(
+    'commerce_kiala_ps_ws_log' => array(
+      'variables' => array('log' => NULL, 'order' => NULL, 'view_mode' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_kiala_ps_permission() {
+  return array(
+    'administer kiala packship ws' => array(
+      'title' => t('Administer Kiala Pack & Ship web service'),
+      'description' => t('Allows users to perform any web service action for any order and view logs.'),
+      'restrict access' => TRUE,
+    ),
+    'view kiala packship ws logs' => array(
+      'title' => t('View Kiala Pack & Ship web service logs'),
+      'description' => t('Allows users to view the logs made to an order.'),
+      'restrict access' => TRUE,
+    ),
+    'create kiala packship ws logs' => array(
+      'title' => t('Create Kiala Pack & Ship web service logs'),
+      'description' => t('Allows users to create the logs made to an order.'),
+      'restrict access' => TRUE,
+    ),
+    'delete kiala packship ws logs' => array(
+      'title' => t('Delete Kiala Pack & Ship web service logs'),
+      'description' => t('Allows users to delete logs on orders they can access.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function commerce_kiala_ps_entity_info() {
+  $return['commerce_kiala_ps_ws_log'] = array(
+    'module' => 'commerce_kiala_ps',
+    'label' => t('Commerce Kiala PS web service log'),
+    'base table' => 'commerce_kiala_ps_ws_log',
+    'entity class' => 'CommerceKialaPSWSLogEntity',
+    'controller class' => 'CommerceKialaPSWSLogEntityController',
+    'metadata controller class' => 'CommerceKialaPSWSLogMetadataController',
+    'views controller class' => FALSE,
+    'rules controller class' => 'EntityDefaultRulesController',
+    'features controller class' => 'EntityDefaultFeaturesController',
+    'fieldable' => FALSE,
+    'exportable' => FALSE,
+    'entity keys' => array(
+      'id' => 'log_id',
+      'bundle' => 'method',
+      'label' => 'log_id',
+    ),
+    'bundle keys' => array(
+      'bundle' => 'method',
+    ),
+    'bundles' => array(
+      'createOrder' => array(
+        'label' => t('createOrder'),
+      ),
+    ),
+    'view modes' => array(
+      'administrator' => array(
+        'label' => t('Administrator'),
+        'custom settings' => FALSE,
+      ),
+    ),
+    'access callback' => 'commerce_kiala_ps_ws_log_access',
+    'load hook' => 'commerce_kiala_ps_ws_log_load',
+    'permission labels' => array(
+      'singular' => t('kiala packship ws log'),
+      'plural' => t('kiala packship ws logs'),
+    ),
+  );
+
+  return $return;
+}
+
+/**
+ * Returns a list of web service log statuses
+ */
+function commerce_kiala_ps_ws_log_status_options_list() {
+  $statuses = array(
+    'success' => t('Success'),
+    'error' => t('Error'),
+  );
+
+  return $statuses;
+}
+
+/**
+ * Load a single web service log entry
+ */
+function commerce_kiala_ps_ws_log_load($id) {
+  return entity_load_single('commerce_kiala_ps_ws_log', $id) ;
+}
+
+/**
+ * Menu item title callback: returns the web servicew log ID for its pages.
+ *
+ * @param $log
+ *   The log object as loaded via the URL wildcard.
+ * @return
+ *   A page title of the format "Web service log ##".
+ */
+function commerce_kiala_ps_ws_log_title($log) {
+  return t('Web service log @log_id', array('@log_id' => $log->log_id));
+}
+
+/**
+ * Generate an array for rendering the given log entity.
+ *
+ * @param $entity
+ *   An array of entities to render.
+ * @param $view_mode
+ *   A view mode as used by this entity type, e.g. 'full', 'teaser'...
+ * @param $langcode
+ *   (optional) A language code to use for rendering. Defaults to the global
+ *   content language of the current request.
+ * @param $page
+ *   (optional) If set will control if the entity is rendered: if TRUE
+ *   the entity will be rendered without its title, so that it can be embeded
+ *   in another context. If FALSE the entity will be displayed with its title
+ *   in a mode suitable for lists.
+ *   If unset, the page mode will be enabled if the current path is the URI
+ *   of the entity, as returned by entity_uri().
+ *   This parameter is only supported for entities which controller is a
+ *   EntityAPIControllerInterface.
+ * @return
+ *   The renderable array, keyed by the entity type and by entity identifiers,
+ *   for which the entity name is used if existing - see entity_id(). If there
+ *   is no information on how to view an entity, FALSE is returned.
+ */
+function commerce_kiala_ps_ws_log_view($entity, $view_mode = 'administrator', $langcode = NULL, $page = NULL) {
+  $entities = array($entity->log_id => $entity);
+  return entity_view('commerce_kiala_ps_ws_log', $entities, $view_mode, $langcode, $page);
+}
+
+/**
+ * Determines access for a variety of operations on web service logs.
+ *
+ * @param $op
+ *   The operation being performed, one of view, update, create, or delete.
+ * @param $log
+ *   The web service log to check.
+ * @param $account
+ *   The user account attempting the operation; defaults to the current user.
+ *
+ * @return
+ *   TRUE or FALSE indicating access for the operation.
+ */
+function commerce_kiala_ps_ws_log_access($op, $log, $account = NULL) {
+  if (isset($log->order_id)) {
+    $order = commerce_order_load($log->order_id);
+    if (!$order) {
+      return FALSE;
+    }
+  }
+  else {
+    $order = NULL;
+  }
+
+  return commerce_kiala_ps_ws_log_order_access($op, $order, $account);
+}
+
+/**
+ * Determines access for a variety of operations for web service logs on a given order.
+ *
+ * @param $op
+ *   The operation being performed, one of view, update, create, or delete.
+ * @param $order
+ *   The order to check against (optional if $op == 'create').
+ * @param $account
+ *   The user account attempting the operation; defaults to the current user.
+ *
+ * @return
+ *   TRUE or FALSE indicating access for the operation.
+ *
+ * @see commerce_payment_transaction_order_access()
+ */
+function commerce_kiala_ps_ws_log_order_access($op, $order, $account = NULL) {
+  global $user;
+
+  if (empty($account)) {
+    $account = clone($user);
+  }
+
+  // Grant administrators access to do anything.
+  if (user_access('administer kiala packship ws', $account)) {
+    return TRUE;
+  }
+
+  switch ($op) {
+    // Creating new logs.
+    case 'create':
+      if (user_access('create kiala packship ws logs', $account)) {
+        // We currently allow any user to create any log,
+        // regardless of the order, because entity_access() doesn't give us a
+        // way to discriminate on the order.
+        // @todo: find a way to prevent creating a log if the
+        // user doesn't have access to the order.
+        if (!isset($order) || commerce_order_access('update', $order, $account)) {
+          return TRUE;
+        }
+      }
+      break;
+
+    // Viewing payment transactions.
+    case 'view':
+      if (user_access('view kiala packship ws logs', $account)) {
+        if (commerce_order_access('view', $order, $account)) {
+          return TRUE;
+        }
+      }
+      break;
+
+    case 'update':
+      if (user_access('update kiala packship ws logs', $account)) {
+        if (commerce_order_access('view', $order, $account)) {
+          return TRUE;
+        }
+      }
+      break;
+
+    case 'delete':
+      if (user_access('delete kiala packship ws logs', $account)) {
+        if (commerce_order_access('update', $order, $account)) {
+          return TRUE;
+        }
+      }
+      break;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Theme for commerce_kiala_ps_ws_log
+ */
+function theme_commerce_kiala_ps_ws_log($vars) {
+  if (empty($vars['log']) || empty($vars['log']->log_id)) {
+    return '';
+  }
+
+  $log = $vars['log'];
+  return drupal_render(commerce_kiala_ps_ws_log_view($log, 'administrator', NULL, TRUE));
+}
+
+/**
+ * Order metadata callback
+ */
+function commerce_kiala_ps_order_property_get($entity, array $options, $name) {
+  switch ($name) {
+    case 'kiala_packship_desktop_export_access':
+      return commerce_kiala_ps_desktop_order_export_access($entity);
+
+    case 'kiala_packship_ws_access':
+      return commerce_kiala_ps_ws_order_access($entity);
+
+    case 'kiala_packship_desktop_export':
+      // This will either return a string or an errors array.
+      return commerce_kiala_ps_build_desktop_export(array($entity));
+  }
+}
+
+/**
+ * Build the export string for a list of orders
+ *
+ * @param type $orders
+ * @return type
+ */
+function commerce_kiala_ps_build_desktop_export($orders) {
+  $settings = commerce_kiala_settings();
+  $countries_enabled = $settings['shipping_countries_enabled'];
+
+  // In the export values are keyed only by position, so this mapping makes it
+  // possible to keep track of things by name.
+  $map = array(
+    'partnerId',
+    'partnerBarcode',
+    'parcelNumber',
+    'orderNumber',
+    'orderDate',
+    'invoiceNumber',
+    'invoiceDate',
+    'shipmentNumber',
+    'CODAmount',
+    'commercialValue',
+    'parcelWeight',
+    'parcelVolume',
+    'parcelDescription',
+    'customerId',
+    'customerName',
+    'customerFirstname',
+    'customerTitle',
+    'customerStreet',
+    'customerStreetnumber',
+    'customerExtraAddressLine',
+    'customerZip',
+    'customerCity',
+    'customerLocality',
+    'customerLanguage',
+    'customerPhone1',
+    'customerPhone2',
+    'customerPhone3',
+    'customerEmail1',
+    'customerEmail2',
+    'customerEmail3',
+    'positiveNotificationRequested',
+    'kialaPoint',
+    'backupKialaPoint',
+  );
+
+  $output_string = '';
+
+  foreach ($orders as $order) {
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    // partnerId
+    $export['partnerId'] = $settings['dspid'];
+
+    // parcelNumber
+    $export['parcelNumber'] = $settings['packship_plugin_number_prefix'];
+
+    // orderNumber
+    $export['orderNumber'] = $order->order_id;
+
+    // orderDate
+    $timestamp = commerce_kiala_order_completed_date($order);
+
+    if (!$timestamp) {
+      $errors[] = t('The customer has not completed checkout for this order.');
+    }
+    else {
+      $export['orderDate'] = date('Ymd', $timestamp);
+    }
+
+    // CODAmount. Set to zero because commerce customer will just be paying for
+    // everything online.
+    $export['CODAmount'] = '0.00';
+
+    // commercialValue (order total amount)
+    $amount = commerce_currency_amount_to_decimal($wrapper->commerce_order_total->amount->value(), commerce_default_currency());
+    $export['commercialValue'] = number_format((float)$amount, 2, '.', '');
+
+    // parcelWeight
+    $weight = commerce_physical_order_weight($order, 'kg');
+
+    $export['parcelWeight'] = number_format((float)$weight['weight'], 3, '.', '');
+
+    //parcelVolume (liters i.e. 1000 cc)
+    $volume = commerce_physical_order_volume($order, 'cm');
+    $liters = $volume['volume'] / 1000;
+    $export['parcelVolume'] = number_format((float)$liters, 3, '.', '');
+
+    // Customer fields
+    if (!empty($order->commerce_customer_shipping)) {
+      $export['customerId'] = $wrapper->commerce_customer_shipping->profile_id->value();
+
+      $address = $wrapper->commerce_customer_shipping->commerce_customer_address->value();
+      $export['customerName'] = commerce_kiala_ps_parse_name($address['name_line']);
+      $export['customerStreet'] = $address['thoroughfare'];
+      $export['customerExtraAddressLine'] = $address['premise'];
+      $export['customerZip'] = $address['postal_code'];
+      $export['customerCity'] = $address['locality'];
+
+      // customerLanguage (DSP language)
+      if (commerce_kiala_ps_language_combinations_match(language_default()->language, $address['country'])) {
+        $export['customerLanguage'] = language_default()->language;
+      }
+      else {
+        $errors[] = t('Language is not supported.');
+      }
+    }
+    else {
+      $errors[] = t('No shipping profile found.');
+    }
+
+    // customerEmail1
+    $export['customerEmail1'] = $order->mail;
+
+    // positiveNotificationRequested @TODO opt-in field
+    $export['positiveNotificationRequested'] = 'yes';
+
+    // kialaPoint
+    $export['kialaPoint'] = $wrapper->kiala_point_id->value();
+
+    // Allow modules to add to the export
+    drupal_alter('commerce_kiala_ps_desktop_export', $export, $order);
+
+    // Fill in missing values and sort by mapping order
+    foreach ($map as $key) {
+      if (isset($export[$key])) {
+        // Check for illegal characters
+        if (strstr($export[$key], '|')) {
+          $errors[] = t('Pipe character found in data, please remove and reinitiate export');
+          break;
+        }
+        $output[] = $export[$key];
+      }
+      else {
+        $output[] = '';
+      }
+    }
+
+    if (isset($errors)) {
+      return array('errors' => $errors);
+    }
+  }
+
+  // Convert to string
+  $string = implode('|', $output);
+  $string .= '|';
+  return $string;
+}
+
+function commerce_kiala_ps_commerce_physical_product_line_item_weight_alter(&$weight, $line_item) {
+  // If no weight is set for a product, assume 1kg
+  // @TODO: Add field on admin form to store default value
+  if (empty($weight)) {
+      $weight['unit'] = 'kg';
+      $weight['weight'] = 1.000;
+      $weight['weight'] *= $line_item->quantity;
+  }
+}
+
+/**
+ * Kiala P&S Web Service request
+ *
+ * @param $order
+ *  An order object
+ *
+ * @return
+ *  A P&S Web Service response object
+ */
+function commerce_kiala_ps_ws_ping_create_order($order) {
+  $method = 'createOrder';
+  $handler = new CommerceKialaPSWS($order);
+  $response = $handler->sendRequest($method);
+
+  $log_values = array(
+    'order_id' => $order->order_id,
+    'method' => $method,
+    'response' => $response,
+  );
+
+  if (isset($response->trackingNumber)) {
+    $log_values['tracking_number'] = $response->trackingNumber;
+  }
+
+  entity_create('commerce_kiala_ps_ws_log', $log_values)->save();
+
+  return $response;
+}
+
+/**
+ * Return an address name line string in "lastname firstname" format.
+ *
+ * @param type $name
+ * @return type
+ */
+function commerce_kiala_ps_parse_name($name) {
+  // For common 2 part space separated names
+  $parts = explode(' ', $name);
+
+  if (count($parts) == 2) {
+    return $parts[1] . ' ' . $parts[0];
+  }
+
+  // Otherwise just leave as is.
+  return $name;
+}
+
+/**
+ * Return a list of support packship language-country combinations
+ *
+ * @return array
+ * @ref http://packandship.kiala.com/desktop/doc/technical/description-of-import-fields.html
+ */
+function commerce_kiala_ps_language_combinations() {
+  return array(
+    'fr' => array('BE', 'FR'),
+    'nl' => array('NL', 'BE'),
+    'es' => array('ES'),
+    'ca' => array('ES'),
+    'de' => array('AT'),
+    'ru' => array('RU'),
+    'en' => array('FR', 'BE', 'NL', 'ES', 'AT', 'RU')
+  );
+}
+
+/**
+ * Determine whether a language and a country may be exported together.
+ *
+ * @param type $lang_code
+ * @param type $country_code
+ * @return type
+ */
+function commerce_kiala_ps_language_combinations_match($lang_code, $country_code) {
+  $combinations = commerce_kiala_ps_language_combinations();
+
+  if (isset($combinations[$lang_code]) && in_array($country_code, $combinations[$lang_code])) {
+    return TRUE;
+  }
+}
+
+/**
+ * Fetch the date when the order became checkout complete
+ *
+ * @param type $order
+ * @return type
+ */
+function commerce_kiala_order_completed_date($order) {
+  $results =
+    db_select('commerce_order_revision', 'c')
+    ->fields('c', array('revision_timestamp'))
+    ->condition('c.status', 'checkout_complete')
+    ->condition('c.order_id', $order->order_id)
+    ->orderBy('c.revision_timestamp')
+    ->range(0,1)
+    ->execute()
+    ->fetchAll();
+
+  if (!empty($results)) {
+    $revision = reset($results);
+    return $revision->revision_timestamp;
+  }
+}

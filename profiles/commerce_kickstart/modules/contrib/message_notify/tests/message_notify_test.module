@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * Test module for Message notify.
+ */
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function message_notify_test_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'message_notify') {
+    return 'plugins/' . $plugin;
+  }
+}

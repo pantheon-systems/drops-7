@@ -1,0 +1,120 @@
+<?php
+
+/**
+ * @file
+ * Provides Kickstart-specific blocks and menus.
+ */
+
+include_once 'commerce_kickstart_block.features.inc';
+
+/**
+ * Implements hook_block_info().
+ *
+ * This hook declares what blocks are provided by the module.
+ */
+function commerce_kickstart_block_block_info() {
+  if (variable_get('commerce_kickstart_demo_store', FALSE)) {
+    $blocks['shipping_discount'] = array(
+      'info' => t('Shipping discount'),
+      'weight' => '0',
+      'cache' => DRUPAL_CACHE_PER_ROLE,
+    );
+    $blocks['promotional_banner'] = array(
+      'info' => t('Promotional banner'),
+      'weight' => '0',
+      'cache' => DRUPAL_CACHE_PER_ROLE,
+    );
+  }
+  $blocks['powered_drupal_commerce'] = array(
+    'info' => t('Powered by Drupal Commerce'),
+    'weight' => '0',
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  );
+  $blocks['proudly_built_by_cg'] = array(
+    'info' => t('Proudly built by Commerce Guys'),
+    'weight' => '0',
+    'cache' => DRUPAL_CACHE_PER_ROLE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * This hook generates the contents of the blocks themselves.
+ */
+function commerce_kickstart_block_block_view($delta = '') {
+  $block = array(
+    'subject' => NULL,
+    'content' => NULL,
+  );
+
+  switch ($delta) {
+    case 'shipping_discount':
+      $amount = '99';
+      $items = array(
+        commerce_kickstart_block_build_element(t('<span><em>Free</em> shipping</span> on orders over'), 'shipping_message'),
+        commerce_kickstart_block_build_element(t('@amount', array('@amount' => commerce_currency_format($amount, commerce_default_currency()))), 'shipping_currency'),
+      );
+      $block['content'] = commerce_kickstart_block_build_element(implode('', $items), 'shipping', NULL, 'div');
+      break;
+
+    case 'promotional_banner':
+      $items = array(
+        commerce_kickstart_block_build_element(t('SAVE 25%'), NULL, 'promotional_banner_saving'),
+        t('Purchases made between June 5 - 12 will be discounted'),
+        commerce_kickstart_block_build_element(t('Offer Details'), NULL, 'promotional_banner_special_offer'),
+      );
+      $block['content'] = commerce_kickstart_block_build_element(implode(' ', $items), 'promotional_banner', NULL, 'div');
+      break;
+
+    case 'powered_drupal_commerce':
+      $content = t('Powered by <a href="@url">Drupal Commerce</a>', array('@url' => 'http://www.drupalcommerce.org'));
+      $block['content'] = commerce_kickstart_block_build_element($content, 'powered_by_drupal_commerce');
+      break;
+
+    case 'proudly_built_by_cg':
+      $items = array(
+        commerce_kickstart_block_build_element(t('Proudly built by'), 'footer-credit-message', 'message', 'div'),
+        commerce_kickstart_block_build_element(t('<a href="@url">Commerce Guys</a>', array('@url' => 'http://www.commerceguys.com')), 'footer-credit-logo', 'logo', 'div'),
+      );
+      $block['content'] = commerce_kickstart_block_build_element(implode(' ', $items), 'credit', 'clearfix', 'div');
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function commerce_kickstart_block_preprocess_page(&$variables) {
+  if (drupal_is_front_page()) {
+    // Remove the title from this page.
+    $variables['title'] = '';
+  }
+  if (arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2))) {
+    // Remove collection_taxonomy_term view title.
+    $variables['title'] = '';
+ }
+}
+
+/**
+ * Build an HTML element.
+ *
+ * @param $content
+ *   The element contents.
+ * @param $id
+ *   The element id attribute.
+ * @param $class
+ *   The element class attribute.
+ * @param $type
+ *   The element type.
+ *
+ * @return
+ *   The HTML element string.
+ */
+function commerce_kickstart_block_build_element($content, $id = NULL, $class = NULL, $type = 'span') {
+  $id = $id ? "id=\"$id\"" : '';
+  $class = $class ? "class=\"$class\"" : '';
+  return "<$type $id $class>$content</$type>";
+}

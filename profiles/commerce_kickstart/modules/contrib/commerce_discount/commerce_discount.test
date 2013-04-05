@@ -1,0 +1,396 @@
+<?php
+
+/**
+ * @file
+ * Commerce Discounts tests.
+ */
+
+/**
+ * Base class for commerce discount tests.
+ */
+class CommerceDiscountTestBase extends CommerceBaseTestCase {
+  /**
+   * Dummy commerce_product and related product node.
+   */
+  protected $product;
+  protected $product_node;
+
+  /**
+   * Overrides CommerceBaseTestCase::permissionBuilder().
+   */
+  protected function permissionBuilder($set) {
+    $permissions = parent::permissionBuilder($set);
+
+    switch ($set) {
+      case 'store admin':
+      case 'site admin':
+        $permissions[] = 'administer commerce discounts';
+        break;
+    }
+
+    return $permissions;
+  }
+
+  /**
+   * Implementation of setUp().
+   *
+   * @param $sub_module
+   *   Used by inherting classes to turn themselves on.
+   */
+  public function setUp($sub_module = FALSE) {
+    // Enable all commerce modules + commerce_discount.
+    $modules = parent::setUpHelper('all');
+    $modules[] = 'commerce_discount';
+    if ($sub_module) {
+      $modules[] = $sub_module;
+    }
+    parent::setUp($modules);
+
+    // User creation for different operations.
+    $this->store_admin = $this->createStoreAdmin();
+    $this->store_customer = $this->createStoreCustomer();
+
+    // Create a dummy product.
+    $this->product = $this->createDummyProduct('PROD-01', 'Product One', 1000);
+
+    // Create a dummy product display content type.
+    $this->createDummyProductDisplayContentType();
+
+    // Create a product display node.
+    $this->product_node = $this->createDummyProductNode(array($this->product->product_id), 'Product One node');
+
+    // Set the default country to US.
+    variable_set('site_default_country', 'US');
+  }
+
+  /**
+   * Create a discount.
+   *
+   * @param $discount_type
+   *   The discount type; Either 'order_discount' or 'product_discount'.
+   * @param $offer_type
+   *   The discount offer type; Either 'fixed_amount' or 'percentage'.
+   * @param $amount
+   *   The discount offer amount.
+   * @param $name
+   *   Discount name - Optional.
+   *
+   * @return
+   *   The newly created commerce_discount entity.
+   */
+  protected function createDiscount($discount_type, $offer_type, $amount, $name = '') {
+    // Create the discount offer.
+    $commerce_discount_offer = entity_create('commerce_discount_offer', array('type' => $offer_type));
+    $wrapper = entity_metadata_wrapper('commerce_discount_offer', $commerce_discount_offer);
+    switch ($offer_type) {
+      case 'fixed_amount':
+        $wrapper->commerce_fixed_amount->amount->set($amount);
+        $wrapper->commerce_fixed_amount->currency_code->set('USD');
+        break;
+
+      case 'percentage':
+        $wrapper->commerce_percentage->set($amount);
+        break;
+    }
+    $wrapper->save();
+
+    // Provide default name.
+    $name = $name ? $name : $discount_type . '_' . $offer_type;
+
+    // Create the discount.
+    $values = array(
+      'name' => $name,
+      'label' => $name,
+      'type' => $discount_type,
+      'enabled' => TRUE,
+      'status' => TRUE,
+    );
+    $commerce_discount = entity_create('commerce_discount', $values);
+    $wrapper = entity_metadata_wrapper('commerce_discount', $commerce_discount);
+    $wrapper->commerce_discount_offer->set($commerce_discount_offer);
+    $wrapper->save();
+
+    return $wrapper->value();
+  }
+}
+
+
+/**
+ * Testing commerce discounts UI and functionality.
+ */
+class CommerceDiscountTest extends CommerceDiscountTestBase {
+  /**
+   * Implementation of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Discounts',
+      'description' => 'Test discounts UI and functionality',
+      'group' => 'Commerce discounts',
+    );
+  }
+
+  /**
+   * Access to commerce discounts admin.
+   */
+  public function testCommerceDiscountUIAccessDiscountsListing() {
+    // Login with customer.
+    $this->drupalLogin($this->store_customer);
+    // Check the access to the profiles listing.
+    $this->drupalGet('admin/commerce/store/discounts');
+    $this->assertResponse(403, t('The store customer has no access to discounts administration.'));
+
+    // Login with store admin.
+    $this->drupalLogin($this->store_admin);
+    // Check the access to the profiles listing.
+    $this->drupalGet('admin/commerce/store/discounts');
+    $this->assertResponse(200, t('The store admin has access to discounts administration.'));
+
+    // Check the message of no discounts available.
+    $this->assertText(t('No discounts found.'), t('\'No discounts found.\' message is displayed'));
+    // Check the add customer profile link.
+    $this->assertRaw(l('Add discount', 'admin/commerce/store/discounts/add'), t('\'Add discount\' link is present in the page'));
+  }
+
+  /**
+   * Test the add discount UI.
+   */
+  public function testCommerceDiscountUIAddDiscount() {
+    // Login with normal user.
+    $this->drupalLogin($this->store_customer);
+
+    // Access to the admin discount creation page.
+    $this->drupalGet('admin/commerce/store/discounts/add');
+
+    $this->assertResponse(403, t('Normal user is not able to add a discount using the admin interface'));
+
+    // Login with store admin.
+    $this->drupalLogin($this->store_admin);
+
+    // Access to the admin discount creation page.
+    $this->drupalGet('admin/commerce/store/discounts/add');
+
+    $this->assertResponse(200, t('Store admin user is allowed to add a discount using the admin interface'));
+
+    // Check the integrity of the add form.
+    $this->assertFieldByName('commerce_discount_type', NULL, t('Discount type field is present'));
+    $this->assertFieldByName('label', NULL, t('Label field is present'));
+    $this->assertFieldByName('commerce_discount_fields[commerce_discount_offer][und][form][type]', NULL, t('Offer type field is present'));
+    $this->assertFieldByName('commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]', NULL, t('Amount field is present'));
+    $this->assertFieldByName('enabled', NULL, t('Status field is present'));
+    $this->assertFieldById('edit-submit', t('Save discount'), t('Save discount button is present'));
+
+    // Try to save the product and check validation messages.
+    $this->drupalPost(NULL, array(), t('Save discount'));
+
+    $this->assertText(t('Admin title field is required.'), t('Validation message for missing label.'));
+    $this->assertText(t('Machine-readable name field is required.'), t('Validation message for missing machine-name.'));
+    $this->assertText(t('Fixed amount field is required.'), t('Validation message for missing amount.'));
+
+    // Load a clean discount add form.
+    $this->drupalGet('admin/commerce/store/discounts/add');
+    // Create a discount.
+    $values = array(
+      'label' => 'Order discount - fixed',
+      'name' => 'order_discount_fixed',
+      'commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]' => 12.77,
+    );
+    $this->drupalPost(NULL, $values, t('Save discount'));
+
+    // Load the discount and wrap it.
+    $discount = entity_load_single('commerce_discount', 1);
+    $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+
+    // Check the stored discount.
+    $this->assertTrue($discount->label == $values['label'], t('Label stored correctly.'));
+    $this->assertTrue($discount->name == 'discount_' . $values['name'], t('Name stored correctly.'));
+    $this->assertTrue($discount->enabled == 1, t('Enabled stored correctly.'));
+
+    $this->assertTrue($wrapper->commerce_discount_offer->type->value() == 'fixed_amount', t('Offer type stored correctly.'));
+    $this->assertTrue($wrapper->commerce_discount_offer->commerce_fixed_amount->amount->value() == 1277, t('Amount stored correctly.'));
+
+    // Check the discounts listing
+    $this->assertTrue($this->url == url('admin/commerce/store/discounts', array('absolute' => TRUE)), t('Landing page after save is the discounts list.'));
+    $this->assertText($values['label'], t('Label of the discount is present.'));
+  }
+
+  /**
+   * Test the importing of commerce discounts.
+   */
+  public function testCommerceDiscountImport() {
+    // Login store admin.
+    $this->drupalLogin($this->store_admin);
+
+    // Access to the admin discount creation page.
+    $this->drupalGet('admin/commerce/store/discounts/import');
+    $this->assertResponse(200, t('Store admin is allowed in the discounts import page'));
+
+    $exported_discount = '{
+  "name" : "pf",
+  "label" : "PF",
+  "type" : "product_discount",
+  "enabled" : "1",
+  "commerce_discount_offer" : {
+    "type" : "fixed_amount",
+    "commerce_fixed_amount" : { "und" : [
+        {
+          "amount" : "1200",
+          "currency_code" : "USD",
+          "data" : { "components" : [] }
+        }
+      ]
+    },
+    "rdf_mapping" : []
+  },
+  "rdf_mapping" : []
+}';
+
+    // Import the discount.
+    $this->drupalPost(NULL, array('import' => $exported_discount), t('Import'));
+
+    // Export the discount to make sure it's identical to the import string.
+    $discount = entity_load_single('commerce_discount', 1);
+    $export = entity_export('commerce_discount', $discount);
+    $this->assertTrue($exported_discount == $export, t('Exported discount is identical to its origin.'));
+  }
+
+  /**
+   * Test fixed order discounts.
+   */
+  public function testCommerceDiscountFixedOrderDiscount() {
+    // Testing fixed discount.
+    // Create a fixed order discount of $3.
+    $discount = $this->createDiscount('order_discount', 'fixed_amount', 300);
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'complete');
+
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    // Check if the discount was applied on the order total price.
+    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 700, t('Fixed order discount is deducted correctly.'));
+
+    // Disable the discount.
+    $discount->enabled = FALSE;
+    entity_save('commerce_discount', $discount);
+
+    // Resave the order.
+    // Check if the discount was applied on the order total price.
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $wrapper->save();
+
+    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 1000, t('Fixed order discount is removed when it\'s not appliable.'));
+  }
+
+  /**
+   * Test percentage order discounts.
+   */
+  public function testCommerceDiscountPercentageOrderDiscount() {
+    // Testing percentage discount.
+    // Create a percentage order discount of 5%.
+    $discount = $this->createDiscount('order_discount', 'percentage', 5);
+    // Create a completed order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'complete');
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    // Check if the discount was applied on the order total price.
+    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 950, t('Percentage order discount is deducted correctly.'));
+
+    // Disable the discount.
+    $discount->enabled = FALSE;
+    entity_save('commerce_discount', $discount);
+
+    // Resave the order.
+    // Check if the discount was applied on the order total price.
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $wrapper->save();
+
+    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 1000, t('Percentage order discount is removed when it\'s not appliable.'));
+  }
+
+  /**
+   * Test fixed product discounts.
+   */
+  public function testCommerceDiscountFixedProductDiscount() {
+    $discount = $this->createDiscount('product_discount', 'fixed_amount', 300);
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'complete');
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    // Invoke line item price re-calculation.
+    $line_item = $wrapper->commerce_line_items->get(0)->value();
+    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
+
+    // Check if the discount was added as a component to the line item.
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $price_data = $line_item_wrapper->commerce_unit_price->data->value();
+
+    $this->assertTrue($price_data['components'][1]['price']['amount'] == -300, t('Fixed product discount is added as a price compoennt to the line item.'));
+  }
+
+  /**
+   * Test percentage product discounts.
+   */
+  public function testCommerceDiscountPercentageProductDiscount() {
+    $discount = $this->createDiscount('product_discount', 'percentage', 5);
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'complete');
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    // Invoke line item price re-calculation.
+    $line_item = $wrapper->commerce_line_items->get(0)->value();
+    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
+
+    // Check if the discount was added as a component to the line item.
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $price_data = $line_item_wrapper->commerce_unit_price->data->value();
+
+    $this->assertTrue($price_data['components'][1]['price']['amount'] == -50, t('Percentage product discount is added as a price compoennt to the line item.'));
+  }
+
+  /**
+   * Test discounted product price display.
+   */
+  public function testCommerceDiscountDiscountedProductPriceDisplay() {
+    // Create a product dicount.
+    $discount = $this->createDiscount('product_discount', 'fixed_amount', 300);
+    $formatted_discounted_price = '$7.00';
+
+    // Log as a normal user.
+    $this->drupalLogin($this->store_customer);
+
+    $nid = $this->product_node->nid;
+    // View a product node.
+    $this->drupalGet("node/$nid");
+    $product_price = $this->xpath('//div[contains(@class, "field-name-commerce-price")]/div[contains(@class, "field-item")]');
+    $this->assertTrue(trim((string)$product_price[0]->div) == $formatted_discounted_price, t('Discounted product price is shown on product page.'));
+
+    // Add a product to the cart.
+    $this->drupalPost('node/' . $this->product_node->nid, array(), t('Add to cart'));
+
+    // View the cart.
+    $this->drupalGet('cart');
+    $product_price = $this->xpath('//td[contains(@class, "views-field-commerce-unit-price")]');
+    $this->assertTrue(trim((string)$product_price[0]->{0}) == $formatted_discounted_price, t('Discounted product price is shown on the cart.'));
+  }
+
+  /**
+   * Test multiple fixed order discounts.
+   */
+  public function testCommerceDiscountMultipleFixedOrderDiscounts() {
+    // Create two discounts.
+    $discount = $this->createDiscount('order_discount', 'fixed_amount', 300, 'of1');
+    $discount = $this->createDiscount('order_discount', 'fixed_amount', 200, 'of2');
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'complete');
+
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    $this->assertTrue($wrapper->commerce_discounts->count() == 2, t('2 discounts are listed as applied on the order.'));
+    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 500, t('Two fixed order discounts are applied on the total price.'));
+    $this->assertTrue($wrapper->commerce_line_items->count() == 3, t('An order with one product and two fixed order discounts has three line items.'));
+    $wrapper->save();
+    $this->assertTrue($wrapper->commerce_line_items->count() == 3, t('After updating the order it still has three line items.'));
+  }
+}

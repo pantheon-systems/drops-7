@@ -1,0 +1,18 @@
+.rrp-total{
+  color:gray;
+  text-decoration:line-through;
+}
+
+.webprice-total{
+  color:red;
+  font-weight:bold;
+}
+
+.commerce-price-rrp-your-price tr.even, .commerce-price-rrp-your-price tr.odd{
+  background: none;
+  border-bottom: none;
+}
+
+.views-field-commerce-price table.commerce-price-rrp-your-price{
+  margin: 0 auto;
+}

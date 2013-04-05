@@ -1,0 +1,13 @@
+name = "Commerce product crud test"
+description = "Support module for product related testing."
+package = Testing
+version = VERSION
+core = 7.x
+hidden = TRUE
+
+; Information added by drupal.org packaging script on 2013-02-13
+version = "7.x-1.5"
+core = "7.x"
+project = "commerce"
+datestamp = "1360749319"
+

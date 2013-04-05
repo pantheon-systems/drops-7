@@ -1,0 +1,19 @@
+<?php
+/**
+ * @file
+ * Sets a status message when DFP is enabled.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_kickstart_dfp_enable() {
+  // Only display the message if the activation of the module is done after the
+  // installation of the distribution.
+  if (variable_get('install_task') == 'done') {
+    if (!variable_get('commerce_kickstart_dfp_eula', FALSE)) {
+      $t = get_t();
+      drupal_set_message($t('The Commerce Kickstart DFP module requires you to accept the !eula before displaying content.', array('!eula' => l('Privacy Policy and User Agreement','admin/config/services/dfp'))), 'warning');
+    }
+  }
+}

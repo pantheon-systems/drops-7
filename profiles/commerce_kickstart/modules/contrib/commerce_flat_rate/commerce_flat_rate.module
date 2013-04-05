@@ -1,0 +1,284 @@
+<?php
+
+/**
+ * @file
+ * Allows you to define any number of flat rate shipping services for customers
+ * to choose during checkout.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_flat_rate_menu() {
+  $items = array();
+
+  $items['admin/commerce/config/shipping/methods/flat-rate/add'] = array(
+    'title' => 'Add a flat rate service',
+    'description' => 'Create a new flat rate shipping service, including a title and base shipping rate.',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('admin/commerce/config/shipping/services/flat-rate/add'),
+    'access callback' => 'commerce_flat_rate_service_access',
+    'access arguments' => array('create'),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 8,
+  );
+
+  $items['admin/commerce/config/shipping/services/flat-rate/add'] = array(
+    'title' => 'Add a flat rate service',
+    'description' => 'Create a new flat rate shipping service, including a title and base shipping rate.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_flat_rate_service_form', commerce_flat_rate_service_new()),
+    'access callback' => 'commerce_flat_rate_service_access',
+    'access arguments' => array('create'),
+    'type' => MENU_LOCAL_ACTION,
+    'context' => MENU_CONTEXT_PAGE,
+    'file' => 'includes/commerce_flat_rate.admin.inc',
+  );
+
+  foreach (commerce_shipping_services('flat_rate') as $name => $shipping_service) {
+    // Convert underscores to hyphens for the menu item argument.
+    $service_name_arg = 'flat-rate-' . strtr($name, '_', '-');
+
+    $items['admin/commerce/config/shipping/services/' . $service_name_arg . '/edit'] = array(
+      'title' => 'Edit',
+      'description' => 'Edit the flat rate service.',
+      'page callback' => 'commerce_flat_rate_service_edit_page',
+      'page arguments' => array($name),
+      'access callback' => 'commerce_flat_rate_service_access',
+      'access arguments' => array('update'),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE,
+      'weight' => 0,
+      'file' => 'includes/commerce_flat_rate.admin.inc',
+    );
+
+    $items['admin/commerce/config/shipping/services/' . $service_name_arg . '/delete'] = array(
+      'title' => 'Delete',
+      'description' => 'Delete the flat rate service.',
+      'page callback' => 'commerce_flat_rate_service_delete_page',
+      'page arguments' => array($name),
+      'access callback' => 'commerce_flat_rate_service_access',
+      'access arguments' => array('delete'),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE,
+      'weight' => 10,
+      'file' => 'includes/commerce_flat_rate.admin.inc',
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Access callback: grants users access to flat rate service operations if they
+ * have the specific flat rate permission or generic shipping permission.
+ *
+ * @param $op
+ *   The operation string: of create, update, or delete.
+ *
+ * @return
+ *   Boolean indicating the user's access.
+ */
+function commerce_flat_rate_service_access($op) {
+  return user_access('administer shipping') || user_access('administer flat rate services');
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_flat_rate_permission() {
+  return array(
+    'administer flat rate services' => array(
+      'title' => t('Administer flat rate shipping services.'),
+      'description' => t('Allows users to create, edit and delete flat rate shipping services.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_shipping_method_info().
+ */
+function commerce_flat_rate_commerce_shipping_method_info() {
+  return array(
+    'flat_rate' => array(
+      'title' => t('Flat rate'),
+      'description' => t('Lets you create flat rate services, specifying their base rates and using Rules to apply additional rate calculation logic.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info().
+ */
+function commerce_flat_rate_commerce_shipping_service_info() {
+  $services = array();
+
+  // Look for flat rate services currently defined in the database.
+  $result = db_query('SELECT * FROM {commerce_flat_rate_service}')->fetchAllAssoc('name', PDO::FETCH_ASSOC);
+
+  if (!empty($result)) {
+    foreach ($result as $name => $service) {
+      // Create a base rate price array for the service
+      $base_rate = array(
+        'amount' => $service['amount'],
+        'currency_code' => $service['currency_code'],
+        'data' => array(),
+      );
+
+      // Unserialize the data array for the service.
+      $data = !empty($service['data']) ? unserialize($service['data']) : array();
+
+      $price_component_type = 'flat_rate_' . $name;
+
+      // If the data array specifies an included tax, include it now.
+      if (module_exists('commerce_tax') && !empty($data['include_tax']) && $tax_rate = commerce_tax_rate_load($data['include_tax'])) {
+        // Reverse apply the tax.
+        $tax_amount = $base_rate['amount'] - ($base_rate['amount'] / (1 + $tax_rate['rate']));
+        $tax_amount = commerce_tax_rate_round_amount($tax_rate, $tax_amount);
+
+        // Add a base price to the data array.
+        $component = array(
+          'amount' => $base_rate['amount'] - $tax_amount,
+          'currency_code' => $base_rate['currency_code'],
+          'data' => array(),
+        );
+
+        $base_rate['data'] = commerce_price_component_add($base_rate, $price_component_type, $component, TRUE, FALSE);
+
+        // Add the tax to the data array.
+        $component['amount'] = $tax_amount;
+        $component['data']['tax_rate'] = $tax_rate;
+
+        $base_rate['data'] = commerce_price_component_add($base_rate, $tax_rate['price_component'], $component, TRUE);
+      }
+
+      // Add the full service array to our return value.
+      $services[$name] = array(
+        'title' => $service['title'],
+        'display_title' => !empty($service['display_title']) ? $service['display_title'] : $service['title'],
+        'description' => $service['description'],
+        'shipping_method' => 'flat_rate',
+        'rules_component' => !empty($service['rules_component']),
+        'price_component' => $price_component_type,
+        'callbacks' => array(
+          'rate' => 'commerce_flat_rate_service_rate_order',
+        ),
+        'base_rate' => $base_rate,
+        'data' => $data,
+      );
+    }
+  }
+
+  return $services;
+}
+
+/**
+ * Shipping service callback: returns the base rate for a flat rate service.
+ */
+function commerce_flat_rate_service_rate_order($shipping_service, $order) {
+  // The base rate is simply defined in the service, so we return it directly.
+  return $shipping_service['base_rate'];
+}
+
+/**
+ * Returns an initialized flat rate shipping service array for forms.
+ */
+function commerce_flat_rate_service_new() {
+  return array(
+    'name' => '',
+    'title' => '',
+    'display_title' => '',
+    'description' => '',
+    'rules_component' => TRUE,
+    'base_rate' => array(
+      'amount' => 0,
+      'currency_code' => commerce_default_currency(),
+      'data' => array(),
+    ),
+    'data' => array(),
+    'is_new' => TRUE,
+  );
+}
+
+/**
+ * Saves a flat rate service to the database.
+ *
+ * @param $shipping_service
+ *   The flat rate shipping service to save. If the service array includes the
+ *   base_rate array, its amount and currency_code values will be moved up a
+ *   level to be saved to the database via drupal_write_record().
+ * @param $skip_reset
+ *   Boolean indicating whether or not this save should result in shipping
+ *   services being reset and the menu being rebuilt; defaults to FALSE. This is
+ *   useful when you intend to perform many saves at once, as menu rebuilding is
+ *   very costly in terms of performance.
+ *
+ * @return
+ *   The return value of the call to drupal_write_record() to save the flat rate
+ *   service; either FALSE on failure or SAVED_NEW or SAVED_UPDATED indicating
+ *   the type of query performed to save the flat rate service.
+ */
+function commerce_flat_rate_service_save($shipping_service, $skip_reset = FALSE) {
+  // Move the amount and currency code up a level in the service array.
+  if (!empty($shipping_service['base_rate'])) {
+    $shipping_service['amount'] = $shipping_service['base_rate']['amount'];
+    $shipping_service['currency_code'] = $shipping_service['base_rate']['currency_code'];
+  }
+
+  $op = drupal_write_record('commerce_flat_rate_service', $shipping_service, empty($shipping_service['is_new']) ? 'name' : array());
+
+  // If this is a new flat rate service and the insert did not fail...
+  if (!empty($shipping_service['is_new']) && $op !== FALSE) {
+    // Notify other modules that a new tax flat rate service has been created.
+    module_invoke_all('commerce_flat_rate_service_insert', $shipping_service, $skip_reset);
+  }
+  elseif ($op !== FALSE) {
+    // Notify other modules that an existing flat rate service has been updated.
+    module_invoke_all('commerce_flat_rate_service_update', $shipping_service, $skip_reset);
+  }
+
+  // Clear the necessary caches and rebuild the menu items.
+  if (!$skip_reset) {
+    commerce_shipping_services_reset();
+    entity_defaults_rebuild();
+    rules_clear_cache(TRUE);
+    menu_rebuild();
+  }
+
+  return $op;
+}
+
+/**
+ * Deletes a flat rate service.
+ *
+ * @param $name
+ *   The machine-name of the flat rate service.
+ * @param $skip_reset
+ *   Boolean indicating whether or not this delete should result in shipping
+ *   services being reset and the menu being rebuilt; defaults to FALSE. This is
+ *   useful when you intend to perform many deletions at once, as menu
+ *   rebuilding is very costly in terms of performance.
+ */
+function commerce_flat_rate_service_delete($name, $skip_reset = FALSE) {
+  $shipping_service = commerce_shipping_service_load($name);
+
+  db_delete('commerce_flat_rate_service')
+    ->condition('name', $name)
+    ->execute();
+
+  rules_config_delete(array('commerce_shipping_service_' . $name));
+
+  // Clear the necessary caches and rebuild the menu items.
+  if (!$skip_reset) {
+    commerce_shipping_services_reset();
+    entity_defaults_rebuild();
+    rules_clear_cache(TRUE);
+    menu_rebuild();
+  }
+
+  // Notify other modules that this flat rate service has been deleted.
+  module_invoke_all('commerce_flat_rate_service_delete', $shipping_service, $skip_reset);
+}

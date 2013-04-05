@@ -1,0 +1,88 @@
+@import url(//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,800);
+@import url(//fonts.googleapis.com/css?family=Gentium+Basic:400,700);
+/* Include Default Variables & Mixins */
+/* End Variables & Mixins */
+/* User menu */
+.block-menu-user-menu .content ul.menu li.first {
+  border-left: 1px solid #ffffff;
+  border-right: 0;
+  padding-left: 7px; }
+.block-menu-user-menu .content ul.menu li.last {
+  padding-right: 7px; }
+
+/**
+* Pseudo Breadcrumb
+*/
+#region-breadcrumb .pseudo-breadcrumb li a {
+  background: url("../images/btn_close.png") right center no-repeat; }
+
+/* Search api facet blocks */
+.region-sidebar-first .block-facetapi ul li input.facetapi-checkbox {
+  float: right;
+  margin: .5em 0 0 .5em;
+  vertical-align: middle; }
+.region-sidebar-first .block-facetapi ul li a.facetapi-inactive {
+  padding-right: 0px; }
+
+/**
+* Blocks
+*/
+#promotional_banner .promotional_banner_special_offer {
+  left: 10px;
+  right: auto; }
+
+/**
+* Connect with us
+*/
+#block-menu-menu-social-connection .content ul.menu li a.facebook {
+  background: url("../images/icon_facebook.png") 98% 50% no-repeat; }
+#block-menu-menu-social-connection .content ul.menu li a.twitter {
+  background: url("../images/icon_twitter.png") 98% 50% no-repeat; }
+#block-menu-menu-social-connection .content ul.menu li a.pinterest {
+  background: url("../images/icon_pinterest.png") 98% 50% no-repeat; }
+
+/**
+* Collection page
+*/
+.view-collection-taxonomy-term .view-content .item-list .products-per-collection li.views-row {
+  padding-left: 5px;
+  /*RTL*/ }
+  .view-collection-taxonomy-term .view-content .item-list .products-per-collection li.views-row:nth-child(4n+5) {
+    clear: right;
+    /*RTL*/
+    float: right;
+    /*RTL*/ }
+
+.form-item-quantity .ui-corner-tr {
+  -moz-border-radius: 4px 0 0 0;
+  -webkit-border-radius: 4px 0 0 0;
+  -khtml-border-radius: 4px 0 0 0;
+  border-radius: 4px 0 0 0; }
+.form-item-quantity .ui-corner-br {
+  -moz-border-radius: 0 0 0 4px;
+  -webkit-border-radius: 0 0 0 4px;
+  -khtml-border-radius: 0 0 0 4px;
+  border-radius: 0 0 0 4px; }
+.form-item-quantity .ui-icon-triangle-1-n {
+  background-position: 2px -16px; }
+
+/*******************************************
+* 2.1.2. Region user second
+*******************************************/
+/**
+* Cart block
+*/
+.block-shopping-cart-block .content {
+  background-position: 99% 48%; }
+
+/**************************************************
+* --
+* 8. Comments
+* --
+**************************************************/
+.node-teaser .links.node-links .links .node-readmore a {
+  padding-left: 15px; }
+.node-teaser .links.node-links .links .comment-comments a {
+  padding-right: 20px; }
+  .node-teaser .links.node-links .links .comment-comments a span {
+    float: right; }

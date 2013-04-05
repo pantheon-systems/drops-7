@@ -1,0 +1,649 @@
+<?php
+
+/**
+ * @file
+ * Allows you to define any number of Kiala shipping services
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_kiala_track_menu() {
+  $items = array();
+
+  $items['admin/commerce/orders/%commerce_order/kiala_trackandtrace'] = array(
+    'title' => 'Tracking',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_kiala_track_admin_trackandtrace_form', 3),
+    'access callback' => 'commerce_kiala_track_admin_trackandtrace_page_access',
+    'access arguments' => array(3),
+    'file' => 'commerce_kiala_track.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 30,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );
+
+  $items['trackandtrace'] = array(
+    'title' => 'Track Kiala shipment',
+    'page callback' => 'commerce_kiala_track_customer_tracking_page',
+    'access arguments' => array('view kiala tracktrace iframe'),
+    'type' => MENU_NORMAL_ITEM
+  );
+
+  return $items;
+}
+
+/**
+ * Access callback for order admin page
+ */
+function commerce_kiala_track_admin_trackandtrace_page_access($order) {
+  if (!user_access('administer kiala services')) {
+    return FALSE;
+  }
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // DENY if no kiala point associated with the order
+  $point_id = $order_wrapper->kiala_point_id->value();
+  if (empty($point_id)) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_kiala_track_permission() {
+  return array(
+    'view kiala tracktrace iframe' => array(
+      'title' => t('View Kiala customer track and trace iFrame.'),
+      'description' => t('Allows users to view the Kiala track and trace iFrame.'),
+    ),
+  );
+}
+
+/**
+ * Render trackback iframe content.
+ *
+ * @param type $tracking_number
+ * @param type $embed_type
+ * @return type
+ */
+function commerce_kiala_track_render_embedded_trackback_content($tracking_number, $embed_type = NULL, $text = NULL) {
+  $settings = commerce_kiala_settings();
+  if (!$embed_type) {
+    $embed_type = $settings['tracktrace_embed_type'];
+  }
+
+  if (empty($text)) {
+    $text = $settings['tracktrace_modal_link_text'];
+  }
+
+  switch ($embed_type) {
+    case 'inline':
+      $render = array(
+        '#type' => 'item',
+        '#markup' => theme('commerce_kiala_trackandtrace', array(
+            'tracking_number' => $tracking_number,
+        )),
+      );
+      break;
+
+    default:
+      global $user;
+      $language = !empty($user->language) ? $user->language : language_default()->language;
+      $handler = commerce_kiala_track_get_tracking_embeddable_handler($language, $tracking_number);
+
+      $modal_attrs = array(
+        'width' => $settings['tracktrace_iframe_width'],
+        'height' => $settings['tracktrace_iframe_height'],
+        'url' => $handler->getUrl(),
+        'display_text' => $text,
+      );
+
+      $render = _commerce_kiala_render_modal_box($embed_type, $modal_attrs);
+      break;
+  }
+
+  return $render;
+}
+
+/*
+ * Display the customer facing tracking page
+ */
+function commerce_kiala_track_customer_tracking_page() {
+  if ($GLOBALS['is_https']) {
+    $tracking_number = isset($_GET['tracking_number']) ? $_GET['tracking_number'] : NULL;
+    return commerce_kiala_track_render_embedded_trackback_content($tracking_number, 'inline');
+  }
+
+  drupal_set_message(t('The site administrator must enable ssl on this page in order to display secure iFrame content.'), 'warning');
+  return t('Unable to load track and trace content.');
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_kiala_track_theme() {
+  $path = drupal_get_path('module', 'commerce_kiala_track') . '/theme';
+
+  return array(
+    'commerce_kiala_trackandtrace' => array(
+      'variables' => array('tracking_number' => NULL),
+      'path' => $path,
+      'file' => 'commerce_kiala_track.theme.inc',
+      'template' => 'commerce-kiala-trackandtrace',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ * - Add Kiala Point reference on order view
+ */
+function commerce_kiala_track_field_extra_fields() {
+  return array(
+    'commerce_order' => array(
+      'commerce_order' => array(
+        'display' => array(
+          'commerce_kiala_track' => array(
+            'label' => t('Kiala Tracking Information'),
+            'description' => t('Kiala tracking information for the order'),
+            'weight' => 15,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_attach_view_alter().
+ * - Add extra fields to Order
+ */
+function commerce_kiala_track_field_attach_view_alter(&$output, $context) {
+  if (!isset($context['entity_type']) || !isset($context['entity'])) {
+    return;
+  }
+
+  $entity = $context['entity'];
+
+  // Add order kiala point
+  if ($context['entity_type'] == 'commerce_order') {
+    $entity_wrapper = entity_metadata_wrapper($context['entity_type'], $entity);
+    $extra_fields_info = field_info_extra_fields($context['entity_type'], $entity_wrapper->getBundle(), 'display');
+
+    $tracking_object = $entity_wrapper->kiala_tracking_object->value();
+    if (!empty($tracking_object->tracking_number)) {
+      $settings = commerce_kiala_settings();
+      $embed_type = $settings['tracktrace_embed_type'];
+      $modal_link_text = $settings['tracktrace_modal_link_text'];
+
+      // render embedded content array
+      $embedded_content = array(
+        '#markup' => t('No information available.'),
+      );
+
+      // Cannot display secure iFrame content in non-secure page
+      if ($GLOBALS['is_https']) {
+        $embedded_content = commerce_kiala_track_render_embedded_trackback_content($tracking_object->tracking_number, $embed_type, $modal_link_text);
+      }
+      elseif (user_access('configure order settings')) {
+        $embedded_content = array(
+          '#markup' => t('Enable HTTPS on this page to display Kiala tracking information.'),
+        );
+      }
+
+      // set field label
+      $field_label = isset($extra_fields_info['commerce_kiala_track']['label']) ?
+            $extra_fields_info['commerce_kiala_track']['label']
+            : t('Kiala Tracking Information');
+
+      // Add to output
+      $output['commerce_kiala_track'] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => FALSE,
+        '#field_type' => 'commerce_kiala_track_extra_field',
+        '#field_name' => 'commerce_kiala_track_extra_field',
+        '#view_mode' => $context['view_mode'],
+        '#title' => check_plain($field_label),
+        '#attributes' => array('class' => array('commerce-kiala-track-order')),
+        0 => array(
+            '#type' => 'item',
+            '#title' => t('Tracking Number: @tracking_number', array('@tracking_number' => $tracking_object->tracking_number)),
+            '#weight' => 0,
+          ) + $embedded_content,
+      );
+    }
+  }
+}
+
+/*
+ * Form: customer facing tracking
+ */
+/*
+function commerce_kiala_track_customer_tracking_form($form, &$form_state) {
+  // First check to see if
+
+  $tracking_object = !empty($form_state['kiala_tracking_object']) ? $form_state['kiala_tracking_object'] : NULL;
+
+  // Attempt to load from URL if nothing found from a form submit
+  if (!$tracking_object && isset($_GET['tracking_number'])) {
+    $tracking_object = commerce_kiala_track_tracking_rest_update($_GET['tracking_number']);
+  }
+
+  $form['tracking_number'] = array(
+    '#type' => 'textfield',
+    '#description' => t('Enter the tracking number that you received with you order.'),
+    '#title' => t('Tracking number'),
+    '#required' => TRUE,
+    '#default_value' => $tracking_object ? $tracking_object->tracking_number : ''
+  );
+
+  if (!empty($tracking_object)) {
+    $statuses = commerce_kiala_track_tracking_status_options();
+    $line_item = commerce_line_item_load($tracking_object->line_item_id);
+    $wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+    // Add an information box if the form is rendered after an update submit.
+    $form['tracking_information'] = array(
+      '#type' => 'markup',
+      '#markup' => t('Tracking status: @status', array('@status' => $statuses[$tracking_object->status]['label']))
+            . '<br/>' . t('View order: @order_url', array('@order_url' => commerce_order_uri($wrapper->order->value())))
+    );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+    '#submit' => array('commerce_kiala_track_customer_tracking_form_submit')
+  );
+
+  return $form;
+}*/
+
+/*
+ * Form callback: customer facing tracking submit
+ */
+function commerce_kiala_track_customer_tracking_form_submit(&$form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+
+  if ($settings['trackback_display_method'] == 'form') {
+    $tracking_object = commerce_kiala_track_tracking_rest_update($form_state['values']['tracking_number']);
+    $form_state['kiala_tracking_object'] = $tracking_object;
+
+    if (empty($tracking_object)) {
+      drupal_set_message(t('The requested tracking number was not found.'), 'error');
+    }
+  }
+}
+
+/*
+ * Implements hook_cron().
+ */
+/*
+function commerce_kiala_track_cron() {
+  // Check for status changes of all tracking objects
+  $active_statuses = commerce_kiala_track_tracking_statuses(array('state' => 'undelivered'));
+  $tracking_objects = commerce_kiala_track_tracking_load(array('status' => $active_statuses));
+
+  foreach ($tracking_objects as $tracking_object) {
+    commerce_kiala_track_assess_status_change($tracking_object);
+  }
+}*/
+/*
+function commerce_kiala_track_tracking_statuses($conditions = array()) {
+  // First check the static cache for an order statuses array.
+  $statuses = &drupal_static(__FUNCTION__);
+
+  // If it did not exist, fetch the statuses now.
+  if (!isset($statuses)) {
+    $statuses = module_invoke_all('commerce_kiala_track_tracking_status_info');
+
+    // Merge in defaults.
+    foreach ($statuses as $name => $status) {
+      // Set some defaults for the checkout pane.
+      $defaults = array(
+        'weight' => 0,
+      );
+      $status += $defaults;
+
+      $statuses[$name] = $status;
+    }
+
+    // Give other modules a chance to alter the order statuses.
+    drupal_alter('commerce_kiala_track_tracking_status_info', $statuses);
+
+    uasort($statuses, 'drupal_sort_weight');
+  }
+
+  // Apply conditions to the returned statuses if specified.
+  if (!empty($conditions)) {
+    $matching_statuses = array();
+
+    foreach ($statuses as $name => $status) {
+      // Check the status against the conditions array to determine whether to
+      // add it to the return array or not.
+      $valid = TRUE;
+
+      foreach ($conditions as $property => $value) {
+        // If the current value for the specified property on the status does
+        // not match the filter value...
+        if ($status[$property] != $value) {
+          // Do not add it to the temporary array.
+          $valid = FALSE;
+        }
+      }
+
+      if ($valid) {
+        $matching_statuses[$name] = $status;
+      }
+    }
+
+    return $matching_statuses;
+  }
+
+  return $statuses;
+}
+
+function commerce_kiala_track_tracking_status_options() {
+  $statuses = commerce_kiala_track_tracking_statuses();
+  $options = array();
+
+  foreach ($statuses as $name => $status) {
+    $options[$name] = $status['label'];
+  }
+
+  return $options;
+}
+*/
+/**
+ * Implements hook_commerce_order_status_info().
+ */
+/*
+function commerce_kiala_track_tracking_status_info() {
+  $statuses = array();
+
+  $statuses['delivered'] = array(
+    'name' => 'delivered',
+    'title' => t('Delivered'),
+    'state' => 'active',
+  );
+
+  return $statuses;
+}*/
+
+/**
+ * Implements hook_form_FORM_ID_alter()
+ */
+function commerce_kiala_track_form_commerce_kiala_settings_form_alter(&$form, &$form_state, $form_id) {
+  $kiala_contact_mail = 'e-commerce@kiala.com';
+  $default_values = commerce_kiala_settings(array(
+    'include_passwords' => FALSE,
+    'decrypt' => TRUE,
+  ));
+
+  $form['commerce_kiala_tracktrace'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Track and Trace'),
+    '#collapsible' => TRUE,
+    '#group' => 'groups',
+    '#weight' => 2,
+  );
+  $form_tracktrace = &$form['commerce_kiala_tracktrace'];
+
+  /*
+  $form_tracktrace['tracktrace_ws_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API URL'),
+    '#default_value' => isset($default_values['tracktrace_ws_url']) ? $default_values['tracktrace_ws_url'] : '',
+  );*/
+
+  $form_tracktrace['tracktrace_iframe_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Track and trace iFrame url'),
+    '#default_value' => isset($default_values['tracktrace_iframe_url']) ? $default_values['tracktrace_iframe_url'] : '',
+    '#disabled' => TRUE,
+  );
+/*
+  $form_tracktrace['tracktrace_display_method'] = array(
+    '#type' => 'radios',
+    '#title' => t('Track and trace display method'),
+    '#options' => array(
+      'iframe' => t('iFrame'),
+      'form' => t('Drupal form')
+    ),
+    '#default_value' => isset($default_values['tracktrace_display_method']) ? $default_values['tracktrace_display_method'] : '',
+  );*/
+
+  $embed_options = commerce_kiala_embed_options();
+  $form_tracktrace['tracktrace_embed_type'] = array(
+    '#type' => 'select',
+    '#title' => t('Embedding Type'),
+    '#default_value' => isset($default_values['tracktrace_embed_type']) ? $default_values['tracktrace_embed_type'] : NULL,
+    '#description' => t('Choose the method to embed the map.'),
+    '#options' => $embed_options,
+  );
+  $form_tracktrace['tracktrace_modal_link_text'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Modal Link Text'),
+    '#default_value' => isset($default_values['tracktrace_modal_link_text']) ? $default_values['tracktrace_modal_link_text'] : '',
+    '#description' => t('The text to display for the modal link.'),
+    '#states' => array(
+      'invisible' => array(
+        ':input[name*="tracktrace_embed_type"]' => array('value' => 'inline'),
+      ),
+    ),
+  );
+
+  $form_tracktrace['tracktrace_iframe_width'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Width'),
+    '#default_value' => isset($default_values['tracktrace_iframe_width']) ? $default_values['tracktrace_iframe_width'] : '',
+    '#element_validate' => array('element_validate_integer_positive'),
+    '#description' => t('The width of the embedded form.'),
+    '#size' => 10,
+  );
+  $form_tracktrace['tracktrace_iframe_height'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Height'),
+    '#default_value' => isset($default_values['tracktrace_iframe_height']) ? $default_values['tracktrace_iframe_height'] : '',
+    '#element_validate' => array('element_validate_integer_positive'),
+    '#description' => t('The height of the embedded form.'),
+    '#size' => 10,
+  );
+
+  /*
+  if (!empty($default_values['tracktrace_ws_params'])) {
+    $form_ls_ws_search['tracktrace_ws_params'] = commerce_kiala_admin_settings_params_element($default_values['tracktrace_ws_params']);
+  }*/
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_kiala_track_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_kiala_track') . '/includes/views',
+  );
+}
+
+/*
+ * Metatdata getter callback: orders
+ */
+function commerce_kiala_track_order_property_getter($order, array $options, $name) {
+  $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  switch ($name) {
+    case 'kiala_tracking_object':
+      $tracking_objects = commerce_kiala_track_tracking_load(array('order_id' => $order->order_id));
+
+      if (!empty($tracking_objects)) {
+        return reset($tracking_objects);
+      }
+      break;
+    case 'tracking_number':
+      $tracking_object = $wrapper->kiala_tracking_object->value();
+
+      if (!empty($tracking_object->tracking_number)) {
+        return $tracking_object->tracking_number;
+      }
+      break;
+  }
+}
+
+/**
+ * Load tracking objects by conditions
+ *
+ * @param type $conditions
+ *  List of conditions in form column => value
+ *
+ * @return array
+ *  List of tracking objects
+ */
+function commerce_kiala_track_tracking_load($conditions = NULL) {
+  $cache = &drupal_static(__FUNCTION__);
+
+  // Cache is keyed by order id
+  if (!empty($conditions['order_id']) && !empty($cache[$conditions['order_id']])) {
+    return $cache[$conditions['order_id']];
+  }
+
+  $query =
+    db_select('commerce_kiala_tracking', 'c')
+    ->fields('c', array('id', 'order_id', 'tracking_number'));
+
+  if (!empty($conditions)) {
+    foreach ($conditions as $column => $value) {
+      $query->condition($column, $value);
+    }
+  }
+
+  $results = $query->execute()->fetchAll();
+  foreach ($results as $result) {
+    $cache[$result->order_id] = $result;
+  }
+
+  return $results;
+}
+
+/**
+ * Fetch the results of a track-and-trace API request
+ *
+ * @param string $language
+ *  Language code
+ *
+ * @param string $tracking_number
+ *  Tracking number
+ *
+ * @return type
+ */
+/*
+function commerce_kiala_track_get_tracking_ws_response($language, $tracking_number) {
+  $handler = commerce_kiala_track_get_tracking_ws_handler($language, $tracking_number);
+  return $handler->getProcessedResponse();
+}*/
+
+/**
+ * Get a handler for a trackback ws query
+ *
+ * @param type $language
+ * @param type $tracking_number
+ * @return CommerceKialaAPIQueryTracktrace
+ */
+/*
+function commerce_kiala_track_get_tracking_ws_handler($language, $tracking_number) {
+  $query = array('language' => $language, 'trackingNumber' => $tracking_number);
+  return new CommerceKialaAPIQueryTracktrace('tracktrace_ws', array('query' => $query));
+}*/
+
+/**
+ * Get a handler for a trackback embeddable url query
+ *
+ * @param type $language
+ * @param type $tracking_number
+ * @return CommerceKialaAPIQueryTracktraceEmbed
+ */
+function commerce_kiala_track_get_tracking_embeddable_handler($language, $tracking_number) {
+  $query = array('language' => $language, 'dspparcelid' => $tracking_number);
+  return new CommerceKialaAPIQueryTracktraceEmbed('tracktrace_iframe', array('query' => $query));
+}
+/*
+function commerce_kiala_track_assess_status_change($tracking_object) {
+  $result = commerce_kiala_track_get_tracking_response($tracking_object->language, $tracking_object->tracking_number);
+
+  if (!empty($result) && !in_array($result['status'], $active_statuses)) {
+    rules_invoke_all('commerce_kiala_track_tracking', $result['status'], $tracking_object);
+  }
+}*/
+
+/**
+ * Create a new tracking object variable
+ *
+ * @param type $tracking_number
+ * @param type $language
+ * @return stdClass
+ */
+function commerce_kiala_track_create_tracking_object($tracking_number, $line_item_id) {
+  $tracking_object = new stdClass();
+
+  $tracking_object->tracking_number = $tracking_number;
+  $tracking_object->order_id = $line_item_id;
+
+  return $tracking_object;
+}
+
+/**
+ * Update or insert a tracking object given a tracking number
+ *
+ * @param type $tracking_number
+ * @param type $update_only
+ */
+/*
+function commerce_kiala_track_tracking_rest_update($tracking_number, $update_only = TRUE) {
+  // Determine if tracking object already exists
+  $tracking_object = commerce_kiala_track_tracking_load(array('tracking_number' => $tracking_number));
+  if (empty($tracking_object) && !$update_only) {
+    global $user;
+
+    $tracking_object = commerce_kiala_track_create_tracking_object($tracking_number, $user->language);
+  }
+  else {
+    return NULL;
+  }
+
+  // Transfer the tracking number from the form
+  if ($tracking_number) {
+    $tracking_object->tracking_number = $tracking_number;
+  }
+
+  // Query the REST API for updates to this tracking number
+  $updated_tracking_data = commerce_kiala_track_get_tracking_ws_response($tracking_object->language, $tracking_object->tracking_number);
+
+  if ($updated_tracking_data['status'] != $tracking_object->status) {
+    $tracking_object->status = $updated_tracking_data['status'];
+
+    $primary_keys = !empty($tracking_object->id) ? 'id' : NULL;
+    drupal_write_record('commerce_kiala_tracking', $tracking_object, $primary_keys);
+  }
+
+  return $tracking_object;
+}
+*/
+
+/**
+ * Write a tracking object record to the database
+ *
+ * @param type $tracking_object
+ */
+function commerce_kiala_track_write_tracking_record($tracking_object) {
+  if (!empty($tracking_object->id)) {
+    drupal_write_record('commerce_kiala_tracking', $tracking_object, 'id');
+  }
+  else {
+    drupal_write_record('commerce_kiala_tracking', $tracking_object);
+  }
+}

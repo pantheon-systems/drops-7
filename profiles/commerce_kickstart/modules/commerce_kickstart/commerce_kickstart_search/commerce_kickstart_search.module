@@ -1,0 +1,178 @@
+<?php
+
+/**
+ * @file
+ * Provides Search API integration for Commerce Kickstart.
+ */
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function commerce_kickstart_search_ctools_plugin_api($module, $api) {
+  if ($module == "current_search" && $api == "current_search") {
+    return array("version" => 1);
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_kickstart_search_views_api() {
+  return array(
+    'api' => 3,
+  );
+}
+
+/**
+ * Implements hook_default_search_api_sort().
+ */
+function commerce_kickstart_search_default_search_api_sort() {
+  $items = array();
+  $title = 'title';
+  // Check if we should sort on the translated title or not.
+  if (module_exists('title') && $title_field = title_field_replacement_info('node', 'title')) {
+    $title = $title_field['field']['field_name'];
+  }
+  $items['product_display__created'] = entity_import('search_api_sort', '{
+    "index_id" : "product_display",
+    "field" : "created",
+    "name" : "Latest",
+    "enabled" : "1",
+    "weight" : "20",
+    "identifier" : "product_display__created",
+    "default_sort" : "0",
+    "default_sort_no_terms" : "0",
+    "default_order" : "asc",
+    "options" : { "field_name" : "Date created" }
+  }');
+  $items['product_display__field_product_commerce_price_amount_decimal'] = entity_import('search_api_sort', '{
+    "index_id" : "product_display",
+    "field" : "field_product_commerce_price_amount_decimal_asc",
+    "name" : "Price",
+    "enabled" : "1",
+    "weight" : "0",
+    "identifier" : "product_display__field_product_commerce_price_amount_decimal",
+    "default_sort" : "0",
+    "default_sort_no_terms" : "0",
+    "default_order" : "asc",
+    "options" : { "field_name" : "Product » Price » Amount (decimal)" }
+  }');
+  $items['product_display__' . $title] = entity_import('search_api_sort', '{
+    "index_id" : "product_display",
+    "field" : "' . $title . '",
+    "name" : "Title",
+    "enabled" : "1",
+    "weight" : "30",
+    "identifier" : "product_display__' . $title . '",
+    "default_sort" : "0",
+    "default_sort_no_terms" : "0",
+    "default_order" : "asc",
+    "options" : { "field_name" : "Title" }
+  }');
+  return $items;
+}
+
+/**
+ * Preprocess theme variables for facetapi blocks.
+ * Add facet field machine name to block class, make it easier to theme.
+ */
+function commerce_kickstart_search_preprocess_block(&$variables) {
+  if ($variables['block']->module == 'facetapi') {
+    $delta = $variables['block']->delta;
+    $map = facetapi_get_delta_map();
+    $name = $map[$delta];
+    $name = explode(':', $name);
+    $name = array_pop($name);
+    $name = str_replace('%3A', '_', $name);
+    $variables['classes_array'][] = $name;
+  }
+}
+
+/**
+ * Remove the breadcrumb on search pages that have the current search shown.
+ */
+function commerce_kickstart_search_menu_breadcrumb_alter(&$active_trail, $item) {
+  if (isset($_GET['f']) || isset($_GET['search_api_views_fulltext'])) {
+    $active_trail = array();
+  }
+}
+
+/**
+ * Implements hook_search_api_facetapi_keys_alter().
+ *
+ * We do not want to see [all items] in breadcrumbs when browsing all
+ * products, but only if search term is empty and no facets are used.
+ *
+ * @see SearchApiFacetapiAdapter::getSearchKeys()
+ */
+function commerce_kickstart_search_search_api_facetapi_keys_alter(&$keys, $query) {
+  if ($keys == '[all items]' && !isset($_GET['f'])) {
+    // All products without facets.
+    $keys = '';
+    drupal_set_breadcrumb(array(l(t('Home'), '<front>'), t('All Products')));
+  }
+  else {
+    if ($keys == '[all items]' && isset($_GET['f'])) {
+      // All products with facets.
+      drupal_set_breadcrumb(array());
+    }
+    else {
+      if ($keys != '[all items]') {
+        // Search result by key with or without facets.
+        drupal_set_breadcrumb(array());
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function commerce_kickstart_search_theme_registry_alter(&$theme_registry) {
+  $theme_registry['facetapi_title']['function'] = 'theme_commerce_kickstart_search_facetapi_title';
+  $theme_registry['current_search_text']['function'] = 'theme_commerce_kickstart_search_current_search_text';
+
+  $theme_registry['search_api_sorts_sort']['theme path'] = drupal_get_path('module', 'commerce_kickstart_search');
+  $theme_registry['search_api_sorts_sort']['path'] = $theme_registry['search_api_sorts_sort']['theme path'];
+  $theme_registry['search_api_sorts_sort']['file'] = 'commerce_kickstart_search.theme.inc';
+  $theme_registry['search_api_sorts_sort']['function'] = 'theme_commerce_kickstart_search_sorts_sort';
+  $theme_registry['search_api_sorts_sort']['includes'] = array($theme_registry['search_api_sorts_sort']['path'] . '/' . $theme_registry['search_api_sorts_sort']['file']);
+}
+
+
+/**
+ * Override facetapi default title.
+ */
+function theme_commerce_kickstart_search_facetapi_title($variables) {
+  $title = explode(' » ', $variables['title']);
+  return drupal_ucfirst(drupal_strtolower(array_pop($title)));
+}
+
+/**
+ * Override current_search_text theme.
+ *
+ * Allow HTML.
+ */
+function theme_commerce_kickstart_search_current_search_text(array $variables) {
+  // Initializes output, don't sanitizes text.
+  $output = $variables['text'];
+
+  // Adds wrapper markup and CSS classes.
+  if ($variables['wrapper'] && $variables['element']) {
+    $attributes = array('class' => $variables['class']);
+    $element = check_plain($variables['element']);
+    $output = '<' . $element . drupal_attributes($attributes) . '>' . $output . '</' . $element . '>';
+  }
+
+  return $output;
+}
+
+/**
+ * Implements hook_block_info_alter().
+ */
+function commerce_kickstart_search_block_info_alter(&$blocks, $theme, $code_blocks) {
+  // Provide a default label for the facetapi block.
+  if (isset($blocks['facetapi']['TFVaQKSORCPdrULxfXDnLQZ40xH0Nper']) && empty($blocks['facetapi']['TFVaQKSORCPdrULxfXDnLQZ40xH0Nper']['title'])) {
+    $blocks['facetapi']['TFVaQKSORCPdrULxfXDnLQZ40xH0Nper']['title'] = t('Price');
+  }
+}

@@ -1,0 +1,98 @@
+<?php
+
+/**
+ * @file
+ * Provides date fields for the Commerce discount entity.
+ */
+
+/**
+ * Implements hook_modules_enabled().
+ *
+ * Add commerce discount date field.
+ *
+ * @see commerce_discount_date_install()
+ */
+function commerce_discount_date_modules_enabled($modules) {
+  foreach (commerce_discount_types() as $type => $value) {
+    if (!field_info_instance('commerce_discount', 'commerce_discount_date', $type)) {
+      $instance = array(
+        'field_name' => 'commerce_discount_date',
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'label' => t('Discount dates'),
+        'widget' => array(
+          'module' => 'date',
+          'type' => 'date_popup',
+        ),
+        'settings' => array(
+          'default_value' => 'blank',
+          'default_value2' => 'blank',
+        ),
+      );
+      field_create_instance($instance);
+    }
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_discount_date_views_api($module, $api) {
+  if ($module == 'views') {
+    return array(
+      'version' => 2,
+      'path' => drupal_get_path('module', 'commerce_discount_date') . '/includes/views',
+    );
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_discount_date_form_commerce_discount_form_alter(&$form, $form_state) {
+  $form['commerce_discount_fields']['commerce_discount_date']['#after_build'][] = 'commerce_discount_date_after_build';
+}
+
+/**
+ * After-build callback for altering the date field.
+ *
+ * @param $element
+ *   The date field.
+ *
+ * @return
+ *   The altered date field.
+ */
+function commerce_discount_date_after_build($element, $form_state) {
+  // Reset the titles.
+  $element[LANGUAGE_NONE][0]['value']['#title'] = t('Start date');
+  $element[LANGUAGE_NONE][0]['value2']['#title'] = t('End date');
+  $element[LANGUAGE_NONE][0]['value']['date']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['value']['time']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['value2']['date']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['value2']['time']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['#fieldset_description'] = '';
+
+  // Ignore the "Show end date" checkbox.
+  unset($element[LANGUAGE_NONE][0]['value2']['#states']);
+
+  // Check the "show end date" checkbox.
+  $element[LANGUAGE_NONE][0]['show_todate']['#checked'] = TRUE;
+
+  return $element;
+}
+
+/**
+ * Implements hook_commerce_discount_rule_build().
+ */
+function commerce_discount_date_commerce_discount_rule_build($rule, $discount) {
+  $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  if (!$wrapper->commerce_discount_date->value()) {
+    // No need to add a condition.
+    return;
+  }
+
+  // Add condition to check usage didn't reach max uses.
+  $rule->condition('commerce_discount_date_condition', array(
+    'commerce_discount' => $discount->name,
+  ));
+}

@@ -1,0 +1,30 @@
+<?php
+/**
+ * @file
+ * Installation and uninstallation functions.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function chosen_requirements($phase) {
+  module_load_include('module', 'libraries');
+  module_load_include('module', 'chosen', 'chosen');
+
+  $requirements['chosen_js'] = array(
+   'title' => t('Chosen JavaScript file'),
+   'value' => chosen_js_path() ? t('Available') : t('Unavailable'),
+   'description' => !chosen_js_path() ? t('Place <code>chosen.jquery.min.js</code> or <code>chosen.jquery.js</code> in <em>sites/all/libraries/chosen/chosen</em>.') : NULL,
+   'severity' => chosen_js_path() ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+  );
+
+  return $requirements;
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function chosen_uninstall() {
+  // Delete created variables.
+  variable_del('chosen_jquery_selector');
+}

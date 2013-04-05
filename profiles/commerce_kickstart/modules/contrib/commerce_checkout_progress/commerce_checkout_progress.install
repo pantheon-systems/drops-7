@@ -1,0 +1,21 @@
+<?php
+/**
+ * @file
+ * Install functions.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_checkout_progress_unintall() {
+  variable_del('commerce_checkout_progress_block_pages');
+  variable_del('commerce_checkout_progress_list_type');
+  variable_del('commerce_checkout_progress_link');
+}
+
+/**
+ * Flush theme registry.
+ */
+function commerce_checkout_progress_update_7000() {
+  drupal_theme_rebuild();
+}

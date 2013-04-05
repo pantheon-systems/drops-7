@@ -1,0 +1,17 @@
+
+.view.message-example .panel-col-first {
+  width: 20%;
+}
+
+.view.message-example .panel-col-last {
+  width: 80%;
+}
+
+.view.message-example .panel-panel p {
+  margin: 0;
+}
+
+.view.message-example .panel-col-last .views-field-message-render-2 p {
+  font-style: italic;
+  font-size: 80%;
+}

@@ -1,0 +1,14 @@
+
+/**
+ * @file
+ * Basic styling for the Commerce Tax module.
+ */
+
+.field-type-commerce-price .form-item {
+  float: left; /* LTR */
+  margin-right: 1em; /* LTR */
+}
+
+.commerce-price-tax-included-clearfix {
+  clear: left; /* LTR */
+}

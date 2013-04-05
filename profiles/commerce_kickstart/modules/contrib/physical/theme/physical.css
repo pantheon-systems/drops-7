@@ -1,0 +1,20 @@
+
+.physical-weight-textfield .form-item {
+  display: inline;
+}
+
+.physical-weight-textfield {
+  padding: 9px 0;
+  margin: 0 0 10px;
+}
+
+.physical-dimension-form-item {
+  float: left;
+  margin-left: .25em;
+}
+
+.physical-dimensions-unit-form-item {
+  float: left;
+  margin-top: 1.6em;
+  margin-left: .4em;
+}

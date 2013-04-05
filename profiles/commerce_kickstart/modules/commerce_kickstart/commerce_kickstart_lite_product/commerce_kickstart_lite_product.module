@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ */
+
+include_once 'commerce_kickstart_lite_product.features.inc';
+
+/**
+ * Implements hook_migrate_api().
+ */
+function commerce_kickstart_lite_product_migrate_api() {
+  return array(
+    'api' => 2,
+    'migrations' => array(
+      'CommerceKickstartProduct' => array('class_name' => 'CommerceKickstartProduct'),
+      'CommerceKickstartNode' => array('class_name' => 'CommerceKickstartNode'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_kickstart_crumb_info().
+ *
+ * Enables the Crumbs plugin relevant to this module that provides taxonomy
+ * based breadcrumbs for each product display node.
+ */
+function commerce_kickstart_lite_product_commerce_kickstart_crumb_info() {
+  return array(
+    'taxonomy.termReference.field_product_category.*',
+  );
+}

@@ -1,0 +1,569 @@
+<?php
+
+/**
+ * @file
+ * Connector module
+ */
+
+//TODO: Make the user edit page more themable by other modules/themes - they should be able to rearrange or hide parts of it
+//TODO: Check whether 'invalidate old info' is set or not in hook_requirements()?
+//TODO: Enable user to remove itself/it's connection from the site?
+//TODO: React on disabling and uninstalling of another connector module
+//TODO: Show indication of the connection when logged in?
+//TODO: Is there really a need for a separate avatar callback?
+//TODO: Make it possible to upload an icon for a button?
+//TODO: Make it possible to disable default login, create account etc?
+//TODO: Always refresh info on log in? Because we will most certainly have access to the info then. Need to make sure not to refresh too often though
+//TODO: Show status of connections to at least the admin - do that on eg. the user's profile page
+//TODO: Should the backing of really be in this module?
+//TODO: Move syncing of info to a hook-system that everyone can hook into?
+//TODO: Provide more hooks!
+//TODO: Remove $uid from info callbacks?
+
+/**
+ * Implements hook_theme().
+ */
+function connector_theme() {
+  return array(
+    'connector_buttons' => array(
+      'render element' => 'form',
+    ),
+    'connector_connections_list_tableselect' => array(
+      'render element' => 'form',
+      'file' => 'connector.pages.inc',
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function connector_menu() {
+  $items = array();
+
+  $items['user/%user/connections'] = array(
+    'title' => 'Connections',
+    'page callback' => 'connector_user_settings',
+    'page arguments' => array(1),
+    'access callback' => 'connector_user_settings_access_callback',
+    'access arguments' => array(1),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'connector.pages.inc',
+    'weight' => 2,
+  );
+  $items['user/%user/connections/%/delete'] = array(
+    'title' => 'Remove connection',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('connector_user_delete_form', 1, 3),
+    'access callback' => 'connector_user_settings_access_callback',
+    'access arguments' => array(1),
+    'file' => 'connector.pages.inc',
+  );
+  $items['user/%user/connections/%/sync'] = array(
+    'title' => 'Sync profile with connection',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('connector_user_sync_form', 1, 3),
+    'access callback' => 'connector_user_sync_access_callback',
+    'access arguments' => array(1),
+    'file' => 'connector.pages.inc',
+  );
+  $items['connect/%'] = array(
+    'page callback' => 'connector_redirect_callback',
+    'page arguments' => array(1),
+    'access callback' => 'connector_redirect_access',
+    'access arguments' => array(1),
+  );
+
+
+  return $items;
+}
+
+
+/**
+ * Menu callback for the direct url.
+ */
+function connector_redirect_callback($connector_name) {
+  global $user;
+  if (!($connector = _connector_get_connectors($connector_name))) {
+    return FALSE;
+  }
+  $callback = 'button callback';
+  if ($user && $user->uid != 0) {
+    $callback = 'connect button callback';
+  }
+  if (!is_callable($connector[$callback])) {
+    return FALSE;
+  }
+
+  // We make sure there is a default destination to avoid redirect loops.
+  if (!isset($_GET['destination'])) {
+    $_GET['destination'] = '/';
+  }
+
+  $action = 'default';
+  if (arg(2) && connector_actions(arg(2))) {
+    $action = arg(2);
+  }
+
+  // this is normally a submit handler... we mimic that.
+  $form = array();
+  $form_state = array();
+  $form_state['clicked_button']['connector']['#value'] = $connector;
+  $form_state['values']['action'] = $action;
+  $connector[$callback]($form, $form_state);
+}
+/**
+ * Access callback for the direct url
+ */
+function connector_redirect_access($connector_name) {
+  if (!($connector = _connector_get_connectors($connector_name))) {
+    return FALSE;
+  }
+
+  return user_access('connect with ' . $connector['name']);
+}
+
+function connector_user_settings_access_callback($account) {
+  return (bool) (user_edit_access($account) && user_access('access connections tab'));
+}
+
+function connector_user_sync_access_callback($account) {
+  return (bool) (user_edit_access($account) && user_access('sync local profile with connections'));
+}
+/**
+ * Implements hook_permission().
+ */
+function connector_permission() {
+  $perms = array(
+    'access connections tab' => array(
+      'title' => t('Access connections tab'),
+      'description' => t('Access the tab with connections to administer connections to external sites for a user.')
+    ),
+    'sync local profile with connections' => array(
+      'title' => t('Sync local profile with connections'),
+      'description' => t('Sync a local profile with a connection.')
+    ),
+  );
+  $connectors = _connector_get_connectors();
+  foreach ($connectors as $connector) {
+    $perms['connect with ' . $connector['name']] = array(
+      'title' => t('Connect with @title', array('@title' => $connector['title'])),
+      'description' => t('Allow user to make a connection with #title to login, register on this site or do stuff on #title in name of the user.', array('#title' => $connector['title'])),
+    );
+  }
+
+  return $perms;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function connector_block_info() {
+  $block['one_click_block']['info'] = t('Connector');
+  return $block;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function connector_block_view($delta) {
+  global $user;
+
+  switch ($delta) {
+    case 'one_click_block':
+      if (!$user->uid) {
+        $state = array('build_info' => array('args' => array()));
+        $form = drupal_retrieve_form('connector_button_form', $state);
+        if($form['#has_buttons']) {
+          return array(
+            'content' => drupal_get_form('connector_button_form'),
+          );
+        }
+      }
+      break;
+  }
+
+}
+
+/**
+ * Implements hook_user_cancel().
+ */
+function connector_user_cancel($edit, $account, $method) {
+  $connectors  = _connector_get_connectors();
+  $connections = _connector_get_user_connections($account);
+  foreach ($connections as $connection) {
+    if (array_key_exists($connection->connector, $connectors)) {
+      $connector = $connectors[$connection->connector];
+      if (isset($connector['delete callback']) && is_callable($connector['delete callback'])) {
+        call_user_func($connector['delete callback'], $connector, $connection->cid);
+      }
+    }
+  }
+  db_delete('connector_user')
+    ->condition('uid', $account->uid)
+    ->execute();
+  db_delete('connector_info')
+    ->condition('uid', $account->uid)
+    ->execute();
+
+}
+
+/**
+ * Implements hook_user_logout().
+ */
+function connector_user_logout($account) {
+  $connectors  = _connector_get_connectors();
+  $connections = _connector_get_user_connections($account);
+  foreach ($connections as $connection) {
+    if (array_key_exists($connection->connector, $connectors)) {
+      $connector = $connectors[$connection->connector];
+      if (isset($connector['logout callback']) && is_callable($connector['logout callback'])) {
+        call_user_func($connector['logout callback'], $connector, $connection->cid);
+      }
+    }
+  }
+}
+
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
+function connector_button_form($form, &$form_state, $account = FALSE, $label = 'Connect with !title', $action = 'default') {
+  $form = array(
+    '#theme' => 'connector_buttons',
+    '#has_buttons' => FALSE,
+  );
+  $form['action'] = array(
+    '#value' => $action,
+    '#type' => 'value',
+  );
+  $i = 0;
+  $connectors = _connector_get_connectors();
+
+  if ($account && $account->uid != 0) {
+    $callback = 'connect button callback';
+  }
+  else {
+    $callback = 'button callback';
+  }
+  foreach ($connectors as $key => $connector) {
+    if (user_access('connect with ' . $connector['name']) && isset($connector[$callback]) && is_callable($connector[$callback])) {
+      $form[$key] = array(
+        '#type' => 'submit',
+        '#value' => t($label, array('!title' => $connector['title'])),
+        '#submit' => array($connector[$callback]),
+        'connector' => array(
+          '#type' => 'value',
+          '#value' => $connector,
+        ),
+      );
+      $form['#has_buttons'] = TRUE;
+    }
+  }
+
+  return $form;
+}
+
+function connector_actions($action_name) {
+  static $connector_actions;
+  if (!isset($connector_actions)) {
+    $connector_actions = (array) module_invoke_all('connector_action');
+    foreach (array_keys($connector_actions) as $key) {
+      if (!isset($connector_actions[$key]['name'])) {
+        $connector_actions[$key]['name'] = $key;
+      }
+    }
+    drupal_alter('connector_action', $connector_actions);
+  }
+  if ($action_name) {
+    if (array_key_exists($action_name, $connector_actions)) {
+      return $connector_actions[$action_name];
+    }
+    else {
+      return FALSE;
+    }
+  }
+  return $connector_actions;
+}
+
+function connector_connector_action() {
+  return array(
+    'default' => array(
+      'login callback' => '_connector_log_in',
+      'create account callback' => '_connector_create_account',
+      'add connection callback' => '_connector_add_connection',
+      'no external uid' => NULL,
+    ),
+  );
+}
+
+function _connector_get_connectors($connector = NULL) {
+  static $connectors;
+
+  if (!isset($connectors)) {
+    $connectors = (array) module_invoke_all('connector');
+
+    // Make sure all connectors has a reference to their own name
+    foreach (array_keys($connectors) as $key) {
+      if (!isset($connectors[$key]['name'])) {
+        $connectors[$key]['name'] = $key;
+      }
+    }
+
+    drupal_alter('connector', $connectors);
+  }
+
+  if ($connector) {
+    if (array_key_exists($connector, $connectors)) {
+      return $connectors[$connector];
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  return $connectors;
+}
+
+function _connector_get_user_connections($uid) {
+  $connectors = array();
+
+  if (is_object($uid)) {
+    $uid = $uid->uid;
+  }
+
+  $result = db_query("SELECT authname FROM {authmap} WHERE module = :module AND uid = :uid", array(':module' => 'connector', ':uid' => $uid));
+
+  foreach ($result as $row) {
+    $row = explode('__', $row->authname, 2);
+    if (count($row) === 2) {
+      $connectors[] = (object) array(
+        'connector' => $row[0],
+        'cid' => $row[1],
+      );
+    }
+  }
+
+  return $connectors;
+}
+
+function _connector_get_primary_connection($uid) {
+  $result = FALSE;
+
+  if (is_object($uid)) {
+    $uid = $uid->uid;
+  }
+
+  $primary_connection = db_query("SELECT primary_connection FROM {connector_user} WHERE uid = :uid", array(':uid' => $uid))->fetchField();
+  if ($primary_connection) {
+    $row = explode('__', $primary_connection, 2);
+    if (count($row) === 2) {
+      $result = (object) array(
+        'connector' => $row[0],
+        'cid' => $row[1],
+      );
+    }
+  }
+
+  return $result;
+}
+
+function _connector_set_primary_connection($uid, $connection) {
+  if (is_object($uid)) {
+    $uid = $uid->uid;
+  }
+  if (is_object($connection)) {
+    $connection = ($connection->connector . '__' . $connection->cid);
+  }
+
+  db_delete('connector_user')
+    ->condition('uid', $uid)
+    ->execute();
+  db_insert('connector_user')
+    ->fields(array(
+      'uid' => $uid,
+      'primary_connection' => $connection,
+    ))
+    ->execute();
+}
+
+
+function _connector_log_in($connector_name, $cid = NULL, $consumer = NULL, $access_token = NULL, $request_token = NULL) {
+  global $user;
+
+  if (user_is_logged_in()) {
+    return TRUE;
+  }
+
+  $connector = _connector_get_connectors($connector_name);
+  if (!$connector) {
+    return FALSE;
+  }
+
+  //Fetch connector ID
+  if ($cid === NULL && isset($connector['id callback']) && is_callable($connector['id callback'])) {
+    $cid = call_user_func($connector['id callback'], $connector);
+  }
+
+  if ($cid !== NULL) {
+    $authname = $connector_name . '__' . $cid;
+    $account = user_external_load($authname);
+    if (!$account) {
+      // Return NULL and not FALSE so that we know we didn't find a user.
+      return NULL;
+    }
+
+    if ($account) {
+
+      if ($account->status) {
+        if (variable_get('user_email_verification', FALSE) && !$account->login) {
+          // User still needs to verify the emailaddress.
+          drupal_set_message(t('Your account is currently pending e-mail verification. You have receveid a email with further instructions. !link to start a new e-mail verification.', array('!link' => l('Request a new password', 'user/password'))), 'warning');
+          if (isset($connector['logout callback']) && is_callable($connector['logout callback'])) {
+            call_user_func($connector['logout callback'], $connector, $connection->cid);
+          }
+        }
+        else {
+         //Log in user
+          $form_state['uid'] = $account->uid;
+          user_login_submit(array(), $form_state);
+          return TRUE;
+        }
+      }
+      else {
+        drupal_set_message(t('Your account is currently pending approval by the site administrator.'), 'warning');
+        // why logout when account is pending? may be it is intentional.
+        if (isset($connector['logout callback']) && is_callable($connector['logout callback'])) {
+          call_user_func($connector['logout callback'], $connector, $connection->cid);
+        }
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+function _connector_create_account($connector_name, $cid = NULL, $consumer = NULL, $access_token = NULL, $request_token = NULL) {
+  $connector = _connector_get_connectors($connector_name);
+  if (!$connector) {
+    return FALSE;
+  }
+  $authname = $connector_name . '__' . $cid;
+
+  if (variable_get('user_register', 1)) {
+    $userinfo = array(
+      'name' => $authname,
+      'pass' => user_password(),
+      'init' => $authname,
+      'status' => variable_get('user_register', 1) == 1,
+      'access' => REQUEST_TIME,
+    );
+
+    // Try to assign values from connection.
+    $info = array();
+    if (!empty($connector['information callback']) && is_callable($connector['information callback'])) {
+      $info = $connector['information callback']($connector, $cid, array(), $access_token);
+    }
+    $allowed_fields = array('name', 'mail');
+    foreach ($info as $field) {
+      if (isset($field['sync']) && $field['sync'] && in_array($field['sync'], $allowed_fields)) {
+        $exists = db_select('users', 'u')
+          ->fields('u')
+          ->condition($field['sync'], $field['value'])
+          ->execute()
+          ->rowCount();
+        if ($exists < 1) {
+          $userinfo[$field['sync']] = $field['value'];
+        }
+      }
+    }
+
+    $new_account = user_save('', $userinfo);
+    // Terminate if an error occured during user_save().
+    if (!$new_account) {
+      drupal_set_message(t("Error saving user account."), 'error');
+    } else {
+      watchdog('user', 'New external user: %name using module %module.', array('%name' => $authname, '%module' => 'connector'), WATCHDOG_NOTICE, l(t('edit'), 'user/' . $new_account->uid . '/edit'));
+      return $new_account;
+    }
+  }
+  else {
+    drupal_set_message(t('Only site administrators can create new user accounts.'), 'error');
+    if (isset($connector['logout callback']) && is_callable($connector['logout callback'])) {
+      call_user_func($connector['logout callback'], $connector, $connection->cid);
+    }
+  }
+}
+
+
+function _connector_add_connection($connector_name, $cid = NULL, $uid = NULL) {
+  global $user;
+
+  $connector = _connector_get_connectors($connector_name);
+  if (!$connector) {
+    return FALSE;
+  }
+
+  $result = FALSE;
+
+  if (empty($uid)) {
+    $uid = $user->uid;
+  }
+  elseif (is_object($uid)) {
+    $uid = $uid->uid;
+  }
+
+  //Fetch connector ID
+  if ($cid === NULL && isset($connector['id callback']) && is_callable($connector['id callback'])) {
+    $cid = call_user_func($connector['id callback'], $connector);
+  }
+
+  // Check that we have an external id to connect with
+  if ($cid !== NULL) {
+    $authname = $connector_name . '__' . $cid;
+    $account = user_external_load($authname);
+    // Check if the external id already connected to someone
+    if ($account) {
+      db_delete('authmap')
+      ->condition('uid', $account->uid)
+      ->condition('authname', $authname)
+      ->execute();
+    }
+    $result = (bool) db_insert('authmap')
+    ->fields(array(
+      'uid' => $uid,
+      'authname' => $authname,
+      'module' => 'connector',
+    ))
+    ->execute();
+    if (!_connector_get_primary_connection($uid)) {
+      _connector_set_primary_connection($uid, $authname);
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * @todo Please document this function.
+ * @see http://drupal.org/node/1354
+ */
+function theme_connector_buttons($variables) {
+
+  $form = $variables['form'];
+  if (!$form['#has_buttons']) return NULL;
+  $output = '';
+  $buttons = array();
+  foreach (element_children($form) as $key) {
+    if ($form[$key]['#type'] == 'submit') {
+      $class = str_replace('_', '-', $key);
+      $form[$key]['#attributes']['class'][] = 'connector-button';
+      $form[$key]['#attributes']['class'][] = $class;
+      $form[$key]['#prefix'] = '<span class="connector-button-wrapper ' .$class . '">';
+      $form[$key]['#suffix'] = '</span>';
+    }
+  }
+  return drupal_render_children($form);
+
+}

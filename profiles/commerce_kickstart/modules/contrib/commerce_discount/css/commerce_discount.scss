@@ -1,0 +1,357 @@
+$gray: #f0f0f0;
+$gray2: #cccccc;
+$gray3: #e7e8e3;
+$gray4: #4d4e49;
+$grayLight: #f6f6f6;
+$grayDark: #6d6d6d;
+$blue: #0089c9;
+$green: #7cae20;
+$azure: #d2eeff;
+
+@mixin gradient {
+  background-image: linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -o-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -moz-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -webkit-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -ms-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.36, rgb(252,253,252)), color-stop(0.68, rgb(240,240,240)));
+}
+
+@mixin box {
+
+  padding: 0px;
+}
+
+@mixin btn {
+  clear: both;
+  margin-right: 20px; // LTR
+  margin-bottom: 5px;
+  color: black;
+  border-radius: 5px;
+}
+
+.ajax-progress-throbber {
+  position: absolute;
+
+  .message {
+    display: none;
+  }
+}
+
+@mixin radio-buttons {
+  @include box;
+  margin-top: 10px;
+
+  .form-item {
+    float: left; // LTR
+    @include btn;
+
+    input {
+      display: inline;
+    }
+  }
+}
+
+@mixin fieldset-title {
+  fieldset.form-wrapper {
+    legend {
+      width: 100%;
+    }
+
+    .fieldset-legend {
+      border-bottom: 1px solid $gray2;
+      display: block;
+      width: 100%;
+    }
+  }
+}
+
+// Reset
+#commerce-discount-edit-order-discount-form,
+#commerce-discount-form {
+
+  label {
+    margin-right: 15px;
+  }
+}
+
+.form-item-label {
+  clear: both;
+}
+
+.form-item-commerce-discount-type.form-item {
+  margin-bottom: 2px;
+  padding: 0;
+
+  #edit-commerce-discount-type {
+    @include radio-buttons;
+  }
+}
+
+.field-name-commerce-discount-date {
+  @include fieldset-title;
+
+  .fieldset-wrapper {
+    display: inline-block;
+    width: 100%;
+  }
+}
+
+.form-item-label.form-item {
+  @include box;
+}
+
+.field-name-commerce-discount-offer {
+
+  border: none;
+  padding: 0;
+  margin: 0;
+
+  .form-wrapper .form-wrapper > .form-item > label {
+    border-bottom: 1px solid $gray2;
+  }
+  span.fieldset-legend {
+    display: none;
+  }
+
+  .fieldset-wrapper {
+    padding: 0;
+  }
+
+  .form-item {
+    margin-bottom: 2px;
+    padding: 0;
+  }
+
+  .form-type-radios > div {
+    @include radio-buttons;
+  }
+
+  .field-type-commerce-price,
+  .field-type-number-decimal {
+    @include box;
+
+    .form-item {
+      margin: 5px 0 0 0;
+    }
+  }
+}
+
+.form-item-enabled {
+  // TODO: Remove
+  height: 45px;
+
+  #edit-enabled .form-item {
+    float: left; // LTR
+    margin-top: 10px;
+
+    label {
+      margin: 0;
+    }
+
+    input {
+      display: none;
+    }
+
+    label {
+      padding: 10px;
+      border: 2px solid $grayDark;
+      font-weight: bold;
+
+      &[for=edit-enabled-1] {
+        background-color: #f7f7f7;
+        color: #d7d7d7;
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px;
+      }
+
+      &[for=edit-enabled-0] {
+        background-color: #f7f7f7;
+        color: $grayDark;
+        border-top-right-radius: 5px;
+        border-bottom-right-radius: 5px;
+        border-left: none;
+      }
+    }
+
+    &.selected {
+
+      label[for=edit-enabled-1] {
+        background-color: $green;
+        color: white;
+
+      }
+
+      label[for=edit-enabled-0] {
+        background-color: $gray4;
+        color: white;
+      }
+
+    }
+  }
+}
+
+// TODO: Try to remove.
+.form-actions {
+  clear: both;
+}
+
+fieldset.form-wrapper {
+  border: none;
+
+  .fieldset-legend {
+    text-transform: none;
+    padding-left: 0;
+  }
+}
+
+.field-name-commerce-discount-date .fieldset-wrapper {
+  @include box;
+
+  .form-type-checkbox {
+    display: none;
+  }
+
+  .container-inline-date {
+    float: left;
+    width: auto;
+    clear: none;
+
+    .date-padding {
+      padding: 0;
+    }
+
+    .description {
+      display: none;
+    }
+
+    .form-item {
+      padding: 0;
+    }
+
+    .date-padding {
+      float: left; // LTR
+
+      input.form-text {
+        width: 55px;
+      }
+
+      & > .form-item:first-child input.form-text {
+        // TODO: For some reason this icon isn't added.
+        width: 100px;
+        background: white url('../../date/date_api/images/calendar.png') no-repeat 86px 1px;
+      }
+    }
+
+    & > .form-item {
+      border: none;
+    }
+
+    label {
+      display: block;
+      float: left;
+    }
+
+    &.end-date-wrapper {
+      margin-left: 20px;
+    }
+  }
+}
+
+.field-name-commerce-discount-max-uses {
+  @include box;
+
+  & > div {
+    float: left; // LTR
+    margin-left: 30px; // LTR
+
+    &:first-child {
+      margin-left: 0;
+    }
+
+    input[disabled] {
+     background: #eeeeee;
+    }
+  }
+
+}
+
+.view-commerce-discount-overview {
+
+  .views-table {
+    border: none;
+
+    tr, td {
+      border: none;
+    }
+
+    th {
+      text-transform: none;
+    }
+
+    th.views-field-enable-disable {
+
+    }
+
+    th.views-field-operations-dropbutton {
+      width: 70px;
+    }
+
+    td.views-field-type span {
+      background-color: $azure;
+      padding: 10px 20px;
+    }
+
+    td.views-field-commerce-discount-usage li {
+      list-style-type: none;
+
+      &.first {
+        color: $grayDark;
+        font-style: italic;
+      }
+    }
+
+    td.views-field-enable-disable .item-list ul {
+      width: 140px;
+      border: 2px solid $grayDark;
+      border-radius: 5px;
+      height: 30px;
+
+      li {
+        display: block;
+        width: 50%;
+        float: left; // LTR
+        text-transform: uppercase;
+        padding: 5px 0;
+        font-weight: bold;
+        text-align: center;
+        font-size: 12px;
+        color: white;
+        line-height: 20px;
+
+        &.enabled {
+          background-color: $green;
+        }
+
+        &.disabled {
+          background-color: $gray4;
+        }
+
+         a {
+          color: $grayDark;
+        }
+      }
+    }
+
+    td.views-field-operations-dropbutton .ctools-dropbutton {
+      border: 1px solid $gray2;
+      border-radius: 10px;
+
+      @include gradient;
+
+      .ctools-content {
+        border-right: 1px solid $gray2;
+      }
+    }
+  }
+}

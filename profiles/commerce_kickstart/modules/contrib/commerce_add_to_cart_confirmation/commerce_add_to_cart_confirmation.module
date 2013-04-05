@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * @file
+ * Provides an "add to cart" confirmation dialog, shown after the customer has
+ * added a product his cart.
+ */
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_add_to_cart_confirmation_views_api() {
+  return array('api' => 3);
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * Create new view mode for product display, commerce product.
+ */
+function commerce_add_to_cart_confirmation_entity_info_alter(&$entity_info) {
+  $entity_info['commerce_product']['view modes']['add_to_cart_confirmation_view'] = array(
+    'label' => t('Add to cart confirmation view'),
+    'custom settings' => TRUE,
+  );
+}

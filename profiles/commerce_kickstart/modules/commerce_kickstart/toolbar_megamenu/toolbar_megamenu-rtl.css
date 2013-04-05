@@ -1,0 +1,16 @@
+#toolbar > div.toolbar-menu > div.toolbar-menu-wrapper > ul.group,
+#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper .group {
+  float: right;
+}
+
+#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper {
+  margin-left: 0;
+  margin-right: -10px;
+}
+
+#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper div.toolbar-menu-wrapper {
+  margin-right: 0;
+  padding-left: 0;
+  padding-right: 1em;
+}
+

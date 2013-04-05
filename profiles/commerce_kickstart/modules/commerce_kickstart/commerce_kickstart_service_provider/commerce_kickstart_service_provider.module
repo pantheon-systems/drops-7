@@ -1,0 +1,450 @@
+<?php
+
+/**
+ * @file
+ * Main module file for commerce_kickstart_service_providers.module
+ */
+
+ // Service module is not exists.
+define('COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_NOT_EXISTS', 0);
+
+// Service module exists but enabled.
+define('COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_EXISTS', 1);
+
+// Service module is exists and enabled.
+define('COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_ENABLED', 2);
+
+// Service module is exists, enabled and the settings are defined.
+define('COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_DEFINED', 3);
+
+// Service module exists, enabled, bypass the settings check.
+define('COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_BYPASS', 4);
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_kickstart_service_provider_theme($existing, $type, $theme, $path) {
+  return array(
+    'providers_teaser' => array(
+      'path' => drupal_get_path('module', 'commerce_kickstart_service_provider') . '/theme',
+      'template' => 'commerce-kickstart-providers-teaser',
+    ),
+    'providers_page' => array(
+      'path' => drupal_get_path('module', 'commerce_kickstart_service_provider') . '/theme',
+      'template' => 'commerce-kickstart-providers-page',
+    ),
+    'providers_page_row' => array(
+      'path' => drupal_get_path('module', 'commerce_kickstart_service_provider') . '/theme',
+      'template' => 'commerce-kickstart-providers-page-row',
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_kickstart_service_provider_menu() {
+  $items = array();
+
+  $items['admin/modules/service-providers'] = array(
+    'title' => 'Service providers',
+    'description' => 'See all the available services for your Commerce Kickstart',
+    'page callback' => 'commerce_kickstart_service_provider_all_services',
+    'access arguments' => array('administer site configuration'),
+    'parent' => 'admin/commerce/config/advanced-settings',
+  );
+  return $items;
+}
+
+/**
+ * Get all the available services.
+ *
+ * For more information look in commerce_kickstart_service_provider.api.php.
+ */
+function commerce_kickstart_service_provider_providers_info() {
+  // Get all the implemented hooks.
+  $services = module_invoke_all('commerce_kickstart_service_provider');
+
+  $all_modules = system_rebuild_module_data();
+  $enabled_modules = module_list();
+
+  foreach ($services as $service_name => $service_info) {
+    if (isset($enabled_modules[$service_name])) {
+      if (!empty($service_info['bypass_requirements'])) {
+        $status = COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_BYPASS;
+      }
+      else {
+        // The module exists. Check for existing requirements status call back
+        // function. If not, return status: enabled module.
+        $status = empty($service_info['requirements_callback']) ? COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_ENABLED : call_user_func($service_info['requirements_callback']);
+      }
+    }
+    else if (isset($all_modules[$service_name])) {
+      // Service module is not enabled but exists.
+      $status = COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_EXISTS;
+    }
+    else {
+      // Module does not exist.
+      $status = COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_NOT_EXISTS;
+    }
+    $services[$service_name] = $service_info + array(
+      '#weight' => isset($service_info['weight']) ? $service_info['weight'] : 0,
+      'status' => $status,
+    );
+  }
+
+  // Allow other modules to alter the data before sorting the data.
+  drupal_alter('commerce_kickstart_service_provider', $services);
+
+  // Sorting by weight.
+  uasort($services, 'element_sort');
+
+  return $services;
+}
+
+/**
+ * Return a html of all the services in a teaser format.
+ */
+function commerce_kickstart_service_provider_get_teaser() {
+  _commerce_kickstart_service_provider_add_element('css', 'commerce_kickstart_service_provider.css');
+
+  // Displaying only 3 services in the teaser.
+  $services = commerce_kickstart_service_provider_providers_info();
+
+  if (empty($services)) {
+    return '<span class="services-not-found">' . t("Couldn't found services providers") . '</span>';
+  }
+
+  // Render the collected from other modules.
+  $output = '';
+  foreach ($services as $name => $info) {
+    $params = array(
+      'path' => $info['logo_path'],
+      'width' => 123,
+    );
+
+    $variable['name'] = $name;
+    $variable['title'] = $info['title'];
+    $variable['logo'] = theme('image', $params);
+    $variable['type'] = $info['category'];
+    $variable['link'] = l(t('View service'), 'admin/modules/service-providers', array('fragment' => $name));
+    $variable['description'] = $info['teaser'];
+
+    $output .= theme('providers_teaser', $variable);
+  }
+
+  return $output;
+}
+
+/**
+ * Return a html of all the services in a full format.
+ */
+function commerce_kickstart_service_provider_get_full() {
+  _commerce_kickstart_service_provider_add_element('css', 'commerce_kickstart_service_provider.css');
+  _commerce_kickstart_service_provider_add_element('js', 'commerce_kickstart_service_provider.js');
+
+  $services = commerce_kickstart_service_provider_providers_info();
+
+  if (empty($services)) {
+    return '<span class="services-not-found">' . t("Couldn't found services providers") . '</span>';
+  }
+
+  // Render the collected from other modules.
+  $requirements = array(
+    COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_NOT_EXISTS => array(
+      'text' => t("Doesn't exist"),
+      'class' => 'not-exists',
+    ),
+    COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_EXISTS => array(
+      'text' => t('Not installed'),
+      'class' => 'not-installed',
+    ),
+    COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_ENABLED => array(
+      'text' => t('Installed, requires configuration'),
+      'class' => 'requires-config'
+    ),
+    COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_DEFINED => array(
+      'text' => t('Installed, settings are defined'),
+      'class' => 'installed-defined'
+    ),
+    COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_BYPASS => array(
+      'text' => t('Installed'),
+      'class' => 'installed-defined',
+    ),
+  );
+  $i = 0;
+  $output = '';
+  foreach ($services as $name => $info) {
+    $params = array(
+      'path' => $info['logo_path'],
+      'width' => 123,
+    );
+    $variables['name'] = $name;
+    $variables['title'] = l($info['title'], $info['link']);
+    $variables['logo'] = theme('image', $params);
+    $variables['type'] = $info['category'];
+    $variables['description'] = $info['description'];
+    $variables['installation'] = $info['installation_proccess'];
+    $variables['installation_label'] = isset($info['installation_label']) ? $info['installation_label'] : t('Installation');
+    $variables['requirements'] = isset($info['requirements']) ? $info['requirements'] : FALSE;
+    $variables['zebra'] = $i++ % 2 == 0 ? 'odd' : 'even';
+    $variables['status_text'] = $requirements[$info['status']]['text'];
+    $variables['status_class'] = $requirements[$info['status']]['class'];
+    $output .= theme('providers_page_row', $variables);
+  }
+
+  return $output;
+}
+
+/**
+ * Implements hook_commerce_kickstart_service_provider().
+ */
+function commerce_kickstart_service_provider_commerce_kickstart_service_provider() {
+  $kiala_teaser = t('Kiala delivers parcels to a convenient collection point selected by your customer. ');
+  $kiala_teaser .= t('Other benefits in addition to faster, more practical delivery include improved tracking and a simpler return process.');
+
+  $kiala_description = t('Sign up for Kiala’s shipping service today to benefit from this pre-installed module! Want to try it for free first?<br/>');
+  $kiala_description .= t('Get a demo account by filling out the form on the <a href="@marketplace_url">Marketplace!</a> (Available in Spain, France and Benelux regions)', array('@marketplace_url' => 'https://marketplace.commerceguys.com/partner/kiala'));
+
+  $lingotek_description = t('Make your site multilingual with the Lingotek module and translation services!');
+  $lingotek_description .= '<br/>' . t('They can adapt to fit your content translation needs by matching your timeline
+  and budget to the appropriate workflow-from machine translation post-editing to professional translation, and everything in between.');
+
+  $lingotek_installation = array();
+  $lingotek_installation[] = t('Enable the module (site settings > modules > search for Lingotek check enabled and save).');
+  $lingotek_installation[] = l(t('Sign up for the Lingotek service.'), 'admin/config/lingotek/new-account');
+
+  return array(
+    'commerce_moneybookers' => array(
+      'logo_path' => drupal_get_path('module', 'commerce_kickstart_service_provider') . '/images/skrill.png',
+      'title' => t('Skrill'),
+      'category' => t('Payment providers'),
+      'teaser' => t('A payment gateway that provides over 100 payment options, with 41 currencies covering 200 countries and territories through just one partner.'),
+      'description' => t('A payment gateway that provides over 100 payment options, with 41 currencies covering 200 countries and territories through just one partner. <br />Great product!'),
+      'link' => 'http://skrill.com',
+      'installation_proccess' => t('1. Register <br />2. Fill in API'),
+      'requirements' => t('Requires configuration API code to be set.'),
+      'weight' => 0,
+    ),
+    'commerce_kiala' => array(
+      'logo_path' => drupal_get_path('module', 'commerce_kickstart_service_provider') . '/images/kiala-logo.jpg',
+      'title' => t('Kiala'),
+      'category' => t('Shipping methods'),
+      'teaser' => $kiala_teaser,
+      'description' => $kiala_description,
+      'requirements_callback' => 'commerce_kickstart_service_provider_kiala_requirements',
+      'link' => 'http://www.kiala.com',
+      'installation_label' => t('Once you have an account'),
+      'installation_proccess' => _commerce_kickstart_service_provider_kiala_get_installation_text(),
+      'weight' => 0,
+    ),
+    'commerce_payflow' => array(
+      'logo_path' => drupal_get_path('module', 'commerce_kickstart_service_provider') . '/images/paypal.gif',
+      'title' => t('PayPal Payments Advanced / Payflow Link'),
+      'category' => t('Payment providers'),
+      'teaser' => _commerce_kickstart_service_provider_payflow_get_teaser(),
+      'description' => _commerce_kickstart_service_provider_payflow_get_teaser(),
+      'installation_proccess' => _commerce_kickstart_service_provider_payflow_get_installation_text(),
+      'link' => 'http://www.paypal.com',
+      'bypass_requirements' => TRUE,
+      'weight' => 10,
+    ),
+    'commerce_paypal_ec' => array(
+      'logo_path' => drupal_get_path('module', 'commerce_kickstart_service_provider') . '/images/paypal.gif',
+      'title' => t('PayPal Express Checkout'),
+      'category' => t('Payment providers'),
+      'teaser' => _commerce_kickstart_service_provider_paypal_ec_get_teaser(),
+      'description' => _commerce_kickstart_service_provider_paypal_ec_get_teaser(),
+      'installation_proccess' => _commerce_kickstart_service_provider_paypal_ec_get_installation_text(),
+      'link' => 'http://www.paypal.com',
+      'bypass_requirements' => TRUE,
+      'weight' => 10,
+    ),
+    'lingotek' => array(
+      'logo_path' => drupal_get_path('module', 'commerce_kickstart_service_provider') . '/images/lingotek.png',
+      'title' => t('Lingotek'),
+      'category' => t('Translation'),
+      'teaser' => t('The Translation Network helps you create and manage all of your multilingual content.'),
+      'description' => $lingotek_description,
+      'installation_proccess' => theme('item_list', array('items' => $lingotek_installation, 'type' => 'ol')),
+      'installation_label' => t('Get started now with two simple steps:'),
+      'link' => 'http://www.lingotek.com',
+      'requirements_callback' => '_commerce_kickstart_service_provider_lingotek_requirements',
+      'weight' => 10,
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_kickstart_service_provider_alter().
+ */
+function commerce_kickstart_service_provider_commerce_kickstart_service_provider_alter(&$services) {
+  if (isset($services['jirafe'])) {
+    $services['jirafe']['logo_path'] = drupal_get_path('module', 'commerce_kickstart_service_provider') . '/images/jirafe_logo.png';
+  }
+}
+
+/**
+ * Requirements callback for the Lingotek service.
+ */
+function _commerce_kickstart_service_provider_lingotek_requirements() {
+  $lingotek_lid = variable_get('lingotek_login_id', '');
+  $lingotek_password = variable_get('lingotek_password', '');
+  if (empty($lingotek_lid) || empty($lingotek_password)) {
+    return COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_ENABLED;
+  }
+  return COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_DEFINED;
+}
+
+/**
+ * Return the teaser text for the PayPal EC module.
+ */
+function _commerce_kickstart_service_provider_paypal_ec_get_teaser() {
+  $text = t('Let your customers pay with PayPal, credit card, or debit card on securely hosted checkout forms.  ');
+  $text .= t('PayPal collects the necessary address and payment information and returns your customers to your site to finalize the purchase. ');
+  $text .= t('All you need to accept payments with Express Checkout is a  PayPal Business account.');
+  return $text;
+}
+
+/**
+ * Return the PayPal EC installation text.
+ */
+function _commerce_kickstart_service_provider_paypal_ec_get_installation_text() {
+  $items = array();
+  $variables = array(
+    '@paypal-url' => 'https://www.paypal.com/webapps/mpp/referral/paypal-express-checkout?partner_id=VZ6B9QLQ8LZEE',
+  );
+  $items[] = t('<a href="@paypal-url">Register for a PayPal Business account.</a>', $variables);
+  $variables += array(
+    '!store_settings' => l('Store settings > Payment methods', 'admin/commerce/config/payment-methods'),
+  );
+  $items[] = t('Enable <em>PayPal Express Checkout</em> from your !store_settings', $variables);
+  $text = t('Edit the payment method rule to configure your <em>PayPal Express Checkout</em> account credentials and transaction settings.');
+  $items[] = $text;
+  $text = t('To get your Express Checkout credentials, go to your PayPal account > Profile > My Selling Tools >API Access.');
+  $items[] = $text;
+  $variables += array(
+    '@drupal-url' => 'http://drupal.org/node/1902734',
+    '@marketplace-url' => 'https://marketplace.commerceguys.com/service/paypal',
+  );
+  $text = t('<a href="@drupal-url">Read the documentation</a> to learn how to locate your API credentials, understand the settings, and configure the checkout form to collect additional information when customers finalize the purchase on your site.', $variables);
+  $items[] = $text;
+  $text = t('Compare Express Checkout and PayPal’s other payment solutions, refer to the <a href="@marketplace-url">PayPal overview in the Commerce Marketplace</a>.', $variables);
+  $items[] = $text;
+  return theme('item_list', array('items' => $items, 'type' => 'ol'));
+}
+
+/**
+ * Return the Payflow installation text.
+ */
+function _commerce_kickstart_service_provider_payflow_get_installation_text() {
+  $items = array();
+  $variables = array(
+    '@paypal-payment-url' => 'https://www.paypal.com/webapps/mpp/referral/paypal-payments-advanced?partner_id=VZ6B9QLQ8LZEE',
+    '@paypal-payflow-url' => 'https://www.paypal.com/webapps/mpp/referral/paypal-payflow-link?partner_id=VZ6B9QLQ8LZEE',
+  );
+  $items[] = t('Register an account for <a href="@paypal-payment-url">PayPal Payments</a> or <a href="@paypal-payflow-url">Payflow Link</a>', $variables);
+  $variables += array(
+    '!store_settings' => l('Store settings > Payment methods', 'admin/commerce/config/payment-methods'),
+  );
+  $items[] = t('Enable Paypal Payment Advanced or Payflow Link from your !store_settings', $variables);
+  $text = t('Edit the payment method rule to configure your PayPal Payments Advanced or Payflow Link account credentials and transaction settings.');
+  $items[] = $text;
+  $variables += array(
+    '@drupal-url' => 'http://drupal.org/node/1902734',
+    '@marketplace-url' => 'https://marketplace.commerceguys.com/service/paypal',
+  );
+  $text = t('<a href="@drupal-url">Read the documentation for a guide</a>  for a guide to the required configuration of the service in your PayPal Payflow account settings and to learn how to connect your PayPal Payflow account to a PayPal Business account to accept PayPal payments.', $variables);
+  $items[] = $text;
+  $text = t('Compare PayPal Payments Advanced / Payflow Link with PayPal’s other payment solutions, refer to the <a href="@marketplace-url">PayPal overview in the Commerce Marketplace</a>', $variables);
+  $items[] = $text;
+  return theme('item_list', array('items' => $items, 'type' => 'ol'));
+}
+
+/**
+ * Return the teaser text for the PayFlow module.
+ */
+function _commerce_kickstart_service_provider_payflow_get_teaser() {
+  $text = t('Accept payments on your site via credit card, debit card and PayPal on secure iframes that are embedded in the Drupal Commerce checkout form. ');
+  $text .= t('With PayPal Payments Advanced, PayPal acts as your payment processor (available in the US only), while Payflow Link allows you to use the merchant account provider of your choice.');
+  return $text;
+}
+
+/**
+ * Return kiala installation text.
+ */
+function _commerce_kickstart_service_provider_kiala_get_installation_text() {
+  $text = '<h5>' . t('1. Add a service') . '</h5>';
+  $text .= t('Add one or more Kiala services to set up the price of your shipping on the site.')  . '<br/>';
+  $variables = array(
+    '!url' => l('"Store Settings - Shipping Methods"', 'admin/commerce/config/shipping/methods'),
+    '!kiala_url' => l('add a Kiala service', 'admin/commerce/config/shipping/services/kiala/'),
+  );
+  $text .= t('Go to the !url option in the main admin menu, then click on !kiala_url to add a service!', $variables);
+  $text .= '<h5>' . t('2. Configure your module') . '</h5>';
+  $variables += array(
+    '!edit_url' => l('edit', 'admin/commerce/config/shipping/methods/kiala/edit'),
+  );
+  $text .= t('Go to the !url option in the main admin menu, then click on !edit_url to configure your merchant ID. ', $variables);
+  $text .= t('You will also be able to edit details about which countries you will be delivering to, and how you wish to display your Kiala map.');
+  return $text;
+}
+
+/**
+ * Requirements callback for the kiala module.
+ */
+function commerce_kickstart_service_provider_kiala_requirements() {
+  $all_modules = system_rebuild_module_data();
+  $enabled_modules = module_list();
+  if (!isset($all_modules['commerce_kiala'])) {
+    return COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_NOT_EXISTS;
+  }
+  else {
+    if (isset($enabled_modules['commerce_kiala'])) {
+      $kiala_services = commerce_shipping_services('kiala');
+      if (!empty($kiala_services)) {
+        return COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_DEFINED;
+      }
+      return COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_ENABLED;
+    }
+    else {
+      return COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_EXISTS;
+    }
+  }
+}
+
+/**
+ * Show all the services available.
+ */
+function commerce_kickstart_service_provider_all_services() {
+  $form = drupal_get_form('commerce_kickstart_service_provider_service_search');
+  $variables = array(
+    'page_title' => t('Services provided through Commerce Guys partners'),
+    'search' => render($form),
+    'services' => commerce_kickstart_service_provider_get_full(),
+  );
+
+  return theme('providers_page', $variables);
+}
+
+/**
+ * Custom form.
+ */
+function commerce_kickstart_service_provider_service_search() {
+  $form['text'] = array(
+    '#type' => 'textfield',
+    '#default_value' => t('Search'),
+    '#size' => 25,
+  );
+
+  return $form;
+}
+
+/**
+ * Helper function: add js/css more easily.
+ */
+function _commerce_kickstart_service_provider_add_element($type, $filename) {
+  $function_name = 'drupal_add_' . $type;
+
+  $function_name(drupal_get_path('module', 'commerce_kickstart_service_provider') . '/' . $type .'/' . $filename);
+}

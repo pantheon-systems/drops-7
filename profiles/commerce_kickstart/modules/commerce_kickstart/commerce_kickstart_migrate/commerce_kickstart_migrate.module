@@ -1,0 +1,17 @@
+<?php
+
+/**
+ * Implements hook_migrate_api().
+ */
+function commerce_kickstart_migrate_migrate_api() {
+  $api = array(
+    'api' => 2,
+    'migrations' => array(
+      'CommerceKickstartPages' => array('class_name' => 'CommerceKickstartPages'),
+    ),
+    'field handlers' => array(
+      'KickstartMigrateTaxonomyTermReferenceFieldHandler',
+    ),
+  );
+  return $api;
+}

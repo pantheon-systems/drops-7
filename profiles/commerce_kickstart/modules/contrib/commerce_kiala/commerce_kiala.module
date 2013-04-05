@@ -1,0 +1,2367 @@
+<?php
+
+/**
+ * @file
+ * Allows you to define any number of Kiala shipping services
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_kiala_menu() {
+  $items = array();
+
+  $items['admin/commerce/config/shipping/methods/kiala/edit'] = array(
+    'title' => 'Edit',
+    'description' => 'Configure the Kiala shipping method.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_kiala_settings_form'),
+    'access arguments' => array('administer shipping'),
+    'file' => 'includes/commerce_kiala.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 0,
+  );
+
+  $items['admin/commerce/config/shipping/methods/kiala/add'] = array(
+    'title' => 'Add a Kiala service',
+    'description' => 'Create a new Kiala shipping service, including a title and base shipping rate.',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('admin/commerce/config/shipping/services/kiala/add'),
+    'access callback' => 'commerce_kiala_service_access',
+    'access arguments' => array('create'),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 8,
+  );
+
+  $items['admin/commerce/config/shipping/services/kiala/add'] = array(
+    'title' => 'Add a Kiala rate service',
+    'description' => 'Create a new kiala shipping service, including a title and base shipping rate.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_kiala_service_form', commerce_kiala_service_new()),
+    'access callback' => 'commerce_kiala_service_access',
+    'access arguments' => array('create'),
+    'type' => MENU_LOCAL_ACTION,
+    'context' => MENU_CONTEXT_PAGE,
+    'file' => 'includes/commerce_kiala.admin.inc',
+  );
+
+  foreach (commerce_shipping_services('kiala') as $name => $shipping_service) {
+    // Convert underscores to hyphens for the menu item argument.
+    $service_name_arg = 'kiala-' . strtr($name, '_', '-');
+
+    $items['admin/commerce/config/shipping/services/' . $service_name_arg . '/edit'] = array(
+      'title' => 'Edit',
+      'description' => 'Edit the Kiala service.',
+      'page callback' => 'commerce_kiala_service_edit_page',
+      'page arguments' => array($name),
+      'access callback' => 'commerce_kiala_service_access',
+      'access arguments' => array('update'),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE,
+      'weight' => 0,
+      'file' => 'includes/commerce_kiala.admin.inc',
+    );
+
+    $items['admin/commerce/config/shipping/services/' . $service_name_arg . '/delete'] = array(
+      'title' => 'Delete',
+      'description' => 'Delete the kiala service.',
+      'page callback' => 'commerce_kiala_service_delete_page',
+      'page arguments' => array($name),
+      'access callback' => 'commerce_kiala_service_access',
+      'access arguments' => array('delete'),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE,
+      'weight' => 10,
+      'file' => 'includes/commerce_kiala.admin.inc',
+    );
+  }
+
+
+  // Define an always accessible path to receive Map selections.
+  $items['commerce_kiala/map-select/%commerce_order/%commerce_shipping_service/%'] = array(
+    'page callback' => 'commerce_kiala_process_map_select',
+    'page arguments' => array(2, 3, 4),
+    'access callback' => 'commerce_kiala_map_select_access',
+    'access arguments' => array(2, 3, 4),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['kiala-points/%'] = array(
+    'title' => 'Kiala Point Details',
+    'title callback' => 'commerce_kiala_point_details_map_page_title',
+    'title arguments' => array(1),
+    'description' => 'Display Kiala Point details.',
+    'page callback' => 'commerce_kiala_point_details_map_page',
+    'page arguments' => array(1),
+    'access callback' => TRUE,
+    'file' => 'includes/commerce_kiala.page.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Access callback: grants users access to the service operations if they
+ * have the specific permission or generic shipping permission.
+ *
+ * @param $op
+ *   The operation string: of create, update, or delete.
+ *
+ * @return
+ *   Boolean indicating the user's access.
+ */
+function commerce_kiala_service_access($op) {
+  return user_access('administer shipping') || user_access('administer kiala services');
+}
+
+/**
+ * Title callback for point details map page
+ */
+function commerce_kiala_point_details_map_page_title($point_id) {
+  return t('Kiala Point Details for @point_id', array('@point_id' => $point_id));
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_kiala_permission() {
+  return array(
+    'administer kiala services' => array(
+      'title' => t('Administer Kiala shipping services.'),
+      'description' => t('Allows users to create, edit and delete Kiala shipping services.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function commerce_kiala_hook_info() {
+  $base_info = array(
+    'group' => 'commerce',
+  );
+
+  $hooks = array(
+    'commerce_kiala_settings_info' => $base_info,
+    'commerce_kiala_settings_info_alter' => $base_info,
+    'commerce_kiala_service_insert' => $base_info,
+    'commerce_kiala_service_update' => $base_info,
+    'commerce_kiala_service_delete' => $base_info,
+    'commerce_kiala_line_item_point_insert' => $base_info,
+    'commerce_kiala_line_item_point_update' => $base_info,
+    'commerce_kiala_line_item_point_delete' => $base_info,
+  );
+
+  return $hooks;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_kiala_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_kiala') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function commerce_kiala_flush_caches() {
+  return array('cache_commerce_kiala_responses');
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_kiala_theme() {
+  $path = drupal_get_path('module', 'commerce_kiala') . '/theme';
+
+  return array(
+    'commerce_kiala_point_details' => array(
+      'variables' => array(
+        'point_details' => array(),
+        'point_title' => NULL,
+        'show_more_link' => NULL,
+      ),
+      'path' => $path,
+      'file' => 'commerce_kiala.theme.inc',
+      'template' => 'commerce-kiala-point-details',
+    ),
+    'commerce_kiala_point_details_map' => array(
+      'variables' => array('point_id' => NULL, 'options' => array()),
+      'path' => $path,
+      'file' => 'commerce_kiala.theme.inc',
+      'template' => 'commerce-kiala-point-details-map',
+    ),
+    'commerce_kiala_point_search_map' => array(
+      'variables' => array('zip' => NULL, 'options' => array()),
+      'path' => $path,
+      'file' => 'commerce_kiala.theme.inc',
+      'template' => 'commerce-kiala-point-search-map',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ * - Add Kiala Point reference on order view
+ */
+function commerce_kiala_field_extra_fields() {
+  return array(
+    'commerce_order' => array(
+      'commerce_order' => array(
+        'form' => array(
+          'commerce_kiala_point' => array(
+            'label' => t('Kiala Delivery Point'),
+            'description' => t('Kiala Point referenced on the order'),
+            'weight' => 10,
+          ),
+        ),
+        'display' => array(
+          'commerce_kiala_point' => array(
+            'label' => t('Kiala Delivery Point'),
+            'description' => t('Kiala Point referenced on the order'),
+            'weight' => 10,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
+
+// -----------------------------------------------------------------------
+// Entity property callbacks
+
+/**
+ * Line item properties
+ */
+function commerce_kiala_line_item_property_get($entity, array $options, $name) {
+  switch ($name) {
+    case 'kiala_point':
+      if (!empty($entity->line_item_id)) {
+        return commerce_kiala_line_item_point_load($entity->line_item_id);
+      }
+      break;
+  }
+}
+
+/**
+ * Order properties
+ */
+function commerce_kiala_order_property_get($entity, array $options, $name) {
+  $point = NULL;
+  if (!empty($entity->order_id)) {
+    $point = commerce_kiala_line_item_point_load_by_order($entity->order_id);
+  }
+
+  switch ($name) {
+    case 'kiala_point':
+      return !empty($point) ? $point : NULL;
+
+    case 'kiala_point_id':
+      return !empty($point->point_id) ? $point->point_id : NULL;
+
+    case 'kiala_point_url':
+      if (!empty($point->point_id)) {
+        return url('kiala-points/' . $point->point_id, array('absolute' => TRUE));
+      }
+      break;
+
+    case 'kiala_point_remote_url':
+      if (!empty($point->point_id)) {
+        return commerce_kiala_get_handler_ls_ws_details($point->point_id)->url;
+      }
+      break;
+
+    case 'kiala_point_remote_search_url':
+      $recipient_address = commerce_kiala_order_recipient_address($entity);
+      if (!empty($recipient_address['zip'])) {
+        return commerce_kiala_get_handler_ls_map_search($recipient_address['zip'], $recipient_address)->url;
+      }
+      break;
+  }
+}
+
+
+// -----------------------------------------------------------------------
+// Service CRUD
+
+/**
+ * Returns an initialized shipping service array for forms.
+ */
+function commerce_kiala_service_new() {
+  return array(
+    'name' => '',
+    'title' => '',
+    'display_title' => '',
+    'description' => t('Kiala allows parcels to be delivered to close by shops with wide open hours and no waiting lines.'),
+    'rules_component' => TRUE,
+    'base_rate' => array(
+      'amount' => 0,
+      'currency_code' => commerce_default_currency(),
+      'data' => array(),
+    ),
+    'data' => array(),
+    'is_new' => TRUE,
+  );
+}
+
+/**
+ * Saves a service to the database.
+ *
+ * @param $shipping_service
+ *   The shipping service to save. If the service array includes the
+ *   base_rate array, its amount and currency_code values will be moved up a
+ *   level to be saved to the database via drupal_write_record().
+ * @param $skip_reset
+ *   Boolean indicating whether or not this save should result in shipping
+ *   services being reset and the menu being rebuilt; defaults to FALSE. This is
+ *   useful when you intend to perform many saves at once, as menu rebuilding is
+ *   very costly in terms of performance.
+ *
+ * @return
+ *   The return value of the call to drupal_write_record() to save the
+ *   service; either FALSE on failure or SAVED_NEW or SAVED_UPDATED indicating
+ *   the type of query performed to save the service.
+ */
+function commerce_kiala_service_save($shipping_service, $skip_reset = FALSE) {
+  // Move the amount and currency code up a level in the service array.
+  if (!empty($shipping_service['base_rate'])) {
+    $shipping_service['amount'] = $shipping_service['base_rate']['amount'];
+    $shipping_service['currency_code'] = $shipping_service['base_rate']['currency_code'];
+  }
+
+  $op = drupal_write_record('commerce_kiala_service', $shipping_service, empty($shipping_service['is_new']) ? 'name' : array());
+
+  // If this is a new service and the insert did not fail...
+  if (!empty($shipping_service['is_new']) && $op !== FALSE) {
+    // Notify other modules that a new service has been created.
+    module_invoke_all('commerce_kiala_service_insert', $shipping_service, $skip_reset);
+  }
+  elseif ($op !== FALSE) {
+    // Notify other modules that an existing service has been updated.
+    module_invoke_all('commerce_kiala_service_update', $shipping_service, $skip_reset);
+  }
+
+  // Clear the necessary caches and rebuild the menu items.
+  if (!$skip_reset) {
+    commerce_shipping_services_reset();
+    entity_defaults_rebuild();
+    rules_clear_cache(TRUE);
+    menu_rebuild();
+  }
+
+  return $op;
+}
+
+/**
+ * Deletes a service.
+ *
+ * @param $name
+ *   The machine-name of the service.
+ * @param $skip_reset
+ *   Boolean indicating whether or not this delete should result in shipping
+ *   services being reset and the menu being rebuilt; defaults to FALSE. This is
+ *   useful when you intend to perform many deletions at once, as menu
+ *   rebuilding is very costly in terms of performance.
+ */
+function commerce_kiala_service_delete($name, $skip_reset = FALSE) {
+  $shipping_service = commerce_shipping_service_load($name);
+
+  db_delete('commerce_kiala_service')
+    ->condition('name', $name)
+    ->execute();
+
+  rules_config_delete(array('commerce_shipping_service_' . $name));
+
+  // Clear the necessary caches and rebuild the menu items.
+  if (!$skip_reset) {
+    commerce_shipping_services_reset();
+    entity_defaults_rebuild();
+    rules_clear_cache(TRUE);
+    menu_rebuild();
+  }
+
+  // Notify other modules that this service has been deleted.
+  module_invoke_all('commerce_kiala_service_delete', $shipping_service, $skip_reset);
+}
+
+
+// -----------------------------------------------------------------------
+// Settings values handling
+
+/**
+ * Return available countries for Kiala
+ */
+function commerce_kiala_country_get_list() {
+  include_once DRUPAL_ROOT . '/includes/locale.inc';
+  $countries = country_get_list();
+
+  $available_codes = array("FR", "ES", "NL", "BE", "LU");
+  $available_countries = array();
+  foreach ($available_codes as $code) {
+    if (isset($countries[$code])) {
+      $available_countries[$code] = $countries[$code];
+    }
+  }
+
+  return $available_countries;
+}
+
+/**
+ * Returns TRUE if can ship to the given country code with the current Kiala settings
+ */
+function commerce_kiala_can_ship_to_country($country_code) {
+  $settings = commerce_kiala_settings();
+
+  if (empty($country_code)) {
+    return FALSE;
+  }
+
+  // DENY if no sender country
+  if (empty($settings['country'])) {
+    return FALSE;
+  }
+
+  // DENY if not in any enabled countries
+  if (empty($settings['shipping_countries_enabled']) ||
+      !in_array($country_code, $settings['shipping_countries_enabled'])) {
+    return FALSE;
+  }
+
+  // DENY if cannot ship to the endpoint
+  return commerce_kiala_country_check_endpoints($settings['country'], $country_code);
+}
+
+/**
+ * Returns TRUE if "from" endpoint can ship to "to" endpoint
+ */
+function commerce_kiala_country_check_endpoints($from, $to) {
+  $from = drupal_strtoupper($from);
+  $to = drupal_strtoupper($to);
+  $available = commerce_kiala_country_available_endpoints();
+  return isset($available[$from]) && in_array($to, $available[$from]);
+}
+
+/**
+ * Returns an array of allowed country combinations FROM/TO
+ */
+function commerce_kiala_country_available_endpoints() {
+  return array(
+    'NL' => array('NL', 'BE', 'LU', 'FR', 'ES'),
+    'BE' => array('NL', 'BE', 'LU', 'FR', 'ES'),
+    'FR' => array('NL', 'BE', 'LU', 'FR', 'ES'),
+    'ES' => array('NL', 'BE', 'LU', 'FR', 'ES'),
+    'LU' => array('NL', 'BE', 'LU', 'FR', 'ES'),
+  );
+}
+
+/**
+ * Retrieve settings values.
+ */
+function commerce_kiala_settings($options = array()) {
+  $options = !empty($options) ? $options : array();
+
+  $options += array(
+    'include_passwords' => FALSE,
+    'decrypt' => FALSE,
+    'conditions' => array(),
+  );
+
+  $decrypt = !empty($options['decrypt']) &&
+              variable_get('commerce_kiala_encrypt', FALSE) &&
+              _commerce_kiala_decrypt_handler();
+
+  // get stored values
+  $stored_values = variable_get('commerce_kiala_settings', array());
+
+  // get settings info
+  $info = commerce_kiala_settings_info($options['conditions']);
+
+  // exclude passwords if needed
+  if (empty($options['include_passwords'])) {
+    $password_info = commerce_kiala_settings_info(array('password' => TRUE));
+    $info = array_diff_key($info, $password_info);
+  }
+
+  // only return values in info
+  $values = array();
+  foreach ($info as $name => $data) {
+    $values[$name] = NULL;
+    if (isset($stored_values[$name])) {
+      $values[$name] = $stored_values[$name];
+    }
+    elseif (isset($data['default'])) {
+      $values[$name] = $data['default'];
+    }
+
+    if ($decrypt && isset($values[$name]) && commerce_kiala_setting_is_sensitive($data)) {
+      $values[$name] = commerce_kiala_decrypt($values[$name]);
+    }
+  }
+
+  return $values;
+}
+
+/**
+ * Encrypt settings values provided.
+ */
+function commerce_kiala_encrypt_settings_values($values) {
+  $encrypter = _commerce_kiala_encrypt_handler();
+  if (empty($values) || !$encrypter) {
+    return $values;
+  }
+
+  $info = commerce_kiala_settings_info();
+  $processed = $values;
+  foreach ($values as $k => $v) {
+    if (isset($info[$k]) && !empty($v) && commerce_kiala_setting_is_sensitive($info[$k])) {
+      $processed[$k] = $encrypter($v);
+    }
+  }
+
+  return $processed;
+}
+
+
+// -----------------------------------------------------------------------
+// Settings info handling
+
+/**
+ * Resets the cached list of settings.
+ */
+function commerce_kiala_settings_info_reset() {
+  $info = &drupal_static('commerce_kiala_settings_info');
+  $info = NULL;
+}
+
+/**
+ * Returns a keyed array of all settings
+ *
+ * @param $conditions
+ *  An associative array where keys are info properties and values are the
+ *  values those properties must have.
+ *  Special properties:
+ *  - 'is_sensitive': checks if the property is considered senstive, generally
+ *     password = TRUE or sensitive = TRUE.
+ *     @see commerce_kiala_setting_is_sensitive()
+ */
+function commerce_kiala_settings_info($conditions = array()) {
+  $info = &drupal_static(__FUNCTION__);
+
+  if (!isset($info)) {
+    $info = module_invoke_all('commerce_kiala_settings_info');
+    drupal_alter('commerce_kiala_settings_info', $info);
+  }
+
+  // Apply conditions to the returned info if specified.
+  if (!empty($conditions)) {
+    $matching_info = array();
+
+    foreach ($info as $name => $data) {
+      $valid = TRUE;
+
+      foreach ($conditions as $property => $value) {
+        if ($property == 'is_sensitive') {
+          if (commerce_kiala_setting_is_sensitive($data) != $value) {
+            $valid = FALSE;
+            break;
+          }
+        }
+        elseif (!isset($data[$property]) || $data[$property] != $value) {
+          // If the current value for the specified property match the filter value...
+          // Do not add it to the temporary array.
+          $valid = FALSE;
+          break;
+        }
+      }
+
+      if ($valid) {
+        $matching_info[$name] = $data;
+      }
+    }
+
+    return $matching_info;
+  }
+
+  return $info;
+}
+
+/**
+ * Returns settings info for a single name
+ */
+function commerce_kiala_settings_info_load($name) {
+  $info = commerce_kiala_settings_info();
+
+  if (isset($info[$name])) {
+    return $info[$name];
+  }
+}
+
+/**
+ * Returns TRUE if a setting should be encrypted
+ */
+function commerce_kiala_setting_is_sensitive($setting_info) {
+  return !empty($setting_info['password']) || !empty($setting_info['sensitive']);
+}
+
+
+// -----------------------------------------------------------------------
+// Encryption handling
+
+/**
+ * Returns function name for encrypting
+ */
+function _commerce_kiala_encrypt_handler() {
+  static $handler;
+  if (!isset($handler)) {
+    if (function_exists('aes_encrypt')) {
+      $handler = 'aes_encrypt';
+    }
+    else {
+      $handler = '';
+    }
+  }
+
+  return $handler;
+}
+
+/**
+ * Encrypt a specified value.
+ */
+function commerce_kiala_encrypt($value) {
+  $handler = _commerce_kiala_encrypt_handler();
+  return $handler && isset($value) && $value !== '' ? $handler($value) : $value;
+}
+
+/**
+ * Returns function name for decrypting
+ */
+function _commerce_kiala_decrypt_handler() {
+  static $handler;
+  if (!isset($handler)) {
+    if (function_exists('aes_decrypt')) {
+      $handler = 'aes_decrypt';
+    }
+    else {
+      $handler = '';
+    }
+  }
+
+  return $handler;
+}
+
+/**
+ * Decrypt a specified value.
+ */
+function commerce_kiala_decrypt($value) {
+  $handler = _commerce_kiala_decrypt_handler();
+  return $handler && isset($value) && $value !== '' ? $handler($value) : $value;
+}
+
+/**
+ * Check whether encryption is available.
+ */
+function commerce_kiala_encryption_available($options = array()) {
+  $defaults = array(
+    'check_config' => TRUE,
+    'display_errors' => FALSE,
+    'display_warnings' => FALSE,
+    'display_all' => FALSE,
+    'fail_threshold' => 'warnings',
+  );
+  $options = array_merge($defaults, $options);
+  extract($options);
+  $errors = array();
+  $warnings = array();
+
+  if (!module_exists('aes')) {
+    $errors[] = 'AES Encryption module is not installed.';
+  }
+  elseif ($check_config) {
+    if (!variable_get('aes_key_path', FALSE) || variable_get('aes_key_storage_method', FALSE) != 'File') {
+      $warnings[] = 'AES Encryption is installed but not configured securely. Please go ' . l('configure AES Encryption to use file storage', 'admin/config/system/aes') . ' to enable encryption for credentials.';
+    }
+  }
+
+  if ($display_errors || $display_all) {
+    foreach ($errors as $msg) {
+      drupal_set_message(filter_xss(t($msg)), 'error', FALSE);
+    }
+  }
+
+  if ($display_warnings || $display_all) {
+    foreach ($warnings as $msg) {
+      drupal_set_message(filter_xss(t($msg)), 'warning', FALSE);
+    }
+  }
+
+  switch ($fail_threshold) {
+    case 'errors':
+      if (empty($errors)) {
+        return TRUE;
+      }
+    case 'warnings':
+      if (empty($errors) && empty($warnings)) {
+        return TRUE;
+      }
+  }
+}
+
+
+// -----------------------------------------------------------------------
+// Line Item Kiala Point CRUD
+
+/**
+ * Define property info for line item Kiala Point records
+ */
+function commerce_kiala_line_item_point_property_info_callback() {
+  return array(
+    'id' => array(
+      'label' => t('Record Unique ID'),
+      'type' => 'integer',
+      'description' => t('The unique ID of the record for the line item Kiala Point.'),
+    ),
+    'line_item_id' => array(
+      'label' => t('Line Item ID'),
+      'type' => 'integer',
+      'description' => t('The numeric ID of the line item related to the Kiala Point.'),
+    ),
+    'line_item' => array(
+      'label' => t('Line Item'),
+      'type' => 'commerce_line_item',
+      'description' => t('The line item entity related to the Kiala Point.'),
+      'getter callback' => 'commerce_kiala_line_item_point_property_get',
+    ),
+    'point_id' => array(
+      'label' => t('Kiala Point ID'),
+      'type' => 'integer',
+      'description' => t('The numeric ID of the Kiala Point related to the line item.'),
+    ),
+    'point_details' => array(
+      'label' => t('Kiala Point Details'),
+      'type' => 'struct',
+      'description' => t('The numeric ID of the Kiala Point related to the line item.'),
+      'getter callback' => 'commerce_kiala_line_item_point_property_get',
+      'property info' => commerce_kiala_point_details_property_info_callback(),
+    ),
+    'point_details_apiHandler' => array(
+      'label' => t('Kiala Point Details API Handler'),
+      'type' => 'CommerceKialaAPIQueryLocateSelectWSPoint',
+      'description' => t('The API handler object for Kiala Point details web service.'),
+      'getter callback' => 'commerce_kiala_line_item_point_property_get',
+    ),
+  );
+}
+
+/**
+ * Line item Point properties
+ */
+function commerce_kiala_line_item_point_property_get($entity, array $options, $name) {
+  switch ($name) {
+    case 'line_item':
+      return !empty($entity->line_item_id) ? $entity->line_item_id : NULL;
+
+    case 'point_details_apiHandler':
+      if (!empty($entity->point_id)) {
+        return commerce_kiala_get_handler_ls_ws_details($entity->point_id);
+      }
+      return;
+
+    case 'point_details':
+      if (!empty($entity->point_id)) {
+        $url_params = array();
+        if (!empty($entity->order_id)) {
+          if ($order = commerce_order_load($entity->order_id)) {
+            $url_params += commerce_kiala_order_point_details_api_params($order);
+          }
+        }
+
+        $handler = commerce_kiala_get_handler_ls_ws_details($entity->point_id, $url_params);
+        if ($handler) {
+          $points = $handler->getProcessedResponse();
+          return !empty($points) ? reset($points) : array();
+        }
+      }
+      return array();
+  }
+}
+
+/**
+ * Implements hook_commerce_line_item_insert().
+ */
+function commerce_kiala_commerce_line_item_insert($line_item) {
+  commerce_kiala_commerce_line_item_update($line_item);
+}
+
+/**
+ * Implements hook_commerce_line_item_update().
+ */
+function commerce_kiala_commerce_line_item_update($line_item) {
+  if ($point = commerce_kiala_extract_line_item_point($line_item)) {
+    commerce_kiala_line_item_point_save($line_item->line_item_id, $point);
+  }
+}
+
+/**
+ * Implements hook_commerce_line_item_delete().
+ */
+function commerce_kiala_commerce_line_item_delete($line_item) {
+  commerce_kiala_line_item_point_delete($line_item->line_item_id);
+}
+
+/**
+ * Returns Kiala points stored on a line item
+ */
+function commerce_kiala_extract_line_item_point($line_item) {
+  $details = commerce_kiala_extract_service_details($line_item);
+  if ($details && !empty($details['kiala_point'])) {
+    return $details['kiala_point'];
+  }
+}
+
+/**
+ * Returns Kiala service details stored on a line item
+ */
+function commerce_kiala_extract_service_details($line_item) {
+  $details = array();
+
+  if (isset($line_item->data) && isset($line_item->data['service_details']) &&
+      isset($line_item->data['shipping_service']) &&
+      isset($line_item->data['shipping_service']['shipping_method']) &&
+      $line_item->data['shipping_service']['shipping_method'] == 'kiala') {
+
+    $details = $line_item->data['service_details'];
+  }
+
+  return $details;
+}
+
+/**
+ * Find Kiala shipping line item on the order
+ *
+ * @param $order
+ *   An order object
+ *
+ * @return
+ *   The Kiala shipping line item object or NULL.
+ */
+function commerce_kiala_get_shipping_line_item($order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    if ($line_item_wrapper->type->value() == 'shipping') {
+      $line_item = $line_item_wrapper->value();
+      $details = commerce_kiala_extract_service_details($line_item);
+      if (isset($details)) {
+        return $line_item;
+      }
+    }
+  }
+}
+
+
+/**
+ * Create a line item for the Kiala shipping method
+ *
+ * @param $order
+ *   An order object
+ * @param $shipping_service_name
+ *   The shipping service machine name
+ * @param $kiala_point_id
+ *   The Kiala point id associated with the shipping service
+ * @param $skip_order_save
+ *   Boolean indicating whether or not to skip saving the order in this function.
+ *
+ * @return
+ *   The saved shipping line item object or NULL on failure.
+ */
+function commerce_kiala_add_shipping_line_item($order, $shipping_service_name, $kiala_point_id, $skip_order_save = FALSE) {
+  $shipping_service = commerce_shipping_service_load($shipping_service_name);
+  if (empty($shipping_service)) {
+    return;
+  }
+
+  // Collect shipping rates for the order.
+  commerce_shipping_collect_rates($order);
+  if (empty($order->shipping_rates) || empty($order->shipping_rates[$shipping_service_name])) {
+    return;
+  }
+
+  // Extract the unit price from the calculated rate.
+  $rate_line_item = $order->shipping_rates[$shipping_service_name];
+  $rate_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $rate_line_item);
+  $unit_price = $rate_line_item_wrapper->commerce_unit_price->value();
+
+  // Create a new shipping line item with the calculated rate.
+  $line_item = commerce_shipping_line_item_new($shipping_service_name, $unit_price, $order->order_id, $rate_line_item->data, $rate_line_item->type);
+
+  // Add the service details to the line item's data array.
+  $line_item->data['service_details'] = array('kiala_point' => $kiala_point_id);
+
+  // Delete any existing shipping line items from the order.
+  commerce_shipping_delete_shipping_line_items($order, $skip_order_save);
+
+  // Save and add the line item to the order.
+  return commerce_shipping_add_shipping_line_item($line_item, $order, $skip_order_save);
+}
+
+/**
+ * Load Point for a given line item id
+ *
+ * @param $line_item_id
+ *   A single line item ID.
+ *
+ * @return
+ *   A Kiala Point item.
+ */
+function commerce_kiala_line_item_point_load($line_item_id) {
+  if (empty($line_item_id)) {
+    return NULL;
+  }
+
+  $points = commerce_kiala_line_item_point_load_multiple(array($line_item_id));
+  return $points ? reset($points) : FALSE;
+}
+
+/**
+ * Load multiple line item points.
+ *
+ * @param $line_item_ids
+ *   An array of line items IDs.
+ *
+ * @return
+ *   An array of Kiala Point items indexed by id.
+ */
+function commerce_kiala_line_item_point_load_multiple(array $line_item_ids) {
+  if (empty($line_item_ids)) {
+    return array();
+  }
+
+  $query = db_select('commerce_kiala_line_item_point', 'p')
+    ->fields('p')
+    ->condition('p.line_item_id', $line_item_ids, 'IN');
+
+  $result = $query->execute();
+  $return = $result->fetchAllAssoc('id');
+
+  return $return;
+}
+
+/**
+ * Load multiple line item points for a given order.
+ *
+ * @param $order_ids
+ *   An array of order_id's
+ * @param $order_conditions
+ *   An associative array of conditions on the commerce_order table
+ *
+ * @return
+ *   An array of Kiala Point items indexed by order id.
+ */
+function commerce_kiala_line_item_point_load_by_order_multiple($order_ids = array(), $order_conditions = array(), $limit = NULL) {
+  $cache = &drupal_static(__FUNCTION__, array());
+  $have_order_ids = !empty($order_ids) && is_array($order_ids);
+  $have_order_conditions = !empty($order_conditions);
+
+  // exit if nothing to query
+  if (!$have_order_ids && !$have_order_conditions) {
+    return array();
+  }
+
+  // intialize cach hits
+  $cache_hits = array();
+
+  // initialize query order ids to ids given
+  $query_order_ids = $have_order_ids ? $order_ids : array();
+
+  // check cache
+  if ($have_order_ids && !$have_order_conditions && !empty($cache)) {
+    $cache_hits = array_intersect_key($cache, drupal_map_assoc($order_ids));
+    $query_order_ids = array_diff($order_ids, array_keys($cache));
+
+    // exit early if all in cache
+    if (empty($query_order_ids)) {
+      return $cache_hits;
+    }
+  }
+
+  // get shipping line item ids for order
+  $query = db_select('commerce_kiala_line_item_point', 'p')->fields('p');
+  $query->join('commerce_line_item', 'li', 'p.line_item_id = li.line_item_id');
+  $query->addField('li', 'order_id');
+
+  if (!empty($query_order_ids)) {
+    $query->condition('li.order_id', $query_order_ids, 'IN');
+  }
+
+  if ($have_order_conditions) {
+    $order_schema = drupal_get_schema('commerce_order');
+    $add_order_join = FALSE;
+    foreach ($order_conditions as $field => $field_value) {
+      if (isset($order_schema['fields'][$field])) {
+        $add_order_join = TRUE;
+        $query->condition('o.' . $field, $field_value);
+      }
+    }
+
+    if ($add_order_join) {
+      $query->join('commerce_order', 'o', 'o.order_id = li.order_id');
+    }
+  }
+
+  // Order by line item id descending to show latest at the top
+  $query->orderBy('line_item_id', 'DESC');
+
+  // Add a limit if specified.
+  if (!empty($limit)) {
+    $limit = $limit - count($cache_hits);
+    $query->range(0, $limit);
+  }
+
+  // Execute query
+  $result = $query->execute();
+  $records = $result->fetchAllAssoc('order_id');
+
+  // Process results
+  $return = $cache_hits;
+  if (!empty($records)) {
+    // update cache with new records
+    $cache = $records + $cache;
+
+    // update return with new records
+    $return = $records + $return;
+  }
+
+  return $return;
+}
+
+/**
+ * Returns Kiala point associated with the order
+ *
+ * @param $order
+ *  Order object
+ * @return
+ *  The Kiala Point record object. The return is cached per order id.
+ */
+function commerce_kiala_line_item_point_load_by_order($order_id) {
+  if (empty($order_id)) {
+    return;
+  }
+
+  $point_items = commerce_kiala_line_item_point_load_by_order_multiple(array($order_id));
+  return !empty($point_items) ? reset($point_items) : NULL;
+}
+
+/**
+ * Save a Point for a line item
+ *
+ * @param $line_item_id
+ *   A single line item ID.
+ * @param $point_id
+ *   A Kiala point id
+ *
+ * @return
+ *   If the record insert or update failed, returns FALSE.
+ *   If it succeeded, returns SAVED_NEW or SAVED_UPDATED, depending on the
+ *   operation performed.
+ */
+function commerce_kiala_line_item_point_save($line_item_id, $point_id) {
+  if (empty($line_item_id) || empty($point_id)) {
+    return FALSE;
+  }
+
+  $record = new stdClass;
+  $primary_keys = array();
+
+  $original_point_id = NULL;
+  $existing = commerce_kiala_line_item_point_load($line_item_id);
+  if (!empty($existing)) {
+    $original_point_id = $existing->point_id;
+    $record = clone($existing);
+    $primary_keys[] = 'id';
+  }
+
+  // set new values
+  $record->line_item_id = $line_item_id;
+  $record->point_id = $point_id;
+  $return = drupal_write_record('commerce_kiala_line_item_point', $record, $primary_keys);
+
+
+  if ($return) {
+    if ($return == SAVED_NEW) {
+      // Notify other modules that this point has been inserted.
+      rules_invoke_all('commerce_kiala_line_item_point_insert', $record);
+    }
+    else if ($return  == SAVED_UPDATED) {
+      // Notify other modules that this point has been updated.
+      rules_invoke_all('commerce_kiala_line_item_point_update', $record, $existing);
+    }
+  }
+
+  return $return;
+}
+
+/**
+ * Delete a Point for a line item
+ */
+function commerce_kiala_line_item_point_delete($line_item_id) {
+  $record = commerce_kiala_line_item_point_load($line_item_id);
+  if (!empty($record)) {
+    // Notify other modules that this point will be deleted.
+    rules_invoke_all('commerce_kiala_line_item_point_delete', $record);
+
+    db_delete('commerce_kiala_line_item_point')
+      ->condition('line_item_id', $line_item_id)
+      ->execute();
+  }
+}
+
+
+// -----------------------------------------------------------------------
+// Address handling
+
+/**
+ * Returns a Kiala address key map for an equivalent addressfield
+ */
+function _commerce_kiala_point_addressfield_map() {
+  static $map = array(
+    'country' => array('country'),
+    'street' => array('thoroughfare', 'premise'),
+    'city' => array('locality'),
+    'zip' => array('postal_code'),
+  );
+
+  return $map;
+}
+
+/**
+ * Convert an addressfield to an equivalent Kiala address array
+ */
+function _commerce_kiala_convert_addressfield_to_point_address($addressfield) {
+  $return = array();
+  if (empty($addressfield)) {
+    return array();
+  }
+
+  $key_map = _commerce_kiala_point_addressfield_map();
+  foreach ($key_map as $k => $address_keys) {
+    foreach ($address_keys as $address_key) {
+      if (!empty($addressfield[$address_key])) {
+        $return[$k] = (!empty($return[$k]) ? '; ' .  $return[$k] : '') . $addressfield[$address_key];
+      }
+    }
+  }
+
+  return $return;
+}
+
+/**
+ * Convert Kiala Point address array to an addressfield array
+ */
+function _commerce_kiala_convert_point_address_to_addressfield($point_address) {
+  $return = array();
+  if (empty($point_address)) {
+    return array();
+  }
+
+  $key_map = _commerce_kiala_point_addressfield_map();
+  foreach ($key_map as $k => $addressfield_keys) {
+    if (!empty($point_address[$k]) && !empty($addressfield_keys)) {
+      $addressfield_key = reset($addressfield_keys);
+      $return[$addressfield_key] = $point_address[$k];
+    }
+  }
+
+  return $return;
+}
+
+/**
+ * Syncs the order shipping address to the address of the Kiala Point
+ *
+ * @param $order
+ *   An order object
+ * @param $point_id
+ *   A Kiala point id
+ *
+ * @return
+ *   The addressfield array
+ */
+function commerce_kiala_sync_shipping_address($order, $point_id) {
+  if (empty($order) || empty($point_id)) {
+    return;
+  }
+
+  // Wrap the order
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // Exit if no shipping profile
+  if (!isset($order_wrapper->commerce_customer_shipping)) {
+    return;
+  }
+
+  // Exit if no shipping address
+  if (!isset($order_wrapper->commerce_customer_shipping->commerce_customer_address)) {
+    return;
+  }
+
+  $original_address = $order_wrapper->commerce_customer_shipping->commerce_customer_address->value();
+  if (!empty($original_address)) {
+    // @todo: store this or let order revisions handle?
+  }
+
+  // get point id details
+  $point_api_params = commerce_kiala_order_point_details_api_params($order);
+  $point_details = commerce_kiala_get_point_details($point_id, $point_api_params);
+  if (empty($point_details)) {
+    return;
+  }
+
+  // get equivalent addressfield array
+  $new_address = commerce_kiala_get_point_details_addressfield($point_details);
+  if (empty($new_address)) {
+    return;
+  }
+
+  // set address
+  $order_wrapper->commerce_customer_shipping->commerce_customer_address = $new_address;
+
+  // save customer profile
+  $order_wrapper->commerce_customer_shipping->save();
+}
+
+/**
+ * Returns Recipient's Kiala API address based on the given order
+ * - Processes for Kiala API requests
+ *
+ * @return
+ *   A Kiala address array
+ */
+function commerce_kiala_order_recipient_address($order) {
+  $return = array();
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  $address = commerce_kiala_order_recipient_addressfield($order);
+  if (!empty($address)) {
+    $return = _commerce_kiala_convert_addressfield_to_point_address($address);
+  }
+
+  return $return;
+}
+
+/**
+ * Returns Recipient's addressfield based on the given order
+ * - Processes for Kiala API requests
+ *
+ * @return
+ *   An addressfield array
+ */
+function commerce_kiala_order_recipient_addressfield($order) {
+  $address = array();
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // try shipping first
+  if (isset($order_wrapper->commerce_customer_shipping)) {
+    if (isset($order_wrapper->commerce_customer_shipping->commerce_customer_address)) {
+      $field_address = $order_wrapper->commerce_customer_shipping->commerce_customer_address->value();
+      if (!empty($field_address)) {
+        $address = $field_address;
+      }
+    }
+  }
+
+  // fallback to billing
+  if (empty($address)) {
+    if (isset($order_wrapper->commerce_customer_billing)) {
+      if (isset($order_wrapper->commerce_customer_billing->commerce_customer_address)) {
+        $field_address = $order_wrapper->commerce_customer_billing->commerce_customer_address->value();
+        if (!empty($field_address)) {
+          $address = $field_address;
+        }
+      }
+    }
+  }
+
+  // ensure names
+  if (!empty($address)) {
+    commerce_kiala_addressfield_ensure_names($address);
+  }
+
+  return $address;
+}
+
+/**
+ * Ensure first and last names for an addressfield array
+ */
+function commerce_kiala_addressfield_ensure_names(&$addressfield) {
+  $addressfield += array(
+    'name_line' => '',
+    'first_name' => '',
+    'last_name' => '',
+  );
+
+  if (!empty($addressfield['name_line']) &&
+      empty($addressfield['first_name']) &&
+      empty($addressfield['last_name'])) {
+
+    $names = preg_split('@\s+@', $addressfield['name_line'], 2);
+    if (!empty($names)) {
+      $addressfield['first_name'] = array_shift($names);
+      if (!empty($names)) {
+        $addressfield['last_name'] = array_shift($names);
+      }
+    }
+  }
+}
+
+/**
+ * Returns the last Kiala point that the user has selected on an order
+ *
+ * @param $account
+ *   A user object
+ *
+ * @return
+ *  The Kiala point id
+ */
+function commerce_kiala_user_last_point($account) {
+  $last_point_id = NULL;
+
+  // exit if not enough information
+  if (empty($account->uid)) {
+    return NULL;
+  }
+
+  // build order conditions for the query
+  $order_statuses = array_keys(commerce_order_statuses(array('cart' => FALSE)));
+  $order_conditions = array(
+    'uid' => $account->uid,
+    'status' => $order_statuses,
+  );
+
+  // query orders history
+  $points_history = commerce_kiala_line_item_point_load_by_order_multiple(array(), $order_conditions, 1);
+
+  // find order with a matching recipient address
+  if (!empty($points_history)) {
+    $point = reset($points_history);
+    $last_point_id = $point->point_id;
+  }
+
+  return $last_point_id;
+}
+
+/**
+ * Returns the last point used for the recipient address
+ *
+ * @param $account
+ *   A user object
+ * @param $recipient_address
+ *   An address array in the Kiala format.
+ *   @see commerce_kiala_order_recipient_address()
+ * @param $order_limit
+ *  The limit for the order history query
+ *
+ * @return
+ *  The Kiala point id
+ */
+function commerce_kiala_recipient_address_last_point($account, $recipient_address, $order_limit = 10) {
+  $last_point_id = NULL;
+
+  // exit if not enough information
+  if (empty($account->uid) || empty($recipient_address)) {
+    return NULL;
+  }
+
+  // build order conditions for the query
+  $order_statuses = array_keys(commerce_order_statuses(array('cart' => FALSE)));
+  $order_conditions = array(
+    'uid' => $account->uid,
+    'status' => $order_statuses,
+  );
+
+  // query orders history
+  $points_history = commerce_kiala_line_item_point_load_by_order_multiple(array(), $order_conditions, $order_limit);
+
+  // find order with a matching recipient address
+  if (!empty($points_history)) {
+    $past_orders = commerce_order_load_multiple(array_keys($points_history));
+    foreach ($past_orders as $past_order) {
+      $past_recipient_address = commerce_kiala_order_recipient_address($past_order);
+      if ($past_recipient_address == $recipient_address) {
+        $last_point_id = $points_history[$past_order->order_id]->point_id;
+        break;
+      }
+    }
+  }
+
+  return $last_point_id;
+}
+
+
+// -----------------------------------------------------------------------
+// Kiala API Functions
+
+/**
+ * Property info callback for Kiala Point details
+ */
+function commerce_kiala_point_details_property_info_callback() {
+  $openingHours_day_property = array(
+    'type' => 'list<commerce_kiala_open_hours>',
+    'property info' => array(
+      'start' => array(
+        'label' => t('Start'),
+        'type' => 'text',
+      ),
+      'end' => array(
+        'label' => t('End'),
+        'type' => 'text',
+      ),
+    ),
+  );
+
+  return array(
+    'shortId' => array(
+      'label' => t('Kiala Point ID'),
+      'type' => 'string',
+      'description' => t('The Kiala Point ID.'),
+    ),
+    'name' => array(
+      'label' => t('Point Name'),
+      'type' => 'text',
+      'description' => t('The Kiala Point name.'),
+    ),
+    'status' => array(
+      'label' => t('Status'),
+      'type' => 'struct',
+      'description' => t('The Kiala Point status data.'),
+      'property info' => array(
+        'value' => array(
+          'label' => t('Status message'),
+          'type' => 'text',
+        ),
+        'available' => array(
+          'label' => t('Status available'),
+          'type' => 'boolean',
+          'description' => t('The Kiala Point availability (TRUE / FALSE).'),
+        ),
+        'code' => array(
+          'label' => t('Status code'),
+          'type' => 'text',
+          'description' => t('The Kiala Point status code.'),
+        ),
+      ),
+    ),
+    'address' => array(
+      'label' => t('Address'),
+      'type' => 'struct',
+      'description' => t('The Kiala Point address data.'),
+      'property info' => array(
+        'street' => array(
+          'label' => t('Street'),
+          'type' => 'text',
+        ),
+        'city' => array(
+          'label' => t('City'),
+          'type' => 'text',
+        ),
+        'zip' => array(
+          'label' => t('Zip'),
+          'type' => 'text',
+        ),
+        'locationHint' => array(
+          'label' => t('Location Hint'),
+          'type' => 'text',
+        ),
+      ),
+    ),
+    'openingHours' => array(
+      'label' => t('Open Hours'),
+      'type' => 'struct',
+      'description' => t('The Kiala Point open hours.'),
+      'property info' => array(
+        'mon' => array('label' => t('Monday')) + $openingHours_day_property,
+        'tue' => array('label' => t('Tuesday')) + $openingHours_day_property,
+        'wed' => array('label' => t('Wednesday')) + $openingHours_day_property,
+        'thu' => array('label' => t('Thursday')) + $openingHours_day_property,
+        'fri' => array('label' => t('Friday')) + $openingHours_day_property,
+        'sat' => array('label' => t('Saturday')) + $openingHours_day_property,
+        'sun' => array('label' => t('Sunday')) + $openingHours_day_property,
+      ),
+    ),
+
+    'picture' => array(
+      'label' => t('Picture'),
+      'type' => 'struct',
+      'description' => t('The Kiala Point picture data.'),
+      'property info' => array(
+        'href' => array(
+          'label' => t('URL'),
+          'type' => 'uri',
+        ),
+      ),
+    ),
+    'coordinate' => array(
+      'label' => t('Coordinates'),
+      'type' => 'struct',
+      'description' => t('The Kiala Point coordinates.'),
+      'property info' => array(
+        'latitude' => array(
+          'label' => t('Latitude'),
+          'type' => 'decimal',
+        ),
+        'longitude' => array(
+          'label' => t('Longitude'),
+          'type' => 'decimal',
+        ),
+      ),
+    ),
+    'label' => array(
+      'label' => t('Label Tags'),
+      'type' => 'struct',
+      'description' => t('The Kiala Point label tags.'),
+      'property info' => array(
+        'name' => array(
+          'label' => t('Name'),
+          'type' => 'text',
+        ),
+        'platform' => array(
+          'label' => t('Platform'),
+          'type' => 'text',
+        ),
+        'route' => array(
+          'label' => t('Route'),
+          'type' => 'text',
+        ),
+        'group' => array(
+          'label' => t('Group'),
+          'type' => 'text',
+        ),
+      ),
+    ),
+
+    // Computed fields
+    'addressfield' => array(
+      'label' => t('Addressfield equivalent'),
+      'type' => 'addressfield',
+      'getter callback' => 'commerce_kiala_point_details_property_get',
+      'property info' => addressfield_data_property_info(),
+      'computed' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Point details properties
+ */
+function commerce_kiala_point_details_property_get($data, array $options, $name) {
+  switch ($name) {
+    case 'addressfield':
+      if (!empty($data)) {
+        return commerce_kiala_get_point_details_addressfield($data);
+      }
+      break;
+  }
+}
+
+/**
+ * Returns the session token for map selections
+ */
+function commerce_kiala_map_select_get_token() {
+  return drupal_get_token('commerce_kiala_map_select');
+}
+
+/**
+ * Returns TRUE if session token is valid map selections
+ */
+function commerce_kiala_map_select_valid_token($token, $skip_anonymous = FALSE) {
+  return drupal_valid_token($token, 'commerce_kiala_map_select');
+}
+
+/**
+ * Returns URL for Callback to process map selections
+ */
+function commerce_kiala_create_map_select_callback_path($order, $shipping_service_name) {
+  $token = commerce_kiala_map_select_get_token();
+  return 'commerce_kiala/map-select/' .  $order->order_id . '/' . $shipping_service_name .'/' . $token;
+}
+
+/**
+ * Access Callback for process map selections
+ */
+function commerce_kiala_map_select_access($order, $shipping_service, $token) {
+  global $user;
+
+  // DENY if token does not validate
+  if (!commerce_kiala_map_select_valid_token($token)) {
+    return FALSE;
+  }
+
+  // DENY if not a Kiala shipping method
+  if ($shipping_service['shipping_method'] != 'kiala') {
+    return FALSE;
+  }
+
+  // ALLOW owner access if order is cart and can access checkout
+  if ($user->uid == $order->uid && commerce_cart_order_is_cart($order) && user_access('access checkout')) {
+    return TRUE;
+  }
+
+  // ALLOW admin access
+  if (commerce_order_access('update', $order)) {
+    return TRUE;
+  }
+
+  // DENY by default
+  return FALSE;
+}
+
+/**
+ * Callback to process map selections
+ */
+function commerce_kiala_process_map_select($order, $shipping_service, $token) {
+  global $user;
+
+  // pull the parameters send back from the map
+  $params = drupal_get_query_parameters();
+
+  // Extract point id from parameters and create shipping line item
+  $point_id = NULL;
+  if (!empty($params['shortkpid'])) {
+    $point_id_param = intval($params['shortkpid']);
+    if (!empty($point_id_param)) {
+      $point_id = $point_id_param;
+
+      // Create and save shipping line item
+      if (!empty($shipping_service['name'])) {
+        $line_item = commerce_kiala_add_shipping_line_item($order, $shipping_service['name'], $point_id, FALSE);
+      }
+    }
+  }
+
+  // determine url for redirect
+  $redirect_url = '';
+  if (isset($params['destination'])) {
+    $redirect_destination_url = url($params['destination']);
+    if (!empty($redirect_destination_url)) {
+      $redirect_url = $redirect_destination_url;
+    }
+  }
+
+  if (!$redirect_url && !empty($order->order_id)) {
+    if (commerce_cart_order_is_cart($order) && $user->uid == $order->uid) {
+      $redirect_url = 'checkout/' . $order->order_id . '/shipping';
+    }
+    elseif (commerce_order_access('view', $order)) {
+      $redirect_url = 'admin/commerce/orders/' . $order->order_id;
+    }
+  }
+
+  // issue redirect
+  drupal_goto($redirect_url);
+}
+
+/**
+ * Returns points details for single point id from the Web Service
+ */
+function commerce_kiala_get_point_details($point_id, $params = array()) {
+  $handler = commerce_kiala_get_handler_ls_ws_details($point_id, $params);
+  $points = $handler->getProcessedResponse();
+  return !empty($points) ? reset($points) : array();
+}
+
+/**
+ * Returns the equivalent addressfield array for the point details
+ */
+function commerce_kiala_get_point_details_addressfield($point_details) {
+  if (empty($point_details) || empty($point_details['address'])) {
+    return array();
+  }
+
+  // initialize with street address
+  $addressfield = _commerce_kiala_convert_point_address_to_addressfield($point_details['address']);
+  if (empty($addressfield)) {
+    return array();
+  }
+
+  // If no country, set default country to shipping method sender country
+  if (empty($addressfield['country'])) {
+    // Load shipping method settings
+    $shipping_method_settings = commerce_kiala_settings(array(
+      'include_passwords' => FALSE,
+      'decrypt' => TRUE,
+    ));
+
+    // set country
+    if (!empty($shipping_method_settings['country'])) {
+      $addressfield['country'] = $shipping_method_settings['country'];
+    }
+  }
+
+  // resolve name
+  $name = '';
+  if (!empty($point_details['name'])) {
+    $name = $point_details['name'];
+  }
+  else {
+    $name = t('Kiala Point!shortId', array(
+      '!shortId' => !empty($point_details['shortId']) ? ' ' . intval($point_details['shortId']) : '',
+    ));
+  }
+
+  // set field names
+  $addressfield['name_line'] = $name;
+  $addressfield['first_name'] = $name;
+  $addressfield['last_name'] = $name;
+
+  // merge defaults
+  $addressfield += addressfield_default_values();
+
+  return $addressfield;
+}
+
+/**
+ * Returns closest point to given zip code
+ *
+ * @param zip
+ *  Postal code
+ * @param $params
+ *  Additional paramters for the query
+ *
+ * @return
+ *   A Kiala point details array
+ */
+function commerce_kiala_get_closest_point_details($zip, $params = array()) {
+  // limit to a single result since first is closest
+  $params += array('max-result' => 1);
+
+  $handler = commerce_kiala_get_handler_ls_ws_search($zip, $params);
+  $points = $handler->getProcessedResponse();
+  return !empty($points) ? reset($points) : array();
+}
+
+/**
+ * Sanitize a Kiala Point details array
+ */
+function commerce_kiala_sanitize_point_details($point_details = array()) {
+  if (empty($point_details) || !is_array($point_details)) {
+    return $point_details;
+  }
+
+  array_walk_recursive($point_details, '_commerce_kiala_check_plain_walk');
+  return $point_details;
+}
+
+/**
+ * Checkout url parameters for all API calls during checkout
+ */
+function commerce_kiala_checkout_api_params($order = NULL) {
+  $param_keys = array('preparationdelay');
+
+  $settings = commerce_kiala_settings(array(
+    'include_passwords' => TRUE,
+    'decrypt' => TRUE,
+  ));
+
+  return array_intersect_key($settings, drupal_map_assoc($param_keys));
+}
+
+/**
+ * Point details API url parameters during checkout
+ */
+function commerce_kiala_checkout_point_details_api_params($order = NULL) {
+  $params = commerce_kiala_checkout_api_params($order);
+
+  if (!empty($order)) {
+    $params += commerce_kiala_order_point_details_api_params($order);
+  }
+
+  return $params;
+}
+
+/**
+ * Point Search API url parameters during checkout
+ */
+function commerce_kiala_checkout_point_search_api_params($order = NULL) {
+  $params = commerce_kiala_checkout_api_params($order);
+
+  if (!empty($order)) {
+    $params += commerce_kiala_order_point_search_api_params($order);
+  }
+
+  return $params;
+}
+
+/**
+ * Point details API url parameters for a given order
+ */
+function commerce_kiala_order_point_details_api_params($order) {
+  $param_keys = array('country');
+
+  $recipient_address = commerce_kiala_order_recipient_address($order);
+  if (empty($recipient_address)) {
+    return array();
+  }
+
+  return array_intersect_key($recipient_address, array_flip($param_keys));
+}
+
+/**
+ * Point Search API url parameters for a given order
+ */
+function commerce_kiala_order_point_search_api_params($order) {
+  $recipient_address = commerce_kiala_order_recipient_address($order);
+  if (empty($recipient_address)) {
+    return array();
+  }
+
+  return $recipient_address;
+}
+
+/**
+ * Returns the API handler for Locate & Select WS Details
+ */
+function commerce_kiala_get_handler_ls_ws_details($point_id, $params = array()) {
+  $params = !empty($params) ? $params : array();
+  $params = array('shortID' => $point_id) + $params;
+
+  return new CommerceKialaAPIQueryLocateSelectWSPoint('ls_ws_details', array('query' => $params));
+}
+
+/**
+ * Returns the API handler for Locate & Select WS Details
+ */
+function commerce_kiala_get_handler_ls_ws_search($zip, $params = array()) {
+  $params = !empty($params) ? $params : array();
+  $params = array('zip' => $zip) + $params;
+
+  return new CommerceKialaAPIQueryLocateSelectWSSearch('ls_ws_search', array('query' => $params));
+}
+
+/**
+ * Returns the API handler for Locate & Select WS Details
+ */
+function commerce_kiala_get_handler_ls_map_details($point_id, $params = array()) {
+  $params = !empty($params) ? $params : array();
+  $params = array('shortID' => $point_id) + $params;
+
+  return new CommerceKialaAPIQueryLocateSelectMapPoint('ls_map_details', array('query' => $params));
+}
+
+/**
+ * Returns the API handler for Locate & Select WS Details
+ */
+function commerce_kiala_get_handler_ls_map_search($zip, $params = array()) {
+  $params = !empty($params) ? $params : array();
+  $params = array('zip' => $zip) + $params;
+
+  return new CommerceKialaAPIQueryLocateSelectMapSearch('ls_map_search', array('query' => $params));
+}
+
+
+// -----------------------------------------------------------------------
+// Map Embed handling
+
+/**
+ * Defines the possible map embed types
+ */
+function _commerce_kiala_embed_info() {
+  return array(
+    'inline' => array(
+      'label' => t('Inline iframe'),
+    ),
+    'lightbox2' => array(
+      'label' => t('Lightbox'),
+      'module dependencies' => array('lightbox2'),
+    ),
+    'colorbox' => array(
+      'label' => t('Colorbox'),
+      'description' => t('To enable Colorbox load, visit <a href="@admin_url">admin/config/media/colorbox</a>.',
+                         array('@admin_url' => url('admin/config/media/colorbox'))),
+      'module dependencies' => array('colorbox'),
+      'variable dependencies' => array('colorbox_load' => TRUE),
+    ),
+  );
+}
+
+/**
+ * Returns an available map embed options
+ */
+function commerce_kiala_embed_options() {
+  $options = array();
+
+  foreach (_commerce_kiala_embed_info() as $name => $info) {
+    // check module dependencies
+    if (!empty($info['module dependencies'])) {
+      foreach ($info['module dependencies'] as $dep_module) {
+        if (!module_exists($dep_module)) {
+          continue 2;
+        }
+      }
+    }
+
+    // check variable dependencies
+    if (!empty($info['variable dependencies'])) {
+      foreach ($info['variable dependencies'] as $var_name => $var_value) {
+        $var_stored = variable_get($var_name, NULL);
+        if (!isset($var_stored) || ($var_stored != $var_value)) {
+          continue 2;
+        }
+      }
+    }
+
+    // add to options list
+    $options[$name] = !empty($info['label']) ? $info['label'] : $name;
+  }
+
+  return $options;
+}
+
+/**
+ * Returns rendered help text for embed options
+ */
+function commerce_kiala_embed_description() {
+  $items = array();
+  foreach (_commerce_kiala_embed_info() as $name => $info) {
+    $output = '<label>' . check_plain($info['label']) . '</label>';
+    if (!empty($info['description'])) {
+      $output .= '<div class="commerce-kiala-embed-description">';
+        $output .= $info['description'];
+      $output .= '</div>';
+    }
+
+    if (!empty($info['module dependencies'])) {
+      $output .= '<div class="commerce-kiala-embed-module-dependencies">';
+        $output .= t('module dependencies:') . ' ' . implode(', ', $info['module dependencies']);
+      $output .= '</div>';
+    }
+
+    if (!empty($info['variable dependencies'])) {
+      $var_deps_texts = array();
+      foreach ($info['variable dependencies'] as $var_name => $var_value) {
+        $var_deps_texts[] = t('@var_name = @var_value', array('@var_name' => $var_name, '@var_value' => $var_value));
+      }
+      if (!empty($var_deps_texts)) {
+        $output .= '<div class="commerce-kiala-embed-module-dependencies">';
+          $output .=  t('variable dependencies:') . ' ' .implode(', ', $var_deps_texts);
+        $output .= '</div>';
+      }
+    }
+
+    if (!empty($output)) {
+      $items[] = $output;
+    }
+  }
+
+  if (!empty($items)) {
+    return theme('item_list', array(
+      'items' => $items,
+    ));
+  }
+
+  return '';
+}
+
+/**
+ * Returns the embedded search map based on shipping method settings
+ *
+ * @param $zip
+ *  The postal code
+ * @param $params
+ *  An array of api parameters
+ *
+ * @return
+ *  A renderable array
+ */
+function commerce_kiala_render_embedded_search_map($zip, $params = array()) {
+  if (empty($zip)) {
+    return array();
+  }
+
+  $params = !empty($params) ? $params : array();
+  $api_handler = commerce_kiala_get_handler_ls_map_search($zip, $params);
+
+  // exit if no url
+  $embed_url = $api_handler->url;
+  if (empty($embed_url)) {
+    return array();
+  }
+
+  // set embed type
+  $embed_options = commerce_kiala_embed_options();
+  $embed_type = 'inline';
+
+  // use settings if defined and valid option
+  if (!empty($api_handler->settings['ls_map_search_embed_type']) &&
+      isset($embed_options[$api_handler->settings['ls_map_search_embed_type']])) {
+      $embed_type = $api_handler->settings['ls_map_search_embed_type'];
+  }
+
+  // exit if not an availabe embed option - covers settings and inline fallback
+  if (!isset($embed_options[$embed_type])) {
+    return array();
+  }
+
+
+  // build map attributes
+  $display_text = '';
+  if (!empty($api_handler->settings['ls_map_search_modal_link_text'])) {
+    $display_text = $api_handler->settings['ls_map_search_modal_link_text'];
+  }
+  else {
+    $display_text = t('Select on Map');
+  }
+
+  $map_attrs = array(
+    'url' => $embed_url,
+    'display_text' => $display_text,
+  );
+  if (!empty($api_handler->settings['ls_map_search_width'])) {
+    $map_attrs['width'] = $api_handler->settings['ls_map_search_width'];
+  }
+  if (!empty($api_handler->settings['ls_map_search_height'])) {
+    $map_attrs['height'] = $api_handler->settings['ls_map_search_height'];
+  }
+
+  // merge input params
+  $map_attrs = array_intersect_key($params, $map_attrs) + $map_attrs;
+
+  // render embedded output
+  $render = array();
+  switch ($embed_type) {
+    case 'inline':
+      // Default to inline
+      $render = array(
+        '#type' => 'item',
+        '#markup' => theme('commerce_kiala_point_search_map', array(
+            'zip' => $zip,
+            'options' => $params,
+        )),
+      );
+      break;
+
+    default:
+      $render = _commerce_kiala_render_modal_box($embed_type, $map_attrs);
+      break;
+  }
+
+  return $render;
+}
+
+/**
+ * Returns the embedded search map based on shipping method settings
+ *
+ * @param $point_id
+ *  The Kiala point id
+ * @param $params
+ *  An array of api parameters
+ *
+ * @return
+ *  A renderable array
+ */
+function commerce_kiala_render_embedded_details_map($point_id, $params = array()) {
+  if (empty($point_id)) {
+    return array();
+  }
+
+  $params = !empty($params) ? $params : array();
+  $api_handler = commerce_kiala_get_handler_ls_map_details($point_id, $params);
+
+  // exit if no url
+  $embed_url = $api_handler->url;
+  if (empty($embed_url)) {
+    return array();
+  }
+
+  // set embed type
+  $embed_options = commerce_kiala_embed_options();
+  $embed_type = 'inline';
+
+  // use settings if defined and valid option
+  if (!empty($api_handler->settings['ls_map_details_embed_type']) &&
+      isset($embed_options[$api_handler->settings['ls_map_details_embed_type']])) {
+      $embed_type = $api_handler->settings['ls_map_details_embed_type'];
+  }
+
+  // exit if not an availabe embed option - covers settings and inline fallback
+  if (!isset($embed_options[$embed_type])) {
+    return array();
+  }
+
+
+  // build map attributes
+  $display_text = '';
+  if (!empty($api_handler->settings['ls_map_details_modal_link_text'])) {
+    $display_text = $api_handler->settings['ls_map_details_modal_link_text'];
+  }
+  else {
+    $display_text = t('Select on Map');
+  }
+
+  $map_attrs = array(
+    'url' => $embed_url,
+    'display_text' => $display_text,
+  );
+  if (!empty($api_handler->settings['ls_map_search_width'])) {
+    $map_attrs['width'] = $api_handler->settings['ls_map_search_width'];
+  }
+  if (!empty($api_handler->settings['ls_map_search_height'])) {
+    $map_attrs['height'] = $api_handler->settings['ls_map_search_height'];
+  }
+
+  // merge input params
+  $map_attrs = array_intersect_key($params, $map_attrs) + $map_attrs;
+
+  // render embedded output
+  $render = array();
+  switch ($embed_type) {
+    case 'inline':
+      // Default to inline
+      $render = array(
+        '#type' => 'item',
+        '#markup' => theme('commerce_kiala_point_details_map', array(
+          'point_id' => $point_id,
+        )),
+      );
+      break;
+
+    default:
+      $render = _commerce_kiala_render_modal_box($embed_type, $map_attrs);
+      break;
+  }
+
+  return $render;
+}
+
+/**
+ * Returns a renderable array based on embed type
+ */
+function _commerce_kiala_render_modal_box($embed_type, $modal_attrs = array()) {
+  if (empty($modal_attrs['url'])) {
+    return array();
+  }
+
+  // merge defaults
+  $modal_attrs += array(
+    'class' => 'commerce-kiala-modal-link',
+    'display_text' => '',
+  );
+
+  // ensure button class
+  if (!preg_match('@\bbutton\b@', $modal_attrs['class'])) {
+    $modal_attrs['class'] .= (!empty($modal_attrs['class']) ? ' ' : '');
+    $modal_attrs['class'] .= 'button';
+  }
+
+  // render based on type
+  $render = array();
+  switch ($embed_type) {
+    case 'lightbox2':
+      $markup = '<a class="' . $modal_attrs['class'] . '" href="' . $modal_attrs['url'] . '"';
+        $markup .= ' rel="lightframe[kiala_modal|scrolling: auto;';
+        if (!empty($modal_attrs['width'])) {
+          $markup .= 'width:' . $modal_attrs['width'] . 'px;';
+        }
+        if (!empty($modal_attrs['height'])) {
+          $markup .= 'height:' . $modal_attrs['height'] . 'px;';
+        }
+        $markup .= ']"';
+      $markup .=  '>' . check_plain($modal_attrs['display_text']) . '</a>';
+
+      $render = array(
+        '#markup' => $markup,
+      );
+      break;
+
+    case 'colorbox':
+      $href = $modal_attrs['url'];
+      $extra_url_params = array('iframe' => 'true');
+
+      if (!empty($modal_attrs['width'])) {
+        $extra_url_params['width'] = $modal_attrs['width'];
+      }
+      if (!empty($modal_attrs['height'])) {
+        $extra_url_params['height'] = $modal_attrs['height'];
+      }
+
+      if (!empty($extra_url_params)) {
+        $href .= (strpos($href, '?') !== FALSE ? '&' : '?&') . drupal_http_build_query($extra_url_params);
+      }
+
+      $modal_attrs['class'] .= ' colorbox-load';
+      $markup = '<a class="' . $modal_attrs['class'] . '" href="' . $href . '">' .
+          check_plain($modal_attrs['display_text']) . '</a>';
+
+      $render = array(
+        '#markup' => $markup,
+      );
+      break;
+  }
+
+  if (!empty($render)) {
+    $render += array(
+      '#type' => 'item',
+    );
+  }
+
+  return $render;
+}
+
+
+// -----------------------------------------------------------------------
+// Field Attach Handling
+
+/**
+ * Implements hook_field_attach_view_alter().
+ * - Add extra fields to Order
+ */
+function commerce_kiala_field_attach_view_alter(&$output, $context) {
+  if (!isset($context['entity_type']) || !isset($context['entity'])) {
+    return;
+  }
+
+  $entity = $context['entity'];
+
+  // Add kiala point for orders not rendered in a view
+  if ($context['entity_type'] == 'commerce_order' &&
+      isset($context['view_mode']) && $context['view_mode'] != '_custom') {
+
+    $entity_wrapper = entity_metadata_wrapper($context['entity_type'], $entity);
+    $extra_fields_info = field_info_extra_fields($context['entity_type'], $entity_wrapper->getBundle(), 'display');
+
+    $point_id = $entity_wrapper->kiala_point_id->value();
+    if (!empty($point_id)) {
+      $field_label = isset($extra_fields_info['commerce_kiala_point']['label']) ?
+            $extra_fields_info['commerce_kiala_point']['label']
+            : t('Kiala Delivery Point');
+
+      $output['commerce_kiala_point'] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => FALSE,
+        '#field_type' => 'commerce_kiala_extra_field',
+        '#field_name' => 'commerce_kiala_extra_field',
+        '#view_mode' => $context['view_mode'],
+        '#title' => check_plain($field_label),
+        '#attributes' => array('class' => array('commerce-kiala-point-details-order')),
+        0 => array(
+          '#weight' => 0,
+          '#markup' => theme('commerce_kiala_point_details', array(
+            'point_details' => $entity_wrapper->kiala_point->point_details->value(),
+            'show_more_link' => TRUE,
+          )),
+        ),
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_field_attach_form()
+ * - Order edit form: add kiala point edit
+ */
+function commerce_kiala_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode = NULL) {
+  if ($entity_type == 'commerce_order') {
+    $entity_wrapper = entity_metadata_wrapper($entity_type, $entity);
+    $extra_fields_info = field_info_extra_fields($entity_type, $entity_wrapper->getBundle(), 'display');
+
+    $point_id = $entity_wrapper->kiala_point_id->value();
+    if (!empty($point_id)) {
+      $form['commerce_kiala_point'] = array(
+        '#type' => 'textfield',
+        '#title' => isset($extra_fields_info['commerce_kiala_point']['label']) ?
+            $extra_fields_info['commerce_kiala_point']['label']
+            : t('Kiala Delivery Point'),
+        '#default_value' => $point_id,
+        '#description' => t('Enter a valid Kiala Point ID from the <a href="@map_url" target="_blank">Search map</a>.', array(
+                              '@map_url' => $entity_wrapper->kiala_point_remote_search_url->value(),
+                            )),
+        '#element_validate' => array('element_validate_integer_positive'),
+        '#size' => 10,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_field_attach_submit()
+ * - Order edit form submit: save kiala point
+ */
+function commerce_kiala_field_attach_submit($entity_type, $entity, $form, &$form_state) {
+  if ($entity_type == 'commerce_order') {
+    $values = &$form_state['values'];
+
+    if (isset($values['commerce_kiala_point'])) {
+      $line_item = commerce_kiala_get_shipping_line_item($entity);
+      if (!empty($line_item)) {
+        // update line item data
+        $line_item->data['service_details']['kiala_point'] = $values['commerce_kiala_point'];
+
+        // save line item which triggers line point data save
+        commerce_line_item_save($line_item);
+      }
+    }
+  }
+}
+
+
+// -----------------------------------------------------------------------
+// Helper Functions
+
+/**
+ * Calls check_plain() by reference for use in array_walk()
+ */
+function _commerce_kiala_check_plain_walk(&$value, $key) {
+  $value = check_plain($value);
+}
+
+/**
+ * Returns a renderable array for any Admin settings parameters input
+ *
+ * @param $param_values
+ *  An array of parameter default values keyed by the unique parameter key
+ * @param $doc_url
+ *  A url to the technical documentation
+ *
+ * @return
+ *  The renderable form array
+ *
+ */
+function commerce_kiala_admin_settings_params_element($param_values, $doc_url = '') {
+  $element = array();
+
+  if (empty($param_values)) {
+    return $element;
+  }
+
+  $description = '';
+  if (!empty($doc_url)) {
+    $description = t('Technical details on the parameters can be found in the <a href=@url>@url</a>.', array(
+      '@doc_url' => $doc_url,
+    ));
+  }
+
+  $element = array(
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => !array_filter($param_values),
+    '#tree' => TRUE,
+    '#title' => t('Parameters'),
+    '#attributes' => array('class' => array('commerce-kiala-url-params')),
+    '#description' => $description,
+  );
+
+  foreach ($param_values as $param => $value) {
+    $element[$param] = array(
+      '#type' => 'textfield',
+      '#field_prefix' => check_plain($param),
+      '#default_value' => $value,
+    );
+  }
+
+  return $element;
+}

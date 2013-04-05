@@ -1,0 +1,116 @@
+name = Commerce Kickstart
+description = Install with Drupal Commerce pre-configured for use.
+core = 7.x
+distribution_name = Commerce Kickstart
+exclusive = 1
+
+; Install necessary core modules.
+dependencies[] = block
+dependencies[] = comment
+dependencies[] = contextual
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = taxonomy
+dependencies[] = dblog
+dependencies[] = overlay
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = toolbar
+
+; Install Commerce dependencies.
+dependencies[] = addressfield
+dependencies[] = ctools
+dependencies[] = entity
+dependencies[] = entity_token
+dependencies[] = rules
+dependencies[] = rules_admin
+dependencies[] = views
+dependencies[] = views_ui
+
+; Install the Commerce modules.
+dependencies[] = commerce
+dependencies[] = commerce_ui
+dependencies[] = commerce_cart
+dependencies[] = commerce_checkout
+dependencies[] = commerce_customer
+dependencies[] = commerce_customer_ui
+dependencies[] = commerce_line_item
+dependencies[] = commerce_line_item_ui
+dependencies[] = commerce_order
+dependencies[] = commerce_order_ui
+dependencies[] = commerce_payment
+dependencies[] = commerce_payment_ui
+dependencies[] = commerce_shipping
+dependencies[] = commerce_shipping_ui
+dependencies[] = commerce_price
+dependencies[] = commerce_product
+dependencies[] = commerce_product_ui
+dependencies[] = commerce_product_pricing
+dependencies[] = commerce_product_pricing_ui
+dependencies[] = commerce_product_reference
+dependencies[] = commerce_tax
+dependencies[] = commerce_tax_ui
+
+; Install Commerce services.
+dependencies[] = jirafe
+dependencies[] = yottaa
+
+; Install contribs.
+dependencies[] = chosen
+dependencies[] = crumbs
+dependencies[] = module_filter
+dependencies[] = image_delta_formatter
+dependencies[] = taxonomy_menu
+dependencies[] = libraries
+dependencies[] = mimemail_compress
+dependencies[] = pathauto
+dependencies[] = inline_entity_form
+dependencies[] = entityreference
+dependencies[] = views_megarow
+dependencies[] = commerce_addressbook
+dependencies[] = commerce_discount
+dependencies[] = commerce_discount_date
+dependencies[] = commerce_add_to_cart_confirmation
+dependencies[] = commerce_message
+dependencies[] = commerce_backoffice
+dependencies[] = commerce_backoffice_product
+dependencies[] = commerce_backoffice_order
+dependencies[] = commerce_backoffice_content
+dependencies[] = commerce_checkout_progress
+dependencies[] = commerce_hosted_pci
+dependencies[] = menu_attributes
+dependencies[] = fences
+dependencies[] = title
+
+; Install Features
+dependencies[] = features
+dependencies[] = commerce_features
+
+; Install Migrate
+dependencies[] = migrate
+dependencies[] = commerce_migrate
+
+; Install Search API
+dependencies[] = facetapi
+dependencies[] = search_api
+dependencies[] = search_api_db
+dependencies[] = search_api_views
+dependencies[] = search_api_facetapi
+dependencies[] = search_api_ranges
+
+; Distribution modules.
+dependencies[] = commerce_kickstart_help
+dependencies[] = commerce_kickstart_inline_help
+dependencies[] = commerce_kickstart_order
+dependencies[] = commerce_kickstart_payment
+dependencies[] = commerce_kickstart_comment
+dependencies[] = commerce_kickstart_migrate
+dependencies[] = commerce_kickstart_service_provider
+dependencies[] = commerce_kickstart_dfp
+
+; System Requirements.
+php_memory_limit = 128M

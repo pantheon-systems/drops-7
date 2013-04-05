@@ -1,0 +1,124 @@
+<?php
+
+/**
+ * Implements hook_taxonomy_menu_path().
+ */
+function commerce_kickstart_taxonomy_taxonomy_menu_path() {
+  $output = array(
+    'commerce_kickstart_taxonomy_term_path' => t('Commerce Kickstart Taxonomy'),
+  );
+  return $output;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_kickstart_taxonomy_theme(&$existing) {
+  $themes = array(
+    'views_view__collection_products__page' => array(
+      'path' => drupal_get_path('module', 'commerce_kickstart_taxonomy') . '/theme',
+      'template' => 'views-view--collection-products--page',
+      'arguments' => array('view' => NULL),
+      'base hook' => 'views_view',
+    ),
+  );
+  return $themes;
+}
+
+/**
+ * Implements hook_preprocess_views_view().
+ *
+ * Add collection term as view header.
+ */
+function commerce_kickstart_taxonomy_preprocess_views_view(&$vars) {
+  $view = $vars['view'];
+  if ($view->name == 'collection_products') {
+    if ($view->current_display == 'page') {
+      // Keep the previous theming.
+      $vars['classes_array'][] = 'view-collection-taxonomy-term';
+      $tid = $view->args['0'];
+      $term = taxonomy_term_load($tid);
+      $vars['collection_title'] = $term->name;
+      $vars['collection_image_url'] = NULL;
+      if (!empty($term->field_image) && !empty($term->field_image[LANGUAGE_NONE][0]['uri'])) {
+        $vars['collection_image_url'] = file_create_url($term->field_image[LANGUAGE_NONE][0]['uri']);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function commerce_kickstart_taxonomy_entity_info_alter(&$entity_info) {
+  // Alter a URI callback to the taxonomy_term entity.
+  $entity_info['taxonomy_term']['uri callback'] = 'commerce_kickstart_taxonomy_term_uri';
+}
+
+/**
+ * Uri callback for the taxonomy terms.
+ */
+function commerce_kickstart_taxonomy_term_uri($taxonomy_term) {
+  $uri = 'taxonomy/term/' . $taxonomy_term->tid;
+  $machine_name = variable_get('commerce_kickstart_demo_store', FALSE) ? 'collection' : 'product_category';
+  // Alter the default uri for those two vocabularies so that it point to our
+  // custom views.
+  if ($taxonomy_term->vocabulary_machine_name == $machine_name) {
+    $uri = $taxonomy_term->vocabulary_machine_name . '/' . $taxonomy_term->tid;
+  }
+  return array(
+    'path' => $uri,
+  );
+}
+
+/**
+ * Callback for hook_taxonomy_menu_path().
+ */
+function commerce_kickstart_taxonomy_term_path($vid, $tid) {
+  $vocabulary = taxonomy_vocabulary_load($vid);
+  if ($vocabulary) {
+    // if tid = 0 then we are creating the vocab menu item format will be taxonomy/term/$tid+$tid+$tid....
+    if ($tid == 0) {
+      // get all of the terms for the vocab
+      $vtids = _taxonomy_menu_get_terms($vid);
+      $end = implode(' ', $vtids);
+      $path = $vocabulary->machine_name . '/' . $end;
+    }
+    else {
+      $path = $vocabulary->machine_name . '/' . $tid;
+      if (variable_get(_taxonomy_menu_build_variable('display_decendants', $vid), FALSE)) {
+        // Use 'all' at the end of the path
+        if (variable_get(_taxonomy_menu_build_variable('end_all', $vid), FALSE)) {
+          $path .= '/all';
+        }
+        else {
+          // we wait to run this instead of during the if above
+          // because we only wan to run it once.
+          $terms = taxonomy_get_tree($vid, $tid);
+          foreach ($terms as $term) {
+            $tids[] = $term->tid;
+          }
+          if ($tids) {
+            $end = implode(' ', $tids);
+            $path .= ' ' . $end;
+          }
+        }
+      }
+    }
+    return $path;
+  }
+  else {
+    return taxonomy_menu_path_default($vid, $tid);
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_kickstart_taxonomy_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_kickstart_taxonomy') . '/includes/views',
+  );
+}
+

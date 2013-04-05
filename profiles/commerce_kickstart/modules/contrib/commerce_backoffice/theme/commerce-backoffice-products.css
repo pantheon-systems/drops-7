@@ -1,0 +1,36 @@
+
+.megarow-content {
+  padding-top: 0;
+}
+.megarow-content table {
+  border: 0;
+}
+.megarow-content tr {
+  border: 0 !important;
+  background-color: #f2f2f2 !important;
+  border-bottom: 5px solid white !important;
+}
+.megarow-content tr td:last-child {
+  border: 0 !important;
+}
+.page-admin-commerce .vbo-views-form .views-field-operations-dropbutton .quick-edit {
+  padding-right: 10px;
+  position :relative;
+}
+.page-admin-commerce .vbo-views-form .views-field-operations-dropbutton .quick-edit .ajax-progress-throbber {
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+/* Mega Row Styles */
+#commerce-backoffice-product-quick-edit-form .form-item-price {
+  float: left;
+}
+/* Editing white title so it won't overlap the down arrow */
+.view-commerce-backoffice-products div.views-megarow-content .megarow-title {
+  color: transparent;
+  font: 0/0 none;
+}
+.view-commerce-backoffice-all-product-variations .views-exposed-form .views-widget-filter-combine {
+  top: 0;
+}

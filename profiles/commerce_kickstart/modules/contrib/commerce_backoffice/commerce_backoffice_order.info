@@ -1,0 +1,27 @@
+name = Commerce Backoffice Order
+description = Provides advanced order management.
+core = 7.x
+package = Commerce (contrib)
+
+dependencies[] = commerce_backoffice
+dependencies[] = commerce_order
+dependencies[] = commerce_order_ui
+dependencies[] = commerce_cart
+dependencies[] = commerce_payment
+
+dependencies[] = date
+dependencies[] = date_popup
+dependencies[] = date_views
+dependencies[] = eva
+dependencies[] = entity_token
+dependencies[] = views_bulk_operations
+dependencies[] = views_megarow
+
+files[] = includes/views/handlers/commerce_backoffice_order_handler_field_order_operations.inc
+
+; Information added by drupal.org packaging script on 2013-03-21
+version = "7.x-1.2"
+core = "7.x"
+project = "commerce_backoffice"
+datestamp = "1363859412"
+

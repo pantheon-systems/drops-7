@@ -1,0 +1,34 @@
+name = Product
+description = Defines the Product entity and associated features.
+package = Commerce
+dependencies[] = rules
+dependencies[] = commerce
+dependencies[] = commerce_price
+core = 7.x
+
+; Module includes
+files[] = includes/commerce_product.controller.inc
+
+; Views handlers
+files[] = includes/views/handlers/commerce_product_handler_area_empty_text.inc
+files[] = includes/views/handlers/commerce_product_handler_argument_product_id.inc
+files[] = includes/views/handlers/commerce_product_handler_field_product.inc
+files[] = includes/views/handlers/commerce_product_handler_field_product_type.inc
+files[] = includes/views/handlers/commerce_product_handler_field_product_link.inc
+files[] = includes/views/handlers/commerce_product_handler_field_product_link_delete.inc
+files[] = includes/views/handlers/commerce_product_handler_field_product_link_edit.inc
+files[] = includes/views/handlers/commerce_product_handler_field_product_operations.inc
+files[] = includes/views/handlers/commerce_product_handler_filter_product_type.inc
+
+; Translation handler
+files[] = includes/commerce_product.translation_handler.inc
+
+; Simple tests
+files[] = tests/commerce_product.test
+
+; Information added by drupal.org packaging script on 2013-02-13
+version = "7.x-1.5"
+core = "7.x"
+project = "commerce"
+datestamp = "1360749319"
+

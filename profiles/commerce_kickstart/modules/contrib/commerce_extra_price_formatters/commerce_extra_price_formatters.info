@@ -1,0 +1,13 @@
+name = Commerce Extra Price Formatters
+description = Provides alternative price formatters for Drupal Commerce
+core = 7.x
+dependencies[] = commerce
+dependencies[] = commerce_price
+
+package = Commerce (contrib)
+; Information added by drupal.org packaging script on 2013-01-05
+version = "7.x-1.1+7-dev"
+core = "7.x"
+project = "commerce_extra_price_formatters"
+datestamp = "1357346742"
+

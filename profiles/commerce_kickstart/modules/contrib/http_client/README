@@ -1,0 +1,9 @@
+Http Client is a library for making Http-requests. It has pluggable authentication methods and data formats.
+
+Comes with support for authenticating with OAuth.module version 3.x for easy to access OAuth-protected resources.
+
+Http Client has extensible support for different request and response body formats. That lets you send PHP data structures and have them serialized and deserialized automatically. JSON and serialized PHP is supported out of the box. This makes it a good companion to REST servers and very well suited for use with the version 2+ of the REST Server.
+
+Optional modules
+
+* OAuth 3.x

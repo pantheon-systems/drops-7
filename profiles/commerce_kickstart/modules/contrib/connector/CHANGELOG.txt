@@ -1,0 +1,8 @@
+Connector 7.x-1.x, xxxx-xx-xx
+-----------------------------
+Issue #1648992 by jsacksick: Connector submodule form description is highlighting buggy WAMP install
+by voxpelli: Removed nonexistent file from info-file
+
+Connector 7.x-1.0-beta1, 2012-03-18
+-----------------------------------
+by Frans: Initial release of 7.x version.

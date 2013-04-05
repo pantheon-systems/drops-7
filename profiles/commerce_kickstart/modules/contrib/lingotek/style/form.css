@@ -1,0 +1,9 @@
+#edit-developer {
+  border: 1px solid #CCC;
+  padding: 2.5em 0 0 0;
+}
+
+#edit-developer legend {
+  display:block;
+  margin-bottom:2.5em;
+}

@@ -1,0 +1,204 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the commerce discount module.
+ */
+
+/**
+ * Implements hook_schema()
+ */
+function commerce_discount_schema() {
+  $schema['commerce_discount'] = array(
+    'description' => 'The base table for discounts.',
+    'fields' => array(
+      'discount_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'The internal identifier for any discount.',
+      ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => 'The machine name of the discount.',
+        'default' => '',
+      ),
+      'label' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The label of the discount.',
+        'default' => '',
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The discount type (bundle).',
+        'default' => '',
+      ),
+      'enabled' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => TRUE,
+        'size' => 'tiny',
+        'description' => 'Whether the discount is enabled.',
+      ),
+      'status' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        // Set the default to ENTITY_CUSTOM without using the constant as it is
+        // not safe to use it at this point.
+        'default' => 0x01,
+        'size' => 'tiny',
+        'description' => 'The exportable status of the entity.',
+      ),
+      'module' => array(
+        'description' => 'The name of the providing module if the entity has been defined in code.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('discount_id'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+  );
+
+  $schema['commerce_discount_offer'] = array(
+    'description' => 'The base table for discount offers.',
+    'fields' => array(
+      'discount_offer_id' => array(
+        'type' => 'serial',
+        'not null' => TRUE,
+        'description' => 'The internal identifier for any discount offer.',
+      ),
+      'type' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'description' => 'The discount offer type (bundle).',
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('discount_offer_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ *
+ * Create the entityreference field on commerce discount, referencing
+ * commerce discount offer.
+ * The instance will be added for every newley created bundle.
+ *
+ * @see commerce_discount_modules_enabled()
+ */
+function commerce_discount_install() {
+  // Clear field info cache, so entity reference field can be used.
+  field_info_cache_clear();
+  $field = array(
+    'entity_types' => array('commerce_discount'),
+    'settings' => array(
+      'handler' => 'base',
+      'target_type' => 'commerce_discount_offer',
+      'handler_settings' => array(
+        // Default to fixed_amount, and others will be selectable from the
+        // IEF widget.
+        'target_bundles' => array('fixed_amount'),
+      ),
+    ),
+    'field_name' => 'commerce_discount_offer',
+    'type' => 'entityreference',
+    'locked' => TRUE,
+  );
+  field_create_field($field);
+
+  // Add price field to the commerce discount offer "fixed_amount" bundle.
+  $field = array(
+    'entity_types' => array('commerce_discount_offer'),
+    'field_name' => 'commerce_fixed_amount',
+    'type' => 'commerce_price',
+    'locked' => TRUE,
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'commerce_fixed_amount',
+    'entity_type' => 'commerce_discount_offer',
+    'bundle' => 'fixed_amount',
+    'label' => t('Fixed amount'),
+    'required' => TRUE,
+  );
+  field_create_instance($instance);
+
+  // Add decimal field to the commerce discount offer "percentage" bundle.
+  $field = array(
+    'entity_types' => array('commerce_discount_offer'),
+    'field_name' => 'commerce_percentage',
+    'type' => 'number_decimal',
+    'locked' => TRUE,
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'commerce_percentage',
+    'entity_type' => 'commerce_discount_offer',
+    'bundle' => 'percentage',
+    'label' => t('Percentage'),
+    'description' => t('The percentage used to calculate this tax expressed as a decimal, e.g. .06 for a rate of 6%.'),
+    'required' => TRUE,
+  );
+  field_create_instance($instance);
+
+  $field = array(
+    'entity_types' => array('commerce_order'),
+    'settings' => array(
+      'handler' => 'base',
+      'target_type' => 'commerce_discount',
+      'handler_settings' => array(
+        'target_bundles' => array(),
+      ),
+    ),
+    'field_name' => 'commerce_discounts',
+    'type' => 'entityreference',
+    'locked' => TRUE,
+    'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+  );
+  field_create_field($field);
+
+  $instance = array(
+    'field_name' => 'commerce_discounts',
+    'entity_type' => 'commerce_order',
+    'bundle' => 'commerce_order',
+    'label' => t('Discount reference'),
+  );
+  field_create_instance($instance);
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Each implementing module adding a bundle needs to take care of deleting
+ * it, upon uninstall.
+ *
+ * @see commerce_discount_type_info()
+ * @see commerce_discount_offer_type_info()
+ */
+function commerce_discount_uninstall() {
+  field_attach_delete_bundle('commerce_discount', 'order_discount');
+  field_attach_delete_bundle('commerce_discount', 'product_discount');
+  field_attach_delete_bundle('commerce_discount_offer', 'fixed_amount');
+  field_attach_delete_bundle('commerce_discount_offer', 'percentage');
+
+  field_delete_field('commerce_fixed_amount');
+  field_delete_field('commerce_percentage');
+  field_delete_field('commerce_discounts');
+
+  // Delete variable settings.
+  variable_del('commerce_discount_line_item_types');
+}

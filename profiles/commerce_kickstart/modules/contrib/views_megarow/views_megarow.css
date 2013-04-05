@@ -1,0 +1,99 @@
+
+tr.views-row-active {
+  background-color: #D5E9F2 !important;
+}
+.megarow > td {
+  padding: 0;
+}
+.megarow-content > .messages {
+  border: 0;
+  margin-top: 0;
+  margin-bottom: 15px;
+  padding: 0;
+}
+
+div.views-megarow-content {
+  background: white;
+  color: black;
+  padding: 15px;
+}
+
+div.views-megarow-content .megarow-title {
+  font-size: 120%;
+  font-weight: bold;
+  color: white;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+div.views-megarow-content .megarow-header {
+  padding: 0 .25em 0 1em;
+}
+
+div.views-megarow-content .megarow-header a {
+  color: white;
+}
+
+div.views-megarow-content .megarow-content {
+  padding-top: 1em;
+}
+
+div.views-megarow-content a.close {
+  color: black;
+  float: right;
+}
+
+div.views-megarow-content a.close:hover {
+  text-decoration: none;
+}
+
+div.views-megarow-content a.close img {
+  position: relative;
+  top: 1px;
+}
+
+div.views-megarow-content .megarow-content .megarow-throbber-wrapper {
+  text-align: center;
+}
+
+div.views-megarow-content .form-item label {
+  width: 15em;
+  float: left;
+}
+
+div.views-megarow-content .form-item label.option {
+  width: auto;
+  float: none;
+}
+
+div.views-megarow-content .form-item .description {
+  clear: left;
+}
+
+div.views-megarow-content .form-item .description .tips {
+  margin-left: 2em;
+}
+
+div.views-megarow-content .no-float .form-item * {
+  float: none;
+}
+
+div.views-megarow-content .megarow-form .no-float label  {
+  width: auto;
+}
+
+div.views-megarow-content fieldset,
+div.views-megarow-content .form-radios,
+div.views-megarow-content .form-checkboxes {
+  clear: left;
+}
+
+div.views-megarow-content .resizable-textarea {
+  width: auto;
+  margin-left: 15em;
+  margin-right: 5em;
+}
+
+div.views-megarow-content .container-inline .form-item {
+  margin-right: 2em;
+}

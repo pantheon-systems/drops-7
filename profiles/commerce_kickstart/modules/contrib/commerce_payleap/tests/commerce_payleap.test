@@ -1,0 +1,162 @@
+<?php
+
+/**
+ * @file
+ * Functional tests for the commerce payment module user interface.
+ */
+
+/**
+ * Test payment user interface.
+ */
+class CommercePayleapTest extends CommerceBaseTestCase {
+
+  /**
+   * Order object.
+   */
+  protected $order;
+
+  /**
+   * Implementation of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'PayLeap transaction test',
+      'description' => 'Test PayLeap service.',
+      'group' => 'Drupal Commerce PayLeap',
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  function setUp() {
+    $modules = parent::setUpHelper('all');
+    $modules[] = 'commerce_payleap';
+    parent::setUp($modules);
+
+    // User creation for different operations.
+    $this->store_admin = $this->createStoreAdmin();
+    $this->store_customer = $this->createStoreCustomer();
+
+    // The rule that sends a mail after checkout completion should be disabled
+    //  as it returns an error caused by how mail messages are stored.
+    $rules_config = rules_config_load('commerce_checkout_order_email');
+    $rules_config->active = FALSE;
+    $rules_config->save();
+  }
+
+  /**
+   * Return an array with credit card info.
+   */
+  protected function createDummyCreditCardInfo($order, $transaction_type = 'Sale', $credit_card_number = '5555555555554444') {
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order) ;
+    $billing_data = commerce_payleap_get_billing_info($order);
+
+    return array(
+      'TransType' => $transaction_type,
+      'CardNum' => $credit_card_number,
+      'ExpDate' => '0420',
+      'CVNum' => '123',
+      'Amount' => commerce_currency_amount_to_decimal($order_wrapper->commerce_order_total->amount->value(), $order_wrapper->commerce_order_total->currency_code->value()),
+      'MagData' => '',
+      'NameOnCard' => $billing_data['name_on_card'],
+      'InvNum' => $this->order->order_number,
+      'Street' => $billing_data['street'],
+      'Zip' => $billing_data['zip'],
+      'ExtData' => $billing_data['ext_data'],
+    );
+  }
+
+  /**
+   *  Return an array with PayLeap settings
+   */
+  protected function getPayleapSettings($transaction_type = PAYLEAP_TXN_TYPE_DIRECT_CAPTURE) {
+    return array(
+      'settings' => array (
+        // API credentials
+        'login' => 'commerceguys_demo_API',
+        'tran_key' => 'Un2^eXMBCRJ7WSeQ',
+        'vendor_number' => '761',
+        'txn_payleap_type' => $transaction_type,
+        'txn_mode' => PAYLEAP_TXN_MODE_TEST,
+        'log' => array (
+          'request' => 'request',
+          'response' => 'response',
+         ),
+       ),
+     );
+   }
+
+  /**
+   * Test the PayLeap direct transaction.
+   */
+  public function testCommercePayleapDirectTransaction() {
+    $user = $this->store_customer;
+    // Log in as normal user.
+    $this->drupalLogin($user);
+
+    $product = $this->createDummyProduct($this->randomName(), $this->randomName(), 2, 'USD', $this->store_admin->uid);
+    $this->order = $this->createDummyOrder($user->uid, array($product->product_id => 20));
+     // Generate random information, as city, postal code, etc.
+    $payment_method = $this->getPayleapSettings();
+    $info = $this->createDummyCreditCardInfo($this->order);
+
+    $response = commerce_payleap_request($payment_method, $info);
+
+    $this->assertTrue($response['status']);
+  }
+
+  /**
+   * Test the PayLeap Auth transaction.
+   */
+  public function testCommercePayleapAuthTransaction() {
+    $user = $this->store_customer;
+    // Log in as normal user.
+    $this->drupalLogin($user);
+
+    $product = $this->createDummyProduct($this->randomName(), $this->randomName(), 2, 'USD', $this->store_admin->uid);
+    $this->order = $this->createDummyOrder($user->uid, array($product->product_id => 20));
+     // Generate random information, as city, postal code, etc.
+    $payment_method = $this->getPayleapSettings(PAYLEAP_TXN_TYPE_DELAYED_CAPTURE);
+    // We must pass a new credit card to avoid Duplicate transaction error.
+    $info = $this->createDummyCreditCardInfo($this->order, 'Auth', '4012888888881881');
+
+    $response = commerce_payleap_request($payment_method, $info);
+
+    $this->assertTrue($response['status']);
+  }
+
+  public function testCommercePayleapCardonFileTranscation() {
+    $user = $this->store_customer;
+    // Log in as normal user.
+    $this->drupalLogin($user);
+
+    // Create a billing profile.
+    $address_info = array(
+      'commerce_customer_address' => array(
+        'first_name' => $this->randomName(),
+        'last_name' => $this->randomName(),
+        'organisation_name' => $this->randomName(),
+      ),
+    );
+    $profile = $this->createDummyCustomerProfile('billing', $user->uid, $address_info);
+
+    $product = $this->createDummyProduct($this->randomName(), $this->randomName(), 2, 'USD', $this->store_admin->uid);
+    $this->order = $this->createDummyOrder($user->uid, array($product->product_id => 20), 'cart', $profile->profile_id);
+    // Generate random information, as city, postal code, etc.
+    $payment_method = $this->getPayleapSettings(PAYLEAP_TXN_TYPE_RECURRING_CAPTURE);
+    $info = $this->createDummyCreditCardInfo($this->order, 'Sale', '4444424444444440');
+    // Create Customer Profile.
+    $profile_response = commerce_payleap_customer_profile_request($payment_method, $this->order, array(), 'Add');
+    if ($this->assertNotEqual(FALSE, $profile_response['status'])) {
+      $info['CustomerKey'] = (string) $profile_response['xml']->CustomerKey;
+      // Create CreditCardInfo.
+      $card_response = commerce_payleap_card_profile_request($payment_method, $info, 'Add');
+      if ($this->assertNotEqual(FALSE, $card_response['status'])) {
+        $info['CcInfoKey'] = (string) $card_response['xml']->CcInfoKey;
+        $response = commerce_payleap_request($payment_method, $info);
+        $this->assertTrue($response['status']);
+      }
+    }
+  }
+}

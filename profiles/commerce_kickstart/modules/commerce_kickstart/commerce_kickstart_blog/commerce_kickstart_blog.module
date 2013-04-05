@@ -1,0 +1,61 @@
+<?php
+/**
+ * @file
+ * Code for the Commerce Kickstart blog.
+ */
+
+include_once 'commerce_kickstart_blog.features.inc';
+
+/**
+ * Implements hook_migrate_api().
+ */
+function commerce_kickstart_blog_migrate_api() {
+  // Only register the migration for demo store.
+  if (variable_get('commerce_kickstart_demo_store', FALSE)) {
+    return array(
+      'api' => 2,
+      'migrations' => array(
+        'CommerceKickstartBlogPost' => array('class_name' => 'CommerceKickstartBlogPost'),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_commerce_kickstart_crumb_info().
+ *
+ * Enables the Crumbs plugin relevant to this module that provides taxonomy
+ * based breadcrumbs for each blog post.
+ */
+function commerce_kickstart_blog_commerce_kickstart_crumb_info() {
+  return array(
+    'taxonomy.termReference.field_blog_category.node.blog_post',
+  );
+}
+
+/**
+ * Override or insert variables into the page template.
+ */
+function commerce_kickstart_blog_preprocess_node(&$vars) {
+  if ($vars['type'] == 'blog_post') {
+    // Switching to short date format.
+    $vars['date'] = format_date($vars['created'], 'short');
+
+    // Override taxonomy path.
+    if (array_key_exists('content', $vars)) {
+      $content = &$vars['content'];
+      if (array_key_exists('field_tags', $content)) {
+        foreach ($content['field_tags']['#items'] as $index => $info) {
+          $id = $info['tid'];
+          $content['field_tags'][$index]['#href'] = 'blog/tags/' . $id;
+        }
+      }
+      if (array_key_exists('field_blog_category', $content)) {
+        foreach ($content['field_blog_category']['#items'] as $index => $info) {
+          $id = $info['tid'];
+          $content['field_blog_category'][$index]['#href'] = 'blog/category/' . $id;
+        }
+      }
+    }
+  }
+}

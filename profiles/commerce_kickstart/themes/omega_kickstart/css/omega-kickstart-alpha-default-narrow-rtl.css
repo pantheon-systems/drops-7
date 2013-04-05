@@ -1,0 +1,30 @@
+/* This file will hold styles that are loaded using the same media query as the narrow grid. */
+/* If you are using the default media queries provided by Omega, these styles will also
+ *  apply to the normal and widescreen layouts. You may override these styles in the normal
+ *  and widescreen CSS files as appropriate. */
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+/*******************************************
+* 3.2.2. Content
+*******************************************/
+#promotional_banner .promotional_banner_special_offer {
+  float: right;
+  line-height: 22px;
+  margin-top: 4px; }
+
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.3. Product page
+**********************************************/
+.node-product-type .cloud-zoom-container #wrap {
+  float: left !important; }

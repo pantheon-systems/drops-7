@@ -1,0 +1,286 @@
+<?php
+
+/**
+ * @file
+ * Connector module for the Jirafe eCommerce analytics service.
+ */
+
+/**
+ * Jirafe support functions.
+ */
+require_once dirname(__FILE__) . '/jirafe.jirafe.inc';
+
+/**
+ * Implements hook_menu().
+ */
+function jirafe_menu() {
+  // Administration page.
+  $items['admin/commerce/config/jirafe'] = array(
+    'title' => 'Jirafe configuration',
+    'description' => 'Configure the Jirafe analytics dashboard.',
+    'page arguments' => array('jirafe_dashboard_admin_page'),
+    'page callback' => 'drupal_get_form',
+    'file' => 'jirafe.admin.inc',
+    'access arguments' => array('administer jirafe dashboard'),
+  );
+
+  // Dashboard.
+  $items['admin/commerce/jirafe'] = array(
+    'title' => 'Jirafe dashboard',
+    'description' => 'Access the Jirafe analytics dashboard.',
+    'page callback' => '_jirafe_dashboard_page',
+    'access arguments' => array('access jirafe dashboard'),
+    'file' => 'jirafe.pages.inc',
+    'weight' => -10,
+  );
+  $items['admin/commerce/jirafe/inline'] = array(
+    'title' => 'Inline Jirafe dashboard',
+    'page callback' => '_jirafe_dashboard_page_inline',
+    'access arguments' => array('access jirafe dashboard'),
+    'type' => MENU_CALLBACK,
+    'file' => 'jirafe.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function jirafe_permission() {
+  $permissions['administer jirafe dashboard'] = array(
+    'title' => t('Administer the Jirafe dashboard'),
+    'description' => t('Allows users to access the Jirafe ecommerce analytics dashboard.'),
+    'restrict access' => TRUE,
+  );
+  $permissions['access jirafe dashboard'] = array(
+    'title' => t('Access Jirafe dashboard'),
+    'description' => t('Allows users to access the Jirafe ecommerce analytics dashboard.'),
+    'restrict access' => TRUE,
+  );
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function jirafe_theme() {
+  $path = drupal_get_path('module', 'jirafe') . '/templates';
+  $theme['jirafe_tag'] = array(
+    'variables' => array('data' => array()),
+    'template' => 'jirafe-tag',
+    'path' => $path,
+  );
+  $theme['jirafe_dashboard'] = array(
+    'variables' => array('url' => NULL),
+    'template' => 'jirafe-dashboard',
+    'path' => $path,
+  );
+  $theme['jirafe_dashboard_iframe'] = array(
+    'variables' => array('data' => array()),
+    'template' => 'jirafe-dashboard-iframe',
+    'path' => $path,
+  );
+  return $theme;
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Insert the tracking tag.
+ *
+ * @see hook_jirafe_tracking_data()
+ */
+function jirafe_page_alter(&$page) {
+  $config = variable_get('jirafe_config', array(
+    'token' => NULL,
+  ));
+
+  $current_site = jirafe_get_current_site();
+  if (!$current_site) {
+    return;
+  }
+
+  $jirafe_tracking_data = array(
+    'id' => $current_site['site_id'],
+  );
+
+  // Provide some "default" configuration.
+  if ($term = menu_get_object('taxonomy_term', 2)) {
+    $vocabularies = _jirafe_get_vocabularies();
+    if (in_array($term->vocabulary_machine_name, $vocabularies)) {
+      $jirafe_tracking_data['category'] = array(
+        'name' => $term->name,
+      );
+    }
+  }
+  else if ($node = menu_get_object('node', 1)) {
+    $product_node = commerce_product_reference_node_types();
+    if (array_key_exists($node->type, commerce_product_reference_node_types())) {
+      foreach (commerce_info_fields('commerce_product_reference', 'node') as $name => $field) {
+        if (!field_info_instance('node', $name, $node->type)) {
+          continue;
+        }
+        $node_wrapper = entity_metadata_wrapper('node', $node);
+        if ($field['cardinality'] == 1) {
+          $product = $node_wrapper->$name->value();
+        }
+        else {
+          $product = $node_wrapper->$name->get(0)->value();
+        }
+        break;
+      }
+      // Don't try to look for the product data if there is no product attached.
+      if (isset($product)) {
+        $price = entity_metadata_wrapper('commerce_product', $product)->commerce_price->value();
+        $ammount = commerce_currency_amount_to_decimal($price['amount'], '');
+        $currency = commerce_currency_load();
+        $clean_price = number_format(commerce_currency_round(abs($ammount), $currency), $currency['decimals'], $currency['decimal_separator'], $currency['thousands_separator']);
+
+        $jirafe_tracking_data['product'] = array(
+          'sku' => $product->sku,
+          'name' => $node->title,
+          'price' => $clean_price,
+        );
+      }
+    }
+  }
+  drupal_alter('jirafe_tracking_data', $jirafe_tracking_data, $page);
+
+  // We allow modules to remove tracking data from the page. We are that nice.
+  if ($jirafe_tracking_data) {
+    $tracking_tag = theme('jirafe_tag', array('data' => $jirafe_tracking_data));
+    $page['page_top']['#attached']['js'][] = array(
+      'data' => $tracking_tag,
+      'type' => 'inline',
+      'scope' => 'footer',
+    );
+  }
+}
+
+/**
+ * Implements hook_commerce_order_update().
+ *
+ * Send updated carts to Jirafe.
+ */
+function jirafe_commerce_order_update($order) {
+  try {
+    if (commerce_cart_order_is_cart($order)) {
+      $tracker = jirafe_get_tracker();
+      if (!$tracker) {
+        return;
+      }
+
+      $jirafe_data = jirafe_commerce_order_data($order);
+      foreach ($jirafe_data['products'] as $product) {
+        $tracker->addEcommerceItem(
+          $product['sku'],
+          $product['name'],
+          $product['category'],
+          $product['price'],
+          $product['quantity']
+        );
+      }
+      $tracker->doTrackEcommerceCartUpdate(array_sum($jirafe_data['total']));
+    }
+  }
+  catch(Exception $exception) {
+    watchdog('jirafe', $exception->getMessage());
+  }
+}
+
+/**
+ * Implements hook_commerce_checkout_complete().
+ *
+ * Send the completed order to Jirafe.
+ */
+function jirafe_commerce_checkout_complete($order) {
+  $tracker = jirafe_get_tracker();
+  if (!$tracker) {
+    return;
+  }
+
+  try {
+    $jirafe_data = jirafe_commerce_order_data($order);
+    foreach ($jirafe_data['products'] as $product) {
+      $tracker->addEcommerceItem(
+        $product['sku'],
+        $product['name'],
+        $product['category'],
+        $product['price'],
+        $product['quantity']
+      );
+    }
+    $tracker->doTrackEcommerceOrder(
+      $jirafe_data['order_id'],
+      array_sum($jirafe_data['total']),
+      $jirafe_data['total']['base'],
+      $jirafe_data['total']['tax'],
+      $jirafe_data['total']['shipping'],
+      $jirafe_data['total']['discount']
+    );
+  }
+  catch(Exception $exception) {
+    watchdog('jirafe', $exception->getMessage());
+  }
+}
+
+/**
+ * Implements hook_commerce_kickstart_service_provider().
+ *
+ * Set Jirafe as a commerce-kickstart service provider.
+ */
+function jirafe_commerce_kickstart_service_provider() {
+  global $base_url;
+  return array(
+    'jirafe' => array(
+      'logo_path' => 'https://en.jirafe.com/bundles/jirafewebsite/img/features/grphcPgHed.png',
+      'title' => t('Jirafe'),
+      'category' => t('Analytics'),
+      'teaser' => t('Jirafe analytics dashboard.'),
+      'description' => t('Grow your revenues by making smarter marketing & merchandising choices.'),
+      'requirements' => t('Requires application ID and token to be set.'),
+      'requirements_callback' => 'jirafe_commerce_kickstart_service_provider_requirements',
+      'link' => 'http://jirafe.com',
+      'installation_proccess' => t('1. Create your Jirafe account at the Commerce Guys !marketplace.<br />2. Fill in your application ID and token !configuration_link.', array('!marketplace' => l('Marketplace', url('https://marketplace.commerceguys.com/service/jirafe', array('query' => array('source' => $base_url)))), '!configuration_link' => l('here', 'admin/commerce/config/jirafe'))),
+    ),
+  );
+}
+
+/**
+ * Callback function.
+ *
+ * @See jirafe_commerce_kickstart_service_provider().
+ */
+function jirafe_commerce_kickstart_service_provider_requirements() {
+  // Load the install file to have hook_requirements() available.
+  module_load_install('jirafe');
+  $requirements = jirafe_requirements('runtime');
+  if (!empty($requirements['jirafe']['severity'])) {
+    return COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_ENABLED;
+  }
+
+  return COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_DEFINED;
+}
+
+/**
+ * Helper function. Get the vocabularies that are used on the commerce product
+ * displays.
+ */
+function _jirafe_get_vocabularies() {
+  $node_types = commerce_product_reference_node_types();
+  $node_types = array_keys($node_types);
+  $vocabularies = array();
+  foreach (field_info_fields() as $field_name => $field) {
+    if ($field['type'] == 'taxonomy_term_reference' && !empty($field['bundles']['node'])) {
+      if (array_intersect($node_types, $field['bundles']['node'])) {
+        foreach ($field['settings']['allowed_values'] as $vocabulary) {
+          $vocabulary_name = $vocabulary['vocabulary'];
+          $vocabularies[$vocabulary_name] = $vocabulary_name;
+        }
+      }
+    }
+  }
+  return $vocabularies;
+}

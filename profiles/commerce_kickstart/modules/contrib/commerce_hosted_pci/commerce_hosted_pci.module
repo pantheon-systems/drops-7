@@ -1,0 +1,1209 @@
+<?php
+
+/**
+ * @file
+ * Implements Hosted PCI credit card payments in Drupal Commerce checkout.
+ */
+
+define('HOSTED_PCI_API_VERSION', '1.0.1');
+define('HOSTED_PCI_API_TYPE', 'pxyhpci');
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_hosted_pci_menu() {
+  $items = array();
+
+  // Add a menu item for capturing authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/hosted-pci-capture'] = array(
+    'title' => 'Capture',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_hosted_pci_capture_form', 3, 5),
+    'access callback' => 'commerce_hosted_pci_capture_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_hosted_pci.admin.inc',
+  );
+
+  // Add a menu item for voiding transactions.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/hosted-pci-void'] = array(
+    'title' => 'Void',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_hosted_pci_void_form', 3, 5),
+    'access callback' => 'commerce_hosted_pci_void_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_hosted_pci.admin.inc',
+  );
+
+  // Add a menu item for issuing credits.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/hosted-pci-credit'] = array(
+    'title' => 'Credit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_hosted_pci_credit_form', 3, 5),
+    'access callback' => 'commerce_hosted_pci_credit_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_hosted_pci.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Authorization capture form for Hosted Pci credit card transactions.
+ *
+ * @param object $order
+ *   The order the transaction is on.
+ * @param object $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return bool
+ *   TRUE or FALSE indicating capture access.
+ */
+function commerce_hosted_pci_capture_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Hosted Pci or isn't
+  // awaiting capture.
+  if ($transaction->payment_method != 'hosted_pci' || empty($transaction->remote_id) ||
+    $transaction->remote_status != COMMERCE_CREDIT_AUTH_ONLY) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 30 days past the original authorization.
+  if (REQUEST_TIME - $transaction->created > 86400 * 30) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Void form for Hosted Pci credit card transactions.
+ *
+ * @param object $order
+ *   The order the transaction is on.
+ * @param object $transaction
+ *   The payment transaction object to be voided.
+ *
+ * @return bool
+ *   TRUE or FALSE indicating void access.
+ */
+function commerce_hosted_pci_void_access($order, $transaction) {
+  $transaction_statuses = array(
+    COMMERCE_CREDIT_AUTH_CAPTURE,
+    COMMERCE_CREDIT_AUTH_ONLY,
+    COMMERCE_CREDIT_CAPTURE_ONLY,
+  );
+  // Return FALSE if the transaction isn't for Hosted Pci or isn't completed.
+  if ($transaction->payment_method != 'hosted_pci' || empty($transaction->remote_id) ||
+    !in_array($transaction->remote_status, $transaction_statuses)) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 24 hours since the last update to the
+  // transaction, as it will already have been settled.
+  if (REQUEST_TIME - $transaction->changed > 2600 * 24) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Credit form for successful Hosted Pci credit card transactions.
+ *
+ * @param object $order
+ *   The order the transaction is on.
+ * @param object $transaction
+ *   The payment transaction object to be credited.
+ *
+ * @return bool
+ *   TRUE or FALSE indicating credit access.
+ */
+function commerce_hosted_pci_credit_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Hosted Pci, doesn't have a
+  // success status or has an amount of 0 or less.
+  if ($transaction->payment_method != 'hosted_pci' || $transaction->status != 'success' || $transaction->amount <= 0) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 120 days past the original capture.
+  if (REQUEST_TIME - $transaction->created > 86400 * 120) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_hosted_pci_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['hosted_pci'] = array(
+    'base' => 'commerce_hosted_pci',
+    'title' => t('Hosted PCI - Credit Card'),
+    'short_title' => t('Hosted PCI'),
+    'display_title' => t('Hosted PCI - Credit card'),
+    'description' => t('Hosted PCI credit card payments'),
+    'cardonfile' => array(
+      'update callback' => 'commerce_hosted_pci_cardonfile_update_delete',
+      'delete callback' => 'commerce_hosted_pci_cardonfile_update_delete',
+    ),
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Returns the default settings for the Hosted PCI payment method.
+ */
+function commerce_hosted_pci_default_settings() {
+  // Get configuration settings.
+  return array(
+    'siteid'          => '',
+    'service_url'     => '',
+    'api_username'    => '',
+    'api_passkey'     => '',
+    'api_version'     => HOSTED_PCI_API_VERSION,
+    'api_type'        => HOSTED_PCI_API_TYPE,
+    'payment_profile' => '',
+    'txn_type'        => COMMERCE_CREDIT_AUTH_CAPTURE,
+    'card_types'      => array(),
+    'cardonfile'      => FALSE,
+    'log'             => array('request' => '0', 'response' => '0'),
+  );
+}
+
+/**
+ * Payment method callback: settings form.
+ */
+function commerce_hosted_pci_settings_form($settings = array()) {
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+  // Merge default settings into the stored settings array.
+  $settings = (array) $settings + commerce_hosted_pci_default_settings();
+
+  $form = array();
+
+  $form['siteid'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Site ID'),
+    '#required'      => TRUE,
+    '#description'   => t('Site ID settings (from hostedpci.com)'),
+    '#default_value' => $settings['siteid'],
+  );
+
+  $form['payment_profile'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Payment Profile Name'),
+    '#required'      => TRUE,
+    '#description'   => t('Payment Profile Name from hostedpci.com'),
+    '#default_value' => $settings['payment_profile'],
+  );
+
+  $form['service_url'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('Service URL'),
+    '#required'      => TRUE,
+    '#description'   => t('API Webservices URL (from hostedpci.com)'),
+    '#default_value' => $settings['service_url'],
+  );
+
+  $form['api_username'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('API Username'),
+    '#required'      => TRUE,
+    '#description'   => t('API Username (from hostedpci.com)'),
+    '#default_value' => $settings['api_username'],
+  );
+
+  $form['api_passkey'] = array(
+    '#type'          => 'textfield',
+    '#title'         => t('API Passkey'),
+    '#required'      => TRUE,
+    '#description'   => t('API Passkey (from hostedpci.com)'),
+    '#default_value' => $settings['api_passkey'],
+  );
+
+  $form['txn_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Default credit card transaction type'),
+    '#description' => t('The default will be used to process transactions during checkout.'),
+    '#options' => array(
+      COMMERCE_CREDIT_AUTH_CAPTURE => t('Authorization and capture'),
+      COMMERCE_CREDIT_AUTH_ONLY    => t('Authorization only (requires manual or automated capture after checkout)'),
+    ),
+    '#default_value' => $settings['txn_type'],
+  );
+
+  $form['card_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Limit accepted credit cards to the following types'),
+    '#description' => t('If you want to limit acceptable card types, you should only select those supported by your merchant account.') . '<br />' . t('If none are checked, any credit card type will be accepted.'),
+    '#options' => commerce_payment_credit_card_types(),
+    '#default_value' => $settings['card_types'],
+  );
+
+  // Card on File integration.
+  if (module_exists('commerce_cardonfile')) {
+    $form['cardonfile'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable Card on File functionality with this payment method.'),
+      '#description' => t('Allow the customer to use a credit card used for a previously order.'),
+      '#default_value' => $settings['cardonfile'],
+    );
+  }
+
+  $form['log'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Log the following messages for debugging'),
+    '#options' => array(
+      'request' => t('API request messages'),
+      'response' => t('API response messages'),
+    ),
+    '#default_value' => $settings['log'],
+  );
+
+  return $form;
+}
+
+/**
+ * Payment method callback: adds Hosted Pci iframe to the submission form.
+ */
+function commerce_hosted_pci_submit_form($payment_method, $pane_values = NULL, $checkout_pane = NULL, $order = NULL) {
+
+  global $base_root;
+  $settings = $payment_method['settings'];
+  $settings += commerce_hosted_pci_default_settings();
+  $settings += array(
+    'hostname' => $base_root,
+    'query'    => current_path(),
+  );
+
+  $form = array();
+
+  // Prepare the fields to include on the credit card form.
+  $fields = array('code' => '');
+
+  // Add the credit card types array if necessary.
+  if ($card_types = array_diff(array_values($payment_method['settings']['card_types']), array(0))) {
+    $fields['type'] = $card_types;
+  }
+
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+  $form = commerce_payment_credit_card_form($fields);
+
+  // Hide the default number and code fields. This will be filled out with
+  // Hosted Pci tokens values.
+  $form['credit_card']['number']['#type'] = 'hidden';
+  $form['credit_card']['code']['#type']   = 'hidden';
+
+  // Because number and code fields are hidden, we don't want to display errors
+  // messages about them to the customer in case of Hosted Pci javascript didn't
+  // succeed to have credit card token. However we do a validation on those
+  // fields in the form validate.
+  $form['credit_card']['number']['#required'] = FALSE;
+  $form['credit_card']['code']['#required']   = FALSE;
+
+  // We are obliged to specify an ID because the default one can be different
+  // whether if the field type is hidden or not.
+  $form['credit_card']['number']['#attributes'] = array('id' => 'edit-commerce-payment-payment-details-credit-card-number');
+  $form['credit_card']['code']['#attributes']   = array('id' => 'edit-commerce-payment-payment-details-credit-card-code');
+
+  // Include the Hosted PCI iframe.
+  $iframe_data = '<iframe id="ccframe" name="ccframe" src="https://cc.hostedpci.com/iSynSApp/showPxyPage!ccFrame.action?pgmode1=prod'
+    . '&locationName=' . $settings['payment_profile']
+    . '&sid=' . $settings['siteid']
+    . '&fullParentHost=' . $settings['hostname']
+    . '&fullParentQStr=' . $settings['query']
+    . '&cvvValidate=Y" width=480 height=80 scrolling="NO" frameBorder="0">'
+    . t("If you can see this, your browser doesn't understand IFRAME. Please upgrade your browser")
+    . '</iframe>';
+
+  $form['credit_card']['cc_hpci'] = array(
+    '#markup' => $iframe_data,
+    '#weight' => -10,
+  );
+
+  // Add an hidden field to hold the firsts digits of the credit card to make
+  // card type validation.
+  $form['credit_card']['cc_bin']  = array(
+    '#type' => 'hidden',
+    '#default_value' => '',
+    '#attributes' => array('id' => 'edit-commerce-payment-payment-details-credit-card-bin'),
+  );
+
+  // Add an hidden field to hold a potential error code returned by Hosted Pci.
+  $form['credit_card']['response_code']  = array(
+    '#type' => 'hidden',
+    '#default_value' => '',
+    '#attributes' => array('id' => 'edit-commerce-payment-payment-details-credit-card-response-code'),
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Attach all needed js file to the payment form.
+ *
+ * This is not the best solution but adding them directly during the form
+ * building doesn't works. Some of those forms are loaded via ajax and in
+ * some cases js files aren't included in the page.
+ */
+function commerce_hosted_pci_form_alter(&$form, &$form_state, $form_id) {
+  if (strpos($form_id, 'commerce_checkout_form_') === 0
+    || $form_id == 'commerce_payment_order_transaction_add_form'
+    || $form_id == 'commerce_cardonfile_update_form') {
+    $form['#attached']['js'][] = array(
+      'data' => 'https://cc.hostedpci.com/WBSStatic/site60/proxy/js/jquery.ba-postmessage.min.js',
+      'type' => 'external',
+    );
+    $form['#attached']['js'][] = array(
+      'data' => 'https://cc.hostedpci.com/WBSStatic/site60/proxy/js/hpci-cciframe-1.0.js',
+      'type' => 'external',
+    );
+    $form['#attached']['js'][] = array(
+      'data' => _commerce_hosted_pci_get_js(),
+      'type' => 'inline',
+    );
+    $form['#attached']['js'][] = array(
+      'data' => drupal_get_path('module', 'commerce_hosted_pci') . '/commerce_hosted_pci.js',
+      'type' => 'file',
+    );
+  }
+}
+
+/**
+ * Payment method callback: checkout form validation.
+ */
+function commerce_hosted_pci_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+
+  // If the customer specified a card on file, skip the normal validation.
+  if (module_exists('commerce_cardonfile') && !empty($payment_method['settings']['cardonfile']) &&
+    !empty($pane_values['cardonfile']) && $pane_values['cardonfile'] !== 'new') {
+    return;
+  }
+
+  $valid = TRUE;
+  // Validate the credit card fields.
+  $settings = array(
+    'form_parents' => array_merge($form_parents, array('credit_card')),
+  );
+  $prefix = implode('][', $settings['form_parents']) . '][';
+  $credit_card = $pane_values['credit_card'];
+
+  // Check if an error code has been returned by hosted Pci.
+  if (!empty($credit_card['response_code'])) {
+    form_set_error($prefix  . 'number', commerce_hosted_pci_code_message($credit_card['response_code']));
+    $valid = FALSE;
+  }
+  else {
+    // Validate the credit card number. We can't use the Luhn algorithm because
+    // we have a token and not a credit card number but all the checks have
+    // already been made by Hosted Pci before they send us the token.
+    if (empty($credit_card['number']) || !ctype_digit($credit_card['number'])) {
+      form_set_error($prefix  . 'number', t('The credit card number you entered is invalid.'));
+      $valid = FALSE;
+    }
+
+    // Validate the security code.
+    if (empty($credit_card['code']) || !ctype_digit($credit_card['code'])) {
+      form_set_error($prefix  . 'code', t('The credit card code you entered is invalid.'));
+      $valid = FALSE;
+    }
+
+    module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+    // Validate the credit card type.
+    if (!empty($credit_card['valid_types'])) {
+      // Check if the first 6 digit of the credit card have been be returned.
+      if (!empty($credit_card['cc_bin']) && strlen($credit_card['cc_bin']) == 6) {
+        // Generate a number with the bin value that match the token lenght.
+        $number = $credit_card['cc_bin'] . str_repeat('X', strlen($credit_card['number']) - 6);
+        $type = commerce_payment_validate_credit_card_type($number, $credit_card['valid_types']);
+        if ($type === FALSE) {
+          form_set_error($prefix . 'type', t('You have entered a credit card number of an unsupported card type.'));
+          $valid = FALSE;
+        }
+        elseif ($type != $credit_card['type']) {
+          drupal_set_message(t('You have entered a credit card number that does not match the type selected.'), 'error');
+          form_set_error($prefix  . 'type', t('You have entered a credit card number that does not match the type selected.'));
+          $valid = FALSE;
+        }
+      }
+      else {
+        form_set_error($prefix  . 'number', t('We encountered an error processing your payment. Please verify your credit card details or try a different card.'));
+        $valid = FALSE;
+      }
+    }
+
+    // Validate the expiration date.
+    if ($invalid = commerce_payment_validate_credit_card_exp_date($credit_card['exp_month'], $credit_card['exp_year']) !== TRUE) {
+      form_set_error($prefix . 'exp_' . $invalid, t('You have entered an expired credit card.'));
+      $valid = FALSE;
+    }
+  }
+
+  return $valid;
+}
+
+/**
+ * Payment method callback: checkout form submission.
+ */
+function commerce_hosted_pci_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+
+  $settings = $payment_method['settings'] + commerce_hosted_pci_default_settings();
+
+  // Display an error and prevent the payment attempt if Hosted PCI has not been
+  // configured yet.
+  if (empty($settings)) {
+    drupal_set_message(t('This payment method must be configured by an administrator before it can be used.'), 'error');
+    return FALSE;
+  }
+
+  // Determine the currency code to use to actually process the transaction.
+  $currency_code = $charge['currency_code'] ? $charge['currency_code'] : variable_get('commerce_default_currency', 'USD');
+  // Convert the charge amount to the specified currency.
+  $amount = commerce_currency_convert($charge['amount'], $charge['currency_code'], $currency_code);
+
+  // Prepare a transaction object.
+  $transaction = commerce_payment_transaction_new('hosted_pci', $order->order_id);
+  $transaction->instance_id   = $payment_method['instance_id'];
+  $transaction->amount        = $amount;
+  $transaction->currency_code = $currency_code;
+
+  // Ensure a billing address has been added to the order before going further.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $valid_billing_address = TRUE;
+  if (empty($order->commerce_customer_billing) || empty($order_wrapper->commerce_customer_billing->value()->commerce_customer_address)) {
+    $valid_billing_address = FALSE;
+  }
+  else {
+    // Check the billing address values.
+    $address_value = $order_wrapper->commerce_customer_billing->commerce_customer_address->value();
+    if (empty($address_value['name_line']) && empty($address_value['first_name'])) {
+      $valid_billing_address = FALSE;
+    }
+    foreach (array('thoroughfare', 'locality', 'postal_code', 'country') as $address_key) {
+      if (empty($address_value[$address_key])) {
+        $valid_billing_address = FALSE;
+      }
+    }
+  }
+
+  // Without a valid villing address, display and log the error messages and
+  // prevent the payment attempt.
+  if (!$valid_billing_address) {
+    // Display a general error to the customer if we can't find the address.
+    drupal_set_message(t('We cannot process your credit card payment without a valid billing address.'), 'error');
+    $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+    $transaction->message = t('The customer must be able to supply a billing address through the default address field of the core billing information customer profile to pay via Hosted Pci.');
+    commerce_payment_transaction_save($transaction);
+    watchdog('commerce_hosted_pci', 'The transaction failed because the order did not have a value for the default billing address field. Your order or checkout configuration may need to be adjusted to support credit card payment.', array(), WATCHDOG_ERROR);
+    return FALSE;
+  }
+
+  // If Card on File storage is enabled and the form says to store data.
+  $add_to_profile = FALSE;
+  if (module_exists('commerce_cardonfile')) {
+    // If the customer specified payment using a card on file, attempt that now
+    // and simply return the result.
+    if (!empty($pane_values['cardonfile']) && $pane_values['cardonfile'] !== 'new') {
+      $card_data = commerce_cardonfile_data_load($pane_values['cardonfile']);
+      $pane_values['credit_card']['number'] = $card_data['remote_id'];
+    }
+    // Else, the user submitted a new card to store.
+    elseif (!empty($pane_values['credit_card']['cardonfile_store']) && $pane_values['credit_card']['cardonfile_store']) {
+      // First look to see if we already have cards on file for the user.
+      $add_to_profile = TRUE;
+      $stored_cards = commerce_cardonfile_data_load_multiple($order->uid, $payment_method['instance_id']);
+      foreach ($stored_cards as $card) {
+        if ($card['remote_id'] == $pane_values['credit_card']['number']) {
+          $add_to_profile = FALSE;
+          break;
+        }
+      }
+    }
+  }
+
+  // Build a name-value pair array for this transaction.
+  $data = commerce_hosted_pci_get_transaction_data($order, array('amount' => $amount, 'currency_code' => $currency_code), $pane_values);
+  // Request Hosted PCI service.
+  $response = commerce_hosted_pci_transaction_process($payment_method['settings']['txn_type'], $settings, $data);
+
+  // Store response message information.
+  $message = array();
+  $message[] = t('Transaction type: %type', array('%type' => commerce_hosted_pci_reverse_txn_type($payment_method['settings']['txn_type'])));
+
+  // Initialise the payment status to false.
+  $payment_approved = FALSE;
+
+  if ($response) {
+    // The call is valid and the payment gateway return something.
+    if (isset($response['pxyResponse_responseStatus'])) {
+      // The payment has been approved.
+      if ($response['status'] == 'success' && $response['pxyResponse_responseStatus'] == 'approved') {
+        $payment_approved = TRUE;
+        switch ($payment_method['settings']['txn_type']) {
+          case COMMERCE_CREDIT_AUTH_ONLY:
+            $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+            $message[] = t('Authorization succeeded with message: @message', array('@message' => $response['pxyResponse_responseStatus_description']));
+            break;
+
+          case COMMERCE_CREDIT_AUTH_CAPTURE:
+            $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+            $message[] = t('Payment succeeded with message: @message', array('@message' => $response['pxyResponse_responseStatus_description']));
+            break;
+        }
+      }
+      // The payment has been rejected.
+      else {
+        $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+        $transaction->message = t('Payment failed with message: @message', array($response['pxyResponse_responseStatus_description']));
+      }
+      $transaction->remote_id = $response['pxyResponse_processorRefId'];
+    }
+    // The payment encountered an error.
+    else {
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->message = t('Payment failed with message: @message', array('@message' => commerce_hosted_pci_code_message($response['errId'])));
+    }
+  }
+  else {
+    $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+    $message[] = t('Payment failed');
+  }
+
+  // Build a meaningful response message.
+  $transaction->message = implode('<br />', $message);
+  $transaction->remote_status = $payment_method['settings']['txn_type'];
+  $transaction->payload[REQUEST_TIME] = commerce_hosted_pci_get_transaction_log($response);
+
+  // Save the transaction.
+  commerce_payment_transaction_save($transaction);
+
+  // If the payment failed, display an error.
+  if (!$payment_approved) {
+    if ($response) {
+      // The error is a payment gateway error.
+      if (isset($response['pxyResponse_responseStatus'])) {
+        watchdog('commerce_hosted_pci', 'Hosted Pci transaction %type <br />Payment response: @response_status <br />Description: @description <br />Response data: !reponse',
+          array(
+            '%type' => $payment_method['settings']['txn_type'],
+            '@response_status' => $response['pxyResponse_responseStatus_name'],
+            '@description' => $response['pxyResponse_responseStatus_description'],
+            '!reponse' => '<pre>' . check_plain(print_r($response, TRUE)) . '</pre>',
+          ),
+          WATCHDOG_ERROR
+        );
+      }
+      // The error is return from a badly formatted call to Hosted Pci.
+      else {
+        watchdog('commerce_hosted_pci', 'Hosted Pci transaction %type <br />Response: @error_id <br />Description: @description <br />Response data: !reponse',
+          array(
+            '%type' => $payment_method['settings']['txn_type'],
+            '@error_id' => $response['errId'],
+            '@description' => commerce_hosted_pci_code_message($response['errId']),
+            '!reponse' => '<pre>' . check_plain(print_r($response, TRUE)) . '</pre>',
+          ),
+          WATCHDOG_ERROR
+        );
+      }
+    }
+    drupal_set_message(t('We encountered an error processing your payment. Please verify your credit card details or try a different card.'), 'error');
+    return FALSE;
+  }
+  else {
+    // If the payment succeed and the card has to be registered.
+    if ($add_to_profile) {
+      // Prepare card to save.
+      $new_card_data = array(
+        'uid' => $order->uid,
+        'payment_method' => $payment_method['method_id'],
+        'instance_id' => $payment_method['instance_id'],
+        'card_type' => 'card',
+        'remote_id' => $pane_values['credit_card']['number'],
+        'card_name' => !empty($address_value['name_line']) ? $address_value['name_line'] : '',
+        'card_number' => substr($pane_values['credit_card']['number'], -4),
+        'card_exp_month' => $pane_values['credit_card']['exp_month'],
+        'card_exp_year' => $pane_values['credit_card']['exp_year'],
+        'status' => 1,
+      );
+      $save = commerce_cardonfile_data_save($new_card_data);
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Build a name-value pair array of data to transmit for this transaction.
+ *
+ * @param object $order
+ *   The order the transaction is on.
+ * @param array $charge
+ *   An array compounded with the amount and the currency for this order.
+ * @param array $payment_info
+ *   Payment information.
+ *
+ * @return array
+ *   An name/value pair array of information to send to Hosted PCI
+ */
+function commerce_hosted_pci_get_transaction_data($order, $charge, $payment_info) {
+  global $user;
+
+  // Convert amount to a decimal number.
+  $decimal_amount = commerce_currency_amount_to_decimal($charge['amount'], $charge['currency_code']);
+
+  // Set credit card information.
+  $data['pxyCreditCard.cardType']             = '';
+  $data['pxyCreditCard.creditCardNumber']     = $payment_info['credit_card']['number'];
+  $data['pxyCreditCard.expirationMonth']      = $payment_info['credit_card']['exp_month'];
+  $data['pxyCreditCard.expirationYear']       = $payment_info['credit_card']['exp_year'];
+  $data['pxyCreditCard.cardCodeVerification'] = $payment_info['credit_card']['code'];
+
+  // Pass information about the amount of transaction, currency and order ID.
+  $data['pxyTransaction.txnAmount']     = $decimal_amount;
+  $data['pxyTransaction.txnCurISO']     = $charge['currency_code'];
+  $data['pxyTransaction.merchantRefId'] = $order->order_id;
+
+  // Pass information about the user.
+  $data['pxyCustomerInfo.email']      = $order->mail;
+  $data['pxyCustomerInfo.customerId'] = $user->uid;
+
+  // Pass the following optional parameters.
+  $data['pxyCustomerInfo.customerIP'] = ip_address();
+  $data['pxyOrder.invoiceNumber']     = "Invoice:" . $order->order_id;
+  $data['pxyOrder.description']       = variable_get('site_name', 'Drupal Commerce') . " Online Order";
+  $data['pxyOrder.totalAmount']       = $decimal_amount;
+  $data['pxyTransaction.txnPayName']  = 'DEF';
+  $data['pxyTransaction.txnComment']  = '';
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // Prepare the billing address for use in the request.
+  $billing_address = $order_wrapper->commerce_customer_billing->commerce_customer_address->value();
+  if (empty($billing_address['first_name'])) {
+    $name_parts = explode(' ', $billing_address['name_line']);
+    $billing_address['first_name'] = array_shift($name_parts);
+    $billing_address['last_name'] = implode(' ', $name_parts);
+  }
+  $data['pxyCustomerInfo.billingLocation.firstName'] = $billing_address['first_name'];
+  $data['pxyCustomerInfo.billingLocation.lastName']  = $billing_address['last_name'];
+  $data['pxyCustomerInfo.billingLocation.addres']    = $billing_address['thoroughfare'];
+  $data['pxyCustomerInfo.billingLocation.city']      = $billing_address['locality'];
+  $data['pxyCustomerInfo.billingLocation.state']     = $billing_address['administrative_area'];
+  $data['pxyCustomerInfo.billingLocation.zipCode']   = $billing_address['postal_code'];
+  $data['pxyCustomerInfo.billingLocation.country']   = $billing_address['country'];
+
+  // Prepare the Shipping address for use in the request.
+  $shipping_address = $order_wrapper->commerce_customer_shipping->commerce_customer_address->value();
+  if (empty($shipping_address)) {
+    $shipping_address = $billing_address;
+  }
+  if (empty($shipping_address['first_name'])) {
+    $name_parts = explode(' ', $shipping_address['name_line']);
+    $shipping_address['first_name'] = array_shift($name_parts);
+    $shipping_address['last_name'] = implode(' ', $name_parts);
+  }
+  $data['pxyCustomerInfo.shippingLocation.firstName'] = $shipping_address['first_name'];
+  $data['pxyCustomerInfo.shippingLocation.lastName']  = $shipping_address['last_name'];
+  $data['pxyCustomerInfo.shippingLocation.address']   = $shipping_address['thoroughfare'];
+  $data['pxyCustomerInfo.shippingLocation.city']      = $shipping_address['locality'];
+  $data['pxyCustomerInfo.shippingLocation.state']     = $shipping_address['administrative_area'];
+  $data['pxyCustomerInfo.shippingLocation.zipCode']   = $shipping_address['postal_code'];
+  $data['pxyCustomerInfo.shippingLocation.country']   = $shipping_address['country'];
+
+  return $data;
+}
+
+/**
+ * Post data to Hosted PCI using cURL library.
+ *
+ * @param string $request_type
+ *   The transaction mode.
+ * @param array $settings
+ *   The settings related to the payment method.
+ * @param array $data
+ *   Data to send to Hosted Pci.
+ *
+ * @return array|bool
+ *   Return a cURL error or an Hosted PCI response.
+ */
+function commerce_hosted_pci_transaction_process($request_type, $settings, $data = array()) {
+  $response = NULL;
+
+  // Set API information.
+  $data += array(
+    'apiVersion'  => $settings['api_version'],
+    'apiType'     => $settings['api_type'],
+    'userName'    => $settings['api_username'],
+    'userPassKey' => $settings['api_passkey'],
+  );
+
+  // Get the API endpoint URL for the method's transaction mode.
+  $url = commerce_hosted_pci_server_url($request_type, $settings);
+
+  // Log the API response if specified.
+  if ($settings['log']['request'] == 'request') {
+    // Mask the credit card number and CVV.
+    $log = $data;
+    if (!empty($log['pxyCreditCard.creditCardNumber'])) {
+      $log['pxyCreditCard.creditCardNumber'] = str_repeat('X', strlen($log['pxyCreditCard.creditCardNumber']) - 4) . substr($log['pxyCreditCard.creditCardNumber'], -4);
+    }
+    if (!empty($log['pxyCreditCard.cardCodeVerification'])) {
+      $log['pxyCreditCard.cardCodeVerification'] = str_repeat('X', strlen($log['pxyCreditCard.cardCodeVerification']));
+    }
+    $variables = array(
+      '@url' => $url,
+      '!param' => '<pre>' . check_plain(print_r($log, TRUE)) . '</pre>',
+    );
+    watchdog('commerce_hosted_pci', 'Hosted Pci request to @url: <pre>!param</pre>', $variables, WATCHDOG_DEBUG);
+  }
+
+  // Encode the url params.
+  $post_fields = array();
+  foreach ($data as $key => $value) {
+    $post_fields[] = $key . '=' . urlencode($value);
+  }
+
+  // Convert params as a string.
+  $post_fields_str = implode('&', $post_fields);
+
+  // Prepare the CURL options.
+  $options = array(
+    CURLOPT_POST => 1,
+    CURLOPT_HEADER => 0,
+    CURLOPT_URL => $url,
+    CURLOPT_FRESH_CONNECT => 1,
+    CURLOPT_RETURNTRANSFER => 1,
+    CURLOPT_FORBID_REUSE => 1,
+    CURLOPT_TIMEOUT => 4,
+    CURLOPT_POSTFIELDS => $post_fields_str,
+  );
+  $ch = curl_init();
+  curl_setopt_array($ch, $options);
+  $result = curl_exec($ch);
+
+  // Check for cURL errors.
+  $errorno = NULL;
+  if ($errorno = curl_errno($ch)) {
+    watchdog('commerce_hosted_pci', 'Error with cURL request: (@error_no). Message: @error_message',
+      array(
+        '@error_no' => $errorno,
+        '@error_message' => curl_error($ch),
+      ),
+      WATCHDOG_ERROR
+    );
+    return FALSE;
+  }
+
+  curl_close($ch);
+
+  // Create a parsed result.
+  parse_str($result, $response);
+
+  // Convert the gateway response string as an array.
+  if ($response['pxyResponse_fullNativeResp']) {
+    parse_str($response['pxyResponse_fullNativeResp'], $response['pxyResponse_fullNativeResp']);
+  }
+
+  // Log the API response if specified.
+  if ($settings['log']['response'] == 'response') {
+    watchdog('commerce_hosted_pci', 'Hosted Pci response received:<pre>!param</pre>', array('!param' => check_plain(print_r($response, TRUE)), WATCHDOG_DEBUG));
+  }
+
+  return $response;
+}
+
+/**
+ * Helper function to generate transaction logs.
+ *
+ * @param array $response
+ *   An Hosted Pci response
+ *
+ * @return array
+ *   An array containing the extracted response from the payment gateway behinf
+ *   Hosted PCI.
+ */
+function commerce_hosted_pci_get_transaction_log($response) {
+  $log = array('hosted_pci' => $response);
+  if ($response['pxyResponse_fullNativeResp']) {
+    $log['gateway'] = $response['pxyResponse_fullNativeResp'];
+  }
+  return $log;
+}
+
+/**
+ * Callback for card on file delete or update.
+ */
+function commerce_hosted_pci_cardonfile_update_delete($form, &$form_state, $payment_method, $card_data) {
+  if ($form['#id'] == 'commerce-cardonfile-delete-form') {
+    $ret = db_delete('commerce_card_data')
+      ->condition('card_id', $card_data['card_id'])
+      ->execute();
+    return $ret;
+  }
+  return TRUE;
+}
+
+/**
+ * Adding Hosted Pci credit card form in the card on file form.
+ */
+function commerce_hosted_pci_form_commerce_cardonfile_update_form_alter(&$form, &$form_state) {
+  if (isset($form['credit_card'])
+    && isset($form['card_data']['#value']['payment_method'])
+    && $form['card_data']['#value']['payment_method'] == 'hosted_pci') {
+    $instance_id = $form['card_data']['#value']['instance_id'];
+    // Get the payment method data.
+    $payment_method = commerce_payment_method_instance_load($instance_id);
+    // Get the default hosted_pci credit card form.
+    $hosted_pci_credit_card_form = commerce_hosted_pci_submit_form($payment_method);
+
+    // Merge default form settings with the hosted_pci credit card form.
+    $form['credit_card'] = array_merge($form['credit_card'], $hosted_pci_credit_card_form['credit_card']);
+    // Move the owner name at the top of the form.
+    $form['credit_card']['owner']['#weight'] = -20;
+    // We are obliged to overide the default cardonfile form validate because
+    // we don't have a card number but a token that couldn't pass the Luhn
+    // algorithm.
+    $form['#validate'] = array('commerce_hosted_pci_form_commerce_cardonfile_update_form_validate');
+  }
+}
+
+/**
+ * This function replaces the default card on file form validation function.
+ */
+function commerce_hosted_pci_form_commerce_cardonfile_update_form_validate($form, $form_state) {
+  $valid = TRUE;
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+  $credit_card = $form_state['values']['credit_card'];
+
+  // Check if an error code has been returned by hosted Pci.
+  if (!empty($credit_card['response_code'])) {
+    form_set_error('credit_card][type', commerce_hosted_pci_code_message($credit_card['response_code']));
+  }
+  else {
+    // Validate the credit card number. We can't use the Luhn algorithm because
+    // we have a token and not a credit card number but all the checks have
+    // already been made by Hosted Pci before they send us the token.
+    if (empty($credit_card['number']) || !ctype_digit($credit_card['number'])) {
+      form_set_error('credit_card][number', t('The credit card number you entered is invalid.'));
+    }
+
+    // Validate the security code.
+    if (empty($credit_card['code']) || !ctype_digit($credit_card['code'])) {
+      form_set_error('credit_card][code', t('The credit card code you entered is invalid.'));
+    }
+
+    module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+    // Validate the credit card type.
+    if (!empty($credit_card['valid_types'])) {
+      // Check if the first 6 digit of the credit card have been be returned.
+      if (!empty($credit_card['cc_bin']) && strlen($credit_card['cc_bin']) == 6) {
+        // Generate a number with the bin value that match the token lenght.
+        $number = $credit_card['cc_bin'] . str_repeat('X', strlen($credit_card['number']) - 6);
+        $type = commerce_payment_validate_credit_card_type($number, $credit_card['valid_types']);
+        if ($type === FALSE) {
+          form_set_error('credit_card][type', t('You have entered a credit card number of an unsupported card type.'));
+        }
+        elseif ($type != $credit_card['type']) {
+          drupal_set_message(t('You have entered a credit card number that does not match the type selected.'), 'error');
+        }
+      }
+      else {
+        form_set_error('credit_card][number', t('We encountered an error processing your request.'));
+      }
+    }
+
+    // Validate the expiration date.
+    if (($invalid = commerce_payment_validate_credit_card_exp_date($credit_card['exp_month'], $credit_card['exp_year'])) !== TRUE) {
+      form_set_error('credit_card][exp_' . $invalid, t('You have entered an expired credit card.'));
+    }
+  }
+}
+
+/**
+ * Returns the URL to the Hosted Pci server determined by the transaction type.
+ *
+ * @param string $request_type
+ *   The transaction mode.
+ * @param array $settings
+ *   The settings related to the payment method.
+ *
+ * @return string
+ *   The URL to use to submit requests to the Hosted Pci server.
+ */
+function commerce_hosted_pci_server_url($request_type, $settings) {
+  switch ($request_type) {
+    case COMMERCE_CREDIT_AUTH_CAPTURE:
+      return $settings['service_url'] . '/iSynSApp/paymentSale.action';
+
+    case COMMERCE_CREDIT_AUTH_ONLY:
+      return $settings['service_url'] . '/iSynSApp/paymentAuth.action';
+
+    case COMMERCE_CREDIT_CAPTURE_ONLY:
+      return $settings['service_url'] . '/iSynSApp/paymentCapture.action';
+
+    case COMMERCE_CREDIT_CREDIT:
+      return $settings['service_url'] . '/iSynSApp/paymentCredit.action';
+
+    case COMMERCE_CREDIT_VOID:
+      return $settings['service_url'] . '/iSynSApp/paymentVoid.action';
+  }
+}
+
+/**
+ * Returns the description of a transaction type.
+ *
+ * @param array $txn_type
+ *   A transaction type string.
+ *
+ * @return string
+ *   return the transaction name type.
+ */
+function commerce_hosted_pci_reverse_txn_type($txn_type) {
+  switch ($txn_type) {
+    case COMMERCE_CREDIT_AUTH_ONLY:
+      return t('Authorization');
+
+    case COMMERCE_CREDIT_AUTH_CAPTURE:
+      return t('Sale');
+
+    case COMMERCE_CREDIT_CAPTURE_ONLY:
+      return t('Capture');
+
+    case COMMERCE_CREDIT_CREDIT:
+      return t('Credit');
+
+    case COMMERCE_CREDIT_VOID:
+      return t('Void');
+  }
+}
+
+/**
+ * Returns an appropriate message given a code.
+ *
+ * @param string $code
+ *   An Hosted PCI response code.
+ *
+ * @return string
+ *   A debugging message based on a response code.
+ */
+function commerce_hosted_pci_code_message($code) {
+  switch ($code) {
+    case 'PPA_ACT_1':
+      return t('User not logged-in, please check the user name and passkey are valid');
+
+    case 'PPA_ACT_2':
+      return t('Invalid version, please use the correct version');
+
+    case 'PPA_ACT_3':
+      return t('Too many mapping failures, contact HPCI admin');
+
+    case 'PPA_ACT_4':
+      return t('SSL Required for the request, please https to submit the request');
+
+    case 'PPA_ACT_5':
+      return t('Credit card mapping failure, please make sure only mapped credit card numbers are used for the request');
+
+    case 'PPA_ACT_6':
+      return t('Payment gateway not configured for the currency, please contact HPCI to setup the correct gateway details');
+
+    case 'PPA_ACT_7':
+      return t('Credit card operation failed, please check the gateway specific return codes.');
+
+    case 'PPA_ACT_8':
+      return t('Invalid amount, please check the amount sent.');
+
+    case 'PPA_ACT_9':
+      return t('Dependent credit card operation not found, please provide the correct reference number for the dependent transaction.');
+
+    case 'PPA_ACT_10':
+      return t('Unknown error, please contact HPCI.');
+
+    case 'PPA_ACT_11':
+      return t('Invalid operation, please verify the request.');
+
+    case 'PPA_ACT_12':
+      return t('Required parameter missing, please make sure missing parameter is provided.');
+
+    case 'PPA_ACT_13':
+      return t('CVV mapping failed, please verify the request.');
+
+    case 'MCC_1':
+      return t('The credit card number you entered is invalid.');
+
+    case 'MCC_2':
+      return t('The credit card code you entered is invalid.');
+
+    case 'PGT_SER_9':
+      return t('Gateway parameter missing. Please review additional response fields for details.');
+
+    case 'PGT_SER_14':
+      return t('Unknown Auth transaction.');
+
+    case 'PGT_SER_15':
+      return t('Unknown Sale transaction.');
+
+    case 'PGT_SER_16':
+      return t('Unknown Void transaction.');
+
+    case 'PGT_SER_17':
+      return t('Unknown Capture transaction.');
+
+    case 'PGT_SER_18':
+      return t('Unknown Credit transaction.');
+
+    case 'PGT_SER_19':
+      return t('Could not complete credit.');
+
+    case 'PGT_SER_20':
+      return t('Call timeout.');
+  }
+  return '';
+}
+
+/**
+ * Create javascript for hostedpci interface.
+ *
+ * @return string
+ *   return a javascript to include into the page.
+ */
+function _commerce_hosted_pci_get_js() {
+
+  global $base_root;
+  $instance_id = 'hosted_pci|commerce_payment_hosted_pci';
+  $payment_method = commerce_payment_method_instance_load($instance_id);
+  $settings = $payment_method['settings'];
+  $settings += commerce_hosted_pci_default_settings();
+  $settings += array(
+    'hostname' => $base_root,
+    'query'    => current_path(),
+  );
+
+  $script = 'var hpciCCFrameFullUrl = "https://cc.hostedpci.com/iSynSApp/showPxyPage!ccFrame.action?pgmode1=prod'
+    . '&locationName=' . $settings['payment_profile']
+    . '&sid=' . $settings['siteid']
+    . '&fullParentHost=' . $base_root
+    . '&fullParentQStr=' . current_path() . '";';
+
+  $script .= '
+    var hpciCCFrameHost = "https://cc.hostedpci.com";
+    var hpciCCFrameName = "ccframe";
+    var hpciSiteErrorHandler = function (errorCode, errorMsg) {
+      jQuery("#edit-commerce-payment-payment-details-credit-card-response-code").val(errorCode);
+      sendHPCIChangeStyleMsg("ccNum", "border", "1px solid #C7C7C7");
+      sendHPCIChangeStyleMsg("ccCVV", "border", "1px solid #C7C7C7");
+      if (errorCode == "MCC_1") {
+        sendHPCIChangeStyleMsg("ccNum", "border", "2px solid red");
+        if (jQuery("#edit-commerce-payment .ccnum-error").length == 0) {
+          jQuery("<div class=\"messages error ccnum-error\"><h2 class=\"element-invisible\">Error message</h2>The credit card number you entered is invalid.</div>").insertBefore("#edit-commerce-payment-payment-method");
+        }
+      }
+      else{
+        if (jQuery("#edit-commerce-payment .ccnum-error")) {
+          jQuery("#edit-commerce-payment .ccnum-error").remove();
+        }
+      }
+
+      if (errorCode == "MCC_2") {
+        sendHPCIChangeStyleMsg("ccCVV", "border", "2px solid red");
+        if (jQuery("#edit-commerce-payment .cccvv-error").length == 0) {
+          jQuery("<div class=\"messages error cccvv-error\"><h2 class=\"element-invisible\">Error message</h2>The credit card code you entered is invalid.</div>").insertBefore("#edit-commerce-payment-payment-method");
+        }
+      }
+      else{
+        if (jQuery("#edit-commerce-payment .cccvv-error")) {
+          jQuery("#eedit-commerce-payment .cccvv-error").remove();
+        }
+      }
+
+      Drupal.enableContinueBtn();
+      return false;
+    }
+
+    var hpciSiteSuccessHandlerV2 = function (mappedCCValue, mappedCVVValue, ccBINValue) {
+      // Inject the CCV value in the credit card number field.
+      jQuery("#edit-commerce-payment-payment-details-credit-card-number").val(mappedCCValue);
+      // Inject the CVV value in the credit card code field.
+      jQuery("#edit-commerce-payment-payment-details-credit-card-code").val(mappedCVVValue);
+      // Inject the CC Bin value in the bin field.
+      jQuery("#edit-commerce-payment-payment-details-credit-card-bin").val(ccBINValue);
+      // Remove any values in the response field.
+      jQuery("#edit-commerce-payment-payment-details-credit-card-response-code").val("");
+      // Submit the form after adding credit card informations.
+
+      // Validate the form if the selected date is valid.
+      var current_date = new Date();
+      if (jQuery("#edit-commerce-payment-payment-details-credit-card-exp-month").val() >= (current_date.getMonth() + 1) && jQuery("#edit-commerce-payment-payment-details-credit-card-exp-year").val() >= current_date.getFullYear()) {
+        jQuery("#edit-commerce-payment-payment-details-credit-card-number").parents("form").first().submit();
+      }
+      else {
+        if (jQuery("#edit-commerce-payment .ccdate-error").length == 0) {
+          jQuery("<div class=\"messages error ccdate-error\"><h2 class=\"element-invisible\">Error message</h2>You have entered an expired credit card.</div>").insertBefore("#edit-commerce-payment-payment-method");
+        }
+        Drupal.enableContinueBtn();
+        return false;
+      }
+
+    }
+  ';
+  return $script;
+}
+
+/**
+ * Implements hook_commerce_kickstart_service_provider().
+ */
+function commerce_hosted_pci_commerce_kickstart_service_provider() {
+  $installation = t('1. Checkout the !marketplace to sign up!.', array('!marketplace' => l(t('Marketplace'), url('https://marketplace.commerceguys.com/service/HostedPCI')))) . '<br />';
+  $installation .= t('2. Enable the module in your Commerce Kickstart or Drupal Commerce installation.') . '<br />';
+  $installation .= t('3. Configure your module: credentials (given after sign up to HostedPCI), selected payment gateways & capture method options.');
+
+  return array(
+    'commerce_hosted_pci' => array(
+      'logo_path' => drupal_get_path('module', 'commerce_hosted_pci') . '/images/HostedPCILogo.jpg',
+      'title' => t('Commerce Hosted PCI'),
+      'category' => t('Payment providers'),
+      'teaser' => t('This module is about integrating the Hosted PCI payment gateway with Drupal Commerce.'),
+      'description' => t("Get total protection against a potential credit card breach with HostedPCI's flexible, easy to implement, affordable solution for PCI compliance."),
+      'requirements' => t('Requires configuration API code to be set.'),
+      'link' => 'http://hostedpci.com',
+      'installation_proccess' => $installation,
+      'requirements_callback' => 'commerce_hosted_pci_commerce_kickstart_requirements_status',
+    ),
+  );
+}
+
+/**
+ * Commerce kickstart service provider requirements callback method.
+ */
+function commerce_hosted_pci_commerce_kickstart_requirements_status() {
+  $settings = array(
+    'default' => NULL,
+  );
+
+  // Checking the rules configuration for verification of the services defining.
+  $rule = rules_config_load('commerce_payment_hosted_pci');
+
+  foreach ($rule->actions() as $action) {
+    $settings['default'] = $action->settings;
+  }
+
+  // Checking if one of the rules is defined.
+  return (isset($settings['default']['payment_method']['settings']) && is_array($settings['default']['payment_method']['settings'])) ? COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_DEFINED : COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_ENABLED;
+}

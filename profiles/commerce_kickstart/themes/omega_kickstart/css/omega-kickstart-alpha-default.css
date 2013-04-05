@@ -1,0 +1,438 @@
+@import url(//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,800);
+@import url(//fonts.googleapis.com/css?family=Gentium+Basic:400,700);
+/* Include Default Variables & Mixins */
+/* End Variables & Mixins */
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.1. Zone user
+**********************************************/
+.zone-user-wrapper {
+  position: fixed;
+  z-index: 200; }
+
+/*******************************************
+* 2.1.2. Region user second
+*******************************************/
+#region-user-second {
+  background-color: transparent; }
+
+.block-views-shopping-cart-block {
+  margin: 0; }
+
+/**********************************************
+* 2.2. Zone branding
+**********************************************/
+.zone-branding .region-branding {
+  clear: both; }
+  .zone-branding .region-branding .logo-img {
+    float: left;
+    /* LTR */
+    text-align: left;
+    /* LTR */ }
+
+/**
+* Search block
+*/
+#block-views-exp-display-products-page {
+  float: right;
+  /* LTR */
+  padding-top: 10px;
+  margin-bottom: 10px; }
+
+#block-views-exp-display-products-page .views-exposed-widgets {
+  position: relative;
+  width: 300px;
+  float: none;
+  margin-right: 10px;
+  /* LTR */
+  margin-bottom: 0; }
+
+/**********************************************
+* 2.3. Zone menu
+**********************************************/
+.menu-toggle {
+  display: none; }
+
+.navigation {
+  background: transparent;
+  display: block !important;
+  margin: 26px 0;
+  padding-bottom: 0;
+  /* Main menu */
+  /* Secondary menu */ }
+  .navigation h2 {
+    display: none; }
+  .navigation .primary-menu ul,
+  .navigation .second-menu ul {
+    display: block;
+    float: left;
+    /* LTR */
+    margin: 0;
+    width: 100%; }
+    .navigation .primary-menu ul li,
+    .navigation .second-menu ul li {
+      font-size: 0.8em;
+      margin-right: -4px;
+      /* LTR */
+      width: auto; }
+      .navigation .primary-menu ul li a,
+      .navigation .second-menu ul li a {
+        display: inline;
+        border-left-width: 0;
+        border-right-width: 0; }
+        .navigation .primary-menu ul li a.active, .navigation .primary-menu ul li a:hover,
+        .navigation .second-menu ul li a.active,
+        .navigation .second-menu ul li a:hover {
+          border-left-width: 0;
+          border-right-width: 0; }
+      .navigation .primary-menu ul li.first a,
+      .navigation .second-menu ul li.first a {
+        border-left: 1px solid #cccccc;
+        /* LTR */ }
+      .navigation .primary-menu ul li.last a,
+      .navigation .second-menu ul li.last a {
+        border-right: 1px solid #cccccc;
+        /* LTR */
+        margin-right: 0;
+        /* LTR */
+        margin-left: -2px;
+        /* LTR */ }
+  .navigation .primary-menu {
+    float: left;
+    /* LTR */
+    margin-right: 12px;
+    /* LTR */
+    margin-left: 0;
+    /* LTR */ }
+  .navigation .second-menu {
+    clear: inherit;
+    float: right;
+    /* LTR */
+    margin-right: 0; }
+
+.zone-menu .block-menu h2.block-title {
+  margin-bottom: 1em; }
+.zone-menu .block-menu ul.menu li {
+  font-size: 0.8em;
+  width: auto; }
+  .zone-menu .block-menu ul.menu li a {
+    display: inline;
+    border-left-width: 0;
+    border-right-width: 0; }
+    .zone-menu .block-menu ul.menu li a.active, .zone-menu .block-menu ul.menu li a:hover {
+      border-left-width: 0;
+      border-right-width: 0; }
+  .zone-menu .block-menu ul.menu li.first a {
+    border-left: 1px solid #cccccc; }
+  .zone-menu .block-menu ul.menu li.last a {
+    border-right: 1px solid #cccccc; }
+
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+/*******************************************
+* 3.2.1. Sidebar first
+*******************************************/
+/* Price range */
+#search-api-ranges-block-slider-view-form .range-slider-box {
+  margin: 0 auto;
+  width: 90%; }
+
+#search-api-ranges-block-slider-view-form .range-box {
+  float: inherit; }
+
+#search-api-ranges-block-slider-view-form label {
+  float: left;
+  /* LTR */ }
+
+#search-api-ranges-block-slider-view-form #edit-range-from,
+#search-api-ranges-block-slider-view-form #edit-range-to {
+  float: inherit; }
+
+#search-api-ranges-block-slider-view-form #edit-submit {
+  margin-top: 0; }
+
+/*******************************************
+* 3.2.2. Content
+*******************************************/
+/**
+* Blocks
+*/
+#block-views-demo-content-slideshow-block-1 {
+  /* HP blocks: Slideshow */
+  /**
+   * For modern browsers
+   * 1. The space content is one way to avoid an Opera bug when the
+   *    contenteditable attribute is included anywhere else in the document.
+   *    Otherwise it causes space to appear at the top and bottom of elements
+   *    that are clearfixed.
+   * 2. The use of `table` rather than `block` is only necessary if using
+   *    `:before` to contain the top-margins of child elements.
+   */
+  /**
+   * For IE 6/7 only
+   * Include this rule to trigger hasLayout and contain floats.
+   */
+  *zoom: 1; }
+  #block-views-demo-content-slideshow-block-1:before, #block-views-demo-content-slideshow-block-1.cf:after {
+    content: " ";
+    /* 1 */
+    display: table;
+    /* 2 */ }
+  #block-views-demo-content-slideshow-block-1:after {
+    clear: both; }
+
+/**********************************************
+* 3.3. Zone postscript
+**********************************************/
+.zone-postscript .grid-8 {
+  margin: 0 10px;
+  width: inherit; }
+
+#zone-postscript {
+  /* Adverts blocks */ }
+  #zone-postscript .view-ad-push .views-row,
+  #zone-postscript .block-blog-block .block-inner {
+    position: relative; }
+    #zone-postscript .view-ad-push .views-row img,
+    #zone-postscript .block-blog-block .block-inner img {
+      height: auto;
+      max-width: 100%; }
+  #zone-postscript .view-ad-push .views-row .views-field-field-tagline,
+  #zone-postscript .block-blog-block .block-inner .content .views-field-title {
+    position: absolute;
+    bottom: 10%;
+    left: 7%;
+    width: 86%; }
+    #zone-postscript .view-ad-push .views-row .views-field-field-tagline a,
+    #zone-postscript .block-blog-block .block-inner .content .views-field-title a {
+      border: 0; }
+  #zone-postscript .block-blog-block .block-inner .block-title {
+    display: block; }
+  #zone-postscript .view-ad-push .views-row .views-field-field-tagline .field-content a,
+  #zone-postscript .block-blog-block .views-field-title .field-content a {
+    min-height: 60px;
+    padding: 15px 10px; }
+
+/**************************************************
+* --
+* 4. Section footer
+* --
+**************************************************/
+/**********************************************
+* 4.1. Zone footer
+**********************************************/
+/**
+* Menu footer navigation
+*/
+.section-footer ul.menu li.expanded {
+  display: inline;
+  float: left;
+  /* LTR */ }
+
+/**********************************************
+* 4.2. Zone footer2
+**********************************************/
+#block-menu-menu-payment-methods {
+  -moz-border-radius: 8px;
+  -webkit-border-radius: 8px;
+  -khtml-border-radius: 8px;
+  border-radius: 8px; }
+
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+.view-collection-products .view-header,
+.view-collection-taxonomy-term .view-header {
+  background-size: cover; }
+  .view-collection-products .view-header .taxonomy-title,
+  .view-collection-taxonomy-term .view-header .taxonomy-title {
+    position: relative; }
+  .view-collection-products .view-header .view-collection-products,
+  .view-collection-products .view-header .collection-terms,
+  .view-collection-taxonomy-term .view-header .view-collection-products,
+  .view-collection-taxonomy-term .view-header .collection-terms {
+    float: right;
+    margin: 5px;
+    padding-top: 0; }
+
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+.view-confirm-message-product-display {
+  clear: both;
+  float: none;
+  width: auto; }
+
+div.messages.commerce-add-to-cart-confirmation .message-inner .added-product-title {
+  float: left;
+  /* LTR */
+  width: 180px; }
+div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper {
+  height: 100%;
+  position: absolute;
+  right: 0;
+  /* LTR */ }
+div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display {
+  float: left;
+  /* LTR */
+  padding-bottom: 20px; }
+  div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display .view-content .views-field-commerce-product .content .field-name-field-images {
+    position: relative;
+    left: 0; }
+
+/* Product details */
+.node-product-type {
+  /* Cloud zoom */ }
+  .node-product-type .cloud-zoom-container .cloud-zoom-big,
+  .node-product-type .cloud-zoom-container .mousetrap,
+  .node-product-type .cloud-zoom-container .cloud-zoom-lens {
+    display: inherit !important; }
+  .node-product-type .field-name-field-product form.commerce-add-to-cart label {
+    float: none; }
+
+.service-links {
+  width: auto; }
+
+/**********************************************
+* 5.4. Checkout process
+**********************************************/
+/**
+* Checkout page
+* Shipping page
+*/
+.page-checkout #commerce-checkout-form-checkout fieldset label,
+.page-checkout #commerce-checkout-form-review fieldset label {
+  float: left;
+  /* LTR */
+  width: 20%; }
+.page-checkout #commerce-checkout-form-checkout fieldset .commerce-customer-profile-copy label,
+.page-checkout #commerce-checkout-form-review fieldset .commerce-customer-profile-copy label {
+  float: none;
+  width: 100%; }
+
+.page-cart .entity-commerce-product .content .field-name-field-images {
+  display: inline;
+  float: left;
+  margin-right: 8px; }
+
+/**************************************************
+* --
+* 7. Blog
+* --
+**************************************************/
+.page-blog .region-content .view-content .views-row {
+  clear: left;
+  float: left;
+  width: 49%; }
+.page-blog .region-content .view-content .views-row-even {
+  clear: right;
+  float: right; }
+
+/**************************************************
+* --
+* 9. User account
+* --
+**************************************************/
+.page-user,
+.page-checkout {
+  /* Registration form */
+  /* Login form, create an account block */
+  /* User home */ }
+  .page-user #user_register_form,
+  .page-user #user_login_form,
+  .page-user .create-account,
+  .page-user #user_pass_form,
+  .page-checkout #user_register_form,
+  .page-checkout #user_login_form,
+  .page-checkout .create-account,
+  .page-checkout #user_pass_form {
+    clear: none;
+    float: left;
+    width: 45%; }
+  .page-user form#user-register-form .form-item-pass,
+  .page-user form#user-profile-form .form-item-pass,
+  .page-checkout form#user-register-form .form-item-pass,
+  .page-checkout form#user-profile-form .form-item-pass {
+    margin-bottom: auto; }
+    .page-user form#user-register-form .form-item-pass .password-parent,
+    .page-user form#user-profile-form .form-item-pass .password-parent,
+    .page-checkout form#user-register-form .form-item-pass .password-parent,
+    .page-checkout form#user-profile-form .form-item-pass .password-parent {
+      position: relative;
+      width: 36.3em; }
+      .page-user form#user-register-form .form-item-pass .password-parent .password-strength,
+      .page-user form#user-profile-form .form-item-pass .password-parent .password-strength,
+      .page-checkout form#user-register-form .form-item-pass .password-parent .password-strength,
+      .page-checkout form#user-profile-form .form-item-pass .password-parent .password-strength {
+        position: absolute;
+        right: 15px;
+        bottom: -12px;
+        width: 17em; }
+    .page-user form#user-register-form .form-item-pass .confirm-parent,
+    .page-user form#user-profile-form .form-item-pass .confirm-parent,
+    .page-checkout form#user-register-form .form-item-pass .confirm-parent,
+    .page-checkout form#user-profile-form .form-item-pass .confirm-parent {
+      position: relative;
+      width: 36.3em; }
+      .page-user form#user-register-form .form-item-pass .confirm-parent div.password-confirm,
+      .page-user form#user-profile-form .form-item-pass .confirm-parent div.password-confirm,
+      .page-checkout form#user-register-form .form-item-pass .confirm-parent div.password-confirm,
+      .page-checkout form#user-profile-form .form-item-pass .confirm-parent div.password-confirm {
+        right: 15px;
+        bottom: 8px;
+        width: 17em; }
+    .page-user form#user-register-form .form-item-pass .password-suggestions,
+    .page-user form#user-profile-form .form-item-pass .password-suggestions,
+    .page-checkout form#user-register-form .form-item-pass .password-suggestions,
+    .page-checkout form#user-profile-form .form-item-pass .password-suggestions {
+      width: 38.5em; }
+  .page-user form#user-register-form .form-actions,
+  .page-user form#user-profile-form .form-actions,
+  .page-checkout form#user-register-form .form-actions,
+  .page-checkout form#user-profile-form .form-actions {
+    clear: both;
+    margin-top: 0;
+    margin-bottom: 100px;
+    width: 70%; }
+  .page-user #user_pass_form,
+  .page-checkout #user_pass_form {
+    width: auto; }
+  .page-user form#user-login #user_login_form,
+  .page-checkout form#user-login #user_login_form {
+    border: 0;
+    border-right: 1px solid #444444;
+    padding-right: 20px;
+    padding-bottom: 0; }
+  .page-user form#user-login .create-account,
+  .page-checkout form#user-login .create-account {
+    margin: 0;
+    padding: 0 20px 20px 20px; }
+  .page-user .profile ul.user-information li,
+  .page-checkout .profile ul.user-information li {
+    border-bottom: 0;
+    width: 33%; }
+
+/* Address book */
+.page-user-addressbook .view-commerce-addressbook td {
+  display: table-cell; }

@@ -1,0 +1,58 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_kickstart_blog_enable() {
+  // Rebuild the feature.
+  features_include(TRUE);
+  $module = 'commerce_kickstart_blog';
+  $feature = feature_load($module);
+  $items[$module] = array_keys($feature->info['features']);
+  _features_restore('enable', $items);
+  _features_restore('rebuild', $items);
+
+  drupal_static_reset();
+  $default_theme = variable_get('theme_default', 'omega_kickstart');
+  _block_rehash($default_theme);
+  try {
+    db_update('block')
+      ->fields(array(
+        'region' => 'postscript_third',
+        'status' => (int) '1',
+        'visibility' => '1',
+        'pages' => '<front>',
+      ))
+      ->condition('module', 'views')
+      ->condition('delta', 'blog-block')
+      ->condition('theme', $default_theme)
+      ->execute();
+    db_update('block')
+      ->fields(array(
+        'region' => 'sidebar_second',
+        'status' => (int) '1',
+        'visibility' => '1',
+        'pages' => "blog\nblog/*",
+        'weight' => 1,
+      ))
+      ->condition('module', 'views')
+      ->condition('delta', 'blog-block_2')
+      ->condition('theme', $default_theme)
+      ->execute();
+    db_update('block')
+      ->fields(array(
+        'region' => 'sidebar_second',
+        'status' => (int) '1',
+        'visibility' => '1',
+        'pages' => "blog\nblog/*",
+        'weight' => 0,
+      ))
+      ->condition('module', 'views')
+      ->condition('delta', 'blog_category_list-block')
+      ->condition('theme', $default_theme)
+      ->execute();
+  } catch (Exception $e) {
+    watchdog_exception('block', $e);
+    throw $e;
+  }
+}

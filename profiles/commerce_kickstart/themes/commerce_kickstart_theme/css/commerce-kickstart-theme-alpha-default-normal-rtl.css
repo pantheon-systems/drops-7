@@ -1,0 +1,47 @@
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.1. Zone user
+**********************************************/
+/*******************************************
+* 2.1.1. Region user first
+*******************************************/
+.block-menu-user-menu .block-inner {
+  float: left;
+  margin-left: 10px;
+  margin-right: 0px; }
+
+/* HP blocks: Slideshow */
+#block-views-demo-content-slideshow-block-1 .event-slider .views-field-nothing {
+  background: transparent url("../images/bg_title_slideshow_current.png") right top no-repeat;
+  left: auto;
+  right: 31%; }
+#block-views-demo-content-slideshow-block-1 .bx-prev,
+#block-views-demo-content-slideshow-block-1 .bx-prev:hover {
+  background: transparent url("../images/bg_title_slideshow_next.png") right top no-repeat; }
+#block-views-demo-content-slideshow-block-1 .bx-next,
+#block-views-demo-content-slideshow-block-1 .bx-next:hover {
+  background: transparent url("../images/bg_title_slideshow_previous.png") right top no-repeat;
+  margin-right: 0;
+  margin-left: 5px; }
+
+/**
+* Connect with us
+*/
+#block-menu-menu-social-connection h2 {
+  background: url("../images/bg_block_footer_title-rtl.png") right top no-repeat; }
+
+/**
+* Add to cart popin.
+*/
+div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper {
+  left: 0;
+  right: auto; }
+div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display {
+  float: right; }
+  div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display .view-content {
+    margin-left: 0;
+    margin-right: 130px; }

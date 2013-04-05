@@ -1,0 +1,760 @@
+<?php
+/**
+ * @file
+ * Integrates Moneybookers' Web Payment Frontend service with Drupal Commerce.
+ */
+
+define('MONEYBOOKERS_TXN_MODE_LIVE', 'LIVE');
+define('MONEYBOOKERS_TXN_MODE_TEST', 'CONNECTOR_TEST');
+
+/**
+ * Implements hook_menu().
+ *
+ * Defines a menu callback to receive the payment status from Moneybookers.
+ */
+function commerce_moneybookers_menu() {
+  $items = array();
+  $items['commerce_moneybookers/wpf_response/%commerce_order/%commerce_payment_method_instance'] = array(
+    'page callback' => 'commerce_moneybookers_payment_callback',
+    'page arguments' => array(2, 3),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+  // Define a path for a waiting page displayed whilst the iframe is loading.
+  $items['commerce_moneybookers/wpf_waiting_page'] = array(
+    'page callback' => 'commerce_moneybookers_waiting_page',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  // Add a menu item for capturing authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/moneybookers-capture'] = array(
+    'title' => 'Capture',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_moneybookers_capture_form', 3, 5),
+    'access callback' => 'commerce_moneybookers_capture_void_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_moneybookers.admin.inc',
+  );
+  // Add a menu item for voiding authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/moneybookers-void'] = array(
+    'title' => 'Void',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_moneybookers_void_form', 3, 5),
+    'access callback' => 'commerce_moneybookers_capture_void_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 4,
+    'file' => 'includes/commerce_moneybookers.admin.inc',
+  );
+  // Add a menu item for refunding transactions.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/moneybookers-refund'] = array(
+    'title' => 'Refund',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_moneybookers_refund_form', 3, 5),
+    'access callback' => 'commerce_moneybookers_refund_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 4,
+    'file' => 'includes/commerce_moneybookers.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Access callback for Capture and Void transaction actions.
+ *
+ * Determines access to the prior authorization capture form or void form for
+ * Moneybookers credit card transactions.
+ *
+ * @param stdClass $order
+ *   The order the transaction is on.
+ * @param stdClass $transaction
+ *   The payment transaction object to be captured or voided.
+ *
+ * @return bool
+ *   TRUE or FALSE indicating access.
+ */
+function commerce_moneybookers_capture_void_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for moneybookers or isn't awaiting
+  // capture.
+  if ($transaction->payment_method != 'commerce_moneybookers' || empty($transaction->remote_id) ||
+    $transaction->remote_status != 'CC.PA.90.00' || $transaction->status != COMMERCE_PAYMENT_STATUS_PENDING) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 29 days past the original authorization.
+  if (REQUEST_TIME - $transaction->created > 86400 * 29) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update payments on this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Access callback for Capture and Void transaction actions.
+ *
+ * Determines access to the refund form for Moneybookers credit card
+ * transactions.
+ *
+ * @param stdClass $order
+ *   The order the transaction is on.
+ * @param stdClass $transaction
+ *   The payment transaction object to be refunded.
+ *
+ * @return bool
+ *   TRUE or FALSE indicating access.
+ */
+function commerce_moneybookers_refund_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Moneybookers or isn't Completed.
+  if ($transaction->payment_method != 'commerce_moneybookers'
+    || empty($transaction->remote_id)
+    || !in_array($transaction->remote_status, array('CC.DB.90.00', 'CC.CP.90.00'))
+    || $transaction->status != COMMERCE_PAYMENT_STATUS_SUCCESS) {
+    return FALSE;
+  }
+
+  // Return FALSE if the transaction was not a success.
+  if ($transaction->status != COMMERCE_PAYMENT_STATUS_SUCCESS) {
+    return FALSE;
+  }
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $order_total = $order_wrapper->commerce_order_total->value();
+  $balance = commerce_payment_order_balance($order);
+  if ($balance['amount'] >= $order_total['amount']) {
+    return FALSE;
+  }
+
+  if ($transaction->amount <= 0) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 60 days since the original transaction.
+  if (REQUEST_TIME - $transaction->created > 86400 * 60) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update payments on this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ *
+ * Defines Moneybookers' Web Payment Frontend payment method.
+ */
+function commerce_moneybookers_commerce_payment_method_info() {
+  $payment_methods['commerce_moneybookers'] = array(
+    'title' => t('Credit / Debit cards (Moneybookers enterprise)'),
+    'description' => t('Integration with Moneybookers using Web Payment Frontend'),
+    'offsite' => TRUE,
+    'offsite_autoredirect' => FALSE,
+    'active' => FALSE,
+    'callbacks' => array(),
+    'terminal' => FALSE,
+  );
+  return $payment_methods;
+}
+
+/**
+ * Payment method callback: Generates the payment method settings form.
+ */
+function commerce_moneybookers_settings_form($settings = NULL) {
+  $form = array();
+  $settings = (array) $settings + array(
+    'username' => '',
+    'password' => '',
+    'channel' => '',
+    'security' => '',
+    'secret_key' => '',
+    'txn_mode' => 0,
+    'txn_type' => 'DD.DB',
+  );
+  $form['contact_us'] = array(
+    '#type' => 'markup',
+    '#markup' => t('For more information on pricing and setup, please contact MoneyBookers at: !mail',
+      array('!mail' => l('contact_sales@moneybookers.com', 'mailto:contact_sales@moneybookers.com'))),
+  );
+  $form['username'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Moneybookers account holder name'),
+    '#description' => t('The username to the Moneybookers live account.'),
+    '#default_value' => $settings['username'],
+    '#required' => TRUE,
+  );
+  $form['password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#default_value' => $settings['password'],
+    '#required' => TRUE,
+  );
+  $form['channel'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Transaction channel'),
+    '#default_value' => $settings['channel'],
+    '#required' => TRUE,
+  );
+  $form['security'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Sender authentication'),
+    '#default_value' => $settings['security'],
+    '#required' => TRUE,
+  );
+  $form['secret_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Secret key'),
+    '#description' => t('The secret key used to secure your transactions.'),
+    '#default_value' => $settings['secret_key'],
+    '#required' => TRUE,
+  );
+  $form['txn_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Transaction mode'),
+    '#description' => t('When testing chose the test option, select live for using the real account (adjust credentials accordingly).'),
+    '#options' => array(
+      MONEYBOOKERS_TXN_MODE_LIVE => t('Live transactions in a live account'),
+      MONEYBOOKERS_TXN_MODE_TEST => t('Test transactions in a test account'),
+    ),
+    '#default_value' => $settings['txn_mode'],
+  );
+  $form['txn_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Default credit card transaction type'),
+    '#description' => t('The default will be used to process transactions during checkout.'),
+    '#options' => array(
+      'DD.DB' => t('Authorization and capture'),
+      'DD.PA' => t('Authorization only (requires manual or automated capture after checkout)'),
+    ),
+    '#default_value' => $settings['txn_type'],
+  );
+  return $form;
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function commerce_moneybookers_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  // Return an error if settings haven't been configured.
+  foreach (array('username', 'password', 'channel', 'security', 'secret_key', 'txn_mode', 'txn_type') as $key) {
+    if (empty($payment_method['settings'][$key])) {
+      drupal_set_message(t('Moneybookers is not configured for use. Please contact an administrator to resolve this issue.'), 'error');
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Redirects the user to the hosted payment page.
+ */
+function commerce_moneybookers_redirect_form($form, &$form_state, $order, $payment_method) {
+  $payment_method['settings'] += array(
+    // Return to the previous page when the payment is cancelled.
+    'cancel_return' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+    // Return to the payment redirect page for processing successful payments.
+    'return' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+    // Specify the current payment method instance ID in the notify_url.
+    'payment_method' => $payment_method['instance_id'],
+  );
+  return commerce_moneybookers_order_form($form, $form_state, $order, $payment_method);
+}
+
+/**
+ * Defines the order form.
+ *
+ * This form is displayed directly before redirecting to Moneybookers hosted
+ * payment page.
+ *
+ * @ingroup forms
+ * @see commerce_moneybookers_submission_redirect()
+ */
+function commerce_moneybookers_order_form($form, &$form_state, $order, $payment_method) {
+  // Add JavaScript to auto-submit the form we are about to create.
+  // Very similar to commerce_payment.js, except it also hides our submit button.
+  drupal_add_js(drupal_get_path('module', 'commerce_moneybookers') . '/commerce_moneybookers.js');
+
+  // Ensure a default value for the payment_method setting.
+  $payment_method['settings'] += array('payment_method' => '');
+  $data = commerce_moneybookers_request_payment($payment_method, $order);
+  $response = commerce_moneybookers_api_request($payment_method, $data);
+
+  // Handle errors first.
+  if (empty($response)) {
+    // Curl problem.
+    watchdog('commerce_moneybookers', 'The website failed to contact the payment gateway', array(), WATCHDOG_ERROR);
+    drupal_set_message(t('The payment gateway is currently unavailable, please chose another payment method, or contact an administrator.'), 'error');
+    drupal_goto($payment_method['settings']['cancel_return']);
+  }
+  elseif ($response['POST.VALIDATION'] != 'ACK') {
+    // Connection problem.
+    watchdog('commerce_moneybookers', 'Payment gateway is currently unavailable. <br /> Reason : @reason', array('@reason' => commerce_moneybookers_post_validation_status_codes($response['POST.VALIDATION'])), WATCHDOG_ERROR);
+    drupal_set_message(t('The payment gateway is currently unavailable, please chose another payment method, or contact an administrator.'), 'error');
+    drupal_goto($payment_method['settings']['cancel_return']);
+  }
+  elseif ($response['POST.VALIDATION'] == 'ACK' && empty($response['FRONTEND.REDIRECT_URL'])) {
+    // Return the user to the checkout page so she can chose another
+    // payment method.
+    watchdog('commerce_moneybookers', 'Payment failed initial handshake with error @validation_error.', array('@validation_error' => $response['POST.VALIDATION']), WATCHDOG_ERROR);
+    drupal_set_message(t('The initial contact with the payment gateway failed with the following error: @validation_error. Please contact an administrator.', array('@validation_error' => $response['POST.VALIDATION'])), 'error');
+    drupal_goto($payment_method['settings']['cancel_return']);
+  }
+  // Okay, everything is fine, proceeed.
+  $form['#action'] = $response['FRONTEND.REDIRECT_URL'];
+  $form['#attributes']['target'] = 'iframe_moneybookers';
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Proceed to Moneybookers'),
+  );
+  // Add Moneybookers iframe.
+  $form['iframe_moneybookers'] = array(
+    '#markup' => '<iframe style="width: 600px; height:360px" scrolling="no" frameborder="0" name="iframe_moneybookers" id="iframe_moneybookers" src="' . url('commerce_moneybookers/wpf_waiting_page', array('absolute' => TRUE)) . '"></iframe>',
+  );
+  return $form;
+}
+
+/**
+ * Defines the payment callback.
+ *
+ * POST callback that decides which URL Moneybookers will redirect the user to
+ * after the payment has been submitted.
+ *
+ * @param stdClass $order
+ *   Order object.
+ * @param array $payment_method
+ *   The payment method instance array associated with this API request.
+ *
+ * @return array
+ *   An url used by Moneybookers to redirect the customer.
+ */
+function commerce_moneybookers_payment_callback($order, $payment_method) {
+  // Set the redirect path to the payment page. In case of error the customer
+  // will be redirected to this url.
+  $redirect_path = url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE));
+  if (!isset($_POST)) {
+    watchdog('commerce_moneybookers', 'IPN URL accessed with no POST data submitted.', array(), WATCHDOG_WARNING);
+  }
+  elseif (!isset($_POST['SECURITY_HASH']) || $_POST['SECURITY_HASH'] != commerce_moneybookers_signature($payment_method['settings'], $_POST)) {
+    watchdog('commerce_moneybookers', 'IPN rejected: invalid hash comparaison.', array(), WATCHDOG_ERROR);
+  }
+  else {
+    $transaction = commerce_payment_transaction_new('commerce_moneybookers', $order->order_id);
+    // Failed transaction.
+    if (!isset($_POST['PROCESSING_RESULT']) || $_POST['PROCESSING_RESULT'] != 'ACK') {
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+
+      if (!isset($_POST['PROCESSING_RESULT'])) {
+        $transaction->message = t('No POST data received');
+      }
+      else {
+        $transaction->message = t('The payment has failed, transaction was not acknowledged. Result code: %code, message: %message', array('%code' => $_POST['PROCESSING_RETURN_CODE'], '%message' => $_POST['PROCESSING_RETURN']));
+      }
+    }
+    // Acknowledged transaction, but that does not necessarily mean it went
+    // through.
+    else {
+      switch ($_POST['PROCESSING_STATUS_CODE']) {
+        // SUCCESS || NEUTRAL || NEW.
+        case 00:
+        case 40:
+        case 90:
+          // If the transaction is an authorization we mark it as pending.
+          if ($_POST['PAYMENT_CODE'] == 'CC.PA') {
+            $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+            $transaction->message = t('Payment pending, reason: %message', array('%message' => $_POST['PROCESSING_RETURN']));
+          }
+          // Mark the transaction as succeed for other cases. E.g. debit.
+          else {
+            $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+            $transaction->message = t('Payment succeeded with message: %message', array('%message' => $_POST['PROCESSING_RETURN']));
+          }
+          break;
+
+        // WAITING || WAITING_BANK || WAITING_RISK.
+        case 80:
+        case 59:
+        case 64:
+          $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+          $transaction->message = t('Payment pending, reason: %message', array('%message' => $_POST['PROCESSING_RETURN']));
+          break;
+
+        // REJECTED_BANK || REJECTED_RISK || REJECTED_VALIDATION.
+        case 60:
+        case 65:
+        case 70:
+        default:
+          $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+          $transaction->message = t('Payment failed with code %code and message: %message', array('%code' => $_POST['PROCESSING_STATUS_CODE'], '%message' => $_POST['PROCESSING_RETURN']));
+          break;
+      }
+      $redirect_path = url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE));
+    }
+    $transaction->remote_id = $_POST['IDENTIFICATION_UNIQUEID'];
+    $transaction->remote_status = $_POST['PROCESSING_CODE'];
+    $transaction->payload[REQUEST_TIME] = $_POST;
+    $transaction->instance_id = $payment_method['instance_id'];
+    $transaction->amount = commerce_currency_decimal_to_amount($_POST['PRESENTATION_AMOUNT'], $_POST['CLEARING_CURRENCY']);
+    $transaction->currency_code = $_POST['CLEARING_CURRENCY'];
+    commerce_payment_transaction_save($transaction);
+  }
+  print $redirect_path;
+  drupal_exit();
+}
+
+/**
+ * Prepares the data sent to MoneyBookers in exchange for a redirect url.
+ *
+ * @param array $payment_method
+ *   The payment method instance array associated with this API request.
+ * @param stdClass $order
+ *   Order object.
+ *
+ * @return array
+ *   Array of parameters to be sent for a Debit or Authorize request.
+ */
+function commerce_moneybookers_request_payment($payment_method, $order) {
+  $settings = $payment_method['settings'];
+  $response_url = url('commerce_moneybookers/wpf_response/' . $order->order_id . '/' . $settings['payment_method'], array('absolute' => TRUE));
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  // Take the amount from the order balance.
+  $balance = commerce_payment_order_balance($order);
+
+  // Prepare the billing address for use in the request.
+  $billing_address = $order_wrapper->commerce_customer_billing->commerce_customer_address->value();
+
+  if (empty($billing_address['first_name'])) {
+    $name_parts = explode(' ', $billing_address['name_line']);
+    $billing_address['first_name'] = array_shift($name_parts);
+    $billing_address['last_name'] = implode(' ', $name_parts);
+  }
+  $data = array(
+    'FRONTEND.CSS_PATH' => url(drupal_get_path('module', 'commerce_moneybookers') . '/commerce_moneybookers.css', array('absolute' => TRUE)),
+    'FRONTEND.ENABLED' => 'true',
+    'FRONTEND.LANGUAGE' => _commerce_moneybookers_get_language(),
+    'FRONTEND.MODE' => 'DEFAULT',
+    'FRONTEND.NEXT_TARGET' => 'top.location.href',
+    'FRONTEND.POPUP' => 'false',
+    'FRONTEND.RESPONSE_URL' => $response_url,
+    'FRONTEND.PM.DEFAULT_DISABLE_ALL' => 'true',
+    'FRONTEND.PM.1.METHOD' => 'CC',
+    'FRONTEND.PM.1.ENABLED' => 'true',
+    'FRONTEND.REDIRECT_TIME' => 0,
+    'FRONTEND.HEIGHT' => '360px',
+    'NAME.GIVEN' => $billing_address['first_name'],
+    'NAME.FAMILY' => $billing_address['last_name'],
+    'ADDRESS.STREET' => $billing_address['thoroughfare'],
+    'ADDRESS.ZIP' => $billing_address['postal_code'],
+    'ADDRESS.CITY' => $billing_address['locality'],
+    'ADDRESS.COUNTRY' => $billing_address['country'],
+    'CONTACT.EMAIL' => $order->mail,
+    'CONTACT.IP' => ip_address(),
+    'PRESENTATION.AMOUNT' => commerce_moneybookers_price_amount($balance['amount'], $balance['currency_code']),
+    'PRESENTATION.CURRENCY' => $balance['currency_code'],
+    'IDENTIFICATION.SHOPPERID' => $order->uid,
+    // This ID is only used on Moneybookers' merchant back office to display
+    // the reference number on the transaction line.
+    'IDENTIFICATION.TRANSACTIONID' => $order->order_number,
+    'IDENTIFICATION.INVOICEID' => $order->order_number,
+    'PAYMENT.CODE' => $settings['txn_type'],
+  );
+  return $data;
+}
+
+/**
+ * Builds a request array for the Capture type.
+ *
+ * @param stdClass $order
+ *   Order object.
+ * @param stdClass $transaction
+ *   Transaction object.
+ * @param array $charge
+ *   An array with the transaction amount and currency.
+ *
+ * @return array
+ *   Array of parameters to be sent for a capture request.
+ */
+function commerce_moneybookers_request_capture($order, $transaction, $charge) {
+  return array(
+    'PAYMENT.CODE' => 'CC.CP',
+    'IDENTIFICATION.TRANSACTIONID' => $order->order_number,
+    'IDENTIFICATION.REFERENCEID' => $transaction->remote_id,
+    'PRESENTATION.AMOUNT' => $charge['amount'],
+    'PRESENTATION.CURRENCY' => $charge['currency'],
+  );
+}
+
+/**
+ * Builds a request array for the Refund type.
+ *
+ * @param stdClass $order
+ *   Order object.
+ * @param stdClass $transaction
+ *   Transaction object.
+ * @param array $charge
+ *   An array with the transaction amount and currency.
+ *
+ * @return array
+ *   Array of parameters to be sent for a refund request.
+ */
+function commerce_moneybookers_request_refund($order, $transaction, $charge) {
+  return array(
+    'PAYMENT.CODE' => 'CC.RF',
+    'IDENTIFICATION.TRANSACTIONID' => $order->order_number,
+    'IDENTIFICATION.REFERENCEID' => $transaction->remote_id,
+    'PRESENTATION.AMOUNT' => $charge['amount'],
+    'PRESENTATION.CURRENCY' => $charge['currency'],
+  );
+}
+
+/**
+ * Builds a request array for the Void type.
+ *
+ * @param stdClass $order
+ *   Order object.
+ * @param stdClass $transaction
+ *   Transaction object.
+ *
+ * @return array
+ *   Array of parameters to be sent for a void request.
+ */
+function commerce_moneybookers_request_void($order, $transaction) {
+  return array(
+    'PAYMENT.CODE' => 'CC.RV',
+    'IDENTIFICATION.TRANSACTIONID' => $order->order_number,
+    'IDENTIFICATION.REFERENCEID' => $transaction->remote_id,
+  );
+}
+
+/**
+ * Submits a request to Moneybookers server.
+ *
+ * @param array $payment_method
+ *   The payment method instance array associated with this API request.
+ * @param array $data
+ *   The set of name-value pairs describing the transaction to submit.
+ *
+ * @return array
+ *   The response array from Moneybookers if successful or FALSE on error.
+ */
+function commerce_moneybookers_api_request($payment_method, $data = array()) {
+  $return = FALSE;
+  $settings = $payment_method['settings'];
+
+  // Get the API endpoint URL for the payment method's transaction mode.
+  $url = commerce_moneybookers_server_url($settings['txn_mode']);
+
+  // Add the default name-value pairs data to the array (API credentials).
+  $data += array(
+    'USER.LOGIN' => $settings['username'],
+    'USER.PWD' => $settings['password'],
+    'SECURITY.SENDER' => $settings['security'],
+    'TRANSACTION.CHANNEL' => $settings['channel'],
+    'TRANSACTION.MODE' => $settings['txn_mode'],
+    'TRANSACTION.RESPONSE' => 'SYNC',
+    'REQUEST.VERSION' => "1.0",
+  );
+
+  $options = array(
+    'method' => 'POST',
+    'headers' => array('Content-Type' => 'application/x-www-form-urlencoded;charset=UTF-8'),
+    'data' => drupal_http_build_query($data),
+  );
+  $response = drupal_http_request($url, $options);
+
+  if (is_object($response) && !empty($response->data)) {
+    // Extract all the parameters received in the response.
+    $parameters = explode('&', $response->data);
+    foreach ($parameters as $parameter) {
+      list($post_attribute, $post_value) = explode('=', $parameter);
+      $return[$post_attribute] = urldecode($post_value);
+    }
+  }
+
+  return $return;
+}
+
+/**
+ * Returns the URL to the specified Moneybookers server.
+ *
+ * @param string $server
+ *   A string indicating which server to get the URL for.
+ *
+ * @return string
+ *   The URL to use to submit requests to the PayPal API server.
+ */
+function commerce_moneybookers_server_url($server) {
+  switch ($server) {
+    case 'CONNECTOR_TEST':
+      return 'https://test.nextgenpay.com/frontend/payment.prc';
+
+    case 'LIVE':
+      return 'https://nextgenpay.com/frontend/payment.prc';
+  }
+}
+
+/**
+ * Formats a price amount as expected by Moneybookers.
+ *
+ * @param int $amount
+ *   An integer price amount.
+ * @param string $currency_code
+ *   The currency code of the price.
+ *
+ * @return int
+ *   The price amount as expected by Moneybookers API servers.
+ */
+function commerce_moneybookers_price_amount($amount, $currency_code) {
+  // Convert the amount to a decimal amount.
+  $amount = commerce_currency_amount_to_decimal($amount, $currency_code);
+  // Round the amount to specific currency.
+  return commerce_currency_round($amount, commerce_currency_load($currency_code));
+}
+
+/**
+ * Get Moneybookers available languages.
+ *
+ * Returns the language to be passed to MoneyBookers by comparing the current
+ * language with the list of languages supported by MoneyBookers.
+ */
+function _commerce_moneybookers_get_language() {
+  global $language;
+  $supported_languages = array(
+    'en', 'de', 'es', 'fr',
+    'it', 'pl', 'gr', 'ro',
+    'ru', 'tr', 'cn', 'cz',
+    'nl', 'da', 'sv', 'fi',
+  );
+  $current_language = substr($language->language, 0, 2);
+
+  // If the current language is supported, return it.
+  // Otherwise, fall back to English.
+  return in_array($current_language, $supported_languages) ? $current_language : 'en';
+}
+
+/**
+ * Outputs a temporary page before the Moneybookers form is submitted.
+ *
+ * Since the form is submitted via a JavaScript call, this page is only really
+ * visible to those that have JS turned off.
+ */
+function commerce_moneybookers_waiting_page() {
+  print ('<html><head><title></title></head><body><p>');
+  print t('Please wait to be redirected to Moneybookers.');
+  print ('</p></body></html>');
+  drupal_exit();
+}
+
+/**
+ * Generate hash to authenticate a payment notification.
+ *
+ * @param array $settings
+ *   The setting array of the commerce_moneybookers payment method.
+ * @param array $response
+ *   The response received from the payment server.
+ *
+ * @return string
+ *   return a SHA1 value
+ */
+function commerce_moneybookers_signature($settings, $response) {
+  // List of required keys to construct the security code.
+  $keys = array(
+    'PAYMENT_CODE',
+    'IDENTIFICATION_TRANSACTIONID',
+    'IDENTIFICATION_UNIQUEID',
+    'CLEARING_AMOUNT',
+    'CLEARING_CURRENCY',
+    'PROCESSING_RISK_SCORE',
+    'TRANSACTION_MODE',
+    'PROCESSING_RETURN_CODE',
+    'PROCESSING_REASON_CODE',
+    'PROCESSING_STATUS_CODE'
+  );
+
+  // Construct an array compouned with the server response and the mechant
+  // secret key to generate a sha1.
+  foreach($keys as $key) {
+    $data[] = isset($response[$key]) ? $response[$key] : '';
+  }
+  $data[] = $settings['secret_key'];
+  $data_implode = implode('|', $data);
+  return sha1($data_implode);
+}
+
+
+/**
+ * Returns a short description of the status code based on the given value.
+ *
+ * @param string $code
+ *   The status code to get the description.
+ *
+ * @return string
+ *   return a short description of the status code.
+ */
+function commerce_moneybookers_post_validation_status_codes($code) {
+  switch ($code) {
+    case '2010':
+      return t('Parameter PRESENTATION.AMOUNT missing or not a number');
+
+    case '2030':
+      return t('Parameter PRESENTATION.CURRENCY missing');
+
+    case '2020':
+      return t('Parameter PAYMENT.CODE missing or wrong ');
+
+    case '3010':
+      return t('Parameter FRONTEND.MODE missing or wrong');
+
+    case '3020':
+      return t('Parameter FRONTEND.NEXT_TARGET wrong');
+
+    case '3040':
+      return t('Parameter FRONTEND.LANGUAGE wrong ');
+
+    case '3050':
+      return t('Parameter FRONTEND. RESPONSE_URL wrong');
+
+    case '3070':
+      return t('Parameter FRONTEND. POPUP wrong');
+
+    case '3090':
+      return t('Wrong FRONTEND.LINK parameter combination');
+
+    case '3100':
+      return t('Wrong BANNERS information');
+
+    case '3110':
+      return t('Wrong FRONTEND.PM_METHOD parameter combination');
+
+    case '3120':
+      return t('Wrong FRONTEND.BUTTON parameter combination');
+
+    case '4020':
+      return t('Parameter SECURITY.IP missing or wrong ');
+
+    case '4030':
+      return t('Parameter SECURITY.SENDER missing or wrong');
+
+    case '4040':
+      return t('Wrong User/Password combination');
+
+    case '4050':
+      return t('Parameter USER.LOGIN missing or wrong');
+
+    case '4060':
+      return t('Parameter USER.PWD missing or wrong');
+
+    case '4070':
+      return t('Parameter TRANSACTION.CHANNEL missing or wrong');
+
+    case '5010':
+      return t('Parameter ACCOUNT.COUNTRY is wrong or missing for WPF_LIGHT mode and payment code starts with DD');
+
+    case '8080':
+      return t('The payment system is currently unavailable. If this error persists, please contact our support.');
+  }
+}

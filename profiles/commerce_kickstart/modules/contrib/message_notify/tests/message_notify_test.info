@@ -1,0 +1,14 @@
+name = Message notify test module
+description = Functionality to assist Message notify testing.
+core = 7.x
+dependencies[] = message_notify
+hidden = TRUE
+
+files[] = plugins/notifier/MessageNotifierTest.class.php
+
+; Information added by drupal.org packaging script on 2013-03-11
+version = "7.x-2.4"
+core = "7.x"
+project = "message_notify"
+datestamp = "1362997513"
+

@@ -1,0 +1,71 @@
+.megarow-title {
+  display: none;
+}
+
+.content-left {
+  float: left;
+  width: 70%;
+}
+.content-left > div {
+  float: left;
+  width: 100%;
+}
+
+.content-right {
+  float: right;
+  width: 25%;
+}
+.content-right > div.field {
+  border: 1px solid #BEBFB9;
+  margin-bottom: 15px;
+}
+
+.content-right .field-label, .commerce-backoffice-order-status-label {
+  line-height: 20px;
+  background-color: #E1E2DC;
+  padding: 3px 10px;
+  border-bottom: 1px solid #BEBFB9;
+  font-weight: normal !important;
+}
+.content-right .field-items {
+  padding: 3px 10px;
+}
+
+.commerce-backoffice-order-status-form .messages {
+  margin-top: 0;
+}
+.commerce-backoffice-order-status-form form {
+  padding: 3px 10px;
+}
+.commerce-backoffice-order-status-form form .form-submit {
+  margin-top: 15px;
+}
+.commerce-backoffice-order-status-form .form-item {
+  margin-bottom: 0;
+}
+
+.field-name-commerce-order-total {
+  float: right !important;
+  width: 220px !important;
+  line-height: 30px;
+}
+.field-name-commerce-order-total .field-label {
+  display: block;
+  float: left;
+}
+.field-name-commerce-order-total .field-items {
+  float: right;
+}
+
+.view-commerce-message-messages h2 {
+  font-size: 1em;
+}
+.page-admin-commerce .vbo-views-form .views-field-operations-dropbutton .quick-edit {
+  padding-right: 10px;
+  position: relative;
+}
+.page-admin-commerce .vbo-views-form .views-field-operations-dropbutton .quick-edit .ajax-progress-throbber {
+  position: absolute;
+  top: 0;
+  right: 0;
+}

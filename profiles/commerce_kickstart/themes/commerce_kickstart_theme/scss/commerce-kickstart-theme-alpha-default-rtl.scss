@@ -1,0 +1,32 @@
+/* Include Default Variables & Mixins */
+@import "variables.scss";
+@import "mixins.scss";
+
+/**
+* Navigation
+*/
+.navigation {
+  .primary-menu ul,
+  .second-menu ul {
+    li {
+      &.first a {
+        @include rounded-corners(0 8px 8px 0 !important);
+      }
+      &.last a {
+        @include rounded-corners(8px 0 0 8px !important);
+      }
+    }
+  }
+}
+/**
+* Blocks
+*/
+/* HP blocks: Top advert */
+#promotional_banner {
+  left: auto;
+  right: -10px;
+}
+.block-shipping-discount {
+  left: auto;
+  right: -50px;
+}

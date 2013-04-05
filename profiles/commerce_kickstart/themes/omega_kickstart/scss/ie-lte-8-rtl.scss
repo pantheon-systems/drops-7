@@ -1,0 +1,233 @@
+/* Pulling in the alignment of the grid */
+.grid-1, .grid-2, .grid-3, .grid-4, .grid-5, .grid-6, .grid-7, .grid-8, .grid-9, .grid-10, .grid-11, .grid-12, .grid-13, .grid-14, .grid-15, .grid-16, .grid-17, .grid-18, .grid-19, .grid-20, .grid-21, .grid-22, .grid-23, .grid-24 {
+  float: right !important;
+}
+img {
+  max-width: inherit;
+  width: auto;
+}
+/**********************************************
+* 2.2. Zone branding
+**********************************************/
+/* Logo */
+.zone-branding .region-branding .logo-img,
+.zone-branding .region-branding .branding-data {
+  float: right;
+}
+/* Search */
+#block-views-exp-display-products-page {
+  float: left !important;
+  margin: 0 !important;
+
+  .views-exposed-widgets {
+    margin: 0 !important;
+  }
+}
+
+/**********************************************
+* 2.3. Zone menu
+**********************************************/
+/**
+* Navigation
+*/
+#zone-menu .navigation .primary-menu {
+  float: right !important;
+  margin-right: 0 !important;
+  margin-left: 12px !important;
+  width: auto;
+}
+#zone-menu .navigation .second-menu {
+  float: left !important;
+  margin-left: 0;
+}
+.navigation .primary-menu ul li,
+.navigation .second-menu ul li {
+  float: right !important;
+  margin-right: 0;
+  margin-left: 0;
+  width: auto;
+
+  a {
+    float: none !important;
+    display: inline-block;
+  }
+}
+.navigation .primary-menu ul li.first a, .navigation .second-menu ul li.first a {
+  border-right: 1px solid #CCC !important;
+  border-left: 0 !important;
+}
+.navigation .primary-menu ul li.last a, .navigation .second-menu ul li.last a {
+  border-left: 1px solid #CCC !important;
+  border-right: 0 !important;
+}
+/**************************************************
+* --
+* 4. Section footer
+* --
+**************************************************/
+/**********************************************
+* 4.1. Zone footer
+**********************************************/
+
+#block-menu-menu-social-connection h2 {
+  padding: 0 25px 22px 0 !important;
+}
+
+/* Menu footer navigation */
+.section-footer ul.menu {
+
+  li.expanded {
+    float: right !important;
+  }
+}
+
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+.view-collection-products .view-header,
+.view-collection-taxonomy-term .view-header {
+  height: auto;
+}
+/**********************************************
+* 5.2. All products page
+**********************************************/
+.page-products .view-display-products {
+  clear: both;
+  margin-top: 40px;
+  width: 700px;
+
+  li.views-row {
+    display: block;
+    margin-right: 0;
+    margin-left: 0;
+    width: 225px;
+  }
+
+  // IE doesn't recognize :nth-child, so we need to list the rows to clear.
+  li.views-row-4,
+  li.views-row-7,
+  li.views-row-10,
+  li.views-row-13,
+  li.views-row-16,
+  li.views-row-19,
+  li.views-row-22{
+    clear: right;
+  }
+}
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+div.messages.commerce-add-to-cart-confirmation {
+  .message-inner {
+    .added-product-title {
+      float: right !important;
+    }
+    .button-wrapper {
+      left: 0 !important;
+      right: auto !important;
+    }
+    .view-confirm-message-product-display {
+      float: none !important; /* LTR */
+      text-align: left;
+
+      .view-content {
+        float: right;
+        margin-left: 0px !important;
+        margin-right: 130px;
+        .views-field-commerce-product {
+          .content {
+            .field-name-field-images {
+              left: auto;
+              right: -115px;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+/* Cloud zoom */
+.node-product-type .cloud-zoom-container {
+  margin-left: 0;
+  margin-right: 130px;
+  position: relative;
+
+
+  #wrap {
+    float: right !important;
+  }
+  .cloud-zoom-gallery-thumbs {
+    position: absolute;
+    top: 0;
+    left: auto;
+    right: -130px;
+    width: 120px;
+
+    .cloud-zoom-gallery img {
+      max-width: none;
+    }
+  }
+}
+.node-product-type {
+  .prefix-1 {
+    padding-right: 10px !important;
+  }
+  .field-name-field-product form.commerce-add-to-cart label {
+    float: right !important;
+  }
+}
+/*
+div.messages.commerce-add-to-cart-confirmation .message-inner .button-wrapper {
+  right: auto !important;
+  left: 0 !important;
+}
+div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-message-product-display {
+  float: right !important;
+}*/
+/**********************************************
+* 5.4. Checkout process
+**********************************************/
+/**
+* Checkout progress
+*/
+ul.inline.commerce-checkout-progress,
+ol.inline.commerce-checkout-progress {
+  li {
+    background-image: url('../images/bg_checkout_progress_ie-rtl.png');
+    background-position: left center;
+    background-repeat: no-repeat;
+    float: right; /* RTL */
+    right: auto;
+    left: -5px;
+    padding-right: 25px;
+    padding-left: 50px;
+
+    &.active {
+      background-image: url('../images/bg_checkout_progress_ie-rtl.png');
+    }
+    &.previous {
+      background-image: url('../images/bg_checkout_progress_ie_visited-rtl.png');
+    }
+    &.last {
+      background-image: url('../images/bg_checkout_progress_ie_last-rtl.png');
+    }
+    &:after {
+      display: none;
+    }
+    &.active.last {
+      background-image: url('../images/bg_checkout_progress_ie_last-rtl.png');
+      left: 25px;
+    }
+  }
+}

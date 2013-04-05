@@ -1,0 +1,81 @@
+/* This file will hold styles that are loaded using the same media query as the normal grid. */
+/* If you are using the default media queries provided by Omega, these styles will also
+ *  apply to the widescreen layout unless they are overridden by the widescreen styles. */
+
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+/*******************************************
+* 3.2.2. Content
+*******************************************/
+/* HP blocks: Slideshow */
+#block-views-demo-content-slideshow-block-1 {
+  .event-slider .views-field-nothing,
+  .view-display-id-block_1 .bx-prev,
+  .view-display-id-block_1 .bx-next {
+    border: 0;
+    width: 320px;
+  }
+  .event-slider .views-field-nothing {
+    background: transparent url('../images/bg_title_slideshow_current.png') left top no-repeat;
+    left: 32.5%; /* LTR */
+  }
+  .bx-prev,
+  .bx-prev:hover {
+    background: transparent url('../images/bg_title_slideshow_previous.png') left top no-repeat; /* LTR */
+  }
+  .bx-next,
+  .bx-next:hover {
+    background: transparent url('../images/bg_title_slideshow_next.png') left top no-repeat; /* LTR */
+    margin-right: 5px; /* LTR */
+  }
+}
+
+/**************************************************
+* --
+* 4. Section footer
+* --
+**************************************************/
+/**********************************************
+* 4.1. Zone footer
+**********************************************/
+/**
+* Connect with us
+*/
+#block-menu-menu-social-connection h2 {
+  background: url('../images/bg_block_footer_title.png') left top no-repeat; /* LTR */
+  color: #eeeeee;
+}
+
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+div.messages.commerce-add-to-cart-confirmation .message-inner {
+  .button-wrapper {
+    float: none;
+    min-height: 210px;
+    height: 100%;
+    position: absolute;
+    right: 0; /* LTR */
+  }
+  .view-confirm-message-product-display {
+    float: left; /* LTR */
+    .view-content {
+      //margin-left: 130px; /* LTR */
+      padding-bottom: 20px;
+    }
+  }
+}

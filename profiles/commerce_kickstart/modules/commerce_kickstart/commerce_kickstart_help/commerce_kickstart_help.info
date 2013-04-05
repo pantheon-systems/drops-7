@@ -1,0 +1,6 @@
+name = Commerce Kickstart Help
+description = Provides in-distribution help for Commerce Kickstart.
+core = 7.x
+package = Commerce Kickstart
+dependencies[] = advanced_help
+dependencies[] = commerce_kickstart_service_provider

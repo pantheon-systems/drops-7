@@ -1,0 +1,201 @@
+.ajax-progress-throbber {
+  position: absolute; }
+  .ajax-progress-throbber .message {
+    display: none; }
+
+#commerce-discount-edit-order-discount-form label,
+#commerce-discount-form label {
+  margin-right: 15px; }
+
+.form-item-label {
+  clear: both; }
+
+.form-item-commerce-discount-type.form-item {
+  margin-bottom: 2px;
+  padding: 0; }
+  .form-item-commerce-discount-type.form-item #edit-commerce-discount-type {
+    padding: 0px;
+    margin-top: 10px; }
+    .form-item-commerce-discount-type.form-item #edit-commerce-discount-type .form-item {
+      float: left;
+      clear: both;
+      margin-right: 20px;
+      margin-bottom: 5px;
+      color: black;
+      border-radius: 5px; }
+      .form-item-commerce-discount-type.form-item #edit-commerce-discount-type .form-item input {
+        display: inline; }
+
+.field-name-commerce-discount-date fieldset.form-wrapper legend {
+  width: 100%; }
+.field-name-commerce-discount-date fieldset.form-wrapper .fieldset-legend {
+  border-bottom: 1px solid #cccccc;
+  display: block;
+  width: 100%; }
+.field-name-commerce-discount-date .fieldset-wrapper {
+  display: inline-block;
+  width: 100%; }
+
+.form-item-label.form-item {
+  padding: 0px; }
+
+.field-name-commerce-discount-offer {
+  border: none;
+  padding: 0;
+  margin: 0; }
+  .field-name-commerce-discount-offer .form-wrapper .form-wrapper > .form-item > label {
+    border-bottom: 1px solid #cccccc; }
+  .field-name-commerce-discount-offer span.fieldset-legend {
+    display: none; }
+  .field-name-commerce-discount-offer .fieldset-wrapper {
+    padding: 0; }
+  .field-name-commerce-discount-offer .form-item {
+    margin-bottom: 2px;
+    padding: 0; }
+  .field-name-commerce-discount-offer .form-type-radios > div {
+    padding: 0px;
+    margin-top: 10px; }
+    .field-name-commerce-discount-offer .form-type-radios > div .form-item {
+      float: left;
+      clear: both;
+      margin-right: 20px;
+      margin-bottom: 5px;
+      color: black;
+      border-radius: 5px; }
+      .field-name-commerce-discount-offer .form-type-radios > div .form-item input {
+        display: inline; }
+  .field-name-commerce-discount-offer .field-type-commerce-price,
+  .field-name-commerce-discount-offer .field-type-number-decimal {
+    padding: 0px; }
+    .field-name-commerce-discount-offer .field-type-commerce-price .form-item,
+    .field-name-commerce-discount-offer .field-type-number-decimal .form-item {
+      margin: 5px 0 0 0; }
+
+.form-item-enabled {
+  height: 45px; }
+  .form-item-enabled #edit-enabled .form-item {
+    float: left;
+    margin-top: 10px; }
+    .form-item-enabled #edit-enabled .form-item label {
+      margin: 0; }
+    .form-item-enabled #edit-enabled .form-item input {
+      display: none; }
+    .form-item-enabled #edit-enabled .form-item label {
+      padding: 10px;
+      border: 2px solid #6d6d6d;
+      font-weight: bold; }
+      .form-item-enabled #edit-enabled .form-item label[for=edit-enabled-1] {
+        background-color: #f7f7f7;
+        color: #d7d7d7;
+        border-top-left-radius: 5px;
+        border-bottom-left-radius: 5px; }
+      .form-item-enabled #edit-enabled .form-item label[for=edit-enabled-0] {
+        background-color: #f7f7f7;
+        color: #6d6d6d;
+        border-top-right-radius: 5px;
+        border-bottom-right-radius: 5px;
+        border-left: none; }
+    .form-item-enabled #edit-enabled .form-item.selected label[for=edit-enabled-1] {
+      background-color: #7cae20;
+      color: white; }
+    .form-item-enabled #edit-enabled .form-item.selected label[for=edit-enabled-0] {
+      background-color: #4d4e49;
+      color: white; }
+
+.form-actions {
+  clear: both; }
+
+fieldset.form-wrapper {
+  border: none; }
+  fieldset.form-wrapper .fieldset-legend {
+    text-transform: none;
+    padding-left: 0; }
+
+.field-name-commerce-discount-date .fieldset-wrapper {
+  padding: 0px; }
+  .field-name-commerce-discount-date .fieldset-wrapper .form-type-checkbox {
+    display: none; }
+  .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date {
+    float: left;
+    width: auto;
+    clear: none; }
+    .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding {
+      padding: 0; }
+    .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .description {
+      display: none; }
+    .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .form-item {
+      padding: 0; }
+    .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding {
+      float: left; }
+      .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding input.form-text {
+        width: 55px; }
+      .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
+        width: 100px;
+        background: white url("../../date/date_api/images/calendar.png") no-repeat 86px 1px; }
+    .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date > .form-item {
+      border: none; }
+    .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date label {
+      display: block;
+      float: left; }
+    .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date.end-date-wrapper {
+      margin-left: 20px; }
+
+.field-name-commerce-discount-max-uses {
+  padding: 0px; }
+  .field-name-commerce-discount-max-uses > div {
+    float: left;
+    margin-left: 30px; }
+    .field-name-commerce-discount-max-uses > div:first-child {
+      margin-left: 0; }
+    .field-name-commerce-discount-max-uses > div input[disabled] {
+      background: #eeeeee; }
+
+.view-commerce-discount-overview .views-table {
+  border: none; }
+  .view-commerce-discount-overview .views-table tr, .view-commerce-discount-overview .views-table td {
+    border: none; }
+  .view-commerce-discount-overview .views-table th {
+    text-transform: none; }
+  .view-commerce-discount-overview .views-table th.views-field-operations-dropbutton {
+    width: 70px; }
+  .view-commerce-discount-overview .views-table td.views-field-type span {
+    background-color: #d2eeff;
+    padding: 10px 20px; }
+  .view-commerce-discount-overview .views-table td.views-field-commerce-discount-usage li {
+    list-style-type: none; }
+    .view-commerce-discount-overview .views-table td.views-field-commerce-discount-usage li.first {
+      color: #6d6d6d;
+      font-style: italic; }
+  .view-commerce-discount-overview .views-table td.views-field-enable-disable .item-list ul {
+    width: 140px;
+    border: 2px solid #6d6d6d;
+    border-radius: 5px;
+    height: 30px; }
+    .view-commerce-discount-overview .views-table td.views-field-enable-disable .item-list ul li {
+      display: block;
+      width: 50%;
+      float: left;
+      text-transform: uppercase;
+      padding: 5px 0;
+      font-weight: bold;
+      text-align: center;
+      font-size: 12px;
+      color: white;
+      line-height: 20px; }
+      .view-commerce-discount-overview .views-table td.views-field-enable-disable .item-list ul li.enabled {
+        background-color: #7cae20; }
+      .view-commerce-discount-overview .views-table td.views-field-enable-disable .item-list ul li.disabled {
+        background-color: #4d4e49; }
+      .view-commerce-discount-overview .views-table td.views-field-enable-disable .item-list ul li a {
+        color: #6d6d6d; }
+  .view-commerce-discount-overview .views-table td.views-field-operations-dropbutton .ctools-dropbutton {
+    border: 1px solid #cccccc;
+    border-radius: 10px;
+    background-image: linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
+    background-image: -o-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
+    background-image: -moz-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
+    background-image: -webkit-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
+    background-image: -ms-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
+    background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.36, #fcfdfc), color-stop(0.68, #f0f0f0)); }
+    .view-commerce-discount-overview .views-table td.views-field-operations-dropbutton .ctools-dropbutton .ctools-content {
+      border-right: 1px solid #cccccc; }

@@ -1,0 +1,15 @@
+name = "Mime Mail Action"
+description = "Provide actions for Mime Mail."
+package = Mail
+dependencies[] = mimemail
+dependencies[] = trigger
+core = 7.x
+
+files[] = mimemail_action.module
+
+; Information added by drupal.org packaging script on 2012-08-22
+version = "7.x-1.0-alpha2"
+core = "7.x"
+project = "mimemail"
+datestamp = "1345634537"
+

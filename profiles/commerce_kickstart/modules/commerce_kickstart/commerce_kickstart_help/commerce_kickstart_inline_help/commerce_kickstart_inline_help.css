@@ -1,0 +1,33 @@
+#commerce-kickstart-inline-help-button {
+  float: right;
+}
+#commerce-kickstart-inline-help-button {
+  float: inherit;
+  position: relative;
+}
+#commerce-kickstart-inline-help {
+  position: relative;
+  z-index: 1;
+}
+#commerce-kickstart-inline-help-button #edit-commerce-kickstart-inline-help-button {
+  margin: 10px 0 0;
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 1;
+}
+#commerce-kickstart-inline-help-button .ajax-progress {
+  bottom: 100%;
+  right: 0;
+  position: absolute;
+  width: 150px;
+}
+#commerce-kickstart-inline-help-button #edit-commerce-kickstart-inline-help-button {
+  margin-bottom: 0;
+  margin-top: -45px;
+  position: relative;
+}
+#commerce-kickstart-inline-help-button .ajax-progress {
+  position: relative;
+  width: auto;
+}

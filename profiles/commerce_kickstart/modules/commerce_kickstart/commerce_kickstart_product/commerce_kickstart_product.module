@@ -1,0 +1,77 @@
+<?php
+/**
+ * @file
+ * Provides Kickstart demo store specific product types and related
+ * functionality.
+ */
+
+include_once 'commerce_kickstart_product.features.inc';
+
+/**
+ * Implements hook_migrate_api().
+ */
+function commerce_kickstart_product_migrate_api() {
+  $api = array(
+    'api' => 2,
+    'migrations' => array(
+      'CommerceKickstartBagsCases' => array('class_name' => 'CommerceKickstartBagsCases'),
+      'CommerceKickstartDrinks' => array('class_name' => 'CommerceKickstartDrinks'),
+      'CommerceKickstartHats' => array('class_name' => 'CommerceKickstartHats'),
+      'CommerceKickstartTops' => array('class_name' => 'CommerceKickstartTops'),
+      'CommerceKickstartShoes' => array('class_name' => 'CommerceKickstartShoes'),
+      'CommerceKickstartStorage' => array('class_name' => 'CommerceKickstartStorage'),
+      'CommerceKickstartCollection' => array('class_name' => 'CommerceKickstartCollection'),
+    ),
+  );
+  $types = array(
+    'bags_cases',
+    'drinks',
+    'hats',
+    'shoes',
+    'storage_devices',
+    'tops',
+  );
+  foreach ($types as $type) {
+    $api['migrations']['CommerceKickstartNode' . $type] = array('class_name' => 'CommerceKickstartNode', 'type' => $type);
+  }
+  return $api;
+}
+
+/**
+ * Implements hook_commerce_kickstart_crumb_info().
+ *
+ * Enables the Crumbs plugin relevant to this module that provides taxonomy
+ * based breadcrumbs for each product display node.
+ */
+function commerce_kickstart_product_commerce_kickstart_crumb_info() {
+  return array(
+    'taxonomy.termReference.field_collection.node.*',
+  );
+}
+
+/**
+ * Implements hook_commerce_product_type_info_alter().
+ */
+function commerce_product_commerce_product_type_info_alter(&$product_types) {
+  // Remove the default product type.
+  unset($product_types['product']);
+}
+
+/**
+ * Implements hook_block_info_alter().
+ */
+function commerce_kickstart_product_block_info_alter(&$blocks, $theme, $code_blocks) {
+  //  Provide a default label for the facetapi blocks.
+  if (isset($blocks['facetapi']['bLnoZinIxE1jGb2PRK60VXpQAiOUVaBT']) && empty($blocks['facetapi']['bLnoZinIxE1jGb2PRK60VXpQAiOUVaBT']['title'])) {
+    $blocks['facetapi']['bLnoZinIxE1jGb2PRK60VXpQAiOUVaBT']['title'] = t('Shoe size');
+  }
+  if (isset($blocks['facetapi']['G1C31UEu0CE1nJNBKS8vf340Ze4SYYEt']) && empty($blocks['facetapi']['G1C31UEu0CE1nJNBKS8vf340Ze4SYYEt']['title'])) {
+    $blocks['facetapi']['G1C31UEu0CE1nJNBKS8vf340Ze4SYYEt']['title'] = t('Hat size');
+  }
+  if (isset($blocks['facetapi']['0ipnwlXipzrm39vOO6k11dGc0FQlH9sg']) && empty($blocks['facetapi']['0ipnwlXipzrm39vOO6k11dGc0FQlH9sg']['title'])) {
+    $blocks['facetapi']['0ipnwlXipzrm39vOO6k11dGc0FQlH9sg']['title'] = t('Top size');
+  }
+  if (isset($blocks['facetapi']['y7cJ8JiPggb9kLdqx2RyReFZulrBd8Ig']) && empty($blocks['facetapi']['y7cJ8JiPggb9kLdqx2RyReFZulrBd8Ig']['title'])) {
+    $blocks['facetapi']['y7cJ8JiPggb9kLdqx2RyReFZulrBd8Ig']['title'] = t('Bag size');
+  }
+}

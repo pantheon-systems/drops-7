@@ -1,0 +1,52 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_kickstart_product_ui_enable() {
+  $default_theme = variable_get('theme_default', 'omega_kickstart');
+  // New module weights in core.
+  db_update('system')
+    ->fields(array(
+      'weight' => 50,
+    ))
+    ->condition('type', 'module')
+    ->condition('name', 'commerce_kickstart_product_ui')
+    ->execute();
+
+  drupal_static_reset();
+  _block_rehash($default_theme);
+  try {
+    // HP push shopping_cart.
+    db_update('block')
+      ->fields(array(
+        'region' => 'user_second',
+        'status' => '1',
+        'visibility' => '0',
+        'pages' => 'cart\ncheckout/*',
+        'title' => '<none>',
+        'cache' => '-1',
+      ))
+      ->condition('module', 'views')
+      ->condition('delta', 'shopping_cart-block')
+      ->condition('theme', $default_theme)
+      ->execute();
+  }
+  catch (Exception $e) {
+    watchdog_exception('block', $e);
+    throw $e;
+  }
+
+  // Set checkout panes order.
+  $pane_ids = array('cart_contents','account','customer_profile_billing','customer_profile_shipping');
+  $weight = 0;
+  foreach($pane_ids as $pane_id) {
+    $checkout_pane = commerce_checkout_pane_load($pane_id);
+    if ($checkout_pane) {
+      $checkout_pane['weight'] = $weight;
+      commerce_checkout_pane_save($checkout_pane);
+
+      $weight++;
+    }
+  }
+}

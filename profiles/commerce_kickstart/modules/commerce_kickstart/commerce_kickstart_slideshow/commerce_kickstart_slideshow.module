@@ -1,0 +1,44 @@
+<?php
+/**
+ * @file
+ * Code for the Commerce Kickstart Merchandising feature.
+ */
+
+include_once 'commerce_kickstart_slideshow.features.inc';
+
+/**
+ * Implements hook_library().
+ */
+function commerce_kickstart_slideshow_library() {
+  $libraries['bxslider'] = array(
+    'title' => 'Bxslider',
+    'website' => 'http://bxslider.com/',
+    'version' => '4.0',
+    'js' => array(
+      libraries_get_path('jquery.bxslider') . '/jquery.bxslider.min.js' => array(),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_migrate_api().
+ */
+function commerce_kickstart_slideshow_migrate_api() {
+  return array(
+    'api' => 2,
+    'migrations' => array(
+      'CommerceKickstartSlideshow' => array('class_name' => 'CommerceKickstartSlideshow'),
+    ),
+  );
+}
+
+/**
+ * Implement hook_views_pre_render().
+ */
+function commerce_kickstart_slideshow_views_pre_render(&$view) {
+  if ($view->name == 'demo_content_slideshow') {
+    drupal_add_library('commerce_kickstart_slideshow', 'bxslider');
+    drupal_add_js(drupal_get_path('module', 'commerce_kickstart_slideshow') . '/commerce_kickstart_slideshow.js');
+  }
+}

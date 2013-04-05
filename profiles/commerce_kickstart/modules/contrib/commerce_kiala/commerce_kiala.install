@@ -1,0 +1,131 @@
+<?php
+
+/**
+ * @file
+ * Defines the database schema for Kiala Shipping.
+ */
+
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_kiala_schema() {
+  $schema = array();
+
+  $schema['commerce_kiala_service'] = array(
+    'description' => 'Stores information about shipping services created through the Kiala module.',
+    'fields' => array(
+      'name' => array(
+        'description' => 'The machine-name of the service.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'title' => array(
+        'description' => 'The human-readable title of the service.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'display_title' => array(
+        'description' => 'The title of the service displayed to customers.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'A brief description of the service.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+      ),
+      'rules_component' => array(
+        'description' => 'Boolean indicating whether or not this service should have a default Rules component for enabling it for orders.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'amount' => array(
+        'description' => 'The amount of the base rate of the service.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'currency_code' => array(
+        'description' => 'The currency code of the base rate of the service.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'data' => array(
+        'description' => 'A serialized array of additional data.',
+        'type' => 'text',
+        'size' => 'big',
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('name'),
+  );
+
+  $schema['commerce_kiala_line_item_point'] = array(
+    'description' => 'Stores kiala point ids associated with a line item.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for an association.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'line_item_id' => array(
+        'description' => 'The primary identifier for a line item.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'point_id' => array(
+        'description' => 'The Kiala Point identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'line_item_id' => array('line_item_id'),
+      'line_point' => array('line_item_id', 'point_id'),
+    )
+  );
+
+
+  $schema['cache_commerce_kiala_responses'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_commerce_kiala_responses']['description'] = 'Cache table for the temporary storage of Commerce Kiala API responses.';
+  $schema['cache_commerce_kiala_responses']['fields']['cid']['description'] = 'Primary Key: Settings group, request date, and hash of the url with parameters.';
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_kiala_uninstall() {
+  variable_del('commerce_kiala_encrypt');
+  variable_del('commerce_kiala_settings');
+}
+
+/**
+ * Add response cache table
+ */
+function commerce_kiala_update_7101(&$sandbox) {
+  if (!db_table_exists('cache_commerce_kiala_responses')) {
+    $table = drupal_get_schema_unprocessed('commerce_kiala', 'cache_commerce_kiala_responses');
+    db_create_table('cache_commerce_kiala_responses', $table);
+  }
+
+  return t('Response cache table installed.');
+}

@@ -1,0 +1,123 @@
+<?php
+
+/**
+ * @file
+ * Message example.
+ */
+
+include_once('message_example.features.inc');
+
+/**
+ * Implements hook_node_insert().
+ */
+function message_example_node_insert($node) {
+  // Save the message and assign it to the user realm. Since another user,
+  // usually an admin might create the node, but populate the author field
+  // with another user, we make sure the user realm is populated with the
+  // node's author, instead of the acting user (although in most cases it
+  // would be the same user).
+  // The following example demonstrates that we don't need to explicitly set
+  // the realm to the user, since if no realms are provided then the message
+  // is automatically assigned to the user passed in the function, or if no
+  // user object is provided, then to the acting user.
+  $account = user_load($node->uid);
+
+  $message = message_create('example_create_node', array('uid' => $account->uid));
+  // Save reference to the node in the node reference field, and the
+  // "publish" state (i.e. if the node is published or unpublished).
+  $wrapper = entity_metadata_wrapper('message', $message);
+  $wrapper->field_node_ref->set($node);
+  $wrapper->field_published->set($node->status);
+  $wrapper->save();
+}
+
+/**
+ * Implements hook_comment_insert().
+ */
+function message_example_comment_insert($comment) {
+  $account = user_load($comment->uid);
+  $node = node_load($comment->nid);
+
+  $message = message_create('example_create_comment', array(), $account);
+  // Save reference to the node in the node reference field, and the
+  // "publish" state (i.e. if the node is published or unpublished).
+  $wrapper = entity_metadata_wrapper('message', $message);
+  $wrapper->field_node_ref->set($node);
+  $wrapper->field_comment_ref->set($comment);
+
+  // The message should be published only if the node and the comment are
+  // both published.
+  $published = $node->status && $comment->status;
+  $wrapper->field_published->set($published);
+  $wrapper->save();
+}
+
+/**
+ * Implements hook_user_insert()
+ */
+function message_example_user_insert(&$edit, $account, $category) {
+  $message = message_create('example_user_register', array(), $account);
+  $wrapper = entity_metadata_wrapper('message', $message);
+  $wrapper->field_published->set($account->status);
+  $wrapper->save();
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function message_example_node_update($node) {
+  message_example_update_message_status('node', $node);
+}
+
+/**
+ * Implements hook_comment_update().
+ */
+function message_example_comment_update($comment) {
+  message_example_update_message_status('comment', $comment);
+}
+
+/**
+ * Update the "published" field in the message entity, when it changes in the
+ * related entity.
+ *
+ * @param $entity_type
+ *   The entity type (node or comment).
+ * @param $entity
+ *   The entity object.
+ */
+function message_example_update_message_status($entity_type, $entity) {
+  if ($entity->status == $entity->original->status) {
+    // status didn't change.
+    return;
+  }
+  list($id) = entity_extract_ids($entity_type, $entity);
+  $field_name = 'field_' . $entity_type . '_ref';
+
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'message')
+    ->fieldCondition($field_name, 'target_id',  $id, '=')
+    ->execute();
+
+  if (empty($result['message'])) {
+    return;
+  }
+
+  foreach (array_keys($result['message']) as $mid) {
+    $wrapper = entity_metadata_wrapper('message', $mid);
+    // If comment status changed, we still need to check the node as-well.
+    if ($entity_type == 'comment') {
+      $node = node_load($entity->nid);
+      $status = intval($entity->status && $node->status);
+    }
+    else {
+      // The entity is the node.
+      $status = $entity->status;
+    }
+    if ($wrapper->field_published->value() != $status) {
+      // Status changed, so update the message entity.
+      $wrapper->field_published->set($status);
+      $wrapper->save();
+    }
+  }
+}

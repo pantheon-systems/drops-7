@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * @file
+ * Declares LingotekAccessFunctionalTest
+ */
+ 
+/**
+ * A class containing access control-related tests.
+ */
+class LingotekAccessFunctionalTest extends LingotekFunctionalTest {
+  /**
+   * Meta information about these tests for the test system.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Access Control',
+      'description' => 'Tests for access control to various Lingotek interface elements.',
+      'group' => 'Lingotek',
+    );
+  }
+    
+  /**
+   * Tests field access for the Lingotek project override field on node/add forms.
+   */
+  public function testProjectOverrideProjectAccess() {
+    $node_add_path = 'node/add/page';
+    $test_text = 'id="edit-lingotek-project-id"';
+    
+    // Privileged user can see the Lingotek Project override field.
+    $this->drupalLogin($this->privileged_user);
+    $this->drupalGet('node/add/page');
+    $this->assertText('Lingotek Translation Settings');
+    $this->drupalLogout();
+    
+    // Unprivileged user cannot see the field.
+    $this->drupalLogin($this->unprivileged_user);
+    $this->drupalGet($node_add_path);
+    $this->assertNoText($test_text);
+    $this->drupalLogout();
+  }
+  
+  /**
+   * Tests field access for the Lingotek project override field on node/add forms.
+   */
+  public function testTMVaultOverrideProjectAccess() {
+    $node_add_path = 'node/add/page';
+    $test_text = 'id="edit-lingotek-vault-id"';
+    
+    // Privileged user can see the Lingotek Project override field.
+    $this->drupalLogin($this->privileged_user);
+    $this->drupalGet('node/add/page');
+    $this->assertText('Lingotek Translation Settings');
+    $this->drupalLogout();
+    
+    // Unprivileged user cannot see the field.
+    $this->drupalLogin($this->unprivileged_user);
+    $this->drupalGet($node_add_path);
+    $this->assertNoText($test_text);
+    $this->drupalLogout();
+  }
+  
+}

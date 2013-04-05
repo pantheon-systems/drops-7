@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * Implements hook_field_schema().
+ */
+function commerce_product_reference_field_schema($field) {
+  if ($field['type'] == 'commerce_product_reference') {
+    return array(
+      'columns' => array(
+        'product_id' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ),
+      ),
+      'indexes' => array(
+        'product_id' => array('product_id'),
+      ),
+      'foreign keys' => array(
+        'product_id' => array(
+          'table' => 'commerce_product',
+          'columns' => array('product_id' => 'product_id'),
+        ),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_product_reference_uninstall() {
+  // Delete any product reference fields.
+  module_load_include('module', 'commerce');
+  commerce_delete_fields('commerce_product_reference');
+}

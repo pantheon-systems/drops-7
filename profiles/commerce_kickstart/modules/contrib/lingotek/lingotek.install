@@ -1,0 +1,380 @@
+<?php
+/**
+ * @file
+ * Installation for Lingotek Community Translation Module.
+ */
+
+
+/*
+ * Implements hook_requirements()
+ */
+
+function lingotek_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+  // Check for the PHP Zip library during install
+  if ($phase == 'install') {
+    if (!extension_loaded('zip')) {
+      $requirements['zip'] = array(
+        'title' => t('Zip allows PHP to work with ZIP compressed archives.'), 
+        'description' => t('Lingotek requires the PHP module \'Zip\', but it is missing or not enabled on your server.  <br>For more information visit: http://php.net/manual/en/book.zip.php'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ */
+function lingotek_install() {
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function lingotek_uninstall() {
+  $delete_variables = array(
+    'lingotek_account_enterprise',
+    'lingotek_account_plan',
+    'lingotek_account_status',
+    'lingotek_activation_email',
+    'lingotek_activation_first_name',
+    'lingotek_activation_last_name',
+    'lingotek_advanced_parsing',
+    'lingotek_advanced_xml_config1',
+    'lingotek_advanced_xml_config2',
+    'lingotek_cms_tag',
+    'lingotek_community_identifier',
+    'lingotek_guid',
+    'lingotek_login_id',
+    'lingotek_password',
+    'lingotek_notifications_callback',
+    'lingotek_oauth_consumer_id',
+    'lingotek_oauth_consumer_secret',
+    'lingotek_project',
+    'lingotek_setup_complete',
+    'lingotek_source_language',
+    'lingotek_target_languages',
+    'lingotek_translate_fields',
+    'lingotek_vault',
+    'lingotek_workbench_tagged_users',
+    'lingotek_workflow'
+  );
+
+  foreach ($delete_variables as $variable) {
+    variable_del($variable);
+  }
+  
+  db_drop_field('languages', 'lingotek_enabled');
+  db_drop_field('languages', 'lingotek_locale');
+}
+
+/**
+ * Implements hook_enable().
+ */
+function lingotek_enable() {
+  lingotek_set_priority();
+  lingotek_set_defaults();  
+}
+
+/**
+ * Implements hook_disable().
+ */
+function lingotek_disable() {
+  variable_del('lingotek_setup_complete'); // require setup again (after disabling the module)
+}
+
+/*
+ * Install the database schema for the Lingotek module
+ */
+function lingotek_schema() {
+  $schema['lingotek'] = array(
+    'description' => 'Table for storing node related data.',
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The primary identifier for a node',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'lingokey' => array(
+        'description' => 'Key in key/value pairs',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'lingovalue' => array(
+        'description' => 'Value of the specified key',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array(
+      'nid',
+      'lingokey',
+    ),
+  );
+  
+  $schema['lingotek_entity_metadata'] = array(
+    'description' => 'Stores Lingotek-related metadata about Drupal entities.',
+    'fields' => array(
+      'entity_id' => array(
+        'description' => 'The primary identifier for the entity.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'entity_type' => array(
+        'description' => 'The entity type (node, comment, etc.).',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'entity_key' => array(
+        'description' => 'The ID for the Lingotek-associated value.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'value' => array(
+        'description' => 'Value for the specified key.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array(
+      'entity_id',
+      'entity_type',
+      'entity_key',
+    ),
+  );
+  
+  return $schema;
+}  
+
+/*
+ * Update
+ * 1. Create the mt-queue
+ * 2. delete the reference variable that was stored in lingotek_languages
+ */
+function lingotek_update_7200(&$sandbox) {
+  drupal_load('module', 'lingotek');
+
+  if (!isset($sandbox['progress'])) {
+    $result = db_select('lingotek', 'n')->distinct(TRUE)->fields('n', array(db_escape_field('nid')))->execute();
+    $nodes = array();
+    foreach ($result as $row) {
+      array_push($nodes, $row->nid);
+    }
+
+    $sandbox['progress'] = 0;
+    $sandbox['max'] = count($nodes);
+    $sandbox['nodes'] = $nodes;
+  }
+  $node = node_load($sandbox['nodes'][$sandbox['progress']]);
+  if ($node !== FALSE) {
+    if (!class_exists('LingotekApi')) {
+      // The LingotekApi class might not have been introduced when this user last updated the Lingotek module.
+      registry_rebuild();
+      require_once(drupal_get_path('module', 'lingotek') . '/lib/Drupal/lingotek/LingotekApi.php');
+    }
+    if (class_exists('LingotekNode')) {
+      LingotekApi::instance()->updateContentDocument(LingotekNode::load($node));
+    }
+    else {
+      throw new Exception('LingotekNode class missing. Please clear the Drupal cache and then run update.php again.');
+    }
+  }
+
+  $sandbox['progress']++;
+  $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
+  if ($sandbox['#finished'] == 1) {
+    lingotek_analyze_project();
+  }
+}
+
+/**
+ * Save per-node Lingotek project associations for all existing content.
+ */
+function lingotek_update_7201(&$sandbox) {
+  $lingotek_nodes = array();
+  $default_lingotek_project = variable_get('lingotek_project', 0);
+
+  if ($default_lingotek_project) {
+    if (!isset($sandbox['progress'])) {
+      $result = db_select('lingotek', 'l')
+        ->distinct(TRUE)
+        ->fields('l', array('nid'))
+        ->execute();
+
+      foreach ($result as $row) {
+        $lingotek_nodes[] = $row->nid;
+      }
+
+      $sandbox['progress'] = 0;
+      $sandbox['max'] = count($lingotek_nodes);
+      $sandbox['nodes'] = $lingotek_nodes;
+    }
+
+    $process_node = node_load(array_shift($sandbox['nodes']));
+    if ($process_node->nid && !lingotek_lingonode($process_node->nid, 'project_id')) {
+      lingotek_lingonode($process_node->nid, 'project_id', $default_lingotek_project);
+    }
+    $sandbox['progress'] = (int) (count($sandbox['nodes']) / $sandbox['max']);
+  }
+
+  $sandbox['#finished'] = empty($sandbox['nodes']);
+}
+
+/**
+ * Ensure the Administrator role is granted newly-introduced permissions.
+ */
+function lingotek_update_7202(&$sandbox) {
+  if ($rid = variable_get('user_admin_role', 0)) {
+    $new_permisions = array(
+      'url_alias_translation',
+      'access lingotek utilities',
+      'access per-item lingotek project selection',
+      'access per-item lingotek vault selection'
+    );
+
+    user_role_grant_permissions($rid, $new_permisions);
+
+    return t('Granted new Lingotek permissions to the administrative security role.');
+  }
+}
+
+/**
+ * Install default FPRM configuration data to support advanced content parsing.
+ */
+function lingotek_update_7203(&$sandbox) {
+  if (!variable_get('lingotek_advanced_xml_config1', FALSE) && !variable_get('lingotek_advanced_xml_config2', FALSE)) {
+    lingotek_set_default_advanced_xml();
+  }
+  else {
+    return t('No action was taken, since your system already has data in the Primary and/or Secondary advanced parsing configuration fields.
+      If you wish to review the default configuration files and compare them to your current settings, the files are in the fprm subfolder of the lingotek module.');
+  }
+}
+
+/**
+ * Ensure LingotekApi class is in autoload registry.
+ */
+function lingotek_update_7204(&$sandbox) {
+  cache_clear_all();
+}
+
+/**
+ * Ensure that the Lingotek module has a weight higher than entity_translation.
+ */
+function lingotek_update_7205(&$sandbox) {
+  lingotek_set_priority();
+}
+
+/**
+ * Adds the lingotek_entity_metadata table.
+ */
+function lingotek_update_7206(&$sandbox) {
+  $module = 'lingotek';
+  $table = 'lingotek_entity_metadata';
+  if (!db_table_exists($table)) {
+    $schema = drupal_get_schema_unprocessed($module, $table);
+    db_create_table($table, $schema);
+    $output = t('Table @table was created.', array('@table' => $table));
+  }
+  else {
+    $output = t('The @table table already exists. No action taken.', array('@table' => $table));
+  }
+  
+  return $output;
+}
+
+/**
+ * Change the value for LINGOTEK_ENABLED to a string to avoid collision.
+ */
+function lingotek_update_7207(&$sandbox) {
+  $updated = array();
+  foreach (array_keys(node_type_get_names()) as $type) {
+    $name = 'language_content_type_' . $type;
+    if (variable_get($name) == 5) {
+      $updated[] = $type;
+      variable_set($name, LINGOTEK_ENABLED);
+    }
+  }
+  
+  if (count($updated)) {
+    $t_args = array(
+      '@updated' => implode(', ', $updated),
+    );
+    return t("Updated @count content type(s) to use 'lingotek' instead of '5' for the identifier: @updated", $t_args);
+  }
+}
+
+/**
+ * Update lingokey name from 'document_id_xx' to 'document_id'
+ */
+function lingotek_update_7208(&$sandbox) {
+  $ret = array();
+  db_query("UPDATE {lingotek} SET lingokey = 'document_id' WHERE lingokey LIKE 'document_id_%'");
+  return $ret;
+}
+
+/**
+ * Extend languages table to have lingotek_enabled field
+ */
+function lingotek_update_7209(&$sandbox) {
+  $ret = array();
+  lingotek_migration_1();
+  return $ret;
+}
+
+/**
+ * Extend languages table to have lingotek_locale field
+ */
+function lingotek_update_7210(&$sandbox) {
+  $ret = array();
+  lingotek_migration_2();
+  lingotek_add_missing_locales();
+  return $ret;
+}
+
+/**
+ * Upgrade lingotek table entries from drupal_codes to lingotek_locales
+ */
+function lingotek_update_7211(&$sandbox) {
+  $ret = array();
+  lingotek_migration_3();
+  return $ret;
+}
+
+/*
+ * Update languages table with lingotek fields
+ */
+/*function lingotek_schema_alter(&$schema) {
+  // Add fields to existing schema.
+  $schema['languages']['fields']['lingotek_enabled'] = array(
+    'type' => 'int',
+    'description' => "Lingotek enabled",
+    'not null' => TRUE,
+    'default' => 0
+  );
+
+  $schema['languages']['fields']['lingotek_locale'] = array(
+    'type' => 'varchar',
+    'description' => "Locale mapping",
+    'length' => 10,
+    'not null' => TRUE,
+    'default' => ''
+  );
+}*/

@@ -1,0 +1,24 @@
+name = Mime Mail
+description = Send MIME-encoded emails with embedded images and attachments.
+dependencies[] = mailsystem
+package = Mail
+core = 7.x
+
+configure = admin/config/system/mimemail
+
+files[] = mimemail.inc
+files[] = mimemail.install
+files[] = mimemail.module
+files[] = mimemail.rules.inc
+files[] = includes/mimemail.admin.inc
+files[] = includes/mimemail.mail.inc
+files[] = includes/mimemail.incoming.inc
+files[] = theme/mimemail-message.tpl.php
+files[] = theme/mimemail.theme.inc
+
+; Information added by drupal.org packaging script on 2012-08-22
+version = "7.x-1.0-alpha2"
+core = "7.x"
+project = "mimemail"
+datestamp = "1345634537"
+

@@ -1,0 +1,119 @@
+<?php
+
+/**
+ * @file
+ * Defines the database schema for Kiala Package and Ship.
+ */
+
+
+/**
+ * Implements hook_requirements
+ */
+function commerce_kiala_ps_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break at install time
+  $t = get_t();
+
+  // Test Soap Client
+  $soap_status = $t('Not Installed');
+  $additional = array(
+    'description' => $t('Your server does not have the PHP soap extension installed. Please consult the <a href="!url">PHP manual</a>.', array('!url' => "http://www.php.net/manual/en/book.soap.php")),
+    'severity' => REQUIREMENT_ERROR
+  );
+  if (class_exists('SoapClient')) {
+    $soap_status = $t('Installed');
+    $additional = array(
+      'description' => $t('Your server has the PHP soap extension installed.'),
+      'severity' => REQUIREMENT_OK
+    );
+  }
+
+  $requirements['commerce_kiala_soap'] = array(
+    'title' => $t('Kiala Pack & Ship: Soap Client'),
+    'value' => ($phase == 'runtime') ? l($soap_status, 'admin/reports/status/php') : $soap_status,
+  );
+  $requirements['commerce_kiala_soap'] += $additional;
+
+
+  return $requirements;
+}
+
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_kiala_ps_schema() {
+  $schema = array();
+
+  $schema['commerce_kiala_ps_ws_log'] = array(
+    'description' => 'Stores information about Kiala pack and ship web service calls',
+    'fields' => array(
+      'log_id' => array(
+        'description' => 'The primary identifier for a log item.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'timestamp' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Timestamp of when the request was performed.',
+      ),
+      'order_id' => array(
+        'description' => 'The primary identifier for an order.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'tracking_number' => array(
+        'description' => 'The Kiala tracking number.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'status' => array(
+        'description' => 'The status of this transaction (success or error).',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'method' => array(
+        'description' => 'The service method for this transaction.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'response' => array(
+        'description' => 'The service response.',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+      ),
+    ),
+    'primary key' => array('log_id'),
+    'indexes' => array(
+      'order_id' => array('order_id'),
+      'tracking_number' => array('tracking_number'),
+      'method' => array('method'),
+    )
+  );
+
+  return $schema;
+}
+
+
+/**
+ * Add P&S web service log table
+ */
+function commerce_kiala_ps_update_7101(&$sandbox) {
+  if (!db_table_exists('commerce_kiala_ps_ws_log')) {
+    $table = drupal_get_schema_unprocessed('commerce_kiala_ps', 'commerce_kiala_ps_ws_log');
+    db_create_table('commerce_kiala_ps_ws_log', $table);
+  }
+
+  return t('P&S web service log table installed.');
+}

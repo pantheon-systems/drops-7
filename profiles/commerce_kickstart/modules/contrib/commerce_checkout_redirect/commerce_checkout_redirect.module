@@ -1,0 +1,40 @@
+<?php
+/**
+ * @file
+ * Force anonymous users to login before being able to checkout.
+ */
+
+/**
+ * Implements hook_commerce_checkout_router().
+ */
+function commerce_checkout_redirect_commerce_checkout_router($order, $checkout_page) {
+  if (user_is_anonymous()) {
+    $_SESSION['commerce_checkout_redirect_anonymous'] = TRUE;
+    drupal_set_message(t('You need to be logged in to be able to checkout.'));
+    return drupal_goto('user/login');
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function commerce_checkout_redirect_form_alter(&$form, &$form_state, $form_id) {
+  if (in_array($form_id, array('user_login', 'user_register_form'))) {
+    // Append the checkout redirect function on user's forms.
+    $form['#submit'][] = 'commerce_checkout_redirect_redirect_anonymous_submit';
+  }
+}
+
+/**
+ * Submit callback for the user forms that will perform the redirection.
+ */
+function commerce_checkout_redirect_redirect_anonymous_submit($form, &$form_state) {
+  // Because the user in the order may have been updated (from uid 0 to the real
+  // uid for example), clear static cache before trying to get the order.
+  drupal_static_reset('commerce_cart_order_id');
+  $order_id = commerce_cart_order_id($GLOBALS['user']->uid);
+  if (!empty($_SESSION['commerce_checkout_redirect_anonymous']) && user_is_logged_in() && $order_id) {
+    unset($_SESSION['commerce_checkout_redirect_anonymous']);
+    $form_state['redirect'] = 'checkout/' . $order_id;
+  }
+}

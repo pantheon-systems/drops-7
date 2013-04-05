@@ -1,0 +1,26 @@
+
+/** Method Settings **/
+
+.commerce-kiala-url-params .field-prefix {
+  display: inline-block;
+  width: 20%;
+  vertical-align: top;
+  text-align: right;
+
+}
+
+/* override vertical-tabs.css */
+.commerce-kiala-settings-form .vertical-tabs .form-type-textfield input {
+  width: auto;
+}
+
+
+/** Service Settings **/
+.commerce-kiala-base-rate .form-item {
+  float: left;
+  margin-right: 1em;
+}
+
+.commerce-kiala-service-form .form-actions {
+  clear: left;
+}

@@ -1,0 +1,224 @@
+/* Include Default Variables & Mixins */
+@import "variables.scss";
+@import "mixins.scss";
+/* End Variables & Mixins */
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.2. Zone branding
+**********************************************/
+.zone-branding .region-branding {
+  .logo-img {
+    float: right !important;
+    text-align: right !important;
+  }
+}
+/**
+* Search block
+*/
+#block-views-exp-display-products-page {
+  float: left !important;
+}
+#block-views-exp-display-products-page .views-exposed-widgets {
+  margin-right: 0 !important;
+  margin-left: 10px;
+}
+/**********************************************
+* 2.3. Zone menu
+**********************************************/
+.navigation {
+  .primary-menu ul,
+  .second-menu ul {
+    float: right !important;
+    li {
+      margin-right: 0 !important;
+      margin-left: -4px !important;
+      &.first a {
+        border-right: $mainmenuitemborder !important;
+        border-left: none !important;
+      }
+      &.last a {
+        border-left: $mainmenuitemborder !important;
+        border-right: none !important;
+        margin-right: -2px !important;
+        margin-left: 0 !important;
+      }
+    }
+  }
+  /* Main menu */
+  .primary-menu {
+    float: right !important;
+    margin-right: 0 !important;
+    margin-left: 12px !important;
+  }
+  /* Secondary menu */
+  .second-menu {
+    float: left !important;
+  }
+}
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/**********************************************
+* 3.2. Zone content
+**********************************************/
+/*******************************************
+* 3.2.1. Sidebar first
+*******************************************/
+/* Price range */
+#search-api-ranges-block-slider-view-form label {
+  float: left;
+}
+
+/**************************************************
+* --
+* 4. Section footer
+* --
+**************************************************/
+/**********************************************
+* 4.1. Zone footer
+**********************************************/
+/**
+* Menu footer navigation
+*/
+.section-footer ul.menu {
+
+  li.expanded {
+    float: right !important;
+  }
+}
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**
+* Collection page
+*/
+.view-collection-products .view-header,
+.view-collection-taxonomy-term .view-header {
+  .view-collection-products,
+  .collection-terms {
+    float: right;
+    margin: 5px;
+    padding-top: 0;
+  }
+}
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/**
+* Add to cart popin.
+*/
+div.messages.commerce-add-to-cart-confirmation .message-inner {
+  .added-product-title {
+    float: right;
+  }
+  .button-wrapper {
+    right: auto !important;
+    left: 0 !important;
+  }
+  .view-confirm-message-product-display {
+    float: right !important;
+    .view-content .views-field-commerce-product .content {
+      .field-name-field-images {
+        clear: right !important;
+        float: right !important;
+      }
+    }
+  }
+}
+/**********************************************
+* 5.4. Checkout process
+**********************************************/
+/**
+* Checkout page
+* Shipping page
+*/
+.page-checkout {
+  #commerce-checkout-form-checkout,
+  #commerce-checkout-form-review {
+    fieldset {
+
+      label {
+        float: right !important;
+      }
+      .commerce-customer-profile-copy {
+        label {
+          float: none !important;
+        }
+      }
+    }
+  }
+}
+.page-cart .entity-commerce-product .content .field-name-field-images {
+  float: right !important;
+  margin-right: 0px !important;
+  margin-left: 8px;
+}
+/**************************************************
+* --
+* 7. Blog
+* --
+**************************************************/
+.page-blog .region-content .view-content {
+  .views-row {
+    clear: right !important;
+    float: right !important;
+  }
+  .views-row-even {
+    clear: left !important;
+    float: left !important;
+  }
+}
+/**************************************************
+* --
+* 9. User account
+* --
+**************************************************/
+.page-user,
+.page-checkout {
+
+  #user_register_form,
+  #user_login_form,
+  .create-account,
+  #user_pass_form {
+    float: right !important;
+  }
+  /* Registration form */
+  form#user-register-form,
+  form#user-profile-form {
+    .form-item-pass {
+      .password-parent {
+        .password-strength {
+          right: auto !important;
+          left: 15px;
+        }
+      }
+      .confirm-parent {
+        div.password-confirm {
+          left: 15px;
+          right: auto !important;
+        }
+      }
+    }
+  }
+
+  /* Login form, create an account block */
+  form#user-login {
+    #user_login_form {
+      border-left: 1px solid #444 !important;
+      border-right: none !important;
+      padding-right: 0;
+      padding-left: 20px;
+    }
+  }
+}

@@ -1,0 +1,168 @@
+<?php
+/**
+ * @file
+ * Code for the Commerce Kickstart Inline Help.
+ */
+
+/**
+ * Implements hook_page_alter.
+ *
+ */
+function commerce_kickstart_inline_help_page_alter(&$vars) {
+
+  $path = current_path();
+  // Our patch where we need to inject help.
+  switch($path) {
+    case 'admin/commerce/products':
+      $help_topic = 'product';
+      break;
+    case 'admin/commerce/products/types':
+      $help_topic = 'product_type';
+      break;
+    case 'admin/commerce/config/taxes':
+    case 'admin/commerce/config/taxes/rates':
+      $help_topic = 'tax';
+      break;
+    default:
+      $help_topic = NULL;
+  }
+
+  if (!empty($help_topic)) {
+    // Add libraries.
+    drupal_add_library('system', 'drupal.ajax');
+    drupal_add_library('system', 'jquery.form');
+    drupal_add_library('commerce_kickstart_product_ui', 'jquery_expander');
+    // Add JS and CSS.
+    drupal_add_js(drupal_get_path('module', 'commerce_kickstart_inline_help') . '/commerce_kickstart_inline_help.js', 'file');
+    drupal_add_css(drupal_get_path('module', 'commerce_kickstart_inline_help') . '/commerce_kickstart_inline_help.css');
+
+    $rendered_help = advanced_help_view_topic('commerce_kickstart_inline_help', $help_topic, TRUE);
+
+    $commerce_kickstart_inline_help_form_ajax = drupal_get_form('commerce_kickstart_inline_help_form_ajax', $help_topic);
+    $vars['content']['system_main']['help_button'] = array(
+      '#weight' => -11,
+      '#markup' => '<div id="commerce-kickstart-inline-help-button">' . render($commerce_kickstart_inline_help_form_ajax) . '</div><div class="clearfix"></div>',
+    );
+    $help_status = variable_get('kickstart_inline_help', array());
+    isset($help_status[$help_topic]) && $help_status[$help_topic] == FALSE ? $display = 'display: none' : $display = NULL;
+    $commerce_kickstart_inline_close_help_form_ajax = drupal_get_form('commerce_kickstart_inline_close_help_form_ajax', $help_topic);
+    $vars['content']['system_main']['help_text'] = array(
+      '#weight' => -10,
+      '#markup' => '<div id="commerce-kickstart-inline-help" style="' . $display . '">' . render($commerce_kickstart_inline_close_help_form_ajax) . $rendered_help . '</div>',
+    );
+  }
+
+}
+
+/**
+ * Remove the system help. Replaced by inline help.
+ * Moves the action links from pages with inline help, after inline help.
+ */
+function commerce_kickstart_inline_help_preprocess_page(&$vars) {
+  if (isset($vars['page']['content']['system_main']['help_text'])) {
+    $vars['page']['help'] = '';
+    if ($vars['action_links']) {
+      $vars['page']['content']['system_main']['local_tasks'] = array(
+        '#weight' => -9,
+        '#markup' => '<ul class="action-links">' . render($vars['action_links']) . '</ul>',
+      );
+      $vars['action_links'] = '';
+    }
+  }
+}
+
+/**
+ * Form API array definition for the open button that display help section.
+ *
+ * @param $form_state
+ *   Array of metadata about state of form processing.
+ * @param $id
+ *   String use to identify the page where we are.
+ */
+function commerce_kickstart_inline_help_form_ajax($form, &$form_state, $id) {
+  $values = variable_get('kickstart_inline_help', array());
+  $form['commerce_kickstart_inline_help_button'] = array(
+    '#value' => $form_state['build_info']['args'][0],
+    '#type' => 'hidden',
+    );
+  $form['commerce_kickstart_inline_help_button'] = array(
+    '#value' => t('Show help'),
+    '#type' => 'button',
+    '#name' => 'open',
+    '#default_value' => 'open',
+    '#ajax' => array(
+      'callback' => 'commerce_kickstart_inline_ajax_open_callback',
+    ),
+  );
+  return $form;
+}
+
+/**
+ * Form API array definition for the close button that display help section.
+ *
+ * @param $form_state
+ *   Array of metadata about state of form processing.
+ * @param $id
+ *   String use to identify the page where we are.
+ */
+function commerce_kickstart_inline_close_help_form_ajax($form, &$form_state, $id) {
+   $form['commerce_kickstart_inline_help_close_button'] = array(
+    '#value' => t('Close'),
+    '#type' => 'button',
+    '#name' => 'close',
+    '#default_value' => 'close',
+    '#ajax' => array(
+      'callback' => 'commerce_kickstart_inline_ajax_close_callback',
+    ),
+  );
+  return $form;
+}
+
+/**
+ * Ajax form callback.
+ */
+function commerce_kickstart_inline_ajax_open_callback($form, $form_state) {
+  $id = $form_state['build_info']['args'][0];
+
+  $help_status = variable_get('kickstart_inline_help', array());
+
+  $help_status[$id] = TRUE;
+  variable_set('kickstart_inline_help', $help_status);
+  $commands = array();
+  $commands[] = commerce_kickstart_inline_help_command_ajax('open');
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Ajax form callback.
+ */
+function commerce_kickstart_inline_ajax_close_callback($form, $form_state) {
+  $id = $form_state['build_info']['args'][0];
+
+  $help_status = variable_get('kickstart_inline_help', array());
+
+  $help_status[$id] = FALSE;
+  variable_set('kickstart_inline_help', $help_status);
+
+  $commands = array();
+  $commands[] = commerce_kickstart_inline_help_command_ajax('close');
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+
+function commerce_kickstart_inline_help_command_ajax($action) {
+  if ($action == 'open') {
+    return array(
+      'command' => 'commerce_kickstart_inline_help_open',
+      'title' => '',
+      'output' => '',
+    );
+  }
+  else {
+    return array(
+      'command' => 'commerce_kickstart_inline_help_close',
+      'title' => '',
+      'output' => '',
+    );
+  }
+}

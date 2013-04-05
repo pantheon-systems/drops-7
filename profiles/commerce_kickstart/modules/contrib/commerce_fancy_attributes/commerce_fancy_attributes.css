@@ -1,0 +1,18 @@
+.form-type-commerce-fancy-attributes .description {
+  display: none;
+}
+
+.form-type-commerce-fancy-attributes-ajax .form-item {
+  width: 20px;
+}
+.form-type-commerce-fancy-attributes-ajax .description {
+  display: block;
+  margin-left: 0;
+  cursor: pointer;
+}
+
+.commerce-fancy-attributes-color {
+  width: 15px;
+  height: 15px;
+  border: 1px solid black;
+}

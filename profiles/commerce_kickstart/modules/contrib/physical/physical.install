@@ -1,0 +1,70 @@
+<?php
+
+/**
+ * Implements hook_field_schema().
+ */
+function physical_field_schema($field) {
+  if ($field['type'] == 'physical_weight') {
+    return array(
+      'columns' => array(
+        'weight' => array(
+          'description' => 'The numeric weight value.',
+          'type' => 'numeric',
+          'size' => 'normal',
+          'not null' => TRUE,
+          'default' => 0,
+          'precision' => 15,
+          'scale' => 5,
+        ),
+        'unit' => array(
+          'description' => 'The unit of measurement.',
+          'type' => 'varchar',
+          'length' => '255',
+          'not null' => TRUE,
+          'default' => '',
+        ),
+      ),
+      'indexes' => array(
+        'weight' => array('weight'),
+      ),
+    );
+  }
+
+  if ($field['type'] == 'physical_dimensions') {
+    return array(
+      'columns' => array(
+        'length' => array(
+          'description' => 'The numeric length value.',
+          'type' => 'numeric',
+          'size' => 'normal',
+          'default' => 0,
+          'precision' => 15,
+          'scale' => 5,
+        ),
+        'width' => array(
+          'description' => 'The numeric width value.',
+          'type' => 'numeric',
+          'size' => 'normal',
+          'default' => 0,
+          'precision' => 15,
+          'scale' => 5,
+        ),
+        'height' => array(
+          'description' => 'The numeric height value.',
+          'type' => 'numeric',
+          'size' => 'normal',
+          'default' => 0,
+          'precision' => 15,
+          'scale' => 5,
+        ),
+        'unit' => array(
+          'description' => 'The unit of measurement.',
+          'type' => 'varchar',
+          'length' => '255',
+          'not null' => TRUE,
+          'default' => '',
+        ),
+      ),
+    );
+  }
+}

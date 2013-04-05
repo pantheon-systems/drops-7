@@ -1,0 +1,311 @@
+<?php
+
+/**
+ * Implement hook_menu().
+ */
+function views_megarow_menu() {
+  $items['views_megarow/refresh/%/%/%'] = array(
+    'page callback' => 'views_megarow_get_row',
+    'page arguments' => array(2, 3, 4),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['display_megarow/%/%'] = array(
+    'page callback' => 'views_megarow_generic_render',
+    'page arguments' => array(1, 2),
+    'delivery callback' => 'ajax_deliver',
+    'access callback' => TRUE,
+  );
+  return $items;
+}
+
+/**
+ * Page callback: Returns a view limited to a single row, used by the
+ * "megarow_refresh_parent" ajax command.
+ *
+ * @todo This code forces the active display to have a base field argument.
+ *  Perhaps try supporting a custom display only for refreshing, so that
+ *  the user can use arguments for something else.
+ */
+function views_megarow_get_row($view_name, $display, $entity_id) {
+  $output = '';
+  $view = views_get_view($view_name);
+  if ($view) {
+    $output = $view->preview($display, array($entity_id));
+  }
+
+  return $output;
+}
+
+/**
+ * Use a generic menu callback to display non megarow tailored pages.
+ */
+function views_megarow_generic_render($entity_id) {
+  // Get the arguments passed to the render callback, it's basicaly
+  // a split path.
+  $args = func_get_args();
+
+  // Remove the entity_id argument.
+  array_shift($args);
+
+  // Clean the values and implode them to generate a clean path.
+  $path = implode('/', array_filter($args));
+
+  // Get the output of the called page.
+  $output = menu_execute_active_handler($path, FALSE);
+
+  // Allow errors to bubble up. The error is always one of: MENU_SITE_OFFLINE,
+  // MENU_ACCESS_DENIED, MENU_NOT_FOUND
+  if (is_int($output)) {
+    return $output;
+  }
+
+  // The output is valid, display it through AJAX and voilà!
+  $commands = array();
+  $commands[] = views_megarow_command_display('Megarow content', drupal_render($output), $entity_id);
+
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function views_megarow_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'views_megarow') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * @TODO: Change for "template path" in hook_views_api() when
+ * http://drupal.org/node/1267482 if fixed.
+ */
+function views_megarow_theme_registry_alter(&$theme_registry) {
+  $theme_registry['views_view_table']['path'] = drupal_get_path('module', 'views_megarow') . '/theme';
+  // NOT WORKING
+  // $theme_registry['views_view_table']['theme path'] = drupal_get_path('module', 'views_megarow') . '/theme';
+}
+
+/**
+ * Implements hook_preprocess_views_view_table().
+ *
+ * This preprocess needs to run after the views one which defines 'row_classes'.
+ */
+function views_megarow_preprocess_views_view_table(&$vars) {
+  // Add the custom classes and attributes that identify each entity row.
+  if ($vars['view']->plugin_name == 'table_megarows') {
+    $vars['attributes_array']['data-view-name'] = $vars['view']->name;
+    $vars['attributes_array']['data-view-display'] = $vars['view']->current_display;
+    $result_entities = $vars['view']->query->get_result_entities($vars['view']->result);
+
+    foreach ($vars['result'] as $count => $result) {
+      $entity = $result_entities[1][$count];
+      list($entity_id) = entity_extract_ids($result_entities[0], $entity);
+      $vars['row_classes'][$count][] = 'item-' . $entity_id;
+      $vars['row_attributes'][$count]['data-entity-id'] = $entity_id;
+    }
+  }
+}
+
+/**
+ * Implements hook_views_pre_render().
+ * Adds the CSS and JS needed for the functioning of the megarow.
+ */
+function views_megarow_views_pre_render(&$view) {
+  static $done = FALSE;
+
+  if ($view->plugin_name == 'table_megarows' && !$done) {
+    $settings = array(
+      'ViewsMegarow' => array(
+        'loadingText' => t('Loading...'),
+        'close' => 'x',
+        // An image can also be used, like this:
+        //'close' => theme('image', array(
+        //  'path' => ctools_image_path('icon-close-window.png'),
+        //  'title' => t('Close window'),
+        //  'alt' => t('Close window'),
+        //)),
+        'throbber' => theme('image', array(
+          //'path' => ctools_image_path('throbber.gif'),
+          'path' => ctools_image_path('ajax-loader.gif', 'ctools_ajax_sample'),
+          'title' => t('Loading...'),
+          'alt' => t('Loading'),
+        )),
+      ),
+    );
+
+    drupal_add_js($settings, 'setting');
+    drupal_add_js('misc/jquery.form.js');
+    drupal_add_js('misc/progress.js');
+    drupal_add_js('misc/ajax.js');
+    drupal_add_js(drupal_get_path('module', 'views_megarow') . "/views_megarow.js");
+    drupal_add_css(drupal_get_path('module', 'views_megarow') . "/views_megarow.css");
+    // Add the Views dropbutton CSS so that links provided by
+    // views_handler_field_megarow_links are styled properly.
+    // @todo Remove this once http://drupal.org/node/1557662 gets committed.
+    drupal_add_css(drupal_get_path('module', 'views') . '/css/views-admin.ctools.css');
+    drupal_add_css(drupal_get_path('module', 'views') . '/css/views-admin.seven.css');
+
+    $done = TRUE;
+  }
+}
+
+/**
+ * This callback is just a testing wrapper to display an ajaxified form
+ * or its fallback if it's not called through AJAX.
+ */
+function views_megarow_display_form_wrapper($js, $form_id, $entity, $entity_type) {
+  if ($js) {
+    list($entity_id) = entity_extract_ids($entity_type, $entity);
+
+    $form_state = array(
+      'ajax' => TRUE,
+      'build_info' => array('args' => array($entity_type, $entity)),
+    );
+    $commands = views_megarow_form_wrapper($form_id, $form_state, $entity_id);
+    if (!empty($form_state['executed'])) {
+      // We'll just overwrite the form output if it was successful.
+      $messages = theme('status_messages');
+      $message = 'Submission completed. You can now close this row. ' . $messages;
+      $commands = array();
+      $commands[] = views_megarow_command_display('Submit OK', $message);
+      // Invoke a custom event that refresh the table row of this item.
+      $commands[] = ajax_command_invoke('.item-' .  $entity_id, 'trigger', array('refreshRow'));
+    }
+    print ajax_render($commands);
+    exit;
+  }
+  else {
+    return drupal_get_form($form_id, $entity->entityType(), $entity, $form_mode);
+  }
+}
+
+/**
+ * Wrap a form so that we can use it properly with AJAX. Essentially if the
+ * form wishes to render, it automatically does that, otherwise it returns
+ * so we can see submission results.
+ *
+ * @return
+ *   The output of the form, if it was rendered. If $form_state['ajax']
+ *   is set, this will use ctools_megarow_form_render so it will be
+ *   a $command object suitable for ajax_render already.
+ *
+ *   The return will be NULL if the form was successfully submitted unless
+ *   you specifically set re_render = TRUE. If ajax is set the
+ *   form will never be redirected.
+ */
+function views_megarow_form_wrapper($form_id, &$form_state, $entity_id) {
+  $form_state += array(
+    're_render' => FALSE,
+    'no_redirect' => !empty($form_state['ajax']),
+  );
+
+  $output = drupal_build_form($form_id, $form_state);
+  if (!empty($form_state['ajax']) && empty($form_state['executed'])) {
+    $output = drupal_render($output);
+    $title = empty($form_state['title']) ? drupal_get_title() : $form_state['title'];
+
+    return views_megarow_display($title, $output, $entity_id);
+  }
+
+  return $output;
+}
+
+/**
+ * Displays the provided output in a megarow.
+ *
+ * Works by returning an array that ajax_deliver() can understand.
+ */
+function views_megarow_display($title, $output, $entity_id) {
+  // If there are messages for the form, render them.
+  if ($messages = theme('status_messages')) {
+    $output = '<div class="messages">' . $messages . '</div>' . $output;
+  }
+
+  $commands = array();
+  $commands[] = views_megarow_command_display($title, $output, $entity_id);
+
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Place HTML within the megarow.
+ *
+ * @param $title
+ *   The title of the megarow.
+ * @param $html
+ *   The html to place within the megarow.
+ */
+function views_megarow_command_display($title, $html, $entity_id) {
+  if (is_array($html)) {
+    $html = drupal_render($html);
+  }
+
+  return array(
+    'command' => 'megarow_display',
+    'entity_id' => $entity_id,
+    'title' => $title,
+    'output' => $html,
+  );
+}
+
+/**
+ * Dismiss the megarow.
+ */
+function views_megarow_command_dismiss($entity_id) {
+  return array(
+    'command' => 'megarow_dismiss',
+    'entity_id' => $entity_id,
+  );
+}
+
+/**
+ * Refresh the parent row of a megarow.
+ */
+function views_megarow_command_refresh_parent($entity_id) {
+  return array(
+    'command' => 'megarow_refresh_parent',
+    'entity_id' => $entity_id,
+  );
+}
+
+
+/**
+ * Render an image as a button link. This will automatically apply an AJAX class
+ * to the link and add the appropriate javascript to make this happen.
+ *
+ * @param $image
+ *   The path to an image to use that will be sent to theme('image') for rendering.
+ * @param $dest
+ *   The destination of the link.
+ * @param $alt
+ *   The alt text of the link.
+ * @param $class
+ *   Any class to apply to the link. @todo this should be a options array.
+ */
+function views_megarow_image_button($image, $dest, $alt, $class = '') {
+  return ctools_ajax_text_button(theme('image', array('path' => $image)), $dest, $alt, $class, 'views-megarow-open');
+}
+
+/**
+ * Render text as a link. This will automatically apply an AJAX class
+ * to the link and add the appropriate javascript to make this happen.
+ *
+ * Note: 'html' => true so be sure any text is vetted! Chances are these kinds of buttons will
+ * not use user input so this is a very minor concern.
+ *
+ * @param $text
+ *   The text that will be displayed as the link.
+ * @param $dest
+ *   The destination of the link.
+ * @param $alt
+ *   The alt text of the link.
+ * @param $class
+ *   Any class to apply to the link. @todo this should be a options array.
+ */
+function views_megarow_text_button($text, $dest, $alt, $class = '') {
+  return ctools_ajax_text_button($text, $dest, $alt, $class, 'views-megarow-open');
+}

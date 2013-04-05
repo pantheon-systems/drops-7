@@ -1,0 +1,64 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the Commerce Kiskcstart Social.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Note that we cannot set the permissions for the providers, as we
+ * don't have the consumer key and consumer secret, thus our exported
+ * providers still don't have a record in the permission page. The admin
+ * will need to manually set the permissions after completing the
+ * registration of the provider form via admin/structure/oauthconnector.
+ *
+ * @see commerce_kickstart_install()
+ */
+function commerce_kickstart_social_install() {
+  // Add service links permissions.
+  user_role_grant_permissions(DRUPAL_ANONYMOUS_RID, array('access service links'));
+  user_role_grant_permissions(DRUPAL_AUTHENTICATED_RID, array('access service links'));
+}
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_kickstart_social_enable() {
+  // Rebuild the features static caches.
+  features_include(TRUE);
+
+  $module = 'commerce_kickstart_social';
+  $feature = feature_load($module);
+  $items[$module] = array_keys($feature->info['features']);
+  _features_restore('enable', $items);
+  _features_restore('rebuild', $items);
+
+  $default_theme = variable_get('theme_default', 'omega_kickstart');
+  // Make sure that the region list is populated for our theme.
+  drupal_static_reset();
+  _block_rehash($default_theme);
+
+  // Set the region of the connect-with-us menu block.
+  $fields = array(
+   'region' => 'footer_second',
+   'status' => 1,
+   'visibility' => 0,
+   'pages' => '',
+  );
+  db_update('block')
+    ->fields($fields)
+    ->condition('module', 'menu')
+    ->condition('delta', 'menu-social-connection')
+    ->condition('theme', $default_theme)
+    ->execute();
+
+  // Add "email" field to OAuth connector.
+  $values = array(
+    'title' => 'email',
+    'description' => '',
+    'required' => 0,
+  );
+  oauthconnector_fields_save('email', $values);
+}

@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * Provides Kickstart-specific cart and order customizations.
+ */
+
+/**
+ * Implements hook_default_message_type_alter().
+ */
+function commerce_kickstart_order_default_message_type_alter(&$items) {
+  if (isset($items['commerce_order_order_confirmation'])) {
+    $items['commerce_order_order_confirmation']->purge = array(
+      'override' => 1,
+      'enabled' => 1,
+      'quota' => '100',
+      'days' => '30',
+    );
+
+    $items['commerce_order_order_confirmation']->message_text['und'] = array(
+      array(
+        'value' => 'Order [message:message-commerce-order:order-number] at [site:name]',
+        'format' => NULL,
+        'safe_value' => 'Order [message:message-commerce-order:order-number] at [site:name]'
+      ),
+      array(
+        'value' => str_replace(array('\u0027', '\u003E', '\u003C', '\/'), array('"', '>', '<', '/'), "\u003Cdiv class=\u0027message-wrapper\u0027\u003E\r\n  \u003Cdiv class=\u0027header\u0027\u003E\r\n    \u003Cdiv class=\u0027logo\u0027\u003E\u003Ca href=\u0027[site:url]\u0027\u003E[site:site-logo]\u003C\/a\u003E\u003C\/div\u003E\r\n    \u003Cdiv class=\u0027thank-you\u0027\u003EThanks for your order\u003C\/div\u003E\r\n  \u003C\/div\u003E\r\n\r\n  \u003Cdiv class=\u0027body\u0027\u003E\r\n    \u003Cp class=\u0027detail\u0027\u003E\r\n      Here are the details for your order \u003Cspan class=\u0027order\u0027\u003E\u003Ca href=\u0027[message:message-commerce-order:view-url]\u0027\u003E#[message:message-commerce-order:order-id]\u003C\/a\u003E\u003C\/span\u003E, placed on [message:message-commerce-order:created]\r\n    \u003C\/p\u003E\r\n\r\n    \u003Cdiv class=\u0027view-order-status [message:message-commerce-order:status]\u0027\u003E\u003Ca href=\u0027[message:message-commerce-order:view-url]\u0027\u003EView your order\u003C\/a\u003E\u003C\/div\u003E\r\n\r\n    \u003Cdiv class=\u0027shipping-wrapper\u0027\u003E\r\n      \u003Cdiv class=\u0027ship-to\u0027\u003E\r\n        \u003Cp class=\u0027ship-to-title\u0027\u003EShip to\u003C\/p\u003E\r\n        \u003Cp class=\u0027details\u0027\u003E\r\n          [message:message-commerce-order:commerce-customer-billing:commerce_customer_address]\r\n        \u003C\/p\u003E\r\n      \u003C\/div\u003E\r\n\r\n      \u003Cdiv class=\u0027ship-method\u0027\u003E\r\n        \u003Cp class=\u0027ship-method-title\u0027\u003E\u003C\/p\u003E\r\n        \u003Cp class=\u0027express-delivery\u0027\u003E\u003C\/p\u003E\r\n        \u003Cp class=\u0027details\u0027\u003E\u003C\/p\u003E\r\n      \u003C\/div\u003E\r\n    \u003C\/div\u003E\r\n\r\n\r\n    \u003Cdiv class=\u0027order-summary-wrapper\u0027\u003E\r\n    \u003Cp class=\u0027items-title\u0027\u003EItems in your order\u003C\/p\u003E\r\n     !order-summary\r\n    \u003C\/div\u003E\r\n\r\n    \u003Cp class=\u0027question\u0027\u003E\u003Cb\u003EOrder questions ?\u003C\/b\u003E \u003Ca href=\u0027[site:url]/contact\u0027\u003EContact us\u003C\/a\u003E\u003C\/p\u003E\r\n\r\n  \u003C\/div\u003E\r\n\u003C\/div\u003E\r\n"),
+        'format'  => 'full_html',
+        'safe_value' => str_replace(array('\u0027', '\u003E', '\u003C', '\/'), array('"', '>', '<', '/'), "\u003Cdiv class=\u0027message-wrapper\u0027\u003E\n\u003Cdiv class=\u0027header\u0027\u003E\n\u003Cdiv class=\u0027logo\u0027\u003E\u003Ca href=\u0027[site:url]\u0027\u003E[site:site-logo]\u003C\/a\u003E\u003C\/div\u003E\n\u003Cdiv class=\u0027thank-you\u0027\u003EThanks for your order\u003C\/div\u003E\n\u003C\/div\u003E\n\u003Cdiv class=\u0027body\u0027\u003E\n\u003Cp class=\u0027detail\u0027\u003E\n      Here are the details for your order \u003Cspan class=\u0027order\u0027\u003E\u003Ca href=\u0027[message:message-commerce-order:view-url]\u0027\u003E#[message:message-commerce-order:order-id]\u003C\/a\u003E\u003C\/span\u003E, placed on [message:message-commerce-order:created]\n    \u003C\/p\u003E\n\u003Cdiv class=\u0027view-order-status [message:message-commerce-order:status]\u0027\u003E\u003Ca href=\u0027[message:message-commerce-order:view-url]\u0027\u003EView your order\u003C\/a\u003E\u003C\/div\u003E\n\u003Cdiv class=\u0027shipping-wrapper\u0027\u003E\n\u003Cdiv class=\u0027ship-to\u0027\u003E\n\u003Cp class=\u0027ship-to-title\u0027\u003EShip to\u003C\/p\u003E\n\u003Cp class=\u0027details\u0027\u003E\n          [message:message-commerce-order:commerce-customer-billing:commerce_customer_address]\n        \u003C\/p\u003E\n\u003C\/div\u003E\n\u003Cdiv class=\u0027ship-method\u0027\u003E\n\u003Cp class=\u0027ship-method-title\u0027\u003E\u003C\/p\u003E\n\u003Cp class=\u0027express-delivery\u0027\u003E\u003C\/p\u003E\n\u003Cp class=\u0027details\u0027\u003E\u003C\/p\u003E\n\u003C\/div\u003E\n\u003C\/div\u003E\n\u003Cdiv class=\u0027order-summary-wrapper\u0027\u003E\n\u003Cp class=\u0027items-title\u0027\u003EItems in your order\u003C\/p\u003E\n\u003Cp\u003E     !order-summary\n    \u003C\/p\u003E\u003C\/div\u003E\n\u003Cp class=\u0027question\u0027\u003E\u003Cb\u003EOrder questions ?\u003C\/b\u003E \u003Ca href=\u0027[site:url]/contact\u0027\u003EContact us\u003C\/a\u003E\u003C\/p\u003E\n\u003C\/div\u003E\n\u003C\/div\u003E\n"),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_commerce_line_item_summary_link_info_alter().
+ */
+function commerce_kickstart_order_commerce_line_item_summary_link_info_alter(&$links) {
+  // Link checkout button to the cart.
+  if (isset($links['checkout'])) {
+    $links['checkout']['href'] = 'cart';
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_kickstart_order_views_api() {
+  return array(
+    "version" => "3.0",
+    'path' => drupal_get_path('module', 'commerce_kickstart_order') . '/includes/views',
+  );
+}
+

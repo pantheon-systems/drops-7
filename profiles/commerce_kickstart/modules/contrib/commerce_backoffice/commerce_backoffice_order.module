@@ -1,0 +1,199 @@
+<?php
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_backoffice_order_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_backoffice_order') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_backoffice_order_menu() {
+  // Megarow callback.
+  $items['commerce_backoffice/order/%commerce_order'] = array(
+    'title callback' => 'commerce_order_ui_order_title',
+    'title arguments' => array(2),
+    'page callback' => 'commerce_backoffice_order_view',
+    'page arguments' => array(2),
+    'delivery callback' => 'ajax_deliver',
+    'access callback' => 'commerce_order_access',
+    'access arguments' => array('view', 2),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function commerce_backoffice_order_admin_paths() {
+  // The order view should use the admin theme.
+  $paths = array(
+    'commerce_backoffice/order/*' => TRUE,
+  );
+  return $paths;
+}
+
+/**
+ * Displays the given order using the backoffice view mode, in a megarow.
+ */
+function commerce_backoffice_order_view($order) {
+  $title = commerce_order_ui_order_title($order);
+  $view = entity_view('commerce_order', array($order->order_id => $order), 'backoffice');
+  $view = $view['commerce_order'][$order->order_id];
+  $output = drupal_render($view);
+
+  $return = views_megarow_display($title, $output, $order->order_id);
+  if (!empty($view['#megarow_refresh_parent'])) {
+    $return['#commands'][] = views_megarow_command_refresh_parent($order->order_id);
+  }
+
+  return $return;
+}
+
+/**
+ * Implements hook_form_views_form_alter().
+ */
+function commerce_backoffice_order_form_alter(&$form, &$form_state, $form_id) {
+  // Alter the Exposed Filters for orders page
+  if (isset($form['submit']['#id']) && $form['submit']['#id'] == 'edit-submit-commerce-backoffice-orders') {
+    $form['status']['#attributes'] = array('data-placeholder' => array(t('All statuses')));
+    $form['combine']['#attributes'] = array('placeholder' => array(t('Search by name, email, order ID')));
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * Adds a new order view mode, used to display the order in a megarow.
+ */
+function commerce_backoffice_order_entity_info_alter(&$entity_info) {
+  $entity_info['commerce_order']['view modes']['backoffice'] = array(
+    'label' => t('Backoffice'),
+    'custom settings' => FALSE,
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_backoffice_order_theme(&$existing) {
+  $themes =  array(
+    'commerce_order__backoffice' => array(
+      'path' => drupal_get_path('module', 'commerce_backoffice_order') . '/theme',
+      'template' => 'commerce-order--backoffice',
+    ),
+  );
+
+  return $themes;
+}
+
+/**
+ * Add the template file for the backoffice view mode.
+ */
+function commerce_backoffice_order_preprocess_entity(&$vars) {
+  if ($vars['entity_type'] == 'commerce_order' && $vars['view_mode'] == 'backoffice') {
+    $vars['theme_hook_suggestions'][] = 'commerce_order__backoffice';
+    $vars['classes_array'][] = 'commerce-order-backofffice';
+  }
+}
+
+/**
+ * Implement hook_views_pre_render().
+ */
+function commerce_backoffice_order_views_pre_render(&$view) {
+  if ($view->name == 'commerce_backoffice_orders') {
+    drupal_add_css(drupal_get_path('module', 'commerce_backoffice_order') . '/theme/commerce-backoffice-order.css');
+  }
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function commerce_backoffice_order_field_extra_fields() {
+  $extra = array();
+  $extra['commerce_order']['commerce_order'] = array(
+    'display' => array(
+      'status' => array(
+        'label' => t('Status'),
+        'description' => t('Allows the user to edit the status.'),
+        'weight' => 0,
+      ),
+    ),
+  );
+
+  return $extra;
+}
+
+/**
+ * Implements hook_entity_view().
+ */
+function commerce_backoffice_order_entity_view($entity, $entity_type, $view_mode, $langcode) {
+  if ($entity_type == 'commerce_order' && $view_mode = 'backoffice') {
+    $status_form = drupal_get_form('commerce_backoffice_order_status_form', $entity);
+    // Bubble-up the signal for refreshing the parent row.
+    if (!empty($status_form['#megarow_refresh_parent'])) {
+      $entity->content['#megarow_refresh_parent'] = TRUE;
+    }
+
+    $markup = '<div class="field commerce-backoffice-order-status-form">';
+    $markup .= '<div class="commerce-backoffice-order-status-label">' . t('Order status') . '</div>';
+    $markup .= drupal_render($status_form);
+    $markup .= '</div>';
+
+    $entity->content['status'] = array(
+      '#weight' => 10,
+      '#markup' =>$markup,
+      '#access' => commerce_order_access('update', $entity),
+    );
+  }
+}
+
+/**
+ * Form callback: Returns the form for modifying the status column.
+ */
+function commerce_backoffice_order_status_form($form, &$form_state, $order) {
+  $form_state['order'] = $order;
+
+  if (!empty($form_state['order_saved'])) {
+    // Show the status message on top of the form.
+    drupal_set_message(t('The order status has been updated.'));
+    $form['status_message'] = array(
+      '#type' => 'markup',
+      '#markup' => theme('status_messages'),
+    );
+    // Send the signal to reload the parent row.
+    $form['#megarow_refresh_parent'] = TRUE;
+  }
+
+  $form['status'] = array(
+    '#type' => 'select',
+    '#title' => t('Status'),
+    '#title_display' => 'invisible',
+    '#options' => commerce_order_status_options_list(),
+    '#default_value' => $order->status,
+  );
+  $form['save'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit callback for commerce_backoffice_order_status_form.
+ */
+function commerce_backoffice_order_status_form_submit($form, &$form_state) {
+  $order = $form_state['order'];
+  $order->status = $form_state['values']['status'];
+  commerce_order_save($order);
+
+  $form_state['rebuild'] = TRUE;
+  $form_state['order_saved'] = TRUE;
+}

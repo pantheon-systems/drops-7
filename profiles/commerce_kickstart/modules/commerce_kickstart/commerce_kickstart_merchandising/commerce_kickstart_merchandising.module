@@ -1,0 +1,22 @@
+<?php
+/**
+ * @file
+ * Code for the Commerce Kickstart Merchandising feature.
+ */
+
+include_once 'commerce_kickstart_merchandising.features.inc';
+
+/**
+ * Implements hook_migrate_api().
+ */
+function commerce_kickstart_merchandising_migrate_api() {
+  // Only register the migration for demo store.
+  if (variable_get('commerce_kickstart_demo_store', FALSE)) {
+    return array(
+      'api' => 2,
+      'migrations' => array(
+        'CommerceKickstartAdPush' => array('class_name' => 'CommerceKickstartAdPush'),
+      ),
+    );
+  }
+}

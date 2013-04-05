@@ -1,0 +1,78 @@
+/**************************************************
+* --
+* 2. Section header
+* --
+**************************************************/
+/**********************************************
+* 2.2. Zone branding
+**********************************************/
+/**
+* Search block
+*/
+#block-views-exp-display-products-page .views-exposed-widgets {
+  position: relative; }
+
+#block-views-exp-display-products-page .views-exposed-widget {
+  padding: 0;
+  position: relative;
+  left: 0px;
+  /* LTR */ }
+
+#block-views-exp-display-products-page #edit-search-api-views-fulltext {
+  height: 18px; }
+
+#block-views-exp-display-products-page .views-submit-button .form-submit {
+  float: left;
+  /* LTR */
+  width: 24px;
+  height: 24px; }
+
+/**************************************************
+* --
+* 3. Section content
+* --
+**************************************************/
+/*******************************************
+* 3.2.1. Sidebar first
+*******************************************/
+/* Category */
+.region-sidebar-first .block-facetapi.field_category .item-list {
+  border: none !important;
+  height: auto !important;
+  padding: 0 !important;
+  overflow-y: visible !important; }
+
+/*******************************************
+* 3.2.2. Content
+*******************************************/
+/**
+* Blocks
+*/
+/* HP blocks: Top advert */
+#promotional_banner .promotional_banner_special_offer {
+  position: absolute;
+  right: 10px;
+  /* LTR */ }
+
+/**************************************************
+* --
+* 5. Commerce specific
+* --
+**************************************************/
+/**********************************************
+* 5.1. Search & Collection page
+**********************************************/
+/**********************************************
+* 5.3. Product page
+**********************************************/
+/* Cloud zoom */
+.node-product-type .cloud-zoom-gallery-thumbs {
+  clear: none;
+  width: 120px; }
+
+.node-product-type .cloud-zoom-container .cloud-zoom {
+  float: left;
+  /* LTR */ }
+
+.commerce-add-to-cart-confirmation .message-inner {
+  position: relative; }

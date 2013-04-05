@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_backoffice_product_enable() {
+  // This module needs to run after commerce_product_ui.
+  db_update('system')
+    ->fields(array(
+      'weight' => 10,
+    ))
+    ->condition('type', 'module')
+    ->condition('name', 'commerce_backoffice_product')
+    ->execute();
+}

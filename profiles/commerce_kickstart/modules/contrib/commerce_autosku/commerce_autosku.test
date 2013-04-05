@@ -1,0 +1,200 @@
+<?php
+
+/**
+ * @file
+ * Contains simpletests for commerce_autosku
+ */
+
+class CommerceAutoSkuTest extends CommerceBaseTestCase {
+
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'SKU Generation',
+      'description' => 'Tests automatic generation of SKUs.',
+      'group' => 'Drupal Commerce',
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  function setUp() {
+    $modules = array('commerce_product_ui', 'commerce_autosku');
+    parent::setUp($modules);
+
+    // User creation for different operations.
+    $this->store_admin = $this->createStoreAdmin();
+
+    // Login with admin user.
+    $this->drupalLogin($this->store_admin);
+  }
+
+  public function permissionBuilder($sets) {
+    $perms = parent::permissionBuilder($sets);
+    // Filter perms by enabled modules:
+    $possible_perms = array_keys(module_invoke_all('permission'));
+    return array_intersect($perms, $possible_perms);
+  }
+
+  /**
+   * Test the basic generation and token replacement.
+   */
+  public function testCommerceAutoSKUGeneration() {
+
+    //Create a product pattern.
+    $edit = array(
+      'product_type[autosku_status]' => TRUE,
+      'product_type[autosku][pattern]' => '[commerce-product:title]',
+    );
+    $this->drupalPost('admin/commerce/products/types/product/edit', $edit, 'Save product type');
+    $this->productTypeSubmit(array('product_type[autosku][pattern]' => '[commerce-product:title]'));
+    //Test Title replacement.
+    $title = $this->randomName();
+    $edit = array('title' => $title, 'commerce_price[' . LANGUAGE_NONE . '][0][amount]' => 500);
+    $this->drupalPost('admin/commerce/products/add/product', $edit, 'Save product');
+    $product = commerce_product_load(1);
+    $this->assertEqual($product->sku, $title, t('Product title token replaced.'));
+
+    //Test Duplicate SKU Handling.
+    $edit = array('title' => $title, 'commerce_price[' . LANGUAGE_NONE . '][0][amount]' => 500);
+    $this->drupalPost('admin/commerce/products/add/product', $edit, 'Save product');
+    $product = commerce_product_load(2);
+    $this->assertEqual($product->sku, $title . '0', t('Product title token replaced.'));
+
+    //Test the ID replacement.
+    $this->productTypeSubmit(array('product_type[autosku][pattern]' => '[commerce-product:product-id]'));
+    $title = $this->randomName();
+    $edit = array('title' => $title, 'commerce_price[' . LANGUAGE_NONE . '][0][amount]' => 500);
+    $this->drupalPost('admin/commerce/products/add/product', $edit, 'Save product');
+    $product = commerce_product_load(3);
+    $this->assertEqual($product->sku, '3', t('Product ID token replaced.'));
+
+    //Test that empty/nonexistent tokens are not printed in the generated pattern.
+    $title = $this->randomName();
+    $this->productTypeSubmit(array('product_type[autosku][pattern]' => '[commerce-product:title][commerce-product:nonexistent-token]'));
+    $edit = array('title' => $title, 'commerce_price[' . LANGUAGE_NONE . '][0][amount]' => 500);
+    $this->drupalPost('admin/commerce/products/add/product', $edit, 'Save product');
+    $product = commerce_product_load(4);
+    $this->assertEqual($product->sku, $title);
+
+    // Test that a pattern that resolves to more than 255 characters is trimmed.
+    //Test that empty/nonexistent tokens are not printed in the generated pattern.
+    $title = $this->randomName(100);
+    $this->productTypeSubmit(array('product_type[autosku][pattern]' => '[commerce-product:title][commerce-product:title][commerce-product:title]'));
+    $edit = array('title' => $title, 'commerce_price[' . LANGUAGE_NONE . '][0][amount]' => 500);
+    $this->drupalPost('admin/commerce/products/add/product', $edit, 'Save product');
+    $product = commerce_product_load(5);
+    $this->assertEqual(drupal_strlen($product->sku), 255);
+    $this->assertEqual($product->sku, drupal_substr($title . $title . $title, 0, 255));
+
+    // Test that when trimming SKU's, we trim from the original sku rather
+    // than the number-incremented version.
+    $edit = array('title' => $title, 'commerce_price[' . LANGUAGE_NONE . '][0][amount]' => 500);
+    $this->drupalPost('admin/commerce/products/add/product', $edit, 'Save product');
+    $product = commerce_product_load(6);
+    $this->assertEqual(drupal_strlen($product->sku), 255);
+    $this->assertEqual($product->sku, drupal_substr($title . $title . $title, 0, 254) . 0);
+  }
+
+  public function testCommerceAutoSKUUpdates() {
+    $edit = array(
+      'product_type[autosku_status]' => TRUE,
+      'product_type[autosku][pattern]' => '[commerce-product:product-id]',
+      'product_type[autosku][advanced][update_existing]' => FALSE,
+      'product_type[autosku][advanced][hide_sku]' => FALSE,
+    );
+    $this->productTypeSubmit($edit);
+
+    //Create a new product and check that the product_id token is correctly replaced:
+    $product_edit = array('title' => 'SimpleTest', 'commerce_price[' . LANGUAGE_NONE . '][0][amount]' => 500);
+    $this->drupalPost('admin/commerce/products/add/product', $product_edit, 'Save product');
+    $product = reset(commerce_product_load_multiple(array(1), array(), TRUE));
+    $this->assertEqual('1', $product->sku, t('Generated SKU from Product ID'));
+
+    //Now create a new product whose SKU we will change:
+    $edit['product_type[autosku][pattern]'] = '[commerce-product:title]';
+    $this->productTypeSubmit($edit);
+    $original_title = 'SimpleTest';
+
+    $product_edit = array('title' => $original_title, 'commerce_price[' . LANGUAGE_NONE . '][0][amount]' => 500);
+    $this->drupalPost('admin/commerce/products/add/product', $product_edit, 'Save product');
+    $product = reset(commerce_product_load_multiple(array(2), array(), TRUE));
+    $this->assertIdentical($original_title, $product->sku, t('SKU was initially set to product title.'));
+
+    $product_edit['title'] = 'SimpleTest_2';
+    $this->drupalPost('admin/commerce/products/2/edit', $product_edit, 'Save product');
+    $product = reset(commerce_product_load_multiple(array(2), array(), TRUE));
+    $this->assertIdentical('SimpleTest_2', $product->title, t('Changed Title.'));
+    $this->assertIdentical($original_title, $product->sku, t('SKU was unchanged.'));
+  }
+
+  /**
+   * Test the "advanced" features.
+   */
+  public function testCommerceAutoSKUAdvanced() {
+
+    //Check we're not modifying anything we shouldn't
+    $this->drupalGet('admin/commerce/products/add/product');
+    $this->assertField('sku', t('SKU field was shown (unmodified).'));
+
+    $edit = array(
+      'product_type[autosku_status]' => TRUE,
+      'product_type[autosku][pattern]' => '[commerce-product:title]',
+      'product_type[autosku][advanced][update_existing]' => TRUE,
+      'product_type[autosku][advanced][case]' => 'uppercase',
+    );
+    $this->productTypeSubmit($edit);
+
+    //Should be hidden by default
+    $this->drupalGet('admin/commerce/products/add/product');
+    $this->assertNoField('sku', t('SKU field was hidden (default).'));
+
+    $edit += array(
+      'product_type[autosku][advanced][hide_sku]' => FALSE,
+    );
+    $this->productTypeSubmit($edit);
+
+    //But we should allow it to be shown.
+    $this->drupalGet('admin/commerce/products/add/product');
+    $this->assertField('sku', t('SKU field was shown (hide sku = false).'));
+
+
+    //Onto the uppercase/lowercase tests.
+    $product_edit = array('title' => 'SimpleTest', 'commerce_price[' . LANGUAGE_NONE . '][0][amount]' => 500);
+    $this->drupalPost('admin/commerce/products/add', $product_edit, 'Save product');
+    $product = reset(commerce_product_load_multiple(array(1), array(), TRUE));
+    $this->assertIdentical('SIMPLETEST', $product->sku, t('SKU was uppercased.'));
+
+    $edit['product_type[autosku][advanced][case]'] = 'lowercase';
+    $this->productTypeSubmit($edit);
+
+    $this->drupalPost('admin/commerce/products/1/edit', $product_edit, 'Save product');
+    $product = reset(commerce_product_load_multiple(array(1), array(), TRUE));
+    $this->assertIdentical('simpletest', $product->sku, t('SKU was lowercased.'));
+  }
+
+  /**
+   * Test that SKU patterns are deleted with the product type.
+   */
+  public function testProductTypeDelete() {
+
+    $product_type = $this->createDummyProductType();
+
+    $result = db_query("SELECT 1 FROM {commerce_autosku_patterns} WHERE product_type = :type", array(':type' => $product_type['type']));
+    $this->assertTrue($result->fetchCol(), t('SKU pattern record exists before deleting.'));
+
+    $this->drupalGet('admin/commerce/products/types/' . str_replace('_', '-', $product_type['type']) . '/delete');
+    $this->drupalPost(NULL, array(), t('Delete'));
+
+    $result = db_query("SELECT 1 FROM {commerce_autosku_patterns} WHERE product_type = :type", array(':type' => $product_type['type']));
+    $this->assertFalse($result->fetchCol(), t('SKU pattern record was deleted with product type.'));
+  }
+
+  public function productTypeSubmit($edit, $product_type = 'product') {
+    $this->drupalPost("admin/commerce/products/types/$product_type/edit", $edit, 'Save product type');
+  }
+
+}

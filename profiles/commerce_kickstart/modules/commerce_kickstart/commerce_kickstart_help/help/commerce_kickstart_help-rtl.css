@@ -1,0 +1,75 @@
+.first-steps-left,
+.first-steps-right,
+.documentation-steps,
+#block-commerce-kickstart-help-commerce-kickstart-ressources,
+#-commerce-kickstart-help-store .search .form-item {
+  float: right;
+}
+.first-steps-column.first-steps-right,
+#block-commerce-kickstart-help-commerce-kickstart-community,
+#-commerce-kickstart-help-store a.search-submit {
+  float: left;
+}
+#block-commerce-kickstart-help-commerce-kickstart-ressources h2,
+#block-commerce-kickstart-help-commerce-kickstart-community h2 {
+  background: transparent url("../images/help-lg.png") no-repeat right 0;
+  padding: 5px 40px 5px 0;
+}
+#block-commerce-kickstart-help-commerce-kickstart-ressources .content,
+#block-commerce-kickstart-help-commerce-kickstart-community .content {
+  padding-left: 0px;
+  padding-right: 40px;
+}
+#-commerce-kickstart-help-store .product-management #edit-product-management-title label,
+#-commerce-kickstart-help-store .order-management #edit-order-management-title label,
+#-commerce-kickstart-help-store .store-settings #edit-store-settings-title label,
+#-commerce-kickstart-help-store .prices-payments-taxes #edit-prices-payments-taxes-title label,
+#-commerce-kickstart-help-store .demo-store-features #edit-demo-store-featuress-title label {
+  background-position: right 0;
+  padding: 0 40px 10px 0;
+}
+html.js #-commerce-kickstart-help-store fieldset.collapsible .fieldset-legend {
+  background-position: right -13px;
+  margin: 15px 25px 0 0;
+  padding-left: 0;
+  padding-right: 25px;
+}
+html.js #-commerce-kickstart-help-store fieldset.collapsed .fieldset-legend {
+  background-position: right 9px;
+}
+#kickstart-help-topic .first-steps-quick ul li {
+  clear: right;
+  float: right;
+}
+#kickstart-help-topic .first-steps-quick ul li a {
+  background: #ffffff url("../images/quicklinks-rtl.png") no-repeat 98% center;
+  clear: right;
+  float: right;
+  padding: 0 25px 0 5px;
+}
+#kickstart-help-topic .first-steps-blocks h2 {
+  background-position: right 0;
+  padding: 5px 40px 10px 15px;
+}
+#kickstart-help-topic .first-steps-documentation h2 {
+  background-position: right 2px;
+}
+#kickstart-help-topic .first-steps-quick h2 {
+  background-position: right -26px;
+}
+#kickstart-help-topic .first-steps-services h2 {
+  background-position: right -56px;
+}
+#kickstart-help-topic .first-steps-mode h2 {
+  background-position: right -90px;
+}
+
+html.js #-commerce-kickstart-help-store fieldset.collapsible .fieldset-legend {
+  padding: 0 25px 0 0;
+}
+#-commerce-kickstart-help-store div > .form-wrapper > .form-item label {
+  padding: 0 40px 10px 0;
+}
+#prices-payments-taxes-title label {
+  background-position: right 0;
+}

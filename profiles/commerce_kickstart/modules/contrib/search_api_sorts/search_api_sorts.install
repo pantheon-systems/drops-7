@@ -1,0 +1,159 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function search_api_sorts_schema() {
+  $schema['search_api_sort'] = array(
+    'description' => 'Stores all activated or configured sorts of a site.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a sort.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'identifier' => array(
+        'description' => 'The identifier for this sort.',
+        'type' => 'varchar',
+        'length' => 255,// This is ugly, but we can't be sure how long a field name might get.
+        'not null' => TRUE,
+      ),
+      'index_id' => array(
+        'description' => 'The {search_api_index}.machine_name this sort belongs to.',
+        'type' => 'varchar',
+        'length' => 50,
+        'not null' => TRUE,
+      ),
+      'field' => array(
+        'description' => 'The index field this sort belongs to.',
+        'type' => 'varchar',
+        'length' => 255,// This is ugly, but we can't be sure how long a field name might get.
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The human-readable name to be displayed for this sort.',
+        'type' => 'varchar',
+        'length' => 80,
+        'not null' => TRUE,
+      ),
+      'enabled' => array(
+        'description' => 'A flag indicating whether the sort is enabled.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'default_sort' => array(
+        'description' => 'A flag indicating whether the sort is the default sort for the index.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'default_sort_no_terms' => array(
+        'description' => 'A flag indicating whether the sort is the default sort for the index when there are no search terms present.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'default_order' => array(
+        'description' => 'The default order for this field.',
+        'type' => 'varchar',
+        'length' => 4,
+        'not null' => TRUE,
+        'default' => 'desc',
+      ),
+      'weight' => array(
+        'description' => 'A weight field determining the sort order of the sorts in the block.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ) + entity_exportable_schema_fields(),
+    'indexes' => array(
+      'field' => array('index_id', array('field', 50)),
+      'enabled' => array('enabled'),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function search_api_sorts_uninstall() {
+  variable_del('search_api_sorts_default_sort');
+  variable_del('search_api_sorts_default_order');
+}
+
+/**
+ * Add default sort and order columns to the sort table. Removed deprecated variables.
+ */
+function search_api_sorts_update_7201() {
+  variable_del('search_api_sorts_default_sort');
+  variable_del('search_api_sorts_default_order');
+
+  db_add_field('search_api_sort', 'default_sort', array(
+    'description' => 'A flag indicating whether the sort is the default sort for the index.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+  db_add_field('search_api_sort', 'default_order', array(
+    'description' => 'The default order for this field.',
+    'type' => 'varchar',
+    'length' => 4,
+    'not null' => TRUE,
+    'default' => 'desc'
+  ));
+}
+
+/**
+ * Add an identifier field consisting of the index and field name
+ */
+function search_api_sorts_update_7202() {
+  db_add_field('search_api_sort', 'identifier', array(
+    'description' => 'The identifier for this sort.',
+    'type' => 'varchar',
+    'length' => 255,// This is ugly, but we can't be sure how long a field name might get.
+    'not null' => TRUE,
+    'default' => '',
+  ));
+
+  db_update('search_api_sort')
+    ->expression('identifier', 'CONCAT(index_id, \'__\', field)')
+    ->execute();
+}
+
+/**
+ * Add weight property.
+ */
+function search_api_sorts_update_7203() {
+  db_add_field('search_api_sort', 'weight', array(
+    'description' => 'A weight field determining the sort order of the sorts in the block.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+}
+
+/**
+ * Add default sort no terms to the sort table.
+ */
+function search_api_sorts_update_7204() {
+  db_add_field('search_api_sort', 'default_sort_no_terms', array(
+    'description' => 'A flag indicating whether the sort is the default sort for the index when there are no search terms present.',
+    'type' => 'int',
+    'size' => 'tiny',
+    'not null' => TRUE,
+    'default' => 0,
+  ));
+}
+

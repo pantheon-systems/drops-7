@@ -1,0 +1,260 @@
+<?php
+
+/**
+ * @file
+ * Default Shipping UI for Drupal Commerce.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_shipping_ui_menu() {
+  $items = array();
+
+  $items['admin/commerce/config/shipping/methods'] = array(
+    'title' => 'Shipping methods',
+    'description' => 'Manage shipping methods.',
+    'page callback' => 'commerce_shipping_ui_overview',
+    'page arguments' => array('methods'),
+    'access arguments' => array('administer shipping'),
+    'weight' => 5,
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'includes/commerce_shipping_ui.admin.inc',
+  );
+
+  $shipping_methods = commerce_shipping_methods();
+
+  foreach ($shipping_methods as $name => $shipping_method) {
+    // Convert underscores to hyphens for the menu item argument.
+    $name_arg = strtr($name, '_', '-');
+
+    $items['admin/commerce/config/shipping/methods/' . $name_arg] = array(
+      'title callback' => 'commerce_shipping_method_get_title',
+      'title arguments' => array($name),
+      'description' => 'Redirect to the shipping method list.',
+      'page callback' => 'drupal_goto',
+      'page arguments' => array('admin/commerce/config/shipping/methods'),
+      'access arguments' => array('administer shipping'),
+    );
+
+    if (rules_config_load('commerce_shipping_method_' . $name)) {
+      $items['admin/commerce/config/shipping/methods/' . $name_arg . '/rule'] = array(
+        'title' => 'Configure rule',
+        'description' => 'Add conditions to the rule used to collect rates for this shipping method.',
+        'page callback' => 'drupal_goto',
+        'page arguments' => array('admin/config/workflow/rules/reaction/manage/commerce_shipping_method_' . $name),
+        'access arguments' => array('administer rules'),
+        'type' => MENU_LOCAL_TASK,
+        'context' => MENU_CONTEXT_INLINE,
+        'weight' => 5,
+      );
+    }
+
+    $items['admin/commerce/config/shipping/methods/' . $name_arg . '/services'] = array(
+      'title' => 'View services',
+      'description' => 'View the table of services defined for this shipping method.',
+      'page callback' => 'drupal_goto',
+      'page arguments' => array('admin/commerce/config/shipping/services/' . $name_arg),
+      'access arguments' => array('administer shipping'),
+      'type' => MENU_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE,
+      'weight' => 10,
+    );
+  }
+
+  if (!empty($shipping_methods)) {
+    reset($shipping_methods);
+    $default_method = key($shipping_methods);
+  }
+  else {
+    $default_method = NULL;
+  }
+
+  $items['admin/commerce/config/shipping'] = array(
+    'title' => 'Shipping',
+    'description' => 'Manage shipping methods and services.',
+    'page callback' => 'commerce_shipping_ui_overview',
+    'page arguments' => array('services', $default_method),
+    'access arguments' => array('administer shipping'),
+    'file' => 'includes/commerce_shipping_ui.admin.inc',
+  );
+
+  $items['admin/commerce/config/shipping/services'] = array(
+    'title' => 'Shipping services',
+    'description' => 'Manage shipping services.',
+    'weight' => 0,
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  foreach ($shipping_methods as $method_name => $shipping_method) {
+    // Convert underscores to hyphens for the menu item argument.
+    $method_name_arg = strtr($method_name, '_', '-');
+
+    $items['admin/commerce/config/shipping/services/' . $method_name_arg] = array(
+      'title' => $shipping_method['title'],
+      'description' => 'Manage shipping services for this shipping method.',
+      'page callback' => 'commerce_shipping_ui_overview',
+      'page arguments' => array('services', $method_name),
+      'access arguments' => array('administer shipping'),
+      'type' => $default_method == $method_name ? MENU_DEFAULT_LOCAL_TASK : MENU_LOCAL_TASK,
+      'file' => 'includes/commerce_shipping_ui.admin.inc',
+    );
+
+    foreach (commerce_shipping_services($method_name) as $service_name => $shipping_service) {
+      // Convert underscores to hyphens for the menu item argument.
+      $service_name_arg = $method_name_arg . '-' . strtr($service_name, '_', '-');
+
+      $items['admin/commerce/config/shipping/services/' . $service_name_arg] = array(
+        'title callback' => 'commerce_shipping_service_get_title',
+        'title arguments' => array($service_name),
+        'description' => 'Redirect to the shipping service list.',
+        'page callback' => 'drupal_goto',
+        'page arguments' => array('admin/commerce/config/shipping/services/' . $method_name_arg),
+        'access arguments' => array('administer shipping'),
+      );
+
+      if (rules_config_load('commerce_shipping_service_' . $service_name)) {
+        $items['admin/commerce/config/shipping/services/' . $service_name_arg . '/component'] = array(
+          'title' => 'Configure component',
+          'description' => 'Add conditions to the Rules component used to rate orders for this service.',
+          'page callback' => 'drupal_goto',
+          'page arguments' => array('admin/config/workflow/rules/components/manage/commerce_shipping_service_' . $service_name),
+          'access arguments' => array('administer rules'),
+          'type' => MENU_LOCAL_TASK,
+          'context' => MENU_CONTEXT_INLINE,
+          'weight' => 5,
+        );
+      }
+    }
+  }
+
+  $items['admin/commerce/config/shipping/calculation-rules'] = array(
+    'title' => 'Calculation rules',
+    'description' => 'Add and configure your shipping rate calculation rules.',
+    'page callback' => 'commerce_shipping_ui_rate_calculation_rules',
+    'access arguments' => array('administer shipping'),
+    'weight' => 10,
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'includes/commerce_shipping_ui.admin.inc',
+  );
+
+  // Add the menu items for the various Rules forms.
+  $controller = new RulesUIController();
+  $items += $controller->config_menu('admin/commerce/config/shipping/calculation-rules');
+
+  $items['admin/commerce/config/shipping/calculation-rules/add'] = array(
+    'title' => 'Add a calculation rule',
+    'description' => 'Adds an additional shipping rate calculation rule configuration.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_shipping_ui_add_calculation_rule_form', 'admin/commerce/config/shipping/calculation-rules'),
+    'access arguments' => array('administer shipping'),
+    'file path' => drupal_get_path('module', 'rules_admin'),
+    'file' => 'rules_admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_commerce_shipping_method_info_alter().
+ */
+function commerce_shipping_ui_commerce_shipping_method_info_alter(&$shipping_methods) {
+  // Default all shipping methods to appear in the admin list.
+  foreach ($shipping_methods as $name => &$shipping_method) {
+    $shipping_method += array('admin_list' => TRUE);
+  }
+}
+
+/**
+ * Implements hook_commerce_shipping_service_info_alter().
+ */
+function commerce_shipping_ui_commerce_shipping_service_info_alter(&$shipping_services) {
+  // Default all shipping services to appear in the admin list.
+  foreach ($shipping_services as $name => &$shipping_service) {
+    $shipping_service += array('admin_list' => TRUE);
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_shipping_ui_theme() {
+  return array(
+    'shipping_method_admin_overview' => array(
+      'variables' => array('shipping_method' => NULL),
+      'file' => 'includes/commerce_shipping_ui.admin.inc',
+    ),
+    'shipping_service_admin_overview' => array(
+      'variables' => array('shipping_service' => NULL),
+      'file' => 'includes/commerce_shipping_ui.admin.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_help().
+ */
+function commerce_shipping_ui_help($path, $arg) {
+  if (strpos($path, 'admin/commerce/config/shipping/methods') === 0 && empty($arg[6])) {
+    return '<p>' . t('Shipping methods are used to define available shipping services and calculate their rates (e.g. store defined flat rates, carrier calculated rates).') . '</p>';
+  }
+
+  switch ($path) {
+    case 'admin/commerce/config/shipping':
+    case 'admin/commerce/config/shipping/services':
+      return '<p>' . t('Shipping services are the various delivery options customers may choose from to have your products shipped to them (e.g. Standard shipping, Free shipping, Ground, Next Day Air).') . '</p>';
+
+    case 'admin/commerce/config/shipping/calculation-rules':
+      return t('Prior to display, shipping rates are calculated for each service using a base rate determined by the shipping method module and the rule configurations listed below. Calculation rules can be used for things like discounting or taxing shipping costs depending on the Rules elements defined by your enabled modules.');
+
+    case 'admin/commerce/config/shipping/calculation-rules/add':
+      return t('After setting the label for this rule configuration, you will be redirected to its empty edit page. There you should add the conditions that must be met for the calculation rule to apply. You can then use actions that alter the unit price of the shipping line item passed to the rule to affect the price customers will see when shipping service selection form elements are displayed.');
+  }
+}
+
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function commerce_shipping_ui_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link 'admin/commerce/config/shipping/calculation-rules/add' on
+  // 'admin/commerce/config/shipping/calculation-rules'.
+  if ($root_path == 'admin/commerce/config/shipping/calculation-rules') {
+    $item = menu_get_item('admin/commerce/config/shipping/calculation-rules/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_forms().
+ */
+function commerce_shipping_ui_forms($form_id, $args) {
+  $forms = array();
+
+  $forms['commerce_shipping_ui_add_calculation_rule_form'] = array(
+    'callback' => 'rules_admin_add_reaction_rule',
+  );
+
+  return $forms;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * The Shipping UI module instantiates the Rules Admin rule configuration add
+ * form at a particular path in the Commerce IA. It uses its own form ID to do
+ * so and alters the form here to select the necessary Rules event.
+ *
+ * @see rules_admin_add_reaction_rule()
+ */
+function commerce_shipping_ui_form_commerce_shipping_ui_add_calculation_rule_form_alter(&$form, &$form_state) {
+  unset($form['settings']['help']);
+  $form['settings']['event']['#type'] = 'value';
+  $form['settings']['event']['#value'] = 'commerce_shipping_calculate_rate';
+  $form['submit']['#suffix'] = l(t('Cancel'), 'admin/commerce/config/shipping/calculation-rules');
+}

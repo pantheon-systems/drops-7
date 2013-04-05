@@ -1,0 +1,36 @@
+
+/**
+ * @file
+ * Administration styles for the Commerce Line Item module.
+ *
+ * Optimized for the Seven administration theme.
+ */
+
+
+.links.operations {
+  text-transform: lowercase;
+}
+
+/**
+ * Theme the line item manager widget.
+ */
+#line-item-manager caption {
+  font-size: 100%;
+  font-weight: bold;
+  padding-bottom: 5px;
+  text-align: left; /* LTR */
+  text-transform: uppercase;
+}
+
+.add-line-item .form-type-select {
+  float: left; /* LTR */
+  padding: 3px 10px 0 0; /* LTR */
+}
+
+#line-item-manager .form-submit {
+  float: left; /* LTR */
+}
+
+#line-item-manager .ajax-progress .message {
+  display: none;
+}

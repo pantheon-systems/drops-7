@@ -1,0 +1,12 @@
+name = Commerce Addressbook
+description = Prepopulates and provides a dropdown for previously added addresses.
+package = Commerce (contrib)
+core = 7.x
+dependencies[] = commerce_customer
+
+; Information added by drupal.org packaging script on 2013-03-21
+version = "7.x-2.0-rc4"
+core = "7.x"
+project = "commerce_addressbook"
+datestamp = "1363885211"
+

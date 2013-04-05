@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * Override or insert variables into the page template.
+ */
+function commerce_kickstart_comment_preprocess_node(&$vars) {
+  // Switching to short date format.
+  if ($vars['view_mode'] != 'full') {
+    // Hide login/register links and Add new comment.
+    unset($vars['content']['links']['comment']['#links']['comment_forbidden']);
+    unset($vars['content']['links']['comment']['#links']['comment-add']);
+    if ($vars['comment'] != COMMENT_NODE_HIDDEN) {
+      // Hide Add new comment.
+      if (empty($vars['comment_count'])) {
+        $vars['content']['links']['comment']['#links']['comment-comments'] = array (
+          'title' => t('0 <span>comment</span>'),
+          'href' => 'node/' . $vars['nid'],
+          'attributes' => array('title' => t('Be the first to add a comment'),),
+          'fragment' => 'comment-form',
+          'html' => TRUE,
+        );
+      }
+      else {
+        $vars['content']['links']['comment']['#links']['comment-comments'] = array(
+          'title' => format_plural($vars['comment_count'], '1 <span>comment</span>', '@count <span>comments</span>'),
+          'href' => 'node/' . $vars['nid'],
+          'attributes' => array('title' => t('Jump to the first comment of this posting.')),
+          'fragment' => 'comments',
+          'html' => TRUE,
+        );
+        if ($new = comment_num_new($vars['nid'])) {
+          $vars['content']['links']['comment']['#links']['comment-new-comments'] = array(
+            'title' => format_plural($new, '+ 1 <span>new</span>', '+ @count <span>new</span>'),
+            'href' => 'node/' . $vars['nid'],
+            'query' => comment_new_page_count($vars['comment_count'], $new, $vars['node']),
+            'attributes' => array('title' => t('Jump to the first new comment of this posting.')),
+            'fragment' => 'new',
+            'html' => TRUE,
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Process variables for comment.tpl.php.
+ *
+ * @see comment.tpl.php
+ */
+function commerce_kickstart_comment_preprocess_comment(&$variables) {
+  // Hide login/register links.
+  if (isset($variables['content']['links']['comment']['#links']['comment_forbidden'])) {
+    unset($variables['content']['links']['comment']['#links']['comment_forbidden']);
+  }
+  // Hide title if comment form title is disabled.
+  if (isset($variables['elements']['#node']->type)) {
+    $comment_title = variable_get('comment_subject_field' . '_' . $variables['elements']['#node']->type);
+    if (!$comment_title) {
+      $variables['title'] = '';
+    }
+  }
+  // Switching to short date format.
+  $variables['created'] = format_date($variables['elements']['#comment']->created, 'short');
+}

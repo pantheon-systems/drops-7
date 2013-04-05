@@ -1,0 +1,194 @@
+<?php
+
+/**
+ * @file
+ * Message notify.
+ */
+
+/**
+ * Process and send a message.
+ *
+ * @param $message
+ *   The message entity being used for the notification.
+ * @param $options
+ *   Array of options to override the plugin's default ones.
+ * @param $notifier_name
+ *   Optional; The name of the notifier to use. Defaults to "email"
+ *   sending method.
+ *
+ * @return
+ *   Boolean value denoting success or failure of the notification.
+ */
+function message_notify_send_message(Message $message, array $options = array(), $notifier_name = 'email') {
+  if (!$plugin = message_notify_get_notifier($notifier_name)) {
+   throw new MessageNotifyException(format_string('Could not send notification using the "@notifier" notifier.'), array('@notifier' => $notifier_name));
+  }
+
+  $plugin['options'] = drupal_array_merge_deep($plugin['options'], $options);
+
+  $class = ctools_plugin_load_class('message_notify', 'notifier', $notifier_name, 'class');
+  $notifier = new $class($plugin, $message);
+  if ($notifier->access()) {
+    return $notifier->send();
+  }
+}
+
+/**
+ * Add defaults values to the notifier plugins.
+ *
+ * - 'description': The description of the plugin.
+ * - 'options': Array with the following keys:
+ *   - 'save on fail': Save the message is delivery failed. Defaults to
+ *     TRUE.
+ *   - 'save on success': Save the message is delivery successded. Defaults to
+ *     TRUE.
+ *   - 'language override': Override user's language, and use the
+ *     Message's language. Defaults to FALSE.
+ *   - 'rendered fields': Array keyed with the view mode(s), and the text
+ *     field(s) to save the rendered output.
+ *     The rendered field is used when it is needed to save the message
+ *     exactly as it was sent (for example for message logs), as it might
+ *     change and show differently when viewed later - as a result of on
+ *     the fly token replacement, or even editing the message type.
+ */
+function message_notify_plugin_process(&$plugin, $info) {
+  $plugin += array(
+    'description' => '',
+    'options' => array(),
+  );
+  $plugin['options'] += array(
+    'save on fail' => TRUE,
+    'save on success' => TRUE,
+    'language override' => FALSE,
+    'rendered fields' => array(),
+  );
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * Add a the notifiers view modes.
+ */
+function message_notify_entity_info_alter(&$entity_info) {
+  foreach (message_notify_get_notifiers() as $plugin) {
+    $view_modes = $plugin['view_modes'];
+    // Set default values.
+    foreach ($view_modes as &$view_mode) {
+      $view_mode += array('custom settings' => TRUE);
+    }
+    $entity_info['message']['view modes'] += $view_modes;
+  }
+}
+
+/**
+ * Implements hook_mail().
+ *
+ * Set's the message subject and body as configured.
+ */
+function message_notify_mail($key, &$message, $params) {
+  $message['subject'] = $params['message_notify_email_subject'];
+  $message['body'][] = $params['message_notify_email_body'];
+}
+
+/**
+ * Implements hook_field_attach_create_bundle().
+ *
+ * We cannot easily set the the visibilty of extra fields, so we set the
+ * bundle settings upon creation of new message bundle.
+ */
+function message_notify_field_attach_create_bundle($entity_type, $bundle) {
+  if ($entity_type != 'message') {
+    return;
+  }
+
+  $bundle_settings = field_bundle_settings('message', $bundle);
+  $display = &$bundle_settings['extra_fields']['display'];
+
+  $visible = array('visible' => TRUE, 'weight' => 0);
+  $hidden = array('visible' => FALSE, 'weight' => 0);
+
+  $display['message__message_text__0'] = array(
+    'message_notify_email_subject' => $visible,
+    'message_notify_email_body' => $hidden,
+  );
+
+  $display['message__message_text__1'] = array(
+    'message_notify_email_subject' => $hidden,
+    'message_notify_email_body' => $visible,
+  );
+
+  field_bundle_settings('message', $bundle, $bundle_settings);
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function message_notify_ctools_plugin_api($module, $api) {
+  if ($module == 'message_notify' && $api == 'notifier') {
+    return array('version' => 1);
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function message_notify_ctools_plugin_type() {
+  $plugins['notifier'] = array(
+    'classes' => array('class'),
+    'process' => 'message_notify_plugin_process',
+  );
+  return $plugins;
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function message_notify_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'message_notify') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Helper function to include CTools plugins and get a notifier plguin.
+ *
+ * @param $plugin_name
+ *   The plugin that should be laoded.
+ */
+function message_notify_get_notifier($notifier_name) {
+  ctools_include('plugins');
+  return ctools_get_plugins('message_notify', 'notifier', $notifier_name);
+}
+
+/**
+ * Helper function to include CTools plugins and get all notifier plugins.
+ */
+function message_notify_get_notifiers() {
+  ctools_include('plugins');
+  return ctools_get_plugins('message_notify', 'notifier');
+}
+
+/**
+ * Helper function to return all notifiers as options for a select list.
+ */
+function message_notify_get_notifiers_as_options() {
+  $notifiers = message_notify_get_notifiers();
+  $options = array();
+  foreach ($notifiers as $notifier_name => $notifier) {
+    $options[$notifier_name] = check_plain($notifier['title']);
+  }
+
+  return $options;
+}
+
+/**
+ * Deprectaed: Send email.
+ *
+ * Wrapper function for message_notify_send_message(), using the "email"
+ * notifier.
+ *
+ * @deprecated
+ */
+function message_notify_send_mail(Message $message, array $options = array()) {
+  message_notify_send_message($message, $options, 'email');
+}

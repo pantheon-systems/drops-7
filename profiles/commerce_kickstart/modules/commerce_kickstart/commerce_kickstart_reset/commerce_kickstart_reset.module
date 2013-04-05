@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_kickstart_reset_permission() {
+  return array(
+    'reset the site' => array(
+      'title' => t('Reset the site'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_kickstart_reset_menu() {
+  $items = array();
+  $items['admin/commerce/config/demo'] = array(
+    'title' => 'Reset',
+    'description' => 'todo.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_kickstart_reset_kill_me_form'),
+    'access arguments' => array('reset the site'),
+    'weight' => 10,
+  );
+
+  return $items;
+}
+
+/**
+ * Menu callback.
+ */
+function commerce_kickstart_reset_kill_me_form() {
+  $form['message'] = array(
+    '#type' => 'item',
+    '#markup' => t('Warning: you are going to wipe all content from this site!'),
+  );
+  $form['buttons']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Wipe all content from this site'),
+  );
+  return $form;
+}
+
+/**
+ * Submit function for commerce_kickstart_reset_kill_me_form().
+ *
+ * @param $form
+ * @param $form_state
+ */
+function commerce_kickstart_reset_kill_me_form_submit($form, &$form_state) {
+  // Take care of database prefix if we use one.
+  $databases = Database::getConnectionInfo('default');
+  $database = $databases['default'];
+  $prefix = !empty($database['prefix']['default']) ? $database['prefix']['default'] : '';
+
+  $tables = db_find_tables($prefix . '%');
+
+  foreach($tables as $table) {
+    db_drop_table($table);
+  }
+  include_once DRUPAL_ROOT . '/includes/install.inc';
+  install_goto('install.php?profile=commerce_kickstart&locale=en');
+}

@@ -1,0 +1,60 @@
+<?php
+
+/**
+ * @file
+ * Performs (un)installation tasks for the commerce_search_api module.
+ */
+
+/**
+ * Implements hook_install().
+ *
+ * Attenmpt to create a search_api_db server backend if no server exists.
+ */
+function commerce_search_api_install() {
+  drupal_load('module', 'search_api');
+  $servers = search_api_server_load_multiple(FALSE);
+  $services = search_api_get_service_info();
+  $t = get_t();
+  // If no services found, then display a warning as we can't create a server.
+  if (empty($services)) {
+    drupal_set_message($t('No search api services could be found, Please install a search_api backend module like search_api_db or search_api_solr.'), 'warning');
+    return;
+  }
+  if (!module_exists('search_api_facetapi')) {
+    drupal_set_message($t("We won't be able to setup a predefined faceted search because search_api_facetapi is not installed."), 'warning');
+  }
+  if (empty($servers)) {
+    if (!isset($services['search_api_db_service'])) {
+      return;
+    }
+    // Create the default Search API server.
+    $values = array(
+      'machine_name' => 'frontend',
+      'name' => 'Db server',
+      'description' => '',
+      'class' => 'search_api_db_service',
+      'options' => array(
+        'database' => 'default:default',
+        'min_chars' => 3,
+      ),
+    );
+    $server = entity_create('search_api_server', $values);
+    $server->save();
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Remove the created server if it exists and if no index is using it.
+ */
+function commerce_search_api_uninstall() {
+  if (module_exists('search_api')) {
+    if ($server = search_api_server_load('frontend')) {
+      $indexes = search_api_index_load_multiple(FALSE, array('server' => 'frontend'));
+      if (empty($indexes)) {
+        $server->delete();
+      }
+    }
+  }
+}

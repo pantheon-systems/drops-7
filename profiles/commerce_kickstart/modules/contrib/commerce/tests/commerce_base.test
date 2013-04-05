@@ -1,0 +1,1092 @@
+<?php
+
+/**
+ * @file
+ * Defines abstract base test class for the Commerce module tests.
+ */
+
+/**
+ * Abstract class for Commerce testing. All Commerce tests should extend this
+ * class.
+ */
+abstract class CommerceBaseTestCase extends DrupalWebTestCase {
+
+  /**
+   * Helper function to determine which modules should be enabled. Should be
+   * used in place of standard parent::setUp('moduleA', 'moduleB') call.
+   *
+   * @param $set
+   *  Which set of modules to load. Can be one of:
+   *    'all': (default) All Commerce modules, including UI and payment modules.
+   *    'ui': All API and UI modules.
+   *    'api': Just API modules (includes commerce_ui since checkout depends on it).
+   *    'dependencies': Common dependencies required by many Commerce API and UI
+   *      modules.
+   * @param $other_modules
+   *  Array of modules to include in addition to the sets loaded by $set
+   */
+  protected function setUpHelper($set = 'all', array $other_modules = array()) {
+
+    $dependencies = array(
+      // API
+      'entity',
+    	'entity_token',
+      'rules',
+      'addressfield',
+      //'rules_admin',
+      // UI
+      'ctools',
+      'views',
+      //'views_ui',
+      'field',
+      'field_ui',
+      'field_sql_storage',
+    );
+    $api = array(
+      'commerce',
+      'commerce_product',
+      'commerce_price',
+      'commerce_customer',
+      'commerce_line_item',
+      'commerce_order',
+      'commerce_product_reference',
+      'commerce_payment',
+      'commerce_tax',
+      'commerce_product_pricing',
+    );
+    $ui = array(
+      'commerce_ui',
+      'commerce_checkout',
+      'commerce_cart',
+      'commerce_line_item_ui',
+      'commerce_order_ui',
+      'commerce_product_ui',
+      'commerce_customer_ui',
+      'commerce_payment_ui',
+      'commerce_product_pricing_ui',
+      'commerce_tax_ui',
+      //'rules_admin',
+    );
+    $payment = array(
+      'commerce_payment_example',
+    );
+
+    // Final module list
+    $modules = array();
+
+    // Cascade down the list and add sets
+    switch ($set) {
+      case 'all':
+        $modules = array_merge($payment, $modules);
+      case 'ui':
+        $modules = array_merge($ui, $modules);
+      case 'api':
+        $modules = array_merge($api, $modules);
+      case 'dependencies':
+        $modules = array_merge($dependencies, $modules);
+        break;
+    }
+
+    // Bring in modules specified by caller
+    $modules = array_merge($modules, $other_modules);
+
+    return $modules;
+  }
+
+  /**
+   * Helper function to get different combinations of permission sets.
+   *
+   * @param $set
+   *  Can be a single string (from the following) or can be an array containing
+   *  multiple values that should be merged:
+   *    'site admin': Admin permissions for Drupal core modules
+   *    'store admin': All commerce "administer X" permissions
+   */
+  protected function permissionBuilder($sets) {
+    if (is_string($sets)) {
+      $sets = array($sets);
+    }
+    $site_admin = array(
+      'administer blocks',
+      'administer comments',
+      'access dashboard',
+      'administer filters',
+      'administer image styles',
+      'administer menu',
+      'administer content types',
+      'administer nodes',
+      'bypass node access',
+      'administer url aliases',
+      'administer search',
+      'administer modules',
+      'administer site configuration',
+      'administer themes',
+      'administer software updates',
+      'administer actions',
+      'access administration pages',
+      'access site in maintenance mode',
+      'access site reports',
+      'block IP addresses',
+      'administer taxonomy',
+      'administer permissions',
+      'administer users',
+      'administer rules',
+    );
+    $store_admin = array(
+      'access administration pages',
+      'administer checkout',
+      'access checkout',
+      'configure store',
+      'administer commerce_customer_profile entities',
+      'administer customer profile types',
+      'administer line items',
+      'administer line item types',
+      'administer commerce_order entities',
+      'configure order settings',
+      'view any commerce_order entity',
+      'create commerce_order entities',
+      'edit any commerce_order entity',
+      'administer commerce_product entities',
+      'administer product types',
+      'administer product pricing',
+      'administer payments',
+      'administer taxes',
+      'administer rules',
+    );
+    $store_customer = array(
+      'access content',
+      'access checkout',
+      'view own commerce_order entities',
+    );
+
+    $final_permissions = array();
+
+    foreach ($sets as $set) {
+      switch ($set) {
+        case 'site admin':
+          $final_permissions = array_unique(array_merge($final_permissions, $site_admin));
+          break;
+        case 'store admin':
+          $final_permissions = array_unique(array_merge($final_permissions, $store_admin));
+          break;
+        case 'store customer':
+          $final_permissions = array_unique(array_merge($final_permissions, $store_customer));
+          break;
+      }
+    }
+
+    return $final_permissions;
+  }
+
+  /**
+   * Wrapper to easily create users from arrays returned by permissionBuilder().
+   *
+   * @param $set
+   *  See permissionBuilder() function
+   * @return
+   *  A user with the permissions returned from permissionBuilder().
+   */
+  protected function createUserWithPermissionHelper($set) {
+    $permissions = $this->permissionBuilder($set);
+    $user = $this->drupalCreateUser($permissions);
+    return $user;
+  }
+
+  /**
+   * Returns a site administrator user. Only has permissions for administering
+   * modules in Drupal core.
+   */
+  protected function createSiteAdmin() {
+    return $this->createUserWithPermissionHelper('site admin');
+  }
+
+  /**
+   * Returns a store administrator user. Only has permissions for administering
+   * Commerce modules.
+   */
+  protected function createStoreAdmin() {
+    return $this->createUserWithPermissionHelper('store admin');
+  }
+
+  /**
+   * Returns a store customer. It's a regular user with some Commerce
+   * permissions as access to checkout.
+   */
+  protected function createStoreCustomer() {
+    return $this->createUserWithPermissionHelper('store customer');
+  }
+
+  /**
+   * Return one of the Commerce configured urls.
+   */
+  protected function getCommerceUrl($element = 'cart') {
+    $links = commerce_line_item_summary_links();
+    if ($element == 'cart') {
+      return $links['view_cart']['href'];
+    }
+    if ($element == 'checkout') {
+      return $links['checkout']['href'];
+    }
+  }
+
+  /**
+   * Creates a dummy product type for use with other tests.
+   *
+   * @return
+   *  A product type.
+   *  FALSE if the appropiate modules were not available.
+   */
+  public function createDummyProductType($type = 'product_type', $name = 'Product Type', $description = '', $help = '', $append_random = TRUE) {
+    if (module_exists('commerce_product')) {
+      if ($append_random) {
+        $type = $type .'_'. $this->randomName(20 - strlen($type) - 1);
+        $name = $name .' '. $this->randomName(40 - strlen($name) - 1);
+        $description = $description .' '. $this->randomString(128);
+        $help = $help .' '. $this->randomString(128);
+      }
+
+      $new_product_type = commerce_product_ui_product_type_new();
+      $new_product_type['type'] = $type;
+      $new_product_type['name'] = $name;
+      $new_product_type['description'] = $description;
+      $new_product_type['help'] = $help;
+      $new_product_type['is_new'] = TRUE;
+
+      $save_result = commerce_product_ui_product_type_save($new_product_type);
+
+      if ($save_result === FALSE) {
+        return FALSE;
+      }
+
+      return $new_product_type;
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  /**
+   * Creates a dummy product for use with other tests.
+   *
+   * @param $type_given
+   *  Optional. The product type to base this product on. Defaults to 'product'.
+   * @return
+   *  A product type with most of it's basic fields set random values.
+   *  FALSE if the appropiate modules were not available.
+   */
+  public function createDummyProduct($sku = '', $title = '', $amount = -1, $currency_code = 'USD', $uid = 1, $type_given = 'product') {
+    if (module_exists('commerce_product')) {
+      $new_product = commerce_product_new($type_given);
+      $new_product->sku = empty($sku) ? $this->randomName(10) : $sku;
+      $new_product->title = empty($title) ? $this->randomName(10) : $title;
+      $new_product->uid = $uid;
+
+      $new_product->commerce_price[LANGUAGE_NONE][0]['amount'] = ($amount < 0) ? rand(2, 500) : $amount;
+      $new_product->commerce_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
+
+      commerce_product_save($new_product);
+
+      return $new_product;
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  /**
+   * Create a dummy product display content type.
+   *
+   * @param $type
+   *  Machine name of the content type to create. Also used for human readable
+   *  name to keep things simple.
+   * @param $attach_product_reference_field
+   *  If TRUE, automatically add a product reference field to the new content
+   *  type.
+   * @param $field_name
+   *  Only used if $attach_product_reference_field is TRUE. Sets the name for
+   *  the field instance to attach. Creates the field if it doesn't exist.
+   * @param $cardinality_reference_field
+   *  Only used if $attach_product_reference_field is TRUE. Sets the
+   *  cardinality for the field instance to attach.
+   * @return
+   *  An object for the content type.
+   * @see attachProductReferenceField()
+   */
+  public function createDummyProductDisplayContentType($type = 'product_display', $attach_product_reference_field = TRUE, $field_name = 'field_product', $cardinality_reference_field = 1) {
+    // If the specified node type already exists, return it now.
+    if ($content_type = node_type_load($type)) {
+      return $content_type;
+    }
+
+    $content_type = array(
+      'type' => $type,
+      'name' => $type, // Don't use a human readable name here to keep it simple.
+      'base' => 'node_content',
+      'description' => 'Use <em>product displays</em> to display products for sale to your customers.',
+      'custom' => 1,
+      'modified' => 1,
+      'locked' => 0,
+    );
+    $content_type = node_type_set_defaults($content_type);
+    node_type_save($content_type);
+    node_add_body_field($content_type);
+    $this->pass("Created content type: $type");
+
+
+    if ($attach_product_reference_field) {
+      // Maybe $instance should be returned as well
+      $instance = $this->attachProductReferenceField($type, $field_name, $cardinality_reference_field);
+    }
+
+    return $content_type;
+  }
+
+  /**
+   * Create a dummy order in a given status.
+   *
+   * @param $uid
+   * 	 ID of the user that owns the order.
+   * @param $products
+   *  	Array of products that are going to be added to the order: keys are
+   *    product ids, values are the quantity of products to add.
+   * @param $status
+   * 	 Status of the order
+   *
+   * @return
+   *   A commerce order object in the given status.
+   */
+  public function createDummyOrder($uid = 1, $products = array(), $status = 'cart', $customer_profile_id = NULL) {
+    // If there aren't any products to add to the order, create one.
+    if (empty($products)) {
+      $product = $this->createDummyProduct('PROD-01', 'Product One', -1, 'USD', $uid);
+      $products[$product->product_id] = rand(1,10);
+    }
+
+    // Create a new shopping cart order by adding the products to it.
+    foreach($products as $product_id => $quantity) {
+      if ($product = commerce_product_load($product_id)) {
+        $line_item = commerce_product_line_item_new($product, $quantity);
+        $line_item = commerce_cart_product_add($uid, $line_item);
+      }
+    }
+
+    // Load the order for returning it.
+    $order = commerce_cart_order_load($uid);
+
+    if (!empty($customer_profile_id)) {
+      $order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id'] = $customer_profile_id;
+    }
+
+    // If the order should be in a different status, update it.
+    if ($status <> 'cart') {
+      $order = commerce_order_status_update($order, $status, TRUE);
+    }
+
+    commerce_order_save($order);
+
+    return $order;
+  }
+
+  /**
+   * Attach a product reference field to a given content type. Creates the field
+   * if the given name doesn't already exist. Automatically sets the display
+   * formatters to be the "add to cart form" for the teaser and full modes.
+   *
+   * @param $content_type
+   *  Name of the content type that should have a field instance attached.
+   * @param $field_name
+   *  Only used if $attach_product_reference_field is TRUE. Sets the name for
+   *  the field instance to attach. Creates the field if it doesn't exist.
+   * @return
+   *  An object containing the field instance that was created.
+   * @see createDummyProductDisplayContentType()
+   */
+  public function attachProductReferenceField($content_type = 'product_display', $field_name = 'field_product', $cardinality = 1) {
+    if (module_exists('commerce_product')) {
+      // Check if the field has already been created.
+      $field_info = field_info_field($field_name);
+      if (empty($field_info)) {
+        // Add a product reference field to the product display node type
+        $field = array(
+          'field_name' => $field_name,
+          'type' => 'commerce_product_reference',
+          'cardinality' => $cardinality,
+          'translatable' => FALSE,
+        );
+        field_create_field($field);
+        $this->pass("New field created: $field_name");
+      } else {
+        debug("NOTE: attachProductReferenceField attempting to create field <code>$field_name</code> that already exists. This is fine and this message is just for your information.");
+      }
+
+      // Check that this instance doesn't already exist
+      $instance = field_info_instance('node', $field_name, $content_type);
+      if (empty($insance)) {
+        // Add an instance of the field to the given content type
+        $instance = array(
+          'field_name' => $field_name,
+          'entity_type' => 'node',
+          'label' => 'Product',
+          'bundle' => $content_type,
+          'description' => 'Choose a product to display for sale.',
+          'required' => TRUE,
+
+          'widget' => array(
+            'type' => 'options_select',
+          ),
+
+          'display' => array(
+            'default' => array(
+              'label' => 'hidden',
+              'type' => 'commerce_cart_add_to_cart_form',
+            ),
+            'teaser' => array(
+              'label' => 'hidden',
+              'type' => 'commerce_cart_add_to_cart_form',
+            ),
+          ),
+        );
+        field_create_instance($instance);
+        $this->pass("Create field instance of field <code>$field_name</code> on content type <code>$content_type</code>");
+      } else {
+        $this->fail("Test Develoepr: You attempted to create a field that already exists. Field: $field_name -- Content Type: $content_type");
+      }
+      return $instance;
+    } else {
+      $this->fail('Cannot create product reference field because Product module is not enabled.');
+    }
+  }
+
+  /**
+   * Creates a product display node with an associated product.
+   *
+   * @param $product_ids
+   *  Array of product IDs to use for the product reference field.
+   * @param $title
+   *  Optional title for the product node. Will default to a random name.
+   * @param $product_display_content_type
+   *  Machine name for the product display content type to use for creating the
+   *  node. Defaults to 'product_display'.
+   * @param $product_ref_field_name
+   *  Machine name for the product reference field on this product display
+   *  content type. Defaults to 'field_product'.
+   * @return
+   *  The newly saved $node object.
+   */
+  public function createDummyProductNode($product_ids, $title = '', $product_display_content_type = 'product_display', $product_ref_field_name = 'field_product') {
+    if (module_exists('commerce_product')) {
+      if (empty($title)) {
+        $title = $this->randomString(10);
+      }
+      $node = (object) array('type' => $product_display_content_type);
+      node_object_prepare($node);
+      $node->uid = 1;
+      $node->title = $title;
+      foreach ($product_ids as $product_id) {
+        $node->{$product_ref_field_name}[LANGUAGE_NONE][]['product_id'] = $product_id;
+      }
+      node_save($node);
+      return $node;
+    } else {
+      $this->fail(t('Cannot use use createProductNode because the product module is not enabled.'));
+    }
+  }
+
+  	/**
+     * Create a full product node without worrying about the earlier steps in
+     * the process.
+     *
+     * @param $count
+     *  Number of product nodes to create. Each one will have a new product
+     *  entity associated with it. SKUs will be like PROD-n. Titles will be
+     *  like 'Product #n'. Price will be 10*n. Counting begins at 1.
+     * @return
+     *  An array of product node objects.
+     */
+  public function createDummyProductNodeBatch($count) {
+    $this->createDummyProductDisplayContentType();
+    $product_nodes = array();
+    for ($i=1; $i<$count; $i++) {
+      $sku = "PROD-$i";
+      $title = "Product #$i";
+      $price = $i*10;
+      $product = $this->createDummyProduct($sku, $title, $price);
+      $product_node = $this->createDummyProductNode(array($product->product_id), $title);
+      $product_nodes[$i] = $product_node;
+    }
+    return $product_nodes;
+  }
+
+	/**
+ 	 * Create a dummy tax type.
+ 	 *
+ 	 * @param $tax_type
+ 	 * 	Array with the specific elements for the tax type, all the elements not
+ 	 * 	specified and required will be generated randomly.
+ 	 * 	@see hook_commerce_tax_type_info
+ 	 *
+ 	 * @return
+ 	 *  The tax type array just created or FALSE if it wasn't created.
+ 	 */
+  public function createDummyTaxType($tax_type = array()) {
+    $defaults = array(
+      'name' => 'example_tax_type',
+    	'title' => t('Example tax type'),
+    	'display_title' => t('Example tax type'),
+      'description' => t('Example tax type for testing purposes'),
+    );
+    // Generate a tax type array based on defaults and specific elements.
+    $tax_type = array_merge(commerce_tax_ui_tax_type_new(), $defaults, $tax_type);
+    if (commerce_tax_ui_tax_type_save($tax_type)) {
+      return commerce_tax_type_load($tax_type['name']);
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+	/**
+ 	 * Create a dummy tax rate.
+ 	 *
+ 	 * @param $tax_type
+ 	 * 	Array with the specific elements for the tax rate, all elements not
+ 	 * 	specified and required will be generated randomly.
+ 	 *	@see hook_commerce_tax_rate_info
+ 	 *
+ 	 * @return
+ 	 *  The tax type array just created or FALSE if it wasn't created.
+ 	 */
+  public function createDummyTaxRate($tax_rate = array()) {
+    $defaults = array(
+    	'name' => 'example_tax_rate',
+    	'title' => t('Example tax rate'),
+    	'display_title' => t('Example tax rate'),
+      'rate' => rand(1,100)/1000,
+      'type' => 'example_tax_type',
+    );
+    // Generate a tax type array based on defaults and specific elements.
+    $tax_rate = array_merge(commerce_tax_ui_tax_rate_new(), $defaults, $tax_rate);
+    if (commerce_tax_ui_tax_rate_save($tax_rate)) {
+      return commerce_tax_rate_load($tax_rate['name']);
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  /**
+   * Create a customer profile.
+   *
+   *  @param $type
+   *  	Type of the customer profile, default billing.
+   *  @param $uid
+   *  	User id that will own the profile, by default anonymous.
+   *  @param $address_info
+   *  	Address information, associative array keyed by the field name.
+   *  	i.e. 'commerce_customer_address'.
+   *
+   *  @return
+   *  	The customer profile created or FALSE if the profile wasn't created.
+   */
+  public function createDummyCustomerProfile($type = 'billing', $uid = 0, $address_info = array()) {
+    variable_set('site_default_country', 'US');
+    // Initialize the profile.
+    $profile = commerce_customer_profile_new($type, $uid);
+
+    // Set the defaults.
+    $defaults['name_line'] = $this->randomName();
+    $defaults = array_merge($defaults, addressfield_default_values(), $this->generateAddressInformation());
+
+    // Get all the fields for the given type, by default billing.
+    $instances = field_info_instances('commerce_customer_profile', $type);
+    foreach ($instances as $name => $instance) {
+      $info_field = field_info_field($name);
+      if ($info_field['type'] == 'addressfield') {
+        $values = !empty($address_info[$name]) ? array_merge($defaults, $address_info[$name]) : $defaults;
+        $values['data'] = serialize($values['data']);
+        $profile->{$name}[LANGUAGE_NONE][] = $values;
+      }
+    }
+    commerce_customer_profile_save($profile);
+    return $profile;
+  }
+
+  /**
+   * Enable extra currencies in the store.
+   *
+   * @param $currencies
+   *  Array of currency codes to be enabled
+   */
+  public function enableCurrencies($currencies) {
+    $currencies = array_merge(drupal_map_assoc($currencies), variable_get('commerce_enabled_currencies', array('USD' => 'USD')));
+    variable_set('commerce_enabled_currencies', $currencies);
+  }
+
+  // =============== Helper functions ===============
+
+  /**
+   * Checks if a group of modules is enabled.
+   *
+   * @param $module_name
+   *  Array of module names to check (without the .module extension)
+   * @return
+   *  TRUE if all of the modules are enabled.
+   */
+  protected function modulesUp($module_names) {
+    if (is_string($module_names)) {
+      $module_names = array($module_names);
+    }
+    foreach ($module_names as $module_name) {
+      if (!module_exists($module_name)) {
+        return FALSE;
+      }
+    }
+    return TRUE;
+  }
+
+  /**
+   * Generate random valid information for Address information.
+   */
+  protected function generateAddressInformation() {
+    $address_info['name_line'] = $this->randomName();
+    $address_info['thoroughfare'] = $this->randomName();
+    $address_info['locality'] = $this->randomName();
+    $address_info['postal_code'] = rand(00000, 99999);
+    $address_info['administrative_area'] = 'KY';
+
+    return $address_info;
+  }
+
+  /**
+   * Generate a random valid email
+   *
+   * @param string $type
+   *  Domain type
+   *
+   * @return string
+   *  Valid email
+   */
+  protected function generateEmail($type = 'com'){
+    return $this->randomName() . '@' . $this->randomName() . '.' . $type;
+  }
+
+  /**
+   * Assertions for Drupal Commerce.
+   */
+
+  /**
+   * Asserts that a product has been added to the cart.
+   *
+   * @param $order
+   *  A full loaded commerce_order object.
+   * @param $product
+   *  A full loaded commerce_product object.
+   * @param $user
+   * 	User that owns the cart.
+   *
+   * @return TRUE if the product is in the cart, FALSE otherwise.
+   */
+  public function assertProductAddedToCart($order, $product, $user = NULL) {
+    // The order should be in cart status.
+    $this->assertTrue(commerce_cart_order_is_cart($order), t('The order checked is in cart status'));
+
+    $product_is_in_cart = FALSE;
+    // Loop through the line items looking for products.
+    foreach (entity_metadata_wrapper('commerce_order', $order)->commerce_line_items as $delta => $line_item_wrapper) {
+      // If this line item matches the product checked...
+      if ($line_item_wrapper->type->value() == 'product' &&
+          $line_item_wrapper->commerce_product->product_id->value() == $product->product_id) {
+            $product_is_in_cart = TRUE;
+      }
+    }
+
+    $this->assertTrue($product_is_in_cart, t('Product !product_title is present in the cart', array('!product_title' => $product->title)));
+
+    // Access to the cart page to check if the product is there.
+    if (empty($user)) {
+      $user = $this->createStoreCustomer();
+    }
+    $this->drupalLogin($user);
+    $this->drupalGet($this->getCommerceUrl('cart'));
+    $this->assertText($product->title, t('Product !product_title is present in the cart view', array('!product_title' => $product->title)));
+  }
+
+  /**
+   *	Asserts that a product has been created.
+   *
+   * @param $product
+   *  A full loaded commerce_product object.
+   * @param $user
+   * 	User that access the admin pages. Optional, if not informed, the check
+   * 	is done with the store admin.
+   */
+  public function assertProductCreated($product, $user = NULL) {
+    // Check if the product is not empty and reload it from database.
+    $this->assertFalse(empty($product), t('Product object is not empty'));
+    $product = commerce_product_load($product->product_id);
+    $this->assertFalse(empty($product), t('Product object is correctly loaded from database'));
+
+    // Access to the admin page for the product and check if the product is there.
+    if (empty($user)) {
+      $user = $this->createStoreAdmin();
+    }
+    $this->drupalLogin($user);
+    $this->drupalGet('admin/commerce/products/' . $product->product_id);
+    $this->assertFieldById('edit-sku', $product->sku, t('When editing the product in the administration interface, the SKU is informed correctly'));
+    $this->assertFieldById('edit-title', $product->title, t('When editing the product in the administration interface, the Title is informed correctly'));
+  }
+
+}
+
+
+/**
+ * Sandbox for trying new things with tests. Eases development so only one test
+ * has to run at a time. Move everything to CommerceBaseTesterTestCase after it
+ * is functioning here.
+ */
+class CommerceSandboxTestCase extends CommerceBaseTestCase {
+  protected $site_admin;
+
+  /**
+   * getInfo() returns properties that are displayed in the test selection form.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Commerce sandbox'),
+      'description' => t('Sandbox for trying new things with tests. Eases development so only one test has to run at a time.'),
+      'group' => t('Drupal Commerce'),
+    );
+  }
+
+  /**
+   * setUp() performs any pre-requisite tasks that need to happen.
+   */
+  public function setUp() {
+    $modules = parent::setUpHelper('all');
+    parent::setUp($modules);
+
+    $this->site_admin = $this->createSiteAdmin();
+    cache_clear_all(); // Just in case
+  }
+
+  /**
+   * Sandbox for test development
+   */
+  public function testTestTest() {
+
+  }
+
+  /**
+   * Test the createDummyCustomerProfile function.
+   */
+  public function testTestCreateDummyCustomerProfile() {
+    $store_admin = $this->createStoreAdmin();
+    // Create a new customer profile for the store admin.
+    $profile = $this->createDummyCustomerProfile('billing', $store_admin->uid);
+
+    // Load profile reseting cache.
+    $profile = reset(commerce_customer_profile_load_multiple(array($profile->profile_id), array(), TRUE));
+
+    $this->assertFalse(empty($profile), t('Profile can be loaded from database'));
+
+    // Login with store admin user and navigate to the profile listing page.
+    $this->drupalLogin($store_admin);
+    $this->drupalGet('admin/commerce/customer-profiles');
+
+    $this->assertText($profile->commerce_customer_address[LANGUAGE_NONE][0]['name_line'], t('\'Name line\' field for the profile created is present in the customer profile listing'));
+    $type = commerce_customer_profile_type_load($profile->type);
+    $this->assertText($type['name'], t('The type of the profile is informed in the profile listing page'));
+  }
+
+}
+
+/**
+ * Test class to test the CommerceBaseTestCase functions. All testTestFoo
+ * functions have "testTest" in the name to indicate that they are verifying
+ * that a test is working. Somewhat "meta" to do this, but it eases test
+ * development.
+ */
+class CommerceBaseTesterTestCase extends CommerceBaseTestCase {
+  protected $site_admin;
+
+  /**
+   * getInfo() returns properties that are displayed in the test selection form.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Commerce base'),
+      'description' => t('Test the functionality of the base test class. Essentially, these are meta-tests.'),
+      'group' => t('Drupal Commerce'),
+    );
+  }
+
+  /**
+   * setUp() performs any pre-requisite tasks that need to happen.
+   */
+  public function setUp() {
+    $modules = parent::setUpHelper('all');
+    parent::setUp($modules);
+
+    $this->site_admin = $this->createSiteAdmin();
+    cache_clear_all(); // Just in case
+  }
+
+  /**
+   * Ensure that all of the Commerce modules (and their dependencies) are
+   * enabled in the test environment.
+   */
+  public function testModulesEnabled() {
+    $this->drupalLogin($this->site_admin);
+    $this->drupalGet('admin/modules');
+
+    $module_ids = array(
+      'edit-modules-commerce-commerce-cart-enable',
+      'edit-modules-commerce-commerce-checkout-enable',
+      'edit-modules-commerce-commerce-enable',
+      'edit-modules-commerce-commerce-customer-enable',
+      'edit-modules-commerce-commerce-line-item-enable',
+      'edit-modules-commerce-commerce-order-enable',
+      'edit-modules-commerce-commerce-payment-enable',
+      'edit-modules-commerce-commerce-price-enable',
+      'edit-modules-commerce-commerce-product-enable',
+      'edit-modules-commerce-commerce-product-reference-enable',
+      'edit-modules-commerce-commerce-product-pricing-enable',
+      'edit-modules-commerce-commerce-tax-enable',
+
+      'edit-modules-commerce-commerce-payment-example-enable',
+
+      'edit-modules-commerce-commerce-ui-enable',
+      'edit-modules-commerce-commerce-customer-ui-enable',
+      'edit-modules-commerce-commerce-line-item-ui-enable',
+      'edit-modules-commerce-commerce-order-ui-enable',
+      'edit-modules-commerce-commerce-payment-ui-enable',
+      'edit-modules-commerce-commerce-product-pricing-ui-enable',
+      'edit-modules-commerce-commerce-product-ui-enable',
+      'edit-modules-commerce-commerce-tax-ui-enable',
+
+      'edit-modules-fields-addressfield-enable',
+      'edit-modules-other-entity-enable',
+
+      'edit-modules-rules-rules-enable',
+
+      'edit-modules-chaos-tool-suite-ctools-enable',
+
+      'edit-modules-views-views-enable',
+    );
+    foreach ($module_ids as $module_id) {
+      $this->assertFieldChecked($module_id);
+    }
+  }
+
+  /**
+   * Test that Store Admin role actually gets set up.
+   */
+  public function testTestStoreAdmin() {
+    $store_admin = $this->createStoreAdmin();
+    $this->drupalLogin($this->site_admin);
+    $this->drupalGet('admin/people/permissions');
+    // This will break if it isn't the second role created
+    $this->assertFieldChecked('edit-5-configure-store');
+  }
+
+  /**
+   * Make a test product type.
+   */
+  public function testTestCreateDummyProductType() {
+    $product_type = $this->createDummyProductType();
+    $store_admin = $this->createStoreAdmin();
+    $this->drupalLogin($store_admin);
+    $this->drupalGet('admin/commerce/products/types');
+    $this->assertText($product_type['name'], t('Dummy product type name found on admin/commerce/products/types'));
+  }
+
+  /**
+   * Make a test product.
+   */
+  public function testTestCreateDummyProduct() {
+    // Create the product.
+    $product = $this->createDummyProduct();
+
+    // Login with the store admin.
+    $store_admin = $this->createStoreAdmin();
+    $this->drupalLogin($store_admin);
+
+    // Assert that the product is in the product listing.
+    $this->drupalGet('admin/commerce/products');
+    $this->assertText($product->title, t('Dummy product found on admin page at admin/commerce/products'));
+    $this->drupalGet('admin/commerce/products/list');
+    $this->assertText($product->title, t('Dummy product found on admin page at admin/commerce/products/list'));
+  }
+
+  /**
+   * Test the creation of a product_display content type and add a product
+   * reference field to the content type.
+   */
+  public function testTestCreateDummyProductDisplayAndRefField() {
+    $this->createDummyProductDisplayContentType();
+
+    $this->drupalLogin($this->site_admin);
+    $this->drupalGet('node/add/product-display');
+    $this->assertText('product_display', t('product_display content type successfully created and accessible.'));
+    //$this->assertOptionSelected('edit-field-product-und', '_none', 'Dummy Product Display reference field shows up on node add page');
+    $this->assertFieldById('edit-field-product-und', '', t('Product reference field found on Dummy Product Display.'));
+
+    // Try to add the same field a second time and see if any errors pop up.
+    //  If uncommented, this will product an error. Basically, this should be
+    //  turned into an assertion that checks for the presence of the field.
+    //$this->attachProductReferenceField('product_display', 'field_product');
+  }
+
+  /**
+   * Test the createDummyProductNode function.
+   */
+  public function testTestCreateDummyProductNode() {
+    // Create a dummy product display content type
+    $this->createDummyProductDisplayContentType();
+
+    // Create dummy product display nodes (and their corresponding product
+    //  entities)
+    $sku = 'PROD-01';
+    $product_name = 'Product One';
+    $product = $this->createDummyProduct($sku, $product_name);
+    $product_node = $this->createDummyProductNode(array($product->product_id), $product_name);
+
+    $this->drupalLogin($this->site_admin);
+    $this->drupalGet("node/{$product_node->nid}");
+    $this->assertText($product_name, t('Product !product_name created successfully', array('!product_name' => $product_name)));
+  }
+
+  /**
+   * Test the createDummyProductNodeBatch function.
+   */
+  public function testTestCreateDummyProductNodeBatch() {
+    $product_nodes = $this->createDummyProductNodeBatch(3);
+    $this->drupalLogin($this->site_admin);
+    $product_node = $product_nodes[1];
+    $this->drupalGet("node/{$product_node->nid}");
+    $this->assertText($product_node->title, t('Product !product_title node page exists', array('product_title' => $product_node->title)));
+  }
+
+  /**
+   * Test the createDummyOrder function.
+   */
+  public function testTestCreateDummyOrder() {
+    $normal_user = $this->drupalCreateUser(array('access checkout'));
+    $this->drupalLogin($normal_user);
+
+    $sku = 'PROD-01';
+    $product_name = 'Product One';
+    $product = $this->createDummyProduct($sku, $product_name);
+    $order = $this->createDummyOrder($normal_user->uid, array($product->product_id => 1));
+
+    // Check if the order is in cart status.
+    $this->assertTrue(commerce_cart_order_is_cart($order), t('Order is in a shopping cart status'));
+    $this->drupalGet('checkout');
+
+    $this->assertTitle(t('Checkout'). ' | Drupal', t('Checkout accessible for the order'));
+    $this->assertText($product_name, t('Product is added to the order'));
+  }
+
+  /**
+   * Test the currency value rounding.
+   */
+  public function testCurrencyRounding() {
+
+    // array( rounding_step => array( 'value' => 'expected result'));
+    $rounding_numbers = array(
+      '0.05' => array(
+        '1' => '1',
+        '5' => '5',
+        '777' => '777',
+        '1.22' => '1.20',
+        '12.2249' => '12.20',
+        '1200.225' => '1200.25',
+        '0.2749' => '0.25',
+        '490.275' => '490.30',
+      ),
+      '0.02' => array(
+        '1' => '1',
+        '777' => '777',
+        '1.205' => '1.20',
+        '12.20999' => '12.20',
+        '1200.21' => '1200.22',
+        '0.26999' => '0.26',
+        '490.2712' => '490.28',
+      ),
+      '0.5' => array(
+        '1' => '1',
+        '5' => '5',
+        '1.22' => '1',
+        '12.2499' => '12',
+        '1200.25' => '1200.5',
+        '0.749' => '0.5',
+        '490.75' => '491.0',
+      ),
+      '0.2' => array(
+        '1' => '1',
+        '777' => '777',
+        '1.05' => '1',
+        '12.0999' => '12',
+        '1200.1' => '1200.2',
+        '0.6999' => '0.6',
+        '490.712' => '490.8',
+      ),
+    );
+
+    foreach ($rounding_numbers as $rounding_step => $numbers) {
+      foreach ($numbers as $input => $output) {
+        $currency = array('decimals' => 2, 'rounding_step' => $rounding_step);
+
+        $result = commerce_currency_round($input, $currency);
+        $this->assertEqual($result, $output, t('Rounding !input to !output with the rounding step: !rounding_step', array('!input' => $input, '!output' => $output, '!rounding_step' => $rounding_step)));
+      }
+    }
+  }
+
+  /**
+   * Test enabling extra currencies.
+   */
+  public function testEnableCurrencies() {
+    // Enable Euros.
+    $this->enableCurrencies(array('EUR'));
+    // Check if Euros is enabled.
+    $this->assertTrue(in_array('EUR', variable_get('commerce_enabled_currencies', array('USD' => 'USD'))), t('Euros are enabled'));
+  }
+
+  /**
+   * Test creating a new tax type.
+   */
+  public function testTestCreateDummyTaxType() {
+    // Create a dummy tax type.
+    $tax_type = $this->createDummyTaxType();
+
+    // Create and login with a store admin user.
+    $store_admin = $this->createStoreAdmin();
+    $this->drupalLogin($store_admin);
+
+    // Access to the tax type listing page and assert that the dummy tax type
+    // is present.
+    $this->drupalGet('admin/commerce/config/taxes/types');
+    $this->assertText($tax_type['display_title'], t('Dummy tax type found on admin page at admin/commerce/config/taxes/types'));
+  }
+
+  /**
+   * Test creating a new tax rate.
+   */
+  public function testTestCreateDummyTaxRate() {
+    // Create a dummy tax type.
+    $tax_type = $this->createDummyTaxType();
+
+    // Create a dummy tax rate.
+    $tax_rate = $this->createDummyTaxRate();
+
+    // Create and login with a store admin user.
+    $store_admin = $this->createStoreAdmin();
+    $this->drupalLogin($store_admin);
+
+    // Access to the tax type listing page and assert that the dummy tax type
+    // is present.
+    $this->drupalGet('admin/commerce/config/taxes/rates');
+    $this->assertText($tax_rate['display_title'], t('Dummy tax rate found on admin page at admin/commerce/config/taxes/rates'));
+  }
+}

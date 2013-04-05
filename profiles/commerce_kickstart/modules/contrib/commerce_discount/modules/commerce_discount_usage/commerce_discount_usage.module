@@ -1,0 +1,221 @@
+<?php
+
+/**
+ * @file
+ * Provides usage fields for the Commerce discount entity.
+ */
+
+/**
+ * Implements hook_modules_enabled().
+ *
+ * Add commerce discount usage fields.
+ *
+ * @see commerce_discount_usage_install()
+ */
+function commerce_discount_usage_modules_enabled($modules) {
+  foreach (commerce_discount_types() as $type => $value) {
+    if (!field_info_instance('commerce_discount', 'commerce_discount_uses', $type)) {
+      $instance = array(
+        'field_name' => 'commerce_discount_uses',
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'label' => t('Times used'),
+        'default_value' => array(0 => array('value' => 0)),
+      );
+      field_create_instance($instance);
+    }
+    if (!field_info_instance('commerce_discount', 'commerce_discount_max_uses', $type)) {
+      $instance = array(
+        'field_name' => 'commerce_discount_max_uses',
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'label' => t('Max uses'),
+        'default_value' => array(0 => array('value' => 50)),
+      );
+      field_create_instance($instance);
+    }
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_discount_usage_views_api($module, $api) {
+  if ($module == 'views') {
+    return array(
+      'version' => 2,
+      'path' => drupal_get_path('module', 'commerce_discount_usage') . '/includes/views',
+    );
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_discount_usage_form_commerce_discount_form_alter(&$form, $form_state) {
+  // Enable the #fieldset key used to move the fields into the main container.
+  $form['commerce_discount_fields']['#pre_render'][] = 'inline_entity_form_pre_render_add_fieldset_markup';
+
+  $form['commerce_discount_fields']['commerce_discount_usage'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('commerce-discount-box', 'commerce-discount-usage', 'clearfix'),
+    )
+  );
+  $form['commerce_discount_fields']['commerce_discount_usage']['limit_uses'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      'unlimited' => t('Unlimited'),
+      'limited' => t('Limited'),
+    ),
+    '#title' => t('Quantity'),
+    '#weight' => -10,
+  );
+
+  $max_uses = &$form['commerce_discount_fields']['commerce_discount_max_uses'];
+  $uses = &$form['commerce_discount_fields']['commerce_discount_uses'];
+  // Move the two fields into the correct container, and remove their
+  // box styling.
+  $max_uses['#weight'] = -9;
+  $max_uses['#fieldset'] = 'commerce_discount_usage';
+  $uses['#fieldset'] = 'commerce_discount_usage';
+  $key = array_search('commerce-discount-box', $max_uses['#attributes']['class']);
+  unset($max_uses['#attributes']['class'][$key]);
+  $key2 = array_search('commerce-discount-box', $uses['#attributes']['class']);
+  unset($uses['#attributes']['class'][$key2]);
+
+  // Remove the title from max uses.
+  $max_uses[LANGUAGE_NONE][0]['value']['#title'] = NULL;
+  // Show the two fields only when "Limited" is selected.
+  $max_uses[LANGUAGE_NONE][0]['value'] += array(
+    '#states' => array(
+        'invisible' => array(
+          ':input[name="commerce_discount_fields[commerce_discount_usage][limit_uses]"]' => array('value' => 'unlimited'),
+        ),
+      ),
+  );
+  $uses[LANGUAGE_NONE][0]['value'] += array(
+    '#states' => array(
+        'invisible' => array(
+          ':input[name="commerce_discount_fields[commerce_discount_usage][limit_uses]"]' => array('value' => 'unlimited'),
+        ),
+      ),
+  );
+
+  // Show uses as readonly on edit, hide completely on add.
+  $uses[LANGUAGE_NONE][0]['value']['#type'] = 'item';
+  $uses[LANGUAGE_NONE][0]['value']['#markup'] = $uses[LANGUAGE_NONE][0]['value']['#default_value'];
+  if ($form_state['op'] == 'add') {
+    $uses['#access'] = FALSE;
+  }
+  $uses[LANGUAGE_NONE][0]['value']['#title'] = t('Times used:');
+}
+
+/**
+ * Implements hook_commerce_order_insert().
+ *
+ * Increment the usage count of applied discounts.
+ */
+function commerce_discount_usage_commerce_order_insert($commerce_order) {
+  $wrapper = entity_metadata_wrapper('commerce_order', $commerce_order);
+
+  // Update usage count on all discounts the got attached to this order.
+  if (isset($wrapper->commerce_discounts)) {
+    foreach ($wrapper->commerce_discounts->value() as $commerce_discount) {
+      commerce_discount_usage_update_usage_count($commerce_discount, 1);
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_order_delete().
+ *
+ * Decrement the usage count of applied discounts.
+ */
+function commerce_discount_usage_commerce_order_delete($commerce_order) {
+  $wrapper = entity_metadata_wrapper('commerce_order', $commerce_order);
+
+  // Update usage count on all discounts the got attached to this order.
+  if (isset($wrapper->commerce_discounts)) {
+    foreach ($wrapper->commerce_discounts->value() as $commerce_discount) {
+      commerce_discount_usage_update_usage_count($commerce_discount, -1);
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_cart_product_add().
+ *
+ * Increment the usage count of applied discounts.
+ */
+function commerce_discount_usage_commerce_cart_product_add($order, $product, $quantity, $line_item) {
+  $wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $price_data = $wrapper->commerce_unit_price->data->value();
+  // Search for discount components in the line item price.
+  foreach ($price_data['components'] as $component) {
+    if ($component['name'] != 'discount') {
+      continue;
+    }
+
+    // When discount found, increment its usage count by one.
+    $discount_name = $component['price']['data']['discount_name'];
+    commerce_discount_usage_update_usage_count($discount_name, 1);
+  }
+}
+
+/**
+ * Implements hook_commerce_cart_product_remove().
+ *
+ * Decrement the usage count of applied discounts.
+ */
+function commerce_discount_usage_commerce_cart_product_remove($order, $product, $quantity, $line_item) {
+  $wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+  $price_data = $wrapper->commerce_unit_price->data->value();
+  // Search for discount components in the line item price.
+  foreach ($price_data['components'] as $component) {
+    if ($component['name'] != 'discount') {
+      continue;
+    }
+
+    // When discount found, decrement its usage count by one.
+    $discount_name = $component['price']['data']['discount_name'];
+    commerce_discount_usage_update_usage_count($discount_name, -1);
+  }
+}
+
+/**
+ * Update the usage counter of a discount.
+ *
+ * @param $commerce_discount
+ *   A discount object.
+ * @param $delta
+ *   Integer to be added to the counter.
+ */
+function commerce_discount_usage_update_usage_count($commerce_discount, $delta) {
+  $wrapper = entity_metadata_wrapper('commerce_discount', $commerce_discount);
+
+  // Select the correct default value, depending on whether the usage is
+  // incremented or decremented.
+  $default = $delta > 0 ? $delta : 0;
+
+  $uses = $wrapper->commerce_discount_uses->value() ? $wrapper->commerce_discount_uses->value() + $delta : $default;
+  $wrapper->commerce_discount_uses->set($uses);
+  $wrapper->save();
+}
+
+/**
+ * Implements hook_commerce_discount_rule_build().
+ */
+function commerce_discount_usage_commerce_discount_rule_build($rule, $discount) {
+  $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+
+  if (!$wrapper->commerce_discount_max_uses->value()) {
+    // No need to add a condition.
+    return;
+  }
+
+  // Add condition to check usage didn't reach max uses.
+  $rule->condition('commerce_discount_usage_condition', array(
+    'commerce_discount' => $discount->name,
+  ));
+}

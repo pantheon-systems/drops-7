@@ -1,0 +1,33 @@
+name = Commerce Discount
+description = Provides common functionality and a UI for managing discounts.
+core = 7.x
+package = Commerce
+
+dependencies[] = number
+dependencies[] = commerce_price
+dependencies[] = commerce_line_item
+dependencies[] = entity
+dependencies[] = entityreference
+dependencies[] = inline_entity_form
+dependencies[] = views
+
+files[] = commerce_discount.info.inc
+files[] = includes/commerce_discount.admin.inc
+files[] = includes/commerce_discount.class.inc
+files[] = includes/commerce_discount_offer.class.inc
+files[] = includes/commerce_discount_offer.inline_entity_form.inc
+files[] = includes/commerce_discount.controller.inc
+
+; Views files
+files[] = includes/views/commerce_discount.views.inc
+files[] = includes/views/handlers/commerce_discount_handler_field_operations_dropbutton.inc
+
+; Simple tests
+files[] = commerce_discount.test
+
+; Information added by drupal.org packaging script on 2012-12-19
+version = "7.x-1.0-alpha1+11-dev"
+core = "7.x"
+project = "commerce_discount"
+datestamp = "1355877894"
+

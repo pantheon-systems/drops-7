@@ -1,0 +1,17 @@
+<?php
+
+define('OAUTH_COMMON_VERSION_2_DRAFT', 3);
+
+
+function oauth2_common_menu() {
+  $items = array();
+  $items['oauth/authorized2'] = array(
+    'title' => 'Authorization finished',
+    'page callback' => 'oauth2_common_page_authorized',
+    'page arguments' => array(2),
+    'access arguments' => array('access content'),
+    'file' => 'oauth2_common.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}

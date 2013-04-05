@@ -1,0 +1,107 @@
+<?php
+
+/**
+ * @file
+ * Message integration with Organic groups example.
+ */
+
+include_once('message_og_example.features.inc');
+
+/**
+ * Implements hook_og_membership_insert().
+ */
+function message_og_example_og_membership_insert($og_membership) {
+  if ($og_membership->state != OG_STATE_ACTIVE || $og_membership->entity_type != 'user') {
+    // Membership isn't active.
+    return;
+  }
+
+  if ($og_membership->group_type != 'node') {
+    // For simplicity we operate only on membership with node groups.
+    return;
+  }
+
+  if (!$og_membership->etid) {
+    // Don't capture membership of anonymous user, that might be caused
+    // when using Devel generate.
+    return;
+  }
+
+  $node = node_load($og_membership->gid);
+    // Create a "User joined" message.
+  $message = message_create('example_og_user_membership', array('uid' => $og_membership->etid));
+
+  $wrapper = entity_metadata_wrapper('message', $message);
+  $wrapper->field_node_groups_ref[] = $node;
+  $wrapper->field_published->set($node->status);
+  $wrapper->save();
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function message_og_example_node_insert($node) {
+  list(,, $bundle) = entity_extract_ids('node', $node);
+  if (!og_is_group_content_type('node', $bundle)) {
+    return;
+  }
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+  if (!$wrapper->{'og_membership__' . OG_STATE_ACTIVE}->value()) {
+    // Node isn't associate, or doesn't have an active association with
+    // any group.
+    return;
+  }
+
+  $nids = array();
+  foreach ($wrapper->{'og_membership__' . OG_STATE_ACTIVE}->value() as $og_membership) {
+    if ($og_membership->group_type != 'node') {
+      // For simplicity we operate only on membership with node groups.
+      continue;
+    }
+    $nids[] = $og_membership->gid;
+  }
+
+  if (!$nids) {
+    return;
+  }
+
+  // Create a "Post in group" message. We don't use a token replacement
+  // here as it needs to get the data from multiple values of the field.
+  // Furthermore, this replacement probably doesn't make sense outside of
+  // this message-type context, so we don't want to add another token,
+  // that will not be used.
+  $arguments['!groups'] = array(
+    'callback' => 'message_og_example_group_list',
+    'pass message' => TRUE,
+  );
+  $message = message_create('example_og_post_in_group', array('arguments' => $arguments, 'uid' => $node->uid));
+
+  $wrapper = entity_metadata_wrapper('message', $message);
+  $wrapper->field_node_ref->set($node);
+  $wrapper->field_node_groups_ref->set($nids);
+  $wrapper->field_published->set($node->status);
+  $wrapper->save();
+}
+
+/**
+ * Message callback; Show a comma separated list of groups.
+ *
+ * @param $message
+ *   The message entity.
+ */
+function message_og_example_group_list(Message $message) {
+  $wrapper = entity_metadata_wrapper('message', $message);
+  $items = array();
+  foreach ($wrapper->field_node_groups_ref->value() as $node) {
+    if (!node_access('view', $node)) {
+      // User doesn't have access to view the group.
+      continue;
+    }
+    $url = entity_uri('node', $node);
+    $label = entity_label('node', $node);
+    $items[] = l($label, $url['path'], $url['options']);
+  }
+  return implode(', ', $items);
+}
+

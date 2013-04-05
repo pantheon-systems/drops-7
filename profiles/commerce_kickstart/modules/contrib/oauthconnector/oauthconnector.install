@@ -1,0 +1,166 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the OAuth Connector module.
+ */
+
+
+/**
+ * Implements hook_schema().
+ */
+function oauthconnector_schema() {
+  $schema = array();
+
+  $schema['oauthconnector_provider']    = _oauthconnector_provider_schema_1();
+  $schema['oauthconnector_connections'] = _oauthconnector_connections_schema_1();
+  $schema['oauthconnector_fields'] = _oauthconnector_fields_schema_1();
+
+  return $schema;
+}
+
+function _oauthconnector_provider_schema_1() {
+  return array(
+    'description' => t('Stores information about OAuth providers.'),
+    'export' => array(
+      'identifier' => 'provider',
+      'export callback' => 'oauthconnector_provider_export',
+      'list callback' => 'oauthconnector_provider_list',
+      'default hook' => 'default_oauthconnector_provider',
+      'api' => array(
+        'owner' => 'oauthconnector',
+        'api' => 'oauthconnector',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'pid' => array(
+        'description' => t('The primary identifier for a provider.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'no export' => TRUE,
+      ),
+      'name' => array(
+        'description' => t('The machine-readable name of the provider.'),
+        'type' => 'varchar',
+        'length' => 100,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => t('The human-readable title of the provider.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'url' => array(
+        'description' => t('A URL to the OAuth provider, typically to the front page.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'csid' => array(
+        'description' => 'The {oauth_common_consumer}.csid of the OAuth consumer to use.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'no export' => TRUE,
+      ),
+      'consumer_advanced' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'Serialized advanced settings for an oauth consumer, like signature method.',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+        'object default' => array(
+          'oauth2' => 0,
+          'signature method' => 'HMAC-SHA1',
+          'authentication realm' => '',
+          'authorization scope' => '',
+          'request token endpoint' => '/oauth/request_token',
+          'authorization endpoint' => '/oauth/authorize',
+          'access token endpoint' => '/oauth/access_token',
+        ),
+      ),
+      'mapping' => array(
+        'type' => 'text',
+        'size' => 'big',
+        'description' => 'Serialized mapping between the response of the API and Connector properties.',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+        'object default' => array(),
+      ),
+    ),
+    'primary key' => array('pid'),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+  );
+}
+
+function _oauthconnector_connections_schema_1() {
+  return array(
+    'description' => t('Stores information about connections between OAuth tokens and Connector connections.'),
+    'fields' => array(
+      'tid' => array(
+        'description' => 'The {oauth_common_token}.tid this connection is related to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'cid' => array(
+        'description' => t('The external id of a connection.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('tid'),
+    'indexes' => array(
+      'tid_cid' => array('tid', 'cid'),
+    ),
+  );
+}
+function _oauthconnector_fields_schema_1() {
+  return array(
+    'description' => t('Stores information about fields definition.'),
+    'fields' => array(
+      'name' => array(
+        'description' => 'The system name.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => t('The title of the field.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'description' => array(
+        'description' => t('The description for the field.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'required' => array(
+        'description' => 'Is this field required',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('name'),
+  );
+}
+
+/**
+ * Add table for fields.
+ */
+function oauthconnector_update_7000(&$sandbox) {
+  db_create_table('oauthconnector_fields', _oauthconnector_fields_schema_1());
+}

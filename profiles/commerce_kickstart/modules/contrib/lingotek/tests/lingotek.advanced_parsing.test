@@ -1,0 +1,29 @@
+<?php
+
+/**
+ * @file
+ * Declares LingotekAdvancedParsingFunctionalTest.
+ */
+ 
+/**
+ * A class containing tests related to advanced content parsing.
+ */
+class LingotekAdvancedParsingFunctionalTest extends LingotekFunctionalTest {
+  /**
+   * Meta information about these tests for the test system.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Advanced Content Parsing',
+      'description' => 'Tests for advanced content parsing using FPRM configuration data.',
+      'group' => 'Lingotek',
+    );
+  }
+  
+  /**
+   * Tests that the system state after install is set to "advanced" by default.
+   */
+  public function testAdvancedAfterInstall() {
+    $this->assertTrue(variable_get('lingotek_advanced_parsing', FALSE), 'Advanced content parsing is enabled when the module is installed.');
+  }
+}
