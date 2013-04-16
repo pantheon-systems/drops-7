@@ -122,21 +122,6 @@ function image_toolkit_invoke($method, stdClass $image, array $params = array())
  *   - "file_size": File size in bytes.
  */
 function image_get_info($filepath, $toolkit = FALSE) {
-  // Cache image_info if possible. This provides a significant speedup on style
-  // rendering and generation, as well as with IMCE and other image-heavy
-  // contributed modules.
-  $cid = "image_get_info:$toolkit:$filepath";
-  if (strpos($filepath, 'public://') === 0 && function_exists('pantheon_cache_get') && $cache = pantheon_cache_get($cid)) {
-    $parsed = parse_url($filepath);
-    $statpath = $parsed['host'];
-    if (isset($parsed['path'])) {
-      $statpath .= $parsed['path'];
-    }
-    $stat = pantheon_stat($statpath);
-    if ($stat['size']	== $cache['file_size']) {
-      return $cache;
-    }
-  }
   $details = FALSE;
   if (!is_file($filepath) && !is_uploaded_file($filepath)) {
     return $details;
@@ -154,9 +139,7 @@ function image_get_info($filepath, $toolkit = FALSE) {
       $details['file_size'] = filesize($filepath);
     }
   }
-  if (function_exists('pantheon_cache_get')) {
-    pantheon_cache_set($cid, $details);
-  }
+
   return $details;
 }
 
@@ -250,11 +233,11 @@ function image_dimensions_scale(array &$dimensions, $width = NULL, $height = NUL
  * @param $image
  *   An image object returned by image_load().
  * @param $width
- *   The target width, in pixels. This value is omitted then the scaling will
- *   based only on the height value.
+ *   The target width, in pixels. If this value is NULL then the scaling will
+ *   be based only on the height value.
  * @param $height
- *   The target height, in pixels. This value is omitted then the scaling will
- *   based only on the width value.
+ *   The target height, in pixels. If this value is NULL then the scaling will
+ *   be based only on the width value.
  * @param $upscale
  *   Boolean indicating that files smaller than the dimensions will be scaled
  *   up. This generally results in a low quality image.

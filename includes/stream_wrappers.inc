@@ -692,21 +692,14 @@ abstract class DrupalLocalStreamWrapper implements DrupalStreamWrapperInterface 
     }
 
     $this->uri = $uri;
-
-    if (strpos($uri, 'public://') === 0 && function_exists('pantheon_stat')) {
-      $path = $this->getTarget($uri);
-      $stat = pantheon_stat($path);
+    $path = $this->getLocalPath();
+    // Suppress warnings if requested or if the file or directory does not
+    // exist. This is consistent with PHP's plain filesystem stream wrapper.
+    if ($flags & STREAM_URL_STAT_QUIET || !file_exists($path)) {
+      $stat = @stat($path);
     }
     else {
-      $path = $this->getLocalPath();
-      // Suppress warnings if requested or if the file or directory does not
-      // exist. This is consistent with PHP's plain filesystem stream wrapper.
-      if ($flags & STREAM_URL_STAT_QUIET || !file_exists($path)) {
-        $stat = @stat($path);
-      }
-      else {
-        $stat = stat($path);
-      }
+      $stat = stat($path);
     }
 
     if ($store_to_cache && $stat !== FALSE) {
