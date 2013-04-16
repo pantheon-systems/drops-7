@@ -98,13 +98,13 @@
             return false;
           params['value']=checked?'1':'0';//seems that the ajax backend gets lost with boolean
 
-          //CRM.api.call(this,entity,'create',params,{ create is still too buggy & perf
-          CRM.api.call(this,entity,'setvalue',params,{
+          CRM.api(entity,'setvalue',params,{
+            context: this,
             error: function (data) {
-              editableSettings.error.call(this,entity,fieldName,checked,data);
+              editableSettings.error.call(this,entity,params.field,checked,data);
             },
             success: function (data) {
-              editableSettings.success.call(this,entity,fieldName,checked,data);
+              editableSettings.success.call(this,entity,params.field,checked,data);
             }
           });
         });
@@ -141,7 +141,7 @@
           return;
         }
 
-        if (this.nodeName = 'A') {
+        if (this.nodeName == 'A') {
           if (this.className.indexOf('crmf-') == -1) { // it isn't a jeditable field
             var formSettings= $.extend({}, editableSettings.form ,
               {source: $i.attr('href')
@@ -242,12 +242,17 @@
           }
 
           if ($i.data('action')) {
-            params[params['field']]=value;//format for create at least
+            var fieldName = params['field'];
+            delete params['field'];
+            delete params['value'];
+
+            params[fieldName]=value;//format for create at least
             action=$i.data('action');
           } else {
             action="setvalue";
           }
-          CRM.api.call(this,entity,action,params,{
+          CRM.api(entity, action, params, {
+              context: this,
               error: function (data) {
                 editableSettings.error.call(this,entity,fieldName,value,data);
               },

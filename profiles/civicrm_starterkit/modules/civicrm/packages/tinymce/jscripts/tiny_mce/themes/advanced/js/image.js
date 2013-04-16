@@ -104,12 +104,10 @@ var ImageDialog = {
 	},
 
 	updateStyle : function() {
-		var dom = tinyMCEPopup.dom, st = {}, v, f = document.forms[0];
+		var dom = tinyMCEPopup.dom, st, v, f = document.forms[0];
 
 		if (tinyMCEPopup.editor.settings.inline_styles) {
-			tinymce.each(tinyMCEPopup.dom.parseStyle(this.styleVal), function(value, key) {
-				st[key] = value;
-			});
+			st = tinyMCEPopup.dom.parseStyle(this.styleVal);
 
 			// Handle align
 			v = getSelectValue(f, 'align');

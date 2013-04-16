@@ -1,12 +1,12 @@
 /*!
- * jQuery UI Draggable 1.9.0
+ * jQuery UI Draggable 1.9.0-rc.1
  * http://jqueryui.com
  *
  * Copyright 2012 jQuery Foundation and other contributors
  * Released under the MIT license.
  * http://jquery.org/license
  *
- * http://api.jqueryui.com/draggable/
+ * http://docs.jquery.com/UI/Draggables
  *
  * Depends:
  *	jquery.ui.core.js
@@ -16,7 +16,7 @@
 (function( $, undefined ) {
 
 $.widget("ui.draggable", $.ui.mouse, {
-	version: "1.9.0",
+	version: "1.9.0-rc.1",
 	widgetEventPrefix: "drag",
 	options: {
 		addClasses: true,
@@ -229,10 +229,11 @@ $.widget("ui.draggable", $.ui.mouse, {
 	},
 	
 	_mouseUp: function(event) {
-		//Remove frame helpers
-		$("div.ui-draggable-iframeFix").each(function() { 
-			this.parentNode.removeChild(this); 
-		});
+		if (this.options.iframeFix === true) {
+			$("div.ui-draggable-iframeFix").each(function() { 
+				this.parentNode.removeChild(this); 
+			}); //Remove frame helpers
+		}
 		
 		//If the ddmanager is used for droppables, inform the manager that dragging has stopped (see #5003)
 		if( $.ui.ddmanager ) $.ui.ddmanager.dragStop(this, event);

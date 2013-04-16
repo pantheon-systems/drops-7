@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
@@ -32,7 +32,7 @@ class Stylesheet {
    * The location of the default built-in CSS file.
    */
   const DEFAULT_STYLESHEET = __DEFAULT_STYLESHEET; 
-
+  
   /**
    * User agent stylesheet origin
    * @var int
@@ -101,7 +101,7 @@ class Stylesheet {
    * @var array
    */
   private $_loaded_files;
-
+  
   private $_current_origin = self::ORIG_UA;
 
   /**
@@ -259,7 +259,7 @@ class Stylesheet {
    */
   function load_css_file($file, $origin = self::ORIG_AUTHOR) {
     global $_dompdf_warnings;
-
+    
     if ( $origin ) {
       $this->_current_origin = $origin;
     }
@@ -309,7 +309,7 @@ class Stylesheet {
 
   /**
    * @link http://www.w3.org/TR/CSS21/cascade.html#specificity
-   *
+   * 
    * 
    *
    * @param string $selector
@@ -345,15 +345,15 @@ class Stylesheet {
     //see _css_selector_to_xpath
 
     if ( !in_array($selector[0], array(" ", ">", ".", "#", "+", ":", "["))/* && $selector !== "*"*/) {
-    	$d++;
+      $d++;
     }
 
     if (DEBUGCSS) {
-      /*DEBUGCSS*/	print "<pre>\n";
-      /*DEBUGCSS*/	printf("_specificity(): 0x%08x \"%s\"\n", ($a << 24) | ($b << 16) | ($c << 8) | ($d), $selector);
-      /*DEBUGCSS*/	print "</pre>";
+      /*DEBUGCSS*/  print "<pre>\n";
+      /*DEBUGCSS*/  printf("_specificity(): 0x%08x \"%s\"\n", ($a << 24) | ($b << 16) | ($c << 8) | ($d), $selector);
+      /*DEBUGCSS*/  print "</pre>";
     }
-
+    
     return self::$_stylesheet_origins[$origin] + ($a << 24) | ($b << 16) | ($c << 8) | ($d);
   }
 
@@ -713,7 +713,7 @@ class Stylesheet {
 
     return array("query" => $query, "pseudo_elements" => $pseudo_elements);
   }
-
+  
   // https://github.com/tenderlove/nokogiri/blob/master/lib/nokogiri/css/xpath_visitor.rb
   protected function _selector_an_plus_b($expr, $last = false) {
     $expr = preg_replace("/\s/", "", $expr);
@@ -1038,7 +1038,7 @@ class Stylesheet {
 
           // If the page has a name, skip the style.
           $page_selector = trim($match[3]);
-
+          
           switch($page_selector) {
             case "": 
               $key = "base"; 
@@ -1199,11 +1199,11 @@ class Stylesheet {
       
       if ( !$source["local"] && in_array($source["format"], array("", "woff", "opentype", "truetype")) ) {
         $valid_sources[] = $source;
+      }
+      
+      $sources[] = $source;
     }
     
-      $sources[] = $source;
-  }
-
     // No valid sources
     if ( empty($valid_sources) ) {
       return;
@@ -1252,24 +1252,24 @@ class Stylesheet {
       //Therefore set a _important_props["prop_name"]=true to indicate the modifier
 
       /* Instead of short code, prefer the typical case with fast code
-	  $important = preg_match("/(.*?)!\s*important/",$prop,$match);
+    $important = preg_match("/(.*?)!\s*important/",$prop,$match);
       if ( $important ) {
-      	$prop = $match[1];
+        $prop = $match[1];
       }
       $prop = trim($prop);
       */
       if (DEBUGCSS) print '(';
       
- 	  $important = false;
+      $important = false;
       $prop = trim($prop);
       
-      if (substr($prop,-9) === 'important') {
-      	$prop_tmp = rtrim(substr($prop,0,-9));
+      if ( substr($prop, -9) === 'important' ) {
+        $prop_tmp = rtrim(substr($prop, 0, -9));
         
-      	if (substr($prop_tmp,-1) === '!') {
-      		$prop = rtrim(substr($prop_tmp,0,-1));
-      		$important = true;
-      	}
+        if ( substr($prop_tmp, -1) === '!' ) {
+          $prop = rtrim(substr($prop_tmp, 0, -1));
+          $important = true;
+        }
       }
 
       if ( $prop === "" ) {

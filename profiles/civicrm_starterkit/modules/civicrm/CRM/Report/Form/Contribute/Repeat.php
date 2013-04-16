@@ -137,11 +137,11 @@ class CRM_Report_Form_Contribute_Repeat extends CRM_Report_Form {
       ),
       'civicrm_financial_type' =>
       array(
-        'dao'       => 'CRM_Financial_DAO_FinancialType',
-        'fields'    => array('financial_type' => array('title' => ts('Financial Type'))),
+        'dao' => 'CRM_Financial_DAO_FinancialType',
+        'fields' => array('financial_type' => array('title' => ts('Financial Type'))),
         'grouping'  => 'contri-fields',
         'group_bys' =>
-        array( 'financial_type'   =>
+        array('financial_type' =>
         array(
           'name' => 'id',
           'title' => ts('Financial Type'),
@@ -212,15 +212,15 @@ contribution_civireport2.total_amount_sum as contribution2_total_amount_sum',
             'operatorType' => CRM_Report_Form::OP_INT,
             'name' => 'total_amount',
           ),
-          'financial_type_id'  =>
+          'financial_type_id' =>
           array(
-            'title'   => ts('Financial Type'),
+            'title' => ts('Financial Type'),
             'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-            'options'      => CRM_Contribute_PseudoConstant::financialType( ) ,
+            'options' => CRM_Contribute_PseudoConstant::financialType(),
           ),
           'contribution_status_id' =>
           array(
-            'title'   => ts('Financial Status'),
+            'title' => ts('Contribution Status'),
             'operatorType' => CRM_Report_Form::OP_MULTISELECT,
             'options' => CRM_Contribute_PseudoConstant::contributionStatus(),
             'default' => array('1'),
@@ -263,7 +263,7 @@ contribution_civireport2.total_amount_sum as contribution2_total_amount_sum',
     $select = array();
     $append = NULL;
     // since contact fields not related to financial type
-    if ( array_key_exists('financial_type', $this->_params['group_bys']) ||
+    if (array_key_exists('financial_type', $this->_params['group_bys']) ||
       array_key_exists('contribution_source', $this->_params['group_bys'])
     ) {
       unset($this->_columns['civicrm_contact']['fields']['id']);
@@ -337,8 +337,8 @@ LEFT JOIN civicrm_phone   {$this->_aliases['civicrm_phone']}
        ON {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_phone']}.contact_id AND {$this->_aliases['civicrm_phone']}.is_primary = 1";
 
     }
-    else if ( $fromTable == 'civicrm_financial_type' ) {
-      $contriCol  = "financial_type_id";
+    else if ($fromTable == 'civicrm_financial_type') {
+      $contriCol = "financial_type_id";
     }
     elseif ($fromTable == 'civicrm_contribution') {
       $contriCol = $fromCol;
@@ -467,7 +467,7 @@ LEFT JOIN civicrm_temp_civireport_repeat2 {$this->_aliases['civicrm_contribution
       'country_id' => array('country_id'),
       'state_province_id' => array('country_id', 'state_province_id'),
       'contribution_source' => array('contribution_source'),
-      'financial_type'      => array( 'financial_type' ),
+      'financial_type' => array('financial_type'),
     );
 
     $idMapping = array(
@@ -475,7 +475,7 @@ LEFT JOIN civicrm_temp_civireport_repeat2 {$this->_aliases['civicrm_contribution
       'country_id' => ts('Country'),
       'state_province_id' => ts('State/Province'),
       'contribution_source' => ts('Contribution Source'),
-      'financial_type'      => ts('Financial Type'),
+      'financial_type' => ts('Financial Type'),
       'sort_name' => ts('Contact Name'),
       'email' => ts('Email'),
       'phone' => ts('Phone'),
@@ -613,7 +613,6 @@ LEFT JOIN civicrm_temp_civireport_repeat1
 			 ON civicrm_temp_civireport_repeat3.contact_id = civicrm_temp_civireport_repeat1.contact_id
 LEFT JOIN civicrm_temp_civireport_repeat2
 			 ON civicrm_temp_civireport_repeat3.contact_id = civicrm_temp_civireport_repeat2.contact_id";
-
     $dao = CRM_Core_DAO::executeQuery($sql);
 
     //store contributions in array 'contact_sums' for comparison
@@ -686,44 +685,61 @@ SELECT COUNT({$this->_aliases['civicrm_contribution']}1.total_amount_count )    
        ROUND(AVG({$this->_aliases['civicrm_contribution']}1.total_amount_sum), 2)  as avg,
   	   COUNT({$this->_aliases['civicrm_contribution']}2.total_amount_count )       as count2,
        SUM({$this->_aliases['civicrm_contribution']}2.total_amount_sum )           as amount2,
-       ROUND(AVG({$this->_aliases['civicrm_contribution']}2.total_amount_sum), 2)  as avg2";
-    $sql = "{$select} {$this->_from} {$this->_where}";
+       ROUND(AVG({$this->_aliases['civicrm_contribution']}2.total_amount_sum), 2)  as avg2,
+       currency";
+    $sql = "{$select} {$this->_from} {$this->_where}
+GROUP BY    currency 
+";
     $dao = CRM_Core_DAO::executeQuery($sql);
 
-    if ($dao->fetch()) {
-      $statistics['counts']['range_one_title'] = array('title' => 'Initial Date Range:');
-      $statistics['counts']['amount'] = array(
-        'value' => $dao->amount,
-        'title' => 'Total Amount',
-        'type' => CRM_Utils_Type::T_MONEY,
-      );
-      $statistics['counts']['count '] = array(
-        'value' => $dao->count,
-        'title' => 'Total Donations',
-      );
-      $statistics['counts']['avg   '] = array(
-        'value' => $dao->avg,
-        'title' => 'Average',
-        'type' => CRM_Utils_Type::T_MONEY,
-      );
-      $statistics['counts']['range_two_title'] = array(
-        'title' => 'Second Date Range:',
-      );
-      $statistics['counts']['amount2'] = array(
-        'value' => $dao->amount2,
-        'title' => 'Total Amount',
-        'type' => CRM_Utils_Type::T_MONEY,
-      );
-      $statistics['counts']['count2 '] = array(
-        'value' => $dao->count2,
-        'title' => 'Total Donations',
-      );
-      $statistics['counts']['avg2   '] = array(
-        'value' => $dao->avg2,
-        'title' => 'Average',
-        'type' => CRM_Utils_Type::T_MONEY,
-      );
+    $amount = $average = $amount = $average = array();
+    $count = $count2 = 0;
+    while ($dao->fetch()) {
+      if ($dao->amount) {
+        $amount[] = CRM_Utils_Money::format($dao->amount, $dao->currency)."(".$dao->count.")";
+        $average[] =   CRM_Utils_Money::format($dao->avg, $dao->currency);
+      }
+
+      $count += $dao->count;
+      if ($dao->amount2) {
+        $amount2[] = CRM_Utils_Money::format($dao->amount2, $dao->currency)."(".$dao->count.")";
+        $average2[] =   CRM_Utils_Money::format($dao->avg2, $dao->currency);
+      }
+      $count2 += $dao->count2;
     }
+
+    $statistics['counts']['range_one_title'] = array('title' => 'Initial Date Range:');
+    $statistics['counts']['amount'] = array(
+      'value' => implode(',  ', $amount),
+      'title' => 'Total Amount',
+      'type' => CRM_Utils_Type::T_STRING,
+    );
+    $statistics['counts']['count'] = array(
+      'value' => $count,
+      'title' => 'Total Donations',
+    );
+    $statistics['counts']['avg'] = array(
+      'value' => implode(',  ', $average),
+      'title' => 'Average',
+      'type' => CRM_Utils_Type::T_STRING,
+    );
+    $statistics['counts']['range_two_title'] = array(
+      'title' => 'Second Date Range:',
+    );
+    $statistics['counts']['amount2'] = array(
+      'value' => implode(',  ', $amount2),
+      'title' => 'Total Amount',
+      'type' => CRM_Utils_Type::T_STRING,
+    );
+    $statistics['counts']['count2'] = array(
+      'value' => $count2,
+      'title' => 'Total Donations',
+    );
+    $statistics['counts']['avg2'] = array(
+      'value' => implode(',  ', $average2),
+      'title' => 'Average',
+      'type' => CRM_Utils_Type::T_STRING,
+    );
 
     return $statistics;
   }
@@ -764,7 +780,8 @@ GROUP BY contribution1.{$contriCol}";
     $subContributionQuery2 = "
 SELECT {$subSelect2} contribution2.{$contriCol},
        sum( contribution2.total_amount ) AS total_amount_sum,
-       count( * ) AS total_amount_count
+       count( * ) AS total_amount_count,
+       currency
 FROM   civicrm_contribution contribution2
 {$subWhere}
 GROUP BY contribution2.{$contriCol}";
@@ -785,7 +802,8 @@ CREATE TEMPORARY TABLE civicrm_temp_civireport_repeat2 (
 {$create}
 {$contriCol} int unsigned,
 total_amount_sum int,
-total_amount_count int
+total_amount_count int,
+currency varchar(3)
 ) ENGINE=HEAP DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci";
     CRM_Core_DAO::executeQuery($sql);
     $sql = "INSERT INTO civicrm_temp_civireport_repeat2 {$subContributionQuery2}";

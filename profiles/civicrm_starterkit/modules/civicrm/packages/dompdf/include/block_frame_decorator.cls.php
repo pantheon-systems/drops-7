@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: block_frame_decorator.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
  */
@@ -190,7 +190,7 @@ class Block_Frame_Decorator extends Frame_Decorator {
 
     $current_line = $this->_line_boxes[$this->_cl];
     $current_line->add_frame($frame);
-    
+
     if ( $frame->is_text_node() )
       $current_line->wc += count(preg_split("/\s+/", trim($frame->get_text())));
 
@@ -262,4 +262,4 @@ class Block_Frame_Decorator extends Frame_Decorator {
   }
 
   //........................................................................
-  }
+}

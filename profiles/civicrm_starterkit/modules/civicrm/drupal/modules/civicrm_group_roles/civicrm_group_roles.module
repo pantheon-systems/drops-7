@@ -240,11 +240,37 @@ function civicrm_group_roles_civicrm_post($op, $objectName, $objectId, &$objectR
 
       switch ($op) {
         case 'create':
-        case 'edit':
+          // Contact added to group; add to corresponding role
           $rolesProcessed[$rid] = $rid;
-          //Contact added or re-joined to group; add to corresponding role
           civicrm_group_roles_add_role($uid, $rid, $role_name);
           break;
+
+          // "edit" denotes both rejoining or being deleted from a group,
+          // need to check which to perform appropriate action
+          case 'edit':
+            $rolesProcessed[$rid] = $rid;
+            // Ideally would use GroupContact API with group_id as a parameter, currently broken (amend once bug fixed):
+            // http://issues.civicrm.org/jira/browse/CRM-10331?page=com.atlassian.jira.plugin.system.issuetabpanels:all-tabpanel
+            $contact_groups = civicrm_api('GroupContact', 'get', array(version => '3', 'contact_id' => $contact_id));
+            $in_group = FALSE;
+            foreach ($contact_groups['values'] as $group_row){
+              if ($group_row['group_id'] == $group_id){
+                $in_group = TRUE;
+                break;
+              }
+            }
+
+            if ($in_group){
+              // Contact rejoined the group; add to corresponding role
+              civicrm_group_roles_add_role($uid, $rid, $role_name);
+            } else {
+              // Contact no longer belongs to group, remove corresponding role,
+              // but only if the contact is in no other groups that grant this role
+              if (!civicrm_role_granted_by_other_group($contact_id, $rid, $group_id)) {
+                civicrm_group_roles_del_role($uid, $rid, $role_name);
+              }
+            }
+            break;
 
         case 'delete':
           $rolesProcessed[$rid] = $rid;

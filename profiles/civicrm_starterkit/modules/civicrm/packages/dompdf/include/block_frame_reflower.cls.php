@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: block_frame_reflower.cls.php 471 2012-02-06 21:59:10Z fabien.menager $
@@ -209,7 +209,7 @@ class Block_Frame_Reflower extends Frame_Reflower {
     $first_line = reset($lines);
     $last_line  = end($lines);
     $height = $last_line->y + $last_line->h - $first_line->y;
-
+    
     return $height;
   }
 
@@ -507,9 +507,9 @@ class Block_Frame_Reflower extends Frame_Reflower {
   function vertical_align() {
     
     $canvas = null;
-
-    foreach ( $this->_frame->get_line_boxes() as $line ) {
     
+    foreach ( $this->_frame->get_line_boxes() as $line ) {
+
       $height = $line->h;
     
       foreach ( $line->get_frames() as $frame ) {
@@ -534,43 +534,43 @@ class Block_Frame_Reflower extends Frame_Reflower {
         $y_offset = 0;
         
         switch ($align) {
-        case "baseline":
+          case "baseline":
             $y_offset = $height*0.8 - $baseline; // The 0.8 ratio is arbitrary until we find it's meaning
-          break;
-
-        case "middle":
+            break;
+    
+          case "middle":
             $y_offset = ($height*0.8 - $baseline) / 2;
-          break;
-
-        case "sub":
+            break;
+    
+          case "sub":
             $y_offset = 0.3 * $height;
-          break;
-
-        case "super":
+            break;
+    
+          case "super":
             $y_offset = -0.2 * $height;
-          break;
-
-        case "text-top":
-        case "top": // Not strictly accurate, but good enough for now
-          break;
-
-        case "text-bottom":
-        case "bottom":
+            break;
+    
+          case "text-top":
+          case "top": // Not strictly accurate, but good enough for now
+            break;
+    
+          case "text-bottom":
+          case "bottom":
             $y_offset = $height*0.8 - $baseline;
-          break;
+            break;
         }
-
+         
         if ( $y_offset ) {
           $frame->move(0, $y_offset);
         }
       }
     }
   }
-
+  
   function process_clear(Frame $child){
     if ( !DOMPDF_ENABLE_CSS_FLOAT ) {
       return;
-      }
+    }
     
     $child_style = $child->get_style();
     $root = $this->_frame->get_root();
@@ -586,13 +586,13 @@ class Block_Frame_Reflower extends Frame_Reflower {
           $line_box->y = $lowest_y + $child->get_margin_height();
           $line_box->left = 0;
           $line_box->right = 0;
-    }
+        }
         
         $child->move(0, $lowest_y - $child->get_position("y"));
-  }
+      }
     }
   }
-
+  
   function process_float(Frame $child, $cb_x, $cb_w){
     if ( !DOMPDF_ENABLE_CSS_FLOAT ) {
       return;
@@ -705,7 +705,7 @@ class Block_Frame_Reflower extends Frame_Reflower {
 
     // Set the y position of the first line in this block
     $this->_frame->set_current_line($cb_y);
-    
+        
     $this->_frame->get_current_line_box()->get_float_offsets();
     
     // Set the containing blocks and reflow each child
@@ -714,20 +714,20 @@ class Block_Frame_Reflower extends Frame_Reflower {
       // Bail out if the page is full
       if ( $page->is_full() )
         break;
-
-        $child->set_containing_block($cb_x, $cb_y, $w, $cb_h);
-          
+      
+      $child->set_containing_block($cb_x, $cb_y, $w, $cb_h);
+      
       $this->process_clear($child);
-        
+      
       $child->reflow($this->_frame);
       
       // Don't add the child to the line if a page break has occurred
       if ( $page->check_page_break($child) )
         break;
-        
+      
       $this->process_float($child, $cb_x, $w);
-        }
-        
+    }
+
     // Determine our height
     list($height, $margin_top, $margin_bottom, $top, $bottom) = $this->_calculate_restricted_height();
     $style->height = $height;
@@ -735,7 +735,7 @@ class Block_Frame_Reflower extends Frame_Reflower {
     $style->margin_bottom = $margin_bottom;
     $style->top = $top;
     $style->bottom = $bottom;
-
+    
     $needs_reposition = ($style->position === "absolute" && ($style->right !== "auto" || $style->bottom !== "auto"));
     
     // Absolute positioning measurement
@@ -770,7 +770,7 @@ class Block_Frame_Reflower extends Frame_Reflower {
       // May be inline-block
       if ( $style->display === "block" ) {
         $block->add_line();
+      }
     }
   }
-}
 }

@@ -709,7 +709,8 @@ function _civicrm_contribute_data(&$data, $enabled) {
     ),
     'relationship' => array(
       'base' => 'civicrm_contact',
-      'field' => 'id',
+      'left_field' => 'id',
+      'field' => 'contact_id',
       'handler' => 'views_handler_relationship',
       'label' => t('CiviCRM Recurring payment Contact'),
     ),
@@ -945,20 +946,24 @@ function _civicrm_contribute_data(&$data, $enabled) {
     ),
   );
   //recurring contributions Status
-  $data['civicrm_contribution_recur']['contiribution_status'] = array(
+  $data['civicrm_contribution_recur']['contribution_status'] = array(
     'title' => t('Contribution Status'),
     'real field' => 'contribution_status_id',
     'help' => t('The Contribution\'s Status'),
     'field' => array(
-      'handler' => 'civicrm_handler_field_contribution_status',
+      'handler' => 'civicrm_handler_field_pseudo_constant',
       'click sortable' => TRUE,
+      'pseudo class' => 'CRM_Contribute_PseudoConstant',
+      'pseudo method' => 'contributionStatus',
     ),
     'argument' => array(
       'handler' => 'views_handler_argument',
     ),
     'filter' => array(
-      'handler' => 'civicrm_handler_filter_contribution_status',
+      'handler' => 'civicrm_handler_filter_pseudo_constant',
       'allow empty' => TRUE,
+      'pseudo class' => 'CRM_Contribute_PseudoConstant',
+      'pseudo method' => 'contributionStatus',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',

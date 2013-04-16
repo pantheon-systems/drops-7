@@ -127,7 +127,7 @@ function civicrm_api3_case_create($params) {
   return civicrm_api3_create_success($values, $params, 'case', 'create', $caseBAO);
 }
 
-/*
+/**
  * Adjust Metadata for Get Action
  *
  * @param array $params array or parameters determined by getfields
@@ -137,7 +137,7 @@ function _civicrm_api3_case_get_spec(&$params) {
   $params['contact_id']['title'] = 'Case Client';
 }
 
-/*
+/**
  * Adjust Metadata for Create Action
  *
  * @param array $params array or parameters determined by getfields
@@ -149,7 +149,7 @@ function _civicrm_api3_case_create_spec(&$params) {
   $params['status_id']['api.default'] = 1;
 }
 
-/*
+/**
  * Adjust Metadata for Update action
  *
  * @param array $params array or parameters determined by getfields
@@ -158,7 +158,7 @@ function _civicrm_api3_case_update_spec(&$params) {
   $params['id']['api.required'] = 1;
 }
 
-/*
+/**
  * Adjust Metadata for Delete action
  *
  * @param array $params array or parameters determined by getfields
@@ -166,7 +166,6 @@ function _civicrm_api3_case_update_spec(&$params) {
 function _civicrm_api3_case_delete_spec(&$params) {
   $params['id']['api.required'] = 1;
 }
-
 
 /**
  * Get details of a particular case, or search for cases, depending on params
@@ -188,6 +187,10 @@ function _civicrm_api3_case_delete_spec(&$params) {
  * @todo Erik Hommel 16 dec 2010 check if all DB fields are returned
  */
 function civicrm_api3_case_get($params) {
+  civicrm_api3_verify_mandatory($params, NULL, array(
+    array('case_id', 'contact_id', 'activity_id', 'contact_id')
+  ));
+
   $options = _civicrm_api3_get_options_from_params($params);
 
   // Get by id
@@ -259,8 +262,6 @@ SELECT DISTINCT case_id
     }
     return civicrm_api3_create_success($cases, $params, 'case', 'get');
   }
-
-  return civicrm_api3_create_error('Missing required parameter. Must provide case_id, contact_id, activity_id, or contact_id.');
 }
 
 /**

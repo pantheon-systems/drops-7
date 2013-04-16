@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: table_frame_decorator.cls.php 462 2012-01-29 22:44:23Z fabien.menager $
  */
@@ -250,7 +250,7 @@ class Table_Frame_Decorator extends Frame_Decorator {
           continue;
         }
 
-        if ( $display === "table-cell") {
+        if ( $display === "table-cell" ) {
           // Create an anonymous table row
           $tr = $this->get_node()->ownerDocument->createElement("tr");
 

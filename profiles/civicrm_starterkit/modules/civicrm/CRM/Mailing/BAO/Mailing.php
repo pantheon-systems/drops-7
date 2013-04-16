@@ -519,7 +519,7 @@ ORDER BY   i.contact_id, i.{$tempColumn}
   private function _getMailingGroupIds($type = 'Include') {
     $mailingGroup = new CRM_Mailing_DAO_Group();
     $group = CRM_Contact_DAO_Group::getTableName();
-    if (!isset($this->id)) {
+    if (!isset($thi->sid)) {
       // we're just testing tokens, so return any group
       $query = "SELECT   id AS entity_id
                       FROM     $group
@@ -769,6 +769,11 @@ ORDER BY   i.contact_id, i.{$tempColumn}
 
       if ($this->body_html) {
         $this->_getTokens('html');
+        if (!$this->body_text) {
+          // Since the text template was created from html, use the html tokens.
+          // @see CRM_Mailing_BAO_Mailing::getTemplates()
+          $this->tokens['text'] = $this->tokens['html'];
+        }
       }
 
       if ($this->body_text) {
@@ -1081,12 +1086,14 @@ ORDER BY   civicrm_email.is_bulkmail DESC
       $this->_domain = CRM_Core_BAO_Domain::getDomain();
     }
 
-    list($verp, $urls, $headers) = $this->getVerpAndUrlsAndHeaders($job_id,
+    list($verp, $urls, $headers) = $this->getVerpAndUrlsAndHeaders(
+      $job_id,
       $event_queue_id,
       $hash,
       $email,
       $isForward
     );
+
     //set from email who is forwarding it and not original one.
     if ($fromEmail) {
       unset($headers['From']);
@@ -1583,7 +1590,7 @@ ORDER BY   civicrm_email.is_bulkmail DESC
 
     /**
      * 'approval_status_id' set in
-     * CRM_Mailing_Form_Mailing_Schedule::postProcess() or via API.
+     * CRM_Mailing_Form_Schedule::postProcess() or via API.
      */
     if (isset($params['approval_status_id']) && $params['approval_status_id']) {
       $job = new CRM_Mailing_BAO_Job();
@@ -2682,7 +2689,7 @@ AND    e.id NOT IN ( SELECT email_id FROM civicrm_mailing_recipients mr WHERE ma
     $dao = CRM_Core_DAO::executeQuery($sql, $params);
   }
 
-  function getMailingsList($isSMS = FALSE) {
+  static function getMailingsList($isSMS = FALSE) {
     static $list = array();
     $where = " WHERE ";
     if (!$isSMS) {

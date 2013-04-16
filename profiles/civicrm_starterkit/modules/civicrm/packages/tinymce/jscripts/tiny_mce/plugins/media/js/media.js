@@ -427,30 +427,24 @@
 		},
 
 		getMediaTypeHTML : function(editor) {
-			function option(media_type, element) {
-				if (!editor.schema.getElementRule(element || media_type)) {
-					return '';
-				}
-
+			function option(media_type){
 				return '<option value="'+media_type+'">'+tinyMCEPopup.editor.translate("media_dlg."+media_type)+'</option>'
 			}
-
 			var html = "";
-
 			html += '<select id="media_type" name="media_type" onchange="Media.formToData(\'type\');">';
 			html += option("video");
 			html += option("audio");
-			html += option("flash", "object");
-			html += option("quicktime", "object");
-			html += option("shockwave", "object");
-			html += option("windowsmedia", "object");
-			html += option("realmedia", "object");
+			html += option("flash");
+			html += option("quicktime");
+			html += option("shockwave");
+			html += option("windowsmedia");
+			html += option("realmedia");
 			html += option("iframe");
 
 			if (editor.getParam('media_embedded_audio', false)) {
-				html += option('embeddedaudio', "object");
+				html += option('embeddedaudio');
 			}
-
+			
 			html += '</select>';
 			return html;
 		},

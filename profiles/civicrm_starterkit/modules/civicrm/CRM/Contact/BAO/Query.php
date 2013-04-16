@@ -1365,7 +1365,8 @@ class CRM_Contact_BAO_Query {
       (substr($values[0], 0, 7) == 'member_') ||
       (substr($values[0], 0, 6) == 'grant_') ||
       (substr($values[0], 0, 7) == 'pledge_') ||
-      (substr($values[0], 0, 5) == 'case_')
+      (substr($values[0], 0, 5) == 'case_') ||
+      (substr($values[0], 0, 10) == 'financial_') 
     ) {
       return;
     }
@@ -1590,10 +1591,15 @@ class CRM_Contact_BAO_Query {
         }
         // check for both id and contact_id
         if ($this->_params[$id][0] == 'id' || $this->_params[$id][0] == 'contact_id') {
-          if ($this->_params[$id][1] == 'IS NULL' ||
+          if (
+            $this->_params[$id][1] == 'IS NULL' ||
             $this->_params[$id][1] == 'IS NOT NULL'
           ) {
             $this->_where[0][] = "contact_a.id {$this->_params[$id][1]}";
+          }
+          elseif (is_array($this->_params[$id][2])) {
+            $idList = implode("','", $this->_params[$id][2]);
+            $this->_where[0][] = "contact_a.id IN ({$idList})";
           }
           else {
             $this->_where[0][] = "contact_a.id {$this->_params[$id][1]} {$this->_params[$id][2]}";
@@ -2705,7 +2711,7 @@ WHERE  id IN ( $groupIDs )
           LEFT JOIN civicrm_tag {$tActTable} ON ( {$etActTable}.tag_id = {$tActTable}.id  )";
 
       $this->_where[$grouping][] = "({$tTable}.name $op '". $value . "' OR {$tCaseTable}.name $op '". $value . "' OR {$tActTable}.name $op '". $value . "')";
-      $this->_qill[$grouping][] = ts('Tag '.$tagTypesText[2].' %1 ', array( 1 => $op)) . ' ' . $value;
+      $this->_qill[$grouping][] = ts('Tag %1 %2 ', array(1 => $tagTypesText[2], 2 => $op)) . ' ' . $value;
     } else {
       $etTable = "`civicrm_entity_tag-" . $value . "`";
       $tTable = "`civicrm_tag-" . $value . "`";
@@ -2780,7 +2786,7 @@ WHERE  id IN ( $groupIDs )
       else {
         $this->_where[$grouping][] = "({$etTable}.tag_id $op (". $value . ") OR {$etCaseTable}.tag_id $op (". $value . ") OR {$etActTable}.tag_id $op (". $value . "))";
       }
-      $this->_qill[$grouping][] = ts('Tag %1 '.$tagTypesText[2], array( 1 => $op)) . ' ' . $names;
+      $this->_qill[$grouping][] = ts('Tag %1 %2', array(1 => $op, 2 => $tagTypesText[2])) . ' ' . $names;
     } else {
       $this->_tables[$etTable] =
         $this->_whereTables[$etTable] =
@@ -3519,13 +3525,14 @@ WHERE  id IN ( $groupIDs )
 
   function modifiedDates($values) {
     $this->_useDistinct = TRUE;
+
+    // CRM-11281, default to added date if not set
+    $fieldTitle = ts('Added Date');
+
     foreach (array_keys($this->_params) as $id) {
       if ($this->_params[$id][0] == 'log_date') {
-        if ($this->_params[$id][2] == 1) {
-          $fieldTitle = 'Added Date';
-        }
-        elseif ($this->_params[$id][2] == 2) {
-          $fieldTitle = 'Modified Date';
+        if ($this->_params[$id][2] == 2) {
+          $fieldTitle = ts('Modified Date');
         }
       }
     }
@@ -4509,20 +4516,16 @@ SELECT COUNT( civicrm_contribution.total_amount ) as cancel_count,
 
       if ($name == $fieldName . '_low') {
         $firstOP = '>=';
-        $firstPhrase = 'greater than or equal to';
+        $firstPhrase = ts('greater than or equal to');
         $firstDate = CRM_Utils_Date::processDate($value);
 
         $secondValues = $this->getWhereValues("{$fieldName}_high", $grouping);
-        if (!empty($secondValues) &&
-          $secondValues[2]
-        ) {
+        if (!empty($secondValues) && $secondValues[2]) {
           $secondOP = '<=';
-          $secondPhrase = 'less than or equal to';
+          $secondPhrase = ts('less than or equal to');
           $secondValue = $secondValues[2];
 
-          if ($appendTimeStamp &&
-            strlen($secondValue) == 10
-          ) {
+          if ($appendTimeStamp && strlen($secondValue) == 10) {
             $secondValue .= ' 23:59:59';
           }
           $secondDate = CRM_Utils_Date::processDate($secondValue);
@@ -4530,21 +4533,17 @@ SELECT COUNT( civicrm_contribution.total_amount ) as cancel_count,
       }
       elseif ($name == $fieldName . '_high') {
         $firstOP = '<=';
-        $firstPhrase = 'less than or equal to';
+        $firstPhrase = ts('less than or equal to');
 
-        if ($appendTimeStamp &&
-          strlen($value) == 10
-        ) {
+        if ($appendTimeStamp && strlen($value) == 10) {
           $value .= ' 23:59:59';
         }
         $firstDate = CRM_Utils_Date::processDate($value);
 
         $secondValues = $this->getWhereValues("{$fieldName}_low", $grouping);
-        if (!empty($secondValues) &&
-          $secondValues[2]
-        ) {
+        if (!empty($secondValues) && $secondValues[2]) {
           $secondOP = '>=';
-          $secondPhrase = 'greater than or equal to';
+          $secondPhrase = ts('greater than or equal to');
           $secondValue = $secondValues[2];
           $secondDate = CRM_Utils_Date::processDate($secondValue);
         }
@@ -4600,7 +4599,7 @@ SELECT COUNT( civicrm_contribution.total_amount ) as cancel_count,
 
     if (
       $tableName == 'civicrm_log' &&
-      $fieldTitle == 'Added Date'
+      $fieldTitle == ts('Added Date')
     ) {
       //CRM-6903 --hack to check modified date of first record.
       //as added date means first modified date of object.
@@ -4628,23 +4627,23 @@ SELECT COUNT( civicrm_contribution.total_amount ) as cancel_count,
 
       if ($name == "{$fieldName}_low") {
         $firstOP = '>=';
-        $firstPhrase = 'greater than';
+        $firstPhrase = ts('greater than');
 
         $secondValues = $this->getWhereValues("{$fieldName}_high", $grouping);
         if (!empty($secondValues)) {
           $secondOP = '<=';
-          $secondPhrase = 'less than';
+          $secondPhrase = ts('less than');
           $secondValue = $secondValues[2];
         }
       }
       else {
         $firstOP = '<=';
-        $firstPhrase = 'less than';
+        $firstPhrase = ts('less than');
 
         $secondValues = $this->getWhereValues("{$fieldName}_low", $grouping);
         if (!empty($secondValues)) {
           $secondOP = '>=';
-          $secondPhrase = 'greater than';
+          $secondPhrase = ts('greater than');
           $secondValue = $secondValues[2];
         }
       }
@@ -4657,7 +4656,8 @@ SELECT COUNT( civicrm_contribution.total_amount ) as cancel_count,
         $displayValue = $options ? $options[$value] : $value;
         $secondDisplayValue = $options ? $options[$secondValue] : $secondValue;
 
-        $this->_qill[$grouping][] = "$fieldTitle - $firstPhrase \"$displayValue\" " . ts('AND') . " $secondPhrase \"$secondDisplayValue\"";
+        $this->_qill[$grouping][] =
+          "$fieldTitle - $firstPhrase \"$displayValue\" " . ts('AND') . " $secondPhrase \"$secondDisplayValue\"";
       }
       else {
         $this->_where[$grouping][] = "{$tableName}.{$dbFieldName} $firstOP {$value}";

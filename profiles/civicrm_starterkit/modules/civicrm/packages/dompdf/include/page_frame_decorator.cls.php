@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: page_frame_decorator.cls.php 457 2012-01-22 11:48:20Z fabien.menager $
  */
@@ -42,7 +42,7 @@ class Page_Frame_Decorator extends Frame_Decorator {
    * @var Renderer
    */
   protected $_renderer;
-
+  
   /**
    * This page's floating frames
    * 
@@ -149,7 +149,7 @@ class Page_Frame_Decorator extends Frame_Decorator {
    * @return bool true if a page break occured
    */
   function check_forced_page_break(Frame $frame) {
-    	
+      
     // Skip check if page is already split
     if ( $this->_page_full )
       return;
@@ -177,7 +177,7 @@ class Page_Frame_Decorator extends Frame_Decorator {
       // $frame->style to the frame's orignal style.
       $frame->get_style()->page_break_before = "auto";
       $this->_page_full = true;
-			
+      
       return true;
     }
 
@@ -188,7 +188,7 @@ class Page_Frame_Decorator extends Frame_Decorator {
       $this->_page_full = true;
       return true;
     }
-		
+    
     if( $prev && $prev->get_last_child() && $frame->get_node()->nodeName != "body" ) {
       $prev_last_child = $prev->get_last_child();
       if ( in_array($prev_last_child->get_style()->page_break_after, $page_breaks) ) {
@@ -552,7 +552,7 @@ class Page_Frame_Decorator extends Frame_Decorator {
   function split($frame = null, $force_pagebreak = false) {
     // Do nothing
   }
-
+  
   /**
    * Add a floating frame
    * 
@@ -560,7 +560,7 @@ class Page_Frame_Decorator extends Frame_Decorator {
    */
   function add_floating_frame(Frame $frame) {
     array_unshift($this->_floating_frames, $frame);
-}
+  }
   
   /**
    * @return array

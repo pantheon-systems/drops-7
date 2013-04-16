@@ -28,6 +28,8 @@
  */
 require_once 'civicrm_user.inc';
 
+define('CIVICRM_UF_HEAD', TRUE);
+
 /**
  * Utilities
  */
@@ -181,6 +183,20 @@ function civicrm_menu() {
 }
 
 /**
+ * Implementation of hook_page_build
+ */
+function civicrm_page_build($page) {
+  // CRM-11823 - If Civi bootstrapped, then merge its HTML header with the CMS's header
+  global $civicrm_root;
+  if (empty($civicrm_root)) {
+    return;
+  }
+  if ($region = CRM_Core_Region::instance('html-header', FALSE)) {
+    CRM_Utils_System::addHTMLHead($region->render(''));
+  }
+}
+
+/**
  * Initialize CiviCRM. Call this function from other modules too if
  * they use the CiviCRM API.
  */
@@ -261,20 +277,33 @@ function civicrm_initialize() {
     $args = explode('/', $_GET['q']);
     if (
       (!isset($args[1]) || $args[1] != 'upgrade') &&
-      CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
-        // drupal wysiwyg
-        'editor_id'
-      ) == 4
+      // drupal wysiwyg
+      CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'editor_id') == 4
     ) {
-      //we have to ensure that wysiwyg is loaded since
-      //pages load only with ajax callbacks
-      $formats = filter_formats();
-      foreach ($formats as $id => $format) {
-        wysiwyg_get_profile($id);
+      // CRM-12164
+      if (!function_exists('wysiwyg_get_profile')) {
+        // reset the editor choice so the warning is not displayed all the time
+        CRM_Core_BAO_Setting::setItem(NULL, CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'editor_id');
+
+        // display warning and url to fix
+        $url = CRM_Utils_System::url('civicrm/admin/setting/preferences/display', 'reset=1');
+        $msg = ts(
+          'You had configured CiviCRM to use Drupal default editor but the WYSIWYG module is disabled. Please goto <a href="%1">display preferences</a> and choose another editor',
+          array(1 => $url)
+        );
+        CRM_Core_Session::setStatus($msg);
       }
-      $path = drupal_get_path('module', 'filter');
-      drupal_add_js($path . '/filter.js');
-      drupal_add_css($path . '/filter.css');
+      else {
+        //we have to ensure that wysiwyg is loaded since
+        //pages load only with ajax callbacks
+        $formats = filter_formats();
+        foreach ($formats as $id => $format) {
+          wysiwyg_get_profile($id);
+        }
+        $path = drupal_get_path('module', 'filter');
+        drupal_add_js($path . '/filter.js');
+        drupal_add_css($path . '/filter.css');
+      }
     }
   }
 
@@ -694,8 +723,9 @@ function civicrm_views_api() {
 }
 
 function civicrm_add_jquery(&$html) {
-  require_once 'CRM/Utils/String.php';
-  return CRM_Utils_String::addJqueryFiles($html);
+  CRM_Core_Resources::singleton()->addCoreResources('html-header');
+  // JS/CSS markup will be rendered in theme('page') by preprocess function
+  return $html;
 }
 
 function civicrm_form_alter(&$form, $formValues, $formID) {

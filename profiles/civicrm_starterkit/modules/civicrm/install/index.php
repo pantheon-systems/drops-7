@@ -904,14 +904,14 @@ class InstallRequirements {
       return;
     }
 
-    $result = mysql_query('SELECT @@GLOBAL.thread_stack', $conn); // bytes => kb
+    $result = mysql_query("SHOW VARIABLES LIKE 'thread_stack'", $conn); // bytes => kb
     if (!$result) {
       $testDetails[2] = 'Could not query thread_stack.';
       $this->error($testDetails);
     } else {
       $values = mysql_fetch_row($result);
-      if ($values[0] < (1024*$minValueKB)) {
-        $testDetails[2] = 'MySQL "thread_stack" is ' . ($values[0]/1024) . 'k';
+      if ($values[1] < (1024*$minValueKB)) {
+        $testDetails[2] = 'MySQL "thread_stack" is ' . ($values[1]/1024) . 'k';
         $this->error($testDetails);
       }
     }
@@ -1067,75 +1067,11 @@ class Installer extends InstallRequirements {
         version_compare(VERSION, '7.0-rc1') >= 0
       ) {
 
-        // clean output
-        @ob_clean();
-
-        $output .= '<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">';
-        $output .= '<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">';
-        $output .= '<head>';
-        $output .= '<title>CiviCRM Installed</title>';
-        $output .= '<link rel="stylesheet" type="text/css" href="template.css" />';
-        $output .= '</head>';
-        $output .= '<body>';
-        $output .= '<div style="padding: 1em;"><p class="good">CiviCRM has been successfully installed</p>';
-        $output .= '<ul>';
-        $docLinkConfig = CRM_Utils_System::docURL2('Configuring a New Site', FALSE, 'here',NULL,NULL,"wiki");
-        if (!function_exists('ts')) {
-          $docLinkConfig = "<a href=\"{$docLinkConfig}\">here</a>";
-        }
-        $drupalURL = civicrm_cms_base();
-        $drupalPermissionsURL = "{$drupalURL}index.php?q=admin/people/permissions";
-        $drupalURL .= "index.php?q=civicrm/admin/configtask&reset=1";
-        $registerSiteURL = "http://civicrm.org/civicrm/profile/create?reset=1&gid=15";
-
-        $output .= "<li>Drupal user permissions have been automatically set - giving anonymous and authenticated users access to public CiviCRM forms and features. We recommend that you <a target='_blank' href={$drupalPermissionsURL}>review these permissions</a> to ensure that they are appropriate for your requirements (<a target='_blank' href='http://wiki.civicrm.org/confluence/display/CRMDOC/Default+Permissions+and+Roles'>learn more...</a>)</li>
-                      <li>Use the <a target='_blank' href=\"$drupalURL\">Configuration Checklist</a> to review and configure settings for your new site</li>
-                      <li> Have you registered this site at CiviCRM.org? If not, please help strengthen the CiviCRM ecosystem by taking a few minutes to <a href='$registerSiteURL' target='_blank'>fill out the site registration form</a>. The information collected will help us prioritize improvements, target our communications and build the community. If you have a technical role for this site, be sure to check Keep in Touch to receive technical updates (a low volume  mailing list).</li>
-                      <li>We have integrated KCFinder with CKEditor and TinyMCE, which enables user to upload images. Note that all the images uploaded using KCFinder will be public.</li>";
-
-        // automatically enable CiviCRM module once it is installed successfully.
-        // so we need to Bootstrap Drupal, so that we can call drupal hooks.
-        global $cmsPath, $crmPath;
-
-        // relative / abosolute paths are not working for drupal, hence using chdir()
-        chdir($cmsPath);
-
-        include_once "./includes/bootstrap.inc";
-        include_once "./includes/unicode.inc";
-
-        drupal_bootstrap(DRUPAL_BOOTSTRAP_FULL);
-
-        // prevent session information from being saved.
-        drupal_save_session(FALSE);
-
-        // Force the current user to anonymous.
-        $original_user = $GLOBALS['user'];
-        $GLOBALS['user'] = drupal_anonymous_user();
-
-        // explicitly setting error reporting, since we cannot handle drupal related notices
-        error_reporting(1);
-
-        // rebuild modules, so that civicrm is added
-        system_rebuild_module_data();
-
-        // now enable civicrm module.
-        module_enable(array('civicrm', 'civicrmtheme'));
-
-        // clear block and page cache, to make sure civicrm link is present in navigation block
-        cache_clear_all();
-
-        //add basic drupal permissions
-        civicrm_install_set_drupal_perms();
-
-        // restore the user.
-        $GLOBALS['user'] = $original_user;
-        drupal_save_session(TRUE);
-
-        $output .= '</ul>';
-        $output .= '</div>';
-        $output .= '</body>';
-        $output .= '</html>';
-        echo $output;
+        // send back to the install with profile and locale variables
+        // this allows the user to pick up where they left off in the install
+        $URL_to_continue_Drupal_install = civicrm_cms_base() . 'install.php?profile=' . $_GET['profile'] . '&locale=' . $_GET['locale'];;
+        header('Location: '. $URL_to_continue_Drupal_install);
+        
       }
       elseif ($installType == 'drupal' && version_compare(VERSION, '6.0') >= 0) {
         // clean output
@@ -1183,8 +1119,8 @@ class Installer extends InstallRequirements {
         // now enable civicrm module.
         module_enable(array('civicrm'));
 
-        // clear block and page cache, to make sure civicrm link is present in navigation block
-        cache_clear_all();
+        // clear block, page, theme, and hook caches
+        drupal_flush_all_caches();
 
         //add basic drupal permissions
         db_query('UPDATE {permission} SET perm = CONCAT( perm, \', access CiviMail subscribe/unsubscribe pages, access all custom data, access uploaded files, make online contributions, profile create, profile edit, profile view, register for events, view event info\') WHERE rid IN (1, 2)');

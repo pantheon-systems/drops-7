@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: cellmap.cls.php 464 2012-01-30 20:44:53Z fabien.menager $
  */
@@ -100,7 +100,7 @@ class Cellmap {
    * @var int Current row when adding cells, 0-based
    */
   private $__row;
-
+  
   /**
    * @var bool Tells wether the columns' width can be modified
    */
@@ -114,7 +114,7 @@ class Cellmap {
   }
   
   function __destruct() {
-  	clear_object($this);
+    clear_object($this);
   }
   //........................................................................
 
@@ -126,7 +126,7 @@ class Cellmap {
     $this->_frames = array();
 
     if ( !$this->_columns_locked ) {
-    $this->_columns = array();
+      $this->_columns = array();
     }
     
     $this->_rows = array();
@@ -490,42 +490,42 @@ class Cellmap {
     }
 
     if (!$this->_columns_locked) {
-    $min = 0;
-    $max = 0;
-    for ( $cs = 0; $cs < $colspan; $cs++ ) {
-
-      // Resolve the frame's width(s) with other cells
-      $col =& $this->get_column( $this->__col + $cs );
-
-      // Note: $var is either 'percent' or 'absolute'.  We compare the
-      // requested percentage or absolute values with the existing widths
-      // and adjust accordingly.
-      if ( isset($var) && $val > $col[$var] ) {
-        $col[$var] = $val;
-        $col["auto"] = false;
+      $min = 0;
+      $max = 0;
+      for ( $cs = 0; $cs < $colspan; $cs++ ) {
+  
+        // Resolve the frame's width(s) with other cells
+        $col =& $this->get_column( $this->__col + $cs );
+  
+        // Note: $var is either 'percent' or 'absolute'.  We compare the
+        // requested percentage or absolute values with the existing widths
+        // and adjust accordingly.
+        if ( isset($var) && $val > $col[$var] ) {
+          $col[$var] = $val;
+          $col["auto"] = false;
+        }
+  
+        $min += $col["min-width"];
+        $max += $col["max-width"];
       }
-
-      $min += $col["min-width"];
-      $max += $col["max-width"];
-    }
-
-
-    if ( $frame_min > $min ) {
-      // The frame needs more space.  Expand each sub-column
-      $inc = ($frame_min - $min) / $colspan;
-      for ($c = 0; $c < $colspan; $c++) {
-        $col =& $this->get_column($this->__col + $c);
-        $col["min-width"] += $inc;
+  
+  
+      if ( $frame_min > $min ) {
+        // The frame needs more space.  Expand each sub-column
+        $inc = ($frame_min - $min) / $colspan;
+        for ($c = 0; $c < $colspan; $c++) {
+          $col =& $this->get_column($this->__col + $c);
+          $col["min-width"] += $inc;
+        }
       }
-    }
-
-    if ( $frame_max > $max ) {
-      $inc = ($frame_max - $max) / $colspan;
-      for ($c = 0; $c < $colspan; $c++) {
-        $col =& $this->get_column($this->__col + $c);
-        $col["max-width"] += $inc;
+  
+      if ( $frame_max > $max ) {
+        $inc = ($frame_max - $max) / $colspan;
+        for ($c = 0; $c < $colspan; $c++) {
+          $col =& $this->get_column($this->__col + $c);
+          $col["max-width"] += $inc;
+        }
       }
-    }
     }
 
     $this->__col += $colspan;

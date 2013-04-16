@@ -1,12 +1,12 @@
 /*!
- * jQuery UI Dialog 1.9.0
+ * jQuery UI Dialog 1.9.0-rc.1
  * http://jqueryui.com
  *
  * Copyright 2012 jQuery Foundation and other contributors
  * Released under the MIT license.
  * http://jquery.org/license
  *
- * http://api.jqueryui.com/dialog/
+ * http://docs.jquery.com/UI/Dialog
  *
  * Depends:
  *	jquery.ui.core.js
@@ -37,7 +37,7 @@ var uiDialogClasses = "ui-dialog ui-widget ui-widget-content ui-corner-all ",
 	};
 
 $.widget("ui.dialog", {
-	version: "1.9.0",
+	version: "1.9.0-rc.1",
 	options: {
 		autoOpen: true,
 		buttons: {},
@@ -170,25 +170,6 @@ $.widget("ui.dialog", {
 		if ( $.fn.bgiframe ) {
 			uiDialog.bgiframe();
 		}
-
-		// prevent tabbing out of modal dialogs
-		this._on( uiDialog, { keydown: function( event ) {
-			if ( !options.modal || event.keyCode !== $.ui.keyCode.TAB ) {
-				return;
-			}
-
-			var tabbables = $( ":tabbable", uiDialog ),
-				first = tabbables.filter( ":first" ),
-				last  = tabbables.filter( ":last" );
-
-			if ( event.target === last[0] && !event.shiftKey ) {
-				first.focus( 1 );
-				return false;
-			} else if ( event.target === first[0] && event.shiftKey ) {
-				last.focus( 1 );
-				return false;
-			}
-		}});
 	},
 
 	_init: function() {
@@ -216,8 +197,7 @@ $.widget("ui.dialog", {
 		}
 
 		next = oldPosition.parent.children().eq( oldPosition.index );
-		// Don't try to place the dialog next to itself (#8613)
-		if ( next.length && next[ 0 ] !== this.element[ 0 ] ) {
+		if ( next.length ) {
 			next.before( this.element );
 		} else {
 			oldPosition.parent.append( this.element );
@@ -245,6 +225,7 @@ $.widget("ui.dialog", {
 		if ( this.overlay ) {
 			this.overlay.destroy();
 		}
+		this._off( this.uiDialog, "keypress" );
 
 		if ( this.options.hide ) {
 			this.uiDialog.hide( this.options.hide, function() {
@@ -327,6 +308,27 @@ $.widget("ui.dialog", {
 		uiDialog.show( options.show );
 		this.overlay = options.modal ? new $.ui.dialog.overlay( this ) : null;
 		this.moveToTop( true );
+
+		// prevent tabbing out of modal dialogs
+		if ( options.modal ) {
+			this._on( uiDialog, { keydown: function( event ) {
+				if ( event.keyCode !== $.ui.keyCode.TAB ) {
+					return;
+				}
+
+				var tabbables = $( ":tabbable", uiDialog ),
+					first = tabbables.filter( ":first" ),
+					last  = tabbables.filter( ":last" );
+
+				if ( event.target === last[0] && !event.shiftKey ) {
+					first.focus( 1 );
+					return false;
+				} else if ( event.target === first[0] && event.shiftKey ) {
+					last.focus( 1 );
+					return false;
+				}
+			}});
+		}
 
 		// set focus to the first tabbable element in the content area or the first button
 		// if there are no tabbable elements, set focus on the dialog itself

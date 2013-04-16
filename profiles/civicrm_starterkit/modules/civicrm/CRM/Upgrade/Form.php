@@ -389,12 +389,12 @@ SET    version = '$version'
 
     $phpVersion = phpversion();
     $minPhpVersion = '5.3.3';
-    if (version_compare($phpVersion, $minPhpVersion) <= 0) {
+    if (version_compare($phpVersion, $minPhpVersion) < 0) {
       $error = ts('CiviCRM %3 requires PHP version %1 (or newer), but the current system uses %2 ',
                array(
                  1 => $minPhpVersion,
                  2 => $phpVersion,
-                 3 => $latestVer,
+                 3 => $latestVer
                ));
     }
 
@@ -403,11 +403,11 @@ SET    version = '$version'
       $error = ts('CiviCRM %1 requires MySQL trigger privileges.',
                array(1 => $latestVer));
     }
-    
-    if (CRM_Core_DAO::singleValueQuery('SELECT @@GLOBAL.thread_stack') < (1024*self::MINIMUM_THREAD_STACK)) {
+
+    if (CRM_Core_DAO::getGlobalSetting('thread_stack', 0) < (1024*self::MINIMUM_THREAD_STACK)) {
       $error = ts('CiviCRM %1 requires MySQL thread stack >= %2k', array(
         1 => $latestVer,
-        2 => self::MINIMUM_THREAD_STACK,
+        2 => self::MINIMUM_THREAD_STACK
       ));
     }
 
@@ -601,7 +601,10 @@ SET    version = '$version'
     $upgrade = new CRM_Upgrade_Form();
     $upgrade->setVersion($rev);
     CRM_Utils_System::flushCache();
-    
+
+    $config = CRM_Core_Config::singleton();
+    $config->userSystem->flush();
+
     if (version_compare($currentVer, '4.1.alpha1') >= 0) {
       CRM_Core_BAO_Setting::updateSettingsFromMetaData();
     }
@@ -613,6 +616,12 @@ SET    version = '$version'
     list($ignore, $latestVer) = $upgrade->getUpgradeVersions();
     // Seems extraneous in context, but we'll preserve old behavior
     $upgrade->setVersion($latestVer);
+
+    // lets rebuild the config array in case we've made a few changes in the
+    // code base
+    // this also helps us always store the latest version of civi in the DB
+    $params = array();
+    CRM_Core_BAO_ConfigSetting::add($params);
 
     // cleanup caches CRM-8739
     $config = CRM_Core_Config::singleton();

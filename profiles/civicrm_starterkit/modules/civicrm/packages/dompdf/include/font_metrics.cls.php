@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
@@ -25,9 +25,9 @@ require_once DOMPDF_LIB_DIR . "/php-font-lib/classes/font.cls.php";
  */
 if (!defined("__DOMPDF_FONT_CACHE_FILE")) {
   if (file_exists(DOMPDF_FONT_DIR . "dompdf_font_family_cache")) {
-  	define('__DOMPDF_FONT_CACHE_FILE', DOMPDF_FONT_DIR . "dompdf_font_family_cache");
+    define('__DOMPDF_FONT_CACHE_FILE', DOMPDF_FONT_DIR . "dompdf_font_family_cache");
   } else {
-  	define('__DOMPDF_FONT_CACHE_FILE', DOMPDF_FONT_DIR . "dompdf_font_family_cache.dist.php");
+    define('__DOMPDF_FONT_CACHE_FILE', DOMPDF_FONT_DIR . "dompdf_font_family_cache.dist.php");
   }
 }
 
@@ -73,10 +73,10 @@ class Font_Metrics {
     if (!self::$_pdf) {
       if (!$canvas) {
         $canvas = Canvas_Factory::get_instance();
-    }
+      }
       
       self::$_pdf = $canvas;
-  }
+    }
   }
 
   /**
@@ -96,8 +96,8 @@ class Font_Metrics {
     
     if ( $text === "" ) {
       return 0;
-  }
-
+    }
+    
     // Don't cache long strings
     $use_cache = !isset($text[50]); // Faster than strlen
     
@@ -186,7 +186,7 @@ class Font_Metrics {
     }
     return null;
   }
-
+  
   static function get_family($family) {
     $family = str_replace( array("'", '"'), "", mb_strtolower($family));
     
@@ -235,23 +235,23 @@ class Font_Metrics {
   
   static function get_type($type) {
     if (preg_match("/bold/i", $type)) {
-        if (preg_match("/italic|oblique/i", $type)) {
-          $type = "bold_italic";
-        }
-        else {
-          $type = "bold";
-        }
+      if (preg_match("/italic|oblique/i", $type)) {
+        $type = "bold_italic";
       }
-      elseif (preg_match("/italic|oblique/i", $type)) {
-        $type = "italic";
+      else {
+        $type = "bold";
       }
+    }
+    elseif (preg_match("/italic|oblique/i", $type)) {
+      $type = "italic";
+    }
     else {
       $type = "normal";
     }
       
     return $type;
-    }
-    
+  }
+  
   static function install_fonts($files) {
     $names = array();
     
@@ -261,10 +261,10 @@ class Font_Metrics {
       $type = self::get_type($records[2]);
       $names[mb_strtolower($records[1])][$type] = $file;
     }
-          
+    
     return $names;
   }
-    
+  
   static function get_system_fonts() {
     $files = glob("/usr/share/fonts/truetype/*.ttf") +
              glob("/usr/share/fonts/truetype/*/*.ttf") +
@@ -296,8 +296,8 @@ class Font_Metrics {
     $entry = array();
     if ( isset($families[$fontname]) ) {
       $entry = $families[$fontname];
-}
-
+    }
+    
     $remote_file = $remote_file;
     $local_file = DOMPDF_FONT_DIR . md5($remote_file);
     $cache_entry = $local_file;

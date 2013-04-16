@@ -1,12 +1,12 @@
 /*!
- * jQuery UI Mouse 1.9.0
+ * jQuery UI Mouse 1.9.0-rc.1
  * http://jqueryui.com
  *
  * Copyright 2012 jQuery Foundation and other contributors
  * Released under the MIT license.
  * http://jquery.org/license
  *
- * http://api.jqueryui.com/mouse/
+ * http://docs.jquery.com/UI/Mouse
  *
  * Depends:
  *	jquery.ui.widget.js
@@ -19,7 +19,7 @@ $( document ).mouseup( function( e ) {
 });
 
 $.widget("ui.mouse", {
-	version: "1.9.0",
+	version: "1.9.0-rc.1",
 	options: {
 		cancel: 'input,textarea,button,select,option',
 		distance: 1,

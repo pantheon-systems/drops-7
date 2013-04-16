@@ -10,7 +10,7 @@
  * @version $Id: api.php 30486 2010-11-02 16:12:09Z shot $
  */
 
-/*
+/**
  * @param string $entity
  *   type of entities to deal with
  * @param string $action
@@ -41,12 +41,17 @@ function civicrm_api($entity, $action, $params, $extra = NULL) {
       $transaction = new CRM_Core_Transaction();
     }
 
+    // support multi-lingual requests
+    if ($language = CRM_Utils_Array::value('option.language', $params)) {
+      _civicrm_api_set_locale($language);
+    }
+
     _civicrm_api3_api_check_permission($apiRequest['entity'], $apiRequest['action'], $apiRequest['params']);
 
     // we do this before we
     _civicrm_api3_swap_out_aliases($apiRequest);
     if (strtolower($action) != 'getfields') {
-      if (!CRM_Utils_Array::value('id', $params)) {
+      if (!CRM_Utils_Array::value('id', $apiRequest['params'])) {
         $apiRequest['params'] = array_merge(_civicrm_api3_getdefaults($apiRequest), $apiRequest['params']);
       }
       //if 'id' is set then only 'version' will be checked but should still be checked for consistency
@@ -370,7 +375,7 @@ function _civicrm_api_get_camel_name($entity, $version = NULL) {
   return implode('', $fragments);
 }
 
-/*
+/**
  * Call any nested api calls
  */
 function _civicrm_api_call_nested_api(&$params, &$result, $action, $entity, $version) {
@@ -465,7 +470,7 @@ function _civicrm_api_call_nested_api(&$params, &$result, $action, $entity, $ver
   }
 }
 
-/*
+/**
  * Swap out any $values vars - ie. the value after $value is swapped for the parent $result
  * 'activity_type_id' => '$value.testfield',
    'tag_id'  => '$value.api.tag.create.id',
@@ -507,11 +512,13 @@ function _civicrm_api_replace_variables($entity, $action, &$params, &$parentResu
   }
 }
 
-/*
+/**
  * Convert possibly camel name to underscore separated entity name
  *
  * @param string $entity entity name in various formats e.g. Contribution, contribution, OptionValue, option_value, UFJoin, uf_join
  * @return string $entity entity name in underscore separated format
+ *
+ * FIXME: Why isn't this called first thing in civicrm_api wrapper?
  */
 function _civicrm_api_get_entity_name_from_camel($entity) {
   if ($entity == strtolower($entity)) {
@@ -526,16 +533,64 @@ function _civicrm_api_get_entity_name_from_camel($entity) {
   }
   return $entity;
 }
-/*
+
+/**
  * Having a DAO object find the entity name
  * @param object $bao DAO being passed in
  */
 function _civicrm_api_get_entity_name_from_dao($bao){
   $daoName = str_replace("BAO", "DAO", get_class($bao));
   $dao = array();
-  require ('CRM/Core/DAO/.listAll.php');
+  require ('CRM/Core/DAO/listAll.php');
   $daos = array_flip($dao);
   return _civicrm_api_get_entity_name_from_camel($daos[$daoName]);
 
 }
 
+
+/**
+ * Sets the tsLocale and dbLocale for multi-lingual sites.
+ * Some code duplication from CRM/Core/BAO/ConfigSetting.php retrieve()
+ * to avoid regressions from refactoring.
+ */
+function _civicrm_api_set_locale($lcMessagesRequest) {
+  // We must validate whether the locale is valid, otherwise setting a bad
+  // dbLocale could probably lead to sql-injection.
+  $domain = new CRM_Core_DAO_Domain();
+  $domain->id = CRM_Core_Config::domainID();
+  $domain->find(TRUE);
+
+  if ($domain->config_backend) {
+    $defaults = unserialize($domain->config_backend);
+
+    // are we in a multi-language setup?
+    $multiLang = $domain->locales ? TRUE : FALSE;
+    $lcMessages = NULL;
+
+    // on multi-lang sites based on request and civicrm_uf_match
+    if ($multiLang) {
+      $languageLimit = array();
+      if (array_key_exists('languageLimit', $defaults) && is_array($defaults['languageLimit'])) {
+        $languageLimit = $defaults['languageLimit'];
+      }
+
+      if (in_array($lcMessagesRequest, array_keys($languageLimit))) {
+        $lcMessages = $lcMessagesRequest;
+      }
+      else {
+        throw new API_Exception(ts('Language not enabled: %1', array(1 => $lcMessagesRequest)));
+      }
+    }
+
+    global $dbLocale;
+
+    // set suffix for table names - use views if more than one language
+    if ($lcMessages) {
+      $dbLocale = $multiLang && $lcMessages ? "_{$lcMessages}" : '';
+
+      // FIXME: an ugly hack to fix CRM-4041
+      global $tsLocale;
+      $tsLocale = $lcMessages;
+    }
+  }
+}

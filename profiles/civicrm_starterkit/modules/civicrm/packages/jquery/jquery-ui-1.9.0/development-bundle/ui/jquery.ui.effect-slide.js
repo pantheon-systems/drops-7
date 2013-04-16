@@ -1,12 +1,12 @@
 /*!
- * jQuery UI Effects Slide 1.9.0
+ * jQuery UI Effects Slide 1.9.0-rc.1
  * http://jqueryui.com
  *
  * Copyright 2012 jQuery Foundation and other contributors
  * Released under the MIT license.
  * http://jquery.org/license
  *
- * http://api.jqueryui.com/slide-effect/
+ * http://docs.jquery.com/UI/Effects/Slide
  *
  * Depends:
  *	jquery.ui.effect.js

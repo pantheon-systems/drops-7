@@ -1,12 +1,12 @@
 /*!
- * jQuery UI Accordion 1.9.0
+ * jQuery UI Accordion 1.9.0-rc.1
  * http://jqueryui.com
  *
  * Copyright 2012 jQuery Foundation and other contributors
  * Released under the MIT license.
  * http://jquery.org/license
  *
- * http://api.jqueryui.com/accordion/
+ * http://docs.jquery.com/UI/Accordion
  *
  * Depends:
  *	jquery.ui.core.js
@@ -16,15 +16,23 @@
 
 var uid = 0,
 	hideProps = {},
-	showProps = {};
+	showProps = {},
+	showPropsAdjust = {};
 
 hideProps.height = hideProps.paddingTop = hideProps.paddingBottom =
 	hideProps.borderTopWidth = hideProps.borderBottomWidth = "hide";
 showProps.height = showProps.paddingTop = showProps.paddingBottom =
 	showProps.borderTopWidth = showProps.borderBottomWidth = "show";
+$.extend( showPropsAdjust, showProps, { accordionHeight: "show" } );
+
+$.fx.step.accordionHeight = function( fx ) {
+	var elem = $( fx.elem ),
+		data = elem.data( "ui-accordion-height" );
+	elem.height( data.total - elem.outerHeight() - data.toHide.outerHeight() + elem.height() );
+};
 
 $.widget( "ui.accordion", {
-	version: "1.9.0",
+	version: "1.9.0-rc.1",
 	options: {
 		active: 0,
 		animate: {},
@@ -477,12 +485,12 @@ $.widget( "ui.accordion", {
 	_animate: function( toShow, toHide, data ) {
 		var total, easing, duration,
 			that = this,
-			adjust = 0,
 			down = toShow.length &&
 				( !toHide.length || ( toShow.index() < toHide.index() ) ),
 			animate = this.options.animate || {},
 			options = down && animate.down || animate,
 			complete = function() {
+				toShow.removeData( "ui-accordion-height" );
 				that._toggleComplete( data );
 			};
 
@@ -504,29 +512,15 @@ $.widget( "ui.accordion", {
 		}
 
 		total = toShow.show().outerHeight();
-		toHide.animate( hideProps, {
-			duration: duration,
-			easing: easing,
-			step: function( now, fx ) {
-				fx.now = Math.round( now );
-			}
-		});
+		toHide.animate( hideProps, duration, easing );
 		toShow
 			.hide()
-			.animate( showProps, {
-				duration: duration,
-				easing: easing,
-				complete: complete,
-				step: function( now, fx ) {
-					fx.now = Math.round( now );
-					if ( fx.prop !== "height" ) {
-						adjust += fx.now;
-					} else if ( that.options.heightStyle !== "content" ) {
-						fx.now = Math.round( total - toHide.outerHeight() - adjust );
-						adjust = 0;
-					}
-				}
-			});
+			.data( "ui-accordion-height", {
+				total: total,
+				toHide: toHide
+			})
+			.animate( this.options.heightStyle === "content" ? showProps : showPropsAdjust,
+				duration, easing, complete );
 	},
 
 	_toggleComplete: function( data ) {

@@ -1,12 +1,12 @@
 /*!
- * jQuery UI Effects Shake 1.9.0
+ * jQuery UI Effects Shake 1.9.0-rc.1
  * http://jqueryui.com
  *
  * Copyright 2012 jQuery Foundation and other contributors
  * Released under the MIT license.
  * http://jquery.org/license
  *
- * http://api.jqueryui.com/shake-effect/
+ * http://docs.jquery.com/UI/Effects/Shake
  *
  * Depends:
  *	jquery.ui.effect.js
@@ -22,7 +22,7 @@ $.effects.effect.shake = function( o, done ) {
 		distance = o.distance || 20,
 		times = o.times || 3,
 		anims = times * 2 + 1,
-		speed = Math.round(o.duration/anims),
+		speed = o.duration,
 		ref = (direction === "up" || direction === "down") ? "top" : "left",
 		positiveMotion = (direction === "up" || direction === "left"),
 		animation = {},

@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: dompdf.cls.php 468 2012-02-05 10:51:40Z fabien.menager $
@@ -135,7 +135,7 @@ class DOMPDF {
    * @var string
    */
   protected $_protocol;
-  
+
   /**
    * HTTP context created with stream_context_create()
    * Will be used for file_get_contents
@@ -160,7 +160,7 @@ class DOMPDF {
    * @var bool Tells if the system's locale is the C standard one
    */
   private $_locale_standard = false;
-
+  
   /**
    * @var string The default view of the PDF in the viewer
    */
@@ -258,7 +258,7 @@ class DOMPDF {
    * @param string $path
    */
   function set_base_path($path) { $this->_base_path = $path; }
-
+  
   /**
    * Sets the HTTP context
    *
@@ -296,7 +296,7 @@ class DOMPDF {
    * @return string
    */
   function get_base_path() { return $this->_base_path; }
-
+  
   /**
    * Returns the HTTP context
    *
@@ -423,14 +423,14 @@ class DOMPDF {
       }
       
       if (isset($matches[1])) {
-        $str = preg_replace('/charset=([^\s"]+)/i','charset=UTF-8', $str);
+        $str = preg_replace('/charset=([^\s"]+)/i', 'charset=UTF-8', $str);
       } else {
         $str = str_replace('<head>', '<head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8">', $str);
       }
     } else {
       $encoding = 'UTF-8';
     }
-
+    
     // remove BOM mark from UTF-8, it's treated as document text by DOMDocument
     // FIXME: roll this into the encoding detection using UTF-8/16/32 BOM (http://us2.php.net/manual/en/function.mb-detect-encoding.php#91051)?
     if (substr($str, 0, 3) == chr(0xEF).chr(0xBB).chr(0xBF)) {
@@ -487,15 +487,15 @@ class DOMPDF {
         $quirksmode = true;
       }
       else {
-    // HTML5 <!DOCTYPE html>
+        // HTML5 <!DOCTYPE html>
         if ( !$doc->doctype->publicId && !$doc->doctype->systemId ) {
-      $quirksmode = false;
-    }
-    
-    // not XHTML
+          $quirksmode = false;
+        }
+        
+        // not XHTML
         if ( !preg_match("/xhtml/i", $doc->doctype->publicId) ) {
-      $quirksmode = true;
-    }
+          $quirksmode = true;
+        }
       }
     }
     
@@ -508,7 +508,7 @@ class DOMPDF {
     
     $this->restore_locale();
   }
-
+  
   static function remove_text_nodes(DOMNode $node) {
     $children = array();
     for ($i = 0; $i < $node->childNodes->length; $i++) {
@@ -571,7 +571,7 @@ class DOMPDF {
       }
 
     }
-
+    
     // Set the base path of the Stylesheet to that of the file being processed
     $this->_css->set_protocol($this->_protocol);
     $this->_css->set_host($this->_base_host);
@@ -601,7 +601,7 @@ class DOMPDF {
 
       } else
         $css = $style->nodeValue;
-      
+
       $this->_css->load_css($css);
     }
     
@@ -652,7 +652,7 @@ class DOMPDF {
       }
     }
   }
-
+  
   /**
    * Get the quirks mode
    * 
@@ -770,8 +770,8 @@ class DOMPDF {
           $index = $parent_node->getAttribute("dompdf-counter");
         }
         
-          $index++;
-          $parent_node->setAttribute("dompdf-counter", $index);
+        $index++;
+        $parent_node->setAttribute("dompdf-counter", $index);
         
         $node->setAttribute("dompdf-counter", $index);
         $style = $this->_css->create_style();
@@ -783,7 +783,7 @@ class DOMPDF {
       }
 
     }
-    
+
     // Add meta information
     $title = $this->_xml->getElementsByTagName("title");
     if ( $title->length ) {
@@ -807,7 +807,7 @@ class DOMPDF {
       
       if ( $name === "dompdf.view" && $this->parse_default_view($value) ) {
         $this->_pdf->set_default_view($this->_default_view, $this->_default_view_options);
-    }
+      }
     }
     
     $root->set_containing_block(0, 0, $this->_pdf->get_width(), $this->_pdf->get_height());

@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
@@ -305,17 +305,17 @@ def("DOMPDF_FONT_HEIGHT_RATIO", 1.1);
  * @var bool
  */
 def("DOMPDF_ENABLE_CSS_FLOAT", false);
- 
+
 /**
  * Prepend the DOMPDF autoload function the spl_autoload stack
  *
  * @var bool
  */
 def("DOMPDF_AUTOLOAD_PREPEND", false);
-  
-  /**
+
+/**
  * Use the more-than-experimental HTML5 Lib parser
-   */
+ */
 def("DOMPDF_ENABLE_HTML5PARSER", false);
 require_once(DOMPDF_LIB_DIR . "/html5lib/Parser.php");
 

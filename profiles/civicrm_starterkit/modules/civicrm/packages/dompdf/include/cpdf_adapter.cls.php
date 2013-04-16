@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Orion Richardson <orionr@yahoo.com>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
@@ -483,7 +483,7 @@ class CPDF_Adapter implements Canvas {
 
       imagepng($im, $filename);
       imagedestroy($im);
-    }
+    } 
     else {
       $filename = Image_Cache::$broken_image;
     }
@@ -571,8 +571,8 @@ class CPDF_Adapter implements Canvas {
 
   function image($img, $x, $y, $w, $h, $resolution = "normal") {
     list($width, $height, $type) = dompdf_getimagesize($img);
-
-      //debugpng
+    
+    //debugpng
     if (DEBUGPNG) print "[image:$img|$width|$height|$type]";
 
     switch ($type) {
@@ -580,7 +580,7 @@ class CPDF_Adapter implements Canvas {
       if (DEBUGPNG)  print '!!!jpg!!!';
       $this->_pdf->addJpegFromFile($img, $x, $this->y($y) - $h, $w, $h);
       break;
-
+      
     case IMAGETYPE_GIF:
     case IMAGETYPE_BMP:
       if (DEBUGPNG)  print '!!!bmp or gif!!!';
@@ -688,11 +688,11 @@ class CPDF_Adapter implements Canvas {
   function get_text_width($text, $font, $size, $word_spacing = 0, $char_spacing = 0) {
     $this->_pdf->selectFont($font);
     if (!DOMPDF_UNICODE_ENABLED) {
-    	$text = mb_convert_encoding($text, 'Windows-1252', 'UTF-8');
+      $text = mb_convert_encoding($text, 'Windows-1252', 'UTF-8');
     }
     return $this->_pdf->getTextWidth($size, $text, $word_spacing, $char_spacing);
   }
-
+  
   function register_string_subset($font, $string) {
     return $this->_pdf->registerText($font, $string);
   }
@@ -703,7 +703,7 @@ class CPDF_Adapter implements Canvas {
     $this->_pdf->selectFont($font);
     return $this->_pdf->getFontHeight($size) * DOMPDF_FONT_HEIGHT_RATIO;
   }
-
+  
   /*function get_font_x_height($font, $size) {
     $this->_pdf->selectFont($font);
     return $this->_pdf->getFontXHeight($size) * DOMPDF_FONT_HEIGHT_RATIO;

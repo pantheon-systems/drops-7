@@ -45,7 +45,7 @@ function civicrm_api3_custom_search_create($params) {
   return civicrm_api3_option_value_create($params);
 }
 
-/*
+/**
  * Adjust Metadata for Create action
  *
  * The metadata is used for setting defaults, documentation & validation
@@ -54,7 +54,9 @@ function civicrm_api3_custom_search_create($params) {
 function _civicrm_api3_custom_search_create_spec(&$params) {
   require_once 'api/v3/OptionValue.php';
   _civicrm_api3_option_value_create_spec($params);
-  $params['weight']['api.default'] = 'next';
+  $params['option_group_id']['api.default'] = CRM_Core_DAO::getFieldValue(
+    'CRM_Core_DAO_OptionGroup', 'custom_search', 'id', 'name'
+  );
   $params['name']['api.aliases'] = array('class_name');
 }
 

@@ -1,12 +1,12 @@
 /*!
- * jQuery UI Effects Blind 1.9.0
+ * jQuery UI Effects Blind 1.9.0-rc.1
  * http://jqueryui.com
  *
  * Copyright 2012 jQuery Foundation and other contributors
  * Released under the MIT license.
  * http://jquery.org/license
  *
- * http://api.jqueryui.com/blind-effect/
+ * http://docs.jquery.com/UI/Effects/Blind
  *
  * Depends:
  *	jquery.ui.effect.js

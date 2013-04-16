@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: list_bullet_frame_decorator.cls.php 451 2012-01-14 14:54:23Z fabien.menager $
@@ -40,7 +40,7 @@ class List_Bullet_Frame_Decorator extends Frame_Decorator {
       return 0;
     }
     
-    return $style->get_font_size()*self::BULLET_SIZE + 2 * self::BULLET_PADDING;
+    return $style->get_font_size() * self::BULLET_SIZE + 2 * self::BULLET_PADDING;
   }
 
   //hits only on "inset" lists items, to increase height of box

@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: page_frame_reflower.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
@@ -37,7 +37,7 @@ class Page_Frame_Reflower extends Frame_Reflower {
   private $_stacking_context = array();
 
   function __construct(Page_Frame_Decorator $frame) { parent::__construct($frame); }
-  
+
   /**
    * @param $frame Frame
    * @return void
@@ -60,11 +60,11 @@ class Page_Frame_Reflower extends Frame_Reflower {
       // FIXME RTL
       if ( $odd && isset($page_styles[":right"]) ) {
         $style->merge($page_styles[":right"]);
-  }
-  
+      }
+      
       if ( $odd && isset($page_styles[":odd"]) ) {
         $style->merge($page_styles[":odd"]);
-  }
+      }
   
       // FIXME RTL
       if ( !$odd && isset($page_styles[":left"]) ) {
@@ -97,21 +97,21 @@ class Page_Frame_Reflower extends Frame_Reflower {
     
     while ($child) {
       $this->apply_page_style($this->_frame, $current_page + 1);
-
+      
       $style = $this->_frame->get_style();
   
-    // Pages are only concerned with margins
-    $cb = $this->_frame->get_containing_block();
-    $left   = $style->length_in_pt($style->margin_left,   $cb["w"]);
-    $right  = $style->length_in_pt($style->margin_right,  $cb["w"]);
-    $top    = $style->length_in_pt($style->margin_top,    $cb["h"]);
-    $bottom = $style->length_in_pt($style->margin_bottom, $cb["h"]);
-    
-    $content_x = $cb["x"] + $left;
-    $content_y = $cb["y"] + $top;
-    $content_width = $cb["w"] - $left - $right;
-    $content_height = $cb["h"] - $top - $bottom;
-    
+      // Pages are only concerned with margins
+      $cb = $this->_frame->get_containing_block();
+      $left   = $style->length_in_pt($style->margin_left,   $cb["w"]);
+      $right  = $style->length_in_pt($style->margin_right,  $cb["w"]);
+      $top    = $style->length_in_pt($style->margin_top,    $cb["h"]);
+      $bottom = $style->length_in_pt($style->margin_bottom, $cb["h"]);
+      
+      $content_x = $cb["x"] + $left;
+      $content_y = $cb["y"] + $top;
+      $content_width = $cb["w"] - $left - $right;
+      $content_height = $cb["h"] - $top - $bottom;
+      
       // Only if it's the first page, we save the nodes with a fixed position
       if ($current_page == 0) {
         $children = $child->get_children();

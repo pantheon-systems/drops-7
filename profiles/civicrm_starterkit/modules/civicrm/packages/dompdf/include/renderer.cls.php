@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: renderer.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
  */
@@ -42,7 +42,7 @@ class Renderer extends Abstract_Renderer {
    * Class destructor
    */
   function __destruct() {
-  	clear_object($this);
+    clear_object($this);
   }
   
   /**
@@ -64,7 +64,7 @@ class Renderer extends Abstract_Renderer {
       echo $frame;
       flush();
     }
-
+    
     $style = $frame->get_style();
     
     if ( in_array($style->visibility, array("hidden", "collapse")) ) {
@@ -74,96 +74,96 @@ class Renderer extends Abstract_Renderer {
     $render_self = self::$stacking_first_pass && !$stacking || !self::$stacking_first_pass;
     
     if ( $render_self ) {
-    $display = $style->display;
-    
-    // Starts the CSS transformation
-    if ( $style->transform && is_array($style->transform) ) {
-      $this->_canvas->save();
-      list($x, $y, $w, $h) = $frame->get_padding_box();
-      $origin = $style->transform_origin;
+      $display = $style->display;
       
-      foreach($style->transform as $transform) {
-        list($function, $values) = $transform;
-        if ( $function === "matrix" ) {
-          $function = "transform";
+      // Starts the CSS transformation
+      if ( $style->transform && is_array($style->transform) ) {
+        $this->_canvas->save();
+        list($x, $y, $w, $h) = $frame->get_padding_box();
+        $origin = $style->transform_origin;
+        
+        foreach($style->transform as $transform) {
+          list($function, $values) = $transform;
+          if ( $function === "matrix" ) {
+            $function = "transform";
+          }
+          
+          $values = array_map("floatval", $values);
+          $values[] = $x + $style->length_in_pt($origin[0], $style->width);
+          $values[] = $y + $style->length_in_pt($origin[1], $style->height);
+          
+          call_user_func_array(array($this->_canvas, $function), $values);
         }
-        
-        $values = array_map("floatval", $values);
-        $values[] = $x + $style->length_in_pt($origin[0], $style->width);
-        $values[] = $y + $style->length_in_pt($origin[1], $style->height);
-        
-        call_user_func_array(array($this->_canvas, $function), $values);
       }
-    }
+    
+      switch ($display) {
+        
+      case "block":
+      case "list-item":
+      case "inline-block":
+      case "table":
+      case "inline-table":
+        $this->_render_frame("block", $frame);
+        break;
   
-    switch ($display) {
-      
-    case "block":
-    case "list-item":
-    case "inline-block":
-    case "table":
-    case "inline-table":
-      $this->_render_frame("block", $frame);
-      break;
-
-    case "inline":
+      case "inline":
         if ( $frame->is_text_node() )
-        $this->_render_frame("text", $frame);
-      else
-        $this->_render_frame("inline", $frame);
-      break;
-
-    case "table-cell":
-      $this->_render_frame("table-cell", $frame);
-      break;
-
+          $this->_render_frame("text", $frame);
+        else
+          $this->_render_frame("inline", $frame);
+        break;
+  
+      case "table-cell":
+        $this->_render_frame("table-cell", $frame);
+        break;
+  
       case "table-row-group":
       case "table-header-group":
       case "table-footer-group":
         $this->_render_frame("table-row-group", $frame);
         break;
   
-    case "-dompdf-list-bullet":
-      $this->_render_frame("list-bullet", $frame);
-      break;
-
-    case "-dompdf-image":
-      $this->_render_frame("image", $frame);
-      break;
-      
-    case "none":
-      $node = $frame->get_node();
-          
-      if ( $node->nodeName === "script" ) {
-        if ( $node->getAttribute("type") === "text/php" ||
-             $node->getAttribute("language") === "php" ) {
-          // Evaluate embedded php scripts
-          $this->_render_frame("php", $frame);
-        }
+      case "-dompdf-list-bullet":
+        $this->_render_frame("list-bullet", $frame);
+        break;
+  
+      case "-dompdf-image":
+        $this->_render_frame("image", $frame);
+        break;
         
-        elseif ( $node->getAttribute("type") === "text/javascript" ||
-             $node->getAttribute("language") === "javascript" ) {
-          // Insert JavaScript
-          $this->_render_frame("javascript", $frame);
+      case "none":
+        $node = $frame->get_node();
+            
+        if ( $node->nodeName === "script" ) {
+          if ( $node->getAttribute("type") === "text/php" ||
+               $node->getAttribute("language") === "php" ) {
+            // Evaluate embedded php scripts
+            $this->_render_frame("php", $frame);
+          }
+          
+          elseif ( $node->getAttribute("type") === "text/javascript" ||
+               $node->getAttribute("language") === "javascript" ) {
+            // Insert JavaScript
+            $this->_render_frame("javascript", $frame);
+          }
         }
+  
+        // Don't render children, so skip to next iter
+        return;
+        
+      default:
+        break;
+  
       }
-
-      // Don't render children, so skip to next iter
-      return;
+  
+      // Check for begin frame callback
+      $this->_check_callbacks("begin_frame", $frame);
       
-    default:
-      break;
-
-    }
-
-    // Check for begin frame callback
-    $this->_check_callbacks("begin_frame", $frame);
-    
-    // Starts the overflow: hidden box
-    if ( $style->overflow === "hidden" ) {
-      list($x, $y, $w, $h) = $frame->get_padding_box();
-      $this->_canvas->clipping_rectangle($x, $y, $w, $h);
-    }
+      // Starts the overflow: hidden box
+      if ( $style->overflow === "hidden" ) {
+        list($x, $y, $w, $h) = $frame->get_padding_box();
+        $this->_canvas->clipping_rectangle($x, $y, $w, $h);
+      }
     }
   
     $page = $frame->get_root()->get_reflower();
@@ -183,21 +183,21 @@ class Renderer extends Abstract_Renderer {
       }
       
       $this->render($child, $_stacking);
-      }
-      
+    }
+     
     if ( $render_self ) {
-    // Ends the overflow: hidden box
-    if ( $style->overflow === "hidden" ) {
-      $this->_canvas->clipping_end();
+      // Ends the overflow: hidden box
+      if ( $style->overflow === "hidden" ) {
+        $this->_canvas->clipping_end();
+      }
+  
+      if ( $style->transform && is_array($style->transform) ) {
+        $this->_canvas->restore();
+      }
+  
+      // Check for end frame callback
+      $this->_check_callbacks("end_frame", $frame);
     }
-
-    if ( $style->transform && is_array($style->transform) ) {
-      $this->_canvas->restore();
-    }
-
-    // Check for end frame callback
-    $this->_check_callbacks("end_frame", $frame);
-  }
   }
   
   /**
@@ -260,7 +260,7 @@ class Renderer extends Abstract_Renderer {
       case "table-cell":
         $this->_renderers[$type] = new Table_Cell_Renderer($this->_dompdf);
         break;
-
+      
       case "table-row-group":
         $this->_renderers[$type] = new Table_Row_Group_Renderer($this->_dompdf);
         break;

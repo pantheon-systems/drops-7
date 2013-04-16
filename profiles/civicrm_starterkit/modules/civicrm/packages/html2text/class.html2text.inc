@@ -466,7 +466,7 @@ class html2text
     function _build_link_list( $link, $display )
     {
 		if ( substr($link, 0, 7) == 'http://' || substr($link, 0, 8) == 'https://' ||
-             substr($link, 0, 7) == 'mailto:' ) {
+             substr($link, 0, 7) == 'mailto:' || preg_match('/{[^}]+}/', $link)) {
             $this->_link_count++;
             $this->_link_list .= "[" . $this->_link_count . "] $link\n";
             $additional = ' [' . $this->_link_count . ']';

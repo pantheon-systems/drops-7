@@ -185,8 +185,12 @@ class civicrm_cli {
     $_SERVER['PHP_SELF'] = "/index.php";
     $_SERVER['HTTP_HOST'] = $this->_site;
     $_SERVER['REMOTE_ADDR'] = "127.0.0.1";
+    $_SERVER['SERVER_SOFTWARE'] = NULL;
+    $_SERVER['REQUEST_METHOD']  = 'GET';
+
     // SCRIPT_FILENAME needed by CRM_Utils_System::cmsRootPath
     $_SERVER['SCRIPT_FILENAME'] = __FILE__;
+
     // CRM-8917 - check if script name starts with /, if not - prepend it.
     if (ord($_SERVER['SCRIPT_NAME']) != 47) {
       $_SERVER['SCRIPT_NAME'] = '/' . $_SERVER['SCRIPT_NAME'];
@@ -218,6 +222,10 @@ class civicrm_cli {
     }
 
     if (!empty($this->_user)) {
+      if(!CRM_Utils_System::authenticateScript(TRUE, $this->_user, $this->_password, TRUE, FALSE, FALSE)) {
+        $this->_log(ts("Failed to login as %1. Wrong username or password.", array('1' => $this->_user)));
+        return FALSE;
+      }
       if (!$cms->loadUser($this->_user)) {
         $this->_log(ts("Failed to login as %1", array('1' => $this->_user)));
         return FALSE;

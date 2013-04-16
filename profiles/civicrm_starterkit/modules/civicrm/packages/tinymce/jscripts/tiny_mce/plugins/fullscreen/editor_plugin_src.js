@@ -79,7 +79,7 @@
 						vp.h -= 1;
 
 					// Use fixed position if it exists
-					if (tinymce.isIE6 || document.compatMode == 'BackCompat')
+					if (tinymce.isIE6)
 						posCss = 'absolute;top:' + vp.y;
 					else
 						posCss = 'fixed;top:0';

@@ -1,12 +1,12 @@
 <?php
-  /**
-   * A PHP class to provide the basic functionality to create a pdf document without
-   * any requirement for additional modules.
-   *
-   * Extended by Orion Richardson to support Unicode / UTF-8 characters using
-   * TCPDF and others as a guide.
-   *
-   * @author       Wayne Munro <pdf@ros.co.nz>
+/**
+ * A PHP class to provide the basic functionality to create a pdf document without
+ * any requirement for additional modules.
+ *
+ * Extended by Orion Richardson to support Unicode / UTF-8 characters using
+ * TCPDF and others as a guide.
+ *
+ * @author  Wayne Munro <pdf@ros.co.nz>
  * @author  Orion Richardson <orionr@yahoo.com>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @author  Ryan H. Masten <ryan.masten@gmail.com>
@@ -14,10 +14,10 @@
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @version $Id: class.pdf.php 469 2012-02-05 22:25:30Z fabien.menager $
  * @license Public Domain http://creativecommons.org/licenses/publicdomain/
-   * @package  Cpdf
-   */
-class  Cpdf {
-
+ * @package Cpdf
+ */
+class Cpdf {
+  
   /**
    * @var integer The current number of pdf objects in the document
    */
@@ -345,7 +345,7 @@ class  Cpdf {
     $this->setFontFamily('init');
     //  $this->fileIdentifier = md5('xxxxxxxx'.time());
   }
-
+  
   /**
    * Document object methods (internal use only)
    *
@@ -2196,7 +2196,7 @@ EOT;
       if  (isset($this->fonts[$fontName])) {
         $this->numObj++;
         $this->numFonts++;
-
+    
         $font = &$this->fonts[$fontName];
 
         //$this->numFonts = md5($fontName);
@@ -2332,16 +2332,16 @@ EOT;
           } elseif (isset($font['Weight']) && preg_match('!(bold|black)!i', $font['Weight'])) {
             $stemV = 120;
           }
-
+          
           // load the pfb file, and put that into an object too.
           // note that pdf supports only binary format type 1 font files, though there is a
           // simple utility to convert them from pfa to pfb.
           if (!$this->isUnicode || $fbtype !== 'ttf' || empty($this->stringSubsets)) {
-          $data =  file_get_contents($fbfile);
+            $data = file_get_contents($fbfile);
           }
           else {
             require_once dirname(__FILE__)."/php-font-lib/classes/font.cls.php";
-
+            
             $this->stringSubsets[$fontName][] = 32; // Force space if not in yet
             
             $subset = $this->stringSubsets[$fontName];
@@ -3120,12 +3120,12 @@ EOT;
 
     return  $size*$h/1000;
   }
-
+  
   function getFontXHeight($size) {
     if  (!$this->numFonts) {
       $this->selectFont($this->defaultFont);
     }
-
+    
     $font = $this->fonts[$this->currentFont];
     
     // for the current font, and the given size, what is the height of the font in user units
@@ -3513,7 +3513,7 @@ EOT;
   function toUpper($matches) {
     return mb_strtoupper($matches[0]);
   }
-
+  
   function concatMatches($matches) {
     $str = "";
     foreach($matches as $match){
@@ -3544,10 +3544,10 @@ EOT;
     if  (!$this->numFonts) {
       $this->selectFont($this->defaultFont);
     }
-    
+
     $text = str_replace(array("\r", "\n"), "", $text);
     
-    if ($smallCaps) {
+    if ( $smallCaps ) {
       preg_match_all("/(\P{Ll}+)/u", $text, $matches, PREG_SET_ORDER);
       $lower = $this->concatMatches($matches);
       d($lower);
@@ -4266,7 +4266,7 @@ EOT;
     
     $wpx = imagesx($img);
     $hpx = imagesy($img);
-    
+      
     imagesavealpha($img, false);
     
     // create temp alpha file
@@ -4286,12 +4286,12 @@ EOT;
     for ($c = 0; $c < 256; ++$c) {
       imagecolorallocate($imgalpha, $c, $c, $c);
     }
-   
+    
     // Use PECL gmagick + Graphics Magic to process transparent PNG images
     if (extension_loaded("gmagick")) {
       $gmagick = new Gmagick($file);
       $gmagick->setimageformat('png');
-    
+      
       // Get opacity channel (negative of alpha channel)
       $alpha_channel_neg = clone $gmagick;
       $alpha_channel_neg->separateimagechannel(Gmagick::CHANNEL_OPACITY);
@@ -4348,50 +4348,50 @@ EOT;
       $imgplain = imagecreatefrompng($tempfile_plain);
     }
     else {
-    // allocated colors cache
-    $allocated_colors = array();
-    
-    // extract alpha channel
-    for ($xpx = 0; $xpx < $wpx; ++$xpx) {
-      for ($ypx = 0; $ypx < $hpx; ++$ypx) {
-        $color = imagecolorat($img, $xpx, $ypx);
-        $col = imagecolorsforindex($img, $color);
-        $alpha = $col['alpha'];
-        
-        if ($eight_bit) {
-          // with gamma correction
-          $gammacorr = 2.2;
-          $pixel = pow((((127 - $alpha) * 255 / 127) / 255), $gammacorr) * 255;
-        }
-        
-        else {
-          // without gamma correction
-          $pixel = (127 - $alpha) * 2;
-          
-            $key = $col['red'].$col['green'].$col['blue'];
-          
-          if (!isset($allocated_colors[$key])) {
-            $pixel_img = imagecolorallocate($img, $col['red'], $col['green'], $col['blue']);
-            $allocated_colors[$key] = $pixel_img;
-          }
-          else {
-            $pixel_img = $allocated_colors[$key]; 
-          }
-          
-          imagesetpixel($img, $xpx, $ypx, $pixel_img);
-        }
-        
-        imagesetpixel($imgalpha, $xpx, $ypx, $pixel);
-      }
-    }
+      // allocated colors cache
+      $allocated_colors = array();
       
-    // extract image without alpha channel
-    $imgplain = imagecreatetruecolor($wpx, $hpx);
-    imagecopy($imgplain, $img, 0, 0, 0, 0, $wpx, $hpx);
-    imagedestroy($img);
-    
+      // extract alpha channel
+      for ($xpx = 0; $xpx < $wpx; ++$xpx) {
+        for ($ypx = 0; $ypx < $hpx; ++$ypx) {
+          $color = imagecolorat($img, $xpx, $ypx);
+          $col = imagecolorsforindex($img, $color);
+          $alpha = $col['alpha'];
+          
+          if ($eight_bit) {
+            // with gamma correction
+            $gammacorr = 2.2;
+            $pixel = pow((((127 - $alpha) * 255 / 127) / 255), $gammacorr) * 255;
+          }
+          
+          else {
+            // without gamma correction
+            $pixel = (127 - $alpha) * 2;
+            
+            $key = $col['red'].$col['green'].$col['blue'];
+            
+            if (!isset($allocated_colors[$key])) {
+              $pixel_img = imagecolorallocate($img, $col['red'], $col['green'], $col['blue']);
+              $allocated_colors[$key] = $pixel_img;
+            }
+            else {
+              $pixel_img = $allocated_colors[$key]; 
+            }
+            
+            imagesetpixel($img, $xpx, $ypx, $pixel_img);
+          }
+          
+          imagesetpixel($imgalpha, $xpx, $ypx, $pixel);
+        }
+      }
+      
+      // extract image without alpha channel
+      $imgplain = imagecreatetruecolor($wpx, $hpx);
+      imagecopy($imgplain, $img, 0, 0, 0, 0, $wpx, $hpx);
+      imagedestroy($img);
+        
       imagepng($imgalpha, $tempfile_alpha);
-    imagepng($imgplain, $tempfile_plain);
+      imagepng($imgplain, $tempfile_plain);
     }
     
     // embed mask image
@@ -4422,7 +4422,7 @@ EOT;
       $meta = unpack("CbitDepth/CcolorType/CcompressionMethod/CfilterMethod/CinterlaceMethod", $info);
       $bit_depth = $meta["bitDepth"];
       $color_type = $meta["colorType"];
-
+      
       // http://www.w3.org/TR/PNG/#11IHDR
       // 3 => indexed
       // 4 => greyscale with alpha
@@ -4469,8 +4469,8 @@ EOT;
     $this->addImagePng($file, $x, $y, $w, $h, $img);
     
     if ( $img ) {
-    imagedestroy($img);
-  }
+      imagedestroy($img);
+    }
   }
 
   /**
@@ -4490,206 +4490,206 @@ EOT;
         return;
       }
       
-    $error =  0;
-
-    if  (!$error) {
-      $header =  chr(137) .chr(80) .chr(78) .chr(71) .chr(13) .chr(10) .chr(26) .chr(10);
+      $error =  0;
+  
+      if  (!$error) {
+        $header =  chr(137) .chr(80) .chr(78) .chr(71) .chr(13) .chr(10) .chr(26) .chr(10);
         
-      if  (mb_substr($data, 0, 8, '8bit') !=  $header) {
-        $error =  1;
+        if  (mb_substr($data, 0, 8, '8bit') !=  $header) {
+          $error =  1;
           
-        if (DEBUGPNG) print '[addPngFromFile this file does not have a valid header '.$file.']';
-
-        $errormsg =  'this file does not have a valid header';
+          if (DEBUGPNG) print '[addPngFromFile this file does not have a valid header '.$file.']';
+  
+          $errormsg =  'this file does not have a valid header';
+        }
       }
-    }
-
-    if  (!$error) {
-      // set pointer
-      $p =  8;
-      $len =  mb_strlen($data, '8bit');
-
-      // cycle through the file, identifying chunks
-      $haveHeader =  0;
-      $info =  array();
-      $idata =  '';
-      $pdata =  '';
-
-      while  ($p < $len) {
-        $chunkLen =  $this->PRVT_getBytes($data, $p, 4);
-        $chunkType =  mb_substr($data, $p+4, 4, '8bit');
+  
+      if  (!$error) {
+        // set pointer
+        $p =  8;
+        $len =  mb_strlen($data, '8bit');
+  
+        // cycle through the file, identifying chunks
+        $haveHeader =  0;
+        $info =  array();
+        $idata =  '';
+        $pdata =  '';
+  
+        while  ($p < $len) {
+          $chunkLen =  $this->PRVT_getBytes($data, $p, 4);
+          $chunkType =  mb_substr($data, $p+4, 4, '8bit');
           
-        switch ($chunkType) {
-        case  'IHDR':
-          // this is where all the file information comes from
-          $info['width'] =  $this->PRVT_getBytes($data, $p+8, 4);
-          $info['height'] =  $this->PRVT_getBytes($data, $p+12, 4);
-          $info['bitDepth'] =  ord($data[$p+16]);
-          $info['colorType'] =  ord($data[$p+17]);
-          $info['compressionMethod'] =  ord($data[$p+18]);
-          $info['filterMethod'] =  ord($data[$p+19]);
-          $info['interlaceMethod'] =  ord($data[$p+20]);
-
-          //print_r($info);
-          $haveHeader =  1;
-          if  ($info['compressionMethod'] !=  0) {
-            $error =  1;
-
-            //debugpng
-            if (DEBUGPNG) print '[addPngFromFile unsupported compression method '.$file.']';
-
-            $errormsg =  'unsupported compression method';
-          }
-
-          if  ($info['filterMethod'] !=  0) {
-            $error =  1;
-
-            //debugpng
-            if (DEBUGPNG) print '[addPngFromFile unsupported filter method '.$file.']';
-
-            $errormsg =  'unsupported filter method';
-          }
-          break;
-
-        case  'PLTE':
-          $pdata.=  mb_substr($data, $p+8, $chunkLen, '8bit');
-          break;
-
-        case  'IDAT':
-          $idata.=  mb_substr($data, $p+8, $chunkLen, '8bit');
-          break;
-
-        case  'tRNS':
-          //this chunk can only occur once and it must occur after the PLTE chunk and before IDAT chunk
-          //print "tRNS found, color type = ".$info['colorType']."\n";
-          $transparency =  array();
-
-            switch ($info['colorType']) {
-            // indexed color, rbg
-              case 3:
-            /* corresponding to entries in the plte chunk
-             Alpha for palette index 0: 1 byte
-             Alpha for palette index 1: 1 byte
-             ...etc...
-            */
-            // there will be one entry for each palette entry. up until the last non-opaque entry.
-            // set up an array, stretching over all palette entries which will be o (opaque) or 1 (transparent)
-            $transparency['type'] =  'indexed';
-                
-            $numPalette =  mb_strlen($pdata, '8bit')/3;
-            $trans =  0;
-
-            for  ($i =  $chunkLen;$i >=  0;$i--) {
-              if  (ord($data[$p+8+$i]) ==  0) {
-                $trans =  $i;
-              }
+          switch ($chunkType) {
+          case  'IHDR':
+            // this is where all the file information comes from
+            $info['width'] =  $this->PRVT_getBytes($data, $p+8, 4);
+            $info['height'] =  $this->PRVT_getBytes($data, $p+12, 4);
+            $info['bitDepth'] =  ord($data[$p+16]);
+            $info['colorType'] =  ord($data[$p+17]);
+            $info['compressionMethod'] =  ord($data[$p+18]);
+            $info['filterMethod'] =  ord($data[$p+19]);
+            $info['interlaceMethod'] =  ord($data[$p+20]);
+  
+            //print_r($info);
+            $haveHeader =  1;
+            if  ($info['compressionMethod'] !=  0) {
+              $error =  1;
+  
+              //debugpng
+              if (DEBUGPNG) print '[addPngFromFile unsupported compression method '.$file.']';
+  
+              $errormsg =  'unsupported compression method';
             }
-
-            $transparency['data'] =  $trans;
+  
+            if  ($info['filterMethod'] !=  0) {
+              $error =  1;
+  
+              //debugpng
+              if (DEBUGPNG) print '[addPngFromFile unsupported filter method '.$file.']';
+  
+              $errormsg =  'unsupported filter method';
+            }
+            break;
+  
+          case  'PLTE':
+            $pdata.=  mb_substr($data, $p+8, $chunkLen, '8bit');
+            break;
+  
+          case  'IDAT':
+            $idata.=  mb_substr($data, $p+8, $chunkLen, '8bit');
+            break;
+  
+          case  'tRNS':
+            //this chunk can only occur once and it must occur after the PLTE chunk and before IDAT chunk
+            //print "tRNS found, color type = ".$info['colorType']."\n";
+            $transparency =  array();
+            
+            switch ($info['colorType']) {
+              // indexed color, rbg
+              case 3:
+                /* corresponding to entries in the plte chunk
+                 Alpha for palette index 0: 1 byte
+                 Alpha for palette index 1: 1 byte
+                 ...etc...
+                */
+                // there will be one entry for each palette entry. up until the last non-opaque entry.
+                // set up an array, stretching over all palette entries which will be o (opaque) or 1 (transparent)
+                $transparency['type'] =  'indexed';
+                
+                $numPalette =  mb_strlen($pdata, '8bit')/3;
+                $trans =  0;
+    
+                for  ($i =  $chunkLen;$i >=  0;$i--) {
+                  if  (ord($data[$p+8+$i]) ==  0) {
+                    $trans =  $i;
+                  }
+                }
+    
+                $transparency['data'] =  $trans;
               break;
               
-            // grayscale
+              // grayscale
               case 0:
-            /* corresponding to entries in the plte chunk
-             Gray: 2 bytes, range 0 .. (2^bitdepth)-1
-            */
-            //            $transparency['grayscale'] = $this->PRVT_getBytes($data,$p+8,2); // g = grayscale
-            $transparency['type'] =  'indexed';
+                /* corresponding to entries in the plte chunk
+                 Gray: 2 bytes, range 0 .. (2^bitdepth)-1
+                */
+                //            $transparency['grayscale'] = $this->PRVT_getBytes($data,$p+8,2); // g = grayscale
+                $transparency['type'] =  'indexed';
                 $transparency['data'] =  ord($data[$p+8+1]);
               break;
-
-            // truecolor
+              
+              // truecolor
               case 2:      
-            /* corresponding to entries in the plte chunk
-             Red: 2 bytes, range 0 .. (2^bitdepth)-1
-             Green: 2 bytes, range 0 .. (2^bitdepth)-1
-             Blue: 2 bytes, range 0 .. (2^bitdepth)-1
-            */
-            $transparency['r'] =  $this->PRVT_getBytes($data, $p+8, 2);
-            // r from truecolor
-            $transparency['g'] =  $this->PRVT_getBytes($data, $p+10, 2);
-            // g from truecolor
-            $transparency['b'] =  $this->PRVT_getBytes($data, $p+12, 2);
-            // b from truecolor
-
-            $transparency['type'] = 'color-key';
+                /* corresponding to entries in the plte chunk
+                 Red: 2 bytes, range 0 .. (2^bitdepth)-1
+                 Green: 2 bytes, range 0 .. (2^bitdepth)-1
+                 Blue: 2 bytes, range 0 .. (2^bitdepth)-1
+                */
+                $transparency['r'] =  $this->PRVT_getBytes($data, $p+8, 2);
+                // r from truecolor
+                $transparency['g'] =  $this->PRVT_getBytes($data, $p+10, 2);
+                // g from truecolor
+                $transparency['b'] =  $this->PRVT_getBytes($data, $p+12, 2);
+                // b from truecolor
+    
+                $transparency['type'] = 'color-key';
               break;
-            
-            //unsupported transparency type
+              
+              //unsupported transparency type
               default:
-            if (DEBUGPNG) print '[addPngFromFile unsupported transparency type '.$file.']';
+                if (DEBUGPNG) print '[addPngFromFile unsupported transparency type '.$file.']';
                 break;
+            }
+  
+            // KS End new code
+            break;
+  
+          default:
+            break;
           }
   
-          // KS End new code
-          break;
-
-        default:
-          break;
+          $p +=  $chunkLen+12;
         }
-
-        $p+=  $chunkLen+12;
+  
+        if (!$haveHeader) {
+          $error =  1;
+  
+          //debugpng
+          if (DEBUGPNG) print '[addPngFromFile information header is missing '.$file.']';
+  
+          $errormsg =  'information header is missing';
+        }
+  
+        if  (isset($info['interlaceMethod']) &&  $info['interlaceMethod']) {
+          $error =  1;
+  
+          //debugpng
+          if (DEBUGPNG) print '[addPngFromFile no support for interlaced images in pdf '.$file.']';
+  
+          $errormsg =  'There appears to be no support for interlaced images in pdf.';
+        }
       }
-
-      if (!$haveHeader) {
+  
+      if  (!$error &&  $info['bitDepth'] > 8) {
         $error =  1;
-
+  
         //debugpng
-        if (DEBUGPNG) print '[addPngFromFile information header is missing '.$file.']';
-
-        $errormsg =  'information header is missing';
+        if (DEBUGPNG) print '[addPngFromFile bit depth of 8 or less is supported '.$file.']';
+  
+        $errormsg =  'only bit depth of 8 or less is supported';
       }
-
-      if  (isset($info['interlaceMethod']) &&  $info['interlaceMethod']) {
-        $error =  1;
-
-        //debugpng
-        if (DEBUGPNG) print '[addPngFromFile no support for interlaced images in pdf '.$file.']';
-
-        $errormsg =  'There appears to be no support for interlaced images in pdf.';
-      }
-    }
-
-    if  (!$error &&  $info['bitDepth'] > 8) {
-      $error =  1;
-
-      //debugpng
-      if (DEBUGPNG) print '[addPngFromFile bit depth of 8 or less is supported '.$file.']';
-
-      $errormsg =  'only bit depth of 8 or less is supported';
-    }
-    
-    if  (!$error) {
-      switch  ($info['colorType']) {
-      case  3:
-        $color =  'DeviceRGB';
-        $ncolor =  1;
-        break;
-
-      case  2:
-        $color =  'DeviceRGB';
-        $ncolor =  3;
-        break;
-
-      case  0:
-        $color =  'DeviceGray';
-        $ncolor =  1;
-        break;
       
-      default: 
-        $error =  1;
-
-        //debugpng
-        if (DEBUGPNG) print '[addPngFromFile alpha channel not supported: '.$info['colorType'].' '.$file.']';
-
-        $errormsg =  'transparancey alpha channel not supported, transparency only supported for palette images.';
+      if  (!$error) {
+        switch  ($info['colorType']) {
+        case  3:
+          $color =  'DeviceRGB';
+          $ncolor =  1;
+          break;
+  
+        case  2:
+          $color =  'DeviceRGB';
+          $ncolor =  3;
+          break;
+  
+        case  0:
+          $color =  'DeviceGray';
+          $ncolor =  1;
+          break;
+        
+        default: 
+          $error =  1;
+  
+          //debugpng
+          if (DEBUGPNG) print '[addPngFromFile alpha channel not supported: '.$info['colorType'].' '.$file.']';
+  
+          $errormsg =  'transparancey alpha channel not supported, transparency only supported for palette images.';
+        }
       }
-    }
-
-    if  ($error) {
-      $this->addMessage('PNG error - ('.$file.') '.$errormsg);
-      return;
-    }
+  
+      if  ($error) {
+        $this->addMessage('PNG error - ('.$file.') '.$errormsg);
+        return;
+      }
 
       //print_r($info);
       // so this image is ok... add it in.
@@ -4753,7 +4753,7 @@ EOT;
     }
 
     if ( $this->image_iscached($img) ) {
-    $data = null;
+      $data = null;
       $imageWidth  = $this->imagelist[$img]['w'];
       $imageHeight = $this->imagelist[$img]['h'];
       $channels    = $this->imagelist[$img]['c'];
@@ -4763,7 +4763,7 @@ EOT;
       $imageWidth  = $tmp[0];
       $imageHeight = $tmp[1];
 
-      if  (isset($tmp['channels'])) {
+      if ( isset($tmp['channels']) ) {
         $channels =  $tmp['channels'];
       } else {
         $channels =  3;

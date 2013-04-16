@@ -34,8 +34,7 @@ var AnchorDialog = {
 			elm.setAttribute('name', name);
 			elm.name = name;
 		} else
-			// create with zero-sized nbsp so that in Webkit where anchor is on last line by itself caret cannot be placed after it
-			ed.execCommand('mceInsertContent', 0, ed.dom.createHTML('a', {name : name, 'class' : 'mceItemAnchor'}, '\uFEFF'));
+			ed.execCommand('mceInsertContent', 0, ed.dom.createHTML('a', {name : name, 'class' : 'mceItemAnchor'}, ''));
 
 		tinyMCEPopup.close();
 	}

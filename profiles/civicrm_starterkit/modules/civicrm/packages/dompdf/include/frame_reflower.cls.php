@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: frame_reflower.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
  */
@@ -49,7 +49,7 @@ abstract class Frame_Reflower {
     $frame = $this->_frame;
     $cb = $frame->get_containing_block();
     $style = $frame->get_style();
-
+    
     if ( !$frame->is_in_flow() ) {
       return;
     }
@@ -75,11 +75,11 @@ abstract class Frame_Reflower {
         if ( $n->is_block() ) {
           break;
         }
-    
+        
         if ( !$n->get_first_child() ) {
           $n = null;
           break;
-    }
+        }
       }
     }
     
@@ -97,7 +97,7 @@ abstract class Frame_Reflower {
         if ( $f->is_block() ) {
           break;
         }
-
+        
         if ( !$f->get_first_child() ) {
           $f = null;
           break;
@@ -112,7 +112,7 @@ abstract class Frame_Reflower {
       $style->margin_top = $t."pt";
       $f_style->margin_bottom = "0pt";
     }*/
-    }
+  }
 
   //........................................................................
 
@@ -321,7 +321,7 @@ abstract class Frame_Reflower {
             $type = null;
 
           $p = $this->_frame->lookup_counter_frame($counter_id);
-
+          
           $text .= $p->counter_value($counter_id, $type);
 
         } else if ( $match[1][7] === "s" ) {

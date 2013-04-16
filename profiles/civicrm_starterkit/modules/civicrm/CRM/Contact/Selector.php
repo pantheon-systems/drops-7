@@ -752,7 +752,7 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
           $result->contact_id
         );
 
-        $row['contact_type_orig'] = $result->contact_type;
+        $row['contact_type_orig'] = $result->contact_sub_type ? $result->contact_sub_type : $result->contact_type;
         $row['contact_sub_type']  = $result->contact_sub_type ?
           CRM_Contact_BAO_ContactType::contactTypePairs(FALSE, $result->contact_sub_type, ', ') : $result->contact_sub_type;
         $row['contact_id'] = $result->contact_id;
@@ -794,10 +794,9 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
       if ($sortByCharacter == 'all') {
         //delete the alphabet key corresponding records in prevnext_cache
         CRM_Core_BAO_PrevNextCache::deleteItem(NULL, $cacheKeyCharacter, 'civicrm_contact');
+        $cacheKeyCharacter = NULL;
       }
-      else {
-        $this->fillupPrevNextCache($sort, $cacheKeyCharacter);
-      }
+      $this->fillupPrevNextCache($sort, $cacheKeyCharacter);
     }
   }
 
@@ -861,16 +860,8 @@ class CRM_Contact_Selector extends CRM_Core_Selector_Base implements CRM_Core_Se
       // allow components to add more actions
       CRM_Core_Component::searchAction($row, $row['contact_id']);
 
-      $contactType = null;
-      if ( CRM_Utils_Array::value('contact_sub_type', $row) ) {
-        $contactType = $row['contact_sub_type'];
-    }
-      elseif ( CRM_Utils_Array::value('contact_type_orig', $row) ) {
-        $contactType = $row['contact_type_orig'];
-  }
-
-      if ( $contactType ) {
-        $row['contact_type'] = CRM_Contact_BAO_Contact_Utils::getImage($contactType,
+      if (!empty($row['contact_type_orig'])) {
+        $row['contact_type'] = CRM_Contact_BAO_Contact_Utils::getImage($row['contact_type_orig'],
           FALSE, $row['contact_id']);
       }
     }

@@ -583,7 +583,13 @@ INNER JOIN  civicrm_membership_type type ON ( type.id = membership.membership_ty
    * @access public
    */
   static function deleteMembership($membershipId) {
-    CRM_Utils_Hook::pre('delete', 'Membership', $membershipId, CRM_Core_DAO::$_nullArray);
+    // CRM-12147, retrieve membership data before we delete it for hooks
+    $params = array('id' => $membershipId);
+    $memValues = array();
+    $memberships = self::getValues($params, $memValues);
+    $membership = $memberships[$membershipId];
+
+    CRM_Utils_Hook::pre('delete', 'Membership', $membershipId, $memValues);
 
     $transaction = new CRM_Core_Transaction();
 
@@ -593,7 +599,13 @@ INNER JOIN  civicrm_membership_type type ON ( type.id = membership.membership_ty
 
     $params = array();
     $deleteActivity = false;
-    $membershipActivities = array('Membership Signup', 'Membership Renewal', 'Change Membership Status', 'Change Membership Type', 'Membership Renewal Reminder');
+    $membershipActivities =  array(
+      'Membership Signup',
+      'Membership Renewal',
+      'Change Membership Status',
+      'Change Membership Type',
+      'Membership Renewal Reminder'
+    );
     foreach($membershipActivities as $membershipActivity) {
       $activityId = array_search($membershipActivity, $activityTypes);
       if ($activityId) {
@@ -603,13 +615,11 @@ INNER JOIN  civicrm_membership_type type ON ( type.id = membership.membership_ty
     }
     if ($deleteActivity) {
       $params['source_record_id'] = $membershipId;
-    CRM_Activity_BAO_Activity::deleteActivity($params);
+      CRM_Activity_BAO_Activity::deleteActivity($params);
     }
     self::deleteMembershipPayment($membershipId);
 
-    $membership     = new CRM_Member_DAO_Membership();
-    $membership->id = $membershipId;
-    $results        = $membership->delete();
+    $results = $membership->delete();
     $transaction->commit();
 
     CRM_Utils_Hook::post('delete', 'Membership', $membership->id, $membership);
@@ -1235,7 +1245,7 @@ AND civicrm_membership.is_test = %2";
     if (is_a($result[1], 'CRM_Core_Error')) {
       $errors[1] = CRM_Core_Error::getMessages($result[1]);
     }
-    else {
+    elseif (CRM_Utils_Array::value(1, $result)) {
       // Save the contribution ID so that I can be used in email receipts
       // For example, if you need to generate a tax receipt for the donation only.
       $form->_values['contribution_other_id'] = $result[1]->id;
@@ -1245,6 +1255,7 @@ AND civicrm_membership.is_test = %2";
 
     $memBlockDetails = CRM_Member_BAO_Membership::getMembershipBlock($form->_id);
     if (CRM_Utils_Array::value('is_separate_payment', $memBlockDetails) && !$paymentDone) {
+      $form->_lineItem = $form->_memLineItem;
       $contributionType = new CRM_Financial_DAO_FinancialType( );
       $contributionType->id = CRM_Utils_Array::value('financial_type_id', $membershipDetails);
       if (!$contributionType->find(TRUE)) {
@@ -2298,7 +2309,7 @@ LEFT JOIN civicrm_membership mem ON ( cr.id = mem.contribution_recur_id )
    *         whose join_date is between $startDate and $endDate and
    *         whose start_date is between $startDate and $endDate
    */
-  function getMembershipJoins($membershipTypeId, $startDate, $endDate, $isTest = 0) {
+  static function getMembershipJoins($membershipTypeId, $startDate, $endDate, $isTest = 0) {
     $testClause = 'membership.is_test = 1';
     if (!$isTest) {
       $testClause = '( membership.is_test IS NULL OR membership.is_test = 0 )';
@@ -2338,7 +2349,7 @@ INNER JOIN  civicrm_contact contact ON ( membership.contact_id = contact.id AND 
    *         whose join_date is before $startDate and
    *         whose start_date is between $startDate and $endDate
    */
-  function getMembershipRenewals($membershipTypeId, $startDate, $endDate, $isTest = 0) {
+  static function getMembershipRenewals($membershipTypeId, $startDate, $endDate, $isTest = 0) {
     $testClause = 'membership.is_test = 1';
     if (!$isTest) {
       $testClause = '( membership.is_test IS NULL OR membership.is_test = 0 )';
@@ -2444,7 +2455,7 @@ WHERE      civicrm_membership.is_test = 0";
     $params = array();
     $dao = CRM_Core_DAO::executeQuery($query, $params);
 
-    $today         = date("Y-m-d");
+    $today         = date('Y-m-d');
     $processCount  = 0;
     $updateCount   = 0;
 
@@ -2504,6 +2515,15 @@ WHERE      civicrm_membership.is_test = 0";
           //since there is change in status.
           $statusChange = array('status_id' => $deceaseStatusId);
           $smarty->append_by_ref('memberParams', $statusChange, TRUE);
+          unset(
+            $deceasedMembership['contact_id'],
+            $deceasedMembership['membership_type_id'],
+            $deceasedMembership['membership_type'],
+            $deceasedMembership['join_date'],
+            $deceasedMembership['start_date'],
+            $deceasedMembership['end_date'],
+            $deceasedMembership['source']
+          );
 
           //process membership record.
           civicrm_api('membership', 'create', $deceasedMembership);
@@ -2545,6 +2565,18 @@ WHERE      civicrm_membership.is_test = 0";
           $memParams['createActivity'] = TRUE;
           $memParams['version'] = 3;
 
+          // Unset columns which should remain unchanged from their current saved
+          // values. This avoids race condition in which these values may have
+          // been changed by other processes.
+          unset(
+            $memParams['contact_id'],
+            $memParams['membership_type_id'],
+            $memParams['membership_type'],
+            $memParams['join_date'],
+            $memParams['start_date'],
+            $memParams['end_date'],
+            $memParams['source']
+          );
           //since there is change in status.
           $statusChange = array('status_id' => $statusId);
           $smarty->append_by_ref('memberParams', $statusChange, TRUE);

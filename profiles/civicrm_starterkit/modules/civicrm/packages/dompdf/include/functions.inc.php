@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
@@ -84,7 +84,7 @@ function d($mixed) {
   // line
   if ($mixed instanceof Line_Box) {
     echo $mixed;
-    }
+  }
   
   // other
   else {
@@ -929,16 +929,16 @@ else {
  * @param mixed $object
  */
 if ( PHP_VERSION_ID < 50300 ) {
-function clear_object(&$object) {
-  if ( is_object($object) ) {
+  function clear_object(&$object) {
+    if ( is_object($object) ) {
       foreach ($object as &$value) {
         clear_object($value);
-    }
+      }
     }
     
-  $object = null;
-  unset($object);
-}
+    $object = null;
+    unset($object);
+  }
 }
 else {
   function clear_object(&$object) {

@@ -107,13 +107,14 @@ class CRM_Report_Form_Contribute_Summary extends CRM_Report_Form {
         ),
         'grouping' => 'contact-fields',
       ),
-                   'civicrm_financial_type' =>
-                   array( 'dao'           => 'CRM_Financial_DAO_FinancialType',
-        'fields' =>
-                          array( 'financial_type'   => null, ), 
+      'civicrm_financial_type' =>
+      array('dao' => 'CRM_Financial_DAO_FinancialType',
+        'fields' => array('financial_type' => null,), 
         'grouping' => 'contri-fields',
-        'group_bys' =>
-                          array( 'financial_type'   => array('title' => ts('Financial Type')), ), ),
+        'group_bys' => array( 
+          'financial_type' => array('title' => ts('Financial Type')), 
+        ), 
+      ),
       'civicrm_contribution' =>
       array(
         'dao' => 'CRM_Contribute_DAO_Contribution',
@@ -122,6 +123,10 @@ class CRM_Report_Form_Contribute_Summary extends CRM_Report_Form {
         array(
           'contribution_source' => array('title' => ts('Source'),
 		  ),
+          'currency' =>
+          array('required' => TRUE,
+            'no_display' => TRUE,
+          ),
           'total_amount' =>
           array('title' => ts('Amount Statistics'),
             'default' => TRUE,
@@ -145,10 +150,17 @@ class CRM_Report_Form_Contribute_Summary extends CRM_Report_Form {
             'default' => array(1),
             'type' => CRM_Utils_Type::T_INT,
           ),
-                                'financial_type_id'   =>
-                                   array( 'title'        => ts( 'Financial Type' ), 
+          'currency' =>
+          array('title' => 'Currency',
             'operatorType' => CRM_Report_Form::OP_MULTISELECT,
-                                          'options'      => CRM_Contribute_PseudoConstant::financialType( ),
+            'options' => CRM_Core_OptionGroup::values('currencies_enabled'),
+            'default' => NULL,
+            'type' => CRM_Utils_Type::T_STRING,
+          ),
+          'financial_type_id' =>
+          array('title' => ts('Financial Type'), 
+            'operatorType' => CRM_Report_Form::OP_MULTISELECT,
+            'options'  => CRM_Contribute_PseudoConstant::financialType(),
             'type' => CRM_Utils_Type::T_INT,
           ),
           'total_amount' =>
@@ -216,6 +228,8 @@ class CRM_Report_Form_Contribute_Summary extends CRM_Report_Form {
       $this->_columns['civicrm_contribution']['grouping']['campaign_id'] = 'contri-fields';
       $this->_columns['civicrm_contribution']['group_bys']['campaign_id'] = array('title' => ts('Campaign'));
     }
+
+    $this->_currencyColumn = 'civicrm_contribution_currency';
     parent::__construct();
   }
 
@@ -344,7 +358,7 @@ class CRM_Report_Form_Contribute_Summary extends CRM_Report_Form {
           foreach ($table['fields'] as $fieldName => $field) {
             if (CRM_Utils_Array::value($field['name'], $fields['fields']) &&
               $fields['fields'][$field['name']] &&
-                             in_array( $field['name'], array( 'sort_name', 'postal_greeting_display', 'contribution_source', 'financial_type' ) ) ) {
+                in_array( $field['name'], array('sort_name', 'postal_greeting_display', 'contribution_source', 'financial_type'))) {
               $grouping[] = $field['title'];
             }
           }
@@ -455,28 +469,35 @@ class CRM_Report_Form_Contribute_Summary extends CRM_Report_Form {
       $select = "
             SELECT COUNT({$this->_aliases['civicrm_contribution']}.total_amount )       as count,
                    SUM({$this->_aliases['civicrm_contribution']}.total_amount )         as amount,
-                   ROUND(AVG({$this->_aliases['civicrm_contribution']}.total_amount), 2) as avg
+                   ROUND(AVG({$this->_aliases['civicrm_contribution']}.total_amount), 2) as avg,                                                                                                                              {$this->_aliases['civicrm_contribution']}.currency as currency                
             ";
+      $group = "\nGROUP BY {$this->_aliases['civicrm_contribution']}.currency";
+      $sql = "{$select} {$this->_from} {$this->_where}{$group}";
 
-      $sql = "{$select} {$this->_from} {$this->_where}";
       $dao = CRM_Core_DAO::executeQuery($sql);
-
-      if ($dao->fetch()) {
-        $statistics['counts']['amount'] = array(
-          'value' => $dao->amount,
-          'title' => 'Total Amount',
-          'type' => CRM_Utils_Type::T_MONEY,
-        );
-        $statistics['counts']['count '] = array(
-          'value' => $dao->count,
-          'title' => 'Total Donations',
-        );
-        $statistics['counts']['avg   '] = array(
-          'value' => $dao->avg,
-          'title' => 'Average',
-          'type' => CRM_Utils_Type::T_MONEY,
-        );
+      $totalAmount = $average = array();
+      $count = 0;
+      while ($dao->fetch()) {
+        $totalAmount[] = CRM_Utils_Money::format($dao->amount, $dao->currency)."(".$dao->count.")";
+        $average[] =   CRM_Utils_Money::format($dao->avg, $dao->currency);
+        $count += $dao->count;
       }
+
+      $statistics['counts']['amount'] = array(
+        'title' => ts('Total Amount'),
+        'value' => implode(',  ', $totalAmount),
+        'type' => CRM_Utils_Type::T_STRING,
+      );
+      $statistics['counts']['count'] = array(
+        'title' => ts('Total Donations'),
+        'value' => $count,
+      );
+      $statistics['counts']['avg'] = array(
+        'title' => ts('Average'),
+        'value' => implode(',  ', $average),
+        'type' => CRM_Utils_Type::T_STRING,
+      );
+
     }
     return $statistics;
   }

@@ -25,7 +25,7 @@
 *}
 {strip}
 {if $rows}
-  <table class="nestedActivitySelector">
+  <table class="nestedActivitySelector" data-params='{$data_params}'>
     <tr class="columnheader">
       <th>{ts}Date{/ts}</th>
       <th>{ts}Subject{/ts}</th>
@@ -56,4 +56,3 @@
 {/strip}
 
 {include file="CRM/Case/Form/ActivityToCase.tpl"}
-{include file="CRM/Case/Form/ActivityChangeStatus.tpl"}

@@ -402,6 +402,9 @@ class CRM_Core_BAO_Setting extends CRM_Core_DAO_Setting {
       'entity_table',
       'sequential',
       'api.has_parent',
+      'IDS_request_uri',
+      'IDS_user_agent',
+      'check_permissions',
     );
     $settingParams = array_diff_key($params, array_fill_keys($ignoredParams, TRUE));
     $getFieldsParams = array('version' => 3);
@@ -521,8 +524,12 @@ class CRM_Core_BAO_Setting extends CRM_Core_DAO_Setting {
    * - description
    * - help_text
    */
-  static function getSettingSpecification($componentID = null, $filters = array(), $domainID = null, $profile = null) {
-
+  static function getSettingSpecification(
+    $componentID = null,
+    $filters = array(),
+    $domainID = null,
+    $profile = null
+  ) {
     $cacheString = 'settingsMetadata_' . $domainID . '_' . $profile;
     foreach ($filters as $filterField => $filterString) {
       $cacheString .= "_{$filterField}_{$filterString}";

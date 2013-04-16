@@ -524,7 +524,7 @@ class CRM_Utils_System {
     return TRUE;
   }
 
-  static function authenticateScript($abort = TRUE, $name = NULL, $pass = NULL, $storeInSession = TRUE, $loadCMSBootstrap = TRUE) {
+  static function authenticateScript($abort = TRUE, $name = NULL, $pass = NULL, $storeInSession = TRUE, $loadCMSBootstrap = TRUE, $requireKey = TRUE) {
     // auth to make sure the user has a login/password to do a shell
     // operation
     // later on we'll link this to acl's
@@ -540,7 +540,7 @@ class CRM_Utils_System {
       );
     }
 
-    if (!self::authenticateKey($abort)) {
+    if ($requireKey && !self::authenticateKey($abort)) {
       return FALSE;
     }
 
@@ -554,9 +554,9 @@ class CRM_Utils_System {
       // lets store contact id and user id in session
       list($userID, $ufID, $randomNumber) = $result;
       if ($userID && $ufID) {
-        $session = CRM_Core_Session::singleton();
-        $session->set('ufID', $ufID);
-        $session->set('userID', $userID);
+
+        $config = CRM_Core_Config::singleton();
+        $config->userSystem->setUserSession( array($userID, $ufID) );
       }
       else {
         return self::authenticateAbort("ERROR: Unexpected error, could not match userID and contactID",
@@ -1195,10 +1195,10 @@ class CRM_Utils_System {
 
       // if db.ver > code.ver, sth really wrong
       if (version_compare($dbVersion, $codeVersion) > 0) {
-        $errorMessage = ts('Your database is marked with an unexpected version number: %1. The v%2 codebase may not be compatible with your database state. You will need to determine the correct version corresponding to your current database state. You may want to revert to the codebase you were using until you resolve this problem.',
+        $errorMessage = '<p>' . ts('Your database is marked with an unexpected version number: %1. The v%2 codebase may not be compatible with your database state. You will need to determine the correct version corresponding to your current database state. You may want to revert to the codebase you were using until you resolve this problem.',
           array(1 => $dbVersion, 2 => $codeVersion)
-        );
-        $errorMessage .= "<p>" . ts('OR if this is an svn install, you might want to fix civicrm-version.php file.') . "</p>";
+        ) . '</p>';
+        $errorMessage .= "<p>" . ts('OR if this is a manual install from git, you might want to fix civicrm-version.php file.') . "</p>";
         return FALSE;
       }
     }
@@ -1511,6 +1511,35 @@ class CRM_Utils_System {
 
     CRM_Utils_System::redirect($redirectUrl);
   }
+
+  /**
+   * Evaluate any tokens in a URL
+   *
+   * @param string|FALSE $url
+   * @return string|FALSE
+   */
+  public static function evalUrl($url) {
+    if ($url === FALSE) {
+      return FALSE;
+    }
+    else {
+      $config = CRM_Core_Config::singleton();
+      $vars = array(
+        '{ver}' => CRM_Utils_System::version(),
+        '{uf}' => $config->userFramework,
+        '{php}' => phpversion(),
+        '{sid}' => md5('sid_' . (defined('CIVICRM_SITE_KEY') ? CIVICRM_SITE_KEY : '') . '_' . $config->userFrameworkBaseURL),
+        '{baseUrl}' => $config->userFrameworkBaseURL,
+        '{lang}' => $config->lcMessages,
+        '{co}' => $config->defaultContactCountry,
+      );
+      foreach (array_keys($vars) as $k) {
+        $vars[$k] = urlencode($vars[$k]);
+      }
+      return strtr($url, $vars);
+    }
+  }
+
 
   /**
    * Determine whether this is a developmental system.

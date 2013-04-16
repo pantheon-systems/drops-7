@@ -99,6 +99,8 @@
             });
           }
           designerDialog.undoState = false;
+          // CRM-12188
+          CRM.designerApp.DetachedProfiles = [];
         },
         close: function() {
           window.onbeforeunload = designerDialog.oldOnBeforeUnload;
@@ -113,6 +115,8 @@
               return false;
             });
           }
+          // CRM-12188
+          CRM.designerApp.restorePreviewArea();
         },
         resize: function() {
           CRM.designerApp.vent.trigger('resize');
@@ -188,8 +192,19 @@
       'click .crm-designer-preview': 'doPreview'
     },
     onRender: function() {
-      this.$('.crm-designer-save').button();
+      this.$('.crm-designer-save').button().attr({
+        disabled: 'disabled',
+        style: 'opacity:.5; box-shadow:none; cursor:default;'
+      });
       this.$('.crm-designer-preview').button();
+    },
+    initialize: function(options) {
+      CRM.designerApp.vent.on('ufUnsaved', this.onUfChanged, this);
+    },
+    onUfChanged: function(isUfUnsaved) {
+      if (isUfUnsaved) {
+        this.$('.crm-designer-save').removeAttr('style').removeAttr('disabled');
+      }
     },
     doSave: function(event) {
       var ufGroupModel = this.model;
@@ -241,6 +256,8 @@
       }
       var $dialog = this.$el.closest('.crm-designer-dialog'); // FIXME use events
       $dialog.block({message: 'Loading...', theme: true});
+      // CRM-12188
+      CRM.designerApp.clearPreviewArea();
       $.ajax({
         url: CRM.url("civicrm/ajax/inline"),
         type: 'POST',
@@ -329,7 +346,8 @@
         themes: {
           "theme": 'classic',
           "dots": false,
-          "icons": false
+          "icons": false,
+          "url": CRM.config.resourceBase + 'packages/jquery/plugins/jstree/themes/classic/style.css'
         },
         'plugins': ['themes', 'json_data', 'ui', 'search']
       }).bind('loaded.jstree', function () {
@@ -395,14 +413,14 @@
       if (paletteView.hideAddFieldAlert) {
         openAddNewWindow();
       } else {
-        CRM.confirm({
-          title: ts('Add Field'),
-          message: ts('A new window or tab will open. Use the new window to add your field, and then return to this window and click "Refresh."'),
-          onContinue: function() {
+        CRM.confirm(function() {
             paletteView.hideAddFieldAlert = true;
             openAddNewWindow();
+          }, {
+            title: ts('Add Field'),
+            message: ts('A new window or tab will open. Use the new window to add your field, and then return to this window and click "Refresh."')
           }
-        });
+        );
       }
       return false;
     },
@@ -677,10 +695,16 @@
         fields: fields
       });
       this.form.on('change', this.onFormChange, this);
+      this.model.on('change', this.onModelChange, this);
     },
     render: function() {
       this.$el.html(this.form.render().el);
       this.onFormChange();
+    },
+    onModelChange: function() {
+      $.each(this.form.fields, function(i, field) {
+        this.form.setValue(field.key, this.model.get(field.key));
+      });
     },
     onFormChange: function() {
       this.form.commit();

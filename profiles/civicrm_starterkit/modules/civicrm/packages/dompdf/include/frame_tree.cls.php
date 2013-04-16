@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: frame_tree.cls.php 464 2012-01-30 20:44:53Z fabien.menager $
  */
@@ -82,7 +82,7 @@ class Frame_Tree {
 
   /**
    * Returns the root frame of the tree
-   *
+   * 
    * @return Page_Frame_Decorator
    */
   function get_root() { return $this->_root; }
@@ -118,7 +118,7 @@ class Frame_Tree {
     $this->_root = $this->_build_tree_r($html);
 
   }
-
+  
   /**
    * Adds missing TBODYs around TR
    */

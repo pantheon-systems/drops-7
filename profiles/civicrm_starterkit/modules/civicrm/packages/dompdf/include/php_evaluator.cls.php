@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: php_evaluator.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
  */
@@ -35,7 +35,7 @@ class PHP_Evaluator {
     
     // Override those variables if passed in
     foreach ($vars as $k => $v) {
-        $$k = $v;
+      $$k = $v;
     }
 
     //$code = html_entity_decode($code); // @todo uncomment this when tested

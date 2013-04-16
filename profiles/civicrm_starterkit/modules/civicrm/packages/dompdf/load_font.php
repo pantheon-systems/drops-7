@@ -2,8 +2,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: load_font.php 467 2012-02-04 13:25:17Z fabien.menager $
@@ -66,7 +66,7 @@ if ( $_SERVER["argc"] < 3 && @$_SERVER["argv"][1] != "system_fonts" ) {
  */
 function install_font_family($fontname, $normal, $bold = null, $italic = null, $bold_italic = null) {
   Font_Metrics::init();
-
+  
   // Check if the base filename is readable
   if ( !is_readable($normal) )
     throw new DOMPDF_Exception("Unable to read '$normal'.");
@@ -112,37 +112,37 @@ function install_font_family($fontname, $normal, $bold = null, $italic = null, $
   $fonts = compact("normal", "bold", "italic", "bold_italic");
   $entry = array();
 
-    // Copy the files to the font directory.
-    foreach ($fonts as $var => $src) {
-      if ( is_null($src) ) {
+  // Copy the files to the font directory.
+  foreach ($fonts as $var => $src) {
+    if ( is_null($src) ) {
       $entry[$var] = DOMPDF_FONT_DIR . mb_substr(basename($normal), 0, -4);
-        continue;
-      }
+      continue;
+    }
 
-      // Verify that the fonts exist and are readable
-      if ( !is_readable($src) )
+    // Verify that the fonts exist and are readable
+    if ( !is_readable($src) )
       throw new DOMPDF_Exception("Requested font '$src' is not readable");
 
-      $dest = DOMPDF_FONT_DIR . basename($src);
+    $dest = DOMPDF_FONT_DIR . basename($src);
 
-      if ( !is_writeable(dirname($dest)) )
-        throw new DOMPDF_Exception("Unable to write to destination '$dest'.");
+    if ( !is_writeable(dirname($dest)) )
+      throw new DOMPDF_Exception("Unable to write to destination '$dest'.");
 
-      echo "Copying $src to $dest...\n";
+    echo "Copying $src to $dest...\n";
 
-      if ( !copy($src, $dest) )
+    if ( !copy($src, $dest) )
       throw new DOMPDF_Exception("Unable to copy '$src' to '$dest'");
-
+    
     $entry_name = mb_substr($dest, 0, -4);
-
+    
     echo "Generating Adobe Font Metrics for $entry_name...\n";
-
+    
     $font_obj = Font::load($dest);
     $font_obj->saveAdobeFontMetrics("$entry_name.ufm");
 
     $entry[$var] = $entry_name;
-      }
-      
+  }
+
   // Store the fonts in the lookup table
   Font_Metrics::set_font_family($fontname, $entry);
 

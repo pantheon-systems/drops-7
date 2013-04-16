@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: attribute_translator.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
@@ -61,10 +61,10 @@ class Attribute_Translator {
       'width' => 'width: %s;',
     ),
     'hr' => array(
-      'align' => '!set_hr_align', // Need to grab width to set 'left' & 'right' correctly
+      'align'   => '!set_hr_align', // Need to grab width to set 'left' & 'right' correctly
       'noshade' => 'border-style: solid;',
       'size'    => '!set_hr_size', //'border-width: %0.2F px;',
-      'width' => 'width: %s;',
+      'width'   => 'width: %s;',
     ),
     'div' => array(
       'align' => 'text-align: %s;',
@@ -176,7 +176,7 @@ class Attribute_Translator {
       'width' => 'width: %s;',
     ),
   );
-
+  
   static protected $_last_basefont_size = 3;
   static protected $_font_size_lookup = array(
     // For basefont support
@@ -250,7 +250,7 @@ class Attribute_Translator {
     
     return $value ? sprintf($target, $value) : "";
   }
-
+  
   static function append_style(DOMNode $node, $new_style) {
     $style = rtrim($node->getAttribute(self::$_style_attr), ";");
     $style .= $new_style;
@@ -281,7 +281,7 @@ class Attribute_Translator {
   } 
 
   //.....................................................................
-
+  
   static protected function _get_valid_color($value) {
     if ( preg_match('/^#?([0-9A-F]{6})$/i', $value, $matches) ) {
       $value = "#$matches[1]";
@@ -312,7 +312,7 @@ class Attribute_Translator {
 
   static protected function _set_table_border($node, $value) {
     $cell_list = self::get_cell_list($node);
-    
+
     foreach ($cell_list as $cell) {
       $style = rtrim($cell->getAttribute(self::$_style_attr));
       $style .= "; border-width: " . ($value > 0 ? 1 : 0) . "pt; border-style: inset;";
@@ -435,7 +435,7 @@ class Attribute_Translator {
   static protected function _set_table_row_bgcolor($node, $value) {
     $cell_list = self::get_cell_list($node);
     $value = self::_get_valid_color($value);
-
+    
     foreach ($cell_list as $cell) {
       self::append_style($cell, "; background-color: $value;");
     }
@@ -446,7 +446,7 @@ class Attribute_Translator {
   static protected function _set_body_link($node, $value) {
     $a_list = $node->getElementsByTagName("a");
     $value = self::_get_valid_color($value);
-
+    
     foreach ($a_list as $a) {
       self::append_style($a, "; color: $value;");
     }

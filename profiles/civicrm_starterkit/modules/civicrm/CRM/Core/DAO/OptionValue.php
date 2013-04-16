@@ -298,6 +298,12 @@ class CRM_Core_DAO_OptionValue extends CRM_Core_DAO
           'name' => 'component_id',
           'type' => CRM_Utils_Type::T_INT,
           'FKClassName' => 'CRM_Core_DAO_Component',
+          'pseudoconstant' => array(
+            'name' => 'component',
+            'table' => 'civicrm_component',
+            'keyColumn' => 'id',
+            'labelColumn' => 'name',
+          )
         ) ,
         'domain_id' => array(
           'name' => 'domain_id',

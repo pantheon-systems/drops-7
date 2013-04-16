@@ -208,7 +208,7 @@
 		},
 
 		_removeWords : function(w) {
-			var ed = this.editor, dom = ed.dom, se = ed.selection, r = se.getRng(true);
+			var ed = this.editor, dom = ed.dom, se = ed.selection, b = se.getBookmark();
 
 			each(dom.select('span').reverse(), function(n) {
 				if (n && (dom.hasClass(n, 'mceItemHiddenSpellWord') || dom.hasClass(n, 'mceItemHidden'))) {
@@ -217,11 +217,11 @@
 				}
 			});
 
-			se.setRng(r);
+			se.moveToBookmark(b);
 		},
 
 		_markWords : function(wl) {
-			var ed = this.editor, dom = ed.dom, doc = ed.getDoc(), se = ed.selection, r = se.getRng(true), nl = [],
+			var ed = this.editor, dom = ed.dom, doc = ed.getDoc(), se = ed.selection, b = se.getBookmark(), nl = [],
 				w = wl.join('|'), re = this._getSeparators(), rx = new RegExp('(^|[' + re + '])(' + w + ')(?=[' + re + ']|$)', 'g');
 
 			// Collect all text nodes
@@ -279,7 +279,7 @@
 				}
 			});
 
-			se.setRng(r);
+			se.moveToBookmark(b);
 		},
 
 		_showMenu : function(ed, e) {

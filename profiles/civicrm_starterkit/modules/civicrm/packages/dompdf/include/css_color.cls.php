@@ -166,7 +166,7 @@ class CSS_Color {
       return $colour;
     
     $colour = strtolower($colour);
-    
+      
     if ( in_array($colour, array("transparent", "inherit")) )
       return $colour;
     

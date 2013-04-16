@@ -33,7 +33,7 @@
     {/if}
      {if $element.options_per_line != 0 }
         <tr class="custom_field-row {$element.element_name}-row">
-            <td class="label">{$form.$element_name.label}{if $element.help_post}{help id=$element.id file="CRM/Custom/Form/CustomField.hlp" title=$form.$element_name.label}{/if}</td>
+            <td class="label">{$form.$element_name.label}{if $element.help_post}{help id=$element.id file="CRM/Custom/Form/CustomField.hlp" title=$element.label}{/if}</td>
             <td class="html-adjust">
                 {assign var="count" value="1"}
                 <table class="form-layout-compressed" style="margin-top: -0.5em;">
@@ -64,7 +64,7 @@
 
     {else}
         <tr class="custom_field-row {$element.element_name}-row">
-            <td class="label">{$form.$element_name.label}{if $element.help_post}{help id=$element.id file="CRM/Custom/Form/CustomField.hlp" title=$form.$element_name.label}{/if}</td>
+            <td class="label">{$form.$element_name.label}{if $element.help_post}{help id=$element.id file="CRM/Custom/Form/CustomField.hlp" title=$element.label}{/if}</td>
             <td class="html-adjust">
                 {if $element.data_type neq 'Date' OR ($element.data_type eq 'Date' AND $element.is_view eq 1)}
                     {$form.$element_name.html}&nbsp;
@@ -76,18 +76,20 @@
                     <span class="crm-clear-link">(<a href="#" title="unselect" onclick="unselectRadio('{$element_name}', '{$form.formName}'); return false;" >{ts}clear{/ts}</a>)</span>
                 {elseif $element.data_type eq 'File'}
                     {if $element.element_value.data}
+                      <div id="attachStatusMesg_{$element_name}" class="status hiddenElement"></div>
+                      <div id="attachFile_{$element_name}">
                         <span class="html-adjust"><br />
                             &nbsp;{ts}Attached File{/ts}: &nbsp;
-                            {if $element.element_value.displayURL }
-                                <a href="javascript:popUp('{$element.element_value.imageURL}')" ><img src="{$element.element_value.displayURL}" height = "{$element.element_value.imageThumbHeight}" width="{$element.element_value.imageThumbWidth}"></a>
+                            {if $element.element_value.displayURL}
+                                <a href="#" onclick="popUp('{$element.element_value.imageURL}'); return false;" ><img src="{$element.element_value.displayURL}" height = "{$element.element_value.imageThumbHeight}" width="{$element.element_value.imageThumbWidth}"></a>
                             {else}
                                 <a href="{$element.element_value.fileURL}">{$element.element_value.fileName}</a>
                             {/if}
-                            {if $element.element_value.deleteURL }
-                                <br />
-                            {$element.element_value.deleteURL}
+                            {if $element.element_value.deleteURL}
+                                   <a href="#" onclick="showDeleteAttachment('{$element.element_value.fileName}', '{$element.element_value.deleteURLArgs}', {$element.element_value.fid}, '#attachStatusMesg_{$element_name}', '#attachFile_{$element_name}'); return false;" title="{ts}Delete this file{/ts}"><span class="icon red-icon delete-icon" style="margin:0px 0px -5px 20px" title="{ts}Delete this file{/ts}"></span></a>
                             {/if}
                         </span>
+                      </div>
                     {/if}
                 {elseif $element.html_type eq 'Autocomplete-Select'}
                   {if $element.data_type eq 'ContactReference'}
@@ -100,4 +102,3 @@
         </tr>
 
     {/if}
-

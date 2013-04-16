@@ -1,12 +1,12 @@
 /*!
- * jQuery UI Widget 1.9.0
+ * jQuery UI Widget 1.9.0-rc.1
  * http://jqueryui.com
  *
  * Copyright 2012 jQuery Foundation and other contributors
  * Released under the MIT license.
  * http://jquery.org/license
  *
- * http://api.jqueryui.com/jQuery.widget/
+ * http://docs.jquery.com/UI/Widget
  */
 (function( $, undefined ) {
 

@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: list_bullet_image_frame_decorator.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
@@ -139,5 +139,5 @@ class List_Bullet_Image_Frame_Decorator extends Frame_Decorator {
   function get_image_url() {
     return $this->_img->get_image_url();
   }
-
-  }
+  
+}

@@ -338,12 +338,9 @@ SELECT name, mail
     // If the path is within the drupal directory we can add in the normal way
     if (CRM_Utils_System_Drupal::formatResourceUrl($url)) {
       drupal_add_js($url, 'module', $scope);
+      return TRUE;
     }
-    // D6 hack for external js files
-    else {
-      drupal_add_js('document.write(unescape("%3Cscript src=\'' . $url . '\' type=\'text/javascript\'%3E%3C/script%3E"));', 'inline', $scope);
-    }
-    return TRUE;
+    return FALSE;
   }
 
   /**
@@ -909,23 +906,32 @@ SELECT name, mail
     return $loginURL;
   }
 
-  /*
+  /**
    * Wrapper for og_membership creation
+   *
+   * @param integer $ogID Organic Group ID
+   * @param integer $drupalID drupal User ID
    */
   function og_membership_create($ogID, $drupalID){
-    $group_membership = og_membership_create($ogID, 'user', $drupalID, array('is_active' => 1));
-    $group_membership->save();
+    og_save_subscription( $ogID, $drupalID, array( 'is_active' => 1 ) );
   }
 
   /**
    * Wrapper for og_membership deletion
+   *
+   * @param integer $ogID Organic Group ID
+   * @param integer $drupalID drupal User ID
    */
   function og_membership_delete($ogID, $drupalID) {
-    $membership = og_get_group_membership($ogID, 'user', $drupalID);
-    if ($membership) {
-      og_membership_delete($membership->id);
-    }
+      og_delete_subscription( $ogID, $drupalID );
   }
 
+  /**
+   * Reset any system caches that may be required for proper CiviCRM
+   * integration.
+   */
+  function flush() {
+    drupal_flush_all_caches();
+  }
 }
 

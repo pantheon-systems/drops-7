@@ -59,22 +59,19 @@ function civicrm_requirements($phase) {
   $pos = strrpos($civicrm_path, 'drupal');
 
   if ($pos !== false) {
-   $civicrm_path = substr_replace($civicrm_path, '', $pos, strlen($civicrm_path));
+    $civicrm_path = substr_replace($civicrm_path, '', $pos, strlen($civicrm_path));
   }
-
-  $url = $base_url . '/' . $civicrm_path . '/install/index.php';
+  //continue passing variables already configured
+  $url = $base_url . '/' . $civicrm_path . 'install/index.php?profile=' . $_GET['profile'] . '&locale=' . $_GET['locale'];
 
   $settings = glob('sites/*/civicrm.settings.php');
   $problems = array();
-  if (empty($settings) &&
-    $phase == 'install'
-  ) {
+  if (empty($settings) && $phase == 'install') {
     $problems[] = array(
       'title' => t('CiviCRM settings does not exist'),
       'value' =>
       t('CiviCRM settings file does not exist. It should be created by CiviCRM <a href="!link">install</a>',
-        array('!link' => $url)
-      ),
+        array('!link' => $url)),
       'severity' => REQUIREMENT_ERROR,
     );
   }

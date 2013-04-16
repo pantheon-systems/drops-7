@@ -23,7 +23,8 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
 *}
-{if $ppType}
+{* Callback snippet: Load payment processor *}
+{if $snippet}
   {include file="CRM/Core/BillingBlock.tpl" context="front-end"}
 
 <div id="paypalExpress">
@@ -49,7 +50,7 @@
 
 {* moved to tpl since need to show only for primary participant page *}
 {if $requireApprovalMsg || $waitlistMsg}
-  <div id = "id-waitlist-approval-msg" class="messages status no-popup">
+  <div id="id-waitlist-approval-msg" class="messages status no-popup">
       {if $requireApprovalMsg}
       <div id="id-req-approval-msg">{$requireApprovalMsg}</div>
   {/if}
@@ -100,9 +101,6 @@
         </div>
     {/if}
 {/if}
-{if $initialPayment}
-  {include file="CRM/Price/Form/InitialPayment.tpl" extends="Contribution" paymentMode='online'}
-{/if}
 {if $pcp && $is_honor_roll }
     <fieldset class="crm-group pcp-group">
         <div class="crm-section pcp-section">
@@ -144,7 +142,7 @@
 {include file="CRM/UF/Form/Block.tpl" fields=$customPre}
 
 {if $form.payment_processor.label}
-<fieldset class="crm-group payment_options-group">
+<fieldset class="crm-group payment_options-group" style="display:none;">
   <legend>{ts}Payment Options{/ts}</legend>
   <div class="crm-section payment_processor-section">
     <div class="label">{$form.payment_processor.label}</div>
@@ -154,7 +152,12 @@
 </fieldset>
 {/if}
 
-<div id="billing-payment-block"></div>
+<div id="billing-payment-block">
+  {* If we have a payment processor, load it - otherwise it happens via ajax *}
+  {if $ppType}
+    {include file="CRM/Event/Form/Registration/Register.tpl" snippet=4}
+  {/if}
+</div>
 {include file="CRM/common/paymentBlock.tpl"}
 
 {include file="CRM/UF/Form/Block.tpl" fields=$customPost}
@@ -177,7 +180,7 @@
 <script type="text/javascript">
 {literal}
 function toggleConfirmButton() {
-  var payPalExpressId = {/literal}{$payPalExpressId}{literal};
+  var payPalExpressId = "{/literal}{$payPalExpressId}{literal}";
   var elementObj = cj('input[name="payment_processor"]');
    if ( elementObj.attr('type') == 'hidden' ) {
       var processorTypeId = elementObj.val( );

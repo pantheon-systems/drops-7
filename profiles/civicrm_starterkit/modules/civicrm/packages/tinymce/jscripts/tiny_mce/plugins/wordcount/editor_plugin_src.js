@@ -16,12 +16,10 @@
 		cleanre : null,
 
 		init : function(ed, url) {
-			var t = this, last = 0, VK = tinymce.VK;
+			var t = this, last = 0;
 
 			t.countre = ed.getParam('wordcount_countregex', /[\w\u2019\'-]+/g); // u2019 == &rsquo;
 			t.cleanre = ed.getParam('wordcount_cleanregex', /[0-9.(),;:!?%#$?\'\"_+=\\\/-]*/g);
-			t.update_rate = ed.getParam('wordcount_update_rate', 2000);
-			t.update_on_delete = ed.getParam('wordcount_update_on_delete', false);
 			t.id = ed.id + '-word-count';
 
 			ed.onPostRender.add(function(ed, cm) {
@@ -51,18 +49,12 @@
 				t._count(ed);
 			});
 
-			function checkKeys(key) {
-				return key !== last && (key === VK.ENTER || last === VK.SPACEBAR || checkDelOrBksp(last));
-			}
-
-			function checkDelOrBksp(key) {
-				return key === VK.DELETE || key === VK.BACKSPACE;
-			}
-
 			ed.onKeyUp.add(function(ed, e) {
-				if (checkKeys(e.keyCode) || t.update_on_delete && checkDelOrBksp(e.keyCode)) {
+				if (e.keyCode == last)
+					return;
+
+				if (13 == e.keyCode || 8 == last || 46 == last)
 					t._count(ed);
-				}
 
 				last = e.keyCode;
 			});
@@ -102,7 +94,7 @@
 				if (!ed.destroyed) {
 					var tc = t._getCount(ed);
 					tinymce.DOM.setHTML(t.id, tc.toString());
-					setTimeout(function() {t.block = 0;}, t.update_rate);
+					setTimeout(function() {t.block = 0;}, 2000);
 				}
 			}, 1);
 		},

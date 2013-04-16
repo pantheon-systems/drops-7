@@ -49,6 +49,7 @@ files[] = modules/views/civicrm/civicrm_handler_field_prefix.inc
 files[] = modules/views/civicrm/civicrm_handler_field_relationship_type.inc
 files[] = modules/views/civicrm/civicrm_handler_field_state.inc
 files[] = modules/views/civicrm/civicrm_handler_field_suffix.inc
+files[] = modules/views/civicrm/civicrm_handler_field_custom_file.inc
 
 ; filter handlers
 files[] = modules/views/civicrm/civicrm_handler_filter_pseudo_constant.inc

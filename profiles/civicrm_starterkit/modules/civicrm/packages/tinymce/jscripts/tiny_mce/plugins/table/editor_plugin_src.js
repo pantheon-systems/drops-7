@@ -1144,9 +1144,7 @@
 						}
 
 						function getChildForDirection(parent, up) {
-							var child =  parent && parent[up ? 'lastChild' : 'firstChild'];
-							// BR is not a valid table child to return in this case we return the table cell
-							return child && child.nodeName === 'BR' ? ed.dom.getParent(child, 'td,th') : child;
+							return parent && parent[up ? 'lastChild' : 'firstChild'];
 						}
 
 						function moveCursorToStartOfElement(n) {
@@ -1268,24 +1266,6 @@
 						if (last && last.childNodes.length == 1 && last.firstChild.nodeName == 'BR')
 							ed.dom.remove(last);
 					});
-
-
-					/**
-					 * Fixes bug in Gecko where shift-enter in table cell does not place caret on new line
-					 */
-					if (tinymce.isGecko) {
-						ed.onKeyDown.add(function(ed, e) {
-							if (e.keyCode === tinymce.VK.ENTER && e.shiftKey) {
-								var node = ed.selection.getRng().startContainer;
-								var tableCell = dom.getParent(node, 'td,th');
-								if (tableCell) {
-									var zeroSizedNbsp = ed.getDoc().createTextNode("\uFEFF");
-									dom.insertAfter(zeroSizedNbsp, node);
-								}
-							}
-						});
-					}
-
 
 					fixTableCaretPos();
 					ed.startContent = ed.getContent({format : 'raw'});

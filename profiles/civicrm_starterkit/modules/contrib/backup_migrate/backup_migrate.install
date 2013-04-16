@@ -179,13 +179,12 @@ function backup_migrate_install() {
 }
 
 function _backup_migrate_setup_database_defaults() {
-  require_once DRUPAL_ROOT . '/'. drupal_get_path('module', 'backup_migrate') .'/includes/crud.inc';
-  require_once DRUPAL_ROOT . '/'. drupal_get_path('module', 'backup_migrate') .'/backup_migrate.module';
-  require_once DRUPAL_ROOT . '/'. drupal_get_path('module', 'backup_migrate') .'/includes/profiles.inc';
-  require_once DRUPAL_ROOT . '/'. drupal_get_path('module', 'backup_migrate') .'/includes/db.inc';
-  require_once DRUPAL_ROOT . '/'. drupal_get_path('module', 'backup_migrate') .'/includes/files.inc';
-
   if (variable_get("backup_migrate_file_name", NULL)) {
+    require_once DRUPAL_ROOT . '/'. drupal_get_path('module', 'backup_migrate') .'/includes/crud.inc';
+    require_once DRUPAL_ROOT . '/'. drupal_get_path('module', 'backup_migrate') .'/backup_migrate.module';
+    require_once DRUPAL_ROOT . '/'. drupal_get_path('module', 'backup_migrate') .'/includes/profiles.inc';
+    require_once DRUPAL_ROOT . '/'. drupal_get_path('module', 'backup_migrate') .'/includes/files.inc';
+
     $settings = array(
       'profile_id' => 'default',
       'filename' => variable_get("backup_migrate_file_name", _backup_migrate_default_filename()),

@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: positioner.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
  */
@@ -32,7 +32,7 @@ abstract class Positioner {
    * Class destructor
    */
   function __destruct() {
-  	clear_object($this);
+    clear_object($this);
   }
   //........................................................................
 
@@ -43,7 +43,7 @@ abstract class Positioner {
     
     if ( !$ignore_self ) {
       $this->_frame->set_position($x + $offset_x, $y + $offset_y);
-}
+    }
     
     foreach($this->_frame->get_children() as $child) {
       $child->move($offset_x, $offset_y);

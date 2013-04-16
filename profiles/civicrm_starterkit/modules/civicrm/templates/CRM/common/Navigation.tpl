@@ -25,14 +25,15 @@
 *}
 <div id="menu-container" style="display:none;">
     <ul id="civicrm-menu">
-        {if call_user_func(array('CRM_Core_Permission','giveMeAllACLs'))}
+      {if call_user_func(array('CRM_Core_Permission','giveMeAllACLs'))}
         <li id="crm-qsearch" class="menumain crm-link-home">
-            <form action="{crmURL p='civicrm/contact/search/basic' h=0 }" name="search_block" id="id_search_block" method="post" onsubmit="getSearchURLValue( );">
+            <form action="{crmURL p='civicrm/contact/search/advanced' h=0 }" name="search_block" id="id_search_block" method="post">
               <div id="quickSearch">
                 <input type="text" class="form-text" id="sort_name_navigation" placeholder="{ts}Find Contacts{/ts}" name="sort_name" style="width: 12em;" />
-                <input type="hidden" id="sort_contact_id" value="" />
+                <input type="text" id="sort_contact_id" style="display: none" />
+                <input type="hidden" name="hidden_location" value="1" />
                 <input type="hidden" name="qfKey" value="{crmKey name='CRM_Contact_Controller_Search' addSequence=1}" />
-                <input type="submit" value="{ts}Go{/ts}" name="_qf_Basic_refresh" class="form-submit default" style="display: none;" />
+                <div style="height:1px; overflow:hidden;"><input type="submit" value="{ts}Go{/ts}" name="_qf_Advanced_refresh" class="form-submit default" /></div>
               </div>
             </form>
           <ul>
@@ -49,39 +50,17 @@
             <li><label class="crm-quickSearchField"><input type="radio" data-tablename="cc" value="job_title" name="quickSearchField">{ts}Job Title{/ts}</label></li>
           </ul>
         </li>
-
-  {/if}
-        {$navigation}
+      {/if}
+      {$navigation}
     </ul>
 </div>
 
 {literal}
 <script type="text/javascript">
-cj( document ).ready( function( ) {
-  //CRM-6776, enter-to-submit functionality is broken for IE due to hidden field
+cj(function( ) {
   cj("#civicrm-menu >li").each(function(i){
     cj(this).attr("tabIndex",i+2);
   });
-  var htmlContent = '';
-  if ( cj.browser.msie ) {
-    if( cj.browser.version.substr( 0,1 ) == '7' ) {
-      htmlContent = '<input type="submit" value="Go" name="_qf_Basic_refresh" class="form-submit default" style ="margin-right: -5px" />';
-    } else {
-      htmlContent = '<input type="submit" value="Go" name="_qf_Basic_refresh" class="form-submit default" />';
-    }
-    htmlContent += '<input type="text" class="form-text" id="sort_name_navigation" placeholder="{/literal}{ts escape='js'}Find Contacts{/ts}{literal}" name="sort_name" style="width: 12em; margin-left: -45px;" /><input type="text" id="sort_contact_id" style="display: none" />';
-    htmlContent += '<input type="hidden" name="qfKey" value="' + {/literal}'{crmKey name='CRM_Contact_Controller_Search' addSequence=1}'{literal} + '" />';
-    cj('#quickSearch').html(htmlContent);
-  }
-
-  cj( "#admin-menu>ul>li>a" ).each( function( ) {
-      if ( cj( this ).html( ) == 'CiviCRM' ) {
-          cj( this ).click ( function( ) {
-              cj( "#civicrm-menu" ).toggle( );
-              return false;
-          });
-      }
-   });
 
   var contactUrl = {/literal}"{crmURL p='civicrm/ajax/rest' q='className=CRM_Contact_Page_AJAX&fnName=getContactList&json=1&context=navigation' h=0 }"{literal};
 
@@ -102,7 +81,7 @@ cj( document ).ready( function( ) {
         }
       }
   }).result(function(event, data, formatted) {
-     document.location={/literal}"{crmURL p='civicrm/contact/view' h=0 q='reset=1&cid='}"{literal}+data[1];
+     document.location = CRM.url('civicrm/contact/view', {reset: 1, cid: data[1]});
      return false;
   });
   cj('#sort_name_navigation').keydown(function() {
@@ -110,35 +89,38 @@ cj( document ).ready( function( ) {
   });
   cj('.crm-quickSearchField').click(function() {
     var label = cj(this).text();
-    cj('#sort_name_navigation').attr('placeholder', label).flushCache().focus();
+    var value = cj('input', this).val();
+    // These fields are not supported by advanced search
+    if (value === 'first_name' || value === 'last_name') {
+      value = 'sort_name';
+    }
+    cj('#sort_name_navigation').attr({name: value, placeholder: label}).flushCache().focus();
+  });
+  // check if there is only one contact and redirect to view page
+  cj('#id_search_block').on('submit', function() {
+    var contactId, sortValue = cj('#sort_name_navigation').val();
+    if (sortValue && cj('#sort_name_navigation').attr('name') == 'sort_name') {
+      {/literal}{*
+      // FIXME: async:false == bad,
+      // we should just check the autocomplete results instead of firing a new request
+      // when we fix this, the civicrm/ajax/contact server-side callback can be removed as well
+      // also that would fix the fact that this only works with sort_name search
+      // (and we can remove the above conditional)
+      *}{literal}
+      var dataUrl = {/literal}"{crmURL p='civicrm/ajax/contact' h=0 q='name='}"{literal} + sortValue;
+      contactId = cj.ajax({
+        url: dataUrl,
+        async: false
+      }).responseText;
+    }
+    if (contactId && !isNaN(parseInt(contactId))) {
+      var url = {/literal}"{crmURL p='civicrm/contact/view' h=0 q='reset=1&cid='}"{literal} + contactId;
+      this.action = url;
+    }
   });
 });
-function getSearchURLValue( )
-{
-    var input = cj('#sort_name_navigation').val();
-    var contactId =  cj( '#sort_contact_id' ).val();
-    if ( ! contactId || isNaN( contactId ) ) {
-      var sortValue = cj( '#sort_name_navigation' ).val();
-      if ( sortValue ) {
-          //using xmlhttprequest check if there is only one contact and redirect to view page
-          var dataUrl = {/literal}"{crmURL p='civicrm/ajax/contact' h=0 q='name='}"{literal} + sortValue;
 
-          var response = cj.ajax({
-              url: dataUrl,
-              async: false
-              }).responseText;
-
-          contactId = response;
-      }
-    }
-
-    if ( contactId && !isNaN(parseInt(contactId)) ) {
-        var url = {/literal}"{crmURL p='civicrm/contact/view' h=0 q='reset=1&cid='}"{literal} + contactId;
-        document.getElementById('id_search_block').action = url;
-    }
-}
-
-if (CRM.config.userFramework != 'Joomla') {
+{/literal}{if $config->userFramework neq 'Joomla'}{literal}
   cj('body').prepend( cj("#menu-container").html() );
 
   //Track Scrolling
@@ -151,14 +133,15 @@ if (CRM.config.userFramework != 'Joomla') {
   if ( cj('#edit-shortcuts').length > 0 ) {
      cj('#civicrm-menu').css({ 'width': '97%' });
   }
-} else {
-     cj('div#toolbar-box div.m').html(cj("#menu-container").html());
-     cj('#civicrm-menu').ready( function(){
-      cj('.outerbox').css({ 'margin-top': '6px'});
-      cj('#root-menu-div .menu-ul li').css({ 'padding-bottom' : '2px', 'margin-top' : '2px' });
-      cj('img.menu-item-arrow').css({ 'top' : '4px' });
-    });
-}
+{/literal}{else}{* Special menu hacks for Joomla *}{literal}
+  cj('div#toolbar-box div.m').html(cj("#menu-container").html());
+  cj('#civicrm-menu').ready(function() {
+    cj('#root-menu-div .outerbox').css({ 'margin-top': '6px'});
+    cj('#root-menu-div .outerbox').first().css({ 'margin-top': '20px'});
+    cj('#root-menu-div .menu-ul li').css({ 'padding-bottom' : '2px', 'margin-top' : '2px' });
+    cj('img.menu-item-arrow').css({ 'top' : '4px' });
+  });
+{/literal}{/if}{literal}
   cj('#civicrm-menu').menu( {arrowSrc: CRM.config.resourceBase + 'packages/jquery/css/images/arrow.png'} );
 </script>
 {/literal}

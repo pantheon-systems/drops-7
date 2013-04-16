@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: list_bullet_renderer.cls.php 468 2012-02-05 10:51:40Z fabien.menager $
@@ -17,7 +17,7 @@
 class List_Bullet_Renderer extends Abstract_Renderer {
   static function get_counter_chars($type) {
     static $cache = array();
-
+    
     if ( isset($cache[$type]) ) {
       return $cache[$type];
     }
@@ -105,7 +105,7 @@ class List_Bullet_Renderer extends Abstract_Renderer {
     if ( $uppercase ) {
       $text = strtoupper($text);
     }
-      
+    
     return "$text.";
   }
   
@@ -166,7 +166,7 @@ class List_Bullet_Renderer extends Abstract_Renderer {
         $y += ($font_size*(1-List_Bullet_Frame_Decorator::BULLET_DESCENT-List_Bullet_Frame_Decorator::BULLET_SIZE))/2;
         $this->_canvas->filled_rectangle($x, $y, $w, $w, $style->color);
         break;
-		
+    
       case "decimal-leading-zero":
       case "decimal":
       case "lower-alpha":
@@ -194,7 +194,7 @@ class List_Bullet_Renderer extends Abstract_Renderer {
         if ( trim($text) == "" ) {
           return;
         }
-
+        
         $spacing = 0;
         $font_family = $style->font_family;
         

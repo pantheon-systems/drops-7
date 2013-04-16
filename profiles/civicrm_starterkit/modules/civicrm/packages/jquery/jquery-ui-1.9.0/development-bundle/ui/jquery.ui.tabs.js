@@ -1,12 +1,12 @@
 /*!
- * jQuery UI Tabs 1.9.0
+ * jQuery UI Tabs 1.9.0-rc.1
  * http://jqueryui.com
  *
  * Copyright 2012 jQuery Foundation and other contributors
  * Released under the MIT license.
  * http://jquery.org/license
  *
- * http://api.jqueryui.com/tabs/
+ * http://docs.jquery.com/UI/Tabs
  *
  * Depends:
  *	jquery.ui.core.js
@@ -30,7 +30,7 @@ function isLocal( anchor ) {
 }
 
 $.widget( "ui.tabs", {
-	version: "1.9.0",
+	version: "1.9.0-rc.1",
 	delay: 300,
 	options: {
 		active: null,
@@ -102,7 +102,7 @@ $.widget( "ui.tabs", {
 
 		// handle numbers: negative, out of range
 		if ( active !== false ) {
-			active = this.tabs.index( this.tabs.eq( active ) );
+			active = this.tabs.eq( active ).index();
 			if ( active === -1 ) {
 				active = options.collapsible ? false : 0;
 			}
@@ -948,9 +948,7 @@ if ( $.uiBackCompat !== false ) {
 			this._super();
 			this._on({
 				tabsbeforeload: function( event, ui ) {
-					// Don't react to nested tabs or tabs that don't use a spinner
-					if ( event.target !== this.element[ 0 ] ||
-							!this.options.spinner ) {
+					if ( !this.options.spinner ) {
 						return;
 					}
 

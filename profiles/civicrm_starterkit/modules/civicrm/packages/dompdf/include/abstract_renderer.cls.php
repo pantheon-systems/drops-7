@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
@@ -68,7 +68,7 @@ abstract class Abstract_Renderer {
     // Skip degenerate cases
     if ( $width == 0 || $height == 0 )
       return;
-
+    
     $box_width = $width;
     $box_height = $height;
 
@@ -118,7 +118,7 @@ abstract class Abstract_Renderer {
     } else {
       $bg_x = (float)($style->length_in_pt($bg_x)*DOMPDF_DPI) / 72;
     }
-
+    
     $bg_x = round($bg_x + $style->length_in_pt($style->border_left_width)*DOMPDF_DPI / 72);
 
     if ( is_percent($bg_y) ) {
@@ -132,7 +132,7 @@ abstract class Abstract_Renderer {
     } else {
       $bg_y = (float)($style->length_in_pt($bg_y)*DOMPDF_DPI) / 72;
     }
-
+    
     $bg_y = round($bg_y + $style->length_in_pt($style->border_top_width)*DOMPDF_DPI / 72);
 
     //clip background to the image area on partial repeat. Nothing to do if img off area
@@ -153,7 +153,7 @@ abstract class Abstract_Renderer {
         $bg_x = 0;
       }
       if ($bg_width <= 0) {
-          return;
+        return;
       }
       $width = (float)($bg_width * 72)/DOMPDF_DPI;
     } else {
@@ -181,7 +181,7 @@ abstract class Abstract_Renderer {
         $bg_y = 0;
       }
       if ($bg_height <= 0) {
-          return;
+        return;
       }
       $height = (float)($bg_height * 72)/DOMPDF_DPI;
     } else {

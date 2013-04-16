@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: gd_adapter.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
@@ -536,14 +536,14 @@ class GD_Adapter implements Canvas {
     if ( !$img_ext ) {
       return;
     }
-      
+    
     $func = "imagecreatefrom$img_ext";
     $src = @$func($img_url);
-      
+
     if ( !$src ) {
       return; // Probably should add to $_dompdf_errors or whatever here
     }
-
+    
     // Scale by the AA factor
     $x *= $this->_aa_factor;
     $y *= $this->_aa_factor;
@@ -553,7 +553,7 @@ class GD_Adapter implements Canvas {
     
     $img_w = imagesx($src);
     $img_h = imagesy($src);
-
+    
     imagecopyresampled($this->_img, $src, $x, $y, 0, 0, $w, $h, $img_w, $img_h);
     
   }
@@ -640,16 +640,16 @@ class GD_Adapter implements Canvas {
    * @param float  $spacing word spacing, if any
    * @return float
    */
-  function get_text_width($text, $font, $size, $word_spacing = 0, $char_spacing = 0) {    
+  function get_text_width($text, $font, $size, $word_spacing = 0, $char_spacing = 0) {
     $font = $this->get_ttf_file($font);
-
+      
     $text = mb_encode_numericentity($text, array(0x0080, 0xffff, 0, 0xffff), 'UTF-8');
 
     // FIXME: word spacing
     list($x1,,$x2) = @imagettfbbox($size, 0, $font, $text);
     return $x2 - $x1;
   }
-
+  
   function get_ttf_file($font) {
     if ( strpos($font, '.ttf') === false )
       $font .= ".ttf";
@@ -672,12 +672,12 @@ class GD_Adapter implements Canvas {
    */
   function get_font_height($font, $size) {
     $font = $this->get_ttf_file($font);
-
+      
     // FIXME: word spacing
     list(,$y2,,,,$y1) = imagettfbbox($size, 0, $font, "MXjpqytfhl");  // Test string with ascenders, descenders and caps
     return ($y2 - $y1) * DOMPDF_FONT_HEIGHT_RATIO;
   }
-
+  
   function get_font_baseline($font, $size) {
     return $this->get_font_height($font, $size) / DOMPDF_FONT_HEIGHT_RATIO;
   }

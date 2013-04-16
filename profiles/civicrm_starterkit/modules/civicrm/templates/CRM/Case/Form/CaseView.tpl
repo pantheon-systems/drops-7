@@ -50,7 +50,7 @@
 <table class="report">
   {if $multiClient}
     <tr class="crm-case-caseview-client">
-      <td colspan="4" class="label">
+      <td colspan="5" class="label">
         {ts}Clients:{/ts}
         {foreach from=$caseRoles.client item=client name=clients}
           <a href="{crmURL p='civicrm/contact/view' q="action=view&reset=1&cid=`$client.contact_id`"}" title="{ts}view contact record{/ts}">{$client.display_name}</a>{if not $smarty.foreach.clients.last}, &nbsp; {/if}
@@ -89,14 +89,14 @@
         {/if}
       </td>
     {/if}
-    <td class="crm-case=caseview-case_subject label">
+    <td class="crm-case-caseview-case_subject label">
       <span class="crm-case-summary-label">{ts}Case Subject{/ts}:</span>&nbsp;{$caseDetails.case_subject}
     </td>
     <td class="crm-case-caseview-case_type label">
-      <span class="crm-case-summary-label">{ts}Case Type{/ts}:</span>&nbsp;{$caseDetails.case_type}&nbsp;<a href="{crmURL p='civicrm/case/activity' q="action=add&reset=1&cid=`$contactId`&caseid=`$caseId`&selectedChild=activity&atype=`$changeCaseTypeId`"}" title={ts}"Change case type (creates activity record)"{/ts}><span class="icon edit-icon"></span></a>
+      <span class="crm-case-summary-label">{ts}Case Type{/ts}:</span>&nbsp;{$caseDetails.case_type}&nbsp;<a href="{crmURL p='civicrm/case/activity' q="action=add&reset=1&cid=`$contactId`&caseid=`$caseId`&selectedChild=activity&atype=`$changeCaseTypeId`"}" title="{ts}Change case type (creates activity record){/ts}"><span class="icon edit-icon"></span></a>
     </td>
     <td class="crm-case-caseview-case_status label">
-      <span class="crm-case-summary-label">{ts}Status{/ts}:</span>&nbsp;{$caseDetails.case_status}&nbsp;<a href="{crmURL p='civicrm/case/activity' q="action=add&reset=1&cid=`$contactId`&caseid=`$caseId`&selectedChild=activity&atype=`$changeCaseStatusId`"}" title={ts}"Change case status (creates activity record)"{/ts}><span class="icon edit-icon"></span></a>
+      <span class="crm-case-summary-label">{ts}Status{/ts}:</span>&nbsp;{$caseDetails.case_status}&nbsp;<a href="{crmURL p='civicrm/case/activity' q="action=add&reset=1&cid=`$contactId`&caseid=`$caseId`&selectedChild=activity&atype=`$changeCaseStatusId`"}" title="{ts}Change case status (creates activity record){/ts}"><span class="icon edit-icon"></span></a>
     </td>
     <td class="crm-case-caseview-case_start_date label">
       <span class="crm-case-summary-label">{ts}Start Date{/ts}:</span>&nbsp;{$caseDetails.case_start_date|crmDate}&nbsp;<a href="{crmURL p='civicrm/case/activity' q="action=add&reset=1&cid=`$contactId`&caseid=`$caseId`&selectedChild=activity&atype=`$changeCaseStartDateId`"}" title="{ts}Change case start date (creates activity record){/ts}"><span class="icon edit-icon"></span></a>
@@ -187,8 +187,33 @@
   var oTable;
 
   cj(function() {
+    cj().crmAccordions();
     buildCaseRoles(false);
   });
+
+  function deleteCaseRoles(caseselector) {
+    cj('.case-role-delete').click(function(){
+      var caseID = cj(this).attr('case_id');
+      var relType  = cj(this).attr('rel_type');
+
+      CRM.confirm(function() {
+        var postUrl = {/literal}"{crmURL p='civicrm/ajax/delcaserole' h=0 }"{literal};
+        cj.post( postUrl, {
+          rel_type: relType, case_id: caseID, key: {/literal}"{crmKey name='civicrm/ajax/delcaserole'}"{literal}},
+          function(data) {
+            // reloading datatable
+            var oTable = cj('#' + caseselector).dataTable();
+            oTable.fnDraw();
+          }
+        );
+      }
+      ,{
+        title: ts('Delete case role'),
+        message: ts('Are you sure you want to delete this case role.')
+      });
+      return false;
+    });
+  }
 
   function buildCaseRoles(filterSearch) {
     if(filterSearch) {
@@ -243,6 +268,9 @@
     cj("#caseRoles-selector td:last-child").each( function( ) {
       cj(this).parent().addClass(cj(this).text() );
     });
+
+    // also bind delete action once rows are rendered
+    deleteCaseRoles('caseRoles-selector');
   }
 
   function printCaseReport( ) {
@@ -254,10 +282,6 @@
 
     window.location = dataUrl;
   }
-  
-  cj(function() {
-    cj().crmAccordions();
-  });
 </script>
 {/literal}
  </div><!-- /.crm-accordion-body -->
@@ -742,7 +766,6 @@ function addRole() {
 </script>
 {/literal}
 {include file="CRM/Case/Form/ActivityToCase.tpl"}
-{include file="CRM/Case/Form/ActivityChangeStatus.tpl"}
 
 {* pane to display / edit regular tags or tagsets for cases *}
 {if $showTags OR $showTagsets}

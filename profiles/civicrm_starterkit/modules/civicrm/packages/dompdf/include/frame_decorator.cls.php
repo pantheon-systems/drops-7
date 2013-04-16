@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: frame_decorator.cls.php 464 2012-01-30 20:44:53Z fabien.menager $
  */
@@ -142,7 +142,7 @@ abstract class Frame_Decorator extends Frame {
    */
   function reset() {
     $this->_frame->reset();
-
+    
     $this->_counters = array();
 
     // Reset all children

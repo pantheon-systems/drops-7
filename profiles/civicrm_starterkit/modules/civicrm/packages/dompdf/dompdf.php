@@ -2,10 +2,10 @@
 /**
  * Command line utility to use dompdf.
  * Can also be used with HTTP GET parameters
- *
+ * 
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: dompdf.php 448 2011-11-13 13:00:03Z fabien.menager $
  */
@@ -223,7 +223,7 @@ switch ( $sapi ) {
   /* Check to see if the input file is local and, if so, that the base path falls within that specified by DOMDPF_CHROOT */
   if(($file_parts['protocol'] == '' || $file_parts['protocol'] === 'file://')) {
     $file = realpath($file);
-    if (strpos($file, DOMPDF_CHROOT) !== 0) {
+    if ( strpos($file, DOMPDF_CHROOT) !== 0 ) {
       throw new DOMPDF_Exception("Permission denied on $file.");
     }
   }

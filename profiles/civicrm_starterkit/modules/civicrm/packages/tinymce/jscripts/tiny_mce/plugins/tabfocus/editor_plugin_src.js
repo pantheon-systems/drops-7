@@ -22,7 +22,7 @@
 				var x, i, f, el, v;
 
 				function find(d) {
-					el = DOM.select(':input:enabled,*[tabindex]:not(iframe)');
+					el = DOM.select(':input:enabled,*[tabindex]');
 
 					function canSelectRecursive(e) {
 						return e.nodeName==="BODY" || (e.type != 'hidden' &&

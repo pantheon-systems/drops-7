@@ -408,7 +408,7 @@ function civicrm_views_custom_data_cache(&$data, $entity_type, $groupID, $subTyp
         $handler = array('handler' => 'civicrm_handler_field_custom',
                    'click sortable' => TRUE,);
       } else if ( $currentfield['html_type'] == 'File' ) {
-        $handler = array('handler' => 'views_handler_field',
+        $handler = array('handler' => 'civicrm_handler_field_custom_file',
                    'click sortable' => TRUE,);
       } else {
         $handler = civicrm_get_field_handler($currentfield['data_type']);

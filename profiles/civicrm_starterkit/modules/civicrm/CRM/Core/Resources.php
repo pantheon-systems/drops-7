@@ -113,7 +113,7 @@ class CRM_Core_Resources {
       self::$_singleton = new CRM_Core_Resources(
         $sys->getMapper(),
         $cache,
-        'resCacheCode'
+        CRM_Core_Config::isUpgradeMode() ? NULL : 'resCacheCode'
       );
     }
     return self::$_singleton;
@@ -131,7 +131,7 @@ class CRM_Core_Resources {
     if ($cacheCodeKey !== NULL) {
       $this->cacheCode = CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, $cacheCodeKey);
     }
-    if (! $this->cacheCode) {
+    if (!$this->cacheCode) {
       $this->resetCacheCode();
     }
   }
@@ -433,14 +433,18 @@ class CRM_Core_Resources {
       }
 
       // Add localized calendar js
+      // Search for i18n file in order of specificity (try fr-CA, then fr)
       list($lang) = explode('_', $config->lcMessages);
-      $localizationFile = "packages/jquery/jquery-ui-1.9.0/development-bundle/ui/i18n/jquery.ui.datepicker-{$lang}.js";
-      if ($this->getPath('civicrm', $localizationFile)) {
-        $this->addScriptFile('civicrm', $localizationFile, $jsWeight++, $region, FALSE);
+      foreach (array(str_replace('_', '-', $config->lcMessages), $lang) as $language) {
+        $localizationFile = "packages/jquery/jquery-ui-1.9.0/development-bundle/ui/i18n/jquery.ui.datepicker-{$language}.js";
+        if ($this->getPath('civicrm', $localizationFile)) {
+          $this->addScriptFile('civicrm', $localizationFile, $jsWeight++, $region, FALSE);
+          break;
+        }
       }
 
       // Give control of jQuery back to the CMS - this loads last
-      $this->addScript('cj = jQuery.noConflict(true);', 9999, $region);
+      $this->addScriptFile('civicrm', 'js/noconflict.js', 9999, $region, FALSE);
 
       $this->addCoreStyles($region);
     }
@@ -471,6 +475,13 @@ class CRM_Core_Resources {
       }
     }
     return $this;
+  }
+
+  /**
+   * Flushes cached translated strings
+   */
+  public function flushStrings() {
+    $this->cache->flush();
   }
 
   /**

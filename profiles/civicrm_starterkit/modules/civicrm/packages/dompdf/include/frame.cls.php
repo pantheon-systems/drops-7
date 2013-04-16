@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: frame.cls.php 450 2012-01-10 22:29:32Z fabien.menager $
  */
@@ -62,7 +62,7 @@ class Frame {
    * @var Frame
    */
   protected $_parent;
-
+  
   /**
    * This frame's children
    *
@@ -197,7 +197,7 @@ class Frame {
 
     $this->set_id( self::$ID_COUNTER++ );
   }
-
+  
   // WIP : preprocessing to remove all the unused whitespace
   protected function ws_trim(){
     if ( $this->ws_keep() ) return;
@@ -372,7 +372,7 @@ class Frame {
     if ( isset($this->_frame_list) ) {
       return $this->_frame_list;
     }
-  
+    
     $this->_frame_list = new FrameList($this);
     return $this->_frame_list; 
   }
@@ -387,7 +387,7 @@ class Frame {
    */
   function get_containing_block($i = null) {
     if ( isset($i) ) {
-      return $this->_containing_block[$i];    
+      return $this->_containing_block[$i];  
     }  
     return $this->_containing_block;
   }
@@ -616,7 +616,7 @@ class Frame {
   }
 
   //........................................................................
-    
+  
   /**
    * Tells if the frame is a text node
    * @return bool 

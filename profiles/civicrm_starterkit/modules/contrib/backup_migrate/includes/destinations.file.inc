@@ -93,7 +93,7 @@ class backup_migrate_destination_files extends backup_migrate_destination {
   /**
    * File delete destination callback.
    */
-  function delete_file($file_id) {
+  function _delete_file($file_id) {
     $filepath = $this->get_filepath($file_id);
     file_unmanaged_delete($filepath);
   }

@@ -163,6 +163,7 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
             }
           } // if seperate payment we set contribution amount to be null, so that it will not show contribution amount same as membership amount.
           elseif ((CRM_Utils_Array::value('is_separate_payment', $this->_membershipBlock))
+              && CRM_Utils_Array::value($priceField->id, $this->_values['fee'])
               && ($this->_values['fee'][$priceField->id]['name'] == "other_amount")
               && CRM_Utils_Array::value("price_{$contriPriceId}", $this->_params) < 1
               && !CRM_Utils_Array::value("price_{$priceField->id}", $this->_params)) {
@@ -447,7 +448,8 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
     }
     $this->assign('priceSetID', $this->_priceSetId);
     $paymentProcessorType = CRM_Core_PseudoConstant::paymentProcessorType(false, null, 'name');
-    if ($this->_paymentProcessor['payment_processor_type_id'] == CRM_Utils_Array::key('Google_Checkout', $paymentProcessorType)
+    if ($this->_paymentProcessor &&
+      $this->_paymentProcessor['payment_processor_type_id'] == CRM_Utils_Array::key('Google_Checkout', $paymentProcessorType)
       && !$this->_params['is_pay_later'] && !($this->_amount == 0)
     ) {
       $this->_checkoutButtonName = $this->getButtonName('next', 'checkout');
@@ -885,7 +887,7 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
       $priceFieldIds = $this->get('memberPriceFieldIDS');
 
       if (!empty($priceFieldIds)) {
-                $contributionTypeID = CRM_Core_DAO::getFieldValue( 'CRM_Price_DAO_Set', $priceFieldIds['id'], 'financial_type_id' );
+        $contributionTypeID = CRM_Core_DAO::getFieldValue('CRM_Price_DAO_Set', $priceFieldIds['id'], 'financial_type_id');
         unset($priceFieldIds['id']);
         $membershipTypeIds = array();
         $membershipTypeTerms = array();
@@ -902,15 +904,27 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
           }
         }
         $membershipParams['selectMembership'] = $membershipTypeIds;
-                $membershipParams['financial_type_id'] = $contributionTypeID;
+        $membershipParams['financial_type_id'] = $contributionTypeID;
         $membershipParams['types_terms'] = $membershipTypeTerms;
       }
       if (CRM_Utils_Array::value('selectMembership', $membershipParams)) {
+        // CRM-12233
+        if ($this->_separateMembershipPayment && $this->_values['amount_block_is_active']) {
+          foreach ($this->_values['fee'] as $key => $feeValues) {
+            if ($feeValues['name'] == 'membership_amount') {
+              $fieldId = $this->_params['price_' . $key];
+              $this->_memLineItem[$this->_priceSetId][$fieldId] = $this->_lineItem[$this->_priceSetId][$fieldId];
+              unset($this->_lineItem[$this->_priceSetId][$fieldId]);
+              break;
+            }
+          }
+        }
+
         CRM_Member_BAO_Membership::postProcessMembership($membershipParams, $contactID,
           $this, $premiumParams, $customFieldsFormatted,
           $fieldTypes
         );
-    }
+      }
     }
     else {
       // at this point we've created a contact and stored its address etc
@@ -1086,8 +1100,15 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
 
     // add these values for the recurringContrib function ,CRM-10188
     $params['financial_type_id'] = $contributionType->id;
-    $params['is_email_receipt'] = CRM_Utils_Array::value( 'is_email_receipt', $form->_values );
-
+    //@todo - this is being set from the form to resolve CRM-10188 - an
+    // eNotice caused by it not being set @ the front end
+    // however, we then get it being over-written with null for backend contributions
+    // a better fix would be to set the values in the respective forms rather than require
+    // a function being shared by two forms to deal with their respective values
+    // moving it to the BAO & not taking the $form as a param would make sense here.
+    if(!isset($params['is_email_receipt'])){
+      $params['is_email_receipt'] = CRM_Utils_Array::value( 'is_email_receipt', $form->_values );
+    }
     $recurringContributionID = self::processRecurringContribution($form, $params, $contactID, $contributionType, $online);
 
     if (!$online && isset($params['honor_contact_id'])) {

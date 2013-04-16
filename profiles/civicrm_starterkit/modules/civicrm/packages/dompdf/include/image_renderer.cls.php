@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: image_renderer.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
@@ -22,14 +22,14 @@ class Image_Renderer extends Block_Renderer {
     $cb = $frame->get_containing_block();
     list($x, $y, $w, $h) = $frame->get_border_box();
   
-    $this->_set_opacity( $frame->get_opacity( $style->opacity ) );  
+    $this->_set_opacity( $frame->get_opacity( $style->opacity ) );
 
-    if ( ($bg = $style->background_color) !== "transparent" ) 
+    if ( ($bg = $style->background_color) !== "transparent" )
       $this->_canvas->filled_rectangle($x, $y, $w, $h, $bg);
 
-    if ( ($url = $style->background_image) && $url !== "none" )           
+    if ( ($url = $style->background_image) && $url !== "none" )
       $this->_background_image($url, $x, $y, $w, $h, $style);
-    
+         
     $this->_render_border($frame);
     $this->_render_outline($frame);
     
@@ -39,7 +39,7 @@ class Image_Renderer extends Block_Renderer {
     
     $w = $style->length_in_pt($style->width, $cb["w"]);
     $h = $style->length_in_pt($style->height, $cb["h"]);
-
+    
     $src = $frame->get_image_url();
 
     if ( Image_Cache::is_broken($src) &&

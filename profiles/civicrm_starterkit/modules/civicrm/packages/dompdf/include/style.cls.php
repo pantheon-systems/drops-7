@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
@@ -21,7 +21,7 @@
  * @package dompdf
  */
 class Style {
-
+  
   const CSS_IDENTIFIER = "-?[_a-zA-Z]+[_a-zA-Z0-9-]*";
   const CSS_INTEGER    = "-?\d+";
 
@@ -107,7 +107,7 @@ class Style {
    * @var array
    */
   static protected $_inherited = null;
-
+  
   /**
    * Caches method_exists result
    * 
@@ -414,13 +414,13 @@ class Style {
    */
   function length_in_pt($length, $ref_size = null) {
     static $cache = array();
-
+    
     if ( !is_array($length) )
       $length = array($length);
 
     if ( !isset($ref_size) )
       $ref_size = self::$default_font_size;
-
+      
     $key = implode("@", $length)."/$ref_size";
     
     if ( isset($cache[$key]) ) {
@@ -472,17 +472,17 @@ class Style {
         $ret += mb_substr($l, 0, $i);
         continue;
       }
-
+      
       if ( ($i = mb_strpos($l, "%"))  !== false ) {
         $ret += mb_substr($l, 0, $i)/100 * $ref_size;
         continue;
       }
-      
+
       if ( ($i = mb_strpos($l, "rem"))  !== false ) {
         $ret += mb_substr($l, 0, $i) * $this->_stylesheet->get_dompdf()->get_tree()->get_root()->get_style()->font_size;
         continue;
       }
-          
+
       if ( ($i = mb_strpos($l, "em"))  !== false ) {
         $ret += mb_substr($l, 0, $i) * $this->__get("font_size");
         continue;
@@ -673,7 +673,7 @@ class Style {
     }
     
     $method = "set_$prop";
-
+    
     if ( !isset(self::$_methods_cache[$method]) ) {
       self::$_methods_cache[$method] = method_exists($this, $method);
     }
@@ -784,7 +784,7 @@ class Style {
       list(,$family) = each($families);
       //remove leading and trailing string delimiters, e.g. on font names with spaces;
       //remove leading and trailing whitespace
-      $family=trim($family," \t\n\r\x0B\"'");
+      $family = trim($family, " \t\n\r\x0B\"'");
       if ($DEBUGCSS) print '('.$family.')';
       $font = Font_Metrics::get_font($family, $subtype);
 
@@ -2116,7 +2116,7 @@ class Style {
     $this->_prop_cache["transform_origin"] = null;
     $this->_props["transform_origin"] = $values;
   }
-
+  
   protected function parse_image_resolution($val) {
     // If exif data could be get: 
     // $re = '/^\s*(\d+|normal|auto)(?:\s*,\s*(\d+|normal))?\s*$/';

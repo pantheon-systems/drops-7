@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Helmut Tischer <htischer@weihenstephan.org>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: pdflib_adapter.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
@@ -450,7 +450,7 @@ class PDFLib_Adapter implements Canvas {
    */
   protected function _set_stroke_color($color) {
     if($this->_last_stroke_color == $color)
-    	return;
+      return;
 
     $this->_last_stroke_color = $color;
 
@@ -477,7 +477,7 @@ class PDFLib_Adapter implements Canvas {
    */
   protected function _set_fill_color($color) {
     if($this->_last_fill_color == $color)
-    	return;
+      return;
 
     $this->_last_fill_color = $color;
 
@@ -509,11 +509,11 @@ class PDFLib_Adapter implements Canvas {
       $this->_pdf->set_gstate($gstate);
     }
   }
-
+  
   function set_default_view($view, $options = array()) {
     // TODO
     // http://www.pdflib.com/fileadmin/pdflib/pdf/manuals/PDFlib-8.0.2-API-reference.pdf
-  /**
+    /**
      * fitheight Fit the page height to the window, with the x coordinate left at the left edge of the window.
      * fitrect Fit the rectangle specified by left, bottom, right, and top to the window.
      * fitvisible Fit the visible contents of the page (the ArtBox) to the window.
@@ -833,7 +833,7 @@ class PDFLib_Adapter implements Canvas {
     // $desc is usually < 0,
     return $size * ($asc - $desc) * DOMPDF_FONT_HEIGHT_RATIO;
   }
-
+  
   function get_font_baseline($font, $size) {
     return $this->get_font_height($font, $size) / DOMPDF_FONT_HEIGHT_RATIO * 1.1;
   }

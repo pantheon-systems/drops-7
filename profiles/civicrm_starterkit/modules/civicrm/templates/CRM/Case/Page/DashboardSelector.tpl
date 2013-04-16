@@ -63,7 +63,7 @@
     {if $list eq 'upcoming'}
        <td class="crm-case-case_scheduled_activity">
      {if $row.case_upcoming_activity_viewable}
-        <a href="javascript:{$list}viewActivity({$row.case_scheduled_activity_id}, {$row.contact_id}, '{$list}');" title="{ts}View this activity.{/ts}">{$row.case_scheduled_activity_type}</a>
+        <a href="#" onclick="{$list}viewActivity({$row.case_scheduled_activity_id}, {$row.contact_id}, '{$list}'); return false;" title="{ts}View this activity.{/ts}">{$row.case_scheduled_activity_type}</a>
      {else}
         {$row.case_scheduled_activity_type}
      {/if}
@@ -78,7 +78,7 @@
     {elseif $list eq 'recent'}
        <td class="crm-case-case_recent_activity">
    {if $row.case_recent_activity_viewable}
-       <a href="javascript:{$list}viewActivity({$row.case_recent_activity_id}, {$row.contact_id}, '{$list}');" title="{ts}View this activity.{/ts}">{$row.case_recent_activity_type}</a>
+       <a href="#" onclick="{$list}viewActivity({$row.case_recent_activity_id}, {$row.contact_id}, '{$list}'); return false;" title="{ts}View this activity.{/ts}">{$row.case_recent_activity_type}</a>
     {else}
        {$row.case_recent_activity_type}
     {/if}
@@ -146,7 +146,7 @@ function showCaseActivities( caseId, type, context ) {
 function hideCaseActivities( caseId , type, context ) {
     cj('#' + context + '-' + type +'-casedetails-' + caseId).hide();
     cj('#' + context+type+caseId+'_show').show();
-    cj('minus'+context+type+caseId+'_hide').hide();
+    cj('#minus'+context+type+caseId+'_hide').hide();
 }
 
 </script>

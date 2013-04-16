@@ -91,12 +91,6 @@ abstract class CRM_Utils_Hook {
     $fnSuffix
   );
 
-  /**
-   * Get a list of modules implementing the given hook.
-   * @return Array of module names.
-   */
-  abstract function moduleImplements($hookName);
-
   function commonInvoke($numParams,
     &$arg1, &$arg2, &$arg3, &$arg4, &$arg5,
     $fnSuffix, $fnPrefix
@@ -130,24 +124,6 @@ abstract class CRM_Utils_Hook {
 
       $this->requireCiviModules($this->commonCiviModules);
     }
-  }
-
-  /**
-   * Get a list of modules implementing the given hook.
-   * @return Array of module names.
-   */
-  function commonModuleImplements($fnSuffix, $fnPrefix) {
-    $return = array();
-
-    $this->commonBuildModuleList($fnPrefix);
-
-    foreach ($this->commonCiviModules as $module) {
-      $fnName = "{$module}_{$fnSuffix}";
-      if (function_exists($fnName)) {
-        $return[] = $module;
-      }
-    }
-    return $return;
   }
 
   function runHooks(&$civiModules, $fnSuffix, $numParams,
@@ -901,7 +877,7 @@ abstract class CRM_Utils_Hook {
 
   /**
    * This hook is called when API permissions are checked (cf. civicrm_api3_api_check_permission()
-   * in api/v3/utils.php and _civicrm_api3_permissions() in CRM/Core/DAO/.permissions.php).
+   * in api/v3/utils.php and _civicrm_api3_permissions() in CRM/Core/DAO/permissions.php).
    *
    * @param string $entity       the API entity (like contact)
    * @param string $action       the API action (like get)

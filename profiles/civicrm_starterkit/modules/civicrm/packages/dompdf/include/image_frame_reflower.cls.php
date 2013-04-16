@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: image_frame_reflower.cls.php 448 2011-11-13 13:00:03Z fabien.menager $
@@ -67,7 +67,7 @@ class Image_Frame_Reflower extends Frame_Reflower {
         $f_style = $f->get_style();
         $t = $f_style->length_in_pt($f_style->width);
         if ($t != 0) {
-        	break;
+          break;
         }
       }
       $width = ((float)rtrim($width,"%") * $t)/100; //maybe 0
@@ -86,7 +86,7 @@ class Image_Frame_Reflower extends Frame_Reflower {
         $f_style = $f->get_style();
         $t = $f_style->length_in_pt($f_style->height);
         if ($t != 0) {
-        	break;
+          break;
         }
       }
       $height = ((float)rtrim($height,"%") * $t)/100; //maybe 0

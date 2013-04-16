@@ -53,9 +53,7 @@ class CRM_Contact_Form_Search_Criteria {
       // multiselect for groups
       if ($form->_group) {
         // Arrange groups into hierarchical listing (child groups follow their parents and have indentation spacing in title)
-        $ids = implode(',', array_keys($form->_group));
-        $ids = 'IN (' . $ids . ')';
-        $groupHierarchy = CRM_Contact_BAO_Group::getGroupsHierarchy($ids, NULL, '&nbsp;&nbsp;', TRUE);
+        $groupHierarchy = CRM_Contact_BAO_Group::getGroupsHierarchy($form->_group, NULL, '&nbsp;&nbsp;', TRUE);
 
         $form->add('select', 'group', ts('Groups'), $groupHierarchy, FALSE,
           array('id' => 'group', 'multiple' => 'multiple', 'title' => ts('- select -'))
@@ -80,7 +78,7 @@ class CRM_Contact_Form_Search_Criteria {
 
       $parentNames = CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
       CRM_Core_Form_Tag::buildQuickForm($form, $parentNames, 'civicrm_contact', NULL, TRUE, FALSE, TRUE);
-      
+
       $used_for = CRM_Core_OptionGroup::values('tag_used_for');
       $tagsTypes = array();
       $showAllTagTypes = false;
@@ -91,7 +89,7 @@ class CRM_Contact_Form_Search_Criteria {
         // we will hide searching contact by attachments tags until it will be implemented in core
         if (count($tags) && $key != 'civicrm_file' && $key != 'civicrm_contact') {
           //if tags exists then add type to display in adv search form help text
-          $tagsTypes[] = ts($value); 
+          $tagsTypes[] = ts($value);
           $showAllTagTypes = true;
         }
       }
@@ -319,25 +317,13 @@ class CRM_Contact_Form_Search_Criteria {
       }
 
       if ($select) {
-        $config = CRM_Core_Config::singleton();
-        $countryDefault = $config->defaultContactCountry;
-        $stateProvinceDefault = $config->defaultContactStateProvince;
-        $defaultValues = array();
         $stateCountryMap[] = array(
           'state_province' => 'state_province',
           'country' => 'country',
           'county' => 'county',
         );
         if ($select == 'stateProvince') {
-          if ($stateProvinceDefault) {
-            //for setdefault state/province
-            $defaultValues[$name] = $stateProvinceDefault;
-            $form->setDefaults($defaultValues);
-          }
-          if ($countryDefault && !isset($formValues['country'])) {
-            $selectElements = array('' => ts('- any -')) + CRM_Core_PseudoConstant::stateProvinceForCountry($countryDefault);
-          }
-          elseif ($formValues['country']) {
+          if (CRM_Utils_Array::value('country', $formValues)) {
             $selectElements = array('' => ts('- select -')) + CRM_Core_PseudoConstant::stateProvinceForCountry($formValues['country']);
           }
           else {
@@ -347,11 +333,6 @@ class CRM_Contact_Form_Search_Criteria {
           $element = $form->addElement('select', $name, $title, $selectElements);
         }
         elseif ($select == 'country') {
-          if ($countryDefault) {
-            //for setdefault country
-            $defaultValues[$name] = $countryDefault;
-            $form->setDefaults($defaultValues);
-          }
           $selectElements = array('' => ts('- any -')) + CRM_Core_PseudoConstant::$select();
           $element = $form->addElement('select', $name, $title, $selectElements);
         }
@@ -386,6 +367,8 @@ class CRM_Contact_Form_Search_Criteria {
       }
     }
 
+    CRM_Core_BAO_Address::addStateCountryMap($stateCountryMap);
+    
     // extend addresses with proximity search
     $form->addElement('text', 'prox_distance', ts('Find contacts within'));
     $form->addElement('select', 'prox_distance_unit', NULL, array('miles' => ts('Miles'), 'kilos' => ts('Kilometers')));
@@ -393,7 +376,6 @@ class CRM_Contact_Form_Search_Criteria {
     // is there another form rule that does decimals besides money ? ...
     $form->addRule('prox_distance', ts('Please enter positive number as a distance'), 'numeric');
 
-    CRM_Core_BAO_Address::addStateCountryMap($stateCountryMap);
     $worldRegions = array('' => ts('- any region -')) + CRM_Core_PseudoConstant::worldRegion();
     $form->addElement('select', 'world_region', ts('World Region'), $worldRegions);
 

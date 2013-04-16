@@ -1,8 +1,8 @@
 <?php
 /**
  * @package dompdf
- * @link http://www.dompdf.com/
- * @author Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    http://www.dompdf.com/
+ * @author  Benj Carson <benjcarson@digitaljunkies.ca>
  * @author  Fabien Ménager <fabien.menager@gmail.com>
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  * @version $Id: text_frame_reflower.cls.php 462 2012-01-29 22:44:23Z fabien.menager $
@@ -128,9 +128,9 @@ class Text_Frame_Reflower extends Frame_Reflower {
         $str .= substr($s, 0, -1);
       }
       else {
-      $width += $word_width;
-      $str .= $word;
-    }
+        $width += $word_width;
+        $str .= $word;
+      }
     }
 
     $offset = mb_strlen($str);
@@ -297,7 +297,7 @@ class Text_Frame_Reflower extends Frame_Reflower {
       
       if ((!$is_inline_frame && !$frame->get_prev_sibling())/* || 
           ( $is_inline_frame && !$parent->get_prev_sibling())*/) { //  <span><span>A<span>B</span> C</span></span> fails (the whitespace is removed)
-      	$t = ltrim($t);
+        $t = ltrim($t);
       }
       
       $frame->set_text( $t );

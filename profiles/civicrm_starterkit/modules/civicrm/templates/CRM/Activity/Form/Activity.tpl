@@ -31,7 +31,7 @@
     <div class="crm-block crm-content-block crm-activity-view-block">
   {else}
     {if $context NEQ 'standalone'}
-    <h3>{if $action eq 1 or $action eq 1024}{ts 1=$activityTypeName}New %1{/ts}{elseif $action eq 8}{ts 1=$activityTypeName}Delete %1{/ts}{else}{ts 1=$activityTypeName}Edit %1{/ts}{/if}</h3>
+    <h3>{if $action eq 1 or $action eq 1024}{ts 1=$activityTypeName}New activity: %1{/ts}{elseif $action eq 8}{ts 1=$activityTypeName}Delete %1{/ts}{else}{ts 1=$activityTypeName}Edit %1{/ts}{/if}</h3>
     {/if}
     {if $activityTypeDescription }
       <div class="help">{$activityTypeDescription}</div>
@@ -127,11 +127,19 @@
   <tr class="crm-activity-form-block-target_contact_id">
     {if $single eq false}
       <td class="label">{ts}With Contact(s){/ts}</td>
-      <td class="view-value" style="white-space: normal">{$with|escape}</td>
+      <td class="view-value" style="white-space: normal">
+        {$with|escape}
+        <br/>
+        {$form.is_multi_activity.html}&nbsp;{$form.is_multi_activity.label}
+      </td>
       {elseif $action neq 4}
       <td class="label">{ts}With Contact{/ts}</td>
       <td class="view-value">
         {include file="CRM/Contact/Form/NewContact.tpl" noLabel=true skipBreak=true multiClient=true}
+        {if $action eq 1}
+        <br/>
+        {$form.is_multi_activity.html}&nbsp;{$form.is_multi_activity.label}
+        {/if}
       </td>
       {else}
       <td class="label">{ts}With Contact{/ts}</td>

@@ -7,7 +7,7 @@ projects[drupal][version] = "7.21"
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.2.8-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.2.9-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
 libraries[civicrm][patch][1830410] = http://drupal.org/files/1830410-fix-hook-requirements-4-5.patch
@@ -18,6 +18,7 @@ libraries[civicrm][patch][1787984] = http://drupal.org/files/1787984-IDS-directo
 libraries[civicrm][patch][1830434] = http://drupal.org/files/1830410-theme_status_report.patch
 libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
 ;libraries[civicrm][patch][] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-drupal.patch
+libraries[civicrm][patch][1948504] = http://drupal.org/files/1948504-civicrm_group_role-error-when-removing-role.patch
 
 libraries[jquery][download][type] = get
 libraries[jquery][download][url] = "http://code.jquery.com/jquery-1.7.2.min.js"
@@ -67,19 +68,19 @@ libraries[tinymce-civicrm][directory_name] = tinymce
 ; ====== POPULAR CONTRIB MODULES =========
 
 projects[backup_migrate][subdir] = "contrib"
-projects[backup_migrate][version] = "2.4"
+projects[backup_migrate][version] = "2.5"
 
 projects[civicrm_cron][subdir] = "contrib"
 projects[civicrm_cron][version] = "1.0-beta2"
 
 projects[ctools][subdir] = "contrib"
-projects[ctools][version] = "1.2"
+projects[ctools][version] = "1.3"
 
 projects[captcha][subdir] = "contrib"
 projects[captcha][version] = "1.0-beta2"
 
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.0-beta1"
+projects[features][version] = "2.0-beta2"
 
 projects[fontyourface][subdir] = "contrib"
 projects[fontyourface][version] = "2.7"
@@ -97,7 +98,7 @@ projects[recaptcha][subdir] = "contrib"
 projects[recaptcha][version] = "1.9"
 
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.5"
+projects[views][version] = "3.7"
 
 projects[webform][subdir] = "contrib"
 projects[webform][version] = "3.18"

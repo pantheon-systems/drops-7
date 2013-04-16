@@ -42,13 +42,12 @@
  *
  * @return array of newly created IM property values.
  * @access public
- * @todo convert to using basic create - BAO function non-std
  */
 function civicrm_api3_im_create($params) {
   return _civicrm_api3_basic_create(_civicrm_api3_get_BAO(__FUNCTION__), $params);
-
 }
-/*
+
+/**
  * Adjust Metadata for Create action
  *
  * The metadata is used for setting defaults, documentation & validation
