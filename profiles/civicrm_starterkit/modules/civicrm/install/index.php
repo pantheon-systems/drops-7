@@ -30,6 +30,7 @@ else {
 
 // set installation type - drupal
 if (!session_id()) {
+  ini_set('session.save_handler', 'files');
   session_start();
 }
 
