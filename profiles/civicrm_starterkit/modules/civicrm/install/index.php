@@ -121,6 +121,38 @@ if ($installType == 'drupal') {
   }
 }
 
+/**
+ * Pantheon Systems:
+ *
+ * Repopulate needed variables based on the Pantheon environment if applicable.
+ * http://www.kalamuna.com/news/civicrm-pantheon
+ *
+ */
+if (!empty($_SERVER['PRESSFLOW_SETTINGS'])) {
+  $env = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
+  if (!empty($env['conf']['pantheon_binding'])) {
+    $pantheon_db = $env['databases']['default']['default'];
+    $pantheon_conf = $env['conf'];
+    
+    //server w/ port
+    $server = 'dbserver.' . $pantheon_conf['pantheon_environment'] . '.' . $pantheon_conf['pantheon_site_uuid'] . '.drush.in' . ':' . $pantheon_db['port'];
+    
+    $databaseConfig = array(
+      "server" => $server,
+      "username" => $pantheon_db['username'],
+      "password" => $pantheon_db['password'],
+      "database" => $pantheon_db['database'],
+    );
+    
+    $drupalConfig = array(
+      "server" => $server,
+      "username" => $pantheon_db['username'],
+      "password" => $pantheon_db['password'],
+      "database" => $pantheon_db['database'],
+    );
+  }
+}
+
 $loadGenerated = 0;
 if (isset($_REQUEST['loadGenerated'])) {
   $loadGenerated = 1;
