@@ -364,12 +364,15 @@ class CRM_Core_BAO_Address extends CRM_Core_DAO_Address {
       CRM_Utils_Address_USPS::checkAddress($params);
 
       // do street parsing again if enabled, since street address might have changed
-      $parseStreetAddress = CRM_Utils_Array::value('street_address_parsing',
-        CRM_Core_BAO_Setting::valueOptions(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
-          'address_options'
-        ),
-        FALSE
-      );
+      $parseStreetAddress =
+        CRM_Utils_Array::value(
+          'street_address_parsing',
+          CRM_Core_BAO_Setting::valueOptions(
+            CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
+            'address_options'
+          ),
+          FALSE
+        );
 
       if ($parseStreetAddress && !empty($params['street_address'])) {
         foreach (array(
@@ -663,11 +666,19 @@ ORDER BY civicrm_address.is_primary DESC, civicrm_address.location_type_id DESC,
     $config->stateCountryMap = array_merge($config->stateCountryMap, $stateCountryMap);
   }
 
-  static function fixAllStateSelects(&$form, &$defaults) {
+  static function fixAllStateSelects(&$form, $defaults, $batchFieldNames = false) {
     $config = CRM_Core_Config::singleton();
 
-    if (!empty($config->stateCountryMap)) {
-      foreach ($config->stateCountryMap as $index => $match) {
+    $map = null;
+    if (is_array($batchFieldNames)) {
+      $map = $batchFieldNames;
+    }
+    else if (!empty($config->stateCountryMap)) {
+      $map = $config->stateCountryMap;
+    }
+
+    if (!empty($map)) {
+      foreach ($map as $index => $match) {
         if (
           array_key_exists('state_province', $match) &&
           array_key_exists('country', $match)
@@ -867,9 +878,11 @@ ORDER BY civicrm_address.is_primary DESC, civicrm_address.location_type_id DESC,
   static function validateAddressOptions($fields) {
     static $addressOptions = NULL;
     if (!$addressOptions) {
-      $addressOptions = CRM_Core_BAO_Setting::valueOptions(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
-        'address_options', TRUE, NULL, TRUE
-      );
+      $addressOptions =
+        CRM_Core_BAO_Setting::valueOptions(
+          CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
+          'address_options'
+        );
     }
 
     if (is_array($fields) && !empty($fields)) {

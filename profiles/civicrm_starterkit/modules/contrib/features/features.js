@@ -128,14 +128,17 @@ jQuery.fn.sortElements = (function(){
       });
 
       //View info dialog
-      $('#features-info-file').dialog({
-        autoOpen: false,
-        modal: true,
-        draggable: false,
-        resizable: false,
-        width: 600,
-        height: 480
-      });
+      var infoDialog = $('#features-info-file');
+      if (infoDialog.length != 0) {
+        infoDialog.dialog({
+          autoOpen: false,
+          modal: true,
+          draggable: false,
+          resizable: false,
+          width: 600,
+          height: 480
+        });
+      }
 
       if ((Drupal.settings.features != undefined) && (Drupal.settings.features.info != undefined)) {
         $('#features-info-file textarea').val(Drupal.settings.features.info);
@@ -145,19 +148,21 @@ jQuery.fn.sortElements = (function(){
       }
 
       // mark any conflicts with a class
-      for (var moduleName in Drupal.settings.features.conflicts) {
-        moduleConflicts = Drupal.settings.features.conflicts[moduleName];
-        $('#features-export-wrapper input[type=checkbox]', context).each(function() {
-          if (!$(this).hasClass('features-checkall')) {
-            var key = $(this).attr('name');
-            var matches = key.match(/^([^\[]+)(\[.+\])?\[(.+)\]\[(.+)\]$/);
-            var component = matches[1];
-            var item = matches[4];
-            if ((component in moduleConflicts) && (moduleConflicts[component].indexOf(item) != -1)) {
-              $(this).parent().addClass('features-conflict');
+      if ((Drupal.settings.features != undefined) && (Drupal.settings.features.conflicts != undefined)) {
+        for (var moduleName in Drupal.settings.features.conflicts) {
+          moduleConflicts = Drupal.settings.features.conflicts[moduleName];
+          $('#features-export-wrapper input[type=checkbox]', context).each(function() {
+            if (!$(this).hasClass('features-checkall')) {
+              var key = $(this).attr('name');
+              var matches = key.match(/^([^\[]+)(\[.+\])?\[(.+)\]\[(.+)\]$/);
+              var component = matches[1];
+              var item = matches[4];
+              if ((component in moduleConflicts) && (moduleConflicts[component].indexOf(item) != -1)) {
+                $(this).parent().addClass('features-conflict');
+              }
             }
-          }
-        });
+          });
+        }
       }
 
       function _checkAll(value) {
@@ -348,30 +353,30 @@ jQuery.fn.sortElements = (function(){
         // collapse fieldsets
         var newState = {};
         var currentState = {};
-        $('#features-export-wrapper .component-select label', context).each(function() {
+        $('#features-export-wrapper fieldset.features-export-component', context).each(function() {
           // expand parent fieldset
-          var section = '';
-          $(this).parents('fieldset.features-export-component').each(function() {
-            section = $(this).attr('id');
-            currentState[section] = !($(this).hasClass('collapsed'));
-            if (!(section in newState)) {
-              newState[section] = false;
+          var section = $(this).attr('id');
+          currentState[section] = !($(this).hasClass('collapsed'));
+          if (!(section in newState)) {
+            newState[section] = false;
+          }
+
+          $(this).find('div.component-select label').each(function() {
+            if (filter == '') {
+              if (currentState[section]) {
+                Drupal.toggleFieldset($('#'+section));
+                currentState[section] = false;
+              }
+              $(this).parent().show();
+            }
+            else if ($(this).text().match(regex)) {
+              $(this).parent().show();
+              newState[section] = true;
+            }
+            else {
+              $(this).parent().hide();
             }
           });
-          if (filter == '') {
-            if (currentState[section]) {
-              Drupal.toggleFieldset($('#'+section));
-              currentState[section] = false;
-            }
-            $(this).parent().show();
-          }
-          else if ($(this).text().match(regex)) {
-            $(this).parent().show();
-            newState[section] = true;
-          }
-          else {
-            $(this).parent().hide();
-          }
         });
         for (section in newState) {
           if (currentState[section] != newState[section]) {

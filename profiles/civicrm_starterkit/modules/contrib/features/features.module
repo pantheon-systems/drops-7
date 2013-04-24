@@ -4,7 +4,7 @@
  * @file
  * Module file for the features module, which enables the capture and
  * management of features in Drupal. A feature is a collection of Drupal
- * entities which taken together statisfy a certain use-case.
+ * entities which taken together satisfy a certain use-case.
  */
 
 define('FEATURES_API', '1');
@@ -78,7 +78,7 @@ function features_menu() {
   );
   $items['admin/structure/features/cleanup'] = array(
     'title' => 'Cleanup',
-    'description' => 'Detect and disable any orphaned feature dependencies.',
+    'description' => 'Clear cache after enabling/disabling a feature.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('features_cleanup_form', 4),
     'type' => MENU_CALLBACK,
@@ -238,7 +238,7 @@ function features_theme() {
 function features_flush_caches() {
   features_rebuild();
   // Don't flush the modules cache during installation, for performance reasons.
-  if (variable_get('install_task') != 'done') {
+  if (variable_get('install_task') == 'done') {
     features_get_modules(NULL, TRUE);
   }
   return array();
@@ -710,6 +710,9 @@ function features_get_orphans($reset = FALSE) {
 
     foreach ($orphaned as $module) {
       if (!empty($modules[$module]->required_by)) {
+        foreach ($modules[$module]->required_by as $module_name => $dependency) {
+          $modules[$module]->required_by[$module_name] = $dependency['name'];
+        }
         // Determine whether any dependents are actually enabled.
         $dependents = array_intersect($modules[$module]->required_by, $enabled);
         if (empty($dependents)) {
@@ -953,4 +956,60 @@ function features_hook_info() {
     'features_export_alter',
   );
   return array_fill_keys($hooks, array('group' => 'features'));
+}
+
+/**
+ * Recursively computes the difference of arrays with additional index check.
+ *
+ * This is a version of array_diff_assoc() that supports multidimensional
+ * arrays.
+ *
+ * @param array $array1
+ *   The array to compare from.
+ * @param array $array2
+ *   The array to compare to.
+ *
+ * @return array
+ *   Returns an array containing all the values from array1 that are not present
+ *   in array2.
+ */
+function features_array_diff_assoc_recursive(array $array1, array $array2) {
+  $difference = array();
+  foreach ($array1 as $key => $value) {
+    if (is_array($value)) {
+      if (!isset($array2[$key]) || !is_array($array2[$key])) {
+        $difference[$key] = $value;
+      }
+      else {
+        $new_diff = features_array_diff_assoc_recursive($value, $array2[$key]);
+        if (!empty($new_diff)) {
+          $difference[$key] = $new_diff;
+        }
+      }
+    }
+    elseif (!isset($array2[$key]) || $array2[$key] != $value) {
+      $difference[$key] = $value;
+    }
+  }
+  return $difference;
+}
+
+/**
+ * Returns an array of deprecated components
+ * Rather than deprecating the component directly, we look for other components
+ * that supersedes the component
+ * @param $components
+ *   The array of components (component_info) from features_get_components typically.
+ */
+function features_get_deprecated($components = array()) {
+  if (empty($components)) {
+    $components = features_get_components();
+  }
+  $deprecated = array();
+  foreach ($components as $component => $component_info) {
+    if (!empty($component_info['supersedes'])) {
+      $deprecated[$component_info['supersedes']] = $component_info['supersedes'];
+    }
+  }
+  return $deprecated;
 }

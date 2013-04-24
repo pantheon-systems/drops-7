@@ -62,7 +62,8 @@ function civicrm_requirements($phase) {
     $civicrm_path = substr_replace($civicrm_path, '', $pos, strlen($civicrm_path));
   }
   //continue passing variables already configured
-  $url = $base_url . '/' . $civicrm_path . 'install/index.php?profile=' . $_GET['profile'] . '&locale=' . $_GET['locale'];
+  $querystring = isset($_GET['profile']) ? '?profile=' . $_GET['profile'] . '&locale=' . $_GET['locale'] : NULL;
+  $url = $base_url . '/' . $civicrm_path . 'install/index.php' . $querystring;
 
   $settings = glob('sites/*/civicrm.settings.php');
   $problems = array();
@@ -70,7 +71,7 @@ function civicrm_requirements($phase) {
     $problems[] = array(
       'title' => t('CiviCRM settings does not exist'),
       'value' =>
-      t('CiviCRM settings file does not exist. It should be created by CiviCRM <a href="!link">install</a>',
+      t('CiviCRM has not been installed.  This Drupal distribution requires CiviCRM to be installed before continuing.  <a href="!link">Please install CiviCRM now</a>.',
         array('!link' => $url)),
       'severity' => REQUIREMENT_ERROR,
     );

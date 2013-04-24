@@ -266,6 +266,13 @@ class FeaturesCtoolsIntegrationTest extends DrupalWebTestCase {
       $this->assertFalse(function_exists($function), 'Chaos tools functions for ' . $module . ' do not exist while it is disabled.');
       // Module enable will trigger declaring the new functions.
       module_enable(array($module));
+    }
+
+    // CTools hooks only created when there is an actual feature exportable
+    // enabled.
+    module_enable(array('features_test'));
+
+    foreach ($try as $module) {
       if (module_exists($module)) {
         $function_exists = function_exists($function);
         if ($function_exists) {

@@ -1,41 +1,45 @@
 api = 2
-core = 7.21
+core = 7.22
 
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.2.9-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.1-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
-libraries[civicrm][patch][1830410] = http://drupal.org/files/1830410-fix-hook-requirements-4-5.patch
-libraries[civicrm][patch][1830416] = http://drupal.org/files/1830416-sub-folder-support-3.patch
-libraries[civicrm][patch][1787984] = http://drupal.org/files/1787984-IDS-directory-fix-crm-core-4-5.patch
-; I think this patch has been resolved in 4.2.8, but needs testing
-;libraries[civicrm][patch][1879796] = http://drupal.org/files/1879796-IDS-path-fix-in-ClassLoader-3.patch
-libraries[civicrm][patch][1830434] = http://drupal.org/files/1830410-theme_status_report.patch
 libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
-;libraries[civicrm][patch][] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-drupal.patch
-libraries[civicrm][patch][1948504] = http://drupal.org/files/1948504-civicrm_group_role-error-when-removing-role.patch
+libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashChart_tpl_javascript.patch
+libraries[civicrm][patch][1946820] = http://drupal.org/files/1946820-turn_IDS_off_in_civicrm.settings.php_.tpl_.patch
+libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings.patch
+
+libraries[civicrm][patch][1849424] = http://drupal.org/files/1849424-use-vars-in-link.patch
+libraries[civicrm][patch][] = http://drupal.org/files/1849424-pass-vars-in-link-2.patch
 
 libraries[jquery][download][type] = get
-libraries[jquery][download][url] = "http://code.jquery.com/jquery-1.7.2.min.js"
+libraries[jquery][download][url] = "http://code.jquery.com/jquery-1.8.3.min.js"
 libraries[jquery][destination] = "modules/civicrm/packages"
 libraries[jquery][directory_name] = jquery
-libraries[jquery][download][filename] = jquery.min.js
+libraries[jquery][download][filename] = jquery-1.8.3.min.js
 libraries[jquery][patch][1787976] = http://drupal.org/files/1787976-jquery-missing-files-9.patch
+libraries[jquery][patch][] = http://drupal.org/files/1787976-updated-fo-4-3-3.patch
 libraries[jquery][patch][] = http://drupal.org/files/textarearesizer-4.patch
-libraries[jquery][patch][] = http://drupal.org/files/jquery.validate.patch
-libraries[jquery][patch][] = http://drupal.org/files/1787976-jquery-ui-missing-files-3.patch
+libraries[jquery][patch][1950068] = http://drupal.org/files/1950068-more-js-files-2.patch
 
 libraries[jquery_ui][download][type] = get
-libraries[jquery_ui][download][url] = "http://jquery-ui.googlecode.com/files/jquery-ui-1.8.16.zip"
-libraries[jquery_ui][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.8.16"
+libraries[jquery_ui][download][url] = "http://jquery-ui.googlecode.com/files/jquery-ui-1.9.0-rc.1.zip"
+libraries[jquery_ui][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0"
 libraries[jquery_ui][directory_name] = development-bundle
 
 libraries[jstree][download][type] = get
 libraries[jstree][download][url] = "https://github.com/vakata/jstree/archive/v.pre1.0.zip"
 libraries[jstree][destination] = "modules/civicrm/packages/jquery/plugins"
 libraries[jstree][directory_name] = jstree
+
+; waiting on whitelist change #1971760
+; once approved, patch for #1950068 will need to be updated
+;libraries[jquery_validate][download][type] = get
+;libraries[jquery_validate][download][url] = "https://raw.github.com/jzaefferer/jquery-validation/master/jquery.validate.js"
+;libraries[jquery_validate][destination] = "modules/civicrm/packages/jquery/plugins"
 
 libraries[phpids][download][type] = get
 libraries[phpids][download][url] = "http://phpids.org/files/phpids-0.7.zip"

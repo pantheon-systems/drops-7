@@ -435,6 +435,9 @@ function drush_features_export() {
       if (!drush_confirm(dt('Do you really want to continue?'))) {
         drush_die('Aborting.');
       }
+      $export = _drush_features_generate_export($items, $module);
+      _features_populate($items, $export[info], $export[name]);
+      _drush_features_export($export['info'], $module, $directory);
     }
   }
   else {
@@ -529,34 +532,7 @@ function _drush_features_export($info, $module_name = NULL, $directory = NULL) {
     }
     if (is_dir($directory)) {
       drupal_flush_all_caches();
-      module_load_include('inc', 'features', 'features.export');
-      $export = features_populate($info, $module_name);
-      if (!features_load_feature($module_name)) {
-        $export['name'] = $module_name;
-      }
-      // Set the feature version if the --version-set or --version-increment option is passed.
-      if ($version = drush_get_option(array('version-set'))) {
-        preg_match('/^(?P<core>\d+\.x)-(?P<major>\d+)\.(?P<patch>\d+)-?(?P<extra>\w+)?$/', $version, $matches);
-        if (!isset($matches['core'], $matches['major'])) {
-          drush_die(dt('Please enter a valid version with core and major version number. Example: !example', array('!example' => '7.x-1.0')));
-        }
-        $export['version'] = $version;
-      }
-      else if ($version = drush_get_option(array('version-increment'))) {
-        // Determine current version and increment it.
-        $export_load = features_export_prepare($export, $module_name);
-        $version = $export_load['version'];
-        $version_explode = explode('.', $version);
-        $version_minor = array_pop($version_explode);
-        // Increment minor version number if numeric or not a dev release.
-        if (is_numeric($version_minor) || strpos($version_minor, 'dev') !== (strlen($version_minor) - 3)) {
-          ++$version_minor;
-        }
-        array_push($version_explode, $version_minor);
-        // Rebuild version string.
-        $version = implode('.', $version_explode);
-        $export['version'] = $version;
-      }
+      $export = _drush_features_generate_export($info, $module_name);
       $files = features_export_render($export, $module_name, TRUE);
       foreach ($files as $extension => $file_contents) {
         if (!in_array($extension, array('module', 'info'))) {
@@ -573,6 +549,46 @@ function _drush_features_export($info, $module_name = NULL, $directory = NULL) {
   else {
     drush_die(dt('Couldn\'t locate site root'));
   }
+}
+
+/**
+ * Helper function for _drush_feature_export.
+ *
+ * @param $info
+ *   The feature info associative array.
+ * @param $module_name
+ *  Optional. The name for the exported module.
+ */
+function _drush_features_generate_export(&$info, &$module_name) {
+  module_load_include('inc', 'features', 'features.export');
+  $export = features_populate($info, $module_name);
+  if (!features_load_feature($module_name)) {
+    $export['name'] = $module_name;
+  }
+  // Set the feature version if the --version-set or --version-increment option is passed.
+  if ($version = drush_get_option(array('version-set'))) {
+    preg_match('/^(?P<core>\d+\.x)-(?P<major>\d+)\.(?P<patch>\d+)-?(?P<extra>\w+)?$/', $version, $matches);
+    if (!isset($matches['core'], $matches['major'])) {
+      drush_die(dt('Please enter a valid version with core and major version number. Example: !example', array('!example' => '7.x-1.0')));
+    }
+    $export['version'] = $version;
+  }
+  else if ($version = drush_get_option(array('version-increment'))) {
+    // Determine current version and increment it.
+    $export_load = features_export_prepare($export, $module_name);
+    $version = $export_load['version'];
+    $version_explode = explode('.', $version);
+    $version_minor = array_pop($version_explode);
+    // Increment minor version number if numeric or not a dev release.
+    if (is_numeric($version_minor) || strpos($version_minor, 'dev') !== (strlen($version_minor) - 3)) {
+      ++$version_minor;
+    }
+    array_push($version_explode, $version_minor);
+    // Rebuild version string.
+    $version = implode('.', $version_explode);
+    $export['version'] = $version;
+  }
+  return $export;
 }
 
 /**

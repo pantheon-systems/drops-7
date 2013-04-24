@@ -170,8 +170,15 @@ function _features_export_maximize_dependencies($dependencies, $module_name = ''
 
 /**
  * Prepare a feature export array into a finalized info array.
+ * @param $export
+ *  An exported feature definition.
+ * @param $module_name
+ *  The name of the module to be exported.
+ * @param $reset
+ *  Boolean flag for resetting the module cache. Only set to true when
+ *  doing a final export for delivery.
  */
-function features_export_prepare($export, $module_name, $reset = FALSE) {
+function features_export_prepare($export, $module_name, $reset = FALSE, $add_deprecated = TRUE) {
   $existing = features_get_modules($module_name, $reset);
 
   // copy certain exports directly into info
@@ -186,9 +193,16 @@ function features_export_prepare($export, $module_name, $reset = FALSE) {
   $defaults = $existing ? $existing->info : array('core' => '7.x', 'package' => 'Features');
   $export = array_merge($defaults, $export);
 
+  $deprecated = features_get_deprecated();
   // Cleanup info array
   foreach ($export['features'] as $component => $data) {
-    $export['features'][$component] = array_keys($data);
+    // if performing the final export, do not export deprecated components
+    if (($reset || !$add_deprecated) && !empty($deprecated[$component])) {
+      unset($export['features'][$component]);
+    }
+    else {
+      $export['features'][$component] = array_keys($data);
+    }
   }
   if (isset($export['dependencies'])) {
     $export['dependencies'] = array_values($export['dependencies']);
@@ -205,7 +219,7 @@ function features_export_prepare($export, $module_name, $reset = FALSE) {
     }
   }
 
-  $export = array_diff_assoc($export, $standard_info);
+  $export = features_array_diff_assoc_recursive($export, $standard_info);
   ksort($export);
   return array_merge($standard_info, $export);
 }
@@ -252,9 +266,14 @@ function features_export_render($export, $module_name, $reset = FALSE) {
   // Generate hook code
   $component_hooks = features_export_render_hooks($export, $module_name, $reset);
   $components = features_get_components();
+  $deprecated = features_get_deprecated($components);
 
   // Group component code into their respective files
   foreach ($component_hooks as $component => $hooks) {
+    if ($reset && !empty($deprecated[$component])) {
+      // skip deprecated components on final export
+      continue;
+    }
     $file = array('name' => 'features');
     if (isset($components[$component]['default_file'])) {
       switch ($components[$component]['default_file']) {
@@ -359,7 +378,7 @@ function features_detect_overrides($module) {
   if (!isset($cache[$module->name])) {
     // Rebuild feature from .info file description and prepare an export from current DB state.
     $export = features_populate($module->info, $module->name);
-    $export = features_export_prepare($export, $module->name);
+    $export = features_export_prepare($export, $module->name, FALSE, FALSE);
 
     $overridden = array();
 
@@ -540,6 +559,12 @@ function features_var_export($var, $prefix = '', $init = TRUE) {
   }
   else if (is_bool($var)) {
     $output = $var ? 'TRUE' : 'FALSE';
+  }
+  else if (is_int($var)) {
+    $output = intval($var);
+  }
+  else if (is_numeric($var)) {
+    $output = floatval($var);
   }
   else if (is_string($var) && strpos($var, "\n") !== FALSE) {
     // Replace line breaks in strings with a token for replacement
