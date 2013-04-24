@@ -30,6 +30,8 @@ else {
 
 // set installation type - drupal
 if (!session_id()) {
+  // setting save_handler as files required for Pantheon
+  ini_set('session.save_handler', 'files');
   session_start();
 }
 
