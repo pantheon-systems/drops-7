@@ -21,7 +21,7 @@ function pantheon_apachesolr_disable() {
   // restore stock solrserviceclass
   variable_del('apachesolr_service_class');
   variable_del('search_api_solr_connection_class');
-  variable_del('search_api_solr_service_class');
+  variable_def('search_api_solr_service_class');
 }
 
 /**
