@@ -93,147 +93,151 @@ class PantheonSearchApiSolrService extends SearchApiSolrConnection {
  *
  * Uses curl() for sending the request with certificate auth
  */
-class PanteheonSearchApiSolrHttpTransport extends Apache_Solr_HttpTransport_Abstract {
 
-  public function __construct() {
-    // Nothing to see here.
-  }
+if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
 
-  /**
-   * Perform a GET HTTP operation with an optional timeout and return the response
-   * contents, use getLastResponseHeaders to retrieve HTTP headers
-   *
-   * @param string $url
-   * @param float $timeout
-   * @return Apache_Solr_HttpTransport_Response HTTP response
-   */
-  public function performGetRequest($url, $timeout = FALSE) {
-    return $this->performHttpRequest('GET', $url, $timeout);
-  }
+  class PanteheonSearchApiSolrHttpTransport extends Apache_Solr_HttpTransport_Abstract {
 
-  /**
-   * Perform a HEAD HTTP operation with an optional timeout and return the response
-   * headers - NOTE: head requests have no response body
-   *
-   * @param string $url
-   * @param float $timeout
-   * @return Apache_Solr_HttpTransport_Response HTTP response
-   */
-  public function performHeadRequest($url, $timeout = FALSE) {
-    return $this->performHttpRequest('HEAD', $url, $timeout);
-  }
-
-  /**
-   * Perform a POST HTTP operation with an optional timeout and return the response
-   * contents, use getLastResponseHeaders to retrieve HTTP headers
-   *
-   * @param string $url
-   * @param string $rawPost
-   * @param string $contentType
-   * @param float $timeout
-   * @return Apache_Solr_HttpTransport_Response HTTP response
-   */
-  public function performPostRequest($url, $rawPost, $contentType, $timeout = FALSE) {
-    return $this->performHttpRequest('POST', $url, $timeout, $rawPost, $contentType);
-  }
-
-  /**
-   * Helper method for making an HTTP request.
-   */
-  protected function performHttpRequest($method, $url, $timeout, $rawPost = NULL, $contentType = NULL) {
-    // The _constructUrl() in Apache_Solr_Service hard codes http like a boss.
-    $url = str_replace('http://', 'https://', $url);
-    // Kludgy workaround of double-get-arging.
-    // https://index.live.getpantheon.com:449/sites/self/environments/dev/index/admin/ping?q=id:1?q=id:1
-    // WHY ARG WHY!?!?!
-    $parts = explode('?', $url);
-    $url = $parts[0] .'?'. $parts[1];
-    $client_cert = '../certs/binding.pem';
-    $port = 449;
-    $ch = curl_init();
-    curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
-
-    $opts = pantheon_apachesolr_curlopts();
-    $opts[CURLOPT_URL] = $url;
-    $opts[CURLOPT_PORT] = $port;
-
-    if ($timeout) {
-      $opts[CURLOPT_CONNECTTIMEOUT] = $timeout;
-    }
-    curl_setopt_array($ch, $opts);
-
-    // If we are doing a delete request...
-    if ($method == 'DELETE') {
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
-    }
-    // If we are doing a put request...
-    if ($method == 'PUT') {
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
-    }
-    // If we are doing a put request...
-    if ($method == 'POST') {
-      curl_setopt($ch, CURLOPT_POST, 1);
-    }
-    if ($rawPost) {
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $rawPost);
+    public function __construct() {
+      // Nothing to see here.
     }
 
-    $response = curl_exec($ch);
-
-    if ($response == NULL) {
-      // TODO; better error handling
-      watchdog('pantheon_apachesolr', "Error !error connecting to !url on port !port", array('!error' => curl_error($ch), '!url' => $url, '!port' => $port), WATCHDOG_ERROR);
+    /**
+     * Perform a GET HTTP operation with an optional timeout and return the response
+     * contents, use getLastResponseHeaders to retrieve HTTP headers
+     *
+     * @param string $url
+     * @param float $timeout
+     * @return Apache_Solr_HttpTransport_Response HTTP response
+     */
+    public function performGetRequest($url, $timeout = FALSE) {
+      return $this->performHttpRequest('GET', $url, $timeout);
     }
-    else {
-      // mimick the $result object from drupal_http_request()
-      // TODO; better error handling
-      $result = new stdClass();
-      list($split, $result->data) = explode("\r\n\r\n", $response, 2);
-      $split = preg_split("/\r\n|\n|\r/", $split);
-      list($result->protocol, $result->code, $result->status_message) = explode(' ', trim(array_shift($split)), 3);
-      // Parse headers.
-      $result->headers = array();
-      while ($line = trim(array_shift($split))) {
-        list($header, $value) = explode(':', $line, 2);
-        if (isset($result->headers[$header]) && $result->header == 'Set-Cookie') {
-          // RFC 2109: the Set-Cookie response header comprises the token Set-
-          // Cookie:, followed by a comma-separated list of one or more cookies.
-          $result->headers[$header] .= ',' . trim($value);
-        }
-        else {
-          $result->headers[$header] = trim($value);
+
+    /**
+     * Perform a HEAD HTTP operation with an optional timeout and return the response
+     * headers - NOTE: head requests have no response body
+     *
+     * @param string $url
+     * @param float $timeout
+     * @return Apache_Solr_HttpTransport_Response HTTP response
+     */
+    public function performHeadRequest($url, $timeout = FALSE) {
+      return $this->performHttpRequest('HEAD', $url, $timeout);
+    }
+
+    /**
+     * Perform a POST HTTP operation with an optional timeout and return the response
+     * contents, use getLastResponseHeaders to retrieve HTTP headers
+     *
+     * @param string $url
+     * @param string $rawPost
+     * @param string $contentType
+     * @param float $timeout
+     * @return Apache_Solr_HttpTransport_Response HTTP response
+     */
+    public function performPostRequest($url, $rawPost, $contentType, $timeout = FALSE) {
+      return $this->performHttpRequest('POST', $url, $timeout, $rawPost, $contentType);
+    }
+
+    /**
+     * Helper method for making an HTTP request.
+     */
+    protected function performHttpRequest($method, $url, $timeout, $rawPost = NULL, $contentType = NULL) {
+      // The _constructUrl() in Apache_Solr_Service hard codes http like a boss.
+      $url = str_replace('http://', 'https://', $url);
+      // Kludgy workaround of double-get-arging.
+      // https://index.live.getpantheon.com:449/sites/self/environments/dev/index/admin/ping?q=id:1?q=id:1
+      // WHY ARG WHY!?!?!
+      $parts = explode('?', $url);
+      $url = $parts[0] .'?'. $parts[1];
+      $client_cert = '../certs/binding.pem';
+      $port = 449;
+      $ch = curl_init();
+      curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
+
+      $opts = pantheon_apachesolr_curlopts();
+      $opts[CURLOPT_URL] = $url;
+      $opts[CURLOPT_PORT] = $port;
+
+      if ($timeout) {
+        $opts[CURLOPT_CONNECTTIMEOUT] = $timeout;
+      }
+      curl_setopt_array($ch, $opts);
+
+      // If we are doing a delete request...
+      if ($method == 'DELETE') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+      }
+      // If we are doing a put request...
+      if ($method == 'PUT') {
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+      }
+      // If we are doing a put request...
+      if ($method == 'POST') {
+        curl_setopt($ch, CURLOPT_POST, 1);
+      }
+      if ($rawPost) {
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $rawPost);
+      }
+
+      $response = curl_exec($ch);
+
+      if ($response == NULL) {
+        // TODO; better error handling
+        watchdog('pantheon_apachesolr', "Error !error connecting to !url on port !port", array('!error' => curl_error($ch), '!url' => $url, '!port' => $port), WATCHDOG_ERROR);
+      }
+      else {
+        // mimick the $result object from drupal_http_request()
+        // TODO; better error handling
+        $result = new stdClass();
+        list($split, $result->data) = explode("\r\n\r\n", $response, 2);
+        $split = preg_split("/\r\n|\n|\r/", $split);
+        list($result->protocol, $result->code, $result->status_message) = explode(' ', trim(array_shift($split)), 3);
+        // Parse headers.
+        $result->headers = array();
+        while ($line = trim(array_shift($split))) {
+          list($header, $value) = explode(':', $line, 2);
+          if (isset($result->headers[$header]) && $result->header == 'Set-Cookie') {
+            // RFC 2109: the Set-Cookie response header comprises the token Set-
+            // Cookie:, followed by a comma-separated list of one or more cookies.
+            $result->headers[$header] .= ',' . trim($value);
+          }
+          else {
+            $result->headers[$header] = trim($value);
+          }
         }
       }
-    }
 
-    if (!isset($result->code) || $result->code < 0) {
-      $result->code = 0;
-      $result->status_message = 'Request failed';
-      $result->protocol = 'HTTP/1.0';
-    }
-    // Additional information may be in the error property.
-    if (isset($result->error)) {
-      $result->status_message .= ': ' . check_plain($result->error);
-    }
+      if (!isset($result->code) || $result->code < 0) {
+        $result->code = 0;
+        $result->status_message = 'Request failed';
+        $result->protocol = 'HTTP/1.0';
+      }
+      // Additional information may be in the error property.
+      if (isset($result->error)) {
+        $result->status_message .= ': ' . check_plain($result->error);
+      }
 
-    if (!isset($result->data)) {
-      $result->data = '';
-      $result->response = NULL;
-    }
-    else {
-      $response = json_decode($result->data);
-      if (is_object($response)) {
-        foreach ($response as $key => $value) {
-          $result->$key = $value;
+      if (!isset($result->data)) {
+        $result->data = '';
+        $result->response = NULL;
+      }
+      else {
+        $response = json_decode($result->data);
+        if (is_object($response)) {
+          foreach ($response as $key => $value) {
+            $result->$key = $value;
+          }
         }
       }
+
+      // drupal_set_message("$url: $result->code");
+
+      $type = isset($result->headers['content-type']) ? $result->headers['content-type'] : 'text/xml';
+      $body = isset($result->data) ? $result->data : NULL;
+      return new Apache_Solr_HttpTransport_Response($result->code, $type, $body);
     }
 
-    // drupal_set_message("$url: $result->code");
-
-    $type = isset($result->headers['content-type']) ? $result->headers['content-type'] : 'text/xml';
-    $body = isset($result->data) ? $result->data : NULL;
-    return new Apache_Solr_HttpTransport_Response($result->code, $type, $body);
   }
-
 }
