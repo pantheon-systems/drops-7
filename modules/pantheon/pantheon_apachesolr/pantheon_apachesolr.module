@@ -19,6 +19,10 @@ function pantheon_apachesolr_menu() {
   return $items;
 }
 
+function pantheon_apachesolr_search_api_service_info_alter(array &$service_info) {
+  $service_info['search_api_solr_service']['class'] = 'PantheonApachesolrSearchApiSolrService';
+}
+
 function pantheon_apachesolr_curlopts() {
   return array(
     CURLOPT_HEADER => 1,
