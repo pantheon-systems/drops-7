@@ -150,6 +150,8 @@ class CRM_Upgrade_Page_Upgrade extends CRM_Core_Page {
     // lets drop all the triggers here
     CRM_Core_DAO::dropTriggers();
 
+    $this->set('isUpgradePending', TRUE);
+
     // Persistent message storage across upgrade steps. TODO: Use structured message store
     // Note: In clustered deployments, this file must be accessible by all web-workers.
     $this->set('postUpgradeMessageFile', CRM_Utils_File::tempnam('civicrm-post-upgrade'));
@@ -174,11 +176,17 @@ class CRM_Upgrade_Page_Upgrade extends CRM_Core_Page {
     $upgrade = new CRM_Upgrade_Form();
     $template = CRM_Core_Smarty::singleton();
 
-    // TODO: Use structured message store
-    $postUpgradeMessage = file_get_contents($this->get('postUpgradeMessageFile'));
+    // If we're redirected from queue-runner, then isUpgradePending=true.
+    // If user then reloads the finish page, the isUpgradePending will be unset. (Because the session has been cleared.)
+    if ($this->get('isUpgradePending')) {
+      // TODO: Use structured message store
+      $postUpgradeMessage = file_get_contents($this->get('postUpgradeMessageFile'));
 
-    // This destroys $session, so do it after ge('postUpgradeMessageFile')
-    CRM_Upgrade_Form::doFinish();
+      // This destroys $session, so do it after get('postUpgradeMessageFile')
+      CRM_Upgrade_Form::doFinish();
+    } else {
+      $postUpgradeMessage = ''; // Session was destroyed! Can't recover messages.
+    }
 
     // do a version check - after doFinish() sets the final version
     list($currentVer, $latestVer) = $upgrade->getUpgradeVersions();

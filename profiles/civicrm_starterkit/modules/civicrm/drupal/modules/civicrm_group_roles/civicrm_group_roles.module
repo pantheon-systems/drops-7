@@ -1,34 +1,34 @@
 <?php
 /*
- +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
- +--------------------------------------------------------------------+
- | This file is a part of CiviCRM.                                    |
- |                                                                    |
- | CiviCRM is free software; you can copy, modify, and distribute it  |
- | under the terms of the GNU Affero General Public License           |
- | Version 3, 19 November 2007 and the CiviCRM Licensing Exception.   |
- |                                                                    |
- | CiviCRM is distributed in the hope that it will be useful, but     |
- | WITHOUT ANY WARRANTY; without even the implied warranty of         |
- | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.               |
- | See the GNU Affero General Public License for more details.        |
- |                                                                    |
- | You should have received a copy of the GNU Affero General Public   |
- | License and the CiviCRM Licensing Exception along                  |
- | with this program; if not, contact CiviCRM LLC                     |
- | at info[AT]civicrm[DOT]org. If you have questions about the        |
- | GNU Affero General Public License or the licensing of CiviCRM,     |
- | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
- +--------------------------------------------------------------------+
+  +--------------------------------------------------------------------+
+  | CiviCRM version 4.3                                                |
+  +--------------------------------------------------------------------+
+  | This file is a part of CiviCRM.                                    |
+  |                                                                    |
+  | CiviCRM is free software; you can copy, modify, and distribute it  |
+  | under the terms of the GNU Affero General Public License           |
+  | Version 3, 19 November 2007 and the CiviCRM Licensing Exception.   |
+  |                                                                    |
+  | CiviCRM is distributed in the hope that it will be useful, but     |
+  | WITHOUT ANY WARRANTY; without even the implied warranty of         |
+  | MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.               |
+  | See the GNU Affero General Public License for more details.        |
+  |                                                                    |
+  | You should have received a copy of the GNU Affero General Public   |
+  | License and the CiviCRM Licensing Exception along                  |
+  | with this program; if not, contact CiviCRM LLC                     |
+  | at info[AT]civicrm[DOT]org. If you have questions about the        |
+  | GNU Affero General Public License or the licensing of CiviCRM,     |
+  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
+  +--------------------------------------------------------------------+
 */
 
 // $Id: civicrm_group_roles.module,v 1.1.4.2 2008/10/14 00:20:36 matt2000 Exp $
 
 
 /* @file
-   * A simple module that adds a user to groups based on Role.
-   */
+ * A simple module that adds a user to groups based on Role.
+ */
 
 /**
  * Implementation of hook_help()
@@ -159,9 +159,9 @@ function civicrm_group_roles_add_groups_oncreate($account, $roles) {
  */
 function civicrm_group_roles_form_alter(&$form, &$form_state, $form_id) {
   // append this to change user edit submit function
-    if ( ( $form['#id'] == 'user-profile-form' &&
-         isset( $form['#user'] ) &&
-         (module_exists('content_profile') || isset( $form['account'] )) ) ||
+  if ( ( $form['#id'] == 'user-profile-form' &&
+      isset( $form['#user'] ) &&
+      (module_exists('content_profile') || isset( $form['account'] )) ) ||
     $form['#id'] == 'user-edit-form'
   ) {
     $uid = $form['#user']->uid;
@@ -247,30 +247,30 @@ function civicrm_group_roles_civicrm_post($op, $objectName, $objectId, &$objectR
 
           // "edit" denotes both rejoining or being deleted from a group,
           // need to check which to perform appropriate action
-          case 'edit':
-            $rolesProcessed[$rid] = $rid;
-            // Ideally would use GroupContact API with group_id as a parameter, currently broken (amend once bug fixed):
-            // http://issues.civicrm.org/jira/browse/CRM-10331?page=com.atlassian.jira.plugin.system.issuetabpanels:all-tabpanel
-            $contact_groups = civicrm_api('GroupContact', 'get', array(version => '3', 'contact_id' => $contact_id));
-            $in_group = FALSE;
-            foreach ($contact_groups['values'] as $group_row){
-              if ($group_row['group_id'] == $group_id){
-                $in_group = TRUE;
-                break;
-              }
+        case 'edit':
+          $rolesProcessed[$rid] = $rid;
+          // Ideally would use GroupContact API with group_id as a parameter, currently broken (amend once bug fixed):
+          // http://issues.civicrm.org/jira/browse/CRM-10331?page=com.atlassian.jira.plugin.system.issuetabpanels:all-tabpanel
+          $contact_groups = civicrm_api('GroupContact', 'get', array(version => '3', 'contact_id' => $contact_id));
+          $in_group = FALSE;
+          foreach ($contact_groups['values'] as $group_row){
+            if ($group_row['group_id'] == $group_id){
+              $in_group = TRUE;
+              break;
             }
+          }
 
-            if ($in_group){
-              // Contact rejoined the group; add to corresponding role
-              civicrm_group_roles_add_role($uid, $rid, $role_name);
-            } else {
-              // Contact no longer belongs to group, remove corresponding role,
-              // but only if the contact is in no other groups that grant this role
-              if (!civicrm_role_granted_by_other_group($contact_id, $rid, $group_id)) {
-                civicrm_group_roles_del_role($uid, $rid, $role_name);
-              }
+          if ($in_group){
+            // Contact rejoined the group; add to corresponding role
+            civicrm_group_roles_add_role($uid, $rid, $role_name);
+          } else {
+            // Contact no longer belongs to group, remove corresponding role,
+            // but only if the contact is in no other groups that grant this role
+            if (!civicrm_role_granted_by_other_group($contact_id, $rid, $group_id)) {
+              civicrm_group_roles_del_role($uid, $rid, $role_name);
             }
-            break;
+          }
+          break;
 
         case 'delete':
           $rolesProcessed[$rid] = $rid;
@@ -394,12 +394,12 @@ function civicrm_group_roles_menu() {
   );
   $items['admin/config/civicrm/civicrm_group_roles/manual_sync'] =
     array(
-    'title' => t('Manually Synchronize'),
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('civicrm_group_roles_manual_sync'),
-    'access callback' => 'user_access',
-    'access arguments' => array('access civicrm group role setting'),
-    'type' => MENU_LOCAL_TASK,
+      'title' => t('Manually Synchronize'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('civicrm_group_roles_manual_sync'),
+      'access callback' => 'user_access',
+      'access arguments' => array('access civicrm group role setting'),
+      'type' => MENU_LOCAL_TASK,
     );
   return $items;
 }
@@ -571,9 +571,9 @@ function civicrm_group_roles_add_rule_form_submit($form, &$form_state) {
   if (isset($form_state['values']['edit_flag'])) {
 
     $edit_rule = db_update('civicrm_group_roles_rules')->fields(array(
-        'role_id' => (int) $form_state['values']['add_rule']['select_role'],
-        'group_id' => (int) $form_state['values']['add_rule']['select_group'],
-      ))->condition('id', (int)$form_state['values']['edit_flag'])->execute();
+                   'role_id' => (int) $form_state['values']['add_rule']['select_role'],
+                   'group_id' => (int) $form_state['values']['add_rule']['select_group'],
+                 ))->condition('id', (int)$form_state['values']['edit_flag'])->execute();
 
     if ($edit_rule) {
       drupal_set_message(t('Your association rule has been edited.'));
@@ -582,9 +582,9 @@ function civicrm_group_roles_add_rule_form_submit($form, &$form_state) {
   else {
 
     $add_rule = db_insert('civicrm_group_roles_rules')->fields(array(
-        'role_id' => (int)$form_state['values']['add_rule']['select_role'],
-        'group_id' => (int)$form_state['values']['add_rule']['select_group'],
-      ))->execute();
+                  'role_id' => (int)$form_state['values']['add_rule']['select_role'],
+                  'group_id' => (int)$form_state['values']['add_rule']['select_group'],
+                ))->execute();
 
     if ($add_rule) {
       drupal_set_message(t('Your association rule has been added.'));
@@ -599,6 +599,10 @@ function civicrm_group_roles_add_rule_form_submit($form, &$form_state) {
  * $op either add or remove
  */
 function civicrm_group_roles_add_remove_groups($roles, $user, $op) {
+  if (!civicrm_initialize()) {
+    return;
+  }
+
   if ($op == 'add') {
     $txt = 'added';
   }
@@ -612,46 +616,45 @@ function civicrm_group_roles_add_remove_groups($roles, $user, $op) {
 
   // make sure user has other roles other than authenticated
   if ($roles) {
-
     //find the contact record
-        $params = array('version' => 3, 'sequential' => 1, 'email' => $user->mail );
-        $contact = civicrm_api('contact', 'get', $params);
+    $params = array('version' => 3, 'sequential' => 1, 'email' => $user->mail );
+    $contact = civicrm_api('contact', 'get', $params);
 
-        if ( empty($contact) || $contact['is_error'] == 1 || $contact['count'] < 1 ) {
-            $msg = 'CiviCRM contact not found for @mail';
-            $variables = array( '@mail' => $user->mail );
-            watchdog( 'civicrm',  $msg, $variables );
-            if ( $debug_mode ) drupal_set_message( t( 'CiviCRM contact not found for %mail', array( '%mail' => $user->mail ) ) );
-        }
+    if ( empty($contact) || $contact['is_error'] == 1 || $contact['count'] < 1 ) {
+      $msg = 'CiviCRM contact not found for @mail';
+      $variables = array( '@mail' => $user->mail );
+      watchdog( 'civicrm',  $msg, $variables );
+      if ( $debug_mode ) drupal_set_message( t( 'CiviCRM contact not found for %mail', array( '%mail' => $user->mail ) ) );
+    }
 
-        $contact_id = CRM_Utils_Array::value( 'contact_id', $contact['values'][0] );
+    $contact_id = CRM_Utils_Array::value( 'contact_id', $contact['values'][0] );
 
-        if ( $contact_id ) {
+    if ( $contact_id ) {
 
       //loop over user's roles
       foreach ($roles as $rid => $role) {
 
         //find the group(s) for the role
-                $groups = db_select('civicrm_group_roles_rules', 'cgr' )->fields( 'cgr', array('group_id') )->condition('role_id', $rid)->execute( )->fetchAll( );
-                foreach ( $groups as $group ) {
+        $groups = db_select('civicrm_group_roles_rules', 'cgr' )->fields( 'cgr', array('group_id') )->condition('role_id', $rid)->execute( )->fetchAll( );
+        foreach ( $groups as $group ) {
 
           //add the contact
-                    $groupId = $group->group_id;
+          $groupId = $group->group_id;
           $contacts = array($contact);
           $gparams = array('version' => 3, 'group_id' => $groupId, 'contact_id' => $contact_id);
           if ($op == 'add') {
-                        $result = civicrm_api('GroupContact', 'create', $gparams);
+            $result = civicrm_api('GroupContact', 'create', $gparams);
           }
           else {
-                        $result = civicrm_api('GroupContact', 'delete', $gparams);
+            $result = civicrm_api('GroupContact', 'delete', $gparams);
           }
 
           if ($result['is_error'] > 0) {
             $msg = 'Error: Unable to sync role @role';
             $variables = array('@role' => $role);
             watchdog('civicrm_group_roles', $msg, $variables);
-                        if ( $debug_mode ) drupal_set_message( t( 'Error: Unable to sync role %role', array( '%role' => $role ) ) );
-                    } elseif ( $debug_mode && $result['values'][$txt] > 0 ) {
+            if ( $debug_mode ) drupal_set_message( t( 'Error: Unable to sync role %role', array( '%role' => $role ) ) );
+          } elseif ( $debug_mode && $result['values'][$txt] > 0 ) {
             drupal_set_message("$txt user $user->name Group: $role");
             drupal_set_message(var_export($result, TRUE));
           }
@@ -659,12 +662,12 @@ function civicrm_group_roles_add_remove_groups($roles, $user, $op) {
             drupal_set_message("User $user->name NOT $txt Group: $role");
             drupal_set_message(var_export($result, TRUE));
           }
-                } //end foreach
-            } //end foreach
+        } //end foreach
+      } //end foreach
 
-        } //end if $contact
-    } //endif $roles
-      }
+    } //end if $contact
+  } //endif $roles
+}
 
 
 /**
@@ -677,13 +680,13 @@ function civicrm_group_roles_manual_sync()
 {
   $form = array();
   $form['manual_sync'] = array(
-             '#type' => 'fieldset',
-             '#title' => t('Manual Synchronization:'),
-             );
+    '#type' => 'fieldset',
+    '#title' => t('Manual Synchronization:'),
+  );
   $form['manual_sync']['manual_sync_submit'] = array(
-                 '#type' => 'submit',
-                 '#value' => t('Synchronize CiviCRM Groups to Drupal Roles now'),
-                 );
+    '#type' => 'submit',
+    '#value' => t('Synchronize CiviCRM Groups to Drupal Roles now'),
+  );
 
   return $form;
 }
@@ -706,14 +709,14 @@ function civicrm_group_roles_manual_sync_submit($form, &$form_state)
 function civicrm_group_roles_batch_init() {
 
   $batch = array(
-     'title' => t('Updating Users...'),
-     'operations' => array(),
-     'init_message' => t('Starting Update'),
-     'progress_message' => t('Processed @current out of @total.'),
-     'error_message' => t('An error occurred during processing'),
-     'finished' => 'civicrm_group_roles_batch_finished',
-     'progressive' => FALSE
-     );
+    'title' => t('Updating Users...'),
+    'operations' => array(),
+    'init_message' => t('Starting Update'),
+    'progress_message' => t('Processed @current out of @total.'),
+    'error_message' => t('An error occurred during processing'),
+    'finished' => 'civicrm_group_roles_batch_finished',
+    'progressive' => FALSE
+  );
 
   //query all existing users
 

@@ -53,43 +53,6 @@
 define( 'CIVICRM_UF'               , '%%cms%%'        );
 
 /**
- * Pantheon Systems:
- *
- * Repopulate needed variables based on the Pantheon environment if applicable.
- * http://www.kalamuna.com/news/civicrm-pantheon
- *
- */
-if (!empty($_SERVER['PRESSFLOW_SETTINGS'])) {
-  $env = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
-  if (!empty($env['conf']['pantheon_binding'])) {
-    $pantheon_db = $env['databases']['default']['default'];
-    $pantheon_conf = $env['conf'];
-
-    //user name and password
-    $db_string = $pantheon_db['driver'] . '://' . $pantheon_db['username'] . ':' . $pantheon_db['password'] . '@';
-    //host
-    $db_string .= 'dbserver.' . $pantheon_conf['pantheon_environment'] . '.' . $pantheon_conf['pantheon_site_uuid'] . '.drush.in' . ':' . $pantheon_db['port'];
-    // database
-    $db_string .= '/' . $pantheon_db['database'] . '?new_link=true';
-
-    // define the database strings
-    define('CIVICRM_UF_DSN', $db_string);
-    define('CIVICRM_DSN', $db_string);
-
-    // define the file paths
-    global $civicrm_root;
-
-    $civicrm_root = '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/code/' . str_replace('drupal', '', drupal_get_path('module', 'civicrm'));
-    define('CIVICRM_TEMPLATE_COMPILEDIR', '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/files/civicrm/templates_c/');
-
-    // Use Drupal base url and path
-    global $base_url, $base_path;
-    define('CIVICRM_UF_BASEURL', $base_url . '/');
-    define( 'CIVICRM_IDS_ENABLE', 0);
-  }
-} else {
-
-/**
  * Content Management System (CMS) Datasource:
  *
  * Update this setting with your CMS (Drupal or Joomla) database username, server and DB name.
@@ -305,7 +268,7 @@ define( 'CIVICRM_MEMCACHE_PREFIX', '' );
  * to FALSE; for SVN checkouts, it defaults to TRUE.
  */
 // define( 'CIVICRM_MYSQL_STRICT', TRUE );
-} // end Pantheon check
+
 /**
  *
  * Do not change anything below this line. Keep as is

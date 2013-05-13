@@ -495,10 +495,12 @@ class CRM_Contact_BAO_Query {
     $trashParamExists = FALSE;
     $paramByGroup    = array();
     foreach ( $this->_params as $k => $param ) {
-      if ( $param[0] == 'contact_is_deleted' ) {
+      if (!empty($param[0]) && $param[0] == 'contact_is_deleted' ) {
         $trashParamExists = TRUE;
       }
-      $paramByGroup[$param[3]][$k] = $param;
+      if (!empty($param[3])) {
+        $paramByGroup[$param[3]][$k] = $param;
+      }
     }
 
     if ( $trashParamExists ) {
@@ -1366,7 +1368,7 @@ class CRM_Contact_BAO_Query {
       (substr($values[0], 0, 6) == 'grant_') ||
       (substr($values[0], 0, 7) == 'pledge_') ||
       (substr($values[0], 0, 5) == 'case_') ||
-      (substr($values[0], 0, 10) == 'financial_') 
+      (substr($values[0], 0, 10) == 'financial_')
     ) {
       return;
     }
@@ -4847,7 +4849,6 @@ WHERE displayRelType.relationship_type_id = $relType
 AND   displayRelType.is_active = 1
 ";
       }
-
       $this->_qill[0][] = $qillMessage . "'" . $relationshipTypeLabel . "'";
     }
 

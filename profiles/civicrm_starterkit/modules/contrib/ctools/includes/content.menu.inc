@@ -50,6 +50,21 @@ function ctools_content_autocomplete_entity($type, $string = '') {
 
     $matches = array();
     if ($type == 'node') {
+      if (!user_access('bypass node access')) {
+        // If the user is able to view their own unpublished nodes, allow them
+        // to see these in addition to published nodes.
+        if (user_access('view own unpublished content')) {
+          $query->condition(db_or()
+            ->condition('b.status', NODE_PUBLISHED)
+            ->condition('b.uid', $GLOBALS['user']->uid)
+          );
+        }
+        else {
+          // If not, restrict the query to published nodes.
+          $query->condition('b.status', NODE_PUBLISHED);
+        }
+      }
+
       $query->addTag('node_access');
       $query->join('users', 'u', 'b.uid = u.uid');
       $query->addField('u', 'name', 'name');

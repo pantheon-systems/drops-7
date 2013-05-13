@@ -1335,7 +1335,7 @@ function fonts_com_saved_api_font($import_font) {
   $saved_fonts = fontyourface_get_fonts("url = '" . $url . "'");
 
   if (count($saved_fonts) > 0) {
-    return $saved_fonts[0];
+    return array_shift($saved_fonts);
   } // if
 
   $font = fonts_com_api_to_font($import_font);

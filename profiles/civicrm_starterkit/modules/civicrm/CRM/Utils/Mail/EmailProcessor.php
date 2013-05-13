@@ -213,7 +213,7 @@ class CRM_Utils_Mail_EmailProcessor {
           // if its the activities that needs to be processed ..
           $mailParams = CRM_Utils_Mail_Incoming::parseMailingObject($mail);
 
-          require_once 'api/v3/DeprecatedUtils.php';
+          require_once 'CRM/Utils/DeprecatedUtils.php';
           $params = _civicrm_api3_deprecated_activity_buildmailparams($mailParams, $emailActivityTypeId);
 
           $params['version'] = 3;
@@ -294,7 +294,9 @@ class CRM_Utils_Mail_EmailProcessor {
                 $text = $mail->generateBody();
 
                 // if text is still empty, lets fudge a blank text so the api call below will succeed
-                $text = ts('We could not extract the mail body from this bounce message.');
+                if (empty($text)) {
+                  $text = ts('We could not extract the mail body from this bounce message.');
+                }
               }
 
               $params = array(

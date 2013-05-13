@@ -147,7 +147,7 @@ function fontyourface_ui_views_pre_render(&$view) {
 
     if (count($providers) == 0) {
 
-      drupal_set_message(t('No font providers enabled. !enable before browsing fonts.', array('!enable' => l(t('Enable font providers'), 'admin/modules'))), 'error');
+      drupal_set_message(t('No font providers enabled. !enable before browsing fonts.', array('!enable' => l(t('Enable font provider modules'), 'admin/modules'))), 'error');
 
     } // if
 
@@ -611,7 +611,7 @@ function fontyourface_ui_settings_form($form, &$form_state) {
 
     } // else
 
-    $tokens = array('@provider' => $provider['name'], '@count' => $count);
+    $tokens = array('@provider' => $provider['name'], '@count' => (int) $count);
     $status = t('@provider is enabled with @count fonts.', $tokens);
 
     if (function_exists($status_function)) {
@@ -769,8 +769,15 @@ function fontyourface_ui_apply_by_font_form($form, &$form_state) {
       '#markup' => '<td>' . $font->provider . '</td>',
     );
 
+    // Prepare data for apply.js to create theme CSS instructions.
+    // Wrap family name in single quotes if not already wrapped.
+    $css_family = $font->css_family[0] == "'" ? check_plain($font->css_family) : "'" . check_plain($font->css_family) . "'";
+    $data = 'data-font-family="' . $css_family . '"';
+    $data .= !empty($font->css_style) && $font->css_style != 'normal' ? ' data-font-style="' . check_plain($font->css_style) . '"' : '';
+    $data .= !empty($font->css_weight) && $font->css_weight != 'normal' && $font->css_weight != '400' ? ' data-font-weight="' . check_plain($font->css_weight) . '"' : '';
+
     $form['table']['row_' . $font->fid]['css_selector[' . $font->fid . ']'] = array(
-      '#prefix' => '<td class="css-selector" data-font-family="' . check_plain($font->css_family) . '">',
+      '#prefix' => '<td class="css-selector" ' . $data . '>',
       '#type' => 'textfield',
       '#maxlength' => 1024,
       '#size' => 50,
@@ -1190,9 +1197,15 @@ function fontyourface_ui_admin_edit_form($form, &$form_state, $fid) {
 
   if ($font->css_family != '') {
 
+    $css_family = $font->css_family[0] == "'" ? check_plain($font->css_family) : "'" . check_plain($font->css_family) . "'";
+    $instructions = '<div><code>font-family: ' . $css_family . ';';
+    $instructions .= !empty($font->css_style) && $font->css_style != 'normal' ? '<br />font-style: ' . check_plain($font->css_style) . ';' : '';
+    $instructions .= !empty($font->css_weight) && $font->css_weight != 'normal' && $font->css_weight != '400' ? '<br />font-weight: ' . check_plain($font->css_weight) . ';' : '';
+    $instructions .= '</code></div>';
+
     $form += array(
       'font-family' => array(
-        '#markup' => '<div>' . t('To apply in your own CSS, use:') . '</div><div><code>font-family: ' . check_plain($font->css_family) . ';</code></div>',
+        '#markup' => '<div>' . t('To apply in your own CSS, use:') . '</div>' . $instructions,
       ),
     );
 

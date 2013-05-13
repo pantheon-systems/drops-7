@@ -745,3 +745,10 @@ function fontyourface_ajax_render_alter(&$commands) {
   } // if
 
 } // fontyourface_ajax_render_alter
+
+/**
+ * Implements hook_modernizr_info().
+ */
+function fontyourface_modernizr_info() {
+  return array('fontface');
+} // fontyourface_modernizr_info

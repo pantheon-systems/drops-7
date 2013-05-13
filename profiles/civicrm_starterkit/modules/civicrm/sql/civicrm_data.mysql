@@ -18612,24 +18612,24 @@ VALUES
     ( @domainID, 'Daily' , NULL, 'Disable expired relationships','Disables relationships that have expired (ie. those relationships whose end date is in the past).', 'job', 'disable_expired_relationships', NULL, 0),
     ( @domainID, 'Daily' , NULL, 'Validate Email Address from Mailings.', 'Updates the reset_date on an email address to indicate that there was a valid delivery to this email address.', 'mailing', 'update_email_resetdate', 'minDays, maxDays=Consider mailings that have completed between minDays and maxDays', 0);
 
-SELECT @option_value_rel_id  := value FROM `civicrm_option_value` WHERE `option_group_id` = @option_group_id_arel AND `name` = 'Income Account is';
-SELECT @option_value_rel_id_exp  := value FROM `civicrm_option_value` WHERE `option_group_id` = @option_group_id_arel AND `name` = 'Expense Account is';
-SELECT @option_value_rel_id_ar  := value FROM `civicrm_option_value` WHERE `option_group_id` = @option_group_id_arel AND `name` = 'Accounts Receivable Account is';
-SELECT @option_value_rel_id_as  := value FROM `civicrm_option_value` WHERE `option_group_id` = @option_group_id_arel AND `name` = 'Asset Account is';
+SELECT @option_value_rel_id  := value FROM civicrm_option_value WHERE option_group_id = @option_group_id_arel AND name = 'Income Account is';
+SELECT @option_value_rel_id_exp  := value FROM civicrm_option_value WHERE option_group_id = @option_group_id_arel AND name = 'Expense Account is';
+SELECT @option_value_rel_id_ar  := value FROM civicrm_option_value WHERE option_group_id = @option_group_id_arel AND name = 'Accounts Receivable Account is';
+SELECT @option_value_rel_id_as  := value FROM civicrm_option_value WHERE option_group_id = @option_group_id_arel AND name = 'Asset Account is';
 
-SELECT @financial_type_id_dtn 	       := max(id) FROM `civicrm_financial_type` WHERE `name` = 'Donation';
-SELECT @financial_type_id_md	       := max(id) FROM `civicrm_financial_type` WHERE `name` = 'Member Dues';
-SELECT @financial_type_id_cc	       := max(id) FROM `civicrm_financial_type` WHERE `name` = 'Campaign Contribution';
-SELECT @financial_type_id_ef	       := max(id) FROM `civicrm_financial_type` WHERE `name` = 'Event Fee';
+SELECT @financial_type_id_dtn 	       := max(id) FROM civicrm_financial_type WHERE name = 'Donation';
+SELECT @financial_type_id_md	       := max(id) FROM civicrm_financial_type WHERE name = 'Member Dues';
+SELECT @financial_type_id_cc	       := max(id) FROM civicrm_financial_type WHERE name = 'Campaign Contribution';
+SELECT @financial_type_id_ef	       := max(id) FROM civicrm_financial_type WHERE name = 'Event Fee';
 
-SELECT @financial_account_id_dtn       := max(id) FROM `civicrm_financial_account` WHERE `name` = 'Donation';
-SELECT @financial_account_id_md	       := max(id) FROM `civicrm_financial_account` WHERE `name` = 'Member Dues';
-SELECT @financial_account_id_cc	       := max(id) FROM `civicrm_financial_account` WHERE `name` = 'Campaign Contribution';
-SELECT @financial_account_id_ef	       := max(id) FROM `civicrm_financial_account` WHERE `name` = 'Event Fee';
-SELECT @financial_account_id_bf	       := max(id) FROM `civicrm_financial_account` WHERE `name` = 'Banking Fees';
-SELECT @financial_account_id_ap	       := max(id) FROM `civicrm_financial_account` WHERE `name` = 'Accounts Receivable';
-SELECT @financial_account_id_ar        := max(id) FROM `civicrm_financial_account` WHERE `name` = 'Deposit Bank Account';
-SELECT @financial_account_id_pp        := max(id) FROM `civicrm_financial_account` WHERE `name` = 'Payment Processor Account';
+SELECT @financial_account_id_dtn       := max(id) FROM civicrm_financial_account WHERE name = 'Donation';
+SELECT @financial_account_id_md	       := max(id) FROM civicrm_financial_account WHERE name = 'Member Dues';
+SELECT @financial_account_id_cc	       := max(id) FROM civicrm_financial_account WHERE name = 'Campaign Contribution';
+SELECT @financial_account_id_ef	       := max(id) FROM civicrm_financial_account WHERE name = 'Event Fee';
+SELECT @financial_account_id_bf	       := max(id) FROM civicrm_financial_account WHERE name = 'Banking Fees';
+SELECT @financial_account_id_ap	       := max(id) FROM civicrm_financial_account WHERE name = 'Accounts Receivable';
+SELECT @financial_account_id_ar        := max(id) FROM civicrm_financial_account WHERE name = 'Deposit Bank Account';
+SELECT @financial_account_id_pp        := max(id) FROM civicrm_financial_account WHERE name = 'Payment Processor Account';
 
 INSERT INTO `civicrm_entity_financial_account`
      ( entity_table, entity_id, account_relationship, financial_account_id )
@@ -19504,4 +19504,4 @@ INSERT INTO `civicrm_report_instance`
 VALUES
     (  @domainID, 'Survey Details', 'survey/detail', 'Detailed report for canvassing, phone-banking, walk lists or other surveys.', 'access CiviReport', 'a:39:{s:6:"fields";a:2:{s:9:"sort_name";s:1:"1";s:6:"result";s:1:"1";}s:22:"assignee_contact_id_op";s:2:"eq";s:25:"assignee_contact_id_value";s:0:"";s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:17:"street_number_min";s:0:"";s:17:"street_number_max";s:0:"";s:16:"street_number_op";s:3:"lte";s:19:"street_number_value";s:0:"";s:14:"street_name_op";s:3:"has";s:17:"street_name_value";s:0:"";s:15:"postal_code_min";s:0:"";s:15:"postal_code_max";s:0:"";s:14:"postal_code_op";s:3:"lte";s:17:"postal_code_value";s:0:"";s:7:"city_op";s:3:"has";s:10:"city_value";s:0:"";s:20:"state_province_id_op";s:2:"in";s:23:"state_province_id_value";a:0:{}s:13:"country_id_op";s:2:"in";s:16:"country_id_value";a:0:{}s:12:"survey_id_op";s:2:"in";s:15:"survey_id_value";a:0:{}s:12:"status_id_op";s:2:"eq";s:15:"status_id_value";s:1:"1";s:11:"custom_1_op";s:2:"in";s:14:"custom_1_value";a:0:{}s:11:"custom_2_op";s:2:"in";s:14:"custom_2_value";a:0:{}s:17:"custom_3_relative";s:1:"0";s:13:"custom_3_from";s:0:"";s:11:"custom_3_to";s:0:"";s:11:"description";s:75:"Detailed report for canvassing, phone-banking, walk lists or other surveys.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviReport";s:6:"groups";s:0:"";s:9:"domain_id";i:1;}');
 
- UPDATE civicrm_domain SET version = '4.3.1';
+ UPDATE civicrm_domain SET version = '4.3.3';

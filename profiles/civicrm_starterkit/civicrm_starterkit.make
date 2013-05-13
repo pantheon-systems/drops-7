@@ -7,14 +7,20 @@ projects[drupal][version] = "7.22"
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.1-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.3-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
 libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
 libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashChart_tpl_javascript.patch
 libraries[civicrm][patch][1946820] = http://drupal.org/files/1946820-turn_IDS_off_in_civicrm.settings.php_.tpl_.patch
-libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings.patch
+libraries[civicrm][patch][1967972] = http://drupal.org/files/1967972-bootsrap-fixes.patch
 
+;PANTHEON PATCHES
+libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings.patch
+libraries[civicrm][patch][1978142] = http://drupal.org/files/1978796-session.save-as_file.patch
+libraries[civicrm][patch][1978838] =  http://drupal.org/files/1978838-pre-populate-db-settings.patch
+
+;IMPROVING PROFILE INSTALL UX
 libraries[civicrm][patch][1849424] = http://drupal.org/files/1849424-use-vars-in-link.patch
 libraries[civicrm][patch][] = http://drupal.org/files/1849424-pass-vars-in-link-2.patch
 
@@ -87,7 +93,7 @@ projects[features][subdir] = "contrib"
 projects[features][version] = "2.0-beta2"
 
 projects[fontyourface][subdir] = "contrib"
-projects[fontyourface][version] = "2.7"
+projects[fontyourface][version] = "2.8"
 
 projects[imce][subdir] = "contrib"
 projects[imce][version] = "1.7"

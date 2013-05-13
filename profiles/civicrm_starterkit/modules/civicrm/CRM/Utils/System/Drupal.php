@@ -735,7 +735,9 @@ AND    u.status = 1
     }
     // load drupal bootstrap
     chdir($cmsPath);
-    define('DRUPAL_ROOT', $cmsPath);
+    if(!DRUPAL_ROOT) {
+      define('DRUPAL_ROOT', $cmsPath);
+    }
 
     // For drupal multi-site CRM-11313
     if ($realPath && strpos($realPath, 'sites/all/modules/') === FALSE) {
@@ -915,12 +917,12 @@ AND    u.status = 1
     if (empty($url)) {
       return $url;
     }
-
+    
     //CRM-7803 -from d7 onward.
     $config = CRM_Core_Config::singleton();
-    if (function_exists('variable_get') &&
-      module_exists('locale') &&
-      function_exists('language_negotiation_get')
+    if (function_exists('variable_get') &&  
+      function_exists('language_negotiation_get') &&
+      module_exists('locale') 
     ) {
       global $language;
 

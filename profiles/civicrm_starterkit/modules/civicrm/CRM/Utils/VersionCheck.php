@@ -41,8 +41,8 @@ class CRM_Utils_VersionCheck {
     LOCALFILE_NAME = 'civicrm-version.php',
     // relative to $config->uploadDir
     CACHEFILE_NAME = 'latest-version-cache.txt',
-    // cachefile expiry time (in seconds) - a week
-    CACHEFILE_EXPIRE = 604800;
+    // cachefile expiry time (in seconds) - one day
+    CACHEFILE_EXPIRE = 86400;
 
   /**
    * We only need one instance of this object, so we use the
@@ -90,7 +90,7 @@ class CRM_Utils_VersionCheck {
       require_once ($localfile);
       if (function_exists('civicrmVersion')) {
         $info = civicrmVersion();
-        $this->localVersion = $info['version'];
+        $this->localVersion = trim($info['version']);
       }
     }
     if ($config->versionCheck) {
@@ -99,7 +99,7 @@ class CRM_Utils_VersionCheck {
       // if there's a cachefile and it's not stale use it to
       // read the latestVersion, else read it from the Internet
       if (file_exists($cachefile) && (filemtime($cachefile) > $expiryTime)) {
-        $this->latestVersion = file_get_contents($cachefile);
+        $this->latestVersion = trim(file_get_contents($cachefile));
       }
       else {
         $siteKey = md5(defined('CIVICRM_SITE_KEY') ? CIVICRM_SITE_KEY : '');
@@ -113,6 +113,7 @@ class CRM_Utils_VersionCheck {
           'ufv' => $config->userFrameworkVersion,
           'PHP' => phpversion(),
           'MySQL' => CRM_CORE_DAO::singleValueQuery('SELECT VERSION()'),
+          'communityMessagesUrl' => CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'communityMessagesUrl', NULL, '*default*'),
         );
 
         // Add usage stats
@@ -160,20 +161,12 @@ class CRM_Utils_VersionCheck {
    * Get the latest version number if it's newer than the local one
    *
    * @return string|null
-   * Returns the newer version's number or null if the versions are equal
+   * Returns the newer version's number, or null if the versions are equal
    */
   public function newerVersion() {
     if ($this->latestVersion) {
-      $local = array_pad(explode('.', $this->localVersion), 3, 0);
-      $latest = array_pad(explode('.', $this->latestVersion), 3, 0);
-
-      for ($i = 0; $i < 3; $i++) {
-        if ($local[$i] > $latest[$i]) {
-          return NULL;
-        }
-        elseif ($local[$i] < $latest[$i]) {
-          return $this->latestVersion;
-        }
+      if (version_compare($this->localVersion, $this->latestVersion) < 0) {
+        return $this->latestVersion;
       }
     }
     return NULL;
@@ -300,6 +293,9 @@ class CRM_Utils_VersionCheck {
     $this->latestVersion = @file_get_contents(self::LATEST_VERSION_AT, FALSE, $ctx);
     if (!preg_match('/^\d+\.\d+\.\d+$/', $this->latestVersion)) {
       $this->latestVersion = NULL;
+    }
+    else {
+      $this->latestVersion = trim($this->latestVersion);
     }
     ini_restore('default_socket_timeout');
   }

@@ -94,7 +94,7 @@
   {include file="CRM/common/TrackingFields.tpl"}
 
   {capture assign='reqMark'}<span class="marker" title="{ts}This field is required.{/ts}">*</span>{/capture}
-  <div class="crm-block crm-contribution-main-form-block">
+  <div class="crm-contribution-page-id-{$contributionPageID} crm-block crm-contribution-main-form-block">
   <div id="intro_text" class="crm-section intro_text-section">
     {$intro_text}
   </div>
@@ -327,11 +327,6 @@
   <div id="footer_text" class="crm-section contribution_footer_text-section">
     <p>{$footer_text}</p>
   </div>
-  {/if}
-  <br/>
-  {if $isShare}
-    {capture assign=contributionUrl}{crmURL p='civicrm/contribute/transact' q="$qParams" a=true fe=1 h=1}{/capture}
-  {include file="CRM/common/SocialNetwork.tpl" url=$contributionUrl title=$title pageURL=$contributionUrl}
   {/if}
 </div>
 

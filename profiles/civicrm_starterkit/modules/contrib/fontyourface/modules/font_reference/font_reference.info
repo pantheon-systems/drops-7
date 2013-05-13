@@ -6,9 +6,9 @@ dependencies[] = fontyourface
 dependencies[] = field
 dependencies[] = options
 
-; Information added by drupal.org packaging script on 2013-02-18
-version = "7.x-2.7"
+; Information added by drupal.org packaging script on 2013-04-29
+version = "7.x-2.8"
 core = "7.x"
 project = "fontyourface"
-datestamp = "1361157170"
+datestamp = "1367195415"
 

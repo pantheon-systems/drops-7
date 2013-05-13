@@ -1041,7 +1041,7 @@ CREATE TABLE `civicrm_financial_account` (
      `is_header_account` tinyint   DEFAULT 0 COMMENT 'Is this a header account which does not allow transactions to be posted against it directly, but only to its sub-accounts?',
      `is_deductible` tinyint   DEFAULT 1 COMMENT 'Is this account tax-deductible?',
      `is_tax` tinyint   DEFAULT 0 COMMENT 'Is this account for taxes?',
-     `tax_rate` decimal(9,8)    COMMENT 'The percentage of the total_amount that is due for this tax.',
+     `tax_rate` decimal(10,8)    COMMENT 'The percentage of the total_amount that is due for this tax.',
      `is_reserved` tinyint    COMMENT 'Is this a predefined system object?',
      `is_active` tinyint    COMMENT 'Is this property active?',
      `is_default` tinyint    COMMENT 'Is this account the default one (or default tax one) for its financial_account_type?' 
