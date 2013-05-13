@@ -1,7 +1,7 @@
 <?php
 
 /**
- * Current Supported Class for RC4
+ * Current Supported Class for RC4+
  */
 class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection {
 
@@ -12,11 +12,13 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
     $options['host'] = (variable_get('pantheon_hyperion_host')) ? variable_get('pantheon_hyperion_host') : 'index.' . variable_get('pantheon_tier', 'live') . '.getpantheon.com';
     $options['path'] = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index';
     $options['port'] = 449;
-    $this->context = stream_context_create(
-      array(
-        'ssl' => array(
-           'local_cert' => '../certs/binding.pem',
-         )
+    $this->setStreamContext(
+      stream_context_create(
+        array(
+          'ssl' => array(
+            'local_cert' => '../certs/binding.pem',
+          )
+        )
       )
     );
 
