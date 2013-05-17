@@ -84,8 +84,7 @@ class backup_migrate_destination_s3 extends backup_migrate_destination_remote {
     $form = parent::edit_form();
     $form['scheme']['#type'] = 'value';
     $form['scheme']['#value'] = 'https';
-    $form['host']['#type'] = 'value';
-    $form['host']['#value'] = 's3.amazonaws.com';
+    $form['host']['#default_value'] = 's3.amazonaws.com';
 
     $form['path']['#title'] = 'S3 Bucket';
     $form['path']['#default_value'] = $this->get_bucket();
@@ -173,7 +172,7 @@ class backup_migrate_destination_s3 extends backup_migrate_destination_remote {
       if (file_exists($path . '/S3.php')) {
         require_once $path . '/S3.php';
         if (!$this->s3 && !empty($this->dest_url['user'])) {
-          $this->s3 = new S3($this->dest_url['user'], $this->dest_url['pass']);
+          $this->s3 = new S3($this->dest_url['user'], $this->dest_url['pass'], FALSE, $this->dest_url['host']);
         }
         return $this->s3;
       }

@@ -1,3 +1,7 @@
+; This version of the .make is used by Drupal.org to package the distribution.
+; Patches and version changes are first made to civicrm_starterkit.make and tested
+; locally before committing to the drupal-org.make. 
+
 api = 2
 core = 7.22
 
@@ -7,20 +11,23 @@ libraries[civicrm][download][type] = get
 libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.3-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
+
+;PATCHES THAT SHOULD BE ADDRESSED IN FUTURE CIVICRM RELEASES
 libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
-libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashChart_tpl_javascript.patch
+libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashChart_tpl_javascript-4.patch
 libraries[civicrm][patch][1946820] = http://drupal.org/files/1946820-turn_IDS_off_in_civicrm.settings.php_.tpl_.patch
 libraries[civicrm][patch][1967972] = http://drupal.org/files/1967972-bootsrap-fixes.patch
 
-;PANTHEON PATCHES
-libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings.patch
+;PANTHEON RELATED PATCHES
+libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-2.patch
 libraries[civicrm][patch][1978142] = http://drupal.org/files/1978796-session.save-as_file.patch
 libraries[civicrm][patch][1978838] =  http://drupal.org/files/1978838-pre-populate-db-settings.patch
 
-;IMPROVING PROFILE INSTALL UX
+;IMPROVING PROFILE INSTALL UX WHEN INSTALLING FROM A PROFILE
 libraries[civicrm][patch][1849424] = http://drupal.org/files/1849424-use-vars-in-link.patch
 libraries[civicrm][patch][] = http://drupal.org/files/1849424-pass-vars-in-link-2.patch
 
+;PATCHES THAT ADD LIBRARIES BACK
 libraries[jquery][download][type] = get
 libraries[jquery][download][url] = "http://code.jquery.com/jquery-1.8.3.min.js"
 libraries[jquery][destination] = "modules/civicrm/packages"
@@ -74,7 +81,7 @@ libraries[tinymce-civicrm][directory_name] = tinymce
 ; ====== POPULAR CONTRIB MODULES =========
 
 projects[backup_migrate][subdir] = "contrib"
-projects[backup_migrate][version] = "2.5"
+projects[backup_migrate][version] = "2.7"
 
 projects[civicrm_cron][subdir] = "contrib"
 projects[civicrm_cron][version] = "1.0-beta2"

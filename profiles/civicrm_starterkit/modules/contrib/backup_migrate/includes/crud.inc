@@ -618,7 +618,11 @@ class backup_migrate_item {
     static $cache = array();
 
     // Allow other modules to declare destinations programatically.
-    $items = module_invoke_all($this->db_table);
+    $items = array();
+    foreach (module_implements($this->db_table) as $module) {
+      $fn = $module . '_' . $this->db_table;
+      $items += $fn();
+    }
 
     // Get any items stored as a variable. This allows destinations to be defined in settings.php
     $defaults = (array)variable_get($this->db_table .'_defaults', array());

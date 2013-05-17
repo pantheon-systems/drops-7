@@ -135,6 +135,6 @@ class mime_mail {
     if (!empty($this->headers)) $mime .= $this->headers ."\n";
     if (!empty($this->body)) $this->add_attachment($this->body, "", "text/plain");
     $mime .= "MIME-Version: 1.0\n". $this->build_multipart();
-    mail($this->to, $this->subject, "", $mime);
+    mail(trim($this->to), $this->subject, "", $mime);
   }
 }

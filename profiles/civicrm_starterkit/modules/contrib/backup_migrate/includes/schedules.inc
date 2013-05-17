@@ -338,8 +338,8 @@ class backup_migrate_schedule extends backup_migrate_item {
       if ($settings = $this->get_profile()) {
         $settings->destination_id = $this->destination_id;
         $settings->source_id = $this->source_id;
-        backup_migrate_perform_backup($settings);
         $this->update_last_run($now);
+        backup_migrate_perform_backup($settings);
         $this->remove_expired_backups();
       }
       else {
