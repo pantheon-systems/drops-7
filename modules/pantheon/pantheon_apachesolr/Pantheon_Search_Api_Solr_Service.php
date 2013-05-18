@@ -47,6 +47,55 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
     }
   }
 
+  /**
+   * Sends an HTTP request to Solr.
+   *
+   * This is just a wrapper around drupal_http_request().
+   *
+   * Overridden by Pantheon to set a  timeout and possibly other improvements.
+   */
+  protected function makeHttpRequest($url, array $options = array()) {
+    if (empty($options['method']) || $options['method'] == 'GET' || $options['method'] == 'HEAD') {
+      // Make sure we are not sending a request body.
+      $options['data'] = NULL;
+    }
+    if ($this->http_auth) {
+      $options['headers']['Authorization'] = $this->http_auth;
+    }
+    if ($this->stream_context) {
+      $options['context'] = $this->stream_context;
+    }
+    // Customize timout.
+    $options['timeout'] = 5;
+
+    $result = drupal_http_request($url, $options);
+
+    if (!isset($result->code) || $result->code < 0) {
+      $result->code = 0;
+      $result->status_message = 'Request failed';
+      $result->protocol = 'HTTP/1.0';
+    }
+    // Additional information may be in the error property.
+    if (isset($result->error)) {
+      $result->status_message .= ': ' . check_plain($result->error);
+    }
+
+    if (!isset($result->data)) {
+      $result->data = '';
+      $result->response = NULL;
+    }
+    else {
+      $response = json_decode($result->data);
+      if (is_object($response)) {
+        foreach ($response as $key => $value) {
+          $result->$key = $value;
+        }
+      }
+    }
+
+    return $result;
+  }
+
 }
 
 class PantheonApachesolrSearchApiSolrService extends SearchApiSolrService {
