@@ -1889,7 +1889,7 @@ ol.inline.commerce-checkout-progress {
     font-weight: 700;
     line-height: 20px;
     margin: 0 0px 10px 0;
-    padding: 15px 20px 15px 35px; /* LTR */
+    padding: 15px 15px 15px 35px; /* LTR */
     position: relative;
     width: auto;
     &:after {
@@ -2021,35 +2021,34 @@ ol.inline.commerce-checkout-progress {
 
 /* Checkout button */
 .page-checkout {
-  #commerce-checkout-form-checkout,
-  #commerce-checkout-form-shipping,
-  #commerce-checkout-form-review {
-    .checkout-buttons {
-      margin: 0 10px;
-      input#edit-cancel,
-      input#edit-back {
-        background: none;
-        border: none transparent;
-        border-bottom: 1px solid #888;
-        @include rounded-corners(0px);
-        color: #666666;
-        font-weight: normal;
-        margin: 0 20px 0 5px; /* LTR */
-        padding: 0 0 1px 0;
-        overlay: 0;
-      }
-      input#edit-continue {
-        background: #2698F2 none 0 0 no-repeat;
-        border: 0;
-        @include rounded-corners(8px);
-        color: #ffffff;
-        font-family: $headerfont;
-        font-weight: 600;
-        font-size: 15px;
-        font-weight: normal;
-        margin: 0 10px 0 0; /* LTR */
-        padding: 10px 15px;
-      }
+  .checkout-buttons {
+    margin: 0 10px;
+
+    input#edit-cancel,
+    input#edit-back,
+    input.checkout-back {
+      background: none;
+      border: none transparent;
+      border-bottom: 1px solid #888;
+      @include rounded-corners(0px);
+      color: #666666;
+      font-weight: normal;
+      margin: 0 20px 0 5px; /* LTR */
+      padding: 0 0 1px 0;
+      overlay: 0;
+    }
+    input#edit-continue,
+    input.checkout-continue {
+      background: #2698F2 none 0 0 no-repeat;
+      border: 0;
+      @include rounded-corners(8px);
+      color: #ffffff;
+      font-family: $headerfont;
+      font-weight: 600;
+      font-size: 15px;
+      font-weight: normal;
+      margin: 0 10px 0 0; /* LTR */
+      padding: 10px 15px;
     }
   }
 }
@@ -2157,6 +2156,10 @@ ol.inline.commerce-checkout-progress {
 * Checkout complete page
 */
 .page-checkout {
+  .checkout-help {
+    margin: 0 0 10px 10px; /* LTR */
+  }
+
   #commerce-checkout-form-checkout,
   #commerce-checkout-form-review {
     fieldset {

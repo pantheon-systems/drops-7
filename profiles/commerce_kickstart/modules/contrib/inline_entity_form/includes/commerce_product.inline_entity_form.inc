@@ -46,7 +46,7 @@ class CommerceProductInlineEntityFormController extends EntityInlineEntityFormCo
     );
     $fields['sku'] = array(
       'type' => 'property',
-      'label' => 'SKU',
+      'label' => t('SKU'),
       'visible' => TRUE,
       'weight' => 2,
     );
@@ -60,11 +60,12 @@ class CommerceProductInlineEntityFormController extends EntityInlineEntityFormCo
 
         // If the product has an imagefield, show it.
         if ($field['type'] == 'image') {
+          $image_style = $instance['widget']['settings']['preview_image_style'];
           $fields[$field_name] = array(
             'type' => 'field',
             'label' => $instance['label'],
             'formatter' => 'image',
-            'settings' => array('image_style' => 'thumbnail'),
+            'settings' => array('image_style' => $image_style),
             'delta' => 0,
             'visible' => TRUE,
             'weight' => -10,

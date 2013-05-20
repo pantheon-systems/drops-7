@@ -393,7 +393,7 @@ ol.inline.commerce-checkout-progress {
   ol.inline.commerce-checkout-progress li {
     float: right;
     /* RTL */
-    padding: 15px 35px 15px 20px; }
+    padding: 15px 35px 15px 15px; }
     ul.inline.commerce-checkout-progress li:after,
     ol.inline.commerce-checkout-progress li:after {
       background: transparent url("../images/bg_checkout_progress-rtl.png") left center no-repeat;
@@ -477,6 +477,8 @@ ol.inline.commerce-checkout-progress {
 * Review order page
 * Checkout complete page
 */
+.page-checkout .checkout-help {
+  margin: 0 10px 10px 0; }
 .page-checkout #commerce-checkout-form-checkout fieldset.customer_profile_billing .locality-block .form-item, .page-checkout #commerce-checkout-form-checkout fieldset.customer_profile_shipping .locality-block .form-item,
 .page-checkout #commerce-checkout-form-review fieldset.customer_profile_billing .locality-block .form-item,
 .page-checkout #commerce-checkout-form-review fieldset.customer_profile_shipping .locality-block .form-item {

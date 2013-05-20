@@ -1,0 +1,403 @@
+<?php
+
+/**
+ * Implements hook_commerce_line_item_type_info().
+ *
+ * @see hook_commerce_line_item_type_info().
+ * @see http://www.drupalcommerce.org/specification/info-hooks/checkout
+ *
+ */
+function commerce_exactor_calc_commerce_line_item_type_info() {
+  $line_item_types = array();
+
+  $line_item_types['exactor_calc'] = array(
+    'type' => 'exactor_calc',
+    'name' => t('Sales Tax'),
+    'description' => t('Sales tax calculated by ExactoCALC'),
+    'product' => FALSE,
+    'base' => 'commerce_exactor_calc_line_item',
+  );
+
+  return $line_item_types;
+}
+
+/**
+ * Implements hook_commerce_price_component_type_info().
+ */
+function commerce_exactor_calc_commerce_price_component_type_info() {
+  $components = array();
+
+  // Define a generic shipping price component type.
+  $components['exactor_calc'] = array(
+    'title' => t('Sales Tax'),
+    'weight' => 20,
+  );
+
+  return $components;
+}
+
+/**
+ * Configure the line item with additional fields or whatever.
+ *
+ * This function is called by the line item module when it is enabled or this
+ * module is enabled. It invokes this function using the configuration_callback
+ * as specified above. Other modules defining product line item types should
+ * use this function to ensure their types have the required fields.
+ *
+ * @param $line_item_type
+ *   The info array of the line item type being configured.
+ *
+ * @see commerce_product_line_item_configuration()
+ */
+function commerce_exactor_calc_line_item_configuration($line_item_type) {
+  $type = $line_item_type['type'];
+
+}
+
+/**
+ * Returns a title for this line item.
+ */
+function commerce_exactor_calc_line_item_title($line_item) {
+  return(t('Sales Tax'));
+}
+
+/**
+ * Impliments hook_field_widget_form_alter().
+ */
+function commerce_exactor_calc_field_widget_form_alter(&$element, &$form_state, $context) {
+  if ($context['instance']['widget']['type'] == 'commerce_line_item_manager') {
+    foreach ($element['line_items'] as $line_item_id => $line_item) {
+      if ($line_item['line_item']['#value']->type == 'exactor_calc') {
+        $element['line_items'][$line_item_id]['commerce_unit_price']['#access'] = FALSE;
+        $element['line_items'][$line_item_id]['quantity']['#access'] = FALSE;
+      }
+    }
+  }
+}
+
+/**
+ * Creates a new exactor line item populated with the proper shipping values.
+ *
+ * @param $unit_price
+ *   A price array used to initialize the value of the line item's unit price.
+ * @param $order_id
+ *   The ID of the order the line item belongs to.
+ * @param $data
+ *   An array value to initialize the line item's data array with.
+ * @param $type
+ *   The name of the line item type being created; defaults to 'shipping'.
+ *
+ * @return
+ *   The shipping line item for the specified service initialized to the given
+ *   unit price.
+ */
+function commerce_exactor_calc_line_item_new($tax_price, $order_id = 0, $data = array()) {
+
+  // Create the new line item.
+  $line_item = entity_create('commerce_line_item', array(
+    'type' => 'exactor_calc',
+    'order_id' => $order_id,
+    'quantity' => 1,
+    'data' => $data,
+  ));
+
+  // Set the unit price.
+  $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+  $line_item_wrapper->commerce_unit_price->amount = $tax_price['amount'];
+  $line_item_wrapper->commerce_unit_price->currency_code = $tax_price['currency_code'];
+
+  // Reset the data array of the line item total field to only include a
+  // base price component, set the currency code from the order.
+  $base_price = array(
+    'amount' => 0,
+    'currency_code' => $tax_price['currency_code'],
+    'data' => array(),
+  );
+
+  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($base_price, 'base_price', $base_price, TRUE);
+  $line_item_wrapper->commerce_unit_price->data = commerce_price_component_add($line_item_wrapper->commerce_unit_price->value(), 'exactor_calc', $tax_price, FALSE);
+
+  // Return the line item.
+  return $line_item;
+}
+
+/**
+ * Deletes all exactor line items on an order.
+ *
+ * @param $order
+ *  The order object to delete the shipping line items from.
+ * @param $skip_save
+ *   Boolean indicating whether or not to skip saving the order in this function.
+ */
+function commerce_exactor_calc_delete_exactocalc_line_items($order, $skip_save = FALSE) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // When deleting more than one line item, metadata_wrapper will give problems
+  // if deleting while looping through the line items. So first remove from order
+  // and then delete the line items.
+  $line_item_ids = array();
+
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // If this line item is a shipping line item...
+    if ($line_item_wrapper->type->value() == 'exactor_calc') {
+      // Store its ID for later deletion and remove the reference from the line
+      // item reference field.
+      $line_item_ids[] = $line_item_wrapper->line_item_id->value();
+      $order_wrapper->commerce_line_items->offsetUnset($delta);
+    }
+  }
+
+  // If we found any shipping line items...
+  if (!empty($line_item_ids)) {
+    // First save the order to update the line item reference field value.
+    if (!$skip_save) {
+      commerce_order_save($order);
+    }
+
+    // Then delete the line items.
+    commerce_line_item_delete_multiple($line_item_ids);
+  }
+}
+
+/**
+ * Adds a exactor line item to an order.
+ *
+ * @param $line_item
+ *   An unsaved shipping line item that should be added to the order.
+ * @param $order
+ *   The order to add the shipping line item to.
+ * @param $skip_save
+ *   Boolean indicating whether or not to skip saving the order in this function.
+ *
+ * @return
+ *   The saved exactor line item object or FALSE on failure.
+ */
+function commerce_exactor_calc_add_exactocalc_line_item($line_item, $order, $skip_save = FALSE) {
+  // Do not proceed without a valid order.
+  if (empty($order)) {
+    return FALSE;
+  }
+
+  // Save the incoming line item now so we get its ID.
+  commerce_line_item_save($line_item);
+
+  // Add it to the order's line item reference value.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  $order_wrapper->commerce_line_items[] = $line_item;
+
+  // Save the updated order.
+  if (!$skip_save) {
+    commerce_order_save($order);
+  }
+  // Otherwise, we still need to update the order total to take for account
+  // added shipping line item.
+  else {
+    commerce_order_calculate_total($order);
+  }
+
+  return $line_item;
+}
+
+function _commerce_exactor_calc_request_xml() {
+  $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><TaxRequest xmlns="http://www.exactor.com/ns"></TaxRequest>');
+  $xml->MerchantId = variable_get('exactor_account_id');
+  $xml->UserId = variable_get('exactor_user_id');
+
+  return $xml;
+}
+
+/**
+ * Send an XML request to Exactor
+ *
+ * @param SimpleXMLElement $xml
+ *   The XML query to send
+ * @return boolean|SimpleXMLElement
+ */
+function commerce_exactor_calc_tax_request($xml) {
+  $url = 'https://taxrequest.exactor.com/xml/invoice';
+
+  $request = commerce_exactor_xml_post($url, $xml->asXML());
+  $data = new SimpleXMLElement($request->data);
+
+  if (isset($data->ErrorResponse->ErrorDescription)) {
+    watchdog('commerce_exactor_calc', (string) $data->ErrorResponse->ErrorDescription);
+    return FALSE;
+  }
+
+  return $data;
+}
+
+/**
+ * Invoice Request XML
+ */
+function commerce_exactor_calc_invoice_request_xml($order, $billing_address, $shipping_address = NULL, $from_address = NULL) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  $vars['order_wrapper'] = $order_wrapper;
+
+  $billing_country = countries_country_lookup($billing_address['country'], 'iso2');
+  $billing_address['country'] = $billing_country->iso3;
+
+  if ($shipping_address) {
+    $shipping_country = countries_country_lookup($shipping_address['country'], 'iso2');
+    $shipping_address['country'] = $shipping_country->iso3;
+  }
+  else {
+    $shipping_address = $billing_address;
+  }
+
+  if ($from_address) {
+    $from_country = countries_country_lookup($from_address['country'], 'iso2');
+    $from_address['country'] = $from_country->iso3;
+  }
+  else {
+    $from_address = array(
+      'name_line' => variable_get('exactor_name_line'),
+      'thoroughfare' => variable_get('exactor_thoroughfare'),
+      'premise' => variable_get('exactor_premise'),
+      'locality' => variable_get('exactor_locality'),
+      'administrative_area' => variable_get('exactor_administrative_area'),
+      'postal_code' => variable_get('exactor_postal_code'),
+      'country' => variable_get('exactor_country', 'USA'),
+    );
+  }
+
+  $xml = _commerce_exactor_calc_request_xml();
+  $invoice_request = $xml->addChild('InvoiceRequest');
+
+  $invoice_request->SaleDate = date("Y-m-d", $order_wrapper->changed->value());
+  $invoice_request->ExemptionId = $order_wrapper->uid->value();
+
+  $invoice_request->BillTo->FullName = $billing_address['name_line'];
+  $invoice_request->BillTo->Street1 = $billing_address['thoroughfare'];
+  $invoice_request->BillTo->Street2 = $billing_address['premise'];
+  $invoice_request->BillTo->City = $billing_address['locality'];
+  $invoice_request->BillTo->StateOrProvince = $billing_address['administrative_area'];
+  $invoice_request->BillTo->PostalCode = $billing_address['postal_code'];
+  $invoice_request->BillTo->Country = $billing_address['country'];
+
+  $invoice_request->ShipTo->FullName = $shipping_address['name_line'];
+  $invoice_request->ShipTo->Street1 = $shipping_address['thoroughfare'];
+  $invoice_request->ShipTo->Street2 = $shipping_address['premise'];
+  $invoice_request->ShipTo->City = $shipping_address['locality'];
+  $invoice_request->ShipTo->StateOrProvince = $shipping_address['administrative_area'];
+  $invoice_request->ShipTo->PostalCode = $shipping_address['postal_code'];
+  $invoice_request->ShipTo->Country = $shipping_address['country'];
+
+  $invoice_request->ShipFrom->FullName = $from_address['name_line'];
+  $invoice_request->ShipFrom->Street1 = $from_address['thoroughfare'];
+  $invoice_request->ShipFrom->Street2 = $from_address['premise'];
+  $invoice_request->ShipFrom->City = $from_address['locality'];
+  $invoice_request->ShipFrom->StateOrProvince = $from_address['administrative_area'];
+  $invoice_request->ShipFrom->PostalCode = $from_address['postal_code'];
+  $invoice_request->ShipFrom->Country = $from_address['country'];
+
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    if ($line_item_wrapper->type->value() != 'exactor_calc') {
+      $line = $invoice_request->addChild('LineItem');
+      $line->addAttribute('id', $delta + 1);
+      $line->addChild('Quantity', $line_item_wrapper->quantity->value());
+      $line->addChild('GrossAmount', number_format(commerce_currency_amount_to_decimal($line_item_wrapper->commerce_total->amount->value(), $line_item_wrapper->commerce_total->currency_code->value()), 2, '.', ''));
+
+      if ($line_item_wrapper->type->value() == 'product') {
+        if (module_exists('commerce_exactor_euc') && isset($line_item_wrapper->commerce_product->exactor_euc) && ($line_item_wrapper->commerce_product->exactor_euc->value() != NULL)) {
+          $line->addChild('SKU', drupal_substr($line_item_wrapper->commerce_product->exactor_euc->value(), -12));
+        }
+        else {
+          $line->addChild('SKU', $line_item_wrapper->commerce_product->sku->value());
+        }
+        $line->addChild('Description', $line_item_wrapper->commerce_product->title->value());
+      }
+
+      elseif ($line_item_wrapper->type->value() == 'shipping') {
+
+        if (module_exists('commerce_shipping') && module_exists('commerce_exactor_euc')) {
+          $shipping_service = commerce_shipping_service_load($line_item_wrapper->commerce_shipping_service->value());
+          $line->addChild('SKU', drupal_substr($shipping_service['exactor_euc'], -12));
+        }
+
+        $line->addChild('Description', $line_item_wrapper->line_item_label->value());
+      }
+
+      elseif ($line_item_wrapper->type->value() == 'commerce_discount') {
+
+        if (module_exists('commerce_discount') && module_exists('commerce_exactor_euc') && in_array('shipping', variable_get('commerce_discount_line_item_types', array('product')))) {
+          $line->addChild('SKU', 'EUC-99010103');
+        }
+        else {
+          $line->addChild('SKU', 'EUC-99010102');
+        }
+
+        $line->addChild('Description', $line_item_wrapper->line_item_label->value());
+      }
+
+      else {
+        $line->addChild('Description', $line_item_wrapper->line_item_label->value());
+      }
+    }
+  }
+
+  return $xml;
+}
+
+/**
+ * Commit Request XML
+ */
+function commerce_exactor_calc_commit_request_xml($order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  $xml = _commerce_exactor_calc_request_xml();
+  $commit_request = $xml->addChild('CommitRequest');
+
+  $commit_request->CommitDate = date("Y-m-d", $order_wrapper->changed->value());
+  $commit_request->InvoiceNumber = $order_wrapper->order_id->value();
+  $commit_request->PriorTransactionId = $order->data['exactor_calc']['InvoiceResponce']['TransactionId'];
+
+  return $xml;
+}
+
+/**
+ * Refund Request XML
+ */
+function commerce_exactor_calc_refund_request_xml($order) {
+  $xml = _commerce_exactor_calc_request_xml();
+  $refund_request = $xml->addChild('RefundRequest');
+
+  $refund_request->RefundDate = date("Y-m-d", $order->changed);
+  $refund_request->PriorTransactionId = $order->data['exactor_calc']['CommitResponce']['TransactionId'];
+
+  return $xml;
+}
+
+/**
+ * Delete Request XML
+ */
+function commerce_exactor_calc_delete_request_xml($order) {
+  $xml = _commerce_exactor_calc_request_xml();
+  $delete_request = $xml->addChild('DeleteRequest');
+
+  $delete_request->DeleteDate = date("Y-m-d", $order->changed);
+  $delete_request->PriorTransactionId = $order->data['exactocalc']['CommitResponce']['TransactionId'];
+
+  return $xml;
+}
+
+/**
+ * Impliments hook_commerce_order_delete().
+ */
+function commerce_exactor_calc_commerce_order_delete($order) {
+  if (isset($order->data['exactocalc']['CommitResponce']['TransactionId'])) {
+    $refund_request = commerce_exactor_calc_delete_request_xml($order);
+    $result = commerce_exactor_calc_tax_request($refund_request);
+
+    if (isset($result->DeleteResponse)) {
+      return TRUE;
+    }
+    else {
+      return FALSE;
+    }
+  }
+  return TRUE;
+}

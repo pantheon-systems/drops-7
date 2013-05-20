@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Custom util javascript.
+ */
 var lingotek;
 if(!lingotek) lingotek = {};
 if(!lingotek.util) lingotek.util = {};

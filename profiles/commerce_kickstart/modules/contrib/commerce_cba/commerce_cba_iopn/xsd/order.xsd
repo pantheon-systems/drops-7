@@ -1,0 +1,411 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://payments.amazon.com/checkout/2009-05-15/"
+           xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://payments.amazon.com/checkout/2009-05-15/"
+           elementFormDefault="qualified">
+    <xs:element name="Order" type="tns:Order" />
+    <xs:complexType name="Order">
+        <xs:sequence>
+            <xs:element name="ClientRequestId" type="xs:string" minOccurs="0"/>
+            <xs:element name="ExpirationDate" type="xs:string" minOccurs="0"/>
+            <xs:element name="Cart" type="tns:Cart"/>
+            <xs:element name="DefaultTaxTable" type="tns:TaxTable" minOccurs="0"/>
+            <xs:element name="TaxTables" type="tns:TaxTables" minOccurs="0"/>
+            <xs:element name="Promotions" type="tns:Promotions" minOccurs="0"/>
+            <xs:element name="ShippingMethods" type="tns:ShippingMethods" minOccurs="0"/>
+            <xs:element name="IntegratorId" type="xs:string" minOccurs="0"/>
+            <xs:element name="IntegratorName" type="xs:string" minOccurs="0"/>
+            <xs:element name="ReturnUrl" type="xs:anyURI" minOccurs="0"/>
+            <xs:element name="CancelUrl" type="xs:anyURI" minOccurs="0"/>
+            <xs:element name="YourAccountUrl" type="xs:anyURI" minOccurs="0"/>
+            <xs:element name="MerchantUpsellItems" type="tns:MerchantUpsellItems" minOccurs="0"/>
+            <xs:element name="AmazonUpsellPreferences" type="tns:AmazonUpsellPreferences" minOccurs="0"/>
+            <xs:element name="OrderCalculationCallbacks" type="tns:OrderCalculationCallbacks" minOccurs="0" />
+            <xs:element name="ShippingAddresses" type="tns:ShippingAddresses" minOccurs="0" />
+            <xs:element name="DisablePromotionCode" type="xs:boolean" minOccurs="0" />
+            <xs:element name="ParameterizedUrls"  type="tns:ParameterizedUrls" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ShippingAddresses">
+       <xs:sequence>
+          <!-- Only one shippingAddress is allowed at this time. -->
+          <xs:element name="ShippingAddress" type="tns:ShippingAddress" minOccurs="0" maxOccurs="unbounded"/>
+       </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="OrderCalculationCallbacks">
+       <xs:sequence>
+          <xs:element name="CalculateTaxRates" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+          <xs:element name="CalculatePromotions" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+          <xs:element name="CalculateShippingRates" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+          <xs:element name="OrderCallbackEndpoint" type="xs:anyURI" minOccurs="1" maxOccurs="1" />
+          <xs:element name="ProcessOrderOnCallbackFailure" type="xs:boolean" minOccurs="0" maxOccurs="1" />
+       </xs:sequence>
+    </xs:complexType>
+
+	<xs:complexType name="ShippingAddress">
+	   <xs:sequence>
+	      <xs:element name="Name" type="xs:string" minOccurs="0"/>
+	      <xs:element name="AddressFieldOne" type="xs:string" minOccurs="0"/>
+	      <xs:element name="AddressFieldTwo" type="xs:string" minOccurs="0" />
+	      <xs:element name="AddressFieldThree" type="xs:string" minOccurs="0" />
+	      <xs:element name="City" type="xs:string" minOccurs="0" />
+	      <xs:element name="State" type="xs:string" minOccurs="0"/>
+	      <xs:element name="PostalCode" type="xs:string" minOccurs="0"/>
+	      <xs:element name="CountryCode" type="xs:string" minOccurs="0"/>
+	      <xs:element name="PhoneNumber" type="xs:string" minOccurs="0"/>
+	   </xs:sequence>
+	</xs:complexType>
+
+    <xs:complexType name="ShippingMethods">
+        <xs:sequence>
+            <xs:element name="ShippingMethod" type="tns:ShippingMethod" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Promotions">
+        <xs:sequence>
+            <xs:element name="Promotion" type="tns:Promotion" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TaxTables">
+        <xs:sequence>
+            <xs:element name="TaxTable" type="tns:TaxTable" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Cart">
+        <xs:sequence>
+            <xs:element name="Items" type="tns:Items"/>
+            <xs:element name="CartPromotionId" type="xs:string" minOccurs="0"/>
+            <xs:element name="CartTaxAmounts" type="tns:CartTaxAmounts" minOccurs="0" />            
+	    <xs:element name="PaymentAmounts" type="tns:MerchantCalculatedPaymentAmounts" minOccurs="0"/> 
+            <!-- A new field for cart level custom data; to be provided by merchants -->
+            <xs:element name="CartCustomData" type="tns:CustomDataXML" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Items">
+        <xs:sequence>
+            <xs:element name="Item" type="tns:Item" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Item">
+        <xs:sequence>
+            <xs:element name="SKU" type="xs:string" minOccurs="0"/>
+            <xs:element name="MerchantId" type="xs:string"/>
+            <xs:element name="Title" type="xs:string"/>
+            <xs:element name="Description" type="xs:string" minOccurs="0"/>
+            <xs:element name="Price" type="tns:Price"/>
+            <xs:element name="Quantity" type="xs:positiveInteger" minOccurs="0"/>
+            <xs:element name="Weight" type="tns:Weight" minOccurs="0"/>
+            <xs:element name="URL" type="xs:anyURI" minOccurs="0"/>
+            <xs:element name="Category" type="xs:string" minOccurs="0"/>
+            <xs:element name="Condition" type="xs:string" minOccurs="0"/>
+            <xs:element name="TaxTableId" type="xs:string" minOccurs="0"/>
+            <xs:element name="PromotionIds" type="tns:PromotionIds" minOccurs="0"/>
+            <xs:element name="ShippingMethodIds" type="tns:ShippingMethodIds" minOccurs="0"/>
+            <xs:element name="FulfillmentNetwork" type="tns:FulfillmentNetwork" minOccurs="0"/>
+            <xs:element name="Images" type="tns:Images" minOccurs="0" />
+ 	    <xs:element name="CatalogSource" type="tns:CatalogSource" minOccurs="0"/>
+     	    <xs:element name="PaymentAmounts" type="tns:MerchantCalculatedItemAmounts" minOccurs="0" />	
+            <!-- New field for item level custom data; to be provided by merchants -->
+            <xs:element name="ItemCustomData" type="tns:CustomDataXML" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+	<!-- New field for WBA -->
+    <xs:simpleType name="CatalogSource">
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="AMAZON" />
+		<xs:enumeration value="MERCHANT" />
+	</xs:restriction>
+   </xs:simpleType>
+	<!--New field for Item Level Changes for V2 -->
+    <xs:complexType name="MerchantCalculatedItemAmounts">
+        <xs:sequence>
+            <xs:element name="TaxAmount" type="tns:Price" minOccurs="0" />
+            <xs:element name="Promotion" type="tns:Promotion" minOccurs="0" />
+            <xs:element name="ShippingAmount" type="tns:Price" minOccurs="0" />
+        </xs:sequence>
+    </xs:complexType>
+
+
+   <xs:complexType name="MerchantUpsellItems">
+        <xs:sequence>
+            <xs:element name="MerchantUpsellItem" type="tns:MerchantUpsellItem" minOccurs="0" maxOccurs="20"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="MerchantUpsellItem">
+        <xs:complexContent>
+             <xs:extension base="tns:Item">
+                 <xs:sequence />
+             </xs:extension>
+        </xs:complexContent>
+    </xs:complexType>
+
+    <xs:complexType name="AmazonUpsellPreferences">
+        <xs:sequence>
+            <xs:element name="AssociateTag" type="xs:string" minOccurs="0"/>
+            <xs:element name="ExclusionCategories" type="tns:Categories" minOccurs="0"/>
+            <xs:element name="InclusionCategories" type="tns:Categories" minOccurs="0"/>
+            <xs:element name="AmazonUpsellItems" type="tns:AmazonUpsellItems" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="AmazonUpsellItems">
+        <xs:sequence>
+            <xs:element name="ASIN" type="xs:string" minOccurs="0" maxOccurs="20"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Categories">
+        <xs:sequence>
+            <xs:element name="Category" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="PromotionIds">
+        <xs:sequence>
+            <xs:element name="PromotionId" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ShippingMethodIds">
+        <xs:sequence>
+            <xs:element name="ShippingMethodId" type="xs:string" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- List of cart tax amounts per shipping method -->
+    <xs:complexType name="CartTaxAmounts">
+        <xs:sequence>
+            <xs:element name="CartTaxAmount" type="tns:CartTaxAmount" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="CartTaxAmount">
+        <xs:sequence>
+            <xs:element name="ShippingMethodId" type="xs:string" minOccurs="0"/>
+            <xs:element name="ServiceLevel" type="tns:ShippingServiceLevel" minOccurs="0"/>
+            <xs:element name="TaxAmount" type="tns:Price"/>
+        </xs:sequence>
+    </xs:complexType>
+
+  <xs:complexType name="MerchantCalculatedPaymentAmounts">
+    <xs:sequence>
+      <xs:element name="TaxAmount" type="tns:Price" minOccurs="0"/>
+      <xs:element name="Promotion" type="tns:Promotion" minOccurs="0"/>
+      <xs:element name="Shipping">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="ShippingAmount" type="tns:Price" minOccurs="0"/>
+            <xs:element name="ShippingServiceLevel"
+                        type="tns:ShippingServiceLevel"/>
+            <xs:element name="DisplayableShippingLabel" type="xs:string"
+                        minOccurs="0"/>
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+  
+    <xs:complexType name="Price">
+        <xs:sequence>
+            <xs:element name="Amount" type="tns:NonEmptyString" />
+            <xs:element name="CurrencyCode" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="NonEmptyString">
+      <xs:restriction base="xs:string">
+        <xs:minLength value="1"/>
+      </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="NonNegativeDouble">
+        <xs:restriction base="xs:double">
+            <xs:minInclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:simpleType name="PositiveDouble">
+        <xs:restriction base="xs:double">
+            <xs:minExclusive value="0"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="Weight">
+        <xs:sequence>
+            <xs:element name="Amount" type="tns:NonNegativeDouble"/>
+            <xs:element name="Unit" type="xs:string"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="FulfillmentNetwork">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="MERCHANT"/>
+            <xs:enumeration value="AMAZON_NA"/>
+            <xs:enumeration value="AMAZON"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="ShippingMethod">
+        <xs:sequence>
+            <xs:element name="ShippingMethodId" type="xs:string"/>
+            <xs:element name="ServiceLevel" type="tns:ShippingServiceLevel"/>
+            <xs:element name="Rate" type="tns:ShippingRate" />
+            <xs:element name="IncludedRegions">
+                  <xs:complexType>
+                        <xs:sequence>
+                              <xs:element ref="tns:RegionDefinition" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                  </xs:complexType>
+            </xs:element>
+            <xs:element name="ExcludedRegions" minOccurs="0">
+                  <xs:complexType>
+                        <xs:sequence>
+                              <xs:element ref="tns:RegionDefinition" minOccurs="0" maxOccurs="unbounded"/>
+                        </xs:sequence>
+                  </xs:complexType>
+            </xs:element>
+            <xs:element name="DisplayableShippingLabel" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:element name="RegionDefinition" type="xs:anyType" abstract="true"/>
+
+    <xs:element name="USZipRegion" type="xs:string" substitutionGroup="tns:RegionDefinition"/>
+    <xs:element name="USStateRegion" type="xs:string" substitutionGroup="tns:RegionDefinition"/>
+    <xs:element name="WorldRegion" type="tns:WorldRegion" substitutionGroup="tns:RegionDefinition"/>
+    <xs:element name="PredefinedRegion" type="tns:PredefinedRegion" substitutionGroup="tns:RegionDefinition"/>
+
+    <xs:simpleType name="ShippingServiceLevel">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="Standard"/>
+            <xs:enumeration value="Expedited"/>
+            <xs:enumeration value="OneDay"/>
+            <xs:enumeration value="TwoDay"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+    <xs:complexType name="ShippingRate">
+        <xs:sequence>
+            <xs:element name="WeightBased" type="tns:Price" minOccurs="0"/>
+            <xs:element name="ItemQuantityBased" type="tns:Price" minOccurs="0"/>
+            <xs:element name="ShipmentBased" type="tns:Price" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TaxTable">
+        <xs:sequence>
+            <xs:element name="TaxTableId" type="xs:string" />
+            <xs:element name="TaxRules" type="tns:TaxRules" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TaxRules">
+        <xs:sequence>
+            <xs:element name="TaxRule" type="tns:TaxRule" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="TaxRule">
+        <xs:sequence>
+            <xs:element name="Rate" type="tns:NonNegativeDouble" />
+            <xs:element name="IsShippingTaxed" type="xs:boolean" minOccurs="0"/>
+             <!-- choice -->
+            <xs:element name="USZipRegion" type="xs:string" minOccurs="0"/>
+            <xs:element name="USStateRegion" type="xs:string" minOccurs="0"/>
+            <xs:element name="WorldRegion" type="tns:WorldRegion" minOccurs="0"/>
+            <xs:element name="PredefinedRegion" type="tns:PredefinedRegion" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="Promotion">
+        <xs:sequence>
+            <xs:element name="PromotionId" type="xs:string" />
+            <xs:element name="Description" type="xs:string" minOccurs="0"/>
+            <xs:element name="Benefit" type="tns:PromotionBenefit" />
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="PromotionBenefit">
+        <xs:sequence>
+            <xs:element name="DiscountRate" type="tns:NonNegativeDouble" minOccurs="0"/>
+            <xs:element name="FixedAmountDiscount" type="tns:Price" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+
+   <xs:simpleType name="PredefinedRegion">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="USContinental48States"/>
+            <xs:enumeration value="USFull50States"/>
+            <xs:enumeration value="USAll"/>
+            <xs:enumeration value="WorldAll"/>
+        </xs:restriction>
+    </xs:simpleType>
+    <xs:complexType name="WorldRegion">
+        <xs:sequence>
+            <xs:element name="PostalRegion" type="xs:string" minOccurs="0"/>
+            <xs:element name="CountryCode" type="xs:string" minOccurs="0"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="Images">
+        <xs:sequence>
+            <xs:element name="Image" type="tns:Image" minOccurs="1"/>
+        </xs:sequence>
+    </xs:complexType>
+    <xs:complexType name="Image">
+        <xs:sequence>
+            <xs:element name="URL" type="xs:anyURI" />
+        </xs:sequence>
+    </xs:complexType>
+
+    <!-- Merchant custom data type -->
+    <xs:complexType name="CustomDataXML" mixed="true">
+        <xs:sequence>
+            <xs:any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="ParameterizedUrls">
+        <xs:sequence>
+            <xs:element name="ParameterizedUrl" type="tns:ParameterizedUrl" minOccurs="1" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+                                                                     
+    <xs:complexType name="ParameterizedUrl">
+        <xs:sequence>
+            <xs:element name="Url" type="xs:string"/>
+            <xs:element name="UrlParameter" type="tns:UrlParameter" minOccurs="0" maxOccurs="unbounded"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:complexType name="UrlParameter">
+        <xs:sequence>
+            <xs:element name="Name" type="xs:string"/>
+            <xs:element name="Type" type="tns:UrlParameterType"/>
+        </xs:sequence>
+    </xs:complexType>
+
+    <xs:simpleType name="UrlParameterType">
+        <xs:restriction base="xs:string">
+            <xs:enumeration value="BuyerId"/>
+            <xs:enumeration value="OrderId"/>
+            <xs:enumeration value="OrderSubtotal"/>
+            <xs:enumeration value="OrderSubtotalPlusShipping"/>
+            <xs:enumeration value="OrderSubtotalPlusTax"/>
+            <xs:enumeration value="OrderTotal"/>
+            <xs:enumeration value="PromotionAmount"/>            
+            <xs:enumeration value="ShippingAmount"/>
+            <xs:enumeration value="ShippingCity"/>
+            <xs:enumeration value="ShippingCountryCode"/>
+            <xs:enumeration value="ShippingPostalCode"/>
+            <xs:enumeration value="ShippingState"/>
+            <xs:enumeration value="TaxAmount"/>
+        </xs:restriction>
+    </xs:simpleType>
+
+</xs:schema>

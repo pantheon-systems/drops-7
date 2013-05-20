@@ -108,7 +108,7 @@ class LingotekDocument {
       if( is_object( $progress ) ) {
         foreach ($progress->translationTargets as $target) {
           $current_phase = $this->currentPhase($target->id);
-          if ($current_phase->canBeMarkedComplete()) {
+          if (is_object($current_phase) && $current_phase->canBeMarkedComplete()) {
             $result = TRUE;
             break;
           }

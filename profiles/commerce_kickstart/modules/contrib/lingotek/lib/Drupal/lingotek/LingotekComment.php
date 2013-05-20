@@ -170,8 +170,8 @@ class LingotekComment implements LingotekTranslatableEntity {
         }
       }
       else {
-        watchdog('lingotek', 'Unabele to retrieve Lingotek Document ID for comment @id',
-          array('@id' => $this->comment->cid), WATCHDOG_ERROR);
+        LingotekLog::error('Unable to retrieve Lingotek Document ID for comment @id',
+          array('@id' => $this->comment->cid));
       }
     }
   }
@@ -404,8 +404,8 @@ class LingotekComment implements LingotekTranslatableEntity {
       $this->comment = comment_load($this->comment->cid);
     }
     else {
-      watchdog('lingotek', 'Unable to refresh local contents for comment @cid. Could not find Lingotek Document ID.',
-        array('@cid' => $this->comment->cid), WATCHDOG_ERROR);
+      LingotekLog::error('Unable to refresh local contents for comment @cid. Could not find Lingotek Document ID.',
+        array('@cid' => $this->comment->cid));
       $success = FALSE;
     }
 

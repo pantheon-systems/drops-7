@@ -1,0 +1,20 @@
+name = Commerce Checkout by Amazon
+description = Checkout by Amazon integration
+package = Commerce (contrib)
+core = 7.x
+
+dependencies[] = bean
+dependencies[] = bean_admin_ui
+dependencies[] = commerce
+dependencies[] = commerce_bean
+dependencies[] = commerce_checkout
+dependencies[] = commerce_cart
+dependencies[] = commerce_customer
+dependencies[] = commerce_payment
+
+; Information added by drupal.org packaging script on 2013-05-16
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "commerce_cba"
+datestamp = "1368718811"
+

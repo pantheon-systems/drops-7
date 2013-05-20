@@ -1,0 +1,60 @@
+<?php
+
+/**
+ * @file
+ *   commerce_exactor.module
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_exactor_permission() {
+   return array(
+    'administer exactor' => array(
+      'title' => t('Administer Exactor'),
+      'description' => t('Manage settings for the Exactor Sales Tax'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_exactor_menu() {
+  $items = array();
+
+  $items['admin/commerce/config/exactor'] = array(
+    'title' => 'Exactor Sales Tax',
+    'description' => 'Exactor Sales Tax Configuration',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_exactor_settings_form'),
+    'file' => 'commerce_exactor.admin.inc',
+    'access arguments' => array('administer exactor'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/commerce/config/exactor/settings'] = array(
+    'title' => 'Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  return $items;
+}
+
+function commerce_exactor_xml_post($url, $xmlrequest) {
+
+  $request_url = $url;
+  $request_options['headers'] = array(
+    'Accept' => 'application/xml',
+    'Content-Type' => 'application/xml; charset=utf-8',
+  );
+  $request_options['method'] = 'POST';
+  $request_options['data'] = $xmlrequest;
+
+  // Send the request.
+  $result = drupal_http_request($request_url, $request_options);
+  //* set the xml as array *//
+
+  return $result;
+
+}

@@ -279,6 +279,21 @@ function hook_search_api_index_items_alter(array &$items, SearchApiIndex $index)
 }
 
 /**
+ * Allows modules to react after items were indexed.
+ *
+ * @param SearchApiIndex $index
+ *   The used index.
+ * @param array $item_ids
+ *   An array containing the indexed items' IDs.
+ */
+function hook_search_api_items_indexed(SearchApiIndex $index, array $item_ids) {
+  if ($index->item_type == 'node') {
+    // Flush page cache of the search page.
+    cache_clear_all(url('search'), 'cache_page');
+  }
+}
+
+/**
  * Lets modules alter a search query before executing it.
  *
  * @param SearchApiQueryInterface $query

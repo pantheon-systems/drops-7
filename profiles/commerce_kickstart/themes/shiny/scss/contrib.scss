@@ -1090,3 +1090,12 @@ html.js #features-export-form {
     padding: 0 13px 13px 15px;
   }
 }
+
+/* Menu Block Radio Fix */
+#menu-block-settings {
+  #foo:checked,
+  input.form-checkbox + label.ui-button::before,
+  input.form-radio + label.ui-button::before {
+    background: transparent;
+  }
+}

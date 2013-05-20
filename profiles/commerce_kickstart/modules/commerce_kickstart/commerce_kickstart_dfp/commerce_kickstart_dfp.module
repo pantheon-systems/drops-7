@@ -23,7 +23,8 @@ function commerce_kickstart_dfp_page_build(&$page) {
         'dfp_width' => 468,
       );
       drupal_add_css(drupal_get_path('module', 'commerce_kickstart_dfp') . '/theme/commerce_kickstart_dfp.css');
-      drupal_add_js('//www.googletagservices.com/tag/js/gpt.js');
+      $prefix = (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on') ? 'https://' : 'http://';
+      drupal_add_js($prefix . 'www.googletagservices.com/tag/js/gpt.js');
       drupal_add_js(array(
         'dfp' => $dfp_settings[$current_path],
       ), 'setting');

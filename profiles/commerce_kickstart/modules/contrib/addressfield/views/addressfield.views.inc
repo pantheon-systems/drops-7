@@ -12,7 +12,7 @@ function addressfield_field_views_data($field) {
       if (!isset($columns['country'])) {
         continue;
       }
-      
+
       $column_real_name = $columns['country'];
       if (!isset($data[$table_name][$column_real_name]['filter'])) {
         continue;

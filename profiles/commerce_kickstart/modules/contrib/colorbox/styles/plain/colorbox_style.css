@@ -1,5 +1,5 @@
 /**
- * ColorBox Core Style:
+ * Colorbox Core Style:
  * The following CSS is consistent between example themes and should not be altered.
  */
 #colorbox, #cboxOverlay, #cboxWrapper {
@@ -22,6 +22,7 @@
 }
 #cboxLoadedContent {
   overflow: auto;
+  -webkit-overflow-scrolling: touch;
 }
 #cboxTitle {
   margin: 0;
@@ -33,8 +34,25 @@
   width: 100%;
   height: 100%;
 }
+/**
+ * These elements are buttons, and may need to have additional
+ * styles reset to avoid unwanted base styles.
+ */
 #cboxPrevious, #cboxNext, #cboxClose, #cboxSlideshow {
+  border: 0;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  width: auto;
+  background: none;
   cursor: pointer;
+}
+/**
+ * Avoid outlines on :active (mouseclick),
+ * but preserve outlines on :focus (tabbed navigating)
+ */
+#cboxPrevious:active, #cboxNext:active, #cboxClose:active, #cboxSlideshow:active {
+  outline: 0;
 }
 .cboxPhoto {
   float: left;
@@ -49,8 +67,10 @@
   display: block;
   border: 0;
 }
+/* Reset box sizing to content-box if theme is using border-box. */
 #colorbox, #cboxContent, #cboxLoadedContent {
   -moz-box-sizing: content-box;
+  -webkit-box-sizing: content-box;
   box-sizing: content-box;
 }
 
@@ -62,12 +82,12 @@
 #cboxOverlay {
   background: #000;
 }
-
-#colorBox {}
+#colorbox {
+  outline: 0;
+}
   #cboxWrapper {}
     #cboxContent {
       overflow: hidden;
-      font: 12px "Lucida Grande", Verdana, Arial, sans-serif;
     }
       #cboxContent, .cboxPhoto {
         -webkit-border-radius: 5px;
@@ -87,6 +107,7 @@
         width: 100%;
         padding: 4px 6px;
         -moz-box-sizing: border-box;
+        -webkit-box-sizing: border-box;
         box-sizing: border-box;
         -webkit-border-bottom-right-radius: 5px;
         -webkit-border-bottom-left-radius: 5px;
@@ -100,9 +121,9 @@
         background: #fff;
       }
       #cboxLoadingGraphic {
-        background: url(images/loading_animation.gif) center center no-repeat;
+        background: url(images/loading_animation.gif) no-repeat center center;
       }
-      .cbox-close-plain {
+      #cboxClose.cbox-close-plain {
         position: absolute;
         font-size: 20px;
         line-height: 18px;;

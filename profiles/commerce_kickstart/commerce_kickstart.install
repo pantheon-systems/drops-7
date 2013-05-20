@@ -79,7 +79,8 @@ function commerce_kickstart_install_tasks_alter(&$tasks, $install_state) {
     $tasks[$install_state['active_task']]['dfp_settings'] += array(
       'dfp_unit' => 'Kickstart_Install',
     );
-    drupal_add_js('//www.googletagservices.com/tag/js/gpt.js');
+    $prefix = (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on') ? 'https://' : 'http://';
+    drupal_add_js($prefix . 'www.googletagservices.com/tag/js/gpt.js');
     drupal_add_js(array(
       'dfp' => $tasks[$install_state['active_task']]['dfp_settings'],
     ), 'setting');
@@ -684,7 +685,7 @@ function commerce_kickstart_install() {
   // Set Mimemail.
   variable_set('mimemail_format', 'full_html');
   // Set checkout progress.
-  variable_set('commerce_checkout_progress_link', 1);
+  variable_set('commerce_checkout_progress_link', 0);
   variable_set('commerce_checkout_progress_list_type', 'ol');
   variable_set('commerce_checkout_progress_block_pages', array_keys(commerce_checkout_pages()));
   // Configure Chosen.
@@ -1088,4 +1089,13 @@ function commerce_kickstart_update_7213() {
     // Disable the old theme.
     theme_disable(array('shiny'));
   }
+}
+
+/**
+ * Enable the Commerce Guys Marketplace module.
+ */
+function commerce_kickstart_update_7214() {
+  _commerce_kickstart_disable_modules('commerce_kickstart_checkout_redirect');
+  module_enable(array('commerceguys_marketplace'));
+  menu_rebuild();
 }

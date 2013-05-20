@@ -73,9 +73,8 @@ function commerce_checkout_builder_form($form, &$form_state) {
   }
 
   $form['actions'] = array(
-    '#type' => 'container',
+    '#type' => 'actions',
     '#tree' => FALSE,
-    '#attributes' => array('class' => array('form-actions')),
   );
   $form['actions']['submit'] = array(
     '#type' => 'submit',
@@ -110,7 +109,14 @@ function commerce_checkout_builder_form_validate(&$form, &$form_state) {
     // Check if pane should be locked but is configured on the wrong checkout page.
     if (!empty($panes[$pane_id]['locked']) && $checkout_pane['page'] != $panes[$pane_id]['page']) {
       $element = &$form['page'][$saved_panes[$pane_id]['page']]['panes'][$pane_id]['page'];
-      drupal_set_message(t('%pane is locked in the code to the %page page and was repositioned accordingly.', array('%pane' => $panes[$pane_id]['title'], '%page' => $pages[$panes[$pane_id]['page']]['title'])), 'warning');
+
+      if ($panes[$pane_id]['page'] == 'disabled') {
+        drupal_set_message(t('%pane must be configured before it can be enabled. It has been moved back to a disabled position.', array('%pane' => $panes[$pane_id]['title'])), 'warning');
+      }
+      else {
+        drupal_set_message(t('%pane is locked in the code to the %page page and was repositioned accordingly.', array('%pane' => $panes[$pane_id]['title'], '%page' => $pages[$panes[$pane_id]['page']]['title'])), 'warning');
+      }
+
       form_set_value($element, $panes[$pane_id]['page'], $form_state);
     }
   }
@@ -320,16 +326,18 @@ function commerce_checkout_pane_settings_form_save_submit($form, &$form_state) {
   // Save this checkout pane's settings as if this was a system settings form.
   if (!empty($form['settings'])) {
     foreach (element_children($form['settings']) as $field) {
-      // Provide support for containers one level deep.
-      if (in_array($form['settings'][$field]['#type'], array('container', 'fieldset'))) {
-        foreach (element_children($form['settings'][$field]) as $nested_field) {
-          if (isset($form_state['values'][$nested_field])) {
-            variable_set($nested_field, $form_state['values'][$nested_field]);
+      if (!empty($form['settings'][$field]['#type'])) {
+        // Provide support for containers one level deep.
+        if (in_array($form['settings'][$field]['#type'], array('container', 'fieldset'))) {
+          foreach (element_children($form['settings'][$field]) as $nested_field) {
+            if (isset($form_state['values'][$nested_field])) {
+              variable_set($nested_field, $form_state['values'][$nested_field]);
+            }
           }
         }
-      }
-      elseif (isset($form_state['values'][$field])) {
-        variable_set($field, $form_state['values'][$field]);
+        elseif (isset($form_state['values'][$field])) {
+          variable_set($field, $form_state['values'][$field]);
+        }
       }
     }
   }

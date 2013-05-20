@@ -288,6 +288,7 @@ class EntityInlineEntityFormController {
 
       $field_state = field_form_get_state($parents, $field_name, $langcode, $form_state);
       unset($field_state['items']);
+      unset($field_state['entity']);
       $field_state['items_count'] = 0;
       field_form_set_state($parents, $field_name, $langcode, $form_state, $field_state);
     }

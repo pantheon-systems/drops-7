@@ -1,15 +1,15 @@
-.addressfield-container-inline > div.form-item {
-  float: left;
-  margin-right: 1em;
+div.addressfield-container-inline > div.form-item {
+  float: left; /* LTR */
+  margin-right: 1em; /* LTR */
 }
 
-.addressfield-container-inline.country-GB > div.form-item {
+div.addressfield-container-inline.country-GB > div.form-item {
   float: none;
-  margin-right: auto;
+  margin-right: auto; /* LTR */
 }
 
 /* Clear-fix markup for the inline container */
-.addressfield-container-inline:after {
+div.addressfield-container-inline:after {
   content: ".";
   display: block;
   height: 0;
@@ -17,10 +17,10 @@
   visibility: hidden;
 }
 /* IE6 */
-* html .addressfield-container-inline {
+* html div.addressfield-container-inline {
   height: 1%;
 }
 /* IE7 */
-*:first-child + html .addressfield-container-inline {
+*:first-child + html div.addressfield-container-inline {
   min-height: 1%;
 }

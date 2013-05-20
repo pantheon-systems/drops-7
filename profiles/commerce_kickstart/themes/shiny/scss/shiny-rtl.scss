@@ -63,6 +63,7 @@ input.form-radio + label::before {
 
 #overlay-tabs,
 #branding ul.tabs {
+  clear: left;
   left: 0;
   right: auto;
 }

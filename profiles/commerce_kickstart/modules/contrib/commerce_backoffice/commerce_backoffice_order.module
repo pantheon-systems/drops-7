@@ -97,17 +97,9 @@ function commerce_backoffice_order_theme(&$existing) {
  * Add the template file for the backoffice view mode.
  */
 function commerce_backoffice_order_preprocess_entity(&$vars) {
-  if ($vars['entity_type'] == 'commerce_order' && $vars['view_mode'] == 'backoffice') {
+  if ($vars['entity_type'] == 'commerce_order' && in_array($vars['view_mode'], array('administrator', 'backoffice'))) {
     $vars['theme_hook_suggestions'][] = 'commerce_order__backoffice';
     $vars['classes_array'][] = 'commerce-order-backofffice';
-  }
-}
-
-/**
- * Implement hook_views_pre_render().
- */
-function commerce_backoffice_order_views_pre_render(&$view) {
-  if ($view->name == 'commerce_backoffice_orders') {
     drupal_add_css(drupal_get_path('module', 'commerce_backoffice_order') . '/theme/commerce-backoffice-order.css');
   }
 }

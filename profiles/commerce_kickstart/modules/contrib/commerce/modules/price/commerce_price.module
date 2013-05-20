@@ -254,12 +254,10 @@ function commerce_price_field_is_empty($item, $field) {
  *   An array of default display data used for the entity's current view modes.
  */
 function commerce_price_create_instance($field_name, $entity_type, $bundle, $label, $weight = 0, $calculation = FALSE, $display = array()) {
-  // If a field type we know should exist isn't found, clear the Field cache.
-  if (!field_info_field_types('commerce_price')) {
-    field_cache_clear();
-  }
-
   // Look for or add the specified price field to the requested entity bundle.
+  commerce_activate_field($field_name);
+  field_cache_clear();
+
   $field = field_info_field($field_name);
   $instance = field_info_instance($entity_type, $field_name, $bundle);
 
@@ -621,10 +619,9 @@ function commerce_price_field_widget_form(&$form, &$form_state, $field, $instanc
     // Convert the price amount to a user friendly decimal value.
     $default_amount = commerce_currency_amount_to_decimal($items[$delta]['amount'], $currency['code']);
 
-    // Run it through number_format() to add the decimal places in if necessary.
-    if (strpos($default_amount, '.') === FALSE || strpos($default_amount, '.') > strlen($default_amount) - $currency['decimals']) {
-      $default_amount = number_format($default_amount, $currency['decimals'], '.', '');
-    }
+    // Run it through number_format() to ensure it has the proper number of
+    // decimal places.
+    $default_amount = number_format($default_amount, $currency['decimals'], '.', '');
 
     $default_currency_code = $items[$delta]['currency_code'];
   }

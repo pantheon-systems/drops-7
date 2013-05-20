@@ -39,6 +39,6 @@ function message_notify_example_comment_insert($comment) {
   message_notify_send_message($message, $options);
   if (module_exists('message_subscribe')) {
     // If Message-subscribe exists, let this example module use it.
-    message_subscribe_process_message('comment', $comment, $message, array('email' => $options));
+    message_subscribe_send_message('comment', $comment, $message, array('email' => $options));
   }
 }

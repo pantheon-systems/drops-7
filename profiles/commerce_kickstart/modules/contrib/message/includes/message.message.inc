@@ -94,7 +94,6 @@ class Message extends Entity {
   public function buildContent($view_mode = 'full', $langcode = NULL) {
     // Get all the message text fields.
     $content = array();
-    $message_type = $this->getType();
     foreach (field_extra_fields_get_display('message', $this->type, $view_mode) as $key => $value) {
       if (!$value['visible']) {
         // Partial is hidden.
@@ -223,7 +222,7 @@ class Message extends Entity {
    */
   public function save() {
     if (empty($this->is_new) || !empty($this->data['skip token hardcode'])) {
-      // Message isn't new, or message explicetly doesn't want token
+      // Message isn't new, or message explicitly doesn't want token
       // hardcoding
       parent::save();
       return;
@@ -233,7 +232,6 @@ class Message extends Entity {
     $token_options = !empty($this->data['token options']) ? $this->data['token options'] : array();
 
     $message_type = $this->getType();
-    $wrapper = entity_metadata_wrapper('message_type', $message_type);
 
     // Iterate over the text fields.
     $tokens = array();

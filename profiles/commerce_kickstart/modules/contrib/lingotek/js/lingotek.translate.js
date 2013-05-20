@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Custom javascript.
+ */
 var lingotek;
 if(!lingotek) lingotek = {};
 if(!lingotek.translate) lingotek.translate = {};

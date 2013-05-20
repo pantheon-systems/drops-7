@@ -99,7 +99,7 @@ function drush_colorbox_plugin() {
     $filename = basename($filepath);
     $dirname = COLORBOX_DOWNLOAD_PREFIX . basename($filepath, '.zip');
 
-     // Remove any existing Colorbox plugin directory
+    // Remove any existing Colorbox plugin directory
     if (is_dir($dirname) || is_dir('colorbox')) {
       drush_delete_dir($dirname, TRUE);
       drush_delete_dir('colorbox', TRUE);

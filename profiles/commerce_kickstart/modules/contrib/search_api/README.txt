@@ -231,7 +231,9 @@ several) of the following classes. Detailed documentation on the methods that
 need to be implemented are always available as doc comments in the respective
 interface definition (all found in their respective files in the includes/
 directory). The details for hooks can be looked up in the search_api.api.php
-file.
+file. Note that all hooks provided by the Search API use the "search_api" hook
+group. Therefore, implementations of the hook can be moved into a
+MODULE.search_api.inc file in your module's directory.
 For all interfaces there are handy base classes which can (but don't need to) be
 used to ease custom implementations, since they provide sensible generic
 implementations for many methods. They, too, should be documented well enough

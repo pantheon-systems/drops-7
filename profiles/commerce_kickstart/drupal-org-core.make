@@ -7,3 +7,4 @@ projects[drupal][patch][] = "http://drupal.org/files/issues/install-redirect-on-
 projects[drupal][patch][] = "http://drupal.org/files/drupal-1470656-14.patch"
 projects[drupal][patch][] = "http://drupal.org/files/drupal-865536-204.patch"
 projects[drupal][patch][] = "http://drupal.org/files/allow_change_system-requirements-1772316-4.patch"
+projects[drupal][patch][] = "http://drupal.org/files/1275902-15-entity_uri_callback-D7.patch"

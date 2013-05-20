@@ -44,6 +44,7 @@ function commerce_addressbook_menu() {
     'access arguments' => array(1),
     'type' => MENU_LOCAL_TASK,
     'file' => 'includes/commerce_addressbook.user.inc',
+    'weight' => 20,
   );
 
   // Custom administrative components for managing customer profile entities
@@ -103,7 +104,7 @@ function commerce_addressbook_menu() {
  */
 function commerce_addressbook_page_access($account) {
   foreach (commerce_customer_profile_types() as $type => $profile_type) {
-    if (commerce_addressbook_profile_create_access($account, $type)) {
+    if (commerce_addressbook_profile_page_access($account, $type)) {
       return $type;
     }
   }
@@ -160,13 +161,20 @@ function commerce_addressbook_profile_page_access($account, $profile_type) {
   // Check if the user can access any page.
   if (user_access('administer commerce_customer_profile entities')
     || user_access('view any commerce_customer_profile entity')
-    || user_access('view any commerce_customer_profile entity of bundle ' . $profile_type)) {
+    || user_access('view any commerce_customer_profile entity of bundle ' . $profile_type)
+    || user_access('edit any commerce_customer_profile entity')
+    || user_access('edit any commerce_customer_profile entity of bundle ' . $profile_type)) {
     return TRUE;
   }
 
   // Check if the user can access his own page.
   if ($user->uid == $account->uid) {
-    if (user_access('view own commerce_customer_profile entities') || user_access('view own commerce_customer_profile entities of bundle ' . $profile_type)) {
+    if (user_access('view own commerce_customer_profile entities')
+    || user_access('create commerce_customer_profile entities')
+    || user_access('create commerce_customer_profile entities of bundle ' . $profile_type)
+    || user_access('view own commerce_customer_profile entities of bundle ' . $profile_type)
+    || user_access('edit own commerce_customer_profile entities')
+    || user_access('edit own commerce_customer_profile entities of bundle ' . $profile_type)) {
       return TRUE;
     }
   }
@@ -245,12 +253,27 @@ function commerce_addressbook_entity_view($entity, $type, $view_mode, $langcode)
 /**
  * Implements hook_commerce_customer_profile_delete().
  *
- * Delete the customer profile entry from commerce_addressbook_defaults table.
+ * Delete the customer profile entry from commerce_addressbook_defaults table,
+ * set a new default customer profile for this type.
  */
 function commerce_addressbook_commerce_customer_profile_delete($profile) {
-  db_delete('commerce_addressbook_defaults')
-    ->condition('profile_id', $profile->profile_id)
-    ->execute();
+  $default_profile = commerce_addressbook_get_default_profile_id($profile->uid, $profile->type);
+  if ($default_profile == $profile->profile_id) {
+    db_delete('commerce_addressbook_defaults')
+      ->condition('profile_id', $profile->profile_id)
+      ->execute();
+
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'commerce_customer_profile')
+      ->propertyCondition('status', 1)
+      ->propertyCondition('type', $profile->type)
+      ->propertyOrderBy('profile_id', 'DESC')
+      ->range(0, 1);
+    $results = $query->execute();
+    if (!empty($results['commerce_customer_profile'])) {
+      commerce_addressbook_set_default_profile(commerce_customer_profile_load(key($results['commerce_customer_profile'])));
+    }
+  }
 }
 
 /**
@@ -301,10 +324,6 @@ function commerce_addressbook_form_alter(&$form, &$form_state, $form_id) {
           elseif (!empty($profile_reference->profile_id)) {
             $default_value = $profile_reference->profile_id;
           }
-          else {
-            // Retrieve the default profile from the database.
-            $default_value = commerce_addressbook_get_default_profile_id($user->uid, $field['settings']['profile_type']);
-          }
           // Check if the default profile is in the enabled profiles array.
           if (!isset($profiles[$default_value])) {
             $default_value = 'none';
@@ -315,6 +334,7 @@ function commerce_addressbook_form_alter(&$form, &$form_state, $form_id) {
               if (($source_profile_type_name = variable_get('commerce_' . $pane_id . '_profile_copy_source', NULL))
                 && $source_profile_type = commerce_customer_profile_type_load($source_profile_type_name)) {
                 // Disable the profile copy checkbox.
+                $form[$pane_id]['commerce_customer_profile_copy']['#default_value'] = FALSE;
                 $form[$pane_id]['commerce_customer_profile_copy']['#access'] = FALSE;
                 // Loop over source profile fields and enable previously disabled
                 // fields.
@@ -324,6 +344,11 @@ function commerce_addressbook_form_alter(&$form, &$form_state, $form_id) {
                     $form[$pane_id][$field_name][$langcode]['#access'] = TRUE;
                     foreach (element_children($form[$pane_id][$field_name][$langcode]) as $key) {
                       $form[$pane_id][$field_name][$langcode][$key]['#access'] = TRUE;
+                      // Disable the editing of the profile if the user doesn't
+                      // have the right to edit customer profiles.
+                      if (!commerce_customer_profile_access('update', $profiles[$default_value])) {
+                        $form[$pane_id][$field_name][$langcode][$key]['#disabled'] = TRUE;
+                      }
                     }
                   }
                 }
@@ -469,14 +494,14 @@ function commerce_addressbook_get_default_profile_id($uid, $type) {
 }
 
 /**
- * Implements hook_commerce_cart_product_add().
+ * Implements hook_commerce_order_insert().
  */
-function commerce_addressbook_commerce_cart_product_add($order, $product, $quantity, $line_item) {
+function commerce_addressbook_commerce_order_insert($order) {
   global $user;
   if ($user->uid) {
     foreach (commerce_checkout_panes() as $pane_id => $checkout_pane) {
       if (variable_get('commerce_' . $pane_id . '_addressbook', FALSE)) {
-        if ($field_name = variable_get('commerce_' . $pane_id . '_field', '')){
+        if (($field_name = variable_get('commerce_' . $pane_id . '_field', '')) && empty($order->{$field_name})) {
           $field = field_info_field($field_name);
           $default_profile_id = commerce_addressbook_get_default_profile_id($user->uid, $field['settings']['profile_type']);
           if ($default_profile_id) {

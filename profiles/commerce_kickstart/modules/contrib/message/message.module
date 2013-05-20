@@ -35,6 +35,58 @@ function message_ctools_plugin_directory($module, $plugin) {
 }
 
 /**
+ * Implements hook_theme().
+ */
+function message_theme() {
+  $info['message'] = array(
+    'render element' => 'elements',
+    'template' => 'message',
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_message_view_alter().
+ */
+function message_message_view_alter(&$build) {
+  $build['#theme'] = 'message';
+}
+
+/**
+ * Process variables for message.tpl.php.
+ */
+function template_preprocess_message(&$variables) {
+  $message = $variables['elements']['#entity'];
+
+  $variables['view_mode'] = $variables['elements']['#view_mode'];
+  $variables['message'] = $message;
+
+  // Helpful $content variable for templates.
+  $variables['content'] = array();
+  foreach (element_children($variables['elements']) as $key) {
+    $variables['content'][$key] = $variables['elements'][$key];
+  }
+
+  // Make the field variables available with the appropriate language.
+  field_attach_preprocess('message', $message, $variables['content'], $variables);
+  list(, , $bundle) = entity_extract_ids('message', $message);
+
+  // Gather CSS classes.
+  $variables['classes_array'][] = drupal_html_class('entity-message');
+  $variables['classes_array'][] = drupal_html_class('message-' . $bundle);
+
+  // Add suggestions.
+  $variables['theme_hook_suggestions'][] = 'message';
+  $variables['theme_hook_suggestions'][] = 'message__' . $bundle;
+  $variables['theme_hook_suggestions'][] = 'message__' . $bundle . '__' . $variables['view_mode'];
+
+  if ($id = entity_id('message', $message)) {
+    $variables['theme_hook_suggestions'][] = 'message__' . $id;
+  }
+}
+
+/**
  * Implements hook_permission().
  */
 function message_permission() {
@@ -155,10 +207,12 @@ function message_entity_info() {
   );
 
   // Add bundle info but bypass entity_load() as we cannot use it here.
-  $message_types = db_select('message_type', 'mt')
-    ->fields('mt')
-    ->execute()
-    ->fetchAllAssoc('name');
+  if (db_table_exists('message_type')) {
+    $message_types = db_select('message_type', 'mt')
+      ->fields('mt')
+      ->execute()
+      ->fetchAllAssoc('name');
+  }
 
   foreach ($message_types as $type_name => $type) {
     $items['message']['bundles'][$type_name] = array(
@@ -504,7 +558,8 @@ function message_field_attach_form($entity_type, $entity, &$form, &$form_state, 
       foreach ($view_modes as $view_mode => $value) {
         if ($value['visible']) {
           $url = "admin/structure/messages/manage/{$entity->name}/display/{$view_mode}";
-          $current_view_modes[$field_name][$delta][] = l($entity_info['view modes'][$view_mode]['label'], $url);
+          $label = $view_mode == 'default' ? t('Default') : $entity_info['view modes'][$view_mode]['label'];
+          $current_view_modes[$field_name][$delta][] = l($label, $url);
         }
       }
     }
@@ -746,13 +801,20 @@ function message_delete_multiple($mids = array()) {
  * Access callback for the message entity.
  */
 function message_access($op, $entity, $account = NULL, $entity_type = 'message') {
-  return user_access('create messages');
+  return user_access('create messages', $account);
 }
 
 /**
  * Access callback for the message type entities.
  */
 function message_type_access($op, $entity, $account, $entity_type) {
+  return user_access('administer message types', $account);
+}
+
+/**
+ * Access callback for the message type categories.
+ */
+function message_type_category_access($op, $entity, $account, $entity_type) {
   return user_access('administer message types', $account);
 }
 

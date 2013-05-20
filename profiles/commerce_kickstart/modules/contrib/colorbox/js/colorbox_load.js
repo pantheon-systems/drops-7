@@ -31,8 +31,7 @@ Drupal.behaviors.initColorboxLoad = {
       }
       return p;
     };
-    $('a, area, input', context)
-      .filter('.colorbox-load')
+    $('.colorbox-load', context)
       .once('init-colorbox-load', function () {
         var params = $.urlParams($(this).attr('href'));
         $(this).colorbox($.extend({}, settings.colorbox, params));

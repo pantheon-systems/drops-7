@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://payments.amazon.com/checkout/2008-11-30/"
+  xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://payments.amazon.com/checkout/2008-11-30/"
+  elementFormDefault="qualified">
+
+  <!-- IOPN Events -->
+  <xs:element name="NewOrderNotification" type="tns:NewOrderNotification" />
+  <xs:element name="OrderReadyToShipNotification" type="tns:OrderReadyToShipNotification" />
+  <xs:element name="OrderCancelledNotification" type="tns:OrderCancelledNotification" />
+
+  <!-- Basic types -->
+  <xs:simpleType name="ShippingServiceLevel">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Standard" />
+      <xs:enumeration value="Expedited" />
+      <xs:enumeration value="OneDay" />
+      <xs:enumeration value="TwoDay" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="NonNegativeDouble">
+    <xs:restriction base="xs:double">
+      <xs:minInclusive value="0" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:simpleType name="PositiveDouble">
+    <xs:restriction base="xs:double">
+      <xs:minExclusive value="0" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="Price">
+    <xs:sequence>
+      <xs:element name="Amount" type="tns:NonNegativeDouble" />
+      <xs:element name="CurrencyCode" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Weight">
+    <xs:sequence>
+      <xs:element name="Amount" type="tns:NonNegativeDouble" />
+      <xs:element name="Unit" type="xs:string" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:simpleType name="FulfillmentNetwork">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="MERCHANT" />
+      <xs:enumeration value="AMAZON_NA" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <xs:complexType name="ShippingAddress">
+    <xs:sequence>
+      <xs:element name="Name" type="xs:string" minOccurs="0" />
+      <xs:element name="AddressFieldOne" type="xs:string" minOccurs="0" />
+      <xs:element name="AddressFieldTwo" type="xs:string" minOccurs="0" />
+      <xs:element name="AddressFieldThree" type="xs:string" minOccurs="0" />
+      <xs:element name="City" type="xs:string" minOccurs="0" />
+      <xs:element name="State" type="xs:string" minOccurs="0" />
+      <xs:element name="PostalCode" type="xs:string" minOccurs="0" />
+      <xs:element name="CountryCode" type="xs:string" minOccurs="0" />
+      <xs:element name="PhoneNumber" type="xs:string" minOccurs="0"/>
+     </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="BillingAddress">
+    <xs:sequence>
+      <xs:element name="Name" type="xs:string" minOccurs="0" />
+      <xs:element name="AddressFieldOne" type="xs:string" minOccurs="0" />
+      <xs:element name="AddressFieldTwo" type="xs:string" minOccurs="0" />
+     <xs:element name="AddressFieldThree" type="xs:string" minOccurs="0" />
+      <xs:element name="City" type="xs:string" minOccurs="0" />
+      <xs:element name="State" type="xs:string" minOccurs="0" />
+      <xs:element name="PostalCode" type="xs:string" minOccurs="0" />
+      <xs:element name="CountryCode" type="xs:string" minOccurs="0" />
+     </xs:sequence>
+  </xs:complexType>
+
+  <!-- IOPN Event Contents -->
+  <xs:complexType name="NewOrderNotification">
+    <xs:sequence>
+      <xs:element name="NotificationReferenceId" type="xs:string" />
+      <xs:element name="ProcessedOrder" type="tns:ProcessedOrder" />
+      <xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="OrderReadyToShipNotification">
+    <xs:sequence>
+      <xs:element name="NotificationReferenceId" type="xs:string" />
+      <xs:element name="ProcessedOrder" type="tns:ProcessedOrder" />
+      <xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="OrderCancelledNotification">
+    <xs:sequence>
+      <xs:element name="NotificationReferenceId" type="xs:string" />
+      <xs:element name="ProcessedOrder" type="tns:ProcessedOrder" />
+      <xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- Common Types -->
+  <xs:complexType name="ProcessedOrder">
+    <xs:sequence>
+      <xs:element name="OrderChannel" type="xs:string" />
+      <xs:element name="AmazonOrderID" type="xs:string" />
+      <xs:element name="OrderDate" type="xs:dateTime" />
+      <xs:element name="BuyerInfo">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="BuyerName" type="xs:string" />
+            <xs:element name="BuyerEmailAddress" type="xs:string" />
+            <xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+      <xs:element name="BillingAddress" type="tns:BillingAddress" minOccurs="0" />
+      <xs:element name="ShippingAddress" type="tns:ShippingAddress"  />
+      <xs:element name="ShippingServiceLevel" type="tns:ShippingServiceLevel" minOccurs="0" />
+      <xs:element name="ProcessedOrderItems" type="tns:ProcessedOrderItems" />
+      <xs:element name="DisplayableShippingLabel" type="xs:string" />
+      <xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ProcessedOrderItems">
+    <xs:sequence>
+      <xs:element name="ProcessedOrderItem" type="tns:ProcessedOrderItem" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="ProcessedOrderItem">
+    <xs:sequence>
+      <xs:element name="AmazonOrderItemCode" type="xs:string" />
+      <xs:element name="MerchantId" type="xs:string" />
+      <xs:element name="SKU" type="xs:string" minOccurs="0" />
+      <xs:element name="Title" type="xs:string" />
+      <xs:element name="Description" type="xs:string" minOccurs="0" />
+      <xs:element name="ClientRequestId" type="xs:string" minOccurs="0" />
+      <xs:element name="CartId" type="xs:string" minOccurs="0" />
+      <xs:element name="IntegratorId" type="xs:string" minOccurs="0" />
+      <xs:element name="IntegratorName" type="xs:string" minOccurs="0" />
+      <xs:element name="Price" type="tns:Price" />
+      <xs:element name="Quantity" type="xs:nonNegativeInteger" minOccurs="0" />
+      <xs:element name="Weight" type="tns:Weight" minOccurs="0" />
+      <xs:element name="Category" type="xs:string" minOccurs="0" />
+      <xs:element name="Condition" type="xs:string" minOccurs="0" />
+      <xs:element name="FulfillmentNetwork" type="tns:FulfillmentNetwork" minOccurs="0" />
+      <xs:element name="ItemCharges" type="tns:Charges" minOccurs="0" />
+      <xs:element name="CartCustomData" type="tns:MerchantCustomDataXML" minOccurs="0" />
+      <xs:element name="ItemCustomData" type="tns:MerchantCustomDataXML" minOccurs="0" />
+      <xs:element name="ShippingCustomData" type="tns:MerchantCustomDataXML" minOccurs="0" />
+      
+     <!--
+        Note: The element below is included for future enhancements. This field is not
+        populated in the current version of IOPN.
+      -->
+      <xs:element name="ItemAttributes" type="tns:ItemAttributes" minOccurs="0" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <xs:complexType name="Charges">
+    <xs:sequence>
+      <xs:element name="Component" minOccurs="0" maxOccurs="unbounded">
+        <xs:complexType>
+          <xs:sequence>
+            <xs:element name="Type" type="tns:ComponentType" />
+            <xs:element name="Charge" type="tns:Price" />
+          </xs:sequence>
+        </xs:complexType>
+      </xs:element>
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- In the current version, Giftwrap and Other charge types are not supported.
+       All amounts are positive. The following mathematical formula can be used to
+       calculate the total item charge:
+       
+       Total Item Charge = (Principal - PrincipalPromo) + (Shipping - ShippingPromo) + Tax + ShippingTax
+   -->
+  <xs:simpleType name="ComponentType">
+    <xs:restriction base="xs:string">
+      <xs:enumeration value="Principal" />
+      <xs:enumeration value="Shipping" />
+      <xs:enumeration value="GiftWrap" />
+      <xs:enumeration value="Other" />
+      <xs:enumeration value="Tax" />
+      <xs:enumeration value="ShippingTax" />
+      <xs:enumeration value="GiftWrapTax" />
+      <xs:enumeration value="OtherTax" />
+      <xs:enumeration value="PrincipalPromo" />
+      <xs:enumeration value="ShippingPromo" />
+      <xs:enumeration value="GiftWrapPromo" />
+      <xs:enumeration value="OtherPromo" />
+    </xs:restriction>
+  </xs:simpleType>
+
+  <!-- Item Attributes is a reserved type for future extensions. New information about order items
+       will be included in this structure.
+   -->
+  <xs:complexType name="ItemAttributes">
+    <xs:sequence>
+      <xs:any namespace="##any" processContents="lax" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+
+  <!-- This is a reserved type and will contain any type of private data that is passed from the Seller
+       to Amazon along with the cart.
+   -->
+  <xs:complexType name="MerchantCustomDataXML" mixed="true">
+    <xs:sequence>
+      <xs:any namespace="##any" processContents="skip" minOccurs="0" maxOccurs="unbounded" />
+    </xs:sequence>
+  </xs:complexType>
+  
+</xs:schema>

@@ -1,5 +1,5 @@
-name = "Lingotek"
-description = "Extends Drupal's multilingual features using the Lingotek Collaborative Translation Platform."
+name = "Drupal Translation"
+description = "Extends Drupal's multilingual features by integrating with the Lingotek Translation Management System."
 package = Multilingual
 core = "7.x"
 version = "7.x-2.x"
@@ -16,17 +16,19 @@ files[] = lib/Drupal/lingotek/LingotekApi.php
 files[] = lib/Drupal/lingotek/LingotekAccount.php
 files[] = lib/Drupal/lingotek/LingotekComment.php
 files[] = lib/Drupal/lingotek/LingotekDocument.php
+files[] = lib/Drupal/lingotek/LingotekLog.php
 files[] = lib/Drupal/lingotek/LingotekNode.php
 files[] = lib/Drupal/lingotek/LingotekPhase.php
+files[] = lib/Drupal/lingotek/LingotekSync.php
 files[] = lib/Drupal/lingotek/LingotekTranslatableEntity.php
 
 files[] = tests/lingotek.base.test
 files[] = tests/lingotek.access.test
 files[] = tests/lingotek.advanced_parsing.test
 
-; Information added by drupal.org packaging script on 2013-04-01
-version = "7.x-2.72"
+; Information added by drupal.org packaging script on 2013-05-03
+version = "7.x-3.02"
 core = "7.x"
 project = "lingotek"
-datestamp = "1364853614"
+datestamp = "1367616019"
 

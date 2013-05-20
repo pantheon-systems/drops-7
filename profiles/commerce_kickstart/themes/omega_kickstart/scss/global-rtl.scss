@@ -515,7 +515,7 @@ ol.inline.commerce-checkout-progress {
   margin-left: 10px;
   li {
     float: right; /* RTL */
-    padding: 15px 35px 15px 20px;
+    padding: 15px 35px 15px 15px;
     &:after {
       background: transparent url('../images/bg_checkout_progress-rtl.png') left center no-repeat;
       float: left;
@@ -613,6 +613,9 @@ ol.inline.commerce-checkout-progress {
 * Checkout complete page
 */
 .page-checkout {
+  .checkout-help {
+    margin: 0 10px 10px 0;
+  }
   #commerce-checkout-form-checkout,
   #commerce-checkout-form-review {
     fieldset {

@@ -47,10 +47,8 @@ function commerce_moneybookers_quickcheckout_commerce_payment_method_info() {
   $payment_methods['commerce_moneybookers_quickcheckout'] = array(
     'title' => t('Credit / Debit cards, instant banking and Moneybookers ewallet'),
     'description' => t('Integration with Moneybookers using Quick Checkout gateway'),
-    'active' => FALSE, // Default to disabled on first install.
     'offsite' => TRUE,
     'offsite_autoredirect' => FALSE,
-    'active' => TRUE,
     'callbacks' => array(),
   );
 

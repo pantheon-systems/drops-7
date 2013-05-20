@@ -155,7 +155,6 @@ function commerce_moneybookers_commerce_payment_method_info() {
     'description' => t('Integration with Moneybookers using Web Payment Frontend'),
     'offsite' => TRUE,
     'offsite_autoredirect' => FALSE,
-    'active' => FALSE,
     'callbacks' => array(),
     'terminal' => FALSE,
   );

@@ -44,8 +44,7 @@ function lingotek_page_mark_phases_complete($node) {
       }
       else {
         drupal_set_message(t('Unable to location Lingotek Document. No phases were marked as complete.'), 'error');
-        watchdog('lingotek', 'Unable to locate Lingotek Document for node @node_id.',
-          array('@node_id' => $node->nid), WATCHDOG_ERROR);
+        LingotekLog::error('Unable to locate Lingotek Document for node @node_id.', array('@node_id' => $node->nid));
       }
     }
     else {

@@ -82,12 +82,11 @@ function lingotek_dev_form($ignore, $param) {
       $rows[] = $row;
     }
   }
-  $table = theme('table', array('header' => $header, 'rows' => $rows));
 
   $form['data']['value'] = array
   (
     '#type' => 'item',
-    '#description' => check_plain($table),
+    '#markup' => theme('table', array('header' => $header, 'rows' => $rows)),
   );
 
   return $form;

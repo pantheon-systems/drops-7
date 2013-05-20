@@ -120,6 +120,10 @@ function commerce_search_api_generate_product_display_index(SearchApiServer $ser
           'status' => 1,
           'weight' => -10,
         ),
+        'commerce_search_api_alter_product_status' => array(
+          'status' => 1,
+          'weight' => -9,
+        ),
         'search_api_alter_add_aggregation' => array(
           'status' => 1,
           'weight' => 0,
@@ -147,7 +151,7 @@ function commerce_search_api_generate_product_display_index(SearchApiServer $ser
   else {
     $product_reference_field = reset($product_reference_fields);
   }
-  $type = $product_reference_field['cardinality'] !== 1 ? 'list<integer>' : 'integer';
+  $type = $product_reference_field['cardinality'] != 1 ? 'list<integer>' : 'integer';
   $values['options']['fields'] += array(
     $product_reference_field['field_name'] => array(
       'type' => $type,
@@ -334,6 +338,13 @@ function commerce_search_api_search_api_alter_callback_info() {
     'class' => 'CommerceSearchApiProductDisplayFilter',
     // Filters should be executed first.
     'weight' => -10,
+  );
+  $callbacks['commerce_search_api_alter_product_status'] = array(
+    'name' => t('Exclude unpublished products'),
+    'description' => t("Exclude unpublished products."),
+    'class' => 'CommerceSearchApiAlterProductStatus',
+    // Filters should be executed first.
+    'weight' => -9,
   );
   return $callbacks;
 }

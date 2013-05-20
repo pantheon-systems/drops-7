@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ * Ensures users have cURL enabled prior to installation.
+ */
+
+/**
+ * Implementation of hook_requirements().
+ */
+function commerce_authnet_requirements($phase) {
+  // Skip the requirements check if SimpleTest is installed to avoid multiple
+  // cURL rows.
+  if (module_exists('simpletest')) {
+    return;
+  }
+
+  $t = get_t();
+
+  $has_curl = function_exists('curl_init');
+
+  $requirements['commerce_authnet_curl'] = array(
+    'title' => $t('cURL'),
+    'value' => $has_curl ? $t('Enabled') : $t('Not found'),
+  );
+
+  if (!$has_curl) {
+    $requirements['commerce_authnet_curl'] += array(
+      'severity' => REQUIREMENT_ERROR,
+      'description' => $t("Authorize.Net requires the PHP <a href='!curl_url'>cURL</a> library.", array('!curl_url' => 'http://php.net/manual/en/curl.setup.php')),
+    );
+  }
+
+  if (module_exists('commerce_cardonfile')) {
+    $path = drupal_get_path('module', 'commerce_cardonfile') . '/commerce_cardonfile.info';
+    $info = drupal_parse_info_file($path);
+    if (isset($info['version']) && version_compare($info['version'], '7.x-2', '>=')) {
+      $requirements['commerce_authnet_cardonfile'] = array(
+        'title' => $t('Card on File'),
+        'value' => $t('Less than 2.x'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => $t("Authorize.Net now requires Card on File 2.x"),
+      );
+    }
+  }
+
+  return $requirements;
+}

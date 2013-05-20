@@ -44,7 +44,7 @@ function colorbox_admin_settings() {
     '#type' => 'checkbox',
     '#title' => t('Enable Colorbox load'),
     '#default_value' => variable_get('colorbox_load', 0),
-    '#description' => t('This enables custom links that can open forms and paths in a Colorbox. Add the class "colorbox-load" to the link and build the url like this for forms "/colorbox/form/[form_id]?destination=some_path&width=500&height=500" and like this for paths "[path]?width=500&height=500&iframe=true" or "[path]?width=500&height=500" if you don\'t want an iframe. Other modules may activate this for easy Colorbox integration.'),
+    '#description' => t('This enables custom links that can open forms and paths in a Colorbox. Add the class "colorbox-load" to the link and build the url like this for paths "[path]?width=500&height=500&iframe=true" or "[path]?width=500&height=500" if you don\'t want an iframe. Other modules may activate this for easy Colorbox integration.'),
   );
   $form['colorbox_extra_features']['colorbox_inline'] = array(
     '#type' => 'checkbox',
@@ -143,7 +143,7 @@ function colorbox_admin_settings() {
     '#type' => 'checkbox',
     '#title' => t('Overlay close'),
     '#default_value' => variable_get('colorbox_overlayclose', 1),
-    '#description' => t('Enable closing ColorBox by clicking on the background overlay.'),
+    '#description' => t('Enable closing Colorbox by clicking on the background overlay.'),
   );
   $form['colorbox_custom_settings']['colorbox_maxwidth'] = array(
     '#type' => 'textfield',
@@ -177,7 +177,7 @@ function colorbox_admin_settings() {
     '#type' => 'checkbox',
     '#title' => t('Fixed'),
     '#default_value' => variable_get('colorbox_fixed', 1),
-    '#description' => t('If the ColorBox should be displayed in a fixed position within the visitor\'s viewport or relative to the document.'),
+    '#description' => t('If the Colorbox should be displayed in a fixed position within the visitor\'s viewport or relative to the document.'),
   );
 
   $form['colorbox_custom_settings']['colorbox_slideshow_settings'] = array(

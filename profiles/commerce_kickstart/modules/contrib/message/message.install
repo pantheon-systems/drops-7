@@ -239,7 +239,7 @@ function message_schema() {
     ),
     'primary key' => array('mid'),
     'indexes' => array(
-      'type' => array('type'),
+      'type_index' => array('type'),
       'timestamp' => array('timestamp'),
     ),
   );
@@ -520,3 +520,10 @@ function message_update_7011() {
   db_add_index('message', 'timestamp', array('timestamp'));
 }
 
+/**
+ * Update the message type index name to fix an sqlite issue.
+ */
+function message_update_7012() {
+  db_drop_index('message', 'type');
+  db_add_index('message', 'type_index', array('type'));
+}

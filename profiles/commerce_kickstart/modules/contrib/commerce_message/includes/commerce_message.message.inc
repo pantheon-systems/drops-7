@@ -560,7 +560,7 @@ function _commerce_message_message_type_select_ajax_callback($form, $form_state)
 function _commerce_message_message_submit_ajax_callback($form, $form_state) {
   $commands = array();
   $order_id = $form_state['values']['message_commerce_order'][LANGUAGE_NONE][0]['target_id'];
-  $view = commerce_embed_view('commerce_message_messages', $form['#current_display']['#value'], $order_id);
+  $view = commerce_embed_view('commerce_message_messages', $form['#current_display']['#value'], array($order_id));
   $commands[] = ajax_command_replace('.view-commerce-message-messages', $view);
   $commands[] = ajax_command_prepend('.view-commerce-message-messages', theme('status_messages'));
   return array('#type' => 'ajax', '#commands' => $commands);

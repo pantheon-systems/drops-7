@@ -17,9 +17,9 @@ files[] = includes/views/handlers/commerce_order_ui_handler_area_view_order_form
 ; Simple tests
 files[] = tests/commerce_order_ui.test
 
-; Information added by drupal.org packaging script on 2013-02-13
-version = "7.x-1.5"
+; Information added by drupal.org packaging script on 2013-04-30
+version = "7.x-1.7"
 core = "7.x"
 project = "commerce"
-datestamp = "1360749319"
+datestamp = "1367298614"
 

@@ -22,7 +22,6 @@ function addressfield_format_address_ch_generate(&$format, $address, $context = 
     $format['locality_block']['postal_code']['#ajax'] = array(
       'callback' => 'addressfield_standard_widget_refresh',
       'wrapper' => $format['#wrapper_id'],
-      'method' => 'replace',
     );
   }
   else {

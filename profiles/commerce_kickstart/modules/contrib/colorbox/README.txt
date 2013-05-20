@@ -46,15 +46,17 @@ The Colorbox plugin:
 
 Installation:
 ------------
-1. Download and unpack the Colorbox plugin in "sites/all/libraries".
-   Link: https://github.com/jackmoore/colorbox/archive/1.x.zip
-   Drush users can use the command "drush colorbox-plugin".
+1. Download and unpack the Libraries module directory in your modules folder
+   (this will usually be "sites/all/modules/").
+   Link: http://drupal.org/project/libraries
 2. Download and unpack the Colorbox module directory in your modules folder
    (this will usually be "sites/all/modules/").
-3. Go to "Administer" -> "Modules" and enable the module.
-
-If you want to use Colorbox with the Embedded Media Field module
-please check "Enable Colorbox load" in the settings.
+3. Download and unpack the Colorbox plugin in "sites/all/libraries".
+    Make sure the path to the plugin file becomes:
+    "sites/all/libraries/colorbox/jquery.colorbox-min.js"
+   Link: https://github.com/jackmoore/colorbox/archive/1.x.zip
+   Drush users can use the command "drush colorbox-plugin".
+4. Go to "Administer" -> "Modules" and enable the Colorbox module.
 
 
 Configuration:

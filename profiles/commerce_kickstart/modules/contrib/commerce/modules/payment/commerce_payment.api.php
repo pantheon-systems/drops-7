@@ -116,6 +116,9 @@ function hook_commerce_payment_totals_row_info_alter(&$rows, $totals, $order) {
  *  - active (optional): TRUE of FALSE indicating whether or not the default
  *    payment method rule configuration for this payment method should be
  *    enabled by default; defaults to FALSE.
+ *  - checkout (optional): TRUE or FALSE indicating whether or not payments can
+ *    be processed via this payment method through the checkout form; defaults
+ *    to TRUE.
  *  - terminal (optional): TRUE or FALSE indicating whether or not payments can
  *    be processed via this payment method through the administrative payment
  *    terminal on an order’s Payment tab; defaults to TRUE.
@@ -260,7 +263,7 @@ function CALLBACK_commerce_payment_method_redirect_form($form, &$form_state, $or
  * Payment method callback; cancellation callback for the redirected payments.
  *
  * If the customer cancels payment or payment fails at the redirected payment
- * service, the custom will be sent back to the previous checkout page upon
+ * service, the customer will be sent back to the previous checkout page upon
  * return from the payment service. Before the redirect occurs, the payment
  * method module has the opportunity to take additional action by implementing
  * this callback. Note that updating the order status and performing the

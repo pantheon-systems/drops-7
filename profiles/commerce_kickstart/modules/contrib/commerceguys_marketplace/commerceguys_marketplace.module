@@ -1,0 +1,402 @@
+<?php
+
+/**
+ * @file
+ *   Connector module for http://marketplace.commerceguys.com
+ */
+
+define('COMMERCEGUYS_MARKETPLACE_URL', 'http://marketplace.commerceguys.com');
+
+/**
+ * Implements hook_permission().
+ */
+function commerceguys_marketplace_permission() {
+  return array(
+    'access the commerceguys marketplace' =>  array(
+      'title' => t('Access the Commerce Guys Marketplace'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerceguys_marketplace_menu() {
+  $items['commerceguys-marketplace'] = array(
+    'title' => 'Commerce Guys Marketplace',
+    'page callback' => 'commerceguys_marketplace_frontpage',
+    'access arguments' => array('access the commerceguys marketplace'),
+    'file' => 'includes/commerceguys_marketplace.pages.inc',
+  );
+  $items['commerceguys-marketplace/overview'] = array(
+    'title' => 'Commerce Guys Marketplace',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['commerceguys-marketplace/addons'] = array(
+    'title' => 'Your Addons',
+    'page callback' => 'commerceguys_marketplace_addons_page',
+    'access arguments' => array('access the commerceguys marketplace'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'includes/commerceguys_marketplace.pages.inc',
+    'weight' => 10,
+  );
+
+  $items['commerceguys-marketplace/connect'] = array(
+    'title' => 'Connect',
+    'page callback' => 'commerceguys_marketplace_connect_page',
+    'access arguments' => array('access the commerceguys marketplace'),
+    'file' => 'includes/commerceguys_marketplace.pages.inc',
+  );
+  $items['admin/config/services/commerceguys-marketplace'] = array(
+    'title' => 'Commerce Guys Marketplace',
+    'description' => 'Configure the authentication parameters for the marketplace.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerceguys_marketplace_settings_form'),
+    'access arguments' => array('access the commerceguys marketplace'),
+    'file' => 'includes/commerceguys_marketplace.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerceguys_marketplace_theme($existing, $type, $theme, $path) {
+  return array(
+    'commerceguys_marketplace_addons' => array(
+      'template' => 'commerceguys-marketplace-addons',
+      'path' => drupal_get_path('module', 'commerceguys_marketplace') . '/theme',
+      'variables' => array('addons' => array(), 'mode' => ''),
+    ),
+    'commerceguys_marketplace_addon_licenses' => array(
+      'template' => 'commerceguys-marketplace-addon-licenses',
+      'path' => drupal_get_path('module', 'commerceguys_marketplace') . '/theme',
+      'variables' => array('addons' => array()),
+    ),
+    'commerceguys_marketplace_addon_featured' => array(
+      'template' => 'commerceguys-marketplace-addon-featured',
+      'path' => drupal_get_path('module', 'commerceguys_marketplace') . '/theme',
+      'variables' => array('addon' => NULL),
+    ),
+    'commerceguys_marketplace_addon_license' => array(
+      'template' => 'commerceguys-marketplace-addon-license',
+      'path' => drupal_get_path('module', 'commerceguys_marketplace') . '/theme',
+      'variables' => array('addon' => NULL),
+    ),
+
+    'commerceguys_marketplace_trainings' => array(
+      'template' => 'commerceguys-marketplace-trainings',
+      'path' => drupal_get_path('module', 'commerceguys_marketplace') . '/theme',
+      'variables' => array('trainings' => NULL),
+    ),
+  );
+}
+
+/**
+ * Process variables for page.tpl.php
+ *
+ * Adds the marketplace css to all marketplace pages, and removes the page
+ * title and breadcrumb since they're not needed.
+ */
+function commerceguys_marketplace_preprocess_page(&$variables) {
+  $item = menu_get_item();
+  if (strpos($item['path'], 'commerceguys-marketplace') === 0) {
+    drupal_add_css(drupal_get_path('module', 'commerceguys_marketplace') . '/theme/commerceguys-marketplace.css');
+    drupal_add_library('commerceguys_marketplace', 'bxslider');
+    drupal_add_js(drupal_get_path('module', 'commerceguys_marketplace') . '/theme/js/commerceguys_marketplace_slideshow.js');
+    $variables['title'] = '';
+    drupal_set_breadcrumb(array());
+  }
+}
+
+/**
+ * Process variables for commerceguys-marketplace-addons.tpl.php.
+ */
+function template_preprocess_commerceguys_marketplace_addons(&$variables) {
+  // Render each addon.
+  foreach ($variables['addons'] as &$addon) {
+    $addon = commerceguys_marketplace_addon_view($addon, $variables['mode']);
+  }
+
+  // Divide the addons into rows and columns.
+  $variables['addons'] = commerceguys_marketplace_prepare_grid($variables['addons']);
+}
+
+/**
+ * Process variables for commerceguys-marketplace-addon-featured.tpl.php.
+ */
+function template_preprocess_commerceguys_marketplace_addon_featured(&$variables) {
+  $addon = $variables['addon'];
+  $variables['logo'] = theme('image', array('path' => $addon->logo, 'alt' => $addon->title . ' logo'));
+  $variables['title'] = $addon->title;
+  $variables['tagline'] = $addon->tagline;
+  $variables['category'] = $addon->category->name;
+  $variables['path'] = $addon->url;
+}
+
+/**
+ * Process variables for commerceguys-marketplace-addon-licenses.tpl.php.
+ */
+function template_preprocess_commerceguys_marketplace_addon_licenses(&$variables) {
+  // Group the addons by category.
+  $addon_groups = array();
+  foreach ($variables['addons'] as $addon) {
+    // Prepare the addon group if it doesn't exist.
+    if (!isset($addon_groups[$addon->category->id])) {
+      $addon_groups[$addon->category->id] = array(
+        'name' => $addon->category->name,
+        'addons' => array(),
+      );
+    }
+    // Add the rendered addon to the group.
+    $addon_groups[$addon->category->id]['addons'][] = commerceguys_marketplace_addon_view($addon, 'license');
+  }
+  // Sort the groups.
+  ksort($addon_groups);
+
+  $variables['groups'] = $addon_groups;
+  unset($variables['addons']);
+}
+
+/**
+ * Process variables for commerceguys-marketplace-addon-license.tpl.php.
+ */
+function template_preprocess_commerceguys_marketplace_addon_license(&$variables) {
+  $addon = $variables['addon'];
+  $variables['more_link'] = l(t('More about this add-on'), $addon->url);
+  $variables['title'] = $addon->title;
+  $variables['logo'] = theme('image', array('path' => $addon->logo, 'alt' => $addon->title . ' logo', 'style_name' => 'thumbnail'));
+  $variables['tagline'] = $addon->tagline;
+  if (module_exists($addon->module_name)) {
+    $variables['enabled'] = '<div class="status status-on"></div>' . t('Enabled');
+  } else {
+    $variables['enabled'] = '<div class="status status-off"></div>' . l(t('Enable'), 'admin/modules');
+  }
+}
+
+/**
+ * Process variables for commerceguys-marketplace-trainings.tpl.php.
+ */
+function template_preprocess_commerceguys_marketplace_trainings(&$variables) {
+  $countries = commerceguys_marketplace_get_countries();
+  // Convert the array of training objects into a format more suitable for
+  // themers.
+  $raw_trainings = $variables['trainings'];
+  $variables['trainings'] = array();
+
+  foreach ($raw_trainings as $raw_training) {
+    $audiences = array();
+    foreach ($raw_training->audience as $audience) {
+      $audiences[] = $audience->name;
+    }
+    $audiences = implode(', ', $audiences);
+
+    $training = array();
+    $training['title'] = $raw_training->title;
+    $training['events'] = array();
+    foreach ($raw_training->events as $event) {
+      $training_event = array();
+      $training_event['title'] = $event->title;
+      $training_event['audience'] = $audiences;
+      $country_code = $event->location->country;
+      $training_event['location'] = $event->location->city . ', ' . $countries[$country_code];
+
+      $training['events'][] = $training_event;
+    }
+
+    $variables['trainings'][] = $training;
+  }
+}
+
+/**
+ * Returns a list of all countries known to Drupal.
+ *
+ * @see _country_get_predefined_list().
+ */
+function commerceguys_marketplace_get_countries() {
+  static $countries;
+
+  if (!$countries) {
+    include_once DRUPAL_ROOT . '/includes/iso.inc';
+    $countries = _country_get_predefined_list();
+  }
+
+  return $countries;
+}
+
+/**
+ * Divides an array of results into rows and columns
+ *
+ * @param $results
+ *   The results array to operate on.
+ * @param $num_columns
+ *   The number of columns per row.
+ *
+ * @return
+ *   The results array in the requested format.
+ */
+function commerceguys_marketplace_prepare_grid($results, $num_columns = 2) {
+  $count = 0;
+  $rows = array();
+  $row = array();
+  foreach ($results as $id => $result) {
+    $row[$id] = $result;
+    $count++;
+
+    if ($count % $num_columns == 0 || $count == count($results)) {
+      $rows[] = $row;
+      $row = array();
+    }
+  }
+
+  return $rows;
+}
+
+/**
+ * Menu item title callback: Returns the title of the passed marketplace item.
+ */
+function commerceguys_marketplace_menu_item_title($item) {
+  return $item->title;
+}
+
+/**
+ * Loads a single addon from the remote service.
+ *
+ * @param $id
+ *   The id of the addon to load.
+ *
+ * @return
+ *   An addon object.
+ */
+function commerceguys_marketplace_addon_load($id) {
+  return commerceguys_marketplace_get_manager('addon')->load($id);
+}
+
+/**
+ * Renders a single addon.
+ *
+ * @param $addon
+ *   The addon to render.
+ * @param $view_mode
+ *   The view mode used (page, list, etc). Used to call the correct theme
+ *   function.
+ *
+ * @return
+ *   A rendered addon (in HTML).
+ */
+function commerceguys_marketplace_addon_view($addon, $view_mode = 'page') {
+  return theme('commerceguys_marketplace_addon_' . $view_mode, array('addon' => $addon));
+}
+
+/**
+ * Loads a single training from the remote service.
+ *
+ * @param $id
+ *   The id of the training to load.
+ *
+ * @return
+ *   A training object.
+ */
+function commerceguys_marketplace_training_load($id) {
+  return commerceguys_marketplace_get_manager('training')->load($id);
+}
+
+/**
+ * Renders a single training.
+ *
+ * @param $training
+ *   The training to render.
+ * @param $view_mode
+ *   The view mode used (page, list, etc). Used to call the correct theme
+ *   function.
+ *
+ * @return
+ *   A rendered training (in HTML).
+ */
+function commerceguys_marketplace_training_view($training, $view_mode = 'page') {
+  $variables = array(
+    'training' => $training,
+  );
+  // Add the event selection form.
+  if ($view_mode == 'page') {
+    $event_form = drupal_get_form('commerceguys_marketplace_training_event_form', $training);
+    $variables['event_form'] = drupal_render($event_form);
+  }
+
+  return theme('commerceguys_marketplace_training_' . $view_mode, $variables);
+}
+
+/**
+ * Returns an instance of a marketplace manager class.
+ */
+function commerceguys_marketplace_get_manager($item_type) {
+  $type_info = array(
+    'addon' => array(
+      'class' => 'CommerceGuysMarketplaceAddonManager',
+    ),
+    'training' => array(
+      'class' => 'CommerceGuysMarketplaceTrainingManager',
+    ),
+  );
+
+  $managers = &drupal_static(__FUNCTION__, array());
+  if (!isset($managers[$item_type])) {
+    $client = commerceguys_marketplace_get_client();
+    $endpoint = COMMERCEGUYS_MARKETPLACE_URL . '/api/marketplace';
+
+    $class = $type_info[$item_type]['class'];
+    $managers[$item_type] = new $class($client, $endpoint);
+  }
+  return $managers[$item_type];
+}
+
+/**
+ * Returns the oAuth2 client info used for authenticating the current site.
+ *
+ * @return
+ *   An array with the client_key and client_secret keys, or FALSE if
+ *   no client information could be found.
+ */
+function commerceguys_marketplace_get_client() {
+  $api_key = variable_get('commerceguys_marketplace_api_key', '');
+  if (!empty($api_key) && strpos($api_key, ';')) {
+    $key_parts = explode(';', $api_key);
+    return array(
+      'client_key' => $key_parts[0],
+      'client_secret' => $key_parts[1],
+    );
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function commerceguys_marketplace_admin_paths() {
+  $paths = array(
+    'commerceguys-marketplace' => TRUE,
+    'commerceguys-marketplace/addons' => TRUE,
+  );
+  return $paths;
+}
+
+/**
+ * Implements hook_library().
+ */
+function commerceguys_marketplace_library() {
+  $libraries['bxslider'] = array(
+    'title' => 'Bxslider',
+    'website' => 'http://bxslider.com/',
+    'version' => '4.0',
+    'css' => array(
+      libraries_get_path('jquery.bxslider') . '/jquery.bxslider.css' => array(),
+    ),
+    'js' => array(
+      libraries_get_path('jquery.bxslider') . '/jquery.bxslider.min.js' => array(),
+    ),
+  );
+
+  return $libraries;
+}

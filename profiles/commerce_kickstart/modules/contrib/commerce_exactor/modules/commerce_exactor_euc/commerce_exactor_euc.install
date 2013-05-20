@@ -1,0 +1,60 @@
+<?php
+
+/**
+ * Helper function that returns a schema field definition for exactor euc fields.
+ */
+function commerce_exactor_euc_schema_field_definition() {
+  return array(
+    'type' => 'char',
+    'length' => 12,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'The Exactor EUC for the product.',
+  );
+}
+
+/**
+ * Implements of hook_schema_alter().
+*/
+function commerce_exactor_euc_schema_alter(&$schema = array()) {
+  $field = commerce_exactor_euc_schema_field_definition();
+
+  $schema['commerce_product']['fields']['exactor_euc'] = $field;
+  $schema['commerce_product_revision']['fields']['exactor_euc'] = $field;
+}
+
+/**
+ * Implements hook_install().
+ */
+function commerce_exactor_euc_install() {
+  variable_set('commerce_exactor_euc_shipping', array('default' => 'EUC-13010204'));
+
+  $field = commerce_exactor_euc_schema_field_definition();
+
+  if (!db_field_exists('commerce_product', 'exactor_euc')) {
+    db_add_field('commerce_product', 'exactor_euc', $field);
+    db_add_index('commerce_product', 'exactor_euc', array('exactor_euc'));
+  }
+
+  if (!db_field_exists('commerce_product_revision', 'exactor_euc')) {
+    db_add_field('commerce_product_revision', 'exactor_euc', $field);
+    db_add_index('commerce_product_revision', 'exactor_euc', array('exactor_euc'));
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_exactor_euc_uninstall() {
+  if (db_field_exists('commerce_product', 'exactor_euc')) {
+    db_drop_field('commerce_product', 'exactor_euc');
+    db_drop_index('commerce_product', 'exactor_euc');
+  }
+
+  if (db_field_exists('commerce_product_revision', 'exactor_euc')) {
+    db_drop_field('commerce_product_revision', 'exactor_euc');
+    db_drop_index('commerce_product_revision', 'exactor_euc');
+  }
+
+  variable_del('commerce_exactor_euc_shipping');
+}

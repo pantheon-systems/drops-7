@@ -6,6 +6,28 @@ Send me your language configuration files.  See /i18n/jquery.colorbox-de.js as a
 
 ## Changelog:
 
+### Version 1.4.15 - 2013/4/22
+
+* Added .webp to list of recognized image extensions
+
+### Version 1.4.14 - 2013/4/16
+
+* Added fadeOut property to control the closing fadeOut speed.
+* Removed longdesc attribute for now.
+
+### Version 1.4.13 - 2013/4/11
+
+* Fixed an error involving IE7/IE8 and legacy versions of jQuery
+
+### Version 1.4.12 - 2013/4/9
+
+* Fixed a potential conflict with Twitter Bootstrap default img styles.
+
+### Version 1.4.11 - 2013/4/9
+
+* Added `type='button'` to buttons to prevent accidental form submission
+* Added alt and longdesc attributes to photo content if they are present on the calling element.
+
 ### Version 1.4.10 - 2013/4/2
 
 * Better 'old IE' feature detection that fixes an error with jQuery 2.0.0pre.

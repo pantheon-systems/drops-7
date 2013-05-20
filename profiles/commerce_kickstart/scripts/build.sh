@@ -98,7 +98,7 @@ fi
 
 # Build the profile.
 echo "Building the profile..."
-drush make --no-core --contrib-destination drupal-org.make tmp
+drush make --no-cache --no-core --contrib-destination drupal-org.make tmp
 
 # Build a drupal-org-core.make file if it doesn't exist.
 if [ ! -f drupal-org-core.make ]; then

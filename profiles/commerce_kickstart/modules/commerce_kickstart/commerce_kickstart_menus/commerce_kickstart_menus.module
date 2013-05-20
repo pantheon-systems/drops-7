@@ -410,6 +410,15 @@ function commerce_kickstart_menus_menu_alter(&$items) {
       'toolbar_css' => 'lingotek',
     );
   }
+  if (isset($items['commerceguys-marketplace'])) {
+    $items['commerceguys-marketplace']['title'] = 'Marketplace';
+    $items['commerceguys-marketplace']['parent'] = 'admin';
+    $items['commerceguys-marketplace']['weight'] = 49;
+    $items['commerceguys-marketplace']['options'] = array(
+      'toolbar_break' => TRUE,
+      'toolbar_css' => 'marketplace',
+    );
+  }
 }
 
 /**

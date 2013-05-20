@@ -345,15 +345,7 @@ function inline_entity_form_settings($field, $instance) {
 
   // Now create a filtered list of bundles that the user has access to.
   foreach ($settings['bundles'] as $bundle) {
-    // Commerce requires a stub entity to be passed for "create" checks.
-    // See http://drupal.org/node/1865022
-    if (in_array($settings['entity_type'], array('commerce_product', 'commerce_line_item'))) {
-      $new_entity = inline_entity_form_create_entity($settings['entity_type'], $bundle);
-    }
-    else {
-      $new_entity = $bundle;
-    }
-
+    $new_entity = inline_entity_form_create_entity($settings['entity_type'], $bundle);
     if (entity_access('create', $settings['entity_type'], $new_entity)) {
       $settings['create_bundles'][] = $bundle;
     }
@@ -772,8 +764,6 @@ function inline_entity_form_entity_form($controller, $entity_form, &$form_state)
 
   // Retrieve the form provided by the controller.
   $entity_form = $controller->entityForm($entity_form, $form_state);
-  // Allow other modules to alter the form.
-  drupal_alter('inline_entity_form_entity_form', $entity_form, $form_state);
 
   // Add the actions
   $entity_form['actions'] = array(
@@ -824,6 +814,9 @@ function inline_entity_form_entity_form($controller, $entity_form, &$form_state)
   // position in $form_state['values'].
   $entity_form['#pre_render'][] = 'inline_entity_form_pre_render_add_fieldset_markup';
 
+  // Allow other modules to alter the form.
+  drupal_alter('inline_entity_form_entity_form', $entity_form, $form_state);
+
   return $entity_form;
 }
 
@@ -854,7 +847,7 @@ function inline_entity_form_process_entity_form(&$entity_form, &$form_state) {
   $controller->entityFormValidate($entity_form, $form_state);
 
   // If validation passed, execute the submission handler.
-  if (!form_get_errors()) {
+  if (!form_get_errors() && !$form_state['rebuild']) {
     $controller->entityFormSubmit($entity_form, $form_state);
     $entity = $entity_form['#entity'];
 
@@ -937,6 +930,9 @@ function inline_entity_form_reference_form($controller, $reference_form, &$form_
   $reference_form['actions']['ief_reference_save']['#submit'] = array('inline_entity_form_close_form');
   $reference_form['actions']['ief_reference_cancel']['#submit'] = array('inline_entity_form_close_form');
   $reference_form['#element_validate'][] = 'inline_entity_form_process_reference_form';
+
+  // Allow other modules to alter the form.
+  drupal_alter('inline_entity_form_reference_form', $reference_form, $form_state);
 
   return $reference_form;
 }
@@ -1419,7 +1415,7 @@ function theme_inline_entity_form_entity_table($variables) {
     // Return the themed table.
     $table_attributes = array(
       'id' => $id,
-      'class' => 'ief-entity-table',
+      'class' => array('ief-entity-table'),
     );
     return theme('table', array('header' => $header, 'rows' => $rows, 'sticky' => FALSE, 'attributes' => $table_attributes));
   }

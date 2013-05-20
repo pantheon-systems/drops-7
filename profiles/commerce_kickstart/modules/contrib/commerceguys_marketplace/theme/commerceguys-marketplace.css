@@ -1,0 +1,514 @@
+/* Styling Tabs */
+.page-commerceguys-marketplace #branding ul.tabs {
+  position: relative;
+  float: right; }
+
+.marketplace,
+#marketplace-listing-form {
+  background-color: black;
+  border: 1px solid #555555;
+  border-width: 0 1px 1px 1px;
+  color: white;
+  margin: 0 auto;
+  padding: 0; }
+
+/* Other Marketplace page overrides */
+.page-commerceguys-marketplace {
+  background: transparent; }
+  .page-commerceguys-marketplace #page {
+    padding: 0;
+    background-color: #000; }
+  .page-commerceguys-marketplace #branding {
+    padding-left: 40px;
+    padding-right: 40px; }
+    .page-commerceguys-marketplace #branding ul.tabs {
+      height: 42px; }
+  .page-commerceguys-marketplace #overlay #overlay-title-wrapper {
+    height: 50px; }
+    .page-commerceguys-marketplace #overlay #overlay-title-wrapper #overlay-title {
+      font: 0/0 none; }
+  .page-commerceguys-marketplace #overlay #overlay-close-wrapper {
+    right: 0; }
+  .page-commerceguys-marketplace #overlay #overlay-close,
+  .page-commerceguys-marketplace #overlay #overlay-close:hover {
+    background: transparent url("images/close.png") no-repeat center center; }
+  .page-commerceguys-marketplace #overlay #overlay-titlebar {
+    background: transparent;
+    box-shadow: none;
+    padding: 0; }
+  .page-commerceguys-marketplace #overlay #overlay-content {
+    background: transparent;
+    padding: 0; }
+    .page-commerceguys-marketplace #overlay #overlay-content #branding {
+      padding: 0; }
+    .page-commerceguys-marketplace #overlay #overlay-content #page {
+      padding: 0; }
+  .page-commerceguys-marketplace #overlay .marketplace,
+  .page-commerceguys-marketplace #overlay #marketplace-listing-form {
+    border-width: 1px; }
+  .page-commerceguys-marketplace #overlay-tabs-wrapper {
+    height: 50px; }
+  .page-commerceguys-marketplace #overlay-tabs {
+    right: 0; }
+  .page-commerceguys-marketplace #overlay-tabs li,
+  .page-commerceguys-marketplace #overlay-tabs li.active,
+  .page-commerceguys-marketplace #branding ul.tabs li,
+  .page-commerceguys-marketplace #branding ul.tabs li.active {
+    float: left;
+    padding: 0;
+    margin: 0; }
+    .page-commerceguys-marketplace #overlay-tabs li a,
+    .page-commerceguys-marketplace #overlay-tabs li a:focus,
+    .page-commerceguys-marketplace #overlay-tabs li a:active,
+    .page-commerceguys-marketplace #overlay-tabs li a:visited,
+    .page-commerceguys-marketplace #overlay-tabs li a:hover,
+    .page-commerceguys-marketplace #overlay-tabs li.active a,
+    .page-commerceguys-marketplace #overlay-tabs li.active a:focus,
+    .page-commerceguys-marketplace #overlay-tabs li.active a:active,
+    .page-commerceguys-marketplace #overlay-tabs li.active a:visited,
+    .page-commerceguys-marketplace #overlay-tabs li.active a:hover,
+    .page-commerceguys-marketplace #branding ul.tabs li a,
+    .page-commerceguys-marketplace #branding ul.tabs li a:focus,
+    .page-commerceguys-marketplace #branding ul.tabs li a:active,
+    .page-commerceguys-marketplace #branding ul.tabs li a:visited,
+    .page-commerceguys-marketplace #branding ul.tabs li a:hover,
+    .page-commerceguys-marketplace #branding ul.tabs li.active a,
+    .page-commerceguys-marketplace #branding ul.tabs li.active a:focus,
+    .page-commerceguys-marketplace #branding ul.tabs li.active a:active,
+    .page-commerceguys-marketplace #branding ul.tabs li.active a:visited,
+    .page-commerceguys-marketplace #branding ul.tabs li.active a:hover {
+      background: #252525;
+      border: 1px solid #707070;
+      border-width: 1px 0 1px 1px;
+      color: #a1a1a1;
+      line-height: 1em;
+      margin: 0 !important;
+      padding: 15px 30px;
+      -moz-box-shadow: 0 0 0 transparent;
+      -webkit-box-shadow: 0 0 0 transparent;
+      box-shadow: 0 0 0 transparent;
+      -moz-border-radius: 0 0 0 0;
+      -webkit-border-radius: 0 0 0 0;
+      border-radius: 0 0 0 0; }
+      .page-commerceguys-marketplace #overlay-tabs li a.active,
+      .page-commerceguys-marketplace #overlay-tabs li a:focus.active,
+      .page-commerceguys-marketplace #overlay-tabs li a:active.active,
+      .page-commerceguys-marketplace #overlay-tabs li a:visited.active,
+      .page-commerceguys-marketplace #overlay-tabs li a:hover.active,
+      .page-commerceguys-marketplace #overlay-tabs li.active a.active,
+      .page-commerceguys-marketplace #overlay-tabs li.active a:focus.active,
+      .page-commerceguys-marketplace #overlay-tabs li.active a:active.active,
+      .page-commerceguys-marketplace #overlay-tabs li.active a:visited.active,
+      .page-commerceguys-marketplace #overlay-tabs li.active a:hover.active,
+      .page-commerceguys-marketplace #branding ul.tabs li a.active,
+      .page-commerceguys-marketplace #branding ul.tabs li a:focus.active,
+      .page-commerceguys-marketplace #branding ul.tabs li a:active.active,
+      .page-commerceguys-marketplace #branding ul.tabs li a:visited.active,
+      .page-commerceguys-marketplace #branding ul.tabs li a:hover.active,
+      .page-commerceguys-marketplace #branding ul.tabs li.active a.active,
+      .page-commerceguys-marketplace #branding ul.tabs li.active a:focus.active,
+      .page-commerceguys-marketplace #branding ul.tabs li.active a:active.active,
+      .page-commerceguys-marketplace #branding ul.tabs li.active a:visited.active,
+      .page-commerceguys-marketplace #branding ul.tabs li.active a:hover.active {
+        background: #000;
+        border-bottom: 1px solid #000;
+        color: #ffc015;
+        margin: 0;
+        padding: 15px 30px; }
+    .page-commerceguys-marketplace #overlay-tabs li a:hover,
+    .page-commerceguys-marketplace #overlay-tabs li.active a:hover,
+    .page-commerceguys-marketplace #branding ul.tabs li a:hover,
+    .page-commerceguys-marketplace #branding ul.tabs li.active a:hover {
+      color: #ffc015; }
+    .page-commerceguys-marketplace #overlay-tabs li:last-child a,
+    .page-commerceguys-marketplace #overlay-tabs li.active:last-child a,
+    .page-commerceguys-marketplace #branding ul.tabs li:last-child a,
+    .page-commerceguys-marketplace #branding ul.tabs li.active:last-child a {
+      border-right: 1px solid #707070; }
+
+.marketplace-header {
+  display: inline-block;
+  -webkit-box-sizing: border-box;
+  /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;
+  /* Firefox, other Gecko */
+  box-sizing: border-box;
+  /* Opera/IE 8+ */
+  padding: 30px;
+  width: 100%; }
+  .marketplace-header:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0; }
+  .marketplace-header a:link, .marketplace-header a:visited {
+    color: white; }
+  .marketplace-header a:hover {
+    color: #00afef;
+    text-decoration: none; }
+  .marketplace-header .logo {
+    float: left; }
+  .marketplace-header .item-list {
+    padding: 0;
+    text-align: right; }
+    .marketplace-header .item-list ul {
+      margin-bottom: 0;
+      text-align: right; }
+      .marketplace-header .item-list ul li {
+        display: inline;
+        line-height: 55px;
+        padding: 0 15px; }
+
+.status-container {
+  background: #2c2c2c;
+  color: #fff;
+  font-size: 22px;
+  line-height: 1.5em;
+  padding: 15px 70px; }
+  .status-container .message {
+    padding: 6px 0; }
+
+.not-registered {
+  padding: 60px 80px;
+  background: #0265a5 url("images/flag.png") no-repeat -20px -20px; }
+  .not-registered a {
+    background: #018cc8;
+    border: 2px solid #56ade6;
+    color: #fff;
+    float: right;
+    font-size: 16px;
+    padding: 5px 50px; }
+    .not-registered a:hover {
+      background: #0097d8; }
+
+.success .message {
+  background: transparent url("images/success.png") no-repeat left center;
+  padding-left: 70px; }
+
+.empty-message {
+  color: #fff;
+  font-size: 22px;
+  line-height: 1.5em;
+  padding: 70px;
+  text-align: center; }
+
+.marketplace-promotions {
+  background: black url("images/slide-overlay.png") repeat 0 0;
+  overflow: hidden; }
+  .marketplace-promotions .bx-wrapper {
+    margin-bottom: 0; }
+    .marketplace-promotions .bx-wrapper .bx-viewport {
+      -moz-box-shadow: 0;
+      -webkit-box-shadow: 0;
+      box-shadow: 0;
+      border: 0;
+      background: #fff;
+      left: 0;
+      overflow: visible !important; }
+      @media screen and (max-width: 768px) {
+        .marketplace-promotions .bx-wrapper .bx-viewport {
+          overflow: hidden !important; } }
+  .marketplace-promotions .bx-controls .slide-overlay-left,
+  .marketplace-promotions .bx-controls .slide-overlay-right {
+    background: transparent url("images/slide-overlay.png") repeat 0 0;
+    height: 320px;
+    position: absolute;
+    top: 0; }
+    @media screen and (max-width: 768px) {
+      .marketplace-promotions .bx-controls .slide-overlay-left,
+      .marketplace-promotions .bx-controls .slide-overlay-right {
+        display: none; } }
+  .marketplace-promotions .bx-controls .slide-overlay-left {
+    right: 100%; }
+  .marketplace-promotions .bx-controls .slide-overlay-right {
+    left: 100%; }
+  .marketplace-promotions .bx-controls a.bx-next,
+  .marketplace-promotions .bx-controls a.bx-prev {
+    background-image: url("images/slide-controls.png");
+    width: 34px;
+    height: 34px; }
+  .marketplace-promotions .bx-controls a.bx-next {
+    right: -40px;
+    background-position: -42px -35px; }
+    .marketplace-promotions .bx-controls a.bx-next:hover {
+      background-position: -42px 0; }
+    @media screen and (max-width: 768px) {
+      .marketplace-promotions .bx-controls a.bx-next {
+        right: 10px; } }
+  .marketplace-promotions .bx-controls a.bx-prev {
+    left: -40px;
+    background-position: 0 -35px; }
+    .marketplace-promotions .bx-controls a.bx-prev:hover {
+      background-position: 0 0; }
+    @media screen and (max-width: 768px) {
+      .marketplace-promotions .bx-controls a.bx-prev {
+        left: 10px; } }
+  .marketplace-promotions #commerceguys-marketplace-slideshow {
+    margin: 0; }
+    .marketplace-promotions #commerceguys-marketplace-slideshow li {
+      background: #000;
+      height: 320px;
+      list-style: none;
+      overflow: hidden;
+      margin: 0;
+      padding: 0;
+      width: 580px; }
+
+.marketplace-content {
+  background: white url("images/bg-sidebar.gif") repeat-y 0 0;
+  color: #000;
+  width: 100%;
+  display: inline-block; }
+  .marketplace-content:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0; }
+  .marketplace-content a:hover {
+    text-decoration: none; }
+  .marketplace-content .marketplace-sidebar {
+    float: left;
+    margin: 20px 20px 20px 45px;
+    margin-top: 85px;
+    width: 245px; }
+    .marketplace-content .marketplace-sidebar .item-title {
+      color: #898989;
+      font-size: 13px;
+      margin-bottom: 10px;
+      text-transform: lowercase; }
+    .marketplace-content .marketplace-sidebar .item-list ul {
+      margin: 0;
+      padding: 0; }
+    .marketplace-content .marketplace-sidebar .item-list ul li {
+      list-style: none;
+      margin-left: 0; }
+      .marketplace-content .marketplace-sidebar .item-list ul li a {
+        color: #000;
+        font-size: 16px;
+        text-transform: lowercase; }
+        .marketplace-content .marketplace-sidebar .item-list ul li a:hover {
+          color: #00afef; }
+  .marketplace-content .marketplace-addons-wrapper {
+    margin-left: 350px; }
+    .marketplace-content .marketplace-addons-wrapper h3 {
+      color: #2aace2;
+      font-weight: normal;
+      margin-left: 10px;
+      margin-top: 45px;
+      text-transform: lowercase; }
+    .marketplace-content .marketplace-addons-wrapper .marketplace-list {
+      margin-bottom: 45px; }
+      .marketplace-content .marketplace-addons-wrapper .marketplace-list .addon {
+        float: left;
+        display: inline-block;
+        height: 202px;
+        padding: 10px;
+        width: 302px;
+        -webkit-box-sizing: border-box;
+        /* Safari/Chrome, other WebKit */
+        -moz-box-sizing: border-box;
+        /* Firefox, other Gecko */
+        box-sizing: border-box;
+        /* Opera/IE 8+ */ }
+        .marketplace-content .marketplace-addons-wrapper .marketplace-list .addon .marketplace-addon-featured a {
+          border: 1px solid #c2c2c2;
+          float: left;
+          height: 182px;
+          margin: 1px;
+          position: relative;
+          width: 282px; }
+          .marketplace-content .marketplace-addons-wrapper .marketplace-list .addon .marketplace-addon-featured a img {
+            max-width: 100%; }
+          .marketplace-content .marketplace-addons-wrapper .marketplace-list .addon .marketplace-addon-featured a .addon-overlay {
+            background: transparent url("images/bg-overlay.png") repeat 0 0;
+            color: #fff;
+            display: none;
+            height: 180px;
+            left: 0;
+            padding: 15px;
+            position: absolute;
+            top: 0;
+            width: 280px;
+            -webkit-box-sizing: border-box;
+            /* Safari/Chrome, other WebKit */
+            -moz-box-sizing: border-box;
+            /* Firefox, other Gecko */
+            box-sizing: border-box;
+            /* Opera/IE 8+ */ }
+          .marketplace-content .marketplace-addons-wrapper .marketplace-list .addon .marketplace-addon-featured a:hover .addon-overlay {
+            display: block; }
+        .marketplace-content .marketplace-addons-wrapper .marketplace-list .addon .marketplace-addon-featured a .addon-overlay .title {
+          color: #2aace2;
+          font-size: 20px;
+          margin-bottom: 10px; }
+        .marketplace-content .marketplace-addons-wrapper .marketplace-list .addon .marketplace-addon-featured a .addon-overlay .tagline {
+          font-size: 14px;
+          height: 85px; }
+        .marketplace-content .marketplace-addons-wrapper .marketplace-list .addon .marketplace-addon-featured a .addon-overlay .category {
+          color: #acacac; }
+
+.marketplace-trainings {
+  display: inline-block;
+  -webkit-box-sizing: border-box;
+  /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;
+  /* Firefox, other Gecko */
+  box-sizing: border-box;
+  /* Opera/IE 8+ */
+  background: #262626;
+  padding: 45px;
+  width: 100%;
+  margin: -5px 0; }
+  .marketplace-trainings:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0; }
+  .marketplace-trainings h3 {
+    color: #fff;
+    font-weight: normal;
+    text-transform: lowercase; }
+  .marketplace-trainings .marketplace-training-event-title {
+    color: white;
+    font-size: 16px;
+    margin-bottom: 10px; }
+  .marketplace-trainings .marketplace-training {
+    -webkit-box-sizing: border-box;
+    /* Safari/Chrome, other WebKit */
+    -moz-box-sizing: border-box;
+    /* Firefox, other Gecko */
+    box-sizing: border-box;
+    /* Opera/IE 8+ */
+    margin: 0 0 10px;
+    padding: 10px;
+    width: 100%; }
+    .marketplace-trainings .marketplace-training:hover {
+      background: #151515; }
+      .marketplace-trainings .marketplace-training:hover a {
+        text-decoration: none; }
+      .marketplace-trainings .marketplace-training:hover .marketplace-training-event-title {
+        color: #2aace2; }
+  .marketplace-trainings .marketplace-training-event-content {
+    color: #898989;
+    width: 100%; }
+    .marketplace-trainings .marketplace-training-event-content .t.location {
+      margin-left: 20px; }
+    .marketplace-trainings .marketplace-training-event-content .t-audience {
+      float: right;
+      font-size: 11px;
+      text-align: left;
+      text-transform: lowercase;
+      width: 280px; }
+
+.marketplace-signup {
+  background: #008ebd url("images/bg-signup.png") no-repeat -50px -50px;
+  font-weight: 100;
+  padding: 75px 125px 20px; }
+  .marketplace-signup .button {
+    float: right;
+    padding-top: 10px; }
+    .marketplace-signup .button a {
+      background: #00afe9;
+      border: 2px solid #60cbee;
+      color: #fff;
+      float: right;
+      font-weight: normal;
+      line-height: 1em;
+      padding: 15px 65px;
+      text-shadow: 0 1px 1px #0098cb; }
+      .marketplace-signup .button a:hover {
+        background: #1ab4e7;
+        text-decoration: none; }
+  .marketplace-signup .message {
+    font-size: 25px;
+    line-height: 1.3em;
+    margin-bottom: 65px; }
+  .marketplace-signup .help {
+    color: #75d7f8;
+    font-size: 12px; }
+
+#commerceguys-marketplace-listing-form {
+  -webkit-box-sizing: border-box;
+  /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;
+  /* Firefox, other Gecko */
+  box-sizing: border-box;
+  /* Opera/IE 8+ */
+  border: 1px solid #707070;
+  background: #000;
+  padding: 20px; }
+  #commerceguys-marketplace-listing-form h1 {
+    color: #fff;
+    font-weight: normal;
+    margin-bottom: 20px; }
+  #commerceguys-marketplace-listing-form .filter {
+    margin-bottom: 20px; }
+  #commerceguys-marketplace-listing-form .form-item-filters-category {
+    float: left;
+    margin-right: 10px;
+    padding: 0; }
+  #commerceguys-marketplace-listing-form .marketplace-addon-licenses {
+    clear: both; }
+    #commerceguys-marketplace-listing-form .marketplace-addon-licenses a:hover {
+      color: #2aace2;
+      text-decoration: underline; }
+    #commerceguys-marketplace-listing-form .marketplace-addon-licenses .addon-category {
+      margin-bottom: 10px;
+      border-bottom: 1px solid #5d5d5d; }
+    #commerceguys-marketplace-listing-form .marketplace-addon-licenses h2 {
+      float: left;
+      font-size: 16px;
+      color: #2aace2; }
+    #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license {
+      background: #272727;
+      margin: 0 0 10px 200px;
+      padding: 10px; }
+      #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license:hover {
+        background: #3b3b3b; }
+      #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license .marketplace-list-item-image {
+        background: #fff;
+        display: inline-block;
+        float: left;
+        height: 80px;
+        width: 80px;
+        line-height: 80px;
+        text-align: center; }
+        #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license .marketplace-list-item-image img {
+          max-width: 90%;
+          vertical-align: middle; }
+      #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license .marketplace-list-item-info {
+        margin: 0 100px;
+        min-height: 80px; }
+        #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license .marketplace-list-item-info .title {
+          font-weight: bold;
+          color: #fff; }
+        #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license .marketplace-list-item-info .tagline {
+          color: #b8b8b8; }
+        #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license .marketplace-list-item-info .more a {
+          background: transparent url("images/arrow.png") no-repeat right center;
+          padding: 2px 25px 2px 0; }
+      #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license .marketplace-list-item-enabled {
+        float: right;
+        text-align: center;
+        width: 80px;
+        padding-top: 50px;
+        position: relative; }
+        #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license .marketplace-list-item-enabled .status {
+          display: inline-block;
+          height: 16px;
+          width: 16px;
+          border-radius: 16px;
+          background: #5d5d5d;
+          border: 2px solid #5d5d5d;
+          position: absolute;
+          top: 10px;
+          left: 50%;
+          margin-left: -9px; }
+        #commerceguys-marketplace-listing-form .marketplace-addon-licenses .marketplace-addon-license .marketplace-list-item-enabled .status-on {
+          background: #31c744; }

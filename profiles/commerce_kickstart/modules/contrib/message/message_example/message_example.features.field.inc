@@ -10,7 +10,7 @@
 function message_example_field_default_fields() {
   $fields = array();
 
-  // Exported field: 'message-example_create_comment-field_comment_ref'
+  // Exported field: 'message-example_create_comment-field_comment_ref'.
   $fields['message-example_create_comment-field_comment_ref'] = array(
     'field_config' => array(
       'active' => '1',
@@ -31,6 +31,7 @@ function message_example_field_default_fields() {
           0 => 'target_id',
         ),
       ),
+      'locked' => '0',
       'module' => 'entityreference',
       'settings' => array(
         'handler' => 'base',
@@ -63,12 +64,15 @@ function message_example_field_default_fields() {
       'display' => array(
         'default' => array(
           'label' => 'above',
-          'module' => 'entityreference',
-          'settings' => array(
-            'link' => FALSE,
-          ),
-          'type' => 'entityreference_label',
-          'weight' => 2,
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => '4',
+        ),
+        'full' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => '2',
         ),
       ),
       'entity_type' => 'message',
@@ -100,7 +104,7 @@ function message_example_field_default_fields() {
     ),
   );
 
-  // Exported field: 'message-example_create_comment-field_node_ref'
+  // Exported field: 'message-example_create_comment-field_node_ref'.
   $fields['message-example_create_comment-field_node_ref'] = array(
     'field_config' => array(
       'active' => '1',
@@ -121,6 +125,7 @@ function message_example_field_default_fields() {
           0 => 'target_id',
         ),
       ),
+      'locked' => '0',
       'module' => 'entityreference',
       'settings' => array(
         'handler' => 'base',
@@ -154,12 +159,15 @@ function message_example_field_default_fields() {
       'display' => array(
         'default' => array(
           'label' => 'above',
-          'module' => 'entityreference',
-          'settings' => array(
-            'link' => FALSE,
-          ),
-          'type' => 'entityreference_label',
-          'weight' => 0,
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => '3',
+        ),
+        'full' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => '3',
         ),
       ),
       'entity_type' => 'message',
@@ -191,7 +199,7 @@ function message_example_field_default_fields() {
     ),
   );
 
-  // Exported field: 'message-example_create_comment-field_published'
+  // Exported field: 'message-example_create_comment-field_published'.
   $fields['message-example_create_comment-field_published'] = array(
     'field_config' => array(
       'active' => '1',
@@ -205,6 +213,7 @@ function message_example_field_default_fields() {
           0 => 'value',
         ),
       ),
+      'locked' => '0',
       'module' => 'list',
       'settings' => array(
         'allowed_values' => array(
@@ -228,10 +237,15 @@ function message_example_field_default_fields() {
       'display' => array(
         'default' => array(
           'label' => 'above',
-          'module' => 'list',
           'settings' => array(),
-          'type' => 'list_default',
-          'weight' => 1,
+          'type' => 'hidden',
+          'weight' => '5',
+        ),
+        'full' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => '4',
         ),
       ),
       'entity_type' => 'message',
@@ -253,7 +267,7 @@ function message_example_field_default_fields() {
     ),
   );
 
-  // Exported field: 'message-example_create_node-field_node_ref'
+  // Exported field: 'message-example_create_node-field_node_ref'.
   $fields['message-example_create_node-field_node_ref'] = array(
     'field_config' => array(
       'active' => '1',
@@ -274,6 +288,7 @@ function message_example_field_default_fields() {
           0 => 'target_id',
         ),
       ),
+      'locked' => '0',
       'module' => 'entityreference',
       'settings' => array(
         'handler' => 'base',
@@ -307,12 +322,15 @@ function message_example_field_default_fields() {
       'display' => array(
         'default' => array(
           'label' => 'above',
-          'module' => 'entityreference',
-          'settings' => array(
-            'link' => FALSE,
-          ),
-          'type' => 'entityreference_label',
-          'weight' => 0,
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => '5',
+        ),
+        'full' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => '5',
         ),
       ),
       'entity_type' => 'message',
@@ -344,7 +362,7 @@ function message_example_field_default_fields() {
     ),
   );
 
-  // Exported field: 'message-example_create_node-field_published'
+  // Exported field: 'message-example_create_node-field_published'.
   $fields['message-example_create_node-field_published'] = array(
     'field_config' => array(
       'active' => '1',
@@ -358,6 +376,7 @@ function message_example_field_default_fields() {
           0 => 'value',
         ),
       ),
+      'locked' => '0',
       'module' => 'list',
       'settings' => array(
         'allowed_values' => array(
@@ -381,10 +400,15 @@ function message_example_field_default_fields() {
       'display' => array(
         'default' => array(
           'label' => 'above',
-          'module' => 'list',
           'settings' => array(),
-          'type' => 'list_default',
-          'weight' => 1,
+          'type' => 'hidden',
+          'weight' => '4',
+        ),
+        'full' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => '4',
         ),
       ),
       'entity_type' => 'message',
@@ -406,7 +430,7 @@ function message_example_field_default_fields() {
     ),
   );
 
-  // Exported field: 'message-example_user_register-field_published'
+  // Exported field: 'message-example_user_register-field_published'.
   $fields['message-example_user_register-field_published'] = array(
     'field_config' => array(
       'active' => '1',
@@ -420,6 +444,7 @@ function message_example_field_default_fields() {
           0 => 'value',
         ),
       ),
+      'locked' => '0',
       'module' => 'list',
       'settings' => array(
         'allowed_values' => array(
@@ -439,10 +464,15 @@ function message_example_field_default_fields() {
       'display' => array(
         'default' => array(
           'label' => 'above',
-          'module' => 'list',
           'settings' => array(),
-          'type' => 'list_default',
-          'weight' => 0,
+          'type' => 'hidden',
+          'weight' => '1',
+        ),
+        'full' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => '1',
         ),
       ),
       'entity_type' => 'message',

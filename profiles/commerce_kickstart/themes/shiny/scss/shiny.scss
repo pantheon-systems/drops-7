@@ -339,6 +339,7 @@ h1#overlay-title {
 }
 #overlay-tabs,
 #branding ul.tabs {
+  clear: right; /* LTR */
   margin: 0;
   padding: 3px 0 0;
   position: relative;
@@ -657,4 +658,13 @@ html.js input.throbbing {
 
 #user-filter-form #edit-actions {
   background: transparent;
+}
+input.vbo-table-select-all,
+input.vbo-select,
+td.checkbox input.form-checkbox {
+  border: 0;
+  opacity: 1;
+  height: 20px;
+  width: 20px;
+  background: transparent url("../images/toggles.png") no-repeat 0 0;
 }

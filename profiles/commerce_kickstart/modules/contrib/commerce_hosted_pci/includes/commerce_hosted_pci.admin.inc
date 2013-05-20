@@ -82,29 +82,28 @@ function commerce_hosted_pci_capture_form_validate($form, &$form_state) {
  * Submit handler: process a prior authorization capture via AIM.
  */
 function commerce_hosted_pci_capture_form_submit($form, &$form_state) {
-  $settings = $form_state['payment_method']['settings'] + commerce_hosted_pci_default_settings();
   $transaction = $form_state['transaction'];
-  $amount = $form_state['values']['amount'];
   $order = $form_state['order'];
-
+  // Convert the amount to the commerce format.
+  $amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $transaction->currency_code);
   // Build a name-value pair array for this transaction.
   $data = array();
-  $data['pxyTransaction.txnAmount'] = $amount;
+  $data['pxyTransaction.txnAmount'] = commerce_hosted_pci_price_amount($amount, $transaction->currency_code);
   $data['pxyTransaction.txnCurISO'] = $transaction->currency_code;
   $data['pxyTransaction.processorRefId'] = $transaction->remote_id;
   $data['pxyTransaction.merchantRefId'] = $order->order_id;
 
   // Request Hosted PCI service.
-  $response = commerce_hosted_pci_transaction_process(COMMERCE_CREDIT_CAPTURE_ONLY, $settings, $data);
+  $response = commerce_hosted_pci_transaction_process(COMMERCE_CREDIT_CAPTURE_ONLY, $form_state['payment_method'], $order, $data);
 
   // Update and save the transaction based on the response.
-  $transaction->payload[REQUEST_TIME] = commerce_hosted_pci_get_transaction_log($response);
+  $transaction->payload[REQUEST_TIME . '-capture'] = $response;
 
   // The call is valid and the payment gateway has been approved.
   if ($response && $response['status'] == 'success' && $response['pxyResponse_responseStatus'] == 'approved') {
     drupal_set_message(t('Prior authorization captured successfully.'));
-    // Update the transaction amount to the actual capture amount.
-    $transaction->amount = commerce_currency_decimal_to_amount($amount, $transaction->currency_code);
+    // Update the transaction amount to the actual captured amount.
+    $transaction->amount = $amount;
     // Set the remote and local status accordingly.
     $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
     $transaction->remote_status = COMMERCE_CREDIT_CAPTURE_ONLY;
@@ -129,7 +128,6 @@ function commerce_hosted_pci_capture_form_submit($form, &$form_state) {
 function commerce_hosted_pci_void_form($form, &$form_state, $order, $transaction) {
   $form_state['order'] = $order;
   $form_state['transaction'] = $transaction;
-
   // Load and store the payment method instance for this transaction.
   $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
   $form_state['payment_method'] = $payment_method;
@@ -154,21 +152,22 @@ function commerce_hosted_pci_void_form($form, &$form_state, $order, $transaction
  * Submit handler: process the void request.
  */
 function commerce_hosted_pci_void_form_submit($form, &$form_state) {
-  $settings = $form_state['payment_method']['settings'] + commerce_hosted_pci_default_settings();
   $transaction = $form_state['transaction'];
   $order = $form_state['order'];
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $order_total = $order_wrapper->commerce_order_total->value();
 
   // Build a name-value pair array for this transaction.
   $data = array();
-  $data['pxyTransaction.txnAmount'] = commerce_currency_amount_to_decimal($order_wrapper->commerce_order_total->amount->value(), $order_wrapper->commerce_order_total->currency_code->value());;
+  $data['pxyTransaction.txnAmount'] = commerce_hosted_pci_price_amount($order_total['amount'], $order_total['currency_code']);
   $data['pxyTransaction.txnCurISO'] = $order_wrapper->commerce_order_total->currency_code->value();
   $data['pxyTransaction.processorRefId'] = $transaction->remote_id;
   $data['pxyTransaction.merchantRefId'] = $order->order_id;
 
   // Request Hosted PCI service.
-  $response = commerce_hosted_pci_transaction_process(COMMERCE_CREDIT_VOID, $settings, $data);
+  $response = commerce_hosted_pci_transaction_process(COMMERCE_CREDIT_VOID, $form_state['payment_method'], $order, $data);
 
+  $transaction->payload[REQUEST_TIME . '-void'] = $response;
   // The call is valid and the payment gateway has been approved.
   if ($response && $response['status'] == 'success' && $response['pxyResponse_responseStatus'] == 'approved') {
     drupal_set_message(t('Transaction successfully voided.'));
@@ -177,8 +176,6 @@ function commerce_hosted_pci_void_form_submit($form, &$form_state) {
     $transaction->remote_status = COMMERCE_CREDIT_VOID;
     // Append a capture indication to the result message.
     $transaction->message .= '<br />' . t('Voided: @date', array('@date' => format_date(REQUEST_TIME, 'short')));
-    // Update and save the transaction based on the response.
-    $transaction->payload[REQUEST_TIME] = commerce_hosted_pci_get_transaction_log($response);
   }
   else {
     // The payment has been rejected, display an error message but leave the
@@ -186,8 +183,8 @@ function commerce_hosted_pci_void_form_submit($form, &$form_state) {
     drupal_set_message(t('Void failed'), 'error');
   }
 
+  // Update and save the transaction based on the response.
   commerce_payment_transaction_save($transaction);
-
   $form_state['redirect'] = 'admin/commerce/orders/' . $form_state['order']->order_id . '/payment';
 }
 
@@ -198,12 +195,13 @@ function commerce_hosted_pci_void_form_submit($form, &$form_state) {
 function commerce_hosted_pci_credit_form($form, &$form_state, $order, $transaction) {
   $form_state['order'] = $order;
   $form_state['transaction'] = $transaction;
-
   // Load and store the payment method instance for this transaction.
   $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
   $form_state['payment_method'] = $payment_method;
 
-  $default_amount = commerce_currency_amount_to_decimal($transaction->amount, $transaction->currency_code);
+  // Take the amount from the order balance to substract it to the total.
+  $balance = commerce_payment_order_balance($order);
+  $default_amount = commerce_currency_amount_to_decimal($transaction->amount - $balance['amount'], $transaction->currency_code);
 
   $form['amount'] = array(
     '#type' => 'textfield',
@@ -252,37 +250,39 @@ function commerce_hosted_pci_credit_form_validate($form, &$form_state) {
 }
 
 /**
- * Submit handler: process a credit via AIM.
+ * Submit handler: process a credit request.
  */
 function commerce_hosted_pci_credit_form_submit($form, &$form_state) {
-  $settings = $form_state['payment_method']['settings'] + commerce_hosted_pci_default_settings();
   $transaction = $form_state['transaction'];
-  $amount = $form_state['values']['amount'];
-  $order = $form_state['order'];
   $payment_method = $form_state['payment_method'];
+
+  $order = $form_state['order'];
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $order_total = $order_wrapper->commerce_order_total->value();
+
+  $amount = commerce_currency_decimal_to_amount($form_state['values']['amount'], $order_total['currency_code']);
 
   // Build a name-value pair array for this transaction.
   $data = array();
-  $data['pxyTransaction.txnAmount'] = $amount;
-  $data['pxyTransaction.txnCurISO'] = $transaction->currency_code;
+  $data['pxyTransaction.txnAmount'] = commerce_hosted_pci_price_amount($amount, $order_total['currency_code']);
+  $data['pxyTransaction.txnCurISO'] = $order_total['currency_code'];
   $data['pxyTransaction.processorRefId'] = $transaction->remote_id;
   $data['pxyTransaction.merchantRefId'] = $order->order_id;
 
   // Request Hosted PCI service.
-  $response = commerce_hosted_pci_transaction_process(COMMERCE_CREDIT_CREDIT, $settings, $data);
+  $response = commerce_hosted_pci_transaction_process(COMMERCE_CREDIT_CREDIT, $form_state['payment_method'], $order, $data);
   // The call is valid and the payment gateway has been approved.
   if ($response && $response['status'] == 'success' && $response['pxyResponse_responseStatus'] == 'approved') {
 
-    $credit_amount = commerce_currency_decimal_to_amount($amount, $transaction->currency_code);
-    drupal_set_message(t('Credit for @amount issued successfully', array('@amount' => commerce_currency_format($credit_amount, $transaction->currency_code))));
+    drupal_set_message(t('Credit for @amount issued successfully', array('@amount' => commerce_currency_format($amount, $transaction->currency_code))));
 
     // Create a new transaction to record the credit.
     $credit_transaction = commerce_payment_transaction_new('hosted_pci', $order->order_id);
     $credit_transaction->instance_id = $payment_method['instance_id'];
     $credit_transaction->remote_id = $response['pxyResponse_processorRefId'];
-    $credit_transaction->amount = $credit_amount * -1;
+    $credit_transaction->amount = $amount * -1;
     $credit_transaction->currency_code = $transaction->currency_code;
-    $credit_transaction->payload[REQUEST_TIME] = commerce_hosted_pci_get_transaction_log($response);
+    $credit_transaction->payload[REQUEST_TIME . '-credit'] = $response;
     $credit_transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
     $credit_transaction->remote_status = COMMERCE_CREDIT_CREDIT;
     $credit_transaction->message = t('Credited to @remote_id.', array('@remote_id' => $transaction->remote_id));
@@ -293,7 +293,7 @@ function commerce_hosted_pci_credit_form_submit($form, &$form_state) {
   // The payment has been rejected.
   else {
     // Save the failure response message to the original transaction.
-    $transaction->payload[REQUEST_TIME] = commerce_hosted_pci_get_transaction_log($response);
+    $transaction->payload[REQUEST_TIME . '-credit'] = $response;
 
     // Display a failure message from Hosted Pci.
     drupal_set_message(t('Credit failed') . '<br />' . t('@reason', array('@reason' => $response['pxyResponse_fullNativeResp']['txnResponse_responseText'])), 'error');

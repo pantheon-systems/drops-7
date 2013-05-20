@@ -1,0 +1,30 @@
+@mixin clearfix {
+  display: inline-block;
+
+  &:after {
+    content: ".";
+    display: block;
+    clear: both;
+    visibility: hidden;
+    line-height: 0;
+    height: 0;
+  }
+}
+
+@mixin box-sizing {
+  -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */
+  -moz-box-sizing: border-box;    /* Firefox, other Gecko */
+  box-sizing: border-box;         /* Opera/IE 8+ */
+}
+
+@mixin box-shadow($horizontal,$vertical,$width,$color) {
+  -moz-box-shadow: $horizontal $vertical $width $color;
+  -webkit-box-shadow: $horizontal $vertical $width $color;
+  box-shadow: $horizontal $vertical $width $color;
+}
+
+@mixin round-corners($topleft,$topright,$bottomright,$bottomleft) {
+  -moz-border-radius: $topleft $topright $bottomright $bottomleft;
+  -webkit-border-radius: $topleft $topright $bottomright $bottomleft;
+  border-radius: $topleft $topright $bottomright $bottomleft;
+}

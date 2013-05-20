@@ -90,6 +90,9 @@ function commerce_discount_entity_info() {
     'entity class' => 'CommerceDiscount',
     'base table' => 'commerce_discount',
     'fieldable' => TRUE,
+    // For integration with Redirect module.
+    // @see http://drupal.org/node/1263884
+    'redirect' => FALSE,
     'exportable' => TRUE,
     'entity keys' => array(
       'id' => 'discount_id',

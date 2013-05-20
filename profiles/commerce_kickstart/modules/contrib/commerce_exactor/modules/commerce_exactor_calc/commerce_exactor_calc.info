@@ -1,0 +1,17 @@
+name = Exactor Calculation Services
+description = Enable commerce to calculate taxes accurately on orders using the Exactor sales tax engine.
+package = Commerce (Tax)
+
+dependencies[] = countries
+dependencies[] = commerce
+dependencies[] = commerce_order
+dependencies[] = commerce_exactor
+dependencies[] = rules
+core = 7.x
+
+; Information added by drupal.org packaging script on 2013-05-17
+version = "7.x-1.0-rc1"
+core = "7.x"
+project = "commerce_exactor"
+datestamp = "1368798840"
+

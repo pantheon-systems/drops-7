@@ -1,0 +1,120 @@
+<?php
+/**
+ * @file
+ *   commerce_exacteuc.module
+ */
+
+/**
+ * Impliments hook_views_api()
+ */
+function commerce_exactor_euc_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_exactor_euc') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_exactor_euc_menu() {
+  $items = array();
+
+  if (module_exists('commerce_shipping')) {
+    $items['admin/commerce/config/exactor/shipping'] = array(
+      'title' => 'Shipping EUC Codes',
+      'description' => '',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_exactor_euc_shipping_settings_form'),
+      'access arguments' => array('administer exactor'),
+      'type' => MENU_LOCAL_TASK,
+      'file' => 'includes/commerce_exactor_euc.forms.inc',
+    );
+  }
+
+  return $items;
+}
+
+function commerce_exactor_euc_commerce_shipping_service_info_alter(&$shipping_services) {
+  foreach ($shipping_services as $key => $shipping_service) {
+    $shipping_euc = variable_get('commerce_exactor_euc_shipping', array());
+    if (isset($shipping_euc[$shipping_service['name']])) {
+      $shipping_services[$key]['exactor_euc'] = $shipping_euc[$shipping_service['name']];
+    }
+    else {
+      $shipping_services[$key]['exactor_euc'] = $shipping_euc['default'];
+    }
+  }
+}
+
+function commerce_exactor_euc_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) {
+  if ($entity_form['#entity_type'] == 'commerce_product') {
+    $product = $entity_form['#entity'];
+    $entity_form['exactor_euc'] = _commerce_exactor_euc_field($product);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * The Product UI module instantiates the Product add/edit form at particular
+ * paths in the Commerce IA. It uses its own form ID to do so and alters the
+ * form here to add in appropriate redirection and an additional button.
+ *
+ * @see commerce_product_ui_product_form()
+ */
+function commerce_exactor_euc_form_commerce_product_product_form_alter(&$form, &$form_state) {
+  $product = $form_state['commerce_product'];
+  $form['exactor_euc'] = _commerce_exactor_euc_field($product);
+  array_unshift($form['actions']['submit']['#submit'], 'commerce_exactor_euc_product_form_submit');
+}
+
+function commerce_exactor_euc_product_form_submit($form, &$form_state) {
+  // Save default parameters back into the $product object.
+  $form_state['commerce_product']->exactor_euc = $form_state['values']['exactor_euc'];
+}
+
+function _commerce_exactor_euc_field($product) {
+
+  $return = array(
+    '#type' => 'select',
+
+    '#title' => t('Exactor EUC'),
+    '#description' => t('Select the EUC for this product'),
+
+    '#required' => TRUE,
+    '#options' => commerce_exactor_euc_options_list(),
+    '#default_value' => $product->exactor_euc,
+  );
+
+  return $return;
+}
+
+/**
+ * Provide the options list for product save validation
+ */
+function commerce_exactor_euc_options_list() {
+  $hierarchy = commerce_exactor_euc_hierarchy();
+
+  $options = array();
+
+  foreach ($hierarchy as $euc) {
+    if (!empty($euc['d4'])) {
+      $options[$euc['code']] = $euc['d1'] . ' > ' . $euc['d2'] . ' > ' . $euc['d3'] . ' > ' . $euc['d4'];
+    }
+  }
+
+  return $options;
+}
+
+/**
+ * Provide the EUCs in a structured array for heirarcical select.
+ */
+function commerce_exactor_euc_hierarchy() {
+  $euc_hierarchy = &drupal_static(__FUNCTION__);
+
+  $jsonurl = drupal_get_path('module', 'commerce_exactor_euc') . '/commerce_exactor_euc.json';
+  $json = file_get_contents($jsonurl);
+  return drupal_json_decode($json);
+}
+

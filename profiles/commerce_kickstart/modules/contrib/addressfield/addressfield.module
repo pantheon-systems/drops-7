@@ -97,20 +97,26 @@ function addressfield_format_plugins_options() {
  * @param $handlers
  *   The format handlers to use to generate the format.
  * @param $context
- *   An array of context arguments:
- *     - 'mode': can be either 'form' or 'render'
- *     - (optional) 'field': when generated for a field, the field
- *     - (optional) 'instance': when generated for a field, the field instance
- *     - (optional) 'langcode': when generated for a field, the langcode
- *       this field is being rendered in.
- *     - (optional) 'delta': when generated for a field, the delta of the
- *       currently handled address.
+ *   An associative array of context information pertaining to how the address
+ *   format should be generated. If no mode is given, it will initialize to the
+ *   default value. The remaining context keys should only be present when the
+ *   address format is being generated for a field:
+ *   - mode: either 'form' or 'render'; defaults to 'render'.
+ *   - field: the field info array.
+ *   - instance: the field instance array.
+ *   - langcode: the langcode of the language the field is being rendered in.
+ *   - delta: the delta value of the given address.
  *
  * @return
- *   A rendered array suitable for use as part of a form (if 'mode' is 'form'),
- *   or suitable to pass to drupal_render().
+ *   A renderable array suitable for use as part of a form (if 'mode' is 'form')
+ *   or for formatted address output when passed to drupal_render().
  */
 function addressfield_generate($address, array $handlers, array $context = array()) {
+  // If no mode is given in the context array, default it to 'render'.
+  if (empty($context['mode'])) {
+    $context['mode'] = 'render';
+  }
+
   ctools_include('plugins');
   $format = array();
   $format['#handlers'] = $handlers;
@@ -129,7 +135,7 @@ function addressfield_generate($address, array $handlers, array $context = array
     $format['#process'][] = 'addressfield_process_format_form';
     $format['#required'] = FALSE;
   }
-  else {
+  elseif ($context['mode'] == 'render') {
     $format['#pre_render'][] = 'addressfield_render_address';
   }
 
@@ -196,7 +202,7 @@ function _addressfield_render_address(&$format, $address) {
 
     // Automatically expand elements that matches one of the field of the
     // address structure.
-    if (in_array($key, array('name_line', 'first_name', 'last_name', 'organisation_name', 'country', 'administrative_area', 'sub_administrative_area', 'locality', 'dependent_locality', 'postal_code', 'thoroughfare', 'premise', 'sub_premise'))) {
+    if (in_array($key, array('name_line', 'first_name', 'last_name', 'organisation_name', 'country', 'administrative_area', 'sub_administrative_area', 'locality', 'dependent_locality', 'postal_code', 'thoroughfare', 'premise', 'sub_premise'), TRUE)) {
       if (isset($child['#render_type'])) {
         $child['#type'] = $child['#render_type'];
       }
@@ -207,9 +213,11 @@ function _addressfield_render_address(&$format, $address) {
         }
       }
 
-      if (isset($child['#options'])) {
-        // Expand options if necessary.
-        $child['#children'] = isset($child['#options'][$address[$key]]) ? check_plain($child['#options'][$address[$key]]) : '';
+      // If the element instructs us to render the option value instead of the
+      // raw address element value and its #options array has a matching key,
+      // swap it out for the option value now.
+      if (!empty($child['#render_option_value']) && isset($child['#options'][$address[$key]])) {
+        $child['#children'] = check_plain($child['#options'][$address[$key]]);
       }
       else {
         $child['#children'] = check_plain($address[$key]);
@@ -220,9 +228,9 @@ function _addressfield_render_address(&$format, $address) {
         $child['#access'] = FALSE;
       }
 
-      // Add #prefix and #field_suffix to the prefixes and suffixes.
-      if (isset($child['#prefix'])) {
-        $child['#prefix'] = (isset($child['#prefix']) ? $child['#prefix'] : '') . $child['#prefix'];
+      // Add #field_prefix and #field_suffix to the prefixes and suffixes.
+      if (isset($child['#field_prefix'])) {
+        $child['#prefix'] = (isset($child['#prefix']) ? $child['#prefix'] : '') . $child['#field_prefix'];
       }
       if (isset($child['#field_suffix'])) {
         $child['#suffix'] = (isset($child['#suffix']) ? $child['#suffix'] : '') . $child['#field_suffix'];
@@ -318,8 +326,10 @@ function addressfield_default_values($available_countries = NULL) {
   if (!isset($available_countries)) {
     $available_countries = _addressfield_country_options_list();
   }
+
   // Use the default country of the site if possible.
   $default_country = variable_get('site_default_country', NULL);
+
   // If the default country is undefined or not in the list of available countries,
   // just fallback to the first country in the list.
   if (!$default_country || !isset($available_countries[$default_country])) {
@@ -378,6 +388,7 @@ function addressfield_field_widget_settings_form($field, $instance) {
   $widget = $instance['widget'];
   $defaults = field_info_widget_settings($widget['type']);
   $settings = array_merge($defaults, $widget['settings']);
+  $form = array();
 
   if ($widget['type'] == 'addressfield_standard') {
     $form['available_countries'] = array(
@@ -436,8 +447,14 @@ function addressfield_field_widget_form(&$form, &$form_state, $field, $instance,
     $address = (array) $instance['default_value'][0];
   }
 
-  // Merge in default values to provide a value for every expected array key.
+  // Determine the list of available countries, and if the currently selected
+  // country is not in it, unset it so it can be reset to the default country.
   $countries = _addressfield_country_options_list($field, $instance);
+  if (!empty($address['country']) && !isset($countries[$address['country']])) {
+    unset($address['country']);
+  }
+
+  // Merge in default values to provide a value for every expected array key.
   $address += addressfield_default_values($countries);
 
   // Add the form elements for the standard widget, which includes a country
@@ -467,7 +484,8 @@ function addressfield_field_widget_form(&$form, &$form_state, $field, $instance,
 }
 
 /**
- * Element validate callback: rebuilds the form on country change and stores the current address value in the $form_state for retrieval on rebuild.
+ * Element validate callback: rebuilds the form on country change and stores the
+ * current address value in the $form_state for retrieval on rebuild.
  */
 function addressfield_standard_country_validate($element, &$form_state) {
   // If the country was changed, rebuild the form.
@@ -508,7 +526,16 @@ function addressfield_standard_widget_refresh($form, $form_state) {
   // Return the address block, but remove the '_weight' element inserted
   // by the field API.
   unset($element['_weight']);
-  return $element;
+
+  // Replace the address field widget with the updated widget and focus on the
+  // new country select list.
+  $commands[] = ajax_command_replace(NULL, render($element));
+  $commands[] = ajax_command_invoke('#' . $element['country']['#id'], 'focus');
+
+  // Allow other modules to add arbitrary AJAX commands on the refresh.
+  drupal_alter('addressfield_standard_widget_refresh', $commands, $form, $form_state);
+
+  return array('#type' => 'ajax', '#commands' => $commands);
 }
 
 /**
@@ -536,7 +563,7 @@ function addressfield_field_formatter_settings_form($field, $instance, $view_mod
 
   $element['use_widget_handlers'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Use the same configuration as the widget'),
+    '#title' => t('Use the same configuration as the widget.'),
     '#default_value' => !empty($settings['use_widget_handlers']),
   );
 
@@ -641,10 +668,23 @@ function addressfield_property_info_callback(&$info, $entity_type, $field, $inst
   $property['type'] = ($field['cardinality'] != 1) ? 'list<addressfield>' : 'addressfield';
   $property['getter callback'] = 'entity_metadata_field_verbatim_get';
   $property['setter callback'] = 'entity_metadata_field_verbatim_set';
-  $property['auto creation'] = 'addressfield_default_values';
+  $property['auto creation'] = 'addressfield_auto_creation';
   $property['property info'] = addressfield_data_property_info();
 
   unset($property['query callback']);
+}
+
+/**
+ * Auto creation callback for an addressfield value array.
+ *
+ * @see addressfield_property_info_callback()
+ */
+function addressfield_auto_creation() {
+  // We can't call addressfield_default_values() directly, because it has an
+  // optional array argument that will receive an invalid value when Entity API
+  // tries to call it directly with its usual $property_name and $context
+  // arguments.
+  return addressfield_default_values();
 }
 
 /**
@@ -689,9 +729,6 @@ function addressfield_data_property_info($name = NULL) {
     ),
     'premise' => array(
       'label' => t('Premise (i.e. Apartment / Suite number)'),
-    ),
-    'name_line' => array(
-      'label' => t('Sub premise'),
     ),
   );
 

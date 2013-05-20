@@ -1295,3 +1295,10 @@ html.js #features-export-form fieldset.collapsed {
 html.js #features-export-form fieldset.collapsible .fieldset-wrapper {
   padding: 0 13px 13px 15px;
 }
+
+/* Menu Block Radio Fix */
+#menu-block-settings #foo:checked,
+#menu-block-settings input.form-checkbox + label.ui-button::before,
+#menu-block-settings input.form-radio + label.ui-button::before {
+  background: transparent;
+}

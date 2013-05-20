@@ -16,11 +16,11 @@ $GLOBALS['_lingotek_client'] = new LingotekSession();
  * @param $lingotek_locale
  *  Target language to be updated/synchronized
  */
-function lingotek_download_document(&$node, $lingotek_locale) {
+function lingotek_download_document(&$node, $lingotek_locale, $sync_success_status = LingotekSync::STATUS_CURRENT) {
   global $_lingotek_client, $_lingotek_locale;
 
   $document_id = lingotek_lingonode($node->nid, 'document_id');
-  lingotek_trace('lingotek_download_document', array('document_id' => $document_id, "language" => $lingotek_locale));
+  LingotekLog::trace('lingotek_download_document @doc_id (@target)', array('@doc_id' => $document_id, '@target' => $lingotek_locale));
 
   //CAREFUL of alternate values for $use_source, must be string 'TRUE' for api, not boolean
   $use_source = lingotek_lingonode($node->nid, 'use_source');
@@ -31,7 +31,7 @@ function lingotek_download_document(&$node, $lingotek_locale) {
     $use_source = 'TRUE';
   }
 
-  $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale);
+  $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale);//lingotek_lookup_language_by_locale($lingotek_locale)->language
   $params = array
   (
     'documentId' => $document_id,
@@ -45,7 +45,7 @@ function lingotek_download_document(&$node, $lingotek_locale) {
     $xml = new SimpleXMLElement($text);
   }
   catch (Exception $e) {
-    lingotek_error("downloadDocument FAILED", array('xml' => $text, 'error' => $e->getMessage()));
+    LingotekLog::error("downloadDocument FAILED. Error: @error. Text: !xml.", array('!xml' => $text, '@error' => $e->getMessage()));
     return;
   }
 
@@ -117,7 +117,7 @@ function lingotek_download_document(&$node, $lingotek_locale) {
   $node->path['alias'] = isset($node->path['alias']) ? $node->path['alias'] : '';
   $node->path['pathauto'] = 0;
   
-  lingotek_set_target_sync_status($node->nid, $lingotek_locale, LINGOTEK_TARGET_SYNC_STATUS_CURRENT);//slightly pre-emptive, but certainly more cohesive
+  LingotekSync::setTargetStatus($node->nid, $lingotek_locale, $sync_success_status);//slightly pre-emptive, but certainly more cohesive
   $node->lingotek_upload_override = 0;// ensure that no upload to lingotek is triggered on node update (in lingotek_node_update)
   $node->skip_status_updates = 1;// ensure that the statuses are not set on node update (in lingotek_node_update)
   node_save($node);
@@ -292,7 +292,7 @@ function lingotek_get_document_targets($document_id, $flush_cache = FALSE) {
   $cache_id = 'lingotek_targets_' . $document_id;
   $cache = cache_get($cache_id);
   if (lingotek_do_cache() && !$flush_cache && !empty($cache->data)) {
-    lingotek_trace("lingotek_get_document_targets USING CACHE", array('document_id' => $document_id, 'flushCache' => $flush_cache));
+    LingotekLog::trace("lingotek_get_document_targets USING CACHE", array('document_id' => $document_id, 'flushCache' => $flush_cache));
     $results = $cache->data;
   }
   else {
@@ -302,7 +302,7 @@ function lingotek_get_document_targets($document_id, $flush_cache = FALSE) {
         $results[$target->language] = $target;
       }
     }
-    lingotek_trace("lingotek_get_document_targets GENERATING NEW CACHE DATA getDocument", array('document_id' => $document_id, 'flushCache' => $flush_cache));
+    LingotekLog::trace("lingotek_get_document_targets GENERATING NEW CACHE DATA getDocument", array('document_id' => $document_id, 'flushCache' => $flush_cache));
     $targets[$document_id] = $results;
     if (!empty($results)) {
       cache_set($cache_id, $results, 'cache', time() + 900);
@@ -415,7 +415,6 @@ function lingotek_get_workbench_url($node, $lingotek_locale, $label = FALSE, $fo
       continue;
     }
 
-    lingotek_trace('lingotek_get_workbench_url TARGETS', array('lang' => $lang, 'translation_target' => $translation_target));
     $target = $api->getTranslationTarget($translation_target->id);
     $phases = ($target) ? $target->phases : array();
 

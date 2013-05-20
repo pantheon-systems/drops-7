@@ -10,10 +10,11 @@ files[] = includes/facetapi/filter_same_search.inc
 files[] = includes/facetapi/filter_search_start.inc
 files[] = includes/facetapi/widget_fancy_attributes.inc
 files[] = includes/commerce_search_api_product_display_filter.inc
+files[] = includes/callback_product_status.inc
 
-; Information added by drupal.org packaging script on 2013-03-18
-version = "7.x-1.1"
+; Information added by drupal.org packaging script on 2013-05-17
+version = "7.x-1.2"
 core = "7.x"
 project = "commerce_search_api"
-datestamp = "1363627216"
+datestamp = "1368798845"
 

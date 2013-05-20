@@ -15,3 +15,10 @@ regions[sidebar_first] = First sidebar
 regions[footer] = Footer
 regions_hidden[] = sidebar_first
 
+
+; Information added by drupal.org packaging script on 2013-05-17
+version = "7.x-2.7"
+core = "7.x"
+project = "commerce_kickstart"
+datestamp = "1368823821"
+

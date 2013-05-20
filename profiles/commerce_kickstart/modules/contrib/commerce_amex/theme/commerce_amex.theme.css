@@ -1,0 +1,16 @@
+
+/**
+ * @file
+ * Basic styling for the Commerce Amex module.
+ */
+
+/**
+ * Add styles to 3d secure form elements.
+ */
+
+.commerce-amex-35  {
+  float: right;
+  margin-right: .25em; /* LTR */
+  margin-bottom: 1em;
+}
+

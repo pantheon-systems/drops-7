@@ -1,15 +1,15 @@
 <?php
+
 /**
  * @file
  * Handles api calls, logging in and logging out of LingoTek
  */
-
 /*
  * Session handler for api calls and logging in to the Lingotek platform
  *
  * Note:
  *  This was origionally designed to do API Version 3 calls.  And it should proably merge with the V4 API object at some point.
-`*  With the addition of Basic Auth to the Version 4 API, it can now also be used to make API V4 calls.
+  `*  With the addition of Basic Auth to the Version 4 API, it can now also be used to make API V4 calls.
  *  This is done by creating a new LingotekSession object and manually setting the URL property to a V4 address.
  */
 class LingotekSession {
@@ -21,16 +21,15 @@ class LingotekSession {
   public $login_id;
   public $key;
   public $password;
-
   private $logged_in = FALSE;
   private $headers = array();
-
   //API calls that don't need to log in.
   private $sessionless = array('login', 'keyLogin');
 
   /*
    * Constructor
    */
+
   function __construct() {
     $this->url = LINGOTEK_API_SERVER . "/lingopoint/api";
     $this->community = variable_get('lingotek_community', '');
@@ -42,6 +41,7 @@ class LingotekSession {
   /*
    * Destructor which logs out of the lingotek platform
    */
+
   function __destruct() {
     if ($this->isLoggedIn()) {
       $this->logout();
@@ -58,17 +58,16 @@ class LingotekSession {
     return $this->logged_in;
   }
 
-
   /*
    * Determines if the user can log in and if so, logs in
    */
+
   public function canLogIn() {
     if (!$this->isLoggedIn()) {
       $this->login();
     }
     return $this->isLoggedIn();
   }
-
 
   /*
    * Makes a request to a Lingotek API
@@ -85,6 +84,7 @@ class LingotekSession {
    * @return
    *  object representing the json returned by the api
    */
+
   public function request($api, $params = NULL, $data = NULL, $returnJson = TRUE) {
     if (!$this->isLoggedIn() && !in_array($api, $this->sessionless)) {
       $this->login();
@@ -96,24 +96,22 @@ class LingotekSession {
     }
 
     $this->headers["Content-Type"] = "application/x-www-form-urlencoded;";
-    
-    
+
+
     $timeout = variable_get('lingotek_api_timeout', self::DEFAULT_API_TIMEOUT);
     if (!is_numeric($timeout)) {
       // The site is configured with some non-numeric timeout value, go back to the default.
-      watchdog('lingotek', "The current value for the 'lingotek_api_timeout' system variable ('@value') should be a number. Defaulting to @timeout seconds",
-        array('@value' => $timeout, '@timeout' => self::DEFAULT_API_TIMEOUT), WATCHDOG_ERROR);
-      $timeout = self::DEFAULT_API_TIMEOUT;        
+      LingotekLog::error("The current value for the 'lingotek_api_timeout' system variable ('@value') should be a number. Defaulting to @timeout seconds", array('@value' => $timeout, '@timeout' => self::DEFAULT_API_TIMEOUT));
+      $timeout = self::DEFAULT_API_TIMEOUT;
     }
 
     $response = drupal_http_request(
-      $this->url . "/" . $api,
-      array(
-        'headers' => $this->headers,
-        'method' => 'POST',
-        'data' => $query,
-        'timeout' => $timeout,
-      )
+        $this->url . "/" . $api, array(
+      'headers' => $this->headers,
+      'method' => 'POST',
+      'data' => $query,
+      'timeout' => $timeout,
+        )
     );
 
     if ($returnJson) {
@@ -121,16 +119,14 @@ class LingotekSession {
         return $json;
       }
       else {
-        lingotek_error(
-          'API ' . $api . ' FAILED',
-          array(
-            'params' => $params,
-            'error' => isset($response->error) ? $response->error : "",
-            'response' => isset($json) ? $json : "",
-            'logged_in' => $this->logged_in,
-          ),
-          1
-        );
+        LingotekLog::error(
+            'API @api FAILED', array(
+          '@api' => $api,
+          'params' => $params,
+          'error' => isset($response->error) ? $response->error : "",
+          'response' => isset($json) ? $json : "",
+          'logged_in' => $this->logged_in,
+            ), 'api');
         $json = new stdClass();
         $json->results = 'fail';
         return $json;
@@ -156,7 +152,7 @@ class LingotekSession {
     $result = LingotekApi::instance()->request($api, $params);
 
     if (!$result) {
-      watchdog('lingotek', 'Unable to download Lingotek Document.', array(), WATCHDOG_ERROR);
+      LingotekLog::error('Unable to download Lingotek Document.');
       return FALSE;
     }
 
@@ -239,27 +235,35 @@ class LingotekSession {
     $data = $this->request($login, $params, NULL, FALSE);
 
     if (!isset($data->error) && ($response = json_decode($data->data)) && $response->results == "success") {
-      $this->headers = array("Cookie" =>  $data->headers['set-cookie']);
+      $this->headers = array("Cookie" => $data->headers['set-cookie']);
       $this->logged_in = TRUE;
     }
     else {
       $this->logged_in = FALSE;
-      lingotek_error(
-        "Unable to log in",
-        array(
+      if (isset($data->error) && $data->error) {
+        LingotekLog::error(
+            "Unable to log in", array(
           'params' => $params,
-          'error' => isset($data->error) ? $data->error : "",
+          'error' => $data->error,
           'response' => isset($response) ? $response : "",
-        ),
-        2,
-        isset($data->error) ? WATCHDOG_ERROR : WATCHDOG_WARNING
-      );
+            ), 'session'
+        );
+      }
+      else {
+        LingotekLog::warning(
+            "Unable to log in", array(
+          'params' => $params,
+          'response' => isset($response) ? $response : "",
+            ), 'session'
+        );
+      }
     }
   }
 
   /*
    * logout from the lingotek platform
    */
+
   public function logout() {
     $json = $this->request('logout');
     if ($json->results == "success") {
@@ -267,7 +271,8 @@ class LingotekSession {
     }
     else {
       $this->logged_in = TRUE;
-      lingotek_error('Unable to log out.');
+      LingotekLog::error('Unable to log out.');
     }
   }
+
 }

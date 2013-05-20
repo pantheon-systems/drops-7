@@ -48,14 +48,6 @@ function commerce_kickstart_help_menu_alter(&$items) {
   $items['admin/index']['type'] = MENU_CALLBACK;
 }
 
-/**
- * Implements hook_advanced_help_topic_alter().
- */
-function commerce_kickstart_help_advanced_help_topic_alter(&$output, $popup) {
-  $output = str_replace('[%services-teaser%]', commerce_kickstart_service_provider_get_teaser(), $output);
-  $output = str_replace('[%services-link%]', url('admin/modules/service-providers'), $output);
-}
-
 function _commerce_kickstart_help_store() {
   drupal_set_breadcrumb(array(l(t('Home'), '<front>'), l(t('Help'), 'admin/advanced_help')));
 
@@ -220,7 +212,6 @@ function _commerce_kickstart_help_store() {
   $form['prices_payments_taxes']['payment_ethods']['content'] = array(
     '#type' => 'item',
     '#markup' => '<p>There are payment gateways and there are service providers that have partnered with Commerce Guys. There are 50+ payment providers that have been integrated with Drupal Commerce in the last year. Out of the box we have provided an example payment method to show what is possible.</p>
-    <a href="/admin/modules/service-providers">Go to the Service Providers</a>
     <a href="/admin/commerce/config/payment-methods">Go to the Payment Methods</a>
     <a href="http://www.drupalcommerce.org/commerce-kickstart-2/how-download-and-setup-payment-method">Learn more about Payment Methods</a>',
   );

@@ -3,7 +3,7 @@
 /**
  * Views argument handler class for handling fulltext fields.
  */
-class SearchApiViewsHandlerArgumentFulltext extends SearchApiViewsHandlerArgumentText {
+class SearchApiViewsHandlerArgumentFulltext extends SearchApiViewsHandlerArgument {
 
   /**
    * Specify the options this filter uses.

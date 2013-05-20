@@ -339,22 +339,46 @@ class Lingotek {
     return $result;
   }
   
+  /**
+   * Returns whether the given language is supported.
+   *
+   * @return
+   *   Boolean value.
+   */
+  public static function isSupportedLanguage($drupal_language_code, $enabled = TRUE) {
+    //($drupal_language_code != LANGUAGE_NONE)
+    $supported = (self::convertDrupal2Lingotek($drupal_language_code, $enabled) !== FALSE);
+    if (!$supported) {
+      LingotekLog::warning("Unsupported language detected: [@language]", array('@language' => $drupal_language_code));
+    }
+    return $supported;
+  }
+  
   
   /**
    * Gets the site's available target languages for Lingotek translation.
    *
+   * @param $pluck_field - mixed
+   *   NULL - return the entire object
+   *   string - return an array of just the pluck_field specified (if it exists)
+   *   array - return an array of the selected fields   
+   * 
    * @return array
    *   An array of Lingotek language codes.
    */
-  public static function availableLanguageTargets() {
+  public static function availableLanguageTargets($pluck_field = NULL, $include_all = FALSE) {
     $languages = array();
-    
+
     foreach (language_list() as $target_language) {
-      if ($target_language->enabled && lingotek_supported_language($target_language->language)) {
-        $languages[] = self::getLingotekLanguage($target_language->language);
+      $language = (is_string($pluck_field) && isset($target_language->$pluck_field)) ? $target_language->$pluck_field : $target_language;
+      if ($include_all && $target_language->enabled) { // include all languages enabled (not necessarily lingotek_enabled)
+        $languages[] = $language;
+      }
+      else if ($target_language->lingotek_enabled) {
+        $languages[] = $language;
       }
     }
-    
     return $languages;
   }
+
 }

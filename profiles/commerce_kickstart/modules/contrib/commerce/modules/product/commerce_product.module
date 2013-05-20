@@ -111,6 +111,9 @@ function commerce_product_entity_info() {
         'plural' => t('products'),
       ),
 
+      // Prevent Redirect alteration of the product form.
+      'redirect' => FALSE,
+
       // Add translation support.
       'translation' => array(
         'locale' => TRUE,
@@ -597,7 +600,7 @@ function commerce_product_access($op, $product = NULL, $account = NULL) {
 }
 
 /**
- * Implementation of hook_query_commerce_product_access_alter().
+ * Implements hook_query_TAG_alter().
  */
 function commerce_product_query_commerce_product_access_alter(QueryAlterableInterface $query) {
   return commerce_entity_access_query_alter($query, 'commerce_product');
@@ -725,6 +728,19 @@ function commerce_product_autocomplete($entity_type, $field_name, $bundle, $stri
 
   $matches = array();
 
+  // Extract the SKU string from the URL while preserving support for SKUs that
+  // contain slashes. Whereas we previously relied on the $string parameter, its
+  // value was being truncated when any SKUs in the autocomplete widget had a /.
+  // @see http://drupal.org/node/1962144
+  $args = explode('/', request_path());
+
+  if (count($args) <= 5) {
+    drupal_json_output($matches);
+  }
+
+  array_splice($args, 0, 5);
+  $string = implode('/', $args);
+
   // The user enters a comma-separated list of tags. We only autocomplete the last tag.
   $tags_typed = drupal_explode_tags($string);
   $tag_last = drupal_strtolower(array_pop($tags_typed));
@@ -740,8 +756,7 @@ function commerce_product_autocomplete($entity_type, $field_name, $bundle, $stri
 
     // Loop through the products and convert them into autocomplete output.
     foreach ($products as $product_id => $data) {
-      // Add a class wrapper for a few required CSS overrides.
-      $matches[$prefix . $data['sku']] = '<div class="reference-autocomplete">' . $data['rendered'] . '</div>';
+      $matches[$prefix . $data['sku']] = $data['rendered'];
     }
   }
 
@@ -786,7 +801,7 @@ function commerce_product_autocomplete($entity_type, $field_name, $bundle, $stri
  *     ...
  *   )
  */
-function commerce_product_match_products($field, $instance = NULL, $string = '', $match = 'contains', $ids = array(), $limit = 50, $access_tag = FALSE) {
+function commerce_product_match_products($field, $instance = NULL, $string = '', $match = 'contains', $ids = array(), $limit = NULL, $access_tag = FALSE) {
   $results = &drupal_static(__FUNCTION__, array());
 
   // Create unique id for static cache.
@@ -812,7 +827,7 @@ function commerce_product_match_products($field, $instance = NULL, $string = '',
  *
  * Returns an array of products matching the specific parameters.
  */
-function _commerce_product_match_products_standard($instance, $string = '', $match = 'contains', $ids = array(), $limit = 50, $access_tag = FALSE) {
+function _commerce_product_match_products_standard($instance, $string = '', $match = 'contains', $ids = array(), $limit = NULL, $access_tag = FALSE) {
   // Build the query object with the necessary fields.
   $query = db_select('commerce_product', 'cp');
 

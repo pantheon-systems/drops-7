@@ -13,16 +13,10 @@ include_once('message_example.features.inc');
 function message_example_node_insert($node) {
   // Save the message and assign it to the user realm. Since another user,
   // usually an admin might create the node, but populate the author field
-  // with another user, we make sure the user realm is populated with the
+  // with another user, we make sure the user is populated with the
   // node's author, instead of the acting user (although in most cases it
   // would be the same user).
-  // The following example demonstrates that we don't need to explicitly set
-  // the realm to the user, since if no realms are provided then the message
-  // is automatically assigned to the user passed in the function, or if no
-  // user object is provided, then to the acting user.
-  $account = user_load($node->uid);
-
-  $message = message_create('example_create_node', array('uid' => $account->uid));
+  $message = message_create('example_create_node', array('uid' => $node->uid));
   // Save reference to the node in the node reference field, and the
   // "publish" state (i.e. if the node is published or unpublished).
   $wrapper = entity_metadata_wrapper('message', $message);

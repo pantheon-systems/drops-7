@@ -1,0 +1,1502 @@
+<?php
+
+/**
+ * @file
+ * Implements Authorize.Net payment services for use in Drupal Commerce.
+ */
+
+// Authorize.Net transaction mode definitions:
+define('AUTHNET_TXN_MODE_LIVE', 'live');
+define('AUTHNET_TXN_MODE_LIVE_TEST', 'live_test');
+define('AUTHNET_TXN_MODE_DEVELOPER', 'developer');
+
+
+/**
+ * Implements hook_menu().
+*/
+function commerce_authnet_menu() {
+  $items = array();
+
+  // Add a menu item for capturing authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/authnet-aim-capture'] = array(
+    'title' => 'Capture',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_authnet_aim_capture_form', 3, 5),
+    'access callback' => 'commerce_authnet_aim_capture_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_authnet.admin.inc',
+  );
+
+  // Add a menu item for voiding transactions.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/authnet-aim-void'] = array(
+    'title' => 'Void',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_authnet_aim_void_form', 3, 5),
+    'access callback' => 'commerce_authnet_aim_void_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_authnet.admin.inc',
+  );
+
+  // Add a menu item for issuing credits.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/authnet-aim-credit'] = array(
+    'title' => 'Credit',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_authnet_aim_credit_form', 3, 5),
+    'access callback' => 'commerce_authnet_aim_credit_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_authnet.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Determines access to the prior authorization capture form for Authorize.Net
+ *   AIM credit card transactions.
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return
+ *   TRUE or FALSE indicating capture access.
+ */
+function commerce_authnet_aim_capture_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Authorize.Net AIM or isn't
+  // awaiting capture.
+  if ($transaction->payment_method != 'authnet_aim' || empty($transaction->remote_id) ||
+    strtoupper($transaction->remote_status) != 'AUTH_ONLY') {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 30 days past the original authorization.
+  if (time() - $transaction->created > 86400 * 30) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determines access to the void form for Authorize.Net AIM credit card
+ * transactions
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be voided.
+ *
+ * @return
+ *   TRUE or FALSE indicating void access.
+ */
+function commerce_authnet_aim_void_access($order, $transaction) {
+  if ($transaction->payment_method != 'authnet_aim' || empty($transaction->remote_id) ||
+    !in_array(strtoupper($transaction->remote_status), array('AUTH_ONLY', 'PRIOR_AUTH_CAPTURE', 'AUTH_CAPTURE'))) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 24 hours since the last update to the
+  // transaction, as it will already have been settled.
+  if (time() - $transaction->changed > 2600 * 24) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determines access to the credit form for successful Authorize.Net AIM credit
+ * card transactions.
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be credited.
+ *
+ * @return
+ *   TRUE or FALSE indicating credit access.
+ */
+function commerce_authnet_aim_credit_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Authorize.Net AIM, doesn't have a
+  // success status or has an amount of 0 or less.
+  if ($transaction->payment_method != 'authnet_aim' || $transaction->status != 'success' || $transaction->amount <= 0) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 120 days past the original capture.
+  if (time() - $transaction->created > 86400 * 120) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_authnet_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['authnet_aim'] = array(
+    'base' => 'commerce_authnet_aim',
+    'title' => t('Authorize.Net AIM - Credit Card'),
+    'short_title' => t('Authorize.Net CC'),
+    'display_title' => t('Credit card'),
+    'description' => t('Integrates Authorize.Net Advanced Integration Method for card not present CC transactions.'),
+    'cardonfile' => array(
+      'charge callback' => 'commerce_authnet_cim_cardonfile_charge',
+      'update callback' => 'commerce_authnet_cim_cardonfile_update',
+      'delete callback' => 'commerce_authnet_cim_cardonfile_delete',
+    ),
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Returns the default settings for the Authorize.Net AIM payment method.
+ */
+function commerce_authnet_aim_default_settings() {
+  return array(
+    'login' => '',
+    'tran_key' => '',
+    'txn_mode' => AUTHNET_TXN_MODE_LIVE_TEST,
+    'txn_type' => COMMERCE_CREDIT_AUTH_CAPTURE,
+    'cardonfile' => FALSE,
+    'continuous' => FALSE,
+    'email_customer' => FALSE,
+    'log' => array('request' => '0', 'response' => '0'),
+    'card_types' => array(),
+  );
+}
+
+/**
+ * Payment method callback: settings form.
+ */
+function commerce_authnet_aim_settings_form($settings = NULL) {
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+  // Merge default settings into the stored settings array.
+  $settings = (array) $settings + commerce_authnet_aim_default_settings();
+
+  $form = array();
+
+  $form['login'] = array(
+    '#type' => 'textfield',
+    '#title' => t('API Login ID'),
+    '#description' => t('Your API Login ID is different from the username you use to login to your Authorize.Net account. Once you login, browse to your Account tab and click the <em>API Login ID and Transaction Key</em> link to find your API Login ID. If you are using a new Authorize.Net account, you may still need to generate an ID.'),
+    '#default_value' => $settings['login'],
+    '#required' => TRUE,
+  );
+  $form['tran_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Transaction Key'),
+    '#description' => t('Your Transaction Key can be found on the same screen as your API Login ID. However, it will not be readily displayed. You must answer your security question and submit a form to see your Transaction Key.'),
+    '#default_value' => $settings['tran_key'],
+    '#required' => TRUE,
+  );
+  $form['txn_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Transaction mode'),
+    '#description' => t('Adjust to live transactions when you are ready to start processing real payments.') . '<br />' . t('Only specify a developer test account if you login to your account through https://test.authorize.net.'),
+    '#options' => array(
+      AUTHNET_TXN_MODE_LIVE => t('Live transactions in a live account'),
+      AUTHNET_TXN_MODE_LIVE_TEST => t('Test transactions in a live account'),
+      AUTHNET_TXN_MODE_DEVELOPER => t('Developer test account transactions'),
+    ),
+    '#default_value' => $settings['txn_mode'],
+  );
+  $form['txn_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Default credit card transaction type'),
+    '#description' => t('The default will be used to process transactions during checkout.'),
+    '#options' => array(
+      COMMERCE_CREDIT_AUTH_CAPTURE => t('Authorization and capture'),
+      COMMERCE_CREDIT_AUTH_ONLY => t('Authorization only (requires manual or automated capture after checkout)'),
+    ),
+    '#default_value' => $settings['txn_type'],
+  );
+
+  $form['card_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Limit accepted credit cards to the following types'),
+    '#description' => t('If you want to limit acceptable card types, you should only select those supported by your merchant account.') . '<br />' . t('If none are checked, any credit card type will be accepted.'),
+    '#options' => commerce_payment_credit_card_types(),
+    '#default_value' => $settings['card_types'],
+  );
+
+  // CIM support in conjunction with AIM requires the Card on File module.
+  if (module_exists('commerce_cardonfile')) {
+    $form['cardonfile'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable Card on File functionality with this payment method using Authorize.Net CIM.'),
+      '#description' => t('This requires an Authorize.Net account upgraded to include support for CIM (Customer Information Manager).'),
+      '#default_value' => $settings['cardonfile'],
+    );
+
+    $form['continuous'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use continuous authority transactions.'),
+      '#description' => t('A continuous authority merchant account will be required.'),
+      '#default_value' => $settings['continuous'],
+    );
+  }
+
+  else {
+    $form['cardonfile'] = array(
+      '#type' => 'markup',
+      '#markup' => t('To enable Card on File funcitionality download and install the Card on File module.'),
+    );
+  }
+
+  $form['email_customer'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Tell Authorize.net to e-mail the customer a receipt based on your account settings.'),
+    '#default_value' => $settings['email_customer'],
+  );
+  $form['log'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Log the following messages for debugging'),
+    '#options' => array(
+      'request' => t('API request messages'),
+      'response' => t('API response messages'),
+    ),
+    '#default_value' => $settings['log'],
+  );
+
+  return $form;
+}
+
+/**
+ * Payment method callback: checkout form.
+ */
+function commerce_authnet_aim_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+  // Prepare the fields to include on the credit card form.
+  $fields = array(
+    'code' => '',
+  );
+
+  // Add the credit card types array if necessary.
+  if (isset($payment_method['settings']['card_types'])) {
+    $card_types = array_diff(array_values($payment_method['settings']['card_types']), array(0));
+
+    if (!empty($card_types)) {
+      $fields['type'] = $card_types;
+    }
+  }
+
+  return commerce_payment_credit_card_form($fields);
+}
+
+/**
+ * Payment method callback: checkout form validation.
+ */
+function commerce_authnet_aim_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  // If the customer specified a card on file, skip the normal validation.
+  if (module_exists('commerce_cardonfile') && !empty($payment_method['settings']['cardonfile']) &&
+    !empty($pane_values['cardonfile']) && $pane_values['cardonfile'] !== 'new') {
+    return;
+  }
+
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+  // Validate the credit card fields.
+  $settings = array(
+    'form_parents' => array_merge($form_parents, array('credit_card')),
+  );
+
+  if (!commerce_payment_credit_card_validate($pane_values['credit_card'], $settings)) {
+    return FALSE;
+  }
+}
+
+/**
+ * Payment method callback: checkout form submission.
+ */
+function commerce_authnet_aim_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  // If the customer specified payment using a card on file, attempt that now
+  // and simply return the result.
+  if (module_exists('commerce_cardonfile') && $payment_method['settings']['cardonfile'] &&
+    !empty($pane_values['cardonfile']) && $pane_values['cardonfile'] !== 'new') {
+    return commerce_authnet_cim_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge);
+  }
+
+  // Determine the credit card type if possible for use in later code.
+  if (!empty($pane_values['credit_card']['number'])) {
+    module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+    $card_type = commerce_payment_validate_credit_card_type($pane_values['credit_card']['number'], array_keys(commerce_payment_credit_card_types()));
+  }
+
+  // If the charge amount is 0...
+  if ($charge['amount'] == 0) {
+    // Prevent the transaction except under limited circumstances.
+    $prevent_transaction = TRUE;
+
+    // Allow 0 amount authorizations on Visa cards.
+    if ($payment_method['settings']['txn_type'] == COMMERCE_CREDIT_AUTH_ONLY && $card_type == 'visa') {
+      $prevent_transaction = FALSE;
+    }
+
+    // If the transaction should still be prevented...
+    if ($prevent_transaction) {
+      // Create a transaction to log the skipped transaction and display a
+      // helpful message to the customer.
+      $transaction = commerce_payment_transaction_new('authnet_aim', $order->order_id);
+      $transaction->amount = $charge['amount'];
+      $transaction->currency_code = $charge['currency_code'];
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->message = t('Invalid @amount transaction not attempted.', array('@amount' => commerce_currency_format($charge['amount'], $charge['currency_code'])));
+      commerce_payment_transaction_save($transaction);
+
+      drupal_set_message('We encountered an error processing your transaction. Please contact us to resolve the issue.', 'error');
+      return FALSE;
+    }
+  }
+
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  // Get the default transaction type from the payment method settings.
+  $txn_type = $payment_method['settings']['txn_type'];
+
+  // If txn_type has been specified in the pane values array, such as through
+  // the special select element we alter onto the payment terminal form, use
+  // that instead.
+  if (!empty($pane_values['txn_type'])) {
+    $txn_type = $pane_values['txn_type'];
+  }
+
+  // Build a name-value pair array for this transaction.
+  $nvp = array(
+    'x_type' => commerce_authnet_txn_type($txn_type),
+    'x_method' => 'CC',
+    'x_amount' => number_format(commerce_currency_amount_to_decimal($charge['amount'], $charge['currency_code']), 2, '.', ''),
+    'x_currency_code' => $charge['currency_code'],
+    'x_card_num' => $pane_values['credit_card']['number'],
+    'x_exp_date' => $pane_values['credit_card']['exp_month'] . $pane_values['credit_card']['exp_year'],
+  );
+
+  if (isset($pane_values['credit_card']['code'])) {
+    $nvp['x_card_code'] = $pane_values['credit_card']['code'];
+  }
+
+  // Build a description for the order.
+  $description = array();
+  // Descriptions come from products, though not all environments have them. So check first.
+  if (function_exists('commerce_product_line_item_types')) {
+    foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+      if (in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
+        $description[] = round($line_item_wrapper->quantity->value(), 2) . 'x ' . $line_item_wrapper->line_item_label->value();
+      }
+    }
+  }
+
+  // Add additional transaction invormation to the request array.
+  $nvp += array(
+    // Order Information
+    'x_invoice_num' => $order->order_number,
+    'x_description' => substr(implode(', ', $description), 0, 255),
+
+    // Customer Information
+    'x_email' => substr($order->mail, 0, 255),
+    'x_cust_id' => substr($order->uid, 0, 20),
+    'x_customer_ip' => substr(ip_address(), 0, 15),
+  );
+
+  // Prepare the billing address for use in the request.
+  if ($order_wrapper->commerce_customer_billing->value()){
+    $billing_address = $order_wrapper->commerce_customer_billing->commerce_customer_address->value();
+
+    if (empty($billing_address['first_name'])) {
+      $name_parts = explode(' ', $billing_address['name_line']);
+      $billing_address['first_name'] = array_shift($name_parts);
+      $billing_address['last_name'] = implode(' ', $name_parts);
+    }
+
+    $nvp += array(
+      // Customer Billing Address
+      'x_first_name' => substr($billing_address['first_name'], 0, 50),
+      'x_last_name' => substr($billing_address['last_name'], 0, 50),
+      'x_company' => substr($billing_address['organisation_name'], 0, 50),
+      'x_address' => substr($billing_address['thoroughfare'], 0, 60),
+      'x_city' => substr($billing_address['locality'], 0, 40),
+      'x_state' => substr($billing_address['administrative_area'], 0, 40),
+      'x_zip' => substr($billing_address['postal_code'], 0, 20),
+      'x_country' => $billing_address['country'],
+    );
+  }
+  else {
+    $billing_address = array();
+  }
+
+  // Submit the request to Authorize.Net.
+  $response = commerce_authnet_aim_request($payment_method, $nvp);
+
+  // Prepare a transaction object to log the API response.
+  $transaction = commerce_payment_transaction_new('authnet_aim', $order->order_id);
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->remote_id = $response[6];
+  $transaction->amount = $charge['amount'];
+  $transaction->currency_code = $charge['currency_code'];
+  $transaction->payload[REQUEST_TIME] = $response;
+
+  // If we didn't get an approval response code...
+  if ($response[0] != '1') {
+    // Create a failed transaction with the error message.
+    $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+  }
+  else {
+    // Set the transaction status based on the type of transaction this was.
+    switch ($txn_type) {
+      case COMMERCE_CREDIT_AUTH_ONLY:
+        $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+        break;
+
+      case COMMERCE_CREDIT_AUTH_CAPTURE:
+        $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+        break;
+
+      case COMMERCE_CREDIT_CAPTURE_ONLY:
+        $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+        break;
+    }
+  }
+
+  // Store the type of transaction in the remote status.
+  $transaction->remote_status = $response[11];
+
+  // Build a meaningful response message.
+  $message = array(
+    '<b>' . commerce_authnet_reverse_txn_type($response[11]) . '</b>',
+    '<b>' . ($response[0] != '1' ? t('REJECTED') : t('ACCEPTED')) . ':</b> ' . check_plain($response[3]),
+    t('AVS response: @avs', array('@avs' => commerce_authnet_avs_response($response[5]))),
+  );
+
+  // Add the CVV response if enabled.
+  if (isset($nvp['x_card_code'])) {
+    $message[] = t('CVV match: @cvv', array('@cvv' => commerce_authnet_cvv_response($response[38])));
+  }
+
+  $transaction->message = implode('<br />', $message);
+
+  // Save the transaction information.
+  commerce_payment_transaction_save($transaction);
+
+  // If the payment failed, display an error and rebuild the form.
+  if ($response[0] != '1') {
+    drupal_set_message(t('We received the following error processing your card. Please enter your information again or try a different card.'), 'error');
+    drupal_set_message(check_plain($response[3]), 'error');
+    return FALSE;
+  }
+
+  // If Card on File storage is enabled via CIM and the form says to store data...
+  if (module_exists('commerce_cardonfile') && !empty($payment_method['settings']['cardonfile']) &&
+    !empty($pane_values['credit_card']['cardonfile_store']) && $pane_values['credit_card']['cardonfile_store']) {
+    // Build a payment details array for the credit card.
+    $payment_details = array(
+      'cardNumber' => $pane_values['credit_card']['number'],
+      'expirationDate' => $pane_values['credit_card']['exp_year'] . '-' . $pane_values['credit_card']['exp_month'],
+    );
+
+    if (isset($pane_values['credit_card']['code'])) {
+      $payment_details['cardCode'] = $pane_values['credit_card']['code'];
+    }
+
+    // First look to see if we already have cards on file for the user.
+    $stored_cards = commerce_cardonfile_load_multiple_by_uid($order->uid, $payment_method['instance_id']);
+    $add_to_profile = NULL;
+
+    // If we didn't find any, attempt to make a new Customer Profile now.
+    if (empty($stored_cards)) {
+      // Submit a CIM request to create the Customer Profile.
+      if ($response = commerce_authnet_cim_create_customer_profile_request($payment_method, $order, $payment_details)) {
+        // If the Customer Profile creation was a success, store the new card on
+        // file data locally.
+        if ((string) $response->messages->resultCode == 'Ok') {
+          // Build a remote ID that includes the Customer Profile ID and the
+          // Payment Profile ID.
+          $remote_id = (string) $response->customerProfileId . '|' . (string) $response->customerPaymentProfileIdList->numericString;
+
+          $card_data = commerce_cardonfile_new();
+          $card_data->uid = $order->uid;
+          $card_data->payment_method = $payment_method['method_id'];
+          $card_data->instance_id = $payment_method['instance_id'];
+          $card_data->remote_id = $remote_id;
+          $card_data->card_type = !empty($card_type) ? $card_type : 'card';
+          $card_data->card_name = !empty($billing_address['name_line']) ? $billing_address['name_line'] : '';
+          $card_data->card_number = substr($pane_values['credit_card']['number'], -4);
+          $card_data->card_exp_month = $pane_values['credit_card']['exp_month'];
+          $card_data->card_exp_year = $pane_values['credit_card']['exp_year'];
+          $card_data->status = 1;
+
+          // Save and log the creation of the new card on file.
+          commerce_cardonfile_save($card_data);
+          watchdog('commerce_authnet', 'CIM Customer Profile @profile_id created and saved to user @uid.', array('@profile_id' => (string) $response->customerProfileId, '@uid' => $order->uid));
+        }
+        elseif ((string) $response->messages->message->code == 'E00039') {
+          // But if a Customer Profile already existed for this user, attempt
+          // instead to add this card as a new Payment Profile to it.
+          $result = array_filter(explode(' ', (string) $response->messages->message->text), 'is_numeric');
+          $add_to_profile = reset($result);
+        }
+      }
+    }
+    else {
+      // Extract the user's Customer Profile ID from the first card's remote ID.
+      $card_data = reset($stored_cards);
+      list($cim_customer_profile_id, $cim_payment_profile_id) = explode('|', $card_data->remote_id);
+
+      // Attempt to add the card as a new payment profile to this Customer Profile.
+      $add_to_profile = $cim_customer_profile_id;
+    }
+
+    // Attempt to add the card to an existing Customer Profile if specified.
+    if (!empty($add_to_profile)) {
+      $response = commerce_authnet_cim_create_customer_payment_profile_request($payment_method, $add_to_profile, $order, $payment_details);
+
+      // If the Payment Profile creation was a success, store the new card on
+      // file data locally.
+      if ((string) $response->messages->resultCode == 'Ok') {
+        // Build a remote ID that includes the Customer Profile ID and the new
+        // Payment Profile ID.
+        $remote_id = $add_to_profile . '|' . (string) $response->customerPaymentProfileId;
+
+        $card_data = commerce_cardonfile_new();
+        $card_data->uid = $order->uid;
+        $card_data->payment_method = $payment_method['method_id'];
+        $card_data->instance_id = $payment_method['instance_id'];
+        $card_data->remote_id = $remote_id;
+        $card_data->card_type = !empty($card_type) ? $card_type : 'card';
+        $card_data->card_name = !empty($billing_address['name_line']) ? $billing_address['name_line'] : '';
+        $card_data->card_number = substr($pane_values['credit_card']['number'], -4);
+        $card_data->card_exp_month = $pane_values['credit_card']['exp_month'];
+        $card_data->card_exp_year = $pane_values['credit_card']['exp_year'];
+        $card_data->status = 1;
+
+        // Save and log the creation of the new card on file.
+        commerce_cardonfile_save($card_data);
+        watchdog('commerce_authnet', 'CIM Payment Profile added to Customer Profile @profile_id for user @uid.', array('@profile_id' => $add_to_profile, '@uid' => $order->uid));
+      }
+      elseif (!empty($card_data) && (string) $response->messages->message->code == 'E00040') {
+        // But if we could not find a customer profile, assume the existing
+        // customer profile ID we had is no longer valid and deactivate the card
+        // data that resulted in the error.
+        $card_data->status = 0;
+        commerce_cardonfile_save($card_data);
+
+        // Submit a CIM request to create the Customer Profile.
+        if ($response = commerce_authnet_cim_create_customer_profile_request($payment_method, $order, $payment_details)) {
+          // If the Customer Profile creation was a success, store the new card on
+          // file data locally.
+          if ((string) $response->messages->resultCode == 'Ok') {
+            // Build a remote ID that includes the Customer Profile ID and the
+            // Payment Profile ID.
+            $remote_id = (string) $response->customerProfileId . '|' . (string) $response->customerPaymentProfileIdList->numericString;
+
+            $card_data = commerce_cardonfile_new();
+            $card_data->uid = $order->uid;
+            $card_data->payment_method = $payment_method['method_id'];
+            $card_data->instance_id = $payment_method['instance_id'];
+            $card_data->remote_id = $remote_id;
+            $card_data->card_type = !empty($card_type) ? $card_type : 'card';
+            $card_data->card_name = !empty($billing_address['name_line']) ? $billing_address['name_line'] : '';
+            $card_data->card_number = substr($pane_values['credit_card']['number'], -4);
+            $card_data->card_exp_month = $pane_values['credit_card']['exp_month'];
+            $card_data->card_exp_year = $pane_values['credit_card']['exp_year'];
+            $card_data->status = 1;
+
+            // Save and log the creation of the new card on file.
+            commerce_cardonfile_save($card_data);
+            watchdog('commerce_authnet', 'CIM Customer Profile @profile_id created and saved to user @uid.', array('@profile_id' => (string) $response->customerProfileId, '@uid' => $order->uid));
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_authnet_form_commerce_payment_order_transaction_add_form_alter(&$form, &$form_state) {
+  // If the payment terminal is displayed for an authnet_aim transaction...
+  if (!empty($form['payment_terminal']) && $form_state['payment_method']['method_id'] == 'authnet_aim') {
+    // Add a select list to let the administrator choose a different transaction
+    // type than the payment method's default.
+    $form['payment_terminal']['payment_details']['txn_type'] = array(
+      '#type' => 'select',
+      '#title' => t('Transaction type'),
+      '#options' => array(
+        COMMERCE_CREDIT_AUTH_ONLY => t('Authorization only'),
+        COMMERCE_CREDIT_AUTH_CAPTURE => t('Authorization and capture'),
+      ),
+      '#default_value' => $form_state['payment_method']['settings']['txn_type'],
+    );
+  }
+}
+
+/**
+ * Imitates the checkout form submission callback for the AIM payment method.
+ */
+function commerce_authnet_cim_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  // First attempt to load the card on file.
+  $card_data = commerce_cardonfile_load($pane_values['cardonfile']);
+
+  // Fail now if it is no longer available or the card is inactive.
+  if (empty($card_data) || $card_data->status == 0) {
+    drupal_set_message(t('The requested card on file is no longer valid.'), 'error');
+    return FALSE;
+  }
+
+  return commerce_authnet_cim_cardonfile_charge($payment_method, $card_data, $order, $charge);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_authnet_form_commerce_cardonfile_update_form_alter(&$form, &$form_state) {
+  // Extract the card data from the form and load the payment method instance.
+  $card_data = $form['card_data']['#value'];
+  $payment_method = commerce_payment_method_instance_load($card_data->instance_id);
+
+  // If this is not an Authorize.Net card then bail.
+  if ($payment_method['method_id'] != 'authnet_aim') {
+    return;
+  }
+
+
+  // Extract the Customer Profile and Payment Profile IDs from the remote_id.
+  list($cim_customer_profile_id, $cim_payment_profile_id) = explode('|', $card_data->remote_id);
+
+  // Load the full payment profile from Authorize.Net.
+  $payment_profile_xml = commerce_authnet_cim_get_customer_payment_profile_request($payment_method, $cim_customer_profile_id, $cim_payment_profile_id);
+
+  if ($payment_profile_xml->messages->message->code == 'I00001') {
+    $billto = $payment_profile_xml->paymentProfile->billTo;
+
+    $address = array(
+      '<strong>' . t('Billing address:') . '</strong>',
+      (string) $billto->firstName . ' ' . (string) $billto->lastName,
+      (string) $billto->company,
+      (string) $billto->address,
+      (string) $billto->city . ', ' . (string) $billto->state . ' ' . (string) $billto->zip,
+      (string) $billto->country,
+    );
+
+    // Add the address info to the form.
+    $form['billto'] = array(
+      '#type' => 'markup',
+      '#markup' => '<div class="commerce-authnet-cim-billto">' . implode('<br />', array_diff($address, array(''))) . '</div>',
+      '#weight' => -50,
+    );
+
+    $form_state['billto_xml'] = $billto;
+  }
+}
+
+/**
+ * Card on file callback: background charge payment
+ *
+ * @param object $payment_method
+ *  The payment method instance definition array.
+ * @param object $card_data
+ *   The stored credit card data array to be processed
+ * @param object $order
+ *   The order object that is being processed
+ * @param array $charge
+ *   The price array for the charge amount with keys of 'amount' and 'currency'
+ *   If null the total value of the order is used.
+ *
+ * @return
+ *   TRUE if the transaction was successful
+ */
+function commerce_authnet_cim_cardonfile_charge($payment_method, $card_data, $order, $charge = NULL) {
+  // Format order total for transaction.
+  if (!isset($charge)) {
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $charge = commerce_line_items_total($wrapper->commerce_line_items);
+  }
+
+  // Extract the Customer Profile and Payment Profile IDs from the remote_id.
+  list($cim_customer_profile_id, $cim_payment_profile_id) = explode('|', $card_data->remote_id);
+
+  // Determine the proper transaction element to use inside the XML.
+  $element_name = commerce_authnet_cim_transaction_element_name($payment_method['settings']['txn_type']);
+
+  // Build a data array for the transaction API request.
+  $api_request_data = array(
+    'transaction' => array(
+      $element_name => array(
+        'amount' => number_format(commerce_currency_amount_to_decimal($charge['amount'], $charge['currency_code']), 2, '.', ''),
+        'customerProfileId' => $cim_customer_profile_id,
+        'customerPaymentProfileId' => $cim_payment_profile_id,
+        'order' => array(
+          'invoiceNumber' => $order->order_number,
+        ),
+      ),
+    ),
+    'extraOptions' => '<![CDATA[x_delim_data=TRUE&amp;x_delim_char=|&amp;x_encap_char="&amp;x_solution_id=A1000009&amp;x_currency_code=' . $charge['currency_code'] . '&amp;x_customer_ip=' . substr(ip_address(), 0, 15) . ']]>',
+  );
+
+  // If we get a response from the API server...
+  $xml_response = commerce_authnet_cim_request($payment_method, 'createCustomerProfileTransactionRequest', $api_request_data);
+
+  if (!empty($xml_response->directResponse)) {
+    // Extract the response data from the XML.
+    $response = explode('|', (string) $xml_response->directResponse);
+
+    for ($i = 0; $i < count($response); $i++) {
+      $response[$i] = substr($response[$i], 1, strlen($response[$i]) - 2);
+    }
+
+    // Prepare a transaction object to represent the transaction attempt.
+    $transaction = commerce_payment_transaction_new('authnet_aim', $order->order_id);
+    $transaction->instance_id = $payment_method['instance_id'];
+    $transaction->remote_id = $response[6];
+    $transaction->amount = $charge['amount'];
+    $transaction->currency_code = $charge['currency_code'];
+    $transaction->payload[REQUEST_TIME] = $response;
+
+    // If we didn't get an approval response code...
+    if ($response[0] != '1') {
+      // Create a failed transaction with the error message.
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+    }
+    else {
+      // Set the transaction status based on the type of transaction this was.
+      switch ($payment_method['settings']['txn_type']) {
+        case COMMERCE_CREDIT_AUTH_ONLY:
+          $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+          break;
+
+        case COMMERCE_CREDIT_AUTH_CAPTURE:
+          $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+          break;
+      }
+    }
+
+    // Store the type of transaction in the remote status.
+    $transaction->remote_status = $response[11];
+
+    // Build a meaningful response message.
+    $message = array(
+      '<b>' . commerce_authnet_reverse_txn_type(commerce_authnet_txn_type($payment_method['settings']['txn_type'])) . '</b>',
+      '<b>' . ($response[0] != '1' ? t('REJECTED') : t('ACCEPTED')) . ':</b> ' . check_plain($response[3]),
+      t('AVS response: @avs', array('@avs' => commerce_authnet_avs_response($response[5]))),
+    );
+
+    $transaction->message = implode('<br />', $message);
+
+    // Save the transaction information.
+    commerce_payment_transaction_save($transaction);
+
+    // If the payment failed, display an error and rebuild the form.
+    if ($response[0] != '1') {
+      drupal_set_message(t('We received the following error processing your card. Please enter your information again or try a different card.'), 'error');
+      drupal_set_message(check_plain($response[3]), 'error');
+      return FALSE;
+    }
+
+    return;
+  }
+  elseif ((string) $xml_response->messages->message->code == 'E00040') {
+    // If the response indicated a non-existent profile, deactive it now.
+    $card_data->status = 0;
+    commerce_cardonfile_save($card_data);
+
+    drupal_set_message(t('The card you selected is no longer valid. Please use a different card to complete payment.'), 'error');
+    return FALSE;
+  }
+
+  drupal_set_message(t('We could not process your card on file at this time. Please try again or use a different card.'), 'error');
+  return FALSE;
+
+}
+
+/**
+ * Card on file callback: updates the associated customer payment profile.
+ */
+function commerce_authnet_cim_cardonfile_update($form, &$form_state, $payment_method, $card_data) {
+  // Extract the Customer Profile and Payment Profile IDs from the remote_id.
+  list($cim_customer_profile_id, $cim_payment_profile_id) = explode('|', $card_data->remote_id);
+
+  if ($form_state['values']['credit_card']['number'] != $form['credit_card']['number']['#default_value']) {
+    $number = $form_state['values']['credit_card']['number'];
+  }
+  else {
+    $number = 'XXXX' . $card_data->card_number;
+  }
+
+  // Load the payment profile so that billTo can be updated.
+  $payment_profile_xml = commerce_authnet_cim_get_customer_payment_profile_request($payment_method, $cim_customer_profile_id, $cim_payment_profile_id);
+  $billto = $payment_profile_xml->paymentProfile->billTo;
+  $first_name = (string) $billto->firstName;
+  $last_name = (string) $billto->lastName;
+  // Extract the first and last name from form values.
+  if (!empty($form_state['values']['credit_card']['owner'])) {
+    $name_parts = explode(' ', $form_state['values']['credit_card']['owner']);
+    $first_name = array_shift($name_parts);
+    $last_name = implode(' ', $name_parts);
+  }
+
+  // Build the base profile update data.
+  $api_request_data = array(
+    'customerProfileId' => $cim_customer_profile_id,
+    'paymentProfile' => array(
+      'billTo' => array(
+        'firstName' =>  substr($first_name, 0, 50),
+        'lastName' => substr($last_name, 0, 50),
+        'company' => (string) $billto->company,
+        'address' => (string) $billto->address,
+        'city' => (string) $billto->city,
+        'state' => (string) $billto->state,
+        'zip' => (string) $billto->zip,
+        'country' => (string) $billto->country,
+      ),
+      'payment' => array(
+        'creditCard' => array(
+          'cardNumber' => $number,
+          'expirationDate' => $card_data->card_exp_year . '-' . $card_data->card_exp_month,
+        ),
+      ),
+      'customerPaymentProfileId' => $cim_payment_profile_id,
+    ),
+  );
+
+  // Fetch the response from the API server and let Card on File know if the
+  // update was successful.
+  $xml_response = commerce_authnet_cim_request($payment_method, 'updateCustomerPaymentProfileRequest', $api_request_data);
+
+  return (string) $xml_response->messages->message->code == 'I00001';
+}
+
+/**
+ * Card on file callback: deletes the associated customer payment profile.
+ */
+function commerce_authnet_cim_cardonfile_delete($form, &$form_state, $payment_method, $card_data) {
+  // Extract the Customer Profile and Payment Profile IDs from the remote_id.
+  list($cim_customer_profile_id, $cim_payment_profile_id) = explode('|', $card_data->remote_id);
+
+  // Fetch the response from the API server and let Card on File know that the
+  // delete was either successful or not necessary.
+  $xml_response = commerce_authnet_cim_delete_customer_payment_profile_request($payment_method, $cim_customer_profile_id, $cim_payment_profile_id);
+  $code = (string) $xml_response->messages->message->code;
+
+  return in_array($code, array('I00001', 'E00040'));
+}
+
+/**
+ * Generates a billTo array for CIM API requests.
+ *
+ * @param $order
+ *   The order object containing the billing information used for the billTo.
+ *
+ * @return
+ *   An array used to generate the billTo XML in CIM API requests.
+ */
+function commerce_authnet_cim_billto_array($order) {
+  // Prepare the billing address for use in the request.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $billing_address = $order_wrapper->commerce_customer_billing->commerce_customer_address->value();
+
+  // Ensure we have a first and last name in the address.
+  if (empty($billing_address['first_name'])) {
+    $name_parts = explode(' ', $billing_address['name_line']);
+    $billing_address['first_name'] = array_shift($name_parts);
+    $billing_address['last_name'] = implode(' ', $name_parts);
+  }
+
+  // Ensure we have a state the address.
+  if (empty($billing_address['administrative_area'])) {
+    $billing_address['administrative_area'] = $billing_address['locality'];
+  }
+
+  // Return the billTo array.
+  return array(
+    'firstName' => substr($billing_address['first_name'], 0, 50),
+    'lastName' => substr($billing_address['last_name'], 0, 50),
+    'company' => substr($billing_address['organisation_name'], 0, 50),
+    'address' => substr($billing_address['thoroughfare'], 0, 60),
+    'city' => substr($billing_address['locality'], 0, 40),
+    'state' => substr($billing_address['administrative_area'], 0, 40),
+    'zip' => substr($billing_address['postal_code'], 0, 20),
+    'country' => $billing_address['country'],
+  );
+}
+
+/**
+ * Generates a creditCard array for CIM API requests.
+ *
+ * @param $payment_details
+ *   An array of payment details used in a CIM API request that doesn't have to
+ *   include credit card data. If it does, the following keys are expected:
+ *   - cardNumber: the full credit card number
+ *   - expirationDate: the expiration date in YYYY-MM format
+ *   - cardCode: the three or four digit card security code
+ */
+function commerce_authnet_cim_credit_card_array($payment_details) {
+  $credit_card = array();
+
+  foreach (array('cardNumber', 'expirationDate', 'cardCode') as $key) {
+    if (!empty($payment_details[$key])) {
+      $credit_card[$key] = $payment_details[$key];
+    }
+  }
+
+  return $credit_card;
+}
+
+/**
+ * Submits a createCustomerProfileRequest XML CIM API request to Authorize.Net.
+ *
+ * This function will attempt to create a CIM Customer Profile and a default
+ * Payment Profile for it using the given payment details.
+ *
+ * @param $payment_method
+ *   The payment method instance array containing the API credentials for a CIM
+ *   enabled Authorize.Net account.
+ * @param $order
+ *   The order object containing the billing address and e-mail to use for the
+ *   customer profile.
+ * @param $payment_details
+ *   An array of payment details to use in the default payment profile. See the
+ *   respective helper array functions for possible keys.
+ *
+ * @return
+ *   A SimpleXMLElement containing the API response.
+ *
+ * @see commerce_authnet_cim_credit_card_array()
+ */
+function commerce_authnet_cim_create_customer_profile_request($payment_method, $order, $payment_details) {
+  $billto = commerce_authnet_cim_billto_array($order);
+
+  // Build the base profile request data.
+  $api_request_data = array(
+    'profile' => array(
+      'merchantCustomerId' => $order->uid,
+      'description' => $billto['firstName'] . ' ' . $billto['lastName'],
+      'email' => $order->mail,
+      'paymentProfiles' => array(
+        'billTo' => $billto,
+        'payment' => array(),
+      ),
+    ),
+  );
+
+  // If the order is anonymous, unset the merchantCustomerId from the request.
+  if (empty($api_request_data['profile']['merchantCustomerId'])) {
+    unset($api_request_data['profile']['merchantCustomerId']);
+  }
+
+  // Add credit card payment details to the default payment profile if given.
+  $credit_card = commerce_authnet_cim_credit_card_array($payment_details);
+
+  if (!empty($credit_card)) {
+    $api_request_data['profile']['paymentProfiles']['payment']['creditCard'] = $credit_card;
+  }
+
+  return commerce_authnet_cim_request($payment_method, 'createCustomerProfileRequest', $api_request_data);
+}
+
+/**
+ * Submits a createCustomerPaymentProfileRequest XML CIM API request to Authorize.Net.
+ *
+ * @param $payment_method
+ *   The payment method instance array containing the API credentials for a CIM
+ *   enabled Authorize.Net account.
+ * @param $cim_customer_profile_id
+ *   A numerical CIM Customer Profile ID.
+ * @param $order
+ *   The order object containing the billing address and e-mail to use for the
+ *   payment profile.
+ * @param $payment_details
+ *   An array of payment details to use in the default payment profile. See the
+ *   respective helper array functions for possible keys.
+ *
+ * @return
+ *   A SimpleXMLElement containing the API response.
+ *
+ * @see commerce_authnet_cim_credit_card_array()
+ */
+function commerce_authnet_cim_create_customer_payment_profile_request($payment_method, $cim_customer_profile_id, $order, $payment_details) {
+  $billto = commerce_authnet_cim_billto_array($order);
+
+  // Build the base profile request data.
+  $api_request_data = array(
+    'customerProfileId' => $cim_customer_profile_id,
+    'paymentProfile' => array(
+      'billTo' => $billto,
+      'payment' => array(),
+    ),
+  );
+
+  // Add credit card payment details to the default payment profile if given.
+  $credit_card = commerce_authnet_cim_credit_card_array($payment_details);
+
+  if (!empty($credit_card)) {
+    $api_request_data['paymentProfile']['payment']['creditCard'] = $credit_card;
+  }
+
+  return commerce_authnet_cim_request($payment_method, 'createCustomerPaymentProfileRequest', $api_request_data);
+}
+
+/**
+ * Submits a getCustomerPaymentProfileRequest XML CIM API request to Authorize.Net.
+ *
+ * @param $payment_method
+ *   The payment method instance array containing the API credentials for a CIM
+ *   enabled Authorize.Net account.
+ * @param $cim_customer_profile_id
+ *   A numerical CIM Customer Profile ID.
+ * @param $cim_payment_profile_id
+ *   A numerical CIM Customer Payment Profile ID.
+ *
+ * @return
+ *   A SimpleXMLElement containing the API response.
+ */
+function commerce_authnet_cim_get_customer_payment_profile_request($payment_method, $cim_customer_profile_id, $cim_payment_profile_id) {
+  // Build the get payment profile request data.
+  $api_request_data = array(
+    'customerProfileId' => $cim_customer_profile_id,
+    'customerPaymentProfileId' => $cim_payment_profile_id,
+  );
+
+  return commerce_authnet_cim_request($payment_method, 'getCustomerPaymentProfileRequest', $api_request_data);
+}
+
+/**
+ * Submits a deleteCustomerPaymentProfileRequest XML CIM API request to Authorize.Net.
+ *
+ * @param $payment_method
+ *   The payment method instance array containing the API credentials for a CIM
+ *   enabled Authorize.Net account.
+ * @param $cim_customer_profile_id
+ *   A numerical CIM Customer Profile ID.
+ * @param $cim_payment_profile_id
+ *   A numerical CIM Customer Payment Profile ID.
+ *
+ * @return
+ *   A SimpleXMLElement containing the API response.
+ */
+function commerce_authnet_cim_delete_customer_payment_profile_request($payment_method, $cim_customer_profile_id, $cim_payment_profile_id) {
+  // Build the payment profile delete request data.
+  $api_request_data = array(
+    'customerProfileId' => $cim_customer_profile_id,
+    'customerPaymentProfileId' => $cim_payment_profile_id,
+  );
+
+  return commerce_authnet_cim_request($payment_method, 'deleteCustomerPaymentProfileRequest', $api_request_data);
+}
+
+/**
+ * Submits an AIM API request to Authorize.Net.
+ *
+ * @param $payment_method
+ *   The payment method instance array associated with this API request.
+ */
+function commerce_authnet_aim_request($payment_method, $nvp = array()) {
+  // Get the API endpoint URL for the method's transaction mode.
+  $url = commerce_authnet_aim_server_url($payment_method['settings']['txn_mode']);
+
+  // Add the default name-value pairs to the array.
+  $nvp += array(
+    // API credentials
+    'x_login' => $payment_method['settings']['login'],
+    'x_tran_key' => $payment_method['settings']['tran_key'],
+    'x_version' => '3.1',
+
+    // Extra administrative values
+    'x_test_request' => $payment_method['settings']['txn_mode'] == AUTHNET_TXN_MODE_LIVE_TEST ? 'TRUE' : 'FALSE',
+    'x_delim_data' => 'TRUE',
+    'x_delim_char' => '|',
+    'x_encap_char' => '"',
+    'x_relay_response' => 'FALSE',
+    'x_email_customer' => $payment_method['settings']['email_customer'],
+
+    // Drupal Commerce Solution ID
+    'x_solution_id' => 'A1000009',
+  );
+
+  // Allow modules to alter parameters of the API request.
+  drupal_alter('commerce_authnet_aim_request', $nvp);
+
+  // Log the request if specified.
+  if ($payment_method['settings']['log']['request'] == 'request') {
+    // Mask the credit card number and CVV.
+    $log_nvp = $nvp;
+    $log_nvp['x_login'] = str_repeat('X', strlen($log_nvp['x_login']));
+    $log_nvp['x_tran_key'] = str_repeat('X', strlen($log_nvp['x_tran_key']));
+
+    if (!empty($log_nvp['x_card_num'])) {
+      $log_nvp['x_card_num'] = str_repeat('X', strlen($log_nvp['x_card_num']) - 4) . substr($log_nvp['x_card_num'], -4);
+    }
+
+    if (!empty($log_nvp['x_card_code'])) {
+      $log_nvp['x_card_code'] = str_repeat('X', strlen($log_nvp['x_card_code']));
+    }
+
+    watchdog('commerce_authnet', 'Authorize.Net AIM request to @url: !param', array('@url' => $url, '!param' => '<pre>' . check_plain(print_r($log_nvp, TRUE)) . '</pre>'), WATCHDOG_DEBUG);
+  }
+
+  // Prepare the name-value pair array to be sent as a string.
+  $pairs = array();
+
+  foreach ($nvp as $key => $value) {
+    $pairs[] = $key . '=' . urlencode($value);
+  }
+
+  // Setup the cURL request.
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_VERBOSE, 0);
+  curl_setopt($ch, CURLOPT_POST, 1);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, implode('&', $pairs));
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_setopt($ch, CURLOPT_NOPROGRESS, 1);
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
+  $result = curl_exec($ch);
+
+  // Log any errors to the watchdog.
+  if ($error = curl_error($ch)) {
+    watchdog('commerce_authnet', 'cURL error: @error', array('@error' => $error), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  curl_close($ch);
+
+  // Make the response an array and trim off the encapsulating characters.
+  $response = explode('|', $result);
+
+  for ($i = 0; $i < count($response); $i++) {
+    $response[$i] = substr($response[$i], 1, strlen($response[$i]) - 2);
+  }
+
+  // Log the response if specified.
+  if ($payment_method['settings']['log']['response'] == 'response') {
+    watchdog('commerce_authnet', 'Authorize.Net AIM response: !param', array('!param' => '<pre>' . check_plain(print_r($response, TRUE)) . '</pre>', WATCHDOG_DEBUG));
+  }
+
+  return $response;
+}
+
+/**
+ * Returns the URL to the Authorize.Net AIM server determined by transaction mode.
+ *
+ * @param $txn_mode
+ *   The transaction mode that relates to the live or test server.
+ *
+ * @return
+ *   The URL to use to submit requests to the Authorize.Net AIM server.
+ */
+function commerce_authnet_aim_server_url($txn_mode) {
+  switch ($txn_mode) {
+    case AUTHNET_TXN_MODE_LIVE:
+    case AUTHNET_TXN_MODE_LIVE_TEST:
+      return 'https://secure.authorize.net/gateway/transact.dll';
+    case AUTHNET_TXN_MODE_DEVELOPER:
+      return 'https://test.authorize.net/gateway/transact.dll';
+  }
+}
+
+/**
+ * Submits a CIM XML API request to Authorize.Net.
+ *
+ * @param $payment_method
+ *   The payment method instance array associated with this API request.
+ * @param $request_type
+ *   The name of the request type to submit.
+ * @param $api_request_data
+ *   An associative array of data to be turned into a CIM XML API request.
+ */
+function commerce_authnet_cim_request($payment_method, $request_type, $api_request_data) {
+  // Get the API endpoint URL for the method's transaction mode.
+  $url = commerce_authnet_cim_server_url($payment_method['settings']['txn_mode']);
+
+  // Add default data to the API request data array.
+  if (!isset($api_request_data['merchantAuthentication'])) {
+    $api_request_data = array(
+      'merchantAuthentication' => array(
+        'name' => $payment_method['settings']['login'],
+        'transactionKey' => $payment_method['settings']['tran_key'],
+      ),
+    ) + $api_request_data;
+  }
+
+  // Determine if it is necessary to add a validation mode to the API request.
+  $validation_mode = '';
+
+  switch ($request_type) {
+    case 'createCustomerProfileRequest':
+      if (empty($api_request_data['profile']['paymentProfiles'])) {
+        $validation_mode = 'none';
+      }
+      else {
+        $validation_mode = $payment_method['settings']['txn_mode'] == AUTHNET_TXN_MODE_LIVE ? 'liveMode' : 'testMode';
+      }
+      break;
+
+    case 'createCustomerPaymentProfileRequest':
+    case 'updateCustomerPaymentProfileRequest':
+    case 'validateCustomerPaymentProfileRequest':
+      $validation_mode = $payment_method['settings']['txn_mode'] == AUTHNET_TXN_MODE_LIVE ? 'liveMode' : 'testMode';
+      break;
+
+    default:
+      break;
+  }
+
+  // Add the validation mode now if one was found.
+  if (!empty($validation_mode)) {
+    $api_request_data['validationMode'] = $validation_mode;
+  }
+
+  // Build and populate the API request SimpleXML element.
+  $api_request_element = new SimpleXMLElement('<' . $request_type . '/>');
+  $api_request_element->addAttribute('xmlns', 'AnetApi/xml/v1/schema/AnetApiSchema.xsd');
+  commerce_simplexml_add_children($api_request_element, $api_request_data);
+
+  // Allow modules an opportunity to alter the request before it is sent.
+  drupal_alter('commerce_authnet_cim_request', $api_request_element);
+
+  // Generate an XML string.
+  $xml = $api_request_element->asXML();
+
+  // Log the request if specified.
+  if ($payment_method['settings']['log']['request'] == 'request') {
+    // Mask the credit card number and CVV.
+    $log_element = clone($api_request_element);
+    $log_element->merchantAuthentication->name = str_repeat('X', strlen((string) $log_element->merchantAuthentication->name));
+    $log_element->merchantAuthentication->transactionKey = str_repeat('X', strlen((string) $log_element->merchantAuthentication->transactionKey));
+
+    if (!empty($log_element->profile->paymentProfiles->payment->creditCard->cardNumber)) {
+      $card_number = (string) $log_element->profile->paymentProfiles->payment->creditCard->cardNumber;
+      $log_element->profile->paymentProfiles->payment->creditCard->cardNumber = str_repeat('X', strlen($card_number) - 4) . substr($card_number, -4);
+    }
+
+    if (!empty($log_element->paymentProfile->payment->creditCard->cardNumber)) {
+      $card_number = (string) $log_element->paymentProfile->payment->creditCard->cardNumber;
+      $log_element->paymentProfile->payment->creditCard->cardNumber = str_repeat('X', strlen($card_number) - 4) . substr($card_number, -4);
+    }
+
+    if (!empty($log_element->profile->paymentProfiles->payment->creditCard->cardCode)) {
+      $log_element->profile->paymentProfiles->payment->creditCard->cardCode = str_repeat('X', strlen((string) $log_element->profile->paymentProfiles->payment->creditCard->cardCode));
+    }
+
+    if (!empty($log_element->paymentProfile->payment->creditCard->cardCode)) {
+      $log_element->paymentProfile->payment->creditCard->cardCode = str_repeat('X', strlen((string) $log_element->paymentProfile->payment->creditCard->cardCode));
+    }
+
+    watchdog('commerce_authnet', 'Authorize.Net CIM @type to @url: @xml', array('@type' => $request_type, '@url' => $url, '@xml' => $log_element->asXML()), WATCHDOG_DEBUG);
+  }
+
+  // Build the array of header information for the request.
+  $header = array();
+  $header[] = 'Content-type: text/xml; charset=utf-8';
+  $header[] = 'Content-length: ' . strlen($api_request_element->asXML());
+
+  // Setup the cURL request.
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_VERBOSE, 0);
+  curl_setopt($ch, CURLOPT_POST, 1);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, $xml);
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
+  curl_setopt($ch, CURLOPT_NOPROGRESS, 1);
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
+  curl_setopt($ch, CURLOPT_HTTPHEADER, $header);
+  $result = curl_exec($ch);
+
+  // Log any errors to the watchdog.
+  if ($error = curl_error($ch)) {
+    watchdog('commerce_authnet', 'cURL error: @error', array('@error' => $error), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  curl_close($ch);
+
+  // If we received data back from the server...
+  if (!empty($result)) {
+    // Remove non-absolute XML namespaces to prevent SimpleXML warnings.
+    $result = str_replace(' xmlns="AnetApi/xml/v1/schema/AnetApiSchema.xsd"', '', $result);
+
+    // Extract the result into an XML response object.
+    $response = new SimpleXMLElement($result);
+
+    // Log the API response if specified.
+    if ($payment_method['settings']['log']['response'] == 'response') {
+      watchdog('commerce_authnet', 'API response received:<pre>@xml</pre>', array('@xml' => $response->asXML()));
+    }
+
+    return $response;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Returns the URL to the Authorize.Net CIM server determined by transaction mode.
+ *
+ * @param $txn_mode
+ *   The transaction mode that relates to the live or test server.
+ *
+ * @return
+ *   The URL to use to submit requests to the Authorize.Net CIM server.
+ */
+function commerce_authnet_cim_server_url($txn_mode) {
+  switch ($txn_mode) {
+    case AUTHNET_TXN_MODE_LIVE:
+    case AUTHNET_TXN_MODE_LIVE_TEST:
+      return 'https://api.authorize.net/xml/v1/request.api';
+    case AUTHNET_TXN_MODE_DEVELOPER:
+      return 'https://apitest.authorize.net/xml/v1/request.api';
+  }
+}
+
+/**
+ * Returns the transaction type string for Authorize.Net that corresponds to the
+ *   Drupal Commerce constant.
+ *
+ * @param $txn_type
+ *   A Drupal Commerce transaction type constant.
+ */
+function commerce_authnet_txn_type($txn_type) {
+  switch ($txn_type) {
+    case COMMERCE_CREDIT_AUTH_ONLY:
+      return 'AUTH_ONLY';
+    case COMMERCE_CREDIT_PRIOR_AUTH_CAPTURE:
+      return 'PRIOR_AUTH_CAPTURE';
+    case COMMERCE_CREDIT_AUTH_CAPTURE:
+      return 'AUTH_CAPTURE';
+    case COMMERCE_CREDIT_CAPTURE_ONLY:
+      return 'CAPTURE_ONLY';
+    case COMMERCE_CREDIT_REFERENCE_SET:
+    case COMMERCE_CREDIT_REFERENCE_TXN:
+    case COMMERCE_CREDIT_REFERENCE_REMOVE:
+    case COMMERCE_CREDIT_REFERENCE_CREDIT:
+      return NULL;
+    case COMMERCE_CREDIT_CREDIT:
+      return 'CREDIT';
+    case COMMERCE_CREDIT_VOID:
+      return 'VOID';
+  }
+}
+
+/**
+ * Returns the CIM transaction request type that correponds to a the Drupal
+ * Commerce constant.
+ *
+ * @param $txn_type
+ *   A Drupal Commerce transaction type constant.
+ */
+function commerce_authnet_cim_transaction_element_name($txn_type) {
+  switch ($txn_type) {
+    case COMMERCE_CREDIT_AUTH_ONLY:
+      return 'profileTransAuthOnly';
+    case COMMERCE_CREDIT_AUTH_CAPTURE:
+      return 'profileTransAuthCapture';
+    case COMMERCE_CREDIT_CAPTURE_ONLY:
+      return 'profileTransCaptureOnly';
+    case COMMERCE_CREDIT_PRIOR_AUTH_CAPTURE:
+      return 'profileTransPriorAuthCapture';
+    case COMMERCE_CREDIT_CREDT:
+      return 'profileTransRefund';
+    case COMMERCE_CREDIT_VOID:
+      return 'profileTransVoid';
+    default:
+      return '';
+  }
+}
+
+/**
+ * Returns the description of an Authorize.Net transaction type.
+ *
+ * @param $txn_type
+ *   An Authorize.Net transaction type string.
+ */
+function commerce_authnet_reverse_txn_type($txn_type) {
+  switch (strtoupper($txn_type)) {
+    case 'AUTH_ONLY':
+      return t('Authorization only');
+    case 'PRIOR_AUTH_CAPTURE':
+      return t('Prior authorization capture');
+    case 'AUTH_CAPTURE':
+      return t('Authorization and capture');
+    case 'CAPTURE_ONLY':
+      return t('Capture only');
+    case 'CREDIT':
+      return t('Credit');
+    case 'VOID':
+      return t('Void');
+  }
+}
+
+/**
+ * Returns the message text for an AVS response code.
+ */
+function commerce_authnet_avs_response($code) {
+  switch ($code) {
+    case 'A':
+      return t('Address (Street) matches, ZIP does not');
+    case 'B':
+      return t('Address information not provided for AVS check');
+    case 'E':
+      return t('AVS error');
+    case 'G':
+      return t('Non-U.S. Card Issuing Bank');
+    case 'N':
+      return t('No Match on Address (Street) or ZIP');
+    case 'P':
+      return t('AVS not applicable for this transaction');
+    case 'R':
+      return t('Retry – System unavailable or timed out');
+    case 'S':
+      return t('Service not supported by issuer');
+    case 'U':
+      return t('Address information is unavailable');
+    case 'W':
+      return t('Nine digit ZIP matches, Address (Street) does not');
+    case 'X':
+      return t('Address (Street) and nine digit ZIP match');
+    case 'Y':
+      return t('Address (Street) and five digit ZIP match');
+    case 'Z':
+      return t('Five digit ZIP matches, Address (Street) does not');
+  }
+
+  return '-';
+}
+
+/**
+ * Returns the message text for a CVV match.
+ */
+function commerce_authnet_cvv_response($code) {
+  switch ($code) {
+    case 'M':
+      return t('Match');
+    case 'N':
+      return t('No Match');
+    case 'P':
+      return t('Not Processed');
+    case 'S':
+      return t('Should have been present');
+    case 'U':
+      return t('Issuer unable to process request');
+  }
+
+  return '-';
+}

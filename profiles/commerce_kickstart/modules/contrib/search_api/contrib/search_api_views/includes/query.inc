@@ -126,11 +126,14 @@ class SearchApiViewsQuery extends views_plugin_query {
   /**
    * Defines the options used by this query plugin.
    *
-   * Adds an option to bypass access checks.
+   * Adds some access options.
    */
   public function option_definition() {
     return parent::option_definition() + array(
       'search_api_bypass_access' => array(
+        'default' => FALSE,
+      ),
+      'entity_access' => array(
         'default' => FALSE,
       ),
     );
@@ -150,6 +153,14 @@ class SearchApiViewsQuery extends views_plugin_query {
       '#description' => t('If the underlying search index has access checks enabled, this option allows to disable them for this view.'),
       '#default_value' => $this->options['search_api_bypass_access'],
     );
+    if (entity_get_info($this->index->item_type)) {
+      $form['entity_access'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Additional access checks on result entities'),
+        '#description' => t("Execute an access check for all result entities. This prevents users from seeing inappropriate content when the index contains stale data, or doesn't provide access checks. However, result counts, paging and other things won't work correctly if results are eliminated in this way, so only use this as a last ressort (and in addition to other checks, if possible)."),
+        '#default_value' => $this->options['entity_access'],
+      );
+    }
   }
 
   /**
@@ -270,6 +281,12 @@ class SearchApiViewsQuery extends views_plugin_query {
     // First off, we try to gather as much field values as possible without
     // loading any items.
     foreach ($results as $id => $result) {
+      if (!empty($this->options['entity_access'])) {
+        $entity = entity_load($this->index->item_type, array($id));
+        if (!entity_access('view', $this->index->item_type, $entity[$id])) {
+          continue;
+        }
+      }
       $row = array();
 
       // Include the loaded item for this result row, if present, or the item

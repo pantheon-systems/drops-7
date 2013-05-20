@@ -49,7 +49,7 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
   );
   $format['locality_block']['#attached']['css'][] = drupal_get_path('module', 'addressfield') . '/addressfield.css';
   $format['locality_block']['postal_code'] = array(
-    '#title' => t('Postal Code'),
+    '#title' => t('Postal code'),
     '#size' => 10,
     '#required' => TRUE,
     '#attributes' => array('class' => array('postal-code')),
@@ -58,19 +58,21 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
     '#title' => t('City'),
     '#size' => 30,
     '#required' => TRUE,
-    '#prefix' => ' ',
+    '#prefix' => ' ',
     '#attributes' => array('class' => array('locality')),
   );
   $format['country'] = array(
     '#title' => t('Country'),
     '#options' => _addressfield_country_options_list(),
+    '#render_option_value' => TRUE,
     '#required' => TRUE,
     '#attributes' => array('class' => array('country')),
     '#weight' => 100,
   );
 
   // Those countries do not seem to have a relevant postal code.
-  if (in_array($address['country'], array('AF', 'AG', 'AL', 'AO', 'BB', 'BI', 'BJ', 'BO', 'BS', 'BW', 'BZ', 'CF', 'CG', 'CM', 'CO', 'DJ', 'DM', 'EG', 'ER', 'FJ', 'GD', 'GH', 'GM', 'GQ', 'GY', 'IE', 'KI', 'KM', 'KP', 'KY', 'LC', 'LY', 'ML', 'MR', 'NA', 'NR', 'RW', 'SB', 'SC', 'SL', 'SR', 'ST', 'TD', 'TG', 'TL', 'TO', 'TT', 'TV', 'TZ', 'UG', 'VC', 'VU', 'WS', 'ZW'))) {
+  static $countries_no_postal_code = array('AF', 'AG', 'AL', 'AO', 'BB', 'BI', 'BJ', 'BO', 'BS', 'BW', 'BZ', 'CF', 'CG', 'CM', 'CO', 'DJ', 'DM', 'EG', 'ER', 'FJ', 'GD', 'GH', 'GM', 'GQ', 'GY', 'HK', 'IE', 'KI', 'KM', 'KP', 'KY', 'LC', 'LY', 'ML', 'MR', 'NA', 'NR', 'RW', 'SB', 'SC', 'SL', 'SR', 'ST', 'TD', 'TG', 'TL', 'TO', 'TT', 'TV', 'TZ', 'UG', 'VC', 'VU', 'WS', 'ZW');
+  if (in_array($address['country'], $countries_no_postal_code)) {
     unset($format['locality_block']['postal_code']);
 
     // Remove the prefix from the first widget of the block.
@@ -79,18 +81,19 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
     unset($format['locality_block'][$first_child]['#prefix']);
   }
 
-  // Those countries generally use their administrative division in postal addresses.
-  if (in_array($address['country'], array('AR', 'AU', 'BR', 'BS', 'BY', 'BZ', 'CA', 'CN', 'DO', 'EG', 'ES', 'FJ', 'FM', 'GB', 'HN', 'ID', 'IE', 'IN', 'IT', 'JO', 'JP', 'KI', 'KN', 'KR', 'KW', 'KY', 'KZ', 'MX', 'MY', 'MZ', 'NG', 'NI', 'NR', 'NZ', 'OM', 'PA', 'PF', 'PG', 'PH', 'PR', 'PW', 'RU', 'SM', 'SO', 'SR', 'SV', 'TH', 'TW', 'UA', 'US', 'UY', 'VE', 'VI', 'VN', 'YU', 'ZA'))) {
+  // Those countries generally use the administrative area in postal addresses.
+  static $countries_administrative_area = array('AR', 'AU', 'BR', 'BS', 'BY', 'BZ', 'CA', 'CN', 'DO', 'EG', 'ES', 'FJ', 'FM', 'GB', 'HN', 'ID', 'IE', 'IN', 'IT', 'JO', 'JP', 'KI', 'KN', 'KR', 'KW', 'KY', 'KZ', 'MX', 'MY', 'MZ', 'NG', 'NI', 'NR', 'NZ', 'OM', 'PA', 'PF', 'PG', 'PH', 'PR', 'PW', 'RU', 'SM', 'SO', 'SR', 'SV', 'TH', 'TW', 'UA', 'US', 'UY', 'VE', 'VI', 'VN', 'YU', 'ZA');
+  if (in_array($address['country'], $countries_administrative_area)) {
     $format['locality_block']['administrative_area'] = array(
-      '#title' => t('State'),
+      '#title' => t('State', array(), array('context' => 'addressfield')),
       '#size' => 10,
       '#required' => TRUE,
-      '#prefix' => ' ',
+      '#prefix' => ' ',
       '#attributes' => array('class' => array('state')),
     );
   }
 
-  // A few contries have a well-known list of administrative divisions.
+  // A few countries have a well-known list of administrative divisions.
   if ($address['country'] == 'US') {
     $format['locality_block']['administrative_area']['#options'] = array(
       ''   => t('--'),
@@ -146,6 +149,9 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
       'WI' => t('Wisconsin'),
       'WY' => t('Wyoming'),
       ' ' => t('--'),
+      'AA' => t('Armed Forces (Americas)'),
+      'AE' => t('Armed Forces (Europe, Canada, Middle East, Africa)'),
+      'AP' => t('Armed Forces (Pacific)'),
       'AS' => t('American Samoa'),
       'FM' => t('Federated States of Micronesia'),
       'GU' => t('Guam'),
@@ -156,163 +162,168 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
       'VI' => t('Virgin Islands'),
     );
     $format['locality_block']['postal_code']['#title'] = t('ZIP Code');
+
+    if ($context['mode'] == 'render') {
+      $format['locality_block']['locality']['#suffix'] = ',';
+    }
   }
   else if ($address['country'] == 'IT') {
     $format['locality_block']['administrative_area']['#options'] = array(
-      ''   => t('--'),
-      'AG' => 'Agrigento',
-      'AL' => 'Alessandria',
-      'AN' => 'Ancona',
-      'AO' => 'Valle d\'Aosta/Vallée d\'Aoste',
-      'AP' => 'Ascoli Piceno',
-      'AQ' => 'L\'Aquila',
-      'AR' => 'Arezzo',
-      'AT' => 'Asti',
-      'AV' => 'Avellino',
-      'BA' => 'Bari',
-      'BG' => 'Bergamo',
-      'BI' => 'Biella',
-      'BL' => 'Belluno',
-      'BN' => 'Benevento',
-      'BO' => 'Bologna',
-      'BR' => 'Brindisi',
-      'BS' => 'Brescia',
-      'BT' => 'Barletta-Andria-Trani',
-      'BZ' => 'Bolzano/Bozen',
-      'CA' => 'Cagliari',
-      'CB' => 'Campobasso',
-      'CE' => 'Caserta',
-      'CH' => 'Chieti',
-      'CI' => 'Carbonia-Iglesias',
-      'CL' => 'Caltanissetta',
-      'CN' => 'Cuneo',
-      'CO' => 'Como',
-      'CR' => 'Cremona',
-      'CS' => 'Cosenza',
-      'CT' => 'Catania',
-      'CZ' => 'Catanzaro',
-      'EN' => 'Enna',
-      'FC' => 'Forlì-Cesena',
-      'FE' => 'Ferrara',
-      'FG' => 'Foggia',
-      'FI' => 'Firenze',
-      'FM' => 'Fermo',
-      'FR' => 'Frosinone',
-      'GE' => 'Genova',
-      'GO' => 'Gorizia',
-      'GR' => 'Grosseto',
-      'IM' => 'Imperia',
-      'IS' => 'Isernia',
-      'KR' => 'Crotone',
-      'LC' => 'Lecco',
-      'LE' => 'Lecce',
-      'LI' => 'Livorno',
-      'LO' => 'Lodi',
-      'LT' => 'Latina',
-      'LU' => 'Lucca',
-      'MB' => 'Monza e Brianza',
-      'MC' => 'Macerata',
-      'ME' => 'Messina',
-      'MI' => 'Milano',
-      'MN' => 'Mantova',
-      'MO' => 'Modena',
-      'MS' => 'Massa-Carrara',
-      'MT' => 'Matera',
-      'NA' => 'Napoli',
-      'NO' => 'Novara',
-      'NU' => 'Nuoro',
-      'OG' => 'Ogliastra',
-      'OR' => 'Oristano',
-      'OT' => 'Olbia-Tempio',
-      'PA' => 'Palermo',
-      'PC' => 'Piacenza',
-      'PD' => 'Padova',
-      'PE' => 'Pescara',
-      'PG' => 'Perugia',
-      'PI' => 'Pisa',
-      'PN' => 'Pordenone',
-      'PO' => 'Prato',
-      'PR' => 'Parma',
-      'PT' => 'Pistoia',
-      'PU' => 'Pesaro e Urbino',
-      'PV' => 'Pavia',
-      'PZ' => 'Potenza',
-      'RA' => 'Ravenna',
-      'RC' => 'Reggio di Calabria',
-      'RE' => 'Reggio nell\'Emilia',
-      'RG' => 'Ragusa',
-      'RI' => 'Rieti',
-      'RM' => 'Roma',
-      'RN' => 'Rimini',
-      'RO' => 'Rovigo',
-      'SA' => 'Salerno',
-      'SI' => 'Siena',
-      'SO' => 'Sondrio',
-      'SP' => 'La Spezia',
-      'SR' => 'Siracusa',
-      'SS' => 'Sassari',
-      'SV' => 'Savona',
-      'TA' => 'Taranto',
-      'TE' => 'Teramo',
-      'TN' => 'Trento',
-      'TO' => 'Torino',
-      'TP' => 'Trapani',
-      'TR' => 'Terni',
-      'TS' => 'Trieste',
-      'TV' => 'Treviso',
-      'UD' => 'Udine',
-      'VA' => 'Varese',
-      'VB' => 'Verbano-Cusio-Ossola',
-      'VC' => 'Vercelli',
-      'VE' => 'Venezia',
-      'VI' => 'Vicenza',
-      'VR' => 'Verona',
-      'VS' => 'Medio Campidano',
-      'VT' => 'Viterbo',
-      'VV' => 'Vibo Valentia',
+      '' => t('--'),
+      'AG' => t('Agrigento'),
+      'AL' => t('Alessandria'),
+      'AN' => t('Ancona'),
+      'AO' => t("Valle d'Aosta/Vallée d'Aoste"),
+      'AP' => t('Ascoli Piceno'),
+      'AQ' => t("L'Aquila"),
+      'AR' => t('Arezzo'),
+      'AT' => t('Asti'),
+      'AV' => t('Avellino'),
+      'BA' => t('Bari'),
+      'BG' => t('Bergamo'),
+      'BI' => t('Biella'),
+      'BL' => t('Belluno'),
+      'BN' => t('Benevento'),
+      'BO' => t('Bologna'),
+      'BR' => t('Brindisi'),
+      'BS' => t('Brescia'),
+      'BT' => t('Barletta-Andria-Trani'),
+      'BZ' => t('Bolzano/Bozen'),
+      'CA' => t('Cagliari'),
+      'CB' => t('Campobasso'),
+      'CE' => t('Caserta'),
+      'CH' => t('Chieti'),
+      'CI' => t('Carbonia-Iglesias'),
+      'CL' => t('Caltanissetta'),
+      'CN' => t('Cuneo'),
+      'CO' => t('Como'),
+      'CR' => t('Cremona'),
+      'CS' => t('Cosenza'),
+      'CT' => t('Catania'),
+      'CZ' => t('Catanzaro'),
+      'EN' => t('Enna'),
+      'FC' => t('Forlì-Cesena'),
+      'FE' => t('Ferrara'),
+      'FG' => t('Foggia'),
+      'FI' => t('Firenze'),
+      'FM' => t('Fermo'),
+      'FR' => t('Frosinone'),
+      'GE' => t('Genova'),
+      'GO' => t('Gorizia'),
+      'GR' => t('Grosseto'),
+      'IM' => t('Imperia'),
+      'IS' => t('Isernia'),
+      'KR' => t('Crotone'),
+      'LC' => t('Lecco'),
+      'LE' => t('Lecce'),
+      'LI' => t('Livorno'),
+      'LO' => t('Lodi'),
+      'LT' => t('Latina'),
+      'LU' => t('Lucca'),
+      'MB' => t('Monza e Brianza'),
+      'MC' => t('Macerata'),
+      'ME' => t('Messina'),
+      'MI' => t('Milano'),
+      'MN' => t('Mantova'),
+      'MO' => t('Modena'),
+      'MS' => t('Massa-Carrara'),
+      'MT' => t('Matera'),
+      'NA' => t('Napoli'),
+      'NO' => t('Novara'),
+      'NU' => t('Nuoro'),
+      'OG' => t('Ogliastra'),
+      'OR' => t('Oristano'),
+      'OT' => t('Olbia-Tempio'),
+      'PA' => t('Palermo'),
+      'PC' => t('Piacenza'),
+      'PD' => t('Padova'),
+      'PE' => t('Pescara'),
+      'PG' => t('Perugia'),
+      'PI' => t('Pisa'),
+      'PN' => t('Pordenone'),
+      'PO' => t('Prato'),
+      'PR' => t('Parma'),
+      'PT' => t('Pistoia'),
+      'PU' => t('Pesaro e Urbino'),
+      'PV' => t('Pavia'),
+      'PZ' => t('Potenza'),
+      'RA' => t('Ravenna'),
+      'RC' => t('Reggio di Calabria'),
+      'RE' => t("Reggio nell'Emilia"),
+      'RG' => t('Ragusa'),
+      'RI' => t('Rieti'),
+      'RM' => t('Roma'),
+      'RN' => t('Rimini'),
+      'RO' => t('Rovigo'),
+      'SA' => t('Salerno'),
+      'SI' => t('Siena'),
+      'SO' => t('Sondrio'),
+      'SP' => t('La Spezia'),
+      'SR' => t('Siracusa'),
+      'SS' => t('Sassari'),
+      'SV' => t('Savona'),
+      'TA' => t('Taranto'),
+      'TE' => t('Teramo'),
+      'TN' => t('Trento'),
+      'TO' => t('Torino'),
+      'TP' => t('Trapani'),
+      'TR' => t('Terni'),
+      'TS' => t('Trieste'),
+      'TV' => t('Treviso'),
+      'UD' => t('Udine'),
+      'VA' => t('Varese'),
+      'VB' => t('Verbano-Cusio-Ossola'),
+      'VC' => t('Vercelli'),
+      'VE' => t('Venezia'),
+      'VI' => t('Vicenza'),
+      'VR' => t('Verona'),
+      'VS' => t('Medio Campidano'),
+      'VT' => t('Viterbo'),
+      'VV' => t('Vibo Valentia'),
     );
     $format['locality_block']['administrative_area']['#title'] = t('Province');
   }
   else if ($address['country'] == 'BR') {
+    $format['locality_block']['administrative_area']['#render_option_value'] = TRUE;
     $format['locality_block']['administrative_area']['#options'] = array(
-      ''   => t('--'),
+      '' => t('--'),
       'AC' => t('Acre'),
       'AL' => t('Alagoas'),
       'AM' => t('Amazonas'),
-      'AP' => t('Amapa'),
+      'AP' => t('Amapá'),
       'BA' => t('Bahia'),
-      'CE' => t('Ceara'),
+      'CE' => t('Ceará'),
       'DF' => t('Distrito Federal'),
-      'ES' => t('Espirito Santo'),
-      'GO' => t('Goias'),
-      'MA' => t('Maranhao'),
+      'ES' => t('Espírito Santo'),
+      'GO' => t('Goiás'),
+      'MA' => t('Maranhão'),
       'MG' => t('Minas Gerais'),
       'MS' => t('Mato Grosso do Sul'),
       'MT' => t('Mato Grosso'),
-      'PA' => t('Para'),
-      'PB' => t('Paraiba'),
+      'PA' => t('Pará'),
+      'PB' => t('Paraíba'),
       'PE' => t('Pernambuco'),
-      'PI' => t('Piaui'),
-      'PR' => t('Parana'),
+      'PI' => t('Piauí'),
+      'PR' => t('Paraná'),
       'RJ' => t('Rio de Janeiro'),
       'RN' => t('Rio Grande do Norte'),
-      'RO' => t('Rondonia'),
+      'RO' => t('Rondônia'),
       'RR' => t('Roraima'),
       'RS' => t('Rio Grande do Sul'),
       'SC' => t('Santa Catarina'),
       'SE' => t('Sergipe'),
-      'SP' => t('Sao Paulo'),
+      'SP' => t('São Paulo'),
       'TO' => t('Tocantins'),
     );
   }
   else if ($address['country'] == 'CA') {
     $format['locality_block']['administrative_area']['#options'] = array(
-      ''   => t('--'),
+      '' => t('--'),
       'AB' => t('Alberta'),
       'BC' => t('British Columbia'),
       'MB' => t('Manitoba'),
       'NB' => t('New Brunswick'),
-      'NL' => t('Newfoundland'),
+      'NL' => t('Newfoundland and Labrador'),
       'NT' => t('Northwest Territories'),
       'NS' => t('Nova Scotia'),
       'NU' => t('Nunavut'),
@@ -323,10 +334,14 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
       'YT' => t('Yukon Territory'),
     );
     $format['locality_block']['administrative_area']['#title'] = t('Province');
+
+    if ($context['mode'] == 'render') {
+      $format['locality_block']['locality']['#suffix'] = ',';
+    }
   }
   else if ($address['country'] == 'AU') {
     $format['locality_block']['administrative_area']['#options'] = array(
-      ''   => t('--'),
+      '' => t('--'),
       'ACT' => t('Australian Capital Territory'),
       'NSW' => t('New South Wales'),
       'NT' => t('Northern Territory'),
@@ -337,12 +352,40 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
       'WA' => t('Western Australia'),
     );
   }
+  else if ($address['country'] == 'NZ') {
+    $format['locality_block']['locality']['#title'] = ('Town/City');
+    $format['locality_block']['postal_code']['#title'] = t('Postcode');
+    $format['locality_block']['administrative_area']['#render_option_value'] = TRUE;
+    $format['locality_block']['administrative_area']['#title'] = t('Region');
+    $format['locality_block']['administrative_area']['#required'] = FALSE;
+    $format['locality_block']['administrative_area']['#options'] = array(
+      ''   => t('--'),
+      'AUK' => t('Auckland'),
+      'BOP' => t('Bay of Plenty'),
+      'CAN' => t('Canterbury'),
+      'HKB' => t("Hawke's Bay"),
+      'MWT' => t('Manawatu-Wanganui'),
+      'NTL' => t('Northland'),
+      'OTA' => t('Otago'),
+      'STL' => t('Southland'),
+      'TKI' => t('Taranaki'),
+      'WKO' => t('Waikato'),
+      'WGN' => t('Wellington'),
+      'WTC' => t('West Coast'),
+      'GIS' => t('Gisborne District'),
+      'MBH' => t('Marlborough District'),
+      'NSN' => t('Nelson City'),
+      'TAS' => t('Tasman District'),
+      'CIT' => t('Chatham Islands Territory'),
+    );
+  }
 
   // Those countries tend to put the postal code after the locality.
-  if (in_array($address['country'], array('AU', 'BD', 'BF', 'BH', 'BM', 'BN', 'BT', 'CA', 'FM', 'GB', 'ID', 'IN', 'JM', 'JO', 'KH', 'LB', 'LS', 'LV', 'MM', 'MN', 'MV', 'MW', 'NG', 'NP', 'NZ', 'PE', 'PK', 'PR', 'PW', 'SA', 'SG', 'SO', 'TH', 'US', 'VI', 'VG', 'VN'))) {
+  static $countries_postal_code_after_locality = array('AU', 'BD', 'BF', 'BH', 'BM', 'BN', 'BT', 'CA', 'FM', 'GB', 'ID', 'IN', 'JM', 'JO', 'KH', 'LB', 'LS', 'LV', 'MM', 'MN', 'MV', 'MW', 'NG', 'NP', 'NZ', 'PE', 'PK', 'PR', 'PW', 'SA', 'SG', 'SO', 'TH', 'US', 'VI', 'VG', 'VN');
+  if (in_array($address['country'], $countries_postal_code_after_locality)) {
     // Take the widget out of the array.
     $postal_code_widget = $format['locality_block']['postal_code'];
-    $postal_code_widget['#prefix'] = ' ';
+    $postal_code_widget['#prefix'] = ' ';
     unset($format['locality_block']['postal_code']);
 
     // Add it back.
@@ -412,7 +455,6 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
     $format['country']['#ajax'] = array(
       'callback' => 'addressfield_standard_widget_refresh',
       'wrapper' => $format['#wrapper_id'],
-      'method' => 'replace',
     );
     $format['country']['#element_validate'] = array('addressfield_standard_country_validate');
     // Don't validate any element when the country is changed.

@@ -1,0 +1,158 @@
+<?php
+/**
+ * @file
+ *
+ * Install / Setup functions for Commerce Checkout by Amazon.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function commerce_cba_install() {
+  // Create a default inline checkout button.
+  $values = array(
+    'delta' => 'checkout-by-amazon-inline',
+    'label' => st('Checkout by Amazon: Inline button'),
+    'type' => 'commerce_cba_checkout',
+    'view_mode' => 'default',
+    'data' => array('settings' => array(
+      'button_type' => 'checkout',
+      'button_settings' => array(
+        'size' => 'large',
+        'color' => 'orange',
+        'background' => 'white',
+      )),
+    ),
+  );
+  $bean = bean_create($values);
+  bean_save($bean);
+
+  // Create a billing address widget.
+  $values = array(
+    'delta' => 'checkout-by-amazon-address',
+    'label' => st('Checkout by Amazon: Address widget'),
+    'type' => 'commerce_cba_address',
+    'view_mode' => 'default',
+    'data' => array('settings' => array(
+      'destination' => 'billing',
+      'display_mode' => 'Edit',
+    )),
+  );
+  $bean = bean_create($values);
+  bean_save($bean);
+
+  // Create a Wallet widget.
+  $values = array(
+    'delta' => 'checkout-by-amazon-wallet',
+    'label' => st('Checkout by Amazon: Wallet widget'),
+    'type' => 'commerce_cba_wallet',
+    'view_mode' => 'default',
+    'data' => array('settings' => array(
+      'display_mode' => 'Edit',
+    )),
+  );
+  $bean = bean_create($values);
+  bean_save($bean);
+
+  // Create an Order Details widget.
+  $values = array(
+    'delta' => 'checkout-by-amazon-order-details',
+    'label' => st('Checkout by Amazon: Order Details'),
+    'type' => 'commerce_cba_order_details',
+    'view_mode' => 'default',
+  );
+  $bean = bean_create($values);
+  bean_save($bean);
+
+  // Provide default permissions for anonymous and auth users.
+  // We need to use the code inside user_role_grant_permissions() to avoid
+  // conflicts as the bean types define permissions that are not yet there when
+  // this module gets installed, but they are afterwards.
+  $permissions = array(
+    'view any commerce_cba_address bean',
+    'view any commerce_cba_checkout bean',
+    'view any commerce_cba_order_details bean',
+    'view any commerce_cba_wallet bean',
+  );
+  // Grant new permissions for the role.
+  foreach ($permissions as $name) {
+    db_merge('role_permission')
+      ->key(array(
+        'rid' => DRUPAL_ANONYMOUS_RID,
+        'permission' => $name,
+      ))
+      ->fields(array(
+        'module' => 'commerce_cba',
+      ))
+      ->execute();
+  }
+  // Grant new permissions for the role.
+  foreach ($permissions as $name) {
+    db_merge('role_permission')
+      ->key(array(
+        'rid' => DRUPAL_AUTHENTICATED_RID,
+        'permission' => $name,
+      ))
+      ->fields(array(
+        'module' => 'commerce_cba',
+      ))
+      ->execute();
+  }
+
+  // Clear the user access cache.
+  drupal_static_reset('user_access');
+  drupal_static_reset('user_role_permissions');
+
+  // Add the checkout by amazon button at the bottom of the cart.
+  $values = array(
+    array(
+      'module' => 'bean',
+      'delta' => 'checkout-by-amazon-inline',
+      'theme' => variable_get('theme_default', 'bartik'),
+      'status' => 1,
+      'weight' => 99,
+      'region' => 'content',
+      'pages' => 'cart',
+      'visibility' => 1,
+    ),
+  );
+  $query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'pages', 'visibility'));
+  foreach ($values as $record) {
+    $query->values($record);
+  }
+  $query->execute();
+
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_cba_uninstall() {
+  variable_del('cba_merchant_id');
+  variable_del('cba_public_key');
+  variable_del('cba_secret_key');
+  variable_del('cba_method');
+  variable_del('cba_country');
+  variable_del('cba_mode');
+
+  // Load the dependent commerce_cba module file, because it has already been
+  // disabled.
+  drupal_load('module', 'commerce_cba');
+
+  $types = commerce_cba_bean_types();
+  $types = array_keys($types);
+  foreach ($types as $type) {
+    $beans = commerce_bean_get_beans($type);
+    foreach ($beans as $bean) {
+      bean_delete($bean);
+    }
+  }
+
+  // Remove fields related with checkout by Amazon.
+  module_load_include('module', 'commerce');
+  commerce_delete_instances('commerce_order', 'commerce_cba_amazon_order_ids');
+  commerce_delete_field('commerce_cba_amazon_order_ids');
+}
+
+

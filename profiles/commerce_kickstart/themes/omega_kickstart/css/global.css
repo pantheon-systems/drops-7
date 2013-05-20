@@ -1672,7 +1672,7 @@ ol.inline.commerce-checkout-progress {
     font-weight: 700;
     line-height: 20px;
     margin: 0 0px 10px 0;
-    padding: 15px 20px 15px 35px;
+    padding: 15px 15px 15px 35px;
     /* LTR */
     position: relative;
     width: auto; }
@@ -1816,16 +1816,11 @@ ol.inline.commerce-checkout-progress {
           /* LTR */ }
 
 /* Checkout button */
-.page-checkout #commerce-checkout-form-checkout .checkout-buttons,
-.page-checkout #commerce-checkout-form-shipping .checkout-buttons,
-.page-checkout #commerce-checkout-form-review .checkout-buttons {
+.page-checkout .checkout-buttons {
   margin: 0 10px; }
-  .page-checkout #commerce-checkout-form-checkout .checkout-buttons input#edit-cancel,
-  .page-checkout #commerce-checkout-form-checkout .checkout-buttons input#edit-back,
-  .page-checkout #commerce-checkout-form-shipping .checkout-buttons input#edit-cancel,
-  .page-checkout #commerce-checkout-form-shipping .checkout-buttons input#edit-back,
-  .page-checkout #commerce-checkout-form-review .checkout-buttons input#edit-cancel,
-  .page-checkout #commerce-checkout-form-review .checkout-buttons input#edit-back {
+  .page-checkout .checkout-buttons input#edit-cancel,
+  .page-checkout .checkout-buttons input#edit-back,
+  .page-checkout .checkout-buttons input.checkout-back {
     background: none;
     border: none transparent;
     border-bottom: 1px solid #888888;
@@ -1839,9 +1834,8 @@ ol.inline.commerce-checkout-progress {
     /* LTR */
     padding: 0 0 1px 0;
     overlay: 0; }
-  .page-checkout #commerce-checkout-form-checkout .checkout-buttons input#edit-continue,
-  .page-checkout #commerce-checkout-form-shipping .checkout-buttons input#edit-continue,
-  .page-checkout #commerce-checkout-form-review .checkout-buttons input#edit-continue {
+  .page-checkout .checkout-buttons input#edit-continue,
+  .page-checkout .checkout-buttons input.checkout-continue {
     background: #2698f2 none 0 0 no-repeat;
     border: 0;
     -moz-border-radius: 8px;
@@ -1962,6 +1956,9 @@ ol.inline.commerce-checkout-progress {
 */
 .page-checkout {
   /* Checkout complete */ }
+  .page-checkout .checkout-help {
+    margin: 0 0 10px 10px;
+    /* LTR */ }
   .page-checkout #commerce-checkout-form-checkout fieldset,
   .page-checkout #commerce-checkout-form-review fieldset {
     padding: 10px; }

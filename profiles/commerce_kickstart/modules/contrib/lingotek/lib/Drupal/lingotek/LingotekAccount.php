@@ -4,7 +4,7 @@
  * @file
  * Defines LingotekAccount.
  */
- 
+
 /**
  * A class representing a Lingotek Account
  *
@@ -12,15 +12,11 @@
  */
 class LingotekAccount {
 
-
-  const LINGOTEK_ACCOUNT_STATUS_UNKNOWN = 'unknown';
-  const LINGOTEK_ACCOUNT_STATUS_NOT_FOUND = 'not_found';
-  const LINGOTEK_ACCOUNT_STATUS_ACTIVE = 'active';
-
-  const LINGOTEK_ACCOUNT_PLAN_UNKNOWN = 'unknown';
-  const LINGOTEK_ACCOUNT_PLAN_NONE = 'none';
-  const LINGOTEK_ACCOUNT_ENTERPRISE = 'enterprise';
-
+  const NOT_FOUND = 'not_found';
+  const ACTIVE = 'active';
+  const UNKNOWN = 'unknown';
+  const NONE = 'none';
+  const ENTERPRISE = 'enterprise';
 
   /**
    * Holds the static instance of the singleton object.
@@ -28,10 +24,9 @@ class LingotekAccount {
    * @var LingotekAccount
    */
   private static $instance;
-
   private $status;
   private $plan;
-  private $enterprise;
+  private $planType;
 
   /**
    * Constructor.
@@ -39,27 +34,20 @@ class LingotekAccount {
    * Sets default values
    */
   public function __construct() {
-
-    // Set the Defaults
-    $this->status = self::LINGOTEK_ACCOUNT_STATUS_UNKNOWN;
-    $this->plan   = self::LINGOTEK_ACCOUNT_PLAN_UNKNOWN;
-    $this->enterprise = FALSE;
+    $this->status = self::UNKNOWN;
+    $this->planType = self::UNKNOWN;
 
     // Load the Current Account Status from Cached local Drupal information.
-    $current_status = variable_get( 'lingotek_account_status', NULL );
-    $current_plan = variable_get( 'lingotek_account_plan', NULL );
-    $current_enterprise = variable_get( 'lingotek_account_enterprise', NULL ); // Stored as 0/1
-    if ( isset( $current_status ) && isset( $current_plan ) && isset( $current_enterprise ) ) {
-      $this->setStatus( $current_status );
-      $this->setPlan( $current_plan );
-      $this->setEnterpriseStatus( $current_enterprise );
+    $current_status = variable_get('lingotek_account_status', NULL);
+    $current_plan_type = variable_get('lingotek_account_plan_type', NULL);
+    if (isset($current_status) && isset($current_plan_type)) {
+      $this->setStatus($current_status);
+      $this->setPlanType($current_plan_type);
     }
     else { // If the Account data isn't cached locally pull it down.
       $this->getAccountStatus();
     }
-
-  } // END:  __construct()
-
+  }
 
   /**
    * Gets the singleton instance of the Account class.
@@ -72,11 +60,10 @@ class LingotekAccount {
       $class_name = __CLASS__;
       self::$instance = new $class_name();
     }
-
     return self::$instance;
   }
 
-  public function setStatus( $value = 'inactive' ) {
+  public function setStatus($value = 'inactive') {
     $this->status = $value;
   }
 
@@ -87,17 +74,17 @@ class LingotekAccount {
   public function getStatusText() {
     return ( $this->status == 'active' ) ? '<span style="color: green;">Active</span>' : '<span style="color: red;">Inactive</span>';
   }
-  
-  public function getManagedTargets($as_detailed_objects = FALSE, $return_lingotek_codes = TRUE) {
-    lingotek_add_missing_locales();// fills in any missing lingotek_locale values to the languages table
-    
+
+  public function getManagedTargets($as_detailed_objects = FALSE) {
+    lingotek_add_missing_locales(); // fills in any missing lingotek_locale values to the languages table
+
     $targets_drupal = language_list();
     $default_language = language_default();
-    
+
     $targets = array();
     foreach ($targets_drupal as $key => $target) {
       $is_source = $default_language->language == $target->language;
-      $is_lingotek_managed = ($this->isEnterprise() === TRUE) || $target->lingotek_enabled;//in_array($target->language, $lingotek_managed_targets);
+      $is_lingotek_managed = $target->lingotek_enabled;
       if ($is_source) {
         continue; // skip, since the source language is not a target
       }
@@ -107,47 +94,55 @@ class LingotekAccount {
       $target->active = $target->lingotek_enabled;
       $targets[$key] = $target;
     }
-    return $as_detailed_objects ? $targets : (array_map(function ($obj) {
-              return $obj->lingotek_locale;
-            }, $targets));
+    $result = $as_detailed_objects ? $targets : array_map(create_function('$obj', 'return $obj->lingotek_locale;'), $targets);
+    return $result;
   }
 
   public function getManagedTargetsAsJSON() {
     return drupal_json_encode(array_values($this->getManagedTargets(FALSE, TRUE)));
   }
 
-  public function setPlan( $value ) {
-    $this->plan = $value;
+  public function setPlan($plan) {
+    $this->plan = $plan;
+    if (is_object($plan) && isset($plan->type)) {
+      $this->setPlanType($plan->type);
+    }
   }
 
   public function getPlan() {
     return $this->plan;
   }
 
-  public function getPlanText() {
-    $plan_pieces = explode('_', $this->plan); 
-    $details = ucwords(end($plan_pieces));// e.g., Enterprise, Monthly, Yearly
+  public function setPlanType($type = 'unknown') {
+    variable_set('lingotek_account_plan_type', $type);
+    $standard_types = array('cosmopolitan_monthly', 'cosmopolitan_yearly'); // if in this list, then set to 'standard'
+    $type = in_array($type, $standard_types) ? 'standard' : $type;
+    $this->planType = $type;
+  }
+
+  public function getPlanType() {
+    return $this->planType;
+  }
+
+  public function isPlanType($type) {
+    // isPlanType type values: 'enterprise', 'standard'
+    $account_type = $this->getPlanType();
+    return (strcasecmp($type, $account_type) == 0);
+  }
+
+  public function getPlanTypeText() {
+    $plan_pieces = explode('_', $this->getPlanType());
+    $details = ucwords(end($plan_pieces)); // e.g., Enterprise, Monthly, Yearly
     return $details;
   }
 
-
-
   public function isEnterprise() {
-    return $this->getEnterpriseStatus();
-  }
-
-  public function getEnterpriseStatus() {
-    return $this->enterprise;
-  }
-
-  public function setEnterpriseStatus( $value ) {
-    $this->enterprise = (bool)$value;
+    return $this->isPlanType(self::ENTERPRISE);
   }
 
   public function getEnterpriseStatusText() {
-    return ( $this->enterprise === TRUE ) ? '<span style="color: green;">Yes</span>' : '<span>No</span>';
+    return ( $this->isPlanType(self::ENTERPRISE) ) ? '<span style="color: green;">Yes</span>' : '<span>No</span>';
   }
-
 
   /**
    * Get Account Status
@@ -160,72 +155,82 @@ class LingotekAccount {
 
     $result = FALSE;
 
-    $fields = array(
-      'community'    => variable_get( 'lingotek_community_identifier', '' ),
-      'external_id'  => variable_get( 'lingotek_login_id', '' ),
-      'oauth_key'    => variable_get( 'lingotek_oauth_consumer_id', '' ),
-      'oauth_secret' => variable_get( 'lingotek_oauth_consumer_secret', '' ),
+    $parameters = array(
+      'community' => variable_get('lingotek_community_identifier', ''),
+      'external_id' => variable_get('lingotek_login_id', ''),
+      'oauth_key' => variable_get('lingotek_oauth_consumer_id', ''),
+      'oauth_secret' => variable_get('lingotek_oauth_consumer_secret', ''),
     );
 
-    if( !empty($fields['community']) && !empty($fields['external_id']) && !empty($fields['oauth_key']) && !empty($fields['oauth_secret']) ) {
+    if (!empty($parameters['community']) && !empty($parameters['external_id']) && !empty($parameters['oauth_key']) && !empty($parameters['oauth_secret'])) {
 
-      $ch = curl_init( LINGOTEK_BILLING_SERVER . '?' . http_build_query( $fields ) );
-      curl_setopt( $ch, CURLOPT_RETURNTRANSFER, TRUE );
-      curl_setopt( $ch, CURLOPT_SSL_VERIFYPEER, FALSE );
+      $timer_name = 'GET -' . microtime(TRUE);
+      timer_start($timer_name);
+
+      $api_url = LINGOTEK_BILLING_SERVER;
+
+      $ch = curl_init($api_url . '?' . http_build_query($parameters));
+      curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
       //curl_setopt( $ch, CURLINFO_HEADER_OUT, TRUE );
 
-      $response = curl_exec( $ch );
-      $info = curl_getinfo( $ch );
-      curl_close( $ch );
+      $response = curl_exec($ch);
+      $info = curl_getinfo($ch);
+      curl_close($ch);
 
-      //debug( $response );
-      //debug( $info );
+      $response_json = json_decode($response);
+      //debug( $response ); //debug( $info );
 
-      $json = json_decode( $response );
-      if ( isset( $json ) && $info['http_code'] == 200  ) { // Did we get valid json data back?  If not, $json is NULL.
+      $timer_results = timer_stop($timer_name);
+
+      $message_params = array(
+        '@url' => $api_url,
+        '@method' => 'GET account (billing API)',
+        '!params' => $parameters,
+        //'!request' => $request,
+        '!response' => $response_json,
+        '@response_time' => number_format($timer_results['time']) . ' ms',
+      );
+      
+      if (isset($response_json) && $info['http_code'] == 200) { // Did we get valid json data back?  If not, $json is NULL.
         //debug ( $json );
+        LingotekLog::info('<h1>@method</h1>
+        <strong>API URL:</strong> @url
+        <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response', $message_params, 'api');
+
+        $response_data = $response;
+
+
         $result = TRUE;
 
         // Not Found - {"state":"not_found"} - Account isn't setup yet.  The state after autoprovisioning a community, but before setting up your billing account.
-        if ( $json->state == self::LINGOTEK_ACCOUNT_STATUS_NOT_FOUND ) {
-          $this->setStatus( self::LINGOTEK_ACCOUNT_STATUS_NOT_FOUND );
-          $this->setPlan( self::LINGOTEK_ACCOUNT_PLAN_NONE );
+        if ($response_json->state == self::NOT_FOUND) {
+          $this->setStatus(self::NOT_FOUND);
+          $this->setPlan(self::NONE);
         } // END:  Not Found
-
-
         // Active Account
         // Additionally, Save the account settings locally.
-        elseif ( $json->state == self::LINGOTEK_ACCOUNT_STATUS_ACTIVE ) {
+        elseif ($response_json->state == self::ACTIVE) {
 
-          $this->setStatus( self::LINGOTEK_ACCOUNT_STATUS_ACTIVE );
-          variable_set( 'lingotek_account_status', self::LINGOTEK_ACCOUNT_STATUS_ACTIVE );
+          $this->setStatus(self::ACTIVE);
+          variable_set('lingotek_account_status', self::ACTIVE);
 
-          if ( is_object( $json->plan ) ) {
+          if (is_object($response_json->plan)) {
 
-            $this->setPlan( $json->plan->type );
-            variable_set( 'lingotek_account_plan', $json->plan->type );
-
-            if ( $json->plan->type == self::LINGOTEK_ACCOUNT_ENTERPRISE ) {
-              $this->setEnterpriseStatus( TRUE );
-              variable_set( 'lingotek_account_enterprise', 1 ); // Store as 0/1
-            }
-            else {
-              //$this->setEnterpriseStatus( FALSE );
-              variable_set( 'lingotek_account_enterprise', 0 ); // Store as 0/1
-            }
-
+            $this->setPlan($response_json->plan);
           } // END:  Plan
 
           menu_rebuild();
-
         } // END  Active
-
       } // END:  Got 200 Response
-
+      else {
+        LingotekLog::error('<h1>@method (Failed)</h1>
+        <strong>API URL:</strong> @url
+        <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response<br/><strong>Full Request:</strong> !request', $message_params, 'api');
+      }
     } // END:  has credentials
 
     return $result;
-
-  } // END:  lingotek_get_account_status()
+  }
 
 }

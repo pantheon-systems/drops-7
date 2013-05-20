@@ -1,0 +1,17 @@
+name = Commerce Guys Marketplace
+description = Connector module for the Commerce Guys Marketplace.
+package = Other
+core = 7.x
+
+files[] = includes/commerceguys_marketplace.base.inc
+files[] = includes/commerceguys_marketplace.addon.inc
+files[] = includes/commerceguys_marketplace.training.inc
+
+configure = admin/config/services/commerceguys-marketplace
+
+; Information added by drupal.org packaging script on 2013-05-17
+version = "7.x-1.0-beta1"
+core = "7.x"
+project = "commerceguys_marketplace"
+datestamp = "1368821423"
+

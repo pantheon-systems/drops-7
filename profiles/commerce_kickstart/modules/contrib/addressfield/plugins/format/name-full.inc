@@ -33,7 +33,7 @@ function addressfield_format_name_full_generate(&$format, $address) {
     '#title' => t('Last name'),
     '#size' => 30,
     '#required' => TRUE,
-    '#prefix' => ' ',
+    '#prefix' => ' ',
     '#attributes' => array('class' => array('last-name')),
   );
 }

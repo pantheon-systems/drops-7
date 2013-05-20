@@ -1,0 +1,24 @@
+name = Authorize.Net
+description = Implements Authorize.Net payment services for use with Drupal Commerce.
+package = Commerce (contrib)
+dependencies[] = commerce
+dependencies[] = commerce_ui
+dependencies[] = commerce_payment
+dependencies[] = commerce_order
+core = 7.x
+
+; Base module files
+files[] = commerce_authnet.module
+
+; Includes
+files[] = includes/commerce_authnet.admin.inc
+
+; Simple tests
+; files[] = tests/commerce_authnet.test
+
+; Information added by drupal.org packaging script on 2013-05-17
+version = "7.x-1.1"
+core = "7.x"
+project = "commerce_authnet"
+datestamp = "1368798834"
+

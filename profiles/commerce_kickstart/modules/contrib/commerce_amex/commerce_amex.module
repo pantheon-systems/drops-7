@@ -1,0 +1,1927 @@
+<?php
+
+/**
+ * @file
+ * Implements American Express payment gateway for use in Drupal Commerce.
+ */
+
+// Amex transaction mode definitions:
+define('AMEX_TXN_MODE_LIVE', '');
+define('AMEX_TXN_MODE_TEST', 'TEST');
+
+// Amex transaction types
+define('AMEX_OP_AUTH', 'AUTHORIZE');
+define('AMEX_OP_CAPTURE', 'CAPTURE');
+define('AMEX_OP_PAY', 'PAY');
+define('AMEX_OP_VERIFY', 'VERIFY');
+
+define('AMEX_TXN_PATH', '/api/rest/version/10/merchant/');
+
+define('COMMERCE_PAYMENT_STATUS_AMEX_REVIEW', 'amex_review');
+define('COMMERCE_PAYMENT_STATUS_AMEX_CANCELED', 'amex_canceled');
+
+/**
+ * Implements hook_menu
+*/
+function commerce_amex_menu() {
+  $items = array();
+
+  // Define a path for the Amex gatewayReturnURL.
+  $items['checkout/%commerce_order/amex/return/%'] = array(
+    'page callback' => 'commerce_amex_hosted_return_handle',
+    'page arguments' => array(1, 4),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Define a path to receive 3D Secure callback.
+  $items['checkout/%commerce_order/amex/3d/%commerce_payment_transaction'] = array(
+    'page callback' => 'commerce_amex_3d_secure_callback',
+    'page arguments' => array(1, 4),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Add a menu item for capturing authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/amex-capture'] = array(
+    'title' => 'Capture',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_amex_capture_form', 3, 5),
+    'access callback' => 'commerce_amex_capture_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_amex.admin.inc',
+  );
+
+  // Add a menu item for voiding authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/amex-void'] = array(
+    'title' => 'Void',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_amex_void_form', 3, 5),
+    'access callback' => 'commerce_amex_void_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_amex.admin.inc',
+  );
+
+  // Add a menu item for refunding authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/amex-refund'] = array(
+    'title' => 'Refund',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_amex_refund_form', 3, 5),
+    'access callback' => 'commerce_amex_refund_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_amex.admin.inc',
+  );
+
+  // Add a menu item for refunding authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/amex-update'] = array(
+    'title' => 'Update Status',
+    'page callback' => 'commerce_amex_update_transaction',
+    'page arguments' => array(3, 5),
+    'access callback' => 'commerce_amex_update_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_amex.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Determines access to the prior authorization capture form for Amex
+ *   hosted credit card transactions.
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return
+ *   TRUE or FALSE indicating capture access.
+ */
+function commerce_amex_capture_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Amex or isn't
+  // awaiting capture.
+  if ($transaction->payment_method != 'amex_hosted' ||
+    strtoupper($transaction->remote_status) != 'APPROVED' || $transaction->status != COMMERCE_PAYMENT_STATUS_PENDING) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 30 days past the original authorization.
+  if (time() - $transaction->created > 86400 * 30) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determines access to the prior authorization capture form for Amex
+ *   hosted credit card transactions.
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return
+ *   TRUE or FALSE indicating capture access.
+ */
+function commerce_amex_void_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Amex or isn't
+  // awaiting capture.
+  if ($transaction->payment_method != 'amex_hosted' || empty($transaction->remote_id) ||
+    strtoupper($transaction->remote_status) != 'APPROVED' || $transaction->status != COMMERCE_PAYMENT_STATUS_PENDING) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 30 days past the original authorization.
+  if (time() - $transaction->created > 86400 * 30) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determines access to the prior authorization capture form for Amex
+ *   hosted credit card transactions.
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return
+ *   TRUE or FALSE indicating capture access.
+ */
+function commerce_amex_refund_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Amex or isn't
+  // awaiting capture.
+  if ($transaction->payment_method != 'amex_hosted' || empty($transaction->remote_id) ||
+    strtoupper($transaction->remote_status) != 'APPROVED' || $transaction->status != COMMERCE_PAYMENT_STATUS_SUCCESS) {
+    return FALSE;
+  }
+
+  if ($transaction->amount <= 0) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 30 days past the original authorization.
+  if (time() - $transaction->created > 86400 * 30) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determines access to the prior authorization capture form for Amex
+ *   hosted credit card transactions.
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return
+ *   TRUE or FALSE indicating capture access.
+ */
+function commerce_amex_update_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Amex or isn't
+  // awaiting capture.
+  if ($transaction->payment_method != 'amex_hosted' || empty($transaction->remote_id) ||
+    $transaction->status != COMMERCE_PAYMENT_STATUS_AMEX_REVIEW) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_amex_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['amex_hosted'] = array(
+    'base' => 'commerce_amex_hosted',
+    'title' => t('American Express'),
+    'short_title' => t('AMEX Host'),
+    'display_title' => t('Pay with Credit or Debit Card'),
+    'description' => t('Integrates American Express Hosted Payment form.'),
+    'offsite' => TRUE,
+    'cardonfile' => array(
+      // create and update are not used because offsite card form.
+      'update callback' => 'commerce_amex_cardonfile_update',
+      //'update form callback' => 'commerce_amex_cardonfile_update_form',
+      'delete callback' => 'commerce_amex_cardonfile_delete',
+      'charge callback' => 'commerce_amex_cardonfile_charge',
+    ),
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Implements hool_commerce_payment_transaction_status_info().
+ */
+function commerce_amex_commerce_payment_transaction_status_info() {
+  $statuses = array();
+
+  $statuses[COMMERCE_PAYMENT_STATUS_AMEX_REVIEW] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_AMEX_REVIEW,
+    'title' => t('Review'),
+    'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-pending.png',
+    'total' => FALSE,
+  );
+
+  $statuses[COMMERCE_PAYMENT_STATUS_AMEX_CANCELED] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_AMEX_CANCELED,
+    'title' => t('Canceled'),
+    'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-failure.png',
+    'total' => FALSE,
+  );
+
+  return $statuses;
+}
+
+/**
+ * Implements hook_commerce_checkout_page_info_alter().
+ */
+function commerce_amex_commerce_checkout_page_info_alter(&$checkout_pages) {
+  $checkout_pages['payment']['help'] = NULL;
+}
+
+/**
+ * Implements hook_commerce_cardonfile_checkout_pane_form_alter()
+ */
+function commerce_amex_commerce_cardonfile_checkout_pane_form_alter(&$pane_form, $form) {
+  // Make alterations for our method
+  if (!empty($form['commerce_payment']['payment_method']['#default_value'])) {
+    $instance_id = $form['commerce_payment']['payment_method']['#default_value'];
+    $payment_method = commerce_payment_method_instance_load($instance_id);
+
+    if ($payment_method['method_id'] == 'amex_hosted') {
+      // Always remove the save card option here.
+      unset($pane_form['credit_card']['cardonfile_store']);
+      unset($pane_form['cardonfile_instance_default']);
+    }
+  }
+}
+
+/**
+ * Returns the default settings for the Amex hosted payment method.
+ */
+function commerce_amex_hosted_default_settings() {
+  return array(
+    'merchant_id' => '',
+    'password' => '',
+    'txn_mode' => AMEX_TXN_MODE_TEST,
+    'txn_3d_secure' => 1,
+    'txn_url' => '',
+    'txn_type' => AMEX_OP_PAY,
+    'cardonfile' => FALSE,
+    'continuous' => FALSE,
+  );
+}
+
+/**
+ * Payment method callback: settings form.
+ */
+function commerce_amex_hosted_settings_form($settings = NULL) {
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+  // Merge default settings into the stored settings array.
+  $settings = (array) $settings + commerce_amex_hosted_default_settings();
+
+  $form = array();
+
+  $form['merchant_id'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Merchant ID'),
+    '#description' => t('Your Merchant ID.'),
+    '#default_value' => $settings['merchant_id'],
+    '#required' => TRUE,
+  );
+
+  // @todo Secure password data
+  $form['password'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Password'),
+    '#description' => t('Your Transaction Password.'),
+    '#default_value' => $settings['password'],
+    '#required' => TRUE,
+  );
+
+  $form['txn_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Default credit card transaction type'),
+    '#description' => t('The default will be used to process transactions during checkout.'),
+    '#options' => array(
+      AMEX_OP_PAY => t('Payment in Full'),
+      AMEX_OP_AUTH => t('Authorisation only (requires manual or automated capture after checkout)'),
+      AMEX_OP_VERIFY => t('Verify (US Only) no funds are collected any amount is only used for risk assesment.'),
+    ),
+    '#default_value' => $settings['txn_type'],
+  );
+
+  $form['txn_3d_secure'] = array(
+    '#type' => 'radios',
+    '#title' => t('Carry out 3D Secure security check'),
+    '#default_value' => $settings['txn_3d_secure'],
+    '#options' => array(
+      '0' => t('Do not perform 3D-Secure checks for this transaction only and always authorise.'),
+      '1' => t('If card is enroled attempt authentication (allow if remote server errors)'),
+      '2' => t('If card is enroled require authentication'),
+      '3' => t('Require card to be enroled and attempt authentication (allow if remote server errors)'),
+      '4' => t('Require card to be enroled and require authentication'),
+    ),
+  );
+
+  $form['txn_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Transaction mode'),
+    '#description' => t('Adjust to live transactions when you are ready to start processing real payments.'),
+    '#options' => array(
+      AMEX_TXN_MODE_LIVE => t('Live transactions'),
+      AMEX_TXN_MODE_TEST => t('Test transactions'),
+    ),
+    '#default_value' => $settings['txn_mode'],
+  );
+
+  $form['txn_url'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Transaction URL'),
+    '#description' => t('Enter the transaction URL e.g. https://gateway-emea.americanexpress.com'),
+    '#default_value' => $settings['txn_url'],
+    '#required' => TRUE,
+  );
+
+  // Card on File module support.
+  if (module_exists('commerce_cardonfile')) {
+    $form['cardonfile'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable Card on File functionality with this payment method.'),
+      '#description' => t('Stores tokenised value for card data.'),
+      '#default_value' => $settings['cardonfile'],
+    );
+
+    $form['continuous'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Use continuous authority transactions.'),
+      '#description' => t('Card on file strage will be required.'),
+      '#default_value' => $settings['continuous'],
+    );
+  }
+
+  else {
+    $form['cardonfile'] = array(
+      '#type' => 'markup',
+      '#markup' => t('To enable Card on File funcitionality download and install the Card on File module.'),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Payment method callback: submit form.
+ *
+ * An empty form is created for Card of File to use to show stored payment methods.
+ */
+function commerce_amex_hosted_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+  $form = array();
+  $form['credit_card']['#tree'] = 1;
+  $form['credit_card']['#attached'] = array(
+    'css' => array(drupal_get_path('module', 'commerce_payment') . '/theme/commerce_payment.theme.css'),
+  );
+
+  return $form;
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function commerce_amex_hosted_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  // Nothing to validate
+}
+
+/**
+ * Payment method callback: submit form submission.
+ */
+function commerce_amex_hosted_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+
+  // Return an error if the enabling action's settings haven't been configured.
+  if (empty($payment_method['settings']['password'])) {
+    drupal_set_message(t('Payment gateway is not configured for use.'), 'error');
+    return array();
+  }
+
+  $wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $total = commerce_line_items_total($wrapper->commerce_line_items);
+
+  // Create a form session with Amex.
+  $session = _commerce_amex_request_session($payment_method);
+
+  if ($session->result == "SUCCESS") {
+    $session_id = $session->session;
+
+    // Create a new payment transaction and setup the amount.
+    $transaction = commerce_payment_transaction_new('amex_hosted', $order->order_id);
+    $transaction->amount = $total['amount'];
+    $transaction->currency_code = $total['currency_code'];
+    $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+    $transaction->instance_id = $payment_method['instance_id'];
+    $transaction->remote_id = $session_id;
+    $transaction->data['cardonfile_selected'] = (!empty($pane_values['cardonfile']) && $pane_values['cardonfile'] != 'new')  ? $pane_values['cardonfile'] : NULL;
+    commerce_payment_transaction_save($transaction);
+
+    return TRUE;
+  }
+
+  elseif ($result->result == "ERROR") {
+    watchdog('commerce_amex', 'Failed to connect to Amex for order %order_id: %explanation', array('%order_id' => $order->order_id, '%explanation' => $result->error->explanation), WATCHDOG_ERROR);
+    drupal_set_message(t('There was an error connecting to the payment server.'), 'error');
+    drupal_goto('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key']);
+  }
+
+  else {
+    watchdog('commerce_amex', 'Failed to connect to Amex for order %order_id', array('%order_id' => $order->order_id), WATCHDOG_ERROR);
+    drupal_set_message(t('There was an error connecting to the payment server.'), 'error');
+    drupal_goto('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key']);
+  }
+}
+
+/**
+ * Payment method callback: redirect form.
+ **/
+function commerce_amex_hosted_redirect_form($form, &$form_state, $order, $payment_method) {
+  $cardonfile_capable = module_exists('commerce_cardonfile') && !empty($payment_method['settings']['cardonfile']);
+
+  // Validate a transaction for the order.
+  $transactions = commerce_payment_transaction_load_multiple(array(), array('order_id' => $order->order_id));
+  if (count($transactions) > 0) {
+    $transaction = end($transactions);
+
+    $default = array(
+      'type' => '',
+      'owner' => '',
+      'number' => '',
+      'start_month' => '',
+      'start_year' => date('Y') - 5,
+      'exp_month' => date('m'),
+      'exp_year' => date('Y'),
+      'issue' => '',
+      'code' => '',
+      'bank' => '',
+    );
+
+    $current_year_2 = date('y');
+    $current_year_4 = date('Y');
+
+    $form = array();
+
+    $form['#action'] = $payment_method['settings']['txn_url'] . '/form/' . $transaction->remote_id;
+    $form['#method'] = "post";
+
+    // Prepare a display settings array.
+    $display = array(
+      'label' => 'hidden',
+      'type' => 'commerce_price_formatted_components',
+      'settings' => array(
+        'calculation' => FALSE,
+      ),
+    );
+
+    // Render the order's order total field with the current display.
+    $order_total = field_view_field('commerce_order', $order, 'commerce_order_total', $display);
+
+    $form['order_total'] = array(
+      '#type' => 'markup',
+      '#markup' => render($order_total),
+      '#attributes' => array('class' => array ('commerce-order-handler-area-order-total')),
+      '#attached' => array(
+        'css' => array(drupal_get_path('module', 'commerce_cart') . '/theme/commerce_cart.theme.css'),
+      ),
+    );
+
+    // Just show the CCV number field for a Card on File Transaction.
+    if ($cardonfile_capable && !empty($transaction->data['cardonfile_selected'])) {
+      $card_data = commerce_cardonfile_load($transaction->data['cardonfile_selected']);
+      module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+      $card_types = commerce_payment_credit_card_types();
+
+      $form['card_holder'] = array(
+        '#type' => 'item',
+        '#title' => t('Card holder'),
+        '#markup' => $card_data->card_name,
+      );
+
+      $form['card_type'] = array(
+        '#type' => 'item',
+        '#title' => t('Card Type'),
+        '#markup' => !empty($card_types[$card_data->card_type]) ? $card_types[$card_data->card_type] : $card_data->card_type,
+      );
+
+      $form['card_number'] = array(
+        '#type' => 'item',
+        '#title' => t('Card Number'),
+        '#markup' => 'XXXX - XXXX - XXXX - ' . $card_data->card_number,
+      );
+
+      $form['card_expire'] = array(
+        '#type' => 'item',
+        '#title' => t('Card Expires'),
+        '#markup' => $card_data->card_exp_month . ' / ' . $card_data->card_exp_year,
+      );
+
+      // Add a field for the security code.
+      $form['gatewayCardSecurityCode'] = array(
+        '#type' => 'textfield',
+        '#title' => !empty($fields['code']) ? $fields['code'] : t('Security code'),
+        '#default_value' => $default['code'],
+        '#attributes' => array('autocomplete' => 'off'),
+        '#required' => TRUE,
+        '#maxlength' => 4,
+        '#size' => 4,
+        '#field_suffix' => '<img src = "' . file_create_url(drupal_get_path('module', 'commerce_amex') . '/theme/logo_cvv.jpg') . '">',
+        '#suffix' => t("Last three digits on the back of your card. For Amex, last four digits on the front of the card."),
+      );
+    }
+
+    else {
+      // Always add a field for the credit card owner.
+      $form['owner'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Card holder'),
+        '#default_value' => $default['owner'],
+        '#attributes' => array('autocomplete' => 'off'),
+        '#required' => TRUE,
+        '#maxlength' => 30,
+        '#size' => 30,
+      );
+
+      // Always add a field for the credit card number.
+      $form['gatewayCardNumber'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Card number'),
+        '#default_value' => $default['number'],
+        '#attributes' => array('autocomplete' => 'off'),
+        '#required' => TRUE,
+        '#maxlength' => 19,
+        '#size' => 20,
+      );
+
+      // Always add fields for the credit card expiration date.
+      $form['gatewayCardExpiryDateMonth'] = array(
+        '#type' => 'select',
+        '#title' => t('Expiration'),
+        '#options' => drupal_map_assoc(array_keys(commerce_months())),
+        '#default_value' => strlen($default['exp_month']) == 1 ? '0' . $default['exp_month'] : $default['exp_month'],
+        '#required' => TRUE,
+        '#prefix' => '<div class="commerce-credit-card-expiration">',
+        '#suffix' => '<span class="commerce-month-year-divider">/</span>',
+        // Attache the CSS from commerce_payment module for nice formatting.
+        '#attached' => array(
+          'css' => array(drupal_get_path('module', 'commerce_payment') . '/theme/commerce_payment.theme.css'),
+        ),
+      );
+
+      // Build a year select list that uses a 4 digit key with a 2 digit value.
+      $options = array();
+
+      for ($i = 0; $i < 20; $i++) {
+        $options[$current_year_4 + $i] = str_pad($current_year_2 + $i, 2, '0', STR_PAD_LEFT);
+      }
+
+      $form['gatewayCardExpiryDateYear'] = array(
+        '#type' => 'select',
+        '#options' => $options,
+        '#default_value' => $default['exp_year'],
+        '#suffix' => '</div>',
+      );
+
+      // Add a field for the security code.
+      $form['gatewayCardSecurityCode'] = array(
+        '#type' => 'textfield',
+        '#title' => !empty($fields['code']) ? $fields['code'] : t('Security code'),
+        '#default_value' => $default['code'],
+        '#attributes' => array('autocomplete' => 'off'),
+        '#required' => TRUE,
+        '#maxlength' => 4,
+        '#size' => 4,
+        '#field_suffix' => '<img src = "' . file_create_url(drupal_get_path('module', 'commerce_amex') . '/theme/logo_cvv.jpg') . '">',
+        '#suffix' => t("Last three digits on the back of your card. For Amex, last four digits on the front of the card."),
+      );
+
+      if ($cardonfile_capable) {
+        $storage = variable_get('commerce_cardonfile_storage', 'opt-in');
+        if (in_array($storage, array('opt-in', 'opt-out')) && !$payment_method['settings']['continuous']) {
+          $form['cardonfile_store'] = array(
+            '#type' => 'checkbox',
+            '#title' => t('Store this credit card on file for future use.'),
+            '#default_value' => $storage == 'opt-out',
+          );
+        }
+        else {
+          $form['cardonfile_store'] = array(
+            '#type' => 'hidden',
+            '#value' => TRUE,
+          );
+        }
+
+        $form['cardonfile_instance_default'] = array(
+          '#type' => 'checkbox',
+          '#title' => t('Set as your default card'),
+          //'#default_value' => $instance_default_default_value || $force_instance_default,
+          //'#access' => !$instance_default_default_value,
+          //'#disabled' => $force_instance_default,
+          '#states' => array(
+            'invisible' => array(
+              ':input[name$="[cardonfile]"]' => array('value' => 'new'),
+            ),
+            'visible' => array(
+              ':input[name$="[cardonfile_store]"]' => array('checked' => TRUE),
+            ),
+          ),
+        );
+      }
+    }
+
+    // Add the return URL for Amex return form to post to.
+    $form['gatewayReturnURL'] = array(
+      '#type' => 'hidden',
+      '#value' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute'=>TRUE)),
+    );
+
+    // Set the backgound colour for the redirect page.
+    $form['gatewayRedirectDisplayBackgroundColor'] = array(
+      '#type' => 'hidden',
+      '#value' => "#ffffff",
+    );
+
+    $form['gatewayRedirectDisplayTitle'] = array(
+      '#type' => 'hidden',
+      '#value' => t('Check Your Submitted Payment Details'),
+    );
+
+    $form['gatewayRedirectDisplayContinueButtonText'] = array(
+      '#type' => 'hidden',
+      '#value' => t('Click to Continue'),
+    );
+
+    $form['transaction_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $transaction->transaction_id,
+    );
+
+    $form['actions'] = array('#type' => 'actions');
+    $form['actions']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Continue'),
+    );
+    $form['actions']['cancel'] = array(
+      '#markup' => l(t('Cancel'), url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE))),
+    );
+
+    if ($payment_method['settings']['txn_3d_secure'] > 0) {
+      $form['3dsecure'] = array(
+        '#type' => 'markup',
+        '#weight' => 100,
+        '#markup' => '<img src = "' . file_create_url(drupal_get_path('module', 'commerce_amex') . '/theme/logo-3dsecure.jpg') .'">
+        <div>' . t("You may be taken to your card issuer's website for credit card validation.") . '<br />' .
+        t("You will be returned here once the process is complete.") . '</div>',
+        '#prefix' => '<div class="commerce-amex-3d">',
+        '#suffix' => '</div>',
+        '#attached' => array(
+          'css' => array(drupal_get_path('module', 'commerce_amex') . '/theme/commerce_amex.theme.css'),
+        ),
+      );
+    }
+
+    return $form;
+  }
+
+  else {
+    watchdog('commerce_amex', 'Transaction could not be found', WATCHDOG_ERROR);
+    drupal_set_message(t('Transaction could not be found.'), 'error');
+    drupal_goto('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key']);
+  }
+}
+
+/**
+ * Payment method callback: redirect form validate.
+ */
+function commerce_amex_hosted_redirect_form_validate($order, $payment_method) {
+  $return = FALSE;
+
+  switch (substr($_POST['gatewayFormResponse'], 0, 1)) {
+    case '0':
+      // Card details have been added to the session.
+      $return = TRUE;
+      break;
+    case '1':
+    case '2':
+    case '3':
+      drupal_set_message(t('There was a problem processing your transaction. Your credit/debit card was not charged. Please try again later.'), 'error');
+      break;
+  }
+
+  return $return;
+}
+
+/**
+ * Payment method callback: redirect form submit.
+ */
+function commerce_amex_hosted_redirect_form_submit($order, $payment_method) {
+  $return = FALSE;
+  $process_transaction = FALSE;
+  $cardonfile_capable = module_exists('commerce_cardonfile') && !empty($payment_method['settings']['cardonfile']);
+
+  if ($transaction = commerce_payment_transaction_load($_POST['transaction_id'])) {
+    $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+
+    if ($cardonfile_capable) {
+      $transaction->data['cardonfile_store'] = !empty($_POST['cardonfile_store']) ? $_POST['cardonfile_store'] : FALSE;
+
+      if (!isset($transaction->data['cardonfile_selected']) && $payment_method['settings']['continuous']) {
+        $transaction->data['cardonfile_store'] = TRUE;
+      }
+    }
+
+    $transaction->data['owner'] = !empty($_POST['owner']) ? $_POST['owner'] : FALSE;
+
+    // Use the validate stage to check if the card is enroled for 3DSecure.
+    if ($payment_method['settings']['txn_3d_secure'] > 0) {
+      commerce_payment_transaction_save($transaction);
+      $process_transaction = commerce_amex_3d_secure_check($order, $payment_method, $transaction);
+    }
+    else {
+      $process_transaction = TRUE;
+    }
+
+    if ($process_transaction) {
+      $transaction = _commerce_amex_process_transaction($order, $transaction);
+      if ($transaction->payload->result == 'SUCCESS') $return = TRUE;
+    }
+
+    else {
+      drupal_set_message(t('Transaction could not be found.'), 'error');
+    }
+  }
+
+  return $return;
+}
+
+/**
+ * Check if the card is registered for 3D Secure and redirect if required
+ * @param object $order
+ * @param object $payment_method
+ * @param object $transaction
+ * @return boolean
+ */
+function commerce_amex_3d_secure_check($order, $payment_method, $transaction) {
+  $amount = commerce_currency_amount_to_decimal($transaction->amount, $transaction->currency_code);
+  $order_amount = number_format($amount, 2, '.', '');
+  $return = FALSE;
+
+  // Build the data array.
+  $data = new stdClass();
+  $data->apiOperation = 'CHECK_3DS_ENROLLMENT';
+  $data->transaction['amount'] = $order_amount;
+  $data->transaction['currency'] = $transaction->currency_code;
+  $data->sourceOfFunds['session'] = $transaction->remote_id;
+
+  if (isset($transaction->data['cardonfile_selected']) && $cardonfile = commerce_cardonfile_load($transaction->data['cardonfile_selected'])) {
+    $data->sourceOfFunds['token'] = $cardonfile->remote_id;
+  }
+
+  $data->{'3DSecure'}['authenticationRedirect']['responseUrl'] = url('checkout/' . $order->order_id . '/amex/3d/' . $transaction->transaction_id, array('absolute'=>TRUE));
+
+  // Build the URL and send the request to Amex.
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/3DSecureId/' . $transaction->transaction_id;
+  $result = _commerce_amex_put_request($url, $payment_method['settings']['password'], $data);
+
+  // Process error and return false.
+  if (isset($result->error) && $result->result == 'ERROR') {
+    $transaction = _commerce_amex_error_process($result, $transaction);
+    commerce_payment_redirect_pane_previous_page($order);
+  }
+
+  // If the card is enrolled print the auto redirect form and exit.
+  if (isset($result->response)) {
+    switch ($result->response->{'3DSecure'}->gatewayCode) {
+      case 'CARD_ENROLLED' :
+        print $result->{'3DSecure'}->authenticationRedirect->simple->htmlBodyContent;
+        drupal_exit();
+        break;
+      case 'NOT_ENROLLED_NO_ERROR_DETAILS' :
+      case 'NOT_ENROLLED_ERROR_DETAILS_PROVIDED' :
+      case 'CARD_DOES_NOT_SUPPORT_3DS' :
+      case 'ENROLLMENT_STATUS_UNDETERMINED_NO_ERROR_DETAILS' :
+      case 'ENROLLMENT_STATUS_UNDETERMINED_ERROR_DETAILS_PROVIDED' :
+      case 'INVALID_DIRECTORY_SERVER_CREDENTIALS' :
+      case 'ERROR_PARSING_CHECK_ENROLLMENT_RESPONSE' :
+      case 'ERROR_COMMUNICATING_WITH_DIRECTORY_SERVER' :
+      case 'MPI_PROCESSING_ERROR' :
+        if ($payment_method['settings']['txn_3d_secure'] < 3) {
+          $return = TRUE;
+        }
+        else {
+          drupal_set_message(t('A 3DSecure card is required'), 'error');
+        }
+        break;
+    }
+  }
+
+  return $return;
+}
+
+/**
+ * Process callback response from merchant server
+ */
+function commerce_amex_3d_secure_callback($order, $transaction){
+  $process_transaction = FALSE;
+
+  // If there's no data in the POST, return a page not found.
+  if (empty($_POST)) return drupal_not_found();
+
+  // check for 3d secure response field
+  if (!isset($_POST['PaRes'])) {
+    watchdog('commerce_amex','Invalid data received in 3D Secure response', array(), WATCHDOG_ERROR);
+    return drupal_not_found();
+  }
+
+  $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
+
+  $data = new stdClass();
+  $data->apiOperation = 'PROCESS_ACS_RESULT';
+
+  $data->{'3DSecure'}['paRes'] = $_POST['PaRes'];
+
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/3DSecureId/' . $transaction->transaction_id;
+  $result = _commerce_amex_post_request($url, $payment_method['settings']['password'], $data);
+
+  // Process error and return to payment form.
+  if (isset($result->result) && $result->result == 'ERROR') {
+    $transaction = _commerce_amex_error_process($result, $transaction);
+    drupal_set_message(t('There was an error verifying your card with 3D Secure'), 'error');
+    commerce_payment_redirect_pane_previous_page($order);
+    drupal_goto('checkout/' . $order->order_id);
+  }
+
+  $transaction->remote_status = $result->response->{'3DSecure'}->gatewayCode;
+
+  switch ($result->response->{'3DSecure'}->gatewayCode) {
+    case 'AUTHENTICATION_SUCCESSFUL':
+    case 'AUTHENTICATION_ATTEMPTED' :
+      $process_transaction = TRUE;
+      break;
+    case 'AUTHENTICATION_FAILED':
+    case 'INVALID_SIGNATURE_ON_AUTHENTICATION_RESPONSE' :
+      drupal_set_message(t('3D Secure Authentication Failed.'), 'error');
+      break;
+    case 'AUTHENTICATION_NOT_AVAILABLE_NO_ERROR_DETAILS':
+    case 'AUTHENTICATION_NOT_AVAILABLE_ERROR_DETAILS_PROVIDED' :
+      if ($payment_method['settings']['txn_3d_secure'] == 1 || $payment_method['settings']['txn_3d_secure'] == 3) {
+        $process_transaction = TRUE;
+      }
+      else {
+        drupal_set_message(t('Authentication not availiable.'), 'error');
+      }
+      break;
+    case 'ERROR_PARSING_AUTHENTICATION_RESPONSE' :
+      drupal_set_message(t('There was an error proccessing your security details.'), 'error');
+      break;
+    case 'ACS_SESSION_TIMEOUT' :
+      drupal_set_message(t('The 3DSecure session timed out.'), 'error');
+      break;
+  }
+
+  if ($process_transaction) {
+    $transaction = _commerce_amex_process_transaction($order, $transaction, TRUE);
+    if (isset($transaction->payload->result) && $transaction->payload->result == 'SUCCESS') {
+      commerce_payment_redirect_pane_next_page($order);
+      drupal_goto('checkout/' . $order->order_id);
+    }
+    else {
+      commerce_payment_redirect_pane_previous_page($order);
+      drupal_goto('checkout/' . $order->order_id);
+    }
+  }
+
+  else {
+    commerce_payment_redirect_pane_previous_page($order);
+    drupal_goto('checkout/' . $order->order_id);
+  }
+}
+
+/**
+ * Capture an autorised payment.
+ * @param unknown $order
+ * @param unknown $auth_transaction
+ * @param unknown $amount
+ * @return boolean
+ */
+function commerce_amex_capture_transaction($auth_transaction, $amount) {
+  $return = FALSE;
+  $instance_id = $auth_transaction->instance_id;
+  $payment_method = commerce_payment_method_instance_load($instance_id);
+
+  $transaction = commerce_payment_transaction_new('amex_hosted', $auth_transaction->order_id);
+  $transaction->amount = commerce_currency_decimal_to_amount($amount, $auth_transaction->currency_code);
+  $transaction->currency_code = $auth_transaction->currency_code;
+  $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->remote_id = $auth_transaction->remote_id;
+
+  commerce_payment_transaction_save($transaction);
+
+  $data = new stdClass();
+
+  $data->apiOperation = AMEX_OP_CAPTURE;
+
+  $data->order['reference'] = $auth_transaction->transaction_id;
+
+  $data->transaction['amount'] = $amount;
+  $data->transaction['currency'] = $transaction->currency_code;
+  $data->transaction['reference'] = $transaction->transaction_id;
+
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/order/' . (10000000000 + $auth_transaction->transaction_id) . '/transaction/' . $transaction->transaction_id;
+  $result = _commerce_amex_put_request($url, $payment_method['settings']['password'], $data);
+  $transaction->payload = $result;
+
+  switch ($result->result) {
+    case 'SUCCESS':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = 'Captured';
+      $auth_transaction->amount = $auth_transaction->amount  - $transaction->amount;
+      drupal_set_message(t('Transaction was processed succesfully'));
+      $return = TRUE;
+      break;
+    case 'PENDING':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      drupal_set_message(t('Transaction pending'));
+      $return = TRUE;
+      break;
+    case 'FAILURE':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      break;
+    case 'UNKNOWN':
+      drupal_set_message(t('There was a problem processing your transaction. Your credit/debit card was not charged. Please try again later.'), 'error');
+      break;
+    case 'ERROR':
+      $transaction = _commerce_amex_error_process($result, $transaction);
+      break;
+  }
+
+  if ($auth_transaction->amount == 0 ) {
+    $auth_transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+  }
+
+  commerce_payment_transaction_save($transaction);
+  commerce_payment_transaction_save($auth_transaction);
+  return $return;
+}
+
+/**
+ * Void an auth transaction
+ * @param object $auth_transaction
+ *   Transaction to be voided.
+ * @return boolean
+ */
+function commerce_amex_void_transaction($auth_transaction) {
+  $return = FALSE;
+  $instance_id = $auth_transaction->instance_id;
+  $payment_method = commerce_payment_method_instance_load($instance_id);
+  $amount = $transaction->amount;
+
+  $transaction = commerce_payment_transaction_new('amex_hosted', $auth_transaction->order_id);
+  $transaction->amount = 0 - commerce_currency_decimal_to_amount($amount, $auth_transaction->currency_code);
+  $transaction->currency_code = $auth_transaction->currency_code;
+  $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->remote_id = $auth_transaction->remote_id;
+
+  commerce_payment_transaction_save($transaction);
+
+  $data = new stdClass();
+
+  $data->apiOperation = 'VOID';
+  $data->transaction['targetTransactionId'] = $auth_transaction->transaction_id;
+
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/order/' . (10000000000 + $auth_transaction->transaction_id) . '/transaction/' . $transaction->transaction_id;
+  $result = _commerce_amex_put_request($url, $payment_method['settings']['password'], $data);
+  $transaction->payload = $result;
+
+  switch ($result->result) {
+    case 'SUCCESS':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_AMEX_CANCELED;
+      $auth_transaction->status = COMMERCE_PAYMENT_STATUS_AMEX_CANCELED;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = 'Void';
+      $auth_transaction->message = 'Void';
+      drupal_set_message(t('Transaction was processed succesfully'));
+      $return = TRUE;
+      break;
+    case 'PENDING':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      drupal_set_message(t('Transaction pending'));
+      $return = TRUE;
+      break;
+    case 'FAILURE':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      break;
+    case 'UNKNOWN':
+      drupal_set_message(t('There was a problem processing your transaction. Your credit/debit card was not charged. Please try again later.'), 'error');
+      break;
+    case 'ERROR':
+      $transaction = _commerce_amex_error_process($result, $transaction);
+      break;
+  }
+
+  commerce_payment_transaction_save($transaction);
+  commerce_payment_transaction_save($auth_transaction);
+  return $return;
+}
+
+/**
+ * Void an auth transaction
+ * @param object $auth_transaction
+ *   Transaction to be voided.
+ * @return boolean
+ */
+function commerce_amex_referral_transaction($refer_transaction, $auth_code) {
+  $return = FALSE;
+  $instance_id = $refer_transaction->instance_id;
+  $payment_method = commerce_payment_method_instance_load($instance_id);
+  $amount = $transaction->amount;
+
+  $transaction = commerce_payment_transaction_new('amex_hosted', $refer_transaction->order_id);
+  $transaction->amount = 0;
+  $transaction->currency_code = $refer_transaction->currency_code;
+  $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->remote_id = $refer_transaction->remote_id;
+
+  commerce_payment_transaction_save($transaction);
+
+  $data = new stdClass();
+
+  $data->apiOperation = 'REFERRAL';
+  $data->transaction['reference'] = $refer_transaction->transaction_id;
+  $data->transaction['authorizationCode'] = $auth_code;
+
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/order/' . (10000000000 + $auth_transaction->transaction_id) . '/transaction/' . $transaction->transaction_id;
+  $result = _commerce_amex_put_request($url, $payment_method['settings']['password'], $data);
+  $transaction->payload = $result;
+
+  switch ($result->result) {
+    case 'SUCCESS':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $refer_transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = 'Referral';
+      $refer_transaction->message = 'Referral Authorised';
+      drupal_set_message(t('Transaction was processed succesfully'));
+      $return = TRUE;
+      break;
+    case 'PENDING':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      drupal_set_message(t('Transaction pending'));
+      $return = TRUE;
+      break;
+    case 'FAILURE':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      break;
+    case 'UNKNOWN':
+      drupal_set_message(t('There was a problem processing your transaction. Your credit/debit card was not charged. Please try again later.'), 'error');
+      break;
+    case 'ERROR':
+      $transaction = _commerce_amex_error_process($result, $transaction);
+      break;
+  }
+
+  commerce_payment_transaction_save($transaction);
+  commerce_payment_transaction_save($auth_transaction);
+  return $return;
+}
+
+/**
+ * Refund a transaction
+ * @param object $capture_transaction
+ *   Transaction to be refunded
+ * @param decimal $amount
+ *   Ammount to be refunded as a decimal
+ * @return boolean
+ */
+function commerce_amex_refund_transaction($capture_transaction, $amount) {
+  $return = FALSE;
+  $instance_id = $capture_transaction->instance_id;
+  $payment_method = commerce_payment_method_instance_load($instance_id);
+
+  $auth_transaction_id = $capture_transaction->data->order->reference;
+
+  $transaction = commerce_payment_transaction_new('amex_hosted', $capture_transaction->order_id);
+  $transaction->amount = - commerce_currency_decimal_to_amount($amount, $capture_transaction->currency_code);
+  $transaction->currency_code = $capture_transaction->currency_code;
+  $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->remote_id = $capture_transaction->remote_id;
+
+  commerce_payment_transaction_save($transaction);
+
+  $data = new stdClass();
+
+  $data->apiOperation = 'REFUND';
+
+  $data->order['reference'] = $auth_transaction_id;
+
+  $data->transaction['amount'] = $amount;
+  $data->transaction['currency'] = $transaction->currency_code;
+  $data->transaction['reference'] = $transaction->transaction_id;
+
+  $data->sourceOfFunds['session'] = $transaction->remote_id;
+  $data->sourceOfFunds['type'] = 'CARD';
+
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/order/' . (10000000000 + $auth_transaction_id) . '/transaction/' . $transaction->transaction_id;
+  $result = _commerce_amex_put_request($url, $payment_method['settings']['password'], $data);
+  $transaction->payload = $result;
+
+  switch ($result->result) {
+    case 'SUCCESS':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = 'Refunded';
+      drupal_set_message(t('Transaction was processed succesfully'));
+      $return = TRUE;
+      break;
+    case 'PENDING':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      drupal_set_message(t('Transaction pending'));
+      $return = TRUE;
+      break;
+    case 'FAILURE':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      break;
+    case 'UNKNOWN':
+      drupal_set_message(t('There was a problem processing your transaction. Your credit/debit card was not charged. Please try again later.'), 'error');
+      break;
+    case 'ERROR':
+      $transaction = _commerce_amex_error_process($result, $transaction);
+      break;
+  }
+
+  commerce_payment_transaction_save($transaction);
+  return $return;
+}
+
+/**
+ * Request a token from Amex for a session and save the Card of File entity.
+ *
+ * @param object $order
+ *   The order - used for the user id and billing address.
+ * @param object $payment_method
+ *   The payment method being used.
+ * @param object $transaction
+ *   The transaction the card being saved was used in for the remote session id.
+ * @return boolean
+ */
+function commerce_amex_cardonfile_save($order, $payment_method, $transaction) {
+
+  $data = new stdClass();
+  $data->sourceOfFunds['session'] = $transaction->remote_id;
+  $data->sourceOfFunds['type'] = 'CARD';
+
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/token';
+  $result = _commerce_amex_post_request($url, $payment_method['settings']['password'], $data);
+
+  // Process error and return false.
+  if (isset($result->result) && $result->result == 'ERROR') {
+    $transaction = _commerce_amex_error_process($result, $transaction);
+    drupal_set_message(t('Unable to save your card data due to a remote server error'), 'error');
+    return FALSE;
+  }
+
+  if (isset($result->token)) {
+    $card_data = commerce_cardonfile_new();
+
+    $card_data->uid = $order->uid;
+    $card_data->payment_method = $payment_method['method_id'];
+    $card_data->instance_id = $payment_method['instance_id'];
+    $card_data->remote_id = $result->token;
+    $card_data->card_type = !empty($result->sourceOfFunds->provided->card->scheme) ? strtolower($result->sourceOfFunds->provided->card->scheme) : 'card';
+    $card_data->card_name = $transaction->data['owner'];
+    $card_data->card_number = drupal_substr($result->sourceOfFunds->provided->card->number, -4);
+    $card_data->card_exp_month = $result->sourceOfFunds->provided->card->expiry->month;
+    $card_data->card_exp_year = 2000 + $result->sourceOfFunds->provided->card->expiry->year;
+    $card_data->status = 1;
+
+    $billing_profile = commerce_customer_profile_load($order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id']);
+
+    // Save the new card on file.
+    if (commerce_cardonfile_save($card_data, $billing_profile)) {
+      return TRUE;
+    }
+    else {
+      drupal_set_message(t('Unable to save your card data due to a server error'), 'error');
+      return FALSE;
+    }
+  }
+}
+
+function commerce_amex_cardonfile_update($card) {
+  return TRUE;
+}
+
+/**
+ * Builds the form for updating cardonfile data.
+ *
+ * @param $card_data
+ *   The card on file entity.
+ */
+function commerce_amex_cardonfile_update_form($form, &$form_state, $card_data) {
+  // Load the credit card helper functions from the Payment module.
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+  $payment_method = commerce_payment_method_instance_load($card_data->instance_id);
+
+  $session = _commerce_amex_request_session($payment_method);
+
+  if ($session->result == "SUCCESS") {
+    $session_id = $session->session;
+
+    $form['#action'] = $payment_method['settings']['txn_url'] . '/form/' . $session_id;
+    $form['#method'] = "post";
+
+    $form['card_data'] = array(
+      '#type' => 'value',
+      '#value' => $card_data,
+    );
+
+    $default = array(
+      'exp_month' => $card_data->card_exp_month,
+      'exp_year' => $card_data->card_exp_year,
+    );
+
+    $current_year_2 = date('y');
+    $current_year_4 = date('Y');
+
+    $form['card_holder'] = array(
+      '#type' => 'item',
+      '#title' => t('Card holder'),
+      '#markup' => $card_data->card_name,
+    );
+
+    $form['card_type'] = array(
+      '#type' => 'item',
+      '#title' => t('Card Type'),
+      '#markup' => !empty($card_types[$card_data->card_type]) ? $card_types[$card_data->card_type] : $card_data->card_type,
+    );
+
+    $form['card_number'] = array(
+      '#type' => 'item',
+      '#title' => t('Card Number'),
+      '#markup' => 'XXXX - XXXX - XXXX - ' . $card_data->card_number,
+    );
+
+    // Always add fields for the credit card expiration date.
+    $form['gatewayCardExpiryDateMonth'] = array(
+      '#type' => 'select',
+      '#title' => t('Expiration'),
+      '#options' => drupal_map_assoc(array_keys(commerce_months())),
+      '#default_value' => strlen($default['exp_month']) == 1 ? '0' . $default['exp_month'] : $default['exp_month'],
+      '#required' => TRUE,
+      '#prefix' => '<div class="commerce-credit-card-expiration">',
+      '#suffix' => '<span class="commerce-month-year-divider">/</span>',
+      // Attache the CSS from commerce_payment module for nice formatting.
+      '#attached' => array(
+        'css' => array(drupal_get_path('module', 'commerce_payment') . '/theme/commerce_payment.theme.css'),
+      ),
+    );
+
+    // Build a year select list that uses a 4 digit key with a 2 digit value.
+    $options = array();
+
+    for ($i = 0; $i < 20; $i++) {
+      $options[$current_year_4 + $i] = str_pad($current_year_2 + $i, 2, '0', STR_PAD_LEFT);
+    }
+
+    $form['gatewayCardExpiryDateYear'] = array(
+      '#type' => 'select',
+      '#options' => $options,
+      '#default_value' => $default['exp_year'],
+      '#suffix' => '</div>',
+    );
+
+    $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Update card data'),
+      '#suffix' => l(t('Cancel'), 'user/' . $card_data->uid . '/cards'),
+    );
+
+  }
+  else {
+    $form['error'] = array(
+      '#type' => 'markup',
+      '#markup' => t('Unable to contact payment gateway'),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Card on file callback: deletes the associated customer payment profile.
+ *
+ * @param array $form
+ *   The card on file delete form array
+ * @param array $form_state
+ *   The card on file delete form's form state array
+ * @param object $payment_method
+ *   The payment method instance definition array.
+ * @param object $card_data
+ *   The stored credit card data array to be processed
+ *
+ * @return
+ *   TRUE if the operation was successful
+ */
+function commerce_amex_cardonfile_delete($form, &$form_state, $payment_method, $card_data) {
+
+  $return = FALSE;
+
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/token/' . $card_data->remote_id;
+  $result = _commerce_amex_delete_request($url, $payment_method['settings']['password']);
+
+  if (isset($result->result) && $result->result == 'SUCCESS') {
+    $return = TRUE;
+  }
+
+  // Process error and return false.
+  elseif (isset($result->result) && $result->result == 'ERROR') {
+    drupal_set_message(t('Unable to delete card due to a remote server error'). 'error');
+  }
+  else {
+    drupal_set_message(t('Unknown error.'). 'error');
+  }
+
+  return $return;
+}
+
+/**
+ * Card on file callback: background charge payment
+ *
+ * @param object $payment_method
+ *  The payment method instance definition array.
+ * @param object $card_data
+ *   The stored credit card data array to be processed
+ * @param object $order
+ *   The order object that is being processed
+ * @param array $charge
+ *   The price array for the charge amount with keys of 'amount' and 'currency'
+ *   If null the total value of the order is used.
+ *
+ * @return
+ *   TRUE if the transaction was successful
+ */
+function commerce_amex_cardonfile_charge($payment_method, $card_data, $order, $charge = NULL) {
+
+  // Format order total for transaction.
+  if (isset($charge)) {
+    $amount = commerce_currency_amount_to_decimal($charge['amount'], $charge['currency_code']);
+  }
+  else {
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $charge = commerce_line_items_total($wrapper->commerce_line_items);
+    $amount = commerce_currency_amount_to_decimal($charge->amount, $charge->currency_code);
+  }
+
+  $order_amount = number_format($amount, 2, '.', '');
+
+  // Create a new payment transaction and setup the amount.
+  $transaction = commerce_payment_transaction_new('amex_hosted', $order->order_id);
+  $transaction->amount = $charge['amount'];
+  $transaction->currency_code = $charge['currency_code'];
+  $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+  $transaction->instance_id = $payment_method['instance_id'];
+
+  commerce_payment_transaction_save($transaction);
+
+  $data = new stdClass();
+
+  $data->apiOperation = $payment_method['settings']['txn_type'];
+
+  if (isset($card_data->name)) {
+    $data->sourceOfFunds['provided']['card']['holder']['fullName'] = $card_data->name;
+  }
+
+  $data->sourceOfFunds['token'] = $card_data->remote_id;
+
+  $data->sourceOfFunds['type'] = 'CARD';
+
+  $data->transaction['amount'] = $order_amount;
+  $data->transaction['currency'] = $transaction->currency_code;
+  $data->transaction['reference'] = $transaction->transaction_id;
+  if ($payment_method['settings']['continuous']) {
+    $data->transaction['frequency'] = 'RECURRING';
+  }
+
+  $data->order['reference'] = $order->order_id;
+
+  // Add the addresses to the data object.
+  $data = _commerce_amax_add_addresses($data, $order);
+
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/order/' . (10000000000 + $transaction->transaction_id) . '/transaction/' . $transaction->transaction_id;
+  $result = _commerce_amex_put_request($url, $payment_method['settings']['password'], $data);
+
+  $transaction->payload = $result;
+
+  switch ($result->result) {
+    case 'SUCCESS':
+      switch ($payment_method['settings']['txn_type']) {
+        case AMEX_OP_AUTH:
+          $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+          break;
+        case AMEX_OP_PAY:
+          $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      }
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      break;
+    case 'PENDING':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      break;
+    case 'FAILURE':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->gatewayCode;
+      break;
+    case 'UNKNOWN':
+      break;
+    case 'ERROR':
+      $transaction = _commerce_amex_error_process($result, $transaction);
+      break;
+  }
+
+  commerce_payment_transaction_save($transaction);
+}
+
+/**
+ * A wrapper for curl to be reused for Amex requests.
+ *
+ * @param string $url
+ * @param string $password
+ * @param array $data
+ * @return multitype:string
+ */
+function _commerce_amex_request_session($payment_method) {
+  // Set a one-minute timeout for this script
+  set_time_limit(60);
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/session';
+
+  // Open the cURL session
+  $curlSession = curl_init();
+  curl_setopt($curlSession, CURLOPT_URL, $url);
+  curl_setopt($curlSession, CURLOPT_HEADER, 0);
+  curl_setopt($curlSession, CURLOPT_POST, 1);
+  curl_setopt($curlSession, CURLOPT_POSTFIELDS, '');
+  curl_setopt($curlSession, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($curlSession, CURLOPT_TIMEOUT, 30);
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYPEER, FALSE);
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYHOST, 1);
+
+  curl_setopt($curlSession, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
+  curl_setopt($curlSession, CURLOPT_USERPWD, ":" . $payment_method['settings']['password']);
+
+  //Send the request and store the result in an array
+
+  $rawresponse = curl_exec($curlSession);
+  $response = json_decode($rawresponse);
+
+  // Close the cURL session
+  curl_close($curlSession);
+
+  // Return the output
+  return $response;
+}
+
+/**
+ *
+ * @param unknown $order
+ * @param unknown $transaction
+ * @param string $use3Dsecure
+ * @return unknown
+ */
+function _commerce_amex_process_transaction($order, $transaction, $use3Dsecure = FALSE) {
+  // Get the payment method.
+  $instance_id = $transaction->instance_id;
+  $payment_method = commerce_payment_method_instance_load($instance_id);
+
+  // Format order total for transaction.
+  $amount = commerce_currency_amount_to_decimal($transaction->amount, $transaction->currency_code);
+  $order_amount = number_format($amount, 2, '.', '');
+
+  $data = new stdClass();
+
+  $data->apiOperation = $payment_method['settings']['txn_type'];
+
+  $data->sourceOfFunds['session'] = $transaction->remote_id;
+
+  if ($transaction->data['owner']) {
+    $data->sourceOfFunds['provided']['card']['holder']['fullName'] = $transaction->data['owner'];
+  }
+
+  if (isset($transaction->data['cardonfile_selected']) && $cardonfile = commerce_cardonfile_load($transaction->data['cardonfile_selected'])) {
+    $data->sourceOfFunds['token'] = $cardonfile->remote_id;
+    $data->sourceOfFunds['provided']['card']['holder']['fullName'] = $cardonfile->card_name;
+  }
+
+  $data->sourceOfFunds['type'] = 'CARD';
+
+  $data->transaction['amount'] = $order_amount;
+  $data->transaction['currency'] = $transaction->currency_code;
+  $data->transaction['reference'] = $transaction->transaction_id;
+
+  if (isset($payment_method['settings']['continuous']) && $payment_method['settings']['continuous']) {
+    $data->transaction['frequency'] = 'RECURRING';
+  }
+
+  if ($use3Dsecure) {
+    $data->{'3DSecureId'} = $transaction->transaction_id;
+  }
+
+  $data->order['reference'] = $order->order_id;
+
+  // Add the addresses to the data object.
+  $data = _commerce_amax_add_addresses($data, $order);
+
+  $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/order/' . (10000000000 + $transaction->transaction_id) . '/transaction/' . $transaction->transaction_id;
+  $result = _commerce_amex_put_request($url, $payment_method['settings']['password'], $data);
+
+  $transaction->payload = $result;
+
+  switch ($result->result) {
+    case 'SUCCESS':
+      if (isset($result->response->risk->gatewayCode) && $result->response->risk->gatewayCode == 'REVIEW') {
+        $transaction->status = COMMERCE_PAYMENT_STATUS_AMEX_REVIEW;
+        $transaction->remote_status = $result->response->risk->gatewayCode;
+        $transaction->message = l(t('Visit Amex to Review'), $payment_method['settings']['txn_url'] . '/ma');
+      }
+      else {
+        switch ($payment_method['settings']['txn_type']) {
+          case AMEX_OP_AUTH:
+            $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+            break;
+          case AMEX_OP_PAY:
+            $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+        }
+        $transaction->remote_status = $result->response->gatewayCode;
+        $transaction->message = $result->response->acquirerMessage;
+      }
+      drupal_set_message(t('Transaction was processed succesfully'));
+      if (isset($transaction->data['cardonfile_store']) && $transaction->data['cardonfile_store']) {
+        commerce_amex_cardonfile_save($order, $payment_method, $transaction);
+      }
+      break;
+    case 'PENDING':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->acquirerMessage;
+      drupal_set_message(t('Transaction pending'));
+      break;
+    case 'FAILURE':
+      $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+      $transaction->remote_status = $result->response->gatewayCode;
+      $transaction->message = $result->response->gatewayCode;
+      drupal_set_message(t('%message Your credit/debit card was not charged. Please try again later.', array('%message' => $transaction->message)), 'warning');
+      break;
+    case 'UNKNOWN':
+      drupal_set_message(t('There was a problem processing your transaction. Your credit/debit card was not charged. Please try again later.'), 'warning');
+      break;
+    case 'ERROR':
+      $transaction = _commerce_amex_error_process($result, $transaction);
+      drupal_set_message(t('There was a problem processing your transaction. Your credit/debit card was not charged. Please try again later.'), 'warning');
+      commerce_payment_redirect_pane_previous_page($order);
+      break;
+  }
+
+  commerce_payment_transaction_save($transaction);
+
+  return $transaction;
+}
+
+/**
+ * A wrapper for curl to be reused for Amex requests.
+ *
+ * @param string $url
+ * @param string $password
+ * @param array $data
+ * @return multitype:string
+ */
+function _commerce_amex_post_request($url, $password, $data = array()) {
+
+  $output = array();
+
+  $data_string = json_encode($data);
+
+  $curlSession = curl_init();
+
+  curl_setopt($curlSession, CURLOPT_URL, $url);
+  curl_setopt($curlSession, CURLOPT_HEADER, 0);
+  curl_setopt($curlSession, CURLOPT_POST, 1);
+  curl_setopt($curlSession, CURLOPT_POSTFIELDS, $data_string);
+  curl_setopt($curlSession, CURLOPT_HTTPHEADER, array(
+  'Content-Type: application/json',
+  'Content-Length: ' . strlen($data_string))
+  );
+
+  curl_setopt($curlSession, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($curlSession, CURLOPT_TIMEOUT, 30);
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYPEER, FALSE);
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYHOST, 1);
+  curl_setopt($curlSession, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
+  curl_setopt($curlSession, CURLOPT_USERPWD, ":" . $password);
+
+  $rawresponse = curl_exec($curlSession);
+  $response = json_decode($rawresponse);
+
+  curl_close($curlSession);
+  return $response;
+}
+
+/**
+ * A wrapper for curl to be reused for Amex requests.
+ *
+ * @param string $url
+ * @param string $password
+ * @param array $data
+ * @return multitype:string
+ */
+function _commerce_amex_put_request($url, $password, $data = array()) {
+  // Set a one-minute timeout for this script
+  set_time_limit(60);
+
+  // Initialise output variable
+  $output = array();
+
+  // Encode the data array.
+  $data_string = json_encode($data);
+
+  // Open the cURL session
+  $curlSession = curl_init();
+
+  // Set the URL
+  curl_setopt($curlSession, CURLOPT_URL, $url);
+  // No headers, please
+  curl_setopt($curlSession, CURLOPT_HEADER, 0);
+  // It's a PUT request
+  curl_setopt($curlSession, CURLOPT_CUSTOMREQUEST, "PUT");
+  // Set the fields for the POST
+  curl_setopt($curlSession, CURLOPT_POSTFIELDS, $data_string);
+  curl_setopt($curlSession, CURLOPT_HTTPHEADER, array(
+  'Content-Type: application/json',
+  'Content-Length: ' . strlen($data_string))
+  );
+  // Return it direct, don't print it out
+  curl_setopt($curlSession, CURLOPT_RETURNTRANSFER, 1);
+  // This connection will timeout in 30 seconds
+  curl_setopt($curlSession, CURLOPT_TIMEOUT, 30);
+  //The next two lines must be present for the kit to work with newer version of cURL
+  //You should remove them if you have any problems in earlier versions of cURL
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYPEER, FALSE);
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYHOST, 1);
+
+  curl_setopt($curlSession, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
+  curl_setopt($curlSession, CURLOPT_USERPWD, ":" . $password);
+
+  //Send the request and store the result in an array
+  $rawresponse = curl_exec($curlSession);
+  $response = json_decode($rawresponse);
+
+  // Close the cURL session
+  curl_close($curlSession);
+
+  // Return the output
+  return $response;
+}
+
+/**
+ * A wrapper for curl to be reused for Amex requests.
+ *
+ * @param string $url
+ * @param string $password
+ * @param array $data
+ * @return multitype:string
+ */
+function _commerce_amex_get_request($url, $password, $data = array()) {
+  // Set a one-minute timeout for this script
+  set_time_limit(60);
+
+  $output = array();
+
+  $data_string = json_encode($data);
+
+  $curlSession = curl_init();
+
+  curl_setopt($curlSession, CURLOPT_URL, $url);
+  curl_setopt($curlSession, CURLOPT_HEADER, 0);
+  curl_setopt($curlSession, CURLOPT_CUSTOMREQUEST, "GET");
+  curl_setopt($curlSession, CURLOPT_POSTFIELDS, $data_string);
+  curl_setopt($curlSession, CURLOPT_HTTPHEADER, array(
+  'Content-Type: application/json',
+  'Content-Length: ' . strlen($data_string))
+  );
+  // Return it direct, don't print it out
+  curl_setopt($curlSession, CURLOPT_RETURNTRANSFER, 1);
+  // This connection will timeout in 30 seconds
+  curl_setopt($curlSession, CURLOPT_TIMEOUT, 30);
+  //The next two lines must be present for the kit to work with newer version of cURL
+  //You should remove them if you have any problems in earlier versions of cURL
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYPEER, FALSE);
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYHOST, 1);
+
+  curl_setopt($curlSession, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
+  curl_setopt($curlSession, CURLOPT_USERPWD, ":" . $password);
+
+  //Send the request and store the result in an array
+  $rawresponse = curl_exec($curlSession);
+  $response = json_decode($rawresponse);
+
+  // Close the cURL session
+  curl_close($curlSession);
+
+  // Return the output
+  return $response;
+}
+
+/**
+ * A wrapper for curl to be reused for Amex requests.
+ *
+ * @param string $url
+ * @param string $password
+ * @param array $data
+ * @return multitype:string
+ */
+function _commerce_amex_delete_request($url, $password, $data = array()) {
+  // Set a one-minute timeout for this script
+  set_time_limit(60);
+
+  // Initialise output variable
+  $output = array();
+
+  // Encode the data array.
+  $data_string = json_encode($data);
+
+  // Open the cURL session
+  $curlSession = curl_init();
+
+  // Set the URL
+  curl_setopt($curlSession, CURLOPT_URL, $url);
+  // No headers, please
+  curl_setopt($curlSession, CURLOPT_HEADER, 0);
+  // It's a PUT request
+  curl_setopt($curlSession, CURLOPT_CUSTOMREQUEST, "DELETE");
+  // Set the fields for the POST
+  curl_setopt($curlSession, CURLOPT_POSTFIELDS, $data_string);
+  curl_setopt($curlSession, CURLOPT_HTTPHEADER, array(
+  'Content-Type: application/json',
+  'Content-Length: ' . strlen($data_string))
+  );
+  // Return it direct, don't print it out
+  curl_setopt($curlSession, CURLOPT_RETURNTRANSFER, 1);
+  // This connection will timeout in 30 seconds
+  curl_setopt($curlSession, CURLOPT_TIMEOUT, 30);
+  //The next two lines must be present for the kit to work with newer version of cURL
+  //You should remove them if you have any problems in earlier versions of cURL
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYPEER, FALSE);
+  curl_setopt($curlSession, CURLOPT_SSL_VERIFYHOST, 1);
+
+  curl_setopt($curlSession, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
+  curl_setopt($curlSession, CURLOPT_USERPWD, ":" . $password);
+
+  //Send the request and store the result in an array
+  $rawresponse = curl_exec($curlSession);
+  $response = json_decode($rawresponse);
+
+  // Close the cURL session
+  curl_close($curlSession);
+
+  // Return the output
+  return $response;
+}
+
+/**
+ * Add the addresses to the amex post data object
+ * @param object $data
+ *   The existing Amex data object.
+ * @param object $order
+ *   The order with the addresses.
+ * @return object $data
+ *   The Amex data object with added addresses.
+ */
+function _commerce_amax_add_addresses($data, $order) {
+  // Load customer profile.
+  $profile = commerce_customer_profile_load($order->commerce_customer_billing[LANGUAGE_NONE][0]['profile_id']);
+  // Get user billing address.
+  $billing_address = $profile->commerce_customer_address[LANGUAGE_NONE][0];
+
+  if (isset($order->data['profiles']['customer_profile_shipping'])) {
+    // Load customer delivery profile.
+    $profile = commerce_customer_profile_load($order->data['profiles']['customer_profile_shipping']);
+    // Get user delivery address.
+    $delivery_address = $profile->commerce_customer_address[LANGUAGE_NONE][0];
+  }
+  elseif (isset($order->field_customer_shipping[LANGUAGE_NONE][0]['profile_id'])) {
+    $profile = commerce_customer_profile_load($order->field_customer_shipping[LANGUAGE_NONE][0]['profile_id']);
+    // Get user delivery address.
+    $delivery_address = $profile->commerce_customer_address[LANGUAGE_NONE][0];
+  }
+  else {
+    $delivery_address = $billing_address;
+  }
+
+  $billing_address['country'] = countries_country_lookup($billing_address['country'], 'iso2');
+
+  $data->billing['address']['street'] = $billing_address['premise'] . ' ' . $billing_address['thoroughfare'];
+  $data->billing['address']['postcodeZip'] = $billing_address['postal_code'];
+  if ($billing_address['locality'] != '') {
+    $data->billing['address']['city'] = $billing_address['locality'];
+  }
+  if ($billing_address['administrative_area'] != '') {
+    $data->billing['address']['stateProvince'] = $billing_address['administrative_area'];
+  }
+  $data->billing['address']['country'] = $billing_address['country']->iso3;
+
+  $delivery_address['country'] = countries_country_lookup($delivery_address['country'], 'iso2');
+
+  $data->shipping['firstName'] = $delivery_address['first_name'];
+  $data->shipping['lastName'] = $delivery_address['last_name'];
+  $data->shipping['fullName'] = $delivery_address['name_line'];
+
+  $data->shipping['address']['street'] = $delivery_address['premise'] . ' ' . $delivery_address['thoroughfare'];
+  $data->shipping['address']['postcodeZip'] = $delivery_address['postal_code'];
+  if ($delivery_address['locality'] != '') {
+    $data->shipping['address']['city'] = $delivery_address['locality'];
+  }
+  if ($delivery_address['administrative_area'] != '') {
+    $data->shipping['address']['stateProvince'] = $delivery_address['administrative_area'];
+  }
+  $data->shipping['address']['country'] = $delivery_address['country']->iso3;
+
+  return $data;
+}
+
+function _commerce_amex_error_process($result, $transaction) {
+  if (isset($result->error)) {
+    $transaction->remote_status = $result->error->cause;
+    switch ($transaction->remote_status) {
+      case 'INVALID_REQUEST':
+      case 'SERVER_BUSY':
+        $transaction->message = $result->error->explanation;
+        break;
+      case 'REQUEST_REJECTED':
+        $transaction->message = 'Request rejected: Code ' . $result->error->supportCode;
+        break;
+      case 'SERVER_FAILED':
+        $transaction->message = 'Remote server error.';
+        break;
+    }
+    commerce_payment_transaction_save($transaction);
+  }
+  return $transaction;
+}

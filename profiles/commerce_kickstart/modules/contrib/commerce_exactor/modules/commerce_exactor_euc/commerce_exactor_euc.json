@@ -1,0 +1,2543 @@
+[
+	{
+		"code": "EUC-01000000",
+		"d1": "Software & Hardware",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01010000",
+		"d1": "Software & Hardware",
+		"d2": "Software License",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01010100",
+		"d1": "Software & Hardware",
+		"d2": "Software License",
+		"d3": "Custom Software",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01010101",
+		"d1": "Software & Hardware",
+		"d2": "Software License",
+		"d3": "Custom Software",
+		"d4": "Licenses of custom software on tangible medium"
+	},
+	{
+		"code": "EUC-01010102",
+		"d1": "Software & Hardware",
+		"d2": "Software License",
+		"d3": "Custom Software",
+		"d4": "Transmitted to the purchaser electronically"
+	},
+	{
+		"code": "EUC-01010200",
+		"d1": "Software & Hardware",
+		"d2": "Software License",
+		"d3": "Prewritten software",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01010201",
+		"d1": "Software & Hardware",
+		"d2": "Software License",
+		"d3": "Prewritten software",
+		"d4": "Transmitted on tangible medium"
+	},
+	{
+		"code": "EUC-01010202",
+		"d1": "Software & Hardware",
+		"d2": "Software License",
+		"d3": "Prewritten software",
+		"d4": "Transmitted to the purchaser electronically"
+	},
+	{
+		"code": "EUC-01020000",
+		"d1": "Software & Hardware",
+		"d2": "Sale of Software",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01020100",
+		"d1": "Software & Hardware",
+		"d2": "Sale of Software",
+		"d3": "Prewritten software",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01020101",
+		"d1": "Software & Hardware",
+		"d2": "Sale of Software",
+		"d3": "Prewritten software",
+		"d4": "Transmitted on tangible medium"
+	},
+	{
+		"code": "EUC-01020102",
+		"d1": "Software & Hardware",
+		"d2": "Sale of Software",
+		"d3": "Prewritten software",
+		"d4": "Transmitted electronically"
+	},
+	{
+		"code": "EUC-01020103",
+		"d1": "Software & Hardware",
+		"d2": "Sale of Software",
+		"d3": "Prewritten software",
+		"d4": "Transmitted via load and leave"
+	},
+	{
+		"code": "EUC-01020200",
+		"d1": "Software & Hardware",
+		"d2": "Sale of Software",
+		"d3": "Custom software",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01020201",
+		"d1": "Software & Hardware",
+		"d2": "Sale of Software",
+		"d3": "Custom software",
+		"d4": "Transmitted on tangible medium"
+	},
+	{
+		"code": "EUC-01020202",
+		"d1": "Software & Hardware",
+		"d2": "Sale of Software",
+		"d3": "Custom software",
+		"d4": "Transmitted electronically"
+	},
+	{
+		"code": "EUC-01020203",
+		"d1": "Software & Hardware",
+		"d2": "Sale of Software",
+		"d3": "Custom software",
+		"d4": "Transmitted via load and leave"
+	},
+	{
+		"code": "EUC-01030000",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01030100",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Installation services",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01030105",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Installation services",
+		"d4": "Mandatory, in connection with the sale of custom software delivered electronically"
+	},
+	{
+		"code": "EUC-01030113",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Installation services",
+		"d4": "Software installation"
+	},
+	{
+		"code": "EUC-01030200",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Training for System Users",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01030205",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Training for System Users",
+		"d4": "Mandatory, in connection with the sale of custom software delivered electronically (job-related)"
+	},
+	{
+		"code": "EUC-01030211",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Training for System Users",
+		"d4": "Optional, in connection with the sale of custom software delivered electronically (job-related)"
+	},
+	{
+		"code": "EUC-01030213",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Training for System Users",
+		"d4": "System software training (job-related)"
+	},
+	{
+		"code": "EUC-01030400",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Technical Support",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01030401",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Technical Support",
+		"d4": "Mandatory, in connection with the sale of prewritten software on tangible medium"
+	},
+	{
+		"code": "EUC-01030402",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Technical Support",
+		"d4": "Mandatory, in connection with the sale of prewritten software delivered electronically"
+	},
+	{
+		"code": "EUC-01030411",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Technical Support",
+		"d4": "Optional, in connection with the sale of custom software delivered electronically"
+	},
+	{
+		"code": "EUC-01030413",
+		"d1": "Software & Hardware",
+		"d2": "Software Services",
+		"d3": "Technical Support",
+		"d4": "Software technical support"
+	},
+	{
+		"code": "EUC-01040000",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01040300",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "For prewritten software",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01040301",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "For prewritten software",
+		"d4": "Software updates delivered via tangible medium"
+	},
+	{
+		"code": "EUC-01040302",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "For prewritten software",
+		"d4": "Software updates delivered via load and leave"
+	},
+	{
+		"code": "EUC-01040303",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "For prewritten software",
+		"d4": "Software updates delivered electronically"
+	},
+	{
+		"code": "EUC-01040304",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "For prewritten software",
+		"d4": "Services and software updates delivered electronically"
+	},
+	{
+		"code": "EUC-01040800",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "For custom software",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01040801",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "For custom software",
+		"d4": "Software updates delivered via tangible medium"
+	},
+	{
+		"code": "EUC-01040802",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "For custom software",
+		"d4": "Software updates delivered via load and leave"
+	},
+	{
+		"code": "EUC-01040803",
+		"d1": "Software & Hardware",
+		"d2": "Software mandatory maintenance contract",
+		"d3": "For custom software",
+		"d4": "Software updates delivered electronically"
+	},
+	{
+		"code": "EUC-01050000",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01050200",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For prewritten software",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01050201",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For prewritten software",
+		"d4": "Software updates or upgrades delivered via tangible medium"
+	},
+	{
+		"code": "EUC-01050202",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For prewritten software",
+		"d4": "Software updates or upgrades delivered via load and leave"
+	},
+	{
+		"code": "EUC-01050203",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For prewritten software",
+		"d4": "Software updates or upgrades delivered electronically"
+	},
+	{
+		"code": "EUC-01050204",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For prewritten software",
+		"d4": "Support services and software updates and upgrades delivered electronically"
+	},
+	{
+		"code": "EUC-01050800",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For custom software",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01050801",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For custom software",
+		"d4": "Software updates or upgrades delivered via tangible medium"
+	},
+	{
+		"code": "EUC-01050802",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For custom software",
+		"d4": "Software updates or upgrades delivered via load and leave"
+	},
+	{
+		"code": "EUC-01050803",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For custom software",
+		"d4": "Software updates or upgrades delivered electronically"
+	},
+	{
+		"code": "EUC-01050807",
+		"d1": "Software & Hardware",
+		"d2": "Software optional maintenance contract",
+		"d3": "For custom software",
+		"d4": "Support services only"
+	},
+	{
+		"code": "EUC-01060000",
+		"d1": "Software & Hardware",
+		"d2": "Computer Hardware, Sale",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01060200",
+		"d1": "Software & Hardware",
+		"d2": "Computer Hardware, Sale",
+		"d3": "Misc Hardware and Accessories",
+		"d4": ""
+	},
+	{
+		"code": "EUC-01060201",
+		"d1": "Software & Hardware",
+		"d2": "Computer Hardware, Sale",
+		"d3": "Misc Hardware and Accessories",
+		"d4": "Computer CPU"
+	},
+	{
+		"code": "EUC-01060203",
+		"d1": "Software & Hardware",
+		"d2": "Computer Hardware, Sale",
+		"d3": "Misc Hardware and Accessories",
+		"d4": "Computer System (with a monitor 35 inches or larger, cpu, mouse, and keyboard)"
+	},
+	{
+		"code": "EUC-01060204",
+		"d1": "Software & Hardware",
+		"d2": "Computer Hardware, Sale",
+		"d3": "Misc Hardware and Accessories",
+		"d4": "Computer System (with a monitor 15 inches or larger, but less than 35 inches, cpu, mouse, and keyboard)"
+	},
+	{
+		"code": "EUC-01060205",
+		"d1": "Software & Hardware",
+		"d2": "Computer Hardware, Sale",
+		"d3": "Misc Hardware and Accessories",
+		"d4": "Computer System (with a monitor 4 inches or larger, but less than 15 inches, cpu, mouse, and keyboard)"
+	},
+	{
+		"code": "EUC-01060206",
+		"d1": "Software & Hardware",
+		"d2": "Computer Hardware, Sale",
+		"d3": "Misc Hardware and Accessories",
+		"d4": "Computer System (with no monitor or a monitor less than 4 inches, cpu, mouse, and keyboard)"
+	},
+	{
+		"code": "EUC-01060224",
+		"d1": "Software & Hardware",
+		"d2": "Computer Hardware, Sale",
+		"d3": "Misc Hardware and Accessories",
+		"d4": "Scanners"
+	},
+	{
+		"code": "EUC-02000000",
+		"d1": "Information Technology",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-02040000",
+		"d1": "Information Technology",
+		"d2": "Data processing services",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-02040100",
+		"d1": "Information Technology",
+		"d2": "Data processing services",
+		"d3": "Data processing services",
+		"d4": ""
+	},
+	{
+		"code": "EUC-02040103",
+		"d1": "Information Technology",
+		"d2": "Data processing services",
+		"d3": "Data processing services",
+		"d4": "Online information services"
+	},
+	{
+		"code": "EUC-02050000",
+		"d1": "Information Technology",
+		"d2": "Internet",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-02050200",
+		"d1": "Information Technology",
+		"d2": "Internet",
+		"d3": "Internet Services",
+		"d4": ""
+	},
+	{
+		"code": "EUC-02050201",
+		"d1": "Information Technology",
+		"d2": "Internet",
+		"d3": "Internet Services",
+		"d4": "Internet access charges."
+	},
+	{
+		"code": "EUC-02050210",
+		"d1": "Information Technology",
+		"d2": "Internet",
+		"d3": "Internet Services",
+		"d4": "Web hosting services"
+	},
+	{
+		"code": "EUC-02100000",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-02100100",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital audio works",
+		"d4": ""
+	},
+	{
+		"code": "EUC-02100101",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital audio works",
+		"d4": "With rights for permanent use"
+	},
+	{
+		"code": "EUC-02100102",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital audio works",
+		"d4": "Sold with rights of use less than permanent use"
+	},
+	{
+		"code": "EUC-02100103",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital audio works",
+		"d4": "Sold with rights of use conditioned on continued payments"
+	},
+	{
+		"code": "EUC-02100201",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital audio visual works",
+		"d4": "With rights for permanent use"
+	},
+	{
+		"code": "EUC-02100202",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital audio visual works",
+		"d4": "Sold with rights of use less than permanent use"
+	},
+	{
+		"code": "EUC-02100203",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital audio visual works",
+		"d4": "Sold with rights of use conditioned on continued payments"
+	},
+	{
+		"code": "EUC-02100300",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital books",
+		"d4": ""
+	},
+	{
+		"code": "EUC-02100301",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital books",
+		"d4": "With rights for permanent use"
+	},
+	{
+		"code": "EUC-02100302",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital books",
+		"d4": "Sold with rights of use less than permanent use"
+	},
+	{
+		"code": "EUC-02100303",
+		"d1": "Information Technology",
+		"d2": "Products transferred electronically",
+		"d3": "Digital books",
+		"d4": "Sold with rights of use conditioned on continued payments"
+	},
+	{
+		"code": "EUC-03000000",
+		"d1": "Food & Beverages",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03010200",
+		"d1": "Food & Beverages",
+		"d2": "Beverages",
+		"d3": "Nutritional Supplements",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03010201",
+		"d1": "Food & Beverages",
+		"d2": "Beverages",
+		"d3": "Nutritional Supplements",
+		"d4": "Dietary Supplements"
+	},
+	{
+		"code": "EUC-03010400",
+		"d1": "Food & Beverages",
+		"d2": "Beverages",
+		"d3": "Soft Drinks",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03010414",
+		"d1": "Food & Beverages",
+		"d2": "Beverages",
+		"d3": "Soft Drinks",
+		"d4": "Carbonated beverages  or Soft Drinks"
+	},
+	{
+		"code": "EUC-03020000",
+		"d1": "Food & Beverages",
+		"d2": "General Food",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03020100",
+		"d1": "Food & Beverages",
+		"d2": "General Food",
+		"d3": "General Food",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03020101",
+		"d1": "Food & Beverages",
+		"d2": "General Food",
+		"d3": "General Food",
+		"d4": "Food and food ingredients (excluding alcoholic beverages and tobacco) not covered by another existing EUC code"
+	},
+	{
+		"code": "EUC-03020200",
+		"d1": "Food & Beverages",
+		"d2": "General Food",
+		"d3": "Candy",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03020201",
+		"d1": "Food & Beverages",
+		"d2": "General Food",
+		"d3": "Candy",
+		"d4": "Candy"
+	},
+	{
+		"code": "EUC-03030000",
+		"d1": "Food & Beverages",
+		"d2": "Food Products not for Home Consumption",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03030100",
+		"d1": "Food & Beverages",
+		"d2": "Food Products not for Home Consumption",
+		"d3": "General Food",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03030103",
+		"d1": "Food & Beverages",
+		"d2": "Food Products not for Home Consumption",
+		"d3": "General Food",
+		"d4": "Food (excluding prepared food) sold through vending machines"
+	},
+	{
+		"code": "EUC-03040000",
+		"d1": "Food & Beverages",
+		"d2": "Prepared Food for Immediate Consumption",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03040100",
+		"d1": "Food & Beverages",
+		"d2": "Prepared Food for Immediate Consumption",
+		"d3": "Prepared Food",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03040101",
+		"d1": "Food & Beverages",
+		"d2": "Prepared Food for Immediate Consumption",
+		"d3": "Prepared Food",
+		"d4": "Prepared Food, not covered by another code"
+	},
+	{
+		"code": "EUC-03040104",
+		"d1": "Food & Beverages",
+		"d2": "Prepared Food for Immediate Consumption",
+		"d3": "Prepared Food",
+		"d4": "Bakery items sold without eating utensils provided by the seller, including bread, rolls, buns, biscuits, bagels, croissants, pastries, donuts, Danish, cakes, tortes, pies, tarts, muffins, bars, cookies, tortillas"
+	},
+	{
+		"code": "EUC-03140000",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03140100",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03140101",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Food storage"
+	},
+	{
+		"code": "EUC-03140102",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Insulated food storage bags"
+	},
+	{
+		"code": "EUC-03140103",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Non-returnable containers or wrapping supplies incidental to the sale of prepared food or beverages"
+	},
+	{
+		"code": "EUC-03140106",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Consumables dispensed with the sale of meals or beverages  (e.g. napkins, plastic utensils)"
+	},
+	{
+		"code": "EUC-03140107",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Consumables required to comply with public health regulations  (e.g. disposable gloves, hair nets)"
+	},
+	{
+		"code": "EUC-03140108",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Consumables that do not become part of the food (e.g. paper towels)"
+	},
+	{
+		"code": "EUC-03140109",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Appliances used to prepare food or beverage for sale for human consumption"
+	},
+	{
+		"code": "EUC-03140110",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Appliances used for general purposes"
+	},
+	{
+		"code": "EUC-03140111",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Appliances used for food preservation, where the food will be sold for human consumption.  Does NOT include items used to display food.  (for example, storage refrigerators, but not display counter refrigerators)"
+	},
+	{
+		"code": "EUC-03140112",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Appliances used for food display  (for example, display counter refrigerators)"
+	},
+	{
+		"code": "EUC-03140113",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Products (appliances and other items) used to clean TPP used to prepare food for sale for human consumption (for example, dish-washers, detergents and cleaning materials)"
+	},
+	{
+		"code": "EUC-03140114",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Products (appliances and other items) used to clean TPP for general purposes"
+	},
+	{
+		"code": "EUC-03140115",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Non-Consumables dispensed with the sale of meals or beverages  (e.g. utensils; water pitcher; non-consumable dishes"
+	},
+	{
+		"code": "EUC-03140116",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Product and food ingredients, that are sold, to be incorporated into food for purpose of sale for  human consumption (e.g. mixes; ground beef)"
+	},
+	{
+		"code": "EUC-03140117",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Restaurant Furniture"
+	},
+	{
+		"code": "EUC-03140118",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Misc Kitchen items"
+	},
+	{
+		"code": "EUC-03140119",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Non-consumables used for food preparation (e.g. pots, pans, skewers)"
+	},
+	{
+		"code": "EUC-03140120",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to Food Preparation Industry (e.g. restaurants, Not for personal consumption), buyer may be considered to be a reseller, and should provide a resale certificate",
+		"d4": "Misc taxable items (e.g. beverage dispensers, ice chests, racks)"
+	},
+	{
+		"code": "EUC-03140200",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": ""
+	},
+	{
+		"code": "EUC-03140201",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Food storage"
+	},
+	{
+		"code": "EUC-03140202",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Insulated food storage bags"
+	},
+	{
+		"code": "EUC-03140203",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Non-returnable containers or wrapping supplies incidental to the sale of prepared food or beverages"
+	},
+	{
+		"code": "EUC-03140206",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Consumables dispensed with the sale of meals or beverages  (e.g. napkins, plastic utensils)"
+	},
+	{
+		"code": "EUC-03140207",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Consumables required to comply with public health regulations  (e.g. disposable gloves, hair nets)"
+	},
+	{
+		"code": "EUC-03140208",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Consumables that do not become part of the food (e.g. paper towels)"
+	},
+	{
+		"code": "EUC-03140209",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Appliances used to prepare food for sale for human consumption"
+	},
+	{
+		"code": "EUC-03140210",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Appliances used for general purposes"
+	},
+	{
+		"code": "EUC-03140211",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Appliances used for food preservation, where the food will be sold for human consumption.  Does NOT include items used to display food.  (for example, storage refrigerators, but not display counter refrigerators)"
+	},
+	{
+		"code": "EUC-03140212",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Appliances used for food display  (for example, display counter refrigerators)"
+	},
+	{
+		"code": "EUC-03140213",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Products (appliances and other items) used to clean TPP used to prepare food for sale for human consumption (for example, dish-washers, detergents and cleaning materials)"
+	},
+	{
+		"code": "EUC-03140214",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Products (appliances and other items) used to clean TPP for general purposes"
+	},
+	{
+		"code": "EUC-03140215",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Non-Consumables dispensed with the sale of meals or beverages  (e.g. utensils; water pitcher; non-consumable dishes"
+	},
+	{
+		"code": "EUC-03140216",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Product and food ingredients, that are sold, to be incorporated into food for purpose of sale for  human consumption (e.g. mixes; ground beef)"
+	},
+	{
+		"code": "EUC-03140217",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Restaurant Furniture"
+	},
+	{
+		"code": "EUC-03140218",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Misc Kitchen items"
+	},
+	{
+		"code": "EUC-03140219",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Non-consumables used for food preparation (e.g. pots, pans, skewers)"
+	},
+	{
+		"code": "EUC-03140220",
+		"d1": "Food & Beverages",
+		"d2": "Supplies & Equipment",
+		"d3": "Sold to General Public (for personal consumption)",
+		"d4": "Misc taxable items (e.g. beverage dispenser, ice chest, racks)"
+	},
+	{
+		"code": "EUC-04000000",
+		"d1": "Installation & Repair Charges",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04020000",
+		"d1": "Installation & Repair Charges",
+		"d2": "Tangible Personal Property (TPP)",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04020100",
+		"d1": "Installation & Repair Charges",
+		"d2": "Tangible Personal Property (TPP)",
+		"d3": "Not on to Real Property",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04020101",
+		"d1": "Installation & Repair Charges",
+		"d2": "Tangible Personal Property (TPP)",
+		"d3": "Not on to Real Property",
+		"d4": "Service charges"
+	},
+	{
+		"code": "EUC-04020200",
+		"d1": "Installation & Repair Charges",
+		"d2": "Tangible Personal Property (TPP)",
+		"d3": "Replacement and non-initial Installation to Real Property",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04020201",
+		"d1": "Installation & Repair Charges",
+		"d2": "Tangible Personal Property (TPP)",
+		"d3": "Replacement and non-initial Installation to Real Property",
+		"d4": "Carpets and Furniture which is permanently affixed to real property"
+	},
+	{
+		"code": "EUC-04020202",
+		"d1": "Installation & Repair Charges",
+		"d2": "Tangible Personal Property (TPP)",
+		"d3": "Replacement and non-initial Installation to Real Property",
+		"d4": "Carpets and Furniture which is not permanently affixed to real property"
+	},
+	{
+		"code": "EUC-04020203",
+		"d1": "Installation & Repair Charges",
+		"d2": "Tangible Personal Property (TPP)",
+		"d3": "Replacement and non-initial Installation to Real Property",
+		"d4": "Installation and replacement by a contractor of immovable non-mechanical material which becomes part of the real property (e.g. wiring)"
+	},
+	{
+		"code": "EUC-04030000",
+		"d1": "Installation & Repair Charges",
+		"d2": "Installation",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04030100",
+		"d1": "Installation & Repair Charges",
+		"d2": "Installation",
+		"d3": "Initial Installation to Real Property",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04030101",
+		"d1": "Installation & Repair Charges",
+		"d2": "Installation",
+		"d3": "Initial Installation to Real Property",
+		"d4": "Installation Services Only"
+	},
+	{
+		"code": "EUC-04030102",
+		"d1": "Installation & Repair Charges",
+		"d2": "Installation",
+		"d3": "Initial Installation to Real Property",
+		"d4": "Office Furniture (including fabrication, assembling or finishing product)"
+	},
+	{
+		"code": "EUC-04030103",
+		"d1": "Installation & Repair Charges",
+		"d2": "Installation",
+		"d3": "Initial Installation to Real Property",
+		"d4": "Office Furniture, does not include fabrication, assembling or finishing product"
+	},
+	{
+		"code": "EUC-04030104",
+		"d1": "Installation & Repair Charges",
+		"d2": "Installation",
+		"d3": "Initial Installation to Real Property",
+		"d4": "Carpets and Furniture"
+	},
+	{
+		"code": "EUC-04030105",
+		"d1": "Installation & Repair Charges",
+		"d2": "Installation",
+		"d3": "Initial Installation to Real Property",
+		"d4": "Carpets and Furniture which is permanently affixed to real property"
+	},
+	{
+		"code": "EUC-04030106",
+		"d1": "Installation & Repair Charges",
+		"d2": "Installation",
+		"d3": "Initial Installation to Real Property",
+		"d4": "Initial installation by a contractor of immovable non-mechanical material which becomes part of the real property (e.g. wiring)"
+	},
+	{
+		"code": "EUC-04040000",
+		"d1": "Installation & Repair Charges",
+		"d2": "Repair Charges",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04040100",
+		"d1": "Installation & Repair Charges",
+		"d2": "Repair Charges",
+		"d3": "Services not covered by a Maintenance Contract",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04040101",
+		"d1": "Installation & Repair Charges",
+		"d2": "Repair Charges",
+		"d3": "Services not covered by a Maintenance Contract",
+		"d4": "Labor only"
+	},
+	{
+		"code": "EUC-04040102",
+		"d1": "Installation & Repair Charges",
+		"d2": "Repair Charges",
+		"d3": "Services not covered by a Maintenance Contract",
+		"d4": "Invoiced line items containing charges for parts and labor, segregated"
+	},
+	{
+		"code": "EUC-04070000",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for parts and labor",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04070100",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for parts and labor",
+		"d3": "Mandatory",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04070101",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for parts and labor",
+		"d3": "Mandatory",
+		"d4": "With the sale of tangible personal property"
+	},
+	{
+		"code": "EUC-04070200",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for parts and labor",
+		"d3": "Optional",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04070201",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for parts and labor",
+		"d3": "Optional",
+		"d4": "With the sale of tangible personal property"
+	},
+	{
+		"code": "EUC-04070202",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for parts and labor",
+		"d3": "Optional",
+		"d4": "Sold separately from the sale of tangible personal property (Maintenance contract includes parts & labor)"
+	},
+	{
+		"code": "EUC-04090000",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for labor only",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04090100",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for labor only",
+		"d3": "Mandatory",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04090101",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for labor only",
+		"d3": "Mandatory",
+		"d4": "With the sale of tangible personal property"
+	},
+	{
+		"code": "EUC-04090200",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for labor only",
+		"d3": "Optional",
+		"d4": ""
+	},
+	{
+		"code": "EUC-04090201",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for labor only",
+		"d3": "Optional",
+		"d4": "With the sale of tangible personal property"
+	},
+	{
+		"code": "EUC-04090202",
+		"d1": "Installation & Repair Charges",
+		"d2": "Maintenance contracts for labor only",
+		"d3": "Optional",
+		"d4": "Sold separately from the sale of tangible personal property (Maintenance contract includes labor only)"
+	},
+	{
+		"code": "EUC-05000000",
+		"d1": "Leases and rentals",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-05010000",
+		"d1": "Leases and rentals",
+		"d2": "Rentals",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-05010100",
+		"d1": "Leases and rentals",
+		"d2": "Rentals",
+		"d3": "Day rentals",
+		"d4": ""
+	},
+	{
+		"code": "EUC-05010101",
+		"d1": "Leases and rentals",
+		"d2": "Rentals",
+		"d3": "Day rentals",
+		"d4": "Short term rental of TPP (not including motor vehicles or lodging)"
+	},
+	{
+		"code": "EUC-05010400",
+		"d1": "Leases and rentals",
+		"d2": "Rentals",
+		"d3": "Storage Rentals",
+		"d4": ""
+	},
+	{
+		"code": "EUC-05010401",
+		"d1": "Leases and rentals",
+		"d2": "Rentals",
+		"d3": "Storage Rentals",
+		"d4": "Self-Storage"
+	},
+	{
+		"code": "EUC-05010402",
+		"d1": "Leases and rentals",
+		"d2": "Rentals",
+		"d3": "Storage Rentals",
+		"d4": "Storage and warehouse, where the property owner (lessor) retains full control over the stored goods (Customer has no access to the stored goods)."
+	},
+	{
+		"code": "EUC-06000000",
+		"d1": "Medical and Health Related Items",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06020000",
+		"d1": "Medical and Health Related Items",
+		"d2": "Eyesight",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06020100",
+		"d1": "Medical and Health Related Items",
+		"d2": "Eyesight",
+		"d3": "Contact Lenses",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06020101",
+		"d1": "Medical and Health Related Items",
+		"d2": "Eyesight",
+		"d3": "Contact Lenses",
+		"d4": "Without a prescription"
+	},
+	{
+		"code": "EUC-06020102",
+		"d1": "Medical and Health Related Items",
+		"d2": "Eyesight",
+		"d3": "Contact Lenses",
+		"d4": "With a prescription"
+	},
+	{
+		"code": "EUC-06020200",
+		"d1": "Medical and Health Related Items",
+		"d2": "Eyesight",
+		"d3": "Corrective eyeglasses",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06020201",
+		"d1": "Medical and Health Related Items",
+		"d2": "Eyesight",
+		"d3": "Corrective eyeglasses",
+		"d4": "Without a prescription"
+	},
+	{
+		"code": "EUC-06020202",
+		"d1": "Medical and Health Related Items",
+		"d2": "Eyesight",
+		"d3": "Corrective eyeglasses",
+		"d4": "With a prescription"
+	},
+	{
+		"code": "EUC-06030000",
+		"d1": "Medical and Health Related Items",
+		"d2": "Dental",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06030100",
+		"d1": "Medical and Health Related Items",
+		"d2": "Dental",
+		"d3": "Dental Prosthetics",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06030101",
+		"d1": "Medical and Health Related Items",
+		"d2": "Dental",
+		"d3": "Dental Prosthetics",
+		"d4": "Without a prescription"
+	},
+	{
+		"code": "EUC-06030102",
+		"d1": "Medical and Health Related Items",
+		"d2": "Dental",
+		"d3": "Dental Prosthetics",
+		"d4": "With a prescription"
+	},
+	{
+		"code": "EUC-06040000",
+		"d1": "Medical and Health Related Items",
+		"d2": "Hearing",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06040100",
+		"d1": "Medical and Health Related Items",
+		"d2": "Hearing",
+		"d3": "Hearing Aids",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06040101",
+		"d1": "Medical and Health Related Items",
+		"d2": "Hearing",
+		"d3": "Hearing Aids",
+		"d4": "Without a prescription"
+	},
+	{
+		"code": "EUC-06040102",
+		"d1": "Medical and Health Related Items",
+		"d2": "Hearing",
+		"d3": "Hearing Aids",
+		"d4": "With a prescription"
+	},
+	{
+		"code": "EUC-06080100",
+		"d1": "Medical and Health Related Items",
+		"d2": "Mobility enhancing equipment",
+		"d3": "Mobility enhancing equipment",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06080101",
+		"d1": "Medical and Health Related Items",
+		"d2": "Mobility enhancing equipment",
+		"d3": "Mobility enhancing equipment",
+		"d4": "Without a prescription"
+	},
+	{
+		"code": "EUC-06080102",
+		"d1": "Medical and Health Related Items",
+		"d2": "Mobility enhancing equipment",
+		"d3": "Mobility enhancing equipment",
+		"d4": "With a prescription"
+	},
+	{
+		"code": "EUC-06090000",
+		"d1": "Medical and Health Related Items",
+		"d2": "Prosthetic devices",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06090100",
+		"d1": "Medical and Health Related Items",
+		"d2": "Prosthetic devices",
+		"d3": "Prosthetic devices",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06090101",
+		"d1": "Medical and Health Related Items",
+		"d2": "Prosthetic devices",
+		"d3": "Prosthetic devices",
+		"d4": "Without a prescription"
+	},
+	{
+		"code": "EUC-06090102",
+		"d1": "Medical and Health Related Items",
+		"d2": "Prosthetic devices",
+		"d3": "Prosthetic devices",
+		"d4": "With a prescription"
+	},
+	{
+		"code": "EUC-06100000",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06100100",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "Durable medical equipment not for home use",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06100101",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "Durable medical equipment not for home use",
+		"d4": "Without a prescription"
+	},
+	{
+		"code": "EUC-06100102",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "Durable medical equipment not for home use",
+		"d4": "With a prescription"
+	},
+	{
+		"code": "EUC-06100200",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "Durable medical equipment for home use",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06100201",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "Durable medical equipment for home use",
+		"d4": "Without a prescription"
+	},
+	{
+		"code": "EUC-06100202",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "Durable medical equipment for home use",
+		"d4": "With a prescription"
+	},
+	{
+		"code": "EUC-06101300",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "Enteral feeding systems for home use",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06101301",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "Enteral feeding systems for home use",
+		"d4": "Without a prescription"
+	},
+	{
+		"code": "EUC-06101302",
+		"d1": "Medical and Health Related Items",
+		"d2": "Durable medical equipment",
+		"d3": "Enteral feeding systems for home use",
+		"d4": "With a prescription"
+	},
+	{
+		"code": "EUC-06110000",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06110100",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "Drugs",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06110101",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "Drugs",
+		"d4": "For human use without a prescription"
+	},
+	{
+		"code": "EUC-06110102",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "Drugs",
+		"d4": "For human use with a prescription"
+	},
+	{
+		"code": "EUC-06110300",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "Drugs for use at licensed medical facilities",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06110301",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "Drugs for use at licensed medical facilities",
+		"d4": "For human use without a prescription to hospitals"
+	},
+	{
+		"code": "EUC-06110302",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "Drugs for use at licensed medical facilities",
+		"d4": "For human use with a prescription to hospitals"
+	},
+	{
+		"code": "EUC-06110700",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "Drugs sold over-the-counter",
+		"d4": ""
+	},
+	{
+		"code": "EUC-06110701",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "Drugs sold over-the-counter",
+		"d4": "For human use without a prescription"
+	},
+	{
+		"code": "EUC-06110702",
+		"d1": "Medical and Health Related Items",
+		"d2": "Drugs",
+		"d3": "Drugs sold over-the-counter",
+		"d4": "For human use with a prescription"
+	},
+	{
+		"code": "EUC-08000000",
+		"d1": "Publications",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-08020000",
+		"d1": "Publications",
+		"d2": "Non-Periodicals",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-08020100",
+		"d1": "Publications",
+		"d2": "Non-Periodicals",
+		"d3": "Books",
+		"d4": ""
+	},
+	{
+		"code": "EUC-08020101",
+		"d1": "Publications",
+		"d2": "Non-Periodicals",
+		"d3": "Books",
+		"d4": "Books."
+	},
+	{
+		"code": "EUC-08020200",
+		"d1": "Publications",
+		"d2": "Non-Periodicals",
+		"d3": "Miscellaneous Printed Materials",
+		"d4": ""
+	},
+	{
+		"code": "EUC-08020201",
+		"d1": "Publications",
+		"d2": "Non-Periodicals",
+		"d3": "Miscellaneous Printed Materials",
+		"d4": "Printed Materials"
+	},
+	{
+		"code": "EUC-08030000",
+		"d1": "Publications",
+		"d2": "Periodicals",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-08030100",
+		"d1": "Publications",
+		"d2": "Periodicals",
+		"d3": "Newspapers",
+		"d4": ""
+	},
+	{
+		"code": "EUC-08030101",
+		"d1": "Publications",
+		"d2": "Periodicals",
+		"d3": "Newspapers",
+		"d4": "Newsstand sales daily"
+	},
+	{
+		"code": "EUC-08030200",
+		"d1": "Publications",
+		"d2": "Periodicals",
+		"d3": "Magazines",
+		"d4": ""
+	},
+	{
+		"code": "EUC-08030201",
+		"d1": "Publications",
+		"d2": "Periodicals",
+		"d3": "Magazines",
+		"d4": "Newsstand sales"
+	},
+	{
+		"code": "EUC-08030202",
+		"d1": "Publications",
+		"d2": "Periodicals",
+		"d3": "Magazines",
+		"d4": "Prepaid subscriptions of general interest magazines issued at intervals not exceeding 3 months"
+	},
+	{
+		"code": "EUC-09000000",
+		"d1": "Retail",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09020000",
+		"d1": "Retail",
+		"d2": "Consumer Items",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09020200",
+		"d1": "Retail",
+		"d2": "Consumer Items",
+		"d3": "Business Goods",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09020201",
+		"d1": "Retail",
+		"d2": "Consumer Items",
+		"d3": "Business Goods",
+		"d4": "Taxable Items"
+	},
+	{
+		"code": "EUC-09020800",
+		"d1": "Retail",
+		"d2": "Consumer Items",
+		"d3": "General Retail Items",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09020802",
+		"d1": "Retail",
+		"d2": "Consumer Items",
+		"d3": "General Retail Items",
+		"d4": "Taxable Retail Items"
+	},
+	{
+		"code": "EUC-09030000",
+		"d1": "Retail",
+		"d2": "Personal Care",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09030100",
+		"d1": "Retail",
+		"d2": "Personal Care",
+		"d3": "Health and Beauty",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09030132",
+		"d1": "Retail",
+		"d2": "Personal Care",
+		"d3": "Health and Beauty",
+		"d4": "Hemorrhoid products"
+	},
+	{
+		"code": "EUC-09030155",
+		"d1": "Retail",
+		"d2": "Personal Care",
+		"d3": "Health and Beauty",
+		"d4": "Lubricating Jelly"
+	},
+	{
+		"code": "EUC-09030200",
+		"d1": "Retail",
+		"d2": "Personal Care",
+		"d3": "Grooming and Hygiene Products",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09030201",
+		"d1": "Retail",
+		"d2": "Personal Care",
+		"d3": "Grooming and Hygiene Products",
+		"d4": "For human use"
+	},
+	{
+		"code": "EUC-09040000",
+		"d1": "Retail",
+		"d2": "School & Education",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09040100",
+		"d1": "Retail",
+		"d2": "School & Education",
+		"d3": "Class Accessories & Supplies",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09040102",
+		"d1": "Retail",
+		"d2": "School & Education",
+		"d3": "Class Accessories & Supplies",
+		"d4": "School supplies"
+	},
+	{
+		"code": "EUC-09050000",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09050100",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Clothing",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09050101",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Clothing",
+		"d4": "General Clothing"
+	},
+	{
+		"code": "EUC-09050102",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Clothing",
+		"d4": "Formal wear (not including rentals)"
+	},
+	{
+		"code": "EUC-09050200",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Clothing Accessories",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09050201",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Clothing Accessories",
+		"d4": "Clothing accessories or equipment"
+	},
+	{
+		"code": "EUC-09050202",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Clothing Accessories",
+		"d4": "Handkerchiefs"
+	},
+	{
+		"code": "EUC-09050204",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Clothing Accessories",
+		"d4": "Belt buckles"
+	},
+	{
+		"code": "EUC-09050300",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Head & Hair Accessories",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09050301",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Head & Hair Accessories",
+		"d4": "Hats (not including formal hats)"
+	},
+	{
+		"code": "EUC-09050305",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Head & Hair Accessories",
+		"d4": "Hair bows"
+	},
+	{
+		"code": "EUC-09050800",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Footwear  & Accessories",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09050801",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Footwear  & Accessories",
+		"d4": "Shoes"
+	},
+	{
+		"code": "EUC-09050900",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Athletic & Sports Apparel",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09050901",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Athletic & Sports Apparel",
+		"d4": "Clothing"
+	},
+	{
+		"code": "EUC-09050902",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Athletic & Sports Apparel",
+		"d4": "Childrens uniforms"
+	},
+	{
+		"code": "EUC-09050904",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Athletic & Sports Apparel",
+		"d4": "Athletic supporters"
+	},
+	{
+		"code": "EUC-09050905",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Athletic & Sports Apparel",
+		"d4": "Equipment"
+	},
+	{
+		"code": "EUC-09050906",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Athletic & Sports Apparel",
+		"d4": "Swimwear"
+	},
+	{
+		"code": "EUC-09050907",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Athletic & Sports Apparel",
+		"d4": "Swimming Caps"
+	},
+	{
+		"code": "EUC-09050910",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Athletic & Sports Apparel",
+		"d4": "Ski pants"
+	},
+	{
+		"code": "EUC-09050911",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Athletic & Sports Apparel",
+		"d4": "Tennis clothing"
+	},
+	{
+		"code": "EUC-09051000",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Safety Apparel non-Athletic",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09051001",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Safety Apparel non-Athletic",
+		"d4": "Lab coats"
+	},
+	{
+		"code": "EUC-09051002",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Safety Apparel non-Athletic",
+		"d4": "Clothing designed to protect product or wearers clothing"
+	},
+	{
+		"code": "EUC-09051006",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Safety Apparel non-Athletic",
+		"d4": "Protective clothing, equipment, or footware"
+	},
+	{
+		"code": "EUC-09051500",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Children & Baby Clothing",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09051501",
+		"d1": "Retail",
+		"d2": "Clothing",
+		"d3": "Children & Baby Clothing",
+		"d4": "Children's Clothing"
+	},
+	{
+		"code": "EUC-09090000",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09090100",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "Regulation size",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09090104",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "Regulation size",
+		"d4": "Regulation size state flag purchased in same respective state (e.g. Wisconsin State flag purchased in Wisconsin)"
+	},
+	{
+		"code": "EUC-09090400",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "POW/MIA flag",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09090401",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "POW/MIA flag",
+		"d4": "Flag"
+	},
+	{
+		"code": "EUC-09090500",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "United States, without accessories",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09090501",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "United States, without accessories",
+		"d4": "United States of America Flag"
+	},
+	{
+		"code": "EUC-09090600",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "United States, with accessories",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09090601",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "United States, with accessories",
+		"d4": "U.S. flag sold with accessories in a kit as a single unit (accessories represent less than 10% of the purchase price)"
+	},
+	{
+		"code": "EUC-09090602",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "United States, with accessories",
+		"d4": "U.S. flag sold with accessories in a kit as a single unit (accessories represent greater than 10% of the purchase price)"
+	},
+	{
+		"code": "EUC-09090603",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "United States, with accessories",
+		"d4": "U.S. flag sold with staff permanently attached"
+	},
+	{
+		"code": "EUC-09090604",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "United States, with accessories",
+		"d4": "Flags which were once official flags of the United States, such as flags with less than fifty white stars when there were fewer than fifty states"
+	},
+	{
+		"code": "EUC-09090605",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "United States, with accessories",
+		"d4": "United States military service flag"
+	},
+	{
+		"code": "EUC-09090700",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "State Flags, without accessories",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09090701",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "State Flags, without accessories",
+		"d4": "State flag purchased in same respective state (e.g. Wisconsin State flag purchased in Wisconsin)"
+	},
+	{
+		"code": "EUC-09090800",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "State Flags, without accessories",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09090801",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "State Flags, without accessories",
+		"d4": "State flag sold with accessories in a kit as a single unit purchased in same respective state (e.g. Wisconsin State flag with accessories purchased in Wisconsin) (accessories represent less than 10% of the purchase price)"
+	},
+	{
+		"code": "EUC-09090802",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "State Flags, without accessories",
+		"d4": "State flag sold with accessories in a kit as a single unit purchased in same respective state (e.g. Wisconsin State flag with accessories purchased in Wisconsin) (accessories represent greater than 10% of the purchase price)"
+	},
+	{
+		"code": "EUC-09090803",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "State Flags, without accessories",
+		"d4": "State flag sold with staff permanently attached purchased in same respective state (e.g. Wisconsin State flag with accessories purchased in Wisconsin)"
+	},
+	{
+		"code": "EUC-09090900",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "Miscellaneous",
+		"d4": ""
+	},
+	{
+		"code": "EUC-09090901",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "Miscellaneous",
+		"d4": "Blue Star banners (indicating son or daughter serving in military)"
+	},
+	{
+		"code": "EUC-09090902",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "Miscellaneous",
+		"d4": "Commercial flag, banner, pennants, decorations, etc"
+	},
+	{
+		"code": "EUC-09090903",
+		"d1": "Retail",
+		"d2": "US Flags",
+		"d3": "Miscellaneous",
+		"d4": "Flagpole and accessories sold separately"
+	},
+	{
+		"code": "EUC-12000000",
+		"d1": "Professional Services",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12070000",
+		"d1": "Professional Services",
+		"d2": "Advertising",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12070100",
+		"d1": "Professional Services",
+		"d2": "Advertising",
+		"d3": "General",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12070102",
+		"d1": "Professional Services",
+		"d2": "Advertising",
+		"d3": "General",
+		"d4": "Indoor-outdoor advertising space"
+	},
+	{
+		"code": "EUC-12070300",
+		"d1": "Professional Services",
+		"d2": "Advertising",
+		"d3": "Broadcast",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12070301",
+		"d1": "Professional Services",
+		"d2": "Advertising",
+		"d3": "Broadcast",
+		"d4": "Radio and Television"
+	},
+	{
+		"code": "EUC-12070400",
+		"d1": "Professional Services",
+		"d2": "Advertising",
+		"d3": "Internet",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12070401",
+		"d1": "Professional Services",
+		"d2": "Advertising",
+		"d3": "Internet",
+		"d4": "Web page"
+	},
+	{
+		"code": "EUC-12080000",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12080100",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Consulting Services",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12080101",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Consulting Services",
+		"d4": "Charges for separately stated consulting services associated with the sale of TPP where the consulting is a mandatory element of the sale required to affect the transfer of tangible personal property."
+	},
+	{
+		"code": "EUC-12080102",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Consulting Services",
+		"d4": "Charges for separately stated consulting services associated with the sale of TPP where the consulting is either unrelated to the transfer of TPP or it is an optional element of the sale not required to affect the transfer of tangible personal property."
+	},
+	{
+		"code": "EUC-12080103",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Consulting Services",
+		"d4": "Charges for separately stated management consulting services including analysis and data management of user site."
+	},
+	{
+		"code": "EUC-12080104",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Consulting Services",
+		"d4": "Interior Design services (design consulting services only, TPP is neither sold nor associated with the service)"
+	},
+	{
+		"code": "EUC-12080200",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Education",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12080201",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Education",
+		"d4": "Educational Services"
+	},
+	{
+		"code": "EUC-12080202",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Education",
+		"d4": "Continuing Educational Services"
+	},
+	{
+		"code": "EUC-12080301",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Landscaping",
+		"d4": "Gardening and landscape maintenance that does not improve the real property, such as lawn mowing"
+	},
+	{
+		"code": "EUC-12080302",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Landscaping",
+		"d4": "Snow removal"
+	},
+	{
+		"code": "EUC-12080400",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Personal Services",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12080401",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Personal Services",
+		"d4": "General personal services"
+	},
+	{
+		"code": "EUC-12080402",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Personal Services",
+		"d4": "Hair, spa and beauty services"
+	},
+	{
+		"code": "EUC-12080403",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Personal Services",
+		"d4": "Hair, spa and beauty, membership fees"
+	},
+	{
+		"code": "EUC-12080404",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Personal Services",
+		"d4": "Tanning services"
+	},
+	{
+		"code": "EUC-12080405",
+		"d1": "Professional Services",
+		"d2": "Miscellaneous",
+		"d3": "Personal Services",
+		"d4": "Hair, spa and beauty, bundled services"
+	},
+	{
+		"code": "EUC-12090000",
+		"d1": "Professional Services",
+		"d2": "Moving Services",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12090100",
+		"d1": "Professional Services",
+		"d2": "Moving Services",
+		"d3": "Moving and Relocation Services",
+		"d4": ""
+	},
+	{
+		"code": "EUC-12090101",
+		"d1": "Professional Services",
+		"d2": "Moving Services",
+		"d3": "Moving and Relocation Services",
+		"d4": "Storage Services"
+	},
+	{
+		"code": "EUC-12090102",
+		"d1": "Professional Services",
+		"d2": "Moving Services",
+		"d3": "Moving and Relocation Services",
+		"d4": "Sale of material incidental to the rendering of moving and relocation services"
+	},
+	{
+		"code": "EUC-13000000",
+		"d1": "Shipping and Handling",
+		"d2": "",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-13010000",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-13010100",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Combined Shipping and Handling",
+		"d4": ""
+	},
+	{
+		"code": "EUC-13010101",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Combined Shipping and Handling",
+		"d4": "Mandatory"
+	},
+	{
+		"code": "EUC-13010102",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Combined Shipping and Handling",
+		"d4": "Optional"
+	},
+	{
+		"code": "EUC-13010200",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Shipping Only Charges",
+		"d4": ""
+	},
+	{
+		"code": "EUC-13010201",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Shipping Only Charges",
+		"d4": "Charges incurred in transporting goods to the facilities of a retailer (freight in)."
+	},
+	{
+		"code": "EUC-13010202",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Shipping Only Charges",
+		"d4": "Via common carrier, sale occurs concurrent with delivery from shipper to buyer (ownership transfers to buyer at buyer's location)"
+	},
+	{
+		"code": "EUC-13010204",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Shipping Only Charges",
+		"d4": "Via common carrier, delivery to shipper occurs after the sale (ownership is transferred at seller's location)"
+	},
+	{
+		"code": "EUC-13010211",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Shipping Only Charges",
+		"d4": "Direct mail"
+	},
+	{
+		"code": "EUC-13010300",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Handling Only Charges",
+		"d4": ""
+	},
+	{
+		"code": "EUC-13010301",
+		"d1": "Shipping and Handling",
+		"d2": "Shipping and Handling",
+		"d3": "Handling Only Charges",
+		"d4": "Separately stated from shipping charges (preparation, wrapping and packaging of a product prior to shipment)"
+	},
+	{
+		"code": "EUC-13030000",
+		"d1": "Shipping and Handling",
+		"d2": "Postage",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-13030100",
+		"d1": "Shipping and Handling",
+		"d2": "Postage",
+		"d3": "Postage Machines",
+		"d4": ""
+	},
+	{
+		"code": "EUC-13030101",
+		"d1": "Shipping and Handling",
+		"d2": "Postage",
+		"d3": "Postage Machines",
+		"d4": "Postage machines"
+	},
+	{
+		"code": "EUC-13030200",
+		"d1": "Shipping and Handling",
+		"d2": "Postage",
+		"d3": "Postage",
+		"d4": ""
+	},
+	{
+		"code": "EUC-13030202",
+		"d1": "Shipping and Handling",
+		"d2": "Postage",
+		"d3": "Postage",
+		"d4": "Postage"
+	},
+	{
+		"code": "EUC-99010000",
+		"d1": "Miscellaneous",
+		"d2": "Discounts and Markups",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99010100",
+		"d1": "Miscellaneous",
+		"d2": "Discounts and Markups",
+		"d3": "Discounts",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99010101",
+		"d1": "Miscellaneous",
+		"d2": "Discounts and Markups",
+		"d3": "Discounts",
+		"d4": "Discount that applies to a single line item"
+	},
+	{
+		"code": "EUC-99010102",
+		"d1": "Miscellaneous",
+		"d2": "Discounts and Markups",
+		"d3": "Discounts",
+		"d4": "Discount that applies to all line items except shipping and handling"
+	},
+	{
+		"code": "EUC-99010103",
+		"d1": "Miscellaneous",
+		"d2": "Discounts and Markups",
+		"d3": "Discounts",
+		"d4": "Discount that applies to all line items including shipping and handling"
+	},
+	{
+		"code": "EUC-99010200",
+		"d1": "Miscellaneous",
+		"d2": "Discounts and Markups",
+		"d3": "Markups",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99010201",
+		"d1": "Miscellaneous",
+		"d2": "Discounts and Markups",
+		"d3": "Markups",
+		"d4": "Markup that applies to a single line item"
+	},
+	{
+		"code": "EUC-99010202",
+		"d1": "Miscellaneous",
+		"d2": "Discounts and Markups",
+		"d3": "Markups",
+		"d4": "Markup that applies to all line items except shipping and handling"
+	},
+	{
+		"code": "EUC-99010203",
+		"d1": "Miscellaneous",
+		"d2": "Discounts and Markups",
+		"d3": "Markups",
+		"d4": "Markup that applies to all line items including shipping and handling"
+	},
+	{
+		"code": "EUC-99030000",
+		"d1": "Miscellaneous",
+		"d2": "Gift Cards",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99030100",
+		"d1": "Miscellaneous",
+		"d2": "Gift Cards",
+		"d3": "Gift Cards",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99030101",
+		"d1": "Miscellaneous",
+		"d2": "Gift Cards",
+		"d3": "Gift Cards",
+		"d4": "Non taxable until redeemed.  Merchant will assume responsibility to apply the correct product code when redeemed"
+	},
+	{
+		"code": "EUC-99030102",
+		"d1": "Miscellaneous",
+		"d2": "Gift Cards",
+		"d3": "Gift Cards",
+		"d4": "Taxable"
+	},
+	{
+		"code": "EUC-99040400",
+		"d1": "Miscellaneous",
+		"d2": "Finance Charges",
+		"d3": "Late payment fees",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99040401",
+		"d1": "Miscellaneous",
+		"d2": "Finance Charges",
+		"d3": "Late payment fees",
+		"d4": "Standard invoice, separately stated"
+	},
+	{
+		"code": "EUC-99040600",
+		"d1": "Miscellaneous",
+		"d2": "Finance Charges",
+		"d3": "Finance Charges",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99040601",
+		"d1": "Miscellaneous",
+		"d2": "Finance Charges",
+		"d3": "Finance Charges",
+		"d4": "Standard invoice, separately stated"
+	},
+	{
+		"code": "EUC-99990000",
+		"d1": "Miscellaneous",
+		"d2": "Miscellaneous",
+		"d3": "",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99990100",
+		"d1": "Miscellaneous",
+		"d2": "Miscellaneous",
+		"d3": "Products",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99990101",
+		"d1": "Miscellaneous",
+		"d2": "Miscellaneous",
+		"d3": "Products",
+		"d4": "Merchant specified exemption (Merchant takes full responsibility for justifying that this product is exempt)"
+	},
+	{
+		"code": "EUC-99990200",
+		"d1": "Miscellaneous",
+		"d2": "Miscellaneous",
+		"d3": "Services",
+		"d4": ""
+	},
+	{
+		"code": "EUC-99990201",
+		"d1": "Miscellaneous",
+		"d2": "Miscellaneous",
+		"d3": "Services",
+		"d4": "Merchant specified exemption (Merchant takes full responsibility for justifying that this service is exempt)"
+	}
+]

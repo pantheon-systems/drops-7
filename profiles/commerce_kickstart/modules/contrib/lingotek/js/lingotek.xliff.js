@@ -1,3 +1,7 @@
+/**
+ * @file
+ * Custom xliff javascript.
+ */
 var lingotek;
 if(!lingotek) lingotek = {};
 

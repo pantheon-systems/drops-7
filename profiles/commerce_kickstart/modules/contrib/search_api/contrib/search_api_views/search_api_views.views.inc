@@ -130,7 +130,7 @@ function _search_api_views_add_handlers($id, array $field, EntityMetadataWrapper
   if ($inner_type == 'text') {
     $table[$id] += array(
       'argument' => array(
-        'handler' => 'SearchApiViewsHandlerArgumentText',
+        'handler' => 'SearchApiViewsHandlerArgument',
       ),
       'filter' => array(
         'handler' => 'SearchApiViewsHandlerFilterText',

@@ -389,7 +389,6 @@ function commerce_hosted_pci_form_alter(&$form, &$form_state, $form_id) {
  * Payment method callback: checkout form validation.
  */
 function commerce_hosted_pci_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
-
   // If the customer specified a card on file, skip the normal validation.
   if (module_exists('commerce_cardonfile') && !empty($payment_method['settings']['cardonfile']) &&
     !empty($pane_values['cardonfile']) && $pane_values['cardonfile'] !== 'new') {
@@ -463,13 +462,9 @@ function commerce_hosted_pci_submit_form_validate($payment_method, $pane_form, $
  * Payment method callback: checkout form submission.
  */
 function commerce_hosted_pci_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
-
-  $settings = $payment_method['settings'] + commerce_hosted_pci_default_settings();
-
-  // Display an error and prevent the payment attempt if Hosted PCI has not been
-  // configured yet.
-  if (empty($settings)) {
-    drupal_set_message(t('This payment method must be configured by an administrator before it can be used.'), 'error');
+  // Return an error if the payment method is not configured.
+  if (empty($payment_method['settings'])) {
+    drupal_set_message(t('Hosted Pci is not configured for use. Please contact an administrator to resolve this issue.'), 'error');
     return FALSE;
   }
 
@@ -540,8 +535,9 @@ function commerce_hosted_pci_submit_form_submit($payment_method, $pane_form, $pa
 
   // Build a name-value pair array for this transaction.
   $data = commerce_hosted_pci_get_transaction_data($order, array('amount' => $amount, 'currency_code' => $currency_code), $pane_values);
-  // Request Hosted PCI service.
-  $response = commerce_hosted_pci_transaction_process($payment_method['settings']['txn_type'], $settings, $data);
+
+  // Request Hosted PCI payment server.
+  $response = commerce_hosted_pci_transaction_process($payment_method['settings']['txn_type'], $payment_method, $order, $data);
 
   // Store response message information.
   $message = array();
@@ -589,7 +585,7 @@ function commerce_hosted_pci_submit_form_submit($payment_method, $pane_form, $pa
   // Build a meaningful response message.
   $transaction->message = implode('<br />', $message);
   $transaction->remote_status = $payment_method['settings']['txn_type'];
-  $transaction->payload[REQUEST_TIME] = commerce_hosted_pci_get_transaction_log($response);
+  $transaction->payload[REQUEST_TIME] = $response;
 
   // Save the transaction.
   commerce_payment_transaction_save($transaction);
@@ -599,24 +595,24 @@ function commerce_hosted_pci_submit_form_submit($payment_method, $pane_form, $pa
     if ($response) {
       // The error is a payment gateway error.
       if (isset($response['pxyResponse_responseStatus'])) {
-        watchdog('commerce_hosted_pci', 'Hosted Pci transaction %type <br />Payment response: @response_status <br />Description: @description <br />Response data: !reponse',
+        watchdog('commerce_hosted_pci', 'Hosted Pci transaction %type <br />Payment response: @response_status <br />Description: @description <br />Response data: <pre>@response</pre>',
           array(
             '%type' => $payment_method['settings']['txn_type'],
             '@response_status' => $response['pxyResponse_responseStatus_name'],
             '@description' => $response['pxyResponse_responseStatus_description'],
-            '!reponse' => '<pre>' . check_plain(print_r($response, TRUE)) . '</pre>',
+            '@response' => print_r($response, TRUE),
           ),
           WATCHDOG_ERROR
         );
       }
       // The error is return from a badly formatted call to Hosted Pci.
       else {
-        watchdog('commerce_hosted_pci', 'Hosted Pci transaction %type <br />Response: @error_id <br />Description: @description <br />Response data: !reponse',
+        watchdog('commerce_hosted_pci', 'Hosted Pci transaction %type <br />Response: @error_id <br />Description: @description <br />Response data: <pre>@response</pre>',
           array(
             '%type' => $payment_method['settings']['txn_type'],
             '@error_id' => $response['errId'],
             '@description' => commerce_hosted_pci_code_message($response['errId']),
-            '!reponse' => '<pre>' . check_plain(print_r($response, TRUE)) . '</pre>',
+            '@response' => print_r($response, TRUE),
           ),
           WATCHDOG_ERROR
         );
@@ -662,10 +658,8 @@ function commerce_hosted_pci_submit_form_submit($payment_method, $pane_form, $pa
  *   An name/value pair array of information to send to Hosted PCI
  */
 function commerce_hosted_pci_get_transaction_data($order, $charge, $payment_info) {
-  global $user;
-
   // Convert amount to a decimal number.
-  $decimal_amount = commerce_currency_amount_to_decimal($charge['amount'], $charge['currency_code']);
+  $decimal_amount = commerce_hosted_pci_price_amount($charge['amount'], $charge['currency_code']);
 
   // Set credit card information.
   $data['pxyCreditCard.cardType']             = '';
@@ -681,7 +675,7 @@ function commerce_hosted_pci_get_transaction_data($order, $charge, $payment_info
 
   // Pass information about the user.
   $data['pxyCustomerInfo.email']      = $order->mail;
-  $data['pxyCustomerInfo.customerId'] = $user->uid;
+  $data['pxyCustomerInfo.customerId'] = $order->uid;
 
   // Pass the following optional parameters.
   $data['pxyCustomerInfo.customerIP'] = ip_address();
@@ -702,29 +696,36 @@ function commerce_hosted_pci_get_transaction_data($order, $charge, $payment_info
   }
   $data['pxyCustomerInfo.billingLocation.firstName'] = $billing_address['first_name'];
   $data['pxyCustomerInfo.billingLocation.lastName']  = $billing_address['last_name'];
-  $data['pxyCustomerInfo.billingLocation.addres']    = $billing_address['thoroughfare'];
+  $data['pxyCustomerInfo.billingLocation.address']   = $billing_address['thoroughfare'];
   $data['pxyCustomerInfo.billingLocation.city']      = $billing_address['locality'];
   $data['pxyCustomerInfo.billingLocation.state']     = $billing_address['administrative_area'];
   $data['pxyCustomerInfo.billingLocation.zipCode']   = $billing_address['postal_code'];
   $data['pxyCustomerInfo.billingLocation.country']   = $billing_address['country'];
 
-  // Prepare the Shipping address for use in the request.
-  $shipping_address = $order_wrapper->commerce_customer_shipping->commerce_customer_address->value();
-  if (empty($shipping_address)) {
-    $shipping_address = $billing_address;
+  // Prepare the Shipping address for use in the request if the shipping module
+  // is enabled.
+  if (module_exists('commerce_shipping')) {
+    if (!empty($order_wrapper->commerce_customer_shipping->commerce_customer_address)) {
+      $shipping_address = $order_wrapper->commerce_customer_shipping->commerce_customer_address->value();
+    }
+    // Use the billing address if the shipping address is not set.
+    else {
+      $shipping_address = $billing_address;
+    }
+
+    if (empty($shipping_address['first_name'])) {
+      $name_parts = explode(' ', $shipping_address['name_line']);
+      $shipping_address['first_name'] = array_shift($name_parts);
+      $shipping_address['last_name'] = implode(' ', $name_parts);
+    }
+    $data['pxyCustomerInfo.shippingLocation.firstName'] = $shipping_address['first_name'];
+    $data['pxyCustomerInfo.shippingLocation.lastName']  = $shipping_address['last_name'];
+    $data['pxyCustomerInfo.shippingLocation.address']   = $shipping_address['thoroughfare'];
+    $data['pxyCustomerInfo.shippingLocation.city']      = $shipping_address['locality'];
+    $data['pxyCustomerInfo.shippingLocation.state']     = $shipping_address['administrative_area'];
+    $data['pxyCustomerInfo.shippingLocation.zipCode']   = $shipping_address['postal_code'];
+    $data['pxyCustomerInfo.shippingLocation.country']   = $shipping_address['country'];
   }
-  if (empty($shipping_address['first_name'])) {
-    $name_parts = explode(' ', $shipping_address['name_line']);
-    $shipping_address['first_name'] = array_shift($name_parts);
-    $shipping_address['last_name'] = implode(' ', $name_parts);
-  }
-  $data['pxyCustomerInfo.shippingLocation.firstName'] = $shipping_address['first_name'];
-  $data['pxyCustomerInfo.shippingLocation.lastName']  = $shipping_address['last_name'];
-  $data['pxyCustomerInfo.shippingLocation.address']   = $shipping_address['thoroughfare'];
-  $data['pxyCustomerInfo.shippingLocation.city']      = $shipping_address['locality'];
-  $data['pxyCustomerInfo.shippingLocation.state']     = $shipping_address['administrative_area'];
-  $data['pxyCustomerInfo.shippingLocation.zipCode']   = $shipping_address['postal_code'];
-  $data['pxyCustomerInfo.shippingLocation.country']   = $shipping_address['country'];
 
   return $data;
 }
@@ -734,16 +735,22 @@ function commerce_hosted_pci_get_transaction_data($order, $charge, $payment_info
  *
  * @param string $request_type
  *   The transaction mode.
- * @param array $settings
- *   The settings related to the payment method.
+ * @param array $payment_method
+ *   The payment method instance array associated with this API request.
+ * @param object $order
+ *   The order object the payment request is being submitted for.
  * @param array $data
  *   Data to send to Hosted Pci.
  *
  * @return array|bool
  *   Return a cURL error or an Hosted PCI response.
  */
-function commerce_hosted_pci_transaction_process($request_type, $settings, $data = array()) {
+function commerce_hosted_pci_transaction_process($request_type, $payment_method, $order, $data = array()) {
+  $settings = $payment_method['settings'] + commerce_hosted_pci_default_settings();
   $response = NULL;
+
+  // Allow modules to alter parameters of the API request.
+  drupal_alter('commerce_hosted_pci_transaction_process', $data, $order, $payment_method);
 
   // Set API information.
   $data += array(
@@ -766,11 +773,13 @@ function commerce_hosted_pci_transaction_process($request_type, $settings, $data
     if (!empty($log['pxyCreditCard.cardCodeVerification'])) {
       $log['pxyCreditCard.cardCodeVerification'] = str_repeat('X', strlen($log['pxyCreditCard.cardCodeVerification']));
     }
+    $log['userPassKey'] = substr($log['userPassKey'], 0, 4) . str_repeat('X', strlen($log['userPassKey']) - 4);
+
     $variables = array(
       '@url' => $url,
-      '!param' => '<pre>' . check_plain(print_r($log, TRUE)) . '</pre>',
+      '@param' => print_r($log, TRUE),
     );
-    watchdog('commerce_hosted_pci', 'Hosted Pci request to @url: <pre>!param</pre>', $variables, WATCHDOG_DEBUG);
+    watchdog('commerce_hosted_pci', 'Hosted Pci request to @url: <pre>@param</pre>', $variables, WATCHDOG_DEBUG);
   }
 
   // Encode the url params.
@@ -816,34 +825,16 @@ function commerce_hosted_pci_transaction_process($request_type, $settings, $data
   parse_str($result, $response);
 
   // Convert the gateway response string as an array.
-  if ($response['pxyResponse_fullNativeResp']) {
+  if (isset($response['pxyResponse_fullNativeResp'])) {
     parse_str($response['pxyResponse_fullNativeResp'], $response['pxyResponse_fullNativeResp']);
   }
 
   // Log the API response if specified.
   if ($settings['log']['response'] == 'response') {
-    watchdog('commerce_hosted_pci', 'Hosted Pci response received:<pre>!param</pre>', array('!param' => check_plain(print_r($response, TRUE)), WATCHDOG_DEBUG));
+    watchdog('commerce_hosted_pci', 'Hosted Pci response received: <pre>@param</pre>', array('@param' => print_r($response, TRUE), WATCHDOG_DEBUG));
   }
 
   return $response;
-}
-
-/**
- * Helper function to generate transaction logs.
- *
- * @param array $response
- *   An Hosted Pci response
- *
- * @return array
- *   An array containing the extracted response from the payment gateway behinf
- *   Hosted PCI.
- */
-function commerce_hosted_pci_get_transaction_log($response) {
-  $log = array('hosted_pci' => $response);
-  if ($response['pxyResponse_fullNativeResp']) {
-    $log['gateway'] = $response['pxyResponse_fullNativeResp'];
-  }
-  return $log;
 }
 
 /**
@@ -935,6 +926,23 @@ function commerce_hosted_pci_form_commerce_cardonfile_update_form_validate($form
       form_set_error('credit_card][exp_' . $invalid, t('You have entered an expired credit card.'));
     }
   }
+}
+
+/**
+ * Formats a price amount into a decimal value.
+ *
+ * @param string $amount
+ *   An integer price amount.
+ * @param string $currency_code
+ *   The currency code of the price.
+ *
+ * @return string
+ *   A decimal price amount.
+ */
+function commerce_hosted_pci_price_amount($amount, $currency_code) {
+  $currency = commerce_currency_load($currency_code);
+  $rounded_amount = commerce_currency_round($amount, $currency);
+  return number_format(commerce_currency_amount_to_decimal($rounded_amount, $currency_code), $currency['decimals'], $currency['decimal_separator'], $currency['thousands_separator']);
 }
 
 /**

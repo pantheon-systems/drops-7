@@ -38,9 +38,12 @@ function commerce_payment_pane_checkout_form($form, &$form_state, $checkout_pane
   $options = array();
 
   foreach ($order->payment_methods as $instance_id => $method_info) {
-    // Ensure we've received a valid payment method.
+    // Ensure we've received a valid payment method that can be used on the
+    // checkout form.
     if ($payment_method = commerce_payment_method_load($method_info['method_id'])) {
-      $options[$instance_id] = $payment_method['display_title'];
+      if (!empty($payment_method['checkout'])) {
+        $options[$instance_id] = $payment_method['display_title'];
+      }
     }
   }
 
@@ -165,6 +168,11 @@ function commerce_payment_pane_checkout_form_validate($form, &$form_state, $chec
       drupal_set_message(t('You cannot complete checkout without submitting payment. Please contact us if an error continues to prevent you from seeing valid payment methods for your order.'), 'error');
       return FALSE;
     }
+  }
+  else {
+    // Otherwise ensure we don't have any leftover payment method data in the
+    // order's data array.
+    unset($order->data['payment_method'], $order->data['payment_redirect_key']);
   }
 
   // Nothing to validate.

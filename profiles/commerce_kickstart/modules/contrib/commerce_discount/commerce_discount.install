@@ -202,3 +202,19 @@ function commerce_discount_uninstall() {
   // Delete variable settings.
   variable_del('commerce_discount_line_item_types');
 }
+
+/**
+ * #1875524 Update the widget type of field commerce_discount_offer
+ */
+function commerce_discount_update_7101(){
+  $instances = field_info_instances('commerce_discount');
+  foreach($instances as $bundle => $bundle_instances ){
+    foreach($bundle_instances as $field_name => $instance){
+      if( $field_name == 'commerce_discount_offer'){
+        $instance['widget']['type'] = 'inline_entity_form_single';
+        field_update_instance($instance);
+      }
+    }
+  }
+}
+

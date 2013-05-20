@@ -8,3 +8,10 @@ dependencies[] = oauth2_common
 dependencies[] = http_client
 dependencies[] = http_client_oauth
 dependencies[] = ctools
+
+; Information added by drupal.org packaging script on 2013-04-04
+version = "7.x-1.0-beta1+12-dev"
+core = "7.x"
+project = "oauthconnector"
+datestamp = "1365082689"
+
