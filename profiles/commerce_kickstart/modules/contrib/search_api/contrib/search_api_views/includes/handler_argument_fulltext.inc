@@ -20,6 +20,8 @@ class SearchApiViewsHandlerArgumentFulltext extends SearchApiViewsHandlerArgumen
   public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
 
+    $form['help']['#markup'] = t('Note: You can change how search keys are parsed under "Advanced" > "Query settings".');
+
     $fields = $this->getFulltextFields();
     if (!empty($fields)) {
       $form['fields'] = array(

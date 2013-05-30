@@ -6,6 +6,14 @@ Send me your language configuration files.  See /i18n/jquery.colorbox-de.js as a
 
 ## Changelog:
 
+### Version 1.4.17 - 2013/5/23
+
+* Possible fix for a Chrome 27 issue (https://github.com/jackmoore/colorbox/pull/438#issuecomment-18334804)
+
+### Version 1.4.16 - 2013/5/20
+
+* Added trapFocus setting to allow disabling of focus trapping
+
 ### Version 1.4.15 - 2013/4/22
 
 * Added .webp to list of recognized image extensions

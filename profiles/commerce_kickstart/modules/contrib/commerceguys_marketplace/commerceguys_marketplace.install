@@ -11,3 +11,39 @@ function commerceguys_marketplace_uninstall() {
   variable_del('commerceguys_marketplace_api_key');
   variable_del('commerceguys_marketplace_access_token');
 }
+
+/**
+ * Implements hook_requirements().
+ */
+function commerceguys_marketplace_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime') {
+    $path = 'sites/all/libraries/jquery.bxslider';
+    $found = FALSE;
+    // If installed, use the Libraries API to locate the library.
+    if (module_exists('libraries')) {
+      drupal_load('module', 'libraries');
+      module_load_include('module', 'libraries');
+      $path = libraries_get_path('jquery.bxslider');
+    }
+    if (file_exists($path . '/jquery.bxslider.min.js') || file_exists($path) . '/jquery.bxslider.js') {
+      $found = TRUE;
+    }
+    $variables = array(
+      '!path' => '<a href="https://github.com/wandoledzep/bxslider-4" target="_blank">Github</a>',
+      '!library_path' => $path,
+    );
+    // Prepare the download instructions.
+    $description = t('The Bxslider library is required for the Commerce Guys Marketplace module to function properly.
+      Download the library from !path and place it in <em>!library_path</em>.', $variables);
+
+    $requirements['commerceguys_marketplace'] = array(
+      'title' => t('Commerce Guys Marketplace (JQuery Bxslider library)'),
+      'value' => $found ? t('Available') : t('Unavailable'),
+      'description' => !$found ? $description : NULL,
+      'severity' => $found ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+    );
+  }
+
+  return $requirements;
+}

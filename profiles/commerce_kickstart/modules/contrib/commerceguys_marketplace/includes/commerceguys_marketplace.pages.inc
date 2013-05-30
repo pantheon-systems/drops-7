@@ -127,7 +127,14 @@ function commerceguys_marketplace_frontpage() {
  * Page callback: Returns a paginated, facetted list of addons.
  */
 function commerceguys_marketplace_addons_page() {
-  return drupal_get_form('commerceguys_marketplace_listing_form', 'addon');
+  if (commerceguys_marketplace_get_client()) {
+    return drupal_get_form('commerceguys_marketplace_listing_form', 'addon');
+  }
+  else {
+    return array(
+      '#markup' => '<div class="empty-message marketplace">' . t('Your site is not registered on Commerce Marketplace.') . '</div>',
+    );
+  }
 }
 
 /**

@@ -434,7 +434,7 @@ select {
   padding: 0;
   position: relative;
 }
-#block-views-exp-display-products-page #edit-search-api-views-fulltext {
+#block-views-exp-display-products-page .form-text {
   border-color: #d7d7d7;
   @include rounded-corners(3px);
   font-family: $headerfont;
@@ -444,7 +444,7 @@ select {
   padding: 5px 28px 5px 5px; /* LTR */
   width: 100%;
 }
-#block-views-exp-display-products-page #edit-search-api-views-fulltext-wrapper {
+#block-views-exp-display-products-page .views-widget-filter-search_api_views_fulltext {
   float: none;
 }
 #block-views-exp-display-products-page .views-submit-button {
@@ -2163,8 +2163,6 @@ ol.inline.commerce-checkout-progress {
   #commerce-checkout-form-checkout,
   #commerce-checkout-form-review {
     fieldset {
-      padding: 10px;
-
       &.customer_profile_billing,
       &.customer_profile_shipping {
         .form-item {
@@ -2185,7 +2183,7 @@ ol.inline.commerce-checkout-progress {
       }
       legend {
         border-bottom: 1px solid #d7d7d7;
-        margin: 0 10px 10px 10px;
+        margin: 0 10px 10px 0px;
         padding: 0px;
         width: 100%;
         span {

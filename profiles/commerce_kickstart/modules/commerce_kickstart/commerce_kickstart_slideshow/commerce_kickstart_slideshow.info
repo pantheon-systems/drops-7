@@ -3,8 +3,6 @@ description = Provides the slideshow node type and related functionality.
 core = 7.x
 package = Commerce Kickstart
 php = 5.2.4
-version = 7.x-1.0
-project = commerce_kickstart_slideshow
 dependencies[] = block
 dependencies[] = commerce_kickstart_migrate
 dependencies[] = ctools
@@ -46,9 +44,9 @@ features[variable][] = pathauto_node_slideshow_pattern
 features[views_view][] = demo_content_slideshow
 files[] = commerce_kickstart_slideshow.migrate.inc
 
-; Information added by drupal.org packaging script on 2013-05-17
-version = "7.x-2.7"
+; Information added by drupal.org packaging script on 2013-05-30
+version = "7.x-2.8"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1368823821"
+datestamp = "1369947669"
 

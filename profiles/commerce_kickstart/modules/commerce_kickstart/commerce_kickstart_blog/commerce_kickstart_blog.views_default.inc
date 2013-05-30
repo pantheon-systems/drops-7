@@ -266,6 +266,8 @@ function commerce_kickstart_blog_views_default_views() {
 
   /* Display: Page blog archive */
   $handler = $view->new_display('page', 'Page blog archive', 'page_3');
+  $handler->display->display_options['defaults']['title'] = FALSE;
+  $handler->display->display_options['title'] = 'Archives';
   $handler->display->display_options['defaults']['hide_admin_links'] = FALSE;
   $handler->display->display_options['defaults']['arguments'] = FALSE;
   /* Contextual filter: Content: Created year + month */
@@ -275,6 +277,8 @@ function commerce_kickstart_blog_views_default_views() {
   $handler->display->display_options['arguments']['created_year_month']['default_action'] = 'summary';
   $handler->display->display_options['arguments']['created_year_month']['title_enable'] = TRUE;
   $handler->display->display_options['arguments']['created_year_month']['title'] = '%1';
+  $handler->display->display_options['arguments']['created_year_month']['breadcrumb_enable'] = TRUE;
+  $handler->display->display_options['arguments']['created_year_month']['breadcrumb'] = '%1';
   $handler->display->display_options['arguments']['created_year_month']['default_argument_type'] = 'fixed';
   $handler->display->display_options['arguments']['created_year_month']['summary']['sort_order'] = 'desc';
   $handler->display->display_options['arguments']['created_year_month']['summary']['number_of_records'] = '0';
@@ -283,7 +287,7 @@ function commerce_kickstart_blog_views_default_views() {
   $handler->display->display_options['arguments']['created_year_month']['specify_validation'] = TRUE;
   $handler->display->display_options['path'] = 'blog/archives';
   $handler->display->display_options['menu']['type'] = 'normal';
-  $handler->display->display_options['menu']['title'] = 'Blog';
+  $handler->display->display_options['menu']['title'] = 'Archives';
   $handler->display->display_options['menu']['name'] = 'secondary-navigation';
   $export['blog'] = $view;
 

@@ -1,0 +1,15 @@
+name = Commerce bean
+description = Integration of Drupal Commerce with Bean module
+package = Commerce (contrib)
+core = 7.x
+dependencies[] = bean
+dependencies[] = commerce_checkout
+configure = admin/commerce/config/bean
+
+
+; Information added by drupal.org packaging script on 2013-05-30
+version = "7.x-1.0-beta1"
+core = "7.x"
+project = "commerce_bean"
+datestamp = "1369926723"
+

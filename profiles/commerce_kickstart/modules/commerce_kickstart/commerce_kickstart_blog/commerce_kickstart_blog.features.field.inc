@@ -37,7 +37,7 @@ function commerce_kickstart_blog_field_default_fields() {
       'module' => 'text',
       'settings' => array(),
       'translatable' => '0',
-      'type' => 'text_long',
+      'type' => 'text_with_summary',
     ),
     'field_instance' => array(
       'bundle' => 'blog_post',
@@ -67,12 +67,15 @@ function commerce_kickstart_blog_field_default_fields() {
         'teaser' => array(
           'label' => 'hidden',
           'module' => 'text',
-          'settings' => array(),
-          'type' => 'text_default',
+          'settings' => array(
+            'trim_length' => 600,
+          ),
+          'type' => 'text_summary_or_trimmed',
           'weight' => '1',
         ),
       ),
       'entity_type' => 'node',
+      'fences_wrapper' => '',
       'field_name' => 'body',
       'label' => 'Description',
       'required' => 0,

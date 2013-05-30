@@ -641,12 +641,6 @@ function commerce_kickstart_install() {
       'locked' => 0,
     ),
   );
-  $field = array(
-    'field_name' => 'body',
-    'type' => 'text_long',
-    'entity_types' => array('node'),
-  );
-  $field = field_create_field($field);
 
   foreach ($types as $type) {
     $type = node_type_set_defaults($type);
@@ -1095,7 +1089,42 @@ function commerce_kickstart_update_7213() {
  * Enable the Commerce Guys Marketplace module.
  */
 function commerce_kickstart_update_7214() {
-  _commerce_kickstart_disable_modules('commerce_kickstart_checkout_redirect');
   module_enable(array('commerceguys_marketplace'));
-  menu_rebuild();
+}
+
+/**
+ * Disable commerce_kickstart_service_provider.
+ */
+function commerce_kickstart_update_7215() {
+  _commerce_kickstart_disable_modules('commerce_kickstart_service_provider');
+}
+
+/**
+ * Revert body field to text with summary type.
+ */
+function commerce_kickstart_update_7216() {
+  if (!db_field_exists('field_data_body', 'body_summary')) {
+    // Force field type change.
+    db_update('field_config')
+      ->fields(array('type' => 'text_with_summary'))
+      ->condition('field_name', 'body')
+      ->execute();
+    // Add summary field to Body field tables.
+    $summary_field = array(
+      'type' => 'text',
+      'size' => 'big',
+      'not null' => FALSE,
+    );
+    db_add_field('field_data_body', 'body_summary', $summary_field);
+    db_add_field('field_revision_body', 'body_summary', $summary_field);
+    // Revert field components of features with body field features.
+    $modules = array_filter(array('commerce_kickstart_product', 'commerce_kickstart_lite_product', 'commerce_kickstart_blog'), 'module_exists');
+    $revert = array();
+    foreach ($modules as $module) {
+      $revert[$module][] = 'field';
+    }
+    if (!empty($revert)) {
+      features_revert($revert);
+    }
+  }
 }

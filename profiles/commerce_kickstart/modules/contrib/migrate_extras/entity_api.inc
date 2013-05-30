@@ -254,8 +254,8 @@ class MigrateDestinationEntityAPI extends MigrateDestinationEntity {
       }
       $return = array($entity->{$this->id});
 
-      if (isset($entity->{$this->revision}) && $entity->{$this->revision} > 0) {
-        $return[] = array($entity->{$this->revision});
+      if (!empty($entity->{$this->revision})) {
+        $return[] = $entity->{$this->revision};
       }
 
       return $return;

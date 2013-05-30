@@ -44,15 +44,16 @@ class CommerceSearchApiAlterProductStatus extends SearchApiAbstractAlterCallback
           $products_removed = 0;
           if ($field['cardinality'] == 1) {
             if ($node_wrapper->{$field_name}->status->raw() == 0) {
-              $node_wrapper->{$field_name} = array();
               $products_removed = 1;
             }
           }
           else {
             foreach ($node_wrapper->{$field_name} as $delta => $product_wrapper) {
               if ($product_wrapper->status->raw() == 0) {
-                $node_wrapper->{$field_name}->offsetUnset($delta);
                 $products_removed++;
+                if ($products_removed != $nb_products) {
+                  $node_wrapper->{$field_name}->offsetUnset($delta);
+                }
               }
             }
           }

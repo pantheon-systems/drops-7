@@ -208,6 +208,12 @@ search_api_index_worker_callback_runtime:
   API will spend indexing (for all indexes combined) in each cron run. The
   default is 15 seconds.
 
+search_api_batch_per_cron:
+  By changing this variable, you can define how many batch items are created on
+  a single cron run. The value is per index, so on a site with 5 indexes with a
+  cron limit of 100 each, the default value of 10 will load and queue up to 5000
+  search items in up to 50 batch items.
+
 
 Information for developers
 --------------------------

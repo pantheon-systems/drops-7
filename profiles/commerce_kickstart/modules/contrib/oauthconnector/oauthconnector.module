@@ -612,13 +612,14 @@ function _oauthconnector_button($form, &$form_state, $login = TRUE) {
     $auth_url = $client->getAuthorizationUrl($provider->consumer_advanced['authorization endpoint'], array(
       'callback' => $callback_url,
     ));
-  } else {
+  }
+  else {
     $callback_url = url('oauth/authorized2/' . $consumer->csid, array('absolute' => TRUE));
     $request_token = new DrupalOAuthToken(md5(mt_rand()), md5(mt_rand()), $consumer, array(
       'type'    => OAUTH_COMMON_TOKEN_TYPE_REQUEST,
       //'version' => $client->version,
     ));
-    $client = new DrupalOAuthClient($consumer, $request_token, $sig_method);
+    $client = new DrupalOAuth2Client($consumer, $request_token, $sig_method);
     $auth_url = $client->getAuthorizationUrl($provider->consumer_advanced['authorization endpoint'], array(
       'params'=>array(
         'redirect_uri' => $callback_url,

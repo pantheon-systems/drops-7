@@ -212,6 +212,9 @@ function _fences_get_fences_options($theme_hook) {
     unset($options['no_wrapper']);
     $options = array('no_wrapper' => $no_wrapper) + $options;
   }
+  if (!variable_get('fences_default_markup', 0)) {
+    $options = array('' => t('Use Drupal standard markup')) + $options;
+  }
 
   return $options;
 }
@@ -225,7 +228,7 @@ function _fences_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
   $form['instance']['fences_wrapper'] = array(
     '#type' => 'select',
     '#title' => t('Wrapper markup'),
-    '#default_value' => $suggestion ? $suggestion : 'div',
+    '#default_value' => $suggestion ? $suggestion : '',
     '#options' => fences_get_fences_options('field'),
     '#description' => t('Choose the HTML to use to wrap the field.'),
   );

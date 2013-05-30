@@ -61,7 +61,7 @@
 #block-views-exp-display-products-page .views-exposed-widgets {
   position: relative; }
 
-#block-views-exp-display-products-page #edit-search-api-views-fulltext {
+#block-views-exp-display-products-page .form-text {
   height: 18px;
   margin-left: 0;
   padding: 5px;

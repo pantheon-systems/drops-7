@@ -104,7 +104,7 @@ h1#page-title {
   margin-left: 10px;
 }
 
-#block-views-exp-display-products-page #edit-search-api-views-fulltext {
+#block-views-exp-display-products-page .form-text {
   padding: 5px 5px 5px 28px !important;
 }
 #block-views-exp-display-products-page .views-submit-button {
@@ -541,9 +541,7 @@ ol.inline.commerce-checkout-progress {
 #commerce-checkout-form-review .view-commerce-cart-summary,
 .page-user-orders .view-commerce-line-item-table /* Review completed order */,
 .view-commerce-backoffice-user-orders {
-
   table {
-
     th {
       text-align: right;
     }

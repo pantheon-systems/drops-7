@@ -16,20 +16,57 @@ class SearchApiRangesAlter extends SearchApiAbstractAlterCallback {
     $this->options += array('fields' => array());
     $eligible_types = array('integer', 'decimal');
     foreach ($fields as $name => $field) {
-      if (search_api_is_list_type($field['type']) && in_array(search_api_extract_inner_type($field['type']), $eligible_types))  {
+      if (search_api_is_list_type($field['type']) && in_array(search_api_extract_inner_type($field['type']), $eligible_types)) {
         $field_options[$name] = $field['name'];
       }
     }
     if (!empty($field_options)) {
-      $form['#attached']['css'][] = drupal_get_path('module', 'search_api') . '/search_api.admin.css';
       $form['fields'] = array(
-        '#type' => 'checkboxes',
+        '#type' => 'fieldset',
         '#title' => t('Fields to run on'),
-        '#options' => $field_options,
-        '#default_value' => $this->options['fields'],
-        '#attributes' => array('class' => array('search-api-checkboxes-list')),
       );
+      foreach ($field_options as $field_name => $label) {
+        $default_value = FALSE;
+        if (isset($this->options['fields'][$field_name])) {
+          if (!is_array($this->options['fields'][$field_name])) {
+            $default_value = TRUE;
+          }
+          else {
+            if (!empty($this->options['fields'][$field_name]['name'])) {
+              $default_value = TRUE;
+            }
+          }
+        }
+        $form['fields'][$field_name]['enabled'] = array(
+          '#type' => 'checkbox',
+          '#title' => $label,
+          '#default_value' => $default_value,
+        );
+        $form['fields'][$field_name]['name'] = array(
+          '#type' => 'value',
+          '#value' => $label,
+        );
+        $form['fields'][$field_name]['description'] = array(
+          '#type' => 'value',
+          '#value' => isset($fields[$field_name]['description']) ? $fields[$field_name]['description'] : '',
+        );
+        $form['fields'][$field_name]['type'] = array(
+          '#type' => 'value',
+          '#value' => search_api_extract_inner_type($fields[$field_name]['type']),
+        );
+      }
       return $form;
+    }
+  }
+
+  public function configurationFormValidate(array $form, array &$values, array &$form_state) {
+    // Make the index believe that the status of the callback has changed to
+    // force Search API to take in account our properties.
+    // We can't do that in the submit because it's happening too late.
+    if ($form_state['values']['callbacks']['search_api_ranges_alter']['status'] == 1) {
+      if ($this->index->options['data_alter_callbacks']['search_api_ranges_alter']['status'] == 1) {
+        $form_state['index']->options['data_alter_callbacks']['search_api_ranges_alter']['status'] = 0;
+      }
     }
   }
 
@@ -37,57 +74,33 @@ class SearchApiRangesAlter extends SearchApiAbstractAlterCallback {
    * Submit callback for configuration form.
    */
   public function configurationFormSubmit(array $form, array &$values, array &$form_state) {
-    $save_index = FALSE;
-    $this->options = $values;
-    if (!empty($values['fields'])) {
-      $values['fields'] = array_filter($values['fields']);
-      if (!isset($this->options['fields']) || ($values['fields'] != $this->options['fields'])) {
-        foreach ($values['fields'] as $field) {
-          $prefix = str_replace(':', '_', $field);
-          $type = search_api_extract_inner_type($this->index->options['fields'][$field]['type']);
-          $this->options['fields'][$prefix . $this->min_suffix] = array(
-            'type' => $type,
-          );
-          $this->options['fields'][$prefix . $this->max_suffix] = array(
-            'type' => $type,
-          );
-        }
-        $save_index = TRUE;
-      }
+    if (empty($values['fields'])) {
+      return array();
     }
-    // Remove non wanted anymore min and max alterations
-    if (!empty($this->options['fields'])) {
-      $alteration_to_remove = array();
-      if (empty($values['fields'])) {
-        $alteration_to_remove = $this->options['fields'];
-        $save_index = TRUE;
+    foreach ($values['fields'] as $name => $field) {
+      if (empty($field['enabled'])) {
+        unset($values['fields'][$name]);
       }
       else {
-        $alteration_to_remove = array_diff_key($this->options['fields'], $values['fields']);
-        $save_index = TRUE;
-      }
-      foreach ($alteration_to_remove as $key => $value) {
-        $prefix = str_replace(':', '_', $key);
-        if (isset($this->index->options['fields'][$prefix . $this->min_suffix])) {
-          unset($this->index->options['fields'][$prefix . $this->min_suffix]);
-          unset($this->index->options['fields'][$prefix . $this->max_suffix]);
-        }
+        // Don't save the enabled flag, it's only used here.
+        unset($values['fields'][$name]['enabled']);
       }
     }
-    if ($save_index) {
-      $this->index->save();
-    }
+    $this->options = $values;
     return $values;
   }
 
+  /**
+   * Index the min and max for the selected fields.
+   */
   public function alterItems(array &$items) {
     if (!$items) {
       return;
     }
     if (!empty($this->options['fields'])) {
-      foreach ($this->options['fields'] as $field) {
-        $required_fields[$field] = array(
-          'type' => search_api_extract_inner_type($this->index->options['fields'][$field]['type']),
+      foreach ($this->options['fields'] as $name => $field) {
+        $required_fields[$name] = array(
+          'type' => search_api_extract_inner_type($this->index->options['fields'][$name]['type']),
         );
       }
       foreach ($items as $item) {
@@ -99,32 +112,34 @@ class SearchApiRangesAlter extends SearchApiAbstractAlterCallback {
             if (!is_array($f['value'])) {
               $f['value'] = array($f['value']);
             }
-            $item->{$name . '_asc'} = min($f['value']);
-            $item->{$name . '_desc'} = max($f['value']);
+            $item->{$name . $this->min_suffix} = min($f['value']);
+            $item->{$name . $this->max_suffix} = max($f['value']);
           }
         }
       }
     }
   }
 
+  /**
+   * Add properties to the index (Min and max) of the selected fields.
+   */
   public function propertyInfo() {
     $ret = array();
     if (!empty($this->options['fields'])) {
-      $index_fields = $this->index->getFields(TRUE);;
       foreach ($this->options['fields'] as $name => $field) {
-        if (isset($index_fields[$name])) {
-          $prefix = str_replace(':', '_', $name);
-          $ret[$prefix . $this->min_suffix] = array(
-            'label' => $index_fields[$name]['name'] . ' (Min)',
-            'description' => empty($index_fields[$name]['description']) ? '' : $index_fields[$name]['description'],
-            'type' => search_api_extract_inner_type($index_fields[$name]['type']),
-          );
-          $ret[$prefix . $this->max_suffix] = array(
-            'label' => $index_fields[$name]['name'] . ' (Max)',
-            'description' => empty($index_fields[$name]['description']) ? '' : $index_fields[$name]['description'],
-            'type' => search_api_extract_inner_type($index_fields[$name]['type']),
-          );
-        }
+        // Backward compatibility with the old format.
+        $is_array = is_array($field);
+        $prefix = str_replace(':', '_', $name);
+        $ret[$prefix . $this->min_suffix] = array(
+          'label' => ($is_array && !empty($field['name'])) ? $field['name'] . ' (Min)' : t('Search API ranges (Min)'),
+          'description' => ($is_array && !empty($field['description'])) ? $field['description'] : '',
+          'type' => ($is_array && !empty($field['type'])) ? $field['type'] : search_api_extract_inner_type($this->index->options['fields'][$name]['type']),
+        );
+        $ret[$prefix . $this->max_suffix] = array(
+          'label' => ($is_array && !empty($field['name'])) ? $field['name'] . ' (Max)' : t('Search API ranges (Max)'),
+          'description' => ($is_array && !empty($field['description'])) ? $field['description'] : '',
+          'type' => ($is_array && !empty($field['type'])) ? $field['type'] : search_api_extract_inner_type($this->index->options['fields'][$name]['type']),
+        );
       }
     }
     return $ret;

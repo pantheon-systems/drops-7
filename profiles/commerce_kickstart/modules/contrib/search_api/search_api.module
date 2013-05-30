@@ -263,7 +263,9 @@ function search_api_cron() {
     if ($limit) {
       try {
         $task = array('index' => $index->machine_name);
-        $ids = search_api_get_items_to_index($index, -1);
+        // Fetch items to index, do not fetch more than the configured amount
+        // of batches to be created per cron run to avoid timeouts.
+        $ids = search_api_get_items_to_index($index, $limit > 0 ? $limit * variable_get('search_api_batch_per_cron', 10) : -1);
         if (!$ids) {
           continue;
         }
@@ -773,6 +775,7 @@ function search_api_search_api_item_type_info() {
       $types[$type] = array(
         'name' => $info['label'],
         'datasource controller' => 'SearchApiEntityDataSourceController',
+        'entity_type' => $type,
       );
     }
   }

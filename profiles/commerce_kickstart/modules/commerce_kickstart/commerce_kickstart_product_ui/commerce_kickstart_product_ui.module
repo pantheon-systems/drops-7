@@ -150,9 +150,11 @@ function commerce_kickstart_product_ui_form_alter(&$form, &$form_state, $form_id
       }
     }
   }
-  if ($form_id == 'views_exposed_form') {
-    $form['search_api_views_fulltext']['#size'] = 26;
-    $form['search_api_views_fulltext']['#attributes']['placeholder'] = t('Search');
+  if ($form_id == 'views_exposed_form' && $form_state['view']->name == 'display_products') {
+    if (isset($form['#info']['filter-search_api_views_fulltext'])) {
+      $form[$form['#info']['filter-search_api_views_fulltext']['value']]['#size'] = 26;
+      $form[$form['#info']['filter-search_api_views_fulltext']['value']]['#attributes']['placeholder'] = t('Search');
+    }
   }
 }
 

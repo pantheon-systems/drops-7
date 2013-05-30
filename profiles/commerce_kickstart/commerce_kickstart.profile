@@ -35,10 +35,14 @@ function commerce_kickstart_image_default_styles() {
  * Allows the profile to alter the site configuration form.
  */
 function commerce_kickstart_form_install_configure_form_alter(&$form, $form_state) {
+  // When using Drush, let it set the default password.
+  if (drupal_is_cli()) {
+    return;
+  }
   // Set a default name for the dev site and change title's label.
   $form['site_information']['site_name']['#title'] = 'Store name';
   $form['site_information']['site_mail']['#title'] = 'Store email address';
-  $form['site_information']['site_name']['#default_value'] = t('Commerce Kickstart');
+  $form['site_information']['site_name']['#default_value'] = st('Commerce Kickstart');
 
   // Set a default country so we can benefit from it on Address Fields.
   $form['server_settings']['site_default_country']['#default_value'] = 'US';
@@ -54,11 +58,13 @@ function commerce_kickstart_form_install_configure_form_alter(&$form, $form_stat
 
   // Add informations about the default username and password.
   $form['admin_account']['account']['commerce_kickstart_name'] = array(
-    '#type' => 'item', '#title' => st('Username'),
+    '#type' => 'item',
+    '#title' => st('Username'),
     '#markup' => 'admin'
   );
   $form['admin_account']['account']['commerce_kickstart_password'] = array(
-    '#type' => 'item', '#title' => st('Password'),
+    '#type' => 'item',
+    '#title' => st('Password'),
     '#markup' => 'admin'
   );
   $form['admin_account']['account']['commerce_kickstart_informations'] = array(
@@ -84,11 +90,7 @@ function commerce_kickstart_form_install_configure_form_alter(&$form, $form_stat
   $form['admin_account']['setup_account']['account']['pass']['#value'] = array('pass1' => 'admin', 'pass2' => 'admin');
 
   // Use "admin" as the default username.
-  $form['admin_account']['account']['name']['#default_value'] = 'admin';
   $form['admin_account']['account']['name']['#access'] = FALSE;
-
-  // Set the default admin password.
-  $form['admin_account']['account']['pass']['#value'] = 'admin';
 
   // Make the password "hidden".
   $form['admin_account']['account']['pass']['#type'] = 'hidden';
@@ -112,8 +114,8 @@ function commerce_kickstart_custom_setting(&$form, &$form_state) {
       $form_state['values']['account']['pass'] = $form_state['input']['pass']['pass1'];
     }
     else {
-        form_set_error('pass', t('The specified passwords do not match.'));
-      }
+      form_set_error('pass', st('The specified passwords do not match.'));
+    }
   }
 }
 
@@ -184,7 +186,7 @@ function commerce_kickstart_update_status_alter(&$projects) {
   foreach ($projects as $project_name => $project_info) {
     // Never unset the drupal project to avoid hitting an error with
     // _update_requirement_check(). See http://drupal.org/node/1875386.
-    if ($project_name == 'drupal') {
+    if ($project_name == 'drupal' || !isset($project_info['releases']) || !isset($project_info['recommended'])) {
       continue;
     }
     // Hide Kickstart projects, they have no update status of their own.

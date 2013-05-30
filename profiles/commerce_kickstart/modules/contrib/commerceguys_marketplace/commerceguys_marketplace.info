@@ -9,9 +9,9 @@ files[] = includes/commerceguys_marketplace.training.inc
 
 configure = admin/config/services/commerceguys-marketplace
 
-; Information added by drupal.org packaging script on 2013-05-17
-version = "7.x-1.0-beta1"
+; Information added by drupal.org packaging script on 2013-05-30
+version = "7.x-1.0-beta3"
 core = "7.x"
 project = "commerceguys_marketplace"
-datestamp = "1368821423"
+datestamp = "1369928762"
 

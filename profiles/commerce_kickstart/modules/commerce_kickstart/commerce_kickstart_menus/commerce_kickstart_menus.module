@@ -25,7 +25,7 @@ function commerce_kickstart_menus_menu() {
     'description' => 'Manage products.',
     'page callback' => 'drupal_goto',
     'page arguments' => array('admin/commerce/products'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer commerce_product entities'),
     'weight' => -20,
     'parent' => 'admin',
     'options' => array(
@@ -54,7 +54,7 @@ function commerce_kickstart_menus_menu() {
     'title' => 'Settings',
     'description' => 'Products settings.',
     'page callback' => 'system_admin_menu_block_page',
-    'access arguments' => array('access administration pages'),
+    'access callback' => 'commerce_kickstart_menus_products_settings_access',
     'file path' => drupal_get_path('module', 'system'),
     'file' => 'system.admin.inc',
     'weight' => 1,
@@ -69,7 +69,7 @@ function commerce_kickstart_menus_menu() {
     'description' => 'Manage tagging, categorization, and classification of your products.',
     'page callback' => 'drupal_goto',
     'page arguments' => array('admin/commerce/config/products-categories'),
-    'access callback' => TRUE,
+    'access arguments' => array('administer taxonomy'),
   );
   // Products > Settings > Variation types
   $items['admin/commerce/manage-products/settings/product-variation-types'] = array(
@@ -77,7 +77,7 @@ function commerce_kickstart_menus_menu() {
     'description' => 'Manage products variation types for your store.',
     'page callback' => 'drupal_goto',
     'page arguments' => array('admin/commerce/config/product-variation-types'),
-    'access callback' => TRUE,
+    'access arguments' => array('administer product types'),
   );
   // Orders
   $items['admin/commerce/manage-orders'] = array(
@@ -142,7 +142,7 @@ function commerce_kickstart_menus_menu() {
     'title' => 'Settings',
     'description' => 'Content settings.',
     'page callback' => 'system_admin_menu_block_page',
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer content types'),
     'file path' => drupal_get_path('module', 'system'),
     'file' => 'system.admin.inc',
     'weight' => 1,
@@ -157,7 +157,7 @@ function commerce_kickstart_menus_menu() {
     'description' => 'Manage content types for your store.',
     'page callback' => 'drupal_goto',
     'page arguments' => array('admin/structure/types'),
-    'access callback' => TRUE,
+    'access arguments' => array('administer content types'),
   );
   // Store settings > Advanced store settings
   $items['admin/commerce/config/advanced-settings'] = array(
@@ -178,7 +178,7 @@ function commerce_kickstart_menus_menu() {
     'title' => 'Product settings',
     'description' => 'Administer the product settings.',
     'page callback' => 'system_admin_menu_block_page',
-    'access arguments' => array('access administration pages'),
+    'access callback' => 'commerce_kickstart_menus_products_settings_access',
     'file path' => drupal_get_path('module', 'system'),
     'file' => 'system.admin.inc',
     'weight' => 5,
@@ -193,7 +193,7 @@ function commerce_kickstart_menus_menu() {
       'title' => 'Promotions',
       'description' => 'Administer promotions.',
       'page callback' => 'system_admin_menu_block_page',
-      'access arguments' => array('access administration pages'),
+      'access arguments' => array('administer commerce discounts'),
       'file path' => drupal_get_path('module', 'system'),
       'file' => 'system.admin.inc',
       'weight' => 10,
@@ -208,7 +208,7 @@ function commerce_kickstart_menus_menu() {
     'title' => 'Visual & Layout',
     'description' => 'Administer the appearance and layout of your store.',
     'page callback' => 'system_admin_menu_block_page',
-    'access arguments' => array('access administration pages'),
+    'access callback' => 'commerce_kickstart_menus_visual_layout_access',
     'file path' => drupal_get_path('module', 'system'),
     'file' => 'system.admin.inc',
     'weight' => 0,
@@ -253,6 +253,20 @@ function commerce_kickstart_menus_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Access callback for the Products settings menu item.
+ */
+function commerce_kickstart_menus_products_settings_access() {
+  return user_access('administer taxonomy') || user_access('administer product types');
+}
+
+/**
+ * Access callback for the Visual & Layout menu item.
+ */
+function commerce_kickstart_menus_visual_layout_access() {
+  return user_access('administer themes') || user_access('administer blocks') || user_access('administer views');
 }
 
 /**

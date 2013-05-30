@@ -97,6 +97,7 @@ class CommerceKickstartNode extends CommerceKickstartMigration {
 
     $this->addFieldMapping('title', 'title');
     $this->addFieldMapping('body', 'description');
+    $this->addFieldMapping('body:summary', 'excerpt');
     $this->addFieldMapping('field_product_category', 'category');
     $this->addFieldMapping('field_product_category:create_term')
       ->defaultValue(TRUE);

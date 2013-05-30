@@ -4,9 +4,9 @@ package = Commerce (contrib)
 core = 7.x
 dependencies[] = commerce_customer
 
-; Information added by drupal.org packaging script on 2013-05-17
-version = "7.x-2.0-rc6"
+; Information added by drupal.org packaging script on 2013-05-19
+version = "7.x-2.0-rc7"
 core = "7.x"
 project = "commerce_addressbook"
-datestamp = "1368798826"
+datestamp = "1369004411"
 

@@ -64,9 +64,26 @@ class DrupalOAuth2Client extends DrupalOAuthClient {
     return clone $this->accessToken;
   }
 
+  public function getAuthorizationUrl($endpoint = NULL, $options = array()) {
+    $options += array(
+      'params' => array(),
+    );
+
+    if (empty($endpoint)) {
+      if (!empty($this->consumer->configuration['authorization_endpoint'])) {
+        $endpoint = $this->consumer->configuration['authorization_endpoint'];
+      }
+      else {
+        $endpoint = '/oauth/authorize';
+      }
+    }
+
+    $endpoint = $this->getAbsolutePath($endpoint);
+    $append_query = strpos($endpoint, '?') === FALSE ? '?' : '&';
+    return $endpoint . $append_query . http_build_query($options['params'], NULL, '&');
+  }
 
   protected function get($path, $options = array()) {
-
     $options += array(
         'token' => FALSE,
         'params' => array(),
@@ -92,7 +109,7 @@ class DrupalOAuth2Client extends DrupalOAuthClient {
         $params[$param_key] = $param_value;
       }
     }
-    if (!empty($params)) {
+    if (!empty($params) && $options['get']) {
       $url .= '?' . drupal_http_build_query($params);
     }
     $headers = array(
@@ -126,5 +143,4 @@ class DrupalOAuth2Client extends DrupalOAuthClient {
 
     return $result->body;
   }
-
 }

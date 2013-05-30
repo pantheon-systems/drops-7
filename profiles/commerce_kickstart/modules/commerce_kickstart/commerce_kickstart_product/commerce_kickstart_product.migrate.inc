@@ -473,6 +473,7 @@ class CommerceKickstartNode extends DynamicMigration {
 
     $this->addFieldMapping('title', 'title');
     $this->addFieldMapping('body', 'description');
+    $this->addFieldMapping('body:summary', 'excerpt');
     $this->addFieldMapping('field_brand', 'brand');
     $this->addFieldMapping('field_brand:create_term')
       ->defaultValue(TRUE);

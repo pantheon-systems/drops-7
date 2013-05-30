@@ -366,6 +366,17 @@ class SearchApiIndex extends Entity {
   }
 
   /**
+   * Get the entity type of items in this index.
+   *
+   * @return string|null
+   *   An entity type string if the items in this index are entities; NULL
+   *   otherwise.
+   */
+  public function getEntityType() {
+    return $this->datasource()->getEntityType();
+  }
+
+  /**
    * Get the server this index lies on.
    *
    * @param $reset

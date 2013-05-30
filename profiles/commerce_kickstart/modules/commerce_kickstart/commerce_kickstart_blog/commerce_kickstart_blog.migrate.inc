@@ -31,6 +31,7 @@ class CommerceKickstartBlogPost extends CommerceKickstartMigration {
 
     $this->addFieldMapping('title', 'title');
     $this->addFieldMapping('body', 'body');
+    $this->addFieldMapping('body:summary', 'excerpt');
     $this->addFieldMapping('field_tags', 'tags')->separator(', ');
     $this->addFieldMapping('field_tags:create_term')
       ->defaultValue(TRUE);

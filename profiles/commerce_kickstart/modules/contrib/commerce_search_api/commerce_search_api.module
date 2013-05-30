@@ -79,9 +79,11 @@ function commerce_search_api_generate_product_display_index(SearchApiServer $ser
   if (module_exists('title') && $title_field = title_field_replacement_info('node', 'title')) {
     $title = $title_field['field']['field_name'];
   }
+  // We prepend temp_ to the machine name to prevent Search API from caching
+  // the wrong fields when calling the getFields() method.
   $values = array(
     'name' => t('Product display'),
-    'machine_name' => $index_machine_name,
+    'machine_name' => 'temp_' . $index_machine_name,
     'server' => $server->machine_name,
     'item_type' => 'node',
     'enabled' => 1,
@@ -163,9 +165,9 @@ function commerce_search_api_generate_product_display_index(SearchApiServer $ser
   $values['options']['additional fields'][$product_reference_field['field_name'] . ':commerce_price'] = $product_reference_field['field_name'] . ':commerce_price';
 
   // Create a temporary node index that allows us to browse the fields.
-  $temp_index = entity_create('search_api_index', $values);
+  $index = entity_create('search_api_index', $values);
   $aggregation_index = 2;
-  foreach ($temp_index->getFields(FALSE) as $field_name => $field) {
+  foreach ($index->getFields(FALSE) as $field_name => $field) {
     // Index term reference fields.
     if (isset($field['entity_type']) && $field['entity_type'] == 'taxonomy_term') {
       $values['options']['fields'] += array(
@@ -226,7 +228,9 @@ function commerce_search_api_generate_product_display_index(SearchApiServer $ser
       }
     }
   }
-  return entity_create('search_api_index', $values);
+  $index->options = $values['options'];
+  $index->machine_name = $index_machine_name;
+  return $index;
 }
 
 /**

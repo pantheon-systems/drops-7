@@ -6,7 +6,10 @@
 class SearchApiTransliteration extends SearchApiAbstractProcessor {
 
   protected function process(&$value) {
-    $value = transliteration_get($value, '', language_default('language'));
+    // We don't touch integers, NULL values or the like.
+    if (is_string($value)) {
+      $value = transliteration_get($value, '', language_default('language'));
+    }
   }
 
 }

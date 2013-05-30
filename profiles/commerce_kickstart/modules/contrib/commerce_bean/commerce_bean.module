@@ -1,0 +1,88 @@
+<?php
+
+/**
+ * @file
+ * Commerce integration with Bean module.
+ */
+
+/**
+ * Implements hook_commerce_checkout_pane_info().
+ */
+function commerce_bean_commerce_checkout_pane_info() {
+  $checkout_panes = array();
+  $type_options = commerce_bean_get_options();
+  $bean_enabled_types = variable_get('commerce_bean_checkout_types', drupal_map_assoc(array_keys($type_options)));
+
+  $beans = bean_get_all_beans();
+  foreach ($beans as $bean) {
+    if (!empty($bean_enabled_types[$bean->type])) {
+      $checkout_panes[$bean->delta] = array(
+        'title' => isset($bean->title) ? $bean->title : '',
+        'name' => $bean->label(),
+        'base' => 'commerce_bean_contents_pane',
+        'file' => 'includes/commerce_bean.checkout_pane.inc',
+        'enabled' => FALSE,
+      );
+    }
+  }
+
+  return $checkout_panes;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_bean_menu() {
+  $items = array();
+
+  $items['admin/commerce/config/bean'] = array(
+    'title' => t('Commerce bean'),
+    'description' => t('Commerce bean settings.'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_bean_admin_form'),
+    'file' => 'includes/commerce_bean.admin.inc',
+    'access arguments' => array('configure store'),
+  );
+
+  return $items;
+}
+
+/**
+ * Return the bean types in a machine name => label format.
+ * @return array
+ */
+function commerce_bean_get_options() {
+  $type_options = array();
+  foreach (bean_get_types() as $type) {
+    $type_options[$type->type] = $type->getLabel();
+  }
+  asort($type_options);
+  return $type_options;
+}
+
+/**
+ * Get all the beans from a given type.
+ * @param null $type
+ * @return array of beans
+ */
+function commerce_bean_get_beans($type = NULL) {
+  if (!isset($type)) {
+    return bean_get_all_beans();
+  }
+
+  if (!isset($beans)) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'bean');
+    $query->propertyCondition('type', $type);
+
+    $result = $query->execute();
+    if (isset($result['bean'])) {
+      $beans = bean_load_multiple(array_keys($result['bean']));
+    }
+    else {
+      $beans = array();
+    }
+  }
+
+  return $beans;
+}

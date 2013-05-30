@@ -236,6 +236,10 @@ interface SearchApiServiceInterface {
 
 /**
  * Abstract class with generic implementation of most service methods.
+ *
+ * For creating your own service class extending this class, you only need to
+ * implement indexItems(), deleteItems() and search() from the
+ * SearchApiServiceInterface interface.
  */
 abstract class SearchApiAbstractService implements SearchApiServiceInterface {
 

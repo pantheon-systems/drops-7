@@ -45,6 +45,7 @@ class CommerceKickstartPages extends CommerceKickstartMigration {
     $this->addFieldMapping('title', 'title');
     $this->addFieldMapping('path', 'path');
     $this->addFieldMapping('body', 'body');
+    $this->addFieldMapping('body:summary', 'excerpt');
 
     $this->addFieldMapping('uid', 'uid')->defaultValue(1);
     $this->addFieldMapping('is_new', 'is_new')->defaultValue(TRUE);
