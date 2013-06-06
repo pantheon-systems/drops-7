@@ -491,6 +491,7 @@ function _webform_display_select($component, $value, $format = 'html') {
   return array(
     '#title' => $component['name'],
     '#weight' => $component['weight'],
+    '#multiple' => $component['extra']['multiple'],
     '#theme' => 'webform_display_select',
     '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),
     '#format' => $format,
@@ -543,7 +544,6 @@ function _webform_submit_select($component, $value) {
  */
 function theme_webform_display_select($variables) {
   $element = $variables['element'];
-  $component = $element['#webform_component'];
 
   // Flatten the list of options so we can get values easily. These options
   // may be translated by hook_webform_display_component_alter().
@@ -560,7 +560,7 @@ function theme_webform_display_select($variables) {
   }
 
   $items = array();
-  if ($component['extra']['multiple']) {
+  if ($element['#multiple']) {
     foreach ((array) $element['#value'] as $option_value) {
       if ($option_value !== '') {
         // Administer provided values.
@@ -873,7 +873,7 @@ function _webform_select_options_callback($name, $component, $flat = FALSE, $fil
 }
 
 /**
- * Utility function to split user-entered values from new-line seperated
+ * Utility function to split user-entered values from new-line separated
  * text into an array of options.
  *
  * @param $text

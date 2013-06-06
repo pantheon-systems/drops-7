@@ -160,7 +160,7 @@ function _webform_edit_number($component) {
     '#description' => t('Minimum numeric value. e.g. 0 would ensure positive numbers.'),
     '#size' => 5,
     '#maxlength' => 10,
-    '#weight' => 2,
+    '#weight' => 2.1,
     '#parents' => array('extra', 'min'),
     '#element_validate' => array('_webform_edit_number_validate'),
   );
@@ -171,7 +171,7 @@ function _webform_edit_number($component) {
     '#description' => t('Maximum numeric value. This may also determine the display width of your field.'),
     '#size' => 5,
     '#maxlength' => 10,
-    '#weight' => 2,
+    '#weight' => 2.2,
     '#parents' => array('extra', 'max'),
     '#element_validate' => array('_webform_edit_number_validate'),
   );
@@ -219,9 +219,18 @@ function theme_webform_number($variables) {
   }
 
   // Step property *must* be a full number with 0 prefix if a decimal.
-  if (!is_int($element['#step'] * 1)) {
+  if (!empty($element['#step']) && !is_int($element['#step'] * 1)) {
     $decimals = strlen($element['#step']) - strrpos($element['#step'], '.') - 1;
     $element['#step'] = sprintf('%1.' . $decimals . 'F', $element['#step']);
+  }
+
+  // If the number is not an integer and step is undefined/empty, set the "any"
+  // value to allow any decimal.
+  if (empty($element['#integer']) && empty($element['#step'])) {
+    $element['#step'] = 'any';
+  }
+  elseif ($element['#integer'] && empty($element['#step'])) {
+    $element['#step'] = 1;
   }
 
   // Convert properties to attributes on the element if set.
@@ -255,7 +264,7 @@ function _webform_render_number($component, $value = NULL, $filter = TRUE) {
     '#theme_wrappers' => array('webform_element'),
     '#min' => $component['extra']['min'],
     '#max' => $component['extra']['max'],
-    '#step' => abs($component['extra']['step']),
+    '#step' => $component['extra']['step'] ? abs($component['extra']['step']) : '',
     '#integer' => $component['extra']['integer'],
     '#translatable' => array('title', 'description'),
   );
@@ -509,7 +518,7 @@ function _webform_csv_headers_number($component, $export_options) {
  * Implements _webform_csv_data_component().
  */
 function _webform_csv_data_number($component, $export_options, $value) {
-  if (isset($value[0]) && $component['extra']['decimals'] !== '') {
+  if (isset($value[0]) && is_numeric($value[0]) && $component['extra']['decimals'] !== '') {
     $value[0] = number_format($value[0], $component['extra']['decimals'], '.', '');
   }
   return isset($value[0]) ? $value[0] : '';
@@ -588,13 +597,18 @@ function _webform_validate_number($element, &$form_state) {
  * Validation of number edit form items.
  */
 function _webform_edit_number_validate($element, &$form_state) {
-  // Shorten field names.
-  $values = $form_state['values']['extra'];
+  // Find the value of all related fields to this element.
+  $parents = $element['#parents'];
+  $key = array_pop($parents);
+  $values = $form_state['values'];
+  foreach ($parents as $parent) {
+    $values = $values[$parent];
+  }
 
-  switch ($element['#name']) {
-    case 'extra[min]':
+  switch ($key) {
+    case 'min':
       if ($values['min'] == '') {
-        if ($values['type'] == 'select') {
+        if (isset($values['type']) && $values['type'] === 'select') {
           form_error($element, t('Minimum is required when using a select list element.'));
         }
       }
@@ -607,9 +621,9 @@ function _webform_edit_number_validate($element, &$form_state) {
         }
       }
       break;
-    case 'extra[max]':
+    case 'max':
       if ($values['max'] == '') {
-        if ($values['type'] == 'select') {
+        if (isset($values['type']) && $values['type'] === 'select') {
           form_error($element, t('Maximum is required when using a select list element.'));
         }
       }
@@ -622,8 +636,8 @@ function _webform_edit_number_validate($element, &$form_state) {
         }
       }
       break;
-    case 'extra[step]':
-      if ($values['step'] != '') {
+    case 'step':
+      if ($values['step'] !== '') {
         if (!is_numeric($values['step'])) {
           form_error($element, t('Step must be numeric.'));
         }
@@ -685,6 +699,9 @@ function _webform_number_select_options($component) {
  * Apply number format.
  */
 function _webform_number_format($component, $value) {
+  if (!is_numeric($value)) {
+    return '';
+  }
   // If no decimal places are specified, do a best guess length of decimals.
   $decimals = $component['extra']['decimals'];
   if ($decimals === '') {

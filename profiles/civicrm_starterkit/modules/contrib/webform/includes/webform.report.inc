@@ -224,7 +224,7 @@ function theme_webform_results_table($variables) {
   $rows = array();
   $cell = array();
 
-  // This header has to be generated seperately so we can add the SQL necessary.
+  // This header has to be generated separately so we can add the SQL necessary.
   // to sort the results.
   $header = theme('webform_results_table_header', array('node' => $node));
 
@@ -442,7 +442,8 @@ function webform_results_download_form($form, &$form_state, $node) {
     '#default_value' => TRUE
   );
 
-  $form['submit'] = array(
+  $form['actions'] = array('#type' => 'actions');
+  $form['actions']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Download'),
   );

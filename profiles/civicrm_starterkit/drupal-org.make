@@ -17,10 +17,11 @@ libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm
 libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashChart_tpl_javascript-4.patch
 libraries[civicrm][patch][1946820] = http://drupal.org/files/1946820-turn_IDS_off_in_civicrm.settings.php_.tpl_.patch
 libraries[civicrm][patch][1967972] = http://drupal.org/files/1967972-bootsrap-fixes.patch
+libraries[civicrm][patch][1988296] = http://drupal.org/files/1988296-logo-filename-change.patch
 
 ;PANTHEON RELATED PATCHES
-libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-2.patch
-libraries[civicrm][patch][1978142] = http://drupal.org/files/1978796-session.save-as_file.patch
+libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-11.patch
+libraries[civicrm][patch][1978796] = http://drupal.org/files/1978796-session.save-as_file.patch
 libraries[civicrm][patch][1978838] =  http://drupal.org/files/1978838-pre-populate-db-settings.patch
 
 ;IMPROVING PROFILE INSTALL UX WHEN INSTALLING FROM A PROFILE
@@ -114,7 +115,7 @@ projects[views][subdir] = "contrib"
 projects[views][version] = "3.7"
 
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "3.18"
+projects[webform][version] = "3.19"
 
 projects[webform_civicrm][subdir] = "contrib"
 projects[webform_civicrm][version] = "3.5"
