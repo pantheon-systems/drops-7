@@ -26,9 +26,9 @@ function smarty_modifier_print_array($var, $depth = 0, $length = 40)
     require_once 'modifier.debug_print_var.php';
     switch (gettype($var)) {
         case 'array' :
-            $results = "array( \n";
+            $results = "array(\n";
             foreach ($var as $curr_key => $curr_val) {
-              
+
                 $results .= str_repeat('  ', ($depth * 2) + 1)
                     . "'" . $curr_key . "' => "
                     . smarty_modifier_print_array($curr_val, ++$depth, $length). ",\n";
@@ -36,7 +36,7 @@ function smarty_modifier_print_array($var, $depth = 0, $length = 40)
             }
             $results .= str_repeat('  ', $depth * 2) . ")";
             break;
-            
+
         case 'object' :
             $object_vars = get_object_vars($var);
             $results =  get_class($var) . ' Object (' . count($object_vars) . ')';
@@ -50,7 +50,7 @@ function smarty_modifier_print_array($var, $depth = 0, $length = 40)
         case 'boolean' :
         case 'NULL' :
         case 'resource' :
-           
+
             if (true === $var) {
                 $results .= 'true';
             } elseif (false === $var) {
@@ -83,7 +83,7 @@ function smarty_modifier_print_array($var, $depth = 0, $length = 40)
     if (empty($var)){
       if(is_array($var)){
         $results = "array()";
-        
+
       }elseif ($var === '0' || $var === 0){
         $results = 0;
       }else{

@@ -10,13 +10,21 @@
 function civicrm_cron_menu() {
   $items = array();
 
-  $items['admin/config/civicrm/civicrm_cron'] = array(
+  $items['admin/config/civicrm/civicrm-cron'] = array(
     'title' => 'CiviCRM Cron Configuration',
     'description' => 'Settings to call CiviCRM\'s cron from Drupal\'s cron.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('civicrm_cron_admin_settings'),
     'access arguments' => array('access administration pages'),
     'type' => MENU_NORMAL_ITEM,
+  );
+  
+  $items['civicrm-cron/passthrough'] = array(
+    'title' => 'CiviCRM Cron Passthrough',
+    'description' => 'Runs CiviCRM\'s cron within Drupal passing the site key as CiviCRM expects',
+    'page callback' => 'civicrm_cron_passthrough',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
   );
   
   return $items;
@@ -28,51 +36,94 @@ function civicrm_cron_menu() {
 function civicrm_cron_admin_settings($form, &$form_state) {
   $form = array();
   
+  
   if (!civicrm_initialize()) {
-    drupal_set_message(t('Failed to initialize CiviCRM'));
+    drupal_set_message(t('Failed to initialize CiviCRM'), 'error');
     return;
   }
   
-  $cron_values['name'] = variable_get('civicrm_cron_username', NULL);
-  $cron_values['pass'] = variable_get('civicrm_cron_password', NULL);
-  $cron_values['key'] = variable_get('civicrm_cron_sitekey', CIVICRM_SITE_KEY);
+  $cron_values['key'] = variable_get('civicrm_cron_sitekey', NULL);
   
-  $url = civicrm_cron_get_url($cron_values);
+  if (empty($form_state['input']['civicrm_cron_sitekey']) && $cron_values['key'] != NULL) {
+    global $base_url;
 
-  if ($url) {
-    $result = drupal_http_request($url);
-    //look for the CiviCRM error in response... successful processing returns nothing
-    if ($result->data) {
-      drupal_set_message('Attempted to use the following URL to process CiviCRM\'s cron: ' . $url . ' <br /> CiviCRM Error: ' . $result->data, 'warning');
-    } else {
-      drupal_set_message(t('CiviCRM Cron Successfully Run'));
+    $path = 'civicrm-cron/passthrough';    
+    $url = $base_url . url($path, array('query' => $cron_values));
+  
+    if ($url) {
+      $result = drupal_http_request($url);
+      //look for the CiviCRM error in response... successful processing returns nothing
+      if ($result->data) {
+        drupal_set_message($result->data, 'error');
+      } else {
+        drupal_set_message(t('CiviCRM Cron Successfully Run'));
+      }
     }
   }
-  
+
   //http://wiki.civicrm.org/confluence/display/CRMDOC41/Command-line+Script+Configuration
   
-  $form['civicrm_cron_username'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Username'),
-    '#default_value' => $cron_values['name'],
-    '#description' => t('CiviCRM runs cron as a specific user.  This user should have MINIMAL permissions since the password will be saved in the database and seen in the logs.'),
-  );
-    
-  $form['civicrm_cron_password'] = array(
-    '#type' => 'password',
-    '#title' => t('Password'),
-    '#default_value' => $cron_values['pass'],
-    '#description' => t('The password for user defined above.'),
-  );
-    
+  //if it's still NULL at this point, set to site key constant
+  if ($cron_values['key'] == NULL ) {
+    $cron_values['key'] = CIVICRM_SITE_KEY;
+    if (empty($form_state['input']['civicrm_cron_sitekey'])) {
+      drupal_set_message(t('Save the Configuration to Test CiviCRM Cron'), 'warning');
+    }
+  }
+      
   $form['civicrm_cron_sitekey'] = array(
     '#type' => 'textfield',
     '#title' => t('Sitekey'),
     '#default_value' => $cron_values['key'],
-    '#description' => t('Must match the sitekey found in the civicrm-settings.php file.'),
+    '#description' => t('Must match the sitekey found in the civicrm-settings.php file.  Leave this field empty to attempt to lookup the current site key.'),
   );
     
   return system_settings_form($form);
+}
+
+/**
+ * Implementation of hook_cron().
+ */
+function civicrm_cron_cron() {
+ 
+  //$cron_values['name'] = variable_get('civicrm_cron_username', NULL);
+  //$cron_values['pass'] = variable_get('civicrm_cron_password', NULL);
+  $cron_values['key'] = variable_get('civicrm_cron_sitekey', NULL);
+  
+  //$url = civicrm_cron_get_url($cron_values);
+  global $base_url;
+
+  $path = 'civicrm-cron/passthrough';    
+  $url = $base_url . url($path, array('query' => $cron_values));
+  
+  if ($url) {
+    $result = drupal_http_request($url);
+    //look for the CiviCRM error in response... successful processing returns nothing
+    if ($result->data) {
+      watchdog('civirm_cron', $result->data, NULL, WATCHDOG_ERROR);
+    } else {
+      watchdog('civirm_cron', t('CiviCRM Cron Successfully Run'), NULL, WATCHDOG_NOTICE);
+    }
+  }
+  
+
+}
+
+
+function civicrm_cron_passthrough() {
+
+  if (!civicrm_initialize()) {
+    //watchdog('civirm_cron', t('Failed to initialize CiviCRM during Cron'), NULL, WATCHDOG_ERROR);
+    return t('Failed to initialize CiviCRM during Cron');
+  }
+  
+  CRM_Utils_System::authenticateScript(FALSE);
+
+  require_once 'CRM/Core/JobManager.php';
+  $facility = new CRM_Core_JobManager();
+ 
+  $facility->execute();
+  
 }
 
 function civicrm_cron_get_url($cron_values) {
@@ -93,26 +144,4 @@ function civicrm_cron_get_url($cron_values) {
   }
   
   return FALSE; 
-}
-
-/**
- * Implementation of hook_cron().
- */
-function civicrm_cron_cron() {
-    
-  $cron_values['name'] = variable_get('civicrm_cron_username', NULL);
-  $cron_values['pass'] = variable_get('civicrm_cron_password', NULL);
-  $cron_values['key'] = variable_get('civicrm_cron_sitekey', CIVICRM_SITE_KEY);
-  
-  $url = civicrm_cron_get_url($cron_values);
-
-  if ($url) {
-    $result = drupal_http_request($url);
-    //look for the CiviCRM error in response... successful processing returns nothing
-    if ($result->data) {
-      watchdog('civirm_cron', $result->data);
-    } else {
-      watchdog('civirm_cron', t('CiviCRM Cron Successfully Run'));
-    }
-  }
 }

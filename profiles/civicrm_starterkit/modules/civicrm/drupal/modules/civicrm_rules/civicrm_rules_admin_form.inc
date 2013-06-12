@@ -15,6 +15,6 @@ function civicrm_rules_admin_settings($form_state = NULL) {
 function _civicrm_rules_admin_getEntities() {
   //Todo Use civicrm_api('Entities', 'Get', array('version' => 3));
   // to extend entities to all API entities
-  return array('Event' => 'Event', 'Participant' => 'Participant');
+  return array('event' => 'Event', 'participant' => 'Participant');
 }
 

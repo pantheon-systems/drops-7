@@ -688,7 +688,6 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
         CRM_Core_BAO_Address::checkContactSharedAddressFields($fields, $contactID);
       }
       $this->assign($name, $fields);
-      $profileAddressFields = array();
       if (is_array($fields)) {
         foreach ($fields as $key => $field) {
           if ($viewOnly &&
@@ -715,15 +714,12 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
             }
             $stateCountryMap[$index][$prefixName] = $key;
           }
-          CRM_Core_BAO_UFField::assignAddressField($key, $profileAddressFields);
           CRM_Core_BAO_UFGroup::buildProfile($this, $field, CRM_Profile_Form::MODE_CREATE, $contactID, TRUE);
 
           $this->_fields[$key] = $field;
         }
       }
-      if (!empty($profileAddressFields)) {
-        $this->set('profileAddressFields', $profileAddressFields);
-      }
+
       CRM_Core_BAO_Address::addStateCountryMap($stateCountryMap);
 
       if ($addCaptcha && !$viewOnly) {
@@ -739,6 +735,9 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
 
     // retrive all active price set fields.
     $discountId = CRM_Core_BAO_Discount::findSet($eventID, 'civicrm_event');
+    if (property_exists($form, '_discountId') && $form->_discountId) {
+      $discountId = $form->_discountId;
+    }
     if ($discountId) {
       $priceSetId = CRM_Core_DAO::getFieldValue('CRM_Core_BAO_Discount', $discountId, 'price_set_id');
       $price = CRM_Price_BAO_Set::initSet($form, $eventID, 'civicrm_event', TRUE, $priceSetId);
@@ -746,7 +745,24 @@ class CRM_Event_Form_Registration extends CRM_Core_Form {
     else {
       $price = CRM_Price_BAO_Set::initSet($form, $eventID, 'civicrm_event', TRUE);
     }
-
+    
+    if (property_exists($form, '_context') && ($form->_context == 'standalone' 
+      || $form->_context == 'participant')) {
+      $discountedEvent = CRM_Core_BAO_Discount::getOptionGroup($eventID, 'civicrm_event');
+      if (is_array( $discountedEvent)) {
+        foreach ($discountedEvent as $key => $priceSetId) {
+          $priceSet = CRM_Price_BAO_Set::getSetDetail($priceSetId);
+          $priceSet = CRM_Utils_Array::value($priceSetId, $priceSet);
+          $form->_values['discount'][$key] = CRM_Utils_Array::value('fields', $priceSet);
+          $fieldID = key($form->_values['discount'][$key]);
+          $form->_values['discount'][$key][$fieldID]['name'] = CRM_Core_DAO::getFieldValue(
+            'CRM_Price_DAO_Set',
+            $priceSetId,
+            'title'
+          );
+        }
+      }
+    }
     $eventFee = CRM_Utils_Array::value('fee', $form->_values);
     if (!is_array($eventFee) || empty($eventFee)) {
       $form->_values['fee'] = array();

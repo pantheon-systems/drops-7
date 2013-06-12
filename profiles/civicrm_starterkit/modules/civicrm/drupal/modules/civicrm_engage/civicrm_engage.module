@@ -42,7 +42,7 @@ function _civicrm_engage_getCustomGroupID($customGroupName) {
 }
 
 function civicrm_engage_civicrm_buildForm($formName, &$form) {
-  if ($formName == 'CRM_Contact_Form_Contact' || 'CRM_Contact_Form_Inline_Demographics') {
+  if ($formName == 'CRM_Contact_Form_Contact' || $formName == 'CRM_Contact_Form_Inline_Demographics') {
     $cgID = _civicrm_engage_getCustomGroupID(CIVICRM_ENGAGE_CG_DEMOGRAPHICS_NAME);
     if (empty($cgID)) {
       return;
@@ -73,15 +73,15 @@ function civicrm_engage_civicrm_alterReportVar($varType, &$var, &$form) {
   $formName = get_class($form);
   if ( $formName == 'CRM_Report_Form_Campaign_SurveyDetails' ) {
     if ( $varType == 'columns' ) {
-      $var['civicrm_contribution'] = 
+      $var['civicrm_contribution'] =
         array(
               'dao' => 'CRM_Contribute_DAO_Contribution',
               'fields' =>
               array(
-                    'receive_date' => 
+                    'receive_date' =>
                     array('title' => ts('Latest Contribution Date'),
                           ),
-                    'total_amount' => 
+                    'total_amount' =>
                     array('title' => ts('Latest Contribution Amount'),
                           ),
                     ),
@@ -134,13 +134,13 @@ function civicrm_engage_civicrm_postProcess($class, &$form) {
  /** The big picture is:
  * set our custom demographics group of fields to be a
  * tab; hide the tab; shove the fields into the core
- * Demographics display. 
+ * Demographics display.
  **/
 
  /**
  * Alter the page as displayed on the contact summary
  * and inline demographics. This is the function where we
- * stick the custom demographics fields into the core 
+ * stick the custom demographics fields into the core
  * demographics displayed. It goes with the custom
  * Demographics.tpl file we are shipping.
  **/
@@ -175,7 +175,7 @@ function civicrm_engage_civicrm_pageRun(&$page) {
 
 /**
  * Hide the custom demographics tab because we are handling
- * the custom demographics fields inline in the 
+ * the custom demographics fields inline in the
  * civicrm_engage_civicrm_pageRun() function.
  **/
 function civicrm_engage_civicrm_tabs(&$tabs, $contactID) {

@@ -48,7 +48,7 @@ class CRM_Financial_Page_AJAX {
       empty($_GET['_value'])) {
       CRM_Utils_System::civiExit();
     }
-
+    $defaultId = NULL;
     if ($_GET['_value'] == 'select') {
       $result = CRM_Contribute_PseudoConstant::financialAccount();
     }
@@ -62,9 +62,11 @@ class CRM_Financial_Page_AJAX {
         '8' => 1, //premium inventory
         '9' => 3, //discount account is
       );
-
-      $financialAccountType = "{$financialAccountType[$_GET['_value']]}";
+      $financialAccountType = CRM_Utils_Array::value($_GET['_value'], $financialAccountType);
       $result = CRM_Contribute_PseudoConstant::financialAccount(NULL, $financialAccountType);
+      if ($financialAccountType) {
+        $defaultId = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_financial_account WHERE is_default = 1 AND financial_account_type_id = $financialAccountType");
+      }
     }
     $elements = array(
       array(
@@ -75,10 +77,14 @@ class CRM_Financial_Page_AJAX {
 
     if (!empty($result)){
       foreach ($result as $id => $name) {
+        $selectedArray = array();
+        if ($id == $defaultId) {
+          $selectedArray['selected'] = 'Selected';
+        }
         $elements[] = array(
           'name'  => $name,
           'value' => $id,
-        );
+        ) + $selectedArray;
       }
     }
     echo json_encode($elements);

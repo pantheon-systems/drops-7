@@ -86,14 +86,14 @@ NON-PEAR
 ========
 PHP gettext    1.0.7      GPL 2+      http://savannah.nongnu.org/projects/php-gettext/
 PHPIDS         0.7        LGPL 3+     http://phpids.org/
-Smarty         2.6.26     LGPL 2.1+   http://smarty.php.net/                                        local changes
+Smarty         2.6.27     LGPL 2.1+   http://smarty.php.net/                                        local changes ( use only lib )
 Smarty Gettext 1.0b1      LGPL 2.1+   http://smarty.incutio.com/?page=SmartyGettext
-TCPDF          4.8.027    LGPL 2.1+   http://tecnick.com/public/code/cp_dpage.php?aiocp_dp=tcpdf    doc, examples, images and most of fonts removed
+TCPDF          6.0.020    GPL 3+      http://www.tcpdf.org/                                         doc, examples, images and most of fonts removed
 dompdf         0.6.0.beta3 LGPL 2.1+  http://code.google.com/p/dompdf/                              local changes (removed tests and index.php)
 eZ Components  2009.1.2   BSD 3-cl.   http://ezcomponents.org/                                      local changes
-html2text      1.0.0      GPL 2+      http://chuggnutt.com/html2text.php                            local changes
+html2text      0.9.1      GPL 3+      http://roundcube.net/download             copied from program/lib/Roundcube/rcube_html2text.php
 reCAPTCHA      1.10       X11         http://recaptcha.net/
-OpenFlashChart 2.0        LGPL        http://teethgrinder.co.uk/open-flash-chart-2/ 
+OpenFlashChart 2.0        LGPL        http://teethgrinder.co.uk/open-flash-chart-2/
 Snappy         ??         X11         https://github.com/knplabs/snappy
 Backbone       0.9.9      X11/MIT     http://backbonejs.org/
 Backone Forms  c6920b3c89 X11/MIT     https://github.com/powmedia/backbone-forms

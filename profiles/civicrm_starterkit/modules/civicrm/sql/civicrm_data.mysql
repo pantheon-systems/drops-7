@@ -2861,13 +2861,13 @@ INSERT INTO civicrm_state_province (id, country_id, abbreviation, name) VALUES
 (4116, 1170, "ZAN", "Zamboanga del Norte"),
 (4117, 1170, "ZAS", "Zamboanga del Sur"),
 (4118, 1170, "ZSI", "Zamboanga Sibiguey"),
-(4119, 1163, "IS", "Islamabad"),
-(4120, 1163, "BA", "Baluchistan (en)"),
-(4121, 1163, "NW", "North-West Frontier"),
-(4122, 1163, "SD", "Sind (en)"),
-(4123, 1163, "TA", "Federally Administered Tribal Aresa"),
-(4124, 1163, "JK", "Azad Rashmir"),
-(4125, 1163, "NA", "Northern Areas"),
+(4119, 1163, "IS", "Islamabad Federal Capital Area"),
+(4120, 1163, "BA", "Baluchistan"),
+(4121, 1163, "NW", "Khyber Pakhtun Khawa"),
+(4122, 1163, "SD", "Sindh"),
+(4123, 1163, "TA", "Federally Administered Tribal Areas"),
+(4124, 1163, "JK", "Azad Kashmir"),
+(4125, 1163, "NA", "Gilgit-Baltistan"),
 (4126, 1173, "01", "Aveiro"),
 (4127, 1173, "02", "Beja"),
 (4128, 1173, "03", "Braga"),
@@ -3971,7 +3971,7 @@ INSERT INTO civicrm_state_province (id, country_id, abbreviation, name) VALUES
 (5222, 1208, "CYI", "Chiayi City"),
 (5223, 1208, "HSZ", "Hsinchu City"),
 (5224, 1208, "TNN", "Tainan City"),
-(9000, 1196, "NW", "North West"), 
+(9000, 1196, "NW", "North West"),
 
 (9986, 1226, "TWR", "Tyne and Wear"),
 (9988, 1226, "GTM", "Greater Manchester"),
@@ -4529,6 +4529,7 @@ VALUES
    ('participant_role'              , 'Participant Role'                   , 1, 1),
    ('event_type'                    , 'Event Type'                         , 1, 1),
    ('contact_view_options'          , 'Contact View Options'               , 1, 1),
+   ('contact_smart_group_display'   , 'Contact Smart Group View Options'   , 1, 1),
    ('contact_edit_options'          , 'Contact Edit Options'               , 1, 1),
    ('advanced_search_options'       , 'Advanced Search Options'            , 1, 1),
    ('user_dashboard_options'        , 'User Dashboard Options'             , 1, 1),
@@ -4584,9 +4585,7 @@ VALUES
    ('sms_provider_name'             , 'Sms Provider Internal Name'         , 1, 1),
    ('auto_renew_options'            , 'Auto Renew Options'         	       , 1, 1),
    ('financial_account_type'        , 'Financial Account Type'             , 1, 1),
-   ('financial_item_status'         , 'Financial Item Status'              , 1, 1),
-   ('grant_program_status'          , 'Grant Program Status'               , 1, 1),
-   ('allocation_algorithm'          , 'Grant Program Allocation Algorithm' , 1, 1);
+   ('financial_item_status'         , 'Financial Item Status'              , 1, 1);
 
 SELECT @option_group_id_pcm            := max(id) from civicrm_option_group where name = 'preferred_communication_method';
 SELECT @option_group_id_act            := max(id) from civicrm_option_group where name = 'activity_type';
@@ -4603,6 +4602,7 @@ SELECT @option_group_id_pcp            := max(id) from civicrm_option_group wher
 SELECT @option_group_id_pRole          := max(id) from civicrm_option_group where name = 'participant_role';
 SELECT @option_group_id_etype          := max(id) from civicrm_option_group where name = 'event_type';
 SELECT @option_group_id_cvOpt          := max(id) from civicrm_option_group where name = 'contact_view_options';
+SELECT @option_group_id_csgOpt         := max(id) from civicrm_option_group where name = 'contact_smart_group_display';
 SELECT @option_group_id_ceOpt          := max(id) from civicrm_option_group where name = 'contact_edit_options';
 SELECT @option_group_id_asOpt          := max(id) from civicrm_option_group where name = 'advanced_search_options';
 SELECT @option_group_id_udOpt          := max(id) from civicrm_option_group where name = 'user_dashboard_options';
@@ -4658,8 +4658,6 @@ SELECT @option_group_id_sms_provider_name := max(id) from civicrm_option_group w
 SELECT @option_group_id_aro := max(id) from civicrm_option_group where name = 'auto_renew_options';
 SELECT @option_group_id_fat            := max(id) from civicrm_option_group where name = 'financial_account_type';
 SELECT @option_group_id_financial_item_status := max(id) from civicrm_option_group where name = 'financial_item_status';
-SELECT @option_group_id_grantProgramSt  := max(id) from civicrm_option_group where name = 'grant_program_status';
-SELECT @option_group_id_allocationAlgo  := max(id) from civicrm_option_group where name = 'allocation_algorithm';
 
 
 SELECT @contributeCompId := max(id) FROM civicrm_component where name = 'CiviContribute';
@@ -4819,6 +4817,11 @@ VALUES
   (@option_group_id_cvOpt, 'Grants'       ,  11, 'CiviGrant', NULL, 0, NULL,  11, NULL, 0, 0, 1, NULL, NULL),
   (@option_group_id_cvOpt, 'Pledges'      ,  13, 'CiviPledge', NULL, 0, NULL,  13, NULL, 0, 0, 1, NULL, NULL),
 
+
+  (@option_group_id_csgOpt, 'Show Smart Groups on Demand',1, 'showondemand', NULL, 0, NULL,  1,  NULL, 0, 0, 1, NULL, NULL),
+  (@option_group_id_csgOpt, 'Always Show Smart Groups',   2, 'alwaysshow', NULL, 0, NULL,  2,  NULL, 0, 0, 1, NULL, NULL),
+  (@option_group_id_csgOpt, 'Hide Smart Groups'       ,   3, 'hide', NULL, 0, NULL,  3,  NULL, 0, 0, 1, NULL, NULL),
+
   (@option_group_id_ceOpt, 'Custom Data'              ,   1, 'CustomData', NULL, 0, NULL, 1, NULL, 0, 0, 1, NULL, NULL),
   (@option_group_id_ceOpt, 'Address'                  ,   2, 'Address', NULL, 0, NULL, 2, NULL, 0, 0, 1, NULL, NULL),
   (@option_group_id_ceOpt, 'Communication Preferences',   3, 'CommunicationPreferences', NULL, 0, NULL, 3, NULL, 0, 0, 1, NULL, NULL),
@@ -4960,7 +4963,7 @@ VALUES
   (@option_group_id_report, 'Survey Report (Detail)',    'survey/detail', 'CRM_Report_Form_Campaign_SurveyDetails',  NULL, 0, NULL, 43, 'Detailed report for canvassing, phone-banking, walk lists or other surveys.', 0, 0, 1, @campaignCompId, NULL),
   (@option_group_id_report, 'Personal Campaign Page Report', 'contribute/pcp', 'CRM_Report_Form_Contribute_PCP', NULL, 0, NULL, 44, 'Summarizes amount raised and number of contributors for each Personal Campaign Page.', 0, 0, 1, @contributeCompId, NULL),
   (@option_group_id_report , 'Pledge Summary Report', 'pledge/summary', 'CRM_Report_Form_Pledge_Summary', NULL, 0, NULL, 45, 'Summary of pledges including amount pledged, pledge status, next payment date, balance due, total amount paid etc.', 0, 0, 1, @pledgeCompId, NULL),
-  (@option_group_id_report , 'Contribution History By Relationship Report',                   'contribute/history',              'CRM_Report_Form_Contribute_History',              NULL, 0, NULL, 46,  'List contact\'s donation history, grouped by year, along with contributions attributed to any of the contact\'s related contacts.', 0, 0, 1, @contributeCompId, NULL),
+  (@option_group_id_report , 'Contribution Aggregate by Relationship',                   'contribute/history',              'CRM_Report_Form_Contribute_History',              NULL, 0, NULL, 46,  'List contact\'s donation history, grouped by year, along with contributions attributed to any of the contact\'s related contacts.', 0, 0, 1, @contributeCompId, NULL),
   (@option_group_id_report,  'Mail Detail Report',                                            'mailing/detail',     'CRM_Report_Form_Mailing_Detail',          NULL, 0, NULL, 47,  'Provides reporting on Intended and Successful Deliveries, Unsubscribes and Opt-outs, Replies and Forwards.',   0, 0, 1, @mailCompId, NULL),
   (@option_group_id_report, 'Contribution and Membership Details', 'member/contributionDetail', 'CRM_Report_Form_Member_ContributionDetail', NULL, 0, NULL, 48, 'Contribution details for any type of contribution, plus associated membership information for contributions which are in payment for memberships.', 0, 0, 1, @memberCompId, NULL),
 
@@ -5261,15 +5264,15 @@ SELECT @opCost := value FROM civicrm_option_value WHERE name = 'Cost of Sales' a
 INSERT INTO
    `civicrm_financial_account` (`name`, `contact_id`, `financial_account_type_id`, `description`, `accounting_code`, `account_type_code`, `is_reserved`, `is_active`, `is_deductible`, `is_default`)
 VALUES
-  ( 'Donation'            , @contactID, @opval, 'Default account for donations', '4200', 'INC', 0, 1, 1, 0 ),
+  ( 'Donation'            , @contactID, @opval, 'Default account for donations', '4200', 'INC', 0, 1, 1, 1 ),
   ( 'Member Dues'          , @contactID, @opval, 'Default account for membership sales', '4400', 'INC', 0, 1, 1, 0 ),
   ( 'Campaign Contribution', @contactID, @opval, 'Sample account for recording payments to a campaign', '4100', 'INC', 0, 1, 0, 0 ),
   ( 'Event Fee'            , @contactID, @opval, 'Default account for event ticket sales', '4300', 'INC', 0, 1, 0, 0 ),
-  ( 'Banking Fees'         , @contactID, @opexp, 'Payment processor fees and manually recorded banking fees', '5200', 'EXP', 0, 1, 0, 0 ),
+  ( 'Banking Fees'         , @contactID, @opexp, 'Payment processor fees and manually recorded banking fees', '5200', 'EXP', 0, 1, 0, 1 ),
   ( 'Deposit Bank Account' , @contactID, @opAsset, 'All manually recorded cash and cheques go to this account', '1100', 'BANK', 0, 1, 0, 1 ),
   ( 'Accounts Receivable'  , @contactID, @opAsset, 'Amounts to be received later (eg pay later event revenues)', '1200', 'AR', 0, 1, 0, 0 ),
-  ( 'Accounts Payable'     , @contactID, @opLiability, 'Amounts to be paid out such as grants and refunds', '2200', 'AP', 0, 1, 0, 0 ),
-  ( 'Premiums'             , @contactID, @opCost, 'Account to record cost of premiums provided to payors', '5100', 'COGS', 0, 1, 0, 0 ),
+  ( 'Accounts Payable'     , @contactID, @opLiability, 'Amounts to be paid out such as grants and refunds', '2200', 'AP', 0, 1, 0, 1 ),
+  ( 'Premiums'             , @contactID, @opCost, 'Account to record cost of premiums provided to payors', '5100', 'COGS', 0, 1, 0, 1 ),
   ( 'Premiums inventory'   , @contactID, @opAsset, 'Account representing value of premiums inventory', '1375', 'OCASSET', 0, 1, 0, 0 ),
   ( 'Discounts'            , @contactID, @opval, 'Contra-revenue account for amounts discounted from sales', '4900', 'INC', 0, 1, 0, 0 ),
   ( 'Payment Processor Account', @contactID, @opAsset, 'Account to record payments into a payment processor merchant account', '1150', 'BANK', 0, 1, 0, 0
@@ -5289,15 +5292,6 @@ VALUES
   (@option_group_id_grantTyp, 'Family Support'     , 2, 'Family Support'    , NULL, 0, NULL, 2, NULL, 0, 0, 1, NULL, @domainID, NULL),
   (@option_group_id_grantTyp, 'General Protection' , 3, 'General Protection', NULL, 0, NULL, 3, NULL, 0, 0, 1, NULL, @domainID, NULL),
   (@option_group_id_grantTyp, 'Impunity'           , 4, 'Impunity'          , NULL, 0, NULL, 4, NULL, 0, 0, 1, NULL, @domainID, NULL),
-
--- grant program status
-  (@option_group_id_grantProgramSt, 'Accepting Applications'          , 1, 'Accepting Applications'         , NULL, 0, 1,    1, NULL, 0, 0, 1, NULL, @domainID, NULL),
-  (@option_group_id_grantProgramSt, 'Trial Allocation'     , 2, 'Trial Allocation'    , NULL, 0, NULL, 2, NULL, 0, 0, 1, NULL, @domainID, NULL),
-  (@option_group_id_grantProgramSt, 'Allocation Finalized' , 3, 'Allocation Finalized', NULL, 0, NULL, 3, NULL, 0, 0, 1, NULL, @domainID, NULL),
-
--- grant program alocation algorithm
- (@option_group_id_allocationAlgo, 'Over Threshold, Percentage of Request Funded'          , 1, 'Over Threshold, Percentage of Request Funded'         , NULL, 0, 1,    1, NULL, 0, 0, 1, NULL, @domainID, NULL),
-  (@option_group_id_allocationAlgo, 'Best to Worst, Fully Funded'     , 2, 'Best to Worst, Fully Funded'    , NULL, 0, NULL, 2, NULL, 0, 0, 1, NULL, @domainID, NULL),
 
 -- Mail Approval Status Preferences
   (@option_group_id_mail_approval_status, 'Approved' , 1, 'Approved', NULL, 0, 1, 1, NULL, 0, 1, 1, @mailCompId, @domainID, NULL),
@@ -18616,6 +18610,7 @@ SELECT @option_value_rel_id  := value FROM civicrm_option_value WHERE option_gro
 SELECT @option_value_rel_id_exp  := value FROM civicrm_option_value WHERE option_group_id = @option_group_id_arel AND name = 'Expense Account is';
 SELECT @option_value_rel_id_ar  := value FROM civicrm_option_value WHERE option_group_id = @option_group_id_arel AND name = 'Accounts Receivable Account is';
 SELECT @option_value_rel_id_as  := value FROM civicrm_option_value WHERE option_group_id = @option_group_id_arel AND name = 'Asset Account is';
+SELECT @option_value_rel_id_cg  := value FROM civicrm_option_value WHERE option_group_id = @option_group_id_arel AND name = 'Cost of Sales Account is';
 
 SELECT @financial_type_id_dtn 	       := max(id) FROM civicrm_financial_type WHERE name = 'Donation';
 SELECT @financial_type_id_md	       := max(id) FROM civicrm_financial_type WHERE name = 'Member Dues';
@@ -18630,6 +18625,7 @@ SELECT @financial_account_id_bf	       := max(id) FROM civicrm_financial_account
 SELECT @financial_account_id_ap	       := max(id) FROM civicrm_financial_account WHERE name = 'Accounts Receivable';
 SELECT @financial_account_id_ar        := max(id) FROM civicrm_financial_account WHERE name = 'Deposit Bank Account';
 SELECT @financial_account_id_pp        := max(id) FROM civicrm_financial_account WHERE name = 'Payment Processor Account';
+SELECT @financial_account_id_pr        := max(id) FROM civicrm_financial_account WHERE name = 'Premiums';
 
 INSERT INTO `civicrm_entity_financial_account`
      ( entity_table, entity_id, account_relationship, financial_account_id )
@@ -18637,15 +18633,19 @@ VALUES
      ( 'civicrm_financial_type', @financial_type_id_dtn, @option_value_rel_id, @financial_account_id_dtn ),
      ( 'civicrm_financial_type', @financial_type_id_dtn, @option_value_rel_id_exp, @financial_account_id_bf ),
      ( 'civicrm_financial_type', @financial_type_id_dtn, @option_value_rel_id_ar, @financial_account_id_ap ),
+     ( 'civicrm_financial_type', @financial_type_id_dtn, @option_value_rel_id_cg, @financial_account_id_pr ),
      ( 'civicrm_financial_type', @financial_type_id_md, @option_value_rel_id, @financial_account_id_md ),
      ( 'civicrm_financial_type', @financial_type_id_md, @option_value_rel_id_exp, @financial_account_id_bf ),
      ( 'civicrm_financial_type', @financial_type_id_md, @option_value_rel_id_ar, @financial_account_id_ap ),
+     ( 'civicrm_financial_type', @financial_type_id_md, @option_value_rel_id_cg, @financial_account_id_pr ),
      ( 'civicrm_financial_type', @financial_type_id_cc, @option_value_rel_id, @financial_account_id_cc ),
      ( 'civicrm_financial_type', @financial_type_id_cc, @option_value_rel_id_exp, @financial_account_id_bf ),
      ( 'civicrm_financial_type', @financial_type_id_cc, @option_value_rel_id_ar, @financial_account_id_ap ),
+     ( 'civicrm_financial_type', @financial_type_id_cc, @option_value_rel_id_cg, @financial_account_id_pr ),
      ( 'civicrm_financial_type', @financial_type_id_ef, @option_value_rel_id_exp, @financial_account_id_bf ),
      ( 'civicrm_financial_type', @financial_type_id_ef, @option_value_rel_id_ar, @financial_account_id_ap ),
-     ( 'civicrm_financial_type', @financial_type_id_ef, @option_value_rel_id, @financial_account_id_ef );
+     ( 'civicrm_financial_type', @financial_type_id_ef, @option_value_rel_id, @financial_account_id_ef ),
+     ( 'civicrm_financial_type', @financial_type_id_ef, @option_value_rel_id_cg, @financial_account_id_pr );
 
 -- CRM-11516
 INSERT INTO  civicrm_entity_financial_account (entity_table, entity_id, account_relationship, financial_account_id)
@@ -18713,6 +18713,7 @@ INSERT INTO civicrm_setting
   ( domain_id, contact_id, is_domain, group_name, name, value )
 VALUES
   ( @domainID, NULL, 1, 'CiviCRM Preferences', 'contact_view_options', 's:28:"123456789101113";' ),
+  ( @domainID, NULL, 1, 'CiviCRM Preferences', 'contact_smart_group_display', 's:1:"1";' ),
   ( @domainID, NULL, 1, 'CiviCRM Preferences', 'contact_edit_options', 's:22:"12345678911";' ),
   ( @domainID, NULL, 1, 'CiviCRM Preferences', 'advanced_search_options', 's:46:"123456789101112131516171819";' ),
   ( @domainID, NULL, 1, 'CiviCRM Preferences', 'user_dashboard_options', 's:15:"1234578";' ),
@@ -19402,6 +19403,11 @@ VALUES
 INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
 VALUES
+    (@domainID,'Contribution Aggregate by Relationship', 'contribute/history','List contact\'s donation history, grouped by year, along with contributions attributed to any of the contact\'s related contacts.', 'access CiviContribute','a:41:{s:6:"fields";a:7:{s:9:"sort_name";s:1:"1";s:20:"relationship_type_id";s:1:"1";s:17:"civicrm_upto_2009";s:1:"1";i:2010;s:1:"1";i:2011;s:1:"1";i:2012;s:1:"1";i:2013;s:1:"1";}s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:6:"id_min";s:0:"";s:6:"id_max";s:0:"";s:5:"id_op";s:3:"lte";s:8:"id_value";s:0:"";s:23:"relationship_type_id_op";s:2:"in";s:26:"relationship_type_id_value";a:0:{}s:12:"this_year_op";s:2:"eq";s:15:"this_year_value";s:0:"";s:13:"other_year_op";s:2:"eq";s:16:"other_year_value";s:0:"";s:21:"receive_date_relative";s:0:"";s:17:"receive_date_from";s:0:"";s:15:"receive_date_to";s:0:"";s:25:"contribution_status_id_op";s:2:"in";s:28:"contribution_status_id_value";a:1:{i:0;s:1:"1";}s:20:"financial_type_id_op";s:2:"in";s:23:"financial_type_id_value";a:0:{}s:16:"total_amount_min";s:0:"";s:16:"total_amount_max";s:0:"";s:15:"total_amount_op";s:3:"lte";s:18:"total_amount_value";s:0:"";s:13:"total_sum_min";s:0:"";s:13:"total_sum_max";s:0:"";s:12:"total_sum_op";s:3:"lte";s:15:"total_sum_value";s:0:"";s:6:"gid_op";s:2:"in";s:9:"gid_value";a:0:{}s:8:"tagid_op";s:2:"in";s:11:"tagid_value";a:0:{}s:11:"description";s:127:"List contact''s donation history, grouped by year, along with contributions attributed to any of the contact''s related contacts.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:21:"access CiviContribute";s:9:"parent_id";s:0:"";s:6:"groups";s:0:"";s:9:"domain_id";i:1;s:11:"is_reserved";b:0;}');
+
+INSERT INTO `civicrm_report_instance`
+    ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
+VALUES
     ( @domainID, 'Personal Campaign Page Summary', 'contribute/pcp', 'Summarizes amount raised and number of contributors for each Personal Campaign Page.', 'access CiviContribute', 'a:22:{s:6:"fields";a:8:{s:9:"sort_name";s:1:"1";s:10:"page_title";s:1:"1";s:5:"title";s:1:"1";s:11:"goal_amount";s:1:"1";s:8:"amount_1";s:1:"1";s:8:"amount_2";s:1:"1";s:7:"soft_id";s:1:"1";s:12:"receive_date";s:1:"1";}s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:6:"id_min";s:0:"";s:6:"id_max";s:0:"";s:5:"id_op";s:3:"lte";s:8:"id_value";s:0:"";s:13:"page_title_op";s:3:"has";s:16:"page_title_value";s:0:"";s:8:"title_op";s:3:"has";s:11:"title_value";s:0:"";s:12:"amount_2_min";s:0:"";s:12:"amount_2_max";s:0:"";s:11:"amount_2_op";s:3:"lte";s:14:"amount_2_value";s:0:"";s:11:"description";s:35:"Shows Personal Campaign Page Report";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:21:"access CiviContribute";s:6:"groups";s:0:"";s:9:"domain_id";i:1;}');
 
 INSERT INTO `civicrm_report_instance`
@@ -19481,7 +19487,7 @@ VALUES
 INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
 VALUES
-    ( @domainID, 'Mailing Summary', 'Mailing/summary','Summary statistics for mailings','access CiviMail','a:25:{s:6:"fields";a:5:{s:4:"name";s:1:"1";s:11:"queue_count";s:1:"1";s:15:"delivered_count";s:1:"1";s:12:"bounce_count";s:1:"1";s:10:"open_count";s:1:"1";}s:15:"is_completed_op";s:2:"eq";s:18:"is_completed_value";s:1:"1";s:15:"mailing_name_op";s:2:"in";s:18:"mailing_name_value";a:0:{}s:9:"status_op";s:3:"has";s:12:"status_value";s:8:"Complete";s:11:"is_test_min";s:0:"";s:11:"is_test_max";s:0:"";s:10:"is_test_op";s:3:"lte";s:13:"is_test_value";s:1:"0";s:19:"start_date_relative";s:9:"this.year";s:15:"start_date_from";s:0:"";s:13:"start_date_to";s:0:"";s:17:"end_date_relative";s:9:"this.year";s:13:"end_date_from";s:0:"";s:11:"end_date_to";s:0:"";s:11:"description";s:31:"Summary statistics for mailings";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:15:"access CiviMail";s:6:"groups";s:0:"";s:6:"charts";s:0:"";s:9:"domain_id";i:1;}');
+    ( @domainID, 'Mailing Summary', 'Mailing/summary','Summary statistics for mailings', 'access CiviMail','a:25:{s:6:"fields";a:5:{s:4:"name";s:1:"1";s:11:"queue_count";s:1:"1";s:15:"delivered_count";s:1:"1";s:12:"bounce_count";s:1:"1";s:10:"open_count";s:1:"1";}s:15:"is_completed_op";s:2:"eq";s:18:"is_completed_value";s:1:"1";s:15:"mailing_name_op";s:2:"in";s:18:"mailing_name_value";a:0:{}s:9:"status_op";s:3:"has";s:12:"status_value";s:8:"Complete";s:11:"is_test_min";s:0:"";s:11:"is_test_max";s:0:"";s:10:"is_test_op";s:3:"lte";s:13:"is_test_value";s:1:"0";s:19:"start_date_relative";s:9:"this.year";s:15:"start_date_from";s:0:"";s:13:"start_date_to";s:0:"";s:17:"end_date_relative";s:9:"this.year";s:13:"end_date_from";s:0:"";s:11:"end_date_to";s:0:"";s:11:"description";s:31:"Summary statistics for mailings";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:15:"access CiviMail";s:6:"groups";s:0:"";s:6:"charts";s:0:"";s:9:"domain_id";i:1;}');
 
 INSERT INTO `civicrm_report_instance`
     ( `domain_id`, `title`, `report_id`, `description`, `permission`, `form_values`)
@@ -19504,4 +19510,4 @@ INSERT INTO `civicrm_report_instance`
 VALUES
     (  @domainID, 'Survey Details', 'survey/detail', 'Detailed report for canvassing, phone-banking, walk lists or other surveys.', 'access CiviReport', 'a:39:{s:6:"fields";a:2:{s:9:"sort_name";s:1:"1";s:6:"result";s:1:"1";}s:22:"assignee_contact_id_op";s:2:"eq";s:25:"assignee_contact_id_value";s:0:"";s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:17:"street_number_min";s:0:"";s:17:"street_number_max";s:0:"";s:16:"street_number_op";s:3:"lte";s:19:"street_number_value";s:0:"";s:14:"street_name_op";s:3:"has";s:17:"street_name_value";s:0:"";s:15:"postal_code_min";s:0:"";s:15:"postal_code_max";s:0:"";s:14:"postal_code_op";s:3:"lte";s:17:"postal_code_value";s:0:"";s:7:"city_op";s:3:"has";s:10:"city_value";s:0:"";s:20:"state_province_id_op";s:2:"in";s:23:"state_province_id_value";a:0:{}s:13:"country_id_op";s:2:"in";s:16:"country_id_value";a:0:{}s:12:"survey_id_op";s:2:"in";s:15:"survey_id_value";a:0:{}s:12:"status_id_op";s:2:"eq";s:15:"status_id_value";s:1:"1";s:11:"custom_1_op";s:2:"in";s:14:"custom_1_value";a:0:{}s:11:"custom_2_op";s:2:"in";s:14:"custom_2_value";a:0:{}s:17:"custom_3_relative";s:1:"0";s:13:"custom_3_from";s:0:"";s:11:"custom_3_to";s:0:"";s:11:"description";s:75:"Detailed report for canvassing, phone-banking, walk lists or other surveys.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviReport";s:6:"groups";s:0:"";s:9:"domain_id";i:1;}');
 
- UPDATE civicrm_domain SET version = '4.3.3';
+ UPDATE civicrm_domain SET version = '4.3.4';

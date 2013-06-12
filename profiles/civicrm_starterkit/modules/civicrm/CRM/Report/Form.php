@@ -161,6 +161,8 @@ class CRM_Report_Form extends CRM_Core_Form {
 
   public $_drilldownReport = array();
 
+  protected $_grandFlag = FALSE;
+
   /**
    * An attribute for checkbox/radio form field layout
    *
@@ -1576,7 +1578,6 @@ WHERE cg.extends IN ('" . implode("','", $this->_customGroupExtends) . "') AND
     }
     $lastRow = array_pop($rows);
 
-    $this->_grandFlag = FALSE;
     foreach ($this->_columnHeaders as $fld => $val) {
       if (!in_array($fld, $this->_statFields)) {
         if (!$this->_grandFlag) {

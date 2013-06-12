@@ -1087,7 +1087,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       }
     }
 
-    if (!CRM_Utils_Array::value('total_amount', $submittedValues)) {
+    if (!isset($submittedValues['total_amount'])) {
       $submittedValues['total_amount'] = CRM_Utils_Array::value('total_amount', $this->_values);
     }
     $this->assign('lineItem', !empty($lineItem) && !$isQuickConfig ? $lineItem : FALSE);
@@ -1374,7 +1374,12 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
         unset($submittedValues[$key]);
       }
     }
-
+     
+    // CRM-12680 set $_lineItem if its not set
+    if (empty($this->_lineItem) && !empty($lineItem)) {
+      $this->_lineItem = $lineItem;
+    }
+    
     //Get the rquire fields value only.
     $params = $this->_params = $submittedValues;
 
@@ -1383,7 +1388,8 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
     );
 
     //get the payment processor id as per mode.
-    $params['payment_processor_id'] = $this->_params['payment_processor_id'] = $submittedValues['payment_processor_id'] = $this->_paymentProcessor['id'];
+    $this->_params['payment_processor'] = $params['payment_processor_id'] = 
+      $this->_params['payment_processor_id'] = $submittedValues['payment_processor_id'] = $this->_paymentProcessor['id'];
 
     $now = date('YmdHis');
     $fields = array();

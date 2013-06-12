@@ -229,16 +229,16 @@ function _civicrm_core_data(&$data, $enabled) {
     'field' => array(
       'handler' => 'civicrm_handler_field_pseudo_constant',
       'click sortable' => TRUE,
-      'pseudo class' => t('CRM_Core_PseudoConstant'),
-      'pseudo method' => t('individualPrefix'),
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'individualPrefix',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
     ),
     'filter' => array(
       'handler' => 'civicrm_handler_filter_pseudo_constant',
-      'pseudo class' => t('CRM_Core_PseudoConstant'),
-      'pseudo method' => t('individualPrefix'),
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'individualPrefix',
     ),
   );
   // Suffix
@@ -250,16 +250,16 @@ function _civicrm_core_data(&$data, $enabled) {
     'field' => array(
       'handler' => 'civicrm_handler_field_pseudo_constant',
       'click sortable' => TRUE,
-      'pseudo class' => t('CRM_Core_PseudoConstant'),
-      'pseudo method' => t('individualSuffix'),
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'individualSuffix',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
     ),
     'filter' => array(
       'handler' => 'civicrm_handler_filter_pseudo_constant',
-      'pseudo class' => t('CRM_Core_PseudoConstant'),
-      'pseudo method' => t('individualSuffix'),
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'individualSuffix',
     ),
   );
 
@@ -505,16 +505,16 @@ function _civicrm_core_data(&$data, $enabled) {
     'field' => array(
       'handler' => 'civicrm_handler_field_pseudo_constant',
       'click sortable' => TRUE,
-      'pseudo class' => t('CRM_Contact_BAO_ContactType'),
-      'pseudo method' => t('basicTypePairs'),
+      'pseudo class' => 'CRM_Contact_BAO_ContactType',
+      'pseudo method' => 'basicTypePairs',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
     ),
     'filter' => array(
       'handler' => 'civicrm_handler_filter_pseudo_constant',
-      'pseudo class' => t('CRM_Contact_BAO_ContactType'),
-      'pseudo method' => t('basicTypePairs'),
+      'pseudo class' => 'CRM_Contact_BAO_ContactType',
+      'pseudo method' => 'basicTypePairs',
     ),
   );
 
@@ -525,13 +525,13 @@ function _civicrm_core_data(&$data, $enabled) {
     'field' => array(
       'handler' => 'civicrm_handler_field',
       'click sortable' => TRUE,
-      'pseudo class' => t('CRM_Contact_BAO_ContactType'),
-      'pseudo method' => t('subTypePairs'),
+      'pseudo class' => 'CRM_Contact_BAO_ContactType',
+      'pseudo method' => 'subTypePairs',
     ),
     'filter' => array(
       'handler' => 'civicrm_handler_filter_pseudo_constant',
-      'pseudo class' => t('CRM_Contact_BAO_ContactType'),
-      'pseudo method' => t('subTypePairs'),
+      'pseudo class' => 'CRM_Contact_BAO_ContactType',
+      'pseudo method' => 'subTypePairs',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',

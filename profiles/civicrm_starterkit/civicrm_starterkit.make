@@ -13,7 +13,7 @@ projects[drupal][version] = "7.22"
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.3-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.4-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
 
@@ -22,7 +22,7 @@ libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm
 libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashChart_tpl_javascript-4.patch
 libraries[civicrm][patch][1946820] = http://drupal.org/files/1946820-turn_IDS_off_in_civicrm.settings.php_.tpl_.patch
 libraries[civicrm][patch][1967972] = http://drupal.org/files/1967972-bootsrap-fixes.patch
-libraries[civicrm][patch][1988296] = http://drupal.org/files/1988296-logo-filename-change-2.patch
+libraries[civicrm][patch][2010430] = https://drupal.org/files/2010430-htmlpurifier_path.patch
 
 ;PANTHEON RELATED PATCHES
 libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-11.patch
@@ -91,7 +91,7 @@ projects[backup_migrate][subdir] = "contrib"
 projects[backup_migrate][version] = "2.7"
 
 projects[civicrm_cron][subdir] = "contrib"
-projects[civicrm_cron][version] = "1.0-beta2"
+projects[civicrm_cron][version] = "2.0-beta1"
 
 projects[ctools][subdir] = "contrib"
 projects[ctools][version] = "1.3"

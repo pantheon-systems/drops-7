@@ -182,6 +182,9 @@ function civicrm_api3_create_success($values = 1, $params = array(
       if (empty($item['id']) && !empty($item[$entity . "_id"])) {
         $values[$key]['id'] = $item[$entity . "_id"];
       }
+      if(!empty($item['financial_type_id'])){
+        $values[$key]['contribution_type_id'] = $item['financial_type_id'];
+      }
     }
   }
   //if ( array_key_exists ('debug',$params) && is_object ($dao)) {
@@ -1083,11 +1086,12 @@ function _civicrm_api3_validate_fields($entity, $action, &$params, $errorMode = 
         //field is of type date or datetime
         _civicrm_api3_validate_date($params, $fieldname, $fieldInfo);
         break;
-    case 32://blob
+
+      case 32://blob
         _civicrm_api3_validate_html($params, $fieldname, $fieldInfo);
         break;
-      case CRM_Utils_Type::T_STRING:
 
+      case CRM_Utils_Type::T_STRING:
         _civicrm_api3_validate_string($params, $fieldname, $fieldInfo);
         break;
 

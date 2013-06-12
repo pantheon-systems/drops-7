@@ -51,6 +51,13 @@ class CRM_Activity_DAO_ActivityContact extends CRM_Core_DAO
    */
   static $_fields = null;
   /**
+   * static instance to hold the keys used in $_fields for each field.
+   *
+   * @var array
+   * @static
+   */
+  static $_fieldKeys = null;
+  /**
    * static instance to hold the FK relationships
    *
    * @var string
@@ -176,6 +183,25 @@ class CRM_Activity_DAO_ActivityContact extends CRM_Core_DAO
       );
     }
     return self::$_fields;
+  }
+  /**
+   * Returns an array containing, for each field, the arary key used for that
+   * field in self::$_fields.
+   *
+   * @access public
+   * @return array
+   */
+  static function &fieldKeys()
+  {
+    if (!(self::$_fieldKeys)) {
+      self::$_fieldKeys = array(
+        'id' => 'id',
+        'activity_id' => 'activity_id',
+        'contact_id' => 'contact_id',
+        'record_type_id' => 'record_type_id',
+      );
+    }
+    return self::$_fieldKeys;
   }
   /**
    * returns the names of this table

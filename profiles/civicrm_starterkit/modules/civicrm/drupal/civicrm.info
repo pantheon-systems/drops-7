@@ -63,6 +63,7 @@ files[] = modules/views/civicrm/civicrm_handler_filter_prefix.inc
 files[] = modules/views/civicrm/civicrm_handler_filter_relationship_type.inc
 files[] = modules/views/civicrm/civicrm_handler_filter_suffix.inc
 files[] = modules/views/civicrm/civicrm_handler_filter_country_multi.inc
+files[] = modules/views/civicrm/civicrm_handler_filter_state_multi.inc
 files[] = modules/views/civicrm/civicrm_handler_filter_domain.inc
 
 ; sort handlers

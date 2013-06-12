@@ -1177,6 +1177,12 @@ function drush_civicrm_api() {
   }
 
   civicrm_initialize();
+
+  global $user;
+  CRM_Core_BAO_UFMatch::synchronize($user, FALSE, 'Drupal',
+    civicrm_get_ctype('Individual')
+  );
+
   $result = civicrm_api($entity, $action, $params);
 
   switch (drush_get_option('out', 'pretty')) {

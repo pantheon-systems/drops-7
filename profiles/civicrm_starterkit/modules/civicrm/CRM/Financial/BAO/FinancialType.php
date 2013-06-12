@@ -101,12 +101,17 @@ class CRM_Financial_BAO_FinancialType extends CRM_Financial_DAO_FinancialType {
     $params['is_reserved'] = CRM_Utils_Array::value('is_reserved', $params, false);
 
     // action is taken depending upon the mode
-    $financialType = new CRM_Financial_DAO_FinancialType( );
-    $financialType->copyValues( $params );;
+    $financialType = new CRM_Financial_DAO_FinancialType();
+    $financialType->copyValues($params);
     if (CRM_Utils_Array::value('financialType', $ids)) {
       $financialType->id = CRM_Utils_Array::value('financialType', $ids);
     }
-    $financialType->save( );
+    $financialType->save();
+    // CRM-12470
+    if (!CRM_Utils_Array::value('financialType', $ids)) {
+      $titles = CRM_Financial_BAO_FinancialTypeAccount::createDefaultFinancialAccounts($financialType);
+      $financialType->titles = $titles;
+    }
     return $financialType;
   }
 
@@ -141,6 +146,38 @@ class CRM_Financial_BAO_FinancialType extends CRM_Financial_DAO_FinancialType {
         ),
         array(
           'table'  => 'civicrm_pledge',
+          'column' => 'financial_type_id',
+        ),
+        array(
+          'table'  => 'civicrm_grant',
+          'column' => 'financial_type_id',
+        ),
+        array(
+          'table'  => 'civicrm_product',
+          'column' => 'financial_type_id',
+        ),
+        array(
+          'table'  => 'civicrm_event',
+          'column' => 'financial_type_id',
+        ),
+        array(
+          'table'  => 'civicrm_premiums_product',
+          'column' => 'financial_type_id',
+        ),
+        array(
+          'table'  => 'civicrm_price_set',
+          'column' => 'financial_type_id',
+        ),
+        array(
+          'table'  => 'civicrm_price_field_value',
+          'column' => 'financial_type_id',
+        ),
+        array(
+          'table'  => 'civicrm_line_item',
+          'column' => 'financial_type_id',
+        ),
+        array(
+          'table'  => 'civicrm_contribution_product ',
           'column' => 'financial_type_id',
         ),
       );

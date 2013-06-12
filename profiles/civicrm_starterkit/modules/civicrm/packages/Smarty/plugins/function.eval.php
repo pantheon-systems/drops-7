@@ -20,7 +20,6 @@
  */
 function smarty_function_eval($params, &$smarty)
 {
-    static $compiledCache = array( );
 
     if (!isset($params['var'])) {
         $smarty->trigger_error("eval: missing 'var' parameter");
@@ -31,13 +30,7 @@ function smarty_function_eval($params, &$smarty)
         return;
     }
 
-    $md5 = md5( $params['var'] );
-    if ( isset( $compiledCache[$md5] ) ) {
-        $_var_compiled = $compiledCache[$md5];
-    } else {
-        $smarty->_compile_source('evaluated template', $params['var'], $_var_compiled);
-        $compiledCache[$md5] = $_var_compiled;
-    }
+    $smarty->_compile_source('evaluated template', $params['var'], $_var_compiled);
 
     ob_start();
     $smarty->_eval('?>' . $_var_compiled);

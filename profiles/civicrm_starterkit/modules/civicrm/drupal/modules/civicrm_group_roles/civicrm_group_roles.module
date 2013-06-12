@@ -183,6 +183,10 @@ function civicrm_group_roles_form_alter(&$form, &$form_state, $form_id) {
  * Helper function to remove Groups when Drupal user form is saved, if a role is removed in Drupal
  */
 function _civicrm_group_update ($form, $form_values) {
+  //note the drupal form calls this function directly so CiviCRM needs to be initialised
+  if (!civicrm_initialize()) {
+    return;
+  }
   $uid = $form['#user']->uid;
   $user = user_load($uid);
   //load the currently saved roles

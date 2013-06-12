@@ -20,17 +20,17 @@
  *
  * For questions, help, comments, discussion, etc., please join the
  * Smarty mailing list. Send a blank e-mail to
- * smarty-discussion-subscribe@googlegroups.com 
+ * smarty-discussion-subscribe@googlegroups.com
  *
  * @link http://www.smarty.net/
  * @copyright 2001-2005 New Digital Group, Inc.
  * @author Monte Ohrt <monte at ohrt dot com>
  * @author Andrei Zmievski <andrei@php.net>
  * @package Smarty
- * @version 2.6.26
+ * @version 2.6.27
  */
 
-/* $Id: Smarty.class.php 3163 2009-06-17 14:39:24Z monte.ohrt $ */
+/* $Id: Smarty.class.php 4660 2012-09-24 20:05:15Z uwe.tews@googlemail.com $ */
 
 /**
  * DIR_SEP isn't used anymore, but third party apps might
@@ -465,7 +465,7 @@ class Smarty
      *
      * @var string
      */
-    var $_version              = '2.6.26';
+    var $_version              = '2.6.27';
 
     /**
      * current template inclusion depth
@@ -1058,7 +1058,7 @@ class Smarty
         } else {
             // var non-existant, return valid reference
             $_tmp = null;
-            return $_tmp;   
+            return $_tmp;
         }
     }
 
@@ -1090,7 +1090,8 @@ class Smarty
      */
     function trigger_error($error_msg, $error_type = E_USER_WARNING)
     {
-        trigger_error("Smarty error: $error_msg", $error_type);
+        $msg = htmlentities($error_msg);
+        trigger_error("Smarty error: $msg", $error_type);
     }
 
 
@@ -1117,7 +1118,7 @@ class Smarty
     function fetch($resource_name, $cache_id = null, $compile_id = null, $display = false)
     {
         static $_cache_info = array();
-        
+
         $_smarty_old_error_level = $this->debugging ? error_reporting() : error_reporting(isset($this->error_reporting)
                ? $this->error_reporting : error_reporting() & ~E_NOTICE);
 
@@ -1510,28 +1511,28 @@ class Smarty
      */
     function _get_compile_path($resource_name)
     {
-        $compilePath = $this->_get_auto_filename( $this->compile_dir, 
+        $compilePath = $this->_get_auto_filename( $this->compile_dir,
                                                   $resource_name,
                                                   $this->_compile_id );
         $compilePath .= '.php';
-        
+
         //for 'string:' resource smarty might going to fail to create
         //compile file, so make sure we should have valid path, CRM-5890
         $matches = array( );
         if ( preg_match( '/^(\s+)?string:/', $resource_name, $matches ) ) {
             if ( !$this->validateCompilePath( $compilePath ) ) {
-                $compilePath = $this->_get_auto_filename( $this->compile_dir, 
+                $compilePath = $this->_get_auto_filename( $this->compile_dir,
                                                           time().rand(),
                                                           $this->_compile_id );
                 $compilePath .= '.php';
             }
         }
-        
-        return $compilePath; 
+
+        return $compilePath;
     }
-    
+
     /**
-     *  do check can smarty create a file w/ given path.  
+     *  do check can smarty create a file w/ given path.
      */
     function validateCompilePath( $compilePath ) {
         //first check for directory.
@@ -1540,17 +1541,17 @@ class Smarty
             require_once(SMARTY_CORE_DIR . 'core.create_dir_structure.php');
             smarty_core_create_dir_structure( array('dir' => $dirname ), $this );
         }
-        
+
         $isValid = false;
         if ( $fd = @fopen( $compilePath, 'wb') ) {
             $isValid = true;
             @fclose( $fd );
             @unlink($compilePath);
         }
-        
+
         return $isValid;
     }
-    
+
     /**
      * fetch the template info. Gets timestamp, and source
      * if get_source is true
@@ -1970,10 +1971,10 @@ class Smarty
     {
         return eval($code);
     }
-    
+
     /**
      * Extracts the filter name from the given callback
-     * 
+     *
      * @param callback $function
      * @return string
      */
@@ -1988,7 +1989,7 @@ class Smarty
 			return $function;
 		}
 	}
-  
+
     /**#@-*/
 
 }

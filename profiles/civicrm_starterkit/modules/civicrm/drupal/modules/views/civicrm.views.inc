@@ -423,6 +423,9 @@ function civicrm_views_custom_data_cache(&$data, $entity_type, $groupID, $subTyp
       if ($currentfield['html_type'] == 'Multi-Select Country') {
         $filter_handler = array('handler' => 'civicrm_handler_filter_country_multi');
       }
+      elseif ($currentfield['html_type'] == 'Multi-Select State/Province') {
+        $filter_handler = array('handler' => 'civicrm_handler_filter_state_multi');
+      }
       elseif (!empty($currentfield['option_group_id']) &&
         in_array($currentfield['html_type'], $customMultiValueHTMLTypes)
       ) {
