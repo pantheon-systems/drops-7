@@ -18,8 +18,8 @@
 function _captcha_available_challenge_types($add_special_options=TRUE) {
   $captcha_types = array();
   if ($add_special_options) {
-    $captcha_types['none'] = '[' . t('none') . ']';
-    $captcha_types['default'] = '[' . t('default challenge type') . ']';
+    $captcha_types['none'] = t('- No challenge -');
+    $captcha_types['default'] = t('Default challenge type');
   }
   // We do our own version of Drupal's module_invoke_all() here because
   // we want to build an array with custom keys and values.
@@ -47,9 +47,7 @@ function captcha_admin_settings() {
   $form['captcha_form_protection'] = array(
     '#type' => 'fieldset',
     '#title' => t('Form protection'),
-    '#description' => t('Select the challenge type you want for each of the listed forms (identified by their so called <em>form_id</em>\'s). You can easily add arbitrary forms with textfield at the bottom of the table or with the help of the \'%CAPTCHA_admin_links\' option below.',
-      array('%CAPTCHA_admin_links' => t('Add CAPTCHA administration links to forms'))
-      ),
+    '#description' => t("Select the challenge type you want for each of the listed forms (identified by their so called <em>form_id</em>'s). You can easily add arbitrary forms with the textfield at the bottom of the table or with the help of the option <em>Add CAPTCHA administration links to forms</em> below."),
   );
   $form['captcha_form_protection']['captcha_default_challenge'] = array(
     '#type' => 'select',
@@ -75,7 +73,7 @@ function captcha_admin_settings() {
     if (isset($captcha_point->module) && $captcha_point->module) {
       $captcha_type = $captcha_point->module . '/' . $captcha_point->captcha_type;
     }
-    elseif ($captcha_point->captcha_type == 'default') {
+    elseif (isset($captcha_point->captcha_type) && ($captcha_point->captcha_type == 'default')) {
       $captcha_type = 'default';
     }
     else {
@@ -113,27 +111,27 @@ function captcha_admin_settings() {
     '#type' => 'checkbox',
     '#title' => t('Add CAPTCHA administration links to forms'),
     '#default_value' => variable_get('captcha_administration_mode', FALSE),
-    '#description' => t('This option makes it easy to manage CAPTCHA settings on forms. When enabled, users with the "%admincaptcha" permission will see a fieldset with CAPTCHA administration links on all forms, except on administrative pages.', array('%admincaptcha' => t('administer CAPTCHA settings'))),
+    '#description' => t('This option makes it easy to manage CAPTCHA settings on forms. When enabled, users with the <em>administer CAPTCHA settings</em> permission will see a fieldset with CAPTCHA administration links on all forms, except on administrative pages.'),
   );
   // Field for the CAPTCHAs on admin pages.
   $form['captcha_form_protection']['captcha_allow_on_admin_pages'] = array(
     '#type' => 'checkbox',
     '#title' => t('Allow CAPTCHAs and CAPTCHA administration links on administrative pages'),
     '#default_value' => variable_get('captcha_allow_on_admin_pages', FALSE),
-    '#description' => t('This option makes it possible to add CAPTCHAs to forms on administrative pages. CAPTCHAs are disabled by default on administrative pages (which shouldn\'t be accessible to untrusted users normally) to avoid the related overhead. In some situations, e.g. in the case of demo sites, it can be usefull to allow CAPTCHAs on administrative pages.'),
+    '#description' => t("This option makes it possible to add CAPTCHAs to forms on administrative pages. CAPTCHAs are disabled by default on administrative pages (which shouldn't be accessible to untrusted users normally) to avoid the related overhead. In some situations, e.g. in the case of demo sites, it can be usefull to allow CAPTCHAs on administrative pages."),
   );
 
-  // Button for flushing the CAPTCHA placement cache.
+  // Button for clearing the CAPTCHA placement cache.
   // Based on Drupal core's "Clear all caches" (performance settings page).
   $form['captcha_form_protection']['captcha_placement_caching'] = array(
     '#type' => 'item',
     '#title' => t('CAPTCHA placement caching'),
-    '#description' => t('For efficiency, the positions of the CAPTCHA elements in each of the configured forms are cached. Most of the time, the structure of a form does not change and it would be a waste to recalculate the positions every time. Occasionally however, the form structure can change (e.g. during site building) and flushing the CAPTCHA placement cache can be required to fix the CAPTCHA placement.'),
+    '#description' => t('For efficiency, the positions of the CAPTCHA elements in each of the configured forms are cached. Most of the time, the structure of a form does not change and it would be a waste to recalculate the positions every time. Occasionally however, the form structure can change (e.g. during site building) and clearing the CAPTCHA placement cache can be required to fix the CAPTCHA placement.'),
   );
-  $form['captcha_form_protection']['captcha_placement_caching']['captcha_placement_cache_flush'] = array(
+  $form['captcha_form_protection']['captcha_placement_caching']['captcha_placement_cache_clear'] = array(
     '#type' => 'submit',
-    '#value' => t('Flush the CAPTCHA placement cache'),
-    '#submit' => array('captcha_flush_captcha_placement_cache_submit'),
+    '#value' => t('Clear the CAPTCHA placement cache'),
+    '#submit' => array('captcha_clear_captcha_placement_cache_submit'),
   );
 
   // Configuration option for adding a CAPTCHA description.
@@ -149,7 +147,7 @@ function captcha_admin_settings() {
     $form['captcha_descriptions'] = array(
       '#type' => 'fieldset',
       '#title' => t('CAPTCHA description'),
-      '#description' => t('Configurable description of the CAPTCHA. An empty entry will reset the description.'),
+      '#description' => t('Configurable description of the CAPTCHA. An empty entry will reset the description to default.'),
       '#attributes' => array('id' => 'edit-captcha-description-wrapper'),
     );
     foreach ($langs as $lang_code => $lang_name) {
@@ -165,7 +163,7 @@ function captcha_admin_settings() {
     $form['captcha_description'] = array(
       '#type' => 'textfield',
       '#title' => t('Challenge description'),
-      '#description' => t('Configurable description of the CAPTCHA. An empty entry will reset the description.'),
+      '#description' => t('Configurable description of the CAPTCHA. An empty entry will reset the description to default.'),
       '#default_value' => _captcha_get_description(),
       '#maxlength' => 256,
       '#attributes' => array('id' => 'edit-captcha-description-wrapper'),
@@ -201,6 +199,14 @@ function captcha_admin_settings() {
         t('Omit challenges on all forms once the user successfully responds to any challenge on the site.'),
     ),
     '#description' => t('Define if challenges should be omitted during the rest of a session once the user successfully responds to a challenge.'),
+  );
+
+  // Enable wrong response counter.
+  $form['captcha_enable_stats'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable statistics'),
+    '#description' => t('Keep CAPTCHA related counters in the <a href="!statusreport">status report</a>. Note that this comes with a performance penalty as updating the counters results in clearing the variable cache.', array('!statusreport' => url('admin/reports/status'))),
+    '#default_value' => variable_get('captcha_enable_stats', FALSE),
   );
 
   // Option for logging wrong responses.
@@ -311,9 +317,10 @@ function captcha_admin_settings_submit($form, &$form_state) {
 
   variable_set('captcha_default_validation', $form_state['values']['captcha_default_validation']);
   variable_set('captcha_persistence', $form_state['values']['captcha_persistence']);
+  variable_set('captcha_enable_stats', $form_state['values']['captcha_enable_stats']);
   variable_set('captcha_log_wrong_responses', $form_state['values']['captcha_log_wrong_responses']);
 
-  drupal_set_message(t('The CAPTCHA settings were saved.'), 'status');
+  drupal_set_message(t('The CAPTCHA settings have been saved.'), 'status');
 }
 
 
@@ -322,9 +329,9 @@ function captcha_admin_settings_submit($form, &$form_state) {
 /**
  * Submit callback; clear CAPTCHA placement cache.
  */
-function captcha_flush_captcha_placement_cache_submit($form, &$form_state) {
+function captcha_clear_captcha_placement_cache_submit($form, &$form_state) {
   variable_del('captcha_placement_map_cache');
-  drupal_set_message(t('Flushed the CAPTCHA placement cache.'));
+  drupal_set_message(t('Cleared the CAPTCHA placement cache.'));
 }
 
 
@@ -378,7 +385,7 @@ function captcha_point_admin_form($form, $form_state, $captcha_point_form_id=NUL
   $form['captcha_type'] = array(
     '#type' => 'select',
     '#title' => t('Challenge type'),
-    '#description' => t('The CAPTCHA type to use for this form'),
+    '#description' => t('The CAPTCHA type to use for this form.'),
     '#default_value' => $default_captcha_type,
     '#options' => _captcha_available_challenge_types(),
   );
@@ -495,7 +502,7 @@ function captcha_examples($form, $form_state, $module, $challenge) {
         foreach ($challenges as $ckey => $challenge) {
           $form["captcha_{$mkey}_{$ckey}"] = array(
             '#type' => 'fieldset',
-            '#title' => t('Challenge "%challenge" by module "%module"', array('%challenge' => $challenge, '%module' => $module)),
+            '#title' => t('Challenge %challenge by module %module', array('%challenge' => $challenge, '%module' => $module)),
             'challenge' => _captcha_generate_example_challenge($module, $challenge),
             'more_examples' => array(
               '#markup' => l(t('10 more examples of this challenge.'), "admin/config/people/captcha/captcha/examples/$module/$challenge"),

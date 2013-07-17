@@ -59,6 +59,17 @@ function image_captcha_settings_form() {
     '#default_value' => (int) variable_get('image_captcha_code_length', 5),
     '#description' => t('The code length influences the size of the image. Note that larger values make the image generation more CPU intensive.'),
   );
+  // RTL support option (only show this option when there are RTL languages).
+  $languages = language_list('direction');
+  if (isset($languages[LANGUAGE_RTL])) {
+    $form['image_captcha_code_settings']['image_captcha_rtl_support'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('RTL support'),
+      '#default_value' => variable_get('image_captcha_rtl_support', 0),
+      '#description' => t('Enable this option to render the code from right to left for right to left languages.'),
+    );
+  }
+
 
   // Font related stuff.
   $form['image_captcha_font_settings'] = _image_captcha_settings_form_font_section();
@@ -89,11 +100,11 @@ function image_captcha_settings_form() {
     '#type' => 'select',
     '#title' => t('Additional variation of text color'),
     '#options' => array(
-      0 => t('none'),
-      50 => t('small'),
-      100 => t('moderate'),
-      150 => t('high'),
-      200 => t('very high'),
+      0 => t('No variation'),
+      50 => t('Little variation'),
+      100 => t('Medium variation'),
+      150 => t('High variation'),
+      200 => t('Very high variation'),
     ),
     '#default_value' => (int) variable_get('image_captcha_foreground_color_randomness', 100),
     '#description' => t('The different characters will have randomized colors in the specified range around the text color.'),

@@ -1024,15 +1024,19 @@ function _civicrm_core_data(&$data, $enabled) {
     'real field' => 'location_type_id',
     'help' => t('The Location of the Address for the Contact'),
     'field' => array(
-      'handler' => 'civicrm_handler_field_location_type',
+      'handler' => 'civicrm_handler_field_pseudo_constant',
       'click sortable' => TRUE,
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'locationType',
     ),
     'argument' => array(
       'handler' => 'views_handler_argument',
     ),
     'filter' => array(
-      'handler' => 'civicrm_handler_filter_location_type',
+      'handler' => 'civicrm_handler_filter_pseudo_constant',
       'allow empty' => TRUE,
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'locationType',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
@@ -1160,15 +1164,19 @@ function _civicrm_core_data(&$data, $enabled) {
     'real field' => 'location_type_id',
     'help' => t('The Location of the Phone for the Contact'),
     'field' => array(
-      'handler' => 'civicrm_handler_field_location_type',
+      'handler' => 'civicrm_handler_field_pseudo_constant',
       'click sortable' => TRUE,
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'locationType',
     ),
     'argument' => array(
       'handler' => 'views_handler_argument',
     ),
     'filter' => array(
-      'handler' => 'civicrm_handler_filter_location_type',
+      'handler' => 'civicrm_handler_filter_pseudo_constant',
       'allow empty' => TRUE,
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'locationType',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
@@ -2277,6 +2285,10 @@ function _civicrm_core_data(&$data, $enabled) {
     */
 
   $data['civicrm_uf_match']['table']['group'] = t("CiviCRM Drupal match table");
+  $data['civicrm_uf_match']['table']['join']['civicrm_contact'] = array(
+    'left_field' => 'id',
+    'field' => 'contact_id'
+  );
   $data['civicrm_uf_match']['uf_id'] = array(
     'title' => t('Drupal User ID'),
     'help' => t('The user id of the User matched to a CiviCRM Contact'),

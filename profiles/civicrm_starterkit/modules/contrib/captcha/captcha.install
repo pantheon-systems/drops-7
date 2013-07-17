@@ -114,7 +114,7 @@ function captcha_schema() {
 function captcha_requirements($phase) {
   $requirements = array();
   $t = get_t();
-  if ($phase == 'runtime') {
+  if ($phase == 'runtime' && variable_get('captcha_enable_stats', FALSE)) {
     // Show the wrong response counter in the status report.
     $requirements['captcha_wrong_response_counter'] = array(
       'title' => $t('CAPTCHA'),
@@ -173,62 +173,6 @@ function captcha_uninstall() {
   drupal_uninstall_schema('captcha');
   db_query("DELETE FROM {variable} WHERE name LIKE 'captcha_%'");
   cache_clear_all('variables', 'cache');
-}
-
-/**
- * Implementation of hook_update_N()
- */
-function captcha_update_1() {
-  $items = array();
-  switch ($GLOBALS['db_type']) {
-    case 'mysql':
-    case 'mysqli':
-      $items[] = update_sql("CREATE TABLE {captcha_points} (
-        form_id varchar(128) NOT NULL,
-        module varchar(64) default NULL,
-        type varchar(64) default NULL,
-        PRIMARY KEY (form_id)
-        ) /*!40100 DEFAULT CHARACTER SET utf8 */;"
-      );
-      $succes = TRUE;
-      break;
-    case 'pgsql':
-      $items[] = update_sql("CREATE TABLE {captcha_points} (
-        form_id varchar(128) NOT NULL,
-        module varchar(64) default NULL,
-        type varchar(64) default NULL,
-        PRIMARY KEY (form_id)
-        );"
-      );
-      $succes = TRUE;
-      break;
-    default:
-      drupal_set_message(t('Unsupported database.'), 'error');
-      $succes = FALSE;
-      break;
-  }
-  if ($succes) {
-    // insert some defaults
-    $form_ids = array('comment_form', 'contact_mail_user', 'contact_mail_page',
-      'user_register', 'user_pass');
-    foreach ($form_ids as $form_id) {
-      $items[] = update_sql("INSERT INTO {captcha_points} (form_id, module, type) VALUES ('$form_id', NULL, NULL)");
-    }
-  }
-  return $items;
-}
-
-/**
- * Implementation of hook_update_N()
- */
-function captcha_update_2() {
-  $items = array();
-  // insert some defaults
-  $form_ids = array('user_login', 'user_login_block');
-  foreach ($form_ids as $form_id) {
-    $items[] = update_sql("INSERT INTO {captcha_points} (form_id, module, type) VALUES ('$form_id', NULL, NULL)");
-  }
-  return $items;
 }
 
 /**

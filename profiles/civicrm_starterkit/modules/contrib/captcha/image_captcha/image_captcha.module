@@ -229,7 +229,13 @@ function image_captcha_captcha($op, $captcha_type='', $captcha_sid=NULL) {
         // Generate image source URL (add timestamp to avoid problems with
         // client side caching: subsequent images of the same CAPTCHA session
         // have the same URL, but should display a different code).
-        $img_src = check_url(url("image_captcha/$captcha_sid/" . REQUEST_TIME));
+        $options = array(
+          'query' => array(
+            'sid' => $captcha_sid,
+            'ts' => REQUEST_TIME,
+          ),
+        );
+        $img_src = check_url(url("image_captcha", $options));
         list($width, $height) = _image_captcha_image_size($code);
         // TODO: start using a theming funtion for generating the image markup?
         $result['form']['captcha_image'] = array(

@@ -219,7 +219,7 @@ define( 'CIVICRM_SITE_KEY', '%%siteKey%%' );
 /*
  * If you want to disable IDS, set this to 0.
  */
-define( 'CIVICRM_IDS_ENABLE', 0);
+define( 'CIVICRM_IDS_ENABLE', 1);
 
 /**
  * Enable this constant, if you want to send your email through the smarty

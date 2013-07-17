@@ -376,6 +376,24 @@ class CaptchaTestCase extends CaptchaBaseWebTestCase {
     $this->assertCaptchaPresence(FALSE);
   }
 
+
+  /**
+   * CAPTCHA should also be put on admin pages even if visitor
+   * has no access
+   */
+  function testCaptchaOnLoginBlockOnAdminPagesIssue893810() {
+    // Set a CAPTCHA on login block form
+    captcha_set_form_id_setting('user_login_block', 'captcha/Math');
+
+    // Check if there is a CAPTCHA on home page.
+    $this->drupalGet('node');
+    $this->assertCaptchaPresence(TRUE);
+
+    // Check there is a CAPTCHA on "forbidden" admin pages
+    $this->drupalGet('admin');
+    $this->assertCaptchaPresence(TRUE);
+  }
+
 }
 
 
@@ -598,9 +616,9 @@ class CaptchaAdminTestCase extends CaptchaBaseWebTestCase {
   }
 
   /**
-   * Test the CAPTCHA placement flushing.
+   * Test the CAPTCHA placement clearing.
    */
-  function testCaptchaPlacementCacheFlushing() {
+  function testCaptchaPlacementCacheClearing() {
     // Set CAPTCHA on user register form.
     captcha_set_form_id_setting('user_register_form', 'captcha/Math');
     // Visit user register form to fill the CAPTCHA placement cache.
@@ -608,12 +626,12 @@ class CaptchaAdminTestCase extends CaptchaBaseWebTestCase {
     // Check if there is CAPTCHA placement cache.
     $placement_map = variable_get('captcha_placement_map_cache', NULL);
     $this->assertNotNull($placement_map, 'CAPTCHA placement cache should be set.');
-    // Flush the cache
+    // Clear the cache
     $this->drupalLogin($this->admin_user);
-    $this->drupalPost(self::CAPTCHA_ADMIN_PATH, array(), t('Flush the CAPTCHA placement cache'));
+    $this->drupalPost(self::CAPTCHA_ADMIN_PATH, array(), t('Clear the CAPTCHA placement cache'));
     // Check that the placement cache is unset
     $placement_map = variable_get('captcha_placement_map_cache', NULL);
-    $this->assertNull($placement_map, 'CAPTCHA placement cache should be unset after flush.');
+    $this->assertNull($placement_map, 'CAPTCHA placement cache should be unset after cache clear.');
   }
 
   /**
