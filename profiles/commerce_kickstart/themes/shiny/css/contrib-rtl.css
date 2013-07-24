@@ -224,3 +224,32 @@ html.js .vbo-views-form #edit-select fieldset .fieldset-wrapper {
 .chzn-container-single .chzn-single span {
   margin-right: 5px;
 }
+
+/* Commerce discount. */
+.commerce-discount-form #foo:checked,
+.commerce-discount-form input.form-checkbox + label::before,
+.commerce-discount-form input.form-radio + label::before {
+  right: 5px;
+  left: 0;
+  /* RTL */
+}
+.commerce-discount-form .form-item.form-type-radio .ajax-progress-throbber {
+  right: 5px;
+  left: 0;
+  /* RTL */
+}
+.commerce-discount-form .field-name-commerce-discount-offer .form-type-radios > div .form-item .ajax-progress-throbber {
+  right: 5px;
+  left: 0;
+  /* RTL */
+}
+.commerce-discount-form .inline-conditions-container .condition-wrapper .form-item .ajax-progress {
+  margin-top: 0 !important;
+  /* RTL */
+  right: 61px;
+  left: 0;
+  /* RTL */
+}
+.commerce-discount-form .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
+  background: url("../images/calendar.png") 2px 3px no-repeat !important;
+}

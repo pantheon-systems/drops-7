@@ -21,15 +21,15 @@ function commerce_payleap_requirements($phase) {
 
   $has_curl = function_exists('curl_init');
 
-  $requirements['commerce_authnet_curl'] = array(
+  $requirements['commerce_payleap_curl'] = array(
     'title' => $t('cURL'),
     'value' => $has_curl ? $t('Enabled') : $t('Not found'),
   );
 
   if (!$has_curl) {
-    $requirements['commerce_authnet_curl'] += array(
+    $requirements['commerce_payleap_curl'] += array(
       'severity' => REQUIREMENT_ERROR,
-      'description' => $t("Authorize.Net requires the PHP <a href='!curl_url'>cURL</a> library.", array('!curl_url' => 'http://php.net/manual/en/curl.setup.php')),
+      'description' => $t("Payleap requires the PHP <a href='!curl_url'>cURL</a> library.", array('!curl_url' => 'http://php.net/manual/en/curl.setup.php')),
     );
   }
 

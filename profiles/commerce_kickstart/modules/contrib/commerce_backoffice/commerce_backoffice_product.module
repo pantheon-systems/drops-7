@@ -230,6 +230,22 @@ function theme_commerce_backoffice_product_node_add_list($variables) {
 }
 
 /**
+ * Implements hook_form_field_ui_field_edit_form_alter().
+ */
+function commerce_backoffice_product_form_field_ui_field_edit_form_alter(&$form) {
+  // Only adds the checkbox for the term reference fields attached to the
+  // product display types.
+  if ($form['#field']['type'] == 'taxonomy_term_reference' && in_array($form['#instance']['bundle'], array_keys(commerce_product_reference_node_types()))) {
+    $form['instance']['product_catalog'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Used for categorizing products'),
+      '#default_value' => (!isset($form['#instance']['product_catalog']) || $form['#instance']['product_catalog']) ? 1 : 0,
+      '#description' => t('Places the field in the "Product catalog" vertical tab.'),
+    );
+  }
+}
+
+/**
  * Implements hook_form_views_form_alter().
  */
 function commerce_backoffice_product_form_alter(&$form, &$form_state, $form_id) {
@@ -237,25 +253,31 @@ function commerce_backoffice_product_form_alter(&$form, &$form_state, $form_id) 
   if (isset($form['#node_edit_form'])) {
     $product_node_types = commerce_product_reference_node_types();
     if (in_array($form['#node']->type, array_keys($product_node_types))) {
-      // Enable the #fieldset key.
-      $form['#pre_render'][] = 'commerce_backoffice_pre_render_add_fieldset_markup';
-      // Add a new vertical tab.
-      $form['product_catalog'] = array(
-        '#type' => 'fieldset',
-        '#title' => t('Product catalog'),
-        '#group' => 'additional_settings',
-        '#collapsible' => TRUE,
-        '#collapsed' => TRUE,
-        '#weight' => -10,
-      );
-
+      $product_catalog_tab = FALSE;
       // Assign all taxonomy reference fields to the new vertical tab.
       foreach (field_info_instances('node', $form['#node']->type) as $field_name => $instance) {
         $field = field_info_field($field_name);
+        if ($field['type'] != 'taxonomy_term_reference') {
+          continue;
+        }
 
-        if ($field['type'] == 'taxonomy_term_reference') {
+        if (!isset($instance['product_catalog']) || $instance['product_catalog']) {
+          $product_catalog_tab = TRUE;
           $form[$field_name]['#fieldset'] = 'product_catalog';
         }
+      }
+      if ($product_catalog_tab) {
+        // Enable the #fieldset key.
+        $form['#pre_render'][] = 'commerce_backoffice_pre_render_add_fieldset_markup';
+        // Add a new vertical tab.
+        $form['product_catalog'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Product catalog'),
+          '#group' => 'additional_settings',
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+          '#weight' => -10,
+        );
       }
     }
   }

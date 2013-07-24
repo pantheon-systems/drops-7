@@ -2,8 +2,9 @@
 
 /**
  * @file
- * Swedish services that extend Service Links module
- * Bork, bork, bork'd by @persand
+ * Extends Service Links with Swedish services.
+ *
+ * @author persand
  */
 
 /**

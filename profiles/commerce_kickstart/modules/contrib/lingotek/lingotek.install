@@ -17,7 +17,7 @@ function lingotek_requirements($phase) {
     $requirements['zip'] = array(
       'title' => $t('Lingotek'),
       'value' => $t('PHP Zip support required.'),
-      'description' => $t('The Drupal Translation module requires the PHP module \'Zip\', but it is missing or not enabled on your server. This module allows PHP to work with ZIP compressed archives.  <br>For more information visit: <a href="http://php.net/manual/en/book.zip.php">http://php.net/manual/en/book.zip.php</a>'),
+      'description' => $t('The Lingotek Translation module requires the PHP module \'Zip\', but it is missing or not enabled on your server. This module allows PHP to work with ZIP compressed archives.  <br>For more information visit: <a href="http://php.net/manual/en/book.zip.php">http://php.net/manual/en/book.zip.php</a>'),
       'severity' => REQUIREMENT_ERROR,
     );
   }
@@ -45,47 +45,12 @@ function lingotek_install() {
  * Implements hook_uninstall().
  */
 function lingotek_uninstall() {
-  $delete_variables = array(
-    'lingotek_account_enterprise',
-    'lingotek_account_plan',
-    'lingotek_account_plan_type',
-    'lingotek_account_status',
-    'lingotek_activation_email',
-    'lingotek_activation_first_name',
-    'lingotek_activation_last_name',
-    'lingotek_advanced_parsing',
-    'lingotek_advanced_xml_config1',
-    'lingotek_advanced_xml_config2',
-    'lingotek_cms_tag',
-    'lingotek_community_identifier',
-    'lingotek_create_documents_by_default',
-    'lingotek_guid',
-    'lingotek_login_id',
-    'lingotek_notifications_callback',
-    'lingotek_oauth_consumer_id',
-    'lingotek_oauth_consumer_secret',
-    'lingotek_password',
-    'lingotek_project',
-    'lingotek_setup_complete',
-    'lingotek_source_language',
-    'lingotek_sync',
-    'lingotek_target_languages',
-    'lingotek_translate_comments',
-    'lingotek_translate_comments_node_types',
-    'lingotek_translate_fields',
-    'lingotek_vault',
-    'lingotek_workbench_tagged_users',
-    'lingotek_workflow',
-    'lingotek_phase_template',
-    'lingotek_warning_log',
-    'lingotek_error_log',
-    'lingotek_trace_log',
-    'lingotek_flush_cache',
-    'lingotek_api_debug'
-  );
-
-  foreach ($delete_variables as $variable) {
-    variable_del($variable);
+  
+  global $conf;
+  foreach (array_keys($conf) as $key) {
+    if (strpos($key, 'lingotek_') === 0) { // It's important to use === instead of == with strpos()
+      variable_del($key);
+    }
   }
 
   db_drop_field('languages', 'lingotek_enabled');
@@ -108,7 +73,7 @@ function lingotek_disable() {
 }
 
 /*
- * Install the database schema for the Drupal Translation module
+ * Install the database schema for the Lingotek Translation module
  */
 
 function lingotek_schema() {
@@ -208,7 +173,7 @@ function lingotek_update_7200(&$sandbox) {
   $node = node_load($sandbox['nodes'][$sandbox['progress']]);
   if ($node !== FALSE) {
     if (!class_exists('LingotekApi')) {
-      // The LingotekApi class might not have been introduced when this user last updated the Drupal Translation module.
+      // The LingotekApi class might not have been introduced when this user last updated the Lingotek Translation module.
       registry_rebuild();
       require_once(drupal_get_path('module', 'lingotek') . '/lib/Drupal/lingotek/LingotekApi.php');
     }
@@ -287,7 +252,7 @@ function lingotek_update_7203(&$sandbox) {
   }
   else {
     return t('No action was taken, since your system already has data in the Primary and/or Secondary advanced parsing configuration fields.
-      If you wish to review the default configuration files and compare them to your current settings, the files are in the fprm subfolder of the Drupal Translation module.');
+      If you wish to review the default configuration files and compare them to your current settings, the files are in the fprm subfolder of the Lingotek Translation module.');
   }
 }
 
@@ -299,7 +264,7 @@ function lingotek_update_7204(&$sandbox) {
 }
 
 /**
- * Ensure that the Drupal Translation module has a weight higher than entity_translation.
+ * Ensure that the Lingotek Translation module has a weight higher than entity_translation.
  */
 function lingotek_update_7205(&$sandbox) {
   lingotek_set_priority();

@@ -2,8 +2,9 @@
 
 /**
  * @file
- * Spanish services that extend Service Links module
- * Funded by ateneatech
+ * Extends Service Links with Spanish services.
+ * 
+ * @author ateneatech
  */
 
 /**
@@ -14,17 +15,17 @@ function spanish_services_service_links() {
 
   $links['_es_meneame'] = array(
     'name' => 'Meneame',
-    'description' => t('Add to Meneame.'),
+    'description' => t('Add to Meneame'),
     'link' => 'http://www.meneame.net/submit.php?url=<encoded-url>',
   );
   $links['_es_latafanera'] = array(
     'name' => 'La Tafanera',
-    'description' => t('Add to La Tafanera.'),
+    'description' => t('Add to La Tafanera'),
     'link' => 'http://latafanera.cat/submit.php?url=<encoded-url>',
   );
   $links['_es_fresqui'] = array(
     'name' => 'Fresqui',
-    'description' => t('Submit this post on tec.fresqui.com.'),
+    'description' => t('Submit this post on tec.fresqui.com'),
     'link' => 'http://tec.fresqui.com/post?url=<encoded-url>&title=<encoded-title>',
   );
   $links['_es_barrapunto'] = array(
@@ -34,7 +35,7 @@ function spanish_services_service_links() {
   );
   $links['_es_tuenti'] = array(
     'name' => 'Tuenti',
-    'description' => t('Share on Tuenti.'),
+    'description' => t('Share on Tuenti'),
     'link' => 'http://www.tuenti.com/share?url=<encoded-url>',
   );
 

@@ -1,4 +1,3 @@
-@import url(//fonts.googleapis.com/css?family=Open+Sans:400,700,300,600,800);
 /* Import Font Families */
 /* Base Admin Theme Styles */
 * {
@@ -41,7 +40,6 @@ fieldset.collapsible .fieldset-legend a {
 fieldset.collapsible .fieldset-wrapper {
   background: transparent;
   border: 0;
-  padding: 25px 15px 0;
 }
 
 body.in-maintenance fieldset .fieldset-legend {

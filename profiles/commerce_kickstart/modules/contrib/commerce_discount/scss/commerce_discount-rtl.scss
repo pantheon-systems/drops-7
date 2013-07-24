@@ -1,0 +1,200 @@
+@import "_mixins.scss";
+
+@mixin btn {
+  margin-left: 20px;
+  margin-right: 0;  // RTL
+}
+.form-item.form-type-radio {
+  position: relative;
+  .progress-disabled {
+    float: none;
+  }
+  .ajax-progress-throbber {
+    position: absolute;
+    right: -10px;
+  }
+}
+
+@mixin radio-buttons {
+  .form-item {
+    @include btn;
+  }
+}
+
+@mixin fieldset-content {
+  .container-inline-date {
+    float: right;
+
+    .date-padding {
+      float: left; // LTR
+
+
+      & > .form-item:first-child input.form-text {
+        // TODO: For some reason this icon isn't added.
+        background: white url('../../date/date_api/images/calendar.png') no-repeat 2px 0px;
+      }
+    }
+    label {
+      float: right;
+      padding-right: 0px;
+      padding-left: 10px; // RTL
+    }
+    &.end-date-wrapper {
+      margin-left: 0; // RTL
+      margin-right: 20px;
+    }
+  }
+}
+
+html.js input.form-autocomplete {
+  background-position: 0% 2px; // RTL
+}
+
+/**
+ * Discount form.
+ */
+.commerce-discount-form {
+  // Position the discount status block on top right region.
+  position: relative;
+  .form-item-enabled {
+    background-color: #eee;
+    padding: 10px 10px 20px 10px;
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: auto; // RTL
+    width: 180px;
+  }
+  // Reset
+  .form-item-label {
+    clear: both;
+    .form-item {
+      @include box;
+    }
+  }
+  .form-item.form-type-radio {
+    position: relative;
+    .ajax-progress-throbber {
+      position: absolute;
+      right: -10px;
+
+    }
+  }
+  // general block margins
+  #commerce-discount-fields-wrapper .form-wrapper {
+    & > #inline-conditions-inline_conditions .form-wrapper .ajax-progress {
+      display: block; /* RTL */
+      margin-top: 10px; /* RTL */
+      width: 180px; /* RTL */
+    }
+    & > #inline-conditions-inline_conditions .form-wrapper .condition-wrapper .form-item {
+      .ajax-progress {
+        display: inline-block;
+        margin-top: 0;
+        width: auto;
+      }
+    }
+  }
+}
+/**
+ * Choose discount type block.
+ */
+.form-item-commerce-discount-type {
+  .form-radios {
+    .form-item {
+      float: right;
+
+      #edit-commerce-discount-type {
+        @include radio-buttons;
+
+        .form-item {
+          float: right;
+        }
+      }
+    }
+  }
+}
+/**
+ * Choose offer type block.
+ */
+.field-name-commerce-discount-offer {
+  clear: both; // RTL
+
+  .form-wrapper .form-wrapper {
+    .form-item {
+      label {
+        padding-right: 5px;
+        padding-left: 0; // RTL
+      }
+      div.form-radios {
+        @include radio-buttons;
+
+        border-right: 0; // RTL
+        border-left: 1px dotted $gray2;
+        float: right;
+        padding-right: 0; // RTL
+        padding-left: 20px;
+
+        label {
+          padding-right: 5px;
+          padding-left: 0; // RTL
+        }
+      }
+    }
+    .form-wrapper {
+      label {
+        padding-right: 5px;
+        padding-left: 0; // RTL
+      }
+      &.form-item {
+        float: right;
+      }
+    }
+  }
+}
+
+/**
+ * Discount dates block.
+ */
+.field-name-commerce-discount-date {
+  .fieldset-wrapper {
+    @include fieldset-content;
+  }
+}
+
+/**
+ * Usage block.
+ */
+.commerce-discount-usage {
+  .form-item.form-type-select {
+    margin: 0;
+
+    label {
+      border-bottom: 1px solid $gray2;
+    }
+  }
+  .form-item .form-select {
+    float: right;
+  }
+  .field-name-commerce-discount-max-uses {
+    @include box;
+
+    & > div {
+      float: left; // LTR
+      margin-left: 30px; // LTR
+
+      &:first-child {
+        margin-left: 0;
+      }
+
+    }
+  }
+  .field-type-number-integer {
+    float: right;
+
+    label {
+      margin-left: 0px;
+      margin-right: 10px; // RTL
+    }
+  }
+}

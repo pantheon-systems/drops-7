@@ -26,6 +26,15 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
       $line_items_to_delete[] = $wrapper_line_item->line_item_id->value();
       $wrapper->commerce_line_items->offsetUnset($delta);
     }
+    elseif ($wrapper_line_item->getBundle() == 'product_discount') {
+      $line_item = $wrapper_line_item->value();
+      if (!isset($line_item->data['context']['discount_name'])) {
+        continue;
+      }
+      // Delete the line item, and remove it from the order.
+      $line_items_to_delete[] = $wrapper_line_item->line_item_id->value();
+      $wrapper->commerce_line_items->offsetUnset($delta);
+    }
     // If the line item is not a discount, delete discount components from its
     // price.
     else {
@@ -78,6 +87,16 @@ function commerce_discount_remove_discount_components($price_wrapper) {
   // Re-set the total price.
   $total = commerce_price_component_total($price_wrapper->value());
   $price_wrapper->amount->set($total['amount']);
+}
+
+/**
+ * Implements hook_commerce_shipping_method_collect_rates().
+ *
+ * Invoke the commerce_discount_free_shipping event when the shipping rates
+ * are being collected.
+ */
+function commerce_discount_commerce_shipping_method_collect_rates($method, $order) {
+  rules_invoke_event('commerce_discount_free_shipping', $order);
 }
 
 /**
@@ -146,29 +165,11 @@ function commerce_discount_entity_info() {
 }
 
 /**
- * Implements hook_modules_enabled().
- *
- * Add commerce discount offer reference field.
- *
- * @see hook_install()
+ * Implements hook_flush_caches().
  */
-function commerce_discount_modules_enabled($modules) {
-  foreach (commerce_discount_types() as $type => $value) {
-    if (!field_read_instance('commerce_discount', 'commerce_discount_offer', $type, array('include_inactive' => TRUE))) {
-      $instance = array(
-        'field_name' => 'commerce_discount_offer',
-        'entity_type' => 'commerce_discount',
-        'bundle' => $type,
-        'label' => t('Discount offer reference'),
-        'required' => TRUE,
-        'widget' => array(
-          'module' => 'inline_entity_form',
-          'type' => 'inline_entity_form_single',
-        ),
-      );
-      field_create_instance($instance);
-    }
-  }
+function commerce_discount_flush_caches() {
+  module_load_install('commerce_discount');
+  commerce_discount_install_helper();
 }
 
 /**
@@ -221,6 +222,23 @@ function commerce_discount_form_features_export_form_alter(&$form, $from_state) 
 }
 
 /**
+ * Implements hook_commerce_price_formatted_components_alter().
+ */
+function commerce_discount_commerce_price_formatted_components_alter(&$components, $price, $entity) {
+  //
+  if (isset($price['data']['components'])) {
+    // Loop into price components and alter the component title if the discount
+    // component label is found.
+    foreach ($price['data']['components'] as $component) {
+      if (!isset($component['price']['data']['discount_component_title'])) {
+        continue;
+      }
+      $components[$component['name']]['title'] = $component['price']['data']['discount_component_title'];
+    }
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  *
  * Disable alteration of discounts with overriden rules.
@@ -249,6 +267,18 @@ function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state
   }
 }
 
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function commerce_discount_field_widget_form_alter(&$element, &$form_state, $context) {
+  if (isset($element['#field_name']) && $element['#field_name'] == 'commerce_free_shipping') {
+    $element['#options'] += commerce_shipping_service_options_list();
+    if ($form_state['op'] == 'edit') {
+      $wrapper_offer = entity_metadata_wrapper('commerce_discount_offer', $element['#entity']);
+      $element['#default_value'] = $wrapper_offer->commerce_free_shipping->value();
+    }
+  }
+}
 
 /**
  * Implements hook_commerce_discount_insert().
@@ -294,12 +324,12 @@ function commerce_discount_access($op, $entity, $account, $entity_type) {
 function commerce_discount_commerce_discount_type_info() {
   $types = array();
   $types['order_discount'] = array(
-    'label' => t('Order Discount'),
+    'label' => t('Order discount'),
     'event' => 'commerce_discount_order',
     'entity type' => 'commerce_order',
   );
   $types['product_discount'] = array(
-    'label' => t('Product Discount'),
+    'label' => t('Product discount'),
     'event' => 'commerce_product_calculate_sell_price',
     // The line item of the product.
     'entity type' => 'commerce_line_item',
@@ -325,7 +355,52 @@ function commerce_discount_commerce_discount_offer_type_info() {
     'entity types' => array('commerce_order', 'commerce_line_item'),
   );
 
+  if (module_exists('commerce_shipping')) {
+    $types['free_shipping'] = array(
+      'label' => t('Free shipping'),
+      'action' => 'commerce_discount_free_shipping_service',
+      'entity types' => array('commerce_order'),
+    );
+  }
+
+  $types['free_products'] = array(
+    'label' => t('Free products'),
+    'action' => 'commerce_discount_free_products',
+    'entity types' => array('commerce_order'),
+  );
+
   return $types;
+}
+
+/**
+ * Implements hook_commerce_discount_rule_build().
+ */
+function commerce_discount_commerce_discount_rule_build($rule, $discount) {
+  $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $discount_offer = $wrapper->commerce_discount_offer->value();
+  $wrapper_discount_offer = entity_metadata_wrapper('commerce_discount_offer', $discount_offer);
+
+  // Check if property is attached.
+  if (isset($wrapper_discount_offer->commerce_free_shipping)) {
+    if (!$shipping_service = $wrapper_discount_offer->commerce_free_shipping->value()) {
+      // No need to change the rules event.
+      return;
+    }
+
+    // Remove old rule event and add the new one.
+    $rule->removeEvent('commerce_discount_order');
+    $rule->event('commerce_discount_free_shipping');
+
+    // Add missing parameter.
+    foreach ($rule->actions() as $action) {
+      if ($action->getElementName() == 'commerce_discount_free_shipping_service') {
+        $action->settings['shipping_service'] = $shipping_service;
+      }
+      else {
+        $action->delete();
+      }
+    }
+  }
 }
 
 /**
@@ -520,6 +595,14 @@ function commerce_discount_commerce_line_item_type_info() {
       'add_form_submit_value' => t('Add discount'),
       'base' => 'commerce_discount_line_item',
     ),
+    'product_discount' => array(
+      'type' => 'product_discount',
+      'name' => t('Product discounted'),
+      'description' => t('References a discounted product.'),
+      'product' => TRUE,
+      'add_form_submit_value' => t('Add product'),
+      'base' => 'commerce_product_line_item',
+    ),
   );
 }
 
@@ -532,4 +615,3 @@ function commerce_discount_commerce_line_item_type_info() {
 function commerce_discount_line_item_title() {
   return t('Fixed amount discount');
 }
-

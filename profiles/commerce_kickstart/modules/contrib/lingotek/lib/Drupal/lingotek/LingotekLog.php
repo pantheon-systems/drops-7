@@ -81,7 +81,7 @@ class LingotekLog {
         ), $severity
     );
 
-    if (variable_get('lingotek_error_log', FALSE)) {
+    if (variable_get('lingotek_error_log', FALSE) && $tag == 'error') {
       error_log("FUNCTION: $function ARGS: $args  FILE: $location MESSAGE: $msg DATA: $data_output ");
     }
   }

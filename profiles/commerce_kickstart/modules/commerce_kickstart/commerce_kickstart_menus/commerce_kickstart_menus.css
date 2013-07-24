@@ -16,34 +16,13 @@ body.toolbar #toolbar div.toolbar-menu {
   background-image: -ms-linear-gradient(top, #55b5ff, #50adf5);
   background-image: -o-linear-gradient(top, #55b5ff, #50adf5);
   background-image: linear-gradient(to bottom, #55b5ff, #50adf5);
-  margin: 0 auto;
-  min-height: 50px;
-  padding: 3px 0;
-  width: 90%;
 }
 #toolbar a {
   color: #fff;
   text-shadow: 0 1px 1px #18466b;
 }
-#toolbar #toolbar-home {
-  padding: 3px 0;
-}
-#toolbar-home li,
-#toolbar-user li,
-.toolbar-menu-wrapper li {
-  display: inline;
-  list-style: none;
-  position: relative;
-}
+
 /* Home Logo Link */
-body.toolbar #toolbar-home a span {
-  background: transparent url("images/logo-menu.png") no-repeat 0 0;
-  display: block;
-  min-height: 40px;
-  text-indent: -9999px;
-  width: 130px;
-  margin: 0;
-}
 body.toolbar #toolbar-home a,
 body.toolbar #toolbar-home ul li a.active,
 body.toolbar #toolbar-home a:hover {
@@ -53,207 +32,108 @@ body.toolbar #toolbar-home a:hover {
   box-shadow: none !important;
   color: #fff;
 }
-/* User Menu */
-#toolbar #toolbar-user {
-  float: right; /* LTR */
+body.toolbar #toolbar-home a span {
+  background: transparent url("images/logo-menu.png") no-repeat 0 0;
+  display: block;
+  min-height: 40px;
+  text-indent: -9999px;
+  width: 130px;
+  margin: 0;
 }
+/* User Menu */
 #toolbar #toolbar-user li.account a {
   color: #fddb84;
-  -webkit-text-stroke: .025em #fddb84;
 }
-/* Main Menu */
-#toolbar div.toolbar-menu .toolbar-menu-wrapper {
-  padding-top: 6px;
+
+body.toolbar #toolbar div.toolbar-menu ul li a {
+  background: transparent;
 }
-#toolbar div.toolbar-menu ul li a {
-  font: normal 500 15px/1.75em "Open Sans",Arial,sans-serif;
-  padding: 2px 10px;
+body.toolbar #toolbar div.toolbar-menu {
+  height: auto;
 }
-body.toolbar #toolbar div.toolbar-menu ul li a:hover,
-body.toolbar #toolbar div.toolbar-menu ul li:hover a,
-body.toolbar #toolbar div.toolbar-menu ul li a.active:hover,
-body.toolbar #toolbar div.toolbar-menu ul li a.active:active,
-body.toolbar #toolbar div.toolbar-menu ul li a.active,
-body.toolbar #toolbar div.toolbar-menu ul li.active-trail a {
-  background: #2f88cd;
+body.toolbar #toolbar div.toolbar-menu a {
+font: normal 500 15px/1.75em "Open Sans",Arial,sans-serif;
+}
+body.toolbar div.toolbar-menu li.depth-2:hover a,
+body.toolbar div.toolbar-menu #toolbar-user li:hover a,
+body.toolbar div.toolbar-menu li.depth-2 a.active,
+body.toolbar div.toolbar-menu li.active-trail a{
+  background: #2f88cd !important;
   -moz-box-shadow: inset 0 0 5px #1a6bdf;
   -webkit-box-shadow: inset 0 0 5px #1a6bdf;
   box-shadow: inset 0 0 5px #1a6bdf;
   border-radius: 10px;
   text-decoration: none;
 }
-/* Dropdown Styles */
-body.toolbar #toolbar div.toolbar-menu ul li:hover ul a,
-body.toolbar #toolbar div.toolbar-menu ul li:hover ul a:hover{
+body.toolbar div.toolbar-menu #toolbar-user,
+body.toolbar #toolbar ul.menu-depth-2 {
+  padding-top: 5px;
+}
+body.toolbar li.depth-2:hover li.depth-3 a {
+  background: transparent !important;
   -moz-box-shadow: none;
   -webkit-box-shadow: none;
   box-shadow: none;
-  text-shadow: none;
 }
-body.toolbar #toolbar div.toolbar-menu #toolbar-home li a:hover,
-body.toolbar #toolbar div.toolbar-menu ul li:hover li a,
-body.toolbar #toolbar div.toolbar-menu ul.menu ul.menu a.active{
+body.toolbar ul.menu-depth-3 li.depth-3 a {
   background: transparent;
-  -moz-box-shadow: none;
-  -webkit-box-shadow: none;
-  box-shadow: none;
-  text-shadow: none;
+  color: #57b3fc !important;
 }
-body.toolbar #toolbar div.toolbar-menu-wrapper ul.menu {
-  margin: 0;
+body.toolbar ul.menu-depth-4 li.depth-4 a {
+  background: transparent;
+  color: #fff !important;
 }
-body.toolbar #toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper {
-  background: transparent url("images/bg-dropdown.png") repeat 0 0;
-  -moz-box-shadow: none;
-  -webkit-box-shadow: none;
-  box-shadow: none;
-  border-radius: 0;
-  font-size: 14px;
-  padding: 1px;
-  width: 190px;
-  z-index: -1;
+body.toolbar ul.menu-depth-4 li.depth-4 a:hover {
+  color: #57b3fc !important;
 }
-body.toolbar #toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu {
-  padding: 20px 0;
-  margin: 0;
-  float: left; /* LTR */
-  width: 190px;
-}
-#toolbar > div.toolbar-menu > div.toolbar-menu-wrapper > ul.group {
-  margin: 0;
-}
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu ul.menu {
+body.toolbar #toolbar li.depth-2 {
+  height: 40px;
   padding: 0;
 }
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu li {
-  float: left; /* LTR */
-  clear: left; /* LTR */
-  padding: 0;
+body.toolbar #toolbar .wrapper-depth-3 {
+  background: transparent url("images/bg-dropdown.png");
   margin: 0;
-  width: 100%;
 }
-body.toolbar #toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu li a {
-  color: #fff;
-  font-weight: 100;
-  padding: 0 10px;
-  width: 100%;
+body.toolbar #toolbar .wrapper-depth-3 ul.group {
+  margin-bottom: 10px;
 }
-/* Wider Mega Menu */
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-products div.toolbar-menu-wrapper ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-products div.toolbar-menu-wrapper ul.menu li:hover a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-products li:hover div.toolbar-menu-wrapper ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-orders div.toolbar-menu-wrapper ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-orders div.toolbar-menu-wrapper ul.menu li:hover a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-orders li:hover div.toolbar-menu-wrapper ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-content div.toolbar-menu-wrapper ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-content div.toolbar-menu-wrapper ul.menu li:hover a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-content li:hover div.toolbar-menu-wrapper ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings div.toolbar-menu-wrapper ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings div.toolbar-menu-wrapper ul.menu li:hover a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings li:hover div.toolbar-menu-wrapper ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-site-settings div.toolbar-menu-wrapper ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-site-settings div.toolbar-menu-wrapper ul.menu li:hover a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-site-settings li:hover div.toolbar-menu-wrapper ul.menu li a {
-  font-size: 15px;
-  color: #57b3fc;
-  font-size: 15px;
-  font-weight: 500;
+/* 2-column Store Settings Menu */
+#toolbar .toolbar-menu-store-settings .wrapper-depth-3 {
+  width: 400px;
 }
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-products div.toolbar-menu-wrapper ul.menu ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-orders div.toolbar-menu-wrapper ul.menu ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-content div.toolbar-menu-wrapper ul.menu ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings div.toolbar-menu-wrapper ul.menu ul.menu li a,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-site-settings div.toolbar-menu-wrapper ul.menu ul.menu li a {
-  font-weight: 100;
-  color: #fff;
-  font-weight: 100;
-}
-body.toolbar #toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu li a:hover,
-body.toolbar #toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu ul.menu li a:hover{
-  color: #57b3fc;
-}
-body.toolbar #toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper {
-  opacity: 1;
-}
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper a:hover,
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper a.active:hover {
-  -moz-box-shadow: none;
-  -webkit-box-shadow: none;
-  box-shadow: none;
-}
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings div.toolbar-menu-wrapper ul.menu ul.menu,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-site-settings div.toolbar-menu-wrapper ul.menu ul.menu {
+#toolbar .toolbar-menu-store-settings .wrapper-depth-3 ul.group {
   float: left; /* LTR */
+  width: 49%;
+  clear: none;
 }
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings ul.toolbar-menu-products {
-  clear: left; /* LTR */
-}
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings ul.group-0 {
+#toolbar .toolbar-menu-store-settings .wrapper-depth-3 ul.group-0 {
   float: right; /* LTR */
 }
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings div.toolbar-menu-wrapper,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-site-settings div.toolbar-menu-wrapper {
-  width: 385px;
+#toolbar .toolbar-menu-store-settings .wrapper-depth-4 ul.group {
+  float: none;
+  width: 100%;
 }
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu ul.menu {
-  margin: 0;
-  padding: 0 20px 0 0; /* LTR */
+/* 2-column Site Settings Menu */
+#toolbar .toolbar-menu-site-settings .wrapper-depth-3 {
+  width: 400px;
 }
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu ul.menu li {
-  padding: 0;
+#toolbar .toolbar-menu-site-settings .wrapper-depth-3 ul.group {
+  float: left;  /* LTR */
+  width: 49%;
+  clear: none;
 }
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu ul.menu li a.active {
-  font-weight: 700;
+#toolbar .toolbar-menu-site-settings .wrapper-depth-3 ul.group-1 {
+  float: right; /* LTR */
 }
-#toolbar div.toolbar-menu-wrapper ul.menu li.open div.toolbar-menu-wrapper,
-#toolbar div.toolbar-menu-wrapper ul.menu li:hover div.toolbar-menu-wrapper {
-  top: 30px;
+#toolbar .toolbar-menu-site-settings .wrapper-depth-4 ul.group {
+  float: none;
+  width: 100%;
 }
-#toolbar div.toolbar-menu ul ul li a:hover,
-#toolbar div.toolbar-menu ul ul li a.active:hover,
-#toolbar div.toolbar-menu ul ul li a.active:active,
-#toolbar div.toolbar-menu ul ul li a.active,
-#toolbar div.toolbar-menu ul ul li.active-trail a {
-  -moz-box-shadow: none;
-  -webkit-box-shadow: none;
-  box-shadow: none;
-  font-weight: 700;
-}
+
 /* Chrome + Safari Hacks */
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   /* Fix for drop-downs disappering on video pages */
   .overlay-open #toolbar.toolbar {
     clip: inherit !important;
   }
-}
-
-/* Responsive quick fix */
-/*body.toolbar.responsive-layout-mobile #toolbar-home a span,
-body.toolbar.responsive-layout-default #toolbar-home a span,
-body.toolbar.responsive-layout-narrow #toolbar-home a span {
-  background-position: -100px 0;
-  margin-top: 7px;
-  min-height: 23px;
-  width:  25px;
-}*/
-body.toolbar.responsive-layout-mobile #toolbar .toolbar-menu-wrapper,
-body.toolbar.responsive-layout-default #toolbar .toolbar-menu-wrapper,
-body.toolbar.responsive-layout-narrow #toolbar .toolbar-menu-wrapper {
-  clear: both;
-}
-.responsive-layout-mobile #toolbar div.toolbar-menu-wrapper > ul.toolbar-menu-products > li > div.toolbar-menu-wrapper,
-.responsive-layout-mobile #toolbar div.toolbar-menu-wrapper > ul.toolbar-menu-orders > li > div.toolbar-menu-wrapper,
-.responsive-layout-mobile #toolbar div.toolbar-menu-wrapper > ul.toolbar-menu-content > li > div.toolbar-menu-wrapper {
-  margin-top: 20px;
-}
-.responsive-layout-mobile #toolbar div.toolbar-menu-wrapper > ul.toolbar-menu-site-settings > li > div.toolbar-menu-wrapper {
-  width: auto;
-}
-.responsive-layout-mobile #toolbar div.toolbar-menu-wrapper > ul.toolbar-menu-site-settings > li > div.toolbar-menu-wrapper ul.toolbar-menu-advanced-settings {
-  clear: both;
-  margin-bottom: 20px;
-}
-.responsive-layout-default #toolbar div.toolbar-menu-wrapper > ul.menu > li > div.toolbar-menu-wrapper,
-.responsive-layout-narrow #toolbar div.toolbar-menu-wrapper > ul.menu > li > div.toolbar-menu-wrapper {
- margin-top: -5px;
 }

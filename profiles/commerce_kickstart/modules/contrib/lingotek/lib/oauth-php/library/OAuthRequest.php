@@ -350,7 +350,7 @@ class OAuthRequest
 				if (is_array($value))
 				{
 					$value_sort = $value;
-					sort($value_sort);
+					sort($value_sort, SORT_STRING);// multi-parameters require the values to be sorted lexigraphically
 					foreach ($value_sort as $v)
 					{
 						$normalized[] = $key.'='.$v;

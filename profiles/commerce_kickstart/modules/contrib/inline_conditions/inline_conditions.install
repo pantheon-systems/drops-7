@@ -1,0 +1,56 @@
+<?php
+/**
+ * @file
+ * Installation functions for inline_conditions module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ */
+function inline_conditions_field_schema($field) {
+  if ($field['type'] == 'inline_conditions') {
+    return array(
+      'columns' => array(
+        'condition_name'     => array(
+          'type'        => 'varchar',
+          'length'      => 255,
+          'not null'    => TRUE,
+          'description' => t('Name of the condition, as defined in hook_inline_condition_info().'),
+        ),
+        'condition_settings' => array(
+          'type'        => 'blob',
+          'size'        => 'big',
+          'not null'    => FALSE,
+          'serialize'   => TRUE,
+          'description' => t('Settings for the condition, serialized.'),
+        ),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_enable().
+ *
+ * @see module_enable()
+ * @see hook_install()
+ * @see hook_modules_enabled()
+ */
+function inline_conditions_enable() {
+}
+
+/**
+ * Perform necessary actions before module is disabled.
+ *
+ * Run clear caches and cron job in order to delete all related fields.
+ *
+ * @see hook_uninstall()
+ * @see hook_modules_disabled()
+ */
+function inline_conditions_disable() {
+  // Clear caches.
+  cache_clear_all();
+
+  // Run the cron job.
+  drupal_cron_run();
+}

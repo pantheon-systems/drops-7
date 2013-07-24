@@ -67,6 +67,7 @@ function commerce_kickstart_lite_product_enable() {
       'entity_type' => 'commerce_product',
       'bundle' => 'product',
       'field_name' => 'field_images',
+      'label' => 'Images',
       'display' => array(
         'default' => $settings,
         'node_product_list' => $settings_node_product_list,

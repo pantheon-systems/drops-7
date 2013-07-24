@@ -2,8 +2,9 @@
 
 /**
  * @file
- * Italian services that extend Service Links module
- * Collected by TheCrow
+ * Extends Service Links with Italian services.
+ *
+ * @author Fabio Mucciante (TheCrow)
  */
 
 /**

@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="PHP" default="build" basedir=".">
+
+    <!-- build -->
+    <target
+        name="build"
+        depends="prepare, phpunit"
+        description="lint, phpdoc, phpunit" />
+
+    <!-- clean -->
+    <target
+        name="clean">
+
+        <delete dir="build/docs" />
+        <delete dir="build/logs" />
+        <delete dir="build/coverage" />
+
+    </target>
+
+    <!-- prepare -->
+    <target
+        name="prepare"
+        depends="clean">
+
+        <mkdir dir="build/docs" />
+        <mkdir dir="build/logs" />
+        <mkdir dir="build/coverage" />
+
+    </target>
+
+    <!-- lint -->
+    <target
+        name="lint">
+
+        <apply executable="php" failonerror="true">
+            <arg value="-l" />
+
+            <fileset dir="lib/">
+                <include name="**/*.php" />
+            </fileset>
+
+            <fileset dir="tests/">
+                <include name="**/*.php" />
+            </fileset>
+
+        </apply>
+
+    </target>
+
+    <!-- phpunit -->
+    <target
+        name="phpunit">
+
+        <exec executable="phpunit" dir="tests" failonerror="true">
+            <arg line="." />
+        </exec>
+
+    </target>
+
+    <!-- phpdoc -->
+    <target
+        name="phpdoc">
+
+        <exec executable="phpdoc" failonerror="true" />
+
+    </target>
+
+</project>

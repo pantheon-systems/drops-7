@@ -1,0 +1,685 @@
+<?php
+/**
+ * @file
+ * Manage frequently used conditions directly on the relevant form.
+ */
+
+// Load local conditions files located into /modules folder.
+foreach (array('commerce_order', 'commerce_product') as $module) {
+  if (module_exists($module)) {
+    module_load_include('inc', 'inline_conditions', "modules/$module.inline_conditions");
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function inline_conditions_menu() {
+  $items = array();
+
+  $items['inline_conditions/autocomplete/%/%/%'] = array(
+    'title' => 'Inline Conditions Autocomplete',
+    'page callback' => 'inline_conditions_autocomplete_callback',
+    'page arguments' => array(2, 3, 4, 5),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_modules_enabled().
+ */
+function inline_conditions_modules_enabled() {
+  // New modules might offer additional inline conditions.
+  drupal_static_reset('inline_conditions_get_info');
+}
+
+/**
+ * Implements hook_modules_disabled().
+ */
+function inline_conditions_modules_disabled() {
+  drupal_static_reset('inline_conditions_get_info');
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function inline_conditions_hook_info() {
+  $hooks['inline_conditions_info'] = array(
+    'group' => 'inline_conditions',
+  );
+  $hooks['inline_conditions_info_alter'] = array(
+    'group' => 'inline_conditions',
+  );
+
+  return $hooks;
+}
+
+/**
+ * Menu callback: autocomplete the label of an entity.
+ *
+ * Assumes "tag mode" (multiple allowed entries).
+ * Mostly stolen from entityreference.
+ *
+ * @param string $entity_type
+ *   The entity type.
+ * @param bool $product_mode
+ *   Boolean indicating whether to limit taxonomy terms to vocabularies used by
+ *   commerce_product bundles.
+ * @param bool $single
+ *   Indicate a single value autocomple field.
+ * @param string $string
+ *   The label of the entity to query by.
+ */
+function inline_conditions_autocomplete_callback($entity_type, $product_mode, $single = FALSE, $string = '') {
+  $matches = array();
+  $entity_info = entity_get_info($entity_type);
+  if ($product_mode) {
+    $product_node_types = commerce_product_reference_node_types();
+    $product_node_types = array_keys($product_node_types);
+  }
+
+  // Single mode.
+  if ($single) {
+    // Get the current string from field.
+    $tag_last = $string;
+  }
+  else {
+    // The user enters a comma-separated list of tags.
+    // We only autocomplete the last tag.@
+    $tags_typed = drupal_explode_tags($string);
+    $tag_last = drupal_strtolower(array_pop($tags_typed));
+    if (!empty($tag_last)) {
+      $prefix = count($tags_typed) ? implode(', ', $tags_typed) . ', ' : '';
+    }
+  }
+
+  if (!empty($tag_last)) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', $entity_type);
+    $query->propertyCondition($entity_info['entity keys']['label'], $tag_last, 'CONTAINS');
+    $query->addTag($entity_type . '_access');
+    $query->range(0, 10);
+    if ($entity_type == 'node') {
+      // Limit the query to product display node types.
+      if ($product_mode) {
+        $query->entityCondition('bundle', $product_node_types);
+      }
+
+      // If there are no access control modules enabled, and the user does not
+      // have permission to bypass node access, limit the nodes to 'published'.
+      if (!user_access('bypass node access') && !count(module_implements('node_grants'))) {
+        $query->propertyCondition(
+          'status',
+          NODE_PUBLISHED
+        );
+      }
+    }
+    elseif ($entity_type == 'taxonomy_term' && $product_mode) {
+      // Gather all vocabularies referenced from term reference fields on
+      // product display node types.
+      $vids = array();
+      $vocabulary_data = taxonomy_vocabulary_get_names();
+      foreach (field_info_instances('commerce_product') as $instance) {
+        foreach ($instance as $field_name => $field_properties) {
+          $field = field_info_field($field_name);
+          if ($field['type'] == 'taxonomy_term_reference') {
+            $vocabulary_name = $field['settings']['allowed_values'][0]['vocabulary'];
+            $vids[] = $vocabulary_data[$vocabulary_name]->vid;
+          }
+        }
+      }
+
+      // Limit the query to only those vocabularies.
+      if ($vids) {
+        $query->propertyCondition('vid', array_unique($vids));
+      }
+    }
+
+    $results = $query->execute();
+    if (!empty($results[$entity_type])) {
+      $entities = entity_load($entity_type, array_keys($results[$entity_type]));
+      foreach ($entities as $entity_id => $entity) {
+        $label = entity_label($entity_type, $entity);
+        $label = check_plain($label);
+
+        $key = "$label ($entity_id)";
+        // Strip things like starting/trailing white spaces,
+        // line breaks and tags.
+        $key = preg_replace('/\s\s+/', ' ', str_replace("\n", '', trim(decode_entities(strip_tags($key)))));
+        // Names containing commas or quotes must be wrapped in quotes.
+        if (strpos($key, ',') !== FALSE || strpos($key, '"') !== FALSE) {
+          $key = '"' . str_replace('"', '""', $key) . '"';
+        }
+        $matches[$prefix . $key] = '<div class="reference-autocomplete">' . $label . '</div>';
+      }
+    }
+  }
+
+  drupal_json_output($matches);
+}
+
+/**
+ * Private Callback: Ensure that autocomplete is valid.
+ *
+ * @param array $element
+ *   Current element array.
+ * @param array $form_state
+ *   The form state array.
+ * @param array $form
+ *   the form array.
+ */
+function _inline_conditions_autocomplete_validate($element, &$form_state, $form) {
+  $value = array();
+  // If a value was entered into the autocomplete...
+  if (!empty($element['#value'])) {
+    $entities = drupal_explode_tags($element['#value']);
+    $value = array();
+    foreach ($entities as $entity) {
+      // Take "label (entity id)', match the id from parenthesis.
+      if (preg_match("/.+\((\d+)\)/", $entity, $matches)) {
+        $value[] = array(
+          'target_id' => $matches[1],
+        );
+      }
+    }
+  }
+
+  // Update the value of this element with only the entity ids.
+  form_set_value($element, $value, $form_state);
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function inline_conditions_field_info() {
+  return array(
+    'inline_conditions' => array(
+      'label' => t('Inline conditions'),
+      'description' => t(
+        'This field stores conditions that are later added to a matching rule.'
+      ),
+      // entity_type is the type of the entity operated on by the matching rule.
+      'instance_settings' => array('entity_type' => NULL),
+      'default_widget' => 'inline_conditions',
+      'default_formatter' => 'hidden',
+      'no_ui' => TRUE,
+      'property_type' => 'inline_conditions',
+      'property_callbacks' => array('inline_conditions_field_property_callback'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function inline_conditions_field_widget_info() {
+  return array(
+    'inline_conditions' => array(
+      'label' => t('Inline conditions'),
+      'field types' => array('inline_conditions'),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_CUSTOM,
+        'default value' => FIELD_BEHAVIOR_NONE,
+      ),
+      'settings' => array(),
+    ),
+  );
+}
+
+/**
+ * Property callback for IC module.
+ */
+function inline_conditions_field_property_callback(&$info, $entity_type, $field, $instance, $field_type) {
+
+  // Apply the default behavior.
+  entity_metadata_field_default_property_callback($info, $entity_type, $field, $instance, $field_type);
+
+  // Alter both getter & setter callbacks.
+  $property = & $info[$entity_type]['bundles'][$instance['bundle']]['properties'][$field['field_name']];
+  $property['getter callback'] = 'inline_conditions_entity_metadata_field_property_get';
+  $property['setter callback'] = 'inline_conditions_entity_metadata_field_property_set';
+}
+
+/**
+ * Callback for getting field property values.
+ */
+function inline_conditions_entity_metadata_field_property_get($entity, array $options, $name, $entity_type, $info) {
+  $field = field_info_field($name);
+  $columns = array_keys($field['columns']);
+  $langcode = isset($options['language']) ? $options['language']->language : LANGUAGE_NONE;
+  $langcode = entity_metadata_field_get_language($entity_type, $entity, $field, $langcode, TRUE);
+  $values = array();
+  if (isset($entity->{$name}[$langcode])) {
+    foreach ($entity->{$name}[$langcode] as $delta => $rows) {
+      $values[$delta] = $rows;
+    }
+  }
+
+  // For an empty single-valued field, we have to return NULL.
+  return $field['cardinality'] == 1 ? ($values ? reset(
+    $values
+  ) : NULL) : $values;
+}
+
+/**
+ * Callback for setting field property values.
+ *
+ * TODO: to be tested...
+ */
+function inline_conditions_entity_metadata_field_property_set($entity, $name, $value, $langcode, $entity_type) {
+  $field = field_info_field($name);
+  $columns = array_keys($field['columns']);
+  $langcode = entity_metadata_field_get_language($entity_type, $entity, $field, $langcode);
+  $values = $field['cardinality'] == 1 ? array($value) : (array) $value;
+
+  $items = array();
+  foreach ($values as $delta => $value) {
+    if (isset($data)) {
+      $items[$delta] = $value;
+    }
+  }
+  $entity->{$name}[$langcode] = $items;
+  // Empty the static field language cache, so the field system picks up any
+  // possible new languages.
+  drupal_static_reset('field_language');
+}
+
+
+/**
+ * Implements hook_field_load().
+ *
+ * Prepare items array in order to be usable with inline_condition field widget.
+ */
+function inline_conditions_field_load($entity_type, $entities, $field, $instances, $langcode, &$items, $age) {
+  // Loop on every entities given.
+  foreach ($entities as $id => $entity) {
+    // Ensures that field is inline_conditions type.
+    if ($field['type'] == 'inline_conditions') {
+
+      foreach ($items[$id] as $delta => $item) {
+        // Ensure condition_settings is unserialised.
+        if (is_string($item['condition_settings'])) {
+          $item['condition_settings'] = unserialize(
+            $item['condition_settings']
+          );
+
+          // Replace item value.
+          $items[$id][$delta] = $item;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_insert().
+ *
+ * Call inline_conditions_prepare_field_items() in order to rebuild items.
+ *
+ * @see inline_conditions_field_prepare_items()
+ */
+function inline_conditions_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  // Ensures that field is inline_conditions type.
+  if ($field['type'] == 'inline_conditions') {
+    inline_conditions_field_prepare_items($items);
+  }
+}
+
+/**
+ * Implements hook_field_update().
+ *
+ * Call inline_conditions_prepare_field_items() in order to rebuild items.
+ *
+ * @see inline_conditions_field_prepare_items()
+ */
+function inline_conditions_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  // Ensures that field is inline_conditions type.
+  if ($field['type'] == 'inline_conditions') {
+    inline_conditions_field_prepare_items($items);
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function inline_conditions_field_is_empty($item, $field) {
+  return empty($item['condition_name']);
+}
+
+
+/**
+ * Alter $items array and prepare it to be saved.
+ *
+ * Serialize the condition_settings column.
+ *
+ * @param array $items
+ *   A referenced array of field items.
+ *
+ * @see inline_conditions_field_load()
+ * @see inline_conditions_field_insert()
+ */
+function inline_conditions_field_prepare_items(&$items) {
+  // A simple way to check if array is a multi-dimensional array.
+  if (is_array($items)) {
+    foreach ($items as $delta => $item) {
+      // Ensures that $item has a condition name.
+      if (!empty($item['condition_name'])) {
+        // Ensure that condition_settings is not serialized.
+        if (is_array($item['condition_settings'])) {
+          $item['condition_settings'] = serialize($item['condition_settings']);
+        }
+
+        // Replace item value.
+        $items[$delta] = $item;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function inline_conditions_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  // Get entity_type setting from the current instance.
+  $entity_type_setting = empty($instance['settings']['entity_type']) ? 'commerce_order' : $instance['settings']['entity_type'];
+
+  // Prepare a list of all possible conditions.
+  $condition_info = inline_conditions_get_info_by_type($entity_type_setting, $instance['entity_type']);
+  $condition_list = array('' => t('- All -'));
+  foreach ($condition_info as $condition_name => $info) {
+    $condition_list[$condition_name] = $info['label'];
+  }
+
+  $element = array(
+    '#type' => 'container',
+    '#prefix' => '<div class="inline-conditions-container" id="inline-conditions-' . $field['field_name'] . '"><label>' . $element['#title'] . '</label>',
+    '#suffix' => '</div>',
+    '#element_validate' => array('inline_conditions_field_widget_form_validate'),
+  ) + $element;
+
+  // Attach module cascade style sheet to inline_conditions_field_widget_form.
+  $form['#attached']['css'][] = drupal_get_path('module', 'inline_conditions') . '/css/inline_conditions.css';
+  // Load rtl.css file if needed.
+  if ($GLOBALS['language']->direction == 1) {
+    $form['#attached']['css'][] = drupal_get_path('module', 'inline_conditions') . '/css/inline_conditions-rtl.css';
+  }
+
+  // If "Add a new condition" button has been pressed.
+  if (isset($form_state['triggering_element']['#condition_action'])) {
+    if ($form_state['triggering_element']['#condition_action'] == 'add') {
+      // Ensure we are on the right row.
+      $items[] = array(
+        'condition_name' => '',
+        'condition_settings' => array(),
+      );
+    }
+    // If "Remove" button has been pressed.
+    elseif ($form_state['triggering_element']['#condition_action'] == 'remove') {
+      $condition_id = $form_state['triggering_element']['#element_delta'];
+      unset($items[$condition_id]);
+      // Rebuild array keys.
+      $items = array_values($items);
+    }
+  }
+
+  if (empty($items)) {
+    $items[] = array('condition_name' => '', 'condition_settings' => array());
+  }
+  $zebra = 0;
+  foreach ($items as $delta => $item) {
+    $condition_name = $item['condition_name'];
+    $condition_settings = $item['condition_settings'];
+    $zebra_class = ($delta % 2) ? 'odd' : 'even';
+    $id = 'inline-conditions-' . $field['field_name'] . '-' . $instance['id'] . '-' . $delta;
+    $element[$delta] = array(
+      '#type' => 'container',
+      '#prefix' => '<div id="' . $id . '" class="container-inline ' . $field['field_name'] . ' ' . $zebra_class . ' clearfix">',
+      '#suffix' => '</div>',
+    );
+    $element[$delta]['condition_name'] = array(
+      '#type' => 'select',
+      '#title' => t('Apply to:'),
+      '#options' => $condition_list,
+      '#default_value' => $condition_name,
+      '#ajax' => array(
+        'callback' => 'inline_conditions_form_ajax_callback',
+        'wrapper' => $id,
+      ),
+      '#prefix' => '<div class="condition-wrapper">',
+
+      '#condition_action' => 'select',
+      // Identifies the condition operated upon.
+      '#element_delta' => $delta,
+    );
+
+    $element[$delta]['condition_settings'] = array(
+      '#type' => 'value',
+      '#value' => array(),
+    );
+
+    // A condition has been selected, and a "configure" callback exists.
+    if (!empty($condition_name) && !empty($condition_info[$condition_name]['callbacks']['configure'])) {
+      $callback = $condition_info[$condition_name]['callbacks']['configure'];
+      $element[$delta]['condition_settings'] = $callback($condition_settings);
+      $element[$delta]['#attributes'] = array('class' => array('container-inline'));
+    }
+
+    // Adds the remove condition button.
+    $element[$delta]['remove_condition'] = array(
+      '#type' => 'button',
+      '#name' => $field['field_name'] . '-' . $instance['id'] . '-' . $delta . '-remove_condition',
+      '#value' => t('Remove'),
+      '#ajax' => array(
+        'callback' => 'inline_conditions_form_ajax_callback',
+        'wrapper' => 'inline-conditions-' . $field['field_name'],
+        'effect' => 'fade',
+      ),
+      // closing condition-wrapper div.
+      '#prefix' => '</div><div class="remove-condition">',
+      '#suffix' => '</div>',
+      '#element_delta' => $delta,
+      '#condition_action' => 'remove',
+      '#executes_submit_callback' => FALSE,
+      '#limit_validation_errors' => array(),
+    );
+
+    if ($delta > 0) {
+      $element[$delta]['condition_name']['#title'] = t('And: ');
+    }
+  }
+
+  // Add the "Add another" button.
+  $element['add_more'] = array(
+    '#type' => 'button',
+    '#name' => $field['field_name'] . '-' . $instance['id'] . '-add_condition',
+    '#value' => t('Add a new condition'),
+    '#ajax' => array(
+      'callback' => 'inline_conditions_form_ajax_callback',
+      'wrapper' => 'inline-conditions-' . $field['field_name'],
+      'effect' => 'fade',
+    ),
+    '#attributes' => array('class' => array('add-new-condition')),
+    '#element_delta' => $element['#delta'],
+    '#condition_action' => 'add',
+    '#limit_validation_errors' => array(),
+  );
+
+  return $element;
+}
+
+/**
+ * Callback : Validate inline_conditions_field_widget_form.
+ *
+ * @param array $element
+ *   A form element array containing basic properties for the widget:
+ *   - #entity_type: The name of the entity the field is attached to.
+ *   - #bundle: The name of the field bundle the field is contained in.
+ *   - #field_name: The name of the field.
+ *   - #language: The language the field is being edited in.
+ *   - #field_parents: The 'parents' space for the field in the form. Most
+ *       widgets can simply overlook this property. This identifies the
+ *       location where the field values are placed within
+ *       $form_state['values'], and is used to access processing information
+ *       for the field through the field_form_get_state() and
+ *       field_form_set_state() functions.
+ *   - #columns: A list of field storage columns of the field.
+ *   - #title: The sanitized element label for the field instance, ready for
+ *     output.
+ *   - #description: The sanitized element description for the field instance,
+ *     ready for output.
+ *   - #required: A Boolean indicating whether the element value is required;
+ *     for required multiple value fields, only the first widget's values are
+ *     required.
+ *   - #delta: The order of this item in the array of subelements; see $delta
+ *     above.
+ * @param array $form_state
+ *   An associative array containing the current state of the form.
+ * @param array $form
+ *   The form structure where widgets are being attached to. This might be a
+ *   full form structure, or a sub-element of a larger form.
+ *
+ * @return bool
+ *   Return a boolean to validate or not form elements.
+ */
+function inline_conditions_field_widget_form_validate($element, &$form_state, $form) {
+  // Support removing the conditions from the entity.
+  if (isset($form_state['triggering_element']['#condition_action']) && $form_state['triggering_element']['#condition_action'] == 'remove') {
+    $element['#parents'][] = $form_state['triggering_element']['#element_delta'];
+    drupal_array_set_nested_value($form_state['values'], $element['#parents'], array(), TRUE);
+    drupal_array_set_nested_value($form_state['input'], $element['#parents'], array(), TRUE);
+  }
+}
+
+/**
+ * Ajax callback for the Inline Conditions form elements.
+ *
+ * @param array $form
+ *   The form array.
+ * @param array &$form_state
+ *   The reference of form_state array.
+ *
+ * @return array
+ *   Return form element to display.
+ */
+function inline_conditions_form_ajax_callback($form, &$form_state) {
+  $element_parents = array_slice($form_state['triggering_element']['#array_parents'], 0, -2);
+  $element = drupal_array_get_nested_value($form, $element_parents);
+
+  // Triggered when user selects a condition.
+  if ($form_state['triggering_element']['#condition_action'] == 'select') {
+    $delta = $form_state['triggering_element']['#element_delta'];
+    return $element[$delta];
+  }
+  else {
+    return $element;
+  }
+}
+
+/**
+ * Defines a callback to add condition(s) to the given rule.
+ *
+ * When a rule is being built, it goes over the $field_values, and for each
+ * condition it calls the conditions "build" function.
+ *
+ * @param RulesReactionRule $rule
+ *   The parent rule.
+ * @param array $field_values
+ *   An array of values from an inline_conditions field.
+ *
+ * @see hook_inline_conditions_prebuild_alter()
+ */
+function inline_conditions_build(RulesReactionRule $rule, $field_values) {
+  if (!empty($field_values)) {
+    foreach ($field_values as $value) {
+      // Give a chance to others module to alter the current field value.
+      drupal_alter('inline_conditions_build', $value);
+
+      // Get the condition info.
+      $condition = inline_conditions_get_info($value['condition_name']);
+      // Ensure we got the condition and we have settings for the rule
+      // condition.
+      if (!$condition || empty($value['condition_settings'])) {
+        continue;
+      }
+
+      // Fullfil the parameters variable with the correct values.
+      $parameters = array('entity:select' => $condition['entity type']) + $value['condition_settings'];
+
+      $rule->condition($value['condition_name'], $parameters);
+    }
+  }
+}
+
+/**
+ * Returns the info array of a condition.
+ *
+ * @param string $condition_name
+ *   The condition name for which the info shall be returned, or NULL to return
+ *   an array with info about all conditions.
+ *
+ * @return array
+ *   An array of conditions.
+ */
+function inline_conditions_get_info($condition_name = NULL) {
+  $conditions = & drupal_static(__FUNCTION__);
+
+  if (!isset($conditions)) {
+    $conditions = array();
+    foreach (module_implements('inline_conditions_info') as $module) {
+      foreach (module_invoke($module, 'inline_conditions_info') as $condition => $condition_info) {
+        $condition_info += array(
+          // Remember the providing module.
+          'module' => $module,
+        );
+        $conditions[$condition] = $condition_info;
+      }
+    }
+
+    drupal_alter('inline_conditions_info', $conditions);
+  }
+
+  if (isset($condition_name)) {
+    return !empty($conditions[$condition_name]) ? $conditions[$condition_name] : FALSE;
+  }
+  else {
+    return $conditions;
+  }
+}
+
+/**
+ * Get inline conditions per type.
+ *
+ * Return an array of defined inline conditions for the passed entity type and
+ * component type (if specified by the condition).
+ *
+ * @param string $entity_type
+ *   The type of the entity available to the rule.
+ * @param string $parent_entity_type
+ *   The type of the parent entity (that contains the IC field).
+ *   Used for comparison if a condition defines one as well.
+ *
+ * @return array
+ *   An array of conditions.
+ */
+function inline_conditions_get_info_by_type($entity_type, $parent_entity_type) {
+  $conditions = inline_conditions_get_info();
+
+  // Prepare the list of conditions to be returned.
+  // Filter first by entity type, then by parent entity type, if available.
+  $filtered_conditions = array();
+  foreach ($conditions as $condition_name => $condition_info) {
+    if ($condition_info['entity type'] != $entity_type) {
+      continue;
+    }
+    if (isset($condition_info['parent entity type']) && $condition_info['parent entity type'] != $parent_entity_type) {
+      continue;
+    }
+
+    $filtered_conditions[$condition_name] = $condition_info;
+  }
+
+  return $filtered_conditions;
+}

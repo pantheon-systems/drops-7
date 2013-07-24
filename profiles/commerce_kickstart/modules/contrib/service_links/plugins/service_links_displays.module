@@ -2,10 +2,14 @@
 
 /**
  * @file
- * Provide a field to Displays Suite for each
- * single service "displayed" on the admin services
- * through the "Display" checkbox and a field 
- * containing the whole set of services "displayed".
+ * Custom Service Links field for Displays.
+ *
+ * This plugin provides fields for Displays Suite, one
+ * for each service selected on the admin services page
+ * through the "Display" checkbox column and a field
+ * containing the whole set of selected services.
+ *
+ * @author Fabio Mucciante (TheCrow)
  */
 
 /**

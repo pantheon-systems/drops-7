@@ -794,7 +794,8 @@ class LingotekApi {
       'documentName' => $node->title,
       'documentDesc' => $node->title,
       'content' => $content,
-      'format' => $this->xmlFormat()
+      'format' => $this->xmlFormat(),
+      'note' => url('node/' . $node->nid, array('absolute' => TRUE, 'alias' => TRUE))
     );
 
     $this->addAdvancedParameters($parameters, $node);

@@ -1,0 +1,966 @@
+<?php
+
+/**
+ * @file
+ * Provides a basic payment module implementation for Paymill
+ */
+
+define('COMMERCE_PAYMILL_BRIDGE', 'https://bridge.paymill.com/');
+define('COMMERCE_PAYMILL_SERVER', 'https://api.paymill.de/v2/');
+define('COMMERCE_PAYMILL_MODE_TEST', 'test');
+define('COMMERCE_PAYMILL_MODE_LIVE', 'live');
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_paymill_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['commerce_paymill'] = array(
+    'title' => t('Paymill'),
+    'display_title' => t('Credit card'),
+    'description' => t('Provides credit card payment during checkout via Paymill.'),
+    'terminal' => FALSE,
+    'cardonfile' => array(
+      'charge callback' => 'commerce_paymill_cardonfile_charge',
+    ),
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Returns the default settings for the Paymill payment method.
+ */
+function commerce_paymill_default_settings() {
+  return array(
+    'test' => array(
+      'private_key' => '',
+      'public_key' => '',
+    ),
+    'live' => array(
+      'private_key' => '',
+      'public_key' => '',
+    ),
+    'mode' => COMMERCE_PAYMILL_MODE_TEST,
+    'capture_mode' => COMMERCE_CREDIT_AUTH_CAPTURE,
+    'cardonfile' => FALSE,
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_paymill_menu() {
+  $items = array();
+
+  // Add a menu item for configuring the detail payment rule
+  $items['admin/settings/commerce-paymill'] = array(
+    'title' => 'Commerce Paymill Configuration',
+    'description' => 'Configure the Commerce Paymill module',
+    'page callback' => 'commerce_paymill_configure',
+    'access arguments' => array('administer payment methods'),
+    'type' => MENU_CALLBACK,
+    'file' => 'commerce_paymill.admin.inc',
+  );
+
+  // Add a menu item for capturing authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/paymill/capture'] = array(
+    'title' => 'Capture',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_paymill_capture_form', 3, 5),
+    'access callback' => 'commerce_paymill_transaction_capture_access',
+    'access arguments' => array(5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'commerce_paymill.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_settings_form().
+ */
+function commerce_paymill_settings_form($settings = NULL) {
+  $form = array();
+
+  $settings = (array) $settings + commerce_paymill_default_settings();
+
+  $library = libraries_detect('paymill');
+  if (!empty($library['error'])) {
+    drupal_set_message($library['error message'], 'error', FALSE);
+  }
+
+  $form[COMMERCE_PAYMILL_MODE_TEST] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Test keys'),
+    '#collapsed' => FALSE,
+  );
+  $form[COMMERCE_PAYMILL_MODE_TEST]['private_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Private test key'),
+    '#size' => 40,
+    '#maxlength' => 32,
+    '#default_value' => $settings[COMMERCE_PAYMILL_MODE_TEST]['private_key'],
+    '#required' => TRUE,
+  );
+  $form[COMMERCE_PAYMILL_MODE_TEST]['public_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Public test key'),
+    '#size' => 40,
+    '#maxlength' => 32,
+    '#default_value' => $settings[COMMERCE_PAYMILL_MODE_TEST]['public_key'],
+    '#required' => TRUE,
+  );
+
+  $form[COMMERCE_PAYMILL_MODE_LIVE] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Live keys'),
+    '#collapsed' => FALSE,
+  );
+  $form[COMMERCE_PAYMILL_MODE_LIVE]['private_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Private live key'),
+    '#size' => 40,
+    '#maxlength' => 32,
+    '#default_value' => $settings[COMMERCE_PAYMILL_MODE_LIVE]['private_key'],
+  );
+  $form[COMMERCE_PAYMILL_MODE_LIVE]['public_key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Public live key'),
+    '#size' => 40,
+    '#maxlength' => 32,
+    '#default_value' => $settings[COMMERCE_PAYMILL_MODE_LIVE]['public_key'],
+  );
+
+  $form['mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Transaction mode'),
+    '#options' => array(
+      COMMERCE_PAYMILL_MODE_TEST => t('Test'),
+      COMMERCE_PAYMILL_MODE_LIVE => t('Live'),
+    ),
+    '#default_value' => $settings['mode'],
+  );
+
+  $form['capture_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Capture mode'),
+    '#options' => array(
+      COMMERCE_CREDIT_AUTH_CAPTURE => t('Capture'),
+      COMMERCE_CREDIT_AUTH_ONLY => t('Pre-authorize only'),
+    ),
+    '#default_value' => $settings['capture_mode'],
+  );
+
+  // Card on File module support.
+  if (module_exists('commerce_cardonfile')) {
+    $form['cardonfile'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Enable Card on File functionality with this payment method.'),
+      '#description' => t('Stores tokenised value for card data.'),
+      '#default_value' => $settings['cardonfile'],
+    );
+  }
+  else {
+    $form['cardonfile'] = array(
+      '#type' => 'markup',
+      '#markup' => t('To enable Card on File funcitionality download and install the Card on File 2.x module.'),
+    );
+  }
+
+  // Add proxy settings to the form.
+  _commerce_paymill_proxy_settings_form($form);
+
+  return $form;
+}
+
+/**
+ * Sets the proxy related part of the module settings form.
+ *
+ * @param array $form
+ *   The form to be populated with the proxy data fields.
+ * @return nothing
+ *   Side effects only.
+ */
+function _commerce_paymill_proxy_settings_form(&$form) {
+
+  // Proxy settings for the API client.
+  $form['proxy_settings'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Proxy settings'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  // Proxy type: HTTP is the default.
+  $form['proxy_settings']['proxy_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Type of proxy'),
+    '#options' => array(
+      CURLPROXY_HTTP => t('HTTP'),
+      CURLPROXY_SOCKS5 => t('SOCKS5'),),
+    '#description' => t('Indicate the type of proxy'),
+    '#default_value' => CURLPROXY_HTTP,
+  );
+
+  // Proxy host (or IP address to circumvent name resolution).
+  $form['proxy_settings']['proxy_host'] = array(
+    '#type' => 'textfield',
+    '#title' => t('The proxy host - hostname or IP'),
+    '#description' => t('The host of the proxy'),
+  );
+
+  $form['proxy_settings']['proxy_port'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Proxy port'),
+    '#description' => t('The proxy port'),
+    '#default_value' => 8080,
+    '#element_validate' => array('element_validate_number'),
+    '#size' => 5,
+  );
+
+  // Proxy user if authentication is in place.
+  $form['proxy_settings']['proxy_user'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Proxy user'),
+    '#description' => t('The user for proxy authentication'),
+    '#default_value' => '',
+    '#maxlength' => 40,
+    '#size' => 40,
+    '#required' => FALSE,
+  );
+
+  // Proxy user if authentication is in place.
+  $form['proxy_settings']['proxy_pass'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Proxy password'),
+    '#description' => t('The password for proxy authentication'),
+    '#default_value' => '',
+    '#size' => 40,
+  );
+
+  // If the proxy connection should be tunneled (HTTP CONNECT method).
+  $form['proxy_settings']['proxy_tunnel'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Proxy tunnel'),
+    '#description' => t('Check if the connection should be tunneled (CONNECT)'),
+    '#default_value' => FALSE,
+  );
+
+} // _commerce_paymill_proxy_settings_form
+
+/**
+ * Determines access for capture on payment transactions.
+ *
+ * @param $transaction
+ *   The payment transaction to check.
+ * @param $account
+ *   The user account attempting the operation; defaults to the current user.
+ *
+ * @return
+ *   TRUE or FALSE indicating access for the operation.
+ */
+function commerce_paymill_transaction_capture_access($transaction, $account = NULL) {
+  global $user;
+
+  if (empty($account)) {
+    $account = clone($user);
+  }
+
+  if (isset($transaction->order_id)) {
+    $order = commerce_order_load($transaction->order_id);
+    if (!$order) {
+      return FALSE;
+    }
+  }
+  else {
+    $order = NULL;
+  }
+
+  // Capture only work with paymill.
+  $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
+  if ($payment_method['method_id'] != 'commerce_paymill') {
+    return FALSE;
+  }
+
+  // Capture work only for auth only transactions.
+  if ($payment_method['settings']['capture_mode'] != COMMERCE_CREDIT_AUTH_ONLY) {
+    //return FALSE;
+  }
+
+  // Can't capture without remote_id.
+  if (empty($transaction->remote_id)) {
+    return FALSE;
+  }
+
+  // Capture only pending transactions.
+  if ($transaction->status != COMMERCE_PAYMENT_STATUS_PENDING) {
+    return FALSE;
+  }
+
+  // Capture only not already captured transactions.
+  if ($transaction->remote_status != 'pending') {
+    return FALSE;
+  }
+
+  // Grant administrators access to do anything.
+  if (user_access('administer payments', $account)) {
+    return TRUE;
+  }
+
+  if (user_access('capture paymill payments', $account)) {
+    if (commerce_order_access('view', $order, $account)) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_paymill_permission() {
+  return array(
+    'capture paymill payments' => array(
+      'title' => t('Capture Paymill payments'),
+      'description' => t('Allows users to capture a payment for a order.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Payment method callback: submit form.
+ */
+function commerce_paymill_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+
+  // If Paymill library isn't loaded.
+  libraries_load('paymill');
+  if (!interface_exists('Services_Paymill_Apiclient_Interface')) {
+    drupal_set_message(t('This payment method is currently unavailable.'), 'error');
+    return array();
+  }
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+  $fields = array(
+    'owner' => '',
+    'code' => '',
+  );
+  $default = array();
+  $form = commerce_payment_credit_card_form($fields, $default);
+
+  // Add a class name for each fields of the credit card form.
+  foreach($form['credit_card'] as $field_name => $field_info) {
+    if ($field_name[0] != '#') {
+      $form['credit_card'][$field_name]['#attributes']['class'][] = 'paymill-' . drupal_html_class($field_name);
+      $form['credit_card'][$field_name]['#attributes']['autocomplete'] = 'off';
+    }
+  }
+
+  // Render default form - will be inserted again using markup.
+  // THIS IS A SECURITY MEASURE TO PREVENT CARD DETAILS BEING TRANSMITTED BACK!
+  $markup = drupal_render($form['credit_card']);
+
+  // Create new form with no existing fields.
+  $form['credit_card'] = array(
+    '#tree' => TRUE,
+    '#attached' => array(
+      'css' => array(drupal_get_path('module', 'commerce_payment') . '/theme/commerce_payment.theme.css'),
+    ),
+  );
+
+  // Add fields as markup (with name attributes removed for security).
+  $form['credit_card']['fields'] = array(
+    '#type' => 'markup',
+    '#markup' => $markup,
+  );
+
+  // Get order balance for order.
+  $charge = commerce_payment_order_balance($order);
+
+  // Add hidden fields for amount/currency/Paymill token/error.
+  $form['credit_card']['amount'] = array(
+    '#type' => 'hidden',
+    '#value' => commerce_currency_amount_to_decimal($charge['amount'], $charge['currency_code']),
+    '#attributes' => array(
+      'class' => array(
+        'paymill-amount',
+      ),
+    ),
+  );
+  $form['credit_card']['currency'] = array(
+    '#type' => 'hidden',
+    '#value' => $charge['currency_code'],
+    '#attributes' => array(
+      'class' => array(
+        'paymill-currency',
+      ),
+    ),
+  );
+  $form['credit_card']['token'] = array(
+    '#type' => 'hidden',
+    '#attributes' => array(
+      'class' => array(
+        'paymill-token',
+      ),
+    ),
+  );
+  $form['credit_card']['error'] = array(
+    '#type' => 'hidden',
+    '#attributes' => array(
+      'class' => array(
+        'paymill-error',
+      ),
+    ),
+  );
+  $form['credit_card']['error-message'] = array(
+    '#type' => 'hidden',
+    '#attributes' => array(
+      'class' => array(
+        'paymill-error-message',
+      ),
+    ),
+  );
+
+  // Load Paymill bridge.
+  $key = commerce_paymill_get_key($payment_method['settings'], 'public');
+  $settings = array('publicKey' => $key);
+  $form['credit_card']['#attached']['js'][] = array(
+    'data' => COMMERCE_PAYMILL_BRIDGE,
+    'type' => 'external',
+  );
+  $form['credit_card']['#attached']['js'][] = array(
+    'data' => array('commercePaymill' => $settings),
+    'type' => 'setting',
+  );
+  $form['credit_card']['#attached']['js'][] = array(
+    'data' => drupal_get_path('module', 'commerce_paymill') . '/commerce_paymill.js',
+    'type' => 'file',
+  );
+  return $form;
+}
+
+/**
+ * Create a Drupal Commerce transaction.
+ */
+
+/**
+ * @TODO Transaction creation can be abstracted. Avoid code duplication.
+ *
+ */
+function commerce_paymill_add_transaction($order, $instance_id, $amount, $currency_code, $status, $message, $remote_id) {
+  $transaction = commerce_payment_transaction_new('commerce_paymill', $order->order_id);
+  $transaction->instance_id = $instance_id;
+  $transaction->amount = $amount;
+  $transaction->currency_code = $currency_code;
+  $transaction->status = $status;
+  $transaction->message = check_plain($message);
+  $transaction->remote_id = $remote_id;
+
+  // Save transaction.
+  commerce_payment_transaction_save($transaction);
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function commerce_paymill_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  $name = implode('][', $form_parents) . ']';
+  $cardonfile_capable = module_exists('commerce_cardonfile') && !empty($payment_method['settings']['cardonfile']);
+
+  if (!empty($pane_values['credit_card']['error'])) {
+    $error = commerce_paymill_get_error($pane_values['credit_card']['error']);
+
+    if (isset($error['watchdog'])) {
+      if (empty($pane_values['credit_card']['error-message'])) {
+        watchdog('commerce_paymill', 'Paymill payment failure on the order @orderid: [@code] - "@return_text"', array(
+                   '@orderid' => $order->order_id,
+                   '@code' => $pane_values['credit_card']['error'],
+                   '@return_text' => $error['watchdog'],
+                 ), WATCHDOG_WARNING);
+      }
+      else {
+        watchdog('commerce_paymill', 'Paymill payment failure on the order @orderid: [@code] - "@return_text" with message : @message', array(
+                   '@orderid' => $order->order_id,
+                   '@code' => $pane_values['credit_card']['error'],
+                   '@return_text' => $error['watchdog'],
+                   '@message' => $pane_values['credit_card']['error-message'],
+                 ), WATCHDOG_WARNING);
+      }
+    }
+    if (isset($error['transaction'])) {
+      $balance = commerce_payment_order_balance($order);
+      $instance_id = $payment_method['instance_id'];
+      $message = $error['transaction'];
+      $remote_id = NULL;
+      $status = COMMERCE_PAYMENT_STATUS_FAILURE;
+
+      // Do not record transaction on 3D secure cancellation.
+      if ($pane_values['credit_card']['error'] != '3ds_cancelled') {
+        commerce_paymill_add_transaction($order, $instance_id, $balance['amount'], $balance['currency_code'], $status, $message, $remote_id);
+      }
+    }
+    if (isset($error['message'])) {
+      form_set_error($name, $error['message']);
+    }
+    return FALSE;
+  }
+
+  if (empty($pane_values['credit_card']['token']) && (!$cardonfile_capable || !is_numeric($pane_values['cardonfile']))) {
+    form_set_error($name, t('We encountered an error processing your payment. Your card has not been charged. Please enable JavaScript to complete your payment or contact us for assistance.'));
+    return FALSE;
+  }
+}
+
+/**
+ * Payment method callback: submit form submission.
+ */
+function commerce_paymill_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  $order->data['commerce_paymill'] = $pane_values;
+
+  // Include Paymill libraries.
+  libraries_load('paymill');
+
+  // Get current API key
+  $api_key = commerce_paymill_get_key($payment_method['settings']);
+
+  // Get client ID
+  $client_id = commerce_paymill_get_client_id($order, $payment_method['settings']);
+  if (!$client_id) {
+    drupal_set_message(t('There was an error with your payment. Please try again or contact us for assistance.'), 'error');
+    return FALSE;
+  }
+
+  $cardonfile_capable = module_exists('commerce_cardonfile') && !empty($payment_method['settings']['cardonfile']);
+
+  $payment_id = FALSE;
+  if ($cardonfile_capable) {
+    $cardonfile = $pane_values['cardonfile'];
+    $cardonfile_instance_default = $pane_values['cardonfile_instance_default'];
+    $cardonfile_store = $pane_values['credit_card']['cardonfile_store'];
+
+    if (is_numeric($cardonfile)) {
+      $card_data = commerce_cardonfile_load($cardonfile);
+      if ($card_data) {
+        $payment_id = $card_data->remote_id;
+      }
+    }
+  }
+
+  if (empty($payment_id)) {
+    // Create payment card
+    $payment_params = array(
+      'token' => $pane_values['credit_card']['token'],
+      'client' => $client_id,
+    );
+    $payment_service = new Services_Paymill_Payments($api_key, COMMERCE_PAYMILL_SERVER);
+    $payment = $payment_service->create($payment_params);
+    if (isset($payment['error'])) {
+      drupal_set_message(t('There was an error with your payment. Please try again or contact us for assistance.'), 'error');
+      watchdog('commerce_paymill', 'Paymill payment failure on the order @orderid: @return_text.', array(
+                 '@orderid' => $order->order_id,
+                 '@return_text' => check_plain($payment['error']),
+               ), WATCHDOG_WARNING);
+      return FALSE;
+    }
+
+    $payment_id = $payment['id'];
+
+    if ($cardonfile_capable && $cardonfile == 'new' && $cardonfile_store) {
+      $card_data = (object)array(
+        'uid' => $order->uid,
+        'payment_method' => $payment_method['method_id'],
+        'instance_id' => $payment_method['instance_id'],
+        'remote_id' => $payment['id'],
+        'card_type' => $payment['card_type'],
+        'card_name' => $payment['card_holder'],
+        'card_number' => $payment['last4'],
+        'card_exp_month' => $payment['expire_month'],
+        'card_exp_year' => $payment['expire_year'],
+        'status' => 1,
+      );
+
+      commerce_cardonfile_save($card_data);
+    }
+  }
+
+  if ($cardonfile_capable && $card_data && $cardonfile_instance_default) {
+    commerce_cardonfile_set_default_card($card_data->card_id);
+  }
+
+  if (isset($card_data)) {
+    return commerce_paymill_cardonfile_charge($payment_method, $card_data, $order, $charge);
+  }
+
+  return commerce_paymill_process_transaction($payment_method, $payment_id, $order, $charge);
+}
+
+function commerce_paymill_get_client_id($order, $settings) {
+  global $user;
+
+  $mode = $settings['mode'];
+
+  // Does the current user already have a client instance?
+  if (isset($user->data)) {
+    if (isset($user->data['commerce_paymill_client_id_' . $mode])) {
+      return $user->data['commerce_paymill_client_id_' . $mode];
+    }
+  }
+
+  // Instantiate client service.
+  $api_key = commerce_paymill_get_key($settings);
+  $client_service = new Services_Paymill_Clients($api_key, COMMERCE_PAYMILL_SERVER);
+
+  // Create client.
+  $client_params = array(
+    'email' => $order->mail,
+    'description' => 'User:' . $order->uid,
+  );
+  $client = $client_service->create($client_params);
+  // @TODO : check with Paymill the format of return for this.
+  if (isset($client['error'])) {
+    $errors = array();
+    if (isset($client['error']['messages'])) {
+      $errors = $client['error']['messages'];
+    }
+    else {
+      $errors['unknown'] = print_r($client['error'], TRUE);
+    }
+    foreach ($errors as $error_code => $error) {
+      watchdog('commerce_paymill', 'Paymill client creation failure on the order @orderid: [@error_code] @return_text.', array(
+                 '@orderid' => $order->order_id,
+                 '@error_code' => $error_code,
+                 '@return_text' => $error,
+               ), WATCHDOG_WARNING);
+    }
+    return FALSE;
+  }
+
+  // Update current user with client ID.
+  if ($user->uid > 0) {
+    // We should not save global user.
+    $user_entity = user_load($user->uid);
+    $user_entity->data['commerce_paymill_client_id'] = $client['id'];
+    $edit = array('data' => $user_entity->data);
+    user_save($user_entity, $edit);
+  }
+
+  return $client['id'];
+}
+
+/**
+ * Get Paymill key from settings.
+ */
+function commerce_paymill_get_key($settings, $key = 'private') {
+  $mode = $settings['mode'];
+  $key = $settings[$mode][$key . '_key'];
+  return $key;
+}
+
+/**
+ * Get errors message.
+ */
+function commerce_paymill_get_error($error) {
+  $error_messages = array(
+    'internal_server_error' => array(
+      'watchdog' => 'Communication with Paymill failed',
+      'transaction' => 'There was an error with your payment.',
+      'message' => t('There was an error with your payment. Please try again or contact us for assistance.'),
+    ),
+    'invalid_public_key' => array(
+      'watchdog' => 'Invalid public key',
+      'transaction' => 'There was an error with your payment.',
+      'message' => t('There was an error with your payment. Please try again or contact us for assistance.'),
+    ),
+    'unknown_error' => array(
+      'watchdog' => 'Unknown error',
+      'transaction' => 'There was an error with your payment.',
+      'message' => t('There was an error with your payment. Please try again or contact us for assistance.'),
+    ),
+    '3ds_cancelled' => array(
+      'watchdog' => 'User cancelled 3D security password entry',
+      'transaction' => 'Transaction cancelled.',
+      'message' => t('Transaction cancelled.'),
+    ),
+    'field_invalid_card_number' => array(
+      'message' => t('Missing or invalid credit card number.'),
+    ),
+    'field_invalid_card_exp_year' => array(
+      'message' => t('Missing or invalid expiry year.'),
+    ),
+    'field_invalid_card_exp_month' > array(
+      'message' => t('Missing or invalid expiry month.'),
+    ),
+    'field_invalid_card_exp' => array(
+      'message' => t('Card has expired.'),
+    ),
+    'field_invalid_card_cvc' => array(
+      'message' => t('Missing or invalid checking number.'),
+    ),
+    'field_invalid_card_holder' => array(
+      'message' => t('Missing or invalid cardholder name.'),
+    ),
+    'field_invalid_account_number' => array(
+      'message' => t('Missing or invalid bank account number.'),
+    ),
+    'field_invalid_account_holder' => array(
+      'message' => t('Missing or invalid bank account holder.'),
+    ),
+    'field_invalid_bank_code' => array(
+      'message' => t('Missing or invalid zip code.'),
+    ),
+  );
+
+  if (isset($error_messages[$error])) {
+    return $error_messages[$error];
+  }
+  else {
+    return array(
+      'watchdog' => drupal_ucfirst(check_plain(str_replace('_', ' ', $error))),
+      'transaction' => 'There was an error with your payment.',
+      'message' => t('There was an error with your payment. Please try again or contact us for assistance.'),
+    );
+  }
+}
+
+/**
+ * Get status code text.
+ */
+function commerce_paymill_get_status_message($status_code) {
+  $status_messages = array(
+    10001 => 'General undefined response.',
+    10002 => 'Still waiting on something.',
+
+    20000 => 'General success response.',
+
+    40000 => 'General problem with data.',
+    40100 => 'Problem with creditcard data.',
+    40101 => 'Problem with cvv.',
+    40102 => 'Card expired or not yet valid.',
+    40103 => 'Limit exceeded.',
+    40104 => 'Card invalid.',
+    40105 => 'expiry date not valid',
+    40200 => 'Problem with bank account data.',
+    40300 => 'Problem with 3d secure data.',
+    40301 => 'currency / amount mismatch',
+    40400 => 'Problem with input data.',
+    40401 => 'Amount too low or zero.',
+    40402 => 'Usage field too long.',
+    40403 => 'Currency not allowed.',
+
+    50000 => 'General problem with backend.',
+    50001 => 'country blacklisted.',
+    50100 => 'Technical error with credit card.',
+    50101 => 'Error limit exceeded.',
+    50102 => 'Card declined by authorization system.',
+    50103 => 'Manipulation or stolen card.',
+    50104 => 'Card restricted.',
+    50105 => 'Invalid card configuration data.',
+    50200 => 'Technical error with bank account.',
+    50201 => 'Card blacklisted.',
+    50300 => 'Technical error with 3D secure.',
+    50400 => 'Decline because of risk issues.',
+  );
+
+  if (isset($status_messages[$status_code])) {
+    return $status_messages[$status_code];
+  }
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function commerce_paymill_libraries_info() {
+  $libraries = array();
+
+  $libraries['paymill'] = array(
+    'name' => 'Paymill',
+    'vendor' => 'http://www.paymill.com/',
+    'download_url' => 'https://github.com/Paymill/Paymill-PHP/archive/master.zip',
+    'path' => 'lib/Services/Paymill',
+    'version arguments' => array(
+      'file' => 'lib/Services/Paymill/Apiclient/Curl.php',
+      'pattern' => '@Paymill-php/([0-9\.]+)@',
+      'lines' => 45,
+    ),
+    'files' => array(
+      'php' => array(
+        'Clients.php',
+        'Coupons.php',
+        'Exception.php',
+        'Offers.php',
+        'Payments.php',
+        'Preauthorizations.php',
+        'Refunds.php',
+        'Subscriptions.php',
+        'Transactions.php',
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Card on file callback: background charge payment
+ *
+ * @param object $payment_method
+ *  The payment method instance definition array.
+ * @param object $card_data
+ *   The stored credit card data array to be processed
+ * @param object $order
+ *   The order object that is being processed
+ * @param array $charge
+ *   The price array for the charge amount with keys of 'amount' and 'currency'
+ *   If null the total value of the order is used.
+ *
+ * @return
+ *   FALSE if the transaction was not successful
+ */
+function commerce_paymill_cardonfile_charge($payment_method, $card_data, $order, $charge = NULL) {
+  // Format order total for transaction.
+  if (!isset($charge)) {
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $charge = commerce_line_items_total($wrapper->commerce_line_items);
+  }
+
+  return commerce_paymill_process_transaction($payment_method, $card_data->remote_id, $order, $charge);
+}
+
+/**
+ * Paylill payment transaction.
+ *
+ * @param object $payment_method
+ *  The payment method instance definition array.
+ * @param string $payment_id
+ *   The payment ID of the card to be processed
+ * @param object $order
+ *   The order object that is being processed
+ * @param array $charge
+ *   The price array for the charge amount with keys of 'amount' and 'currency'
+ *   If null the total value of the order is used.
+ *
+ * @return
+ *   FALSE if the transaction was not successful
+ */
+function commerce_paymill_process_transaction($payment_method, $payment_id, $order, $charge = NULL) {
+
+  // Include Paymill libraries.
+  libraries_load('paymill');
+
+  // Get current API key
+  $api_key = commerce_paymill_get_key($payment_method['settings']);
+
+  // Get client ID
+  $client_id = commerce_paymill_get_client_id($order, $payment_method['settings']);
+  if (!$client_id) {
+    drupal_set_message(t('There was an error with your payment. Please try again or contact us for assistance.'), 'error');
+    return FALSE;
+  }
+
+  if (empty($charge)) {
+    $charge = commerce_payment_order_balance($order);
+  }
+
+  // Create transaction/preauth
+  $transaction_params = array(
+    'amount' => $charge['amount'],
+    'currency' => $charge['currency_code'],
+    'payment' => $payment_id,
+  );
+
+  $original_response = array();
+  if ($payment_method['settings']['capture_mode'] == COMMERCE_CREDIT_AUTH_ONLY) {
+    $preauthorization_service = new Services_Paymill_Preauthorizations($api_key, COMMERCE_PAYMILL_SERVER);
+    $response = $preauthorization_service->create($transaction_params);
+    if (method_exists($preauthorization_service, 'getResponse')) {
+      $original_response = $preauthorization_service->getResponse();
+    }
+  }
+  else {
+    $transaction_service = new Services_Paymill_Transactions($api_key, COMMERCE_PAYMILL_SERVER);
+    $transaction_params['description'] = 'Order:' . $order->order_id;
+    $response = $transaction_service->create($transaction_params);
+    if (method_exists($transaction_service, 'getResponse')) {
+      $original_response = $transaction_service->getResponse();
+    }
+  }
+
+  if (!isset($response['response_code']) && isset($original_response['body']['data']['response_code'])) {
+    $response = $original_response['body']['data'];
+  }
+
+  /**
+   * @TODO Transaction creation can be abstracted. Avoid code duplication.
+   *
+   */
+  // Create Commerce transaction.
+  $transaction = commerce_payment_transaction_new('commerce_paymill', $order->order_id);
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->amount = $charge['amount'];
+  $transaction->currency_code = $charge['currency_code'];
+
+  // Set transaction status.
+  if ($response['response_code'] < 20000 || $response['response_code'] >= 30000) {
+    $message = commerce_paymill_get_status_message($response['response_code']);
+    $message = isset($message) ? $message : check_plain($response['error']);
+    $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+    $transaction->message = $message;
+    /**
+     * @TODO refactor the error checking code. Can be abstracted on a function.
+     *       prefix with _ to not pollute the namespace.
+     */
+    if ($response['response_code']) {
+      watchdog('commerce_paymill', 'Paymill transaction failure on the order @orderid: [@code] - @return_text.', array(
+                 '@orderid' => $order->order_id,
+                 '@code' => $response['response_code'],
+                 '@return_text' => $message,
+               ), WATCHDOG_WARNING);
+    }
+    else {
+      watchdog('commerce_paymill', 'Paymill transaction failure on the order @orderid: @return_text.', array(
+                 '@orderid' => $order->order_id,
+                 '@return_text' => $message,
+               ), WATCHDOG_WARNING);
+    }
+
+    drupal_set_message(t('There was an error with your payment. Please try again or contact us for assistance.'), 'error');
+
+    // Save transaction.
+    commerce_payment_transaction_save($transaction);
+    return FALSE;
+
+  }
+  else {
+    if ($payment_method['settings']['capture_mode'] == COMMERCE_CREDIT_AUTH_ONLY) {
+      $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+      $transaction->remote_id = $response['preauthorization']['id'];
+      $transaction->remote_status = 'pending';
+    }
+    else {
+      $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+      $transaction->remote_id = $response['id'];
+    }
+  }
+
+  // Save transaction.
+  commerce_payment_transaction_save($transaction);
+
+  /**
+   * @TODO refactor the error checking code. Can be abstracted on a function.
+   *       prefix with _ to not pollute the namespace.
+   */
+
+  // Check for errors from the response.
+  if (isset($response['error'])) {
+    watchdog('commerce_paymill', 'Paymill transaction failure on the order @orderid: @return_text.', array(
+               '@orderid' => $order->order_id,
+               '@return_text' => $response['error'],
+             ), WATCHDOG_WARNING);
+    drupal_set_message(t('There was an error with your payment. Please try again or contact us for assistance.'), 'error');
+    return FALSE;
+  }
+}

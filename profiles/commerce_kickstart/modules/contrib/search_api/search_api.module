@@ -590,7 +590,7 @@ function search_api_search_api_index_update(SearchApiIndex $index) {
       }
     }
 
-    // We also have to re-index all content
+    // We also have to re-index all content.
     _search_api_index_reindex($index);
   }
 
@@ -614,7 +614,7 @@ function search_api_search_api_index_update(SearchApiIndex $index) {
   $new_additional = $index->options + array('additional fields' => array());
   $new_additional = $new_additional['additional fields'];
   if ($old_additional != $new_additional) {
-    cache_clear_all($index->getCacheId() . '-0-1', 'cache', TRUE);
+    cache_clear_all($index->getCacheId() . '-0-1', 'cache');
   }
 
   // If the index's enabled or read-only status is being changed, queue or
@@ -763,6 +763,32 @@ function search_api_entity_delete($entity, $type) {
 }
 
 /**
+ * Implements hook_field_update_field().
+ *
+ * Recalculates fields settings if the cardinality of the field has changed from
+ * or to 1.
+ */
+function search_api_field_update_field($field, $prior_field, $has_data) {
+  $before = $prior_field['cardinality'];
+  $after = $field['cardinality'];
+  if ($before != $after && ($before == 1 || $after == 1)) {
+    // Unfortunately, we cannot call this right away since the field information
+    // is only stored after the hook is called.
+    drupal_register_shutdown_function('search_api_index_recalculate_fields');
+  }
+}
+
+/**
+ * Implements hook_flush_caches().
+ *
+ * Recalculates fields settings in case the schema (in most cases: the
+ * multiplicity) of a property has changed.
+ */
+function search_api_flush_caches() {
+  search_api_index_recalculate_fields();
+}
+
+/**
  * Implements hook_search_api_item_type_info().
  *
  * Adds item types for all entity types with property information.
@@ -809,6 +835,13 @@ function search_api_search_api_alter_callback_info() {
     'name' => t('Bundle filter'),
     'description' => t('Exclude items from indexing based on their bundle (content type, vocabulary, …).'),
     'class' => 'SearchApiAlterBundleFilter',
+    // Filters should be executed first.
+    'weight' => -10,
+  );
+  $callbacks['search_api_alter_role_filter'] = array(
+    'name' => t('Role filter'),
+    'description' => t('Exclude users from indexing based on their role.'),
+    'class' => 'SearchApiAlterRoleFilter',
     // Filters should be executed first.
     'weight' => -10,
   );
@@ -918,7 +951,7 @@ function search_api_track_item_insert($type, array $item_ids) {
 
   foreach ($indexes as $index) {
     if (!empty($index->options['index_directly'])) {
-      $indexed = search_api_index_specific_items_delayed($index, $item_ids);
+      search_api_index_specific_items_delayed($index, $item_ids);
     }
   }
 }
@@ -1022,6 +1055,83 @@ function search_api_track_item_delete($type, array $item_ids) {
       }
     }
   }
+}
+
+/**
+ * Recalculates the saved fields of an index.
+ *
+ * This is mostly necessary when the multiplicity of the underlying properties
+ * change. The method will re-examine the data structure of the entities in each
+ * index and, if a discrepancy is spotted, re-save that index with updated
+ * fields options (thus, of course, also triggering a re-indexing operation).
+ *
+ * @param array|false $indexes
+ *   An array of SearchApiIndex objects on which to perform the operation, or
+ *   FALSE to perform it on all indexes.
+ */
+function search_api_index_recalculate_fields($indexes = FALSE) {
+  if (!is_array($indexes)) {
+    $indexes = search_api_index_load_multiple(FALSE);
+  }
+  $stored_keys = drupal_map_assoc(array('type', 'entity_type', 'real_type', 'boost'));
+  foreach ($indexes as $index) {
+    if (empty($index->options['fields'])) {
+      continue;
+    }
+    // We have to clear the cache, both static and stored, before using
+    // getFields(). Otherwise, we'd just use the stale data which the fields
+    // options are probably already based on.
+    cache_clear_all($index->getCacheId() . '-1-0', 'cache');
+    $index->resetCaches();
+    // getFields() automatically uses the actual data types to correct possible
+    // stale data.
+    $fields = $index->getFields();
+    foreach ($fields as $key => $field) {
+      $fields[$key] = array_intersect_key($field, $stored_keys);
+      if (isset($fields[$key]['boost']) && $fields[$key]['boost'] == '1.0') {
+        unset($fields[$key]['boost']);
+      }
+    }
+    // Use a more accurate method of determining if the fields settings are
+    // equal to avoid needlessly re-indexing the whole index.
+    if (!_search_api_settings_equals($fields, $index->options['fields'])) {
+      $options = $index->options;
+      $options['fields'] = $fields;
+      $index->update(array('options' => $options));
+    }
+  }
+}
+
+/**
+ * Test two setting arrays (or individual settings) for equality.
+ *
+ * While a simple == also works in some cases, this function takes into account
+ * that the order of keys (usually) doesn't matter in settings arrays.
+ *
+ * @param mixed $setting1
+ *   The first setting (array).
+ * @param mixed $setting2
+ *   The second setting (array).
+ *
+ * @return bool
+ *   TRUE if both settings are identical, FALSE otherwise.
+ */
+function _search_api_settings_equals($setting1, $setting2) {
+  if (!is_array($setting1) || !is_array($setting2)) {
+    return $setting1 == $setting2;
+  }
+  foreach ($setting1 as $key => $value) {
+    if (!array_key_exists($key, $setting2)) {
+      return FALSE;
+    }
+    if (!_search_api_settings_equals($value, $setting2[$key])) {
+      return FALSE;
+    }
+    unset($setting2[$key]);
+  }
+  // If any keys weren't unset previously, they are not present in $setting1 and
+  // the two are different.
+  return !$setting2;
 }
 
 /**
@@ -1774,19 +1884,20 @@ function search_api_server_load($id, $reset = FALSE) {
  *
  * @see entity_load()
  *
- * @param $ids
+ * @param array|false $ids
  *   An array of server IDs or machine names, or FALSE to load all servers.
- * @param $conditions
+ * @param array $conditions
  *   An array of conditions on the {search_api_server} table in the form
  *   'field' => $value.
- * @param $reset
+ * @param bool $reset
  *   Whether to reset the internal entity_load cache.
  *
  * @return array
  *   An array of server objects keyed by machine name.
  */
 function search_api_server_load_multiple($ids = array(), $conditions = array(), $reset = FALSE) {
-  return entity_load_multiple_by_name('search_api_server', $ids, $conditions, $reset);
+  $servers = entity_load('search_api_server', $ids, $conditions, $reset);
+  return entity_key_array_by_property($servers, 'machine_name');
 }
 
 /**
@@ -1930,12 +2041,12 @@ function search_api_index_load($id, $reset = FALSE) {
  *
  * @see entity_load()
  *
- * @param $ids
+ * @param array|false $ids
  *   An array of index IDs or machine names, or FALSE to load all indexes.
- * @param $conditions
+ * @param array $conditions
  *   An array of conditions on the {search_api_index} table in the form
  *   'field' => $value.
- * @param $reset
+ * @param bool $reset
  *   Whether to reset the internal entity_load cache.
  *
  * @return array
@@ -1945,7 +2056,8 @@ function search_api_index_load_multiple($ids = array(), $conditions = array(), $
   // This line is a workaround for a weird PDO bug in PHP 5.2.
   // See http://drupal.org/node/889286.
   new SearchApiIndex();
-  return entity_load_multiple_by_name('search_api_index', $ids, $conditions, $reset);
+  $indexes = entity_load('search_api_index', $ids, $conditions, $reset);
+  return entity_key_array_by_property($indexes, 'machine_name');
 }
 
 /**

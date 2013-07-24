@@ -233,7 +233,7 @@ function commerce_paypal_ec_service_description() {
 function commerce_paypal_ec_default_settings() {
   $default_currency = commerce_default_currency();
 
-  return array(
+  $default_settings = array(
     'api_username' => '',
     'api_password' => '',
     'api_signature' => '',
@@ -249,7 +249,14 @@ function commerce_paypal_ec_default_settings() {
     'reference_transactions' => FALSE,
     'ba_desc' => '',
     'show_payment_instructions' => FALSE,
+    'update_billing_profiles' => TRUE,
   );
+
+  if (module_exists('commerce_shipping')) {
+    $default_settings['update_shipping_profiles'] = TRUE;
+  }
+
+  return $default_settings;
 }
 
 /**
@@ -380,9 +387,22 @@ function commerce_paypal_ec_settings_form($settings = array()) {
   );
   $form['show_payment_instructions'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Show a message on the checkout form when PayPal WPS is selected telling the customer to "Continue with checkout to complete payment via PayPal."'),
+    '#title' => t('Show a message on the checkout form when PayPal EC is selected telling the customer to "Continue with checkout to complete payment via PayPal."'),
     '#default_value' => $settings['show_payment_instructions'],
   );
+  $form['update_billing_profiles'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Update billing customer profiles with address information the customer enters at PayPal.'),
+    '#default_value' => $settings['update_billing_profiles'],
+  );
+
+  if (module_exists('commerce_shipping')) {
+    $form['update_shipping_profiles'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Update shipping customer profiles with address information the customer enters at PayPal.'),
+      '#default_value' => $settings['update_shipping_profiles'],
+    );
+  }
 
   return $form;
 }
@@ -399,12 +419,16 @@ function commerce_paypal_ec_form_alter(&$form, &$form_state, $form_id) {
   if (strpos($form_id, 'views_form_commerce_cart_form_') === 0 && commerce_paypal_ec_enabled()) {
     // If the cart form View shows line items...
     if (!empty($form_state['build_info']['args'][0]->result)) {
-      // Add the Express Checkout form as a suffix to the cart form.
-      $payment_method = commerce_payment_method_instance_load('paypal_ec|commerce_payment_paypal_ec');
       $order = $form_state['order'];
 
-      $ec_form = drupal_get_form('commerce_paypal_ec_order_form', $payment_method, $order);
-      $form['#suffix'] = drupal_render($ec_form);
+      // And Express Checkout is also available as a payment option in checkout...
+      if (commerce_paypal_ec_enabled($order)) {
+        // Add the Express Checkout form as a suffix to the cart form.
+        $payment_method = commerce_payment_method_instance_load('paypal_ec|commerce_payment_paypal_ec');
+
+        $ec_form = drupal_get_form('commerce_paypal_ec_order_form', $payment_method, $order);
+        $form['#suffix'] .= drupal_render($ec_form);
+      }
     }
   }
 
@@ -418,7 +442,7 @@ function commerce_paypal_ec_form_alter(&$form, &$form_state, $form_id) {
       // If we find PayPal EC, include its CSS on the form and exit the loop.
       if ($method_id == 'paypal_ec') {
         $paypal_ec = TRUE;
-        $value = commerce_paypal_ec_mark_image();
+        $value = theme('paypal_ec_mark_image');
       }
     }
 
@@ -615,6 +639,8 @@ function commerce_paypal_ec_redirect_form_back($order, $payment_method) {
  * Payment method callback: redirect form return validation.
  */
 function commerce_paypal_ec_redirect_form_validate($order, $payment_method) {
+  $payment_method['settings'] += commerce_paypal_ec_default_settings();
+
   if (!empty($payment_method['settings']['ipn_logging']) &&
     $payment_method['settings']['ipn_logging'] == 'full_ipn') {
     watchdog('commerce_paypal_ec', 'Customer returned from PayPal with the following POST data:!ipn_data', array('!ipn_data' => '<pre>' . check_plain(print_r($_POST, TRUE)) . '</pre>'), WATCHDOG_NOTICE);
@@ -654,11 +680,13 @@ function commerce_paypal_ec_redirect_form_validate($order, $payment_method) {
   }
 
   // Create a billing information profile for the order with the available info.
-  commerce_paypal_ec_customer_profile($order, 'billing', $response, 'PAYMENTREQUEST_0_');
+  if (!empty($payment_method['settings']['update_billing_profiles'])) {
+    commerce_paypal_ec_customer_profile($order, 'billing', $response, 'PAYMENTREQUEST_0_');
+  }
 
   // If the shipping module exists on the site, create a shipping information
   // profile for the order with the available info.
-  if (module_exists('commerce_shipping')) {
+  if (module_exists('commerce_shipping') && !empty($payment_method['settings']['update_shipping_profiles'])) {
     commerce_paypal_ec_customer_profile($order, 'shipping', $response, 'PAYMENTREQUEST_0_');
   }
 
@@ -699,7 +727,12 @@ function commerce_paypal_ec_redirect_form_submit($order, $payment_method) {
  */
 function commerce_paypal_ec_paypal_ipn_validate($order, $payment_method, $ipn) {
   // Prepare a trimmed list of receiver e-mail addresses.
-  $receiver_emails = explode(',', $payment_method['settings']['receiver_emails']);
+  if (!empty($payment_method['settings']['receiver_emails'])) {
+    $receiver_emails = explode(',', $payment_method['settings']['receiver_emails']);
+  }
+  else {
+    $receiver_emails = array();
+  }
 
   foreach ($receiver_emails as $key => &$email) {
     $email = trim(strtolower($email));
@@ -1137,22 +1170,17 @@ function commerce_paypal_ec_itemize_order($order, $currency_code) {
     // If the current line item is a shipping line item, track its amount value
     // without taxes separately from products.
     if (module_exists('commerce_shipping') && $line_item_wrapper->type->value() == 'shipping') {
-      // Extract the unit price and the amount of non-display inclusive taxes it
-      // contains (i.e. sales tax).
+      // Extract the unit price.
       $shipping_price = $line_item_wrapper->commerce_unit_price->value();
 
-      // Otherwise track the total costs of all shipping line items on the
-      // order to add to the final payment request as a single amount, though
-      // typically this should be limited to one shipping line item per order.
+      // Track the total costs of all shipping line items on the order to add to
+      // the final payment request as a single amount, though typically this
+      // should be limited to one shipping line item per order.
       $shippingamt += $shipping_price['amount'];
     }
     else {
       // Extract the line item unit price value array.
       $unit_price = $line_item_wrapper->commerce_unit_price->value();
-
-      // Determine the amount of non-display inclusive tax included in this line
-      // item (i.e. sales tax).
-      $l_taxamt = commerce_tax_total_amount($unit_price['data']['components'], FALSE, $currency_code);
 
       // Convert the unit price to the propery currency.
       $l_amt = commerce_currency_convert($unit_price['amount'], $unit_price['currency_code'], $currency_code);
@@ -1180,7 +1208,12 @@ function commerce_paypal_ec_itemize_order($order, $currency_code) {
   // Determine the order level item amount and tax amount line items. To prevent
   // rounding problems getting in the way, we calculate them based on the order
   // total instead of tallying it from each line item.
-  $taxamt = commerce_round(COMMERCE_ROUND_HALF_UP, commerce_tax_total_amount($order_total['data']['components'], FALSE, $currency_code));
+  if (module_exists('commerce_tax')) {
+    $taxamt = commerce_round(COMMERCE_ROUND_HALF_UP, commerce_tax_total_amount($order_total['data']['components'], FALSE, $currency_code));
+  }
+  else {
+    $taxamt = 0;
+  }
 
   // Add the total item and tax amounts to the payment request
   $nvp += array(
@@ -1336,11 +1369,22 @@ function commerce_paypal_ec_checkout_url($server, $token) {
  * @param $order
  *    The order that needs to be checked.
  *
- * @todo Rework this function to support any number of Express Checkout rules
- * and actually evaluate their conditions to see if it would be available for a
- * particular order.
+ * @todo Rework this function to support any number of Express Checkout rules.
  */
 function commerce_paypal_ec_enabled($order = NULL) {
+  // If an order is passed in, then pass it through Rules to only return TRUE if
+  // the Express Checkout rule is available for the order.
+  if (!empty($order)) {
+    $order->payment_methods = array();
+    rules_invoke_all('commerce_payment_methods', $order);
+
+    // Sort the payment methods array by the enabling Rules' weight values.
+    uasort($order->payment_methods, 'drupal_sort_weight');
+
+    return in_array('paypal_ec|commerce_payment_paypal_ec', array_keys($order->payment_methods));
+  }
+
+  // Otherwise sipmly load the default PayPal EC rule and see if it's enabled.
   $rule = rules_config_load('commerce_payment_paypal_ec');
 
   $enabled = !empty($rule) && $rule->active;
@@ -1401,12 +1445,20 @@ function commerce_paypal_ec_mark_url() {
   return url(drupal_get_path('module', 'commerce_paypal_ec') . '/images/paypal-ec-logo.gif', array('absolute' => TRUE));
 }
 
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_paypal_ec_theme() {
+  return array(
+    'paypal_ec_mark_image' => array(),
+  );
+}
+
 /**
  * Returns a themed PayPal mark image.
- *
- * @todo Make this an actual theme function.
  */
-function commerce_paypal_ec_mark_image($remote = FALSE) {
+function theme_paypal_ec_mark_image() {
   $variables = array(
     'path' => commerce_paypal_ec_mark_url(),
     'title' => t('Pay with PayPal'),

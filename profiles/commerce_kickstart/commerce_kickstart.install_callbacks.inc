@@ -191,6 +191,8 @@ function _commerce_kickstart_taxonomy_menu($operation, &$context) {
     variable_set($variable_name, 'commerce_kickstart_taxonomy_term_path');
     $variable_name = _taxonomy_menu_build_variable('rebuild', $collection->vid);
     variable_set($variable_name, 1);
+    $variable_name = _taxonomy_menu_build_variable('sync', $collection->vid);
+    variable_set($variable_name, 1);
   }
 }
 

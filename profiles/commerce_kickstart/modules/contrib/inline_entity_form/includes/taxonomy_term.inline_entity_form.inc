@@ -19,13 +19,13 @@ class TaxonomyTermInlineEntityFormController extends EntityInlineEntityFormContr
   }
 
   /**
-   * Overrides EntityInlineEntityFormController::defaultFields().
+   * Overrides EntityInlineEntityFormController::tableFields().
    *
    * We can't use the parent class method because the taxonomy term metadata
    * wrapper doesn't have a property that matches the entity bundle key.
    * @todo: Remove this method once http://drupal.org/node/1662558 is fixed.
    */
-  public function defaultFields($bundles) {
+  public function tableFields($bundles) {
     $fields = array();
 
     $info = entity_get_info($this->entityType);
@@ -35,7 +35,6 @@ class TaxonomyTermInlineEntityFormController extends EntityInlineEntityFormContr
     $fields[$label_key] = array(
       'type' => 'property',
       'label' => $metadata ? $metadata['properties'][$label_key]['label'] : t('Label'),
-      'visible' => TRUE,
       'weight' => 1,
     );
 
@@ -43,7 +42,6 @@ class TaxonomyTermInlineEntityFormController extends EntityInlineEntityFormContr
     $fields['vocabulary'] = array(
       'type' => 'property',
       'label' => t('Vocabulary'),
-      'visible' => TRUE,
       'weight' => 2,
     );
 

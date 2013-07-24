@@ -94,6 +94,9 @@
   > fieldset .fieldset-wrapper {
     margin-top: 10px;
   }
+  > fieldset .field-type-image .fieldset-wrapper {
+    margin-top: 0;
+  }
 }
 .field-widget-inline-entity-form fieldset fieldset .fieldset-wrapper .ief-entity-submit,
 .ief-row-form .ief-entity-submit {
@@ -111,13 +114,22 @@
 }
 .field-widget-inline-entity-form fieldset .tabledrag-toggle-weight-wrapper {
   float: right; /* LTR */
-  margin-top: -20px;
+  margin-top: -5px;
 }
 .field-widget-inline-entity-form fieldset.ief-entity-fieldset,
-.ief-form-bottom > legend .fieldset-legend {
+.ief-form-bottom > legend .fieldset-legend,
+.field-widget-inline-entity-form .field-type-image fieldset.form-wrapper {
   background: transparent;
   border: 0;
   margin: 0;
+}
+.field-widget-inline-entity-form .field-type-image {
+  .form-item label {
+    float: none;
+  }
+  .description {
+    padding-bottom: 10px;
+  }
 }
 .field-widget-inline-entity-form fieldset.ief-entity-fieldset .fieldset-legend {
   border-bottom: 1px solid #e4e4e4;
@@ -425,6 +437,7 @@ div.views-megarow-content {
 .field-widget-inline-entity-form tr.ief-row-form .ief-form-row {
   background: transparent url("../images/mega-arrow.png") no-repeat 50px -1px;
   display: inline-block;
+  margin-top: -1px;
   width: 100%;
 }
 /* Comments View Fix */
@@ -495,6 +508,92 @@ html.js .view-commerce-message-messages .view-footer fieldset.collapsible .field
 }
 
 /* Commerce discount. */
+.commerce-discount-form {
+  font-size: 0.95em;
+
+  fieldset .fieldset-legend {
+    font-size: 14px;
+    font-weight: 700;
+  }
+  div.form-item-commerce-discount-fields-inline-conditions-und-0-condition-settings-products {
+    input.form-autocomplete {
+      width: 300px;
+    }
+  }
+
+  #foo:checked,
+  input.form-checkbox + label::before,
+  input.form-radio + label::before {
+    top: 7px;
+    left: 5px; /* LTR */
+  }
+
+  .form-item-commerce-discount-type.form-item .ajax-progress {
+    display: block;
+  }
+  .form-item.form-type-radio .ajax-progress-throbber {
+    top: 7px;
+    left: 5px; /* LTR */
+  }
+  .field-name-commerce-discount-offer {
+    .form-type-radios > div {
+      .form-item {
+        .ajax-progress {
+          display: block;
+        }
+        .ajax-progress-throbber {
+          top: 7px;
+          left: 5px; /* LTR */
+        }
+      }
+    }
+  }
+  .inline-conditions-container .condition-wrapper .form-item .ajax-progress {
+    top: 5px;
+    left: 66px; /* LTR */
+  }
+
+  .commerce-discount-usage .form-item.form-type-select label {
+    font-weight: 700;
+  }
+  #commerce-discount-fields-wrapper .start-date-wrapper label,
+  #commerce-discount-fields-wrapper .end-date-wrapper label {
+    box-sizing: -moz-box;
+    margin-top: 4px;
+  }
+  .commerce-discount-usage .field-type-number-integer {
+    margin-top: 10px;
+  }
+}
+.commerce-discount-form .form-item-label {
+  padding-bottom: 10px;
+}
+.commerce-discount-form .field-name-commerce-discount-date .fieldset-wrapper {
+  background: none;
+  border: 0;
+  outline: 0;
+  margin-left: 0; /* LTR */
+}
+.commerce-discount-form .field-type-datestamp .fieldset-legend {
+  margin-left: 0; /* LTR */
+}
+.commerce-discount-form .field-name-commerce-discount-date .fieldset-wrapper input {
+  background-position: 100px 3px !important;
+  height: 25px;
+  width: 120px !important;
+}
+.commerce-discount-form #edit-actions {
+  margin-top: 20px;
+}
+
+td.views-field-operations-dropbutton {
+  position: relative;
+
+  .ctools-dropbutton-processed {
+    position: absolute;
+    top: 18px;
+  }
+}
 .view-commerce-discount-overview td.views-field-enable-disable * {
   -moz-box-sizing: content-box;
   -webkit-box-sizing: content-box;
@@ -593,11 +692,6 @@ td.views-field-operations-dropbutton {
 #commerce-discount-fields-wrapper .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type {
   margin-bottom: 9px;
 }
-#commerce-discount-fields-wrapper .start-date-wrapper label,
-#commerce-discount-fields-wrapper .end-date-wrapper label {
-  box-sizing: -moz-box;
-  margin-top: 9px;
-}
 .field-name-commerce-discount-offer .form-wrapper {
   padding-top: 5px;
 }
@@ -642,6 +736,21 @@ td.views-field-operations-dropbutton {
 }
 
 /* Manage Products */
+.views-exposed-widgets {
+  .views-exposed-widget {
+    label,
+    .views-widget {
+      display: inline-block;
+    }
+  }
+  .views-widget-filter-date_filter {
+    label {
+      float: left;
+      margin-right: 10px;
+    }
+  }
+
+}
 .views-exposed-form {
 
   .views-exposed-widgets {
@@ -659,19 +768,7 @@ td.views-field-operations-dropbutton {
 .views-exposed-form label {
   font-weight: 500;
 }
-.views-exposed-form .views-widget-filter-combine .views-widget {
-  max-width: 250px;
-}
 /* Making wide enough to fit min and max date fields inline */
-.commerce-backoffice-view .views-exposed-form #edit-date-filter-wrapper {
-  width: 650px;
-}
-.commerce-backoffice-view .views-exposed-form #edit-date-filter-wrapper .views-widget {
-  max-width: 650px;
-}
-.commerce-backoffice-view .views-exposed-form .date-padding {
-  max-width: 235px;
-}
 .views-exposed-form .form-item input {
   border: 1px solid #C8C8C8;
   -moz-border-radius: 3px;
@@ -689,6 +786,7 @@ html.js .views-exposed-form .form-item input.throbbing {
 }
 .commerce-backoffice-view .views-exposed-form .date-padding .form-item {
   margin-top: 0;
+  max-width: 100%;
 }
 .views-exposed-form label,
 .views-exposed-form #edit-date-filter-min-wrapper,
@@ -1098,4 +1196,9 @@ html.js #features-export-form {
   input.form-radio + label.ui-button::before {
     background: transparent;
   }
+}
+
+/* Webform Fixes */
+form table#webform-emails label::before {
+  display: none;
 }

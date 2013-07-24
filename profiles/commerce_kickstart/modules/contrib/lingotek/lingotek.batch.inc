@@ -14,7 +14,7 @@
  * If this batch was NOT created from a form_submit() handler, then pass in TRUE
  */
 function lingotek_field_language_data_cleanup_batch_create($front = FALSE) {
-
+  LingotekLog::trace(__METHOD__);
   $operations = array();
   $entity_type = 'node';
   $source_language = lingotek_get_source_language();
@@ -223,7 +223,7 @@ function lingotek_get_sync_download_batch_elements($download_targets = NULL, $sy
  * Batch Create: Lingotek Identify Content - create informative lingonode data (in lingotek table) for pre-existing content 
  */
 function lingotek_batch_identify_content($front = FALSE) {
-
+  LingotekLog::trace(__METHOD__);
   $result = db_query('SELECT DISTINCT nid FROM {lingotek}');
   $existing_nids = $result->fetchCol();
   $operations = array();
@@ -314,14 +314,14 @@ function lingotek_sync_upload_node($nid, &$context) {
   }
 
   if ($result) {
-    $context['results']['uploads'] = is_numeric($context['results']['uploads']) ? $context['results']['uploads'] + 1 : 1;
+    $context['results']['uploads'] = isset($context['results']['uploads']) && is_numeric($context['results']['uploads']) ? $context['results']['uploads'] + 1 : 1;
     if (!isset($context['results']['uploaded_nids']) || !is_array($context['results']['uploaded_nids'])) {
       $context['results']['uploaded_nids'] = array();
     }
     $context['results']['uploaded_nids'][] = $nid;
   }
   else {
-    $context['results']['upload_fails'] = is_numeric($context['results']['upload_fails']) ? $context['results']['upload_fails'] + 1 : 1;
+    $context['results']['upload_fails'] = isset($context['results']['upload_fails']) && is_numeric($context['results']['upload_fails']) ? $context['results']['upload_fails'] + 1 : 1;
     if (!isset($context['results']['upload_fail_nids']) || !is_array($context['results']['upload_fail_nids'])) {
       $context['results']['upload_fail_nids'] = array();
     }

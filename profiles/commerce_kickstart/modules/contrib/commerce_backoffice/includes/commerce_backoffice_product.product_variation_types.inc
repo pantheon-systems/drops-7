@@ -162,9 +162,15 @@ function commerce_backoffice_product_form_commerce_product_ui_product_type_form_
  */
 function commerce_backoffice_product_variation_type_form_submit($form, &$form_state) {
   commerce_product_ui_product_type_form_submit($form, $form_state);
-  $type_name = trim($form_state['values']['product_type']['type']);
+  if (!empty($form_state['product_type']['type'])) {
+    $type_name = $form_state['product_type']['type'];
+  }
+  else {
+    $type_name = $form_state['values']['product_type']['type'];
+  }
+  $type_name = trim($type_name);
   $human_name = trim($form_state['values']['product_type']['name']);
-  if (!empty($form_state['values']['create_product_display'])) {
+  if (!empty($form_state['values']['create_product_display']) && !node_type_load($type_name)) {
     // Create the product display type.
     $type = node_type_set_defaults();
     $type->type = $type_name;

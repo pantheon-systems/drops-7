@@ -24,14 +24,14 @@ function theme_service_links_build_link($variables) {
         $link = array(
           'title' => $text,
           'href' => $url[0],
-          //'query' => array($url[1]),
           'query' => $query,
           'attributes' => $attributes,
         );
         break;
       case SERVICE_LINKS_STYLE_IMAGE:
+        $alt_text = t('!name logo', array('!name' => $text));
         $link = array(
-          'title' => theme('image', array('path' => service_links_expand_path($image), 'alt' => $text)),
+          'title' => theme('image', array('path' => service_links_expand_path($image), 'alt' => $alt_text)),
           'href' => $url[0],
           'query' => $query,
           'attributes' => $attributes,
@@ -39,8 +39,9 @@ function theme_service_links_build_link($variables) {
         );
         break;
       case SERVICE_LINKS_STYLE_IMAGE_AND_TEXT:
+        $alt_text = t('!name logo', array('!name' => $text));
         $link = array(
-          'title' => theme('image', array('path' => service_links_expand_path($image), 'alt' => $text)) .' '. $text,
+          'title' => theme('image', array('path' => service_links_expand_path($image), 'alt' => $alt_text)) .' '. $text,
           'href' => $url[0],
           'query' => $query,
           'attributes' => $attributes,
@@ -71,20 +72,22 @@ function theme_service_links_build_link($variables) {
         $link = l($text, $url[0], $attributes);
         break;
       case SERVICE_LINKS_STYLE_IMAGE:
-        $attributes = array_merge($attributes, array('html' => TRUE));
-        $link = l(theme('image', array('path' => service_links_expand_path($image), 'alt' => $text)), $url[0], $attributes);
+        $attributes['html'] = TRUE;
+        $alt_text = t('!name logo', array('!name' => $text));
+        $link = l(theme('image', array('path' => service_links_expand_path($image), 'alt' => $alt_text)), $url[0], $attributes);
         break;
       case SERVICE_LINKS_STYLE_IMAGE_AND_TEXT:
-        $attributes = array_merge($attributes, array('html' => TRUE));
-        $link = l(theme('image', array('path' => service_links_expand_path($image), 'alt' => $text)) .' '. $text, $url[0], $attributes);
+        $attributes['html'] = TRUE;
+        $alt_text = t('!name logo', array('!name' => $text));
+        $link = l(theme('image', array('path' => service_links_expand_path($image), 'alt' => $alt_text)) .' '. $text, $url[0], $attributes);
         break;
       case SERVICE_LINKS_STYLE_EMPTY:
-        $attributes = array_merge($attributes, array('html' => TRUE));
+        $attributes['html'] = TRUE;
         $link = l('<span class="element-invisible">' . $text . '</span>', $url[0], $attributes);
         break;
       case SERVICE_LINKS_STYLE_FISHEYE:
         $attributes['attributes']['class'] = isset($attributes['attributes']['class']) ? array_merge($attributes['attributes']['class'], array('fisheyeItem')) : array('fisheyeItem');
-        $attributes = array_merge($attributes, array('html' => TRUE));
+        $attributes['html'] = TRUE;
         $link = l(theme('image', array('path' => service_links_expand_path($image, 'fisheye'), 'alt' => $text, 'getsize' => FALSE)) .'<span>'. $text .'</span>', $url[0], $attributes);
         break;
       default:
@@ -101,7 +104,18 @@ function theme_service_links_build_link($variables) {
 function theme_service_links_node_format($variables) {
   $links = $variables['links'];
   $label = $variables['label'];
+  $view_mode = $variables['view_mode'];
+  $node_type = $variables['node_type'];
 
+  if ($view_mode == 'rss') {
+    $result = array();
+    foreach($links as $l) {
+      $result[] = l($l['title'], $l['href'], $l);
+    }
+
+    return '<div class="service-links">' . implode(' ', $result) . '</div>';
+  }
+  
   if (isset($label) && !empty($label)) {
     return '<div class="service-links"><div class="service-label">'. t('@label', array('@label' => $label)) .' </div>'. theme('links', array('links' => $links)) .'</div>';
   }

@@ -727,6 +727,9 @@ function i18n_menu_item_get_language($item) {
   }
   else {
     $menu = menu_load($item['menu_name']);
+    if (!isset($menu['i18n_mode'])) {
+      return LANGUAGE_NONE;
+    }
     switch ($menu['i18n_mode']) {
       case I18N_MODE_LANGUAGE:
         return $menu['language'];

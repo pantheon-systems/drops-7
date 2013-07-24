@@ -1,0 +1,12 @@
+name = Inline Conditions
+description = Manage frequently used conditions through an attached field.
+package = Rules
+core = 7.x
+dependencies[] = rules
+
+; Information added by drupal.org packaging script on 2013-07-18
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "inline_conditions"
+datestamp = "1374154559"
+

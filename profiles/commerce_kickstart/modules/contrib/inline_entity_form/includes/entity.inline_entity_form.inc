@@ -54,28 +54,28 @@ class EntityInlineEntityFormController {
   }
 
   /**
-   * Returns an array of fields (which can be either Field API fields or
-   * properties defined through hook_entity_property_info()) that should be
-   * used to represent a selected entity in the IEF table.
+   * Returns an array of fields used to represent an entity in the IEF table.
    *
-   * The IEF widget can have its own fields specified in the widget settings,
-   * in which case the output of this function is ignored.
+   * The fields can be either Field API fields or properties defined through
+   * hook_entity_property_info().
+   *
+   * Modules can alter the output of this method through
+   * hook_inline_entity_form_table_fields_alter().
    *
    * @param $bundles
-   *   An array of allowed $bundles for this widget.
+   *   An array of allowed bundles for this widget.
    *
    * @return
    *   An array of field information, keyed by field name. Allowed keys:
    *   - type: 'field' or 'property',
    *   - label: Human readable name of the field, shown to the user.
    *   - weight: The position of the field relative to other fields.
-   *   - visible: Whether the field should be displayed.
-   *   Special keys for type 'field':
+   *   Special keys for type 'field', all optional:
    *   - formatter: The formatter used to display the field, or "hidden".
    *   - settings: An array passed to the formatter. If empty, defaults are used.
    *   - delta: If provided, limits the field to just the specified delta.
    */
-  public function defaultFields($bundles) {
+  public function tableFields($bundles) {
     $info = entity_get_info($this->entityType);
     $metadata = entity_get_property_info($this->entityType);
 
@@ -85,7 +85,6 @@ class EntityInlineEntityFormController {
       $fields[$label_key] = array(
         'type' => 'property',
         'label' => $metadata ? $metadata['properties'][$label_key]['label'] : t('Label'),
-        'visible' => TRUE,
         'weight' => 1,
       );
     }
@@ -94,7 +93,6 @@ class EntityInlineEntityFormController {
       $fields[$id_key] = array(
         'type' => 'property',
         'label' => $metadata ? $metadata['properties'][$id_key]['label'] : t('ID'),
-        'visible' => TRUE,
         'weight' => 1,
       );
     }
@@ -103,7 +101,6 @@ class EntityInlineEntityFormController {
       $fields[$bundle_key] = array(
         'type' => 'property',
         'label' => $metadata ? $metadata['properties'][$bundle_key]['label'] : t('Type'),
-        'visible' => TRUE,
         'weight' => 2,
       );
     }
@@ -171,6 +168,12 @@ class EntityInlineEntityFormController {
         ),
       ),
     );
+    // The single widget doesn't offer autocomplete functionality.
+    if ($instance['widget']['type'] == 'inline_entity_form_single') {
+      $form['allow_existing']['#access'] = FALSE;
+      $form['match_operator']['#access'] = FALSE;
+    }
+
     $form['delete_references'] = array(
       '#type' => 'checkbox',
       '#title' => t('Delete referenced @label when the parent entity is deleted.', array('@label' => $labels['plural'])),

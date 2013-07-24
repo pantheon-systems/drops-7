@@ -214,6 +214,7 @@ function search_api_install() {
     'server' => NULL,
     'item_type' => 'node',
     'options' => array(
+      'index_directly' => 1,
       'cron_limit' => '50',
       'data_alter_callbacks' => array(
         'search_api_alter_node_access' => array(

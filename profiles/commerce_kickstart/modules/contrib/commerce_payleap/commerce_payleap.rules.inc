@@ -61,8 +61,8 @@ function commerce_payleap_rules_integration_access($type, $name) {
 function commerce_payleap_rules_capture_pending($order, $transaction = FALSE) {
   if ($transaction) {
     $payments = array();
-    $payments[0]->transaction_id = $transaction->$transaction_id;
-    $payments[0]->commerce_payment_transaction_status = $transaction->$transaction_id;
+    $payments[0]->transaction_id = $transaction->transaction_id;
+    $payments[0]->commerce_payment_transaction_status = $transaction->transaction_id;
   }
   else {
     $payments =  views_get_view_result('commerce_payment_order', 'defaults', $order->order_id);
@@ -88,8 +88,8 @@ function commerce_payleap_rules_capture_pending($order, $transaction = FALSE) {
 function commerce_payleap_rules_cancel_capture($order, $transaction = FALSE) {
   if ($transaction) {
     $payments = array();
-    $payments[0]->transaction_id = $transaction->$transaction_id;
-    $payments[0]->commerce_payment_transaction_status = $transaction->$transaction_id;
+    $payments[0]->transaction_id = $transaction->transaction_id;
+    $payments[0]->commerce_payment_transaction_status = $transaction->transaction_id;
   }
   else {
     $payments =  views_get_view_result('commerce_payment_order', 'defaults', $order->order_id);

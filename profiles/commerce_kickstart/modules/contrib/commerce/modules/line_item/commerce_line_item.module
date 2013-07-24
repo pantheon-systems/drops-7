@@ -798,6 +798,8 @@ function commerce_line_item_field_info() {
  *                           valid line item ID).
  */
 function commerce_line_item_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  $translated_instance = commerce_i18n_object('field_instance', $instance);
+
   // Extract line_item_ids to check.
   $line_item_ids = array();
 
@@ -810,7 +812,7 @@ function commerce_line_item_field_validate($entity_type, $entity, $field, $insta
       else {
         $errors[$field['field_name']][$langcode][$delta][] = array(
           'error' => 'invalid_line_item_id',
-          'message' => t('%name: you have specified an invalid line item for this field.', array('%name' => $instance['label'])),
+          'message' => t('%name: you have specified an invalid line item for this field.', array('%name' => $translated_instance['label'])),
         );
       }
     }
@@ -825,7 +827,7 @@ function commerce_line_item_field_validate($entity_type, $entity, $field, $insta
         if (!empty($item['line_item_id']) && !isset($line_items[$item['line_item_id']])) {
           $errors[$field['field_name']][$langcode][$delta][] = array(
             'error' => 'invalid_line_item_id',
-            'message' => t('%name: you have specified an invalid line item for this reference field.', array('%name' => $instance['label'])),
+            'message' => t('%name: you have specified an invalid line item for this reference field.', array('%name' => $translated_instance['label'])),
           );
         }
       }
@@ -1077,8 +1079,9 @@ function commerce_line_item_field_widget_form(&$form, &$form_state, $field, $ins
       // Add a default save button.
       $element['actions'] += array(
         'save_line_item' => array(
-          '#type' => 'submit',
+          '#type' => 'button',
           '#value' => !empty($line_item_type['add_form_submit_value']) ? $line_item_type['add_form_submit_value'] : t('Save'),
+          '#limit_validation_errors' => array(array_merge($element['#field_parents'], array($field['field_name']))),
           '#ajax' => array(
             'callback' => 'commerce_line_item_manager_refresh',
             'wrapper' => 'line-item-manager',
@@ -1087,8 +1090,9 @@ function commerce_line_item_field_widget_form(&$form, &$form_state, $field, $ins
       );
 
       $element['actions']['cancel'] = array(
-        '#type' => 'submit',
+        '#type' => 'button',
         '#value' => t('Cancel'),
+        '#limit_validation_errors' => array(),
         '#ajax' => array(
           'callback' => 'commerce_line_item_manager_refresh',
           'wrapper' => 'line-item-manager',
@@ -1107,8 +1111,9 @@ function commerce_line_item_field_widget_form(&$form, &$form_state, $field, $ins
           '#prefix' => '<div class="add-line-item">',
         );
         $element['actions']['line_item_add'] = array(
-          '#type' => 'submit',
+          '#type' => 'button',
           '#value' => t('Add line item'),
+          '#limit_validation_errors' => array(array_merge($element['#field_parents'], array($field['field_name']))),
           '#ajax' => array(
             'callback' => 'commerce_line_item_manager_refresh',
             'wrapper' => 'line-item-manager',
@@ -1547,16 +1552,18 @@ function commerce_line_item_field_views_data($field) {
     $bundles[] = $entity . ' (' . implode(', ', $entity_bundles) . ')';
   }
 
+  $replacements = array('!field_name' => $field['field_name'], '@bundles' => implode(', ', $bundles));
+
   foreach ($data as $table_name => $table_data) {
     foreach ($table_data as $field_name => $field_data) {
       if (isset($field_data['filter']['field_name']) && $field_name != 'delta') {
         $data[$table_name][$field_name]['relationship'] = array(
-          'title' => t('Referenced line item'),
-          'help' => t('Appears in: @bundles.', array('@bundles' => implode(', ', $bundles))),
+          'title' => t('Referenced line items'),
+          'label' => t('Line items referenced by !field_name', $replacements),
+          'help' => t('Relate this entity to line items referenced by its !field_name value.', $replacements) . '<br />' . t('Appears in: @bundles.', $replacements),
           'base' => 'commerce_line_item',
           'base field' => 'line_item_id',
           'handler' => 'views_handler_relationship',
-          'label' => t('Line Item'),
         );
       }
     }

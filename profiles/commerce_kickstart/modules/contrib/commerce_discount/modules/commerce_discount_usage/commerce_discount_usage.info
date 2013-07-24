@@ -11,9 +11,9 @@ files[] = includes/views/handlers/commerce_discount_usage_handler_field_commerce
 ; Simple tests
 files[] = commerce_discount_usage.test
 
-; Information added by drupal.org packaging script on 2013-05-03
-version = "7.x-1.0-alpha1+13-dev"
+; Information added by drupal.org packaging script on 2013-07-25
+version = "7.x-1.0-alpha3"
 core = "7.x"
 project = "commerce_discount"
-datestamp = "1367585716"
+datestamp = "1374743169"
 

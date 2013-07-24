@@ -1,0 +1,33 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for Commerce Kickstart Menus module.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_kickstart_menus_enable() {
+  // Commerce Kickstart Menus extensively manipulates menu links. Even though
+  // menus are rebuilt by default when a module gets enabled, it's necessary to
+  // rebuild them again in order to have them in the right place. This is due
+  // to the following issue: https://drupal.org/node/550254.
+  menu_rebuild();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_kickstart_menus_uninstall() {
+  // Similarly to the module's `hook_enable()` a workaround is needed here in
+  // order to set the original state of menu links back due to the
+  // aforementioned issue: https://drupal.org/node/550254.
+  // Unfortunately this can't happen in `hook_disable()`, because the module's
+  // `hook_menu()` implementation is still invoked there.
+  // Remove all administrative menu links from the database.
+  db_query("DELETE FROM menu_links WHERE router_path LIKE 'admin%'");
+  // Rebuild the menus, this will regenerate the administrative links, but
+  // without this module's additions.
+  menu_rebuild();
+}

@@ -33,7 +33,7 @@ function commerce_payflow_link_capture_form($form, &$form_state, $order, $transa
   }
 
   // Convert the price amount to a user friendly decimal value.
-  $default_amount = commerce_currency_amount_to_decimal($default_amount, $transaction->currency_code);
+  $default_amount = number_format(commerce_currency_amount_to_decimal($default_amount, $transaction->currency_code), 2, '.', '');
 
   $description = implode('<br />', array(
     t('Authorization: @amount', array('@amount' => commerce_currency_format($transaction->amount, $transaction->currency_code))),
@@ -173,7 +173,7 @@ function commerce_payflow_link_reference_form($form, &$form_state, $order, $tran
   // Convert the price amount to a user friendly decimal value or leave it blank
   // if there is no oustanding balance on the order.
   if ($balance['amount'] > 0) {
-    $default_amount = commerce_currency_amount_to_decimal($balance['amount'], $transaction->currency_code);
+    $default_amount = number_format(commerce_currency_amount_to_decimal($balance['amount'], $transaction->currency_code), 2, '.', '');
   }
   else {
     $default_amount = '';
@@ -399,7 +399,7 @@ function commerce_payflow_link_refund_form($form, &$form_state, $order, $transac
   $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
   $form_state['payment_method'] = $payment_method;
 
-  $default_amount = commerce_currency_amount_to_decimal($transaction->amount, $transaction->currency_code);
+  $default_amount = number_format(commerce_currency_amount_to_decimal($transaction->amount, $transaction->currency_code), 2, '.', '');
 
   $form['amount'] = array(
     '#type' => 'textfield',

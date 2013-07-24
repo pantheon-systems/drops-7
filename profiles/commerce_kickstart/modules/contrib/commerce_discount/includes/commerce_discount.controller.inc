@@ -67,4 +67,13 @@ class CommerceDiscountControllerExportable extends EntityAPIControllerExportable
 
     return parent::save($entity, $transaction);
   }
+
+  /**
+   * Overridden to handle deletion of rules when a discount is deleted.
+   */
+  public function delete($ids, DatabaseTransaction $transaction = NULL) {
+    parent::delete($ids, $transaction);
+    // Rebuild entities.
+    entity_defaults_rebuild(array('rules_config'));
+  }
 }

@@ -1,0 +1,39 @@
+<?php
+
+/**
+ * @file
+ * Widgets services install file.
+ */
+
+/**
+ * Remove unused variables.
+ */
+function widget_services_update_7201(&$sandbox) {
+  // Digg Smart Button
+  variable_del('service_links_dsb_type');
+  variable_del('service_links_dsb_related');
+  variable_del('service_links_dsb_style');
+
+  // Facebook Share unused variables
+  variable_del('service_links_fs_text');
+  variable_del('service_links_fs_fix_count');
+
+  // Google Plus one unused
+  variable_set('service_links_gpo_size', variable_get('service_links_gpo_type', ''));
+  variable_del('service_links_gpo_type');
+  variable_del('service_links_gpo_counter');
+
+  // Facebook Like height
+  $layout = variable_get('service_links_fl_layout', 'button_count');
+  switch ($layout) {
+    case 'box_count':
+      variable_set('service_links_fl_height', 65);
+      break;
+    case 'standard':
+      variable_set('service_links_fl_height', 80);
+      break;
+    case 'button_count':
+      variable_set('service_links_fl_height', 21);
+      break;
+  }
+}

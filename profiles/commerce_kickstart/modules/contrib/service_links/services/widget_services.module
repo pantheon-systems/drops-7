@@ -2,7 +2,9 @@
 
 /**
  * @file
- * Widgets show some info about the content and the social network.
+ * Extends Service Links with dynamic buttons.
+ *
+ * @author Fabio Mucciante (TheCrow)
  */
 
 /**
@@ -11,17 +13,14 @@
 function widget_services_service_links() {
   $links = array();
 
-  $links['facebook_widget'] = array(
+  $links['facebook_share'] = array(
     'name' => t('Share on Facebook'),
     'link' => 'http://www.facebook.com/sharer.php',
     'description' => t('Share this post on Facebook'),
-    'javascript' => array(
-      'http://static.ak.fbcdn.net/connect.php/js/FB.Share',
-      'facebook_share.js',
-    ),
+    'javascript' => 'facebook_share.js',
     'icon' => 'facebook.png',
-    'style' => SERVICE_LINKS_STYLE_TEXT,
-    'callback' => 'ws_facebook_widget_share',
+    'style' => SERVICE_LINKS_STYLE_EMPTY,
+    'callback' => 'ws_facebook_share_data',
   );
   $links['twitter_widget'] = array(
     'name' => 'Tweet Widget',
@@ -29,7 +28,7 @@ function widget_services_service_links() {
     'icon' => 'twitter.png',
     'description' => t('Tweet This'),
     'attributes' => array('class' => array('twitter-share-button')),
-    'javascript' => 'http://platform.twitter.com/widgets.js',
+    'javascript' => 'twitter_button.js',
     'style' => SERVICE_LINKS_STYLE_EMPTY,
     'callback' => 'ws_twitter_widget_data',
   );
@@ -40,26 +39,13 @@ function widget_services_service_links() {
     'description' => t('I Like it'),
     'javascript' => 'facebook_like.js',
     'style' => SERVICE_LINKS_STYLE_EMPTY,
-    'callback' => 'ws_facebook_widget_like',
-  );
-  $links['digg_smart_button'] = array(
-    'name' => 'Digg Smart Button',
-    'link' => 'http://digg.com/submit?url=<raw-encoded-url>&title=<raw-encoded-title>&related=<related>&style=<style>',
-    'icon' => 'digg.png',
-    'description' => t('Digg It'),
-    'javascript' => 'http://digg.com/tools/diggthis.js',
-    'style' => SERVICE_LINKS_STYLE_EMPTY,
-    'callback' => 'ws_digg_smart_button_data',
-    'attributes' => array('class' => array('DiggThisButton', variable_get('service_links_dsb_type', 'DiggCompact'))),
+    'callback' => 'ws_facebook_like_data',
   );
   $links['google_plus_one'] = array(
     'name' => 'Google Plus One',
     'link' => '<url>',
     'description' => t('Plus it'),
-    'javascript' => array(
-      'https://apis.google.com/js/plusone.js',
-      'google_plus_one.js',
-    ),
+    'javascript' => 'google_plus_one.js',
     'style' => SERVICE_LINKS_STYLE_EMPTY,
     'callback' => 'ws_google_plus_one_data',
   );
@@ -69,11 +55,26 @@ function widget_services_service_links() {
     'icon' => 'linkedin.png',
     'description' => t('Share on Linkedin'),
     'javascript' => array(
+      'http://platform.linkedin.com/in.js?async=true',
       'linkedin_share_button.js',
-      'http://platform.linkedin.com/in.js',
     ),
     'style' => SERVICE_LINKS_STYLE_EMPTY,
     'callback' => 'ws_linkedin_share_button_data',
+  );
+  $links['pinterest_button'] = array(
+    'name' => 'Pinterest',
+    //'link' => 'http://pinterest.com/pin/create/button/?url=<raw-encoded-url>&description=<pinterest-description>&media=<pinterest-media>',
+    'link' => 'http://pinterest.com/pin/create/button/?url=<raw-encoded-long-url>&description=<pinterest-description>&media=<pinterest-media>',
+    'icon' => 'pinterest.png',
+    'description' => t('Pin It'),
+    'javascript' => array(
+      'pinterest_button.js',
+      //'http://assets.pinterest.com/js/pinit.js',
+    ),
+    'style' => SERVICE_LINKS_STYLE_EMPTY,
+    'attributes' => array('class' => array('pin-it-button')),
+    'callback' => 'ws_pinterest_button_data',
+    'preset' => 'ws_pinterest_button_tags',
   );
 
   return $links;
@@ -96,15 +97,16 @@ function ws_twitter_widget_data(&$service, $subst) {
 }
 
 /**
- * Callback function for Facebook Share Widget.
+ * Callback function for Facebook Share.
  */
-function ws_facebook_widget_share(&$service, $subst) {
+function ws_facebook_share_data(&$service, $subst) {
   static $fs_settings;
 
   if (!isset($fs_settings)) {
     $fs_settings = array(
       'type' => check_plain(variable_get('service_links_fs_type', 'button_count')),
-      'fix_count' => (boolean) variable_get('service_links_fs_fix_count', FALSE),
+      'app_id' => check_plain(variable_get('service_links_fs_app_id', '150123828484431')),
+      'css' => check_plain(preg_replace('/[^0-9a-z\-:;]/', '', variable_get('service_links_fs_css', ''))),
     );
 
     drupal_add_js(array('ws_fs' => $fs_settings), 'setting');
@@ -114,9 +116,9 @@ function ws_facebook_widget_share(&$service, $subst) {
 }
 
 /**
- * Callback function for Facebook Like Widget.
+ * Callback function for Facebook Like.
  */
-function ws_facebook_widget_like(&$service, $subst) {
+function ws_facebook_like_data(&$service, $subst) {
   static $params;
 
   if (!isset($params)) {
@@ -127,50 +129,18 @@ function ws_facebook_widget_like(&$service, $subst) {
       'colorscheme' => check_plain(variable_get('service_links_fl_colorscheme', 'light')),
       'font' => check_plain(variable_get('service_links_fl_font', '')),
       'width' => (int) variable_get('service_links_fl_width', 100),
-      'height' => '21',
+      'height' => (int) variable_get('service_links_fl_height', 21),
       'locale' => check_plain(variable_get('service_links_fl_locale', '')),
     );
 
     $fl_settings = array(
       'width' => $params['width'],
-      'height' => '21',
+      'height' => $params['height'],
     );
-
-    switch ($params['layout']) {
-      case 'standard':
-        $fl_settings['height'] = '80';
-        $params['height'] = '80';
-        break;
-      case 'box_count':
-        $fl_settings['height'] = '65';
-        $params['height'] = '65';
-        break;
-      //case 'button_count':
-        //$fl_settings['height'] = 21;
-        //$params['height'] = '21';
-        //break;
-    }
 
     drupal_add_js(array('ws_fl' => $fl_settings), 'setting');
   }
 
-  $service['url'][1] = array_merge($service['url'][1], $params);
-}
-
-/**
- * Callback function for Digg Button.
- */
-function ws_digg_smart_button_data(&$service, $subst) {
-  static $params;
-
-  if (!isset($params)) {
-    $params = array(
-      'related' => check_plain(variable_get('service_links_dsb_related', 'yes')),
-      'style' => check_plain(variable_get('service_links_dsb_style', 'yes')),
-    );
-  }
-
-  // teaser on rel used as description ?
   $service['url'][1] = array_merge($service['url'][1], $params);
 }
 
@@ -182,8 +152,11 @@ function ws_google_plus_one_data(&$service, $subst) {
 
   if (!isset($gpo_settings)) {
     $gpo_settings = array(
-      'type' => check_plain(variable_get('service_links_gpo_type', '')),
-      'counter' => (boolean) variable_get('service_links_gpo_counter', TRUE),
+      'size' => check_plain(variable_get('service_links_gpo_size', '')),
+      'annotation' => check_plain(variable_get('service_links_gpo_annotation', '')),
+      'lang' => check_plain(variable_get('service_links_gpo_lang', '')),
+      'callback' => check_plain(variable_get('service_links_gpo_callback', '')),
+      'width' => (int) variable_get('service_links_gpo_width', 300),
     );
 
     drupal_add_js(array('ws_gpo' => $gpo_settings), 'setting');
@@ -202,6 +175,50 @@ function ws_linkedin_share_button_data(&$service, $subst) {
     );
 
     drupal_add_js(array('ws_lsb' => $lsb_settings), 'setting');
+  }
+}
+
+/**
+ * Preset function for Pinterest Button, which fill the media tag.
+ */
+function ws_pinterest_button_tags(&$service, &$settings, $node = NULL) {
+  static $tokens;
+
+  if (!isset($tokens)) {
+    $tokens['media'] = variable_get('service_links_pb_mediatoken', '');
+    $tokens['description'] = variable_get('service_links_pb_descriptiontoken', '');
+  }
+ 
+  $settings['tag']['pinterest-media'] = '<pinterest-media>';
+
+  if (module_exists('token')) {
+    $settings['subst']['pinterest-media'] = check_plain(@token_replace($tokens['media'], array('node' => $node)));
+    if (empty($tokens['description'])) {
+      $service['link'] = str_replace('pinterest-description', 'raw-encoded-teaser', $service['link']);
+    }
+    else {
+      $settings['tag']['pinterest-description'] = '<pinterest-description>';
+      $settings['subst']['pinterest-description'] = check_plain(@token_replace($tokens['description'], array('node' => $node)));
+    }
+  }
+  else {
+    $settings['subst']['pinterest-media'] = '';
+    $service['link'] = str_replace('pinterest-description', 'raw-encoded-teaser', $service['link']);
+  }
+}
+
+/**
+ * Callback function for Pinterest Button.
+ */
+function ws_pinterest_button_data(&$service, $subst) {
+  static $pb_settings;
+
+  if (!isset($pb_settings)) {
+    $pb_settings = array(
+      'countlayout' => check_plain(variable_get('service_links_pb_countlayout', 'horizontal')),
+    );
+
+    drupal_add_js(array('ws_pb' => $pb_settings), 'setting');
   }
 }
 

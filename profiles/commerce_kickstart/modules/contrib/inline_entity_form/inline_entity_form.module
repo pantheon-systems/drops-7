@@ -389,14 +389,18 @@ function inline_entity_form_field_widget_form(&$form, &$form_state, $field, $ins
     '#suffix' => '</div>',
     '#attached' => array(
       'css' => array(),
-      'js' => array(
-        // Give the JS file a weight so that it runs after file.js.
-        drupal_get_path('module', 'inline_entity_form') . '/inline_entity_form.js' => array('weight' => 10),
-      ),
     ),
     '#ief_id' => $ief_id,
     '#ief_root' => TRUE,
   ) + $element;
+
+  if (module_exists('file')) {
+    // file.js triggers uploads when the main Submit button is clicked.
+    $element['#attached']['js'] = array(
+      drupal_get_path('module', 'file') . '/file.js',
+      drupal_get_path('module', 'inline_entity_form') . '/inline_entity_form.js',
+    );
+  }
 
   $base_css = array(
     'base' => drupal_get_path('module', 'inline_entity_form') . '/theme/inline_entity_form.css',
@@ -406,15 +410,6 @@ function inline_entity_form_field_widget_form(&$form, &$form_state, $field, $ins
   _inline_entity_form_attach_css($base_css, $element['#attached']['css']);
   // Add entity type specific CSS.
   _inline_entity_form_attach_css($controller->css(), $element['#attached']['css']);
-
-  // Mark the parent form submit button with a special flag that will trigger
-  // a save of inline forms and entity weights.
-  if (!empty($form['submit'])) {
-    $form['submit']['#ief_submit_all'] = TRUE;
-  }
-  elseif (!empty($form['actions']['submit'])) {
-    $form['actions']['submit']['#ief_submit_all'] = TRUE;
-  }
 
   // Initialize the IEF array in form state.
   if (empty($form_state['inline_entity_form'][$ief_id])) {
@@ -495,15 +490,18 @@ function inline_entity_form_field_widget_form(&$form, &$form_state, $field, $ins
       '#theme' => 'inline_entity_form_entity_table',
       '#entity_type' => $settings['entity_type'],
     );
+
     // Get the fields that should be displayed in the table.
-    // They can either come from the widget settings or from a "default fields"
-    // callback.
-    if (!empty($widget['settings']['fields'])) {
-      $element['entities']['#fields'] = $widget['settings']['fields'];
-    }
-    else {
-      $element['entities']['#fields'] = $controller->defaultFields($settings['bundles']);
-    }
+    $fields = $controller->tableFields($settings['bundles']);
+    $context = array(
+      'parent_entity_type' => $instance['entity_type'],
+      'parent_bundle' => $instance['bundle'],
+      'field_name' => $instance['field_name'],
+      'entity_type' => $settings['entity_type'],
+      'allowed_bundles' => $settings['bundles'],
+    );
+    drupal_alter('inline_entity_form_table_fields', $fields, $context);
+    $element['entities']['#table_fields'] = $fields;
 
     foreach ($form_state['inline_entity_form'][$ief_id]['entities'] as $key => $value) {
       // Data used by theme_inline_entity_form_entity_table().
@@ -736,6 +734,27 @@ function inline_entity_form_field_widget_form(&$form, &$form_state, $field, $ins
 }
 
 /**
+ * Implements hook_form_alter().
+ *
+ * Adds the #ief_submit_all flag to the main submit button of a form that
+ * contains an IEF widget.
+ * Needs to be done in an alter hook because many forms add the submit button
+ * after inline_entity_form_field_widget_form() is called.
+ */
+function inline_entity_form_form_alter(&$form, &$form_state, $form_id) {
+  if (!empty($form_state['inline_entity_form'])) {
+    // Mark the parent form submit button with a special flag that will trigger
+    // a save of inline forms and entity weights.
+    if (!empty($form['submit'])) {
+      $form['submit']['#ief_submit_all'] = TRUE;
+    }
+    elseif (!empty($form['actions']['submit'])) {
+      $form['actions']['submit']['#ief_submit_all'] = TRUE;
+    }
+  }
+}
+
+/**
  * Wraps and returns the entity form provided by the passed-in controller.
  *
  * @param $controller
@@ -754,12 +773,14 @@ function inline_entity_form_entity_form($controller, $entity_form, &$form_state)
   $delta = $entity_form['#ief_id'];
   if ($entity_form['#op'] == 'edit') {
     $delta .= '-' . $entity_form['#ief_row_delta'];
+    $save_label = t('Update @type_singular', array('@type_singular' => $labels['singular']));
   }
   elseif ($entity_form['#op'] == 'add') {
     // Create a new entity that will be passed to the form.
     $form_settings = $form_state['inline_entity_form'][$entity_form['#ief_id']]['form settings'];
     $entity_form['#entity'] = inline_entity_form_create_entity($entity_form['#entity_type'], $form_settings['bundle'], $entity_form['#parent_language']);
     $entity_form['#title'] = t('Add new @type_singular', array('@type_singular' => $labels['singular']));
+    $save_label = t('Create @type_singular', array('@type_singular' => $labels['singular']));
   }
 
   // Retrieve the form provided by the controller.
@@ -772,7 +793,7 @@ function inline_entity_form_entity_form($controller, $entity_form, &$form_state)
   );
   $entity_form['actions']['ief_' . $entity_form['#op'] . '_save'] = array(
     '#type' => 'submit',
-    '#value' => t('Save @type_singular', array('@type_singular' => $labels['singular'])),
+    '#value' => $save_label,
     '#name' => 'ief-' . $entity_form['#op'] . '-submit-' . $delta,
     '#limit_validation_errors' => array($entity_form['#parents']),
     '#attributes' => array('class' => array('ief-entity-submit')),
@@ -898,6 +919,7 @@ function inline_entity_form_reference_form($controller, $reference_form, &$form_
     '#autocomplete_path' => $autocomplete_path,
     '#element_validate' => array('_inline_entity_form_autocomplete_validate'),
     '#required' => TRUE,
+    '#maxlength' => 255,
   );
   // Add the actions
   $reference_form['actions'] = array(
@@ -1209,13 +1231,13 @@ function inline_entity_form_field_attach_submit($parent_entity_type, $parent_ent
   foreach (field_info_instances($parent_entity_type, $bundle_name) as $instance_name => $instance) {
     if (isset($instance['widget']) && strpos($instance['widget']['type'], 'inline_entity_form') === 0) {
       $field_name = $instance['field_name'];
-      $langcode = $form[$field_name]['#language'];
       $ief_id = $instance['id'];
-      // There's no IEF data for this field, skip it.
-      if (empty($form_state['inline_entity_form'][$ief_id])) {
+      // Skip if the field is not on the form or there is no IEF data for it.
+      if (empty($form_state['inline_entity_form'][$ief_id]) || !isset($form[$field_name])) {
         continue;
       }
 
+      $langcode = $form[$field_name]['#language'];
       $values = $form_state['inline_entity_form'][$ief_id];
       $entity_type = $values['settings']['entity_type'];
       $controller = inline_entity_form_get_controller($instance);
@@ -1300,14 +1322,9 @@ function inline_entity_form_create_entity($entity_type, $bundle, $language = NUL
 function theme_inline_entity_form_entity_table($variables) {
   $form = $variables['form'];
   $entity_type = $form['#entity_type'];
-  $fields = $form['#fields'];
-  // Sort the fields by weight and remove the ones that won't be displayed.
+  $fields = $form['#table_fields'];
+  // Sort the fields by weight.
   uasort($fields, 'drupal_sort_weight');
-  foreach ($fields as $field_name => $field) {
-    if (empty($field['visible'])) {
-      unset($fields[$field_name]);
-    }
-  }
   // If one of the rows is in form context, disable tabledrag.
   $has_tabledrag = TRUE;
   foreach (element_children($form) as $key) {
@@ -1370,12 +1387,16 @@ function theme_inline_entity_form_entity_table($variables) {
         $data = check_plain($data);
       }
       elseif ($field['type'] == 'field') {
-        $settings = array(
+        $display = array(
           'label' => 'hidden',
-          'type' => $field['formatter'],
-          'settings' => $field['settings']
-        );
-        $renderable_data = field_view_field($entity_type, $entity, $field_name, $settings);
+        ) + $field;
+        // The formatter needs to be under the 'type' key.
+        if (isset($display['formatter'])) {
+          $display['type'] = $display['formatter'];
+          unset($display['formatter']);
+        }
+
+        $renderable_data = field_view_field($entity_type, $entity, $field_name, $display);
         // The field has specified an exact delta to display.
         if (isset($field['delta'])) {
           if (!empty($renderable_data[$field['delta']])) {

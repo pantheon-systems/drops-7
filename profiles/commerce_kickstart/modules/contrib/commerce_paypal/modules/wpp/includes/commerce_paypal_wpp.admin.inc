@@ -33,7 +33,7 @@ function commerce_paypal_wpp_capture_form($form, &$form_state, $order, $transact
   }
 
   // Convert the price amount to a user friendly decimal value.
-  $default_amount = commerce_currency_amount_to_decimal($default_amount, $transaction->currency_code);
+  $default_amount = number_format(commerce_currency_amount_to_decimal($default_amount, $transaction->currency_code), 2, '.', '');
 
   $description = implode('<br />', array(
     t('Authorization: @amount', array('@amount' => commerce_currency_format($transaction->amount, $transaction->currency_code))),
@@ -106,12 +106,12 @@ function commerce_paypal_wpp_capture_form_submit($form, &$form_state) {
     $nvp = array(
       'METHOD' => 'DoReauthorization',
       'AUTHORIZATIONID' => $transaction->remote_id,
-      'AMT' => commerce_currency_amount_to_decimal($transaction->amount, $transaction->currency_code),
+      'AMT' => commerce_paypal_price_amount($transaction->amount, $transaction->currency_code),
       'CURRENCYCODE' => $transaction->currency_code,
     );
 
     // Submit the reauthorization request.
-    $response = commerce_paypal_wpp_request($payment_method, $nvp, $order);
+    $response = commerce_paypal_api_request($payment_method, $nvp, $order);
     $transaction->payload[REQUEST_TIMESTAMP . '-reauthorization'] = $response;
 
     // If the response contains an authorization ID...
@@ -146,7 +146,7 @@ function commerce_paypal_wpp_capture_form_submit($form, &$form_state) {
     );
 
     // Submit the capture request request to PayPal.
-    $response = commerce_paypal_wpp_request($payment_method, $nvp, $order);
+    $response = commerce_paypal_api_request($payment_method, $nvp, $order);
     $transaction->payload[REQUEST_TIME . '-capture'] = $response;
 
     switch ($response['ACK']) {

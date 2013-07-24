@@ -2,8 +2,9 @@
 
 /**
  * @file
- * Russian services that extend Service Links module
- * Collected by PVasili (vasili@pinchuk.biz)
+ * Extends Service Links with Russian services.
+ * 
+ * @author PVasili <vasili@pinchuk.biz>
  */
 
 /**

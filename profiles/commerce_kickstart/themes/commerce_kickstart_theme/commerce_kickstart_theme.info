@@ -420,9 +420,9 @@ settings[alpha_region_footer2_second_suffix] = ''
 settings[alpha_region_footer2_second_weight] = '2'
 settings[alpha_region_footer2_second_css] = ''
 
-; Information added by drupal.org packaging script on 2013-05-30
-version = "7.x-2.8"
+; Information added by drupal.org packaging script on 2013-07-26
+version = "7.x-2.9"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1369947669"
+datestamp = "1374852667"
 

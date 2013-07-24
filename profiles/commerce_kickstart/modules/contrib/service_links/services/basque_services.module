@@ -2,8 +2,9 @@
 
 /**
  * @file
- * Basque services that extend Service Links module
- * Collected by Aiaraldea
+ * Extends Service Links with Basque services.
+ * 
+ * @author Aiaraldea
  */
 
 /**

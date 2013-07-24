@@ -23,6 +23,7 @@ function commerce_discount_date_modules_enabled($modules) {
         'widget' => array(
           'module' => 'date',
           'type' => 'date_popup',
+          'weight' => -11,
         ),
         'settings' => array(
           'default_value' => 'blank',

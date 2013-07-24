@@ -1,0 +1,49 @@
+#toolbar .toolbar-menu {
+  postion: relative;
+}
+#toolbar-home,
+#toolbar-user {
+  position: absolute;
+  top: 0;
+  z-index: 2;
+}
+#toolbar-home {
+  left: 0;
+}
+#toolbar-user {
+  right: 0;
+}
+#toolbar .wrapper-depth-2 {
+  position: relative;
+  z-index: 1;
+  width: auto;
+  padding: 0;
+  margin: 0 250px 0 140px;
+}
+#toolbar .wrapper-depth-2,
+#toolbar .depth-2,
+#toolbar .depth-2 a {
+  display: inline-block;
+  position: relative;
+  z-index: 1;
+}
+body.toolbar #toolbar ul.menu-depth-2 a {
+  margin-bottom: 15px;
+}
+body.toolbar #toolbar ul.menu-depth-2 li {
+  cursor: pointer;
+}
+body.toolbar #toolbar ul.menu-depth-2 .wrapper-depth-3 {
+  margin-top: 0px;
+}
+body.toolbar #toolbar ul.menu-depth-2 .wrapper-depth-3 a {
+  margin-bottom: 0;
+}
+body.toolbar #toolbar .wrapper-depth-3 li {
+  list-style-image: none !important;
+}
+
+/* Hide Toolbar Drawer */
+body.toolbar #toolbar .toolbar-drawer {
+  height: 0;
+}

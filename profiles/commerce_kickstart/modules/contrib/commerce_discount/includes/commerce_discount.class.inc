@@ -33,6 +33,13 @@ class CommerceDiscount extends Entity {
    */
   public $enabled = TRUE;
 
+  /**
+   * Set the component price title shown for customers.
+   *
+   * @var string
+   */
+  public $component_title;
+
   public function __construct($values = array()) {
     parent::__construct($values, 'commerce_discount');
   }

@@ -249,11 +249,10 @@ class LingotekSync {
     $doc_ids = is_array($lingotek_document_id) ? $lingotek_document_id : array($lingotek_document_id);
     $count = 0;
     foreach ($doc_ids as $doc_id) {
-      $nid = self::getNodeIdFromDocId($lingotek_document_id);
+      $nid = self::getNodeIdFromDocId($doc_id);
       if ($nid) {
         $query = db_delete('lingotek');
         $query->condition('nid', $nid);
-        //$query->distinct();
         $result = $query->execute();
         $count++;
       }

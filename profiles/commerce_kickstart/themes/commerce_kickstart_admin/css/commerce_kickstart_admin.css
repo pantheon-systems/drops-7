@@ -123,6 +123,10 @@ body.in-maintenance fieldset.collapsible {
   border: 1px solid #ccc;
   padding: 15px;
 }
+body.in-maintenance fieldset .fieldset-wrapper input.form-text,
+body.in-maintenance fieldset.collapsible input.form-text {
+  width: 100%;
+}
 body.in-maintenance ol.task-list {
   background: transparent url("../images/wizard-bg.png") repeat-y 0 0;
 }
@@ -314,11 +318,6 @@ body.installing-additional-functionality ol.task-list {
 
 html.js #-commerce-kickstart-help-store fieldset.collapsible {
   min-height: 55px;
-}
-
-/* Reports Jirafe */
-.page-admin-commerce-jirafe #overlay #overlay-content #page {
-  padding: 0 0 30px;
 }
 
 /* Customer Profiles Fix */

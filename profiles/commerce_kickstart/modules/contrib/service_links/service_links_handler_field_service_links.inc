@@ -9,8 +9,6 @@
 class service_links_handler_field_service_links extends views_handler_field {
   function construct() {
     parent::construct();
-    $this->additional_fields['nid'] = 'nid';
-    $this->additional_fields['title'] = 'title';
   }
 
   function query() {
@@ -32,10 +30,13 @@ class service_links_handler_field_service_links extends views_handler_field {
   }
 
   function render($values) {
-    $node = new stdClass();
-    $node->nid = $values->{$this->aliases['nid']};
-    $node->title = $values->{$this->aliases['title']};
-    // Nothing to render.
+    if (isset($values->_field_data['nid']['entity'])) {
+      $node = $values->_field_data['nid']['entity'];
+    }
+    else {
+      $node = NULL;
+    }
+
     return theme('links', array('links' => service_links_render($node, TRUE)));
   }
 }

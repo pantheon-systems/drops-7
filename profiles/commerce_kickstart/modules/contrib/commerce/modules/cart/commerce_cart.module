@@ -386,6 +386,25 @@ function commerce_cart_form_field_ui_field_edit_form_alter(&$form, &$form_state)
       ),
     );
 
+    // Determine the default attribute widget title.
+    $attribute_widget_title = $commerce_cart_settings['attribute_widget_title'];
+
+    if (empty($attribute_widget_title)) {
+      $attribute_widget_title = $instance['label'];
+    }
+
+    $form['instance']['commerce_cart_settings']['attribute_widget_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Attribute widget title'),
+      '#description' => t('Specify the title to use for the attribute widget on the Add to Cart form.'),
+      '#default_value' => $attribute_widget_title,
+      '#states' => array(
+        'visible' => array(
+          ':input[name="instance[commerce_cart_settings][attribute_field]"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+
     $form['field']['cardinality']['#description'] .= '<br />' . t('Must be 1 for this field to function as an attribute selection field on Add to Cart forms.');
   }
 
@@ -701,15 +720,17 @@ function commerce_cart_order_ids_reset() {
  *   The uid of the user for whom to create the order. If left 0, the order will
  *   be created for an anonymous user and associated with the current session
  *   if it is anonymous.
+ * @param $type
+ *   The type of the order; defaults to the standard 'commerce_order' type.
  *
  * @return
  *   The newly created shopping cart order object.
  */
-function commerce_cart_order_new($uid = 0) {
+function commerce_cart_order_new($uid = 0, $type = 'commerce_order') {
   global $user;
 
   // Create the new order with the customer's uid and the cart order status.
-  $order = commerce_order_new($uid, 'cart');
+  $order = commerce_order_new($uid, 'cart', $type);
   $order->log = t('Created as a shopping cart order.');
 
   // Save it so it gets an order ID and return the full object.
@@ -1140,15 +1161,22 @@ function commerce_cart_product_add($uid, $line_item, $combine = TRUE) {
 
     // Allow other modules to specify what properties should be compared when
     // determining whether or not to combine line items.
-    drupal_alter('commerce_cart_product_comparison_properties', $comparison_properties);
+    drupal_alter('commerce_cart_product_comparison_properties', $comparison_properties, clone($line_item));
 
     // Loop over each line item on the order.
     foreach ($order_wrapper->commerce_line_items as $delta => $matching_line_item_wrapper) {
       // Examine each of the comparison properties on the line item.
       foreach ($comparison_properties as $property) {
+        // If the property is not present on either line item, bypass it.
+        if (!isset($matching_line_item_wrapper->value()->{$property}) && !isset($line_item_wrapper->value()->{$property})) {
+          continue;
+        }
+
         // If any property does not match the same property on the incoming line
-        // item...
-        if ($matching_line_item_wrapper->{$property}->raw() != $line_item_wrapper->{$property}->raw()) {
+        // item or exists on one line item but not the other...
+        if ((!isset($matching_line_item_wrapper->value()->{$property}) && isset($line_item_wrapper->value()->{$property})) ||
+          (isset($matching_line_item_wrapper->value()->{$property}) && !isset($line_item_wrapper->value()->{$property})) ||
+          $matching_line_item_wrapper->{$property}->raw() != $line_item_wrapper->{$property}->raw()) {
           // Continue the loop with the next line item.
           continue 2;
         }
@@ -1355,6 +1383,8 @@ function commerce_cart_field_attribute_eligible($field) {
  *   - attribute_widget: string indicating the type of form element to use on
  *     the Add to Cart form for customers to select the attribute option;
  *     defaults to 'select', may also be 'radios'
+ *   - attribute_widget_title: string used as the title of the attribute form
+ *     element on the Add to Cart form.
  */
 function commerce_cart_field_instance_attribute_settings($instance) {
   if (empty($instance['commerce_cart_settings']) || !is_array($instance['commerce_cart_settings'])) {
@@ -1369,6 +1399,7 @@ function commerce_cart_field_instance_attribute_settings($instance) {
   $commerce_cart_settings += array(
     'attribute_field' => FALSE,
     'attribute_widget' => 'select',
+    'attribute_widget_title' => '',
   );
 
   return $commerce_cart_settings;
@@ -1425,6 +1456,35 @@ function commerce_cart_field_instance_access_settings($instance) {
 }
 
 /**
+ * Returns the title of an attribute widget for the Add to Cart form.
+ *
+ * @param $instance
+ *   The attribute field instance info array.
+ *
+ * @return
+ *   A sanitized string to use as the attribute widget title.
+ */
+function commerce_cart_attribute_widget_title($instance) {
+  // Translate the entire field instance and find the default title.
+  $translated_instance = commerce_i18n_object('field_instance', $instance);
+  $title = $translated_instance['label'];
+
+  // Use the customized attribute widget title if it exists.
+  $commerce_cart_settings = commerce_cart_field_instance_attribute_settings($instance);
+
+  if (!empty($commerce_cart_settings['attribute_widget_title'])) {
+    $title = $commerce_cart_settings['attribute_widget_title'];
+
+    // Use the translated customized title if it exists.
+    if (!empty($translated_instance['attribute_widget_title'])) {
+      $title = $translated_instance['attribute_widget_title'];
+    }
+  }
+
+  return check_plain($title);
+}
+
+/**
  * Builds an appropriate cart form ID based on the products on the form.
  *
  * @see commerce_cart_forms().
@@ -1469,6 +1529,12 @@ function commerce_cart_forms($form_id, $args) {
  *   ways by the form:
  *   - $line_item->data['context']['product_ids']: an array of product IDs to
  *     include on the form.
+ *   - $line_item->data['context']['add_to_cart_combine']: a boolean indicating
+ *     whether or not to attempt to combine the product added to the cart with
+ *     existing line items of matching fields.
+ *   - $line_item->data['context']['show_single_product_attributes']: a boolean
+ *     indicating whether or not product attribute fields with single options
+ *     should be shown on the Add to Cart form.
  *   - $line_item->quantity: the default value for the quantity widget if
  *     included (determined by the $show_quantity parameter).
  *   - $line_item->commerce_product: the value of this field will be used as the
@@ -1744,11 +1810,6 @@ function commerce_cart_add_to_cart_form($form, &$form_state, $line_item, $show_q
                 $allowed_values = $translate($field);
                 _options_prepare_options($allowed_values, $properties);
               }
-
-              // Translate the field title if set.
-              if (!empty($instance['label'])) {
-                $instance['label'] = i18n_field_translate_property($instance, 'label');
-              }
             }
 
             // Otherwise just use the base language values.
@@ -1817,7 +1878,7 @@ function commerce_cart_add_to_cart_form($form, &$form_state, $line_item, $show_q
           else {
             $form['attributes'][$field_name] = array(
               '#type' => $data['commerce_cart_settings']['attribute_widget'],
-              '#title' => check_plain($data['instance']['label']),
+              '#title' => commerce_cart_attribute_widget_title($data['instance']),
               '#options' => array_intersect_key($data['options'], drupal_map_assoc($used_options[$field_name])),
               '#default_value' => $default_product_wrapper->{$field_name}->raw(),
               '#weight' => $data['instance']['widget']['weight'],
@@ -2193,10 +2254,6 @@ function commerce_cart_add_to_cart_form_submit($form, &$form_state) {
       drupal_set_message(t('%title could not be added to your cart.', array('%title' => $product->title)), 'error');
     }
   }
-
-  // Ensure that page redirects back to its original URL without losing query parameters, such as pagers.
-  // @todo Remove when http://drupal.org/node/171267 is fixed.
-  $form_state['redirect'] = array(current_path(), array('query' => drupal_get_query_parameters()));
 }
 
 /**
@@ -2434,5 +2491,20 @@ function commerce_cart_preprocess_views_view(&$vars) {
     if (!empty($view->result)) {
       drupal_add_css(drupal_get_path('module', 'commerce_cart') . '/theme/commerce_cart.theme.css');
     }
+  }
+}
+
+/**
+ * Implements hook_i18n_string_list_TEXTGROUP_alter().
+ */
+function commerce_cart_i18n_string_list_field_alter(&$strings, $type = NULL, $object = NULL) {
+  if (!isset($strings['field']) || !is_array($object) || !commerce_cart_field_instance_is_attribute($object)) {
+    return;
+  }
+  if (!empty($object['commerce_cart_settings']['attribute_widget_title'])) {
+    $strings['field'][$object['field_name']][$object['bundle']]['attribute_widget_title'] = array(
+      'string' => $object['commerce_cart_settings']['attribute_widget_title'],
+      'title' => t('Attribute widget title'),
+    );
   }
 }

@@ -19,14 +19,14 @@ function lingotek_dashboard() {
     $login_id = variable_get('lingotek_login_id', 'community_admin');
 
     if ($login_id != 'community_admin') {
-      drupal_set_message(t('The Drupal Translation module is not fully configured.'), 'warning');
+      drupal_set_message(t('The Lingotek Translation module is not fully configured.'), 'warning');
       $output['instructions'] = array(
         '#type' => 'markup',
         '#markup' => theme('item_list', array(
           'title' => 'Complete configuration by performing the following:',
           'type' => 'ol',
           'items' => array(
-            array('data' => t('Login to the @dashboard_link', array('@dashboard_link', l(t('Lingotek account dashboard'), LINGOTEK_API_SERVER, array('attributes' => array('target' => '_blank')))))),
+            array('data' => t('Login to the') .' '. l(t('Lingotek account dashboard'), LINGOTEK_API_SERVER, array('attributes' => array('target' => '_blank')))),
             array('data' => t('Select the <i>Community &gt; Integrations</i> menu item')),
             array('data' => t('Setup an <i>Inbound OAuth integration</i> method to create an <i>OAuth Key</i> and <i>OAuth Secret</i>')),
             array('data' => t('Copy and paste the <i>OAuth Key</i> and <i>OAuth Secret</i> that were created into the') . ' ' . l(t('Lingotek Drupal module settings'), LINGOTEK_MENU_LANG_BASE_URL . '/settings', array('query' => array('edit_connection' => 1))))
@@ -35,7 +35,7 @@ function lingotek_dashboard() {
       );
     }
     else { // Show the standard misconfiguration message.
-      drupal_set_message(t('The Drupal Translation module is not fully configured. To complete setup, run the') . ' ' . l(t('Lingotek Configuration Wizard'), 'admin/config/lingotek/setup'), 'warning');
+      drupal_set_message(t('The Lingotek Translation module is not fully configured. To complete setup, run the') . ' ' . l(t('Lingotek Configuration Wizard'), 'admin/config/lingotek/setup'), 'warning');
     }
     $output[] = lingotek_support_footer();
     return $output;

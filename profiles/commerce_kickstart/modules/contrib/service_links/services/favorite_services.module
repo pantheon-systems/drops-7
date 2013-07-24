@@ -2,7 +2,9 @@
 
 /**
  * @file
- * Provide the bookmarking support for various browser.
+ * Extends Service Links with browser bookmarking.
+ *
+ * @author Fabio Mucciante (TheCrow)
  */
 
 /**

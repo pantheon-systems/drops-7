@@ -317,7 +317,7 @@ function commerce_paypal_wpp_submit_form_submit($payment_method, $pane_form, $pa
     'CREDITCARDTYPE' => commerce_paypal_wpp_card_type($pane_values['credit_card']['type']),
     'ACCT' => $pane_values['credit_card']['number'],
     'EXPDATE' => $pane_values['credit_card']['exp_month'] . $pane_values['credit_card']['exp_year'],
-    'AMT' => commerce_currency_amount_to_decimal($amount, $currency_code),
+    'AMT' => commerce_paypal_price_amount($amount, $currency_code),
     'CURRENCYCODE' => $currency_code,
   );
 

@@ -1,6 +1,33 @@
 Search API 1.x, dev (xx/xx/xxxx):
 ---------------------------------
 
+Search API 1.7 (07/01/2013):
+----------------------------
+- #1612708 by drunken monkey: Fixed Views caching with facet blocks.
+- #2024189 by drunken monkey: Improved serialization of the query class.
+- #1311260 by drunken monkey: Fixed tokenizing of string fields.
+- #1246998 by drunken monkey: Fixed deletion of items in read-only indexes.
+- #1310970 by drunken monkey: Added improved UI help for determining which
+  fields are available for sorting.
+- #1886738 by chx, Jelle_S, drunken monkey: Added Role filter data alteration.
+- #1837782 by drunken monkey: Fixed enabling of indexes through the Status tab.
+- #1382170 by orakili, lliss, drunken monkey: Added OR filtering for Views
+  option filter.
+- #2012706 by drunken monkey: Fixed $reset parameter for load functions.
+- #1851204 by mvc: Fixed exception when indexing book hierarchy.
+- #1926030 by stella: Added field machine name to indexes' "Fields" tabs.
+- #1879102 by fearlsgroove: Fixed Drush attempting to index 0 items.
+- #1999858 by drunken monkey: Cleaned up API documentation for data alterations.
+- #2010116 by drunken monkey: Enabled "Index items immediately" for the default
+  node index.
+- #2013581 by drunken monkey: Added multi-valued field to test module.
+- #1288724 by brunodbo, drunken monkey, fearlsgroove: Added option for using OR
+  in Views fulltext search.
+- #1694832 by drunken monkey: Fixed index field settings getting stale when
+  Field API field settings change.
+- #1285794 by drunken monkey: Fixed "All" option in Views' exposed "Items per
+  page" setting.
+
 Search API 1.6 (05/29/2013):
 ----------------------------
 - #1649976 by Berdir, ilari.stenroth, drunken monkey: Fixed memory error during

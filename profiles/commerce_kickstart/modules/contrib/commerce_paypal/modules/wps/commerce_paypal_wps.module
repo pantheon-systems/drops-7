@@ -39,6 +39,7 @@ function commerce_paypal_wps_default_settings() {
     'server' => 'sandbox',
     'payment_action' => 'sale',
     'ipn_logging' => 'notification',
+    'receiver_emails' => '',
     'ipn_create_billing_profile' => FALSE,
     'show_payment_instructions' => FALSE,
   );
@@ -105,6 +106,12 @@ function commerce_paypal_wps_settings_form($settings = array()) {
       'full_ipn' => t('Log notifications with the full IPN during validation and processing (used for debugging).'),
     ),
     '#default_value' => $settings['ipn_logging'],
+  );
+  $form['receiver_emails'] = array(
+    '#type' => 'textfield',
+    '#title' => t('PayPal receiver e-mail addresses'),
+    '#description' => t('Enter the primary e-mail address for your PayPal account if different from the one entered above or a comma separated list of all valid e-mail addresses on the account.') . '<br />' . t('IPNs that originate from payments made to a PayPal account whose e-mail address is not in this list will not be processed.'),
+    '#default_value' => $settings['receiver_emails'],
   );
   $form['ipn_create_billing_profile'] = array(
     '#type' => 'checkbox',
@@ -209,9 +216,24 @@ function commerce_paypal_wps_redirect_form_validate($order, $payment_method) {
  *   price, and other parameters as possible.
  */
 function commerce_paypal_wps_paypal_ipn_validate($order, $payment_method, $ipn) {
-  // Return FALSE if the receiver e-mail does not match the one specified by
-  // the payment method instance.
-  if (trim(strtolower($ipn['receiver_email'])) != trim(strtolower($payment_method['settings']['business']))) {
+  // Prepare a trimmed list of receiver e-mail addresses.
+  if (!empty($payment_method['settings']['receiver_emails'])) {
+    $receiver_emails = explode(',', $payment_method['settings']['receiver_emails']);
+  }
+  else {
+    $receiver_emails = array();
+  }
+
+  // Add the business e-mail address to the list of addresses.
+  $receiver_emails[] = $payment_method['settings']['business'];
+
+  foreach ($receiver_emails as $key => &$email) {
+    $email = trim(strtolower($email));
+  }
+
+  // Return FALSE if the receiver e-mail does not match one specified by the
+  // payment method instance.
+  if (!in_array(trim(strtolower($ipn['receiver_email'])), $receiver_emails)) {
     commerce_payment_redirect_pane_previous_page($order);
     watchdog('commerce_paypal_wps', 'IPN rejected: invalid receiver e-mail specified (@receiver_email); must match the primary e-mail address on the PayPal account.', array('@receiver_email' => $ipn['receiver_email']), WATCHDOG_NOTICE);
     return FALSE;
@@ -426,7 +448,7 @@ function commerce_paypal_wps_order_form($form, &$form_state, $order, $settings) 
     'invoice' => commerce_paypal_ipn_invoice($order),
 
     // Define a single item in the cart representing the whole order
-    'amount_1' => commerce_currency_amount_to_decimal(commerce_currency_convert($amount, $order_currency_code, $currency_code), $currency_code),
+    'amount_1' => commerce_paypal_price_amount(commerce_currency_convert($amount, $order_currency_code, $currency_code), $currency_code),
     'item_name_1' => t('Order @order_number at @store', array('@order_number' => $order->order_number, '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))))),
     'on0_1' => t('Product count'),
     'os0_1' => commerce_line_items_quantity($wrapper->commerce_line_items, commerce_product_line_item_types()),

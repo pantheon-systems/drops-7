@@ -11,15 +11,6 @@
 function commerce_product_reference_field_views_data($field) {
   $data = field_views_field_default_views_data($field);
 
-  // Add a join to commerce_product so that it can be used by the inverse relationship.
-  $data[_field_sql_storage_tablename($field)]['table']['join']['commerce_product'] = array(
-    'left_field' => 'product_id',
-    'field' => $field['field_name'] . '_product_id',
-    'extra' => array(
-      array('field' => 'deleted', 'value' => 0, 'numeric' => TRUE),
-    ),
-  );
-
   // Build an array of bundles the product reference field appears on.
   $bundles = array();
 
@@ -27,16 +18,18 @@ function commerce_product_reference_field_views_data($field) {
     $bundles[] = $entity . ' (' . implode(', ', $entity_bundles) . ')';
   }
 
+  $replacements = array('!field_name' => $field['field_name'], '@bundles' => implode(', ', $bundles));
+
   foreach ($data as $table_name => $table_data) {
     foreach ($table_data as $field_name => $field_data) {
       if (isset($field_data['filter']['field_name']) && $field_name != 'delta') {
         $data[$table_name][$field_name]['relationship'] = array(
-          'title' => t('Referenced product'),
-          'help' => t('Appears in: @bundles.', array('@bundles' => implode(', ', $bundles))),
+          'title' => t('Referenced products'),
+          'label' => t('Products referenced by !field_name', $replacements),
+          'help' => t('Relate this entity to products referenced by its !field_name value.', $replacements) . '<br />' . t('Appears in: @bundles.', $replacements),
           'base' => 'commerce_product',
           'base field' => 'product_id',
           'handler' => 'views_handler_relationship',
-          'label' => t('Product'),
         );
       }
     }
@@ -94,16 +87,19 @@ function commerce_product_reference_views_data_alter(&$data) {
       }
 
       $entity_info = entity_get_info($entity_type);
+      $replacements = array('@entity_type' => $entity_info['label'], '!field_name' => $field['field_name']);
+
       $data['commerce_product'][$field['field_name']]['relationship'] = array(
-        'handler' => 'views_handler_relationship',
+        'handler' => 'views_handler_relationship_entity_reverse',
+        'field_name' => $field['field_name'],
+        'field table' => _field_sql_storage_tablename($field),
+        'field field' => $field['field_name'] . '_product_id',
         'base' => $entity_info['base table'],
         'base field' => $entity_info['entity keys']['id'],
-        'relationship table' => _field_sql_storage_tablename($field),
-        'relationship field' => 'entity_id',
 
-        'label' => t('!entity_type referencing products from !field_name', array('!entity_type' => $entity_info['label'], '!field_name' => $field['field_name'])),
-        'title' => t('!entity_type referencing products from !field_name', array('!entity_type' => $entity_info['label'],  '!field_name' => $field['field_name'])),
-        'help' => t('Relate a product to the !entity_type referencing it.', array('!entity_type' => strtolower($entity_info['label']))),
+        'label' => t('@entity_type referencing products from !field_name', $replacements),
+        'title' => t('Referencing @entity_type', $replacements),
+        'help' => t('Relate a product to the @entity_type referencing it through !field_name.', $replacements),
       );
     }
   }

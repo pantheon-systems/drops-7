@@ -2,7 +2,9 @@
 
 /**
  * @file
- * Polish services that extend Service Links module.
+ * Extends Service Links with Polish services.
+ *
+ * @author Fabio Mucciante (TheCrow)
  */
 
 /**

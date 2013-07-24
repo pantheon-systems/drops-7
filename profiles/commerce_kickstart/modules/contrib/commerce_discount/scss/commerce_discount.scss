@@ -1,0 +1,289 @@
+@import "_mixins.scss";
+
+/**
+ * Discount form.
+ */
+.commerce-discount-form {
+  // Position the discount status block on top right region.
+  position: relative;
+  .form-item-enabled {
+    background-color: #eee;
+    padding: 10px 10px 20px 10px;
+    position: absolute;
+    top: 0;
+    right: 0; // LTR
+    width: 180px;
+  }
+  // Reset
+  .form-item-label {
+    clear: both;
+    .form-item {
+      @include box;
+    }
+  }
+  .form-item.form-type-radio {
+    position: relative;
+    .ajax-progress-throbber {
+      position: absolute;
+      right: -10px;
+      .message {
+        display: none;
+      }
+    }
+  }
+  // general block margins
+  #commerce-discount-fields-wrapper {
+    & > .form-wrapper {
+      margin-bottom: 15px;
+    }
+  }
+  #edit-actions {
+    clear: both;
+  }
+}
+
+/**
+ * Choose discount type block.
+ */
+.form-item-commerce-discount-type {
+  .form-radios {
+    margin-top: 5px;
+    .form-item {
+      @include btn;
+      float: left;
+
+      &.selected {
+        background-color: #eee;
+      }
+      .ajax-progress {
+        display: none;
+      }
+      #edit-commerce-discount-type {
+        @include radio-buttons;
+        clear: none;
+
+        .form-item {
+          float: left; // LTR
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Order/Product discount conditions block.
+ */
+.commerce-discount-box {
+  div.inline-conditions-container > label {
+    border-bottom: 1px solid $gray2;
+    display: block;
+    width: 100%;
+  }
+}
+
+/**
+ * Choose offer type block.
+ */
+.field-name-commerce-discount-offer {
+  border: none;
+  margin: 0;
+  padding: 0;
+
+  .form-wrapper .form-wrapper {
+    .form-item {
+      margin-bottom: 2px;
+      padding: 0;
+
+      label {
+        border-bottom: 1px solid $gray2;
+        padding-left: 5px; // LTR
+      }
+      div.form-radios {
+        @include radio-buttons;
+
+        background-color: transparent;
+        border-right: 1px dotted $gray2; /* LTR */
+        float: left; /* LTR */
+        margin: 10px;
+        padding: 4px;
+        padding-right: 20px; /* LTR */
+
+        .form-item {
+          &.selected {
+            background-color: #eee;
+          }
+          .ajax-progress {
+            display: none;
+          }
+        }
+
+        label {
+          border-bottom: 0;
+          padding-left: 0;
+        }
+      }
+    }
+    .form-wrapper {
+      label {
+        border-bottom: 0;
+        padding-left: 0;
+      }
+
+      &.form-item {
+        background-color: transparent;
+        float: left; /* LTR */
+        margin: 10px;
+        padding: 4px;
+      }
+    }
+  }
+}
+
+/**
+ * Discount dates block.
+ */
+.field-name-commerce-discount-date {
+  clear: both;
+  @include fieldset-title;
+  .form-wrapper fieldset.form-wrapper {
+    margin: 0;
+  }
+  .fieldset-wrapper {
+    @include fieldset-content;
+
+    background-color: transparent;
+    display: inline-block;
+    margin: 10px;
+    padding: 4px;
+    width: auto;
+  }
+}
+
+/**
+ * Usage block.
+ */
+.commerce-discount-usage {
+  clear: both;
+
+  .form-item.form-type-select {
+    margin: 0;
+
+    label {
+      border-bottom: 1px solid $gray2;
+    }
+  }
+  .form-item .form-select {
+    float: left; // LTR
+    margin: 10px;
+  }
+  .field-name-commerce-discount-max-uses {
+    @include box;
+
+    & > div {
+      float: left; // LTR
+      margin-left: 30px; // LTR
+
+      &:first-child {
+        margin-left: 0;
+      }
+
+      input[disabled] {
+        background: #eeeeee;
+      }
+    }
+  }
+  .field-type-number-integer {
+    float: left; // LTR
+
+    .form-item {
+      padding: 0;
+    }
+    label {
+      display: inline;
+      font-weight: normal;
+      margin-left: 10px; // LTR
+    }
+    .form-disabled input {
+      border: none;
+      background: none;
+    }
+  }
+}
+
+/**
+ * Overview table.
+ */
+.view-commerce-discount-overview {
+  .views-table {
+    border: none;
+
+    tr, td {
+      border: none;
+    }
+    th {
+      text-transform: none;
+      .views-field-enable-disable {}
+      .views-field-operations-dropbutton {
+        width: 70px;
+      }
+    }
+    td {
+      .views-field-type {
+        padding: 10px 20px;
+      }
+      .views-field-commerce-discount-usage li {
+        list-style-type: none;
+
+        &.first {
+          color: $grayDark;
+          font-style: italic;
+        }
+      }
+      .views-field-enable-disable .item-list ul {
+        width: 140px;
+        border: 2px solid $grayDark;
+        border-radius: 5px;
+        height: 30px;
+
+        li {
+          display: block;
+          width: 50%;
+          float: left; // LTR
+          text-transform: uppercase;
+          padding: 5px 0;
+          font-weight: bold;
+          text-align: center;
+          font-size: 12px;
+          color: white;
+          line-height: 20px;
+
+          &.enabled {
+            background-color: $green;
+          }
+
+          &.disabled {
+            background-color: $gray4;
+          }
+
+          a {
+            color: $grayDark;
+          }
+        }
+      }
+      .views-field-operations-dropbutton {
+        position: relative;
+
+        .ctools-dropbutton {
+          border: 1px solid $gray2;
+          border-radius: 10px;
+
+          @include gradient;
+
+          .ctools-content {
+            border-right: 1px solid $gray2;
+          }
+        }
+      }
+    }
+  }
+}

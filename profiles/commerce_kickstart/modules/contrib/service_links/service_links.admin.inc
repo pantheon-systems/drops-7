@@ -108,7 +108,7 @@ function service_links_admin_settings() {
           $form['where_to_show_the_links']['service_links_category_by_voc_' . $vid] = array(
             '#type' => 'select',
             '#multiple' => TRUE,
-            '#title' => t('@voc', array('@voc' => $vocabulary)),
+            '#title' => $vocabulary,
             '#default_value' => $selected_types,
             '#options' => $terms,
             '#size' => ($count > 10 ? 10 : $count),
@@ -124,27 +124,19 @@ function service_links_admin_settings() {
     '#collapsed' => FALSE,
     '#title' => t('Where to show service links'),
   );
-  $form['places_to_show_the_links']['service_links_in_links'] = array(
-    '#type' => 'select',
-    '#title' => t('Service links in links'),
-    '#default_value' => variable_get('service_links_in_links', SERVICE_LINKS_IN_BOTH),
-    '#options' => array(
-      SERVICE_LINKS_DISABLED => t('Disabled'),
-      SERVICE_LINKS_IN_TEASER => t('Teaser view'),
-      SERVICE_LINKS_IN_FULL => t('Full-page view'),
-      SERVICE_LINKS_IN_BOTH => t('Teasers and full-page view')),
-    '#description' => t('When to display the services in the links section.'),
+  $form['places_to_show_the_links']['service_links_link_view_modes'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Service links in the links'),
+    '#default_value' => variable_get('service_links_link_view_modes', array()),
+    '#options' => _service_links_get_view_modes(),
+    '#description' => t('Select for what view mode display the services in the link section.'),
   );
-  $form['places_to_show_the_links']['service_links_in_node'] = array(
-    '#type' => 'select',
-    '#title' => t('Service links in nodes'),
-    '#default_value' => variable_get('service_links_in_node', SERVICE_LINKS_DISABLED),
-    '#options' => array(
-      SERVICE_LINKS_DISABLED => t('Disabled'),
-      SERVICE_LINKS_IN_TEASER => t('Teaser view'),
-      SERVICE_LINKS_IN_FULL => t('Full-page view'),
-      SERVICE_LINKS_IN_BOTH => t('Teasers and full-page view')),
-    '#description' => t('When to display the services after the content text.'),
+  $form['places_to_show_the_links']['service_links_node_view_modes'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Service links in the content'),
+    '#default_value' => variable_get('service_links_node_view_modes', array()),
+    '#options' => _service_links_get_view_modes(),
+    '#description' => t('Select for what view modes display the services in the content section.'),
   );
 
   $form['page_match'] = array(
@@ -348,7 +340,7 @@ function service_links_admin_settings() {
     $form['short_links']['service_links_domain_redirect'] = array(
       '#type' => 'textfield',
       '#title' => t('Domain to redirect'),
-      '#description' => t('Write here the complete address without trailing slash (i.e. %name)', array('%name' => 'http://www.example.com') ),
+      '#description' => t('Enter the complete address without trailing slash (i.e. %name)', array('%name' => 'http://www.example.com') ),
       '#default_value' => variable_get('service_links_domain_redirect', ''),
       '#size' => 40,
     );
@@ -473,4 +465,18 @@ function _service_links_get_vocabularies() {
   }
 
   return $vocs;
+}
+
+/**
+ * Return the view modes availables for the node entity.
+ */
+function _service_links_get_view_modes() {
+  $view_modes = array();
+
+  $entity_info = entity_get_info('node');
+  foreach ($entity_info['view modes'] as $view => $info){
+    $view_modes[$view] = $info['label'];
+  }
+
+  return $view_modes;
 }

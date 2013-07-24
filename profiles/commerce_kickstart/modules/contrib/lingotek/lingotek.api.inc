@@ -1,9 +1,9 @@
 <?php
+
 /**
  * @file
  * Call the Lingotek APIs
  */
-
 $GLOBALS['_lingotek_client'] = new LingotekSession();
 
 /*
@@ -16,6 +16,7 @@ $GLOBALS['_lingotek_client'] = new LingotekSession();
  * @param $lingotek_locale
  *  Target language to be updated/synchronized
  */
+
 function lingotek_download_document(&$node, $lingotek_locale, $sync_success_status = LingotekSync::STATUS_CURRENT) {
   global $_lingotek_client, $_lingotek_locale;
 
@@ -31,9 +32,9 @@ function lingotek_download_document(&$node, $lingotek_locale, $sync_success_stat
     $use_source = 'TRUE';
   }
 
-  $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale);//lingotek_lookup_language_by_locale($lingotek_locale)->language
+  $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale); //lingotek_lookup_language_by_locale($lingotek_locale)->language
   $params = array
-  (
+    (
     'documentId' => $document_id,
     'targetLanguage' => $lingotek_locale,
     'useSource' => $use_source,
@@ -43,8 +44,7 @@ function lingotek_download_document(&$node, $lingotek_locale, $sync_success_stat
   $text = $_lingotek_client->download("downloadDocument", $params);
   try {
     $xml = new SimpleXMLElement($text);
-  }
-  catch (Exception $e) {
+  } catch (Exception $e) {
     LingotekLog::error("downloadDocument FAILED. Error: @error. Text: !xml.", array('!xml' => $text, '@error' => $e->getMessage()));
     return;
   }
@@ -116,10 +116,20 @@ function lingotek_download_document(&$node, $lingotek_locale, $sync_success_stat
   $node->path = path_load(array('source' => 'node/' . $node->nid, 'language' => $node->language));
   $node->path['alias'] = isset($node->path['alias']) ? $node->path['alias'] : '';
   $node->path['pathauto'] = 0;
-  
-  LingotekSync::setTargetStatus($node->nid, $lingotek_locale, $sync_success_status);//slightly pre-emptive, but certainly more cohesive
-  $node->lingotek_upload_override = 0;// ensure that no upload to lingotek is triggered on node update (in lingotek_node_update)
-  $node->skip_status_updates = 1;// ensure that the statuses are not set on node update (in lingotek_node_update)
+
+  LingotekSync::setTargetStatus($node->nid, $lingotek_locale, $sync_success_status); //slightly pre-emptive, but certainly more cohesive
+  $node->lingotek_upload_override = 0; // ensure that no upload to lingotek is triggered on node update (in lingotek_node_update)
+  $node->skip_status_updates = 1; // ensure that the statuses are not set on node update (in lingotek_node_update)
+  //Fix for workbench_moderation changing node state after translation download
+  if (module_exists('workbench_moderation')) {
+    if (!isset($node->workbench_moderation)) {
+      LingotekLog::error("workbench_moderation variable does not exist inside node object. Error: @error.", array('@error' => $e->getMessage()));
+    }
+    else {
+      $node->workbench_moderation['updating_live_revision'] = 1; // ensure that workflow state does not get updated
+    }
+  }
+
   node_save($node);
 }
 
@@ -140,9 +150,10 @@ function lingotek_download_document(&$node, $lingotek_locale, $sync_success_stat
  * @return
  *  boolean, TRUE if the api call was successful
  */
+
 function lingotek_save_segment($source_text, $target_text, $target_language, $doc_id) {
   $param = array
-  (
+    (
     "sourceText" => $source_text,
     "targetText" => $target_text,
     "targetLanguage" => $target_language,
@@ -165,6 +176,7 @@ function lingotek_save_segment($source_text, $target_text, $target_language, $do
  * @param $phase_template_id
  *  Workflow Id to be added
  */
+
 function lingotek_add_phase_template($translation_target_id, $phase_template_id) {
   $params = array('translationTargetId' => $translation_target_id, 'phaseTemplateId' => $phase_template_id);
   LingotekApi::instance()->request("applyPhaseTemplate", $params);
@@ -175,6 +187,7 @@ function lingotek_add_phase_template($translation_target_id, $phase_template_id)
  * @param $name
  *  Project name being created
  */
+
 function lingotek_add_project($name) {
   $output = LingotekApi::instance()->request('addProject', array('projectName' => $name));
   if ($output->results == "success") {
@@ -188,6 +201,7 @@ function lingotek_add_project($name) {
  * @param $name
  *  Vault name being created
  */
+
 function lingotek_add_vault($name) {
   $output = LingotekApi::instance()->request('addTMVault', array('tmVaultName' => $name));
   if ($output->results == "success") {
@@ -223,6 +237,7 @@ function lingotek_analyze_project() {
 /*
  * Get available URL alias methods
  */
+
 function lingotek_get_url_alias_translations() {
   $methods = array();
   $methods[0] = t("Don't translate");
@@ -234,6 +249,7 @@ function lingotek_get_url_alias_translations() {
 /*
  * Get the Lingotek user's cms key for the community they are currently logged in with
  */
+
 function lingotek_get_cms_key() {
   global $_lingotek_client;
 
@@ -250,6 +266,7 @@ function lingotek_get_cms_key() {
 /*
  * Get the Lingotek user's current communities
  */
+
 function lingotek_get_communities() {
   $options = array();
 
@@ -349,6 +366,7 @@ function lingotek_get_phase_name($phase_id) {
 /*
  * Get available synchronization methods for keeping nodes up-to-date
  */
+
 function lingotek_get_sync_methods() {
   $methods = array();
   $methods[0] = t("Never"); // Manual
@@ -367,6 +385,7 @@ function lingotek_get_sync_methods() {
  * @return
  *  Object representing a target language for a specific document in the lingotek platform
  */
+
 function lingotek_get_translation_target($translation_target_id) {
   $params = array('translationTargetId' => $translation_target_id);
   $output = LingotekApi::instance()->request("getTranslationTarget", $params);
@@ -394,7 +413,7 @@ function lingotek_get_translation_target($translation_target_id) {
  *   Either a link pointing the the url, or the url itself if $label is FALSE
  */
 function lingotek_get_workbench_url($node, $lingotek_locale, $label = FALSE, $force = FALSE) {
-  
+
   if ($lingotek_locale === FALSE) {
     return "";
   }
@@ -447,10 +466,10 @@ function lingotek_get_workbench_url($node, $lingotek_locale, $label = FALSE, $fo
             $label = lingotek_get_phase_name($phase_id);
           }
           $l = l($label, '', array('attributes' => array(
-            'onclick' => 'window.open(\'' . $path . '\'); return false;',
-            'onmouseover' => 'jQuery("#node-' . $node->nid . '").addClass("highlight");',
-            'onmouseout' => 'jQuery("#node-' . $node->nid . '").removeClass("highlight");',
-          )));
+              'onclick' => 'window.open(\'' . $path . '\'); return false;',
+              'onmouseover' => 'jQuery("#node-' . $node->nid . '").addClass("highlight");',
+              'onmouseout' => 'jQuery("#node-' . $node->nid . '").removeClass("highlight");',
+              )));
         }
       }
     }
@@ -474,6 +493,7 @@ function lingotek_get_workbench_url($node, $lingotek_locale, $label = FALSE, $fo
  * @return
  *  xml text of the xliff
  */
+
 function lingotek_get_xliff($doc_id) {
   global $_lingotek_client;
 

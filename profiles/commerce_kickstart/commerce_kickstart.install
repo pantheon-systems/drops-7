@@ -1103,7 +1103,7 @@ function commerce_kickstart_update_7215() {
  * Revert body field to text with summary type.
  */
 function commerce_kickstart_update_7216() {
-  if (!db_field_exists('field_data_body', 'body_summary')) {
+  if (db_table_exists('field_data_body') && !db_field_exists('field_data_body', 'body_summary')) {
     // Force field type change.
     db_update('field_config')
       ->fields(array('type' => 'text_with_summary'))
@@ -1127,4 +1127,22 @@ function commerce_kickstart_update_7216() {
       features_revert($revert);
     }
   }
+}
+
+/**
+ * Enable Inline Conditions (Needed by Commerce Discount).
+ */
+function commerce_kickstart_update_7217() {
+  if (module_exists('commerce_discount')) {
+    module_enable(array('inline_conditions'));
+  }
+}
+
+/**
+ * Remove jirafe.
+ */
+function commerce_kickstart_update_7218() {
+  _commerce_kickstart_disable_modules(array('jirafe'));
+  variable_del('jirafe_config');
+  variable_del('jirafe_create_account_link');
 }

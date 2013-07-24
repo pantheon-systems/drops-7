@@ -220,20 +220,25 @@ function commerce_kickstart_taxonomy_views_default_views_alter(&$views) {
     $page_handler->display->display_options['fields']['name']['replace_spaces'] = TRUE;
     // Replace the contextual filter.
     unset($default_handler->display->display_options['arguments']['field_collection']);
-    $default_handler->display->display_options['arguments']['field_product_category_1']['id'] = 'field_product_category_1';
-    $default_handler->display->display_options['arguments']['field_product_category_1']['field'] = 'field_product_category';
-    $default_handler->display->display_options['arguments']['field_product_category_1']['table'] = 'search_api_index_product_display';
-    $default_handler->display->display_options['arguments']['field_product_category_1']['default_action'] = 'not found';
-    $default_handler->display->display_options['arguments']['field_product_category_1']['default_argument_type'] = 'fixed';
-    $default_handler->display->display_options['arguments']['field_product_category_1']['summary']['format'] = 'default_summary';
-    $default_handler->display->display_options['arguments']['field_product_category_1']['summary_options']['grouping'] = array(
+    $default_handler->display->display_options['arguments']['field_product_category']['id'] = 'field_product_category';
+    $default_handler->display->display_options['arguments']['field_product_category']['field'] = 'field_product_category';
+    $default_handler->display->display_options['arguments']['field_product_category']['table'] = 'search_api_index_product_display';
+    $default_handler->display->display_options['arguments']['field_product_category']['default_action'] = 'not found';
+    $default_handler->display->display_options['arguments']['field_product_category']['default_argument_type'] = 'fixed';
+    $default_handler->display->display_options['arguments']['field_product_category']['summary']['format'] = 'default_summary';
+    $default_handler->display->display_options['arguments']['field_product_category']['summary_options']['grouping'] = array(
       0 => array(
         'field' => 'name',
         'rendered' => 1,
         'rendered_strip' => 0,
       ),
     );
-    $default_handler->display->display_options['arguments']['field_product_category_1']['break_phrase'] = 0;
+    $default_handler->display->display_options['arguments']['field_product_category']['specify_validation'] = TRUE;
+    $default_handler->display->display_options['arguments']['field_product_category']['validate']['type'] = 'taxonomy_term';
+    $default_handler->display->display_options['arguments']['field_product_category']['validate_options']['vocabularies'] = array(
+      'product_category' => 'product_category',
+    );
+    $default_handler->display->display_options['arguments']['field_product_category']['break_phrase'] = 0;
     // Update the path.
     $page_handler->display->display_options['path'] = 'product_category/%';
   }

@@ -42,7 +42,7 @@ function commerce_kickstart_search_current_search_default_items() {
       ),
     ),
     'advanced' => array(
-      'empty_searches' => 0,
+      'empty_searches' => 3,
     ),
   );
   $export['kickstart_search'] = $item;

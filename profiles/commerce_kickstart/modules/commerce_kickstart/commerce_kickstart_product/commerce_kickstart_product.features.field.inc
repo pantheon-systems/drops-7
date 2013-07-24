@@ -510,7 +510,7 @@ function commerce_kickstart_product_field_default_fields() {
       'entity_type' => 'commerce_product',
       'fences_wrapper' => 'figure',
       'field_name' => 'field_images',
-      'label' => 'Image',
+      'label' => 'Images',
       'required' => 0,
       'settings' => array(
         'alt_field' => 0,
@@ -1026,7 +1026,7 @@ function commerce_kickstart_product_field_default_fields() {
       'entity_type' => 'commerce_product',
       'fences_wrapper' => 'figure',
       'field_name' => 'field_images',
-      'label' => 'Image',
+      'label' => 'Images',
       'required' => 0,
       'settings' => array(
         'alt_field' => 0,
@@ -1659,7 +1659,7 @@ function commerce_kickstart_product_field_default_fields() {
       'entity_type' => 'commerce_product',
       'fences_wrapper' => 'figure',
       'field_name' => 'field_images',
-      'label' => 'Image',
+      'label' => 'Images',
       'required' => 0,
       'settings' => array(
         'alt_field' => 0,
@@ -2175,7 +2175,7 @@ function commerce_kickstart_product_field_default_fields() {
       'entity_type' => 'commerce_product',
       'fences_wrapper' => 'figure',
       'field_name' => 'field_images',
-      'label' => 'Image',
+      'label' => 'Images',
       'required' => 0,
       'settings' => array(
         'alt_field' => 0,
@@ -2690,7 +2690,7 @@ function commerce_kickstart_product_field_default_fields() {
       'entity_type' => 'commerce_product',
       'fences_wrapper' => 'figure',
       'field_name' => 'field_images',
-      'label' => 'Image',
+      'label' => 'Images',
       'required' => 0,
       'settings' => array(
         'alt_field' => 0,
@@ -3314,7 +3314,7 @@ function commerce_kickstart_product_field_default_fields() {
       'entity_type' => 'commerce_product',
       'fences_wrapper' => 'figure',
       'field_name' => 'field_images',
-      'label' => 'Image',
+      'label' => 'Images',
       'required' => 0,
       'settings' => array(
         'alt_field' => 0,

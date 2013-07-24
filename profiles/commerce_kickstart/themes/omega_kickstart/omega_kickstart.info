@@ -1,5 +1,5 @@
 name = 'Omega Kickstart'
-description = 'Clean, simple starting point for building <a href="http://drupal.org/project/omega target="_blank">Omega</a> subthemes for Commerce Kickstart. <br />HTML5, Responsive, ready to customize...'
+description = 'Clean, simple starting point for building <a href="http://drupal.org/project/omega" target="_blank">Omega</a> subthemes for Commerce Kickstart. <br />HTML5, Responsive, ready to customize...'
 core = '7.x'
 engine = 'phptemplate'
 screenshot = 'screenshot.png'
@@ -402,9 +402,9 @@ settings[alpha_region_footer2_second_suffix] = ''
 settings[alpha_region_footer2_second_weight] = '2'
 settings[alpha_region_footer2_second_css] = ''
 
-; Information added by drupal.org packaging script on 2013-05-30
-version = "7.x-3.3"
+; Information added by drupal.org packaging script on 2013-07-25
+version = "7.x-3.4"
 core = "7.x"
 project = "omega_kickstart"
-datestamp = "1369929663"
+datestamp = "1374741378"
 

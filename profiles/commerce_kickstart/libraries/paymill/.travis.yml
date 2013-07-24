@@ -1,0 +1,12 @@
+--- 
+php: 
+- "5.4"
+- "5.3"
+language: php
+env: 
+  global: 
+    secure: |-
+      Oth4dGc+gnvZxUkkZGsjAny+tkAxF6ejdItMqPCCIl8F5sjuX65c1C/ib84x
+      kcYI+0v92n2K+8iKtzcjAY6tm4V1MkvwfznkYOwYiZWdYmNSCCscsvshH9pE
+      KDG3iqzywS4L+++KStlt1bVN+kZ0KnzT6aIxTbMc79td/EP74NA=
+script: ant phpunit

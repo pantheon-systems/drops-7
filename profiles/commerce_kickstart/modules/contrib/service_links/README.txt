@@ -1,16 +1,24 @@
-Drupal service links module 2.x:
----------------------------------
-Original Author: Fredrik Jonsson fredrik at combonet dot se
-Ex Maintainer: Sivanandhan, P. apsivam .at. apsivam .dot. in
-Current Mantainer and Starter of 2.x branch: Fabio Mucciante aka TheCrow
-Current Co-Mantainer: Rob Loach
-Requires - Drupal 7
-License - GPL (see LICENSE)
+Service Links 2.x:
+------------------
+Author and mantainer: Fabio Mucciante aka TheCrow (since the 2.x branch)
+Current co-mantainer: Simon Georges
+Requirements:         Drupal 7
+License:              GPL (see LICENSE.txt)
 
-Overview:
+Introduction
+------------
+This module is the enhanced version of Service Links 1.x developed
+by Fredrik Jonsson, rewritten and improved to fit the new purposes:
+extend easily the number of services supported and provide APIs to
+print links everywhere within any content.
+At the address http://servicelinks.altervista.org/?q=service
+a web interface helps to create a module including the services
+not availables in the standard package.
+
+Overview
 ---------
-Service Links provide an amount of 70+ social services
-from around the World where submit the link of a given content;
+Service Links provide an amount of 70+ social networks
+from around the World where submit the link of a given content,
 below a short list:
 
 * del.icio.us
@@ -20,109 +28,62 @@ below a short list:
 * Google
 * IceRocket
 * LinkedIn
-* ma.gnolia.com
 * MySpace
 * Newsvine
-* PubSub
 * Reddit
 * StumbleUpon
 * Technorati
 * Twitter
-* Yahoo Buzz
 * Yahoo
 * ...
 
-The admin can decide:
-- To show the links as text, image or both.
-- To show only for certain node types or some categories
-- To show in teaser view or full page view or both.
-- If the links should be added after the body text or in the links
-  section or in a block
-- Decide what roles get to see/use the service links.
+The admin decides:
+- the style to render the links: text, image, text + image
+- to show links only for certain node types or some categories
+- to add links within the content body, among the other links, or in a block
+- what roles are allowed to see the selected links.
 
-2.x version introduced:
-- modular management of services grouped by different language area
-- visual sort of Services through drag'n drop
-- a block with Fisheye effect
-- a block for not-node pages
-- support for other Drupal modules: Forward, Views, Short Url, Sharethis, Share
-- support for browser bookmark (Chrome, Firefox, IE, Opera)
-- auto-hide for unpublished nodes (configurable)
-- configurable label for the block shown in the node
-- params can be stick to the url address
-- custom icon's path
+Within the 2.x branch has been introduced:
+- modular management of services, grouped by different language area,
+  through external modules implementing the hook_service_links()
+- sorting of services through drag'n drop
+- support for buttons which make use of Javascript without break the
+  XHTML specifies to keep the module more 'accessible' as possible
+- improved the use with not node pages
+- support for other Drupal modules: Display Suite, Forward, Views, Short Url
+- support for sprites to render the service images
+- support for browser bookmarking (Chrome, Firefox, IE, Opera)
+- two APIs to print easily the whole set of services or a customs subset of them
+- configurable list of pages to show/hide on also through PHP code
 
-And plus, the support for aggregator2 has been removed (obsolete) but it work
-well with aggregation
+A more detailed list of options and related explaining is available at the page:
+http://servicelinks.altervista.org/?q=about
 
-Installation and configuration:
-------------------------------
-Copy the whole 'service_links' folder under your 'modules' directory and then
-enable the modules 'Service Links' and 'General Services' at 'administer >> modules'.
+Installation and configuration
+-------------------------------
+1) Copy the whole 'service_links' folder under your 'modules' directory and then
+   
+2) Point your browser to administer >> modules', enable 'Service Links' and one
+   of the 'XXX Services' provided, 'General Services' contain the most know social
+   networks, and 'Widgets Services' the most used buttons
 
-Go to 'administer >> access control' for allow users to watch the links.
+3) Go to 'administer >> access control' for allow users to watch the links.
 
-For configurate the options go to at 'administer >> settings >> service_links'.
-Under the tab 'Services' sort and enable the services needed.
+4) At 'administer >> settings >> service links' select for what type of content
+   enable Service Links and in 'Services' tab select the services to show.
 
-Extend the list of services (for developers):
--------------------------------------------
-2.x branch introduce a fast and less intrusive method for expand the number of services
-supported:
+More information
+----------------
 
-1) Create your own module under 'services/' folder with standard
-  '.info' and '.module' files (watch general_services as basic example).
+The file 'template.php' contains some examples about phptemplate variables
 
-  .module file must implement the hook_service_links() that return an array like:
+The file 'service_links.api.php' contains info about the hooks implemented
 
-  function myaddon_service_links() {
-    $links = array();
+More info regarding installation and first configuration, set up of the available
+options, either extension of the number of services and theming output are available
+on the online documentation at the address:
+http://servicelinks.altervista.org/?q=about
 
-    $links['myservice'] = array(
-      'name' => 'My Service',
-      'link' => 'http://myservice.com/?q=<encoded-url>&title=<encoded-title>',
-      'description' => t('Bookmark it on My Service'),
-    );
-
-    ...
-
-    return $links;
-  }
-
-  Notes:
-  i) be sure that 'myservice' (know as 'service-id') is unique;
-  ii) tags allowed: <encoded-url>, <encoded-title>, <encoded-teaser>, <encoded-short-url>, <encoded-query>, <query>, <source>, <teaser>, <node-id>, <short-url>
-
-2) Put the related standard icon (myservice.png) under 'images/' folder .
-
-  Notes:
-  i) standard filename must be the same of service-id + .png extension
-  ii) for overwrite the standard filename just include the key 'icon':
-    $links['myservice'] = array(
-      ...
-      'icon' => drupal_get_path('module', 'myservice') .'/anothername.gif',
-    );
-
-3) Enable the module under admin >> modules page and under settings >> service links >> services
-  complete the job!
-
-Theme's customizations
-----------------------
-In the included template.php file there are examples about how to create
-a PHPTemplate variable for your theme. Remember to place the
-template.php file in the folder of your theme or integrate it with
-the content of 'template.php' provided by your theme.
-
-Themeable functions that could be useful to overwrite:
-
-- service_links_node_format($links, $label):
-  
-  Get the links to print into the node and return a themed string.
-
-- service_links_block_format($items, $style)
-
-  Get the items to print into a block (node and not-node pages)
-  and return a themed string.
-
-Last updated:
-------------
+More services can be included and packed within an external module customizable
+through a web interface available at the address:
+http://servicelinks.altervista.org/?q=service

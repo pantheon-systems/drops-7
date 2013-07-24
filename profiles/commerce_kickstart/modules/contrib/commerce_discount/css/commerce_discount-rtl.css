@@ -1,0 +1,155 @@
+.form-item.form-type-radio {
+  position: relative;
+}
+.form-item.form-type-radio .progress-disabled {
+  float: none;
+}
+.form-item.form-type-radio .ajax-progress-throbber {
+  position: absolute;
+  right: -10px;
+}
+
+html.js input.form-autocomplete {
+  background-position: 0% 2px;
+}
+
+/**
+ * Discount form.
+ */
+.commerce-discount-form {
+  position: relative;
+}
+.commerce-discount-form .form-item-enabled {
+  background-color: #eee;
+  padding: 10px 10px 20px 10px;
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: auto;
+  width: 180px;
+}
+.commerce-discount-form .form-item-label {
+  clear: both;
+}
+.commerce-discount-form .form-item-label .form-item {
+  padding: 0px;
+}
+.commerce-discount-form .form-item.form-type-radio {
+  position: relative;
+}
+.commerce-discount-form .form-item.form-type-radio .ajax-progress-throbber {
+  position: absolute;
+  right: -10px;
+}
+.commerce-discount-form #commerce-discount-fields-wrapper .form-wrapper > #inline-conditions-inline_conditions .form-wrapper .ajax-progress {
+  display: block;
+  /* RTL */
+  margin-top: 10px;
+  /* RTL */
+  width: 180px;
+  /* RTL */
+}
+.commerce-discount-form #commerce-discount-fields-wrapper .form-wrapper > #inline-conditions-inline_conditions .form-wrapper .condition-wrapper .form-item .ajax-progress {
+  display: inline-block;
+  margin-top: 0;
+  width: auto;
+}
+
+/**
+ * Choose discount type block.
+ */
+.form-item-commerce-discount-type .form-radios .form-item {
+  float: right;
+}
+.form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type .form-item {
+  margin-left: 20px;
+  margin-right: 0;
+}
+.form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type .form-item {
+  float: right;
+}
+
+/**
+ * Choose offer type block.
+ */
+.field-name-commerce-discount-offer {
+  clear: both;
+}
+.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item label {
+  padding-right: 5px;
+  padding-left: 0;
+}
+.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios {
+  border-right: 0;
+  border-left: 1px dotted #cccccc;
+  float: right;
+  padding-right: 0;
+  padding-left: 20px;
+}
+.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios .form-item {
+  margin-left: 20px;
+  margin-right: 0;
+}
+.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios label {
+  padding-right: 5px;
+  padding-left: 0;
+}
+.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-wrapper label {
+  padding-right: 5px;
+  padding-left: 0;
+}
+.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-wrapper .form-item {
+  float: right;
+}
+
+/**
+ * Discount dates block.
+ */
+.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date {
+  float: right;
+}
+.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding {
+  float: left;
+}
+.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
+  background: white url("../../date/date_api/images/calendar.png") no-repeat 2px 0px;
+}
+.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date label {
+  float: right;
+  padding-right: 0px;
+  padding-left: 10px;
+}
+.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date.end-date-wrapper {
+  margin-left: 0;
+  margin-right: 20px;
+}
+
+/**
+ * Usage block.
+ */
+.commerce-discount-usage .form-item.form-type-select {
+  margin: 0;
+}
+.commerce-discount-usage .form-item.form-type-select label {
+  border-bottom: 1px solid #cccccc;
+}
+.commerce-discount-usage .form-item .form-select {
+  float: right;
+}
+.commerce-discount-usage .field-name-commerce-discount-max-uses {
+  padding: 0px;
+}
+.commerce-discount-usage .field-name-commerce-discount-max-uses > div {
+  float: left;
+  margin-left: 30px;
+}
+.commerce-discount-usage .field-name-commerce-discount-max-uses > div:first-child {
+  margin-left: 0;
+}
+.commerce-discount-usage .field-type-number-integer {
+  float: right;
+}
+.commerce-discount-usage .field-type-number-integer label {
+  margin-left: 0px;
+  margin-right: 10px;
+}

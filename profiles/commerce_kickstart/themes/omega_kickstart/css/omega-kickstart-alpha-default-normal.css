@@ -101,7 +101,7 @@
     overflow: visible; }
   #block-views-demo-content-slideshow-block-1 .views-field-nothing {
     background: #888;
-    border: 1px solid #cccccc;
+    border: 1px solid #CCC;
     color: #ffffff;
     padding-bottom: 5px;
     position: absolute;
@@ -111,7 +111,7 @@
   #block-views-demo-content-slideshow-block-1 .bx-next {
     color: #000000;
     background: #EEE;
-    border: 1px solid #cccccc;
+    border: 1px solid #CCC;
     text-decoration: none;
     display: block;
     margin-top: 15px;

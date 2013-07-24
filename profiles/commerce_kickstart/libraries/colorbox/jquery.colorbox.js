@@ -1,6 +1,7 @@
 /*!
-	jQuery Colorbox v1.4.17 - 2013-05-23
-	(c) 2013 Jack Moore - jacklmoore.com/colorbox
+	Colorbox v1.4.27 - 2013-07-16
+	jQuery lightbox and modal window plugin
+	(c) 2013 Jack Moore - http://www.jacklmoore.com/colorbox
 	license: http://www.opensource.org/licenses/mit-license.php
 */
 (function ($, document, window) {
@@ -63,6 +64,7 @@
 		onComplete: false,
 		onCleanup: false,
 		onClosed: false,
+
 		overlayClose: true,
 		escKey: true,
 		arrowKey: true,
@@ -71,7 +73,8 @@
 		left: false,
 		right: false,
 		fixed: false,
-		data: undefined
+		data: undefined,
+		closeButton: true
 	},
 	
 	// Abstracting the HTML and event identifiers for easy rebranding
@@ -127,6 +130,7 @@
 	div = "div",
 	className,
 	requests = 0,
+	previousCSS = {},
 	init;
 
 	// ****************
@@ -337,7 +341,11 @@
 			}
 			className = settings.className;
 
-			$close.html(settings.close).show();
+			if (settings.closeButton) {
+				$close.html(settings.close).appendTo($content);
+			} else {
+				$close.appendTo('<div/>');
+			}
 
 			if (!open) {
 				open = active = true; // Prevents the page-change action from queuing up if the visitor holds down the left or right keys.
@@ -345,14 +353,14 @@
 				// Show colorbox so the sizes can be calculated in older versions of jQuery
 				$box.css({visibility:'hidden', display:'block'});
 				
-				$loaded = $tag(div, 'LoadedContent', 'width:0; height:0; overflow:hidden').appendTo($content);
+				$loaded = $tag(div, 'LoadedContent', 'width:0; height:0; overflow:hidden');
+				$content.css({width:'', height:''}).append($loaded);
 
 				// Cache values needed for size calculations
 				interfaceHeight = $topBorder.height() + $bottomBorder.height() + $content.outerHeight(true) - $content.height();
 				interfaceWidth = $leftBorder.width() + $rightBorder.width() + $content.outerWidth(true) - $content.width();
 				loadedHeight = $loaded.outerHeight(true);
 				loadedWidth = $loaded.outerWidth(true);
-				
 				
 				// Opens inital empty Colorbox prior to content being loaded.
 				settings.w = setSize(settings.initialWidth, 'x');
@@ -406,7 +414,7 @@
 				tabindex: '-1'
 			}).hide();
 			$overlay = $tag(div, "Overlay").hide();
-			$loadingOverlay = $tag(div, "LoadingOverlay").add($tag(div, "LoadingGraphic"));
+			$loadingOverlay = $([$tag(div, "LoadingOverlay")[0],$tag(div, "LoadingGraphic")[0]]);
 			$wrap = $tag(div, "Wrapper");
 			$content = $tag(div, "Content").append(
 				$title = $tag(div, "Title"),
@@ -414,9 +422,10 @@
 				$prev = $('<button type="button"/>').attr({id:prefix+'Previous'}),
 				$next = $('<button type="button"/>').attr({id:prefix+'Next'}),
 				$slideshow = $tag('button', "Slideshow"),
-				$loadingOverlay,
-				$close = $('<button type="button"/>').attr({id:prefix+'Close'})
+				$loadingOverlay
 			);
+
+			$close = $('<button type="button"/>').attr({id:prefix+'Close'});
 			
 			$wrap.append( // The 3x3 Grid that makes up Colorbox
 				$tag(div).append(
@@ -449,7 +458,7 @@
 		function clickHandler(e) {
 			// ignore non-left-mouse-clicks and clicks modified with ctrl / command, shift, or alt.
 			// See: http://jacklmoore.com/notes/click-events/
-			if (!(e.which > 1 || e.shiftKey || e.altKey || e.metaKey || e.control)) {
+			if (!(e.which > 1 || e.shiftKey || e.altKey || e.metaKey || e.ctrlKey)) {
 				e.preventDefault();
 				launch(this);
 			}
@@ -599,29 +608,41 @@
 		}
 
 		$box.css({top: offset.top, left: offset.left, visibility:'visible'});
-
-		// setting the speed to 0 to reduce the delay between same-sized content.
-		speed = ($box.width() === settings.w + loadedWidth && $box.height() === settings.h + loadedHeight) ? 0 : speed || 0;
 		
 		// this gives the wrapper plenty of breathing room so it's floated contents can move around smoothly,
 		// but it has to be shrank down around the size of div#colorbox when it's done.  If not,
 		// it can invoke an obscure IE bug when using iframes.
 		$wrap[0].style.width = $wrap[0].style.height = "9999px";
 		
-		function modalDimensions(that) {
-			$topBorder[0].style.width = $bottomBorder[0].style.width = $content[0].style.width = (parseInt(that.style.width,10) - interfaceWidth)+'px';
-			$content[0].style.height = $leftBorder[0].style.height = $rightBorder[0].style.height = (parseInt(that.style.height,10) - interfaceHeight)+'px';
+		function modalDimensions() {
+			$topBorder[0].style.width = $bottomBorder[0].style.width = $content[0].style.width = (parseInt($box[0].style.width,10) - interfaceWidth)+'px';
+			$content[0].style.height = $leftBorder[0].style.height = $rightBorder[0].style.height = (parseInt($box[0].style.height,10) - interfaceHeight)+'px';
 		}
 
 		css = {width: settings.w + loadedWidth + interfaceWidth, height: settings.h + loadedHeight + interfaceHeight, top: top, left: left};
 
-		if(speed===0){ // temporary workaround to side-step jQuery-UI 1.8 bug (http://bugs.jquery.com/ticket/12273)
+		// setting the speed to 0 if the content hasn't changed size or position
+		if (speed) {
+			var tempSpeed = 0;
+			$.each(css, function(i){
+				if (css[i] !== previousCSS[i]) {
+					tempSpeed = speed;
+					return;
+				}
+			});
+			speed = tempSpeed;
+		}
+
+		previousCSS = css;
+
+		if (!speed) {
 			$box.css(css);
 		}
+
 		$box.dequeue().animate(css, {
-			duration: speed,
+			duration: speed || 0,
 			complete: function () {
-				modalDimensions(this);
+				modalDimensions();
 				
 				active = false;
 				
@@ -639,35 +660,45 @@
 					loadedCallback();
 				}
 			},
-			step: function () {
-				modalDimensions(this);
-			}
+			step: modalDimensions
 		});
 	};
 
 	publicMethod.resize = function (options) {
+		var scrolltop;
+		
 		if (open) {
 			options = options || {};
 			
 			if (options.width) {
 				settings.w = setSize(options.width, 'x') - loadedWidth - interfaceWidth;
 			}
+
 			if (options.innerWidth) {
 				settings.w = setSize(options.innerWidth, 'x');
 			}
+
 			$loaded.css({width: settings.w});
 			
 			if (options.height) {
 				settings.h = setSize(options.height, 'y') - loadedHeight - interfaceHeight;
 			}
+
 			if (options.innerHeight) {
 				settings.h = setSize(options.innerHeight, 'y');
 			}
+
 			if (!options.innerHeight && !options.height) {
+				scrolltop = $loaded.scrollTop();
 				$loaded.css({height: "auto"});
 				settings.h = $loaded.height();
 			}
+
 			$loaded.css({height: settings.h});
+
+			if(scrolltop) {
+				$loaded.scrollTop(scrolltop);
+			}
 			
 			publicMethod.position(settings.transition === "none" ? 0 : settings.speed);
 		}
@@ -764,7 +795,7 @@
 
 						if (src && isImage(data, src)) {
 							src = retinaUrl(data, src);
-							img = new Image();
+							img = document.createElement('img');
 							img.src = src;
 						}
 					});

@@ -43,7 +43,14 @@ function commerce_discount_views_default_views() {
   );
   $handler->display->display_options['style_options']['default'] = '-1';
   $handler->display->display_options['style_options']['info'] = array(
-    'commerce_discount_offer' => array(
+    'label' => array(
+      'sortable' => 1,
+      'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'type_1' => array(
       'sortable' => 1,
       'default_sort_order' => 'asc',
       'align' => '',
@@ -53,6 +60,11 @@ function commerce_discount_views_default_views() {
     'type' => array(
       'sortable' => 1,
       'default_sort_order' => 'asc',
+      'align' => '',
+      'separator' => '',
+      'empty_column' => 0,
+    ),
+    'commerce_discount_usage' => array(
       'align' => '',
       'separator' => '',
       'empty_column' => 0,
@@ -91,18 +103,22 @@ function commerce_discount_views_default_views() {
   $handler->display->display_options['empty']['area']['field'] = 'area';
   $handler->display->display_options['empty']['area']['content'] = 'No discounts found.';
   $handler->display->display_options['empty']['area']['format'] = 'filtered_html';
-  /* Field: Commerce Discount: Discount offer reference */
-  $handler->display->display_options['fields']['commerce_discount_offer']['id'] = 'commerce_discount_offer';
-  $handler->display->display_options['fields']['commerce_discount_offer']['table'] = 'field_data_commerce_discount_offer';
-  $handler->display->display_options['fields']['commerce_discount_offer']['field'] = 'commerce_discount_offer';
-  $handler->display->display_options['fields']['commerce_discount_offer']['label'] = 'Offer';
-  $handler->display->display_options['fields']['commerce_discount_offer']['element_type'] = '0';
-  $handler->display->display_options['fields']['commerce_discount_offer']['element_wrapper_type'] = '0';
-  $handler->display->display_options['fields']['commerce_discount_offer']['element_default_classes'] = FALSE;
-  $handler->display->display_options['fields']['commerce_discount_offer']['settings'] = array(
-    'link' => 0,
-  );
-  $handler->display->display_options['fields']['commerce_discount_offer']['field_api_classes'] = TRUE;
+  /* Relationship: Entity Reference: Referenced Entity */
+  $handler->display->display_options['relationships']['commerce_discount_offer_target_id']['id'] = 'commerce_discount_offer_target_id';
+  $handler->display->display_options['relationships']['commerce_discount_offer_target_id']['table'] = 'field_data_commerce_discount_offer';
+  $handler->display->display_options['relationships']['commerce_discount_offer_target_id']['field'] = 'commerce_discount_offer_target_id';
+  $handler->display->display_options['relationships']['commerce_discount_offer_target_id']['required'] = TRUE;
+  /* Field: Commerce Discount: Label */
+  $handler->display->display_options['fields']['label']['id'] = 'label';
+  $handler->display->display_options['fields']['label']['table'] = 'commerce_discount';
+  $handler->display->display_options['fields']['label']['field'] = 'label';
+  $handler->display->display_options['fields']['label']['label'] = 'Name';
+  /* Field: Commerce Discount Offer: Type */
+  $handler->display->display_options['fields']['type_1']['id'] = 'type_1';
+  $handler->display->display_options['fields']['type_1']['table'] = 'commerce_discount_offer';
+  $handler->display->display_options['fields']['type_1']['field'] = 'type';
+  $handler->display->display_options['fields']['type_1']['relationship'] = 'commerce_discount_offer_target_id';
+  $handler->display->display_options['fields']['type_1']['label'] = 'Offer';
   /* Field: Commerce Discount: Type */
   $handler->display->display_options['fields']['type']['id'] = 'type';
   $handler->display->display_options['fields']['type']['table'] = 'commerce_discount';
@@ -144,16 +160,21 @@ function commerce_discount_views_default_views() {
   $handler->display->display_options['fields']['operations_dropbutton']['id'] = 'operations_dropbutton';
   $handler->display->display_options['fields']['operations_dropbutton']['table'] = 'commerce_discount';
   $handler->display->display_options['fields']['operations_dropbutton']['field'] = 'operations_dropbutton';
-  /* Filter criterion: Commerce Discount: Discount offer reference (commerce_discount_offer) */
-  $handler->display->display_options['filters']['commerce_discount_offer_target_id']['id'] = 'commerce_discount_offer_target_id';
-  $handler->display->display_options['filters']['commerce_discount_offer_target_id']['table'] = 'field_data_commerce_discount_offer';
-  $handler->display->display_options['filters']['commerce_discount_offer_target_id']['field'] = 'commerce_discount_offer_target_id';
-  $handler->display->display_options['filters']['commerce_discount_offer_target_id']['group'] = 1;
-  $handler->display->display_options['filters']['commerce_discount_offer_target_id']['exposed'] = TRUE;
-  $handler->display->display_options['filters']['commerce_discount_offer_target_id']['expose']['operator_id'] = 'commerce_discount_offer_target_id_op';
-  $handler->display->display_options['filters']['commerce_discount_offer_target_id']['expose']['label'] = 'Offer';
-  $handler->display->display_options['filters']['commerce_discount_offer_target_id']['expose']['operator'] = 'commerce_discount_offer_target_id_op';
-  $handler->display->display_options['filters']['commerce_discount_offer_target_id']['expose']['identifier'] = 'commerce_discount_offer_target_id';
+  /* Field: Commerce Discount: Operations */
+  $handler->display->display_options['fields']['operations_dropbutton']['id'] = 'operations_dropbutton';
+  $handler->display->display_options['fields']['operations_dropbutton']['table'] = 'commerce_discount';
+  $handler->display->display_options['fields']['operations_dropbutton']['field'] = 'operations_dropbutton';
+  /* Filter criterion: Commerce Discount Offer: Type */
+  $handler->display->display_options['filters']['type_1']['id'] = 'type_1';
+  $handler->display->display_options['filters']['type_1']['table'] = 'commerce_discount_offer';
+  $handler->display->display_options['filters']['type_1']['field'] = 'type';
+  $handler->display->display_options['filters']['type_1']['relationship'] = 'commerce_discount_offer_target_id';
+  $handler->display->display_options['filters']['type_1']['group'] = 1;
+  $handler->display->display_options['filters']['type_1']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['type_1']['expose']['operator_id'] = 'type_1_op';
+  $handler->display->display_options['filters']['type_1']['expose']['label'] = 'Offer';
+  $handler->display->display_options['filters']['type_1']['expose']['operator'] = 'type_1_op';
+  $handler->display->display_options['filters']['type_1']['expose']['identifier'] = 'type_1';
   /* Filter criterion: Commerce Discount: Type */
   $handler->display->display_options['filters']['type']['id'] = 'type';
   $handler->display->display_options['filters']['type']['table'] = 'commerce_discount';

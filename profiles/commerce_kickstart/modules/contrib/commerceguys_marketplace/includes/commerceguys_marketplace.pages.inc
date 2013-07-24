@@ -10,6 +10,12 @@
  */
 function commerceguys_marketplace_frontpage() {
   global $base_url;
+  $profile_token = drupal_get_profile();
+  $commerceguys_marketplace_tokens = array(
+    'utm_source' => $profile_token,
+    'utm_medium' => 'connector',
+    'utm_campaign' => 'Connector+Marketplace+Links',
+  );
 
   // Initialize the managers.
   $addon_manager = commerceguys_marketplace_get_manager('addon');
@@ -22,16 +28,16 @@ function commerceguys_marketplace_frontpage() {
 
   // Hardcode the header menu.
   $commerceguys_marketplace_menu = array(
-    l('Platform', COMMERCEGUYS_MARKETPLACE_URL . '/platform'),
-    l('Add-ons', COMMERCEGUYS_MARKETPLACE_URL . '/add-ons'),
-    l('Support', COMMERCEGUYS_MARKETPLACE_URL . '/support'),
-    l('Training', COMMERCEGUYS_MARKETPLACE_URL . '/training'),
+    l('Platform', COMMERCEGUYS_MARKETPLACE_URL . '/platform', array('query' => $commerceguys_marketplace_tokens, 'attributes' => array('target' => '_blank'))),
+    l('Add-ons', COMMERCEGUYS_MARKETPLACE_URL . '/add-ons', array('query' => $commerceguys_marketplace_tokens, 'attributes' => array('target' => '_blank'))),
+    l('Support', COMMERCEGUYS_MARKETPLACE_URL . '/support', array('query' => $commerceguys_marketplace_tokens, 'attributes' => array('target' => '_blank'))),
+    l('Training', COMMERCEGUYS_MARKETPLACE_URL . '/training', array('query' => $commerceguys_marketplace_tokens, 'attributes' => array('target' => '_blank'))),
   );
   // Prepare a list of linked categories for the sidebar.
   $category_list = array();
   foreach ($categories as $category) {
-    $category_url = COMMERCEGUYS_MARKETPLACE_URL . '/add-ons?f[0]=field_category%3A' . $category->id;
-    $category_list[] = l($category->name, $category_url);
+    $category_url = COMMERCEGUYS_MARKETPLACE_URL . '/add-ons?f[0]=field_category%3A' . $category->id . '&utm_source=' . $profile_token . '&utm_medium=connector&utm_campaign=Connector+Marketplace+Links';
+    $category_list[] = l($category->name, $category_url, array('attributes' => array('target' => '_blank')));
   }
   // Remove trainings that have no events.
   foreach ($trainings['results'] as $index => $training) {
@@ -69,6 +75,9 @@ function commerceguys_marketplace_frontpage() {
       'query' => array(
         'site_name' => variable_get('site_name', 'Drupal'),
         'site_url' => $base_url,
+        'utm_source' => $profile_token,
+        'utm_medium' => 'connector',
+        'utm_campaign' => 'Connector+Sign+Up',
       ),
     );
     $link = url(COMMERCEGUYS_MARKETPLACE_URL . '/marketplace/connect', $options);
@@ -115,7 +124,8 @@ function commerceguys_marketplace_frontpage() {
   $page['content']['promotions']['promotion']['#markup'] = '<ul id="commerceguys-marketplace-slideshow">';
   foreach ($promotions as $variables) {
     $promotion_image_url = $variables->image;
-    $promotion_link = $variables->addon->url;
+    $promotion_token = urlencode($variables->addon->title);
+    $promotion_link = $variables->addon->url . '?utm_source=' . $profile_token . '&utm_medium=connector&utm_campaign=' . $promotion_token;
     $promotion_image = '<a href="' .$promotion_link . '" target="_blank"><img src="' . $promotion_image_url . '"></a>';
     $page['content']['promotions']['promotion']['#markup'] .= '<li>' . $promotion_image . '</li>';
   }
@@ -176,7 +186,7 @@ function commerceguys_marketplace_listing_form($form, &$form_state, $type) {
   }
   else {
     $form['results'] = array(
-      '#markup' => '<div class="empty-message">' . t('You don\'t have any Marketplace installed add-ons yet. ') . l('Visit the Marketplace', COMMERCEGUYS_MARKETPLACE_URL . '/add-ons') . t(' to find everything you need to improve and strengthen your online store.') . '</div>',
+      '#markup' => '<div class="empty-message">' . t('You don\'t have any Marketplace installed add-ons yet. ') . l('Visit the Marketplace', COMMERCEGUYS_MARKETPLACE_URL . '/add-ons', array('attributes' => array('target' => '_blank'))) . t(' to find everything you need to improve and strengthen your online store.') . '</div>',
     );
   }
   return $form;

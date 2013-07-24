@@ -711,7 +711,7 @@ function commerce_payflow_link_redirect_form_validate($order, $payment_method) {
     // the watchdog.
     $transaction = commerce_payment_transaction_new($payment_method['method_id'], $order->order_id);
     $transaction->instance_id = $payment_method['instance_id'];
-    $transaction->amount = commerce_currency_decimal_to_amount($_POST['AMT'], $currency_code);
+    $transaction->amount = commerce_currency_decimal_to_amount(isset($_POST['AMT']) ? $_POST['AMT'] : 0, $currency_code);
     $transaction->currency_code = $currency_code;
     $transaction->payload[REQUEST_TIME] = $_POST;
     $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
@@ -911,7 +911,11 @@ function commerce_payflow_form_alter(&$form, &$form_state, $form_id) {
 
       // If we find Payflow Link, include its CSS on the form and exit the loop.
       if (in_array($method_id, array('payflow_link', 'paypal_ppa'))) {
+        // Merge in the default settings in case the payment method has not been
+        // configured yet.
         $payment_method = commerce_payment_method_instance_load($key);
+        $payment_method['settings'] += commerce_payflow_link_default_settings();
+
         $payment_icons = array_values($payment_method['settings']['payment_icons']);
         $payflow_link = TRUE;
 
@@ -1188,7 +1192,12 @@ function commerce_payflow_link_itemize_order($order, $currency_code) {
   // Determine the order level item amount and tax amount line items. To prevent
   // rounding problems getting in the way, we calculate them based on the order
   // total instead of tallying it from each line item.
-  $taxamt = commerce_round(COMMERCE_ROUND_HALF_UP, commerce_tax_total_amount($order_total['data']['components'], FALSE, $currency_code));
+  if (module_exists('commerce_tax')) {
+    $taxamt = commerce_round(COMMERCE_ROUND_HALF_UP, commerce_tax_total_amount($order_total['data']['components'], FALSE, $currency_code));
+  }
+  else {
+    $taxamt = 0;
+  }
 
   // Add payment details line items.
   $nvp += array(
@@ -1269,7 +1278,9 @@ function commerce_payflow_api_request($payment_method, $api, $nvp = array(), $or
   $pairs = array();
 
   foreach ($nvp as $key => $value) {
-    $pairs[] = $key . '=' . $value;
+    // Since we aren't supposed to urlencode parameter values for PFL / PPA API
+    // requests, we strip out ampersands and equals signs to
+    $pairs[] = $key . '=' . str_replace(array('&', '=', '#'), array(''), $value);
   }
 
   // Setup the cURL request.
@@ -1282,6 +1293,20 @@ function commerce_payflow_api_request($payment_method, $api, $nvp = array(), $or
   curl_setopt($ch, CURLOPT_NOPROGRESS, 1);
   curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
   curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+
+  // Commerce PayPal requires SSL peer verification, which may prevent out of
+  // date servers from successfully processing API requests. If you get an error
+  // related to peer verification, you may need to download the CA certificate
+  // bundle file from http://curl.haxx.se/docs/caextract.html, place it in a
+  // safe location on your web server, and update your settings.php to set the
+  // commerce_paypal_cacert variable to contain the absolute path of the file.
+  // Alternately, you may be able to update your php.ini to point to the file
+  // with the curl.cainfo setting.
+  if (variable_get('commerce_paypal_cacert', FALSE)) {
+    curl_setopt($ch, CURLOPT_CAINFO, variable_get('commerce_paypal_cacert', ''));
+  }
+
   $result = curl_exec($ch);
 
   // Log any errors to the watchdog.

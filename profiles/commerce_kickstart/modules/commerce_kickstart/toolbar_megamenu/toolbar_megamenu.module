@@ -132,12 +132,16 @@ function toolbar_megamenu_get_menu_tree() {
 }
 
 function toolbar_megamenu_tree_output($tree, $balance = TRUE) {
+
+  // Add IE-specific Stylesheet.
+  drupal_add_css(drupal_get_path('module','toolbar_megamenu') . '/toolbar_megamenu_ie.css', array('group' => CSS_THEME, 'weight' => 23, 'browsers' => array('!IE' => FALSE), 'preprocess' => FALSE));
   $build = array();
   $groups = array();
 
   // Build the groups up-front so that we get proper grouping and accurate
   // counts for the first/last classes.
   $current_group = 0;
+  $current_depth = 0;
   foreach ($tree as $data) {
     // Break to a new group (even for non-visible items), but only if the
     // current group is not empty.
@@ -147,6 +151,7 @@ function toolbar_megamenu_tree_output($tree, $balance = TRUE) {
     if ($data['link']['access'] && !$data['link']['hidden']) {
       $groups[$current_group][] = $data;
     }
+    $current_depth = $data['link']['depth'];
   }
 
   $router_item = menu_get_item();
@@ -188,6 +193,7 @@ function toolbar_megamenu_tree_output($tree, $balance = TRUE) {
       // Allow menu-specific theme overrides.
       $element['#theme'] = 'menu_link__' . strtr($data['link']['menu_name'], '-', '_');
       $element['#attributes']['class'] = $class;
+      $element['#attributes']['class'][] .= 'depth-' . $current_depth;
       $element['#title'] = $data['link']['title'];
       $element['#href'] = $data['link']['href'];
       $element['#localized_options'] = !empty($data['link']['localized_options']) ? $data['link']['localized_options'] : array();
@@ -206,7 +212,7 @@ function toolbar_megamenu_tree_output($tree, $balance = TRUE) {
       }
       $build[$group_id] += array(
         '#sorted' => TRUE,
-        '#prefix' => '<ul class="menu group group-' . $group_id . ' toolbar-menu-' . $css_class . '">',
+        '#prefix' => '<ul class="menu group group-' . $group_id . ' toolbar-menu-' . $css_class . ' menu-depth-' . $current_depth . '">',
         '#suffix' => '</ul>',
       );
     }
@@ -215,7 +221,7 @@ function toolbar_megamenu_tree_output($tree, $balance = TRUE) {
     // Add the theme wrapper for outer markup.
     // Allow menu-specific theme overrides.
     $build += array(
-      '#prefix' => '<div class="toolbar-menu-wrapper">',
+      '#prefix' => '<div class="toolbar-menu-wrapper wrapper-depth-' . $current_depth . ' clearfix">',
       '#suffix' => '</div>',
     );
   }

@@ -1,65 +1,58 @@
-/**
- * Someone please redo this thing completely.
- *
- * (start from scratch)
- */
 
-/* Fix drop-down cropping in IE 7 & 8 */
 #toolbar {
   filter: none !important;
+  background: #000;
+  padding: 0;
 }
-#toolbar > div.toolbar-menu {
-  background-color: #333;
-}
-#toolbar > div.toolbar-menu {
 
+#toolbar div.toolbar-menu {
+  margin: 0 auto;
+  height: 25px;
+  padding: 3px 0 0;
+  width: 90%;
 }
-#toolbar > div.toolbar-menu > div.toolbar-menu-wrapper > ul.group {
+#toolbar .wrapper-depth-2,
+#toolbar-home,
+#toolbar-user {
+  padding-top: 2px;
+  top: 0;
+}
+#toolbar-home {
+  width: 30px;
+}
+#toolbar-user {
+  width: 20%;
+  left: auto; /* LTR */
+  right: 0; /* LTR */
+}
+#toolbar .wrapper-depth-2{
+  width: 80%;
+  padding-top: 2px;
+  left: 30px; /* LTR */
+}
+#toolbar ul.menu-depth-2 {
+  display: inline-block;
   float: left; /* LTR */
 }
-#toolbar > div.toolbar-menu > div.toolbar-menu-wrapper > ul.group > li {
-  margin-bottom: -1px;
-}
-#toolbar div.toolbar-menu-wrapper {
+#toolbar li.depth-2 {
   position: relative;
+  height: 30px;
+  margin-bottom: 0;
+  padding: 0 5px;
 }
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper {
+#toolbar .wrapper-depth-3 {
+  margin: -10px 0 0;
   position: absolute;
-  top: -1000px;
-  left: -10px; /* LTR */
-  background: #333;
-  border-radius: 0 0 5px 5px;
-  -moz-box-shadow: 0 3px 10px #000;
-  -webkit-box-shadow: 0 3px 10px #000;
-  box-shadow: 0 3px 10px #000;
-  padding: 1em;
-  opacity: 0;
+  text-align: left; /* LTR */
+  padding: 10px 5px 10px 5px;
+  width: 200px;
+  background: #000;
+  top: -999px;
+  left: 0; /* LTR */
+  display: inline-block;
   z-index: -1;
-}
 
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper div.toolbar-menu-wrapper {
-  position: static;
-  background: transparent;
-  border-radius: none;
-  -moz-box-shadow: none;
-  -webkit-box-shadow: none;
-  box-shadow: none;
-  margin-left: 0; /* LTR */
-  padding: 0;
-  padding-left: 1em; /* LTR */
-  width: normal;
-  display: block;
-  opacity: 1;
-}
-
-#toolbar div.toolbar-menu ul li:hover a {
-  background: #444;
-}
-#toolbar div.toolbar-menu ul li:hover div a {
-  background: transparent;
-}
-
-#toolbar div.toolbar-menu-wrapper > ul.menu > li > div.toolbar-menu-wrapper {
+  /* Transition for browsers that support it. */
   -webkit-transition: .5s all;
   -webkit-transition-delay: .25s;
   -moz-transition: .5s all;
@@ -71,14 +64,11 @@
   transition: .5s all;
   transition-delay: .25s;
 }
+#toolbar li.depth-2:hover .wrapper-depth-3,
+#toolbar li.depth-2 .wrapper-depth-3:hover {
+  top: 100%;
 
-
-
-#toolbar div.toolbar-menu-wrapper > ul.menu > li.open > div.toolbar-menu-wrapper,
-#toolbar div.toolbar-menu-wrapper > ul.menu:hover > li > div.toolbar-menu-wrapper {
-  display: block;
-  opacity: 1;
-  top: 30px;
+  /* Transition for browsers that support it. */
   -webkit-transition-delay: 0s;
   -ms-transition-delay: 0s;
   transition-delay: 0s;
@@ -88,49 +78,33 @@
   transition: 0.5s;
   -moz-transition: 0.5s;
 }
-
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu li a {
-  color: #eee;
-  font-weight: bold;
-  -moz-border-radius: 0px;
-  -webkit-border-radius: 0px;
-  border-radius: 0px;
-}
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu li a {
-  font-weight: normal;
-  color: #ccc;
+#toolbar ul.menu-depth-3 {
   background: transparent;
-}
-
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul li a:focus,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul li a:hover,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul li a:active,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul li a.active:focus {
-  background: transparent;
-  color: #fff;
-}
-
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul li a.active:hover,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul li a.active:active,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul li a.active,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul li.active-trail a {
-  background: transparent;
-  text-shadow: none;
-  color: #fff;
-}
-
-
-
-#toolbar ul.menu ul.menu li a {
-  float: none;
-  display: block;
-}
-
-#toolbar ul.menu ul.menu li {
-  float: none;
-}
-
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper .group {
-  width: 10em;
+  position: relative;
+  padding-bottom: 10px;
+  width: 100%;
   float: left; /* LTR */
+  clear: left; /* LTR */
+}
+#toolbar ul.menu-depth-3,
+#toolbar ul.menu-depth-4,
+#toolbar ul.menu-depth-3 li.depth-3,
+#toolbar ul.menu-depth-4 li.depth-4 {
+  float: none;
+  clear: both;
+}
+#toolbar .wrapper-depth-3 a,
+#toolbar .wrapper-depth-4 a {
+  float: none;
+  clear: left; /* LTR */
+  display: inline-block;
+}
+#toolbar .wrapper-depth-4 {
+  padding-left: 10px; /* LTR */
+}
+#toolbar .wrapper-depth-3 li.depth-3,
+#toolbar .wrapper-depth-4 li.depth-4,
+#toolbar .expanded,
+#toolbar .collapsed {
+  list-style: none !important;
 }

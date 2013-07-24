@@ -1,0 +1,35 @@
+/**
+* inline_conditions main css file.
+*/
+
+/**
+* Condition area.
+*/
+.inline-conditions-container .condition-wrapper {
+  float: right;
+}
+.inline-conditions-container .condition-wrapper .form-item label {
+  float: right; /* RTL */
+}
+/* Throbber */
+.inline-conditions-container .condition-wrapper .form-item .ajax-progress {
+  display: inline;
+  margin-top: 0; /* RTL */
+  left: 0;
+  right: 62px; /* RTL */
+  width: auto; /* RTL */
+}
+.inline-conditions-container .remove-condition .form-submit {
+  float: right;
+}
+.inline-conditions-container .remove-condition .ajax-progress .message {
+  float: right;
+  padding-right: 5px;
+  padding-left: 0; /* RTL */
+}
+
+/* order conditions */
+.inline-conditions-container div.condition-instructions {
+  margin-right: 85px;
+  margin-left: 0; /* RTL */
+}

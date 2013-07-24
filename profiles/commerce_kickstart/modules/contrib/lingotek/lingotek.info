@@ -1,4 +1,4 @@
-name = "Drupal Translation"
+name = "Lingotek Translation"
 description = "Extends Drupal's multilingual features by integrating with the Lingotek Translation Management System."
 package = Multilingual
 core = "7.x"
@@ -26,9 +26,9 @@ files[] = tests/lingotek.base.test
 files[] = tests/lingotek.access.test
 files[] = tests/lingotek.advanced_parsing.test
 
-; Information added by drupal.org packaging script on 2013-05-03
-version = "7.x-3.02"
+; Information added by drupal.org packaging script on 2013-06-11
+version = "7.x-3.03"
 core = "7.x"
 project = "lingotek"
-datestamp = "1367616019"
+datestamp = "1370982653"
 

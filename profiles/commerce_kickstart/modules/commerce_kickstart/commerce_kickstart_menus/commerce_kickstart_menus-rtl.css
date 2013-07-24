@@ -1,44 +1,12 @@
-#toolbar #toolbar-user {
-  float: left; /* LTR */
-}
-body.toolbar #toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings div.toolbar-menu-wrapper ul.menu ul.menu,
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-site-settings div.toolbar-menu-wrapper ul.menu ul.menu {
+#toolbar .toolbar-menu-store-settings .wrapper-depth-3 ul.group {
   float: right;
 }
-
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings ul.toolbar-menu-advanced-store-settings {
+#toolbar .toolbar-menu-store-settings .wrapper-depth-3 ul.group-0 {
   float: left;
 }
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings ul.toolbar-menu-products {
-  clear: right;
-}
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu li {
+#toolbar .toolbar-menu-site-settings .wrapper-depth-3 ul.group {
   float: right;
-  clear: right;
 }
-
-#toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu ul.menu {
-  padding: 0 0 0 20px;
-}
-
-#toolbar div.toolbar-menu .toolbar-menu-wrapper {
-  padding-right: 175px;
-}
-
-.responsive-layout-mobile #toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings ul.toolbar-menu-advanced-store-settings {
-  float: none;
-}
-.responsive-layout-mobile #toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings ul.toolbar-menu-products {
-  clear: both;
-}
-.responsive-layout-mobile #toolbar div.toolbar-menu div.toolbar-menu-wrapper div.toolbar-menu-wrapper ul.menu li {
-  float: none;
-  clear: both;
-}
-.responsive-layout-mobile #toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings div.toolbar-menu-wrapper {
-  width: auto;
-}
-.responsive-layout-mobile #toolbar div.toolbar-menu div.toolbar-menu-wrapper ul.toolbar-menu-store-settings ul.toolbar-menu-product-settings {
-  float: none;
+#toolbar .toolbar-menu-site-settings .wrapper-depth-3 ul.group-1 {
+  float: left;
 }

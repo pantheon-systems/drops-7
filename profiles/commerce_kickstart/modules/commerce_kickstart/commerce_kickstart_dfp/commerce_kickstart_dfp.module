@@ -49,14 +49,6 @@ function commerce_kickstart_dfp_commerce_kickstart_dfp_paths() {
       'dfp_class' => array('dfp-orders'),
       'dfp_unit' => 'Kickstart_Orders_Admin',
     ),
-    'admin/commerce/jirafe' => array(
-      'dfp_selector' => '.page-admin-commerce-jirafe #block-system-main .content:not(:has(#jirafe))',
-      'dfp_class' => array('dfp-jirafe'),
-      'dfp_position' => 'after',
-      'dfp_height' => 540,
-      'dfp_width' => 960,
-      'dfp_unit' => 'Kickstart_Jirafe',
-    ),
     'admin/commerce/customer-profiles' => array(
       'dfp_selector' => '.page-admin-commerce-customer-profiles #title-wrapper',
       'dfp_class' => array('dfp-customer-profiles'),

@@ -1,16 +1,34 @@
-#toolbar > div.toolbar-menu > div.toolbar-menu-wrapper > ul.group,
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper .group {
+#toolbar-user {
+  left: 0;
+  right: auto;
+}
+
+#toolbar .wrapper-depth-2 {
+  left: auto;
+  right: 30px;
+}
+
+#toolbar ul.menu-depth-2 {
   float: right;
 }
 
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper {
-  margin-left: 0;
-  margin-right: -10px;
+#toolbar .wrapper-depth-3 {
+  text-align: right;
+  left: auto;
+  right: 0;
 }
 
-#toolbar div.toolbar-menu-wrapper div.toolbar-menu-wrapper div.toolbar-menu-wrapper {
-  margin-right: 0;
+#toolbar ul.menu-depth-3 {
+  float: right;
+  clear: right;
+}
+
+#toolbar .wrapper-depth-3 a,
+#toolbar .wrapper-depth-4 a {
+  clear: right;
+}
+
+#toolbar .wrapper-depth-4 {
   padding-left: 0;
-  padding-right: 1em;
+  padding-right: 10px;
 }
-

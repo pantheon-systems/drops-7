@@ -2,8 +2,9 @@
 
 /**
  * @file
- * Hungarian services that extend Service Links module
- * by Denes Szabo
+ * Extends Service Links with Hungarian services.
+ *
+ * @author Denes Szabo
  */
 
 /**
@@ -14,7 +15,7 @@ function hungarian_services_service_links() {
 
   $links['_hu_iwiw'] = array(
     'name' => 'IWIW',
-    'description' => t('Add to iWiW.'),
+    'description' => t('Add to iWiW'),
     'link' => 'http://iwiw.hu/pages/share/share.jsp?u=<encoded-url>&t=<encoded-title>',
   );
 

@@ -10,12 +10,12 @@
  */
   &:before,
   &.cf:after {
-      content: " "; /* 1 */
-      display: table; /* 2 */
+    content: " "; /* 1 */
+    display: table; /* 2 */
   }
   
   &:after {
-      clear: both;
+    clear: both;
   }
   
   /**
@@ -36,4 +36,37 @@
   border-#{$side}-radius: $radius;
   -moz-border-radius-#{$side}: $radius;
   -webkit-border-#{$side}-radius: $radius;
+}
+
+@mixin gradient-vertical($from, $to) {
+  background: $from;
+  background: -moz-linear-gradient(top,  $from 0%, $to 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%,$from), color-stop(100%,$to));
+  background: -webkit-linear-gradient(top, $from 0%,$to 100%);
+  background: -o-linear-gradient(top, $from 0%,$to 100%);
+  background: -ms-linear-gradient(top, $from 0%,$to 100%);
+  background: linear-gradient(to bottom, $from 0%,$to 100%);
+  filter: progid:DXImageTransform.Microsoft.Gradient(GradientType=0, startColorstr='#{$from}', endColorstr='#{$to}');
+  -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='#{$from}', endColorstr='#{$to}')";
+}
+
+@mixin action-links {
+  ul.action-links {
+    list-style: none;
+    margin: 1.5em 0 2em 0.5em;
+
+    li a {
+      @include gradient-vertical(#FFFFFF, #DDDDDD);
+      @include rounded-corners(11px);
+      border-color: #DDDDDD #BBBBBB #999999;
+      border-style: solid;
+      border-width: 1px;
+      color: #333333;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 3px 10px 4px;
+      text-decoration: none;
+      text-shadow: 0 1px 1px #FFFFFF;
+    }
+  }
 }

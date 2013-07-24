@@ -2,11 +2,17 @@
 
 /**
  * @file
- * Original Author: Fredrik Jonsson fredrik at combonet dot se
- * Ex Maintainer: Sivanandhan, P. apsivam .at. apsivam .dot. in
- * Current Maintainer and 2.x branch starter: Fabio Mucciante aka TheCrow
- * Co Mantainer: Rob Loach
- * A module that adds Digg, del.icio.us, reddit, Technorati etc. links to nodes.
+ * Adds social network links to the content.
+ *
+ * This module is the enhanced version of Service Links 1.x developed
+ * by Fredrik Jonsson, rewritten and improved to fit the new purposes:
+ * extend easily the number of services supported and provide APIs to
+ * print links everywhere within any content.
+ * At the @link http://servicelinks.altervista.org/?q=service home page
+ * @endlink a web interface helps to create a module including the
+ * services not availables in the standard package.
+ *
+ * @author: Fabio Mucciante (TheCrow)
  */
 
 define('SERVICE_LINKS_STYLE_NONE', 0);
@@ -15,11 +21,6 @@ define('SERVICE_LINKS_STYLE_IMAGE', 2);
 define('SERVICE_LINKS_STYLE_IMAGE_AND_TEXT', 3);
 define('SERVICE_LINKS_STYLE_EMPTY', 4);
 define('SERVICE_LINKS_STYLE_FISHEYE', 5);
-
-define('SERVICE_LINKS_DISABLED', 0);
-define('SERVICE_LINKS_IN_TEASER', 1);
-define('SERVICE_LINKS_IN_FULL', 2);
-define('SERVICE_LINKS_IN_BOTH', 3);
 
 define('SERVICE_LINKS_SHORT_URL_USE_NEVER', 0);
 define('SERVICE_LINKS_SHORT_URL_USE_WHEN_REQUESTED', 1);
@@ -118,41 +119,29 @@ function service_links_menu() {
  * Implements hook_node_view().
  */
 function service_links_node_view($node, $view_mode) {
+  static $view_modes_allowed;
+ 
+  if (!isset($view_modes_allowed)) {
+    $view_modes_allowed = array_filter(variable_get('service_links_node_view_modes', array()));
+  }
+
   if ((arg(2) != 'edit') && service_links_show($node) && user_access('access service links')) {
+
     $node->service_links = service_links_render($node, TRUE);
 
-    if ($view_mode == 'rss') {
-      $node->service_links_rendered = theme('service_links_block_format', array('items' => service_links_render($node, FALSE), 'style' => SERVICE_LINKS_STYLE_IMAGE));
-    }
-    else {
-      $node->service_links_rendered = theme('service_links_node_format', array('links' => $node->service_links, 'label' => variable_get('service_links_label_in_node', t('Bookmark/Search this post with'))));
-    }
+    if (!empty($view_modes_allowed) && (in_array($view_mode, $view_modes_allowed))) {
 
-    switch (variable_get('service_links_in_node', SERVICE_LINKS_DISABLED)) {
-      case SERVICE_LINKS_IN_TEASER:
-        if (($view_mode == 'teaser') || ($view_mode == 'rss')) {
-          $node->content['service_links'] = array(
-            '#markup' => $node->service_links_rendered,
-            '#weight' => variable_get('service_links_weight_in_node', 10),
-          );
-        }
-        break;
-      case SERVICE_LINKS_IN_FULL:
-        if (($view_mode == 'full') || ($view_mode == 'rss')) {
-          $node->content['service_links'] = array(
-            '#markup' => $node->service_links_rendered,
-            '#weight' => variable_get('service_links_weight_in_node', 10),
-          );
-        }
-        break;
-      case SERVICE_LINKS_IN_BOTH:
-        if (($view_mode == 'teaser') || ($view_mode == 'full') || ($view_mode == 'rss')) {
-          $node->content['service_links'] = array(
-            '#markup' => $node->service_links_rendered,
-            '#weight' => variable_get('service_links_weight_in_node', 10),
-          );
-        }
-        break;
+      $node->service_links_rendered = theme('service_links_node_format', array(
+        'links' => $node->service_links,
+        'label' => variable_get('service_links_label_in_node', t('Bookmark/Search this post with')),
+        'view_mode' => $view_mode,
+        'node_type' => $node->type,
+      ));
+  
+      $node->content['service_links'] = array(
+        '#markup' => $node->service_links_rendered,
+        '#weight' => variable_get('service_links_weight_in_node', 10),
+      );
     }
 
     _service_links_link($node, $view_mode);
@@ -163,29 +152,13 @@ function service_links_node_view($node, $view_mode) {
  * Create an array of links for the link section.
  */
 function _service_links_link($node, $view_mode) {
-  $teaser = ($view_mode == 'teaser') ? TRUE : FALSE;
-  $rss = ($view_mode == 'rss') ? TRUE : FALSE;
-  $full = ($view_mode == 'full') ? TRUE : FALSE;
-
-  switch (variable_get('service_links_in_links', SERVICE_LINKS_DISABLED)) {
-    case SERVICE_LINKS_DISABLED:
-      $show_links = FALSE;
-      break;
-    case SERVICE_LINKS_IN_TEASER:
-      $show_links = ($teaser || $rss) ? TRUE : FALSE;
-      break;
-    case SERVICE_LINKS_IN_FULL:
-      $show_links = ($full || $rss) ? TRUE : FALSE;
-      break;
-    case SERVICE_LINKS_IN_BOTH:
-      $show_links = TRUE;
-      break;
-    default:
-      $show_links = FALSE;
-      break;
+  static $view_modes_allowed;
+ 
+  if (!isset($view_modes_allowed)) {
+    $view_modes_allowed = array_filter(variable_get('service_links_link_view_modes', array()));
   }
 
-  if ($show_links) {
+  if (in_array($view_mode, $view_modes_allowed)) {
     $links = $node->service_links;
     if (!empty($links)) {
       $node->content['links']['node']['#links'] = array_merge($node->content['links']['node']['#links'], $links);
@@ -342,7 +315,12 @@ function service_links_theme() {
       'file' => 'service_links.theme.inc',
     ),
     'service_links_node_format' => array(
-      'variables' => array('links' => NULL, 'label' => NULL),
+      'variables' => array(
+        'links' => NULL,
+        'label' => NULL,
+        'view_mode' => NULL,
+        'node_type' => NULL
+      ),
       'file' => 'service_links.theme.inc',
     ),
     'service_links_block_format' => array(
@@ -357,6 +335,25 @@ function service_links_theme() {
       'render element' => 'form',
     ),
   );
+}
+
+/**
+ * Remove a service from the list if the related module is disabled
+ * and can't provide the correct values.
+ */
+function service_links_array_filter($services) {
+  $result = array();
+
+  foreach ($services as $service_id => $service) {
+    if ($service === 1) {
+      drupal_set_message(t('The service having id "@id" is missing, reactivate its module or save again the list of services.', array('@id' => $service_id)), 'warning', FALSE);
+    }
+    else {
+      $result[$service_id] = $service;
+    }
+  }
+
+  return $result;
 }
 
 /**
@@ -395,12 +392,22 @@ function service_links_get_links($services = NULL, $reset = FALSE) {
       cache_set('service_links_get_links', $links);
     }
   }
-  // If desired, return only the given services.
-  if (isset($services) && is_numeric(key($services))) {
-    $services = array_combine($services, array_fill(0, count($services), 1));
+
+  // If desired, return only the wanted services.
+  if (isset($services)) {
+    // Detect a manual request and populate the array correctly.
+    if (is_numeric(key($services))) {
+      $services = array_combine($services, array_fill(0, count($services), 1));
+    }
+
+    // Provide only the services requested.
+    $services = array_merge($services, array_intersect_key($links, $services));
+
+    // Remove the unknown services.
+    $services = service_links_array_filter($services);
   }
 
-  return isset($services) ? array_merge($services, array_intersect_key($links, $services)) : $links;
+  return isset($services) ? $services : $links;
 }
 
 /**
@@ -585,7 +592,7 @@ function _service_links_render($service_id, $service, $settings, $nodelink, $nod
     $service['url'][0] = str_replace($settings['tag'], $settings['subst'], $service['url'][0]);
   }
 
-  $service['attributes']['title'] = $service['description'];
+  $service['attributes']['title'] = t($service['description']);
   $class = str_replace(array('][', '_', ' '), '-', 'service_links-'. $service_id);
   $service['attributes']['class'] = isset($service['attributes']['class']) ? array_merge($service['attributes']['class'], array($class)) : array($class);
   $service['attributes'] += $settings['attributes'];
@@ -616,7 +623,7 @@ function _service_links_render($service_id, $service, $settings, $nodelink, $nod
 
   // Create the HTML.
   $link = theme('service_links_build_link', array(
-    'text' => $service['name'],
+    'text' => t($service['name']),
     'url' => $service['url'],
     'image' => $service['icon'],
     'nodelink' => $nodelink,
@@ -648,6 +655,7 @@ function _service_links_add_js($javascript) {
         // Ensure that we embed the https js library.
         $js = str_replace('http://', 'https://', $js);
       }
+
       if (!in_array($js, $external_js)) {
         drupal_add_js($js, array('type' => 'external'));
         $external_js[] = $js;
@@ -671,30 +679,41 @@ function _service_links_get_tags($node, &$settings) {
 
     $query = drupal_get_path_alias("node/{$node->nid}");
 
-    $teaser = (isset($node->body) && isset($node->language) && isset($node->body[$node->language])) ? strip_tags(text_summary($node->body[$node->language][0]['value'])) : '';
+    $body = field_get_items('node', $node, 'body');
+    $teaser = $body ? strip_tags(text_summary($body[0]['value'])) : '';
 
     $nid = $node->nid;
+  }
+  elseif (isset($settings['data'])) {
+    $title = isset($settings['data']['title']) ? $settings['data']['title'] : '';
+    $url = isset($settings['data']['url']) ? $settings['data']['url'] : '';
+    $query = isset($settings['data']['query']) ? $settings['data']['query'] : '';
+    $teaser = isset($settings['data']['teaser']) ? $settings['data']['teaser'] : '';
+    $nid = isset($settings['data']['node_id']) ? $settings['data']['node_id'] : NULL;
   }
   else {
     $title = drupal_get_title();
 
     $url = _service_links_get_page_url(NULL, $settings);
 
-    // The choice of front_page shouldn't affect the query which points the original page
-    $query = check_plain(arg(0)) . str_replace(url(arg(0)), '', url($_GET['q']));
+    // The query shouldn't follow the front_page alias but point the original page.
+    $query = drupal_get_normal_path($_GET['q']);
+    
     $teaser = '';
     $nid = NULL;
   }
 
   $source = variable_get('site_name', 'Drupal');
 
+  $long_url = $url;
+
   $front_page = url('<front>', array('absolute' => TRUE));
   if ((variable_get('clean_url', 0) == 0) && (strpos($front_page, '?q=') === FALSE)) {
     $front_page .= '?q=';
   }
   else {
-    // Ensure a trailing slash on multilingual sites.
-    $front_page = preg_replace('/\?q\=([0-9a-z-_]+)$/i', '?q=\1/', $front_page);
+    // Ensure a trailing slash on multilingual sites with clean url on.
+    $front_page = preg_replace('/([0-9a-z-_]+)$/i', '\1/', $front_page);
   }
 
   switch ($settings['short_links_use']) {
@@ -715,16 +734,19 @@ function _service_links_get_tags($node, &$settings) {
     'raw-encoded-url' => '<raw-encoded-url>',
     'raw-encoded-teaser' => '<raw-encoded-teaser>',
     'raw-encoded-short-url' => '<raw-encoded-short-url>',
+    'raw-encoded-long-url' => '<raw-encoded-long-url>',
     'raw-encoded-query' => '<raw-encoded-query>',
     'raw-encoded-source' => '<raw-encoded-source>',
     'encoded-title' => '<encoded-title>',
     'encoded-url' => '<encoded-url>',
     'encoded-teaser' => '<encoded-teaser>',
     'encoded-short-url' => '<encoded-short-url>',
+    'encoded-long-url' => '<encoded-long-url>',
     'encoded-query' => '<encoded-query>',
     'encoded-source' => '<encoded-source>',
     'teaser' => '<teaser>',
     'short-url' => '<short-url>',
+    'long-url' => '<long-url>',
     'source' => '<source>',
     'node-id' => '<node-id>',
     'query' => '<query>',
@@ -741,6 +763,8 @@ function _service_links_get_tags($node, &$settings) {
     'raw-encoded-teaser' => $teaser,
     //'raw-encoded-short-url' => rawurlencode($short_url),
     'raw-encoded-short-url' => $short_url,
+    //'raw-encoded-long-url' => rawurlencode($long_url),
+    'raw-encoded-long-url' => $long_url,
     //'raw-encoded-query' => rawurlencode($query),
     'raw-encoded-query' => $query,
     //'raw-encoded-source' => rawurlencode($source),
@@ -753,6 +777,8 @@ function _service_links_get_tags($node, &$settings) {
     'encoded-teaser' => $teaser,
     //'encoded-short-url' => urlencode($short_url),
     'encoded-short-url' => $short_url,
+    //'encoded-long-url' => urlencode($long_url),
+    'encoded-long-url' => $long_url,
     //'encoded-query' => urlencode($query),
     'encoded-query' => $query,
     //'encoded-source' => urlencode($source),
@@ -760,6 +786,7 @@ function _service_links_get_tags($node, &$settings) {
     //Not needed
     'teaser' => $teaser,
     'short-url' => $short_url,
+    'long-url' => $long_url,
     'source' => $source,
     'node-id' => $nid,
     'query' => $query,
@@ -773,7 +800,7 @@ function _service_links_get_tags($node, &$settings) {
  * Return the url for not-node pages.
  */
 function _service_links_get_page_url($node, $settings) {
-  if ($settings['link_to_front']) {
+  if ($settings['link_to_front'] || drupal_is_front_page()) {
     $url = url('<front>', array('absolute' => TRUE, 'query' => service_links_get_query($settings['text_to_append'])));
   }
   else {
@@ -800,7 +827,7 @@ function _service_links_get_node_title($node, $settings) {
       break;
   }
 
-  return check_plain($title);
+  return $title;
 }
 
 /**
@@ -815,10 +842,8 @@ function _service_links_get_node_path($node) {
   }
 
   $path = "node/$node->nid";
-  if (isset($node->uri)) {
-    if (((object)$node->uri['path'] == $front_page) || ($path == $front_page)) {
-      $path = '<front>';
-    }
+  if (($path == $front_page) || (isset($node->uri) && ((object)$node->uri['path'] == $front_page))) {
+    $path = '<front>';
   }
 
   return $path;
@@ -1011,7 +1036,13 @@ function service_links_get_query($query_str) {
     return NULL;
   }
   $result = array();
-  parse_str($query_str, $result);
+
+  // parse_str() replaces dots and squares with underscores.
+  $query_str = explode('&', $query_str);
+  foreach($query_str as $q) {
+    $key_value = explode('=', $q);
+    $result[$key_value[0]] = isset($key_value[1]) ? $key_value[1] : '';
+  }
 
   return $result;
 }

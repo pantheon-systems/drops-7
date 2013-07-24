@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Installation file for service links module.
+ * Service Links install file.
  */
 
 /**
@@ -12,4 +12,78 @@ function service_links_uninstall() {
   db_delete('variable')
     ->condition('name', 'service_links_%', 'LIKE')
     ->execute();
+}
+
+/**
+ * Update from Service Links 1.x.
+ */
+function service_links_update_6200() {
+  $new_var = variable_get('service_links_show', NULL);
+
+  if (!isset($new_var)) {
+    variable_set('service_links_show', array(
+      'delicious' => variable_get('service_links_show_delicious', 0),
+      'digg' => variable_get('service_links_show_digg', 0),
+      'stumbleupon' => variable_get('service_links_show_stumbleupon', 0),
+      'reddit' => variable_get('service_links_show_reddit', 0),
+      'newsvine' => variable_get('service_links_show_newsvine', 0),
+      'furl' => variable_get('service_links_show_furl', 0),
+      'facebook' => variable_get('service_links_show_facebook', 0),
+      'myspace' => variable_get('service_links_show_myspace', 0),
+      'identica' => variable_get('service_links_show_identica', 0),
+      'twitter' => variable_get('service_links_show_twitter', 0),
+      'google' => variable_get('service_links_show_google', 0),
+      'yahoo' => variable_get('service_links_show_yahoo', 0),
+      'linkedin' => variable_get('service_links_show_linkedin', 0),
+      'technorati' => variable_get('service_links_show_technorati', 0),
+      'icerocket' => variable_get('service_links_show_icerocket', 0),
+    ));
+
+    module_enable(array('general_services'));
+  }
+
+  // delete old service variables
+  db_delete('variable')
+    ->condition('name', 'service_links_show_%', 'LIKE')
+    ->execute();
+
+  // Aggregator2 support
+  variable_del('service_links_agg2_link');
+}
+
+/**
+ * Switch the old variables to the news based on view modes.
+ */
+function _update_to_view_modes($old_var, $new_var) {
+  $modes = variable_get($old_var, 0);
+  $new_values = variable_get($new_var, NULL);
+
+  if (!isset($new_values)) {
+    switch($modes) {
+    default:
+      $modes = array();
+      break;
+    case 1:
+      $modes = array('teaser' => 'teaser');
+      break;
+    case 2:
+      $modes = array('full' => 'full');
+      break;
+    case 3:
+      $modes = array('teaser' => 'teaser', 'full' => 'full');
+      break;
+    }
+
+    variable_set($new_var, $modes);
+  }
+
+  variable_del($old_var);
+}
+
+/**
+ * Update to view mode display.
+ */
+function service_links_update_7201(&$sandbox) {
+  _update_to_view_modes('service_links_in_links', 'service_links_link_view_modes');
+  _update_to_view_modes('service_links_in_node', 'service_links_node_view_modes');
 }

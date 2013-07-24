@@ -127,12 +127,13 @@ function template_preprocess_commerceguys_marketplace_addons(&$variables) {
  * Process variables for commerceguys-marketplace-addon-featured.tpl.php.
  */
 function template_preprocess_commerceguys_marketplace_addon_featured(&$variables) {
+  $profile_token = drupal_get_profile();
   $addon = $variables['addon'];
   $variables['logo'] = theme('image', array('path' => $addon->logo, 'alt' => $addon->title . ' logo'));
   $variables['title'] = $addon->title;
   $variables['tagline'] = $addon->tagline;
   $variables['category'] = $addon->category->name;
-  $variables['path'] = $addon->url;
+  $variables['path'] = $addon->url . '?utm_source=' . $profile_token . '&utm_medium=connector&utm_campaign=' . urlencode($addon->title);
 }
 
 /**
@@ -163,8 +164,14 @@ function template_preprocess_commerceguys_marketplace_addon_licenses(&$variables
  * Process variables for commerceguys-marketplace-addon-license.tpl.php.
  */
 function template_preprocess_commerceguys_marketplace_addon_license(&$variables) {
+  $profile_token = drupal_get_profile();
   $addon = $variables['addon'];
-  $variables['more_link'] = l(t('More about this add-on'), $addon->url);
+  $addon_token = array(
+    'utm_source' => $profile_token,
+    'utm_medium' => 'connector',
+    'utm_campaign' => urlencode($addon->title),
+  );
+  $variables['more_link'] = l(t('More about this add-on'), $addon->url, array('query' => $addon_token, 'attributes' => array('target' => '_blank')));
   $variables['title'] = $addon->title;
   $variables['logo'] = theme('image', array('path' => $addon->logo, 'alt' => $addon->title . ' logo', 'style_name' => 'thumbnail'));
   $variables['tagline'] = $addon->tagline;
@@ -184,6 +191,9 @@ function template_preprocess_commerceguys_marketplace_trainings(&$variables) {
   // themers.
   $raw_trainings = $variables['trainings'];
   $variables['trainings'] = array();
+
+  $profile_token = drupal_get_profile();
+  $variables['training_path'] = COMMERCEGUYS_MARKETPLACE_URL . '/training?utm_source=' . $profile_token . '&utm_medium=connector&utm_campaign=Connector+Training';
 
   foreach ($raw_trainings as $raw_training) {
     $audiences = array();

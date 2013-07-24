@@ -8,36 +8,30 @@
 class CommerceLineItemInlineEntityFormController extends EntityInlineEntityFormController {
 
   /**
-   * Overrides EntityInlineEntityFormController::defaultFields().
+   * Overrides EntityInlineEntityFormController::tableFields().
    */
-  public function defaultFields($bundles) {
+  public function tableFields($bundles) {
     $fields = array();
     $fields['line_item_label'] = array(
       'type' => 'property',
       'label' => t('Label'),
-      'visible' => TRUE,
       'weight' => 1,
     );
     $fields['commerce_unit_price'] = array(
       'type' => 'field',
       'label' => t('Unit price'),
       'formatter' => 'commerce_price_formatted_amount',
-      'settings' => array(),
-      'visible' => TRUE,
       'weight' => 2,
     );
     $fields['quantity'] = array(
       'type' => 'property',
       'label' => t('Quantity'),
-      'visible' => TRUE,
       'weight' => 3,
     );
     $fields['commerce_total'] = array(
       'type' => 'field',
       'label' => t('Total'),
       'formatter' => 'commerce_price_formatted_amount',
-      'settings' => array(),
-      'visible' => TRUE,
       'weight' => 4,
     );
 
@@ -64,8 +58,8 @@ class CommerceLineItemInlineEntityFormController extends EntityInlineEntityFormC
     $form = parent::settingsForm($field, $instance);
 
     // Adding existing entities is not supported for line items.
-    unset($form['allow_existing']);
-    unset($form['match_operator']);
+    $form['allow_existing']['#access'] = FALSE;
+    $form['match_operator']['#access'] = FALSE;
 
     return $form;
   }
@@ -108,14 +102,16 @@ class CommerceLineItemInlineEntityFormController extends EntityInlineEntityFormC
 
     // If the order is still in a cart status, then the prices are still being
     // recalculated, meaning that no changes made to them would be permanent.
-    if (!empty($form_state['commerce_order']) && commerce_cart_order_is_cart($form_state['commerce_order'])) {
-      $language = $entity_form['commerce_unit_price']['#language'];
-      $entity_form['commerce_unit_price'][$language][0]['amount']['#disabled'] = TRUE;
-      $entity_form['commerce_unit_price'][$language][0]['currency_code']['#disabled'] = TRUE;
+    if (!empty($form_state['commerce_order']) && module_exists('commerce_order')) {
+      if (commerce_cart_order_is_cart($form_state['commerce_order'])) {
+        $language = $entity_form['commerce_unit_price']['#language'];
+        $entity_form['commerce_unit_price'][$language][0]['amount']['#disabled'] = TRUE;
+        $entity_form['commerce_unit_price'][$language][0]['currency_code']['#disabled'] = TRUE;
+      }
     }
 
     // Tweaks specific to product line items.
-    if (in_array($line_item->type, commerce_product_line_item_types())) {
+    if (in_array($line_item->type, $this->productLineItemTypes())) {
       $entity_form['line_item_label']['#access'] = FALSE;
       $entity_form['commerce_display_path']['#access'] = FALSE;
       $entity_form['commerce_product']['#weight'] = -100;
@@ -159,26 +155,56 @@ class CommerceLineItemInlineEntityFormController extends EntityInlineEntityFormC
     $line_item = $entity_form['#entity'];
     $line_item_values = drupal_array_get_nested_value($form_state['values'], $entity_form['#parents']);
     $line_item->quantity = sprintf("%.2f", $line_item_values['quantity']);
-
     field_attach_submit('commerce_line_item', $line_item, $entity_form, $form_state);
+    commerce_line_item_rebase_unit_price($line_item);
 
+    $wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
     // Update the line item label based on the line item type.
     // Product line item types always get the product SKU as the label.
-    if (in_array($line_item->type, commerce_product_line_item_types())) {
-      $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-      $line_item->line_item_label = $line_item_wrapper->commerce_product->sku->value();
+    if (in_array($line_item->type, $this->productLineItemTypes())) {
+      $wrapper->line_item_label = $wrapper->commerce_product->sku->value();
     }
     else {
-      $line_item->line_item_label = trim($line_item_values['line_item_label']);
+      $wrapper->line_item_label = trim($line_item_values['line_item_label']);
     }
 
     // Update the total price.
-    commerce_line_item_rebase_unit_price($line_item);
+    $unit_price = $wrapper->commerce_unit_price->value();
+    $wrapper->commerce_total->amount = $line_item->quantity * $unit_price['amount'];
+    $wrapper->commerce_total->currency_code = $unit_price['currency_code'];
+    // Add the components multiplied by the quantity to the data array.
+    foreach ($unit_price['data']['components'] as $key => &$component) {
+      $component['price']['amount'] *= $line_item->quantity;
+    }
+    // Set the updated data array to the total price.
+    $wrapper->commerce_total->data = $unit_price['data'];
+  }
 
-    // Product line item types by default get the product SKU as the label.
-    if (empty($line_item->line_item_id) && in_array($line_item->type, commerce_product_line_item_types())) {
-      $product = commerce_product_load($line_item->commerce_product[LANGUAGE_NONE][0]['product_id']);
-      $line_item->line_item_label = $product->sku;
+  /**
+   * Overrides EntityInlineEntityFormController::removeForm().
+   */
+  public function removeForm($remove_form, &$form_state) {
+    // EntityInlineEntityFormController::removeForm uses the entity label
+    // in the confirmation message, but line items don't have any.
+    $remove_form['message'] = array(
+      '#markup' => '<div>' . t('Are you sure you want to remove this line item?') . '</div>',
+    );
+
+    return $remove_form;
+  }
+
+  /**
+   * Returns an array of product line item types.
+   *
+   * If the commerce_product_reference module is missing, returns an empty
+   * array as a fallback.
+   */
+  protected function productLineItemTypes() {
+    if (module_exists('commerce_product_reference')) {
+      return commerce_product_line_item_types();
+    }
+    else {
+      return array();
     }
   }
 }

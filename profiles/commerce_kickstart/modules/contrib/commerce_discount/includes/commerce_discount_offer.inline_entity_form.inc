@@ -20,10 +20,22 @@ class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntity
       }
     }
 
+    // Get discount type.
+    $discount_type = commerce_discount_type($form_state['commerce_discount']->type);
+
     $options = array();
     foreach (commerce_discount_offer_types() as $type => $info) {
-      $options[$type] = $info['label'];
+      if (in_array($discount_type['entity type'], $info['entity types'])) {
+        $options[$type] = $info['label'];
+      }
     }
+
+    // Ensures the discount type includes the passed offer type. If not, set the
+    // offer type to the first found valid offer.
+    if (!in_array($offer->type, array_keys($options))) {
+      $offer->type = reset(array_keys($options));
+    }
+
     $entity_form['type'] = array(
       '#title' => t('Choose offer type'),
       '#type' => 'radios',

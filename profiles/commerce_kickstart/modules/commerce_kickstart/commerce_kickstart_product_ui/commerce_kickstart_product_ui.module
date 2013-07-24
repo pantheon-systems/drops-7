@@ -69,7 +69,7 @@ function commerce_kickstart_product_ui_theme_registry_alter(&$theme_registry) {
  */
 function commerce_kickstart_product_ui_preprocess_page(&$vars) {
   $product_display_types = commerce_product_reference_node_types();
-  if (!empty($vars['node']) && isset($product_display_types[$vars['node']->type])) {
+  if (isset($vars['node']->type) && isset($product_display_types[$vars['node']->type])) {
     $vars['title'] = "";
   }
 }

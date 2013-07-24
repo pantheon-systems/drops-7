@@ -5,10 +5,12 @@
         var processed = $('#commerceguys-marketplace-slideshow', context).hasClass('pager-processed');
         if ($('#commerceguys-marketplace-slideshow li').length >= 2 && typeof $.fn.bxSlider != 'undefined' && processed == false) {
           $('#commerceguys-marketplace-slideshow', context).bxSlider({
+            auto: true,
             pager: false,
             slideWidth: 580,
             moveSlides: 1,
-            slideMargin: 0
+            slideMargin: 0,
+            randomStart: true
           });
         };
         $('#commerceguys-marketplace-slideshow', context).addClass('pager-processed');

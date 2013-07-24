@@ -1,0 +1,79 @@
+/**
+* inline_conditions main css file.
+*/
+
+/**
+* Discount conditions block.
+*/
+.inline-conditions-container .form-wrapper {
+  margin: 10px;
+}
+.inline-conditions-container .even,
+.inline-conditions-container .odd {
+  margin-top: 2px;
+  padding: 10px 5px;
+}
+.inline-conditions-container .odd {
+  background-color: #eee;
+}
+
+/**
+* Condition area.
+*/
+.inline-conditions-container .condition-wrapper {
+  display: block;
+  float: left; /* LTR */
+  position: relative;
+}
+.inline-conditions-container .condition-wrapper .form-item label {
+  display: inline-block;
+  width: 80px;
+}
+/* Throbber */
+.inline-conditions-container .condition-wrapper .form-item .ajax-progress {
+  position: absolute;
+  left: 62px; /* LTR */
+}
+.inline-conditions-container .condition-wrapper .form-item .ajax-progress .message {
+  display: none;
+}
+.inline-conditions-container .remove-condition {
+  position: relative;
+}
+.inline-conditions-container .remove-condition .form-submit {
+  float: left; /* LTR */
+  margin: 0 10px;
+}
+.inline-conditions-container .remove-condition .ajax-progress .message {
+  float: left; /* LTR */
+  padding-left: 5px; /* LTR */
+}
+
+/* order conditions */
+.inline-conditions-container .form-item {
+  margin: 0;
+}
+.inline-conditions-container .form-submit {
+  margin: 0;
+}
+.inline-conditions-container .form-submit.add-new-condition {
+  margin-top: 10px;
+}
+.inline-conditions-container div.condition-instructions {
+  color: #6d6d6d;
+  font-style: italic;
+  display: block;
+  font-size: smaller;
+  /* Equal to ..inline-conditions-container .condition-wrapper .form-item label width+5px */
+  margin-left: 85px; /* LTR */
+}
+.inline-conditions-container .product-taxonomy .form-type-radio {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+.inline-conditions-container .product-taxonomy .form-type-radio > label {
+  color: #6d6d6d;
+  font-style: italic;
+  font-size: smaller;
+}

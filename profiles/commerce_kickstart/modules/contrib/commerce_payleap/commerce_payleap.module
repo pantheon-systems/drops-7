@@ -18,17 +18,9 @@ define('PAYLEAP_TXN_TYPE_MANAGECUSTOMER', 'manage_customer');
 define('PAYLEAP_TXN_TYPE_MANAGECONTRACT', 'manage_contract');
 define('PAYLEAP_TXN_TYPE_VOID', 'void');
 define('PAYLEAP_TXN_TYPE_FORCE', 'force');
-define('COMMERCE_PAYMENT_STATUS_CANCELED', 'canceled');
+define('PAYLEAP_PAYMENT_STATUS_CANCELED', 'canceled');
 // Tracking code provided by PayLeap for Drupal Commerce.
 define('PAYLEAP_COMMERCE_PARTNER_ID', 'commerceguys298');
-
-/**
- * Implements hook_enable().
- */
-function commerce_payleap_enable() {
-  // Make the card on file option checked by default.
-  variable_set('commerce_cardonfile_storage', 'opt-out');
-}
 
 /**
  * Implements hook_commerce_payment_transaction_status_info().
@@ -36,9 +28,8 @@ function commerce_payleap_enable() {
 function commerce_payleap_commerce_payment_transaction_status_info() {
   $statuses = array();
 
-  // COMMERCE_PAYMENT_STATUS_CANCELED is a constant defined in the Paleap module.
-  $statuses[COMMERCE_PAYMENT_STATUS_CANCELED] = array(
-    'status' => COMMERCE_PAYMENT_STATUS_CANCELED,
+  $statuses[PAYLEAP_PAYMENT_STATUS_CANCELED] = array(
+    'status' => PAYLEAP_PAYMENT_STATUS_CANCELED,
     'title' => t('Canceled'),
     'total' => FALSE,
   );
@@ -101,11 +92,11 @@ function commerce_payleap_commerce_payment_method_info() {
     'base' => 'commerce_payleap_cof',
     'title' => t('PayLeap - Card On File'),
     'short_title' => t('PayLeap Cardonfile'),
-    'display_title' => t('Card on File'),
+    'display_tiwtle' => t('Card on File'),
     'description' => t('PayLeap - Can be used for regular transaction with option to keep the credit card saved for re-use - requires the Card on File module '),
     'cardonfile' => array(
-      'update callback' => 'commerce_payleap_cim_cardonfile_update_delete',
-      'delete callback' => 'commerce_payleap_cim_cardonfile_update_delete',
+      'update callback' => 'commerce_payleap_cof_cardonfile_update_delete',
+      'delete callback' => 'commerce_payleap_cof_cardonfile_update_delete',
     ),
   );
 
@@ -136,7 +127,7 @@ function commerce_payleap_cof_settings_form($settings = NULL) {
   $settings = (array) $settings + commerce_payleap_default_settings();
   $form = commerce_payleap_base_settings_form($settings);
 
-  // CIM support in conjunction with AIM requires the Card on File module.
+  // COF support in conjunction with AIM requires the Card on File module.
   $form['vendor_number'] = array(
     '#type' => 'textfield',
     '#title' => t('Vendor number'),
@@ -318,11 +309,11 @@ function commerce_payleap_cof_submit_form_submit($payment_method, $pane_form, $p
             // Get the remote ID.
             $info['CustomerKey'] = (string) $response['xml']->CustomerKey;
             // Save and log the creation of the Customer Profile.
-            watchdog('commerce_payleap', 'CIM Customer Profile @profile_id created and saved to user @uid.', array('@profile_id' => $info['CustomerKey'] , '@uid' => $order->uid));
+            watchdog('commerce_payleap', 'Customer Profile @profile_id created and saved to user @uid.', array('@profile_id' => $info['CustomerKey'] , '@uid' => $order->uid));
           }
           else {
             // Could not save the a Customer Profile.
-            watchdog('commerce_payleap', 'CIM Customer Profile save error. Unable to save profile for user @uid. @msg', array('@uid' => $order->uid, '@msg' => $response['msg']));
+            watchdog('commerce_payleap', 'Customer Profile save error. Unable to save profile for user @uid. @msg', array('@uid' => $order->uid, '@msg' => $response['msg']));
           }
         }
       }
@@ -335,7 +326,12 @@ function commerce_payleap_cof_submit_form_submit($payment_method, $pane_form, $p
 
       // Could not get a Customer Profile.
       if (empty($info['CustomerKey'])) {
-        drupal_set_message(t('Unable to save credit card profile - @msg.', array('@msg' => $response['msg'])), 'error');
+        $msg = t('Unable to save credit card profile.');
+        if (isset($response['msg'])) {
+          $msg = t('Unable to save credit card profile - @msg.', array('@msg' => $response['msg']));
+        }
+        drupal_set_message($msg, 'error');
+
         return FALSE;
       }
       // Attempt to add the card to an existing Customer Profile if specified.
@@ -359,8 +355,8 @@ function commerce_payleap_cof_submit_form_submit($payment_method, $pane_form, $p
           $info['CcInfoKey'] = (string) $response['xml']->CcInfoKey;
           $new_card_data['remote_id'] = $info['CustomerKey'] . '|' . $info['CcInfoKey'];
           // Save and log the creation of the new card on file.
-          $save = commerce_cardonfile_data_save($new_card_data);
-          watchdog('commerce_payleap', 'CIM Credit Card @card_id added to Customer Profile @profile_id for user @uid.', array('@card_id' =>  $info['CcInfoKey'] , '@profile_id' => $info['CustomerKey'], '@uid' => $order->uid));
+          commerce_cardonfile_data_save($new_card_data);
+          watchdog('commerce_payleap', 'Credit Card @card_id added to Customer Profile @profile_id for user @uid.', array('@card_id' =>  $info['CcInfoKey'] , '@profile_id' => $info['CustomerKey'], '@uid' => $order->uid));
         }
         else {
           // But if we could not find a Customer Profile, assume the existing
@@ -368,7 +364,7 @@ function commerce_payleap_cof_submit_form_submit($payment_method, $pane_form, $p
           // data that resulted in the error.
           $card_data['status'] = 0;
           commerce_cardonfile_data_save($card_data);
-          watchdog('commerce_payleap', 'CIM Credit Card save error. Unable to save credit card for user @uid. @msg', array('@uid' => $order->uid, '@msg' => $response['msg']));
+          watchdog('commerce_payleap', 'Credit Card save error. Unable to save credit card for user @uid. @msg', array('@uid' => $order->uid, '@msg' => $response['msg']));
           return FALSE;
         }
       }
@@ -572,9 +568,9 @@ function commerce_payleap_get_billing_info($order) {
  *
  * @param $txn_mode
  *   The transaction mode that relates to the production or test server.
- *
- * @return
- *   The URL to use to submit requests to the PayLeap server.
+ * @param $txn_payleap_type
+ *   The transaction type that relate to transaction steps or results.
+ * @return string The URL to use to submit requests to the PayLeap server.
  */
 function commerce_payleap_server_url($txn_mode, $txn_payleap_type) {
 
@@ -618,6 +614,10 @@ function commerce_payleap_server_url($txn_mode, $txn_payleap_type) {
  *
  * @param $payment_method
  *   The payment method instance array associated with this API request.
+ * @param array $info
+ *   The payment method extented info.
+ * @return array
+ *    Response.
  */
 function commerce_payleap_request($payment_method, $info = array()) {
   // Get the API endpoint URL for the method's transaction mode and type.
@@ -743,9 +743,16 @@ function commerce_payleap_request($payment_method, $info = array()) {
 /**
  * Process a Void or Force transaction.
  *
+ * @param $transaction
+ *  The Transaction entity.
+ * @param $payment_method
+ *   The payment method instance array associated with this API request.
+ * @param $amount
+ *   Current transaction amount.
  * @param $action
  *   Transaction type, 'Void' or 'Force' supported.
- *
+ * @return bool
+ *  Return TRUE on success.
  * @see TransactServices.svc/ProcessCreditCard (Transaction API Guide)
  */
 function commerce_payleap_transaction_request($transaction, $payment_method, $amount, $action) {
@@ -790,7 +797,7 @@ function commerce_payleap_transaction_request($transaction, $payment_method, $am
        // Set the remote and local status accordingly.
        switch ($action) {
          case 'Void':
-           $transaction->status = COMMERCE_PAYMENT_STATUS_CANCELED;
+           $transaction->status = PAYLEAP_PAYMENT_STATUS_CANCELED;
            break;
          case 'Force':
            $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
@@ -810,26 +817,15 @@ function commerce_payleap_transaction_request($transaction, $payment_method, $am
 
 /**
  * Submits a ManageCreditCardInfo request PayLeap.
- *
  * This function will perform a Add/Update/Delete of a credit card profile.
  *
  * @param $payment_method
- *   The payment method instance array containing the API credentials for a CIM
- *   enabled Authorize.Net account.
- * @param $order
- *   The order object containing the billing address and e-mail to use for the
- *   customer profile.
- * @param $payment_details
- *   An array of payment details to use in the default payment profile. See the
- *   respective helper array functions for possible keys.
- *
- * @param $action
+ *   The payment method instance array containing the API credentials for a
+ *   Payleap account.
+ * @param $info
+ * @param string $action
  *   The action wanted: Add/Update/Delete
- *
- * @return
- *   A SimpleXMLElement containing the API response.
- *
- * @see MerchantServices.svc/ManageCreditCardInfo (SCM API Guide)
+ * @return array A SimpleXMLElement containing the API response.@see MerchantServices.svc/ManageCreditCardInfo (SCM API Guide)
  */
 function commerce_payleap_card_profile_request($payment_method, $info, $action = 'Add') {
 
@@ -865,7 +861,7 @@ function commerce_payleap_card_profile_request($payment_method, $info, $action =
  *
  * @see MerchantServices.svc/ManageCreditCardInfo (SCM API Guide)
  */
-function commerce_payleap_cim_cardonfile_update_delete($form, &$form_state, $payment_method, $card_data) {
+function commerce_payleap_cof_cardonfile_update_delete($form, &$form_state, $payment_method, $card_data) {
   $info = array();
   $ids = explode('|', $card_data['remote_id']);
 
@@ -912,42 +908,24 @@ function commerce_payleap_form_commerce_cardonfile_update_form_alter(&$form, &$f
 
 /**
  * Submits a ManageCustomer request PayLeap.
- *
- * This function will perform a Add/Update/Delete of a CIM Customer Profile
+ * This function will perform a Add/Update/Delete of a Customer Profile
  *
  * @param $payment_method
- *   The payment method instance array containing the API credentials for a CIM
- *   enabled Authorize.Net account.
+ *   The payment method instance array containing the API credentials for a
+ *   Payleap account.
  * @param $order
  *   The order object containing the billing address and e-mail to use for the
  *   customer profile.
- * @param $payment_details
- *   An array of payment details to use in the default payment profile. See the
- *   respective helper array functions for possible keys.
- *
- * @param $action
+ * @param $info
+ * @param string $action
  *   The action wanted: Add/Update/Delete
- *
- * @return
- *   A SimpleXMLElement containing the API response.
- *
- * @see MerchantServices.svc/ManageCustomer (SCM API Guide)
- *
+ * @return array A SimpleXMLElement containing the API response.@see MerchantServices.svc/ManageCustomer (SCM API Guide)
  */
 function commerce_payleap_customer_profile_request($payment_method, $order, $info, $action = 'Add') {
   $api_request_data = array();
   $billto = commerce_payleap_get_billing_info($order);
   // Update and Add required fields.
   if ($action == 'Add' || $action == 'Update') {
-    // When user is anonymous, use an ID related to the order.
-    // TODO: Check if this have any use.
-    if ($order->uid == 0) {
-      $customer_id = 'order' . $order->order_id;
-    }
-    else {
-      $customer_id = $order->uid;
-    }
-
     $api_request_data += array(
      // Unique, merchant-supplied identifier for a customer.
       'CustomerID' => $order->uid,
@@ -1073,62 +1051,4 @@ function commerce_payleap_cvv_response($code) {
       return t('Server Provider did not respond');
   }
   return '-';
-}
-
-/**
- * Implements hook_commerce_kickstart_service_provider().
- */
-function commerce_payleap_commerce_kickstart_service_provider() {
-  $description = t('This module is about integrating the PayLeap payment gateway with Drupal Commerce and the Commerce Card-on-File framework'). '<br /><br />';
-  $description .= '<b>' . t('Your own virtual POS') . '</b><br />';
-  $description .= t('Accept card payments face-to-face, over the phone, through the mail, or recurring, with a PayLeap virtual point-of-sale terminal to meet your business needs.') . '<br /><br />';
-  $description .= '<b>' . t('eCommerce Solutions') . '</b><br />';
-  $description .= t('Safe, secure credit card payments for all eCommerce environments, including customizable hosted payment pages or integration through our easy-to-use API’s.') . '<br /><br />';
-  $description .= '<b>' . t('Secure Technology') . '</b><br />';
-  $description .= t('Adaptive solutions aimed at keeping your data safe, we provide secure payment forms utilizing LeapLock™ technology and customer data storage with tokenization.');
-
-  $installation = t('1. Go to admin -> modules and enable commerce PayLeap module.') . '<br />';
-  $installation .= t('2. Under site configuration -> Workflow you can see 2 PayLeap rules. Choose your method and define as needed');
-
-  return array(
-    'commerce_payleap' => array(
-      'logo_path' => 'http://www.payleap.com/images/PayLeapRevisedLogo.png',
-      'title' => t('Commerce PayLeap'),
-      'category' => t('Payment providers'),
-      'teaser' => t('This module is about integrating the PayLeap payment gateway with Drupal Commerce and the Commerce Card-on-File framework.'),
-      'description' => $description,
-      'requirements' => t('PayLeap API login ID and PayLeap API transaction key'),
-      'link' => 'http://www.payleap.com/',
-      'installation_proccess' => $installation,
-      'requirements_callback' => 'commerce_payleap_commerce_kickstart_requirements_status',
-    ),
-  );
-}
-
-/**
- * commerce kickstart service provider requirements callback method.
- */
-function commerce_payleap_commerce_kickstart_requirements_status() {
-  $settings = array(
-    'direct' => null,
-    'recurring' => null,
-  );
-
-  // Checking the rules configuration for verification of the services defining.
-  $rule = rules_config_load('commerce_payment_payleap_direct');
-
-  foreach ($rule->actions() as $action) {
-    $settings['direct'] = $action->settings;
-  }
-
-  $rule = rules_config_load('commerce_payment_payleap_recurring');
-
-  if (!empty($rule)) {
-    foreach ($rule->actions() as $action) {
-      $settings['recurring'] = $action->settings;
-    }
-  }
-
-  // Checking if one of the rules is defined.
-  return (isset($settings['direct']['payment_method']['settings']) && is_array($settings['direct']['payment_method']['settings'])) || (isset($settings['recurring']['payment_method']['settings']) && is_array($settings['recurring']['payment_method']['settings'])) ? COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_DEFINED : COMMERCE_KICKSTART_SERVICE_PROVIDER_MODULE_ENABLED;
 }

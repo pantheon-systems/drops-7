@@ -17,6 +17,8 @@ function shiny_views_bulk_operations_form_alter(&$form, &$form_state, $vbo) {
 
 /**
  * Override or insert variables into the html template.
+ * @link https://drupal.org/node/2014851 @endlink
+ * Issue #2014851 explains the core bug causing the font css import workaround.
  */
 function shiny_preprocess_html(&$vars) {
   drupal_add_css(path_to_theme() . '/css/ie.css', array('group' => CSS_THEME, 'browsers' => array('IE' => 'lte IE 9', '!IE' => FALSE), 'weight' => 999, 'preprocess' => FALSE));
@@ -26,6 +28,8 @@ function shiny_preprocess_html(&$vars) {
   drupal_add_css(path_to_theme() . '/css/ie7.css', array('group' => CSS_THEME, 'browsers' => array('IE' => 'lte IE 7', '!IE' => FALSE), 'weight' => 999, 'preprocess' => FALSE));
   // Add conditional CSS for IE6.
   drupal_add_css(path_to_theme() . '/css/ie6.css', array('group' => CSS_THEME, 'browsers' => array('IE' => 'lte IE 6', '!IE' => FALSE), 'weight' => 999, 'preprocess' => FALSE));
+  // Add external CSS for Open Sans from Google Fonts.
+  drupal_add_css('//fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800&subset=latin,latin-ext',array('type' => 'external'));
 }
 
 /**

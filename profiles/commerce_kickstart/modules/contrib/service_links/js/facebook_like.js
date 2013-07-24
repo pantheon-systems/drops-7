@@ -1,12 +1,25 @@
 (function ($) {
-  $(document).ready(function(){
-    $('a.service-links-facebook-like').each(function(){
-      var iframe_txt='<iframe src="' + $(this).attr('href').replace('http://', '//') +
-        '" scrolling="no" frameborder="0" style="border:none; overflow:hidden; width:' +
-        Drupal.settings.ws_fl.width + 'px; height:' +
-        Drupal.settings.ws_fl.height + 'px;"' + ' allowTransparency="true"></iframe>';
+  Drupal.behaviors.ws_fl = {
+    attach: function (context, settings) {
+      $('a.service-links-facebook-like', context).each(function(){
+        var iframe = document.createElement('iframe');
 
-      $(this).replaceWith(iframe_txt);
-    });
-  });
+        iframe.src = $(this).attr('href').replace('http://', '//').replace(/http[s]*\%3A\/\//, '');
+        iframe.setAttribute('scrolling', 'no');
+        iframe.setAttribute('frameborder', 0);
+        iframe.setAttribute('allowTransparency', 'true');
+
+        $(iframe).css({
+          'border': 'none',
+          'overflow': 'hidden',
+          'width': Drupal.settings.ws_fl.width + 'px',
+          'height': Drupal.settings.ws_fl.height + 'px',
+        });
+       
+        $(iframe).addClass($(this).attr('class'));
+
+        $(this).replaceWith(iframe);
+      });
+    }
+  }
 })(jQuery);

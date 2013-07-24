@@ -421,7 +421,7 @@ div.messages.commerce-add-to-cart-confirmation .message-inner .view-confirm-mess
   .page-user form#user-login #user_login_form,
   .page-checkout form#user-login #user_login_form {
     border: 0;
-    border-right: 1px solid #444444;
+    border-right: 1px solid #444;
     padding-right: 20px;
     padding-bottom: 0; }
   .page-user form#user-login .create-account,

@@ -19,14 +19,13 @@ class NodeInlineEntityFormController extends EntityInlineEntityFormController {
   }
 
   /**
-   * Overrides EntityInlineEntityFormController::defaultFields().
+   * Overrides EntityInlineEntityFormController::tableFields().
    */
-  public function defaultFields($bundles) {
-    $fields = parent::defaultFields($bundles);
+  public function tableFields($bundles) {
+    $fields = parent::tableFields($bundles);
     $fields['status'] = array(
       'type' => 'property',
       'label' => t('Status'),
-      'visible' => TRUE,
       'weight' => 100,
     );
 
@@ -58,6 +57,7 @@ class NodeInlineEntityFormController extends EntityInlineEntityFormController {
     );
     $entity_form['status'] = array(
       '#type' => 'radios',
+      '#access' => user_access('administer nodes'),
       '#title' => t('Status'),
       '#default_value' => $node->status,
       '#options' => array(1 => t('Published'), 0 => t('Unpublished')),

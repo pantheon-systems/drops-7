@@ -2,12 +2,15 @@
 
 /**
  * @file
- * Add the support for Print module,
- * work only if alias are enabled in Print module.
+ * Extends Service Links with Print module support.
+ *
+ * These services work only with alias enabled in Print module.
+ *
+ * @author Fabio Mucciante (TheCrow)
  */
 
 /**
- * Implementats hook_service_links().
+ * Implements hook_service_links().
  */
 function print_services_service_links() {
   $links = array();
@@ -20,7 +23,7 @@ function print_services_service_links() {
 
   if (module_exists('print_pdf')) {
     $links['printpdf'] = array(
-      'name' => 'Print Pdf',
+      'name' => 'Print PDF',
       'link' => '<front-page>printpdf/<query>',
       'description' => t('PDF version'),
     );

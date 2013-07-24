@@ -106,6 +106,10 @@ body.in-maintenance {
   fieldset.collapsible  {
     border: 1px solid #ccc;
     padding: 15px;
+
+    input.form-text {
+      width: 100%;
+    }
   }
 
   ol.task-list {
@@ -287,10 +291,6 @@ body.installing-additional-functionality ol.task-list {
 }
 html.js #-commerce-kickstart-help-store fieldset.collapsible {
   min-height: 55px;
-}
-/* Reports Jirafe */
-.page-admin-commerce-jirafe #overlay #overlay-content #page {
-  padding: 0 0 30px;
 }
 /* Customer Profiles Fix */
 .view-commerce-customer-profiles .views-exposed-form #edit-name-wrapper {

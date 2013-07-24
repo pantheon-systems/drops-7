@@ -272,8 +272,14 @@ abstract class SearchApiAbstractProcessor implements SearchApiProcessorInterface
       $this->processFieldValue($value);
     }
     if (is_array($value)) {
-      $type = 'tokens';
-      $value = $this->normalizeTokens($value);
+      // Don't tokenize non-fulltext content!
+      if (in_array($type, array('text', 'tokens'))) {
+        $type = 'tokens';
+        $value = $this->normalizeTokens($value);
+      }
+      else {
+        $value = $this->implodeTokens($value);
+      }
     }
   }
 
@@ -303,6 +309,32 @@ abstract class SearchApiAbstractProcessor implements SearchApiProcessorInterface
       }
     }
     return $ret;
+  }
+
+  /**
+   * Internal helper function for imploding tokens into a single string.
+   *
+   * @param array $tokens
+   *   The tokens array to implode.
+   *
+   * @return string
+   *   The text data from the tokens concatenated into a single string.
+   */
+  protected function implodeTokens(array $tokens) {
+    $ret = array();
+    foreach ($tokens as $token) {
+      if (empty($token['value']) && !is_numeric($token['value'])) {
+        // Filter out empty tokens.
+        continue;
+      }
+      if (is_array($token['value'])) {
+        $ret[] = $this->implodeTokens($token['value']);
+      }
+      else {
+        $ret[] = $token['value'];
+      }
+    }
+    return implode(' ', $ret);
   }
 
   /**

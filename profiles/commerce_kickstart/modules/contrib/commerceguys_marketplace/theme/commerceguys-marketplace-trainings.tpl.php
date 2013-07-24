@@ -1,7 +1,7 @@
 <h3><?php print t('Upcoming trainings'); ?></h3>
 <?php foreach ($trainings as $training): ?>
   <div class="marketplace-training">
-    <a class="clearfix" href="<?php echo COMMERCEGUYS_MARKETPLACE_URL;?>/training">
+    <a class="clearfix" href="<?php echo $training_path;?>" target="_blank">
     <div class="marketplace-training-event-title"><?php echo $training['title'];?></div>
     <?php foreach ($training['events'] as $event): ?>
       <div class="marketplace-training-event-content">

@@ -383,7 +383,6 @@ function commerce_kickstart_menus_menu_alter(&$items) {
     'admin/commerce/config/line-items',
     'admin/commerce/config/order',
     'admin/commerce/config/product-pricing',
-    'admin/commerce/config/jirafe',
     'admin/commerce/config/commerce_search_api',
     'admin/commerce/config/demo',
   );
@@ -408,15 +407,6 @@ function commerce_kickstart_menus_menu_alter(&$items) {
     }
     $items['admin/reports']['title'] = 'Site reports';
   }
-  if (isset($items['admin/commerce/jirafe'])) {
-    $items['admin/commerce/jirafe']['title'] = 'Analytics';
-    $items['admin/commerce/jirafe']['parent'] = 'admin';
-    $items['admin/commerce/jirafe']['weight'] = 49;
-    $items['admin/commerce/jirafe']['options'] = array(
-      'toolbar_break' => TRUE,
-      'toolbar_css' => 'reports',
-    );
-  }
   // Lingotek alteration.
   if (isset($items['admin/settings/lingotek'])) {
     $items['admin/settings/lingotek']['options'] = array(
@@ -433,20 +423,6 @@ function commerce_kickstart_menus_menu_alter(&$items) {
       'toolbar_css' => 'marketplace',
     );
   }
-}
-
-/**
- * Implements hook_init().
- *
- * Alter the page title on the Jirafe dashboard page.
- */
-function commerce_kickstart_menus_init() {
-  $item = menu_get_item();
-  if ($item['path'] != 'admin/commerce/jirafe') {
-    return;
-  }
-
-  drupal_set_title(t('Commerce Guys Dashboard by Jirafe'));
 }
 
 /**

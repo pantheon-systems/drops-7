@@ -122,11 +122,11 @@ html {
 
 body {
   font-family: "Open Sans", sans-serif;
-  font-weight: 400;
   font-size: 14px;
+  font-weight: 400;
   margin: 0;
-  width: 100%;
-  overflow-x: hidden; }
+  overflow-x: hidden;
+  width: 100%; }
 
 .region {
   margin: 0 10px; }
@@ -793,6 +793,50 @@ select {
   #block-views-demo-content-slideshow-block-1 .bx-next {
     display: none;
     text-indent: -9999px; }
+
+.front .node {
+  border: 1px solid #E0E3E6;
+  display: block;
+  margin: 15px 0px;
+  padding: 10px 15px;
+  width: auto; }
+  .front .node h2 {
+    font-size: 18px;
+    font-weight: 400;
+    margin-bottom: 0;
+    text-transform: uppercase; }
+    .front .node h2 a {
+      color: #656565;
+      text-decoration: none; }
+  .front .node .submitted {
+    color: #A0A0A0;
+    font-size: 12px;
+    margin: 5px 0;
+    text-transform: uppercase; }
+    .front .node .submitted a {
+      color: #A0A0A0; }
+  .front .node .content .field-name-field-image {
+    margin: 0 0 15px; }
+  .front .node .content .field-type-taxonomy-term-reference .field-items .field-item {
+    padding-right: 3px; }
+  .front .node .content .field-name-field-tags {
+    border-top: 1px dotted #777777;
+    font-size: 11px;
+    margin-bottom: 5px;
+    padding: 3px; }
+  .front .node .content .field-name-field-blog-category {
+    font-size: 11px;
+    padding: 3px; }
+  .front .node .node-links {
+    font-size: 12px; }
+    .front .node .node-links a {
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none; }
+    .front .node .node-links ul {
+      margin: 0; }
+      .front .node .node-links ul li {
+        margin: 0; }
 
 /*******************************************
 * 3.2.3. Sidebar second
@@ -2059,6 +2103,32 @@ ol.inline.commerce-checkout-progress {
       float: none; }
 
 /* Page user review order */
+.page-user-orders ul.action-links {
+  list-style: none;
+  margin: 1.5em 0 2em 0.5em; }
+  .page-user-orders ul.action-links li a {
+    background: white;
+    background: -moz-linear-gradient(top, white 0%, #dddddd 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #dddddd));
+    background: -webkit-linear-gradient(top, white 0%, #dddddd 100%);
+    background: -o-linear-gradient(top, white 0%, #dddddd 100%);
+    background: -ms-linear-gradient(top, white 0%, #dddddd 100%);
+    background: linear-gradient(to bottom, white 0%, #dddddd 100%);
+    filter: progid:DXImageTransform.Microsoft.Gradient(GradientType=0, startColorstr='white', endColorstr='#dddddd');
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#dddddd')";
+    -moz-border-radius: 11px;
+    -webkit-border-radius: 11px;
+    -khtml-border-radius: 11px;
+    border-radius: 11px;
+    border-color: #DDDDDD #BBBBBB #999999;
+    border-style: solid;
+    border-width: 1px;
+    color: #333333;
+    font-size: 12px;
+    font-weight: bold;
+    padding: 3px 10px 4px;
+    text-decoration: none;
+    text-shadow: 0 1px 1px #FFFFFF; }
 .page-user-orders .field-name-commerce-order-total {
   /**
    * For modern browsers
@@ -2118,11 +2188,6 @@ ol.inline.commerce-checkout-progress {
   .view-commerce-backoffice-user-orders th a img {
     vertical-align: baseline; }
 
-/*
-.page-user-orders .view-commerce-user-orders table thead th a {
-  color: #777777;
-  text-decoration: none;
-}*/
 /* Order history */
 .view-commerce-backoffice-order-messages {
   /* Order activity stream */
@@ -2373,6 +2438,10 @@ article.comment {
       clear: both; }
   .comment-form .form-item {
     clear: left; }
+    .comment-form .form-item.form-item-notify label, .comment-form .form-item.form-item-notify-type label {
+      float: none; }
+      .comment-form .form-item.form-item-notify label:after, .comment-form .form-item.form-item-notify-type label:after {
+        content: none; }
     .comment-form .form-item label {
       float: left;
       padding-right: 8px;
@@ -2754,6 +2823,9 @@ article.comment {
       float: left;
       /* LTR */
       padding: 10px 0; }
+      .page-user .tabs ul.primary li.active a {
+        color: #000000;
+        font-weight: bold; }
       .page-user .tabs ul.primary li a {
         background-color: transparent;
         border: 0 none;
@@ -2787,12 +2859,20 @@ article.comment {
   list-style: none;
   margin: 1.5em 0 2em 0.5em; }
   .page-user-addressbook ul.action-links li a {
-    background: -moz-linear-gradient(center top, white 0%, #dddddd 100%) repeat scroll 0 0 transparent;
-    border-color: #DDDDDD #BBBBBB #999999;
+    background: white;
+    background: -moz-linear-gradient(top, white 0%, #dddddd 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #dddddd));
+    background: -webkit-linear-gradient(top, white 0%, #dddddd 100%);
+    background: -o-linear-gradient(top, white 0%, #dddddd 100%);
+    background: -ms-linear-gradient(top, white 0%, #dddddd 100%);
+    background: linear-gradient(to bottom, white 0%, #dddddd 100%);
+    filter: progid:DXImageTransform.Microsoft.Gradient(GradientType=0, startColorstr='white', endColorstr='#dddddd');
+    -ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr='white', endColorstr='#dddddd')";
     -moz-border-radius: 11px;
     -webkit-border-radius: 11px;
     -khtml-border-radius: 11px;
     border-radius: 11px;
+    border-color: #DDDDDD #BBBBBB #999999;
     border-style: solid;
     border-width: 1px;
     color: #333333;

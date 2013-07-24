@@ -1,0 +1,114 @@
+$gray: #f0f0f0;
+$gray2: #cccccc;
+$gray3: #e7e8e3;
+$gray4: #4d4e49;
+$grayLight: #f6f6f6;
+$grayDark: #6d6d6d;
+$blue: #0089c9;
+$green: #7cae20;
+$azure: #d2eeff;
+
+@mixin gradient {
+  background-image: linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -o-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -moz-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -webkit-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -ms-linear-gradient(top, rgb(252,253,252) 36%, rgb(240,240,240) 68%);
+  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.36, rgb(252,253,252)), color-stop(0.68, rgb(240,240,240)));
+}
+
+@mixin box {
+  padding: 0px;
+}
+
+@mixin btn {
+  color: black;
+  border-radius: 5px;
+  margin-right: 20px; // LTR
+  margin-bottom: 5px;
+  padding: 5px;
+  &:hover {
+    background-color: $grayLight;
+    cursor: pointer;
+    label {
+      cursor: pointer;
+    }
+  }
+}
+
+@mixin radio-buttons {
+  @include box;
+  clear: both;
+  margin-top: 10px;
+
+  .form-item {
+    @include btn;
+
+    input {
+      display: inline;
+    }
+  }
+}
+
+@mixin fieldset-title {
+  fieldset.form-wrapper {
+    border: none;
+
+    legend {
+      width: 100%;
+    }
+    .fieldset-legend {
+      border-bottom: 1px solid $gray2;
+      display: block;
+      margin-top: 0;
+      padding-left: 0;
+      text-transform: none;
+      width: 100%;
+    }
+  }
+}
+
+@mixin fieldset-content {
+  @include box;
+
+  .form-type-checkbox {
+    // Hide Show end date checkbox.
+    display: none;
+  }
+  .container-inline-date {
+    clear: none;
+    float: left; // LTR
+    width: auto;
+
+    .description {
+      display: none;
+    }
+    .form-item {
+      padding: 0;
+    }
+    .date-padding {
+      float: left; // LTR
+      padding: 0;
+
+      input.form-text {
+        width: 55px;
+      }
+      & > .form-item:first-child input.form-text {
+        // TODO: For some reason this icon isn't added.
+        background: white url('../../date/date_api/images/calendar.png') no-repeat 86px 0px; // LTR
+        width: 100px;
+      }
+    }
+    & > .form-item {
+      border: none;
+    }
+    label {
+      display: block;
+      float: left; // LTR
+      padding-right: 10px; // LTR
+    }
+    &.end-date-wrapper {
+      margin-left: 20px; // LTR
+    }
+  }
+}

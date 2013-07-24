@@ -123,12 +123,12 @@ ol {
 }
 .item-list ul li.collapsed,
 ul.menu li.collapsed {
-  list-style-image:url(../../misc/menu-collapsed.png);
+  list-style-image:url(/misc/menu-collapsed.png);
   list-style-type:disc;
 }
 .item-list ul li.expanded,
 ul.menu li.expanded {
-  list-style-image:url(../../misc/menu-expanded.png);
+  list-style-image:url(/misc/menu-expanded.png);
   list-style-type:circle;
 }
 quote,
@@ -697,6 +697,7 @@ select.form-select {
   border-top-color: #999;
   background: #fff;
   color: #333;
+  box-sizing: border-box;
 }
 input.form-text:focus,
 input.form-file:focus,

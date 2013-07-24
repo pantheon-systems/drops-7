@@ -132,11 +132,11 @@ html {
 body {
   //background: $bodybg;
   font-family: $headerfont;
-  font-weight: 400;
   font-size: 14px;
+  font-weight: 400;
   margin: 0;
-  width: 100%;
   overflow-x: hidden;
+  width: 100%;
 }
 // default region positioning on mobile
 .region {
@@ -886,6 +886,68 @@ select {
   .bx-next {
     display: none;
     text-indent: -9999px;
+  }
+}
+
+.front .node {
+  border: 1px solid #E0E3E6;
+  display: block;
+  margin: 15px 0px;
+  padding: 10px 15px;
+  width: auto;
+
+  h2 {
+    font-size: 18px;
+    font-weight: 400;
+    margin-bottom: 0;
+    text-transform: uppercase;
+
+    a {
+      color: #656565;
+      text-decoration: none;
+    }
+  }
+  .submitted {
+    color: #A0A0A0;
+    font-size: 12px;
+    margin: 5px 0;
+    text-transform: uppercase;
+    a {
+      color: #A0A0A0;
+    }
+  }
+  .content {
+    .field-name-field-image {
+      margin: 0 0 15px;
+    }
+    .field-type-taxonomy-term-reference .field-items .field-item {
+      padding-right: 3px;
+    }
+    .field-name-field-tags {
+      border-top: 1px dotted #777777;
+      font-size: 11px;
+      margin-bottom: 5px;
+      padding: 3px;
+    }
+    .field-name-field-blog-category {
+      font-size: 11px;
+      padding: 3px;
+    }
+  }
+  .node-links {
+    font-size: 12px;
+    a {
+      font-size: 12px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    ul {
+      margin: 0;
+
+      li {
+        margin: 0;
+      }
+    }
   }
 }
 /*******************************************
@@ -2295,6 +2357,7 @@ ol.inline.commerce-checkout-progress {
 
 /* Page user review order */
 .page-user-orders {
+  @include action-links;
   .field-name-commerce-order-total {
     @include clearfix;
 
@@ -2342,11 +2405,6 @@ ol.inline.commerce-checkout-progress {
     vertical-align: baseline;
   }
 }
-/*
-.page-user-orders .view-commerce-user-orders table thead th a {
-  color: #777777;
-  text-decoration: none;
-}*/
 
 /* Order history */
 .view-commerce-backoffice-order-messages {
@@ -2635,6 +2693,16 @@ article.comment {
     float: none;
   }
   .form-item {
+    // fix for comment-notify module.
+    &.form-item-notify,
+    &.form-item-notify-type {
+      label {
+        float: none;
+        &:after {
+          content: none;
+        }
+      }
+    }
     clear: left;
     label {
       float: left;
@@ -3004,6 +3072,10 @@ article.comment {
       li {
         float: left; /* LTR */
         padding: 10px 0;
+        &.active a {
+          color:#000000;
+          font-weight: bold;
+        }
         a {
           background-color: transparent;
           border: 0 none;
@@ -3044,24 +3116,7 @@ article.comment {
 
 /* Address book */
 .page-user-addressbook {
-  ul.action-links {
-    list-style: none;
-    margin: 1.5em 0 2em 0.5em;
-
-    li a {
-      background: -moz-linear-gradient(center top , #FFFFFF 0%, #DDDDDD 100%) repeat scroll 0 0 transparent;
-      border-color: #DDDDDD #BBBBBB #999999;
-      @include rounded-corners(11px);
-      border-style: solid;
-      border-width: 1px;
-      color: #333333;
-      font-size: 12px;
-      font-weight: bold;
-      padding: 3px 10px 4px;
-      text-decoration: none;
-      text-shadow: 0 1px 1px #FFFFFF;
-    }
-  }
+  @include action-links;
   .view-commerce-addressbook-defaults .views-field {
     background-color: #F0F0F0;
     border: 1px solid #D8D8D8;

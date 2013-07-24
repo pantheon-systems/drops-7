@@ -265,7 +265,7 @@ h1#page-title {
   .page-products .view-display-products li.views-row.last {
     padding-left: 0 !important; }
 .page-products .view-display-products li:nth-child(3n) {
-  padding-left: 0!important; }
+  padding-left: 0 !important; }
 .page-products .view-display-products li:nth-child(3n+4) {
   clear: right !important;
   float: right !important; }

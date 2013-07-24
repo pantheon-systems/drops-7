@@ -184,11 +184,11 @@ function i18n_taxonomy_field_formatter_info() {
 }
 
  /**
-- * Implements hook_field_formatter_prepare_view().
-- *
-- * This preloads all taxonomy terms for multiple loaded objects at once and
-- * unsets values for invalid terms that do not exist.
-- */
+ * Implements hook_field_formatter_prepare_view().
+ *
+ * This preloads all taxonomy terms for multiple loaded objects at once and
+ * unsets values for invalid terms that do not exist.
+ */
 function i18n_taxonomy_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays) {
   return taxonomy_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, $items, $displays);
 }
@@ -318,7 +318,7 @@ function i18n_taxonomy_field_storage_details_alter(&$details, &$field) {
 
 /**
  * Implements hook_field_attach_prepare_translation_alter().
-
+ *
  * Prepare and synchronize translation for term reference fields.
  */
 function i18n_taxonomy_field_attach_prepare_translation_alter(&$entity, $context) {
@@ -1260,10 +1260,10 @@ function i18n_taxonomy_modules_enabled($modules) {
   $modules = drupal_map_assoc($modules);
   if (isset($modules['i18n_taxonomy'])) {
     foreach (field_info_fields() as $fieldname => $field) {
-        if ($field['type'] == 'taxonomy_term_reference') {
-          $field['settings']['options_list_callback'] = 'i18n_taxonomy_allowed_values';
-          field_update_field($field);
-        }
+      if ($field['type'] == 'taxonomy_term_reference') {
+        $field['settings']['options_list_callback'] = 'i18n_taxonomy_allowed_values';
+        field_update_field($field);
       }
+    }
   }
 }

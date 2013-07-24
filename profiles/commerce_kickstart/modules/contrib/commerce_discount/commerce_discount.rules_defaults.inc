@@ -37,6 +37,14 @@ function commerce_discount_default_rules_configuration() {
     // hook_default_rules_configuration_alter().
     module_invoke_all('commerce_discount_rule_build', $rule, $discount);
 
+    // Let inline_conditions fields add their own conditions.
+    $wrapper_discount = entity_metadata_wrapper('commerce_discount', $discount);
+    foreach ($wrapper_discount->getPropertyInfo() as $field_name => $property) {
+      if (stripos($property['type'], 'inline_conditions') !== FALSE) {
+        inline_conditions_build($rule, $wrapper_discount->$field_name->value());
+      }
+    }
+
     // Add the commerce discount to the rule configuration, so other may act
     // according to it, in hook_default_rules_configuration_alter().
     $rule->commerce_discount = $discount;

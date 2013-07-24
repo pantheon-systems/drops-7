@@ -59,6 +59,10 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
       'file' => 'includes/commerce_discount.admin.inc',
       'file path' => drupal_get_path('module', 'commerce_discount'),
     );
+    $items[$this->path . '/list'] = array(
+      'title' => 'Discounts',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    );
     $items[$this->path . '/add']['title callback'] = 'commerce_discount_get_action_title';
     $items[$this->path . '/import']['title callback'] = 'commerce_discount_get_action_title';
 
@@ -84,6 +88,10 @@ function commerce_discount_overview_form() {
   $view->override_url = $_GET['q'];
   $form['view'] = array('#markup' => $view->preview());
   $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount.css';
+  // Load rtl.css file if needed.
+  if ($GLOBALS['language']->direction == 1) {
+    $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount-rtl.css';
+  }
   return $form;
 }
 
@@ -126,17 +134,11 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     '#required' => TRUE,
   );
 
-  // Show a list of commerce discounts.
-  $form['commerce_discount_type'] = array(
-    '#title' => t('Choose discount type'),
-    '#type' => 'radios',
-    '#options' => $options,
-    '#required' => FALSE,
-    '#default_value' => $commerce_discount->type,
-    '#ajax' => array(
-       'callback' => 'commerce_discount_fields_ajax_callback',
-       'wrapper' => 'commerce-discount-fields-wrapper',
-    ),
+  $form['component_title'] = array(
+    '#title' => t('Name'),
+    '#type' => 'textfield',
+    '#default_value' => $commerce_discount->component_title,
+    '#description' => t('Shown to customers.'),
   );
 
   // Machine-readable type name.
@@ -155,6 +157,30 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     // This field should stay LTR even for RTL languages.
     '#field_prefix' => '<span dir="ltr">discount_',
     '#field_suffix' => '</span>&lrm;',
+  );
+
+  $form['enabled'] = array(
+    '#title' => t('Discount status'),
+    '#type' => 'select',
+    '#options' => array(
+      TRUE => t('Enabled'),
+      FALSE => t('Disabled'),
+    ),
+    '#required' => FALSE,
+    '#default_value' => $commerce_discount->enabled,
+  );
+
+  // Show a list of commerce discounts.
+  $form['commerce_discount_type'] = array(
+    '#title' => t('Choose discount type'),
+    '#type' => 'radios',
+    '#options' => $options,
+    '#required' => FALSE,
+    '#default_value' => $commerce_discount->type,
+    '#ajax' => array(
+       'callback' => 'commerce_discount_fields_ajax_callback',
+       'wrapper' => 'commerce-discount-fields-wrapper',
+    ),
   );
 
   $form['commerce_discount_fields'] = array(
@@ -184,17 +210,6 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     $field_form['#attributes']['class'][] = 'commerce-discount-box';
   }
 
-  $form['enabled'] = array(
-    '#title' => t('Discount status'),
-    '#type' => 'select',
-    '#options' => array(
-      TRUE => t('Enabled'),
-      FALSE => t('Disabled'),
-    ),
-    '#required' => FALSE,
-    '#default_value' => $commerce_discount->enabled,
-  );
-
   $form['actions'] = array('#type' => 'actions');
   $form['actions']['submit'] = array(
     '#type' => 'submit',
@@ -216,8 +231,11 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
   // Add assets.
   $form['#attached']['js'][] = drupal_get_path('module', 'commerce_discount') . '/js/commerce_discount.js';
   $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount.css';
+  // Load rtl.css file if needed.
+  if ($GLOBALS['language']->direction == 1) {
+    $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount') . '/css/commerce_discount-rtl.css';
+  }
   $form['#attributes']['class'][] = 'commerce-discount-form';
-
   return $form;
 }
 
@@ -257,7 +275,6 @@ function commerce_discount_form_submit(&$form, &$form_state) {
 function commerce_discount_form_submit_delete(&$form, &$form_state) {
   $form_state['redirect'] = 'admin/commerce/store/discounts/manage/' . $form_state['commerce_discount']->name . '/delete';
 }
-
 
 /**
  * Checks if a Discount machine name is taken.

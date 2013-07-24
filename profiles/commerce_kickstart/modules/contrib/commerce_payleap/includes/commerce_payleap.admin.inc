@@ -69,7 +69,7 @@ function commerce_payleap_capture_form_validate($form, &$form_state) {
 
   // Ensure the amount is less than or equal to the authorization amount.
   if ($amount > commerce_currency_amount_to_decimal($transaction->amount, $transaction->currency_code)) {
-    form_set_error('amount', t('You cannot capture more than you authorized through Authorize.Net.'));
+    form_set_error('amount', t('You cannot capture more than you authorized through Payleap.'));
   }
 
   // If the authorization has expired, display an error message and redirect.

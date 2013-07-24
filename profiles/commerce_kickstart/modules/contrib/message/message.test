@@ -37,7 +37,7 @@ class MessageCrud extends DrupalWebTestCase {
     $this->assertEqual($message->uid, $web_user->uid, 'Message has been saved for the right user.');
     $this->assertEqual($message->getType()->message_text[LANGUAGE_NONE][0]['value'], 'Example text.', 'Message type text has been saved.');
 
-    // Make sure an exception is thrown if message type alreayd exists.
+    // Make sure an exception is thrown if message type already exists.
     try {
       $message_type = message_type_create('foo');
       $this->fail("Creating the same message type hasn't created an exception.");

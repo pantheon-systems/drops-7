@@ -154,19 +154,19 @@ ol {
 
 .item-list ul li.collapsed,
 ul.menu li.collapsed {
-  list-style-image: url(../../misc/menu-collapsed.png);
+  list-style-image: url(/misc/menu-collapsed.png);
   list-style-type: disc;
 }
 
 .item-list ul li.expanded,
 ul.menu li.expanded {
-  list-style-image: url(../../misc/menu-expanded.png);
+  list-style-image: url(/misc/menu-expanded.png);
   list-style-type: circle;
 }
 
 quote,
 code {
-  margin: 0.5em 0;
+  margin: .5em 0;
 }
 
 code,
@@ -474,7 +474,7 @@ dl.node-type-list dt {
   padding-left: 30px;
   /* LTR */
   padding-top: 9px;
-  border-top: 1px solid #cccccc;
+  border-top: 1px solid #ccc;
   margin-left: 0;
   /* LTR */
   margin-bottom: 10px;
@@ -618,7 +618,7 @@ table tr.selected td {
 }
 
 table.system-status-report tr {
-  border-bottom: 1px solid #cccccc;
+  border-bottom: 1px solid #ccc;
 }
 
 table.system-status-report tr.ok {
@@ -669,7 +669,7 @@ tr td:last-child {
  *   to apply all padding to the inner .fieldset-wrapper instead.
  */
 fieldset {
-  border: 1px solid #cccccc;
+  border: 1px solid #ccc;
   padding: 2.5em 0 0 0;
   /* LTR */
   position: relative;
@@ -825,12 +825,12 @@ input.form-submit:active {
   background: #666;
   color: #fff;
   border-color: #555;
-  text-shadow: #222222 0 -1px 0;
+  text-shadow: #222 0 -1px 0;
 }
 
 input.form-button-disabled,
 input.form-button-disabled:active {
-  background: #eeeeee none;
+  background: #eee none;
   border-color: #eee;
   text-shadow: none;
   color: #999;
@@ -843,10 +843,11 @@ input.form-file,
 textarea.form-textarea,
 select.form-select {
   padding: 2px;
-  border: 1px solid #cccccc;
+  border: 1px solid #ccc;
   border-top-color: #999;
   background: #fff;
   color: #333;
+  box-sizing: border-box;
 }
 
 input.form-text:focus,
@@ -912,7 +913,7 @@ div.admin-panel {
   margin: 0 0 20px;
   padding: 9px;
   background: #f8f8f8;
-  border: 1px solid #cccccc;
+  border: 1px solid #ccc;
 }
 
 div.admin-panel h3 {
@@ -946,7 +947,7 @@ div.admin-options {
   line-height: 30px;
   height: 30px;
   padding: 9px;
-  border: 1px solid #cccccc;
+  border: 1px solid #ccc;
   margin: 0 0 10px;
 }
 
@@ -1128,7 +1129,7 @@ div.add-or-remove-shortcuts {
 }
 
 #dashboard .dashboard-region .block {
-  border: #cccccc 1px solid;
+  border: #ccc 1px solid;
 }
 
 /* Field UI */

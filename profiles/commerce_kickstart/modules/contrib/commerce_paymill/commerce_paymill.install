@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * Provides a Libraries module based loader for the Paymill API.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function commerce_paymill_requirements($phase) {
+  $t = get_t();
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    // Check Paymill library is installed.
+    $library = libraries_detect('paymill');
+    if (!empty($library['installed'])) {
+      $value = $library['version'];
+      $description = NULL;
+      $severity = REQUIREMENT_OK;
+    }
+    else {
+      $value = $t('Not installed');
+      $description = $library['error message'];
+      $severity = REQUIREMENT_ERROR;
+    }
+    $requirements['commerce_paymill_library'] = array(
+      'title' => $t('Paymill library'),
+      'value' => $value,
+      'description' => $description,
+      'severity' => $severity,
+    );
+
+    // Check cURL is installed.
+    $curl = function_exists('curl_init');
+    $requirements['commerce_paymill_curl'] = array(
+      'title' => $t('Paymill cURL support'),
+      'value' => $curl ? $t('cURL extension enabled') : $t('cURL extension is not installed/enabled'),
+      'description' => NULL,
+      'severity' => $curl ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+    );
+
+    // Check JSON is installed.
+    $curl = function_exists('json_decode');
+    $requirements['commerce_paymill_json'] = array(
+      'title' => $t('Paymill JSON support'),
+      'value' => $curl ? $t('JSON extension enabled') : $t('JSON extension is not installed/enabled'),
+      'description' => NULL,
+      'severity' => $curl ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+    );
+  }
+
+  return $requirements;
+}

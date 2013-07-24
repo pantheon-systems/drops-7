@@ -409,15 +409,10 @@ function commerce_customer_commerce_checkout_pane_info() {
     // Get instance data for the customer profile reference field.
     $field_name = variable_get('commerce_customer_profile_' . $type . '_field', '');
     $instance = field_info_instance('commerce_order', $field_name, 'commerce_order');
-
-    // If the i18n_field module is available, we'll use it to translate
-    // user-configurable field labels.
-    if (module_exists('i18n_field') && !empty($instance['label'])) {
-      $instance['label'] = i18n_field_translate_property($instance, 'label');
-    }
+    $translated_instance = commerce_i18n_object('field_instance', $instance);
 
     $checkout_panes['customer_profile_' . $type] = array(
-      'title' => !empty($instance['label']) ? $instance['label'] : $profile_type['name'],
+      'title' => !empty($instance['label']) ? $translated_instance['label'] : $profile_type['name'],
       'file' => 'includes/commerce_customer.checkout_pane.inc',
       'base' => 'commerce_customer_profile_pane',
       'page' => !empty($instance) ? 'checkout' : 'disabled',
@@ -442,16 +437,18 @@ function commerce_customer_field_views_data($field) {
     $bundles[] = $entity . ' (' . implode(', ', $entity_bundles) . ')';
   }
 
+  $replacements = array('!field_name' => $field['field_name'], '@bundles' => implode(', ', $bundles));
+
   foreach ($data as $table_name => $table_data) {
     foreach ($table_data as $field_name => $field_data) {
       if (isset($field_data['filter']['field_name']) && $field_name != 'delta') {
         $data[$table_name][$field_name]['relationship'] = array(
           'title' => t('Referenced customer profile'),
-          'help' => t('Appears in: @bundles.', array('@bundles' => implode(', ', $bundles))),
+          'label' => t('Customer profile referenced by !field_name', $replacements),
+          'help' => t('Relate this entity to the customer profile referenced by its !field_name value.', $replacements) . '<br />' . t('Appears in: @bundles.', $replacements),
           'base' => 'commerce_customer_profile',
           'base field' => 'profile_id',
           'handler' => 'views_handler_relationship',
-          'label' => t('Customer profile'),
         );
       }
     }
@@ -841,6 +838,8 @@ function commerce_customer_field_settings_form($field, $instance, $has_data) {
  *   line item ID).
  */
 function commerce_customer_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  $translated_instance = commerce_i18n_object('field_instance', $instance);
+
   if ($field['type'] == 'commerce_customer_profile_reference') {
     // Extract profile_ids to check.
     $profile_ids = array();
@@ -854,7 +853,7 @@ function commerce_customer_field_validate($entity_type, $entity, $field, $instan
         else {
           $errors[$field['field_name']][$langcode][$delta][] = array(
             'error' => 'invalid_profile_id',
-            'message' => t('%name: you have specified an invalid customer profile for this reference field.', array('%name' => $instance['label'])),
+            'message' => t('%name: you have specified an invalid customer profile for this reference field.', array('%name' => $translated_instance['label'])),
           );
         }
       }
@@ -871,7 +870,7 @@ function commerce_customer_field_validate($entity_type, $entity, $field, $instan
           if (!empty($item['profile_id']) && !isset($profiles[$item['profile_id']])) {
             $errors[$field['field_name']][$langcode][$delta][] = array(
               'error' => 'invalid_profile_id',
-              'message' => t('%name: you have specified an invalid customer profile for this reference field.', array('%name' => $instance['label'])),
+              'message' => t('%name: you have specified an invalid customer profile for this reference field.', array('%name' => $translated_instance['label'])),
             );
           }
         }
