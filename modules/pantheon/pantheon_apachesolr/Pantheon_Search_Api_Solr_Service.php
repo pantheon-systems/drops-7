@@ -102,6 +102,20 @@ class PantheonApachesolrSearchApiSolrService extends SearchApiSolrService {
 
   protected $connection_class = 'PantheonApachesolrSearchApiSolrConnection';
 
+  /**
+   * Overrides SearchApiSolrService::configurationForm().
+   *
+   * Hides unnecessary settings from Search API server settings form.
+   */
+  public function configurationForm(array $form, array &$form_state) {
+    $form['note'] = array(
+      '#type' => 'item',
+      '#title' => t('Pantheon Notice'),
+      '#markup' => '<p>'. t('You should not need to configure solr host connections: Pantheon is managing your Solr connection settings.') .'</p>',
+    );
+
+    return $form;
+  }
 }
 
 /**
