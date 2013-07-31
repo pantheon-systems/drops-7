@@ -23,7 +23,9 @@ function pantheon_apachesolr_search_api_service_info_alter(array &$service_info)
   // Change the Search API Solr Service class to our custom class. This approach is used for
   // Search API RC4 and greater which no longer uses the SolrPHP Client library.
   if (!function_exists('_search_api_solr_solrphpclient_path')) {
-    $service_info['search_api_solr_service']['class'] = 'PantheonApachesolrSearchApiSolrService';
+    // The Search API Solr service class is stored in a variable so that it can
+    // be overridden if necessary to use the default SearchApiSolrService class.
+    $service_info['search_api_solr_service']['class'] = variable_get('pantheon_apachesolr_search_api_solr_service_class', 'PantheonApachesolrSearchApiSolrService');
   }
 }
 
