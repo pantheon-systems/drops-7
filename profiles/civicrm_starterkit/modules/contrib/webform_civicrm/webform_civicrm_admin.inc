@@ -288,6 +288,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     wf_crm_ajax_item($form, 'act', 'case_type_id', 'case');
   }
   $case_type = $activity_type = NULL;
+  $campaign_act_types = array();
   if ($case_enabled && !empty($data['case'][1]['case'][1]['case_type_id'])) {
     $case_type = $form['act']['case_type_id']['#default_value'] = $data['case'][1]['case'][1]['case_type_id'];
     $case_type_name = $case_types[$case_type];
@@ -298,7 +299,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     $form['act']['case']['case_fields']['existing_case_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Case'),
-      '#description' => t('If any of the above options are selected and a %type case with that status already exists for the client, it will be autofilled and updated.', array('%type' => $case_type_name)),
+      '#description' => t('If any of the above options are selected and a %type case with that status already exists for the client, it will be autofilled and updated.', array('%type' => $case_type_name)) . '<br />' . t('Note: a case can also be autofilled by passing "caseid" in the url.'),
       '#options' => wf_crm_get_options('case_status'),
       '#default_value' => wf_crm_aval($data, 'case:1:existing_case_status', array()),
       '#multiple' => TRUE,
@@ -308,12 +309,13 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     $act_types = $case_info->get($case_type_name, 'ActivityTypes');
   }
   else {
-    $param = NULL;
+    $act_types = wf_crm_get_options('activity_type');
     // Include campaign types
     if (in_array('CiviCampaign', $config->enableComponents, TRUE)) {
-      $param = CRM_Core_DAO::singleValueQuery("SELECT id FROM civicrm_component WHERE name = 'CiviCampaign'");
+      $campaign_act_types = wf_crm_get_options('activity_type', 'CiviCampaign');
+      $act_types += $campaign_act_types;
+      asort($act_types);
     }
-    $act_types = wf_crm_get_options('activity_type', $param);
   }
   $form['act']['case']['activity_type_id'] = array(
     '#type' => 'select',
@@ -329,7 +331,7 @@ function wf_crm_configure_form($form, &$form_state, $node) {
     $form['act']['case']['activity_fields']['existing_activity_status'] = array(
       '#type' => 'select',
       '#title' => t('Update Existing Activity'),
-      '#description' => t('If any of the above options are selected and a %type activity with that status already exists for !ent, it will be autofilled and updated.', array('!ent' => $case_type ? t('the case') : t('contact 1'), '%type' => $act_types[$settings['activity_type_id']])),
+      '#description' => t('If any of the above options are selected and a %type activity with that status already exists for !ent, it will be autofilled and updated.', array('!ent' => $case_type ? t('the case') : t('contact 1'), '%type' => $act_types[$settings['activity_type_id']])) . '<br />' . t('Note: an activity can also be autofilled by passing "aid" in the url.'),
       '#options' => wf_crm_get_options('activity_status'),
       '#default_value' => wf_crm_aval($data, 'activity:1:existing_activity_status', array()),
       '#multiple' => TRUE,
@@ -369,8 +371,22 @@ function wf_crm_configure_form($form, &$form_state, $node) {
         if ($fid == 'activity_assignee_contact_id' && CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'activity_assignee_notification')) {
           $field['extra']['description'] = t('A copy of this activity will be emailed to the assignee.');
         }
-        $fid = "civicrm_1_{$ent}_1_$fid";
-        $form['act']['case'][$ent . '_fields'][$sid][$fid] = wf_crm_configure_form_item($fid, $field, $settings);
+        if ($fid !== 'activity_survey_id') {
+          $complete_fid = "civicrm_1_{$ent}_1_$fid";
+          $form_item = wf_crm_configure_form_item($complete_fid, $field, $settings);
+          $form['act']['case'][$ent . '_fields'][$sid][$complete_fid] = $form_item;
+
+          // If the activity type is part of CiviCampaign
+          // then attach an AJAX select box for the survey/petition ID
+          if (isset($campaign_act_types[$activity_type]) && $fid === 'activity_campaign_id') {
+            $pathstr = 'act:case:activity_fields:' . $sid;
+            wf_crm_ajax_item($form, $pathstr, $complete_fid, 'campaign_fields');
+            $survey_fid = 'activity_survey_id';
+            $complete_survey_fid = "civicrm_1_{$ent}_1_{$survey_fid}";
+            $survey_form_item = wf_crm_configure_form_item($complete_survey_fid, $sets['activity']['fields']['activity_survey_id'], $settings);
+            $form['act']['case']['activity_fields'][$sid]['campaign_fields'][$complete_survey_fid] = $survey_form_item;
+          }
+        }
       }
     }
   }
@@ -635,6 +651,12 @@ function wf_crm_process_form_settings(&$vals) {
     else {
       $data['activity'][1]['activity'][1]['target_contact_id'] = range(1, $vals['number_of_contacts']);
     }
+  }
+  if (!empty($vals['civicrm_1_activity_1_activity_campaign_id'])) {
+    $data['activity'][1]['activity'][1]['activity_campaign_id'] = $vals['civicrm_1_activity_1_activity_campaign_id'];
+  }
+  if (!empty($vals['civicrm_1_activity_1_activity_survey_id'])) {
+    $data['activity'][1]['activity'][1]['activity_survey_id'] = $vals['civicrm_1_activity_1_activity_survey_id'];
   }
   if (!empty($vals['case_type_id'])) {
     if (empty($data['case'][1])) {
@@ -1010,6 +1032,13 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
               t('Check the "default" box for an option to be selected by default when a user views the form.') .
               '</div></p>',
           );
+          // Special instructions for contact reference fields
+          if (wf_crm_aval($field, 'data_type') == 'ContactReference') {
+            $form['civicrm_options_fieldset']['intro'] = array(
+              '#markup' => '<p>' . t('This is a contact reference field. It points to another contact on the webform. You can configure how that contact is presented by editing their "Existing Contact" field.') . '</p>' .
+              '<p>' . t("Note: In most cases it is not desireable to have the selection of webform contacts exposed to the end-user so you may wish to set this field's value on the CiviCRM tab instead.") . '</p>',
+            );
+          }
           $options_selected = wf_crm_str2array($element['extra']['items']);
           // Sort weights. Unselected options will be at the bottom.
           $option_keys = $option_selected_keys = array();
@@ -1126,8 +1155,10 @@ function _wf_crm_component_form_alter(&$form, $form_state) {
             $widgets[$k] = $v['label'];
           }
         }
-        if ($form['type']['#value'] == 'textfield' && $table === 'address' && $name === 'state_province_id') {
-          $widgets['textfield'] = t('Textfield / AJAX Select');
+        if ($form['type']['#value'] == 'textfield' && $table === 'address') {
+          if ($name === 'state_province_id' || $name === 'county_id') {
+            $widgets['textfield'] = t('Textfield / AJAX Select');
+          }
         }
         $form['widget'] = array(
           '#type' => 'fieldset',
@@ -1452,7 +1483,7 @@ function wf_crm_change_widget($form, &$form_state) {
  *
  * @param $variables
  *   Includes the form array.
- * @return
+ * @return string
  *   Formatted HTML form, ready for display.
  */
 function theme_webform_civicrm_components_form($variables) {
@@ -1495,7 +1526,6 @@ function theme_webform_civicrm_components_form($variables) {
     array('colspan' => 3, 'data' => drupal_render($form['add']['add'])),
   );
   $add_form = array('data' => $row_data, 'class' => array('draggable', 'webform-add-form'));
-  $form_rendered = FALSE;
 
   if (!empty($node->webform['components'])) {
     $component_tree = array();
@@ -1531,7 +1561,7 @@ function theme_webform_civicrm_components_form($variables) {
         $fields = wf_crm_get_fields();
         $sets = wf_crm_get_fields('sets');
         $class = 'civi-icon';
-        $title = $clone = '';
+        $clone = '';
         list( , $c, $ent, $n, $table, $name) = explode('_', $component['form_key'], 6);
         $field = wf_crm_aval($fields, $table . '_' . $name, array('type' => 'fieldset'));
         if ($component['type'] == 'fieldset') {
@@ -1548,8 +1578,10 @@ function theme_webform_civicrm_components_form($variables) {
         else {
           $title = t('Field for !type', array('!type' => $sets[$table]['label']));
         }
-        if ($table === 'address' && $name === 'state_province_id' && $component['type'] === 'textfield') {
-          $type = t('AJAX Select');
+        if ($table === 'address' && $component['type'] === 'textfield') {
+          if ($name === 'state_province_id' || $name === 'county_id') {
+            $type = t('AJAX Select');
+          }
         }
         if ($component['type'] == 'civicrm_contact' || $component['type'] == 'fieldset') {
           $class .= ' ' . $node->webform_civicrm['data']['contact'][$c]['contact'][1]['contact_type'];

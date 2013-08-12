@@ -30,7 +30,7 @@ var wfCiviContact = (function ($, D) {
       }
     }
     return ret;
-  }
+  };
 
   D.behaviors.webform_civicrmContact = {
     attach: function (context) {

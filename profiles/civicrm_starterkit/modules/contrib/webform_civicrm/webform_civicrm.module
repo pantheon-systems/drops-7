@@ -37,6 +37,7 @@ function webform_civicrm_menu() {
  *
  * @param $node
  *   Node object
+ * @return bool
  */
 function wf_crm_admin_access($node) {
   return (node_access('update', $node) && user_access('access CiviCRM'));
@@ -430,6 +431,7 @@ function wf_crm_aval($haystack, $keys, $default = NULL, $strict = FALSE) {
  *
  * @param $input
  *   Data to store
+ * @return null
  */
 function wf_crm_contact_clone_storage($input = NULL) {
   static $storage = NULL;
@@ -446,7 +448,7 @@ function wf_crm_contact_clone_storage($input = NULL) {
 function wf_crm_contact_clone($form, $form_state) {
   module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
   $fid = $form['form_key']['#default_value'];
-  list($lobo, $old, $ent, $n, $table, $key) = wf_crm_explode_key($fid);
+  list( , $old, $ent, $n, $table, $key) = wf_crm_explode_key($fid);
   $node = node_load($form['nid']['#value']);
   $settings = $node->webform_civicrm;
   $new = count($settings['data']['contact']) + 1;
@@ -499,6 +501,7 @@ function wf_crm_validate($form, &$form_state) {
  *   FAPI form array (to store) or form nid (to retrieve)
  * @param $form_state
  *   FAPI form_state array
+ * @return null
  */
 function wf_crm_storage($form, $form_state = NULL) {
   static $storage = array();

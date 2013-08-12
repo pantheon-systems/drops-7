@@ -13,9 +13,9 @@ function features_test_taxonomy_default_vocabularies() {
       'name' => 'Taxonomy Features Test',
       'machine_name' => 'taxonomy_features_test',
       'description' => 'Taxonomy vocabulary',
-      'hierarchy' => '0',
+      'hierarchy' => 0,
       'module' => 'taxonomy',
-      'weight' => '0',
+      'weight' => 0,
       'rdf_mapping' => array(
         'rdftype' => array(
           0 => 'skos:ConceptScheme',

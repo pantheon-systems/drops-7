@@ -29,7 +29,6 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
   $node = $form['#node'];
   $settings = $node->webform_civicrm;
   $data = $settings['data'];
-  $fields = wf_crm_get_fields();
   $id['cid'] = $id = $info = array();
   // JS Cache eliminates the need for most ajax state/province callbacks
   foreach ($data['contact'] as $c) {
@@ -38,7 +37,7 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
         'defaultCountry' => $config->defaultContactCountry,
         'defaultStates' => wf_crm_get_options('state_province', $config->defaultContactCountry),
         'noCountry' => t('- First Choose a Country -'),
-        'callbackPath' => url('webform-civicrm/js/state_province', array('alias' => TRUE)),
+        'callbackPath' => url('webform-civicrm/js', array('alias' => TRUE)),
       );
       $form['#attached']['js'][] = array(
         'data' => array('webform_civicrm' => $js_vars),
@@ -97,7 +96,6 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
     $result = wf_civicrm_api('activity', 'get', array('activity_id' => $_GET['aid'], 'return.target_contact_id' => 1, 'return.assignee_contact_id' => 1));
     if (isset($result['values'][$_GET['aid']])) {
       $act = $result['values'][$_GET['aid']];
-      $valid = FALSE;
       // Verify that this activity is the right type and that our contacts have some involvement in it
       if ($act['activity_type_id'] == $data['activity'][1]['activity'][1]['activity_type_id']) {
         foreach ($id['cid'] as $cid) {
@@ -121,11 +119,12 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
   }
   // Search for case & activity
   else {
-    if (!empty($data['case'][1]['existing_case_status']) && !empty($data['case'][1]['case'][1]['client_id'])) {
+    if (!empty($data['case'][1])) {
       $case = wf_crm_case_find($data['case'][1], $id);
       if ($case) {
         $id['case'][1] = $case['id'];
         $custom = wf_crm_get_custom($case['id'], 'case');
+        // Add case to $info in standard webform_civicrm format
         $info['case'] = array(1 => (array('case' => array(1 => $case)) + $custom));
       }
     }
@@ -236,7 +235,6 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
     }
   }
   // Form alterations for known contacts
-  $count = count($data['contact']);
   foreach ($data['contact'] as $c => $contact) {
     if ($cid = wf_crm_aval($id['cid'], $c)) {
       // Retrieve contact data
@@ -302,11 +300,10 @@ function _wf_crm_frontend_form_alter(&$form, &$form_state) {
  *   Contact #
  * @param $cids
  *   All known contact ids for this form
- * @param $exclude
+ * @param array $exclude
  *   Fields to ignore
  *
- * @return
- *   Array of contact data
+ * @return array of contact data
  */
 function wf_crm_contact_get($node, $enabled, $c, $cids, $exclude = array()) {
   $info = array();
@@ -512,7 +509,7 @@ function wf_crm_fill_form(&$elements, $node, $data = array(), $submitted = array
           // Set data for contact image
           if ($name == 'image_URL') {
             if ($val && in_array($element['#type'], array('file', 'managed_file'))) {
-              $js = "jQuery(document).ready(function() {wfCivi.contactImage('$eid', '$val')});";
+              $js = "jQuery(function() {wfCivi.contactImage('$eid', '$val')});";
               $element['#attached']['js'][$js] = array('type' => 'inline');
             }
           }
@@ -559,7 +556,6 @@ function wf_crm_process_submission($node, &$submission, $op) {
     $enabled = wf_crm_enabled_fields($node);
     $fields = wf_crm_get_fields();
     $data = $settings['data'];
-    $sets = wf_crm_get_fields('sets');
     $shared_address = array();
 
     // Retrieve stored ids
@@ -704,7 +700,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
           }
         }
         $params['contact_id'] = $id['cid'][$c];
-        $result = wf_civicrm_api('contact', 'create', $params);
+        wf_civicrm_api('contact', 'create', $params);
       }
     }
     // Fill ContactRef fields with contact IDs
@@ -1068,6 +1064,9 @@ function wf_crm_process_submission($node, &$submission, $op) {
       if (empty($params['campaign_id']) || !in_array('CiviCampaign', $config->enableComponents, TRUE)) {
         unset($params['campaign_id']);
       }
+      if (!empty($data['activity'][1]['activity'][1]['survey_id'])) {
+        $params['source_record_id'] = $data['activity'][1]['activity'][1]['survey_id'];
+      }
       $result = wf_civicrm_api('activity', 'create', $params);
 
       if (!empty($result['id'])) {
@@ -1086,7 +1085,7 @@ function wf_crm_process_submission($node, &$submission, $op) {
             require_once 'CRM/Core/BAO/File.php';
             $attachments = &CRM_Core_BAO_File::getEntityFile('civicrm_activity', $id['act'][1]);
             require_once 'CRM/Case/BAO/Case.php';
-            $result = CRM_Case_BAO_Case::sendActivityCopy(NULL, $id['act'][1], $mail, $attachments, NULL);
+            CRM_Case_BAO_Case::sendActivityCopy(NULL, $id['act'][1], $mail, $attachments, NULL);
           }
         }
       }
@@ -1320,7 +1319,7 @@ function _wf_crm_participant_validate($form, &$form_state, $submitted) {
   // Check how many valid contacts we have
   foreach ($data['contact'] as $c => $contact) {
     // Check if we have a contact_id
-    if (!empty($submitted["civicrm_{$c}_contact_1_contact_existing"])) {
+    if (is_numeric(wf_crm_aval($submitted, "civicrm_{$c}_contact_1_contact_existing"))) {
       $cids[] = $contacts[$c] = $submitted["civicrm_{$c}_contact_1_contact_existing"];
     }
     // Or else see if enough info was entered to create a contact
@@ -1403,13 +1402,13 @@ function _wf_crm_participant_validate($form, &$form_state, $submitted) {
  * Recursive function to fill ContactRef fields with contact IDs
  * Called during webform submission
  *
- * @param $data
- *   Array of crm data to update (reference)
- * @param $cids
+ * @param $data array
+ *   CRM data to update (reference)
+ * @param $cids array
  *   All known contact ids for this form
- * @param $values
+ * @param $values null|array
  *   Leave blank - used internally to recurse through data
- * @param $depth
+ * @param $depth int
  *   Leave blank - used internally to track recursion level
  */
 function _wf_crm_fill_contact_ref(&$data, $cids, $values = NULL, $depth = 0) {
@@ -1431,7 +1430,7 @@ function _wf_crm_fill_contact_ref(&$data, $cids, $values = NULL, $depth = 0) {
       if (wf_crm_aval($fields, "{$table}_$name:data_type") === 'ContactReference') {
         if (is_array($val)) {
           $data[$ent][$c][$table][$n][$name] = array();
-          foreach ($val as $k => $v) {
+          foreach ($val as $v) {
             if (is_numeric($v) && !empty($cids[$v])) {
               $data[$ent][$c][$table][$n][$name][] = $cids[$v];
             }
@@ -1495,6 +1494,7 @@ function wf_crm_process_relationship($params, $cid1, $cid2) {
  *   Contact id
  * @param $cid2
  *   Contact id
+ * @return array
  */
 function wf_crm_relationship_get($r_types, $cid1, $cid2) {
   $found = array();
@@ -1552,15 +1552,22 @@ function _wf_crm_form_data(&$data, $enabled, $submission, $updating, $node) {
     $val = wf_crm_sub_value($submission, $fid);
     if ($val !== FALSE) {
       list( , $c, $ent, $n, $table, $name) = explode('_', $field_key, 6);
+      // Fieldsets and existing contact fields are not CRM data, so ignore
       if ($name === 'existing' || $name === 'fieldset') {
         continue;
       }
       // Ignore values from fields hidden by existing contact component
-      if (!empty($updating['cid'][$c]) && isset($enabled["civicrm_{$c}_contact_1_contact_existing"])) {
+      if ($ent == 'contact' && isset($enabled["civicrm_{$c}_contact_1_contact_existing"])) {
         $component = $node->webform['components'][$enabled["civicrm_{$c}_contact_1_contact_existing"]];
-        $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
-        if (in_array($type, $component['extra']['hide_fields'])) {
-          continue;
+        $existing_contact_val = wf_crm_sub_value($submission, $component['cid']);
+        // Fields should be hidden if value is empty (no selection) or a numeric contact id
+        if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
+          $type = ($table == 'contact' && strpos($name, 'name')) ? 'name' : $table;
+          if (in_array($type, $component['extra']['hide_fields'])) {
+            // Remove the value from the webform submission
+            wf_crm_sub_value($submission, $fid, array(NULL));
+            continue;
+          }
         }
       }
       $field = $fields[$table . '_' . $name];

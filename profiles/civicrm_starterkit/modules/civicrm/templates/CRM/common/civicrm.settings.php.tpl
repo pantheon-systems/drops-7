@@ -79,14 +79,27 @@ if (!empty($_SERVER['PRESSFLOW_SETTINGS'])) {
     // define the file paths
     global $civicrm_root;
 
-    $civicrm_root = '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/code/' . str_replace('drupal', '', drupal_get_path('module', 'civicrm'));
+    $civicrm_root = '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/code/%%modulePath%%';
     define('CIVICRM_TEMPLATE_COMPILEDIR', '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/files/civicrm/templates_c/');
 
     // Use Drupal base url and path
     global $base_url, $base_path;
-    define('CIVICRM_UF_BASEURL', $base_url . '/');
-    define( 'CIVICRM_IDS_ENABLE', 0);
+    define( 'CIVICRM_UF_BASEURL', $base_url . '/');
+    define( 'CIVICRM_IDS_ENABLE', 1);
     define( 'CIVICRM_SITE_KEY', '%%siteKey%%' );
+    
+    if ( $pantheon_conf['pantheon_environment'] == 'dev' || $pantheon_conf['pantheon_environment'] == 'test' ){ 
+      /**
+      * This setting logs all emails to a file. Useful for debugging any mail (or civimail) issues.
+      * This will not send any email, so ensure this is commented out in production
+      */
+     define( 'CIVICRM_MAIL_LOG', '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/code/sites/default/files/civicrm/templates_c/mail.log' );
+    }
+    
+    // Add this line only once above any settings overrides
+    global $civicrm_setting;
+    $civicrm_setting['Directory Preferences']['extensionsDir'] = '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/files/civicrm/extensions/';
+
   }
 } else {
 
