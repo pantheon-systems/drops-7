@@ -175,7 +175,7 @@ function civicrm_config(&$config) {
   global $crmPath, $comPath;
   global $compileDir;
   global $tplPath, $installType;
-
+  
   $params = array(
     'crmRoot' => $crmPath,
     'templateCompileDir' => $compileDir,
@@ -185,8 +185,24 @@ function civicrm_config(&$config) {
     'dbHost' => $config['mysql']['server'],
     'dbName' => addslashes($config['mysql']['database']),
   );
-
+  
+  // when running on Pantheon, part of $crmPath is set dynamically in civicrm_settings.php
+  //if civicrm is in a profile
+  if (strpos($crmPath , 'profile')) {
+    $modulePathParts = explode('profiles/', $crmPath);
+    $params['modulePath'] = 'profiles/' . $modulePathParts[1];
+  }
+  // if civicrm is not in profile, it is in sites 
+  if (!isset($params['modulePath'])) {
+    $modulePathParts = explode('sites/', $crmPath);
+    $params['modulePath'] = 'sites/' . $modulePathParts[1];
+  }
+  
   $params['baseURL'] = isset($config['base_url']) ? $config['base_url'] : civicrm_cms_base();
+  
+  // trim $params['baseURL'] if install is running from profile
+  // before global variable is set fro Drupal
+  
   if ($installType == 'drupal') {
     if (version_compare(VERSION, '7.0-rc1') >= 0) {
       $params['cms']       = 'Drupal';
@@ -215,7 +231,9 @@ function civicrm_config(&$config) {
   }
 
   $params['siteKey'] = md5(uniqid('', TRUE) . $params['baseURL']);
-
+  
+  
+  
   $str = file_get_contents($tplPath . 'civicrm.settings.php.tpl');
   foreach ($params as $key => $value) {
     $str = str_replace('%%' . $key . '%%', $value, $str);

@@ -18,7 +18,7 @@ function features_test_ctools_plugin_api() {
  * Implements hook_views_api().
  */
 function features_test_views_api() {
-  return array("version" => "3.0");
+  return array("api" => "3.0");
 }
 
 /**
@@ -27,7 +27,7 @@ function features_test_views_api() {
 function features_test_image_default_styles() {
   $styles = array();
 
-  // Exported image style: features_test
+  // Exported image style: features_test.
   $styles['features_test'] = array(
     'name' => 'features_test',
     'effects' => array(
@@ -41,13 +41,14 @@ function features_test_image_default_styles() {
         'module' => 'image',
         'name' => 'image_scale',
         'data' => array(
-          'width' => '100',
-          'height' => '100',
+          'width' => 100,
+          'height' => 100,
           'upscale' => 0,
         ),
-        'weight' => '1',
+        'weight' => 1,
       ),
     ),
+    'label' => 'features_test',
   );
 
   return $styles;

@@ -43,7 +43,7 @@ var wfCiviAdmin = (function ($, D) {
         break;
     }
     $('select', context).change();
-  }
+  };
 
   pub.participantConditional = function (fs) {
     var info = {
@@ -95,7 +95,7 @@ var wfCiviAdmin = (function ($, D) {
         $(this).show(300);
       }
     });
-  }
+  };
 
   /**
    * Private methods.
@@ -177,7 +177,7 @@ var wfCiviAdmin = (function ($, D) {
       });
       types[c] = {
             type: $('#edit-'+c+'-contact-type').val(),
-        sub_type: sub_type,
+        sub_type: sub_type
       };
     }
     return types
@@ -337,6 +337,15 @@ var wfCiviAdmin = (function ($, D) {
       $('select[name$="_contact_type"]').once('contact-type').change(function() {
         $('#wf-crm-configure-form .vertical-tab-button span[name="'+$(this).attr('name')+'"]').removeClass().addClass('civi-icon '+$(this).val());
         employerOptions();
+      });
+
+      // Change activity subject to match survey/petition
+      $('select[name$="_activity_survey_id"]', context).once('wf-civi').change(function() {
+        var val = $(this).val();
+        if (val != '0' && val != 'create_civicrm_webform_element') {
+          var label = $(this).find('option[value=' + val + ']').text();
+          $('#wf-crm-configure-form input[name=activity_subject]').val(label);
+        }
       });
     }
   };

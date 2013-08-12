@@ -3,7 +3,7 @@
  */
 (function ($, D) {
   function defaultBoxes(newType, defaultName) {
-    oldType = newType == 'radio' ? 'checkbox' : 'radio';
+    var oldType = newType == 'radio' ? 'checkbox' : 'radio';
     var defaultValue = $('input[name*="[civicrm_defaults]"]:checked').val() || '';
     $('input:'+oldType+'[name*="[civicrm_defaults]"]').each(function() {
       var ele = $(this);

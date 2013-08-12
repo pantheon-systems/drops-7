@@ -3,12 +3,12 @@ description = Links Webform submissions with your CiviCRM database.
 core = 7.x
 package = CiviCRM
 dependencies[] = civicrm (>=4.1)
-dependencies[] = webform (>3.9)
+dependencies[] = webform (>3.9, <4.0-alpha7)
 dependencies[] = libraries
 
-; Information added by drupal.org packaging script on 2013-03-10
-version = "7.x-3.5"
+; Information added by drupal.org packaging script on 2013-07-19
+version = "7.x-3.6"
 core = "7.x"
 project = "webform_civicrm"
-datestamp = "1362949522"
+datestamp = "1374261968"
 

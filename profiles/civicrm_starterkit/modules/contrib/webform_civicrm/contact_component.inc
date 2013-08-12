@@ -21,6 +21,7 @@ function _webform_defaults_civicrm_contact() {
     'extra' => array(
       'search_prompt' => '',
       'none_prompt' => '',
+      'results_display' => array('display_name'),
       'allow_create' => 0,
       'widget' => 'autocomplete',
       'show_hidden_contact' => 0,
@@ -82,9 +83,9 @@ function _webform_edit_civicrm_contact($component) {
       prePopulate: prep
     }';
     $js = '
-    jQuery(document).ready(function() {
+    jQuery(function($) {
       var prep = wfCiviContact.init(' . $callback_path . ');
-      jQuery("#default-contact-id").tokenInput(' . $callback_path . ', ' . $settings . ');
+      $("#default-contact-id").tokenInput(' . $callback_path . ', ' . $settings . ');
     });';
     $form['#attached']['js'][$js] = array('type' => 'inline');
     $form['#attached']['css'][] = drupal_get_path('module', 'webform_civicrm') . '/token-input.css';
@@ -124,6 +125,20 @@ function _webform_edit_civicrm_contact($component) {
     '#maxlength' => 1024,
     '#weight' => -6,
     '#parents' => array('extra', 'none_prompt'),
+  );
+  $form['display']['results_display_fieldset'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Display Name Format'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    'results_display' => array(
+      '#type' => 'checkboxes',
+      '#title' => t("Field(s) to display the contact"),
+      '#required' => TRUE,
+      '#default_value' => $component['extra']['results_display'],
+      '#options' => wf_crm_results_display_options(),
+      '#parents' => array('extra', 'results_display'),
+    ),
   );
   $form['display']['show_hidden_contact'] = array(
     '#type' => 'radios',
@@ -407,7 +422,7 @@ function wf_crm_fill_contact_value($node, $component, &$element) {
       }
     }
   }
-  if (!$cid && $element['#type'] == 'hidden' && $component['extra']['none_prompt']) {
+  if (empty($cid) && $element['#type'] == 'hidden' && $component['extra']['none_prompt']) {
     $element['#attributes']['data-civicrm-name'] = $component['extra']['none_prompt'];
   }
 }
@@ -495,10 +510,10 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   }
   $limit = $str ? 12 : 200;
   $ret = array();
+  $display = $component['extra']['results_display'];
   $params += array(
     'rowCount' => $limit,
     'sort' => 'sort_name',
-    'return.display_name' => TRUE,
   );
   if ($str) {
     require_once 'CRM/Utils/Type.php';
@@ -507,9 +522,9 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   $result = wf_civicrm_api('contact', 'get', $params);
   // Autocomplete results
   if ($str) {
-    foreach (wf_crm_aval($result, 'values', array()) as $val) {
-      if (!empty($val['display_name'])) {
-        $ret[] = array('id' => $val['id'], 'name' => $val['display_name']);
+    foreach (wf_crm_aval($result, 'values', array()) as $contact) {
+      if ($name = wf_crm_format_contact($contact, $display)) {
+        $ret[] = array('id' => $contact['id'], 'name' => $name);
       }
     }
     if (count($ret) < $limit && $component['extra']['allow_create']) {
@@ -522,9 +537,9 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
     if ($component['extra']['allow_create']) {
       $ret['-'] = $component['extra']['none_prompt'];
     }
-    foreach (wf_crm_aval($result, 'values', array()) as $val) {
-      if (!empty($val['display_name'])) {
-        $ret[$val['id']] = $val['display_name'];
+    foreach (wf_crm_aval($result, 'values', array()) as $contact) {
+      if ($name = wf_crm_format_contact($contact, $display)) {
+        $ret[$contact['id']] = $name;
       }
     }
   }
@@ -546,9 +561,19 @@ function wf_crm_ajax($key, $input = '') {
   // Populate state/prov lists on the fly
   if ($key == 'state_province') {
     if (!$input || (intval($input) != $input && $input != 'default')) {
-      exit(drupal_json_output(array('' => t('- first choose a country -'))));
+      drupal_json_output(array('' => t('- first choose a country -')));
+      exit();
     }
-    exit(drupal_json_output(wf_crm_get_options('state_province', $input)));
+    drupal_json_output(wf_crm_get_options('state_province', $input));
+    exit();
+  }
+  elseif ($key == 'county') {
+    if (strpos($input, '-')) {
+      list($state, $country) = explode('-', $input);
+      $state_id = wf_crm_state_abbr($state, 'id', $country);
+      drupal_json_output(wf_crm_get_options('county', $state_id));
+      exit();
+    }
   }
   // Populate contact autocomplete
   elseif (strpos($key, '-')) {
@@ -569,11 +594,10 @@ function wf_crm_ajax($key, $input = '') {
     }
     // Autocomplete contact names
     if (!empty($_GET['str'])) {
-      $output = NULL;
       if ($str = trim($_GET['str'])) {
-        $output = drupal_json_output(wf_crm_contact_search($node, $component, $filters, $str));
+        drupal_json_output(wf_crm_contact_search($node, $component, $filters, $str));
       }
-      exit($output);
+      exit();
     }
     // Load contact by id
     $data = array();
@@ -619,9 +643,10 @@ function wf_crm_ajax($key, $input = '') {
         }
       }
     }
-    exit(drupal_json_output($data));
+    drupal_json_output($data);
+    exit();
   }
-  return drupal_access_denied();
+  drupal_access_denied();
 }
 
 /**
@@ -631,6 +656,8 @@ function wf_crm_ajax($key, $input = '') {
  *   Node object
  * @param $fid
  *   Webform component id
+ *
+ * @return bool
  */
 function wf_crm_autocomplete_access($node, $fid) {
   global $user;
@@ -644,6 +671,7 @@ function wf_crm_autocomplete_access($node, $fid) {
     return FALSE;
   }
   if (variable_get('webform_submission_access_control', 1)) {
+    $allowed_roles = array();
     foreach ($node->webform['roles'] as $rid) {
       $allowed_roles[$rid] = isset($user->roles[$rid]) ? TRUE : FALSE;
     }
@@ -663,6 +691,8 @@ function wf_crm_autocomplete_access($node, $fid) {
  *   Contact get params
  * @param $cid
  *   Contact id
+ *
+ * @return bool|string
  */
 function wf_crm_contact_access($component, $filters, $cid) {
   // Create new contact doesn't require lookup
@@ -676,15 +706,16 @@ function wf_crm_contact_access($component, $filters, $cid) {
   }
   $filters['id'] = $cid;
   $filters['is_deleted'] = 0;
-  $filters['return.display_name'] = 1;
   // A contact always has permission to view self
   if ($cid == wf_crm_user_cid()) {
     $filters['check_permissions'] = FALSE;
   }
   if (!empty($filters['check_permissions'])) {
     // If we have a valid checksum for this contact, bypass other permission checks
+    // For legacy reasons we support "cid" param as an alias of "cid1"
     if (wf_crm_aval($_GET, "cid$c") == $cid || $c == 1 && wf_crm_aval($_GET, "cid") == $cid) {
       require_once 'CRM/Contact/BAO/Contact/Utils.php';
+      // For legacy reasons we support "cs" param as an alias of "cs1"
       if (!empty($_GET['cs']) && $c == 1 && CRM_Contact_BAO_Contact_Utils::validChecksum($cid, $_GET['cs'])) {
         $filters['check_permissions'] = FALSE;
       }
@@ -695,7 +726,27 @@ function wf_crm_contact_access($component, $filters, $cid) {
   }
   // Fetch contact name with filters applied
   $result = wf_civicrm_api('contact', 'get', $filters);
-  return wf_crm_aval($result, "values:$cid:display_name", FALSE, TRUE);
+  return wf_crm_format_contact(wf_crm_aval($result, "values:$cid"), $component['extra']['results_display']);
+}
+
+/**
+ * Display a contact based on chosen fields
+ *
+ * @param array $contact
+ * @param array $display_fields
+ * @return bool|string
+ */
+function wf_crm_format_contact($contact, $display_fields) {
+  if (!$contact) {
+    return FALSE;
+  }
+  $display = array();
+  foreach ($display_fields as $field) {
+    if ($field && !empty($contact[$field])) {
+      $display[] = $contact[$field];
+    }
+  }
+  return implode(' :: ', $display);
 }
 
 /**
@@ -705,6 +756,8 @@ function wf_crm_contact_access($component, $filters, $cid) {
  *   Node object
  * @param $con
  *   Contact #
+ *
+ * @return array
  */
 function wf_crm_contact_fields($node, $con) {
   $ret = array();
@@ -959,4 +1012,29 @@ function theme_static_contact_element($vars) {
   }
 
   return $output . $element['#children'] . "\n</div>\n";
+}
+
+/**
+ * Returns a list of fields that can be shown in an "Existing Contact" field display
+ * In the future we could use api.getfields for this, but that also returns a lot of stuff we don't want
+ *
+ * @return array
+ */
+function wf_crm_results_display_options() {
+  $options = array(
+    'display_name' => t("Display Name"),
+    'sort_name' => t("Sort Name"),
+    'organization_name' => t("Organization Name"),
+    'job_title' => t("Job Title"),
+    'id' => t("Contact ID"),
+    'external_identifier' => t("External ID"),
+    'email' => t("Email"),
+    'city' => t("City"),
+    'county' => t("County"),
+    'state_province' => t("State/Province"),
+    'Country' => t("Country"),
+    'postal_code' => t("Postal Code"),
+    'phone' => t("Phone"),
+  );
+  return $options;
 }

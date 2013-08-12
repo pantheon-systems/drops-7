@@ -10,7 +10,7 @@
 function features_test_views_default_views() {
   $export = array();
 
-  $view = new view;
+  $view = new view();
   $view->name = 'features_test';
   $view->description = 'Test view provided by Features testing module.';
   $view->tag = 'testing';
@@ -23,6 +23,7 @@ function features_test_views_default_views() {
   /* Display: Defaults */
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->display->display_options['title'] = 'Test';
+  $handler->display->display_options['use_more_always'] = FALSE;
   $handler->display->display_options['access']['type'] = 'none';
   $handler->display->display_options['cache']['type'] = 'none';
   $handler->display->display_options['query']['type'] = 'views_query';
