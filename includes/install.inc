@@ -1021,10 +1021,18 @@ function drupal_install_fix_file($file, $mask, $message = TRUE) {
  *
  * This issues an on-site HTTP redirect. Messages (and errors) are erased.
  *
+ * Updated by Pantheon to bounce requests by the screenshot tool to prevent it
+ * from installing sites ahead of users.
+ *
  * @param $path
  *   An installer path.
  */
 function install_goto($path) {
+  if (isset($_SERVER['HTTP_X_PANTHEON_SCREENSHOT'])) {
+    header('Location: http://content.getpantheon.com/ready_to_install.html')
+    header('Cache-Control: no-cache'); // Not a permanent redirect.
+    drupal_exit();
+  }
   global $base_url;
   include_once DRUPAL_ROOT . '/includes/common.inc';
   header('Location: ' . $base_url . '/' . $path);
