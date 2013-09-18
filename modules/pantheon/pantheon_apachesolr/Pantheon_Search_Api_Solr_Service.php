@@ -52,7 +52,7 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
    *
    * This is just a wrapper around drupal_http_request().
    *
-   * Overridden by Pantheon to set a  timeout and possibly other improvements.
+   * Overridden by Pantheon to set a timeout and possibly other improvements.
    */
   protected function makeHttpRequest($url, array $options = array()) {
     if (empty($options['method']) || $options['method'] == 'GET' || $options['method'] == 'HEAD') {
@@ -65,7 +65,7 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
     if ($this->stream_context) {
       $options['context'] = $this->stream_context;
     }
-    // Customize timout.
+    // Specify timeout.
     $options['timeout'] = 5;
 
     $result = drupal_http_request($url, $options);
@@ -99,16 +99,13 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
 }
 
 class PantheonApachesolrSearchApiSolrService extends SearchApiSolrService {
-
   protected $connection_class = 'PantheonApachesolrSearchApiSolrConnection';
-
 }
 
 /**
  * Legacy Supported Class for RC2
  */
 class PantheonSearchApiSolrService extends SearchApiSolrConnection {
-
   /**
    * Constructor
    */
@@ -135,9 +132,7 @@ class PantheonSearchApiSolrService extends SearchApiSolrConnection {
       $this->_httpTransport = new PanteheonSearchApiSolrHttpTransport();
     }
   }
-
 }
-
 
 /**
  * Pantheon implementation of the HTTP transport interface.
@@ -146,12 +141,8 @@ class PantheonSearchApiSolrService extends SearchApiSolrConnection {
  */
 
 if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
-
   class PanteheonSearchApiSolrHttpTransport extends Apache_Solr_HttpTransport_Abstract {
-
-    public function __construct() {
-      // Nothing to see here.
-    }
+    public function __construct() {}
 
     /**
      * Perform a GET HTTP operation with an optional timeout and return the response
@@ -235,7 +226,7 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
       $response = curl_exec($ch);
 
       if ($response == NULL) {
-        // TODO; better error handling
+        // TODO; better error handling.
         watchdog('pantheon_apachesolr', "Error !error connecting to !url on port !port", array('!error' => curl_error($ch), '!url' => $url, '!port' => $port), WATCHDOG_ERROR);
       }
       else {
