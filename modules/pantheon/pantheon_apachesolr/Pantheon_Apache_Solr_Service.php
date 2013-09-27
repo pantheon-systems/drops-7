@@ -334,11 +334,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // Pantheon-specific URL settings.
     // Note: we don't pass a port at this time, because the parent This data
     // is added later in the _makeHttpRequest() method.
-    // TODO: get $host from variable_get('pantheon_hyperion_host', 'index.live.getpantheon.com')
-    $host = variable_get('pantheon_hyperion_host', FALSE);
-    if (!$host) {
-      $host = 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com';
-    }
+    $host = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
     $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
     $url = 'https://'. $host .'/'. $path;
 
@@ -452,7 +448,7 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
     // $result = drupal_http_request($url, $headers, $method, $content);
     static $ch;
     $client_cert = '../certs/binding.pem';
-    $port = 449;
+    $port = variable_get('pantheon_index_port', 449);
 
     if (!isset($ch)) {
       $ch = curl_init();
