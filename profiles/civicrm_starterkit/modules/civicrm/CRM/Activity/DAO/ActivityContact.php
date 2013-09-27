@@ -1,7 +1,7 @@
 <?php
 /*
 +--------------------------------------------------------------------+
-| CiviCRM version 4.3                                                |
+| CiviCRM version 4.4                                                |
 +--------------------------------------------------------------------+
 | Copyright CiviCRM LLC (c) 2004-2013                                |
 +--------------------------------------------------------------------+
@@ -179,6 +179,9 @@ class CRM_Activity_DAO_ActivityContact extends CRM_Core_DAO
           'name' => 'record_type_id',
           'type' => CRM_Utils_Type::T_INT,
           'title' => ts('Record Type ID') ,
+          'pseudoconstant' => array(
+            'optionGroupName' => 'activity_contacts',
+          )
         ) ,
       );
     }

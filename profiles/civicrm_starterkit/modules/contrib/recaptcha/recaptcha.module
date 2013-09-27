@@ -74,25 +74,15 @@ function recaptcha_captcha() {
       $captcha_type = array_shift($args);
       $captcha = array();
       if ($captcha_type == 'reCAPTCHA') {
-        // Load the recaptcha library.
-        _recaptcha_load_library();
-
-        // Check if reCAPTCHA is available and show Math if not.
-        $connect = @fsockopen(RECAPTCHA_VERIFY_SERVER, 80);
-        if (!$connect) {
-          return captcha_captcha('generate', 'Math', $args);
-        }
-        fclose($connect);
-
         // Retrieve configuration variables.
         $recaptcha_theme = variable_get('recaptcha_theme', 'red');
         $recaptcha_tabindex = variable_get('recaptcha_tabindex', NULL);
         $recaptcha_public_key = variable_get('recaptcha_public_key', FALSE);
-        $recaptcha_form_value = NULL;
         $recaptcha_ajax_api = variable_get('recaptcha_ajax_api', FALSE);
 
-        // Fallback to Math if reCAPTCHA is not configured.
-        if (!$recaptcha_public_key) {
+        // Test if reCAPTCHA can be used, falling back to Math if it is not
+        // configured, the library won't load, or the server is down.
+        if (!$recaptcha_public_key || !_recaptcha_load_library() || !_recaptcha_test_recaptcha_server()) {
           return captcha_captcha('generate', 'Math', $args);
         }
 
@@ -124,7 +114,6 @@ function recaptcha_captcha() {
           // Add support to display the custom theme.
           if ($recaptcha_theme == 'custom') {
             $recaptcha_options['custom_theme_widget'] = 'recaptcha_custom_theme_widget';
-            $recaptcha_form_value = theme('recaptcha_custom_widget');
           }
 
           // Set the default tab index.
@@ -144,26 +133,31 @@ function recaptcha_captcha() {
           $recaptcha_public_key .= '&nocookie=1';
         }
 
-        $html = recaptcha_get_html($recaptcha_public_key, NULL, TRUE);
         $captcha['form']['captcha_response'] = array(
           '#type' => 'hidden',
           '#value' => 'reCAPTCHA',
         );
 
         // Expose the form, either straight HTML, or using the AJAX API.
+        // Build the custom theme HTML if necessary.
+        $recaptcha_custom_html = ($recaptcha_theme == 'custom') ? theme('recaptcha_custom_widget') : '';
         if ($recaptcha_ajax_api == FALSE) {
+          // Only generate recaptcha_get_html() if we're not using the AJAX API.
+          $html = recaptcha_get_html($recaptcha_public_key, NULL, TRUE);
           $captcha['form']['captcha_form'] = array(
             '#type' => 'item',
-            '#markup' => ($recaptcha_form_value ? '<div id="recaptcha_custom_theme_widget">' . $recaptcha_form_value . '</div>' : '') . $html,
+            '#markup' => (!empty($recaptcha_custom_html) ? '<div id="recaptcha_custom_theme_widget">' . $recaptcha_custom_html . '</div>' : '') . $html,
           );
         }
         else {
-          $html = ($recaptcha_theme == 'custom') ? theme('recaptcha_custom_widget') : '';
           $captcha['form']['captcha_form'] = array(
             '#type' => 'item',
-            '#markup' => '<div id="recaptcha_ajax_api_container">' . $html . '</div>',
+            // Create the destination container, inserting any custom theme HTML
+            // necessary ($recaptcha_custom_html will be empty if we are not
+            // using custom theme).
+            '#markup' => '<div id="recaptcha_ajax_api_container">' . $recaptcha_custom_html . '</div>',
           );
-          drupal_add_js('https://www.google.com/recaptcha/api/js/recaptcha.js', array('type' => 'external'));
+          drupal_add_js('https://www.google.com/recaptcha/api/js/recaptcha_ajax.js', array('type' => 'external'));
           $recaptcha_options['public_key'] = $recaptcha_public_key;
           $recaptcha_options['container'] = 'recaptcha_ajax_api_container';
           drupal_add_js(array('recaptcha' => $recaptcha_options), 'setting');
@@ -253,5 +247,5 @@ EOT;
  * Load the recaptcha library.
  */
 function _recaptcha_load_library() {
-  module_load_include('php', 'recaptcha', 'recaptcha-php-1.11/recaptchalib');
+  return module_load_include('php', 'recaptcha', 'recaptcha-php-1.11/recaptchalib');
 }

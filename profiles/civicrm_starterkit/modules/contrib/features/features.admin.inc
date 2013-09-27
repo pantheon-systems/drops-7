@@ -157,19 +157,21 @@ function features_export_form($form, $form_state, $feature = NULL) {
     // if path ends with module_name, strip it
     $directory = dirname($directory);
   }
-  $form['advanced']['generate_path'] = array(
-    '#title' => t('Path to Generate feature module'),
-    '#description' => t('File path for feature module.  For Example: sites/all/modules/features or /tmp.  ' .
-      t('Leave blank for <strong>@path</strong>', array('@path' => $directory))),
-    '#type' => 'textfield',
-    '#required' => FALSE,
-    '#default_value' => !empty($feature->info['project path']) ? $feature->info['project path'] : '',
-  );
-  $form['advanced']['generate'] = array(
-    '#type' => 'submit',
-    '#value' => t('Generate feature'),
-    '#submit' => array('features_export_build_form_submit'),
-  );
+  if (user_access('generate features')) {
+    $form['advanced']['generate_path'] = array(
+      '#title' => t('Path to Generate feature module'),
+      '#description' => t('File path for feature module.  For Example: sites/all/modules/features or /tmp.  ' .
+        t('Leave blank for <strong>@path</strong>', array('@path' => $directory))),
+      '#type' => 'textfield',
+      '#required' => FALSE,
+      '#default_value' => !empty($feature->info['project path']) ? $feature->info['project path'] : '',
+    );
+    $form['advanced']['generate'] = array(
+      '#type' => 'submit',
+      '#value' => t('Generate feature'),
+      '#submit' => array('features_export_build_form_submit'),
+    );
+  }
   // build the Component Listing panel on the right
   _features_export_form_components($form, $form_state);
 
@@ -725,6 +727,8 @@ function features_export_components_json($feature_name) {
         }
       }
     }
+
+    $stub['dependencies'] = isset($stub['dependencies']) ? $stub['dependencies'] : array();
     $export = features_populate(array('features' => $stub, 'dependencies' => $stub['dependencies']), $feature_name);
     $export['features']['dependencies'] = $export['dependencies'];
 
@@ -827,6 +831,11 @@ function features_export_build_form_submit($form, &$form_state) {
   $export = _features_export_generate($export, $form_state, $feature);
   $generate = ($form_state['values']['op'] == $form_state['values']['generate']);
   $module_name = $form_state['values']['module_name'];
+
+  if ($generate && !user_access('generate features')) {
+    drupal_set_message(t("No permission for generating features."));
+    return;
+  }
 
   // Generate download
   if ($files = features_export_render($export, $module_name, TRUE)) {

@@ -13,9 +13,14 @@ projects[drupal][version] = "7.23"
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.5-starterkit.tgz"
+;libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.alpha3-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.6-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
+
+;PATCHES THAT CHANGED BETWEEN 4.3 and 4.4
+;libraries[civicrm][patch][1978142] = https://drupal.org/files/2082713-pantheon-settings-4-4.patch
+libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-12.patch
 
 ;PATCHES THAT SHOULD BE ADDRESSED IN FUTURE CIVICRM RELEASES
 libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
@@ -23,10 +28,9 @@ libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashCh
 libraries[civicrm][patch][1967972] = http://drupal.org/files/1967972-bootsrap-fixes.patch
 
 ;PANTHEON RELATED PATCHES
-libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-12.patch
 libraries[civicrm][patch][2063371] = https://drupal.org/files/2063371-add-modulePath-var.patch
 libraries[civicrm][patch][1978796] = http://drupal.org/files/1978796-session.save-as_file.patch
-libraries[civicrm][patch][1978838] =  http://drupal.org/files/1978838-pre-populate-db-settings.patch
+libraries[civicrm][patch][1978838] = http://drupal.org/files/1978838-pre-populate-db-settings.patch
 
 ;IMPROVING PROFILE INSTALL UX WHEN INSTALLING FROM A PROFILE
 libraries[civicrm][patch][1849424] = http://drupal.org/files/1849424-use-vars-in-link.patch
@@ -254,8 +258,11 @@ libraries[tinymce-civicrm][directory_name] = tinymce
 projects[backup_migrate][subdir] = "contrib"
 projects[backup_migrate][version] = "2.7"
 
+projects[civicrm_clear_all_caches][subdir] = "contrib"
+projects[civicrm_clear_all_caches][version] = "1.0-beta1"
+
 projects[civicrm_cron][subdir] = "contrib"
-projects[civicrm_cron][version] = "2.0-beta1"
+projects[civicrm_cron][version] = "2.0-beta2"
 
 projects[ctools][subdir] = "contrib"
 projects[ctools][version] = "1.3"
@@ -264,7 +271,7 @@ projects[captcha][subdir] = "contrib"
 projects[captcha][version] = "1.0"
 
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.0-rc2"
+projects[features][version] = "2.0-rc3"
 
 projects[fontyourface][subdir] = "contrib"
 projects[fontyourface][version] = "2.8"
@@ -282,7 +289,7 @@ projects[profile_switcher][subdir] = "contrib"
 projects[profile_switcher][version] = "1.0-alpha1"
 
 projects[recaptcha][subdir] = "contrib"
-projects[recaptcha][version] = "1.9"
+projects[recaptcha][version] = "1.10"
 
 projects[views][subdir] = "contrib"
 projects[views][version] = "3.7"

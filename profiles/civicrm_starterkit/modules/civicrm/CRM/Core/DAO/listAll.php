@@ -128,7 +128,6 @@ $dao['TrackableURLOpen'] = 'CRM_Mailing_Event_DAO_TrackableURLOpen';
 $dao['Unsubscribe'] = 'CRM_Mailing_Event_DAO_Unsubscribe';
 $dao['ContributionRecur'] = 'CRM_Contribute_DAO_ContributionRecur';
 $dao['FinancialTrxn'] = 'CRM_Financial_DAO_FinancialTrxn';
-$dao['OfficialReceipt'] = 'CRM_Financial_DAO_OfficialReceipt';
 $dao['Membership'] = 'CRM_Member_DAO_Membership';
 $dao['MembershipLog'] = 'CRM_Member_DAO_MembershipLog';
 $dao['Field'] = 'CRM_Price_DAO_Field';

@@ -117,6 +117,9 @@ function features_drush_command() {
     'arguments' => array(
       'feature' => 'The feature in question.',
     ),
+    'options' => array(
+      'lines' => 'Generate diffs with <n> lines of context instead of the usual two.',
+    ),
     'drupal dependencies' => array('features', 'diff'),
     'aliases' => array('fd'),
   );
@@ -470,8 +473,8 @@ function drush_features_export() {
  * This is DEPRECATED, but keeping it around for a bit longer for user migration
  */
 function drush_features_add() {
-  drush_print(dt('features_add is DEPRECATED.'));
-  drush_print(dt('Calling features_export instead.'));
+  drush_print(dt('features-add is DEPRECATED.'));
+  drush_print(dt('Calling features-export instead.'));
   drush_features_export();
 }
 
@@ -797,9 +800,12 @@ function drush_features_diff() {
     module_load_include('inc', 'diff', 'diff.engine');
   }
 
+  $lines = (int) drush_get_option('lines');
+  $lines = $lines > 0 ? $lines : 2;
+
   $formatter = new DiffFormatter();
-  $formatter->leading_context_lines = 2;
-  $formatter->trailing_context_lines = 2;
+  $formatter->leading_context_lines = $lines;
+  $formatter->trailing_context_lines = $lines;
   $formatter->show_header = FALSE;
 
   if (drush_get_context('DRUSH_NOCOLOR')) {

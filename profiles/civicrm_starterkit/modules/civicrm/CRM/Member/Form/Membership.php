@@ -235,7 +235,7 @@ class CRM_Member_Form_Membership extends CRM_Member_Form {
           $resources->addScriptFile('civicrm', 'templates/CRM/Member/Form/Membership.js');
         }
       }
-      else { 
+      else {
         $resources = CRM_Core_Resources::singleton();
         $resources->addScriptFile('civicrm', 'templates/CRM/Member/Form/MembershipStandalone.js');
         $statuses = array();
@@ -1357,12 +1357,12 @@ WHERE   id IN ( ' . implode(' , ', array_keys($membershipType)) . ' )';
           $formValues['preserveDBName'] = TRUE;
         }
       }
-      //here we are setting up the billing contact - if different from the member they are already created
-      // but they will get billing details assigned
-      CRM_Contact_BAO_Contact::createProfileContact($formValues, $fields,
-        $this->_contributorContactID, NULL, NULL, $ctype
-      );
-
+      if ($this->_contributorContactID == $this->_contactID) {
+        //see CRM-12869 for discussion of why we don't do this for separate payee payments
+        CRM_Contact_BAO_Contact::createProfileContact($formValues, $fields,
+          $this->_contributorContactID, NULL, NULL, $ctype
+        );
+      }
 
       // add all the additioanl payment params we need
       $this->_params["state_province-{$this->_bltID}"] = $this->_params["billing_state_province-{$this->_bltID}"] = CRM_Core_PseudoConstant::stateProvinceAbbreviation($this->_params["billing_state_province_id-{$this->_bltID}"]);
@@ -1798,7 +1798,7 @@ WHERE   id IN ( ' . implode(' , ', array_keys($membershipType)) . ' )';
     else {
       $form->assign('receiptType', 'membership signup');
     }
-    $form->assign('receive_date', CRM_Utils_Array::value('receive_date', $formValues ) );
+    $form->assign('receive_date', CRM_Utils_Date::processDate(CRM_Utils_Array::value('receive_date', $formValues)));
     $form->assign('formValues', $formValues);
 
     if (empty($lineItem)) {

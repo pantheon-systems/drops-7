@@ -351,7 +351,7 @@ ORDER BY ov.label
     parent::preProcess();
   }
 
-  function getOperationPair($type = "string", $fieldName = NULL) {
+  static function getOperationPair($type = "string", $fieldName = NULL) {
     if ($fieldName == 'gid' && $type == CRM_Report_FORM::OP_MULTISELECT) {
       return array('in' => ts('Is one of'),
         'mand' => ts('Is equal to'),

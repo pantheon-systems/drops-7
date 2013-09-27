@@ -8,9 +8,9 @@ core = 7.x
 configure = admin/config/civicrm/civicrm-cron
 
 
-; Information added by drupal.org packaging script on 2013-06-12
-version = "7.x-2.0-beta1"
+; Information added by drupal.org packaging script on 2013-09-27
+version = "7.x-2.0-beta2"
 core = "7.x"
 project = "civicrm_cron"
-datestamp = "1371070251"
+datestamp = "1380290186"
 

@@ -42,7 +42,7 @@ class CRM_Core_Payment_BaseIPN {
   function validateData(&$input, &$ids, &$objects, $required = TRUE, $paymentProcessorID = NULL) {
 
     // make sure contact exists and is valid
-    $contact = new CRM_Contact_DAO_Contact();
+    $contact = new CRM_Contact_BAO_Contact();
     $contact->id = $ids['contact'];
     if (!$contact->find(TRUE)) {
       CRM_Core_Error::debug_log_message("Could not find contact record: {$ids['contact']} in IPN request: ".print_r($input, TRUE));
@@ -51,7 +51,7 @@ class CRM_Core_Payment_BaseIPN {
     }
 
     // make sure contribution exists and is valid
-    $contribution = new CRM_Contribute_DAO_Contribution();
+    $contribution = new CRM_Contribute_BAO_Contribution();
     $contribution->id = $ids['contribution'];
     if (!$contribution->find(TRUE)) {
       CRM_Core_Error::debug_log_message("Could not find contribution record: {$contribution->id} in IPN request: ".print_r($input, TRUE));
@@ -156,12 +156,15 @@ class CRM_Core_Payment_BaseIPN {
     $participant = &$objects['participant'];
 
     $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
+    $contribution->receive_date = CRM_Utils_Date::isoToMysql($contribution->receive_date);
+    $contribution->receipt_date = CRM_Utils_Date::isoToMysql($contribution->receipt_date);
+    $contribution->thankyou_date = CRM_Utils_Date::isoToMysql($contribution->thankyou_date);
     $contribution->contribution_status_id = array_search('Failed', $contributionStatus);
     $contribution->save();
 
     //add lineitems for recurring payments
     if (CRM_Utils_Array::value('contributionRecur', $objects) && $objects['contributionRecur']->id && $addLineItems) {
-      $this->addrecurLineItems($objects['contributionRecur']->id, $contribution->id);
+      $this->addrecurLineItems($objects['contributionRecur']->id, $contribution->id, CRM_Core_DAO::$_nullArray);
     }
 
     if (!CRM_Utils_Array::value('skipComponentSync', $input)) {
@@ -219,7 +222,7 @@ class CRM_Core_Payment_BaseIPN {
 
     //add lineitems for recurring payments
     if (CRM_Utils_Array::value('contributionRecur', $objects) && $objects['contributionRecur']->id && $addLineItems) {
-      $this->addrecurLineItems($objects['contributionRecur']->id, $contribution->id);
+      $this->addrecurLineItems($objects['contributionRecur']->id, $contribution->id, CRM_Core_DAO::$_nullArray);
     }
 
     if (!CRM_Utils_Array::value('skipComponentSync', $input)) {
@@ -465,7 +468,7 @@ LIMIT 1;";
 
     //add lineitems for recurring payments
     if (CRM_Utils_Array::value('contributionRecur', $objects) && $objects['contributionRecur']->id && $addLineItems) {
-      $this->addrecurLineItems($objects['contributionRecur']->id, $contribution->id);
+      $this->addrecurLineItems($objects['contributionRecur']->id, $contribution->id, $input);
     }
 
     // next create the transaction record
@@ -483,8 +486,8 @@ LIMIT 1;";
 
     if ($contribution->id) {
       $contributionStatuses = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-      if (!$input['prevContribution']->is_pay_later &&
-        $input['prevContribution']->contribution_status_id == array_search('Pending', $contributionStatuses)) {
+      if ((!$input['prevContribution'] && $paymentProcessorId) || (!$input['prevContribution']->is_pay_later &&
+        $input['prevContribution']->contribution_status_id == array_search('Pending', $contributionStatuses))) {
         $input['payment_processor'] = $paymentProcessorId;
       }
       $input['contribution_status_id'] = array_search('Completed', $contributionStatuses);
@@ -750,7 +753,7 @@ LIMIT 1;";
     );
   }
 
-  function addrecurLineItems($recurId, $contributionId) {
+  function addrecurLineItems($recurId, $contributionId, &$input) {
     $lineSets = $lineItems = array();
 
     //Get the first contribution id with recur id
@@ -765,8 +768,12 @@ LIMIT 1;";
           $lineSets[$pricesetID->price_set_id][] = $value;
         }
       }
-
-      CRM_Price_BAO_LineItem::processPriceSet($contributionId, $lineSets);
+      if (!empty($input)) {
+        $input['line_item'] = $lineSets;
+      }
+      else {
+        CRM_Price_BAO_LineItem::processPriceSet($contributionId, $lineSets);
+      }
     }
   }
 }

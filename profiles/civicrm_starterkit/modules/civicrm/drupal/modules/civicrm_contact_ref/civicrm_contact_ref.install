@@ -21,3 +21,41 @@ function civicrm_contact_ref_field_schema($field) {
   );
 }
 
+/*
+ * Implementation of hook_install().
+ */
+function civicrm_contact_ref_install() {
+  db_update('content_node_field')
+    ->fields(array(
+        'module' => 'civicrm_contact_ref',
+        'type' => 'civicrm_contact_ref_contact',
+      ))
+    ->condition('module', 'civicrm_cck')
+    ->execute();
+
+  db_update('content_node_field_instance')
+    ->fields(array(
+        'widget_type' => 'civicrm_contact_ref_autocomplete',
+      ))
+    ->condition('widget_module', 'civicrm_cck')
+    ->condition('widget_type', 'civicrm_cck_autocomplete')
+    ->execute();
+
+
+  db_update('content_node_field_instance')
+    ->fields(array(
+        'widget_type' => 'civicrm_contact_ref_select',
+      ))
+    ->condition('widget_module', 'civicrm_cck')
+    ->condition('widget_type', 'civicrm_cck_select')
+    ->execute();
+
+  db_update('content_node_field_instance')
+    ->fields(array(
+        'widget_type' => 'civicrm_contact_ref_buttons',
+      ))
+    ->condition('widget_module', 'civicrm_cck')
+    ->condition('widget_type', 'civicrm_cck_buttons')
+    ->execute();
+}
+

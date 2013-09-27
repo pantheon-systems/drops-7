@@ -117,6 +117,11 @@ function civicrm_starterkit_update_status_alter(&$projects) {
 
   $make_info = drupal_parse_info_file($make_filepath);
   foreach ($projects as $project_name => $project_info) {
+    // Never unset the drupal project to avoid hitting an error with
+    // _update_requirement_check(). See http://drupal.org/node/1875386.
+    if ($project_name == 'drupal') {
+      continue;
+    }
     // Hide cm_ projects, they have no update status of their own.
     //if (strpos($project_name, 'cm_') !== FALSE) {
       //unset($projects[$project_name]);

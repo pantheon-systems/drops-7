@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -419,6 +419,11 @@ class CRM_Core_DAO_AllCoreTables {
         'class' => 'CRM_Core_DAO_PrintLabel',
         'table' => 'civicrm_print_label',
       ),
+      'CRM_Core_DAO_WordReplacement' => array(
+        'name' => 'WordReplacement',
+        'class' => 'CRM_Core_DAO_WordReplacement',
+        'table' => 'civicrm_word_replacement',
+      ),
       'CRM_ACL_DAO_Cache' => array(
         'name' => 'Cache',
         'class' => 'CRM_ACL_DAO_Cache',
@@ -524,14 +529,14 @@ class CRM_Core_DAO_AllCoreTables {
         'class' => 'CRM_Report_DAO_ReportInstance',
         'table' => 'civicrm_report_instance',
       ),
-      'CRM_Price_DAO_Set' => array(
-        'name' => 'Set',
-        'class' => 'CRM_Price_DAO_Set',
+      'CRM_Price_DAO_PriceSet' => array(
+        'name' => 'PriceSet',
+        'class' => 'CRM_Price_DAO_PriceSet',
         'table' => 'civicrm_price_set',
       ),
-      'CRM_Price_DAO_SetEntity' => array(
-        'name' => 'SetEntity',
-        'class' => 'CRM_Price_DAO_SetEntity',
+      'CRM_Price_DAO_PriceSetEntity' => array(
+        'name' => 'PriceSetEntity',
+        'class' => 'CRM_Price_DAO_PriceSetEntity',
         'table' => 'civicrm_price_set_entity',
       ),
       'CRM_Core_DAO_County' => array(
@@ -554,9 +559,9 @@ class CRM_Core_DAO_AllCoreTables {
         'class' => 'CRM_Core_DAO_EntityTag',
         'table' => 'civicrm_entity_tag',
       ),
-      'CRM_Core_DAO_MessageTemplates' => array(
-        'name' => 'MessageTemplates',
-        'class' => 'CRM_Core_DAO_MessageTemplates',
+      'CRM_Core_DAO_MessageTemplate' => array(
+        'name' => 'MessageTemplate',
+        'class' => 'CRM_Core_DAO_MessageTemplate',
         'table' => 'civicrm_msg_template',
       ),
       'CRM_Core_DAO_UFGroup' => array(
@@ -604,9 +609,9 @@ class CRM_Core_DAO_AllCoreTables {
         'class' => 'CRM_Mailing_DAO_TrackableURL',
         'table' => 'civicrm_mailing_trackable_url',
       ),
-      'CRM_Mailing_DAO_Job' => array(
-        'name' => 'Job',
-        'class' => 'CRM_Mailing_DAO_Job',
+      'CRM_Mailing_DAO_MailingJob' => array(
+        'name' => 'MailingJob',
+        'class' => 'CRM_Mailing_DAO_MailingJob',
         'table' => 'civicrm_mailing_job',
       ),
       'CRM_Mailing_DAO_Recipients' => array(
@@ -669,11 +674,6 @@ class CRM_Core_DAO_AllCoreTables {
         'class' => 'CRM_Financial_DAO_FinancialTrxn',
         'table' => 'civicrm_financial_trxn',
       ),
-      'CRM_Financial_DAO_OfficialReceipt' => array(
-        'name' => 'OfficialReceipt',
-        'class' => 'CRM_Financial_DAO_OfficialReceipt',
-        'table' => 'civicrm_official_receipt',
-      ),
       'CRM_Member_DAO_Membership' => array(
         'name' => 'Membership',
         'class' => 'CRM_Member_DAO_Membership',
@@ -684,14 +684,14 @@ class CRM_Core_DAO_AllCoreTables {
         'class' => 'CRM_Member_DAO_MembershipLog',
         'table' => 'civicrm_membership_log',
       ),
-      'CRM_Price_DAO_Field' => array(
-        'name' => 'Field',
-        'class' => 'CRM_Price_DAO_Field',
+      'CRM_Price_DAO_PriceField' => array(
+        'name' => 'PriceField',
+        'class' => 'CRM_Price_DAO_PriceField',
         'table' => 'civicrm_price_field',
       ),
-      'CRM_Price_DAO_FieldValue' => array(
-        'name' => 'FieldValue',
-        'class' => 'CRM_Price_DAO_FieldValue',
+      'CRM_Price_DAO_PriceFieldValue' => array(
+        'name' => 'PriceFieldValue',
+        'class' => 'CRM_Price_DAO_PriceFieldValue',
         'table' => 'civicrm_price_field_value',
       ),
       'CRM_Price_DAO_LineItem' => array(
@@ -805,6 +805,10 @@ class CRM_Core_DAO_AllCoreTables {
     return FALSE !== array_search($tableName, self::tables());
   }
 
+  static public function getCanonicalClassName($className) {
+    return str_replace('_BAO_', '_DAO_', $className);
+  }
+
   static public function getClasses() {
     return array_values(self::daoToClass());
   }
@@ -820,5 +824,14 @@ class CRM_Core_DAO_AllCoreTables {
   static public function getBriefName($className) {
     return CRM_Utils_Array::value($className, array_flip(self::daoToClass()));
   }
+
+  /**
+   * @param string $className DAO or BAO name
+   * @return string|FALSE SQL table name
+   */
+  static public function getTableForClass($className) {
+    return array_search(self::getCanonicalClassName($className), self::tables());
+  }
+
 
 }

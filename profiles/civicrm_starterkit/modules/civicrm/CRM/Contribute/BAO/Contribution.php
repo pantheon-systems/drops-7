@@ -134,7 +134,8 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution {
     }
 
     // contribution status is missing, choose Completed as default status
-    if (!CRM_Utils_Array::value('contribution_status_id', $params)) {
+    // do this for create mode only
+    if (!CRM_Utils_Array::value('contribution', $ids) && !CRM_Utils_Array::value('contribution_status_id', $params)) {
       $params['contribution_status_id'] = CRM_Core_OptionGroup::getValue('contribution_status', 'Completed', 'name');
     }
 
@@ -2848,7 +2849,8 @@ WHERE  contribution_id = %1 ";
 
         $params['trxnParams']['total_amount'] = - $params['total_amount'];
       }
-      elseif ($params['prevContribution']->contribution_status_id == array_search('Pending', $contributionStatus)) {
+      elseif ($params['prevContribution']->contribution_status_id == array_search('Pending', $contributionStatus) 
+        && $params['prevContribution']->is_pay_later) {
         $financialTypeID = CRM_Utils_Array::value('financial_type_id', $params) ? $params['financial_type_id'] : $params['prevContribution']->financial_type_id;
         if ($params['contribution']->contribution_status_id == array_search('Cancelled', $contributionStatus)) {
           $params['trxnParams']['to_financial_account_id'] = NULL;
@@ -3015,5 +3017,24 @@ WHERE  contribution_id = %1 ";
     while ($contribution->fetch()) {
       self::deleteContribution($contribution->id);
     }
+  }
+  /**
+   * Function to validate financial type
+   *
+   * CRM-13231
+   *
+   * @param integer $financialTypeId Financial Type id 
+   *
+   * @access public
+   * @static
+   */
+  static function validateFinancialType($financialTypeId, $relationName = 'Expense Account is') {
+    $expenseTypeId = key(CRM_Core_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE '{$relationName}' "));
+    $financialAccount = CRM_Contribute_PseudoConstant::financialAccountType($financialTypeId, $expenseTypeId);
+
+    if (!$financialAccount) {
+      return CRM_Contribute_PseudoConstant::financialType($financialTypeId);
+    }
+    return FALSE;
   }
 }

@@ -48,7 +48,6 @@ DROP TABLE IF EXISTS `civicrm_price_field_value`;
 DROP TABLE IF EXISTS `civicrm_price_field`;
 DROP TABLE IF EXISTS `civicrm_membership_log`;
 DROP TABLE IF EXISTS `civicrm_membership`;
-DROP TABLE IF EXISTS `civicrm_official_receipt`;
 DROP TABLE IF EXISTS `civicrm_financial_trxn`;
 DROP TABLE IF EXISTS `civicrm_contribution_recur`;
 DROP TABLE IF EXISTS `civicrm_mailing_event_unsubscribe`;

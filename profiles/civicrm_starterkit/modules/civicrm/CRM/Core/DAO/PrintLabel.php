@@ -1,7 +1,7 @@
 <?php
 /*
 +--------------------------------------------------------------------+
-| CiviCRM version 4.3                                                |
+| CiviCRM version 4.4                                                |
 +--------------------------------------------------------------------+
 | Copyright CiviCRM LLC (c) 2004-2013                                |
 +--------------------------------------------------------------------+
@@ -239,17 +239,17 @@ class CRM_Core_DAO_PrintLabel extends CRM_Core_DAO
         'is_default' => array(
           'name' => 'is_default',
           'type' => CRM_Utils_Type::T_BOOLEAN,
-          'default' => '',
+          'default' => '1',
         ) ,
         'is_active' => array(
           'name' => 'is_active',
           'type' => CRM_Utils_Type::T_BOOLEAN,
-          'default' => '',
+          'default' => '1',
         ) ,
         'is_reserved' => array(
           'name' => 'is_reserved',
           'type' => CRM_Utils_Type::T_BOOLEAN,
-          'default' => '',
+          'default' => '1',
         ) ,
         'created_id' => array(
           'name' => 'created_id',

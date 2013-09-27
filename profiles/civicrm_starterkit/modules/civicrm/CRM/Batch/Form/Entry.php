@@ -178,7 +178,7 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
 
     $contactTypes = array('Contact', 'Individual', 'Household', 'Organization');
     for ($rowNumber = 1; $rowNumber <= $this->_batchInfo['item_count']; $rowNumber++) {
-      CRM_Contact_Form_NewContact::buildQuickForm($this, $rowNumber, NULL, TRUE, 'primary_');
+      CRM_Contact_Form_NewContact::buildQuickForm($this, $rowNumber, NULL, TRUE, 'primary_', ts('Contact'));
 
       // special field specific to membership batch udpate
       if ($this->_batchInfo['type_id'] == 2) {
@@ -238,6 +238,16 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
       if ( $self->_batchInfo['type_id'] == 2 ) {
         if ( !CRM_Utils_Array::value( 1, $value['membership_type'] ) ) {
           $errors["field[$key][membership_type]"] = ts('Membership type is a required field.');
+        }
+      }
+    }
+
+    // if contact name is set for a row using autocomplete widget then make sure contact id exists, CRM-13078
+    // I was not able to replicate this on my local but adding this check and hopefully it will fix the issue.
+    if (!empty($params['primary_contact'])) {
+      foreach($params['primary_contact'] as $rowIndex => $contactName) {
+        if (empty($params['primary_contact_select_id'][$rowIndex])) {
+          $errors['primary_contact['.$rowIndex.']'] = ts('Please select a valid contact.');
         }
       }
     }
@@ -365,8 +375,6 @@ class CRM_Batch_Form_Entry extends CRM_Core_Form {
     $priceSetId = CRM_Core_DAO::getFieldValue('CRM_Price_DAO_Set', 'default_contribution_amount', 'id', 'name');
     $this->_priceSet = current(CRM_Price_BAO_Set::getSetDetail($priceSetId));
     $fieldID = key($this->_priceSet['fields']);
-
-    $assetRelation = key(CRM_CORE_PseudoConstant::accountOptionValues('account_relationship', NULL, " AND v.name LIKE 'Asset Account is' "));
 
     if (isset($params['field'])) {
       foreach ($params['field'] as $key => $value) {

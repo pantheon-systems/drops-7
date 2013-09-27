@@ -73,7 +73,6 @@ DROP TABLE IF EXISTS `civicrm_price_field_value`;
 DROP TABLE IF EXISTS `civicrm_price_field`;
 DROP TABLE IF EXISTS `civicrm_membership_log`;
 DROP TABLE IF EXISTS `civicrm_membership`;
-DROP TABLE IF EXISTS `civicrm_official_receipt`;
 DROP TABLE IF EXISTS `civicrm_financial_trxn`;
 DROP TABLE IF EXISTS `civicrm_contribution_recur`;
 DROP TABLE IF EXISTS `civicrm_mailing_event_unsubscribe`;
@@ -4010,7 +4009,7 @@ CREATE TABLE `civicrm_contribution_recur` (
      `contribution_status_id` int unsigned   DEFAULT 1 ,
      `is_test` tinyint   DEFAULT 0 ,
      `cycle_day` int unsigned NOT NULL  DEFAULT 1 COMMENT 'Day in the period when the payment should be charged e.g. 1st of month, 15th etc.',
-     `next_sched_contribution` datetime    COMMENT 'At Groundspring this was used by the cron job which triggered payments. If we\'re not doing that but we know about payments, it might still be useful to store for display to org andor contributors.',
+     `next_sched_contribution` datetime    COMMENT 'At Groundspring this was used by the cron job which triggered payments. If we''re not doing that but we know about payments, it might still be useful to store for display to org andor contributors.',
      `failure_count` int unsigned   DEFAULT 0 COMMENT 'Number of failed charge attempts since last success. Business rule could be set to deactivate on more than x failures.',
      `failure_retry_date` datetime    COMMENT 'At Groundspring we set a business rule to retry failed payments every 7 days - and stored the next scheduled attempt date there.',
      `auto_renew` tinyint NOT NULL  DEFAULT 0 COMMENT 'Some systems allow contributor to set a number of installments - but then auto-renew the subscription or commitment if they do not cancel.',
@@ -4031,7 +4030,7 @@ CREATE TABLE `civicrm_contribution_recur` (
   ,     INDEX `index_contribution_status`(
         contribution_status_id
   )
-  ,     INDEX `UI_contrib_payment_instrument_id`(
+  ,     INDEX `UI_contribution_recur_payment_instrument_id`(
         payment_instrument_id
   )
   
@@ -4071,48 +4070,6 @@ CREATE TABLE `civicrm_financial_trxn` (
   )
   
 ,          CONSTRAINT FK_civicrm_financial_trxn_from_financial_account_id FOREIGN KEY (`from_financial_account_id`) REFERENCES `civicrm_financial_account`(`id`) ,          CONSTRAINT FK_civicrm_financial_trxn_to_financial_account_id FOREIGN KEY (`to_financial_account_id`) REFERENCES `civicrm_financial_account`(`id`) ,          CONSTRAINT FK_civicrm_financial_trxn_payment_processor_id FOREIGN KEY (`payment_processor_id`) REFERENCES `civicrm_payment_processor`(`id`) ON DELETE SET NULL  
-)  ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci  ;
-
--- /*******************************************************
--- *
--- * civicrm_official_receipt
--- *
--- *******************************************************/
-CREATE TABLE `civicrm_official_receipt` (
-
-
-     `id` int unsigned NOT NULL AUTO_INCREMENT  COMMENT 'Receipt ID',
-     `contact_id` int unsigned NOT NULL   COMMENT 'FK to Contact ID',
-     `contact_snapshot` text    COMMENT 'Serialized array of contact info of payor at time receipt is created',
-     `issued_date` datetime NOT NULL   ,
-     `start_date` datetime NOT NULL   ,
-     `end_date` datetime NOT NULL   ,
-     `receipt_status_id` int unsigned NOT NULL   COMMENT 'pseudo FK to civicrm_option_value',
-     `receipt_type_id` int unsigned NOT NULL   COMMENT 'pseudo FK to civicrm_option_value',
-     `total_amount` decimal(20,2) NOT NULL   COMMENT 'Total amount for this receipt.',
-     `non_deductible_amount` decimal(20,2)    COMMENT 'Portion of total amount which is NOT tax deductible. Equal to total_amount for non-deductible financial types.',
-     `currency` varchar(3)   DEFAULT NULL COMMENT '3 character string, value from config setting or input via user.',
-     `msg_template_id` int unsigned    COMMENT 'template used to generate receipt' 
-,
-    PRIMARY KEY ( `id` )
- 
-    ,     INDEX `UI_issued_date`(
-        issued_date
-  )
-  ,     INDEX `UI_start_date`(
-        start_date
-  )
-  ,     INDEX `UI_end_date`(
-        end_date
-  )
-  ,     INDEX `UI_receipt_status_id`(
-        receipt_status_id
-  )
-  ,     INDEX `UI_receipt_type_id`(
-        receipt_type_id
-  )
-  
-,          CONSTRAINT FK_civicrm_official_receipt_contact_id FOREIGN KEY (`contact_id`) REFERENCES `civicrm_contact`(`id`) ,          CONSTRAINT FK_civicrm_official_receipt_msg_template_id FOREIGN KEY (`msg_template_id`) REFERENCES `civicrm_msg_template`(`id`) ON DELETE Set Null  
 )  ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci  ;
 
 -- /*******************************************************

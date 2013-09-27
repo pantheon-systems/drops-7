@@ -187,7 +187,7 @@ class CRM_Contribute_DAO_ContributionRecur extends CRM_Core_DAO
    */
   public $cycle_day;
   /**
-   * At Groundspring this was used by the cron job which triggered payments. If we\'re not doing that but we know about payments, it might still be useful to store for display to org andor contributors.
+   * At Groundspring this was used by the cron job which triggered payments. If we''re not doing that but we know about payments, it might still be useful to store for display to org andor contributors.
    *
    * @var datetime
    */

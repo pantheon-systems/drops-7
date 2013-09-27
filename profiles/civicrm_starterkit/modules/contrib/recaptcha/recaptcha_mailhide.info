@@ -5,9 +5,9 @@ core = 7.x
 
 files[] = recaptcha_mailhide.module
 
-; Information added by drupal.org packaging script on 2013-02-04
-version = "7.x-1.9"
+; Information added by drupal.org packaging script on 2013-08-29
+version = "7.x-1.10"
 core = "7.x"
 project = "recaptcha"
-datestamp = "1359998293"
+datestamp = "1377803514"
 

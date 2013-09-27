@@ -363,7 +363,12 @@ SELECT id
         }
       }
     }
-
+    
+    if (CRM_Utils_Array::value('payment_processor', $fields) 
+      && $financialType = CRM_Contribute_BAO_Contribution::validateFinancialType($self->_defaultValues['financial_type_id'])) {
+      $errors['payment_processor'] = ts("Financial Account of account relationship of 'Expense Account is' is not configured for Financial Type : ") . $financialType;  
+    }
+        
     if (CRM_Utils_Array::value('is_recur_interval', $fields)) {
       foreach(array_keys($fields['payment_processor']) as $paymentProcessorID) {
         $paymentProcessorTypeId = CRM_Core_DAO::getFieldValue(
@@ -529,6 +534,7 @@ SELECT id
                 $setParams['name'] = $pageTitle . '_' . date('is', $timeSec[0]) . $timeSec[1];
               }
               $setParams['is_quick_config'] = 1;
+              $setParams['financial_type_id'] = CRM_Utils_Array::value('financial_type_id', $this->_values);
               $setParams['extends'] = CRM_Core_Component::getComponentID('CiviContribute');
               $priceSet = CRM_Price_BAO_Set::create($setParams);
               $priceSetId = $priceSet->id;
