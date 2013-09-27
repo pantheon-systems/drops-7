@@ -187,6 +187,7 @@ function pantheon_apachesolr_post_schema_exec($schema) {
     CURLOPT_BINARYTRANSFER => 1,
     CURLOPT_INFILE => $file,
     CURLOPT_INFILESIZE => filesize($schema),
+    CURLOPT_SSL_VERIFYPEER => 0,
   );
   curl_setopt_array($ch, $opts);
   $response = curl_exec($ch);
@@ -315,6 +316,7 @@ function pantheon_apachesolr_query_submit($form, &$form_state) {
     CURLOPT_PORT => PANTHEON_APACHESOLR_PORT,
     CURLOPT_SSLCERT => '../certs/binding.pem',
     CURLOPT_HEADER => 0,
+    CURLOPT_SSL_VERIFYPEER => 0,
   ));
 
   $response = curl_exec($ch);
