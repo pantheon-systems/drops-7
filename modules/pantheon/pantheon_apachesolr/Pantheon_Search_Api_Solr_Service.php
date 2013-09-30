@@ -9,9 +9,9 @@ class PantheonApachesolrSearchApiSolrConnection extends SearchApiSolrConnection 
 
     // Adding in custom settings for Pantheon
     $options['scheme'] = 'https';
-    $options['host'] = (variable_get('pantheon_hyperion_host')) ? variable_get('pantheon_hyperion_host') : 'index.' . variable_get('pantheon_tier', 'live') . '.getpantheon.com';
+    $options['host'] = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
     $options['path'] = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index';
-    $options['port'] = 449;
+    $options['port'] = variable_get('pantheon_index_port', 449);
     $this->setStreamContext(
       stream_context_create(
         array(
@@ -110,10 +110,7 @@ class PantheonSearchApiSolrService extends SearchApiSolrConnection {
    * Constructor
    */
   public function __construct(array $options) {
-    $host = variable_get('pantheon_hyperion_host', FALSE);
-    if (!$host) {
-      $host = 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com';
-    }
+    $host = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
     $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
     $options = array(
       'host' => $host,
@@ -194,7 +191,7 @@ if (class_exists('Apache_Solr_HttpTransport_Abstract')) {
       $parts = explode('?', $url);
       $url = $parts[0] .'?'. $parts[1];
       $client_cert = '../certs/binding.pem';
-      $port = 449;
+      $port = variable_get('pantheon_index_port', 449);
       $ch = curl_init();
       curl_setopt($ch, CURLOPT_SSLCERT, $client_cert);
 

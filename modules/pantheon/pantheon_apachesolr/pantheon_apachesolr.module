@@ -5,7 +5,7 @@
  *
  * Facilitates and debugs communication with Pantheon's Apache Solr service.
  */
-define('PANTHEON_APACHESOLR_PORT', 449);
+define('PANTHEON_APACHESOLR_PORT', variable_get('pantheon_index_port', 449));
 
 /**
  * Implements hook_help().
@@ -169,7 +169,7 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   }
 
   $ch = curl_init();
-  $host = 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com';
+  $host = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
 
   $client_cert = '../certs/binding.pem';
