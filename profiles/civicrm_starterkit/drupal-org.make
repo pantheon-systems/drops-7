@@ -9,7 +9,7 @@ core = 7.23
 
 libraries[civicrm][download][type] = get
 ;libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.alpha3-starterkit.tgz"
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.6-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.7-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
 
@@ -72,6 +72,85 @@ libraries[jquery_ui][download][type] = get
 libraries[jquery_ui][download][url] = "http://jquery-ui.googlecode.com/files/jquery-ui-1.9.0-rc.1.zip"
 libraries[jquery_ui][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0"
 libraries[jquery_ui][directory_name] = development-bundle
+
+; MANUALLY GRAB SPECIFIC IMAGES FOR JQUERY UI
+libraries[jquery_ui_bg_flat_0][download][type] = get
+libraries[jquery_ui_bg_flat_0][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-bg_flat_0_aaaaaa_40x100.png"
+libraries[jquery_ui_bg_flat_0][download][filename] = ui-bg_flat_0_aaaaaa_40x100.png
+libraries[jquery_ui_bg_flat_0][directory_name] = images
+libraries[jquery_ui_bg_flat_0][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_bg_flat_75][download][type] = get
+libraries[jquery_ui_bg_flat_75][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-bg_flat_75_ffffff_40x100.png"
+libraries[jquery_ui_bg_flat_75][download][filename] = ui-bg_flat_75_ffffff_40x100.png
+libraries[jquery_ui_bg_flat_75][directory_name] = images
+libraries[jquery_ui_bg_flat_75][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_bg_glass_55][download][type] = get
+libraries[jquery_ui_bg_glass_55][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-bg_glass_55_fbf9ee_1x400.png"
+libraries[jquery_ui_bg_glass_55][download][filename] = ui-bg_glass_55_fbf9ee_1x400.png
+libraries[jquery_ui_bg_glass_55][directory_name] = images
+libraries[jquery_ui_bg_glass_55][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_bg_glass_65][download][type] = get
+libraries[jquery_ui_bg_glass_65][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-bg_glass_65_ffffff_1x400.png"
+libraries[jquery_ui_bg_glass_65][download][filename] = ui-bg_glass_65_ffffff_1x400.png
+libraries[jquery_ui_bg_glass_65][directory_name] = images
+libraries[jquery_ui_bg_glass_65][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_bg_glass_75_dadada][download][type] = get
+libraries[jquery_ui_bg_glass_75_dadada][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-bg_glass_75_dadada_1x400.png"
+libraries[jquery_ui_bg_glass_75_dadada][download][filename] = ui-bg_glass_75_dadada_1x400.png
+libraries[jquery_ui_bg_glass_75_dadada][directory_name] = images
+libraries[jquery_ui_bg_glass_75_dadada][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_bg_glass_75_e6e6e6][download][type] = get
+libraries[jquery_ui_bg_glass_75_e6e6e6][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-bg_glass_75_e6e6e6_1x400.png"
+libraries[jquery_ui_bg_glass_75_e6e6e6][download][filename] = ui-bg_glass_75_e6e6e6_1x400.png
+libraries[jquery_ui_bg_glass_75_e6e6e6][directory_name] = images
+libraries[jquery_ui_bg_glass_75_e6e6e6][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_bg_glass_95][download][type] = get
+libraries[jquery_ui_bg_glass_95][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-bg_glass_95_fef1ec_1x400.png"
+libraries[jquery_ui_bg_glass_95][download][filename] = ui-bg_glass_95_fef1ec_1x400.png
+libraries[jquery_ui_bg_glass_95][directory_name] = images
+libraries[jquery_ui_bg_glass_95][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_bg_highlight][download][type] = get
+libraries[jquery_ui_bg_highlight][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-bg_highlight-soft_75_cccccc_1x100.png"
+libraries[jquery_ui_bg_highlight][download][filename] = ui-bg_highlight-soft_75_cccccc_1x100.png
+libraries[jquery_ui_bg_highlight][directory_name] = images
+libraries[jquery_ui_bg_highlight][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_icons_2e83ff][download][type] = get
+libraries[jquery_ui_icons_2e83ff][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-icons_2e83ff_256x240.png"
+libraries[jquery_ui_icons_2e83ff][download][filename] = ui-icons_2e83ff_256x240.png
+libraries[jquery_ui_icons_2e83ff][directory_name] = images
+libraries[jquery_ui_icons_2e83ff][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_icons_222222][download][type] = get
+libraries[jquery_ui_icons_222222][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-icons_222222_256x240.png"
+libraries[jquery_ui_icons_222222][download][filename] = ui-icons_222222_256x240.png
+libraries[jquery_ui_icons_222222][directory_name] = images
+libraries[jquery_ui_icons_222222][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_icons_454545][download][type] = get
+libraries[jquery_ui_icons_454545][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-icons_454545_256x240.png"
+libraries[jquery_ui_icons_454545][download][filename] = ui-icons_454545_256x240.png
+libraries[jquery_ui_icons_454545][directory_name] = images
+libraries[jquery_ui_icons_454545][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_icons_888888][download][type] = get
+libraries[jquery_ui_icons_888888][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-icons_888888_256x240.png"
+libraries[jquery_ui_icons_888888][download][filename] = ui-icons_888888_256x240.png
+libraries[jquery_ui_icons_888888][directory_name] = images
+libraries[jquery_ui_icons_888888][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
+
+libraries[jquery_ui_icons_cd0a0a][download][type] = get
+libraries[jquery_ui_icons_cd0a0a][download][url] = "https://raw.github.com/jquery/jquery-ui/master/themes/base/images/ui-icons_cd0a0a_256x240.png"
+libraries[jquery_ui_icons_cd0a0a][download][filename] = ui-icons_cd0a0a_256x240.png
+libraries[jquery_ui_icons_cd0a0a][directory_name] = images
+libraries[jquery_ui_icons_cd0a0a][destination] = "modules/civicrm/packages/jquery/jquery-ui-1.9.0/css/smoothness"
 
 libraries[jstree][download][type] = get
 libraries[jstree][download][url] = "https://github.com/vakata/jstree/archive/v.pre1.0.zip"
