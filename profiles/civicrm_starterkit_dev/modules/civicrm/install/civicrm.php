@@ -185,6 +185,18 @@ function civicrm_config(&$config) {
     'dbHost' => $config['mysql']['server'],
     'dbName' => addslashes($config['mysql']['database']),
   );
+  
+  // when running on Pantheon, part of $crmPath is set dynamically in civicrm_settings.php
+  //if civicrm is in a profile
+  if (strpos($crmPath , 'profile')) {
+    $modulePathParts = explode('profiles/', $crmPath);
+    $params['modulePath'] = 'profiles/' . $modulePathParts[1];
+  }
+  // if civicrm is not in profile, it is in sites 
+  if (!isset($params['modulePath'])) {
+    $modulePathParts = explode('sites/', $crmPath);
+    $params['modulePath'] = 'sites/' . $modulePathParts[1];
+  }
 
   $params['baseURL'] = isset($config['base_url']) ? $config['base_url'] : civicrm_cms_base();
   if ($installType == 'drupal') {
