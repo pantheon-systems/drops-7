@@ -1,0 +1,46 @@
+<?php
+/**
+ * @file
+ * CiviCRM Flush Caches
+ */
+ 
+/**
+ * Implementation of hook_flush_caches().
+ */
+function civicrm_clear_all_caches_flush_caches() {
+  // Can't return tables because https://api.drupal.org/api/drupal/includes%21cache.inc/function/DrupalDatabaseCache%3A%3AisValidBin/7
+  // checks if the table begins with cache_ or includes specific fields
+  //return array('civicrm_acl_cache', 'civicrm_acl_contact_cache', 'civicrm_cache', 
+  // 'civicrm_group_contact_cache', 'civicrm_prevnext_cache');
+  
+  // this only clears the tables, but is fast
+  
+  //$result = db_truncate('civicrm_acl_cache')->execute();
+  //$result = db_truncate('civicrm_acl_contact_cache')->execute();
+  //$result = db_truncate('civicrm_cache')->execute();
+  //$result = db_truncate('civicrm_group_contact_cache')->execute();
+  //$result = db_truncate('civicrm_prevnext_cache')->execute();
+  
+  // this is from civicrm.drush.inc.  Includes files, but slower
+  if (!civicrm_initialize()) {
+    watchdog('civicrm_clear_all_caches', t('Failed to initialize CiviCRM'));
+    return;
+  }
+
+  require_once 'CRM/Core/Config.php';
+  $config = CRM_Core_Config::singleton();
+
+  // clear db caching
+  CRM_Core_Config::clearDBCache();
+
+  // also cleanup the templates_c directory
+  $config->cleanup(1, FALSE);
+
+  // also cleanup the session object
+  $session = CRM_Core_Session::singleton();
+  $session->reset(1);
+  
+  watchdog('civicrm_clear_all_caches', t('CiviCRM cache tables cleared by Drupal'));
+  return;
+}
+
