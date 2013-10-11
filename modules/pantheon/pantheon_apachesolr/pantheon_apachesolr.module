@@ -6,6 +6,7 @@
  * Facilitates and debugs communication with Pantheon's Apache Solr service.
  */
 define('PANTHEON_APACHESOLR_PORT', variable_get('pantheon_index_port', 449));
+define('PANTHEON_APACHESOLR_HOST', variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com'));
 
 /**
  * Implements hook_help().
@@ -169,7 +170,7 @@ function pantheon_apachesolr_post_schema_exec($schema) {
   }
 
   $ch = curl_init();
-  $host = variable_get('pantheon_index_host', 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com');
+  $host = PANTHEON_APACHESOLR_HOST;
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
 
   $client_cert = '../certs/binding.pem';
@@ -269,7 +270,7 @@ function pantheon_apachesolr_query($form, &$form_state) {
     );
   }
 
-  $host = 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com';
+  $host = PANTHEON_APACHESOLR_HOST;
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
   $url = 'https://'. $host .'/'. $path;
 
@@ -302,7 +303,7 @@ function pantheon_apachesolr_query($form, &$form_state) {
 function pantheon_apachesolr_query_submit($form, &$form_state) {
   $form_state['rebuild'] = TRUE;
 
-  $host = 'index.'. variable_get('pantheon_tier', 'live') .'.getpantheon.com';
+  $host = PANTHEON_APACHESOLR_HOST;
   $path = 'sites/self/environments/'. variable_get('pantheon_environment', 'dev') .'/index';
   $url = 'https://'. $host .'/'. $path . $form_state['values']['query'];
 
@@ -438,7 +439,7 @@ function pantheon_apachesolr_post_schema_form_submit($form, &$form_state) {
 function pantheon_apachesolr_status($form, &$form_state) {
   $form = array();
 
-  $host = 'index.' . variable_get('pantheon_tier', 'live') . '.getpantheon.com';
+  $host = PANTHEON_APACHESOLR_HOST;
 
   // Determine what schema was used.
   $schema = 'generic';
@@ -646,7 +647,7 @@ function pantheon_apachesolr_requirements($phase) {
         '@pantheon_apachesolr_schema' => $pantheon_apachesolr_schema,
       ));
       // Ping.
-      $host = 'index.' . variable_get('pantheon_tier', 'live') . '.getpantheon.com';
+      $host = PANTHEON_APACHESOLR_HOST;
       $path = 'sites/self/environments/' . variable_get('pantheon_environment', 'dev') . '/index/admin/ping';
       $schema = strpos($pantheon_apachesolr_schema, 'search_api_solr') !== FALSE ? 'search_api_solr' : 'generic';
 
