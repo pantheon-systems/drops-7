@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -204,6 +204,7 @@ class CRM_Core_BAO_OptionValue extends CRM_Core_DAO_OptionValue {
 
     $optionValue->id = CRM_Utils_Array::value('optionValue', $ids);
     $optionValue->save();
+    CRM_Core_PseudoConstant::flush();
     return $optionValue;
   }
 
@@ -221,6 +222,7 @@ class CRM_Core_BAO_OptionValue extends CRM_Core_DAO_OptionValue {
     $optionValue = new CRM_Core_DAO_OptionValue();
     $optionValue->id = $optionValueId;
     if (self::updateRecords($optionValueId, CRM_Core_Action::DELETE)) {
+      CRM_Core_PseudoConstant::flush();
       return $optionValue->delete();
     }
     return FALSE;
@@ -288,6 +290,7 @@ class CRM_Core_BAO_OptionValue extends CRM_Core_DAO_OptionValue {
     $value = $optionValue->value;
 
     // get the proper group name & affected field name
+    // todo: this may no longer be needed for individuals - check inputs
     $individuals = array(
       'gender' => 'gender_id',
       'individual_prefix' => 'prefix_id',

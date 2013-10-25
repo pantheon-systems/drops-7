@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -173,6 +173,6 @@ class CRM_Utils_System_UnitTests extends CRM_Utils_System_Drupal {
   public function getLoginURL($destination = '') {
     throw new Exception("Method not implemented: getLoginURL");
   }
-  
+
 }
 

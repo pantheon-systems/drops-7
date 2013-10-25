@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -106,6 +105,14 @@ class CRM_Report_Utils_Get {
       case 'nnll':
         $defaults["{$fieldName}_op"] = $fieldOP;
         break;
+      case 'in':
+      case 'notin':
+        $value = self::getTypedValue("{$fieldName}_value", CRM_Utils_Type::T_STRING);
+        if ($value !== NULL) {
+          $defaults["{$fieldName}_value"] = explode(",", $value);
+          $defaults["{$fieldName}_op"] = $fieldOP;
+        }
+        break;
     }
   }
 
@@ -174,6 +181,7 @@ class CRM_Report_Utils_Get {
       foreach ($fields as $fieldName => $field) {
         switch (CRM_Utils_Array::value('type', $field)) {
           case CRM_Utils_Type::T_INT:
+          case CRM_Utils_Type::T_FLOAT:
           case CRM_Utils_Type::T_MONEY:
             self::intParam($fieldName, $field, $defaults);
             break;
@@ -239,6 +247,10 @@ class CRM_Report_Utils_Get {
     if (is_array($reportFields)) {
       if ($urlFields = CRM_Utils_Array::value("fld", $_GET)) {
         $urlFields = explode(',', $urlFields);
+      }
+      if (CRM_Utils_Array::value("ufld", $_GET) == 1) {
+        // unset all display columns
+        $defaults['fields'] = array();
       }
       if (!empty($urlFields)) {
         foreach ($reportFields as $tableName => $fields) {

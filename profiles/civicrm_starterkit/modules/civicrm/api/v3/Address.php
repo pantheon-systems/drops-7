@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -36,8 +35,6 @@
  * @copyright CiviCRM LLC (c) 2004-2013
  * @version $Id: Address.php 2011-02-16 ErikHommel $
  */
-
-require_once 'CRM/Core/BAO/Address.php';
 
 /**
  *  Add an Address for a contact

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -33,7 +33,8 @@
     width        : 250, 
     selectFirst  : false,
     matchCase    : true, 
-    matchContains: true
+    matchContains: true,
+    max: {/literal}{crmSetting name="search_autocomplete_count" group="Search Preferences"}{literal}
   }).result( function(event, data, formatted) {
     var foundContact   = ( parseInt( data[1] ) ) ? cj( "#current_employer_id" ).val( data[1] ) : cj( "#current_employer_id" ).val('');
     if ( ! foundContact.val() ) {

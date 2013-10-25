@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -60,15 +60,15 @@ class CRM_Logging_ReportDetail extends CRM_Report_Form {
     parent::__construct();
 
     CRM_Utils_System::resetBreadCrumb();
-    $breadcrumb = 
+    $breadcrumb =
       array(
-            array('title' => ts('Home'), 
+            array('title' => ts('Home'),
                   'url' => CRM_Utils_System::url()),
-            array('title' => ts('CiviCRM'), 
+            array('title' => ts('CiviCRM'),
                   'url' => CRM_Utils_System::url('civicrm', 'reset=1')),
-            array('title' => ts('View Contact'), 
+            array('title' => ts('View Contact'),
                   'url' => CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$this->cid}")),
-            array('title' => ts('Search Results'), 
+            array('title' => ts('Search Results'),
                   'url' => CRM_Utils_System::url('civicrm/contact/search', "force=1")),
             );
     CRM_Utils_System::appendBreadCrumb($breadcrumb);
@@ -152,20 +152,24 @@ class CRM_Logging_ReportDetail extends CRM_Report_Form {
           continue;
         }
 
-        // CRM-7251: special-case preferred_communication_method
-        if ($field == 'preferred_communication_method') {
-          $froms = array();
-          $tos = array();
-          foreach (explode(CRM_Core_DAO::VALUE_SEPARATOR, $from) as $val) $froms[] = CRM_Utils_Array::value($val, $values[$field]);
-          foreach (explode(CRM_Core_DAO::VALUE_SEPARATOR, $to) as $val) $tos[] = CRM_Utils_Array::value($val, $values[$field]);
+        // special-case for multiple values. Also works for CRM-7251: preferred_communication_method
+        if ((substr($from, 0, 1) == CRM_Core_DAO::VALUE_SEPARATOR && 
+            substr($from, -1, 1) == CRM_Core_DAO::VALUE_SEPARATOR) || 
+          (substr($to, 0, 1) == CRM_Core_DAO::VALUE_SEPARATOR && 
+            substr($to, -1, 1) == CRM_Core_DAO::VALUE_SEPARATOR)) {
+          $froms = $tos = array();
+          foreach (explode(CRM_Core_DAO::VALUE_SEPARATOR, trim($from, CRM_Core_DAO::VALUE_SEPARATOR)) as $val) {
+            $froms[] = CRM_Utils_Array::value($val, $values[$field]);
+          }
+          foreach (explode(CRM_Core_DAO::VALUE_SEPARATOR, trim($to, CRM_Core_DAO::VALUE_SEPARATOR)) as $val) {
+            $tos[] = CRM_Utils_Array::value($val, $values[$field]);
+          }
           $from = implode(', ', array_filter($froms));
-          $to = implode(', ', array_filter($tos));
+          $to   = implode(', ', array_filter($tos));
         }
 
         if (isset($values[$field][$from])) {
-
           $from = $values[$field][$from];
-
         }
         if (isset($values[$field][$to])) {
           $to = $values[$field][$to];

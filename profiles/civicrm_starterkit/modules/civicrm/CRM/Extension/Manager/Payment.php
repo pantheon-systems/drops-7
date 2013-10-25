@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -263,7 +263,7 @@ class CRM_Extension_Manager_Payment extends CRM_Extension_Manager_Base {
       case 'disable':
 
         // Instantiate PP
-        eval('$processorInstance = ' . $paymentClass . '::singleton( null, $paymentProcessor );');
+        $processorInstance = $paymentClass::singleton(NULL, $paymentProcessor);
 
         // Does PP implement this method, and can we call it?
         if (method_exists($processorInstance, $method) && is_callable(array(

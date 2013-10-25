@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -25,7 +25,7 @@
 *}
 {ts 1=$totalSelectedActivities}Number of selected Activities: %1{/ts}
 
-{if $rows } 
+{if $rows }
 <div class="form-item">
 <table width="30%">
   <tr class="columnheader">

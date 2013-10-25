@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -69,8 +69,12 @@ class CRM_Contribute_Page_DashBoard extends CRM_Core_Page {
         $now = $yearNow;
       }
 
+      // appending end date i.e $now with time
+      // to also calculate records of end date till mid-night
+      $nowWithTime = $now . '235959';
+
       foreach ($status as $s) {
-        ${$aName}[$s] = CRM_Contribute_BAO_Contribution::getTotalAmountAndCount($s, $$dName, $now);
+        ${$aName}[$s] = CRM_Contribute_BAO_Contribution::getTotalAmountAndCount($s, $$dName, $nowWithTime);
         ${$aName}[$s]['url'] = CRM_Utils_System::url('civicrm/contribute/search',
           "reset=1&force=1&status=1&start={$$dName}&end=$now&test=0"
         );
@@ -121,6 +125,7 @@ class CRM_Contribute_Page_DashBoard extends CRM_Core_Page {
     $chartForm->setEmbedded(TRUE);
     $chartForm->process();
     $chartForm->run();
+    CRM_Core_Resources::singleton()->addScriptFile('civicrm', 'templates/CRM/Contribute/Page/DashBoard.js');
 
     return parent::run();
   }

@@ -1,32 +1,40 @@
 <?php
-
-/*
- Get entities and location block in 1 api call
+/**
+ * Test Generated example of using loc_block get API
+ * Get entities and location block in 1 api call *
  */
 function loc_block_get_example(){
-$params = array( 
-  'version' => 3,
+$params = array(
   'id' => 3,
   'return' => 'all',
 );
 
-  $result = civicrm_api( 'loc_block','get',$params );
-
-  return $result;
+try{
+  $result = civicrm_api3('loc_block', 'get', $params);
+}
+catch (CiviCRM_API3_Exception $e) {
+  // handle error here
+  $errorMessage = $e->getMessage();
+  $errorCode = $e->getErrorCode();
+  $errorData = $e->getExtraParams();
+  return array('error' => $errorMessage, 'error_code' => $errorCode, 'error_data' => $errorData);
 }
 
-/*
+return $result;
+}
+
+/**
  * Function returns array of result expected from previous function
  */
 function loc_block_get_expectedresult(){
 
-  $expectedResult = array( 
+  $expectedResult = array(
   'id' => '3',
   'address_id' => '3',
   'email_id' => '4',
   'phone_id' => '3',
   'phone_2_id' => '4',
-  'address' => array( 
+  'address' => array(
       'id' => '3',
       'location_type_id' => '1',
       'is_primary' => 0,
@@ -34,7 +42,7 @@ function loc_block_get_expectedresult(){
       'street_address' => '987654321',
       'manual_geo_code' => 0,
     ),
-  'email' => array( 
+  'email' => array(
       'id' => '4',
       'location_type_id' => '1',
       'email' => 'test2@loc.block',
@@ -43,7 +51,7 @@ function loc_block_get_expectedresult(){
       'on_hold' => 0,
       'is_bulkmail' => 0,
     ),
-  'phone' => array( 
+  'phone' => array(
       'id' => '3',
       'location_type_id' => '1',
       'is_primary' => 0,
@@ -51,7 +59,7 @@ function loc_block_get_expectedresult(){
       'phone' => '987654321',
       'phone_numeric' => '987654321',
     ),
-  'phone_2' => array( 
+  'phone_2' => array(
       'id' => '4',
       'location_type_id' => '1',
       'is_primary' => 0,
@@ -61,7 +69,7 @@ function loc_block_get_expectedresult(){
     ),
 );
 
-  return $expectedResult  ;
+  return $expectedResult;
 }
 
 

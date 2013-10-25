@@ -1,36 +1,43 @@
 <?php
-
-/*
- demonstrates _high filter (at time of writing doesn't work if contact_id is set
+/**
+ * Test Generated example of using activity get API
+ * demonstrates _high filter (at time of writing doesn't work if contact_id is set *
  */
 function activity_get_example(){
-$params = array( 
-  'source_contact_id' => 17,
-  'version' => 3,
+$params = array(
+  'source_contact_id' => 1,
   'filter.activity_date_time_high' => '20120101000000',
   'sequential' => 1,
 );
 
-  $result = civicrm_api( 'activity','get',$params );
-
-  return $result;
+try{
+  $result = civicrm_api3('activity', 'get', $params);
+}
+catch (CiviCRM_API3_Exception $e) {
+  // handle error here
+  $errorMessage = $e->getMessage();
+  $errorCode = $e->getErrorCode();
+  $errorData = $e->getExtraParams();
+  return array('error' => $errorMessage, 'error_code' => $errorCode, 'error_data' => $errorData);
 }
 
-/*
+return $result;
+}
+
+/**
  * Function returns array of result expected from previous function
  */
 function activity_get_expectedresult(){
 
-  $expectedResult = array( 
+  $expectedResult = array(
   'is_error' => 0,
   'version' => 3,
   'count' => 1,
   'id' => 1,
-  'values' => array( 
-      '0' => array( 
+  'values' => array(
+      '0' => array(
           'id' => '1',
-          'source_contact_id' => '17',
-          'activity_type_id' => '44',
+          'activity_type_id' => '46',
           'subject' => 'Make-it-Happen Meeting',
           'activity_date_time' => '2011-01-01 00:00:00',
           'duration' => '120',
@@ -42,11 +49,12 @@ function activity_get_expectedresult(){
           'is_auto' => 0,
           'is_current_revision' => '1',
           'is_deleted' => 0,
+          'source_contact_id' => '1',
         ),
     ),
 );
 
-  return $expectedResult  ;
+  return $expectedResult;
 }
 
 

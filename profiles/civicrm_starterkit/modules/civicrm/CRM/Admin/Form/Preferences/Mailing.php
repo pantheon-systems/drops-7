@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -92,10 +92,49 @@ class CRM_Admin_Form_Preferences_Mailing extends CRM_Admin_Form_Preferences {
           'weight' => 7,
           'description' => NULL,
         ),
+        'write_activity_record' =>
+        array(
+          'html_type' => 'checkbox',
+          'title' => ts('Enable CiviMail to create activities on delivery'),
+          'weight' => 8,
+          'description' => NULL,
+        ),
+        'disable_mandatory_tokens_check' =>
+        array(
+          'html_type' => 'checkbox',
+          'title' => ts('Disable check for mandatory tokens'),
+          'weight' => 9,
+          'description' => ts('Don\'t check for presence of mandatory tokens (domain address; unsubscribe/opt-out) before sending mailings. WARNING: Mandatory tokens are a safe-guard which facilitate compliance with the US CAN-SPAM Act. They should only be disabled if your organization adopts other mechanisms for compliance or if your organization is not subject to CAN-SPAM.'),
+        ),
       ),
     );
 
     parent::preProcess();
+  }
+
+  function postProcess() {
+    // check if mailing tab is enabled, if not prompt user to enable the tab if "write_activity_record" is disabled
+    $params = $this->controller->exportValues($this->_name);
+
+    if (!CRM_Utils_Array::value('write_activity_record', $params)) {
+      $existingViewOptions = CRM_Core_BAO_Setting::getItem(
+        CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME,
+        'contact_view_options'
+      );
+
+      $displayValue = CRM_Core_OptionGroup::getValue('contact_view_options', 'CiviMail', 'name');
+      $viewOptions = explode(CRM_Core_DAO::VALUE_SEPARATOR, $existingViewOptions);
+
+      if (!in_array($displayValue, $viewOptions)) {
+        $existingViewOptions .= $displayValue . CRM_Core_DAO::VALUE_SEPARATOR;
+
+        CRM_Core_BAO_Setting::setItem($existingViewOptions, CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'contact_view_options');
+        CRM_Core_Session::setStatus(ts('We have automatically enabled the Mailings tab for the Contact Summary screens
+        so that you can view mailings sent to each contact.'), ts('Saved'), 'success');
+      }
+    }
+
+    parent::postProcess();
   }
 }
 

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -23,6 +23,7 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
 *}
+
 {* Callback snippet: Load payment processor *}
 {if $snippet}
 {include file="CRM/Core/BillingBlock.tpl" context="front-end"}
@@ -52,7 +53,7 @@
     {/if}
   {/if}
 
-{* Main Form *}  
+{* Main Form *}
 {else}
   {literal}
   <script type="text/javascript">
@@ -98,6 +99,7 @@
   <div id="intro_text" class="crm-section intro_text-section">
     {$intro_text}
   </div>
+  {include file="CRM/common/cidzero.tpl"}
   {if $islifetime or $ispricelifetime }
   <div id="help">{ts}You have a current Lifetime Membership which does not need to be renewed.{/ts}</div>
   {/if}
@@ -199,7 +201,7 @@
         <div class="content" >
           {$form.honor_type_id.html}
           <span class="crm-clear-link">(<a href="#" title="unselect" onclick="unselectRadio('honor_type_id', '{$form.formName}');enableHonorType(); return false;">{ts}clear{/ts}</a>)</span>
-          <div class="description">{ts}Please include the name, and / or email address of the person you are honoring.{/ts}</div>
+          <div class="description">{ts}Select an option to reveal honoree information fields.{/ts}</div>
         </div>
       </div>
     {/if}
@@ -318,7 +320,7 @@
   {/if}
 
   {if $isCaptcha}
-  {include file='CRM/common/ReCAPTCHA.tpl'}
+    {include file='CRM/common/ReCAPTCHA.tpl'}
   {/if}
   <div id="crm-submit-buttons" class="crm-submit-buttons">
   {include file="CRM/common/formButtons.tpl" location="bottom"}

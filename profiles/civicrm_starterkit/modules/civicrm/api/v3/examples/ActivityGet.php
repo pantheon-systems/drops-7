@@ -1,37 +1,45 @@
 <?php
-
-/*
- 
+/**
+ * Test Generated example of using activity get API
+ * *
  */
 function activity_get_example(){
-$params = array( 
-  'contact_id' => 17,
-  'activity_type_id' => '44',
-  'version' => 3,
+$params = array(
+  'contact_id' => 1,
+  'activity_type_id' => '46',
   'sequential' => 1,
   'return.custom_1' => 1,
 );
 
-  $result = civicrm_api( 'activity','get',$params );
-
-  return $result;
+try{
+  $result = civicrm_api3('activity', 'get', $params);
+}
+catch (CiviCRM_API3_Exception $e) {
+  // handle error here
+  $errorMessage = $e->getMessage();
+  $errorCode = $e->getErrorCode();
+  $errorData = $e->getExtraParams();
+  return array('error' => $errorMessage, 'error_code' => $errorCode, 'error_data' => $errorData);
 }
 
-/*
+return $result;
+}
+
+/**
  * Function returns array of result expected from previous function
  */
 function activity_get_expectedresult(){
 
-  $expectedResult = array( 
+  $expectedResult = array(
   'is_error' => 0,
   'version' => 3,
   'count' => 1,
   'id' => 1,
-  'values' => array( 
-      '0' => array( 
-          'source_contact_id' => '17',
+  'values' => array(
+      '0' => array(
+          'source_contact_id' => '1',
           'id' => '1',
-          'activity_type_id' => '44',
+          'activity_type_id' => '46',
           'subject' => 'test activity type id',
           'location' => 'Pensulvania',
           'activity_date_time' => '2011-06-02 14:36:13',
@@ -45,7 +53,7 @@ function activity_get_expectedresult(){
     ),
 );
 
-  return $expectedResult  ;
+  return $expectedResult;
 }
 
 

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -66,13 +66,13 @@ function _civicrm_campaign_data(&$data, $enabled) {
   // Campaign's Name
   $data['civicrm_campaign']['name'] = array(
     'title' => t('Name'),
-    'help' => t('Campaing\'s name'),
+    'help' => t('Campaign\'s name'),
     'field' => array(
       'handler' => 'views_handler_field',
       'click sortable' => TRUE,
     ),
     'argument' => array(
-      'handler' => 'views_handler_argument',
+      'handler' => 'views_handler_argument_string',
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_string',
@@ -91,7 +91,7 @@ function _civicrm_campaign_data(&$data, $enabled) {
       'click sortable' => TRUE,
     ),
     'argument' => array(
-      'handler' => 'views_handler_argument',
+      'handler' => 'views_handler_argument_string',
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_string',
@@ -255,7 +255,7 @@ function _civicrm_campaign_data(&$data, $enabled) {
       'click sortable' => TRUE,
     ),
     'argument' => array(
-      'handler' => 'views_handler_argument',
+      'handler' => 'views_handler_argument_string',
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_string',

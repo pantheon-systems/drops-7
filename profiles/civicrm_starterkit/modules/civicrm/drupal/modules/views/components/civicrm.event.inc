@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -161,7 +161,7 @@ function _civicrm_event_data(&$data, $enabled) {
       'click sortable' => TRUE,
     ),
     'argument' => array(
-      'handler' => 'views_handler_argument',
+      'handler' => 'views_handler_argument_string',
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_string',
@@ -307,7 +307,7 @@ function _civicrm_event_data(&$data, $enabled) {
       'click sortable' => TRUE,
     ),
     'argument' => array(
-      'handler' => 'views_handler_argument',
+      'handler' => 'views_handler_argument_string',
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_string',
@@ -324,7 +324,7 @@ function _civicrm_event_data(&$data, $enabled) {
       'help' => t('Event -> Campaign'),
       'relationship' => array(
         'base' => 'civicrm_campaign',
-        'field' => 'id',
+        'base field' => 'id',
         'handler' => 'views_handler_relationship',
         'label' => t('Event -> Campaign'),
       ),
@@ -496,7 +496,7 @@ function _civicrm_event_data(&$data, $enabled) {
       'click sortable' => TRUE,
     ),
     'argument' => array(
-      'handler' => 'views_handler_argument',
+      'handler' => 'views_handler_argument_string',
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_string',
@@ -583,7 +583,7 @@ function _civicrm_event_data(&$data, $enabled) {
       'click sortable' => TRUE,
     ),
     'argument' => array(
-      'handler' => 'views_handler_argument',
+      'handler' => 'views_handler_argument_string',
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_string',
@@ -621,7 +621,7 @@ function _civicrm_event_data(&$data, $enabled) {
       'help' => t('Participant -> Campaign'),
       'relationship' => array(
         'base' => 'civicrm_campaign',
-        'field' => 'id',
+        'base field' => 'id',
         'handler' => 'views_handler_relationship',
         'label' => t('Participant -> Campaign'),
       ),

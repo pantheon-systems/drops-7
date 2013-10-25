@@ -1,9 +1,7 @@
 <?php
-// $Id$
-
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -58,6 +56,15 @@ class CRM_Report_Form_Contribute_Lybunt extends CRM_Report_Form {
       $date['minYear']++;
     }
 
+    // Check if CiviCampaign is a) enabled and b) has active campaigns
+    $config = CRM_Core_Config::singleton();
+    $campaignEnabled = in_array("CiviCampaign", $config->enableComponents);
+    if ($campaignEnabled) {
+      $getCampaigns = CRM_Campaign_BAO_Campaign::getPermissionedCampaigns(NULL, NULL, TRUE, FALSE, TRUE);
+      $this->activeCampaigns = $getCampaigns['campaigns'];
+      asort($this->activeCampaigns);
+    }
+
     $this->_columns = array(
       'civicrm_contact' =>
       array(
@@ -70,9 +77,19 @@ class CRM_Report_Form_Contribute_Lybunt extends CRM_Report_Form {
             'default' => TRUE,
             'required' => TRUE,
           ),
-		  'first_name' => array('title' => ts('First Name'),
+          'first_name' => array(
+            'title' => ts('First Name'),
           ),
-		  'last_name' => array('title' => ts('Last Name'),
+          'last_name' => array(
+            'title' => ts('Last Name'),
+          ),
+          'contact_type' =>
+          array(
+            'title' => ts('Contact Type'),
+          ),
+          'contact_sub_type' =>
+          array(
+            'title' => ts('Contact SubType'),
           ),
         ),
         'filters' =>
@@ -107,6 +124,9 @@ class CRM_Report_Form_Contribute_Lybunt extends CRM_Report_Form {
           ),
         ),
       ),
+    )
+    + $this->addAddressFields()
+    + array(
       'civicrm_contribution' =>
       array(
         'dao' => 'CRM_Contribute_DAO_Contribution',
@@ -172,6 +192,18 @@ class CRM_Report_Form_Contribute_Lybunt extends CRM_Report_Form {
       ),
     );
 
+    // If we have a campaign, build out the relevant elements
+    if ($campaignEnabled && !empty($this->activeCampaigns)) {
+      $this->_columns['civicrm_contribution']['fields']['campaign_id'] = array(
+        'title' => ts('Campaign'),
+        'default' => 'false',
+      );
+      $this->_columns['civicrm_contribution']['filters']['campaign_id'] = array('title' => ts('Campaign'),
+        'operatorType' => CRM_Report_Form::OP_MULTISELECT,
+        'options' => $this->activeCampaigns,
+      );
+    }
+
     $this->_tagFilter = TRUE;
     parent::__construct();
   }
@@ -230,13 +262,21 @@ class CRM_Report_Form_Contribute_Lybunt extends CRM_Report_Form {
         FROM  civicrm_contribution  {$this->_aliases['civicrm_contribution']}
               INNER JOIN civicrm_contact {$this->_aliases['civicrm_contact']}
                       ON {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_contribution']}.contact_id
-              {$this->_aclFrom}
+              {$this->_aclFrom}";
+
+    if ($this->isTableSelected('civicrm_email')) {
+      $this->_from .= "
               LEFT  JOIN civicrm_email  {$this->_aliases['civicrm_email']}
-                      ON {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_email']}.contact_id AND
-                         {$this->_aliases['civicrm_email']}.is_primary = 1
+                      ON {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_email']}.contact_id
+                     AND {$this->_aliases['civicrm_email']}.is_primary = 1";
+    }
+    if ($this->isTableSelected('civicrm_phone')) {
+      $this->_from .= "
               LEFT  JOIN civicrm_phone  {$this->_aliases['civicrm_phone']}
                       ON {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_phone']}.contact_id AND
-                         {$this->_aliases['civicrm_phone']}.is_primary = 1 ";
+                         {$this->_aliases['civicrm_phone']}.is_primary = 1";
+    }
+    $this->addAddressFromClause();
   }
 
   function where() {
@@ -421,6 +461,9 @@ class CRM_Report_Form_Contribute_Lybunt extends CRM_Report_Form {
   }
 
   function alterDisplay(&$rows) {
+    // custom code to alter rows
+    $entryFound = FALSE;
+
     foreach ($rows as $rowNum => $row) {
       //Convert Display name into link
       if (array_key_exists('civicrm_contact_sort_name', $row) &&
@@ -432,12 +475,29 @@ class CRM_Report_Form_Contribute_Lybunt extends CRM_Report_Form {
         );
         $rows[$rowNum]['civicrm_contact_sort_name_link'] = $url;
         $rows[$rowNum]['civicrm_contact_sort_name_hover'] = ts("View Contribution Details for this Contact.");
+        $entryFound = TRUE;
+      }
+
+      // convert campaign_id to campaign title
+      if (array_key_exists('civicrm_contribution_campaign_id', $row)) {
+        if ($value = $row['civicrm_contribution_campaign_id']) {
+          $rows[$rowNum]['civicrm_contribution_campaign_id'] = $this->activeCampaigns[$value];
+          $entryFound = TRUE;
+        }
+      }
+
+      $entryFound = $this->alterDisplayAddressFields($row, $rows, $rowNum, 'contribute/detail', 'List all contribution(s)') ? TRUE : $entryFound;
+
+      // skip looking further in rows, if first row itself doesn't
+      // have the column we need
+      if (!$entryFound) {
+        break;
       }
     }
   }
 
   // Override "This Year" $op options
-  static function getOperationPair($type = "string", $fieldName = NULL) {
+  function getOperationPair($type = "string", $fieldName = NULL) {
     if ($fieldName == 'yid') {
       return array('calendar' => ts('Is Calendar Year'), 'fiscal' => ts('Fiscal Year Starting'));
     }

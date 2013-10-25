@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -102,6 +102,15 @@ class CRM_Extension_System {
       // TODO: CRM_Extension_Container_Basic( /sites/$domain/modules
       // TODO: CRM_Extension_Container_Basic( /modules )
       // TODO: CRM_Extension_Container_Basic( /vendors )
+
+      // At time of writing, D6, D7, and WP support cmsRootPath() but J does not
+      $cmsRootPath = $config->userSystem->cmsRootPath();
+      if (NULL !== $cmsRootPath) {
+        $vendorPath = $cmsRootPath . DIRECTORY_SEPARATOR . 'vendor';
+        if (is_dir($vendorPath)) {
+          $containers['cmsvendor'] = new CRM_Extension_Container_Basic($vendorPath, $config->userFrameworkBaseURL  . DIRECTORY_SEPARATOR . 'vendor', $this->getCache(), 'cmsvendor');
+        }
+      }
 
       $this->fullContainer = new CRM_Extension_Container_Collection($containers, $this->getCache(), 'full');
     }

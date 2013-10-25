@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -99,11 +99,11 @@
       </creditCard>
     </payment>
    {if $invoiceNumber}
-   <order>  
+   <order>
      <invoiceNumber>{$invoiceNumber}</invoiceNumber>
      {if $name}<description>{$name}</description>{/if}
    </order>
-   {/if}  
+   {/if}
     <customer>
       <id>{$contactID}</id>
       <email>{$email}</email>

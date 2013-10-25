@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                               |
+ | CiviCRM version 4.4                                               |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -36,8 +36,7 @@ class civicrm_handler_field_phone extends civicrm_handler_field_location {
       if (!civicrm_initialize()) {
         return;
       }
-      require_once 'CRM/Core/PseudoConstant.php';
-      self::$_phoneType = CRM_Core_PseudoConstant::phoneType();
+      self::$_phoneType = CRM_Core_PseudoConstant::get('CRM_Core_DAO_Phone', 'phone_type_id');
     }
   }
 

@@ -1,14 +1,12 @@
 <?php
-
-
-
-/*
- 
+/**
+ * Test Generated example of using activity create API
+ * *
  */
 function activity_create_example(){
-$params = array( 
-  'source_contact_id' => 17,
-  'activity_type_id' => 40,
+$params = array(
+  'source_contact_id' => 1,
+  'activity_type_id' => '46',
   'subject' => 'test activity type id',
   'activity_date_time' => '2011-06-02 14:36:13',
   'status_id' => 2,
@@ -16,41 +14,47 @@ $params = array(
   'duration' => 120,
   'location' => 'Pensulvania',
   'details' => 'a test activity',
-  'version' => 3,
   'custom_1' => 'custom string',
 );
 
-  require_once 'api/api.php';
-  $result = civicrm_api( 'activity','create',$params );
-
-  return $result;
+try{
+  $result = civicrm_api3('activity', 'create', $params);
+}
+catch (CiviCRM_API3_Exception $e) {
+  // handle error here
+  $errorMessage = $e->getMessage();
+  $errorCode = $e->getErrorCode();
+  $errorData = $e->getExtraParams();
+  return array('error' => $errorMessage, 'error_code' => $errorCode, 'error_data' => $errorData);
 }
 
-/*
+return $result;
+}
+
+/**
  * Function returns array of result expected from previous function
  */
 function activity_create_expectedresult(){
 
-  $expectedResult = array( 
+  $expectedResult = array(
   'is_error' => 0,
   'version' => 3,
   'count' => 1,
   'id' => 1,
-  'values' => array( 
-      '1' => array( 
-          'id' => 1,
-          'source_contact_id' => 17,
+  'values' => array(
+      '1' => array(
+          'id' => '1',
           'source_record_id' => '',
-          'activity_type_id' => 40,
+          'activity_type_id' => '46',
           'subject' => 'test activity type id',
           'activity_date_time' => '20110602143613',
-          'duration' => 120,
+          'duration' => '120',
           'location' => 'Pensulvania',
           'phone_id' => '',
           'phone_number' => '',
           'details' => 'a test activity',
-          'status_id' => 2,
-          'priority_id' => 1,
+          'status_id' => '2',
+          'priority_id' => '1',
           'parent_id' => '',
           'is_test' => '',
           'medium_id' => '',
@@ -67,22 +71,28 @@ function activity_create_expectedresult(){
     ),
 );
 
-  return $expectedResult  ;
+  return $expectedResult;
 }
-
-
 
 
 /*
 * This example has been generated from the API test suite. The test that created it is called
-* 
-* testActivityCreateCustom and can be found in 
-* http://svn.civicrm.org/civicrm/branches/v3.4/tests/phpunit/CiviTest/api/v3/ActivityTest.php
-* 
-* You can see the outcome of the API tests at 
+*
+* testActivityCreateCustom and can be found in
+* http://svn.civicrm.org/civicrm/trunk/tests/phpunit/CiviTest/api/v3/ActivityTest.php
+*
+* You can see the outcome of the API tests at
 * http://tests.dev.civicrm.org/trunk/results-api_v3
+*
+* To Learn about the API read
+* http://book.civicrm.org/developer/current/techniques/api/
+*
 * and review the wiki at
 * http://wiki.civicrm.org/confluence/display/CRMDOC/CiviCRM+Public+APIs
+*
 * Read more about testing here
 * http://wiki.civicrm.org/confluence/display/CRM/Testing
+*
+* API Standards documentation:
+* http://wiki.civicrm.org/confluence/display/CRM/API+Architecture+Standards
 */

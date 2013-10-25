@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -90,8 +90,9 @@ function _civicrm_grant_data(&$data, $enabled) {
     'field' => array(
       'handler' => 'civicrm_handler_field_pseudo_constant',
       'click sortable' => TRUE,
-      'pseudo class' => 'CRM_Grant_PseudoConstant',
-      'pseudo method' => 'grantStatus',
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'get',
+      'dao class' => 'CRM_Grant_DAO_Grant',
     ),
     'argument' => array(
       'handler' => 'views_handler_argument',
@@ -99,8 +100,9 @@ function _civicrm_grant_data(&$data, $enabled) {
     'filter' => array(
       'handler' => 'civicrm_handler_filter_pseudo_constant',
       'allow empty' => TRUE,
-      'pseudo class' => 'CRM_Grant_PseudoConstant',
-      'pseudo method' => 'grantStatus',
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'get',
+      'dao class' => 'CRM_Grant_DAO_Grant',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
@@ -224,8 +226,9 @@ function _civicrm_grant_data(&$data, $enabled) {
     'field' => array(
       'handler' => 'civicrm_handler_field_pseudo_constant',
       'click sortable' => TRUE,
-      'pseudo class' => 'CRM_Grant_PseudoConstant',
-      'pseudo method' => 'grantType',
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'get',
+      'dao class' => 'CRM_Grant_DAO_Grant',
     ),
     'argument' => array(
       'handler' => 'views_handler_argument',
@@ -233,8 +236,9 @@ function _civicrm_grant_data(&$data, $enabled) {
     'filter' => array(
       'handler' => 'civicrm_handler_filter_pseudo_constant',
       'allow empty' => TRUE,
-      'pseudo class' => 'CRM_Grant_PseudoConstant',
-      'pseudo method' => 'grantType',
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'get',
+      'dao class' => 'CRM_Grant_DAO_Grant',
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',
@@ -313,7 +317,7 @@ function _civicrm_grant_data(&$data, $enabled) {
       'click sortable' => TRUE,
     ),
     'argument' => array(
-      'handler' => 'views_handler_argument',
+      'handler' => 'views_handler_argument_string',
     ),
     'filter' => array(
       'handler' => 'views_handler_filter_string',

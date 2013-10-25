@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -35,4 +35,4 @@
 
     showHideByValue(trigger_field_id, trigger_value, target_element_id, target_element_type, field_type, invert);
 
-</script>  
+</script>

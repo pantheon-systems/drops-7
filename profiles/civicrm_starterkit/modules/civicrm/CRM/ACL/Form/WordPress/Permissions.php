@@ -2,7 +2,7 @@
 
 /*
   +--------------------------------------------------------------------+
-  | CiviCRM version 4.3                                                |
+  | CiviCRM version 4.4                                                |
   +--------------------------------------------------------------------+
   | Copyright CiviCRM LLC (c) 2004-2013                                |
   +--------------------------------------------------------------------+
@@ -159,19 +159,7 @@ class CRM_ACL_Form_WordPress_Permissions extends CRM_Core_Form {
   static function getPermissionArray(){
     global $civicrm_root;
 
-    $permissions = CRM_Core_Permission::getCorePermissions();
-    $crmFolderDir = $civicrm_root . DIRECTORY_SEPARATOR . 'CRM';
-
-    $components = CRM_Core_Component::getComponentsFromFile($crmFolderDir);
-    foreach ($components as $comp) {
-      $perm = $comp->getPermissions();
-      if ($perm) {
-        $info = $comp->getInfo();
-        foreach ($perm as $p) {
-          $permissions[$p] = $info['translatedName'] . ': ' . $p;
-        }
-      }
-    }
+    $permissions = CRM_Core_Permission::basicPermissions();
 
     $perms_array = array();
     foreach ($permissions as $perm => $title) {

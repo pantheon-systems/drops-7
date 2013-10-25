@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -110,10 +110,11 @@
         </tr>
         <tr>
             <td>{$form.is_opt_out.html} {$form.is_opt_out.label} {help id="id-optOut" file="CRM/Contact/Form/Contact.hlp"}</td>
-            <td>{$form.preferred_mail_format.label} &nbsp;
-                {$form.preferred_mail_format.html} {help id="id-emailFormat" file="CRM/Contact/Form/Contact.hlp"}
-            </td>
-
+            {if !empty($form.preferred_mail_format)}
+                <td>{$form.preferred_mail_format.label} &nbsp;
+                    {$form.preferred_mail_format.html} {help id="id-emailFormat" file="CRM/Contact/Form/Contact.hlp"}
+                </td>
+            {/if}
         </tr>
     </table>
  </div><!-- /.crm-accordion-body -->

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -136,6 +136,16 @@ class CRM_Extension_Container_Basic implements CRM_Extension_Container_Interface
    * {@inheritdoc}
    */
   public function getResUrl($key) {
+    if (! $this->baseUrl) {
+      CRM_Core_Session::setStatus(
+        ts('Failed to determine URL for extension (%1). Please update <a href="%2">Resource URLs</a>.',
+          array(
+            1 => $key,
+            2 => CRM_Utils_System::url('civicrm/admin/setting/url', 'reset=1'),
+          )
+        )
+      );
+    }
     return $this->baseUrl . $this->getRelUrl($key);
   }
 

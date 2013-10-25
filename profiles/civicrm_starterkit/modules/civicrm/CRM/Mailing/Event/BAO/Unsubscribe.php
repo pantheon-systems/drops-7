@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -131,9 +131,9 @@ WHERE  email = %2
     $transaction = new CRM_Core_Transaction();
 
     $do = new CRM_Core_DAO();
-    $mgObject = new CRM_Mailing_DAO_Group();
+    $mgObject = new CRM_Mailing_DAO_MailingGroup();
     $mg = $mgObject->getTableName();
-    $jobObject = new CRM_Mailing_BAO_Job();
+    $jobObject = new CRM_Mailing_BAO_MailingJob();
     $job = $jobObject->getTableName();
     $mailingObject = new CRM_Mailing_BAO_Mailing();
     $mailing = $mailingObject->getTableName();
@@ -295,7 +295,7 @@ WHERE  email = %2
     $config = CRM_Core_Config::singleton();
     $domain = CRM_Core_BAO_Domain::getDomain();
 
-    $jobObject = new CRM_Mailing_BAO_Job();
+    $jobObject = new CRM_Mailing_BAO_MailingJob();
     $jobTable = $jobObject->getTableName();
     $mailingObject = new CRM_Mailing_DAO_Mailing();
     $mailingTable = $mailingObject->getTableName();
@@ -423,7 +423,7 @@ WHERE  email = %2
     $queue = $queueObject->getTableName();
     $mailingObject = new CRM_Mailing_BAO_Mailing();
     $mailing = $mailingObject->getTableName();
-    $jobObject = new CRM_Mailing_BAO_Job();
+    $jobObject = new CRM_Mailing_BAO_MailingJob();
     $job = $jobObject->getTableName();
 
     $query = "
@@ -486,7 +486,7 @@ WHERE  email = %2
     $queue = $queueObject->getTableName();
     $mailingObject = new CRM_Mailing_BAO_Mailing();
     $mailing = $mailingObject->getTableName();
-    $jobObject = new CRM_Mailing_BAO_Job();
+    $jobObject = new CRM_Mailing_BAO_MailingJob();
     $job = $jobObject->getTableName();
     $contactObject = new CRM_Contact_BAO_Contact();
     $contact = $contactObject->getTableName();
@@ -528,6 +528,7 @@ WHERE  email = %2
     $orderBy = "sort_name ASC, {$unsub}.time_stamp DESC";
     if ($sort) {
       if (is_string($sort)) {
+        $sort = CRM_Utils_Type::escape($sort, 'String');
         $orderBy = $sort;
       }
       else {

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -112,7 +112,7 @@
     {/if}
     {foreach from=$note item="rec"}
       {if $rec }
-            <tr><td class="label">{ts}Note{/ts}</td><td>{$rec}</td></tr>
+            <tr><td class="label">{ts}Note{/ts}</td><td>{$rec|nl2br}</td></tr>
       {/if}
     {/foreach}
     </table>

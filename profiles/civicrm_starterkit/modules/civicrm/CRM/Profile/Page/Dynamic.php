@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -98,7 +98,7 @@ class CRM_Profile_Page_Dynamic extends CRM_Core_Page {
   protected $_multiRecord = NULL;
 
   protected $_recordId = NULL;
-  
+
   /*
    * fetch multirecord as well as non-multirecord fields
    */
@@ -130,21 +130,21 @@ class CRM_Profile_Page_Dynamic extends CRM_Core_Page {
     if (!array_key_exists('allFields', $_GET)) {
       $this->set('allFields', NULL);
     }
-    
+
     //specifies the action being done on a multi record field
     $multiRecordAction = CRM_Utils_Request::retrieve('multiRecord', 'String', $this);
-    
-    $this->_multiRecord = (!is_numeric($multiRecordAction)) ? 
+
+    $this->_multiRecord = (!is_numeric($multiRecordAction)) ?
       CRM_Core_Action::resolve($multiRecordAction) : $multiRecordAction;
     if ($this->_multiRecord) {
       $this->set('multiRecord', $this->_multiRecord);
     }
-  
+
     if ($this->_multiRecord & CRM_Core_Action::VIEW) {
       $this->_recordId  = CRM_Utils_Request::retrieve('recordId', 'Positive', $this);
       $this->_allFields = CRM_Utils_Request::retrieve('allFields', 'Integer', $this);
     }
-    
+
     if ($profileIds) {
       $this->_profileIds = $profileIds;
     }
@@ -333,6 +333,8 @@ class CRM_Profile_Page_Dynamic extends CRM_Core_Page {
     }
 
     $name = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_UFGroup', $this->_gid, 'name');
+    $this->assign('ufGroupName', $name);
+    CRM_Utils_Hook::viewProfile($name);
 
     if (strtolower($name) == 'summary_overlay') {
       $template->assign('overlayProfile', TRUE);
@@ -369,7 +371,7 @@ class CRM_Profile_Page_Dynamic extends CRM_Core_Page {
     // invoke the pagRun hook, CRM-3906
     CRM_Utils_Hook::pageRun($this);
 
-    return trim($template->fetch($this->getTemplateFileName()));
+    return trim($template->fetch($this->getHookedTemplateFileName()));
   }
 
   function checkTemplateFileExists($suffix = '') {

@@ -1,9 +1,9 @@
 The following patches have been applied to this project:
-- http://drupal.org/files/1978142-pantheon-settings-12.patch
+- https://drupal.org/files/2082713-pantheon-settings-4-4-2.patch
 - http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
 - http://drupal.org/files/1940074-openFlashChart_tpl_javascript-4.patch
 - http://drupal.org/files/1967972-bootsrap-fixes.patch
-- https://drupal.org/files/2063371-add-modulePath-var.patch
+- https://drupal.org/files/2063371-add-modulePath-var-4-4.patch
 - http://drupal.org/files/1978796-session.save-as_file.patch
 - http://drupal.org/files/1978838-pre-populate-db-settings.patch
 - http://drupal.org/files/1849424-use-vars-in-link.patch

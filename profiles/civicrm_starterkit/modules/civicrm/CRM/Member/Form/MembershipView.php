@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -100,28 +100,30 @@ class CRM_Member_Form_MembershipView extends CRM_Core_Form {
         $id = CRM_Utils_Request::retrieve('mid', 'Positive', $this);
         $relatedContactId = CRM_Utils_Request::retrieve('cid', 'Positive', $this);
         $relatedDisplayName = CRM_Contact_BAO_Contact::displayName($relatedContactId);
-        CRM_Member_BAO_Membership::deleteMembership($id);
-        CRM_Core_Session::setStatus(ts('Related membership for %1 has been deleted.', array(1 => $relatedDisplayName)), ts('Membership Deleted'), 'success');
+        CRM_Member_BAO_Membership::del($id);
+        CRM_Core_Session::setStatus(ts('Related membership for %1 has been deleted.', array(1 => $relatedDisplayName)),
+          ts('Membership Deleted'), 'success');
         break;
       case 'create':
         $ids = array();
         $params = array(
-          'contact_id'           => CRM_Utils_Request::retrieve('rid', 'Positive', $this),
-          'membership_type_id'   => $owner['membership_type_id'],
-          'owner_membership_id'  => $owner['id'],
-          'join_date'            => CRM_Utils_Date::processDate($owner['join_date'], NULL, TRUE, 'Ymd'),
-          'start_date'           => CRM_Utils_Date::processDate($owner['start_date'], NULL, TRUE, 'Ymd'),
-          'end_date'             => CRM_Utils_Date::processDate($owner['end_date'], NULL, TRUE, 'Ymd'),
-          'source'               => ts('Manual Assignment of Related Membership'),
-          'is_test'              => $owner['is_test'],
-          'campaign_id'          => CRM_Utils_Array::value('campaign_id', $owner),
-          'status_id'            => $owner['status_id'],
-          'skipStatusCal'        => TRUE,
-          'createActivity'       => TRUE,
+          'contact_id' => CRM_Utils_Request::retrieve('rid', 'Positive', $this),
+          'membership_type_id' => $owner['membership_type_id'],
+          'owner_membership_id' => $owner['id'],
+          'join_date' => CRM_Utils_Date::processDate($owner['join_date'], NULL, TRUE, 'Ymd'),
+          'start_date' => CRM_Utils_Date::processDate($owner['start_date'], NULL, TRUE, 'Ymd'),
+          'end_date' => CRM_Utils_Date::processDate($owner['end_date'], NULL, TRUE, 'Ymd'),
+          'source' => ts('Manual Assignment of Related Membership'),
+          'is_test' => $owner['is_test'],
+          'campaign_id' => CRM_Utils_Array::value('campaign_id', $owner),
+          'status_id' => $owner['status_id'],
+          'skipStatusCal' => TRUE,
+          'createActivity' => TRUE,
         );
         CRM_Member_BAO_Membership::create($params, $ids);
         $relatedDisplayName = CRM_Contact_BAO_Contact::displayName($params['contact_id']);
-        CRM_Core_Session::setStatus(ts('Related membership for %1 has been created.', array(1 => $relatedDisplayName)), ts('Membership Added'), 'success');
+        CRM_Core_Session::setStatus(ts('Related membership for %1 has been created.', array(1 => $relatedDisplayName)),
+          ts('Membership Added'), 'success');
         break;
       default:
         CRM_Core_Error::fatal(ts("Invalid action specified in URL"));
@@ -164,7 +166,11 @@ class CRM_Member_Form_MembershipView extends CRM_Core_Form {
       }
 
       // build associated contributions
-      CRM_Member_Page_Tab::associatedContribution($values['contact_id'], $id);
+      $this->assign('accessContribution', FALSE);
+      if (CRM_Core_Permission::access('CiviContribute')) {
+        $this->assign('accessContribution', TRUE);
+        CRM_Member_Page_Tab::associatedContribution($values['contact_id'], $id);
+      }
 
       //Provide information about membership source when it is the result of a relationship (CRM-1901)
       $values['owner_membership_id'] = CRM_Core_DAO::getFieldValue('CRM_Member_DAO_Membership',
@@ -190,11 +196,11 @@ class CRM_Member_Form_MembershipView extends CRM_Core_Form {
         $relTypeIds = str_replace(CRM_Core_DAO::VALUE_SEPARATOR, ",", $membershipType['relationship_type_id']);
         $sql = "
 SELECT relationship_type_id,
-  CASE    
+  CASE
   WHEN  contact_id_a = {$values['owner_contact_id']} AND contact_id_b = {$values['contact_id']} THEN 'b_a'
   WHEN  contact_id_b = {$values['owner_contact_id']} AND contact_id_a = {$values['contact_id']} THEN 'a_b'
 END AS 'relType'
-  FROM civicrm_relationship 
+  FROM civicrm_relationship
  WHERE relationship_type_id IN ($relTypeIds)";
         $dao = CRM_Core_DAO::executeQuery($sql);
         $values['relationship'] = NULL;
@@ -217,7 +223,8 @@ END AS 'relType'
       $this->assign('has_related', FALSE);
       // if membership can be granted, and we are the owner of the membership
       if (CRM_Utils_Array::value('relationship_type_id', $membershipType)
-          && !CRM_Utils_Array::value('owner_membership_id', $values)) {
+        && !CRM_Utils_Array::value('owner_membership_id', $values)
+      ) {
         // display related contacts/membership block
         $this->assign('has_related', TRUE);
         $this->assign('max_related', CRM_Utils_Array::value('max_related', $values, ts('Unlimited')));
@@ -238,24 +245,38 @@ SELECT r.id, c.id as cid, c.display_name as name, c.job_title as comment,
   FROM civicrm_relationship r
   LEFT JOIN civicrm_relationship_type rt ON rt.id = r.relationship_type_id
   LEFT JOIN civicrm_contact c ON c.id = r.contact_id_x
-  LEFT JOIN civicrm_membership m ON (m.owner_membership_id = {$values['id']} AND m.contact_id = r.contact_id_x AND m.is_test = 0)
+  LEFT JOIN civicrm_membership m ON (m.owner_membership_id = {$values['id']}
+  AND m.contact_id = r.contact_id_x AND m.is_test = 0)
   LEFT JOIN civicrm_membership_status ms ON ms.id = m.status_id
  WHERE r.contact_id_y = {$values['contact_id']} AND r.is_active = 1  AND c.is_deleted = 0";
         $query = '';
-        foreach (array('a', 'b') as $dir ) {
-          if (CRM_Utils_Array::value($dir, $relTypeDir)) {
+        foreach (array('a', 'b') as $dir) {
+          if (isset($relTypeDir[$dir])) {
             $query .= ($query ? ' UNION ' : '')
-              . str_replace('_y', '_'.$dir, str_replace('_x', '_'.($dir=='a'?'b':'a'), $select))
-              . ' AND r.relationship_type_id IN (' . implode(',', $relTypeDir[$dir]) .')';
+              . str_replace('_y', '_' . $dir, str_replace('_x', '_' . ($dir == 'a' ? 'b' : 'a'), $select))
+              . ' AND r.relationship_type_id IN (' . implode(',', $relTypeDir[$dir]) . ')';
           }
         }
         $query .= " ORDER BY is_current_member DESC";
         $dao = CRM_Core_DAO::executeQuery($query);
         $related = array();
         $relatedRemaining = CRM_Utils_Array::value('max_related', $values, PHP_INT_MAX);
+        $rowElememts = array(
+          'id',
+          'cid',
+          'name',
+          'comment',
+          'relation',
+          'mid',
+          'start_date',
+          'end_date',
+          'is_current_member',
+          'status'
+        );
+
         while ($dao->fetch()) {
           $row = array();
-          foreach (array('id', 'cid', 'name', 'comment', 'relation', 'mid', 'start_date', 'end_date', 'is_current_member', 'status') as $field) {
+          foreach ($rowElememts as $field) {
             $row[$field] = $dao->$field;
           }
           if ($row['mid'] && ($row['is_current_member'] == 1)) {
@@ -267,7 +288,9 @@ SELECT r.id, c.id as cid, c.display_name as name, c.job_title as comment,
                 'mid' => $row['mid'],
               )
             );
-          } else if ($relatedRemaining > 0) {
+          }
+          else {
+            if ($relatedRemaining > 0) {
               $row['action'] = CRM_Core_Action::formLink(self::links(), CRM_Core_Action::ADD,
                 array(
                   'id' => CRM_Utils_Request::retrieve('id', 'Positive', $this),
@@ -275,30 +298,35 @@ SELECT r.id, c.id as cid, c.display_name as name, c.job_title as comment,
                   'rid' => $row['cid'],
                 )
               );
+            }
           }
           $related[] = $row;
         }
         $this->assign('related', $related);
         if ($relatedRemaining <= 0) {
           $this->assign('related_text', ts('None available'));
-        } else if ($relatedRemaining < 100000) {
-          $this->assign('related_text', ts('%1 available', array(1 => $relatedRemaining)));
-        } else {
-          $this->assign('related_text', ts('Unlimited', array(1 => $relatedRemaining)));
+        }
+        else {
+          if ($relatedRemaining < 100000) {
+            $this->assign('related_text', ts('%1 available', array(1 => $relatedRemaining)));
+          }
+          else {
+            $this->assign('related_text', ts('Unlimited', array(1 => $relatedRemaining)));
+          }
         }
       }
 
       $displayName = CRM_Contact_BAO_Contact::displayName($values['contact_id']);
       $this->assign('displayName', $displayName);
-      
+
       // Check if this is default domain contact CRM-10482
       if (CRM_Contact_BAO_Contact::checkDomainContact($values['contact_id'])) {
         $displayName .= ' (' . ts('default organization') . ')';
       }
 
-      // omitting contactImage from title for now since the summary overlay css doesn't work outside of our crm-container
-      CRM_Utils_System::setTitle(ts('View Membership for') .  ' ' . $displayName);
-      
+      // omitting contactImage from title for now since the summary overlay css doesn't work outside crm-container
+      CRM_Utils_System::setTitle(ts('View Membership for') . ' ' . $displayName);
+
       // add viewed membership to recent items list
       $recentTitle = $displayName . ' - ' . ts('Membership Type:') . ' ' . $values['membership_type'];
       $url = CRM_Utils_System::url('civicrm/contact/view/membership',
@@ -325,7 +353,7 @@ SELECT r.id, c.id as cid, c.display_name as name, c.job_title as comment,
         $recentOther
       );
 
-      CRM_Member_Page_Tab::setContext($values['contact_id']);
+      CRM_Member_Page_Tab::setContext($this, $values['contact_id']);
 
       $memType = CRM_Core_DAO::getFieldValue("CRM_Member_DAO_Membership", $id, "membership_type_id");
 

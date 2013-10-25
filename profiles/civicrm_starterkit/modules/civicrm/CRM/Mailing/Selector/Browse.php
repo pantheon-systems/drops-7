@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -107,7 +107,7 @@ class CRM_Mailing_Selector_Browse extends CRM_Core_Selector_Base implements CRM_
    */
   function &getColumnHeaders($action = NULL, $output = NULL) {
     $mailing = CRM_Mailing_BAO_Mailing::getTableName();
-    $job = CRM_Mailing_BAO_Job::getTableName();
+    $job = CRM_Mailing_BAO_MailingJob::getTableName();
     if (!isset(self::$_columnHeaders)) {
       $completedOrder = NULL;
 
@@ -191,7 +191,7 @@ class CRM_Mailing_Selector_Browse extends CRM_Core_Selector_Base implements CRM_
    * @access public
    */
   function getTotalCount($action) {
-    $job        = CRM_Mailing_BAO_Job::getTableName();
+    $job        = CRM_Mailing_BAO_MailingJob::getTableName();
     $mailing    = CRM_Mailing_BAO_Mailing::getTableName();
     $mailingACL = CRM_Mailing_BAO_Mailing::mailingACL();
 
@@ -374,7 +374,8 @@ LEFT JOIN  civicrm_contact scheduledContact ON ( $mailing.scheduled_id = schedul
           }
         }
 
-        if ($row['status'] == 'Complete' && !$row['archived']) {
+        if (in_array($row['status'], array('Complete', 'Canceled')) && 
+          !$row['archived']) {
           if ($allAccess || $showCreateLinks) {
             $actionMask |= CRM_Core_Action::RENEW;
           }
@@ -389,7 +390,7 @@ LEFT JOIN  civicrm_contact scheduledContact ON ( $mailing.scheduled_id = schedul
           $actionMask = CRM_Core_Action::ADD;
         }
         //get status strings as per locale settings CRM-4411.
-        $rows[$key]['status'] = CRM_Mailing_BAO_Job::status($row['status']);
+        $rows[$key]['status'] = CRM_Mailing_BAO_MailingJob::status($row['status']);
 
         $rows[$key]['action'] = CRM_Core_Action::formLink($actionLinks,
           $actionMask,
@@ -432,9 +433,9 @@ LEFT JOIN  civicrm_contact scheduledContact ON ( $mailing.scheduled_id = schedul
 
   function whereClause(&$params, $sortBy = TRUE) {
     $values = $clauses = array();
+    $isFormSubmitted   = $this->_parent->get('hidden_find_mailings');
 
     $title = $this->_parent->get('mailing_name');
-
     if ($title) {
       $clauses[] = 'name LIKE %1';
       if (strpos($title, '%') !== FALSE) {
@@ -445,59 +446,85 @@ LEFT JOIN  civicrm_contact scheduledContact ON ( $mailing.scheduled_id = schedul
       }
     }
 
-
+    $dateClause1 = $dateClause2 = array();
     $from = $this->_parent->get('mailing_from');
     if (!CRM_Utils_System::isNull($from)) {
-      $dateClause1[] = 'civicrm_mailing_job.start_date >= %2';
-      $dateClause2[] = 'civicrm_mailing_job.scheduled_date >= %2';
-      $params[2]     = array($from, 'String');
+      if ($this->_parent->get('unscheduled')) {
+        $dateClause1[] = 'civicrm_mailing.created_date >= %2';
+      }
+      else {
+        $dateClause1[] = 'civicrm_mailing_job.start_date >= %2';
+        $dateClause2[] = 'civicrm_mailing_job.scheduled_date >= %2';
+      }
+      $params[2] = array($from, 'String');
     }
 
     $to = $this->_parent->get('mailing_to');
     if (!CRM_Utils_System::isNull($to)) {
-      $dateClause1[] = 'civicrm_mailing_job.start_date <= %3';
-      $dateClause2[] = 'civicrm_mailing_job.scheduled_date <= %3';
+      if ($this->_parent->get('unscheduled')) {
+        $dateClause1[] = ' civicrm_mailing.created_date <= %3 ';
+      }
+      else {
+        $dateClause1[] = 'civicrm_mailing_job.start_date <= %3';
+        $dateClause2[] = 'civicrm_mailing_job.scheduled_date <= %3';
+      }
       $params[3]     = array($to, 'String');
     }
 
+    $dateClauses = array();
     if (!empty($dateClause1)) {
-      $dateClause1[] = "civicrm_mailing_job.status IN ('Complete', 'Running')";
-      $dateClause2[] = "civicrm_mailing_job.status IN ('Scheduled')";
-      $dateClause1   = implode(' AND ', $dateClause1);
-      $dateClause2   = implode(' AND ', $dateClause2);
-      $clauses[]     = "( ({$dateClause1}) OR ({$dateClause2}) )";
+      $dateClauses[] = implode(' AND ', $dateClause1);
     }
-
-    if ($this->_parent->get('unscheduled')) {
-      $clauses[] = "civicrm_mailing_job.status is null";
-      $clauses[] = "civicrm_mailing.scheduled_id IS NULL";
+    if (!empty($dateClause2)) {
+      $dateClauses[] = implode(' AND ', $dateClause2);
     }
-
-    if ($this->_parent->get('archived')) {
-      // CRM-6446: archived view should also show cancelled mailings
-      $clauses[] = "(civicrm_mailing.is_archived = 1 OR civicrm_mailing_job.status = 'Canceled')";
+    $dateClauses = implode(' OR ', $dateClauses);
+    if (!empty($dateClauses)) {
+      $clauses[] = "({$dateClauses})";
     }
 
     if ($this->_parent->get('sms')) {
-      $clauses[] = "(civicrm_mailing.sms_provider_id IS NOT NULL)";
+      $clauses[] = "civicrm_mailing.sms_provider_id IS NOT NULL";
     }
     else {
-      $clauses[] = "(civicrm_mailing.sms_provider_id IS NULL)";
+      $clauses[] = "civicrm_mailing.sms_provider_id IS NULL";
     }
 
-    // CRM-4290, do not show archived or unscheduled mails
-    // on 'Scheduled and Sent Mailing' page selector
-    if ($this->_parent->get('scheduled')) {
-      $clauses[] = "civicrm_mailing.scheduled_id IS NOT NULL";
-      $clauses[] = "( civicrm_mailing.is_archived IS NULL OR civicrm_mailing.is_archived = 0 )";
-      $status    = $this->_parent->get('mailing_status');
-      if (!empty($status)) {
-        $status    = array_keys($status);
-        $status    = implode("','", $status);
-        $clauses[] = "civicrm_mailing_job.status IN ('$status')";
-      }
-      else {
-        $clauses[] = "civicrm_mailing_job.status IN ('Scheduled', 'Complete', 'Running')";
+    // get values submitted by form
+    $isDraft       = $this->_parent->get('status_unscheduled');
+    $isArchived    = $this->_parent->get('is_archived');
+    $mailingStatus = $this->_parent->get('mailing_status');
+
+    if (!$isFormSubmitted && $this->_parent->get('scheduled')) {
+      // mimic default behavior for scheduled screen
+      $isArchived = 0;
+      $mailingStatus = array('Scheduled' => 1, 'Complete' => 1, 'Running' => 1, 'Canceled' => 1);
+    }
+    if (!$isFormSubmitted && $this->_parent->get('archived')) {
+      // mimic default behavior for archived screen
+      $isArchived = 1;
+    }
+    if (!$isFormSubmitted && $this->_parent->get('unscheduled')) {
+      // mimic default behavior for draft screen
+      $isDraft = 1;
+    }
+
+    $statusClauses = array();
+    if ($isDraft) {
+      $statusClauses[] = "civicrm_mailing.scheduled_id IS NULL";
+    }
+    if (!empty($mailingStatus)) {
+      $statusClauses[] = "civicrm_mailing_job.status IN ('" . implode("', '", array_keys($mailingStatus)) . "')";
+    }
+    if (!empty($statusClauses)) {
+      $clauses[] = "(" . implode(' OR ', $statusClauses) . ")";
+    }
+
+    if (isset($isArchived)) {
+      if ($isArchived) {
+        $clauses[] = "civicrm_mailing.is_archived = 1";
+      } else {
+        $clauses[] = "(civicrm_mailing.is_archived IS NULL OR civicrm_mailing.is_archived = 0)";
       }
     }
 

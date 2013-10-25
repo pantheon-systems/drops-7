@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -536,12 +536,12 @@ class CRM_Pledge_BAO_Query {
 
   static function buildSearchForm(&$form) {
     // pledge related dates
-    CRM_Core_Form_Date::buildDateRange($form, 'pledge_start_date', 1, '_low', '_high', ts('From'), FALSE, FALSE);
-    CRM_Core_Form_Date::buildDateRange($form, 'pledge_end_date', 1, '_low', '_high', ts('From'), FALSE, FALSE);
-    CRM_Core_Form_Date::buildDateRange($form, 'pledge_create_date', 1, '_low', '_high', ts('From'), FALSE, FALSE);
+    CRM_Core_Form_Date::buildDateRange($form, 'pledge_start_date', 1, '_low', '_high', ts('From'), FALSE);
+    CRM_Core_Form_Date::buildDateRange($form, 'pledge_end_date', 1, '_low', '_high', ts('From'), FALSE);
+    CRM_Core_Form_Date::buildDateRange($form, 'pledge_create_date', 1, '_low', '_high', ts('From'), FALSE);
 
     // pledge payment related dates
-    CRM_Core_Form_Date::buildDateRange($form, 'pledge_payment_date', 1, '_low', '_high', ts('From'), FALSE, FALSE);
+    CRM_Core_Form_Date::buildDateRange($form, 'pledge_payment_date', 1, '_low', '_high', ts('From'), FALSE);
 
     $form->addYesNo('pledge_test', ts('Pledge is a Test?'));
     $form->add('text', 'pledge_amount_low', ts('From'), array('size' => 8, 'maxlength' => 8));
@@ -589,7 +589,7 @@ class CRM_Pledge_BAO_Query {
 
     //add fields for pledge frequency
     $form->add('text', 'pledge_frequency_interval', ts('Every'), array('size' => 8, 'maxlength' => 8));
-
+    $form->addRule('pledge_frequency_interval', ts('Please enter valid Pledge Frequency Interval'), 'integer');
     $frequencies = CRM_Core_OptionGroup::values('recur_frequency_units');
     foreach ($frequencies as $val => $label) {
       $freqUnitsDisplay["'{$val}'"] = ts('%1(s)', array(1 => $label));

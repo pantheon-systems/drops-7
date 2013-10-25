@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -278,7 +278,8 @@ function selectCreateOrg( orgOption, reset ) {
     cj('#onbehalf_organization_name').autocomplete( dataUrl,
       { width         : 180,
         selectFirst   : false,
-        matchContains : true
+        matchContains : true,
+        max: {/literal}{crmSetting name="search_autocomplete_count" group="Search Preferences"}{literal}
       }).result( function( event, data, formatted ) {
         cj('#onbehalf_organization_name').val( data[0] );
         cj('#onbehalfof_id').val( data[1] );

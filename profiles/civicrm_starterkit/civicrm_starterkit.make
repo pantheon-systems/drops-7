@@ -13,14 +13,14 @@ projects[drupal][version] = "7.23"
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-;libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.alpha3-starterkit.tgz"
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.7-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.0-starterkit.tgz"
+;libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.7-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
 
 ;PATCHES THAT CHANGED BETWEEN 4.3 and 4.4
-;libraries[civicrm][patch][1978142] = https://drupal.org/files/2082713-pantheon-settings-4-4.patch
-libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-12.patch
+libraries[civicrm][patch][1978142] = https://drupal.org/files/2082713-pantheon-settings-4-4-2.patch
+;libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-12.patch
 
 ;PATCHES THAT SHOULD BE ADDRESSED IN FUTURE CIVICRM RELEASES
 libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
@@ -28,7 +28,7 @@ libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashCh
 libraries[civicrm][patch][1967972] = http://drupal.org/files/1967972-bootsrap-fixes.patch
 
 ;PANTHEON RELATED PATCHES
-libraries[civicrm][patch][2063371] = https://drupal.org/files/2063371-add-modulePath-var.patch
+libraries[civicrm][patch][2063371] = https://drupal.org/files/2063371-add-modulePath-var-4-4.patch
 libraries[civicrm][patch][1978796] = http://drupal.org/files/1978796-session.save-as_file.patch
 libraries[civicrm][patch][1978838] = http://drupal.org/files/1978838-pre-populate-db-settings.patch
 
@@ -42,7 +42,7 @@ libraries[jquery][download][url] = "http://code.jquery.com/jquery-1.8.3.min.js"
 libraries[jquery][destination] = "modules/civicrm/packages"
 libraries[jquery][directory_name] = jquery
 libraries[jquery][download][filename] = jquery-1.8.3.min.js
-libraries[jquery][patch][1787976] = http://drupal.org/files/1787976-jquery-missing-files-12.patch
+libraries[jquery][patch][1787976] = http://drupal.org/files/1787976-jquery-missing-files-13.patch
 libraries[jquery][patch][] = http://drupal.org/files/1787976-updated-fo-4-3-3.patch
 libraries[jquery][patch][] = http://drupal.org/files/textarearesizer-4.patch
 ; JQuery Notify and Validate were whitelisted
@@ -311,6 +311,13 @@ libraries[phpids_log_interface][download][filename] = Interface.php
 libraries[phpids_log_interface][directory_name] = Log
 libraries[phpids_log_interface][destination] = "modules/civicrm/packages/IDS"
 
+; This file is added to create the sites/all/extensions directory
+libraries[cache][download][type] = get
+libraries[cache][download][url] = "https://raw.github.com/PHPIDS/PHPIDS/master/README.md"
+libraries[cache][download][filename] = timestamp.txt
+libraries[cache][destination] = extensions
+libraries[cache][patch][1980088] = https://drupal.org/files/1980088-create-extensions-dir-4.patch
+
 libraries[htmlpurifier][download][type] = get
 libraries[htmlpurifier][download][url] = "http://repo.or.cz/w/htmlpurifier.git/snapshot/33a1efbb2d6e234c0143523e9273afec8b84ce8d.tar.gz"
 libraries[htmlpurifier][destination] = "modules/civicrm/packages/IDS/vendors"
@@ -353,7 +360,7 @@ projects[captcha][subdir] = "contrib"
 projects[captcha][version] = "1.0"
 
 projects[features][subdir] = "contrib"
-projects[features][version] = "2.0-rc3"
+projects[features][version] = "2.0"
 
 projects[fontyourface][subdir] = "contrib"
 projects[fontyourface][version] = "2.8"
@@ -366,6 +373,9 @@ projects[imce_wysiwyg][version] = "1.0"
 
 projects[libraries][subdir] = "contrib"
 projects[libraries][version] = "2.1"
+
+projects[module_filter][subdir] = "contrib"
+projects[module_filter][version] = "1.8"
 
 projects[profile_switcher][subdir] = "contrib"
 projects[profile_switcher][version] = "1.0-alpha1"

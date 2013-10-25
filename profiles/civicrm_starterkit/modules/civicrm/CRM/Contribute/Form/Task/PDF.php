@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -223,7 +223,7 @@ AND    {$this->_componentClause}";
       $input['trxn_id']    = $contribution->trxn_id;
       $input['trxn_date']  = isset($contribution->trxn_date) ? $contribution->trxn_date : NULL;
 
-      // CRM_Contribute_BAO_Contribution::composeMessageArray expects mysql formatted date     
+      // CRM_Contribute_BAO_Contribution::composeMessageArray expects mysql formatted date
       $objects['contribution']->receive_date = CRM_Utils_Date::isoToMysql($objects['contribution']->receive_date);
 
       // CRM_Core_Error::debug('input',$input);

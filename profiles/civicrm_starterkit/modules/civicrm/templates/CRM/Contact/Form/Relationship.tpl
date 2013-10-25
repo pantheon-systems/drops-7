@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -168,7 +168,7 @@
                         var relContact = cj('#contact_1');
                         if ( relType ) {
                              var dataUrl = {/literal}'{crmURL p="civicrm/ajax/rest" h=0 q="className=CRM_Contact_Page_AJAX&fnName=getContactList&json=1&context=relationship&rel="}'{literal} + relType;
-                             relContact.autocomplete( dataUrl, { width : 180, selectFirst : false, matchContains: true });
+                             relContact.autocomplete( dataUrl, { width : 200, selectFirst : false, matchContains: true, max: {/literal}{crmSetting name="search_autocomplete_count" group="Search Preferences"}{literal} });
                              relContact.result(function( event, data ) {
                                 cj("input[name='contact_select_id[1]']").val(data[1]);
                                 cj('#relationship-refresh-save').show( );
@@ -185,10 +185,10 @@
                         var postUrl = "{/literal}{crmURL p='civicrm/ajax/relationshipContactTypeList' h=0}{literal}";
                         cj.post( postUrl, { relType: relType },
                             function ( response ) {
-                                cj( selectID ).get(0).add(new Option('{/literal}{ts escape="js"}- create new contact -{/ts}{literal}', ''), document.all ? i : null);
+                                cj( selectID ).get(0).add(new Option('{/literal}{ts escape="js"}- create new contact -{/ts}{literal}', ''));
                                 response = eval( response );
                                 for (i = 0; i < response.length; i++) {
-                                    cj( selectID ).get(0).add(new Option(response[i].name, response[i].value), document.all ? i : null);
+                                    cj( selectID ).get(0).add(new Option(response[i].name, response[i].value));
                                 }
                             }
                         );

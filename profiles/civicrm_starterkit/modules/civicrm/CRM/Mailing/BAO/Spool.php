@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -76,9 +76,6 @@ class CRM_Mailing_BAO_Spool extends CRM_Mailing_DAO_Spool {
       $params['created_date'] = date('YmdHis');
       $params['scheduled_id'] = $params['created_id'];
       $params['scheduled_date'] = $params['created_date'];
-      $params['approver_id'] = $params['created_id'];
-      $params['approval_date'] = $params['created_date'];
-      $params['approval_status_id'] = CRM_Core_OptionGroup::getValue('mail_approval_status', 'Approved', 'name');
       $params['is_completed'] = 1;
       $params['is_archived'] = 1;
       $params['body_html'] = htmlspecialchars( $headerStr ) . "\n\n" . $body;
@@ -91,7 +88,7 @@ class CRM_Mailing_BAO_Spool extends CRM_Mailing_DAO_Spool {
         return PEAR::raiseError( 'Unable to create spooled mailing.' );
       }
 
-      $job = new CRM_Mailing_BAO_Job();
+      $job = new CRM_Mailing_BAO_MailingJob();
       $job->is_test = 0; // if set to 1 it doesn't show in the UI
       $job->status = 'Complete';
       $job->scheduled_date = CRM_Utils_Date::processDate(date('Y-m-d'), date('H:i:s'));
@@ -101,7 +98,7 @@ class CRM_Mailing_BAO_Spool extends CRM_Mailing_DAO_Spool {
       $job->save();
       $job_id = $job->id; // need this for parent_id below
 
-      $job = new CRM_Mailing_BAO_Job();
+      $job = new CRM_Mailing_BAO_MailingJob();
       $job->is_test = 0;
       $job->status = 'Complete';
       $job->scheduled_date = CRM_Utils_Date::processDate(date('Y-m-d'), date('H:i:s'));

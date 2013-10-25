@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -65,6 +65,13 @@ class CRM_Profile_Form extends CRM_Core_Form {
    * @var int
    */
   protected $_gid;
+
+  /**
+   * The group id that we are editing
+   *
+   * @var string
+   */
+  protected $_ufGroupName = 'unknown';
 
   /**
    * The group id that we are passing in url
@@ -256,16 +263,20 @@ class CRM_Profile_Form extends CRM_Core_Form {
     }
     $this->_isContactActivityProfile = CRM_Core_BAO_UFField::checkContactActivityProfileType($this->_gid);
 
-    //get values for captch and dupe update.
+    //get values for ufGroupName, captch and dupe update.
     if ($this->_gid) {
       $dao = new CRM_Core_DAO_UFGroup();
       $dao->id = $this->_gid;
       if ($dao->find(TRUE)) {
         $this->_isUpdateDupe = $dao->is_update_dupe;
         $this->_isAddCaptcha = $dao->add_captcha;
+        if (!empty($dao->name)) {
+          $this->_ufGroupName = $dao->name;
+        }
       }
       $dao->free();
     }
+    $this->assign('ufGroupName', $this->_ufGroupName);
 
     $gids = empty($this->_profileIds) ? $this->_gid : $this->_profileIds;
 
@@ -494,7 +505,8 @@ class CRM_Profile_Form extends CRM_Core_Form {
           }
         }
       }
-    } else {
+    }
+    else {
       foreach ($this->_fields as $name => $field) {
         if ($customFieldID = CRM_Core_BAO_CustomField::getKeyID($name)) {
           $htmlType = $field['html_type'];
@@ -511,9 +523,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
 
           if ($htmlType == 'File') {
             $entityId = $this->_id;
-            if (CRM_Utils_Array::value('field_type', $field) == 'Activity' &&
-              $this->_activityId
-            ) {
+            if (CRM_Utils_Array::value('field_type', $field) == 'Activity' && $this->_activityId) {
               $entityId = $this->_activityId;
             }
             $url = CRM_Core_BAO_CustomField::getFileURL($entityId, $customFieldID);
@@ -553,6 +563,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
       $this->assign("imageThumbWidth", $imageThumbWidth);
       $this->assign("imageThumbHeight", $imageThumbHeight);
       $this->assign("imageURL", $this->_defaults['image_URL']);
+      $this->removeFileRequiredRules('image_URL');
     }
 
     if (array_key_exists('contact_sub_type', $this->_defaults) &&
@@ -573,6 +584,18 @@ class CRM_Profile_Form extends CRM_Core_Form {
    * @access public
    */
   public function buildQuickForm() {
+    switch ($this->_mode) {
+      case self::MODE_CREATE:
+      case self::MODE_EDIT:
+      case self::MODE_REGISTER:
+        CRM_Utils_Hook::buildProfile($this->_ufGroupName);
+        break;
+      case self::MODE_SEARCH:
+        CRM_Utils_Hook::searchProfile($this->_ufGroupName);
+        break;
+      default:
+    }
+
     //lets have single status message, CRM-4363
     $return = FALSE;
     $statusMessage = NULL;
@@ -680,7 +703,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
             CRM_Core_Permission::EDIT,
             NULL,
             'civicrm_uf_group',
-            CRM_Core_PseudoConstant::ufGroup()
+            CRM_Core_PseudoConstant::get('CRM_Core_DAO_UFField', 'uf_group_id')
           )
         )
       ) {
@@ -868,6 +891,8 @@ class CRM_Profile_Form extends CRM_Core_Form {
    * @static
    */
   static function formRule($fields, $files, $form) {
+    CRM_Utils_Hook::validateProfile($form->_ufGroupName);
+
     $errors = array();
     // if no values, return
     if (empty($fields)) {
@@ -1066,6 +1091,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
         return;
       }
     }
+    CRM_Utils_Hook::processProfile($this->_ufGroupName);
     if (CRM_Utils_Array::value('image_URL', $params)) {
       CRM_Contact_BAO_Contact::processImageParams($params);
     }
@@ -1291,6 +1317,7 @@ class CRM_Profile_Form extends CRM_Core_Form {
       $params['contactID'] = $this->_id;
       if (!CRM_Core_BAO_CMSUser::create($params, $this->_mail)) {
         CRM_Core_Session::setStatus(ts('Your profile is not saved and Account is not created.'), ts('Profile Error'), 'error');
+        CRM_Core_Error::debug_log_message("Rolling back transaction as CMSUser Create failed in Profile_Form for contact " . $params['contactID']);
         $transaction->rollback();
         return CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/profile/create',
             'reset=1&gid=' . $this->_gid

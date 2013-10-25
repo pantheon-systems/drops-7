@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -81,7 +81,7 @@ class CRM_PCP_Form_Event extends CRM_Event_Form_ManageEvent {
       $defaults['tellfriend_limit'] = 5;
       $defaults['link_text'] = ts('Promote this event with a personal campaign page');
 
-      if ($this->_id && 
+      if ($this->_id &&
           $ccReceipt = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_ContributionPage', $this->_id, 'cc_receipt')) {
         $defaults['notify_email'] = $ccReceipt;
       }

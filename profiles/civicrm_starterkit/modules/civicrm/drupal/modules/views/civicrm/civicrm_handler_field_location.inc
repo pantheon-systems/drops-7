@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -39,7 +39,7 @@ class civicrm_handler_field_location extends civicrm_handler_field {
         return;
       }
       require_once 'CRM/Core/PseudoConstant.php';
-      self::$_locationTypes = CRM_Core_PseudoConstant::locationType();
+      self::$_locationTypes = CRM_Core_PseudoConstant::get('CRM_Core_DAO_Address', 'location_type_id');
       self::$_locationOps = array(0 => 'AND', 1 => 'OR');
     }
   }

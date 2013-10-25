@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -78,9 +77,6 @@ function _civicrm_api3_uf_match_create_spec(&$params) {
   $params['contact_id']['api.required'] = 1;
   $params['uf_id']['api.required'] = 1;
   $params['uf_name']['api.required'] = 1;
-  // note that this should perhaps not be required but need a wrapper level approach
-  // prefera
-  $params['domain_id']['api.required'] = 1;
 }
 
 /**

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -25,7 +25,7 @@
 *}
 <div class="crm-block crm-activity_task_print-form-block">
 <p>
-{if $rows } 
+{if $rows }
 <div class="crm-submit-buttons element-right">
   {include file="CRM/common/formButtons.tpl" location="top"}
 </div>

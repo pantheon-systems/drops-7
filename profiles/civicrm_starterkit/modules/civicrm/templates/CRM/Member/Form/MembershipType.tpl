@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -164,7 +164,7 @@ cj(function(){
   var orgDataUrl = "{/literal}{$dataUrl}{literal}";
   var hintText = "{/literal}{ts escape='js'}Type in a partial or complete name of an existing contact.{/ts}{literal}";
   cj('#member_of_contact').autocomplete( orgDataUrl,
-    { width : 180, selectFirst : false, hintText: hintText, matchContains: true, minChars: 1
+    { width : 200, selectFirst : false, hintText: hintText, matchContains: true, minChars: 1, max: {/literal}{crmSetting name="search_autocomplete_count" group="Search Preferences"}{literal}
   }).result(
     function(event, data, formatted) {
       ( parseInt( data[1] ) ) ? cj( "#member_of_contact_id" ).val( data[1] ) : cj( "#member_of_contact_id" ).val('');
@@ -203,10 +203,19 @@ cj(function(){
     showHidePeriodSettings();
   });
 
-  showHideMaxRelated(cj('#relationship_type_id :selected').val());
-  cj('#relationship_type_id').change(function(){
-    showHideMaxRelated(cj('#relationship_type_id :selected').val());
-  });
+  {/literal}
+	{if $action eq 2}
+	{literal}
+	  showHideMaxRelated(cj('#relationship_type_id').val());
+	  cj('#relationship_type_id').change(function(){
+	    showHideMaxRelated(cj('#relationship_type_id').val());
+	  });
+	{/literal}{else}{literal}
+	  showHideMaxRelated(cj('#relationship_type_id :selected').val());
+	  cj('#relationship_type_id').change(function(){
+	    showHideMaxRelated(cj('#relationship_type_id :selected').val());
+	  });	
+	{/literal}{/if}{literal}
 });
 
 function showHidePeriodSettings() {

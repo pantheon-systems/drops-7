@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -111,7 +111,7 @@ class CRM_Member_Info extends CRM_Core_Component_Info {
               'query' => "reset=1&action=add&context=standalone&mode=live",
               'ref' => 'new-membership-cc',
               'title' => $title,
-            )));        
+            )));
       }
     }
   }

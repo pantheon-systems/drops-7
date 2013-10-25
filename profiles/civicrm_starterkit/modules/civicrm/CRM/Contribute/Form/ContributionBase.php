@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -152,6 +152,13 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
    */
   public $_pcpInfo;
 
+  /**
+   * The contact id of the person for whom membership is being added or renewed based on the cid in the url,
+   * checksum, or session
+   * @var unknown_type
+   */
+  protected $_contactID;
+
   protected $_userID;
 
   /**
@@ -193,21 +200,17 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     // current contribution page id
     $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this);
     if (!$this->_id) {
-      $pastContributionID = $session->get('pastContributionID');
-      if (!$pastContributionID) {
-        CRM_Core_Error::fatal(ts('We can\'t load the requested web page due to an incomplete link. This can be caused by using your browser\'s Back button or by using an incomplete or invalid link.'));
-      }
-      else {
-        CRM_Core_Error::fatal(ts('An error occurred during form submission. This page requires form data to be submitted for processing and no form data was submitted or processed. We are sorry for any inconvience. Please click <a href=\'%1\'>here</a> to visit the contribution page and re-start the contribution process.', array(1 => CRM_Utils_System::url('civicrm/contribute/transact', 'reset=1&id=' . $pastContributionID))));
-      }
-    }
-    else {
-      $session->set('pastContributionID', $this->_id);
+      // seems like the session is corrupted and/or we lost the id trail
+      // lets just bump this to a regular session error and redirect user to main page
+      $this->controller->invalidKeyRedirect();
     }
 
+    // this was used prior to the cleverer this_>getContactID - unsure now
     $this->_userID = $session->get('userID');
+
+    $this->_contactID = $this->_membershipContactID = $this->getContactID();
     $this->_mid = NULL;
-    if ($this->_userID) {
+    if ($this->_contactID) {
       $this->_mid = CRM_Utils_Request::retrieve('mid', 'Positive', $this);
       if ($this->_mid) {
         $membership = new CRM_Member_DAO_Membership();
@@ -215,14 +218,26 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
 
         if ($membership->find(TRUE)) {
           $this->_defaultMemTypeId = $membership->membership_type_id;
-          if ($membership->contact_id != $this->_userID) {
+          if ($membership->contact_id != $this->_contactID) {
+            $validMembership = FALSE;
             $employers = CRM_Contact_BAO_Relationship::getPermissionedEmployer($this->_userID);
-            if (array_key_exists($membership->contact_id, $employers)) {
+            if (!empty($employers) && array_key_exists($membership->contact_id, $employers)) {
               $this->_membershipContactID = $membership->contact_id;
               $this->assign('membershipContactID', $this->_membershipContactID);
               $this->assign('membershipContactName', $employers[$this->_membershipContactID]['name']);
+              $validMembership = TRUE;
+            } else {
+              $membershipType = new CRM_Member_BAO_MembershipType();
+              $membershipType->id = $membership->membership_type_id;
+              if ($membershipType->find(TRUE)) {
+                $permContacts = CRM_Contact_BAO_Relationship::getPermissionedContacts($this->_userID, $membershipType->relationship_type_id);
+                if (array_key_exists($membership->contact_id, $permContacts)) {
+                  $this->_membershipContactID = $membership->contact_id;
+                  $validMembership = TRUE;
+                }
+              }
             }
-            else {
+            if (!$validMembership) {
               CRM_Core_Session::setStatus(ts("Oops. The membership you're trying to renew appears to be invalid. Contact your site administrator if you need assistance. If you continue, you will be issued a new membership."), ts('Membership Invalid'), 'alert');
             }
           }
@@ -269,7 +284,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
 
       // also check for billing informatin
       // get the billing location type
-      $locationTypes = CRM_Core_PseudoConstant::locationType();
+      $locationTypes = CRM_Core_PseudoConstant::get('CRM_Core_DAO_Address', 'location_type_id');
       // CRM-8108 remove ts around Billing location type
       //$this->_bltID = array_search( ts('Billing'),  $locationTypes );
       $this->_bltID = array_search('Billing', $locationTypes);
@@ -330,7 +345,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
 
       // get price info
       // CRM-5095
-      CRM_Price_BAO_Set::initSet($this, $this->_id, 'civicrm_contribution_page');
+      CRM_Price_BAO_PriceSet::initSet($this, $this->_id, 'civicrm_contribution_page');
 
       // this avoids getting E_NOTICE errors in php
       $setNullFields = array(
@@ -626,7 +641,7 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
     $stateCountryMap = array();
 
     if ($id) {
-      $contactID = $this->_userID;
+      $contactID = $this->getContactID();
 
       // we don't allow conflicting fields to be
       // configured via profile - CRM 2100
@@ -716,7 +731,8 @@ class CRM_Contribute_Form_ContributionBase extends CRM_Core_Form {
             );
             $this->_fields[$key] = $field;
           }
-          if ($field['add_captcha']) {
+          // CRM-11316 Is ReCAPTCHA enabled for this profile AND is this an anonymous visitor
+          if ($field['add_captcha'] && !$this->_userID) {
             $addCaptcha = TRUE;
           }
         }

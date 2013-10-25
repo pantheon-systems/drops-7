@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -38,7 +38,7 @@
  */
 class CRM_Mailing_Form_Upload extends CRM_Core_Form {
   public $_mailingID;
-  
+
   function preProcess() {
     $this->_mailingID = $this->get('mailing_id');
     if (CRM_Core_Permission::check('administer CiviCRM')) {
@@ -96,7 +96,7 @@ class CRM_Mailing_Form_Upload extends CRM_Core_Form {
       $this->assign('templateSelected', $templateId ? $templateId : 0);
       if (isset($defaults['msg_template_id']) && !$templateId) {
         $defaults['template'] = $defaults['msg_template_id'];
-        $messageTemplate = new CRM_Core_DAO_MessageTemplates();
+        $messageTemplate = new CRM_Core_DAO_MessageTemplate();
         $messageTemplate->id = $defaults['msg_template_id'];
         $messageTemplate->selectAdd();
         $messageTemplate->selectAdd('msg_text, msg_html');
@@ -214,7 +214,7 @@ class CRM_Mailing_Form_Upload extends CRM_Core_Form {
       "CRM_Mailing_Controller_Send_{$this->controller->_key}"
     );
 
-    $fromEmailAddress = CRM_Core_PseudoConstant::fromEmailAddress('from_email_address');
+    $fromEmailAddress = CRM_Core_OptionGroup::values('from_email_address');
     if (empty($fromEmailAddress)) {
       //redirect user to enter from email address.
       $url = CRM_Utils_System::url('civicrm/admin/options/from_email_address', 'group=from_email_address&action=add&reset=1');
@@ -396,7 +396,7 @@ class CRM_Mailing_Form_Upload extends CRM_Core_Form {
 
         $templateParams['id'] = $formValues['template'];
 
-        $msgTemplate = CRM_Core_BAO_MessageTemplates::add($templateParams);
+        $msgTemplate = CRM_Core_BAO_MessageTemplate::add($templateParams);
       }
 
       if (CRM_Utils_Array::value('saveTemplate', $composeParams)) {
@@ -409,7 +409,7 @@ class CRM_Mailing_Form_Upload extends CRM_Core_Form {
 
         $templateParams['msg_title'] = $composeParams['saveTemplateName'];
 
-        $msgTemplate = CRM_Core_BAO_MessageTemplates::add($templateParams);
+        $msgTemplate = CRM_Core_BAO_MessageTemplate::add($templateParams);
       }
 
       if (isset($msgTemplate->id)) {
@@ -430,7 +430,7 @@ class CRM_Mailing_Form_Upload extends CRM_Core_Form {
 
     //handle mailing from name & address.
     $fromEmailAddress = CRM_Utils_Array::value($formValues['from_email_address'],
-      CRM_Core_PseudoConstant::fromEmailAddress('from_email_address')
+      CRM_Core_OptionGroup::values('from_email_address')
     );
 
     //get the from email address
@@ -441,7 +441,7 @@ class CRM_Mailing_Form_Upload extends CRM_Core_Form {
 
     //Add Reply-To to headers
     if (CRM_Utils_Array::value('reply_to_address', $formValues)) {
-      $replyToEmail = CRM_Core_PseudoConstant::fromEmailAddress('from_email_address');
+      $replyToEmail = CRM_Core_OptionGroup::values('from_email_address');
       $params['replyto_email'] = CRM_Utils_Array::value($formValues['reply_to_address'], $replyToEmail);
     }
 
@@ -613,12 +613,14 @@ class CRM_Mailing_Form_Upload extends CRM_Core_Form {
 
       /* First look for missing tokens */
 
-      $err = CRM_Utils_Token::requiredTokens($str);
-      if ($err !== TRUE) {
-        foreach ($err as $token => $desc) {
-          $dataErrors[] = '<li>' . ts('This message is missing a required token - {%1}: %2',
-            array(1 => $token, 2 => $desc)
-          ) . '</li>';
+      if (!CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::MAILING_PREFERENCES_NAME, 'disable_mandatory_tokens_check')) {
+        $err = CRM_Utils_Token::requiredTokens($str);
+        if ($err !== TRUE) {
+          foreach ($err as $token => $desc) {
+            $dataErrors[] = '<li>' . ts('This message is missing a required token - {%1}: %2',
+              array(1 => $token, 2 => $desc)
+            ) . '</li>';
+          }
         }
       }
 
@@ -658,7 +660,7 @@ class CRM_Mailing_Form_Upload extends CRM_Core_Form {
       }
     }
 
-    $templateName = CRM_Core_BAO_MessageTemplates::getMessageTemplates();
+    $templateName = CRM_Core_BAO_MessageTemplate::getMessageTemplates();
     if (CRM_Utils_Array::value('saveTemplate', $params)
       && in_array(CRM_Utils_Array::value('saveTemplateName', $params), $templateName)
     ) {

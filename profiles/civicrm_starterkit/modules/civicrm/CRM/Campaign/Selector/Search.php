@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -249,6 +249,7 @@ class CRM_Campaign_Selector_Search extends CRM_Core_Selector_Base implements CRM
     $rows = array();
 
     While ($result->fetch()) {
+      $this->_query->convertToPseudoNames($result);
       $row = array();
       // the columns we are interested in
       foreach (self::$_properties as $property) {
@@ -273,7 +274,7 @@ class CRM_Campaign_Selector_Search extends CRM_Core_Selector_Base implements CRM
     if (!$crmPID) {
       $cacheKey = "civicrm search {$this->_key}";
       CRM_Core_BAO_PrevNextCache::deleteItem(NULL, $cacheKey, 'civicrm_contact');
-      
+
       $sql = $this->_query->searchQuery(0, 0, $sort,
         FALSE, FALSE,
         FALSE, FALSE,
@@ -284,7 +285,7 @@ class CRM_Campaign_Selector_Search extends CRM_Core_Selector_Base implements CRM
       list($select, $from) = explode(' FROM ', $sql);
       $insertSQL = "
 INSERT INTO civicrm_prevnext_cache ( entity_table, entity_id1, entity_id2, cacheKey, data )
-SELECT 'civicrm_contact', contact_a.id, contact_a.id, '$cacheKey', contact_a.display_name 
+SELECT 'civicrm_contact', contact_a.id, contact_a.id, '$cacheKey', contact_a.display_name
 FROM {$from}
 ";
       CRM_Core_Error::ignoreException();

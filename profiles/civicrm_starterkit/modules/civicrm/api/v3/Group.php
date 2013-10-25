@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -35,11 +34,6 @@
  * @copyright CiviCRM LLC (c) 2004-2013
  * @version $Id: Group.php 30171 2010-10-14 09:11:27Z mover $
  */
-
-/**
- * Include utility functions
- */
-require_once 'CRM/Contact/BAO/Group.php';
 
 /**
  * create/update group
@@ -109,7 +103,7 @@ function civicrm_api3_group_get($params) {
     $returnProperties['id'] = 1;
     $returnProperties = array_keys($returnProperties);
   }
-  if (CRM_Utils_Array::value('group_id', $inputParams)) {
+  if (!empty($inputParams['group_id'])) {
     $inputParams['id'] = $inputParams['group_id'];
   }
   $groupObjects = CRM_Contact_BAO_Group::getGroups($inputParams, $returnProperties, $sort, $offset, $rowCount);

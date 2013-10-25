@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -64,7 +64,8 @@ class CRM_Core_BAO_Block {
     if (empty($params)) {
       return NULL;
     }
-    eval('$block = new CRM_Core_BAO_' . $blockName . '( );');
+    $BAOString = 'CRM_Core_BAO_' . $blockName;
+    $block = new $BAOString( );
 
     $blocks = array();
     if (!isset($params['entity_table'])) {
@@ -83,7 +84,7 @@ class CRM_Core_BAO_Block {
 
       $count = 1;
       foreach ($blockIds as $blockId) {
-        eval('$block = new CRM_Core_BAO_' . $blockName . '( );');
+        $block = new $BAOString( );
         $block->id        = $blockId['id'];
         $getBlocks        = self::retrieveBlock($block, $blockName);
         $blocks[$count++] = array_pop($getBlocks);
@@ -176,6 +177,7 @@ class CRM_Core_BAO_Block {
    */
   static function getBlockIds($blockName, $contactId = NULL, $entityElements = NULL, $updateBlankLocInfo = FALSE) {
     $allBlocks = array();
+
     $name = ucfirst($blockName);
     if ($blockName == 'im') {
       $name = 'IM';
@@ -184,11 +186,19 @@ class CRM_Core_BAO_Block {
       $name = 'OpenID';
     }
 
+    $baoString = 'CRM_Core_BAO_' . $name;
     if ($contactId) {
-      eval('$allBlocks = CRM_Core_BAO_' . $name . '::all' . $name . 's( $contactId, $updateBlankLocInfo );');
+      //@todo a cleverer way to do this would be to use the same fn name on each
+      // BAO rather than constructing the fn
+      // it would also be easier to grep for
+      // e.g $bao = new $baoString;
+      // $bao->getAllBlocks()
+      $baoFunction = 'all' . $name . 's';
+      $allBlocks = $baoString::$baoFunction( $contactId, $updateBlankLocInfo );
     }
     elseif (!empty($entityElements) && $blockName != 'openid') {
-      eval('$allBlocks = CRM_Core_BAO_' . $name . '::allEntity' . $name . 's( $entityElements );');
+      $baoFunction = 'allEntity' . $name . 's';
+      $allBlocks = $baoString::$baoFunction( $entityElements );
     }
 
     return $allBlocks;
@@ -259,7 +269,8 @@ class CRM_Core_BAO_Block {
             }
           }
           if ($resetPrimaryId) {
-            eval('$block = new CRM_Core_BAO_' . $blockName . '( );');
+            $baoString = 'CRM_Core_BAO_' . $blockName;
+            $block = new $baoString( );
             $block->selectAdd();
             $block->selectAdd("id, is_primary");
             $block->id = $resetPrimaryId;
@@ -299,7 +310,7 @@ class CRM_Core_BAO_Block {
 
               if ($blockName == 'phone') {
                 $phoneTypeBlockValue = CRM_Utils_Array::value('phoneTypeId', $blockValue);
-                if ($phoneTypeBlockValue == $value['phone_type_id']) {
+                if ($phoneTypeBlockValue == CRM_Utils_Array::value('phone_type_id', $value)) {
                   $valueId = TRUE;
                 }
               }
@@ -358,7 +369,8 @@ class CRM_Core_BAO_Block {
       }
 
       $blockFields = array_merge($value, $contactFields);
-      eval('$blocks[] = CRM_Core_BAO_' . $name . '::add( $blockFields );');
+      $baoString = 'CRM_Core_BAO_' . $name;
+      $blocks[] = $baoString::add( $blockFields );
     }
 
     // we need to delete blocks that were deleted during update
@@ -392,8 +404,8 @@ class CRM_Core_BAO_Block {
       $name = 'OpenID';
     }
 
-    require_once "CRM/Core/DAO/{$name}.php";
-    eval('$block = new CRM_Core_DAO_' . $name . '( );');
+    $baoString = 'CRM_Core_DAO_' . $name;
+    $block = new $baoString( );
 
     $block->copyValues($params);
     /*
@@ -422,19 +434,11 @@ class CRM_Core_BAO_Block {
    * @static
    */
   public static function handlePrimary(&$params, $class) {
-    switch ($class) {
-      case 'CRM_Core_BAO_Phone':
-        $table = 'civicrm_phone';
-        break;
-
-      case 'CRM_Core_BAO_Email':
-        $table = 'civicrm_email';
-        break;
-
-      case 'CRM_Core_BAO_Address':
-        $table = 'civicrm_address';
-        break;
+    $table = CRM_Core_DAO_AllCoreTables::getTableForClass($class);
+    if (!$table) {
+      throw new API_Exception("Failed to locate table for class [$class]");
     }
+
     // contact_id in params might be empty or the string 'null' so cast to integer
     $contactId = (int) CRM_Utils_Array::value('contact_id', $params);
     // If id is set & we haven't been passed a contact_id, retrieve it

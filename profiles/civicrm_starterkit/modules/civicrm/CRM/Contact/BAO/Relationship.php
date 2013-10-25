@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -47,22 +47,30 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
    *
    * @param array $params (reference ) an assoc array of name/value pairs
    * @param array $ids    the array that holds all the db ids
+   * per http://wiki.civicrm.org/confluence/display/CRM/Database+layer
+   *  "we are moving away from the $ids param "
    *
    * @return object CRM_Contact_BAO_Relationship object
    * @access public
    * @static
    */
-  static function create(&$params, &$ids) {
+  static function create(&$params, $ids = array()) {
     $valid = $invalid = $duplicate = $saved = 0;
-    $relationshipId = CRM_Utils_Array::value('relationship', $ids);
+    $relationships = array();
+    $relationshipId = CRM_Utils_Array::value('relationship', $ids, CRM_Utils_Array::value('id', $params));
     //CRM-9015 - the hooks are called here & in add (since add doesn't call create)
     // but in future should be tidied per ticket
-    if (CRM_Utils_Array::value('relationship', $ids)) {
-      CRM_Utils_Hook::pre('edit', 'Relationship', $ids['relationship'], $params);
+    if(empty($relationshipId)){
+      $hook = 'create';
+      $action = CRM_Core_Action::ADD;
     }
-    else {
-      CRM_Utils_Hook::pre('create', 'Relationship', NULL, $params);
+    else{
+      $hook = 'edit';
+      $action = CRM_Core_Action::UPDATE;
     }
+
+    CRM_Utils_Hook::pre($hook, 'Relationship', $relationshipId, $params);
+
     if (!$relationshipId) {
       // creating a new relationship
       $dataExists = self::dataExists($params);
@@ -98,13 +106,16 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
 
         $relationship = self::add($params, $ids, $key);
         $relationshipIds[] = $relationship->id;
+        $relationships[$relationship->id] = $relationship;
         $valid++;
       }
       // editing the relationship
     }
     else {
       // check for duplicate relationship
-
+      //@todo this code doesn't cope well with updates - causes e-Notices. API has a lot of code to work around
+      // this but should review this code & remove the extra handling from the api
+      // it seems doubtful any of this is relevant if the contact fields & relationship type fields are not set
       if (
         self::checkDuplicateRelationship(
           $params,
@@ -131,6 +142,7 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
         // editing an existing relationship
         $relationship = self::add($params, $ids, $ids['contactTarget']);
         $relationshipIds[] = $relationship->id;
+        $relationships[$relationship->id] = $relationship;
         $saved++;
       }
     }
@@ -161,7 +173,6 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
       $title = CRM_Contact_BAO_Contact::displayName($relationship->contact_id_a) . ' (' . CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_RelationshipType',
         $relationship->relationship_type_id, 'label_a_b'
       ) . ' ' . CRM_Contact_BAO_Contact::displayName($relationship->contact_id_b) . ')';
-
       // add the recently created Relationship
       CRM_Utils_Recent::add($title,
         $url,
@@ -173,7 +184,7 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
       );
     }
 
-    return array($valid, $invalid, $duplicate, $saved, $relationshipIds);
+    return array($valid, $invalid, $duplicate, $saved, $relationshipIds, $relationships);
   }
 
   /**
@@ -187,13 +198,14 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
    * @access public
    * @static
    */
-  static function add(&$params, &$ids, $contactId) {
-    if (CRM_Utils_Array::value('relationship', $ids)) {
-      CRM_Utils_Hook::pre('edit', 'Relationship', $ids['relationship'], $params);
+  static function add(&$params, $ids = array(), $contactId = NULL) {
+    $relationshipId = CRM_Utils_Array::value('relationship', $ids, CRM_Utils_Array::value('id', $params));
+    $hook = 'create';
+    if($relationshipId) {
+      $hook = 'edit';
     }
-    else {
-      CRM_Utils_Hook::pre('create', 'Relationship', NULL, $params);
-    }
+    //@todo hook are called from create and add - remove one
+    CRM_Utils_Hook::pre($hook , 'Relationship', $relationshipId, $params);
 
     $relationshipTypes = CRM_Utils_Array::value('relationship_type_id', $params);
 
@@ -210,10 +222,12 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
     }
 
     $relationship = new CRM_Contact_BAO_Relationship();
+    //@todo this code needs to be updated for the possibility that not all fields are set
+    // (update)
     $relationship->contact_id_b = $contact_b;
     $relationship->contact_id_a = $contact_a;
     $relationship->relationship_type_id = $type;
-    $relationship->id = CRM_Utils_Array::value('relationship', $ids);
+    $relationship->id = $relationshipId;
 
     $dateFields = array('end_date', 'start_date');
 
@@ -229,7 +243,7 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
           $relationship->$defaultField = $params[$defaultField];
         }
       }
-      elseif(empty($relationship->id)){
+      elseif(!$relationshipId){
         $relationship->$defaultField = $defaultValue;
       }
     }
@@ -243,12 +257,7 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
 
     $relationship->free();
 
-    if (CRM_Utils_Array::value('relationship', $ids)) {
-      CRM_Utils_Hook::post('edit', 'Relationship', $relationship->id, $relationship);
-    }
-    else {
-      CRM_Utils_Hook::post('create', 'Relationship', $relationship->id, $relationship);
-    }
+    CRM_Utils_Hook::post($hook, 'Relationship', $relationshipId, $relationship);
 
     return $relationship;
   }
@@ -720,9 +729,15 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
    * @static
    */
   static function setIsActive($id, $is_active) {
-    CRM_Core_DAO::setFieldValue('CRM_Contact_DAO_Relationship', $id, 'is_active', $is_active);
+    // as both the create & add functions have a bunch of logic in them that
+    // doesn't seem to cope with a normal update we will call the api which
+    // has tested handling for this
+    // however, a longer term solution would be to simplify the add, create & api functions
+    // to be more standard. It is debatable @ that point whether it's better to call the BAO
+    // direct as the api is more tested.
+    civicrm_api3('relationship', 'create', array('id' => $id, 'is_active' => $is_active));
 
-    // call hook
+    // call (undocumented possibly deprecated) hook
     CRM_Utils_Hook::enableDisable('CRM_Contact_BAO_Relationship', $id, $is_active);
 
     return TRUE;
@@ -772,12 +787,13 @@ class CRM_Contact_BAO_Relationship extends CRM_Contact_DAO_Relationship {
    * @param int $count get the no of relationships
    * $param int $relationshipId relationship id
    * @param string $direction   the direction we are interested in a_b or b_a
+   * @param array $params array of extra values including relationship_type_id per api spec
    *
    * return string the query for this diretion
    * @static
    * @access public
    */
-  static function makeURLClause($contactId, $status, $numRelationship, $count, $relationshipId, $direction) {
+  static function makeURLClause($contactId, $status, $numRelationship, $count, $relationshipId, $direction, $params = array()) {
     $select = $from = $where = '';
 
     $select = '( ';
@@ -879,7 +895,17 @@ LEFT JOIN  civicrm_country ON (civicrm_address.country_id = civicrm_country.id)
 
     // CRM-6181
     $where .= ' AND civicrm_contact.is_deleted = 0';
-
+    if(!empty($params['membership_type_id']) && empty($params['relationship_type_id'])) {
+      $where .= self::membershipTypeToRelationshipTypes($params, $direction);
+    }
+    if(!empty($params['relationship_type_id'])) {
+      if(is_array($params['relationship_type_id'])) {
+        $where .=  " AND " . CRM_Core_DAO::createSQLFilter('relationship_type_id', $params['relationship_type_id'], 'Integer');
+      }
+      else {
+        $where .= ' AND relationship_type_id = ' . CRM_Utils_Type::escape($params['relationship_type_id'], 'Positive');
+      }
+    }
     if ($direction == 'a_b') {
       $where .= ' ) UNION ';
     }
@@ -901,7 +927,7 @@ LEFT JOIN  civicrm_country ON (civicrm_address.country_id = civicrm_country.id)
    * $param array $links the list of links to display
    * $param int   $permissionMask  the permission mask to be applied for the actions
    * $param boolean $permissionedContact to return only permissioned Contact
-   *
+   * $param array $params array of variables consistent with filters supported by the api
    * return array $values relationship records
    * @static
    * @access public
@@ -910,7 +936,8 @@ LEFT JOIN  civicrm_country ON (civicrm_address.country_id = civicrm_country.id)
     $status              = 0, $numRelationship = 0,
     $count               = 0, $relationshipId = 0,
     $links               = NULL, $permissionMask = NULL,
-    $permissionedContact = FALSE
+    $permissionedContact = FALSE,
+    $params = array()
   ) {
     $values = array();
     if (!$contactId && !$relationshipId) {
@@ -918,10 +945,10 @@ LEFT JOIN  civicrm_country ON (civicrm_address.country_id = civicrm_country.id)
     }
 
     list($select1, $from1, $where1) = self::makeURLClause($contactId, $status, $numRelationship,
-      $count, $relationshipId, 'a_b'
+      $count, $relationshipId, 'a_b', $params
     );
     list($select2, $from2, $where2) = self::makeURLClause($contactId, $status, $numRelationship,
-      $count, $relationshipId, 'b_a'
+      $count, $relationshipId, 'b_a', $params
     );
 
     $order = $limit = '';
@@ -1322,8 +1349,10 @@ SELECT count(*)
    * Helper function to check whether to delete the membership or
    * not.
    *
+   * @static
+   *
    */
-  function isDeleteRelatedMembership($relTypeIds, $contactId, $mainRelatedContactId, $relTypeId, $relIds) {
+  static function isDeleteRelatedMembership($relTypeIds, $contactId, $mainRelatedContactId, $relTypeId, $relIds) {
     if (in_array($relTypeId, $relTypeIds)) {
       return TRUE;
     }
@@ -1394,38 +1423,59 @@ WHERE id IN ( {$contacts} )
    * @return array array of employers.
    *
    */
-  static function getPermissionedEmployer($contactID, $name = '%') {
-    $employers = array();
-
+  static function getPermissionedEmployer($contactID, $name = NULL) {
     //get the relationship id
     $relTypeId = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_RelationshipType',
       'Employee of', 'id', 'name_a_b'
     );
 
+    return self::getPermissionedContacts($contactID, $relTypeId, $name);
+  }
+
+
+ /**
+  * Function to return list of permissioned contacts for a given contact and relationship type
+  *
+  * @param $contactID int contact id whose permissioned contacts are to be found.
+  * @param $relTypeId relationship type id
+  * @param $name string
+  *
+  * @static
+  *
+  * @return array of contacts
+  */
+  static function getPermissionedContacts($contactID, $relTypeId, $name = NULL) {
+    $contacts = array();
+
     if ($relTypeId) {
       $query = "
 SELECT cc.id as id, cc.sort_name as name
 FROM civicrm_relationship cr, civicrm_contact cc
-WHERE cr.contact_id_a = $contactID AND
-cr.relationship_type_id = $relTypeId AND
-cr.is_permission_a_b = 1 AND
+WHERE
+cr.contact_id_a         = %1 AND
+cr.relationship_type_id = %2 AND
+cr.is_permission_a_b    = 1 AND
 IF(cr.end_date IS NULL, 1, (DATEDIFF( CURDATE( ), cr.end_date ) <= 0)) AND
 cr.is_active = 1 AND
-cc.id = cr.contact_id_b AND
-cc.sort_name LIKE '%$name%'";
+cc.id = cr.contact_id_b";
 
-      $nullArray = array();
-      $dao = CRM_Core_DAO::executeQuery($query, $nullArray);
+      if (!empty($name)) {
+        $name   = CRM_Utils_Type::escape($name, 'String');
+        $query .= "
+AND cc.sort_name LIKE '%$name%'";
+      }
+
+      $args = array(1 => array($contactID, 'Integer'), 2 => array($relTypeId, 'Integer'));
+      $dao  = CRM_Core_DAO::executeQuery($query, $args);
 
       while ($dao->fetch()) {
-        $employers[$dao->id] = array(
+        $contacts[$dao->id] = array(
           'name' => $dao->name,
           'value' => $dao->id,
         );
       }
     }
-
-    return $employers;
+    return $contacts;
   }
 
   static function getValidContactTypeList($relType) {
@@ -1515,6 +1565,50 @@ cc.sort_name LIKE '%$name%'";
       }
     }
     return TRUE;
+  }
+
+  /**
+   * Function filters the query by possible relationships for the membership type
+   * It is intended to be called when constructing queries for the api (reciprocal & non-reciprocal)
+   * and to add clauses to limit the return to those relationships which COULD inherit a membership type
+   * (as opposed to those who inherit a particular membership
+   *
+   * @param array $params api input array
+   */
+  static function membershipTypeToRelationshipTypes(&$params, $direction = NULL) {
+    $membershipType = civicrm_api3('membership_type', 'getsingle', array('id' => $params['membership_type_id'], 'return' => 'relationship_type_id, relationship_direction'));
+    $relationshipTypes = $membershipType['relationship_type_id'];
+    if(empty($relationshipTypes)) {
+      return;
+    }
+    // if we don't have any contact data we can only filter on type
+    if(empty($params['contact_id']) && empty($params['contact_id_a']) && empty($params['contact_id_a'])) {
+      $params['relationship_type_id'] = array('IN' => $relationshipTypes);
+      return;
+    }
+    else {
+      $relationshipDirections = (array) $membershipType['relationship_direction'];
+      // if we have contact_id_a OR contact_id_b we can make a call here
+      // if we have contact??
+      foreach ($relationshipDirections as $index => $mtdirection) {
+        if(isset($params['contact_id_a']) && $mtdirection == 'a_b'  || $direction == 'a_b') {
+          $types[] = $relationshipTypes[$index];
+        }
+        if(isset($params['contact_id_b']) && $mtdirection == 'b_a'  || $direction == 'b_a') {
+          $types[] = $relationshipTypes[$index];
+        }
+      }
+      if(!empty($types)) {
+        $params['relationship_type_id'] = array('IN' => $types);
+      }
+      elseif(!empty($clauses)) {
+        return explode(' OR ', $clauses);
+      }
+      else{
+        // effectively setting it to return no results
+        $params['relationship_type_id'] = 0;
+      }
+    }
   }
 }
 

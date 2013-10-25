@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -114,10 +114,10 @@ class CRM_Mailing_Event_BAO_Queue extends CRM_Mailing_Event_DAO_Queue {
   public static function getEmailAddress($queue_id) {
     $email = CRM_Core_BAO_Email::getTableName();
     $eq    = self::getTableName();
-    $query = "  SELECT      $email.email as email 
-                    FROM        $email 
-                    INNER JOIN  $eq 
-                    ON          $eq.email_id = $email.id 
+    $query = "  SELECT      $email.email as email
+                    FROM        $email
+                    INNER JOIN  $eq
+                    ON          $eq.email_id = $email.id
                     WHERE       $eq.id = " . CRM_Utils_Type::rule($queue_id, 'Integer');
 
     $q = new CRM_Mailing_Event_BAO_Queue();
@@ -144,7 +144,7 @@ class CRM_Mailing_Event_BAO_Queue extends CRM_Mailing_Event_DAO_Queue {
 
     $queue   = self::getTableName();
     $mailing = CRM_Mailing_BAO_Mailing::getTableName();
-    $job     = CRM_Mailing_BAO_Job::getTableName();
+    $job     = CRM_Mailing_BAO_MailingJob::getTableName();
 
     $dao->query("
             SELECT      COUNT(*) as queued
@@ -183,13 +183,14 @@ class CRM_Mailing_Event_BAO_Queue extends CRM_Mailing_Event_DAO_Queue {
 
     $queue   = self::getTableName();
     $mailing = CRM_Mailing_BAO_Mailing::getTableName();
-    $job     = CRM_Mailing_BAO_Job::getTableName();
+    $job     = CRM_Mailing_BAO_MailingJob::getTableName();
     $contact = CRM_Contact_BAO_Contact::getTableName();
     $email   = CRM_Core_BAO_Email::getTableName();
 
     $orderBy = "sort_name ASC, {$job}.start_date DESC";
     if ($sort) {
       if (is_string($sort)) {
+        $sort = CRM_Utils_Type::escape($sort, 'String');
         $orderBy = $sort;
       }
       else {
@@ -252,7 +253,7 @@ class CRM_Mailing_Event_BAO_Queue extends CRM_Mailing_Event_DAO_Queue {
    */
   public function &getMailing() {
     $mailing  = new CRM_Mailing_BAO_Mailing();
-    $jobs     = CRM_Mailing_BAO_Job::getTableName();
+    $jobs     = CRM_Mailing_BAO_MailingJob::getTableName();
     $mailings = CRM_Mailing_BAO_Mailing::getTableName();
     $queue    = self::getTableName();
 

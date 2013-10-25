@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -35,16 +35,17 @@ class views_handler_argument_civicrm_year_month extends views_handler_argument_d
     parent::construct();
     $this->format     = 'F Y';
     $this->arg_format = 'Ym';
-    $this->formula    = views_date_sql_format($this->arg_format, "***table***.$this->real_field", "datetime", '0');
+    $this->formula    = views_date_sql_format($this->arg_format, "***table***.$this->real_field");
   }
 
   /**
    * Provide a link to the next level of the view
    */
   function summary_name($data) {
-    $timestamp = strtotime($data->{$this->name_alias});
+    $timestamp = $data->{$this->name_alias};
+    $timestamp = strtotime($timestamp . " UTC");
     if ($timestamp !== FALSE) {
-      return format_date($timestamp, 'custom', $this->format);
+      return format_date($timestamp, 'custom', $this->format, 'UTC');
     }
   }
 
@@ -52,9 +53,9 @@ class views_handler_argument_civicrm_year_month extends views_handler_argument_d
    * Provide a link to the next level of the view
    */
   function title() {
-    $timestamp = strtotime($this->argument);
+    $timestamp = strtotime($this->argument . " UTC");
     if ($timestamp !== FALSE) {
-      return format_date($timestamp, 'custom', $this->format);
+      return format_date($timestamp, 'custom', $this->format, 'UTC');
     }
   }
 }

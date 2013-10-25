@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright Tech To The People (c) 2010                              |
  +--------------------------------------------------------------------+
@@ -38,8 +37,6 @@
  * Include utility functions
  */
 require_once 'api/v3/utils.php';
-require_once 'CRM/Utils/Rule.php';
-require_once 'CRM/Campaign/BAO/Petition.php';
 
 /**
  * Get the list of signatories

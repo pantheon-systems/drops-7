@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -29,7 +29,7 @@ var stregexp = new RegExp;
 function initFilter( id ) {
     //build the array
     filterArray = new Array();
-    filterArray = {/literal}{$tokens}{literal};    
+    filterArray = {/literal}{$tokens}{literal};
 
     tempArray  = new Array();
     remvdArray = new Array();

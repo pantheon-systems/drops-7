@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -39,13 +39,12 @@ class CRM_Utils_Array {
    *
    * @access public
    *
-   * @param array  $list  the array to be searched
    * @param string $key   the key value
+   * @param array $list  the array to be searched
+   * @param mixed $default
    *
-   * @return value if exists else null
+   * @return mixed value if exists else $default
    * @static
-   * @access public
-   *
    */
   static function value($key, $list, $default = NULL) {
     if (is_array($list)) {
@@ -378,13 +377,12 @@ class CRM_Utils_Array {
 
   /**
    *  Function to check if give array is empty
-   *  @param array $array array that needs to be check for empty condition
+   *  @param array $array array to check for empty condition
    *
    *  @return boolean true is array is empty else false
    *  @static
    */
-  static function crmIsEmptyArray($array = array(
-    )) {
+  static function crmIsEmptyArray($array = array()) {
     if (!is_array($array)) {
       return TRUE;
     }
@@ -486,7 +484,8 @@ class CRM_Utils_Array {
    * Convenient way to unset a bunch of items from an array
    *
    * @param array $items (reference)
-   * @param string/int/array $itemN: other params to this function will be treated as keys (or arrays of keys) to unset
+   * @param string/int/array $itemN: other params to this function will be treated as keys
+   * (or arrays of keys) to unset
    */
    static function remove(&$items) {
      foreach (func_get_args() as $n => $key) {
@@ -571,29 +570,37 @@ class CRM_Utils_Array {
   /**
    * Like explode() but assumes that the $value is padded with $delim on left and right
    *
-   * @param string|NULL $value
+   * @param mixed $values
    * @param string $delim
    * @return array|NULL
    */
-  static function explodePadded($value, $delim = CRM_Core_DAO::VALUE_SEPARATOR) {
-    if ($value === NULL) {
+  static function explodePadded($values, $delim = CRM_Core_DAO::VALUE_SEPARATOR) {
+    if ($values === NULL) {
       return NULL;
     }
-    return explode($delim, trim($value, $delim));
+    // If we already have an array, no need to continue
+    if (is_array($values)) {
+      return $values;
+    }
+    return explode($delim, trim((string) $values, $delim));
   }
 
   /**
-   * Like implode() but assumes that the $value is padded with $delim on left and right
+   * Like implode() but creates a string that is padded with $delim on left and right
    *
-   * @param string|NULL $value
+   * @param mixed $values
    * @param string $delim
-   * @return array|NULL
+   * @return string|NULL
    */
   static function implodePadded($values, $delim = CRM_Core_DAO::VALUE_SEPARATOR) {
     if ($values === NULL) {
       return NULL;
     }
-    return $delim . implode($delim, $values) . $delim;
+    // If we already have a string, strip $delim off the ends so it doesn't get added twice
+    if (is_string($values)) {
+      $values = trim($values, $delim);
+    }
+    return $delim . implode($delim, (array) $values) . $delim;
   }
 
   /**
@@ -614,6 +621,19 @@ class CRM_Utils_Array {
     $keys[$index] = $newKey;
     $elementArray = array_combine($keys, array_values($elementArray));
     return $elementArray;
+  }
+
+  /*
+   * function to get value of first matched
+   * regex key element of an array
+   */
+  static function valueByRegexKey($regexKey, $list, $default = NULL) {
+    if (is_array($list) && $regexKey) {
+      $matches = preg_grep($regexKey, array_keys($list));
+      $key = reset($matches);
+      return ($key && array_key_exists($key, $list)) ? $list[$key] : $default;
+    }
+    return $default;
   }
 }
 

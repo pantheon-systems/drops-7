@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -249,6 +249,21 @@ WHERE  id IN ( $groupIDs )
     CRM_Core_DAO::executeQuery($sql);
   }
 
+  /**
+   * Removes all the cache entries pertaining to a specific group
+   * If no groupID is passed in, removes cache entries for all groups
+   * Has an optimization to bypass repeated invocations of this function.
+   * Note that this function is an advisory, i.e. the removal respects the
+   * cache date, i.e. the removal is not done if the group was recently
+   * loaded into the cache.
+   *
+   * @param $groupID  int the groupID to delete cache entries, NULL for all groups
+   * @param $onceOnly boolean run the function exactly once for all groups.
+   *
+   * @public
+   * @return void
+   * @static
+   */
   static function remove($groupID = NULL, $onceOnly = TRUE) {
     static $invoked = FALSE;
 
@@ -465,16 +480,22 @@ WHERE  civicrm_group_contact.status = 'Added'
 
     $groupIDs = array($groupID);
     self::remove($groupIDs);
-
     $processed = FALSE;
+    $tempTable = 'civicrm_temp_group_contact_cache' . rand(0,2000);
     foreach (array($sql, $sqlB) as $selectSql) {
       if (!$selectSql) {
         continue;
       }
-      $insertSql = "INSERT IGNORE INTO civicrm_group_contact_cache (group_id,contact_id) ($selectSql);";
+      $insertSql = "CREATE TEMPORARY TABLE $tempTable ($selectSql);";
       $processed = TRUE;
       $result = CRM_Core_DAO::executeQuery($insertSql);
+      CRM_Core_DAO::executeQuery(
+        "INSERT IGNORE INTO civicrm_group_contact_cache (contact_id, group_id)
+        SELECT DISTINCT $idName, group_id FROM $tempTable
+      ");
+      CRM_Core_DAO::executeQuery(" DROP TABLE $tempTable");
     }
+
     self::updateCacheTime($groupIDs, $processed);
 
     if ($group->children) {

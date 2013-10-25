@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -28,18 +27,18 @@
  */
 
 /**
- * File for CiviCRM APIv3 pseudoconstants
+ * CiviCRM APIv3 pseudoconstants
  *
+ * @deprecated
  * @package CiviCRM_APIv3
  * @subpackage API_Constant
  * @copyright CiviCRM LLC (c) 2004-2013
  * @version $Id: Constant.php 30171 2010-10-14 09:11:27Z mover $
- *
  */
 
 /**
- * Generic file to retrieve all the constants and
- * pseudo constants used in CiviCRM
+ * @deprecated as of CiviCRM 4.4.
+ * It's recommended to use the api getoptions action instead
  *
  *  @param  string  Name of a public static method of
  *                  CRM_Core_PseudoContant: one of
@@ -85,6 +84,7 @@
  *    <li>worldRegion</li>
  *    <li>wysiwygEditor</li>
  *  </ul>
+ * @return array
  *  @example ConstantGet.php
  *  {@getfields constant_get}
  */

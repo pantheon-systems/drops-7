@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -130,7 +130,7 @@ INNER JOIN civicrm_price_set cps ON cps.id = cpf.price_set_id AND cps.name <>'de
       $dao = CRM_Core_DAO::executeQuery($sql);
       if ($dao->fetch()) {
         $errors = ts("We found unexpected data values from an older version of CiviCRM in your database. The upgrade can not be run until this condition is corrected.<br /><br />Details: One or more rows are present in the civicrm_option_group with name like 'civicrm_price_field.amount.%'. <a href='%1'>Check here for information on diagnosing and correcting this problem.</a>", array(1 => 'http://forum.civicrm.org/index.php/topic,27744.msg118748.html#msg118748'));
-        CRM_Core_Error::fatal($errors);     
+        CRM_Core_Error::fatal($errors);
         return FALSE;
   }
     }
@@ -194,7 +194,7 @@ INNER JOIN civicrm_price_set cps ON cps.id = cpf.price_set_id AND cps.name <>'de
 
     // Some steps take a long time, so we break them up into separate
     // tasks and enqueue them separately.
-    $this->addTask(ts('Upgrade DB to 4.2.alpha1: SQL'), 'task_4_2_x_runSql', $rev);
+    $this->addTask(ts('Upgrade DB to %1: SQL', array(1 => '4.2.alpha1')), 'task_4_2_x_runSql', $rev);
     $this->addTask(ts('Upgrade DB to 4.2.alpha1: Price Sets'), 'task_4_2_alpha1_createPriceSets', $rev);
     self::convertContribution();
     $this->addTask(ts('Upgrade DB to 4.2.alpha1: Event Profile'), 'task_4_2_alpha1_eventProfile');
@@ -212,7 +212,7 @@ INNER JOIN civicrm_price_set cps ON cps.id = cpf.price_set_id AND cps.name <>'de
   }
 
   function upgrade_4_2_beta3($rev) {
-    $this->addTask(ts('Upgrade DB to 4.2.beta3: SQL'), 'task_4_2_x_runSql', $rev);
+    $this->addTask(ts('Upgrade DB to %1: SQL', array(1 => '4.2.beta3')), 'task_4_2_x_runSql', $rev);
     $minParticipantId = CRM_Core_DAO::singleValueQuery('SELECT coalesce(min(id),0) FROM civicrm_participant');
     $maxParticipantId = CRM_Core_DAO::singleValueQuery('SELECT coalesce(max(id),0) FROM civicrm_participant');
 
@@ -233,11 +233,11 @@ INNER JOIN civicrm_price_set cps ON cps.id = cpf.price_set_id AND cps.name <>'de
   }
 
   function upgrade_4_2_0($rev) {
-    $this->addTask(ts('Upgrade DB to 4.2.0: SQL'), 'task_4_2_x_runSql', $rev);
+    $this->addTask(ts('Upgrade DB to %1: SQL', array(1 => '4.2.0')), 'task_4_2_x_runSql', $rev);
   }
 
   function upgrade_4_2_2($rev) {
-    $this->addTask(ts('Upgrade DB to 4.2.2: SQL'), 'task_4_2_x_runSql', $rev);
+    $this->addTask(ts('Upgrade DB to %1: SQL', array(1 => '4.2.2')), 'task_4_2_x_runSql', $rev);
     //create line items for memberships and participants for api/import
     self::convertContribution();
 
@@ -274,7 +274,7 @@ INNER JOIN civicrm_price_set cps ON cps.id = cpf.price_set_id AND cps.name <>'de
   }
 
   function upgrade_4_2_3($rev) {
-    $this->addTask(ts('Upgrade DB to 4.2.3: SQL'), 'task_4_2_x_runSql', $rev);
+    $this->addTask(ts('Upgrade DB to %1: SQL', array(1 => '4.2.3')), 'task_4_2_x_runSql', $rev);
     // CRM-10953 Remove duplicate activity type for 'Reminder Sent' which is mistakenly inserted by 4.2.alpha1 upgrade script
     $queryMin = "
 SELECT coalesce(min(value),0) from civicrm_option_value ov
@@ -313,7 +313,7 @@ DELETE from civicrm_option_value
   }
 
   function upgrade_4_2_5($rev) {
-    $this->addTask(ts('Upgrade DB to 4.2.5: SQL'), 'task_4_2_x_runSql', $rev);
+    $this->addTask(ts('Upgrade DB to %1: SQL', array(1 => '4.2.5')), 'task_4_2_x_runSql', $rev);
     //CRM-11077
     $sql = " SELECT cpse.entity_id, cpse.price_set_id
 FROM `civicrm_price_set_entity` cpse
@@ -485,7 +485,7 @@ WHERE     cpse.price_set_id IS NULL";
       $fieldParams['option_label'] = $optionValue['label'];
       $fieldParams['option_amount'] = $optionValue['value'];
       $fieldParams['option_weight'] = $optionValue['weight'];
-      $fieldParams['is_quick_config'] = $setParams['is_quick_config']; 
+      $fieldParams['is_quick_config'] = $setParams['is_quick_config'];
       if ($defaultAmount = CRM_Core_DAO::getFieldValue($daoName[$addTo[0]][0], $addTo[2], $defaultAmountColumn)) {
         $fieldParams['default_option'] = array_search($defaultAmount, $optionValue['amount_id']);
       }
@@ -642,7 +642,7 @@ WHERE     cpf.price_set_id = %1
           $priceSetId = $result->price_set_id;
         }
         else{
-          $defaultPriceSets = CRM_Price_BAO_Set::getDefaultPriceSet();
+          $defaultPriceSets = CRM_Price_BAO_PriceSet::getDefaultPriceSet();
           foreach ($defaultPriceSets as $key => $pSet) {
             if ($pSet['name'] == 'contribution_amount'){
               $priceSetId = $pSet['setID'];

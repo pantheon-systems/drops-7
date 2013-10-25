@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -43,7 +42,7 @@ class CRM_Report_Form_Contribute_HouseholdSummary extends CRM_Report_Form {
   public $_drilldownReport = array('contribute/detail' => 'Link to Detail Report');
 
   protected $_summary = NULL;
-  
+
   function __construct() {
     self::validRelationships();
 
@@ -69,6 +68,14 @@ class CRM_Report_Form_Contribute_HouseholdSummary extends CRM_Report_Form {
           array(
             'no_display' => TRUE,
             'required' => TRUE,
+          ),
+          'contact_type' =>
+          array(
+            'title' => ts('Contact Type'),
+          ),
+          'contact_sub_type' =>
+          array(
+            'title' => ts('Contact SubType'),
           ),
         ),
         'filters' =>
@@ -131,6 +138,8 @@ class CRM_Report_Form_Contribute_HouseholdSummary extends CRM_Report_Form {
           'contribution_status_id' => array(
             'title' => 'Contribution Status',
             'default' => TRUE,
+          ),
+          'check_number' => array('title' => ts('Check Number'),
           ),
           'currency' => array(
             'required' => TRUE,

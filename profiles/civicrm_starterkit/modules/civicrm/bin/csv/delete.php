@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright Tech To The People http:tttp.eu (c) 2011                 |
  +--------------------------------------------------------------------+
@@ -23,13 +23,13 @@
  +--------------------------------------------------------------------+
 */
 
-/** 
+/**
  * Delete records passed in via a csv file. You must have the record
- * id defined in the csv file. 
+ * id defined in the csv file.
  *
  * Usage:
  * php bin/csv/delete.php -e <entity> --file /path/to/csv/file [ -s site.org ]
- * e.g.: php bin/csv/delete.php -e Contact --file /tmp/delete.csv 
+ * e.g.: php bin/csv/delete.php -e Contact --file /tmp/delete.csv
  *
  **/
 

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -107,9 +107,9 @@ function selectValue( val ) {
   document.getElementsByName("updateTemplate")[0].checked = false;
   showSaveUpdateChkBox();
   if ( !val ) {
+    document.getElementById("subject").value ="";
     if ( !isPDF ) {
       document.getElementById(text_message).value ="";
-      document.getElementById("subject").value ="";
     }
     if ( editor == "ckeditor" ) {
       oEditor = CKEDITOR.instances[html_message];
@@ -147,9 +147,8 @@ function selectValue( val ) {
   var dataUrl = {/literal}"{crmURL p='civicrm/ajax/template' h=0 }"{literal};
 
   cj.post( dataUrl, {tid: val}, function( data ) {
+    cj("#subject").val( data.subject );
     if ( !isPDF ) {
-      cj("#subject").val( data.subject );
-
       if ( data.msg_text ) {
         cj("#"+text_message).val( data.msg_text );
         cj("div.text").show();
@@ -291,6 +290,9 @@ function tokenReplText(element) {
   var token     = cj("#"+element.id).val( )[0];
   if ( element.id == 'token3' ) {
     ( isMailing ) ? text_message = "subject" : text_message = "msg_subject";
+  }
+  else if ( element.id == 'token1' ) {
+    ( isMailing ) ? text_message = "text_message" : text_message = "msg_text";
   }
 
   cj( "#"+ text_message ).replaceSelection( token );

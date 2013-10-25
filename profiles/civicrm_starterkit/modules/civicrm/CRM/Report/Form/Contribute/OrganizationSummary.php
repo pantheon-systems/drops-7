@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -43,7 +42,7 @@ class CRM_Report_Form_Contribute_OrganizationSummary extends CRM_Report_Form {
   public $_drilldownReport = array('contribute/detail' => 'Link to Detail Report');
 
   protected $_summary = NULL;
-  
+
   function __construct() {
     self::validRelationships();
     $config = CRM_Core_Config::singleton();
@@ -69,6 +68,14 @@ class CRM_Report_Form_Contribute_OrganizationSummary extends CRM_Report_Form {
           array(
             'no_display' => TRUE,
             'required' => TRUE,
+          ),
+          'contact_type' =>
+          array(
+            'title' => ts('Contact Type'),
+          ),
+          'contact_sub_type' =>
+          array(
+            'title' => ts('Contact SubType'),
           ),
         ),
         'filters' =>
@@ -131,6 +138,8 @@ class CRM_Report_Form_Contribute_OrganizationSummary extends CRM_Report_Form {
           'contribution_status_id' => array(
             'title' => 'Contribution Status',
             'default' => TRUE,
+          ),
+          'check_number' => array('title' => ts('Check Number'),
           ),
           'currency' => array(
             'required' => TRUE,
@@ -198,7 +207,7 @@ class CRM_Report_Form_Contribute_OrganizationSummary extends CRM_Report_Form {
         'options' => $this->activeCampaigns,
       );
     }
-    
+
     $this->_currencyColumn = 'civicrm_contribution_currency';
     parent::__construct();
   }
@@ -248,24 +257,24 @@ class CRM_Report_Form_Contribute_OrganizationSummary extends CRM_Report_Form {
     $this->_from = NULL;
     $this->_from = "
         FROM  civicrm_relationship  {$this->_aliases['civicrm_relationship']}
-            LEFT  JOIN civicrm_contact {$this->_aliases['civicrm_contact_organization']} ON 
+            LEFT  JOIN civicrm_contact {$this->_aliases['civicrm_contact_organization']} ON
                       ({$this->_aliases['civicrm_contact_organization']}.id = {$this->_aliases['civicrm_relationship']}.$this->orgContact AND {$this->_aliases['civicrm_contact_organization']}.contact_type='Organization')
-            LEFT JOIN civicrm_contact {$this->_aliases['civicrm_contact']} ON 
-                      ({$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_relationship']}.$this->otherContact )       
+            LEFT JOIN civicrm_contact {$this->_aliases['civicrm_contact']} ON
+                      ({$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_relationship']}.$this->otherContact )
             {$this->_aclFrom}
             INNER JOIN civicrm_contribution {$this->_aliases['civicrm_contribution']} ON
                       ({$this->_aliases['civicrm_contribution']}.contact_id = {$this->_aliases['civicrm_relationship']}.$this->otherContact ) AND {$this->_aliases['civicrm_contribution']}.is_test = 0 ";
 
     if ($this->_addressField) {
-      $this->_from .= " 
-            LEFT JOIN civicrm_address  {$this->_aliases['civicrm_address']} ON 
-                      {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_address']}.contact_id AND 
+      $this->_from .= "
+            LEFT JOIN civicrm_address  {$this->_aliases['civicrm_address']} ON
+                      {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_address']}.contact_id AND
                       {$this->_aliases['civicrm_address']}.is_primary = 1\n ";
     }
     if ($this->_emailField) {
       $this->_from .= "
-            LEFT JOIN civicrm_email {$this->_aliases['civicrm_email']} ON 
-                      {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_email']}.contact_id AND 
+            LEFT JOIN civicrm_email {$this->_aliases['civicrm_email']} ON
+                      {$this->_aliases['civicrm_contact']}.id = {$this->_aliases['civicrm_email']}.contact_id AND
                       {$this->_aliases['civicrm_email']}.is_primary = 1\n ";
     }
   }

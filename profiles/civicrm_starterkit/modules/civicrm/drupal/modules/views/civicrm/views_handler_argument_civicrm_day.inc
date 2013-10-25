@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -35,7 +35,7 @@ class views_handler_argument_civicrm_day extends views_handler_argument_date {
     parent::construct();
     $this->format     = 'j';
     $this->arg_format = 'd';
-    $this->formula    = views_date_sql_extract('DAY', "***table***.$this->real_field", "datetime", '0');
+    $this->formula    = views_date_sql_extract('DAY', "***table***.$this->real_field");
   }
 
   /**
@@ -43,7 +43,7 @@ class views_handler_argument_civicrm_day extends views_handler_argument_date {
    */
   function summary_name($data) {
     $day = str_pad($data->{$this->name_alias}, 2, '0', STR_PAD_LEFT);
-    return format_date(strtotime("2005" . "05" . $day), 'custom', $this->format, 0);
+    return format_date(strtotime("2005" . "05" . $day . " 00:00:00 UTC"), 'custom', $this->format, 'UTC');
   }
 
   /**
@@ -51,7 +51,7 @@ class views_handler_argument_civicrm_day extends views_handler_argument_date {
    */
   function title() {
     $day = str_pad($this->argument, 2, '0', STR_PAD_LEFT);
-    return format_date(strtotime("2005" . "05" . $day), 'custom', $this->format, 0);
+    return format_date(strtotime("2005" . "05" . $day . " 00:00:00 UTC"), 'custom', $this->format, 'UTC');
   }
 
   function summary_argument($data) {

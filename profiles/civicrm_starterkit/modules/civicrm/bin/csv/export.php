@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright Tech To The People http:tttp.eu (c) 2011                 |
  +--------------------------------------------------------------------+
@@ -24,7 +24,7 @@
 */
 
 
-/** 
+/**
  *
  * Export records in a csv format to standard out. Optionally
  * limit records by field/value pairs passed as arguments.

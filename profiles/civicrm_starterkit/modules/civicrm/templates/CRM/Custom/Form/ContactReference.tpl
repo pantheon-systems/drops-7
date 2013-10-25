@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -35,7 +35,7 @@ cj( function( ) {
 
     if ( !customObj.hasClass('ac_input') ) {
         customObj.autocomplete( url,
-            { width : 250, selectFirst : false, elementId: custom,  matchContains: true, formatResult: {/literal}validate{$element_name|replace:']':''|replace:'[':'_'|replace:'-':'_'}{literal}
+            { width : 250, selectFirst : false, elementId: custom,  matchContains: true, formatResult: {/literal}validate{$element_name|replace:']':''|replace:'[':'_'|replace:'-':'_'}{literal}, max: {/literal}{crmSetting name="search_autocomplete_count" group="Search Preferences"}{literal}
             }).result(
                 function(event, data) {
                   cj(custom_id).val(data[1]);

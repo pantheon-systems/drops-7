@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -380,7 +380,7 @@ INNER JOIN   civicrm_contact AS contact ON ( contact.id = contrib.contact_id )
     if (!empty($config->fiscalYearStart) && ($config->fiscalYearStart['M'] != 1 || $config->fiscalYearStart['d'] != 1)) {
       $yearClause = "CASE
         WHEN (MONTH(contrib.receive_date)>= " . $config->fiscalYearStart['M'] . "
-	        && DAYOFMONTH(contrib.receive_date)>= " . $config->fiscalYearStart['d'] . " )
+          && DAYOFMONTH(contrib.receive_date)>= " . $config->fiscalYearStart['d'] . " )
           THEN
             concat(YEAR(contrib.receive_date), '-',YEAR(contrib.receive_date)+1)
           ELSE

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -44,7 +44,7 @@ interface CRM_Extension_Manager_Interface {
   /**
    * Perform type-specific removal logic (before updating the extension
    * row in the "civicrm_extension" table).
-   * 
+   *
    * @param CRM_Extension_Info $info may be generated from xml or DB (which is lossy)
    * @see CRM_Extension_Manager::createInfoFromDB
    */

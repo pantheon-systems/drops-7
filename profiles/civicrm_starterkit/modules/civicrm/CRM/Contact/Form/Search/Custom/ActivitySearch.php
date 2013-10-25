@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -201,6 +201,7 @@ class CRM_Contact_Form_Search_Custom_ActivitySearch implements CRM_Contact_Form_
       // Define ORDER BY for query in $sort, with default value
       if (!empty($sort)) {
         if (is_string($sort)) {
+          $sort = CRM_Utils_Type::escape($sort, 'String');
           $sql .= " ORDER BY $sort ";
         }
         else {
@@ -213,6 +214,8 @@ class CRM_Contact_Form_Search_Custom_ActivitySearch implements CRM_Contact_Form_
     }
 
     if ($rowcount > 0 && $offset >= 0) {
+      $offset = CRM_Utils_Type::escape($offset, 'Int');
+      $rowcount = CRM_Utils_Type::escape($rowcount, 'Int');
       $sql .= " LIMIT $offset, $rowcount ";
     }
     return $sql;
@@ -226,22 +229,31 @@ class CRM_Contact_Form_Search_Custom_ActivitySearch implements CRM_Contact_Form_
 
   // Regular JOIN statements here to limit results to contacts who have activities.
   function from() {
+    $activityContacts = CRM_Core_OptionGroup::values('activity_contacts', FALSE, FALSE, FALSE, NULL, 'name');
+    $assigneeID = CRM_Utils_Array::key('Activity Assignees', $activityContacts);
+    $targetID = CRM_Utils_Array::key('Activity Targets', $activityContacts);
+    $sourceID = CRM_Utils_Array::key('Activity Source', $activityContacts);
+
     return "
-        civicrm_contact contact_a
-            JOIN civicrm_activity activity
-                 ON contact_a.id = activity.source_contact_id
+        civicrm_activity activity
+            LEFT JOIN civicrm_activity_contact target
+                 ON activity.id = target.activity_id AND target.record_type_id = {$targetID}
+            JOIN civicrm_contact contact_a
+                 ON contact_a.id = target.contact_id
             JOIN civicrm_option_value ov1
                  ON activity.activity_type_id = ov1.value AND ov1.option_group_id = 2
             JOIN civicrm_option_value ov2
                  ON activity.status_id = ov2.value AND ov2.option_group_id = {$this->_groupId}
+            LEFT JOIN civicrm_activity_contact sourceContact
+                 ON activity.id = sourceContact.activity_id AND sourceContact.record_type_id = {$sourceID}
             JOIN civicrm_contact contact_b
-                 ON activity.source_contact_id = contact_b.id
+                 ON sourceContact.contact_id = contact_b.id
             LEFT JOIN civicrm_case_activity cca
                  ON activity.id = cca.activity_id
-            LEFT JOIN civicrm_activity_assignment assignment
-                 ON activity.id = assignment.activity_id
+            LEFT JOIN civicrm_activity_contact assignment
+                 ON activity.id = assignment.activity_id AND assignment.record_type_id = {$assigneeID}
             LEFT JOIN civicrm_contact contact_c
-                 ON assignment.assignee_contact_id = contact_c.id ";
+                 ON assignment.contact_id = contact_c.id ";
   }
 
   /*

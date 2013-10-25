@@ -1,9 +1,7 @@
 <?php
-// $Id$
-
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -27,6 +25,17 @@
  +--------------------------------------------------------------------+
 */
 
+
+ /*
+  *   !!!!!!!!!!!!!!!!!!!!
+  *     NB: this is named detail but behaves like a summary report.
+  *   It is also accessed through the Pledge Summary link in the UI
+  *   This should presumably be changed.
+  *   ~ Doten
+  *   !!!!!!!!!!!!!!!!!!!!
+  *
+  */
+
 /**
  *
  * @package CRM
@@ -38,11 +47,22 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
 
   protected $_summary = NULL;
   protected $_totalPaid = FALSE;
+  protected $_pledgeStatuses = array();
   protected $_customGroupExtends = array(
     'Pledge',
     'Individual'
   );
   function __construct() {
+  $this->_pledgeStatuses = CRM_Contribute_PseudoConstant::contributionStatus();
+  // Check if CiviCampaign is a) enabled and b) has active campaigns
+  $config = CRM_Core_Config::singleton();
+    $campaignEnabled = in_array("CiviCampaign", $config->enableComponents);
+    if ($campaignEnabled) {
+      $getCampaigns = CRM_Campaign_BAO_Campaign::getPermissionedCampaigns(NULL, NULL, TRUE, FALSE, TRUE);
+      $this->activeCampaigns = $getCampaigns['campaigns'];
+      asort($this->activeCampaigns);
+    }
+
     $this->_columns = array(
       'civicrm_contact' =>
       array(
@@ -146,6 +166,7 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
             'operatorType' => CRM_Report_Form::OP_MULTISELECT,
             'options' => CRM_Core_OptionGroup::values('contribution_status'),
           ),
+
         ),
       ),
       'civicrm_pledge_payment' =>
@@ -164,6 +185,7 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
               'default' => TRUE,
               'type' => CRM_Utils_Type::T_MONEY,
             ),
+
         ),
       ),
       'civicrm_group' =>
@@ -181,8 +203,24 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
             'options' => CRM_Core_PseudoConstant::group(),
           ),
         ),
-      ),
-    ) + $this->addAddressFields(FALSE, FALSE);
+      )
+    )
+    + $this->getAddressColumns(array('group_by' => FALSE))
+    + $this->getPhoneColumns();
+    // If we have a campaign, build out the relevant elements
+    $this->_tagFilter = TRUE;
+    if ($campaignEnabled && !empty($this->activeCampaigns)) {
+    $this->_columns['civicrm_pledge']['fields']['campaign_id'] = array(
+          'title' => 'Campaign',
+          'default' => 'false',
+    );
+    $this->_columns['civicrm_pledge']['filters']['campaign_id'] = array('title' => ts('Campaign'),
+          'operatorType' => CRM_Report_Form::OP_MULTISELECT,
+          'options' => $this->activeCampaigns,
+    );
+    $this->_columns['civicrm_pledge']['group_bys']['campaign_id'] = array('title' => ts('Campaign'));
+
+    }
 
     $this->_tagFilter = TRUE;
     $this->_currencyColumn = 'civicrm_pledge_currency';
@@ -206,16 +244,18 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
         'title' => $field['title'],
         'type' => $field['type']
       );
-      return "sum({$this->_aliases[$tableName]}.actual_amount) as {$tableName}_{$fieldName}";
+      return "COALESCE(sum({$this->_aliases[$tableName]}.actual_amount), 0) as {$tableName}_{$fieldName}";
     }
     if($fieldName == 'balance_due'){
+      $cancelledStatus = array_search('Cancelled', $this->_pledgeStatuses);
+      $completedStatus = array_search('Completed', $this->_pledgeStatuses);
       $this->_totalPaid = TRUE; // add pledge_payment join
       $this->_columnHeaders["{$tableName}_{$fieldName}"] = $field['title'];
       $this->_columnHeaders["{$tableName}_{$fieldName}"] = array(
         'title' => $field['title'],
         'type' => $field['type']
       );
-        return "sum({$this->_aliases[$tableName]}.actual_amount) - COALESCE({$this->_aliases['civicrm_pledge']}.amount, 0) as {$tableName}_{$fieldName}";
+        return "IF({$this->_aliases['civicrm_pledge']}.status_id IN({$cancelledStatus}, $completedStatus), 0, COALESCE({$this->_aliases['civicrm_pledge']}.amount, 0) - COALESCE(sum({$this->_aliases[$tableName]}.actual_amount),0)) as {$tableName}_{$fieldName}";
     }
     return FALSE;
   }
@@ -242,15 +282,8 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
       ";
     }
 
-    // include address field if address column is to be included
-    if ($this->_addressField) {
-      $this->_from .= "
-                 LEFT JOIN civicrm_address {$this->_aliases['civicrm_address']}
-                           ON ({$this->_aliases['civicrm_contact']}.id =
-                               {$this->_aliases['civicrm_address']}.contact_id) AND
-                               {$this->_aliases['civicrm_address']}.is_primary = 1\n";
-    }
-
+    $this->addPhoneFromClause();
+    $this->addAddressFromClause();
     // include email field if email column is to be included
     if ($this->_emailField) {
       $this->_from .= "
@@ -263,41 +296,54 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
 
   function statistics(&$rows) {
     $statistics = parent::statistics($rows);
-
+   //regenerate the from field without extra left join on pledge payments
+    $this->_totalPaid = FALSE;
+    $this->from();
+    $this->customDataFrom();
     if (!$this->_having) {
       $totalAmount = $average = array();
       $count = 0;
       $select = "
-            SELECT COUNT({$this->_aliases['civicrm_pledge']}.amount )       as count,
-                   SUM({$this->_aliases['civicrm_pledge']}.amount )         as amount,
-                   ROUND(AVG({$this->_aliases['civicrm_pledge']}.amount), 2) as avg,
-                   {$this->_aliases['civicrm_pledge']}.currency as currency
-            ";
+        SELECT COUNT({$this->_aliases['civicrm_pledge']}.amount )       as count,
+          SUM({$this->_aliases['civicrm_pledge']}.amount )         as amount,
+          ROUND(AVG({$this->_aliases['civicrm_pledge']}.amount), 2) as avg,
+          {$this->_aliases['civicrm_pledge']}.currency as currency
+        ";
 
-      $group = "\nGROUP BY {$this->_aliases['civicrm_pledge']}.currency";
+      $group = "GROUP BY {$this->_aliases['civicrm_pledge']}.currency";
       $sql = "{$select} {$this->_from} {$this->_where} {$group}";
       $dao = CRM_Core_DAO::executeQuery($sql);
-
-      while ($dao->fetch()) {
-       $totalAmount[] = CRM_Utils_Money::format($dao->amount, $dao->currency)."(".$dao->count.")";
-       $average[] =   CRM_Utils_Money::format($dao->avg, $dao->currency);
-       $count += $dao->count; 
+      $count = $index = $totalCount = 0;
+      // this will run once per currency
+      while($dao->fetch()) {
+        $totalAmount = CRM_Utils_Money::format($dao->amount, $dao->currency);
+        $average =   CRM_Utils_Money::format($dao->avg, $dao->currency);
+        $count = $dao->count;
+        $totalCount .= $count;
+        $statistics['counts']['amount' . $index] = array(
+          'title' => ts('Total Amount Pledged (') . $dao->currency . ')',
+          'value' => $totalAmount,
+          'type' => CRM_Utils_Type::T_STRING,
+        );
+        $statistics['counts']['avg' . $index] = array(
+          'title' => ts('Average (') . $dao->currency . ')',
+          'value' => $average,
+          'type' => CRM_Utils_Type::T_STRING,
+        );
+        $statistics['counts']['count' . $index] = array(
+          'title' => ts('Total No Pledges (') . $dao->currency . ')',
+          'value' => $count,
+          'type' => CRM_Utils_Type::T_INT,
+        );
+        $index ++;
       }
-
-      $statistics['counts']['amount'] = array(
-        'title' => ts('Total Pledged (Number of Pledge)'),
-        'value' => implode(',  ', $totalAmount),
-        'type' => CRM_Utils_Type::T_STRING,
-      );
-      $statistics['counts']['count'] = array(
-        'title' => ts('Total No Pledges'),
-        'value' => $count,
-      );
-      $statistics['counts']['avg'] = array(
-        'title' => ts('Average'),
-        'value' => implode(',  ', $average),
-        'type' => CRM_Utils_Type::T_STRING,
-     );
+      if($totalCount > $count) {
+        $statistics['counts']['count' . $index] = array(
+          'title' => ts('Total No Pledges'),
+          'value' => $totalCount,
+          'type' => CRM_Utils_Type::T_INT,
+        );
+      }
     }
     return $statistics;
   }
@@ -350,7 +396,7 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
     }
     else {
       $this->_where = "WHERE  ({$this->_aliases['civicrm_pledge']}.is_test=0 )  AND
-                                      " . implode(' AND ', $clauses);
+      " . implode(' AND ', $clauses);
     }
 
     if ($this->_aclWhere) {
@@ -366,7 +412,6 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
     $this->buildACLClause($this->_aliases['civicrm_contact']);
     $sql   = $this->buildQuery();
     $rows  = $payment = array();
-    $count = $due = $paid = 0;
 
     $dao = CRM_Core_DAO::executeQuery($sql);
 
@@ -444,34 +489,6 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
             $display[$daoPayment->pledge_id]['scheduled_amount'] = $daoPayment->scheduled_amount;
           }
         }
-      }
-
-      // Do calculations for Total amount paid AND
-      // Balance Due, based on Pledge Status either
-      // In Progress, Pending or Completed
-      //?q - what does this add compared to calculating the amount paid & subtracting it from
-      // the amount committed? The only thing I can see if it the pledge was not fully paid but
-      // had been set to completed? In which case this could be done more simply either @ the php or mysql level
-      foreach ($display as $pledgeID => $data) {
-        $count = $due = $paid = 0;
-        $totalPaidAmt = CRM_Utils_Array::value('civicrm_pledge_payment_total_paid', $display[$pledgeID]);
-
-        if (CRM_Utils_Array::value('civicrm_pledge_status_id', $data) == 5) {
-          $due = $data['civicrm_pledge_amount'] - $totalPaidAmt;
-          $paid = $totalPaidAmt;
-          $count++; // ?? why?? I can't see any use for this
-        }
-        elseif (CRM_Utils_Array::value('civicrm_pledge_status_id', $data) == 2) {
-          $due = $data['civicrm_pledge_amount'];
-          $paid = 0;
-        }
-        elseif (CRM_Utils_Array::value('civicrm_pledge_status_id', $data) == 1) {
-          $due = 0;
-          $paid = $paid + $data['civicrm_pledge_amount'];
-        }
-
-        $display[$pledgeID]['civicrm_pledge_payment_total_paid'] = $paid;
-        $display[$pledgeID]['civicrm_pledge_payment_balance_due'] = $due;
       }
     }
 
@@ -551,6 +568,14 @@ class CRM_Report_Form_Pledge_Detail extends CRM_Report_Form {
       if (array_key_exists('civicrm_pledge_status_id', $row)) {
         if ($value = $row['civicrm_pledge_status_id']) {
           $rows[$rowNum]['civicrm_pledge_status_id'] = CRM_Contribute_PseudoConstant::contributionStatus($value);
+        }
+        $entryFound = TRUE;
+      }
+
+      // If using campaigns, convert campaign_id to campaign title
+      if (array_key_exists('civicrm_pledge_campaign_id', $row)) {
+        if ($value = $row['civicrm_pledge_campaign_id']) {
+          $rows[$rowNum]['civicrm_pledge_campaign_id'] = $this->activeCampaigns[$value];
         }
         $entryFound = TRUE;
       }

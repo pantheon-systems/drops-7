@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -56,8 +56,8 @@ class CRM_Upgrade_Incremental_Legacy {
       )
     ) {
       $query = "
-SELECT  id 
-  FROM  civicrm_mailing_job 
+SELECT  id
+  FROM  civicrm_mailing_job
  WHERE  status NOT IN ( 'Complete', 'Canceled' ) AND is_test = 0 LIMIT 1";
       $mjId = CRM_Core_DAO::singleValueQuery($query);
       if ($mjId) {
@@ -88,6 +88,24 @@ SELECT  id
 
       if ($googleProcessorExists) {
         $preUpgradeMessage .= '<br />' . ts('To continue using Google Checkout Payment Processor with latest version of CiviCRM, requires updating merchant account settings. Please refer "Set API callback URL and other settings" section of <a href="%1" target="_blank"><strong>Google Checkout Configuration</strong></a> doc.', array(1 => 'http://wiki.civicrm.org/confluence/x/zAJTAg'));
+      }
+    }
+
+    // http://issues.civicrm.org/jira/browse/CRM-13572
+    // Depending on how the code was upgraded, some sites may still have copies of old
+    // source files left behind. This is often a forgivable offense, but it's quite
+    // dangerous for CIVI-SA-2013-001.
+    global $civicrm_root;
+    $ofcFile = "$civicrm_root/packages/OpenFlashChart/php-ofc-library/ofc_upload_image.php";
+    if (file_exists($ofcFile)) {
+      if (@unlink($ofcFile)) {
+        $preUpgradeMessage .= '<br />' . ts('This system included an outdated, insecure script (%1). The file was automatically deleted.', array(
+          1 => $ofcFile
+        ));
+      } else {
+        $preUpgradeMessage .= '<br />' . ts('This system includes an outdated, insecure script (%1). Please delete it.', array(
+          1 => $ofcFile
+        ));
       }
     }
   }
@@ -206,8 +224,8 @@ SELECT  id
     if ($rev == '3.2.beta4') {
       $statuses = array('New', 'Current', 'Grace', 'Expired', 'Pending', 'Cancelled', 'Deceased');
       $sql = "
-SELECT  count( id ) as statusCount 
-  FROM  civicrm_membership_status 
+SELECT  count( id ) as statusCount
+  FROM  civicrm_membership_status
  WHERE  name IN ( '" . implode("' , '", $statuses) . "' ) ";
       $count = CRM_Core_DAO::singleValueQuery($sql);
       if ($count < count($statuses)) {
@@ -234,7 +252,7 @@ SELECT  count( id ) as statusCount
   static function upgrade_2_2_alpha1($rev) {
     for ($stepID = 1; $stepID <= 4; $stepID++) {
       $formName = "CRM_Upgrade_TwoTwo_Form_Step{$stepID}";
-      eval("\$form = new $formName( );");
+      $form = new $formName();
 
       $error = NULL;
       if (!$form->verifyPreDBState($error)) {
@@ -277,7 +295,7 @@ SELECT  count( id ) as statusCount
    */
   static function upgrade_2_1_2($rev) {
     $formName = "CRM_Upgrade_TwoOne_Form_TwoOneTwo";
-    eval("\$form = new $formName( '$rev' );");
+    $form = new $formName($rev);
 
     $error = NULL;
     if (!$form->verifyPreDBState($error)) {
@@ -409,7 +427,7 @@ SELECT  count( id ) as statusCount
   static function upgrade_2_2_7($rev) {
     $upgrade = new CRM_Upgrade_Form();
     $upgrade->processSQL($rev);
-    $sql = "UPDATE civicrm_report_instance 
+    $sql = "UPDATE civicrm_report_instance
                        SET form_values = REPLACE(form_values,'#',';') ";
     CRM_Core_DAO::executeQuery($sql, CRM_Core_DAO::$_nullArray);
 

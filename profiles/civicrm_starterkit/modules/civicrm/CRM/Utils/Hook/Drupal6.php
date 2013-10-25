@@ -1,8 +1,7 @@
 <?php
-
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -61,7 +60,7 @@ class CRM_Utils_Hook_Drupal6 extends CRM_Utils_Hook {
   ) {
 
     $this->buildModuleList();
-    
+
     return $this->runHooks($this->allModules, $fnSuffix,
       $numParams, $arg1, $arg2, $arg3, $arg4, $arg5
     );

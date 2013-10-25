@@ -3,7 +3,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -183,23 +183,29 @@ function _civicrm_api3_activity_create_spec(&$params) {
   //default for source_contact_id = currently logged in user
   $params['source_contact_id']['api.default'] = 'user_contact_id';
 
+  $params['status_id']['api.aliases'] = array('activity_status');
+
   $params['assignee_contact_id'] = array(
     'name' => 'assignee_id',
     'title' => 'assigned to',
     'type' => 1,
-    'FKClassName' => 'CRM_Activity_DAO_ActivityAssignment',
+    'FKClassName' => 'CRM_Activity_DAO_ActivityContact',
   );
   $params['target_contact_id'] = array(
     'name' => 'target_id',
     'title' => 'Activity Target',
     'type' => 1,
-    'FKClassName' => 'CRM_Activity_DAO_ActivityTarget',
+    'FKClassName' => 'CRM_Activity_DAO_ActivityContact',
   );
-  $params['activity_status_id'] = array(
-    'name' => 'status_id',
-    'title' => 'Status Id',
-    'type' => 1,
+
+  $params['source_contact_id'] = array(
+      'name' => 'source_contact_id',
+      'title' => 'Activity Source Contact',
+      'type' => 1,
+      'FKClassName' => 'CRM_Activity_DAO_ActivityContact',
+      'api.default' => 'user_contact_id',
   );
+
 }
 
 /**
@@ -240,7 +246,7 @@ function civicrm_api3_activity_get($params) {
       $returns[$returnkey] = $v;
     }
   }
-
+  $returns['source_contact_id'] = 1;
   foreach ($returns as $n => $v) {
     switch ($n) {
       case 'assignee_contact_id':
@@ -253,6 +259,11 @@ function civicrm_api3_activity_get($params) {
           $activities[$key]['target_contact_id'] = CRM_Activity_BAO_ActivityTarget::retrieveTargetIdsByActivityId($activityArray['id']);
         }
         break;
+      case 'source_contact_id':
+        foreach ($activities as $key => $activityArray) {
+          $activities[$key]['source_contact_id'] = CRM_Activity_BAO_Activity::getSourceContactID($activityArray['id']);
+        }
+        break;
       default:
         if (substr($n, 0, 6) == 'custom') {
           $returnProperties[$n] = $v;
@@ -261,13 +272,14 @@ function civicrm_api3_activity_get($params) {
   }
   if (!empty($activities) && (!empty($returnProperties) || !empty($params['contact_id']))) {
     foreach ($activities as $activityId => $values) {
-
       _civicrm_api3_custom_data_get($activities[$activityId], 'Activity', $activityId, NULL, $values['activity_type_id']);
     }
   }
   //legacy custom data get - so previous formatted response is still returned too
   return civicrm_api3_create_success($activities, $params, 'activity', 'get');
 }
+
+
 
 /**
  * Delete a specified Activity.
@@ -305,15 +317,16 @@ function civicrm_api3_activity_delete($params) {
 function _civicrm_api3_activity_check_params(&$params) {
 
   $contactIDFields = array_intersect_key($params,
-    array(
-      'source_contact_id' => 1,
-      'assignee_contact_id' => 1,
-      'target_contact_id' => 1,
-    )
+                     array(
+                       'source_contact_id' => 1,
+                       'assignee_contact_id' => 1,
+                       'target_contact_id' => 1,
+                     )
   );
-   // this should be handled by wrapper layer & probably the api would already manage it
-   //correctly by doing post validation - ie. a failure should result in a roll-back = an error
-   // needs testing
+
+  // this should be handled by wrapper layer & probably the api would already manage it
+  //correctly by doing post validation - ie. a failure should result in a roll-back = an error
+  // needs testing
   if (!empty($contactIDFields)) {
     $contactIds = array();
     foreach ($contactIDFields as $fieldname => $contactfield) {
@@ -342,8 +355,8 @@ SELECT  count(*)
 
 
   $activityIds = array('activity' => CRM_Utils_Array::value('id', $params),
-    'parent' => CRM_Utils_Array::value('parent_id', $params),
-    'original' => CRM_Utils_Array::value('original_id', $params),
+                 'parent' => CRM_Utils_Array::value('parent_id', $params),
+                 'original' => CRM_Utils_Array::value('original_id', $params),
   );
 
   foreach ($activityIds as $id => $value) {
@@ -383,26 +396,6 @@ SELECT  count(*)
   ) {
     return civicrm_api3_create_error('Invalid Activity Type ID');
   }
-
-  // check for activity status is passed in
-  // note this should all be removed in favour of wrapper layer validation
-  // needs testing
-  if (isset($params['activity_status_id'])) {
-    $activityStatus = CRM_Core_PseudoConstant::activityStatus();
-
-    if (is_numeric($params['activity_status_id']) && !array_key_exists($params['activity_status_id'], $activityStatus)) {
-      return civicrm_api3_create_error('Invalid Activity Status');
-    }
-    elseif (!is_numeric($params['activity_status_id'])) {
-      $statusId = array_search($params['activity_status_id'], $activityStatus);
-
-      if (!is_numeric($statusId)) {
-        return civicrm_api3_create_error('Invalid Activity Status');
-      }
-    }
-  }
-
-
 
   // check for activity duration minutes
   // this should be validated @ the wrapper layer not here

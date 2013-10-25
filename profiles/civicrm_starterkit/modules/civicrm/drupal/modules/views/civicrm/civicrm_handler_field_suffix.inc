@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -38,7 +38,7 @@ class civicrm_handler_field_suffix extends views_handler_field {
         return;
       }
       require_once 'CRM/Core/PseudoConstant.php';
-      self::$_individualSuffix = CRM_Core_PseudoConstant::individualSuffix();
+      self::$_individualSuffix = CRM_Core_PseudoConstant::get('CRM_Contact_DAO_Contact', 'suffix_id');
     }
   }
 

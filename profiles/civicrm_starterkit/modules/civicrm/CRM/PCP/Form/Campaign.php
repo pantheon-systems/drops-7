@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -211,7 +211,7 @@ class CRM_PCP_Form_Campaign extends CRM_Core_Form {
         $params[$field] = CRM_Utils_String::purifyHTML($params[$field]);
       }
     }
-    
+
     $entity_table = CRM_PCP_BAO_PCP::getPcpEntityTable($params['page_type']);
 
     $pcpBlock = new CRM_PCP_DAO_PCPBlock();
@@ -320,7 +320,7 @@ class CRM_PCP_Form_Campaign extends CRM_Core_Form {
       unset($emailArray[0]);
       $cc = implode(',', $emailArray);
 
-      list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplates::sendTemplate(
+      list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplate::sendTemplate(
         array(
           'groupName' => 'msg_tpl_workflow_contribution',
           'valueName' => 'pcp_notify',

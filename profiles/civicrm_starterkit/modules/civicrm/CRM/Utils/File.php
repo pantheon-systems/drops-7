@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -161,7 +161,7 @@ class CRM_Utils_File {
       if ($rmdir) {
         if (rmdir($target)) {
           if ($verbose) {
-          	CRM_Core_Session::setStatus(ts('Removed directory %1', array(1 => $target)), '', 'success');
+            CRM_Core_Session::setStatus(ts('Removed directory %1', array(1 => $target)), '', 'success');
           }
           return TRUE;
       }

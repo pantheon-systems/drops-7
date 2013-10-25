@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -310,7 +310,7 @@ class CRM_Core_Payment_PayPalImpl extends CRM_Core_Payment {
     $args['state'] = $params['state_province'];
     $args['countryCode'] = $params['country'];
     $args['zip'] = $params['postal_code'];
-    $args['desc'] = CRM_Utils_Array::value('description', $params);
+    $args['desc'] = substr(CRM_Utils_Array::value('description', $params), 0, 127);
     $args['custom'] = CRM_Utils_Array::value('accountingCode', $params);
 
     if (CRM_Utils_Array::value('is_recur', $params) == 1) {

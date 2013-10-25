@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -41,6 +41,7 @@
  *
  */
 class CRM_Core_Config_Defaults {
+
   function setCoreVariables() {
     global $civicrm_root;
 
@@ -67,10 +68,6 @@ class CRM_Core_Config_Defaults {
     //$this->revampPages = array( 'CRM/Admin/Form/Setting/Url.tpl', 'CRM/Admin/Form/Preferences/Address.tpl' );
     $this->revampPages = array();
 
-    // IDS enablement
-    $this->useIDS = defined('CIVICRM_IDS_ENABLE') ? (bool) CIVICRM_IDS_ENABLE : TRUE;
-
-    //
     $size = trim(ini_get('upload_max_filesize'));
     if ($size) {
       $last = strtolower($size{strlen($size) - 1});

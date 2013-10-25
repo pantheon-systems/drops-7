@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -232,7 +232,7 @@ class CRM_Activity_Form_Search extends CRM_Core_Form {
    * @return void
    */
   function buildQuickForm() {
-    $this->addElement('text', 'sort_name', ts('With (name or email)'), CRM_Core_DAO::getAttribute('CRM_Contact_DAO_Contact', 'sort_name'));
+    $this->addElement('text', 'sort_name', ts('Name or Email'), CRM_Core_DAO::getAttribute('CRM_Contact_DAO_Contact', 'sort_name'));
 
     CRM_Activity_BAO_Query::buildSearchForm($this);
 
@@ -332,9 +332,6 @@ class CRM_Activity_Form_Search extends CRM_Core_Form {
       $this->_formValues["activity_test"] = 0;
     }
 
-    if (!CRM_Utils_Array::value('activity_contact_name', $this->_formValues) && !CRM_Utils_Array::value('contact_id', $this->_formValues)) {
-      $this->_formValues['activity_role'] = NULL;
-    }
     CRM_Core_BAO_CustomValue::fixFieldValueOfTypeMemo($this->_formValues);
 
     $this->_queryParams = CRM_Contact_BAO_Query::convertFormValues($this->_formValues);
@@ -346,7 +343,7 @@ class CRM_Activity_Form_Search extends CRM_Core_Form {
     if ($buttonName == $this->_actionButtonName || $buttonName == $this->_printButtonName) {
       // check actionName and if next, then do not repeat a search, since we are going to the next page
       // hack, make sure we reset the task values
-      $stateMachine = &$this->controller->getStateMachine();
+      $stateMachine = $this->controller->getStateMachine();
       $formName = $stateMachine->getTaskFormName();
       $this->controller->resetPage($formName);
       return;
@@ -396,6 +393,7 @@ class CRM_Activity_Form_Search extends CRM_Core_Form {
     if (!$this->_force) {
       return;
     }
+
     $status = CRM_Utils_Request::retrieve('status', 'String', $this);
     if ($status) {
       $this->_formValues['activity_status'] = $status;
@@ -432,10 +430,69 @@ class CRM_Activity_Form_Search extends CRM_Core_Form {
       }
     }
 
+    // Added for membership search
+
+    $signupType = CRM_Utils_Request::retrieve('signupType', 'Positive',
+      CRM_Core_DAO::$_nullObject
+    );
+
+    if ($signupType) {
+      //$this->_formValues['activity_type_id'] = array();
+      $this->_formValues['activity_role'] = 1;
+      $this->_defaults['activity_role'] = 1;
+      $activityTypes = CRM_Core_PseudoConstant::activityType(TRUE, FALSE, FALSE, 'name');
+
+      $renew = CRM_Utils_Array::key('Membership Renewal', $activityTypes);
+      $signup = CRM_Utils_Array::key('Membership Signup', $activityTypes);
+
+      switch ($signupType) {
+        case 3: // signups and renewals
+          $this->_formValues['activity_type_id'][$renew] = 1;
+          $this->_defaults['activity_type_id'][$renew] = 1;
+        case 1: // signups only
+          $this->_formValues['activity_type_id'][$signup] = 1;
+          $this->_defaults['activity_type_id'][$signup] = 1;
+          break;
+
+        case 2: // renewals only
+          $this->_formValues['activity_type_id'][$renew] = 1;
+          $this->_defaults['activity_type_id'][$renew] = 1;
+          break;
+      }
+    }
+
+    $dateLow = CRM_Utils_Request::retrieve('dateLow', 'String',
+      CRM_Core_DAO::$_nullObject
+    );
+
+    if ($dateLow) {
+      $dateLow = date('m/d/Y', strtotime($dateLow));
+      $this->_formValues['activity_date_relative'] = 0;
+      $this->_defaults['activity_date_relative'] = 0;
+      $this->_formValues['activity_date_low'] = $dateLow;
+      $this->_defaults['activity_date_low'] = $dateLow;
+    }
+
+    $dateHigh = CRM_Utils_Request::retrieve('dateHigh', 'String',
+      CRM_Core_DAO::$_nullObject
+    );
+
+    if ($dateHigh) {
+      // Activity date time assumes midnight at the beginning of the date
+      // This sets it to almost midnight at the end of the date
+   /*   if ($dateHigh <= 99999999) {
+        $dateHigh = 1000000 * $dateHigh + 235959;
+      } */
+      $dateHigh = date('m/d/Y', strtotime($dateHigh));
+      $this->_formValues['activity_date_relative'] = 0;
+      $this->_defaults['activity_date_relative'] = 0;
+      $this->_formValues['activity_date_high'] = $dateHigh;
+      $this->_defaults['activity_date_high'] = $dateHigh;
+    }
+
     if (!empty($this->_defaults)) {
       $this->setDefaults($this->_defaults);
     }
-
   }
 
   function getFormValues() {

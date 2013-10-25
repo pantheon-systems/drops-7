@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -41,7 +40,6 @@
 /**
  * Files required for this package
  */
-require_once 'CRM/Event/BAO/ParticipantPayment.php';
 
 /**
  * Create a Event Participant Payment
@@ -73,7 +71,7 @@ function civicrm_api3_participant_payment_create($params) {
 
 /**
  * Adjust Metadata for Create action
- * 
+ *
  * The metadata is used for setting defaults, documentation & validation
  * @param array $params array or parameters determined by getfields
  */

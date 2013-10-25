@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -54,8 +54,7 @@ class CRM_Dedupe_Finder {
     $rgBao->id         = $rgid;
     $rgBao->contactIds = $cids;
     if (!$rgBao->find(TRUE)) {
-        //FIXME:
-      CRM_Core_Error::fatal("$level rule for $ctype does not exist");
+      CRM_Core_Error::fatal("Dedupe rule not found for selected contacts");
     }
 
     $rgBao->fillTable();
@@ -82,7 +81,7 @@ class CRM_Dedupe_Finder {
    *
    * @param array  $params  array of params of the form $params[$table][$field] == $value
    * @param string $ctype   contact type to match against
-   * @param string $used    dedupe rule group usage ('Unsupervised' or 'Supervised' or 'General')  
+   * @param string $used    dedupe rule group usage ('Unsupervised' or 'Supervised' or 'General')
    * @param array  $except  array of contacts that shouldn't be considered dupes
    * @param int    $ruleGroupID the id of the dedupe rule we should be using
    *
@@ -202,14 +201,13 @@ class CRM_Dedupe_Finder {
     $flat = array();
     CRM_Utils_Array::flatten($fields, $flat);
 
+    // FIXME: This may no longer be necessary - check inputs
     $replace_these = array(
       'individual_prefix' => 'prefix_id',
       'individual_suffix' => 'suffix_id',
       'gender' => 'gender_id',
     );
-    //handle for individual_suffix, individual_prefix, gender
-    foreach (array(
-      'individual_suffix', 'individual_prefix', 'gender') as $name) {
+    foreach (array('individual_suffix', 'individual_prefix', 'gender') as $name) {
       if (CRM_Utils_Array::value($name, $fields)) {
         $flat[$replace_these[$name]] = $flat[$name];
         unset($flat[$name]);

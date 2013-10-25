@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -72,9 +72,13 @@ class CRM_UF_Form_Group extends CRM_Core_Form {
     $this->assign('gid', $this->_id);
     $this->_group = CRM_Core_PseudoConstant::group();
 
+    if ($this->_action & (CRM_Core_Action::UPDATE | CRM_Core_Action::DELETE)) {
+      $title = CRM_Core_BAO_UFGroup::getTitle($this->_id);
+      $this->assign('profileTitle', $title);
+    }
+
     // setting title for html page
     if ($this->_action & CRM_Core_Action::UPDATE) {
-      $title = CRM_Core_BAO_UFGroup::getTitle($this->_id);
       CRM_Utils_System::setTitle(ts('Profile Settings') . " - $title");
     }
     elseif ($this->_action & (CRM_Core_Action::DISABLE | CRM_Core_Action::DELETE)) {
@@ -137,6 +141,7 @@ class CRM_UF_Form_Group extends CRM_Core_Form {
 
     // title
     $this->add('text', 'title', ts('Profile Name'), CRM_Core_DAO::getAttribute('CRM_Core_DAO_UFGroup', 'title'), TRUE);
+    $this->add('textarea', 'description', ts('Description'), CRM_Core_DAO::getAttribute('CRM_Core_DAO_UFGroup', 'description'));
 
 
     //add checkboxes
@@ -176,7 +181,7 @@ class CRM_UF_Form_Group extends CRM_Core_Form {
         'id' => $type,
       );
 
-      eval('CRM_UF_Form_AdvanceSetting::' . $type . '( $this );');
+      CRM_UF_Form_AdvanceSetting::$type($this);
     }
 
     $this->addButtons(array(

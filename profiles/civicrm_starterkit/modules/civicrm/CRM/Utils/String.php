@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -630,6 +630,25 @@ class CRM_Utils_String {
     }
     return $result;
   }
+
+  /**
+   * Examples:
+   * "admin foo" => array(NULL,"admin foo")
+   * "cms:admin foo" => array("cms", "admin foo")
+   *
+   * @param string $string e.g. "view all contacts". Syntax: "[prefix:]name"
+   * @return array (0 => string|NULL $prefix, 1 => string $value)
+   */
+  public static function parsePrefix($delim, $string, $defaultPrefix = NULL) {
+    $pos = strpos($string, $delim);
+    if ($pos === FALSE) {
+      return array($defaultPrefix, $string);
+    }
+    else {
+      return array(substr($string, 0, $pos), substr($string, 1+$pos));
+    }
+  }
+
 
 }
 

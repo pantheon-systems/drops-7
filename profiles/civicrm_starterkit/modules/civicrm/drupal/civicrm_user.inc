@@ -132,7 +132,7 @@ function civicrm_user_categories() {
     return;
   }
 
-  $allUFGroups = CRM_Core_BAO_UFGroup::getModuleUFGroup('User Account');
+  $allUFGroups = CRM_Core_BAO_UFGroup::getModuleUFGroup('User Account', 0, TRUE, CRM_Core_Permission::VIEW, array('id', 'name', 'title', 'is_active'));
   $ufGroups = array();
 
   $weight = 100;

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -57,7 +57,7 @@ class CRM_Custom_Page_Group extends CRM_Core_Page {
    *
    * @return  array   array of action links that we need to display for the browse screen
    * @access public
-   */ 
+   */
   function &actionLinks() {
     // check if variable _actionsLinks is populated
     if (!isset(self::$_actionLinks)) {
@@ -208,7 +208,7 @@ class CRM_Custom_Page_Group extends CRM_Core_Page {
     // get all custom groups sorted by weight
     $customGroup = array();
     $dao = new CRM_Core_DAO_CustomGroup();
-
+    $dao->is_reserved = FALSE;
     $dao->orderBy('weight, title');
     $dao->find();
 

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -101,6 +101,10 @@ class CRM_Mailing_Page_Report extends CRM_Core_Page_Basic {
         "atype={$atype}&action=view&reset=1&id={$aid}&cid={$cid}&context=activity"
       );
       $backUrlTitle = ts('Back to Activity');
+    }
+    elseif ($context == 'mailing') {
+      $backUrl = CRM_Utils_System::url('civicrm/contact/view', "reset=1&cid={$cid}&selectedChild=mailing");
+      $backUrlTitle = ts('Back to Mailing');
     }
     else {
       $backUrl = CRM_Utils_System::url('civicrm/mailing', 'reset=1');

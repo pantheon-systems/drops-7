@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -62,7 +62,7 @@ class CRM_Member_Form_Task_Batch extends CRM_Member_Form_Task {
    *
    * @return void
    * @access public
-   */ 
+   */
   function preProcess() {
     /*
          * initialize the task and row fields

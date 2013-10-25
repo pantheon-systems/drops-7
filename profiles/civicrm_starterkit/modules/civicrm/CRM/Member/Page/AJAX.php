@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -52,7 +52,7 @@ class CRM_Member_Page_AJAX {
     }
     $memType = CRM_Utils_Type::escape($_POST['mtype'], 'Integer');
 
-        $query = "SELECT name, minimum_fee AS total_amount, financial_type_id, auto_renew 
+        $query = "SELECT name, minimum_fee AS total_amount, financial_type_id, auto_renew
 FROM    civicrm_membership_type
 WHERE   id = %1";
 
@@ -67,7 +67,7 @@ WHERE   id = %1";
     // fix the display of the monetary value, CRM-4038
     $details['total_amount'] = CRM_Utils_Money::format($details['total_amount'], NULL, '%a');
     $options = array(ts('No auto-renew option'), ts('Give option, but not required'), ts('Auto-renew required '));
-    $details['auto_renew'] = $options[$details['auto_renew']];
+    $details['auto_renew'] = CRM_Utils_Array::value('auto_renew', $options[$details]);
     echo json_encode($details);
     CRM_Utils_System::civiExit();
   }

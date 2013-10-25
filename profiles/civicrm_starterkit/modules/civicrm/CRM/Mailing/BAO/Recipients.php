@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -56,6 +56,9 @@ WHERE  mailing_id = %1
   ) {
     $limitString = NULL;
     if ($limit && $offset !== NULL) {
+      $offset = CRM_Utils_Type::escape($offset, 'Int');
+      $limit = CRM_Utils_Type::escape($limit, 'Int');
+
       $limitString = "LIMIT $offset, $limit";
     }
 

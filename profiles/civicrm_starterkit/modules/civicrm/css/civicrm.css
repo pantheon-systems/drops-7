@@ -42,6 +42,7 @@ div.crm-container label {
   margin: 0em 0em 1em;
   border-collapse: collapse;
   width: 100%;
+  font-size: 12px;
 }
 
 .crm-container table.criteria-group {
@@ -1254,7 +1255,7 @@ div.crm-container label {
   height: auto;
   margin: 0 1px;
   padding: 2px 5px;
-  font-family: Arial, Helvetica, sans-serif; 
+  font-family: Arial, Helvetica, sans-serif;
 }
 
 .crm-container #alpha-filter a {
@@ -2585,6 +2586,10 @@ div.grippie {
   background-position: -3px -161px;
 }
 
+.crm-container .swap-icon {
+  background-position: -82px -81px;
+}
+
 #crm-container .geotag {
   padding: 2px 0 2px 20px !important;
   background: url('../i/geotag_16.png') left center no-repeat;
@@ -2826,7 +2831,6 @@ div.crm-accordion-header a.helpicon {
 
 div a.helpicon:hover,
 div a.helpicon:focus {
-  background-image: url(../i/icons/jquery-ui-91CE00.png);
   opacity: 1;
 }
 
@@ -2983,6 +2987,11 @@ div#crm-container form {
   color: #f5f6f1;
 }
 
+/* add border to jQuery ui-dialog box CRM-13177 */
+div.ui-dialog {
+  border: 1px solid black;
+}
+
 #Tag .tree .collapsable .hit,
 #Tag .tree .expandable .hit {
   padding-left: 16px;
@@ -3018,6 +3027,19 @@ div#crm-container form {
 
 /* Date plugin */
 #crm-container div.batch-update {
+  overflow: visible;
+}
+
+/* Date plugin for profile in edit mode */
+.crm-container-snippet input.dateplugin {
+  background: white url(../i/cal.gif) no-repeat scroll right center;
+  padding-right: 16px;
+  /* so that text doesn't flow on top of icon */
+  width: 9em;
+}
+
+/* Date plugin for profile in edit mode */
+.crm-container-snippet div.batch-update {
   overflow: visible;
 }
 
@@ -3405,7 +3427,7 @@ div.m ul#civicrm-menu,
 }
 
 /* table row highlightng */
-#crm-container table.row-highlight tr:hover {
+.crm-container table.row-highlight tr:hover {
   background-color: #FFFFCC !important;
 }
 #crm-container .civicrm-drupal-wysiwyg .collapsed {
@@ -3454,7 +3476,7 @@ div.m ul#civicrm-menu,
 }
 
 /* classes related to batch entry operation */
-#crm-container span.batch-edit {
+.crm-container span.batch-edit {
   padding: 2px 9px 2px 3px;
   margin: 2px 2px 3px 2px;
   cursor: pointer;
@@ -3463,7 +3485,7 @@ div.m ul#civicrm-menu,
   background-image: url("../packages/jquery/jquery-ui-1.9.0/css/smoothness/images/ui-icons_222222_256x240.png");
 }
 
-#crm-container span.batch-valid {
+.crm-container span.batch-valid {
   padding: 2px 9px 2px 3px;
   margin: 2px 2px 3px 2px;
   cursor: pointer;
@@ -3472,7 +3494,7 @@ div.m ul#civicrm-menu,
   background-image: url("../packages/jquery/jquery-ui-1.9.0/css/smoothness/images/ui-icons_222222_256x240.png");
 }
 
-#crm-container span.batch-invalid {
+.crm-container span.batch-invalid {
   padding: 2px 9px 2px 3px;
   margin: 2px 2px 3px 2px;
   cursor: pointer;
@@ -3481,17 +3503,17 @@ div.m ul#civicrm-menu,
   background-image: url("../packages/jquery/jquery-ui-1.9.0/css/smoothness/images/ui-icons_222222_256x240.png");
 }
 
-#crm-container #Entry ul#errorList {
+.crm-container #Entry ul#errorList {
   display: none;
 }
 
-#crm-container table.batch-totals {
+.crm-container table.batch-totals {
   border: 1px solid #7A7A60 !important;
   margin-top: 10px !important;
 }
 
 /* grid div as table */
-#crm-container .crm-grid-table {
+.crm-container .crm-grid-table {
   display: table;
   border-collapse: collapse;
   border: 1px solid #7A7A60;
@@ -3499,20 +3521,20 @@ div.m ul#civicrm-menu,
   margin: 10px 3px 10px !important;
 }
 
-#crm-container #crm-batch-entry-table {
+.crm-container .crm-batch-entry-table {
   border-right: 2px solid #7A7A60 !important;
 }
 
-#crm-container .crm-grid-row,
-#crm-container .crm-grid-header {
+.crm-container .crm-grid-row,
+.crm-container .crm-grid-header {
   display: table-row;
 }
 
-#crm-container .crm-grid-header {
+.crm-container .crm-grid-header {
   white-space: nowrap;
 }
 
-#crm-container .crm-grid-cell {
+.crm-container .crm-grid-cell {
   display: table-cell;
   border-right: 1px solid #EFEFEF;
   padding: 2px;
@@ -3673,14 +3695,14 @@ div.m ul#civicrm-menu,
 }
 
 /* Notifications */
-#crm-container .ui-notify {
+#crm-notification-container {
   width: 350px;
   position: fixed;
   top: 45px;
   right: 15px;
   z-index: 999999;
 }
-#crm-container div.ui-notify-message {
+.crm-container div.ui-notify-message {
   padding: 10px;
   margin-bottom: 15px;
   color: #fff;
@@ -3690,14 +3712,14 @@ div.m ul#civicrm-menu,
   max-height: 600px;
   overflow: auto;
 }
-#crm-container div.ui-notify-message h1 {
+.crm-container div.ui-notify-message h1 {
   font-size: 14px;
   margin: 0;
   padding: 4px;
   font-weight: bold;
   color: #fff;
 }
-#crm-container div.ui-notify-message p {
+.crm-container div.ui-notify-message p {
   margin: 3px 0;
   padding: 0;
   line-height: 18px;
@@ -3724,7 +3746,7 @@ div.m ul#civicrm-menu,
 .crm-container div.ui-notify-message .ui-notify-close {
   cursor: pointer;
 }
-#crm-container div.ui-notify-message a.ui-notify-cross {
+.crm-container div.ui-notify-message a.ui-notify-cross {
   margin-top: -4px;
   float: right;
   text-decoration: none;
@@ -3734,29 +3756,29 @@ div.m ul#civicrm-menu,
   padding: 2px;
   color: #FDFDFD;
 }
-#crm-container div.ui-notify-message .ui-notify-cross:hover,
-#crm-container div.ui-notify-message .ui-notify-cross:focus {
+.crm-container div.ui-notify-message .ui-notify-cross:hover,
+.crm-container div.ui-notify-message .ui-notify-cross:focus {
   color: #ffffab;
 }
-#crm-container div.ui-notify-message table,
-#crm-container div.ui-notify-message tbody,
-#crm-container div.ui-notify-message tr {
+.crm-container div.ui-notify-message table,
+.crm-container div.ui-notify-message tbody,
+.crm-container div.ui-notify-message tr {
   border: 0 none;
   font-size: 11px;
 }
-#crm-container div.ui-notify-message td {
+.crm-container div.ui-notify-message td {
   background: rgba(255,255,255,0.1);
   border: 1px solid #111;
   font-size: 11px;
 }
-#crm-container div.ui-notify-message th {
+.crm-container div.ui-notify-message th {
   background: rgba(200,200,200,0.2);
   border: 1px solid #111;
   color: #eee;
   font-size: 11px;
 }
-#crm-container div.ui-notify-message ul,
-#crm-container div.ui-notify-message ol {
+.crm-container div.ui-notify-message ul,
+.crm-container div.ui-notify-message ol {
   margin: 0.5em 0 1em;
   padding: 0 0 0 0.5em;
 }
@@ -3955,3 +3977,58 @@ span.crm-status-icon {
   border: 1px solid #000;
   text-align: center;
 }
+
+/* Styles for credit card payment logos */
+.crm-container .credit_card_type-section .crm-credit_card_type-icons a {
+  display: block;
+  float: left;
+  width: 50px;
+  height: 30px;
+  background: url(../i/creditcard-icons.png) no-repeat 0 0 transparent;
+  text-indent: -20000px;
+  margin-right: 10px;
+  box-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+  border-radius: 3px;
+  border: 1px solid #FFFFFF;
+}
+
+.crm-container .credit_card_type-section .crm-credit_card_type-icons .crm-credit_card_type-icon-visa {
+  background-position: -50px 0;
+}
+
+.crm-container .credit_card_type-section .crm-credit_card_type-icons .crm-credit_card_type-icon-mastercard {
+  background-position: -100px 0;
+}
+
+.crm-container .credit_card_type-section .crm-credit_card_type-icons .crm-credit_card_type-icon-amex {
+  background-position: -150px 0;
+}
+
+.crm-container .credit_card_type-section .crm-credit_card_type-icons .crm-credit_card_type-icon-discover {
+  background-position: -200px 0;
+}
+
+.crm-container .credit_card_type-section .crm-credit_card_type-icons .crm-credit_card_type-icon-jcb {
+  background-position: -250px 0;
+}
+
+.crm-container .credit_card_type-section .crm-credit_card_type-icons .crm-credit_card_type-icon-unionpay {
+  background-position: -300px 0;
+}
+
+.crm-container .cvv2-icon {
+  display: inline-block;
+  width: 50px;
+  height: 30px;
+  background: url(../i/creditcard-icons.png) no-repeat 0 0 transparent;
+}
+
+/* Avoid weird border around the images (some themes will add a border around images) */
+#crm-container .credit_card_type-section .crm-credit_card_type-icons a,
+#crm-container .credit_card_type-section .crm-credit_card_type-icons a:link,
+#crm-container .credit_card_type-section .crm-credit_card_type-icons a:hover,
+#crm-container .credit_card_type-section .crm-credit_card_type-icons a:focus,
+#crm-container .credit_card_type-section .crm-credit_card_type-icons a:active {
+  color: #fff;
+}
+

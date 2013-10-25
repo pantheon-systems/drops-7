@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -52,8 +52,8 @@
           {/if}
           </td>
         </tr>
-	<tr id="financial_type_id_row" class="crm-price-set-form-block-contribution_type_id crm-price-set-form-block-financial_type_id">
-	   <td class="label">{$form.financial_type_id.label}</td>
+  <tr id="financial_type_id_row" class="crm-price-set-form-block-contribution_type_id crm-price-set-form-block-financial_type_id">
+     <td class="label">{$form.financial_type_id.label}</td>
            <td>{$form.financial_type_id.html}</td>
            <td>&nbsp;</td>
         </tr>

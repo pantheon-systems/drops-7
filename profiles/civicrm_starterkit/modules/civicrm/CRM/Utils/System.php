@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -47,11 +47,15 @@ class CRM_Utils_System {
    * pager, sort and qfc
    *
    * @param string $urlVar the url variable being considered (i.e. crmPageID, crmSortID etc)
+   * @param boolean $includeReset - should we include or ignore the reset GET string (if present)
+   * @param boolean $includeForce - should we include or ignore the force GET string (if present)
+   * @param string  $path - the path to use for the new url
+   * @param string  $absolute - do we need a absolute or relative URL?
    *
    * @return string the url fragment
    * @access public
    */
-  static function makeURL($urlVar, $includeReset = FALSE, $includeForce = TRUE, $path = NULL) {
+  static function makeURL($urlVar, $includeReset = FALSE, $includeForce = TRUE, $path = NULL, $absolute = FALSE) {
     if (empty($path)) {
       $config = CRM_Core_Config::singleton();
       $path = CRM_Utils_Array::value($config->userFrameworkURLVar, $_GET);
@@ -60,9 +64,12 @@ class CRM_Utils_System {
       }
     }
 
-    return self::url($path,
-      CRM_Utils_System::getLinksUrl($urlVar, $includeReset, $includeForce)
-    );
+    return
+      self::url(
+        $path,
+        CRM_Utils_System::getLinksUrl($urlVar, $includeReset, $includeForce),
+        $absolute
+      );
   }
 
   /**
@@ -131,7 +138,12 @@ class CRM_Utils_System {
     $querystring = array_merge($querystring, array_unique($arrays));
     $querystring = array_map('htmlentities', $querystring);
 
-    return implode('&amp;', $querystring) . (!empty($querystring) ? '&amp;' : '') . $urlVar . '=';
+    $url = implode('&amp;', $querystring);
+    if ($urlVar) {
+      $url .= (!empty($querystring) ? '&amp;' : '') . $urlVar . '=';
+    }
+
+    return $url;
   }
 
   /**
@@ -208,7 +220,7 @@ class CRM_Utils_System {
     return $config->userSystem->url($path, $query, $absolute, $fragment, $htmlize, $frontend, $forceBackend);
   }
 
-  function href($text, $path = NULL, $query = NULL, $absolute = TRUE,
+  static function href($text, $path = NULL, $query = NULL, $absolute = TRUE,
     $fragment = NULL, $htmlize = TRUE, $frontend = FALSE, $forceBackend = FALSE
   ) {
     $url = self::url($path, $query, $absolute, $fragment, $htmlize, $frontend, $forceBackend);
@@ -993,26 +1005,34 @@ class CRM_Utils_System {
   }
 
   /*
-     * Get logged in user's IP address.
-     *
-     * Get IP address from HTTP Header. If the CMS is Drupal then use the Drupal function
-     * as this also handles reverse proxies (based on proper configuration in settings.php)
-     *
-     * @return string ip address of logged in user
-     */
-
-  static function ipAddress() {
+   * Get logged in user's IP address.
+   *
+   * Get IP address from HTTP Header. If the CMS is Drupal then use the Drupal function
+   * as this also handles reverse proxies (based on proper configuration in settings.php)
+   *
+   * @return string ip address of logged in user
+   */
+  static function ipAddress($strictIPV4 = TRUE) {
     $address = CRM_Utils_Array::value('REMOTE_ADDR', $_SERVER);
 
     $config = CRM_Core_Config::singleton();
     if ($config->userSystem->is_drupal) {
       //drupal function handles the server being behind a proxy securely
-      return ip_address();
+      $address = ip_address();
     }
 
     // hack for safari
     if ($address == '::1') {
       $address = '127.0.0.1';
+    }
+
+    // when we need to have strictly IPV4 ip address
+    // convert ipV6 to ipV4
+    if ($strictIPV4) {
+      // this converts 'IPV4 mapped IPV6 address' to IPV4
+      if (filter_var($address, FILTER_VALIDATE_IP, FILTER_FLAG_IPV6) && strstr($address, '::ffff:')) {
+        $address = ltrim($address, '::ffff:');
+      }
     }
 
     return $address;
@@ -1255,6 +1275,7 @@ class CRM_Utils_System {
       CRM_Pledge_BAO_Pledge::$_exportableFields =
       CRM_Contribute_BAO_Query::$_contributionFields =
       CRM_Core_BAO_CustomField::$_importFields =
+      CRM_Core_BAO_Cache::$_cache =
       CRM_Core_DAO::$_dbColumnValueCache = NULL;
 
     CRM_Core_OptionGroup::flushAll();

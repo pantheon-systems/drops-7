@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -182,11 +182,12 @@ class CRM_Core_Payment_Form {
       'title' => ts('Card Type'),
       'cc_field' => TRUE,
       'attributes' => $creditCardType,
-      'is_required' => TRUE,
+      'is_required' => FALSE,
     );
   }
 
-  /** create all fields needed for direct debit transaction
+  /**
+   * create all fields needed for direct debit transaction
    *
    * @return void
    * @access public
@@ -236,7 +237,7 @@ class CRM_Core_Payment_Form {
   /**
    * Function to add all the credit card fields
    *
-   * @return None
+   * @return void
    * @access public
    */
   static function buildCreditCard(&$form, $useRequired = FALSE) {
@@ -261,7 +262,7 @@ class CRM_Core_Payment_Form {
       );
 
       $form->addRule('credit_card_exp_date',
-        ts('Credit card expiration date cannot be a past date.'),
+        ts('Card expiration date cannot be a past date.'),
         'currentDate', TRUE
       );
 
@@ -282,6 +283,24 @@ class CRM_Core_Payment_Form {
         array('class' => 'form-submit')
       );
     }
+  }
+
+  /**
+   * The credit card pseudo constant results only the CC label, not the key ID
+   * So we normalize the name to use it as a CSS class.
+   */
+  static function getCreditCardCSSNames() {
+    $creditCardTypes = array();
+    foreach (CRM_Contribute_PseudoConstant::creditCard() as $key => $name) {
+      // Replace anything not css-friendly by an underscore
+      // Non-latin names will not like this, but so many things are wrong with
+      // the credit-card type configurations already.
+      $key = str_replace(' ', '', $key);
+      $key = preg_replace('/[^a-zA-Z0-9]/', '_', $key);
+      $key = strtolower($key);
+      $creditCardTypes[$key] = $name;
+    }
+    return $creditCardTypes;
   }
 
   /**
@@ -336,13 +355,16 @@ class CRM_Core_Payment_Form {
       if (!empty($values['credit_card_number']) &&
         !CRM_Utils_Rule::creditCardNumber($values['credit_card_number'], $values['credit_card_type'])
       ) {
-        $errors['credit_card_number'] = ts('Please enter a valid Credit Card Number');
+        $errors['credit_card_number'] = ts('Please enter a valid Card Number');
       }
       if (!empty($values['cvv2']) &&
         !CRM_Utils_Rule::cvv($values['cvv2'], $values['credit_card_type'])
       ) {
-        $errors['cvv2'] = ts('Please enter a valid Credit Card Verification Number');
+        $errors['cvv2'] = ts('Please enter a valid Card Verification Number');
       }
+    }
+    elseif (!empty($values['credit_card_number'])) {
+      $errors['credit_card_number'] = ts('Please enter a valid Card Number');
     }
   }
 

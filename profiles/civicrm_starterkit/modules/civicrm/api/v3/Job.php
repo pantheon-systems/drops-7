@@ -3,7 +3,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -71,17 +71,7 @@ function _civicrm_api3_job_create_spec(&$params) {
  * {@schema Core/Job.xml}
  */
 function civicrm_api3_job_create($params) {
-  require_once 'CRM/Utils/Rule.php';
-
-  if (isset($params['id']) && !CRM_Utils_Rule::integer($params['id'])) {
-    return civicrm_api3_create_error('Invalid value for job ID');
-  }
-
-  $dao = CRM_Core_BAO_Job::create($params);
-
-  $result = array();
-  _civicrm_api3_object_to_array($dao, $result[$dao->id]);
-  return civicrm_api3_create_success($result, $params, 'job', 'create', $dao);
+  return _civicrm_api3_basic_create(_civicrm_api3_get_BAO(__FUNCTION__), $params);
 }
 
 /**
@@ -106,7 +96,6 @@ function civicrm_api3_job_get($params) {
  * @access public
  */
 function civicrm_api3_job_delete($params) {
-  require_once 'CRM/Utils/Rule.php';
   if ($params['id'] != NULL && !CRM_Utils_Rule::integer($params['id'])) {
     return civicrm_api3_create_error('Invalid value for job ID');
   }
@@ -131,7 +120,6 @@ function civicrm_api3_job_delete($params) {
  *
  */
 function civicrm_api3_job_execute($params) {
-  require_once 'CRM/Core/JobManager.php';
   $facility = new CRM_Core_JobManager();
   $facility->execute(FALSE);
 
@@ -161,8 +149,6 @@ function _civicrm_api3_job_execute_spec(&$params) {
  *
  */
 function civicrm_api3_job_geocode($params) {
-
-  require_once 'CRM/Utils/Address/BatchUpdate.php';
   $gc = new CRM_Utils_Address_BatchUpdate($params);
 
 
@@ -199,13 +185,11 @@ function _civicrm_api3_job_geocode_spec(&$params) {
  *
  */
 function civicrm_api3_job_send_reminder($params) {
-  require_once 'CRM/Core/Lock.php';
   $lock = new CRM_Core_Lock('civimail.job.EmailProcessor');
   if (!$lock->isAcquired()) {
     return civicrm_api3_create_error('Could not acquire lock, another EmailProcessor process is running');
   }
 
-  require_once 'CRM/Core/BAO/ActionSchedule.php';
   $result = CRM_Core_BAO_ActionSchedule::processQueue(CRM_Utils_Array::value('now', $params));
   $lock->release();
 
@@ -366,8 +350,6 @@ function civicrm_api3_job_process_sms($params) {
  * Job to get mail responses from civimailing
  */
 function civicrm_api3_job_fetch_bounces($params) {
-  require_once 'CRM/Utils/Mail/EmailProcessor.php';
-  require_once 'CRM/Core/Lock.php';
   $lock = new CRM_Core_Lock('civimail.job.EmailProcessor');
   if (!$lock->isAcquired()) {
     return civicrm_api3_create_error('Could not acquire lock, another EmailProcessor process is running');
@@ -387,8 +369,6 @@ function civicrm_api3_job_fetch_bounces($params) {
  * Job to get mail and create activities
  */
 function civicrm_api3_job_fetch_activities($params) {
-  require_once 'CRM/Utils/Mail/EmailProcessor.php';
-  require_once 'CRM/Core/Lock.php';
   $lock = new CRM_Core_Lock('civimail.job.EmailProcessor');
   if (!$lock->isAcquired()) {
     return civicrm_api3_create_error('Could not acquire lock, another EmailProcessor process is running');
@@ -414,7 +394,6 @@ function civicrm_api3_job_fetch_activities($params) {
  * @access public
  */
 function civicrm_api3_job_process_participant($params) {
-  require_once 'CRM/Event/BAO/ParticipantStatusType.php';
   $result = CRM_Event_BAO_ParticipantStatusType::process($params);
 
   if (!$result['is_error']) {
@@ -440,13 +419,11 @@ function civicrm_api3_job_process_participant($params) {
  * @access public
  */
 function civicrm_api3_job_process_membership($params) {
-  require_once 'CRM/Core/Lock.php';
   $lock = new CRM_Core_Lock('civimail.job.updateMembership');
   if (!$lock->isAcquired()) {
     return civicrm_api3_create_error('Could not acquire lock, another EmailProcessor process is running');
   }
 
-  require_once 'CRM/Member/BAO/Membership.php';
   $result = CRM_Member_BAO_Membership::updateAllMembershipStatus();
   $lock->release();
 
@@ -468,7 +445,6 @@ function civicrm_api3_job_process_membership($params) {
  * @access public
  */
 function civicrm_api3_job_process_respondent($params) {
-  require_once 'CRM/Campaign/BAO/Survey.php';
   $result = CRM_Campaign_BAO_Survey::releaseRespondent($params);
 
   if ($result['is_error'] == 0) {
@@ -503,7 +479,6 @@ function civicrm_api3_job_process_batch_merge($params) {
   $mode = CRM_Utils_Array::value('mode', $params, 'safe');
   $autoFlip = CRM_Utils_Array::value('auto_flip', $params, TRUE);
 
-  require_once 'CRM/Dedupe/Merger.php';
   $result = CRM_Dedupe_Merger::batchMerge($rgid, $gid, $mode, $autoFlip);
 
   if ($result['is_error'] == 0) {
@@ -525,8 +500,6 @@ function civicrm_api3_job_process_batch_merge($params) {
  * @access public
  */
 function civicrm_api3_job_run_payment_cron($params) {
-
-  require_once 'CRM/Core/Payment.php';
 
   // live mode
   CRM_Core_Payment::handlePaymentMethod(
@@ -561,8 +534,6 @@ function civicrm_api3_job_run_payment_cron($params) {
  * @access public
  */
 function civicrm_api3_job_cleanup( $params ) {
-  require_once 'CRM/Utils/Array.php';
-
   $session   = CRM_Utils_Array::value( 'session'   , $params, true  );
   $tempTable = CRM_Utils_Array::value( 'tempTables', $params, true  );
   $jobLog    = CRM_Utils_Array::value( 'jobLog'    , $params, true  );
@@ -571,7 +542,6 @@ function civicrm_api3_job_cleanup( $params ) {
   $memCache  = CRM_Utils_Array::value( 'memCache'  , $params, false );
 
   if ( $session || $tempTable || $prevNext ) {
-    require_once 'CRM/Core/BAO/Cache.php';
     CRM_Core_BAO_Cache::cleanup( $session, $tempTable, $prevNext );
   }
 
@@ -609,7 +579,6 @@ function civicrm_api3_job_disable_expired_relationships($params) {
  * and use the cache
  */
 function civicrm_api3_job_group_rebuild( $params ) {
-  require_once 'CRM/Core/Lock.php';
   $lock = new CRM_Core_Lock('civimail.job.groupRebuild');
   if (!$lock->isAcquired()) {
     return civicrm_api3_create_error('Could not acquire lock, another EmailProcessor process is running');

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -43,7 +43,6 @@
 require_once 'civicrm_rules_utils.inc';
 function civicrm_rules_rules_action_contact_send_email($to, $subject, $message, $from = NULL, $settings, RulesState$state, RulesPlugin$element) {
 
-  require_once 'CRM/Contact/BAO/Contact.php';
   $to = str_replace(array("\r", "\n"), ',', $to);
   $toEmails = explode(',', $to);
   if (empty($toEmails)) {
@@ -83,7 +82,7 @@ function civicrm_rules_rules_action_remove_from_group($contact, $settings) {
   $contactId = !empty($contact->id) ? $contact->id : $contact->getVar('_contactId');
   if ($contactId) {
     foreach ($settings as $gid) {
-      _civicrm_rules_group_contact($contactId, $gid, 'remove');
+      _civicrm_rules_group_contact($contactId, $gid, 'delete');
     }
     return array('contact' => $contact);
   }
@@ -101,7 +100,6 @@ function civicrm_rules_rules_contact_create($first_name, $last_name, $email) {
     'version' => 3,
   );
 
-  require_once 'api/api.php';
   $contact = civicrm_api('contact', 'create', $params);
 
   if (!$contact['is_error']) {

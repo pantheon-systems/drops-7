@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -65,11 +65,11 @@
             <table class="form-layout">
                 <tr class="crm-contribution-contributionpage-amount-form-block-pay_later_text"><th scope="row" class="label">{$form.pay_later_text.label} <span class="marker" title="This field is required.">*</span> {if $action == 2}{include file='CRM/Core/I18n/Dialog.tpl' table='civicrm_contribution_page' field='pay_later_text' id=$contributionPageID}{/if}</th>
                 <td>{$form.pay_later_text.html|crmAddClass:big}<br />
-                    <span class="description">{ts}Text displayed next to the checkbox for the 'pay later' option on the contribution form.{/ts}</span></td></tr>
+                    <span class="description">{ts}Text displayed next to the checkbox for the 'pay later' option on the contribution form. You may include HTML formatting tags.{/ts}</span></td></tr>
                 <tr class="crm-contribution-contributionpage-amount-form-block-pay_later_receipt"><th scope="row" class="label">{$form.pay_later_receipt.label} <span class="marker" title="This field is required.">*</span> {if $action == 2}{include file='CRM/Core/I18n/Dialog.tpl' table='civicrm_contribution_page' field='pay_later_receipt' id=$contributionPageID}{/if}</th>
                 <td>{$form.pay_later_receipt.html|crmAddClass:big}<br />
                   <span class="description">{ts}Instructions added to Confirmation and Thank-you pages, as well as the confirmation email, when the user selects the 'pay later' option (e.g. 'Mail your check to ... within 3 business days.').{/ts}</span></td></tr>
-		  
+
             </table>
             </td>
         </tr>
@@ -157,7 +157,11 @@
                 </td>
             </tr>
             {/if}
-
+	    	    
+	    <tr class="crm-contribution-form-block-amount_label">
+              <th scope="row" class="label" width="20%">{$form.amount_label.label}<span class="marker"> *</span></th>
+	      <td>{$form.amount_label.html}</td>
+	    </tr>
             <tr class="crm-contribution-form-block-is_allow_other_amount"><th scope="row" class="label" width="20%">{$form.is_allow_other_amount.label}</th>
             <td>{$form.is_allow_other_amount.html}<br />
             <span class="description">{ts}Check this box if you want to give users the option to enter their own contribution amount. Your page will then include a text field labeled <strong>Other Amount</strong>.{/ts}</span></td></tr>
@@ -206,7 +210,7 @@
             cj('.crm-contribution-contributionpage-amount-form-block-payment_processor input[type="checkbox"]').each(function(){
                 if(cj(this).attr('checked')) {
                     var id = cj(this).attr('id').split('_')[2];
-		    ids.push(id);
+        ids.push(id);
                 }
             });
             return ids;
@@ -239,7 +243,7 @@
   cj('#is_pay_later').click( function() {
      payLater('is_pay_later');
   });
-  
+
 
   function minMax(chkbox) {
     if (chkbox.checked) {
@@ -321,7 +325,7 @@
             cj( '#recurringContribution' ).hide( );
         }
     }
-     
+
 </script>
 {/literal}
 {if $form.is_recur}

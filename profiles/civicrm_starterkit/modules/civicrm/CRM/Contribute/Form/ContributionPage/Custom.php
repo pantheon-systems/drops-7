@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -196,7 +196,7 @@ class CRM_Contribute_Form_ContributionPage_Custom extends CRM_Contribute_Form_Co
     if (($postProfileType == 'Membership') && !$membershipEnable) {
       $errors['custom_post_id'] = $errorMsg;
     }
-   
+
     $behalf = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_ContributionPage', $contributionPageId, 'is_for_organization');
     if ($fields['custom_pre_id']) {
       $errorMsg = ts('You should move the membership related fields in the "On Behalf" profile for this Contribution Page');

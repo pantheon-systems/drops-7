@@ -2,7 +2,7 @@
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -369,6 +369,10 @@ function _civicrm_api3_permissions($entity, $action, &$params) {
   );
 
   // Profile permissions
+  $permissions['profile'] = array(
+    'get' => array(), // the profile will take care of this
+  );
+
   $permissions['uf_group'] = array(
     'get' => array(
       'access CiviCRM',

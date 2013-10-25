@@ -1,7 +1,7 @@
 <?php
 /*
   +--------------------------------------------------------------------+
-  | CiviCRM version 4.3                                                |
+  | CiviCRM version 4.4                                                |
   +--------------------------------------------------------------------+
   | Copyright CiviCRM LLC (c) 2004-2013                                |
   +--------------------------------------------------------------------+
@@ -88,8 +88,7 @@ class CRM_Utils_Weight {
    * @return bool
    */
   static function delWeight($daoName, $fieldID, $fieldValues = NULL, $weightField = 'weight') {
-    require_once (str_replace('_', DIRECTORY_SEPARATOR, $daoName) . ".php");
-    eval('$object   = new ' . $daoName . '( );');
+    $object = new $daoName();
     $object->id = $fieldID;
     if (!$object->find(TRUE)) {
       return FALSE;
@@ -109,7 +108,7 @@ class CRM_Utils_Weight {
   }
 
   /**
-   * Updates the weight fields of other rows according to the new and old weight paased in.
+   * Updates the weight fields of other rows according to the new and old weight passed in.
    * And returns the new weight be used. If old-weight not present, Creates a gap for a new row to be inserted
    * at the specified new weight
    *
@@ -354,7 +353,7 @@ class CRM_Utils_Weight {
       'url' => $returnURL,
       'filter' => $filter,
     );
-    
+
     $signer = new CRM_Utils_Signer(CRM_Core_Key::privateKey(), self::$SIGNABLE_FIELDS);
     $queryParams['_sgn'] = $signer->sign($queryParams);
     $baseURL = CRM_Utils_System::url('civicrm/admin/weight', $queryParams);
@@ -412,9 +411,7 @@ class CRM_Utils_Weight {
     $src     = CRM_Utils_Request::retrieve('src', 'Integer', CRM_Core_DAO::$_nullObject);
     $dst     = CRM_Utils_Request::retrieve('dst', 'Integer', CRM_Core_DAO::$_nullObject);
     $dir     = CRM_Utils_Request::retrieve('dir', 'String', CRM_Core_DAO::$_nullObject);
-
-    require_once (str_replace('_', DIRECTORY_SEPARATOR, $daoName) . ".php");
-    eval('$object   = new ' . $daoName . '( );');
+    $object   = new $daoName();
     $srcWeight = CRM_Core_DAO::getFieldValue($daoName, $src, 'weight', $idName);
     $dstWeight = CRM_Core_DAO::getFieldValue($daoName, $dst, 'weight', $idName);
     if ($srcWeight == $dstWeight) {

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -23,52 +23,35 @@
  | see the CiviCRM license FAQ at http://civicrm.org/licensing        |
  +--------------------------------------------------------------------+
 *}
+<div class="crm-profile-name-{$ufGroupName}">
+{crmRegion name=profile-form-`$ufGroupName`}
+
 {* Profile forms when embedded in CMS account create (mode=1) or
     cms account edit (mode=8) or civicrm/profile (mode=4) pages *}
 {if ($context eq 'multiProfileDialog')}
 {literal}
 <script type="text/javascript">
-cj(function() {
+cj(function($) {
+  $('#profile-dialog .crm-container-snippet #Edit').validate(CRM.validate.params);
   var formOptions = {
-    beforeSubmit:  proccessMultiRecordForm //pre-submit callback
+    success:       checkResponse  // post-submit callback 
   };
 
   //binding the callback to snippet profile form
-  cj('.crm-container-snippet #Edit').ajaxForm(formOptions);
+  $('.crm-container-snippet #Edit').ajaxForm(formOptions);
 });
 
-// pre-submit callback
-function proccessMultiRecordForm(formData, jqForm, options) {
-  var queryString = cj.param(formData);
-  queryString = queryString + '{/literal}{$urlParams}{literal}' + '&snippet=1';
-
-  if (cj('#profile-dialog')) {
-    var postUrl = {/literal}"{crmURL p='civicrm/profile/edit' h=0 }"{literal};
-    var response = cj.ajax({
-      type: "POST",
-      url: postUrl,
-      async: false,
-      data: queryString,
-      dataType: "json",
-
-    }).responseText;
-
-    //if there is any form error show the dialog
-    //else redirect to post url
-    if (cj(response).find('.crm-error').html()) {
-      cj('#profile-dialog').show().html(response);
-    }
-    else {
-      window.location = '{/literal}{$postUrl}{literal}';
-    }
-
-    // here we could return false to prevent the form from being submitted;
-    // returning anything other than false will allow the form submit to continue
-    return false;
+// post-submit callback 
+function checkResponse(responseText, statusText, xhr, $form) { 
+  //if there is any form error show the dialog
+  //else redirect to post url
+  if (!cj(responseText).find('.crm-error').html()) {
+    window.location = '{/literal}{$postUrl}{literal}';
   }
-}
+} 
 </script>
 {/literal}
+{include file="CRM/Form/validate.tpl"}
 {/if}
 {if $deleteRecord}
 <div class="messages status no-popup">
@@ -251,9 +234,7 @@ function proccessMultiRecordForm(formData, jqForm, options) {
         {/if}
       {/if}{* end of main if field name if *}
     {/foreach}
-    </div><!-- end form-layout-compressed for last profile --> {* closing main form layout div when all the fields are built*}
-
-
+   
     {if $isCaptcha && ( $mode eq 8 || $mode eq 4 || $mode eq 1 ) }
       {include file='CRM/common/ReCAPTCHA.tpl'}
       <script type="text/javascript">cj('.recaptcha_label').attr('width', '140px');</script>
@@ -270,7 +251,7 @@ function proccessMultiRecordForm(formData, jqForm, options) {
 
     {if ($action eq 1 and $mode eq 4 ) or ($action eq 2) or ($action eq 8192)}
       {if $action eq 2 and $multiRecordFieldListing}
-      {include file="CRM/Profile/Page/MultipleRecordFieldsListing.tpl"	showListing=true}
+      {include file="CRM/Profile/Page/MultipleRecordFieldsListing.tpl" showListing=true}
         {assign var=floatStyle value='float:right'}
       {/if}
       <div class="crm-submit-buttons" style='{$floatStyle}'>
@@ -339,7 +320,7 @@ cj(document).ready(function(){
     var queryString = cj.param(formData);
     queryString = queryString + '&snippet=5&gid=' + {/literal}"{$profileID}"{literal};
     var postUrl = {/literal}"{crmURL p='civicrm/profile/create' h=0 }"{literal};
-    var blockNo = {/literal}{$blockNo}{literal};
+    var blockNo = {/literal}{if $blockNo}{$blockNo}{else}null{/if}{literal};
     var prefix  = {/literal}"{$prefix}"{literal};
     var response = cj.ajax({
       type: "POST",
@@ -356,7 +337,7 @@ cj(document).ready(function(){
             }
           }
           cj('input[name="' + prefix + 'contact_select_id[' + blockNo +']"]').val( response.contactID );
-          CRM.alert(response.sortName + {/literal}'{ts escape="js"} has been created.{/ts}', '{ts escape="js"}Contact Saved{/ts}'{literal}, 'success');
+          CRM.alert(response.displayName + {/literal}'{ts escape="js"} has been created.{/ts}', '{ts escape="js"}Contact Saved{/ts}'{literal}, 'success');
           cj('#contact-dialog-' + prefix + blockNo ).dialog('close');
         }
       }
@@ -375,3 +356,5 @@ cj(document).ready(function(){
 </script>
 {/literal}
 
+{/crmRegion}
+</div> {* end crm-profile-NAME *}

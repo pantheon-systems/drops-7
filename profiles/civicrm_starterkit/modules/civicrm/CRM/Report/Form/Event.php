@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -38,7 +37,7 @@ class CRM_Report_Form_Event extends CRM_Report_Form {
   /**
    * Get a standardized array of <select> options for "Event Title"
    * filter values.
-   * @return Array 
+   * @return Array
    */
   function getEventFilterOptions() {
     $events = array();
@@ -52,6 +51,6 @@ class CRM_Report_Form_Event extends CRM_Report_Form {
        $events[$dao->id] = "{$dao->title} - " . CRM_Utils_Date::customFormat(substr($dao->start_date, 0, 10)) . " (ID {$dao->id})";
     }
     return $events;
-  }  
+  }
 }
 

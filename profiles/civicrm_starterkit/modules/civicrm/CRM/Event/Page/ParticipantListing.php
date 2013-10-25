@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -90,7 +90,7 @@ class CRM_Event_Page_ParticipantListing extends CRM_Core_Page {
       CRM_Core_Error::fatal('Participant listing code file: ' . $classFile . ' does not exist. Please verify your custom particpant listing settings in CiviCRM administrative panel.');
     }
 
-    eval("\$participantListingClass = new $className( );");
+    $participantListingClass = new $className();
 
     $participantListingClass->preProcess();
     $participantListingClass->run();

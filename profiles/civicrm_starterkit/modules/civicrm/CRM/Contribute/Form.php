@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -73,8 +73,8 @@ class CRM_Contribute_Form extends CRM_Core_Form {
     if (isset($this->_id)) {
       $params = array('id' => $this->_id);
       if (!empty( $this->_BAOName)) {
-        require_once (str_replace('_', DIRECTORY_SEPARATOR, $this->_BAOName) . ".php");
-        eval($this->_BAOName . '::retrieve( $params, $defaults );');
+        $baoName = $this->_BAOName;
+        $baoName::retrieve($params, $defaults);
       }
     }
     if ($this->_action == CRM_Core_Action::DELETE && CRM_Utils_Array::value('name', $defaults)) {
@@ -97,7 +97,7 @@ class CRM_Contribute_Form extends CRM_Core_Form {
       if ($parentId = CRM_Utils_Array::value('parent_id', $defaults)) {
         $this->assign('parentId', $parentId);
       }
-    }   
+    }
     return $defaults;
   }
 

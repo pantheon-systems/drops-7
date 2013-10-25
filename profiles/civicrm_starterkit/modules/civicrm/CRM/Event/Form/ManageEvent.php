@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -101,7 +101,7 @@ class CRM_Event_Form_ManageEvent extends CRM_Core_Form {
 
     $this->assign('action', $this->_action);
 
-    $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this, FALSE);
+    $this->_id = CRM_Utils_Request::retrieve('id', 'Positive', $this, FALSE, NULL, 'GET');
     if ($this->_id) {
       $this->assign('eventId', $this->_id);
       if (empty($this->_addProfileBottom) && empty($this->_addProfileBottomAdd)) {
@@ -350,8 +350,6 @@ class CRM_Event_Form_ManageEvent extends CRM_Core_Form {
           CRM_Event_BAO_Event::updateParticipantCampaignID($eventID, $newCampaignID);
         }
       }
-
-      $this->postProcessHook();
 
       if ($this->controller->getButtonName('submit') == "_qf_{$className}_upload_done") {
         if ($this->_isTemplate) {

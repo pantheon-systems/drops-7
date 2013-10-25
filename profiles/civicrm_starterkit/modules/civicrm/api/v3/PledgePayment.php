@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -37,11 +36,6 @@
  * @version $Id: PledgePayment.php
  *
  */
-
-/**
- * Include utility functions
- */
-require_once 'CRM/Pledge/BAO/PledgePayment.php';
 
 /**
  * Add or update a plege payment. Pledge Payment API doesn't actually add a pledge

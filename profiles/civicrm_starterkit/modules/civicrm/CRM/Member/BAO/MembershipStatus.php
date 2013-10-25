@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -182,36 +182,21 @@ class CRM_Member_BAO_MembershipStatus extends CRM_Member_DAO_MembershipStatus {
    * @param
    * @static
    */
-  static function del($membershipStatusId, $skipRedirect = FALSE) {
+  static function del($membershipStatusId) {
     //check dependencies
     //checking if membership status is present in some other table
     $check = FALSE;
 
     $dependancy = array('Membership', 'MembershipLog');
     foreach ($dependancy as $name) {
-      require_once (str_replace('_', DIRECTORY_SEPARATOR, "CRM_Member_BAO_" . $name) . ".php");
-      eval('$dao = new CRM_Member_BAO_' . $name . '();');
+      $baoString = 'CRM_Member_BAO_' . $name;
+      $dao = new $baoString();
       $dao->status_id = $membershipStatusId;
       if ($dao->find(TRUE)) {
-        $check = TRUE;
+        throw new CRM_Core_Exception(ts('This membership status cannot be deleted as memberships exist with this status'));
       }
     }
-
-    if ($check) {
-      if (!$skipRedirect) {
-        $session = CRM_Core_Session::singleton();
-        CRM_Core_Session::setStatus(ts('This membership status cannot be deleted'), ts('Deletion Error'), 'error');
-        return CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/admin/member/membershipStatus', "reset=1"));
-      }
-
-      // Return the error message to the api
-      $error = array();
-      $error['is_error'] = 1;
-      //don't translate as api error message are not translated
-      $error['error_message'] = 'The membership status cannot be deleted as memberships of this status exist';
-      return $error;
-    }
-
+    CRM_Utils_Weight::delWeight('CRM_Member_DAO_MembershipStatus', $membershipStatusId);
     //delete from membership Type table
     $membershipStatus = new CRM_Member_DAO_MembershipStatus();
     $membershipStatus->id = $membershipStatusId;

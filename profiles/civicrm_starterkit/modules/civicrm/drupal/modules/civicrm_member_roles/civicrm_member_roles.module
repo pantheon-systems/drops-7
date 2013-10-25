@@ -104,10 +104,7 @@ function civicrm_member_roles_sync_user($account) {
   if (!civicrm_initialize()) {
     return;
   }
-  if (
-    variable_get('civicrm_member_roles_sync_method', 0) == 0 ||
-    variable_get('civicrm_member_roles_sync_method', 0) == 3
-  ) {
+  if (variable_get('civicrm_member_roles_sync_method', 0) == 0) {
     _civicrm_member_roles_sync($account->uid);
   }
 }

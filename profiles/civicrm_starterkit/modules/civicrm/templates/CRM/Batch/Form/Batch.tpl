@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -27,7 +27,7 @@
 {if $action eq 8}
   <h3>{ts}Delete Data Entry Batch{/ts}</h3>
 {elseif $action eq 2}
-	<h3>{ts}Edit Data Entry Batch{/ts}</h3>
+  <h3>{ts}Edit Data Entry Batch{/ts}</h3>
 {else}
   <h3>{ts}New Data Entry Batch{/ts}</h3>
 {/if}

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -141,7 +141,6 @@ class CRM_Contribute_Form_Task_Batch extends CRM_Contribute_Form_Task {
 
     $this->assign('profileTitle', $this->_title);
     $this->assign('componentIds', $this->_contributionIds);
-    $fileFieldExists = FALSE;
 
     //load all campaigns.
     if (array_key_exists('contribution_campaign_id', $this->_fields)) {

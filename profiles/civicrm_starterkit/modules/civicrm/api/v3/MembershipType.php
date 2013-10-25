@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -39,11 +38,6 @@
  */
 
 /**
- * Files required for this package
- */
-require_once 'CRM/Member/BAO/MembershipType.php';
-
-/**
  * API to Create or update a Membership Type
  *
  * @param   array  $params  an associative array of name/value property values of civicrm_membership_type
@@ -53,24 +47,22 @@ require_once 'CRM/Member/BAO/MembershipType.php';
  * {getfields MembershipType_get}
  */
 function civicrm_api3_membership_type_create($params) {
-  $values = $params;
-  civicrm_api3_verify_mandatory($values, 'CRM_Member_DAO_MembershipType');
+  $ids['membershipType'] = CRM_Utils_Array::value('id', $params);
+  $ids['memberOfContact'] = CRM_Utils_Array::value('member_of_contact_id', $params);
+  $ids['contributionType'] = CRM_Utils_Array::value('financial_type_id', $params);
 
-  $ids['membershipType'] = CRM_Utils_Array::value('id', $values);
-  $ids['memberOfContact'] = CRM_Utils_Array::value('member_of_contact_id', $values);
-  $ids['contributionType'] = CRM_Utils_Array::value('financial_type_id', $values);
-
-  require_once 'CRM/Member/BAO/MembershipType.php';
-  $membershipTypeBAO = CRM_Member_BAO_MembershipType::add($values, $ids);
+  $membershipTypeBAO = CRM_Member_BAO_MembershipType::add($params, $ids);
   $membershipType = array();
   _civicrm_api3_object_to_array($membershipTypeBAO, $membershipType[$membershipTypeBAO->id]);
   CRM_Member_PseudoConstant::membershipType(NULL, TRUE);
+  civicrm_api3('membership', 'getfields', array('cache_clear' => 1, 'fieldname' => 'membership_type_id'));
+  civicrm_api3('profile', 'getfields', array('action' => 'submit', 'cache_clear' => 1));
   return civicrm_api3_create_success($membershipType, $params, 'membership_type', 'create', $membershipTypeBAO);
 }
 
 /**
  * Adjust Metadata for Create action
- * 
+ *
  * The metadata is used for setting defaults, documentation & validation
  * @param array $params array or parameters determined by getfields
  */
@@ -112,7 +104,6 @@ function civicrm_api3_membership_type_get($params) {
  * {getfields MembershipType_delete}
  */
 function civicrm_api3_membership_type_delete($params) {
-  $memberDelete = CRM_Member_BAO_MembershipType::del($params['id'], 1);
-  return $memberDelete ? civicrm_api3_create_success($memberDelete) : civicrm_api3_create_error('Error while deleting membership type. id : ' . $params['id']);
+  return _civicrm_api3_basic_delete(_civicrm_api3_get_BAO(__FUNCTION__), $params);
 }
 

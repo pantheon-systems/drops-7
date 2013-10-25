@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -25,11 +25,12 @@
 *}
 <div class="crm-block crm-form-block crm-smtp-form-block">
 <div id="help">
-    {ts}<p>CiviCRM offers several options to send emails. The default option should work fine on linux systems. If you are using windows, you probably need to enter settings for your SMTP/Sendmail server. You can send a test email to check your settings by clicking "Save and Send Test Email". If you're unsure of the correct values, check with your system administrator, ISP or hosting provider.</p>   
+    {ts}<p>CiviCRM offers several options to send emails. The default option should work fine on linux systems. If you are using windows, you probably need to enter settings for your SMTP/Sendmail server. You can send a test email to check your settings by clicking "Save and Send Test Email". If you're unsure of the correct values, check with your system administrator, ISP or hosting provider.</p>
 
     <p>If you do not want users to send outbound mail from CiviCRM, select "Disable Outbound Email". NOTE: If you disable outbound email, and you are using Online Contribution pages or online Event Registration - you will need to disable automated receipts and registration confirmations.</p>
 
-    <p>If you choose Redirect to Database, all emails will be recorded as archived mailings instead of being sent out.</p>{/ts}
+   <p>If you choose Redirect to Database, all emails will be recorded as archived mailings instead of being sent out.</p>{/ts}
+
 </div>
      <table class="form-layout-compressed">
            <tr class="crm-smtp-form-block-outBound_option">
@@ -59,13 +60,13 @@
                          <span class="description">{ts}Does your SMTP server require authentication (user name + password)?{/ts}</span>
                        </td>
                     </tr>
-                    <tr class="crm-smtp-form-block-smtpUsername"> 
+                    <tr class="crm-smtp-form-block-smtpUsername">
                        <td class="label">{$form.smtpUsername.label}</td>
                        <td>{$form.smtpUsername.html}</td>
                     </tr>
-                    <tr class="crm-smtp-form-block-smtpPassword"> 
+                    <tr class="crm-smtp-form-block-smtpPassword">
                        <td class="label">{$form.smtpPassword.label}</td>
-                       <td>{$form.smtpPassword.html}<br />                  
+                       <td>{$form.smtpPassword.html}<br />
                            <span class="description">{ts}If your SMTP server requires authentication, enter your Username and Password here.{/ts}</span>
                        </td>
                     </tr>
@@ -76,13 +77,13 @@
             <fieldset>
                 <legend>{ts}Sendmail Configuration{/ts}</legend>
                    <table class="form-layout-compressed">
-                     <tr class="crm-smtp-form-block-sendmail_path">           
+                     <tr class="crm-smtp-form-block-sendmail_path">
                         <td class="label">{$form.sendmail_path.label}</td>
                         <td>{$form.sendmail_path.html}<br />
                             <span class="description">{ts}Enter the Sendmail Path. EXAMPLE: /usr/sbin/sendmail{/ts}</span>
                         </td>
                      </tr>
-                     <tr class="crm-smtp-form-block-sendmail_args"> 
+                     <tr class="crm-smtp-form-block-sendmail_args">
                         <td class="label">{$form.sendmail_args.label}</td>
                         <td>{$form.sendmail_args.html}</td>
                      </tr>
@@ -95,28 +96,41 @@
             <span class="place-left">&nbsp;</span>
             <span class="crm-button crm-button-type-next crm-button_qf_Smtp_refresh_test">{$form._qf_Smtp_refresh_test.html}</span>
         </div>
-</div>    
+</div>
 
 {literal}
 <script type="text/javascript">
     cj( function( ) {
+			var mailSetting = cj("input[name='outBound_option']:checked").val( );
+
+			var archiveWarning = "{/literal}{ts escape='js'}WARNING: You are switching from a testing mode (Redirect to Database) to a live mode. Check Mailings > Archived Mailings, and delete any test mailings that are not in Completed status prior to running the mailing cron job for the first time. This will ensure that test mailings are not actually sent out.{/ts}{literal}"
+
         showHideMailOptions( cj("input[name='outBound_option']:checked").val( ) ) ;
-        
+
         function showHideMailOptions( value ) {
             switch( value ) {
               case "0":
                 cj("#bySMTP").show( );
                 cj("#bySendmail").hide( );
                 cj("#_qf_Smtp_refresh_test").show( );
+								if (mailSetting == '5') {
+									alert(archiveWarning);
+								}
               break;
               case "1":
                 cj("#bySMTP").hide( );
                 cj("#bySendmail").show( );
                 cj("#_qf_Smtp_refresh_test").show( );
+								if (mailSetting == '5') {
+									alert(archiveWarning);
+								}
               break;
               case "3":
                 cj('.mailoption').hide();
                 cj("#_qf_Smtp_refresh_test").show( );
+								if (mailSetting == '5') {
+									alert(archiveWarning);
+								}
               break;
               default:
                 cj("#bySMTP").hide( );
@@ -124,11 +138,11 @@
                 cj("#_qf_Smtp_refresh_test").hide( );
             }
         }
-        
+
         cj("input[name='outBound_option']").click( function( ) {
             showHideMailOptions( cj(this).val( ) );
         });
     });
-    
+
 </script>
 {/literal}

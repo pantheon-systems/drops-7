@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -107,7 +107,8 @@ class CRM_Contact_Form_Location {
         }
 
         $form->set($blockName . '_Block_Count', $instance);
-        eval('CRM_Contact_Form_Edit_' . $blockName . '::buildQuickForm( $form );');
+        $formName = 'CRM_Contact_Form_Edit_' . $blockName;
+        $formName::buildQuickForm( $form );
       }
     }
 

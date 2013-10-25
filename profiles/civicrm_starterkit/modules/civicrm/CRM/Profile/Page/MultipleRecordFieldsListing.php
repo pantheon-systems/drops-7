@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -45,10 +45,10 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
   protected $_fields = NULL;
 
   protected $_profileId = NULL;
-  
+
   protected $_contactId = NULL;
 
-  protected $_customGroupTitle = NULL;  
+  protected $_customGroupTitle = NULL;
   /**
    * Get BAO Name
    *
@@ -71,28 +71,28 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
       $view = array_search(CRM_Core_Action::VIEW, CRM_Core_Action::$_names);
       $update = array_search(CRM_Core_Action::UPDATE, CRM_Core_Action::$_names);
       $delete = array_search(CRM_Core_Action::DELETE, CRM_Core_Action::$_names);
-      
+
       $links[CRM_Core_Action::VIEW] = array(
         'name' => ts('View'),
         'url' => 'civicrm/profile/view',
-        'qs' => "id=%%id%%&recordId=%%recordId%%&gid=%%gid%%&multiRecord={$view}&snippet=1&context=multiProfileDialog",
+        'qs' => "reset=1&id=%%id%%&recordId=%%recordId%%&gid=%%gid%%&multiRecord={$view}&snippet=1&context=multiProfileDialog&onPopupClose=%%onPopupClose%%",
         'title' => ts('View %1', array( 1 => $this->_customGroupTitle . ' record')),
       );
 
       $links[CRM_Core_Action::UPDATE] = array(
         'name' => ts('Edit'),
         'url' => 'civicrm/profile/edit',
-        'qs' => "id=%%id%%&recordId=%%recordId%%&gid=%%gid%%&multiRecord={$update}&snippet=1&context=multiProfileDialog",
+        'qs' => "reset=1&id=%%id%%&recordId=%%recordId%%&gid=%%gid%%&multiRecord={$update}&snippet=1&context=multiProfileDialog&onPopupClose=%%onPopupClose%%",
         'title' => ts('Edit %1', array( 1 => $this->_customGroupTitle . ' record')),
       );
 
       $links[CRM_Core_Action::DELETE] = array(
         'name' => ts('Delete'),
         'url' => 'civicrm/profile/edit',
-        'qs' => "id=%%id%%&recordId=%%recordId%%&gid=%%gid%%&multiRecord={$delete}&snippet=1&context=multiProfileDialog",
+        'qs' => "reset=1&id=%%id%%&recordId=%%recordId%%&gid=%%gid%%&multiRecord={$delete}&snippet=1&context=multiProfileDialog&onPopupClose=%%onPopupClose%%",
         'title' => ts('Delete %1', array( 1 => $this->_customGroupTitle . ' record')),
       );
-      
+
       self::$_links = $links;
     }
     return self::$_links;
@@ -112,22 +112,23 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
   function run() {
     // get the requested action, default to 'browse'
     $action = CRM_Utils_Request::retrieve('action', 'String', $this, FALSE, FALSE);
+    $this->_onPopupClose = CRM_Utils_Request::retrieve('onPopupClose', 'String', $this);
 
     // assign vars to templates
     $this->assign('action', $action);
     $profileId = CRM_Utils_Request::retrieve('profileId', 'Positive', $this, FALSE);
     if (!is_array($profileId) && is_numeric($profileId)) {
-      $this->_profileId = $profileId;      
+      $this->_profileId = $profileId;
     }
     //record id
     $recid = CRM_Utils_Request::retrieve('recid', 'Positive', $this, FALSE, 0);
     //custom group id
     $groupId = CRM_Utils_Request::retrieve('groupId', 'Positive', $this, FALSE, 0);
-    
+
     $this->_contactId = CRM_Utils_Request::retrieve('contactId', 'Positive', $this, FALSE);
-  
+
     if ($action & CRM_Core_Action::BROWSE) {
-      //browse 
+      //browse
       $this->browse();
       return;
     }
@@ -154,7 +155,7 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
       $fieldIDs = NULL;
       $result = NULL;
       $multiRecordFieldsWithSummaryListing = CRM_Core_BAO_UFGroup::shiftMultiRecordFields($fields, $multiRecordFields, TRUE);
-      
+
       $multiFieldId = CRM_Core_BAO_CustomField::getKeyID(key($multiRecordFields));
       $customGroupId = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_CustomField', $multiFieldId, 'custom_group_id');
       $reached = CRM_Core_BAO_CustomGroup::hasReachedMaxLimit($customGroupId, $this->_contactId);
@@ -163,12 +164,12 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
         $this->assign('gid', $this->_profileId);
       }
       $this->assign('reachedMax', $reached);
-      
+
       if ($multiRecordFieldsWithSummaryListing && !empty($multiRecordFieldsWithSummaryListing)) {
         $fieldIDs = array_keys($multiRecordFieldsWithSummaryListing);
       }
     }
-   
+
     if ($fieldIDs && !empty($fieldIDs) && $this->_contactId) {
       $options = array( );
       $returnProperities = array('html_type', 'data_type', 'date_format', 'time_format');
@@ -177,24 +178,24 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
         $param = array('id' => $fieldIDs[$key]);
         $returnValues = array( );
         CRM_Core_DAO::commonRetrieve('CRM_Core_DAO_CustomField', $param, $returnValues, $returnProperities);
-        
+
         $optionValuePairs = CRM_Core_BAO_CustomOption::getCustomOption($fieldIDs[$key]);
         if (!empty($optionValuePairs)) {
           foreach ($optionValuePairs as $optionPairs) {
             $options[$fieldIDs[$key]][$optionPairs['value']] = $optionPairs['label'];
           }
         }
-       
+
         $options[$fieldIDs[$key]]['attributes']['html_type'] = $returnValues['html_type'];
         $options[$fieldIDs[$key]]['attributes']['data_type'] = $returnValues['data_type'];
-        
-        $options[$fieldIDs[$key]]['attributes']['format'] = 
+
+        $options[$fieldIDs[$key]]['attributes']['format'] =
           $options[$fieldIDs[$key]]['attributes']['date_format'] = CRM_Utils_Array::value('date_format', $returnValues);
         $options[$fieldIDs[$key]]['attributes']['time_format'] = CRM_Utils_Array::value('time_format', $returnValues);
       }
-   
+
       $result = CRM_Core_BAO_CustomValueTable::getEntityValues($this->_contactId, NULL, $fieldIDs, TRUE);
- 
+
      if (!empty($fieldIDs)) {
        //get the group info of multi rec fields in listing view
        $fieldInput = $fieldIDs;
@@ -209,7 +210,7 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
      }
      $customGroupInfo = CRM_Core_BAO_CustomGroup::getGroupTitles($fieldInput);
      $this->_customGroupTitle = $customGroupInfo[$fieldIdInput]['groupTitle'];
-     
+
      if ($result && !empty($result)) {
        $links = self::links();
        $pageCheckSum = $this->get('pageCheckSum');
@@ -219,7 +220,7 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
          }
        }
        $linkAction = array_sum(array_keys($this->links()));
-       
+
        foreach ($result as $recId => &$value) {
          foreach ($value as $fieldId => &$val) {
            if (is_numeric($fieldId)) {
@@ -229,7 +230,7 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
                $customValue = "";
              }
              $actionParams = array('recordId' => $recId, 'gid' => $this->_profileId,
-               'id' => $this->_contactId);
+               'id' => $this->_contactId, 'onPopupClose' => $this->_onPopupClose);
              if ($pageCheckSum) {
                $actionParams['cs'] = $pageCheckSum;
              }
@@ -240,7 +241,7 @@ class CRM_Profile_Page_MultipleRecordFieldsListing extends CRM_Core_Page_Basic {
        }
      }
     }
-        
+
     $headers = array(  );
     if (!empty($fieldIDs)) {
       foreach ($fieldIDs as $fieldID) {

@@ -165,7 +165,8 @@ Features provides several useful drush commands:
 
   The option '--destination=foo' may be used to specify the path (from Drupal
   root) where the feature should be created. The default destination is
-  'sites/all/modules'.
+  'sites/all/modules', though this can be overridden via the Features
+  settings page.
 
 - `drush features-update [feature name]`
 

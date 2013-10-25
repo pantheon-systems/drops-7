@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -42,6 +42,7 @@ class CRM_Contact_Form_Task_EmailCommon {
   CONST MAX_EMAILS_KILL_SWITCH = 50;
 
   public $_contactDetails = array();
+  public $_additionalContactDetails = array();
   public $_allContactDetails = array();
   public $_toContactEmails = array();
 
@@ -105,7 +106,7 @@ class CRM_Contact_Form_Task_EmailCommon {
 
     // now add domain from addresses
     $domainEmails = array();
-    $domainFrom = CRM_Core_PseudoConstant::fromEmailAddress();
+    $domainFrom = CRM_Core_OptionGroup::values('from_email_address');
     foreach (array_keys($domainFrom) as $k) {
       $domainEmail = $domainFrom[$k];
       $domainEmails[$domainEmail] = htmlspecialchars($domainEmail);
@@ -146,8 +147,9 @@ class CRM_Contact_Form_Task_EmailCommon {
             'name' => $name,
             'id' => $matches[0][$i],
           );
+          $id = CRM_Core_DAO::getFieldValue('CRM_Core_DAO_Email', $matches[2][$i] , 'contact_id', 'email');
+          $form->_additionalContactDetails[$element][$id] = CRM_Contact_BAO_Contact::displayName($id);
         }
-
         $var = "{$element}Contact";
         $form->assign($var, json_encode($elementValues));
       }
@@ -268,6 +270,7 @@ class CRM_Contact_Form_Task_EmailCommon {
     }
 
     $form->addFormRule(array('CRM_Contact_Form_Task_EmailCommon', 'formRule'), $form);
+    CRM_Core_Resources::singleton()->addScriptFile('civicrm', 'templates/CRM/Contact/Form/Task/EmailCommon.js');
   }
 
   /**
@@ -322,6 +325,21 @@ class CRM_Contact_Form_Task_EmailCommon {
     $bcc       = CRM_Utils_Array::value('bcc_id', $formValues);
     $subject   = $formValues['subject'];
 
+
+    // CRM-13378: Append CC and BCC information at the end of Activity Details
+    $elements = array('cc', 'bcc');
+    $additionalDetails = NULL;
+    foreach ($elements as $element) {
+      if (isset($form->_additionalContactDetails[$element])) {
+        foreach ($form->_additionalContactDetails[$element] as $id => $display_name) {
+          $url = CRM_Utils_System::url('civicrm/contact/view', "reset=1&force=1&cid={$id}");
+          $form->_additionalContactDetails[$element][$id] = "<a href=$url>$display_name</a>";
+        }
+        $additionalDetails .= "\n$element : " . implode(", ", $form->_additionalContactDetails[$element]);
+        unset($form->_additionalContactDetails[$element]);
+      }
+    }
+
     // CRM-5916: prepend case id hash to CiviCase-originating emails’ subjects
     if (isset($form->_caseId) && is_numeric($form->_caseId)) {
       $hash = substr(sha1(CIVICRM_SITE_KEY . $form->_caseId), 0, 7);
@@ -341,7 +359,7 @@ class CRM_Contact_Form_Task_EmailCommon {
 
       if (CRM_Utils_Array::value('saveTemplate', $formValues)) {
         $messageTemplate['msg_title'] = $formValues['saveTemplateName'];
-        CRM_Core_BAO_MessageTemplates::add($messageTemplate);
+        CRM_Core_BAO_MessageTemplate::add($messageTemplate);
       }
 
       if (CRM_Utils_Array::value('template', $formValues) &&
@@ -349,7 +367,7 @@ class CRM_Contact_Form_Task_EmailCommon {
       ) {
         $messageTemplate['id'] = $formValues['template'];
         unset($messageTemplate['msg_title']);
-        CRM_Core_BAO_MessageTemplates::add($messageTemplate);
+        CRM_Core_BAO_MessageTemplate::add($messageTemplate);
       }
     }
 
@@ -394,7 +412,8 @@ class CRM_Contact_Form_Task_EmailCommon {
       $attachments,
       $cc,
       $bcc,
-      array_keys($form->_contactDetails)
+      array_keys($form->_contactDetails),
+      $additionalDetails
     );
 
     if ($sent) {

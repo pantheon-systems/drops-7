@@ -201,10 +201,10 @@ function civicrm_page_build($page) {
  * they use the CiviCRM API.
  */
 function civicrm_initialize() {
-  // Check for php version and ensure its greater than 5.
-  // Do a fatal exit if not.
-  if ((int) substr(PHP_VERSION, 0, 1) < 5) {
-    echo "CiviCRM requires PHP Version 5.2 or greater. You are running PHP Version " . PHP_VERSION . "<p>";
+  // Check for php version and ensure its greater than minPhpVersion
+  $minPhpVersion = '5.3.3';
+  if (version_compare(PHP_VERSION, $minPhpVersion) < 0) {
+    echo "CiviCRM requires PHP Version $minPhpVersion or greater. You are running PHP Version " . PHP_VERSION . "<p>";
     exit();
   }
 
@@ -720,6 +720,36 @@ function civicrm_views_api() {
     'api' => 3,
     'path' => drupal_get_path('module', 'civicrm') . '/modules/views',
   );
+}
+
+function civicrm_views_query_alter(&$view, &$query) {
+
+  if ( ! civicrm_initialize( ) ) {
+    return;
+  }
+
+  // check if we are in multilingual mode, otherwise return
+  // TODO: should be a simple call - is_multiligual ?
+  require_once 'CRM/Core/DAO/Domain.php';
+  $domain = new CRM_Core_DAO_Domain();
+  $domain->find(true);
+  
+  $multilingual = (bool) $domain->locales;
+  
+  if ($multilingual) {
+    require_once 'CRM/Core/I18n/SchemaStructure.php';
+    global $dbLocale;
+    $columns = CRM_Core_I18n_SchemaStructure::columns();
+    
+    // TODO: for better performance, loop on $query->fields instead
+    foreach ($columns as $table => $hash) {
+      foreach ($hash as $column => $type) {
+        if (array_key_exists("{$table}_{$column}", $query->fields)) {
+          $query->fields["{$table}_{$column}"]['field'] = "{$column}{$dbLocale}";
+        }
+      }
+    }
+  }
 }
 
 function civicrm_add_jquery(&$html) {

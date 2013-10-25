@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -44,11 +44,15 @@ class civicrm_handler_filter_pseudo_constant extends views_handler_filter_in_ope
 
     // Load pseudo arguments if passed as array from hook_views_data
     if (isset($this->definition['pseudo args']) && is_array($this->definition['pseudo args'])) {
-      $this->definition['pseudo args'];
+      $pseudo_args = $this->definition['pseudo args'];
+    }
+    elseif (isset($this->definition['dao class']) && isset($this->definition['real field'])) {
+      $pseudo_args = array($this->definition['dao class'], $this->definition['real field']);
     }
     else {
       $pseudo_args = array();
     }
+
     require_once str_replace('_', DIRECTORY_SEPARATOR, $this->definition['pseudo class']) . '.php';
     // Include and call the Pseudo Class method
     $this->_pseudo_constant = call_user_func_array($this->definition['pseudo class'] . "::" . $this->definition['pseudo method'], $pseudo_args);

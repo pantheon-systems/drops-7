@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -62,9 +62,7 @@ function civicrm_engage_civicrm_buildForm($formName, &$form) {
       CRM_Core_BAO_CustomGroup::setDefaults($groupTree, $defaults);
       $form->setDefaults($defaults);
 
-      CRM_Core_BAO_CustomGroup::buildQuickForm($form, $groupTree, FALSE, 1,
-        CIVICRM_ENGAGE_DEMOGRAPHICS_PREFIX
-      );
+      CRM_Core_BAO_CustomGroup::buildQuickForm($form, $groupTree, FALSE, CIVICRM_ENGAGE_DEMOGRAPHICS_PREFIX);
     }
   }
 }

@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -37,8 +36,6 @@
  * @version $Id: GroupNesting.php 21624 2009-08-07 22:02:55Z wmorgan $
  *
  */
-
-require_once 'CRM/Contact/BAO/GroupNesting.php';
 
 /**
  * Provides group nesting record(s) given parent and/or child id.
@@ -74,7 +71,7 @@ function civicrm_api3_group_nesting_create($params) {
 
 /**
  * Adjust Metadata for Create action
- * 
+ *
  * The metadata is used for setting defaults, documentation & validation
  * @param array $params array or parameters determined by getfields
  */

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -49,7 +49,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
    */
   public static function &create(&$params) {
     $financialTypeId = NULL;
-    if (CRM_Utils_Array::value('id', $params) && !CRM_Price_BAO_Set::getFor('civicrm_contribution_page', $params['id'], NULL, 1)) {
+    if (CRM_Utils_Array::value('id', $params) && !CRM_Price_BAO_PriceSet::getFor('civicrm_contribution_page', $params['id'], NULL, 1)) {
       $financialTypeId = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_ContributionPage', $params['id'], 'financial_type_id');
     }
     $dao = new CRM_Contribute_DAO_ContributionPage();
@@ -57,7 +57,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
     $dao->save();
     if ($financialTypeId && CRM_Utils_Array::value('financial_type_id', $params) 
       && $financialTypeId != $params['financial_type_id']) {
-      CRM_Price_BAO_FieldValue::updateFinancialType($params['id'], 'civicrm_contribution_page', $params['financial_type_id']);
+      CRM_Price_BAO_PriceFieldValue::updateFinancialType($params['id'], 'civicrm_contribution_page', $params['financial_type_id']);
     }
     return $dao;
   }
@@ -68,7 +68,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
    * @param int      $id        id of the database record
    * @param boolean  $is_active value we want to set the is_active field
    *
-   * @return Object             DAO object on sucess, null otherwise
+   * @return Object             DAO object on success, null otherwise
    * @static
    */
   static function setIsActive($id, $is_active) {
@@ -81,7 +81,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
     );
 
     CRM_Core_DAO::commonRetrieve('CRM_Contribute_DAO_ContributionPage', $params, $values);
-    
+
     // get the profile ids
     $ufJoinParams = array(
       'module' => 'CiviContribute',
@@ -218,7 +218,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
         0,
       );
     }
-    
+
     if (!$returnMessageText && !empty($gIds)) {
       //send notification email if field values are set (CRM-1941)
       foreach ($gIds as $key => $gId) {
@@ -240,7 +240,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
 
       // get the billing location type
       if (!array_key_exists('related_contact', $values)) {
-        $locationTypes = CRM_Core_PseudoConstant::locationType();
+        $locationTypes = CRM_Core_PseudoConstant::get('CRM_Core_DAO_Address', 'location_type_id');
         $billingLocationTypeId = array_search('Billing', $locationTypes);
       }
       else {
@@ -309,10 +309,10 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
         'isShare' => CRM_Utils_Array::value('is_share', $values),
       );
 
-            if ( $contributionTypeId = CRM_Utils_Array::value('financial_type_id', $values ) ) {
+      if ($contributionTypeId = CRM_Utils_Array::value('financial_type_id', $values)) {
         $tplParams['contributionTypeId'] = $contributionTypeId;
-                $tplParams['contributionTypeName'] = CRM_Core_DAO::getFieldValue( 'CRM_Financial_DAO_FinancialType',
-                                                                                  $contributionTypeId );
+        $tplParams['contributionTypeName'] = CRM_Core_DAO::getFieldValue('CRM_Financial_DAO_FinancialType',
+          $contributionTypeId);
       }
 
       if ($contributionPageId = CRM_Utils_Array::value('id', $values)) {
@@ -348,8 +348,8 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
           'entity_id' => $values['id'],
         );
         $OnBehalfProfile = CRM_Core_BAO_UFJoin::getUFGroupIds($ufJoinParams);
-        $profileId       = $OnBehalfProfile[0];
-        $userID          = $contactID;
+        $profileId = $OnBehalfProfile[0];
+        $userID = $contactID;
         self::buildCustomDisplay($profileId, 'onBehalfProfile', $userID, $template, $params['onbehalf_profile'], $fieldTypes);
       }
 
@@ -364,7 +364,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
       );
 
       if ($returnMessageText) {
-        list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplates::sendTemplate($sendTemplateParams);
+        list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplate::sendTemplate($sendTemplateParams);
         return array(
           'subject' => $subject,
           'body' => $message,
@@ -379,7 +379,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
         $sendTemplateParams['toEmail'] = $email;
         $sendTemplateParams['cc'] = CRM_Utils_Array::value('cc_receipt', $values);
         $sendTemplateParams['bcc'] = CRM_Utils_Array::value('bcc_receipt', $values);
-        list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplates::sendTemplate($sendTemplateParams);
+        list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplate::sendTemplate($sendTemplateParams);
       }
 
       // send duplicate alert, if dupe match found during on-behalf-of processing.
@@ -395,11 +395,11 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
         // fix cc and reset back to original, CRM-6976
         $sendTemplateParams['cc'] = $originalCCReceipt;
 
-        CRM_Core_BAO_MessageTemplates::sendTemplate($sendTemplateParams);
+        CRM_Core_BAO_MessageTemplate::sendTemplate($sendTemplateParams);
       }
     }
   }
-  
+
   /*
      * Construct the message to be sent by the send function
      *
@@ -414,7 +414,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
       'PDFFilename' => 'receipt.pdf',
     );
     if ($returnMessageText) {
-      list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplates::sendTemplate($sendTemplateParams);
+      list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplate::sendTemplate($sendTemplateParams);
       return array(
         'subject' => $subject,
         'body' => $message,
@@ -441,13 +441,13 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
     $value = array();
     if ($pageID) {
       CRM_Core_DAO::commonRetrieveAll('CRM_Contribute_DAO_ContributionPage', 'id', $pageID, $value, array(
-          'title',
-          'is_email_receipt',
-          'receipt_from_name',
-          'receipt_from_email',
-          'cc_receipt',
-          'bcc_receipt',
-        ));
+        'title',
+        'is_email_receipt',
+        'receipt_from_name',
+        'receipt_from_email',
+        'cc_receipt',
+        'bcc_receipt',
+      ));
     }
 
     $isEmailReceipt = CRM_Utils_Array::value('is_email_receipt', $value[$pageID]);
@@ -463,9 +463,9 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
         $receiptFromEmail = $value[$pageID]['receipt_from_email'];
       }
       else {
-        $domainValues     = CRM_Core_BAO_Domain::getNameAndEmail();
-        $receiptFrom      = "$domainValues[0] <$domainValues[1]>";
-        $receiptFromName  = $domainValues[0];
+        $domainValues = CRM_Core_BAO_Domain::getNameAndEmail();
+        $receiptFrom = "$domainValues[0] <$domainValues[1]>";
+        $receiptFromName = $domainValues[0];
         $receiptFromEmail = $domainValues[1];
       }
 
@@ -495,9 +495,9 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
       if ($recur->id) {
         // in some cases its just recurringNotify() thats called for the first time and these urls don't get set.
         // like in PaypalPro, & therefore we set it here additionally.
-        $template         = CRM_Core_Smarty::singleton();
+        $template = CRM_Core_Smarty::singleton();
         $paymentProcessor = CRM_Financial_BAO_PaymentProcessor::getProcessorForEntity($recur->id, 'recur', 'obj');
-        $url              = $paymentProcessor->subscriptionURL($recur->id, 'recur');
+        $url = $paymentProcessor->subscriptionURL($recur->id, 'recur');
         $template->assign('cancelSubscriptionUrl', $url);
 
         $url = $paymentProcessor->subscriptionURL($recur->id, 'recur', 'billing');
@@ -507,7 +507,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
         $template->assign('updateSubscriptionUrl', $url);
       }
 
-      list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplates::sendTemplate($templatesParams);
+      list($sent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplate::sendTemplate($templatesParams);
 
       if ($sent) {
         CRM_Core_Error::debug_log_message('Success: mail sent for recurring notification.');
@@ -530,12 +530,12 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
    * @access public
    * @static
    */
-  function buildCustomDisplay($gid, $name, $cid, &$template, &$params, $fieldTypes = NULL) {
+  public static function buildCustomDisplay($gid, $name, $cid, &$template, &$params, $fieldTypes = NULL) {
     if ($gid) {
       if (CRM_Core_BAO_UFGroup::filterUFGroups($gid, $cid)) {
-        $values     = array();
+        $values = array();
         $groupTitle = NULL;
-        $fields     = CRM_Core_BAO_UFGroup::getFields($gid, FALSE, CRM_Core_Action::VIEW, NULL, NULL, FALSE, NULL, FALSE, NULL, CRM_Core_Permission::CREATE, NULL);
+        $fields = CRM_Core_BAO_UFGroup::getFields($gid, FALSE, CRM_Core_Action::VIEW, NULL, NULL, FALSE, NULL, FALSE, NULL, CRM_Core_Permission::CREATE, NULL);
         foreach ($fields as $k => $v) {
           if (!$groupTitle) {
             $groupTitle = $v["groupTitle"];
@@ -616,7 +616,7 @@ class CRM_Contribute_BAO_ContributionPage extends CRM_Contribute_DAO_Contributio
       ));
 
     //copy price sets
-    CRM_Price_BAO_Set::copyPriceSet('civicrm_contribution_page', $id, $copy->id);
+    CRM_Price_BAO_PriceSet::copyPriceSet('civicrm_contribution_page', $id, $copy->id);
 
     $copyTellFriend = &CRM_Core_DAO::copyGeneric('CRM_Friend_DAO_Friend', array(
         'entity_id' => $id,
@@ -647,11 +647,11 @@ WHERE entity_table = 'civicrm_contribution_page'
     $premiumDao = CRM_Core_DAO::executeQuery($premiumQuery, CRM_Core_DAO::$_nullArray);
     while ($premiumDao->fetch()) {
       if ($premiumDao->id) {
-        $copyPremiumProduct = &CRM_Core_DAO::copyGeneric('CRM_Contribute_DAO_PremiumsProduct', array(
-            'premiums_id' => $premiumDao->id,
-          ), array(
-            'premiums_id' => $copyPremium->id,
-          ));
+        $copyPremiumProduct = & CRM_Core_DAO::copyGeneric('CRM_Contribute_DAO_PremiumsProduct', array(
+          'premiums_id' => $premiumDao->id,
+        ), array(
+          'premiums_id' => $copyPremium->id,
+        ));
       }
     }
 
@@ -697,8 +697,7 @@ WHERE entity_table = 'civicrm_contribution_page'
    * @access public
    * @static
    */
-  static function getSectionInfo($contribPageIds = array(
-    )) {
+  static function getSectionInfo($contribPageIds = array()) {
     $info = array();
     $whereClause = NULL;
     if (is_array($contribPageIds) && !empty($contribPageIds)) {
@@ -718,7 +717,7 @@ WHERE entity_table = 'civicrm_contribution_page'
     );
     $query = "
    SELECT  civicrm_contribution_page.id as id,
-           civicrm_contribution_page.financial_type_id as settings, 
+           civicrm_contribution_page.financial_type_id as settings,
            amount_block_is_active as amount,
            civicrm_membership_block.id as membership,
            civicrm_uf_join.id as custom,

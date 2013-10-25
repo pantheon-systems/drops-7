@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -46,7 +46,7 @@ class CRM_Contribute_BAO_Widget extends CRM_Contribute_DAO_Widget {
    *
    * @return stdClass
    */
-  public function getContributionPageData($contributionPageID, $widgetID) {
+  public static function getContributionPageData($contributionPageID, $widgetID) {
     $config = CRM_Core_Config::singleton();
 
     $data = array();

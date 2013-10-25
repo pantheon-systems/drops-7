@@ -1,7 +1,7 @@
 <?php
 /*
   +--------------------------------------------------------------------+
-  | CiviCRM version 4.3                                                |
+  | CiviCRM version 4.4                                                |
   +--------------------------------------------------------------------+
   | Copyright CiviCRM LLC (c) 2004-2013                                |
   +--------------------------------------------------------------------+
@@ -112,7 +112,7 @@ class CRM_Mailing_Form_Approve extends CRM_Core_Form {
 
     $this->addElement('textarea', 'approval_note', ts('Approve/Reject Note'));
 
-    $mailApprovalStatus = CRM_Mailing_PseudoConstant::approvalStatus();
+    $mailApprovalStatus = CRM_Core_OptionGroup::values('mail_approval_status');
 
     // eliminate the none option
     $noneOptionID = CRM_Core_OptionGroup::getValue('mail_approval_status',
@@ -192,7 +192,7 @@ class CRM_Mailing_Form_Approve extends CRM_Core_Form {
       $params['scheduled_date'] = 'null';
 
       // also delete any jobs associated with this mailing
-      $job = new CRM_Mailing_BAO_Job();
+      $job = new CRM_Mailing_BAO_MailingJob();
       $job->mailing_id = $ids['mailing_id'];
       $job->delete();
     }

@@ -1,7 +1,7 @@
 <?php
 /*
    +--------------------------------------------------------------------+
-   | CiviCRM version 4.3                                                |
+   | CiviCRM version 4.4                                                |
    +--------------------------------------------------------------------+
    | Copyright CiviCRM LLC (c) 2004-2013                                |
    +--------------------------------------------------------------------+
@@ -257,7 +257,7 @@ class CRM_Utils_REST {
         return self::error('Unknown function invocation.');
       }
       $store = NULL;
-      
+
       if ($args[1] == 'ping') {
         return self::ping();
       }
@@ -268,7 +268,7 @@ class CRM_Utils_REST {
       $args[1] = CRM_Utils_array::value('entity', $_REQUEST);
       $args[2] = CRM_Utils_array::value('action', $_REQUEST);
     }
- 
+
 
     // Everyone should be required to provide the server key, so the whole
     //  interface can be disabled in more change to the configuration file.
@@ -378,7 +378,7 @@ class CRM_Utils_REST {
 
     if (array_key_exists('json', $_REQUEST) &&  $_REQUEST['json'][0] == "{") {
       $params = json_decode($_REQUEST['json'], TRUE);
-      if(empty($params)) {
+      if($params === NULL) {
         echo json_encode(array('is_error' => 1, 'error_message', 'Unable to decode supplied JSON.'));
         CRM_Utils_System::civiExit();
       }

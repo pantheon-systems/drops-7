@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -36,11 +36,7 @@
 /**
  * Drupal specific stuff goes here
  */
-class CRM_Utils_System_Drupal extends CRM_Utils_System_Base {
-  function __construct() {
-    $this->is_drupal = TRUE;
-    $this->supports_form_extensions = TRUE;
-  }
+class CRM_Utils_System_Drupal extends CRM_Utils_System_DrupalBase {
 
   /**
    * Function to create a user in Drupal.
@@ -660,6 +656,20 @@ AND    u.status = 1
    */
   function userLoginFinalize($params = array()){
     user_login_finalize($params);
+  }
+
+  /**
+   * Determine the native ID of the CMS user
+   *
+   * @param $username
+   * @return int|NULL
+   */
+  function getUfId($username) {
+    $user = user_load_by_name($username);
+    if (empty($user->uid)) {
+      return NULL;
+    }
+    return $user->uid;
   }
 
   /**

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -51,7 +51,7 @@ class CRM_Mailing_MailStore {
       throw new Exception("Could not find entry named $name in civicrm_mail_settings");
     }
 
-    $protocols = CRM_Core_PseudoConstant::mailProtocol();
+    $protocols = CRM_Core_PseudoConstant::get('CRM_Core_DAO_MailSettings', 'protocol');
 
     switch ($protocols[$dao->protocol]) {
       case 'IMAP':

@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -31,7 +31,7 @@
   <div class="messages status no-popup">
     <dl>
       <dt><div class="icon inform-icon"></div></dt>
-      <dd>    
+      <dd>
         {ts}WARNING: Delete will remove this permission from the specified ACL Role.{/ts} {ts}Do you want to continue?{/ts}
       </dd>
     </dl>
@@ -52,9 +52,9 @@
 </dd>
   </dl>
 {/if}
-  <dl> 
+  <dl>
     <dt></dt><dd>{$form.buttons.html}</dd>
-  </dl> 
+  </dl>
 </fieldset>
 </div>
 

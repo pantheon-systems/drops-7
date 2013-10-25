@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -29,7 +29,7 @@
 /*
  * This file checks and updates the status of all pledge records for a
  * given domain using the updatePledgePaymentStatus.
- * 
+ *
  * UpdatePledgeRecord.php prior to running this script.
  */
 
@@ -86,12 +86,12 @@ SELECT  pledge.contact_id              as contact_id,
         pledge.is_test                 as is_test,
         pledge.campaign_id             as campaign_id,
         SUM(payment.scheduled_amount)  as amount_due,
-        ( SELECT sum(civicrm_pledge_payment.actual_amount) 
-        FROM civicrm_pledge_payment 
+        ( SELECT sum(civicrm_pledge_payment.actual_amount)
+        FROM civicrm_pledge_payment
         WHERE civicrm_pledge_payment.status_id = 1
         AND  civicrm_pledge_payment.pledge_id = pledge.id
         ) as amount_paid
-        FROM      civicrm_pledge pledge, civicrm_pledge_payment payment 
+        FROM      civicrm_pledge pledge, civicrm_pledge_payment payment
         WHERE     pledge.id = payment.pledge_id
         AND     payment.status_id IN ( {$statusIds} ) AND pledge.status_id IN ( {$statusIds} )
         GROUP By  payment.id
@@ -241,8 +241,8 @@ SELECT  pledge.contact_id              as contact_id,
             $template->assign('amount', $details['amount']);
             $template->assign('create_date', $details['create_date']);
 
-            require_once 'CRM/Core/BAO/MessageTemplates.php';
-            list($mailSent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplates::sendTemplate(
+            require_once 'CRM/Core/BAO/MessageTemplate.php';
+            list($mailSent, $subject, $message, $html) = CRM_Core_BAO_MessageTemplate::sendTemplate(
               array(
                 'groupName' => 'msg_tpl_workflow_pledge',
                 'valueName' => 'pledge_reminder',

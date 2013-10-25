@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -35,9 +35,11 @@
 class CRM_Contact_Form_Search_Custom_EventAggregate extends CRM_Contact_Form_Search_Custom_Base implements CRM_Contact_Form_Search_Interface {
 
   protected $_formValues;
+  public $_permissionedComponent;
 
   function __construct(&$formValues) {
     $this->_formValues = $formValues;
+    $this->_permissionedComponent = array('CiviContribute', 'CiviEvent');
 
     /**
      * Define the columns for search result rows
@@ -72,7 +74,7 @@ class CRM_Contact_Form_Search_Custom_EventAggregate extends CRM_Contact_Form_Sea
     foreach ($event_type as $eventId => $eventName) {
       $form->addElement('checkbox', "event_type_id[$eventId]", 'Event Type', $eventName);
     }
-    $events = CRM_Event_BAO_Event::getEvents(TRUE);
+    $events = CRM_Event_BAO_Event::getEvents(1);
     $form->add('select', 'event_id', ts('Event Name'), array('' => ts('- select -')) + $events);
 
     $form->addDate('start_date', ts('Payments Date From'), FALSE, array('formatType' => 'custom'));
@@ -159,6 +161,8 @@ class CRM_Contact_Form_Search_Custom_EventAggregate extends CRM_Contact_Form_Sea
     }
 
     if ($rowcount > 0 && $offset >= 0) {
+      $offset = CRM_Utils_Type::escape($offset, 'Int');
+      $rowcount = CRM_Utils_Type::escape($rowcount, 'Int');
       $sql .= " LIMIT $offset, $rowcount ";
     }
 

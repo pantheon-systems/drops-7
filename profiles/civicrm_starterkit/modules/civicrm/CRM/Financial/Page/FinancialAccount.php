@@ -1,8 +1,7 @@
 <?php
-
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -116,7 +115,7 @@ class CRM_Financial_Page_FinancialAccount extends CRM_Core_Page_Basic {
       $this->edit($action, $id) ;
     }
 
-    // parent run 
+    // parent run
     return parent::run();
   }
 
@@ -134,7 +133,7 @@ class CRM_Financial_Page_FinancialAccount extends CRM_Core_Page_Basic {
     $dao = new CRM_Financial_DAO_FinancialAccount();
     $dao->orderBy('financial_account_type_id, name');
     $dao->find();
-    $financialAccountType = CRM_Core_PseudoConstant::accountOptionValues('financial_account_type');
+    $financialAccountType = CRM_Core_PseudoConstant::get('CRM_Financial_DAO_FinancialAccount', 'financial_account_type_id');
 
     while ($dao->fetch()) {
       $contributionType[$dao->id] = array();

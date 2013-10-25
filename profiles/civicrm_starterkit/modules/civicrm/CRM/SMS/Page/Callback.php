@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -33,12 +33,12 @@
  *
  */
 
-class CRM_SMS_Page_Callback 
+class CRM_SMS_Page_Callback
 {
-  
+
   function run(){
     $provider = CRM_SMS_Provider::singleton($_REQUEST);
-    
+
     if (array_key_exists('status',$_REQUEST)){
       $provider->callback();
     } else {

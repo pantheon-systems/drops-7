@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -36,11 +36,7 @@
 /**
  * Drupal specific stuff goes here
  */
-class CRM_Utils_System_Drupal6 extends CRM_Utils_System_Base {
-  function __construct() {
-    $this->is_drupal = TRUE;
-    $this->supports_form_extensions = TRUE;
-  }
+class CRM_Utils_System_Drupal6 extends CRM_Utils_System_DrupalBase {
 
   /**
    * if we are using a theming system, invoke theme, else just print the
@@ -174,29 +170,38 @@ class CRM_Utils_System_Drupal6 extends CRM_Utils_System_Base {
     }
 
     $sql = "
-SELECT name, mail
-  FROM {$config->userFrameworkUsersTableName}
- WHERE (LOWER(name) = LOWER('$name')) OR (LOWER(mail) = LOWER('$email'))";
+      SELECT name, mail
+      FROM {users}
+      WHERE (LOWER(name) = LOWER('$name')) OR (LOWER(mail) = LOWER('$email'))
+    ";
 
-    $db_cms = DB::connect($config->userFrameworkDSN);
-    if (DB::isError($db_cms)) {
-      die("Cannot connect to UF db via $dsn, " . $db_cms->getMessage());
+    $result = db_query($sql);
+    $row = db_fetch_array($result);
+    if (!$row) {
+      return;
     }
-    $query = $db_cms->query($sql);
-    $row = $query->fetchRow();
+ 
+    $user = NULL;
+
     if (!empty($row)) {
-      $dbName = CRM_Utils_Array::value(0, $row);
-      $dbEmail = CRM_Utils_Array::value(1, $row);
+      $dbName = CRM_Utils_Array::value('name', $row);
+      $dbEmail = CRM_Utils_Array::value('mail', $row);
       if (strtolower($dbName) == strtolower($name)) {
         $errors['cms_name'] = ts('The username %1 is already taken. Please select another username.',
           array(1 => $name)
         );
       }
       if (strtolower($dbEmail) == strtolower($email)) {
-        $resetUrl = $config->userFrameworkBaseURL . 'user/password';
-        $errors[$emailName] = ts('The email address %1 is already registered. <a href="%2">Have you forgotten your password?</a>',
-          array(1 => $email, 2 => $resetUrl)
-        );
+        if(empty($email)) {
+          $errors[$emailName] = ts('You cannot create an email account for a contact with no email',
+            array(1 => $email)
+          );
+        }
+        else{
+          $errors[$emailName] = ts('This email %1 is already registered. Please select another email.',
+            array(1 => $email)
+          );
+        }
       }
     }
   }
@@ -520,6 +525,13 @@ SELECT name, mail
    * @access public
    */
   function authenticate($name, $password, $loadCMSBootstrap = FALSE, $realPath = NULL) {
+   //@todo this 'PEAR-y' stuff is only required when bookstrap is not being loaded which is rare
+   // if ever now.
+   // probably if bootstrap is loaded this call
+   // CRM_Utils_System::loadBootStrap($bootStrapParams, TRUE, TRUE, $realPath); would be
+   // sufficient to do what this fn does. It does exist as opposed to return which might need some hanky-panky to make
+   // safe in the unknown situation where authenticate might be called & it is important that
+   // false is returned
     require_once 'DB.php';
 
     $config = CRM_Core_Config::singleton();
@@ -591,6 +603,20 @@ SELECT name, mail
    */
   function userLoginFinalize($params = array()) {
     user_authenticate_finalize($params);
+  }
+
+  /**
+   * Determine the native ID of the CMS user
+   *
+   * @param $username
+   * @return int|NULL
+   */
+  function getUfId($username) {
+    $user = user_load(array('name' => $username));
+    if (empty($user->uid)) {
+      return NULL;
+    }
+    return $user->uid;
   }
 
   /**
@@ -714,7 +740,7 @@ SELECT name, mail
     if (!$loadUser) {
       return TRUE;
     }
-
+    global $user;
     // If $uid is passed in, authentication has been done already.
     $uid = CRM_Utils_Array::value('uid', $params);
     if (!$uid) {
@@ -723,13 +749,16 @@ SELECT name, mail
       $pass = CRM_Utils_Array::value('pass', $params, FALSE) ? $params['pass'] : trim(CRM_Utils_Array::value('pass', $_REQUEST));
 
       if ($name) {
-        $uid = user_authenticate(array('name' => $name, 'pass' => $pass));
-        if (!$uid) {
+        $user = user_authenticate(array('name' => $name, 'pass' => $pass));
+        if (!$user->uid) {
           if ($throwError) {
             echo '<br />Sorry, unrecognized username or password.';
             exit();
           }
           return FALSE;
+        }
+        else {
+          return TRUE;
         }
       }
     }
@@ -737,7 +766,6 @@ SELECT name, mail
     if ($uid) {
       $account = user_load($uid);
       if ($account && $account->uid) {
-        global $user;
         $user = $account;
         return TRUE;
       }

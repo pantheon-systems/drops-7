@@ -1,9 +1,8 @@
 <?php
-// $Id$
 
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -189,7 +188,7 @@ class CRM_Report_Form_Event_Income extends CRM_Report_Form_Event {
         }
       }
     }
-    
+
     $rows['Role'] = $roleRows;
 
     //Count the Participant by status ID for Event

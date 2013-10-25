@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | This file is a part of CiviCRM.                                    |
  |                                                                    |
@@ -33,7 +33,7 @@ class views_handler_argument_civicrm_month extends views_handler_argument_date {
    */
   function construct() {
     parent::construct();
-    $this->formula    = views_date_sql_extract('MONTH', "***table***.$this->real_field", "datetime", '0');
+    $this->formula    = views_date_sql_extract('MONTH', "***table***.$this->real_field");
     $this->format     = 'F';
     $this->arg_format = 'm';
   }
@@ -43,7 +43,7 @@ class views_handler_argument_civicrm_month extends views_handler_argument_date {
    */
   function summary_name($data) {
     $month = str_pad($data->{$this->name_alias}, 2, '0', STR_PAD_LEFT);
-    return format_date(strtotime("2005" . $month . "15"), 'custom', $this->format);
+    return format_date(strtotime("2005" . $month . "15" . " 00:00:00 UTC"), 'custom', $this->format, 'UTC');
   }
 
   /**
@@ -51,7 +51,7 @@ class views_handler_argument_civicrm_month extends views_handler_argument_date {
    */
   function title() {
     $month = str_pad($this->argument, 2, '0', STR_PAD_LEFT);
-    return format_date(strtotime("2005" . $month . "15"), 'custom', $this->format, 0);
+    return format_date(strtotime("2005" . $month . "15" . " 00:00:00 UTC"), 'custom', $this->format, 'UTC');
   }
 
   function summary_argument($data) {

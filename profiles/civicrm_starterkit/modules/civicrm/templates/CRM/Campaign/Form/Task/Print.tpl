@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -27,7 +27,7 @@
      <span class="element-right">{$form.buttons.html}</span>
 </div>
 
-{if $rows } 
+{if $rows }
 <p></p>
 {include file="CRM/Campaign/Form/Selector.tpl"}
 

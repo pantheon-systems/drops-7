@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -71,7 +71,7 @@
             <tr class="crm-report crm-report-criteria-groupby">
                 {foreach from=$groupByElements item=gbElem key=dnc}
                     {assign var="count" value=`$count+1`}
-                    <td width="25%" {if $form.fields.$gbElem} onClick="selectGroupByFields('{$gbElem}');"{/if}>
+                    <td width="25%" {if $form.fields.$gbElem}"{/if}>
                         {$form.group_bys[$gbElem].html}
                         {if $form.group_bys_freq[$gbElem].html}:<br>
                             &nbsp;&nbsp;{$form.group_bys_freq[$gbElem].label}&nbsp;{$form.group_bys_freq[$gbElem].html}
@@ -146,16 +146,23 @@
       </div>
     {/if}
 
-    {if $form.options.html || $form.options.html}
+    {if $otherOptions}
         <div id="other-options" class="civireport-criteria" >
         <h3>Other Options</h3>
         <table class="report-layout">
-            <tr class="crm-report crm-report-criteria-groupby">
-          <td>{$form.options.html}</td>
-          {if $form.blank_column_end}
-              <td>{$form.blank_column_end.label}&nbsp;&nbsp;{$form.blank_column_end.html}</td>
-                {/if}
-            </tr>
+          {assign var="optionCount" value=0}
+          <tr class="crm-report crm-report-criteria-field">
+          {foreach from=$otherOptions item=optionField key=optionName}
+            {assign var="optionCount" value=`$optionCount+1`}
+            <td>{if $form.$optionName.label}{$form.$optionName.label}&nbsp;{/if}{$form.$optionName.html}</td>
+            {if $optionCount is div by 2}
+              </tr><tr class="crm-report crm-report-criteria-field">
+            {/if}
+          {/foreach}
+          {if $optionCount is not div by 2}
+            <td colspan="2 - ($count % 2)"></td>
+          {/if}
+          </tr>
         </table>
         </div>
     {/if}
@@ -247,16 +254,16 @@
             }
         }
 
-  function selectGroupByFields(id) {
-      var field = 'fields\['+ id+'\]';
-      var group = 'group_bys\['+ id+'\]';
-      var groups = document.getElementById( group ).checked;
-      if ( groups == 1 ) {
-          document.getElementById( field ).checked = true;
-      } else {
-          document.getElementById( field ).checked = false;
-      }
-  }
+    cj(document).ready(function(){
+      cj('.crm-report-criteria-groupby input:checkbox').click(function() {
+        cj('#fields_' + this.id.substr(10)).prop('checked', this.checked);
+      });
+      {/literal}{if $displayToggleGroupByFields}{literal}
+      cj('.crm-report-criteria-field input:checkbox').click(function() {
+        cj('#group_bys_' + this.id.substr(7)).prop('checked', this.checked);
+      });
+      {/literal}{/if}{literal}
+    });
     </script>
     {/literal}
 

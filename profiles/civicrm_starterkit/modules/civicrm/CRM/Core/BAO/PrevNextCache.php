@@ -1,7 +1,7 @@
 <?php
 /*
   +--------------------------------------------------------------------+
-  | CiviCRM version 4.3                                                |
+  | CiviCRM version 4.4                                                |
   +--------------------------------------------------------------------+
   | Copyright CiviCRM LLC (c) 2004-2013                                |
   +--------------------------------------------------------------------+
@@ -152,6 +152,9 @@ WHERE  cacheKey = %1
     }
 
     if ($rowCount) {
+      $offset = CRM_Utils_Type::escape($offset, 'Int');
+      $rowCount = CRM_Utils_Type::escape($rowCount, 'Int');
+
       $query .= " LIMIT {$offset}, {$rowCount}";
     }
 
@@ -193,7 +196,7 @@ WHERE cacheKey $op %1
     }
 
     $params = array(1 => array($cacheKey, 'String'));
-    return CRM_Core_DAO::singleValueQuery($query, $params);
+    return (int) CRM_Core_DAO::singleValueQuery($query, $params, TRUE, FALSE);
   }
 
   static function refillCache($rgid = NULL, $gid = NULL, $cacheKeyString = NULL) {

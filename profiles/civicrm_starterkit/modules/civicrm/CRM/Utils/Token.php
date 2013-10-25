@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -192,7 +192,7 @@ class CRM_Utils_Token {
    * @static
    */
   private static function tokenRegex($token_type) {
-    return '/(?<!\{|\\\\)\{' . $token_type . '\.([\w]+(\-[\w\s]+)?)\}(?!\})/e';
+    return '/(?<!\{|\\\\)\{' . $token_type . '\.([\w]+(\-[\w\s]+)?)\}(?!\})/';
   }
 
   /**
@@ -236,9 +236,11 @@ class CRM_Utils_Token {
       return $str;
     }
 
-    $str = preg_replace(
+    $str = preg_replace_callback(
       self::tokenRegex($key),
-      'self::getDomainTokenReplacement(\'\\1\',$domain,$html)',
+      function ($matches) use(&$domain, $html, $escapeSmarty) {
+        return CRM_Utils_Token::getDomainTokenReplacement($matches[1], $domain, $html, $escapeSmarty);
+      },
       $str
     );
     return $str;
@@ -399,9 +401,12 @@ class CRM_Utils_Token {
       return $str;
     }
 
-    $str = preg_replace(
+    $str = preg_replace_callback(
       self::tokenRegex($key),
-      'self::getMailingTokenReplacement(\'\\1\',$mailing,$escapeSmarty)', $str
+      function ($matches) use(&$mailing, $escapeSmarty) {
+        return CRM_Utils_Token::getMailingTokenReplacement($matches[1], $mailing, $escapeSmarty);
+      },
+      $str
     );
     return $str;
   }
@@ -455,8 +460,7 @@ class CRM_Utils_Token {
         break;
 
       case 'approvalStatus':
-        $mailApprovalStatus = CRM_Mailing_PseudoConstant::approvalStatus();
-        $value = $mailApprovalStatus[$mailing->approval_status_id];
+        $value = CRM_Core_PseudoConstant::getLabel('CRM_Mailing_DAO_Mailing', 'approval_status_id', $mailing->approval_status_id);
         break;
 
       case 'approvalNote':
@@ -519,8 +523,11 @@ class CRM_Utils_Token {
       return $str;
     }
 
-    $str = preg_replace(self::tokenRegex($key),
-      'self::getActionTokenReplacement(\'\\1\',$addresses,$urls,$escapeSmarty)',
+    $str = preg_replace_callback(
+      self::tokenRegex($key),
+      function ($matches) use(&$addresses, &$urls, $html, $escapeSmarty) {
+        return CRM_Utils_Token::getActionTokenReplacement($matches[1], $addresses, $urls, $html, $escapeSmarty);
+      },
       $str
     );
     return $str;
@@ -604,9 +611,11 @@ class CRM_Utils_Token {
       return $str;
     }
 
-    $str = preg_replace(
+    $str = preg_replace_callback(
       self::tokenRegex($key),
-      'self::getContactTokenReplacement(\'\\1\', $contact, $html, $returnBlankToken, $escapeSmarty)',
+      function ($matches) use(&$contact, $html, $returnBlankToken, $escapeSmarty) {
+        return CRM_Utils_Token::getContactTokenReplacement($matches[1], $contact, $html, $returnBlankToken, $escapeSmarty);
+      },
       $str
     );
 
@@ -635,6 +644,9 @@ class CRM_Utils_Token {
 
     $value = NULL;
 
+    // Support legacy tokens
+    $token = CRM_Utils_Array::value($token, self::legacyContactTokens(), $token);
+
     // check if the token we were passed is valid
     // we have to do this because this function is
     // called only when we find a token in the string
@@ -654,6 +666,18 @@ class CRM_Utils_Token {
     }
     else {
       $value = CRM_Utils_Array::retrieveValueRecursive($contact, $token);
+
+      // FIXME: for some pseudoconstants we get array ( 0 => id, 1 => label )
+      if (is_array($value)) {
+        $value = $value[1];
+      }
+      // Convert pseudoconstants using metadata
+      elseif ($value && is_numeric($value)) {
+        $allFields = CRM_Contact_BAO_Contact::exportableFields('All');
+        if (!empty($allFields[$token]['pseudoconstant'])) {
+          $value = CRM_Core_PseudoConstant::getLabel('CRM_Contact_BAO_Contact', $token, $value);
+        }
+      }
     }
 
     if (!$html) {
@@ -692,15 +716,33 @@ class CRM_Utils_Token {
     $escapeSmarty = FALSE
   ) {
     foreach ($categories as $key) {
-      $str = preg_replace(
+      $str = preg_replace_callback(
         self::tokenRegex($key),
-        'self::getHookTokenReplacement(\'\\1\', $contact, $key, $html, $escapeSmarty)',
+        function ($matches) use(&$contact, $key, $html, $escapeSmarty) {
+          return CRM_Utils_Token::getHookTokenReplacement($matches[1], $contact, $key, $html, $escapeSmarty);
+        },
         $str
       );
     }
     return $str;
   }
 
+  /**
+   * Parse html through Smarty resolving any smarty functions
+   * @param string $tokenHtml
+   * @param array $entity
+   * @param string $entityType
+   * @return string html parsed through smarty
+   */
+  public static function parseThroughSmarty($tokenHtml, $entity, $entityType = 'contact') {
+    if (defined('CIVICRM_MAIL_SMARTY') && CIVICRM_MAIL_SMARTY) {
+      $smarty = CRM_Core_Smarty::singleton();
+      // also add the tokens to the template
+      $smarty->assign_by_ref($entityType, $entity);
+      $tokenHtml = $smarty->fetch("string:$tokenHtml");
+    }
+    return $tokenHtml;
+  }
   public static function getHookTokenReplacement(
     $token,
     &$contact,
@@ -1050,7 +1092,7 @@ class CRM_Utils_Token {
         if (CRM_Utils_Array::value('preferred_communication_method', $returnProperties) == 1
           && array_key_exists('preferred_communication_method', $contactDetails[$contactID])
         ) {
-          $pcm = CRM_Core_PseudoConstant::pcm();
+          $pcm = CRM_Core_PseudoConstant::get('CRM_Contact_DAO_Contact', 'preferred_communication_method');
 
           // communication Prefferance
           $contactPcm = explode(CRM_Core_DAO::VALUE_SEPARATOR,
@@ -1144,6 +1186,12 @@ class CRM_Utils_Token {
           $details[$dao->id]['campaign'] = $campaigns[$campaignId];
         }
 
+        if (CRM_Utils_Array::value('financial_type_id', $details[$dao->id])) {
+          $financialtypeId = $details[$dao->id]['financial_type_id'];
+          $ftis = CRM_Contribute_PseudoConstant::financialType();
+          $details[$dao->id]['financial_type'] = $ftis[$financialtypeId];
+        }
+
         // TODO: call a hook to get token contribution details
       }
     }
@@ -1151,6 +1199,14 @@ class CRM_Utils_Token {
     return $details;
   }
 
+  /**
+   * Get Membership Token Details
+   * @param array $membershipIDs array of membership IDS
+   */
+  static function getMembershipTokenDetails($membershipIDs) {
+    $memberships = civicrm_api3('membership', 'get', array('membership_id' => array('IN' => (array) $membershipIDs)));
+    return $memberships['values'];
+  }
   /**
    * replace greeting tokens exists in message/subject
    *
@@ -1236,8 +1292,12 @@ class CRM_Utils_Token {
       return $str;
     }
 
-    $str = preg_replace(self::tokenRegex($key),
-      'self::getUserTokenReplacement(\'\\1\',$escapeSmarty)', $str
+    $str = preg_replace_callback(
+      self::tokenRegex($key),
+      function ($matches) use($escapeSmarty) {
+        return CRM_Utils_Token::getUserTokenReplacement($matches[1], $escapeSmarty);
+      },
+      $str
     );
     return $str;
   }
@@ -1274,6 +1334,45 @@ class CRM_Utils_Token {
     }
   }
 
+  /**
+   * store membership tokens on the static _tokens array
+   */
+  protected static function _buildMembershipTokens() {
+    $key = 'membership';
+    if (!isset(self::$_tokens[$key]) || self::$_tokens[$key] == NULL) {
+      $membershipTokens = array();
+      $tokens = CRM_Core_SelectValues::membershipTokens();
+      foreach ($tokens as $token => $dontCare) {
+        $membershipTokens[] = substr($token, (strpos($token, '.') + 1), -1);
+      }
+      self::$_tokens[$key] = $membershipTokens;
+    }
+  }
+
+  /**
+   * Replace tokens for an entity
+   * @param string $entity
+   * @param array $entityArray (e.g. in format from api)
+   * @param string $str string to replace in
+   * @param array $knownTokens array of tokens present
+   * @param boolean $escapeSmarty
+   * @return string string with replacements made
+   */
+  public static function replaceEntityTokens($entity, $entityArray, $str, $knownTokens = array(), $escapeSmarty = FALSE) {
+    if (!$knownTokens || !CRM_Utils_Array::value($entity, $knownTokens)) {
+      return $str;
+    }
+
+    $fn = 'get' . ucFirst($entity) . 'tokenReplacement';
+    //since we already know the tokens lets just use them & do str_replace which is faster & simpler than preg_replace
+    foreach ($knownTokens[$entity] as $token) {
+      $replaceMent = CRM_Utils_Token::$fn($token, $entityArray, $escapeSmarty);
+      $str = str_replace('{' . $entity . '.' . $token . '}', $replaceMent, $str);
+    }
+    $str = preg_replace('/\\\\|\{(\s*)?\}/', ' ', $str);
+    return $str;
+  }
+
   public static function &replaceContributionTokens($str, &$contribution, $html = FALSE, $knownTokens = NULL, $escapeSmarty = FALSE) {
     self::_buildContributionTokens();
 
@@ -1286,13 +1385,62 @@ class CRM_Utils_Token {
       return $str;
     }
 
-    $str = preg_replace(self::tokenRegex($key),
-      'self::getContributionTokenReplacement(\'\\1\', $contribution, $html, $escapeSmarty)',
+    $str = preg_replace_callback(
+      self::tokenRegex($key),
+      function ($matches) use(&$contribution, $html, $escapeSmarty) {
+        return CRM_Utils_Token::getContributionTokenReplacement($matches[1], $contribution, $html, $escapeSmarty);
+      },
       $str
     );
 
     $str = preg_replace('/\\\\|\{(\s*)?\}/', ' ', $str);
     return $str;
+  }
+
+  /**
+   * Get replacement strings for any membership tokens (only a small number of tokens are implemnted in the first instance
+   * - this is used by the pdfLetter task from membership search
+   * @param string $token
+   * @param array $membership an api result array for a single membership
+   * @param boolean $escapeSmarty
+   * @return string token replacement
+   */
+  public static function getMembershipTokenReplacement($token, $membership, $escapeSmarty = FALSE) {
+    $entity = 'membership';
+    self::_buildMembershipTokens();
+   switch ($token) {
+     case 'type':
+       $value = $membership['membership_name'];
+       break;
+     case 'status':
+       $statuses = CRM_Member_BAO_Membership::buildOptions('status_id');
+       $value = $statuses[$membership['status_id']];
+       break;
+     case 'fee':
+       try{
+         $value = civicrm_api3('membership_type', 'getvalue', array('id' => $membership['membership_type_id'], 'return' => 'minimum_fee'));
+       }
+       catch (CiviCRM_API3_Exception $e) {
+         // we can anticipate we will get an error if the minimum fee is set to 'NULL' because of the way the
+         // api handles NULL (4.4)
+         $value = 0;
+       }
+       break;
+     default:
+       if (in_array($token, self::$_tokens[$entity])) {
+         $value = $membership[$token];
+       }
+       else {
+         //ie unchanged
+         $value = "{$entity}.{$token}";
+       }
+       break;
+    }
+
+    if ($escapeSmarty) {
+      $value = self::tokenEscapeSmarty($value);
+    }
+    return $value;
   }
 
   public static function getContributionTokenReplacement($token, &$contribution, $html = FALSE, $escapeSmarty = FALSE) {
@@ -1331,5 +1479,16 @@ class CRM_Utils_Token {
   function getPermissionEmails($permissionName) {}
 
   function getRoleEmails($roleName) {}
-}
 
+  /**
+   * @return array: legacy_token => new_token
+   */
+  static function legacyContactTokens() {
+    return array(
+      'individual_prefix' => 'prefix_id',
+      'individual_suffix' => 'suffix_id',
+      'gender' => 'gender_id',
+    );
+  }
+
+}

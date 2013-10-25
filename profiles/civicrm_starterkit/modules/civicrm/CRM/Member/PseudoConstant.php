@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -125,7 +125,7 @@ class CRM_Member_PseudoConstant extends CRM_Core_PseudoConstant {
    * @param boolean $name pseudoconstant to be flushed
    *
    */
-  public static function flush($name) {
+  public static function flush($name = 'cache') {
    if (isset(self::$$name)) {
       self::$$name = NULL;
     }

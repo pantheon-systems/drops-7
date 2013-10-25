@@ -73,6 +73,7 @@ Pager                         2.4.8      BSD 3-cl.
 PEAR                          1.9.0      PHP 3.0
 PHP_Beautifier                0.1.14     PHP 3.0
 Services_JSON                 1.0.1      BSD 2-cl.
+Services_Twilio               3.10.0     MIT
 Structures_Graph              1.0.2      LGPL 2.1+
 System_Command                1.0.6      PHP 2
 Validate                      0.8.2      BSD 3-cl.
@@ -98,6 +99,7 @@ Snappy         ??         X11         https://github.com/knplabs/snappy
 Backbone       0.9.9      X11/MIT     http://backbonejs.org/
 Backone Forms  c6920b3c89 X11/MIT     https://github.com/powmedia/backbone-forms
 Backbon.Collectionsubset d3de0d6804 X11/MIT https://github.com/anthonyshort/backbone.collectionsubset
+Backbone.ModelBinder 448472f X11/MIT  https://github.com/theironcook/Backbone.ModelBinder
 git-footnote   2013-03-27 LGPL 3      https://github.com/totten/git-footnote
 json2          2012-10-08 PUBDOM      https://github.com/douglascrockford/JSON-js
 Marionette     1.0.0-rc2  X11/MIT     http://marionettejs.com/

@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -54,8 +54,8 @@ class CRM_Grant_Form_GrantView extends CRM_Core_Form {
     $values = array();
     $params['id'] = $this->_id;
     CRM_Grant_BAO_Grant::retrieve($params, $values);
-    $grantType = CRM_Grant_PseudoConstant::grantType();
-    $grantStatus = CRM_Grant_PseudoConstant::grantStatus();
+    $grantType = CRM_Core_PseudoConstant::get('CRM_Grant_DAO_Grant', 'grant_type_id');
+    $grantStatus = CRM_Core_PseudoConstant::get('CRM_Grant_DAO_Grant', 'status_id');
     $this->assign('grantType', $grantType[$values['grant_type_id']]);
     $this->assign('grantStatus', $grantStatus[$values['status_id']]);
     $grantTokens = array(

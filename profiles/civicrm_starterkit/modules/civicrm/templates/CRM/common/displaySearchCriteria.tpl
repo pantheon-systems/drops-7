@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -41,7 +41,7 @@
 
         {* If there's a criteria set with key=0, this set is AND'd with other sets (if any). Otherwise, multiple sets are OR'd together. *}
         {if !$smarty.foreach.sets.last}
-            <ul class="menu"><li class="no-display"> 
+            <ul class="menu"><li class="no-display">
             {if $setKey == 0}AND<br />
             {else}OR<br />
             {/if}

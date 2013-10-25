@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright (C) 2011 Marty Wright                                    |
  | Licensed to CiviCRM under the Academic Free License version 3.0.   |
@@ -100,7 +100,7 @@ class CRM_Admin_Form_ScheduleReminders extends CRM_Admin_Form {
     $this->assign('entityMapping', json_encode($entityMapping));
     $this->assign('recipientMapping', json_encode($recipientMapping));
 
-    $sel = &$this->add(
+    $sel = & $this->add(
       'hierselect',
       'entity',
       ts('Entity'),
@@ -175,7 +175,10 @@ class CRM_Admin_Form_ScheduleReminders extends CRM_Admin_Form {
       );
     }
 
-    $this->add('select', 'recipient', ts('Limit Recipients'), $sel5[$recipient],
+    $limitOptions = array(1 => ts('Limit to'), 0 => ts('Addition to'));
+    $this->add('select', 'limit_to', ts('Limit Options'), $limitOptions);
+
+    $this->add('select', 'recipient', ts('Recipients'), $sel5[$recipient],
       FALSE, array('onClick' => "showHideByValue('recipient','manual','recipientManual','table-row','select',false); showHideByValue('recipient','group','recipientGroup','table-row','select',false);")
     );
 
@@ -189,14 +192,14 @@ class CRM_Admin_Form_ScheduleReminders extends CRM_Admin_Form {
     $recipientListing->setMultiple(TRUE);
     $this->add('hidden', 'is_recipient_listing', empty($recipientListingOptions) ? FALSE : TRUE, array('id' => 'is_recipient_listing'));
 
-    //autocomplete url
+    //auto-complete url
     $dataUrl = CRM_Utils_System::url('civicrm/ajax/rest',
       'className=CRM_Contact_Page_AJAX&fnName=getContactList&json=1&context=activity&reset=1',
       FALSE, NULL, FALSE
     );
 
     $this->assign('dataUrl', $dataUrl);
-    //tokeninput url
+    //token input url
     $tokenUrl = CRM_Utils_System::url('civicrm/ajax/checkemail',
       'noemail=1',
       FALSE, NULL, FALSE
@@ -204,8 +207,12 @@ class CRM_Admin_Form_ScheduleReminders extends CRM_Admin_Form {
     $this->assign('tokenUrl', $tokenUrl);
     $this->add('text', 'recipient_manual_id', ts('Manual Recipients'));
 
-    $this->addElement('select', 'group_id', ts('Group'),
-      CRM_Core_PseudoConstant::staticGroup()
+    $this->addElement(
+      'select',
+      'group_id',
+      ts('Group'),
+      // CRM-13577
+      CRM_Core_PseudoConstant::group()
     );
 
     CRM_Mailing_BAO_Mailing::commonCompose($this);
@@ -334,20 +341,24 @@ class CRM_Admin_Form_ScheduleReminders extends CRM_Admin_Form {
       'subject',
       'absolute_date',
       'group_id',
-      'record_activity'
+      'record_activity',
+      'limit_to'
     );
     foreach ($keys as $key) {
       $params[$key] = CRM_Utils_Array::value($key, $values);
     }
 
     $moreKeys = array(
-      'start_action_offset', 'start_action_unit',
-      'start_action_condition', 'start_action_date',
+      'start_action_offset',
+      'start_action_unit',
+      'start_action_condition',
+      'start_action_date',
       'repetition_frequency_unit',
       'repetition_frequency_interval',
       'end_frequency_unit',
       'end_frequency_interval',
-      'end_action', 'end_date',
+      'end_action',
+      'end_date',
     );
 
     if ($absoluteDate = CRM_Utils_Array::value('absolute_date', $params)) {
@@ -439,7 +450,7 @@ class CRM_Admin_Form_ScheduleReminders extends CRM_Admin_Form {
 
       $templateParams['id'] = $values['template'];
 
-      $msgTemplate = CRM_Core_BAO_MessageTemplates::add($templateParams);
+      $msgTemplate = CRM_Core_BAO_MessageTemplate::add($templateParams);
     }
 
     if (CRM_Utils_Array::value('saveTemplate', $composeParams)) {
@@ -452,7 +463,7 @@ class CRM_Admin_Form_ScheduleReminders extends CRM_Admin_Form {
 
       $templateParams['msg_title'] = $composeParams['saveTemplateName'];
 
-      $msgTemplate = CRM_Core_BAO_MessageTemplates::add($templateParams);
+      $msgTemplate = CRM_Core_BAO_MessageTemplate::add($templateParams);
     }
 
     if (isset($msgTemplate->id)) {

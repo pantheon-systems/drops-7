@@ -1,9 +1,0 @@
-name = CiviEngage
-description = Walklist and Phone-banking support for CiviCRM
-version = 4.4.beta4
-dependencies[] = civicrm
-package = CiviCRM
-core = 7.x
-php = 5.2
-
-files[] = civicrm_engage.module

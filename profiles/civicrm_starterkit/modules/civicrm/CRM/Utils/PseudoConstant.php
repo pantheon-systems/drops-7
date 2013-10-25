@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -37,7 +37,6 @@ class CRM_Utils_PseudoConstant {
     'CRM_Event_PseudoConstant',
     'CRM_Contribute_PseudoConstant',
     'CRM_Member_PseudoConstant',
-    'CRM_Grant_PseudoConstant',
   );
 
   /**
@@ -156,5 +155,6 @@ class CRM_Utils_PseudoConstant {
     foreach (self::findConstants() as $constant) {
       self::flushConstant($constant);
     }
+    CRM_Core_PseudoConstant::flush();
   }
 }

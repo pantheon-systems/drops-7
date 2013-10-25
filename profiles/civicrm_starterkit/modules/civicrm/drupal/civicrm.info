@@ -1,6 +1,6 @@
 name = CiviCRM
 description = Constituent Relationship Management CRM - v4.3. Allows sites to manage contacts, relationships and groups, and track contact activities, contributions, memberships and events.
-version = 4.3
+version = 4.4.0
 package = CiviCRM
 core = 7.x
 php = 5.3
@@ -66,6 +66,9 @@ files[] = modules/views/civicrm/civicrm_handler_filter_country_multi.inc
 files[] = modules/views/civicrm/civicrm_handler_filter_state_multi.inc
 files[] = modules/views/civicrm/civicrm_handler_filter_domain.inc
 
+; activity handlers
+files[] = modules/views/civicrm/civicrm_handler_field_activity.inc
+
 ; sort handlers
 files[] = modules/views/civicrm/civicrm_handler_sort_date.inc
 files[] = modules/views/civicrm/civicrm_handler_sort_pcp_raised_amount.inc
@@ -81,6 +84,7 @@ files[] = modules/views/civicrm/views_handler_argument_civicrm_year_month.inc
 
 ; relationship handlers
 files[] = modules/views/civicrm/civicrm_handler_relationship.inc
+files[] = modules/views/civicrm/civicrm_handler_relationship_relationship.inc
 files[] = modules/views/civicrm/civicrm_handler_relationship_contact2users.inc
 
 ; views plugins

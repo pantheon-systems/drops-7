@@ -1,8 +1,7 @@
 <?php
-
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -120,7 +119,7 @@ class CRM_Financial_Page_FinancialBatch extends CRM_Core_Page_Basic {
 
   /**
    * Get user context.
-   *  
+   *
    * Redirect to civicrm home page when clicked on cancel button
    *
    * @return string user context.

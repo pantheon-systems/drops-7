@@ -1,7 +1,7 @@
 <?php
 /*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -48,7 +48,7 @@ class CRM_Contact_Form_Task_PDFLetterCommon {
   static function preProcess(&$form) {
     $messageText    = array();
     $messageSubject = array();
-    $dao            = new CRM_Core_BAO_MessageTemplates();
+    $dao            = new CRM_Core_BAO_MessageTemplate();
     $dao->is_active = 1;
     $dao->find();
     while ($dao->fetch()) {
@@ -74,6 +74,16 @@ class CRM_Contact_Form_Task_PDFLetterCommon {
    * @return void
    */
   static function buildQuickForm(&$form) {
+    //Added for CRM-12682: Add activity subject and campaign fields
+    CRM_Campaign_BAO_Campaign::addCampaign($form);
+    $form->add(
+      'text',
+      'subject',
+      ts('Activity Subject'),
+      array('size' => 45, 'maxlength' => 255),
+      FALSE
+    );
+
     $form->add('static', 'pdf_format_header', NULL, ts('Page Format'));
     $form->add(
       'select',
@@ -180,7 +190,17 @@ class CRM_Contact_Form_Task_PDFLetterCommon {
       }
     }
     else {
-      $form->addDefaultButtons(ts('Make PDF Letters'));
+      $form->addButtons(array(
+        array(
+          'type' => 'submit',
+          'name' => ts('Make PDF Letters'),
+          'isDefault' => TRUE,
+        ),
+        array(
+          'type' => 'cancel',
+          'name' => ts('Done'),
+        ),
+      ));
     }
 
     $form->addFormRule(array('CRM_Contact_Form_Task_PDFLetterCommon', 'formRule'), $form);
@@ -254,14 +274,14 @@ class CRM_Contact_Form_Task_PDFLetterCommon {
       }
       if (CRM_Utils_Array::value('saveTemplate', $formValues) && $formValues['saveTemplate']) {
         $messageTemplate['msg_title'] = $formValues['saveTemplateName'];
-        CRM_Core_BAO_MessageTemplates::add($messageTemplate);
+        CRM_Core_BAO_MessageTemplate::add($messageTemplate);
       }
 
       if (CRM_Utils_Array::value('updateTemplate', $formValues) && $formValues['template'] && $formValues['updateTemplate']) {
         $messageTemplate['id'] = $formValues['template'];
 
         unset($messageTemplate['msg_title']);
-        CRM_Core_BAO_MessageTemplates::add($messageTemplate);
+        CRM_Core_BAO_MessageTemplate::add($messageTemplate);
       }
     }
     elseif (CRM_Utils_Array::value('template', $formValues) > 0) {
@@ -354,14 +374,19 @@ class CRM_Contact_Form_Task_PDFLetterCommon {
   }
 
   function createActivities($form, $html_message, $contactIds) {
+    //Added for CRM-12682: Add activity subject and campaign fields
+    $formValues     = $form->controller->exportValues($form->getName());
 
     $session        = CRM_Core_Session::singleton();
     $userID         = $session->get('userID');
-    $activityTypeID = CRM_Core_OptionGroup::getValue('activity_type',
+    $activityTypeID = CRM_Core_OptionGroup::getValue(
+      'activity_type',
       'Print PDF Letter',
       'name'
     );
     $activityParams = array(
+      'subject' => $formValues['subject'],
+      'campaign_id' => CRM_Utils_Array::value('campaign_id', $formValues),
       'source_contact_id' => $userID,
       'activity_type_id' => $activityTypeID,
       'activity_date_time' => date('YmdHis'),
@@ -382,12 +407,16 @@ class CRM_Contact_Form_Task_PDFLetterCommon {
       }
     }
 
+    $activityContacts = CRM_Core_OptionGroup::values('activity_contacts', FALSE, FALSE, FALSE, NULL, 'name');
+    $targetID = CRM_Utils_Array::key('Activity Targets', $activityContacts);
+
     foreach ($form->_contactIds as $contactId) {
       $activityTargetParams = array(
         'activity_id' => empty($activity->id) ? $activityIds[$contactId] : $activity->id,
-        'target_contact_id' => $contactId,
+        'contact_id' => $contactId,
+        'record_type_id' => $targetID
       );
-      CRM_Activity_BAO_Activity::createActivityTarget($activityTargetParams);
+      CRM_Activity_BAO_ActivityContact::create($activityTargetParams);
     }
   }
 

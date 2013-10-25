@@ -1,6 +1,6 @@
 {*
  +--------------------------------------------------------------------+
- | CiviCRM version 4.3                                                |
+ | CiviCRM version 4.4                                                |
  +--------------------------------------------------------------------+
  | Copyright CiviCRM LLC (c) 2004-2013                                |
  +--------------------------------------------------------------------+
@@ -123,7 +123,7 @@
                                 <span class="nowrap">{$row.$field|crmMoney:$row.$currencyColumn}</span>
                             {else}
                                 <span class="nowrap">{$row.$field|crmMoney}</span>
-				                   {/if}
+                           {/if}
                         {else}
                             {$row.$field}
                         {/if}
