@@ -22,16 +22,16 @@ function webform_submission_data($node, $submitted) {
   $data = array();
 
   foreach ($submitted as $cid => $values) {
-    // Don't save pagebreaks as submitted data.
-    if ($node->webform['components'][$cid]['type'] == 'pagebreak') {
+    // Don't save pseudo-fields or pagebreaks as submitted data.
+    if (!isset($node->webform['components'][$cid]) || $node->webform['components'][$cid]['type'] == 'pagebreak') {
       continue;
     }
 
     if (is_array($values)) {
-      $data[$cid]['value'] = $values;
+      $data[$cid] = $values;
     }
     else {
-      $data[$cid]['value'][0] = $values;
+      $data[$cid][0] = $values;
     }
   }
 
@@ -108,7 +108,7 @@ function webform_submission_insert($node, $submission) {
   }
 
   foreach ($submission->data as $cid => $values) {
-    foreach ($values['value'] as $delta => $value) {
+    foreach ($values as $delta => $value) {
       $data = array(
         'nid' => $node->webform['nid'],
         'sid' => $submission->sid,
@@ -131,16 +131,16 @@ function webform_submission_insert($node, $submission) {
 /**
  * Delete a single submission.
  *
- * @param $nid
- *   ID of node for which this webform was submitted.
- * @param $sid
- *   ID of submission to be deleted (from webform_submitted_data).
+ * @param $node
+ *   The node object containing the current webform.
+ * @param $submission
+ *   The webform submission object to be deleted from the database.
  */
 function webform_submission_delete($node, $submission) {
   // Iterate through all components and let each do cleanup if necessary.
   foreach ($node->webform['components'] as $cid => $component) {
     if (isset($submission->data[$cid])) {
-      webform_component_invoke($component['type'], 'delete', $component, $submission->data[$cid]['value']);
+      webform_component_invoke($component['type'], 'delete', $component, $submission->data[$cid]);
     }
   }
 
@@ -196,7 +196,7 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
     }
 
     // Replace tokens in the message.
-    $email['message'] = _webform_filter_values($email['message'], $node, $submission, $email, FALSE, TRUE);
+    $email['message'] = webform_replace_tokens($email['message'], $node, $submission, $email, $email['html'] ? TRUE : FALSE);
 
     // Build the e-mail headers.
     $email['headers'] = theme(array('webform_mail_headers_' . $node->nid, 'webform_mail_headers'), array('node' => $node, 'submission' => $submission, 'email' => $email));
@@ -208,6 +208,16 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
       unset($email['headers']['From']);
     }
     else {
+      // Replace "from_address" field content with chosen email mapping. For the
+      // from address, only a single address is supported, so we use the first.
+      if (isset($email['extra']['from_address_mapping'])) {
+        if (isset($submission->data[$email['from_address']][0])) {
+          $selected = $submission->data[$email['from_address']][0];
+          if (isset($email['extra']['from_address_mapping'][$selected])) {
+            $email['from_address'] = $email['extra']['from_address_mapping'][$selected];
+          }
+        }
+      }
       $email['from'] = webform_format_email_address($email['from_address'], $email['from_name'], $node, $submission);
     }
 
@@ -218,6 +228,17 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
     }
     else {
       $email['subject'] = webform_format_email_subject($email['subject'], $node, $submission);
+    }
+
+    // Replace the "email" field content with chosen email mapping.
+    if (isset($email['extra']['email_mapping'])) {
+      $component_emails = array();
+      foreach ($submission->data[$email['email']] as $email_value) {
+        if (isset($email['extra']['email_mapping'][$email_value])) {
+          $component_emails[] = $email['extra']['email_mapping'][$email_value];
+        }
+      }
+      $email['email'] = implode(',', $component_emails);
     }
 
     // Update the to e-mail if set in the themed headers.
@@ -274,9 +295,9 @@ function webform_submission_send_mail($node, $submission, $emails = NULL) {
         if ($email['attachments']) {
           webform_component_include('file');
           foreach ($node->webform['components'] as $component) {
-            if (webform_component_feature($component['type'], 'attachment') && !empty($submission->data[$component['cid']]['value'][0])) {
+            if (webform_component_feature($component['type'], 'attachment') && !empty($submission->data[$component['cid']][0])) {
               if (webform_component_implements($component['type'], 'attachments')) {
-                $files = webform_component_invoke($component['type'], 'attachments', $component, $submission->data[$component['cid']]['value']);
+                $files = webform_component_invoke($component['type'], 'attachments', $component, $submission->data[$component['cid']]);
                 if ($files) {
                   $attachments = array_merge($attachments, $files);
                 }
@@ -386,7 +407,8 @@ function webform_submission_page($node, $submission, $format) {
     $output = drupal_get_form('webform_client_form_' . $node->nid, $node, $submission);
   }
   else {
-    $output = webform_submission_render($node, $submission, NULL, $format);
+    $renderable = webform_submission_render($node, $submission, NULL, $format);
+    $output = drupal_render($renderable);
   }
 
   // Determine the mode in which we're displaying this submission.
@@ -456,7 +478,7 @@ function webform_submission_resend($form, $form_state, $node, $submission) {
       '#markup' => implode('<br />', $email_addresses),
     );
     if (!$valid_email) {
-      $form['emails'][$eid]['email']['#value'] .= ' (' . t('empty') . ')';
+      $form['emails'][$eid]['email']['#markup'] .= ' (' . t('empty') . ')';
     }
     $form['emails'][$eid]['subject'] = array(
       '#markup' => check_plain(webform_format_email_subject($email['subject'], $node, $submission)),
@@ -567,20 +589,22 @@ function webform_submission_render($node, $submission, $email, $format) {
     unset($components[$cid]);
   }
 
+  module_load_include('inc', 'webform', 'includes/webform.components');
   _webform_components_tree_build($components, $component_tree, 0, $page_count);
 
   // Make sure at least one field is available
   if (isset($component_tree['children'])) {
     // Recursively add components to the form.
+    $input_values = $submission->data;
     foreach ($component_tree['children'] as $cid => $component) {
-      if (_webform_client_form_rule_check($node, $component, $component['page_num'], NULL, $submission)) {
-        _webform_client_form_add_component($node, $component, NULL, $renderable, $renderable, NULL, $submission, $format);
+      if (_webform_client_form_rule_check($node, $component, $component['page_num'], $input_values, $format)) {
+        _webform_client_form_add_component($node, $component, NULL, $renderable, $renderable, $input_values, $format);
       }
     }
   }
 
   drupal_alter('webform_submission_render', $renderable);
-  return drupal_render($renderable);
+  return $renderable;
 }
 
 /**
@@ -609,53 +633,55 @@ function webform_get_submissions($filters = array(), $header = NULL, $pager_coun
     unset($filters['uid']);
   }
 
-  // No need to find SIDs if it was given to us.
-  if (isset($filters['sid'])) {
-    $sids = array($filters['sid']);
+  // Build the list of submissions and load their basic information.
+  $pager_query = db_select('webform_submissions', 'ws')
+    ->addTag('webform_get_submissions_sids')
+    ->fields('ws', array('sid', 'nid', 'submitted', 'remote_addr', 'uid', 'is_draft'));
+  foreach ($filters as $column => $value) {
+    $pager_query->condition($column, $value);
   }
-  // Build the list of SIDs that need to be retrieved.
-  else {
-    $pager_query = db_select('webform_submissions', 'ws')->fields('ws', array('sid'));
-    foreach ($filters as $column => $value) {
-      $pager_query->condition($column, $value);
-    }
 
-    if (isset($filters['u.uid']) || !empty($header)) {
-      // Join to the users table for sorting by user name.
-      $pager_query->leftJoin('users', 'u', 'u.uid = ws.uid');
-    }
-
-    if (isset($filters['u.uid']) && $filters['u.uid'] === 0) {
-      if (!empty($_SESSION['webform_submission'])) {
-        $anonymous_sids = array_keys($_SESSION['webform_submission']);
-        $pager_query->condition('sid', $anonymous_sids, 'IN');
-      }
-      else {
-        $pager_query->condition('sid', 0);
-      }
-    }
-
-    if (is_array($header)) {
-      // Extending the query instatiates a new query object.
-      $pager_query = $pager_query->extend('TableSort');
-      $pager_query->orderByHeader($header);
+  // Join to the users table to include user name in results.
+  $pager_query->leftJoin('users', 'u', 'u.uid = ws.uid');
+  $pager_query->fields('u', array('name'));
+  if (isset($filters['u.uid']) && $filters['u.uid'] === 0) {
+    if (!empty($_SESSION['webform_submission'])) {
+      $anonymous_sids = array_keys($_SESSION['webform_submission']);
+      $pager_query->condition('sid', $anonymous_sids, 'IN');
     }
     else {
-      $pager_query->orderBy('sid', 'ASC');
+      $pager_query->condition('sid', 0);
     }
+  }
 
-    if ($pager_count) {
-      // Extending the query instatiates a new query object.
-      $pager_query = $pager_query->extend('PagerDefault');
-      $pager_query->limit($pager_count);
-    }
-    $result = $pager_query->execute();
+  if (is_array($header)) {
+    // Extending the query instantiates a new query object.
+    $pager_query = $pager_query->extend('TableSort');
+    $pager_query->orderByHeader($header);
+  }
+  else {
+    $pager_query->orderBy('sid', 'ASC');
+  }
 
-    $sids = array();
-    foreach ($result as $row) {
-      $sids[] = $row->sid;
-      $submissions[$row->sid] = FALSE;
-    }
+  if ($pager_count) {
+    // Extending the query instantiates a new query object.
+    $pager_query = $pager_query->extend('PagerDefault');
+    $pager_query->limit($pager_count);
+  }
+  $result = $pager_query->execute();
+
+  $sids = array();
+  foreach ($result as $row) {
+    $sids[] = $row->sid;
+    $submissions[$row->sid] = new stdClass();
+    $submissions[$row->sid]->sid = $row->sid;
+    $submissions[$row->sid]->nid = $row->nid;
+    $submissions[$row->sid]->submitted = $row->submitted;
+    $submissions[$row->sid]->remote_addr = $row->remote_addr;
+    $submissions[$row->sid]->uid = $row->uid;
+    $submissions[$row->sid]->name = $row->name;
+    $submissions[$row->sid]->is_draft = $row->is_draft;
+    $submissions[$row->sid]->data = array();
   }
 
   // If there are no submissions being retrieved, return an empty array.
@@ -665,12 +691,9 @@ function webform_get_submissions($filters = array(), $header = NULL, $pager_coun
 
   // Query the required submission data.
   $query = db_select('webform_submitted_data', 'sd');
-  $query->leftJoin('webform_submissions', 's', 's.sid = sd.sid');
-  $query->leftJoin('users', 'u', 'u.uid = s.uid');
   $query
-    ->fields('s')
-    ->fields('sd', array('cid', 'no', 'data'))
-    ->fields('u', array('name'))
+    ->addTag('webform_get_submissions_data')
+    ->fields('sd', array('sid', 'cid', 'no', 'data'))
     ->condition('sd.sid', $sids, 'IN')
     ->orderBy('sd.sid', 'ASC')
     ->orderBy('sd.cid', 'ASC')
@@ -684,25 +707,9 @@ function webform_get_submissions($filters = array(), $header = NULL, $pager_coun
 
   $result = $query->execute();
 
-  // Convert the queried rows into submissions.
-  $previous = 0;
+  // Convert the queried rows into submission data.
   foreach ($result as $row) {
-    if ($row->sid != $previous) {
-      $submissions[$row->sid] = new stdClass();
-      $submissions[$row->sid]->sid = $row->sid;
-      $submissions[$row->sid]->nid = $row->nid;
-      $submissions[$row->sid]->submitted = $row->submitted;
-      $submissions[$row->sid]->remote_addr = $row->remote_addr;
-      $submissions[$row->sid]->uid = $row->uid;
-      $submissions[$row->sid]->name = $row->name;
-      $submissions[$row->sid]->is_draft = $row->is_draft;
-      $submissions[$row->sid]->data = array();
-    }
-    // CID may be NULL if this submission does not actually contain any data.
-    if ($row->cid) {
-      $submissions[$row->sid]->data[$row->cid]['value'][$row->no] = $row->data;
-    }
-    $previous = $row->sid;
+    $submissions[$row->sid]->data[$row->cid][$row->no] = $row->data;
   }
 
   foreach (module_implements('webform_submission_load') as $module) {
@@ -723,10 +730,10 @@ function webform_get_submissions($filters = array(), $header = NULL, $pager_coun
  * @return
  *   An integer value of the number of submissions.
  */
-function webform_get_submission_count($nid, $uid = NULL, $reset = FALSE) {
-  static $counts;
+function webform_get_submission_count($nid, $uid = NULL) {
+  $counts = &drupal_static(__FUNCTION__);
 
-  if (!isset($counts[$nid][$uid]) || $reset) {
+  if (!isset($counts[$nid][$uid])) {
     $query = db_select('webform_submissions', 'ws')
       ->addTag('webform_get_submission_count')
       ->condition('ws.nid', $nid)
@@ -755,15 +762,8 @@ function webform_get_submission_count($nid, $uid = NULL, $reset = FALSE) {
 /**
  * Fetch a specified submission for a webform node.
  */
-function webform_get_submission($nid, $sid, $reset = FALSE) {
-  static $submissions = array();
-
-  if ($reset) {
-    $submissions = array();
-    if (!isset($sid)) {
-      return;
-    }
-  }
+function webform_get_submission($nid, $sid) {
+  $submissions = &drupal_static(__FUNCTION__, array());
 
   // Load the submission if needed.
   if (!isset($submissions[$sid])) {
@@ -788,11 +788,26 @@ function _webform_submission_spam_check($to, $subject, $from, $headers = array()
  *
  * @param $node
  *   The webform node to be checked.
+ * @param $account
+ *   Optional parameter. Specify the account you want to check the limit
+ *   against.
+ *
  * @return
  *   Boolean TRUE if the user has exceeded their limit. FALSE otherwise.
  */
-function _webform_submission_user_limit_check($node) {
+function webform_submission_user_limit_check($node, $account = NULL) {
   global $user;
+  $tracking_mode = variable_get('webform_tracking_mode', 'cookie');
+
+  if (!isset($account)) {
+    $account = $user;
+  }
+
+  // We can only check access for anonymous users through their cookies.
+  if ($user->uid !== 0 && $account->uid === 0) {
+    watchdog('webform', 'Unable to check anonymous user submission limit when logged in as user @uid.', array('@uid' => $user->uid), WATCHDOG_WARNING);
+    return FALSE;
+  }
 
   // Check if submission limiting is enabled.
   if ($node->webform['submit_limit'] == '-1') {
@@ -801,6 +816,7 @@ function _webform_submission_user_limit_check($node) {
 
   // Retrieve submission data for this IP address or username from the database.
   $query = db_select('webform_submissions')
+    ->addTag('webform_submission_user_limit_check')
     ->condition('nid', $node->nid)
     ->condition('is_draft', 0);
 
@@ -808,19 +824,22 @@ function _webform_submission_user_limit_check($node) {
     $query->condition('submitted', REQUEST_TIME - $node->webform['submit_interval'], '>');
   }
 
-  if ($user->uid) {
-    $query->condition('uid', $user->uid);
+  if ($account->uid) {
+    $query->condition('uid', $account->uid);
   }
   else {
     $query->condition('remote_addr', ip_address());
   }
 
   // Fetch all the entries from the database within the submit interval with this username and IP.
-  $num_submissions_database = $query->countQuery()->execute()->fetchField();
+  $num_submissions_database = 0;
+  if ($account->uid !== 0 || $tracking_mode === 'ip_address' || $tracking_mode === 'strict') {
+    $num_submissions_database = $query->countQuery()->execute()->fetchField();
+  }
 
   // Double check the submission history from the users machine using cookies.
   $num_submissions_cookie = 0;
-  if ($user->uid == 0 && variable_get('webform_use_cookies', 0)) {
+  if ($account->uid === 0 && ($tracking_mode === 'cookie' || $tracking_mode === 'strict')) {
     $cookie_name = 'webform-' . $node->nid;
 
     if (isset($_COOKIE[$cookie_name]) && is_array($_COOKIE[$cookie_name])) {
@@ -856,7 +875,7 @@ function _webform_submission_user_limit_check($node) {
  * @return
  *   Boolean TRUE if the form has exceeded it's limit. FALSE otherwise.
  */
-function _webform_submission_total_limit_check($node) {
+function webform_submission_total_limit_check($node) {
 
   // Check if submission limiting is enabled.
   if ($node->webform['total_submit_limit'] == '-1') {
@@ -865,6 +884,7 @@ function _webform_submission_total_limit_check($node) {
 
   // Retrieve submission data from the database.
   $query = db_select('webform_submissions')
+    ->addTag('webform_submission_total_limit_check')
     ->condition('nid', $node->nid)
     ->condition('is_draft', 0);
 

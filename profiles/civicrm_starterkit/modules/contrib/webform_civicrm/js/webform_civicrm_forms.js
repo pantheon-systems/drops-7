@@ -3,6 +3,8 @@
  */
 
 var wfCivi = (function ($, D) {
+  'use strict';
+  var setting = D.settings.webform_civicrm;
   /**
    * Public methods.
    */
@@ -26,35 +28,32 @@ var wfCivi = (function ($, D) {
         }
         names.organization = names.household = names.first + (names.last ? ' ' : '') + names.last;
         for (i in names) {
-          var field = $('#webform-client-form-'+nid+' :input[id$="civicrm-'+num+'-contact-1-contact-'+i+'-name"]');
-          if (field.length) {
-            field.val(names[i]);
-          }
+          $(':input[name$="civicrm_'+num+'_contact_1_contact_'+i+'_name]"]', '.webform-client-form-'+nid).val(names[i]);
         }
       }
       return;
     }
     resetFields(num, nid, true, 'hide', toHide, 500);
     if (cid && fetch) {
-      $('#webform-client-form-'+nid).addClass('contact-loading');
+      $('.webform-client-form-'+nid).addClass('contact-loading');
       var params = getCids(nid);
       params.load = 'full';
       params.cid = cid;
       $.get(path, params, function(data) {
         fillValues(data, nid);
-        $('#webform-client-form-'+nid).removeClass('contact-loading');
+        $('.webform-client-form-'+nid).removeClass('contact-loading');
       }, 'json');
     }
   };
 
   pub.existingInit = function (field, num, nid, path, toHide) {
-    var ret = null;
+    var cid, ret = null;
     if (field.length) {
       if (field.is('select')) {
-        var cid = $('option:selected', field).val();
+        cid = $('option:selected', field).val();
       }
       else {
-        var cid = field.attr('defaultValue');
+        cid = field.attr('defaultValue');
       }
       if (!cid || cid.charAt(0) !== '-') {
         resetFields(num, nid, false, 'hide', toHide);
@@ -83,12 +82,12 @@ var wfCivi = (function ($, D) {
   };
 
   pub.contactImage = function(field, url) {
-    var container = $('div.civicrm-enabled[id$=' + field.replace(/_/g, '-').toLowerCase() + ']');
+    var container = $('div.webform-component.[class$="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
     if (container.length > 0) {
       if ($('.file', container).length > 0) {
         if ($('.file', container).is(':visible')) {
           $('.file', container).hide();
-          url = $('.file', container).find('a').attr('href');
+          url = $('.file a', container).attr('href');
         }
         else {
           return;
@@ -103,7 +102,7 @@ var wfCivi = (function ($, D) {
   };
 
   pub.clearImage = function(field) {
-    var container = $('div.civicrm-enabled[id$=' + field.replace(/_/g, '-').toLowerCase() + ']');
+    var container = $('div.webform-component.[class$="--' + field.replace(/_/g, '-') + '"] div.civicrm-enabled');
     $('.civicrm-remove-image, .civicrm-contact-image', container).remove();
     $('input[type=file], input[type=submit]', container).show();
   };
@@ -115,60 +114,70 @@ var wfCivi = (function ($, D) {
   var stateProvinceCache = {};
 
   function resetFields(num, nid, clear, op, toHide, speed) {
-    $('#webform-client-form-'+nid+' div.form-item.webform-component[id*="civicrm-'+num+'-contact-"]').each(function() {
-      var ele = $(this);
-      var name = ele.attr('id');
-      name = name.slice(name.lastIndexOf('civicrm-'));
+    $('div.form-item.webform-component[class*="--civicrm-'+num+'-contact-"]', '.webform-client-form-'+nid).each(function() {
+      var $el = $(this);
+      var name = getFieldNameFromClass($el);
+      if (!name) {
+        return;
+      }
       var n = name.split('-');
       if (n[0] === 'civicrm' && n[1] == num && n[2] === 'contact' && n[5] !== 'existing') {
         if (clear) {
-          $(':input', ele).not(':radio, :checkbox, :button, :submit').val('');
-          $('.civicrm-remove-image', ele).click();
-          $('input:checkbox, input:radio', ele).each(function() {
+          $(':input', this).not(':radio, :checkbox, :button, :submit').val('');
+          $('.civicrm-remove-image', this).click();
+          $('input:checkbox, input:radio', this).each(function() {
             $(this).attr('checked', '');
           });
           // Trigger chain select when changing country
           if (n[5] === 'country') {
-            $('select.civicrm-processed', ele).val(D.settings.webform_civicrm.defaultCountry).change();
+            $('select.civicrm-processed', this).val(setting.defaultCountry).change();
           }
         }
-        if (op === 'show') {
-          ele.show(speed);
-        }
-        else {
-          var type = (n[6] === 'name') ? 'name' : n[4];
-          if ($.inArray(type, toHide) >= 0) {
-            ele.hide(speed, function() {ele.css('display', 'none');});
-          }
+        var type = (n[6] === 'name') ? 'name' : n[4];
+        if ($.inArray(type, toHide) >= 0) {
+          $el[op](speed, function() {$el[op];});
         }
       }
     });
   }
 
+  function getFieldNameFromClass($el) {
+    var name = false;
+    $.each($el.attr('class').split(' '), function(k, val) {
+      if (val.indexOf('webform-component--') === 0 && val.indexOf('--civicrm') > 0) {
+        val = val.substring(val.lastIndexOf('--civicrm') + 2);
+        if (val.indexOf('fieldset') < 0) {
+          name = val;
+        }
+      }
+    });
+    return name;
+  }
+
   function fillValues(data, nid) {
     for (var fid in data) {
       // Handle contact image
-      if (fid.slice(-9) == 'image-URL') {
+      if (fid.slice(-9) == 'image_URL') {
         if (data[fid].length > 0) {
           pub.contactImage(fid, data[fid]);
         }
         continue;
       }
       // First try to find a single element - works for textfields and selects
-      var ele = $('#webform-client-form-'+nid+' :input.civicrm-enabled[id$="'+fid+'"]');
+      var ele = $('.webform-client-form-'+nid+' :input.civicrm-enabled[name$="'+fid+']"]').not(':checkbox, :radio');
       if (ele.length > 0) {
         // Trigger chain select when changing country
-        if (fid.substr(fid.length - 10) === 'country-id') {
+        if (fid.substr(fid.length - 10) === 'country_id') {
           if (ele.val() != data[fid]) {
             ele.val(data[fid]);
-            countrySelect('#'+ele.attr('id'), data[fid.replace('country', 'state-province')]);
+            countrySelect('#'+ele.attr('id'), data[fid.replace('country', 'state_province')]);
           }
         }
         ele.val(data[fid]);
       }
       // Next go after the wrapper - for radios, dates & checkboxes
       else {
-        var wrapper = $('#webform-client-form-'+nid+' div.form-item.webform-component[id$="'+fid+'"]');
+        var wrapper = $('.webform-client-form-'+nid+' div.form-item.webform-component[class*="--'+(fid.replace(/_/g, '-'))+'"]');
         if (wrapper.length > 0) {
           // Date fields
           if (wrapper.hasClass('webform-component-date')) {
@@ -208,7 +217,7 @@ var wfCivi = (function ($, D) {
       fillOptions(stateSelect, stateProvinceCache[countryId], stateVal);
     }
     else {
-      $.get(D.settings.webform_civicrm.callbackPath+'/state_province/'+countryId, function(data) {
+      $.get(setting.callbackPath+'/stateProvince/'+countryId, function(data) {
         populateCounty(stateSelect, stateVal);
         fillOptions(stateSelect, data, stateVal, countryId);
         stateProvinceCache[countryId] = data;
@@ -224,7 +233,7 @@ var wfCivi = (function ($, D) {
         fillOptions(countySelect, {'': Drupal.t('- First Choose a State -')});
       }
       else {
-        $.get(D.settings.webform_civicrm.callbackPath+'/county/'+stateVal+'-'+countryId, function(data) {
+        $.get(setting.callbackPath+'/county/'+stateVal+'-'+countryId, function(data) {
           fillOptions(countySelect, data);
         }, 'json');
       }
@@ -246,10 +255,10 @@ var wfCivi = (function ($, D) {
     if (!dataEmpty) {
       if (!noCountry) {
         if ($(element).hasClass('required')) {
-          var text = D.t('- Select -');
+          var text = Drupal.t('- Select -');
         }
         else {
-          var text = D.t('- None -');
+          var text = Drupal.t('- None -');
         }
         if ($(element).hasClass('has-default')) {
           $(element).removeClass('has-default');
@@ -265,7 +274,7 @@ var wfCivi = (function ($, D) {
     }
     else {
       $(element).removeClass('has-default');
-      $(element).append('<option value="-">'+D.t('- N/A -')+'</option>');
+      $(element).append('<option value="-">'+Drupal.t('- N/A -')+'</option>');
     }
     $(element).removeAttr('disabled');
   }
@@ -294,8 +303,8 @@ var wfCivi = (function ($, D) {
   }
 
   function getCids(nid) {
-    var cids = $('#webform-client-form-'+nid).data('civicrm-ids') || {};
-    $('#webform-client-form-'+nid+' .civicrm-enabled:input[name$="_contact_1_contact_existing]"]').each(function() {
+    var cids = $('.webform-client-form-'+nid).data('civicrm-ids') || {};
+    $('.webform-client-form-'+nid+' .civicrm-enabled:input[name$="_contact_1_contact_existing]"]').each(function() {
       var cid = $(this).val();
       if (cid) {
         var n = parseName($(this).attr('name')).split('_');
@@ -316,10 +325,10 @@ var wfCivi = (function ($, D) {
 
   D.behaviors.webform_civicrmForm = {
     attach: function (context) {
-      if (!stateProvinceCache['default'] && D.settings.webform_civicrm) {
-        stateProvinceCache['default'] = D.settings.webform_civicrm.defaultStates;
-        stateProvinceCache[D.settings.webform_civicrm.defaultCountry] = D.settings.webform_civicrm.defaultStates;
-        stateProvinceCache[''] = {'': D.settings.webform_civicrm.noCountry};
+      if (!stateProvinceCache['default'] && setting) {
+        stateProvinceCache['default'] = setting.defaultStates;
+        stateProvinceCache[setting.defaultCountry] = setting.defaultStates;
+        stateProvinceCache[''] = {'': setting.noCountry};
       }
 
       // Replace state/prov & county textboxes with dynamic select lists
@@ -330,9 +339,8 @@ var wfCivi = (function ($, D) {
         var countrySelect = ele.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'country'))+']"]');
         var county = ele.parents('form').find('.civicrm-enabled[name*="['+(key.replace('state_province', 'county'))+']"]');
         makeSelect(ele);
-        if (county.length) {
-          makeSelect(county);
-        }
+        county.length && makeSelect(county);
+
         var countryVal = 'default';
         if (countrySelect.length === 1) {
           countryVal = $(countrySelect).val();
@@ -340,9 +348,8 @@ var wfCivi = (function ($, D) {
         else if (countrySelect.length > 1) {
           countryVal = $(countrySelect).filter(':checked').val();
         }
-        if (!countryVal) {
-          countryVal = '';
-        }
+        countryVal || (countryVal = '');
+
         populateStates($('#'+id), countryVal);
         $('#'+id).change(function() {
           populateCounty($(this), $(this).val(), countryVal);
@@ -356,13 +363,10 @@ var wfCivi = (function ($, D) {
 
       // Show/hide address fields when sharing an address
       $('form.webform-client-form .civicrm-enabled[name*="_address_master_id"]').once('civicrm').change(function(){
-        if ($(this).val() === '' || ($(this).is('input:checkbox:not(:checked)'))) {
-          sharedAddress(this, 'show', 500);
-        }
-        else {
-          sharedAddress(this, 'hide', 500);
-        }
+        var action = ($(this).val() === '' || ($(this).is('input:checkbox:not(:checked)'))) ? 'show' : 'hide';
+        sharedAddress(this, action, 500);
       });
+
       // Hide shared address fields on form load
       $('form.webform-client-form select.civicrm-enabled[name*="_address_master_id"], form.webform-client-form .civicrm-enabled[name*="_address_master_id"]:checked').each(function() {
         if ($(this).val() !== '') {
@@ -370,12 +374,11 @@ var wfCivi = (function ($, D) {
         }
       });
 
-      // Handle image file fields
-      $('div.civicrm-enabled[id$=contact-1-contact-image-url]:has(.file)', context).each(function() {
-        pub.contactImage($(this).attr('id'));
+      // Handle image file ajax refresh
+      $('div.civicrm-enabled[id*=contact-1-contact-image-url]:has(.file)', context).each(function() {
+        pub.contactImage(getFieldNameFromClass($(this).parent()));
       });
     }
   };
-
   return pub;
 })(jQuery, Drupal);

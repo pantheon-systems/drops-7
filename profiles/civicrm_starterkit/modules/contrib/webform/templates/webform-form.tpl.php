@@ -18,6 +18,9 @@
  */
 ?>
 <?php
+  //Print out the progress bar at the top of the page
+  print drupal_render($form['progressbar']);
+
   // Print out the main part of the form.
   // Feel free to break this up and move the pieces within the array.
   print drupal_render($form['submitted']);

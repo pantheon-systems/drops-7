@@ -193,7 +193,7 @@ function webform_civicrm_update_6200() {
 
   // Match field keys to new format
   civicrm_initialize();
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+  module_load_include('inc', 'webform_civicrm', 'includes/utils');
   $fields = wf_crm_get_fields();
   $match = $contacts = $update = array();
   // Create matching table
@@ -331,7 +331,7 @@ function webform_civicrm_update_6203() {
   if ($submitted) {
     $where = implode(' OR ', $submitted);
     civicrm_initialize();
-    module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+    module_load_include('inc', 'webform_civicrm', 'includes/utils');
     $db = db_query('SELECT DISTINCT data FROM {webform_submitted_data} WHERE ' . $where);
     foreach ($db as $row) {
       if ($row->data && is_numeric($row->data)) {
@@ -347,7 +347,7 @@ function webform_civicrm_update_6203() {
  * Group participant options into a single array.
  */
 function webform_civicrm_update_6204() {
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+  module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {
@@ -371,7 +371,7 @@ function webform_civicrm_update_6204() {
  */
 function webform_civicrm_update_6205() {
   civicrm_initialize();
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+  module_load_include('inc', 'webform_civicrm', 'includes/utils');
   module_load_include('inc', 'webform', 'includes/webform.components');
   $db = db_query("SELECT * FROM {webform_component} WHERE form_key LIKE 'civicrm_%%_other_tags' OR form_key LIKE 'civicrm_%%_other_group%%'");
   $tag = $group = array();
@@ -447,8 +447,8 @@ function webform_civicrm_update_6205() {
  * Read the upgrade instructions at http://drupal.org/node/1615380
  */
 function webform_civicrm_update_7300() {
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_admin');
-  module_load_include('inc', 'webform_civicrm', 'contact_component');
+  module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_admin_form');
+  module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
   module_load_include('inc', 'webform', 'includes/webform.components');
   civicrm_initialize();
   $fields = wf_crm_get_fields();
@@ -466,7 +466,7 @@ function webform_civicrm_update_7300() {
     $field['weight'] = -255;
     $field['extra']['default'] = $form['contact_matching'] ? 'user' : '';
     $field['extra']['hide_fields'] = array();
-    wf_crm_component_insert($field, $enabled, $form);
+    wf_crm_admin_form::insertComponent($field, $enabled, $form);
 
     // Activity target
     if (!empty($data['activity'][1]['activity'])) {
@@ -511,7 +511,7 @@ function webform_civicrm_update_7300() {
                 $field['extra']['default'] = 'relationship';
                 $field['extra']['default_relationship'] = array($e_type . '_' . $a_b);
                 $field['extra']['hide_fields'] = array();
-                wf_crm_component_insert($field, $enabled, $form);
+                wf_crm_admin_form::insertComponent($field, $enabled, $form);
               }
             }
           }
@@ -647,7 +647,7 @@ function webform_civicrm_update_7300() {
  * Update case features.
  */
 function webform_civicrm_update_7301() {
-  module_load_include('inc', 'webform_civicrm', 'webform_civicrm_utils');
+  module_load_include('inc', 'webform_civicrm', 'includes/utils');
 
   $db = db_query("SELECT * FROM {webform_civicrm_forms}");
   foreach ($db as $form) {

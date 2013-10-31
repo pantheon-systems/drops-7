@@ -36,7 +36,7 @@ function webform_configure_form($form, &$form_state, $node) {
   $form['submission']['confirmation'] = array(
     '#type' => 'text_format',
     '#title' => t('Confirmation message'),
-    '#description' => t('Message to be shown upon successful submission. If the redirection location is set to <em>Confirmation page</em> it will be shown on its own page, otherwise this displays as a message.'),
+    '#description' => t('Message to be shown upon successful submission. If the redirection location is set to <em>Confirmation page</em> it will be shown on its own page, otherwise this displays as a message. Supports Webform token replacements.') . ' ' . theme('webform_token_help', array('groups' => array('node', 'submission'))),
     '#default_value' => $node->webform['confirmation'],
     '#cols' => 40,
     '#rows' => 10,
@@ -64,7 +64,7 @@ function webform_configure_form($form, &$form_state, $node) {
     '#type' => 'item',
     '#title' => t('Redirection location'),
     '#theme' => 'webform_advanced_redirection_form',
-    '#description' => t('Choose where to redirect the user upon successful submission.') . ' ' . t('The <em>Custom URL</em> option supports Webform token replacements.') . theme('webform_token_help', array('groups' => array('basic', 'node', 'special', 'submission'))),
+    '#description' => t('Choose where to redirect the user upon successful submission.') . ' ' . t('The <em>Custom URL</em> option supports Webform token replacements.') . ' ' . theme('webform_token_help', array('groups' => array('node', 'submission'))),
   );
   $form['submission']['redirection']['redirect']= array(
     '#type' => 'radios',
@@ -74,13 +74,16 @@ function webform_configure_form($form, &$form_state, $node) {
       'url' => t('Custom URL'),
       'none' => t('No redirect (reload current page)'),
     ),
+    '#parents' => array('redirect'),
   );
   $form['submission']['redirection']['redirect_url'] = array(
     '#type' => 'textfield',
     '#title' => t('Redirect URL'),
     '#description' => t('URL to redirect the user to upon successful submission.'),
     '#default_value' => $redirect_url,
-    '#maxlength' => 255,
+    '#maxlength' => 2048,
+    '#parents' => array('redirect_url'),
+    '#attributes' => array('title' => t('Custom URL value')),
   );
 
   // Submission limit settings for all submissions.
@@ -166,6 +169,7 @@ function webform_configure_form($form, &$form_state, $node) {
     '#weight' => -3,
     '#description' => t('These permissions affect which roles can submit this webform. It does not prevent access to the webform page. If needing to prevent access to the webform page entirely, use a content access module such as <a href="http://drupal.org/project/taxonomy_access">Taxonomy Access</a> or <a href="http://drupal.org/project/node_privacy_byrole">Node Privacy by Role</a>.'),
     '#access' => variable_get('webform_submission_access_control', 1),
+    '#weight' => 10,
   );
   $user_roles = user_roles();
   foreach ($user_roles as $rid => $rname) {
@@ -183,13 +187,67 @@ function webform_configure_form($form, &$form_state, $node) {
   );
   /* End per-role submission control */
 
+  /* Start progress bar settings form */
+  $form['progressbar'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Progress bar'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#weight' => 15,
+  );
+  $progress_bar_style = array_filter(array(
+    $node->webform['progressbar_page_number'] ? 'progressbar_page_number' : NULL,
+    $node->webform['progressbar_percent'] ? 'progressbar_percent' : NULL,
+    $node->webform['progressbar_bar'] ? 'progressbar_bar' : NULL,
+    $node->webform['progressbar_pagebreak_labels'] ? 'progressbar_pagebreak_labels' : NULL,
+    $node->webform['progressbar_include_confirmation'] ? 'progressbar_include_confirmation' : NULL,
+  ));
+  $form['progressbar']['webform_progressbar_style']  = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Progress bar style'),
+    '#options' => array(
+      'progressbar_bar' => t('Show progress bar'),
+      'progressbar_page_number' => t('Show page number as number of completed (i.e. Page 1 of 10)'),
+      'progressbar_percent' => t('Show percentage completed (i.e. 10%)'),
+      'progressbar_pagebreak_labels' => t('Show page labels from page break components'),
+      'progressbar_include_confirmation' => t('Include confirmation page in progress bar'),
+    ),
+    '#default_value' => $progress_bar_style,
+    '#description' => t('Choose how the progress bar should be displayed for multi-page forms.'),
+  );
+  $form['progressbar']['progressbar_label_first'] = array(
+    '#type' => 'textfield',
+    '#title' => t('First page label'),
+    '#default_value' => $node->webform['progressbar_label_first'],
+    '#maxlength' => 255,
+    '#description' => t('The first page label in the progress bar. Subseqent pages are titled by their page break label.'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="webform_progressbar_style[progressbar_pagebreak_labels]"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['progressbar']['progressbar_label_confirmation'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Confirmation page label'),
+    '#default_value' => $node->webform['progressbar_label_confirmation'],
+    '#maxlength' => 255,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="webform_progressbar_style[progressbar_pagebreak_labels]"]' => array('checked' => TRUE),
+        ':input[name="webform_progressbar_style[progressbar_include_confirmation]"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  /* End progress Bar settings form */
+
   /* Start advanced settings form */
   $form['advanced'] = array(
     '#type' => 'fieldset',
     '#title' => t('Advanced settings'),
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
-    '#weight' => -1,
+    '#weight' => 20,
   );
   $form['advanced']['block'] = array(
     '#type' => 'checkbox',
@@ -197,12 +255,6 @@ function webform_configure_form($form, &$form_state, $node) {
     '#default_value' => $node->webform['block'],
     '#description' => t('If enabled this webform will be available as a block.'),
     '#access' => user_access('administer blocks') || user_access('administer site configuration') || user_access('use panels dashboard'),
-  );
-  $form['advanced']['teaser'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Show complete form in teaser'),
-    '#default_value' => $node->webform['teaser'],
-    '#description' => t('Display the entire form in the teaser display of this node.'),
   );
   $form['advanced']['allow_draft'] = array(
     '#type' => 'checkbox',
@@ -218,7 +270,7 @@ function webform_configure_form($form, &$form_state, $node) {
   );
   $form['advanced']['submit_notice'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Show the notification about previous submissions.'),
+    '#title' => t('Show the notification about previous submissions'),
     '#default_value' => $node->webform['submit_notice'],
     '#description' => t('Show the previous submissions notification that appears when users have previously submitted this form.'),
   );
@@ -264,7 +316,7 @@ function webform_configure_form_validate($form, &$form_state) {
     if (empty($redirect_url)) {
       form_error($form['submission']['redirection']['redirect_url'], t('A valid URL is required for custom redirection.'));
     }
-    elseif (strpos($redirect_url, 'http') === 0 && !valid_url($redirect_url, TRUE)) {
+    elseif (strpos($redirect_url, 'http') === 0 && !valid_url(webform_replace_tokens($redirect_url, $form['#node']), TRUE)) {
       form_error($form['submission']['redirection']['redirect_url'], t('The entered URL is not a valid address.'));
     }
     else {
@@ -302,9 +354,6 @@ function webform_configure_form_submit($form, &$form_state) {
   // Set the block option.
   $node->webform['block'] = $form_state['values']['block'];
 
-  // Set the Show complete form in teaser setting.
-  $node->webform['teaser'] = $form_state['values']['teaser'];
-
   // Set the draft option.
   $node->webform['allow_draft'] = $form_state['values']['allow_draft'];
 
@@ -331,6 +380,16 @@ function webform_configure_form_submit($form, &$form_state) {
     $node->webform['total_submit_interval'] = $form_state['values']['total_submit_interval'];
   }
 
+  // Set the progress bar preferences.
+  $progress_bar_settings = array_filter($form_state['values']['webform_progressbar_style']);
+  $node->webform['progressbar_page_number'] = in_array('progressbar_page_number', $progress_bar_settings);
+  $node->webform['progressbar_percent'] = in_array('progressbar_percent', $progress_bar_settings);
+  $node->webform['progressbar_bar'] = in_array('progressbar_bar', $progress_bar_settings);
+  $node->webform['progressbar_pagebreak_labels'] = in_array('progressbar_pagebreak_labels', $progress_bar_settings);
+  $node->webform['progressbar_include_confirmation'] = in_array('progressbar_include_confirmation', $progress_bar_settings);
+  $node->webform['progressbar_label_first'] = $form_state['values']['progressbar_label_first'];
+  $node->webform['progressbar_label_confirmation'] = $form_state['values']['progressbar_label_confirmation'];
+
   // Set submit notice.
   $node->webform['submit_notice'] = $form_state['values']['submit_notice'];
 
@@ -355,17 +414,15 @@ function webform_configure_form_submit_save($form, &$form_state) {
 function theme_webform_advanced_redirection_form($variables) {
   $form = $variables['form'];
   // Add special class for setting the active radio button.
-  $form['redirect_url']['#attributes']['class'] = array('webform-set-active');
+  $form['redirect_url']['#attributes']['class'][] = 'webform-set-active';
 
-  // Remove title and description for Redirect URL field.
-  $form['redirect_url']['#title'] = NULL;
-  $form['redirect_url']['#description'] = NULL;
+  // Remove wrappers around the inline Redirect URL field.
+  $form['redirect_url']['#theme_wrappers'] = array();
 
   $form['redirect']['confirmation']['#theme_wrappers'] = array('webform_inline_radio');
   $form['redirect']['url']['#theme_wrappers'] = array('webform_inline_radio');
   $form['redirect']['none']['#theme_wrappers'] = array('webform_inline_radio');
-  $form['redirect']['url']['#inline_element'] = $form['redirect']['url']['#title'] . ': ' . drupal_render($form['redirect_url']);
-  $form['redirect']['url']['#title'] = NULL;
+  $form['redirect']['url']['#title'] = t('Custom URL: !redirect_url', array('!redirect_url' => drupal_render($form['redirect_url'])));
 
   return drupal_render_children($form);
 }
@@ -375,20 +432,15 @@ function theme_webform_advanced_redirection_form($variables) {
  */
 function theme_webform_advanced_submit_limit_form($variables) {
   $form = $variables['form'];
-  $form['submit_limit']['#attributes']['class'] = array('webform-set-active');
-  $form['submit_interval']['#attributes']['class'] = array('webform-set-active');
+  $form['submit_limit']['#attributes']['class'][] = 'webform-set-active';
+  $form['submit_interval']['#attributes']['class'][] = 'webform-set-active';
   // Remove div wrappers around limit options.
   $form['submit_limit']['#theme_wrappers'] = array();
   $form['submit_interval']['#theme_wrappers'] = array();
-  $replacements = array(
-    '!count' => drupal_render($form['submit_limit']),
-    '!timespan' => drupal_render($form['submit_interval']),
-  );
 
   $form['enforce_limit']['no']['#theme_wrappers'] = array('webform_inline_radio');
-  $form['enforce_limit']['yes']['#title'] = NULL;
-  $form['enforce_limit']['yes']['#inline_element'] = t('Limit each user to !count submission(s) !timespan', $replacements);
   $form['enforce_limit']['yes']['#theme_wrappers'] = array('webform_inline_radio');
+  $form['enforce_limit']['yes']['#title'] = t('Limit each user to !count submission(s) !timespan', array('!count' => drupal_render($form['submit_limit']), '!timespan' => drupal_render($form['submit_interval'])));
 
   return drupal_render_children($form);
 }
@@ -398,20 +450,15 @@ function theme_webform_advanced_submit_limit_form($variables) {
  */
 function theme_webform_advanced_total_submit_limit_form($variables) {
   $form = $variables['form'];
-  $form['total_submit_limit']['#attributes']['class'] = array('webform-set-active');
-  $form['total_submit_interval']['#attributes']['class'] = array('webform-set-active');
+  $form['total_submit_limit']['#attributes']['class'][] = 'webform-set-active';
+  $form['total_submit_interval']['#attributes']['class'][] = 'webform-set-active';
   // Remove div wrappers around limit options.
   $form['total_submit_limit']['#theme_wrappers'] = array();
   $form['total_submit_interval']['#theme_wrappers'] = array();
-  $replacements = array(
-    '!count' => drupal_render($form['total_submit_limit']),
-    '!timespan' => drupal_render($form['total_submit_interval']),
-  );
 
   $form['enforce_total_limit']['no']['#theme_wrappers'] = array('webform_inline_radio');
-  $form['enforce_total_limit']['yes']['#title'] = NULL;
-  $form['enforce_total_limit']['yes']['#inline_element'] = t('Limit to !count total submission(s) !timespan', $replacements);
   $form['enforce_total_limit']['yes']['#theme_wrappers'] = array('webform_inline_radio');
+  $form['enforce_total_limit']['yes']['#title'] = t('Limit to !count total submission(s) !timespan', array('!count' => drupal_render($form['total_submit_limit']), '!timespan' => drupal_render($form['total_submit_interval'])));
 
   return drupal_render_children($form);
 }

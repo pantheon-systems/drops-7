@@ -37,7 +37,7 @@ class webform_handler_field_submission_count extends views_handler_field {
     global $user;
 
     $output = NULL;
-    if ($this->count_type == 'node' && in_array($values->{$this->aliases['type']}, webform_variable_get('webform_node_types'))) {
+    if ($this->count_type == 'node' && variable_get('webform_node_' . $values->{$this->aliases['type']}, FALSE)) {
       module_load_include('inc', 'webform', 'includes/webform.submissions');
       $node = node_load($values->{$this->aliases['nid']});
       if (webform_results_access($node, $user)) {
@@ -52,7 +52,7 @@ class webform_handler_field_submission_count extends views_handler_field {
     elseif ($this->count_type == 'users') {
       $output = db_select('webform_submissions')
         ->condition('uid', $values->{$this->aliases['uid']})
-        ->countQuery->execute()->fetchField();
+        ->countQuery()->execute()->fetchField();
     }
 
     return $output;
