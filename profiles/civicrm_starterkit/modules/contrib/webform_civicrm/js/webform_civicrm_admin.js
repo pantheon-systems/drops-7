@@ -129,12 +129,7 @@ var wfCiviAdmin = (function ($, D) {
           $(this).append('<option value="'+t['id']+'_b">'+t['label_b_a']+'</option>');
         }
       }
-      if ($(this).find('option[value='+selected_option+']').size()) {
-        $(this).val(selected_option);
-      }
-      else {
-        $(this).val("0").change();
-      }
+      $(this).val(selected_option).change();
     });
   }
 
@@ -170,7 +165,7 @@ var wfCiviAdmin = (function ($, D) {
     for (var c=1; c<=contacts; c++) {
       var sub_type = [];
       $('#edit-civicrm-'+c+'-contact-1-contact-contact-sub-type :selected').each(function(i, selected) {
-        if ($(selected).val() !== 'create_civicrm_webform_element') {
+        if ($(selected).val() !== 'create_civicrm_webform_element' && $(selected).val() !== '0') {
           sub_type[i] = $(selected).val();
         }
       });
@@ -214,6 +209,45 @@ var wfCiviAdmin = (function ($, D) {
     }
   }
 
+  // Toggle the "multiple" attribute of a select
+  function changeSelect() {
+    var $el = $(this).siblings('select');
+    var triggerChange;
+    $(this).toggleClass('select-multiple');
+    if ($el.is('[multiple]')) {
+      if ($el.val() && $el.val().length > 1) {
+        triggerChange = true;
+      }
+      if ($('option[value=""]', $el).length < 1) {
+        $el.prepend('<option value="">'+ Drupal.t('- None -') +'</option>');
+      }
+      $el.removeAttr('multiple');
+    }
+    else {
+      $el.attr('multiple', 'multiple');
+      $('option[value=""]', $el).remove();
+    }
+    // For the sake of Drupal.setSummary
+    $el.click();
+    // For ajax fields
+    if (triggerChange) {
+      $el.change();
+    }
+    return false;
+  }
+
+  // HTML multiselect elements are awful. This is a simple/lightweight way to make them better.
+  function initMultiSelect() {
+    $(this).after('<a href="#" class="wf-crm-change-select civi-icon" title="'+ Drupal.t('Toggle Multiple Options') +'"></a>');
+    $(this).siblings('.wf-crm-change-select').click(changeSelect);
+    if (!$(this).val() || $(this).val().length < 2) {
+      $(this).siblings('.wf-crm-change-select').click();
+    }
+    else {
+      $('option[value=""]', this).remove();
+    }
+  }
+
   /**
    * Add Drupal behaviors.
    */
@@ -222,6 +256,8 @@ var wfCiviAdmin = (function ($, D) {
 
       employerOptions();
       showHideParticipantOptions();
+
+      $('#wf-crm-configure-form select[multiple]').once('wf-crm-multiselect').each(initMultiSelect);
 
       // Summaries for vertical tabs
       $('fieldset[id^="edit-contact-"]', context).once('wf-civi').drupalSetSummary(function (context) {
@@ -308,12 +344,21 @@ var wfCiviAdmin = (function ($, D) {
         $('#wf-crm-configure-form')[0].submit();
       });
 
-      $('select[name*="relationship_relationship_type_id"]', context).once('wf-civi').change(function() {
-        var name = $(this).attr('name').replace('relationship_type_id', '');
-        var val = $(this).val().split('_');
+      // Show/hide custom relationship fields
+      $('select[name*="relationship_relationship_type_id"]', context).once('wf-civi-rel').change(function() {
+        var name = $(this).attr('name').replace('relationship_type_id[]', '');
+        // Input type may be single or multi-select
+        var val = typeof($(this).val()) == 'string' ? [$(this).val()] : $(this).val();
         $(':input[name*="'+name+'"][data-relationship-type]', context).each(function() {
           var rel = $(this).attr('data-relationship-type').split(',');
-          if ($.inArray(val[0], rel) > -1) {
+          var show = false;
+          $.each(val, function(i, v) {
+            v = v.split('_');
+            if ($.inArray(v[0], rel) > -1) {
+              show = true;
+            }
+          });
+          if (show) {
             $(this).removeAttr('disabled');
             $(this).parent().removeAttr('style');
           }

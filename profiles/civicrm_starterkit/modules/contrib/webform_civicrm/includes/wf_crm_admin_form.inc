@@ -187,7 +187,7 @@ class wf_crm_admin_form {
       '#suffix' => '</div>',
     );
     $this->help($this->form['contact_' . $n][$n . '_webform_label'], 'webform_label', t('Contact Label'));
-    $this->addAjaxItem('contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper');
+    $this->addAjaxItem('contact_' . $n, $n . '_contact_type', 'contact_subtype_wrapper', 'contact-subtype-wrapper');
 
     // Contact sub-type
     $fid = 'civicrm_' . $n . '_contact_1_contact_contact_sub_type';
@@ -274,6 +274,9 @@ class wf_crm_admin_form {
           if (in_array($sid, wf_crm_location_fields()) && $i == 1) {
             $fieldset['#title'] .= ' ' . t('(primary)');
           }
+        }
+        if (!empty($set['help_text'])) {
+          $this->help($fieldset, "fieldset_$sid", $set['label']);
         }
         foreach ($set['fields'] as $fid => $field) {
           if ($fid == 'contact_contact_sub_type' ||
@@ -372,7 +375,7 @@ class wf_crm_admin_form {
       $this->form['act']['case']['case_fields']['existing_case_status'] = array(
         '#type' => 'select',
         '#title' => t('Update Existing Case'),
-        '#options' => wf_crm_apivalues('case', 'getoptions', array('field' => 'status_id')),
+        '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_apivalues('case', 'getoptions', array('field' => 'status_id')),
         '#default_value' => wf_crm_aval($this->data, 'case:1:existing_case_status', array()),
         '#multiple' => TRUE,
       );
@@ -393,7 +396,7 @@ class wf_crm_admin_form {
       $this->form['act']['case']['activity_fields']['existing_activity_status'] = array(
         '#type' => 'select',
         '#title' => t('Update Existing Activity'),
-        '#options' => wf_crm_apivalues('activity', 'getoptions', array('field' => 'status_id')),
+        '#options' => array('' => '- ' . t('None') . ' -') + wf_crm_apivalues('activity', 'getoptions', array('field' => 'status_id')),
         '#default_value' => wf_crm_aval($this->data, 'activity:1:existing_activity_status', array()),
         '#multiple' => TRUE,
       );
@@ -884,8 +887,12 @@ class wf_crm_admin_form {
       $field['form_key'] = $fid;
       // Retrieve option list
       $options = array();
+      // Placeholder empty option - used by javascript when displaying multiselect as single
+      if (!empty($field['extra']['multiple'])) {
+        $options += array('' => '- ' . t('None') . ' -');
+      }
       if ($field['type'] != 'hidden') {
-        $options = array('create_civicrm_webform_element' => t('- User Select -'));
+        $options += array('create_civicrm_webform_element' => t('- User Select -'));
       }
       $options += wf_crm_field_options($field, 'config_form', $this->data);
       $item += array(
@@ -967,7 +974,7 @@ class wf_crm_admin_form {
    * @param string $container
    *   Array key of the container to be created
    */
-  private function addAjaxItem($path, $control_element, $container) {
+  private function addAjaxItem($path, $control_element, $container, $class='civicrm-ajax-wrapper') {
     eval('$snippet = &$this->form[\'' . str_replace(':', "']['", $path) . "'];");
     $path .= ':' . $container;
     $id = 'civicrm-ajax-' . str_replace(array(':', '_'), '-', $path);
@@ -978,7 +985,7 @@ class wf_crm_admin_form {
       'effect' => 'fade',
     );
     $snippet[$container] = array(
-      '#prefix' => '<div class="civicrm-ajax-wrapper" id="' . $id . '">',
+      '#prefix' => '<div class="' . $class . '" id="' . $id . '">',
       '#type' => 'markup',
       '#suffix' => '</div>',
     );
@@ -998,7 +1005,7 @@ class wf_crm_admin_form {
   }
   
   /**
-   * Build the $this->data array for webform settings; called while rebuilding or post-processing the admin form.
+   * Build $this->data array for webform settings; called while rebuilding or post-processing the admin form.
    */
   private function rebuildData() {
     $this->settings['data'] = array('contact' => array());
@@ -1057,7 +1064,7 @@ class wf_crm_admin_form {
       if (isset($this->settings['activity_subject'])) {
         $this->data['activity'][1]['activity'][1]['subject'] = $this->settings['activity_subject'];
         $this->data['activity'][1]['details'] = $this->settings['activity_details'];
-        $this->data['activity'][1]['existing_activity_status'] = $this->settings['existing_activity_status'];
+        $this->data['activity'][1]['existing_activity_status'] = array_filter($this->settings['existing_activity_status']);
       }
       else {
         $this->data['activity'][1]['activity'][1]['target_contact_id'] = range(1, $this->settings['number_of_contacts']);
@@ -1074,7 +1081,7 @@ class wf_crm_admin_form {
         $this->data['case'][1]['case'][1]['creator_id'] = 1;
       }
       $this->data['case'][1]['case'][1]['case_type_id'] = $this->settings['case_type_id'];
-      $this->data['case'][1]['existing_case_status'] = $this->settings['existing_case_status'];
+      $this->data['case'][1]['existing_case_status'] = array_filter($this->settings['existing_case_status']);
     }
     if (isset($this->settings['participant_reg_type'])) {
       $this->data['participant_reg_type'] = $this->settings['participant_reg_type'];
@@ -1085,7 +1092,8 @@ class wf_crm_admin_form {
       if (substr($key, 0, 7) == 'civicrm') {
         list(, $c, $ent, $n, $table, $name) = explode('_', $key, 6);
         if (is_array($val)) {
-          unset($val['create_civicrm_webform_element']);
+          // Git rid of the "User Select" and "None" options
+          unset($val['create_civicrm_webform_element'], $val['']);
         }
         elseif ($val == 'create_civicrm_webform_element') {
           $val = '';

@@ -305,6 +305,7 @@ function civicrm_initialize() {
         drupal_add_css($path . '/filter.css');
       }
     }
+    CRM_Core_Config::singleton()->userSystem->setMySQLTimeZone();
   }
 
   return TRUE;
@@ -733,14 +734,14 @@ function civicrm_views_query_alter(&$view, &$query) {
   require_once 'CRM/Core/DAO/Domain.php';
   $domain = new CRM_Core_DAO_Domain();
   $domain->find(true);
-  
+
   $multilingual = (bool) $domain->locales;
-  
+
   if ($multilingual) {
     require_once 'CRM/Core/I18n/SchemaStructure.php';
     global $dbLocale;
     $columns = CRM_Core_I18n_SchemaStructure::columns();
-    
+
     // TODO: for better performance, loop on $query->fields instead
     foreach ($columns as $table => $hash) {
       foreach ($hash as $column => $type) {

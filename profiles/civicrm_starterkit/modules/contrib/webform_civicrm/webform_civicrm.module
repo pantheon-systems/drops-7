@@ -8,6 +8,15 @@
  */
 
 /**
+ * The versions of CiviCRM and WebForm. Min is >=.  Max is <. FALSE = no MAX  
+ */
+define('WEBFROM_CIVICRM_CIVICRM_VERSION_MIN', '4.4');
+define('WEBFROM_CIVICRM_CIVICRM_VERSION_MAX', FALSE);
+
+define('WEBFROM_CIVICRM_WEBFORM_VERSION', '4');
+
+
+/**
  * Implements hook_menu().
  */
 function webform_civicrm_menu() {
@@ -506,4 +515,37 @@ function wf_crm_validate($form, &$form_state) {
   module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_postprocess');
   $processor = wf_crm_webform_postprocess::singleton($form['#node']);
   $processor->validate($form, $form_state);
+}
+
+/**
+ * Checks dependencies.
+ *
+ * @return bool
+ *   Array with TRUE/FALSE for each dependency.
+ *
+ * @see webform_civicrm_requirements() in .install
+ */
+function _webform_civicrm_status() {
+  $status = array();
+  $status['webform_civicrm'] = FALSE;
+
+  $path = drupal_get_path('module', 'civicrm') . '/civicrm.info';
+  $civicrm = drupal_parse_info_file($path);
+  
+  $path = drupal_get_path('module', 'webform') . '/webform.info';
+  $webform = drupal_parse_info_file($path);
+  //strip the 7.x- from version so version_compare works
+  $webform['version'] = str_replace('7.x-', '', $webform['version']);
+    
+  if (version_compare($civicrm['version'], WEBFROM_CIVICRM_CIVICRM_VERSION_MIN, '>=') && 
+  version_compare($webform['version'], WEBFROM_CIVICRM_WEBFORM_VERSION, '>=')) {
+    $status['webform_civicrm'] = TRUE;
+  }
+  
+  // if there is a max version of CiviCRM supported, check it too
+  if (WEBFROM_CIVICRM_CIVICRM_VERSION_MAX && version_compare($civicrm['version'], WEBFROM_CIVICRM_CIVICRM_VERSION_MAX, '>=')) {
+    $status['webform_civicrm'] = FALSE;
+  }
+  
+  return $status;
 }

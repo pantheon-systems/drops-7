@@ -13,7 +13,7 @@ projects[drupal][version] = "7.23"
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.0-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.1-starterkit.tgz"
 ;libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.7-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
@@ -390,7 +390,7 @@ projects[webform][subdir] = "contrib"
 projects[webform][version] = "4.0-beta1"
 
 projects[webform_civicrm][subdir] = "contrib"
-projects[webform_civicrm][version] = "4.0"
+projects[webform_civicrm][version] = "4.1"
 
 projects[wysiwyg][subdir] = "contrib"
 projects[wysiwyg][version] = "2.2"

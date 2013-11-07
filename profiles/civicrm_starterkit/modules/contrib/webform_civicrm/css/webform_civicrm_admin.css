@@ -10,7 +10,7 @@ form .web-civi-checkbox-set {
 form .web-civi-checkbox-set .form-item,
 #wf-crm-configure-form .contact-type-select {
   float:left;
-  width:18em;
+  width:200px;
   padding-right:1.5em;
 }
 
@@ -18,7 +18,8 @@ form .web-civi-checkbox-set .auto-width .form-item {
   width:auto;
 }
 
-.web-civi-checkbox-set + div {
+.web-civi-checkbox-set + div,
+.civicrm-ajax-wrapper {
   clear:both;
 }
 
@@ -61,7 +62,7 @@ th div.form-type-radio {
 
 #wf-crm-configure-form select,
 #wf-crm-configure-form .form-type-textfield input {
-  max-width: 100%;
+  max-width: 177px;
 }
 
 #wf-crm-configure-form fieldset fieldset{
@@ -84,7 +85,17 @@ form .civi-icon {
   display:inline-block;
   width:16px;
   height:16px;
-  margin-right:4px;
+  margin: 0 4px 0 0;
+}
+
+form .wf-crm-change-select {
+  margin: 3px 0 0 6px;
+  vertical-align: top;
+  background-position: -188px -0px;
+}
+
+form .wf-crm-change-select.select-multiple {
+  background-position: -203px -0px;
 }
 
 form .civi-icon.individual {

@@ -456,7 +456,7 @@ class CRM_Core_Resources {
       // Initialize CRM.url and CRM.formatMoney
       $url = CRM_Utils_System::url('civicrm/example', 'placeholder', FALSE, NULL, FALSE);
       $js = "CRM.url('init', '$url');\n";
-      $js .= "CRM.formatMoney('init', '" . CRM_Utils_Money::format(1234.56) . "');";
+      $js .= "CRM.formatMoney('init', " . json_encode(CRM_Utils_Money::format(1234.56)) . ");";
       $this->addScript($js, $jsWeight++, $region);
 
       // Add global settings
@@ -493,8 +493,9 @@ class CRM_Core_Resources {
       if (!empty($config->customCSSURL)) {
         $this->addStyleUrl($config->customCSSURL, -99, $region);
       }
-      else {
+      if (!CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'disable_core_css')) {
         $this->addStyleFile('civicrm', 'css/civicrm.css', -99, $region);
+        // extras.css is deprecated. Don't use it.
         $this->addStyleFile('civicrm', 'css/extras.css', -98, $region);
       }
     }

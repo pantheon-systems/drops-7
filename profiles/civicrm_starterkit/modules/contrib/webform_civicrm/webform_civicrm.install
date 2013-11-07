@@ -6,6 +6,39 @@
  */
 
 /**
+ * Implements hook_requirements().
+ */
+function webform_civicrm_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $t = get_t();
+    $status = _webform_civicrm_status();
+      
+    if (!$status['webform_civicrm']) {
+
+      $requirements['webform_civicrm'] = array(
+        'title' => 'Webform CiviCRM Integration',
+        'value' => $t('Version error'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => $t('The versions of the Webform CiviCRM Integration, Webform, CiviCRM enabled are not compatible. ') . 
+        l($t('See the Webform CiviCRM Integration project page for version compatibility'), 'https://drupal.org/project/webform_civicrm'),
+      );
+    }
+    else {
+      
+      $requirements['webform_civicrm'] = array(
+        'title' => 'Webform CiviCRM Integration',
+        'severity' => REQUIREMENT_OK,
+        'value' => t('Required version of CiviCRM and Webform are enabled.'),
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+/**
  * Implements hook_schema().
  */
 function webform_civicrm_schema() {

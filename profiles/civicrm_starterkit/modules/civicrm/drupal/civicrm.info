@@ -1,6 +1,6 @@
 name = CiviCRM
 description = Constituent Relationship Management CRM - v4.3. Allows sites to manage contacts, relationships and groups, and track contact activities, contributions, memberships and events.
-version = 4.4.0
+version = 4.4.1
 package = CiviCRM
 core = 7.x
 php = 5.3

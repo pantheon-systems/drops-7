@@ -454,31 +454,29 @@ function _civicrm_member_roles_sync($ext_uid = NULL, $cid = NULL) {
     return;
   }
 
-  //Bring in CRM_Core_BAO_UFMatch class so we can find Drupal UIDs
-  require_once 'CRM/Core/BAO/UFMatch.php';
   $rules = db_query('SELECT * FROM {civicrm_member_roles_rules}')->fetchAll();
-  //Error check
   if (empty($rules) || $rules === FALSE) {
     return FALSE;
   }
-
+  $memberroles = $rid = array();
+  foreach ($rules as $ruleValues) {
+    $memberroles[$ruleValues->type_id][] = array(
+        'rid' => $ruleValues->rid,
+        'codes' => unserialize($ruleValues->status_codes),
+    );
+    $rid[] = $ruleValues->rid;
+  }
   //Find all contacts that have membership rules (or just use $ext_uid)
   if (empty($ext_uid) && empty($cid)) {
-    //Put all unique membership types that have rules in an array
-    $all_rule_membership_types = array();
-    foreach ($rules as $result) {
-      $all_rule_membership_types[] = $result->type_id;
-    }
-    if (empty($all_rule_membership_types)) {
-      return FALSE;
-    }
-    $memTypes = implode(",", $all_rule_membership_types);
-    // OPTIMIZATION: "SELECT DISTINCT contact_id" would be better if field were indexed
-    $sql = "SELECT DISTINCT contact_id FROM civicrm_uf_match";
-    $contacts = CRM_Core_DAO::executeQuery($sql, CRM_Core_DAO::$_nullArray);
-    if ($contacts->N == 0) {
-      return FALSE;
-    }
+    $sql = "SELECT DISTINCT uf.contact_id FROM civicrm_uf_match uf
+      LEFT JOIN civicrm_membership m ON uf.contact_id = m.contact_id
+      WHERE m.id IS NOT NULL AND m.membership_type_id IN (" . implode(',', array_keys($memberroles)) . ")
+      ORDER BY m.end_date DESC";
+    //let's prioritise those ending last as then we are more likely to get relevant ones if it doesn't complete
+    //obviously a better fix would be for it to chunk & save where it is up to
+    $params = CRM_Core_DAO::$_nullArray;
+    $errorMsg = 'unknown error';
+    $errorParams = array();
   }
   else {
     if (!empty($ext_uid)) {
@@ -486,39 +484,27 @@ function _civicrm_member_roles_sync($ext_uid = NULL, $cid = NULL) {
       $uid      = $ext_uid;
       $sql      = "SELECT contact_id FROM civicrm_uf_match WHERE uf_id = %1";
       $params   = array(1 => array($uid, "Integer"));
-      $contacts = CRM_Core_DAO::executeQuery($sql, $params);
-      if ($contacts->N == 0) {
-        watchdog('civicrm_member_roles',
-          'The uid: @uid did not have a CiviCRM Contact ID.',
-          array('@uid' => (int) $ext_uid),
-          WATCHDOG_ERROR
-        );
-        return FALSE;
-      }
+      $errorMsg = 'The uid: @uid did not have a CiviCRM Contact ID.';
+      $errorParams = array('@uid' => (int) $ext_uid);
     }
     else {
       // Seems silly to add this query, but the while loop below needs result set.
       $sql      = "SELECT id AS contact_id FROM civicrm_contact WHERE id = %1";
       $params   = array(1 => array($cid, "Integer"));
-      $contacts = CRM_Core_DAO::executeQuery($sql, $params);
-      if ($contacts->N == 0) {
-        watchdog('civicrm_member_roles',
-          'Unable to get CiviCRM Contact ID @cid.', array(
-            '@uid' => (int) $cid), WATCHDOG_ERROR
-        );
-        return FALSE;
-      }
+      $errorMsg = 'Unable to get CiviCRM Contact ID @cid.';
+      $errorParams = array('@uid' => (int) $cid);
     }
   }
-  $memberRules = db_query('SELECT * FROM {civicrm_member_roles_rules}')->fetchAll();
-  $memberroles = $rid = array();
-  foreach ($memberRules as $ruleValues) {
-    $memberroles[$ruleValues->type_id][] = array(
-      'rid' => $ruleValues->rid,
-      'codes' => unserialize($ruleValues->status_codes),
+  $contacts = CRM_Core_DAO::executeQuery($sql, $params);
+  if ($contacts->N == 0) {
+    watchdog('civicrm_member_roles',
+      $errorMsg,
+      $errorParams,
+      WATCHDOG_ERROR
     );
-    $rid[] = $ruleValues->rid;
+    return FALSE;
   }
+
   $allRoles = user_roles(TRUE);
   while ($contacts->fetch()) {
     $cid = $contacts->contact_id;
@@ -528,7 +514,6 @@ function _civicrm_member_roles_sync($ext_uid = NULL, $cid = NULL) {
     }
 
     //Get all memberships of contact
-    require_once 'api/api.php';
     $memParams = array(
       'contact_id' => $cid,
       'version' => 3,
@@ -636,4 +621,3 @@ function civicrm_member_roles_civicrm_post($op, $objname, $objid, &$objref) {
     }
   }
 }
-

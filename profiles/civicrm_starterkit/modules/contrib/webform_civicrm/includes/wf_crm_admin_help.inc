@@ -88,9 +88,9 @@ class wf_crm_admin_help {
 
   static function contribution_payment_processor_id() {
     print '<p>' .
-      t('All payment processors enabled on the contribution page are available here. "Pay Later" option allows the user to purchase events/memberships without entering a credit card.') .
+      t('Supported payment processors enabled on the contribution page are available here. "Pay Later" option allows the user to purchase events/memberships without entering a credit card.') .
       '</p><p>' .
-      t("Note that only on-site credit card processors will work on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported. Recurring payments are not supported.") .
+      t("Note that only on-site credit card processors are currently supported on Webforms. Services that redirect to an external website, such as Paypal Standard, are not supported. Recurring payments are not supported.") .
       '</p>';
   }
 
@@ -135,6 +135,8 @@ class wf_crm_admin_help {
   static function participant_event_id() {
     print '<p>' .
       t('Events can be selected here without giving the user a choice, or this field can be added to the form ("User Select").') .
+      '</p><p>' .
+      t('Click the + button to choose multiple events.') .
       '</p><p>' .
       t('On the form, this field could be represented as either single or multiselect (checkboxes or radios). Note: enabling this field as a multiselect (checkboxes) should only be done if all selectable events will have the same price, role, custom data, etc.') .
       '</p><p>' .
@@ -208,6 +210,8 @@ class wf_crm_admin_help {
 
   static function multiselect_options() {
     print '<p>' .
+      t('Click the + button to select more than one option.') .
+      '</p><p>' .
       t('You may set options here and/or add this element to the webform ("User Select"). If you do both, options set here will be applied automatically and will not appear on the form.') .
       '</p>';
   }
@@ -298,8 +302,8 @@ class wf_crm_admin_help {
   /**
    * Get help for a custom field
    */
-  static function custom($field) {
-    list( , $id) = explode('_', $field);
+  static function custom($param) {
+    list( , $id) = explode('_', $param);
     if (!is_numeric($id)) {
       return;
     }
@@ -311,6 +315,19 @@ class wf_crm_admin_help {
     }
     if (!empty($info['help_post'])) {
       print '<p>' . $info['help_post'] . '</p>';
+    }
+  }
+
+  /**
+   * Get help for a fieldset
+   */
+  static function fieldset($param) {
+    list( , $set) = explode('_', $param);
+    civicrm_initialize();
+    module_load_include('inc', 'webform_civicrm', 'includes/utils');
+    $sets = wf_crm_get_fields('sets');
+    if (!empty($sets[$set]['help_text'])) {
+      print '<p>' . $sets[$set]['help_text'] . '</p>';
     }
   }
 
@@ -343,6 +360,9 @@ function wf_crm_admin_help($topic) {
   }
   elseif (strpos($topic, 'custom_') === 0) {
     wf_crm_admin_help::custom($topic);
+  }
+  elseif (strpos($topic, 'fieldset_') === 0) {
+    wf_crm_admin_help::fieldset($topic);
   }
   exit();
 }

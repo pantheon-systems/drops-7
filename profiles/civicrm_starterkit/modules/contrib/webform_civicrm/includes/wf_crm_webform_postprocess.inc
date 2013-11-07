@@ -167,7 +167,12 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
       // Process relationships
       foreach (wf_crm_aval($contact, 'relationship', array()) as $n => $params) {
-        $this->processRelationship($params, $cid, $this->id['cid'][$n]);
+        $relationship_type_id = wf_crm_aval($params, 'relationship_type_id');
+        if ($relationship_type_id) {
+          foreach ((array) $relationship_type_id as $params['relationship_type_id']) {
+            $this->processRelationship($params, $cid, $this->id['cid'][$n]);
+          }
+        }
       }
       // Process event participation
       if (isset($this->all_sets['participant']) && !empty($this->data['participant_reg_type'])) {

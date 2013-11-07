@@ -115,8 +115,8 @@ function civicrmtheme_custom_theme() {
   }
 
   // Get the menu items.
-  $args = explode('/', $_GET['q']);
-  $path = implode('/', $args);
+  $args = explode('?', $_GET['q']);
+  $path = $args[0];
 
   // Get the menu for above URL.
   $item = CRM_Core_Menu::get($path);

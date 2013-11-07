@@ -522,7 +522,7 @@ ORDER BY   i.contact_id, i.{$tempColumn}
   private function _getMailingGroupIds($type = 'Include') {
     $mailingGroup = new CRM_Mailing_DAO_MailingGroup();
     $group = CRM_Contact_DAO_Group::getTableName();
-    if (!isset($thi->sid)) {
+    if (!isset($this->id)) {
       // we're just testing tokens, so return any group
       $query = "SELECT   id AS entity_id
                       FROM     $group
@@ -2642,7 +2642,7 @@ WHERE  civicrm_mailing_job.id = %1
  //   CRM_Core_Error::debug_log_message("Beginning processQueue run: {$config->mailerJobsMax}, {$config->mailerJobSize}");
 
     if ($mode == NULL && CRM_Core_BAO_MailSettings::defaultDomain() == "EXAMPLE.ORG") {
-      CRM_Core_Error::fatal(ts('The <a href="%1">default mailbox</a> has not been configured. You will find <a href="%2">more info in the online user and administrator guide</a>', array(1 => CRM_Utils_System::url('civicrm/admin/mailSettings', 'reset=1'), 2 => "http://book.civicrm.org/user/initial-set-up/email-system-configuration")));
+      CRM_Core_Error::fatal(ts('The <a href="%1">default mailbox</a> has not been configured. You will find <a href="%2">more info in the online user and administrator guide</a>', array(1 => CRM_Utils_System::url('civicrm/admin/mailSettings', 'reset=1'), 2 => "http://book.civicrm.org/user/advanced-configuration/email-system-configuration/")));
     }
 
     // check if we are enforcing number of parallel cron jobs
@@ -2689,7 +2689,7 @@ WHERE  civicrm_mailing_job.id = %1
     return TRUE;
   }
 
-  private function addMultipleEmails($mailingID) {
+  private static function addMultipleEmails($mailingID) {
     $sql = "
 INSERT INTO civicrm_mailing_recipients
     (mailing_id, email_id, contact_id)

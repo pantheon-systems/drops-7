@@ -3,7 +3,7 @@ name = CiviCRM Contact Reference Field
 description = Makes a CiviCRM Contact Reference Field
 package = CiviCRM
 core = 7.x
-version = 4.4.0
+version = 4.4.1
 php = 5.2
 
 dependencies[] = civicrm

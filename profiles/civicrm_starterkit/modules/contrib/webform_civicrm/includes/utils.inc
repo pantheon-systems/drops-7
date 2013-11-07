@@ -68,6 +68,7 @@ function wf_crm_field_options($field, $context, $data) {
       $ret = wf_crm_get_events($data['reg_options'], $context);
     }
     elseif ($table == 'contribution' && $name == 'is_test') {
+      // Getoptions would return 'yes' and 'no' - this is a bit more descriptive
       $ret = array(0 => t('Live Transactions'), 1 => t('Test Mode'));
     }
     // Not a real field so can't call getoptions for this one
@@ -94,6 +95,11 @@ function wf_crm_field_options($field, $context, $data) {
         foreach ($old as $key => $val) {
           $ret[number_format(str_replace(',', '', $key), 2, '.', '')] = $val;
         }
+      }
+
+      // Hack to remove payment processors we don't support
+      if ($name == 'payment_processor_id') {
+        wf_crm_supported_payment_processors($ret);
       }
     }
     // Remove options that were set behind the scenes on the admin form
@@ -314,6 +320,14 @@ function wf_crm_get_privacy_options() {
     'do_not_sms' => ts('Do not sms'),
     'do_not_trade' => ts('Do not trade'),
   );
+}
+
+function wf_crm_supported_payment_processors(&$ret) {
+  foreach(wf_crm_apivalues('payment_processor', 'get', array('is_test' => 0)) as $processor) {
+    if (!in_array($processor['billing_mode'], array(1, 3))) {
+      unset($ret[$processor['id']]);
+    }
+  }
 }
 
 /**
@@ -628,13 +642,13 @@ function wf_crm_get_fields($var = 'fields') {
       'expose_list' => TRUE,
     );
     $fields['other_group'] = array(
-      'name' => t('Groups'),
+      'name' => t('Group(s)'),
       'type' => 'select',
       'extra' => array('multiple' => 1, 'civicrm_live_options' => 1),
       'table' => 'group',
       'expose_list' => TRUE,
     );
-    $tagsets = array('' => t('Tags')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
+    $tagsets = array('' => t('Tag(s)')) + CRM_Core_BAO_Tag::getTagSet('civicrm_contact');
     foreach ($tagsets as $pid => $name) {
       $fields['other_tag' . ($pid ? "_$pid" : '')] = array(
         'name' => $name,
@@ -645,7 +659,7 @@ function wf_crm_get_fields($var = 'fields') {
       );
     }
     $fields['activity_target_contact_id'] = array(
-      'name' => t('Activity Participants'),
+      'name' => t('Activity Participant(s)'),
       'type' => 'select',
       'expose_list' => TRUE,
       'extra' => array(
@@ -732,11 +746,13 @@ function wf_crm_get_fields($var = 'fields') {
       );
     }
     $fields['relationship_relationship_type_id'] = array(
-      'name' => t('Relationship Type'),
+      'name' => t('Relationship Type(s)'),
       'type' => 'select',
       'expose_list' => TRUE,
-      'empty_option' => t('No Relationship'),
-      'extra' => array('civicrm_live_options' => 1),
+      'extra' => array(
+        'civicrm_live_options' => 1,
+        'multiple' => 1,
+      ),
     );
     $fields['relationship_is_active'] = array(
       'name' => t('Is Active'),
@@ -966,7 +982,7 @@ function wf_crm_get_fields($var = 'fields') {
     list($contact_types) = wf_crm_get_contact_types();
     $custom_extends = "'" . implode("','", array_keys($contact_types + $sets)) . "'";
     $sql = "
-      SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id
+      SELECT cf.*, cg.title AS custom_group_name, LOWER(cg.extends) AS entity_type, cg.extends_entity_column_id, cg.extends_entity_column_value AS sub_types, cg.is_multiple, cg.max_multiple, cg.id AS custom_group_id, cg.help_pre as cg_help
       FROM civicrm_custom_field cf
       INNER JOIN civicrm_custom_group cg ON cg.id = cf.custom_group_id
       WHERE cf.is_active <> 0 AND cg.extends IN ($custom_extends) AND cg.is_active <> 0
@@ -1001,6 +1017,7 @@ function wf_crm_get_fields($var = 'fields') {
           if ($dao->extends_entity_column_id) {
             $sets[$set]['extension_of'] = $dao->extends_entity_column_id;
           }
+          $sets[$set]['help_text'] = $dao->cg_help;
         }
         $id = $set . '_custom_' . $dao->id;
         $fields[$id] = $custom_types[$dao->html_type];
@@ -1041,9 +1058,6 @@ function wf_crm_get_fields($var = 'fields') {
         elseif ($fields[$id]['type'] == 'textarea') {
           $fields[$id]['extra']['cols'] = $dao->note_columns;
           $fields[$id]['extra']['rows'] = $dao->note_rows;
-        }
-        if (!empty($dao->option_group_id) && empty($fields[$id]['value'])) {
-          $fields[$id]['value_callback'] = 'getCustomFieldDefault';
         }
       }
     }
