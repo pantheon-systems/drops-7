@@ -299,6 +299,14 @@ class wf_crm_admin_help {
       '</ul>';
   }
 
+  static function fieldset_relationship() {
+    print '<p>' .
+      t('Relationships are created from higher-number contacts to lower-number contacts.') .
+      '</p><p>' .
+      t("Example: to create a relationship between Contact 3 and Contact 4, go to Contact 4's tab and select Number of Relationships: 3. This will give you the option to create relationships between Contact 4 and Contacts 1, 2, and 3, respectively.") .
+      '</p>';
+  }
+
   /**
    * Get help for a custom field
    */

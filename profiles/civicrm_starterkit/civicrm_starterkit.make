@@ -377,8 +377,14 @@ projects[libraries][version] = "2.1"
 projects[module_filter][subdir] = "contrib"
 projects[module_filter][version] = "1.8"
 
+projects[options_element][subdir] = "contrib"
+projects[options_element][version] = "1.9"
+
 projects[profile_switcher][subdir] = "contrib"
 projects[profile_switcher][version] = "1.0-alpha1"
+
+projects[profile_switcher][subdir] = "contrib"
+projects[profile_switcher][version] = "1.x-dev"
 
 projects[recaptcha][subdir] = "contrib"
 projects[recaptcha][version] = "1.10"
@@ -390,7 +396,7 @@ projects[webform][subdir] = "contrib"
 projects[webform][version] = "4.0-beta1"
 
 projects[webform_civicrm][subdir] = "contrib"
-projects[webform_civicrm][version] = "4.1"
+projects[webform_civicrm][version] = "4.2"
 
 projects[wysiwyg][subdir] = "contrib"
 projects[wysiwyg][version] = "2.2"

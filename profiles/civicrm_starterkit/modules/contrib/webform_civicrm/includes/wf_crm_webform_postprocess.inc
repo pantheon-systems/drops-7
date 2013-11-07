@@ -1137,7 +1137,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     if (!empty($this->data['activity'][1]['details']['entire_result'])) {
       module_load_include('inc', 'webform', 'includes/webform.submissions');
-      $params['details'] .= webform_submission_render($this->node, $this->submission, NULL, 'html');
+      $renderable = webform_submission_render($this->node, $this->submission, NULL, 'html');
+      $params['details'] .= drupal_render($renderable);
     }
     if (!empty($this->data['activity'][1]['details']['view_link'])) {
       $params['details'] .= '<p>' . l(t('View Webform Submission'), 'node/' . $this->node->nid . '/submission/' . $this->submission->sid, array('absolute' => TRUE, 'alias' => TRUE)) . '</p>';
@@ -1539,7 +1540,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             $val = array_unique(array_merge($val, $this->data[$ent][$c][$table][$n][$name]));
           }
           // Implode data that will be stored as a string
-          if ($table !== 'other' && $name !== 'event_id' && $table !== 'contact' && wf_crm_aval($field, 'data_type') != 'ContactReference') {
+          if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && wf_crm_aval($field, 'data_type') != 'ContactReference') {
             $val = $sp . implode($sp, $val) . $sp;
           }
         }

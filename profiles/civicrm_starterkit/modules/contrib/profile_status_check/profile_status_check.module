@@ -1,0 +1,166 @@
+<?php
+/**
+ * @file
+ * Profile Module Check
+ */
+
+
+/**
+ * Implementation of hook_menu().
+ */
+function profile_status_check_menu() {
+  $items = array();
+
+  $items['admin/modules/status'] = array(
+    'title' => 'Status',
+    'description' => '',
+    'page callback' => 'profile_status_check_system_listing',
+    'access arguments' => array('access administration pages'),
+    'weight' => 99,
+    'type' => MENU_LOCAL_TASK,
+  );
+    
+  return $items;
+
+}
+
+/**
+ * Returns lists of modules being overridden
+ *
+ */
+function profile_status_check_system_listing() {
+  $modules = array();
+  $mask = '/^' . DRUPAL_PHP_FUNCTION_PATTERN . '\.module$/';
+  $directory = 'modules';
+  $key = 'name';
+  $min_depth = 1;
+  
+  define('REQUIREMENT_NOT_INSTALLED', -1);
+  
+  $config = conf_path();
+
+  $searchdir = array($directory);
+  $files = array();
+
+  // The 'profiles' directory contains pristine collections of modules and
+  // themes as organized by a distribution. It is pristine in the same way
+  // that /modules is pristine for core; users should avoid changing anything
+  // there in favor of sites/all or sites/<domain> directories.
+  $profiles = array();
+  $profile = drupal_get_profile();
+  // For SimpleTest to be able to test modules packaged together with a
+  // distribution we need to include the profile of the parent site (in which
+  // test runs are triggered).
+  if (drupal_valid_test_ua()) {
+    $testing_profile = variable_get('simpletest_parent_profile', FALSE);
+    if ($testing_profile && $testing_profile != $profile) {
+      $profiles[] = $testing_profile;
+    }
+  }
+  // In case both profile directories contain the same extension, the actual
+  // profile always has precedence.
+  $profiles[] = $profile;
+  foreach ($profiles as $profile) {
+    if (file_exists("profiles/$profile/$directory")) {
+      $searchdir[] = "profiles/$profile/$directory";
+    }
+  }
+
+  // Always search sites/all/* as well as the global directories.
+  $searchdir[] = 'sites/all/' . $directory;
+
+  if (file_exists("$config/$directory")) {
+    $searchdir[] = "$config/$directory";
+  }
+
+  // Get current list of items.
+  if (!function_exists('file_scan_directory')) {
+    require_once DRUPAL_ROOT . '/includes/file.inc';
+  }
+  foreach ($searchdir as $dir) {
+    $files_to_add = file_scan_directory($dir, $mask, array('key' => $key, 'min_depth' => $min_depth));
+    
+    
+    //dsm($files_to_add);
+    //dsm($files);
+    
+    if ($dir == 'sites/all/modules' || $dir == 'sites/default/modules') {
+  
+      foreach ($files_to_add as $file_key => $file) {
+        if (file_exists($info_file = dirname($file->uri) . '/' . $file->name . '.info')) {
+          // Get the .info file for the module or theme this file belongs to.
+          $info = drupal_parse_info_file($info_file);
+          
+          if (module_exists($file_key)) {
+            $message = 'Enabled from ' . dirname($file->uri);
+            $status = 1;
+            $value = t('Added, Enabled');
+          } else {
+            $message = 'Not enabled, but exists in ' . dirname($file->uri);
+            $status = -1;
+            $value = t('Added, Not Enabled');
+          } 
+             
+          $modules[$file_key]['title'] = $info['name'];
+          $modules[$file_key]['value'] = $value;
+          $modules[$file_key]['severity'] = $status; 
+          $modules[$file_key]['description'] = $message; 
+        }
+      }
+    }
+    
+    // Duplicate files found in later search directories take precedence over
+    // earlier ones, so we want them to overwrite keys in our resulting
+    // $files array.
+    // The exception to this is if the later file is from a module or theme not
+    // compatible with Drupal core. This may occur during upgrades of Drupal
+    // core when new modules exist in core while older contrib modules with the
+    // same name exist in a directory such as sites/all/modules/.
+    foreach (array_intersect_key($files_to_add, $files) as $file_key => $file) {
+      //dsm($file);
+      // If it has no info file, then we just behave liberally and accept the
+      // new resource on the list for merging.
+      if (file_exists($info_file = dirname($file->uri) . '/' . $file->name . '.info')) {
+        // Get the .info file for the module or theme this file belongs to.
+        $info = drupal_parse_info_file($info_file);
+        $message = $info['name'] . ' - ' . $info['version'] . ' from ' . dirname($file->uri) . ' is overriding ' ;
+        
+        //dsm($file->uri);
+        //dsm($files[$file->name]->uri);
+        
+        // get version from profile 
+        if (file_exists($info_file = dirname($files[$file->name]->uri) . '/' . $file->name . '.info')) {
+          // Get the .info file for the module or theme this file belongs to.
+          $info_old = drupal_parse_info_file($info_file);
+          $message .= 'version ' . $info_old['version'] . ' from ' . dirname($files[$file->name]->uri);
+        }
+        // If the module or theme is incompatible with Drupal core, remove it
+        // from the array for the current search directory, so it is not
+        // overwritten when merged with the $files array.
+        if (isset($info['core']) && $info['core'] != DRUPAL_CORE_COMPATIBILITY) {
+          unset($files_to_add[$file_key]);
+        }
+        if (module_exists($file_key)) {
+          $status = 2;
+          $value = t('Overridden, Enabled');
+        } else {
+          $status = 1;
+          $value = t('Overridden, Not Enabled');
+        }
+        
+        $modules[$file_key]['title'] = $info['name'];
+        $modules[$file_key]['value'] = $value;
+        $modules[$file_key]['severity'] = $status; 
+        $modules[$file_key]['description'] = $message; 
+  
+      }
+    }
+    
+    $files = array_merge($files, $files_to_add);
+  }
+  if (!isset($message)) {
+    drupal_set_message(t('There are no overridden or additional modules.'), 'status');
+  } else {
+    return theme('status_report', array('requirements' => $modules));
+  }
+}

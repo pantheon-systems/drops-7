@@ -450,7 +450,7 @@ function wf_crm_get_fields($var = 'fields') {
       'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
       'activity' => array('entity_type' => 'activity', 'label' => t('Activity')),
-      'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship')),
+      'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE),
     );
     if (in_array('CiviCase', $components)) {
       $sets['case'] = array('entity_type' => 'case', 'label' => t('Case Settings'));

@@ -252,6 +252,9 @@ class wf_crm_admin_form {
           $selector['#options'] = array(t('No'), t('Yes'));
           $selector['#title'] = t('Enable %type Fields', array('%type' => $set['label']));
         }
+        if (!empty($set['help_text'])) {
+          $this->help($selector, "fieldset_$sid", $set['label']);
+        }
         $pos['contact_' . $n . '_number_of_' . $sid] = $selector;
         $this->addAjaxItem($path, 'contact_' . $n . '_number_of_' . $sid, $n . $sid . '_wrapper');
       }
@@ -274,9 +277,6 @@ class wf_crm_admin_form {
           if (in_array($sid, wf_crm_location_fields()) && $i == 1) {
             $fieldset['#title'] .= ' ' . t('(primary)');
           }
-        }
-        if (!empty($set['help_text'])) {
-          $this->help($fieldset, "fieldset_$sid", $set['label']);
         }
         foreach ($set['fields'] as $fid => $field) {
           if ($fid == 'contact_contact_sub_type' ||

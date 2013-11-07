@@ -1,0 +1,15 @@
+name = Profile Status Check
+description = 'Adds an Status tab to module list to show list modules being pulled from 
+sites/all/modules or sites/default/modules instead of profile/'
+
+core = 7.x
+
+configure = admin/modules/status
+
+
+; Information added by drupal.org packaging script on 2013-10-09
+version = "7.x-1.x-dev"
+core = "7.x"
+project = "profile_status_check"
+datestamp = "1381362244"
+
