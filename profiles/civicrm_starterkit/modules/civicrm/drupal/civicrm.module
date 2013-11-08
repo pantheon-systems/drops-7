@@ -305,7 +305,7 @@ function civicrm_initialize() {
         drupal_add_css($path . '/filter.css');
       }
     }
-    if (MAINTENANCE_MODE != 'install') {
+    if (defined('MAINTENANCE_MODE') && MAINTENANCE_MODE != 'install') {
       CRM_Core_Config::singleton()->userSystem->setMySQLTimeZone();
     }
   }
