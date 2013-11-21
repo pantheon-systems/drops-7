@@ -3,12 +3,12 @@
 ; locally before committing to the drupal-org.make. 
 
 api = 2
-core = 7.23
+core = 7.24
 
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.1-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.2-starterkit.tgz"
 ;libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.7-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
@@ -30,6 +30,7 @@ libraries[civicrm][patch][1978838] = http://drupal.org/files/1978838-pre-populat
 ;IMPROVING PROFILE INSTALL UX WHEN INSTALLING FROM A PROFILE
 libraries[civicrm][patch][1849424] = http://drupal.org/files/1849424-use-vars-in-link.patch
 libraries[civicrm][patch][] = http://drupal.org/files/1849424-pass-vars-in-link-2.patch
+libraries[civicrm][patch][2130213] = https://drupal.org/files/issues/2130213-ignore-timezone-on-install-2.patch
 
 ;PATCHES THAT ADD LIBRARIES BACK
 libraries[jquery][download][type] = get
@@ -314,7 +315,7 @@ libraries[cache][destination] = extensions
 libraries[cache][patch][1980088] = https://drupal.org/files/1980088-create-extensions-dir-4.patch
 
 libraries[htmlpurifier][download][type] = get
-libraries[htmlpurifier][download][url] = "http://repo.or.cz/w/htmlpurifier.git/snapshot/33a1efbb2d6e234c0143523e9273afec8b84ce8d.tar.gz"
+libraries[htmlpurifier][download][url] = "http://htmlpurifier.org/releases/htmlpurifier-4.5.0.tar.gz"
 libraries[htmlpurifier][destination] = "modules/civicrm/packages/IDS/vendors"
 libraries[htmlpurifier][directory_name] = htmlpurifier
 
@@ -340,7 +341,7 @@ libraries[tinymce-civicrm][directory_name] = tinymce
 ; ====== POPULAR CONTRIB MODULES =========
 
 projects[backup_migrate][subdir] = "contrib"
-projects[backup_migrate][version] = "2.7"
+projects[backup_migrate][version] = "2.8"
 
 projects[civicrm_clear_all_caches][subdir] = "contrib"
 projects[civicrm_clear_all_caches][version] = "1.0-beta1"
@@ -376,10 +377,10 @@ projects[options_element][subdir] = "contrib"
 projects[options_element][version] = "1.9"
 
 projects[profile_status_check][subdir] = "contrib"
-projects[profile_status_check][version] = "1.x-dev"
+projects[profile_status_check][version] = "1.0-beta1"
 
 projects[profile_switcher][subdir] = "contrib"
-projects[profile_switcher][version] = "1.0-alpha1"
+projects[profile_switcher][version] = "1.0-beta1"
 
 projects[recaptcha][subdir] = "contrib"
 projects[recaptcha][version] = "1.10"

@@ -35,8 +35,6 @@ function profile_status_check_system_listing() {
   $key = 'name';
   $min_depth = 1;
   
-  define('REQUIREMENT_NOT_INSTALLED', -1);
-  
   $config = conf_path();
 
   $searchdir = array($directory);
@@ -80,10 +78,6 @@ function profile_status_check_system_listing() {
   foreach ($searchdir as $dir) {
     $files_to_add = file_scan_directory($dir, $mask, array('key' => $key, 'min_depth' => $min_depth));
     
-    
-    //dsm($files_to_add);
-    //dsm($files);
-    
     if ($dir == 'sites/all/modules' || $dir == 'sites/default/modules') {
   
       foreach ($files_to_add as $file_key => $file) {
@@ -117,22 +111,21 @@ function profile_status_check_system_listing() {
     // core when new modules exist in core while older contrib modules with the
     // same name exist in a directory such as sites/all/modules/.
     foreach (array_intersect_key($files_to_add, $files) as $file_key => $file) {
-      //dsm($file);
+
       // If it has no info file, then we just behave liberally and accept the
       // new resource on the list for merging.
       if (file_exists($info_file = dirname($file->uri) . '/' . $file->name . '.info')) {
         // Get the .info file for the module or theme this file belongs to.
         $info = drupal_parse_info_file($info_file);
-        $message = $info['name'] . ' - ' . $info['version'] . ' from ' . dirname($file->uri) . ' is overriding ' ;
-        
-        //dsm($file->uri);
-        //dsm($files[$file->name]->uri);
+        $version = isset($info['version']) ? $info['version'] : 'NO VERSION';
+        $message = $info['name'] . ' - ' . $version . ' from ' . dirname($file->uri) . ' is overriding ' ;
         
         // get version from profile 
         if (file_exists($info_file = dirname($files[$file->name]->uri) . '/' . $file->name . '.info')) {
           // Get the .info file for the module or theme this file belongs to.
           $info_old = drupal_parse_info_file($info_file);
-          $message .= 'version ' . $info_old['version'] . ' from ' . dirname($files[$file->name]->uri);
+          $version = isset($info_old['version']) ? $info_old['version'] : 'NO VERSION';
+          $message .= 'version ' . $version . ' from ' . dirname($files[$file->name]->uri);
         }
         // If the module or theme is incompatible with Drupal core, remove it
         // from the array for the current search directory, so it is not
@@ -159,7 +152,7 @@ function profile_status_check_system_listing() {
     $files = array_merge($files, $files_to_add);
   }
   if (!isset($message)) {
-    drupal_set_message(t('There are no overridden or additional modules.'), 'status');
+    return drupal_set_message(t('There are no overridden or additional modules.'), 'status');
   } else {
     return theme('status_report', array('requirements' => $modules));
   }

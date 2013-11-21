@@ -230,6 +230,29 @@ function backup_migrate_theme() {
   return $themes;
 }
 
+/**
+ * Implementation of hook_backup_migrate_destinations().
+ *
+ * Get the default NodeSquirrel destination.
+ */
+function backup_migrate_backup_migrate_schedules() {
+  $schedules = array();
+  if (variable_get('nodesquirrel_schedule', 60*60*24) && variable_get('nodesquirrel_secret_key', FALSE) != FALSE) {
+    $schedule = array(
+      'schedule_id' => 'nodesquirrel',
+      'name' => 'NodeSquirrel',
+      'source_id' => 'db',
+      'destination_id' => 'nodesquirrel',
+      'profile_id' => 'default',
+      'period' => variable_get('nodesquirrel_schedule', 60*60*24),
+      'enabled' => variable_get('nodesquirrel_secret_key', FALSE) != FALSE,
+    );
+    $schedules['nodesquirrel'] = backup_migrate_crud_create_item('schedule', $schedule);
+  }
+  return $schedules;
+}
+
+
 /* Menu Callbacks */
 
 /**
@@ -352,11 +375,17 @@ function backup_migrate_ui_manual_quick_backup_form($form, &$form_state) {
 
   $form['quickbackup']['source_id'] = _backup_migrate_get_source_pulldown(variable_get('backup_migrate_source_id', NULL));
 
+  // Pull the destination ID from the get param if it exists.
+  $destinations = _backup_migrate_get_destination_form_item_options('manual backup');
+  $destination_id = variable_get('backup_migrate_destination_id', 'download');
+  if (isset($_GET['destination_id']) && isset($destinations[$_GET['destination_id']])) {
+    $destination_id = $_GET['destination_id'];
+  }
   $form['quickbackup']['destination_id'] = array(
     "#type" => "select",
     "#title" => t("Destination"),
-    "#options" => _backup_migrate_get_destination_form_item_options('manual backup'),
-    "#default_value" => variable_get("backup_migrate_destination_id", "download"),
+    "#options" => $destinations,
+    "#default_value" => $destination_id,
   );
   $profile_options = _backup_migrate_get_profile_form_item_options();
   $form['quickbackup']['profile_id'] = array(
@@ -642,7 +671,7 @@ function backup_migrate_ui_manual_restore_form() {
  * The restore submit. Do the restore.
  */
 function backup_migrate_ui_manual_restore_form_submit($form, &$form_state) {
-  $validators = array('file_validate_extensions' => array('gz zip sql mysql bz bz2'));
+  $validators = array('file_validate_extensions' => array('gz zip sql mysql bz bz2 aes'));
   if ($file = file_save_upload('backup_migrate_restore_upload', $validators)) {
     backup_migrate_include('destinations');
     backup_migrate_perform_restore('upload', $file->uri, $form_state['values']);
@@ -670,7 +699,7 @@ function backup_migrate_perform_backup(&$settings) {
   timer_start('backup_migrate_backup');
 
   // If not in 'safe mode', increase the maximum execution time:
-  if (!ini_get('safe_mode') && strpos(ini_get('disable_functions'), 'set_time_limit') === FALSE && ini_get('max_execution_time') < 1200) {
+  if (!ini_get('safe_mode') && strpos(ini_get('disable_functions'), 'set_time_limit') === FALSE && ini_get('max_execution_time') != 0 && ini_get('max_execution_time') < variable_get('backup_migrate_backup_max_time', 1200)) {
     set_time_limit(variable_get('backup_migrate_backup_max_time', 1200));
   }
 
@@ -732,7 +761,7 @@ function backup_migrate_perform_restore($destination_id, $file, $settings = arra
   timer_start('backup_migrate_restore');
 
   // If not in 'safe mode', increase the maximum execution time:
-  if (!ini_get('safe_mode') && strpos(ini_get('disable_functions'), 'set_time_limit') === FALSE && ini_get('max_execution_time') < variable_get('backup_migrate_backup_max_time', 1200)) {
+  if (!ini_get('safe_mode') && strpos(ini_get('disable_functions'), 'set_time_limit') === FALSE && ini_get('max_execution_time') != 0 && ini_get('max_execution_time') < variable_get('backup_migrate_restore_max_time', 1200)) {
     set_time_limit(variable_get('backup_migrate_restore_max_time', 1200));
   }
 
@@ -1050,3 +1079,31 @@ function backup_migrate_exec($command, $args = array()) {
   return $result == 0;
 }
 
+/**
+ * Implements hook_mail().
+ */
+function backup_migrate_mail($key, &$message, $params) {
+
+  switch($key) {
+    case 'backup_succeed':
+      $message['subject'] = t('!site backup succeeded', array('!site' => variable_get('site_name', 'Drupal')));
+      if ($params['messages']) {
+        $message['body'][] = t("The site backup has completed successfully with the following messages:");
+        $message['body'][] = t("!messages", array('!messages' => $params['messages']));
+      }
+      else {
+        $message['body'][] = t("The site backup has completed successfully.");
+      }
+      break;
+    case 'backup_fail':
+      $message['subject'] = t('!site backup failed', array('!site' => variable_get('site_name', 'Drupal')));
+      if ($params['messages']) {
+        $message['body'][] = t("The site backup has failed with the following messages:");
+        $message['body'][] = t("!messages", array('!messages' => $params['messages']));
+      }
+      else {
+        $message['body'][] = t("The site backup has failed for an unknown reason.");
+      }
+      break;
+  }
+}

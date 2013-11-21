@@ -1,20 +1,8 @@
 <?php
 /**
  * @file
- * Community Media Project Module
+ * Profie Switcher Module
  */
-
-
-/**
- * Implements hook_help().
- */
-function profile_switcher_help($section) {
-  switch ($section) {
-    case 'admin/help#profile_switcher':
-      return t('Core project functionality.');
-      break;
-  }
-}
 
 
 /**
@@ -25,7 +13,7 @@ function profile_switcher_menu() {
 
   $items['admin/config/development/profile-switcher'] = array(
     'title' => 'Profile Switcher',
-    'description' => 'Configuration options for the Community Media Project.',
+    'description' => '',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('profile_switcher_admin_settings'),
     'access arguments' => array('access administration pages'),
@@ -128,15 +116,14 @@ function profile_switcher_admin_settings_submit($form, &$form_state) {
     // files are added to /profiles.  They are added after they are active.  We
     // need to add them before that so they are BOTH active and enabled. 
     
+    // Cache a fully-built schema.
+    drupal_get_schema(NULL, TRUE);
+    system_rebuild_module_data();
+    
     // Flush all caches to ensure that any full bootstraps during the installer
     // do not leave stale cached data, and that any content types or other items
     // registered by the install profile are registered correctly.
     drupal_flush_all_caches();
-    
-    // Cache a fully-built schema.
-    //drupal_get_schema(NULL, TRUE);
-  
-    //system_rebuild_module_data();
     
   } 
   

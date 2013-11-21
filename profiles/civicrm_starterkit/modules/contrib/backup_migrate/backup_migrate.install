@@ -421,3 +421,86 @@ function backup_migrate_update_7204() {
   }
   return $ret;
 }
+
+
+/**
+ * Increase the length of all ids to 255.
+ */
+function backup_migrate_update_7205() {
+  $schema['backup_migrate_profiles'] = array(
+    'fields' => array(
+      'profile_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '0',
+        'description' => t('The primary identifier for a profile.'),
+      ),
+      'filename' => array(
+        'description' => t('The base pattern (including unreplaced tokens) for the name of the backup file.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE
+      ),
+    ),
+  );
+  $schema['backup_migrate_destinations'] = array(
+    'fields' => array(
+      'destination_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '0',
+        'description' => t('The primary identifier for a profile.'),
+      ),
+    ),
+  );
+  $schema['backup_migrate_schedules'] = array(
+    'fields' => array(
+      'schedule_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '0',
+        'description' => t('The primary identifier for a profile.'),
+      ),
+      'source_id' => array(
+        'description' => t('The {backup_migrate_destination}.destination_id of the source to backup from.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => 'db',
+        'not null' => TRUE
+      ),
+      'destination_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '0',
+        'description' => t('The {backup_migrate_destination}.destination_id of the destination to back up to.'),
+      ),
+      'profile_id' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '0',
+        'description' => t('The primary identifier for a profile.'),
+      ),
+    ),
+  );
+
+  $spec = array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      );
+
+  $schema = backup_migrate_schema();
+
+  // Update the length of each of the ids
+  foreach ($schema as $table => $ids) {
+    foreach ($ids['fields'] as $field => $spec) {
+      db_change_field($table, $field, $field, $spec);
+    }
+  }
+}
