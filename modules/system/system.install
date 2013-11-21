@@ -279,8 +279,8 @@ function system_requirements($phase) {
     );
     foreach ($htaccess_files as $htaccess_file => $info) {
       // Check for the string which was added to the recommended .htaccess file
-      // in the latest security update.
-      if (!file_exists($htaccess_file) || !($contents = @file_get_contents($htaccess_file)) || strpos($contents, 'Drupal_Security_Do_Not_Remove_See_SA_2013_003') === FALSE) {
+      // in the latest security update. Skipped on Pantheon where it has no effect.
+      if (!isset($_SERVER['PANTHEON_ENVIRONMENT']) && (!file_exists($htaccess_file) || !($contents = @file_get_contents($htaccess_file)) || strpos($contents, 'Drupal_Security_Do_Not_Remove_See_SA_2013_003') === FALSE)) {
         $requirements[$htaccess_file] = array(
           'title' => $info['title'],
           'value' => $t('Not fully protected'),
