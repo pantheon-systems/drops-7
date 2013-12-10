@@ -447,3 +447,28 @@ function civicrm_contact_ref_field_views_data($field) {
 
   return $data;
 }
+
+/**
+ * Implements hook_civicrm_merge().
+ * Update field data to reflect new cids when contacts are merged.
+ */
+function civicrm_contact_ref_civicrm_merge($type, $data, $new_id = NULL, $old_id = NULL, $tables = NULL) {
+  $updated = FALSE;
+  if (!empty($new_id) && !empty($old_id) && $type == 'sqls' && $tables === FALSE) {
+    // Update contact reference field data
+    $db = db_query("SELECT field_name FROM {field_config} WHERE module = 'civicrm_contact_ref'");
+    foreach ($db as $table) {
+      $result = db_update("field_data_{$table->field_name}")
+        ->fields(array("{$table->field_name}_contact_id" => $new_id))
+        ->condition("{$table->field_name}_contact_id", $old_id)
+        ->execute();
+      if ($result) {
+        $updated = TRUE;
+      }
+    }
+  }
+  if ($updated) {
+    cache_clear_all('*', 'cache_field', TRUE);
+    cache_clear_all('*', 'cache_page', TRUE);
+  }
+}

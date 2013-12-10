@@ -144,11 +144,22 @@ function civicrm_starterkit_install() {
       'cache' => -1,
     ),
   );
-  $query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'pages', 'cache'));
-  foreach ($blocks as $block) {
-    $query->values($block);
+  //$query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'pages', 'cache'));
+  //foreach ($blocks as $block) {
+  //  $query->values($block);
+  //}
+  //$query->execute();
+  
+  // Insert core blocks using merge query to avoid unique index constraints.
+  foreach ($blocks as $value) {
+    db_merge('block')
+      ->key(
+        array('theme', 'module', 'delta'),
+        array($value['theme'], $value['module'], $value['delta'])
+      )
+      ->fields($value)
+      ->execute();
   }
-  $query->execute();
 
   // Insert default pre-defined node types into the database. For a complete
   // list of available node type attributes, refer to the node type API

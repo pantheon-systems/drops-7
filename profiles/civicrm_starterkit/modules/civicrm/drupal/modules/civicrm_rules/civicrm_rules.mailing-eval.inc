@@ -66,12 +66,20 @@ function civicrm_rules_rules_action_mailing_send_email($to,
     // also allow some user permission tokens for the toEmail
     $tokens['user'] = array(
       'user.permission-schedule mailings',
-      'user.permission-create_mailings',
-      'user.permission-approve_mailings',
+      'user.permission-create mailings',
+      'user.permission-approve mailings',
     );
     foreach ($toEmails as $toEmail) {
       $params['toEmail'] = CRM_Utils_Token::replaceMailingTokens($toEmail, $state->variables['mailing'], NULL, $tokens);
-      $params['toEmail'] = CRM_Utils_Token::replaceUserTokens($params['toEmail'], $tokens);
+
+      //only process user permission tokens if used in toEmail
+      if ( in_array(trim($toEmail, '{}'), $tokens['user']) ) {
+        //we require a TO email, but can only send one; so we strip the first off and send the rest as CCs
+        $userEmails = explode(',', CRM_Utils_Token::replaceUserTokens($params['toEmail'], $tokens));
+        $params['toEmail'] = $userEmails[0];
+        array_shift($userEmails);
+        $params['cc'] = implode(',', $userEmails);
+      }
 
       CRM_Utils_Mail::send($params);
     }
