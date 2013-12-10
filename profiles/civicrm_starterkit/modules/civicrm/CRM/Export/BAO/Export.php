@@ -629,10 +629,8 @@ INSERT INTO {$componentTable} SELECT distinct gc.contact_id FROM civicrm_group_c
         $count++;
         $row = array();
 
-        if ($exportMode == CRM_Export_Form_Select::CONTACT_EXPORT) {
-          //convert the pseudo constants
-          $query->convertToPseudoNames($dao);
-        }
+        //convert the pseudo constants
+        $query->convertToPseudoNames($dao);
 
         //first loop through returnproperties so that we return what is required, and in same order.
         $relationshipField = 0;
@@ -1138,7 +1136,7 @@ INSERT INTO {$componentTable} SELECT distinct gc.contact_id FROM civicrm_group_c
    * Function to handle import error file creation.
    *
    */
-  function invoke() {
+  static function invoke() {
     $type = CRM_Utils_Request::retrieve('type', 'Positive', CRM_Core_DAO::$_nullObject);
     $parserName = CRM_Utils_Request::retrieve('parser', 'String', CRM_Core_DAO::$_nullObject);
     if (empty($parserName) || empty($type)) {
@@ -1175,7 +1173,7 @@ INSERT INTO {$componentTable} SELECT distinct gc.contact_id FROM civicrm_group_c
     CRM_Utils_System::civiExit();
   }
 
-  function exportCustom($customSearchClass, $formValues, $order) {
+  static function exportCustom($customSearchClass, $formValues, $order) {
     $ext = CRM_Extension_System::singleton()->getMapper();
     if (!$ext->isExtensionClass($customSearchClass)) {
       require_once (str_replace('_', DIRECTORY_SEPARATOR, $customSearchClass) . '.php');
@@ -1276,7 +1274,19 @@ INSERT INTO {$componentTable} SELECT distinct gc.contact_id FROM civicrm_group_c
     }
     else {
       if (substr($fieldName, -3, 3) == '_id') {
-        $sqlColumns[$fieldName] = "$fieldName varchar(16)";
+        // for trxn_id and its variants use a longer buffer
+        // to accomodate different systems - CRM-13739
+        static $notRealIDFields = NULL;
+        if ($notRealIDFields == NULL) {
+          $notRealIDFields = array( 'trxn_id', 'componentpaymentfield_transaction_id' );
+        }
+
+        if (in_array($fieldName, $notRealIDFields)) {
+          $sqlColumns[$fieldName] = "$fieldName varchar(255)";
+        }
+        else {
+          $sqlColumns[$fieldName] = "$fieldName varchar(16)";
+        }
       }
       else {
         $changeFields = array(
@@ -1803,7 +1813,7 @@ LIMIT $offset, $limit
    * or have no street address
    *
    */
-  function postalMailingFormat($exportTempTable, &$headerRows, &$sqlColumns, $exportParams) {
+  static function postalMailingFormat($exportTempTable, &$headerRows, &$sqlColumns, $exportParams) {
     $whereClause = array();
 
     if (array_key_exists('is_deceased', $sqlColumns)) {

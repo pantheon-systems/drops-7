@@ -3,7 +3,7 @@
 
 /**
  * @file
- * A filter for compressing bckups with zip, gz bzip etc.
+ * A filter for compressing backups with Zip, gzip, and bzip2.
  */
 
 /**
@@ -89,10 +89,10 @@ class backup_migrate_filter_compression extends backup_migrate_filter {
   function _backup_migrate_get_compression_form_item_options() {
     $compression_options = array("none" => t("No Compression"));
     if (@function_exists("gzencode")) {
-      $compression_options['gzip'] = t("GZip");
+      $compression_options['gzip'] = t("gzip");
     }
     if (@function_exists("bzcompress")) {
-      $compression_options['bzip'] = t("BZip");
+      $compression_options['bzip'] = t("bzip2");
     }
     if (class_exists('ZipArchive')) {
       $compression_options['zip'] = t("Zip", array(), array('context' => 'compression format'));
@@ -101,7 +101,7 @@ class backup_migrate_filter_compression extends backup_migrate_filter {
   }
 
   /**
-   * Gzip encode a file.
+   * Encode a file with gzip.
    */
   function _backup_migrate_gzip_encode($source, $dest, $level = 9) {
     $success = FALSE;
@@ -119,7 +119,7 @@ class backup_migrate_filter_compression extends backup_migrate_filter {
   }
 
   /**
-   * Gzip decode a file.
+   * Decode a file with gzip.
    */
   function _backup_migrate_gzip_decode($source, $dest) {
     $success = FALSE;
@@ -137,7 +137,7 @@ class backup_migrate_filter_compression extends backup_migrate_filter {
   }
 
   /**
-   * Bzip encode a file.
+   * Encode a file with bzip2.
    */
   function _backup_migrate_bzip_encode($source, $dest) {
     $success = FALSE;
@@ -158,7 +158,7 @@ class backup_migrate_filter_compression extends backup_migrate_filter {
   }
 
   /**
-   * Bzip decode a file.
+   * Decode a file with bzip2.
    */
   function _backup_migrate_bzip_decode($source, $dest) {
     $success = FALSE;
@@ -179,7 +179,7 @@ class backup_migrate_filter_compression extends backup_migrate_filter {
   }
 
   /**
-   * Zip encode a file.
+   * Encode a file with Zip.
    */
   function _backup_migrate_zip_encode($source, $dest, $filename) {
     $success = FALSE;
@@ -195,7 +195,7 @@ class backup_migrate_filter_compression extends backup_migrate_filter {
   }
 
   /**
-   * Zip decode a file.
+   * Decode a file with Zip.
    */
   function _backup_migrate_zip_decode($source, $dest) {
     $success = FALSE;
@@ -218,7 +218,7 @@ class backup_migrate_filter_compression extends backup_migrate_filter {
 
   /**
    * Compress a file with the given settings.
-   *  Also updates settings to reflect new file mime and file extension.
+   * Also updates settings to reflect new file mime and file extension.
    */
   function _backup_migrate_file_compress($file, $settings) {
     switch ($settings->filters['compression']) {
@@ -253,7 +253,7 @@ class backup_migrate_filter_compression extends backup_migrate_filter {
 
   /**
    * Decompress a file with the given settings.
-   *  Also updates settings to reflect new file mime and file extension.
+   * Also updates settings to reflect new file mime and file extension.
    */
   function _backup_migrate_file_decompress($file) {
     $success = FALSE;

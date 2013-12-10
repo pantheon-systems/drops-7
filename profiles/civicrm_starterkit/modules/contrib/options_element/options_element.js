@@ -52,9 +52,13 @@ Drupal.optionsElement = function(element) {
   this.optionsElement = $('<div></div>').get(0); // Temporary DOM object.
   this.optionsToggleElement = $(Drupal.theme('optionsElementToggle')).get(0);
   this.optionAddElement = $(Drupal.theme('optionsElementAdd')).get(0);
+  this.removeDefaultElement = $(Drupal.theme('optionsElementRemoveDefault')).get(0);
 
   // Add the options widget and toggle elements to the page.
   $(this.manualElement).css('display', 'none').before(this.optionsElement).after(this.optionsToggleElement).after(this.optionAddElement);
+  if (this.manualDefaultValueElement) {
+    $(this.manualElement).after(this.removeDefaultElement);
+  }
 
   // Enable add item link.
   $(this.optionAddElement).find('a').click(function() {
@@ -66,6 +70,12 @@ Drupal.optionsElement = function(element) {
   // Enable the toggle action for manual entry of options.
   $(this.optionsToggleElement).find('a').click(function() {
     self.toggleMode();
+    return false;
+  });
+
+  // Enable the remove default link.
+  $(this.removeDefaultElement).find('a').click(function() {
+    $(self.element).find('input.option-default').removeAttr('checked').trigger('change');
     return false;
   });
 
@@ -784,6 +794,10 @@ Drupal.theme.prototype.optionsElementAdd = function() {
   return '<div class="form-option-add"><a href="#">' + Drupal.t('Add item') + '</a></div>';
 };
 
+Drupal.theme.prototype.optionsElementRemoveDefault = function() {
+  return '<div class="remove-default"><a href="#">' + Drupal.t('No default') + '</a></div>';
+};
+
 Drupal.theme.prototype.optionsElementToggle = function() {
   return '<div class="form-options-manual"><a href="#">' + Drupal.t('Manual entry') + '</a></div>';
 };
@@ -795,5 +809,21 @@ Drupal.theme.tableDragChangedMarker = function () {
 Drupal.theme.tableDragChangedWarning = function() {
   return '<span></span>';
 };
+
+/**
+ * Field module support for Options widgets.
+ */
+Drupal.behaviors.optionsElementFieldUI = {};
+Drupal.behaviors.optionsElementFieldUI.attach = function(context) {
+  var $cardinalityField = $(context).find('#edit-field-cardinality');
+  if ($cardinalityField.length) {
+    $cardinalityField.change(function() {
+      var optionsElementId = $(this).parents('fieldset:first').find('.form-type-options table').attr('id');
+      if (Drupal.optionElements[optionsElementId]) {
+        Drupal.optionElements[optionsElementId].setMultiple(this.value != 1);
+      }
+    }).trigger('change');
+  }
+}
 
 })(jQuery);

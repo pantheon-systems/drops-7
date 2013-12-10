@@ -61,7 +61,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
     $filters = wf_crm_search_filters($this->node, $component);
     // Bypass filters when choosing contact on component edit form
     if (!empty($_GET['admin']) && wf_crm_admin_access($this->node)) {
-      $filters = array('check_permissions' => 1, 'is_deleted' => 0);
+      $filters = array('check_permissions' => 1, 'is_deleted' => 0, 'contact_type' => $filters['contact_type']);
       $component['extra']['allow_create'] = 0;
     }
     // Autocomplete contact names

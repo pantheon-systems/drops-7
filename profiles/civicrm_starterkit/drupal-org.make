@@ -8,29 +8,30 @@ core = 7.24
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.2-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.3-starterkit.tgz"
 ;libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.7-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
 
 ;PATCHES THAT CHANGED BETWEEN 4.3 and 4.4
-libraries[civicrm][patch][1978142] = https://drupal.org/files/2082713-pantheon-settings-4-4-2.patch
+libraries[civicrm][patch][1978142] = http://drupal.org/files/2082713-pantheon-settings-4-4-2.patch
 ;libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-12.patch
 
 ;PATCHES THAT SHOULD BE ADDRESSED IN FUTURE CIVICRM RELEASES
 libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
 libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashChart_tpl_javascript-4.patch
 libraries[civicrm][patch][1967972] = http://drupal.org/files/1967972-bootsrap-fixes.patch
+libraries[civicrm][patch][2130213] = http://drupal.org/files/issues/2130213-ignore-timezone-on-install-2.patch
 
 ;PANTHEON RELATED PATCHES
-libraries[civicrm][patch][2063371] = https://drupal.org/files/2063371-add-modulePath-var-4-4.patch
+libraries[civicrm][patch][2063371] = http://drupal.org/files/2063371-add-modulePath-var-4-4.patch
 libraries[civicrm][patch][1978796] = http://drupal.org/files/1978796-session.save-as_file.patch
-libraries[civicrm][patch][1978838] = http://drupal.org/files/1978838-pre-populate-db-settings.patch
+libraries[civicrm][patch][1978838] = http://drupal.org/files/issues/1978838-pre-populate-db-settings-2.patch
 
 ;IMPROVING PROFILE INSTALL UX WHEN INSTALLING FROM A PROFILE
-libraries[civicrm][patch][1849424] = http://drupal.org/files/1849424-use-vars-in-link.patch
+libraries[civicrm][patch][1849424] = https://drupal.org/files/issues/1849424-use-vars-in-link-2.patch
 libraries[civicrm][patch][] = http://drupal.org/files/1849424-pass-vars-in-link-2.patch
-libraries[civicrm][patch][2130213] = https://drupal.org/files/issues/2130213-ignore-timezone-on-install-2.patch
+libraries[civicrm][patch][2130213] = http://drupal.org/files/issues/2130213-ignore-timezone-on-install-2.patch
 
 ;PATCHES THAT ADD LIBRARIES BACK
 libraries[jquery][download][type] = get
@@ -43,7 +44,7 @@ libraries[jquery][patch][] = http://drupal.org/files/1787976-updated-fo-4-3-3.pa
 libraries[jquery][patch][] = http://drupal.org/files/textarearesizer-4.patch
 ; JQuery Notify and Validate were whitelisted
 libraries[jquery][patch][1950068] = http://drupal.org/files/1950068-jquery-redirect.patch
-libraries[jquery][patch][2018177] = https://drupal.org/files/2018177-jquery-formnavigate-js-2.patch
+libraries[jquery][patch][2018177] = http://drupal.org/files/2018177-jquery-formnavigate-js-2.patch
 
 libraries[jquery_notify][download][type] = get
 libraries[jquery_notify][download][url] = "https://raw.github.com/ehynds/jquery-notify/1.5/src/jquery.notify.js"
@@ -374,7 +375,7 @@ projects[module_filter][subdir] = "contrib"
 projects[module_filter][version] = "1.8"
 
 projects[options_element][subdir] = "contrib"
-projects[options_element][version] = "1.9"
+projects[options_element][version] = "1.10"
 
 projects[profile_status_check][subdir] = "contrib"
 projects[profile_status_check][version] = "1.0-beta1"
@@ -392,7 +393,7 @@ projects[webform][subdir] = "contrib"
 projects[webform][version] = "4.0-beta1"
 
 projects[webform_civicrm][subdir] = "contrib"
-projects[webform_civicrm][version] = "4.2"
+projects[webform_civicrm][version] = "4.3"
 
 projects[wysiwyg][subdir] = "contrib"
 projects[wysiwyg][version] = "2.2"

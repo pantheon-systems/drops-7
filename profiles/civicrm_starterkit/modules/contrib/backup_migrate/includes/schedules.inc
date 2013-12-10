@@ -370,6 +370,8 @@ class backup_migrate_schedule extends backup_migrate_item {
    * Remove older backups keeping only the number specified by the aministrator.
    */
   function remove_expired_backups() {
+    $files = array();
+
     backup_migrate_include('destinations');
 
     $num_to_keep = $this->keep;

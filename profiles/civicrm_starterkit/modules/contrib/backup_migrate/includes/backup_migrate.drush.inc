@@ -15,7 +15,7 @@ function backup_migrate_drush_command() {
     'description' => dt('Backup the site\'s database with Backup and Migrate.'),
     'aliases' => array('bb'),
     'examples' => array(
-      'drush bam-backup' => 'Backup the default databse to the manual backup directory using the default settings.', 
+      'drush bam-backup' => 'Backup the default database to the manual backup directory using the default settings.', 
       'drush bam-backup db scheduled mysettings' => 'Backup the database to the scheduled directory using a settings profile called "mysettings"', 
       'drush bam-backup files' => 'Backup the files directory to the manual directory using the default settings. The Backup and Migrate Files module is required for files backups.', 
     ),
@@ -136,7 +136,7 @@ function backup_migrate_drush_restore($source_id = '', $destination_id = '', $fi
 
   _backup_migrate_message('Starting restore...');
   $settings = array('source_id' => $source_id);
-  backup_migrate_perform_restore($destination_id, $file_id);
+  backup_migrate_perform_restore($destination_id, $file_id, $settings);
 }
 
 /**

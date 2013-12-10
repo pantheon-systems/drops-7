@@ -178,13 +178,16 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       if (isset($this->all_sets['participant']) && !empty($this->data['participant_reg_type'])) {
         $this->processParticipants($c, $cid);
       }
-      // Process memberships
-      if (isset($this->all_sets['membership']) && !empty($this->data['membership'][$c]['number_of_membership'])) {
+    }
+    // We do this after all contacts and addresses exist
+    $this->processSharedAddresses();
+
+    // Process memberships after relationships have been created
+    foreach ($this->id['cid'] as $c => $cid) {
+      if ($cid && isset($this->all_sets['membership']) && !empty($this->data['membership'][$c]['number_of_membership'])) {
         $this->processMemberships($c, $cid);
       }
     }
-    // We do this last after all contacts and addresses exist.
-    $this->processSharedAddresses();
   }
 
   /**
@@ -194,6 +197,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   public function postSave($submission) {
     $this->submission = $submission;
+    $record = array(
+      'sid' => $this->submission->sid,
+      'contact_id' => '-' . implode('-', $this->id['cid']) . '-',
+    );
     if (empty($this->submission->is_draft)) {
       // Process case
       if (!empty($this->data['case'][1]['case'][1]['client_id'])) {
@@ -202,18 +209,17 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Process activity
       if (!empty($this->data['activity'][1]['activity'])) {
        $this->processActivity();
+        if (!empty($this->id['act'][1])) {
+          $record['activity_id'] = $this->id['act'][1];
+        }
       }
       // Save contribution custom data & line-items
       if (!empty($this->id['contribution'])) {
         $this->processContribution();
+        $record['contribution_id'] = $this->id['contribution'];
       }
     }
     // Write record; we do this when creating, updating, or saving a draft of a webform submission.
-    $record = array(
-      'sid' => $this->submission->sid,
-      'contact_id' => '-' . implode('-', $this->id['cid']) . '-',
-      'activity_id' => empty($this->id['act'][1]) ? 0 : $this->id['act'][1],
-    );
     drupal_write_record('webform_civicrm_submissions', $record, $this->update);
   }
 
@@ -1396,7 +1402,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function contributionParams() {
     $params = $this->billing_params + $this->data['contribution'][1]['contribution'][1];
     $params['financial_type_id'] = $this->contribution_page['financial_type_id'];
-    $params['currency'] = $this->contribution_page['currency'];
+    $params['currency'] = $params['currencyID'] = $this->contribution_page['currency'];
     $params['skipRecentView'] = $params['skipLineItem'] = 1;
     $params['contact_id'] = $this->id['cid'][1];
     $params['source'] = $this->settings['new_contact_source'];
@@ -1654,7 +1660,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     $_SESSION['messages']['error'] = array_diff($_SESSION['messages']['error'], $removed_messages);
     if (empty($_SESSION['messages']['error'])) {
-      unset ($_SESSION['messages']['error']);
+      unset($_SESSION['messages']['error']);
     }
   }
 

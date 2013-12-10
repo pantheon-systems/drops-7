@@ -204,8 +204,7 @@ class PEAR_Autoloader extends PEAR
             $this->addAggregateObject($this->_autoload_map[$method]);
         }
         if (isset($this->_method_map[$method])) {
-            $retval = call_user_func_array(array($this->_method_map[$method], $method), $args);
-            return true;
+          return call_user_func_array(array($this->_method_map[$method], $method), $args);
         }
         return false;
     }

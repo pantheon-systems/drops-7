@@ -4801,11 +4801,11 @@ VALUES
    (@option_group_id_acc, 'Amex'      ,  3, 'Amex'      , NULL, 0, NULL, 3, NULL, 0, 0, 1, NULL, NULL),
    (@option_group_id_acc, 'Discover'  ,  4, 'Discover'  , NULL, 0, NULL, 4, NULL, 0, 0, 1, NULL, NULL),
 
-  (@option_group_id_pi, 'Credit Card',  1, 'Credit Card', NULL, 0, NULL, 1, NULL, 0, 1, 1, NULL, NULL),
-  (@option_group_id_pi, 'Debit Card',   2, 'Debit Card',  NULL, 0, NULL, 2, NULL, 0, 1, 1, NULL, NULL),
-  (@option_group_id_pi, 'Cash',         3, 'Cash',        NULL, 0, NULL, 3, NULL, 0, 0, 1, NULL, NULL),
-  (@option_group_id_pi, 'Check',        4, 'Check',       NULL, 0, NULL, 4, NULL, 0, 1, 1, NULL, NULL),
-  (@option_group_id_pi, 'EFT',          5, 'EFT',         NULL, 0, NULL, 5, NULL, 0, 0, 1, NULL, NULL),
+  (@option_group_id_pi, 'Credit Card',  1, 'Credit Card', NULL, 0, 0, 1, NULL, 0, 1, 1, NULL, NULL),
+  (@option_group_id_pi, 'Debit Card',   2, 'Debit Card',  NULL, 0, 0, 2, NULL, 0, 1, 1, NULL, NULL),
+  (@option_group_id_pi, 'Cash',         3, 'Cash',        NULL, 0, 0, 3, NULL, 0, 0, 1, NULL, NULL),
+  (@option_group_id_pi, 'Check',        4, 'Check',       NULL, 0, 1, 4, NULL, 0, 1, 1, NULL, NULL),
+  (@option_group_id_pi, 'EFT',          5, 'EFT',         NULL, 0, 0, 5, NULL, 0, 0, 1, NULL, NULL),
 
   (@option_group_id_cs, 'Completed'  , 1, 'Completed'  , NULL, 0, NULL, 1, NULL, 0, 1, 1, NULL, NULL),
   (@option_group_id_cs, 'Pending'    , 2, 'Pending'    , NULL, 0, NULL, 2, NULL, 0, 1, 1, NULL, NULL),
@@ -5422,7 +5422,7 @@ VALUES
   (@option_group_id_languages, 0, 1, 'de_DE', 'de', 'German', @counter := @counter + 1),
   (@option_group_id_languages, 0, 1, 'de_CH', 'de', 'German (Swiss)', @counter := @counter + 1),
   (@option_group_id_languages, 0, 1, 'el_GR', 'el', 'Greek, Modern', @counter := @counter + 1),
-  (@option_group_id_languages, 0, 0, 'gn_PY', 'gn', 'GuaranÃ­', @counter := @counter + 1),
+  (@option_group_id_languages, 0, 0, 'gn_PY', 'gn', 'Guarani­', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'gu_IN', 'gu', 'Gujarati', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'ht_HT', 'ht', 'Haitian; Haitian Creole', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'ha_NG', 'ha', 'Hausa', @counter := @counter + 1),
@@ -5472,7 +5472,7 @@ VALUES
   (@option_group_id_languages, 0, 0, 'ms_MY', 'ms', 'Malay', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'ml_IN', 'ml', 'Malayalam', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'mt_MT', 'mt', 'Maltese', @counter := @counter + 1),
-  (@option_group_id_languages, 0, 0, 'mi_NZ', 'mi', 'MÄ�ori', @counter := @counter + 1),
+  (@option_group_id_languages, 0, 0, 'mi_NZ', 'mi', 'Māori', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'mr_IN', 'mr', 'Marathi', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'mh_MH', 'mh', 'Marshallese', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'mn_MN', 'mn', 'Mongolian', @counter := @counter + 1),
@@ -5493,7 +5493,7 @@ VALUES
   (@option_group_id_languages, 0, 0, 'or_IN', 'or', 'Oriya', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'os_GE', 'os', 'Ossetian, Ossetic', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'pa_IN', 'pa', 'Panjabi, Punjabi', @counter := @counter + 1),
-  (@option_group_id_languages, 0, 0, 'pi_KH', 'pi', 'PÄ�li', @counter := @counter + 1),
+  (@option_group_id_languages, 0, 0, 'pi_KH', 'pi', 'Pali', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'fa_IR', 'fa', 'Persian (Iran)', @counter := @counter + 1),
   (@option_group_id_languages, 0, 1, 'pl_PL', 'pl', 'Polish', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'ps_AF', 'ps', 'Pashto, Pushto', @counter := @counter + 1),
@@ -5546,7 +5546,7 @@ VALUES
   (@option_group_id_languages, 0, 0, 'uz_UZ', 'uz', 'Uzbek', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 've_ZA', 've', 'Venda', @counter := @counter + 1),
   (@option_group_id_languages, 0, 1, 'vi_VN', 'vi', 'Vietnamese', @counter := @counter + 1),
-  (@option_group_id_languages, 0, 0, 'vo_XX', 'vo', 'VolapÃ¼k', @counter := @counter + 1),
+  (@option_group_id_languages, 0, 0, 'vo_XX', 'vo', 'Volapük', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'wa_BE', 'wa', 'Walloon', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'cy_GB', 'cy', 'Welsh', @counter := @counter + 1),
   (@option_group_id_languages, 0, 0, 'wo_SN', 'wo', 'Wolof', @counter := @counter + 1),
@@ -11500,7 +11500,7 @@ registration process.{/ts}</p>
 {$event.confirm_email_text}
 
 {else}
-Thank you for your participation.  This letter is a confirmation that your registration has been received and your status has been updated to {if $participant_status}$participant_status{else}{if $isOnWaitlist}waitlisted{else}registered{/if}{/if} for the following:
+Thank you for your participation.  This letter is a confirmation that your registration has been received and your status has been updated to {if $participant_status}{$participant_status}{else}{if $isOnWaitlist}waitlisted{else}registered{/if}{/if}.
 
 {/if}
 
@@ -11803,7 +11803,7 @@ You were registered by: {$payer.name}
      <p>{$event.confirm_email_text|htmlize}</p>
 
     {else}
-  <p>Thank you for your participation.  This letter is a confirmation that your registration has been received and your status has been updated to <strong>{if $isOnWaitlist}waitlisted{else}registered{/if}</strong> for the following:</p>
+  <p>Thank you for your participation.  This letter is a confirmation that your registration has been received and your status has been updated to <strong>{if $participant_status}{$participant_status}{else}{if $isOnWaitlist}waitlisted{else}registered{/if}{/if}</strong>.</p>
 
     {/if}
 
@@ -12234,7 +12234,7 @@ registration process.{/ts}</p>
 {$event.confirm_email_text}
 
 {else}
-Thank you for your participation.  This letter is a confirmation that your registration has been received and your status has been updated to {if $participant_status}$participant_status{else}{if $isOnWaitlist}waitlisted{else}registered{/if}{/if} for the following:
+Thank you for your participation.  This letter is a confirmation that your registration has been received and your status has been updated to {if $participant_status}{$participant_status}{else}{if $isOnWaitlist}waitlisted{else}registered{/if}{/if}.
 
 {/if}
 
@@ -12537,7 +12537,7 @@ You were registered by: {$payer.name}
      <p>{$event.confirm_email_text|htmlize}</p>
 
     {else}
-  <p>Thank you for your participation.  This letter is a confirmation that your registration has been received and your status has been updated to <strong>{if $isOnWaitlist}waitlisted{else}registered{/if}</strong> for the following:</p>
+  <p>Thank you for your participation.  This letter is a confirmation that your registration has been received and your status has been updated to <strong>{if $participant_status}{$participant_status}{else}{if $isOnWaitlist}waitlisted{else}registered{/if}{/if}</strong>.</p>
 
     {/if}
 
@@ -19573,4 +19573,4 @@ INSERT INTO `civicrm_report_instance`
 VALUES
     (  @domainID, 'Survey Details', 'survey/detail', 'Detailed report for canvassing, phone-banking, walk lists or other surveys.', 'access CiviReport', 'a:39:{s:6:"fields";a:2:{s:9:"sort_name";s:1:"1";s:6:"result";s:1:"1";}s:22:"assignee_contact_id_op";s:2:"eq";s:25:"assignee_contact_id_value";s:0:"";s:12:"sort_name_op";s:3:"has";s:15:"sort_name_value";s:0:"";s:17:"street_number_min";s:0:"";s:17:"street_number_max";s:0:"";s:16:"street_number_op";s:3:"lte";s:19:"street_number_value";s:0:"";s:14:"street_name_op";s:3:"has";s:17:"street_name_value";s:0:"";s:15:"postal_code_min";s:0:"";s:15:"postal_code_max";s:0:"";s:14:"postal_code_op";s:3:"lte";s:17:"postal_code_value";s:0:"";s:7:"city_op";s:3:"has";s:10:"city_value";s:0:"";s:20:"state_province_id_op";s:2:"in";s:23:"state_province_id_value";a:0:{}s:13:"country_id_op";s:2:"in";s:16:"country_id_value";a:0:{}s:12:"survey_id_op";s:2:"in";s:15:"survey_id_value";a:0:{}s:12:"status_id_op";s:2:"eq";s:15:"status_id_value";s:1:"1";s:11:"custom_1_op";s:2:"in";s:14:"custom_1_value";a:0:{}s:11:"custom_2_op";s:2:"in";s:14:"custom_2_value";a:0:{}s:17:"custom_3_relative";s:1:"0";s:13:"custom_3_from";s:0:"";s:11:"custom_3_to";s:0:"";s:11:"description";s:75:"Detailed report for canvassing, phone-banking, walk lists or other surveys.";s:13:"email_subject";s:0:"";s:8:"email_to";s:0:"";s:8:"email_cc";s:0:"";s:10:"permission";s:17:"access CiviReport";s:6:"groups";s:0:"";s:9:"domain_id";i:1;}');
 
- UPDATE civicrm_domain SET version = '4.4.2';
+ UPDATE civicrm_domain SET version = '4.4.3';

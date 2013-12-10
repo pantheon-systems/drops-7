@@ -7,9 +7,9 @@ dependencies[] = webform (>=4.0-beta1)
 dependencies[] = libraries
 dependencies[] = options_element
 
-; Information added by  packaging script on 2013-11-07
-version = "7.x-4.2"
+; Information added by  packaging script on 2013-11-21
+version = "7.x-4.3"
 core = "7.x"
 project = "webform_civicrm"
-datestamp = "1383841067"
+datestamp = "1385017505"
 

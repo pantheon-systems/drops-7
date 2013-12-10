@@ -218,7 +218,7 @@ var wfCiviAdmin = (function ($, D) {
       if ($el.val() && $el.val().length > 1) {
         triggerChange = true;
       }
-      if ($('option[value=""]', $el).length < 1) {
+      if (!$el.hasClass('required') && $('option[value=""]', $el).length < 1) {
         $el.prepend('<option value="">'+ Drupal.t('- None -') +'</option>');
       }
       $el.removeAttr('multiple');
@@ -257,7 +257,7 @@ var wfCiviAdmin = (function ($, D) {
       employerOptions();
       showHideParticipantOptions();
 
-      $('#wf-crm-configure-form select[multiple]').once('wf-crm-multiselect').each(initMultiSelect);
+      $('select[multiple]', '#wf-crm-configure-form, #webform-component-edit-form').once('wf-crm-multiselect').each(initMultiSelect);
 
       // Summaries for vertical tabs
       $('fieldset[id^="edit-contact-"]', context).once('wf-civi').drupalSetSummary(function (context) {
@@ -512,7 +512,7 @@ var wfCiviAdmin = (function ($, D) {
    */
   cj(function($) {
     // Inline help
-    $('#wf-crm-configure-form').on('click', 'a.helpicon', function () {
+    $('#wf-crm-configure-form, #webform-component-edit-form').on('click', 'a.helpicon', function () {
       var topic = $(this).attr('href').substr(1);
       CRM.help($(this).attr('title'), {q: 'webform-civicrm/help/' + topic}, D.settings.basePath);
       return false;

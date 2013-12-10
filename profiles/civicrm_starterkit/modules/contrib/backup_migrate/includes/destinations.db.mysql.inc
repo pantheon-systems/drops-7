@@ -51,22 +51,19 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
         if ($info['driver'] === 'mysql') {
           $url = $info['driver'] . '://' . $info['username'] . ':' . $info['password'] . '@' . $info['host'] . (isset($info['port']) ? ':' . $info['port'] : '') . '/' . $info['database'];
           if ($destination = backup_migrate_create_destination('mysql', array('url' => $url))) {
-            // Make sure the connection is valid.
-            if ($destination->_get_db_connection()) {
-              // Treat the default database differently because it is probably the only one available.
-              if ($key == 'default:default') {
-                $destination->set_id('db');
-                $destination->set_name(t('Default Database'));
-                // Dissalow backing up to the default database because that's confusing and potentially dangerous.
-                $destination->remove_op('scheduled backup');
-                $destination->remove_op('manual backup');
-              }
-              else {
-                $destination->set_id('db:'. $key);
-                $destination->set_name($key .": ". $destination->get_display_location());
-              }
-              $out[$destination->get_id()] = $destination;              
-            } 
+            // Treat the default database differently because it is probably the only one available.
+            if ($key == 'default:default') {
+              $destination->set_id('db');
+              $destination->set_name(t('Default Database'));
+              // Dissalow backing up to the default database because that's confusing and potentially dangerous.
+              $destination->remove_op('scheduled backup');
+              $destination->remove_op('manual backup');
+            }
+            else {
+              $destination->set_id('db:'. $key);
+              $destination->set_name($key .": ". $destination->get_display_location());
+            }
+            $out[$destination->get_id()] = $destination;
           }
         }
       }
@@ -91,7 +88,7 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
       "#type" => "checkbox",
       "#title" => t("Use mysqldump command"),
       "#default_value" => !empty($settings['use_mysqldump']),
-      "#description" => t("Use the mysqldump command line tool if available. This can be faster for large databases but will not work on all servers. EXPERIMENTAL"),
+      "#description" => t("Use the mysqldump command line tool if available. This can be faster for large databases but will not work on all servers. Also exporting SQL views is not really solid with this option. EXPERIMENTAL"),
     );
 
     return $form;
@@ -116,6 +113,7 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
     if ($file->open(TRUE)) {
       $file->write($this->_get_sql_file_header());
       $alltables = $this->_get_tables();
+      $allviews = $this->_get_views();
       foreach ($alltables as $table) {
         if (_backup_migrate_check_timeout()) {
           return FALSE;
@@ -127,6 +125,15 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
             $lines += $this->_dump_table_data_sql_to_file($file, $table);
           }
         }
+      }
+      foreach ($allviews as $view) {
+        if (_backup_migrate_check_timeout()) {
+          return FALSE;
+        }
+        if ($view['name'] && !isset($exclude[$view['name']])) {
+          $file->write($this->_get_view_create_sql($view));
+        }
+
       }
       $file->write($this->_get_sql_file_footer());
       $file->close();
@@ -158,13 +165,15 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
     );
 
     // Ignore the excluded and no-data tables.
+    $db = $this->dest_url['path'];
     if (!empty($settings->filters['exclude_tables'])) {
-      $db = $this->dest_url['path'];
       foreach ((array)$settings->filters['exclude_tables'] as $table) {
         if (isset($alltables[$table])) {
           $command .= ' --ignore-table='. $db .'.'. $table;
         }
       }
+    }
+    if (!empty($settings->filters['nodata_tables'])) {
       foreach ((array)$settings->filters['nodata_tables'] as $table) {
         if (isset($alltables[$table])) {
           $nodata_tables[] = $table;
@@ -221,14 +230,12 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
   function _read_sql_command_from_file($file) {
     $out = '';
     while ($line = $file->read()) {
-      $first2 = substr($line, 0, 2);
-      $first3 = substr($line, 0, 2);
-
-      // Ignore single line comments. This function doesn't support multiline comments or inline comments.
-      if ($first2 != '--' && ($first2 != '/*' || $first3 == '/*!')) {
-        $out .= ' ' . trim($line);
+      $line = trim($line);
+      // Ignore single line comments.
+      if (!empty($line) && substr($line, 0, 2) != '--') {
+        $out .= ' ' . $line;
         // If a line ends in ; or */ it is a sql command.
-        if (substr($out, strlen($out) - 1, 1) == ';') {
+        if (substr($out, strlen($out) - 1, 1) == ';' || substr($out, strlen($out) - 2, 2) == '*/') {
           return trim($out);
         }
       }
@@ -243,6 +250,17 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
     $out = array();
     foreach ($this->_get_tables() as $table) {
       $out[$table['name']] = $table['name'];
+    }
+    return $out;
+  }
+
+  /**
+   * Get a list of views in the database.
+   */
+  function _get_view_names() {
+    $out = array();
+    foreach ($this->_get_views() as $view) {
+      $out[$view['name']] = $view['name'];
     }
     return $out;
   }
@@ -278,7 +296,27 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
       // Lowercase the keys because between Drupal 7.12 and 7.13/14 the default query behavior was changed.
       // See: http://drupal.org/node/1171866
       $table = array_change_key_case($table);
-      $out[$table['name']] = $table;
+      if (!empty($table['engine'])) {
+        $out[$table['name']] = $table;
+      }
+    }
+    return $out;
+  }
+
+  /**
+   * Get a list of views in the db.
+   */
+  function _get_views() {
+    $out = array();
+    // get auto_increment values and names of all tables
+    $tables = $this->query("show table status", array(), array('fetch' => PDO::FETCH_ASSOC));
+    foreach ($tables as $table) {
+      // Lowercase the keys because between Drupal 7.12 and 7.13/14 the default query behavior was changed.
+      // See: http://drupal.org/node/1171866
+      $table = array_change_key_case($table);
+      if (empty($table['engine'])) {
+        $out[$table['name']] = $table;
+      }
     }
     return $out;
   }
@@ -304,6 +342,25 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
     return $out;
   }
   
+  /**
+   * Get the sql for the structure of the given table.
+   */
+  function _get_view_create_sql($view) {
+    $out = "";
+    // Switch SQL mode to get rid of "CREATE ALGORITHM..." what requires more permissions + troubles with the DEFINER user
+    $sql_mode = $this->query("SELECT @@SESSION.sql_mode")->fetchField();
+    $this->query("SET sql_mode = 'ANSI'");
+    $result = $this->query("SHOW CREATE VIEW `" . $view['name'] . "`", array(), array('fetch' => PDO::FETCH_ASSOC));
+    $this->query("SET SQL_mode = :mode", array(':mode' => $sql_mode));
+    foreach ($result as $create) {
+      $out .= "DROP VIEW IF EXISTS `". $view['name'] ."`;\n";
+      $out .= "SET sql_mode = 'ANSI';\n";
+      $out .= strtr($create['Create View'], "\n", " ") . ";\n";
+      $out .= "SET sql_mode = '$sql_mode';\n";
+    }
+    return $out;
+  }
+
   /**
    *  Get the sql to insert the data for a given table
    */
@@ -367,10 +424,9 @@ class backup_migrate_destination_db_mysql extends backup_migrate_destination_db 
    */
   function _get_db_connection() {
     if (!$this->connection) {
-      if ($this->connection = parent::_get_db_connection()) {
-        // Set the sql mode because the default is ANSI,TRADITIONAL which is not aware of collation or storage engine.
-        $this->connection->exec("SET sql_mode=''");        
-      }
+      $this->connection = parent::_get_db_connection();
+      // Set the sql mode because the default is ANSI,TRADITIONAL which is not aware of collation or storage engine.
+      $this->connection->exec("SET sql_mode=''");
     }
     return $this->connection;
   }
@@ -416,4 +472,3 @@ SET NAMES utf8;
 ";
   }
 }
-

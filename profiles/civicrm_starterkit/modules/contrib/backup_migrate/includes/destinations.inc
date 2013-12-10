@@ -90,7 +90,7 @@ function backup_migrate_backup_migrate_destination_types() {
       'can_create' => TRUE,
     ),
     's3' => array(
-      'description' => t('Save the backup files to a bucket on your !link.', array('!link' => l(t('Amazon S3 account'), 'http://aws.amazon.com/s3/'))),
+      'description' => t('Save the backup files to a bucket on your <a href="@link">Amazon S3 account</a>.', array('@link' => url('http://aws.amazon.com/s3/'))),
       'file' => drupal_get_path('module', 'backup_migrate') .'/includes/destinations.s3.inc',
       'class' => 'backup_migrate_destination_s3',
       'type_name' => t('Amazon S3 Bucket'),

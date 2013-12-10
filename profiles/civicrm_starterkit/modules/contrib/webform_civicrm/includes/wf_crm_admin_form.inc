@@ -1283,8 +1283,7 @@ class wf_crm_admin_form {
   }
 
   private function help(&$field, $topic, $title = NULL) {
-    $title = $title ? $title : $field['#title'];
-    $field['#title'] .= ' &nbsp;<span class="crm-container"><a class="helpicon" href="#' . $topic . '" title="' . $title .'">&nbsp;</a></span>';
+    wf_crm_admin_help::addHelp($field, $topic, $title);
   }
 
   /**

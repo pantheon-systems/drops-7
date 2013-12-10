@@ -423,14 +423,14 @@ class CRM_Contribute_DAO_ContributionPage extends CRM_Core_DAO
         'title' => array(
           'name' => 'title',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => ts('Title') ,
+          'title' => ts('Contribution Page Title') ,
           'maxlength' => 255,
           'size' => CRM_Utils_Type::HUGE,
         ) ,
         'intro_text' => array(
           'name' => 'intro_text',
           'type' => CRM_Utils_Type::T_TEXT,
-          'title' => ts('Intro Text') ,
+          'title' => ts('Contribution Page Introduction Text') ,
           'rows' => 6,
           'cols' => 50,
         ) ,
@@ -641,14 +641,14 @@ class CRM_Contribute_DAO_ContributionPage extends CRM_Core_DAO
         'honor_block_title' => array(
           'name' => 'honor_block_title',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => ts('Honor Block Title') ,
+          'title' => ts('Contribution Page Honor Block Title') ,
           'maxlength' => 255,
           'size' => CRM_Utils_Type::HUGE,
         ) ,
         'honor_block_text' => array(
           'name' => 'honor_block_text',
           'type' => CRM_Utils_Type::T_TEXT,
-          'title' => ts('Honor Block Text') ,
+          'title' => ts('Contribution Page Honor Block Text') ,
           'rows' => 2,
           'cols' => 50,
         ) ,
@@ -665,6 +665,7 @@ class CRM_Contribute_DAO_ContributionPage extends CRM_Core_DAO
         'created_id' => array(
           'name' => 'created_id',
           'type' => CRM_Utils_Type::T_INT,
+          'title' => ts('Contribution Page Created By') ,
           'FKClassName' => 'CRM_Contact_DAO_Contact',
         ) ,
         'created_date' => array(
@@ -675,7 +676,7 @@ class CRM_Contribute_DAO_ContributionPage extends CRM_Core_DAO
         'currency' => array(
           'name' => 'currency',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => ts('Currency') ,
+          'title' => ts('Contribution Page Currency') ,
           'maxlength' => 3,
           'size' => CRM_Utils_Type::FOUR,
           'default' => 'NULL',
@@ -689,11 +690,13 @@ class CRM_Contribute_DAO_ContributionPage extends CRM_Core_DAO
         'campaign_id' => array(
           'name' => 'campaign_id',
           'type' => CRM_Utils_Type::T_INT,
+          'title' => ts('Contribution Page Campaign ID') ,
           'FKClassName' => 'CRM_Campaign_DAO_Campaign',
         ) ,
         'is_share' => array(
           'name' => 'is_share',
           'type' => CRM_Utils_Type::T_BOOLEAN,
+          'title' => ts('Is Contribution Page Shared?') ,
           'default' => '1',
         ) ,
       );

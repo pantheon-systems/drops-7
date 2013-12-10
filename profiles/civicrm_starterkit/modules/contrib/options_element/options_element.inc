@@ -30,6 +30,12 @@ function theme_options($variables) {
     $classes[] = 'options-multiple';
   }
 
+  // Replace the error class from wrapper div, which doesn't display well with
+  // complex elements like Options Element.
+  if ($key = array_search('error', $classes, TRUE)) {
+    $classes[$key] = 'options-error';
+  }
+
   $options = '';
   $options .= drupal_render($element['options_field']);
   if (isset($element['default_value_field'])) {
@@ -182,7 +188,6 @@ function _form_options_expand($element) {
 
   // Remove properties that will confuse the FAPI.
   unset($element['#options']);
-  $element['#required'] = FALSE;
 
   return $element;
 }
@@ -351,14 +356,14 @@ function _form_options_to_text($options, $key_type) {
 function _form_options_from_text($text, $key_type, $flat = FALSE, &$duplicates = array()) {
   $keys = array();
   $items = array();
-  $rows = array_filter(explode("\n", trim($text)));
+  $rows = array_filter(explode("\n", trim($text)), 'strlen');
   $group = FALSE;
   foreach ($rows as $row) {
     $row = trim($row);
     $matches = array();
 
     // Check for a simple empty row.
-    if (empty($row)) {
+    if (!strlen($row)) {
       continue;
     }
     // Check if this row is a group.

@@ -41,7 +41,7 @@ class backup_migrate_destination_email extends backup_migrate_destination {
       "#title" => t("Email Address"),
       "#default_value" => $this->get_location(),
       "#required" => TRUE,
-      "#description" => t('Enter the email address to send the backup files to. Make sure the email sever can handle large file attachments'),
+      "#description" => t('Enter the email address to send the backup files to. Make sure the email server can handle large file attachments.'),
     );
     return $form;
   }

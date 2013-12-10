@@ -38,9 +38,9 @@ class wf_crm_admin_help {
     print '<p>' .
       t('Choose a webform contact of type "Organization" to be the employer for this individual.') .
       '</p><p>' .
-      t('Use the "Existing Contact" field for that organization to enable autocomplete or select of employers.') .
+      t('Use the "Existing Contact" field for that organization to enable autocomplete or selection of employers.') .
       '</p><p>' .
-      t('Configure the "Existing Contact" default value to be "Employer" relationship to this individual.') .
+      t('You can also autofill the employer by configuring the organization\'s "Existing Contact" default value to be "Employer" relationship to Contact 1.') .
       '</p>';
   }
 
@@ -307,6 +307,30 @@ class wf_crm_admin_help {
       '</p>';
   }
 
+  static function contact_creation() {
+    print '<p>' .
+      t('CiviCRM requires at minimum a name or email address to create a new contact.') .
+      '</p><p>' .
+      t("Webform contacts that do not have these fields can be used for selection of existing contacts but not creating new ones.") .
+      '</p>';
+  }
+
+  static function contact_component_widget() {
+    print '<ul>
+      <li>' . t('Autocomplete will suggest names of contacts as the user types. Good for large numbers of contacts.') . '</li>
+      <li>' . t('A select list will show all possible contacts in a dropdown menu. Good for small lists - use filters.') . '</li>
+      <li>' . t('A static element will not allow the user to make a choice. Use in conjunction with a default value setting or a cid passed in the url.') . '</li>
+      </ul>';
+  }
+
+  static function contact_component_hide_fields() {
+    print '<p>' .
+      t('When an existing contact is selected, which fields should the user be allowed to edit and which should be hidden?') .
+      '</p><p>' .
+      t("This is useful for preventing changes to existing data.") .
+      '</p>';
+  }
+
   /**
    * Get help for a custom field
    */
@@ -355,6 +379,21 @@ class wf_crm_admin_help {
         </div>
       </div>
     </div>';
+  }
+
+  /**
+   * Add help icon to a FAPI field
+   * @param array $field
+   * @param string $topic
+   * @param string|null $title
+   */
+  static function addHelp(&$field, $topic, $title = NULL) {
+    $title = $title ? $title : $field['#title'];
+    $field['#title'] .= ' &nbsp;' . self::helpIcon($topic, $title);
+  }
+
+  static function helpIcon($topic, $title) {
+    return '<span class="crm-container"><a class="helpicon" href="#' . $topic . '" title="' . $title .'">&nbsp;</a></span>';
   }
 }
 

@@ -43,6 +43,10 @@ div.default-value-pattern-match {
   float: left; /* RTL */
 }
 
+div.remove-default {
+  float: left; /* RTL */
+}
+
 div.form-options-manual,
 div.form-option-add {
   text-align: right; /* RTL */

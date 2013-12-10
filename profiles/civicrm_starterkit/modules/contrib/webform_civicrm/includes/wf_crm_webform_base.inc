@@ -105,10 +105,10 @@ abstract class wf_crm_webform_base {
         $prefix = "civicrm_{$c}_contact_{$r}_relationship_";
         if (!empty($this->id['cid'][$r])) {
           if (!empty($contact['relationship'][$r]['relationship_type_id']) && $contact['relationship'][$r]['relationship_type_id'] != 'create_civicrm_webform_element') {
-            $types = array($contact['relationship'][$r]['relationship_type_id']);
+            $types = (array) $contact['relationship'][$r]['relationship_type_id'];
           }
           if (!empty($this->enabled[$prefix . 'relationship_type_id'])) {
-            $types = array_keys($this->getExposedOptions($prefix . 'relationship_type_id'));
+            $types += array_keys($this->getExposedOptions($prefix . 'relationship_type_id'));
           }
         }
         $rel = $this->getRelationship($types, $cid, $this->id['cid'][$r]);
@@ -150,7 +150,7 @@ abstract class wf_crm_webform_base {
       $types = array();
       foreach ($r_types as $r_type) {
         list($type, $side) = explode('_', $r_type);
-        $types[] = $type;
+        $types[$type] = $type;
       }
       $sql = "SELECT * FROM civicrm_relationship
       WHERE relationship_type_id IN (" . implode(',', $types) . ")
@@ -164,13 +164,13 @@ abstract class wf_crm_webform_base {
         if (in_array("{$type}_$side", $r_types) || in_array("{$type}_r", $r_types)) {
           // Discard metadata from the query
           foreach ((array) $dao as $k => $v) {
-            if ($k[0] != '_' && $k != 'N') {
+            if ($k[0] != '_' && $k != 'N' && $k != 'relationship_type_id') {
               $found[$k] = $v;
             }
           }
-          $found['relationship_type_id'] = in_array("{$type}_r", $r_types) ? "{$type}_r" : "{$type}_$side";
+          // Support multi-valued relationship type fields, fudge the rest
+          $found['relationship_type_id'][] = in_array("{$type}_r", $r_types) ? "{$type}_r" : "{$type}_$side";
           $found['relationship_permission'] = ($found['is_permission_a_b'] ? 1 : 0) + ($found['is_permission_b_a'] ? 2 : 0);
-          break;
         }
       }
       $dao->free();

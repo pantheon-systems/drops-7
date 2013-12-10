@@ -58,15 +58,15 @@ class backup_migrate_filter_statusnotify extends backup_migrate_filter {
    */
   function backup_succeed($settings) {
     if (@$settings->filters['notify_success_enable'] && $to = @$settings->filters['notify_success_email']) {
-      $messages = $this->get_messages();
-      $subject = t('!site backup succeeded', array('!site' => variable_get('site_name', 'Drupal site')));
-      if ($messages = $this->get_messages()) {
-        $body = t("The site backup has completed successfully with the following messages:\n!messages", array('!messages' => $messages));
-      }
-      else {
-        $body = t("The site backup has completed successfully.\n");
-      }
-      mail($settings->filters['notify_success_email'], $subject, $body);
+
+      $params = array(
+        'messages' => $this->get_messages(),
+      );
+
+      // Using the default language since this is not specific to a user.
+      $language = language_default();
+
+      drupal_mail('backup_migrate', 'backup_succeed', $settings->filters['notify_success_email'], $language, $params);
     }
   }
 
@@ -75,15 +75,15 @@ class backup_migrate_filter_statusnotify extends backup_migrate_filter {
    */
   function backup_fail($settings) {
     if (@$settings->filters['notify_failure_enable'] && $to = @$settings->filters['notify_failure_email']) {
-      $messages = $this->get_messages();
-      $subject = t('!site backup failed', array('!site' => variable_get('site_name', 'Drupal site')));
-      if ($messages = $this->get_messages()) {
-        $body = t("The site backup has failed with the following messages:\n!messages", array('!messages' => $messages));
-      }
-      else {
-        $body = t("The site backup has failed for an unknown reason.");
-      }
-      mail($settings->filters['notify_failure_email'], $subject, $body);
+
+      $params = array(
+        'messages' => $this->get_messages(),
+      );
+
+      // Using the default language since this is not specific to a user.
+      $language = language_default();
+
+      drupal_mail('backup_migrate', 'backup_fail', $settings->filters['notify_failure_email'], $language, $params);
     }
   }
 

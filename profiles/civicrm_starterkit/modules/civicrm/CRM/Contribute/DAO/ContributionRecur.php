@@ -397,6 +397,9 @@ class CRM_Contribute_DAO_ContributionRecur extends CRM_Core_DAO
           'dataPattern' => '',
           'export' => true,
           'default' => '1',
+          'pseudoconstant' => array(
+            'optionGroupName' => 'contribution_status',
+          )
         ) ,
         'is_test' => array(
           'name' => 'is_test',
@@ -451,6 +454,11 @@ class CRM_Contribute_DAO_ContributionRecur extends CRM_Core_DAO
           'headerPattern' => '',
           'dataPattern' => '',
           'FKClassName' => 'CRM_Financial_DAO_FinancialType',
+          'pseudoconstant' => array(
+            'table' => 'civicrm_financial_type',
+            'keyColumn' => 'id',
+            'labelColumn' => 'name',
+          )
         ) ,
         'payment_instrument_id' => array(
           'name' => 'payment_instrument_id',

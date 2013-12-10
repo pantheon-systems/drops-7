@@ -81,7 +81,7 @@ function nodesquirrel_settings($form_state) {
 
   $form['intro'] = array(
     '#type' => 'markup',
-    '#markup' => t('<p>For better protection, back your site up regularly to a location not on your web server. !nodesquirrel is the cloud backup service built by the maintainers of Backup and Migrate. You can also !add such as FTP or Amazon S3. Additional 3rd party options are available and many are listed on the !bam.', array('!nodesquirrel' => l(t('NodeSquirrel'), 'http://nodesquirrel.com'), '!add' => l(t('add other offsite destinations'), BACKUP_MIGRATE_MENU_PATH . '/destination/list/add'), '!bam' => l(t('Backup and Migrate project page'), 'http://drupal.org/project/backup_migrate'))),
+    '#markup' => t('<p>For better protection, back your site up regularly to a location not on your web server. !nodesquirrel is the cloud backup service built by the maintainers of Backup and Migrate. Find out more at <a href="http://nodesquirrel.com">nodesquirrel.com</a></p><p>You can also !add such as FTP or Amazon S3. Additional 3rd party options are available and many are listed on the !bam.', array('!nodesquirrel' => l(t('NodeSquirrel'), 'http://nodesquirrel.com'), '!add' => l(t('add other offsite destinations'), BACKUP_MIGRATE_MENU_PATH . '/destination/list/add'), '!bam' => l(t('Backup and Migrate project page'), 'http://drupal.org/project/backup_migrate'))),
     );
 
   $form['nodesquirrel_status'] = array(
@@ -96,7 +96,7 @@ function nodesquirrel_settings($form_state) {
 
   // Warn the user if the key they entered is invalid.
   if ($key && empty($destination)) {
-    $form['nodesquirrel_status']['status']['#value'] = t('Your secret key does not seem to be valid. Please check that you entered it correctly or visit !ns to generate a new key.', array('!ns' => nodesquirrel_get_activate_link()));
+    $form['nodesquirrel_status']['status']['#markup'] = t('Your secret key does not seem to be valid. Please check that you entered it correctly or visit !ns to generate a new key.', array('!ns' => nodesquirrel_get_activate_link()));
   }
   else if (!empty($destination)) {
     $form['nodesquirrel_status']['manage'] = array(
@@ -107,7 +107,7 @@ function nodesquirrel_settings($form_state) {
     );
     $form['nodesquirrel_status']['status']['#markup'] = t('Ready to Backup');
     if (user_access('perform backup')) {
-      $form['nodesquirrel_status']['status']['#markup'] .= ' ' . l('(' . t('backup now') . ')', BACKUP_MIGRATE_MENU_PATH);
+      $form['nodesquirrel_status']['status']['#markup'] .= ' ' . l('(' . t('backup now') . ')', BACKUP_MIGRATE_MENU_PATH, array('query' => array('destination_id' => 'nodesquirrel')));
     }
   }
 
@@ -125,13 +125,33 @@ function nodesquirrel_settings($form_state) {
     $form['nodesquirrel_credentials']['secret_key_help'] = nodesquirrel_get_activate_help_text();
   }
 
+  $form['nodesquirrel_schedule'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Backup Schedule'),
+  );
+
+
+  $schedule = variable_get('nodesquirrel_schedule', 60*60*24);
+  $form['nodesquirrel_schedule']['nodesquirrel_schedule'] = array(
+    '#type' => 'select',
+    '#title' => t('Backup to NodeSquirrel'),
+    '#options' => array(
+      ''            => t('- None - '),
+      (60*60)       => t('Hourly'),
+      (60*60*24)    => t('Daily'),
+      (60*60*24*7)  => t('Weekly'),
+    ),
+    '#default_value' => variable_get('nodesquirrel_schedule', 60*60*24),
+    '#description' => t('Set up a schedule to back up your database to NodeSquirrel. You can customize this schedule in the !schedule. Not seeing your automatic backups? Make sure !cron is set to run at the same frequency or higher.', array('!schedule' => l(t('Schedules tab'), BACKUP_MIGRATE_MENU_PATH . '/schedule'), '!cron' => l(t('cron'), 'http://drupal.org/cron'))),
+  );
+
   // If the schedule has been overriden it must be edited in the schedule tab.
   backup_migrate_include('crud');
   $item = backup_migrate_crud_get_item('schedule', 'nodesquirrel');
   if ($item && $item->storage == BACKUP_MIGRATE_STORAGE_OVERRIDEN) {
-    $form['nodesquirrel_schedule']['#options'] = array('' => t('- Overriden -'));
-    $form['nodesquirrel_schedule']['#disabled'] = TRUE;
-    $form['nodesquirrel_schedule']['#description'] = t('Your NodeSquirrel schedule has been overriden and must be edited in the !schedule.', array('!schedule' => l(t('Schedules tab'), BACKUP_MIGRATE_MENU_PATH . '/schedule/list/edit/nodesquirrel')));
+    $form['nodesquirrel_schedule']['nodesquirrel_schedule']['#options'] = array('' => $item->get_frequency_description());
+    $form['nodesquirrel_schedule']['nodesquirrel_schedule']['#disabled'] = TRUE;
+    $form['nodesquirrel_schedule']['nodesquirrel_schedule']['#description'] = t('Your NodeSquirrel schedule has been overriden and must be edited in the !schedule.', array('!schedule' => l(t('Schedules tab'), BACKUP_MIGRATE_MENU_PATH . '/schedule/list/edit/nodesquirrel')));
   }
 
   return system_settings_form($form);

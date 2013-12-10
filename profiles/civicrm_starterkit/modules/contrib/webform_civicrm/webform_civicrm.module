@@ -311,6 +311,13 @@ function webform_civicrm_webform_submission_actions($node, $submission) {
         'query' => array('action' => 'view', 'reset' => 1, 'cid' => $data['contact_id'][1], 'id' => $data['activity_id']),
       );
     }
+    if (!empty($data['contribution_id'])) {
+      $actions['civicrm_action contribution_view'] = array(
+        'title' => t('View Contribution'),
+        'href' => 'civicrm/contact/view/contribution',
+        'query' => array('action' => 'view', 'reset' => 1, 'cid' => $data['contact_id'][1], 'id' => $data['contribution_id']),
+      );
+    }
   }
   return $actions;
 }

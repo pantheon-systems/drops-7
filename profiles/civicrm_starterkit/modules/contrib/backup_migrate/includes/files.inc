@@ -174,7 +174,7 @@ class backup_file {
     );
     if (file_exists($path)) {
       $params['filesize'] = filesize($path);
-      $params['filetime'] = filectime($path);
+      $params['filetime'] = filemtime($path);
     }
     $this->set_file_info($params);
   }
@@ -320,6 +320,11 @@ class backup_file {
       array('key' => 'Content-Type', 'value' => $this->mimetype()),
       array('key' => 'Content-Disposition', 'value' => 'attachment; filename="'. $this->filename() .'"'),
     );
+    // In some circumstances, web-servers will double compress gzipped files.
+    // This may help aleviate that issue by disabling mod-deflate.
+    if ($this->mimetype() == 'application/x-gzip') {
+      $headers[] = 'Content-Encoding: gzip';
+    }
     if ($size = $this->info('filesize')) {
       $headers[] = array('key' => 'Content-Length', 'value' => $size);
     }

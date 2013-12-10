@@ -193,7 +193,7 @@ class backup_migrate_destination_files extends backup_migrate_destination {
    */
   function check_web_dir($directory) {
     // If the directory is specified with an absolute path, strip the site root.
-    $directory = substr(drupal_realpath($directory), strlen(drupal_realpath($_SERVER['DOCUMENT_ROOT']) . base_path()));
+    $directory = substr(drupal_realpath($directory), strlen(DRUPAL_ROOT . '/'));
 
     file_create_htaccess($directory, TRUE);
 
@@ -232,7 +232,7 @@ class backup_migrate_destination_files extends backup_migrate_destination {
    * Check if the given directory is within the webroot and is therefore web accessible.
    */
   function dir_in_webroot($directory) {
-    if (strpos(drupal_realpath($directory), realpath($_SERVER['DOCUMENT_ROOT'])) !== FALSE) {
+    if (strpos(drupal_realpath($directory), DRUPAL_ROOT) !== FALSE) {
       return TRUE;
     }
     return FALSE;
