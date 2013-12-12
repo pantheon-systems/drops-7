@@ -405,35 +405,38 @@ class CRM_Utils_System_Drupal extends CRM_Utils_System_DrupalBase {
     drupal_add_css($code, $params);
     return TRUE;
   }
-
-   /**
-    * Check if a resource url is within the drupal directory and format appropriately
-    *
-    * @param url (reference)
-    *
-    * @return bool: TRUE for internal paths, FALSE for external
-    */
-   static function formatResourceUrl(&$url) {
-     $internal = FALSE;
-     $base = CRM_Core_Config::singleton()->resourceBase;
-     global $base_url;
-     // Handle absolute urls
-     if (strpos($url, $base_url) === 0) {
-       $internal = TRUE;
-       $url = trim(str_replace($base_url, '', $url), '/');
-     }
-     // Handle relative urls
-     elseif (strpos($url, $base) === 0) {
-       $internal = TRUE;
-       $url = substr(drupal_get_path('module', 'civicrm'), 0, -6) . trim(substr($url, strlen($base)), '/');
-     }
-     // Strip query string
-     $q = strpos($url, '?');
-     if ($q && $internal) {
-       $url = substr($url, 0, $q);
-     }
-     return $internal;
-   }
+  
+  /**
+   * Check if a resource url is within the drupal directory and format appropriately
+   *
+   * @param url (reference)
+   *
+   * @return bool: TRUE for internal paths, FALSE for external. The drupal_add_js fn is able to add js more
+   * efficiently if it is known to be in the drupal site
+   */
+  function formatResourceUrl(&$url) {
+    $internal = FALSE;
+    $base = CRM_Core_Config::singleton()->resourceBase;
+    global $base_url;
+    // Handle absolute urls
+    // compares $url (which is some unknown/untrusted value from a third-party dev) to the CMS's base url (which is independent of civi's url)
+    // to see if the url is within our drupal dir, if it is we are able to treated it as an internal url
+    if (strpos($url, $base_url) === 0) {
+      $internal = TRUE;
+      $url = trim(str_replace($base_url, '', $url), '/');
+    }
+    // Handle relative urls that are within the CiviCRM module directory
+    elseif (strpos($url, $base) === 0) {
+      $internal = TRUE;
+      $url = $this->appendCoreDirectoryToResourceBase(substr(drupal_get_path('module', 'civicrm'), 0, -6)) . trim(substr($url, strlen($base)), '/');
+    }
+    // Strip query string
+    $q = strpos($url, '?');
+    if ($q && $internal) {
+      $url = substr($url, 0, $q);
+    }
+    return $internal;
+  }
    
   /**
    * rewrite various system urls to https
