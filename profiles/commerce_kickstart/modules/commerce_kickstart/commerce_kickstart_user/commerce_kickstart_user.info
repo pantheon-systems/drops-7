@@ -40,9 +40,9 @@ features[variable][] = user_email_verification
 features[variable][] = user_pictures
 features[variable][] = user_register
 
-; Information added by drupal.org packaging script on 2013-07-26
-version = "7.x-2.9"
+; Information added by  packaging script on 2013-12-03
+version = "7.x-2.10"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1374852667"
+datestamp = "1386081910"
 

@@ -37,7 +37,7 @@ function commerce_exactor_euc_shipping_settings_form($form, &$form_state) {
     $form['commerce_exactor_euc_shipping'][$shipping_service['name']] = array(
       '#type' => 'select',
 
-      '#title' => $shipping_service['title'],
+      '#title' => check_plain($shipping_service['title']),
       '#description' => t('Select the EUC for this shipping service'),
 
       '#required' => TRUE,

@@ -10,9 +10,9 @@ core = 7.x
 
 
 files[] = commerce_autosku.test
-; Information added by drupal.org packaging script on 2013-03-28
-version = "7.x-1.1+6-dev"
+; Information added by drupal.org packaging script on 2013-09-30
+version = "7.x-1.1+7-dev"
 core = "7.x"
 project = "commerce_autosku"
-datestamp = "1364431327"
+datestamp = "1380559953"
 

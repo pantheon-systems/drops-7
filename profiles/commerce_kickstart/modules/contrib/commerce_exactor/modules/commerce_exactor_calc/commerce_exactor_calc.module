@@ -1,11 +1,15 @@
 <?php
 
 /**
+ * @file
+ * Calculate taxes using Exactor.
+ */
+
+/**
  * Implements hook_commerce_line_item_type_info().
  *
  * @see hook_commerce_line_item_type_info().
  * @see http://www.drupalcommerce.org/specification/info-hooks/checkout
- *
  */
 function commerce_exactor_calc_commerce_line_item_type_info() {
   $line_item_types = array();
@@ -44,25 +48,24 @@ function commerce_exactor_calc_commerce_price_component_type_info() {
  * as specified above. Other modules defining product line item types should
  * use this function to ensure their types have the required fields.
  *
- * @param $line_item_type
+ * @param array $line_item_type
  *   The info array of the line item type being configured.
  *
  * @see commerce_product_line_item_configuration()
  */
 function commerce_exactor_calc_line_item_configuration($line_item_type) {
   $type = $line_item_type['type'];
-
 }
 
 /**
  * Returns a title for this line item.
  */
 function commerce_exactor_calc_line_item_title($line_item) {
-  return(t('Sales Tax'));
+  return t('Sales Tax');
 }
 
 /**
- * Impliments hook_field_widget_form_alter().
+ * Implements hook_field_widget_form_alter().
  */
 function commerce_exactor_calc_field_widget_form_alter(&$element, &$form_state, $context) {
   if ($context['instance']['widget']['type'] == 'commerce_line_item_manager') {
@@ -78,14 +81,12 @@ function commerce_exactor_calc_field_widget_form_alter(&$element, &$form_state, 
 /**
  * Creates a new exactor line item populated with the proper shipping values.
  *
- * @param $unit_price
+ * @param array $tax_price
  *   A price array used to initialize the value of the line item's unit price.
- * @param $order_id
+ * @param int $order_id
  *   The ID of the order the line item belongs to.
- * @param $data
+ * @param array $data
  *   An array value to initialize the line item's data array with.
- * @param $type
- *   The name of the line item type being created; defaults to 'shipping'.
  *
  * @return
  *   The shipping line item for the specified service initialized to the given
@@ -125,10 +126,10 @@ function commerce_exactor_calc_line_item_new($tax_price, $order_id = 0, $data = 
 /**
  * Deletes all exactor line items on an order.
  *
- * @param $order
+ * @param object $order
  *  The order object to delete the shipping line items from.
- * @param $skip_save
- *   Boolean indicating whether or not to skip saving the order in this function.
+ * @param bool $skip_save
+ *  Boolean indicating whether or not to skip saving the order in this function.
  */
 function commerce_exactor_calc_delete_exactocalc_line_items($order, $skip_save = FALSE) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
@@ -163,14 +164,14 @@ function commerce_exactor_calc_delete_exactocalc_line_items($order, $skip_save =
 /**
  * Adds a exactor line item to an order.
  *
- * @param $line_item
+ * @param object $line_item
  *   An unsaved shipping line item that should be added to the order.
- * @param $order
+ * @param object $order
  *   The order to add the shipping line item to.
- * @param $skip_save
+ * @param bool $skip_save
  *   Boolean indicating whether or not to skip saving the order in this function.
  *
- * @return
+ * @return object|false
  *   The saved exactor line item object or FALSE on failure.
  */
 function commerce_exactor_calc_add_exactocalc_line_item($line_item, $order, $skip_save = FALSE) {
@@ -204,6 +205,7 @@ function _commerce_exactor_calc_request_xml() {
   $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><TaxRequest xmlns="http://www.exactor.com/ns"></TaxRequest>');
   $xml->MerchantId = variable_get('exactor_account_id');
   $xml->UserId = variable_get('exactor_user_id');
+  $xml->PartnerID = '';
 
   return $xml;
 }
@@ -219,11 +221,21 @@ function commerce_exactor_calc_tax_request($xml) {
   $url = 'https://taxrequest.exactor.com/xml/invoice';
 
   $request = commerce_exactor_xml_post($url, $xml->asXML());
-  $data = new SimpleXMLElement($request->data);
+
+  if (isset($request->data)) {
+    $data = new SimpleXMLElement($request->data);
+  }
+  elseif (isset($request->error)) {
+    watchdog('commerce_exactor_calc', $request->error);
+    return FALSE;
+  }
+  else {
+    watchdog('commerce_exactor_calc', 'Unknown Error Contacting Exactor');
+    return FALSE;
+  }
 
   if (isset($data->ErrorResponse->ErrorDescription)) {
     watchdog('commerce_exactor_calc', (string) $data->ErrorResponse->ErrorDescription);
-    return FALSE;
   }
 
   return $data;
@@ -231,6 +243,11 @@ function commerce_exactor_calc_tax_request($xml) {
 
 /**
  * Invoice Request XML
+ *
+ * @param object $order
+ * @param array $billing_address
+ * @param array $shipping_address
+ * @param array $from_address
  */
 function commerce_exactor_calc_invoice_request_xml($order, $billing_address, $shipping_address = NULL, $from_address = NULL) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
@@ -270,29 +287,29 @@ function commerce_exactor_calc_invoice_request_xml($order, $billing_address, $sh
   $invoice_request->SaleDate = date("Y-m-d", $order_wrapper->changed->value());
   $invoice_request->ExemptionId = $order_wrapper->uid->value();
 
-  $invoice_request->BillTo->FullName = $billing_address['name_line'];
-  $invoice_request->BillTo->Street1 = $billing_address['thoroughfare'];
-  $invoice_request->BillTo->Street2 = $billing_address['premise'];
-  $invoice_request->BillTo->City = $billing_address['locality'];
-  $invoice_request->BillTo->StateOrProvince = $billing_address['administrative_area'];
-  $invoice_request->BillTo->PostalCode = $billing_address['postal_code'];
-  $invoice_request->BillTo->Country = $billing_address['country'];
+  $invoice_request->BillTo->FullName = check_plain($billing_address['name_line']);
+  $invoice_request->BillTo->Street1 = check_plain($billing_address['thoroughfare']);
+  $invoice_request->BillTo->Street2 = check_plain($billing_address['premise']);
+  $invoice_request->BillTo->City = check_plain($billing_address['locality']);
+  $invoice_request->BillTo->StateOrProvince = check_plain($billing_address['administrative_area']);
+  $invoice_request->BillTo->PostalCode = check_plain($billing_address['postal_code']);
+  $invoice_request->BillTo->Country = check_plain($billing_address['country']);
 
-  $invoice_request->ShipTo->FullName = $shipping_address['name_line'];
-  $invoice_request->ShipTo->Street1 = $shipping_address['thoroughfare'];
-  $invoice_request->ShipTo->Street2 = $shipping_address['premise'];
-  $invoice_request->ShipTo->City = $shipping_address['locality'];
-  $invoice_request->ShipTo->StateOrProvince = $shipping_address['administrative_area'];
-  $invoice_request->ShipTo->PostalCode = $shipping_address['postal_code'];
-  $invoice_request->ShipTo->Country = $shipping_address['country'];
+  $invoice_request->ShipTo->FullName = check_plain($shipping_address['name_line']);
+  $invoice_request->ShipTo->Street1 = check_plain($shipping_address['thoroughfare']);
+  $invoice_request->ShipTo->Street2 = check_plain($shipping_address['premise']);
+  $invoice_request->ShipTo->City = check_plain($shipping_address['locality']);
+  $invoice_request->ShipTo->StateOrProvince = check_plain($shipping_address['administrative_area']);
+  $invoice_request->ShipTo->PostalCode = check_plain($shipping_address['postal_code']);
+  $invoice_request->ShipTo->Country = check_plain($shipping_address['country']);
 
-  $invoice_request->ShipFrom->FullName = $from_address['name_line'];
-  $invoice_request->ShipFrom->Street1 = $from_address['thoroughfare'];
-  $invoice_request->ShipFrom->Street2 = $from_address['premise'];
-  $invoice_request->ShipFrom->City = $from_address['locality'];
-  $invoice_request->ShipFrom->StateOrProvince = $from_address['administrative_area'];
-  $invoice_request->ShipFrom->PostalCode = $from_address['postal_code'];
-  $invoice_request->ShipFrom->Country = $from_address['country'];
+  $invoice_request->ShipFrom->FullName = check_plain($from_address['name_line']);
+  $invoice_request->ShipFrom->Street1 = check_plain($from_address['thoroughfare']);
+  $invoice_request->ShipFrom->Street2 = check_plain($from_address['premise']);
+  $invoice_request->ShipFrom->City = check_plain($from_address['locality']);
+  $invoice_request->ShipFrom->StateOrProvince = check_plain($from_address['administrative_area']);
+  $invoice_request->ShipFrom->PostalCode = check_plain($from_address['postal_code']);
+  $invoice_request->ShipFrom->Country = check_plain($from_address['country']);
 
   foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
     if ($line_item_wrapper->type->value() != 'exactor_calc') {
@@ -306,9 +323,9 @@ function commerce_exactor_calc_invoice_request_xml($order, $billing_address, $sh
           $line->addChild('SKU', drupal_substr($line_item_wrapper->commerce_product->exactor_euc->value(), -12));
         }
         else {
-          $line->addChild('SKU', $line_item_wrapper->commerce_product->sku->value());
+          $line->addChild('SKU', check_plain($line_item_wrapper->commerce_product->sku->value()));
         }
-        $line->addChild('Description', $line_item_wrapper->commerce_product->title->value());
+        $line->addChild('Description', check_plain($line_item_wrapper->commerce_product->title->value()));
       }
 
       elseif ($line_item_wrapper->type->value() == 'shipping') {
@@ -318,7 +335,7 @@ function commerce_exactor_calc_invoice_request_xml($order, $billing_address, $sh
           $line->addChild('SKU', drupal_substr($shipping_service['exactor_euc'], -12));
         }
 
-        $line->addChild('Description', $line_item_wrapper->line_item_label->value());
+        $line->addChild('Description', check_plain($line_item_wrapper->line_item_label->value()));
       }
 
       elseif ($line_item_wrapper->type->value() == 'commerce_discount') {
@@ -330,11 +347,11 @@ function commerce_exactor_calc_invoice_request_xml($order, $billing_address, $sh
           $line->addChild('SKU', 'EUC-99010102');
         }
 
-        $line->addChild('Description', $line_item_wrapper->line_item_label->value());
+        $line->addChild('Description', check_plain($line_item_wrapper->line_item_label->value()));
       }
 
       else {
-        $line->addChild('Description', $line_item_wrapper->line_item_label->value());
+        $line->addChild('Description', check_plain($line_item_wrapper->line_item_label->value()));
       }
     }
   }
@@ -344,6 +361,8 @@ function commerce_exactor_calc_invoice_request_xml($order, $billing_address, $sh
 
 /**
  * Commit Request XML
+ *
+ * @param object $order
  */
 function commerce_exactor_calc_commit_request_xml($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
@@ -360,6 +379,8 @@ function commerce_exactor_calc_commit_request_xml($order) {
 
 /**
  * Refund Request XML
+ *
+ * @param object $order
  */
 function commerce_exactor_calc_refund_request_xml($order) {
   $xml = _commerce_exactor_calc_request_xml();
@@ -373,6 +394,8 @@ function commerce_exactor_calc_refund_request_xml($order) {
 
 /**
  * Delete Request XML
+ *
+ * @param object $order
  */
 function commerce_exactor_calc_delete_request_xml($order) {
   $xml = _commerce_exactor_calc_request_xml();
@@ -385,7 +408,9 @@ function commerce_exactor_calc_delete_request_xml($order) {
 }
 
 /**
- * Impliments hook_commerce_order_delete().
+ * Implements hook_commerce_order_delete().
+ *
+ * @param object $order
  */
 function commerce_exactor_calc_commerce_order_delete($order) {
   if (isset($order->data['exactocalc']['CommitResponce']['TransactionId'])) {

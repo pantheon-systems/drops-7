@@ -1,0 +1,67 @@
+/**
+ * Toolbar tab.
+ */
+
+/* Toolbar tab triangle toggle. */
+.navbar-tab-lingotek .trigger:after {
+  left: 1em;
+  right: auto;
+}
+.navbar-tab-lingotek.open:before {
+  left: 0;
+  right: auto;
+}
+.navbar-tab-lingotek.open .trigger:after {
+  left: 0.7em;
+  right: auto;
+}
+.lingotek .control.close {
+  left: 0;
+  right: auto;
+}
+.lingotek .control.orientation {
+  left: auto;
+  right: 0;
+}
+
+.drupal-navbar .bar .navbar-tab-lingotek .icon-lingotek:before {
+  left: auto; /* LTR */
+  right: 1em;
+}
+
+/**
+ * Responsive preview controls icons.
+ */
+.lingotek .icon-close:before {
+  left: 9px;
+  right: auto;
+}
+.lingotek .icon-orientation:before {
+  left: auto;
+  right: 9px;
+}
+
+
+/* At narrow screen widths, float the tab to the right so it falls in line with
+ * the rest of the navbar tabs. */
+.js .drupal-navbar .bar .navbar-tab-lingotek.tab {
+  float: left;
+}
+.navbar-tab-lingotek .lingotek-options {
+  left: 0.3em;
+  right: auto;
+}
+
+/**
+ * Preview container.
+ *
+ * The container is kept offscreen after it is built and has been disabled.
+ */
+.lingotek {
+  left: auto;
+  right: -200%;
+}
+.lingotek.active {
+  left: auto;
+  right: 0;
+}

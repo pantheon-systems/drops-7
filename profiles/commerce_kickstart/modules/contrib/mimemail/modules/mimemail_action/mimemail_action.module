@@ -42,16 +42,18 @@ function mimemail_send_email_action($entity, $context) {
 
   $params = array(
     'context' => array(
-      'subject' => $context['subject'],
-      'body' => $context['body'],
+      'subject' => token_replace($context['subject'], $context),
+      'body' => token_replace($context['body'], $context),
     ),
+    'key' => $context['key'],
     'cc' => $context['cc'],
     'bcc' => $context['bcc'],
-    'plaintext' => $context['plaintext'],
+    'reply-to' => $context['reply-to'],
+    'plaintext' => token_replace($context['plaintext'], $context),
     'attachments' => $context['attachments'],
   );
 
-  drupal_mail('mimemail', 'action_send_email', $to, $language, $params);
+  drupal_mail('mimemail', $context['key'], $to, $language, $params);
 }
 
 /**
@@ -59,9 +61,11 @@ function mimemail_send_email_action($entity, $context) {
  */
 function mimemail_send_email_action_form($context) {
   $context += array(
+    'key' => '',
     'to' => '',
     'cc' => '',
     'bcc' => '',
+    'reply-to' => '',
     'subject' => '',
     'body' => '',
     'format' => filter_fallback_format(),
@@ -69,6 +73,13 @@ function mimemail_send_email_action_form($context) {
     'attachments' => ''
   );
 
+  $form['key'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Key'),
+    '#default_value' => $context['key'],
+    '#description' => t('A key to identify the e-mail sent.'),
+    '#required' => TRUE,
+  );
   $form['to'] = array(
     '#type' => 'textfield',
     '#title' => t('Recipient'),
@@ -89,6 +100,13 @@ function mimemail_send_email_action_form($context) {
     '#title' => t('BCC Recipient'),
     '#default_value' => $context['bcc'],
     '#description' => t("The mail's blind carbon copy address. You may separate multiple addresses with comma."),
+    '#required' => FALSE,
+  );
+  $form['reply-to'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Reply e-mail address'),
+    '#default_value' => $context['reply-to'],
+    '#description' => t("The address to reply to. Leave it empty to use the sender's address."),
     '#required' => FALSE,
   );
   $form['subject'] = array(
@@ -145,6 +163,11 @@ function mimemail_send_email_action_validate($form, $form_state) {
       form_set_error('bcc', t('Enter a valid email address or use a token e-mail address such as %author.', array('%author' => '[node:author:mail]')));
     }
   }
+
+  $reply_to = trim($form_state['values']['reply-to']);
+  if (!empty($reply_to) && !valid_email_address($reply_to) && strpos($reply_to, ':mail') === FALSE) {
+    form_set_error('reply-to', t('Enter a valid email address or use a token e-mail address such as %author.', array('%author' => '[node:author:mail]')));
+  }
 }
 
 /**
@@ -154,9 +177,11 @@ function mimemail_send_email_action_submit($form, $form_state) {
   $form_values = $form_state['values'];
 
   $params = array(
+    'key' => $form_values['key'],
     'to' => $form_values['to'],
     'cc' => $form_values['cc'],
     'bcc' => $form_values['bcc'],
+    'reply-to' => $form_values['reply-to'],
     'subject' => $form_values['subject'],
     'body' => $form_values['body']['value'],
     'format' => $form_values['body']['format'],

@@ -27,7 +27,13 @@ function search_api_views_views_data() {
         );
       }
 
-      $wrapper = $index->entityWrapper(NULL, TRUE);
+      try {
+        $wrapper = $index->entityWrapper(NULL, FALSE);
+      }
+      catch (EntityMetadataWrapperException $e) {
+        watchdog_exception('search_api_views', $e, "%type while retrieving metadata for index %index: !message in %function (line %line of %file).", array('%index' => $index->name), WATCHDOG_WARNING);
+        continue;
+      }
 
       // Add field handlers and relationships provided by the Entity API.
       foreach ($wrapper as $key => $property) {
@@ -35,6 +41,14 @@ function search_api_views_views_data() {
         if ($info) {
           entity_views_field_definition($key, $info, $table);
         }
+      }
+
+      try {
+        $wrapper = $index->entityWrapper(NULL);
+      }
+      catch (EntityMetadataWrapperException $e) {
+        watchdog_exception('search_api_views', $e, "%type while retrieving metadata for index %index: !message in %function (line %line of %file).", array('%index' => $index->name), WATCHDOG_WARNING);
+        continue;
       }
 
       // Add handlers for all indexed fields.
@@ -63,7 +77,7 @@ function search_api_views_views_data() {
         if ($group) {
           // @todo Entity type label instead of $group?
           $table[$id]['group'] = $group;
-          $name = t('@field (indexed)', array('@field' => $name));
+          $name = t('!field (indexed)', array('!field' => $name));
         }
         $table[$id]['title'] = $name;
         $table[$id]['help'] = empty($info['description']) ? t('(No information available)') : $info['description'];
@@ -139,8 +153,18 @@ function search_api_views_views_data() {
 }
 
 /**
- * Helper function that returns an array of handler definitions to add to a
- * views field definition.
+ * Adds handler definitions for a field to a Views data table definition.
+ *
+ * Helper method for search_api_views_views_data().
+ *
+ * @param $id
+ *   The internal identifier of the field.
+ * @param array $field
+ *   Information about the field.
+ * @param EntityMetadataWrapper $wrapper
+ *   A wrapper providing further metadata about the field.
+ * @param array $table
+ *   The existing Views data table definition, as a reference.
  */
 function _search_api_views_add_handlers($id, array $field, EntityMetadataWrapper $wrapper, array &$table) {
   $type = $field['type'];
@@ -175,12 +199,24 @@ function _search_api_views_add_handlers($id, array $field, EntityMetadataWrapper
   elseif ($inner_type == 'date') {
     $table[$id]['filter']['handler'] = 'SearchApiViewsHandlerFilterDate';
   }
+  elseif (isset($field['entity_type']) && $field['entity_type'] === 'user') {
+    $table[$id]['filter']['handler'] = 'SearchApiViewsHandlerFilterUser';
+  }
+  elseif (isset($field['entity_type']) && $field['entity_type'] === 'taxonomy_term') {
+    $table[$id]['filter']['handler'] = 'SearchApiViewsHandlerFilterTaxonomyTerm';
+    $info = $wrapper->info();
+    $field_info = field_info_field($info['name']);
+    $table[$id]['filter']['vocabulary'] = $field_info['settings']['allowed_values'][0]['vocabulary'];
+  }
   else {
     $table[$id]['filter']['handler'] = 'SearchApiViewsHandlerFilter';
   }
 
-  if ($inner_type == 'string') {
+  if ($inner_type == 'string' || $inner_type == 'uri') {
     $table[$id]['argument']['handler'] = 'SearchApiViewsHandlerArgumentString';
+  }
+  elseif ($inner_type == 'date') {
+    $table[$id]['argument']['handler'] = 'SearchApiViewsHandlerArgumentDate';
   }
   else {
     $table[$id]['argument']['handler'] = 'SearchApiViewsHandlerArgument';

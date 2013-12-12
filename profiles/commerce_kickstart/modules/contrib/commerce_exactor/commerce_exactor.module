@@ -2,14 +2,14 @@
 
 /**
  * @file
- *   commerce_exactor.module
+ * commerce_exactor.module
  */
 
 /**
  * Implements hook_permission().
  */
 function commerce_exactor_permission() {
-   return array(
+  return array(
     'administer exactor' => array(
       'title' => t('Administer Exactor'),
       'description' => t('Manage settings for the Exactor Sales Tax'),
@@ -21,8 +21,6 @@ function commerce_exactor_permission() {
  * Implements hook_menu().
  */
 function commerce_exactor_menu() {
-  $items = array();
-
   $items['admin/commerce/config/exactor'] = array(
     'title' => 'Exactor Sales Tax',
     'description' => 'Exactor Sales Tax Configuration',
@@ -41,6 +39,14 @@ function commerce_exactor_menu() {
   return $items;
 }
 
+/**
+ * Generic wrapper for sending a POST to a provided URL.
+ *
+ * @param string $url
+ *   Address to post XML to.
+ * @param string $xmlrequest
+ *   A string containing the request body.
+ */
 function commerce_exactor_xml_post($url, $xmlrequest) {
 
   $request_url = $url;
@@ -53,8 +59,6 @@ function commerce_exactor_xml_post($url, $xmlrequest) {
 
   // Send the request.
   $result = drupal_http_request($request_url, $request_options);
-  //* set the xml as array *//
-
   return $result;
 
 }

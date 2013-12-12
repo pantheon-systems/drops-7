@@ -31,7 +31,7 @@ class LingotekComment implements LingotekTranslatableEntity {
   /**
    * A static flag for content updates.
    */
-  protected static $content_update_in_progress = FALSE;
+  public static $content_update_in_progress = FALSE;
 
   /**
    * Constructor.
@@ -152,28 +152,6 @@ class LingotekComment implements LingotekTranslatableEntity {
       $update_result = $this->updateLingotekDocument();
     }
 
-    // Synchronize the local content with the translations from Lingotek.
-    // We instruct the users to configure comment translation with a
-    // single-phase machine translation-only Workflow, so the updated content
-    // should be available right after our create/update document calls from above.
-    // If it isn't, Lingotek will call us back via LINGOTEK_NOTIFICATIONS_URL
-    // when machine translation for the item has finished.
-    if (!self::$content_update_in_progress) {
-      // Only update the local content if the Document is 100% complete
-      // according to Lingotek.
-
-      $document_id = $this->getMetadataValue('document_id');
-      if ($document_id) {
-        $document = $this->api->getDocument($document_id);
-        if (!empty($document->percentComplete) && $document->percentComplete == 100) {
-          $this->updateLocalContent();        
-        }
-      }
-      else {
-        LingotekLog::error('Unable to retrieve Lingotek Document ID for comment @id',
-          array('@id' => $this->comment->cid));
-      }
-    }
   }
 
   /**
@@ -230,7 +208,7 @@ class LingotekComment implements LingotekTranslatableEntity {
 
     foreach ($this->comment as $key => $value) {
       $field = field_info_field($key);
-      if (isset($field) && array_key_exists('lingotek_translatable', $field) && $field['lingotek_translatable'] == 1) {
+      if (isset($field)) {
         array_push($translatable, $key);
       }
     }
@@ -333,6 +311,23 @@ class LingotekComment implements LingotekTranslatableEntity {
         ->execute();
     }
   }
+  
+  /**
+   * Deletes a Lingotek metadata value for this item
+   * 
+   * @param string $key
+   *  The key for a name/value pair
+   */
+  public function deleteMetadataValue($key) {
+    $metadata = $this->metadata();
+    if (isset($metadata[$key])) {
+      db_delete('lingotek_entity_metadata')
+        ->condition('entity_id', $this->comment->cid)
+        ->condition('entity_type', self::DRUPAL_ENTITY_TYPE)
+        ->condition('entity_key', $key, 'LIKE')
+        ->execute();
+    }
+  }
 
   /**
    * Updates the local content with data from a Lingotek Document.
@@ -343,74 +338,98 @@ class LingotekComment implements LingotekTranslatableEntity {
   public function updateLocalContent() {
     $success = TRUE;
     $metadata = $this->metadata();
+    $document_id = $metadata['document_id'];
 
-    if (!empty($metadata['document_id'])) {
-      $document_id = $metadata['document_id'];
-      $api = LingotekApi::instance();
-      $document = $api->getDocument($document_id);
-      foreach ($document->translationTargets as $target) {
-        $document_xml = $api->downloadDocument($metadata['document_id'], $target->language);
-
-        $target_language = Lingotek::convertLingotek2Drupal($target->language);
-        foreach ($document_xml as $drupal_field_name => $content) {
-
-          // Figure out which subkey of the field data we're targeting.
-          // "value" for standard text fields, or some other key for
-          // compound text fields (text with summary, for example).
-          $target_key = 'value';
-          $subfield_parts = explode('__', $drupal_field_name);
-          if (count($subfield_parts) == 2) {
-            $drupal_field_name = $subfield_parts[0];
-            $target_key = $subfield_parts[1];
-          }
-
-          $field = field_info_field($drupal_field_name);
-          if (!empty($field['lingotek_translatable'])) {
-            $comment_field = &$this->comment->$drupal_field_name;
-            $index = 0;
-            foreach ($content as $text) {
-              $comment_field[$target_language][$index][$target_key] = decode_entities(lingotek_xml_decode($text));
-
-              // Copy filter format from source language field.
-              if (!empty($comment_field[$this->comment->language][0]['format'])) {
-                $comment_field[$target_language][$index]['format'] = $comment_field[$this->comment->language][0]['format'];
-              }
-              $index++;
-            }
-          }
-        }
-
-        $comment_node = LingotekNode::loadById($this->comment->nid);
-        $comment_fields = array_keys(field_info_instances('comment', 'comment_node_' . $comment_node->type));
-        foreach ($comment_fields as $field) {
-          // Copy any untranslated fields from the default language into this target.
-          if (isset($this->comment->{$field}[$this->comment->language]) && !isset($this->comment->{$field}[$target_language])) {
-            $this->comment->{$field}[$target_language] = $this->comment->{$field}[$this->comment->language];
-          }
-
-          // Ensure that all fields get their LANGUAGE_NONE field data populated with the
-          // comment's default language data, to support toggling off of comment translation
-          // at some point in the future.
-          if (!empty($this->comment->{$field}[$this->comment->language])) {
-            $this->comment->{$field}[LANGUAGE_NONE] = $this->comment->{$field}[$this->comment->language];
-          }
-        }
-      }
-
-      // This avoids an infitinite loop when hooks resulting from comment_save() are invoked.
-      self::$content_update_in_progress = TRUE;
-      comment_save($this->comment);
-      self::$content_update_in_progress = FALSE;
-      $this->comment = comment_load($this->comment->cid);
-    }
-    else {
+    if (empty($document_id)) {
       LingotekLog::error('Unable to refresh local contents for comment @cid. Could not find Lingotek Document ID.',
         array('@cid' => $this->comment->cid));
-      $success = FALSE;
+      return FALSE;
+    }
+  
+    $api = LingotekApi::instance();
+    $document = $api->getDocument($document_id);
+    
+    foreach ($document->translationTargets as $target) {
+        $this->updateLocalContentByTarget($target->language);
     }
 
     return $success;
   }
+  
+  /**
+   * Updates the local content of $target_code with data from a Lingotek Document
+   *
+   * @param string $lingotek_locale
+   *   The code for the language that needs to be updated.
+   * @return bool
+   *   TRUE if the content updates succeeded, FALSE otherwise.
+   */
+  public function updateLocalContentByTarget($lingotek_locale) {
+    $metadata = $this->metadata();
+    $document_id = $metadata['document_id'];
+    
+    if (empty($document_id)) {
+      LingotekLog::error('Unable to refresh local contents for comment @cid. Could not find Lingotek Document ID.',
+        array('@cid' => $this->comment->cid));
+      return FALSE;
+    }
+    
+    $api = LingotekApi::instance();
+    $document_xml = $api->downloadDocument($document_id, $lingotek_locale);
+    
+    $target_language = Lingotek::convertLingotek2Drupal($lingotek_locale);
+    foreach ($document_xml as $drupal_field_name => $content) {
+
+      // Figure out which subkey of the field data we're targeting.
+      // "value" for standard text fields, or some other key for
+      // compound text fields (text with summary, for example).
+      $target_key = 'value';
+      $subfield_parts = explode('__', $drupal_field_name);
+      if (count($subfield_parts) == 2) {
+        $drupal_field_name = $subfield_parts[0];
+        $target_key = $subfield_parts[1];
+      }
+
+      $field = field_info_field($drupal_field_name);
+      if (!empty($field)) {
+        $comment_field = &$this->comment->$drupal_field_name;
+        $index = 0;
+        foreach ($content as $text) {
+          $comment_field[$target_language][$index][$target_key] = decode_entities($text);
+
+          // Copy filter format from source language field.
+          if (!empty($comment_field[$this->comment->language][0]['format'])) {
+            $comment_field[$target_language][$index]['format'] = $comment_field[$this->comment->language][0]['format'];
+          }
+          $index++;
+        }
+      }
+    }
+
+    $comment_node = LingotekNode::loadById($this->comment->nid);
+    $comment_fields = array_keys(field_info_instances('comment', 'comment_node_' . $comment_node->type));
+    foreach ($comment_fields as $field) {
+      // Copy any untranslated fields from the default language into this target.
+      if (isset($this->comment->{$field}[$this->comment->language]) && !isset($this->comment->{$field}[$target_language])) {
+        $this->comment->{$field}[$target_language] = $this->comment->{$field}[$this->comment->language];
+      }
+
+      // Ensure that all fields get their LANGUAGE_NONE field data populated with the
+      // comment's default language data, to support toggling off of comment translation
+      // at some point in the future.
+      if (!empty($this->comment->{$field}[$this->comment->language])) {
+        $this->comment->{$field}[LANGUAGE_NONE] = $this->comment->{$field}[$this->comment->language];
+      }
+    }
+    
+    // This avoids an infitinite loop when hooks resulting from comment_save() are invoked.
+    self::$content_update_in_progress = TRUE;
+    comment_save($this->comment);
+    self::$content_update_in_progress = FALSE;
+    $this->comment = comment_load($this->comment->cid);
+    
+    return TRUE;
+  }  
 
   /**
    * Gets the Lingotek document ID for this entity.
@@ -423,6 +442,25 @@ class LingotekComment implements LingotekTranslatableEntity {
     return $this->getMetadataValue('document_id');
   }
 
+  /**
+   * Return the Drupal Entity type
+   *
+   * @return string
+   *   The entity type associated with this object
+   */
+  public function getEntityType() {
+    return self::DRUPAL_ENTITY_TYPE;
+  }
+
+  /**
+   * Return the comment ID
+   *
+   * @return int
+   *   The ID associated with this object
+   */
+  public function getId() {
+    return $this->comment->cid;
+  }
 
   /**
    * Magic get for access to node and node properties.
@@ -439,4 +477,29 @@ class LingotekComment implements LingotekTranslatableEntity {
 
     return $property;
   }
+  
+  public function getWorkflowId() {
+    return variable_get('lingotek_translate_comments_workflow_id', '');
+  }
+  
+  public function getProjectId() {
+    return variable_get('lingotek_project', '');
+  }
+  
+  public function getVaultId() {
+    return variable_get('lingotek_vault', '');
+  }
+  
+  public function getTitle() {
+    return $this->comment->title;
+  }
+  
+  public function getDescription() {
+    return $this->comment->title;
+  }
+  
+  public function getSourceLocale() {
+    return Lingotek::convertDrupal2Lingotek($this->comment->language);
+  }
+  
 }

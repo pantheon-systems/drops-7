@@ -35,6 +35,9 @@ function commerce_exactor_euc_menu() {
   return $items;
 }
 
+/**
+ * Implements hook_commerce_shipping_service_info_alter().
+ */
 function commerce_exactor_euc_commerce_shipping_service_info_alter(&$shipping_services) {
   foreach ($shipping_services as $key => $shipping_service) {
     $shipping_euc = variable_get('commerce_exactor_euc_shipping', array());
@@ -84,14 +87,14 @@ function _commerce_exactor_euc_field($product) {
 
     '#required' => TRUE,
     '#options' => commerce_exactor_euc_options_list(),
-    '#default_value' => $product->exactor_euc,
+    '#default_value' => isset($product->exactor_euc) ? $product->exactor_euc : 'EUC-09020802',
   );
 
   return $return;
 }
 
 /**
- * Provide the options list for product save validation
+ * Provide the options list for product save validation.
  */
 function commerce_exactor_euc_options_list() {
   $hierarchy = commerce_exactor_euc_hierarchy();

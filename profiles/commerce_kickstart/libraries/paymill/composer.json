@@ -1,7 +1,7 @@
 {
     "name": "paymill/paymill",
     "type": "library",
-    "description": "",
+    "description": "Paymill PHPLib",
     "keywords": ["payment", "provider"],
     "license": "MIT",
     "homepage": "https://www.paymill.de",
@@ -13,7 +13,7 @@
     ],
     "autoload": {
         "psr-0": {
-            "Services_Paymill_": "lib/"
+            "Paymill": "lib/"
         }
     }
 }

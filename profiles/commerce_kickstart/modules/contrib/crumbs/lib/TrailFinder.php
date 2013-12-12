@@ -17,6 +17,7 @@ class crumbs_TrailFinder {
     $trail_reverse = array();
     $front_normal_path = drupal_get_normal_path(variable_get('site_frontpage', 'node'));
     $front_menu_item = crumbs_get_router_item($front_normal_path);
+    $front_menu_item['href'] = '<front>';
     while (strlen($path) && $path !== '<front>' && $path !== $front_normal_path) {
       if (isset($trail_reverse[$path])) {
         // We found a loop! To prevent infinite recursion, we

@@ -2,7 +2,6 @@ name = "Lingotek Translation"
 description = "Extends Drupal's multilingual features by integrating with the Lingotek Translation Management System."
 package = Multilingual
 core = "7.x"
-version = "7.x-2.x"
 php = "5.2"
 configure = admin/config/lingotek/setup
 
@@ -10,11 +9,29 @@ dependencies[] = locale
 dependencies[] = translation
 dependencies[] = field_ui
 dependencies[] = title
+dependencies[] = variable
+dependencies[] = i18n
+dependencies[] = block
+dependencies[] = i18n_block
+dependencies[] = menu
+dependencies[] = i18n_menu
+dependencies[] = i18n_string
+dependencies[] = taxonomy
+dependencies[] = i18n_taxonomy
+dependencies[] = i18n_translation
+dependencies[] = i18n_variable
+dependencies[] = ctools
+dependencies[] = views
+dependencies[] = i18nviews
+dependencies[] = i18n_node
+dependencies[] = l10n_update
+dependencies[] = potx
 
 files[] = lib/Drupal/lingotek/Lingotek.php
 files[] = lib/Drupal/lingotek/LingotekApi.php
 files[] = lib/Drupal/lingotek/LingotekAccount.php
 files[] = lib/Drupal/lingotek/LingotekComment.php
+files[] = lib/Drupal/lingotek/LingotekConfigChunk.php
 files[] = lib/Drupal/lingotek/LingotekDocument.php
 files[] = lib/Drupal/lingotek/LingotekLog.php
 files[] = lib/Drupal/lingotek/LingotekNode.php
@@ -24,11 +41,15 @@ files[] = lib/Drupal/lingotek/LingotekTranslatableEntity.php
 
 files[] = tests/lingotek.base.test
 files[] = tests/lingotek.access.test
-files[] = tests/lingotek.advanced_parsing.test
+files[] = tests/lingotek.setup.test
 
-; Information added by drupal.org packaging script on 2013-06-11
-version = "7.x-3.03"
+files[] = lingotek_views_handler_workbench_link.inc
+
+stylesheets[all][] = style/base.css
+
+; Information added by  packaging script on 2013-11-18
+version = "7.x-4.09"
 core = "7.x"
 project = "lingotek"
-datestamp = "1370982653"
+datestamp = "1384818213"
 

@@ -2,7 +2,7 @@
 /**
  * @file
  *   commerce_exactor_calc.rules.inc
- * Rules integrations for ExactoCALC
+ * Rules integrations for ExactoCALC.
  */
 
 /**
@@ -79,11 +79,26 @@ function commerce_exactor_calc_rules_action_info() {
     ),
   );
 
+  $actions['commerce_exactor_calc_delete_lines'] = array(
+    'label' => t('Delete Exactor Tax Line items'),
+    'parameter' => array(
+      'order' => array(
+        'type' => 'commerce_order',
+        'label' => t('Order'),
+        'save' => TRUE,
+      ),
+    ),
+    'group' => t('Commerce Exactor'),
+    'callbacks' => array(
+      'execute' => 'commerce_exactor_calc_delete_lines',
+    ),
+  );
+
   return $actions;
 }
 
 /**
- * Rule callback
+ * Rule callback.
  */
 function commerce_exactor_calc_invoice_request($order, $billing_address, $shipping_address, $from_address = NULL) {
 
@@ -93,33 +108,49 @@ function commerce_exactor_calc_invoice_request($order, $billing_address, $shippi
   }
 
   $invoice_request = commerce_exactor_calc_invoice_request_xml($order, $billing_address, $shipping_address, $from_address = NULL);
+
+  if (isset($order->data['exactor_calc']['InvoicRequest']) && $order->data['exactor_calc']['InvoicRequest'] == md5($invoice_request->asXML())) {
+    // The invoice is the same so no need to recalculate.
+    return TRUE;
+  }
+
   $result = commerce_exactor_calc_tax_request($invoice_request);
 
   // Delete any existing shipping line items from the order.
   commerce_exactor_calc_delete_exactocalc_line_items($order, TRUE);
 
-  if (isset($result->InvoiceResponse->TotalTaxAmount) && $result->InvoiceResponse->TotalTaxAmount > 0) {
-    // Extract the unit price from the calculated rate.
-    $tax_price = array(
-      'amount' => commerce_currency_decimal_to_amount((string) $result->InvoiceResponse->TotalTaxAmount, (string) $result->InvoiceResponse->CurrencyCode),
-      'currency_code' => (string) $result->InvoiceResponse->CurrencyCode,
-      'data' => array(),
-    );
+  if (isset($result->InvoiceResponse)) {
+    if (isset($result->InvoiceResponse->TotalTaxAmount) && $result->InvoiceResponse->TotalTaxAmount > 0) {
+      // Extract the unit price from the calculated rate.
+      $tax_price = array(
+        'amount' => commerce_currency_decimal_to_amount((string) $result->InvoiceResponse->TotalTaxAmount, (string) $result->InvoiceResponse->CurrencyCode),
+        'currency_code' => (string) $result->InvoiceResponse->CurrencyCode,
+        'data' => array(),
+      );
 
-    $data['exactocalc']['InvoiceResponce']['TransactionId'] = (string) $result->InvoiceResponse->TransactionId;
+      $data['exactocalc']['InvoiceResponce']['TransactionId'] = (string) $result->InvoiceResponse->TransactionId;
 
-    // Create a new exactor line item with the calculated rate from the form.
-    $line_item = commerce_exactor_calc_line_item_new($tax_price, $order->order_id, $data);
+      // Create a new exactor line item with the calculated rate from the form.
+      $line_item = commerce_exactor_calc_line_item_new($tax_price, $order->order_id, $data);
 
-    // Save and add the line item to the order.
-    commerce_exactor_calc_add_exactocalc_line_item($line_item, $order, TRUE);
+      // Save and add the line item to the order.
+      commerce_exactor_calc_add_exactocalc_line_item($line_item, $order, TRUE);
 
+    }
     $order->data['exactor_calc']['InvoiceResponce']['TransactionId'] = (string) $result->InvoiceResponse->TransactionId;
+    $order->data['exactor_calc']['InvoicRequest'] = md5($invoice_request->asXML());
+
+    return TRUE;
+  }
+  elseif (isset($result->ErrorResponse)) {
+    $order->status = 'checkout_checkout';
+    drupal_set_message(t('Sales Tax could not be calculated due to: @error', array('@error' => (string) $result->ErrorResponse->ErrorDescription)), 'warning');
+    return FALSE;
   }
 }
 
 /**
- * Rule callback
+ * Rule callback.
  */
 function commerce_exactor_calc_commit_request($order) {
   if (!variable_get('exactor_account_id') && !variable_get('exactor_user_id')) {
@@ -134,11 +165,14 @@ function commerce_exactor_calc_commit_request($order) {
     if (isset($result->CommitResponse)) {
       $order->data['exactor_calc']['CommitResponce']['TransactionId'] = (string) $result->CommitResponse->TransactionId;
     }
+    elseif (isset($result->ErrorResponse)) {
+      return FALSE;
+    }
   }
 }
 
 /**
- * Rule callback
+ * Rule callback.
  */
 function commerce_exactor_calc_refund_request($order) {
   if (!variable_get('exactor_account_id') && !variable_get('exactor_user_id')) {
@@ -153,5 +187,15 @@ function commerce_exactor_calc_refund_request($order) {
     if (isset($result->CommitResponse)) {
       $order->data['exactor_calc']['RefundResponce']['TransactionId'] = (string) $result->RefundResponse->TransactionId;
     }
+    elseif (isset($result->ErrorResponse)) {
+      return FALSE;
+    }
   }
+}
+
+/**
+ * Rule callback.
+ */
+function commerce_exactor_calc_delete_lines($order) {
+  commerce_exactor_calc_delete_exactocalc_line_items($order, TRUE);
 }

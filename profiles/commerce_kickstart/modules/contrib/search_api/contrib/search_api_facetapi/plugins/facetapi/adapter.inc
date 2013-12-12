@@ -128,8 +128,10 @@ class SearchApiFacetapiAdapter extends FacetapiAdapter {
    *   search_api_current_search(). Or NULL, if no match was found.
    */
   public function getCurrentSearch() {
+    // Even if this fails once, there might be a search query later in the page
+    // request. We therefore don't store anything in $this->current_search in
+    // case of failure, but just try again if the method is called again.
     if (!isset($this->current_search)) {
-      $this->current_search = FALSE;
       $index_id = $this->info['instance'];
       // There is currently no way to configure the "current search" block to
       // show on a per-searcher basis as we do with the facets. Therefore we
@@ -143,7 +145,7 @@ class SearchApiFacetapiAdapter extends FacetapiAdapter {
         }
       }
     }
-    return $this->current_search ? $this->current_search : NULL;
+    return $this->current_search;
   }
 
   /**
@@ -194,7 +196,6 @@ class SearchApiFacetapiAdapter extends FacetapiAdapter {
    */
   public function settingsForm(&$form, &$form_state) {
     $facet = $form['#facetapi']['facet'];
-    $realm = $form['#facetapi']['realm'];
     $facet_settings = $this->getFacet($facet)->getSettings();
     $options = $facet_settings->settings;
     $search_ids = variable_get('search_api_facets_search_ids', array());
@@ -203,6 +204,7 @@ class SearchApiFacetapiAdapter extends FacetapiAdapter {
       $form['global']['default_true'] = array(
         '#type' => 'select',
         '#title' => t('Display for searches'),
+        '#prefix' => '<div class="facetapi-global-setting">',
         '#options' => array(
           TRUE => t('For all except the selected'),
           FALSE => t('Only for the selected'),
@@ -212,6 +214,7 @@ class SearchApiFacetapiAdapter extends FacetapiAdapter {
       $form['global']['facet_search_ids'] = array(
         '#type' => 'select',
         '#title' => t('Search IDs'),
+        '#suffix' => '</div>',
         '#options' => $search_ids,
         '#size' => min(4, count($search_ids)),
         '#multiple' => TRUE,
@@ -244,8 +247,24 @@ class SearchApiFacetapiAdapter extends FacetapiAdapter {
         '#type' => 'select',
         '#title' => t('Granularity'),
         '#description' => t('Determine the maximum drill-down level'),
+        '#prefix' => '<div class="facetapi-global-setting">',
+        '#suffix' => '</div>',
         '#options' => $granularity_options,
         '#default_value' => isset($options['date_granularity']) ? $options['date_granularity'] : FACETAPI_DATE_MINUTE,
+      );
+    }
+
+    // Add an "Exclude" option for terms.
+    if(!empty($facet['query types']) && in_array('term', $facet['query types'])) {
+      $form['global']['operator']['#weight'] = -2;
+      unset($form['global']['operator']['#suffix']);
+      $form['global']['exclude'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Exclude'),
+        '#description' => t('Make the search exclude selected facets, instead of restricting it to them.'),
+        '#suffix' => '</div>',
+        '#weight' => -1,
+        '#default_value' => !empty($options['exclude']),
       );
     }
   }

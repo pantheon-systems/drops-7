@@ -46,6 +46,7 @@ class views_handler_field_megarow_links extends views_handler_field {
           'token_types' => array($this->getTokenType()),
           'global_types' => TRUE,
           'click_insert' => TRUE,
+          'dialog' => TRUE,
         );
         $form['megarow']['tokens']['help'] = array(
           '#type' => 'markup',
@@ -93,10 +94,20 @@ class views_handler_field_megarow_links extends views_handler_field {
     $provided_links = array_filter($provided_links, 'strlen');
 
     $links = array();
+    $tokens = $this->get_render_tokens(array());
     foreach ($provided_links as $link) {
       $link_parts = explode('|', $link);
-      $url = 'display_megarow/' . $entity_id . '/' . $this->getUrl($link_parts[1], $entity);
-      $links[] = $this->getLink($link_parts[0], $url, array('class' => 'views-megarow-open'));
+
+      // Replace tokens if necessary in the url.
+      $url = 'display_megarow/' . $entity_id . '/' . $this->replaceTokens($link_parts[1], $entity);
+      $url = $this->render_altered(array('text' => $url), $tokens);
+
+      // Do the same for the label.
+      $label = $this->replaceTokens($link_parts[0], $entity);
+      $label = $this->render_altered(array('text' => $label), $tokens);
+
+      // Add the link for rendering.
+      $links[] = $this->getLink($label, $url, array('class' => 'views-megarow-open'));
     }
 
     $nb_links = count($links);
@@ -120,7 +131,6 @@ class views_handler_field_megarow_links extends views_handler_field {
         ),
       );
     }
-
     return $element;
   }
 
@@ -130,7 +140,7 @@ class views_handler_field_megarow_links extends views_handler_field {
    * @param type $values
    * @return string
    */
-  protected function getUrl($raw_url, $entity) {
+  protected function replaceTokens($raw_url, $entity) {
     $data = array(
       $this->getTokenType() => $entity,
     );

@@ -38,8 +38,13 @@ class LingotekAccount {
     $this->planType = self::UNKNOWN;
 
     // Load the Current Account Status from Cached local Drupal information.
-    $current_status = variable_get('lingotek_account_status', NULL);
-    $current_plan_type = variable_get('lingotek_account_plan_type', NULL);
+    //$current_status = variable_get('lingotek_account_status', NULL);
+    //$current_plan_type = variable_get('lingotek_account_plan_type', NULL);
+
+    // assume an standard active account avoid call to billing
+    $current_status = variable_get('lingotek_account_status', self::ACTIVE);
+    $current_plan_type = variable_get('lingotek_account_plan_type', 'standard');
+
     if (isset($current_status) && isset($current_plan_type)) {
       $this->setStatus($current_status);
       $this->setPlanType($current_plan_type);
@@ -72,34 +77,7 @@ class LingotekAccount {
   }
 
   public function getStatusText() {
-    return ( $this->status == 'active' ) ? '<span style="color: green;">Active</span>' : '<span style="color: red;">Inactive</span>';
-  }
-
-  public function getManagedTargets($as_detailed_objects = FALSE) {
-    lingotek_add_missing_locales(); // fills in any missing lingotek_locale values to the languages table
-
-    $targets_drupal = language_list();
-    $default_language = language_default();
-
-    $targets = array();
-    foreach ($targets_drupal as $key => $target) {
-      $is_source = $default_language->language == $target->language;
-      $is_lingotek_managed = $target->lingotek_enabled;
-      if ($is_source) {
-        continue; // skip, since the source language is not a target
-      }
-      else if (!$is_lingotek_managed) {
-        continue; // skip, since lingotek is not managing the language
-      }
-      $target->active = $target->lingotek_enabled;
-      $targets[$key] = $target;
-    }
-    $result = $as_detailed_objects ? $targets : array_map(create_function('$obj', 'return $obj->lingotek_locale;'), $targets);
-    return $result;
-  }
-
-  public function getManagedTargetsAsJSON() {
-    return drupal_json_encode(array_values($this->getManagedTargets(FALSE, TRUE)));
+    return ( $this->status == 'active' ) ? '<span style="color: green;">'.t('Active').'</span>' : '<span style="color: red;">'.t('Inactive').'</span>';
   }
 
   public function setPlan($plan) {
@@ -194,9 +172,9 @@ class LingotekAccount {
       
       if (isset($response_json) && $info['http_code'] == 200) { // Did we get valid json data back?  If not, $json is NULL.
         //debug ( $json );
-        LingotekLog::info('<h1>@method</h1>
+        LingotekLog::api('<h1>@method</h1>
         <strong>API URL:</strong> @url
-        <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response', $message_params, 'api');
+        <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response', $message_params);
 
         $response_data = $response;
 

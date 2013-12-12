@@ -4,27 +4,19 @@
  * @file
  * Lingotek Easy Install Process.
  */
+include_once('lingotek.admin.inc');
 
 /**
  * Routing:  Returning User, New Account or Already Setup
  */
 function lingotek_setup() {
 
-  // Check the current settings
-  $current_community_identifier = variable_get('lingotek_community_identifier', '');
-  $current_oauth_consumer_id = variable_get('lingotek_oauth_consumer_id', '');
-  $current_oauth_consumer_secret = variable_get('lingotek_oauth_consumer_secret', '');
-  $current_login_id = variable_get('lingotek_login_id', '');
-  $current_project = variable_get('lingotek_project', '');
-  $current_vault = variable_get('lingotek_vault', '');
-  $current_workflow = variable_get('lingotek_workflow', '');
-
   // Does the install already have connection credentials?
-  if ($current_community_identifier == '' || $current_oauth_consumer_id == '' || $current_oauth_consumer_secret == '' || $current_login_id == '' || $current_project == '' || $current_vault == '' || $current_workflow == '') {
+  if (lingotek_is_config_missing()) {
     drupal_goto('admin/config/lingotek/new-account'); // If something is missing - Go though the Setup Process
   }
   else {
-    drupal_goto('admin/lingotek'); // We already have credentials, goto the Dashboard
+    drupal_goto('admin/settings/lingotek/settings'); // We already have credentials, goto the Dashboard
   }
 }
 
@@ -75,6 +67,7 @@ function lingotek_setup_new_account_form() {
   );
 
   $form['lingotek_button_spacer'] = array('#markup' => '<div>&nbsp;</div>');
+  
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Next') // Create Account
@@ -179,8 +172,8 @@ function lingotek_setup_new_account_form_submit($form, &$form_state) {
       'first_name' => $first_name,
       'last_name' => $last_name,
       'email' => $email
-        ));
-    $callback_url = lingotek_get_notifications_url();
+    ));
+    $notify_url = lingotek_notify_url_generate();
 
     $parameters = array_merge($lead, array(
       'communityDisplayName' => lingotek_get_site_name(),
@@ -189,10 +182,10 @@ function lingotek_setup_new_account_form_submit($form, &$form_state) {
       'company' => lingotek_get_site_name(), //currently we are not asking for this.
       'website' => $base_url,
       'lead' => json_encode($lead)
-        ));
+    ));
 
     $api = LingotekApi::instance();
-    $response = $api->createCommunity($parameters, $callback_url);
+    $response = $api->createCommunity($parameters, $notify_url);
 
     if ($response && $response->results == "success") {
       $community = $response;
@@ -215,7 +208,10 @@ function lingotek_setup_new_account_form_submit($form, &$form_state) {
       variable_set('lingotek_project', $community->project_id);
       variable_set('lingotek_vault', $community->tm_vault_id);
       variable_set('lingotek_workflow', $community->workflow_id);
-      variable_set('lingotek_notifications_callback', $callback_url);
+      variable_set('lingotek_translate_comments_workflow_id', $community->workflow_id);
+      variable_set('lingotek_translate_config_workflow_id', $community->workflow_id);
+      variable_set('lingotek_integration_method', $community->integration_method_id);
+      variable_set('lingotek_notify_url', $notify_url);
       variable_set('lingotek_cms_tag', $lead['distribution']);
 
       $_SESSION['lingotek_setup_path'] = array('admin/config/lingotek/new-account');
@@ -291,13 +287,11 @@ function lingotek_setup_account_settings_form() {
 function lingotek_setup_account_settings_form_submit($form, $form_state) {
   $login_id = $form_state['values']['lingotek_lid'];
   $password = $form_state['values']['lingotek_pid'];
-  //debug( $login_id );
-  //debug( $password );
-  // Validate the Account - Can we Login?
-  // These are V4 Basic Auth API Calls for Legacy Users
-  $communities = lingotek_get_communities_v4($login_id, $password, LINGOTEK_API_SERVER . '/lingopoint/api/4');
-  if ($communities === FALSE) {
-    drupal_set_message(t('Invalid login or password.'), 'error');
+
+  // Validate the Account
+  list($success, $msg) = lingotek_list_community_integrations($login_id, $password);
+  if ($success == FALSE) {
+    drupal_set_message($msg, 'error');
   }
   else {
     // Login Successful:  Valid Account
@@ -320,23 +314,25 @@ function lingotek_community_select_form() {
 
   $form = array();
 
-  // V3 API Calls for Legacy Users
-  $communities = lingotek_get_communities_v4($login_id, $password, LINGOTEK_API_SERVER . '/lingopoint/api/4');
+  list($success, $msg) = lingotek_list_community_integrations($login_id, $password);
 
-  if ($communities === FALSE) {
+  if ($success == FALSE) {
 
-    drupal_set_message(t('Invalid login or password.'), 'error');
+    drupal_set_message($msg, 'error');
     drupal_goto('admin/config/lingotek/account-settings'); // Shouldnt be here.  So something messed up.  Go back.
   }
   else {
-    $count = count($communities);
+    $community_integrations = $msg;
+
+    $count = count($community_integrations);
     if ($count == 1) { // Just one community, use that.
-      $community_keys = array_keys($communities);
-      $community_id = array_pop($community_keys);
-      variable_set('lingotek_community_identifier', $community_id);
-      drupal_goto('admin/config/lingotek/project-select'); // Default path, if they only have 1 community. 
+      $ci = array_pop($community_integrations);
+      variable_set('lingotek_community_identifier', $ci->community_id);
+      variable_set('lingotek_oauth_consumer_id', $ci->key);
+      variable_set('lingotek_oauth_consumer_secret', $ci->secret);
+      drupal_goto('admin/config/lingotek/project-vault-select'); // Default path, if they belong to one community.
     }
-    elseif ($count > 1) { // More then 1 community
+    elseif ($count > 1) { // More than 1 community
       // Stay on this page
     }
     else {
@@ -346,30 +342,41 @@ function lingotek_community_select_form() {
     }
   } // END:  Community Select Paths
 
-  $form['lingotek_user_directions_1'] = array('#markup' => '<p>Your account is associated with multiple Lingotek communities.</p><p>Which community should we associate your Drupal site with?</p>');
-  $form['lingotek_top_spacer'] = array('#markup' => '<div>&nbsp;</div>');
+  $form['lingotek_user_directions_1'] = array(
+    '#markup' => '<p>Your account is associated with multiple Lingotek communities.</p>
+    <p>Select the community to associate this site with:</p>');
+  $community_options = array();
+  foreach ($community_integrations as $ci) {
+    $community_options[$ci->community_id] = $ci->community_name . ' (' . $ci->community_id . ')';
+  }
 
   $form['lingotek_site_community'] = array(
     '#title' => t('Community'),
     '#type' => 'select',
-    '#options' => $communities,
+    '#options' => $community_options,//array_combine(array_keys($communities),array_keys($communities)),
     //'#default_value' => ,
     //'#description' => t( '' ),
     '#required' => TRUE,
   );
-
-  $form['lingotek_button_spacer'] = array('#markup' => '<div>&nbsp;</div>');
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Next')
+  
+  $form['lingotek_communities'] = array(
+    '#type' => 'hidden',
+    '#value' => json_encode($community_integrations)
   );
 
+  $form['lingotek_button_spacer'] = array('#markup' => '<div>&nbsp;</div>');
+  
   if (is_array($_SESSION['lingotek_setup_path'])) {
     if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/community-select') {
       $null = array_pop($_SESSION['lingotek_setup_path']);
     } // if the user went back, remove the last element, which is this page.
     $form['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
   }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Next')
+  );
 
   $form['lingotek_support_footer'] = lingotek_support_footer();
 
@@ -382,87 +389,167 @@ function lingotek_community_select_form() {
  * Community Select Screen - Form Submit
  */
 function lingotek_community_select_form_submit($form, $form_state) {
-  $community_identity = $form_state['values']['lingotek_site_community'];
-  variable_set('lingotek_community_identifier', $community_identity);
+  $community_selected = $form_state['values']['lingotek_site_community'];
+  variable_set('lingotek_community_identifier', $community_selected);
+  $communities = (array)json_decode($form_state['values']['lingotek_communities']);
+  $community = $communities[$community_selected];
+  variable_set('lingotek_oauth_consumer_id', $community->key);
+  variable_set('lingotek_oauth_consumer_secret', $community->secret);
 
   $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/community-select';
-  drupal_set_message(t('Your Lingotek Community Settings have been saved.'));
-  drupal_goto('admin/config/lingotek/project-select'); // Move to Project Select Step. 
+
+  drupal_set_message(t('Your site has been securely connected to your community (@community).', array('@community' => $community_selected)));
+  drupal_goto('admin/config/lingotek/project-vault-select'); // Move to Project Select Step.
 }
 
 /**
  * Project Select Screen (for Current Users) - Form Layout
  */
-function lingotek_project_select_form() {
-  $login_id = variable_get('lingotek_login_id', '');
-  $password = variable_get('lingotek_password', '');
-
+function lingotek_project_vault_select_form() {
   $form = array();
 
-  // V3 API Call for Legacy Users
   $community_identity = variable_get('lingotek_community_identifier', NULL);
-  $projects = lingotek_get_projects_v4($login_id, $password, $community_identity, LINGOTEK_API_SERVER . '/lingopoint/api/4');
-  //To-do: $vaults = lingotek_get_vaults_v4( $login_id, $password, $community_identity, $lingotek_url . '/lingopoint/api/4' );
+  list($community_settings, $full_community_data) = lingotek_get_community_settings($community_identity, TRUE);
 
-  if ($projects === FALSE) {
+  if ($community_settings === FALSE) {
     drupal_set_message(t('Error Retrieving Account Information.'), 'error');
     drupal_goto('admin/config/lingotek/account-settings'); // Error geting projects.  Go back.
   }
-  else {
-    $count = count($projects);
-    if ($count == 1) {
-
-      // If there is just 1 Project, Auto-Select it.  Then move on to the next step.
-      $project_id = '';
-      $workflow_id = '';
-
-      $project_keys = array_keys($projects);
-      $project_string = array_pop($project_keys);
-
-      // This can come back as just the ProjectID, OR the ProjectID ||| WorkflowID jammed together, so check the string.
-      if (strpos($project_string, '|||')) { // Returns a position or false if not found.
-        $parts = explode('|||', $project_string);
-        $project_id = $parts[0];
-        $workflow_id = $parts[1];
-      }
-      else {
-        $project_id = $project_string;
-      }
-
-      variable_set('lingotek_project', $project_id);
-      variable_set('lingotek_workflow', $workflow_id);
-
-      drupal_goto('admin/config/lingotek/language-settings'); // Default path, if they only have 1 project. 
-    }
-    else {
-      // Stay on this page.
-    }
+  elseif ($community_settings['project'] === FALSE || $community_settings['workflow'] === FALSE || $community_settings['vault'] === FALSE) {
+    drupal_set_message(t('Error Retrieving Account Information.'), 'error');
+    drupal_goto('admin/config/lingotek/account-settings'); // Error geting projects.  Go back.
   }
 
-  $form['lingotek_user_directions_1'] = array('#markup' => '<p>Your account is associated with multiple Lingotek projects.</p><p>Choose the project where you would like your translated content stored.</p>');
-  $form['lingotek_top_spacer'] = array('#markup' => '<div>&nbsp;</div>');
+  $form['lingotek_user_directions'] = array('#markup' => '<p>Select or create the default project and vault that you would like to use.</p>');
+  $form['lingotek_community_data'] = array(
+    '#type' => 'hidden',
+    '#value' => json_encode($full_community_data)
+  );
 
-  $form['lingotek_site_project'] = array(
-    '#title' => t('Project'),
+  // Project
+
+    asort($community_settings['project']);
+    
+    $project_already_set = !is_null(variable_get('lingotek_project', NULL));
+    $projects_count = count($community_settings['project']);
+
+    $project_options = array(
+        1 => t('New') . (!$project_already_set ? ' <i>(' . t('recommended') . ')</i>' : ''),
+        0 => t('Existing') . ($project_already_set ? ' <i>(' . t('recommended') . ')</i>' : '')
+      );
+    if ($projects_count == 0) {
+      unset($project_options[0]);
+    }
+    $form['project_new_or_existing'] = array(
+      '#type' => 'radios',
+      '#title' => t('Project'),
+      '#default_value' => $project_already_set ? 0 : 1,
+      '#options' => $project_options,
+      //'#description' => t('The Lingotek Project that you would like to use for this site.'),
+      '#required' => TRUE,
+      //'#attributes' => array('onclick' => "(function(){ console.log($); alert('hi'); })();"),
+    );
+    
+    $form['project_new'] = array(
+      '#type' => 'textfield',
+      //'#title' => t('Project Name'),
+      '#default_value' => lingotek_get_site_name(),
+      '#description' => t('The name of the project where content will be uploaded'),
+      '#size' => 20,
+      '#states' => array(
+        'invisible' => array(
+          ':input[name="project_new_or_existing"]' => array('value' => 0)
+        )
+      )
+    );
+    
+    $form['project_existing'] = array(
+      '#type' => 'select',
+      //'#title' => t('Project Selection'),
+      '#options' => $community_settings['project'],
+      '#default_value' => variable_get('lingotek_project', NULL),
+      '#description' => t('Note: ALL documents uploaded to the project, including documents not from this site, will be affected by actions taken on this site (e.g., adding languages)'),
+      '#states' => array(
+        'invisible' => array(
+          ':input[name="project_new_or_existing"]' => array('value' => 1)
+        ),
+      )
+    );
+
+  // Workflow (assume project default for workflow)
+    
+  /*
+  if ($workflow_count > 1) {
+
+    $form['lingotek_site_workflow'] = array(
+      '#title' => t('Workflow'),
+      '#type' => 'select',
+      '#options' => $community_settings['workflow'],
+      //'#default_value' => ,
+      '#description' => t('The Workflow to use when translating content.'),
+      '#required' => TRUE,
+    );
+  }
+  */
+  
+  // Vault
+
+  $form['vault_existing_or_new'] = array(
+    '#type' => 'radios',
+    '#title' => t('Vault'),
+    '#default_value' => 0,
+    '#options' => array(0 => t('Existing') . ' <i>(' . t('recommended') . ')</i>', 1 => t('New')),
+    //'#description' => t('The Translation Memory (TM) vault where translations are saved.'),
+    '#required' => TRUE
+  );
+
+  $form['vault_existing_or_new'][1]['#states'] = array(
+    'invisible' => array(
+      ':input[name="project_new_or_existing"]' => array('value' => 0)
+    ),
+  );
+
+  $form['vault_existing'] = array(
     '#type' => 'select',
-    '#options' => $projects,
-    //'#default_value' => ,
-    //'#description' => t( '' ),
-    '#required' => TRUE,
+    '#options' => $community_settings['vault'],
+    '#default_value' => variable_get('lingotek_vault', NULL),
+    '#description' => t('Using a shared TM vault allows translations to be re-used.'),
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="vault_existing_or_new"]' => array('value' => 1)
+      ),
+    )
+  );
+  
+  $form['vault_new'] = array(
+    '#type' => 'textfield',
+    //'#title' => t('Vault'),
+    '#default_value' => lingotek_get_site_name(),
+    '#description' => t('The name of the vault where translation memory will be stored'),
+    '#size' => 20,
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="vault_existing_or_new"]' => array('value' => 0)
+      )
+    )
   );
 
-  $form['lingotek_button_spacer'] = array('#markup' => '<div>&nbsp;</div>');
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Next')
-  );
+  
 
+  // submit, etc.
+    
   if (is_array($_SESSION['lingotek_setup_path'])) {
-    if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/project-select') {
+    if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/project-vault-select') {
       $null = array_pop($_SESSION['lingotek_setup_path']);
     } // if the user went back, remove the last element, which is this page.
     $form['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
   }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Next')
+  );
+  //$form['#submit'] = 'lingotek_project_vault_select_form_submit';
 
   $form['lingotek_support_footer'] = lingotek_support_footer();
 
@@ -474,28 +561,59 @@ function lingotek_project_select_form() {
 /**
  * Project Select Screen - Form Submit
  */
-function lingotek_project_select_form_submit($form, $form_state) {
+function lingotek_project_vault_select_form_submit($form, $form_state) {
+  $auto_provision_project = FALSE;
+  $params = array();
 
-  $project_id = '';
-  $workflow_id = '';
-
-  $project_string = $form_state['values']['lingotek_site_project'];
-
-  // This can come back as just the ProjectID, OR the ProjectID ||| WorkflowID jammed together, so check the string.
-  if (strpos($project_string, '|||')) { // Returns a position or false if not found.
-    $parts = explode('|||', $project_string);
-    $project_id = $parts[0];
-    $workflow_id = $parts[1];
+  // Project
+  if ($form_state['values']['project_new_or_existing']) { // new
+    $auto_provision_project = TRUE;
+    $project_name = $form_state['values']['project_new'];
+    $params['projectName'] = $project_name;
   }
-  else {
-    $project_id = $project_string;
+  else { // existing
+    $project_id = $form_state['values']['project_existing'];
+    $lingotek_community_data = json_decode($form_state['values']['lingotek_community_data']);
+    $workflow_id = $lingotek_community_data->project->{$project_id}->workflowId;
+    variable_set('lingotek_project', $project_id);
+    variable_set('lingotek_workflow', $workflow_id);
+    variable_set('lingotek_translate_comments_workflow_id', $workflow_id);
+    variable_set('lingotek_translate_config_workflow_id', $workflow_id);
   }
+  
+  // Vault
+  if ($form_state['values']['vault_existing_or_new']) { // new
+    $vault_name = $form_state['values']['vault_new'];
+    $params['tmVaultName'] = $vault_name;
+  }
+  else { // existing
+    $vault_id = $form_state['values']['vault_existing'];
+    variable_set('lingotek_vault', $vault_id);
+    $params['tmVaultId'] = $vault_id;
+  }
+  
+  if ($auto_provision_project) {
+    $notify_url = lingotek_notify_url_generate();
+    $params['callbackUrl'] = $notify_url;
+    $api = LingotekApi::instance();
+    $response = $api->request('autoProvisionProject', $params);
 
-  variable_set('lingotek_project', $project_id);
-  variable_set('lingotek_workflow', $workflow_id);
-
-  $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/project-select';
-  drupal_set_message(t('Your Lingotek project selection has been saved.'));
+    if ($response->results == 'success') {
+      $project_id = $response->project_id;
+      $workflow_id = $response->workflow_id;
+      $vault_id = $response->tm_vault_id;
+      variable_set('lingotek_project', $project_id);
+      variable_set('lingotek_workflow', $workflow_id);
+      variable_set('lingotek_translate_comments_workflow_id', $workflow_id);
+      variable_set('lingotek_translate_config_workflow_id', $workflow_id);
+      variable_set('lingotek_vault', $vault_id);
+      variable_set('lingotek_integration_method', $response->integration_method_id);
+      variable_set('lingotek_notify_url', $notify_url);
+    }
+  }
+  
+  $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/project-vault-select';
+  drupal_set_message(t('Your Lingotek project, workflow, and vault selections have been setup and saved.'));
   drupal_goto('admin/config/lingotek/language-settings'); // Move to Source Language Select Step. 
 }
 
@@ -533,15 +651,9 @@ function lingotek_setup_language_settings_form() {
     '#type' => 'select',
     '#options' => $languages,
     '#default_value' => $source_language,
-    '#description' => t('<br/>In most cases, your source language should be the default language. (The current site default language is: <b>' . $default_language->name . '</b>)'),
+    '#description' => t('<br/>In most cases, your source language should be the default language. (The current site default language is: <b>@default_language</b>', array('@default_language' => $default_language->name)),
     //t('The current language your site is written in.'),
     '#required' => TRUE,
-  );
-
-  $form['lingotek_button_spacer'] = array('#markup' => '<div>&nbsp;</div>');
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Next')
   );
 
   if (is_array($_SESSION['lingotek_setup_path'])) {
@@ -550,6 +662,11 @@ function lingotek_setup_language_settings_form() {
     } // if the user went back, remove the last element, which is this page.
     $form['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
   }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Next')
+  );
 
   $form['lingotek_support_footer'] = lingotek_support_footer();
 
@@ -606,186 +723,127 @@ function lingotek_setup_language_switcher_form($form, $form_state) {
   $block_enabled = $block['status'];
   $block_regions = system_region_list($current_theme, REGIONS_VISIBLE);
 
-  $ls_chkbox_enabled = array(
-    '#type' => 'checkbox',
-    '#title' => t('Enabled'),
-    '#default_value' => TRUE //$block_enabled,
-  );
-
   $default_region = "sidebar_first";
   $default_region_value = array_key_exists($block['region'], $block_regions) ? $block['region'] : (array_key_exists($default_region, $block_regions) ? $default_region : NULL);
-
-  $ls_select_region = array(
-    '#type' => 'select',
-    //'#title' => 'Region',
-    '#description' => t('When enabled, the region to be displayed in.'),
-    '#options' => $block_regions,
-    '#default_value' => $default_region_value
-  );
 
   $form = array(
     '#type' => 'item',
     '#title' => t('Default Language Switcher'),
     'actions' => array(
       '#type' => 'actions',
-      'submit' => array(
-        '#type' => 'submit',
-        '#value' => t('Next')
-      ),
-      'lingotek_back_button' => lingotek_setup_link('admin/config/lingotek/language-settings', t('Previous Step'))
-    )
+    ),
   );
-  $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/setup-language-switcher';
 
-  $form[] = array(
-    '#type' => 'item',
-    '#description' => t('Would you like to enable the default language switcher?'),
-      //'#suffix' => t('The default language switcher block is only shown if at least two languages are enabled and language negotiation is set to <i>URL</i> or <i>Session</i>.')
-  );
+
   $form['theme'] = array(
     '#type' => 'hidden',
     '#value' => $current_theme
   );
 
-  $form['enabled'] = $ls_chkbox_enabled;
-  $form['region'] = $ls_select_region;
+  $form['enabled'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable the default language switcher'),
+    '#default_value' => TRUE //$block_enabled,
+  );
+
+  $form['region'] = array(
+    '#type' => 'select',
+    '#description' => t('The region where the switcher will be displayed.'),
+    '#options' => $block_regions,
+    '#default_value' => $default_region_value,
+    '#states' => array(
+      'invisible' => array(
+        ':input[name="enabled"]' => array('checked' => FALSE),
+      ),
+    ),
+  );
+
+  if (is_array($_SESSION['lingotek_setup_path'])) {
+    if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/setup-language-switcher') {
+      $null = array_pop($_SESSION['lingotek_setup_path']);
+    } // if the user went back, remove the last element, which is this page.
+    $form['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Next')
+  );
+
   $output = array(
     $form
   );
+
+  $output[] = lingotek_support_footer();
+
   return $output;
 }
 
 function lingotek_setup_language_switcher_form_submit($form, $form_state) {
-  require_once('lingotek.admin.inc');
   lingotek_admin_language_switcher_form_submit($form, $form_state);
+  $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/setup-language-switcher';
   drupal_goto('admin/config/lingotek/node-translation-settings');
 }
 
 /**
- * Node Translation Settings - Form Layout
+ * Entity Translation Settings - Form Layout
  * Select the Content Types and Fields to be Translated.
  */
-function lingotek_setup_node_translation_settings_form() {
+function lingotek_setup_node_translation_settings_form($form, $form_state) {
+  drupal_add_js(drupal_get_path('module', 'lingotek') . '/js/lingotek.admin.js');
 
-  $raw_types = node_type_get_types();
-  $types = array();
-  $translate = variable_get('lingotek_translate_fields', array());
-
-  if (count($translate) > 0) {
-    $use_defaults = FALSE;
-  }
-  else {
-    $use_defaults = TRUE;
-  }
-
-  // What types of fields DO we translate?
-  $included_fields = array('text', 'text_long', 'text_textfield', 'text_textarea_with_summary');
-
-  $form[] = array(
+  $fs['values'] = lingotek_get_global_profile();
+  $fs['values']['profile_id'] = LingotekSync::PROFILE_CUSTOM;
+  $form = lingotek_admin_node_translation_settings_form($form, $form_state, 'node');
+  $content_defaults = lingotek_admin_profile_form($form, $fs);
+  $form['lingotek_nodes_translation_method'] = $content_defaults['defaults']['lingotek_nodes_translation_method'];
+  $form['lingotek_nodes_translation_method']['#weight'] = -3;
+  
+  $c = db_select('node', 'n')
+    ->fields('n', array('tnid'))
+    ->condition('n.tnid', 0, '<>')
+    ->distinct()
+    ->countQuery()
+    ->execute()
+    ->fetchField();
+  
+  $form['lingotek_overwrite_note'] = array(
     '#type' => 'item',
-    '#title' => t('Which content do you want translated?'),
-  );
-  //$form['lingotek_instructions'] = array('#markup' => '<div>Which content do you want translated?</div>');
-  //$form['lingotek_top_spacer'] = array('#markup' => '<div>&nbsp;</div>');
-
-  $form['lingotek_checkboxes_open'] = array('#markup' => '<div id="content-checkboxes" style="border: 0px solid red;">');
-  // Arrange the Types nicely.
-  foreach ($raw_types as $value) {
-    $types[$value->type] = $value->name;
-    $form['type_' . $value->type] = array(
-      '#type' => 'checkbox',
-      '#title' => t('@value_name (<span id="showhidelink_@value_type"><a id="showlink_@value_type" href="@url" class="use-ajax">choose fields</a></span>)', array('@value_name' => $value->name, '@value_type' => $value->type, '@url' => url('admin/config/lingotek/content-type-choose-fields-ajax/' . $value->type))),
-      '#return_value' => $value->type,
-      '#default_value' => ( array_key_exists($value->type, $translate) || ( $use_defaults === TRUE) ) ? TRUE : FALSE,
-      '#prefix' => '<div id="content_type_' . $value->type . '">',
-      '#suffix' => '</div>' . '',
-      '#ajax' => array(
-        'event' => 'click',
-        'callback' => 'lingotek_content_type_checkbox_callback',
-        'wrapper' => 'content_fields_' . $value->type,
+    '#title' => t('You have @count nodes with existing translations', array('@count' => $c)),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="lingotek_nodes_translation_method"]' => array('checked' => FALSE),
       ),
-    );
-
-    // Grab the fields for this Content Type.
-    $fields = field_info_instances('node', $value->type);
-
-    $switch = ( array_key_exists($value->type, $translate) ) ? 'block' : 'none';
-    $form['lingotek_' . $value->type . 'fieldlist_open'] = array('#markup' => '<div id="content_fields_' . $value->type . '" style="display: ' . $switch . ';">');
-    $form['lingotek_fieldlist_details_' . $value->type] = array('#markup' => '<div style="padding-left: 25px; padding-bottom: 5px;">Which fields would you like to include:</div>');
-
-    $title_found = FALSE; // Is there a title field present?
-    // Loop the fields, outputting them.
-    foreach ($fields as $field) {
-      $field_label = $field['label'];
-      $field_machine_name = $field['field_name'];
-      $field_type = $field['widget']['type'];
-      $field_name = $value->type . '_SEPERATOR_' . $field_machine_name;
-
-      if (($field_label == 'Title') && ($field_type == 'text_textfield')) {
-        $title_found = TRUE;
-      }
-      /*
-        $rand = rand();
-        $form['lingotek_fieldlist_debug_'.$rand] = array( '#markup' => '<div>'
-        .'Name: ' .$field_name .'<br>'
-        .'Label: ' .$field_label .'<br>'
-        .'Type: ' .$field_type .'<br>'
-        .'</div>' );
-       */
-      // Exclude field types we dont translate.
-      if (TRUE == array_search($field_type, $included_fields)) {
-        $form[$field_name] = array(
-          '#type' => 'checkbox',
-          '#title' => t('@fieldlabel [@fieldtype]', array('@fieldlabel' => $field_label, '@fieldtype' => $field_type)),
-          // Set if your machine type is set to translate, and your field has been flagged for translation.   OR!  If use defaults == TRUE, and your field type has text in the name somewhere
-          '#default_value' => ( ( isset($translate[$value->type]) && FALSE !== array_search($field_machine_name, $translate[$value->type]) ) || ( ( $use_defaults === TRUE) && (strpos($field_type, 'text') !== FALSE ) ) ) ? TRUE : FALSE,
-          '#prefix' => '<div style="padding-left: 35px;">',
-          '#suffix' => '</div>',
-        );
-      }
-    } // END:  foreach field
-    // if we did NOT find a title field for the specified content type, add it manually as an option, and we can do a title swap for the user.
-    if ($title_found === FALSE) {
-      $form['title_swap_' . $value->type] = array(
-        '#type' => 'checkbox',
-        '#title' => t('Title (Note: field will be created)'),
-        '#default_value' => TRUE,
-        '#prefix' => '<div style="padding-left: 35px;">',
-        '#suffix' => '</div>',
-      );
-    }
-
-    $form['lingotek_' . $value->type . 'fieldlist_close'] = array('#markup' => '</div>');
-
-    $rand = rand();
-    $form['lingotek_after_fields_' . $rand] = array('#markup' => '<div>&nbsp;</div>');
-  } // END:  foreach content type
-
-  $form['lingotek_checkboxes_close'] = array('#markup' => '</div>');
-
-
-  if (variable_get('lingotek_setup_complete', 0)) {
-    $form['lingotek_button_spacer'] = array('#markup' => '<div>&nbsp;</div>');
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Save')
-    );
+    ),
+    '#weight' => -2,
+  );
+  
+  $form['lingotek_overwrite'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Do not allow Lingotek to translate these nodes. <b>NOTE: Unchecking this option will cause Lingotek to overwrite your current translated content.</b>'),
+    '#default_value' => TRUE,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="lingotek_nodes_translation_method"]' => array('checked' => FALSE),
+      ),
+    ),
+    '#weight' => -1,
+  );
+  
+  if (is_array($_SESSION['lingotek_setup_path'])) {
+    if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/node-translation-settings') {
+      $null = array_pop($_SESSION['lingotek_setup_path']);
+    } // if the user went back, remove the last element, which is this page.
+    $form['node_translation']['actions']['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
   }
-  else {
-    $form['lingotek_button_spacer'] = array('#markup' => '<div>&nbsp;</div>');
-    $form['submit'] = array(
-      '#type' => 'submit',
-      '#value' => t('Next')
-    );
 
-    if (is_array($_SESSION['lingotek_setup_path'])) {
-      if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/node-translation-settings') {
-        $null = array_pop($_SESSION['lingotek_setup_path']);
-      } // if the user went back, remove the last element, which is this page.
-      $form['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
-    }
-    $form['lingotek_support_footer'] = lingotek_support_footer();
-  }
+  unset($form['node_translation']['actions']['submit']);
+  $form['node_translation']['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Next')
+  );
+
+  $form['lingotek_support_footer'] = lingotek_support_footer();
 
   return $form;
 }
@@ -818,129 +876,102 @@ function lingotek_content_type_choose_fields_callback($content_type) {
 }
 
 /**
- * Node Translation Settings - Ajax Callback - Checkbox Check/Uncheck
- */
-function lingotek_content_type_checkbox_callback($form, &$form_state) {
-
-  $triggered_by = $form_state['input']['_triggering_element_name'];  // IE:  type_article
-  $selected_type = substr($triggered_by, 5); // This was the content type that was selected.  IE:  article
-  $selector = '#content_fields_' . $selected_type;
-
-  $commands = array();
-
-  // A checkbox was just selected.   If it is checked, its value will be its type name.  If it was unchecked, it will be blank.
-  $checkbox_value = $form_state['input'][$triggered_by];
-
-  // If the checkbox was un-checked, deselect child checkboxes.
-  if ($checkbox_value == '') {
-    // NAME: article_SEPERATOR_body
-    // removeAttr('checked')
-    // 'td[name^=tcol]'
-    $checkbox_selector = ':checkbox[name^=' . $selected_type . '_SEPERATOR_]';
-    $link_selector = '#togglelink_' . $selected_type;
-    $commands[] = ajax_command_invoke($checkbox_selector, 'removeAttr', array('checked'));
-
-    $checkbox_selector2 = ':checkbox[name=title_swap_' . $selected_type . ']';
-    $commands[] = ajax_command_invoke($checkbox_selector2, 'removeAttr', array('checked'));
-
-    $commands[] = ajax_command_invoke($selector, 'hide');
-
-    $link = '<a id="showlink_' . $selected_type . '" href="' . url('admin/config/lingotek/content-type-choose-fields-ajax/' . $selected_type) . '" class="use-ajax">choose fields</a>';
-    $span_selector = '#showhidelink_' . $selected_type;
-    $commands[] = ajax_command_html($span_selector, $link);
-  } // END: uncheck
-  else { // If the checkbox was selected, activate the default fields.
-    //$commands[] = ajax_command_invoke( $selector, 'show' );
-    $checkbox_selector2 = ':checkbox[name=title_swap_' . $selected_type . ']';
-    $commands[] = ajax_command_invoke($checkbox_selector2, 'attr', array('checked', 'checked'));
-
-    // Grab the fields for this Content Type.
-    $fields = field_info_instances('node', $selected_type);
-    // Loop the fields, outputting them.
-    foreach ($fields as $field) {
-      $field_label = $field['label']; //  Label: Body
-      $field_machine_name = $field['field_name'];
-      $field_type = $field['widget']['type']; // Type: text_textarea_with_summary
-      $field_name = $selected_type . '_SEPERATOR_' . $field_machine_name; // Name: article_SEPERATOR_body
-      // If this is a text field, include it by default.
-      if (strpos($field_type, 'text') !== FALSE) {
-        $checkbox_selector = ':checkbox[name=' . $field_name . ']';
-        $commands[] = ajax_command_invoke($checkbox_selector, 'attr', array('checked', 'checked'));
-      }
-    } // END:  foreach  $fields
-  } // END:  checked
-  //$commands[] = ajax_command_invoke( $selector, 'toggle' );
-  //$commands[] = ajax_command_alert( 'Info: ' . $link_selector );
-
-  return array('#type' => 'ajax', '#commands' => $commands);
-}
-
-/**
  * Node Translation Settings - Form Submit
  */
 function lingotek_setup_node_translation_settings_form_submit($form, &$form_state) {
-  $translate = array();
-  $operations = array();
-  foreach ($form_state['values'] as $key => $value) {
-
-    // Look for Selected Content Types and Fields.
-    if (FALSE !== strpos($key, '_SEPERATOR_')) {
-      // And only if set to translate
-      if ($value != 0) {
-        $parts = explode('_SEPERATOR_', $key);
-        $content_type = $parts[0];
-        $content_field = $parts[1];
-        $translate[$content_type][] = $content_field;
-
-        // Set this content type to be Lingotek translated.
-        variable_set('language_content_type_' . $content_type, LINGOTEK_ENABLED);
-        // Set this field to 'translatable'.
-        // Update the field via the Field API (Instead of the direct db_update)
-        $field = field_info_field($content_field);
-        $field['translatable'] = 1;
-        $field['lingotek_translatable'] = 1;
-        field_update_field($field);
+  lingotek_admin_node_translation_settings_form_submit($form, $form_state);
+  
+  if ($form_state['values']['lingotek_nodes_translation_method'] == 'node' && $form_state['values']['lingotek_overwrite']) {
+    $nodes = db_select('node', 'n')
+      ->fields('n', array('nid', 'tnid'))
+      ->condition('n.tnid', 0, '<>')
+      ->execute()
+      ->fetchAll();
+    
+    $ops = array();
+    
+    foreach ($nodes as $row) {
+      $ops[] = array('lingotek_lingonode', array($row->nid, 'profile', LingotekSync::PROFILE_DISABLED));
+      if ($row->nid == $row->tnid) {
+        $ops[] = array('LingotekSync::setNodeEnabled', array($row->nid, FALSE));
       }
-    } // END:  Selected Content Types and Fields
-    // Look for any nodes we need to do the Title swap for.
-    if (FALSE !== strpos($key, 'title_swap_')) {
-      // And only if set to swap
-      if ($value != 0) {
-        $content_type = substr($key, strlen('title_swap_'));
-        //dpm( 'Title Swap: ' . $content_type );
-        // Do the actual title replacement
-        $entity_type = 'node';
-        $bundle = $content_type;
-        $legacy_field = 'title';
-
-        // Use the Title module to migrate the content.
-        if (title_field_replacement_toggle($entity_type, $bundle, $legacy_field)) {
-          //title_field_replacement_batch_set($title_entity, $title_bundle, $title_field);
-          $operations[] = array('title_field_replacement_batch', array($entity_type, $bundle, $legacy_field));
-          $translate[$content_type][] = 'title_field';
-          $field = field_info_field('title_field');
-          $field['translatable'] = 1;
-          $field['lingotek_translatable'] = 1; // Ensure the title field is flagged for Lingotek translation.
-          $operations[] = array('field_update_field', array($field)); //field_update_field($field);
-        }
+      else {
+        $ops[] = array('lingotek_lingonode', array($row->nid, 'node_sync_status', LingotekSync::STATUS_TARGET));
       }
     }
+    
+    $batch = array(
+      'operations' => $ops,
+    );
+    
+    batch_set($batch);
+    batch_process('admin/config/lingotek/comment-translation-settings');
+    
   }
-  $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/node-translation-settings';
-  variable_set('lingotek_translate_fields', $translate);
+  else {
+    drupal_goto('admin/config/lingotek/comment-translation-settings');
+  }
+}
 
-  $operations[] = array('lingotek_cleanup_utility', array(FALSE));
-  $operations[] = array('variable_set', array('lingotek_setup_complete', 1));
+function lingotek_setup_comment_translation_settings_form($form, &$form_state) {
+  $form = lingotek_admin_comment_translation_settings_form($form, $form_state);
 
-  $batch = array(
-    'title' => t('Preparing content for translation'),
-    'operations' => $operations
+  if (is_array($_SESSION['lingotek_setup_path'])) {
+    if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/comment-translation-settings') {
+      $null = array_pop($_SESSION['lingotek_setup_path']);
+    } // if the user went back, remove the last element, which is this page.
+    $form['comment_translation']['actions']['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
+  }
+  $form['comment_translation']['#submit'] = 'lingotek_setup_comment_translation_settings_form_submit';
+
+  unset($form['comment_translation']['actions']['submit']);
+  $form['comment_translation']['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Next'),
   );
 
-  batch_set($batch);
-  drupal_set_message(t('You have completed setup successfully!'));
-  $redirect = LINGOTEK_MENU_LANG_BASE_URL;
-  batch_process($redirect);
+  $form['lingotek_support_footer'] = lingotek_support_footer();
+
+  return $form;
+}
+
+function lingotek_setup_comment_translation_settings_form_submit($form, &$form_state) {
+  lingotek_admin_comment_translation_settings_form_submit($form, $form_state);
+  drupal_goto('admin/config/lingotek/additional-translation-settings');
+}
+
+function lingotek_setup_additional_translation_settings_form($form, &$form_state) {
+  $form = lingotek_admin_additional_translation_settings_form($form, $form_state);
+
+  if (is_array($_SESSION['lingotek_setup_path'])) {
+    if (end($_SESSION['lingotek_setup_path']) == 'admin/config/lingotek/additional-translation-settings') {
+      $null = array_pop($_SESSION['lingotek_setup_path']);
+    } // if the user went back, remove the last element, which is this page.
+    $form['additional_translation']['actions']['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
+  }
+  $form['additional_translation']['#submit'] = 'lingotek_setup_additional_translation_settings_form_submit';
+
+  unset($form['additional_translation']['actions']['submit']);
+  $form['additional_translation']['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Finish'),
+  );
+
+  $form['lingotek_support_footer'] = lingotek_support_footer();
+  return $form;
+}
+
+function lingotek_setup_additional_translation_settings_form_submit($form, &$form_state) {
+  // WTD: process the submitted options
+  
+  $operations = array();
+  $cleanup_batch = lingotek_cleanup_utility(FALSE, FALSE); // return the batch, rather than autoset to execute
+  if ($cleanup_batch && isset($cleanup_batch['operations'])) {
+    $operations = array_merge($operations, $cleanup_batch['operations']);
+  }
+  $_SESSION['lingotek_setup_path'][] = 'admin/config/lingotek/additional-translation-settings';
+  
+  lingotek_admin_additional_translation_settings_form_submit($form, $form_state, $additional_operations=$operations);
 }
 
 /**
@@ -988,12 +1019,12 @@ function lingotek_setup_node_updates_form($form, $form_state) {
 
   $form['lingotek_middle_spacer'] = array('#markup' => '<div>&nbsp;</div>');
 
-  $form['lingotek_button_spacer'] = array('#markup' => '<div>&nbsp;</div>');
+  $form['lingotek_back_button'] = lingotek_setup_link('admin/config/lingotek/language-settings', t('Previous Step'));
+
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Next')
   );
-  $form['lingotek_back_button'] = lingotek_setup_link('admin/config/lingotek/language-settings', t('Previous Step'));
 
   return $form;
 }
@@ -1003,7 +1034,7 @@ function lingotek_setup_node_updates_form($form, $form_state) {
  */
 function lingotek_setup_link($path = 'admin/config/lingotek/language-settings', $text = 'Previous Step') {
   return array(
-    '#markup' => l($text, $path, array('#attributes' => 'margin-left: 20px;'))
+    '#markup' => '<span style="margin-right: 15px;">' . l($text, $path) . '</span>'
   );
 }
 
@@ -1030,65 +1061,113 @@ function lingotek_setup_node_updates_form_submit($form, $form_state) {
  * Get the Lingotek user's current Communities.  Use the V3 API.
  */
 
-function lingotek_get_communities_v4($login, $passwd, $url) {
+function lingotek_list_community_integrations($login, $passwd) {
 
   // API V4 Connection
   $client = new LingotekSession();
 
   $client->login_id = $login;
   $client->password = $passwd;
-  $client->url = $url;
+  $client->url = LINGOTEK_API_SERVER . '/lingopoint/api/4';
 
   $options = array();
 
   if (!$client->canLogIn()) {
-    return FALSE;
+    return array(FALSE, t('Failed to connect to the Lingotek service: @error', array('@error' => $client->getLastLoginMsg())));
   }
 
-  $list_communities = $client->request("listCommunities", array());
-  if ($list_communities->results == "success") {
-    foreach ($list_communities->communities as $community) {
-      $options[$community->id] = $community->name;
-    }
-  }
-
-  return $options;
-}
-
-/*
- * Get the Lingotek user's current Projects.  Uses the V4 API with Basic Auth.
- */
-
-function lingotek_get_projects_v4($login, $passwd, $community_identity, $url) {
-
-  // API V4 Connection
-  $client = new LingotekSession();
-
-  $client->login_id = $login;
-  $client->password = $passwd;
-  $client->url = $url;
-  $client->community = $community_identity;
-
-  if (!$client->canLogIn()) {
-    return FALSE;
-  }
-
-  $options = array();
-  $list_projects = $client->request("listProjects", array('community' => $community_identity));
-  if ($list_projects->results == "success") {
-    foreach ($list_projects->projects as $project) {
-      if ($project->state == 'Active') {
-        if (!empty($project->workflowId)) { // Send back the ProjectID AND WorkflowID.  Joined by |||
-          $options[$project->id . '|||' . $project->workflowId] = $project->name;
-        }
-        else { // Just send back the Project ID
-          $options[$project->id] = $project->name;
+  $list_community_integrations = $client->request("listCommunityIntegrations", array());
+  if ($list_community_integrations->results == "success") {
+    foreach ($list_community_integrations->communities as $community) {
+      foreach ($community->integration_methods as $integration_method) {
+        if (!empty($integration_method->key) && !empty($integration_method->secret)) { // select first InboundOAuth Integration keys
+          $integration_method->community_name = $community->name;
+          $integration_method->community_id = isset($community->id) ? $community->id : $community->name;
+          $options[$integration_method->community_id] = $integration_method;
+          break;
         }
       }
     }
   }
+  return array(TRUE, $options);
+}
 
-  return $options;
+/*
+ * Get the Lingotek user's current Projects.
+ */
+function lingotek_get_community_settings($community_identity, $return_complete = FALSE) {
+
+  $api = LingotekApi::instance();
+
+  $options = array();
+  $complete = array();
+  
+  // get projects
+  $options['project'] = array();
+  $complete['project'] = array();
+  $list_projects = $api->request("listProjects", array('community' => $community_identity));
+  if ($list_projects->results == "success") {
+    foreach ($list_projects->projects as $project) {
+      $complete['project'][$project->id] = $project;
+      if ($project->state == 'Active') {
+        //if (!empty($project->workflowId)) { // Send back the ProjectID AND WorkflowID.  Joined by |||
+        //  $options['project'][$project->id . '|||' . $project->workflowId] = $project->name;
+        //}
+        //else { // Just send back the Project ID
+        $options['project'][$project->id] = $project->name;
+        //}
+      }
+    }
+  }
+
+  // get workflows
+  $options['workflow'] = array();
+  $complete['workflow'] = array();
+  $list_workflows = $api->request("listWorkflows", array('community' => $community_identity));
+  if ($list_workflows->results == "success") {
+    
+    foreach ($list_workflows->workflows as $workflow) {
+      $workflow_key = $workflow->id;
+      $complete['workflow'][$workflow_key] = $workflow;
+      foreach ($workflow->workflow_steps as $step) {
+        if (isset($step->save_to_vault)) {
+          $vault = array();
+          $vault_match = preg_match('/doc_index_id="([0-9]*)"/', $step->save_to_vault, $vault);
+          $workflow_key .= '|||' . $vault[1];
+        }
+      }
+      if ($workflow->active && !$workflow->is_public) {
+        $options['workflow'][$workflow_key] = $workflow->name;
+      }
+    }
+  }
+
+  // get TM vaults
+  $options['vault'] = array();
+  $complete['vault'] = array();
+  $list_vaults = $api->request("listTMVaults", array('community' => $community_identity));
+  if ($list_vaults->results == "success") {
+    if (isset($list_vaults->personalVaults)) {
+      foreach ($list_vaults->personalVaults as $personal_vault) {
+        $complete['vault']['PersonalVaults'][$personal_vault->id] = $personal_vault;
+        $options['vault']['Personal Vaults'][$personal_vault->id] = $personal_vault->name;
+      }
+    }
+    if (isset($list_vaults->communityVaults)) {
+      foreach ($list_vaults->communityVaults as $community_vault) {
+        $complete['vault']['CommunityVaults'][$community_vault->id] = $community_vault;
+        $options['vault']['Community Vaults'][$community_vault->id] = $community_vault->name;
+      }
+    }
+    if (isset($list_vaults->publicVaults)) {
+      foreach ($list_vaults->publicVaults as $public_vault) {
+        $complete['vault']['PublicVaults'][$public_vault->id] = $public_vault;
+        $options['vault']['Public Vaults'][$public_vault->id] = $public_vault->name;
+      }
+    }
+  }
+
+  return $return_complete ? array($options, $complete) : $options;
 }
 
 /**

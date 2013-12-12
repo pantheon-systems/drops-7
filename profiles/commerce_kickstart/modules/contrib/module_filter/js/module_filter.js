@@ -50,7 +50,7 @@
   moduleFilter = function(string) {
     stringLowerCase = string.toLowerCase();
 
-    $("fieldset table tbody tr td label > strong").each(function(i) {
+    $("fieldset table tbody tr td label strong").each(function(i) {
       var $row = $(this).parents('tr');
       var module = $(this).text();
       var moduleLowerCase = module.toLowerCase();

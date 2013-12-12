@@ -4,11 +4,12 @@
  * @file
  * Defines Lingotek.
  */
- 
+
 /**
  * A utility class for Lingotek translation.
  */
 class Lingotek {
+
   /**
    * A map of Drupal language codes to Lingotek language codes.
    */
@@ -204,20 +205,17 @@ class Lingotek {
     'zh-hans' => 'zh_CN',
     'zh-hant' => 'zh_TW',
     'zu' => 'zu_ZA',
-   );
-  
+  );
   public static $language_mapping_l2d_exceptions = array(
     'ar' => 'ar',
     'zh_CN' => 'zh',
     'zh_TW' => 'zh-hant'
   );
-  
   public static $language_mapping_d2l_exceptions = array(
     'zh-hans' => 'zh_CN',
     'zh-hant' => 'zh_TW'
   );
-   
-  
+
   /**
    * Converts the Lingotek language code for the specified Drupal language code.
    *
@@ -233,9 +231,9 @@ class Lingotek {
   public static function convertDrupal2Lingotek($drupal_language_code, $enabled_check = TRUE) {
 
     $lingotek_locale = FALSE;
-    
+
     // standard conversion
-    if (!$enabled_check) { 
+    if (!$enabled_check) {
       // If the code contains a dash then, keep it specific 
       $exceptions = self::$language_mapping_d2l_exceptions;
       if (array_key_exists($drupal_language_code, $exceptions)) {
@@ -252,21 +250,20 @@ class Lingotek {
           $lingotek_locale = self::$language_map[$drupal_language_code];
         }
       }
-      //dvz($lingotek_locale,TRUE);
       return $lingotek_locale;
     }
 
     // check to see if the lingotek_locale is set the drupal languages table for this language
     $languages = language_list();
     foreach ($languages as $target) {
-      if ( strcasecmp($drupal_language_code,$target->language) == 0 && isset($target->lingotek_locale)) {
+      if (strcasecmp($drupal_language_code, $target->language) == 0 && isset($target->lingotek_locale)) {
         return $target->lingotek_locale;
       }
-    }   
+    }
 
     return $lingotek_locale;
   }
-  
+
   /**
    * Gets the Drupal language code for the specified Lingotek language code.
    *
@@ -282,7 +279,7 @@ class Lingotek {
   public static function convertLingotek2Drupal($lingotek_locale, $enabled_check = TRUE) {
 
     $drupal_language_code = strtolower(str_replace("_", "-", $lingotek_locale)); // standard conversion
-    $drupal_general_code = substr($drupal_language_code, 0, strpos($drupal_language_code, '-'));   
+    $drupal_general_code = substr($drupal_language_code, 0, strpos($drupal_language_code, '-'));
     if (!$enabled_check) {
       $exceptions = self::$language_mapping_l2d_exceptions;
       if (array_key_exists($lingotek_locale, $exceptions)) {
@@ -316,7 +313,7 @@ class Lingotek {
     //echo "\n\n convertLingotek2Drupal: ".$lingotek_locale." => ".$ret." \n\n";
     return $ret;
   }
-  
+
   public static function testConvertFunctions() {
     $result = array(
       "drupal => lingotek" => array(),
@@ -338,7 +335,7 @@ class Lingotek {
     }
     return $result;
   }
-  
+
   /**
    * Returns whether the given language is supported.
    *
@@ -353,8 +350,7 @@ class Lingotek {
     }
     return $supported;
   }
-  
-  
+
   /**
    * Gets the site's available target languages for Lingotek translation.
    *
@@ -366,19 +362,30 @@ class Lingotek {
    * @return array
    *   An array of Lingotek language codes.
    */
-  public static function availableLanguageTargets($pluck_field = NULL, $include_all = FALSE) {
+  public static function availableLanguageTargets($pluck_field = NULL, $include_disabled = FALSE, $lingotek_locale_to_exclude = NULL) {
+    lingotek_add_missing_locales();
     $languages = array();
 
     foreach (language_list() as $target_language) {
+      if ($target_language->lingotek_locale == $lingotek_locale_to_exclude)
+        continue;
       $language = (is_string($pluck_field) && isset($target_language->$pluck_field)) ? $target_language->$pluck_field : $target_language;
-      if ($include_all && $target_language->enabled) { // include all languages enabled (not necessarily lingotek_enabled)
-        $languages[] = $language;
+      if ($target_language->lingotek_enabled) { // include all languages enabled
+        $languages[$target_language->lingotek_locale] = $language;
       }
-      else if ($target_language->lingotek_enabled) {
-        $languages[] = $language;
+      else if ($include_disabled) { // include all languages, including disabled (lingotek_enabled is 0)
+        $languages[$target_language->lingotek_locale] = $language;
       }
     }
     return $languages;
+  }
+
+  public static function availableLanguageTargetsWithoutSource($source_lingotek_locale) {
+    return self::availableLanguageTargets('lingotek_locale', FALSE, $source_lingotek_locale);
+  }
+
+  public static function availableLanguageTargetsWithoutSourceAsJSON($source_lingotek_locale) {
+    return drupal_json_encode(array_values(self::availableLanguageTargets('lingotek_locale', FALSE, $source_lingotek_locale)));
   }
 
 }

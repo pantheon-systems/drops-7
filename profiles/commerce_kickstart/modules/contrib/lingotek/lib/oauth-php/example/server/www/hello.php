@@ -36,7 +36,7 @@
 require_once '../core/init.php';
 
 $authorized = false;
-$server = new OAuthServer();
+$server = new LingotekOAuthServer();
 try
 {
 	if ($server->verifyIfSigned())

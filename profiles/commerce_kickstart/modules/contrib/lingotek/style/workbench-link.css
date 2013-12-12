@@ -1,0 +1,48 @@
+.views-field {
+  position: relative;
+}
+
+.comment {
+  position: relative;
+}
+
+.node {
+  position: relative;
+}
+
+.views-field-lingotek-workbench-link a {
+  position:absolute;
+  left: -25px;
+  top: 5px;
+  background-image: url('../images/ico_chevs_dd.png');
+  background-repeat: no-repeat;
+  background-position:center;
+  width: 30px;
+  text-indent: -9000px;
+}
+
+a.lingotek-translation-link {
+  position:absolute;
+  left: -25px;
+  top: 5px;
+  z-index: 100;
+  opacity:0.6;
+  filter:alpha(opacity=60);
+  padding: 5px 5px 0 5px;
+}
+
+a.lingotek-translation-link:hover {
+    opacity:1.0;
+    filter:alpha(opacity=100);
+}
+
+.comment a.lingotek-translation-link {
+  right: 10px;
+  left: auto;
+  top: 10px;
+}
+
+.node a.lingotek-translation-link {
+  right: 40px;
+  left: auto;
+}

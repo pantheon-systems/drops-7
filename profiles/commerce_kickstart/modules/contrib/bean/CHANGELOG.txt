@@ -1,5 +1,43 @@
 Current API VERSION: 5.
 
+Bean 7.x-1.6, 2013-11-20
+---------------------------
+#2138651 by indytechcook: Add deploy_managed_ui_form_elements() to edit/create form.
+#1941168: Add back in missing setDefault method on bean class.
+#1957986 by sylus: Bean + UUID / Deploy.
+#2112567 by webflo: Make access controller swappable.
+#2115463 by webflo: Page title is escaped twice.
+#1684250 by rimen, foopang: Transliteration module integration fix.
+#2117223 by jrbeeman: Static cache bean_block_info().
+#2123053 by dagmar: Uninstalling Bean when Shortcut module is disabled produces a fatal error.
+#2114279 by kingandy: Block cache flush introduces Block module dependency.
+
+Bean 7.x-1.5, 2013-10-23
+---------------------------
+by DamienMcKenna: Fixed arbitrary tag in the bean title input.
+
+Bean 7.x-1.4, 2013-10-13
+---------------------------
+#2080239 by ro0NL: Bean export type is internally translated
+#2061725 by timaholt: support UUID for revisions
+#2076133 by Sylvain Lecoy: Align admin/structure text with drupal standards
+#1359472 by arithmetric: Fix uninstall of bean module plugins
+#2053911 by franz: When no Bean type is created, views_handler_filter_bean_type
+  return many errors.
+#2095595 by SpadXIII: Fixed Revision stores wrong uid.
+#1891210 by valderama, guillaumev: Fixed Incompatible with entity reference
+  formatter Rendered Entity.
+#1891928 by jeffam | indytechcook: Fixed Block reference not picking up bean
+  module blocks.
+#2108631 by webflo: Fixed Add access checks to default Bean Admin UI.
+
+Bean 7.x-1.3, 2013-07-24
+----------------------------
+#2036137 by eugene.ilyin: Fixed Numeric delta of the bean block.
+ Followup by brantwynn Fix block delta truncation error.
+#1728632 by donutdan4114 | indytechcook: Fixed Can't name a bean type 'bean'.
+#1982468 by 30equals: Cleanup menulink/shortcut after uninstall
+
 Bean 7.x-1.2, 2013-05-12
 ----------------------------
 #1924126 by DamienMcKenna: Group beans by block type in the CTools/Panels content

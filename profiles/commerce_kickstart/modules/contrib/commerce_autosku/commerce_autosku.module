@@ -212,3 +212,54 @@ function commerce_autosku_features_pipe_commerce_product_type_alter(&$pipe, $dat
     }
   }
 }
+
+/**
+ * Generates a SKU for the product passed in using the given pattern.
+ *
+ * @param $product
+ *   The product whose SKU should be generated.
+ * @param $pattern
+ *   The pattern to use to determine the product SKU.
+ * @param $case
+ *   String indicating the casing to use for letters in the SKU, one of:
+ *   - 'original': do not change the casing used in any of the tokens.
+ *   - 'uppercase': convert the SKU to all upper case letters.
+ *   - 'lowercase': convert the SKU to all lower case letters.
+ *
+ * @return
+ *   A string containing a unique SKU for the product pass in using the given
+ *   pattern with a numeric suffix in the event of a pre-existing matching SKU.
+ */
+function commerce_autosku_generate_sku($product, $pattern, $case = 'original') {
+  // Create the new SKU using token replacement, clean out illegitimate values,
+  // and trim it to the maximum SKU length - 255 characters.
+  $sku = token_replace($pattern, array('commerce-product' => $product), array('clear' => TRUE));
+  $sku = commerce_autosku_cleanstring($sku);
+  $sku = drupal_substr($sku, 0, 255);
+
+  // Adjust the casing as specified.
+  switch ($case) {
+    case 'uppercase':
+      $sku = drupal_strtoupper($sku);
+      break;
+    case 'lowercase':
+      $sku = drupal_strtolower($sku);
+      break;
+  }
+
+  // Check to ensure the current SKU is unique...
+  if (!commerce_product_validate_sku_unique($sku, $product->product_id)) {
+    // If not, retain the originally generated SKU and begin to append numerals
+    // to it in search of a unique SKU.
+    $original_sku = $sku;
+    $i = 0;
+
+    do {
+      $sku = drupal_substr($original_sku, 0, (255 - drupal_strlen(COMMERCE_AUTOSKU_REPLACEMENT . $i)));
+      $sku = commerce_autosku_cleanstring($sku . COMMERCE_AUTOSKU_REPLACEMENT . $i);
+      $i++;
+    } while (!commerce_product_validate_sku_unique($sku, $product->product_id));
+  }
+
+  return $sku;
+}

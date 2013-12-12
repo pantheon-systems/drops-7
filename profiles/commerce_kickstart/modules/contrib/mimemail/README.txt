@@ -57,13 +57,13 @@
 
   You can use the following optional parameters to build the e-mail:
     'plain':
-      Boolean, whether to send messages in plaintext-only (optional, default is FALSE). 
+      Boolean, whether to send messages in plaintext-only (optional, default is FALSE).
     'plaintext':
       Plaintext portion of a multipart e-mail (optional).
     'attachments':
       Array of arrays with the path or content, name and MIME type of the file (optional).
     'headers':
-      A keyed array with headers (optional). 
+      A keyed array with headers (optional).
 
   You can set these in $params either before calling drupal_mail() or in hook_mail()
   and of course hook_mail_alter().
@@ -87,8 +87,10 @@
   To create a custom mail template copy the mimemail-message.tpl.php file from
   the mimemail/theme directory into your default theme's folder. Both general and
   by-mailkey theming can be performed:
+    mimemail-message--[module]--[key].tpl.php (for messages with a specific module and key)
+    mimemail-message--[module].tpl.php (for messages with a specific module)
+    mimemail-message--[key].tpl.php (for messages with a specific key)
     mimemail-message.tpl.php (for all messages)
-    mimemail-message--[mailkey].tpl.php (for messages with a specific mailkey)
 
   Messages can be rendered using different themes. You can choose the following
   settings to render the e-mail:
@@ -109,6 +111,10 @@
   attributes. It transmogrifies the HTML source by parsing the CSS and inserting the
   CSS definitions into tags within the HTML based on the CSS selectors. To use the
   Compressor, just enable it.
+
+  The 'send arbitrary files' permission allows you to attach or embed files located
+  outside Drupal's public files directory. Note that this has security implications:
+  arbitrary means even your settings.php! Give to trusted roles only!
 
 
 -- CREDITS --

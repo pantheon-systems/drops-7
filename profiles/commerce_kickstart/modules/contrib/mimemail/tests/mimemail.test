@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * @file
+ * Functionality tests for the Mime Mail module.
+ *
+ * @ingroup mimemail
+ */
+
+require_once(dirname(__FILE__) . '/../mimemail.inc');
+
+/**
+ * Tests helper functions from the Mime Mail module.
+ */
+class MimeMailUnitTestCase extends DrupalUnitTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Mime Mail unit tests',
+      'description' => 'Test that Mime Mail helper functions work properly.',
+      'group' => 'Mime Mail',
+    );
+  }
+
+  function setUp() {
+    drupal_load('module', 'mimemail');
+    parent::setUp();
+  }
+
+  function testHeaders() {
+    // Test the regular expression for extracting the mail address.
+    $chars = array('-', '.', '+', '_');
+    $name = $this->randomString();
+    $local = $this->randomName() . $chars[array_rand($chars)] . $this->randomName();
+    $domain = $this->randomName() . '-' . $this->randomName() . '.' . $this->randomName(rand(2,4));
+    $headers = mimemail_headers(array(), "$name <$local@$domain>");
+    $result = $headers['Return-Path'];
+    $expected = "<$local@$domain>";
+    $this->assertIdentical($result, $expected, 'Return-Path header field correctly set.');
+  }
+
+  function testUrl() {
+    $result = _mimemail_url('#');
+    $this->assertIdentical($result, '#', 'Hash mark URL without fragment left intact.');
+  }
+
+}

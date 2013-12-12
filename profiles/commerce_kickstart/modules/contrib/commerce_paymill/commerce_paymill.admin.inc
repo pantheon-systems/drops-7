@@ -102,6 +102,7 @@ function commerce_paymill_capture_amount_validate($element, $form_state) {
  * Submit handler: process a transaction for the authorized amount.
  */
 function commerce_paymill_capture_form_submit($form, &$form_state) {
+
   $transaction = $form_state['transaction'];
   $amount = $form_state['values']['amount'];
   $order = $form_state['order'];
@@ -110,11 +111,19 @@ function commerce_paymill_capture_form_submit($form, &$form_state) {
   // Include Paymill libraries.
   libraries_load('paymill');
 
+  // Extra Paymill client options.
+  $extra_options = array();
+
   // Get current API key.
   $api_key = commerce_paymill_get_key($payment_method['settings']);
 
+  // Verify if there's a configured proxy. If it is setup the cURL options for it.
+  if (!empty($payment_method['settings']['proxy_settings']['proxy_host'])) {
+    $extra_options = commerce_paymill_set_proxy($payment_method['settings']['proxy_settings']);
+  }
+
   // Attempt capture using Paymill.
-  $transaction_service = new Services_Paymill_Transactions($api_key, COMMERCE_PAYMILL_SERVER);
+  $transaction_service = new Services_Paymill_Transactions($api_key, COMMERCE_PAYMILL_SERVER, $extra_options);
   $transaction_params = array(
     'amount' => commerce_currency_decimal_to_amount(
       $amount,
@@ -186,3 +195,4 @@ function commerce_paymill_configure() {
     )
   );
 }
+

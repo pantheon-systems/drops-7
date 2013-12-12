@@ -38,7 +38,7 @@ class views_handler_field_bean_delete_link extends views_handler_field_entity {
   }
 
   function render_link($bean) {
-    if (bean_access('delete', $bean)) {
+    if (entity_access('delete', 'bean', $bean)) {
       $this->options['alter']['make_link'] = TRUE;
       $this->options['alter']['path'] = "block/$bean->delta/delete";
       $this->options['alter']['query'] = drupal_get_destination();

@@ -47,6 +47,8 @@ elements:
   address:
     ruleTypes: [TEXTUNIT]
     idAttributes: [id]
+  drupalvar:
+    ruleTypes: [INLINE, EXCLUDE]
   dt:
     ruleTypes: [TEXTUNIT]
     idAttributes: [id]
@@ -100,7 +102,7 @@ elements:
   a:
     ruleTypes: [INLINE]
     elementType: link
-    translatableAttributes: [title, accesskey, href, alt]
+    translatableAttributes: [title, accesskey, alt]
   abbr:
     ruleTypes: [INLINE]
   acronym:

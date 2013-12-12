@@ -214,6 +214,24 @@ function rules_user_action_info() {
     'label' => t('Unblock a user'),
     'base' => 'rules_action_user_unblock',
   );
+  $items['user_send_account_email'] = array(
+    'label' => t('Send account e-mail'),
+    'parameter' => array(
+      'account' => array(
+        'type' => 'user',
+        'label' => t('Account'),
+      ),
+      'email_type' => array(
+        'type' => 'text',
+        'label' => t('E-mail type'),
+        'description' => t("Select the e-mail based on your site's account settings to send to the user."),
+        'options list' => 'rules_user_account_email_options_list',
+      ),
+    ),
+    'group' => t('User'),
+    'base' => 'rules_action_user_send_account_email',
+    'access callback' => 'rules_user_integration_access',
+  );
   return $items;
 }
 
@@ -229,6 +247,24 @@ function rules_user_role_change_access() {
  */
 function rules_user_roles_options_list($element) {
   return entity_metadata_user_roles('roles', array(), $element instanceof RulesConditionInterface ? 'view' : 'edit');
+}
+
+/**
+ * Options list callback for user account e-mail types.
+ *
+ * @see _user_mail_notify()
+ */
+function rules_user_account_email_options_list() {
+  return array(
+    'register_admin_created' => t('Welcome (new user created by administrator)'),
+    'register_no_approval_required' => t('Welcome (no approval required)'),
+    'register_pending_approval' => t('Welcome (awaiting approval)'),
+    'password_reset' => t('Password recovery'),
+    'status_activated' => t('Account activation'),
+    'status_blocked' => t('Account blocked'),
+    'cancel_confirm' => t('Account cancellation confirmation'),
+    'status_canceled' => t('Account canceled'),
+  );
 }
 
 /**

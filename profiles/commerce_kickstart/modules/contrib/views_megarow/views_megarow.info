@@ -1,15 +1,16 @@
 name = Views megarow
 description = Open views links in a modal.
 core = 7.x
+package = Views
 
 dependencies[] = views
 
 files[] = includes/views/plugins/views_plugin_style_table_megarows.inc
 files[] = includes/views/handlers/views_handler_field_megarow_links.inc
 
-; Information added by drupal.org packaging script on 2012-12-18
-version = "7.x-1.0"
+; Information added by  packaging script on 2013-11-22
+version = "7.x-1.2"
 core = "7.x"
 project = "views_megarow"
-datestamp = "1355841872"
+datestamp = "1385156307"
 

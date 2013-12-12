@@ -32,7 +32,7 @@
 
 
 include_once "../../library/OAuthStore.php";
-include_once "../../library/OAuthRequester.php";
+include_once "../../library/LingotekOAuthRequester.php";
 
 // Test of the OAuthStore2Leg 
 
@@ -49,7 +49,7 @@ $params = null;
 try
 {
 	// Obtain a request object for the request we want to make
-	$request = new OAuthRequester($url, $method, $params);
+	$request = new LingotekOAuthRequester($url, $method, $params);
 
 	// Sign the request, perform a curl request and return the results, 
 	// throws OAuthException2 exception on an error

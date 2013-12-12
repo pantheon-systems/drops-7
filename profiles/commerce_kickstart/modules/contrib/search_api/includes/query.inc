@@ -461,7 +461,7 @@ class SearchApiQuery implements SearchApiQueryInterface {
         return array('#conjunction' => $this->options['conjunction'], $keys);
 
       case 'terms':
-        $ret = explode(' ', $keys);
+        $ret = preg_split('/\s+/u', $keys);
         $quoted = FALSE;
         $str = '';
         foreach ($ret as $k => $v) {

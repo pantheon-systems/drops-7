@@ -1,0 +1,219 @@
+Install and Configure
+---------------------
+
+Please refer to the Drupal documentation regarding adding and enabling the
+module on your site.
+
+The module creates the following things upon installation:
+
+* 19 new blocks
+* A "Top Sellers" page with corresponding menu item
+
+Before the module is ready for use you need to configure it and place the newly
+created blocks on the the correct pages as well as enabling the Top Sellers menu
+item.
+
+Configuration
+-------------
+
+The configuration section in the Drupal backend can be found by either clicking
+the "Configure" link in the module listing or by going to [ Administration ->
+Configuration -> Web services -> Nosto Tagging ].
+
+The configuration page holds account and server details as well as site specific
+settings for the "tagging" process.
+
+The server address is pre-filled so you will not need to modify this. The
+account name is the name of your Nosto account. If you do not have one yet, you
+need to refer to the Nosto documentation.
+
+The tagging settings define how the module can access needed data on your site.
+
+* Product tagging settings
+
+  * Product field
+    * This is the content type field that holds the commerce product reference.
+    * The available options are all of entity "node" and type
+    "commerce_product_reference".
+    * Without this the module cannot tag products at all.
+
+  * Product variation image field
+    * This is the product variation field that holds the product images.
+    * The available options are all of entity "commerce_product" and type
+    "image".
+    * If you are not using product variations for your product images, but
+    instead include them at the display level, i.e. through a content type, then
+    you leave this setting empty and configure the one below.
+    * Without this the module cannot include image urls in the product tagging.
+
+  * Product content type image field
+    * This is the content type field that holds the product images.
+    * The available options are all of entity "node" and type "image".
+    * If you are not using a content type for including your product images, but
+    instead use product variations, then you leave this setting empty and
+    configure the one above.
+    * Without this the module cannot include image urls in the product tagging.
+
+  * Product category field
+    * This is the content type field that holds the taxonomy reference used for
+    product categories.
+    * The available options are all of entity "node" and type
+    "taxonomy_term_reference".
+    * Without this the module cannot include category data in the product
+    tagging.
+
+  * Product brand field
+    * This is the content type field that holds the taxonomy reference used for
+    product brands.
+    * The available options are all of entity "node" and type
+    "taxonomy_term_reference".
+    * Without this the module cannot include brand data in the product tagging.
+
+* Category tagging settings
+
+  * Category vocabulary
+    * This is the vocabulary used for product categories.
+    * The options are all vocabularies defined for the installation.
+    * Without this the module cannot tag categories at all.
+
+Blocks
+------
+
+There are two types of blocks created by the module; tagging blocks and element
+blocks. All block names are prefixed with "Nosto Tagging" in order to be easy
+to find in the block listing in your site backend.
+
+You will need to edit each block individually to place them on the correct
+pages.
+
+Tagging blocks are used to hold meta-data about products, categories, orders,
+shopping cart and customers on your site. These should be placed on the correct
+pages in order for the Nosto marketing automation service to be able to function
+properly. These types of blocks do not hold any visual elements, so it is not
+important where on the page they are placed.
+
+* Nosto Tagging: tag: product
+  * This block contains product information and should be placed on all product
+  pages. This can be done by restricting the visibility to specific content
+  types used for your products or pages by the url path.
+  * The module assumes that the product page is a node.
+
+* Nosto Tagging: tag: category
+  * This block contains product category information and should be placed on
+  all category pages. If your category taxonomies are displayed with Views,
+  then you can restrict the visibility based on the page url path for the used
+  Views. If you are using the Drupal default taxonomy display, then you can use
+  "taxonomy/term/*" as the page url path.
+  * The module assumes that the category is a taxonomy term.
+  * If using Views, the taxonomy term id must be present in the url.
+
+* Nosto Tagging: tag: order
+  * This block contains order information and should be placed on the checkout
+  complete page. If you are using the Drupal Commerce default, then you can
+  restrict visibility on the "checkout/*/complete" url path.
+
+* Nosto Tagging: tag: cart
+  * This block contains shopping cart information and should be placed on all
+  pages of the site. This is done buy simply assigning the block a region that
+  exists on all pages. The block will not be added if there are no items in the
+  cart.
+
+* Nosto Tagging: tag: customer
+  * This block contains information about the logged in customer and should be
+  placed on all pages of the site. This isdone buy simply assigning the block
+  a region that exists on all pages.
+
+Element blocks are used as placeholders for the product recommendations coming
+from the Nosto marketing automation service. The blocks contain only a empty
+div element and do not hold any visual content by themselves. It is important,
+however, where these are placed on the page as they will get populated with
+content by the Nosto marketing automation service if they are in use
+(configured in the Nosto backend).
+
+These blocks also have an extra option in the settings called "Nosto ID". This
+ID will be the ID of the div element when rendered. The values are pre-filled
+but can be changed if needed. They are used as the identifier in the Nosto
+backend when configuring what content should be shown in the block.
+
+* Nosto Tagging: element: product page 1
+  * This block should be placed at the bottom of all product pages. You can do
+  this by restricting the visibility to specific content types used for your
+  products and adjusting the block weight property.
+
+* Nosto Tagging: element: product page 2
+  * This block should be placed below the above block on all product pages. You
+  can do this by restricting the visibility to specific content types used for
+  your products and adjusting the block weight property.
+
+* Nosto Tagging: element: product page 3
+  * This block should be placed below the above block on all product pages. You
+  can do this by restricting the visibility to specific content types used for
+  your products and adjusting the block weight property.
+
+* Nosto Tagging: element: category page 1
+  * This block should be placed at the top of all category pages. You can do
+  this by restricting the visibility based on the page url path adjusting the
+  block weight property. If you are using Views for the category pages, you may
+  need to add the block through the View to get it below the page header. This
+  can be done in different ways, but overriding the view template file and
+  printing the block to a specific place would be a common way of doing it.
+
+* Nosto Tagging: element: category page 2
+  * This block should be placed at the bottom of all category pages. You can do
+  this by restricting the visibility based on the page url path adjusting the
+  block weight property.
+
+* Nosto Tagging: element: search page 1
+  * This block should be placed at the top of all search result pages. You can
+  do this by restricting the visibility based on the page url path adjusting the
+  block weight property. If you are using Views for the search pages, you may
+  need to add the block through the View to get it below the page header. This
+  can be done in different ways, but overriding the view template file and
+  printing the block to a specific place would be a common way of doing it.
+
+* Nosto Tagging: element: search page 2
+  * This block should be placed at the bottom of all search result pages. You
+  can do this by restricting the visibility based on the page url path and
+  adjusting the block weight property.
+
+* Nosto Tagging: element: cart page 1
+  * This block should be placed at the bottom of the shopping cart page. You can
+  do this by restricting the visibility to specific page url path and adjusting
+  the block weight property.
+
+* Nosto Tagging: element: cart page 2
+  * This block should be placed below the above block of the shopping cart page.
+  You can do this by restricting the visibility to specific page url path and
+  adjusting the block weight property.
+
+* Nosto Tagging: element: cart page 3
+  * This block should be placed below the above block of the shopping cart page.
+  You can do this by restricting the visibility to specific page url path and
+  adjusting the block weight property.
+
+* Nosto Tagging: element: page top
+  * This block should be placed at the top of all pages of the site. This is
+  done buy simply assigning the block a region that exists on all pages.
+
+* Nosto Tagging: element: page footer
+  * This block should be placed at the bottom of all pages of the site. This is
+  done buy simply assigning the block a region that exists on all pages.
+
+* Nosto Tagging: element: left column
+  * This block should be placed in the left sidebar of all pages of the site,
+  if your layout includes sidebars. This is done buy simply assigning the block
+  a region.
+
+* Nosto Tagging: element: right column
+  * This block should be placed in the right sidebar of all pages of the site,
+  if your layout includes sidebars. This is done buy simply assigning the block
+  a region.
+
+Top Sellers
+-----------
+
+A "Top Sellers" page and a corresponding menu item is created by the module. The
+page contains a Nosto element for showing the top selling products in the store.
+
+The menu item needs to be enabled and placed under the appropriate menu by the
+site administrator. The menu item can be found in Drupal's menu tree.

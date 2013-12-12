@@ -1,6 +1,30 @@
 Mime Mail 7.x-1.x, xxxx-xx-xx
 -----------------------
-
+- #1702868 by sgabe, kid_icarus: Remove tokens if no replacement value can be generated.
+- #1719570 by sgabe, oadaeh | greggles: Fix for SA-CONTRIB-2012-124.
+- #2020875 by das-peter, Propaganistas: Provide option to set language in Rules actions.
+- #2045699 by sgabe | Punk_UnDeaD: Boundaries are not unique on Windows.
+- #1798324 by sgabe, kienan | ShaneOnABike: Return-Path is incorrectly using sender name.
+- #1790098 by sgabe | edb, Shellingfox: Custom 'from' address comes out as 'Array'.
+- #1979776 by sgabe | cswolf: Hash mark link gets replaced with site URL.
+- #1963412 by sgabe | djg_tram: Content-Disposition should default to 'inline'.
+- #1469828 by sgabe | shadowhitman: Allow to use simple address format only for recipient.
+- #1947018 by sgabe | bendev: Allow sending plain text messages with Rules.
+- #962226 by sgabe | rchuber: Allow custom mailkeys for system and Rules action messages.
+- #1873348 by sgabe | tutumlum: Cannot use tokens in subject and body of HTML email action.
+- #1439918 by sgabe | Lukas von Blarer: 'Link images only' is not working if the file exists as-is.
+- #1538004 by sgabe | djg_tram: Change template naming logic to use module as well.
+- #1719256 by lirantal, sgabe: Handle different files with the same file name.
+- #1922530 by berliner: Callto links in mail body wrongly replaced.
+- #1911558 by Simon Georges, JulienD: Remove useless files[] directive from .info files.
+- #1877928 by sgabe | parasite: Replacing underscore in key is not needed.
+- #1898140 by MiroslavBanov: Engine variable set to NULL on settings page.
+- #1780412 by sgabe, kid_icarus: Option to exclude blocked users from a role.
+- #1814922 by marcusx: Rule sanitizes the $body if populated by a parameter.
+- #1813348 by sgabe | jdhildeb: Sendmail invoked with empty Return-Path.
+- #1469022 by sgabe, das-peter | MI: Add 'Reply-to' field to Rules and system actions.
+- #1773698 by jherencia: Alternatives for mimemail-message.tpl.php do not work.
+- #1585546 by kotnik, bojanz: Rules actions must be in root module directory.
 
 Mime Mail 7.x-1.0-alpha2, 2012-08-22
 -----------------------

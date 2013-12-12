@@ -20,20 +20,20 @@ function bean_admin_ui_admin_page() {
       $export_status = $bean_type->getExportStatus();
     }
     else {
-      $export_status = 'Normal';
+      $export_status = t('Normal');
     }
     $row[] = array('data' => $export_status);
     // Edit and delete buttons
     if ($bean_type->isEditable()) {
       $row[] = array('data' => l(t('Edit'), 'admin/structure/block-types/manage/' . $bean_type->buildURL() . '/edit'));
       switch ($export_status) {
-        case 'Normal':
+        case t('Normal'):
           $row[] = array('data' => l(t('Delete'), 'admin/structure/block-types/manage/' . $bean_type->buildURL() . '/delete'));
           break;
-        case 'Overridden':
+        case t('Overridden'):
           $row[] = array('data' => l(t('Revert'), 'admin/structure/block-types/manage/' . $bean_type->buildURL() . '/revert'));
           break;
-        case 'Default':
+        case t('Default'):
           $row[] = array();
           break;
       }

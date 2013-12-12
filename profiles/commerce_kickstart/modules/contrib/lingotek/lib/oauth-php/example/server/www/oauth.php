@@ -36,7 +36,7 @@
 
 require_once '../core/init.php';
 
-$server = new OAuthServer();
+$server = new LingotekOAuthServer();
 
 switch($_SERVER['PATH_INFO'])
 {

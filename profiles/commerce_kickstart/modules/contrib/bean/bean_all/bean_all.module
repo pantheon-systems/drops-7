@@ -138,7 +138,7 @@ function bean_all_settings_form($form, &$form_state) {
   $form = array();
   $module_info = system_rebuild_module_data();
 
-  drupal_set_title(t('Select Blocks to not appear as Block Types'));
+  drupal_set_title(t('Select Blocks to not appear as Block Types'), PASS_THROUGH);
 
   foreach (module_implements('block_info') as $module) {
     if ($module !== 'bean') {

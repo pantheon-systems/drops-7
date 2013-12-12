@@ -224,6 +224,10 @@ select.form-select:focus {
     background: white url("../images/drop-filter.png") no-repeat right center;
     /* LTR */
   }
+  select.form-select[multiple="multiple"] {
+    background: #fff;
+    padding: 5px;
+  }
 
   form table input.form-checkbox,
   form table input.form-radio {

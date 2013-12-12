@@ -1,12 +1,12 @@
-name = Exactor Calculation Services
+name = Exactor API
 description = Enable the Exactor Sales Tax Service
 package = Commerce (Tax)
 core = 7.x
-configure = admin/config/services/exactor
+configure = admin/commerce/config/exactor
 
-; Information added by drupal.org packaging script on 2013-05-17
-version = "7.x-1.0-rc1"
+; Information added by  packaging script on 2013-11-11
+version = "7.x-1.2"
 core = "7.x"
 project = "commerce_exactor"
-datestamp = "1368798840"
+datestamp = "1384175906"
 

@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * Implements hook_crumbs_plugins()
+ */
+function crumbs_example_crumbs_plugins($api) {
+
+  // The class will be crumbs_example_CrumbsMonoPlugin_NewsByDate.
+  $api->monoPlugin('NewsByDate');
+
+  // The class will be crumbs_example_CrumbsMultiPlugin_ListOfNews.
+  $api->multiPlugin('ListOfNews');
+}

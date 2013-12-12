@@ -248,7 +248,7 @@ function i18n_node_autocomplete($type, $language, $string = '') {
  */
 function i18n_node_nid2autocomplete($nid) {
   if ($node = node_load($nid)) {
-    return check_plain($node->title) . ' [nid:' . $nid . ']';
+    return $node->title . ' [nid:' . $nid . ']';
   }
   else {
     return t('Not found');

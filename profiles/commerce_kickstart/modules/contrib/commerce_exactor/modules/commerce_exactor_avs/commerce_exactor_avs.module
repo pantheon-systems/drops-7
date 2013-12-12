@@ -1,3 +1,124 @@
 <?php
 
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function commerce_exactor_avs_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'addressfield') {
+    return 'plugins/' . $plugin;
+  }
+}
 
+/**
+ * Implements hook_menu().
+ */
+function commerce_exactor_avs_menu() {
+  $items['addressfield-exactor-avs'] = array(
+    'title' => 'Address Field Excactor AVS',
+    'access arguments' => array('access content'),
+    'page callback' => 'commerce_exactor_avs_ajax_callback',
+    'delivery callback' => 'ajax_deliver',
+    'theme callback' => 'ajax_base_page_theme',
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Menu callback; Returns the results after a ajax call.
+ */
+function commerce_exactor_avs_ajax_callback($form, &$form_state) {
+  $element_parents = array_slice($form_state['triggering_element']['#array_parents'], 0, -1);
+  $element = drupal_array_get_nested_value($form, $element_parents);
+
+  $exactor_values = drupal_array_get_nested_value($form_state['values'], $element_parents);
+
+  // Replace values in form.
+  return _commerce_exactor_avs_filter_scalar_values($element, $exactor_values);
+}
+
+/**
+ * Lookup the values on the rest endpoint.
+ */
+function commerce_exactor_avs_lookup($input_address) {
+  // This service only works with US address.
+  if ($input_address['country'] != 'US') {
+    return array();
+  }
+
+  //TODO: If it's only working for US, remove countries dependency.
+  $input_country = countries_country_lookup($input_address['country'], 'iso2');
+
+  // TODO: Put this in a setting var or a constant.
+  $url = 'https://avs.exactor.com/avs/v1/xml';
+
+  $xml = '<?xml version="1.0" encoding="UTF-8" ?>';
+  $xml .= '<avs:AddressRequest xmlns:avs="http://www.exactor.com/ns_avs/v1">';
+  $xml .= '<MerchantId>' . variable_get('exactor_account_id') . '</MerchantId>';
+  $xml .= '<UserId>' . variable_get('exactor_user_id') . '</UserId>';
+  $xml .= '<Address>';
+  $xml .= '<FullName>' . $input_address['name_line'] . '</FullName>';
+  $xml .= '<Street1>' . $input_address['thoroughfare'] . '</Street1>';
+  $xml .= '<Street2>' . $input_address['premise'] . '</Street2>';
+  $xml .= '<City>' . $input_address['locality'] . '</City>';
+  if (isset($input_address['sub_administrative_area'])) {
+    $xml .= '<County>' . $input_address['sub_administrative_area'] . '</County>';
+  }
+  $xml .= '<StateOrProvince>' . $input_address['administrative_area'] . '</StateOrProvince>';
+  $xml .= '<PostalCode>' . $input_address['postal_code'] . '</PostalCode>';
+  $xml .= '<Country>' . $input_country->iso3 . '</Country>';
+  $xml .= '</Address>';
+  $xml .= '</avs:AddressRequest>';
+
+  $result = commerce_exactor_xml_post($url, $xml);
+  $data = new SimpleXMLElement($result->data);
+  $output_country = countries_country_lookup((string) $data->Address->Country, 'iso3');
+
+  $output_address = $input_address;
+  $output_address['name_line'] = (string) $data->Address->FullName;
+  $output_address['thoroughfare'] = (string) $data->Address->Street1;
+  $output_address['premise'] = (string) $data->Address->Street2;
+  $output_address['locality'] = (string) $data->Address->City;
+  $output_address['sub_administrative_area'] = (string) $data->Address->County;
+  $output_address['administrative_area'] = (string) $data->Address->StateOrProvince;
+  $output_address['postal_code'] = (string) $data->Address->PostalCode;
+  $output_address['country'] = $output_country->iso2;
+
+  return array(
+    'output_address' => $output_address,
+    'status' => (int) $data->Address->attributes()->status,
+  );
+}
+
+/**
+ * Helper function to replace form values by those passed.
+ *
+ * We don't need to create a recursive function here, we have only 2 levels to
+ * parse.
+ *
+ * @param array $element
+ *   The form element
+ * @param array $values
+ *   An array of values.
+ *
+ * @return array
+ *   The filtered form element.
+ */
+function _commerce_exactor_avs_filter_scalar_values(&$element, $values) {
+  foreach (element_children($element) as $key) {
+    if (!isset($element[$key]['#value'])) {
+      foreach (element_children($element[$key]) as $key2) {
+        if (isset($values[$key2])) {
+          $element[$key][$key2]['#value'] = $values[$key2];
+        }
+      }
+    }
+    else {
+      if (isset($values[$key])) {
+        $element[$key]['#value'] = $values[$key];
+      }
+    }
+  }
+
+  return $element;
+}

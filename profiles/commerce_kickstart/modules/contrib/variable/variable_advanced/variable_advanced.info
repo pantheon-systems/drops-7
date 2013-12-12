@@ -3,9 +3,9 @@ description = Provides access to advanced low level variables. By using this you
 dependencies[] = variable
 package = Variable
 core = 7.x
-; Information added by drupal.org packaging script on 2013-01-13
-version = "7.x-2.2"
+; Information added by drupal.org packaging script on 2013-08-09
+version = "7.x-2.3"
 core = "7.x"
 project = "variable"
-datestamp = "1358075138"
+datestamp = "1376034993"
 

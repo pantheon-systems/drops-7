@@ -1,5 +1,8 @@
 <?php
 
+// @TODO
+//  * Manage create.
+
 /**
  * Implement hook_menu().
  */
@@ -15,8 +18,31 @@ function views_megarow_menu() {
     'page arguments' => array(1, 2),
     'delivery callback' => 'ajax_deliver',
     'access callback' => TRUE,
+    'theme callback' => 'views_megarow_get_page_theme',
   );
   return $items;
+}
+
+/**
+ * Determine which theme should be used to render the megarow.
+ *
+ * Since the rendering of this page is triggered on click by a user, our only
+ * way to figure out the original page is to rely on the HTTP_REFERER.
+ * With this information we can determine if the origin page was an admin path
+ * or not and display the appropriate accordingly.
+ */
+function views_megarow_get_page_theme() {
+  // Find the path of the parent page.
+  $url = parse_url($_SERVER['HTTP_REFERER']);
+
+  // Use the admin theme if it's an admin page.
+  if (user_access('view the administration theme') && path_is_admin(substr($url['path'], 1))) {
+    return variable_get('admin_theme', 'seven');
+  }
+  else {
+    // Otherwise use the default theme.
+    return variable_get('theme_default', 'bartik');
+  }
 }
 
 /**
@@ -61,8 +87,25 @@ function views_megarow_generic_render($entity_id) {
   }
 
   // The output is valid, display it through AJAX and voilà!
+  // Render our output if we get a renderable array.
+  if (is_array($output)) {
+    // Let's double check if the output isn't already a ajax command.
+    if (isset($output['#type']) && $output['#type'] == 'ajax') {
+      return $output;
+    }
+    $arguments = array('display' => 'error');
+    $messages = theme('status_messages', $arguments);
+
+    // Pass the result of this to the modal to display it.
+    $content = array(
+      array('#markup' => $messages),
+      $output,
+    );
+    $output = drupal_render($content);
+  }
+  // @TODO Add command to slide to top if errors.
   $commands = array();
-  $commands[] = views_megarow_command_display('Megarow content', drupal_render($output), $entity_id);
+  $commands[] = views_megarow_command_display(t('Megarow content'), $output, $entity_id);
 
   return array('#type' => 'ajax', '#commands' => $commands);
 }
@@ -118,10 +161,15 @@ function views_megarow_views_pre_render(&$view) {
   static $done = FALSE;
 
   if ($view->plugin_name == 'table_megarows' && !$done) {
+    // Store if the row should be automatically closed when the form are
+    // processed.
+    $_SESSION['views_megarow']['autoclose'] = $view->style_plugin->options['autoclose'];
     $settings = array(
       'ViewsMegarow' => array(
-        'loadingText' => t('Loading...'),
-        'close' => 'x',
+        'loadingText' => $view->style_plugin->options['loading_text'],
+        'scrollEnabled' => $view->style_plugin->options['enable_scroll'],
+        'scrollPadding' => $view->style_plugin->options['scroll_padding'],
+        'close' => $view->style_plugin->options['close'],
         // An image can also be used, like this:
         //'close' => theme('image', array(
         //  'path' => ctools_image_path('icon-close-window.png'),
@@ -129,10 +177,9 @@ function views_megarow_views_pre_render(&$view) {
         //  'alt' => t('Close window'),
         //)),
         'throbber' => theme('image', array(
-          //'path' => ctools_image_path('throbber.gif'),
           'path' => ctools_image_path('ajax-loader.gif', 'ctools_ajax_sample'),
-          'title' => t('Loading...'),
-          'alt' => t('Loading'),
+          'title' => $view->style_plugin->options['loading_text'],
+          'alt' => $view->style_plugin->options['loading_text'],
         )),
       ),
     );
@@ -171,7 +218,7 @@ function views_megarow_display_form_wrapper($js, $form_id, $entity, $entity_type
       $messages = theme('status_messages');
       $message = 'Submission completed. You can now close this row. ' . $messages;
       $commands = array();
-      $commands[] = views_megarow_command_display('Submit OK', $message);
+      $commands[] = views_megarow_command_display('Submit OK', $message, $entity_id);
       // Invoke a custom event that refresh the table row of this item.
       $commands[] = ajax_command_invoke('.item-' .  $entity_id, 'trigger', array('refreshRow'));
     }
@@ -203,9 +250,13 @@ function views_megarow_form_wrapper($form_id, &$form_state, $entity_id) {
     'no_redirect' => !empty($form_state['ajax']),
   );
 
-  $output = drupal_build_form($form_id, $form_state);
+  $form = drupal_build_form($form_id, $form_state);
+
+  // Add a callback to let the megarow being closed automatically if enabled.
+  $form['#submit'][] = 'views_megarow_autoclose_megarow';
+
   if (!empty($form_state['ajax']) && empty($form_state['executed'])) {
-    $output = drupal_render($output);
+    $output = drupal_render($form);
     $title = empty($form_state['title']) ? drupal_get_title() : $form_state['title'];
 
     return views_megarow_display($title, $output, $entity_id);
@@ -220,13 +271,21 @@ function views_megarow_form_wrapper($form_id, &$form_state, $entity_id) {
  * Works by returning an array that ajax_deliver() can understand.
  */
 function views_megarow_display($title, $output, $entity_id) {
-  // If there are messages for the form, render them.
-  if ($messages = theme('status_messages')) {
-    $output = '<div class="messages">' . $messages . '</div>' . $output;
+  // Add the messages in the renderable array if the source is an array or
+  // render them if we already have markup in order to display potential error
+  // messages or confirmation messages to the user.
+  if (is_array($output)) {
+    $renderable_output = array(
+      array('#theme' => 'status_messages'),
+      $output,
+    );
+  }
+  else {
+    $renderable_output = theme('status_message') . $output;
   }
 
   $commands = array();
-  $commands[] = views_megarow_command_display($title, $output, $entity_id);
+  $commands[] = views_megarow_command_display($title, $renderable_output, $entity_id);
 
   return array('#type' => 'ajax', '#commands' => $commands);
 }
@@ -243,7 +302,6 @@ function views_megarow_command_display($title, $html, $entity_id) {
   if (is_array($html)) {
     $html = drupal_render($html);
   }
-
   return array(
     'command' => 'megarow_display',
     'entity_id' => $entity_id,
@@ -265,13 +323,13 @@ function views_megarow_command_dismiss($entity_id) {
 /**
  * Refresh the parent row of a megarow.
  */
-function views_megarow_command_refresh_parent($entity_id) {
+function views_megarow_command_refresh_parent($entity_id, $display_id) {
+  drupal_add_js(array('ViewsMegarow' => array('display_id' => $display_id)), 'setting');
   return array(
     'command' => 'megarow_refresh_parent',
     'entity_id' => $entity_id,
   );
 }
-
 
 /**
  * Render an image as a button link. This will automatically apply an AJAX class
@@ -308,4 +366,123 @@ function views_megarow_image_button($image, $dest, $alt, $class = '') {
  */
 function views_megarow_text_button($text, $dest, $alt, $class = '') {
   return ctools_ajax_text_button($text, $dest, $alt, $class, 'views-megarow-open');
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function views_megarow_form_alter(&$form, &$form_state, $form_id) {
+  // Look for node forms, entity forms should be ok.
+  if (strstr($form_id, '_node_form')) {
+    // Use module_load_include so that caches and stuff can know to load this.
+    form_load_include($form_state, 'inc', 'node', 'node.pages');
+
+    // Prevent Drupal from redirecting the user to the node being edited if
+    // we are doing the edition action from a megarow.
+    if (isset($form['#node']->from_megarow) && $form['#node']->from_megarow == TRUE) {
+      $form_state['programmed'] = TRUE;
+
+      // Trigger an extra submit callback offering the possibility to have
+      // the megarow automatically closed when the node is submitted.
+      $form['#submit'][] = 'views_megarow_autoclose_megarow';
+    }
+  }
+  else if ($form_id == 'user_profile_form') {
+    // Trigger an extra submit callback offering the possibility to have
+    // the megarow automatically closed when the user is submitted if
+    // we are doing the edition action from a megarow.
+    if (isset($form['#user']->from_megarow) && $form['#user']->from_megarow == TRUE) {
+      $form['#submit'][] = 'views_megarow_autoclose_megarow';
+    }
+  }
+}
+
+/**
+ * Submit callback to trigger the megarow closing after submitting the form.
+ */
+function views_megarow_autoclose_megarow($form, &$form_state) {
+  // Check if the user enabled the feature to automatically close the megarow
+  // once a form is submitted.
+  if (isset($_SESSION['views_megarow']) && $_SESSION['views_megarow']['autoclose']) {
+    if (strstr($form['#form_id'], '_node_form')) {
+      $output = views_megarow_command_dismiss($form_state['node']->nid);
+    }
+    else if ($form['#form_id'] == 'user_profile_form') {
+      $output = views_megarow_command_dismiss($form_state['user']->uid);
+    }
+    else if (isset($form_state['#entity_id'])) {
+      $output = views_megarow_command_dismiss($form_state['#entity_id']);
+    }
+
+    // Turn off the light before leaving.
+    print ajax_render(array($output));
+    drupal_exit();
+  }
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function views_megarow_menu_alter(&$items) {
+  // We need to wrap some logic around the default node edition page and user
+  // edition page in order to be able to tell the system that we are editing
+  // a node from a megarow context.
+  $items['node/%node/edit']['page callback'] = 'views_megarow_node_page_edit';
+  $items['user/%user/edit']['page callback'] = 'views_megarow_user_page_edit';
+}
+
+/**
+ * Overrides the node edit callback.
+ *
+ * @see node_page_edit().
+ */
+function views_megarow_node_page_edit($node) {
+  // If the url executing the node edit menu item is from a megarow,
+  // let's hook into megarow form rendering instead of the classic
+  // output.
+  if (preg_match('`^display_megarow/[0-9]+/node/[0-9]+/edit$`', $_GET['q'])) {
+    // Add a flag for the node edition form.
+    $node->from_megarow = TRUE;
+
+    // This is a duplication of the default behavior.
+    $type_name = node_type_get_name($node);
+    $title = t('<em>Edit @type</em> @title', array(
+      '@type' => $type_name,
+      '@title' => $node->title
+    ));
+    drupal_set_title($title, PASS_THROUGH);
+    $output = drupal_get_form($node->type . '_node_form', $node);
+
+    // Instead of return the form, pass it to views megarow to display it.
+    return views_megarow_display($title, $output, $node->nid);
+  }
+  else {
+    // Otherwise fallback on the default behavior.
+    $node->from_megarow = FALSE;
+    return node_page_edit($node);
+  }
+}
+
+/**
+ * Wrap the default user edition form.
+ *
+ * @see user_profile_form().
+ */
+function views_megarow_user_page_edit($form_id, $user) {
+  // If the url executing the user edit menu item is from a megarow,
+  // let's hook into megarow form rendering instead of the classic
+  // output.
+  if (preg_match('`^display_megarow/[0-9]+/user/[0-9]+/edit$`', $_GET['q'])) {
+    // Add a flag for the user edition form.
+    $user->from_megarow = TRUE;
+    $output = drupal_get_form('user_profile_form', $user);
+
+    // Instead of return the form, pass it to views megarow to display it.
+    return views_megarow_display(t('Edit'), $output, $user->uid);
+  }
+  else {
+    // Otherwise fallback on the default behavior.
+    $user->from_megarow = FALSE;
+    return drupal_get_form('user_profile_form', $user);
+  }
 }

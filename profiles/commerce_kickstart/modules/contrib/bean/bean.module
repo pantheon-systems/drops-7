@@ -32,6 +32,7 @@ function bean_entity_info() {
       'label callback' => 'entity_class_label',
       'uri callback' => 'entity_class_uri',
       'access callback' => 'bean_access',
+      'view callback' => 'bean_view_callback',
       'module' => 'bean',
       'metadata controller class' => 'BeanMetadataController',
       'view modes' => array(
@@ -137,8 +138,8 @@ function bean_menu() {
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
     'page callback' => 'bean_edit',
     'page arguments' => array(1),
-    'access arguments' => array('edit', 1),
-    'access callback' => 'bean_access',
+    'access arguments' => array('update', 'bean', 1),
+    'access callback' => 'entity_access',
     'file' => 'includes/bean.pages.inc',
   );
 
@@ -146,8 +147,8 @@ function bean_menu() {
     'title' => 'Delete Block',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bean_delete_confirm', 1),
-    'access callback' => 'bean_access',
-    'access arguments' => array('delete', 1),
+    'access callback' => 'entity_access',
+    'access arguments' => array('delete', 'bean', 1),
     'weight' => 1,
     'type' => MENU_LOCAL_TASK,
     'context' => MENU_CONTEXT_NONE,
@@ -168,8 +169,8 @@ function bean_menu() {
     'title arguments' => array(1),
     'page callback' => 'bean_view',
     'page arguments' => array(1),
-    'access callback' => 'bean_access',
-    'access arguments' => array('view', 1),
+    'access callback' => 'entity_access',
+    'access arguments' => array('view', 'bean', 1),
     'file' => 'includes/bean.pages.inc',
     'load arguments' => array(3),
   );
@@ -178,8 +179,8 @@ function bean_menu() {
     'title' => 'View',
     'page callback' => 'bean_view',
     'page arguments' => array(1),
-    'access callback' => 'bean_access',
-    'access arguments' => array('view', 1),
+    'access callback' => 'entity_access',
+    'access arguments' => array('view', 'bean', 1),
     'file' => 'includes/bean.pages.inc',
     'load arguments' => array(3),
     'weight' => -10,
@@ -191,8 +192,8 @@ function bean_menu() {
     'title' => 'Edit',
     'page callback' => 'bean_edit',
     'page arguments' => array(1),
-    'access callback' => 'bean_access',
-    'access arguments' => array('edit', 1),
+    'access callback' => 'entity_access',
+    'access arguments' => array('update', 'bean', 1),
     'file' => 'includes/bean.pages.inc',
     'load arguments' => array(3),
     'type' => MENU_LOCAL_TASK,
@@ -203,8 +204,8 @@ function bean_menu() {
     'title' => 'Set active',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bean_set_default_confirm', 1),
-    'access callback' => 'bean_access',
-    'access arguments' => array('edit', 1),
+    'access callback' => 'entity_access',
+    'access arguments' => array('update', 'bean', 1),
     'file' => 'includes/bean.pages.inc',
     'load arguments' => array(3),
     'type' => MENU_LOCAL_TASK,
@@ -215,8 +216,8 @@ function bean_menu() {
     'title' => 'Delete',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('bean_delete_revision_confirm', 1),
-    'access callback' => 'bean_access',
-    'access arguments' => array('delete', 1),
+    'access callback' => 'entity_access',
+    'access arguments' => array('delete', 'bean', 1),
     'file' => 'includes/bean.pages.inc',
     'load arguments' => array(3),
     'weight' => 1,
@@ -371,7 +372,7 @@ function bean_fetch_plugin_info($plugin = NULL) {
 /**
  * Reset the static variables and caches.
  */
-function bean_reset($skip_menu_rebuild = FALSE) {
+function bean_reset($skip_menu_rebuild = FALSE, $rehash_blocks= FALSE) {
   // Clear ctools cache.
   ctools_include('plugins');
   ctools_get_plugins_reset();
@@ -387,6 +388,12 @@ function bean_reset($skip_menu_rebuild = FALSE) {
   ctools_plugin_get_plugin_type_info(TRUE);
   if (!$skip_menu_rebuild) {
     menu_rebuild();
+  }
+
+  // Rehashes blocks for active themes. This will populate the blocks table and allow
+  // modules like blockreference to work properly.
+  if ($rehash_blocks && module_exists('block')) {
+    block_flush_caches();
   }
 }
 
@@ -436,7 +443,7 @@ function bean_load_plugin_class($plugin_key = NULL) {
  */
 function bean_check_plugin_class($class) {
   $ref_class = new ReflectionClass($class);
-  if (in_array('BeanTypePluginInterface', $ref_class->getInterfaceNames())) {
+  if ($ref_class->isInstantiable() && in_array('BeanTypePluginInterface', $ref_class->getInterfaceNames())) {
     return TRUE;
   }
 
@@ -719,7 +726,7 @@ function bean_add_page_access() {
     return TRUE;
   }
   foreach (bean_get_types() as $bean_type) {
-    if (bean_access('create', $bean_type->type)) {
+    if (entity_access('create', 'bean', $bean_type->type)) {
       return TRUE;
     }
   }
@@ -776,9 +783,27 @@ function bean_view(Bean $bean, $view_mode = 'default', $langcode = NULL) {
 }
 
 /**
+ * View callback
+ */
+function bean_view_callback($entities, $view_mode, $langcode, $entity_type) {
+  $render = array();
+  foreach($entities as $key => $entity) {
+    $id = entity_id($entity_type, $entity);
+    $render[$entity_type][$id] = bean_view($entity, $view_mode, $langcode);
+  }
+  return $render;
+}
+
+/**
  * Implements hook_block_info().
  */
 function bean_block_info() {
+  static $blocks = array();
+
+  if (!empty($blocks)) {
+    return $blocks;
+  }
+
   $blocks = array();
   $beans = bean_get_all_beans();
   foreach ($beans as $bean) {
@@ -798,7 +823,7 @@ function bean_block_view($delta = '') {
   $return = array();
   $bean = bean_load_delta($delta);
 
-  if (bean_access('view', $bean) && $bean) {
+  if (entity_access('view', 'bean', $bean) && $bean) {
     $content = $bean->view($bean->view_mode);
     if (!is_array($content)) {
       $content = array(
@@ -808,7 +833,7 @@ function bean_block_view($delta = '') {
 
     $return = array(
       'content' => $content,
-      'subject' => isset($bean->title) ? $bean->title : '',
+      'subject' => isset($bean->title) ? filter_xss($bean->title, $allowed_tags = array('em', 'strong', 'i', 'b')) : '',
     );
   }
 
@@ -947,7 +972,7 @@ function bean_workbench_create_alter(&$output) {
   $items = array();
   $i = 0;
   foreach (bean_get_types() as $bean_type) {
-    if (bean_access('create', $bean_type->type)) {
+    if (entity_access('create', 'bean', $bean_type->type)) {
       $items[str_replace(' ', '', $bean_type->getLabel()) . '_' . $i] = array(
         'title' => $bean_type->getLabel(),
         'href' => 'block/add/' . $bean_type->buildURL(),

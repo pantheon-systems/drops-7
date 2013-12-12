@@ -293,5 +293,5 @@ function bean_services_access($op, $args) {
     return FALSE;
   }
 
-  return bean_access($op, $bean);
+  return entity_access($op, 'bean', $bean);
 }

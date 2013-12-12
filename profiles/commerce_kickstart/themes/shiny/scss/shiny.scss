@@ -193,6 +193,11 @@ select.form-select {
   select.form-select {
     padding: 5px 35px 5px 5px; /* LTR */
     background: #fff url("../images/drop-filter.png") no-repeat right center; /* LTR */
+
+    &[multiple="multiple"] {
+      background: #fff;
+      padding: 5px;
+    }
   }
   form table {
 

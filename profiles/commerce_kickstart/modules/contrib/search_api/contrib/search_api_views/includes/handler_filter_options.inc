@@ -105,14 +105,24 @@ class SearchApiViewsHandlerFilterOptions extends SearchApiViewsHandlerFilter {
       '#options' => $options,
       '#multiple' => TRUE,
       '#size' => min(4, count($this->definition['options'])),
-      '#default_value' => isset($this->value) ? $this->value : array(),
+      '#default_value' => is_array($this->value) ? $this->value : array(),
     );
-    // Hide the value box if operator is 'empty' or 'not empty'.
+
+    // Hide the value box if the operator is 'empty' or 'not empty'.
     // Radios share the same selector so we have to add some dummy selector.
-    $form['value']['#states']['visible'] = array(
-      ':input[name="options[operator]"],dummy-empty' => array('!value' => 'empty'),
-      ':input[name="options[operator]"],dummy-not-empty' => array('!value' => 'not empty'),
-    );
+    if (empty($form_state['exposed'])) {
+      $form['value']['#states']['visible'] = array(
+        ':input[name="options[operator]"],dummy-empty' => array('!value' => 'empty'),
+        ':input[name="options[operator]"],dummy-not-empty' => array('!value' => 'not empty'),
+      );
+    }
+    elseif (!empty($this->options['expose']['use_operator'])) {
+      $name = $this->options['expose']['operator_id'];
+      $form['value']['#states']['visible'] = array(
+        ':input[name="' . $name . '"],dummy-empty' => array('!value' => 'empty'),
+        ':input[name="' . $name . '"],dummy-not-empty' => array('!value' => 'not empty'),
+      );
+    }
   }
 
   /**

@@ -49,7 +49,12 @@ function module_filter_form_system_modules_alter(&$form, &$form_state, $form_id)
 
   $form['module_filter'] = array(
     '#tree' => TRUE,
-    '#weight' => -1
+    '#weight' => -1,
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'module_filter') .'/css/module_filter.css',
+      ),
+    ),
   );
   $form['module_filter']['name'] = array(
     '#type' => 'textfield',
@@ -65,6 +70,19 @@ function module_filter_form_system_modules_alter(&$form, &$form_state, $form_id)
   );
 
   if (variable_get('module_filter_tabs', 1)) {
+    $form['module_filter']['#attached']['css'][] = drupal_get_path('module', 'module_filter') .'/css/module_filter_tab.css';
+    $form['module_filter']['#attached']['js'][] = drupal_get_path('module', 'module_filter') .'/js/module_filter_tab.js';
+    $form['module_filter']['#attached']['js'][] = array(
+      'data' => array('moduleFilter' => array('visualAid' => variable_get('module_filter_visual_aid', 1))),
+      'type' => 'setting',
+    );
+
+    if (variable_get('module_filter_dynamic_save_position', 0)) {
+      $form['module_filter']['#attached']['js'][] = drupal_get_path('module', 'module_filter') .'/js/dynamic_position.js';
+    }
+
+    $form['module_filter']['#size'] = 45;
+
     // Remove the fieldsets for each package since we will be using tabs
     // instead. Put all modules into one array.
     $modules = array(
@@ -111,9 +129,14 @@ function module_filter_form_system_modules_alter(&$form, &$form_state, $form_id)
 
     // Add our $tab_counts array to the form.
     $form['#tab_counts'] = $tab_counts;
-  }
 
-  $form['#theme'] = 'module_filter_system_modules';
+    $form['#theme'] = 'module_filter_system_modules_tabs';
+  }
+  else {
+    $form['module_filter']['#attached']['js'][] = drupal_get_path('module', 'module_filter') .'/js/module_filter.js';
+    $form['module_filter']['#prefix'] = '<div id="module-filter-wrapper" style="display: none;">';
+    $form['module_filter']['#suffix'] = '</div>';
+  }
 }
 
 /**
@@ -121,10 +144,6 @@ function module_filter_form_system_modules_alter(&$form, &$form_state, $form_id)
  */
 function module_filter_theme() {
   return array(
-    'module_filter_system_modules' => array(
-      'render element' => 'form',
-      'file' => 'module_filter.theme.inc'
-    ),
     'module_filter_modules_table' => array(
       'render element' => 'form',
       'file' => 'module_filter.theme.inc',

@@ -110,11 +110,35 @@ class menu_CrumbsMultiPlugin_link_title implements crumbs_MultiPlugin {
           $link['title'] = $row['link_title'];
         }
         if (!is_array($link['options'])) {
+          // hook_translated_menu_link_alter() expects options to be an array.
           $link['options'] = unserialize($link['options']);
         }
-        // Give other modules (e.g. i18n_menu) a chance to alter the title.
-        drupal_alter('translated_menu_link', $link, $item['map']);
-        $titles[$row['menu_name']] = $link['title'];
+        if (1
+          // Check if i18n_menu < 7.x-1.8 is installed.
+          // We need to support older versions, because 7.x-1.8 is a bit buggy.
+          // See http://drupal.org/node/1781112#comment-7163324
+          && module_exists('i18n_menu')
+          && !function_exists('_i18n_menu_link_process')
+        ) {
+          if (1
+            && isset($link['language'])
+            && $link['language'] === LANGUAGE_NONE
+          ) {
+            // i18n_menu_translated_menu_link_alter() in older versions of
+            // i18n_menu expects $link['language'] to be empty for language
+            // neutral.
+            unset($link['language']);
+          }
+          // Give other modules (e.g. i18n_menu) a chance to alter the title.
+          drupal_alter('translated_menu_link', $link, $item['map']);
+          // i18n_menu < 7.x-1.8 sets the 'link_title' instead of 'title'.
+          $titles[$row['menu_name']] = $link['link_title'];
+        }
+        else {
+          // Give other modules (e.g. i18n_menu) a chance to alter the title.
+          drupal_alter('translated_menu_link', $link, $item['map']);
+          $titles[$row['menu_name']] = $link['title'];
+        }
       }
     }
     return $titles;

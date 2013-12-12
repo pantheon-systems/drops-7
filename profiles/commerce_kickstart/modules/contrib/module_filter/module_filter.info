@@ -16,9 +16,9 @@ files[] = js/module_filter_tab.js
 
 configure = admin/config/user-interface/modulefilter
 
-; Information added by drupal.org packaging script on 2012-07-05
-version = "7.x-1.7"
+; Information added by drupal.org packaging script on 2013-08-08
+version = "7.x-1.8"
 core = "7.x"
 project = "module_filter"
-datestamp = "1341518501"
+datestamp = "1375995220"
 

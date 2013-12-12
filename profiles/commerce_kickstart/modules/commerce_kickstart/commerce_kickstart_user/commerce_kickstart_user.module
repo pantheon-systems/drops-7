@@ -54,11 +54,12 @@ function _commerce_kickstart_user_page_title($account = NULL) {
  * Implements hook_username_alter().
  */
 function commerce_kickstart_user_username_alter(&$name, $account) {
-  if (module_exists('commerce_addressbook')) {
-    $billing_profile_id = commerce_addressbook_get_default_profile_id($account->uid, 'billing');
-    if ($billing_profile_id) {
+  if (!empty($account->uid) && module_exists('commerce_addressbook')) {
+    if ($billing_profile_id = commerce_addressbook_get_default_profile_id($account->uid, 'billing')) {
       $billing_profile = commerce_customer_profile_load($billing_profile_id);
-      $name = $billing_profile->commerce_customer_address[LANGUAGE_NONE][0]['name_line'];
+      if (!empty($billing_profile->commerce_customer_address[LANGUAGE_NONE][0]['name_line'])) {
+        $name = $billing_profile->commerce_customer_address[LANGUAGE_NONE][0]['name_line'];
+      }
     }
   }
 }

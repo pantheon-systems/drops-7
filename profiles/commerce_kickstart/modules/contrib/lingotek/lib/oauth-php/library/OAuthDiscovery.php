@@ -33,7 +33,7 @@
 require_once dirname(__FILE__).'/discovery/xrds_parse.php';
 
 require_once dirname(__FILE__).'/OAuthException2.php';
-require_once dirname(__FILE__).'/OAuthRequestLogger.php';
+require_once dirname(__FILE__).'/LingotekOAuthRequestLogger.php';
 
 
 class OAuthDiscovery
@@ -64,7 +64,7 @@ class OAuthDiscovery
 			throw new OAuthException2('Could not discover XRDS file at '.$uri);
 		}
 
-		// Fill an OAuthServer record for the uri found
+		// Fill an LingotekOAuthServer record for the uri found
 		$ps			= parse_url($uri);
 		$host		= isset($ps['host']) ? $ps['host'] : 'localhost';
 		$server_uri = $ps['scheme'].'://'.$host.'/';
@@ -214,8 +214,8 @@ class OAuthDiscovery
 
 		// Tell the logger what we requested and what we received back
 		$data = "GET $uri";
-		OAuthRequestLogger::setSent($data, "");
-		OAuthRequestLogger::setReceived($txt);
+		LingotekOAuthRequestLogger::setSent($data, "");
+		LingotekOAuthRequestLogger::setReceived($txt);
 
 		return $txt;
 	}

@@ -1,6 +1,15 @@
 Search API Database Search 1.x, dev (xx/xx/xxxx):
 -------------------------------------------------
 
+Search API Database Search 1.0 (10/23/2013):
+--------------------------------------------
+- #1155568 by bember, drunken monkey, fabsor: Fixed indexing of historical date
+  fields.
+- #2083079 by drumm, drunken monkey: Added single, denormalized table for
+  indexing single-valued fields.
+- #2073443 by drunken monkey: Removed custom uninstall code for deleting
+  dependent servers.
+
 Search API Database Search 1.0, RC 2 (07/21/2013):
 --------------------------------------------------
 - #2040543 by drunken monkey: Fixed ignored "missing facet" setting.

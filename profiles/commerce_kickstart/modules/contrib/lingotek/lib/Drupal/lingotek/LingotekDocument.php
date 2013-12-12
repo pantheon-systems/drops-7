@@ -35,7 +35,7 @@ class LingotekDocument {
    *   A Lingotek Document ID.
    */
   public function __construct($document_id) {
-    $this->document_id = intval($document_id);
+    $this->document_id = $document_id;
   }
   
   /**
@@ -71,7 +71,7 @@ class LingotekDocument {
   public function currentPhase($translation_target_id) {
     $phase = FALSE;
     
-    if ($progress = $this->translationProgress()) {
+    if ($progress = $this->getProgress()) {
       foreach ($progress->translationTargets as $target) {
         if ($target->id == $translation_target_id && !empty($target->phases)) {
           $current_phase = FALSE;
@@ -104,7 +104,7 @@ class LingotekDocument {
     $result = FALSE;
     
     if (class_exists('LingotekPhase')) {
-      $progress = $this->translationProgress();
+      $progress = $this->getProgress();
       if( is_object( $progress ) ) {
         foreach ($progress->translationTargets as $target) {
           $current_phase = $this->currentPhase($target->id);
@@ -125,7 +125,7 @@ class LingotekDocument {
    * @return mixed
    *   The data object returned by a call to getDocumentProgress on success, FALSE on failure.
    */
-  public function translationProgress() {
+  public function getProgress() {
     $progress = &drupal_static(__FUNCTION__ . '-' . $this->document_id);
     
     if (!$progress) {
@@ -135,6 +135,35 @@ class LingotekDocument {
     return $progress;
   }
   
+  const IMPORT_STATUS__UNKNOWN = "UNKNOWN";// unsuccessful api response
+  const IMPORT_STATUS__IN_QUEUE = "IN_QUEUE";
+  const IMPORT_STATUS__PROCESSING = "PROCESSING";
+  const IMPORT_STATUS__COMPLETE = "COMPLETE";
+  const IMPORT_STATUS__ERROR = "ERROR";
+
+  public function getImportStatus($include_details = TRUE) {
+    $response = $this->api->request('getDocumentImportStatus', array('id' => $this->document_id));
+    $status = self::IMPORT_STATUS__UNKNOWN;
+    $status_message = $status;
+    if ($response->results == 'success') {
+      $status = $response->status;
+      if ($status === self::IMPORT_STATUS__PROCESSING) {
+        $status_message = $status . " (" . $response->process->percentComplete . "% complete)";
+      }
+      elseif ($status === self::IMPORT_STATUS__ERROR) {
+        $status_message = $status . " (" . $response->process->error . ")";
+      }
+      else {
+        $status_message = $status;
+      }
+    }
+    elseif ($response->results == 'fail') {
+      $status = self::IMPORT_STATUS__ERROR;
+      $status_message = $status . " (" . $response->error . ")";
+    }
+    return $include_details ? $status_message : $status;
+  }
+
   /**
    * Injects reference to an API object.
    *
@@ -155,7 +184,7 @@ class LingotekDocument {
    *   A loaded LingotekDocument object.
    */
   public static function load($document_id) {
-    $document_id = intval($document_id);
+    $document_id = $document_id;
     if (empty($documents[$document_id])) {
       $document = new LingotekDocument($document_id);
       $document->setApi(LingotekApi::instance());

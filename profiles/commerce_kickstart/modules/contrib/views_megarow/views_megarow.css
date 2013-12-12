@@ -5,15 +5,11 @@ tr.views-row-active {
 .megarow > td {
   padding: 0;
 }
-.megarow-content > .messages {
-  border: 0;
-  margin-top: 0;
-  margin-bottom: 15px;
-  padding: 0;
-}
 
 div.views-megarow-content {
   background: white;
+  border: 1px solid #CCCCCC;
+  border-radius: 4px;
   color: black;
   padding: 15px;
 }
@@ -27,11 +23,20 @@ div.views-megarow-content .megarow-title {
 }
 
 div.views-megarow-content .megarow-header {
-  padding: 0 .25em 0 1em;
+  background-color: #888;
+  margin-right: 20px;
+  padding: 0 .25em 0 0.6em;
 }
 
-div.views-megarow-content .megarow-header a {
+div.views-megarow-content .megarow-header a.close {
+  background: url('close.png') top left no-repeat;
   color: white;
+  display: block;
+  height: 16px;
+  margin-right: -23px;
+  margin-top: 2px;
+  text-indent: -1000em;
+  width: 16px;
 }
 
 div.views-megarow-content .megarow-content {

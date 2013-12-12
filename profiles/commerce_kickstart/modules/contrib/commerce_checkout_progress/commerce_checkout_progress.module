@@ -33,11 +33,6 @@ function commerce_checkout_progress_block_view($delta = 'indication') {
   if ($delta === 'indication') {
     // Get the current page that was created/stored earlier by commerce checkout.
     $page_id = commerce_checkout_progress_commerce_checkout_router();
-
-    if (empty($page_id) && variable_get('commerce_checkout_progress_cart', FALSE) && $_GET['q'] = 'cart') {
-      $page_id = 'cart';
-    }
-
     $block_pages = variable_get('commerce_checkout_progress_block_pages', array());
 
     // on block configuration page, use select nothing, it mean, we need
@@ -59,6 +54,12 @@ function commerce_checkout_progress_block_view($delta = 'indication') {
     if ($visible) {
       // Get non-empty pages.
       $pages = commerce_checkout_progress_get_items();
+      if (empty($page_id)) {
+        if (!isset($pages['cart'])) {
+          return;
+        }
+        $page_id = 'cart';
+      }
       $content = array(
         '#theme' => 'commerce_checkout_progress_list',
         '#items' => $pages,
@@ -78,7 +79,7 @@ function commerce_checkout_progress_block_view($delta = 'indication') {
  * Implements hook_form_FORM_ID_alter().
  *
  * Overrule the pages-visibility settings form.
- *   Only for the blocks this module defines.
+ * Only for the blocks this module defines.
  */
 function commerce_checkout_progress_form_block_admin_configure_alter(&$form, $form_state, $form_id) {
   if ($form['module']['#value'] === 'commerce_checkout_progress') {
@@ -153,8 +154,13 @@ function theme_commerce_checkout_progress_list($variables) {
   // Option to display back pages as links.
   if ($link) {
     // Load the *shopping cart* order. It gets deleted on last page.
-    if ($order = commerce_cart_order_load($GLOBALS['user']->uid)) {
+    if (module_exists('commerce_cart') && $order = commerce_cart_order_load($GLOBALS['user']->uid)) {
       $order_id = $order->order_id;
+    }
+    // If we don't have the Cart module and are on the checkout page, load the
+    // order from the arguments.
+    elseif (arg(0) == 'checkout' && $order_id = arg(1)) {
+      $order = commerce_order_load($order_id);
     }
   }
 
@@ -170,15 +176,14 @@ function theme_commerce_checkout_progress_list($variables) {
       // Active page and next pages should not be linked.
       $visited = FALSE;
     }
-    if ($page_id === $items[$current_page]['prev_page']) {
+    if (isset($items[$current_page]['prev_page']) && $page_id === $items[$current_page]['prev_page']) {
       $class[] = 'previous';
     }
-    if ($page_id === $items[$current_page]['next_page']) {
+    if (isset($items[$current_page]['next_page']) && $page_id === $items[$current_page]['next_page']) {
       $class[] = 'next';
     }
-    // @TODO: Calculate width based on 100 / qty of pages.
     $class[] = $page_id;
-    $data    = t($page['title']);
+    $data = t($page['title']);
 
     if ($visited) {
       $class[] = 'visited'; // Issue #1345942.
@@ -212,16 +217,22 @@ function theme_commerce_checkout_progress_list($variables) {
     $progress[] = $item;
   }
 
+  $classes = array(
+    'commerce-checkout-progress',
+    'clearfix',
+    'inline',
+    'checkout-pages-' . count($progress),
+  );
   return theme('item_list', array(
     'items' => $progress,
     'type' => $type,
-    'attributes' => array('class' => array('commerce-checkout-progress', 'clearfix', 'inline',)),
+    'attributes' => array('class' => $classes),
   ));
 }
 
 /**
  * Implements hook_form_FORM_ID_alter().
- * 
+ *
  * @see commerce_checkout_progress_get_items().
  */
 function commerce_checkout_progress_form_commerce_checkout_builder_form_alter(&$form, $form_state, $form_id) {
@@ -254,7 +265,7 @@ function commerce_checkout_progress_form_commerce_checkout_builder_form_alter(&$
 
 /**
  * Custom submit function to save module settings after form submit.
- * 
+ *
  * @see commerce_checkout_progress_form_commerce_checkout_builder_form_alter().
  * @see commerce_checkout_progress_get_items().
  */
@@ -277,32 +288,10 @@ function commerce_checkout_progress_get_items() {
   foreach ($panes as $id => $pane) {
     // Panes could exist in removed pages (through
     // hook_commerce_checkout_page_info_alter()).
-    if (!isset($pages[$pane['page']])) {
-      continue;
+    if (isset($pages[$pane['page']])) {
+      // Pane has page ID, use this value to flag that the page is not empty.
+      $pages[$pane['page']]['has_item'] = TRUE;
     }
-
-    // special case at commerce_payment_redirect page, this page is not empty
-    // but in some cases, it just redirects user to next step.
-    // code in this block copied from commerce_payment_redirect_pane_checkout_form().
-    // See commerce_payment_redirect_pane_checkout_form() for more detail.
-    if ($id === 'commerce_payment_redirect') {
-      $order = menu_get_object('commerce_order');
-      if (!empty($order->data['payment_method'])) {
-        $payment_method = commerce_payment_method_instance_load($order->data['payment_method']);
-        if (!empty($payment_method['offsite'])) {
-          if (arg(3) !== 'return' || arg(4) == $order->data['payment_redirect_key']) {
-            $callback = commerce_payment_method_callback($payment_method, 'redirect_form');
-            if ($callback) {
-              $pages[$pane['page']]['has_item'] = TRUE;
-            }
-          }
-        }
-      }
-      continue;
-    }
-
-    // pane has page ID, use this value to flag that the page is not empty.
-    $pages[$pane['page']]['has_item'] = TRUE;
   }
 
   $items = array();
@@ -329,6 +318,6 @@ function commerce_checkout_progress_get_items() {
     );
     $items = array_reverse($items);
   }
-
+  drupal_alter('commerce_checkout_progress_items', $items);
   return $items;
 }

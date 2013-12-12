@@ -7,9 +7,9 @@ dependencies[] = commerce_payment
 dependencies[] = commerce_order
 dependencies[] = countries
 core = 7.x
-; Information added by drupal.org packaging script on 2013-05-17
-version = "7.x-1.0-rc2"
+; Information added by drupal.org packaging script on 2013-08-02
+version = "7.x-1.1"
 core = "7.x"
 project = "commerce_amex"
-datestamp = "1368798829"
+datestamp = "1375445167"
 

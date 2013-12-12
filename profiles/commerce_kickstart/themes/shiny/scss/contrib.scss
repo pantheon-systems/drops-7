@@ -1119,7 +1119,9 @@ html.js .vbo-views-form #edit-select fieldset .fieldset-wrapper{
   height: 28px;
 }
 .chzn-container-single .select:focus {
-  box-shadow: 0;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
 }
 .chzn-container-single .chzn-single-with-drop {
   border-radius: 3px 3px 0 0;
@@ -1201,4 +1203,53 @@ html.js #features-export-form {
 /* Webform Fixes */
 form table#webform-emails label::before {
   display: none;
+}
+
+/* Form Builder Fixes */
+.form-builder-wrapper *,
+#form-builder-fields,
+.form-builder-palette-element {
+  -moz-box-sizing: content-box;
+  -webkit-box-sizing: content-box;
+  box-sizing: content-box;
+}
+
+/* Path Breadcrumb Fixes */
+.breadcrumb span.inline,
+.breadcrumb span.delimiter{
+  display: inline;
+  background: none;
+}
+
+/* Log Filter Fixes */
+#log-filter-form {
+  label::before {
+    display: none;
+  }
+  input.form-checkbox {
+    opacity: 1;
+  }
+}
+
+/* Customise the color module form layout in the theme settings */
+
+.color-form {
+  max-width: 100%;
+}
+
+#placeholder {
+  left: 20px;
+  top: 40px;
+}
+
+#palette {
+  float: left;
+  width: 49%;
+  margin-top: 200px;
+}
+
+html.js #preview {
+  clear: none !important;
+  width: 49%;
+  float: right !important;
 }

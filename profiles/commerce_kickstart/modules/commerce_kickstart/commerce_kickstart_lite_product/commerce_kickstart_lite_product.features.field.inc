@@ -478,7 +478,7 @@ function commerce_kickstart_lite_product_field_default_fields() {
           'settings' => array(
             'combine' => 1,
             'default_quantity' => '1',
-            'line_item_type' => 0,
+            'line_item_type' => 'product',
             'show_quantity' => 1,
             'show_single_product_attributes' => 0,
           ),

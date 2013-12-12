@@ -828,12 +828,12 @@ class views_handler_field_field extends views_handler_field {
       'type' => $this->options['type'],
       'settings' => $this->options['settings'],
       'label' => 'hidden',
-      // Pass the View object in the display so that fields can act on it.
-      'views_view' => $this->view,
+      // Pass information about the View in the display so that fields can act on it.
+      'views_view_name' => $this->view->name,
+      'views_display_name' => $this->view->current_display,
       'views_field' => $this,
       'views_row_id' => $row_id,
     );
-
 
     $entity_type = $values->_field_data[$this->field_alias]['entity_type'];
     $entity = $this->get_value($values, 'entity');

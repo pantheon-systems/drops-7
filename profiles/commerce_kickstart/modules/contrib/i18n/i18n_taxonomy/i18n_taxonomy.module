@@ -468,7 +468,8 @@ function i18n_taxonomy_theme() {
  * Get localized term name unfiltered.
  */
 function i18n_taxonomy_term_name($term, $langcode = NULL) {
-  return i18n_taxonomy_vocabulary_mode($term->vid, I18N_MODE_LOCALIZE) ? i18n_string(array('taxonomy', 'term', $term->tid, 'name'), $term->name, array('langcode' => $langcode, 'sanitize' => FALSE)) : $term->name;
+  $key = i18n_object_info('taxonomy_term', 'key');
+  return i18n_taxonomy_vocabulary_mode($term->vid, I18N_MODE_LOCALIZE) ? i18n_string(array('taxonomy', 'term', $term->{$key}, 'name'), $term->name, array('langcode' => $langcode, 'sanitize' => FALSE)) : $term->name;
 }
 
 
@@ -476,7 +477,8 @@ function i18n_taxonomy_term_name($term, $langcode = NULL) {
  * Get localized term description unfiltered.
  */
 function i18n_taxonomy_term_description($term, $langcode = NULL) {
-  return i18n_taxonomy_vocabulary_mode($term->vid, I18N_MODE_LOCALIZE) ? i18n_string(array('taxonomy', 'term', $term->tid, 'description'), $term->description, array('langcode' => $langcode, 'sanitize' => FALSE)) : $term->description;
+  $key = i18n_object_info('taxonomy_term', 'key');
+  return i18n_taxonomy_vocabulary_mode($term->vid, I18N_MODE_LOCALIZE) ? i18n_string(array('taxonomy', 'term', $term->{$key}, 'description'), $term->description, array('langcode' => $langcode, 'sanitize' => FALSE)) : $term->description;
 }
 
 /**

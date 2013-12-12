@@ -22,6 +22,7 @@ class LingotekSession {
   public $key;
   public $password;
   private $logged_in = FALSE;
+  private $last_login_msg = '';
   private $headers = array();
   //API calls that don't need to log in.
   private $sessionless = array('login', 'keyLogin');
@@ -56,6 +57,13 @@ class LingotekSession {
    */
   public function isLoggedIn() {
     return $this->logged_in;
+  }
+
+  /*
+   * Returns message received from last login attempt
+   */
+  public function getLastLoginMsg() {
+    return $this->last_login_msg;
   }
 
   /*
@@ -105,15 +113,33 @@ class LingotekSession {
       $timeout = self::DEFAULT_API_TIMEOUT;
     }
 
-    $response = drupal_http_request(
-        $this->url . "/" . $api, array(
+    $api_url = $this->url . "/" . $api;
+    $params = array(
       'headers' => $this->headers,
       'method' => 'POST',
       'data' => $query,
       'timeout' => $timeout,
-        )
+        );
+    $response = drupal_http_request($api_url, $params);
+    
+    $message_params = array(
+      '@url' => $api_url,
+      'api' => 'api-session',
+      '@method' => $api,
+      '!params' => $params,
+      '!request' => array(),
+      '!response' => $response
     );
+    
+    LingotekLog::api('<h1>@method</h1> <strong>API URL:</strong> @url
+        <br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response', $message_params);
 
+    if (isset($response->error)) {
+      $this->last_login_msg = $response->error;
+    }
+    else {
+      $this->last_login_msg = "";
+    }
     if ($returnJson) {
       if (isset($response->data) && ($json = json_decode($response->data)) && $json->results == "success") {
         return $json;
@@ -123,7 +149,7 @@ class LingotekSession {
             'API @api FAILED', array(
           '@api' => $api,
           'params' => $params,
-          'error' => isset($response->error) ? $response->error : "",
+          'error' => $this->last_login_msg,
           'response' => isset($json) ? $json : "",
           'logged_in' => $this->logged_in,
             ), 'api');
@@ -150,9 +176,14 @@ class LingotekSession {
    */
   public function download($api, $params) {
     $result = LingotekApi::instance()->request($api, $params);
+    $result_decoded = json_decode($result);// non-zipped will be decoded
 
     if (!$result) {
-      LingotekLog::error('Unable to download Lingotek Document.');
+      LingotekLog::error('Unable to download Lingotek Document.', array());
+      return FALSE;
+    }
+    elseif (isset($result_decoded->results)) {
+      LingotekLog::error('Download Lingotek Document Failed. !error ', array('!error' => $result));
       return FALSE;
     }
 
@@ -232,31 +263,39 @@ class LingotekSession {
       $login = 'keyLogin';
     }
 
+    $error = 'unknown error';
+    $success = FALSE;
+    $response = array();
     $data = $this->request($login, $params, NULL, FALSE);
+    if (isset($data->data)) {
+      $response = json_decode($data->data);
+      if (isset($response->results) && $response->results == "success") {
+        $success = TRUE;
+        $error = '';
+      }
+      elseif (isset($response->results) && $response->results == "fail") {
+        $error = $response->error;
+      }
+    }
+    elseif (isset($data->error)) {
+      $error = $data->error;
+    }
 
-    if (!isset($data->error) && ($response = json_decode($data->data)) && $response->results == "success") {
+    if ($success) {
       $this->headers = array("Cookie" => $data->headers['set-cookie']);
       $this->logged_in = TRUE;
+      $this->last_login_msg = '';
     }
     else {
       $this->logged_in = FALSE;
-      if (isset($data->error) && $data->error) {
-        LingotekLog::error(
-            "Unable to log in", array(
-          'params' => $params,
-          'error' => $data->error,
-          'response' => isset($response) ? $response : "",
-            ), 'session'
-        );
-      }
-      else {
-        LingotekLog::warning(
-            "Unable to log in", array(
-          'params' => $params,
-          'response' => isset($response) ? $response : "",
-            ), 'session'
-        );
-      }
+      $this->last_login_msg = $error;
+      LingotekLog::error(
+          "Unable to log in", array(
+        'params' => $params,
+        'error' => $error,
+        'response' => json_encode($response),
+          ), 'session'
+      );
     }
   }
 

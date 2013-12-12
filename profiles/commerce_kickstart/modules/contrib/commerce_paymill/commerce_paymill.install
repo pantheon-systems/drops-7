@@ -5,6 +5,9 @@
  * Provides a Libraries module based loader for the Paymill API.
  */
 
+define('COMMERCE_PAYMILL_CARDONFILE_URI',
+       'https://drupal.org/project/commerce_cardonfile');
+
 /**
  * Implements hook_requirements().
  */
@@ -13,7 +16,7 @@ function commerce_paymill_requirements($phase) {
   $requirements = array();
 
   if ($phase == 'runtime') {
-    // Check Paymill library is installed.
+    // Check if Paymill library is installed.
     $library = libraries_detect('paymill');
     if (!empty($library['installed'])) {
       $value = $library['version'];
@@ -32,24 +35,43 @@ function commerce_paymill_requirements($phase) {
       'severity' => $severity,
     );
 
-    // Check cURL is installed.
-    $curl = function_exists('curl_init');
-    $requirements['commerce_paymill_curl'] = array(
-      'title' => $t('Paymill cURL support'),
-      'value' => $curl ? $t('cURL extension enabled') : $t('cURL extension is not installed/enabled'),
-      'description' => NULL,
-      'severity' => $curl ? REQUIREMENT_OK : REQUIREMENT_ERROR,
-    );
-
-    // Check JSON is installed.
-    $curl = function_exists('json_decode');
+    // Check if JSON decoding is available.
+    $predicate = function_exists('json_decode');
     $requirements['commerce_paymill_json'] = array(
-      'title' => $t('Paymill JSON support'),
-      'value' => $curl ? $t('JSON extension enabled') : $t('JSON extension is not installed/enabled'),
+      'title' => $t('JSON decoding (Paymill)'),
+      'value' => $predicate ? $t('JSON decoding available') : $t('No JSON decoding. You must enable it'),
       'description' => NULL,
-      'severity' => $curl ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+      'severity' => $predicate ? REQUIREMENT_OK : REQUIREMENT_ERROR,
+    );
+  }
+
+  // Validating the cardonfile requirements.
+  $requirements['commerce_paymill_cardonfile'] = array(
+    'title' => $t('Paymill: Card On File'),
+  );
+
+  if (!module_exists('commerce_cardonfile')) {
+    $requirements['commerce_paymill_cardonfile'] += array(
+      'severity' => REQUIREMENT_INFO,
+      'value' => $t('Not available'),
+      'description' => $t("You must install <a href='!cof_url'>Commerce Card on File 2.x</a> to use the Card on File functionality.", array('!cof_url' => COMMERCE_PAYMILL_CARDONFILE_URI)),
+    );
+  }
+  elseif (!commerce_paymill_has_cardonfile()) {
+    $requirements['commerce_paymill_cardonfile'] += array(
+      'severity' => REQUIREMENT_WARNING,
+      'value' => $t('Version Incompatibility'),
+      'description' => $t("Your version of <a href='!cof_url'>Commerce Card on File</a> is too old. Please upgrade to 2.x.", array('!cof_url' => COMMERCE_PAYMILL_CARDONFILE_URI)),
+    );
+  }
+  else {
+    $requirements['commerce_paymill_cardonfile'] += array(
+      'severity' => REQUIREMENT_OK,
+      'value' => $t('Enabled'),
+      'description' => $t("The <a href='!cof_url'>Commerce Card on File</a> functionality is available.", array('!cof_url' => COMMERCE_PAYMILL_CARDONFILE_URI)),
     );
   }
 
   return $requirements;
 }
+

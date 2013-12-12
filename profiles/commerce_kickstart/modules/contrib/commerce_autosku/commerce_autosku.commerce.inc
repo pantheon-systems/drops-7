@@ -75,32 +75,16 @@ function commerce_autosku_commerce_product_presave($product) {
     }
     //@todo: Replace TRUE with a check if we should update existing SKUS.
     elseif (empty($product->sku) || _commerce_autosku_is_temporary_sku($product->sku) || $settings['advanced']['update_existing']) {
-      $data = array('commerce-product' => $product);
-      $sku = token_replace($settings['pattern'], $data, array('clear' => TRUE));
-      $sku = commerce_autosku_cleanstring($sku);
-      $sku = drupal_substr($sku, 0, 255);
-      if ($settings['advanced']['case']) {
-        switch ($settings['advanced']['case']) {
-          case 'uppercase':
-            $sku = drupal_strtoupper($sku);
-            break;
-          case 'lowercase':
-            $sku = drupal_strtolower($sku);
-        }
+      // Determine the casing to use for the generated SKU from the settings.
+      if (!empty($settings['advanced']['case'])) {
+        $case = $settings['advanced']['case'];
+      }
+      else {
+        $case = 'original';
       }
 
-      //Borrowed from pathauto...
-      if (!commerce_product_validate_sku_unique($sku, $product->product_id)) {
-        $original_sku = $sku;
-        $i = 0;
-
-        do {
-          $sku = drupal_substr($original_sku, 0, (255 - drupal_strlen(COMMERCE_AUTOSKU_REPLACEMENT . $i)));
-          $sku = commerce_autosku_cleanstring($sku . COMMERCE_AUTOSKU_REPLACEMENT . $i);
-          $i++;
-        } while (!commerce_product_validate_sku_unique($sku, $product->product_id));
-      }
-      $product->sku = $sku;
+      // Generate the SKU.
+      $product->sku = commerce_autosku_generate_sku($product, $settings['pattern'], $case);
     }
   }
 }

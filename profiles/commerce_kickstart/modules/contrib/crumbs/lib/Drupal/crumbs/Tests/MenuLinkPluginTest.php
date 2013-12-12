@@ -15,7 +15,7 @@ class MenuLinkPluginTest extends \DrupalWebTestCase {
   function setUp() {
     // Include the menu plugin file, because those classes are not autoloaded!
     module_load_include('inc', 'crumbs', 'plugins/crumbs.menu');
-    parent::setUp();
+    parent::setUp('crumbs');
   }
 
   function testMenuLinkTitle() {

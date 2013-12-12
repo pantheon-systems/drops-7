@@ -10,80 +10,139 @@
  */
 function lingotek_download_translations_form($form, $form_state, $node, $document = NULL) {
 
-  $icon_green_check = base_path() . drupal_get_path('module', 'lingotek') . '/images/ico_tick_17x.png';
-  $checkbox = '<input type="checkbox" onchange="lingotek.pm.toggle_checkboxes(this);" />';
-  $headers = array(
-    $checkbox,
-    t('Language'),
-    t('Document Progress'),
-    t('Phase'),
-    t('Phase Progress'),
-    t('Phase Complete'),
-  );
+  module_load_include('lingotek', 'lingotek.bulk_grid', 'inc');
+  $form = array();
+  
+  $document = is_null($document) ? LingotekDocument::load($node->lingotek['document_id']) : $document;
 
-  $document = is_null($document) ? LingotekDocument::load(lingotek_lingonode($node->nid, 'document_id')) : $document;
-  $targets = lingotek_get_document_targets($document->document_id, TRUE);
-  $rows = array();
-  foreach ($targets as $lingotek_locale => $target) {
-    $current_phase = $document->currentPhase($target->id);
+  $document_progress = $document->getProgress();
 
-    $phase_complete = ($current_phase->isMarkedComplete) ? TRUE : FALSE;
+  $sum_progress = 0;
+  if ($document_progress->results == 'success') {
 
-    $phase_complete_percent = is_object($current_phase) ? $current_phase->percentComplete : 0;
-    if (empty($phase_complete_percent)) {
-      $phase_complete_percent = 0;
+    $rows = array();
+    foreach ($document_progress->translationTargets as $target) {
+      $current_phase = $document->currentPhase($target->id);
+      $marked_complete = FALSE;
+
+      $phase_complete_percent = is_object($current_phase) ? $current_phase->percentComplete : 0;
+      if (empty($phase_complete_percent)) {
+        $phase_complete_percent = 0;
+      }
+      $language_link = l(lingotek_language_field_lookup('native', $target->language), 'node/' . $node->nid . '/lingotekworkbench/' . $target->language, array('attributes' => array('target' => '_blank')));
+      $language_link .= ' (' . lingotek_language_field_lookup('name', $target->language) . ')';
+
+      $row = array(
+        'column_1' => array('data' => $language_link, 'width' => '40%'),
+        'column_2' => array('data' => lingotek_grid_create_progress_bar($target->percentComplete), 'width' => '40%'),
+        'column_3' => array('data' => ''),//$target->percentComplete == 100 ? '<i class="fa fa-check-sign ltk-complete-check" title="'.t('Workflow complete').'"></i>' : '<i class="fa fa-check-empty ltk-complete-check"></i>', 'width' => '20%'
+        '#attributes' => array('class' => array('bold-row')),
+      );
+
+      LingotekLog::trace("lingotek_pm table row [@locale]", array('@locale' => $target->language));
+      $rows[$target->language] = $row;
+      foreach ($target->phases as $phase) {
+        $row = array(
+          'column_1' => $phase->name,
+          'column_2' => lingotek_grid_create_progress_bar($phase->percentComplete),
+          'column_3' => $phase->isMarkedComplete ? '<i class="fa fa-check-sign ltk-complete-check" title="' . t('Phase complete') . '"></i>' : '<i class="fa fa-check-empty ltk-complete-check"></i>',
+          '#attributes' => array('class' => array('no-checkbox-row')),
+        );
+        $rows[$target->language . '_' . $phase->name] = $row;
+        $marked_complete = $phase->isMarkedComplete;
+      }
+
+      // update progress
+      $lingotek_locale = $target->language;
+      $progress_percentage = empty($target->percentComplete) ? 0 : $target->percentComplete;
+      $sum_progress += $progress_percentage;
+      $target_status_local = lingotek_lingonode($node->nid, 'target_sync_status_' . $lingotek_locale);
+      if ($target_status_local === LingotekSync::STATUS_PENDING) {
+        $target_status = ($marked_complete) ? LingotekSync::STATUS_READY : LingotekSync::STATUS_PENDING;
+        lingotek_lingonode($node->nid, 'target_sync_status_' . $lingotek_locale, $target_status);
+      }
+      lingotek_lingonode($node->nid, 'target_sync_progress_' . $lingotek_locale, $progress_percentage);
+      lingotek_lingonode($node->nid, 'target_sync_last_progress_updated_' . $lingotek_locale, time());
     }
-    $language_link = l(lingotek_language_field_lookup('native', $lingotek_locale), '', array('attributes' => array('onclick' => 'window.open(\'' . lingotek_get_workbench_url($node, $lingotek_locale) . '\'); return false;')));
-    $language_link .= ' ' . t('(@language_name)', array('@language_name' => lingotek_language_field_lookup('name', $lingotek_locale)));
-    $row = array(
-      '<input type="checkbox" tag="lingotek_pm_row" language="' . $lingotek_locale . '" />',
-      $language_link,
-      $target->percentComplete . '%',
-      $current_phase->name,
-      $phase_complete_percent . '%',
-      ($phase_complete) ? '<img src="' . $icon_green_check . '" />' : '',
+    $count = count($document_progress->translationTargets);
+    if ($count) {
+      lingotek_lingonode($node->nid, 'translation_progress', $sum_progress/$count);// unused
+    }
+
+    $form['fieldset'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Download Translations'),
+      '#description' => t('Download the latest translations from Lingotek in the selected languages.'),
+      '#collapsible' => TRUE,
+      '#collapsed' => FALSE,
     );
 
-    LingotekLog::trace("lingotek_pm table row [@locale]", array('@locale' => $lingotek_locale));
-    $rows[] = $row;
+    $header = array(
+      'column_1' => t('Target Language'),
+      'column_2' => t('Progress'),
+      'column_3' => t('Status'),
+    );
+
+    $form['fieldset']['documents'] = array(
+      '#type' => 'tableselect',
+      '#header' => $header,
+      '#options' => $rows,
+      '#empty' => t('No content available.'),
+      '#after_build' => array('lingotek_remove_checkboxes'),
+    );
+
+    $form['fieldset']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => 'Download',
+    );
+
+    $form['fieldset']['nid'] = array(
+      '#type' => 'value',
+      '#value' => $node->nid,
+    );
   }
 
-  $table = theme('table', array('header' => $headers, 'rows' => $rows));
-
-  $actions = '<input type="button" id="lingotek-update-button" value="' . t('Download') . '" class="form-submit"/>';
-
-  $vars = '<input type="hidden" id="lingotek_nid" value="' . $node->nid . '" />';
-
-  $token_element = array(
-    '#type' => 'hidden',
-    '#attributes' => array('id' => 'submit-token'),
-    '#value' => drupal_get_token(),
-  );
-  $vars .= drupal_render($token_element);
-
-  $download_form = array();
-
-  //$node_auto_download = (lingotek_lingonode($node->nid, 'sync_method'));
-  $download_form['fieldset'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Download Translations'),
-    '#description' => t('Download the latest translations from Lingotek in the selected languages.'),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE //!$node_auto_download,
-  );
-
-  $download_form['fieldset']['contents'] = array(
-    '#markup' => $table . $actions . $vars,
-  );
-
-  return $download_form;
+  return $form;
 }
 
 /**
  * Download Translations Form Submit
  */
 function lingotek_download_translations_form_submit($form, $form_state) {
-  
+  $nid = $form_state['values']['nid'];
+
+  // clear any caching from entitycache module
+  if (module_exists('entitycache')) {
+    cache_clear_all($nid, 'cache_entity_node');
+  }
+
+  $document_id = lingotek_lingonode($nid, 'document_id');
+
+  $locales = array();
+  $download_targets = array();
+
+  foreach ($form_state['values']['documents'] as $locale => $selected) {
+    if ($selected) {
+      $locales[] = $locale;
+      $download_targets[] = (object) array('document_id' => $document_id, 'locale' => $locale);
+    }
+  }
+
+  $extra_operations = array();
+
+  lingotek_sync_batch_create(array(), array(), $download_targets, array(), 'node/' . $form_state['values']['nid'] . '/lingotek_pm', $extra_operations);
+
+  drupal_set_message(t('Updated local translations for the selected languages: @selected_locales', array('@selected_locales' => implode(", ", $locales))));
+  cache_clear_all('field:node:' . $form_state['values']['nid'], 'cache_field');
+}
+
+function lingotek_remove_checkboxes($form_element) {
+  foreach ($form_element['#options'] as $locale => $data) {
+    if (isset($data['#attributes']['class']) && in_array('no-checkbox-row', $data['#attributes']['class'])) {
+      unset($form_element[$locale]['#theme']);
+    }
+  }
+  return $form_element;
 }
 
 /**
@@ -92,14 +151,15 @@ function lingotek_download_translations_form_submit($form, $form_state) {
 function lingotek_push_form($form, $form_state, $node) {
   $form = array();
 
+  $last_uploaded_message = isset($node->lingotek['last_uploaded']) ? ' (' . t('Last uploaded @human_readable_timestamp ago.', array('@human_readable_timestamp' => lingotek_human_readable_timestamp($node->lingotek['last_uploaded']))) . ')' : '';
   $form['content_push'] = array(
     '#type' => 'fieldset',
     '#title' => t('Upload'),
-    '#description' => t("Upload this node's content to Lingotek for translation."),
+    '#description' => t("Upload this node's content to Lingotek for translation. @last_uploaded_message", array('@last_uploaded_message' => $last_uploaded_message)),
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
-
+  
   $form['content_push']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Upload'),
@@ -117,60 +177,89 @@ function lingotek_push_form($form, $form_state, $node) {
  * Submit handler for the lingotek_push_form form.
  */
 function lingotek_push_form_submit($form, $form_state) {
-  $node = node_load($form_state['values']['node_id']);
+  $node = lingotek_node_load_default($form_state['values']['node_id']);
+
+  // clear any caching from entitycache module
+  if (module_exists('entitycache')) {
+    cache_clear_all($node->nid, 'cache_entity_node');
+  }
 
   $api = LingotekApi::instance();
-  if ($existing_document = lingotek_lingonode($node->nid, 'document_id')) {
+  if ($node->lingotek['sync_method'] == 1 && module_exists('workbench_moderation') && isset($node->workbench_moderation)) {
+    lingotek_lingonode($node->nid, 'workbench_moderate', '0');
+  }
+  if ($existing_document = isset($node->lingotek['document_id']) ? $node->lingotek['document_id'] : '') {
     // Update an existing Lingotek Document.
     $api->updateContentDocument($node);
   }
   else {
     // Create a new Lingotek Document.
-    $api->addContentDocument($node, TRUE);
+    lingotek_node_save_readonly($node);
+    $ln = LingotekNode::load($node);
+    $api->addContentDocument($ln, TRUE);
   }
 
   drupal_set_message(t('Uploaded content for "@node_title" to Lingotek for translation.', array('@node_title' => $node->title)));
 }
 
 /**
- * Form constructor for the node content reset form. (Reset Translations)
+ * Form constructor for the node disassociate form. (Formerly "Reset Translations")
  */
-function lingotek_node_content_reset_form($form, $form_state, $node) {
-  $form = array();
+function lingotek_node_disassociate_form($form, $form_state, $nids = array(), $collapse_fieldset = TRUE) {
 
-  $form['reset_translations'] = array(
+  if (isset($form_state['nids'])) {
+    $nids = $form_state['nids'];
+    $collapse_fieldset = FALSE;
+  }
+
+  $form = array();
+  if (!is_array($nids)) {
+    $nids = array($nids);
+  }
+
+  $form['disassociate_translations'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Reset Translations'),
-    '#description' => t("Disassociates the node's locally-published translations from their counterparts on Lingotek's servers. This allows for your Drupal content to be re-uploaded to Lingotek, so that it can be retranslated entirely using the currently-defined workflow. Also resets the node's translation management settings to their defaults."),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
+    '#title' => t('Disassociate Translations'),
+    '#description' => t("Should only be used to change the Lingotek project or TM vault associated with the node’s translation. Disassociates node translations on Lingotek’s servers from the copies downloaded to Drupal. Additional translation using Lingotek will require re-uploading the node’s content to restart the translation process."),
+    '#collapsible' => $collapse_fieldset,
+    '#collapsed' => $collapse_fieldset,
   );
 
-  $form['reset_translations']['submit'] = array(
+  $form['disassociate_translations']['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Reset Translations'),
+    '#value' => t('Disassociate Translations'),
   );
 
   $form['node_id'] = array(
     '#type' => 'hidden',
-    '#value' => $node->nid,
+    '#value' => json_encode($nids),
   );
 
   return $form;
 }
 
 /**
- * Submit handler for the lingotek_node_content_reset form.
+ * Submit handler for the lingotek_node_disassociate form.
  */
-function lingotek_node_content_reset_form_submit($form, $form_state) {
-  $drupal_node_id = $form_state['values']['node_id'];
-  $doc_id = LingotekSync::getDocIdFromNodeId($drupal_node_id);
+function lingotek_node_disassociate_form_submit($form, $form_state) {
+  $drupal_node_ids_json = json_decode($form_state['values']['node_id']);
+  $drupal_node_ids = array();
+  foreach ($drupal_node_ids_json as $nid) {
+    $drupal_node_ids[] = $nid;
+  }
+  $doc_ids = LingotekSync::getDocIdsFromNodeIds($drupal_node_ids);
 
   $api = LingotekApi::instance();
-  $api->removeDocument($doc_id);
+  $api->removeDocument($doc_ids);
 
-  $node = node_load($drupal_node_id);
-  drupal_set_message(t('Translations reset for "@node_title".', array('@node_title' => $node->title)));
+  if (count($drupal_node_ids) <= 1) {
+    $node = lingotek_node_load_default($drupal_node_ids[0]);
+    drupal_set_message(t('Translations disassociated for "@node_title".', array('@node_title' => $node->title)));
+  }
+  else {
+    drupal_set_message(t('Translations disassociated for @number nodes.', array('@number' => count($drupal_node_ids))));
+//    drupal_goto('admin/settings/lingotek/grid');
+  }
 }
 
 /**
@@ -179,7 +268,7 @@ function lingotek_node_content_reset_form_submit($form, $form_state) {
 function lingotek_publish_form($form, $form_state, $node) {
   $form = array();
 
-  if (module_exists('entity_translation')) {
+  if (module_exists('entity_translation') && lingotek_managed_by_entity_translation($node->type)) {
 
     $handler = entity_translation_get_handler('node', $node);
     $languages = entity_translation_languages();
@@ -252,26 +341,11 @@ function lingotek_publish_form($form, $form_state, $node) {
  */
 function lingotek_publish_form_submit($form, $form_state) {
   if (module_exists('entity_translation')) {
-    $node = node_load($form_state['values']['node_id']);
-
+    $node = lingotek_node_load_default($form_state['values']['node_id']);
     $status_request = $form_state['triggering_element']['#id'] == 'publish' ? 1 : 0;
-    $handler = entity_translation_get_handler('node', $node);
-
     $language_codes = $form_state['values']['languages'];
-    $languages_updated = array();
-    $updates = 0;
-    foreach ($language_codes as $langcode) {
-      if ($langcode !== 0) {
-        // set node (source or target as specified) flag (in the entity_translation table) as published or unpublished
-        $handler->setTranslation(array(
-          'language' => $langcode,
-          'status' => $status_request
-        ));
-        $languages_updated[$langcode] = lingotek_language_name($langcode);
-        $updates++;
-      }
-    }
-    $handler->saveTranslations();
+
+    list($languages_updated, $updates) = lingotek_entity_translation_save_status($node, $language_codes, $status_request);
 
     $publish_status_text = $status_request ? 'published' : 'unpublished';
     $languages_updated_html = "<ul><li>" . implode("</li><li>", $languages_updated) . "</li></ul>";
@@ -297,32 +371,57 @@ function lingotek_publish_form_submit($form, $form_state) {
 function lingotek_pm($node) {
   // Display all of the appropriate node management sections (e.g., Upload, Download, Publish)
 
-  $output = array();
+  $output = array(
+    '#attached' => array(
+      'css' => array(
+        '//netdna.bootstrapcdn.com/font-awesome/3.2.1/css/font-awesome.css' => array(
+          'type' => 'external',
+        ),
+      ),
+    ),
+  );
+  
+  $sync_status = $node->lingotek['node_sync_status'];
 
-  drupal_add_js(drupal_get_path('module', 'lingotek') . '/js/lingotek.pm.js');
+  // node translation support
+  if ($node->tnid != 0 && $node->tnid != $node->nid) {
+    $output[] = array(
+      '#markup' => t('This is a translated node. Go to the @link to manage the translations.', array('@link' => l('source node', 'node/' . $node->tnid . '/lingotek_pm'))),
+    );
+    return $output;
+  }
 
-  if (class_exists('LingotekDocument')) {
-    $document = LingotekDocument::load(lingotek_lingonode($node->nid, 'document_id'));
+  // node disabled support
+  if ($sync_status == LingotekSync::STATUS_DISABLED) {
+    $output[] = array(
+      '#markup' => 'Lingotek Translation is currently disabled for this node. You can enable translation by editing this node and selecting a Translation Profile (e.g. "Automatic").'
+    );
+    return $output;
+  }
 
-    if (lingotek_supported_type($node->type) && Lingotek::isSupportedLanguage($node->language)) {
+  if (lingotek_supported_node($node) && Lingotek::isSupportedLanguage($node->language)) {
 
-      $node_pushed = lingotek_node_pushed($node);
-      $node_auto_upload = (lingotek_lingonode($node->nid, 'create_lingotek_document'));
-      if (!$node_pushed || !$node_auto_upload) {
-        $content_push_form = drupal_get_form('lingotek_push_form', $node);
-        $output['content_push'] = array(
-          '#markup' => drupal_render($content_push_form),
-        );
-      }
+    if (($node->lingotek['node_sync_status'] == LingotekSync::STATUS_EDITED)) {
+      $content_push_form = drupal_get_form('lingotek_push_form', $node);
+      $output['content_push'] = array(
+        '#markup' => drupal_render($content_push_form),
+      );
+    }
 
-      if ($node_pushed) {
+    if ($node->lingotek['document_id']) {
+
+      $document = LingotekDocument::load($node->lingotek['document_id']);
+      $progress = $document->getProgress();
+      
+      if ($progress->results == 'success') {
+
         $download_form = drupal_get_form('lingotek_download_translations_form', $node, $document);
         $output[] = array(
           '#markup' => drupal_render($download_form),
         );
-
-        // Add the mark as complete table if there are complete-eligible phrases.
+        
         if ($document->hasPhasesToComplete()) {
+          // Add the mark as complete table if there are complete-eligible phrases.
           $drupal_phase_complete_from = drupal_get_form('lingotek_mark_phases_complete', $node, $document);
           $output['mark_complete'] = array(
             '#markup' => drupal_render($drupal_phase_complete_from),
@@ -334,36 +433,43 @@ function lingotek_pm($node) {
           '#markup' => drupal_render($lingotek_advanced_parsing_form),
         );
 
-        $reset_translations_form = drupal_get_form('lingotek_node_content_reset_form', $node);
-        $output['reset_translations'] = array(
-          '#markup' => drupal_render($reset_translations_form),
-        );
       }
-    }
-    else {
-      $output[] = array(
-        '#markup' => '<p class="help">' . t('This node is not compatible with Lingotek translation. Either it is not a Lingotek tranlsation-enabled content type or the node does not have a defined language.') . '</p>'
-      );
-    }
+      else {
+        // Document not found (may still be importing)
+        // Import Status (check and report on import status)
+        $status = $document->getImportStatus();
 
-    // Publish form
-    $output['publish_form'] = drupal_get_form('lingotek_publish_form', $node);
+        $message = ' <i>' . check_plain($status) . '</i> ' . l('<i class="fa fa-refresh"></i> ' . t('Refresh'), '', array('html' => TRUE, 'attributes' => array('class' => 'ltk-icon', 'title' => t('Refresh'), 'onclick' => array('location.reload();return false;'))));
+        drupal_set_message(t('Content Import Status:') . $message, 'status');
+
+        $output['import_status'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Content Import Status'),
+          '#description' => $message,
+          '#collapsible' => TRUE,
+          '#collapsed' => TRUE,
+        );
+      
+      }
+      
+      /* REMOVE DISASSOCIATE_TRANSLTIONS FORM FROM THE TRANSLATE PAGE, FOR NOW
+      $disassociate_translations_form = drupal_get_form('lingotek_node_disassociate_form', $node->nid);
+      $output['disassociate_translations'] = array(
+        '#markup' => drupal_render($disassociate_translations_form),
+      );
+      */
+    }
   }
+  else {
+    $output[] = array(
+      '#markup' => '<p class="help">' . t('This node is not compatible with Lingotek translation. Either it is not a Lingotek tranlsation-enabled content type or the node does not have a defined language.') . '</p>'
+    );
+  }
+
+  // Publish form
+  $output['publish_form'] = drupal_get_form('lingotek_publish_form', $node);
 
   return $output;
-}
-
-/*
- * Synchonize translations with what is available on the Lingotek platform (current translations)
- */
-
-function lingotek_update($nid) {
-  $node = node_load($nid);
-  foreach ($_POST['targets'] as $locale) {
-    lingotek_download_document($node, $locale);
-  }
-  drupal_set_message(t('Updated local translations for the selected languages: @selected_locales', array('@selected_locales' => implode(", ", $_POST['targets']))));
-  drupal_json_output(array('status' => 0, 'updated' => $_POST['targets'], 'nid' => $nid));
 }
 
 /**
@@ -427,7 +533,7 @@ function lingotek_advanced_parsing_upgrade_form_submit($form, $form_state) {
 
   if (!empty($form_state['values']['node_id'])) {
     lingotek_lingonode($form_state['values']['node_id'], 'use_advanced_parsing', 1);
-    $target_node = node_load($form_state['values']['node_id']);
+    $target_node = lingotek_node_load_default($form_state['values']['node_id']);
     if ($target_node->nid) {
       if (LingotekApi::instance()->updateContentDocument(LingotekNode::load($target_node))) {
         drupal_set_message(t('This node has been upgraded to use advanced content parsing.'));
@@ -468,23 +574,20 @@ function lingotek_advanced_parsing_upgrade_form_submit($form, $form_state) {
 function lingotek_mark_phases_complete($form, $form_state, $node, $document = NULL) {
   $form = array();
 
-  $document = is_null($document) ? LingotekDocument::load(lingotek_lingonode($node->nid, 'document_id')) : $document;
-  $document_id = $document->document_id; //lingotek_lingonode($node->nid, 'document_id');
+  $document = is_null($document) ? LingotekDocument::load($node->lingotek['document_id']) : $document;
+  $document_id = $document->document_id;
   if (class_exists('LingotekPhase') && $document_id) {
     $api = LingotekApi::instance();
-
-    //$document = LingotekDocument::load($document_id);
-    if ($progress = $document->translationProgress()) {
+    $progress = $document->getProgress();
+    
+    if ($progress) {
       $targets = $progress->translationTargets;
 
       foreach ($targets as $target) {
         $language = Lingotek::convertLingotek2Drupal($target->language);
         $current_phase = $document->currentPhase($target->id);
 
-        $phase_complete_percent = $current_phase->percentComplete;
-        if (empty($phase_complete_percent)) {
-          $phase_complete_percent = 0;
-        }
+        $phase_complete_percent = empty($current_phase->percentComplete) ? 0 : $current_phase->percentComplete;
 
         if ($current_phase && $current_phase->canBeMarkedComplete()) {
           $phase_link = l($current_phase->name, '', array('attributes' => array(
@@ -601,4 +704,44 @@ function page_sync_comment_translations($comment_id) {
   }
 
   drupal_goto();
+}
+
+/*
+ * 
+ */
+function lingotek_workbench_redirect($entity_type, $id, $lingotek_locale) {
+  $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale);
+  
+  if ($entity_type == 'node') {
+    // clear any residual nodes built out before the lingotek document_id was stored
+    if (module_exists('entitycache')) {
+      cache_clear_all($id, 'cache_entity_node');
+    }
+    $node = node_load($id);
+    
+    if ($node->language == $drupal_language_code) {
+      drupal_goto('node/' . $node->nid . '/edit');
+    }
+    else {
+      $translation_edit_link = lingotek_get_workbench_url($node->lingotek['document_id'], $lingotek_locale);
+      drupal_goto($translation_edit_link);
+    }
+  }
+  elseif ($entity_type == 'comment') {
+    $comment = comment_load($id);
+    if ($comment->language == $drupal_language_code) {
+      drupal_goto('comment/' . $comment->cid . '/edit');
+    }
+    else {  
+      $lingotek_comment = LingotekComment::load($comment);
+      
+      $translation_edit_link = lingotek_get_workbench_url($lingotek_comment->lingotekDocumentId(), $lingotek_locale);
+      if (!empty($translation_edit_link)) {
+        drupal_goto($translation_edit_link);
+      }
+      else {
+        drupal_goto('comment/' . $comment->cid . '/edit');
+      }
+    }
+  }
 }

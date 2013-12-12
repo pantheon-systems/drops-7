@@ -30,7 +30,7 @@
 
 
 include_once "../../library/OAuthStore.php";
-include_once "../../library/OAuthRequester.php";
+include_once "../../library/LingotekOAuthRequester.php";
 
 define("GOOGLE_CONSUMER_KEY", "FILL THIS"); // 
 define("GOOGLE_CONSUMER_SECRET", "FILL THIS"); // 
@@ -66,7 +66,7 @@ try
 			'oauth_callback' => 'http://likeorhate.local/google.php');
 
 		// get a request token
-		$tokenResultParams = OAuthRequester::requestRequestToken(GOOGLE_CONSUMER_KEY, 0, $getAuthTokenParams);
+		$tokenResultParams = LingotekOAuthRequester::requestRequestToken(GOOGLE_CONSUMER_KEY, 0, $getAuthTokenParams);
 
 		//  redirect to the google authorization page, they will redirect back
 		header("Location: " . GOOGLE_AUTHORIZE_URL . "?btmpl=mobile&oauth_token=" . $tokenResultParams['token']);
@@ -79,7 +79,7 @@ try
 		$tokenResultParams = $_GET;
 		
 		try {
-		    OAuthRequester::requestAccessToken(GOOGLE_CONSUMER_KEY, $oauthToken, 0, 'POST', $_GET);
+		    LingotekOAuthRequester::requestAccessToken(GOOGLE_CONSUMER_KEY, $oauthToken, 0, 'POST', $_GET);
 		}
 		catch (OAuthException2 $e)
 		{
@@ -92,7 +92,7 @@ try
 		}
 		
 		// make the docs requestrequest.
-		$request = new OAuthRequester("http://docs.google.com/feeds/documents/private/full", 'GET', $tokenResultParams);
+		$request = new LingotekOAuthRequester("http://docs.google.com/feeds/documents/private/full", 'GET', $tokenResultParams);
 		$result = $request->doRequest(0);
 		if ($result['code'] == 200) {
 			var_dump($result['body']);

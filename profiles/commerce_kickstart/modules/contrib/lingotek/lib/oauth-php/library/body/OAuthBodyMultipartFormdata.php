@@ -48,7 +48,7 @@ class OAuthBodyMultipartFormdata
     {
     	$headers  	= array();
 		$body		= '';
-		$boundary	= 'OAuthRequester_'.md5(uniqid('multipart') . microtime());
+		$boundary	= 'LingotekOAuthRequester_'.md5(uniqid('multipart') . microtime());
 		$headers['Content-Type'] = 'multipart/form-data; boundary=' . $boundary;
 
 

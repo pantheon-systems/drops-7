@@ -10,7 +10,7 @@ function mimemail_theme_theme() {
 
   return array(
     'mimemail_message' => array(
-      'variables' => array('key' => NULL, 'recipient' => NULL, 'subject' => NULL, 'body' => NULL),
+      'variables' => array('module' => NULL, 'key' => NULL, 'recipient' => NULL, 'subject' => NULL, 'body' => NULL),
       'template' => 'mimemail-message',
       'pattern' => 'mimemail_message__',
       'file' => 'mimemail.theme.inc',
@@ -113,7 +113,11 @@ function template_preprocess_mimemail_message(&$variables) {
   // Set styles for the message.
   $variables['css'] = $css;
 
-   // Process key to be a proper CSS class.
+  // Set template alternatives.
+  $variables['theme_hook_suggestions'][] = 'mimemail_message__' . str_replace('-', '_', $variables['key']);
+
+   // Process identifiers to be proper CSS classes.
+  $variables['module'] = str_replace('_', '-', $variables['module']);
   $variables['key'] = str_replace('_', '-', $variables['key']);
 }
 

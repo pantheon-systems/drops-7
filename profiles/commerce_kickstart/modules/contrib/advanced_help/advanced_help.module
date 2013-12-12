@@ -124,7 +124,8 @@ function advanced_help_uasort($id_a, $id_b) {
   return 0;
 }
 
-/* Helper function for grabbing search keys. Function is missing in D7.
+/**
+ * Helper function for grabbing search keys. Function is missing in D7.
  *
  * http://api.drupal.org/api/function/search_get_keys/6
  */
@@ -204,8 +205,7 @@ function advanced_help_index_page($module = '') {
 
   $output = array();
   // Print a search widget.
-  $output['advanced_help_search'] = module_exists('search')
-    ? drupal_get_form('advanced_help_search_form') : t('Enable the search module to search help.');
+  $output['advanced_help_search'] = module_exists('search') ? drupal_get_form('advanced_help_search_form') : t('Enable the search module to search help.');
 
   $breadcrumb = array();
   if ($module) {
@@ -618,7 +618,7 @@ function advanced_help_get_topic_file_info($module, $topic) {
  *   Name of the module.
  * @param string $topic
  *   Name of the topic.
- * @param boolean $popup
+ * @param bool $popup
  *   Whether to show in popup or not.
  *
  * @return string
@@ -642,7 +642,7 @@ function advanced_help_view_topic($module, $topic, $popup = FALSE) {
     // Change 'topic:' to the URL for another help topic.
     if ($popup) {
       $output = preg_replace('/href="topic:([^"]+)"/', 'href="' . strtr(url('help/$1', array('query' => array('popup' => 'true'))), array('%24' => '$')) . '"', $output);
-      $output = preg_replace('/src="topic:([^"]+)"/', 'src="' .  strtr(url('help/$1', array('query' => array('popup' => 'true'))), array('%24' => '$')) . '"', $output);
+      $output = preg_replace('/src="topic:([^"]+)"/', 'src="' . strtr(url('help/$1', array('query' => array('popup' => 'true'))), array('%24' => '$')) . '"', $output);
       $output = preg_replace('/&topic:([^"]+)&/', strtr(url('help/$1', array('query' => array('popup' => 'true'))), array('%24' => '$')), $output);
     }
     else {
@@ -665,7 +665,7 @@ function advanced_help_view_topic($module, $topic, $popup = FALSE) {
 
     // Change 'base_url:' to the URL to the site.
     $output = preg_replace('/href="base_url:([^"]+)"/', 'href="' . strtr(url('$1'), array('%24' => '$')) . '"', $output);
-    $output = preg_replace('/src="base_url:([^"]+)"/', 'src="'   . strtr(url('$1'), array('%24' => '$')) . '"', $output);
+    $output = preg_replace('/src="base_url:([^"]+)"/', 'src="' . strtr(url('$1'), array('%24' => '$')) . '"', $output);
     $output = preg_replace('/&base_url&([^"]+)"/', strtr(url('$1'), array('%24' => '$')) . '"', $output);
 
     // Run the line break filter if requested.
@@ -854,8 +854,7 @@ function _advanced_help_parse_ini() {
 /**
  * Implements hook_search_info().
  *
- * @return array
- *   Returns title for the tab on search page & path component after 'search/'.
+ * Returns title for the tab on search page & path component after 'search/'.
  */
 function advanced_help_search_info() {
   return array(

@@ -1,3 +1,12 @@
+Module Filter 7.x-1.8, 2013-08-08
+---------------------------------
+by greenSkin: Changed the title for the 'module_filter_dynamic_save_position'
+  checkbox to make it clearer what it does.
+#1933384 by kaidjohnson: Fixed jQuery UI button breaks functionality.
+#1166414 by greenSkin: Fixed module filter + tabs disabled = broken modules
+  page.
+
+
 Module Filter 7.x-1.7, 2012-07-05
 ---------------------------------
 #1033012 by greenSkin: Hide incompatible module rows when the 'Unavailable'

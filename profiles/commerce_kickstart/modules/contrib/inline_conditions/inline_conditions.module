@@ -4,13 +4,6 @@
  * Manage frequently used conditions directly on the relevant form.
  */
 
-// Load local conditions files located into /modules folder.
-foreach (array('commerce_order', 'commerce_product') as $module) {
-  if (module_exists($module)) {
-    module_load_include('inc', 'inline_conditions', "modules/$module.inline_conditions");
-  }
-}
-
 /**
  * Implements hook_menu().
  */
@@ -51,6 +44,9 @@ function inline_conditions_hook_info() {
     'group' => 'inline_conditions',
   );
   $hooks['inline_conditions_info_alter'] = array(
+    'group' => 'inline_conditions',
+  );
+  $hooks['inline_conditions_build_alter'] = array(
     'group' => 'inline_conditions',
   );
 
@@ -383,6 +379,12 @@ function inline_conditions_field_prepare_items(&$items) {
  * Implements hook_field_widget_form().
  */
 function inline_conditions_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  // Ensure this .inline_conditions files are loaded when the form is rebuilt
+  // from the cache.
+  foreach (inline_conditions_get_info_by_module() as $module => $condition) {
+    $form_state['build_info']['files']["form_ic_$module"] = drupal_get_path('module', $module) . "/$module.inline_conditions.inc";
+  }
+
   // Get entity_type setting from the current instance.
   $entity_type_setting = empty($instance['settings']['entity_type']) ? 'commerce_order' : $instance['settings']['entity_type'];
 
@@ -679,6 +681,27 @@ function inline_conditions_get_info_by_type($entity_type, $parent_entity_type) {
     }
 
     $filtered_conditions[$condition_name] = $condition_info;
+  }
+
+  return $filtered_conditions;
+}
+
+/**
+ * Get inline conditions per module name.
+ *
+ * Return an array of conditions keyed by module name.
+ *
+ * @param string $module
+ *   The module name.
+ *
+ * @return array
+ *   An array of conditions.
+ */
+function inline_conditions_get_info_by_module($module = NULL) {
+  $filtered_conditions = array();
+
+  foreach (inline_conditions_get_info() as $name => $condition) {
+    $filtered_conditions[$condition['module']][$name] = $condition;
   }
 
   return $filtered_conditions;

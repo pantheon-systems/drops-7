@@ -16,6 +16,10 @@ class LingotekNode implements LingotekTranslatableEntity {
    */
   protected $node;
   
+  /**
+   * The Drupal entity type associated with this class
+   */
+  const DRUPAL_ENTITY_TYPE = 'node';
   
   /**
    * Lingotek Lingonode properties.
@@ -31,6 +35,8 @@ class LingotekNode implements LingotekTranslatableEntity {
    */
   protected $api = NULL;
   
+  public $language = '';
+
   /**
    * Constructor.
    *
@@ -41,6 +47,8 @@ class LingotekNode implements LingotekTranslatableEntity {
    */
   private function __construct($node) {
     $this->node = $node;
+    $this->nid = $node->nid;
+    $this->language = $node->language;
   }
   
   /**
@@ -101,7 +109,7 @@ class LingotekNode implements LingotekTranslatableEntity {
    */
   public static function loadById($node_id) {
     $node = FALSE;
-    if ($drupal_node = node_load($node_id)) {
+    if ($drupal_node = lingotek_node_load_default($node_id)) {
       $node = self::load($drupal_node);
     }
     return $node;
@@ -119,20 +127,14 @@ class LingotekNode implements LingotekTranslatableEntity {
    */
   public static function loadByLingotekDocumentId($lingotek_document_id) {
     $node = FALSE;
-    $key = 'document_id';
-    $query = db_select('lingotek', 'l')->fields('l');
-    $query->condition('lingokey', $key.'%', 'LIKE');
-    $query->condition('lingovalue', $lingotek_document_id);
-    $result = $query->execute();
-
-    if ($record = $result->fetchAssoc()) {
-      $node = self::loadById($record['nid']);
+    $nid = LingotekSync::getNodeIdFromDocId($lingotek_document_id);
+    if ($nid) {
+      $node = self::loadById($nid);
     }
-
     return $node;
   }
-  
-  
+
+
   /**
    * Gets the Lingotek document ID for this entity.
    *
@@ -141,7 +143,7 @@ class LingotekNode implements LingotekTranslatableEntity {
    *   Lingotek document. FALSE otherwise.
    */
   public function lingotekDocumentId() {
-    return lingotek_lingonode($this->node->nid, 'document_id');
+    return $this->node->lingotek['document_id'];
   }
   
   /**
@@ -211,4 +213,60 @@ class LingotekNode implements LingotekTranslatableEntity {
     // on LingotekNode objects, explicitly.    
   }
   
+  /**
+   * Updates the local content of $target_code with data from a Lingotek Document
+   *
+   * @param string $lingotek_locale
+   *   The code for the language that needs to be updated.
+   * @return bool
+   *   TRUE if the content updates succeeded, FALSE otherwise.
+   */
+  public function updateLocalContentByTarget($lingotek_locale) {
+    // Necessary to fully implement the interface, but we don't do anything
+    // on LingotekNode objects, explicitly.    
+  }
+  
+  public function getWorkflowId() {
+    return $this->node->lingotek['workflow_id'];
+  }
+  
+  public function getProjectId() {
+    return $this->node->lingotek['project_id'];
+  }
+  
+  public function getVaultId() {
+    return $this->node->lingotek['vault_id'];
+  }
+  
+  public function getTitle() {
+    return $this->node->title;
+  }
+  
+  public function getDescription() {
+    return $this->node->title;
+  }
+  
+    /**
+   * Return the Drupal Entity type
+   *
+   * @return string
+   *   The entity type associated with this object
+   */
+  public function getEntityType() {
+    return self::DRUPAL_ENTITY_TYPE;
+  }
+
+  /**
+   * Return the node ID
+   *
+   * @return int
+   *   The ID associated with this object
+   */
+  public function getId() {
+    return $this->node->nid;
+  }
+  
+  public function getSourceLocale() {
+    return Lingotek::convertDrupal2Lingotek($this->node->language);
+  }
 }

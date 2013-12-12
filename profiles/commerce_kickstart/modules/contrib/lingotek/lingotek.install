@@ -5,7 +5,7 @@
  * Installation for Lingotek Community Translation Module.
  */
 /*
- * Implements hook_requirements() (see: 
+ * Implements hook_requirements() (see:
  */
 
 function lingotek_requirements($phase) {
@@ -38,14 +38,18 @@ function lingotek_requirements($phase) {
  * Implements hook_install().
  */
 function lingotek_install() {
-  
+  spl_autoload_register('lingotek_auto_loader');
+  lingotek_migration_1();
+  lingotek_migration_2();
+  $sandbox = array();
+  lingotek_update_7401($sandbox);
 }
 
 /**
  * Implements hook_uninstall().
  */
 function lingotek_uninstall() {
-  
+
   global $conf;
   foreach (array_keys($conf) as $key) {
     if (strpos($key, 'lingotek_') === 0) { // It's important to use === instead of == with strpos()
@@ -55,6 +59,9 @@ function lingotek_uninstall() {
 
   db_drop_field('languages', 'lingotek_enabled');
   db_drop_field('languages', 'lingotek_locale');
+  db_drop_field('locales_target', 'translation_agent_id');
+  db_drop_table('lingotek_config_metadata');
+  db_drop_table('lingotek_translation_agent');
 }
 
 /**
@@ -73,7 +80,7 @@ function lingotek_disable() {
 }
 
 /*
- * Install the database schema for the Lingotek Translation module
+ * Implements hook_schema().
  */
 
 function lingotek_schema() {
@@ -147,7 +154,93 @@ function lingotek_schema() {
     ),
   );
 
+  $schema['lingotek_config_metadata'] = array(
+    'description' => 'Stores Lingotek-related metadata about Drupal translations from locales source and target tables.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'the segment ID assigned to the given range of strings.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'config_key' => array(
+        'description' => 'The ID for the Lingotek-associated value.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'value' => array(
+        'description' => 'Value for the specified key.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array(
+      'id',
+      'config_key',
+    ),
+  );
+
+  $schema['lingotek_translation_agent'] = array(
+    'description' => 'An assignment of IDs to agents from which translations were added.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'the ID assigned to a given translation agent.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'name' => array(
+        'description' => 'The name of a given tool for adding translations.',
+        'type' => 'varchar',
+        'length' => 63,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array(
+      'id',
+    ),
+  );
+
   return $schema;
+}
+
+/*
+ * Implements hook_schema_alter().
+ */
+function lingotek_schema_alter(&$schema) {
+  // Add fields to existing schema.
+
+  $schema['languages']['fields']['lingotek_enabled'] = array(
+    'type' => 'int',
+    'description' => "Lingotek enabled",
+    'not null' => TRUE,
+    'default' => 0
+  );
+
+  $schema['languages']['fields']['lingotek_locale'] = array(
+    'type' => 'varchar',
+    'description' => "Locale mapping",
+    'length' => 10,
+    'not null' => TRUE,
+    'default' => ''
+  );
+
+  $schema['locales_target']['fields']['translation_agent_id'] = array(
+    'type' => 'int',
+    'description' => "translation tool mapping",
+    'length' => 10,
+    'not null' => TRUE,
+    'default' => '1', // unknown
+  );
+
+
 }
 
 /*
@@ -170,7 +263,7 @@ function lingotek_update_7200(&$sandbox) {
     $sandbox['max'] = count($nodes);
     $sandbox['nodes'] = $nodes;
   }
-  $node = node_load($sandbox['nodes'][$sandbox['progress']]);
+  $node = lingotek_node_load_default($sandbox['nodes'][$sandbox['progress']]);
   if ($node !== FALSE) {
     if (!class_exists('LingotekApi')) {
       // The LingotekApi class might not have been introduced when this user last updated the Lingotek Translation module.
@@ -215,7 +308,7 @@ function lingotek_update_7201(&$sandbox) {
       $sandbox['nodes'] = $lingotek_nodes;
     }
 
-    $process_node = node_load(array_shift($sandbox['nodes']));
+    $process_node = lingotek_node_load_default(array_shift($sandbox['nodes']));
     if ($process_node->nid && !lingotek_lingonode($process_node->nid, 'project_id')) {
       lingotek_lingonode($process_node->nid, 'project_id', $default_lingotek_project);
     }
@@ -223,24 +316,6 @@ function lingotek_update_7201(&$sandbox) {
   }
 
   $sandbox['#finished'] = empty($sandbox['nodes']);
-}
-
-/**
- * Ensure the Administrator role is granted newly-introduced permissions.
- */
-function lingotek_update_7202(&$sandbox) {
-  if ($rid = variable_get('user_admin_role', 0)) {
-    $new_permisions = array(
-      'url_alias_translation',
-      'access lingotek utilities',
-      'access per-item lingotek project selection',
-      'access per-item lingotek vault selection'
-    );
-
-    user_role_grant_permissions($rid, $new_permisions);
-
-    return t('Granted new Lingotek permissions to the administrative security role.');
-  }
 }
 
 /**
@@ -348,23 +423,187 @@ function lingotek_update_7211(&$sandbox) {
   return t('Upgraded lingotek table entries from drupal_codes to lingotek_locales (as needed).');
 }
 
-/*
- * Update languages table with lingotek fields
+/**
+ * Adds the lingotek_entity_metadata table.
  */
-/*function lingotek_schema_alter(&$schema) {
-  // Add fields to existing schema.
-  $schema['languages']['fields']['lingotek_enabled'] = array(
-    'type' => 'int',
-    'description' => "Lingotek enabled",
-    'not null' => TRUE,
-    'default' => 0
-  );
+function lingotek_update_7212(&$sandbox) {
+  $module = 'lingotek';
+  $table = 'lingotek_config_metadata';
+  if (!db_table_exists($table)) {
+    $schema = drupal_get_schema_unprocessed($module, $table);
+    db_create_table($table, $schema);
+    $output = t('Table @table was created.', array('@table' => $table));
+  }
+  else {
+    $output = t('The @table table already exists. No action taken.', array('@table' => $table));
+  }
 
-  $schema['languages']['fields']['lingotek_locale'] = array(
-    'type' => 'varchar',
-    'description' => "Locale mapping",
+  return $output;
+}
+
+/**
+ * Ensure the Administrator role is granted correct permissions.
+ */
+function lingotek_update_7213(&$sandbox) {
+  $rid = variable_get('user_admin_role', 0);
+  if ($rid) {
+    $permissions = array(
+      'administer lingotek',
+      'manage projects',
+      'translation',
+      'use lingotek developer tools'
+    );
+
+    user_role_grant_permissions($rid, $permissions);
+
+    return t('Granted Lingotek permissions to the administrative security role.');
+  }
+}
+
+/**
+ * Adds the lingotek_translation_agent table and links it to the locales_target table
+ */
+function lingotek_update_7401(&$sandbox) {
+
+  // add the translation_agent table
+  $module = 'lingotek';
+  $table = 'lingotek_translation_agent';
+  if (!db_table_exists($table)) {
+    $schema = drupal_get_schema_unprocessed($module, $table);
+    db_create_table($table, $schema);
+    $output = t('Table @table was created.', array('@table' => $table));
+  }
+  else {
+    $output = t('The @table table already exists. No action taken.', array('@table' => $table));
+  }
+
+  // populate translation_agent table
+  $agents = array(
+    array('id' => '1', 'name' => 'unknown'),
+    array('id' => '2', 'name' => 'Drupal Translations'),
+    array('id' => '3', 'name' => 'Lingotek'),
+    );
+
+  foreach ($agents as $a) {
+    db_insert('lingotek_translation_agent')
+      ->fields(array('id' => $a['id'], 'name' => $a['name']))
+      ->execute();
+  }
+
+  $spec = array(
+    'type' => 'int',
+    'description' => "translation tool mapping",
     'length' => 10,
     'not null' => TRUE,
-    'default' => ''
+    'default' => '1', // unknown
   );
-}*/
+  try {
+    db_add_field('locales_target', 'translation_agent_id', $spec);
+  } catch (DatabaseSchemaObjectExistsException $e) {
+    // already exists (no need to do anything)
+  }
+  drupal_static_reset('language_list');
+
+  $output .= "\n" . t('Upgraded the locales target table to have the translation_agent_id field (if not already present).');
+
+  return $output;
+}
+
+/**
+ * Removes the deprecated "Lingotek Translatable" option from each field
+ */
+function lingotek_update_7403(&$sandbox) {
+  $translate_fields = variable_get('lingotek_translate_fields');
+  if (empty($translate_fields)) {
+
+    $types = _node_types_build()->types;
+    $translate_fields = array();
+
+    foreach ($types as $t) {
+      $translation_setting = variable_get('language_content_type_' . $t->type);
+      if ($translation_setting == 'lingotek') {
+        variable_set('language_content_type_' . $t->type, "1");
+        $fields = field_info_instances("node", $t->type);
+        foreach ($fields as $field_name => $instance) {
+          $field = field_info_field($field_name);
+          if ($field['translatable'] && $field['lingotek_translatable'] == 1) {
+            $translate_fields[$t->type][] = $field_name;
+          }
+        }
+      }
+    }
+
+    variable_set('lingotek_translate_fields', $translate_fields);
+  }
+}
+
+/**
+ * Upgrade the callback URL signature and adds translation profiles.
+ */
+function lingotek_update_7404(&$sandbox) {
+  LingotekSync::updateNotifyUrl();
+
+  $query = db_select('lingotek', 'l');
+  $query->fields('l', array('nid'));
+  $query->distinct('nid');
+  $result = $query->execute();
+  $nids = $result->fetchCol();
+
+  foreach ($nids as $nid) {
+    $profile = lingotek_lingonode($nid, 'profile');
+    if (empty($profile)) {
+      lingotek_lingonode($nid, 'profile', LingotekSync::PROFILE_CUSTOM);
+    }
+  }
+
+  $entity_profiles = variable_get('lingotek_entity_profiles');
+  if (empty($entity_profiles)) {
+    $fields = variable_get('lingotek_translate_fields');
+
+    $entity_profiles = array();
+
+    foreach (node_type_get_types() as $type => $details) {
+      $entity_profiles['node'][$type] = isset($fields[$type]) ? LingotekSync::PROFILE_CUSTOM : LingotekSync::PROFILE_DISABLED;
+    }
+
+    variable_set('lingotek_entity_profiles', $entity_profiles);
+  }
+}
+
+/**
+ * Makes lingotek handle entities better.
+ */
+function lingotek_update_7406(&$sandbox) {
+  $translate_fields = variable_get('lingotek_translate_fields');
+
+  $enabled_fields = array('node' => $translate_fields);
+
+  variable_set('lingotek_enabled_fields', $enabled_fields);
+  variable_del('lingotek_translate_fields');
+}
+
+/**
+ * Creates an upgrade path for existing translated content to be inserted into entity_translation module table if necessary
+ */
+function lingotek_update_7408(&$sandbox) {
+  if (module_exists('entity_translation')) {
+    $nid_list = array();
+    $results = db_select('lingotek', 'l')
+      ->fields('l', array('nid', 'lingokey'))
+      ->condition('lingokey', 'target_sync_status_%', 'LIKE')
+      ->condition('lingovalue', LingotekSync::STATUS_CURRENT)
+      ->execute();
+    foreach ($results as $r) {
+      $nid_list[$r->nid] = str_replace('target_sync_status_', '', $r->lingokey);
+    }
+    
+    foreach ($nid_list as $nid => $locale) {
+      $node = lingotek_node_load_default($nid, NULL, TRUE);
+      if ($node) {
+        if (lingotek_managed_by_entity_translation($node->type)) {
+          lingotek_entity_translation_save_status($node, array(Lingotek::convertLingotek2Drupal($locale)));
+        }
+      }
+    }
+  }
+}

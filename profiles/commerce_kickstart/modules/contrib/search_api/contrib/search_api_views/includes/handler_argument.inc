@@ -13,6 +13,17 @@ class SearchApiViewsHandlerArgument extends views_handler_argument {
   public $query;
 
   /**
+   * The operator to use for multiple arguments.
+   *
+   * Either "and" or "or".
+   *
+   * @var string
+   *
+   * @see views_break_phrase
+   */
+  public $operator;
+
+  /**
    * Determine if the argument can generate a breadcrumb
    *
    * @return boolean

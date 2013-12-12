@@ -18,7 +18,7 @@ class EntityTranslationBeanHandler extends EntityTranslationDefaultHandler {
   }
 
   public function getAccess($op) {
-    return bean_access($op, $this->entity);
+    return entity_access($op, 'bean', $this->entity);
   }
 
   protected function getEntityId() {

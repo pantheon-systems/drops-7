@@ -10,9 +10,9 @@ core = 7.x
 files[] = i18n_menu.inc
 files[] = i18n_menu.test
 
-; Information added by drupal.org packaging script on 2013-07-21
-version = "7.x-1.9+1-dev"
+; Information added by drupal.org packaging script on 2013-08-21
+version = "7.x-1.10"
 core = "7.x"
 project = "i18n"
-datestamp = "1374368096"
+datestamp = "1377069696"
 

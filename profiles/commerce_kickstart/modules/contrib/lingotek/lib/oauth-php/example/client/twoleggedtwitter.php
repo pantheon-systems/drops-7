@@ -29,7 +29,7 @@
 
 
 include_once "../../library/OAuthStore.php";
-include_once "../../library/OAuthRequester.php";
+include_once "../../library/LingotekOAuthRequester.php";
 
 // register at http://twitter.com/oauth_clients and fill these two 
 define("TWITTER_CONSUMER_KEY", "FILL THIS");
@@ -51,14 +51,14 @@ OAuthStore::instance("2Leg", $options);
 try
 {
 	// Obtain a request object for the request we want to make
-	$request = new OAuthRequester(TWITTER_REQUEST_TOKEN_URL, "POST");
+	$request = new LingotekOAuthRequester(TWITTER_REQUEST_TOKEN_URL, "POST");
 	$result = $request->doRequest(0);
 	parse_str($result['body'], $params);
 	
 	echo "aa";
 
 	// now make the request. 
-    $request = new OAuthRequester(TWITTER_PUBLIC_TIMELINE_API, 'GET', $params);
+    $request = new LingotekOAuthRequester(TWITTER_PUBLIC_TIMELINE_API, 'GET', $params);
     $result = $request->doRequest();
 }
 catch(OAuthException2 $e)

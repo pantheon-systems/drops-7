@@ -15,7 +15,7 @@ define('AMEX_OP_CAPTURE', 'CAPTURE');
 define('AMEX_OP_PAY', 'PAY');
 define('AMEX_OP_VERIFY', 'VERIFY');
 
-define('AMEX_TXN_PATH', '/api/rest/version/10/merchant/');
+define('AMEX_TXN_PATH', '/api/rest/version/12/merchant/');
 
 define('COMMERCE_PAYMENT_STATUS_AMEX_REVIEW', 'amex_review');
 define('COMMERCE_PAYMENT_STATUS_AMEX_CANCELED', 'amex_canceled');
@@ -270,19 +270,19 @@ function commerce_amex_commerce_checkout_page_info_alter(&$checkout_pages) {
 /**
  * Implements hook_commerce_cardonfile_checkout_pane_form_alter()
  */
-function commerce_amex_commerce_cardonfile_checkout_pane_form_alter(&$pane_form, $form) {
-  // Make alterations for our method
-  if (!empty($form['commerce_payment']['payment_method']['#default_value'])) {
-    $instance_id = $form['commerce_payment']['payment_method']['#default_value'];
-    $payment_method = commerce_payment_method_instance_load($instance_id);
+// function commerce_amex_commerce_cardonfile_checkout_pane_form_alter(&$pane_form, $form) {
+//   // Make alterations for our method
+//   if (!empty($form['commerce_payment']['payment_method']['#default_value'])) {
+//     $instance_id = $form['commerce_payment']['payment_method']['#default_value'];
+//     $payment_method = commerce_payment_method_instance_load($instance_id);
 
-    if ($payment_method['method_id'] == 'amex_hosted') {
-      // Always remove the save card option here.
-      unset($pane_form['credit_card']['cardonfile_store']);
-      unset($pane_form['cardonfile_instance_default']);
-    }
-  }
-}
+//     if ($payment_method['method_id'] == 'amex_hosted') {
+//       // Always remove the save card option here.
+//       unset($pane_form['credit_card']['cardonfile_store']);
+//       unset($pane_form['cardonfile_instance_default']);
+//     }
+//   }
+// }
 
 /**
  * Returns the default settings for the Amex hosted payment method.
@@ -400,30 +400,6 @@ function commerce_amex_hosted_settings_form($settings = NULL) {
 }
 
 /**
- * Payment method callback: submit form.
- *
- * An empty form is created for Card of File to use to show stored payment methods.
- */
-function commerce_amex_hosted_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
-  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
-
-  $form = array();
-  $form['credit_card']['#tree'] = 1;
-  $form['credit_card']['#attached'] = array(
-    'css' => array(drupal_get_path('module', 'commerce_payment') . '/theme/commerce_payment.theme.css'),
-  );
-
-  return $form;
-}
-
-/**
- * Payment method callback: submit form validation.
- */
-function commerce_amex_hosted_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
-  // Nothing to validate
-}
-
-/**
  * Payment method callback: submit form submission.
  */
 function commerce_amex_hosted_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
@@ -434,19 +410,16 @@ function commerce_amex_hosted_submit_form_submit($payment_method, $pane_form, $p
     return array();
   }
 
-  $wrapper = entity_metadata_wrapper('commerce_order', $order);
-  $total = commerce_line_items_total($wrapper->commerce_line_items);
-
   // Create a form session with Amex.
   $session = _commerce_amex_request_session($payment_method);
 
-  if ($session->result == "SUCCESS") {
+  if (isset($session->result) && $session->result == "SUCCESS") {
     $session_id = $session->session;
 
     // Create a new payment transaction and setup the amount.
     $transaction = commerce_payment_transaction_new('amex_hosted', $order->order_id);
-    $transaction->amount = $total['amount'];
-    $transaction->currency_code = $total['currency_code'];
+    $transaction->amount = $charge['amount'];
+    $transaction->currency_code = $charge['currency_code'];
     $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
     $transaction->instance_id = $payment_method['instance_id'];
     $transaction->remote_id = $session_id;
@@ -456,16 +429,17 @@ function commerce_amex_hosted_submit_form_submit($payment_method, $pane_form, $p
     return TRUE;
   }
 
-  elseif ($result->result == "ERROR") {
-    watchdog('commerce_amex', 'Failed to connect to Amex for order %order_id: %explanation', array('%order_id' => $order->order_id, '%explanation' => $result->error->explanation), WATCHDOG_ERROR);
+  elseif (isset($session->result) && $session->result == "ERROR") {
+    $explanation = isset($session->error->explanation) ? $session->error->explanation : 'Unknown Error';
+    watchdog('commerce_amex', 'Failed to connect to Amex for order %order_id: %explanation', array('%order_id' => $order->order_id, '%explanation' => $explanation), WATCHDOG_ERROR);
     drupal_set_message(t('There was an error connecting to the payment server.'), 'error');
-    drupal_goto('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key']);
+    commerce_payment_redirect_pane_previous_page($order);
   }
 
   else {
     watchdog('commerce_amex', 'Failed to connect to Amex for order %order_id', array('%order_id' => $order->order_id), WATCHDOG_ERROR);
     drupal_set_message(t('There was an error connecting to the payment server.'), 'error');
-    drupal_goto('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key']);
+    commerce_payment_redirect_pane_previous_page($order);
   }
 }
 
@@ -720,7 +694,7 @@ function commerce_amex_hosted_redirect_form($form, &$form_state, $order, $paymen
   }
 
   else {
-    watchdog('commerce_amex', 'Transaction could not be found', WATCHDOG_ERROR);
+    //watchdog('commerce_amex', 'Transaction could not be found', WATCHDOG_ERROR);
     drupal_set_message(t('Transaction could not be found.'), 'error');
     drupal_goto('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key']);
   }
@@ -817,7 +791,7 @@ function commerce_amex_3d_secure_check($order, $payment_method, $transaction) {
 
   // Build the URL and send the request to Amex.
   $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/3DSecureId/' . $transaction->transaction_id;
-  $result = _commerce_amex_put_request($url, $payment_method['settings']['password'], $data);
+  $result = _commerce_amex_put_request($url, $payment_method['settings']['merchant_id'], $payment_method['settings']['password'], $data);
 
   // Process error and return false.
   if (isset($result->error) && $result->result == 'ERROR') {
@@ -877,7 +851,7 @@ function commerce_amex_3d_secure_callback($order, $transaction){
   $data->{'3DSecure'}['paRes'] = $_POST['PaRes'];
 
   $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/3DSecureId/' . $transaction->transaction_id;
-  $result = _commerce_amex_post_request($url, $payment_method['settings']['password'], $data);
+  $result = _commerce_amex_post_request($url, $payment_method['settings']['merchant_id'], $payment_method['settings']['password'], $data);
 
   // Process error and return to payment form.
   if (isset($result->result) && $result->result == 'ERROR') {
@@ -1228,7 +1202,7 @@ function commerce_amex_cardonfile_save($order, $payment_method, $transaction) {
   $data->sourceOfFunds['type'] = 'CARD';
 
   $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/token';
-  $result = _commerce_amex_post_request($url, $payment_method['settings']['password'], $data);
+  $result = _commerce_amex_post_request($url, $payment_method['settings']['merchant_id'], $payment_method['settings']['password'], $data);
 
   // Process error and return false.
   if (isset($result->result) && $result->result == 'ERROR') {
@@ -1444,8 +1418,11 @@ function commerce_amex_cardonfile_charge($payment_method, $card_data, $order, $c
 
   $data->apiOperation = $payment_method['settings']['txn_type'];
 
+  // Drupal Commerce Solution ID.
+  $data->partnerSolutionId = '3304010';
+
   if (isset($card_data->name)) {
-    $data->sourceOfFunds['provided']['card']['holder']['fullName'] = $card_data->name;
+    $data->sourceOfFunds['provided']['card']['holder']['lastName'] = $card_data->name;
   }
 
   $data->sourceOfFunds['token'] = $card_data->remote_id;
@@ -1526,12 +1503,14 @@ function _commerce_amex_request_session($payment_method) {
   curl_setopt($curlSession, CURLOPT_SSL_VERIFYHOST, 1);
 
   curl_setopt($curlSession, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
-  curl_setopt($curlSession, CURLOPT_USERPWD, ":" . $payment_method['settings']['password']);
+  curl_setopt($curlSession, CURLOPT_USERPWD,  ":" . $payment_method['settings']['password']);
 
   //Send the request and store the result in an array
 
   $rawresponse = curl_exec($curlSession);
   $response = json_decode($rawresponse);
+
+  watchdog('commerce_amex', print_r(curl_getinfo($curlSession), TRUE));
 
   // Close the cURL session
   curl_close($curlSession);
@@ -1560,15 +1539,18 @@ function _commerce_amex_process_transaction($order, $transaction, $use3Dsecure =
 
   $data->apiOperation = $payment_method['settings']['txn_type'];
 
+  // Drupal Commerce Solution ID.
+  $data->partnerSolutionId = '3304010';
+
   $data->sourceOfFunds['session'] = $transaction->remote_id;
 
   if ($transaction->data['owner']) {
-    $data->sourceOfFunds['provided']['card']['holder']['fullName'] = $transaction->data['owner'];
+    $data->sourceOfFunds['provided']['card']['holder']['lastName'] = $transaction->data['owner'];
   }
 
   if (isset($transaction->data['cardonfile_selected']) && $cardonfile = commerce_cardonfile_load($transaction->data['cardonfile_selected'])) {
     $data->sourceOfFunds['token'] = $cardonfile->remote_id;
-    $data->sourceOfFunds['provided']['card']['holder']['fullName'] = $cardonfile->card_name;
+    $data->sourceOfFunds['provided']['card']['holder']['lastName'] = $cardonfile->card_name;
   }
 
   $data->sourceOfFunds['type'] = 'CARD';
@@ -1591,7 +1573,7 @@ function _commerce_amex_process_transaction($order, $transaction, $use3Dsecure =
   $data = _commerce_amax_add_addresses($data, $order);
 
   $url = $payment_method['settings']['txn_url'] . AMEX_TXN_PATH . $payment_method['settings']['merchant_id'] . '/order/' . (10000000000 + $transaction->transaction_id) . '/transaction/' . $transaction->transaction_id;
-  $result = _commerce_amex_put_request($url, $payment_method['settings']['password'], $data);
+  $result = _commerce_amex_put_request($url, $payment_method['settings']['merchant_id'], $payment_method['settings']['password'], $data);
 
   $transaction->payload = $result;
 
@@ -1653,7 +1635,7 @@ function _commerce_amex_process_transaction($order, $transaction, $use3Dsecure =
  * @param array $data
  * @return multitype:string
  */
-function _commerce_amex_post_request($url, $password, $data = array()) {
+function _commerce_amex_post_request($url, $merchant_id, $password, $data = array()) {
 
   $output = array();
 
@@ -1692,7 +1674,7 @@ function _commerce_amex_post_request($url, $password, $data = array()) {
  * @param array $data
  * @return multitype:string
  */
-function _commerce_amex_put_request($url, $password, $data = array()) {
+function _commerce_amex_put_request($url, $merchant_id, $password, $data = array()) {
   // Set a one-minute timeout for this script
   set_time_limit(60);
 
@@ -1748,7 +1730,7 @@ function _commerce_amex_put_request($url, $password, $data = array()) {
  * @param array $data
  * @return multitype:string
  */
-function _commerce_amex_get_request($url, $password, $data = array()) {
+function _commerce_amex_get_request($url, $merchant_id, $password, $data = array()) {
   // Set a one-minute timeout for this script
   set_time_limit(60);
 
@@ -1891,7 +1873,6 @@ function _commerce_amax_add_addresses($data, $order) {
 
   $data->shipping['firstName'] = $delivery_address['first_name'];
   $data->shipping['lastName'] = $delivery_address['last_name'];
-  $data->shipping['fullName'] = $delivery_address['name_line'];
 
   $data->shipping['address']['street'] = $delivery_address['premise'] . ' ' . $delivery_address['thoroughfare'];
   $data->shipping['address']['postcodeZip'] = $delivery_address['postal_code'];

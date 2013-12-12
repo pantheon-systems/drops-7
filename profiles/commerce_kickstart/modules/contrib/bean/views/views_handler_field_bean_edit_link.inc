@@ -38,7 +38,7 @@ class views_handler_field_bean_edit_link extends views_handler_field_entity {
   }
 
   function render_link($bean) {
-    if (bean_access('edit', $bean)) {
+    if (entity_access('update', 'bean', $bean)) {
       $this->options['alter']['make_link'] = TRUE;
       $this->options['alter']['path'] = "block/$bean->delta/edit";
       $this->options['alter']['query'] = drupal_get_destination();

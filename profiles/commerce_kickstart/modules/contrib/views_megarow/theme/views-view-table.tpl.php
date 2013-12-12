@@ -32,9 +32,9 @@
   </thead>
   <tbody>
     <?php foreach ($rows as $count => $row): ?>
-      <tr class="<?php print implode(' ', $row_classes[$count]); ?>" <?php if (isset($row_attributes[$count])) { print drupal_attributes($row_attributes[$count]); } ?>>
+      <tr class="<?php print implode(' ', $row_classes[$count]); ?>" <?php if (isset($row_attributes[$count]) && is_array($row_attributes[$count])) { print drupal_attributes($row_attributes[$count] ); } ?>>
         <?php foreach ($row as $field => $content): ?>
-          <td <?php if ($field_classes[$field][$count]) { print 'class="'. $field_classes[$field][$count] . '" '; } ?><?php print drupal_attributes($field_attributes[$field][$count]); ?>>
+          <td <?php if ($field_classes[$field][$count]) { print 'class="'. $field_classes[$field][$count] . '" '; } ?><?php if (is_array($field_attributes[$field][$count])){ print drupal_attributes($field_attributes[$field][$count]);} ?>>
             <?php print $content; ?>
           </td>
         <?php endforeach; ?>

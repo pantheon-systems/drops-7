@@ -9,14 +9,26 @@
  */
 
 (function ($) {
+  // Add a help to scroll to the closed item
+  // We scroll to a padding above the selected item due to the potential admin bar,
+  // shortcuts and potential sticky table headers.
+  // The value of the padding is defined in the view style settings.
+  $.fn.viewsMegarowGoTo = function (scrollPadding) {
+    $('html, body').animate({
+      scrollTop: ($(this).offset().top - scrollPadding) + 'px'
+    }, 'fast');
+    return this;
+
+  }
   Drupal.ViewsMegarow = Drupal.ViewsMegarow || {};
 
   /**
    * Display the megarow.
    */
-  Drupal.ViewsMegarow.open = function(entityId) {
-    // There's already a megarow open for this entity, abort.
-    if ($('.views-megarow-content-' + entityId).length > 0) {
+  Drupal.ViewsMegarow.open = function(entityId, target) {
+    // If there's already a megarow opened for this entity, abort.
+    var row_parent_megarow = $(target).parents('tr').next('tr.megarow');
+    if (row_parent_megarow != undefined && row_parent_megarow.length > 0) {
       return;
     }
 
@@ -24,7 +36,7 @@
       megarowTheme: 'ViewsMegarowDialog',
       throbberTheme: 'ViewsMegarowThrobber',
       animation: 'show',
-      animationSpeed: 'fast',
+      animationSpeed: 'fast'
     };
     var settings = {};
     $.extend(true, settings, defaults, Drupal.settings.ViewsMegarow);
@@ -36,8 +48,18 @@
     $('.megarow-content', megarowContent).html(Drupal.theme(settings.throbberTheme));
     megarowContent.hide();
 
+    // Extract the width of the megarow.
+    var views_table = target.parents('.views-table');
+    var nbcols = 1;
+    var arr_classes = views_table.attr('class').split(' ');
+    for (var i = 0 ; i < arr_classes.length ; i++) {
+      result = arr_classes[i].substr(0, 5);
+      if (result == 'cols-') {
+        nbcols = arr_classes[i].substr(5);
+      }
+    }
+
     // Create our megarow.
-    var nbcols = $(".views-table").attr('class').replace('views-table cols-', '');
     var wrapper_html = '';
     wrapper_html += '<tr class="megarow">';
     wrapper_html += '  <td colspan="' + nbcols + '">';
@@ -46,25 +68,31 @@
     wrapper_html += '   </div>';
     wrapper_html += '  </td>';
     wrapper_html += '</tr>;'
-    $('tr.item-' + entityId).after(wrapper_html);
+    $('tr.item-' + entityId, views_table).after(wrapper_html);
+
     // Mark the parent row as active.
-    $('tr.item-' + entityId).addClass('views-row-active');
+    $('tr.item-' + entityId, views_table).addClass('views-row-active');
 
     // Get the megarow from the DOM, now that it's been inserted.
-    var megarow = $('.views-megarow-content-' + entityId);
+    var megarow = views_table.find('.views-megarow-content-' + entityId, views_table);
 
     // Bind a click for closing the megarow.
     $('.close', megarow).bind('click', { entityId: entityId }, function(event) {
-      Drupal.ViewsMegarow.close(event.data.entityId);
+      Drupal.ViewsMegarow.close(event.data.entityId, event.target);
+      event.preventDefault();
     });
   };
 
   /**
    * Close the megarow.
    */
-  Drupal.ViewsMegarow.close = function(entityId) {
-    var megarow = $('.views-megarow-content-' + entityId).parents('tr.megarow');
-
+  Drupal.ViewsMegarow.close = function(entityId, target) {
+    // Target the megarow of the triggering element
+    // (submit button or close link).
+    var megarow = $(target).parents('.views-megarow-content');
+    if (Drupal.ViewsMegarow.currentSettings.scrollEnabled) {
+      $(megarow).viewsMegarowGoTo(Drupal.ViewsMegarow.currentSettings.scrollPadding);
+    }
     // Unbind the events.
     $(document).trigger('CToolsDetachBehaviors', megarow);
 
@@ -81,8 +109,8 @@
     }
 
     // Close and remove the megarow.
-    $('.views-megarow-content', megarow).hide()[animation](Drupal.ViewsMegarow.currentSettings.animationSpeed);
-    megarow.remove();
+    $(megarow).hide()[animation](Drupal.ViewsMegarow.currentSettings.animationSpeed);
+    $(megarow).parents('tr').remove();
 
     // Mark the parent row as inactive.
     $('tr.item-' + entityId).removeClass('views-row-active');
@@ -121,8 +149,9 @@
    * Handler to prepare the megarow for the response
    */
   Drupal.ViewsMegarow.clickAjaxLink = function () {
-    var entityId = $(this).parents('tr').attr('data-entity-id');
-    Drupal.ViewsMegarow.open(entityId);
+    var target = $(this);
+    var entityId = target.parents('tr').attr('data-entity-id');
+    Drupal.ViewsMegarow.open(entityId, target);
 
     return false;
   };
@@ -176,11 +205,14 @@
    * AJAX command to place HTML within the megarow.
    */
   Drupal.ViewsMegarow.megarow_display = function(ajax, response, status) {
-    var megarow = $('.views-megarow-content-' + response.entity_id);
+    var target = $(ajax.element).parents('.views-table');
+    var megarow = $('.views-megarow-content-' + response.entity_id, target);
 
-    Drupal.ViewsMegarow.open(response.entity_id);
+    // Update the megarow content.
     $('.megarow-title', megarow).html(response.title);
-    $('.megarow-content', megarow).html(response.output);
+    // .html strips off <form> tag for version Jquery 1.7, using append instead.
+    $('.megarow-content', megarow).html('');
+    $('.megarow-content', megarow).append(response.output);
     Drupal.attachBehaviors();
   }
 
@@ -188,7 +220,9 @@
    * AJAX command to dismiss the megarow.
    */
   Drupal.ViewsMegarow.megarow_dismiss = function(ajax, response, status) {
-    Drupal.ViewsMegarow.close(response.entity_id);
+    // Close the megarow of the calling element
+    // (form submit button or close link).
+    Drupal.ViewsMegarow.close(response.entity_id, ajax.element);
   }
 
   /**
@@ -203,7 +237,9 @@
     // Fetch the current page using ajax, and extract the relevant data.
     var table = $('tr.item-' + response.entity_id).parents('table');
     var viewName = table.attr('data-view-name');
-    var display = table.attr('data-view-display');
+    var display = Drupal.settings.ViewsMegarow.display_id;
+    if (display === undefined) display = table.attr('data-view-display');
+
     var url = Drupal.settings.basePath + 'views_megarow/refresh/' + viewName + '/' + display + '/' + response.entity_id;
 
     $.get(url, function(data) {

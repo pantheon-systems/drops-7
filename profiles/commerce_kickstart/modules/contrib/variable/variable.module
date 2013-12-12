@@ -420,7 +420,7 @@ function variable_hook_info() {
 function variable_edit_form($form, $form_state, $list, $options = array()) {
   // Pass on the values on the form for further reference.
   $form['#variable_edit_form'] = $list;
-  module_load_include('form.inc', 'variable');
+  form_load_include($form_state, 'form.inc', 'variable');
   $form += variable_edit_subform($list, $options);
   return variable_settings_form($form, $options);
 }

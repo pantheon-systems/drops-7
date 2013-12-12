@@ -31,10 +31,10 @@
  * THE SOFTWARE.
  */
 
-require_once dirname(__FILE__) . '/../library/OAuthRequest.php';
-require_once dirname(__FILE__) . '/../library/OAuthRequester.php';
-require_once dirname(__FILE__) . '/../library/OAuthRequestSigner.php';
-require_once dirname(__FILE__) . '/../library/OAuthRequestVerifier.php';
+require_once dirname(__FILE__) . '/../library/LingotekOAuthRequest.php';
+require_once dirname(__FILE__) . '/../library/LingotekOAuthRequester.php';
+require_once dirname(__FILE__) . '/../library/LingotekOAuthRequestSigner.php';
+require_once dirname(__FILE__) . '/../library/LingotekOAuthRequestVerifier.php';
 
 if (!function_exists('getallheaders'))
 {
@@ -59,7 +59,7 @@ function oauth_test ()
 	assert_options(ASSERT_CALLBACK, 'oauth_assert_handler');
 	assert_options(ASSERT_WARNING,  0);
 	
-	$req = new OAuthRequest('http://www.example.com', 'GET');
+	$req = new LingotekOAuthRequest('http://www.example.com', 'GET');
 
 	echo "***** Parameter Encoding *****\n\n";
 	
@@ -75,37 +75,37 @@ function oauth_test ()
 
 	echo "***** Normalize Request Parameters *****\n\n";
 	
-	$req = new OAuthRequest('http://example.com/?name', 'GET');
+	$req = new LingotekOAuthRequest('http://example.com/?name', 'GET');
 	assert('$req->getNormalizedParams() == \'name=\'');
 
-	$req = new OAuthRequest('http://example.com/?a=b', 'GET');
+	$req = new LingotekOAuthRequest('http://example.com/?a=b', 'GET');
 	assert('$req->getNormalizedParams() == \'a=b\'');
 	
-	$req = new OAuthRequest('http://example.com/?a=b&c=d', 'GET');
+	$req = new LingotekOAuthRequest('http://example.com/?a=b&c=d', 'GET');
 	assert('$req->getNormalizedParams() == \'a=b&c=d\'');
 	
 	// At this moment we don't support two parameters with the same name
 	// so I changed this test case to "a=" and "b=" and not "a=" and "a="
-	$req = new OAuthRequest('http://example.com/?b=x!y&a=x+y', 'GET');
+	$req = new LingotekOAuthRequest('http://example.com/?b=x!y&a=x+y', 'GET');
 	assert('$req->getNormalizedParams() == \'a=x%2By&b=x%21y\'');
 	
-	$req = new OAuthRequest('http://example.com/?x!y=a&x=a', 'GET');
+	$req = new LingotekOAuthRequest('http://example.com/?x!y=a&x=a', 'GET');
 	assert('$req->getNormalizedParams() == \'x=a&x%21y=a\'');
 	
 
 	echo "***** Base String *****\n\n";
 	
-	$req  = new OAuthRequest('http://example.com/?n=v', 'GET');
+	$req  = new LingotekOAuthRequest('http://example.com/?n=v', 'GET');
 	assert('$req->signatureBaseString() == \'GET&http%3A%2F%2Fexample.com%2F&n%3Dv\'');
 	
-	$req = new OAuthRequest(
+	$req = new LingotekOAuthRequest(
 							'https://photos.example.net/request_token', 
 							'POST',
 							'oauth_version=1.0&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_timestamp=1191242090&oauth_nonce=hsu94j3884jdopsl&oauth_signature_method=PLAINTEXT&oauth_signature=ignored',
 							array('X-OAuth-Test' => true));
 	assert('$req->signatureBaseString() == \'POST&https%3A%2F%2Fphotos.example.net%2Frequest_token&oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dhsu94j3884jdopsl%26oauth_signature_method%3DPLAINTEXT%26oauth_timestamp%3D1191242090%26oauth_version%3D1.0\'');
 
-	$req = new OAuthRequest(
+	$req = new LingotekOAuthRequest(
 							'http://photos.example.net/photos?file=vacation.jpg&size=original&oauth_version=1.0&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_token=nnch734d00sl2jdk&oauth_timestamp=1191242096&oauth_nonce=kllo9940pd9333jh&oauth_signature=ignored&oauth_signature_method=HMAC-SHA1', 
 							'GET');
 	assert('$req->signatureBaseString() == \'GET&http%3A%2F%2Fphotos.example.net%2Fphotos&file%3Dvacation.jpg%26oauth_consumer_key%3Ddpf43f3p2l4k3l03%26oauth_nonce%3Dkllo9940pd9333jh%26oauth_signature_method%3DHMAC-SHA1%26oauth_timestamp%3D1191242096%26oauth_token%3Dnnch734d00sl2jdk%26oauth_version%3D1.0%26size%3Doriginal\'');
@@ -114,7 +114,7 @@ function oauth_test ()
 	echo "***** HMAC-SHA1 *****\nRequest signing\n";
 
 	OAuthStore::instance('MySQL', array('conn'=>false));
-	$req = new OAuthRequestSigner('http://photos.example.net/photos?file=vacation.jpg&size=original', 'GET');	
+	$req = new LingotekOAuthRequestSigner('http://photos.example.net/photos?file=vacation.jpg&size=original', 'GET');	
 
 	assert('$req->urldecode($req->calculateDataSignature(\'bs\', \'cs\', \'\',   \'HMAC-SHA1\')) == \'egQqG5AJep5sJ7anhXju1unge2I=\'');
 	assert('$req->urldecode($req->calculateDataSignature(\'bs\', \'cs\', \'ts\', \'HMAC-SHA1\')) == \'VZVjXceV7JgPq/dOTnNmEfO0Fv8=\'');
@@ -133,7 +133,7 @@ function oauth_test ()
 
 	echo "***** HMAC-SHA1 *****\nRequest verification\n";
 
-	$req = new OAuthRequestVerifier(
+	$req = new LingotekOAuthRequestVerifier(
 				'http://photos.example.net/photos?file=vacation.jpg&size=original'
 				.'&oauth_consumer_key=dpf43f3p2l4k3l03&oauth_token=nnch734d00sl2jdk'
 				.'&oauth_signature_method=HMAC-SHA1&oauth_nonce=kllo9940pd9333jh'
@@ -147,7 +147,7 @@ function oauth_test ()
 	echo "***** Yahoo! test case ******\n\n";
 
 	OAuthStore::instance('MySQL', array('conn'=>false));
-	$req = new OAuthRequestSigner('http://example.com:80/photo', 'GET');
+	$req = new LingotekOAuthRequestSigner('http://example.com:80/photo', 'GET');
 	
 	$req->setParam('title',   'taken with a 30% orange filter');
 	$req->setParam('file',    'mountain & water view');

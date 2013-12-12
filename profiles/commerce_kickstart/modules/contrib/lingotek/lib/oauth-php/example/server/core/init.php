@@ -55,7 +55,7 @@ mysql_select_db(basename($info['path']), $GLOBALS['db_conn']) || die(mysql_error
 unset($info);
 
 
-require_once '../../../library/OAuthServer.php';
+require_once '../../../library/LingotekOAuthServer.php';
 
 /*
  * Initialize OAuth store

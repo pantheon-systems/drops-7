@@ -85,8 +85,8 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
     // this method.
 
     // Executes query, iterates over results.
-    if (isset($results['search_api_facets']) && isset($results['search_api_facets'][$this->facet['field']])) {
-      $values = $results['search_api_facets'][$this->facet['field']];
+    if (isset($results['search_api_facets']) && isset($results['search_api_facets'][$this->facet['name']])) {
+      $values = $results['search_api_facets'][$this->facet['name']];
       foreach ($values as $value) {
         if ($value['count']) {
           $filter = $value['filter'];
@@ -121,7 +121,8 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
 
     // Gets active facets, starts building hierarchy.
     $parent = $gap = NULL;
-    foreach ($this->adapter->getActiveItems($this->facet) as $value => $item) {
+    $active_items = $this->adapter->getActiveItems($this->facet);
+    foreach ($active_items as $value => $item) {
       // If the item is active, the count is the result set count.
       $build[$value] = array('#count' => $total);
 
@@ -199,7 +200,9 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
       if (!isset($build[$new_value])) {
         $build[$new_value] = array('#count' => $count);
       }
-      else {
+      // Active items already have their value set because it's the current
+      // result count.
+      elseif (!isset($active_items[$new_value])) {
         $build[$new_value]['#count'] += $count;
       }
 

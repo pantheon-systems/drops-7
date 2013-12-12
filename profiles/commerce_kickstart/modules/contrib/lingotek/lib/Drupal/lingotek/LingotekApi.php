@@ -60,76 +60,95 @@ class LingotekApi {
   /**
    * Add a document to the Lingotek platform.
    *
-   * Uploads the node's field content in the node's selected language.
+   * Uploads the translatable object's content in the selected language.
    *
-   * @param object $node
-   *   A Drupal node object.
+   * @param object $translatable_object
+   *   A Drupal node object or lingotek ConfigChunk object
    */
-  public function addContentDocument($node, $with_targets = FALSE) {
-    global $_lingotek_locale;
+  public function addContentDocument(LingotekTranslatableEntity $translatable_object, $with_targets = FALSE) {
     $success = FALSE;
 
-    $project_id = empty($node->lingotek_project_id) ? NULL : $node->lingotek_project_id;
-    $project_id = empty($project_id) ? lingotek_lingonode($node->nid, 'project_id') : $project_id;
-    $project_id = empty($project_id) ? variable_get('lingotek_project', NULL) : $project_id;
+    $project_id = $translatable_object->getProjectId();
+    $vault_id = $translatable_object->getVaultId();
+    $workflow_id = $translatable_object->getWorkflowId();
 
-    $vault_id = empty($node->lingotek_vault_id) ? NULL : $node->lingotek_vault_id;
-    $vault_id = empty($vault_id) ? lingotek_lingonode($node->nid, 'vault_id') : $vault_id;
-    $vault_id = empty($vault_id) ? variable_get('lingotek_vault', 1) : $vault_id;
-
-    $workflow_id = empty($node->workflow_id) ? NULL : $node->workflow_id;
-    $workflow_id = empty($workflow_id) ? lingotek_lingonode($node->nid, 'workflow_id') : $workflow_id;
-    $workflow_id = empty($workflow_id) ? variable_get('workflow_id', NULL) : $workflow_id;
-
-    $source_language = ( isset($_lingotek_locale[$node->language]) ) ? $_lingotek_locale[$node->language] : $_lingotek_locale[lingotek_get_source_language()];
+    $source_lingotek_locale = $translatable_object->getSourceLocale();
+    $source_language = isset($source_lingotek_locale) ? $source_lingotek_locale : Lingotek::convertDrupal2Lingotek(lingotek_get_source_language());
 
     if ($project_id) {
       $parameters = array(
         'projectId' => $project_id,
-        'documentName' => $node->title,
-        'documentDesc' => $node->title,
         'format' => $this->xmlFormat(),
         'sourceLanguage' => $source_language,
         'tmVaultId' => $vault_id,
-        'content' => lingotek_xml_node_body($node),
-        'note' => url('node/' . $node->nid, array('absolute' => TRUE, 'alias' => TRUE))
       );
+      $parameters['documentName'] = $translatable_object->getTitle();
+      $parameters['documentDesc'] = $translatable_object->getDescription();
+      $parameters['content'] = $translatable_object->documentLingotekXML();
+      if (get_class($translatable_object) == 'LingotekConfigChunk') {
+        $cid = $translatable_object->getId();
+        if (!$cid) {
+          $cid = '(new/unassigned)';
+        }
+        $parameters['note'] = 'config chunk #' . $cid;
+      }
+      else {
+        $parameters['note'] = url($translatable_object->getEntityType() . '/' . $translatable_object->getId(), array('absolute' => TRUE, 'alias' => TRUE));
+      }
 
       if (!empty($workflow_id)) {
         $parameters['workflowId'] = $workflow_id;
       }
 
-      $this->addAdvancedParameters($parameters, $node);
+      $this->addAdvancedParameters($parameters, $translatable_object);
 
       if ($with_targets) {
-        $parameters['targetAsJSON'] = LingotekAccount::instance()->getManagedTargetsAsJSON();
+        $parameters['targetAsJSON'] = Lingotek::availableLanguageTargetsWithoutSourceAsJSON($source_language);
+
         $parameters['applyWorkflow'] = 'true'; // API expects a 'true' string
-        $result = $this->request('addContentDocumentWithTargets', $parameters);
+        $result = $this->request('addContentDocumentWithTargetsAsync', $parameters);
       }
       else {
-        $result = $this->request('addContentDocument', $parameters);
+        $result = $this->request('addContentDocumentAsync', $parameters);
       }
 
       if ($result) {
-        lingotek_lingonode($node->nid, 'document_id', $result->id);
-        lingotek_lingonode($node->nid, 'project_id', $project_id);
-        LingotekSync::setNodeAndTargetsStatus($node->nid, LingotekSync::STATUS_CURRENT, LingotekSync::STATUS_PENDING);
+        if (get_class($translatable_object) == 'LingotekConfigChunk') {
+          $translatable_object->setDocumentId($result->id);
+          $translatable_object->setProjectId($project_id);
+          $translatable_object->setChunkStatus(LingotekSync::STATUS_CURRENT);
+          $translatable_object->setChunkTargetsStatus(LingotekSync::STATUS_PENDING);
+
+          // WTD: there is a race condition here where a user could modify a locales-
+          // source entry between the time the dirty segments are pulled and the time
+          // they are set to current at this point.  This same race condition exists
+          // for nodes as well; however, the odds may be lower due to number of entries.
+          LingotekConfigChunk::setSegmentStatusToCurrentById($translatable_object->getId());
+        }
+        else {
+          // node assumed (based on two functions below...
+          lingotek_lingonode($translatable_object->getId(), 'document_id', $result->id);
+          LingotekSync::setNodeAndTargetsStatus($translatable_object, LingotekSync::STATUS_CURRENT, LingotekSync::STATUS_PENDING);
+          lingotek_lingonode($translatable_object->getId(), 'last_uploaded', time());
+        }
+          
         $success = TRUE;
       }
     }
     return $success;
   }
-  
+
   public function removeDocument($document_id, $reset_node = TRUE) {
     $success = FALSE;
-    if ($document_id && (is_numeric($document_id) || is_array($document_id))) {
+    if ($document_id) {
       // Remove node info from lingotek table (and reset for upload when reset_node is TRUE)
-      if($reset_node) {
+      if ($reset_node) {
         LingotekSync::resetNodeInfoByDocId($document_id);
-      } else {
+      }
+      else {
         LingotekSync::removeNodeInfoByDocId($document_id);
       }
-      $result = $this->request('removeDocument', array('documentId'=>$document_id));
+      $result = $this->request('removeDocument', array('documentId' => $document_id));
       if ($result) {
         $success = TRUE;
       }
@@ -138,7 +157,7 @@ class LingotekApi {
   }
 
   /**
-   * Adds a Document and one or more Translation Targets to the Lingotek platform. (only used by comments currently)
+   * Adds a Document and one or more Translation Targets to the Lingotek platform. (used by comments and config chunks currently)
    *
    * @param LingotekTranslatableEntity $entity
    *   A Drupal entity.
@@ -149,14 +168,14 @@ class LingotekApi {
 
     $parameters = $this->getCreateWithTargetsParams($entity);
 
-    if ($result = $this->request('addContentDocumentWithTargets', $parameters)) {
+    if ($result = $this->request('addContentDocumentWithTargetsAsync', $parameters)) {
       $entity->setMetadataValue('document_id', $result->id);
 
-      // Comments are all associated with the configured "default" Lingotek project.
+      // Comments and Config Chunks are associated with the "default" Lingotek project.
       // Nodes can have their projects selected on a per-node basis, and will need
       // separate consideration if addContentDocumentWithTargets is used for them
       // in the future.
-      if (get_class($entity) == 'LingotekComment') {
+      if (in_array(get_class($entity), array('LingotekComment', 'LingotekConfigChunk'))) {
         $entity->setMetadataValue('project_id', variable_get('lingotek_project'));
       }
       $success = TRUE;
@@ -181,9 +200,12 @@ class LingotekApi {
       case 'LingotekComment':
         $parameters = $this->getCommentCreateWithTargetsParams($entity);
         break;
+      case 'LingotekConfigChunk':
+        $parameters = $this->getConfigChunkCreateWithTargetsParams($entity);
+        break;
       case 'LingotekNode':
       default:
-        throw new Exception("Not implemented: Only comments can currently use createContentDocumentWithTargets.");
+        throw new Exception("createContentDocumentWithTargets not implemented for type '" . get_class($entity) . "'.");
         break;
     };
 
@@ -200,8 +222,9 @@ class LingotekApi {
    *   An array of API parameter values.
    */
   protected function getCommentCreateWithTargetsParams(LingotekComment $comment) {
-    $target_locales = Lingotek::availableLanguageTargets("lingotek_locale");
-
+    global $language;
+    
+    $source_language = Lingotek::convertDrupal2Lingotek($comment->language != 'und' ? $comment->language : $language->language);
     $parameters = array(
       'projectId' => variable_get('lingotek_project', NULL),
       'documentName' => 'comment - ' . $comment->cid,
@@ -209,14 +232,45 @@ class LingotekApi {
       'format' => $this->xmlFormat(),
       'applyWorkflow' => 'true',
       'workflowId' => variable_get('lingotek_translate_comments_workflow_id', NULL),
-      'sourceLanguage' => Lingotek::convertDrupal2Lingotek($comment->language),
+      'sourceLanguage' => $source_language,
       'tmVaultId' => variable_get('lingotek_vault', 1),
       'content' => $comment->documentLingotekXML(),
-      'targetAsJSON' => drupal_json_encode(array_values($target_locales)),
+      'targetAsJSON' => Lingotek::availableLanguageTargetsWithoutSourceAsJSON($source_language),
       'note' => url('node/' . $comment->nid, array('absolute' => TRUE, 'alias' => TRUE))
     );
 
     $this->addAdvancedParameters($parameters, $comment);
+
+    return $parameters;
+  }
+
+  /**
+   * Gets the config-chunk-specific parameters for use in a createContentDocumentWithTargets API call.
+   *
+   * @param LingotekConfigChunk
+   *   The config chunk to be translated.
+   *
+   * @return array
+   *   An array of API parameter values.
+   */
+  protected function getConfigChunkCreateWithTargetsParams(LingotekConfigChunk $chunk) {
+    $target_locales = Lingotek::availableLanguageTargets("lingotek_locale");
+
+    $parameters = array(
+      'projectId' => variable_get('lingotek_project', NULL),
+      'documentName' => 'config - ' . $chunk->cid,
+      'documentDesc' => 'configuration string set "' . $chunk->cid . '", related to menus, views, taxonomy vocabularies & terms, etc.',
+      'format' => $this->xmlFormat(),
+      'applyWorkflow' => 'true',
+      'workflowId' => variable_get('lingotek_translate_config_workflow_id', NULL),
+      'sourceLanguage' => Lingotek::convertDrupal2Lingotek($chunk->language),
+      'tmVaultId' => variable_get('lingotek_vault', 1),
+      'content' => $chunk->documentLingotekXML(),
+      'targetAsJSON' => drupal_json_encode(array_values($target_locales)),
+      'note' => url('node/' . $chunk->nid, array('absolute' => TRUE, 'alias' => TRUE))
+    );
+
+    $this->addAdvancedParameters($parameters, $chunk);
 
     return $parameters;
   }
@@ -344,22 +398,24 @@ class LingotekApi {
    *
    * @param int $document_id
    *   The Lingotek document ID that should be downloaded.
-   * @param string $language_lingotek
+   * @param string $lingotek_locale
    *   A Lingotek language/locale code.
    *
    * @return mixed
    *   On success, a SimpleXMLElement object representing the translated document. FALSE on failure.
    *
    */
-  public function downloadDocument($document_id, $language_lingotek) {
+  public function downloadDocument($document_id, $lingotek_locale) {
     $document = FALSE;
 
     $params = array(
       'documentId' => $document_id,
-      'targetLanguage' => $language_lingotek,
+      'targetLanguage' => $lingotek_locale,
     );
 
-    if ($results = $this->request('downloadDocument', $params)) {
+    $results = $this->request('downloadDocument', $params);
+
+    if ($results) {
       try {
         // TODO: This is borrowed from the now-deprecated LingotekSession::download()
         // and could use refactoring.
@@ -446,6 +502,24 @@ class LingotekApi {
     }
 
     return $document;
+  }
+
+  /**  
+   * Gets the workflow progress of the specified documents.
+   *
+   * @param int $document_id
+   *   The IDs of the Lingotek Documents to retrieve.
+   *
+   * @return mixed
+   *  The API response object with Lingotek Document data, or FALSE on error.
+   */
+  public function listDocumentProgress($document_ids) {
+    $params = array();
+    foreach ($document_ids as $document_id) {
+      $params['documentId'][] = $document_id;
+    }
+    $documents = $this->request('listDocumentProgress', $params);
+    return $documents;
   }
 
   /**
@@ -667,7 +741,8 @@ class LingotekApi {
         'externalId' => $externalId
       );
 
-      if ($output = $this->request('getWorkbenchLink', $params)) {
+      $output = $this->request('getWorkbenchLink', $params);
+      if ($output && isset($output->url)) {
         $links[$static_id] = $url = $output->url;
       }
       else {
@@ -682,17 +757,26 @@ class LingotekApi {
 
   /**
    * Gets available Lingotek projects.
-   *
+   * 
+   * @param $reset
+   *   A boolean value to determin whether we need to query the API
+   * 
    * @return array
    *   An array of available projects with project IDs as keys, project labels as values.
    */
-  public function listProjects() {
-    $projects = array();
+  public function listProjects($reset = FALSE) {
+    $projects = variable_get('lingotek_project_defaults', array());
 
+    if (!empty($projects) && $reset == FALSE) {
+      return $projects;
+    }
+    
     if ($projects_raw = $this->request('listProjects')) {
+      $projects = array();
       foreach ($projects_raw->projects as $project) {
         $projects[$project->id] = $project->name;
       }
+      variable_set('lingotek_project_defaults', $projects);
     }
 
     return $projects;
@@ -700,32 +784,52 @@ class LingotekApi {
 
   /**
    * Gets available Lingotek Workflows.
-   *
+   * 
+   * @param $reset
+   *   A boolean value to determine whether we need to query the API
+   * @param $include_public
+   *   A boolean value to determine whether to show public workflows
+   * 
    * @return array
    *   An array of available Workflows with workflow IDs as keys, workflow labels as values.
    */
-  public function listWorkflows() {
-    $workflows = array();
+  public function listWorkflows($reset = FALSE, $include_public = FALSE) {
+    $workflows = variable_get('lingotek_workflow_defaults', array());
+    if (!empty($workflows) && $reset == FALSE) {
+      return $workflows;
+    }
 
     if ($workflows_raw = $this->request('listWorkflows')) {
+      $workflows = array();
       foreach ($workflows_raw->workflows as $workflow) {
+        if ($include_public || (!$workflow->is_public 
+            && $workflow->owner != LINGOTEK_DEFAULT_WORKFLOW_TEMPLATE))
         $workflows[$workflow->id] = $workflow->name;
       }
+      variable_set('lingotek_workflow_defaults', $workflows);
     }
 
     return $workflows;
   }
 
   /**
-   * Gets available Lingotek Translation Memory vaults.
-   *
+   * Gets available Lingotek Translation Memory Vaults.
+   * 
+   * @param $reset
+   *   A boolean value to determin whether we need to query the API
+   * 
    * @return array
    *   An array of available vaults.
    */
-  public function listVaults() {
-    $vaults = array();
+  public function listVaults($reset = FALSE, $show_public_vaults = FALSE) {
+    $vaults = variable_get('lingotek_vaults_defaults', array());
+
+    if (!empty($vaults) && $reset == FALSE) {
+      return $vaults;
+    }
 
     if ($vaults_raw = $this->request('listTMVaults')) {
+      $vaults = array();
       if (!empty($vaults_raw->personalVaults)) {
         foreach ($vaults_raw->personalVaults as $vault) {
           $vaults['Personal Vaults'][$vault->id] = $vault->name;
@@ -738,14 +842,41 @@ class LingotekApi {
         }
       }
 
-      if (!empty($vaults_raw->publicVaults)) {
+      if ($show_public_vaults && !empty($vaults_raw->publicVaults)) {
         foreach ($vaults_raw->publicVaults as $vault) {
           $vaults['Public Vaults'][$vault->id] = $vault->name;
         }
       }
+      variable_set('lingotek_vaults_defaults', $vaults);
     }
 
     return $vaults;
+  }
+
+  /**
+   * Updates one or more nids to belong to a given workflow
+   * 
+   * @param array $document_ids
+   *   An array of document IDs
+   * @param string $workflow_id
+   *   A string containing the desired workflow_id
+   * @param string $prefillPhase
+   *   An optional parameter specifying the prefill phase
+   * 
+   * @return bool
+   *   TRUE on success, FALSE on failure.
+   */
+  public function changeWorkflow($document_ids, $workflow_id, $prefillPhase=NULL) {
+    $parameters = array(
+      'documentId' => $document_ids,
+      'workflowId' => $workflow_id,
+      'preserveTargets' => 'true',
+    );
+    if ($prefillPhase) {
+      $parameters['prefillPhase'] = $prefillPhase;
+    }
+
+    return ($this->request('resetDocument', $parameters) ? TRUE : FALSE);
   }
 
   /**
@@ -766,44 +897,67 @@ class LingotekApi {
   }
 
   /**
-   * Updates the content of an existing Lingotek document with the current node contents.
+   * Updates the content of an existing Lingotek document with the current object contents.
    *
-   * @param stdClass $node
-   *   A Drupal node object.
+   * @param stdClass $translatable_object
+   *   A Drupal node object or another object, such as a config chunk, etc.
    *
    * @return bool
    *   TRUE on success, FALSE on failure.
    */
-  public function updateContentDocument($node) {
+  public function updateContentDocument($translatable_object) {
 
-    switch (get_class($node)) {
+    $isContentNode = FALSE;
+    switch (get_class($translatable_object)) {
+      case 'LingotekConfigChunk':
       case 'LingotekComment':
-        // Comments have their own way to format the content.
-        $document_id = $node->getMetadataValue('document_id');
-        $content = $node->documentLingotekXML();
+        // Comments and Config Chunks have their own way to format the content.
+        $document_id = $translatable_object->getMetadataValue('document_id');
+        $content = $translatable_object->documentLingotekXML();
         break;
       default:
         // Normal content do the regular formating.
-        $document_id = lingotek_lingonode($node->nid, 'document_id');
-        $content = lingotek_xml_node_body($node);
+        $isContentNode = TRUE;
+        $document_id = $translatable_object->lingotek['document_id'];
+        $content = lingotek_xml_node_body($translatable_object);
         break;
     };
 
     $parameters = array(
       'documentId' => $document_id,
-      'documentName' => $node->title,
-      'documentDesc' => $node->title,
+      'documentName' => $translatable_object->title,
+      'documentDesc' => $translatable_object->title,
       'content' => $content,
       'format' => $this->xmlFormat(),
-      'note' => url('node/' . $node->nid, array('absolute' => TRUE, 'alias' => TRUE))
     );
+    if (get_class($translatable_object) == 'LingotekConfigChunk') {
+      $parameters['note'] = 'configuration file #' . $translatable_object->cid;
+    }
+    else {
+      $parameters['note'] = url('node/' . $translatable_object->nid, array('absolute' => TRUE, 'alias' => TRUE));
+    }
 
-    $this->addAdvancedParameters($parameters, $node);
+    $this->addAdvancedParameters($parameters, $translatable_object);
 
     $result = $this->request('updateContentDocument', $parameters);
 
     if ($result) {
-      LingotekSync::setNodeAndTargetsStatus($node->nid, LingotekSync::STATUS_CURRENT, LingotekSync::STATUS_PENDING);
+      if (get_class($translatable_object) == 'LingotekConfigChunk') {
+        $translatable_object->setChunkStatus(LingotekSync::STATUS_CURRENT);
+        $translatable_object->setChunkTargetsStatus(LingotekSync::STATUS_PENDING);
+
+        // WTD: there is a race condition here where a user could modify a locales-
+        // source entry between the time the dirty segments are pulled and the time
+        // they are set to current at this point.  This same race condition exists
+        // for nodes as well; however, the odds may be lower due to number of entries.
+        LingotekConfigChunk::setSegmentStatusToCurrentById($translatable_object->getId());
+      }
+      else {
+        LingotekSync::setNodeAndTargetsStatus($translatable_object, LingotekSync::STATUS_CURRENT, LingotekSync::STATUS_PENDING);
+      }
+      if ($isContentNode) {
+        lingotek_lingonode($translatable_object->nid, 'last_uploaded', time());
+      }
     }
 
     return ( $result ) ? TRUE : FALSE;
@@ -825,7 +979,7 @@ class LingotekApi {
    * @return bool
    *   TRUE if the configuration is correct, FALSE otherwise.
    */
-  public function testAuthentication( $force = FALSE ) {
+  public function testAuthentication($force = FALSE) {
     $valid_connection = &drupal_static(__FUNCTION__);
 
     if ($force || !isset($valid_connection)) {
@@ -833,7 +987,7 @@ class LingotekApi {
       $consumer_key = variable_get('lingotek_oauth_consumer_id', '');
       $consumer_secret = variable_get('lingotek_oauth_consumer_secret', '');
       if (!empty($consumer_key) && !empty($consumer_secret)) {
-        $valid_connection = ($this->request('listProjects')) ? TRUE : FALSE;
+        $valid_connection = ($this->request('validateApiKeys')) ? TRUE : FALSE;
       }
       else {
         $valid_connection = FALSE;
@@ -859,7 +1013,7 @@ class LingotekApi {
       $parameters['externalId'] = variable_get('lingotek_login_id', '');
     }
     module_load_include('php', 'lingotek', 'lib/oauth-php/library/OAuthStore');
-    module_load_include('php', 'lingotek', 'lib/oauth-php/library/OAuthRequester');
+    module_load_include('php', 'lingotek', 'lib/oauth-php/library/LingotekOAuthRequester');
 
     $credentials = is_null($credentials) ? array(
       'consumer_key' => variable_get('lingotek_oauth_consumer_id', ''),
@@ -869,39 +1023,45 @@ class LingotekApi {
     $timer_name = $method . '-' . microtime(TRUE);
     timer_start($timer_name);
 
+    $result = NULL;
     $response = NULL;
+    $api_url = $this->api_url . '/' . $method;
     try {
       OAuthStore::instance('2Leg', $credentials);
-      $api_url = $this->api_url . '/' . $method;
-      $request = @new OAuthRequester($api_url, $request_method, $parameters);
-      // There is an error right here.  The new OAuthRequester throws it, because it barfs on $parameters
-      // The error:  Warning: rawurlencode() expects parameter 1 to be string, array given in OAuthRequest->urlencode() (line 619 of .../modules/lingotek/lib/oauth-php/library/OAuthRequest.php).
+      $request = @new LingotekOAuthRequester($api_url, $request_method, $parameters);
+      // There is an error right here.  The new LingotekOAuthRequester throws it, because it barfs on $parameters
+      // The error:  Warning: rawurlencode() expects parameter 1 to be string, array given in LingotekOAuthRequest->urlencode() (line 619 of .../modules/lingotek/lib/oauth-php/library/LingotekOAuthRequest.php).
       // The thing is, if you encode the params, they just get translated back to an array by the object.  They have some type of error internal to the object code that is handling things wrong.
       // I couldn't find a way to get around this without changing the library.  For now, I am just supressing the warning w/ and @ sign.
       $result = $request->doRequest(0, array(CURLOPT_SSL_VERIFYPEER => FALSE));
-      $response = ($method == 'downloadDocument') ? $result['body'] : json_decode($result['body']);
+      $response = json_decode($result['body']);
     } catch (OAuthException2 $e) {
-      LingotekLog::error('Failed OAuth request.
+      LingotekLog::error('Failed OAuth request. <br />Method: @method <br />Message: @message 
       <br />API URL: @url
-      <br />Message: @message. 
-      <br />Method: @name. 
       <br />Parameters: !params.
       <br />Response: !response', array(
-        '@url' => $api_url,
+        '@method' => $method,
         '@message' => $e->getMessage(),
-        '@name' => $method,
+        '@url' => $api_url,
         '!params' => ($parameters),
         '!response' => ($response)), 'api');
     }
 
     $timer_results = timer_stop($timer_name);
-
+    
+    // cleanup parameters so that the logs aren't too long
+    if(isset($parameters['fprmFileContents'])) {
+      $parameters['fprmFileContents'] = 'removed for brevity';
+    }
+    if(isset($parameters['secondaryFprmFileContents'])) {
+      $parameters['secondaryFprmFileContents'] = 'removed for brevity';
+    }
     $message_params = array(
       '@url' => $api_url,
       '@method' => $method,
       '!params' => $parameters,
       '!request' => $request,
-      '!response' => ($method == 'downloadDocument') ? 'Zipped Lingotek Document Data' : $response,
+      '!response' => ($method == 'downloadDocument' && !isset($response->results)) ? "Zipped document" : $response,
       '@response_time' => number_format($timer_results['time']) . ' ms',
     );
 
@@ -910,18 +1070,21 @@ class LingotekApi {
       downloadDocument - Returns misc data (no $response->results), and should always be sent back.
       assignProjectManager - Returns fails/falses if the person is already a community manager (which should be ignored)
      */
-    if ($method == 'downloadDocument' || $method == 'assignProjectManager' || (!is_null($response) && $response->results == self::RESPONSE_STATUS_SUCCESS)) {
-      LingotekLog::info('<h1>@method</h1>
-        <strong>API URL:</strong> @url
+    if ($method == 'downloadDocument') { // Exception downloadDocument
+      LingotekLog::api('<h1>@method</h1> <strong>API URL:</strong> @url
+        <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response<br/><strong>Full Request:</strong> !request', $message_params);
+      $response_data = !empty($result) ? $result['body'] : "";
+    }
+    else if ((!is_null($response) && $response->results == self::RESPONSE_STATUS_SUCCESS) || $method == 'assignProjectManager') { // SUCCESS
+      LingotekLog::api('<h1>@method</h1> <strong>API URL:</strong> @url
+        <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response<br/><strong>Full Request:</strong> !request', $message_params);
+      $response_data = $response;
+    }
+    else { // ERROR
+      LingotekLog::error('<h1>@method (Failed)</h1> <strong>API URL:</strong> @url
         <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response<br/><strong>Full Request:</strong> !request', $message_params, 'api');
       $response_data = $response;
     }
-    else {
-      LingotekLog::error('<h1>@method (Failed)</h1>
-        <strong>API URL:</strong> @url
-        <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response<br/><strong>Full Request:</strong> !request', $message_params, 'api');
-    }
-
     return $response_data;
   }
 
@@ -935,7 +1098,8 @@ class LingotekApi {
   public function createCommunity($parameters = array(), $callback_url = NULL) {
     $credentials = array('consumer_key' => LINGOTEK_AP_OAUTH_KEY, 'consumer_secret' => LINGOTEK_AP_OAUTH_SECRET);
     if (isset($callback_url)) {
-      $parameters['callbackUrl'] = $callback_url . '?doc_id={document_id}&target_code={target_language}&project_id={project_id}';
+      $parameters['projectName'] = lingotek_get_site_name(); 
+      $parameters['callbackUrl'] = $callback_url;
     }
     $response = $this->request('autoProvisionCommunity', $parameters, 'POST', $credentials);
     return $response;

@@ -11,7 +11,7 @@ function commerce_exactor_calc_default_rules_configuration() {
 
   // Calculate Tax.
   $rule = rules_reaction_rule();
-  $rule->label = 'Calculate Taxes with ExactoCALC';
+  $rule->label = 'Calculate Taxes with Exactor CALC';
   $rule->requires = array(
     'rules',
     'commerce_exactor_calc',
@@ -19,35 +19,49 @@ function commerce_exactor_calc_default_rules_configuration() {
   );
   $rule->event('commerce_order_presave');
 
-  $rule_status = rules_or()
-   ->condition('data_is', array(
-     'data:select' => 'commerce-order:status',
-     'op' => 'IN',
-     'value' => array(
-       'checkout_checkout' => 'checkout_checkout',
-       'checkout_shipping' => 'checkout_shipping',
-       'checkout_review' => 'checkout_review',
-     ))
-   )
-   ->condition('data_is', array(
-     'data:select' => 'commerce-order:state',
-     'op' => 'IN',
-     'value' => array(
-       'pending' => 'pending',
-       'cart' => 'cart',
-     ))
-   );
+  $rule_status = rules_or();
+
+  $rule_status->condition(rules_and()
+    ->condition('data_is', array(
+      'data:select' => 'commerce-order:status',
+      'op' => 'IN',
+      'value' => array(
+        'checkout_review' => 'checkout_review',
+      )
+    ))
+    ->condition(rules_condition('data_is', array(
+      'data:select' => 'commerce-order-unchanged:status',
+      'op' => 'IN',
+      'value' => array(
+        'checkout_review' => 'checkout_review',
+      )
+    ))->negate()));
+
+  $rule_status->condition(rules_and()
+    ->condition('data_is', array(
+      'data:select' => 'commerce-order:state',
+      'op' => 'IN',
+      'value' => array(
+        'pending' => 'pending',
+        'completed' => 'completed',
+      )
+    ))
+    ->condition(rules_condition('data_is', array(
+      'data:select' => 'commerce-order-unchanged:state',
+      'op' => 'IN',
+      'value' => array(
+        'checkout' => 'checkout',
+      )
+    ))->negate()));
 
   $rule->condition($rule_status);
   $rule->condition('entity_has_field', array('entity:select' => 'commerce-order', 'field' => 'commerce_customer_billing'));
   $rule->condition('entity_has_field', array('entity:select' => 'commerce-order:commerce-customer-billing', 'field' => 'commerce_customer_address'));
-  $rule->condition(rules_condition('data_is_empty', array('data:select' => 'commerce-order:commerce-customer-billing:commerce-customer-address:country'))->negate());
 
   // If the shipping module is enabled use the shipping profile.
   if (module_exists('commerce_shipping')) {
     $rule->condition('entity_has_field', array('entity:select' => 'commerce-order', 'field' => 'commerce_customer_shipping'));
     $rule->condition('entity_has_field', array('entity:select' => 'commerce-order:commerce-customer-shipping', 'field' => 'commerce_customer_address'));
-    $rule->condition(rules_condition('data_is_empty', array('data:select' => 'commerce-order:commerce-customer-shipping:commerce-customer-address:country'))->negate());
 
     $rule->action('commerce_exactor_calc_invoice_request', array(
       'order:select' => 'commerce-order',
@@ -70,13 +84,13 @@ function commerce_exactor_calc_default_rules_configuration() {
 
   // Commit Order.
   $rule = rules_reaction_rule();
-  $rule->label = 'Commit with ExactoCALC';
+  $rule->label = 'Commit with Exactor CALC';
   $rule->requires = array(
     'rules',
     'commerce_exactor_calc',
     'entity',
   );
-  $rule->event('commerce_order_presave');
+  $rule->event('commerce_order_update');
   $rule->condition('data_is', array('data:select' => 'commerce-order:state', 'value' => 'completed'));
   $rule->condition(rules_condition('data_is', array('data:select' => 'commerce-order-unchanged:state', 'value' => 'completed'))->negate());
   $rule->action('commerce_exactor_calc_commit_request', array('order:select' => 'commerce-order'));
@@ -85,7 +99,7 @@ function commerce_exactor_calc_default_rules_configuration() {
 
   // Refund Order.
   $rule = rules_reaction_rule();
-  $rule->label = 'Refund order with ExactoCALC';
+  $rule->label = 'Refund order with Exactor CALC';
   $rule->requires = array(
     'rules',
     'commerce_exactor_calc',
@@ -97,6 +111,21 @@ function commerce_exactor_calc_default_rules_configuration() {
   $rule->action('commerce_exactor_calc_refund_request', array('order:select' => 'commerce-order'));
 
   $configs['commerce_exactor_calc_refund_order'] = $rule;
+
+  // Return to Cart.
+  $rule = rules_reaction_rule();
+  $rule->label = 'Remove Exactor on Returning to Cart from Checkout';
+  $rule->requires = array(
+    'rules',
+    'commerce_exactor_calc',
+    'entity',
+  );
+  $rule->event('commerce_order_presave');
+  $rule->condition(rules_condition('data_is', array('data:select' => 'commerce-order:status', 'value' => 'cart')));
+  $rule->condition(rules_condition('data_is', array('data:select' => 'commerce-order-unchanged:status', 'value' => 'cart'))->negate());
+  $rule->action('commerce_exactor_calc_delete_lines', array('order:select' => 'commerce-order'));
+
+  $configs['rules_remove_exactor_on_returning_to_cart_from_checkout'] = $rule;
 
   return $configs;
 }

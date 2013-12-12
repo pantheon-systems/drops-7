@@ -5,11 +5,10 @@ dependencies[] = mimemail
 dependencies[] = trigger
 core = 7.x
 
-files[] = mimemail_action.module
 
-; Information added by drupal.org packaging script on 2012-08-22
-version = "7.x-1.0-alpha2"
+; Information added by drupal.org packaging script on 2013-10-07
+version = "7.x-1.0-beta1"
 core = "7.x"
 project = "mimemail"
-datestamp = "1345634537"
+datestamp = "1381150945"
 

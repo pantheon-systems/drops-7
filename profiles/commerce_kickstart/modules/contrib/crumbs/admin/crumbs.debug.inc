@@ -8,7 +8,7 @@ function crumbs_debug_page() {
   $form_action = url('admin/structure/crumbs/debug');
 
   $input_html = <<<EOT
-<input id="path" size="40" name="path_to_test" value="$path_checked"/>
+<input id="path" type="text" class="form-text" size="40" name="path_to_test" value="$path_checked"/>
 EOT;
   $input_html = t('Path: !text_field', array('!text_field' => $input_html));
   $text = <<<EOT
@@ -40,64 +40,118 @@ EOT;
 
     $log[] = crumbs_benchmark('crumbs_get_router_item("' . $path . '")');
 
-    $parent_finder = crumbs_get_parent_finder();
+    $engine = crumbs_get_plugin_engine();
 
-    $log[] = crumbs_benchmark('crumbs_get_parent_finder()');
+    $log[] = crumbs_benchmark('crumbs_get_plugin_engine()');
 
-    $parent_path = $parent_finder->getParentPath($path, $item);
+    $op = new crumbs_PluginOperation_findTitle($path, $item, array());
+    $engine->invokeAll_find($op);
+    $title = $op->getValue();
+    $title_candidates = $op->getLoggedCandidates();
+    $title_candidate_key = $op->getCandidateKey();
 
-    $log[] = crumbs_benchmark('$finder->getParentPath()');
+    $log[] = crumbs_benchmark('find title');
+
+    $op = new crumbs_PluginOperation_findParent($path, $item, array());
+    $engine->invokeAll_find($op);
+    $parent_path = $op->getValue();
+    $parent_path_candidates = $op->getLoggedCandidates();
+    $parent_path_candidate_key = $op->getCandidateKey();
+    $parent_path = drupal_get_normal_path($parent_path);
+    $parent_item = crumbs_get_router_item($parent_path);
+
+    $log[] = crumbs_benchmark('find parent');
+
+    if (!empty($parent_item)) {
+      $op = new crumbs_PluginOperation_findTitle($parent_path, $parent_item, array());
+      $engine->invokeAll_find($op);
+      $parent_title = $op->getValue();
+      $parent_title_candidates = $op->getLoggedCandidates();
+      $parent_title_candidate_key = $op->getCandidateKey();
+    }
+
+    $log[] = crumbs_benchmark('find parent title');
+
     $log_html = implode('<br/>', $log);
 
-    $log = $parent_finder->getLoggedCandidates($path);
-    $rows = array();
+    $default_row = array(
+      '',
+      '(default)',
+      $item['title'],
+      crumbs_reduce_path($path),
+      $parent_item['title'],
+    );
+
     $sort = array();
     $rule_found = FALSE;
-    foreach ($log as $key => $x) {
-      list($candidate, $weight) = $x;
-      $key_html = $key;
-      if ($key === @$item['crumbs_candidate_key']) {
-        $key_html = '<strong>'. $key_html .'</strong>';
-        $candidate = '<strong>'. $candidate .'</strong>';
-        $rule_found = TRUE;
+    foreach (array('title', 'parent_path', 'parent_title') as $i => $k) {
+      if (!isset(${$k . '_candidates'})) {
+        continue;
       }
-      if ($weight === FALSE) {
-        $key_html = '<strike>'. $key_html .'</strike>';
-        $candidate = '<strike>'. $candidate .'</strike>';
-        $weight = 'disabled';
+      if (!isset($$k)) {
+        $default_row[$i + 2] = '<strong>' . $default_row[$i + 2] . '</strong>';
       }
-      else if (is_null($weight)) {
-        $candidate = '-';
-        $key_html = '<i>'. $key_html .'</i>';
-        $weight = '-';
+      foreach (${$k . '_candidates'} as $key => $x) {
+        list($candidate, $weight) = $x;
+        if (FALSE === $weight) {
+          // This one is disabled. Continue.
+          $weight = 'FALSE';
+        }
+        elseif (is_null($weight)) {
+          $weight = '';
+        }
+        elseif (!is_numeric($weight)) {
+          $weight = '?';
+        }
+        if (!isset($sort[$weight][$key])) {
+          $sort[$weight][$key] = array(
+            $weight,
+            $key,
+            '',
+            '',
+            '',
+          );
+        }
+        if (FALSE === $candidate) {
+          $candidate = 'FALSE';
+        }
+        elseif (is_null($candidate)) {
+          $candidate = '-';
+        }
+        if ($key === ${$k . '_candidate_key'}) {
+          $candidate = '<strong>' . check_plain($candidate) . '</strong>';
+        }
+        $sort[$weight][$key][$i + 2] = $candidate;
       }
-      $rows[$key] = <<<EOT
-<tr><td>$weight</td><td>$key_html</td><td>$candidate</td></tr>
-EOT;
-      $sort[$key] = $weight;
     }
 
-    // array_multisort($sort, $rows);
-    $rows_html = implode('', $rows);
-    $parent_path_checked = check_plain($parent_path);
-    if (!$rule_found) {
-      $default_text = t('Default: Chop off last path fragment.');
-      $rows_html .= <<<EOT
-<tr><td></td><td>$default_text</td><td>$parent_path_checked</td></tr>
-EOT;
+    ksort($sort);
+    $all = array();
+    foreach ($sort as $weight => $rows) {
+      foreach ($rows as $key => $row) {
+        $all[] = $row;
+      }
     }
-    $text = t('Parent found: !parent_path', array(
-      '!parent_path' => l($parent_path, 'admin/structure/crumbs/debug', array(
-        'query' => array('path_to_test' => $parent_path)
-      )),
+
+    // Default row.
+    $all[] = $default_row;
+
+    $head = array(
+      'Weight',
+      'Key',
+      'Title candidate',
+      'Parent path candidate',
+      'Parent title candidate',
+    );
+    $table = theme('table', array(
+      'header' => $head,
+      'rows' => $all,
     ));
+
     $html .= <<<EOT
       <p>$text</p>
       <p>$log_html</p>
-      <table>
-        <thead><tr><th>Weight</th><th>Key</th><th>Parent path candidate</th></tr></thead>
-        <tbody>$rows_html</tbody>
-      </table>
+      $table
 EOT;
   }
   return $html;

@@ -104,17 +104,23 @@ class LinkUITest extends DrupalWebTestcase {
         'msg' => 'js label',
         'type' => self::LINK_INPUT_TYPE_BAD_TITLE
       ),
-       array(
+      array(
         'href' => 'http://example.com/' . $this->randomName(),
         'label' => $this->randomName() . '\' onmouseover="alert(\'hi\')',
         'msg' => 'js label',
         'type' => self::LINK_INPUT_TYPE_BAD_TITLE
       ),
-     array(
+      array(
         'href' => 'javascript:alert("http://example.com/' . $this->randomName() . '")',
         'label' => $this->randomName(),
         'msg' => 'js url',
         'type' => self::LINK_INPUT_TYPE_BAD_URL
+      ),
+      array(
+        'href' => 'http://ecs-es.kelkoo.es/ctl/go/sitesearchGo?.ts=1338833010331&.sig=qP9GXeEFH6syBzwmzYkxmsvp1EI-',
+        'label' => 'http://ecs-es.kelkoo.es/ctl/go/sitesearchGo?.ts=1338833010331&.sig=qP9GXeEFH6syBzwmzYkxmsvp1EI-',
+        'msg' => 'Url with . in querystring',
+        'type' => self::LINK_INPUT_TYPE_GOOD,
       ),
     );
     $test_case = array(

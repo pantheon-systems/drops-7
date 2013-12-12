@@ -1,4 +1,263 @@
 
-.highlight {
+.lingotek-highlight {
   background-color: #ecf2f9 !important;
 }
+
+#navbar-link-admin-settings-lingotek::before {
+  background-attachment: scroll;
+  background-color: transparent;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-image: url("../images/ico_chevs_dd.png");
+}
+
+.ltk-icon {
+}
+
+.ltk-icon:hover {
+    text-decoration: none;
+    color: #00348D;
+}
+
+/*#lingotek-navbar-tab {
+  margin-top: 8px;
+  color: black;
+  float: right;
+}
+
+#lingotek-navbar-tab .ddTitle {
+  height: 23px;
+}*/
+
+div.form-item-create-lingotek-document-workbench-moderation, div.form-item-sync-method-workbench-moderation {
+  margin-left: 50px;
+}
+
+/*div.form-item-create-lingotek-document-workbench-moderation label, div.form-item-syncMethod-wb label {
+  font-weight: normal !important;
+}*/
+
+div.form-item.form-item-lingotek-create-documents-by-default-workbench-moderation,
+div.form-item.form-item-wb-options {
+  margin-left: 50px;
+}
+
+#edit-wb-select {
+  margin-left: 50px;
+}
+
+/* Settings/Setup - Content Types Table */
+
+.lingotek-content-settings-table td div {
+  float: left;
+  padding-right: 15px !important;
+}
+
+input.lingotek-content-settings-table.form-checkbox {
+  margin: 0px;
+}
+
+#lingotek-profiles {
+  width: auto;
+}
+
+/* Bulk Grid */
+
+#lingotek-bulk-grid-form #edit-header-fieldset .form-item {
+  float:left;
+  margin-left: 15px;
+}
+
+#modal-content #edit-filters .form-item {
+}
+
+#modal-content #edit-filter-buttons {
+  clear: both;
+}
+
+.form-item.form-item-actions-select {
+  padding: 0px;
+}
+
+.form-item-actions-select label, .form-item-search label {
+  display: inline;
+}
+
+.form-item-search-type, .form-item-search, .form-item-search-submit {
+  display: inline;
+}
+
+.lingotek-action {
+  float: right;
+  font-size: 125%;
+  margin-left: 20px;
+  margin-top: 30px;
+  color: #666;
+}
+
+.lingotek-action:hover {
+  color: #333;
+  text-decoration: none;
+}
+
+#grid-result-summary {
+  color: #666;
+}
+
+#page-limit {
+  text-align: center;
+}
+
+.form-item-limit-select {
+  display: inline;
+}
+
+#edit-grid-container .table-select-processed {
+  clear: both;
+}
+#edit-grid-container > .grid-empty {
+  clear: both;
+  padding: 25px;
+  background: #f3f3f3;
+  border: #aaa;
+}
+
+#edit-custom-columns {
+    columns:100px 2;
+    -webkit-columns:100px 2;
+    -moz-columns:100px 2;
+}
+
+.language-icon {
+  background-color:#80a49e;
+  border-radius: 3px;
+  margin-right: 3px;
+  padding: 2px;
+  padding-left: 5px;
+  padding-right: 5px;
+  color: #fff !important;
+  white-space: nowrap;
+}
+
+.language-icon.target-pending {
+  background-color: #CE2029;
+}
+
+.language-icon.target-current {
+  background-color:#48C;
+}
+
+.language-icon.target-ready {
+  background-color:#59ad1a;
+}
+
+.language-icon.target-edited {
+  background-color:#999;
+}
+
+.ltk-complete-check {
+    color: green;
+    font-size: 150%;
+}
+
+.ltk-download {
+    color: #59ad1a;
+}
+.ltk-download:hover {
+    color: green;
+}
+
+.ltk-refresh {
+    color: #CE2029;
+}
+.ltk-refresh:hover {
+    color: darkred;
+}
+
+.ltk-muted {
+    color: #666;
+}
+
+.no-localized-title, .no-localized-title a {
+  color: #444;
+  /*font-style: italic;*/
+}
+
+.lingotek-node-actions, .lingotek-language-source i {
+  font-size: 150%;
+  white-space: nowrap;
+}
+.lingotek-node-actions a:hover {
+    text-decoration: none;
+    color: #00348D;
+}
+
+a.ltk-action:hover {
+    text-decoration: none;
+    color: #00348D;
+}
+
+#edit-grid-container i.lingotek-disabled {
+  color: #AAA;
+}
+
+.ltk-upload-button {
+  color: #0074BD;
+  cursor: pointer;
+}
+
+.ltk-upload-button:hover {
+  color: #00348D;
+}
+
+.node-configuration {
+  color: #48C;
+}
+
+#edit-settings-link, #reset-translations-link, #change-workflow-link {
+  display: none;
+}
+
+.lingotek-progress {
+  background-color: #F7F7F7;
+  background-image: linear-gradient(to bottom, #F5F5F5, #F9F9F9);
+  background-repeat: repeat-x;
+  border-radius: 4px 4px 4px 4px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1) inset;
+  height: 20px;
+  overflow: hidden;
+  position: relative;
+}
+
+.lingotek-progress .bar {
+  -moz-box-sizing: border-box;
+  margin: 0;
+  background-color: #0E90D2;
+  background-image: linear-gradient(to bottom, #149BDF, #0480BE);
+  background-repeat: repeat-x;
+  box-shadow: 0 -1px 0 rgba(0, 0, 0, 0.15) inset;
+  color: #FFFFFF;
+  float: left;
+  font-size: 12px;
+  height: 100%;
+  text-align: center;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+  transition: width 0.6s ease 0s;
+  width: 0;
+}
+
+
+.lingotek-progress .percent {
+  position: absolute;
+  width: 100%;
+  text-align: center;
+  color: #333333;
+  font-weight: bold;
+  font-size: 100%;
+  padding-top: 1px;
+}
+
+.bold-row td {
+  background-color: #CCCCCC
+}
+

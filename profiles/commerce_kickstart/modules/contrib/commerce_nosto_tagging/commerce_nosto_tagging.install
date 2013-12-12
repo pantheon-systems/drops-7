@@ -1,0 +1,48 @@
+<?php
+
+/**
+ * @file
+ * Install, update, and uninstall functions for the module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ *
+ * Deletes all config variables created by the module.
+ */
+function commerce_nosto_tagging_uninstall() {
+  $variables = array(
+    'nosto_tagging_server_address',
+    'nosto_tagging_account_name',
+    'nosto_tagging_content_type_category_field_id',
+    'nosto_tagging_content_type_brand_field_id',
+    'nosto_tagging_content_type_product_field_id',
+    'nosto_tagging_vocabulary_category_vid',
+    'nosto_tagging_product_variation_image_field_id',
+    'nosto_tagging_content_type_image_field_id',
+    'nosto_tagging_tag_product_id',
+    'nosto_tagging_tag_category_id',
+    'nosto_tagging_tag_customer_id',
+    'nosto_tagging_tag_order_id',
+    'nosto_tagging_tag_cart_id',
+    'nosto_tagging_element_page_frontpage1_id',
+    'nosto_tagging_element_page_frontpage2_id',
+    'nosto_tagging_element_page_product1_id',
+    'nosto_tagging_element_page_product2_id',
+    'nosto_tagging_element_page_product3_id',
+    'nosto_tagging_element_page_category1_id',
+    'nosto_tagging_element_page_category2_id',
+    'nosto_tagging_element_page_search1_id',
+    'nosto_tagging_element_page_search2_id',
+    'nosto_tagging_element_page_cart1_id',
+    'nosto_tagging_element_page_cart2_id',
+    'nosto_tagging_element_page_cart3_id',
+    'nosto_tagging_element_page_top_id',
+    'nosto_tagging_element_page_footer_id',
+    'nosto_tagging_element_column_left_id',
+    'nosto_tagging_element_column_right_id',
+  );
+  foreach ($variables as $variable) {
+    variable_del($variable);
+  }
+}

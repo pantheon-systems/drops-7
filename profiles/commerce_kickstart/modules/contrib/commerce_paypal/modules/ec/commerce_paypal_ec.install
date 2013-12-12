@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Remove variables required by Commerce PayPal EC.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_paypal_ec_uninstal() {
+  variable_del('commerce_paypal_ec_review_embedded_panes');
+  variable_del('commerce_paypal_ec_banners_settings');
+}

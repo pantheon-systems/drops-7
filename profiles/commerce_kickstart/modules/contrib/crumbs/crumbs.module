@@ -381,7 +381,7 @@ function crumbs_get_plugins() {
       'path',
       'taxonomy',
       'forum',
-      'views',
+      'entityreference_prepopulate',
     );
 
     // Include Crumbs-provided plugins.

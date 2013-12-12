@@ -1,0 +1,1019 @@
+<?php
+
+/**
+ * @file
+ * Implements the required blocks for using Nosto marketing automation service.
+ */
+
+define('COMMERCE_NOSTO_TAGGING_SERVER_ADDRESS', 'connect.nosto.com');
+
+define('COMMERCE_NOSTO_TAGGING_CONFIG_KEY_PREFIX', 'nosto_tagging_');
+define('COMMERCE_NOSTO_TAGGING_CONFIG_KEY_SERVER_ADDRESS', 'nosto_tagging_server_address');
+define('COMMERCE_NOSTO_TAGGING_CONFIG_KEY_ACCOUNT_NAME', 'nosto_tagging_account_name');
+define('COMMERCE_NOSTO_TAGGING_CONFIG_KEY_CATEGORY_FIELD_ID', 'nosto_tagging_content_type_category_field_id');
+define('COMMERCE_NOSTO_TAGGING_CONFIG_KEY_BRAND_FIELD_ID', 'nosto_tagging_content_type_brand_field_id');
+define('COMMERCE_NOSTO_TAGGING_CONFIG_KEY_PRODUCT_FIELD_ID', 'nosto_tagging_content_type_product_field_id');
+define('COMMERCE_NOSTO_TAGGING_CONFIG_KEY_CATEGORY_VOCABULARY_ID', 'nosto_tagging_vocabulary_category_vid');
+define('COMMERCE_NOSTO_TAGGING_CONFIG_KEY_PRODUCT_VARIATION_IMAGE_FIELD_ID', 'nosto_tagging_product_variation_image_field_id');
+define('COMMERCE_NOSTO_TAGGING_CONFIG_KEY_CONTENT_TYPE_IMAGE_FIELD_ID', 'nosto_tagging_content_type_image_field_id');
+
+define('COMMERCE_NOSTO_TAGGING_NOSTO_ELEMENT_ID_PREFIX', 'nosto-');
+define('COMMERCE_NOSTO_TAGGING_BLOCK_ELEMENT_PREFIX', 'element_');
+
+define('COMMERCE_NOSTO_TAGGING_PRODUCT_IN_STOCK', 'InStock');
+define('COMMERCE_NOSTO_TAGGING_PRODUCT_OUT_OF_STOCK', 'OutOfStock');
+
+/**
+ * Implements hook_init().
+ *
+ * Perform setup tasks for non-cached page requests.
+ *
+ * Adds the Nosto embed script.
+ */
+function commerce_nosto_tagging_init() {
+  $server_address = variable_get(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_SERVER_ADDRESS, '');
+  $account_name = variable_get(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_ACCOUNT_NAME, '');
+
+  if (!empty($server_address) && !empty($account_name)) {
+    drupal_add_js(drupal_get_path('module', 'commerce_nosto_tagging') . '/js/embed.js', array(
+      'type' => 'file',
+      'scope' => 'header',
+      'group' => JS_DEFAULT,
+      'every_page' => TRUE,
+    ));
+
+    $js = 'embedjs(\'' . check_plain($server_address) . '\', \'/include/' . check_plain($account_name) . '\');';
+    drupal_add_js($js, array(
+      'type' => 'inline',
+      'scope' => 'header',
+      'group' => JS_DEFAULT,
+      'every_page' => TRUE,
+    ));
+  }
+}
+
+/**
+ * Implements hook_permission().
+ *
+ * Defines permissions for the module.
+ *
+ * Adds a permission entry for the module admin section.
+ */
+function commerce_nosto_tagging_permission() {
+  return array(
+    'administer nosto tagging' => array(
+      'title' => t('Administer Nosto Tagging'),
+      'description' => t('Perform administration tasks for the module.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ *
+ * Adds menu link for the module configuration and top sellers page.
+ */
+function commerce_nosto_tagging_menu() {
+  $items = array();
+  $items['admin/config/services/nostotagging'] = array(
+    'title' => 'Nosto Tagging',
+    'description' => 'Configure Nosto Tagging.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_commerce_nosto_tagging_admin'),
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer nosto tagging'),
+    'file' => 'includes/commerce_nosto_tagging.admin.inc',
+  );
+  $items['top-sellers'] = array(
+    'title' => 'Top Sellers',
+    'page callback' => 'commerce_nosto_tagging_top_sellers_view',
+    'access arguments' => array('access content'),
+    'type' => MENU_SUGGESTED_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Page callback for menu item "top-sellers".
+ *
+ * Renders the required Nosto element to show the top selling products.
+ *
+ * @return array
+ *   The render array for the page.
+ */
+function commerce_nosto_tagging_top_sellers_view() {
+  $page = array();
+  $page['content'] = array(
+    '#theme' => 'nosto_element',
+    '#nosto_id' => 'nosto-page-top-sellers',
+  );
+  return $page;
+}
+
+/**
+ * Implements hook_block_info().
+ *
+ * Defines all tagging- and element-blocks used by Nosto.
+ *
+ * The blocks are not given any default region and needs
+ * to be manually assigned to the correct pages.
+ * Instructions are included in the module README.txt file.
+ */
+function commerce_nosto_tagging_block_info() {
+  $blocks = array();
+
+  $blocks['tag_product'] = array(
+    'info' => t('Nosto Tagging: tag: product'),
+  );
+
+  $blocks['tag_category'] = array(
+    'info' => t('Nosto Tagging: tag: category'),
+  );
+
+  $blocks['tag_customer'] = array(
+    'info' => t('Nosto Tagging: tag: customer'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  $blocks['tag_order'] = array(
+    'info' => t('Nosto Tagging: tag: order'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  $blocks['tag_cart'] = array(
+    'info' => t('Nosto Tagging: tag: cart'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+
+  $blocks['element_page_frontpage1'] = array(
+    'info' => t('Nosto Tagging: element: front page 1'),
+  );
+
+  $blocks['element_page_frontpage2'] = array(
+    'info' => t('Nosto Tagging: element: front page 2'),
+  );
+
+  $blocks['element_page_product1'] = array(
+    'info' => t('Nosto Tagging: element: product page 1'),
+  );
+
+  $blocks['element_page_product2'] = array(
+    'info' => t('Nosto Tagging: element: product page 2'),
+  );
+
+  $blocks['element_page_product3'] = array(
+    'info' => t('Nosto Tagging: element: product page 3'),
+  );
+
+  $blocks['element_page_category1'] = array(
+    'info' => t('Nosto Tagging: element: category page 1'),
+  );
+
+  $blocks['element_page_category2'] = array(
+    'info' => t('Nosto Tagging: element: category page 2'),
+  );
+
+  $blocks['element_page_search1'] = array(
+    'info' => t('Nosto Tagging: element: search page 1'),
+  );
+
+  $blocks['element_page_search2'] = array(
+    'info' => t('Nosto Tagging: element: search page 2'),
+  );
+
+  $blocks['element_page_cart1'] = array(
+    'info' => t('Nosto Tagging: element: cart page 1'),
+  );
+
+  $blocks['element_page_cart2'] = array(
+    'info' => t('Nosto Tagging: element: cart page 2'),
+  );
+
+  $blocks['element_page_cart3'] = array(
+    'info' => t('Nosto Tagging: element: cart page 3'),
+  );
+
+  $blocks['element_page_top'] = array(
+    'info' => t('Nosto Tagging: element: page top'),
+  );
+
+  $blocks['element_page_footer'] = array(
+    'info' => t('Nosto Tagging: element: page footer'),
+  );
+
+  $blocks['element_column_left'] = array(
+    'info' => t('Nosto Tagging: element: left column'),
+  );
+
+  $blocks['element_column_right'] = array(
+    'info' => t('Nosto Tagging: element: right column'),
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * Render logic for blocks in this module.
+ */
+function commerce_nosto_tagging_block_view($delta = '') {
+  $block = array();
+
+  switch ($delta) {
+    // Product tagging block.
+    case 'tag_product':
+      $block['content'] = array(
+        '#theme' => 'nosto_product',
+      );
+      break;
+
+    // Category tagging block.
+    case 'tag_category':
+      $block['content'] = array(
+        '#theme' => 'nosto_category',
+      );
+      break;
+
+    // Customer tagging block.
+    case 'tag_customer':
+      global $user;
+      // Only logged in users.
+      if ((bool) $user->uid) {
+        $block['content'] = array(
+          '#theme' => 'nosto_customer',
+          '#user' => $user,
+        );
+      }
+      break;
+
+    // Order tagging block.
+    case 'tag_order':
+      $block['content'] = array(
+        '#theme' => 'nosto_order',
+      );
+      break;
+
+    // Cart tagging block.
+    case 'tag_cart':
+      $block['content'] = array(
+        '#theme' => 'nosto_cart',
+      );
+      break;
+
+    // All "Nosto Element" blocks.
+    default:
+      $block['content'] = array(
+        '#theme' => 'nosto_element',
+        '#nosto_id' => _commerce_nosto_tagging_get_nosto_element_id($delta),
+      );
+      break;
+  }
+
+  return $block;
+}
+
+/**
+ * Implements hook_theme().
+ *
+ * Register theme implementations for this modules blocks.
+ */
+function commerce_nosto_tagging_theme($existing, $type, $theme, $path) {
+  $theme_path = drupal_get_path('module', 'commerce_nosto_tagging') . '/theme';
+
+  return array(
+    'nosto_element' => array(
+      'variables' => array(
+        'nosto_id' => NULL,
+      ),
+      'template' => 'block--commerce_nosto_tagging-nosto-element',
+      'path' => $theme_path,
+    ),
+    'nosto_customer' => array(
+      'variables' => array(
+        'user' => NULL,
+      ),
+      'template' => 'block--commerce_nosto_tagging-nosto-customer',
+      'path' => $theme_path,
+    ),
+    'nosto_cart' => array(
+      'variables' => array(
+        'nosto_line_items' => NULL,
+      ),
+      'template' => 'block--commerce_nosto_tagging-nosto-cart',
+      'path' => $theme_path,
+    ),
+    'nosto_order' => array(
+      'variables' => array(
+        'nosto_order' => NULL,
+      ),
+      'template' => 'block--commerce_nosto_tagging-nosto-order',
+      'path' => $theme_path,
+    ),
+    'nosto_category' => array(
+      'variables' => array(
+        'category' => NULL,
+      ),
+      'template' => 'block--commerce_nosto_tagging-nosto-category',
+      'path' => $theme_path,
+    ),
+    'nosto_product' => array(
+      'variables' => array(
+        'nosto_product' => NULL,
+      ),
+      'template' => 'block--commerce_nosto_tagging-nosto-product',
+      'path' => $theme_path,
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_configure().
+ *
+ * Adds the "Nosto ID" config field to all "Nosto Element"
+ * blocks in this module.
+ */
+function commerce_nosto_tagging_block_configure($delta = '') {
+  $form = array();
+
+  if (_commerce_nosto_tagging_is_nosto_element_block($delta)) {
+    $form['nosto_id'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Nosto ID'),
+      '#description' => t('Override the default ID for the block. It is used as the identifier when configuring the Nosto marketing automation service.'),
+      '#default_value' => _commerce_nosto_tagging_get_nosto_element_id($delta),
+      '#element_validate' => array('_commerce_nosto_tagging_block_validate'),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Validates the custom "node_id" parameter from the block configure form.
+ *
+ * Must begin with a letter (a-z), and may be followed by any number of
+ * letters (a-z), digits (0-9), hyphens ('-'), underscores ('_'),
+ * colons (':'), and periods ('.').
+ *
+ * @param array $element
+ *   The element to validate.
+ */
+function _commerce_nosto_tagging_block_validate($element) {
+  if (isset($element['#value'])) {
+    if (!preg_match('@^[A-Za-z][A-Za-z0-9-_:.]+$@', $element['#value'])) {
+      form_set_error('nosto_id', t('Invalid Nosto ID. Must begin with a letter (a-z), and may be followed by any number of letters (a-z), digits (0-9), hyphens ("-"), underscores ("_"), colons (":"), and periods (".").'));
+    }
+  }
+}
+
+/**
+ * Implements hook_block_save().
+ *
+ * Saves the additional "nosto_id" value for the
+ * "Nosto Element" blocks.
+ */
+function commerce_nosto_tagging_block_save($delta = '', $edit = array()) {
+  if (isset($edit['nosto_id']) && !empty($delta)) {
+    variable_set(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_PREFIX . $delta . '_id', $edit['nosto_id']);
+  }
+}
+
+/**
+ * Currency formatter for prices used in Nosto tagging data.
+ *
+ * @param int $amount
+ *   The amount to format.
+ * @param string $currency_code
+ *   The currency code.
+ *
+ * @return string
+ *   The formatted price string.
+ */
+function commerce_nosto_tagging_currency_format($amount, $currency_code) {
+  $amount = commerce_currency_amount_to_decimal($amount, $currency_code);
+  $currency = commerce_currency_load($currency_code);
+  return number_format(commerce_currency_round($amount, $currency), 2, '.', '');
+}
+
+/**
+ * Date formatter for date strings used in Nosto tagging data.
+ *
+ * Output format is "Y-m-d".
+ *
+ * @param string $timestamp
+ *   The timestamp to format.
+ *
+ * @return string
+ *   The formatted date.
+ */
+function commerce_nosto_tagging_date_format($timestamp) {
+  // If the time stamp is not all digits.
+  if (!ctype_digit((string) $timestamp)) {
+    // Then we probably want to convert it,
+    // as it is most likely not a time stamp at all.
+    $timestamp = strtotime($timestamp);
+  }
+  return date('Y-m-d', $timestamp);
+}
+
+/**
+ * Checks if the block delta is for a "Nosto Element" block.
+ *
+ * The delta needs to start with "element_" in order to be a
+ * valid "Nosto Element".
+ *
+ * @param string $delta
+ *   The block delta string.
+ *
+ * @return bool
+ *   If it is valid.
+ */
+function _commerce_nosto_tagging_is_nosto_element_block($delta = '') {
+  $length = strlen(COMMERCE_NOSTO_TAGGING_BLOCK_ELEMENT_PREFIX);
+  return substr($delta, 0, $length) === COMMERCE_NOSTO_TAGGING_BLOCK_ELEMENT_PREFIX;
+}
+
+/**
+ * Builds an id string for a "Nosto Element".
+ *
+ * The id is extracted from the block delta if none is
+ * already stored in the database.
+ *
+ * @param string $delta
+ *   The block delta string.
+ *
+ * @return string
+ *   The built id string.
+ */
+function _commerce_nosto_tagging_get_nosto_element_id($delta = '') {
+  // First build a default id.
+  // Prefix the id.
+  $default_id = COMMERCE_NOSTO_TAGGING_NOSTO_ELEMENT_ID_PREFIX;
+  // Append everything after block element prefix.
+  $length = strlen(COMMERCE_NOSTO_TAGGING_BLOCK_ELEMENT_PREFIX);
+  $default_id .= substr($delta, $length);
+  // And replace all underscores with hyphens.
+  $default_id = str_replace('_', '-', $default_id);
+  // Then get any stored value and use the default as fallback.
+  return variable_get(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_PREFIX . $delta . '_id', $default_id);
+}
+
+/**
+ * Preprocessor for the nosto_cart tagging block template.
+ *
+ * Builds a list on line item objects from the shopping cart
+ * and includes the list in the template variables.
+ *
+ * @param array $variables
+ *   The variables passed to the template.
+ */
+function commerce_nosto_tagging_preprocess_nosto_cart(&$variables) {
+  $user = isset($variables['user']) ? $variables['user'] : FALSE;
+
+  if (is_object($user)) {
+    $order = commerce_cart_order_load($user->uid);
+
+    if ($order) {
+      $order_status_blacklist = array(
+        'canceled',
+        'checkout_complete',
+        'pending',
+        'processing',
+        'completed',
+      );
+
+      $is_valid_order_status = !in_array($order->status, $order_status_blacklist);
+
+      if ($is_valid_order_status) {
+        $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+        $items = $order_wrapper->commerce_line_items;
+        $nosto_line_items = array();
+
+        foreach ($items as $item) {
+          if (_commerce_nosto_tagging_validate_line_item_wrapper($item, 'product')) {
+            $commerce_unit_price = $item->commerce_unit_price->value();
+            $entity = _commerce_nosto_tagging_get_line_item_context_entity($item->value());
+
+            if ($entity) {
+              $nosto_line_item = new stdClass();
+              $nosto_line_item->title = $entity->title;
+              $nosto_line_item->product_id = $entity->nid;
+              $nosto_line_item->quantity = $item->quantity->value();
+              $nosto_line_item->unit_price = commerce_nosto_tagging_currency_format(
+                $commerce_unit_price['amount'],
+                $commerce_unit_price['currency_code']
+              );
+              $nosto_line_item->currency_code = $commerce_unit_price['currency_code'];
+              $nosto_line_items[] = $nosto_line_item;
+            }
+          }
+        }
+
+        if (!empty($nosto_line_items)) {
+          $variables['nosto_line_items'] = $nosto_line_items;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Preprocessor for the nosto_product tagging block template.
+ *
+ * Gathers all data for the product currently being viewed and
+ * includes the data object in the template variables.
+ *
+ * @param array $variables
+ *   The variables passed to the template.
+ */
+function commerce_nosto_tagging_preprocess_nosto_product(&$variables) {
+  $node = menu_get_object();
+  if ($node) {
+    $field_id = (int) variable_get(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_PRODUCT_FIELD_ID, 0);
+    $field_name = _commerce_nosto_tagging_get_field_name_by_id($field_id);
+    if (!empty($field_name)) {
+      $node_wrapper = entity_metadata_wrapper('node', $node);
+      if (isset($node_wrapper->$field_name)) {
+        $commerce_product = $node_wrapper->$field_name->value();
+        if (is_array($commerce_product)) {
+          $commerce_product = reset($commerce_product);
+        }
+        if (is_object($commerce_product) && isset($commerce_product->product_id)) {
+          $commerce_price = commerce_product_calculate_sell_price($commerce_product);
+
+          $nosto_product = new stdClass();
+          $nosto_product->page_url = url('node/' . $node->nid, array('absolute' => TRUE));
+          $nosto_product->product_id = $node->nid;
+          $nosto_product->name = $node->title;
+          $nosto_product->image_url = _commerce_nosto_tagging_get_commerce_product_image_url($commerce_product);
+          $nosto_product->price = commerce_nosto_tagging_currency_format(
+            $commerce_price['amount'],
+            $commerce_price['currency_code']
+          );
+          $nosto_product->price_currency_code = $commerce_price['currency_code'];
+          $nosto_product->availability = _commerce_nosto_tagging_get_commerce_product_availability($commerce_product);
+          $nosto_product->categories = _commerce_nosto_tagging_get_commerce_product_categories($commerce_product);
+          $nosto_product->description = $node_wrapper->body->value->value();
+          $nosto_product->list_price = commerce_nosto_tagging_currency_format(
+            _commerce_nosto_tagging_get_commerce_product_list_price($commerce_price),
+            $commerce_price['currency_code']
+          );
+          $nosto_product->brand = _commerce_nosto_tagging_get_commerce_product_brand($commerce_product);
+          $nosto_product->date_published = commerce_nosto_tagging_date_format($commerce_product->created);
+
+          $variables['nosto_product'] = $nosto_product;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Preprocessor for the nosto_category tagging block template.
+ *
+ * Gathers all data for the category currently being viewed and
+ * includes the data in the template variables.
+ *
+ * @param array $variables
+ *   The variables passed to the template.
+ */
+function commerce_nosto_tagging_preprocess_nosto_category(&$variables) {
+  $vid = (int) variable_get(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_CATEGORY_VOCABULARY_ID, 0);
+  $vocabulary = taxonomy_vocabulary_load($vid);
+  if ($vocabulary) {
+    $taxonomy_term = _commerce_nosto_tagging_get_current_taxonomy_term();
+    if ($taxonomy_term && (int) $taxonomy_term->vid === (int) $vocabulary->vid) {
+      $category = _commerce_nosto_tagging_build_category_string($taxonomy_term);
+      if (!empty($category)) {
+        $variables['category'] = $category;
+      }
+    }
+  }
+}
+
+/**
+ * Preprocessor for the nosto_order tagging block template.
+ *
+ * Gathers all data for the completed order and includes the data
+ * in the template variables.
+ *
+ * @param array $variables
+ *   The variables passed to the template.
+ *
+ * @see commerce_nosto_tagging_commerce_checkout_complete()
+ */
+function commerce_nosto_tagging_preprocess_nosto_order(&$variables) {
+  // The completed order id should be stored in the user session.
+  // It is put there in hook_commerce_checkout_complete().
+  if (isset($_SESSION['commerce_nosto_tagging']['completed_order_id'])) {
+    $order_id = $_SESSION['commerce_nosto_tagging']['completed_order_id'];
+    $order = commerce_order_load($order_id);
+
+    if ($order) {
+      global $user;
+
+      $order_status_blacklist = array(
+        'canceled',
+        'cart',
+        'checkout_checkout',
+        'checkout_review',
+        'checkout_payment',
+      );
+
+      $is_valid_order_status = !in_array($order->status, $order_status_blacklist);
+
+      if ($user && $order->uid === $user->uid && $is_valid_order_status) {
+        $nosto_order = new stdClass();
+        $nosto_order->order_number = $order->order_number;
+        $nosto_order->user = $user;
+        $nosto_order->purchased_items = array();
+
+        $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+        $items = $order_wrapper->commerce_line_items;
+
+        foreach ($items as $item) {
+          if (_commerce_nosto_tagging_validate_line_item_wrapper($item)) {
+            if ($item->type->value() === 'product') {
+              $commerce_unit_price = $item->commerce_unit_price->value();
+              $entity = _commerce_nosto_tagging_get_line_item_context_entity($item->value());
+              if ($entity) {
+                $nosto_order->purchased_items[] = (object) array(
+                  'product_id' => $entity->nid,
+                  'quantity' => $item->quantity->value(),
+                  'name' => $entity->title,
+                  'unit_price' => commerce_nosto_tagging_currency_format(
+                    $commerce_unit_price['amount'],
+                    $commerce_unit_price['currency_code']
+                  ),
+                  'price_currency_code' => $commerce_unit_price['currency_code'],
+                );
+              }
+            }
+            /* Disabled for now.
+            else {
+            // Other possible line items; usually shipping and discounts.
+            $commerce_unit_price = $item->commerce_unit_price->value();
+            $nosto_order->purchased_items[] = (object) array(
+            'product_id' => -1,
+            'quantity' => $item->quantity->value(),
+            'name' => $item->line_item_label->value(),
+            'unit_price' => commerce_nosto_tagging_currency_format(
+            $commerce_unit_price['amount'],
+            $commerce_unit_price['currency_code']
+            ),
+            'price_currency_code' => $commerce_unit_price['currency_code'],
+            );
+            }
+            */
+          }
+        }
+
+        if (!empty($nosto_order->purchased_items)) {
+          $variables['nosto_order'] = $nosto_order;
+        }
+      }
+    }
+
+    unset($_SESSION['commerce_nosto_tagging']['completed_order_id']);
+  }
+}
+
+/**
+ * Implements hook_commerce_checkout_complete().
+ *
+ * We need to store the completed order id to the users
+ * session, in order to tag the order in our block that
+ * should be shown on the checkout complete page.
+ *
+ * @see commerce_nosto_tagging_preprocess_nosto_order()
+ */
+function commerce_nosto_tagging_commerce_checkout_complete($order) {
+  if (is_object($order)) {
+    global $user;
+
+    if ($user && $user->uid === $order->uid) {
+      $_SESSION['commerce_nosto_tagging']['completed_order_id'] = $order->order_id;
+    }
+  }
+}
+
+/**
+ * Validates line item wrapper instance data integrity.
+ *
+ * @param object $line_item_wrapper
+ *   The line item wrapper instance.
+ *
+ * @param array|string $valid_types
+ *   List of valid wrapper types or a type string.
+ *
+ * @return bool
+ *   Returns true if everything is ok, otherwise false.
+ */
+function _commerce_nosto_tagging_validate_line_item_wrapper($line_item_wrapper, $valid_types = array()) {
+  if (!is_object($line_item_wrapper) || !isset($line_item_wrapper->type)) {
+    return FALSE;
+  }
+
+  $type = $line_item_wrapper->type->value();
+
+  if (!is_array($valid_types)) {
+    $valid_types = array($valid_types);
+  }
+
+  if (!empty($valid_types) && !in_array($type, $valid_types)) {
+    return FALSE;
+  }
+
+  $has_price = isset($line_item_wrapper->commerce_unit_price);
+  $has_quantity = isset($line_item_wrapper->quantity);
+  $has_product = isset($line_item_wrapper->commerce_product);
+
+  if (!$has_price || !$has_quantity || ($type === 'product' && !$has_product)) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * Getter for the "currently viewed" taxonomy term.
+ *
+ * First check if the term object can be found through the
+ * current menu router ("taxonomy/term/%"). If not found, then
+ * check if the term id can be found as a view argument (Views module)
+ * through the current menu router ("views_arg").
+ *
+ * @return object|bool
+ *   The taxonomy term object or false.
+ */
+function _commerce_nosto_tagging_get_current_taxonomy_term() {
+  $taxonomy_term = menu_get_object('taxonomy_term', 2);
+  if (empty($taxonomy_term)) {
+    $taxonomy_term_id = menu_get_object('views_arg');
+    if (!empty($taxonomy_term_id) && ctype_digit($taxonomy_term_id)) {
+      $taxonomy_term = taxonomy_term_load($taxonomy_term_id);
+    }
+  }
+  return !empty($taxonomy_term) ? $taxonomy_term : FALSE;
+}
+
+/**
+ * Gets the entity object for a line item.
+ *
+ * @param object $line_item
+ *   The line item object for which to get the entity.
+ *
+ * @return bool|object
+ *   The entity object or FALSE if not found.
+ *
+ * @see commerce_nosto_tagging_preprocess_nosto_cart()
+ */
+function _commerce_nosto_tagging_get_line_item_context_entity($line_item) {
+  if (isset($line_item->data['context']['entity'])) {
+    $entity_data = $line_item->data['context']['entity'];
+    return entity_load_single($entity_data['entity_type'], $entity_data['entity_id']);
+  }
+
+  return FALSE;
+}
+
+/**
+ * Gets a product image url.
+ *
+ * If there are many images present, then the first one is used.
+ *
+ * @param object $commerce_product
+ *   The product object for which to get the image url.
+ *
+ * @return string
+ *   The product image url.
+ *
+ * @see commerce_nosto_tagging_preprocess_nosto_product()
+ */
+function _commerce_nosto_tagging_get_commerce_product_image_url($commerce_product) {
+  $image_url = '';
+
+  $field_id = (int) variable_get(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_PRODUCT_VARIATION_IMAGE_FIELD_ID, 0);
+  if ($field_id > 0) {
+    $entity_type = 'commerce_product';
+    $entity = $commerce_product;
+  }
+  else {
+    $field_id = (int) variable_get(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_CONTENT_TYPE_IMAGE_FIELD_ID, 0);
+    $entity_type = 'node';
+    $entity = isset($commerce_product->display_context['entity']) ? $commerce_product->display_context['entity'] : NULL;
+  }
+
+  $field_name = _commerce_nosto_tagging_get_field_name_by_id($field_id);
+  if (!empty($field_name) && !empty($entity)) {
+    // Use "field_get_items" instead of the "entity_metadata_wrapper" to
+    // get the image field data, as the result set from the wrapper is
+    // sometimes empty.
+    $field_items = field_get_items($entity_type, $entity, $field_name);
+    // Take the first image if there are many.
+    if (is_array($field_items) && isset($field_items[0]['uri'])) {
+      $image_url = file_create_url($field_items[0]['uri']);
+    }
+  }
+
+  return $image_url;
+}
+
+/**
+ * Gets the availability of a product.
+ *
+ * The availability is based on the commerce_stock module.
+ * If it does not exist, then the product is always in stock.
+ *
+ * @param object $commerce_product
+ *   The commerce_product object.
+ *
+ * @return string
+ *   The availability value from constant.
+ *
+ * @see commerce_nosto_tagging_preprocess_nosto_product()
+ */
+function _commerce_nosto_tagging_get_commerce_product_availability($commerce_product) {
+  if (module_exists('commerce_stock') && isset($commerce_product->commerce_stock)) {
+    $remaining_stock = 0;
+    $out_of_stock = commerce_stock_product_check_out_of_stock($commerce_product->product_id, 1, $remaining_stock);
+    if ($out_of_stock) {
+      return COMMERCE_NOSTO_TAGGING_PRODUCT_OUT_OF_STOCK;
+    }
+  }
+
+  return COMMERCE_NOSTO_TAGGING_PRODUCT_IN_STOCK;
+}
+
+/**
+ * Gets a list of categories the product belongs to.
+ *
+ * The items in the list are formatted to include the
+ * complete path for each taxonomy term.
+ *
+ * @param object $commerce_product
+ *   The commerce_product object.
+ *
+ * @return array
+ *   List of formatted category strings the product belongs to.
+ *
+ * @see commerce_nosto_tagging_preprocess_nosto_product()
+ */
+function _commerce_nosto_tagging_get_commerce_product_categories($commerce_product) {
+  $categories = array();
+
+  $field_id = (int) variable_get(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_CATEGORY_FIELD_ID, 0);
+
+  if ($field_id > 0 && isset($commerce_product->display_context['entity'])) {
+    $field_name = _commerce_nosto_tagging_get_field_name_by_id($field_id);
+    if (!empty($field_name)) {
+      $entity = $commerce_product->display_context['entity'];
+      $entity_wrapper = entity_metadata_wrapper('node', $entity);
+      if (isset($entity_wrapper->$field_name)) {
+        $taxonomy_term_list = $entity_wrapper->$field_name->value();
+        if (!is_array($taxonomy_term_list)) {
+          $taxonomy_term_list = array($taxonomy_term_list);
+        }
+        foreach ($taxonomy_term_list as $taxonomy_term) {
+          if (is_object($taxonomy_term)) {
+            $categories[] = _commerce_nosto_tagging_build_category_string($taxonomy_term);
+          }
+        }
+      }
+    }
+  }
+
+  return $categories;
+}
+
+/**
+ * Gets the brand name the product belongs to.
+ *
+ * The brand is a taxonomy term found in the product's
+ * display context.
+ *
+ * @param object $commerce_product
+ *   The commerce_product object.
+ *
+ * @return string
+ *   The brand name, or empty string.
+ *
+ * @see commerce_nosto_tagging_preprocess_nosto_product()
+ */
+function _commerce_nosto_tagging_get_commerce_product_brand($commerce_product) {
+  $field_id = (int) variable_get(COMMERCE_NOSTO_TAGGING_CONFIG_KEY_BRAND_FIELD_ID, 0);
+
+  if ($field_id > 0 && isset($commerce_product->display_context['entity'])) {
+    $field_name = _commerce_nosto_tagging_get_field_name_by_id($field_id);
+    if (!empty($field_name)) {
+      $entity = $commerce_product->display_context['entity'];
+      $entity_wrapper = entity_metadata_wrapper('node', $entity);
+
+      if (isset($entity_wrapper->$field_name)) {
+        $taxonomy_term = $entity_wrapper->$field_name->value();
+        if (is_array($taxonomy_term)) {
+          $taxonomy_term = reset($taxonomy_term);
+        }
+        if (is_object($taxonomy_term)) {
+          return $taxonomy_term->name;
+        }
+      }
+    }
+  }
+
+  return '';
+}
+
+/**
+ * Gets the list price for a commerce_product.
+ *
+ * The list price includes the product base price and
+ * tax if exists. The returned price is converted to
+ * the same currency as the final price.
+ *
+ * @param array $commerce_price
+ *   The commerce_price array structure.
+ *
+ * @return float
+ *   The calculated list price.
+ *
+ * @see commerce_nosto_tagging_preprocess_nosto_product()
+ */
+function _commerce_nosto_tagging_get_commerce_product_list_price($commerce_price) {
+  $list_price = 0;
+
+  if (isset($commerce_price['currency_code']) && isset($commerce_price['data']['components'])) {
+    foreach ($commerce_price['data']['components'] as $component) {
+      if (isset($component['name'])) {
+        $is_base_price_component = $component['name'] === 'base_price';
+        $is_tax_component = substr($component['name'], 0, 4) === 'tax|';
+        if ($is_base_price_component || $is_tax_component) {
+          $list_price += commerce_currency_convert(
+            $component['price']['amount'],
+            $component['price']['currency_code'],
+            $commerce_price['currency_code']
+          );
+        }
+      }
+    }
+  }
+
+  return $list_price;
+}
+
+/**
+ * Builds a category string for tagging blocks.
+ *
+ * The category string is the complete path of taxonomy
+ * terms up to the given term.
+ *
+ * All terms are separated with a directory separator and the
+ * string also starts with one.
+ *
+ * @param object $taxonomy_term
+ *   The taxonomy term object to build the category string from.
+ *
+ * @return string
+ *   The formatted category string string.
+ */
+function _commerce_nosto_tagging_build_category_string($taxonomy_term) {
+  $data = array();
+
+  if (isset($taxonomy_term->tid)) {
+    $parent_taxonomy_terms = taxonomy_get_parents($taxonomy_term->tid);
+    foreach ($parent_taxonomy_terms as $parent_taxonomy_term) {
+      $data[] = $parent_taxonomy_term->name;
+    }
+    $data[] = $taxonomy_term->name;
+  }
+
+  if (!empty($data)) {
+    return DIRECTORY_SEPARATOR . implode(DIRECTORY_SEPARATOR, $data);
+  }
+  else {
+    return '';
+  }
+}
+
+/**
+ * Gets a field name based on its id.
+ *
+ * @param int $field_id
+ *   The filed id to get the name for.
+ *
+ * @return string
+ *   The field name or empty string.
+ */
+function _commerce_nosto_tagging_get_field_name_by_id($field_id) {
+  $field_name = '';
+
+  if ($field_id > 0) {
+    $field_info = field_info_field_by_id($field_id);
+    if (isset($field_info['field_name'])) {
+      $field_name = $field_info['field_name'];
+    }
+  }
+
+  return $field_name;
+}
