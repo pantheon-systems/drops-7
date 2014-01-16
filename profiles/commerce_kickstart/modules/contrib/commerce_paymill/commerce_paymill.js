@@ -46,7 +46,7 @@
         exp_month: expMonth,
         exp_year: expYear,
         cvc: securityCode,
-        cardholdername: cardHolderName,
+        cardholder: cardHolderName,
         amount: orderAmount,
         currency: orderCurrency
       },

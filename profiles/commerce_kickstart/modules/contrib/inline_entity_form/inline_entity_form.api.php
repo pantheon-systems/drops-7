@@ -35,6 +35,28 @@ function hook_inline_entity_form_reference_form_alter(&$reference_form, &$form_s
 }
 
 /**
+ * Perform alterations to the IEF field type settings.
+ *
+ * This allows modules to enable IEF to work on custom field types.
+ *
+ * @param $settings
+ *   An array with the following keys:
+ *   - entity_type - The entity_type being managed.
+ *   - bundles - Bundles of entities that the user is allowed to create.
+ *   - column - The name of the ref. field column that stores the entity id.
+ * @param $field
+ *   The field array of the reference field.
+ * @param $instance
+ *   The instance array of the reference field.
+ */
+function hook_inline_entity_form_settings_alter(&$settings, $field, $instance) {
+  if ($field['type'] == 'mycustom_reference') {
+    $settings['entity_type'] = 'mycustom';
+    $settings['column'] = 'mycustom_id';
+  }
+}
+
+/**
  * Alter the fields used to represent an entity in the IEF table.
  *
  * The fields can be either Field API fields or properties defined through

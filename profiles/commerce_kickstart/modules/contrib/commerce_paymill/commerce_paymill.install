@@ -57,7 +57,13 @@ function commerce_paymill_requirements($phase) {
       'description' => $t("You must install <a href='!cof_url'>Commerce Card on File 2.x</a> to use the Card on File functionality.", array('!cof_url' => COMMERCE_PAYMILL_CARDONFILE_URI)),
     );
   }
-  elseif (!commerce_paymill_has_cardonfile()) {
+  elseif (!function_exists('commerce_cardonfile_commerce_checkout_form_submit')) {
+    // This function exists only in the 2.x branch of Commerce Card on File and
+    // we need to ensure that if Card on File is used, it's not the outdated
+    // version that is installed.
+    // commerce_paymill_has_cardonfile() is a wrapper function to do this check,
+    // but it can't be used here, since the .module file is only included after
+    // the hook_requirements() are satisfied in the install phase.
     $requirements['commerce_paymill_cardonfile'] += array(
       'severity' => REQUIREMENT_WARNING,
       'value' => $t('Version Incompatibility'),

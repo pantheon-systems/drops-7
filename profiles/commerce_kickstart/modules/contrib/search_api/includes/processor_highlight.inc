@@ -150,8 +150,8 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
   /**
    * Retrieves the fulltext data of a result.
    *
-   * @param array $result
-   *   All results returned in the search.
+   * @param array $results
+   *   All results returned in the search, by reference.
    * @param int|string $i
    *   The index in the results array of the result whose data should be
    *   returned.
@@ -166,10 +166,10 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
   protected function getFulltextFields(array &$results, $i, $load = TRUE) {
     global $language;
     $data = array();
-    // Act as if $load is TRUE if we have a loaded item.
-    $load |= !empty($result['entity']);
 
     $result = &$results[$i];
+    // Act as if $load is TRUE if we have a loaded item.
+    $load |= !empty($result['entity']);
     $result += array('fields' => array());
     $fulltext_fields = $this->index->getFulltextFields();
     // We only need detailed fields data if $load is TRUE.
@@ -294,7 +294,6 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
     // If the sum of all fragments is too short, we look for second occurrences.
     $ranges = array();
     $included = array();
-    $foundkeys = array();
     $length = 0;
     $workkeys = $keys;
     while ($length < $this->options['excerpt_length'] && count($workkeys)) {
@@ -396,8 +395,9 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
    */
   protected function highlightField($text, array $keys) {
     $replace = $this->options['prefix'] . '\0' . $this->options['suffix'];
-    $text = preg_replace('/' . self::$boundary . '(' . implode('|', $keys) . ')' . self::$boundary . '/iu', $replace, ' ' . $text);
-    return substr($text, 1);
+    $keys = implode('|', array_map('preg_quote', $keys));
+    $text = preg_replace('/' . self::$boundary . '(' . $keys . ')' . self::$boundary . '/iu', $replace, ' ' . $text . ' ');
+    return substr($text, 1, -1);
   }
 
 }

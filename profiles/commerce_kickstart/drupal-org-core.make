@@ -1,6 +1,6 @@
 api = 2
 core = 7.x
-projects[drupal][version] = 7.24
+projects[drupal][version] = 7.26
 
 ; Patches for Core
 projects[drupal][patch][] = "http://drupal.org/files/issues/install-redirect-on-empty-database-728702-36.patch"

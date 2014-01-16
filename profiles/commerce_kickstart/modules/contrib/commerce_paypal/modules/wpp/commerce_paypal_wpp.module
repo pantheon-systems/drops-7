@@ -67,6 +67,7 @@ function commerce_paypal_wpp_commerce_payment_method_info() {
     'short_title' => t('PayPal WPP'),
     'display_title' => t('Credit card'),
     'description' => t('PayPal Website Payments Pro'),
+    'buttonsource' => 'CommerceGuys_Cart_PPP',
   );
 
   return $payment_methods;
@@ -313,6 +314,7 @@ function commerce_paypal_wpp_submit_form_submit($payment_method, $pane_form, $pa
     'METHOD' => 'DoDirectPayment',
     'PAYMENTACTION' => commerce_paypal_payment_action($payment_method['settings']['txn_type']),
     'NOTIFYURL' => commerce_paypal_ipn_url($payment_method['instance_id']),
+    'BUTTONSOURCE' => $payment_method['buttonsource'],
 
     'CREDITCARDTYPE' => commerce_paypal_wpp_card_type($pane_values['credit_card']['type']),
     'ACCT' => $pane_values['credit_card']['number'],

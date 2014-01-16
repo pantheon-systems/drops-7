@@ -1,0 +1,29 @@
+<?php
+/**
+ * @file
+ * Unit tests for the commerce checkout by amazon module.
+ */
+
+class CommerceCbaEnableDisableTestCase extends DrupalWebTestCase {
+  protected $module = 'commerce_cba';
+  protected $dependent_modules = array('commerce', 'commerce_cart', 'commerce_checkout', 'commerce_product', 'commerce_customer', 'commerce_line_item',
+    'commerce_order', 'commerce_payment', 'commerce_price', 'commerce_product_reference', 'commerce_ui', 'commerce_product_ui', 'addressfield', 'entity',
+    'rules', 'ctools', 'views');
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Enable/disable commerce checkout by amazon',
+      'description' => 'Enable/disable commerce checkout by amazon.',
+      'group' => 'Commerce cba',
+    );
+  }
+
+  /**
+   * setUp() performs any pre-requisite tasks that need to happen.
+   */
+  function setUp() {
+    $modules = array_merge($this->dependent_modules, array($this->module));
+    parent::setUp($modules);
+  }
+
+}

@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Contains SearchApiProcessorInterface and SearchApiAbstractProcessor.
+ */
+
+/**
  * Interface representing a Search API pre- and/or post-processor.
  *
  * While processors are enabled or disabled for both pre- and postprocessing at
@@ -27,7 +32,7 @@ interface SearchApiProcessorInterface {
   /**
    * Check whether this processor is applicable for a certain index.
    *
-   * This can be used for hiding the processor on the index's "Workflow" tab. To
+   * This can be used for hiding the processor on the index's "Filters" tab. To
    * avoid confusion, you should only use criteria that are immutable, such as
    * the index's item type. Also, since this is only used for UI purposes, you
    * should not completely rely on this to ensure certain index configurations

@@ -7,6 +7,19 @@
 
 class CommerceProductInlineEntityFormController extends EntityInlineEntityFormController {
 
+  public function __construct($entityType, array $settings) {
+    $this->entityType = $entityType;
+    $this->settings = $settings + $this->defaultSettings();
+
+    // Convert the old product-specific variation language setting.
+    if (!empty($settings['use_variation_language']) && empty($settings['override_labels'])) {
+      $this->settings['override_labels'] = TRUE;
+      $this->settings['label_singular'] = 'variation';
+      $this->settings['label_plural'] = 'variations';
+      unset($this->settings['use_variation_language']);
+    }
+  }
+
   /**
    * Overrides EntityInlineEntityFormController::css().
    */
@@ -14,23 +27,6 @@ class CommerceProductInlineEntityFormController extends EntityInlineEntityFormCo
     return array(
       'base' => drupal_get_path('module', 'inline_entity_form') . '/theme/commerce-product.css',
     );
-  }
-
-  /**
-   * Overrides EntityInlineEntityFormController::labels().
-   */
-  public function labels() {
-    $labels = parent::labels();
-
-    // Override the strings.
-    if ($this->settings['use_variation_language']) {
-      $labels = array(
-        'singular' => t('variation'),
-        'plural' => t('variations'),
-      );
-    }
-
-    return $labels;
   }
 
   /**
@@ -120,8 +116,7 @@ class CommerceProductInlineEntityFormController extends EntityInlineEntityFormCo
    */
   public function defaultSettings() {
     $defaults = parent::defaultSettings();
-    $defaults['autogenerate_title'] = TRUE;
-    $defaults['use_variation_language'] = FALSE;
+    $defaults['autogenerate_title'] = FALSE;
 
     return $defaults;
   }
@@ -137,11 +132,6 @@ class CommerceProductInlineEntityFormController extends EntityInlineEntityFormCo
       '#title' => t('Auto generate the product title'),
       '#description' => t('This will hide the title input field and generate the title by appending any available attributes to the @entity title.', array('@entity' => $instance['entity_type'])),
       '#default_value' => $this->settings['autogenerate_title'],
-    );
-    $form['use_variation_language'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Refer to the referenced products as "variations"'),
-      '#default_value' => $this->settings['use_variation_language'],
     );
 
     return $form;
@@ -179,7 +169,7 @@ class CommerceProductInlineEntityFormController extends EntityInlineEntityFormCo
       '#title' => t('SKU'),
       '#description' => t('Supply a unique identifier using letters, numbers, hyphens, and underscores. Commas may not be used.'),
       '#default_value' => $product->sku,
-      '#maxlength' => 128,
+      '#maxlength' => 255,
       '#required' => TRUE,
       '#fieldset' => 'product_details',
       '#weight' => $extra_fields['sku']['weight'],
@@ -188,7 +178,7 @@ class CommerceProductInlineEntityFormController extends EntityInlineEntityFormCo
       '#type' => 'textfield',
       '#title' => t('@label title', array('@label' => drupal_ucfirst($labels['singular']))),
       '#default_value' => $product->title,
-      '#maxlength' => 128,
+      '#maxlength' => 255,
       '#required' => TRUE,
       '#fieldset' => 'product_details',
       // The label might be missing if the Title module has replaced it.

@@ -37,9 +37,11 @@ class commerce_backoffice_handler_field_node_operations extends views_handler_fi
     // Add the quick-edit link which opens the megarow.
     if ($this->options['add_quick_edit']) {
       $quick_edit['quick-edit'] = menu_get_item('commerce_backoffice/variations/' . $nid);
-      $quick_edit['quick-edit']['title'] = t('Quick edit');
-      $quick_edit['quick-edit']['attributes']['class'] = 'views-megarow-open';
-      $links = array_merge($quick_edit, $links);
+      if ($quick_edit['quick-edit']['access']) {
+        $quick_edit['quick-edit']['title'] = t('Quick edit');
+        $quick_edit['quick-edit']['attributes']['class'] = 'views-megarow-open';
+        $links = array_merge($quick_edit, $links);
+      }
     }
 
     // Add the destination to the links if specified.

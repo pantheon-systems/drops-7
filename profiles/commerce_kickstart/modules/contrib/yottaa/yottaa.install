@@ -1,0 +1,42 @@
+<?php
+/**
+ * @file
+ * yottaa.install
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function yottaa_requirements($phase) {
+  $t = get_t();
+
+  $requirements = array();
+
+  if (variable_get('yottaa_api_key', 'NONE') == 'NONE') {
+    $requirements['yottaa'] = array(
+      'title' => $t('Yottaa'),
+      'value' => $t('Yottaa credentials are not set. !register or !configure', array(
+        '!register' => l($t('Register'), 'admin/config/services/yottaa/register'),
+        '!configure' => l($t('Configure'),
+        'admin/config/services/yottaa'))
+      ),
+      'description' => '',
+      'severity' => REQUIREMENT_WARNING,
+    );
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_enable().
+ */
+function yottaa_enable() {
+  if (variable_get('yottaa_api_key', 'NONE') == 'NONE') {
+    drupal_set_message(t('Yottaa credentials are not set. !register or !configure', array(
+      '!register' => l(t('Register'),
+      'admin/config/services/yottaa/register'),
+      '!configure' => l(t('Configure'), 'admin/config/services/yottaa'),
+    )));
+  }
+}

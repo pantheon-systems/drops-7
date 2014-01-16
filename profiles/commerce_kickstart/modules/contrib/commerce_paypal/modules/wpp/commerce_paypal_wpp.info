@@ -11,9 +11,9 @@ core = 7.x
 ; Simple tests
 ; files[] = tests/commerce_paypal_wps.test
 
-; Information added by drupal.org packaging script on 2013-09-17
-version = "7.x-2.2"
+; Information added by Drupal.org packaging script on 2014-01-14
+version = "7.x-2.3"
 core = "7.x"
 project = "commerce_paypal"
-datestamp = "1379410934"
+datestamp = "1389740908"
 

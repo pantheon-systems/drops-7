@@ -1,0 +1,76 @@
+h1 img {
+  height: 32px;
+  float: right;
+}
+
+.status-preview {
+  color: orange;
+  font-weight: bold;
+}
+
+.status-live {
+  color: green;
+  font-weight: bold;
+}
+
+.status-paused,
+.status-error {
+  color: red;
+  font-weight: bold;
+}
+
+.setting span.setting-item-title {
+  display: inline-block;
+  width: 100px;
+  font-weight: bold;
+}
+
+#yottaa-auto-clear-cache-form table,
+#yottaa-clear-cache-form table,
+#yottaa-optimizer-activate-form table,
+#yottaa-optimizer-resume-form table,
+#yottaa-optimizer-pause-form table,
+#yottaa-optimizer-transparent-form table {
+  border: none;
+  max-width: 960px;
+}
+
+#yottaa-auto-clear-cache-form table,
+#yottaa-auto-clear-cache-form table tr,
+#yottaa-auto-clear-cache-form table tr td,
+#yottaa-clear-cache-form table,
+#yottaa-clear-cache-form table tr,
+#yottaa-clear-cache-form table tr td,
+#yottaa-optimizer-activate-form table,
+#yottaa-optimizer-activate-form table tr,
+#yottaa-optimizer-activate-form table tr td,
+#yottaa-optimizer-resume-form table,
+#yottaa-optimizer-resume-form table tr,
+#yottaa-optimizer-resume-form table tr td,
+#yottaa-optimizer-pause-form table,
+#yottaa-optimizer-pause-form table tr,
+#yottaa-optimizer-pause-form table tr td,
+#yottaa-optimizer-transparent-form table,
+#yottaa-optimizer-transparent-form table tr,
+#yottaa-optimizer-transparent-form table tr td {
+  border: none;
+}
+
+input.form-submit {
+  width: 150px;
+}
+
+.setting span.checklist-item-title,
+.checklist-item span.checklist-item-title {
+  display: inline-block;
+  width: 300px;
+  font-weight: bold;
+}
+
+.checklist-item-status-passed {
+  color: green;
+}
+
+.checklist-item-status-failed {
+  color: red;
+}

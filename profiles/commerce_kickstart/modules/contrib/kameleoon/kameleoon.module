@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * @file
+ * Integration with Kameleoon A/B testing solution.
+ */
+
+/**
+ * URI scheme for the external Kameleoon JS. '!site_code' has to be replaced.
+ */
+//define('KAMELEOON_JS_URI_SCHEME', '//static.kameleoon.com/css/customers/!site_code/0/kameleoon.js');
+define('KAMELEOON_JS_URI_SCHEME', '//static-bp.kameleoon.com/css/customers/!site_code/0/kameleoon.js?acquisitionSource=commerce_guys');
+
+/**
+ * Implements hook_menu().
+ */
+function kameleoon_menu() {
+  $items = array();
+  $items['admin/config/system/kameleoon'] = array(
+    'title' => 'Kameleoon',
+    'description' => 'Configure Kameleoon to access to its A/B testing tool and WYSIWYG editor.',
+    'access arguments' => array('administer kameleoon'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('kameleoon_admin_form'),
+    'file' => 'kameleoon.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function kameleoon_permission() {
+  return array(
+    'administer kameleoon' => array(
+      'title' => t('Administer Kameleoon'),
+      'description' => t('Perform administration tasks for Kameleoon.'),
+    ),
+    'access kameleoon tools' => array(
+      'title' => t('Access Kameleon tools'),
+      'description' => t('Access to Kameleoon tools such as the A/B testing tool.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_page_build().
+ *
+ * Adds the external Kameleoon JS to the page when it's appropriate. It will be
+ * included on each page except administrative pages when the user has
+ * permission to access to Kameleoon tools.
+ */
+function kameleoon_page_build(&$page) {
+  $js_url = kameleoon_js_url();
+  if (!($js_url) || !user_access('access kameleoon tools')) {
+    return;
+  }
+  // Skip this entirely for administrative pages.
+  if ($_GET['q'] == 'admin' || strpos($_GET['q'], 'admin/') === 0) {
+    return;
+  }
+
+  // Include the external JavaScript provided by Kameleoon.
+  $page['page_top']['kameleoon'] = array(
+    '#attached' => array(
+      'js' => array(
+        $js_url => array('type' => 'external'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Returns the URI for including the external Kameleoon JS.
+ */
+function kameleoon_js_url() {
+  $site_code = variable_get('kameleoon_site_code');
+  if (!empty($site_code)) {
+    return format_string(KAMELEOON_JS_URI_SCHEME, array('!site_code' => $site_code));
+  }
+  return FALSE;
+}

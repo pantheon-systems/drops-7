@@ -1,0 +1,17 @@
+name = Commerce Yotpo
+description = Intergration with Yotpo.
+core = 7.x
+package = Commerce (Contrib)
+configure = admin/commerce/config/yotpo
+
+dependencies[] = libraries
+dependencies[] = commerce
+dependencies[] = commerce_order
+dependencies[] = commerce_product
+
+; Information added by Drupal.org packaging script on 2013-12-17
+version = "7.x-1.0"
+core = "7.x"
+project = "commerce_yotpo"
+datestamp = "1387279407"
+

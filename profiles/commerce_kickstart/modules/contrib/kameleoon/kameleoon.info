@@ -1,0 +1,12 @@
+name = Kameleoon
+description = Integration with Kameleoon A/B testing solution.
+core = 7.x
+configure = admin/config/system/kameleoon
+files[] = kameleoon.test
+
+; Information added by Drupal.org packaging script on 2013-12-20
+version = "7.x-1.0"
+core = "7.x"
+project = "kameleoon"
+datestamp = "1387555105"
+

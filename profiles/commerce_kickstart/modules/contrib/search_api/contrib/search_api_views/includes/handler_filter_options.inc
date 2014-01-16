@@ -1,15 +1,81 @@
 <?php
 
 /**
- * Views filter handler class for handling fields with a limited set of possible
- * values.
- *
- * Definition items:
- * - options: An array of possible values for this field.
+ * @file
+ * Contains the SearchApiViewsHandlerFilterOptions class.
+ */
+
+/**
+ * Views filter handler for fields with a limited set of possible values.
  */
 class SearchApiViewsHandlerFilterOptions extends SearchApiViewsHandlerFilter {
 
+  /**
+   * Stores the values which are available on the form.
+   *
+   * @var array
+   */
+  protected $value_options = NULL;
+
+  /**
+   * The type of form element used to display the options.
+   *
+   * @var string
+   */
   protected $value_form_type = 'checkboxes';
+
+  /**
+   * Retrieves a wrapper for this filter's field.
+   *
+   * @return EntityMetadataWrapper|null
+   *   A wrapper for the field which this filter uses.
+   */
+  protected function get_wrapper() {
+    if ($this->query) {
+      $index = $this->query->getIndex();
+    }
+    elseif (substr($this->view->base_table, 0, 17) == 'search_api_index_') {
+      $index = search_api_index_load(substr($this->view->base_table, 17));
+    }
+    else {
+      return NULL;
+    }
+    $wrapper = $index->entityWrapper(NULL, TRUE);
+    $parts = explode(':', $this->real_field);
+    foreach ($parts as $i => $part) {
+      if (!isset($wrapper->$part)) {
+        return NULL;
+      }
+      $wrapper = $wrapper->$part;
+      $info = $wrapper->info();
+      if ($i < count($parts) - 1) {
+        // Unwrap lists.
+        $level = search_api_list_nesting_level($info['type']);
+        for ($j = 0; $j < $level; ++$j) {
+          $wrapper = $wrapper[0];
+        }
+      }
+    }
+
+    return $wrapper;
+  }
+
+  /**
+   * Fills the value_options property with all possible options.
+   */
+  protected function get_value_options() {
+    if (isset($this->value_options)) {
+      return;
+    }
+
+    $wrapper = $this->get_wrapper();
+    if ($wrapper) {
+      $this->value_options = $wrapper->optionsList('view');
+    }
+    else {
+      $this->value_options = array();
+    }
+  }
 
   /**
    * Provide a list of options for the operator form.
@@ -63,13 +129,12 @@ class SearchApiViewsHandlerFilterOptions extends SearchApiViewsHandlerFilter {
    * Reduce the options according to the selection.
    */
   protected function reduce_value_options() {
-    $options = array();
-    foreach ($this->definition['options'] as $id => $option) {
-      if (isset($this->options['value'][$id])) {
-        $options[$id] = $option;
+    foreach ($this->value_options as $id => $option) {
+      if (!isset($this->options['value'][$id])) {
+        unset($this->value_options[$id]);
       }
     }
-    return $options;
+    return $this->value_options;
   }
 
   /**
@@ -92,19 +157,20 @@ class SearchApiViewsHandlerFilterOptions extends SearchApiViewsHandlerFilter {
    * Provide a form for setting options.
    */
   public function value_form(&$form, &$form_state) {
-    $options = array();
+    $this->get_value_options();
     if (!empty($this->options['expose']['reduce']) && !empty($form_state['exposed'])) {
-      $options += $this->reduce_value_options($form_state);
+      $options = $this->reduce_value_options();
     }
     else {
-      $options += $this->definition['options'];
+      $options = $this->value_options;
     }
+
     $form['value'] = array(
       '#type' => $this->value_form_type,
       '#title' => empty($form_state['exposed']) ? t('Value') : '',
       '#options' => $options,
       '#multiple' => TRUE,
-      '#size' => min(4, count($this->definition['options'])),
+      '#size' => min(4, count($options)),
       '#default_value' => is_array($this->value) ? $this->value : array(),
     );
 
@@ -149,8 +215,9 @@ class SearchApiViewsHandlerFilterOptions extends SearchApiViewsHandlerFilter {
     $values = '';
 
     // Remove every element which is not known.
+    $this->get_value_options();
     foreach ($this->value as $i => $value) {
-      if (!isset($this->definition['options'][$value])) {
+      if (!isset($this->value_options[$value])) {
         unset($this->value[$i]);
       }
     }
@@ -171,7 +238,7 @@ class SearchApiViewsHandlerFilterOptions extends SearchApiViewsHandlerFilter {
       }
       // If there is only a single value, use just the plain operator, = or <>.
       $operator = check_plain($operator);
-      $values = check_plain($this->definition['options'][reset($this->value)]);
+      $values = check_plain($this->value_options[reset($this->value)]);
     }
     else {
       foreach ($this->value as $value) {
@@ -182,7 +249,7 @@ class SearchApiViewsHandlerFilterOptions extends SearchApiViewsHandlerFilter {
           $values .= '…';
           break;
         }
-        $values .= check_plain($this->definition['options'][$value]);
+        $values .= check_plain($this->value_options[$value]);
       }
     }
 
@@ -207,28 +274,24 @@ class SearchApiViewsHandlerFilterOptions extends SearchApiViewsHandlerFilter {
       $this->value = reset($this->value);
     }
 
-    // Determine operator and conjunction.
+    // Determine operator and conjunction. The defaults are already right for
+    // "all of".
+    $operator = '=';
+    $conjunction = 'AND';
     switch ($this->operator) {
       case '=':
-        $operator = '=';
         $conjunction = 'OR';
-        break;
-
-      case 'all of':
-        $operator = '=';
-        $conjunction = 'AND';
         break;
 
       case '<>':
         $operator = '<>';
-        $conjunction = 'AND';
         break;
     }
 
     // If the value is an empty array, we either want no filter at all (for
-    // "is none of", or want to find only items with no value for the field.
+    // "is none of"), or want to find only items with no value for the field.
     if ($this->value === array()) {
-      if ($this->operator != '<>') {
+      if ($operator != '<>') {
         $this->query->condition($this->real_field, NULL, '=', $this->options['group']);
       }
       return;

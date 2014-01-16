@@ -100,3 +100,11 @@ function commerce_message_history($order) {
 function commerce_message_flush_caches() {
   commerce_message_message_field_refresh();
 }
+
+/**
+ * Implements hook_multilingual_settings_changed().
+ */
+function commerce_message_multilingual_settings_changed() {
+  // Rebuild the message types after modifying the language settings.
+  entity_defaults_rebuild(array('message_type'));
+}

@@ -18,8 +18,9 @@ function commerce_backoffice_product_menu() {
   $items['commerce_backoffice/variations/%node'] = array(
     'page callback' => 'commerce_backoffice_product_variations_view',
     'page arguments' => array(2),
+    'access callback' => 'node_access',
+    'access arguments' => array('update', 2),
     'delivery callback' => 'ajax_deliver',
-    'access arguments' => array('administer commerce_product entities'),
   );
 
   // The overriden node/add type listing.
@@ -324,6 +325,8 @@ function commerce_backoffice_product_quick_edit_form($form, &$form_state, $produ
   $currency = commerce_currency_load($price_array['currency_code']);
   $amount = commerce_currency_amount_to_decimal($price_array['amount'], $price_array['currency_code']);
   $price = number_format(commerce_currency_round(abs($amount), $currency), $currency['decimals'], $currency['decimal_separator'], $currency['thousands_separator']);
+  $update_permission = commerce_product_access('update', $product);
+  $disabled = !$update_permission;
 
   $wrapper = drupal_html_id('commerce-backoffice-product-quick-edit-form');
   $form['#prefix'] = '<div class="container-inline" id="' . $wrapper . '">';
@@ -335,6 +338,7 @@ function commerce_backoffice_product_quick_edit_form($form, &$form_state, $produ
     '#title_display' => 'invisible',
     '#default_value' => $price,
     '#size' => 5,
+    '#disabled' => $disabled,
   );
   $form['status'] = array(
     '#type' => 'select',
@@ -342,6 +346,7 @@ function commerce_backoffice_product_quick_edit_form($form, &$form_state, $produ
     '#title_display' => 'invisible',
     '#options' => array(0 => t('Disabled'), 1 => t('Active')),
     '#default_value' => $product->status,
+    '#disabled' => $disabled,
   );
   $form['save'] = array(
     '#type' => 'submit',
@@ -350,6 +355,7 @@ function commerce_backoffice_product_quick_edit_form($form, &$form_state, $produ
       'callback' => 'commerce_backoffice_product_quick_edit_form_ajax',
       'wrapper' => $wrapper,
     ),
+    '#disabled' => $disabled,
   );
   if (!empty($form_state['product_saved'])) {
     $form['save']['#suffix'] = t('Saved');
@@ -371,7 +377,15 @@ function commerce_backoffice_product_quick_edit_form_ajax($form, &$form_state) {
 function commerce_backoffice_product_quick_edit_form_submit($form, &$form_state) {
   $product = $form_state['product'];
   $currency_code = $product->commerce_price[LANGUAGE_NONE][0]['currency_code'];
-  $product->commerce_price[LANGUAGE_NONE][0]['amount'] = commerce_currency_decimal_to_amount($form_state['values']['price'], $currency_code);
+  
+  // Make sure decimal separator is period and determine rounding boolean
+  $currency = commerce_currency_load($currency_code);
+  $price = $form_state['values']['price'];
+  if ($currency['decimal_separator'] == ',') {
+    $price = str_replace(',', '.', $price);
+  }
+  $round = ($currency['rounding_step'] == 0) ? FALSE : TRUE;
+  $product->commerce_price[LANGUAGE_NONE][0]['amount'] = commerce_currency_decimal_to_amount($price, $currency_code, $round);
   $product->status = $form_state['values']['status'];
   commerce_product_save($product);
 

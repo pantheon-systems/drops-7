@@ -92,7 +92,7 @@ function search_api_facetapi_facetapi_facet_info(array $searcher_info) {
       // other modules.
       $type_settings = array(
         'taxonomy_term' => array(
-          'hierarchy callback' => 'facetapi_get_taxonomy_hierarchy',
+          'hierarchy callback' => 'search_api_facetapi_get_taxonomy_hierarchy',
         ),
         'date' => array(
           'query type' => 'date',
@@ -224,6 +224,26 @@ function search_api_facetapi_settings($realm_name, SearchApiIndex $index) {
   $searcher_name = 'search_api@' . $index->machine_name;
   module_load_include('inc', 'facetapi', 'facetapi.admin');
   return drupal_get_form('facetapi_realm_settings_form', $searcher_name, $realm_name);
+}
+
+/**
+ * Gets hierarchy information for taxonomy terms.
+ *
+ * Used as a hierarchy callback in search_api_facetapi_facetapi_facet_info().
+ *
+ * Internally just uses facetapi_get_taxonomy_hierarchy(), but makes sure that
+ * our special "!" value is not passed.
+ *
+ * @param array $values
+ *   An array containing the term IDs.
+ *
+ * @return array
+ *   An associative array mapping term IDs to parent IDs (where parents could be
+ *   found).
+ */
+function search_api_facetapi_get_taxonomy_hierarchy(array $values) {
+  $values = array_filter($values, 'is_numeric');
+  return $values ? facetapi_get_taxonomy_hierarchy($values) : array();
 }
 
 /**

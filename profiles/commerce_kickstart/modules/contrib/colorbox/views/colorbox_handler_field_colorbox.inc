@@ -109,7 +109,7 @@ If you would like to have the characters %5B and %5D please use the html entity 
     $form['custom_gid'] = array(
       '#type' => 'textfield',
       '#title' => t('Custom Colorbox gallery'),
-      '#description' => t('Enable Colorbox gallery with a given string as gallery. Overrides the automatically generated gallery id above.'),
+      '#description' => t('Enable Colorbox gallery with a given string as gallery. Overrides the automatically generated gallery id above. You may enter data from this view as per the "Replacement patterns" below.'),
       '#default_value' => $this->options['custom_gid'],
       '#weight' => -8,
     );
@@ -162,12 +162,14 @@ If you would like to have the characters %5B and %5D please use the html entity 
     $tokens = $this->get_render_tokens($this->options['alter']);
     $popup = filter_xss_admin($this->options['popup']);
     $caption = filter_xss_admin($this->options['caption']);
+    $gallery = drupal_html_class($this->options['custom_gid']);
     $popup = strtr($popup, $tokens);
     $caption = strtr($caption, $tokens);
+    $gallery = strtr($gallery, $tokens);
 
     $width = $this->options['width'] ? $this->options['width'] : '';
     $height = $this->options['height'] ? $this->options['height'] : '';
-    $gallery_id = !empty($this->options['custom_gid']) ? $this->options['custom_gid'] : ($this->options['gid'] ? 'gallery-' . $this->view->name : '');
+    $gallery_id = !empty($gallery) ? $gallery : ($this->options['gid'] ? 'gallery-' . $this->view->name : '');
     $link_text = $tokens["[{$this->options['trigger_field']}]"];
     $link_options = array(
       'html' => TRUE,

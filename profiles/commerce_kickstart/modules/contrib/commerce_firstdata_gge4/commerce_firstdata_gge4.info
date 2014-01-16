@@ -1,0 +1,20 @@
+name = First Data Global Gateway e4
+description = Implements First Data Global Gateway e4 payment services for use with Drupal Commerce.
+package = Commerce (payment)
+dependencies[] = commerce_payment
+dependencies[] = commerce_order
+dependencies[] = commerce_customer
+dependencies[] = addressfield
+core = 7.x
+
+
+files[] = plugins/component/base.inc
+files[] = includes/commerce_firstdata_gge4.controller.inc
+
+
+; Information added by Drupal.org packaging script on 2013-12-16
+version = "7.x-1.0"
+core = "7.x"
+project = "commerce_firstdata_gge4"
+datestamp = "1387206506"
+

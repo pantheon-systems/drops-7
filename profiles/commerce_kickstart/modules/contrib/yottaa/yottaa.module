@@ -1,14 +1,30 @@
 <?php
+/**
+ * @file
+ * Yottaa module.
+ */
 
 /**
- * Implements hook_permission().
+ * Implements hook_init().
+ */
+function yottaa_init() {
+  // Include Yottaa API classes.
+  module_load_include('inc', 'yottaa', 'yottaa.api');
+  module_load_include('inc', 'yottaa', 'yottaa.api.drupal');
+}
+
+/**
+ * Return permissions for the Yottaa module.
  */
 function yottaa_permission() {
-  return array(
+  $perms = array(
     'administer yottaa' => array(
       'title' => t('Administer Yottaa'),
+      'description' => t('Allows users to administer Yottaa.'),
+      'restrict access' => TRUE,
     ),
   );
+  return $perms;
 }
 
 /**
@@ -27,6 +43,14 @@ function yottaa_menu() {
     'type' => MENU_NORMAL_ITEM,
   );
 
+  $items['admin/config/services/yottaa/info'] = array(
+    'title' => 'Yottaa Info',
+    'page callback' => 'yottaa_info',
+    'access arguments' => array('administer yottaa'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 3,
+  );
+
   $items['admin/config/services/yottaa/settings'] = array(
     'title' => 'Settings',
     'description' => 'Configure Yottaa User ID, Site ID and API Key',
@@ -34,7 +58,7 @@ function yottaa_menu() {
     'page arguments' => array('yottaa_setup_form'),
     'access arguments' => array('administer yottaa'),
     'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => 0,
+    'weight' => 1,
     'file' => 'yottaa.admin.inc',
   );
 
@@ -46,14 +70,27 @@ function yottaa_menu() {
     'file' => 'yottaa.admin.inc',
     'access arguments' => array('administer yottaa'),
     'type' => MENU_LOCAL_TASK,
-    'weight' => 1,
+    'weight' => 2,
   );
 
   return $items;
 }
 
 /**
- * Impliments hook_commerce_kickstart_service_provider().
+ * Implements hook_help().
+ */
+function yottaa_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#yottaa':
+      $output = '';
+      $output .= '<h3>' . t('About') . '</h3>';
+      $output .= '<p>' . t('Yottaa is an easy-to-use cloud service that brings speed, scale and security to any website. It accelerates your site for faster page loads, a better user experience and higher search engine rankings. It prevents your site from failing under heavy load or even attacks. It scales your web infrastructure to a global cloud network with over 20 locations. Further, Yottaa watches your site 24x7 and provides real time visibility into site problems. That’s what we mean by "Optimize, Protect and Monitor".') . '<p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_commerce_kickstart_service_provider().
  */
 function yottaa_commerce_kickstart_service_provider() {
   return array(
@@ -71,4 +108,320 @@ function yottaa_commerce_kickstart_service_provider() {
       'requirements_callback' => '',
     ),
   );
+}
+
+/**
+ * Register custom themes for yottaa module.
+ */
+function yottaa_theme($existing, $type, $theme, $path) {
+  return array(
+    'yottaa_info' => array(
+      'file' => 'yottaa.theme.inc',
+    ),
+    'yottaa_optimizer_activate_form' => array(
+      'file' => 'yottaa.theme.inc',
+      'render element' => 'form',
+    ),
+    'yottaa_optimizer_pause_form' => array(
+      'file' => 'yottaa.theme.inc',
+      'render element' => 'form',
+    ),
+    'yottaa_optimizer_transparent_form' => array(
+      'file' => 'yottaa.theme.inc',
+      'render element' => 'form',
+    ),
+    'yottaa_optimizer_resume_form' => array(
+      'file' => 'yottaa.theme.inc',
+      'render element' => 'form',
+    ),
+    'yottaa_clear_cache_form' => array(
+      'file' => 'yottaa.theme.inc',
+      'render element' => 'form',
+    ),
+    'yottaa_auto_clear_cache_form' => array(
+      'file' => 'yottaa.theme.inc',
+      'render element' => 'form',
+    ),
+  );
+}
+
+/**
+ * Generates the info page.
+ */
+function yottaa_info() {
+  $yottaa_user_id = variable_get('yottaa_user_id', '');
+  $yottaa_api_key = variable_get('yottaa_api_key', '');
+  $yottaa_site_id = variable_get('yottaa_site_id', '');
+
+  if (empty($yottaa_user_id) || empty($yottaa_api_key) || empty($yottaa_site_id)) {
+    drupal_goto('admin/config/services/yottaa/register');
+  }
+
+  return theme('yottaa_info', array('children' => ''));
+}
+
+/**
+ * Implements hook_form().
+ */
+function yottaa_optimizer_activate_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#name' => 'activate',
+    '#value' => 'Activate Optimizations',
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function yottaa_optimizer_activate_form_submit($form, &$form_state) {
+  unset($form_state['storage']);
+  $form_state['redirect'] = 'admin/config/services/yottaa/info';
+}
+
+/**
+ * Implements hook_form().
+ */
+function yottaa_optimizer_pause_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#name' => 'activate',
+    '#value' => 'Bypass',
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function yottaa_optimizer_pause_form_submit($form, &$form_state) {
+  unset($form_state['storage']);
+  $yottaa_api = yottaa_api_drupal();
+  $json_output = $yottaa_api->pause();
+
+  if (!isset($json_output["error"])) {
+    drupal_set_message(t('Your Yottaa optimizer has been changed to bypass mode.'));
+    $form_state['redirect'] = 'admin/config/services/yottaa/info';
+  }
+  else {
+    $error = $json_output["error"];
+    form_set_error('', filter_xss('Error received from pausing Yottaa optimizer:' . json_encode($error)));
+  }
+}
+
+/**
+ * Implements hook_form().
+ */
+function yottaa_optimizer_transparent_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#name' => 'activate',
+    '#value' => 'Transparent Proxy',
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function yottaa_optimizer_transparent_form_submit($form, &$form_state) {
+  unset($form_state['storage']);
+  $yottaa_api = yottaa_api_drupal();
+  $json_output = $yottaa_api->transparent();
+
+  if (!isset($json_output["error"])) {
+    drupal_set_message(t('Your Yottaa optimizer has been changed to transparent proxy mode.'));
+    $form_state['redirect'] = 'admin/config/services/yottaa/info';
+  }
+  else {
+    $error = $json_output["error"];
+    form_set_error('', filter_xss('Error received from pausing Yottaa optimizer:' . json_encode($error)));
+  }
+}
+
+/**
+ * Implements hook_form().
+ */
+function yottaa_optimizer_resume_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#name' => 'activate',
+    '#value' => 'Resume Optimizations',
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function yottaa_optimizer_resume_form_submit($form, &$form_state) {
+  unset($form_state['storage']);
+
+  $yottaa_api = yottaa_api_drupal();
+  $json_output = $yottaa_api->resume();
+
+  if (!isset($json_output["error"])) {
+    drupal_set_message(t('Your Yottaa optimizer has been resumed.'));
+    $form_state['redirect'] = 'admin/config/services/yottaa/info';
+  }
+  else {
+    $error = $json_output["error"];
+    form_set_error('', filter_xss('Error received from resuming Yottaa optimizer:' . json_encode($error)));
+  }
+}
+
+/**
+ * Implements hook_form().
+ */
+function yottaa_clear_cache_form($form, &$form_state) {
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#name' => 'clear',
+    '#value' => 'Clear Cache',
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function yottaa_clear_cache_form_submit($form, &$form_state) {
+  unset($form_state['storage']);
+
+  $yottaa_api = yottaa_api_drupal();
+  $json_output = $yottaa_api->flush();
+
+  if (!isset($json_output["error"])) {
+    drupal_set_message(t('Cache for all of your sites resources has been removed from Yottaa CDN.'));
+    $form_state['redirect'] = 'admin/config/services/yottaa/info';
+  }
+  else {
+    $error = $json_output["error"];
+    form_set_error('', filter_xss('Error received from flushing Yottaa cache:' . json_encode($error)));
+  }
+}
+
+/**
+ * Implements hook_form().
+ */
+function yottaa_auto_clear_cache_form($form, &$form_state) {
+  $form['yottaa_auto_clear_cache'] = array(
+    '#type' => 'checkbox',
+    '#title' => t("Automatically clear Yottaa's site optimizer cache on node changes."),
+    '#default_value' => variable_get('yottaa_auto_clear_cache', 1),
+  );
+
+  $form['yottaa_enable_proxy_mode'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable drupal proxy mode.'),
+    '#default_value' => variable_get('yottaa_reverse_proxy', 0),
+  );
+
+  $form['yottaa_enable_logging'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable logging for Yottaa service calls.'),
+    '#default_value' => variable_get('yottaa_enable_logging', 0),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#name' => 'clear',
+    '#value' => 'Save Settings',
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function yottaa_auto_clear_cache_form_submit($form, &$form_state) {
+  unset($form_state['storage']);
+  variable_set('yottaa_auto_clear_cache', intval($form_state['values']['yottaa_auto_clear_cache']));
+  variable_set('yottaa_reverse_proxy', intval($form_state['values']['yottaa_enable_proxy_mode']));
+  variable_set('yottaa_enable_logging', intval($form_state['values']['yottaa_enable_logging']));
+  $status = intval($form_state['values']['yottaa_auto_clear_cache']) == 1 ? 'enabled' : 'disabled';
+  drupal_set_message(filter_xss(t("Automatically clearing Yottaa's site optimizer cache is @status", array('@status' => $status))));
+  $status = intval($form_state['values']['yottaa_enable_proxy_mode']) == 1 ? 'enabled' : 'disabled';
+  drupal_set_message(filter_xss(t('Proxy mode is @status', array('@status' => $status))));
+  $status = intval($form_state['values']['yottaa_enable_logging']) == 1 ? 'enabled' : 'disabled';
+  drupal_set_message(filter_xss(t('Logging for Yottaa service calls is @status', array('@status' => $status))));
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function yottaa_node_update($node) {
+  if (!module_exists('expire')) {
+    watchdog('yottaa', 'Caught node update event for node @node.', array('@node' => $node->nid), WATCHDOG_DEBUG);
+    $yottaa_api = yottaa_api_drupal();
+    $yottaa_api->flush();
+  }
+}
+
+/**
+ * Implements hook_comment_update().
+ */
+function yottaa_comment_update($comment) {
+  if (!module_exists('expire')) {
+    watchdog('yottaa', 'Caught comment update event for node @node.', array('@node' => $comment->nid), WATCHDOG_DEBUG);
+    // $node = node_load($comment->nid);
+    $yottaa_api = yottaa_api_drupal();
+    $yottaa_api->flush();
+  }
+}
+
+/**
+ * Implements hook_comment_insert().
+ */
+function yottaa_comment_insert($comment) {
+  if (!module_exists('expire')) {
+    watchdog('yottaa', 'Caught comment insert event for node @node.', array('@node' => $comment->nid), WATCHDOG_DEBUG);
+    // $node = node_load($comment->nid);
+    $yottaa_api = yottaa_api_drupal();
+    $yottaa_api->flush();
+  }
+}
+
+/**
+ * Implements hook_comment_delete().
+ */
+function yottaa_comment_delete($comment) {
+  if (!module_exists('expire')) {
+    watchdog('yottaa', 'Caught comment delete event for node @node.', array('@node' => $comment->nid), WATCHDOG_DEBUG);
+    // $node = node_load($comment->nid);
+    $yottaa_api = yottaa_api_drupal();
+    $yottaa_api->flush();
+  }
+}
+
+/**
+ * Implements hook_expire_cache().
+ *
+ * Takes an array from expire.module and issue purges.
+ */
+function yottaa_expire_cache($paths) {
+  global $base_url;
+  $yottaa_api = yottaa_api_drupal();
+  $yottaa_auto_clear_cache = $yottaa_api->getAutoClearCacheParameter();
+  if ($yottaa_auto_clear_cache == 1) {
+    $path_configs = array();
+    foreach ($paths as $path) {
+      $relative_path = str_replace($base_url, "", $path);
+      array_push($path_configs, array(
+        "condition" => $relative_path,
+        "name" => "URI",
+        "type" => "html",
+      ));
+    }
+    $yottaa_api->log(json_encode($path_configs));
+    $results = $yottaa_api->flushPaths($path_configs);
+    $yottaa_api->log(json_encode($results));
+  }
 }

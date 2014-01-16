@@ -16,7 +16,7 @@ class SearchApiViewsHandlerFilterTaxonomyTerm extends SearchApiViewsHandlerFilte
    * {@inheritdoc}
    */
   public function has_extra_options() {
-    return TRUE;
+    return !empty($this->definition['vocabulary']);
   }
 
   /**
@@ -25,7 +25,7 @@ class SearchApiViewsHandlerFilterTaxonomyTerm extends SearchApiViewsHandlerFilte
   public function option_definition() {
     $options = parent::option_definition();
 
-    $options['type'] = array('default' => 'textfield');
+    $options['type'] = array('default' => !empty($this->definition['vocabulary']) ? 'textfield' : 'select');
     $options['hierarchy'] = array('default' => 0);
     $options['error_message'] = array('default' => TRUE, 'bool' => TRUE);
 
@@ -57,14 +57,21 @@ class SearchApiViewsHandlerFilterTaxonomyTerm extends SearchApiViewsHandlerFilte
   public function value_form(&$form, &$form_state) {
     parent::value_form($form, $form_state);
 
-    $vocabulary = taxonomy_vocabulary_machine_name_load($this->definition['vocabulary']);
-    $form['value']['#title'] = t('Select terms from vocabulary @voc', array('@voc' => $vocabulary->name));
+    if (!empty($this->definition['vocabulary'])) {
+      $vocabulary = taxonomy_vocabulary_machine_name_load($this->definition['vocabulary']);
+      $title = t('Select terms from vocabulary @voc', array('@voc' => $vocabulary->name));
+    }
+    else {
+      $vocabulary = FALSE;
+      $title = t('Select terms');
+    }
+    $form['value']['#title'] = $title;
 
-    if ($this->options['type'] == 'textfield') {
+    if ($vocabulary && $this->options['type'] == 'textfield') {
       $form['value']['#autocomplete_path'] = 'admin/views/ajax/autocomplete/taxonomy/' . $vocabulary->vid;
     }
     else {
-      if (!empty($this->options['hierarchy'])) {
+      if ($vocabulary && !empty($this->options['hierarchy'])) {
         $tree = taxonomy_get_tree($vocabulary->vid);
         $options = array();
 
@@ -86,7 +93,9 @@ class SearchApiViewsHandlerFilterTaxonomyTerm extends SearchApiViewsHandlerFilte
         $query->orderby('td.weight');
         $query->orderby('td.name');
         $query->addTag('term_access');
-        $query->condition('tv.machine_name', $vocabulary->machine_name);
+        if ($vocabulary) {
+          $query->condition('tv.machine_name', $vocabulary->machine_name);
+        }
         $result = $query->execute();
         foreach ($result as $term) {
           $options[$term->tid] = $term->name;
@@ -114,8 +123,8 @@ class SearchApiViewsHandlerFilterTaxonomyTerm extends SearchApiViewsHandlerFilte
             $keys = array_keys($options);
             $default_value = array_shift($keys);
           }
-          // Due to #1464174 there is a chance that array('') was saved in the admin ui.
-          // Let's choose a safe default value.
+          // Due to #1464174 there is a chance that array('') was saved in the
+          // admin ui. Let's choose a safe default value.
           elseif ($default_value == array('')) {
             $default_value = 'All';
           }
@@ -231,7 +240,9 @@ class SearchApiViewsHandlerFilterTaxonomyTerm extends SearchApiViewsHandlerFilte
     $query->innerJoin('taxonomy_vocabulary', 'tv', 'td.vid = tv.vid');
     $query->fields('td');
     $query->condition('td.name', $names);
-    $query->condition('tv.machine_name', $this->definition['vocabulary']);
+    if (!empty($this->definition['vocabulary'])) {
+      $query->condition('tv.machine_name', $this->definition['vocabulary']);
+    }
     $query->addTag('term_access');
     $result = $query->execute();
     foreach ($result as $term) {

@@ -62,8 +62,9 @@ function commerce_line_item_type_features_revert($module) {
   // Get default line item types
   if (module_hook($module, 'commerce_line_item_default_types')) {
     $default_types = module_invoke($module, 'commerce_line_item_default_types');
-    foreach ($default_types as $type) {
-      commerce_custom_product_line_item_type_save($type, TRUE, TRUE);
+    foreach ($default_types as $type => $line_item_type) {
+      $line_item_type['type'] = $type;
+      commerce_custom_product_line_item_type_save($line_item_type, TRUE, TRUE);
     }
   }
   else {

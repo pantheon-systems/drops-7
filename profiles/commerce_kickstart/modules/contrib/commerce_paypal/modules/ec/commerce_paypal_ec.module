@@ -565,7 +565,7 @@ function commerce_paypal_bml_order_form($form, &$form_state, $payment_method, $o
 
   // @todo Allow for localization by changing en_US to a supported locale code.
   $form['paypal_bml_undertext'] = array(
-    '#markup' => '<div><a target="_BLANK" href="https://www.securecheckout.billmelater.com/paycapture-content/fetch?hash=AU826TU8&content=/bmlweb/ppwpsiw.html"><img src="https://www.paypalobjects.com/webstatic/en_US/btn/btn_bml_text.png" /></a></div>',
+    '#markup' => '<div><a target="_blank" class="paypal-bml-text" href="https://www.securecheckout.billmelater.com/paycapture-content/fetch?hash=AU826TU8&content=/bmlweb/ppwpsiw.html"><img src="https://www.paypalobjects.com/webstatic/en_US/btn/btn_bml_text.png" /></a></div>',
   );
 
   return $form;
@@ -1652,17 +1652,16 @@ function commerce_paypal_ec_block_configure($delta = '') {
     // Banner agreement.
     $form['paypal_ec_banners']['settings']['banner_agreement'] = array(
       '#type' => 'checkbox',
-      '#title' => t('PayPal Banner Program Operating Terms.'),
       // We are not using l() according to https://drupal.org/node/322774.
-      '#description' => t('By checking this, you agree with the <a href="@terms_link">PayPal Banner Program Operating Terms</a>.', array('@terms_link' => 'https://financing.paypal.com/ppfinportal/content/operatingAgmt')),
+      '#title' => t('I agree to the <a target="_blank" href="@terms_link">PayPal Banner Program Operating Terms</a>.', array('@terms_link' => 'https://financing.paypal.com/ppfinportal/content/operatingAgmt')),
       '#default_value' => $settings['banner_agreement'],
     );
 
     // API Email.
     $form['paypal_ec_banners']['settings']['api_email'] = array(
       '#type' => 'textfield',
-      '#title' => t('E-mail address'),
-      '#description' => t('Enter the e-mail address used for your PayPal Banners account. Currently, this must be a live account.'),
+      '#title' => t('PayPal account e-mail address'),
+      '#description' => t('Enter the same e-mail address used in your Express Checkout configuration.'),
       '#default_value' => $settings['api_email'],
       '#states' => array(
         'visible' => array(
@@ -1706,22 +1705,6 @@ function commerce_paypal_ec_block_configure($delta = '') {
         ),
       ),
     );
-
-    // API Server.
-    $form['paypal_ec_banners']['settings']['server'] = array(
-      '#type' => 'radios',
-      '#title' => t('PayPal Banners server'),
-      '#options' => array(
-        'sandbox' => ('Sandbox - use for testing, requires a PayPal Banners Sandbox account'),
-        'live' => ('Live - use for real actions'),
-      ),
-      '#default_value' => $settings['server'],
-      '#states' => array(
-        'visible' => array(
-          ':input[name$="[banner_agreement]"]' => array('checked' => TRUE),
-        ),
-      ),
-    );
   }
 
   $form['#attached']['css'][] = drupal_get_path('module', 'commerce_paypal_ec') . '/theme/commerce_paypal_ec.theme.css';
@@ -1754,6 +1737,10 @@ function commerce_paypal_ec_block_save($delta = '', $edit = array()) {
       $edit['settings'] = array_map('trim', $edit['settings']);
 
       if ($edit['settings']['banner_agreement'] == TRUE) {
+        /**
+         * Using the staging server is for now unavailable, so we simply default
+         * to using the live key and secret.
+         *
         if ($edit['settings']['server'] == 'live') {
           $edit['settings']['api_key'] = PAYPAL_BANNER_API_KEY;
           $edit['settings']['api_secret'] = PAYPAL_BANNER_API_SECRET;
@@ -1762,6 +1749,9 @@ function commerce_paypal_ec_block_save($delta = '', $edit = array()) {
           $edit['settings']['api_key'] = PAYPAL_BANNER_API_KEY_STAGING;
           $edit['settings']['api_secret'] = PAYPAL_BANNER_API_SECRET_STAGING;
         }
+         */
+        $edit['settings']['api_key'] = PAYPAL_BANNER_API_KEY;
+        $edit['settings']['api_secret'] = PAYPAL_BANNER_API_SECRET;
 
         // Gets the payerId and the publisherId.
         if (($banner_account = commerce_paypal_ec_request_banner_account($edit['settings']))
@@ -1813,6 +1803,8 @@ function commerce_paypal_ec_block_view($delta = '') {
  * Requests a banner account to PayPal.
  */
 function commerce_paypal_ec_request_banner_account($settings) {
+  $settings = (array) variable_get('commerce_paypal_ec_banners_settings', array()) + commerce_paypal_ec_banners_default_settings();
+
   $data = array(
     'bnCode' => PAYPAL_BANNER_BN_CODE,
     'emailAddress' => $settings['api_email'],
@@ -1841,8 +1833,8 @@ function commerce_paypal_ec_request_banner_account($settings) {
 
   if (($result = drupal_json_decode($response)) && (is_array($result))) {
     if (isset($result['errors'])) {
-      watchdog('commerce_paypal_ec', 'The server was not able to get the banner account. The request returned from PayPal with the following data: <pre>@data</pre>', array('@data' => print_r($result, TRUE)), WATCHDOG_ERROR);
-      drupal_set_message(t("An error occurred during the obtention of your certificate. Please, check the credentials you've filled in and submit the form again."), 'error');
+      watchdog('commerce_paypal_ec', 'The server was not able to get the banner account. The request returned from PayPal with the following data: !data', array('!data' => '<pre>' . check_plain(print_r($result, TRUE)) . '</pre>'), WATCHDOG_ERROR);
+      drupal_set_message(t('An error occurred during account validation. Double check the e-mail address you entered and try again.'), 'error');
     }
     return $result;
   }

@@ -1,5 +1,9 @@
 Current API VERSION: 5.
 
+Bean 7.x-1.7, 2013-11-29
+---------------------------
+#2145333 by chris.jichen: Fixed misspelling of entity_access in views plugin
+
 Bean 7.x-1.6, 2013-11-20
 ---------------------------
 #2138651 by indytechcook: Add deploy_managed_ui_form_elements() to edit/create form.

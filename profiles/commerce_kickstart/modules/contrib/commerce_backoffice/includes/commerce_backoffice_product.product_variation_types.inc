@@ -251,7 +251,7 @@ function commerce_backoffice_product_variation_type_form_submit($form, &$form_st
             'attributes_single' => 1,
             'combine' => 1,
             'default_quantity' => '1',
-            'line_item_type' => 0,
+            'line_item_type' => 'product',
             'show_quantity' => 1,
             'show_single_product_attributes' => FALSE,
           ),
@@ -264,7 +264,7 @@ function commerce_backoffice_product_variation_type_form_submit($form, &$form_st
           'settings' => array(
             'combine' => 1,
             'default_quantity' => '1',
-            'line_item_type' => 0,
+            'line_item_type' => 'product',
             'show_quantity' => 1,
             'show_single_product_attributes' => FALSE,
           ),

@@ -7,9 +7,9 @@ dependencies[] = uuid
 
 package = Bean
 
-; Information added by  packaging script on 2013-11-20
-version = "7.x-1.6"
+; Information added by  packaging script on 2013-11-29
+version = "7.x-1.7"
 core = "7.x"
 project = "bean"
-datestamp = "1384952611"
+datestamp = "1385749410"
 

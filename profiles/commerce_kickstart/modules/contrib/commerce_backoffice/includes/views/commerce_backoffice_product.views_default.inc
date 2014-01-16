@@ -157,7 +157,7 @@ function commerce_backoffice_product_views_default_views() {
   $handler->display->display_options['fields']['operations_dropbutton']['label'] = 'Operations';
   $handler->display->display_options['fields']['operations_dropbutton']['element_label_colon'] = FALSE;
   $handler->display->display_options['fields']['operations_dropbutton']['add_quick_edit'] = 1;
-  $handler->display->display_options['fields']['operations_dropbutton']['add_destination'] = 0;
+  $handler->display->display_options['fields']['operations_dropbutton']['add_destination'] = 1;
   /* Sort criterion: Content: Post date */
   $handler->display->display_options['sorts']['created']['id'] = 'created';
   $handler->display->display_options['sorts']['created']['table'] = 'node';
@@ -538,7 +538,7 @@ function commerce_backoffice_product_views_default_views() {
   $handler->display->display_options['fields']['operations']['table'] = 'commerce_product';
   $handler->display->display_options['fields']['operations']['field'] = 'operations';
   $handler->display->display_options['fields']['operations']['label'] = 'Operations';
-  $handler->display->display_options['fields']['operations']['add_destination'] = 0;
+  $handler->display->display_options['fields']['operations']['add_destination'] = 1;
   /* Sort criterion: Commerce Product: Created date */
   $handler->display->display_options['sorts']['created']['id'] = 'created';
   $handler->display->display_options['sorts']['created']['table'] = 'commerce_product';

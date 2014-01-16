@@ -1,0 +1,216 @@
+<?php
+
+/**
+ * @file
+ * Implements First Data Global Gateway e4 Hosted Payment Pages for use in Drupal Commerce.
+ */
+
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_firstdata_gge4_hpp_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['firstdata_gge4_hpp'] = array(
+    'base' => 'commerce_firstdata_gge4_hpp',
+    'title' => t('First Data GGe4 Hosted Payment Page'),
+    'short_title' => t('First Data Hosted'),
+    'display_title' => t('Pay securely without sharing your financial information'),
+    'description' => t('Integrates First Data GGe4 Hosted Payment Pages.'),
+    'offsite' => TRUE,
+    'terminal' => FALSE,
+    'cardonfile' => array(
+      'charge callback' => 'commerce_firstdata_gge4_cardonfile_charge',
+      'create callback' => 'commerce_firstdata_gge4_cardonfile_create_placeholder',
+      'delete callback' => 'commerce_firstdata_gge4_cardonfile_delete',
+    ),
+  );
+
+
+  return $payment_methods;
+}
+
+/**
+ * Payment method callback: settings form.
+ */
+function commerce_firstdata_gge4_hpp_settings_form($settings = NULL) {
+  $form = commerce_firstdata_gge4_get_controller($settings)->settingsForm();
+
+  // Alter hosted payment page form
+  if (isset($form['hpp'])) {
+    $plugin_element = &$form['hpp'];
+  
+    // Move to top
+    $plugin_element['#weight'] = -50;
+
+    // Force web service enabled
+    if (isset($plugin_element['enable'])) {
+      $plugin_element['enable'] = array(
+        '#title' => '<strong>' . t('Hosted Payment Page') . '</strong>',
+        '#default_value' => 1,
+        '#disabled' => TRUE,
+      ) + $plugin_element['enable'];
+
+      $plugin_element['enable']['#attributes']['class'][] = 'element-hidden';
+    }
+  }
+
+  // Add description to web service plugin
+  if (isset($form['web_service']['enable'])) {
+    $descriptions = array();
+    $descriptions[] = t('If enabled, the Web Service API provides prior payment transaction operations (prior auth capture, void, credit) and card on file charge processing during checkout or elsewhere.');
+    $descriptions[] = t('The Web Service API credentials must match the terminal selected in your Hosted Payment Page "Payment Types" settings for the same transaction mode as selected below.');
+
+    $description = implode('<br />', $descriptions);
+    if (!empty($form['web_service']['enable']['#description'])) {
+      $form['web_service']['enable']['#description'] .= '<br />' . $description;
+    }
+    else {
+      $form['web_service']['enable']['#description'] = $description;
+    }
+  }
+
+
+  return $form;
+}
+
+/**
+ * Payment method callback: adds a message to the submission form if enabled
+ */
+function commerce_firstdata_gge4_hpp_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  $form = array();
+
+  if (!empty($payment_method['settings']['show_payment_instructions'])) {
+    $form['paypal_wps_information'] = array(
+      '#markup' => '<span class="commerce-firstdata-gge4-hpp-info">' . t('(Continue with checkout to complete secure payment via First Data.)') . '</span>',
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Implements hook_commerce_cardonfile_checkout_pane_form_alter()
+ * - Hide 'Set as your default card' if hpp is the only method
+ */
+function commerce_firstdata_gge4_hpp_commerce_cardonfile_checkout_pane_form_alter(&$payment_details, &$form) {
+  if (isset($payment_details['#options']) ||
+      empty($form['commerce_payment']['payment_method']['#options']) ||
+      count($form['commerce_payment']['payment_method']['#options']) > 1) {
+    return;
+  }
+
+  reset($form['commerce_payment']['payment_method']['#options']);
+  $instance_id = key($form['commerce_payment']['payment_method']['#options']);
+  $payment_method = commerce_payment_method_instance_load($instance_id);
+  
+  if ($payment_method['method_id'] == 'firstdata_gge4_hpp') {
+    $payment_details['cardonfile_instance_default'] = array(
+      '#type' => 'value',
+      '#value' => !empty($payment_details['cardonfile_instance_default']['#default_value']),
+    );
+  }
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function commerce_firstdata_gge4_hpp_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents) {
+  // Load the API controller
+  $gateway = commerce_firstdata_gge4_get_controller($payment_method['instance_id']);
+
+  // DENY if hpp not configured
+  if (!$gateway->isActive('hpp')) {
+    watchdog('commerce_firstdata_gge4', 'Misconfigured hosted payment page during checkout of order @order_id.', array(
+      '@order_id' => $order->order_id,
+    ), WATCHDOG_ERROR);
+    drupal_set_message(t('An unexpected error occurred.  Please contact an administrator to resolve this issue'), 'error');
+    return FALSE;
+  }
+}
+
+/**
+ * Payment method callback: checkout form submission.
+ */
+function commerce_firstdata_gge4_hpp_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  // If the customer specified payment using a card on file, attempt that now
+  // and simply return the result.
+  if (module_exists('commerce_cardonfile') && !empty($pane_values['cardonfile']) && $pane_values['cardonfile'] != 'new') {
+    return commerce_firstdata_gge4_cardonfile_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge);
+  }
+
+  return TRUE;
+}
+
+/**
+ * Payment method callback: redirect form
+ */
+function commerce_firstdata_gge4_hpp_redirect_form($form, &$form_state, $order, $payment_method) {
+  // Load the API controller
+  $gateway = commerce_firstdata_gge4_get_controller($payment_method['instance_id']);
+
+  // Transaction info
+  $txn_type = $gateway->getSettings('txn_type');
+  $txn_type_info = $gateway->transactionType($txn_type);
+
+  // Determine if selected card on file was processed
+  $success_statuses = array(COMMERCE_PAYMENT_STATUS_SUCCESS, COMMERCE_PAYMENT_STATUS_GGE4_PREAUTH_ONLY);
+  if (!empty($txn_type_info['commerce_status_success'])) {
+    $success_statuses[] = $txn_type_info['commerce_status_success'];
+  }
+  $success_statuses = array_unique($success_statuses);
+
+  $query_entity_type = 'commerce_payment_transaction';
+  $txn_query = new EntityFieldQuery();
+  $txn_query
+    ->entityCondition('entity_type', 'commerce_payment_transaction')
+    ->propertyCondition('instance_id', $payment_method['instance_id'])
+    ->propertyCondition('order_id', $order->order_id)
+    ->propertyCondition('status', $success_statuses)
+    ->propertyCondition('remote_id', '', '!=')
+    ->entityOrderBy('entity_id', 'DESC')
+    ->addTag('DANGEROUS_ACCESS_CHECK_OPT_OUT');
+
+  $txn_result = $txn_query->execute();
+  if (isset($txn_result[$query_entity_type])) {
+    $txn_ids = array_keys($txn_result[$query_entity_type]);
+    $transactions = commerce_payment_transaction_load_multiple($txn_ids);
+  
+    if (!empty($transactions)) {
+      $completed = FALSE;
+      foreach ($transactions as $transaction) {
+        if (!empty($transaction->remote_id)) {
+          // Send the customer on to the next checkout page.
+          commerce_payment_redirect_pane_next_page($order, t('Customer successfully submitted payment via card on file.'));
+          drupal_goto(commerce_checkout_order_uri($order));
+          break;
+        }
+      }
+    }
+  }
+
+  // DENY if hpp not configured
+  if (!$gateway->isActive('hpp')) {
+    drupal_set_message(t('An unexpected error occurred.'), 'error');
+    drupal_goto('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key']);
+  }
+
+
+  // Build redirect form
+  $request_state = array(
+    'order' => $order,
+  );
+
+  // If the payment method settings has the 'checkout_offsite_autoredirect'
+  // option enabled, add the redirection behavior.
+  // @see commerce_payment_redirect_pane_checkout_form()
+  if ($gateway->get('hpp')->getSettings('checkout_offsite_autoredirect')) {
+    $form['checkout_offsite_autoredirect'] = array(
+      '#markup' => '<div class="checkout-help">' . t('Please wait while you are redirected to the payment server. If nothing happens within 10 seconds, please click on the button below.') . '</div>',
+      '#attached' => array('js' => array(drupal_get_path('module', 'commerce_payment') . '/commerce_payment.js')),
+    );
+  }
+
+  return $gateway->get('hpp')->paymentForm($form, $form_state, $request_state);
+}

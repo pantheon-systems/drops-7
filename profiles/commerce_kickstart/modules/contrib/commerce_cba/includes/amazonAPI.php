@@ -186,7 +186,10 @@ class amazonAPI {
     // Set the expected delivery method for the order.
     $delivery_method = '#default';
     if (isset($order->data['commerce_cba'])) {
-      if (!empty($order->data['commerce_cba']['shipping'])) {
+      if (isset($order->data['commerce_cba']['express-checkout'])) {
+        $delivery_method = '#default';
+      }
+      elseif (!empty($order->data['commerce_cba']['shipping'])) {
         $delivery_method = 'shipping';
       }
       elseif (!empty($order->data['commerce_cba']['billing'])) {

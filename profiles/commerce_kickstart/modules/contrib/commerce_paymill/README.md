@@ -26,11 +26,13 @@ All development happens on the 2.x branch. The 1.x branch is
     multiple captures. Multiple captures will arrive in a future
     release. Right now you can capture only and only **one** time. 
    
- 4. **card on file** functionality that allows for you securely to
+ 4. [3-D Secure](https://en.wikipedia.org/wiki/3-D_Secure) support.
+   
+ 5. **card on file** functionality that allows for you securely to
     charge a client card without having to deal with the huge hassle
     of storing credit card numbers.
 
- 5. **proxy** support allowing it to work out of the box on sites
+ 6. **proxy** support allowing it to work out of the box on sites
     using exit proxies for security reasons. 
 
 Note that to enable the card on file funcionality you need to install
@@ -97,7 +99,7 @@ Here are the steps to install the module when using a proxy:
  5. On the `Proxy settings` fieldset configure the proxy.
  
  
- 6. Add the proxy host, it can be `localhost` any domain name that can
+ 6. Add the proxy host, it can be `localhost`, any domain name that can
     be resolved or an IP address.
     
  7. Configure the port number, by default it uses `8080`.   

@@ -97,11 +97,13 @@ function search_api_db_update_7103() {
   foreach ($server_options as $options) {
     $options = unserialize($options);
     if (!empty($options['indexes'])) {
+      list($key, $target) = explode(':', $options['database'], 2);
+      $connection = Database::getConnection($target, $key);
       foreach ($options['indexes'] as $fields) {
         foreach ($fields as $field) {
           if ($field['type'] == 'date') {
             $column = !empty($field['column']) ? $field['column'] : 'value';
-            db_change_field($field['table'], $column, $column, $spec);
+            $connection->schema()->changeField($field['table'], $column, $column, $spec);
           }
         }
       }

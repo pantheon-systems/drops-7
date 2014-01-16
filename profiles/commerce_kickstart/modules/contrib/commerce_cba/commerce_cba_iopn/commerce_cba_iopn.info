@@ -5,9 +5,9 @@ core = 7.x
 
 dependencies[] = commerce_cba
 
-; Information added by drupal.org packaging script on 2013-05-16
-version = "7.x-1.0-alpha1"
+; Information added by Drupal.org packaging script on 2013-12-11
+version = "7.x-1.0-alpha2"
 core = "7.x"
 project = "commerce_cba"
-datestamp = "1368718811"
+datestamp = "1386777506"
 

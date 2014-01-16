@@ -7,7 +7,8 @@
       var processed = $('.event-slider', context).hasClass('pager-processed');
       if (typeof $.fn.bxSlider != 'undefined' && processed == false) {
         // bx Slider.
-        var slider = $('.event-slider', context).bxSlider({
+        var slider = $('.event-slider', context);
+        slider.bxSlider({
           auto: true,
           autoHover: true,
           controls: true,

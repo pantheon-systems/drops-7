@@ -15,11 +15,11 @@ function commerce_backoffice_order_views_api() {
  */
 function commerce_backoffice_order_menu() {
   // Megarow callback.
-  $items['commerce_backoffice/order/%commerce_order'] = array(
+  $items['commerce_backoffice/order/%commerce_order/%'] = array(
     'title callback' => 'commerce_order_ui_order_title',
     'title arguments' => array(2),
     'page callback' => 'commerce_backoffice_order_view',
-    'page arguments' => array(2),
+    'page arguments' => array(2, 3),
     'delivery callback' => 'ajax_deliver',
     'access callback' => 'commerce_order_access',
     'access arguments' => array('view', 2),
@@ -42,7 +42,7 @@ function commerce_backoffice_order_admin_paths() {
 /**
  * Displays the given order using the backoffice view mode, in a megarow.
  */
-function commerce_backoffice_order_view($order) {
+function commerce_backoffice_order_view($order, $display_id) {
   $title = commerce_order_ui_order_title($order);
   $view = entity_view('commerce_order', array($order->order_id => $order), 'backoffice');
   $view = $view['commerce_order'][$order->order_id];
@@ -50,7 +50,7 @@ function commerce_backoffice_order_view($order) {
 
   $return = views_megarow_display($title, $output, $order->order_id);
   if (!empty($view['#megarow_refresh_parent'])) {
-    $return['#commands'][] = views_megarow_command_refresh_parent($order->order_id);
+    $return['#commands'][] = views_megarow_command_refresh_parent($order->order_id, $display_id);
   }
 
   return $return;
@@ -63,7 +63,7 @@ function commerce_backoffice_order_form_alter(&$form, &$form_state, $form_id) {
   // Alter the Exposed Filters for orders page
   if (isset($form['submit']['#id']) && $form['submit']['#id'] == 'edit-submit-commerce-backoffice-orders') {
     $form['status']['#attributes'] = array('data-placeholder' => array(t('All statuses')));
-    $form['combine']['#attributes'] = array('placeholder' => array(t('Search by name, email, order ID')));
+    $form['combine']['#attributes'] = array('placeholder' => array(t('Search by username, email, order ID')));
   }
 }
 
@@ -102,6 +102,9 @@ function commerce_backoffice_order_preprocess_entity(&$vars) {
     $vars['classes_array'][] = 'commerce-order-backofffice';
     drupal_add_css(drupal_get_path('module', 'commerce_backoffice_order') . '/theme/commerce-backoffice-order.css');
   }
+  if ($vars['entity_type'] == 'commerce_order' && $vars['view_mode'] != 'backoffice') {
+    unset($vars['content']['commerce_backoffice_order_payments_quick_edit_payment']);
+  }
 }
 
 /**
@@ -126,7 +129,7 @@ function commerce_backoffice_order_field_extra_fields() {
  * Implements hook_entity_view().
  */
 function commerce_backoffice_order_entity_view($entity, $entity_type, $view_mode, $langcode) {
-  if ($entity_type == 'commerce_order' && $view_mode = 'backoffice') {
+  if ($entity_type == 'commerce_order' && $view_mode == 'backoffice') {
     $status_form = drupal_get_form('commerce_backoffice_order_status_form', $entity);
     // Bubble-up the signal for refreshing the parent row.
     if (!empty($status_form['#megarow_refresh_parent'])) {

@@ -26,7 +26,7 @@ interface SearchApiAlterCallbackInterface {
   /**
    * Check whether this data-alter callback is applicable for a certain index.
    *
-   * This can be used for hiding the callback on the index's "Workflow" tab. To
+   * This can be used for hiding the callback on the index's "Filters" tab. To
    * avoid confusion, you should only use criteria that are immutable, such as
    * the index's entity type. Also, since this is only used for UI purposes, you
    * should not completely rely on this to ensure certain index configurations

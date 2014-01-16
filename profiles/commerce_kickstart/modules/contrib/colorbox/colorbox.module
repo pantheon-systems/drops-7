@@ -32,6 +32,7 @@ function colorbox_theme() {
         'widget' => NULL,
       ),
       'template' => 'colorbox-insert-image',
+      'pattern' => 'colorbox_insert_image__[a-z0-9_]+',
       'file' => 'colorbox.theme.inc',
     ),
 
@@ -77,7 +78,7 @@ function colorbox_libraries_info() {
   $libraries['colorbox'] = array(
     'name' => 'Colorbox plugin',
     'vendor url' => 'http://www.jacklmoore.com/colorbox',
-    'download url' => 'http://www.jacklmoore.com/colorbox',
+    'download url' => 'https://github.com/jackmoore/colorbox/archive/1.x.zip',
     'version arguments' => array(
       'file' => 'jquery.colorbox-min.js',
       'pattern' => '@(?i:Colorbox) v([0-9\.a-z]+)@',
@@ -187,6 +188,8 @@ function _colorbox_doheader() {
       'initialHeight' => variable_get('colorbox_initialheight', '250'),
       'fixed' => variable_get('colorbox_fixed', 1) ? TRUE : FALSE,
       'scrolling' => variable_get('colorbox_scrolling', 1) ? TRUE : FALSE,
+      'mobiledetect' => variable_get('colorbox_mobile_detect', 1) ? TRUE : FALSE,
+      'mobiledevicewidth' => variable_get('colorbox_mobile_device_width', '480px'),
     );
   }
   else {
@@ -199,6 +202,8 @@ function _colorbox_doheader() {
       'maxWidth' => '98%',
       'maxHeight' => '98%',
       'fixed' => TRUE,
+      'mobiledetect' => variable_get('colorbox_mobile_detect', 1) ? TRUE : FALSE,
+      'mobiledevicewidth' => variable_get('colorbox_mobile_device_width', '480px'),
     );
   }
 
@@ -306,15 +311,12 @@ function colorbox_field_formatter_settings_form($field, $instance, $view_mode, $
   );
   $element['colorbox_gallery_custom'] = array(
     '#title' => t('Custom gallery'),
-    '#type' => 'machine_name',
+    '#type' => 'textfield',
     '#maxlength' => 32,
     '#default_value' => $settings['colorbox_gallery_custom'],
-    '#description' => t('All images on a page with the same gallery value (rel attribute) will be grouped together. It must only contain lowercase letters, numbers, and underscores.'),
+    '#description' => t('All images on a page with the same gallery value (rel attribute) will be grouped together. It must only contain lowercase letters, numbers, hyphen and underscores.'),
+    '#element_validate' => array('colorbox_gallery_custom_validate'),
     '#required' => FALSE,
-    '#machine_name' => array(
-      'exists' => 'colorbox_gallery_exists',
-      'error' => t('The custom gallery field must only contain lowercase letters, numbers, and underscores.'),
-    ),
     '#states' => array(
       'visible' => array(
         ':input[name$="[settings_edit_form][settings][colorbox_gallery]"]' => array('value' => 'custom'),
@@ -378,6 +380,15 @@ function colorbox_field_formatter_settings_form($field, $instance, $view_mode, $
   }
 
   return $element;
+}
+
+/**
+ * Validate function for colorbox_gallery_custom.
+ */
+function colorbox_gallery_custom_validate($element, &$form_state) {
+  if ($element['#value'] != drupal_html_class($element['#value'])) {
+    form_error($element, t('%name must only contain lowercase letters, numbers, hyphen and underscores.', array('%name' => $element['#title'])));
+  }
 }
 
 /**
@@ -479,7 +490,7 @@ function colorbox_insert_styles() {
  */
 function colorbox_insert_content($item, $style, $widget) {
   list($item['module_name'], $item['style_name']) = explode('__', $style['name'], 2);
-  return theme('colorbox_insert_image', array('item' => $item, 'widget' => $widget));
+  return theme(array('colorbox_insert_image__' . str_replace('-', '_', $item['style_name']), 'colorbox_insert_image'), array('item' => $item, 'widget' => $widget));
 }
 
 /**

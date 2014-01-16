@@ -35,6 +35,29 @@ function addressfield_views_api() {
 }
 
 /**
+ * Implements hook_module_implements_alter().
+ *
+ * Moves the hook_token_info_alter() implementation to the bottom so it is
+ * invoked after all modules implementing the same hook.
+ */
+function addressfield_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'token_info_alter') {
+    $group = $implementations['addressfield'];
+    unset($implementations['addressfield']);
+    $implementations['addressfield'] = $group;
+  }
+}
+
+/**
+ * Returns TRUE if a field map array value represents an addressfield.
+ *
+ * Provided for use as a callback by array_filter().
+ */
+function addressfield_field_map_filter($field) {
+  return !empty($field['type']) && $field['type'] == 'addressfield';
+}
+
+/**
  * Get the list of format plugins.
  */
 function addressfield_format_plugins() {
@@ -160,30 +183,38 @@ function _addressfield_process_format_form(&$format, $address, $required) {
   foreach (element_children($format) as $key) {
     $child = &$format[$key];
 
-    // Automatically expand elements that matches one of the field of the
-    // address structure.
+    // Automatically convert any element in the format array to an appropriate
+    // form element that matches one of the address component names.
     if (in_array($key, array('name_line', 'first_name', 'last_name', 'organisation_name', 'country', 'administrative_area', 'sub_administrative_area', 'locality', 'dependent_locality', 'postal_code', 'thoroughfare', 'premise', 'sub_premise'))) {
-      // Set the type.
+      // Set the form element type for the address component to whatever the
+      // address format specified in its #widget_type property.
       if (isset($child['#widget_type'])) {
         $child['#type'] = $child['#widget_type'];
       }
       else {
+        // If the element didn't specify a #widget_type and has options, turn it
+        // into a select list and unset its #size value, which is typically used
+        // to provide the width of a textfield.
         if (isset($child['#options'])) {
           $child['#type'] = 'select';
-          $child['#size'] = 0;
+          unset($child['#size']);
         }
         else {
+          // Otherwise go ahead and make it a textfield.
           $child['#type'] = 'textfield';
         }
       }
+
       if (!$required) {
         unset($child['#required']);
       }
 
-      $child['#default_value'] = $address[$key];
+      if (isset($address[$key])) {
+        $child['#default_value'] = $address[$key];
+      }
     }
 
-    // Recurse through the child.
+    // Recurse through the element's children if it has any.
     _addressfield_process_format_form($child, $address, $required);
   }
 }
@@ -200,8 +231,8 @@ function _addressfield_render_address(&$format, $address) {
   foreach (element_children($format) as $key) {
     $child = &$format[$key];
 
-    // Automatically expand elements that matches one of the field of the
-    // address structure.
+    // Automatically expand elements that match one of the fields of the address
+    // structure.
     if (in_array($key, array('name_line', 'first_name', 'last_name', 'organisation_name', 'country', 'administrative_area', 'sub_administrative_area', 'locality', 'dependent_locality', 'postal_code', 'thoroughfare', 'premise', 'sub_premise'), TRUE)) {
       if (isset($child['#render_type'])) {
         $child['#type'] = $child['#render_type'];
@@ -216,10 +247,12 @@ function _addressfield_render_address(&$format, $address) {
       // If the element instructs us to render the option value instead of the
       // raw address element value and its #options array has a matching key,
       // swap it out for the option value now.
+      $child['#children'] = '';
+
       if (!empty($child['#render_option_value']) && isset($child['#options'][$address[$key]])) {
         $child['#children'] = check_plain($child['#options'][$address[$key]]);
       }
-      else {
+      elseif (isset($address[$key])) {
         $child['#children'] = check_plain($address[$key]);
       }
 
@@ -361,6 +394,35 @@ function addressfield_field_is_empty($item, $field) {
   // Every address field must have at least a country value or it is considered
   // empty, even if it has name information.
   return empty($item['country']);
+}
+
+/**
+ * Implements hook_field_presave().
+ */
+function addressfield_field_presave($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  foreach ($items as $delta => &$item) {
+    // If the first name and last name are set but the name line isn't...
+    if (isset($item['first_name']) && isset($item['last_name']) && !isset($item['name_line'])) {
+      // Combine the first and last name to be the name line.
+      $items[$delta]['name_line'] = $items[$delta]['first_name'] . ' ' . $items[$delta]['last_name'];
+    }
+    elseif (isset($item['name_line'])) {
+      // Otherwise if the name line is set, separate it out into a best guess at
+      // the first and last name.
+      $names = explode(' ', $item['name_line']);
+
+      $item['first_name'] = array_shift($names);
+      $item['last_name'] = implode(' ', $names);
+    }
+
+    // Trim whitespace from all of the address components and convert any double
+    // spaces to single spaces.
+    foreach ($item as $key => &$value) {
+      if (!in_array($key, array('element_key', 'data')) && is_string($value)) {
+        $value = trim(str_replace('  ', ' ', $value));
+      }
+    }
+  }
 }
 
 /**

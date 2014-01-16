@@ -213,32 +213,17 @@ function commerce_message_default_message_type_alter(&$items) {
   if (module_exists('locale')) {
     $languages = locale_language_list();
     foreach ($languages as $langcode => $langname) {
-      // Commerce Order: created
-      $items['commerce_order_created']->message_text[$langcode] = $items['commerce_order_created']->message_text[LANGUAGE_NONE];
-      $items['commerce_order_created']->message_order_display_name[$langcode] = $items['commerce_order_created']->message_order_display_name[LANGUAGE_NONE];
-      // Commerce Order: state change of the order
-      $items['commerce_order_state']->message_text[$langcode] = $items['commerce_order_state']->message_text[LANGUAGE_NONE];
-      $items['commerce_order_state']->message_order_display_name[$langcode] = $items['commerce_order_state']->message_order_display_name[LANGUAGE_NONE];
-      // Commerce Order: payment entered
-      $items['commerce_order_payment_entered']->message_text[$langcode] = $items['commerce_order_payment_entered']->message_text[LANGUAGE_NONE];
-      $items['commerce_order_payment_entered']->message_order_display_name[$langcode] = $items['commerce_order_payment_entered']->message_order_display_name[LANGUAGE_NONE];
-      // Commerce Order: order paid in full
-      $items['commerce_order_payment_full']->message_text[$langcode] = $items['commerce_order_payment_full']->message_text[LANGUAGE_NONE];
-      $items['commerce_order_payment_full']->message_order_display_name[$langcode] = $items['commerce_order_payment_full']->message_order_display_name[LANGUAGE_NONE];
-      // Commerce Order: product added to cart
-      $items['commerce_order_cart_add']->message_text[$langcode] = $items['commerce_order_cart_add']->message_text[LANGUAGE_NONE];
-      $items['commerce_order_cart_add']->message_order_display_name[$langcode] = $items['commerce_order_cart_add']->message_order_display_name[LANGUAGE_NONE];
-      // Commerce Order: product removed from cart
-      $items['commerce_order_cart_remove']->message_text[$langcode] = $items['commerce_order_cart_remove']->message_text[LANGUAGE_NONE];
-      $items['commerce_order_cart_remove']->message_order_display_name[$langcode] = $items['commerce_order_cart_remove']->message_order_display_name[LANGUAGE_NONE];
-      // Commerce Order: user comment
-      $items['commerce_order_user_comment']->message_text[$langcode] = $items['commerce_order_user_comment']->message_text[LANGUAGE_NONE];
-      $items['commerce_order_user_comment']->message_order_display_name[$langcode] = $items['commerce_order_user_comment']->message_order_display_name[LANGUAGE_NONE];
-      // Commerce Order: admin comment
-      $items['commerce_order_admin_comment']->message_text[$langcode] = $items['commerce_order_admin_comment']->message_text[LANGUAGE_NONE];
-      $items['commerce_order_admin_comment']->message_order_display_name[$langcode] = $items['commerce_order_admin_comment']->message_order_display_name[LANGUAGE_NONE];
-      // Commerce Order: order confirmation
-      $items['commerce_order_order_confirmation']->message_text[$langcode] = $items['commerce_order_order_confirmation']->message_text[LANGUAGE_NONE];
+      foreach ($items as $message_type => $item) {
+        if ($item->module != 'commerce_message') {
+          continue;
+        }
+        if (isset($items[$message_type]->message_text[LANGUAGE_NONE])) {
+          $items[$message_type]->message_text[$langcode] = $items[$message_type]->message_text[LANGUAGE_NONE];
+        }
+        if (isset($items[$message_type]->message_order_display_name[LANGUAGE_NONE])) {
+          $items[$message_type]->message_order_display_name[$langcode] = $items[$message_type]->message_order_display_name[LANGUAGE_NONE];
+        }
+      }
     }
   }
 }

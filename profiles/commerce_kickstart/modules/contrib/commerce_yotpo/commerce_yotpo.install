@@ -1,0 +1,51 @@
+<?php
+
+/**
+ * @file Confirm the required library is available
+ */
+
+/**
+ * Implements of hook_requirements().
+ *
+ * Display installed status on the site report screen.
+ */
+function commerce_yotpo_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break at install time.
+  $t = get_t();
+
+  if ($phase == 'runtime' && module_exists('libraries')) {
+    $library = libraries_detect('yotpo-php');
+    // Check if the expected library path exists.
+    if (!empty($library['installed'])) {
+      $path = libraries_get_path('yotpo-php');
+
+      $requirements['yotpo-php'] = array(
+        'title' => $t('Yotpo PHP library'),
+        'value' => $t('Yotpo PHP library @version is available.', array('@version' => $library['version'])),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['yotpo-php'] = array(
+        'title' => $t('Yotpo PHP library'),
+        'description' => $t('Yotpo PHP library is required.'),
+        'value' => $library['error message'],
+        'severity' => REQUIREMENT_ERROR,
+        'description' => $t('
+          See the <a href="@help_url">project page</a> for install instructions.
+          <br/>
+          Download the required libraries from
+          <a href="@library_url">the Yotpo GitHub project</a>
+          and place it in <code>@install_path</code>',
+          array(
+            '@library_url' => $library['download url'],
+            '@help_url' => url('https://drupal.org/project/commerce_yotpo'),
+            '@install_path' => 'sites/all/libraries/yotpo-php',
+          )
+        ),
+      );
+    }
+  }
+  return $requirements;
+}

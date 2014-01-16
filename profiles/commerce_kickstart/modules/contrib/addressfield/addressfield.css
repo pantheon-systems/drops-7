@@ -8,6 +8,13 @@ div.addressfield-container-inline.country-GB > div.form-item {
   margin-right: auto; /* LTR */
 }
 
+div.addressfield-container-inline.country-BR > div.form-item:first-child,
+div.addressfield-container-inline.country-BR > div.form-item:last-child {
+  clear: both;
+  float: none;
+  margin-right: auto; /* LTR */
+}
+
 /* Clear-fix markup for the inline container */
 div.addressfield-container-inline:after {
   content: ".";

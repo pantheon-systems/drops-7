@@ -963,16 +963,7 @@ function lingotek_admin_advanced_parsing_form($form, &$form_state, $show_fieldse
   $form['advanced-parsing'] = array(
     '#type' => $show_fieldset ? 'fieldset' : 'item',
     '#title' => t('Advanced Content Parsing'),
-    '#collapsible' => TRUE,
-    '#collapsed' => TRUE,
     '#group' => 'administrative_settings',
-    'actions' => array(
-      '#type' => 'actions',
-      'submit' => array(
-        '#type' => 'submit',
-        '#value' => t('Save')
-      )
-    ),
     '#submit' => array('lingotek_admin_advanced_parsing_form_submit')
   );
 
@@ -1005,12 +996,32 @@ function lingotek_admin_advanced_parsing_form($form, &$form_state, $show_fieldse
 
     $form['advanced-parsing']['#submit'][] = 'lingotek_handle_advanced_xml_upgrade';
   }
+
+  $form['advanced-parsing']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save'),
+  );
+
+  $form['advanced-parsing']['reset'] = array(
+    '#type' => 'submit',
+    '#value' => t('Reset to Defaults'),
+    '#attributes' => array(
+      'onclick' => 'return confirm("' . t('Are you sure?\n\nAll of your configuration settings will be reset to system defaults.') . '")',
+      ),
+  );
+
   return $form;
 }
 
-function lingotek_admin_advanced_parsing_form_submit($form, &$form_state) {
-  system_settings_form_submit($form, $form_state);
-}
+function lingotek_admin_advanced_parsing_form_submit(&$form, &$form_state) {
+  if (isset($form_state['values']['op']) && $form_state['values']['op'] == 'Reset to Defaults') {
+    lingotek_set_default_advanced_xml(TRUE);
+    drupal_set_message(t('The configuration settings have been reset to system defaults.'));
+  }
+  else {
+    system_settings_form_submit($form, $form_state);
+  }
+ }
 
 /**
  * Lingotek prefs Form
@@ -1962,13 +1973,15 @@ function lingotek_admin_configuration_view($form_short_id = NULL, $show_fieldset
       $output['lingotek'][] = lingotek_wrap_in_fieldset($entity_settings, t('Translate @types', array('@type' => $entity_type['label'])));
     }
 
-    $arr['lingotek'][] = lingotek_wrap_in_fieldset(drupal_get_form('lingotek_admin_advanced_parsing_form', TRUE), 'Advanced Content Parsing');
-
     //$output['lingotek'][] = lingotek_wrap_in_fieldset($arr, 'Translate Content');
     
     $output['lingotek'][] = lingotek_wrap_in_fieldset(drupal_get_form('lingotek_admin_comment_translation_settings_form', $show_fieldset), 'Translate Comments');
     $output['lingotek'][] = lingotek_wrap_in_fieldset(drupal_get_form('lingotek_admin_additional_translation_settings_form', $show_fieldset), 'Translate Configuration');
     $output['lingotek'][] = lingotek_wrap_in_fieldset(drupal_get_form('lingotek_admin_profiles_form', $show_fieldset), 'Translation Profiles');
+    if ($is_enterprise) {
+      $output['lingotek'][] = lingotek_wrap_in_fieldset(drupal_get_form('lingotek_admin_advanced_parsing_form', TRUE), 'Content Parsing (Advanced)');
+    }
+   
     $output['lingotek'][] = lingotek_wrap_in_fieldset(drupal_get_form('lingotek_admin_prefs_form', $show_fieldset), 'Preferences');
 
     $logging_utilities = array(

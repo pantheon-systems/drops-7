@@ -1,0 +1,194 @@
+<?php
+
+/**
+ * @file
+ * Implements First Data Global Gateway e4 Web Service for use in Drupal Commerce.
+ */
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_firstdata_gge4_ws_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['firstdata_gge4_ws'] = array(
+    'base' => 'commerce_firstdata_gge4_ws',
+    'title' => t('First Data GGe4 Web Service - Credit Card'),
+    'short_title' => t('First Data GGe4 WS CC'),
+    'display_title' => t('Credit card'),
+    'description' => t('Integrates First Data Global Gateway e4 Web Service for card not present CC transactions.'),
+    'cardonfile' => array(
+      'charge callback' => 'commerce_firstdata_gge4_cardonfile_charge',
+      'create callback' => 'commerce_firstdata_gge4_cardonfile_create',
+      'update callback' => 'commerce_firstdata_gge4_cardonfile_update',
+      'delete callback' => 'commerce_firstdata_gge4_cardonfile_delete',
+    ),
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Payment method callback: settings form.
+ */
+function commerce_firstdata_gge4_ws_settings_form($settings = NULL) {
+  $form = commerce_firstdata_gge4_get_controller($settings)->settingsForm();
+
+  // Alter web service plugin
+  if (isset($form['web_service'])) {
+    $plugin_element = &$form['web_service'];
+
+    // Move to top
+    $plugin_element['#weight'] = -50;
+
+    // Force web service enabled
+    if (isset($plugin_element['enable'])) {
+      $plugin_element['enable'] = array(
+        '#title' => '<strong>' . t('Web Service') . '</strong>',
+        '#default_value' => 1,
+        '#disabled' => TRUE,
+      ) + $plugin_element['enable'];
+
+      $plugin_element['enable']['#attributes']['class'][] = 'element-hidden';
+    }
+  }
+
+  // Alter HPP plugin form
+  if (isset($form['hpp'])) {
+    // Alter default form for Web Services
+    $cardonfile_enabled_selector = array(
+      ':input[name*="[cardonfile"]' => array('checked' => TRUE),
+    );
+
+    // Add description to Hosted Payment Page
+    if (isset($form['hpp']['enable'])) {
+      $form['hpp']['enable']['#states'] = array(
+        'visible' => $cardonfile_enabled_selector,
+      );
+
+      $description = t('If enabled, then the Hosted Payment Page is used to update cards on file.');
+      if (!empty($form['hpp']['enable']['#description'])) {
+        $form['hpp']['enable']['#description'] .= '<br />' . $description;
+      }
+      else {
+        $form['hpp']['enable']['#description'] = $description;
+      }
+    }
+  }
+
+  // No live test for web service
+  unset($form['txn_mode']['#options'][FIRSTDATA_GGE4_TXN_MODE_LIVE_TEST]);
+
+  return $form;
+}
+
+/**
+ * Payment method callback: checkout form.
+ */
+function commerce_firstdata_gge4_ws_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  $form = array();
+  $form_state = array('values' => $pane_values);
+
+  // Instance controller with settings b/c 'instance_id' is not available.
+  $gateway = commerce_firstdata_gge4_get_controller($payment_method['settings']);
+  if ($gateway->isActive('web_service')) {
+    $form = $gateway->get('web_service')->paymentForm($form, $form_state, $order);
+  }
+
+  return $form;
+}
+
+/**
+ * Payment method callback: checkout form validation.
+ */
+function commerce_firstdata_gge4_ws_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  // Validate the web service component
+  $gateway = commerce_firstdata_gge4_get_controller($payment_method['instance_id']);
+
+  // Exit if web service component misconfigured or missing
+  if (empty($gateway) || !$gateway->isActive('web_service')) {
+    watchdog('commerce_firstdata_gge4', 'Misconfigured web_service component during checkout of order @order_id.', array(
+      '@order_id' => $order->order_id,
+    ), WATCHDOG_ERROR);
+    drupal_set_message(t('An unexpected error occurred. Please enter your information again or try a different card.'), 'error');
+    return FALSE;
+  }
+  
+  // If the customer specified a card on file, skip the normal validation.
+  if (module_exists('commerce_cardonfile') && !empty($payment_method['settings']['cardonfile']) &&
+    !empty($pane_values['cardonfile']) && $pane_values['cardonfile'] !== 'new') {
+    return;
+  }
+
+  module_load_include('inc', 'commerce_payment', 'includes/commerce_payment.credit_card');
+
+  // Validate the credit card fields.
+  $settings = array(
+    'form_parents' => array_merge($form_parents, array('credit_card')),
+  );
+
+  if (!commerce_payment_credit_card_validate($pane_values['credit_card'], $settings)) {
+    return FALSE;
+  }
+}
+
+/**
+ * Payment method callback: checkout form submission.
+ */
+function commerce_firstdata_gge4_ws_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  // Load the API controller
+  $gateway = commerce_firstdata_gge4_get_controller($payment_method['instance_id']);
+
+  // DENY if no web service
+  if (!$gateway->isActive('web_service')) {
+    return FALSE;
+  }
+
+  // If the customer specified payment using a card on file, attempt that now
+  // and simply return the result.
+  if (module_exists('commerce_cardonfile') && !empty($pane_values['cardonfile']) && $pane_values['cardonfile'] != 'new') {
+    return commerce_firstdata_gge4_cardonfile_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge);
+  }
+
+  // Create a new card based on the pane values
+  $card = commerce_firstdata_gge4_payment_pane_card($payment_method, $pane_values, $order);
+
+/** @todo: check for amount >= 0? or does commerce check already ***/
+  // Cannot process amount < 0
+  if ($charge['amount'] < 0) {
+    drupal_set_message(t('Card processing is not available for an order balance that is less than zero.'), 'error');
+    return FALSE;
+  }
+
+  // Build request state
+  $request_state = array(
+    'charge' => $charge,
+    'card' => $card,
+    'order' => $order,
+  );
+
+  // If txn_type has been specified in the pane values array, such as through
+  // the special select element we alter onto the payment terminal form, use
+  // that instead of the default defined in the payment method settings.
+  if (!empty($pane_values['txn_type'])) {
+    $request_state['txn_type'] = $pane_values['txn_type'];
+  }
+
+  // Perform request
+  $response = $gateway->get('web_service')->request($request_state);
+
+  // If the payment failed, display an error and rebuild the form.
+  if (empty($response) || empty($response['transaction_approved'])) {
+    drupal_set_message(t('We received an error processing your card. Please enter your information again or try a different card.'), 'error');
+
+    // Display bank error to customer.
+    if ($error_messages = $gateway->get('web_service')->getErrorMessages($response)) {
+      if (!empty($error_messages['bank_message'])) {
+        drupal_set_message(t('@error', array('@error' => $error_messages['bank_message'])), 'error');
+      }
+    }
+    return FALSE;
+  }
+
+  return TRUE;
+}

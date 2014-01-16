@@ -31,7 +31,7 @@ class commerce_backoffice_order_handler_field_order_operations extends views_han
     array_shift($links);
 
     // Add the quick-edit link which opens the megarow.
-    $quick_edit['quick-edit'] = menu_get_item('commerce_backoffice/order/' . $order_id);
+    $quick_edit['quick-edit'] = menu_get_item('commerce_backoffice/order/' . $order_id . '/' . $this->view->current_display);
     $quick_edit['quick-edit']['title'] = t('Quick edit');
     $quick_edit['quick-edit']['attributes']['class'] = 'views-megarow-open';
     $links = array_merge($quick_edit, $links);

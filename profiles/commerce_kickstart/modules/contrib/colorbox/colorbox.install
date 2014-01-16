@@ -14,13 +14,15 @@ function colorbox_requirements($phase) {
   if ($phase == 'runtime') {
     $t = get_t();
     $library = libraries_detect('colorbox');
+    $error_type = isset($library['error']) ? drupal_ucfirst($library['error']) : '';
+    $error_message = isset($library['error message']) ? $library['error message'] : '';
 
     if (empty($library['installed'])) {
       $requirements['colorbox_plugin'] = array(
         'title' => $t('Colorbox plugin'),
-        'value' => $t('At least @a', array('@a' => COLORBOX_MIN_PLUGIN_VERSION)),
+        'value' => $t('@e: At least @a', array('@e' => $error_type, '@a' => COLORBOX_MIN_PLUGIN_VERSION)),
         'severity' => REQUIREMENT_ERROR,
-        'description' => $t('You need to download the !colorbox, extract the archive and place the colorbox directory in the %path directory on your server.', array('!colorbox' => l($t('Colorbox plugin'), $library['download url']), '%path' => 'sites/all/libraries')),
+        'description' => $t('!error You need to download the !colorbox, extract the archive and place the colorbox directory in the %path directory on your server.', array('!error' => $error_message, '!colorbox' => l($t('Colorbox plugin'), $library['download url']), '%path' => 'sites/all/libraries')),
       );
     }
     elseif (version_compare($library['version'], COLORBOX_MIN_PLUGIN_VERSION, '>=')) {
@@ -47,7 +49,7 @@ function colorbox_requirements($phase) {
  * Implements hook_uninstall().
  */
 function colorbox_uninstall() {
-  db_query("DELETE FROM {variable} WHERE name LIKE 'colorbox_%'");
+  db_delete('variable')->condition('name', db_like('colorbox_') . '%', 'LIKE')->execute();
 }
 
 /**

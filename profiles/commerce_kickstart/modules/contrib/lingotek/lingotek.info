@@ -47,9 +47,9 @@ files[] = lingotek_views_handler_workbench_link.inc
 
 stylesheets[all][] = style/base.css
 
-; Information added by  packaging script on 2013-11-18
-version = "7.x-4.09"
+; Information added by  packaging script on 2013-11-28
+version = "7.x-4.10"
 core = "7.x"
 project = "lingotek"
-datestamp = "1384818213"
+datestamp = "1385597617"
 

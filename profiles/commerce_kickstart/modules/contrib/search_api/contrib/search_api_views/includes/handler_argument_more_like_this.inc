@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Contains SearchApiViewsHandlerArgumentMoreLikeThis.
+ */
+
+/**
  * Views argument handler providing a list of related items for search servers
  * supporting the "search_api_mlt" feature.
  */

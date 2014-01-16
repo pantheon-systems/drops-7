@@ -1,0 +1,1029 @@
+<?php
+
+/**
+ * @file
+ * Implements First Data Global Gateway e4 payment services for use in Drupal Commerce.
+ */
+
+// Transaction mode definitions:
+define('FIRSTDATA_GGE4_TXN_MODE_LIVE', 'live');
+define('FIRSTDATA_GGE4_TXN_MODE_LIVE_TEST', 'live_test');
+define('FIRSTDATA_GGE4_TXN_MODE_DEVELOPER', 'developer');
+
+
+// Commerce transaction types
+
+// Used to verify and tokenize credit card details, but never captured.
+// Supports 0 dollar transactions
+define('FIRSTDATA_GGE4_CREDIT_PREAUTH_ONLY', 'firstdata_gge4_pre_authorize');
+
+// Refunds an amount for a credit card without the need of a prior transaction
+define('FIRSTDATA_GGE4_CREDIT_REFUND', 'firstdata_gge4_refund');
+
+
+// Commerce payment statuses
+define('COMMERCE_PAYMENT_STATUS_GGE4_VOIDED', 'firstdata_gge4_voided');
+define('COMMERCE_PAYMENT_STATUS_GGE4_PREAUTH_ONLY', 'firstdata_gge4_pre_authorized');
+
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_firstdata_gge4_menu() {
+  $items = array();
+
+  // Add menu items for trasnsaction operations.
+  foreach (commerce_firstdata_gge4_transaction_operations() as $txn_type => $txn_type_info) {
+    $action = !empty($txn_type_info['action_word']['present']) ? $txn_type_info['action_word']['present'] : $txn_type_info['short_label'];
+    $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/firstdata-gge4-' . strtr($action, array('_' => '-'))] = array(
+      'title' => $action,
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_firstdata_gge4_transaction_form', 3, 5, $txn_type),
+      'access callback' => 'commerce_firstdata_gge4_payment_transaction_access',
+      'access arguments' => array($txn_type, 3, 5),
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'context' => MENU_CONTEXT_INLINE,
+      'weight' => 2,
+      'file' => 'includes/commerce_firstdata_gge4.admin.inc',
+    );
+  }
+
+  // Respond to the relay response from a GGe4 payment page.
+  $items['commerce_firstdata_gge4/hosted-relay'] = array(
+    'page callback' => 'commerce_firstdata_gge4_hosted_process_relay',
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Return url after relay response to route customers.
+  $items['commerce_firstdata_gge4/hosted-relay-return'] = array(
+    'page callback' => 'commerce_firstdata_gge4_hosted_process_relay_return',
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Process an auto-post response from a GGe4 payment page.
+  $items['commerce_firstdata_gge4/hosted-auto-post'] = array(
+    'page callback' => 'commerce_firstdata_gge4_hosted_process_autopost',
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_alter()
+ */
+function commerce_firstdata_gge4_menu_alter(&$items) {
+  if (!module_exists('commerce_cardonfile')) {
+    return;
+  }
+
+  $module_path = drupal_get_path('module', 'commerce_firstdata_gge4');
+  foreach (commerce_firstdata_gge4_payment_methods() as $method_id => $payment_method) {
+    $payment_method_instances = _commerce_cardonfile_payment_method_instances($method_id, TRUE);
+    if (empty($payment_method_instances)) {
+      continue;
+    }
+
+    foreach ($payment_method_instances as $instance_id => $payment_instance) {
+      $path = 'user/%user/cards/add/' . drupal_hash_base64($instance_id);
+      if (isset($items[$path])) {
+        $items[$path] = array(
+          'page callback' => 'commerce_firstdata_gge4_cardonfile_form_wrapper',
+          'access callback' => 'commerce_firstdata_gge4_cardonfile_access',
+          'file' => 'includes/commerce_firstdata_gge4.pages.inc',
+          'file path' => $module_path,
+        ) + $items[$path];
+
+        // Match form wrapper callback similar to an entity form
+        // - remove $op, add $account, and recreate new card to not depend on original arguments
+        $new_card = commerce_cardonfile_new(array(
+          'instance_id' => $instance_id,
+          'payment_method' => $payment_method['method_id'],
+        ));
+        $items[$path]['page arguments'] = array($new_card, 1);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_firstdata_gge4_theme() {
+  return array(
+    'commerce_firstdata_gge4_ctr' => array(
+      'variables' => array('transaction' => NULL, 'payload_timestamp' => NULL),
+      'file' => 'theme/commerce_firstdata_gge4.theme.inc'
+    ),
+    'commerce_firstdata_gge4_help_link' => array(
+      'variables' => array('path' => NULL, 'text' => NULL, 'options' => NULL),
+      'file' => 'theme/commerce_firstdata_gge4.theme.inc'
+    ),
+  );
+}
+
+/**
+ * Implements hook_commerce_checkout_pane_info().
+ */
+function commerce_firstdata_gge4_commerce_checkout_pane_info() {
+  $checkout_panes = array();
+
+  $checkout_panes['commerce_firstdata_gge4_ctr'] = array(
+    'title' => t('Transaction record'),
+    'name' => t('First Data GGe4 Customer Transaction Record'),
+    'file' => 'includes/commerce_firstdata_gge4.checkout_pane.inc',
+    'base' => 'commerce_firstdata_gge4_ctr_pane',
+    'page' => 'complete',
+    'fieldset' => FALSE,
+    'enabled' => FALSE,
+  );
+
+  return $checkout_panes;
+}
+
+/**
+ * Implements hook_hook_info()
+ */
+function commerce_firstdata_gge4_hook_info() {
+  $base_info = array(
+    'group' => 'commerce',
+  );
+
+  $hooks = array();
+  foreach (commerce_firstdata_gge4_get_component_plugins() as $plugin) {
+    if (!empty($plugin['hook_info'])) {
+      foreach ($plugin['hook_info'] as $hook_name) {
+        $hooks["commerce_firstdata_gge4_{$hook_name}"] = $base_info;
+      }
+    }
+  }
+
+  return $hooks;
+}
+
+
+/**
+ * Hosted Payment Page relay response callback
+ */
+function commerce_firstdata_gge4_hosted_process_relay() {
+/** @todo: handle failed 3 times reponse with Transaction Declined **/
+// @see https://firstdata.zendesk.com/entries/407522-First-Data-Global-Gateway-e4-Hosted-Payment-Pages-Integration-Manual#7
+
+  // Exit if no data
+  if (!isset($_POST) || !isset($_POST['x_trans_id']) || empty($_POST['commerce_payment_method'])) {
+    watchdog('commerce_firstdata_gge4', 'Relay response accessed with no POST data submitted.', array(), WATCHDOG_WARNING);
+    print _commerce_firstdata_gge4_redirect_html(url('', array('absolute' => TRUE)));
+    exit();
+  }
+  watchdog('commerce_firstdata_gge4', 'Relay response accessed.', array(), WATCHDOG_INFO);
+
+  $output = '';
+  $payment_instance = rawurldecode($_POST['commerce_payment_method']);
+  $gateway = commerce_firstdata_gge4_get_controller($payment_instance);
+  if ($gateway && $gateway->isActive('hpp')) {
+    $state = $gateway->get('hpp')->processResponse($_POST);
+    if (!empty($state) && !empty($state['processed'])) {
+
+      // Redirect arguments
+      $redirect_args = array(
+        'payment_method' => $payment_instance,
+        'approved' => !empty($state['processed_response']['transaction_approved']) ? 1 : 0,
+      );
+
+      if (!empty($state['order']->order_id)) {
+        $redirect_args['order_id'] = $state['order']->order_id;
+      }
+      if (!empty($state['transaction'])) {
+        $redirect_args['transaction_id'] = $state['transaction']->transaction_id;
+      }
+      if (!empty($state['card']->card_id)) {
+        $redirect_args['card_id'] = $state['card']->card_id;
+      }
+      elseif (!empty($state['processed_response']['commerce_card_id']) && $state['processed_response']['commerce_card_id'] != 'new') {
+        $redirect_args['card_id'] = $state['processed_response']['commerce_card_id'];
+      }
+
+      $redirect_args['hash'] = $gateway->get('hpp')->generateRedirectHash($redirect_args);
+
+      $redirect_url = url('commerce_firstdata_gge4/hosted-relay-return', array(
+        'absolute' => TRUE,
+        'query' => array('commerce' => $redirect_args),
+      ));
+
+      $output = _commerce_firstdata_gge4_redirect_html($redirect_url);
+    }
+  }
+  else {
+    watchdog('commerce_firstdata_gge4', 'Misconfigured payment method while receiving a Hosted payment page relay response.', array(), WATCHDOG_WARNING);
+  }
+
+  if (!empty($output)) {
+    print $output;
+  }
+  else {
+    print _commerce_firstdata_gge4_redirect_html(url('', array('absolute' => TRUE)));
+  }
+  exit();
+}
+
+/**
+ * Hosted Payment Page redirect router
+ *
+ * Callback function triggered by HTTP redirect in relay response HTML returned
+ * to the First Data Hosted Payment Page.
+ */
+function commerce_firstdata_gge4_hosted_process_relay_return() {
+  watchdog('commerce_firstdata_gge4', 'Relay return accessed.', array(), WATCHDOG_INFO);
+    
+  // pull the parameters send back from the return link
+  $params = drupal_get_query_parameters();
+
+  // Exit if parameters
+/** @todo: allow the menu path to act as the "Return to this store" link **/
+// determine global user order in checkout:payment and is an hpp method
+// redirect to cancel - 'checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'];
+  if (empty($params) || empty($params['commerce'])) {
+    drupal_goto();
+  }
+
+  // Decode redirect parameters
+  $redirect_params = $params['commerce'];
+  foreach ($redirect_params as $k => $v) {
+    $redirect_params[rawurldecode($k)] = rawurldecode($v);
+  }
+
+  // Exit if not enough information
+  if (empty($redirect_params['hash']) || empty($redirect_params['payment_method'])) {
+    drupal_goto();
+  }
+
+  $payment_instance = check_plain($redirect_params['payment_method']);
+  $gateway = commerce_firstdata_gge4_get_controller($payment_instance);
+  if (!$gateway || !$gateway->isActive('hpp')) {
+    watchdog('commerce_firstdata_gge4', 'Misconfigured payment method during return from offsite Hosted payment page.', array(), WATCHDOG_WARNING);
+    drupal_goto();
+  }
+
+  // Build payment state
+  $state = array('processed_response' => array('transaction_approved' => !empty($redirect_params['approved'])));
+
+  if (!empty($redirect_params['order_id'])) {
+    $state['order'] = commerce_order_load($redirect_params['order_id']);
+  }
+  if (empty($state['order']) && !empty($redirect_params['transaction_id'])) {
+    $state['transaction'] = commerce_payment_transaction_load($redirect_params['transaction_id']);
+    if (!empty($state['transaction']->order_id)) {
+      $state['order'] = commerce_order_load($state['transaction']->order_id);
+    }
+  }
+
+  if (!empty($redirect_params['card_id']) && module_exists('commerce_cardonfile')) {
+    $state['card'] = commerce_cardonfile_load($redirect_params['card_id']);
+  }
+
+  // Redirect hash check
+/** @todo: better messaging here? ie could have been a successful but just an invalid redirect hash ***/
+  if ($gateway->get('hpp')->generateRedirectHash($redirect_params) != $redirect_params['hash']) {
+    watchdog('commerce_firstdata_gge4', 'Hosted page redirect return was accessed with an invalid hash.');
+    drupal_set_message(t('An error occurred while returning from the payment server. Please contact an administrator about your transaction.'));
+    drupal_goto();
+  }
+
+  // Route based on payment state
+  commerce_firstdata_gge4_hosted_return_router($state);
+}
+
+/**
+ * Hosted Payment Page Auto-Post response callback
+ */
+function commerce_firstdata_gge4_hosted_process_autopost() {
+  // Exit if no data
+  if (!isset($_POST) || !isset($_POST['x_trans_id']) || empty($_POST['commerce_payment_method'])) {
+    watchdog('commerce_firstdata_gge4', 'Auto-Post response accessed with no POST data submitted.', array(), WATCHDOG_WARNING);
+    drupal_goto();
+  }
+  watchdog('commerce_firstdata_gge4', 'Auto-Post response accessed.', array(), WATCHDOG_INFO);
+
+  $payment_instance = rawurldecode($_POST['commerce_payment_method']);
+  $gateway = commerce_firstdata_gge4_get_controller($payment_instance);
+  if ($gateway && $gateway->isActive('hpp')) {
+    $state = $gateway->get('hpp')->processResponse($_POST);
+    if (!empty($state) && !empty($state['processed'])) {
+      commerce_firstdata_gge4_hosted_return_router($state);
+    }
+  }
+  else {
+    watchdog('commerce_firstdata_gge4', 'Misconfigured payment method while receiving a Hosted payment page Auto-Post response.', array(), WATCHDOG_WARNING);
+  }
+
+  // Fallback to homepage
+  drupal_goto();
+}
+
+/**
+ * Redirects to a return page based on the payment state
+ */
+function commerce_firstdata_gge4_hosted_return_router($state) {
+  // Redirect orders to the checkout page
+  // - Order status updates occur in relay processsing
+  if (!empty($state['order'])) {
+    if (empty($state['processed_response']['transaction_approved'])) {
+      drupal_set_message(t('Payment failed at the payment server. Please review your information and try again.'), 'error');
+    }
+    drupal_goto(commerce_checkout_order_uri($state['order']));
+  }
+
+  // Redirect cards to the user's store cards list
+  if (!empty($state['card']->uid)) {
+    if (empty($state['processed_response']['transaction_approved'])) {
+      drupal_set_message(t('Your card data update has failed . Please review your information and try again.'), 'error');
+    }
+    else {
+      drupal_set_message(t('Your stored card data has been updated.'));
+    }
+    drupal_goto('user/' . $state['card']->uid . '/cards');
+  }
+
+  // Fallback to the homepage
+  drupal_goto();
+}
+
+/**
+ * Returns an HTML document to issue a redirect
+ *
+ * @param $redirect_url
+ *   An absolute url
+ */
+function _commerce_firstdata_gge4_redirect_html($redirect_url) {
+  $embed_prefix = "\n<!--//--><![CDATA[//><!--\n";
+  $embed_suffix = "\n//--><!]]>\n";
+
+  $redirect_url = $redirect_url;
+
+  $js_element = array(
+    '#tag' => 'script',
+    '#value' => 'window.location.href="' . $redirect_url . '";',
+    '#attributes' => array(
+      'type' => 'text/javascript',
+    ),
+    '#value_prefix' => $embed_prefix,
+    '#value_suffix' => $embed_suffix,
+  );
+  $script = theme('html_tag', array('element' => $js_element));
+
+  $output  = '<html><head><title>' .  t('Processing Payment') . '</title>';
+  $output .= $script;
+  $output .= '<noscript><meta http-equiv="refresh" content="1;url=' . $redirect_url . '"></noscript>' . "\n";
+  $output .= '</head>';
+  $output .= '<body>' . "\n";
+
+  $output .= '<p style="text-align: center">' . t('Processing your payment, please wait...') . '</p>';
+  $output .= '<p style="text-align: center"><a href="' . $redirect_url . '">';
+  $output .= t('Please click here if you are not automatically redirected to the next step.');
+  $output .= '</a></p>';
+  $output .= '</body></html>';
+
+  return $output;
+}
+
+
+// -----------------------------------------------------------------------
+// Payment transaction integration
+
+/**
+ * Returns TRUE if the payment method can be controlled by this module
+ *
+ * @param $method_id
+ *   The payment method id or instance id
+ */
+function _commerce_firstdata_gge4_check_payment_method($method_id) {
+  return strpos($method_id, 'firstdata_gge4') !== FALSE;
+}
+
+/**
+ * Returns all payment methods that are controlled by this module
+ *
+ * @return
+ *   An associative array of payment method objects keyed by the method_id.
+ *   
+ * @see commerce_payment_methods()
+ */
+function commerce_firstdata_gge4_payment_methods() {
+  $supported = array();
+  $payment_methods = commerce_payment_methods();
+  foreach ($payment_methods as $method_id => $payment_method) {
+    if (_commerce_firstdata_gge4_check_payment_method($method_id)) {
+      $supported[$method_id] = $payment_method;
+    }
+  }
+
+  return $supported;
+}
+
+/**
+ * Determines access to the methods available for previous First Data GGe4
+ * transactions
+ *
+ * @param $txn_type
+ *   A Drupal Commerce transaction type constant.
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return
+ *   TRUE or FALSE if transaction is allowed
+ */
+function commerce_firstdata_gge4_payment_transaction_access($txn_type, $order, $transaction) {
+  // DENY if not First Data GGe4
+  if (!_commerce_firstdata_gge4_check_payment_method($transaction->payment_method)) {
+    return FALSE;
+  }
+
+  // DENY if no remote id
+  if (empty($transaction->remote_id)) {
+    return FALSE;
+  }
+
+  // Build request state
+  $request_state = array(
+    'txn_type' => $txn_type,
+    'order' => $order,
+    'previous_transaction' => $transaction,
+    'skip_charge_validation' => $txn_type != COMMERCE_CREDIT_VOID,
+  );
+
+  // Load API controller
+  $gateway = commerce_firstdata_gge4_get_controller($transaction->instance_id);
+
+  // DENY if no web service
+  if (!$gateway->isActive('web_service')) {
+    return FALSE;
+  }
+
+  // DENY if not a valid request
+  if (!$gateway->get('web_service')->requestValidate($request_state)) {
+    return FALSE;
+  }
+
+  // ALLOW if the user can update this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Implements hool_commerce_payment_transaction_status_info().
+ */
+function commerce_firstdata_gge4_commerce_payment_transaction_status_info() {
+  $statuses = array();
+
+  $statuses[COMMERCE_PAYMENT_STATUS_GGE4_VOIDED] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_GGE4_VOIDED,
+    'title' => t('Voided'),
+    'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-failure.png',
+    'total' => FALSE,
+  );
+
+  $statuses[COMMERCE_PAYMENT_STATUS_GGE4_PREAUTH_ONLY] = array(
+    'status' => COMMERCE_PAYMENT_STATUS_GGE4_PREAUTH_ONLY,
+    'title' => t('Pre-authorized'),
+    'icon' => drupal_get_path('module', 'commerce_payment') . '/theme/icon-success.png',
+    'total' => FALSE,
+  );
+
+  return $statuses;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_firstdata_gge4_form_commerce_payment_order_transaction_add_form_alter(&$form, &$form_state) {
+  // If the payment terminal is displayed for an authnet_aim transaction...
+  if (!empty($form['payment_terminal']) && _commerce_firstdata_gge4_check_payment_method($form_state['payment_method']['method_id'])) {
+    // Add a select list to let the administrator choose a different transaction
+    // type than the payment method's default.
+    $form['payment_terminal']['payment_details']['txn_type'] = array(
+      '#type' => 'select',
+      '#title' => t('Transaction type'),
+      '#options' => array(
+        COMMERCE_CREDIT_AUTH_ONLY => t('Authorization only'),
+        COMMERCE_CREDIT_AUTH_CAPTURE => t('Authorization and capture'),
+        FIRSTDATA_GGE4_CREDIT_REFUND => t('Refund'),
+      ),
+      '#default_value' => $form_state['payment_method']['settings']['txn_type'],
+      '#weight' => -50,
+    );
+  }
+}
+
+/**
+ * Returns the balance of a given transaction accounting for any credits
+ *
+ * First Data previous transaction-based credits cannot total more than the
+ * original captured transaction.
+ *
+ * @todo: use for request validation / menu access callback?
+ */
+function commerce_firstdata_gge4_transaction_balance($requested_transaction) {
+  $return = array(
+    'amount' => $requested_transaction->amount,
+    'currency_code' => $requested_transaction->currency_code,
+  );
+
+  if (empty($requested_transaction->order_id) || empty($requested_transaction->remote_id)) {
+    return $return;
+  }
+
+  $totals = array();
+  $transaction_statuses = commerce_payment_transaction_statuses();
+  foreach (commerce_payment_transaction_load_multiple(array(), array('order_id' => $requested_transaction->order_id)) as $transaction) {
+    // If the payment transaction status indicates it should include the
+    // current transaction in the total...
+    if ($transaction_statuses[$transaction->status]['total']) {
+      if ($transaction->remote_id == $requested_transaction->remote_id ||
+          (isset($transaction->data['remote_id_reference']) && $transaction->data['remote_id_reference'] == $requested_transaction->remote_id)) {
+
+        if (isset($totals[$transaction->currency_code])) {
+          $totals[$transaction->currency_code] += $transaction->amount;
+        }
+        else {
+          // Or begin a new running total for the currency.
+          $totals[$transaction->currency_code] = $transaction->amount;
+        }
+        
+      }
+    }
+  }
+
+  if (isset($totals[$requested_transaction->currency_code])) {
+    $return['amount'] = $totals[$requested_transaction->currency_code];
+  }
+
+  return $return;
+}
+
+
+// -----------------------------------------------------------------------
+// Plugin handling
+
+/**
+ * Implements hook_ctools_plugin_type().
+ */
+function commerce_firstdata_gge4_ctools_plugin_type() {
+  return array(
+    'component' => array(
+      'use hooks' => FALSE,
+      'classes' => array('class'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function commerce_firstdata_gge4_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'commerce_firstdata_gge4') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Get the available feature plugins.
+ */
+function commerce_firstdata_gge4_get_component_plugins() {
+  ctools_include('plugins');
+  $plugins = ctools_get_plugins('commerce_firstdata_gge4', 'component');
+  foreach ($plugins as $key => $plugin) {
+    if (!class_exists($plugin['class'])) {
+      // Invalid class specified.
+      unset($plugins[$key]);
+      continue;
+    }
+  }
+  uasort($plugins, 'ctools_plugin_sort');
+  return $plugins;
+}
+
+/**
+ * Returns First Data GGe4 Controller initialized with settings
+ *
+ * @param $data
+ *   A payment method instance id or an array of payment instance settings
+ *
+ * @return
+ *   An instantiated CommerceFirstDataGGE4 controller class
+ */
+function commerce_firstdata_gge4_get_controller($data = NULL) {
+  $controllers = &drupal_static(__FUNCTION__, array());
+
+  if (!isset($data)) {
+    return new CommerceFirstDataGGE4Controller();
+  }
+
+  $cid = NULL;
+  if (is_scalar($data)) {
+    // Payment method instance id
+    $cid = $data;
+    if (!isset($controllers[$cid])) {
+      $controllers[$cid] = new CommerceFirstDataGGE4Controller($data);
+    }
+  }
+  elseif (is_array($data)) {
+    // Settings only - used in settings form and checkout submit form.
+    $cid = md5(serialize($data));
+    if (!isset($controllers[$cid])) {
+      $controllers[$cid] = new CommerceFirstDataGGE4Controller(NULL, $data);
+    }
+  }
+
+  return $cid ? $controllers[$cid] : NULL;
+}
+
+/**
+ * Retrieve transaction types that are transaction operations
+ *
+ * @return
+ *   An array keyed by Commerce transaction type and values of API meta data
+ */
+function commerce_firstdata_gge4_transaction_operations() {
+  $types = array();
+  foreach (CommerceFirstDataGGE4Controller::transactionTypes() as $txn_type => $txn_type_info) {
+    if (!empty($txn_type_info['transaction_operation'])) {
+      $types[$txn_type] = $txn_type_info;
+    }
+  }
+
+  return $types;
+}
+
+/**
+ * Returns an options array of all transaction operations keyed by the
+ * transaction type
+ */
+function commerce_firstdata_gge4_transaction_operation_options() {
+  $options = array();
+  foreach (commerce_firstdata_gge4_transaction_operations() as $txn_type => $txn_type_info) {
+    if (!empty($txn_type_info['transaction_operation'])) {
+      $options[$txn_type] = t('@label', array('@label' => $txn_type_info['label']));
+    }
+  }
+
+  return $options;
+}
+
+/**
+ * Form element validation handler for conditionally required plugin settings.
+ * @see _form_validate()
+ */
+function commerce_firstdata_gge4_element_validate_plugin_required($element, &$form_state) {
+  $form_values = &$form_state['values'];
+
+  // Find plugin container
+  $plugin_parents = $element['#parents'];
+  array_pop($plugin_parents);
+  $key_exists = FALSE;
+  $plugin_values = drupal_array_get_nested_value($form_values, $plugin_parents, $key_exists);
+
+  // PASS if no plugin container found or plugin is not enabled
+  if (!$key_exists || empty($plugin_values['enable'])) {
+    return;
+  }
+
+  // @see _form_validate()
+  $value = $element['#value'];
+  $is_empty_multiple = (!count($value));
+  $is_empty_string = (is_string($value) && drupal_strlen(trim($value)) == 0);
+  $is_empty_value = ($value === 0);
+  if ($is_empty_multiple || $is_empty_string || $is_empty_value) {
+    if (isset($element['#title'])) {
+      form_error($element, t('%name field is required.', array('%name' => $element['#title'])));
+    }
+    else {
+      form_error($element);
+    }
+  }
+}
+
+
+// -----------------------------------------------------------------------
+// Card on file integration
+
+/**
+ * Card on file access callback for First Data payment methods
+ *
+ * - Checks if card on file is enabled for the payment instance
+ * 
+ * @return
+ *   TRUE if the current user has access
+ */
+function commerce_firstdata_gge4_cardonfile_access($op = 'view', $card = NULL, $account = NULL) {
+  global $user;
+
+  $account = isset($account) ? $account : $user;
+  
+  // DENY if no instance_id
+  if (empty($card->instance_id)) {
+    return FALSE;
+  }
+
+  // Load API controller
+  $gateway = commerce_firstdata_gge4_get_controller($card->instance_id);
+
+  // DENY if no card on file
+  if (!$gateway->isActive('cardonfile')) {
+    return FALSE;
+  }
+
+  // Fallback to original access function
+  return commerce_cardonfile_access($op, $card, $account);
+}
+
+/**
+ * Creates a new card stub object using the payment pane values
+ *
+ * @param $payment_pane_values
+ *   The payment pane form state values
+ *
+ * @return
+ *   A stub object representing a Commerce Card on File entity.
+ */
+function commerce_firstdata_gge4_payment_pane_card($payment_method, $pane_values, $order = NULL) {
+  $key_exclusions = array(
+    'valid_types' => 1,
+    'cardonfile_store' => 1,
+  );
+
+  // Create a new card
+  $card_values = array();
+
+  foreach (array_diff_key($pane_values['credit_card'], $key_exclusions) as $key => $value) {
+    $card_values['card_' . $key] = $value;
+  }
+
+  $card_values += array(
+    'card_id' => NULL,
+    'status' => 1,
+    'uid' => isset($order->uid) ? $order->uid : 0,
+    'payment_method' => $payment_method['method_id'],
+    'instance_id' => $payment_method['instance_id'],
+    'remote_id' => '',
+    'created' => REQUEST_TIME,
+    'changed' => REQUEST_TIME,
+    'instance_default' => !empty($pane_values['cardonfile_instance_default']),
+    'no_store' => empty($pane_values['credit_card']['cardonfile_store']),
+  );
+
+  return (object) $card_values;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * - commerce_cardonfile_update_form
+ */
+function commerce_firstdata_gge4_form_commerce_cardonfile_card_form_alter(&$form, &$form_state) {
+  // Extract the card data from the form and load the payment method instance.
+  $card = $form_state['card_data'];
+  $payment_method = commerce_payment_method_instance_load($card->instance_id);
+
+  // If this is not an Authorize.Net card then bail.
+  if (!_commerce_firstdata_gge4_check_payment_method($payment_method['method_id'])) {
+    return;
+  }
+
+  $entity_type = 'commerce_cardonfile';
+  $billing_profile_render = field_view_field($entity_type, $card, 'commerce_cardonfile_profile');
+  if (!empty($billing_profile_render)) {
+    $billing_profile_render['#label_display'] = 'hidden';
+    $form['commerce_firstdata_gge4'] = array(
+      '#type' => 'item',
+      '#markup' => drupal_render($billing_profile_render),
+      '#weight' => -10,
+    );
+  }
+}
+
+/**
+ * Card on file Payment method callback: checkout form submission for any GGe4 method.
+ */
+function commerce_firstdata_gge4_cardonfile_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  // Load the API controller
+  $gateway = commerce_firstdata_gge4_get_controller($payment_method['instance_id']);
+
+  // DENY if no card on file
+  if (!$gateway->isActive('cardonfile')) {
+    drupal_set_message(t('Card on file processing is not allowed with the selected payment method.'), 'error');
+    return FALSE;
+  }
+
+   // First attempt to load the card on file.
+  $card = commerce_cardonfile_load($pane_values['cardonfile']);
+
+  // Fail now if it is no longer available or the card is inactive.
+  if (empty($card) || $card->status == 0) {
+    drupal_set_message(t('The selected card on file is no longer valid.'), 'error');
+    return FALSE;
+  }
+
+  return commerce_firstdata_gge4_cardonfile_charge($payment_method, $card, $order, $charge);
+}
+
+/**
+ * Card on file callback: background charge payment
+ *
+ * @param object $payment_method
+ *  The payment method instance definition array.
+ * @param object $card
+ *   The stored credit card object to be processed
+ * @param object $order
+ *   The order object that is being processed
+ * @param array $charge
+ *   The price array for the charge amount with keys of 'amount' and 'currency'
+ *   If null the total value of the order is used.
+ *
+ * @return
+ *   TRUE if the transaction was successful
+ */
+function commerce_firstdata_gge4_cardonfile_charge($payment_method, $card, $order, $charge = NULL) {
+  // Format order total for transaction.
+  if (!isset($charge)) {
+    $charge = commerce_payment_order_balance($order);
+  }
+
+  // Build request state
+  $request_state = array(
+    'charge' => $charge,
+    'card' => $card,
+    'order' => $order,
+  );
+
+  // Load API controller
+  $gateway = commerce_firstdata_gge4_get_controller($card->instance_id);
+
+  // DENY if no card on file
+  if (!$gateway->isActive('cardonfile')) {
+    return FALSE;
+  }
+
+  // Perform request
+  $response = $gateway->get('web_service')->request($request_state);
+
+  // If the payment failed, display an error and rebuild the form.
+  if (empty($response['transaction_approved'])) {
+    //drupal_set_message(t('We received the following error processing your card. Please enter your information again or try a different card.'), 'error');
+
+    $error_messages = $gateway->get('web_service')->getErrorMessages($response);
+    watchdog('commerce_firstdata_gge4', 'Error during card on file charge callback: @error_message', array('@error_message' => implode('; ', $error_messages)), WATCHDOG_ERROR);
+
+    return FALSE;
+  }
+
+  return COMMERCE_PAYMENT_STATUS_SUCCESS;
+}
+
+/**
+ * Card on file callback: create a new card of file.
+ *
+ * - Web service create card
+ */
+function commerce_firstdata_gge4_cardonfile_create($form, &$form_state, $payment_method, $updated_card) {
+  // Create zero dollar charge
+  $charge = array(
+    'amount' => 0,
+    'currency_code' => commerce_default_currency(),
+  );
+
+  // Clone card
+  $card = clone($updated_card);
+
+  // Set creation since stub card is cached in the menu
+  $card->created = REQUEST_TIME;
+
+  // Card on file create truncates the number
+  $card->card_number = $form_state['values']['credit_card']['number'];
+
+  // Build the request state
+  $request_state = array(
+    'charge' => $charge,
+    'card' => $card,
+  );
+
+  // Load API controller
+  $gateway = commerce_firstdata_gge4_get_controller($card->instance_id);
+
+  // DENY if no card on file
+  if (!$gateway->isActive('cardonfile')) {
+    return FALSE;
+  }
+
+  // Perform request
+  $response = $gateway->get('web_service')->request($request_state);
+
+  // If the payment failed, display an error and rebuild the form.
+  if (empty($response['transaction_approved'])) {
+    $error_messages = $gateway->get('web_service')->getErrorMessages($response);
+    watchdog('commerce_firstdata_gge4', 'Error during card on file creation callback: @error_message', array('@error_message' => implode('; ', $error_messages)), WATCHDOG_ERROR);
+
+    return FALSE;
+  }
+
+  return $card;
+}
+
+/**
+ * Card on file callback placeholder for create a new card of file.
+ *
+ * This allows payment method to define a create callback and allow
+ * commerce_firstdata_gge4 to handle with its form router.
+ */
+function commerce_firstdata_gge4_cardonfile_create_placeholder($form, &$form_state, $payment_method, $updated_card) {
+  return FALSE;
+}
+
+/**
+ * Card on file callback: update the card on file
+ */
+function commerce_firstdata_gge4_cardonfile_update($form, &$form_state, $payment_method, $card) {
+  // Create zero dollar charge
+  $charge = array(
+    'amount' => 0,
+    'currency_code' => commerce_default_currency(),
+  );
+
+  // Build the request state
+  $request_state = array(
+    'charge' => $charge,
+    'card' => $card,
+  );
+
+  // Load API controller
+  $gateway = commerce_firstdata_gge4_get_controller($card->instance_id);
+
+  // DENY if no web service
+/** @todo: give preference to hosted page if active ****/
+  if (!$gateway->isActive('cardonfile')) {
+    return FALSE;
+  }
+
+  // Perform request
+  $response = $gateway->get('web_service')->request($request_state);
+
+  // If the payment failed, display an error and rebuild the form.
+  if (empty($response['transaction_approved'])) {
+    $error_messages = $gateway->get('web_service')->getErrorMessages($response);
+    watchdog('commerce_firstdata_gge4', 'Error during card on file creation callback: @error_message', array('@error_message' => implode('; ', $error_messages)), WATCHDOG_ERROR);
+
+    return FALSE;
+  }
+
+  return $card;
+}
+
+/**
+ * Card on file callback: deletes the associated card.
+ */
+function commerce_firstdata_gge4_cardonfile_delete($form, &$form_state, $payment_method, $card) {
+  // Pass thru: First Data GGe4 does not have an update or delete card
+  // Commerce card on file module will disable the card on the site
+  return TRUE;
+}
+
+
+// -----------------------------------------------------------------------
+// Helpers
+
+/**
+ * Returns TRUE if value is loosely detected to be a numeric zero
+ */
+function commerce_firstdata_gge4_is_zero($value) {
+  return isset($value) && $value !== '' && is_numeric($value) && $value == 0;
+}
+
+/**
+ * Form element validation handler for number range elements.
+ * @see element_validate_number()
+ */
+function commerce_firstdata_gge4_element_validate_number_range($element, &$form_state) {
+  $value = $element['#value'];
+
+  if ($value === '') {
+    return;
+  }
+
+  if (!is_numeric($value)) {
+    form_error($element, t('%name must be a number.', array('%name' => $element['#title'])));
+  }
+  elseif (isset($element['#min_value']) && $value < $element['#min_value']) {
+    $min_formatted = number_format($element['#min_value'], 2, '.', '');
+    form_error($element, t('%name must be greater than or equal to %min.', array('%name' => $element['#title'], '%min' => $min_formatted)));
+  }
+  elseif (isset($element['#max_value']) && $value > $element['#max_value']) {
+    $max_formatted = number_format($element['#max_value'], 2, '.', '');
+    form_error($element, t('%name must be less than or equal to %max.', array('%name' => $element['#title'], '%max' => $max_formatted)));
+  }
+}
+

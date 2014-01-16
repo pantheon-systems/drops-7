@@ -37,6 +37,17 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
   public function execute($query) {
     // Return terms for this facet.
     $this->adapter->addFacet($this->facet, $query);
+
+    $settings = $this->adapter->getFacet($this->facet)->getSettings()->settings;
+
+    // First check if the facet is enabled for this search.
+    $default_true = isset($settings['default_true']) ? $settings['default_true'] : TRUE;
+    $facet_search_ids = isset($settings['facet_search_ids']) ? $settings['facet_search_ids'] : array();
+    if ($default_true != empty($facet_search_ids[$query->getOption('search id')])) {
+      // Facet is not enabled for this search ID.
+      return;
+    }
+
     // Change limit to "unlimited" (-1).
     $options = &$query->getOptions();
     if (!empty($options['search_api_facets'][$this->facet['name']])) {

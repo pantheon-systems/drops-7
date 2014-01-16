@@ -16,10 +16,6 @@
   padding: 0;
 }
 
-#edit-paypal-bml {
-  margin-bottom: -25px;
-}
-
 .commerce-paypal-ec-icon-wrapper,
 .commerce-paypal-bml-icon-wrapper {
   line-height: 3em;
@@ -29,6 +25,10 @@
 .commerce-paypal-bml-icon {
   position: relative;
   top: 15px;
+}
+
+.paypal-bml-text {
+  margin: 0 .5em 0 0;
 }
 
 #edit-paypal-ec-banners .form-item-settings-banner-size {

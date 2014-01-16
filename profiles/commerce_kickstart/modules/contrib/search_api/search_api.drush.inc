@@ -99,8 +99,8 @@ function search_api_drush_command() {
     'examples' => array(
       'drush searchapi-clear' => dt('Clear all search indexes.'),
       'drush sapi-c' => dt('Alias to clear all search indexes.'),
-      'drush sapi-r 1' => dt('Clear the search index with the ID !id.', array('!id' => 1)),
-      'drush sapi-r default_node_index' => dt('Clear the search index with the machine name !name.', array('!name' => 'default_node_index')),
+      'drush sapi-c 1' => dt('Clear the search index with the ID !id.', array('!id' => 1)),
+      'drush sapi-c default_node_index' => dt('Clear the search index with the machine name !name.', array('!name' => 'default_node_index')),
     ),
     'arguments' => array(
       'index_id' => dt('The numeric ID or machine name of an index.'),

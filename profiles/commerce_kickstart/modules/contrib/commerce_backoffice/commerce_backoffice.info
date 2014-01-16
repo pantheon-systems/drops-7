@@ -7,9 +7,9 @@ files[] = includes/views/handlers/commerce_backoffice_handler_filter_term_node_t
 files[] = includes/views/handlers/commerce_backoffice_handler_field_term_entity_tid.inc
 files[] = includes/views/handlers/commerce_backoffice_handler_field_node_operations.inc
 
-; Information added by drupal.org packaging script on 2013-07-24
-version = "7.x-1.3"
+; Information added by Drupal.org packaging script on 2013-12-24
+version = "7.x-1.4"
 core = "7.x"
 project = "commerce_backoffice"
-datestamp = "1374682868"
+datestamp = "1387900413"
 

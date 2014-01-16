@@ -34,6 +34,14 @@ function commerce_features_features_api() {
       'file' => drupal_get_path('module', 'commerce_features') . '/commerce_tax_rate.features.inc',
     );
   }
+  if (module_exists('commerce_order') && module_exists('commerce_order_types')) {
+    $features['commerce_order_type'] = array(
+      'name' => t('Commerce order types'),
+      'features_source' => TRUE,
+      'default_hook' => 'commerce_order_default_types',
+      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_order_type.features.inc',
+    );
+  }
   if (module_exists('commerce_line_item') && module_exists('commerce_custom_product')) {
     $features['commerce_line_item_type'] = array(
       'name' => t('Commerce line item types'),
@@ -190,15 +198,5 @@ function commerce_features_commerce_tax_rate_info_alter(&$tax_rates) {
     if ($tax_rate['module'] == 'commerce_features') {
       $tax_rate += array('admin_list' => ($tax_rate['module'] == 'commerce_features'));
     }
-  }
-}
-
-/**
- * Implements hook_commerce_line_item_type_info_alter().
- */
-function commerce_features_commerce_line_item_type_info_alter(&$info) {
-  foreach (module_implements('commerce_line_item_default_types') as $module) {
-    $types = module_invoke($module, 'commerce_line_item_default_types');
-    $info += $types;
   }
 }

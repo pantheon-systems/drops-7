@@ -193,13 +193,15 @@ abstract class SearchApiViewsHandlerFilterEntity extends SearchApiViewsHandlerFi
       $this->query->condition($this->real_field, NULL, '<>', $this->options['group']);
     }
     elseif (is_array($this->value)) {
+      $all_of = $this->operator === 'all of';
+      $operator = $all_of ? '=' : $this->operator;
       if (count($this->value) == 1) {
-        $this->query->condition($this->real_field, reset($this->value), $this->operator, $this->options['group']);
+        $this->query->condition($this->real_field, reset($this->value), $operator, $this->options['group']);
       }
       else {
-        $filter = $this->query->createFilter($this->operator === '<>' || $this->operator === 'all of' ? 'AND' : 'OR');
+        $filter = $this->query->createFilter($operator === '<>' || $all_of ? 'AND' : 'OR');
         foreach ($this->value as $value) {
-          $filter->condition($this->real_field, $value, $this->operator === 'all of' ? '=' : $this->operator);
+          $filter->condition($this->real_field, $value, $operator);
         }
         $this->query->filter($filter, $this->options['group']);
       }

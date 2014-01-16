@@ -1,5 +1,23 @@
-Search API Database Search 1.x, dev (xx/xx/xxxx):
--------------------------------------------------
+Search API Database Search 1.2 (12/25/2013):
+--------------------------------------------
+- #2156151 by drunken monkey: Fixed exception when clearing a server.
+- Follow-up to #2147361 by drunken monkey: Fixed left-over pieces of old code.
+
+Search API Database Search 1.1 (12/09/2013):
+--------------------------------------------
+- #2138669 by drunken monkey, acouch: Fixed MS SQL error for primary key on
+  nullable column.
+- #2147361 by drunken monkey: Revised non-default database support to be more
+  robust.
+- #2126291 by drunken monkey: Update error handling according to the latest
+  Search API change.
+- #2136409 by drunken monkey: Fixed handling of NULL filters.
+- #2135595 by drumm, drunken monkey: Added support for the new "skip result
+  count" option.
+- #2127001 by drunken monkey: Fixed negated fulltext searches.
+- #2134667 by drunken monkey: Fixed tests to not depend on the Search API UI.
+- #1916474 by drunken monkey: Fixed indexing of multi-valued float fields.
+- #2111753 by drunken monkey: Added additional tests for ORed fulltext keywords.
 
 Search API Database Search 1.0 (10/23/2013):
 --------------------------------------------

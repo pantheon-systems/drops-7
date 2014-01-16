@@ -1,0 +1,28 @@
+/**
+ * Admin styles for First Data Global Gateway e4 forms
+ */
+
+.commerce-firstdata-gge4-logo {
+  padding: 10px;
+  /*background-color: #092132;*/
+}
+
+.commerce-firstdata-gge4-settings-plugin-container {
+  border: 1px solid #eee;
+  margin: 1em 0;
+  padding: 10px;
+}
+.commerce-firstdata-gge4-settings-plugin-container .form-item {
+  margin-left: 20px;
+}
+
+.commerce-firstdata-gge4-settings-plugin-container .commerce-firstdata-gge4-settings-plugin-enable .form-item {
+  margin-left: 0;
+}
+
+.commerce-firstdata-gge4-config-help {
+  background: #eee;
+}
+.commerce-firstdata-gge4-config-value {
+  font-weight: 700;
+}

@@ -24,7 +24,7 @@
  * id. Links may be embedded as in the following example:
  *
  * @code
- * $output .= theme('advanced_help_topic', $module, $topic);
+ * $output .= theme('advanced_help_topic', array('module' => $module, 'topic' => $topic));
  * @endcode
  *
  * Link to other topics using <a href="topic:module/topic">. (Using
@@ -753,26 +753,34 @@ function advanced_help_get_topic($module, $topic) {
  * Search the system for all available help topics.
  */
 function advanced_help_get_topics() {
-  $cache = _advanced_help_parse_ini();
-  return $cache['topics'];
+  $ini = _advanced_help_parse_ini();
+  return $ini['topics'];
 }
 
 /**
  * Returns advanced help settings.
  */
 function advanced_help_get_settings() {
-  $cache = _advanced_help_parse_ini();
-  return $cache['settings'];
+  $ini = _advanced_help_parse_ini();
+  return $ini['settings'];
 }
 
 /**
  * Funtion to parse ini / txt files.
  */
 function _advanced_help_parse_ini() {
-  static $cache = NULL;
+  global $language;
+  static $ini = NULL;
 
-  if (!isset($cache)) {
-    $cache = array('topics' => array(), 'settings' => array());
+  if (!isset($ini)) {
+    $cache = cache_get('advanced_help_ini:' . $language->language);
+    if ($cache) {
+      $ini = $cache->data;
+    }
+  }
+
+  if (!isset($ini)) {
+    $ini = array('topics' => array(), 'settings' => array());
 
     $help_path = drupal_get_path('module', 'advanced_help') . '/modules';
     foreach (module_list() as $module) {
@@ -803,23 +811,22 @@ function _advanced_help_parse_ini() {
 
       if (!empty($info)) {
         // Get translated titles:
-        global $language;
         $translation = array();
         if (file_exists("$module_path/translations/help/$language->language/$module.help.ini")) {
           $translation = parse_ini_file("$module_path/translations/help/$language->language/$module.help.ini", TRUE);
         }
 
-        $cache['settings'][$module] = array();
+        $ini['settings'][$module] = array();
         if (!empty($info['advanced help settings'])) {
-          $cache['settings'][$module] = $info['advanced help settings'];
+          $ini['settings'][$module] = $info['advanced help settings'];
           unset($info['advanced help settings']);
 
           // Check translated strings for translatable global settings.
           if (isset($translation['advanced help settings']['name'])) {
-            $cache['settings']['name'] = $translation['advanced help settings']['name'];
+            $ini['settings']['name'] = $translation['advanced help settings']['name'];
           }
           if (isset($translation['advanced help settings']['index name'])) {
-            $cache['settings']['index name'] = $translation['advanced help settings']['index name'];
+            $ini['settings']['index name'] = $translation['advanced help settings']['index name'];
           }
 
         }
@@ -827,8 +834,10 @@ function _advanced_help_parse_ini() {
         foreach ($info as $name => $topic) {
           // Each topic should have a name, a title, a file and path.
           $file = !empty($topic['file']) ? $topic['file'] : $name;
-          $cache['topics'][$module][$name] = array(
+          $ini['topics'][$module][$name] = array(
             'name' => $name,
+            'module' => $module,
+            'ini' => $topic,
             'title' => !empty($translation[$name]['title']) ? $translation[$name]['title'] : $topic['title'],
             'weight' => isset($topic['weight']) ? $topic['weight'] : 0,
             'parent' => isset($topic['parent']) ? $topic['parent'] : 0,
@@ -838,17 +847,19 @@ function _advanced_help_parse_ini() {
             'file' => isset($topic['readme file']) ? $file : $file . '.html',
             // Not in .ini file.
             'path' => $path,
-            'line break' => isset($topic['line break']) ? $topic['line break'] : (isset($cache['settings'][$module]['line break']) ? $cache['settings'][$module]['line break'] : FALSE),
-            'navigation' => isset($topic['navigation']) ? $topic['navigation'] : (isset($cache['settings'][$module]['navigation']) ? $cache['settings'][$module]['navigation'] : TRUE),
-            'css' => isset($topic['css']) ? $topic['css'] : (isset($cache['settings'][$module]['css']) ? $cache['settings'][$module]['css'] : NULL),
+            'line break' => isset($topic['line break']) ? $topic['line break'] : (isset($ini['settings'][$module]['line break']) ? $ini['settings'][$module]['line break'] : FALSE),
+            'navigation' => isset($topic['navigation']) ? $topic['navigation'] : (isset($ini['settings'][$module]['navigation']) ? $ini['settings'][$module]['navigation'] : TRUE),
+            'css' => isset($topic['css']) ? $topic['css'] : (isset($ini['settings'][$module]['css']) ? $ini['settings'][$module]['css'] : NULL),
             'readme file' => isset($topic['readme file']) ? $topic['readme file'] : FALSE,
           );
         }
       }
     }
-    drupal_alter('advanced_help_topic_info', $cache);
+    drupal_alter('advanced_help_topic_info', $ini);
+
+    cache_set('advanced_help_ini:' . $language->language, $ini);
   }
-  return $cache;
+  return $ini;
 }
 
 /**

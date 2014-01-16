@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ * Ensures users have cURL enabled prior to installation.
+ */
+
+/**
+ * Implementation of hook_requirements().
+ */
+function commerce_firstdata_gge4_requirements($phase) {
+  $t = get_t();
+
+  // Test Required PHP Extensions.
+  $required_extensions = array(
+    'curl',
+    'hash',
+  );
+  $disabled_extensions = array();
+
+  $extension_statuses = array();
+  foreach ($required_extensions as $ext) {
+    $ext_enabled = extension_loaded($ext) ? 'Enabled' : 'Disabled';
+    $extension_statuses[] = $ext . ' (' . $ext_enabled . ')';
+
+    if ($ext_enabled == 'Disabled') {
+      $disabled_extensions[] = $ext;
+    }
+  }
+
+  $requirements['commerce_firstdata_gge4_php_extensions'] = array(
+    'title' => $t('First Data GGe4 PHP Extensions'),
+    'value' => ($phase == 'install') ? '' : implode(', ', $extension_statuses),
+  );
+
+  if ($disabled_extensions) {
+    $requirements['commerce_firstdata_gge4_php_extensions']['severity'] = REQUIREMENT_ERROR;
+    $requirements['commerce_firstdata_gge4_php_extensions']['description'] = $t('The following PHP extensions must be enabled for First Data GGe4: ' . implode(', ', $disabled_extensions));
+  }
+
+  if (module_exists('commerce_cardonfile')) {
+    $path = drupal_get_path('module', 'commerce_cardonfile') . '/commerce_cardonfile.info';
+    $info = drupal_parse_info_file($path);
+    if (isset($info['version']) && !version_compare($info['version'], '7.x-2', '>=')) {
+      $requirements['commerce_firstdata_gge4_cardonfile'] = array(
+        'title' => $t('Card on File'),
+        'value' => $t('Less than 2.x'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => $t("First Data Global Gateway e4 requires Card on File 2.x"),
+      );
+    }
+  }
+
+  return $requirements;
+}

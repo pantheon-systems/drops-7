@@ -102,7 +102,7 @@ class CommerceLineItemInlineEntityFormController extends EntityInlineEntityFormC
 
     // If the order is still in a cart status, then the prices are still being
     // recalculated, meaning that no changes made to them would be permanent.
-    if (!empty($form_state['commerce_order']) && module_exists('commerce_order')) {
+    if (!empty($form_state['commerce_order']) && module_exists('commerce_cart')) {
       if (commerce_cart_order_is_cart($form_state['commerce_order'])) {
         $language = $entity_form['commerce_unit_price']['#language'];
         $entity_form['commerce_unit_price'][$language][0]['amount']['#disabled'] = TRUE;

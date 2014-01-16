@@ -98,7 +98,7 @@ class SearchApiViewsCache extends views_plugin_cache_time {
       // other parameters used in the parent method are already reflected in the
       // Search API query object we use.
       if (isset($_GET['exposed_info'])) {
-        $key_data[$key] = $_GET[$key];
+        $key_data['exposed_info'] = $_GET['exposed_info'];
       }
 
       $this->_results_key = $this->view->name . ':' . $this->display->id . ':results:' . md5(serialize($key_data));

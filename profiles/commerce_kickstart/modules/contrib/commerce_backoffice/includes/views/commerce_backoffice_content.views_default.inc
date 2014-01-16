@@ -274,7 +274,7 @@ function commerce_backoffice_content_views_default_views() {
   $handler->display->display_options['fields']['operations_dropbutton']['field'] = 'operations_dropbutton';
   $handler->display->display_options['fields']['operations_dropbutton']['label'] = 'Operations';
   $handler->display->display_options['fields']['operations_dropbutton']['add_quick_edit'] = 0;
-  $handler->display->display_options['fields']['operations_dropbutton']['add_destination'] = 0;
+  $handler->display->display_options['fields']['operations_dropbutton']['add_destination'] = 1;
   /* Sort criterion: Content: Post date */
   $handler->display->display_options['sorts']['created']['id'] = 'created';
   $handler->display->display_options['sorts']['created']['table'] = 'node';

@@ -35,7 +35,7 @@ class views_handler_field_bean_operations extends views_handler_field_entity {
   }
 
   function render_link($bean) {
-    if (entity_acces('update', 'bean', $bean)) {
+    if (entity_access('update', 'bean', $bean)) {
       // Get the operations links.
       $links = menu_contextual_links('bean', 'block', array($bean->delta));
 

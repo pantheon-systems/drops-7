@@ -20,6 +20,12 @@ function commerce_paypal_wps_commerce_payment_method_info() {
     'terminal' => FALSE,
     'offsite' => TRUE,
     'offsite_autoredirect' => TRUE,
+
+    // Because the order form generation code does not have access to a payment
+    // method info array, we set the bn directly there instead of making use of
+    // this buttonsource variable. It's here for consistency with other payment
+    // methods in this package.
+    'buttonsource' => 'CommerceGuys_Cart_PPS',
   );
 
   return $payment_methods;
@@ -190,6 +196,9 @@ function commerce_paypal_wps_redirect_form($form, &$form_state, $order, $payment
 
     // Specify the current payment method instance ID in the notify_url
     'payment_method' => $payment_method['instance_id'],
+
+    // Include the application indicator
+    'bn' => $payment_method['buttonsource'],
   );
 
   return commerce_paypal_wps_order_form($form, $form_state, $order, $payment_method['settings'] + $settings);
@@ -418,6 +427,9 @@ function commerce_paypal_wps_order_form($form, &$form_state, $order, $settings) 
 
     // The path PayPal should send the IPN to
     'notify_url' => commerce_paypal_ipn_url($settings['payment_method']),
+
+    // The application generating the API request
+    'bn' => 'CommerceGuys_Cart_PPS',
 
     // Set the correct character set
     'charset' => 'utf-8',

@@ -5,9 +5,6 @@
  *   drush integration for paymill.
  */
 
-
-// The Paymill library download URI.
-define('PAYMILL_DOWNLOAD_URI', 'https://github.com/Paymill/Paymill-PHP/archive/master.zip');
 // The default path for installing the library.
 define('COMMERCE_PAYMILL_LIBRARY_DEFAULT_PATH',
        sprintf('sites%sall%slibraries', DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR));
@@ -92,8 +89,7 @@ function drush_commerce_paymill_library() {
   $olddir = getcwd();
   chdir($path);
 
-  $filename = basename(PAYMILL_DOWNLOAD_URI);
-  $dirname = 'paymill-php-master';
+  $filename = basename(COMMERCE_PAYMILL_LIBRARY_DOWNLOAD_URI);
 
   // Remove any existing Paymill library zip archive.
   if (is_file($filename)) {
@@ -101,8 +97,8 @@ function drush_commerce_paymill_library() {
   }
 
   // Download the zip archive.
-  if (!drush_shell_exec('wget ' . PAYMILL_DOWNLOAD_URI)) {
-    drush_shell_exec('curl -O ' . PAYMILL_DOWNLOAD_URI);
+  if (!drush_shell_exec('wget ' . COMMERCE_PAYMILL_LIBRARY_DOWNLOAD_URI)) {
+    drush_shell_exec('curl -O ' . COMMERCE_PAYMILL_LIBRARY_DOWNLOAD_URI);
   }
 
   // Download the archive.
@@ -117,7 +113,7 @@ function drush_commerce_paymill_library() {
   chdir($olddir);
 
   // The full dirname.
-  $dirname = $path . DIRECTORY_SEPARATOR . $dirname;
+  $dirname = $path . DIRECTORY_SEPARATOR . 'paymill-php-' . COMMERCE_PAYMILL_LIBRARY_VERSION;
   // The destination directory.
   $dest = sprintf('%s%s%s', $path, DIRECTORY_SEPARATOR, 'paymill');
 

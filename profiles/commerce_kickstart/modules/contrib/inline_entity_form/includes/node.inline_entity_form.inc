@@ -8,9 +8,9 @@
 class NodeInlineEntityFormController extends EntityInlineEntityFormController {
 
   /**
-  * Overrides EntityInlineEntityFormController::labels().
+  * Overrides EntityInlineEntityFormController::defaultLabels().
    */
-  public function labels() {
+  public function defaultLabels() {
     $labels = array(
       'singular' => t('node'),
       'plural' => t('nodes'),

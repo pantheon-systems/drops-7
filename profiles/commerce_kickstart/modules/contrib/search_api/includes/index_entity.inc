@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Contains SearchApiIndex.
+ */
+
+/**
  * Class representing a search index.
  */
 class SearchApiIndex extends Entity {
@@ -178,18 +183,9 @@ class SearchApiIndex extends Entity {
     if ($this->enabled) {
       $this->queueItems();
     }
-    $server = $this->server();
-    if ($server) {
+    if ($server = $this->server()) {
       // Tell the server about the new index.
-      if ($server->enabled) {
-        $server->addIndex($this);
-      }
-      else {
-        $tasks = variable_get('search_api_tasks', array());
-        // When we add or remove an index, we can ignore all other tasks.
-        $tasks[$server->machine_name][$this->machine_name] = array('add');
-        variable_set('search_api_tasks', $tasks);
-      }
+      $server->addIndex($this);
     }
   }
 
@@ -198,18 +194,7 @@ class SearchApiIndex extends Entity {
    */
   public function postDelete() {
     if ($server = $this->server()) {
-      if ($server->enabled) {
-        $server->removeIndex($this);
-      }
-      // Once the index is deleted, servers won't be able to tell whether it was
-      // read-only. Therefore, we prefer to err on the safe side and don't call
-      // the server method at all if the index is read-only and the server
-      // currently disabled.
-      elseif (empty($this->read_only)) {
-        $tasks = variable_get('search_api_tasks', array());
-        $tasks[$server->machine_name][$this->machine_name] = array('remove');
-        variable_set('search_api_tasks', $tasks);
-      }
+      $server->removeIndex($this);
     }
 
     // Stop tracking entities for indexing.
@@ -230,14 +215,14 @@ class SearchApiIndex extends Entity {
    */
   public function dequeueItems() {
     $this->datasource()->stopTracking(array($this));
-    _search_api_empty_cron_queue($this);
   }
 
   /**
-   * Saves this index to the database, either creating a new record or updating
-   * an existing one.
+   * Saves this index to the database.
    *
-   * @return
+   * Either creates a new record or updates the existing one with the same ID.
+   *
+   * @return int|false
    *   Failure to save the index will return FALSE. Otherwise, SAVED_NEW or
    *   SAVED_UPDATED is returned depending on the operation performed. $this->id
    *   will be set if a new index was inserted.
@@ -253,6 +238,7 @@ class SearchApiIndex extends Entity {
     // This will also throw an exception if the server doesn't exist – which is good.
     elseif (!$this->server(TRUE)->enabled) {
       $this->enabled = FALSE;
+      $this->server = NULL;
     }
 
     return parent::save();
@@ -267,7 +253,7 @@ class SearchApiIndex extends Entity {
    * @param array $fields
    *   The new field values.
    *
-   * @return
+   * @return int|false
    *   SAVE_UPDATED on success, FALSE on failure, 0 if the fields already had
    *   the specified values.
    */
@@ -296,7 +282,7 @@ class SearchApiIndex extends Entity {
   /**
    * Schedules this search index for re-indexing.
    *
-   * @return
+   * @return bool
    *   TRUE on success, FALSE on failure.
    */
   public function reindex() {
@@ -311,7 +297,7 @@ class SearchApiIndex extends Entity {
   /**
    * Clears this search index and schedules all of its items for re-indexing.
    *
-   * @return
+   * @return bool
    *   TRUE on success, FALSE on failure.
    */
   public function clear() {
@@ -319,20 +305,7 @@ class SearchApiIndex extends Entity {
       return TRUE;
     }
 
-    $server = $this->server();
-    if ($server->enabled) {
-      $server->deleteItems('all', $this);
-    }
-    else {
-      $tasks = variable_get('search_api_tasks', array());
-      // If the index was cleared or newly added since the server was last enabled, we don't need to do anything.
-      if (!isset($tasks[$server->machine_name][$this->machine_name])
-          || (array_search('add', $tasks[$server->machine_name][$this->machine_name]) === FALSE
-              && array_search('clear', $tasks[$server->machine_name][$this->machine_name]) === FALSE)) {
-        $tasks[$server->machine_name][$this->machine_name][] = 'clear';
-        variable_set('search_api_tasks', $tasks);
-      }
-    }
+    $this->server()->deleteItems('all', $this);
 
     _search_api_index_reindex($this);
     module_invoke_all('search_api_index_reindex', $this, TRUE);

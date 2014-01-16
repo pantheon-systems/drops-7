@@ -1,0 +1,67 @@
+#!/usr/bin/env php
+<?php
+
+/**
+ * Build the whole library into a single file
+ * as an easy drop in solution as opposed to
+ * relying on autoloader.
+ * Yotpo should make this easy.
+ */
+
+function exit_unless($condition, $msg = null) {
+    if ($condition)
+        return;
+    echo "[FAIL]\n$msg\n";
+    exit(1);
+}
+
+// Create the Yotpo Phar
+echo "Building Yotpo Phar... ";
+$base_dir = dirname(__FILE__);
+$source_dir = $base_dir . '/src/Yotpo';
+$phar_path = $base_dir . '/yotpo.phar';
+echo $phar_path;
+$phar = new Phar($phar_path, 0, 'yotpo.phar');
+$stub = <<<HEREDOC
+<?php
+    // Phar Stub File
+    Phar::mapPhar('yotpo.phar');
+    include('phar://yotpo.phar/Httpful/Mime.php');
+    include('phar://yotpo.phar/Httpful/Handlers/MimeHandlerAdapter.php');
+    include('phar://yotpo.phar/Httpful/Handlers/JsonHandler.php');
+    include('phar://yotpo.phar/Httpful/Handlers/CsvHandler.php');
+    include('phar://yotpo.phar/Httpful/Handlers/FormHandler.php');
+    include('phar://yotpo.phar/Httpful/Handlers/XHtmlHandler.php');
+    include('phar://yotpo.phar/Httpful/Handlers/XmlHandler.php');
+    include('phar://yotpo.phar/Httpful/Response/Headers.php');
+    include('phar://yotpo.phar/Httpful/Exception/ConnectionErrorException.php');
+    include('phar://yotpo.phar/Httpful/Http.php');
+    include('phar://yotpo.phar/Httpful/Httpful.php');
+    include('phar://yotpo.phar/Httpful/Request.php');
+    include('phar://yotpo.phar/Httpful/Response.php');
+    include('phar://yotpo.phar/Httpful/Bootstrap.php');
+    \Httpful\Bootstrap::pharInit();
+    include('phar://yotpo.phar/Yotpo/Bootstrap.php');
+    \Yotpo\Bootstrap::pharInit();
+
+    __HALT_COMPILER();
+HEREDOC;
+try {
+    $phar->setStub($stub);
+} catch(Exception $e) {
+    $phar = false;
+}
+exit_unless($phar, "Unable to create a phar.  Make certain you have phar.readonly=0 set in your ini file.");
+$phar->buildFromDirectory($base_dir . '/vendor/nategood/httpful/src');
+$phar->buildFromDirectory(dirname($source_dir));
+echo "[ OK ]\n";
+
+
+
+// Add it to git!
+echo "Adding yotpo.phar to the repo... ";
+$return_code = 0;
+passthru("git add $phar_path", $return_code);
+exit_unless($return_code === 0, "Unable to add download files to git.");
+echo "[ OK ]\n";
+echo "\nBuild completed sucessfully.\n\n";

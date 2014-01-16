@@ -1,10 +1,10 @@
-.addressfield-container-inline > div.form-item {
+div.addressfield-container-inline > div.form-item {
   float: right;
   margin-right: 0;
   margin-left: 1em;
 }
 
-.addressfield-container-inline.country-GB > div.form-item {
+div.addressfield-container-inline.country-GB > div.form-item {
   margin-left: auto;
   margin-right: 0;
 }

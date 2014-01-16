@@ -1,0 +1,170 @@
+<?php
+
+/**
+ * @file
+ * Tests for Kameleoon module.
+ */
+
+/**
+ * Tests Kameleoon module's functionality.
+ */
+class KameleoonWebTestCase extends DrupalWebTestCase {
+
+  /**
+   * Implements getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Kameleoon',
+      'description' => 'Tests functionality of Kameleoon module.',
+      'group' => 'Kameleoon',
+    );
+  }
+
+  /**
+   * Implements setUp().
+   */
+  public function setUp() {
+    parent::setUp(array('kameleoon', 'node'));
+
+    // Disable Clean URIs to ensure drupal.org testbot compatibility.
+    variable_set('clean_url', 0);
+  }
+
+  /**
+   * Tests that the external JS is added to the page when it's appropriate.
+   *
+   * There are three factors that affect whether it's added:
+   *   - A site code has to be configured;
+   *   - User needs access Kameleoon tools ('access kameleoon tools'
+   *     permission).
+   *   - The visited page can't be an administrative page (URI is 'admin' or it
+   *     starts with 'admin/').
+   */
+  public function testJavaScriptAdded() {
+    // Create a user that has access to Kameleoon tools and administrative
+    // pages.
+    $account = $this->drupalCreateUser(array('access kameleoon tools', 'access administration pages'));
+    $this->drupalLogin($account);
+
+    // Visit the 'node' page. Note that the Kameleoon site code is not set.
+    $this->drupalGet('node');
+    // Make sure the Kameleoon JS is not added, since there is no site code
+    // configured.
+    $this->assertNoRaw(kameleoon_js_url(), t('Kameleoon JS is not added when site code is not configured.'));
+
+    // Configure a site code. It's a random string, since we only want to assure
+    // that Drupal tries to load the external JS.
+    variable_set('kameleoon_site_code', $this->randomName(10));
+    // Visit the 'node' page again.
+    $this->drupalGet('node');
+    // Make sure the Kameleoon JS is added now.
+    $this->assertRaw(kameleoon_js_url(), t('Kameleoon JS is added when site code is configured.'));
+
+    // Visit the 'admin' page.
+    $this->drupalGet('admin');
+    // Make sure the Kameleoon JS is not added, since it shouldn't be used on
+    // administrative pages.
+    $this->assertNoRaw(kameleoon_js_url(), t('Kameleoon JS is not added on administrative page.'));
+    // Visit the 'admin/config' page.
+    $this->drupalGet('admin/config');
+    // Make sure the Kameleoon JS is not added here either.
+    $this->assertNoRaw(kameleoon_js_url(), t('Kameleoon JS is not added on administrative page.'));
+
+    // Logout the user that we created.
+    $this->drupalLogout();
+    // Visit 'node' page now with the anonymous user.
+    $this->drupalGet('node');
+    // Make sure the Kameleoon JS is not added now, since we didn't grant
+    // anonymous users access to the Kameleoon tools.
+    $this->assertNoRaw(kameleoon_js_url(), t('Kameleoon JS is not added when the user has no permission.'));
+  }
+
+  /**
+   * Tests that the page cache gets invalidated when the site code is updated.
+   */
+  public function testPageCacheInvalidation() {
+    // Configure a site code. It's a random string, since we only want to assure
+    // that Drupal tries to load the external JS.
+    $site_code = $this->randomName(10);
+    variable_set('kameleoon_site_code', $site_code);
+
+    // Grant access to anonymous users to use the Kameleoon tools, so the JS
+    // gets included for them.
+    user_role_grant_permissions(1, array('access kameleoon tools'));
+    // Enable page cache for anonymous users.
+    variable_set('cache', 1);
+
+    // Visit the 'node' page, this will warm up the page cache for this page.
+    $this->drupalGet('node');
+    $this->assertRaw($site_code, t('Kameleoon JS is added.'));
+
+    // Update the site code using the configuration page.
+    $account = $this->drupalCreateUser(array('administer kameleoon', 'access administration pages'));
+    $this->drupalLogin($account);
+    $site_code_new = $this->randomName(10);
+    $edit = array();
+    $edit['kameleoon_site_code'] = $site_code_new;
+    $this->drupalPost('admin/config/system/kameleoon', $edit, t('Save configuration'));
+    $this->drupalLogout();
+
+    // Visit the 'node' page again with an anonymous user.
+    $this->drupalGet('node');
+    // Make sure that the page cache has been invalidated when we configured a
+    // new site code, so that the Kameleoon JS is added with using the new site
+    // code.
+    $this->assertRaw($site_code_new, t('Kameleoon JS is added with a new site code.'));
+  }
+
+  /**
+   * Tests module administration form.
+   */
+  public function testAdminForm() {
+    // Create and login with a user who can perform administrative tasks.
+    $account = $this->drupalCreateUser(array('administer kameleoon', 'access administration pages'));
+    $this->drupalLogin($account);
+
+    // Submit the administration form.
+    $edit = array();
+    $edit['kameleoon_site_code'] = $this->randomName(10);
+    $this->drupalPost('admin/config/system/kameleoon', $edit, t('Save configuration'));
+    $this->assertText(t('The configuration options have been saved.'), t('Saved configuration.'));
+    // Make sure the saved value is the same as we submitted.
+    $this->assertEqual($edit['kameleoon_site_code'], variable_get('kameleoon_site_code'), t('Submitted value was saved properly.'));
+
+    // Page cache shouldn't be cleared, because it's not enabled and anonymous
+    // users don't have access to Kameleoon tools.
+    $this->assertNoText(t('Page cache has been cleared.'), t('Page cache was not cleared when it was disabled and anonymous users had no permission.'));
+
+    // Enable page cache for anonymous users.
+    variable_set('cache', 1);
+    // Submit the administration form.
+    $edit['kameleoon_site_code'] = $this->randomName(10);
+    $this->drupalPost('admin/config/system/kameleoon', $edit, t('Save configuration'));
+    // Page cache still shouldn't be cleared, because anonymous users don't have
+    // access to Kameleoon tools.
+    $this->assertNoText(t('Page cache has been cleared.'), t('Page cache was not cleared when anonymous users had no permission.'));
+
+    // Grant access to anonymous users to use the Kameleoon tools.
+    user_role_grant_permissions(1, array('access kameleoon tools'));
+    // Submit the administration form.
+    $edit['kameleoon_site_code'] = $this->randomName(10);
+    $this->drupalPost('admin/config/system/kameleoon', $edit, t('Save configuration'));
+    // Page cache now should be cleared.
+    $this->assertText(t('Page cache has been cleared.'), t('Page cache was cleared when it was enabled and anonymous users had permission.'));
+
+    // Submit the administration form with the same site code as before.
+    $this->drupalPost('admin/config/system/kameleoon', $edit, t('Save configuration'));
+    // Page cache shouldn't be cleared, because the site code hasn't been
+    // changed.
+    $this->assertNoText(t('Page cache has been cleared.'), t('Page cache was not cleared when site code had not changed.'));
+
+    // Disable page cache for anonymous users.
+    variable_set('cache', 0);
+    // Submit the administration form.
+    $edit['kameleoon_site_code'] = $this->randomName(10);
+    $this->drupalPost('admin/config/system/kameleoon', $edit, t('Save configuration'));
+    // Page cache shouldn't be cleared because it's not enabled.
+    $this->assertNoText(t('Page cache has been cleared.'), t('Page cache was not cleared when it was not enabled.'));
+  }
+}

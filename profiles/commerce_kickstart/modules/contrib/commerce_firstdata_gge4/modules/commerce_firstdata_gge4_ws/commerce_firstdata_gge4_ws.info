@@ -1,0 +1,12 @@
+name = First Data Global Gateway e4 Web Service
+description = Implements First Data Global Gateway e4 web service for use with Drupal Commerce.
+package = Commerce (payment)
+dependencies[] = commerce_firstdata_gge4
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2013-12-16
+version = "7.x-1.0"
+core = "7.x"
+project = "commerce_firstdata_gge4"
+datestamp = "1387206506"
+

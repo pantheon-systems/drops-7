@@ -1,0 +1,29 @@
+{
+    "name": "yotpo/yotpo",
+    "type": "library",
+    "description": "A PHP interface to the YOTPO API",
+    "keywords": ["rest", "yotpo"],
+    "homepage": "https://www.yotpo.com",
+    "license": "MIT",
+    "version": "0.0.1",
+    "authors": [
+        {
+            "name": "Vladislav Shub",
+            "email": "vlad@yotpo.com"
+        }
+    ],
+    "require": {
+        "php": ">=5.3.2",
+        "nategood/httpful": "*"
+        
+    },
+    "require-dev": {
+        "satooshi/php-coveralls": "dev-master",
+        "phpunit/phpunit": "3.7.*@dev"
+    },
+    "autoload": {
+        "psr-0": {
+            "Yotpo": "src/"
+        }
+    }
+}

@@ -1,5 +1,59 @@
-Search API 1.x, dev (xx/xx/xxxx):
----------------------------------
+Search API 1.11 (12/25/2013):
+-----------------------------
+- #1879196 by drunken monkey: Fixed invalid old indexes causing errors.
+- #2155127 by drunken monkey: Clarified the scope of the "Node access" and
+  "Exclude unpublished nodes" data alterations.
+- #2155575 by drunken monkey: Fixed incorrect "Server index status" warnings.
+- #2159011 by idebr, drunken monkey: Fixed highlighting of keywords with PCRE
+  special characters.
+- #2155721 by rjacobs, drunken monkey: Added support for Views' get_total_rows
+  property.
+- #2158873 by drumm, drunken monkey: Fixed "all of" operator of Views entity
+  filter handler.
+- #2156021 by jgullstr: Fixed confirm message when disabling servers.
+- #2146435 by timkang: Fixed Views paging with custom pager add-ons.
+- #2150347 by drunken monkey: Added access callbacks for indexes and servers.
+
+Search API 1.10 (12/09/2013):
+-----------------------------
+- #2130819 by drunken monkey, Bojhan: Added UI improvements for the "View" tabs.
+- #2152327 by sirtet, miro_dietiker: Fixed typo in help text for drush sapi-c.
+- #2144531 by drunken monkey: Fixed cloning of queries to clone filters, too.
+- #2100671 by drunken monkey: Fixed stopwords processor to ignore missing
+  stopwords.
+- #2139239 by drunken monkey: Fixed highlighting for the last word of a field.
+- #1925114 by azinck: Fixed Views Facet Block integration with Panels.
+- #2139215 by drunken monkey: Fixed $context parameter of batch callback.
+- #2143659 by khiminrm: Fixed typo in update function 7116.
+- #2134509 by kscheirer, drunken monkey: Removed unused variables and
+  parameters.
+- #2136019 by drunken monkey: Fixed mapping callback for taxonomy term facets.
+- #2128001 by drunken monkey: Fixed the logic of the "contains none of these
+  words" fulltext operator.
+- #2128947 by stBorchert, drunken monkey: Fixed facet handling for multiple
+  searches on a page.
+- #2128529 by Frando, drunken monkey: Added a way for facet query type plugins
+  to pass options to the search query.
+- #1551302 by drunken monkey: Fixed the server tasks system.
+- #2135363 by drumm, drunken monkey: Added support for Views' use_count_query()
+  method.
+- #1390598 by Damien Tournoud, drunken monkey: Added the concept of query filter
+  tags.
+- #2135255 by dww: Fixed missing pager on first page of search results.
+- #1832334 by Damien Tournoud, drunken monkey: Fixed performance issues of
+  Views options filter handler for huge options lists.
+- #2118589 by mxr576, drunken monkey: Added node access for comment indexes.
+- #1961120 by drunken monkey: Fixed Views handling of short fulltext keywords.
+- #2100231 by drunken monkey: Renamed "Workflow" tab to "Filters".
+- #2100193 by drunken monkey: Turned operations in overview into D8 dropbuttons.
+- #2100199 by drunken monkey: Merged index tabs for a cleaner look.
+- #2115127 by drunken monkey: Fixed cron indexing logic to keep the right order.
+- #1750144 by jsacksick, drunken monkey: Fixed missing Boost option for custom
+  fulltext field types.
+- #1956650 by drunken monkey, wwhurley: Fixed trackItemChange not checking for
+  empty $item_ids.
+- #2100191 by drunken monkey, Bojhan: Added an admin description to the Search
+  API landing page.
 
 Search API 1.9 (10/23/2013):
 ----------------------------

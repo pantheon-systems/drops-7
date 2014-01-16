@@ -5,7 +5,7 @@
  */
 
 /**
- * Settings form
+ * Settings form.
  */
 function yottaa_setup_form($form_state) {
   $form['introduction'] = array(
@@ -46,11 +46,9 @@ marketing campaigns and other performance and scalability challenges.') . '</p>'
 }
 
 /**
- * Register form
+ * Register form.
  */
 function yottaa_register_form($form_state) {
-
-  global $base_url;
 
   $form['introduction'] = array(
     '#type' => 'markup',
@@ -65,14 +63,12 @@ marketing campaigns and other performance and scalability challenges.') . '</p>'
   $form['yottaa_first_name'] = array(
     '#type' => 'textfield',
     '#title' => t('First Name'),
-    '#description' => t(''),
     '#required' => TRUE,
   );
 
   $form['yottaa_last_name'] = array(
     '#type' => 'textfield',
     '#title' => t('Last Name'),
-    '#description' => t(''),
     '#required' => TRUE,
   );
 
@@ -156,7 +152,7 @@ function yottaa_register_form_submit($form, &$form_state) {
 
     $message = '<p>' . t('Congratulations - Your sign up to Yottaa was successful!') . '</p>' .
 
-    '<p>' . t('We’ve sent you an email with your password, You can log into your Yottaa account here: ') . l('https://apps.yottaa.com', 'https://apps.yottaa.com') .
+    '<p>' . t('We’ve sent you an email with your password, You can log into your Yottaa account here: ') . l(t('https://apps.yottaa.com'), 'https://apps.yottaa.com') .
     '</p> <p>' . t('To get started you can:') .
     '</p><ol><li>' . t('Check out the Optimizer Preview: To illustrate what Yottaa Site Optimizer can do for yoursite, we have created a version of your site running on the Yottaa network and ran the Before/After sites through a battery of real browser tests.  You can check out the preview here: ') . l($data['preview_url'], $data['preview_url']) .
     '</li><li>' . t('Free Trial: The best way to check out Yottaa is to simply activate the free trial, through a straightforward CName or DNS change.  There are two ways to do this:') . '</li>' .

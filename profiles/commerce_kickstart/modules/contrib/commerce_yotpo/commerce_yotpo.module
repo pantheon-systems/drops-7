@@ -1,0 +1,360 @@
+<?php
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_yotpo_views_api() {
+  return array(
+    'api' => 3,
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_yotpo_menu() {
+  $items = array();
+
+  $items['admin/commerce/config/yotpo'] = array(
+    'title' => 'Yotpo Reviews',
+    'description' => 'Register with Yotpo',
+    'page callback' => 'commerce_yotpo_select_page',
+    'file' => 'commerce_yotpo.admin.inc',
+    'access arguments' => array('administer yotpo'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/commerce/config/yotpo/settings'] = array(
+    'title' => 'Settings',
+    'description' => 'Yotpo Connection Details',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_yotpo_settings_form'),
+    'file' => 'commerce_yotpo.admin.inc',
+    'access arguments' => array('administer yotpo'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  $items['admin/commerce/config/yotpo/register'] = array(
+    'title' => 'Register',
+    'description' => 'Register with Yotpo',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_yotpo_register_form'),
+    'file' => 'commerce_yotpo.admin.inc',
+    'access arguments' => array('administer yotpo'),
+    'type' => MENU_LOCAL_TASK,
+  );
+
+  return $items;
+}
+
+ /**
+ * Implements hook_permission().
+ */
+function commerce_yotpo_permission() {
+  return array(
+    'administer yotpo' => array(
+      'title' => t('Administer Yotpo'),
+      'description' => t('Perform administration tasks for Yotpo.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function commerce_yotpo_block_info() {
+  $blocks['testimonials'] = array(
+    'info' => t('Yotpo Testimonials'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $blocks['product_reviews'] = array(
+    'info' => t('Yotpo Product Reviews'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  $blocks['product_bottomline'] = array(
+    'info' => t('Yotpo Product Bottom Line'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function commerce_yotpo_block_view($delta = '') {
+  switch ($delta) {
+    case 'testimonials':
+      $block['subject'] = t('Testimonials');
+      $block['content'] = array(
+        '#attached' => array(
+          'js' => array(
+            'https://www.yotpo.com/js/yQuery.js' => array(
+              'type' => 'external',
+              'scope' => 'header',
+            ),
+            'var yotpo_app_key = "' . variable_get(
+              'commerce_yotpo_id'
+            ) . '"' => array(
+              'type' => 'inline',
+              'scope' => 'header',
+            ),
+          ),
+        ),
+        '#markup' => "<div id='yotpo-testimonials-custom-tab'></div>",
+      );
+      break;
+
+    case 'product_reviews':
+      $node = menu_get_object();
+      $node_wrapper = $node ? entity_metadata_wrapper('node', $node) : NULL;
+      $image_field = variable_get('commerce_yotpo_image_field', 'field_images');
+      $product_field = variable_get('commerce_yotpo_product_field', 'field_product');
+
+      if ($node_wrapper && $product_field_wrapper = $node_wrapper->$product_field) {
+        if ($image_field_wrapper = $product_field_wrapper[0]->$image_field && !empty($image_field_wrapper[0]->file)) {
+          $image_url = $image_field_wrapper[0]->file->url->value();
+        }
+        else {
+          $image_url = '';
+        }
+
+        if ($node_wrapper) {
+          $description = $node_wrapper->body->value->value(array('decode' => TRUE));
+        }
+
+        $block['subject'] = t('Reviews');
+        $block['content'] = array(
+          '#attached' => array(
+            'js' => array(
+              'https://www.yotpo.com/js/yQuery.js' => array(
+                'type' => 'external',
+                'scope' => 'header',
+              ),
+              'var yotpo_app_key = "' . variable_get(
+                'commerce_yotpo_id'
+              ) . '"' => array(
+                'type' => 'inline',
+                'scope' => 'header',
+              ),
+            ),
+          ),
+          '#markup' => '<div class="yotpo reviews"
+            data-appkey="' . variable_get('commerce_yotpo_id') . '"
+            data-domain="' . $_SERVER['SERVER_NAME'] . '"
+            data-product-id="' . str_replace('/', '-', current_path()) . '"
+            data-name="' . check_plain($node->title) . '"
+            data-url="' . url(current_path(), array('absolute' => TRUE)) . '"
+            data-image-url="' . $image_url . '"
+            data-description="' . $description . '"
+            >
+            </div>',
+        );
+      }
+      break;
+
+    case 'product_bottomline':
+      $node = menu_get_object();
+      $node_wrapper = $node ? entity_metadata_wrapper('node', $node) : NULL;
+      $image_field = variable_get('commerce_yotpo_image_field', 'field_images');
+      $product_field = variable_get('commerce_yotpo_product_field', 'field_product');
+
+      if ($node_wrapper && $product_field_wrapper = $node_wrapper->$product_field) {
+        if ($image_field_wrapper = $product_field_wrapper[0]->$image_field && !empty($image_field_wrapper[0]->file)) {
+          $image_url = $image_field_wrapper[0]->file->url->value();
+        }
+        else {
+          $image_url = '';
+        }
+
+        if ($node_wrapper) {
+          $description = $node_wrapper->body->value->value(array('decode' => TRUE));
+        }
+
+        $block['subject'] = t('Bottom Line');
+        $block['content'] = array(
+          '#attached' => array(
+            'js' => array(
+              'https://www.yotpo.com/js/yQuery.js' => array(
+                'type' => 'external',
+                'scope' => 'header',
+              ),
+              'var yotpo_app_key = "' . variable_get(
+                'commerce_yotpo_id'
+              ) . '"' => array(
+                'type' => 'inline',
+                'scope' => 'header',
+              ),
+            ),
+          ),
+          '#markup' => '<div class="yotpo bottomLine"
+            data-appkey="' . variable_get('commerce_yotpo_id') . '"
+            data-domain="' . $_SERVER['SERVER_NAME'] . '"
+            data-product-id="' . str_replace('/', '-', current_path()) . '"
+            data-name="' . check_plain($node->title) . '"
+            data-url="' . url(current_path(), array('absolute' => TRUE)) . '"
+            data-image-url="' . $image_url . '"
+            data-description="' . $description . '"
+            >
+            </div>',
+        );
+      }
+      break;
+  }
+
+  return isset($block) ? $block : '';
+}
+
+
+/**
+ * Implements hook_menu_libraries_info().
+ */
+function commerce_yotpo_libraries_info() {
+  $libraries['yotpo-php'] = array(
+    'name' => 'Yotpo PHP',
+    'vendor url' => 'http://yotpo.com',
+    'download url' => 'https://github.com/YotpoLtd/yotpo-php/releases/tag/production_2013-12-17_08-48-39',
+    'version arguments' => array(
+      'file' => 'CHANGELOG.md',
+      'pattern' => '@## ([0-9\.]+)@',
+      'lines' => 4,
+    ),
+    'files' => array(
+      'php' => array('bootstrap.php'),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_commerce_checkout_pane_info().
+ */
+function commerce_yotpo_commerce_checkout_pane_info() {
+  $checkout_panes = array();
+
+  $checkout_panes['checkout_yotpo'] = array(
+    'title' => t('Yotpo Tracking'),
+    'file' => 'includes/commerce_yotpo.checkout_pane.inc',
+    'base' => 'commerce_yotpo_checkout_pane',
+    'page' => 'complete',
+    'fieldset' => FALSE,
+  );
+
+  return $checkout_panes;
+}
+
+function commerce_yotpo_new() {
+
+  if (($library = libraries_load('yotpo-php')) && !empty($library['loaded'])) {
+    $ak = variable_get('commerce_yotpo_id');
+    $st = variable_get('commerce_yotpo_secret');
+    $yotpo = new \Yotpo\Yotpo($ak, $st);
+
+    return $yotpo;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+function commerce_yotpo_create_purchase($commerce_order) {
+  $wrapper = entity_metadata_wrapper('commerce_order', $commerce_order);
+
+  $products = array();
+  foreach ($wrapper->commerce_line_items as $key => $line_item_wrapper) {
+    if ($line_item_wrapper->type->value() == 'product') {
+      $products[str_replace('/', '-', $line_item_wrapper->commerce_display_path->value())] = _commerce_yotpo_product_format($line_item_wrapper);
+    }
+  }
+
+  if ($yotpo = commerce_yotpo_new()) {
+
+    // retrieving the utoken - will be valid for 24 hours.
+    $credentials = $yotpo->get_oauth_token();
+    $utoken = $credentials->access_token;
+
+    $data = array();
+    $data['utoken'] = $utoken;
+    $data['email'] = $wrapper->mail->value();
+    $data['customer_name'] = $wrapper->commerce_customer_billing->commerce_customer_address->name_line->value();
+    $data['order_id'] = $wrapper->order_id->value();
+    $data['currency_iso'] = $wrapper->commerce_order_total->currency_code->value();
+    $data['platform'] = 'commerce_guys';
+    $data['products'] = $products;
+
+    $response = $yotpo->create_purchase($data);
+  }
+  else {
+    watchdog('commerce_yotpo', 'Could not load Yotpo library');
+  }
+}
+
+function commerce_yotpo_bulk_order_post($commerce_orders) {
+
+  $data = array();
+
+  foreach ($commerce_orders as $commerce_order) {
+    $wrapper = entity_metadata_wrapper('commerce_order', $commerce_order);
+
+    $order = array();
+    $order['email'] = $wrapper->mail->value();
+    $order['customer_name'] = $wrapper->commerce_customer_billing->commerce_customer_address->name_line->value();
+    $order['order_id'] = $wrapper->order_id->value();
+    $order['order_date'] = date('Y-m-d', $wrapper->created->value());
+    $order['currency_iso'] = $wrapper->commerce_order_total->currency_code->value();
+
+    foreach ($wrapper->commerce_line_items as $key => $line_item_wrapper) {
+      if ($line_item_wrapper->type->value() == 'product') {
+        $products[str_replace('/', '-', $line_item_wrapper->commerce_display_path->value())] = _commerce_yotpo_product_format($line_item_wrapper);
+      }
+    }
+    $order['products'] = $products;
+    $data['orders'][] = $order;
+  }
+
+  $yotpo = commerce_yotpo_new();
+
+  // retrieving the utoken - will be valid for 24 hours.
+  $credentials = $yotpo->get_oauth_token();
+  $utoken = $credentials->access_token;
+
+  $data['utoken'] = $utoken;
+  $data['platform'] = 'commerce_guys';
+
+  $response = $yotpo->create_purchases($data);
+
+  return $response;
+}
+
+function _commerce_yotpo_product_format($line_item_wrapper) {
+  $path = $line_item_wrapper->commerce_display_path->value();
+  $node = menu_get_object('node', 1, $path);
+  $node_wrapper = $node ? entity_metadata_wrapper('node', $node) : NULL;
+  $image_field = variable_get('commerce_yotpo_image_field', 'field_images');
+  $unit_price = commerce_currency_amount_to_decimal($line_item_wrapper->commerce_unit_price->amount->value(), $line_item_wrapper->commerce_unit_price->currency_code->value());
+
+  $product_array = array();
+  $product_array['url'] = url($line_item_wrapper->commerce_display_path->value(), array('absolute' => TRUE));
+  $product_array['name'] = $line_item_wrapper->commerce_product->title->value();
+  $product_array['price'] = $unit_price;
+
+  if ($image_field_wrapper = $line_item_wrapper->commerce_product->$image_field && !empty($image_field_wrapper[0]->file)) {
+    $image_url = $image_field_wrapper[0]->file->url->value();
+    $product_array['image'] = $image_url;
+  }
+  else {
+    $product_array['image'] = '';
+  }
+
+  if ($node_wrapper) {
+    $description = $node_wrapper->body->value->value(array('decode' => TRUE));
+  }
+  else {
+    $description = $line_item_wrapper->commerce_product->title->value();
+  }
+
+  $product_array['description'] = $description;
+
+  return $product_array;
+}
