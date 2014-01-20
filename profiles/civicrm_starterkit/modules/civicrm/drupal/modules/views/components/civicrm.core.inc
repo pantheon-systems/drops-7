@@ -2444,16 +2444,18 @@ function _civicrm_core_data(&$data, $enabled) {
     'field' => array(
       'handler' => 'civicrm_handler_field_pseudo_constant',
       'click sortable' => TRUE,
-      'pseudo class' => 'CRM_Member_PseudoConstant',
-      'pseudo method' => 'tag',
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'get',
+      'pseudo args' => array('CRM_Core_BAO_EntityTag', 'tag_id'),
     ),
     'argument' => array(
       'handler' => 'views_handler_argument',
     ),
     'filter' => array(
       'handler' => 'civicrm_handler_filter_pseudo_constant',
-      'pseudo class' => 'CRM_Member_PseudoConstant',
-      'pseudo method' => 'tag',
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'get',
+      'pseudo args' => array('CRM_Core_BAO_EntityTag', 'tag_id'),
     ),
     'sort' => array(
       'handler' => 'views_handler_sort',

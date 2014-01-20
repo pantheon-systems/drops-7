@@ -7,9 +7,9 @@ dependencies[] = webform (>=4.0-beta1)
 dependencies[] = libraries
 dependencies[] = options_element
 
-; Information added by  packaging script on 2013-11-21
-version = "7.x-4.3"
+; Information added by Drupal.org packaging script on 2014-01-13
+version = "7.x-4.4"
 core = "7.x"
 project = "webform_civicrm"
-datestamp = "1385017505"
+datestamp = "1389638913"
 

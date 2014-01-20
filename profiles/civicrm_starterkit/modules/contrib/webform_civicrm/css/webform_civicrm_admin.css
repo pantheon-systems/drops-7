@@ -62,7 +62,8 @@ th div.form-type-radio {
 
 #wf-crm-configure-form select,
 #wf-crm-configure-form .form-type-textfield input {
-  max-width: 177px;
+  max-width: 175px;
+  margin: 0;
 }
 
 #wf-crm-configure-form fieldset fieldset{

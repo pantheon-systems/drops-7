@@ -323,7 +323,7 @@ class CRM_Campaign_DAO_Campaign extends CRM_Core_DAO
         'external_identifier' => array(
           'name' => 'external_identifier',
           'type' => CRM_Utils_Type::T_STRING,
-          'title' => ts('External Identifier') ,
+          'title' => ts('Campaign External Identifier') ,
           'maxlength' => 32,
           'size' => CRM_Utils_Type::MEDIUM,
           'import' => true,
@@ -335,6 +335,7 @@ class CRM_Campaign_DAO_Campaign extends CRM_Core_DAO
         'parent_id' => array(
           'name' => 'parent_id',
           'type' => CRM_Utils_Type::T_INT,
+          'title' => ts('Parent Campaign') ,
           'import' => true,
           'where' => 'civicrm_campaign.parent_id',
           'headerPattern' => '',
@@ -346,11 +347,13 @@ class CRM_Campaign_DAO_Campaign extends CRM_Core_DAO
         'is_active' => array(
           'name' => 'is_active',
           'type' => CRM_Utils_Type::T_BOOLEAN,
+          'title' => ts('Is Campaign Active?') ,
           'default' => '1',
         ) ,
         'created_id' => array(
           'name' => 'created_id',
           'type' => CRM_Utils_Type::T_INT,
+          'title' => ts('Campaign Created By') ,
           'FKClassName' => 'CRM_Contact_DAO_Contact',
         ) ,
         'created_date' => array(
@@ -361,12 +364,13 @@ class CRM_Campaign_DAO_Campaign extends CRM_Core_DAO
         'last_modified_id' => array(
           'name' => 'last_modified_id',
           'type' => CRM_Utils_Type::T_INT,
+          'title' => ts('Campaign Modified By') ,
           'FKClassName' => 'CRM_Contact_DAO_Contact',
         ) ,
         'last_modified_date' => array(
           'name' => 'last_modified_date',
           'type' => CRM_Utils_Type::T_DATE + CRM_Utils_Type::T_TIME,
-          'title' => ts('Last Modified Date') ,
+          'title' => ts('Campaign Modified Date') ,
         ) ,
         'goal_general' => array(
           'name' => 'goal_general',

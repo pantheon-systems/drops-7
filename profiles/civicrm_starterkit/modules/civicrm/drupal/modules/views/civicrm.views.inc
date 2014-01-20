@@ -462,6 +462,7 @@ function civicrm_views_custom_data_cache(&$data, $entity_type, $groupID, $subTyp
         'sort' => array(
           'handler' => civicrm_get_sort_handler($currentfield['data_type']),
         ),
+        'relationship' => civicrm_views_get_relationship($currentfield['data_type']),
       );
 
       //For date fields add in 6 arguments
@@ -678,6 +679,28 @@ function civicrm_get_sort_handler($type) {
 
     default:
       return 'views_handler_sort';
+  }
+}
+
+/**
+ * Acquire the proper relationship handler by checking against the field's data_type as defined by CRM_Utils_Type.
+ *
+ * @param $type
+ *   A String containing the field type
+ *
+ * @return
+ *   An array containing the handler name and any extra settings
+ */
+function civicrm_views_get_relationship($type) {
+  switch ($type) {
+    case "ContactReference":
+      return array(
+        'handler'    => 'views_handler_relationship',
+        'base'       => 'civicrm_contact',
+        'base field' => 'id',
+      );
+    default:
+      return array();
   }
 }
 

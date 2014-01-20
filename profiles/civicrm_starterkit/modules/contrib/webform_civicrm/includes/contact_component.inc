@@ -250,11 +250,12 @@ function _webform_edit_civicrm_contact($component) {
     '#default_value' => $component['extra']['filters']['group'],
     '#description' => t('Listed contacts must be members of at least one of the selected groups (leave blank to not filter by group).'),
   );
+  $tags = array();
   $form['filters']['tag'] = array(
     '#type' => 'select',
     '#multiple' => TRUE,
     '#title' => t('Tags'),
-    '#options' => array('' => '- ' . t('None') . ' -') + CRM_Core_BAO_Tag::getTags("civicrm_contact", $ret, NULL, '- '),
+    '#options' => array('' => '- ' . t('None') . ' -') + CRM_Core_BAO_Tag::getTags("civicrm_contact", $tags, NULL, '- '),
     '#default_value' => $component['extra']['filters']['tag'],
     '#description' => t('Listed contacts must be have at least one of the selected tags (leave blank to not filter by tag).'),
   );
@@ -660,7 +661,7 @@ function wf_crm_update_existing_component(&$component, $enabled, $data) {
     $contact_type = $data['contact'][$c]['contact'][1]['contact_type'];
     $allow_create = wf_crm_name_field_exists($enabled, $c, $contact_type);
     if ($allow_create != $component['extra']['allow_create']) {
-      $component['extra']['none_prompt'] = $allow_create ? t('+ Create new contact +') : t('- None Found -');
+      $component['extra']['none_prompt'] = $allow_create ? t('+ Create new +') : t('- None Found -');
       $component['extra']['allow_create'] = $allow_create;
       webform_component_update($component);
     }
@@ -821,9 +822,9 @@ function wf_crm_results_display_options() {
     'external_identifier' => t("External ID"),
     'email' => t("Email"),
     'city' => t("City"),
-    'county' => t("County"),
+    'county' => t("District/County"),
     'state_province' => t("State/Province"),
-    'Country' => t("Country"),
+    'country' => t("Country"),
     'postal_code' => t("Postal Code"),
     'phone' => t("Phone"),
   );

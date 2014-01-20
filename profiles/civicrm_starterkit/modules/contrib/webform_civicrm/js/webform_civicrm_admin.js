@@ -451,15 +451,18 @@ var wfCiviAdmin = (function ($, D) {
       }).change();
 
       // Membership constraints
-      $('select[name$=_membership_num_terms]', context).once('crm-mem-date').change(function() {
+      $('select[name$=_membership_num_terms]', context).once('crm-mem-date').change(function(e, type) {
         var $dateWrappers = $(this).parent().siblings('[class$="-date"]');
         if ($(this).val() == '0') {
-          $dateWrappers.show().find('input').attr('checked', 'checked');
+          $dateWrappers.show();
+          if (type !== 'init') {
+            $('input', $dateWrappers).attr('checked', 'checked');
+          }
         }
         else {
           $dateWrappers.hide().find('input').removeAttr('checked');
         }
-      }).change();
+      }).trigger('change', 'init');
 
       function billingMessages() {
         var $pageSelect = $('[name=civicrm_1_contribution_1_contribution_contribution_page_id]');

@@ -157,11 +157,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     }
     // Preprocess contribution page
     if (!empty($this->data['contribution'])) {
-      $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
-      CRM_Core_Resources::singleton()
-        ->addCoreResources()
-        ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
-        ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
+      $this->addPaymentJs();
       $this->form['#attached']['js'][] = array(
         'data' => drupal_get_path('module', 'webform_civicrm') . '/js/webform_civicrm_payment.js',
         'scope' => 'footer',
@@ -186,7 +182,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
   private function populateActivityAndCaseFromUrl($aid) {
     $result = wf_crm_apivalues('activity', 'get', array(
       'activity_id' => $aid,
-      'options' => array('return' => array('target_contact_id', 'assignee_contact_id'))
+      'return' => array('target_contact_id', 'assignee_contact_id', 'source_contact_id', 'activity_type_id'),
     ));
     if (isset($result[$aid])) {
       $act = $result[$aid];
@@ -477,10 +473,6 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
           }
         }
       }
-    }
-    // Identify contact 1 as acting user if not already logged in
-    if (!empty($this->id['cid'][1]) && $c == 1 && user_is_anonymous()) {
-      CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->id['cid'][1], 'Integer')));
     }
   }
   

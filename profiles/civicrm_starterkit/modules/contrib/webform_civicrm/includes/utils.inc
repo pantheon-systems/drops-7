@@ -186,17 +186,7 @@ function wf_crm_state_abbr($input, $ret = 'abbreviation', $country_id = NULL) {
  */
 function wf_crm_get_events($reg_options, $context) {
   $ret = array();
-  $format = explode(' ', wf_crm_aval($reg_options, 'title_display', 'title'));
-  if (in_array('type', $format)) {
-    $types = wf_crm_apivalues('event', 'getoptions', array('field' => 'event_type_id', 'context' => 'get'));
-  }
-  // Date format
-  foreach ($format as $value) {
-    if (strpos($value, 'dateformat') === 0) {
-      $config = CRM_Core_Config::singleton();
-      $date_format = $config->$value;
-    }
-  }
+  $format = wf_crm_aval($reg_options, 'title_display', 'title');
   $sql = "SELECT id, title, start_date, end_date, event_type_id FROM civicrm_event WHERE is_template = 0 AND is_active = 1";
   // 0 means only current events, 1 means show all past events, other values are relative date strings
   $date = wf_crm_aval($reg_options, 'show_past_events', 'now');
@@ -210,27 +200,46 @@ function wf_crm_get_events($reg_options, $context) {
   $sql .= ' ORDER BY start_date ' . ($context == 'config_form' ? 'DESC' : '');
   $dao = CRM_Core_DAO::executeQuery($sql);
   while ($dao->fetch()) {
-    $title = array();
-    if (in_array('title', $format)) {
-      $title[] = $dao->title;
-    }
-    if (in_array('type', $format)) {
-      $title[] = $types[$dao->event_type_id];
-    }
-    if (in_array('start', $format) && $dao->start_date) {
-      $title[] = CRM_Utils_Date::customFormat($dao->start_date, $date_format);
-    }
-    if (in_array('end', $format) && $dao->end_date) {
-      // Avoid showing redundant end-date if it is the same as the start date
-      $same_day = substr($dao->start_date, 0, 10) == substr($dao->end_date, 0, 10);
-      if (!$same_day || in_array('dateformatDatetime', $format) || in_array('dateformatTime', $format)) {
-        $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? $config->dateformatTime : $date_format;
-        $title[] = CRM_Utils_Date::customFormat($dao->end_date, $end_format);
-      }
-    }
-    $ret[$dao->id . '-' . $dao->event_type_id] = implode(' - ', $title);
+    $ret[$dao->id . '-' . $dao->event_type_id] = wf_crm_format_event($dao, $format);
   }
   return $ret;
+}
+
+/**
+ * @param array|object $event
+ * @param string $format
+ * @return string
+ */
+function wf_crm_format_event($event, $format) {
+  $format = explode(' ', $format);
+  // Date format
+  foreach ($format as $value) {
+    if (strpos($value, 'dateformat') === 0) {
+      $config = CRM_Core_Config::singleton();
+      $date_format = $config->$value;
+    }
+  }
+  $event = (object) $event;
+  $title = array();
+  if (in_array('title', $format)) {
+    $title[] = $event->title;
+  }
+  if (in_array('type', $format)) {
+    $types = wf_crm_apivalues('event', 'getoptions', array('field' => 'event_type_id', 'context' => 'get'));
+    $title[] = $types[$event->event_type_id];
+  }
+  if (in_array('start', $format) && $event->start_date) {
+    $title[] = CRM_Utils_Date::customFormat($event->start_date, $date_format);
+  }
+  if (in_array('end', $format) && $event->end_date) {
+    // Avoid showing redundant end-date if it is the same as the start date
+    $same_day = substr($event->start_date, 0, 10) == substr($event->end_date, 0, 10);
+    if (!$same_day || in_array('dateformatDatetime', $format) || in_array('dateformatTime', $format)) {
+      $end_format = (in_array('dateformatDatetime', $format) && $same_day) ? $config->dateformatTime : $date_format;
+      $title[] = CRM_Utils_Date::customFormat($event->end_date, $end_format);
+    }
+  }
+  return implode(' - ', $title);
 }
 
 /**
@@ -479,7 +488,7 @@ function wf_crm_get_fields($var = 'fields') {
       'name' => t('Existing Contact'),
       'type' => 'civicrm_contact',
       'extra' => array(
-        'search_prompt' => t('- Choose existing contact -'),
+        'search_prompt' => t('- Choose existing -'),
       ),
     );
     foreach (array('organization' => t('Organization Name'), 'legal' => t('Legal Name'), 'household' => t('Household Name')) as $key => $label) {

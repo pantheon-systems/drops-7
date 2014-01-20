@@ -81,6 +81,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
 
     // Process live contribution. If the transaction is unsuccessful it will trigger a form validation error.
     if ($this->getContributionPage()) {
+      // Ensure contribution js is still loaded if the form has to refresh
+      $this->addPaymentJs();
       $this->loadMultiPageData();
       if ($this->tallyLineItems()) {
         if ($this->isPaymentPage() && !form_get_errors()) {
@@ -109,7 +111,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     // Fill $this->id from existing contacts
     $this->getExistingContactIds();
 
-    // While saving a draft, just skip to the end and write the record
+    // While saving a draft, just skip to postSave and write the record
     if (!empty($this->submission->is_draft)) {
       return;
     }
@@ -137,6 +139,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       // Update existing contact
       else {
         $this->updateContact($contact, $c);
+      }
+      // Identify contact 1 as acting user if not logged in
+      if ($c == 1 && $this->id['cid'][$c] && user_is_anonymous()) {
+        CRM_Core_DAO::executeQuery('SET @civicrm_user_id = %1', array(1 => array($this->id['cid'][1], 'Integer')));
       }
     }
     // $this->id['cid'] will now contain all contact ids in order, with 0 as a placeholder for any contact not saved
@@ -191,7 +197,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   }
 
   /**
-   * Process webform submission when it is has been saved. Called by the following hooks:
+   * Process webform submission after it is has been saved. Called by the following hooks:
    * @see webform_civicrm_webform_submission_insert
    * @see webform_civicrm_webform_submission_update
    */
@@ -372,8 +378,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
     }
     $this->loadEvents();
     // Add event info to line items
+    $format = wf_crm_aval($this->data['reg_options'], 'title_display', 'title');
     foreach ($this->line_items as &$item) {
-      $item['label'] = $this->events[$item['event_id']]['title'];
+      $item['label'] = wf_crm_format_event($this->events[$item['event_id']], $format);
       $item['financial_type_id'] = wf_crm_aval($this->events[$item['event_id']], 'financial_type_id', 'Event Fee');
     }
     // Form Validation
@@ -810,7 +817,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
       foreach ($add as $a) {
         $params[$data_type . '_id'] = $mailer_params['group_id'] = $a;
         if ($data_type == 'group' && isset($mailing_lists[$a]) && !empty($email)) {
-          $result = wf_civicrm_api('mailing_group', 'event_subscribe', $mailer_params);
+          $result = wf_civicrm_api('mailing_event_subscribe', 'create', $mailer_params);
           if (empty($result['is_error'])) {
             $confirmations_sent[] = check_plain($mailing_lists[$a]);
           }

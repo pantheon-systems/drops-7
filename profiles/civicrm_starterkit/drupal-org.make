@@ -3,30 +3,28 @@
 ; locally before committing to the drupal-org.make. 
 
 api = 2
-core = 7.24
+core = 7.26
 
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
 libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.3-starterkit.tgz"
-;libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.3.7-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
 
-;PATCHES THAT CHANGED BETWEEN 4.3 and 4.4
-libraries[civicrm][patch][1978142] = http://drupal.org/files/2082713-pantheon-settings-4-4-2.patch
-;libraries[civicrm][patch][1978142] = http://drupal.org/files/1978142-pantheon-settings-12.patch
+;PANTHEON RELATED PATCHES
+libraries[civicrm][patch][2082713] = http://drupal.org/files/issues/2082713-pantheon-settings-4-4-3.patch
+libraries[civicrm][patch][2063371] = http://drupal.org/files/2063371-add-modulePath-var-4-4.patch
+libraries[civicrm][patch][1978796] = http://drupal.org/files/1978796-session.save-as_file.patch
+libraries[civicrm][patch][1978838] = http://drupal.org/files/issues/1978838-pre-populate-db-settings-2.patch
 
 ;PATCHES THAT SHOULD BE ADDRESSED IN FUTURE CIVICRM RELEASES
 libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
 libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashChart_tpl_javascript-4.patch
 libraries[civicrm][patch][1967972] = http://drupal.org/files/1967972-bootsrap-fixes.patch
 libraries[civicrm][patch][2130213] = http://drupal.org/files/issues/2130213-ignore-timezone-on-install-2.patch
-
-;PANTHEON RELATED PATCHES
-libraries[civicrm][patch][2063371] = http://drupal.org/files/2063371-add-modulePath-var-4-4.patch
-libraries[civicrm][patch][1978796] = http://drupal.org/files/1978796-session.save-as_file.patch
-libraries[civicrm][patch][1978838] = http://drupal.org/files/issues/1978838-pre-populate-db-settings-2.patch
+libraries[civicrm][patch][2153441] = https://drupal.org/files/issues/2153441_formatresourceurl-4.patch
+libraries[civicrm][patch][] = https://drupal.org/files/issues/2153441_formatresourceurl-5.patch
 
 ;IMPROVING PROFILE INSTALL UX WHEN INSTALLING FROM A PROFILE
 libraries[civicrm][patch][1849424] = https://drupal.org/files/issues/1849424-use-vars-in-link-2.patch
@@ -316,9 +314,8 @@ libraries[cache][destination] = extensions
 libraries[cache][patch][1980088] = https://drupal.org/files/1980088-create-extensions-dir-4.patch
 
 libraries[htmlpurifier][download][type] = get
-libraries[htmlpurifier][download][url] = "http://htmlpurifier.org/releases/htmlpurifier-4.5.0.tar.gz"
+libraries[htmlpurifier][download][url] = "http://repo.or.cz/w/htmlpurifier.git/snapshot/a628e0dc707a8f7f0a6fa83018ec976f410661dc.tar.gz"
 libraries[htmlpurifier][destination] = "modules/civicrm/packages/IDS/vendors"
-libraries[htmlpurifier][directory_name] = htmlpurifier
 
 libraries[dompdf][download][type] = get
 libraries[dompdf][download][url] = "http://dompdf.googlecode.com/files/dompdf_0-6-0_beta3.tar.gz"
@@ -363,7 +360,7 @@ projects[fontyourface][subdir] = "contrib"
 projects[fontyourface][version] = "2.8"
 
 projects[imce][subdir] = "contrib"
-projects[imce][version] = "1.7"
+projects[imce][version] = "1.8"
 
 projects[imce_wysiwyg][subdir] = "contrib"
 projects[imce_wysiwyg][version] = "1.0"
@@ -393,7 +390,7 @@ projects[webform][subdir] = "contrib"
 projects[webform][version] = "4.0-beta1"
 
 projects[webform_civicrm][subdir] = "contrib"
-projects[webform_civicrm][version] = "4.3"
+projects[webform_civicrm][version] = "4.4"
 
 projects[wysiwyg][subdir] = "contrib"
 projects[wysiwyg][version] = "2.2"
