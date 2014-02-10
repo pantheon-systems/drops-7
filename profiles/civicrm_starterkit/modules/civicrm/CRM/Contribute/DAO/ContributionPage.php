@@ -692,6 +692,11 @@ class CRM_Contribute_DAO_ContributionPage extends CRM_Core_DAO
           'type' => CRM_Utils_Type::T_INT,
           'title' => ts('Contribution Page Campaign ID') ,
           'FKClassName' => 'CRM_Campaign_DAO_Campaign',
+          'pseudoconstant' => array(
+            'table' => 'civicrm_campaign',
+            'keyColumn' => 'id',
+            'labelColumn' => 'title',
+          )
         ) ,
         'is_share' => array(
           'name' => 'is_share',

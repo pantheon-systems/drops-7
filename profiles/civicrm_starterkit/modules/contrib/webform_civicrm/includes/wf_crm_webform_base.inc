@@ -306,6 +306,31 @@ abstract class wf_crm_webform_base {
   }
 
   /**
+   * Get memberships for a contact
+   * @param $cid
+   * @return array
+   */
+  protected function findMemberships($cid) {
+    static $status_types;
+    $existing = wf_crm_apivalues('membership', 'get', array('contact_id' => $cid));
+    if (!$existing) {
+      return array();
+    }
+    if (!$status_types) {
+      $status_types = wf_crm_apivalues('membership_status', 'get');
+    }
+    // Attempt to order memberships by most recent and active
+    $active = $expired = array();
+    foreach ($existing as $membership) {
+      $membership['is_active'] = $status_types[$membership['status_id']]['is_current_member'];
+      $membership['status'] = $status_types[$membership['status_id']]['label'];
+      $list = $membership['is_active'] ? 'active' : 'expired';
+      array_unshift($$list, $membership);
+    }
+    return array_merge($active, $expired);
+  }
+
+  /**
    * Fetch info and remaining spaces for events
    *
    * @param $events

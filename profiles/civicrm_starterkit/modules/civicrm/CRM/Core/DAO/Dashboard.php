@@ -100,6 +100,12 @@ class CRM_Core_DAO_Dashboard extends CRM_Core_DAO
    */
   public $domain_id;
   /**
+   * Internal name of dashlet.
+   *
+   * @var string
+   */
+  public $name;
+  /**
    * dashlet title
    *
    * @var string
@@ -213,6 +219,13 @@ class CRM_Core_DAO_Dashboard extends CRM_Core_DAO
           'required' => true,
           'FKClassName' => 'CRM_Core_DAO_Domain',
         ) ,
+        'name' => array(
+          'name' => 'name',
+          'type' => CRM_Utils_Type::T_STRING,
+          'title' => ts('Dashlet Name') ,
+          'maxlength' => 64,
+          'size' => CRM_Utils_Type::BIG,
+        ) ,
         'label' => array(
           'name' => 'label',
           'type' => CRM_Utils_Type::T_STRING,
@@ -292,6 +305,7 @@ class CRM_Core_DAO_Dashboard extends CRM_Core_DAO
       self::$_fieldKeys = array(
         'id' => 'id',
         'domain_id' => 'domain_id',
+        'name' => 'name',
         'label' => 'label',
         'url' => 'url',
         'permission' => 'permission',

@@ -3082,6 +3082,10 @@ CREATE TABLE `civicrm_activity_contact` (
       , activity_id
       , record_type_id
   )
+  ,     INDEX `index_record_type`(
+        activity_id
+      , record_type_id
+  )
   
 ,          CONSTRAINT FK_civicrm_activity_contact_activity_id FOREIGN KEY (`activity_id`) REFERENCES `civicrm_activity`(`id`) ON DELETE CASCADE,          CONSTRAINT FK_civicrm_activity_contact_contact_id FOREIGN KEY (`contact_id`) REFERENCES `civicrm_contact`(`id`) ON DELETE CASCADE  
 )  ENGINE=InnoDB DEFAULT CHARACTER SET utf8 COLLATE utf8_unicode_ci  ;
@@ -3277,6 +3281,7 @@ CREATE TABLE `civicrm_dashboard` (
 
      `id` int unsigned NOT NULL AUTO_INCREMENT  ,
      `domain_id` int unsigned NOT NULL   COMMENT 'Domain for dashboard',
+     `name` varchar(64)    COMMENT 'Internal name of dashlet.',
      `label` varchar(255)    COMMENT 'dashlet title',
      `url` varchar(255)    COMMENT 'url in case of external dashlet',
      `permission` varchar(255)    COMMENT 'Permission for the dashlet',

@@ -39,8 +39,10 @@ class CRM_Report_Form_Event_ParticipantListing extends CRM_Report_Form_Event {
 
   protected $_contribField = FALSE;
   protected $_lineitemField = FALSE;
+  protected $_groupFilter = TRUE;
+  protected $_tagFilter = TRUE;
 
-  protected $_customGroupExtends = array('Participant', 'Contact', 'Individual',);
+  protected $_customGroupExtends = array('Participant', 'Contact', 'Individual', 'Event');
 
   public $_drilldownReport = array('event/income' => 'Link to Detail Report');
 
@@ -552,6 +554,10 @@ GROUP BY  cv.label
     }
   }
 
+  function groupBy(){
+    $this->_groupBy = "GROUP BY {$this->_aliases['civicrm_participant']}.id";
+  }
+
   function postProcess() {
 
     // get ready with post process params
@@ -565,6 +571,7 @@ GROUP BY  cv.label
 
     // build array of result based on column headers. This method also allows
     // modifying column headers before using it to build result set i.e $rows.
+    $rows = array();
     $this->buildRows($sql, $rows);
 
     // format result set.

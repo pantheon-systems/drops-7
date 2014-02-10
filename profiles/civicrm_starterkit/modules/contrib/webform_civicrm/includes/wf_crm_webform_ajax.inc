@@ -47,7 +47,7 @@ class wf_crm_webform_ajax extends wf_crm_webform_base {
    * @param $key
    */
   function contactAjax($key) {
-
+    module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
     if (empty($_GET['str']) && (empty($_GET['load']) || empty($_GET['cid']))) {
       exit();
     }

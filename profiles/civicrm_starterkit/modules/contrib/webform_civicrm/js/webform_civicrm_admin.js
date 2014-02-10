@@ -213,15 +213,20 @@ var wfCiviAdmin = (function ($, D) {
   function changeSelect() {
     var $el = $(this).siblings('select');
     var triggerChange;
+    var val = $el.val();
     $(this).toggleClass('select-multiple');
     if ($el.is('[multiple]')) {
-      if ($el.val() && $el.val().length > 1) {
+      if (val && val.length > 1) {
         triggerChange = true;
       }
       if (!$el.hasClass('required') && $('option[value=""]', $el).length < 1) {
         $el.prepend('<option value="">'+ Drupal.t('- None -') +'</option>');
       }
       $el.removeAttr('multiple');
+      // Choose first option if nothing is already selected
+      if (!val || val.length < 1) {
+        $el.val($('option:first', $el).attr('value'));
+      }
     }
     else {
       $el.attr('multiple', 'multiple');

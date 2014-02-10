@@ -1,4 +1,5 @@
 <?php
+
 /*
  +--------------------------------------------------------------------+
  | CiviCRM version 4.4                                                |
@@ -26,72 +27,69 @@
 */
 
 /**
+ * File for the CiviCRM APIv3 for Dashboard Contact
  *
- * @package CRM
+ * @package CiviCRM_APIv3
+ * @subpackage API_ActionSchedule
+ *
  * @copyright CiviCRM LLC (c) 2004-2013
- * $Id$
  *
  */
 
 /**
- * Dummy page for details of SMS
+ * Creates/Updates a new Dashboard Contact Entry
+ *
+ * @param array $params
+ *
+ * @return array
  *
  */
-class CRM_Contact_Page_View_SMS extends CRM_Core_Page {
-
-  /**
-   * Run the page.
-   *
-   * This method is called after the page is created.
-   *
-   * @return void
-   * @access public
-   *
-   */
-  function run() {
-    // get the callback, module and activity id
-    $action = CRM_Utils_Request::retrieve('action', 'String',
-      $this, FALSE, 'browse'
+function civicrm_api3_dashboard_contact_create($params) {
+  if (empty($params['id'])) {
+    civicrm_api3_verify_one_mandatory($params,
+      NULL,
+      array(
+        'dashboard_id',
+      )
     );
-    $id = CRM_Utils_Request::retrieve('id', 'Positive',
-      $this
-    );
-
-    $dao                = new CRM_Core_DAO_ActivityHistory();
-    $dao->activity_id   = $id;
-    $dao->activity_type = ts('SMS Sent');
-    if ($dao->find(TRUE)) {
-      $cid = $dao->entity_id;
-    }
-
-    $dao = new CRM_SMS_DAO_History();
-    $dao->id = $id;
-
-    if ($dao->find(TRUE)) {
-      $this->assign('fromName',
-        CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact',
-          $dao->contact_id,
-          'display_name'
-        )
-      );
-      $this->assign('toName',
-        CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact',
-          $cid,
-          'display_name'
-        )
-      );
-      $this->assign('sentDate', $dao->sent_date);
-      $this->assign('message', $dao->message);
-
-      // get the display name and images for the contact
-      list($displayName, $contactImage) = CRM_Contact_BAO_Contact::getDisplayAndImage($dao->contact_id);
-
-      CRM_Utils_System::setTitle($contactImage . ' ' . $displayName);
-
-      // also add the cid params to the Menu array
-      CRM_Core_Menu::addParam('cid', $cid);
-    }
-    return parent::run();
   }
+  $errors = _civicrm_api3_dashboard_contact_check_params($params);
+  if ($errors !== NULL) {
+    return $errors;
+  }
+  return _civicrm_api3_basic_create(_civicrm_api3_get_BAO(__FUNCTION__), $params);
 }
 
+/**
+ * Gets a CiviCRM Dashlets of Contacts according to parameters
+ *
+ * @param array  $params       Associative array of property name/value
+ *                             pairs for the activity.
+ *
+ * @return array
+ *
+ */
+function civicrm_api3_dashboard_contact_get($params) {
+  return _civicrm_api3_basic_get(_civicrm_api3_get_BAO(__FUNCTION__), $params);
+}
+
+/**
+ * Adjust Metadata for Create action
+ *
+ * The metadata is used for setting defaults, documentation & validation
+ * @param array $params array or parameters determined by getfields
+ */
+function _civicrm_api3_dashboard_contact_create_spec(&$params) {
+  unset($params['version']);
+}
+
+function _civicrm_api3_dashboard_contact_check_params(&$params) {
+  $dashboard_id = CRM_Utils_Array::value('dashboard_id', $params);
+  if ($dashboard_id) {
+    $allDashlets = CRM_Core_BAO_Dashboard::getDashlets(TRUE, CRM_Utils_Array::value('check_permissions', $params, 0));
+    if (!isset($allDashlets[$dashboard_id])) {
+      return civicrm_api3_create_error('Invalid or inaccessible dashboard ID');
+    }
+  }
+  return NULL;
+}

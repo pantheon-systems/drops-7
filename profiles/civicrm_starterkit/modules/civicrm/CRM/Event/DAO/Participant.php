@@ -409,13 +409,18 @@ class CRM_Event_DAO_Participant extends CRM_Core_DAO
         'participant_campaign_id' => array(
           'name' => 'campaign_id',
           'type' => CRM_Utils_Type::T_INT,
-          'title' => ts('Campaign ID') ,
+          'title' => ts('Campaign') ,
           'import' => true,
           'where' => 'civicrm_participant.campaign_id',
           'headerPattern' => '',
           'dataPattern' => '',
           'export' => true,
           'FKClassName' => 'CRM_Campaign_DAO_Campaign',
+          'pseudoconstant' => array(
+            'table' => 'civicrm_campaign',
+            'keyColumn' => 'id',
+            'labelColumn' => 'title',
+          )
         ) ,
         'discount_amount' => array(
           'name' => 'discount_amount',

@@ -321,11 +321,10 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
     $this->buildCustom($this->_values['custom_pre_id'], 'customPre');
     $this->buildCustom($this->_values['custom_post_id'], 'customPost');
 
-    if (!empty($this->_fields)) {
+    if (!empty($this->_fields) && !empty($this->_values['custom_pre_id'])) {
       $profileAddressFields = array();
       foreach ($this->_fields as $key => $value) {
-        CRM_Core_BAO_UFField::assignAddressField($key, $profileAddressFields);
-      }
+        CRM_Core_BAO_UFField::assignAddressField($key, $profileAddressFields, array('uf_group_id' => $this->_values['custom_pre_id']));      }
       $this->set('profileAddressFields', $profileAddressFields);
     }
 
@@ -841,7 +840,7 @@ class CRM_Event_Form_Registration_Register extends CRM_Event_Form_Registration {
     }
 
     if ($self->_values['event']['is_monetary']) {
-      if ($fields['amount'] > 0 && !isset($fields['payment_processor'])) {
+      if (empty($self->_requireApproval) && $fields['amount'] > 0 && !isset($fields['payment_processor'])) {
         $errors['payment_processor'] = ts('Please select a Payment Method');
       }
       if (is_array($self->_paymentProcessor)) {

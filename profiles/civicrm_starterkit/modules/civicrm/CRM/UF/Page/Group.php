@@ -87,6 +87,7 @@ class CRM_UF_Page_Group extends CRM_Core_Page {
           'url' => 'civicrm/profile/create',
           'qs' => 'gid=%%id%%&reset=1',
           'title' => ts('Use Profile-Create Mode'),
+          'fe' => true,
         ),
         CRM_Core_Action::DISABLE => array(
           'name' => ts('Disable'),
@@ -225,8 +226,7 @@ class CRM_UF_Page_Group extends CRM_Core_Page {
     $template = CRM_Core_Smarty::singleton();
     $template->assign('gid', $gid);
     $template->assign('tplFile', 'CRM/Profile/Form/Edit.tpl');
-    $profile = trim($template->fetch('CRM/common/commonCSS.tpl'));
-    $profile .= trim($template->fetch('CRM/Form/default.tpl'));
+    $profile = trim($template->fetch('CRM/Form/default.tpl'));
 
     // not sure how to circumvent our own navigation system to generate the right form url
     $urlReplaceWith = 'civicrm/profile/create&amp;gid=' . $gid . '&amp;reset=1';

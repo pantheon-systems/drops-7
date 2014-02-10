@@ -635,6 +635,12 @@ class CRM_Contact_BAO_Query {
         }
       }
 
+      if (in_array($name, array('prefix_id', 'suffix_id', 'gender_id'))) {
+        if (CRM_Utils_Array::value($field['pseudoconstant']['optionGroupName'], $this->_returnProperties)) {
+          $makeException = TRUE;
+        }
+      }
+
       $cfID = CRM_Core_BAO_CustomField::getKeyID($name);
       if (
         CRM_Utils_Array::value($name, $this->_paramLookup) ||
@@ -1626,6 +1632,7 @@ class CRM_Contact_BAO_Query {
       case 'activity_campaign_id':
       case 'activity_engagement_level':
       case 'activity_id':
+      case 'activity_result':
       case 'source_contact':
         CRM_Activity_BAO_Query::whereClauseSingle($values, $this);
         return;
@@ -1987,9 +1994,11 @@ class CRM_Contact_BAO_Query {
         $op = 'LIKE';
       }
       $wc = self::caseImportant($op) ? "LOWER(contact_a.organization_name)" : "contact_a.organization_name";
-      $this->_where[$grouping][] = self::buildClause($wc, $op,
-        "'$value' AND contact_a.contact_type ='Individual'"
+      $ceWhereClause = self::buildClause($wc, $op,
+        $value
       );
+      $ceWhereClause .= " AND contact_a.contact_type = 'Individual'";
+      $this->_where[$grouping][] = $ceWhereClause;
       $this->_qill[$grouping][] = "$field[title] $op \"$value\"";
     }
     elseif ($name === 'email_greeting') {
@@ -2029,7 +2038,7 @@ class CRM_Contact_BAO_Query {
       }
 
       $wc = 'civicrm_website.url';
-      $this->_where[$grouping][] = self::buildClause($wc, $op, "'$value'");
+      $this->_where[$grouping][] = $d = self::buildClause($wc, $op, $value);
       $this->_qill[$grouping][] = "$field[title] $op \"$value\"";
     }
     elseif ($name === 'contact_is_deleted') {
@@ -2435,8 +2444,8 @@ class CRM_Contact_BAO_Query {
           continue;
 
         case 'civicrm_log':
-          $from .= " $side JOIN civicrm_log ON (civicrm_log.entity_id = contact_a.id AND civicrm_log.entity_table = 'civicrm_contact')";
-          $from .= " $side JOIN civicrm_contact contact_b_log ON (civicrm_log.modified_id = contact_b_log.id)";
+          $from .= " INNER JOIN civicrm_log ON (civicrm_log.entity_id = contact_a.id AND civicrm_log.entity_table = 'civicrm_contact')";
+          $from .= " INNER JOIN civicrm_contact contact_b_log ON (civicrm_log.modified_id = contact_b_log.id)";
           continue;
 
         case 'civicrm_tag':
@@ -3644,7 +3653,7 @@ WHERE  id IN ( $groupIDs )
     $name = $targetName[4] ? "%$name%" : $name;
     $this->_where[$grouping][] = "contact_b_log.sort_name LIKE '%$name%'";
     $this->_tables['civicrm_log'] = $this->_whereTables['civicrm_log'] = 1;
-    $this->_qill[$grouping][] = ts('Changed by') . ": $name";
+    $this->_qill[$grouping][] = ts('Modified by') . ": $name";
   }
 
   function modifiedDates($values) {
@@ -3652,18 +3661,20 @@ WHERE  id IN ( $groupIDs )
 
     // CRM-11281, default to added date if not set
     $fieldTitle = ts('Added Date');
-
+    $fieldName = 'created_date';
     foreach (array_keys($this->_params) as $id) {
       if ($this->_params[$id][0] == 'log_date') {
         if ($this->_params[$id][2] == 2) {
           $fieldTitle = ts('Modified Date');
+          $fieldName = 'modified_date';
         }
       }
     }
 
-    $this->dateQueryBuilder($values,
-      'civicrm_log', 'log_date', 'modified_date', $fieldTitle
-    );
+
+    $this->dateQueryBuilder($values, 'contact_a', 'log_date', $fieldName, $fieldTitle);
+
+    self::$_openedPanes[ts('Change Log')] = TRUE;
   }
 
   function demographics(&$values) {
@@ -3742,7 +3753,10 @@ WHERE  id IN ( $groupIDs )
     list($name, $op, $value, $grouping, $wildcard) = $values;
 
     $pref = array();
-    if (!is_array($value)) {
+    if (in_array($op, array( 'IS NULL', 'IS NOT NULL', 'IS EMPTY', 'IS NOT EMPTY'))) {
+      $value = NULL;
+    }
+    elseif (!is_array($value)) {
       $v = array();
       $value = trim($value, ' ()');
       if (strpos($value, CRM_Core_DAO::VALUE_SEPARATOR) !== FALSE) {
@@ -3769,10 +3783,16 @@ WHERE  id IN ( $groupIDs )
     $commPref = CRM_Core_PseudoConstant::get('CRM_Contact_DAO_Contact', 'preferred_communication_method');
 
     $sqlValue = array();
+    $showValue = array();
     $sql = "contact_a.preferred_communication_method";
-    foreach ($pref as $val) {
-      $sqlValue[] = "( $sql like '%" . CRM_Core_DAO::VALUE_SEPARATOR . $val . CRM_Core_DAO::VALUE_SEPARATOR . "%' ) ";
-      $showValue[] = $commPref[$val];
+    if (in_array($op, array('IS NULL', 'IS NOT NULL', 'IS EMPTY', 'IS NOT EMPTY'))) {
+      $sqlValue[] = "{$sql} {$op}";
+    }
+    else {
+      foreach ($pref as $val) {
+        $sqlValue[] = "( $sql like '%" . CRM_Core_DAO::VALUE_SEPARATOR . $val . CRM_Core_DAO::VALUE_SEPARATOR . "%' ) ";
+        $showValue[] = $commPref[$val];
+      }
     }
     $this->_where[$grouping][] = "( " . implode(' OR ', $sqlValue) . " )";
     $this->_qill[$grouping][] = ts('Preferred Communication Method') . " $op " . implode(' ' . ts('or') . ' ', $showValue);
@@ -4462,29 +4482,36 @@ civicrm_relationship.is_permission_a_b = 0
   }
 
   function &summaryContribution($context = NULL) {
-    list($select, $from, $where, $having) = $this->query(TRUE);
+    list($innerselect, $from, $where, $having) = $this->query(TRUE);
 
     // hack $select
     $select = "
-SELECT COUNT( civicrm_contribution.total_amount ) as total_count,
-       SUM(   civicrm_contribution.total_amount ) as total_amount,
-       AVG(   civicrm_contribution.total_amount ) as total_avg,
-       civicrm_contribution.currency              as currency";
-
-    // make sure contribution is completed - CRM-4989
-    $where .= " AND civicrm_contribution.contribution_status_id = 1 ";
+SELECT COUNT( conts.total_amount ) as total_count,
+       SUM(   conts.total_amount ) as total_amount,
+       AVG(   conts.total_amount ) as total_avg,
+       conts.currency              as currency";
+    if($this->_permissionWhereClause) {
+      $where .= " AND " . $this->_permissionWhereClause;
+    }
     if ($context == 'search') {
       $where .= " AND contact_a.is_deleted = 0 ";
     }
+
+    // make sure contribution is completed - CRM-4989
+    $completedWhere =  $where . " AND civicrm_contribution.contribution_status_id = 1 ";
+
 
     $summary = array();
     $summary['total'] = array();
     $summary['total']['count'] = $summary['total']['amount'] = $summary['total']['avg'] = "n/a";
 
-    $query = "$select $from $where GROUP BY currency";
-    $params = array();
+    $query = "$select FROM (
+      SELECT civicrm_contribution.total_amount, civicrm_contribution.currency $from $completedWhere
+      GROUP BY civicrm_contribution.id
+    ) as conts
+    GROUP BY currency";
 
-    $dao = CRM_Core_DAO::executeQuery($query, $params);
+    $dao = CRM_Core_DAO::executeQuery($query);
 
     $summary['total']['count'] = 0;
     $summary['total']['amount'] = $summary['total']['avg'] = array();
@@ -4502,19 +4529,37 @@ SELECT COUNT( civicrm_contribution.total_amount ) as total_count,
     }
 
     // hack $select
+    //@todo  - this could be one query using the IF in mysql - eg
+    //  SELECT sum(total_completed), sum(count_completed), sum(count_cancelled), sum(total_cancelled) FROM (
+    //   SELECT civicrm_contribution.total_amount, civicrm_contribution.currency  ,
+    //  IF(civicrm_contribution.contribution_status_id = 1, 1, 0 ) as count_completed,
+    //  IF(civicrm_contribution.contribution_status_id = 1, total_amount, 0 ) as total_completed,
+    //  IF(civicrm_contribution.cancel_date IS NOT NULL = 1, 1, 0 ) as count_cancelled,
+    //  IF(civicrm_contribution.cancel_date IS NOT NULL = 1, total_amount, 0 ) as total_cancelled
+    // FROM civicrm_contact contact_a
+    //  LEFT JOIN civicrm_contribution ON civicrm_contribution.contact_id = contact_a.id
+    // WHERE  ( ... where clause....
+    // AND (civicrm_contribution.cancel_date IS NOT NULL OR civicrm_contribution.contribution_status_id = 1)
+    //  ) as conts
+
     $select = "
-SELECT COUNT( civicrm_contribution.total_amount ) as cancel_count,
-       SUM(   civicrm_contribution.total_amount ) as cancel_amount,
-       AVG(   civicrm_contribution.total_amount ) as cancel_avg,
-       civicrm_contribution.currency              as currency";
+SELECT COUNT( conts.total_amount ) as cancel_count,
+       SUM(   conts.total_amount ) as cancel_amount,
+       AVG(   conts.total_amount ) as cancel_avg,
+       conts.currency              as currency";
 
     $where .= " AND civicrm_contribution.cancel_date IS NOT NULL ";
     if ($context == 'search') {
       $where .= " AND contact_a.is_deleted = 0 ";
     }
 
-    $query = "$select $from $where GROUP BY currency";
-    $dao = CRM_Core_DAO::executeQuery($query, $params);
+    $query = "$select FROM (
+      SELECT civicrm_contribution.total_amount, civicrm_contribution.currency $from $where
+      GROUP BY civicrm_contribution.id
+    ) as conts
+    GROUP BY currency";
+
+    $dao = CRM_Core_DAO::executeQuery($query);
 
     if ($dao->N <= 1) {
       if ($dao->fetch()) {
@@ -4733,16 +4778,6 @@ SELECT COUNT( civicrm_contribution.total_amount ) as cancel_count,
       $this->_tables[$tableName] = $this->_whereTables[$tableName] = 1;
       $this->_qill[$grouping][] = "$fieldTitle - $phrase \"$format\"";
     }
-
-    if (
-      $tableName == 'civicrm_log' &&
-      $fieldTitle == ts('Added Date')
-    ) {
-      //CRM-6903 --hack to check modified date of first record.
-      //as added date means first modified date of object.
-      $addedDateQuery = 'select id from civicrm_log group by entity_id order by id';
-      $this->_where[$grouping][] = "civicrm_log.id IN ( {$addedDateQuery} )";
-    }
   }
 
   function numberRangeBuilder(&$values,
@@ -4876,7 +4911,6 @@ SELECT COUNT( civicrm_contribution.total_amount ) as cancel_count,
         }
 
         $value = CRM_Utils_Type::escape($value, $dataType);
-
         // if we dont have a dataType we should assume
         if ($dataType == 'String' || $dataType == 'Text') {
           $value = "'" . strtolower($value) . "'";
@@ -5165,7 +5199,7 @@ AND   displayRelType.is_active = 1
           //preserve id value
           $idColumn = "{$key}_id";
           $dao->$idColumn = $val;
-          $dao->$key = CRM_Core_PseudoConstant::getLabel($baoName, $value['pseudoField'], $val);
+          $dao->$value['pseudoField'] = $dao->$key = CRM_Core_PseudoConstant::getLabel($baoName, $value['pseudoField'], $val);
         }
         elseif ($value['pseudoField'] == 'state_province_abbreviation') {
           $dao->$key = CRM_Core_PseudoConstant::stateProvinceAbbreviation($val);

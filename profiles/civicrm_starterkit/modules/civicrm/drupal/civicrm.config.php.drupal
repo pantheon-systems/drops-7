@@ -58,8 +58,8 @@ function civicrm_conf_init() {
         // to the script that invokes it
         $moduleDir  = 'sites' . DIRECTORY_SEPARATOR . 'all' . DIRECTORY_SEPARATOR . 'modules';
         $contribDir = $moduleDir . DIRECTORY_SEPARATOR . 'contrib';
-        // check to see if this is under sites/all/modules/contrib
-        if ( strpos( $currentDir, $contribDir ) !== false ) {
+        // check to see if this is under sites/all/modules/contrib or subdir civicrm-core
+        if ( strpos( $currentDir, $contribDir ) !== false || strpos( $currentDir, 'civicrm-core' ) !== false) {
             $confdir = $currentDir . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..';
         // check to see if this is under sites/all/modules
         } else if ( strpos( $currentDir, $moduleDir ) !== false ) {

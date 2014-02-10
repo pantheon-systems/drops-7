@@ -173,18 +173,19 @@ function recaptcha_captcha() {
  *   Whether or not the reCAPTCHA server is up.
  */
 function _recaptcha_test_recaptcha_server() {
-  $test = TRUE;
   $fs = @fsockopen(RECAPTCHA_VERIFY_SERVER, 80, $errno, $errstr, 10);
-  if (!$fs) {
-    $test = FALSE;
+  if ($fs) {
+    fclose($fs);
+    return TRUE;
+  }
+  else {
     drupal_set_message(t('Unable to connect with the reCAPTCHA server (@server): @errno: @errstr', array(
       '@server' => RECAPTCHA_VERIFY_SERVER,
       '@errno' => $errno,
       '@errstr' => $errstr,
     )), 'error');
+    return FALSE;
   }
-  fclose($fs);
-  return $test;
 }
 
 /**

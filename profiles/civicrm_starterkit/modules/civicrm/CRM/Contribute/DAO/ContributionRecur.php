@@ -471,13 +471,18 @@ class CRM_Contribute_DAO_ContributionRecur extends CRM_Core_DAO
         'contribution_campaign_id' => array(
           'name' => 'campaign_id',
           'type' => CRM_Utils_Type::T_INT,
-          'title' => ts('Campaign ID') ,
+          'title' => ts('Campaign') ,
           'import' => true,
           'where' => 'civicrm_contribution_recur.campaign_id',
           'headerPattern' => '',
           'dataPattern' => '',
           'export' => true,
           'FKClassName' => 'CRM_Campaign_DAO_Campaign',
+          'pseudoconstant' => array(
+            'table' => 'civicrm_campaign',
+            'keyColumn' => 'id',
+            'labelColumn' => 'title',
+          )
         ) ,
         'is_email_receipt' => array(
           'name' => 'is_email_receipt',

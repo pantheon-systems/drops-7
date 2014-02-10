@@ -59,15 +59,14 @@ function civicrm_conf_init() {
         $moduleDir  = 'sites' . DIRECTORY_SEPARATOR . 'all' . DIRECTORY_SEPARATOR . 'modules';
         $contribDir = $moduleDir . DIRECTORY_SEPARATOR . 'contrib';
         $profileDir = DIRECTORY_SEPARATOR . 'profiles' . DIRECTORY_SEPARATOR;
-                       
-        // check to see if this is under sites/all/modules/contrib
-        if ( strpos( $currentDir, $contribDir ) !== false ) {
+        // check to see if this is under sites/all/modules/contrib or subdir civicrm-core
+        if ( strpos( $currentDir, $contribDir ) !== false || strpos( $currentDir, 'civicrm-core' ) !== false) {
             $confdir = $currentDir . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..';
             
-            // drupal root is back one from the $confdir
-            define('DRUPAL_ROOT', $confdir . DIRECTORY_SEPARATOR . '..');
-            require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
-            
+             // drupal root is back one from the $confdir
+             define('DRUPAL_ROOT', $confdir . DIRECTORY_SEPARATOR . '..');
+             require_once DRUPAL_ROOT . '/includes/bootstrap.inc';
+        
         // check to see if this is under sites/all/modules
         } else if ( strpos( $currentDir, $moduleDir ) !== false ) {
             $confdir = $currentDir . '..' . DIRECTORY_SEPARATOR . '..' . DIRECTORY_SEPARATOR . '..';

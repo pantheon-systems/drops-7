@@ -468,7 +468,7 @@ class CRM_Contact_Form_Edit_Address {
         $counties = CRM_Core_PseudoConstant::countyForState($stateID);
       }
       else {
-        $counties = CRM_Core_PseudoConstant::country();
+        $counties = CRM_Core_PseudoConstant::county();
       }
 
       $form->addElement('select', $countyElementName, ts('County'), array('' => ts('- select -')) + $counties);
@@ -497,7 +497,7 @@ class CRM_Contact_Form_Edit_Address {
   static function setDefaultValues( &$defaults, &$form ) {
     $addressValues = array();
     if (isset($defaults['address']) && is_array($defaults['address']) &&
-      !CRM_Utils_system::isNull($defaults['address'])
+      !CRM_Utils_System::isNull($defaults['address'])
     ) {
 
       // start of contact shared adddress defaults

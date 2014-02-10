@@ -3,14 +3,15 @@ description = "Uses the reCAPTCHA web service to improve the CAPTCHA system."
 dependencies[] = captcha
 package = "Spam control"
 core = 7.x
+configure = admin/config/people/captcha/recaptcha
 
 files[] = recaptcha.admin.inc
 files[] = recaptcha.module
 files[] = recaptcha.install
 
-; Information added by drupal.org packaging script on 2013-08-29
-version = "7.x-1.10"
+; Information added by Drupal.org packaging script on 2014-02-06
+version = "7.x-1.11"
 core = "7.x"
 project = "recaptcha"
-datestamp = "1377803514"
+datestamp = "1391701492"
 

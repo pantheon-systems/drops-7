@@ -13,7 +13,7 @@ projects[drupal][version] = "7.26"
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.3-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.4-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
 
@@ -22,6 +22,7 @@ libraries[civicrm][patch][2082713] = http://drupal.org/files/issues/2082713-pant
 libraries[civicrm][patch][2063371] = http://drupal.org/files/2063371-add-modulePath-var-4-4.patch
 libraries[civicrm][patch][1978796] = http://drupal.org/files/1978796-session.save-as_file.patch
 libraries[civicrm][patch][1978838] = http://drupal.org/files/issues/1978838-pre-populate-db-settings-2.patch
+libraries[civicrm][patch][2177647] = https://drupal.org/files/issues/2177647-sessions-fix.patch
 
 ;PATCHES THAT SHOULD BE ADDRESSED IN FUTURE CIVICRM RELEASES
 libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
@@ -386,7 +387,7 @@ projects[profile_switcher][subdir] = "contrib"
 projects[profile_switcher][version] = "1.0-beta1"
 
 projects[recaptcha][subdir] = "contrib"
-projects[recaptcha][version] = "1.10"
+projects[recaptcha][version] = "1.11"
 
 projects[views][subdir] = "contrib"
 projects[views][version] = "3.7"
@@ -395,7 +396,7 @@ projects[webform][subdir] = "contrib"
 projects[webform][version] = "4.0-beta1"
 
 projects[webform_civicrm][subdir] = "contrib"
-projects[webform_civicrm][version] = "4.4"
+projects[webform_civicrm][version] = "4.5"
 
 projects[wysiwyg][subdir] = "contrib"
 projects[wysiwyg][version] = "2.2"

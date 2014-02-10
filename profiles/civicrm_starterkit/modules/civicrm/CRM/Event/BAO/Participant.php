@@ -106,6 +106,11 @@ class CRM_Event_BAO_Participant extends CRM_Event_DAO_Participant {
       $params['fee_amount'] = CRM_Utils_Rule::cleanMoney($params['fee_amount']);
     }
 
+    // ensure that role ids are encoded as a string
+    if (isset($params['role_id']) && is_array($params['role_id'])) {
+      $params['role_id'] = implode(CRM_Core_DAO::VALUE_SEPARATOR, $params['role_id']);
+    }
+
     $participantBAO = new CRM_Event_BAO_Participant;
     if (CRM_Utils_Array::value('id', $params)) {
       $participantBAO->id = CRM_Utils_Array::value('id', $params);
@@ -214,7 +219,7 @@ class CRM_Event_BAO_Participant extends CRM_Event_DAO_Participant {
     $session = CRM_Core_Session::singleton();
     $id = $session->get('userID');
     if (!$id) {
-      $id = $params['contact_id'];
+      $id = CRM_Utils_Array::value('contact_id', $params);
     }
 
     // add custom field values
@@ -693,11 +698,6 @@ GROUP BY  participant.event_id
       $tmpFields['participant_contact_id']['title'] =
         $tmpFields['participant_contact_id']['title'] . ' (match to contact)';
 
-      //campaign fields.
-      if (isset($tmpFields['participant_campaign_id'])) {
-        $tmpFields['participant_campaign'] = array('title' => ts('Campaign Title'));
-      }
-
       $fields = array_merge($fields, $tmpContactField);
       $fields = array_merge($fields, $tmpFields);
       $fields = array_merge($fields, $note, $participantStatus, $participantRole, $eventType);
@@ -739,11 +739,6 @@ GROUP BY  participant.event_id
         'participant_role' => array('title' => 'Participant Role',
           'name' => 'participant_role',
         ));
-
-      //campaign fields.
-      if (isset($participantFields['participant_campaign_id'])) {
-        $participantFields['participant_campaign'] = array('title' => ts('Campaign Title'));
-      }
 
       $discountFields  = CRM_Core_DAO_Discount::export();
 

@@ -1,9 +1,10 @@
 The following patches have been applied to this project:
-- http://drupal.org/files/issues/2082713-pantheon-settings-4-4-3.patch
+- https://drupal.org/files/issues/2082713-pantheon-settings-4-4-4.patch
 - http://drupal.org/files/2063371-add-modulePath-var-4-4.patch
 - http://drupal.org/files/1978796-session.save-as_file.patch
 - http://drupal.org/files/issues/1978838-pre-populate-db-settings-2.patch
-- http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
+- https://drupal.org/files/issues/2177647-sessions-fix.patch
+- https://drupal.org/files/issues/1844558-run-civicrm-from-profile-dir-config-3.patch
 - http://drupal.org/files/1940074-openFlashChart_tpl_javascript-4.patch
 - http://drupal.org/files/1967972-bootsrap-fixes.patch
 - http://drupal.org/files/issues/2130213-ignore-timezone-on-install-2.patch

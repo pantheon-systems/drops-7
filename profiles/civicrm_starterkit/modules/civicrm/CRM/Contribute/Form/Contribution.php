@@ -679,13 +679,26 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       }
     }
     elseif ((!$this->_ppID && $this->_id) || !$this->_id) {
-      foreach (array(
-                 'Overdue',
-                 'In Progress'
-               ) as $suppress) {
-        unset($status[CRM_Utils_Array::key($suppress, $statusName)]);
+      $suppressFlag = FALSE;
+      if ($this->_id) {
+        $componentDetails = CRM_Contribute_BAO_Contribution::getComponentDetails($this->_id);
+        if (CRM_Utils_Array::value('membership', $componentDetails) || CRM_Utils_Array::value('participant', $componentDetails)) {
+          $suppressFlag = TRUE;
+        }
+      }
+      if (!$suppressFlag) {
+        foreach (array(
+                   'Overdue',
+                   'In Progress'
+                 ) as $suppress) {
+          unset($status[CRM_Utils_Array::key($suppress, $statusName)]);
+        }
+      }
+      else {
+        unset($status[CRM_Utils_Array::key('Overdue', $statusName)]);
       }
     }
+    
     if ($this->_id) {
       $contributionStatus = CRM_Core_DAO::getFieldValue('CRM_Contribute_DAO_Contribution', $this->_id, 'contribution_status_id');
       $name = CRM_Utils_Array::value($contributionStatus, $statusName);
@@ -693,10 +706,12 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
         case 'Completed':
         case 'Cancelled':
         case 'Refunded':
+          unset($status[CRM_Utils_Array::key('In Progress', $statusName)]);
           unset($status[CRM_Utils_Array::key('Pending', $statusName)]);
           unset($status[CRM_Utils_Array::key('Failed', $statusName)]);
           break;
         case 'Pending':
+        case 'In Progress':
           unset($status[CRM_Utils_Array::key('Refunded', $statusName)]);
           break;
         case 'Failed':
@@ -704,6 +719,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
                      'Pending',
                      'Refunded',
                      'Completed',
+                     'In Progress',
                      'Cancelled'
                    ) as $suppress) {
             unset($status[CRM_Utils_Array::key($suppress, $statusName)]);
@@ -920,7 +936,7 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
       }
     }
 
-    $softErrors = CRM_Contribute_Form_SoftCredit::formRule($fields);
+    $softErrors = CRM_Contribute_Form_SoftCredit::formRule($fields, $errors, $self);
 
     if (CRM_Utils_Array::value('total_amount', $fields) && (CRM_Utils_Array::value('net_amount', $fields) || CRM_Utils_Array::value('fee_amount', $fields))) {
       $sum = CRM_Utils_Rule::cleanMoney($fields['net_amount']) + CRM_Utils_Rule::cleanMoney($fields['fee_amount']);
@@ -937,6 +953,20 @@ class CRM_Contribute_Form_Contribution extends CRM_Contribute_Form_AbstractEditP
      if (CRM_Utils_Array::value('fee_amount', $fields) 
       && $financialType = CRM_Contribute_BAO_Contribution::validateFinancialType($fields['financial_type_id'])) {
       $errors['financial_type_id'] = ts("Financial Account of account relationship of 'Expense Account is' is not configured for Financial Type : ") . $financialType;  
+    }
+    
+    // $trxn_id must be unique CRM-13919
+    if (!empty($fields['trxn_id'])) {
+      $queryParams = array(1 => array($fields['trxn_id'], 'String'));
+      $query = 'select count(*) from civicrm_contribution where trxn_id = %1';
+      if ($self->_id) {
+        $queryParams[2] = array((int)$self->_id, 'Integer');
+        $query .= ' and id !=%2';
+      }
+      $tCnt = CRM_Core_DAO::singleValueQuery($query, $queryParams);
+      if ($tCnt) {
+        $errors['trxn_id'] = ts('Transaction ID\'s must be unique. Transaction \'%1\' already exists in your database.', array(1 => $fields['trxn_id']));
+      }      
     }
 
     $errors = array_merge($errors, $softErrors);

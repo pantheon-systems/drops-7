@@ -270,6 +270,11 @@ class CRM_Campaign_DAO_Survey extends CRM_Core_DAO
           'type' => CRM_Utils_Type::T_INT,
           'default' => 'NULL',
           'FKClassName' => 'CRM_Campaign_DAO_Campaign',
+          'pseudoconstant' => array(
+            'table' => 'civicrm_campaign',
+            'keyColumn' => 'id',
+            'labelColumn' => 'title',
+          )
         ) ,
         'activity_type_id' => array(
           'name' => 'activity_type_id',

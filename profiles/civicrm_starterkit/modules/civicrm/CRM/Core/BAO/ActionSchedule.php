@@ -463,6 +463,8 @@ WHERE   cas.entity_value = $id AND
         'toName' => $contact['display_name'],
         'toEmail' => $email,
         'subject' => $messageSubject,
+        'entity' => 'action_schedule',
+        'entity_id' => $scheduleID,
       );
 
       if (!$html || $contact['preferred_mail_format'] == 'Text' ||
@@ -495,7 +497,7 @@ WHERE   cas.entity_value = $id AND
    * @static
    *
    */
-  static function add(&$params, &$ids = NULL) {
+  static function add(&$params, $ids = array()) {
     $actionSchedule = new CRM_Core_DAO_ActionSchedule();
     $actionSchedule->copyValues($params);
 
@@ -682,7 +684,7 @@ WHERE reminder.action_schedule_id = %1 AND reminder.action_date_time IS NULL
             $stateProvince = CRM_Core_PseudoConstant::stateProvince();
             $loc['street_address'] = $dao->street_address;
             $loc['city'] = $dao->city;
-            $loc['state_province'] = CRM_Utils_array::value($dao->state_province_id, $stateProvince);
+            $loc['state_province'] = CRM_Utils_Array::value($dao->state_province_id, $stateProvince);
             $loc['postal_code'] = $dao->postal_code;
             $entityTokenParams["{$tokenEntity}." . $field] = CRM_Utils_Address::format($loc);
           }
@@ -753,10 +755,13 @@ WHERE reminder.action_schedule_id = %1 AND reminder.action_date_time IS NULL
     }
   }
 
-  static function buildRecipientContacts($mappingID, $now) {
+  static function buildRecipientContacts($mappingID, $now, $params = array()) {
     $actionSchedule = new CRM_Core_DAO_ActionSchedule();
     $actionSchedule->mapping_id = $mappingID;
     $actionSchedule->is_active = 1;
+    if(!empty($params)) {
+      _civicrm_api3_dao_set_filter($actionSchedule, $params, FALSE, 'ActionSchedule');
+    }
     $actionSchedule->find();
 
     while ($actionSchedule->fetch()) {
@@ -903,7 +908,7 @@ WHERE reminder.action_schedule_id = %1 AND reminder.action_date_time IS NULL
 
         // Need to check if its a smart group or not
         // Then decide which table to join onto the query
-        $group			= CRM_Contact_DAO_Group::getTableName();
+        $group = CRM_Contact_DAO_Group::getTableName();
 
         // Get the group information
         $sql = "
@@ -1024,14 +1029,18 @@ LEFT JOIN {$reminderJoinClause}
           reminder.entity_id          = c.id AND
           reminder.entity_table       = 'civicrm_contact' AND
           reminder.action_schedule_id = {$actionSchedule->id}";
-
+        $addWhereClause = '';
+        if ($addWhere) {
+          $addWhereClause = "AND {$addWhere}";
+        }
         $insertAdditionalSql ="
 INSERT INTO civicrm_action_log (contact_id, entity_id, entity_table, action_schedule_id)
 {$addSelect}
 FROM ({$contactTable}, {$table})
 LEFT JOIN {$additionReminderClause}
 {$addGroup}
-{$additionWhere} c.is_deleted = 0 AND c.is_deceased = 0 AND {$addWhere}
+{$additionWhere} c.is_deleted = 0 AND c.is_deceased = 0
+{$addWhereClause}
 AND {$dateClause}
 AND c.id NOT IN (
      SELECT rem.contact_id
@@ -1052,6 +1061,12 @@ GROUP BY c.id
         }
         elseif ($actionSchedule->repetition_frequency_unit == 'week') {
           $hrs = 24 * $actionSchedule->repetition_frequency_interval * 7;
+        }
+        elseif ($actionSchedule->repetition_frequency_unit == 'month') {
+          $hrs = "24*(DATEDIFF(DATE_ADD(latest_log_time, INTERVAL 1 MONTH ), latest_log_time))";
+        }
+        elseif ($actionSchedule->repetition_frequency_unit == 'year') {
+          $hrs = "24*(DATEDIFF(DATE_ADD(latest_log_time, INTERVAL 1 YEAR ), latest_log_time))";
         }
         else {
           $hrs = $actionSchedule->repetition_frequency_interval;
@@ -1151,12 +1166,12 @@ WHERE     m.owner_membership_id IS NOT NULL AND
     return NULL;
   }
 
-  static function processQueue($now = NULL) {
+  static function processQueue($now = NULL, $params = array()) {
     $now = $now ? CRM_Utils_Time::setTime($now) : CRM_Utils_Time::getTime();
 
     $mappings = self::getMapping();
     foreach ($mappings as $mappingID => $mapping) {
-      self::buildRecipientContacts($mappingID, $now);
+      self::buildRecipientContacts($mappingID, $now, $params);
       self::sendMailings($mappingID, $now);
     }
 

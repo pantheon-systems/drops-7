@@ -39,9 +39,9 @@ class CRM_Core_DAO_AllCoreTables {
   static private $tables = null;
   static private $daoToClass = null;
 
-  static private function init() {
+  static private function init($fresh = FALSE) {
     static $init = FALSE;
-    if ($init) return;
+    if ($init && !$fresh) return;
 
     $entityTypes = array(
       'CRM_Core_DAO_AddressFormat' => array(
@@ -833,5 +833,8 @@ class CRM_Core_DAO_AllCoreTables {
     return array_search(self::getCanonicalClassName($className), self::tables());
   }
 
+  static public function reinitializeCache($fresh = FALSE) {
+    self::init($fresh);
+  }
 
 }

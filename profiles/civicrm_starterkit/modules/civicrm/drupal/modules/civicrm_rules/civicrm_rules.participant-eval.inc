@@ -58,29 +58,26 @@ function civicrm_rules_condition_participant_role($entityobj, $roleIDs) {
  *I wanted to do it using a civicrm_event cck type but got a bit stuck.
  */
 function civicrm_rules_events_argument_civicrm_eventnode($participantobj) {
-  if (!module_exists('content') || !isset($participantobj['participant'])) {
+  if (!module_exists('field') || !isset($participantobj['participant'])) {
     return NULL;
   }
 
   $participant = $participantobj['participant'];
   $eventID = $participant->event_id;
-  //todo there must be a clever way to get a node based on the cck field but I don't know it yet
-  //I looked into the search_index_links but that seems to rely on touching the node
-  // really I am only needing type_name now as I am specifying the field name to be
-  // field_civicrm_event_value but leaving this in in case I go back to the cck way
-  $sql = "SELECT nf.field_name, i.type_name
-FROM {content_node_field} nf
-LEFT JOIN {content_node_field_instance} i ON nf.field_name = i.field_name
-WHERE nf.field_name LIKE '%civicrm_event'
-LIMIT 1";
-
-  $results = db_query($sql);
-
-  while ($result = db_fetch_object($results)) {
-    //todo rewrite this with %s & figure out why cck field ends in contact_id
-    $sql = "SELECT nid  FROM {content_type_" . $result->type_name . "} WHERE " . $result->field_name . "_value = %d";
-    $nodeid = db_result(db_query($sql, $eventID));
-    return $nodeid;
+  $results = db_select('field_config_instance', 'i')
+    ->fields('i', array('field_name', 'entity_type', 'bundle'))
+    ->condition('field_name',  '%'.db_like('civicrm_event'), 'LIKE')
+    ->execute()
+    ->fetchAllAssoc('id');
+  foreach($results as $result) {
+    $nid = db_select('field_data_' . $result->field_name, 'fd')
+      ->fields('fd', array('entity_id'))
+      ->condition('bundle', $result->bundle, '=')
+      ->condition($result->field_name . '_value', $eventID, '=')
+      ->condition('entity_type',  $result->entity_type, '=')
+      ->execute()
+      ->fetchAssoc();
+    return $nid['entity_id'];
   }
   return NULL;
 }

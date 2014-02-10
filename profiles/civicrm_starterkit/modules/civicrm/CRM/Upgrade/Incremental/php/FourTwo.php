@@ -148,7 +148,7 @@ INNER JOIN civicrm_price_set cps ON cps.id = cpf.price_set_id AND cps.name <>'de
       $config = CRM_Core_Config::singleton();
       if (!empty($config->extensionsDir)) {
         $postUpgradeMessage .= '<br />' . ts('Please <a href="%1" target="_blank">configure the Extension Resource URL</a>.', array(
-          1 => CRM_Utils_system::url('civicrm/admin/setting/url', 'reset=1')
+          1 => CRM_Utils_System::url('civicrm/admin/setting/url', 'reset=1')
         ));
   }
     }
@@ -762,13 +762,19 @@ AND       cli.entity_id IS NULL AND cp.fee_amount IS NOT NULL";
   static function task_4_2_alpha1_eventProfile(CRM_Queue_TaskContext $ctx) {
     $upgrade = new CRM_Upgrade_Form();
     $profileTitle = ts('Your Registration Info');
+
     $sql = "
 INSERT INTO civicrm_uf_group
   (is_active, group_type, title, help_pre, help_post, limit_listings_group_id, post_URL, add_to_group_id, add_captcha, is_map, is_edit_link, is_uf_link, is_update_dupe, cancel_URL, is_cms_user, notify, is_reserved, name, created_id, created_date, is_proximity_search)
 VALUES
-  (1, 'Individual, Contact', '{$profileTitle}', NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, NULL, 0, NULL, 0, 'event_registration', NULL, NULL, 0);
+  (1, 'Individual, Contact', %1, NULL, NULL, NULL, NULL, NULL, 0, 0, 0, 0, 0, NULL, 0, NULL, 0, 'event_registration', NULL, NULL, 0);
 ";
-    CRM_Core_DAO::executeQuery($sql);
+
+    $params = array(
+      1 => array($profileTitle, 'String'),
+    );
+
+    CRM_Core_DAO::executeQuery($sql, $params);
 
     $eventRegistrationId = CRM_Core_DAO::singleValueQuery('SELECT LAST_INSERT_ID()');
     $sql = "

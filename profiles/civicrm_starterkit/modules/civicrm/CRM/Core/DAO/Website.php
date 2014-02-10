@@ -152,11 +152,13 @@ class CRM_Core_DAO_Website extends CRM_Core_DAO
         'id' => array(
           'name' => 'id',
           'type' => CRM_Utils_Type::T_INT,
+          'title' => ts('Website ID') ,
           'required' => true,
         ) ,
         'contact_id' => array(
           'name' => 'contact_id',
           'type' => CRM_Utils_Type::T_INT,
+          'title' => ts('Contact') ,
           'FKClassName' => 'CRM_Contact_DAO_Contact',
         ) ,
         'url' => array(

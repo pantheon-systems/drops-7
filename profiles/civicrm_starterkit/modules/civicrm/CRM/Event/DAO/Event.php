@@ -916,8 +916,13 @@ class CRM_Event_DAO_Event extends CRM_Core_DAO
         'campaign_id' => array(
           'name' => 'campaign_id',
           'type' => CRM_Utils_Type::T_INT,
-          'title' => ts('Campaign ID') ,
+          'title' => ts('Campaign') ,
           'FKClassName' => 'CRM_Campaign_DAO_Campaign',
+          'pseudoconstant' => array(
+            'table' => 'civicrm_campaign',
+            'keyColumn' => 'id',
+            'labelColumn' => 'title',
+          )
         ) ,
         'is_share' => array(
           'name' => 'is_share',

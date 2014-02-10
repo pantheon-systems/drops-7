@@ -54,7 +54,7 @@ function _webform_edit_civicrm_contact($component) {
   civicrm_initialize();
   $form = array();
   $node = node_load($component['nid']);
-  if (empty($node->webform_civicrm)) {
+  if (empty($node->webform_civicrm) && node_is_page($node)) {
     drupal_set_message(t('CiviCRM processing is not enabled for this webform.'), 'error');
     return $form;
   }
@@ -125,7 +125,7 @@ function _webform_edit_civicrm_contact($component) {
     '#title' => t("Contact Display Field(s)"),
     '#required' => TRUE,
     '#default_value' => $component['extra']['results_display'],
-    '#options' => wf_crm_results_display_options(),
+    '#options' => wf_crm_results_display_options($contact_type),
     '#parents' => array('extra', 'results_display'),
   );
   $form['display']['show_hidden_contact'] = array(
@@ -182,7 +182,7 @@ function _webform_edit_civicrm_contact($component) {
       '#type' => 'select',
       '#multiple' => TRUE,
       '#title' => t('Specify Relationship(s)'),
-      '#options' => array('' => '- ' . t('None') . ' -'),
+      '#options' => array('' => '- ' . t('No relationship types defined for @a to @b', array('@a' => $contact_types[$contact_type], '@b' => $contact_types[$data['contact'][1]['contact'][1]['contact_type']])) . ' -'),
       '#default_value' => $component['extra']['default_relationship'],
       '#parents' => array('extra', 'default_relationship'),
     );
@@ -511,7 +511,7 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
   if (empty($node->webform_civicrm)) {
     return array();
   }
-  $limit = $str ? 12 : 200;
+  $limit = $str ? 12 : 500;
   $ret = array();
   $display = $component['extra']['results_display'];
   $params += array(
@@ -542,6 +542,24 @@ function wf_crm_contact_search($node, $component, $params, $str = NULL) {
     foreach (wf_crm_aval($result, 'values', array()) as $contact) {
       if ($name = wf_crm_format_contact($contact, $display)) {
         $ret[$contact['id']] = $name;
+      }
+    }
+    // If we get exactly $limit results, there are probably more - warn that the list is truncated
+    if (wf_crm_aval($result, 'count') >= $limit) {
+      watchdog(
+        'webform_civicrm',
+        'Maximum contacts exceeded, list truncated on the webform "@title". The webform_civicrm "@field" field cannot display more than !limit contacts because it is a select list. Recommend switching to autocomplete widget in component settings.',
+        array('!limit' => $limit, '@field' => $component['name'], '@title' => $node->title),
+        WATCHDOG_WARNING,
+        l(t('Edit component'), "node/{$node->nid}/webform/components/{$component['cid']}")
+      );
+      if (wf_crm_admin_access($node) && node_is_page($node)) {
+        drupal_set_message(
+          '<strong>' . t('Maximum contacts exceeded, list truncated.') .'</strong><br>' .
+          t('The field "@field" cannot show more than !limit contacts because it is a select list. Recommend switching to autocomplete widget in <a !link>component settings</a>.',
+            array('!limit' => $limit, '@field' => $component['name'], '!link' => 'href="' . url("node/{$node->nid}/webform/components/{$component['cid']}") . '"')),
+          'warning'
+        );
       }
     }
   }
@@ -812,12 +830,25 @@ function theme_static_contact_element($vars) {
  *
  * @return array
  */
-function wf_crm_results_display_options() {
+function wf_crm_results_display_options($contact_type) {
   $options = array(
     'display_name' => t("Display Name"),
     'sort_name' => t("Sort Name"),
-    'organization_name' => t("Organization Name"),
-    'job_title' => t("Job Title"),
+  );
+  if ($contact_type == 'individual') {
+    $options += array(
+      'first_name' => t("First Name"),
+      'middle_name' => t("Middle Name"),
+      'last_name' => t("Last Name"),
+      'current_employer' => t("Current Employer"),
+      'job_title' => t("Job Title"),
+    );
+  }
+  else {
+    $options[$contact_type . '_name'] = $contact_type == 'organization' ? t("Organization Name") : t("Household Name");
+  }
+  $options += array(
+    'nick_name' => t("Nick Name"),
     'id' => t("Contact ID"),
     'external_identifier' => t("External ID"),
     'email' => t("Email"),

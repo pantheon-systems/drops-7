@@ -214,6 +214,80 @@ VALUES {$insertStatus}";
     $this->addTask('Patch word-replacement schema', 'wordReplacements_patch', $rev);
   }
 
+  function upgrade_4_4_4($rev) {
+    $fkConstraint = array();
+    if (!CRM_Core_DAO::checkFKConstraintInFormat('civicrm_activity_contact', 'activity_id')) {
+      $fkConstraint[] = "ADD CONSTRAINT `FK_civicrm_activity_contact_activity_id` FOREIGN KEY (`activity_id`) REFERENCES `civicrm_activity` (`id`) ON DELETE CASCADE";
+    }
+    if (!CRM_Core_DAO::checkFKConstraintInFormat('civicrm_activity_contact', 'contact_id')) {
+      $fkConstraint[] = "ADD CONSTRAINT `FK_civicrm_activity_contact_contact_id` FOREIGN KEY (`contact_id`) REFERENCES `civicrm_contact` (`id`) ON DELETE CASCADE;
+";
+    }
+
+    if (!empty($fkConstraint)) {
+      $fkConstraint = implode(',', $fkConstraint);
+      $sql = "ALTER TABLE `civicrm_activity_contact`
+{$fkConstraint}
+";
+      // CRM-14036 : delete entries of un-mapped contacts
+        CRM_Core_DAO::executeQuery("DELETE ac FROM civicrm_activity_contact ac
+LEFT JOIN civicrm_contact c
+ON c.id = ac.contact_id
+WHERE c.id IS NULL;
+");
+        // delete entries of un-mapped activities
+        CRM_Core_DAO::executeQuery("DELETE ac FROM civicrm_activity_contact ac
+LEFT JOIN civicrm_activity a
+ON a.id = ac.activity_id
+WHERE a.id IS NULL;
+");
+
+      CRM_Core_DAO::executeQuery("SET FOREIGN_KEY_CHECKS=0;");
+      CRM_Core_DAO::executeQuery($sql);
+      CRM_Core_DAO::executeQuery("SET FOREIGN_KEY_CHECKS=1;");
+    }
+
+    // task to process sql
+    $this->addTask(ts('Upgrade DB to %1: SQL', array(1 => '4.4.4')), 'task_4_4_x_runSql', $rev);
+
+    // CRM-13892 : add `name` column to dashboard schema
+    $query = "
+ALTER TABLE civicrm_dashboard
+    ADD name varchar(64) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'Internal name of dashlet.' AFTER domain_id ";
+    CRM_Core_DAO::executeQuery($query, array(), TRUE, NULL, FALSE, FALSE);
+
+    $dashboard = new CRM_Core_DAO_Dashboard();
+    $dashboard->find();
+    while ($dashboard->fetch()) {
+      $urlElements = explode('/', $dashboard->url);
+      if ($urlElements[1] == 'dashlet') {
+        $url = explode('&', $urlElements[2]);
+        $name = $url[0];
+      }
+      elseif ($urlElements[1] == 'report') {
+        $url = explode('&', $urlElements[3]);
+        $name = 'report/' .$url[0];
+      }
+      $values .= "
+      WHEN {$dashboard->id} THEN '{$name}'
+      ";
+    }
+
+    $query = "
+     UPDATE civicrm_dashboard
+  SET name = CASE id
+  {$values}
+  END;
+    ";
+    CRM_Core_DAO::executeQuery($query, array(), TRUE, NULL, FALSE, FALSE);
+ 
+    // CRM-13998 : missing alter statements for civicrm_report_instance
+    $this->addTask(ts('Confirm civicrm_report_instance sql table for upgrades'), 'updateReportInstanceTable');
+
+
+    return TRUE;
+  }
+
   /**
    * Update activity contacts CRM-12274
    *
@@ -470,5 +544,38 @@ CREATE TABLE IF NOT EXISTS `civicrm_word_replacement` (
       'values' => self::getConfigArraysAsAPIParams(FALSE),
     ));
     CRM_Core_BAO_WordReplacement::rebuild();
+  }
+
+  
+  /***
+   * CRM-13998 missing alter statements for civicrm_report_instance
+   ***/
+  public function updateReportInstanceTable() {
+
+    // add civicrm_report_instance.name 
+
+    $sql = "SELECT count(*) FROM information_schema.columns "
+      . "WHERE table_schema = database() AND table_name = 'civicrm_report_instance' AND COLUMN_NAME = 'name' ";
+
+    $res = CRM_Core_DAO::singleValueQuery($sql);
+
+    if ($res <= 0 ) {
+      $sql = "ALTER TABLE civicrm_report_instance ADD `name` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'when combined with report_id/template uniquely identifies the instance'";
+      $res = CRM_Core_DAO::executeQuery($sql);
+    }
+
+    // add civicrm_report_instance args 
+
+    $sql = "SELECT count(*) FROM information_schema.columns WHERE table_schema = database() AND table_name = 'civicrm_report_instance' AND COLUMN_NAME = 'args' ";
+
+    $res = CRM_Core_DAO::singleValueQuery($sql);
+
+    if ($res <= 0 ) {
+      $sql = "ALTER TABLE civicrm_report_instance ADD `args` varchar(255) COLLATE utf8_unicode_ci DEFAULT NULL COMMENT 'arguments that are passed in the url when invoking the instance'";
+
+      $res = CRM_Core_DAO::executeQuery($sql);
+    }
+
+    return TRUE;
   }
 }

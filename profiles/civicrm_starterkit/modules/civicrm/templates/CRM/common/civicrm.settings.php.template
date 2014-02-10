@@ -98,7 +98,7 @@ if (!empty($_SERVER['PRESSFLOW_SETTINGS'])) {
     // Add this line only once above any settings overrides
     global $civicrm_setting;
     $civicrm_setting['Directory Preferences']['extensionsDir'] = '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/code/sites/all/extensions/';
-    $civicrm_setting['URL Preferences']['userFrameworkResourceURL'] = $base_url . 'sites/all/extensions';
+    $civicrm_setting['URL Preferences']['extensionsURL'] = $base_url . '/sites/all/extensions';
 
   }
 } else {

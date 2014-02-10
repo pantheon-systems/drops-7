@@ -202,6 +202,7 @@ function webform_civicrm_webform_component_info() {
  */
 function webform_civicrm_webform_submission_presave($node, &$submission) {
   if (!empty($node->webform_civicrm)) {
+    module_load_include('inc', 'webform_civicrm', 'includes/wf_crm_webform_postprocess');
     $processor = wf_crm_webform_postprocess::singleton($node);
     $processor->preSave($submission);
   }

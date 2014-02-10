@@ -393,12 +393,13 @@ class CRM_Contact_Form_Search_Builder extends CRM_Contact_Form_Search {
   }
 
   static function fields() {
-    return array_merge(
+    $fields = array_merge(
       CRM_Contact_BAO_Contact::exportableFields('All', FALSE, TRUE),
       CRM_Core_Component::getQueryFields(),
       CRM_Contact_BAO_Query_Hook::singleton()->getFields(),
       CRM_Activity_BAO_Activity::exportableFields()
     );
+    return $fields;
   }
 
   /**
@@ -418,6 +419,7 @@ class CRM_Contact_Form_Search_Builder extends CRM_Contact_Form_Search {
       'payment_instrument' => 'contribution',
       'membership_status' => 'membership',
       'membership_type' => 'membership',
+      'member_campaign_id' => 'membership',
       'member_is_test' => 'yesno',
       'member_is_pay_later' => 'yesno',
       'is_override' => 'yesno',
