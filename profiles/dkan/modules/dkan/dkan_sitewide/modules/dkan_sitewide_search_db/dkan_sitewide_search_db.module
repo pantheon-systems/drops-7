@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the dkan_sitewide_search_db feature.
+ */
+
+include_once 'dkan_sitewide_search_db.features.inc';
