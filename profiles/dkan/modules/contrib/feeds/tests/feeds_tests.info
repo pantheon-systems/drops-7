@@ -11,5 +11,5 @@ hidden = TRUE
 version = "7.x-2.0-alpha8+8-dev"
 core = "7.x"
 project = "feeds"
-datestamp = "1392695296"
+datestamp = "1392727168"
 

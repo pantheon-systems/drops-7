@@ -11,5 +11,5 @@ files[] = views/plugins/views_plugin_style_json.inc
 version = "7.x-1.x-dev"
 core = "7.x"
 project = "views_datasource"
-datestamp = "1392695292"
+datestamp = "1392727150"
 
