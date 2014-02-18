@@ -1,0 +1,13 @@
+name = Reference Field Synchronization (for entityreference)
+description = "Keep Entity Reference Fields synchronized."
+core = 7.x
+package = Fields
+dependencies[] = entityreference
+dependencies[] = entity
+
+; Information added by drupal.org packaging script on 2013-10-01
+version = "7.x-2.0-alpha1+3-dev"
+core = "7.x"
+project = "ref_field"
+datestamp = "1380625276"
+
