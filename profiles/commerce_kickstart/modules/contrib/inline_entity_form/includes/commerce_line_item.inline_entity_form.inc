@@ -100,20 +100,11 @@ class CommerceLineItemInlineEntityFormController extends EntityInlineEntityFormC
     );
     field_attach_form('commerce_line_item', $line_item, $entity_form, $form_state);
 
-    // If the order is still in a cart status, then the prices are still being
-    // recalculated, meaning that no changes made to them would be permanent.
-    if (!empty($form_state['commerce_order']) && module_exists('commerce_cart')) {
-      if (commerce_cart_order_is_cart($form_state['commerce_order'])) {
-        $language = $entity_form['commerce_unit_price']['#language'];
-        $entity_form['commerce_unit_price'][$language][0]['amount']['#disabled'] = TRUE;
-        $entity_form['commerce_unit_price'][$language][0]['currency_code']['#disabled'] = TRUE;
-      }
-    }
-
     // Tweaks specific to product line items.
     if (in_array($line_item->type, $this->productLineItemTypes())) {
       $entity_form['line_item_label']['#access'] = FALSE;
       $entity_form['commerce_display_path']['#access'] = FALSE;
+      $entity_form['commerce_unit_price']['#access'] = FALSE;
       $entity_form['commerce_product']['#weight'] = -100;
     }
 
@@ -156,16 +147,15 @@ class CommerceLineItemInlineEntityFormController extends EntityInlineEntityFormC
     $line_item_values = drupal_array_get_nested_value($form_state['values'], $entity_form['#parents']);
     $line_item->quantity = sprintf("%.2f", $line_item_values['quantity']);
     field_attach_submit('commerce_line_item', $line_item, $entity_form, $form_state);
-    commerce_line_item_rebase_unit_price($line_item);
 
     $wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-    // Update the line item label based on the line item type.
-    // Product line item types always get the product SKU as the label.
     if (in_array($line_item->type, $this->productLineItemTypes())) {
-      $wrapper->line_item_label = $wrapper->commerce_product->sku->value();
+      // Populate the line item with the product data.
+      commerce_product_line_item_populate($line_item, $wrapper->commerce_product->value());
     }
     else {
       $wrapper->line_item_label = trim($line_item_values['line_item_label']);
+      commerce_line_item_rebase_unit_price($line_item);
     }
 
     // Update the total price.

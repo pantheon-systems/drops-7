@@ -1,0 +1,5 @@
+#commerce-discount-fields-wrapper .field-name-discount-usage-limit,
+#commerce-discount-fields-wrapper .field-name-discount-usage-per-person{
+  float:none;
+  clear:both;
+}

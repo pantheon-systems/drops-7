@@ -60,7 +60,7 @@ class CommerceDiscountUIController extends EntityDefaultUIController {
       'file path' => drupal_get_path('module', 'commerce_discount'),
     );
     $items[$this->path . '/list'] = array(
-      'title' => 'Discounts',
+      'title' => 'List',
       'type' => MENU_DEFAULT_LOCAL_TASK,
     );
     $items[$this->path . '/add']['title callback'] = 'commerce_discount_get_action_title';
@@ -159,15 +159,15 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     '#field_suffix' => '</span>&lrm;',
   );
 
-  $form['enabled'] = array(
+  $form['status'] = array(
     '#title' => t('Discount status'),
     '#type' => 'select',
     '#options' => array(
-      TRUE => t('Enabled'),
+      TRUE => t('Active'),
       FALSE => t('Disabled'),
     ),
     '#required' => FALSE,
-    '#default_value' => $commerce_discount->enabled,
+    '#default_value' => $commerce_discount->status,
   );
 
   // Show a list of commerce discounts.
@@ -216,6 +216,7 @@ function commerce_discount_form($form, &$form_state, CommerceDiscount $commerce_
     '#value' => t('Save discount'),
     '#weight' => 40,
     '#ief_submit_all' => TRUE,
+    '#submit' => array(),
   );
 
   if (!$commerce_discount->hasStatus(ENTITY_IN_CODE) && $op != 'add') {

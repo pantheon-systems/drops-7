@@ -62,10 +62,10 @@ function commerce_shipping_update_7002(&$sandbox) {
 
   foreach ($rules as $rule) {
     if ($rule->module == 'commerce_shipping') {
-    	if (strpos($rule->name, 'commerce_shipping_plugin') !== FALSE) {
-     		rules_config_delete(array($rule->id));
-     		$deleted += 1;
-    	}
+      if (strpos($rule->name, 'commerce_shipping_plugin') !== FALSE) {
+        rules_config_delete(array($rule->id));
+        $deleted += 1;
+      }
     }
   }
 
@@ -207,7 +207,9 @@ function commerce_shipping_update_7100(&$sandbox) {
     // If the order should be updated, trigger that now.
     if ($update_order) {
       $order = commerce_order_load($line_item_wrapper->order_id->value());
-      commerce_order_save($order);
+      if ($order) {
+        commerce_order_save($order);
+      }
     }
 
     $sandbox['progress']++;

@@ -3,6 +3,33 @@ A customizable lightbox plugin for jQuery.  See the [project page](http://jacklm
 
 ## Changelog:
 
+### Version 1.5.4 - 2014/3/7
+
+* Fixed potential issue where IE9+ wouldn't close the modal when clicking on the overlay.  Fixes #576
+
+### Version 1.5.3 - 2014/3/4
+
+* Added access to settings object in callbacks.
+
+### Version 1.5.2 - 2014/2/28
+
+* Added svg to image types regex.
+
+### Version 1.5.1 - 2014/2/27
+
+* Fixed regression that broke direct calls to Colorbox, ie. $.colorbox(…)
+
+### Version 1.5.0 - 2014/2/27
+
+* Changed when the className is applied: immediately on open, but only updated immediately prior to transition.  Fixes #565
+* Fixed potential style flash if #cboxLoadedContent is given a background.  Fixes #567
+* Misc. code cleanup
+
+### Version 1.4.37 - 2014/2/11
+
+* Fixed potential error when resizing.  Fixes #254
+* Added Microsoft's JPEG XR to photo detection regex.
+
 ### Version 1.4.33 - 2013/10/31
 
 * Fixed an issue where private events propagated to the document in versions of jQuery prior to 1.7.  Fixes #525, Fixes #526

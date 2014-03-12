@@ -109,3 +109,10 @@ function mimemail_update_7001() {
   variable_del('mimemail_theme');
 }
 
+/**
+ * Generate new key for authenticating incoming messages.
+ */
+function mimemail_update_7002() {
+  variable_set('mimemail_key', drupal_random_key());
+  return t('Mime Mail has generated a new key to authenticate incoming messages.');
+}

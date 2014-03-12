@@ -21,6 +21,9 @@
  * - entity type: The type of the entity available to the rule, on which the
  *   condition can operate. This is the main criteria on which conditions are
  *   selected for showing in the field widget.
+ * - rule condition name: (Optional) Rule condition machine name. This rule
+ *   condition will be use instead of the inline condition name. If this
+ *   key is set, the build callback is optional.
  * - parent entity type: (Optional) The type of the parent entity type (that
  *   contains the Inline Conditions field), used to further limit the
  *   availability of the condition (so a condition could choose to be shown
@@ -29,14 +32,17 @@
  * - callbacks: An array of callbacks:
  *   - configure: (Optional) Returns a configuration form embedded into the
  *     field widget, and used to configure the inline condition.
- *   - build: Gets the rule and any settings added by the configure callback,
- *     then builds and adds an actual rules condition to the rule.
+ *   - build: [Do not use if rule condition name is set] Gets the rule and any
+ *     settings added by the configure callback, then builds and adds an actual
+ *     rules condition to the rule. Also, if the rule condition name key is set,
+ *     this parameter is no longer available.
  */
 function hook_inline_conditions_info() {
   $conditions = array();
   $conditions['inline_conditions_order_total'] = array(
     'label' => t('Orders over'),
     'entity type' => 'commerce_order',
+    //'rule condition name' => 'data_is'
     'callbacks' => array(
       'configure' => 'inline_conditions_order_total_configure',
       'build' => 'inline_conditions_order_total_build',
@@ -48,6 +54,11 @@ function hook_inline_conditions_info() {
 
 /**
  * Alter the condition info.
+ *
+ * @param array $conditions
+ *   An array of inline conditions.
+ *
+ * @see hook_inline_conditions_info().
  */
 function hook_inline_conditions_info_alter(&$conditions) {
   $conditions['inline_conditions_order_total']['label'] = t('Order total over');
@@ -56,7 +67,10 @@ function hook_inline_conditions_info_alter(&$conditions) {
 /**
  * Alter fields values before building the rule.
  *
- * @see inline_conditions_build()
+ * @param array $value
+ *   Current value found in an inline conditions field type.
+ *
+ * @see inline_conditions_build().
  */
 function hook_inline_conditions_build_alter(&$value) {
   if ($value['condition_name'] == 'commerce_order_has_owner') {

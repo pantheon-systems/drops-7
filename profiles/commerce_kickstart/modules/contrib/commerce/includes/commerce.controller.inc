@@ -94,17 +94,15 @@ class DrupalCommerceEntityController extends DrupalDefaultEntityController imple
       $function($this->entityType, $entity);
     }
 
-    // Invoke the hook. If rules is there, use the rule funtion so that a rules
-    // event is invoked too.
-    if (module_exists('rules')) {
-      rules_invoke_all($this->entityType . '_' . $hook, $entity);
-    }
-    else {
-      module_invoke_all($this->entityType . '_' . $hook, $entity);
-    }
+    // Invoke the hook.
+    module_invoke_all($this->entityType . '_' . $hook, $entity);
     // Invoke the respective entity level hook.
     if ($hook == 'presave' || $hook == 'insert' || $hook == 'update' || $hook == 'delete') {
       module_invoke_all('entity_' . $hook, $entity, $this->entityType);
+    }
+    // Invoke rules.
+    if (module_exists('rules')) {
+      rules_invoke_event($this->entityType . '_' . $hook, $entity);
     }
   }
 
@@ -181,8 +179,12 @@ class DrupalCommerceEntityController extends DrupalDefaultEntityController imple
     }
 
     try {
-      // Load the stored entity, if any.
-      if (!empty($entity->{$this->idKey}) && !isset($entity->original)) {
+      // Load the stored entity, if any. If this save was invoked during a
+      // previous save's insert or update hook, this means the $entity->original
+      // value already set on the entity will be replaced with the entity as
+      // saved. This will allow any original entity comparisons in the current
+      // save process to react to the most recently saved version of the entity.
+      if (!empty($entity->{$this->idKey})) {
         // In order to properly work in case of name changes, load the original
         // entity using the id key if it is available.
         $entity->original = entity_load_unchanged($this->entityType, $entity->{$this->idKey});
@@ -243,8 +245,16 @@ class DrupalCommerceEntityController extends DrupalDefaultEntityController imple
 
       // Ignore slave server temporarily.
       db_ignore_slave();
-      unset($entity->is_new);
+
+      // We unset the original version of the entity after the current save as
+      // it no longer accurately represents the version of the entity saved in
+      // the database. However, if this save was invoked during a previous
+      // save's insert or update hook, this means that any hook implementations
+      // executing after this save will no longer have an original version of
+      // the entity to compare against. Attempting to compare against the non-
+      // existent original entity in code or Rules will result in an error.
       unset($entity->original);
+      unset($entity->is_new);
       unset($entity->revision);
 
       return $return;

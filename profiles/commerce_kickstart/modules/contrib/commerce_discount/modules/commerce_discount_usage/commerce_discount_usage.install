@@ -1,36 +1,148 @@
 <?php
 
-/**
+/*
  * Implements hook_install().
- *
- * Create uses and max_uses fields for commerce discounts.
- * The instance will be added for every newley created bundle.
- *
- * @see commerce_discount_usage_modules_enabled()
  */
 function commerce_discount_usage_install() {
-  // Clear field info cache, so entity reference field can be used.
-  field_info_cache_clear();
-
-  $field = array(
-    'entity_types' => array('commerce_discount'),
-    'field_name' => 'commerce_discount_uses',
-    'type' => 'number_integer',
-  );
-  field_create_field($field);
-
-  $field = array(
-    'entity_types' => array('commerce_discount'),
-    'field_name' => 'commerce_discount_max_uses',
-    'type' => 'number_integer',
-  );
-  field_create_field($field);
+  _commerce_discount_usage_install_helper();
 }
 
 /**
- * Implements hook_uninstall().
+ * Install fields for this module
  */
-function commerce_discount_usage_uninstall() {
-  field_delete_field('commerce_discount_uses');
-  field_delete_field('commerce_discount_max_uses');
+function _commerce_discount_usage_install_helper() {
+  field_info_cache_clear();
+
+  $fields = field_info_fields();
+  $instances = field_info_instances();
+
+  /*
+   * Discount usage per-person
+   */
+
+  if (empty($fields['discount_usage_per_person'])) {
+    // Create entity reference field.
+    $field = array(
+      'entity_types' => array('commerce_discount'),
+      'field_name' => 'discount_usage_per_person',
+      'type' => 'number_integer',
+      'locked' => TRUE,
+    );
+    field_create_field($field);
+  }
+  foreach (commerce_discount_types() as $type => $info) {
+    if (empty($instances['commerce_discount'][$type]['discount_usage_per_person'])) {
+      $instance = array(
+        'field_name' => 'discount_usage_per_person',
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'label' => t('Maximum usage per customer'),
+        'description' => t('Enter the maximum number of times a specific person (as identified by email) may use this discount. Leave blank for unlimited.'),
+        'required' => FALSE,
+        'widget' => array(
+          'weight' => 100,
+        ),
+        'settings' => array(
+          'min' => 0
+        )
+      );
+      field_create_instance($instance);
+    }
+  }
+
+  /*
+   * Discount usage
+   */
+
+  if (empty($fields['discount_usage_limit'])) {
+    // Create entity reference field.
+    $field = array(
+      'entity_types' => array('commerce_discount'),
+      'field_name' => 'discount_usage_limit',
+      'type' => 'number_integer',
+      'locked' => TRUE,
+    );
+    field_create_field($field);
+  }
+  foreach (commerce_discount_types() as $type => $info) {
+    if (empty($instances['commerce_discount'][$type]['discount_usage_limit'])) {
+      $instance = array(
+        'field_name' => 'discount_usage_limit',
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'label' => t('Maximum overall usage'),
+        'description' => t('Enter the maximum number of times this discount may be used on the site, by anyone. Leave blank for unlimited.'),
+        'required' => FALSE,
+        'widget' => array(
+          'weight' => 100,
+        ),
+        'settings' => array(
+          'min' => 0
+        )
+      );
+      field_create_instance($instance);
+    }
+  }
+}
+
+/*
+ * Implements hook_schema().
+ */
+function commerce_discount_usage_schema() {
+  $schema['commerce_discount_usage'] = array(
+    'fields' => array(
+      'discount' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => 'Discount name.',
+      ),
+      'mail' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The email of the customer that used this discount.',
+      ),
+      'order_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'The order id that this discount was used with.',
+      ),
+    ),
+    'unique keys' => array(
+      'discount_mail_order_id' => array('discount', 'mail', 'order_id'),
+    ),
+    'foreign keys' => array(
+      'discount' => array(
+        'table' => 'commerce_discount',
+        'column' => array('discount' => 'name')
+      ),
+      'order_id' => array(
+        'table' => 'commerce_order',
+        'column' => array('order_id' => 'order_id')
+      ),
+      'mail' => array(
+        'table' => 'users',
+        'column' => array('mail' => 'mail')
+      )
+    ),
+    'indexes' => array(
+      'mail' => array('mail'),
+      'discount' => array('discount'),
+      'order_id' => array('order_id')
+    )
+  );
+
+  return $schema;
+}
+
+/**
+ * Create usage table
+ */
+function commerce_discount_usage_update_7001() {
+  // Add usage table
+  if (!db_table_exists('commerce_discount_usage')) {
+    db_create_table('commerce_discount_usage', drupal_get_schema_unprocessed('commerce_discount_usage', 'commerce_discount_usage'));
+  }
 }

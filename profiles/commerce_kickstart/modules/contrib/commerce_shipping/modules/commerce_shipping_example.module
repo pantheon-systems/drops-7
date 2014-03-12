@@ -28,7 +28,7 @@ function commerce_shipping_example_commerce_shipping_service_info() {
 
   $shipping_services['example_shipping_service'] = array(
     'title' => t('Example shipping service'),
-    'description' => t('A $20 flat rate service with express delivery available for an additional $15.'),
+    'description' => t('A flat rate service with express delivery available.'),
     'display_title' => t('Shipping'),
     'shipping_method' => 'example_shipping_method',
     'price_component' => 'shipping',
@@ -48,9 +48,10 @@ function commerce_shipping_example_commerce_shipping_service_info() {
  * calculated for the given order.
  */
 function commerce_shipping_example_service_rate($shipping_service, $order) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   return array(
     'amount' => 2000,
-    'currency_code' => 'USD',
+    'currency_code' => $order_wrapper->commerce_order_total->currency_code->value(),
     'data' => array(),
   );
 }
@@ -77,7 +78,7 @@ function commerce_shipping_example_service_details_form($pane_form, $pane_values
   $form['express'] = array(
     '#type' => 'checkbox',
     '#title' => t('Express delivery'),
-    '#description' => t('Express delivery (costs an additional $15)'),
+    '#description' => t('Express delivery is really fast and you need to pay extra for this service.'),
     '#default_value' => $pane_values['service_details']['express'],
   );
 
@@ -109,7 +110,7 @@ function commerce_shipping_example_service_details_form_submit($details_form, $d
     // Build a price array for the express delivery fee.
     $express_price = array(
       'amount' => 1500,
-      'currency_code' => 'USD',
+      'currency_code' => $line_item_wrapper->commerce_unit_price->currency_code->value(),
       'data' => array(),
     );
 

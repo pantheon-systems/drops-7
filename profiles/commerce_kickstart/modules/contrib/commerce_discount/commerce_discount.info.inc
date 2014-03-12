@@ -14,7 +14,7 @@ class CommerceDiscountMetadataController extends EntityDefaultMetadataController
     $info = parent::entityPropertyInfo();
     $properties = &$info[$this->type]['properties'];
 
-    $properties['enabled']['type'] = 'boolean';
+    $properties['status']['type'] = 'boolean';
 
     return $info;
   }

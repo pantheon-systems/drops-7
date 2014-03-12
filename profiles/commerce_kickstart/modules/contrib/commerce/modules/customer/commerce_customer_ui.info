@@ -1,7 +1,6 @@
 name = Customer UI
 description = Exposes a default UI for Customers through profile edit forms and default Views.
 package = Commerce
-dependencies[] = contextual
 dependencies[] = field_ui
 dependencies[] = commerce
 dependencies[] = commerce_ui
@@ -10,19 +9,12 @@ dependencies[] = views
 core = 7.x
 configure = admin/commerce/customer-profiles/types
 
-; Module includes
-files[] = includes/commerce_customer_ui.profiles.inc
-files[] = includes/commerce_customer_ui.profile_types.inc
-
-; Views includes
-files[] = includes/views/commerce_customer_ui.views_default.inc
-
 ; Simple tests
 files[] = tests/commerce_customer_ui.test
 
-; Information added by drupal.org packaging script on 2013-07-23
-version = "7.x-1.8"
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
 core = "7.x"
 project = "commerce"
-datestamp = "1374609067"
+datestamp = "1394061805"
 

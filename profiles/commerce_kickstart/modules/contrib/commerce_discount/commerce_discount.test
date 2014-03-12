@@ -102,8 +102,8 @@ class CommerceDiscountTestBase extends CommerceBaseTestCase {
       'name' => $name,
       'label' => $name,
       'type' => $discount_type,
-      'enabled' => TRUE,
       'status' => TRUE,
+      'export_status' => TRUE,
     );
     $commerce_discount = entity_create('commerce_discount', $values);
     $wrapper = entity_metadata_wrapper('commerce_discount', $commerce_discount);
@@ -177,7 +177,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $this->assertFieldByName('label', NULL, t('Label field is present'));
     $this->assertFieldByName('commerce_discount_fields[commerce_discount_offer][und][form][type]', NULL, t('Offer type field is present'));
     $this->assertFieldByName('commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]', NULL, t('Amount field is present'));
-    $this->assertFieldByName('enabled', NULL, t('Status field is present'));
+    $this->assertFieldByName('status', NULL, t('Status field is present'));
     $this->assertFieldById('edit-submit', t('Save discount'), t('Save discount button is present'));
 
     // Try to save the product and check validation messages.
@@ -204,7 +204,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     // Check the stored discount.
     $this->assertTrue($discount->label == $values['label'], t('Label stored correctly.'));
     $this->assertTrue($discount->name == 'discount_' . $values['name'], t('Name stored correctly.'));
-    $this->assertTrue($discount->enabled == 1, t('Enabled stored correctly.'));
+    $this->assertTrue($discount->status == 1, t('Active stored correctly.'));
 
     $this->assertTrue($wrapper->commerce_discount_offer->type->value() == 'fixed_amount', t('Offer type stored correctly.'));
     $this->assertTrue($wrapper->commerce_discount_offer->commerce_fixed_amount->amount->value() == 1277, t('Amount stored correctly.'));
@@ -229,7 +229,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
   "name" : "pf",
   "label" : "PF",
   "type" : "product_discount",
-  "enabled" : "1",
+  "status" : "1",
   "commerce_discount_offer" : {
     "type" : "fixed_amount",
     "commerce_fixed_amount" : { "und" : [
@@ -270,7 +270,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $this->assertTrue($wrapper->commerce_order_total->amount->value() == 700, t('Fixed order discount is deducted correctly.'));
 
     // Disable the discount.
-    $discount->enabled = FALSE;
+    $discount->status = FALSE;
     entity_save('commerce_discount', $discount);
 
     // Resave the order.
@@ -295,7 +295,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $this->assertTrue($wrapper->commerce_order_total->amount->value() == 950, t('Percentage order discount is deducted correctly.'));
 
     // Disable the discount.
-    $discount->enabled = FALSE;
+    $discount->status = FALSE;
     entity_save('commerce_discount', $discount);
 
     // Resave the order.

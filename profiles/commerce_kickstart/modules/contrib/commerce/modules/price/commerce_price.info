@@ -7,16 +7,13 @@ core = 7.x
 ; Module file includes
 files[] = commerce_price.rules.inc
 
-; Views includes
-files[] = includes/views/commerce_price.views.inc
-
 ; Views handlers
 files[] = includes/views/handlers/commerce_price_handler_field_commerce_price.inc
 files[] = includes/views/handlers/commerce_price_handler_filter_commerce_price_amount.inc
 
-; Information added by drupal.org packaging script on 2013-07-23
-version = "7.x-1.8"
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
 core = "7.x"
 project = "commerce"
-datestamp = "1374609067"
+datestamp = "1394061805"
 

@@ -39,10 +39,8 @@ function commerce_checkout_router($order, $checkout_page = NULL) {
     }
   }
 
-  // If there are no line items on the order, redirect away.
-  $wrapper = entity_metadata_wrapper('commerce_order', $order);
-
-  if (commerce_line_items_quantity($wrapper->commerce_line_items, commerce_product_line_item_types()) == 0) {
+  // Ensure the order can proceed to checkout; if not, redirect away.
+  if (!commerce_checkout_order_can_checkout($order)) {
     drupal_goto('<front>');
   }
 
@@ -231,8 +229,6 @@ function commerce_checkout_form($form, &$form_state, $order, $checkout_page) {
  * are happy, we move on to the next page.
  */
 function commerce_checkout_form_validate($form, &$form_state) {
-  global $user;
-
   $checkout_page = $form_state['checkout_page'];
 
   // Load a fresh copy of the order stored in the form.

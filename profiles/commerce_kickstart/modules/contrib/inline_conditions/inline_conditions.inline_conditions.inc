@@ -34,6 +34,15 @@ function inline_conditions_inline_conditions_info() {
       ),
     );
 
+    $conditions['commerce_product_has_owner'] = array(
+      'label' => t('User'),
+      'entity type' => 'commerce_line_item',
+      'rule condition name' => 'data_is',
+      'callbacks' => array(
+        'configure' => 'commerce_product_has_owner_configure',
+      ),
+    );
+
     $conditions['commerce_order_has_specific_quantity_products'] = array(
       'label' => t('Product(s) and quantity'),
       'entity type' => 'commerce_order',
@@ -62,6 +71,14 @@ function inline_conditions_inline_conditions_info() {
       'callbacks' => array(
         'configure' => 'commerce_product_contains_products_configure',
         'build' => 'commerce_product_contains_products_build',
+      ),
+    );
+    $conditions['commerce_product_has_type'] = array(
+      'label' => t('Product type'),
+      'entity type' => 'commerce_line_item',
+      'callbacks' => array(
+        'configure' => 'commerce_product_has_type_configure',
+        'build' => 'commerce_product_has_type_build',
       ),
     );
   }
@@ -164,12 +181,15 @@ function commerce_order_compare_order_amount_configure($settings) {
     '#type' => 'container',
     '#tree' => TRUE,
     '#element_validate' => array('commerce_price_field_widget_validate'),
-    '#suffix' => '<div class="condition-instructions">' . t('The discount is active only if the total order amount matches the condition above.') . '</div>',
+    '#suffix' => '<div class="condition-instructions">' . t(
+        'The discount is active only if the order total matches the above condition.
+              <br />(the other order discounts are not taken into the comparison process)'
+      ) . '</div>',
   );
 
   $form['total']['amount'] = array(
     '#type' => 'textfield',
-    '#title' => t('Order total'),
+    '#title' => t('Order subtotal'),
     '#title_display' => 'invisible',
     '#default_value' => commerce_currency_amount_to_decimal($settings['total']['amount'], $default_currency['code']),
     '#size' => 10,
@@ -191,7 +211,7 @@ function commerce_order_compare_order_amount_configure($settings) {
  * @param array $settings
  *   An array of rules condition settings.
  *
- * @return array;
+ * @return array
  *   A form element array.
  */
 function commerce_order_has_owner_configure($settings) {
@@ -206,6 +226,46 @@ function commerce_order_has_owner_configure($settings) {
     '#autocomplete_path' => 'user/autocomplete',
     '#element_validate' => array('_commerce_order_has_owner_validate'),
     '#suffix' => '<div class="condition-instructions">' . t('Discount is active if the selected user is the order owner.') . '</div>',
+  );
+
+  return $form;
+}
+
+/**
+ * Configuration callback for commerce_product_has_owner.
+ *
+ * @param array $settings
+ *   An array of rules condition settings.
+ *
+ * @return array
+ *   A form element array.
+ */
+function commerce_product_has_owner_configure($settings) {
+  $form = array();
+
+  // The bellow values (data:select & op) are added because they are required by
+  // rule condition.
+  $form['data:select'] = array(
+    '#type' => 'textfield',
+    '#access' => FALSE,
+    '#default_value' => 'site:current-user:uid'
+  );
+
+  $form['op'] = array(
+    '#type' => 'textfield',
+    '#access' => FALSE,
+    '#default_value' => '=='
+  );
+
+  $form['value'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Users'),
+    '#title_display' => 'invisible',
+    '#default_value' => isset($settings['value']) ? user_load($settings['value'])->name : '',
+    '#required' => TRUE,
+    '#autocomplete_path' => 'user/autocomplete',
+    '#element_validate' => array('_commerce_order_has_owner_validate'),
+    '#suffix' => '<div class="condition-instructions">' . t('Discount is active if the selected users are currently logged.') . '</div>',
   );
 
   return $form;
@@ -401,6 +461,46 @@ function commerce_product_contains_products_configure($settings) {
   );
 
   return $form;
+}
+
+/**
+ * Configuration callback for commerce_product_has_type.
+ *
+ * @param array $settings
+ *   Values for the form element.
+ *
+ * @return array
+ *   Return a form element.
+ */
+function commerce_product_has_type_configure($settings) {
+  $form = array();
+
+  $form['type'] = array(
+    '#type' => 'select',
+    '#multiple' => FALSE,
+    '#options' => commerce_product_type_options_list(),
+    '#title' => t('Product type'),
+    '#title_display' => 'invisible',
+    '#default_value' => !empty($settings['type']) ? $settings['type'] : FALSE,
+    '#require' => TRUE,
+    '#element_validate' => array('_commerce_product_has_type_validate'),
+    '#suffix' => '<div class="condition-instructions">' . t('The discount is active if the product has the type selected above.') . '</div>',
+  );
+
+  return $form;
+}
+
+/**
+ * Element validation callback.
+ *
+ * Ensures passed element is a valid commerce product type.
+ */
+function _commerce_product_has_type_validate($element, &$form_state, $form) {
+  $product_types = commerce_product_types();
+
+  if (!array_key_exists($element['#value'], $product_types)) {
+    form_set_error(implode('][', $element['#array_parents']), t('A correct product type must be selected'));
+  }
 }
 
 /**

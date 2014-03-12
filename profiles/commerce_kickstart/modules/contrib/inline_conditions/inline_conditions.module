@@ -4,6 +4,11 @@
  * Manage frequently used conditions directly on the relevant form.
  */
 
+// Inline conditions own constants.
+define('INLINE_CONDITIONS_AND', 1);
+define('INLINE_CONDITIONS_OR', 0);
+define('INLINE_CONDITIONS_NOT', -1);
+
 /**
  * Implements hook_menu().
  */
@@ -244,9 +249,7 @@ function inline_conditions_field_property_callback(&$info, $entity_type, $field,
  */
 function inline_conditions_entity_metadata_field_property_get($entity, array $options, $name, $entity_type, $info) {
   $field = field_info_field($name);
-  $columns = array_keys($field['columns']);
-  $langcode = isset($options['language']) ? $options['language']->language : LANGUAGE_NONE;
-  $langcode = entity_metadata_field_get_language($entity_type, $entity, $field, $langcode, TRUE);
+  $langcode = entity_metadata_field_get_language($entity_type, $entity, $field, isset($options['language']) ? $options['language']->language : LANGUAGE_NONE, TRUE);
   $values = array();
   if (isset($entity->{$name}[$langcode])) {
     foreach ($entity->{$name}[$langcode] as $delta => $rows) {
@@ -267,13 +270,12 @@ function inline_conditions_entity_metadata_field_property_get($entity, array $op
  */
 function inline_conditions_entity_metadata_field_property_set($entity, $name, $value, $langcode, $entity_type) {
   $field = field_info_field($name);
-  $columns = array_keys($field['columns']);
   $langcode = entity_metadata_field_get_language($entity_type, $entity, $field, $langcode);
   $values = $field['cardinality'] == 1 ? array($value) : (array) $value;
 
   $items = array();
   foreach ($values as $delta => $value) {
-    if (isset($data)) {
+    if (isset($delta)) {
       $items[$delta] = $value;
     }
   }
@@ -298,9 +300,14 @@ function inline_conditions_field_load($entity_type, $entities, $field, $instance
       foreach ($items[$id] as $delta => $item) {
         // Ensure condition_settings is unserialised.
         if (is_string($item['condition_settings'])) {
-          $item['condition_settings'] = unserialize(
-            $item['condition_settings']
-          );
+          // Unserialize the field settings.
+          $item['condition_settings'] = unserialize($item['condition_settings']);
+
+          // Look up for the value of the logic operator.
+          if (isset($item['condition_settings']['condition_logic_operator'])) {
+            $item['condition_logic_operator'] = $item['condition_settings']['condition_logic_operator'];
+            unset($item['condition_settings']['condition_logic_operator']);
+          }
 
           // Replace item value.
           $items[$id][$delta] = $item;
@@ -365,9 +372,15 @@ function inline_conditions_field_prepare_items(&$items) {
       if (!empty($item['condition_name'])) {
         // Ensure that condition_settings is not serialized.
         if (is_array($item['condition_settings'])) {
-          $item['condition_settings'] = serialize($item['condition_settings']);
+          $item['condition_settings'] = serialize(
+            array_merge(
+              $item['condition_settings'], array(
+                // Store the rule condition logic operator.
+                'condition_logic_operator' => isset($item['condition_logic_operator']) ? $item['condition_logic_operator'] : NULL,
+              )
+            )
+          );
         }
-
         // Replace item value.
         $items[$delta] = $item;
       }
@@ -396,11 +409,11 @@ function inline_conditions_field_widget_form(&$form, &$form_state, $field, $inst
   }
 
   $element = array(
-    '#type' => 'container',
-    '#prefix' => '<div class="inline-conditions-container" id="inline-conditions-' . $field['field_name'] . '"><label>' . $element['#title'] . '</label>',
-    '#suffix' => '</div>',
-    '#element_validate' => array('inline_conditions_field_widget_form_validate'),
-  ) + $element;
+      '#type' => 'container',
+      '#prefix' => '<div class="inline-conditions-container" id="inline-conditions-' . $field['field_name'] . '"><label>' . $element['#title'] . '</label>',
+      '#suffix' => '</div>',
+      '#element_validate' => array('inline_conditions_field_widget_form_validate'),
+    ) + $element;
 
   // Attach module cascade style sheet to inline_conditions_field_widget_form.
   $form['#attached']['css'][] = drupal_get_path('module', 'inline_conditions') . '/css/inline_conditions.css';
@@ -427,31 +440,31 @@ function inline_conditions_field_widget_form(&$form, &$form_state, $field, $inst
     }
   }
 
+  // If no items found, create an empty item for display purposes.
   if (empty($items)) {
     $items[] = array('condition_name' => '', 'condition_settings' => array());
   }
-  $zebra = 0;
+
   foreach ($items as $delta => $item) {
-    $condition_name = $item['condition_name'];
-    $condition_settings = $item['condition_settings'];
-    $zebra_class = ($delta % 2) ? 'odd' : 'even';
     $id = 'inline-conditions-' . $field['field_name'] . '-' . $instance['id'] . '-' . $delta;
+    $zebra = ($delta % 2) ? 'odd' : 'even';
     $element[$delta] = array(
       '#type' => 'container',
-      '#prefix' => '<div id="' . $id . '" class="container-inline ' . $field['field_name'] . ' ' . $zebra_class . ' clearfix">',
+      '#prefix' => '<div id="' . $id . '" class="container-inline ' . $field['field_name'] . ' ' . $zebra . ' clearfix ' . drupal_clean_css_identifier($item['condition_name']) . '">',
       '#suffix' => '</div>',
     );
+
+    // Condition selector.
     $element[$delta]['condition_name'] = array(
       '#type' => 'select',
       '#title' => t('Apply to:'),
       '#options' => $condition_list,
-      '#default_value' => $condition_name,
+      '#default_value' => $item['condition_name'],
       '#ajax' => array(
         'callback' => 'inline_conditions_form_ajax_callback',
         'wrapper' => $id,
       ),
       '#prefix' => '<div class="condition-wrapper">',
-
       '#condition_action' => 'select',
       // Identifies the condition operated upon.
       '#element_delta' => $delta,
@@ -463,13 +476,13 @@ function inline_conditions_field_widget_form(&$form, &$form_state, $field, $inst
     );
 
     // A condition has been selected, and a "configure" callback exists.
-    if (!empty($condition_name) && !empty($condition_info[$condition_name]['callbacks']['configure'])) {
-      $callback = $condition_info[$condition_name]['callbacks']['configure'];
-      $element[$delta]['condition_settings'] = $callback($condition_settings);
+    if (!empty($item['condition_name']) && !empty($condition_info[$item['condition_name']]['callbacks']['configure'])) {
+      $callback = $condition_info[$item['condition_name']]['callbacks']['configure'];
+      $element[$delta]['condition_settings'] = $callback($item['condition_settings']);
       $element[$delta]['#attributes'] = array('class' => array('container-inline'));
     }
 
-    // Adds the remove condition button.
+    // Remove condition button.
     $element[$delta]['remove_condition'] = array(
       '#type' => 'button',
       '#name' => $field['field_name'] . '-' . $instance['id'] . '-' . $delta . '-remove_condition',
@@ -488,8 +501,25 @@ function inline_conditions_field_widget_form(&$form, &$form_state, $field, $inst
       '#limit_validation_errors' => array(),
     );
 
+    // Add an option list to select logical disjunctions for each inline
+    // condition.
     if ($delta > 0) {
-      $element[$delta]['condition_name']['#title'] = t('And: ');
+      // Remove the default condition selector label and also remove the prefix
+      // used as HTML wrapper for the current condition.
+      unset($element[$delta]['condition_name']['#title'], $element[$delta]['condition_name']['#prefix']);
+      // Add an option list to select the logic operator for the current
+      // condition.
+      $element[$delta]['condition_logic_operator'] = array(
+        '#type' => 'select',
+        '#options' => array(
+          INLINE_CONDITIONS_OR => t('Or:'),
+          INLINE_CONDITIONS_AND => t('And:'),
+          INLINE_CONDITIONS_NOT => t('Not:'),
+        ),
+        '#default_value' => isset($item['condition_logic_operator']) ? $item['condition_logic_operator'] : INLINE_CONDITIONS_AND,
+        '#weight' => -50,
+        '#prefix' => '<div class="condition-wrapper">',
+      );
     }
   }
 
@@ -573,6 +603,7 @@ function inline_conditions_form_ajax_callback($form, &$form_state) {
   // Triggered when user selects a condition.
   if ($form_state['triggering_element']['#condition_action'] == 'select') {
     $delta = $form_state['triggering_element']['#element_delta'];
+
     return $element[$delta];
   }
   else {
@@ -595,22 +626,86 @@ function inline_conditions_form_ajax_callback($form, &$form_state) {
  */
 function inline_conditions_build(RulesReactionRule $rule, $field_values) {
   if (!empty($field_values)) {
-    foreach ($field_values as $value) {
+    // Initialising the variables needed to later build the rule.
+    $or = $and = $temp = NULL;
+
+    // Loop over field values.
+    foreach ($field_values as $delta => $value) {
       // Give a chance to others module to alter the current field value.
       drupal_alter('inline_conditions_build', $value);
 
       // Get the condition info.
       $condition = inline_conditions_get_info($value['condition_name']);
+
       // Ensure we got the condition and we have settings for the rule
       // condition.
       if (!$condition || empty($value['condition_settings'])) {
         continue;
       }
 
-      // Fullfil the parameters variable with the correct values.
+      // Fulfill the parameters variable with the expecting values.
       $parameters = array('entity:select' => $condition['entity type']) + $value['condition_settings'];
 
-      $rule->condition($value['condition_name'], $parameters);
+      // Find the condition name in order to be attached on the passed rule.
+      $name = isset($condition['rule condition name']) ? $condition['rule condition name'] : $value['condition_name'];
+
+      // Find out if we need to add a OR / AND condition before the one defined
+      // in the current field value.
+      if (isset($value['condition_logic_operator'])) {
+        switch ($value['condition_logic_operator']) {
+          case INLINE_CONDITIONS_AND || INLINE_CONDITIONS_NOT:
+            if (is_null($and)) {
+              $and = rules_and();
+            }
+            // Attach the condition in the "AND" group.
+            rules_condition($name, $parameters)
+              // Negate the condition if the given logical operator is NOT.
+              ->negate($value['condition_logic_operator'] == INLINE_CONDITIONS_NOT)
+              ->setParent($and);
+            // Try to add the condition stored in temp variable in the current
+            // group.
+            if (!is_null($temp)) {
+              rules_condition($temp['name'], $temp['parameters'])->setParent($and);
+              $temp = NULL;
+            }
+            break;
+          case INLINE_CONDITIONS_OR:
+            if (is_null($or)) {
+              $or = rules_or();
+            }
+            // Attach the condition in the "OR" group.
+            rules_condition($name, $parameters)->setParent($or);
+            // Try to add the condition stored in temp variable in the current
+            // group.
+            if (!is_null($temp)) {
+              rules_condition($temp['name'], $temp['parameters'])->setParent($or);
+              $temp = NULL;
+            }
+            break;
+
+        }
+        continue;
+      }
+
+      // No logical operator found, so we put the condition in the temp array.
+      // It will be added to next condition using a logical operator.
+      $temp = array(
+        'name' => $name,
+        'parameters' => $parameters
+      );
+    }
+
+    // Add conditions based on logical operators groups to passed rule.
+    if (!is_null($and)) {
+      $rule->condition($and);
+    }
+    if (!is_null($or)) {
+      $rule->condition($or);
+    }
+
+    // If a condition is still present in the temp var, attach it on the rule.
+    if (!is_null($temp)) {
+      $rule->condition($temp['name'], $temp['parameters']);
     }
   }
 }

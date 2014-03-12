@@ -145,8 +145,18 @@ function search_api_sorts_search_sorts($index_id, $enabled = 1, $reset = FALSE) 
     ))->condition('index_id', $index_id)->condition('enabled', $enabled)->orderby('weight', 'ASC')->execute();
 
     $data = array();
+    $index = search_api_index_load($index_id);
+    $fields = $index->options['fields'];
+    $fields += array(
+      'search_api_relevance' => array('type' => 'decimal'),
+      'search_api_id' => array('type' => 'integer'),
+    );
+
     while ($row = $query->fetch()) {
-      $data[] = $row;
+      // Check that this field exists in index.
+      if (!empty($fields[$row->field])) {
+        $data[] = $row;
+      }
     }
 
     $cache[$index_id . '_' . $enabled] = $data;
@@ -168,10 +178,9 @@ function search_api_sorts_block_search_sorts_view() {
     return;
   }
 
-  $item = menu_get_item();
-  $path = $item['href'];
+ $path = $_GET['q'];
   $current_sort = $query->getSort();
-  
+
   $params = drupal_get_query_parameters($_GET, array(
     'q',
     'page'
@@ -220,10 +229,12 @@ function search_api_sorts_block_search_sorts_view() {
     if ($sort == $data->field) {
 
       // add some extra classes
-      $options['attributes']['class'] += array(
-        'active',
-        'sort-' . $order
-      );
+      $options['attributes']['class'] = array_merge(
+        $options['attributes']['class'],
+        array(
+          'active-sort',
+          'sort-' . $order,
+        ));
 
       // create a copy of the options, for use in the order-link
       $order_options = $options;

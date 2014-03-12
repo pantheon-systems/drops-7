@@ -21,9 +21,9 @@ files[] = includes/views/handlers/commerce_cart_handler_area_empty_text.inc
 ; Simple tests
 files[] = tests/commerce_cart.test
 
-; Information added by drupal.org packaging script on 2013-07-23
-version = "7.x-1.8"
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
 core = "7.x"
 project = "commerce"
-datestamp = "1374609067"
+datestamp = "1394061805"
 

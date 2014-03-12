@@ -97,7 +97,7 @@ function theme_shipping_service_admin_overview($variables) {
   $shipping_service = $variables['shipping_service'];
 
   $output = check_plain($shipping_service['title']);
-  $output .= ' <small> (Machine name: ' . check_plain($shipping_service['name']) . ')</small>';
+  $output .= ' <small> (' . t('Machine name: @name', array('@name' => check_plain($shipping_service['name']))) . ')</small>';
   $output .= '<div class="description">' . filter_xss_admin($shipping_service['description']) . '</div>';
 
   return $output;

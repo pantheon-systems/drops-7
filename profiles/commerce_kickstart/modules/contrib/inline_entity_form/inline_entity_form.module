@@ -301,10 +301,16 @@ function inline_entity_form_field_widget_settings_form($field, $instance) {
  * by the field type.
  */
 function inline_entity_form_field_widget_properties_alter(&$widget, $context) {
-  $view = views_get_current_view();
-  $is_ief_widget = (strpos($widget['type'], 'inline_entity_form') === 0);
-  $has_vbo = module_exists('views_bulk_operations');
-  if ($view && $is_ief_widget && $has_vbo) {
+  if (strpos($widget['type'], 'inline_entity_form') !== 0) {
+    // Not an IEF widget.
+    return;
+  }
+  if (!module_exists('views') || !module_exists('views_bulk_operations')) {
+    // Views or VBO not installed.
+    return;
+  }
+
+  if ($view = views_get_current_view()) {
     $vbo = _views_bulk_operations_get_field($view);
     if ($vbo) {
       $field = $context['field'];
@@ -783,14 +789,27 @@ function inline_entity_form_field_widget_form(&$form, &$form_state, $field, $ins
  */
 function inline_entity_form_form_alter(&$form, &$form_state, $form_id) {
   if (!empty($form_state['inline_entity_form'])) {
-    $submit = array_merge(array('inline_entity_form_trigger_submit'), $form['#submit']);
+    // Try to find the main submit button in the most common places.
+    $submit_element = NULL;
     if (!empty($form['submit'])) {
-      $form['submit']['#submit'] = array_merge($submit, $form['submit']['#submit']);
-      $form['submit']['#ief_submit_all'] = TRUE;
+      $submit_element = &$form['submit'];
     }
     elseif (!empty($form['actions']['submit'])) {
-      $form['actions']['submit']['#submit'] = array_merge($submit, $form['actions']['submit']['#submit']);
-      $form['actions']['submit']['#ief_submit_all'] = TRUE;
+      $submit_element = &$form['actions']['submit'];
+    }
+
+    if ($submit_element) {
+      $submit = array_merge(array('inline_entity_form_trigger_submit'), $form['#submit']);
+      if (!empty($submit_element['#submit'])){
+        $submit = array_merge($submit, $submit_element['#submit']);
+        // $form['#submit'] and $submit_element['#submit'] might have matching
+        // callbacks, resulting in duplicates and double processing.
+        $submit_element['#submit'] = array_unique($submit);
+      }
+      else{
+        $submit_element['#submit'] = $submit;
+      }
+      $submit_element['#ief_submit_all'] = TRUE;
     }
   }
 }
@@ -1443,6 +1462,11 @@ function inline_entity_form_field_attach_submit($parent_entity_type, $parent_ent
         continue;
       }
       $langcode = $form[$field_name]['#language'];
+      if (!isset($form[$field_name][$langcode]['#ief_id'])) {
+        // The field is present on the form, but the IEF widget wasn't added,
+        // usually due to inline_entity_form_field_widget_properties_alter().
+        continue;
+      }
       $ief_id = $form[$field_name][$langcode]['#ief_id'];
       if (empty($form_state['inline_entity_form'][$ief_id])) {
         // No data found, no need to do anything.
@@ -1474,8 +1498,11 @@ function inline_entity_form_field_attach_submit($parent_entity_type, $parent_ent
         list($entity_id) = entity_extract_ids($entity_type, $item['entity']);
         $entity_ids[] = array($values['settings']['column'] => $entity_id);
       }
-      // Set the list of ids as the field value.
-      $parent_entity->{$field_name}[$langcode] = $entity_ids;
+
+      if (!empty($entity_ids)) {
+        // Set the list of ids as the field value.
+        $parent_entity->{$field_name}[$langcode] = $entity_ids;
+      }
     }
   }
 }
@@ -1623,13 +1650,14 @@ function theme_inline_entity_form_entity_table($variables) {
     // Add fields that represent the entity.
     $wrapper = entity_metadata_wrapper($entity_type, $entity);
     foreach ($fields as $field_name => $field) {
+      $data = '';
       if ($field['type'] == 'property') {
         $property = $wrapper->{$field_name};
         // label() returns human-readable versions of token and list properties.
         $data = $property->label() ? $property->label() : $property->value();
         $data = check_plain($data);
       }
-      elseif ($field['type'] == 'field') {
+      elseif ($field['type'] == 'field' && isset($entity->{$field_name})) {
         $display = array(
           'label' => 'hidden',
         ) + $field;

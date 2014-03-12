@@ -13,15 +13,17 @@
 function commerce_discount_usage_views_default_views_alter(&$views) {
   $usage_field = _commerce_discount_usage_views_get_view_delta();
 
-  $view = &$views['commerce_discount_overview'];
-  $handler = &$view->display['default']->handler;
+  $view = & $views['commerce_discount_overview'];
+  $handler = & $view->display['default']->handler;
 
   if (!is_array($handler->display->display_options['fields'])) {
     return;
   }
+
+  $fields = array();
   foreach ($handler->display->display_options['fields'] as $field_id => $field) {
     // Add the usage column after the status column.
-    if ($field_id == 'enabled') {
+    if ($field_id == 'status') {
       $fields += $usage_field;
     }
     $fields[$field_id] = $field;

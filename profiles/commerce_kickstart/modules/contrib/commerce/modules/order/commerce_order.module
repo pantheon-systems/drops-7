@@ -1016,11 +1016,11 @@ function commerce_order_states() {
 }
 
 /**
- * Resets the cached list of order statuses.
+ * Resets the cached list of order states.
  */
 function commerce_order_states_reset() {
-  $order_statuses = &drupal_static('commerce_order_statuses');
-  $order_statuses = NULL;
+  $order_states = &drupal_static('commerce_order_states');
+  $order_states = NULL;
 }
 
 /**
@@ -1040,15 +1040,6 @@ function commerce_order_state_load($name) {
   }
 
   return FALSE;
-}
-
-/**
- * Resets an order state by name to its module defined defaults.
- */
-function commerce_order_state_reset($name) {
-  db_delete('commerce_order_state')
-    ->condition('name', $name)
-    ->execute();
 }
 
 /**
@@ -1187,15 +1178,6 @@ function commerce_order_status_load($name) {
 }
 
 /**
- * Resets an order status by name to its module defined defaults.
- */
-function commerce_order_status_reset($name) {
-  db_delete('commerce_order_status')
-    ->condition('name', $name)
-    ->execute();
-}
-
-/**
  * Returns the human readable title of any or all order statuses.
  *
  * @param $name
@@ -1249,7 +1231,7 @@ function commerce_order_status_options_list() {
  * Updates the status of an order to the specified status.
  *
  * While there is no explicit Rules event or hook devoted to an order status
- * being updated, you can use the commerce_order_updated event / hook to check
+ * being updated, you can use the commerce_order_update event / hook to check
  * for a changed order status by comparing $order->original->status to the
  * $order->status. If they are different, this will alert you that the order
  * status for the given order was just changed.

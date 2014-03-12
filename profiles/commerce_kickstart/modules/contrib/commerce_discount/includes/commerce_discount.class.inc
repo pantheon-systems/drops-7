@@ -27,11 +27,11 @@ class CommerceDiscount extends Entity {
   public $type = 'order_discount';
 
   /**
-   * Whether the discount is enabled.
+   * Whether the discount is active.
    *
    * @var bool
    */
-  public $enabled = TRUE;
+  public $status = TRUE;
 
   /**
    * Set the component price title shown for customers.

@@ -13,46 +13,69 @@
  */
 function commerce_discount_commerce_cart_order_refresh($wrapper) {
   $line_items_to_delete = array();
+  $cloned_line_items = array();
   // Remove all discount references from the order.
-  $wrapper->commerce_discounts->set(array());
+  // (If there are none, setting array() would modify the order, so test first.)
+  if ($wrapper->commerce_discounts->value()) {
+    $wrapper->commerce_discounts->set(array());
+  }
 
   // Remove discount components from the order total price.
   commerce_discount_remove_discount_components($wrapper->commerce_order_total);
 
   foreach ($wrapper->commerce_line_items as $delta => $wrapper_line_item) {
-    // If the line item is a discount remove it.
-    if ($wrapper_line_item->getBundle() == 'commerce_discount') {
+    if ($wrapper_line_item->getBundle() == 'product_discount') {
       // Delete the line item, and remove it from the order.
       $line_items_to_delete[] = $wrapper_line_item->line_item_id->value();
       $wrapper->commerce_line_items->offsetUnset($delta);
     }
-    elseif ($wrapper_line_item->getBundle() == 'product_discount') {
-      $line_item = $wrapper_line_item->value();
-      if (!isset($line_item->data['context']['discount_name'])) {
-        continue;
-      }
-      // Delete the line item, and remove it from the order.
-      $line_items_to_delete[] = $wrapper_line_item->line_item_id->value();
-      $wrapper->commerce_line_items->offsetUnset($delta);
-    }
-    // If the line item is not a discount, delete discount components from its
-    // price.
     else {
-      // Remove discount components from the line item unit price.
+      $cloned_line_items[$wrapper_line_item->getIdentifier()] = clone($wrapper_line_item->value());
+
+      // Remove discount components from the line item price fields; the line
+      // item may be a discount (so the price will become 0) or another line
+      // item like a product (so the price will become the 'original' price).
       commerce_discount_remove_discount_components($wrapper_line_item->commerce_unit_price);
-
-      // Remove discount components from the line item total price.
       commerce_discount_remove_discount_components($wrapper_line_item->commerce_total);
-
-      $wrapper_line_item->save();
     }
   }
-  // Delete line items.
-  foreach ($line_items_to_delete as $line_item_id) {
-    commerce_line_item_delete($line_item_id);
+
+  // Re-add all applicable discount price components and/or line items.
+  rules_invoke_event('commerce_discount_order', $wrapper->value());
+
+  // Save the line items which have changes after removing/re-adding discounts;
+  // except if one of our discount type line items still has price 0, delete it.
+  foreach ($wrapper->commerce_line_items as $delta => $wrapper_line_item) {
+    if ($wrapper_line_item->getBundle() != 'product_discount') {
+      $id = $wrapper_line_item->getIdentifier();
+
+      // Only check non-new line items; new ones have already been saved.
+      if (isset($cloned_line_items[$id])) {
+        if ($wrapper_line_item->getBundle() == 'commerce_discount' && $wrapper_line_item->commerce_unit_price->amount->value() == 0) {
+          $line_items_to_delete[] = $id;
+          $wrapper->commerce_line_items->offsetUnset($delta);
+        }
+        else {
+          // Check for changes, in commerce_unit_price (in the same way as
+          // commerce_cart_order_refresh() does) and quantity.
+          // (Don't check e.g. commerce_total; it may not be updated yet.)
+          $old_line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $cloned_line_items[$id]);
+          $old_data = $old_line_item_wrapper->commerce_unit_price->data->value() + array('components' => array());
+          $data = (array) $wrapper_line_item->commerce_unit_price->data->value() + array('components' => array());
+
+          if ($wrapper_line_item->commerce_unit_price->amount->value() != $old_line_item_wrapper->commerce_unit_price->amount->value() ||
+            $wrapper_line_item->commerce_unit_price->currency_code->value() != $old_line_item_wrapper->commerce_unit_price->currency_code->value() ||
+            $data['components'] != $old_data['components']) {
+            // Save changed line item (which will correctly set commerce_total).
+            $wrapper_line_item->save();
+          }
+        }
+      }
+    }
   }
 
-  rules_invoke_event('commerce_discount_order', $wrapper->value());
+  // Delete line items.
+  commerce_line_item_delete_multiple($line_items_to_delete);
 }
 
 /**
@@ -66,12 +89,12 @@ function commerce_discount_remove_discount_components($price_wrapper) {
   $component_removed = FALSE;
   // Remove price components belonging to order discounts.
   foreach ($data['components'] as $key => $component) {
-    if ($component['name'] != 'discount' || empty($component['price']['data']['discount_name'])) {
+    if (empty($component['price']['data']['discount_name'])) {
       continue;
     }
     $discount_name = $component['price']['data']['discount_name'];
     $wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
-    if (!$wrapper->raw() || $wrapper->type->value() == 'order_discount') {
+    if (!$wrapper->value() || $wrapper->getBundle() == 'order_discount') {
       unset($data['components'][$key]);
       $component_removed = TRUE;
     }
@@ -191,7 +214,7 @@ function commerce_discount_views_api($module, $api) {
   if ($module == 'views') {
     return array(
       'version' => 3,
-      'path' => drupal_get_path('module','commerce_discount') . '/includes/views',
+      'path' => drupal_get_path('module', 'commerce_discount') . '/includes/views',
     );
   }
 }
@@ -208,7 +231,7 @@ function commerce_discount_features_pipe_commerce_discount_alter(&$pipe, $data, 
 
   foreach ($data as $name) {
     $wrapper = entity_metadata_wrapper('commerce_discount', $name);
-    $pipe['commerce_discount_offer'][] = $wrapper->commerce_discount_offer->name->value();
+    $pipe['commerce_discount_offer'][] = $wrapper->commerce_discount_offer->type->value();
   }
 }
 
@@ -360,6 +383,7 @@ function commerce_discount_commerce_discount_offer_type_info() {
       'label' => t('Free shipping'),
       'action' => 'commerce_discount_free_shipping_service',
       'entity types' => array('commerce_order'),
+      'event' => 'commerce_discount_free_shipping',
     );
   }
 
@@ -387,10 +411,6 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
       return;
     }
 
-    // Remove old rule event and add the new one.
-    $rule->removeEvent('commerce_discount_order');
-    $rule->event('commerce_discount_free_shipping');
-
     // Add missing parameter.
     foreach ($rule->actions() as $action) {
       if ($action->getElementName() == 'commerce_discount_free_shipping_service') {
@@ -401,20 +421,6 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
       }
     }
   }
-}
-
-/**
- * Applies the passed-in fixed amount discount offer to the passed-in entity.
- */
-function commerce_discount_fixed_amount_offer_apply($entity, $entity_type, CommerceDiscountOffer $discount_offer) {
-
-}
-
-/**
- * Applies the passed-in percentage discount offer to the passed-in entity.
- */
-function commerce_discount_percentage_offer_apply($entity, $entity_type, CommerceDiscountOffer $discount_offer) {
-
 }
 
 /**
@@ -576,7 +582,7 @@ function commerce_discount_offer_type_get_name($type = NULL) {
  */
 function commerce_discount_entity_list() {
   $options = array();
-  foreach(entity_load('commerce_discount') as $discount) {
+  foreach (entity_load('commerce_discount') as $discount) {
     $options[$discount->name] = $discount->label;
   }
 

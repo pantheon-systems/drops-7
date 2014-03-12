@@ -26,7 +26,7 @@ function commerce_kickstart_menus_uninstall() {
   // Unfortunately this can't happen in `hook_disable()`, because the module's
   // `hook_menu()` implementation is still invoked there.
   // Remove all administrative menu links from the database.
-  db_query("DELETE FROM menu_links WHERE router_path LIKE 'admin%'");
+  db_query("DELETE FROM {menu_links} WHERE router_path LIKE 'admin%'");
   // Rebuild the menus, this will regenerate the administrative links, but
   // without this module's additions.
   menu_rebuild();

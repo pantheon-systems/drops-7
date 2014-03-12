@@ -16,7 +16,7 @@ function commerce_discount_date_rules_condition_info() {
     'group' => t('Commerce Discount'),
     'parameter' => array(
       'commerce_discount' => array(
-        'label' => t('Commerce discount'),
+        'label' => t('Commerce Discount'),
         'type' => 'token',
         'options list' => 'commerce_discount_entity_list',
       ),

@@ -72,6 +72,12 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
       ),
     );
 
+    foreach ($options as $key => $option) {
+      $pane_form['shipping_service'][$key] = array(
+        '#description' => $order->shipping_rates[$key]->data['shipping_service']['description'],
+      );
+    }
+
     // Find the default shipping method using either the pre-selected value
     // stored as a line item on the order or the first available method.
     $pane_values = !empty($form_state['values'][$checkout_pane['pane_id']]) ? $form_state['values'][$checkout_pane['pane_id']] : array();
@@ -277,7 +283,11 @@ function commerce_shipping_recalculate_services_submit($form, &$form_state) {
 
   // Save the order and rebuild the form to reflect the updated customer data.
   if ($rebuild) {
-    commerce_order_save($order);
+    // Avoid overwriting an already updated order.
+    $stored_order = commerce_order_load($order->order_id);
+    if ($stored_order->changed < $order->changed) {
+      commerce_order_save($order);
+    }
     $form_state['rebuild'] = TRUE;
   }
 }

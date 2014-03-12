@@ -95,11 +95,12 @@ function commerce_info_fields($field_type, $entity_type = NULL) {
   $fields = array();
 
   // Loop through the fields looking for any fields of the specified type.
-  foreach (field_info_fields() as $field_name => $field) {
-    if ($field['type'] == $field_type) {
+  foreach (field_info_field_map() as $field_name => $field_stub) {
+    if ($field_stub['type'] == $field_type) {
       // Add this field to the return array if no entity type was specified or
       // if the specified type exists in the field's bundles array.
-      if (empty($entity_type) || in_array($entity_type, array_keys($field['bundles']))) {
+      if (empty($entity_type) || in_array($entity_type, array_keys($field_stub['bundles']))) {
+        $field = field_info_field($field_name);
         $fields[$field_name] = $field;
       }
     }
@@ -537,7 +538,7 @@ function commerce_currencies($enabled = FALSE, $reset = FALSE) {
       // Include the currency file and invoke the currency info hook.
       module_load_include('inc', 'commerce', 'includes/commerce.currency');
       $currencies['all'] = module_invoke_all('commerce_currency_info');
-      drupal_alter('commerce_currency_info', $currencies['all']);
+      drupal_alter('commerce_currency_info', $currencies['all'], $language->language);
 
       // Add default values if they don't exist.
       foreach ($currencies['all'] as $currency_code => $currency) {
@@ -1139,17 +1140,6 @@ function commerce_entity_access_query_alter($query, $entity_type, $base_table = 
     $account = $user;
   }
 
-  // Read the base table from the query if available or default to the first
-  // table in the query's tables array.
-  if (!isset($base_table) && !$base_table = $query->getMetaData('base_table')) {
-    // Assume that the base table is the first table if not set. It will result
-    // in an invalid query if the first table is not the table we expect,
-    // forcing the caller to actually properly pass a base table in that case.
-    $tables = &$query->getTables();
-    reset($tables);
-    $base_table = key($tables);
-  }
-
   // Do not apply any conditions for users with administrative view permissions.
   if (user_access('administer ' . $entity_type . ' entities', $account)
     || user_access('view any ' . $entity_type . ' entity', $account)) {
@@ -1159,9 +1149,44 @@ function commerce_entity_access_query_alter($query, $entity_type, $base_table = 
   // Get the entity type info array for the current access check and prepare a
   // conditions object.
   $entity_info = entity_get_info($entity_type);
+
+  // If a base table wasn't specified, attempt to read it from the query if
+  // available, look for a table in the query's tables array that matches the
+  // base table of the given entity type, or just default to the first table.
+  if (!isset($base_table) && !$base_table = $query->getMetaData('base_table')) {
+    // Initialize the base table to the first table in the array. If a table can
+    // not be found that matches the entity type's base table, this will result
+    // in an invalid query if the first table is not the table we expect,
+    // forcing the caller to actually properly pass a base table in that case.
+    $tables = $query->getTables();
+    reset($tables);
+    $base_table = key($tables);
+
+    foreach ($tables as $table_info) {
+      if (!($table_info instanceof SelectQueryInterface)) {
+        // If this table matches the entity type's base table, use its table
+        // alias as the base table for the purposes of bundle and ownership
+        // access checks.
+        if ($table_info['table'] == $entity_info['base table']) {
+          $base_table = $table_info['alias'];
+        }
+      }
+    }
+  }
+
+  // Prepare an OR container for conditions. Conditions will be added that seek
+  // to grant access, meaning any particular type of permission check may grant
+  // access even if none of the others apply. At the end of this function, if no
+  // conditions have been added to the array, a condition will be added that
+  // always returns FALSE (1 = 0).
   $conditions = db_or();
 
   // Perform bundle specific permission checks for the specified entity type.
+  // In the event that the user has permission to view every bundle of the given
+  // entity type, $really_restricted will remain FALSE, indicating that it is
+  // safe to exit this function without applying any additional conditions. If
+  // the user only had such permission for a subset of the defined bundles,
+  // conditions representing those access checks would still be added.
   $really_restricted = FALSE;
 
   // Loop over every possible bundle for the given entity type.
@@ -1240,5 +1265,88 @@ function commerce_entity_access_query_alter($query, $entity_type, $base_table = 
 function commerce_options_list_limit_validate($element, &$form_state, $form) {
   if (!empty($element['#value']) && (!is_numeric($element['#value']) || $element['#value'] < 1)) {
     form_error($element, t('Use a positive number for the options list limit or else leave it blank for no limit.'));
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * The Entity API theme function template_preprocess_entity() assumes the
+ * presence of a path key in an entity URI array, which isn't strictly required
+ * by Drupal core itself. Until this is fixed in the Entity API code, we replace
+ * that function with a Commerce specific version.
+ *
+ * @todo Remove when https://drupal.org/node/1934382 is resolved.
+ */
+function commerce_theme_registry_alter(&$theme_registry) {
+  // Copy the preprocess functions array and remove the core preprocess function
+  // along with the Entity API's and this module's.
+  $functions = drupal_map_assoc($theme_registry['entity']['preprocess functions']);
+  unset($functions['template_preprocess'], $functions['template_preprocess_entity'], $functions['commerce_preprocess_entity']);
+
+  // Unshift the core preprocess function and the Commerce specific function so
+  // they appear at the beginning of the array in the desired order.
+  array_unshift($functions, 'template_preprocess', 'commerce_preprocess_entity');
+
+  // Update the function list in the theme registry.
+  $theme_registry['entity']['preprocess functions'] = array_values($functions);
+}
+
+/**
+ * Processes variables for entity.tpl.php, replacing template_preprocess_entity().
+ *
+ * @see commerce_theme_registry_alter()
+ * @todo Remove when https://drupal.org/node/1934382 is resolved.
+ */
+function commerce_preprocess_entity(&$variables) {
+  $variables['view_mode'] = $variables['elements']['#view_mode'];
+  $entity_type = $variables['elements']['#entity_type'];
+  $variables['entity_type'] = $entity_type;
+  $entity = $variables['elements']['#entity'];
+  $variables[$variables['elements']['#entity_type']] = $entity;
+  $info = entity_get_info($entity_type);
+
+  $variables['title'] = check_plain(entity_label($entity_type, $entity));
+
+  $uri = entity_uri($entity_type, $entity);
+  $variables['url'] = $uri && isset($uri['path']) ? url($uri['path'], $uri['options']) : FALSE;
+
+  if (isset($variables['elements']['#page'])) {
+    // If set by the caller, respect the page property.
+    $variables['page'] = $variables['elements']['#page'];
+  }
+  else {
+    // Else, try to automatically detect it.
+    $variables['page'] = $uri && isset($uri['path']) && $uri['path'] == $_GET['q'];
+  }
+
+  // Helpful $content variable for templates.
+  $variables['content'] = array();
+  foreach (element_children($variables['elements']) as $key) {
+    $variables['content'][$key] = $variables['elements'][$key];
+  }
+
+  if (!empty($info['fieldable'])) {
+    // Make the field variables available with the appropriate language.
+    field_attach_preprocess($entity_type, $entity, $variables['content'], $variables);
+  }
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+
+  // Gather css classes.
+  $variables['classes_array'][] = drupal_html_class('entity-' . $entity_type);
+  $variables['classes_array'][] = drupal_html_class($entity_type . '-' . $bundle);
+
+  // Add RDF type and about URI.
+  if (module_exists('rdf')) {
+    $variables['attributes_array']['about'] = empty($uri['path']) ? NULL: url($uri['path']);
+    $variables['attributes_array']['typeof'] = empty($entity->rdf_mapping['rdftype']) ? NULL : $entity->rdf_mapping['rdftype'];
+  }
+
+  // Add suggestions.
+  $variables['theme_hook_suggestions'][] = $entity_type;
+  $variables['theme_hook_suggestions'][] = $entity_type . '__' . $bundle;
+  $variables['theme_hook_suggestions'][] = $entity_type . '__' . $bundle . '__' . $variables['view_mode'];
+  if ($id = entity_id($entity_type, $entity)) {
+    $variables['theme_hook_suggestions'][] = $entity_type . '__' . $id;
   }
 }

@@ -4,7 +4,7 @@
 .commerce-discount-form {
   position: relative;
 }
-.commerce-discount-form .form-item-enabled {
+.commerce-discount-form .form-item-status {
   background-color: #eee;
   padding: 10px 10px 20px 10px;
   position: absolute;

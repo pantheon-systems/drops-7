@@ -66,9 +66,13 @@ class CommerceOrderEntityController extends DrupalCommerceEntityController {
       $order->is_new = empty($order->order_id);
 
       // Set the timestamp fields.
-      if ($order->is_new && empty($order->created)) {
-        $order->created = REQUEST_TIME;
-        $order->hostname = ip_address();
+      if ($order->is_new) {
+        if (empty($order->created)) {
+          $order->created = REQUEST_TIME;
+        }
+        if (empty($order->hostname)) {
+          $order->hostname = ip_address();
+        }
       }
       else {
         // Otherwise if the order is not new but comes from an entity_create()
@@ -81,7 +85,7 @@ class CommerceOrderEntityController extends DrupalCommerceEntityController {
         if ($order->uid === '') {
           unset($order->uid);
         }
-        if (property_exists($order, 'hostname') && $order->hostname === '') {
+        if ($order->hostname === '') {
           unset($order->hostname);
         }
       }

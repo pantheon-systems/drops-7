@@ -8,6 +8,10 @@
  * special considerations to associate it with a user and
  */
 
+// Define constants for the shopping cart refresh modes.
+define('COMMERCE_CART_REFRESH_ALWAYS', 'always');
+define('COMMERCE_CART_REFRESH_OWNER_ONLY', 'owner_only');
+define('COMMERCE_CART_REFRESH_ACTIVE_CART_ONLY', 'active_cart_only');
 
 /**
  * Implements hook_menu().
@@ -38,6 +42,23 @@ function commerce_cart_menu() {
     'type' => MENU_CALLBACK,
     'file' => 'includes/commerce_cart.pages.inc',
   );
+
+  // If the Order UI module is installed, add a local action to it that lets an
+  // administrator execute a cart order refresh on the order. Modules that
+  // define their own order edit menu item are also responsible for defining
+  // their own local action menu items if needed.
+  if (module_exists('commerce_order_ui')) {
+    $items['admin/commerce/orders/%commerce_order/edit/refresh'] = array(
+      'title' => 'Apply pricing rules',
+      'description' => 'Executes the cart order refresh used to apply all current pricing rules on the front end.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_cart_order_refresh_form', 3),
+      'access callback' => 'commerce_cart_order_refresh_form_access',
+      'access arguments' => array(3),
+      'type' => MENU_LOCAL_ACTION,
+      'file' => 'includes/commerce_cart.admin.inc',
+    );
+  }
 
   return $items;
 }
@@ -72,6 +93,20 @@ function commerce_cart_menu_item_title() {
  */
 function commerce_cart_menu_item_redirect() {
   drupal_goto('cart');
+}
+
+/**
+ * Access callback: determines access to the "Apply pricing rules" local action.
+ */
+function commerce_cart_order_refresh_form_access($order) {
+  // Do not show the link for cart orders as they're refreshed automatically.
+  if (commerce_cart_order_is_cart($order)) {
+    return FALSE;
+  }
+
+  // Returns TRUE if the link is enabled via the order settings form and the
+  // user has access to update the order.
+  return variable_get('commerce_order_apply_pricing_rules_link', TRUE) && commerce_order_access('update', 3);
 }
 
 /**
@@ -311,6 +346,66 @@ function commerce_cart_line_item_delete_form_submit($form, &$form_state) {
 /**
  * Implements hook_form_FORM_ID_alter().
  *
+ * Adds a checkbox to the order settings form to enable the local action on
+ * order edit forms to apply pricing rules.
+ */
+function commerce_cart_form_commerce_order_settings_form_alter(&$form, &$form_state) {
+  $form['commerce_order_apply_pricing_rules_link'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable the local action link on order edit forms to apply pricing rules.'),
+    '#description' => t('Even if enabled the link will not appear on shopping cart order edit forms.'),
+    '#default_value' => variable_get('commerce_order_apply_pricing_rules_link', TRUE),
+    '#weight' => 10,
+  );
+
+  // Add a fieldset for settings pertaining to the shopping cart refresh.
+  $form['cart_refresh'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Shopping cart refresh'),
+    '#description' => t('Shopping cart orders comprise orders in shopping cart and some checkout related order statuses. These settings let you control the shopping cart orders are refreshed, the process during which product prices are recalculated, to improve site performance in the case of excessive refreshes on sites with less dynamic pricing needs.'),
+    '#weight' => 40,
+  );
+  $form['cart_refresh']['commerce_cart_refresh_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Shopping cart refresh mode'),
+    '#options' => array(
+      COMMERCE_CART_REFRESH_ALWAYS => t('Refresh a shopping cart when it is loaded regardless of who it belongs to.'),
+      COMMERCE_CART_REFRESH_OWNER_ONLY => t('Only refresh a shopping cart when it is loaded if it belongs to the current user.'),
+      COMMERCE_CART_REFRESH_ACTIVE_CART_ONLY => t("Only refresh a shopping cart when it is loaded if it is the current user's active shopping cart."),
+    ),
+    '#default_value' => variable_get('commerce_cart_refresh_mode', COMMERCE_CART_REFRESH_OWNER_ONLY),
+  );
+  $form['cart_refresh']['commerce_cart_refresh_frequency'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Shopping cart refresh frequency'),
+    '#description' => t('Shopping carts will only be refreshed if more than the specified number of seconds have passed since they were last refreshed.'),
+    '#default_value' => variable_get('commerce_cart_refresh_frequency', 30),
+    '#required' => TRUE,
+    '#size' => 32,
+    '#field_suffix' => t('seconds'),
+    '#element_validate' => array('commerce_cart_validate_refresh_frequency'),
+  );
+  $form['cart_refresh']['commerce_cart_refresh_force'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Always refresh shopping cart orders on shopping cart and checkout form pages regardless of other settings.'),
+    '#description' => t('Note: this option only applies to the core /cart and /checkout/* paths.'),
+    '#default_value' => variable_get('commerce_cart_refresh_force', TRUE),
+  );
+}
+
+/**
+ * Form element validation handler for the cart refresh frequency value.
+ */
+function commerce_cart_validate_refresh_frequency($element, &$form_state) {
+  $value = $element['#value'];
+  if ($value !== '' && (!is_numeric($value) || intval($value) != $value || $value < 0)) {
+    form_error($element, t('%name must be 0 or a positive integer.', array('%name' => $element['#title'])));
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
  * Alter the order edit form so administrators cannot attempt to alter line item
  * unit prices for orders still in a shopping cart status. On order load, the
  * cart module refreshes these prices based on the current product price and
@@ -508,7 +603,7 @@ function commerce_cart_user_login(&$edit, $account) {
  */
 function commerce_cart_user_update(&$edit, $account, $category) {
   // If the e-mail address was changed...
-  if ($account->mail != $edit['original']->mail) {
+  if (!empty($edit['original']->mail) && $account->mail != $edit['original']->mail) {
     // Load the user's shopping cart orders.
     $query = new EntityFieldQuery();
 
@@ -579,6 +674,63 @@ function commerce_cart_block_view($delta) {
   }
 }
 
+ /**
+ * Checks if a cart order should be refreshed based on the shopping cart refresh
+ * settings on the order settings form.
+ *
+ * @param $order
+ *   The cart order to check.
+ *
+ * @return
+ *   Boolean indicating whether or not the cart order can be refreshed.
+ */
+function commerce_cart_order_can_refresh($order) {
+  global $user;
+
+  // Force the shopping cart refresh on /cart and /checkout/* paths if enabled.
+  if (variable_get('commerce_cart_refresh_force', TRUE) &&
+    (current_path() == 'cart' || strpos(current_path(), 'checkout/') === 0)) {
+    return TRUE;
+  }
+
+  // Prevent refresh for orders that don't match the current refresh mode.
+  switch (variable_get('commerce_cart_refresh_mode', COMMERCE_CART_REFRESH_OWNER_ONLY)) {
+    case COMMERCE_CART_REFRESH_OWNER_ONLY:
+      // If the order is anonymous, check the session to see if the order
+      // belongs to the current user. Otherwise just check that the order uid
+      // matches the current user.
+      if ($order->uid == 0 && !commerce_cart_order_session_exists($order->order_id)) {
+        return FALSE;
+      }
+      elseif ($order->uid != $user->uid) {
+        return FALSE;
+      }
+      break;
+
+    case COMMERCE_CART_REFRESH_ACTIVE_CART_ONLY:
+      // Check to see if the order ID matches the current user's cart order ID.
+      if (commerce_cart_order_id($user->uid) != $order->order_id) {
+        return FALSE;
+      }
+      break;
+
+    case COMMERCE_CART_REFRESH_ALWAYS:
+    default:
+      // Continue on if shopping cart orders should always refresh.
+      break;
+  }
+
+  // Check to see if the last cart refresh happened long enough ago.
+  $seconds = variable_get('commerce_cart_refresh_frequency', 15);
+
+  if (!empty($seconds) && !empty($order->data['last_cart_refresh']) &&
+    REQUEST_TIME - $order->data['last_cart_refresh'] < $seconds) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
 /**
  * Implements hook_commerce_order_load().
  *
@@ -592,13 +744,37 @@ function commerce_cart_commerce_order_load($orders) {
 
   foreach ($orders as $order) {
     // Refresh only if this order object represents the latest revision of a
-    // shopping cart order and it hasn't been refreshed already.
+    // shopping cart order, it hasn't been refreshed already in this request
+    // and it meets the criteria in the shopping cart refresh settings.
     if (!isset($refreshed[$order->order_id]) &&
       commerce_cart_order_is_cart($order) &&
-      commerce_order_is_latest_revision($order)) {
+      commerce_order_is_latest_revision($order) &&
+      commerce_cart_order_can_refresh($order)) {
+      // Update the last cart refresh timestamp and record the order's current
+      // changed timestamp to detect if the order is actually updated.
+      $order->data['last_cart_refresh'] = REQUEST_TIME;
+
+      $unchanged_data = $order->data;
+      $last_changed = $order->changed;
+
       // Refresh the order and add its ID to the refreshed array.
       $refreshed[$order->order_id] = TRUE;
       commerce_cart_order_refresh($order);
+
+      // If order wasn't updated during the refresh, we need to manually update
+      // the last cart refresh timestamp in the database.
+      if ($order->changed == $last_changed) {
+        db_update('commerce_order')
+          ->fields(array('data' => serialize($unchanged_data)))
+          ->condition('order_id', $order->order_id)
+          ->execute();
+
+        db_update('commerce_order_revision')
+          ->fields(array('data' => serialize($unchanged_data)))
+          ->condition('order_id', $order->order_id)
+          ->condition('revision_id', $order->revision_id)
+          ->execute();
+      }
     }
   }
 }
@@ -877,7 +1053,7 @@ function commerce_cart_order_convert($order, $account) {
 
 /**
  * Refreshes the contents of a shopping cart by finding the most current prices
- *   for any product line items on the order.
+ * for any product line items on the order.
  *
  * @param $order
  *   The order object whose line items should be refreshed.
@@ -925,7 +1101,7 @@ function commerce_cart_order_refresh($order) {
       rules_invoke_event('commerce_product_calculate_sell_price', $cloned_line_item);
     }
 
-    // Allow other modules alter line items on a shopping cart refresh.
+    // Allow other modules to alter line items on a shopping cart refresh.
     module_invoke_all('commerce_cart_line_item_refresh', $cloned_line_item, $order_wrapper);
 
     // Delete this line item if it no longer has a valid price.
@@ -1126,6 +1302,7 @@ function commerce_cart_product_add($uid, $line_item, $combine = TRUE) {
   // If no order existed, create one now.
   if (empty($order)) {
     $order = commerce_cart_order_new($uid);
+    $order->data['last_cart_refresh'] = REQUEST_TIME;
   }
 
   // Set the incoming line item's order_id.
@@ -1528,7 +1705,13 @@ function commerce_cart_forms($form_id, $args) {
  *   A fully formed product line item whose data will be used in the following
  *   ways by the form:
  *   - $line_item->data['context']['product_ids']: an array of product IDs to
- *     include on the form.
+ *     include on the form or the string 'entity' if the context array includes
+ *     an entity array with information for accessing the product IDs from an
+ *     entity's product reference field.
+ *   - $line_item->data['context']['entity']: if the product_ids value is the
+ *     string 'entity', an associative array with the keys 'entity_type',
+ *     'entity_id', and 'product_reference_field_name' that points to the
+ *     location of the product IDs used to build the form.
  *   - $line_item->data['context']['add_to_cart_combine']: a boolean indicating
  *     whether or not to attempt to combine the product added to the cart with
  *     existing line items of matching fields.
@@ -1574,24 +1757,7 @@ function commerce_cart_add_to_cart_form($form, &$form_state, $line_item, $show_q
   $default_quantity = $line_item->quantity;
 
   // Retrieve the array of product IDs from the line item's context data array.
-  $product_ids = array();
-
-  // If the product IDs setting tells us to use entity values...
-  if ($line_item->data['context']['product_ids'] == 'entity' &&
-    is_array($line_item->data['context']['entity'])) {
-    $entity_data = $line_item->data['context']['entity'];
-
-    // Load the specified entity.
-    $entity = entity_load_single($entity_data['entity_type'], $entity_data['entity_id']);
-
-    // Extract the product IDs from the specified product reference field.
-    if (!empty($entity->{$entity_data['product_reference_field_name']})) {
-      $product_ids = entity_metadata_wrapper($entity_data['entity_type'], $entity)->{$entity_data['product_reference_field_name']}->raw();
-    }
-  }
-  elseif (is_array($line_item->data['context']['product_ids'])) {
-    $product_ids = $line_item->data['context']['product_ids'];
-  }
+  $product_ids = commerce_cart_add_to_cart_form_product_ids($line_item);
 
   // If we don't have a list of products to load, just bail out early.
   // There is nothing we can or have to do in that case.
@@ -2142,10 +2308,10 @@ function commerce_cart_add_to_cart_form_attributes_refresh($form, $form_state) {
         $classes[] = 'commerce-product-field-empty';
       }
 
-      $element += array(
-        '#prefix' => '<div class="' . implode(' ', $classes) . '">',
-        '#suffix' => '</div>',
-      );
+      // Append the prefix and suffix around existing values if necessary.
+      $element += array('#prefix' => '', '#suffix' => '');
+      $element['#prefix'] = '<div class="' . implode(' ', $classes) . '">' . $element['#prefix'];
+      $element['#suffix'] .= '</div>';
 
       $commands[] = ajax_command_replace('.' . $replacement_class, drupal_render($element));
     }
@@ -2273,7 +2439,7 @@ function commerce_cart_field_formatter_info() {
     'commerce_cart_add_to_cart_form' => array(
       'label' => t('Add to Cart form'),
       'description' => t('Display an Add to Cart form for the referenced product.'),
-      'field types' => array('commerce_product_reference'),
+      'field types' => array('commerce_product_reference', 'entityreference'),
       'settings' => array(
         'show_quantity' => FALSE,
         'default_quantity' => 1,
@@ -2337,7 +2503,7 @@ function commerce_cart_field_formatter_settings_form($field, $instance, $view_mo
     else {
       $element['line_item_type'] = array(
         '#type' => 'hidden',
-        '#value' => key($types),
+        '#value' => reset($types),
       );
     }
   }
@@ -2390,7 +2556,12 @@ function commerce_cart_field_formatter_view($entity_type, $entity, $field, $inst
   $product_ids = array();
 
   foreach ($items as $delta => $item) {
-    $product_ids[] = $item['product_id'];
+    if (isset($item['product_id'])) {
+      $product_ids[] = $item['product_id'];
+    }
+    elseif (module_exists('entityreference') && isset($item['target_id'])) {
+      $product_ids[] = $item['target_id'];
+    }
   }
 
   if ($display['type'] == 'commerce_cart_add_to_cart_form') {
@@ -2442,6 +2613,15 @@ function commerce_cart_field_attach_view_alter(&$output, $context) {
       $cart_context['entity_id'] = $entity_id;
       unset($cart_context['entity']);
 
+      // Remove any Views data added to the context by views_handler_field_field.
+      // It unnecessarily increases the size of rows in the cache_form table for
+      // Add to Cart form state data.
+      if (!empty($cart_context['display']) && is_array($cart_context['display'])) {
+        unset($cart_context['display']['views_view']);
+        unset($cart_context['display']['views_field']);
+        unset($cart_context['display']['views_row_id']);
+      }
+
       // Add the context for displaying product fields in the context of an entity
       // that references the product by looking at the entity this product
       // reference field is attached to.
@@ -2481,6 +2661,48 @@ function commerce_cart_field_attach_view_alter(&$output, $context) {
 }
 
 /**
+ * Returns an array of product IDs used for building an Add to Cart form from
+ * the context information in a line item's data array.
+ *
+ * @param $line_item
+ *   The line item whose data array includes a context array used for building
+ *   an Add to Cart form.
+ *
+ * @return
+ *   The array of product IDs extracted from the line item.
+ *
+ * @see commerce_cart_add_to_cart_form()
+ */
+function commerce_cart_add_to_cart_form_product_ids($line_item) {
+  $product_ids = array();
+
+  if (empty($line_item->data['context']) ||
+    empty($line_item->data['context']['product_ids']) ||
+    ($line_item->data['context']['product_ids'] == 'entity' && empty($line_item->data['context']['entity']))) {
+    return $product_ids;
+  }
+
+  // If the product IDs setting tells us to use entity values...
+  if ($line_item->data['context']['product_ids'] == 'entity' &&
+    is_array($line_item->data['context']['entity'])) {
+    $entity_data = $line_item->data['context']['entity'];
+
+    // Load the specified entity.
+    $entity = entity_load_single($entity_data['entity_type'], $entity_data['entity_id']);
+
+    // Extract the product IDs from the specified product reference field.
+    if (!empty($entity->{$entity_data['product_reference_field_name']})) {
+      $product_ids = entity_metadata_wrapper($entity_data['entity_type'], $entity)->{$entity_data['product_reference_field_name']}->raw();
+    }
+  }
+  elseif (is_array($line_item->data['context']['product_ids'])) {
+    $product_ids = $line_item->data['context']['product_ids'];
+  }
+
+  return $product_ids;
+}
+
+/**
  * Implements hook_preprocess_views_view().
  */
 function commerce_cart_preprocess_views_view(&$vars) {
@@ -2488,9 +2710,7 @@ function commerce_cart_preprocess_views_view(&$vars) {
 
   // Add the shopping cart stylesheet to the cart or form if they are not empty.
   if ($view->name == 'commerce_cart_block' || $view->name == 'commerce_cart_form') {
-    if (!empty($view->result)) {
-      drupal_add_css(drupal_get_path('module', 'commerce_cart') . '/theme/commerce_cart.theme.css');
-    }
+    drupal_add_css(drupal_get_path('module', 'commerce_cart') . '/theme/commerce_cart.theme.css');
   }
 }
 

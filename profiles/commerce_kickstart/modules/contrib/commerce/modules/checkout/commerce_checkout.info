@@ -4,7 +4,6 @@ package = Commerce
 dependencies[] = commerce
 dependencies[] = commerce_ui
 dependencies[] = commerce_order
-dependencies[] = commerce_product_reference
 dependencies[] = entity
 dependencies[] = rules
 core = 7.x
@@ -13,9 +12,9 @@ configure = admin/commerce/config/checkout
 ; Simple tests
 files[] = tests/commerce_checkout.test
 
-; Information added by drupal.org packaging script on 2013-07-23
-version = "7.x-1.8"
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
 core = "7.x"
 project = "commerce"
-datestamp = "1374609067"
+datestamp = "1394061805"
 

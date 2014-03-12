@@ -353,7 +353,8 @@ function mimemail_prepare_message($message) {
     }
   }
 
-  $subject = str_replace(array(" \n", "\n"), '', trim(drupal_html_to_text($subject)));
+  // Removing newline character introduced by _drupal_wrap_mail_line();
+  $subject = str_replace(array("\n"), '', trim(drupal_html_to_text($subject)));
 
   $hook = array(
     'mimemail_message__' . $key,

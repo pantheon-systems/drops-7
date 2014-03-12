@@ -6,9 +6,9 @@ core = 7.x
 
 files[] = mimemail_compress.inc
 
-; Information added by drupal.org packaging script on 2013-10-07
-version = "7.x-1.0-beta1"
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.0-beta3"
 core = "7.x"
 project = "mimemail"
-datestamp = "1381150945"
+datestamp = "1394018015"
 

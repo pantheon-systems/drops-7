@@ -419,7 +419,9 @@ function commerce_shipping_service_get_title($name = NULL, $title_type = 'title'
 
   foreach ((array) $shipping_services as $key => $value) {
     $method_title = commerce_shipping_method_get_title($value['shipping_method']);
-    $shipping_service_titles[$method_title][$key] = $value[$title_type];
+    // Since Views needs a flat array and services must be unique, return a
+    // flat array.
+    $shipping_service_titles[$key] = $value[$title_type] . ' (' . $method_title . ')';
   }
 
   // Sort the title groups by method title.
@@ -624,7 +626,7 @@ function commerce_shipping_service_rate_options($order) {
     $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
 
     $options[$name] = t('!shipping_service: !price', array(
-      '!shipping_service' => commerce_shipping_service_get_title($name, 'display_title'),
+      '!shipping_service' => commerce_shipping_line_item_title($line_item),
       '!price' => commerce_currency_format($line_item_wrapper->commerce_unit_price->amount->value(), $line_item_wrapper->commerce_unit_price->currency_code->value()),
     ));
   }
@@ -773,7 +775,8 @@ function commerce_shipping_line_item_title($line_item) {
     return $line_item->data['shipping_service']['display_title'];
   }
   // Then try to get the title from the shipping service.
-  elseif ($title = commerce_shipping_service_get_title($line_item_wrapper->commerce_shipping_service->value(), 'display_title')) {
+  elseif ($line_item_wrapper->commerce_shipping_service->value() != NULL &&
+    $title = commerce_shipping_service_get_title($line_item_wrapper->commerce_shipping_service->value(), 'display_title')) {
     return $title;
   }
 
@@ -1087,7 +1090,7 @@ function commerce_shipping_form_commerce_checkout_form_alter(&$form, &$form_stat
         'event' => 'click',
       ),
       '#attached' => array(
-        'js' => array(drupal_get_path('module', 'commerce_shipping') . '/commerce_shipping.js'),
+        'js' => array(drupal_get_path('module', 'commerce_shipping') . '/js/commerce_shipping.js'),
       ),
     );
 
@@ -1147,7 +1150,7 @@ function commerce_shipping_recalculate_services($form, $form_state = NULL, $igno
         // If the current type is on the form...
         if (!empty($form['customer_profile_' . $type])) {
           // Load the checkout pane to find its checkout pane validate callback.
-          $checkout_pane = commerce_checkout_pane_load($pane_id);
+          $checkout_pane = commerce_checkout_pane_load('customer_profile_' . $type);
 
           // If it has a validate callback...
           if ($callback = commerce_checkout_pane_callback($checkout_pane, 'checkout_form_validate')) {

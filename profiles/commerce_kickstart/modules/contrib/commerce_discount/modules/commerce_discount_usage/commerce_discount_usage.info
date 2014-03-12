@@ -1,19 +1,17 @@
 name = Commerce Discount Usage
-description = Provides fields for tracking the discount usage.
+description = Provide usage tracking and limits for Commerce Discounts
+package = Commerce (contrib)
 core = 7.x
-package = Commerce
 
+; Dependencies
 dependencies[] = commerce_discount
 
-; Views files
-files[] = includes/views/handlers/commerce_discount_usage_handler_field_commerce_discount_usage.inc
+; Views handlers
+files[] = includes/views/handlers/commerce_discount_usage_handler_field_commerce_discount_analytics.inc
 
-; Simple tests
-files[] = commerce_discount_usage.test
-
-; Information added by drupal.org packaging script on 2013-07-25
-version = "7.x-1.0-alpha3"
+; Information added by Drupal.org packaging script on 2014-03-07
+version = "7.x-1.0-alpha3+24-dev"
 core = "7.x"
 project = "commerce_discount"
-datestamp = "1374743169"
+datestamp = "1394203705"
 

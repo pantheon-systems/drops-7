@@ -7,9 +7,9 @@ core = 7.x
 package = Search
 
 files[] = search_api_sorts.entity.inc
-; Information added by drupal.org packaging script on 2013-01-23
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2014-02-16
+version = "7.x-1.5"
 core = "7.x"
 project = "search_api_sorts"
-datestamp = "1358960304"
+datestamp = "1392554916"
 

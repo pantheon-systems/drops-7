@@ -142,6 +142,14 @@ class mimemail_compress {
           $style = trim($value['attributes']);
         }
         $node->setAttribute('style', $style);
+
+        // Convert float to align for images.
+        $float = preg_match ('/float:(left|right)/', $style, $matches);
+        if ($float) {
+          $node->setAttribute('align', $matches[1]);
+          $node->setAttribute('vspace', 5);
+          $node->setAttribute('hspace', 5);
+        }
       }
     }
 

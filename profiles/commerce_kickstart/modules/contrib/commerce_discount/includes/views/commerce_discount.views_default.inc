@@ -23,20 +23,20 @@ function commerce_discount_views_default_views() {
 
   /* Display: Master */
   $handler = $view->new_display('default', 'Master', 'default');
+  $handler->display->display_options['use_ajax'] = TRUE;
   $handler->display->display_options['use_more_always'] = FALSE;
   $handler->display->display_options['access']['type'] = 'none';
   $handler->display->display_options['cache']['type'] = 'none';
   $handler->display->display_options['query']['type'] = 'views_query';
   $handler->display->display_options['query']['options']['query_comment'] = FALSE;
   $handler->display->display_options['exposed_form']['type'] = 'basic';
-  $handler->display->display_options['exposed_form']['options']['reset_button'] = TRUE;
-  $handler->display->display_options['exposed_form']['options']['autosubmit'] = TRUE;
   $handler->display->display_options['pager']['type'] = 'full';
   $handler->display->display_options['style_plugin'] = 'table';
   $handler->display->display_options['style_options']['columns'] = array(
-    'commerce_discount_offer' => 'commerce_discount_offer',
+    'label' => 'label',
+    'type_1' => 'type_1',
     'type' => 'type',
-    'enabled' => 'enabled',
+    'status' => 'status',
     'commerce_discount_date' => 'commerce_discount_date',
     'commerce_discount_date_1' => 'commerce_discount_date_1',
     'operations_dropbutton' => 'operations_dropbutton',
@@ -69,9 +69,9 @@ function commerce_discount_views_default_views() {
       'separator' => '',
       'empty_column' => 0,
     ),
-    'enabled' => array(
+    'status' => array(
       'sortable' => 1,
-      'default_sort_order' => 'asc',
+      'default_sort_order' => 'desc',
       'align' => '',
       'separator' => '',
       'empty_column' => 0,
@@ -97,6 +97,13 @@ function commerce_discount_views_default_views() {
     ),
   );
   $handler->display->display_options['style_options']['empty_table'] = TRUE;
+  /* Footer: Global: Text area */
+  $handler->display->display_options['footer']['area']['id'] = 'area';
+  $handler->display->display_options['footer']['area']['table'] = 'views';
+  $handler->display->display_options['footer']['area']['field'] = 'area';
+  $handler->display->display_options['footer']['area']['label'] = 'Rules link';
+  $handler->display->display_options['footer']['area']['content'] = 'Access to <a href="/admin/config/workflow/rules?event=0&tag=Commerce+Discount">promotion rules</a>';
+  $handler->display->display_options['footer']['area']['format'] = 'full_html';
   /* No results behavior: Global: Text area */
   $handler->display->display_options['empty']['area']['id'] = 'area';
   $handler->display->display_options['empty']['area']['table'] = 'views';
@@ -125,45 +132,27 @@ function commerce_discount_views_default_views() {
   $handler->display->display_options['fields']['type']['field'] = 'type';
   $handler->display->display_options['fields']['type']['alter']['alter_text'] = TRUE;
   $handler->display->display_options['fields']['type']['alter']['text'] = '<span>[type]</span>';
-  /* Field: Commerce Discount: Enabled */
-  $handler->display->display_options['fields']['enabled']['id'] = 'enabled';
-  $handler->display->display_options['fields']['enabled']['table'] = 'commerce_discount';
-  $handler->display->display_options['fields']['enabled']['field'] = 'enabled';
-  $handler->display->display_options['fields']['enabled']['label'] = 'Status';
-  $handler->display->display_options['fields']['enabled']['type'] = 'enabled-disabled';
-  $handler->display->display_options['fields']['enabled']['not'] = 0;
-  /* Field: Commerce Discount: Discount dates */
-  $handler->display->display_options['fields']['commerce_discount_date']['id'] = 'commerce_discount_date';
-  $handler->display->display_options['fields']['commerce_discount_date']['table'] = 'field_data_commerce_discount_date';
-  $handler->display->display_options['fields']['commerce_discount_date']['field'] = 'commerce_discount_date';
-  $handler->display->display_options['fields']['commerce_discount_date']['label'] = 'Start date';
-  $handler->display->display_options['fields']['commerce_discount_date']['settings'] = array(
-    'format_type' => 'short',
-    'fromto' => 'value',
-    'multiple_number' => '',
-    'multiple_from' => '',
-    'multiple_to' => '',
-  );
-  /* Field: Commerce Discount: Discount dates */
-  $handler->display->display_options['fields']['commerce_discount_date_1']['id'] = 'commerce_discount_date_1';
-  $handler->display->display_options['fields']['commerce_discount_date_1']['table'] = 'field_data_commerce_discount_date';
-  $handler->display->display_options['fields']['commerce_discount_date_1']['field'] = 'commerce_discount_date';
-  $handler->display->display_options['fields']['commerce_discount_date_1']['label'] = 'End date';
-  $handler->display->display_options['fields']['commerce_discount_date_1']['settings'] = array(
-    'format_type' => 'short',
-    'fromto' => 'value2',
-    'multiple_number' => '',
-    'multiple_from' => '',
-    'multiple_to' => '',
-  );
+  /* Field: Commerce Discount: Status */
+  $handler->display->display_options['fields']['status']['id'] = 'status';
+  $handler->display->display_options['fields']['status']['table'] = 'commerce_discount';
+  $handler->display->display_options['fields']['status']['field'] = 'status';
+  $handler->display->display_options['fields']['status']['type'] = 'active-disabled';
+  $handler->display->display_options['fields']['status']['not'] = 0;
   /* Field: Commerce Discount: Operations */
   $handler->display->display_options['fields']['operations_dropbutton']['id'] = 'operations_dropbutton';
   $handler->display->display_options['fields']['operations_dropbutton']['table'] = 'commerce_discount';
   $handler->display->display_options['fields']['operations_dropbutton']['field'] = 'operations_dropbutton';
-  /* Field: Commerce Discount: Operations */
-  $handler->display->display_options['fields']['operations_dropbutton']['id'] = 'operations_dropbutton';
-  $handler->display->display_options['fields']['operations_dropbutton']['table'] = 'commerce_discount';
-  $handler->display->display_options['fields']['operations_dropbutton']['field'] = 'operations_dropbutton';
+  /* Filter criterion: Commerce Discount: Label */
+  $handler->display->display_options['filters']['label']['id'] = 'label';
+  $handler->display->display_options['filters']['label']['table'] = 'commerce_discount';
+  $handler->display->display_options['filters']['label']['field'] = 'label';
+  $handler->display->display_options['filters']['label']['operator'] = 'contains';
+  $handler->display->display_options['filters']['label']['group'] = 1;
+  $handler->display->display_options['filters']['label']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['label']['expose']['operator_id'] = 'label_op';
+  $handler->display->display_options['filters']['label']['expose']['label'] = 'Name';
+  $handler->display->display_options['filters']['label']['expose']['operator'] = 'label_op';
+  $handler->display->display_options['filters']['label']['expose']['identifier'] = 'label';
   /* Filter criterion: Commerce Discount Offer: Type */
   $handler->display->display_options['filters']['type_1']['id'] = 'type_1';
   $handler->display->display_options['filters']['type_1']['table'] = 'commerce_discount_offer';
@@ -185,17 +174,43 @@ function commerce_discount_views_default_views() {
   $handler->display->display_options['filters']['type']['expose']['label'] = 'Type';
   $handler->display->display_options['filters']['type']['expose']['operator'] = 'type_op';
   $handler->display->display_options['filters']['type']['expose']['identifier'] = 'type';
-  /* Filter criterion: Commerce Discount: Enabled */
-  $handler->display->display_options['filters']['enabled']['id'] = 'enabled';
-  $handler->display->display_options['filters']['enabled']['table'] = 'commerce_discount';
-  $handler->display->display_options['filters']['enabled']['field'] = 'enabled';
-  $handler->display->display_options['filters']['enabled']['value'] = 'All';
-  $handler->display->display_options['filters']['enabled']['group'] = 1;
-  $handler->display->display_options['filters']['enabled']['exposed'] = TRUE;
-  $handler->display->display_options['filters']['enabled']['expose']['operator_id'] = '';
-  $handler->display->display_options['filters']['enabled']['expose']['label'] = 'Enabled';
-  $handler->display->display_options['filters']['enabled']['expose']['operator'] = 'enabled_op';
-  $handler->display->display_options['filters']['enabled']['expose']['identifier'] = 'enabled';
+  /* Filter criterion: Commerce Discount: Status */
+  $handler->display->display_options['filters']['status']['id'] = 'status';
+  $handler->display->display_options['filters']['status']['table'] = 'commerce_discount';
+  $handler->display->display_options['filters']['status']['field'] = 'status';
+  $handler->display->display_options['filters']['status']['value'] = 'All';
+  $handler->display->display_options['filters']['status']['exposed'] = TRUE;
+  $handler->display->display_options['filters']['status']['expose']['operator_id'] = '';
+  $handler->display->display_options['filters']['status']['expose']['label'] = 'Active';
+  $handler->display->display_options['filters']['status']['expose']['operator'] = 'status_op';
+  $handler->display->display_options['filters']['status']['expose']['identifier'] = 'status';
+  $translatables['commerce_discount_overview'] = array(
+    t('Master'),
+    t('more'),
+    t('Apply'),
+    t('Reset'),
+    t('Sort by'),
+    t('Asc'),
+    t('Desc'),
+    t('Items per page'),
+    t('- All -'),
+    t('Offset'),
+    t('« first'),
+    t('‹ previous'),
+    t('next ›'),
+    t('last »'),
+    t('No discounts found.'),
+    t('Commerce Discount Offer entity referenced from commerce_discount_offer'),
+    t('Name'),
+    t('Offer'),
+    t('Type'),
+    t('<span>[type]</span>'),
+    t('Status'),
+    t('Operations'),
+    t('Name'),
+    t('Active'),
+  );
+
   $views['commerce_discount_overview'] = $view;
 
   return $views;

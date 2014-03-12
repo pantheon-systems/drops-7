@@ -152,10 +152,10 @@ function _commerce_kickstart_example_taxes($operation, &$context) {
       variable_set('import_choosen_tax', 'europe');
       $tax = array(
         'name' => 'sample_french_vat_tax',
-        'title' => 'Sample French VAT 19,6%',
-        'display_title' => 'Sample French VAT 19,6%',
+        'title' => 'Sample French VAT 20%',
+        'display_title' => 'Sample French VAT 20%',
         'description' => '',
-        'rate' => 0.196,
+        'rate' => 0.2,
         'type' => 'vat', // vat
         'default_rules_component' => TRUE,
         'tax_component' => '',

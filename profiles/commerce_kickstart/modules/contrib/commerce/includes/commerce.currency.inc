@@ -753,6 +753,16 @@ function commerce_commerce_currency_info() {
       'minor_unit' => t('bani'),
       'major_unit' => t('Lei'),
     ),
+    'MKD' => array(
+      'code' => 'MKD',
+      'symbol' => 'ден',
+      'name' => t('Macedonian denar'),
+      'symbol_placement' => 'after',
+      'numeric_code' => '807',
+      'code_placement' => 'hidden',
+      'minor_unit' => t('Deni'),
+      'major_unit' => t('Denari'),
+    ),
     'MMK' => array(
       'code' => 'MMK',
       'symbol' => 'MMK',
@@ -875,8 +885,10 @@ function commerce_commerce_currency_info() {
     ),
     'NZD' => array(
       'code' => 'NZD',
-      'symbol' => 'NZ$',
+      'symbol' => '$',
       'name' => t('New Zealand Dollar'),
+      'symbol_placement' => 'before',
+      'code_placement' => 'hidden',
       'numeric_code' => '554',
       'minor_unit' => t('Cent'),
       'major_unit' => t('Dollar'),

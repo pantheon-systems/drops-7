@@ -101,7 +101,7 @@ function mimemail_admin_settings() {
   $form['mimemail']['advanced']['mimemail_key'] = array(
     '#type' => 'textfield',
     '#title' => t('Message validation string'),
-    '#default_value' => variable_get('mimemail_key', md5(rand())),
+    '#default_value' => variable_get('mimemail_key', drupal_random_key()),
     '#required' => TRUE,
     '#description' => t('This string will be used to validate incoming messages. It can be anything, but must be used on both sides of the transfer.'),
   );

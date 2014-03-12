@@ -1401,6 +1401,19 @@ function commerce_product_line_item_types() {
 }
 
 /**
+ * Implements hook_commerce_checkout_order_can_checkout().
+ */
+function commerce_product_reference_commerce_checkout_order_can_checkout($order) {
+  // Allow orders with one or more product line items to proceed to checkout.
+  // If there are no line items on the order, redirect away.
+  $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+  if (commerce_line_items_quantity($wrapper->commerce_line_items, commerce_product_line_item_types()) > 0) {
+    return TRUE;
+  }
+}
+
+/**
  * Implements hook_commerce_product_can_delete().
  */
 function commerce_product_reference_commerce_product_can_delete($product) {
@@ -1437,9 +1450,9 @@ function commerce_product_reference_property_info_callback(&$info, $entity_type,
 function commerce_product_reference_node_types() {
   $list = array();
   $types = node_type_get_types();
-  foreach (field_info_fields() as $field_name => $field) {
-    if ($field['type'] == 'commerce_product_reference' && !empty($field['bundles']['node'])) {
-      foreach($field['bundles']['node'] as $bundle) {
+  foreach (field_info_field_map() as $field_name => $field_stub) {
+    if ($field_stub['type'] == 'commerce_product_reference' && !empty($field_stub['bundles']['node'])) {
+      foreach($field_stub['bundles']['node'] as $bundle) {
         $list[$bundle] = $types[$bundle];
       }
     }

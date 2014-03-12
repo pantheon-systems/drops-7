@@ -12,9 +12,6 @@ core = 7.x
 ; Module includes
 files[] = includes/commerce_order.controller.inc
 
-; Views includes
-files[] = includes/views/commerce_order.views.inc
-
 ; Views handlers
 files[] = includes/views/handlers/commerce_order_handler_area_empty_text.inc
 files[] = includes/views/handlers/commerce_order_handler_area_order_total.inc
@@ -39,9 +36,9 @@ files[] = includes/views/handlers/commerce_order_plugin_argument_validate_user.i
 files[] = tests/commerce_order.rules.test
 files[] = tests/commerce_order.test
 
-; Information added by drupal.org packaging script on 2013-07-23
-version = "7.x-1.8"
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
 core = "7.x"
 project = "commerce"
-datestamp = "1374609067"
+datestamp = "1394061805"
 

@@ -14,6 +14,27 @@ function commerce_checkout_default_rules_configuration() {
 
   $rules = array();
 
+  // Add a reaction rule to set the order created date to the checkout
+  // completion date. This was added in a point release and thus will be
+  // disabled by default for updated sites based on a variable set in an update
+  // hook but enabled by default for new sites.
+  $rule = rules_reaction_rule();
+
+  $rule->label = t('Set the order created date to the checkout completion date');
+  $rule->tags = array('Commerce Checkout');
+  $rule->active = variable_get('enable_commerce_checkout_order_created_date_update', TRUE);
+
+  $rule
+    ->event('commerce_checkout_complete')
+    ->action('data_set', array(
+      'data:select' => 'commerce-order:created',
+      'value:select' => 'site:current-date',
+    ));
+
+  $rule->weight = -10;
+
+  $rules['commerce_checkout_order_created_date_update'] = $rule;
+
   // Add a reaction rule to update an order to the default status of the pending
   // order status upon checkout completion.
   $rule = rules_reaction_rule();
