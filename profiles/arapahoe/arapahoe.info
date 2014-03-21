@@ -1,0 +1,30 @@
+name = Arapahoe Ridge
+description = Bare bones install profile for Arapahoe Ridge High School 'Drupal Intensive'
+core = 7.x
+
+dependencies[] = contextual
+dependencies[] = toolbar
+dependencies[] = overlay
+dependencies[] = block
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = shortcut
+dependencies[] = toolbar
+
+dependencies[] = entityreference
+dependencies[] = views
+dependencies[] = views_ui
+dependencies[] = date
+dependencies[] = conditional_fields
+dependencies[] = pathauto
+
+dependencies[] = arapahoe_page
+dependencies[] = arapahoe_article
+
