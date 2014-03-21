@@ -1,0 +1,11 @@
+name = Default Menu Link
+description = Provides you with a checkbox on all content types to set the "provide a menu link" value to true by default.
+package = Other
+version = 7.x-1.2
+core = 7.x
+; Information added by Drupal.org packaging script on 2014-01-24
+version = "7.x-1.3"
+core = "7.x"
+project = "default_menu_link"
+datestamp = "1390599504"
+
