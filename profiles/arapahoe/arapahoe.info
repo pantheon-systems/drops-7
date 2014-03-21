@@ -28,3 +28,5 @@ dependencies[] = pathauto
 dependencies[] = arapahoe_page
 dependencies[] = arapahoe_article
 
+dependencies[] = pantheon_info
+dependencies[] = pantheon_api
