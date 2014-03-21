@@ -16,11 +16,11 @@ function system_form_install_select_profile_form_alter(&$form, $form_state) {
  *
  * Set default database options.
  */
-function system_form_install_settings_form_alter(&$form, $form_state) {
-  $form['settings']['mysql']['database']['#default_value'] = 'arapahoe_default';
-  $form['settings']['mysql']['username']['#default_value'] = 'root';
-  $form['settings']['mysql']['password']['#default_value'] = '';
-}
+//function system_form_install_settings_form_alter(&$form, $form_state) {
+  //$form['settings']['mysql']['database']['#default_value'] = 'arapahoe_default';
+  //$form['settings']['mysql']['username']['#default_value'] = 'root';
+  //$form['settings']['mysql']['password']['#default_value'] = '';
+//}
 
 /**
  * Implements hook_form_FORM_ID_alter().
