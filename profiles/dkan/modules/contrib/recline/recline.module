@@ -8,6 +8,66 @@
 module_load_include('inc', 'recline', 'recline.field');
 
 /**
+ * Implements hook_menu().
+ */
+function recline_menu() {
+  $items = array();
+
+  $items['node/%node/recline-embed'] = array(
+    'title' => 'Embed',
+    'page callback' => 'recline_embed',
+    'page arguments' => array(1),
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+  );
+
+  return $items;
+}
+
+/**
+ * Callback function to render the view in a frame.
+ */
+function recline_embed($node) {
+
+  // Search for a field of type 'recline_field'. Render content of first found.
+  $fields_info = field_info_instances('node', $node->type);
+  foreach ($fields_info as $field_name => $value) {
+    $field_info = field_info_field($field_name);
+    $type = $field_info['type'];
+    if ($type == 'recline_field') {
+      $content = field_view_field('node', $node, $field_name);
+      if ($content) {
+        print theme('recline_embed', array('title' => $node->title, 'content' => render($content)));
+        drupal_exit();
+      }
+    }
+  }
+
+  // If no populated field of type 'recline_field' is found, display 404 page.
+  drupal_fast_404();
+  drupal_not_found();
+}
+
+/**
+ * Process variables for embed-html.tpl.php.
+ *
+ * The $variables array contains the following elements:
+ * - content: the rendered content.
+ *
+ * @see embed-html.tpl.php
+ */
+function template_preprocess_recline_embed(&$variables) {
+  global $base_url, $language;
+  $variables['base_url'] = $base_url;
+  $variables['language'] = $language;
+  $variables['language_dir'] = $language->direction == LANGUAGE_RTL ? 'rtl' : 'ltr';
+  $variables['head']     = drupal_get_html_head();
+  $variables['css']      = drupal_add_css();
+  $variables['styles']   = drupal_get_css();
+  $variables['scripts']  = drupal_get_js();
+}
+
+/**
  * Implements hook_theme().
  */
 function recline_theme() {
@@ -19,6 +79,14 @@ function recline_theme() {
     'recline_widget' => array(
       'render element' => 'element',
       'file' => 'recline.field.inc',
+    ),
+    'recline_embed' => array(
+      'variables' => array('title' => NULL, 'content' => NULL),
+      'template' => 'recline-embed',
+    ),
+    'recline_embed_button' => array(
+      'variables' => array('node' => NULL),
+      'template' => 'recline-embed-button',
     ),
   );
 }

@@ -1,0 +1,52 @@
+input,
+textarea,
+select,
+.input-prepend .add-on,
+.input-append .add-on,
+.uneditable-input,
+.slick-header-column.ui-state-default  {
+  height:auto;
+}
+.form-type-managed-file.form-group button.btn {
+  @include border-radius(0 4px 4px 0);
+  margin-left:-1px;
+}
+
+.form-managed-file.input-group {
+  .form-control {
+    display: inline-block;
+    width:80%;
+    margin-bottom: 1em;
+  }
+  .input-group-btn {
+    display: inline-block;
+    vertical-align: top;
+  }
+  fieldset {
+    clear:both;
+  }
+}
+fieldset #edit-path-alias {
+  position:relative;
+}
+
+#action-info {
+  margin:15px 15px 0;
+}
+
+a.tabledrag-handle .handle {
+  padding:0.42em 0.6em;
+}
+
+.double-field-elements.container-inline {
+  input {
+    width:40%;
+    float:left;
+    margin-right:10px;
+  }
+}
+
+#edit-field-link-remote-file-und-0-filefield-remotefile-select--2 {
+	@include border-radius(0 4px 4px 0);
+	border-left:none;
+}

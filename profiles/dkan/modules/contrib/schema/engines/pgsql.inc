@@ -30,6 +30,18 @@ class SchemaDatabaseSchema_pgsql extends DatabaseSchema_pgsql {
     return $map;
   }
 
+  /**
+   * Overrides DatabaseSchema_pgsql::getFieldTypeMap().
+   */
+  public function getFieldTypeMap() {
+    $map = &drupal_static('SchemaDatabaseSchema_pgsql::getFieldTypeMap');
+    if (!isset($map)) {
+      $map = parent::getFieldTypeMap();
+      drupal_alter('schema_field_type_map', $map, $this, $this->connection);
+    }
+    return $map;
+  }
+
   public function inspect($connection = NULL, $table_name = NULL) {
     // Support the deprecated connection parameter.
     if (isset($connection) && $connection != $this->connection->getKey()) {
@@ -39,6 +51,13 @@ class SchemaDatabaseSchema_pgsql extends DatabaseSchema_pgsql {
     // Get the current database name
     $info = $this->connection->getConnectionOptions();
     $database = $info['database'];
+
+    // Apply table prefixes.
+    if (isset($table_name)) {
+      $table_info = $this->getPrefixInfo($table_name);
+      // @todo What do we do with $table_info['schema']?
+      $table_name = $table_info['table'];
+    }
 
     //
     // Retrieve information about all columns in the database from the
@@ -66,7 +85,7 @@ class SchemaDatabaseSchema_pgsql extends DatabaseSchema_pgsql {
     foreach ($res as $r) {
       $col = array();
 
-      $r->new_table_name = schema_unprefix_table($r->table_name);
+      $r->new_table_name = schema_unprefix_table($r->table_name, $this->connection);
 
       // We treat numeric columns slightly differently and identify them
       // because they have a 'numeric_precision_radix' property.
@@ -166,7 +185,7 @@ class SchemaDatabaseSchema_pgsql extends DatabaseSchema_pgsql {
                      INNER JOIN information_schema.check_constraints cc ON ccu.constraint_name=cc.constraint_name
                      WHERE table_schema=current_schema()');
     foreach ($res as $r) {
-      $r->table_name = schema_unprefix_table($r->table_name);
+      $r->table_name = schema_unprefix_table($r->table_name, $this->connection);
 
       if ($r->check_clause == '((' . $r->column_name . ' >= 0))' ||
           $r->check_clause == '((' . $r->column_name . ' >= (0)::numeric))') {
@@ -189,8 +208,8 @@ class SchemaDatabaseSchema_pgsql extends DatabaseSchema_pgsql {
       '      c.relnamespace=n.oid AND n.nspname=current_schema() ' .
       'ORDER BY c2.relname');
     foreach ($res as $r) {
-      $r->tblname = schema_unprefix_table($r->tblname);
-      $r->indname = schema_unprefix_table($r->indname);
+      $r->tblname = schema_unprefix_table($r->tblname, $this->connection);
+      $r->indname = schema_unprefix_table($r->indname, $this->connection);
 
       if (preg_match('@CREATE(?: UNIQUE)? INDEX \w+ ON "?(\w+)"?(?: USING \w+)? \((.*)\)@', $r->inddef, $m)) {
         list($all, $table, $keys) = $m;

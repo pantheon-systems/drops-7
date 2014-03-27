@@ -1,0 +1,76 @@
+<?php
+/**
+ * @file Hook and callback implementations that must be available at all times.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function image_styles_admin_menu() {
+  $items = array();
+  $items['admin/config/media/image-styles/duplicate/%image_style'] = array(
+    'title' => 'Duplicate style',
+    'description' => 'Make a copy of an image style.',
+    'page callback' => 'image_styles_admin_duplicate_page_callback',
+    'page arguments' => array(5),
+    'access arguments' => array('administer image styles'),
+    'file' => 'image_styles_admin.inc',
+  );
+  $items['admin/config/media/image-styles/export/%image_style'] = array(
+    'title' => 'Export style',
+    'description' => 'Export an image style.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('image_styles_admin_export_form', 5),
+    'access arguments' => array('administer image styles'),
+    'file' => 'image_styles_admin.inc',
+  );
+  $items['admin/config/media/image-styles/import'] = array(
+    'title' => 'Import style',
+    'description' => 'Import an image style.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('image_styles_admin_import_form'),
+    'access arguments' => array('administer image styles'),
+    'type' => MENU_LOCAL_ACTION,
+    'weight' => 3,
+    'file' => 'image_styles_admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_preprocess_HOOK for theme image_style_list.
+ */
+function image_styles_admin_preprocess_image_style_list(&$variables) {
+  // Tell imagecache_actions_preprocess_image_style_list to preprocess the next
+  // call to theme_table()
+  $flag = TRUE;
+  image_styles_admin_preprocess_table($flag);
+}
+
+/**
+ * Implements hook_preprocess_HOOK for theme table.
+ */
+function image_styles_admin_preprocess_table(&$variables) {
+  static $is_in_image_style_list = FALSE;
+
+  if (is_bool($variables)) {
+    // Called from imagecache_actions_style_duplicate(): set flag
+    $is_in_image_style_list = $variables;
+  }
+  else if ($is_in_image_style_list) {
+    // Normal preprocess hook call: only process if theme('table', ...) has been
+    // called by theme_image_style_list()
+    $variables['header'][2]['colspan'] = 4;
+    foreach ($variables['rows'] as &$row) {
+      array_splice($row, 2, 0, array($row[2], $row[2]));
+      // Replace edit with duplicate in text and href
+      $row[3] = str_replace('>' . t('edit') . '<', '>' . t('duplicate') . '<', $row[3]);
+      $row[3] = preg_replace('/\/edit\/([-a-z0-9_]+)"/', '/duplicate/\1"', $row[3]);
+      // Replace edit with export in text and href
+      $row[4] = str_replace('>' . t('edit') . '<', '>' . t('export') . '<', $row[4]);
+      $row[4] = preg_replace('/\/edit\/([-a-z0-9_]+)"/', '/export/\1"', $row[4]);
+    }
+    // Don't preprocess subsequent calls to theme_table().
+    $is_in_image_style_list = FALSE;
+  }
+}

@@ -307,47 +307,51 @@ function schema_phpprint_key($keys) {
 // Schema comparison functions
 //////////////////////////////////////////////////////////////////////
 
-function schema_unprefix_table($name) {
-  // TODO: Deal with D7 prefixing
-  global $db_prefix;
-  static $_db_prefix;
+/**
+ * Unprefix a table name.
+ *
+ * This is pretty much the converse of DatabaseConnection::prefixTables().
+ *
+ * @param string $name
+ *   The prefixed table name.
+ * @param DatabaseConnection $connection
+ *   An optional database connection object.
+ *
+ * @return string
+ *   The unprefixed table name.
+ */
+function schema_unprefix_table($name, $connection = NULL) {
+  $prefixes = &drupal_static(__FUNCTION__, array());
 
-  if (is_array($db_prefix)) {
-    if (!isset($_db_prefix)) {
-      foreach ($db_prefix as $key => $val) {
-        $_db_prefix[$val . $key] = $key;
+  if (!isset($connection)) {
+    $connection = Database::getConnection();
+  }
+
+  $key = $connection->getKey();
+  if (!isset($prefixes[$key])) {
+    $prefixes[$key] = array();
+
+    $info = $connection->getConnectionOptions();
+    if (isset($info['prefix'])) {
+      if (is_array($info['prefix'])) {
+        $info['prefix'] = $info['prefix'] + array('default' => '');
       }
-    }
-    if (isset($_db_prefix[$name])) {
-      return $_db_prefix[$name];
-    }
-    elseif (!empty($db_prefix['default']) && preg_match('@^' . $db_prefix['default'] . '(.*)@', $name, $m)) {
-      return $m[1];
-    }
-    else {
-      // On pgsql, key and index names are also prefixed
-      // (e.g. 'prefix_blocks_roles_rid_idx').
-      foreach ($db_prefix as $key => $val) {
-        if (($key != 'default' && preg_match('@^' . $val . '(' . $key . '.*)@', $name, $m)) ||
-          ($key == 'default' && preg_match('@^' . $val . '(.*)@', $name, $m))) {
-          return $m[1];
+      else {
+        $info['prefix'] = array('default' => $info['prefix']);
+      }
+
+      foreach ($info['prefix'] as $table => $prefix) {
+        if ($table != 'default') {
+          $prefixes[$key][$prefix . $table] = $table;
+        }
+        elseif ($prefix !== '') {
+          $prefixes[$key][$prefix] = '';
         }
       }
-      return $name;
     }
   }
-  elseif (!empty($db_prefix) && preg_match('@^' . $db_prefix . '(.*)@', $name, $m)) {
-      return $m[1];
-  }
-  elseif (empty($_db_prefix)) {
-    $info = Database::getConnectionInfo($connection = 'default'); // FIXME: obtain the correct connection
-    $_db_prefix = empty($info['default']['prefix'])
-      ? ''
-      : reset($info['default']['prefix']);
-    $db_prefix = $_db_prefix;
-    $name = drupal_substr($name, drupal_strlen($_db_prefix));
-  }
-  return $name;
+
+  return !empty($prefixes[$key]) ? strtr($name, $prefixes[$key]) : $name;
 }
 
 /**
@@ -361,9 +365,7 @@ function schema_engine_type($col, $table, $field, $engine = NULL) {
     return $map[$type];
   }
   else {
-    drupal_set_message(t('%table.%field: no %engine type for Schema type %type.',
-                         array('%engine' => $engine, '%type' => $type, '%table' => $table, '%field' => $field)),
-      'warning');
+    trigger_error(t('@table.@field: no @engine type for schema type @type.', array('@engine' => $engine, '@type' => $type, '@table' => $table, '@field' => $field)), E_USER_WARNING);
     return $col['type'];
   }
 }
@@ -379,7 +381,7 @@ function schema_schema_type($type, $table, $field, $engine = NULL) {
   }
   else {
     if (!variable_get('schema_suppress_type_warnings', FALSE)) {
-      drupal_set_message(t('Field @table.@field: no Schema type for @engine type @type.', array('@engine' => $engine, '@type' => $type, '@table' => $table, '@field' => $field)), 'warning');
+      trigger_error(t('@table.@field: no schema type for @engine type @type.', array('@engine' => $engine, '@type' => $type, '@table' => $table, '@field' => $field)), E_USER_WARNING);
     }
     return array($type, 'normal');
   }
@@ -610,4 +612,36 @@ function schema_compare_table($ref, $inspect = NULL) {
 
   $status = (count($reasons) ? 'different' : 'same');
   return array('status' => $status, 'reasons' => $reasons, 'notes' => $notes);
+}
+
+/**
+ * Implements hook_schema_field_type_map_alter() on behalf of field.module.
+ */
+function field_schema_field_type_map_alter(array &$map, DatabaseSchema $schema, DatabaseConnection $connection) {
+  $db_type = $connection->databaseType() . '_type';
+
+  // Load all fields in order to inspect each field's schema.
+  $include_additional = array(
+    'include_deleted' => TRUE,
+    'include_inactive' => TRUE,
+  );
+  $fields = field_read_fields(array(), $include_additional);
+
+  foreach ($fields as $field) {
+    $cols = $field['columns'];
+
+    // Loop through each field column and add any missing mappings.
+    foreach ($cols as $col) {
+      if (!isset($col['type'])) {
+        continue;
+      }
+      $size = isset($col['size']) ? $col['size'] : 'normal';
+      $generic_type = $col['type'] . ':' . $size;
+      if (!isset($map[$generic_type])) {
+        // Use engine specific type if it exists.
+        $map[$generic_type] = isset($col[$db_type]) ? $col[$db_type] : $col['type'];
+        $map[$generic_type] = drupal_strtoupper($map[$generic_type]);
+      }
+    }
+  }
 }

@@ -1,0 +1,62 @@
+body,
+body.overlay {
+  color: @text;
+}
+.comment .comment-arrow {
+  border-color: @bg;
+}
+#page,
+#main-wrapper,
+#main-menu-links li a.active,
+#main-menu-links li.active-trail a {
+  background: @bg;
+}
+.tabs ul.primary li a.active {
+  background-color: @bg;
+}
+.tabs ul.primary li.active a {
+  background-color: @bg;
+  border-bottom: 1px solid @bg;
+}
+.form-actions {
+  background-color: @bg;
+}
+#header {
+background-color: @bottom;
+background-image: -moz-linear-gradient(top, @top, @bottom);
+background-image: -webkit-gradient(linear, 0 0, 0 100%, from(@top), to(@bottom));
+background-image: -webkit-linear-gradient(top, @top, @bottom);
+background-image: -o-linear-gradient(top, @top, @bottom);
+background-image: linear-gradient(to bottom, @top, @bottom);
+border: none;
+box-shadow: none;
+color: @titleslogan;
+}
+a {
+  color: @link;
+}
+a:hover,
+a:focus {
+  color: @linkhover;
+}
+a:active {
+  color: @linkactive;
+}
+.sidebar .block {
+  background-color: @sidebar;
+  border-color: @sidebarborders;
+}
+#page-wrapper,
+#footer-wrapper,
+body #footer {
+  background-color: @footer;
+}
+.region-header,
+.region-header a,
+.region-header li a.active,
+#name-and-slogan,
+#name-and-slogan a,
+#secondary-menu-links li a {
+  color: @titleslogan;
+}
+

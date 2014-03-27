@@ -138,11 +138,9 @@ this.recline.Backend.Ckan = this.recline.Backend.Ckan || {};
       if (data.filters) {
         for (var filter in data.filters) {
           filters = "&filters[" + filter + "]=" + data.filters[filter];
-          console.log(filters);
         }
       }
       var searchUrl = that.endpoint + '/3/action/datastore_search?=' + objToQuery(data) + filters;
-      console.log(searchUrl);
       var jqxhr = jQuery.ajax({
         url: searchUrl,
         type: 'GET',

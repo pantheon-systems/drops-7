@@ -8,8 +8,8 @@ dependencies[] = dkan_datastore
 dependencies[] = services
 
 
-; Information added by drush on 2014-02-18
+; Information added by drush on 2014-03-27
 version = "unknown"
 project = "dkan_datastore"
-datestamp = "1392727127"
+datestamp = "1395936177"
 

@@ -1,0 +1,6 @@
+/* Welcome to Compass. Use this file to write IE specific override styles. */
+/* line 3, ../sass/ie.scss */
+#jumbotron .col-md-6 { max-width: 45%; }
+
+/* line 6, ../sass/ie.scss */
+.media-overlay a.img { max-width: 350px !important; }

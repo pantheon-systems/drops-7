@@ -182,6 +182,7 @@ function _dkan_datastore_api_datastore_index($resource_ids, $filters, $query, $o
       $ids = array_values($resource_ids);
       $resource_id = array_shift($ids);
       $table = dkan_datastore_api_tablename($resource_id);
+      $sort = dkan_datastore_api_sort_clean($sort);
       $data_select = dkan_datastore_api_build_index_query($table, $offset, $limit, $fields, $sort);
       dkan_datastore_api_add_index_conditions($data_select, $filters);
     }
@@ -305,6 +306,27 @@ function dkan_datastore_api_build_additional_index_query(&$data_select, $table, 
 }
 
 /**
+ * Makes sure we are using column names for sorts.
+ */
+function dkan_datastore_api_sort_clean($sort) {
+  if (strpos($sort,' asc') !== false) {
+    $type = 'asc';
+  }
+  elseif (strpos($sort,' desc') !== false) {
+    $type = 'desc';
+  }
+  else {
+    return $sort;
+  }
+  $sort = explode(" $type", $sort);
+  foreach ($sort as $key => $value) {
+    $sort[$key] = feeds_flatstore_processor_safe_name($value);
+  }
+  $sort = implode(" $type", $sort);
+  return $sort;
+}
+
+/**
  * Returns table name or exeption.
  */
 function dkan_datastore_api_tablename($resource_id) {
@@ -388,7 +410,7 @@ function dkan_datastore_api_resource_build_index_list($results, $table, $fields,
     $meta = $data_table->meta;
     $new_items = array();
     foreach ($items as $item) {
-      $new_item = new stdClass(); 
+      $new_item = new stdClass();
       foreach ($item as $name => $data) {
         if (isset($meta['fields'][$name]['label']) && $new_name = $meta['fields'][$name]['label']) {
           $new_item->$new_name = $data;

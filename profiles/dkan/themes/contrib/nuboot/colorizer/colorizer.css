@@ -1,0 +1,93 @@
+body,
+body.overlay {
+	background-color: @footer;
+	color: @text;
+}
+#nav-wrapper,
+#page-wrapper {
+	background-color: @bg;
+}
+h1,h2,h3,h4,
+h2.block-title {
+	color: @top;
+}
+
+.tint,
+#block-dkan-sitewide-demo-front-dkan-demo-front {
+  background-color: @tint;
+}
+
+.form-actions {
+  background-color: @bg;
+}
+
+a {
+  color: @link;
+}
+a:hover,
+a:focus {
+  color: @linkhover;
+}
+a:active {
+  color: @linkactive;
+}
+
+.region-header,
+.region-header a,
+.region-header li a.active,
+#name-and-slogan,
+#name-and-slogan a,
+#secondary-menu-links li a {
+  color: @titleslogan;
+}
+
+#nav-wrapper .navbar-default .navbar-brand { color: @top; }
+#nav-wrapper .navbar-default .navbar-nav li > a { color: @top; }
+
+.nav-pills li a,
+.tabs--primary li a {
+	border:1px solid @toolbarborder;
+	background: @toolbarbtn;
+	color:  @top;
+}
+
+.tabs--primary li a:hover {
+	border:1px solid @bottom;
+	background: @bottom;
+	color: #ffffff;
+}
+
+.nav-pills li a.active,
+.nav-pills li.active a:hover,
+.nav-pills li.active a:focus,
+.tabs--primary li a.active {
+	border:1px solid @top;
+	background: @top;
+	color:#ffffff;
+}
+
+.resource-list .btn-primary,
+.view-og-count .btn-primary {
+	background-color: @top;
+	border:1px solid @top;
+	color:#ffffff;
+}
+.resource-list  .btn-primary:hover,
+.view-og-count .btn-primary:hover {
+	background:@bottom;
+	border:1px solid @bottom;
+	color:#ffffff;
+}
+
+.region-sidebar-first .block-facetapi ul li.leaf a:hover,
+.block-facetapi ul li.leaf a:hover {
+	color:@top;
+}
+
+.footer-wrapper {
+	background-color: @footer;
+	color: @sidebar;
+}
+.footer-wrapper a {
+	color: @sidebarborders;
+}
