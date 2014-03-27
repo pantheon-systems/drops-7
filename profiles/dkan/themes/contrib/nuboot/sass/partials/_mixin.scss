@@ -1,0 +1,79 @@
+@mixin popblock {
+  @include border-radius(3px);
+  @include box-shadow(0 0 3px rgba(0, 0, 0, 0.3));
+  background-color: $white;
+  margin-bottom: 20px;
+  padding:20px;
+}
+
+@mixin searchbox {
+  display:inline-block;
+  position:relative;
+  margin-top:8px;
+  form {
+    margin:0;
+  }
+  input.form-text {
+    padding-right:30px;
+  }
+  .views-exposed-form .views-widget-filter-search_api_views_fulltext {
+    float:none;
+    position:relative;
+  }
+  .views-exposed-form {
+    position:relative;
+    label {
+      display: none;
+    }
+    .views-exposed-widget {
+      padding:0;
+    }
+    .form-submit {
+      color:transparent;
+      background:none !important;
+      border:none;
+      padding:0;
+        position: absolute;
+        right:10px;
+        top: -20px;
+    }
+    .form-submit:after {
+      font-family:$icon-fa;
+      font-size:1.5em;
+      content:'\f002';
+      color:$smoke;
+    }
+    .description {
+      @include text-shadow(none);
+      position:absolute;
+      color: #999999;
+      font-size:12px;
+      left: 7px;
+      top: 10px;
+    }
+  }
+}
+
+
+// Image replacement
+@mixin ir {
+  // Kellum Method
+  display: block !important;
+  text-indent: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  // Additional helpers
+  border: 0;                     // Remove the default border from elements like <button>
+  font: 0/0 a;                   // Crush the text down to take up no space
+  text-shadow: none;             // Remove any text shadows
+  color: transparent;            // Hide any residual text in Safari 4 and any mobile devices that may need it
+  background-color: transparent; // Hide the default background color on elements like <button>
+}
+//transition
+@mixin transition {
+  -moz-transition: all .3s linear;
+  -webkit-transition: all .3s linear;
+  -ms-transition: all .3s linear;
+  -o-transition: all .3s linear;
+  transition: all .3s linear;
+}

@@ -184,6 +184,15 @@ function recline_field_widget_form(&$form, &$form_state, $field, $instance, $lan
       '#default_value' => $default_value,
     );
   }
+  $embed_value = isset($elements[$delta]['#default_value']['embed']) ? $elements[$delta]['#default_value']['embed'] : '';
+
+  $elements[$delta]['embed'] = array(
+    '#title' => t('Embed'),
+    '#description' => t('Provide an embed link?'),
+    '#type' => 'checkbox',
+    '#weight' => 5,
+    '#default_value' => $embed_value,
+  );
 
   $delimiter = isset($elements[$delta]['#default_value']['delimiter']) ? $elements[$delta]['#default_value']['delimiter'] : FALSE;
 
@@ -195,9 +204,20 @@ function recline_field_widget_form(&$form, &$form_state, $field, $instance, $lan
     '#weight' => 1,
     '#default_value' => $delimiter,
   );
+  $elements['#attached']['css'] = array(
+    drupal_get_path('module', 'recline') . '/recline.css',
+  );
 
   return $elements;
 }
+
+/**
+ * Adds columns to the field schema.
+ */
+function recline_add_field_columns(&$columns) {
+  drupal_alter('recline_field_columns', $columns);
+}
+
 
 /**
  * Implements hook_field_load().
@@ -278,6 +298,14 @@ function recline_field_formatter_view($entity_type, $entity, $field, $instance, 
  * @ingroup themeable
  */
 function theme_recline_default_formatter($variables) {
+  $output = recline_default_formatter_output($variables);
+  return drupal_render($output);
+}
+
+/**
+ * Builds output render array for field formatter.
+ */
+function recline_default_formatter_output($variables) {
   $file = $variables['item'];
 
   $url = file_create_url($file['uri']);
@@ -317,8 +345,9 @@ function theme_recline_default_formatter($variables) {
   $recline = '';
   if (isset($variables['item']['grid']) &&
     isset($variables['item']['graph']) &&
-    isset($variables['item']['map'])) {
-    if ($variables['item']['map'] || $variables['item']['grid'] || $variables['item']['graph']) {
+    isset($variables['item']['map']) &&
+    isset($variables['item']['embed'])) {
+    if ($variables['item']['map'] || $variables['item']['grid'] || $variables['item']['graph'] || $variables['item']['embed']) {
       $uuid = isset($variables['item']['entity']->uuid) ? $variables['item']['entity']->uuid : FALSE;
       drupal_add_library('system', 'ui.sortable');
       $recline = libraries_load('recline');
@@ -333,6 +362,7 @@ function theme_recline_default_formatter($variables) {
         'grid' => (int) $variables['item']['grid'],
         'graph' => (int) $variables['item']['graph'],
         'map' => (int) $variables['item']['map'],
+        'embed' => (int) $variables['item']['embed'],
         'uuid' => $uuid,
         'fileType' => $variables['item']['filemime'],
         'dkan' => $dkan,
@@ -357,6 +387,7 @@ function theme_recline_default_formatter($variables) {
       'grid' => 1,
       'graph' => 1,
       'map' => 1,
+      'embed' => 1,
       'fileType' => $variables['item']['filemime'],
       'dkan' => $dkan,
     );
@@ -369,7 +400,37 @@ function theme_recline_default_formatter($variables) {
   }
 
   $file = l($file['filename'], $url, $options);
-  return '<div class="download">' . $file . '</div><span class="data-explorer"></span>';
+
+  $node = $variables['item']['entity'];
+  $embed = theme('recline_embed_button', array('node' => $node));
+
+  $output = array(
+    'download' => array(
+      '#type' => 'markup',
+      '#markup' => '<div class="download">' . $file . '</div>',
+    ),
+  );
+  if (isset($settings['recline']['embed']) && $settings['recline']['embed']) {
+    $output['embed'] = array(
+      '#type' => 'markup',
+      '#markup' => $embed,
+    );
+  }
+  $output['data_explorer'] = array(
+    '#type' => 'markup',
+    '#markup' => '<span class="data-explorer"></span>',
+  );
+  return $output;
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * Process variables for recline-embed-button.tpl.php.
+ */
+function template_preprocess_recline_embed_button(&$variables) {
+  $node = $variables['node'];
+  $variables['embed_url'] = url('node/' . $node->nid . '/recline-embed', array('absolute' => TRUE));
 }
 
 /**
@@ -396,9 +457,10 @@ function theme_recline_widget($variables) {
  * Returns array of possible view types supported by Recline.
  */
 function recline_view_options() {
-  return array(
+  $options = array(
     'grid' => t('Grid'),
     'graph' => t('Graph'),
     'map' => t('Map'),
   );
+  return $options + module_invoke_all('recline_view_options');
 }

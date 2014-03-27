@@ -1,0 +1,128 @@
+.field-name-field-tags .field-item {
+	display:inline-block;
+}
+.field-type-taxonomy-term-reference .field-item {
+	a {
+	    padding:2px 10px 3px;
+	    font-size:12px;
+	    @include border-radius(0 5px 5px 0);
+	    @include background-image(linear-gradient(#fbfdfc, #f5f5f5));
+	    //float:left;
+	    margin:5px 5px 5px 20px;
+	    position:relative;
+	    color:$gray-dark;
+	    border:1px solid $smoke;
+	    border-left:0;
+	    z-index:2;
+	    &:after {
+	        content:"";
+	        width:18px;
+	        height:18px;
+	        @include background-image(linear-gradient(left top , #fbfdfc 0%,#f5f5f5 100%));
+	        @include rotate(45deg);
+	        @include border-radius(2px);
+	        display:block;
+	        position:absolute;
+	        top:2px;
+	        left:-9px;
+	        z-index:-1;
+	        border:1px solid $smoke;
+	        border-top:none;
+	        border-right:none;
+	    }
+	    &:before{
+			content:"";
+			width:2px;
+			height:2px;
+			background:$smoke;
+			position:absolute;
+			top:11px;
+			left:-5px;
+			@include border-radius(0);
+	    }
+	}
+	a:hover:after,
+	a:hover {
+    	background: $gray-lighter;
+    	color:#000;
+    	text-decoration:none;
+	}
+}
+ul.resource-list {
+  margin:1em 0;
+  li {
+    margin:.5em 0;
+    min-height:40px;
+    padding:0 125px 0 40px;
+    position:relative;
+    .btn {
+      margin-top:0;
+      position:absolute;
+      top:0;
+      right:10px;
+    }
+  }
+}
+.resource-list .btn {
+  margin-right:0;
+}
+
+.node-dataset label {
+    font-size: 18px;
+    font-weight: bold;
+    line-height: 27px;
+    margin:10px 0;
+}
+
+.data-and-resources .label {
+  display: inline;
+  padding: 1px 4px 2px;
+  @include border-radius(3px);
+  font-size: 10.998px;
+  font-weight: bold;
+  line-height: 14px;
+  color: white;
+  vertical-align: baseline;
+  white-space: nowrap;
+  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
+}
+
+.field-name-body {
+    ul {
+        list-style-type:disc;
+        margin:10px 20px;
+        li {
+            margin:6px 10px;
+        }
+    }
+}
+.field-group-table-description {
+  color:$gray;
+  display:block;
+  padding:8px 10px 8px 40px;
+  position:relative;
+  .icon-info-sign:before {
+    color:$gray-light;
+    content:"\f05a"; 
+    font-family:$icon-fa;
+    font-size:2.5em;
+    height:30px;
+    left:0;
+    margin:10px 15px 0 0;
+    padding:6px 0;
+    position:absolute;
+    top:0;
+    width:30px;
+  }
+}
+
+.node-dataset-form,
+.node-resource-form {
+  //@include popblock;
+}
+.horizontal-tabs ul.horizontal-tabs-list li a, 
+.horizontal-tabs ul.horizontal-tabs-list li.selected a {
+  display: block;
+  font-size: 1.35em;
+  padding: 0.5em 0.6em;
+}

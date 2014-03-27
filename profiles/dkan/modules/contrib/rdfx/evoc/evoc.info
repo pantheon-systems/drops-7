@@ -10,9 +10,9 @@ files[] = evoc.load_vocab.inc
 files[] = evoc.install
 files[] = evoc.test
 
-; Information added by  packaging script on 2013-11-18
-version = "7.x-2.0-alpha4+8-dev"
+; Information added by Drupal.org packaging script on 2014-02-18
+version = "7.x-2.0-alpha4+9-dev"
 core = "7.x"
 project = "rdfx"
-datestamp = "1384782817"
+datestamp = "1392730412"
 

@@ -1,0 +1,294 @@
+<?php
+
+/**
+ * @file
+ * Colorize your theme
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function colorizer_menu() {
+  $items = array();
+
+  $items['admin/appearance/colorizer'] = array(
+    'title' => 'Colorizer',
+    'description' => 'Adjust theme color settings.',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 100,
+    'file' => 'colorizer.admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('colorizer_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_init().
+ * Add the colorized style sheet to the site
+ */
+function colorizer_init() {
+  static $first = TRUE;
+  global $theme_key;
+  $instance = $theme_key;
+  // allow other modules to change the instance we are updating
+  // allows for group-specific color instances rather than tying to theme
+  drupal_alter('colorizer_instance', $instance);
+
+  $file = variable_get('colorizer_' . $instance . '_stylesheet', '');
+
+  // recreate any missing colorize css files
+  if (!file_exists($file)) {
+    $palette = colorizer_get_palette($theme_key, $instance);
+    if (!empty($palette)) {
+      $file = colorizer_update_stylesheet($theme_key, $instance, $palette);
+      clearstatcache();
+      if (!file_exists($file)) {
+        // could not create the style sheet, so stop trying to recreate it
+        variable_del('colorizer_' . $instance . '_stylesheet');
+      }
+    }
+  }
+  drupal_add_css(file_create_url($file), array(
+    'type' => 'external',
+    'group' => CSS_THEME,
+    'every_page' => TRUE,
+    'weight' => 999, // want to be last
+  ));
+}
+
+/**
+ * Retrieves the Color module information for a particular theme.
+ */
+function colorizer_get_info($theme, $build_colors = FALSE) {
+  static $theme_info = array();
+
+  if (isset($theme_info[$theme])) {
+    return $theme_info[$theme];
+  }
+
+  $info = array();
+  $path = drupal_get_path('theme', $theme);
+  $inc_file = variable_get('colorizer_incfile', '');
+  $file = DRUPAL_ROOT . '/' . $path . '/' . $inc_file;
+  if ($inc_file && file_exists($file)) {
+    include $file;
+    if ($build_colors) {
+      $info = colorizer_fill_defaults($info);
+    }
+    $theme_info[$theme] = $info;
+  }
+  return $info;
+}
+
+/**
+ * Retrieves the color palette for a particular theme and instance.
+ */
+function colorizer_get_palette($theme, $instance = '', $default = FALSE) {
+  // Fetch and expand default palette.
+  $info = colorizer_get_info($theme);
+  if (empty($info)) {
+    return array();
+  }
+  $palette = $info['schemes']['default']['colors'];
+  $instance = empty($instance) ? $theme : $instance;
+
+  // Load variable.
+  return $default ? $palette : variable_get('colorizer_' . $instance . '_palette', $palette);
+}
+
+/**
+ * Fill in any missing colors in palette with defaults
+ * scaled to the correct hue
+ */
+function colorizer_fill_defaults($info) {
+  foreach ($info['schemes'] as $scheme => $colors) {
+    if ($scheme == 'default') {
+      continue;
+    }
+    foreach ($info['fields'] as $key => $value) {
+      if (empty($colors['colors'][$key]) && !empty($colors['base'])) {
+        // compute missing color
+        $def_color = _colorizer_unpack($info['schemes']['default']['colors'][$key], TRUE);
+        $def_hsl = _colorizer_rgb2hsl($def_color);
+        $base_color = _colorizer_unpack($colors['base'], TRUE);
+        $base_hsl = _colorizer_rgb2hsl($base_color);
+
+        $def_hsl[0] = $base_hsl[0]; // copy hue from base into def color
+        $new_color = _colorizer_hsl2rgb($def_hsl);
+        $info['schemes'][$scheme]['colors'][$key] = _colorizer_pack($new_color, TRUE);
+      }
+    }
+  }
+  return $info;
+}
+
+/**
+ * Create a new stylesheet by replacing color variables
+ * Basic filehandling copied from Color module
+ */
+function colorizer_update_stylesheet($theme, $instance, $palette) {
+
+  // Delete old files.
+  $file = variable_get('colorizer_' . $instance . '_stylesheet', '');
+  @drupal_unlink($file);
+
+  // Prepare target locations for generated files.
+  $id = $instance . '-' . substr(hash('sha256', serialize($palette) . microtime()), 0, 8);
+  $paths['color'] = 'public://colorizer';
+  foreach ($paths as $path) {
+    file_prepare_directory($path, FILE_CREATE_DIRECTORY);
+    @drupal_chmod($path, 0777);
+  }
+  $paths['target'] = $paths['color'] . '/';
+  $paths['source'] = drupal_get_path('theme', $theme) . '/';
+
+  $stylesheet = variable_get('colorizer_cssfile', '');
+  $file = $paths['source'] . $stylesheet;
+  $saved_path = '';
+
+  if (file_exists($file)) {
+    // Aggregate @imports recursively for each configured top level CSS file
+    // without optimization. Aggregation and optimization will be
+    // handled by drupal_build_css_cache() only.
+    $style = drupal_load_stylesheet($file, FALSE);
+
+    // Rewrite stylesheet with new colors.
+    $style = _colorizer_rewrite_stylesheet($palette, $style);
+    $base_file = $id . '.css';
+    $css = $paths['target'] . $base_file;
+    _colorizer_save_stylesheet($paths['target'] . $base_file, $style);
+  }
+
+  // Maintain list of files.
+  if (!empty($css)) {
+    variable_set('colorizer_' . $instance . '_stylesheet', $css);
+  }
+  return $css;
+
+}
+
+/**
+ * Rewrites the stylesheet to match the colors in the palette.
+ */
+function _colorizer_rewrite_stylesheet($palette, $style) {
+  // loop through all color variables and perform string replacement in css
+  foreach ($palette as $key => $value) {
+    $style = preg_replace('/@' . $key . '\b/', $value, $style);
+  }
+  return $style;
+}
+
+/**
+ * Saves the rewritten stylesheet to disk.
+ */
+function _colorizer_save_stylesheet($file, $style) {
+  $filepath = file_unmanaged_save_data($style, $file, FILE_EXISTS_REPLACE);
+
+  // Set standard file permissions for webserver-generated files.
+  @drupal_chmod($file);
+
+  return $filepath;
+}
+
+/**
+ * Removes css files from colorizer files cache
+ * They will get recreated in hook_init on demand
+ */
+function colorizer_clearcache() {
+  file_unmanaged_delete_recursive('public://colorizer');
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function colorizer_flush_caches() {
+  colorizer_clearcache();
+  return array();
+}
+
+/**
+ * Converts a hex color into an RGB triplet.
+ */
+function _colorizer_unpack($hex, $normalize = FALSE) {
+  if (strlen($hex) == 4) {
+    $hex = $hex[1] . $hex[1] . $hex[2] . $hex[2] . $hex[3] . $hex[3];
+  }
+  $c = hexdec($hex);
+  for ($i = 16; $i >= 0; $i -= 8) {
+    $out[] = (($c >> $i) & 0xFF) / ($normalize ? 255 : 1);
+  }
+
+  return $out;
+}
+
+/**
+ * Converts an RGB triplet to a hex color.
+ */
+function _colorizer_pack($rgb, $normalize = FALSE) {
+  $out = 0;
+  foreach ($rgb as $k => $v) {
+    $out |= (($v * ($normalize ? 255 : 1)) << (16 - $k * 8));
+  }
+
+  return '#' . str_pad(dechex($out), 6, 0, STR_PAD_LEFT);
+}
+
+/**
+ * Converts an HSL triplet into RGB.
+ */
+function _colorizer_hsl2rgb($hsl) {
+  $h = $hsl[0];
+  $s = $hsl[1];
+  $l = $hsl[2];
+  $m2 = ($l <= 0.5) ? $l * ($s + 1) : $l + $s - $l*$s;
+  $m1 = $l * 2 - $m2;
+
+  return array(
+    _colorizer_hue2rgb($m1, $m2, $h + 0.33333),
+    _colorizer_hue2rgb($m1, $m2, $h),
+    _colorizer_hue2rgb($m1, $m2, $h - 0.33333),
+  );
+}
+
+/**
+ * Helper function for _colorizer_hsl2rgb().
+ */
+function _colorizer_hue2rgb($m1, $m2, $h) {
+  $h = ($h < 0) ? $h + 1 : (($h > 1) ? $h - 1 : $h);
+  if ($h * 6 < 1) return $m1 + ($m2 - $m1) * $h * 6;
+  if ($h * 2 < 1) return $m2;
+  if ($h * 3 < 2) return $m1 + ($m2 - $m1) * (0.66666 - $h) * 6;
+
+  return $m1;
+}
+
+/**
+ * Converts an RGB triplet to HSL.
+ */
+function _colorizer_rgb2hsl($rgb) {
+  $r = $rgb[0];
+  $g = $rgb[1];
+  $b = $rgb[2];
+  $min = min($r, min($g, $b));
+  $max = max($r, max($g, $b));
+  $delta = $max - $min;
+  $l = ($min + $max) / 2;
+  $s = 0;
+
+  if ($l > 0 && $l < 1) {
+    $s = $delta / ($l < 0.5 ? (2 * $l) : (2 - 2 * $l));
+  }
+
+  $h = 0;
+  if ($delta > 0) {
+    if ($max == $r && $max != $g) $h += ($g - $b) / $delta;
+    if ($max == $g && $max != $b) $h += (2 + ($b - $r) / $delta);
+    if ($max == $b && $max != $r) $h += (4 + ($r - $g) / $delta);
+    $h /= 6;
+  }
+
+  return array($h, $s, $l);
+}

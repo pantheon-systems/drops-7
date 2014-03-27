@@ -75,7 +75,7 @@ function dkan_dataset_groups_field_default_field_instances() {
         'module' => 'image',
         'settings' => array(
           'image_link' => 'content',
-          'image_style' => 'medium',
+          'image_style' => 'group_medium',
         ),
         'type' => 'image',
         'weight' => 0,

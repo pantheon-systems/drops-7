@@ -216,14 +216,20 @@ function dkan_datastore_node_update($node) {
   if (isset($node->feeds) && $node->type == 'resource' && $importer_ids = feeds_get_importer_ids($node->type, $node->nid)) {
     $wrapper = entity_metadata_wrapper('node', $node);
     $file = $wrapper->field_upload->value();
-    $link = $wrapper->field_link_remote_file->value();
-    if ($file) {
-      if ($file->filemime != 'text/csv') {
-        feeds_node_delete($node);
+    if (!$file) {
+      $link = $wrapper->field_link_remote_file->value();
+      if (isset($link) && isset($link['fid'])) {
+        $file = file_load($link['fid']);
+      }
+      elseif (isset($link) && isset($link->fid)) {
+        $file = $link;
+      }
+      else {
+        $file = '';
       }
     }
-    elseif ($link) {
-      if ($link->filemime != 'text/csv') {
+    if ($file) {
+      if ($file->filemime != 'text/csv') {
         feeds_node_delete($node);
       }
     }
@@ -240,7 +246,6 @@ function dkan_datastore_permission() {
     ),
   );
 }
-
 
 /**
  * Implements hook_node_view().
@@ -378,3 +383,22 @@ function theme_dkan_datastore_status_formatter($variables) {
   }
   return '<span class="circle na">' . t('Correct file type not attached to resource') . '</span>';
 }
+
+ /**
+ * Gets a datastore instance.
+ *
+ * @param $id
+ *   The unique id of the importer object.
+ *
+ * @return
+ *   A Datastore object or an object of a class defined by the Drupal
+ *   variable 'dkan_datastore_class'. There is only one importer object
+ *   per $id system-wide.
+ */
+function dkan_datastore_go($id, $class = NULL) {
+  if (!$class) {
+    $class = variable_get('dkan_datastore_class', 'DkanDatastore');
+  }
+  return Datastore::instance($class, $id);
+}
+

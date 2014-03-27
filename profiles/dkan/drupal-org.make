@@ -22,6 +22,8 @@ projects[beautytips][subdir] = contrib
 projects[beautytips][patch][849232] = http://drupal.org/files/include-excanvas-via-libraries-api-d7-849232-13.patch
 projects[chosen][subdir] = contrib
 projects[chosen][version] = 2.0-alpha1
+projects[colorizer][subdir] = contrib
+projects[colorizer][version] = 1.0
 projects[ctools][subdir] = contrib
 projects[ctools][version] = 1.4
 projects[diff][subdir] = contrib
@@ -74,6 +76,7 @@ projects[views_datasource][download][url] = "http://git.drupal.org/project/views
 projects[views_datasource][download][branch] = "7.x-1.x"
 projects[views_datasource][type] = "module"
 projects[views_bulk_operations][subdir] = contrib
+projects[views_responsive_grid][subdir] = contrib
 
 projects[recline][subdir] = contrib
 projects[recline][version] = 1.x
@@ -140,6 +143,7 @@ projects[facetapi_pretty_paths][subdir] = contrib
 projects[gravatar][subdir] = contrib
 projects[gravatar][version] = 1.x
 projects[gravatar][patch][1568162] = http://drupal.org/files/views-display-user-picture-doesn-t-display-gravatar-1568162-10.patch
+projects[gravatar][patch][1689850] = http://drupal.org/files/issues/gravatar-image_url_munged_when_pic_display_style_selected-1689850-17.patch
 projects[markdowneditor][subdir] = contrib
 projects[markdowneditor][version] = 1.x
 projects[markdowneditor][patch][2045225] = http://drupal.org/files/remove-dsm-from-hook-install-2045225-1.patch
@@ -150,11 +154,17 @@ projects[search_api][subdir] = contrib
 projects[search_api_db][subdir] = contrib
 projects[rules][subdir] = contrib
 projects[rules][version] = 2.3
+projects[imagecache_actions][subdir] = contrib
+projects[imagecache_actions][version] = 1.4
 
 ; Themes
 projects[omega][version] = 3.1
 projects[omega][subdir] = contrib
 projects[omega][patch][1828552] = http://drupal.org/files/1828552-omega-hook_views_mini_pager.patch
+projects[bootstrap][version] = 3.x-dev
+projects[bootstrap][subdir] = contrib
+projects[nuboot][version] = 1.x-dev
+projects[nuboot][subdir] = contrib
 
 ; Libraries
 libraries[recline][type] = libraries

@@ -28,6 +28,40 @@ class SchemaDatabaseSchema_mysql extends DatabaseSchema_mysql {
     return $map;
   }
 
+  /**
+   * Overrides DatabaseSchema_mysql::getPrefixInfo().
+   *
+   * @todo Remove when https://drupal.org/node/2223073 is fixed in core.
+   */
+  protected function getPrefixInfo($table = 'default', $add_prefix = TRUE) {
+    $info = array('prefix' => $this->connection->tablePrefix($table));
+    if ($add_prefix) {
+      $table = $info['prefix'] . $table;
+    }
+    if (($pos = strpos($table, '.')) !== FALSE) {
+      $info['database'] = substr($table, 0, $pos);
+      $info['table'] = substr($table, ++$pos);
+    }
+    else {
+      $db_info = $this->connection->getConnectionOptions();
+      $info['database'] = $db_info['database'];
+      $info['table'] = $table;
+    }
+    return $info;
+  }
+
+  /**
+   * Overrides DatabaseSchema_mysql::getFieldTypeMap().
+   */
+  public function getFieldTypeMap() {
+    $map = &drupal_static('SchemaDatabaseSchema_mysql::getFieldTypeMap');
+    if (!isset($map)) {
+      $map = parent::getFieldTypeMap();
+      drupal_alter('schema_field_type_map', $map, $this, $this->connection);
+    }
+    return $map;
+  }
+
   public function inspect($connection = NULL, $table_name = NULL) {
     // Support the deprecated connection parameter.
     if (isset($connection) && $connection != $this->connection->getKey()) {
@@ -37,6 +71,15 @@ class SchemaDatabaseSchema_mysql extends DatabaseSchema_mysql {
     // Get the current database name
     $info = $this->connection->getConnectionOptions();
     $database = $info['database'];
+
+    // Apply table prefixes.
+    if (isset($table_name)) {
+      $table_info = $this->getPrefixInfo($table_name);
+      if (!empty($table_info['database']) && $database != $table_info['database']) {
+        $database = $table_info['database'];
+      }
+      $table_name = $table_info['table'];
+    }
 
     $tables = array();
     $args = array(':database' => $database);
@@ -63,7 +106,7 @@ class SchemaDatabaseSchema_mysql extends DatabaseSchema_mysql {
 
     $res = $this->connection->query($sql, $args);
     foreach ($res as $r) {
-      $r->new_table_name = schema_unprefix_table($r->table_name);
+      $r->new_table_name = schema_unprefix_table($r->table_name, $this->connection);
 
       $numeric = !is_null($r->numeric_scale);
       $col = array();

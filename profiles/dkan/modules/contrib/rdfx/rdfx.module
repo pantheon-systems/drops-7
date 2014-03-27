@@ -184,8 +184,21 @@ function rdfx_get_rdf_model($type, $id) {
     }
   }
 
-  // Expand all CURIEs and attach the index to the ARC2 resource.
-  $res->index = $res->expandPNames($index);
+  // Attach the index to the ARC2 resource.
+  $res->index = $index;
+
+  // Allow other modules to alter the RDF data model before serialization.
+  // For example, a module could add elements which are not supported by the
+  // Entity API.
+  // This should only be used in special cases. The data is not added to
+  // Drupal's internal model, and is thus not accessible to other modules or
+  // during Drupal's normal rendering stream. It will only show up in non-RDFa
+  // serializations of the entity.
+  drupal_alter('rdf_model', $res, $type, $id);
+
+  // Expand all CURIEs.
+  $res->index = $res->expandPNames($res->index);
+
   return $res;
 }
 

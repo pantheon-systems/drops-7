@@ -35,7 +35,7 @@ function recline_requirements($phase) {
 /**
  * Implements hook_field_schema().
  */
-function recline_field_schema($field) {
+function recline_field_schema() {
   $columns = array(
     'fid' => array(
       'description' => 'The {file_managed}.fid being referenced in this field.',
@@ -56,12 +56,17 @@ function recline_field_schema($field) {
     ),
   );
   module_load_include('inc', 'recline', 'recline.field');
+  recline_add_field_columns($columns);
   foreach (recline_view_options() as $view => $label) {
     $columns[$view] = array(
       'type' => 'int',
       'not null' => FALSE,
     );
   }
+  $columns['embed'] = array(
+    'type' => 'int',
+    'not null' => FALSE,
+  );
   $indexes = array(
     'fid' => array('fid'),
   );
@@ -106,6 +111,27 @@ function recline_update_7001(&$sandbox) {
         }
         field_cache_clear();
       }
+    }
+  }
+  return $ret;
+}
+
+/**
+ * Add 'embed' to recline field storage.
+ */
+function recline_update_7002(&$sandbox) {
+  $ret = array();
+  $fields = field_info_fields();
+  foreach ($fields as $field_name => $field) {
+    if ($field['type'] == 'recline_field' && $field['storage']['type'] == 'field_sql_storage') {
+      $schema = recline_field_schema($field);
+      foreach ($field['storage']['details']['sql'] as $type => $table_info) {
+        foreach ($table_info as $table_name => $columns) {
+          $column_name = _field_sql_storage_columnname($field_name, 'embed');
+          db_add_field($table_name, $column_name, $schema['columns']['embed']);
+        }
+      }
+      field_cache_clear();
     }
   }
   return $ret;

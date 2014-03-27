@@ -17,10 +17,12 @@ features[features_api][] = api:2
 features[feeds_importer][] = dkan_file
 features[feeds_importer][] = dkan_link
 features[views_view][] = datasets
+files[] = includes/Datastore.inc
+files[] = includes/DkanDatastore.inc
 
 
-; Information added by drush on 2014-02-18
+; Information added by drush on 2014-03-27
 version = "unknown"
 project = "dkan_datastore"
-datestamp = "1392727127"
+datestamp = "1395936177"
 
