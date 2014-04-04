@@ -2,6 +2,7 @@ name = Arapahoe Ridge
 description = Bare bones install profile for Arapahoe Ridge High School 'Drupal Intensive'
 core = 7.x
 
+
 dependencies[] = contextual
 dependencies[] = toolbar
 dependencies[] = overlay
