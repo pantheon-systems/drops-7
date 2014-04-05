@@ -6,8 +6,8 @@
  * Perform actions to set up the site for this profile.
  */
 function arapahoe_install() {
-  // Set admin theme to 'rubik'.
-  variable_set('admin_theme', 'rubik');
+  // Set admin theme to 'ember'.
+  variable_set('admin_theme', 'ember');
 
   // Set node edit to admin theme.
   variable_set('node_admin_theme', 1);
