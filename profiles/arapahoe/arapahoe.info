@@ -39,6 +39,7 @@ dependencies[] = pathauto
 dependencies[] = module_filter
 dependencies[] = honeypot
 dependencies[] = cu_slider
+dependencies[] = navbar
 
 ;Arapahoe Ridge modules
 dependencies[] = arapahoe_page
