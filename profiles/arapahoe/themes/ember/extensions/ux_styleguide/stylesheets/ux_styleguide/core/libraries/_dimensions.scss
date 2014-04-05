@@ -1,0 +1,22 @@
+//
+// @file
+// Dimension variables.
+//
+
+// Use the modular-scale plugin for spacing.
+$base-size: 1em;
+$ratio: augmented-fourth() fifth();
+
+// Set defaults for borders.
+$default-border-radius: 2px;
+$base-border-width: 1px !default;
+
+// Configure for Compass vertical rhythm and set defaults for reuse.
+$font-size: 14px !default;
+$font-size-small: .88em !default;
+$font-size-micro: ms(-1) !default;
+$line-height: ms(1) !default;
+$rhythm-space: ms(-1) !default;
+$rhythm-space-short: ms(-5) !default;
+$inset-space: ms(4) !default;
+$inset-space-short: ms(2) !default;
