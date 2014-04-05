@@ -1,0 +1,50 @@
+// $Id$
+
+Sky 7.x-1.x, xxxx-xx-xx
+-------------------------
+
+Sky 7.x-1.x, 2011-02-08
+-------------------------
+by Jacine: Fixed a typo with the collapsible region.
+#1053532 by Jacine | bitsman: Fixed css undefined index.
+
+Sky 7.x-1.5, 2011-02-06
+-------------------------
+#1043726 by Jacine | Amarjit: Fixed Tabs problem - Secondary not displaying.
+by Jacine: Added more ARIA roles.
+by Jacine: Added instructions to create a subtheme.
+by Jacine: Added a print stylesheet and HTML5 book export.
+by Jacine: Various fixes and new styles for search and code blocks.
+by Jacine: Added Book module styles.
+
+Sky 7.x-1.4, 2011-01-24
+-------------------------
+#1038236 by Jacine | Ninja Overlord: Fixed Errors on setting the color scheme.
+by Jacine: Fixed the selector for the collapsible region when JS is disabled.
+#1019334 by asrob: Collapsible fieldsets on theme settings page are still a
+  problem for some sites. Removing them, because I'm not sure why.
+
+Sky 7.x-1.3, 2011-01-14
+-------------------------
+#1025054 by mtsanford: Fixed Collapsible region has horizontal scrollbar in
+  Firefox when collapsible-toggle link has focus.
+by Jacine: Remove padding from vertical tabs fieldsets.
+#1019334 by Jacine: Revert position: fixed for color wheel.
+#1019334 by Jacine: Force collapse.js to load on theme settings page.
+#1019334 by Jacine: Shamelessly stealing Bartik's Druplicon logo.
+#1026580 by Jeff Burnz: Fixed Wrong closing element in field--taxonomy-term-reference.tpl.php.
+
+Sky 7.x-1.2, 2011-01-09
+-------------------------
+by Jacine: Color module improvements, jQuery UI styles, and more tweaks.
+#1019334 by Jacine | wallbay1: Fixed logo not printing in page.tpl.php.
+by Jacine: Added documentation for using menus in the navigation region.
+by Jacine: Fixed feature listing in .info file.
+
+Sky 7.x-1.1, 2011-01-06
+-------------------------
+by Jacine: Fixed the format of the CVS tag and minor code style issues.
+
+Sky 7.x-1.0, 2011-01-05
+-------------------------
+by Jacine: Checked in a newly rewritten version for Drupal 7.

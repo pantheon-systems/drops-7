@@ -1,0 +1,270 @@
+/* Fieldsets */
+fieldset {
+  border: solid 1px #e6e4e2;
+  margin: 1.2em 0;
+  padding: 0 0 1em 0;
+  position: relative;
+}
+.fieldset-wrapper {
+  padding: 2.4em 1em 1em 1em;
+}
+.fieldset-description {
+  padding: 1em 0;
+}
+html.js fieldset.collapsed {
+  border: solid 1px #e6e4e2;
+  height: 2em;
+}
+legend {
+  display: block;
+  color: #999;
+  font-weight: 600;
+  font-size: 0.923em;
+  left: 1em;
+  letter-spacing: 0.25em;
+  line-height: normal;
+  position: absolute;
+  text-transform: uppercase;
+  top: 1em;
+}
+legend a.fieldset-title {
+  color: #999;
+}
+.js fieldset.collapsible legend a {
+  background: url(images/gray.png) no-repeat 0 -132px;
+  padding-left: 20px;
+  -moz-transition: color 0.3s linear;
+  -webkit-transition: color 0.3s linear;
+  transition: color 0.3s linear;
+}
+.js fieldset.collapsible legend a:hover,
+.js fieldset.collapsible legend a:focus,
+.js fieldset.collapsible legend a:active {
+  background-image: url(images/black.png);
+  color: #444;
+}
+.js fieldset.collapsed legend a {
+  background-position: 0 -198px;
+}
+html.js fieldset.collapsed .fieldset-legend,
+html.js fieldset.collapsible .fieldset-legend {
+  background-image: none;
+  padding: 0;
+}
+#edit-advanced {
+  clear: both;
+}
+
+/* Labels */
+label {
+  cursor: pointer;
+  font-weight: 500;
+}
+.form-item label {
+  display: block;
+  font-size: 1.077em;
+  margin-bottom: 0.2em;
+  margin-left: 3px;
+}
+.form-item .form-item label {
+  display: inline;
+  font-size: 1em;
+}
+table label,
+.form-item label.option {
+  display: inline;
+  font-size: 1em;
+  font-weight: normal;
+}
+select {
+  margin-bottom: 3px;
+  padding: 2px;
+}
+
+/* Wrappers */
+.form-item {
+  margin: 1.4em 0;
+}
+.fieldset-wrapper .form-item:first-child {
+  margin-top: 0.4em;
+}
+.form-item .form-item {
+  margin: 0.5em 0;
+}
+.form-type-checkbox,
+.form-type-radio {
+  margin: 1em 0;
+}
+.form-actions {
+  margin-top: 1em;
+  padding: 1em 0;
+}
+.filter-wrapper .fieldset-wrapper {
+  padding: 0;
+}
+/* Elements */
+input, select, textarea, button {
+  font-family: "Helvetica Neue", Helvetica, Clean, Arial, sans-serif;
+}
+input.form-text {
+  max-width: 100%;
+}
+input, textarea {
+  line-height: 1.3em;
+}
+textarea.form-textarea,
+textarea {
+  background-color: #fff;
+  border: solid 2px #e6e4de;
+  padding: 0.5em;
+  -moz-border-radius: 3px 3px 0 0;
+  -webkit-border-top-right-radius: 3px;
+  -webkit-border-top-left-radius: 3px;
+  border-radius: 3px 3px 0 0;
+}
+input.form-text,
+select[multiple="multiple"] {
+  background-color: #fff;
+  border: solid 2px #e6e4de !important;
+  padding: 4px;
+  -moz-border-radius: 3px;
+  -webkit-border-radius: 3px;
+  border-radius: 3px;
+}
+.ie9 input.form-text,
+.ie9 select[multiple="multiple"],
+.chrome input.form-text,
+.chrome select[multiple="multiple"] {
+  padding: 2px 4px;
+}
+select {
+  max-width: 100%;
+  -moz-box-sizing: border-box;
+  -webkit-box-sizing: border-box;
+  box-sizing: border-box;
+}
+button,
+input[type="submit"],
+input.form-submit,
+.form-actions a,
+.form-actions a:visited,
+.button, a.button, a.button:visited {
+  background: #e6e4e2 url(images/ui/ui-bg_highlight-soft_90_e6e4e2_1x100.png) 50% 50% repeat-x;
+  border: 1px solid #e6e4e2;
+  border-bottom-color: #bbb;
+  border-right-color: #bbb;
+  color: #000;
+  font-size: 1em;
+  font-weight: 500;
+  padding: 0.5em 1em;
+  margin: 0 0.5em 0 0;
+  overflow: hidden;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+  border-radius: 4px;
+}
+button:hover,
+input[type="submit"]:hover,
+input.form-submit:hover,
+.form-actions a:hover,
+.form-actions a:focus,
+.form-actions a:active,
+.button:hover,
+a.button:hover,
+a.button:focus,
+a.button:active {
+  background: #d6d4d1 url(images/ui/ui-bg_highlight-soft_50_d6d4d1_1x100.png) 50% 50% repeat-x;
+  border: 1px solid #e1dedb;
+  border-bottom-color: #aaa;
+  border-right-color: #aaa;
+  color: #000;
+  cursor: pointer;
+}
+textarea:focus,
+input[type="password"]:focus,
+input[type="search"]:focus,
+input[type="text"]:focus,
+select[multiple="multiple"]:focus,
+.form-text:focus {
+  outline: 0;
+  -webkit-box-shadow: 0 0 5px 3px rgba(169,169,169,0.4);
+  -moz-box-shadow: 0 0 5px 3px rgba(169,169,169,0.4);
+  box-shadow: 0 0 5px 3px rgba(169,169,169, 0.4);
+  border-color: rgba(213,213,213,0.5);
+  -webkit-appearance: textfield; /* -webkit-appearance: searchfield; does not support box shadow in Chrome, yet...*/
+}
+
+/* Misc */
+.description {
+  color: #777;
+  font-size: 0.923em;
+  line-height: 1.5;
+}
+.form-item .description {
+  margin-top: 0.4em;
+  padding-left: 0.4em;
+}
+.form-required {
+  color: #fda61f;
+  font: bold 1em Tahoma, Verdana, Geneva;
+}
+
+/* Inline containers */
+.container-inline .form-item label {}
+.container-inline .form-submit {
+  font-size: 0.923em;
+  line-height: 1.5em;
+  margin: 0 0.3em 0 0;
+  padding: 0.2em 1em;
+}
+.container-inline .form-actions {
+  padding: 0;
+}
+
+/* Autocomplete throbber */
+html.js input.form-autocomplete {
+  background-position: 99% 6px; /* LTR */
+}
+html.js input.throbbing {
+  background-position: 99% -12px; /* LTR */
+}
+
+/* Vertical tabs */
+.vertical-tabs fieldset.vertical-tabs-pane {
+  padding: 0;
+}
+.vertical-tabs .fieldset-wrapper {
+  padding: 1em 0.5em;
+}
+div.vertical-tabs,
+div.vertical-tabs ul.vertical-tabs-list,
+div.vertical-tabs ul.vertical-tabs-list li {
+  border-color: #e6e4e2;
+}
+.vertical-tabs ul.vertical-tabs-list li {
+  background-color: #efedea;
+}
+.vertical-tabs ul.vertical-tabs-list li a {
+  -moz-transition: none;
+  -webkit-transition: none;
+  transition: none;
+}
+.vertical-tabs ul.vertical-tabs-list li a:hover,
+.vertical-tabs ul.vertical-tabs-list li a:focus {
+  color: #000;
+  outline: none;
+}
+.vertical-tabs ul.vertical-tabs-list li a:focus strong,
+.vertical-tabs ul.vertical-tabs-list li a:active strong,
+.vertical-tabs ul.vertical-tabs-list li a:hover strong {
+  text-decoration: none;
+}
+.vertical-tabs .summary {
+  font-size: 0.923em;
+}
+
+/* Reset textarea backgrounds in WYSIWYG module text editors */
+body.wysiwygeditor {
+  background-color: #fff;
+  background-image: none;
+}

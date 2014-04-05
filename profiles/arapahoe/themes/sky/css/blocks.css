@@ -1,0 +1,82 @@
+/* Blocks. */
+.block {
+  margin-bottom: 20px;
+}
+.block-title {
+  font-size: 1.385em;
+  line-height: 1.2;
+  margin: 0 0 0.4em 0;
+}
+.mini-panel-title {
+  margin: 0 10px;
+}
+.region-header .block {
+  clear: none;
+  float: right;
+  margin: 0;
+}
+#page > footer .block {
+  margin: 0;
+}
+#page > footer .block .block-inner {
+  padding: 20px 0;
+}
+/* Block lists */
+.block ul li {
+  margin: 0;
+}
+.block .item-list ul  {
+  margin-left: 15px;
+}
+.block-panels_mini .mini-panel-title {
+  margin: 0 10px;
+}
+/* Reset margins and padding for the Help block .block-inner */
+#block-system-help .block-inner {
+  padding: 0;
+  margin: 0;
+}
+/* Reset block ul in the dashboard */
+#dashboard .block ul {
+  margin-left: 0;
+}
+.block-search .inner {
+  padding-left: 0;
+  padding-right: 0;
+}
+.region-header .block-search .inner {
+  padding: 0;
+}
+#search-form input#edit-keys,
+#block-search-form .form-item-search-block-form input {
+  float: left; /* LTR */
+  font-size: 1em;
+  margin-right: 5px;
+  width: 62%;
+}
+#search-block-form input.form-submit,
+#search-form input.form-submit {
+  background: url(images/search-button.png) no-repeat scroll center top transparent;
+  border-color: #E4E4E4 #D2D2D2 #B4B4B4;
+  cursor: pointer;
+  height: 25px;
+  margin-left: 0;
+  margin-right: 0;
+  overflow: hidden;
+  padding: 0;
+  text-indent: -9999px;
+  width: 34px;
+  text-transform: uppercase; /* IE7 hack to trigger text indent reliably */
+}
+#search-block-form input.form-submit:hover,
+#search-block-form input.form-submit:focus,
+#search-form input.form-submit:hover,
+#search-form input.form-submit:focus {
+  background-position: center bottom;
+}
+.ie6-7 #search-block-form input.form-submit:hover,
+.ie6-7 #search-block-form input.form-submit:focus,
+.ie6-7 #search-form input.form-submit:hover,
+.ie6-7 #search-form input.form-submit:focus {
+  background-position: center -25px;
+}

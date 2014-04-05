@@ -1,0 +1,98 @@
+body {
+  padding: 0 5px;
+}
+
+body.admin-menu {
+  margin-top: 0 !important;
+}
+
+#admin-menu {
+  display:none;
+}
+
+#branding,
+.region-header  {
+  float: none;
+  margin: 0 0 10px;
+  width: 100%;
+  clear: both;
+  text-align: center;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.region-header .block {
+  clear: both;
+  float: none;
+  margin: 5px auto;
+  max-width: 80%;
+}
+
+.region-header .block .block-inner {
+  margin-left: 0;
+  margin-right: 0;
+  margin: auto;
+}
+
+h1#site-name {
+  font-size: 1.5em;
+}
+
+h2#site-slogan {
+  font-size: 0.9em;
+}
+
+.region-top-menu {
+  height: auto;
+}
+
+.js #menu-bar nav {
+  display: none;
+}
+
+.menu-toggle {
+  display: block;
+  float: right;
+  font-size: 1.2em;
+  margin: 0 10px 0 0;
+  padding: 0;
+  text-transform: lowercase;
+}
+
+.menu-toggle a {
+  padding: 7px 10px 10px;
+  display: block;
+}
+
+#menu-bar .menu-wrapper {
+  float: none !important;
+}
+
+#menu-bar .menu-wrapper li a,
+#menu-bar .menu-wrapper .menu li a {
+  display: block;
+  padding: 0 0.5em;
+  -moz-border-radius: 0 !important;
+  -webkit-border-radius: 0 !important;
+  border-radius: 0 !important;
+}
+
+#menu-bar .menu-wrapper li,
+#menu-bar .menu-wrapper .menu li {
+  display: block;
+  float: none;
+  margin-right: 0;
+}
+
+#menu-bar .menu-wrapper ul.menu li {
+  margin: 0;
+  padding: 0;
+}
+
+ul.sf-menu {
+  width: 100%;
+}
+
+.sf-menu.sf-style-default ul {
+  width: 100% !important;
+}

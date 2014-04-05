@@ -1,0 +1,12 @@
+h1#site-name {
+  font-size: 2.8em;
+}
+#menu-bar .menu-wrapper li a,
+#menu-bar .menu-wrapper .menu li a {
+  padding: 0 1.2em;
+  font-size: .94em;
+}
+#menu-bar .menu-wrapper li,
+#menu-bar .menu-wrapper .menu li {
+  margin-right: 4px;
+}

@@ -1,0 +1,84 @@
+/* Articles (nodes) */
+article {
+  margin-bottom: 3em;
+}
+h1.node-title {
+  margin: 0 0 0.18em;
+}
+article > header {
+ border-bottom: solid 1px #e6e4de;
+ position: relative;
+}
+article .submitted {
+  color: #666;
+  font-size: 0.923em;
+  padding: 0 0 0.6em 0;
+  position: relative;
+}
+article .node-content {
+  padding: 1em 0;
+}
+article .links {
+  font-size: 0.923em;
+  text-transform: lowercase;
+}
+article .links a,
+article .links a:visited {
+  display: inline-block;
+  padding: 0.3em 0.8em;
+}
+.node header.with-picture {
+  height: 3.5em;
+  height: auto !important;
+  min-height: 3.5em;
+  padding-left: 60px;
+}
+.node header .user-picture {
+  left: 0;
+  top: 3px;
+  height: 45px;
+  position: absolute;
+  width: 45px;
+}
+.node header .user-picture img {
+  display: block;
+  margin: 0;
+  height: 45px;
+  width: 45px;
+}
+.node-content img {
+  border: solid 1px #e6e4de;
+  padding: 0.5em;
+}
+article .tags,
+.node-content .field-type-taxonomy-term-reference {
+  border-left: solid 1px #e6e4de;
+  display: inline;
+  font-style: italic;
+  margin-left: 0.6em;
+  padding: 0 0 0 0.6em;
+}
+article .tags .field-label,
+.node-content .field-type-taxonomy-term-reference h2.field-label {
+  display: inline;
+  font-size: 1em;
+  font-weight: normal;
+  margin: 0;
+}
+.node-content .field-type-taxonomy-term-reference ul,
+.node-content .field-type-taxonomy-term-reference ul  li {
+  display: inline;
+}
+.node ul.links {
+  margin: 0;
+  text-transform: lowercase;
+}
+.node ul.links li {
+  margin: 0;
+  padding: 0 .75em 0 0;
+}
+.node ul.links li a {
+  padding: 0.5em 1em;
+  white-space: nowrap;
+  font-size: 0.857em;
+}

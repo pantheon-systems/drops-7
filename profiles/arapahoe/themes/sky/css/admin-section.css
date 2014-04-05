@@ -1,0 +1,82 @@
+/**
+ * NOTE: This file is not loaded by default, to use it you must un-comment
+ * it in your themes info file. These styles provide a very basic admin 
+ * section, however you should really use a proper admin theme like AT Admin, 
+ * Root Candy or Seven.
+ */
+div.admin-panel {
+  border: 1px solid #ddd;
+  margin: 0 0 .75em;
+  padding: 0;
+}
+div.admin .left,
+div.admin .right {
+  margin-left: 0;
+  margin-right: 0;
+  width: 49%;
+}
+.admin-panel h3 {
+  background: #eee;
+  color: #222;
+  padding: 0 0 0 .5em;
+}
+.admin-panel .body {
+  padding: 0 1em;
+}
+.admin-panel p {
+  margin: 0;
+  padding: 1em 0 0;
+}
+.admin-panel ul,
+.admin-panel ul.menu,
+.admin-panel .item-list ul {
+  padding: 0 0 1em;
+}
+.admin-panel ul li {
+  color: #555;
+}
+.admin-panel dl {
+  margin: 0;
+  padding: 1em 0;
+}
+.admin-panel dd {
+  color: #555;
+  font-size: .923em;
+  margin-left: 0;
+}
+.admin .compact-link {
+  margin: 0 0 1em;
+}
+.page-admin-by-module .admin-panel .body p {
+  color: #555;
+  font-size: .923em;
+}
+.more-help-link {
+  font-size: .923em;
+  line-height: 1.538em;
+}
+#permissions td.permission {
+  padding-left: .5em;
+}
+#permissions td.module {
+  background: #eee;
+  color: #222;
+  font-weight: 700;
+}
+tr .block {
+  border: 0;
+}
+.admin-panel dt {
+  font-weight: 400;
+}
+.admin-dependencies,
+.admin-required,
+.admin-enabled,
+.admin-disabled,
+.admin-missing {
+  font-weight: 700;
+}
+.admin-panel .item-list ul,
+.page-admin-by-module .admin-panel .body {
+  margin: 0;
+}

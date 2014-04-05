@@ -1,0 +1,24 @@
+/* color_scheme_form - kill it, its not needed and too hard to support */
+#color_scheme_form h2,
+#color_scheme_form #preview {
+  display: none;
+}
+#color_scheme_form .form-item-scheme label,
+#color_scheme_form .color-form #palette label {
+  width: 17em;
+}
+#color_scheme_form .color-form  #palette .form-item {
+  width: 25em;
+}
+#color_scheme_form #palette .unlocked {
+  background-position: 50% -22px;
+}
+#color_scheme_form #palette .hook {
+  float: right;
+  margin-top: -1.5em;
+}
+#color_scheme_form #palette .lock {
+  float: right;
+  left: 1em;
+  top: -3.5em;
+}
