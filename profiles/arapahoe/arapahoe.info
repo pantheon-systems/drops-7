@@ -37,6 +37,7 @@ dependencies[] = date
 dependencies[] = conditional_fields
 dependencies[] = pathauto
 dependencies[] = module_filter
+dependencies[] = honeypot
 dependencies[] = cu_slider
 
 ;Arapahoe Ridge modules
