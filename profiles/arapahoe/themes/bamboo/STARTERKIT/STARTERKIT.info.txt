@@ -1,0 +1,51 @@
+name = Bamboo sub-theme Starter Kit
+description = Bamboo is a responsive Drupal 7 theme designed and developed by Danny Englander, <a href="http://highrockmedia.com">High Rock Media</a>
+core = 7.x
+engine = phptemplate
+base theme = bamboo
+
+; CSS --------------------
+
+; --- Your subtheme css files.
+; Rename STARTERKIT.css to something meaningful.
+; The actual name you give the file should match what's below.
+; You'll then need to ucomment by removing the semi-colon.
+
+;stylesheets[all][] = css/STARTERKIT.css
+
+; Regions --------------------
+regions[top_links]       = Top Links
+regions[main_menu]  = Main menu (3rd party menu systems)
+regions[hero_first]      = Hero first
+regions[hero_second]  = Hero second
+regions[preface_first]  = Preface first
+regions[preface_second] = Preface second
+regions[preface_third]  = Preface third
+regions[content_top]    = Content top
+regions[help]           = Help
+regions[sidebar_first]  = Sidebar first
+regions[content]         = Content
+regions[node_block]  = Node Block (block in a node)
+regions[footer_first]   = Footer first
+regions[footer_second]  = Footer second
+regions[footer_third]   = Footer third
+
+; Features --------------------
+features[] = logo
+features[] = name
+features[] = slogan
+features[] = comment_user_picture
+features[] = favicon
+features[] = main_menu
+
+; Bamboo default settings --------------
+
+settings[bamboo_themelogo]  = 1
+settings[breadcrumbs]  = 1
+settings[theme_sidebar_location]  = sidebar_right
+settings[bamboo_viewport]  = 0
+settings[header_font_style]  = sans_serif
+settings[body_font_style]  = sans_serif
+settings[theme_color_palette]  = green_bamboo
+settings[theme_bg]  = dark_linen
+settings[bamboo_tertiarymenu]  = 0

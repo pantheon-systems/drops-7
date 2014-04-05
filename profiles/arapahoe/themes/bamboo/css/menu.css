@@ -1,0 +1,261 @@
+/**
+ * @file
+ * Menu CSS file
+ * Note this has media queries to be careful if you edit this.
+ */
+
+/* Main nav */
+
+/* Hide the menu, it gets unhidden with JQuery when fully ready. */
+.js #main-menu ul:first-child {
+  display: none;
+}
+
+#menu-wrapper {
+  background: #444;
+  background: -moz-repeating-linear-gradient(#555, #333 42px);
+  background: -webkit-repeating-linear-gradient(#555, #333 42px);
+  background: -o-repeating-linear-gradient(#555, #333 42px);
+  background: -ms-repeating-linear-gradient(#555, #333 42px);
+  background: repeating-linear-gradient(#555, #333 42px);
+  box-shadow: 0 0 3px #999;
+}
+
+#nav-wrap {
+  position: relative;
+}
+
+#main-menu ul.menu.ul-depth-0 {
+  margin-top: 20px;
+}
+
+/* menu icon */
+#menu-icon {
+  display: none;
+}
+
+#main-menu ul.menu.ul-depth-0,
+#main-menu ul.menu.ul-depth-0 li {
+  margin: 0;
+  padding: 0;
+}
+
+#main-menu ul.menu.ul-depth-0 li {
+  float: left;
+  list-style: none;
+  position: relative;
+}
+
+#main-menu ul.menu.ul-depth-0 li.expanded a {
+  padding-right: 25px;
+}
+
+/* nav link */
+#main-menu ul.menu.ul-depth-0 a {
+  color: #fff;
+  display: block;
+  font-size: .83em;
+  letter-spacing: .09em;
+  padding: 9px 11px;
+}
+
+/* nav dropdown */
+
+#main-menu ul.menu.ul-depth-0 ul {
+  display: none;
+  padding: 0;
+  position: absolute;
+  top: 41px;
+  width: 208px;
+  z-index: 300;
+}
+
+.body-font-serif #main-menu ul.menu.ul-depth-0 ul {
+  top: 39px;
+}
+
+#main-menu ul.menu.ul-depth-0 ul li a {
+  font-size: .8em;
+  padding: 6px 9px;
+}
+
+.body-font-serif #main-menu ul.menu.ul-depth-0 ul li a {
+  font-size: 1.1em;
+  padding: 9px 9px;
+}
+
+#main-menu ul.menu.ul-depth-0 ul li {
+  border-top: #ccc 1px solid;
+  float: none;
+  margin: 0;
+  padding: 0;
+}
+
+#main-menu ul.menu.ul-depth-0 li:hover > ul {
+  display: block;
+}
+
+#main-menu ul li li.last a {
+  -moz-border-radius-bottomright: 9px;
+  -webkit-border-bottom-right-radius: 9px;
+  -moz-border-radius-bottomleft: 9px;
+  -webkit-border-bottom-left-radius: 9px;
+  border-radius: 0 0 9px 9px;
+}
+
+.tertiarymenu #main-menu ul li li.last a {
+  -moz-border-radius-bottomright: 0;
+  -webkit-border-bottom-right-radius: 0;
+  -moz-border-radius-bottomleft: 0;
+  -webkit-border-bottom-left-radius: 0;
+  border-radius: 0;
+}
+
+#main-menu a:hover,
+#main-menu li > a.active {
+  background: #777;
+  background: -moz-linear-gradient(#777, #555);
+  background: -webkit-linear-gradient(#777, #555);
+  background: -o-linear-gradient(#777, #555);
+  background: -ms-linear-gradient(#777, #555);
+  background: linear-gradient(#777, #555);
+  color: #fff;
+  text-decoration: none;
+}
+
+/* MOBILE */
+
+@media screen and (max-width: 768px) {
+
+  /* nav-wrap */
+  #main-menu ul.menu.ul-depth-0-wrap {
+    position: relative;
+  }
+
+  /* menu icon */
+  #menu-icon {
+    background: #ecebeb url('../images/menu-icon.png') no-repeat 10px center;
+    border: solid 1px #667;
+    color: #000;
+    cursor: pointer;
+    display: block;
+    height: 30px;
+    padding: 8px 10px 0 42px;
+    width: 84px;
+  }
+
+  #menu-icon:hover {
+    background-color: #f8f8f8;
+  }
+
+  #menu-icon.active {
+    background-color: #bbb;
+  }
+
+  /* main nav */
+  #main-menu ul.menu.ul-depth-0 {
+    background: #f8f8f8;
+    border: solid 1px #999;
+    clear: both;
+    display: none;
+    padding: 5px;
+    position: absolute;
+    top: 38px;
+    width: auto;
+    z-index: 10000;
+  }
+
+  #main-menu ul.menu.ul-depth-0 li {
+    clear: both;
+    float: none;
+    margin: 5px 0 5px 10px;
+  }
+
+  #main-menu ul.menu.ul-depth-0 a,
+  #main-menu ul.menu.ul-depth-0 ul a {
+    background: none;
+    border: none;
+    color: #667;
+    display: inline;
+    font: inherit;
+    padding: 0;
+  }
+
+  #main-menu ul.menu.ul-depth-0 a:hover,
+  #main-menu ul.menu.ul-depth-0 ul a:hover {
+    background: none;
+    color: #000;
+  }
+
+  /* dropdown */
+
+  #main-menu ul.menu.ul-depth-0 ul {
+    background: inherit;
+    border: none;
+    display: block;
+    position: static;
+    width: auto;
+  }
+
+  #main-menu ul.menu.ul-depth-0 ul li {
+    margin: 3px 0 3px 15px;
+  }
+
+  #main-menu li.leaf.active-trail a {
+    background: #ccc;
+  }
+
+}
+
+@media screen and (min-width: 769px) {
+
+  #main-menu ul.menu.ul-depth-0 {
+    display: block !important;
+  }
+
+  #main-menu ul.menu.ul-depth-0 a:hover,
+  #main-menu ul.menu.ul-depth-0 li >a.active {
+    color: #fff;
+  }
+
+  span.drop-arrow {
+    background: url('../images/arrows-ffffff.png') 10px -100px;
+    display: block;
+    height: 10px;
+    position: absolute;
+    right: 5px;
+    top: 16px;
+    width: 11px;
+    z-index: 201;
+  }
+
+  .menu.ul-depth-1 span.drop-arrow {
+    background: url('../images/arrows-right.png') 10px -2px;
+  }
+
+  #main-menu ul.menu.ul-depth-0 li.expanded.active-trail {
+    background: #777;
+    background: -moz-linear-gradient(#777, #555);
+    background: -webkit-linear-gradient(#777, #555);
+    background: -o-linear-gradient(#777, #555);
+    background: -ms-linear-gradient(#777, #555);
+    background: linear-gradient(#777, #555);
+    color: #fff;
+  }
+
+	#main-menu ul.menu.ul-depth-2 li {
+    border-left: 1px dotted #667;
+    left: 207px;
+    position: relative;
+    top: -42px;
+}
+
+  #main-menu ul.menu.ul-depth-2 li a {
+    -moz-border-radius-bottomright: 0;
+    -webkit-border-bottom-right-radius: 0;
+    -moz-border-radius-bottomleft: 0;
+    -webkit-border-bottom-left-radius: 0;
+    border-radius: 0;
+  }
+
+}
