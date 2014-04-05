@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Install tasks for flexslider_example
+ *
+ * @author Mathew Winstone <mwinstone@coldfrontlabs.ca>
+ */
+
+/**
+ * Implements hook_update_N().
+ *
+ * Checks for the Context module. Disables if not present.
+ */
+function flexslider_example_update_7001(&$sandbox) {
+  if (!module_exists('context')) {
+    module_disable(array('flexslider_example'));
+      drupal_set_message(t('FlexSlider Example has been disabled as it now requires the !context module which is not currently available. Please download and enable the !context module and re-enable the FlexSlider Example module', array('!context' => l('Context', 'http://drupal.org/project/context'))), 'warning');
+  }
+}
+
