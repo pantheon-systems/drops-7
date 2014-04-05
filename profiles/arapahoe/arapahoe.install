@@ -182,4 +182,7 @@ function arapahoe_install() {
   db_insert('users_roles')
     ->fields(array('uid' => 1, 'rid' => $admin_role->rid))
     ->execute();
+
+  // Enable honeypot EVERYWHERE.
+  variable_set('honeypot_protect_all_forms', 1);
 }
