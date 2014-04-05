@@ -1,0 +1,9 @@
+<?php
+
+/**
+ * enable disable cropping modules.
+ */
+function cu_slider_update_7010() {
+  module_disable('manualcrop');  
+  module_enable('smartcrop');  
+}
