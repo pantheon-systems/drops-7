@@ -44,7 +44,7 @@ function cu_slider_theme_registry_alter(&$theme_registry) {
 function cu_slider_form_bean_form_alter(&$form, &$form_state, &$form_id) {
   $items = $form['field_slider_slide'][LANGUAGE_NONE];
   $children = array_intersect_key($items, element_children($items));
-  if ($form['redirect']) {
+  if (array_key_exists('redirect', $form) && isset($form['redirect'])) {
     $form['redirect']['#access'] = FALSE;
   }
   if (!empty($children)) {
