@@ -36,6 +36,8 @@ dependencies[] = views_ui
 dependencies[] = date
 dependencies[] = conditional_fields
 dependencies[] = pathauto
+dependencies[] = module_filter
+dependencies[] = cu_slider
 
 ;Arapahoe Ridge modules
 dependencies[] = arapahoe_page
