@@ -516,3 +516,7 @@ body .view-cu-slider-wide-teaser .flexslider .views-field-field-slider-caption {
 .cu-content-slider-style5 .flex-direction-nav a {
   top:40%;
 }
+
+.cu-slider-slide .field-name-field-slider-image .img {
+  padding: 0px;
+}
