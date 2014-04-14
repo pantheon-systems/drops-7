@@ -45,6 +45,6 @@ function pantheon_api_image_path_flush($path) {
     }
   }
   if (count($paths) > 0) {
-    pantheon_api_bulk_file_delete($paths);
+    pantheon_bulk_file_delete($paths);
   }
 }
