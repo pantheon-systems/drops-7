@@ -30,12 +30,7 @@ function pantheon_api_menu() {
   // return $items;
 }
 
-function pantheon_api_load_api() {
-  include_once('pantheon_api.inc');
-}
-
 function pantheon_api_image_path_flush($path) {
-  pantheon_api_load_api();
   $styles = image_styles();
   $paths = array();
   foreach($styles as $style) {
@@ -45,6 +40,6 @@ function pantheon_api_image_path_flush($path) {
     }
   }
   if (count($paths) > 0) {
-    pantheon_api_bulk_file_delete($paths);
+    pantheon_bulk_file_delete($paths);
   }
 }
