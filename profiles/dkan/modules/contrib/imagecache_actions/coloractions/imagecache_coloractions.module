@@ -15,31 +15,28 @@
  * @author sydneyshan http://enigmadigital.net.au
  */
 
-// During devel, caching is pointless. Flush it
-//imagecache_action_definitions(TRUE);
-
 if (! function_exists('imagecache_actions_calculate_relative_position') ) {
   module_load_include('inc', 'imagecache_actions', 'utility');
 }
 module_load_include('inc', 'imagecache_actions', 'utility-color');
 
-
-// @todo There doesn't seem to be a way to specify a file in hook_image_effect_info
+// There is no way to specify a file in hook_image_effect_info,
 // so placing this here for the time being.
 module_load_include('inc', 'imagecache_coloractions', 'transparency');
 
 /**
- * hook_image_effect_info()
+ * Implements hook_image_effect_info().
  *
- * Return the descriptions for the supported actions.
+ * Defines information about the supported effects.
  */
 function imagecache_coloractions_image_effect_info() {
+  // @todo: standardize naming. requires a hook_update_n().
   $effects = array();
 
   $effects['coloractions_colorshift'] = array(
     'label' => t('Color Shift'),
     'help' => t('Adjust image colors.'),
-    'effect callback' => 'coloractions_colorshift_image',
+    'effect callback' => 'coloractions_colorshift_effect',
     'dimensions passthrough' => TRUE,
     'form callback' => 'coloractions_colorshift_form',
     'summary theme' => 'coloractions_colorshift_summary',
@@ -48,7 +45,7 @@ function imagecache_coloractions_image_effect_info() {
   $effects['imagecache_coloroverlay'] = array(
     'label' => t('Color Overlay'),
     'help' => t('Apply a color tint to an image (retaining blacks and whites).'),
-    'effect callback' => 'coloractions_coloroverlay_image',
+    'effect callback' => 'coloractions_coloroverlay_effect',
     'dimensions passthrough' => TRUE,
     'form callback' => 'coloractions_coloroverlay_form',
     'summary theme' => 'coloractions_coloroverlay_summary',
@@ -57,52 +54,57 @@ function imagecache_coloractions_image_effect_info() {
   $effects['coloractions_brightness'] = array(
     'label' => t('Brightness'),
     'help' => t('Adjust image brightness.'),
-    'effect callback' => 'coloractions_brightness_image',
+    'effect callback' => 'coloractions_brightness_effect',
     'dimensions passthrough' => TRUE,
     'form callback' => 'coloractions_brightness_form',
     'summary theme' => 'coloractions_brightness_summary',
   );
 
+  // @todo: changing inverse to invert at this place requires a hook_update_n().
   $effects['coloractions_inverse'] = array(
     'label' => t('Negative Image'),
     'help' => t('Invert colors and brightness.'),
-    'effect callback' => 'coloractions_inverse_image',
+    'effect callback' => 'coloractions_invert_effect',
     'dimensions passthrough' => TRUE,
+    'form callback' => 'coloractions_invert_form',
+    'summary theme' => 'coloractions_invert_summary',
   );
 
   // @todo Convert may need a little more work.
   $effects['coloractions_convert'] = array(
     'label' => t('Change file format'),
     'help' => t('Choose to save the image as a different filetype.'),
-    'effect callback' => 'coloractions_convert_image',
+    'effect callback' => 'coloractions_convert_effect',
     'dimensions passthrough' => TRUE,
     'form callback' => 'coloractions_convert_form',
     'summary theme' => 'coloractions_convert_summary',
   );
 
-  $effects['imagecache_alpha'] = array(
-    'label' => t('Alpha Transparency'),
-    'help' => t('Adjust transparency.'),
-    'effect callback' => 'imagecache_alpha_image',
-    'dimensions passthrough' => TRUE,
-    'form callback' => 'imagecache_alpha_form',
-    'summary theme' => 'coloractions_alpha_summary',
-  );
-
   $effects['coloractions_posterize'] = array(
     'label' => t('Posterize'),
     'help' => t('Reduce the image to a limited number of color levels per channel.'),
-    'effect callback' => 'coloractions_posterize_image',
+    'effect callback' => 'coloractions_posterize_effect',
     'dimensions passthrough' => TRUE,
     'form callback' => 'coloractions_posterize_form',
     'summary theme' => 'coloractions_posterize_summary',
+  );
+
+  $effects['imagecache_alpha'] = array(
+    'label' => t('Alpha Transparency'),
+    'help' => t('Adjust transparency.'),
+    'effect callback' => 'coloractions_alpha_effect',
+    'dimensions passthrough' => TRUE,
+    'form callback' => 'coloractions_alpha_form',
+    'summary theme' => 'coloractions_alpha_summary',
   );
 
   return $effects;
 }
 
 /**
- * hook_theme()
+ * Implements hook_theme().
+ *
+ * Registers theme functions for the effect summaries.
  */
 function imagecache_coloractions_theme() {
   return array(
@@ -110,9 +112,6 @@ function imagecache_coloractions_theme() {
       'variables' => array('data' => NULL),
     ),
     'coloractions_coloroverlay_summary' => array(
-      'variables' => array('data' => NULL),
-    ),
-    'coloractions_alpha_summary' => array(
       'variables' => array('data' => NULL),
     ),
     'coloractions_brightness_summary' => array(
@@ -124,26 +123,32 @@ function imagecache_coloractions_theme() {
     'coloractions_posterize_summary' => array(
       'variables' => array('data' => NULL),
     ),
+    'coloractions_alpha_summary' => array(
+      'variables' => array('data' => NULL),
+      'file' => 'transparency.inc',
+    ),
   );
 }
 
+
 /**
- * Implementation of imagecache_hook_form()
+ * Image effect form callback for the color shift effect.
  *
- * Settings for colorshift actions.
+ * @param array $data
+ *   The current configuration for this image effect.
  *
- * @param $action array of settings for this action
- * @return a form definition
+ * @return array
+ *   The form definition for this effect.
  */
-function coloractions_colorshift_form($action) {
+function coloractions_colorshift_form(array $data) {
   $defaults = array(
     'RGB' => array(
       'HEX' => '#FF0000',
     ),
   );
-  $action = array_merge($defaults, (array) $action);
+  $data = array_merge($defaults, (array) $data);
   $form = array('#theme' => 'imagecache_rgb_form');
-  $form['RGB'] = imagecache_rgb_form($action['RGB']);
+  $form['RGB'] = imagecache_rgb_form($data['RGB']);
   $form['note'] = array('#value' => t("<p>
     Note that colorshift is a mathematical filter that doesn't always
     have the expected result.
@@ -157,23 +162,31 @@ function coloractions_colorshift_form($action) {
   return $form;
 }
 
-
 /**
- * Implementation of theme_hook() for imagecache_ui.module
+ * Implements theme_hook() for the color shift effect summary.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - data: The current configuration for this image effect.
+ *
+ * @return string
+ *   The HTML for the summary of this image effect.
+ * @ingroup themeable
  */
-function theme_coloractions_colorshift_summary($variables) {
+function theme_coloractions_colorshift_summary(array $variables) {
   return theme_imagecacheactions_rgb($variables['data']);
 }
 
-
 /**
- * Implementation of hook_image()
+ * Image effect callback for the color shift effect.
  *
- * Process the imagecache action on the passed image
+ * @param stdClass $image
+ * @param array $data
  *
- * Just converts and passes the vals to the all-purpose 'filter' action
+ * @return bool
+ *   true on success, false otherwise.
  */
-function coloractions_colorshift_image($image, $data = array()) {
+function coloractions_colorshift_effect(stdClass $image, array $data) {
   // convert color from hex (as it is stored in the UI)
   if ($data['RGB']['HEX'] && $deduced = imagecache_actions_hex2rgba($data['RGB']['HEX'])) {
     $data['RGB'] = array_merge($data['RGB'], $deduced);
@@ -182,9 +195,16 @@ function coloractions_colorshift_image($image, $data = array()) {
 }
 
 /**
- * Implementation of hook_{toolkit}_{effect}()
+ * GD toolkit specific implementation of the color shift effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_gd_colorshift($image, $data = array()) {
+function image_gd_colorshift(stdClass $image, array $data) {
   $RGB = $data['RGB'];
   if (!function_exists('imagefilter')) {
     module_load_include('inc', 'imagecache_actions', 'imagefilter');
@@ -193,9 +213,16 @@ function image_gd_colorshift($image, $data = array()) {
 }
 
 /**
- * Implementation of hook_{toolkit}_{effect}()
+ * Imagemagick toolkit specific implementation of the color shift effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_imagemagick_colorshift($image, $data = array()) {
+function image_imagemagick_colorshift(stdClass $image, array $data) {
   $RGB = $data['RGB'];
   $image->ops[] = "-fill rgb" . escapeshellcmd('(') . "{$RGB['red']},{$RGB['green']},{$RGB['blue']}" . escapeshellcmd(')') . " -colorize 50" . escapeshellcmd('%');
   return TRUE;
@@ -203,22 +230,23 @@ function image_imagemagick_colorshift($image, $data = array()) {
 
 
 /**
- * Implementation of imagecache_hook_form()
+ * Image effect form callback for the color overlay effect.
  *
- * Settings for coloroverlay actions.
+ * @param array $data
+ *   The current configuration for this image effect.
  *
- * @param $action array of settings for this action
- * @return a form definition
+ * @return array
+ *   The form definition for this effect.
  */
-function coloractions_coloroverlay_form($action) {
+function coloractions_coloroverlay_form(array $data) {
   $defaults = array(
     'RGB' => array(
       'HEX' => '#E2DB6A',
     ),
   );
-  $action = array_merge($defaults, (array) $action);
+  $data = array_merge($defaults, (array) $data);
   $form = array('#theme' => 'imagecache_rgb_form');
-  $form['RGB'] = imagecache_rgb_form($action['RGB']);
+  $form['RGB'] = imagecache_rgb_form($data['RGB']);
   $form['note'] = array('#value' => t("<p>
     Note that color overlay is a mathematical filter that doesn't always
     have the expected result.
@@ -232,23 +260,31 @@ function coloractions_coloroverlay_form($action) {
   return $form;
 }
 
-
 /**
- * Implementation of theme_hook() for imagecache_ui.module
+ * Implements theme_hook() for the color overlay effect summary.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - data: The current configuration for this image effect.
+ *
+ * @return string
+ *   The HTML for the summary of this image effect.
+ * @ingroup themeable
  */
-function theme_coloractions_coloroverlay_summary($variables) {
+function theme_coloractions_coloroverlay_summary(array $variables) {
   return theme_imagecacheactions_rgb($variables['data']);
 }
 
-
 /**
- * Implementation of hook_image()
+ * Image effect callback for the color overlay effect.
  *
- * Process the imagecache action on the passed image
+ * @param stdClass $image
+ * @param array $data
  *
- * Just converts and passes the vals to the all-purpose 'filter' action
+ * @return bool
+ *   true on success, false otherwise.
  */
-function coloractions_coloroverlay_image($image, $data = array()) {
+function coloractions_coloroverlay_effect(stdClass $image, array $data) {
   // convert color from hex (as it is stored in the UI)
   if ($data['RGB']['HEX'] && $deduced = imagecache_actions_hex2rgba($data['RGB']['HEX'])) {
     $data['RGB'] = array_merge($data['RGB'], $deduced);
@@ -257,9 +293,16 @@ function coloractions_coloroverlay_image($image, $data = array()) {
 }
 
 /**
- * Implementation of hook_{toolkit}_{effect}()
+ * GD toolkit specific implementation of the color overlay effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_gd_coloroverlay($image, $data = array()) {
+function image_gd_coloroverlay(stdClass $image, array $data) {
   $RGB = $data['RGB'];
 
   $w = $image->info['width'];
@@ -294,9 +337,16 @@ function image_gd_coloroverlay($image, $data = array()) {
 }
 
 /**
- * Implementation of hook_{toolkit}_{effect}()
+ * Imagemagick toolkit specific implementation of the color overlay effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_imagemagick_coloroverlay($image, $data = array()) {
+function image_imagemagick_coloroverlay(stdClass $image, array $data) {
   $RGB = $data['RGB'];
   $image->ops[] = escapeshellcmd('(') . " +clone +matte -fill rgb" . escapeshellcmd('(') . "{$RGB['red']},{$RGB['green']},{$RGB['blue']}" . escapeshellcmd(')') . " -colorize 100" . escapeshellcmd('%') . " +clone +swap -compose overlay -composite " . escapeshellcmd(')') . " -compose SrcIn -composite";
   return TRUE;
@@ -304,107 +354,167 @@ function image_imagemagick_coloroverlay($image, $data = array()) {
 
 
 /**
- * Implementation of imagecache_hook_form()
+ * Image effect form callback for the brightness effect.
  *
- * Settings for colorshift actions.
+ * @param array $data
+ *   The current configuration for this image effect.
  *
- * @param $action array of settings for this action
- * @return a form definition
+ * @return array
+ *   The form definition for this effect.
  */
-function coloractions_brightness_form($action) {
+function coloractions_brightness_form(array $data) {
   $default = array('filter_arg1' => '100');
-  $action = array_merge($default, (array) $action);
+  $data = array_merge($default, (array) $data);
   $form = array();
   $form['help'] = array('#value' => t("The brightness effect seldom looks good on its own, but can be useful to wash out an image before making it transparent - eg for a watermark."));
   $form['filter_arg1'] = array(
     '#type' => 'textfield',
     '#title' => t('Brightness'),
     '#description' => t('-255 - +255'),
-    '#default_value' => $action['filter_arg1'],
+    '#default_value' => $data['filter_arg1'],
     '#size' => 3,
   );
   return $form;
 }
 
 /**
- * Implementation of hook_image()
+ * Implements theme_hook() for the brightness effect summary.
  *
- * Process the imagecache action on the passed image
+ * @param array $variables
+ *   An associative array containing:
+ *   - data: The current configuration for this image effect.
+ *
+ * @return string
+ *   The HTML for the summary of this image effect.
+ * @ingroup themeable
  */
-function coloractions_brightness_image($image, $data = array()) {
+function theme_coloractions_brightness_summary(array $variables) {
+  return t("Adjust") . " : " . $variables['data']['filter_arg1'];
+}
+
+/**
+ * Image effect callback for the brightness effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *
+ * @return bool
+ *   true on success, false otherwise.
+ */
+function coloractions_brightness_effect(stdClass $image, array $data) {
   return image_toolkit_invoke('brightness', $image, array($data));
 }
 
 /**
- * Implementation of hook_{toolkit}_{effect}()
+ * GD toolkit specific implementation of the brightness effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_gd_brightness($image, $data = array()) {
+function image_gd_brightness(stdClass $image, array $data) {
   if (!function_exists('imagefilter')) {
     module_load_include('inc', 'imagecache_actions', 'imagefilter');  }
   return imagefilter($image->resource, 2, $data['filter_arg1']);
 }
+
 /**
- * Implementation of hook_{toolkit}_{effect}()
+ * Imagemagick toolkit specific implementation of the brightness effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_imagemagick_brightness($image, $data = array()) {
+function image_imagemagick_brightness(stdClass $image, array $data) {
   $image->ops[] = "-modulate " . (int)(100 + ( $data['filter_arg1'] / 128 * 100 ));
   return TRUE;
 }
 
-/**
- * Implementation of theme_hook() for imagecache_ui.module
- */
-function theme_coloractions_brightness_summary($variables) {
-  return t("Adjust") . " : " . $variables['data']['filter_arg1'];
-}
-
 
 /**
- * Implementation of imagecache_hook_form()
+ * Image effect form callback for the image invert effect.
  *
- * No settings.
+ * This effect has no parameters.
  *
- * @param $action array of settings for this action
- * @return a form definition
+ * @param array $data
+ *   The current configuration for this image effect.
+ *
+ * @return array
+ *   The form definition for this effect.
  */
-function coloractions_inverse_form($action) {
+function coloractions_invert_form(array $data) {
   $form = array();
   return $form;
 }
 
 /**
- * Implementation of hook_image()
+ * Image effect callback for the image invert effect.
  *
- * Process the imagecache action on the passed image
+ * @param stdClass $image
+ * @param array $data
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function coloractions_inverse_image($image, $data = array()) {
-  return image_toolkit_invoke('inverse', $image, array($data));
+function coloractions_invert_effect(stdClass $image, array $data) {
+  return image_toolkit_invoke('invert', $image, array($data));
 }
 
 /**
- * Implementation of hook_{toolkit}_{effect}()
+ * GD toolkit specific implementation of the image invert effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_gd_inverse($image, $data = array()) {
+function image_gd_invert(stdClass $image, array $data) {
   if (!function_exists('imagefilter')) {
     module_load_include('inc', 'imagecache_actions', 'imagefilter');
   }
   return imagefilter($image->resource, 0);
 }
+
 /**
- * Implementation of hook_{toolkit}_{effect}()
+ * Imagemagick toolkit specific implementation of the image invert effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_imagemagick_inverse(&$image, $data = array()) {
-  // TODO
+function image_imagemagick_invert(stdClass $image, array $data) {
+  // @todo
   return FALSE;
 }
 
+
 /**
- * Implementation of imagecache_hook_form()
+ * Image effect form callback for the convert image format effect.
  *
- * @param $action array of settings for this action
- * @return a form definition
+ * @param array $data
+ *   The current configuration for this image effect.
+ *
+ * @return array
+ *   The form definition for this effect.
  */
-function coloractions_convert_form($action) {
+function coloractions_convert_form(array $data) {
+  $defaults = array(
+    'format' => 'image/png',
+    'quality' => '75',
+  );
+  $data = array_merge($defaults, $data);
+
   $form = array(
     'help' => array(
       '#markup' => t("If you've been using transparencies in the process, the result may get saved as a PNG (as the image was treated as a one in in-between processes). If this is not desired (file sizes may get too big) you should use this process to force a flatten action before saving. "),
@@ -415,7 +525,7 @@ function coloractions_convert_form($action) {
     'format' => array(
       '#title' => t("File format"),
       '#type' => 'select',
-      '#default_value' => isset($action['format']) ? $action['format'] : 'image/png',
+      '#default_value' => isset($data['format']) ? $data['format'] : 'image/png',
       '#options' => coloractions_file_formats(),
     ),
     'quality' => array(
@@ -424,15 +534,24 @@ function coloractions_convert_form($action) {
       '#description' => t('Override the default image quality. Works for Imagemagick only. Ranges from 0 to 100. For jpg, higher values mean better image quality but bigger files. For png it is a combination of compression and filter'),
       '#size' => 10,
       '#maxlength' => 3,
-      '#default_value' => isset($action['quality']) ? $action['quality'] : '75',
+      '#default_value' => $data['quality'],
       '#field_suffix' => '%',
     ),
   );
+
   return $form;
 }
 
 /**
- * Implementation of theme_hook() for imagecache_ui.module
+ * Implements theme_hook() for the convert image format effect summary.
+ *
+ * @param array $variables
+ *   An associative array containing:
+ *   - data: The current configuration for this image effect.
+ *
+ * @return string
+ *   The HTML for the summary of this image effect.
+ * @ingroup themeable
  */
 function theme_coloractions_convert_summary($variables) {
   $data = $variables['data'];
@@ -449,44 +568,58 @@ function theme_coloractions_convert_summary($variables) {
 }
 
 /**
- * Implementation of hook_image()
+ * Image effect callback for the convert image format effect.
  *
- * Process the imagecache action on the passed image
+ * @param stdClass $image
+ * @param array $data
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function coloractions_convert_image($image, $data = array()) {
+function coloractions_convert_effect(stdClass $image, array $data) {
   $formats = coloractions_file_formats();
   $image->info['mime_type'] = $data['format'];
   $image->info['extension'] = $formats[$data['format']];
-  image_toolkit_invoke('convert_image', $image, array($data));
+  image_toolkit_invoke('convert', $image, array($data));
   return TRUE;
 }
 
 /**
- * Implementation of hook_{toolkit}_{effect}()
+ * GD toolkit specific implementation of the convert image format effect.
  *
- * image_toolkit_invoke will exit with an error when no implementation is
- * provided for the active toolkit so provide an empty operation for the GD
- * tookit
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_gd_convert_image($image, $data) {
+function image_gd_convert($image, $data) {
   return TRUE;
 }
 
 /**
- * Implements hook_{toolkit}_{effect}().
+ * Imagemagick toolkit specific implementation of the color shift effect.
  *
  * Converting the image format with imagemagick is done by prepending the output
  * format to the target file separated by a colon (:). This is done with
  * hook_imagemagick_arguments_alter(), see below.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
-function image_imagemagick_convert_image($image, $data) {
+function image_imagemagick_convert(stdClass $image, array $data) {
   $image->ops['output_format'] = $image->info['extension'];
   $image->ops['custom_quality_value'] = (int) $data['quality'];
   return TRUE;
 }
 
 /**
- * Implements hook_imagemagick_arguments_alter.
+ * Implements hook_imagemagick_arguments_alter().
  *
  * This hook moves a change in output format from the args (action list) to the
  * destination format setting within the context.
@@ -504,32 +637,25 @@ function imagecache_coloractions_imagemagick_arguments_alter(&$args, &$context) 
 
 /**
  * Mini mime-type list
+ *
+ * @todo: can we use IMAGETYPE_xxx constants in combination with
+ * image_type_to_extension and image_type_to_mime_type?
  */
 function coloractions_file_formats() {
   return array('image/jpeg' => 'jpg', 'image/gif' => 'gif', 'image/png' => 'png');
 }
 
+
 /**
- * Implementation of theme_hook() for imagecache_ui.module
+ * Image effect form callback for the posterize effect.
+ *
+ * @param array $data
+ *   The current configuration for this image effect.
+ *
+ * @return array
+ *   The form definition for this effect.
  */
-function theme_coloractions_posterize_summary($variables) {
-  return t(': Reduce to @colors color levels per channel', array('@colors' => $variables['data']['colors']));
-}
-
-function coloractions_posterize_image(&$image, $data) {
-  if (!image_toolkit_invoke('posterize', $image, array($data['colors']))) {
-    watchdog('image_posterize', 'Image posterize failed using the %toolkit toolkit on %path (%mimetype, %dimensions)', array(
-      '%toolkit' => $image->toolkit,
-      '%path' => $image->source,
-      '%mimetype' => $image->info['mime_type'],
-      '%dimensions' => $image->info['height'] . 'x' . $image->info['height'],
-    ), WATCHDOG_ERROR);
-    return FALSE;
-  }
-  return TRUE;
-}
-
-function coloractions_posterize_form($data) {
+function coloractions_posterize_form(array $data) {
   $form = array();
 
   $form['colors'] = array(
@@ -547,20 +673,66 @@ function coloractions_posterize_form($data) {
 }
 
 /**
- * Posterize action for GD.
+ * Implements theme_hook() for the posterize effect summary.
  *
- * @see http://www.qtcentre.org/threads/36385-Posterizes-an-image-with-results-identical-to-Gimp-s-Posterize-command?p=167712#post167712
+ * @param array $variables
+ *   An associative array containing:
+ *   - data: The current configuration for this image effect.
+ *
+ * @return string
+ *   The HTML for the summary of this image effect.
+ * @ingroup themeable
+ */
+function theme_coloractions_posterize_summary(array $variables) {
+  return t(': Reduce to @colors color levels per channel', array('@colors' => $variables['data']['colors']));
+}
+
+/**
+ * Image effect callback for the posterize effect.
+ *
+ * @param stdClass $image
+ * @param array $data
+ *
+ * @return bool
+ *   true on success, false otherwise.
+ */
+function coloractions_posterize_effect(stdClass $image, array $data) {
+  if (!image_toolkit_invoke('posterize', $image, array($data['colors']))) {
+    watchdog('image_posterize', 'Image posterize failed using the %toolkit toolkit on %path (%mimetype, %dimensions)', array(
+      '%toolkit' => $image->toolkit,
+      '%path' => $image->source,
+      '%mimetype' => $image->info['mime_type'],
+      '%dimensions' => $image->info['height'] . 'x' . $image->info['height'],
+    ), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  return TRUE;
+}
+
+/**
+ * GD toolkit specific implementation of the posterize effect.
+ *
+ * Based on:
+ * http://www.qtcentre.org/threads/36385-Posterizes-an-image-with-results-identical-to-Gimp-s-Posterize-command?p=167712#post167712
+ *
+ * @param stdClass $image
+ * @param int $colors
+ *   The parameter for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
 function image_gd_posterize(stdClass $image, $colors) {
   // Value step for colors per channel.
   $round_to = 255 / ($colors - 1);
+  $alpha_bit_mask = 255 << 24;
 
   for ($x = imagesx($image->resource); $x--; ) {
     for ($y = imagesy($image->resource); $y--; ) {
       $rgb = imagecolorat($image->resource, $x, $y);
 
       // Use bitmasks to extract numbers we want, faster equivalent to imagecolorsforindex().
-      $a = $rgb >> 24 & 255; // Alpha
+      $a = $rgb & $alpha_bit_mask; // Alpha
       $r = $rgb >> 16 & 255; // Red
       $g = $rgb >> 8  & 255; // Green
       $b = $rgb       & 255; // Blue
@@ -571,7 +743,7 @@ function image_gd_posterize(stdClass $image, $colors) {
       $new_b = (int) (((int) ($b / $round_to + 0.5)) * $round_to  + 0.5);
 
       // Faster equivalent to imagecolorallocatealpha().
-      $color_combined = ($a << 24) | ($new_r << 16) | ($new_g << 8) | $new_b;
+      $color_combined = $a | ($new_r << 16) | ($new_g << 8) | $new_b;
       imagesetpixel($image->resource, $x, $y, $color_combined);
     }
   }
@@ -580,7 +752,14 @@ function image_gd_posterize(stdClass $image, $colors) {
 }
 
 /**
- * Posterize action for ImageMagick.
+ * Imagemagick toolkit specific implementation of the color shift effect.
+ *
+ * @param stdClass $image
+ * @param int $colors
+ *   The parameter for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
  */
 function image_imagemagick_posterize(stdClass $image, $colors) {
   // In newer versions of ImageMagick dithering has no effect on posterize.

@@ -15,15 +15,21 @@
 function _bootstrap_settings_form(&$form, $form_state) {
   // Do not add Bootstrap specific settings to non-bootstrap based themes.
   $theme = !empty($form_state['build_info']['args'][0]) ? $form_state['build_info']['args'][0] : FALSE;
-
-  // Global or non Bootstrap based theme settings.
-  if ($theme === FALSE || !in_array('bootstrap', _bootstrap_get_base_themes($theme, TRUE))) {
+  // Global settings.
+  if ($theme === FALSE) {
     return;
+  }
+  // Other theme settings.
+  elseif ($theme !== 'bootstrap') {
+    $base_theme = bootstrap_get_theme_info($theme, 'base theme');
+    if (!$base_theme || (!is_array($base_theme) && $base_theme !== 'bootstrap') || (is_array($base_theme) && !in_array('bootstrap', $base_theme))) {
+      return;
+    }
   }
 
   // Display a warning if jquery_update isn't enabled.
-  if ((!module_exists('jquery_update') || !version_compare(variable_get('jquery_update_jquery_version', '1.10'), '1.7', '>=')) && !theme_get_setting('bootstrap_toggle_jquery_error')) {
-    drupal_set_message(t('jQuery Update is not enabled, Bootstrap requires a minimum jQuery version of 1.7 or higher.<br/>Please enable <a href="https://drupal.org/project/jquery_update">jQuery Update module</a> 7.x-2.3 or higher, you must manually set this in the configuration after it is installed.'), 'error', FALSE);
+  if ((!module_exists('jquery_update') || !version_compare(variable_get('jquery_update_jquery_version', 0), 1.7, '>=')) && !theme_get_setting('bootstrap_toggle_jquery_error')) {
+    drupal_set_message(t('jQuery Update is not enabled, Bootstrap requires a minimum jQuery version of 1.7 or higher.<br/>Please enable <a href="https://drupal.org/project/jquery_update">jQuery Update module</a> 7.x-2.3 or higher, you must manually set this in the configuration after it is installed.'), 'error');
   }
 
   // Wrap global setting fieldsets in vertical tabs.
@@ -57,7 +63,6 @@ function _bootstrap_settings_form(&$form, $form_state) {
     '#title' => t('Components'),
     '#group' => 'bootstrap',
   );
-
   // Breadcrumbs.
   $form['components']['breadcrumbs'] = array(
     '#type' => 'fieldset',
@@ -97,7 +102,6 @@ function _bootstrap_settings_form(&$form, $form_state) {
       ),
     ),
   );
-
   // Navbar.
   $form['components']['navbar'] = array(
     '#type' => 'fieldset',
@@ -158,7 +162,6 @@ function _bootstrap_settings_form(&$form, $form_state) {
     '#title' => t('JavaScript'),
     '#group' => 'bootstrap',
   );
-
   // Anchors.
   $form['javascript']['anchors'] = array(
     '#type' => 'fieldset',
@@ -183,7 +186,6 @@ function _bootstrap_settings_form(&$form, $form_state) {
       ),
     ),
   );
-
   // Popovers.
   $form['javascript']['popovers'] = array(
     '#type' => 'fieldset',
@@ -266,12 +268,6 @@ function _bootstrap_settings_form(&$form, $form_state) {
       'manual',
     )),
   );
-  $form['javascript']['popovers']['options']['bootstrap_popover_trigger_autoclose'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Auto-close on document click'),
-    '#description' => t('Will automatically close the current popover if a click occurs anywhere else other than the popover element.'),
-    '#default_value' => theme_get_setting('bootstrap_popover_trigger_autoclose'),
-  );
   $form['javascript']['popovers']['options']['bootstrap_popover_title'] = array(
     '#type' => 'textfield',
     '#title' => t('title'),
@@ -281,7 +277,7 @@ function _bootstrap_settings_form(&$form, $form_state) {
   $form['javascript']['popovers']['options']['bootstrap_popover_content'] = array(
     '#type' => 'textfield',
     '#title' => t('content'),
-    '#description' => t('Default content value if "data-content" or "data-target" attributes are not present.'),
+    '#description' => t("Default content value if \"data-content\" attribute isn't present."),
     '#default_value' => theme_get_setting('bootstrap_popover_content'),
   );
   $form['javascript']['popovers']['options']['bootstrap_popover_delay'] = array(
@@ -296,7 +292,6 @@ function _bootstrap_settings_form(&$form, $form_state) {
     '#description' => t('Appends the popover to a specific element. Example: "body". This option is particularly useful in that it allows you to position the popover in the flow of the document near the triggering element - which will prevent the popover from floating away from the triggering element during a window resize.'),
     '#default_value' => theme_get_setting('bootstrap_popover_container'),
   );
-
   // Tooltips.
   $form['javascript']['tooltips'] = array(
     '#type' => 'fieldset',
@@ -318,24 +313,12 @@ function _bootstrap_settings_form(&$form, $form_state) {
   );
   $form['javascript']['tooltips']['bootstrap_tooltip_descriptions'] = array(
     '#type' => 'checkbox',
-    '#title' => t('Use Tooltips for simple form descriptions'),
-    '#description' => t('Form items that contain simple descriptions (no HTML, no title attribute and are less than the specified length below) will be converted into tooltips. This helps reduce the sometimes unnecessary noise of form item descriptions. Descriptions that contain longer text or HTML as actionable descriptions (user needs to click) will not be converted. This ensures it is always visible so its usability remains intact.'),
+    '#title' => t('Convert simple form descriptions'),
+    '#description' => t('Form items that contain simple descriptions (no HTML and shorter than 200 characters) will be converted into tooltips. This helps reduce the sometimes unnecessary noise of form item descriptions. By treating descriptions that contain longer text or HTML as actionable descriptions, we ensure it is always visible so its usability remains intact.'),
     '#default_value' => theme_get_setting('bootstrap_tooltip_descriptions'),
     '#states' => array(
       'visible' => array(
         ':input[name="bootstrap_tooltip_enabled"]' => array('checked' => TRUE),
-      ),
-    ),
-  );
-  $form['javascript']['tooltips']['bootstrap_tooltip_descriptions_length'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Simple form description length'),
-    '#description' => t('The character length limit used to determine when a description makes a sense to be used as a tooltip.'),
-    '#default_value' => theme_get_setting('bootstrap_tooltip_descriptions_length'),
-    '#states' => array(
-      'visible' => array(
-        ':input[name="bootstrap_tooltip_enabled"]' => array('checked' => TRUE),
-        ':input[name="bootstrap_tooltip_descriptions"]' => array('checked' => TRUE),
       ),
     ),
   );
@@ -420,7 +403,6 @@ function _bootstrap_settings_form(&$form, $form_state) {
     '#title' => t('Advanced'),
     '#group' => 'bootstrap',
   );
-
   // BootstrapCDN.
   $form['advanced']['bootstrap_cdn'] = array(
     '#type' => 'fieldset',
@@ -438,18 +420,14 @@ function _bootstrap_settings_form(&$form, $form_state) {
     '#type' => 'select',
     '#title' => t('BootstrapCDN version'),
     '#options' => drupal_map_assoc(array(
-      '3.1.1',
-      '3.1.0',
-      '3.0.3',
-      '3.0.2',
-      '3.0.1',
       '3.0.0',
+      '3.0.1',
+      '3.0.2',
     )),
     '#default_value' => theme_get_setting('bootstrap_cdn'),
     '#empty_option' => t('Disabled'),
     '#empty_value' => NULL,
   );
-
   // Bootswatch.
   $bootswatch_themes = array();
   $request = drupal_http_request('http://api.bootswatch.com/3/');
@@ -482,7 +460,16 @@ function _bootstrap_settings_form(&$form, $form_state) {
   if (empty($bootswatch_themes)) {
     $form['advanced']['bootstrap_cdn']['bootstrap_bootswatch']['#prefix'] = '<div class="alert alert-danger messages error"><strong>' . t('ERROR') . ':</strong> ' . t('Unable to reach Bootswatch API. Please ensure the server your website is hosted on is able to initiate HTTP requests.') . '</div>';
   }
-
+  // Rebuild registry.
+  $form['advanced']['bootstrap_rebuild_registry'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Rebuild theme registry on every page.'),
+    '#default_value' => theme_get_setting('bootstrap_rebuild_registry'),
+    '#description' => t('During theme development, it can be very useful to continuously !rebuild. !warning', array(
+      '!rebuild' => l(t('rebuild the theme registry'), 'http://drupal.org/node/173880#theme-registry'),
+      '!warning' => '<div class="alert alert-warning messages warning"><strong>' . t('WARNING') . ':</strong> ' . t('This is a huge performance penalty and must be turned off on production websites. ') . '</div>',
+    )),
+  );
   // Suppress jQuery message.
   $form['advanced']['bootstrap_toggle_jquery_error'] = array(
     '#type' => 'checkbox',

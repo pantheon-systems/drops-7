@@ -100,18 +100,26 @@ test('filters', function () {
   });
 
   query = new recline.Model.Query();
-  query.addFilter({type: 'range', field: 'date', start: '2011-01-01', stop: '2011-05-01'});
+  query.addFilter({type: 'terms', field: 'country', terms: ['UK','DE']});
+  data.query(query.toJSON()).then(function(out) {
+    equal(out.total, 5);
+    deepEqual(_.pluck(out.hits, 'country'), ['DE','UK','UK','UK','DE']);
+  });
+
+  query = new recline.Model.Query();
+  query.addFilter({type: 'range', field: 'date', from: '2011-01-01', to: '2011-05-01'});
   data.query(query.toJSON()).then(function(out) {
     equal(out.total, 3);
     deepEqual(_.pluck(out.hits, 'date'), ['2011-01-01','2011-02-03','2011-04-05']);
   });
   
   query = new recline.Model.Query();
-  query.addFilter({type: 'range', field: 'z', start: '0', stop: '10'});
+  query.addFilter({type: 'range', field: 'z', from: '0', to: '10'});
   data.query(query.toJSON()).then(function(out) {
     equal(out.total, 3);
     deepEqual(_.pluck(out.hits, 'z'), [3,6,9]);
   });
+
 });
 
 
@@ -119,35 +127,37 @@ test('filters with nulls', function () {
   var data = _wrapData();
 
   query = new recline.Model.Query();
-  query.addFilter({type: 'range', field: 'z', start: '', stop: null});
+  query.addFilter({type: 'range', field: 'z', from: '', to: null});
   data.query(query.toJSON()).then(function(out) {
     equal(out.total, 6);
   });
 
   query = new recline.Model.Query();
-  query.addFilter({type: 'range', field: 'x', start: '', stop: '3'});
+  query.addFilter({type: 'range', field: 'x', from: '', to: '3'});
   data.query(query.toJSON()).then(function(out) {
     equal(out.total, 3);
   });
 
   query = new recline.Model.Query();
-  query.addFilter({type: 'range', field: 'x', start: '3', stop: ''});
+  query.addFilter({type: 'range', field: 'x', from: '3', to: ''});
   data.query(query.toJSON()).then(function(out) {
     equal(out.total, 4);
   });
 
   data.records[5].country = '';
+
   query = new recline.Model.Query();
-  query.addFilter({type: 'range', field: 'country', start: '', stop: 'Z'});
+  query.addFilter({type: 'range', field: 'country', from: '', to: 'Z'});
   data.query(query.toJSON()).then(function(out) {
     equal(out.total, 5);
   });
 
   query = new recline.Model.Query();
-  query.addFilter({type: 'range', field: 'x', start: '', stop: ''});
+  query.addFilter({type: 'range', field: 'x', from: '', to: ''});
   data.query(query.toJSON()).then(function(out) {
     equal(out.total, 6);
   });
+
 });
 
 test('facet', function () {
@@ -305,14 +315,21 @@ test('filters', function () {
   });
 
   dataset = makeBackendDataset();
-  dataset.queryState.addFilter({type: 'range', field: 'date', start: '2011-01-01', stop: '2011-05-01'});
+  dataset.queryState.addFilter({type: 'terms', field: 'country', terms: ['UK','DE']});
+  dataset.query().then(function() {
+    equal(dataset.records.length, 5);
+    deepEqual(dataset.records.pluck('country'), ['DE','UK', 'UK', 'UK','DE']);
+  });
+
+  dataset = makeBackendDataset();
+  dataset.queryState.addFilter({type: 'range', field: 'date', from: '2011-01-01', to: '2011-05-01'});
   dataset.query().then(function() {
     equal(dataset.records.length, 3);
     deepEqual(dataset.records.pluck('date'), ['2011-01-01','2011-02-03','2011-04-05']);
   });
   
   dataset = makeBackendDataset();
-  dataset.queryState.addFilter({type: 'range', field: 'z', start: '0', stop: '10'});
+  dataset.queryState.addFilter({type: 'range', field: 'z', from: '0', to: '10'});
   dataset.query().then(function() {
     equal(dataset.records.length, 3);
     deepEqual(dataset.records.pluck('z'), [3,6,9]);

@@ -9,10 +9,10 @@ body.overlay {
 }
 h1,h2,h3,h4,
 h2.block-title {
-	color: @top;
+	
 }
 
-.tint,
+#featured .tint,
 #block-dkan-sitewide-demo-front-dkan-demo-front {
   background-color: @tint;
 }
@@ -66,17 +66,24 @@ a:active {
 	color:#ffffff;
 }
 
-.resource-list .btn-primary,
-.view-og-count .btn-primary {
+.view-group-block .views-field-nid a,
+.btn-primary {
 	background-color: @top;
 	border:1px solid @top;
 	color:#ffffff;
 }
-.resource-list  .btn-primary:hover,
-.view-og-count .btn-primary:hover {
+
+.view-group-block .views-field-nid a:hover,
+.btn-primary:hover {
 	background:@bottom;
 	border:1px solid @bottom;
 	color:#ffffff;
+}
+#edit-submit:hover,
+#edit-submit:focus, 
+#edit-submit:active {
+	background: @linkactive;
+	border-color: @linkactive;
 }
 
 .region-sidebar-first .block-facetapi ul li.leaf a:hover,

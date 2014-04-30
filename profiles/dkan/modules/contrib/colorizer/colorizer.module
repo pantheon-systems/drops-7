@@ -27,26 +27,27 @@ function colorizer_menu() {
 
 /**
  * Implements hook_init().
- * Add the colorized style sheet to the site
+ *
+ * Add the colorized style sheet to the site.
  */
 function colorizer_init() {
   static $first = TRUE;
   global $theme_key;
   $instance = $theme_key;
-  // allow other modules to change the instance we are updating
-  // allows for group-specific color instances rather than tying to theme
+  // Allow other modules to change the instance we are updating.
+  // Allows for group-specific color instances rather than tying to theme.
   drupal_alter('colorizer_instance', $instance);
 
   $file = variable_get('colorizer_' . $instance . '_stylesheet', '');
 
-  // recreate any missing colorize css files
+  // Recreate any missing colorize css files.
   if (!file_exists($file)) {
     $palette = colorizer_get_palette($theme_key, $instance);
     if (!empty($palette)) {
       $file = colorizer_update_stylesheet($theme_key, $instance, $palette);
       clearstatcache();
       if (!file_exists($file)) {
-        // could not create the style sheet, so stop trying to recreate it
+        // Could not create the style sheet, so stop trying to recreate it.
         variable_del('colorizer_' . $instance . '_stylesheet');
       }
     }
@@ -55,7 +56,8 @@ function colorizer_init() {
     'type' => 'external',
     'group' => CSS_THEME,
     'every_page' => TRUE,
-    'weight' => 999, // want to be last
+    'weight' => 999,
+    // Want to be last.
   ));
 }
 
@@ -100,8 +102,9 @@ function colorizer_get_palette($theme, $instance = '', $default = FALSE) {
 }
 
 /**
- * Fill in any missing colors in palette with defaults
- * scaled to the correct hue
+ * Fill in any missing colors in palette with defaults.
+ *
+ * Scaled to the correct hue.
  */
 function colorizer_fill_defaults($info) {
   foreach ($info['schemes'] as $scheme => $colors) {
@@ -110,13 +113,13 @@ function colorizer_fill_defaults($info) {
     }
     foreach ($info['fields'] as $key => $value) {
       if (empty($colors['colors'][$key]) && !empty($colors['base'])) {
-        // compute missing color
+        // Compute missing color.
         $def_color = _colorizer_unpack($info['schemes']['default']['colors'][$key], TRUE);
         $def_hsl = _colorizer_rgb2hsl($def_color);
         $base_color = _colorizer_unpack($colors['base'], TRUE);
         $base_hsl = _colorizer_rgb2hsl($base_color);
-
-        $def_hsl[0] = $base_hsl[0]; // copy hue from base into def color
+        // Copy hue from base into def color.
+        $def_hsl[0] = $base_hsl[0];
         $new_color = _colorizer_hsl2rgb($def_hsl);
         $info['schemes'][$scheme]['colors'][$key] = _colorizer_pack($new_color, TRUE);
       }
@@ -126,7 +129,8 @@ function colorizer_fill_defaults($info) {
 }
 
 /**
- * Create a new stylesheet by replacing color variables
+ * Create a new stylesheet by replacing color variables.
+ *
  * Basic filehandling copied from Color module
  */
 function colorizer_update_stylesheet($theme, $instance, $palette) {
@@ -174,9 +178,29 @@ function colorizer_update_stylesheet($theme, $instance, $palette) {
  * Rewrites the stylesheet to match the colors in the palette.
  */
 function _colorizer_rewrite_stylesheet($palette, $style) {
-  // loop through all color variables and perform string replacement in css
+  // Loop through all color variables and perform string replacement in css.
   foreach ($palette as $key => $value) {
     $style = preg_replace('/@' . $key . '\b/', $value, $style);
+    // Get the RGB value of the @top key.
+    if ($key == 'top') {
+      if ($value[0] == '#') {
+        $value = substr($value, 1);
+      }
+      if (strlen($value) == 6) {
+        list($r, $g, $b) = array(
+          $value[0] . $value[1],
+          $value[2] . $value[3],
+          $value[4] . $value[5],
+        );
+      }
+      else {
+        return FALSE;
+      }
+      $r = hexdec($r);
+      $g = hexdec($g);
+      $b = hexdec($b);
+      $style = preg_replace('/@tint\b/', 'rgba(' . $r . ' , ' . $g . ' , ' . $b . ',0.45)', $style);
+    }
   }
   return $style;
 }
@@ -194,8 +218,9 @@ function _colorizer_save_stylesheet($file, $style) {
 }
 
 /**
- * Removes css files from colorizer files cache
- * They will get recreated in hook_init on demand
+ * Removes css files from colorizer files cache.
+ *
+ * They will get recreated in hook_init on demand.
  */
 function colorizer_clearcache() {
   file_unmanaged_delete_recursive('public://colorizer');
@@ -243,7 +268,7 @@ function _colorizer_hsl2rgb($hsl) {
   $h = $hsl[0];
   $s = $hsl[1];
   $l = $hsl[2];
-  $m2 = ($l <= 0.5) ? $l * ($s + 1) : $l + $s - $l*$s;
+  $m2 = ($l <= 0.5) ? $l * ($s + 1) : $l + $s - $l * $s;
   $m1 = $l * 2 - $m2;
 
   return array(

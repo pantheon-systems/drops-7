@@ -183,7 +183,27 @@ jQuery.fn.sortElements = (function(){
         }
       }
 
+      function updateComponentCountInfo(item, section) {
+        console.log(section);
+        switch (section) {
+          case 'select':
+            var parent = $(item).closest('.features-export-list').siblings('.features-export-component');
+            $('.component-count', parent).text(function (index, text) {
+                return +text + 1;
+              }
+            );
+            break;
+          case 'added':
+          case 'detected':
+            var parent = $(item).closest('.features-export-component');
+            $('.component-count', parent).text(function (index, text) {
+              return text - 1;
+            });
+        }
+      }
+
       function moveCheckbox(item, section, value) {
+        updateComponentCountInfo(item, section);
         var curParent = item;
         if ($(item).hasClass('form-type-checkbox')) {
           item = $(item).children('input[type=checkbox]');

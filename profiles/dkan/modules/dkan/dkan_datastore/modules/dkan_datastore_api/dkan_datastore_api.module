@@ -254,7 +254,7 @@ function dkan_datastore_api_add_index_conditions(&$data_select, $filters, $alias
 function dkan_datastore_api_add_index_query(&$data_select, $table, $query) {
   if (db_driver() == 'mysql') {
     // Get fulltext fields
-    $ft_result = db_query("SHOW INDEX IN $table WHERE Index_type = 'FULLTEXT'");
+    $ft_result = db_query("SHOW INDEX IN \{$table\} WHERE Index_type = 'FULLTEXT'");
     $ft_fields = array();
     foreach($ft_result as $ft_row) {
       $ft_fields[] = $ft_row->Column_name;
@@ -312,7 +312,7 @@ function dkan_datastore_api_sort_clean($sort) {
   if (strpos($sort,' asc') !== false) {
     $type = 'asc';
   }
-  elseif (strpos($sort,' desc') !== false) {
+  elseif (strpos($sort, ' desc') !== FALSE) {
     $type = 'desc';
   }
   else {
@@ -330,14 +330,21 @@ function dkan_datastore_api_sort_clean($sort) {
  * Returns table name or exeption.
  */
 function dkan_datastore_api_tablename($resource_id) {
-  $nid = db_query('SELECT nid FROM {node} WHERE uuid = :uuid', array(':uuid' => $resource_id))->fetchField();
-  $source_id = dkan_datastore_api_get_feeds_source($nid);
-  $table = feeds_flatstore_processor_table_name($source_id, $nid);
-  if (db_table_exists($table)) {
-    return $table;
+  static $tables;
+  if (!isset($tables[$resource_id])) {
+    $nid = db_query('SELECT nid FROM {node} WHERE uuid = :uuid', array(':uuid' => $resource_id))->fetchField();
+    $source_id = dkan_datastore_api_get_feeds_source($nid);
+    $table = feeds_flatstore_processor_table_name($source_id, $nid);
+    if (db_table_exists($table)) {
+      $tables[$resource_id] = $table;
+      return $table;
+    }
+    else {
+      throw new Exception('Resource ' . $resource_id . ' does not exist.');
+    }
   }
   else {
-    throw new Exception('Resource ' . $resource_id . ' does not exist.');
+    return $tables[$resource_id];
   }
 }
 /**
@@ -447,7 +454,9 @@ function dkan_datastore_api_resource_build_index_list($results, $table, $fields,
   }
   $return->resource_id = $resource_ids;
   $return->limit = $count['limit'];
-  $total = db_query("SELECT count(feeds_flatstore_entry_id) from {$table}")->fetchCol();
+  $query = db_select($table, 't');
+  $query->addExpression('count(t.timestamp)', 'count');
+  $total = $query->execute()->fetchCol();
   $return->total = $total[0];
   $return->records = $items;
 

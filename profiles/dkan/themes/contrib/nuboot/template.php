@@ -24,7 +24,6 @@ function nuboot_preprocess_html(&$variables) {
  */
 function nuboot_preprocess_page(&$vars) {
   if (drupal_is_front_page()) {
-    drupal_add_js('js/front.js');
     $vars['title'] = '';
     unset($vars['page']['content']['system_main']['default_message']);
   }
@@ -147,6 +146,14 @@ function nuboot_menu_local_task($variables) {
 
       case 'node/%/members':
         $icon_type = 'user';
+        break;
+
+      case 'node/%/revisions':
+        $icon_type = 'folder-open-o';
+        break;
+
+      case 'node/%/datastore/delete-items':
+        $icon_type = 'eraser';
         break;
 
       default:
@@ -296,5 +303,50 @@ function nuboot_sitewide_social_block() {
     ),
   );
 
+  return $output;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function nuboot_form_alter(&$form, &$form_state, $form_id) {
+  switch ($form_id) {
+    case 'colorizer_admin_settings':
+      $form['colorizer_global']['colorizer_cssfile']['#default_value'] = 'colorizer/colorizer.css';
+      $form['colorizer_global']['colorizer_incfile']['#default_value'] = 'colorizer/colorizer.inc';
+      break;
+
+  }
+}
+
+/**
+ * Overrides theme_file_widget().
+ *
+ * https://drupal.org/files/issues/bootstrap-undefined-index-2177089-1.patch
+ */
+function nuboot_file_widget($variables) {
+  $element = $variables['element'];
+  $output = '';
+
+  $hidden_elements = array();
+  foreach (element_children($element) as $child) {
+    if (isset($element[$child]['#type']) && $element[$child]['#type'] === 'hidden') {
+      $hidden_elements[$child] = $element[$child];
+      unset($element[$child]);
+    }
+  }
+
+  $element['upload_button']['#prefix'] = '<span class="input-group-btn">';
+  $element['upload_button']['#suffix'] = '</span>';
+
+  // The "form-managed-file" class is required for proper Ajax functionality.
+  $output .= '<div class="file-widget form-managed-file clearfix input-group">';
+  if (!empty($element['fid']['#value'])) {
+    // Add the file size after the file name.
+    $element['filename']['#markup'] .= ' <span class="file-size">(' . format_size($element['#file']->filesize) . ')</span> ';
+  }
+  $output .= drupal_render_children($element);
+  $output .= '</div>';
+  $output .= render($hidden_elements);
   return $output;
 }

@@ -73,7 +73,20 @@ var createExplorer = function(dataset, state) {
       id: 'grid',
       label: 'Grid',
       view: new recline.View.SlickGrid({
-        model: dataset
+        model: dataset,
+        state: {
+          gridOptions: {
+            editable: true,
+            enabledAddRow: true,
+		enabledDelRow: true,
+            autoEdit: false,
+            enableCellNavigation: true
+          },
+          columnsEditor: [
+            { column: 'date', editor: Slick.Editors.Date },
+            { column: 'title', editor: Slick.Editors.Text }
+          ]
+        }
       })
     },
     {
@@ -81,6 +94,7 @@ var createExplorer = function(dataset, state) {
       label: 'Graph',
       view: new recline.View.Graph({
         model: dataset
+
       })
     },
     {

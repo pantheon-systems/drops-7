@@ -15,6 +15,7 @@ function dkan_default_content_available_groups(){
 function dkan_default_content_data_explorer_group(){
 	return array(
 	  'title' => 'Data Explorer Examples',
+    'uid' => 1,
     'status' => '1',
     'sort_value' => '2',
     'promote' => '0',
@@ -59,6 +60,7 @@ function dkan_default_content_data_explorer_group(){
 function dkan_default_content_geospatial_group(){
   return array(
     'title' => 'Geospatial Data Explorer Examples',
+    'uid' => 1,
     'status' => '1',
     'sort_value' => '1',
     'promote' => '0',
@@ -72,10 +74,10 @@ function dkan_default_content_geospatial_group(){
     'body' => array(
       'und' => array(
         0 => array(
-          'value' => 'DKAN can plot both latitude and longitude as well as GeoJSON on a map. For more information, see ',
+          'value' => 'DKAN can plot both latitude and longitude as well as GeoJSON on a map.',
           'summary' => '',
           'format' => 'plain_text',
-          'safe_value' => '<p>DKAN can plot both latitude and longitude as well as GeoJSON on a map. For more information, see</p>',
+          'safe_value' => '<p>DKAN can plot both latitude and longitude as well as GeoJSON on a map.</p>',
           'safe_summary' => '',
         ),
       ),

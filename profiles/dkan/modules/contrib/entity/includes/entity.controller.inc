@@ -587,6 +587,16 @@ class EntityAPIController extends DrupalDefaultEntityController implements Entit
     $entity->content = $content;
     $langcode = isset($langcode) ? $langcode : $GLOBALS['language_content']->language;
 
+    // Allow modules to change the view mode.
+    $context = array(
+      'entity_type' => $this->entityType,
+      'entity' => $entity,
+      'langcode' => $langcode,
+    );
+    drupal_alter('entity_view_mode', $view_mode, $context);
+    // Make sure the used view-mode gets stored.
+    $entity->content += array('#view_mode' => $view_mode);
+
     // By default add in properties for all defined extra fields.
     if ($extra_field_controller = entity_get_extra_fields_controller($this->entityType)) {
       $wrapper = entity_metadata_wrapper($this->entityType, $entity);

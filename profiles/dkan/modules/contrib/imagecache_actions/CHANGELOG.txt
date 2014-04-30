@@ -3,6 +3,19 @@ Imagecache Actions
 
 Imagecache Actions 7.x-1.x-dev
 ------------------------------
+- [#2183721]: Duplicate/Export links just edit, they don't duplicate or export.
+    possible solution only.
+- [#2176727]: New actions: scale / resize by percent.
+- [#2190759]: hook_image_style_flush(): Prefer silent failure over clear failure.
+- [#2166715]: Typo causes extra query every page load.
+- [#2139091]: # sign before HEX in settings form breaks Define canvas action.
+- [#2085967]: Remove .gitignore from version control.
+- Text overlay: treat empty texts as normal situation.
+- [#2003446]: Clean up or remove .install files, adapt .info files.
+- [1854270-48]: Minor optimization for Posterize.
+- Refactor: eliminate test warnings and errors.
+- Refactor: standardize function and parameter naming, function order, doxygen
+    documentation and comments, remove spelling errors in doc and comments.
 
 
 Imagecache Actions 7.x-1.4 2013-08-24

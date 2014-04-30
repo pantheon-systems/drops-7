@@ -1,0 +1,278 @@
+<?php
+/**
+ * Implements hook_og_permission().
+ *
+ */
+function og_moderation_og_permission() {
+  $perms = array();
+  $infos = node_type_get_types();
+
+  if (module_exists('clone')) {
+    $perms["clone node"] = array(
+      'title' => t("Clone any node"),
+    );
+    $perms["clone own nodes"] = array(
+      'title' => t("Clone own nodes."),
+    );
+  }
+
+  if (module_exists('revisioning')) {
+    $moderated_content_types = implode(', ', revisioning_moderated_content_types(FALSE));
+    $perms["publish revisions"] = array(
+      'title' => t("Publish content revisions (of anyone's content)"),
+      'description' => t('Applies to content types that are subject to moderation, i.e.: %moderated_content_types.', array('%moderated_content_types' => $moderated_content_types)),
+    );
+    $perms["unpublish current revision"] = array(
+      'title' => t("Unpublish current revision (of anyone's content)"),
+      'description' => t('Applies to content types that are subject to moderation, i.e.: %moderated_content_types.', array('%moderated_content_types' => $moderated_content_types)),
+    );
+
+    foreach ($infos as $info) {
+      if (og_is_group_content_type('node', $info->type)) {
+        $perms["publish revisions of own " . $info->type . " content"] = array(
+          'title' => t('Publish revisions of own %type_name content', array('%type_name' => $info->name)),
+        );
+        $perms["publish revisions of any " . $info->type . " content"] = array(
+          'title' => t('Publish revisions of any %type_name content', array('%type_name' => $info->name)),
+        );
+      }
+    }
+  }
+
+  foreach ($infos as $info) {
+    if (og_is_group_content_type('node', $info->type)) {
+      $perms["view any unpublished " . $info->type . " content"] = array(
+        'title' => t('View any unpublished %type_name content', array('%type_name' => $info->name)),
+      );
+      $perms["access publishing options of " . $info->type . " content"] = array(
+        'title' => t('Access publishing options of %type_name content', array('%type_name' => $info->name)),
+      );
+      $perms["access revisions options of " . $info->type . " content"] = array(
+        'title' => t('Access revisions options of %type_name content', array('%type_name' => $info->name)),
+      );
+      $perms["access authoring options of " . $info->type . " content"] = array(
+        'title' => t('Access authoring information of %type_name content', array('%type_name' => $info->name)),
+        'description' => t('Allows changing author and/or authored on date'),
+      );
+    }
+  }
+  return $perms;
+}
+
+function og_moderation_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node_edit_form'])) {
+    if ($form['#node_edit_form'] && og_is_group_content_type('node', $form['#bundle'])) {
+      if (isset($form['#node']->nid))
+        $gids = og_get_entity_groups('node', $form['#node']);
+      else
+        $gids = og_get_groups_by_user();
+      if ($gids) {
+        foreach($gids['node'] as $id => $gid) {
+          if (og_user_access('node', $gid, "access publishing options of " . $form['#bundle'] . " content")) {
+            $form['options']['#access'] = TRUE;
+          }
+          if (og_user_access('node', $gid, "access revisions options of " . $form['#bundle'] . " content")) {
+            $form['revision_information']['#access'] = TRUE;
+          }
+          if (og_user_access('node', $gid, "access authoring options of " . $form['#bundle'] . " content")) {
+            $form['author']['#access'] = TRUE;
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_access_records().
+ */
+function og_moderation_node_access_records($node) {
+  if ($node->status == 0 && $group_types = og_get_entity_groups('node', $node)) {
+    $grants = array();
+    foreach (array_values($group_types) as $gids) {
+      foreach ($gids as $gid) {
+        $grants[] = array(
+          'realm' => 'og_view_any_unpublished_' . $node->type . '_content',
+          'gid' => $gid,
+          'grant_view' => 1,
+          'grant_update' => 0,
+          'grant_delete' => 0,
+          'priority' => 0,
+        );
+      }
+    }
+    return $grants;
+  }
+}
+
+/**
+ * Implements hook_node_grants().
+ */
+function og_moderation_node_grants($account, $op) {
+  if ($op != 'view') {
+    return;
+  }
+  $grants = array();
+  if ($groups = og_get_entity_groups('user', $account)) {
+    $node_types = node_type_get_types();
+    foreach ($groups as $group_type => $gids) {
+      foreach ($gids as $gid) {
+        foreach ($node_types as $node_type) {
+          if (og_user_access('node', $gid, "view any unpublished " . $node_type->type . " content")) {
+            $realm = 'og_view_any_unpublished_' . $node_type->type . '_content';
+            $grants[$realm][] = $gid;
+          }
+        }
+      }
+    }
+  }
+  return $grants;
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * Modify menu items defined in other modules (in particular the Node and
+ * Module Grants modules).
+ */
+function og_moderation_menu_alter(&$items) {
+  $items['node/%node/revisions']['access callback'] = 'og_moderation_node_revision_access';
+  $items['node/%node/revisions']['access arguments'] = array(1);
+
+  $items['node/%node/revisions/%/view']['access callback'] = 'og_moderation_node_revision_access';
+  $items['node/%node/revisions/%/view']['access arguments'] = array(1);
+
+  $items['node/%node/revisions/%/revert']['access callback'] = 'og_moderation_node_revision_access';
+  $items['node/%node/revisions/%/revert']['access arguments'] = array(1, 4);
+  $items['node/%node/revisions/%/delete']['access callback'] = 'og_moderation_node_revision_access';
+  $items['node/%node/revisions/%/delete']['access arguments'] = array(1, 4);
+  if (module_exists('diff')) {
+    $items['node/%node/revisions/view']['access callback'] = 'og_moderation_node_revision_access';
+  }
+
+}
+
+function og_moderation_node_revision_access($node, $op = 'view') {
+  if ($gids = og_get_entity_groups('node', $node)) {
+    foreach ($gids['node'] as $id => $gid) {
+      if (og_user_access('node', $gid, "access revisions options of " . $node->type . " content")) {
+        return TRUE;
+      }
+    }
+  }
+  return _node_revision_access($node, $op);
+}
+
+/**
+ * Implements hook_revisioning_access_node_revision().
+ *
+ * Apply OG user roles to the revisioning action taken here.
+ */
+function og_moderation_revisioning_access_node_revision($revision_op, $node) {
+  $result = NODE_ACCESS_IGNORE;
+  if (og_is_group_content_type('node', $node->type) && !empty($node->og_group_ref[LANGUAGE_NONE][0]['target_id'])) {
+    global $user;
+    $gid = $node->og_group_ref[LANGUAGE_NONE][0]['target_id'];
+    switch ($revision_op) {
+      case 'publish revisions':
+        if (og_user_access('node', $gid, "publish revisions")) {
+          return NODE_ACCESS_ALLOW;
+        }
+        if (og_user_access('node', $gid, 'publish revisions of any ' . $node->type . ' content')) {
+          return NODE_ACCESS_ALLOW;
+        }
+        if ($user != NULL) {
+          if (($node->uid == $user->uid) && og_user_access('node', $gid, 'publish revisions of own ' . $node->type . ' content', $user)) {
+            return NODE_ACCESS_ALLOW;
+          }
+        }
+        break;
+
+      case 'unpublish current revision':
+        if (og_user_access('node', $gid, "unpublish current revision", NULL, FALSE, FALSE)) {
+          return NODE_ACCESS_ALLOW;
+        }
+        break;
+
+      case 'view current':
+        if (og_user_access('node', $gid, 'view any unpublished ' . $node->type . ' content')) {
+          return NODE_ACCESS_ALLOW;
+        }
+        if ($user != NULL) {
+          if (($node->uid == $user->uid) && og_user_access('node', $gid, 'view own unpublished ' . $node->type . ' content', $user)) {
+            return NODE_ACCESS_ALLOW;
+          }
+        }
+        break;
+
+      case 'view revision list':
+      case 'view revisions':
+        if (og_user_access('node', $gid, 'access revisions options of ' . $node->type . ' content')) {
+          return NODE_ACCESS_ALLOW;
+        }
+        break;
+
+      case 'edit revisions':
+        if (og_user_access('node', $gid, 'update any ' . $node->type . ' content')) {
+          return NODE_ACCESS_ALLOW;
+        }
+        if ($user != NULL) {
+          if (($node->uid == $user->uid) && og_user_access('node', $gid, 'update own ' . $node->type . ' content', $user)) {
+            return NODE_ACCESS_ALLOW;
+          }
+        }
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * Implements hook_form_diff_node_revisions_alter().
+ *
+ * Show revert and delete links on revisions overview when using the Diff module.
+ */
+function og_moderation_form_diff_node_revisions_alter(&$form) {
+  $node = node_load($form['nid']['#value']);
+  foreach ($form['operations'] as $vid => $ops) {
+    if (count($ops)) {
+      if (og_moderation_node_revision_access($node, 'revert')) {
+        $form['operations'][$vid][0]['#markup'] = l(t('Revert'), "node/$node->nid/revisions/$vid/revert");
+      }
+      if (og_moderation_node_revision_access($node, 'delete')) {
+        $form['operations'][$vid][1]['#markup'] = l(t('Delete'), "node/$node->nid/revisions/$vid/delete");
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_TYPE_alter().
+ *
+ * Apply OG roles for node clone permissions.
+ */
+function og_moderation_clone_access_alter(&$data, &$context1 = NULL, &$context2 = NULL, &$context3 = NULL) {
+  $result = NODE_ACCESS_IGNORE;
+  $node = $context1;
+
+  if (clone_is_permitted($node->type)) {
+    if (og_is_group_content_type('node', $node->type) && !empty($node->og_group_ref[LANGUAGE_NONE][0]['target_id'])) {
+      global $user;
+      $gid = $node->og_group_ref[LANGUAGE_NONE][0]['target_id'];
+      if (og_user_access('node', $gid, "clone node")) {
+        $result = NODE_ACCESS_ALLOW;
+      }
+      if ($user != NULL) {
+        if (($node->uid == $user->uid) && og_user_access('node', $gid, 'clone own nodes', $user)) {
+          return NODE_ACCESS_ALLOW;
+        }
+      }
+    }
+  }
+
+  $data = $result;
+}

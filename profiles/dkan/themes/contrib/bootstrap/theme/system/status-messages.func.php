@@ -32,7 +32,7 @@ function bootstrap_status_messages($variables) {
 
   foreach (drupal_get_messages($display) as $type => $messages) {
     $class = (isset($status_class[$type])) ? ' alert-' . $status_class[$type] : '';
-    $output .= "<div class=\"alert alert-block$class messages $type\">\n";
+    $output .= "<div class=\"alert alert-block$class\">\n";
     $output .= "  <a class=\"close\" data-dismiss=\"alert\" href=\"#\">&times;</a>\n";
 
     if (!empty($status_heading[$type])) {

@@ -18,34 +18,6 @@
  */
 
 /**
- * Implements hook_exit().
- *
- * For imagemagick we place the text in a temporary file as this prevents
- * problems with non-ASCII characters. This hook deletes files created during
- * execution of the text effect. As a style may contain multiple text effects,
- * there may be multiple files to delete.
- *
- * To keep track of temporary files created by this effect, the image effect
- * function itself also calls this hook, but places the file name in a
- *
- * @param string|null $destination
- */
-function image_effects_text_exit($destination = NULL) {
-  static $tmp_file_names = NULL;
-
-  if (isset($destination) && substr($destination, 0 , strlen('temporary://')) === 'temporary://') {
-    // Called by the effect function. Add to our static list of files ot delete.
-    $tmp_file_names[] = $destination;
-  }
-  else if (is_array($tmp_file_names)) {
-    // Normal invocation and we do have files to delete.
-    foreach ($tmp_file_names as $tmp_file_name) {
-      unlink($tmp_file_name);
-    }
-  }
-}
-
-/**
  * Implements hook_image_effect_info().
  *
  * Defines information about the supported effects.
@@ -57,8 +29,8 @@ function image_effects_text_image_effect_info() {
     'label' => t('Text'),
     'help' => t('Add static or dynamic (coded) text to an image.'),
     'dimensions passthrough' => TRUE,
-    'form callback' => 'image_effects_text_form',
     'effect callback' => 'image_effects_text_effect',
+    'form callback' => 'image_effects_text_form',
     'summary theme' => 'image_effects_text_summary',
   );
 
@@ -94,6 +66,34 @@ function image_effects_text_theme() {
       'file' => 'image_effects_text.inc'
     ),
   );
+}
+
+/**
+ * Implements hook_exit().
+ *
+ * For imagemagick we place the text in a temporary file as this prevents
+ * problems with non-ASCII characters. This hook deletes files created during
+ * execution of the text effect. As a style may contain multiple text effects,
+ * there may be multiple files to delete.
+ *
+ * To keep track of temporary files created by this effect, the image effect
+ * function itself also calls this hook, but passes the filename as a parameter.
+ *
+ * @param string|null $destination
+ */
+function image_effects_text_exit($destination = NULL) {
+  static $tmp_file_names = NULL;
+
+  if (isset($destination) && substr($destination, 0 , strlen('temporary://')) === 'temporary://') {
+    // Called by the effect function. Add to our static list of files ot delete.
+    $tmp_file_names[] = $destination;
+  }
+  else if (is_array($tmp_file_names)) {
+    // Normal invocation and we do have files to delete.
+    foreach ($tmp_file_names as $tmp_file_name) {
+      unlink($tmp_file_name);
+    }
+  }
 }
 
 /**

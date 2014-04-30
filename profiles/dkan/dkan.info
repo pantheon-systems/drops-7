@@ -1,7 +1,7 @@
 name = DKAN
 core = 7.x
 exclusive = TRUE
-version = 7.x-1.0-beta1
+version = 7.x-1.0
 
 ; Core
 dependencies[] = block
@@ -31,7 +31,6 @@ dependencies[] = date_popup
 dependencies[] = delta
 dependencies[] = diff
 dependencies[] = date
-dependencies[] = defaultcontent
 dependencies[] = double_field
 dependencies[] = entity
 dependencies[] = entity_token
@@ -55,6 +54,7 @@ dependencies[] = multistep
 dependencies[] = og
 dependencies[] = og_access
 dependencies[] = og_extras
+dependencies[] = og_moderation
 dependencies[] = og_ui
 dependencies[] = pathauto
 dependencies[] = rules
@@ -87,7 +87,6 @@ dependencies[] = rdfx
 ; DKAN Features
 dependencies[] = dkan_sitewide_menu
 dependencies[] = dkan_sitewide_user
-dependencies[] = dkan_sitewide_roles_perms
 dependencies[] = dkan_sitewide_context
 dependencies[] = dkan_default_content
 dependencies[] = dkan_sitewide_demo_front
@@ -99,3 +98,4 @@ dependencies[] = dkan_sitewide
 dependencies[] = dkan_dataset
 dependencies[] = dkan_datastore
 dependencies[] = dkan_datastore_api
+dependencies[] = dkan_dataset_api

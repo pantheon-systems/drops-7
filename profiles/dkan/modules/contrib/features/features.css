@@ -559,3 +559,8 @@ input.form-submit.features-refresh-button {
   background: #EEE;
   border-width: 0;
 }
+
+fieldset.features-export-component .fieldset-title .component-count {
+font-size: 12px;
+font-weight: bold;
+}

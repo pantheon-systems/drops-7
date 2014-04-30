@@ -76,7 +76,7 @@ function feeds_flatstore_processor_feeds_after_parse(FeedsSource $source, FeedsP
  */
 function feeds_flatstore_processor_table_name($source_id, $entity_id, $prefix = 'feeds_datastore') {
   $name = $prefix . '_' . $source_id . '_' . $entity_id;
-  drupal_alter('feeds_flatstore_processor_table_name', $name, $source_id, $entity_id) ;
+  drupal_alter('feeds_flatstore_processor_table_name', $name, $source_id, $entity_id);
   return $name;
 }
 
@@ -86,7 +86,7 @@ function feeds_flatstore_processor_table_name($source_id, $entity_id, $prefix = 
 function feeds_flatstore_processor_table(FeedsSource $source, $parser_result) {
   $table_name = feeds_flatstore_processor_table_name($source->id, $source->feed_nid);
   // If table exists, just return it.
-  if ($table = db_table_exists($table_name)) {
+  if ($table = data_get_table($table_name)) {
     return $table;
   }
   else {
@@ -116,7 +116,7 @@ function feeds_flatstore_processor_table(FeedsSource $source, $parser_result) {
       }
       $headers = $example_data[0];
       unset($example_data[0]);
-      $types = feeds_flatstore_processor_find_columns($example_data, $limit, $headers);
+      $types = feeds_flatstore_processor_find_columns($example_data, $limit = 500, $headers);
     }
     else {
       $types = feeds_flatstore_processor_find_columns($parser_result->items, $limit);
@@ -129,7 +129,9 @@ function feeds_flatstore_processor_table(FeedsSource $source, $parser_result) {
     $x = 0;
     $meta = array();
     foreach ($schema['fields'] as $name => $data) {
-      $meta['fields'][$name]['label'] = $headers[$x];
+      if (isset($headers[$x])) {
+        $meta['fields'][$name]['label'] = $headers[$x];
+      }
       $x++;
     }
     $driver = db_driver();
@@ -144,6 +146,17 @@ function feeds_flatstore_processor_table(FeedsSource $source, $parser_result) {
       $meta['fields']['longitude']['label'] = t('lon');
     }
 
+    $db_prefix = $GLOBALS['databases']['default']['default']['prefix'];
+    $prefixed = $table_name;
+    
+    if ($db_prefix) {
+      if (is_array($db_prefix) && isset($db_prefix['default'])) {
+        $db_prefix = $db_prefix['default'];
+      }
+      $table_name = str_replace($db_prefix, "", $table_name);
+      $prefixed = $db_prefix . $table_name;
+    }
+
     $table = data_create_table($table_name, $schema, $title);
     $table->update(array('meta' => $meta));
 
@@ -153,7 +166,7 @@ function feeds_flatstore_processor_table(FeedsSource $source, $parser_result) {
       // The number of indexes depends on the MySQL version and installation.
       $fulltext = array_splice($fulltext, 0, variable_get('feeds_flatstore_mysql_index_length', 15));
       $fulltext = implode(',', $fulltext);
-      Database::getConnection()->query("ALTER TABLE {$table_name} ADD FULLTEXT INDEX $table_name" . "_index ($fulltext)");
+      Database::getConnection()->query("ALTER TABLE {$prefixed} ADD FULLTEXT INDEX $table_name" . "_index ($fulltext)");
     }
     return $table;
   }

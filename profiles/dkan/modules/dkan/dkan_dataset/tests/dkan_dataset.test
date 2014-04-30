@@ -9,7 +9,7 @@
  * Test basic Data API functionality.
  */
 class DkanDatasetWebTestCase extends DrupalWebTestCase {
-  protected $profile = 'standard';
+  protected $profile = 'testing';
 
   /**
    * Information about the test.
@@ -88,7 +88,6 @@ class DkanDatasetWebTestCase extends DrupalWebTestCase {
     $modules[] = 'libraries';
     $modules[] = 'recline';
     $modules[] = 'remote_stream_wrapper';
-    $modules[] = 'restws';
     $modules[] = 'strongarm';
     $modules[] = 'token';
     $modules[] = 'rdfx';
@@ -103,7 +102,6 @@ class DkanDatasetWebTestCase extends DrupalWebTestCase {
     $modules[] = 'eva';
     $modules[] = 'views';
     $modules[] = 'views_bulk_operations';
-    $modules[] = 'views_json';
 
     $modules = array_unique($modules);
     parent::setUp($modules);

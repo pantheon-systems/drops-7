@@ -26,16 +26,6 @@ Drupal.behaviors.autocomplete = {
 };
 
 /**
- * Prevents the form from submitting if the suggestions popup is open
- * and closes the suggestions popup when doing so.
- */
-Drupal.autocompleteSubmit = function () {
-  return $('.form-autocomplete > .dropdown').each(function () {
-    this.owner.hidePopup();
-  }).length == 0;
-};
-
-/**
  * Highlights a suggestion.
  */
 Drupal.jsAC.prototype.highlight = function (node) {
@@ -115,17 +105,17 @@ Drupal.jsAC.prototype.found = function (matches) {
 };
 
 Drupal.jsAC.prototype.setStatus = function (status) {
-  var $throbber = $('.glyphicon-refresh, .autocomplete-throbber', $('#' + this.input.id).parent()).first();
-  var throbbingClass = $throbber.is('.autocomplete-throbber') ? 'throbbing' : 'glyphicon-spin';
+  var $throbber = $('.glyphicon-refresh', $('#' + this.input.id).parent());
+
   switch (status) {
     case 'begin':
-      $throbber.addClass(throbbingClass);
+      $throbber.addClass('glyphicon-spin');
       $(this.ariaLive).html(Drupal.t('Searching for matches...'));
       break;
     case 'cancel':
     case 'error':
     case 'found':
-      $throbber.removeClass(throbbingClass);
+      $throbber.removeClass('glyphicon-spin');
       break;
   }
 };

@@ -25,21 +25,21 @@ $info = array(
   'schemes' => array(
     'default' => array(
       'title' => t('DKAN (default)'),
-      'base' => '#0062a0',
+      'base' => '#0A77BD',
       'colors' => array(
-        'top' => '#0062a0',
+        'top' => '#0A77BD',
         'bottom' => '#d3ae7e',
         'toolbarbtn' => '#ffffff',
         'toolbarborder' => '#cccccc',
         'bg' => '#ffffff',
         'sidebar' => '#3b3b3b',
-        'sidebarborders' => '#0062a0',
+        'sidebarborders' => '#0A77BD',
         'footer' => '#ffffff',
         'titleslogan' => '#fffeff',
         'text' => '#3b3b3b',
-        'link' => '#0071B3',
-        'linkactive' => '#23aeff',
-        'linkhover' => '#018fe2',
+        'link' => '#0A77BD',
+        'linkactive' => '#005584',
+        'linkhover' => '#d3ae7e',
       ),
     ),
     'bluelagoon' => array(
@@ -57,6 +57,8 @@ $info = array(
         'titleslogan' => '#fffeff',
         'text' => '#3b3b3b',
         'link' => '#0071B3',
+        'linkactive' => '#0779bf',
+        'linkhover' => '#23aeff',
       ),
     ),
     'firehouse' => array(
@@ -74,6 +76,8 @@ $info = array(
         'titleslogan' => '#fffeff',
         'text' => '#3b3b3b',
         'link' => '#d6121f',
+        'linkactive' => '#9e000a',
+        'linkhover' => '#ff0000',
       ),
     ),
     'ice' => array(
@@ -91,6 +95,8 @@ $info = array(
         'titleslogan' => '#000000',
         'text' => '#4a4a4a',
         'link' => '#019dbf',
+        'linkactive' => '#003140',
+        'linkhover' => '#71d1ef',
       ),
     ),
     'plum' => array(
@@ -108,6 +114,8 @@ $info = array(
         'titleslogan' => '#ffffff',
         'text' => '#301313',
         'link' => '#9d408d',
+        'linkactive' => '#400034',
+        'linkhover' => '#9e0082',
       ),
     ),
     'forest' => array(
@@ -125,6 +133,8 @@ $info = array(
         'titleslogan' => '#fffeff',
         'text' => '#3b3b3b',
         'link' => '#0a9900',
+        'linkactive' => '#044000',
+        'linkhover' => '#0a9e00',
       ),
     ),
     'slate' => array(
@@ -141,7 +151,9 @@ $info = array(
         'footer' => '#161617',
         'titleslogan' => '#ffffff',
         'text' => '#3b3b3b',
-        'link' => '#0073b6',
+        'link' => '#8c95a6',
+        'linkactive' => '#e2e3e9',
+        'linkhover' => '#707070',
       ),
     ),
   ),

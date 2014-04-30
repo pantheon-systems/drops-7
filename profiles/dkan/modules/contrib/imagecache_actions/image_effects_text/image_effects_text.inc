@@ -311,19 +311,20 @@ function image_effects_text_effect_inc(stdClass $image, array $data) {
   // Start with a straight copy.
   $params = $data;
 
+  // Get the text to overlay.
+  $params['text'] = image_effects_text_get_text($image, $params);
+  if (empty($params['text'])) {
+    // No text to overlay. This is a situation that can be expected with token
+    // replacement, or custom PHP code. Return immediately with success.
+    return TRUE;
+  }
+
   // Find out where the font file is located and if it is readable.
   $params['fontpath'] = imagecache_actions_find_file($data['fontfile']);
   if ($params['fontpath'] === FALSE) {
     // Pass the font on and let's hope that the toolkit knows where to find it.
     // We did warn on the effect form.
     $params['fontpath'] = $data['fontfile'];
-  }
-
-  // Get the text to overlay.
-  $params['text'] = image_effects_text_get_text($image, $params);
-  if ($params['text'] === FALSE) {
-    drupal_set_message(t("Failed to evaluate text (is the 'PHP Filter' module enabled?). Not overlaying text."), 'error');
-    return FALSE;
   }
 
   // Parse offsets.
@@ -340,7 +341,8 @@ function image_effects_text_effect_inc(stdClass $image, array $data) {
   $params['size'] = (int) $params['size'];
   $params['xpos'] = (int) $params['xpos'];
   $params['ypos'] = (int) $params['ypos'];
-  // Hand over to toolkit
+
+  // Hand over to toolkit.
   return image_toolkit_invoke('image_effects_text', $image, array($params));
 }
 
@@ -348,43 +350,43 @@ function image_effects_text_effect_inc(stdClass $image, array $data) {
  * GD toolkit specific implementation of the text effect.
  *
  * @param stdClass $image
- * @param array $params
+ * @param array $data
  *   The parameters for this effect.
  *
  * @return bool
  *   true on success, false otherwise.
  */
-function image_gd_image_effects_text(stdClass $image, array $params) {
+function image_gd_image_effects_text(stdClass $image, array $data) {
   // Convert color and alpha to GD alpha and color value.
   // GD alpha value: 0 = opaque, 127 = transparent.
-  $params['alpha'] = (int) ((1 - ($params['alpha'] / 100)) * 127);
-  $color = imagecolorallocatealpha($image->resource, $params['RGB']['red'], $params['RGB']['green'], $params['RGB']['blue'], $params['alpha']);
+  $data['alpha'] = (int) ((1 - ($data['alpha'] / 100)) * 127);
+  $color = imagecolorallocatealpha($image->resource, $data['RGB']['red'], $data['RGB']['green'], $data['RGB']['blue'], $data['alpha']);
   if ($color !== FALSE) {
     $bounds = NULL;
     // Adjust Y position for vertical alignment (if different from bottom).
-    if ($params['valign'] !== 'bottom') {
+    if ($data['valign'] !== 'bottom') {
       // Get bounding box.
       // PHP Manual: "This function requires both the GD library and the » FreeType library."
       // So it is not more demanding than imagettftext, which we need anyway.
-      $bounds = imagettfbbox($params['size'], 0, $params['fontpath'], $params['text']);
-      if ($bounds === FALSE) {
+      $bounds = imagettfbbox($data['size'], 0, $data['fontpath'], $data['text']);
+      if (!$bounds) {
         drupal_set_message(t('Failed to calculate text dimensions using GD toolkit. Ignoring the alignment settings.'), 'warning');
       }
       else {
         // Get height of bounding box.
         $height = $bounds[1] - $bounds[7];
         // Shift ypos down (full height on bottom, half the height on center).
-        $params['ypos'] += $params['valign'] === 'center' ? (int) ($height / 2) : $height;
+        $data['ypos'] += $data['valign'] === 'center' ? (int) ($height / 2) : $height;
       }
     }
     // Adjust X position for horizontal alignment (if different from left).
-    if ($params['halign'] !== 'left') {
+    if ($data['halign'] !== 'left') {
       // Get bounding box. PHP Manual: "This function requires both the GD
       // library and the » FreeType library.", so it is not more demanding than
       // imagettftext(), which we need anyway.
       if ($bounds === NULL) {
-        $bounds = imagettfbbox($params['size'], 0, $params['fontpath'], $params['text']);
-        if ($bounds === FALSE) {
+        $bounds = imagettfbbox($data['size'], 0, $data['fontpath'], $data['text']);
+        if (!$bounds) {
           drupal_set_message(t('Failed to calculate text dimensions using GD toolkit. Ignoring the alignment.'), 'warning');
         }
       }
@@ -392,12 +394,12 @@ function image_gd_image_effects_text(stdClass $image, array $params) {
         // Get width of bounding box.
         $width = $bounds[2] - $bounds[0];
         // Shift xpos to the left (full width on right, half the width on center).
-        $params['xpos'] -= $params['halign'] === 'center' ? (int) ($width / 2) : $width;
+        $data['xpos'] -= $data['halign'] === 'center' ? (int) ($width / 2) : $width;
       }
     }
 
     // PHP Manual: "This function requires both the GD library and the » FreeType library."
-    $bounds = imagettftext($image->resource, $params['size'], $params['angle'], $params['xpos'], $params['ypos'], $color, $params['fontpath'], $params['text']);
+    $bounds = imagettftext($image->resource, $data['size'], $data['angle'], $data['xpos'], $data['ypos'], $color, $data['fontpath'], $data['text']);
     return $bounds !== FALSE;
   }
   return FALSE;
@@ -407,25 +409,25 @@ function image_gd_image_effects_text(stdClass $image, array $params) {
  * Imagemagick toolkit specific implementation of the text effect.
  *
  * Text in Imagemagick:
- * @link http://www.imagemagick.org/script/command-line-options.php?#draw
- * @link http://www.imagemagick.org/script/command-line-options.php?#annotate
+ * - http://www.imagemagick.org/script/command-line-options.php?#draw
+ * - http://www.imagemagick.org/script/command-line-options.php?#annotate
  *
  * UTF-8/non-ascii characters:
  * To prevent problems with non-ASCII characters, the online manual suggests to
  * put the text in a file and use the @{file} syntax. This does not work with
  * the text primitive of the -draw command, so we use -annotate.
  * We put the text in a temporary file which will be deleted by our hook_exit().
- * @see: http://www.imagemagick.org/Usage/windows/#character_encoding
+ * http://www.imagemagick.org/Usage/windows/#character_encoding
  *
  * Alignment in Imagemagick:
  * This is not directly supported, though a justification option has been
- * proposed: @see http://www.imagemagick.org/Usage/bugs/future/#justification.
+ * proposed: http://www.imagemagick.org/Usage/bugs/future/#justification.
  *
  * What we do have is the gravity option:
  * Gravity is used to position a text, but it also automatically applies a
  * justification based on that placement. So we use gravity here for alignment,
  * but will thus have to rebase our positioning.
- * @see http://www.imagemagick.org/Usage/annotating/#gravity
+ * - http://www.imagemagick.org/Usage/annotating/#gravity
  *
  * Gravity  |halign|valign |hpos change|vpos change
  * ------------------------------------------------
@@ -438,8 +440,16 @@ function image_gd_image_effects_text(stdClass $image, array $params) {
  * SouthWest left   bottom  0           -height
  * South     center bottom  -width/2    -height
  * SouthEast right  bottom  -width      -height
+ *
+ * @param stdClass $image
+ * @param array $data
+ *   The parameters for this effect.
+ *
+ * @return bool
+ *   true on success, false otherwise.
+
  */
-function image_imagemagick_image_effects_text(stdClass $image, array $params) {
+function image_imagemagick_image_effects_text(stdClass $image, array $data) {
   static $alignments2gravity = array(
     'left' => array(
       'top' => array(
@@ -495,49 +505,49 @@ function image_imagemagick_image_effects_text(stdClass $image, array $params) {
   );
 
   // Convert color and alpha to Imagemagick rgba color argument.
-  $alpha = $params['alpha'] / 100;
-  $color = 'rgba(' . $params['RGB']['red'] . ',' . $params['RGB']['green'] . ',' . $params['RGB']['blue'] . ',' . $alpha . ')';
+  $alpha = $data['alpha'] / 100;
+  $color = 'rgba(' . $data['RGB']['red'] . ',' . $data['RGB']['green'] . ',' . $data['RGB']['blue'] . ',' . $alpha . ')';
 
   // Set gravity for the alignment and calculate the translation to the
   // requested x and y offset as starting from the gravity point.
-  $alignment_corrections = $alignments2gravity[$params['halign']][$params['valign']];
+  $alignment_corrections = $alignments2gravity[$data['halign']][$data['valign']];
   $gravity = $alignment_corrections['gravity'];
   if ($alignment_corrections['tx'] > 0) {
-    $params['xpos'] = (int) ($alignment_corrections['tx'] * $image->info['width'] - $params['xpos']);
+    $data['xpos'] = (int) ($alignment_corrections['tx'] * $image->info['width'] - $data['xpos']);
   }
   else {
-    $params['xpos'] += (int) ($alignment_corrections['tx'] * $image->info['width']);
+    $data['xpos'] += (int) ($alignment_corrections['tx'] * $image->info['width']);
   }
   if ($alignment_corrections['ty'] > 0) {
-    $params['ypos'] = (int) ($alignment_corrections['ty'] * $image->info['height'] - $params['ypos']);
+    $data['ypos'] = (int) ($alignment_corrections['ty'] * $image->info['height'] - $data['ypos']);
   }
   else {
-    $params['ypos'] += (int) ($alignment_corrections['ty'] * $image->info['height']);
+    $data['ypos'] += (int) ($alignment_corrections['ty'] * $image->info['height']);
   }
 
   // Add signs to translation, also when positive or 0.
-  if ($params['xpos'] >= 0) {
-    $params['xpos'] = '+' . $params['xpos'];
+  if ($data['xpos'] >= 0) {
+    $data['xpos'] = '+' . $data['xpos'];
   }
-  if ($params['ypos'] >= 0) {
-    $params['ypos'] = '+' . $params['ypos'];
+  if ($data['ypos'] >= 0) {
+    $data['ypos'] = '+' . $data['ypos'];
   }
 
   // Angle must be positive.
-  if ($params['angle'] < 0) {
-    $params['angle'] = $params['angle'] % 360 + 360;
+  if ($data['angle'] < 0) {
+    $data['angle'] = $data['angle'] % 360 + 360;
   }
 
   // Set font file, size and color.
-  $image->ops[] = '-font ' . escapeshellarg($params['fontpath']);
-  $image->ops[] = "-pointsize {$params['size']}";
+  $image->ops[] = '-font ' . escapeshellarg($data['fontpath']);
+  $image->ops[] = "-pointsize {$data['size']}";
   $image->ops[] = '-fill ' . escapeshellarg($color);
 
   // Add text to a temporary file,
   $tmp_file_name = drupal_tempnam('temporary://', 'image_effects_text');
   $tmp_file = fopen($tmp_file_name, 'w');
   if ($tmp_file) {
-    fwrite($tmp_file, $params['text']);
+    fwrite($tmp_file, $data['text']);
     fclose($tmp_file);
     // and inform our hook_exit about it.
     image_effects_text_exit($tmp_file_name);
@@ -547,13 +557,13 @@ function image_imagemagick_image_effects_text(stdClass $image, array $params) {
   else {
     // Fallback to pass the text via the command line, let's hope there are no
     // non-ASCII characters or that it works anyway (OS and locale dependent).
-    $text = $params['text'];
+    $text = $data['text'];
   }
 
   // Add gravity.
   $image->ops[] = "-gravity $gravity";
   // Add text angle, position and text (file) itself.
-  $image->ops[] = "-annotate {$params['angle']}x{$params['angle']}{$params['xpos']}{$params['ypos']} " . escapeshellarg($text);
+  $image->ops[] = "-annotate {$data['angle']}x{$data['angle']}{$data['xpos']}{$data['ypos']} " . escapeshellarg($text);
 
   return TRUE;
 }

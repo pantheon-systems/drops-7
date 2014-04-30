@@ -132,11 +132,18 @@ function dkan_sitewide_license_block() {
       $key = $key['value'];
       $label = $options[$key];
 
-      $output = l($label, 'http://opendefinition.org/licenses/' . $key) . '<br/>';
-      if ($key != 'other-closed') {
-        $output .= l('<img class="open-data" src="http://assets.okfn.org/images/ok_buttons/od_80x15_blue.png" alt="[Open Data]">', 'http://opendefinition.org/licenses/' . $key, array('html' => TRUE));
+      if (strpos($key,'other') !== false) {
+        $output = $label;
       }
-
+      else {
+        $output = l($label, 'http://opendefinition.org/licenses/' . $key) . '<br/>';
+        $output .= l(
+          '<img class="open-data" src="http://assets.okfn.org/images/ok_buttons/od_80x15_blue.png" alt="[Open Data]">',
+          'http://opendefinition.org/licenses/' . $key,
+          array('html' => TRUE)
+        );
+      }
+      
       return $output;
     }
     else {
@@ -149,7 +156,7 @@ function dkan_sitewide_license_block() {
  * Adds Powered by.
  */
 function dkan_sitewide_footer_author() {
-  return t("powered by !dkan, a project of !nuams", array("!dkan" => l('DKAN', 'http://drupal.org/project/dkan'), '!nuams' => l('Nuams', 'http://nuams.com')));
+  return t("powered by !dkan, a project of !nuams", array("!dkan" => l('DKAN', 'http://nucivic.com/dkan'), '!nuams' => l('nüams', 'http://nuams.com')));
 }
 
 /**
@@ -233,7 +240,7 @@ function dkan_sitewide_other_access() {
                 'html' => TRUE,
                 'attributes' => array(
                   'class' => array('btn'),
-                  'title' => 'json view of content'
+                  'title' => t('json view of content')
             ))),
           ),
           'rdf' => array(
@@ -244,14 +251,14 @@ function dkan_sitewide_other_access() {
                 'html' => TRUE,
                 'attributes' => array(
                   'class' => array('btn'),
-                  'title' => 'rdf view of content'
+                  'title' => t('rdf view of content')
             ))),
           ),
         ),
       ),
       'dkan_api' => array(
         '#type' => 'markup',
-        '#markup' => '<p><small>via the <a href="http://docs.getdkan.com">DKAN API</a></small></p>',
+        '#markup' => '<p><small>' . t('via the  <a href="http://docs.getdkan.com">DKAN API</a>') . '</small></p>',
       )
     );
 
@@ -264,12 +271,27 @@ function dkan_sitewide_other_access() {
  */
 function dkan_sitewide_search_bar() {
   if (module_exists('dkan_sitewide_search_db')) {
+    static $dkan_sitewide_searcb_bar_id = 0;
     $view = views_get_view('dataset');
     $view->set_display('page');
     $view->init_handlers();
     $exposed_form = $view->display_handler->get_plugin('exposed_form');
     $exposed_form->view->filter['search_api_views_fulltext']->options['expose']['description'] = t('eg. Gold Prices');
     $exposed_form->view->filter['search_api_views_fulltext']->options['expose']['label'] = '';
-    return $exposed_form->render_exposed_form(true);
+    // Deal with any exposed filters we may have, before building.
+    $form_state = array(
+      'view' => $view,
+      'display' => $view->display[$view->current_display],
+      'method' => 'get',
+      'rerender' => TRUE,
+      'no_redirect' => TRUE,
+      'always_process' => TRUE,
+    );
+    $form_state['exposed_form_plugin'] = $exposed_form;
+    $form = drupal_build_form('views_exposed_form', $form_state);
+    $form['query']['#id'] = 'edit-query-' . $dkan_sitewide_searcb_bar_id;
+    $dkan_sitewide_searcb_bar_id++;
+    $output = drupal_render($form);
+    return $output;
   }
 }

@@ -211,9 +211,23 @@ function dkan_add_resource($node) {
 /**
  * Implements hook_node_update().
  */
+function dkan_datastore_node_insert($node) {
+  if ($node->type == 'resource') {
+    if (!isset($node->feeds)) {
+      // Feeds only saves if there is a form present. We want this to work
+      // programmatically as well.
+      feeds_node_prepare($node);
+      feeds_node_update($node);
+    }
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
 function dkan_datastore_node_update($node) {
-  // Remove node from feeds list if not csv.
-  if (isset($node->feeds) && $node->type == 'resource' && $importer_ids = feeds_get_importer_ids($node->type, $node->nid)) {
+  if ($node->type == 'resource') {
+    // See if we have a file link or upload.
     $wrapper = entity_metadata_wrapper('node', $node);
     $file = $wrapper->field_upload->value();
     if (!$file) {
@@ -229,7 +243,13 @@ function dkan_datastore_node_update($node) {
       }
     }
     if ($file) {
-      if ($file->filemime != 'text/csv') {
+      if (!isset($node->feeds)) {
+        // Feeds only saves if there is a form present. We want this to work
+        // programmatically as well.
+        feeds_node_prepare($node);
+      }
+      // Remove node from feeds list if not csv.
+      elseif ($file->filemime != 'text/csv') {
         feeds_node_delete($node);
       }
     }
@@ -295,7 +315,10 @@ function dkan_datastore_records($nid) {
     $source_id = dkan_datastore_api_get_feeds_source($nid);
     if ($table = feeds_flatstore_processor_table_name($source_id, $nid)) {
       if (db_table_exists($table)) {
-        if ($result = db_query_range("SELECT timestamp FROM {$table}", 0, 1)) {
+        $query = db_select($table, 't')
+          ->fields('t', array('timestamp'))
+          ->range(0, 1);
+        if ($result = $query->execute()) {
           return TRUE;
         }
       }

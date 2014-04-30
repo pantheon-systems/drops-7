@@ -485,8 +485,15 @@ function entity_metadata_field_options_list($name, $info) {
       // No data available.
       $entity = NULL;
     }
-    $instance = $wrapper->getBundle() ? field_info_instance($wrapper->type(), $name, $wrapper->getBundle()) : NULL;
-    return (array) module_invoke($field['module'], 'options_list', $field, $instance, $wrapper->type(), $entity);
+
+    // Support translating labels via i18n field.
+    if (module_exists('i18n_field') && ($translate = i18n_field_type_info($field['type'], 'translate_options'))) {
+      return $translate($field);
+    }
+    else {
+      $instance = $wrapper->getBundle() ? field_info_instance($wrapper->type(), $name, $wrapper->getBundle()) : NULL;
+      return (array) module_invoke($field['module'], 'options_list', $field, $instance, $wrapper->type(), $entity);
+    }
   }
 }
 

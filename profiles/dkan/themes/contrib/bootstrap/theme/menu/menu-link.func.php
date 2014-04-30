@@ -41,28 +41,3 @@ function bootstrap_menu_link(array $variables) {
   $output = l($element['#title'], $element['#href'], $element['#localized_options']);
   return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>\n";
 }
-
-/**
- * Overrides theme_menu_link() for book module.
- */
-function bootstrap_menu_link__book_toc(array $variables) {
-  $element = $variables['element'];
-  $sub_menu = drupal_render($element['#below']);
-  $element['#attributes']['role'] = 'presentation';
-  $link = TRUE;
-  if ($element['#title'] && $element['#href'] === FALSE) {
-    $element['#attributes']['class'][] = 'dropdown-header';
-    $link = FALSE;
-  }
-  elseif ($element['#title'] === FALSE && $element['#href'] === FALSE) {
-    $element['#attributes']['class'][] = 'divider';
-    $link = FALSE;
-  }
-  elseif (($element['#href'] == $_GET['q'] || ($element['#href'] == '<front>' && drupal_is_front_page())) && (empty($element['#localized_options']['language']))) {
-    $element['#attributes']['class'][] = 'active';
-  }
-  if ($link) {
-    $element['#title'] = l($element['#title'], $element['#href'], $element['#localized_options']);
-  }
-  return '<li' . drupal_attributes($element['#attributes']) . '>' . $element['#title'] . $sub_menu . "</li>\n";
-}

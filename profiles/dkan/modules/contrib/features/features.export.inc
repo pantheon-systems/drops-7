@@ -583,7 +583,16 @@ function features_var_export($var, $prefix = '', $init = TRUE, $count = 0) {
     $output = intval($var);
   }
   else if (is_numeric($var)) {
-    $output = floatval($var);
+    $floatval = floatval($var);
+    if (is_string($var) && ((string) $floatval !== $var)) {
+      // Do not convert a string to a number if the string
+      // representation of that number is not identical to the
+      // original value.
+      $output = var_export($var, TRUE);
+    }
+    else {
+      $output = $floatval;
+    }
   }
   else if (is_string($var) && strpos($var, "\n") !== FALSE) {
     // Replace line breaks in strings with a token for replacement
@@ -862,7 +871,8 @@ function features_get_component_states($features = array(), $rebuild_only = TRUE
     $cache = array();
   }
 
-  $features = !empty($features) ? $features : array_keys(features_get_features());
+  $all_features = features_get_features();
+  $features = !empty($features) ? $features : array_keys($all_features);
 
   // Retrieve only rebuildable components if requested.
   features_include();
@@ -877,8 +887,8 @@ function features_get_component_states($features = array(), $rebuild_only = TRUE
 
   foreach ($features as $feature) {
     $cache[$feature] = isset($cache[$feature]) ? $cache[$feature] : array();
-    if (module_exists($feature)) {
-      foreach ($components as $component) {
+    if (module_exists($feature) && !empty($all_features[$feature]->components)) {
+      foreach (array_intersect($all_features[$feature]->components, $components) as $component) {
         if (!isset($cache[$feature][$component])) {
           $normal = features_get_signature('normal', $feature, $component, $reset);
           $default = features_get_signature('default', $feature, $component, $reset);
