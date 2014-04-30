@@ -27,18 +27,16 @@ function bootstrap_preprocess_bootstrap_panel(&$variables) {
     $variables['collapsible'] = FALSE;
     $variables['collapsed'] = FALSE;
   }
-  if (!isset($element['#id']) && $variables['collapsible']) {
-    $element['#id'] = drupal_html_id('bootstrap-panel');
-  }
-  $variables['target'] = NULL;
+  $variables['id'] = '';
   if (isset($element['#id'])) {
-    $attributes['id'] = $element['#id'];
-    $variables['target'] = '#' . $element['#id'] . ' .collapse';
+    if ($variables['collapsible']) {
+      $variables['id'] = $element['#id'];
+    }
+    else {
+      $attributes['id'] = $element['#id'];
+    }
   }
   $variables['content'] = $element['#children'];
-  if (isset($element['#value'])) {
-    $variables['content'] .= $element['#value'];
-  }
 
   // Iterate over optional variables.
   $keys = array(

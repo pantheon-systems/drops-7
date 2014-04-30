@@ -12,9 +12,9 @@ files[] = multistep.rules.inc
 ;files[] = multistep.views.inc
 configure = admin/config/content/multistep
 
-; Information added by drupal.org packaging script on 2013-10-01
-version = "7.x-1.x-dev"
-core = "7.x"
+
+; Information added by drush on 2014-04-30
+version = "3b0d40a"
 project = "multistep"
-datestamp = "1380592359"
+datestamp = "1398830009"
 

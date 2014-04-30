@@ -90,16 +90,14 @@ function imagecache_rgb_validate($element, &$form_state) {
 
 
 /**
- * Displays a chosen color for use in the the style summary snippets, 
+ * Displays a chosen color for use in the style summary snippets, 
  * by actually rendering the color.
  */
 function theme_imagecacheactions_rgb($variables) {
-  $rgb = $variables['RGB'];
-  if ($rgb['HEX']) {
-    return " <span style=\"width:2em; border:1px solid white; background-color:#{$rgb['HEX']}\" >&nbsp;#{$rgb['HEX']}&nbsp;</span>";
+  if (!empty($variables['RGB']['HEX'])) {
+    $hex = ltrim($variables['RGB']['HEX'], '#');
+    return " <span style=\"width:2em; border:1px solid white; background-color:#{$hex}\" >&nbsp;#{$hex}&nbsp;</span>";
   }
-  else {
-    return ' ' . t('Transparent');
-  }
+  return ' ' . t('Transparent');
 }
 

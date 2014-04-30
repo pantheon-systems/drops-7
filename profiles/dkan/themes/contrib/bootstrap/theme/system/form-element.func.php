@@ -18,26 +18,21 @@ function bootstrap_form_element(&$variables) {
     '#title_display' => 'before',
   );
 
-  if (empty($element['#wrapper_attributes'])) {
-    $element['#wrapper_attributes'] = array();
-  }
-  $wrapper_attributes = &$element['#wrapper_attributes'];
-
   // Add element #id for #type 'item'.
   if (isset($element['#markup']) && !empty($element['#id'])) {
-    $wrapper_attributes['id'] = $element['#id'];
+    $attributes['id'] = $element['#id'];
   }
 
   // Check for errors and set correct error class.
   if (isset($element['#parents']) && form_get_error($element)) {
-    $wrapper_attributes['class'][] = 'has-error';
+    $attributes['class'][] = 'error';
   }
 
   if (!empty($element['#type'])) {
-    $wrapper_attributes['class'][] = 'form-type-' . strtr($element['#type'], '_', '-');
+    $attributes['class'][] = 'form-type-' . strtr($element['#type'], '_', '-');
   }
   if (!empty($element['#name'])) {
-    $wrapper_attributes['class'][] = 'form-item-' . strtr($element['#name'], array(
+    $attributes['class'][] = 'form-item-' . strtr($element['#name'], array(
         ' ' => '-',
         '_' => '-',
         '[' => '-',
@@ -46,29 +41,42 @@ function bootstrap_form_element(&$variables) {
   }
   // Add a class for disabled elements to facilitate cross-browser styling.
   if (!empty($element['#attributes']['disabled'])) {
-    $wrapper_attributes['class'][] = 'form-disabled';
+    $attributes['class'][] = 'form-disabled';
   }
   if (!empty($element['#autocomplete_path']) && drupal_valid_path($element['#autocomplete_path'])) {
-    $wrapper_attributes['class'][] = 'form-autocomplete';
+    $attributes['class'][] = 'form-autocomplete';
   }
-  $wrapper_attributes['class'][] = 'form-item';
+  $attributes['class'][] = 'form-item';
 
   // See http://getbootstrap.com/css/#forms-controls.
   if (isset($element['#type'])) {
     if ($element['#type'] == "radio") {
-      $wrapper_attributes['class'][] = 'radio';
+      $attributes['class'][] = 'radio';
       $is_radio = TRUE;
     }
     elseif ($element['#type'] == "checkbox") {
-      $wrapper_attributes['class'][] = 'checkbox';
+      $attributes['class'][] = 'checkbox';
       $is_checkbox = TRUE;
     }
     else {
-      $wrapper_attributes['class'][] = 'form-group';
+      $attributes['class'][] = 'form-group';
     }
   }
 
-  $output = '<div' . drupal_attributes($wrapper_attributes) . '>' . "\n";
+  $description = FALSE;
+  $tooltip = FALSE;
+  // Convert some descriptions to tooltips.
+  // @see bootstrap_tooltip_descriptions setting in _bootstrap_settings_form()
+  if (!empty($element['#description'])) {
+    $description = $element['#description'];
+    if (theme_get_setting('bootstrap_tooltip_enabled') && theme_get_setting('bootstrap_tooltip_descriptions') && $description === strip_tags($description) && strlen($description) <= 200) {
+      $tooltip = TRUE;
+      $attributes['data-toggle'] = 'tooltip';
+      $attributes['title'] = $description;
+    }
+  }
+
+  $output = '<div' . drupal_attributes($attributes) . '>' . "\n";
 
   // If #title is not set, we don't display any label or required marker.
   if (!isset($element['#title'])) {
@@ -83,13 +91,6 @@ function bootstrap_form_element(&$variables) {
       $prefix .= '<div class="input-group">';
       $prefix .= isset($element['#field_prefix']) ? '<span class="input-group-addon">' . $element['#field_prefix'] . '</span>' : '';
       $suffix .= isset($element['#field_suffix']) ? '<span class="input-group-addon">' . $element['#field_suffix'] . '</span>' : '';
-      $suffix .= '</div>';
-    }
-    // Determine if "#input_group_button" was specified.
-    elseif (!empty($element['#input_group_button'])) {
-      $prefix .= '<div class="input-group">';
-      $prefix .= isset($element['#field_prefix']) ? '<span class="input-group-btn">' . $element['#field_prefix'] . '</span>' : '';
-      $suffix .= isset($element['#field_suffix']) ? '<span class="input-group-btn">' . $element['#field_suffix'] . '</span>' : '';
       $suffix .= '</div>';
     }
     else {
@@ -122,7 +123,7 @@ function bootstrap_form_element(&$variables) {
       break;
   }
 
-  if (!empty($element['#description']) && empty($element['#attributes']['title']) && !_bootstrap_tooltip_description($element['#description'])) {
+  if ($description && !$tooltip) {
     $output .= '<p class="help-block">' . $element['#description'] . "</p>\n";
   }
 

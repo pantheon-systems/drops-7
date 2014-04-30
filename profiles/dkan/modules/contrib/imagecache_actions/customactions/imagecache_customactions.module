@@ -18,9 +18,9 @@
 
 
 /**
- * Implements hook_image_effect_info.
+ * Implements hook_image_effect_info().
  *
- * @return array
+ * Defines information about the supported effects.
  */
 function imagecache_customactions_image_effect_info() {
   $effects = array();
@@ -47,35 +47,6 @@ function imagecache_customactions_image_effect_info() {
 }
 
 /**
- * Implements hook_image_style_flush().
- *
- * This hook checks if the image style that is being flushed is used in a
- * subroutine effect. If so, the style that contains the subroutine effect
- * should be flushed as well.
- *
- * This may lead to recursive calls to image_style_flush() and thus to this
- * hook. Without loops in styles that call each other as subroutine, this
- * recursion will always end.
- *
- * @param array $flushed_style
- *   The image style that is being flushed.
- */
-function imagecache_customactions_image_style_flush(array $flushed_style) {
-  $styles = image_styles();
-  foreach ($styles as $style) {
-    if ($style['name'] !== $flushed_style['name']) {
-      foreach ($style['effects'] as $effect) {
-        if ($effect['name'] === 'imagecache_subroutine') {
-          if (isset($effect['data']['subroutine_presetname']) && $effect['data']['subroutine_presetname'] === $flushed_style['name']) {
-            image_style_flush($style);
-          }
-        }
-      }
-    }
-  }
-}
-
-/**
  * Implements hook_theme().
  *
  * Registers theme functions for the effect summaries.
@@ -89,6 +60,35 @@ function imagecache_customactions_theme() {
       'variables' => array('data' => NULL),
     ),
   );
+}
+
+/**
+ * Implements hook_image_style_flush().
+ *
+ * This hook checks if the image style that is being flushed is used in a
+ * subroutine effect. If so, the style that contains the subroutine effect
+ * should be flushed as well.
+ *
+ * This may lead to recursive calls to image_style_flush() and thus to this
+ * hook. Without loops in styles that call each other as subroutine, this
+ * recursion will always end.
+ *
+ * @param array $flushed_style
+ *   The image style that is being flushed.
+ */
+function imagecache_customactions_image_style_flush(/*array*/ $flushed_style) {
+  $styles = image_styles();
+  foreach ($styles as $style) {
+    if ($style['name'] !== $flushed_style['name']) {
+      foreach ($style['effects'] as $effect) {
+        if ($effect['name'] === 'imagecache_subroutine') {
+          if (isset($effect['data']['subroutine_presetname']) && $effect['data']['subroutine_presetname'] === $flushed_style['name']) {
+            image_style_flush($style);
+          }
+        }
+      }
+    }
+  }
 }
 
 /**

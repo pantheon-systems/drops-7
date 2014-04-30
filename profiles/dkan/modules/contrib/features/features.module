@@ -64,6 +64,11 @@ define('FEATURES_DUPLICATES_CONFLICT', 0);
 define('FEATURES_DUPLICATES_ALLOWED', 1);
 
 /**
+ * The default destination path for features exported via the UI.
+ */
+define('FEATURES_DEFAULT_EXPORT_PATH', 'sites/all/modules');
+
+/**
  * Implements hook_menu().
  */
 function features_menu() {
@@ -333,9 +338,18 @@ function features_modules_enabled($modules) {
   }
 
   if (!empty($items)) {
+    // Need to include any new files.
+    // @todo Redo function so can take in list of modules to include.
+    features_include_defaults(NULL, TRUE);
     _features_restore('enable', $items);
     // Rebuild the list of features includes.
     features_include(TRUE);
+    // Reorders components to match hook order and removes non-existant.
+    $all_components = array_keys(features_get_components());
+    foreach ($items as $module => $components) {
+      $items[$module] = array_intersect($all_components, $components);
+    }
+    _features_restore('rebuild', $items);
   }
 }
 
@@ -376,7 +390,6 @@ function features_include($reset = FALSE) {
  * collecting defaults.
  */
 function features_include_defaults($components = NULL, $reset = FALSE) {
-  static $included = array();
   static $include_components;
 
   // Build an array of components that require inclusion:
@@ -399,7 +412,7 @@ function features_include_defaults($components = NULL, $reset = FALSE) {
     $components = array_keys($include_components);
   }
   foreach ($components as $component) {
-    if (isset($include_components[$component]) && (!isset($included[$component]) || $reset)) {
+    if (isset($include_components[$component])) {
       $info = $include_components[$component];
       // Inclusion of ctools components.
       if (isset($info['api'], $info['module'], $info['current_version'])) {
@@ -416,7 +429,6 @@ function features_include_defaults($components = NULL, $reset = FALSE) {
           }
         }
       }
-      $included[$component] = TRUE;
     }
   }
 }
@@ -662,6 +674,10 @@ function features_get_info($type = 'module', $name = NULL, $reset = FALSE) {
           }
         }
         $data['feature'][$row->name] = $row;
+        $data['feature'][$row->name]->components = array_keys($row->info['features']);
+        if (!empty($row->info['dependencies'])) {
+          $data['feature'][$row->name]->components[] = 'dependencies';
+        }
       }
       $data['module'][$row->name] = $row;
     }

@@ -1,17 +1,14 @@
 name = NuBoot - DKAN theme
-description = A Bootstrap Sub-theme.
+description = A Bootstrap theme for DKAN. Built by nücivic.
 core = 7.x
 base theme = bootstrap
-
+version = 7.x-1.0
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Regions
 ;;;;;;;;;;;;;;;;;;;;;
 
-regions[navigation]     = 'Navigation'
 regions[header]         = 'Header'
-regions[jumbotron]      = 'Jumbotron Hero'
-regions[preface] 		= 'Preface'
 regions[highlighted]    = 'Highlighted'
 regions[preface_first] 	= 'Preface First'
 regions[preface_second] = 'Preface Second'
@@ -35,9 +32,9 @@ regions[page_bottom]    = 'Page bottom'
 ;; Stylesheets
 ;;;;;;;;;;;;;;;;;;;;;
 
+;stylesheets[all][] = bootstrap/css/bootstrap.min.css
+stylesheets[all][] = css/font-awesome.min.css
 stylesheets[all][] = css/screen.css
-stylesheets[all][] = css/responsive.css
-;stylesheets[all][] = css/font-awesome.min.css
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Default Theme Settings
@@ -52,8 +49,8 @@ settings[toggle_comment_user_verification] = 1
 settings[toggle_favicon] = 1
 settings[toggle_main_menu] = 1
 settings[toggle_secondary_menu] = 1
-settings[hero_path] = '/sites/all/themes/nuboot/images/hero.jpg'
-settings[brand_primary] = '#ff0000'
+settings[logo_path] = 'profiles/dkan/themes/contrib/nuboot/logo.svg'
+settings[hero_path] = 'profiles/dkan/themes/contrib/nuboot/images/hero.jpg'
 
 ; Breadcrumbs
 ; --------------
@@ -89,19 +86,9 @@ settings[bootstrap_region_well-footer] = ''
 ; ;; Scripts
 ; ;;;;;;;;;;;;;;;;;;;;;
 ;
-; scripts[] = 'bootstrap/js/affix.js'
-; scripts[] = 'bootstrap/js/alert.js'
-; scripts[] = 'bootstrap/js/button.js'
-; scripts[] = 'bootstrap/js/carousel.js'
-; scripts[] = 'bootstrap/js/collapse.js'
-; scripts[] = 'bootstrap/js/dropdown.js'
-; scripts[] = 'bootstrap/js/modal.js'
-; scripts[] = 'bootstrap/js/tooltip.js'
-; scripts[] = 'bootstrap/js/popover.js'
-; scripts[] = 'bootstrap/js/scrollspy.js'
-; scripts[] = 'bootstrap/js/tab.js'
-; scripts[] = 'bootstrap/js/transition.js'
+;scripts[] = 'bootstrap/js/bootstrap.min.js'
 scripts[] = js/sitewide.js
+scripts[] = js/svgeezy.min.js
 
 ; ; Disable BootstrapCDN if using Bootstrap source files in your sub-theme.
 settings[cdn_bootstrap] = 0
@@ -118,9 +105,9 @@ settings[cdn_bootstrap] = 0
 ; Panels Custom Layouts
 ; plugins[panels][layouts] = layouts
 
-; Information added by Drupal.org packaging script on 2014-03-26
-version = "7.x-1.0-beta2+12-dev"
+; Information added by Drupal.org packaging script on 2014-04-28
+version = "7.x-1.0"
 core = "7.x"
 project = "nuboot"
-datestamp = "1395866046"
+datestamp = "1398716028"
 

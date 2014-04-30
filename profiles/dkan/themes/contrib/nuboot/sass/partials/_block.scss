@@ -1,8 +1,4 @@
-.region-content .block {
-  @include popblock;
-}
-#block-views-front-page-group-grid-block,
-.node-type-dataset .region-content .block {
+#block-views-front-page-group-grid-block {
   @include box-shadow(none);
   margin-bottom: 0;
   padding:0;
@@ -11,25 +7,74 @@
   display:none;
 }
 h2.block-title {
-  background-color: hero;
   @include background-image(linear-gradient(#F5F5F5, #F0F0F0));
   @include border-radius(3px 3px 0 0);
-    border-bottom: 1px solid $border;
-    color: #0062A0;
-    font-size: 14px;
-    line-height: 1.3;
-    padding: 7px 15px;
+  border-bottom: 1px solid $border;
+  color: $gray-dark;
+  font-size: 14px;
+  line-height: 1.3;
+  padding: 7px 15px;
 }
 .region-sidebar-first,
 .region-sidebar-second {
   .block {
     background-color: #FFFFFF;
-      border-radius: 3px;
-      box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
-      margin-bottom: 20px;
-      .block-content {
-        padding:20px 15px;
+    border-radius: 3px;
+    box-shadow: 0 0 3px rgba(0, 0, 0, 0.3);
+    margin-bottom: 20px;
+    .block-content {
+      padding:20px 15px;
+    }
+  }
+}
+
+#block-dkan-sitewide-dkan-sitewide-user-menu {
+  //mobile
+  position:relative;
+  margin:0 auto;
+  img {
+    position: relative;
+    display: inline-block;
+    height: 26px;
+    width: 26px;
+  }
+  .links {
+    display: inline-block;
+    position: relative;
+    padding: 10px;
+    a {
+      float: left;
+      line-height: 14px;
+      margin:0 15px;
+    }
+  }
+  .sub {
+    font-size: 12px;
+  }
+  @media(min-width:768px) {
+    position: absolute;
+    width: 50px;
+    padding: 20px 0 0 20px;
+    right: 16px;
+    top: 0;
+    img {
+      position: absolute;
+      left: 0px;
+      padding: 2px 0 0 0;
+    }
+    .links {
+      display: block;
+      position: relative;
+      padding: 0 0 0 15px;
+      a {
+        float: left;
+        line-height: 14px;
+        margin:0;
       }
+    }
+    .sub {
+      clear: left;
+    }
   }
 }
 
@@ -41,9 +86,9 @@ h2.block-title {
 .block-dkan-sitewide-dkan-sitewide-search-bar {
   form {
     float: right;
-      margin: 0;
-      position: relative;
-      width: 200px;
+    margin: 0;
+    position: relative;
+    width: 200px;
   }
 }
 #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar {
@@ -263,10 +308,20 @@ h2.block-title {
     .views-field-body {
       margin:10px 15px;
     }
+    .group-subscribe-message {
+      background: $brand-primary;
+      color: #fff;
+      padding:5px;
+      text-align: center;
+      a {
+        color: #fff;
+        display: block;
+      }
+    }
   }
 }
 
-#block-dkan-forms-dkan-forms-dataset-help h2.block-title::before{
+#block-dkan-forms-dkan-forms-dataset-help h2.block-title:before{
   content: "\f05a";
   font-family: $icon-fa;
   font-weight: normal;
@@ -281,7 +336,7 @@ h2.block-title {
 }
 
 #block-dkan-sitewide-demo-front-dkan-demo-front {
-  @include box-shadow(0 0 8px #333);
+  @include box-shadow(0 0 8px rgba(0, 0, 0, 0.3));
   background-color: rgba($brand-primary, 0.5);
   padding-top:15px;
   .media-overlay img {

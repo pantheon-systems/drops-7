@@ -949,6 +949,22 @@ function _entity_defaults_rebuild($entity_type) {
 }
 
 /**
+ * Implements hook_modules_installed().
+ */
+function entity_modules_installed($modules) {
+  module_load_install('entity');
+  entity_entitycache_installed_modules($modules);
+}
+
+/**
+ * Implements hook_modules_uninstalled().
+ */
+function entity_modules_uninstalled($modules) {
+  module_load_install('entity');
+  entity_entitycache_uninstalled_modules($modules);
+}
+
+/**
  * Implements hook_modules_enabled().
  */
 function entity_modules_enabled($modules) {
@@ -1059,6 +1075,17 @@ function entity_flush_caches() {
   // to do it again.
   if (current_path() != 'admin/modules/list/confirm') {
     entity_defaults_rebuild();
+  }
+
+  // Care about entitycache tables.
+  if (module_exists('entitycache')) {
+    $tables = array();
+    foreach (entity_crud_get_info() as $entity_type => $entity_info) {
+      if (isset($entity_info['module']) && !empty($entity_info['entity cache'])) {
+        $tables[] = 'cache_entity_' . $entity_type;
+      }
+    }
+    return $tables;
   }
 }
 
@@ -1408,6 +1435,13 @@ function entity_entity_info_alter(&$entity_info) {
   foreach ($entity_info as $type => $info) {
     if (!isset($info['configuration'])) {
       $entity_info[$type]['configuration'] = !empty($info['exportable']);
+    }
+
+    if (isset($info['controller class']) && in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+      // Automatically disable field cache when entity cache is used.
+      if (!empty($info['entity cache']) && module_exists('entitycache')) {
+        $entity_info[$type]['field cache'] = FALSE;
+      }
     }
   }
 }

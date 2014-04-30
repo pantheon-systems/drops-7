@@ -41,9 +41,10 @@ git push origin :updating_from_pantheon_drops
 # Make a branch so we can test the travis build sep
 git checkout -b rebuilding_dkan_profile
 # Run dkan update script
-scripts/rebuild-dkan.sh
+cd scripts
+./rebuild-dkan.sh
 # Add, Commit, Push and check the travis build for the 'rebuilding_dkan_profile' branch
-git add profiles/dkan -A
+git add ../profiles/dkan -A
 git commit -m "Rebuilding dkan"
 git push origin rebuilding_dkan_profile
 ```

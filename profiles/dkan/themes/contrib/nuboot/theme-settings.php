@@ -11,7 +11,7 @@ function nuboot_form_system_theme_settings_alter(&$form, &$form_state) {
   // Hero fieldset.
   $form['hero'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Hero'),
+    '#title' => t('Hero Unit'),
     '#group' => 'general',
   );
   // Default path for image.
@@ -19,17 +19,18 @@ function nuboot_form_system_theme_settings_alter(&$form, &$form_state) {
   if (file_uri_scheme($hero_path) == 'public') {
     $hero_path = file_uri_target($hero_path);
   }
+
   // Helpful text showing the file name, non-editable.
   $form['hero']['hero_path'] = array(
     '#type' => 'textfield',
-    '#title' => 'Path to front page hero region background image',
+    '#title' => 'Path to front page hero unit background image',
     '#default_value' => $hero_path,
-    //'#disabled' => TRUE,
+    '#disabled' => TRUE,
   );
   // Upload field.
   $form['hero']['hero_upload'] = array(
     '#type' => 'file',
-    '#title' => 'Upload a photo for the hero region background image',
+    '#title' => 'Upload a photo for the hero unit background image',
     '#description' => 'Upload a new image for the hero region background.',
     '#upload_validators' => array(
       'file_validate_extensions' => array('png jpg jpeg'),
@@ -50,7 +51,13 @@ function nuboot_settings_submit($form, &$form_state) {
     $values['hero_path'] = _system_theme_settings_validate_path($values['hero_path']);
   }
   // Get the previous value.
-  $previous = 'public://' . $form['hero']['hero_path']['#default_value'];
+  $previous = $form['hero']['hero_path']['#default_value'];
+  if ($previous !== 'profiles/dkan/themes/contrib/nuboot/images/hero.jpg') {
+    $previous = 'public://' . $previous;
+  }
+  else {
+    $previous = FALSE;
+  }
   if ($file = file_save_upload('hero_upload')) {
     $parts = pathinfo($file->filename);
     $destination = 'public://' . $parts['basename'];
@@ -58,7 +65,7 @@ function nuboot_settings_submit($form, &$form_state) {
     if (file_copy($file, $destination, FILE_EXISTS_REPLACE)) {
       $_POST['hero_path'] = $form_state['values']['hero_path'] = $destination;
       // If new file has a different name than the old one, delete the old.
-      if ($destination != $previous) {
+      if ($previous && $destination != $previous) {
         drupal_unlink($previous);
       }
     }

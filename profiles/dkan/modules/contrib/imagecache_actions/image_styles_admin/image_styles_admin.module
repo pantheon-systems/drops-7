@@ -60,16 +60,37 @@ function image_styles_admin_preprocess_table(&$variables) {
   else if ($is_in_image_style_list) {
     // Normal preprocess hook call: only process if theme('table', ...) has been
     // called by theme_image_style_list()
-    $variables['header'][2]['colspan'] = 4;
-    foreach ($variables['rows'] as &$row) {
-      array_splice($row, 2, 0, array($row[2], $row[2]));
-      // Replace edit with duplicate in text and href
-      $row[3] = str_replace('>' . t('edit') . '<', '>' . t('duplicate') . '<', $row[3]);
-      $row[3] = preg_replace('/\/edit\/([-a-z0-9_]+)"/', '/duplicate/\1"', $row[3]);
-      // Replace edit with export in text and href
-      $row[4] = str_replace('>' . t('edit') . '<', '>' . t('export') . '<', $row[4]);
-      $row[4] = preg_replace('/\/edit\/([-a-z0-9_]+)"/', '/export/\1"', $row[4]);
+
+    // Find the column with the edit link in it.
+    $i = 0;
+    $first_row = reset($variables['rows']);
+    foreach ($first_row as $i => $cell) {
+      if (strpos($cell, '>' . t('edit') . '<') !== FALSE) {
+        break;
+      }
     }
+
+    // Increase the colspan for the column with the edit link to include the
+    // duplicate and export links as well.
+    $variables['header'][$i]['colspan'] += 2;
+
+    // Add the 2 links to each row by duplicating the edit link and then
+    // changing the text and the link.
+    $edit_column = $i;
+    foreach ($variables['rows'] as &$row) {
+      $i = $edit_column;
+      // Duplicate the edit link twice.
+      array_splice($row, $i + 1, 0, array($row[$i], $row[$i]));
+      // Replace edit with duplicate in text and href
+      $i++;
+      $row[$i] = str_replace('>' . t('edit') . '<', '>' . t('duplicate') . '<', $row[$i]);
+      $row[$i] = preg_replace('#/admin/config/media/image-styles/edit/#', '/admin/config/media/image-styles/duplicate/', $row[$i]);
+      // Replace edit with export in text and href
+      $i++;
+      $row[$i] = str_replace('>' . t('edit') . '<', '>' . t('export') . '<', $row[$i]);
+      $row[$i] = preg_replace('#/admin/config/media/image-styles/edit/#', '/admin/config/media/image-styles/export/', $row[$i]);
+    }
+
     // Don't preprocess subsequent calls to theme_table().
     $is_in_image_style_list = FALSE;
   }

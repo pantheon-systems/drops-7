@@ -20,7 +20,7 @@ class Dataset {
    * Helper function that slugifies strings.
    *
    * @param string $string
-   *   the string to be slugified
+   *   the string to be slugified.
    */
   protected static function slugify($string) {
     return strtolower(preg_replace('/[^a-zA-Z0-9-]+/', '-', $string));
@@ -40,25 +40,25 @@ class Dataset {
   }
 
   /**
-   * Helps checks if group reference definition.
+   * Helper function that checks if group reference is defined.
    *
    * @param array $fields
-   *   an array of dataset fields
+   *   an array of dataset fields.
    */
-  protected static function populate_og_reference(&$fields) {
-    if (isset($fields['og_group_ref']['und'][0]) && isset($fields['og_group_ref']['und'][0]['title'])) {
+  protected static function populateOgReference(&$fields) {
+    if (isset($fields['og_group_ref'][LANGUAGE_NONE][0]) && isset($fields['og_group_ref'][LANGUAGE_NONE][0]['title'])) {
       // Query group by title.
       $query = new EntityFieldQuery();
       $query->entityCondition('entity_type', 'node')
             ->entityCondition('bundle', 'group')
-            ->propertyCondition('title', $fields['og_group_ref']['und'][0]['title'])
+            ->propertyCondition('title', $fields['og_group_ref'][LANGUAGE_NONE][0]['title'])
             ->range(0, 1);
       $result = $query->execute();
       if (isset($result['node'])) {
         // If OG exists fix the field array so node_save works.
         reset($result['node']);
-        $fields['og_group_ref']['und'][0]['target_id'] = key($result['node']);
-        unset($fields['og_group_ref']['und'][0]['title']);
+        $fields['og_group_ref'][LANGUAGE_NONE][0]['target_id'] = key($result['node']);
+        unset($fields['og_group_ref'][LANGUAGE_NONE][0]['title']);
       }
       else {
         // If OG does not exists remove group reference.
@@ -75,7 +75,7 @@ class Dataset {
    * @param object $resource
    *   an object that represents a file field
    */
-  protected static function populate_resource_field_upload($resource) {
+  protected static function populateResourceFieldUpload($resource) {
     if (isset($resource->field_upload)) {
       foreach ($resource->field_upload as $lang => $items) {
         foreach ($items as $key => $item) {
@@ -142,7 +142,7 @@ class Dataset {
   }
 
   /**
-   * Preloads dataset and resources based on dataset nid.
+   * Preloads dataset based on dataset nid.
    *
    * @param string $nid
    *   A string that represents the dataset node id
@@ -152,16 +152,23 @@ class Dataset {
     if ($node) {
       $this->title = $node->title;
       $this->dataset = $node;
-      $this->resources = array();
-      // Load resources.
-      foreach ($this->dataset->field_resources[$this->dataset->language] as $key => $resource) {
-        $this->resources[] = node_load($resource['target_id']);
-      }
       // Removed unset($this->dataset->field_resources);.
       $this->created = TRUE;
     }
   }
 
+  /**
+   * Preloads Dataset's Resources.
+   */
+  protected function preloadResources() {
+    if ($this->created) {
+      $this->resources = array();
+      // Load resources.
+      foreach ($this->dataset->field_resources[$this->dataset->language] as $key => $resource) {
+        $this->resources[] = node_load($resource['target_id']);
+      }
+    }
+  }
   /**
    * Constructor.
    *
@@ -196,7 +203,7 @@ class Dataset {
    * Increments revision for the dataset and sets a log for the resource.
    *
    * @param string $log
-   *   A string to be used as the log message for the revision instance
+   *   A string to be used as the log message for the revision instance.
    */
   public function incrementRevision($log) {
     if (isset($this->dataset->nid)) {
@@ -213,7 +220,7 @@ class Dataset {
    *   An associative array containing the dataset node fields
    */
   public function attachFields($fields) {
-    Dataset::populate_og_reference($fields);
+    Dataset::populateOgReference($fields);
     $this->dataset = Dataset::asobject($fields);
     // Populate basic properties.
     $this->dataset->title = $this->title;
@@ -221,7 +228,7 @@ class Dataset {
     $this->dataset->promote = '0';
     $this->dataset->sticky = '0';
     $this->dataset->type = 'dataset';
-    $this->dataset->language = 'und';
+    $this->dataset->language = LANGUAGE_NONE;
     $this->dataset->comment = '1';
     $this->dataset->translate = '0';
     $this->datasetUpdated = TRUE;
@@ -235,13 +242,13 @@ class Dataset {
    */
   public function attachResource($resource) {
     $resource = Dataset::asobject($resource);
-    $resource = Dataset::populate_resource_field_upload($resource);
+    $resource = Dataset::populateResourceFieldUpload($resource);
     // Populate basic properties.
     $resource->status = '1';
     $resource->promote = '0';
     $resource->sticky = '0';
     $resource->type = 'resource';
-    $resource->language = 'und';
+    $resource->language = LANGUAGE_NONE;
     $resource->comment = '0';
     $resource->translate = '0';
     // Attach resource.
@@ -263,20 +270,39 @@ class Dataset {
     if ($this->resourcesUpdated) {
       $this->dataset->field_resources = array();
       foreach ($this->resources as $key => $resource) {
-        $this->resources[$key]->field_dataset_ref['und'][] = array(
+        $this->resources[$key]->field_dataset_ref[LANGUAGE_NONE][] = array(
           'target_id' => $this->dataset->nid,
           'target_type' => $this->dataset->type,
         );
         node_save($this->resources[$key]);
-        $this->dataset->field_resources['und'][] = array(
+        $this->dataset->field_resources[LANGUAGE_NONE][] = array(
           'target_id' => $this->resources[$key]->nid,
           'target_type' => $this->resources[$key]->type,
         );
       }
-      if (count($this->dataset->field_resources['und'])) {
+      if (count($this->dataset->field_resources[LANGUAGE_NONE])) {
         node_save($this->dataset);
       }
       $this->resourcesUpdated = FALSE;
     }
+  }
+
+  /**
+   * Delete the populated dataset and resources.
+   * @param boolean $delete_resources
+   *   Boolean to indicate if resources should be deleted.
+   */
+  public function delete($delete_resources = FALSE) {
+    if ($this->created) {
+      $to_delete = array();
+      $to_delete[] = $this->dataset->nid;
+      if ($delete_resources) {
+        foreach ($this->resources as $key => $resource) {
+          $to_delete[] = $resource->nid;
+        }
+      }
+      node_delete_multiple($to_delete);
+    }
+    return count(node_load_multiple($to_delete)) === 0 ? TRUE : FALSE;
   }
 }

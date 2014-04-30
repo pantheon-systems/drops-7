@@ -41,17 +41,6 @@
 	}
 }
 
-#edit-field-spatial,
-#edit-field-temporal-coverage {
-	position:relative;
-	padding-top:33px;
-	fieldset legend {
-	    left: 0;
-	    position: absolute;
-	    top: 0;
-	}
-}
-
 .system-status-report tr {
 	border-bottom: 1px solid $shade;
 	&.ok {

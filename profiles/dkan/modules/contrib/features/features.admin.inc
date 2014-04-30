@@ -49,7 +49,17 @@ function features_settings_form($form, $form_state) {
     }
   }
 
-  $form['features_rebuild_on_flush'] = array(
+  $form['general'] = array(
+    '#title' => t('General settings'),
+    '#type' => 'fieldset',
+  );
+  $form['general']['features_default_export_path'] = array(
+    '#title' => t('Default export path'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('features_default_export_path', FEATURES_DEFAULT_EXPORT_PATH),
+    '#description' => t('All feature exports will be automatically saved to this path, unless overridden on the individual feature.'),
+  );
+  $form['general']['features_rebuild_on_flush'] = array(
     '#type' => 'checkbox',
     '#title' => t('Rebuild features on cache clear'),
     '#default_value' => variable_get('features_rebuild_on_flush', TRUE),
@@ -152,7 +162,7 @@ function features_export_form($form, $form_state, $feature = NULL) {
     '#default_value' => !empty($feature->info['project status url']) ? $feature->info['project status url'] : '',
     '#element_validate' => array('features_export_form_validate_field'),
   );
-  $directory = (!empty($feature->filename)) ? dirname($feature->filename) : 'sites/all/modules/features';
+  $directory = (!empty($feature->filename)) ? dirname($feature->filename) : variable_get('features_default_export_path', FEATURES_DEFAULT_EXPORT_PATH);
   if (!empty($feature_name) && substr_compare($directory, $feature_name, strlen($directory)-strlen($feature_name), strlen($feature_name)) === 0) {
     // if path ends with module_name, strip it
     $directory = dirname($directory);
@@ -337,17 +347,21 @@ function _features_export_form_components(&$form, &$form_state) {
     if (!variable_get('features_admin_show_component_' . $component, TRUE)) {
       continue;
     }
-    $label = (isset($component_info['name']) ?
-      $component_info['name'] . " <span>(" . check_plain($component) . ")</span>" : check_plain($component));
 
-    $count = 0;
+      $component_items_count = count($component_info['options']['sources']);
+      $count_label = ' (<span class = "component-count">' . $component_items_count . '</span>)';
+      $label = (isset($component_info['name']) ?
+          $component_info['name'] . $count_label . " <span>(" . check_plain($component) . ")</span>"
+          : check_plain($component) . $count_label);
+
+      $count = 0;
     foreach ($sections as $section) {
       $count += count($component_info['options'][$section]);
     }
     $extra_class = ($count == 0) ? 'features-export-empty' : '';
     $component_name = str_replace('_', '-', check_plain($component));
 
-    if ($count + count($component_info['options']['sources']) > 0) {
+    if ($count + $component_items_count > 0) {
 
       if (!empty($deprecated[$component])) {
         // only show deprecated component if it has some exports
@@ -843,7 +857,7 @@ function features_export_build_form_submit($form, &$form_state) {
 
     if ($generate) {
       $success = TRUE;
-      $destination = 'sites/all/modules/features';
+      $destination = variable_get('features_default_export_path', FEATURES_DEFAULT_EXPORT_PATH);
       $directory = (!empty($export['project path'])) ? $export['project path'] . '/' . $module_name :
         (isset($feature->filename) ? dirname($feature->filename) : $destination . '/' . $module_name);
       if (!is_dir($directory)) {

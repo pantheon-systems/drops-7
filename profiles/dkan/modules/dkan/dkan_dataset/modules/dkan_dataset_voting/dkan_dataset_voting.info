@@ -2,7 +2,7 @@ name = DKAN Dataset Voting
 description = Adds voting to datasets.
 core = 7.x
 package = DKAN Features
-version = 7.x-1.0-beta1
+version = 7.x-1.0
 php = 5.2.4
 project = dkan_dataset_voting
 dependencies[] = ajax_comments
@@ -19,3 +19,10 @@ features[field_instance][] = comment-comment_node_dataset-field_rating
 features[field_instance][] = node-dataset-field_rating
 features[variable][] = ajax_comments_node_types
 features[variable][] = ajax_comments_notify
+
+; Information added by Drupal.org packaging script on 2014-04-29
+version = "7.x-1.0"
+core = "7.x"
+project = "dkan_dataset"
+datestamp = "1398791955"
+

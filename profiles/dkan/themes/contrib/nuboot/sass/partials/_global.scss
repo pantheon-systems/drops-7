@@ -4,17 +4,22 @@ h1 {
     margin-bottom: 15px;
 }
 h1,h2,h3,h4 {
-    color:$brand-primary;
+    color:$gray-dark;
     font-weight:bold;
 }
 h3.media-heading {
     margin:.5em 0;
 }
+
 a {
     color:$brand-primary;
     &:hover {
         color:$brand-secondary;
     }
+}
+p,
+p:last-child {
+    margin: 0 0 1.25em 0;
 }
 
 .breadcrumb {
@@ -75,4 +80,27 @@ table.table {
     tr:hover {
         background:#FFFEEE;
     }
+}
+
+dl {
+  margin:0;
+  padding:0;
+  clear:both;
+  overflow:hidden;
+}
+dt {
+  margin:0;
+  padding:8px 5px;
+  float:left;
+  width:28%;
+}
+dd {
+  margin:0;
+  padding:8px 5px;
+  float:right;
+  width:72%;
+}
+dt:nth-of-type(2n),
+dd:nth-of-type(2n) {
+  background:$shade;
 }

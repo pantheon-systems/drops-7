@@ -22,6 +22,7 @@ function features_install() {
  */
 function features_uninstall() {
   variable_del('features_codecache');
+  variable_del('features_default_export_path');
   variable_del('features_semaphore');
   variable_del('features_ignored_orphans');
   if (db_table_exists('menu_custom')) {

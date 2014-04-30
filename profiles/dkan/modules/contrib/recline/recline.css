@@ -47,3 +47,9 @@
   border: 1px solid #DDE4FF !important;
   padding: 5px;
 }
+
+.data-explorer div{
+  -webkit-box-sizing: content-box;
+     -moz-box-sizing: content-box;
+          box-sizing: content-box;
+}

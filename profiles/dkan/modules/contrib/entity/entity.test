@@ -1502,7 +1502,7 @@ class EntityMetadataIntegrationTestCase extends EntityWebTestCase {
     $this->assertEmpty($wrapper, 'parent');
 
     // Test comment entity access.
-    $admin_user = $this->drupalCreateUser(array('access comments', 'administer comments'));
+    $admin_user = $this->drupalCreateUser(array('access comments', 'administer comments', 'access user profiles'));
     // Also grant access to view user accounts to test the comment author
     // property.
     $unprivileged_user = $this->drupalCreateUser(array('access comments', 'access user profiles'));

@@ -60,7 +60,6 @@ settings[bootstrap_popover_selector] = ''
 settings[bootstrap_popover_trigger]['hover'] = 0
 settings[bootstrap_popover_trigger]['focus'] = 0
 settings[bootstrap_popover_trigger]['click'] = 'click'
-settings[bootstrap_popover_trigger_autoclose] = 1
 settings[bootstrap_popover_title] = ''
 settings[bootstrap_popover_content] = ''
 settings[bootstrap_popover_delay] = 0
@@ -70,7 +69,6 @@ settings[bootstrap_popover_container] = 'body'
 ; --------------
 settings[bootstrap_tooltip_enabled] = 1
 settings[bootstrap_tooltip_descriptions] = 1
-settings[bootstrap_tooltip_descriptions_length] = 200
 settings[bootstrap_tooltip_animation] = 1
 settings[bootstrap_tooltip_html] = 0
 settings[bootstrap_tooltip_placement] = 'auto left'
@@ -83,7 +81,7 @@ settings[bootstrap_tooltip_container] = 'body'
 
 ; Advanced
 ; --------------
-settings[bootstrap_cdn] = 3.1.1
+settings[bootstrap_cdn] = 3.0.2
 settings[bootstrap_bootswatch] = ''
 
 ; Global
@@ -141,9 +139,9 @@ exclude[css][] = 'modules/user/user.css'
 
 simplytest_dependencies[] = jquery_update
 
-; Information added by Drupal.org packaging script on 2014-03-27
-version = "7.x-3.0+62-dev"
+; Information added by  packaging script on 2013-11-17
+version = "7.x-3.0"
 core = "7.x"
 project = "bootstrap"
-datestamp = "1395887043"
+datestamp = "1384678107"
 

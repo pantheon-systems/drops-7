@@ -62,7 +62,7 @@ return
     </header>
     <section class="featured media-overlay">
       <h2 class="media-heading">DKAN‘s data previewing tool has many powerful features</h2>
-      <a class="image" href="/dataset/gold-prices-london-1950-2008-monthly"><img src="/profiles/dkan/themes/dkan/images/homepage-graphic.jpg" style="width: 100%"></a>
+      <a class="image" href="/dataset/gold-prices-london-1950-2008-monthly"><img src="/profiles/dkan/themes/dkan/images/homepage-graphic.jpg" alt="Demo Image" style="width: 100%"></a>
     </section>
   </div>';
 }
@@ -82,21 +82,6 @@ function dkan_add_front_block() {
   $output .= t('You can add a !dataset to get a sense of publisher workflow. This form can be customised to require many additional fields. In this demo only the most basic fields are required.', array('!dataset' => l('Dataset', 'node/add/dataset')));
   $output .= '</div><a class="close icon-remove-sign" href="#close"></a>';
   return $output;
-}
-/**
- *
- * Implements hook_form_alter().
- */
-function dkan_sitewide_demo_front_form_alter(&$form, &$form_state, $form_id) {
-  // TODO: Move out of front module.
-  if ($form_id == 'views_exposed_form' && $form['#id'] == 'views-exposed-form-dataset-page' ||
-    $form['#id'] == 'views-exposed-form-user-profile-search-entity-view-1' ||
-    $form['#id'] == 'views-exposed-form-groups-search-entity-view-1') {
-    unset($form['terms']['#size']);
-    $form['#info']['filter-search_api_views_fulltext']['description'] = t('Search');
-    $form['#info']['filter-search_api_views_fulltext']['label'] = t('Search');
-    $form['submit']['#title'] = '';
-  }
 }
 
 /**

@@ -60,50 +60,17 @@ function dkan_additional_setup() {
   drupal_write_record('bueditor_editors', $data, array('eid'));
 
   dkan_default_content_base_install();
+  // Keeps us from getting notices "No module defines permission".
+  module_enable(array('dkan_sitewide_roles_perms'));
 
-  // Add feed source for resources loaded by dkan_default_content.
-  $record = array(
-    'id' => 'dkan_file',
-    'feed_nid' => '10',
-    'source' => 'public://Polling_Places_Madison_4.csv',
-    'state' => '0',
-    'config' => array('FeedsCSVParser'=>array('delimiter' => ",", 'no_headers' => 0, 'encoding' => 'UTF-8'), 'FeedsFileFieldFetcher' => array('fid'=> '36', 'source' => 'public://Polling_Places_Madison_4.csv'), 'FeedsFlatstoreProcessor' => array()),
-    'fetcher_result' => '0',
-    'imported' => '0',
-  );
-  drupal_write_record('feeds_source', $record);
-  $record = array(
-    'id' => 'dkan_file',
-    'feed_nid' => '5',
-    'source' => 'public://district_centerpoints_4.csv',
-    'state' => '0',
-    'config' => array('FeedsCSVParser'=>array('delimiter' => ",", 'no_headers' => 0, 'encoding' => 'UTF-8'), 'FeedsFileFieldFetcher' => array('fid'=> '30', 'source' => 'public://district_centerpoints_4.csv'), 'FeedsFlatstoreProcessor' => array()),
-    'fetcher_result' => '0',
-    'imported' => '0',
-  );
-  drupal_write_record('feeds_source', $record);
-  $record = array(
-    'id' => 'dkan_file',
-    'feed_nid' => '8',
-    'source' => 'public://us_foreclosures_jan_2012_by_state_4.csv',
-    'state' => '0',
-    'config' => array('FeedsCSVParser'=>array('delimiter' => ",", 'no_headers' => 0, 'encoding' => 'UTF-8'), 'FeedsFileFieldFetcher' => array('fid'=> '30', 'source' => 'public://district_centerpoints_4.csv'), 'FeedsFlatstoreProcessor' => array()),
-    'fetcher_result' => '0',
-    'imported' => '0',
-  );
-  drupal_write_record('feeds_source', $record);
-  $record = array(
-    'id' => 'dkan_file',
-    'feed_nid' => '6',
-    'source' => 'public://data_4.csv',
-    'state' => '0',
-    'config' => array('FeedsCSVParser'=>array('delimiter' => ",", 'no_headers' => 0, 'encoding' => 'UTF-8'), 'FeedsFileFieldFetcher' => array('fid'=> '30', 'source' => 'public://district_centerpoints_4.csv'), 'FeedsFlatstoreProcessor' => array()),
-    'fetcher_result' => '0',
-    'imported' => '0',
-  );
-  drupal_write_record('feeds_source', $record);
-  features_revert(array('dkan_sitewide_search_db' => array('search_api_index')));
+  features_revert(array('dkan_sitewide_menu' => array('content_menu_links')));
+  features_revert(array('dkan_sitewide_menu' => array('menu_links')));
+  features_revert(array('dkan_dataset_content_types' => array('field_base', 'field_instance')));
+  features_revert(array('dkan_dataset_groups' => array('field_base')));
   features_revert(array('dkan_dataset_groups' => array('search_api_index')));
-  features_revert(array('dkan_sitewide_roles_perms' => array('user_permission')));
+  features_revert(array('dkan_sitewide_search_db' => array('search_api_index')));
+  cache_clear_all();
+  features_revert(array('dkan_sitewide_search_db' => array('search_api_server')));
+  features_revert(array('dkan_sitewide_roles_perms' => array('user_permission', 'og_features_permission')));
   unset($_SESSION['messages']['warning']);
 }

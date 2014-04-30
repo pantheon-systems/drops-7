@@ -2,7 +2,7 @@ name = DKAN Datastore
 description = Creates a datastore designed to make it easy to share open data.
 core = 7.x
 package = DKAN
-version = 7.x-1.0-beta1
+version = 7.x-1.0
 project = dkan_datastore
 dependencies[] = dkan_dataset
 dependencies[] = feeds
@@ -10,7 +10,7 @@ dependencies[] = feeds_field_fetcher
 dependencies[] = feeds_flatstore_processor
 dependencies[] = rest_server
 dependencies[] = views
-datestamp = 1373951381
+datestamp = 1398705724
 features[ctools][] = feeds:feeds_importer_default:1
 features[ctools][] = views:views_default:3.0
 features[features_api][] = api:2
@@ -19,10 +19,11 @@ features[feeds_importer][] = dkan_link
 features[views_view][] = datasets
 files[] = includes/Datastore.inc
 files[] = includes/DkanDatastore.inc
+files[] = tests/dkan_datastore.test
 
-
-; Information added by drush on 2014-03-27
-version = "unknown"
+; Information added by Drupal.org packaging script on 2014-04-28
+version = "7.x-1.0"
+core = "7.x"
 project = "dkan_datastore"
-datestamp = "1395936177"
+datestamp = "1398710927"
 

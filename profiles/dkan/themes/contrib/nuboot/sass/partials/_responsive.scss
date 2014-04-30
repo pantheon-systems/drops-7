@@ -1,97 +1,26 @@
-@media only screen and (max-width: 360px) {
-	.ul.resource-list li  {
-		padding-right:0;
-		.btn {
-			margin:0 0 25px;
-			position:relative;
-			top:auto;
-			right:auto;
-		}
-	}
-}
-
-@media only screen and (max-width: 767px) {
-	#nav-wrapper .navbar-default {
-		.lead {
-			position:absolute;
-			top:40px;
-			left:68px;
-		}
-		nav {
-			float:none;
-			margin:0;
-		}
-		.navbar-nav {
-			margin:0;
-		}
-		.navbar-nav > li > a {
-			text-align:center;
-		}
-		.navbar-nav.secondary li {
-			float: none;
-			font-size:1em;
-			margin:0;
-			text-align:center;
-			a {
-    			font-size: 1em;
-    			padding:12px 6px;
-			}
-		}
-		#block-dkan-sitewide-dkan-sitewide-search-bar {
-			width:100%;
-			input.form-control {
-				width:100%;
-			}
-		}
-		.container > .navbar-header {
-			margin:0 15px;
-		}
-	}
-	#jumbotron {
-		height:auto;
-	}
-	#block-dkan-sitewide-demo-front-dkan-add-front {
-		margin-top:1em;
-	}
-	.view-popular-tags .tag-list li {
-	    margin-right: 1.25em;
-	}
-	#views-exposed-form-user-profile-search-entity-view-1, 
-	#views-exposed-form-groups-search-entity-view-1, 
-	#views-exposed-form-dataset-page {
-		width:100%;
-	}
-	.view-front-page-group-grid,
-	.page-groups .main-container .region-content .block {
-		.span6,
-		.col-lg-6 {
-			float:none;
-			margin:0;
-			width:100%;
-			span {
-				height: auto;
-			}
-		}
-		.node-group {
-			height:auto;
-			padding:170px 0 0 0;
-			position:relative;
-			margin-bottom:2em;
-			text-align:center;
-			.field-type-image {
-				width:100%;
-				img {
-					@include popblock;
-					display:block;
-					margin:0 auto;
-					padding:0;
-				}
-			}
-		}
-	}
-	#nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar form {
-	    display: block;
-	    margin: 0 auto;
-	    width: 300px;
-	}
+@media(min-width:768px){
+  .container > .navbar-header {
+    margin-left:0;
+  }
+  #nav-wrapper .navbar-default .logo {
+    padding:10px 10px 0 0;
+  }
+  #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar {
+    margin-right:60px;
+  }
+  #data-and-resources ul.resource-list {
+    margin:1em 0;
+    li {
+      margin:.5em 0;
+      min-height:40px;
+      padding:0 125px 0 40px;
+      position:relative;
+      a.btn {
+        margin-top:0;
+        position:absolute;
+        top:0;
+        right:10px;
+      }
+    }
+  }
 }

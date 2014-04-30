@@ -58,6 +58,15 @@ function dkan_sitewide_roles_perms_user_default_permissions() {
     'module' => 'node',
   );
 
+  // Exported permission: 'access resource node'.
+  $permissions['access resource node'] = array(
+    'name' => 'access resource node',
+    'roles' => array(
+      'anonymous user' => 'anonymous user',
+    ),
+    'module' => 'restws',
+  );
+
   // Exported permission: 'access rules debug'.
   $permissions['access rules debug'] = array(
     'name' => 'access rules debug',
@@ -618,15 +627,6 @@ function dkan_sitewide_roles_perms_user_default_permissions() {
     'module' => 'node',
   );
 
-  // Exported permission: 'edit node machine name'.
-  $permissions['edit node machine name'] = array(
-    'name' => 'edit node machine name',
-    'roles' => array(
-      'administrator' => 'administrator',
-    ),
-    'module' => 'defaultcontent',
-  );
-
   // Exported permission: 'edit own dataset content'.
   $permissions['edit own dataset content'] = array(
     'name' => 'edit own dataset content',
@@ -827,10 +827,7 @@ function dkan_sitewide_roles_perms_user_default_permissions() {
   // Exported permission: 'use text format html'.
   $permissions['use text format html'] = array(
     'name' => 'use text format html',
-    'roles' => array(
-      'administrator' => 'administrator',
-      'editor' => 'editor',
-    ),
+    'roles' => array(),
     'module' => 'filter',
   );
 
@@ -839,6 +836,7 @@ function dkan_sitewide_roles_perms_user_default_permissions() {
     'name' => 'view own unpublished content',
     'roles' => array(
       'administrator' => 'administrator',
+      'authenticated user' => 'authenticated user',
       'editor' => 'editor',
     ),
     'module' => 'node',
@@ -849,6 +847,8 @@ function dkan_sitewide_roles_perms_user_default_permissions() {
     'name' => 'view revisions',
     'roles' => array(
       'administrator' => 'administrator',
+      'anonymous user' => 'anonymous user',
+      'authenticated user' => 'authenticated user',
       'editor' => 'editor',
     ),
     'module' => 'node',

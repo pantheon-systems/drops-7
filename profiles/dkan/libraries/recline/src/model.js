@@ -43,9 +43,17 @@ my.Dataset = Backbone.Model.extend({
     // store will either be the backend or be a memory store if Backend fetch
     // tells us to use memory store
     this._store = this.backend;
+
+    // if backend has a handleQueryResultFunction, use that
+    this._handleResult = (this.backend != null && _.has(this.backend, 'handleQueryResult')) ? 
+      this.backend.handleQueryResult : this._handleQueryResult;
     if (this.backend == recline.Backend.Memory) {
       this.fetch();
     }
+  },
+
+  sync: function(method, model, options) {
+    return this.backend.sync(method, model, options);
   },
 
   // ### fetch
@@ -189,7 +197,7 @@ my.Dataset = Backbone.Model.extend({
 
     this._store.query(actualQuery, this.toJSON())
       .done(function(queryResult) {
-        self._handleQueryResult(queryResult);
+        self._handleResult(queryResult);
         self.trigger('query:done');
         dfd.resolve(self.records);
       })
@@ -481,8 +489,8 @@ my.Query = Backbone.Model.extend({
     },
     range: {
       type: 'range',
-      start: '',
-      stop: ''
+      from: '',
+      to: ''
     },
     geo_distance: {
       type: 'geo_distance',
@@ -514,8 +522,8 @@ my.Query = Backbone.Model.extend({
     // delete filter on the same field, then add
     var filters = this.get('filters');
     var idx = -1;
-    _.each(this.get('filters'), function(filter, key, list) {
-      if (filter.field == filter.field) {
+    _.each(this.get('filters'), function(f, key, list) {
+      if (filter.field == f.field) {
         idx = key;
       }
     });
@@ -631,9 +639,9 @@ my.ObjectState = Backbone.Model.extend({
 // ## Backbone.sync
 //
 // Override Backbone.sync to hand off to sync function in relevant backend
-Backbone.sync = function(method, model, options) {
-  return model.backend.sync(method, model, options);
-};
+// Backbone.sync = function(method, model, options) {
+//   return model.backend.sync(method, model, options);
+// };
 
 }(this.recline.Model));
 

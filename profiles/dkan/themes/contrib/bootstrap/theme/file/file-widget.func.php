@@ -13,7 +13,7 @@ function bootstrap_file_widget($variables) {
 
   $hidden_elements = array();
   foreach (element_children($element) as $child) {
-    if (isset($element[$child]['#type']) && $element[$child]['#type'] === 'hidden') {
+    if ($element[$child]['#type'] === 'hidden') {
       $hidden_elements[$child] = $element[$child];
       unset($element[$child]);
     }

@@ -20,29 +20,11 @@ html {
   &.js {
     // Collapsible fieldsets.
     fieldset.collapsed {
-      border-left-width: 1px;
-      border-right-width: 1px;
-      height: auto;
+     height: auto;
     }
     // Throbbers.
     input.form-autocomplete {
       background-image: none;
-    }
-    // Autocomplete.
-    input.form-autocomplete {
-      background-image: none;
-    }
-    // Autocomplete (fallback throbber, no icon).
-    .autocomplete-throbber {
-      background-position: 100% 2px;
-      background-repeat: no-repeat;
-      display: inline-block;
-      height: 15px;
-      margin: 2px 0 0 2px;
-      width: 15px;
-    }
-    .autocomplete-throbber.throbbing {
-      background-position: 100% -18px;
     }
   }
 }
@@ -110,13 +92,13 @@ body {
 // Default navbar.
 .navbar.container {
   @media @tablet {
-    max-width: ((@container-sm - @grid-gutter-width));
+    max-width: ((@container-sm - 30px));
   }
   @media @normal {
-    max-width: ((@container-md - @grid-gutter-width));
+    max-width: ((@container-md - 30px));
   }
   @media @wide {
-    max-width: ((@container-lg - @grid-gutter-width));
+    max-width: ((@container-lg - 30px));
   }
   margin-top: 20px;
   > .container {
@@ -141,10 +123,6 @@ body {
 }
 .modal-dialog {
   z-index: 1630;
-}
-.ctools-modal-dialog .modal-body {
-  width: 100% !important;
-  overflow: auto;
 }
 .modal-backdrop {
   z-index: 1610;
@@ -256,7 +234,6 @@ fieldset legend.panel-heading {
 }
 fieldset .panel-body {
   clear: both;
-  display: inherit;
 }
 fieldset .panel-heading a.panel-title {
   color: inherit;
@@ -266,14 +243,6 @@ fieldset .panel-heading a.panel-title {
   &:hover {
     text-decoration: none;
   }
-}
-.form-group:last-child,
-.panel:last-child {
-  margin-bottom: 0;
-}
-.form-horizontal .form-group {
-  margin-left: 0;
-  margin-right: 0;
 }
 .form-actions{
   clear: both;
@@ -679,88 +648,4 @@ table {
 }
 .alert-danger a {
   color: darken(@alert-danger-text, 10%);
-}
-
-// Override image module.
-div.image-style-new,
-div.image-style-new div {
-  display: block;
-}
-div.image-style-new div.input-group {
-  display: table;
-}
-
-td.module,
-.table-striped>tbody>tr:nth-child(odd)>td.module,
-.table>tbody>tr>td.module {
-  background: @table-border-color;
-  font-weight: 700;
-}
-
-// Book module.
-.book-toc > .dropdown-menu {
-  overflow: hidden;
-  > .dropdown-header {
-    white-space: nowrap;
-  }
-  > li:nth-child(1) > a {
-    font-weight: bold;
-  }
-  .dropdown-menu {
-    .box-shadow(none);
-    border: 0;
-    display: block;
-    font-size: @font-size-small;
-    margin: 0;
-    padding: 0;
-    position: static;
-    width: 100%;
-    > li {
-      padding-left: 20px;
-      > a {
-        margin-left: -40px;
-        padding-left: 60px;
-      }
-    }
-  }
-}
-
-// Features module.
-#features-filter .form-item.form-type-checkbox {
-  padding-left: 20px;
-}
-fieldset.features-export-component {
-  font-size: @font-size-small;
-  html.js #features-export-form &, & {
-    margin: 0 0 (@line-height-computed / 2);
-  }
-  .panel-heading {
-    padding: 5px 10px;
-    a.panel-title {
-      font-size: @font-size-small;
-      font-weight: 500;
-      margin: -5px -10px;
-      padding: 5px 10px;
-    }
-  }
-  .panel-body {
-    padding: 0 10px;
-  }
-}
-div.features-export-list {
-  margin: -11px 0 10px;
-  padding: 0 10px;
-}
-
-fieldset.features-export-component .component-select ,
-div.features-export-list {
-  .form-type-checkbox {
-    line-height: 1em;
-    margin: 5px 5px 5px 0 !important;
-    min-height: 0;
-    padding: 3px 3px 3px 25px!important;
-    input[type=checkbox] {
-      margin-top: 0;
-    }
-  }
 }

@@ -21,9 +21,8 @@ Personally, I prefer the imagemagick toolkit:
   you will see what I mean.
 - It does not execute in the PHP memory space, so is not restricted by the
   memory_limit PHP setting.
-- The GD toolkit will, at least on my Windows configuration, keep the font file
+- The GD toolkit will, at least on my Windows configuration, keep font files
   open after a text operation, so you cannot delete, move or rename it anymore.
-- This module does a better job with Imagemagick (see below).
 
 
 Installing

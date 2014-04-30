@@ -62,7 +62,7 @@
                 $.ajax({
                     url: file,
                     dataType: "text",
-                    timeout: 1000,
+                    timeout: 500,
                     success: function(data) {
                         // Converts line endings in either format to unix format.
                         data = data.replace(/(\r\n|\n|\r)/gm,"\n");

@@ -1,5 +1,6 @@
-.front #nav-wrapper {
-	//border-bottom:1px solid lighten($brand-primary, 20%);
+.container > .navbar-header, .container > .navbar-collapse {
+    margin-left: 10px;
+    margin-right: 10px;
 }
 #nav-wrapper {
 	border-bottom:1px solid $smoke;
@@ -18,7 +19,12 @@
 		border:none;
 		nav {
 			margin-top: 14px;
-			float:right;
+			float: none;
+			display: block;
+			text-align: center;
+			@media(min-width:768px) {
+				float:right;
+			}
 		}
 		.navbar-brand {
 			color:$brand-primary;
@@ -28,9 +34,6 @@
 		}
 		.logo {
 			padding:10px 10px 0 0;
-			img {
-				height:60px;
-			}
 		}
 		.lead {
 			font-size:21px;
@@ -65,6 +68,10 @@
 		}
 	}
 }
+//override bootstrap
+.navbar .nav > li > a {
+	text-shadow:none;
+}
 
 .tabs--primary {
 	margin: 10px 0;
@@ -72,16 +79,17 @@
 		margin:1px;
 	}
 	li a {
+    background: $white;
 		border:1px solid $smoke;
 		padding:5px 15px;
 		&:hover {
 			border:1px solid $brand-secondary;
-			background:lighten($brand-secondary,10%);
-			color:$brand-primary;
+			background:$brand-secondary;
+			color:$white;
 		}
 		&.active {
 			border:1px solid $brand-primary;
-			background:lighten($brand-primary,10%);
+			background:$brand-primary;
 			color:$white;
 		}
 	}
@@ -96,22 +104,67 @@
 	}
 }
 
-// .btn-primary,
-// a.btn-primary {
-//   color: white;
-//   text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
-//   background-color: $brand-primary;
-//   @include background-image(linear-gradient(lighten($brand-primary,15%),$brand-primary));
-//   border:1px solid darken($brand-primary,10%);
-//   border-color: $brand-primary darken($brand-primary,10%) darken($brand-primary,10%) $brand-primary;
-//   &:hover {
-//   	background:$brand-secondary;
-//   	@include background-image(linear-gradient(darken($brand-secondary,15%),$brand-secondary));
-//   	border:1px solid darken($brand-secondary,10%);
-//   	border-color: $brand-secondary darken($brand-secondary,10%) darken($brand-secondary,10%) $brand-secondary;
-//   }
-// }
+.nav-pills li a.active,
+.nav-pills li.active a:hover,
+.nav-pills li.active a:focus,
+.tabs--primary li a.active {
+  border:1px solid $brand-primary;
+  background: $brand-primary;
+  color:#ffffff;
+}
+.btn-primary {
+  background:$brand-primary;
+  border-color:$brand-primary;
+}
+.btn-primary:hover, 
+.btn-primary:focus, 
+.btn-primary:active, 
+.btn-primary.active {
+	background:$brand-secondary;
+	border-color:$brand-secondary;
+}
+#edit-submit:hover,
+#edit-submit:focus,
+#edit-submit:active {
+	background: darken($brand-primary,20%);
+	border-color: darken($brand-primary,20%);
+	color: #fff;
+}
 
+a.embed-link {
+	@include border-radius(4px);
+  background:$brand-primary;
+  color: #fff;
+  display: inline-block;
+  padding:5px 15px 5px 30px;
+  position:relative;
+  margin:1em 0;
+  text-decoration: none;
+}
+a.embed-link:hover, 
+a.embed-link:focus, 
+a.embed-link:active {
+	background:$brand-secondary;
+	color:#fff;
+	text-decoration:none;
+}
+a.embed-link:before {
+  content:'\f121';
+  color: #fff;
+  font-family: $icon-fa;
+  font-size: 1.3em;
+  position: absolute;
+  top:5px;
+  left:10px;
+}
+textarea.embed-code {
+	width: 100%;
+	margin-bottom:1em;
+}
+
+ul.action-links {
+	margin:1em 0;
+}
 .data-explorer .btn {
 	border:1px solid $smoke;
 }
