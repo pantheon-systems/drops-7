@@ -547,7 +547,7 @@ function image_field_update_instance($instance, $prior_instance) {
  */
 function image_path_flush($path) {
   // Pantheon optimization: one bulk operation is better.
-  if (function_exists('pantheon_api_image_path_flush')) {
+  if (function_exists('pantheon_api_image_path_flush') && function_exists('pantheon_bulk_file_delete')) {
     pantheon_api_image_path_flush($path);
     return;
   }
