@@ -345,6 +345,8 @@ function commerce_discount_install_helper() {
  * @see commerce_discount_offer_type_info()
  */
 function commerce_discount_uninstall() {
+  // Drop all bundles attached on commerce_discount and commerce_discount_offer
+  // entity types.
   field_attach_delete_bundle('commerce_discount', 'order_discount');
   field_attach_delete_bundle('commerce_discount', 'product_discount');
   field_attach_delete_bundle('commerce_discount_offer', 'fixed_amount');
@@ -352,6 +354,7 @@ function commerce_discount_uninstall() {
   field_attach_delete_bundle('commerce_discount_offer', 'free_shipping');
   field_attach_delete_bundle('commerce_discount_offer', 'free_products');
 
+  // Then delete the related fields
   commerce_delete_field('commerce_discount_offer');
   commerce_delete_field('commerce_fixed_amount');
   commerce_delete_field('commerce_percentage');
@@ -359,6 +362,17 @@ function commerce_discount_uninstall() {
   commerce_delete_field('inline_conditions');
   commerce_delete_field('commerce_free_shipping');
   commerce_delete_field('commerce_free_products');
+
+  // Delete all rules added by commerce_discount module.
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'rules_config')
+    ->propertyCondition('module', 'commerce_discount')
+    ->execute();
+
+  if (!empty($result)) {
+    rules_config_delete(array_keys(reset($result)));
+  }
 
   // Delete variable settings.
   variable_del('commerce_discount_line_item_types');

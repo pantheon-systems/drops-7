@@ -20,12 +20,12 @@ function entity_metadata_entity_get_properties($entity, array $options, $name, $
  * @see entity_metadata_book_entity_info_alter()
  */
 function entity_metadata_book_get_properties($node, array $options, $name, $entity_type) {
-  if (!isset($node->book['bid'])) {
-    throw new EntityMetadataWrapperException('This node is no book page.');
-  }
   switch ($name) {
     case 'book':
-      return $node->book['bid'];
+      if (isset($node->book['bid'])) {
+        return $node->book['bid'];
+      }
+      return NULL;
 
     case 'book_ancestors':
       $ancestors = array();
@@ -92,6 +92,12 @@ function entity_metadata_comment_get_node_properties($node, array $options, $nam
 
     case 'comment_count_new':
       return comment_num_new($node->nid);
+
+    case 'comments':
+      $select = db_select('comment', 'c')
+        ->fields('c', array('cid'))
+        ->condition('c.nid', $node->nid);
+      return array_keys($select->execute()->fetchAllKeyed(0, 0));
   }
 }
 
@@ -413,7 +419,7 @@ function entity_metadata_language_list() {
   $list = array();
   $list[LANGUAGE_NONE] = t('Language neutral');
   foreach (language_list() as $language) {
-    $list[$language->language] = $language->name;
+    $list[$language->language] = t($language->name);
   }
   return $list;
 }
@@ -485,8 +491,15 @@ function entity_metadata_field_options_list($name, $info) {
       // No data available.
       $entity = NULL;
     }
-    $instance = $wrapper->getBundle() ? field_info_instance($wrapper->type(), $name, $wrapper->getBundle()) : NULL;
-    return (array) module_invoke($field['module'], 'options_list', $field, $instance, $wrapper->type(), $entity);
+
+    // Support translating labels via i18n field.
+    if (module_exists('i18n_field') && ($translate = i18n_field_type_info($field['type'], 'translate_options'))) {
+      return $translate($field);
+    }
+    else {
+      $instance = $wrapper->getBundle() ? field_info_instance($wrapper->type(), $name, $wrapper->getBundle()) : NULL;
+      return (array) module_invoke($field['module'], 'options_list', $field, $instance, $wrapper->type(), $entity);
+    }
   }
 }
 
@@ -965,10 +978,17 @@ function entity_metadata_form_comment($comment) {
  * Callback to get the form of a user account.
  */
 function entity_metadata_form_user($account) {
-  // Pre-populate the form-state with the right form include.
+  // If $account->uid is set then we want a user edit form.
+  // Otherwise we want the user register form.
+  if (isset($account->uid)) {
+    $form_id = 'user_profile_form';
+    form_load_include($form_state, 'inc', 'user', 'user.pages');
+  }
+  else {
+    $form_id = 'user_register_form';
+  }
   $form_state['build_info']['args'] = array($account);
-  form_load_include($form_state, 'inc', 'user', 'user.pages');
-  return drupal_build_form('user_profile_form', $form_state);
+  return drupal_build_form($form_id, $form_state);
 }
 
 /**

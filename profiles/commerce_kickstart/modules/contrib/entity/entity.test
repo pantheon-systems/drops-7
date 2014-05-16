@@ -1443,6 +1443,11 @@ class EntityMetadataIntegrationTestCase extends EntityWebTestCase {
     $this->assertTrue($wrapper->$name->value() === NULL, 'Property ' . check_plain($name) . ' is empty.');
   }
 
+  protected function assertEmptyArray($wrapper, $name) {
+    $this->assertTrue(isset($wrapper->$name), 'Property ' . check_plain($name) . ' exists.');
+    $this->assertTrue($wrapper->$name->value() === array(), 'Property ' . check_plain($name) . ' is an empty array.');
+  }
+
   protected function assertValue($wrapper, $key) {
     $this->assertTrue($wrapper->$key->value() !== NULL, check_plain($key) . ' property returned.');
     $info = $wrapper->$key->info();
@@ -1470,8 +1475,8 @@ class EntityMetadataIntegrationTestCase extends EntityWebTestCase {
 
     // Try using book properties for no book nodes.
     $wrapper = entity_metadata_wrapper('node', $node3);
-    $this->assertException($wrapper, 'book');
-    $this->assertException($wrapper, 'book_ancestors');
+    $this->assertEmpty($wrapper, 'book');
+    $this->assertEmptyArray($wrapper, 'book_ancestors');
   }
 
   /**
@@ -1502,7 +1507,7 @@ class EntityMetadataIntegrationTestCase extends EntityWebTestCase {
     $this->assertEmpty($wrapper, 'parent');
 
     // Test comment entity access.
-    $admin_user = $this->drupalCreateUser(array('access comments', 'administer comments'));
+    $admin_user = $this->drupalCreateUser(array('access comments', 'administer comments', 'access user profiles'));
     // Also grant access to view user accounts to test the comment author
     // property.
     $unprivileged_user = $this->drupalCreateUser(array('access comments', 'access user profiles'));
@@ -1579,8 +1584,8 @@ class EntityMetadataIntegrationTestCase extends EntityWebTestCase {
         $this->assertValue($wrapper, $key);
       }
     }
-    $this->assertException($wrapper, 'book');
-    $this->assertException($wrapper, 'book_ancestors');
+    $this->assertEmpty($wrapper, 'book');
+    $this->assertEmptyArray($wrapper, 'book_ancestors');
     $this->assertEmpty($wrapper, 'source');
     $this->assertException($wrapper->source, 'title');
     $this->assertEmpty($wrapper, 'last_view');

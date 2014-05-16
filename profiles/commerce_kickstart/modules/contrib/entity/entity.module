@@ -203,6 +203,9 @@ function entity_ui_get_page_title($op, $entity_type, $entity = NULL) {
   if (isset($entity)) {
     list(, , $bundle) = entity_extract_ids($entity_type, $entity);
   }
+  else {
+    $bundle = NULL;
+  }
   return entity_ui_get_action_title($op, $entity_type, $bundle);
 }
 
@@ -949,6 +952,22 @@ function _entity_defaults_rebuild($entity_type) {
 }
 
 /**
+ * Implements hook_modules_installed().
+ */
+function entity_modules_installed($modules) {
+  module_load_install('entity');
+  entity_entitycache_installed_modules($modules);
+}
+
+/**
+ * Implements hook_modules_uninstalled().
+ */
+function entity_modules_uninstalled($modules) {
+  module_load_install('entity');
+  entity_entitycache_uninstalled_modules($modules);
+}
+
+/**
  * Implements hook_modules_enabled().
  */
 function entity_modules_enabled($modules) {
@@ -1059,6 +1078,17 @@ function entity_flush_caches() {
   // to do it again.
   if (current_path() != 'admin/modules/list/confirm') {
     entity_defaults_rebuild();
+  }
+
+  // Care about entitycache tables.
+  if (module_exists('entitycache')) {
+    $tables = array();
+    foreach (entity_crud_get_info() as $entity_type => $entity_info) {
+      if (isset($entity_info['module']) && !empty($entity_info['entity cache'])) {
+        $tables[] = 'cache_entity_' . $entity_type;
+      }
+    }
+    return $tables;
   }
 }
 
@@ -1247,6 +1277,37 @@ function entity_ui_get_form($entity_type, $entity, $op = 'edit', $form_state = a
   return drupal_build_form($form_id, $form_state);
 }
 
+
+/**
+ * Gets the page/menu title for local action operations.
+ *
+ * @param $op
+ *  The current operation. One of 'add' or 'import'.
+ * @param $entity_type
+ *  The entity type.
+ * @param $bundle_name
+ *  (Optional) The name of the bundle. May be NULL if the bundle name is not
+ *  relevant to the current page. If the entity type has only one bundle, or no
+ *  bundles, this will be the same as the entity type.
+ */
+function entity_ui_get_action_title($op, $entity_type, $bundle_name = NULL) {
+  $info = entity_get_info($entity_type);
+  switch ($op) {
+    case 'add':
+      if (isset($bundle_name) && $bundle_name != $entity_type) {
+        return t('Add @bundle_name @entity_type', array(
+          '@bundle_name' => drupal_strtolower($info['bundles'][$bundle_name]['label']),
+          '@entity_type' => drupal_strtolower($info['label']),
+        ));
+      }
+      else {
+        return t('Add @entity_type', array('@entity_type' => drupal_strtolower($info['label'])));
+      }
+    case 'import':
+      return t('Import @entity_type', array('@entity_type' => drupal_strtolower($info['label'])));
+  }
+}
+
 /**
  * Helper for using i18n_string().
  *
@@ -1408,6 +1469,13 @@ function entity_entity_info_alter(&$entity_info) {
   foreach ($entity_info as $type => $info) {
     if (!isset($info['configuration'])) {
       $entity_info[$type]['configuration'] = !empty($info['exportable']);
+    }
+
+    if (isset($info['controller class']) && in_array('EntityAPIControllerInterface', class_implements($info['controller class']))) {
+      // Automatically disable field cache when entity cache is used.
+      if (!empty($info['entity cache']) && module_exists('entitycache')) {
+        $entity_info[$type]['field cache'] = FALSE;
+      }
     }
   }
 }

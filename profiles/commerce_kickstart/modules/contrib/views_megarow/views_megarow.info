@@ -8,9 +8,9 @@ dependencies[] = views
 files[] = includes/views/plugins/views_plugin_style_table_megarows.inc
 files[] = includes/views/handlers/views_handler_field_megarow_links.inc
 
-; Information added by  packaging script on 2013-11-22
-version = "7.x-1.2"
+; Information added by Drupal.org packaging script on 2014-03-25
+version = "7.x-1.3"
 core = "7.x"
 project = "views_megarow"
-datestamp = "1385156307"
+datestamp = "1395764366"
 

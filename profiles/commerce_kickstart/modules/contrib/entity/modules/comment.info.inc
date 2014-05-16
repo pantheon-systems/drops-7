@@ -137,6 +137,13 @@ function entity_metadata_comment_entity_property_info_alter(&$info) {
     'setter permission' => 'administer comments',
     'type' => 'integer',
   );
+  $properties['comments'] = array(
+    'label' => t("Comments"),
+    'type' => 'list<comment>',
+    'description' => t("The node comments."),
+    'getter callback' => 'entity_metadata_comment_get_node_properties',
+    'computed' => TRUE,
+  );
   $properties['comment_count'] = array(
     'label' => t("Comment count"),
     'description' => t("The number of comments posted on a node."),

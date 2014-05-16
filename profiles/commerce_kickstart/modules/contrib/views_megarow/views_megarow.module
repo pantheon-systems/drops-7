@@ -13,6 +13,7 @@ function views_megarow_menu() {
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );
+
   $items['display_megarow/%/%'] = array(
     'page callback' => 'views_megarow_generic_render',
     'page arguments' => array(1, 2),
@@ -20,6 +21,17 @@ function views_megarow_menu() {
     'access callback' => TRUE,
     'theme callback' => 'views_megarow_get_page_theme',
   );
+
+  $items['admin/config/user-interface/views_megarow'] = array(
+    'title' => 'Views Megarow configuration',
+    'description' => t('Options for Views Megarow settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('views_megarow_admin_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'views_megarow.admin.inc',
+  );
+
   return $items;
 }
 
@@ -75,7 +87,7 @@ function views_megarow_generic_render($entity_id) {
   array_shift($args);
 
   // Clean the values and implode them to generate a clean path.
-  $path = implode('/', array_filter($args));
+  $path = implode('/', array_filter($args, 'strlen'));
 
   // Get the output of the called page.
   $output = menu_execute_active_handler($path, FALSE);
@@ -105,7 +117,7 @@ function views_megarow_generic_render($entity_id) {
   }
   // @TODO Add command to slide to top if errors.
   $commands = array();
-  $commands[] = views_megarow_command_display(t('Megarow content'), $output, $entity_id);
+  $commands[] = views_megarow_command_display(variable_get('views_megarow_title', t('Megarow content')), $output, $entity_id);
 
   return array('#type' => 'ajax', '#commands' => $commands);
 }
@@ -185,9 +197,9 @@ function views_megarow_views_pre_render(&$view) {
     );
 
     drupal_add_js($settings, 'setting');
-    drupal_add_js('misc/jquery.form.js');
-    drupal_add_js('misc/progress.js');
-    drupal_add_js('misc/ajax.js');
+    drupal_add_library('system', 'jquery.form');
+    drupal_add_library('system', 'drupal.progress');
+    drupal_add_library('system', 'drupal.ajax');
     drupal_add_js(drupal_get_path('module', 'views_megarow') . "/views_megarow.js");
     drupal_add_css(drupal_get_path('module', 'views_megarow') . "/views_megarow.css");
     // Add the Views dropbutton CSS so that links provided by
@@ -281,7 +293,7 @@ function views_megarow_display($title, $output, $entity_id) {
     );
   }
   else {
-    $renderable_output = theme('status_message') . $output;
+    $renderable_output = theme('status_messages') . $output;
   }
 
   $commands = array();
@@ -424,11 +436,17 @@ function views_megarow_autoclose_megarow($form, &$form_state) {
  * Implements hook_menu_alter().
  */
 function views_megarow_menu_alter(&$items) {
+  // For compatibility reasons with panels mainly let's check if the callbacks
+  // should be overriden.
   // We need to wrap some logic around the default node edition page and user
   // edition page in order to be able to tell the system that we are editing
   // a node from a megarow context.
-  $items['node/%node/edit']['page callback'] = 'views_megarow_node_page_edit';
-  $items['user/%user/edit']['page callback'] = 'views_megarow_user_page_edit';
+  if (variable_get('views_megarow_override_node_edit', TRUE)) {
+    $items['node/%node/edit']['page callback'] = 'views_megarow_node_page_edit';
+  }
+  if (variable_get('views_megarow_override_user_edit', TRUE)) {
+    $items['user/%user/edit']['page callback'] = 'views_megarow_user_page_edit';
+  }
 }
 
 /**

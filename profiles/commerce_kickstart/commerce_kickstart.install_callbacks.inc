@@ -434,10 +434,9 @@ function _commerce_kickstart_create_order($uid, $items_number, $is_cart = FALSE)
 
   // Proceed to payment.
   _commerce_kickstart_update_order_status($order, 'checkout_review');
-  $order->data['payment_method'] = 'commerce_kickstart_payment|commerce_payment_commerce_kickstart_payment';
-  $order->data['commerce_kickstart_payment'] = array(
+  $order->data['payment_method'] = 'commerce_payment_example|commerce_payment_commerce_payment_example';
+  $order->data['commerce_payment_example'] = array(
     'credit_card' => array(
-      'type' => 'visa',
       'number' => '4111111111111111',
       'exp_month' => '06',
       'exp_year' => '2012',
@@ -445,11 +444,11 @@ function _commerce_kickstart_create_order($uid, $items_number, $is_cart = FALSE)
     ),
   );
   commerce_order_save($order);
-  $rule = rules_config_load('commerce_payment_commerce_kickstart_payment');
-  $payment_method = commerce_payment_method_load('commerce_kickstart_payment');
-  $method_instance_id = commerce_payment_method_instance_id('commerce_kickstart_payment', $rule);
+  $rule = rules_config_load('commerce_payment_commerce_payment_example');
+  $payment_method = commerce_payment_method_load('commerce_payment_example');
+  $method_instance_id = commerce_payment_method_instance_id('commerce_payment_example', $rule);
   $method_instance = commerce_payment_method_instance_load($method_instance_id);
-  $transaction = commerce_kickstart_payment_transaction($method_instance, $order, $order->commerce_order_total[LANGUAGE_NONE][0], '');
+  $transaction = commerce_payment_example_transaction($method_instance, $order, $order->commerce_order_total[LANGUAGE_NONE][0], '');
 
   $message = message_create('commerce_order_payment_entered', array('uid' => $uid));
   $wrapper = entity_metadata_wrapper('message', $message);

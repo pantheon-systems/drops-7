@@ -157,10 +157,10 @@ class EntityFieldHandlerHelper {
     }
 
     if (method_exists($handler->query, 'get_result_wrappers')) {
-      list($handler->entity_type, $handler->wrappers) = $handler->query->get_result_wrappers($values, NULL, $handler->real_field);
+      list($handler->entity_type, $handler->wrappers) = $handler->query->get_result_wrappers($values, $handler->relationship, $handler->real_field);
     }
     else {
-      list($handler->entity_type, $entities) = $handler->query->get_result_entities($values, NULL, $handler->real_field);
+      list($handler->entity_type, $entities) = $handler->query->get_result_entities($values, $handler->relationship, $handler->real_field);
       $handler->wrappers = array();
       foreach ($entities as $id => $entity) {
         $handler->wrappers[$id] = entity_metadata_wrapper($handler->entity_type, $entity);
@@ -343,7 +343,7 @@ class EntityFieldHandlerHelper {
             $values->_entity_properties[$selector] = $wrapper->value();
           }
           else {
-            $values->_entity_properties[$selector] = isset($wrapper->$field) ? $wrapper->$field->value(array('identifier' => TRUE)) : $default;
+            $values->_entity_properties[$selector] = isset($wrapper->$field) ? $wrapper->$field->value(array('identifier' => TRUE, 'sanitize' => TRUE)) : $default;
           }
         }
         catch (EntityMetadataWrapperException $e) {

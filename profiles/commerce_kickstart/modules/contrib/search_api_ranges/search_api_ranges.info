@@ -10,9 +10,9 @@ files[] = plugins/facetapi/widget_select.inc
 core = 7.x
 package = Search
 
-; Information added by drupal.org packaging script on 2012-10-21
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2014-02-16
+version = "7.x-1.5"
 core = "7.x"
 project = "search_api_ranges"
-datestamp = "1350817329"
+datestamp = "1392554914"
 

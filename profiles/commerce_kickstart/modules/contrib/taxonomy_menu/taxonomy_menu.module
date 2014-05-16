@@ -6,10 +6,10 @@
  */
 
 //include the database layer
-require_once(drupal_get_path('module', 'taxonomy_menu') . '/taxonomy_menu.database.inc');
+require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'taxonomy_menu') . '/taxonomy_menu.database.inc');
 
 //include the batch functions
-require_once(drupal_get_path('module', 'taxonomy_menu') . '/taxonomy_menu.batch.inc');
+require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'taxonomy_menu') . '/taxonomy_menu.batch.inc');
 
 /**
  * Implements hook_form_alter().
@@ -481,7 +481,12 @@ function _taxonomy_menu_taxonomy_termapi_helper($term, $operation) {
  */
 function _taxonomy_menu_nodeapi_helper($op, $terms = array(), $node) {
   foreach ($terms as $key => $tid) {
-    $term = taxonomy_term_load($tid);
+
+    // taxonomy_term_load($tid) return FALSE if the term was not found
+    // if taxonomy $term is false, then go to the next $term
+    if (!$term = taxonomy_term_load($tid)) {
+      continue;
+    }
 
     // update the menu for each term if necessary
     $menu_name = variable_get(_taxonomy_menu_build_variable('vocab_menu', $term->vid), FALSE);
@@ -754,7 +759,7 @@ function taxonomy_menu_path_default($vid, $tid) {
   }
   else {
     $path = 'taxonomy/term/' . $tid;
-    if (variable_get(_taxonomy_menu_build_variable('display_decendants', $vid), FALSE)) {
+    if (variable_get(_taxonomy_menu_build_variable('display_descendants', $vid), FALSE)) {
       // Use 'all' at the end of the path
       if (variable_get(_taxonomy_menu_build_variable('end_all', $vid), FALSE)) {
         $path .= '/all';

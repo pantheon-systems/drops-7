@@ -51,7 +51,7 @@ function commerce_kickstart_block_block_view($delta = '') {
 
   switch ($delta) {
     case 'shipping_discount':
-      $amount = '99';
+      $amount = '9999';
       $items = array(
         commerce_kickstart_block_build_element(t('<span><em>Free</em> shipping</span> on orders over'), 'shipping_message'),
         commerce_kickstart_block_build_element(t('@amount', array('@amount' => commerce_currency_format($amount, commerce_default_currency()))), 'shipping_currency'),

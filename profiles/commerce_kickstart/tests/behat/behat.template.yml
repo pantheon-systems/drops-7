@@ -1,0 +1,15 @@
+default:
+  paths:
+    features: 'features'
+  extensions:
+    Behat\MinkExtension\Extension:
+      goutte: ~
+      selenium2: ~
+      base_url: http://${drupal.uri}
+      files_path: ../../
+    Drupal\DrupalExtension\Extension:
+      blackbox: ~
+      drush:
+        root: ${drush.root}
+      region_map:
+        Tabs: ".tabs.primary"

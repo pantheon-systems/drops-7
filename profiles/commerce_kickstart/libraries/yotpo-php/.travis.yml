@@ -1,0 +1,22 @@
+language: php
+php:
+  - 5.5
+  - 5.4
+  - 5.3
+
+matrix:
+  allow_failures:
+    - php: 5.5
+
+before_script:
+  - curl -s http://getcomposer.org/installer | php
+  - php composer.phar update --no-interaction --dev
+
+script:
+  - mkdir -p build/logs
+  - php vendor/bin/phpunit -c tests/phpunit.xml
+
+after_script:
+  - php vendor/bin/coveralls
+  # or enable logging
+  #   - php vendor/bin/coveralls -v

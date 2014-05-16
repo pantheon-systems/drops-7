@@ -10,9 +10,9 @@ dependencies[] = date_popup
 ; Simple tests
 files[] = commerce_discount_date.test
 
-; Information added by Drupal.org packaging script on 2014-03-07
-version = "7.x-1.0-alpha3+24-dev"
+; Information added by Drupal.org packaging script on 2014-04-20
+version = "7.x-1.0-alpha3+28-dev"
 core = "7.x"
 project = "commerce_discount"
-datestamp = "1394203705"
+datestamp = "1397979830"
 

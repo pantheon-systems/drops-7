@@ -23,16 +23,14 @@
 
           // on change: when clicking somewhere in the bar
           change: function(event, ui) {
-            var values = slider.slider("option", "values");
-            widget.find('input[name=range-from]').val(values[0]);
-            widget.find('input[name=range-to]').val(values[1]);
+            widget.find('input[name=range-from]').val(ui.values[0]);
+            widget.find('input[name=range-to]').val(ui.values[1]);
           },
 
           // on slide: when sliding with the controls
           slide: function(event, ui) {
-            var values = slider.slider("option", "values");
-            widget.find('input[name=range-from]').val(values[0]);
-            widget.find('input[name=range-to]').val(values[1]);
+            widget.find('input[name=range-from]').val(ui.values[0]);
+            widget.find('input[name=range-to]').val(ui.values[1]);
           }
         });
 

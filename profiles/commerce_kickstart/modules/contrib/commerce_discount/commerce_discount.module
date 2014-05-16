@@ -271,7 +271,7 @@ function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state
   $form['commerce_discount_type']['#attributes']['class'][] = 'clearfix';
   $form['commerce_discount_fields']['commerce_discount_offer']['und']['form']['type']['#attributes']['class'][] = 'clearfix';
 
-  if (empty($form['commerce_discount_fields']['#entity']->discount_id)) {
+  if (empty($form_state['commerce_discount']->discount_id)) {
     // Entity is new.
     return;
   }
@@ -281,10 +281,8 @@ function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state
     return;
   }
 
-  $discount_id = $form['commerce_discount_fields']['#entity']->discount_id;
-  $discount = entity_load_single('commerce_discount', $discount_id);
-  $rule = rules_config_load('commerce_discount_rule_' . $discount->name);
-  if ($rule->hasStatus(ENTITY_OVERRIDDEN)) {
+  $rule = rules_config_load('commerce_discount_rule_' . $form_state['commerce_discount']->name);
+  if ($rule && $rule->hasStatus(ENTITY_OVERRIDDEN)) {
     drupal_set_message(t('The rule associated with this discount is overriden, making it impossible to edit the discount.'), 'warning');
     $form['actions']['submit']['#disabled'] = TRUE;
   }
