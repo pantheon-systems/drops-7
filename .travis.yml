@@ -31,3 +31,9 @@ before_script:
 
 script:
   - drush test-run --uri=http://127.0.0.1:8080
+
+notifications:
+  slack:
+    rooms:
+      nuams:2Eywq0BtPv73ISq3CF6gvRzo#devops
+      nuams:t3p2KxXdzymmwxitWPvfAsnK#dkan
