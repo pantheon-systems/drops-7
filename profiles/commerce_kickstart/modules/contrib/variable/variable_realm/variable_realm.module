@@ -29,10 +29,10 @@ function variable_realm_boot() {
  * Implements hook_init()
  *
  * Let realms be overriden by query string parameters, but only for:
- * - Admin paths (not variable admin pages)
+ * - Admin paths (not variable realm admin pages)
  */
 function variable_realm_init() {
-  if (arg(0) == 'admin' && arg(3) != 'variable' && ($params = variable_realm_params()) && user_access('administer site configuration')) {
+  if (arg(0) == 'admin' && (arg(3) != 'variable' || arg(4) != 'realm') && ($params = variable_realm_params()) && user_access('administer site configuration')) {
     foreach ($params as $realm_name => $realm_key) {
       variable_realm_switch($realm_name, $realm_key, FALSE);
     }

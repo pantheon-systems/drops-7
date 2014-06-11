@@ -164,12 +164,34 @@ input.form-radio + label::before {
   content: "";
   cursor: pointer;
   position: absolute;
-  top: 2px;
-  left: 0;
+  top: 4px;
+  left: 2px;
   /* LTR */
-  height: 20px;
-  width: 20px;
-  background: transparent url("../images/toggles.png") no-repeat 0 0;
+  height: 15px;
+  width: 15px;
+  border: 1px solid #a1a1a1;
+  border-radius: 3px;
+  background: #eaeaea;
+  background: -moz-linear-gradient(top, white 0%, #eaeaea 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #eaeaea));
+  background: -webkit-linear-gradient(top, white 0%, #eaeaea 100%);
+  background: -o-linear-gradient(top, white 0%, #eaeaea 100%);
+  background: -ms-linear-gradient(top, white 0%, #eaeaea 100%);
+  background: linear-gradient(to bottom, #ffffff 0%, #eaeaea 100%);
+}
+
+#foo:checked,
+input.form-checkbox:focus + label::before,
+input.form-radio:focus + label::before {
+  outline: 0;
+  box-shadow: 0 0 3px #36a2f6;
+}
+
+#foo:checked,
+input.form-radio + label::before {
+  height: 14px;
+  width: 14px;
+  border-radius: 14px;
 }
 
 #foo:checked,
@@ -182,17 +204,41 @@ body.in-maintenance input.form-radio + label::before {
   top: 4px;
 }
 
-input.form-radio + label::before {
-  background-position: 0 -40px;
-}
-
 #foo:checked,
 input.form-checkbox:checked + label::before {
-  background-position: 0 -20px;
+  background-image: url("../images/check.png");
+  background-image: url("../images/check.png"), -moz-linear-gradient(top, white 0%, #eaeaea 100%);
+  /* FF3.6+ */
+  background-image: url("../images/check.png"), -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #eaeaea));
+  /* Chrome,Safari4+ */
+  background-image: url("../images/check.png"), -webkit-linear-gradient(top, white 0%, #eaeaea 100%);
+  /* Chrome10+,Safari5.1+ */
+  background-image: url("../images/check.png"), -o-linear-gradient(top, white 0%, #eaeaea 100%);
+  /* Opera 11.10+ */
+  background-image: url("../images/check.png"), -ms-linear-gradient(top, white 0%, #eaeaea 100%);
+  /* IE10+ */
+  background-image: url("../images/check.png"), linear-gradient(to bottom, #ffffff 0%, #eaeaea 100%);
+  /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$from', endColorstr='#eaeaea',GradientType=0 );
+  /* IE6-9 */
 }
 
 input.form-radio:checked + label::before {
-  background-position: 0 -60px;
+  background-image: url("../images/radio.png");
+  background-image: url("../images/radio.png"), -moz-linear-gradient(top, white 0%, #eaeaea 100%);
+  /* FF3.6+ */
+  background-image: url("../images/radio.png"), -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #eaeaea));
+  /* Chrome,Safari4+ */
+  background-image: url("../images/radio.png"), -webkit-linear-gradient(top, white 0%, #eaeaea 100%);
+  /* Chrome10+,Safari5.1+ */
+  background-image: url("../images/radio.png"), -o-linear-gradient(top, white 0%, #eaeaea 100%);
+  /* Opera 11.10+ */
+  background-image: url("../images/radio.png"), -ms-linear-gradient(top, white 0%, #eaeaea 100%);
+  /* IE10+ */
+  background-image: url("../images/radio.png"), linear-gradient(to bottom, #ffffff 0%, #eaeaea 100%);
+  /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$from', endColorstr='#eaeaea',GradientType=0 );
+  /* IE6-9 */
 }
 
 select.form-select {
@@ -216,6 +262,16 @@ select.form-select:focus {
   color: #000;
 }
 
+form table input.form-checkbox,
+form table input.form-radio {
+  opacity: 1;
+  height: auto;
+  width: auto;
+}
+form table .form-disabled input.form-checkbox {
+  opacity: .4;
+}
+
 /* Form Fixes for Webkit Browsers. */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   select.form-select {
@@ -232,21 +288,68 @@ select.form-select:focus {
   form table input.form-checkbox,
   form table input.form-radio {
     -webkit-appearance: none;
+    display: inline-block;
     appearance: none;
-    border: 0;
     opacity: 1;
-    height: 20px;
-    width: 20px;
-    background: transparent url("../images/toggles.png") no-repeat 0 0;
+    cursor: pointer;
+    top: 4px;
+    left: 2px;
+    /* LTR */
+    height: 17px;
+    width: 17px;
+    border: 1px solid #a1a1a1;
+    border-radius: 3px;
+    background: #eaeaea;
+    background: -moz-linear-gradient(top, white 0%, #eaeaea 100%);
+    background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #eaeaea));
+    background: -webkit-linear-gradient(top, white 0%, #eaeaea 100%);
+    background: -o-linear-gradient(top, white 0%, #eaeaea 100%);
+    background: -ms-linear-gradient(top, white 0%, #eaeaea 100%);
+    background: linear-gradient(to bottom, #ffffff 0%, #eaeaea 100%);
+  }
+  form table input.form-checkbox:focus,
+  form table input.form-radio:focus {
+    outline: 0;
+    box-shadow: 0 0 3px #36a2f6;
   }
   form table input.form-checkbox:checked {
-    background-position: 0 -20px;
+    background-image: url("../images/check.png");
+    background-image: url("../images/check.png"), -moz-linear-gradient(top, white 0%, #eaeaea 100%);
+    /* FF3.6+ */
+    background-image: url("../images/check.png"), -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #eaeaea));
+    /* Chrome,Safari4+ */
+    background-image: url("../images/check.png"), -webkit-linear-gradient(top, white 0%, #eaeaea 100%);
+    /* Chrome10+,Safari5.1+ */
+    background-image: url("../images/check.png"), -o-linear-gradient(top, white 0%, #eaeaea 100%);
+    /* Opera 11.10+ */
+    background-image: url("../images/check.png"), -ms-linear-gradient(top, white 0%, #eaeaea 100%);
+    /* IE10+ */
+    background-image: url("../images/check.png"), linear-gradient(to bottom, #ffffff 0%, #eaeaea 100%);
+    /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$from', endColorstr='#eaeaea',GradientType=0 );
+    /* IE6-9 */
   }
   form table input.form-radio {
-    background-position: 0 -40px;
+    height: 16px;
+    width: 16px;
+    border-radius: 16px;
   }
   form table input.form-radio:checked {
-    background-position: 0 -60px;
+    background-image: url("../images/radio.png");
+    background-image: url("../images/radio.png"), -moz-linear-gradient(top, white 0%, #eaeaea 100%);
+    /* FF3.6+ */
+    background-image: url("../images/radio.png"), -webkit-gradient(linear, left top, left bottom, color-stop(0%, white), color-stop(100%, #eaeaea));
+    /* Chrome,Safari4+ */
+    background-image: url("../images/radio.png"), -webkit-linear-gradient(top, white 0%, #eaeaea 100%);
+    /* Chrome10+,Safari5.1+ */
+    background-image: url("../images/radio.png"), -o-linear-gradient(top, white 0%, #eaeaea 100%);
+    /* Opera 11.10+ */
+    background-image: url("../images/radio.png"), -ms-linear-gradient(top, white 0%, #eaeaea 100%);
+    /* IE10+ */
+    background-image: url("../images/radio.png"), linear-gradient(to bottom, #ffffff 0%, #eaeaea 100%);
+    /* W3C */
+    filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$from', endColorstr='#eaeaea',GradientType=0 );
+    /* IE6-9 */
   }
   form table .form-disabled input.form-checkbox {
     opacity: .4;
@@ -254,23 +357,10 @@ select.form-select:focus {
 }
 /* Form Fix for Firefox */
 @-moz-document url-prefix() {
-  form table input.form-checkbox,
-  form table input.form-radio {
-    opacity: 1;
-    height: auto;
-    width: auto;
-  }
-  form table .fieldset-wrapper input.form-radio,
-  form table .fieldset-wrapper input.form-checkbox {
+  .fieldset-wrapper input.form-radio,
+  .fieldset-wrapper input.form-checkbox {
     opacity: 0;
   }
-}
-
-/* Form Fix for Opera */
-noindex:-o-prefocus input.form-checkbox,
-noindex:-o-prefocus input.form-radio, form table input.form-checkbox,
-form table input.form-radio {
-  opacity: 1;
 }
 
 .exposed-filters .form-item label {
@@ -572,6 +662,7 @@ a.button {
 input.form-submit:focus,
 a.button:focus {
   color: #fff;
+  outline: 0;
 }
 input.form-submit:hover, input.form-submit:focus, input.form-submit:active, input.form-submit:disabled,
 a.button:hover,
@@ -580,6 +671,7 @@ a.button:active,
 a.button:disabled {
   background: #eeeeee;
   color: #5A5A5A;
+  outline: 0;
   text-shadow: 0 -1px 1px #fff;
 }
 
@@ -673,6 +765,7 @@ html.js .view-commerce-message-messages .view-footer fieldset.collapsible .field
 .field-widget-inline-entity-form .container-inline input.form-submit:focus,
 input.ief-entity-submit:focus {
   color: #fff;
+  outline: 0;
 }
 .form-actions #edit-submit:hover, .form-actions #edit-submit:focus, .form-actions #edit-submit:active, .form-actions #edit-submit:disabled,
 .form-actions #edit-save:hover,
@@ -890,5 +983,10 @@ td.checkbox input.form-checkbox {
   opacity: 1;
   height: 20px;
   width: 20px;
-  background: transparent url("../images/toggles.png") no-repeat 0 0;
+}
+
+#module-filter-squeeze td.checkbox input.form-checkbox {
+  height: 17px;
+  width: 17px;
+  border: 1px solid #a1a1a1;
 }

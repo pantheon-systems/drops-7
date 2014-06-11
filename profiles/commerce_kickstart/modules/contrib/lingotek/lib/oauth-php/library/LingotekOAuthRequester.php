@@ -376,8 +376,8 @@ class LingotekOAuthRequester extends LingotekOAuthRequestSigner
 			{
 				if (!$has_content_type)
 				{
-					$header[]         = 'Content-Type: application/x-www-form-urlencoded';
-					$has_content_type = true;
+					$header[] = 'Content-Type: application/x-www-form-urlencoded; charset=utf-8';
+          $has_content_type = true;
 				}
 
 				curl_setopt($ch, CURLOPT_POST, 		  true);

@@ -4,6 +4,9 @@
  * @file
  * Installation for Lingotek Community Translation Module.
  */
+
+require_once drupal_get_filename('module', 'lingotek');
+
 /*
  * Implements hook_requirements() (see:
  */
@@ -60,8 +63,10 @@ function lingotek_uninstall() {
   db_drop_field('languages', 'lingotek_enabled');
   db_drop_field('languages', 'lingotek_locale');
   db_drop_field('locales_target', 'translation_agent_id');
-  db_drop_table('lingotek_config_metadata');
-  db_drop_table('lingotek_translation_agent');
+  db_drop_table('{lingotek}'); // leave this here until we move it to an update function
+  db_drop_table('{lingotek_config_metadata}');
+  db_drop_table('{lingotek_entity_metadata}');
+  db_drop_table('{lingotek_translation_agent}');
 }
 
 /**
@@ -84,37 +89,6 @@ function lingotek_disable() {
  */
 
 function lingotek_schema() {
-  $schema['lingotek'] = array(
-    'description' => 'Table for storing node related data.',
-    'fields' => array(
-      'nid' => array(
-        'description' => 'The primary identifier for a node',
-        'type' => 'int',
-        'unsigned' => TRUE,
-        'not null' => TRUE,
-        'default' => 0,
-      ),
-      'lingokey' => array(
-        'description' => 'Key in key/value pairs',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-      'lingovalue' => array(
-        'description' => 'Value of the specified key',
-        'type' => 'varchar',
-        'length' => 255,
-        'not null' => TRUE,
-        'default' => '',
-      ),
-    ),
-    'primary key' => array(
-      'nid',
-      'lingokey',
-    ),
-  );
-
   $schema['lingotek_entity_metadata'] = array(
     'description' => 'Stores Lingotek-related metadata about Drupal entities.',
     'fields' => array(
@@ -128,14 +102,14 @@ function lingotek_schema() {
       'entity_type' => array(
         'description' => 'The entity type (node, comment, etc.).',
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 128,
         'not null' => TRUE,
         'default' => '',
       ),
       'entity_key' => array(
         'description' => 'The ID for the Lingotek-associated value.',
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 128,
         'not null' => TRUE,
         'default' => '',
       ),
@@ -146,11 +120,29 @@ function lingotek_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
+      'created' => array(
+        'type' => 'int',
+        'description' => "created timestamp",
+        'default' => 0,
+        'not null' => TRUE,
+      ),
+      'modified' => array(
+        'type' => 'int',
+        'description' => "last modified timestamp",
+        'default' => 0,
+        'not null' => TRUE,
+      )
     ),
     'primary key' => array(
       'entity_id',
       'entity_type',
       'entity_key',
+    ),
+    'indexes' => array(
+      'idx_entity_id' => array('entity_id'),
+      'idx_entity_key' => array('entity_key'),
+      'idx_entity_type_and_key' => array('entity_type', 'entity_key'),
+      'idx_entity_key_and_value' => array('entity_key', 'value'),
     ),
   );
 
@@ -178,6 +170,18 @@ function lingotek_schema() {
         'not null' => TRUE,
         'default' => '',
       ),
+      'created' => array(
+        'type' => 'int',
+        'description' => "created timestamp",
+        'default' => 0,
+        'not null' => TRUE,
+      ),
+      'modified' => array(
+        'type' => 'int',
+        'description' => "last modified timestamp",
+        'default' => 0,
+        'not null' => TRUE,
+      )
     ),
     'primary key' => array(
       'id',
@@ -243,6 +247,33 @@ function lingotek_schema_alter(&$schema) {
 
 }
 
+function lingotek_extend_metadata_tables() {
+  $tables = array('lingotek_entity_metadata', 'lingotek_config_metadata');
+  $fields = array('created', 'modified');
+  $spec = array(
+    'created' => array(
+      'type' => 'int',
+    'description' => "created timestamp",
+    'default' => 0,
+    'not null' => TRUE,
+  ),
+    'modified' => array(
+      'type' => 'int',
+      'description' => "last modified timestamp",
+      'default' => 0,
+      'not null' => TRUE,
+  ));
+  foreach ($tables as $table) {
+    foreach ($fields as $field) {
+      try {
+        db_add_field($table, $field, $spec[$field]);
+      } catch (Exception $ex) {
+        // already exists (no need to do anything)
+      }
+    }
+  }
+}
+
 /*
  * Update
  * 1. Create the mt-queue
@@ -253,7 +284,7 @@ function lingotek_update_7200(&$sandbox) {
   drupal_load('module', 'lingotek');
 
   if (!isset($sandbox['progress'])) {
-    $result = db_select('lingotek', 'n')->distinct(TRUE)->fields('n', array(db_escape_field('nid')))->execute();
+    $result = db_select('{lingotek}', 'n')->distinct(TRUE)->fields('n', array(db_escape_field('nid')))->execute();
     $nodes = array();
     foreach ($result as $row) {
       array_push($nodes, $row->nid);
@@ -294,7 +325,7 @@ function lingotek_update_7201(&$sandbox) {
 
   if ($default_lingotek_project) {
     if (!isset($sandbox['progress'])) {
-      $result = db_select('lingotek', 'l')
+      $result = db_select('{lingotek}', 'l')
           ->distinct(TRUE)
           ->fields('l', array('nid'))
           ->execute();
@@ -309,8 +340,8 @@ function lingotek_update_7201(&$sandbox) {
     }
 
     $process_node = lingotek_node_load_default(array_shift($sandbox['nodes']));
-    if ($process_node->nid && !lingotek_lingonode($process_node->nid, 'project_id')) {
-      lingotek_lingonode($process_node->nid, 'project_id', $default_lingotek_project);
+    if ($process_node->nid && !lingotek_keystore('node', $process_node->nid, 'project_id')) {
+      lingotek_keystore('node', $process_node->nid, 'project_id', $default_lingotek_project);
     }
     $sandbox['progress'] = (int) (count($sandbox['nodes']) / $sandbox['max']);
   }
@@ -464,7 +495,6 @@ function lingotek_update_7213(&$sandbox) {
  * Adds the lingotek_translation_agent table and links it to the locales_target table
  */
 function lingotek_update_7401(&$sandbox) {
-
   // add the translation_agent table
   $module = 'lingotek';
   $table = 'lingotek_translation_agent';
@@ -482,12 +512,13 @@ function lingotek_update_7401(&$sandbox) {
     array('id' => '1', 'name' => 'unknown'),
     array('id' => '2', 'name' => 'Drupal Translations'),
     array('id' => '3', 'name' => 'Lingotek'),
-    );
+  );
 
   foreach ($agents as $a) {
-    db_insert('lingotek_translation_agent')
-      ->fields(array('id' => $a['id'], 'name' => $a['name']))
-      ->execute();
+    db_merge('{lingotek_translation_agent}')
+        ->key(array('id' => $a['id']))
+        ->fields(array('id' => $a['id'], 'name' => $a['name']))
+        ->execute();
   }
 
   $spec = array(
@@ -542,17 +573,18 @@ function lingotek_update_7403(&$sandbox) {
  */
 function lingotek_update_7404(&$sandbox) {
   LingotekSync::updateNotifyUrl();
+  lingotek_extend_metadata_tables();
 
-  $query = db_select('lingotek', 'l');
+  $query = db_select('{lingotek}', 'l');
   $query->fields('l', array('nid'));
   $query->distinct('nid');
   $result = $query->execute();
   $nids = $result->fetchCol();
 
   foreach ($nids as $nid) {
-    $profile = lingotek_lingonode($nid, 'profile');
+    $profile = lingotek_keystore('node', $nid, 'profile');
     if (empty($profile)) {
-      lingotek_lingonode($nid, 'profile', LingotekSync::PROFILE_CUSTOM);
+      lingotek_keystore('node', $nid, 'profile', LingotekSync::PROFILE_CUSTOM);
     }
   }
 
@@ -571,7 +603,7 @@ function lingotek_update_7404(&$sandbox) {
 }
 
 /**
- * Makes lingotek handle entities better.
+ * Cleans up lingotek variables
  */
 function lingotek_update_7406(&$sandbox) {
   $translate_fields = variable_get('lingotek_translate_fields');
@@ -586,10 +618,11 @@ function lingotek_update_7406(&$sandbox) {
  * Creates an upgrade path for existing translated content to be inserted into entity_translation module table if necessary
  */
 function lingotek_update_7408(&$sandbox) {
+  lingotek_extend_metadata_tables();
   if (module_exists('entity_translation')) {
     $nid_list = array();
-    $results = db_select('lingotek', 'l')
-      ->fields('l', array('nid', 'lingokey'))
+    $results = db_select('{lingotek}', 'l')
+        ->fields('l', array('nid', 'lingokey'))
       ->condition('lingokey', 'target_sync_status_%', 'LIKE')
       ->condition('lingovalue', LingotekSync::STATUS_CURRENT)
       ->execute();
@@ -606,4 +639,207 @@ function lingotek_update_7408(&$sandbox) {
       }
     }
   }
+}
+
+/**
+ * Adds support for translating additional entity types
+ */
+function lingotek_update_7500(&$sandbox) {
+  lingotek_extend_metadata_tables();
+  db_query("INSERT IGNORE INTO {lingotek_entity_metadata} (entity_id, entity_type, entity_key, value)
+SELECT nid as entity_id, 'node' as entity_type, lingokey as entity_key, lingovalue as value
+FROM {lingotek}");
+  //db_drop_table('lingotek');// as soon as this is running in an update function remove it from the uninstall function above
+}
+
+/**
+ * Updates 'lingotek_account_plan_type' to be 'advanced' when 'enterprise'
+ */
+function lingotek_update_7501(&$sandbox) { 
+  lingotek_extend_metadata_tables();
+  $current_plan_type = variable_get('lingotek_account_plan_type');
+  if ($current_plan_type == 'enterprise') {
+    variable_set('lingotek_account_plan_type', 'advanced');
+  }
+}
+
+/**
+ * Migrates comment profile settings
+ */
+function lingotek_update_7502(&$sandbox) {
+  lingotek_extend_metadata_tables();
+  // migrate the old variable to the new
+  $comment_settings = variable_get('lingotek_translate_comments_node_types'); // old variable
+  if (!is_null($comment_settings)) {
+    $profiles = variable_get('lingotek_entity_profiles'); // new variable where profiles will be stored
+    $profiles['comment'] = (isset($profiles['comment']) && is_array($profiles['comment'])) ? $profiles['comment'] : array();
+    foreach ($comment_settings as $setting_key => $setting_val) {
+      $profiles['comment']['comment_node_' . $setting_key] = ($setting_val === $setting_key) ? LingotekSync::PROFILE_AUTOMATIC : LingotekSync::PROFILE_DISABLED;
+    }
+    variable_set('lingotek_entity_profiles', $profiles);
+  }
+  // deletes the old, now migrated, variables
+  variable_del('lingotek_translate_comments_node_types');
+  variable_del('lingotek_translate_comments');
+
+  // set assumed status of CURRENT for all comment translations
+  // select all comment entity ids in the lingotek_entity_metadata table
+  $entity_type = 'comment';
+  $query = db_select('{lingotek_entity_metadata}', 'l');
+  $query->fields('l', array('entity_id'))->condition('entity_type', $entity_type);
+  $query->distinct('entity_id');
+  $result = $query->execute();
+  $entity_ids = $result->fetchCol();
+
+  // foreach entity, set the target statuses
+  if (!empty($entity_ids)) {
+    $entities = entity_load('comment', $entity_ids);
+    foreach ($entities as $entity) {
+      $entity_id = $entity->cid;
+      foreach (array_keys(Lingotek::getLanguages()) as $lingotek_locale) {
+        if (Lingotek::convertDrupal2Lingotek($entity->language) != $lingotek_locale) { // only add status when not the source language
+          LingotekSync::setTargetStatus($entity_type, $entity_id, $lingotek_locale, LingotekSync::STATUS_CURRENT);
+        }
+        else { // remove status when source language equal to target language
+          lingotek_keystore_delete($entity_type, $entity_id, "target_sync_status_$lingotek_locale");
+          lingotek_keystore($entity_type, $entity_id, 'node_sync_status', LingotekSync::STATUS_CURRENT);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Migrate any CUSTOM profile usage within entity_profiles
+ */
+function lingotek_update_7503(&$sandbox) {
+  lingotek_extend_metadata_tables();
+  $profiles = variable_get('lingotek_entity_profiles');
+  foreach ($profiles as $profile_key => $profile) {
+    foreach ($profile as $bundle => $profile_id) {
+      if ($profile_id === LingotekSync::PROFILE_CUSTOM) {
+        $profiles[$profile_key][$bundle] = LingotekSync::PROFILE_AUTOMATIC;
+      }
+    }
+  }
+  variable_set('lingotek_entity_profiles', $profiles);
+}
+
+/**
+ * Add indexes to the lingotek_entity_metadata table
+ */
+function lingotek_update_7504(&$sandbox) {
+  lingotek_extend_metadata_tables();
+  $table = 'lingotek_entity_metadata';
+  $indexes = array(
+    'idx_entity_id' => array('entity_id'),
+    'idx_entity_key' => array('entity_key'),
+    'idx_entity_type_and_key' => array('entity_type', 'entity_key'),
+    'idx_entity_key_and_value' => array('entity_key', 'value'),
+  );
+  foreach ($indexes as $index_name => $fields) {
+    if (!db_index_exists($table, $index_name)) {
+      db_add_index($table, $index_name, $fields);
+    }
+  }
+  return t('Added indexes to the <i>lingotek_entity_metadata</i> table.');
+}
+
+/**
+ * Remove unused entries from lingotek_entity_metadata table
+ */
+function lingotek_update_7505(&$sandbox) {
+  lingotek_extend_metadata_tables();
+  $delete = db_delete('{lingotek_entity_metadata}');
+  $or = db_or();
+  $or->condition('entity_key', 'target_sync_progress_%', 'LIKE');
+  $or->condition('entity_key', 'target_sync_last_progress_updated_%', 'LIKE');
+  $or->condition('entity_key', 'target_last_downloaded_%', 'LIKE');
+  $or->condition('entity_key', 'translation_progress');
+  $count = $delete->condition($or)->execute();
+  return format_plural($count, 'Removed one unused entry from the <i>lingotek_entity_metadata</i> table.', 'Removed @count unused entries from the <i>lingotek_entity_metadata</i> table.');
+}
+
+/**
+ * Add created and modified timestamps to lingotek schemas.
+ */
+function lingotek_update_7506(&$sandbox) {
+
+  // lingotek_keystore() was modified as of update #7506 to
+  // require two additional fields: created and modified.  So, that
+  // update function is called in all previous update functions prior to 
+  // running lingotek_keystore() as a forward-compatibility, since these
+  // fields are missing at the point of previous updates, while the db
+  // schema includes the fields already.  This is the final call to it.
+  lingotek_extend_metadata_tables();
+
+  $message = "Creation and modification timestamps for Lingotek metadata have successfully been added.";
+  return $message;
+}
+
+/**
+ * Reset any bundles currently set to legacy profile 'CUSTOM' to be 'MANUAL'.
+ */
+function lingotek_update_7507(&$sandbox) {
+  $entity_profiles = variable_get('lingotek_entity_profiles', NULL);
+  $custom_bundles = array();
+  foreach ($entity_profiles as $entity_type => $bundles) {
+    foreach ($bundles as $bundle_name => $profile) {
+      if ($profile == LingotekSync::PROFILE_CUSTOM) {
+        $entity_profiles[$entity_type][$bundle_name] = LingotekSync::PROFILE_MANUAL;
+        $custom_bundles[] = "$bundle_name ($entity_type)";
+      }
+    }
+  }
+  if (!empty($custom_bundles)) {
+    variable_set('lingotek_entity_profiles', $entity_profiles);
+    $message = "The following content types have been reset from profile 'CUSTOM' to profile 'MANUAL': " . implode(', ', $custom_bundles) . "  (The 'CUSTOM' profile is now reserved for individual entities only and is no longer supported at the content-type level.)";
+    return $message;
+  }
+}
+
+/**
+ * Reduce the size of current entity_type and entity_key fields in the lingotek_entity_metadata table
+ */
+function lingotek_update_7508(&$sandbox) {
+  $table = 'lingotek_entity_metadata';
+  $entity_type_spec = array(
+        'description' => 'The entity type (node, comment, etc.).',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+  );
+  $entity_key_spec = array(
+        'description' => 'The ID for the Lingotek-associated value.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+  );
+  $primary_key = array(
+    'entity_id',
+    'entity_type',
+    'entity_key',
+  );
+  $indexes = array(
+    'idx_entity_key' => array('entity_key'),
+    'idx_entity_type_and_key' => array('entity_type', 'entity_key'),
+    'idx_entity_key_and_value' => array('entity_key', 'value'),
+  );
+
+  // drop the related keys and indices
+  db_drop_primary_key($table);
+  foreach ($indexes as $index_name => $fields) {
+    db_drop_index($table, $index_name);
+  }
+  // update the fields to be 128 instead of 255
+  db_change_field($table, 'entity_type', 'entity_type', $entity_type_spec);
+  db_change_field($table, 'entity_key', 'entity_key', $entity_key_spec);
+  // add back related keys and indices
+  db_add_primary_key($table, $primary_key);
+  foreach ($indexes as $index_name => $fields) {
+    db_add_index($table, $index_name, $fields);
+  }
+  return t('Reduced field size of entity types and keys in the Lingotek entity metadata table.');
 }

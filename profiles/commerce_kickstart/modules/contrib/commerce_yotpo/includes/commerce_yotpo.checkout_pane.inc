@@ -5,8 +5,9 @@
  */
 
 /**
- * Checkout pane callback: returns a pane allowing the customer to review the
- * details of the order.
+ * Checkout pane callback.
+ *
+ * Returns a pane allowing the customer to review the details of the order.
  */
 function commerce_yotpo_checkout_pane_checkout_form($form, &$form_state, $checkout_pane, $order) {
   $pane_form = array();

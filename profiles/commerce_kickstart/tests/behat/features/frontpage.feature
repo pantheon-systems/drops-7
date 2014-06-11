@@ -65,9 +65,6 @@ Feature: Frontpage
       | Like us on Facebook       |
       | Follow Us on Twitter      |
       | What We Like on Pinterest |
-      | Terms of use              |
-      | Our security policy       |
-      | Press links               |
 
   Scenario: User should see the payment menu
     Then I should see the following <links>

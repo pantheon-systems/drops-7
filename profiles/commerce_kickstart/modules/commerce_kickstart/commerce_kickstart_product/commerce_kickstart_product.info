@@ -205,9 +205,9 @@ features[variable][] = pathauto_taxonomy_term_storage_capacity_pattern
 features[variable][] = pathauto_taxonomy_term_top_size_pattern
 files[] = commerce_kickstart_product.migrate.inc
 
-; Information added by Drupal.org packaging script on 2014-04-22
-version = "7.x-2.14"
+; Information added by Drupal.org packaging script on 2014-06-11
+version = "7.x-2.15"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1398158656"
+datestamp = "1402495791"
 

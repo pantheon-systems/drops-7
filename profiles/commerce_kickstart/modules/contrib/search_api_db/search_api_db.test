@@ -45,7 +45,10 @@ class SearchApiDbTest extends DrupalWebTestCase {
     $this->searchNoResults();
     $this->indexItems();
     $this->searchSuccess1();
+    $this->checkFacets();
     $this->regressionTests();
+    $this->editServerPartial();
+    $this->searchSuccessPartial();
     $this->editServer();
     $this->searchSuccess2();
     $this->clearIndex();
@@ -59,14 +62,14 @@ class SearchApiDbTest extends DrupalWebTestCase {
     $count = db_query('SELECT COUNT(*) FROM {search_api_test}')->fetchField();
     $this->insertItem(array(
       'id' => 1,
-      'title' => 'foo bar baz',
+      'title' => 'foo bar baz foobaz',
       'body' => 'test test',
       'type' => 'item',
       'keywords' => 'orange',
     ));
     $this->insertItem(array(
       'id' => 2,
-      'title' => 'foo test',
+      'title' => 'foo test foobuz',
       'body' => 'bar test',
       'type' => 'item',
       'keywords' => 'orange,apple,grape',
@@ -119,6 +122,7 @@ class SearchApiDbTest extends DrupalWebTestCase {
       'options' => array(
         'min_chars' => 3,
         'database' => $database,
+        'partial_matches' => FALSE,
       ),
     );
     $success = (bool) entity_create('search_api_server', $values)->save();
@@ -236,11 +240,73 @@ class SearchApiDbTest extends DrupalWebTestCase {
     $this->assertEqual(array_keys($results['results']), array(4), 'Complex search 1 returned correct result.');
     $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
     $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    $query = $this->buildSearch()->sort('id');
+    $filter = $query->createFilter('OR');
+    $filter->condition('title', 'bar');
+    $filter->condition('body', 'bar');
+    $query->filter($filter);
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], 4, 'Search with multi-field fulltext filter returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(1, 2, 3, 5), 'Search with multi-field fulltext filter returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+  }
+
+  protected function checkFacets() {
+    $query = $this->buildSearch();
+    $filter = $query->createFilter('OR', array('facet:type'));
+    $filter->condition('type', 'article');
+    $query->filter($filter);
+    $facets['type'] = array(
+      'field' => 'type',
+      'limit' => 0,
+      'min_count' => 1,
+      'missing' => TRUE,
+      'operator' => 'or',
+    );
+    $query->setOption('search_api_facets', $facets);
+    $query->range(0, 0);
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], 2, 'OR facets query returned correct number of results.');
+    $expected = array(
+      array('count' => 2, 'filter' => '"article"'),
+      array('count' => 2, 'filter' => '"item"'),
+      array('count' => 1, 'filter' => '!'),
+    );
+    $facet_match = _search_api_settings_equals($results['search_api_facets']['type'], $expected);
+    $this->assertTrue($facet_match, 'Correct OR facets were returned');
+
+    $query = $this->buildSearch();
+    $filter = $query->createFilter('OR', array('facet:type'));
+    $filter->condition('type', 'article');
+    $query->filter($filter);
+    $filter = $query->createFilter('AND');
+    $filter->condition('type', NULL, '<>');
+    $query->filter($filter);
+    $facets['type'] = array(
+      'field' => 'type',
+      'limit' => 0,
+      'min_count' => 1,
+      'missing' => TRUE,
+      'operator' => 'or',
+    );
+    $query->setOption('search_api_facets', $facets);
+    $query->range(0, 0);
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], 2, 'OR facets query returned correct number of results.');
+    $expected = array(
+      array('count' => 2, 'filter' => '"article"'),
+      array('count' => 2, 'filter' => '"item"'),
+    );
+    $facet_match = _search_api_settings_equals($results['search_api_facets']['type'], $expected);
+    $this->assertTrue($facet_match, 'Correct OR facets were returned');
   }
 
   protected function editServer() {
     $server = search_api_server_load($this->server_id, TRUE);
     $server->options['min_chars'] = 4;
+    $server->options['partial_matches'] = FALSE;
     $success = (bool) $server->save();
     $this->assertTrue($success, 'The server was successfully edited.');
 
@@ -255,6 +321,17 @@ class SearchApiDbTest extends DrupalWebTestCase {
     $results = $this->buildSearch('test')->range(1, 2)->execute();
     $this->assertEqual($results['result count'], 4, 'Search for »test« returned correct number of results.');
     $this->assertEqual(array_keys($results['results']), array(4, 1), 'Search for »test« returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    $query = $this->buildSearch()->sort('id');
+    $filter = $query->createFilter('OR');
+    $filter->condition('title', 'test');
+    $filter->condition('body', 'test');
+    $query->filter($filter);
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], 4, 'Search with multi-field fulltext filter returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(1, 2, 3, 4), 'Search with multi-field fulltext filter returned correct result.');
     $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
     $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
 
@@ -337,6 +414,56 @@ class SearchApiDbTest extends DrupalWebTestCase {
     $results = $this->buildSearch()->condition('keywords', NULL)->execute();
     $this->assertEqual($results['result count'], 1, 'Query with NULL filter returned correct number of results.');
     $this->assertEqual(array_keys($results['results']), array(3), 'Query with NULL filter returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+  }
+
+  /**
+   * Edits the server to enable partial matches.
+   */
+  protected function editServerPartial() {
+    $server = search_api_server_load($this->server_id, TRUE);
+    $server->options['partial_matches'] = TRUE;
+    $success = (bool) $server->save();
+    $this->assertTrue($success, 'The server was successfully edited.');
+
+    $this->clearIndex();
+    $this->indexItems();
+
+    // Reset the internal cache so the new values will be available.
+    search_api_index_load($this->index_id, TRUE);
+  }
+
+  /**
+   * Tests whether partial searches work.
+   */
+  protected function searchSuccessPartial() {
+    $results = $this->buildSearch('foobaz')->range(0, 1)->execute();
+    $this->assertEqual($results['result count'], 1, 'Partial search for »foobaz« returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(1), 'Partial search for »foobaz« returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    $results = $this->buildSearch('foo')->sort('search_api_relevance', 'DESC')->sort('id', 'ASC')->execute();
+    $this->assertEqual($results['result count'], 5, 'Partial search for »foo« returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(1, 2, 4, 3, 5), 'Partial search for »foo« returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    $results = $this->buildSearch('foo', array('type,item'))->sort('id', 'DESC')->execute();
+    $this->assertEqual($results['result count'], 2, 'Partial search for »foo« of type »item« returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(2, 1), 'Partial search for »foo« of type »item« returned correct result.');
+    $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
+    $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
+
+    $query = $this->buildSearch()->sort('id');
+    $filter = $query->createFilter('OR');
+    $filter->condition('title', 'test');
+    $filter->condition('body', 'test');
+    $query->filter($filter);
+    $results = $query->execute();
+    $this->assertEqual($results['result count'], 4, 'Partial search with multi-field fulltext filter returned correct number of results.');
+    $this->assertEqual(array_keys($results['results']), array(1, 2, 3, 4), 'Partial search with multi-field fulltext filter returned correct result.');
     $this->assertEqual($results['ignored'], array(), 'No keys were ignored.');
     $this->assertEqual($results['warnings'], array(), 'No warnings were displayed.');
   }
@@ -427,6 +554,7 @@ class SearchApiDbTest extends DrupalWebTestCase {
       array('count' => 2, 'filter' => '"item"'),
       array('count' => 1, 'filter' => '!'),
     );
+    usort($results['search_api_facets']['type'], array($this, 'facetCompare'));
     $facet_match = _search_api_settings_equals($results['search_api_facets']['type'], $expected);
     $this->assertTrue($facet_match, 'Correct facets were returned');
 
@@ -439,6 +567,7 @@ class SearchApiDbTest extends DrupalWebTestCase {
       array('count' => 2, 'filter' => '"article"'),
       array('count' => 2, 'filter' => '"item"'),
     );
+    usort($results['search_api_facets']['type'], array($this, 'facetCompare'));
     $facet_match = _search_api_settings_equals($results['search_api_facets']['type'], $expected);
     $this->assertTrue($facet_match, 'Correct facets were returned');
 
@@ -558,6 +687,39 @@ class SearchApiDbTest extends DrupalWebTestCase {
     $results = $query->execute();
     $this->assertEqual($results['result count'], 4, 'NOT NULL filter returned correct number of results.');
     $this->assertEqual(array_keys($results['results']), array(1, 2, 4, 5), 'NOT NULL filter returned correct result.');
+
+    // Regression tests for #1658964.
+    $query = $this->buildSearch();
+    $facets['type'] = array(
+      'field' => 'type',
+      'limit' => 0,
+      'min_count' => 0,
+      'missing' => TRUE,
+    );
+    $query->setOption('search_api_facets', $facets);
+    $query->condition('type', 'article');
+    $query->range(0, 0);
+    $results = $query->execute();
+    $expected = array(
+      array('count' => 2, 'filter' => '"article"'),
+      array('count' => 0, 'filter' => '!'),
+      array('count' => 0, 'filter' => '"item"'),
+    );
+    usort($results['search_api_facets']['type'], array($this, 'facetCompare'));
+    $facet_match = _search_api_settings_equals($results['search_api_facets']['type'], $expected);
+    $this->assertTrue($facet_match, 'Correct facets were returned');
+  }
+
+  /**
+   * Compares two facets for ordering.
+   *
+   * Used as a callback for usort() in regressionTests().
+   */
+  protected function facetCompare($a, $b) {
+    if ($a['count'] != $b['count']) {
+      return $b['count'] - $a['count'];
+    }
+    return strcasecmp($a['filter'], $b['filter']);
   }
 
   protected function clearIndex() {

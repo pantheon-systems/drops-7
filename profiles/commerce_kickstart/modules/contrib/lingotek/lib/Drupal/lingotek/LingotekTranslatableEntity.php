@@ -56,14 +56,6 @@ interface LingotekTranslatableEntity {
   public function setMetadataValue($key, $value);
 
   /**
-   * Updates the local content with data from a Lingotek Document.
-   *
-   * @return bool
-   *   TRUE if the content updates succeeded, FALSE otherwise.
-   */
-  public function updateLocalContent();
-
-  /**
    * Updates the local content of $target_code with data from a Lingotek Document
    *
    * @param string $lingotek_locale
@@ -71,7 +63,7 @@ interface LingotekTranslatableEntity {
    * @return bool
    *   TRUE if the content updates succeeded, FALSE otherwise.
    */
-  public function updateLocalContentByTarget($lingotek_locale);
+  public function downloadTriggered($lingotek_locale);
 
   /**
    * Gets the Lingotek document ID for this entity.
@@ -92,6 +84,19 @@ interface LingotekTranslatableEntity {
 
   public function getDescription();
   
+  public function getDocumentName();
+  
+  public function getUrl();
+  
+  public function getNote();
+  
+  public function preDownload($lingotek_locale, $completed);
+  
+  public function postDownload($lingotek_locale, $completed);
+  
+  public function setStatus($status);
+
+  public function setTargetsStatus($status);
   /*
    * Returns the source locale for the translatable entity
    */

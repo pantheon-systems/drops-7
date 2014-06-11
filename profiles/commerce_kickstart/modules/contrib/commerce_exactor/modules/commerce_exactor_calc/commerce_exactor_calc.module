@@ -202,10 +202,11 @@ function commerce_exactor_calc_add_exactocalc_line_item($line_item, $order, $ski
 }
 
 function _commerce_exactor_calc_request_xml() {
-  $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" standalone="yes"?><TaxRequest xmlns="http://www.exactor.com/ns"></TaxRequest>');
+  $module_info = system_get_info('module', 'commerce_exactor');
+  $xml = new SimpleXMLElement('<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+      <TaxRequest xmlns="http://www.exactor.com/ns" plugin="COMMERCEGUYS" version="' . $module_info['version'] . '"></TaxRequest>');
   $xml->MerchantId = variable_get('exactor_account_id');
   $xml->UserId = variable_get('exactor_user_id');
-  $xml->PartnerID = '';
 
   return $xml;
 }

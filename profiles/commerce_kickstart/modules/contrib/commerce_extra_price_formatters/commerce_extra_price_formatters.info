@@ -5,9 +5,10 @@ dependencies[] = commerce
 dependencies[] = commerce_price
 
 package = Commerce (contrib)
-; Information added by drupal.org packaging script on 2013-09-30
+
+; Information added by drush on 2014-06-11
 version = "7.x-1.1+7-dev"
 core = "7.x"
 project = "commerce_extra_price_formatters"
-datestamp = "1380560219"
+datestamp = "1402495808"
 

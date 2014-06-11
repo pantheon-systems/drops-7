@@ -108,3 +108,33 @@ function commerce_message_multilingual_settings_changed() {
   // Rebuild the message types after modifying the language settings.
   entity_defaults_rebuild(array('message_type'));
 }
+
+/*
+ * Implements of hook_element_info_alter().
+ * extra process function for filter format to alter the format options
+ */
+function commerce_message_element_info_alter(&$type) {
+  // Our process callback must run immediately after filter_process_format().
+  $filter_process_format_location = array_search('filter_process_format', $type['text_format']['#process']);
+  $replacement = array('filter_process_format', 'commerce_message_filter_process_format');
+  array_splice($type['text_format']['#process'], $filter_process_format_location, 1, $replacement);
+}
+
+/**
+ * Process callback for form elements that have a text format selector attached.
+ *
+ * This callback runs after filter_process_format() and performs additional
+ * modifications to the form element.
+ *
+ * @see filter_process_format()
+ *
+ * Disable the Commerce Order Message format
+ * for all entity types other than message_type type.
+ */
+function commerce_message_filter_process_format($element) {
+  if (isset($element['#entity_type']) && $element['#entity_type'] != 'message_type') {
+    $element['format']['format']['#options'] = array_diff_key($element['format']['format']['#options'], array('commerce_order_message' => 'commerce_order_message'));
+  }
+
+  return $element;
+}

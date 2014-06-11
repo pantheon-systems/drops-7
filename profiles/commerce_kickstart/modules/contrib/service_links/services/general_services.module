@@ -140,6 +140,11 @@ function general_services_service_links() {
     'description' => t('Post on Diigo'),
     'link' => 'http://www.diigo.com/post?url=<encoded-url>&title=<encoded-title>&desc=<encoded-teaser>',
   );
+  $links['viadeo'] = array(
+    'name' => 'Viadeo',
+    'link' => 'http://www.viadeo.com/shareit/share/?url=<encoded-url>&title=<encoded-title>',
+    'description' => t('Share this on Viadeo'),
+  );
 
   return $links;
 }

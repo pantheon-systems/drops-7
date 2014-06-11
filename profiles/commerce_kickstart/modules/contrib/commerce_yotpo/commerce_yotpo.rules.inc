@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *   commerce_yotpo.rules.inc
+ * commerce_yotpo.rules.inc
  */
 
 /**

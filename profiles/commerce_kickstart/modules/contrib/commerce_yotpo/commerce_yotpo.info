@@ -9,9 +9,9 @@ dependencies[] = commerce
 dependencies[] = commerce_order
 dependencies[] = commerce_product
 
-; Information added by Drupal.org packaging script on 2013-12-17
-version = "7.x-1.0"
+; Information added by Drupal.org packaging script on 2014-01-16
+version = "7.x-1.1"
 core = "7.x"
 project = "commerce_yotpo"
-datestamp = "1387279407"
+datestamp = "1389868409"
 

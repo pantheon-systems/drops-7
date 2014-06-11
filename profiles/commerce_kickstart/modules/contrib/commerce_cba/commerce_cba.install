@@ -6,6 +6,32 @@
  */
 
 /**
+* Implements hook_requirements().
+*/
+function commerce_cba_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    if (!variable_get('cba_merchant_id', '') && variable_get('cba_public_key', '')) {
+      $requirements['commerce_cba'] = array(
+        'value' => t('Not configured'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => t('Go to !cbasettings to set up "Checkout by Amazon".', array('!cbasettings' => l('Administration > Store > Configuration > Checkout by Amazon', 'admin/commerce/config/cba'))),
+      );
+    }
+    else {
+      $requirements['commerce_cba'] = array(
+        'value' => t('Configured'),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    $requirements['commerce_cba']['title'] = t('Commerce Checkout by Amazon');
+  }
+
+  return $requirements;
+}
+
+/**
  * Implements hook_install().
  */
 function commerce_cba_install() {

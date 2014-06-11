@@ -1,5 +1,5 @@
 /*!
-	Colorbox v1.5.8 - 2014-04-15
+	Colorbox v1.5.9 - 2014-04-25
 	jQuery lightbox and modal window plugin
 	(c) 2014 Jack Moore - http://www.jacklmoore.com/colorbox
 	license: http://www.opensource.org/licenses/mit-license.php
@@ -242,7 +242,7 @@
 	function getRelated(rel) {
 		index = 0;
 		
-		if (rel && rel !== false) {
+		if (rel && rel !== false && rel !== 'nofollow') {
 			$related = $('.' + boxElement).filter(function () {
 				var options = $.data(this, colorbox);
 				var settings = new Settings(this, options);
@@ -929,15 +929,16 @@
 		}, 100);
 		
 		if (settings.get('inline')) {
+			var $target = $(href);
 			// Inserts an empty placeholder where inline content is being pulled from.
 			// An event is bound to put inline content back when Colorbox closes or loads new content.
-			$inline = $tag(div).hide().insertBefore($(href)[0]);
+			$inline = $('<div>').hide().insertBefore($target);
 
 			$events.one(event_purge, function () {
-				$inline.replaceWith($loaded.children());
+				$inline.replaceWith($target);
 			});
 
-			prep($(href));
+			prep($target);
 		} else if (settings.get('iframe')) {
 			// IFrame element won't be added to the DOM until it is ready to be displayed,
 			// to avoid problems with DOM-ready JS that might be trying to run in that iframe.
@@ -1067,7 +1068,7 @@
 
 		$box.stop();
 		$.colorbox.close();
-		$box.stop().remove();
+		$box.stop(false, true).remove();
 		$overlay.remove();
 		closing = false;
 		$box = null;
@@ -1075,7 +1076,7 @@
 			.removeData(colorbox)
 			.removeClass(boxElement);
 
-		$(document).unbind('click.'+prefix);
+		$(document).unbind('click.'+prefix).unbind('keydown.'+prefix);
 	};
 
 	// A method for fetching the current element Colorbox is referencing.

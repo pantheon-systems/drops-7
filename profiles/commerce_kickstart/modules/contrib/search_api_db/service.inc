@@ -11,6 +11,11 @@
 class SearchApiDbService extends SearchApiAbstractService {
 
   /**
+   * Multiplier for scores to have precision when converted from float to int.
+   */
+  const SCORE_MULTIPLIER = 1000;
+
+  /**
    * The database connection to use for this server.
    *
    * @var DatabaseConnection
@@ -92,6 +97,7 @@ class SearchApiDbService extends SearchApiAbstractService {
     $options = $this->options + array(
       'min_chars' => 1,
       'autocomplete' => array(),
+      'partial_matches' => FALSE,
     );
     $options['autocomplete'] += array(
       'suggest_suffix' => TRUE,
@@ -104,6 +110,13 @@ class SearchApiDbService extends SearchApiAbstractService {
       '#description' => t('The minimum number of characters a word must consist of to be indexed.'),
       '#options' => drupal_map_assoc(array(1, 2, 3, 4, 5, 6)),
       '#default_value' => $options['min_chars'],
+    );
+
+    $form['partial_matches'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Search on parts of a word'),
+      '#description' => t('Find keywords in parts of a word, too. (E.g., find results with "database" when searching for "base"). <strong>Caution:</strong> This can make searches much slower on large sites!'),
+      '#default_value' => $options['partial_matches'],
     );
 
     if (module_exists('search_api_autocomplete')) {
@@ -135,10 +148,11 @@ class SearchApiDbService extends SearchApiAbstractService {
    * {@inheritdoc}
    */
   public function supportsFeature($feature) {
-    $supported = drupal_map_assoc(array(
-      'search_api_autocomplete',
-      'search_api_facets',
-    ));
+    $supported = array(
+      'search_api_autocomplete' => TRUE,
+      'search_api_facets' => TRUE,
+      'search_api_facets_operator_or' => TRUE,
+    );
     return isset($supported[$feature]);
   }
 
@@ -227,8 +241,7 @@ class SearchApiDbService extends SearchApiAbstractService {
   protected function findFreeTable($prefix, $name) {
     // A DB prefix might further reduce the maximum length of the table name.
     $maxbytes = 62;
-    list($key, $target) = explode(':', $this->options['database'], 2);
-    if ($db_prefix = Database::getConnection($target, $key)->tablePrefix()) {
+    if ($db_prefix = $this->connection->tablePrefix()) {
       // Use strlen instead of drupal_strlen since we want to measure bytes
       // instead of characters.
       $maxbytes -= strlen($db_prefix);
@@ -329,53 +342,32 @@ class SearchApiDbService extends SearchApiAbstractService {
       }
     }
 
-    if ($type == 'text') {
-      // Text columns are always a separate table.
-      $this->connection->schema()->addField($db['table'], 'word', array(
-        'description' => 'The text of the indexed token.',
-        'type' => 'varchar',
-        'length' => 50,
-        'not null' => TRUE,
-      ));
-      $this->connection->schema()->addField($db['table'], 'score', array(
-        'description' => 'The score associated with this token.',
-        'type' => 'float',
-        'not null' => TRUE,
-      ));
-      $this->connection->schema()->addIndex($db['table'], 'word', array(array('word', 10)));
-      if ($new_table) {
-        // Add a covering index since word is not repeated for each item.
-        $this->connection->schema()->addPrimaryKey($db['table'], array('item_id', 'word'));
-      }
+    if (!isset($db['column'])) {
+      $db['column'] = 'value';
+    }
+    $db_field = $this->sqlType($type);
+    $db_field += array(
+      'description' => "The field's value for this item.",
+    );
+    if ($new_table && search_api_is_list_type($field['type'])) {
+      $db_field['not null'] = TRUE;
+    }
+    $this->connection->schema()->addField($db['table'], $db['column'], $db_field);
+    if ($db_field['type'] === 'varchar') {
+      $this->connection->schema()->addIndex($db['table'], $db['column'], array(array($db['column'], 10)));
     }
     else {
-      if (!isset($db['column'])) {
-        $db['column'] = 'value';
-      }
-      $db_field = $this->sqlType($type);
-      $db_field += array(
-        'description' => "The field's value for this item.",
-      );
-      if ($new_table && search_api_is_list_type($field['type'])) {
-        $db_field['not null'] = TRUE;
-      }
-      $this->connection->schema()->addField($db['table'], $db['column'], $db_field);
-      if ($db_field['type'] === 'varchar') {
-        $this->connection->schema()->addIndex($db['table'], $db['column'], array(array($db['column'], 10)));
+      $this->connection->schema()->addIndex($db['table'], $db['column'], array($db['column']));
+    }
+    if ($new_table) {
+      if (search_api_is_list_type($field['type'])) {
+        // Add a covering index for lists.
+        $this->connection->schema()->addPrimaryKey($db['table'], array('item_id', $db['column']));
       }
       else {
-        $this->connection->schema()->addIndex($db['table'], $db['column'], array($db['column']));
-      }
-      if ($new_table) {
-        if (search_api_is_list_type($field['type'])) {
-          // Add a covering index for lists.
-          $this->connection->schema()->addPrimaryKey($db['table'], array('item_id', $db['column']));
-        }
-        else {
-          // Otherwise, a denormalized table with many columns, where we can't
-          // predict the best covering index.
-          $this->connection->schema()->addPrimaryKey($db['table'], array('item_id'));
-        }
+        // Otherwise, a denormalized table with many columns, where we can't
+        // predict the best covering index.
+        $this->connection->schema()->addPrimaryKey($db['table'], array('item_id'));
       }
     }
   }
@@ -427,11 +419,17 @@ class SearchApiDbService extends SearchApiAbstractService {
       $reindex = FALSE;
       $cleared = FALSE;
       $change = FALSE;
+      $text_table = NULL;
 
       foreach ($fields as $name => $field) {
+        if (!isset($text_table) && search_api_is_text_type($field['type'])) {
+          // Stash the shared text table name for the index.
+          $text_table = $field['table'];
+        }
+
         if (!isset($new_fields[$name])) {
           // The field is no longer in the index, drop the data.
-          $this->removeFieldStorage($field);
+          $this->removeFieldStorage($name, $field);
           unset($fields[$name]);
           $change = TRUE;
           continue;
@@ -444,9 +442,9 @@ class SearchApiDbService extends SearchApiAbstractService {
         $new_inner_type = search_api_extract_inner_type($new_type);
         if ($old_type != $new_type) {
           $change = TRUE;
-          if ($old_inner_type == 'text' || $new_inner_type == 'text'
-            || search_api_list_nesting_level($old_type) != search_api_list_nesting_level($new_type)
-          ) {
+          $list_old = (bool) search_api_list_nesting_level($old_type);
+          $list_new = (bool) search_api_list_nesting_level($new_type);
+          if ($old_inner_type == 'text' || $new_inner_type == 'text' || $list_old != $list_new) {
             // A change in fulltext or list status necessitates completely
             // clearing the index.
             $reindex = TRUE;
@@ -454,14 +452,15 @@ class SearchApiDbService extends SearchApiAbstractService {
               $cleared = TRUE;
               $this->deleteItems('all', $index);
             }
-            $this->removeFieldStorage($field);
+            $this->removeFieldStorage($name, $field);
             // Keep the table in $new_fields to create the new storage.
             continue;
           }
           elseif ($this->sqlType($old_inner_type) != $this->sqlType($new_inner_type)) {
             // There is a change in SQL type. We don't have to clear the index,
             // since types can be converted.
-            $this->connection->schema()->changeField($field['table'], $field['column'], $field['column'], $this->sqlType($new_type) + array('description' => "The field's value for this item."));
+            $column = isset($field['column']) ? $field['column'] : 'value';
+            $this->connection->schema()->changeField($field['table'], $column, $column, $this->sqlType($new_type) + array('description' => "The field's value for this item."));
             $reindex = TRUE;
           }
           elseif ($old_inner_type == 'date' || $new_inner_type == 'date') {
@@ -470,19 +469,25 @@ class SearchApiDbService extends SearchApiAbstractService {
             $reindex = TRUE;
           }
         }
-        elseif ($field['boost'] != $new_fields[$name]['boost']) {
+        elseif ($new_inner_type == 'text' && $field['boost'] != $new_fields[$name]['boost']) {
           $change = TRUE;
-          if (!$reindex && $new_inner_type == 'text') {
+          if (!$reindex) {
             $multiplier = $new_fields[$name]['boost'] / $field['boost'];
-            $this->connection->update($field['table'])
+            $this->connection->update($text_table)
               ->expression('score', 'score * :mult', array(':mult' => $multiplier))
+              ->condition('field_name', self::getTextFieldName($name))
               ->execute();
           }
         }
         // Make sure the table and column now exist. (Especially important when
         // we actually add the index for the first time.)
-        if (!$this->connection->schema()->tableExists($field['table']) || (isset($field['column']) && !$this->connection->schema()->fieldExists($field['table'], $field['column']))) {
-          $this->createFieldTable($index, $new_fields[$name], $field);
+        if (!search_api_is_text_type($field['type'])) {
+          $storageExists = $this->connection->schema()->tableExists($field['table'])
+              && (!isset($field['column'])
+                  || $this->connection->schema()->fieldExists($field['table'], $field['column']));
+          if (!$storageExists) {
+            $this->createFieldTable($index, $new_fields[$name], $field);
+          }
         }
         unset($new_fields[$name]);
       }
@@ -491,17 +496,98 @@ class SearchApiDbService extends SearchApiAbstractService {
       // These are new fields that were previously not indexed.
       foreach ($new_fields as $name => $field) {
         $reindex = TRUE;
-        if ($this->canDenormalize($field)) {
-          $fields[$name]['table'] = $prefix;
-          $fields[$name]['column'] = $this->findFreeColumn($fields[$name]['table'], $name);
+        if (search_api_is_text_type($field['type'])) {
+          if (!isset($text_table)) {
+            // If we have not encountered a text table, assign a name for it.
+            $text_table = $this->findFreeTable($prefix . '_', 'text');
+          }
+          $fields[$name]['table'] = $text_table;
         }
         else {
-          $fields[$name]['table'] = $this->findFreeTable($prefix . '_', $name);
+          if ($this->canDenormalize($field)) {
+            $fields[$name]['table'] = $prefix;
+            $fields[$name]['column'] = $this->findFreeColumn($fields[$name]['table'], $name);
+          }
+          else {
+            $fields[$name]['table'] = $this->findFreeTable($prefix . '_', $name);
+          }
+          $this->createFieldTable($index, $field, $fields[$name]);
         }
-        $this->createFieldTable($index, $field, $fields[$name]);
         $fields[$name]['type'] = $field['type'];
         $fields[$name]['boost'] = $field['boost'];
         $change = TRUE;
+      }
+
+      // If needed, make sure the text table exists.
+      if (isset($text_table) && !$this->connection->schema()->tableExists($text_table)) {
+        $table = array(
+          'name' => $text_table,
+          'module' => 'search_api_db',
+          'fields' => array(
+            'item_id' => array(
+              'description' => 'The primary identifier of the item.',
+              'not null' => TRUE,
+            ),
+            'field_name' => array(
+              'description' => "The name of the field in which the token appears, or an MD5 hash of the field.",
+              'not null' => TRUE,
+              'type' => 'varchar',
+              'length' => 255,
+            ),
+            'word' => array(
+              'description' => 'The text of the indexed token.',
+              'type' => 'varchar',
+              'length' => 50,
+              'not null' => TRUE,
+            ),
+            'score' => array(
+              'description' => 'The score associated with this token.',
+              'type' => 'int',
+              'unsigned' => TRUE,
+              'not null' => TRUE,
+              'default' => 0,
+            ),
+          ),
+          'indexes' => array(
+            'word_field' => array(array('word', 20), 'field_name'),
+          ),
+          // Add a covering index since word is not repeated for each item.
+          'primary key' => array('item_id', 'field_name', 'word'),
+        );
+        // The type of the item_id field depends on the ID field's type.
+        $id_field = $index->datasource()->getIdFieldInfo();
+        $table['fields']['item_id'] += $this->sqlType($id_field['type'] == 'text' ? 'string' : $id_field['type']);
+        if (isset($table['fields']['item_id']['length'])) {
+          // A length of 255 is overkill for IDs. 50 should be more than enough.
+          $table['fields']['item_id']['length'] = 50;
+        }
+        $this->connection->schema()->createTable($text_table, $table);
+
+        // Some DBMSs will need a character encoding and collation set. Since
+        // this largely circumvents Drupal's database layer (but isn't integral
+        // enough to failing completely when it doesn't work, we wrap it in a
+        // try/catch, to be on the safe side.
+        try {
+          switch ($this->connection->databaseType()) {
+            case 'mysql':
+              $this->connection->query("ALTER TABLE {{$text_table}} CONVERT TO CHARACTER SET 'utf8' COLLATE 'utf8_bin'");
+              break;
+
+            case 'pgsql':
+              $this->connection->query("ALTER TABLE {{$text_table}} ALTER COLUMN word SET DATA TYPE character varying(50) COLLATE \"C\"");
+              break;
+
+            // @todo Add fixes for other DBMSs.
+            case 'oracle':
+            case 'sqlite':
+            case 'sqlsrv':
+              break;
+          }
+        }
+        catch (PDOException $e) {
+          $vars['%index'] = $index->name;
+          watchdog_exception('search_api_db', $e, '%type while trying to change collation for the fulltext table of index %index: !message in %function (line %line of %file).', $vars);
+        }
       }
 
       if ($change) {
@@ -536,15 +622,22 @@ class SearchApiDbService extends SearchApiAbstractService {
   /**
    * Drops a field's table or column for storage.
    *
+   * @param string $name
+   *   The field name.
    * @param array $field
-   *   Single field definition from SearchApiIndex::getFields().
+   *   Server-internal information about the field.
    */
-  protected function removeFieldStorage($field) {
+  protected function removeFieldStorage($name, $field) {
+    if (search_api_is_text_type($field['type'])) {
+      $this->connection->delete($field['table'])
+        ->condition('field_name', self::getTextFieldName($name))
+        ->execute();
+    }
     // Legacy non-denormalized fields will not have a column.
-    if ($this->canDenormalize($field) && isset($field['column'])) {
+    elseif ($this->canDenormalize($field) && isset($field['column'])) {
       $this->connection->schema()->dropField($field['table'], $field['column']);
     }
-    else {
+    elseif ($this->connection->schema()->tableExists($field['table'])) {
       $this->connection->schema()->dropTable($field['table']);
     }
   }
@@ -621,6 +714,7 @@ class SearchApiDbService extends SearchApiAbstractService {
     $txn = $this->connection->startTransaction('search_api_indexing');
     try {
       $inserts = array();
+      $text_inserts = array();
       foreach ($item as $name => $field) {
         // Sometimes index changes are not triggering the update hooks
         // correctly. Therefore, to avoid DB errors, we re-check the tables
@@ -639,10 +733,10 @@ class SearchApiDbService extends SearchApiAbstractService {
         $table = $fields[$name]['table'];
         $boost = $fields[$name]['boost'];
         $this->connection->delete($table)
-            ->condition('item_id', $id)
-            ->execute();
+          ->condition('item_id', $id)
+          ->execute();
         // Don't index null values
-        if($field['value'] === NULL) {
+        if ($field['value'] === NULL) {
           continue;
         }
         $type = $field['type'];
@@ -675,16 +769,15 @@ class SearchApiDbService extends SearchApiAbstractService {
             }
           }
           if ($words) {
-            $query = $this->connection->insert($table)
-              ->fields(array('item_id', 'word', 'score'));
+            $field_name = self::getTextFieldName($name);
             foreach ($words as $word) {
-              $query->values(array(
-                'item_id' => $id,
-                'word'    => $word['value'],
-                'score'   => $word['score'] * $boost,
-              ));
+              $text_inserts[$table][] = array(
+                'item_id'    => $id,
+                'field_name' => $field_name,
+                'word'       => $word['value'],
+                'score'      => (int) round($word['score'] * $boost * self::SCORE_MULTIPLIER),
+              );
             }
-            $query->execute();
           }
         }
         elseif (search_api_is_list_type($type)) {
@@ -721,10 +814,37 @@ class SearchApiDbService extends SearchApiAbstractService {
           ->fields(array_merge($data, array('item_id' => $id)))
           ->execute();
       }
+      foreach ($text_inserts as $table => $data) {
+        $query = $this->connection->insert($table)
+          ->fields(array('item_id', 'field_name', 'word', 'score'));
+        foreach ($data as $row) {
+          $query->values($row);
+        }
+        $query->execute();
+      }
     }
     catch (Exception $e) {
       $txn->rollback();
       throw $e;
+    }
+  }
+
+  /**
+   * Trims long field names to fit into the text table's field_name column.
+   *
+   * @param string $name
+   *   The field name.
+   *
+   * @return string
+   *   The field name as stored in the field_name column.
+   */
+  protected static function getTextFieldName($name) {
+    if (strlen($name) > 255) {
+      // Replace long field names with something unique and predictable.
+      return md5($name);
+    }
+    else {
+      return $name;
     }
   }
 
@@ -780,7 +900,7 @@ class SearchApiDbService extends SearchApiAbstractService {
           if ($v) {
             $ret[] = array(
               'value' => $v,
-              'score' => 1.0,
+              'score' => 1,
             );
           }
         }
@@ -968,6 +1088,15 @@ class SearchApiDbService extends SearchApiAbstractService {
           }
           $alias = $this->getTableAlias($field, $db_query);
           $db_query->orderBy($alias . '.' . $fields[$field_name]['column'], $order);
+          // PostgreSQL automatically adds a field to the SELECT list when
+          // sorting on it. Therefore, if we have aggregrations present we also
+          // have to add the field to the GROUP BY (since Drupal won't do it for
+          // us). However, if no aggregations are present, a GROUP BY would lead
+          // to another error. Therefore, we only add it if there is already a
+          // GROUP BY.
+          if ($db_query->getGroupBy()) {
+            $db_query->groupBy($alias . '.' . $fields[$field_name]['column']);
+          }
         }
       }
       else {
@@ -980,7 +1109,7 @@ class SearchApiDbService extends SearchApiAbstractService {
       foreach ($result as $row) {
         $results['results'][$row->item_id] = array(
           'id' => $row->item_id,
-          'score' => $row->score,
+          'score' => $row->score / self::SCORE_MULTIPLIER,
         );
       }
       if ($skip_count) {
@@ -1057,7 +1186,7 @@ class SearchApiDbService extends SearchApiAbstractService {
 
         $db_query = $this->createKeysQuery($keys, $fulltext_fields, $fields);
         if (is_array($keys) && !empty($keys['#negation'])) {
-          $db_query->addExpression(':score', 'score', array(':score' => 1));
+          $db_query->addExpression(':score', 'score', array(':score' => self::SCORE_MULTIPLIER));
           $db_query->distinct();
         }
       }
@@ -1075,7 +1204,7 @@ class SearchApiDbService extends SearchApiAbstractService {
     if (!isset($db_query)) {
       $db_query = $this->connection->select($fields['search_api_language']['table'], 't');
       $db_query->addField('t', 'item_id', 'item_id');
-      $db_query->addExpression(':score', 'score', array(':score' => 1));
+      $db_query->addExpression(':score', 'score', array(':score' => self::SCORE_MULTIPLIER));
       $db_query->distinct();
     }
 
@@ -1240,7 +1369,6 @@ class SearchApiDbService extends SearchApiAbstractService {
       );
     }
 
-    $or = db_or();
     $neg = !empty($keys['#negation']);
     $conj = $keys['#conjunction'];
     $words = array();
@@ -1273,47 +1401,43 @@ class SearchApiDbService extends SearchApiAbstractService {
     $not_nested = ($subs <= 1 && count($fields) == 1) || ($neg && $conj == 'OR' && !$negated);
 
     if ($words) {
-      if (count($words) > 1) {
-        $mul_words = TRUE;
-        foreach ($words as $word) {
-          $or->condition('word', $word);
-        }
+      // All text fields in the index share a table. Get name from the first.
+      $field = reset($fields);
+      $db_query = $this->connection->select($field['table'], 't');
+      $mul_words = count($words) > 1;
+      if ($neg_nested) {
+        $db_query->fields('t', array('item_id', 'word'));
+      }
+      elseif ($neg) {
+        $db_query->fields('t', array('item_id'));
+      }
+      elseif ($not_nested) {
+        $db_query->fields('t', array('item_id', 'score'));
       }
       else {
-        $word = array_shift($words);
+        $db_query->fields('t', array('item_id', 'score', 'word'));
       }
-      foreach ($fields as $name => $field) {
-        $table = $field['table'];
-        $query = $this->connection->select($table, 't');
-        if ($neg_nested) {
-          $query->fields('t', array('item_id', 'word'));
-        }
-        elseif ($neg) {
-          $query->fields('t', array('item_id'));
-        }
-        elseif ($not_nested) {
-          $query->fields('t', array('item_id', 'score'));
-        }
-        else {
-          $query->fields('t');
-        }
-        if ($mul_words) {
-          $query->condition($or);
-        }
-        else {
-          $query->condition('word', $word);
-        }
 
-        if (!isset($db_query)) {
-          $db_query = $query;
-        }
-        elseif ($not_nested) {
-          $db_query->union($query, 'UNION');
-        }
-        else {
-          $db_query->union($query, 'UNION ALL');
-        }
+      if (empty($this->options['partial_matches'])) {
+        $db_query->condition('word', $words, 'IN');
       }
+      else {
+        $db_or = db_or();
+        $db_query->groupBy('t.item_id');
+        foreach ($words as $i => $word) {
+          $db_or->condition('t.word', '%' . $this->connection->escapeLike($word) . '%', 'LIKE');
+
+          // Add an expression for each keyword that shows whether the indexed
+          // word matches that particular keyword. That way we don't return a
+          // result multiple times if a single indexed word (partially) matches
+          // multiple keywords.
+          $alias = 'w' . $i;
+          $alias = $db_query->addExpression("t.word LIKE '%" . $this->connection->escapeLike($word) . "%'", $alias);
+          $db_query->groupBy($alias);
+        }
+        $db_query->condition($db_or);
+      }
+      $db_query->condition('field_name', array_map(array(__CLASS__, 'getTextFieldName'), array_keys($fields)), 'IN');
     }
 
     if ($nested) {
@@ -1360,33 +1484,16 @@ class SearchApiDbService extends SearchApiAbstractService {
 
     if ($negated) {
       if (!isset($db_query) || $conj == 'OR') {
-        if (isset($all_fields['search_api_language'])) {
-          // We use this table because all items should be contained exactly
-          // once.
-          $table = $all_fields['search_api_language']['table'];
-        }
-        else {
-          $distinct = TRUE;
-          foreach ($all_fields as $field) {
-            $table = $field['table'];
-            if (!search_api_is_list_type($field['type']) && !search_api_is_text_type($field['type'])) {
-              unset($distinct);
-              break;
-            }
-          }
-        }
         if (isset($db_query)) {
           // We are in a rather bizarre case where the keys are something like
           // "a OR (NOT b)".
           $old_query = $db_query;
         }
-        $db_query = $this->connection->select($table, 't');
+        // We use this table because all items should be contained exactly once.
+        $db_query = $this->connection->select($all_fields['search_api_language']['table'], 't');
         $db_query->addField('t', 'item_id', 'item_id');
         if (!$neg) {
-          $db_query->addExpression(':score', 'score', array(':score' => 1));
-          $distinct = TRUE;
-        }
-        if (isset($distinct)) {
+          $db_query->addExpression(':score', 'score', array(':score' => self::SCORE_MULTIPLIER));
           $db_query->distinct();
         }
       }
@@ -1435,7 +1542,6 @@ class SearchApiDbService extends SearchApiAbstractService {
    */
   protected function createFilterCondition(SearchApiQueryFilterInterface $filter, array $fields, SelectQueryInterface $db_query) {
     $cond = db_condition($filter->getConjunction());
-    $empty = TRUE;
     // Store whether a JOIN alrady occurred for a field, so we don't JOIN
     // repeatedly for OR filters.
     $first_join = array();
@@ -1445,12 +1551,10 @@ class SearchApiDbService extends SearchApiAbstractService {
       if (is_object($f)) {
         $c = $this->createFilterCondition($f, $fields, $db_query);
         if ($c) {
-          $empty = FALSE;
           $cond->condition($c);
         }
       }
       else {
-        $empty = FALSE;
         if (!isset($fields[$f[0]])) {
           throw new SearchApiException(t('Unknown field in filter clause: @field.', array('@field' => $f[0])));
         }
@@ -1465,19 +1569,12 @@ class SearchApiDbService extends SearchApiAbstractService {
         }
         if (search_api_is_text_type($field['type'])) {
           $keys = $this->prepareKeys($f[1]);
-          $query = $this->createKeysQuery($keys, array($field), $fields);
-          // We don't need the score, so we remove it. The score might either be
-          // an expression or a field.
-          $query_expressions = &$query->getExpressions();
-          if ($query_expressions) {
-            $query_expressions = array();
+          if (!isset($keys)) {
+            continue;
           }
-          else {
-            $query_fields = &$query->getFields();
-            unset($query_fields['score']);
-            unset($query_fields);
-          }
-          unset($query_expressions);
+          $query = $this->createKeysQuery($keys, array($f[0] => $field), $fields);
+          // We only want the item IDs, so we use the keys query as a nested query.
+          $query = $this->connection->select($query, 't')->fields('t', array('item_id'));
           $cond->condition('t.item_id', $query, $f[2] == '<>' || $f[2] == '!=' ? 'NOT IN' : 'IN');
         }
         else {
@@ -1499,7 +1596,7 @@ class SearchApiDbService extends SearchApiAbstractService {
         }
       }
     }
-    return $empty ? NULL : $cond;
+    return count($cond->conditions()) > 1 ? $cond : NULL;
   }
 
   /**
@@ -1544,50 +1641,109 @@ class SearchApiDbService extends SearchApiAbstractService {
    *   An array of facets, as specified by the search_api_facets feature.
    */
   protected function getFacets(SearchApiQueryInterface $query, SelectQueryInterface $db_query) {
-    $table = $this->getTemporaryResultsTable($db_query);
-    if (!$table) {
+    try {
+      $table = $this->getTemporaryResultsTable($db_query);
+      if (!$table) {
+        return array();
+      }
+
+      $fields = $this->getFieldInfo($query->getIndex());
+      $ret = array();
+      foreach ($query->getOption('search_api_facets') as $key => $facet) {
+        if (empty($fields[$facet['field']])) {
+          $this->warnings[] = t('Unknown facet field @field.', array('@field' => $facet['field']));
+          continue;
+        }
+        $field = $fields[$facet['field']];
+
+        if (empty($facet['operator']) || $facet['operator'] != 'or') {
+          // All the AND facets can use the main query.
+          $select = $this->connection->select($table, 't');
+        }
+        else {
+          // For OR facets, we need to build a different base query that
+          // excludes the facet filters applied to the facet.
+          $or_query = clone $query;
+          $filters = &$or_query->getFilter()->getFilters();
+          $tag = 'facet:' . $facet['field'];
+          foreach ($filters as $filter_id => $filter) {
+            if ($filter instanceof SearchApiQueryFilterInterface && $filter->hasTag($tag)) {
+              unset($filters[$filter_id]);
+            }
+          }
+          $or_db_query = $this->createDbQuery($or_query, $fields);
+          $select = $this->connection->select($or_db_query, 't');
+        }
+
+        // If "Include missing facet" is disabled, we use an INNER JOIN and add
+        // IS NOT NULL for shared tables.
+        $alias = $this->getTableAlias($field, $select, TRUE, $facet['missing'] ? 'leftJoin' : 'innerJoin');
+        $select->addField($alias, search_api_is_text_type($field['type']) ? 'word' : $field['column'], 'value');
+        if (!$facet['missing'] && !search_api_is_text_type($field['type'])) {
+          $select->isNotNull($alias . '.' . $field['column']);
+        }
+        $select->addExpression('COUNT(DISTINCT t.item_id)', 'num');
+        $select->groupBy('value');
+        $select->orderBy('num', 'DESC');
+
+        $limit = $facet['limit'];
+        if ((int) $limit > 0) {
+          $select->range(0, $limit);
+        }
+        if ($facet['min_count'] > 1) {
+          $select->having('num >= :count', array(':count' => $facet['min_count']));
+        }
+
+        $terms = array();
+        $values = array();
+        $has_missing = FALSE;
+        foreach ($select->execute() as $row) {
+          $terms[] = array(
+            'count' => $row->num,
+            'filter' => isset($row->value) ? '"' . $row->value . '"' : '!',
+          );
+          if (isset($row->value)) {
+            $values[] = $row->value;
+          }
+          else {
+            $has_missing = TRUE;
+          }
+        }
+
+        // If 'Minimum facet count' is set to 0 in the display options for this
+        // facet, we need to retrieve all facets, even ones that aren't matched
+        // in our search result set above. Here we SELECT all DISTINCT facets,
+        // and add in those facets that weren't added above.
+        if ($facet['min_count'] < 1) {
+          $select = $this->connection->select($field['table'], 't');
+          $select->addField('t', $field['column'], 'value');
+          $select->distinct();
+          if ($values) {
+            $select->condition($field['column'], $values, 'NOT IN');
+          }
+          $select->isNotNull($field['column']);
+          foreach ($select->execute() as $row) {
+            $terms[] = array(
+              'count' => 0,
+              'filter' => '"' . $row->value . '"',
+            );
+          }
+          if ($facet['missing'] && !$has_missing) {
+            $terms[] = array(
+              'count' => 0,
+              'filter' => '!',
+            );
+          }
+        }
+
+        $ret[$key] = $terms;
+      }
+      return $ret;
+    }
+    catch (PDOException $e) {
+      watchdog_exception('search_api_db', $e, '%type while trying to calculate facets: !message in %function (line %line of %file).');
       return array();
     }
-
-    $fields = $this->getFieldInfo($query->getIndex());
-    $ret = array();
-    foreach ($query->getOption('search_api_facets') as $key => $facet) {
-      if (empty($fields[$facet['field']])) {
-        $this->warnings[] = t('Unknown facet field @field.', array('@field' => $facet['field']));
-        continue;
-      }
-      $field = $fields[$facet['field']];
-
-      $select = $this->connection->select($table, 't');
-      $alias = $this->getTableAlias($field, $select, TRUE, $facet['missing'] ? 'leftJoin' : 'innerJoin');
-      $select->addField($alias, search_api_is_text_type($field['type']) ? 'word' : $field['column'], 'value');
-      // Facets without missing make sure a value is present with an inner join
-      // and not null for shared tables.
-      if (!$facet['missing'] && !search_api_is_text_type($field['type'])) {
-        $select->isNotNull($alias . '.' . $field['column']);
-      }
-      $select->addExpression('COUNT(DISTINCT t.item_id)', 'num');
-      $select->groupBy('value');
-      $select->orderBy('num', 'DESC');
-
-      $limit = $facet['limit'];
-      if ((int) $limit > 0) {
-        $select->range(0, $limit);
-      }
-      if ($facet['min_count'] > 1) {
-        $select->having('num >= :count', array(':count' => $facet['min_count']));
-      }
-
-      $terms = array();
-      foreach ($select->execute() as $row) {
-        $terms[] = array(
-          'count' => $row->num,
-          'filter' => isset($row->value) ? '"' . $row->value . '"' : '!',
-        );
-      }
-      $ret[$key] = $terms;
-    }
-    return $ret;
   }
 
   /**
@@ -1613,6 +1769,10 @@ class SearchApiDbService extends SearchApiAbstractService {
     }
     $expressions = &$db_query->getExpressions();
     $expressions = array();
+
+    $group_by = &$db_query->getGroupBy();
+    $group_by = array();
+
     $db_query->distinct();
     if (!$db_query->preExecute()) {
       return FALSE;

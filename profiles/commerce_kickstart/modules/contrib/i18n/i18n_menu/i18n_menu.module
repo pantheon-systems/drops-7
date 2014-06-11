@@ -529,6 +529,10 @@ function _i18n_menu_link_process(&$link) {
         return FALSE;
       }
     }
+    // Skip if administering this menu item through the node edit form.
+    elseif (arg(0) == 'node' && arg(2) == 'edit') {
+      return FALSE;
+    }
     return TRUE;
   }
   else {

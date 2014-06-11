@@ -1056,3 +1056,17 @@ function service_links_views_api() {
     'path' => drupal_get_path('module', 'service_links'),
   );
 }
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function service_links_ctools_plugin_directory($module, $plugin) {
+  // Also Prevent PHP warnings for undefined constants.
+  if (defined('PANELS_REQUIRED_CTOOLS_API')) {
+    // Safety: go away if CTools is not at an appropriate version.
+    if (!module_invoke('ctools', 'api_version', PANELS_REQUIRED_CTOOLS_API)) {
+      return;
+    }
+    return 'plugins/' . $plugin;
+  }
+}

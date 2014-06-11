@@ -2,39 +2,36 @@ name = "Lingotek Translation"
 description = "Extends Drupal's multilingual features by integrating with the Lingotek Translation Management System."
 package = Multilingual
 core = "7.x"
-php = "5.2"
+php = "5.3"
 configure = admin/config/lingotek/setup
 
 dependencies[] = locale
-dependencies[] = translation
 dependencies[] = field_ui
 dependencies[] = title
-dependencies[] = variable
-dependencies[] = i18n
 dependencies[] = block
-dependencies[] = i18n_block
 dependencies[] = menu
+dependencies[] = i18n
+dependencies[] = i18n_block
+dependencies[] = variable
+dependencies[] = entity
 dependencies[] = i18n_menu
 dependencies[] = i18n_string
 dependencies[] = taxonomy
 dependencies[] = i18n_taxonomy
 dependencies[] = i18n_translation
 dependencies[] = i18n_variable
-dependencies[] = ctools
 dependencies[] = views
-dependencies[] = i18nviews
-dependencies[] = i18n_node
 dependencies[] = l10n_update
+dependencies[] = ctools
 dependencies[] = potx
 
 files[] = lib/Drupal/lingotek/Lingotek.php
 files[] = lib/Drupal/lingotek/LingotekApi.php
 files[] = lib/Drupal/lingotek/LingotekAccount.php
-files[] = lib/Drupal/lingotek/LingotekComment.php
 files[] = lib/Drupal/lingotek/LingotekConfigChunk.php
 files[] = lib/Drupal/lingotek/LingotekDocument.php
 files[] = lib/Drupal/lingotek/LingotekLog.php
-files[] = lib/Drupal/lingotek/LingotekNode.php
+files[] = lib/Drupal/lingotek/LingotekEntity.php
 files[] = lib/Drupal/lingotek/LingotekPhase.php
 files[] = lib/Drupal/lingotek/LingotekSync.php
 files[] = lib/Drupal/lingotek/LingotekTranslatableEntity.php
@@ -47,9 +44,9 @@ files[] = lingotek_views_handler_workbench_link.inc
 
 stylesheets[all][] = style/base.css
 
-; Information added by  packaging script on 2013-11-28
-version = "7.x-4.10"
+; Information added by Drupal.org packaging script on 2014-05-14
+version = "7.x-5.07"
 core = "7.x"
 project = "lingotek"
-datestamp = "1385597617"
+datestamp = "1400110135"
 

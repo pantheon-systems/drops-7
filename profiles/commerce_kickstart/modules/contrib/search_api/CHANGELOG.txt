@@ -1,3 +1,29 @@
+Search API 1.12 (05/23/2014):
+-----------------------------
+- #2265349 by drunken monkey: Marked _search_api_settings_equals() as
+  deprecated.
+- #2256891 by justanothermark: Fixed "0" entity labels.
+- #2233749 by rjacobs, drunken monkey: Added drush support to change the server
+  used by an index.
+- #2219553 by drunken monkey: Fixed Views fulltext filter operators.
+- #2135697 by drunken monkey: Fixed handling of HTML attributes in the
+  Highlighting processor.
+- #2179755 by drunken monkey, fago: Fixed whitespaces after HTML filter.
+- pagination
+- #2198791 by drunken monkey: Fixed empty Views entity filters.
+- #2195469 by freakalis, drunken monkey: Added "Exclude fields" options to
+  Highlighting processor.
+- #2169455 by drunken monkey: Fixed "undefined index" in
+  search_api_update_7116().
+- #2219563 by drunken monkey: Added __toString() methods for queries and
+  filters.
+- #1888174 by drunken monkey, ipallian: Fixed problems with date facets.
+- #2187487 by drunken monkey: Fixed admin summary of language filter.
+- #2198261 by drunken monkey: Fixed fatal error on view editing.
+- #2168713 by idebr: Fixed highlighting of keys containing slashes.
+- #2150779 by hefox: Fixed "Overridden" detection for index features.
+- #1227702 by drunken monkey: Improved error handling.
+
 Search API 1.11 (12/25/2013):
 -----------------------------
 - #1879196 by drunken monkey: Fixed invalid old indexes causing errors.

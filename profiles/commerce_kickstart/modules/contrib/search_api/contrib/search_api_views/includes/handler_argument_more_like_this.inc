@@ -62,24 +62,30 @@ class SearchApiViewsHandlerArgumentMoreLikeThis extends SearchApiViewsHandlerArg
    * The argument sent may be found at $this->argument.
    */
   public function query($group_by = FALSE) {
-    $server = $this->query->getIndex()->server();
-    if (!$server->supportsFeature('search_api_mlt')) {
-      $class = search_api_get_service_info($server->class);
-      watchdog('search_api_views', 'The search service "@class" does not offer "More like this" functionality.',
+    try {
+      $server = $this->query->getIndex()->server();
+      if (!$server->supportsFeature('search_api_mlt')) {
+        $class = search_api_get_service_info($server->class);
+        watchdog('search_api_views', 'The search service "@class" does not offer "More like this" functionality.',
           array('@class' => $class['name']), WATCHDOG_ERROR);
-      $this->query->abort();
-      return;
-    }
-    $fields = $this->options['fields'] ? $this->options['fields'] : array();
-    if (empty($fields)) {
-      foreach ($this->query->getIndex()->options['fields'] as $key => $field) {
-        $fields[] = $key;
+        $this->query->abort();
+        return;
       }
+      $fields = $this->options['fields'] ? $this->options['fields'] : array();
+      if (empty($fields)) {
+        foreach ($this->query->getIndex()->options['fields'] as $key => $field) {
+          $fields[] = $key;
+        }
+      }
+      $mlt = array(
+        'id' => $this->argument,
+        'fields' => $fields,
+      );
+      $this->query->getSearchApiQuery()->setOption('search_api_mlt', $mlt);
     }
-    $mlt = array(
-      'id' => $this->argument,
-      'fields' => $fields,
-    );
-    $this->query->getSearchApiQuery()->setOption('search_api_mlt', $mlt);
+    catch (SearchApiException $e) {
+      $this->query->abort($e->getMessage());
+    }
   }
+
 }

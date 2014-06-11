@@ -27,14 +27,14 @@ function commerce_exactor_calc_default_rules_configuration() {
       'op' => 'IN',
       'value' => array(
         'checkout_review' => 'checkout_review',
-      )
+      ),
     ))
     ->condition(rules_condition('data_is', array(
       'data:select' => 'commerce-order-unchanged:status',
       'op' => 'IN',
       'value' => array(
         'checkout_review' => 'checkout_review',
-      )
+      ),
     ))->negate()));
 
   $rule_status->condition(rules_and()
@@ -44,14 +44,14 @@ function commerce_exactor_calc_default_rules_configuration() {
       'value' => array(
         'pending' => 'pending',
         'completed' => 'completed',
-      )
+      ),
     ))
     ->condition(rules_condition('data_is', array(
       'data:select' => 'commerce-order-unchanged:state',
       'op' => 'IN',
       'value' => array(
         'checkout' => 'checkout',
-      )
+      ),
     ))->negate()));
 
   $rule->condition($rule_status);

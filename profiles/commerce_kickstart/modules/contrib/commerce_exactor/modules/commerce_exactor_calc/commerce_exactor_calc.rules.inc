@@ -1,8 +1,8 @@
 <?php
 /**
  * @file
- *   commerce_exactor_calc.rules.inc
- * Rules integrations for ExactoCALC.
+ * commerce_exactor_calc.rules.inc
+ *   Rules integrations for ExactoCALC.
  */
 
 /**

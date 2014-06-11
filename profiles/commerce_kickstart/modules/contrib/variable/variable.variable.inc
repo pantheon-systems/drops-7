@@ -376,7 +376,10 @@ function variable_format_multiple($variable, $options = array()) {
  * Validate numeric variable.
  */
 function variable_validate_number($variable) {
-  if (!is_numeric($variable['value'])) {
+  if (empty($variable['required']) && empty($variable['value'])) {
+    return;
+  }
+  elseif (!is_numeric($variable['value'])) {
     return t('The value is not a number.');
   }
 }

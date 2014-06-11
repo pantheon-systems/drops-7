@@ -133,10 +133,46 @@ class amazonAPI {
       'method' => $this->method,
     );
     $response = drupal_http_request($query, $options);
+
+    // Debugging messages and logs.
+    $debug_log = variable_get('cba_debug_log', FALSE);
+    $debug = variable_get('cba_debug', FALSE);
+    $debug_activated = ((boolean) $debug_log || ($debug_log && user_access('access checkout by amazon debug')));
+    if ($debug_activated) {
+      $response_data = new SimpleXMLElement($response->data);
+      $response_type = $response_data->getName();
+      // Build debugging message content.
+      $debug_message = '';
+      $debug_message .= '<br /><strong>' . $response_type . '</strong>:<br />';
+      $debug_message .= '<pre>' . print_r($response, TRUE) . '</pre>';
+    }
+    // Error response.
     if ($response->code <> '200') {
       drupal_set_message(t('An error happened while processing the request'), 'error');
-      watchdog('commerce_cba', 'Error while processing Amazon response: !response', array('!response' => print_r($response, TRUE)), WATCHDOG_ERROR);
+      if ($debug_activated) {
+        $debug_message = t('Error while processing Amazon request.') . $debug_message;
+      }
     }
+    // Successful response.
+    else {
+      if ($debug_activated) {
+        $debug_message = t('Amazon request successfully processed.') . $debug_message;
+        if ($debug == 2) {
+          $debug = FALSE;
+        }
+      }
+    }
+    if (!empty($debug_message)) {
+      // Logs a system message.
+      if ($debug_log) {
+        watchdog('Checkout by Amazon', $debug_message, array(), WATCHDOG_INFO);
+      }
+      // Set a debugging message.
+      if (($debug && user_access('access checkout by amazon debug'))) {
+        drupal_set_message($debug_message);
+      }
+    }
+
     return $response;
   }
 
@@ -195,6 +231,9 @@ class amazonAPI {
       elseif (!empty($order->data['commerce_cba']['billing'])) {
         $delivery_method = 'billing';
       }
+      elseif (!empty($order->data['commerce_cba']['amazon-delivery-address'])) {
+        $delivery_method = 'amazon-delivery-address';
+      }
     }
 
     $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
@@ -218,9 +257,9 @@ class amazonAPI {
         $params[$base . 'MerchantItemId'] = $product_wrapper->sku->value();
         $params[$base . 'SKU'] = $product_wrapper->sku->value();
         $params[$base . 'MerchantId'] = $this->merchant_id;
-        $params[$base . 'Title'] = $product_wrapper->title->value();
-        $params[$base . 'Description'] = !empty($entity->body) ? $wrapper->body->value->value() : '';
-        $params[$base . 'UnitPrice.Amount'] = $unit_amount;
+        $params[$base . 'Title'] = substr($product_wrapper->title->value(), 0, 80);
+        $params[$base . 'Description'] = !empty($entity->body) ? text_summary($wrapper->body->value->value(), $wrapper->body->format->value(), '2000') : '';
+        $params[$base . 'UnitPrice.Amount'] = number_format($unit_amount, 2);
         $params[$base . 'UnitPrice.CurrencyCode'] = $unit_currency_code;
         $params[$base . 'Quantity'] = (int) $line_item_wrapper->quantity->value();
         $params[$base . 'URL'] = isset($url) ? $url : '';
@@ -272,16 +311,19 @@ class amazonAPI {
     }
 
     // Providing taxes and shipping information, even if it's 0.
-    $params['Charges.Tax.Amount'] = commerce_currency_amount_to_decimal($tax_amount, $total_price['currency_code']);
+    $tax_amount_decimal = commerce_currency_amount_to_decimal($tax_amount, $total_price['currency_code']);
+    $params['Charges.Tax.Amount'] = number_format($tax_amount_decimal, 2);
     $params['Charges.Tax.CurrencyCode'] = $total_price['currency_code'];
     $shipping_currency_code = !empty($shipping_currency_code) ? $shipping_currency_code : $total_price['currency_code'];
-    $params['Charges.Shipping.Amount'] = commerce_currency_amount_to_decimal($shipping_amount, $shipping_currency_code);
+    $shipping_amount_decimal = commerce_currency_amount_to_decimal($shipping_amount, $shipping_currency_code);
+    $params['Charges.Shipping.Amount'] = number_format($shipping_amount_decimal, 2);
     $params['Charges.Shipping.CurrencyCode'] = $shipping_currency_code;
 
     if ($discount_amount <> 0) {
       $params['Charges.Promotions.Promotion.1.PromotionId'] = t('Discount');
       $params['Charges.Promotions.Promotion.1.Description'] = t('Discount');
-      $params['Charges.Promotions.Promotion.1.Discount.Amount'] = abs(commerce_currency_amount_to_decimal($discount_amount, $discount_currency_code));
+      $discount_amount_decimal = abs(commerce_currency_amount_to_decimal($discount_amount, $discount_currency_code));
+      $params['Charges.Promotions.Promotion.1.Discount.Amount'] = number_format($discount_amount_decimal, 2);
       $params['Charges.Promotions.Promotion.1.Discount.CurrencyCode'] = $discount_currency_code;
     }
 

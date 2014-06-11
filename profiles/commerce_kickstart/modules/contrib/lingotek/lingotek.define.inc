@@ -19,7 +19,7 @@ function lingotek_define($key, $val) {
  * (2) inserting variable into a "config.php" file in The Lingotek Translation module folder 
  * (3) setting the environment var 'LINGOTEK_CONFIG_PATH' to a file path elsewhere on your system
  */
-$local_env_config_filepath = getenv('LINGOTEK_CONFIG_PATH');
+$local_env_config_filepath = function_exists('getenv') ? getenv('LINGOTEK_CONFIG_PATH') : (array_key_exists('LINGOTEK_CONFIG_PATH', $_SERVER) ? $_SERVER['LINGOTEK_CONFIG_PATH'] : FALSE);
 $local_config_file = $local_env_config_filepath !== FALSE ? $local_env_config_filepath : getcwd() . '/' . drupal_get_path('module', 'lingotek') . '/config.php';
 $use_local_override = file_exists($local_config_file);
 if ($use_local_override) {

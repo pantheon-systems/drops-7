@@ -1,6 +1,7 @@
 <?php
 
 /**
+ * @file
  * A handler to link to the Lingotek Workbench.
  *
  * Definition terms:
@@ -39,10 +40,11 @@ class lingotek_views_handler_workbench_link extends views_handler_field {
     
     if ($entity_type == 'node') {
       $entity = node_load($values->nid);
-    } elseif($entity_type == 'comment') {
+    }
+    elseif ($entity_type == 'comment') {
       $entity = comment_load($values->cid);
     }
-    
+
     if (!user_access('manage projects') && !user_access('translation')) {
       return; //do not show if the user does not have correct permissions
     }

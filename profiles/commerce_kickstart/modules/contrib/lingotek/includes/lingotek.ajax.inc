@@ -22,7 +22,7 @@ function lingotek_page_mark_phases_complete($node) {
   if (!empty($_POST['token']) && drupal_valid_token($_POST['token'])) {
     if (!empty($_POST['targets']) && is_array($_POST['targets'])) {
       $languages = language_list();
-      if ($lingotek_document_id = lingotek_lingonode($node->nid, 'document_id')) {
+      if ($lingotek_document_id = lingotek_keystore('node', $node->nid, 'document_id')) {
         $targets = LingotekDocument::load($lingotek_document_id)->translationTargets();
         $api = LingotekApi::instance();
         foreach ($_POST['targets'] as $target) {

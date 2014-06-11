@@ -17,7 +17,6 @@ REQUIREMENTS
 Dependencies:
   Chaos Tools
   Internationalization Suite
-  Internationalization Views
   Localization update
   Title
   Translation template extractor
@@ -26,6 +25,7 @@ Dependencies:
 
 Modules that we integrate with (optional):
   Entity Translation - version beta1 or greater
+  Internationalization Views
   Workbench Moderation
 
 

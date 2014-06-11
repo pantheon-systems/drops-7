@@ -34,11 +34,36 @@ function commerce_cba_menu() {
 }
 
 /**
+ * Implements hook_permission().
+ */
+function commerce_cba_permission() {
+  $permissions = array(
+    'access checkout by amazon' => array(
+      'title' => t('Checkout by Amazon access'),
+      'description' => t('Set Checkout by Amazon (button) availabilty.'),
+    ),
+    'access checkout by amazon debug' => array(
+      'title' => t('Access the Checkout by Amazon debug log'),
+    ),
+  );
+
+  return $permissions;
+}
+
+/**
  * Implements hook_commerce_checkout_pane_info().
  */
 function commerce_cba_commerce_checkout_pane_info() {
   $checkout_panes = array();
 
+  $checkout_panes['commerce_cba_addresswidget'] = array(
+    'title' => 'Amazon delivery address',
+    'name' => t('Amazon address widget'),
+    'base' => 'commerce_cba_addresswidget_pane',
+    'file' => 'includes/commerce_cba.checkout_pane.inc',
+    'page' => 'checkout',
+    'review' => TRUE,
+  );
   $checkout_panes['commerce_cba_orderdetailswidget'] = array(
     'title' => '',
     'name' => t('Amazon order details widget'),
@@ -117,16 +142,6 @@ function commerce_cba_form_commerce_checkout_pane_settings_submit($form, $form_s
 }
 
 /**
- * Implements hook_form_FORM_ID_alter().
- *
- * When cancelling an order, remove Amazon data.
- * @see commerce_cba_form_commerce_checkout_form_reset_amazon_data()
- */
-function commerce_cba_form_commerce_checkout_form_alter(&$form, &$form_state, $form_id) {
-  $form['buttons']['cancel']['#submit'][] = 'commerce_cba_form_commerce_checkout_form_reset_amazon_data';
-}
-
-/**
  * Implements hook_form_alter().
  *
  * When doing checkout with the normal checkout button, remove Amazon data.
@@ -139,93 +154,103 @@ function commerce_cba_form_alter(&$form, &$form_state, $form_id) {
 
   // Checkout form alter for Amazon checkout.
   if (strpos($form_id, 'commerce_checkout_form_') === 0) {
-    $elements = element_children($form);
     $order = $form_state['order'];
-    // Amazon widget settings.
-    $default_cba_widget_settings = array(
-      'cba_button_size' => 'large',
-      'cba_button_color' => 'orange',
-      'cba_button_background' => 'white',
-      'cba_widget_width' => NULL,
-      'cba_widget_height' => NULL,
-    );
-    $cba_widget_settings = variable_get('cba_widget_settings', $default_cba_widget_settings);
-    $display_mode = isset($order->data['commerce_cba']['express-checkout']) ? 'Read' : 'Edit';
-
-    // Replace customer profiles with addresses by Amazon widgets if the right
-    // flag is on or the Amazon checkout button was used instead of normal checkout.
-    //$addresswidgets = filter_input(INPUT_GET, 'addresswidget', FILTER_SANITIZE_STRING, FILTER_REQUIRE_ARRAY);
-    foreach ($elements as $name) {
-      if (($pane = commerce_checkout_pane_load($name)) && $pane['module'] == 'commerce_customer' && isset($form[$name]['commerce_customer_address'])) {
-        if(commerce_cba_get_purchase_contract_id() && isset($form[$name]['commerce_customer_profile_copy'])) {
-          unset($form[$name]['commerce_customer_profile_copy']);
-        }
-        // Amazon checkout button
-        if(isset($order->data['commerce_cba']) && (isset($order->data['commerce_cba']['inline-checkout']) || isset($order->data['commerce_cba']['express-checkout'])) && commerce_cba_get_purchase_contract_id()) {
-          $form[$name]['commerce_customer_address']['#access'] = FALSE;
-          // Hide Addressbook form.
-          if(isset($form[$name]['addressbook'])) {
-            $form[$name]['addressbook']['#access'] = FALSE;
+    if (isset($order->data['commerce_cba']) && (isset($order->data['commerce_cba']['inline-checkout']) || isset($order->data['commerce_cba']['express-checkout'])) && $contract_id = commerce_cba_get_purchase_contract_id()) {
+      $elements = element_children($form);
+      // Hide customer profiles address field widget.
+      // Amazon address widget it will be used instead.
+      foreach ($elements as $name) {
+        // Only for billing and shipping customer profiles, as they have
+        // correspondence on Amazon with the order delivery and invoice addresses.
+        if (in_array($name, array('customer_profile_shipping', 'customer_profile_billing'))) {
+             if (($pane = commerce_checkout_pane_load($name)) && $pane['module'] == 'commerce_customer' && isset($form[$name]['commerce_customer_address'])) {
+            if(commerce_cba_get_purchase_contract_id() && isset($form[$name]['commerce_customer_profile_copy'])) {
+              unset($form[$name]['commerce_customer_profile_copy']);
+            }
+            $form[$name]['commerce_customer_address']['#access'] = FALSE;
+            // Hide Addressbook form.
+            if(isset($form[$name]['addressbook'])) {
+              $form[$name]['addressbook']['#access'] = FALSE;
+            }
+            $form[$name]['#profile_type'] = $customer_profile_type = str_replace('customer_profile_', '', $name);
+            // Help text for missing address.
+            $form[$name]['cba_help_text'] = array(
+              '#markup' => t('Amazon data will be used to fill the address data.'),
+            );
           }
-          $form[$name]['#profile_type'] = str_replace('customer_profile_', '', $name);
-          $destination = isset($order->data['commerce_cba']['express-checkout']) ? '#default' : $form[$name]['#profile_type'];
-          // For Express checkout we won't have the onAddressSelect
-          // so we need to flag the order for this profile here.
-          if (isset($order->data['commerce_cba']['express-checkout'])) {
-            commerce_cba_set_order($form[$name]['#profile_type'], commerce_cba_get_purchase_contract_id());
+        }
+      }
+      // Define addresses types to be replaced by Amazon addresses data.
+      foreach (commerce_customer_profile_types() as $type => $customer_profile_type) {
+        if (in_array($type, array('shipping', 'billing'))) {
+          $form_state['commerce_cba']['addresses']['commerce_customer_' . $type] = $type;
+        }
+      }
+
+
+      // Checkout Review pane.
+      // Hide customer profiles address field widget.
+      // Amazon address widget it will be used instead.
+      if (!empty($form['checkout_review']) && isset($order->data['commerce_cba'])) {
+        foreach ($form['checkout_review']['review']['#data'] as $name => $data) {
+          if (($pane = commerce_checkout_pane_load($name)) && $pane['module'] == 'commerce_customer') {
+            $customer_profile_type = str_replace('customer_profile_', '', $name);
+            $field_instances = field_info_instances('commerce_customer_profile', $customer_profile_type);
+            // Only if the addressfield is the only one field defined.
+            if (count($field_instances) <= 1) {
+              // Help text for missing address.
+              $cba_help_text = t('Amazon data will be used to fill the address data.');
+              if (!empty($field_instances['commerce_customer_address'])) {
+                $form['checkout_review']['review']['#data'][$name]['data'] = $cba_help_text;
+              } else {
+                $form['checkout_review']['review']['#data'][$name]['data'] .= $cba_help_text;
+              }
+            }
           }
-          $form[$name]['cba_addresswidget'] = commerce_cba_amazonaddresswidget($form[$name]['#profile_type'], $display_mode, $destination, $cba_widget_settings);
         }
       }
-    }
 
-    // Check if there's an address managed by Amazon widgets to save the customer
-    // profile accordingly.
-    $form_state['commerce_cba_checkout_address'] = array();
-    foreach ($elements as $name) {
-      if (!empty($form[$name]['cba_addresswidget'])) {
-        $pane_id = 'customer_profile_' . $form[$name]['#profile_type'];
-        _commerce_cba_form_commerce_checkout_form_checkout($form, $form_state, $name, $form[$name]['#profile_type'], $order, $pane_id);
-      }
-    }
+      // Wallet validation process.
+      if ((isset($order->data['commerce_cba']['inline-checkout']) || isset($order->data['commerce_cba']['express-checkout'])) && commerce_cba_get_purchase_contract_id() && isset($form['commerce_payment'])) {
+        // Amazon widget settings.
+        $default_cba_widget_settings = array(
+          'cba_button_size' => 'large',
+          'cba_button_color' => 'orange',
+          'cba_button_background' => 'white',
+          'cba_widget_width' => NULL,
+          'cba_widget_height' => NULL,
+        );
+        $cba_widget_settings = variable_get('cba_widget_settings', $default_cba_widget_settings);
+        $display_mode = isset($order->data['commerce_cba']['express-checkout']) ? 'Read' : 'Edit';
 
-    // When there's a customer profile pane with an address replaced with an
-    // address widget, save it using the data coming back from Amazon.
-    foreach ($elements as $name) {
-      if (isset($form[$name]['cba_addresswidget']) && $pane = commerce_checkout_pane_load($name)) {
-        // Get the address widget related with this pane.
-        $pane_id = 'customer_profile_' . $form[$name]['#profile_type'];
-        if ($pane['pane_id'] == $pane_id) {
-          _commerce_cba_form_commerce_checkout_form_checkout($form, $form_state, $name, $form[$name]['#profile_type'], $order, $pane_id);
+        // Disable payments form elements.
+        $form['commerce_payment']['payment_method']['#access'] = FALSE;
+        $form['commerce_payment']['payment_method']['#value'] = 'commerce_checkout_by_amazon|commerce_payment_commerce_checkout_by_amazon';
+        // Empty unneeded payment form elements.
+        $form['commerce_payment']['payment_details'] = array();
+        // Check if the address widget is present in the form/page.
+        $addresswidget_present = FALSE;
+        if (!empty($form['commerce_cba_addresswidget'])) {
+          $addresswidget_present = TRUE;
+        }
+        // Add amazon wallet widget to payment pane.
+        $form['commerce_payment']['cba_walletwidget'] = commerce_cba_amazonwalletwidget($display_mode, $cba_widget_settings, $addresswidget_present);
+        $form_state['commerce_cba_checkout_wallet'] = array('wallet');
+
+        // For Express checkout we won't have the onAddressSelect
+        // so we need to flag the order for this profile here.
+        if (isset($order->data['commerce_cba']['express-checkout']) && !isset($order->data['commerce_cba']['wallet'])) {
+          commerce_cba_set_order('wallet', $contract_id);
         }
       }
+    // End for Checkout form alter for Amazon checkout.
     }
-
-    // Add submit and validate callbacks for addresses.
-    if (!empty($form_state['commerce_cba_checkout_address']) || isset($order->data['commerce_cba']['express-checkout'])) {
-      $form['buttons']['continue']['#submit'][] = 'commerce_cba_form_commerce_checkout_add_address';
-      $form['buttons']['continue']['#validate'][] = 'commerce_cba_form_commerce_checkout_validate';
-    }
-    // Wallet validation process.
-    if ((isset($order->data['commerce_cba']['inline-checkout']) || isset($order->data['commerce_cba']['express-checkout'])) && commerce_cba_get_purchase_contract_id() && isset($form['commerce_payment'])) {
-      // Disable payments form elements.
-      $form['commerce_payment']['payment_method']['#access'] = FALSE;
-      $form['commerce_payment']['payment_method']['#value'] = 'commerce_checkout_by_amazon|commerce_payment_commerce_checkout_by_amazon';
-      // Unset unneeded payment form elements.
-      unset($form['commerce_payment']['payment_details']);
-      // Add amazon wallet widget to payment pane.
-      $form['commerce_payment']['cba_walletwidget'] = commerce_cba_amazonwalletwidget($display_mode, $cba_widget_settings);
-      $form_state['commerce_cba_checkout_wallet'] = array('wallet');
-      $form['buttons']['continue']['#validate'][] = 'commerce_cba_form_commerce_checkout_validate';
-      // For Express checkout we won't have the onAddressSelect
-      // so we need to flag the order for this profile here.
-      if (isset($order->data['commerce_cba']['express-checkout']) || !isset($order->data['commerce_cba']['wallet'])) {
-        commerce_cba_set_order('wallet', commerce_cba_get_purchase_contract_id());
-      }
-    }
+    // Remove Checkout by Amazon payment method from Payment method options,
+    // on Payment checkout pane.
     elseif ((!isset($order->data['commerce_cba']['inline-checkout']) && !isset($order->data['commerce_cba']['express-checkout'])) && !commerce_cba_get_purchase_contract_id() && isset($form['commerce_payment'])) {
       $form['commerce_payment']['payment_method']['#options'] = array_diff_key($form['commerce_payment']['payment_method']['#options'], array('commerce_checkout_by_amazon|commerce_payment_commerce_checkout_by_amazon' => 'Checkout by Amazon'));  
     }
+
   }
 
   // Cart forms alter.
@@ -239,6 +264,8 @@ function commerce_cba_form_alter(&$form, &$form_state, $form_id) {
     elseif ($checkout_type == 'express') {
       $checkout_button = commerce_cba_amazonexpresswidget($cba_widget_settings);
     }
+    // Use permissions for the button.
+    $checkout_button['#access'] = user_access('access checkout') && user_access('access checkout by amazon');
     $form['#suffix'] .= drupal_render($checkout_button);
     // Hide regular checkout button.
     $payment_methods = commerce_payment_methods();
@@ -246,6 +273,8 @@ function commerce_cba_form_alter(&$form, &$form_state, $form_id) {
     if (isset($form['actions']['checkout']) && (!empty($cba_hide_regular_checkout) || sizeof($payment_methods) <= 1)) {
       $form['actions']['checkout']['#access'] = FALSE;
     }
+    // Reset the amazon cookie and data for regular checkout.
+    commerce_cba_form_commerce_checkout_form_reset_amazon_data($form, $form_state);
   }
 
 }
@@ -267,28 +296,8 @@ function commerce_cba_module_implements_alter(&$implementations, $hook) {
 /**
  * Validation of panes with address or widgets components.
  */
-function commerce_cba_form_commerce_checkout_validate(&$form, &$form_state) {
+function commerce_cba_form_commerce_checkout_validate($form, &$form_state) {
   $order = commerce_order_load($form_state['order']->order_id);
-
-  // Validate the address selection if needed.
-  if (isset($form_state['commerce_cba_checkout_address'])) {
-    foreach ($form_state['commerce_cba_checkout_address'] as $profile_type) {
-      if (!isset($order->data['commerce_cba'][$profile_type])) {
-        form_set_error($profile_type, t('Please select one of the addresses to continue'));
-        return FALSE;
-      }
-    }
-  }
-
-  // Validate the wallet selection if needed.
-  if (isset($form_state['commerce_cba_checkout_wallet'])) {
-    foreach ($form_state['commerce_cba_checkout_wallet'] as $payment) {
-      if (!isset($order->data['commerce_cba'][$payment])) {
-        form_set_error($payment, t('Please select a payment method to continue'));
-        return FALSE;
-      }
-    }
-  }
 
   // Check the integrity of the call to get the address.
   include_once 'includes/amazonAPI.php';
@@ -299,6 +308,7 @@ function commerce_cba_form_commerce_checkout_validate(&$form, &$form_state) {
     return FALSE;
   }
   else {
+    commerce_order_save($order);
     $form_state['amazonAPI'] = $amazonAPI;
     $form_state['amazonResponse'] = $response;
   }
@@ -308,92 +318,85 @@ function commerce_cba_form_commerce_checkout_validate(&$form, &$form_state) {
 }
 
 /**
- * Helper function to build the customer profile and attach it to the form.
- */
-function _commerce_cba_form_commerce_checkout_form_checkout(&$form, &$form_state, $name, $profile_type, $order, $pane_id) {
-  $wrapper = entity_metadata_wrapper('commerce_order', $order);
-  // If the associated order field has been set...
-  if ($field_name = variable_get('commerce_' . $pane_id . '_field', '')) {
-    if (isset($wrapper->{$field_name})) {
-      $profile = $wrapper->{$field_name}->value();
-    }
-  }
-  else {
-    // Or try the association stored in the order's data array if no field is set.
-    if (!empty($order->data['profiles'][$pane_id])) {
-      $profile = commerce_customer_profile_load($order->data['profiles'][$pane_id]);
-    }
-  }
-
-  // Create a new profile of the specified type if it hasn't already been made.
-  if (empty($profile)) {
-    $profile = commerce_customer_profile_new($profile_type, $order->uid);
-  }
-  // Add the entity context of the current cart order.
-  $profile->entity_context = array(
-    'entity_type' => 'commerce_order',
-    'entity_id' => $order->order_id,
-  );
-  $profile->status = TRUE;
-
-  $form[$name]['customer_profile'] = array(
-    '#type' => 'value',
-    '#value' => $profile,
-  );
-
-  $form_state['commerce_cba_checkout_address'][$name] = $profile_type;
-}
-
-/**
  * Properly save the customer profile address when the address widget is
  * present.
  */
-function commerce_cba_form_commerce_checkout_add_address(&$form, &$form_state) {
-  if (!empty($form_state['commerce_cba_checkout_address'])) {
-    $order = commerce_order_load($form_state['order']->order_id);
+function commerce_cba_form_commerce_checkout_add_address(&$form, &$form_state, $order) {
+  if (!empty($form_state['commerce_cba']['amazon-delivery-address'])) {
+    // Get address data from Amazon request.
+    $address = $form_state['amazonAPI']->getAddress($form_state['amazonResponse'], 'amazon-delivery-address');
 
-    foreach ($form_state['commerce_cba_checkout_address'] as $name => $profile_type) {
-      $pane_id = 'customer_profile_' . $profile_type;
-      $profile = $form[$name]['customer_profile']['#value'];
-      // For Express checkout will use the #default DestinationName.
-      if (isset($order->data['commerce_cba']['express-checkout'])) {
-        $profile_type = '#default';
+    if (!empty($address)) {
+      // Set the adress data.
+      $order->data['commerce_cba']['address_data'] = $address;
+      if (empty($order->data['commerce_cba']['unchanged_address_data'])) {
+        $order->data['commerce_cba']['unchanged_address_data'] = $address;
       }
-      $address = $form_state['amazonAPI']->getAddress($form_state['amazonResponse'], $profile_type);
-
-      // Don't require address form elements.
-      if (isset($form[$name]['commerce_customer_address'])) {
-        unset($form[$name]['commerce_customer_address']['#required']);
+      // Unset the wallet flag if the address is changed.
+      elseif (isset($order->data['commerce_cba']['wallet']) && $order->data['commerce_cba']['address_data'] != $order->data['commerce_cba']['unchanged_address_data']) {
+        unset($order->data['commerce_cba']['wallet']);
       }
+      if (!empty($form_state['commerce_cba']['addresses'])) {
+        $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+        foreach ($form_state['commerce_cba']['addresses'] as $name => $customer_profile_type) {
+          $pane_id = 'customer_profile_' . $customer_profile_type;
+          // For Express checkout will use the #default DestinationName.
+          if (isset($order->data['commerce_cba']['express-checkout'])) {
+            $customer_profile_type = '#default';
+          }
 
-      if (!empty($address)) {
-        $form_state['values'][$name]['commerce_customer_address'][LANGUAGE_NONE][0] = array(
-          'country' => $address['CountryCode'],
-          'name_line' => $address['Name'],
-          'postal_code' => $address['PostalCode'],
-          'locality' => $address['City'],
-          'administrative_area' => isset($address['StateOrProvinceCode']) ? $address['StateOrProvinceCode'] : '',
-          'data' => serialize($address),
-        );
-        commerce_unrequire_form_elements($form[$name]);
-        field_attach_submit('commerce_customer_profile', $profile, $form[$name], $form_state);
-        $profile->commerce_customer_address = $form_state['values'][$name]['commerce_customer_address'];
-        // Save the profile.
-        commerce_customer_profile_save($profile);
-        // Store the profile ID for the related field as specified on the settings form.
-        $wrapper = entity_metadata_wrapper('commerce_order', $order);
+          // Customer profile pane exists and it is enabled.
+          if (isset($form[$pane_id]['commerce_customer_address'])) {
+            // Don't require address form elements.
+            unset($form[$pane_id]['commerce_customer_address']['#required']);
 
-        if ($field_name = variable_get('commerce_' . $pane_id . '_field', '')) {
-          $wrapper->{$field_name} = $profile;
+            $customer_profile = $form[$pane_id]['customer_profile']['#value'];
+            $form_state['values'][$pane_id]['commerce_customer_address'][LANGUAGE_NONE][0] = array(
+              'country' => $address['CountryCode'],
+              'name_line' => $address['Name'],
+              'postal_code' => $address['PostalCode'],
+              'locality' => $address['City'],
+              'administrative_area' => isset($address['StateOrProvinceCode']) ? $address['StateOrProvinceCode'] : '',
+              'data' => serialize($address),
+            );
+            commerce_unrequire_form_elements($form[$pane_id]);
+            field_attach_submit('commerce_customer_profile', $customer_profile, $form[$pane_id], $form_state);
+            $customer_profile->commerce_customer_address = $form_state['values'][$pane_id]['commerce_customer_address'];
+            // Save the customer profile.
+            commerce_customer_profile_save($customer_profile);
+          }
+          // No customer profile pane.
+          else {
+            if (empty($order->{$name})) {
+              $customer_profile = commerce_customer_profile_new($customer_profile_type, $order->uid);
+              // Save the new customer profile.
+              commerce_customer_profile_save($customer_profile);
+            }
+            else {
+              $customer_profile = commerce_customer_profile_load($order_wrapper->{$name}->profile_id->value());
+            }
+            $customer_profile_wrapper = entity_metadata_wrapper('commerce_customer_profile', $customer_profile);
+            $customer_profile_wrapper->commerce_customer_address->name_line = $address['Name'];
+            $customer_profile_wrapper->commerce_customer_address->country = $address['CountryCode'];
+            $customer_profile_wrapper->commerce_customer_address->locality = $address['City'];
+            $customer_profile_wrapper->commerce_customer_address->administrative_area = isset($address['StateOrProvinceCode']) ? $address['StateOrProvinceCode'] : '';
+            $customer_profile_wrapper->commerce_customer_address->postal_code = $address['PostalCode'];
+            $customer_profile->commerce_customer_address[LANGUAGE_NONE][0]['data'] = serialize($address);
+            // Save the customer profile.
+            commerce_customer_profile_save($customer_profile);
+          }
+
+          if ($field_name = variable_get('commerce_' . $pane_id . '_field', '')) {
+            $order_wrapper->{$field_name} = $customer_profile;
+          }
+          else {
+            // Or make the association in the order's data array if no field was found.
+            $order->data['profiles'][$pane_id] = $customer_profile->profile_id;
+          }
         }
-        else {
-          // Or make the association in the order's data array if no field was found.
-          $order->data['profiles'][$pane_id] = $profile->profile_id;
-        }
-        // Set a flag of the type required.
-        $order->data['commerce_cba']['has_address'] = TRUE;
-        commerce_order_save($order);
       }
+      // Save the order with address data.
+      commerce_order_save($order);
     }
   }
 }
@@ -402,13 +405,17 @@ function commerce_cba_form_commerce_checkout_add_address(&$form, &$form_state) {
  * Remove the cookie from Amazon and payment info to enable regular checkout.
  */
 function commerce_cba_form_commerce_checkout_form_reset_amazon_data($form, $form_state) {
+  // Remove cookie.
   if (isset($_COOKIE['apay-pcId'])) {
+    commerce_cba_purge_contract_id_cookie();
+  }
+  // Remove Amazon payment info from order.
+  if (!empty($form_state['order'])) {
     $order = $form_state['order'];
     if (isset($order->data['commerce_cba'])) {
       unset($order->data['commerce_cba']);
       commerce_order_save($order);
     }
-    commerce_cba_purge_contract_id_cookie();
   }
 }
 
@@ -453,6 +460,7 @@ function commerce_cba_commerce_payment_method_info() {
     'description' => t('Integration with Checkout by Amazon payment method'),
     'active' => TRUE,
     'terminal' => FALSE,
+    'checkout' => FALSE,
   );
   return $payment_methods;
 }
@@ -471,11 +479,20 @@ function commerce_cba_checkout_submit_form($payment_method, $pane_values, $check
  * Payment method callback: submit form validation.
  */
 function commerce_checkout_by_amazon_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
-  if (!isset($order->data['commerce_cba']) || !isset($order->data['commerce_cba']['wallet']) || !isset($order->data['commerce_cba']['has_address'])) {
-    drupal_set_message(t('Some information for proceeding with the payment might be missing, please review previous steps in order to complete at least address and wallet information'), 'error');
+  // No selection for WalletWidget validation.
+  if (!isset($order->data['commerce_cba']) || !isset($order->data['commerce_cba']['wallet'])) {
+    form_set_error('commerce_payment', t('Please select a payment method to continue'));
+    drupal_set_message(t('Some information for proceeding with the payment might be missing, please review previous steps in order to complete at least address and wallet information.'), 'error');
     return FALSE;
   }
 
+  // There should be no more validation error before purchasing with Amazon.
+  $form_errors = form_get_errors();
+  if (!empty($form_errors)) {
+    return FALSE;
+  }
+
+  // Amazon API calls for completing the purchase.
   include_once 'includes/amazonAPI.php';
   $amazonAPI = new amazonAPI();
 
@@ -646,6 +663,49 @@ function commerce_cba_load_order_by_amazon_id($amazon_order_id = '') {
 }
 
 /**
+ * Helper function Amazon Address widget function.
+ *
+ * @param object $order
+ *   Order object from the checkout pane.
+ * @param boolean $review_pane
+ *   Boolean value to indicate if the pane is the review one or not.
+ * @param string $customer_profile_type
+ *   Customer profile type to be used as Amazon address destination.
+ * @return array
+ *   Amazon address widget pane form to be rendered.
+ */
+function commerce_cba_amazonaddresswidget_pane_form($order, $review_pane = FALSE, $customer_profile_type = 'amazon-delivery-address') {
+  $pane_form = array();
+  if (isset($order->data['commerce_cba'])) {
+    // Amazon widget settings.
+    $default_cba_widget_settings = array(
+      'cba_button_size' => 'large',
+      'cba_button_color' => 'orange',
+      'cba_button_background' => 'white',
+      'cba_widget_width' => NULL,
+      'cba_widget_height' => NULL,
+    );
+    $cba_widget_settings = variable_get('cba_widget_settings', $default_cba_widget_settings);
+    if (isset($order->data['commerce_cba']['express-checkout'])) {
+      $destination = '#default';
+      $display_mode = 'Read';
+      commerce_cba_set_order($customer_profile_type, commerce_cba_get_purchase_contract_id());
+    }
+    else {
+      $destination = 'amazon-delivery-address';
+      if ($review_pane) {
+        $display_mode = 'Read';
+      }
+      else {
+        $display_mode = 'Edit';
+      }
+    }
+    $pane_form['cba_addresswidget'] = commerce_cba_amazonaddresswidget($customer_profile_type, $cba_widget_settings, $display_mode, $destination);
+  }
+  return $pane_form;
+}
+
+/**
  * Amazon Inline Checkout widget function.
  *
  * @param string $button_type
@@ -657,7 +717,7 @@ function commerce_cba_load_order_by_amazon_id($amazon_order_id = '') {
  * @return array
  *   Amazon Inline checkout widget to be rendered.
  */
- function commerce_cba_amazoninlinewidget($button_type = 'checkout', $settings, $checkout_pane = NULL) {
+function commerce_cba_amazoninlinewidget($button_type = 'checkout', $settings, $checkout_pane = NULL) {
   // There's no point in displaying the button if amazon js was not included.
   if ($js = commerce_cba_javascript_file()) {
     $html_id = drupal_html_id('AmazonInlineWidget');
@@ -712,6 +772,7 @@ function commerce_cba_load_order_by_amazon_id($amazon_order_id = '') {
  *   Amazon Expresss checkout (button) widget to be rendered.
  */
 function commerce_cba_amazonexpresswidget($settings) {
+  $content = array();
   // There's no point in displaying the button if amazon js was not included.
   if ($js = commerce_cba_javascript_file()) {
     $button_type = 'express-checkout';
@@ -745,24 +806,25 @@ function commerce_cba_amazonexpresswidget($settings) {
     $content[$button_type]['#attributes'] = array('id' => $html_id);
     // Place the button aligned to the right if it's checkout.
     $content[$button_type]['#attributes']['class'] = 'checkout-by-amazon-pay';
-    return $content;
   }
+  return $content;
 }
 
 /**
  * Amazon Address widget function.
  *
- * @param string $profile_type
+ * @param string $customer_profile_type
  *   Customer profile type to be used as Amazon address destination.
  * @param string $display_mode
  *   View mode of Amazon address widget, Read or Edit.
  * @return array
  *   Amazon address widget to be rendered.
  */
-function commerce_cba_amazonaddresswidget($profile_type = 'billing', $display_mode = 'Edit', $destination = '#default', $settings) {
+function commerce_cba_amazonaddresswidget($customer_profile_type = 'billing', $settings, $display_mode = 'Edit', $destination = '#default') {
+  $content = array();
   if ($purchase_contract_id = commerce_cba_get_purchase_contract_id()) {
     $html_id = drupal_html_id('AmazonAddressWidget');
-    $content[$profile_type]['#attached']['library'][] = array('commerce_cba', 'amazon_widgets');
+    $content[$customer_profile_type]['#attached']['library'][] = array('commerce_cba', 'amazon_widgets');
 
     $callbacks = array('callbacks' => array('onAddressSelect' => 'commerce_cba_add_widget_info'));
     // Width and height settings.
@@ -782,13 +844,13 @@ function commerce_cba_amazonaddresswidget($profile_type = 'billing', $display_mo
       ),
     );
 
-    $content[$profile_type]['#attached']['js'][] = array(
+    $content[$customer_profile_type]['#attached']['js'][] = array(
       'data' => $data,
       'type' => 'setting',
     );
 
-    $content[$profile_type]['#type'] = 'container';
-    $content[$profile_type]['#attributes'] = array('id' => $html_id);
+    $content[$customer_profile_type]['#type'] = 'container';
+    $content[$customer_profile_type]['#attributes'] = array('id' => $html_id);
   }
   return $content;
 }
@@ -796,20 +858,22 @@ function commerce_cba_amazonaddresswidget($profile_type = 'billing', $display_mo
 /**
  * Amazon Wallet widget function.
  *
- * @param string $profile_type
+ * @param string $customer_profile_type
  *   Customer profile type to be used as Amazon address destination.
  * @param string $display_mode
  *   Display mode of Amazon wallet widget, Read or Edit.
  * @return array
  *   Amazon wallet widget to be rendered.
  */
-function commerce_cba_amazonwalletwidget($display_mode = 'Edit', $settings) {
+function commerce_cba_amazonwalletwidget($display_mode = 'Edit', $settings, $addresswidget_present = FALSE) {
+  $content = array();
   // There's no point in displaying the button if amazon js was not included.
   if (($js = commerce_cba_javascript_file()) && ($purchase_contract_id = commerce_cba_get_purchase_contract_id())) {
     $html_id = drupal_html_id('AmazonWalletWidget');
     $content['walletwidget']['#attached']['library'] = array(array('commerce_cba', 'amazon_widgets'));
 
     $callbacks = array('callbacks' => array('onPaymentSelect' => 'commerce_cba_add_widget_info'));
+
     // Width and height settings.
     $dimensions = array('size' => array('width' => $settings['cba_widget_width'], 'height' => $settings['cba_widget_height']));
 
@@ -833,6 +897,15 @@ function commerce_cba_amazonwalletwidget($display_mode = 'Edit', $settings) {
 
     $content['walletwidget']['#type'] = 'container';
     $content['walletwidget']['#attributes'] = array('id' => $html_id);
+
+    // The address widget (pane) is present on the page/form.
+    if ($addresswidget_present) {
+      $content['amazonwalletwidget-message'] = array(
+        '#type' => 'item',
+        '#markup' => t('Please select one of the addresses from Amazon Address Book.'),
+        '#id' => 'amazonwalletwidget-message',
+      );
+    }
   }
   return $content;
 }
@@ -875,6 +948,5 @@ function commerce_cba_amazonwalletwidget($display_mode = 'Edit', $settings) {
       $content['orderdetailswidget'][$html_id]['#attributes'] = array('id' => $html_id);
     }
   }
-
   return $content;
 }

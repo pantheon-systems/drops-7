@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- *   commerce_yotpo.admin.inc
+ * commerce_yotpo.admin.inc
  *   Administrtive forms for Commerce Yotpo module
  */
 
@@ -37,7 +37,7 @@ function commerce_yotpo_settings_form($form_state) {
     '#required' => TRUE,
   );
 
-    $node_fields = field_info_instances('node');
+  $node_fields = field_info_instances('node');
   $product_field_options = array();
   foreach ($node_fields as $field_instances) {
     foreach ($field_instances as $field) {
@@ -93,7 +93,7 @@ function commerce_yotpo_settings_form($form_state) {
 
     if (count($result > 0)) {
       $form['actions']['sync_orders'] = array(
-      	'#type' => 'submit',
+        '#type' => 'submit',
         '#submit' => array('commerce_yotpo_settings_form_send_orders'),
         '#value' => t('Send historic orders'),
       );
@@ -105,9 +105,11 @@ function commerce_yotpo_settings_form($form_state) {
   return $form;
 }
 
+/**
+ * Submit callback.
+ */
 function commerce_yotpo_settings_form_token($form, &$form_state) {
-
-  if($yotpo = commerce_yotpo_new()) {
+  if ($yotpo = commerce_yotpo_new()) {
     // Retrieving the utoken - will be valid for 24 hours.
     $credentials = $yotpo->get_oauth_token();
     if (isset($credentials->access_token) && $utoken = $credentials->access_token) {
@@ -121,6 +123,9 @@ function commerce_yotpo_settings_form_token($form, &$form_state) {
   }
 }
 
+/**
+ * Send Orders callback.
+ */
 function commerce_yotpo_settings_form_send_orders($form, &$form_state) {
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'commerce_order')
@@ -143,7 +148,7 @@ function commerce_yotpo_settings_form_send_orders($form, &$form_state) {
 }
 
 /**
- * Register form
+ * Register form.
  */
 function commerce_yotpo_register_form($form_state) {
 
@@ -197,11 +202,10 @@ function commerce_yotpo_register_form($form_state) {
       drupal_set_message(t('Your account is already configured. You can check your account settings <a href="@already_registered">on the settings page</a>.',
         array('@already_registered' => url('admin/commerce/config/yotpo/settings'))));
     }
-
   }
 
+  // If no library.
   else {
-
     drupal_set_message(t('Yotpo PHP library is required.'), 'error');
 
     $form['help'] = array(

@@ -144,11 +144,26 @@ input.form-radio + label::before {
   content: "";
   cursor: pointer;
   position: absolute;
-  top: 2px;
-  left: 0; /* LTR */
-  height: 20px;
-  width: 20px;
-  background: transparent url("../images/toggles.png") no-repeat 0 0;
+  top: 4px;
+  left: 2px; /* LTR */
+  height: 15px;
+  width: 15px;
+  border: 1px solid #a1a1a1;
+  border-radius: 3px;
+  @include gradient-vertical(#ffffff,#eaeaea);
+}
+#foo:checked,
+input.form-checkbox:focus + label::before,
+input.form-radio:focus + label::before {
+  outline: 0;
+  box-shadow: 0 0 3px #36a2f6;
+}
+// Make the radios more round.
+#foo:checked,
+input.form-radio + label::before {
+  height: 14px;
+  width: 14px;
+  border-radius: 14px;
 }
 #foo:checked,
 .form-disabled input.form-checkbox + label::before {
@@ -158,16 +173,12 @@ input.form-radio + label::before {
 body.in-maintenance input.form-radio + label::before {
   top: 4px;
 }
-input.form-radio + label::before {
-  background-position: 0 -40px;
-}
 #foo:checked,
-
 input.form-checkbox:checked + label::before {
-  background-position: 0 -20px;
+  @include gradient-image(url("../images/check.png"), #ffffff, #eaeaea);
 }
 input.form-radio:checked + label::before {
-  background-position: 0 -60px;
+  @include gradient-image(url("../images/radio.png"), #ffffff, #eaeaea);
 }
 select.form-select {
   -webkit-appearance: none;
@@ -188,6 +199,17 @@ select.form-select {
     color: #000;
   }
 }
+form table {
+  input.form-checkbox,
+  input.form-radio {
+    opacity: 1;
+    height: auto;
+    width: auto;
+  }
+  .form-disabled input.form-checkbox {
+    opacity: .4;
+  }
+}
 /* Form Fixes for Webkit Browsers. */
 @media screen and (-webkit-min-device-pixel-ratio:0) {
   select.form-select {
@@ -204,21 +226,32 @@ select.form-select {
     input.form-checkbox,
     input.form-radio {
       -webkit-appearance: none;
+      display: inline-block;
       appearance: none;
-      border: 0;
       opacity: 1;
-      height: 20px;
-      width: 20px;
-      background: transparent url("../images/toggles.png") no-repeat 0 0;
+      cursor: pointer;
+      top: 4px;
+      left: 2px; /* LTR */
+      height: 17px;
+      width: 17px;
+      border: 1px solid #a1a1a1;
+      border-radius: 3px;
+      @include gradient-vertical(#ffffff,#eaeaea);
+      &:focus {
+        outline: 0;
+        box-shadow: 0 0 3px #36a2f6;
+      }
     }
     input.form-checkbox:checked {
-      background-position: 0 -20px;
+      @include gradient-image(url("../images/check.png"),#ffffff,#eaeaea);
     }
     input.form-radio {
-      background-position: 0 -40px;
+      height: 16px;
+      width: 16px;
+      border-radius: 16px;
     }
     input.form-radio:checked {
-      background-position: 0 -60px;
+      @include gradient-image(url("../images/radio.png"),#ffffff,#eaeaea);
     }
     .form-disabled input.form-checkbox {
       opacity: .4;
@@ -227,24 +260,9 @@ select.form-select {
 }
 /* Form Fix for Firefox */
 @-moz-document url-prefix() {
-  form table {
-    input.form-checkbox,
-    input.form-radio {
-      opacity: 1;
-      height: auto;
-      width: auto;
-    }
-    .fieldset-wrapper input.form-radio,
-    .fieldset-wrapper input.form-checkbox {
-      opacity: 0;
-    }
-  }
-}
-/* Form Fix for Opera */
-noindex:-o-prefocus, form table {
-  input.form-checkbox,
-  input.form-radio {
-    opacity: 1;
+  .fieldset-wrapper input.form-radio,
+  .fieldset-wrapper input.form-checkbox {
+    opacity: 0;
   }
 }
 .exposed-filters .form-item label {
@@ -669,5 +687,10 @@ td.checkbox input.form-checkbox {
   opacity: 1;
   height: 20px;
   width: 20px;
-  background: transparent url("../images/toggles.png") no-repeat 0 0;
+}
+
+#module-filter-squeeze td.checkbox input.form-checkbox {
+  height: 17px;
+  width: 17px;
+  border: 1px solid #a1a1a1;
 }

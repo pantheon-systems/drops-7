@@ -52,6 +52,9 @@ function _search_api_rules_access() {
  * Rules action for indexing an item.
  */
 function _search_api_rules_action_index(EntityDrupalWrapper $wrapper, SearchApiIndex $index = NULL, $index_immediately = TRUE) {
+  // If we do not have an index, we need to guess the item type to use.
+  // @todo Since this can only be used with entities anyways, we can just loop
+  //   over the item type information and use all types with that entity type.
   $type = $wrapper->type();
   $item_ids = array($wrapper->getIdentifier());
 
@@ -61,6 +64,7 @@ function _search_api_rules_action_index(EntityDrupalWrapper $wrapper, SearchApiI
   }
 
   if ($index) {
+    $type = $index->item_type;
     $indexes = array($index);
   }
   else {

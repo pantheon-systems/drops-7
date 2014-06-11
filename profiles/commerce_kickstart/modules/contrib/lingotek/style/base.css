@@ -19,16 +19,6 @@
     color: #00348D;
 }
 
-/*#lingotek-navbar-tab {
-  margin-top: 8px;
-  color: black;
-  float: right;
-}
-
-#lingotek-navbar-tab .ddTitle {
-  height: 23px;
-}*/
-
 div.form-item-create-lingotek-document-workbench-moderation, div.form-item-sync-method-workbench-moderation {
   margin-left: 50px;
 }
@@ -100,7 +90,7 @@ input.lingotek-content-settings-table.form-checkbox {
   text-decoration: none;
 }
 
-#grid-result-summary {
+.grid-result-summary {
   color: #666;
 }
 
@@ -128,36 +118,72 @@ input.lingotek-content-settings-table.form-checkbox {
     -moz-columns:100px 2;
 }
 
-.language-icon {
+a.language-icon {
   background-color:#80a49e;
   border-radius: 3px;
   margin-right: 3px;
-  padding: 2px;
-  padding-left: 5px;
-  padding-right: 5px;
+  padding: 1px;
+  padding-left: 4px;
+  padding-right: 4px;
   color: #fff !important;
   white-space: nowrap;
+  border: 1px solid #fff;
 }
 
 .language-icon.target-pending {
   background-color: #CE2029;
+  border: 1px solid #CE2029;
 }
 
 .language-icon.target-current {
-  background-color:#48C;
+  background-color: rgba(68,135,204,0.9);
+  border: 1px solid rgba(68,135,204,1);
 }
 
 .language-icon.target-ready {
-  background-color:#59ad1a;
+  background-color: #59ad1a;
+  border: 1px solid #59ad1a;
 }
 
 .language-icon.target-edited {
   background-color:#999;
+  border: 1px solid #999;
+}
+
+.language-icon.target-untracked {
+  color: #aaa !important;
+  background-color:inherit;
+  border: 1px #ccc solid;
+}
+
+.language-icon.target-pending.target-disabled {
+  background-color: inherit;
+  border: 1px solid rgba(206,32,41,0.5);
+  color: #aaa !important;
+}
+
+.language-icon.target-ready.target-disabled {
+  background-color: inherit;
+  border: 1px solid rgba(89,173,26,0.8);
+  color: #aaa !important;
+}
+
+.language-icon.target-current.target-disabled {
+  background-color: inherit;
+  border: 1px solid rgba(68,135,204,0.8);
+  color: #aaa !important;
 }
 
 .ltk-complete-check {
     color: green;
     font-size: 150%;
+}
+
+.ltk-upload {
+    color: #444;
+}
+.ltk-upload:hover {
+    color: #000;
 }
 
 .ltk-download {
@@ -176,6 +202,17 @@ input.lingotek-content-settings-table.form-checkbox {
 
 .ltk-muted {
     color: #666;
+}
+
+.ltk-disabled-icon {
+  color: #ddd;
+}
+
+.ltk-disabled-text {
+  color: #666;
+}
+.ltk-enabled-text {
+  color: green;
 }
 
 .no-localized-title, .no-localized-title a {
@@ -197,24 +234,20 @@ a.ltk-action:hover {
     color: #00348D;
 }
 
-#edit-grid-container i.lingotek-disabled {
-  color: #AAA;
-}
-
 .ltk-upload-button {
-  color: #0074BD;
+  color: #333;
   cursor: pointer;
 }
 
 .ltk-upload-button:hover {
-  color: #00348D;
+  color: #000;
 }
 
 .node-configuration {
   color: #48C;
 }
 
-#edit-settings-link, #reset-translations-link, #change-workflow-link {
+.ltk-hidden-modal-trigger, #edit-settings-link, #change-workflow-link {
   display: none;
 }
 

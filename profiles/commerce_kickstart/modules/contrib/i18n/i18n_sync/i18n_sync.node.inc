@@ -39,6 +39,7 @@ function i18n_sync_node_translation($node, $translations, $field_names, $op) {
       continue;
     }
     // Load full node, we need all data here.
+    entity_get_controller('node')->resetCache(array($translation->nid));
     $translation = node_load($translation->nid);
     $i18n_options = i18n_sync_node_options($node->type);
     // Invoke callback for each field, the default is just copy over

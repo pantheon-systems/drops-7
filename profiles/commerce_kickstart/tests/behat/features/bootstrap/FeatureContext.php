@@ -229,15 +229,4 @@ class FeatureContext extends DrupalContext {
   public function iWaitForSeconds($arg1) {
     sleep($arg1);
   }
-//
-// Place your definition and hook methods here:
-//
-//    /**
-//     * @Given /^I have done something with "([^"]*)"$/
-//     */
-//    public function iHaveDoneSomethingWith($argument)
-//    {
-//        doSomethingWith($argument);
-//    }
-//
 }

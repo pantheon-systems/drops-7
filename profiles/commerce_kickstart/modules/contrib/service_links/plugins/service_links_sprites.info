@@ -6,9 +6,10 @@ dependencies[] = service_links
 
 configure = admin/config/services/service-links
 
-; Information added by drupal.org packaging script on 2013-06-10
-version = "7.x-2.2"
+
+; Information added by drush on 2014-06-11
+version = "7.x-2.3-beta1+3-dev"
 core = "7.x"
 project = "service_links"
-datestamp = "1370849155"
+datestamp = "1402495802"
 

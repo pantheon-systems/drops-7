@@ -120,6 +120,7 @@ class LingotekSession {
       'data' => $query,
       'timeout' => $timeout,
         );
+
     $response = drupal_http_request($api_url, $params);
     
     $message_params = array(
@@ -174,7 +175,7 @@ class LingotekSession {
    * @return
    *  Location of the file, or FALSE on error.
    */
-  public function download($api, $params) {
+  public function downloadTriggered($api, $params) {
     $result = LingotekApi::instance()->request($api, $params);
     $result_decoded = json_decode($result);// non-zipped will be decoded
 
@@ -235,32 +236,15 @@ class LingotekSession {
   /*
    * login to the lingotek platform
    */
-  private function login($version = "3.11", $xml = FALSE) {
+  private function login() {
 
     if ($this->key == "") {
       $params = array(
-        'userLogin' => $this->login_id,
+        'loginId' => $this->login_id,
         'password' => $this->password,
-        'version' => $version,
         'community' => $this->community,
       );
       $login = 'login';
-    }
-    else {
-      $arr = array(
-        'community' => $this->community,
-        'login_id' => $this->login_id,
-        'time' => time(),
-      );
-      $json_str = json_encode($arr);
-
-      $params = array(
-        "auth_json" => $json_str,
-        "hmac" => LingotekSession::create_mac($json_str),
-        "version" => $version,
-        "returnXML" => $xml,
-      );
-      $login = 'keyLogin';
     }
 
     $error = 'unknown error';

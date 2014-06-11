@@ -30,9 +30,17 @@ function theme_colorbox_image_formatter($variables) {
     'style_name' => $settings['colorbox_node_style'],
   );
 
+  if ($variables['delta'] == 0 && !empty($settings['colorbox_node_style_first'])) {
+    $image['style_name'] = $settings['colorbox_node_style_first'];
+  }
+
   if (isset($item['width']) && isset($item['height'])) {
     $image['width'] = $item['width'];
     $image['height'] = $item['height'];
+  }
+
+  if (isset($item['attributes'])) {
+    $image['attributes'] = $item['attributes'];
   }
 
   $entity_title = entity_label($entity_type, $entity);
@@ -153,10 +161,11 @@ function theme_colorbox_imagefield($variables) {
  * Preprocess variables for the colorbox-insert-image.tpl.php file.
  */
 function template_preprocess_colorbox_insert_image(&$variables) {
-  $variables['file'] = file_load($variables['item']['fid']);
-  $variables['style_name'] = $variables['item']['style_name'];
-  $variables['width'] = $variables['item']['width'];
-  $variables['height'] = $variables['item']['height'];
+  $item = $variables['item'];
+  $variables['file'] = file_load($item['fid']);
+  $variables['style_name'] = $item['style_name'];
+  $variables['width'] = isset($item['width']) ? $item['width'] : NULL;
+  $variables['height'] = isset($item['height']) ? $item['height'] : NULL;
 
   // Determine dimensions of the image after the image style transformations.
   image_style_transform_dimensions($variables['style_name'], $variables);

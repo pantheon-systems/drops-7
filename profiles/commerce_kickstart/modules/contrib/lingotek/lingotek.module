@@ -4,14 +4,14 @@
  * @file
  * Module core functionality.
  */
-include_once('lingotek.define.inc');
-include_once('lingotek.session.inc');
-include_once('lingotek.reference.inc');
-include_once('lingotek.util.inc');
-include_once('lingotek.api.inc');
-include_once('lingotek.sync.inc');
-include_once('lingotek.batch.inc');
-include_once('lingotek.bulk_grid.inc');
+include_once 'lingotek.define.inc';
+include_once 'lingotek.session.inc';
+include_once 'lingotek.reference.inc';
+include_once 'lingotek.util.inc';
+include_once 'lingotek.api.inc';
+include_once 'lingotek.sync.inc';
+include_once 'lingotek.batch.inc';
+include_once 'lingotek.bulk_grid.inc';
 
 /**
  * Auto-loader function used for upgrades
@@ -66,13 +66,43 @@ function lingotek_menu() {
     'weight' => 1,
     'type' => MENU_CALLBACK
   );
-  
+
   $items['comment/%/lingotekworkbench/%'] = array(
     'title' => 'Workbench',
     'access arguments' => array('translation'),
     'file' => 'lingotek.page.inc',
     'page arguments' => array(0, 1, 3),
     'page callback' => 'lingotek_workbench_redirect',
+    'weight' => 1,
+    'type' => MENU_CALLBACK
+  );
+
+  $items['lingotek/workbench/%/%/%'] = array(// lingotek/workbench/entity_type/entity_id/lingotek_locale
+    'title' => 'Workbench',
+    'access arguments' => array('translation'),
+    'file' => 'lingotek.page.inc',
+    'page arguments' => array(2, 3, 4), // entity_type, entity_id, lingotek_locale
+    'page callback' => 'lingotek_workbench_redirect',
+    'weight' => 1,
+    'type' => MENU_CALLBACK
+  );
+
+  $items['lingotek/view/%/%/%'] = array(// lingotek/view/entity_type/entity_id/lingotek_locale
+    'title' => '',
+    'file' => 'lingotek.page.inc',
+    'access arguments' => array('access content'),
+    'page arguments' => array(2, 3, 4),
+    'page callback' => 'lingotek_entity_view_redirect',
+    'weight' => 1,
+    'type' => MENU_CALLBACK
+  );
+
+  $items['lingotek/utility/%'] = array(
+    'title' => '',
+    'file' => 'lingotek.util.inc',
+    'access arguments' => array('administer lingotek'),
+    'page arguments' => array(2),
+    'page callback' => 'lingotek_utility_router',
     'weight' => 1,
     'type' => MENU_CALLBACK
   );
@@ -130,14 +160,14 @@ function lingotek_menu() {
     'page callback' => 'lingotek_admin_profile_manage',
     'page arguments' => array(5),
   );
-  
+
   // Tab: Bulk Management
   $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/sync'] = array(
-    'title' => 'Sync',
+    'title' => 'Config',
     'type' => MENU_LOCAL_TASK,
     'weight' => 4,
     'access arguments' => array('administer lingotek'),
-    'description' => 'Bulk management of content translations',
+    'description' => 'Bulk management of config translations',
     'file' => 'lingotek.sync.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('lingotek_form_bulk_sync')
@@ -155,7 +185,7 @@ function lingotek_menu() {
   );
   $items[LINGOTEK_MENU_MAIN_BASE_URL . '/notifications'] = $items[LINGOTEK_NOTIFY_URL]; // allow early auto-provision community callback urls to wor
   // Dashboard:  Ajax Command Processor
-  $items['lingotek/target'] = array(
+  $items['lingotek/language'] = array(
     'type' => MENU_CALLBACK,
     'access arguments' => array('administer lingotek'),
     'description' => 'Lingotek Command Router',
@@ -197,19 +227,27 @@ function lingotek_menu() {
     'access arguments' => array('administer lingotek'),
     'description' => 'Bulk grid of content translations',
     'file' => 'lingotek.bulk_grid.inc',
-    'page callback' => 'drupal_get_form',
+    'page callback' => 'lingotek_manage_callback',
     'page arguments' => array('lingotek_bulk_grid_form')
   );
   $items[LINGOTEK_MENU_LANG_BASE_URL . '/manage'] = $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage'];
 
-  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/list'] = array(
-    'title' => 'Content',
-    'description' => 'Bulk grid of content translations',
-    'type' => MENU_DEFAULT_LOCAL_TASK,
-    'weight' => -8,
-  );
-  $items[LINGOTEK_MENU_LANG_BASE_URL . '/manage/list'] = $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/list'];
-  
+  $entity_types = lingotek_managed_entity_types();
+  foreach ($entity_types as $machine_name => $entity_type) {
+    $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/' . $machine_name] = array(
+      'title' => $entity_type['label'],
+      'description' => 'Bulk grid of content translations',
+      'type' => $machine_name == 'node' ? MENU_LOCAL_TASK : MENU_LOCAL_TASK,
+      'weight' => $machine_name == 'node' ? -9 : -8,
+      'access arguments' => array('administer lingotek'),
+      'description' => 'Bulk grid of content translations',
+      'file' => 'lingotek.bulk_grid.inc',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('lingotek_bulk_grid_form')
+    );
+    $items[LINGOTEK_MENU_LANG_BASE_URL . '/manage/' . $machine_name] = $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/' . $machine_name];
+  }
+
   $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/customize'] = array(
     'access arguments' => array('administer lingotek'),
     'file' => 'lingotek.bulk_grid.inc',
@@ -225,80 +263,81 @@ function lingotek_menu() {
     'page arguments' => array(),
     'type' => MENU_CALLBACK,
   );
-  
-  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/filters/clear'] = array(
+
+  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/filters/clear/%'] = array(
     'access arguments' => array('administer lingotek'),
     'file' => 'lingotek.bulk_grid.inc',
     'page callback' => 'lingotek_grid_clear_filters_page',
-    'page arguments' => array(),
+    'page arguments' => array(6),
     'type' => MENU_CALLBACK,
   );
-  
-  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/update'] = array(
+
+  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/update/%'] = array(
     'access arguments' => array('administer lingotek'),
     'file' => 'lingotek.bulk_grid.inc',
     'page callback' => 'lingotek_grid_update',
-    'page arguments' => array(),
+    'page arguments' => array(5),
     'type' => MENU_CALLBACK,
   );
-  
-    $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/download-ready'] = array(
+
+  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/download-ready/%'] = array(
     'access arguments' => array('administer lingotek'),
     'file' => 'lingotek.bulk_grid.inc',
     'page callback' => 'lingotek_grid_download_ready',
-    'page arguments' => array(),
+    'page arguments' => array(5),
     'type' => MENU_CALLBACK,
   );
   
-  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/edit/%'] = array(
+  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/upload-edited/%'] = array(
+    'access arguments' => array('administer lingotek'),
+    'file' => 'lingotek.bulk_grid.inc',
+    'page callback' => 'lingotek_grid_upload_edited',
+    'page arguments' => array(5),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/edit/%/%'] = array(
     'access arguments' => array('administer lingotek'),
     'file' => 'lingotek.bulk_grid.inc',
     'page callback' => 'lingotek_edit_nodes',
-    'page arguments' => array(5),
+    'page arguments' => array(5, 6),
     'type' => MENU_CALLBACK,
   );
 
-  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/change-workflow/%'] = array(
+  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/change-workflow/%/%'] = array(
     'access arguments' => array('administer lingotek'),
     'file' => 'lingotek.bulk_grid.inc',
     'page callback' => 'lingotek_change_workflow',
-    'page arguments' => array(5),
+    'page arguments' => array(5, 6),
+    //'page callback' => 'lingotek_popup',
+    //'page arguments' => array('get_change_workflow', 5, 6),
     'type' => MENU_CALLBACK,
   );
 
-  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/reset/%'] = array(
+  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/delete/%/%'] = array(
     'access arguments' => array('administer lingotek'),
-    'file' => 'lingotek.page.inc',
-    'page callback' => 'lingotek_disassociate_nodes',
-    'page arguments' => array(5),
+    'file' => 'lingotek.bulk_grid.inc',
+    'page callback' => 'lingotek_popup',
+    'page arguments' => array('entity_delete', 5, 6),
     'type' => MENU_CALLBACK,
   );
 
-  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/delete/%'] = array(
+  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/manage/reset/%/%'] = array(
     'access arguments' => array('administer lingotek'),
-    'file' => 'lingotek.page.inc',
-    'page callback' => 'lingotek_disassociate_nodes',
-    'page arguments' => array(5),
+    'file' => 'lingotek.bulk_grid.inc',
+    'page callback' => 'lingotek_popup',
+    'page arguments' => array('entity_disassociate', 5, 6),
     'type' => MENU_CALLBACK,
   );
-  
+
   // Batch Process Pages ----------------------------------------
-  // Sync Progress Report 
+  // Sync Progress Report
   $items['lingotek/sync/report'] = array(
     'type' => MENU_CALLBACK,
     'access arguments' => array('administer lingotek'),
     'description' => 'Lingotek Sync Endpoint',
     'file' => 'lingotek.sync.inc',
-    'page callback' => 'lingotek_sync_endpoint', //'lingotek_sync'
-  );
-
-  $items[LINGOTEK_MENU_LANG_BASE_URL . '/identify-content'] = array(
-    'title' => 'Test',
-    'type' => MENU_CALLBACK,
-    'weight' => 30,
-    'file' => 'lib/Drupal/batch/lingotek.batch.inc',
-    'page callback' => 'lingotek_batch_identify_content',
-    'access arguments' => array('administer lingotek')
+    'page callback' => 'lingotek_sync_endpoint',
   );
 
   // Easy Install Screens ----------------------------------------
@@ -351,17 +390,6 @@ function lingotek_menu() {
     'file' => 'lingotek.setup.inc',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('lingotek_project_vault_select_form'),
-    'type' => MENU_CALLBACK,
-    'access arguments' => array('administer lingotek')
-  );
-
-  // Standard Screens
-  $items['admin/config/lingotek/language-settings'] = array(
-    'title' => 'Choose Your Languages',
-    'description' => 'Manage your Lingotek language settings.',
-    'file' => 'lingotek.setup.inc',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('lingotek_setup_language_settings_form'),
     'type' => MENU_CALLBACK,
     'access arguments' => array('administer lingotek')
   );
@@ -436,6 +464,16 @@ function lingotek_menu() {
     'access arguments' => array('administer lingotek')
   );
 
+  $items[LINGOTEK_MENU_MAIN_BASE_URL . '/disassociate'] = array(
+    //'title' => 'Lingotek Disassociate All Content',
+    'description' => 'This will disassociate all content from their translation',
+    'file' => 'lingotek.admin.inc',
+    'page callback' => 'lingotek_disassociate_all_translations',
+    'page arguments' => array(),
+    'type' => MENU_CALLBACK,
+    'access arguments' => array('administer lingotek')
+  );
+
   return $items;
 }
 
@@ -501,20 +539,32 @@ function lingotek_entity_translation_node_tab_access() {
   $args = func_get_args();
   $node = array_shift($args);
   if ($node->language !== LANGUAGE_NONE) {
-    if (lingotek_supported_type($node->type) || lingotek_managed_by_entity_translation($node->type)) {
-      // If the node has been pushed then return FALSE (don't show the "Translate" tab)
-      // Otherwise, return TRUE (show the "Translate" tab)
-      $user_access = (drupal_multilingual() && (user_access('translate any entity') || user_access("translate node entities")));
-      $translate_tab_access = $node->lingotek['profile'] == LingotekSync::PROFILE_DISABLED && $user_access;
-      return $translate_tab_access;
+    
+    // if the user doesn't have rights, don't show it
+    $user_access = (drupal_multilingual() && (user_access('translate any entity') || user_access("translate node entities")));
+    $node_disabled = isset($node->lingotek['profile']) && $node->lingotek['profile'] == LingotekSync::PROFILE_DISABLED;
+    if (!$user_access) {
+      return FALSE;
     }
-    elseif (entity_translation_node_supported_type($node->type)) {
+    
+    // if it's a Lingotek-supported type and the node itself is not specifically
+    // disabled then don't show it
+    if (lingotek_access($node, 'manage projects')) {
+      return FALSE;
+    }
+
+    if (entity_translation_node_supported_type($node->type)) {
       // This is not a Lingotek-supported type, but is a type
       // that is set up for Entity Translation.
       // Fall back to the Entity Translation module's access callback.
+      if (entity_translation_node('node', $node)) {
+        $function = array_shift($args);
+        return call_user_func_array($function, $args);
+      }
       return entity_translation_tab_access('node', $node);
     }
-    elseif (entity_translation_node('node', $node) && module_exists('translation')) {
+
+    if (entity_translation_node('node', $node) && lingotek_node_based_trans_ready()) {
       // This node is set up to use the Translation module's
       // node translation (as opposed to Entity Translation).
       return _translation_tab_access($node);
@@ -578,38 +628,44 @@ function lingotek_permission() {
  *   The ID of the form being altered.
  */
 function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
-  // On node create, set the language select box to our source language, if this is a node content type that we translate for, if the form is in Add mode.
-  if (!isset($form['nid']['#value'])) { // add mode (no node id set)
-    if (lingotek_supported_type($form['type']['#value'])) { // lingotek translated content type
-      $form['language']['#default_value'] = lingotek_get_source_language();
-    }
-  }
 
   if (!user_access('manage projects')) {
     return;
   }
-  $is_enterprise = LingotekAccount::instance()->isEnterprise();
+  $show_advanced = LingotekAccount::instance()->showAdvanced();
 
-  if (isset($form['nid']['#value'])) {
-    $nid = $form['nid']['#value'];
-    $node = lingotek_node_load_default($nid);
+  // On node create, set the language select box to our source language, if the following are true:
+  // 1. the form is in Add mode
+  // 2. this is a node content type that we translate
+  // 3. the language is one enabled for lingotek translation
+
+  if (!isset($form['nid']['#value'])) { // add mode (no node id set)
+    $node = $form['#node'];
+    $is_node_translation = lingotek_is_node_translation($node);
+    lingotek_entity_load(array($node), 'node');
+    if (lingotek_supported_type($form['type']['#value']) && (!$is_node_translation || lingotek_enabled_langcode($node->language))) { // lingotek translated content type
+      $form['language']['#default_value'] = lingotek_get_source_language();
+    }
   }
   else {
-    $node = $form['#node'];
-    lingotek_node_load(array($node), array());
+    // Node exists, updating.
+    $nid = $form['nid']['#value'];
+    $node = lingotek_node_load_default($nid);
+    $is_node_translation = lingotek_is_node_translation($node);
   }
-    
-  global $language;
 
+  global $language;
   $drupal_language_code = $language->language;
 
-  if ($drupal_language_code != $node->language && lingotek_node_pushed($node)) {
+  if ($drupal_language_code != $node->language && lingotek_node_pushed($node) && !$is_node_translation) {
     $lingotek_locale = Lingotek::convertDrupal2Lingotek($drupal_language_code);
-    LingotekSync::setTargetStatus($node->nid, $lingotek_locale, LingotekSync::STATUS_PENDING); //set to pending so any changes will be downloaded on next sync
+    LingotekSync::setTargetStatus('node', $node->nid, $lingotek_locale, LingotekSync::STATUS_PENDING); //set to pending so any changes will be downloaded on next sync
     $language_text = lingotek_language_field_lookup('native', $lingotek_locale) . " (" . $drupal_language_code . ")";
-    $translation_edit_link = lingotek_get_workbench_url($node->lingotek['document_id'], $lingotek_locale, t('Edit Translation: @language_text', array('@language_text' => $language_text)));
     $edit_translation_message = t('Editing the fields below will only change the content of the source language, not the translation.');
-    $edit_translation_message .= "<br/>" . $translation_edit_link;
+    if ($node->lingotek['profile'] != LingotekSync::PROFILE_DISABLED) {
+      $translation_edit_link = lingotek_get_workbench_url($node->lingotek['document_id'], $lingotek_locale, t('Edit Translation: @language_text', array('@language_text' => $language_text)));
+      $edit_translation_message .= "<br/>" . $translation_edit_link;
+    }
     drupal_set_message($edit_translation_message, 'warning', FALSE);
   }
 
@@ -618,7 +674,12 @@ function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
   }
 
   $form = array_merge($form, lingotek_get_node_settings_form($form, $form_state, $node));
- 
+
+  // Don't modify form if it is node-based translation of a disabled language.
+  if ($is_node_translation && !lingotek_enabled_langcode($node->language)) {
+    return;
+  }
+
   $api = LingotekApi::instance();
 
   // show workflow-change option only if there are more than one workflow and if it's an existing node
@@ -633,7 +694,7 @@ function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
       '#options' => $workflows,
       '#empty_option' => '(select one)',
     );
-    if (!$nid) { // don't show prefill stuff on new nodes 
+    if (!$nid) { // don't show prefill stuff on new nodes
       $form['lingotek']['workflow_id']['#suffix'] = '</div>';
     }
     else {
@@ -659,9 +720,9 @@ function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
         '#description' => t('Please select the highest phase which should be prefilled for the new workflow'),
         '#type' => 'select',
         '#states' => array(
-            'visible' => array(':input[name="lingotek[workflow_id]"]' => array('!value' => $node->lingotek['workflow_id']),
-                           array(':input[name="lingotek[prefill_phases_checkbox]"]' => array('checked' => TRUE))),
-          ),
+          'visible' => array(':input[name="lingotek[workflow_id]"]' => array('!value' => $node->lingotek['workflow_id']),
+            array(':input[name="lingotek[prefill_phases_checkbox]"]' => array('checked' => TRUE))),
+        ),
         '#suffix' => '</div>',
       );
       if (isset($form_state['values']['lingotek']['workflow_id']) && $form_state['values']['lingotek']['workflow_id'] != NULL) {
@@ -672,9 +733,9 @@ function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
         $form['lingotek']['prefill_phase_select']['#disabled'] = TRUE;
       }
     }
-  }    
-  
-  if ($is_enterprise) {
+  }
+
+  if ($show_advanced) {
     // Only show these options if the Lingotek document hasn't yet been created.
     if (!$node->lingotek['document_id'] && class_exists('LingotekApi')) {
 
@@ -702,7 +763,7 @@ function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
       }
     } // END:  Document not created yet
   }
-  
+
   $form['lingotek']['content_end'] = array(
     '#markup' => '</div>',
   );
@@ -724,25 +785,69 @@ function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
   $form['lingotek']['advanced']['current_lingonode'] = array(
     '#type' => 'textarea',
     '#title' => t('Node Data'),
-    '#value' => isset($nid) ? (json_encode(lingotek_lingonode($nid))) : t('None'),
+    '#value' => isset($nid) ? (json_encode(lingotek_keystore('node', $nid))) : t('None'),
     '#disabled' => TRUE,
     '#attributes' => array('rows' => '2')
   );
+
+  if (isset($form['menu']['link'])) {
+    // if menu translation is enabled, if the default language is english,
+    // and if either 'english' or 'language neutral' is selected for the node
+    // being created, then show the option to set the menu item as 'und' for
+    // i18n_string translation.
+    $i18n_language = 'en';
+
+    $form['menu']['link']['lingotek_translate'] = array(
+      '#type' => 'select',
+      '#title' => 'Menu translation through Lingotek',
+      '#description' => t('Select whether to allow this link to be translated into all enabled languages.'),
+      '#default_value' => isset($form_state['node']->menu['language']) ? $form_state['node']->menu['language'] : 'und',
+      '#options' => array('und' => 'Allow link to be translated', 'en' => 'Show link only in English'),
+      '#prefix' => '<div id="edit-menu-english">',
+      '#suffix' => '</div>',
+    );
+    $form['menu']['link']['nonenglish_info'] = array(
+      '#markup' => t('<div id="edit-menu-non-english">Note: This menu item will be visible only in this node\'s currently selected language.  If you want this menu link to be available for all languages, you must add it directly through the Menus administration tool as an English string and then save the menu item as "Language Neutral".</div>'),
+      '#prefix' => '<div id="edit-menu-non-english">',
+      '#suffix' => '</div>',
+    );
+  }
 }
 
-function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {  
+/**
+ * Display the Lingotek node-settings form
+ *
+ * This form is used both in a tab at the bottom of each node's edit form
+ * (Translation management) and in the bulk-action select box on the translation
+ * manage page (Edit Translation Settings).
+ *
+ * @param array $form
+ *   the passed form elements
+ *
+ * @param array $form_state
+ *   the form state, including submitted values if any
+ *
+ * @param object $node
+ *   an optional node on which to act
+ *
+ * @return array
+ *   the modified form
+ */
+function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
   $second_run = isset($form_state['input']['op']);
-  
+
   $bulk_grid = FALSE;
   $multiple = FALSE;
   //$new_node = isset($node->nid) ? 0 : 1;
   
+  $entity_type = isset($form_state['entity_type']) ? $form_state['entity_type'] : 'node';
+
   if (isset($form_state['nids'])) {
     $nids = $form_state['nids'];
     $bulk_grid = TRUE;
     $multiple = count($nids) > 1;
     if (!$multiple) {
-      $node = lingotek_node_load_default(reset($nids));
+      $node = lingotek_entity_load_single($entity_type, $nids[0]);
     }
     else {
       if (!$second_run) {
@@ -750,18 +855,30 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
       }
       $node = new stdClass();
       $node->lingotek = lingotek_get_global_profile();
-      $node->lingotek['profile'] = LingotekSync::PROFILE_DISABLED;// Note: Consider making this default 'Automatic' (after it is a fixed profile; can't be deleted)
+      $node->lingotek['profile'] = LingotekSync::PROFILE_DISABLED; // Note: Consider making this default 'Automatic' (after it is a fixed profile; can't be deleted)
     }
   }
   
   drupal_add_css(drupal_get_path('module', 'lingotek') . '/style/form.css');
 
-  $is_enterprise = LingotekAccount::instance()->isEnterprise();
-  $workbench_moderation_enabled = module_exists('workbench_moderation');
-
-  $title = t('Translation Management');
+  $show_advanced = LingotekAccount::instance()->showAdvanced();
+  $enabled_languages = lingotek_get_target_locales(TRUE);
+  $node_language = Lingotek::convertDrupal2Lingotek($node->language);
 
   // Vertical Tab.
+  // (When the Lingotek module is enabled, then show the translation tab unless
+  // the node is *not* managed by Lingotek or the language is *not* managed by
+  // Lingotek, *and* it is a node-based translation of a different (source) node.
+  if (lingotek_is_node_translation($node)) {
+    if (isset($node->translation_source->lingotek['profile']) && $node->translation_source->lingotek['profile'] === LingotekSync::PROFILE_DISABLED) {
+      return $form;
+    }
+    if (!in_array($node_language, $enabled_languages)) {
+      return $form;
+    }
+  }
+  $title = t('Translation Management');
+
   $form['lingotek'] = array(
     '#title' => t('Translation management'),
     '#type' => 'fieldset',
@@ -775,13 +892,15 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
     '#modal' => TRUE,
     '#tree' => TRUE,
   );
-    
-  if (isset($node->tnid) && $node->tnid != 0 && $node->tnid != $node->nid) {
+
+  if (lingotek_is_node_translation($node) && in_array($node_language, $enabled_languages)) {
     $form['lingotek']['note'] = array(
       '#markup' => t('This is a target node for the language code: @lang. To change
         the Lingotek settings please edit the source node.', array('@lang' => $node->language)),
     );
-    
+    $form['lingotek']['content_begin'] = array(
+      '#markup' => '<div id="edit-lingotek-content" class="form-wrapper">',
+    );
     return $form; //this is a target node and thus should not have lingotek settings
   }
 
@@ -791,7 +910,7 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
       '#default_value' => json_encode($nids),
     );
   }
-  
+
   if (!$bulk_grid) { // $node will be set because $multiple has to be false
     $form['lingotek']['note'] = array(
       '#type' => 'item',
@@ -805,50 +924,57 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
     '#title' => $title,
     '#description' => t("The Lingotek Translation module was developed to help you translate your site. The module integrates the Lingotek translation management system directly into Drupal, so that your users can leverage the power of Lingotek's translation tools and services without ever having to leave the comfort of your Drupal environment."),
   );
-  
-  $profiles = lingotek_get_profiles();
-  
-  $profile_options = array();
-  foreach ($profiles as $key => $profile) {
-    $profile_options[$key] = $profile['name'];
-  }
-  $profile_options[LingotekSync::PROFILE_CUSTOM] = 'Custom';
-  $profile_options[LingotekSync::PROFILE_DISABLED] = 'Disabled';
+
   $form['lingotek']['profile'] = array(
     '#type' => 'select',
-    '#title' => 'Translation Profile',
-    '#options' => $profile_options,
+    '#title' => t('Translation Profile'),
+    '#options' => lingotek_get_profile_options(),
     '#default_value' => $node->lingotek['profile'],
   );
-  
-  if ($node->lingotek['node_sync_status'] == LingotekSync::STATUS_DISABLED) {
-    $form['lingotek']['profile']['#default_value'] = LingotekSync::PROFILE_DISABLED;
+
+  // Warning note when enabling nodes with existing Lingotek translations
+  $overwrite_markup = '<div id="edit-lingotek-overwrite-warning"></div>';
+  if (isset($nids) && lingotek_previously_managed_translations($entity_type, $nids)) {
+    $overwrite_markup = '<div id="edit-lingotek-overwrite-warning" style="color: red;">Note: One or more of the entities selected have had previous Lingotek translations.  If edits have been made to the local copy of these translations since disabling Lingotek, those edits will be lost when synchronizing with Lingotek.</div>';
   }
-  
+  $form['lingotek']['overwrite_warning'] = array(
+    '#markup' => $overwrite_markup,
+  );
+
+  $form['lingotek']['document_id'] = array(
+    '#type' => 'value',
+    '#value' => $node->lingotek['document_id'],
+  );
+
   $form['lingotek']['node_sync_status'] = array(
     '#type' => 'value',
     '#value' => $node->lingotek['node_sync_status'],
   );
-  
+
   $form['lingotek']['content_begin'] = array(
     '#markup' => '<div id="edit-lingotek-content" class="form-wrapper">',
   );
-  
+
+  $content_translation_note = '';
+  if (!lingotek_node_based_trans_ready()) {
+    $content_translation_note = t("Note: Requires Content Translation module (translation) and Multilingual content module (i18n_node).");
+  }
+
   if (!$bulk_grid) {
     $form['lingotek']['lingotek_nodes_translation_method'] = array(
       '#type' => 'radios',
       '#title' => t('Method for storing translations'),
       '#options' => array(
-        'field' => '<strong>Fields</strong> (Recommended) - all translations are stored in a single node',
-        'node' => '<strong>Nodes</strong>  - create a new node per language ',
+        'field' => t('<strong>Fields</strong> (Recommended) - all translations are stored in a single node'),
+        'node' => t('<strong>Nodes</strong>  - create a new node per language'),
       ),
       'field' => array(
-        '#description' => 'A newer and recommended method. It appears newer versions of Drupal will use this method.',
+        '#description' => t('A newer and recommended method. It appears newer versions of Drupal will use this method.'),
       ),
       'node' => array(
-        '#description' => 'The classical method. Use for backwards compatibility.',
+        '#description' => t('The classical method. Use for backwards compatibility. <i>@note</i>', array('@note' => $content_translation_note)),
       ),
-      '#disabled' => isset($node->nid),
+      '#disabled' => isset($node->nid) || !lingotek_node_based_trans_ready(),
       '#default_value' => $node->lingotek['lingotek_nodes_translation_method'],
     );
   }
@@ -860,34 +986,6 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
     '#description' => t('When enabled, your Drupal content (including saved edits) will automatically be uploaded to Lingotek for translation.<br/>When disabled, you are required to manually upload your content by clicking the "Upload" button on the Translations tab.'),
   );
 
-  $show_moderation = FALSE;
-  if ($workbench_moderation_enabled) {
-    /*foreach ($nodes as $node) {
-      $show_moderation = workbench_moderation_node_type_moderated($node->type);
-      if ($show_moderation) {
-      break;
-      }
-    }*/
-    $show_moderation = $bulk_grid || workbench_moderation_node_type_moderated($node->type);
-
-    if ($show_moderation) {
-      $form['lingotek']['create_lingotek_document_workbench_moderation'] = array(
-        '#type' => 'select',
-        '#title' => t('Workbench Moderation Upload'),
-        '#field_prefix' => t('Upload to Lingotek when node reaches'),
-        '#field_suffix' => t('state.'),
-        '#options' => lingotek_get_workbench_moderation_states(),
-        '#default_value' => $multiple ? workbench_moderation_state_published() : $node->lingotek['create_lingotek_document_workbench_moderation'],
-        '#description' => 'The most recent revision will be automatically uploaded when changed to this state.',
-        '#states' => array(
-          'invisible' => array(
-            ':input[id="edit-lingotek-create-lingotek-document"]' => array('checked' => FALSE),
-          ),
-        ),
-      );
-    }
-  }
-
   $form['lingotek']['sync_method'] = array(
     '#type' => 'checkbox',
     '#title' => t('Download Translations Automatically'),
@@ -895,31 +993,7 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
     '#description' => t('When enabled, completed translations will automatically be downloaded from Lingotek.<br/>When disabled, you are required to manually download translations by clicking the "Download" button on the Translations tab.'),
   );
 
-
-  if ($workbench_moderation_enabled) {
-    $default_download_state = 'no_moderation';
-    if (!$multiple && isset($node->nid)) {
-      $default_download_state = $node->lingotek['sync_method_workbench_moderation'];
-    }
-    if ($show_moderation) {
-      $transition_select = lingotek_workbench_moderation_get_mult_transitions();
-      $form['lingotek']['sync_method_workbench_moderation'] = array(
-        '#type' => 'select',
-        '#title' => t('Workbench Moderation Download'),
-        '#field_suffix' => t('after translations have downloaded from Lingotek.'),
-        '#options' => lingotek_get_workbench_moderation_options(),
-        '#default_value' => $default_download_state,
-        '#description' => t("Transition will not occur until <i>all</i> of the node's translations have downloaded."),
-        '#states' => array(
-          'invisible' => array(
-            ':input[id="edit-lingotek-syncmethod"]' => array('checked' => FALSE),
-          ),
-        ),
-      );
-    }
-  }
-
-  if ($is_enterprise) {
+  if ($show_advanced) {
     // Community Translation
     $form['lingotek']['allow_community_translation'] = array(
       '#type' => 'checkbox',
@@ -927,16 +1001,16 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
       '#description' => t('When enabled, anonymous site visitors will be presented with a link allowing them to contribute translations for this node.'),
       '#default_value' => $node->lingotek['allow_community_translation'],
     );
-
-    // URL Alias Translation.
-    $form['lingotek']['url_alias_translation'] = array(
-      '#type' => 'select',
-      '#title' => t('URL Alias Translation'),
-      '#default_value' => $node->lingotek['url_alias_translation'],
-      '#options' => lingotek_get_url_alias_translations(),
-      '#description' => t('Choose how you would like to translate the URL alias. The last option requires that you install both the Title and Pathauto modules, define a path pattern, and check "Enable Lingotek Translation" for the Title field.'),
-    );
   }
+
+  // URL Alias Translation.
+  $form['lingotek']['url_alias_translation'] = array(
+    '#type' => 'select',
+    '#title' => t('URL Alias Translation'),
+    '#default_value' => $node->lingotek['url_alias_translation'],
+    '#options' => lingotek_get_url_alias_translations(),
+    '#description' => t('Choose how you would like to translate the URL alias. The last option requires that you install both the Title and Pathauto modules, and define a path pattern.'),
+  );
 
   if ($bulk_grid) {
     $form['submit'] = array(
@@ -952,102 +1026,121 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
 /*
  * This is not a hook. This is a helper function to save all lingotek related data.
  */
-function lingotek_node_save($node) {
+function lingotek_entity_save($entity, $entity_type) {
 
-  if (!isset($node->lingotek)) {
+  if (!variable_get('lingotek_login_id')) {
+    // Lingotek is installed but has not been setup yet
+    // (could use function lingotek_is_config_missing() but did not want
+    // to make that many checks on every entity create/update)
+    return $entity;
+  }
+
+  $managed_entity_types = array_keys(lingotek_managed_entity_types());
+  if (!in_array($entity_type, $managed_entity_types)) {
+    // nothing to do here
+    return $entity;
+  }
+
+  if (!isset($entity->lingotek)) {
     // load default lingotek settings when alternate node creation paths are employed (e.g., commons)
-    lingotek_node_load(array($node), array());
+    lingotek_entity_load(array($entity), $entity_type);
   }
-  $has_not_been_uploaded = !isset($node->lingotek['document_id']) || empty($node->lingotek['document_id']);
-  
-  $disabled_selected = ($node->lingotek['profile'] == LingotekSync::PROFILE_DISABLED);
-  $disabled = isset($node->lingotek['node_sync_status']) && ($node->lingotek['node_sync_status'] == LingotekSync::STATUS_DISABLED);
-  if ($disabled_selected && !$disabled) {
-    LingotekSync::setNodeEnabled($node->nid, FALSE);
-  }
-  elseif (!$disabled_selected && $disabled) {
-    LingotekSync::setNodeEnabled($node->nid, TRUE);
-  }
-  
-  $remove = lingotek_get_profile_fields($has_not_been_uploaded, TRUE);
-  $remove[] = 'profile';
-    
-  db_delete('lingotek')
-    ->condition('nid', $node->nid)
-    ->condition('lingokey', $remove, 'IN')
-    ->execute();
 
-  if ($node->lingotek['profile'] == LingotekSync::PROFILE_CUSTOM) {
-    $ignore = array('et_content', 
-                    'lingotek_push_once', 
-                    'lingotek_disabled', 
-                    'advanced', 
-                    'node_sync_status', 
-                    'document_id',
-                    'prefill_phases_checkbox',
-                    'prefill_phase_select');
-    $query = db_insert('lingotek')->fields(array('nid', 'lingokey', 'lingovalue'));
-    
-    foreach ($node->lingotek as $key => $value) {
-      if (array_search($key, $ignore) === FALSE) {
-        $query->values(array($node->nid, $key, $value));
+  if (isset($entity->lingotek_upload_override)) {
+    return $entity;
+  }
+  
+  list($id, $vid, $bundle) = lingotek_entity_extract_ids($entity_type, $entity);
+
+  $has_not_been_uploaded = !isset($entity->lingotek['document_id']) || empty($entity->lingotek['document_id']);
+
+  $remove = lingotek_get_profile_fields($has_not_been_uploaded, TRUE);
+
+  db_delete('{lingotek_entity_metadata}')
+      ->condition('entity_type', $entity_type)
+      ->condition('entity_id', $id)
+      ->condition('entity_key', $remove, 'IN')
+      ->execute();
+
+  // Set the default value for whether the entity's content actually changed.
+  $entity_changed = TRUE;
+
+  if ($entity->lingotek['profile'] == LingotekSync::PROFILE_CUSTOM) {
+    $query = db_insert('{lingotek_entity_metadata}')->fields(array('entity_type', 'entity_id', 'entity_key', 'value'));
+
+    foreach ($remove as $key) {
+      if (isset($entity->lingotek[$key])) {
+        $query->values(array($entity_type, $id, $key, $entity->lingotek[$key]));
       }
     }
     $query->execute();
     
     // check for a workflow change
-    if (isset($node->lingotek['workflow_id']) && isset($node->lingotek['advanced']['document_id'])) {
-      $curr_workflow = $node->lingotek['workflow_id'];
-      $document_id = $node->lingotek['advanced']['document_id'];
-      if (!isset($node->original->lingotek['workflow_id']) ||
-          $node->original->lingotek['workflow_id'] != $curr_workflow) {
+    if (isset($entity->lingotek['workflow_id']) && isset($entity->lingotek['document_id'])) {
+      $curr_workflow = $entity->lingotek['workflow_id'];
+      $document_id = $entity->lingotek['document_id'];
+      if (!isset($entity->original->lingotek['workflow_id']) ||
+          $entity->original->lingotek['workflow_id'] != $curr_workflow) {
         $api = LingotekApi::instance();
-        $prefill_checked = (isset($node->lingotek['prefill_phases_checkbox']) ? $node->lingotek['prefill_phases_checkbox'] : NULL);
-        $prefill_phase = ($prefill_checked ? $node->lingotek['prefill_phase_select'] : NULL);
+        $prefill_checked = (isset($entity->lingotek['prefill_phases_checkbox']) ? $entity->lingotek['prefill_phases_checkbox'] : NULL);
+        $prefill_phase = ($prefill_checked ? $entity->lingotek['prefill_phase_select'] : NULL);
         $result = $api->changeWorkflow(array($document_id), $curr_workflow, $prefill_phase);
-        LingotekSync::setAllTargetStatus($node->nid, LingotekSync::STATUS_PENDING);
+        if ($result === TRUE) {
+          LingotekSync::setAllTargetStatus($entity_type, $id, LingotekSync::STATUS_PENDING);
+          lingotek_keystore($entity_type, $id, 'workflow_id', $curr_workflow);
         }
+        else {
+          LingotekLog::error('Failed to change workflow for @et #@id: @error', array('@et' => $entity_type, '@id' => $id, '@error' => $result));
+        }
+      }
     }
   }
   else { // Specific Profile
-    $node_defaults = lingotek_load_profile_defaults('node');
-    $profile_overridden = (!isset($node_defaults[$node->type]['profile']) || $node_defaults[$node->type]['profile'] != $node->lingotek['profile']);
+    $defaults = lingotek_load_profile_defaults($entity_type);
+    $profile_overridden = (!isset($defaults[$bundle]['profile']) || $defaults[$bundle]['profile'] != $entity->lingotek['profile']);
     if ($profile_overridden) {
-      lingotek_lingonode($node->nid, 'profile', $node->lingotek['profile']);
+      lingotek_keystore($entity_type, $id, 'profile', $entity->lingotek['profile']);
     }
     else {
-      lingotek_lingonode_variable_delete($node->nid, 'profile');
+      lingotek_keystore_delete($entity_type, $id, 'profile');
+    }
+    // If the hash changed, handle target statuses
+    $entity_changed = lingotek_entity_changed($entity_type, $entity, $id);
+    if ($entity_changed) {
+      if ($entity->lingotek['profile'] == LingotekSync::PROFILE_DISABLED) {
+        LingotekSync::setAllTargetStatus($entity_type, $id, LingotekSync::STATUS_UNTRACKED);
+      }
+      elseif ($entity->lingotek['node_sync_status'] != LingotekSync::STATUS_TARGET) {
+        LingotekSync::setAllTargetStatus($entity_type, $id, LingotekSync::STATUS_EDITED);
+      }
     }
   }
-  
-  //This reloads the lingovalues to ensure that the proper defaults and hierarchy are used.
-  //We clear out the lingovalues first, then wrap in an array, call the lingotek load function, and then unwrap from array.
-  unset($node->lingotek);
-  $nodes = array($node->nid => $node);
-  $types = array($node->type);
-  lingotek_node_load($nodes, $types);
-  $node = $nodes[$node->nid];
-  return $node;
-}
 
-function lingotek_node_save_readonly($node) {
-  lingotek_lingonode($node->nid, 'project_id', $node->lingotek['project_id']);
-  lingotek_lingonode($node->nid, 'vault_id', $node->lingotek['vault_id']);
-  lingotek_lingonode($node->nid, 'workflow_id', $node->lingotek['workflow_id']);
-  lingotek_lingonode($node->nid, 'lingotek_nodes_translation_method', $node->lingotek['lingotek_nodes_translation_method']);
+  //This reloads the lingotek values to ensure that the proper defaults and hierarchy are used.
+  //We clear out the lingotek values first, then wrap in an array, call the lingotek load function, and then unwrap from array.
+  unset($entity->lingotek);
+  $entitys = array($id => $entity);
+  $types = array($bundle);
+  lingotek_entity_load($entitys, $entity_type);
+  $entity = $entitys[$id];
+  lingotek_entity_upload_triggered($entity, $entity_type, $entity_changed);
+
+  return $entity;
 }
 
 function lingotek_get_node_settings_form_submit($form, $form_state) {
   if (isset($form_state['nids']) && !empty($form_state['nids'])) {
     $nids = $form_state['nids'];
 
-    // YOU LEFT OFF HERE, SEND UP THE CALL TO UPDATE THE WORKFLOW_ID FOR EACH NODE ALREADY UPLOADED
+    $entity_type = $form_state['entity_type'];
     
     foreach ($nids as $nid) {
-      $node = node_load($nid);
+      $node = lingotek_entity_load_single($entity_type, $nid);
       $node->lingotek = array_replace($node->lingotek, $form_state['values']['lingotek']);
-      node_save($node);
+      lingotek_entity_save($node, $entity_type);
     }
+    node_types_rebuild();
+    menu_rebuild();
   }
 }
 
@@ -1063,7 +1156,8 @@ function lingotek_get_change_workflow_form_submit($form, $form_state) {
     }
 
     // SUBMIT THE WORKFLOW CHANGES TO TMS
-    $document_ids = LingotekSync::getDocIdsFromNodeIds($nids);
+    $entity_type = $form_state['entity_type'];
+    $document_ids = LingotekSync::getDocIdsFromEntityIds($entity_type, $nids);
     if (!$document_ids) {
       return;
     }
@@ -1072,12 +1166,11 @@ function lingotek_get_change_workflow_form_submit($form, $form_state) {
 
     // CREATE/UPDATE WORKFLOW ENTRIES IN THE LINGOTEK METADATA TABLE
     foreach ($nids as $nid) {
-      lingotek_lingonode($nid, 'workflow_id', $workflow_id);
-      LingotekSync::setAllTargetStatus($nid, LingotekSync::STATUS_PENDING);
+      lingotek_keystore($entity_type, $nid, 'workflow_id', $workflow_id);
+      LingotekSync::setAllTargetStatus($entity_type, $nid, LingotekSync::STATUS_PENDING);
     }
   }
 }
-
 
 function lingotek_get_global_profile() {
   return array(
@@ -1089,17 +1182,32 @@ function lingotek_get_global_profile() {
     'allow_community_translation' => 0,
     'url_alias_translation' => 0,
     'node_sync_status' => LingotekSync::STATUS_EDITED,
-    'sync_method_workbench_moderation' => 'no_moderation',
-    'create_lingotek_document_workbench_moderation' => 'published',
     'project_id' => variable_get('lingotek_project'),
     'workflow_id' => variable_get('lingotek_workflow'),
     'vault_id' => variable_get('lingotek_vault'),
   );
 }
 
+/**
+ * Return all profiles in an associative array, by name
+ */
+function lingotek_get_profiles_by_name($include_custom = FALSE, $use_tfunction = TRUE) {
+  $profile_options = array();
+  $profiles = lingotek_get_profiles();
+  foreach ($profiles as $key => $profile) {
+    $profile_options[$key] = $use_tfunction ? t($profile['name']) : $profile['name'];
+  }
+  if ($include_custom) {
+    $profile_options[LingotekSync::PROFILE_CUSTOM] = $use_tfunction ? t('Custom') : 'Custom';
+  }
+  $profile_options[LingotekSync::PROFILE_DISABLED] = $use_tfunction ? t('Disabled') : 'Disabled';
+
+  return $profile_options;
+}
+
 function lingotek_get_profiles() {
   $profiles = variable_get('lingotek_profiles', array());
-  
+
   if (empty($profiles)) {
     $profiles[] = array(
       'name' => 'Automatic',
@@ -1114,6 +1222,36 @@ function lingotek_get_profiles() {
     variable_set('lingotek_profiles', $profiles);
   }
   return $profiles;
+}
+
+  function lingotek_get_profile_settings($profile_id) {
+  // merge of global profile settings and profile-specific settings
+  $profiles = lingotek_get_profiles();
+  $global_profile = lingotek_get_global_profile();
+  $profile = isset($profiles[$profile_id]) ? $profiles[$profile_id] : array();
+  return array_merge($global_profile, $profile);
+}
+
+function lingotek_set_profile_settings($profile_id, $settings) {
+  // reverse merge, saving the differences and stomping the rest
+  $global_profile = lingotek_get_global_profile();
+  $profiles = lingotek_get_profiles();
+  $differences = array_diff($settings, $global_profile);
+  $profiles[$profile_id] = $differences;
+  variable_set('lingotek_profiles', $profiles);
+}
+
+function lingotek_get_profile_options() {
+  $profiles = lingotek_get_profiles();
+
+  $profile_options = array();
+  foreach ($profiles as $key => $profile) {
+    $profile_options[$key] = t($profile['name']);
+  }
+  $profile_options[LingotekSync::PROFILE_CUSTOM] = t('Custom');
+  $profile_options[LingotekSync::PROFILE_DISABLED] = t('Disabled');
+
+  return $profile_options;
 }
 
 /**
@@ -1139,7 +1277,7 @@ function lingotek_node_view($node, $view_mode) {
     }
   }
 
-  if (user_access('translation')) {
+  if (user_access('translation') && $node->lingotek['profile'] != LingotekSync::PROFILE_DISABLED) {
     if (isset($node->lingotek['document_id']) && !empty($node->lingotek['document_id'])) {
       global $language;
       $node->content['lingotek_link']['#markup'] = lingotek_workbench_icon('node', $node->nid, Lingotek::convertDrupal2Lingotek($language->language));
@@ -1157,96 +1295,6 @@ function lingotek_node_presave($node) {
 }
 
 /**
- * Implements hook_node_insert().
- */
-function lingotek_node_insert($node) {
-  lingotek_node_update($node);
-}
-
-/**
- * Implements hook_node_delete().
- */
-function lingotek_node_delete($node) {
-  $doc_id = isset($node->lingotek['document_id']) ? $node->lingotek['document_id'] : NULL;
-  $api = LingotekApi::instance();
-  $api->removeDocument($doc_id, FALSE);
-  LingotekSync::removeNodeInfoByNodeId($node->nid);
-}
-
-/*
- * The function entity_load_single is not in core but rather in the entity module
- * which we currently do not have as a dependency.
- */
-function lingotek_entity_load_single($entity_type, $entity_id) {
-  if ($entity_type == 'node') {
-    $entity = lingotek_node_load_default($entity_id);
-  }
-  else {
-    $entities = entity_load($entity_type, array($entity_id));
-    $entity = $entities[$entity_id];
-  }
-
-  return $entity;
-}
-
-/**
- * Implements hook_node_load().
- */
-function lingotek_node_load($nodes, $types) {
-  if (empty($nodes)) {
-    return;
-  }
-
-  $global_profile = lingotek_get_global_profile();
-  $node_profile_defaults = lingotek_load_profile_defaults('node'); // return assoc array by node type
-  $profiles_list = lingotek_get_profiles();
-  
-  $result = db_select('lingotek', 'n')
-      ->fields('n', array('nid', 'lingokey', 'lingovalue'))
-      ->condition('n.nid', array_keys($nodes), 'IN')
-      ->condition('n.lingokey', 'target_%', 'NOT LIKE')
-      ->execute();
-  
-  $node_lingovalues = array();
-  foreach ($result as $record) {
-    $node_lingovalues[$record->nid][$record->lingokey] = $record->lingovalue;
-  }
-  
-  foreach ($nodes as &$node) {
-//    if (!lingotek_supported_type($node->type)) {
-//      continue;
-//    }
-    
-    // translate node titles for workbench moderation 'View draft' node tab
-    if (module_exists('workbench_moderation') && isset($node->workbench_moderation['published']) && $node->workbench_moderation['published']->vid != $node->vid) {
-      // Workbench Moderation calls two node saves if viewing a draft, so we have to
-      // clear this cache in order for the translated title fields to be loaded
-      drupal_static_reset('title_entity_sync');
-      title_entity_sync('node', $node);
-    }
-    // Node profile inheritance heirarchy
-    // Step 1: get global profile
-    $node->lingotek = $global_profile;
-    // Step 2: add default profiles
-    if (array_key_exists($node->type, $node_profile_defaults)) {
-      $node->lingotek = array_merge($node->lingotek, $node_profile_defaults[$node->type]);
-    }
-    // Step 3: add node-specific profile
-    if (isset($node->nid) && isset($node_lingovalues[$node->nid]['profile']) && is_numeric($node_lingovalues[$node->nid]['profile'])) {
-      $node->lingotek = array_merge($node->lingotek, $profiles_list[$node_lingovalues[$node->nid]['profile']]);
-    }
-    // Step 4: add node-specific overrides
-    if (isset($node->nid) && isset($node_lingovalues[$node->nid])) {
-      $node->lingotek = array_merge($node->lingotek, $node_lingovalues[$node->nid]);
-    }
-    // Step 5: if no profile, then disabled.
-    if (!isset($node->lingotek['profile']) || !strlen($node->lingotek['profile'])) {
-      $node->lingotek['profile'] = LingotekSync::PROFILE_DISABLED;
-    }
-  }
-}
-
-/**
  * Lingotek custom wrapper function for node_load
  *
  * This is needed because the Lingotek module should translate only the most current revision of any node
@@ -1257,7 +1305,7 @@ function lingotek_node_load($nodes, $types) {
  */
 function lingotek_node_load_default($nid, $vid = NULL, $reset = FALSE) {
   if ($vid == NULL) {
-    $query = db_select('node_revision', 'nr')
+    $query = db_select('{node_revision}', 'nr')
         ->condition('nid', $nid, '=');
     $query->addExpression('MAX(vid)', 'max_vid');
     $vid = $query->execute()->fetchField();
@@ -1267,146 +1315,354 @@ function lingotek_node_load_default($nid, $vid = NULL, $reset = FALSE) {
   return $node;
 }
 
-/**
- * Implements hook_node_update().
+/*
+ * The function entity_load_single is not in core but rather in the entity module
+ * which we currently do not have as a dependency.
  */
-function lingotek_node_update($node) {
-  // check to make sure Lingotek is enabled and supporting the given node type or profile
-  if ( !lingotek_supported_type($node->type)
-       && (!isset($node->lingotek) || $node->lingotek['profile'] == LingotekSync::PROFILE_DISABLED)) {
-    return;
-  }
-  //check to make sure it is not a target node
-  if (!empty($node->tnid) && ($node->nid != $node->tnid)) {
-    return;
-  }
-  
-  $node = lingotek_node_save($node);
-  
-  if (module_exists('workbench_moderation') && isset($node->workbench_moderation)) {
-    if (isset($node->is_new) && $node->is_new) {
-      lingotek_workbench_moderation_transition($node, $node->workbench_moderation['current']->from_state, $node->workbench_moderation['current']->state);
-    }
-    else {
-      return;
-    }
+function lingotek_entity_load_single($entity_type, $entity_id) {
+  $entity = NULL;
+  if ($entity_type == 'node') {
+    $entity = lingotek_node_load_default($entity_id);
   }
   else {
-    lingotek_upload_document($node);
+    $entities = entity_load($entity_type, array($entity_id));
+    if ($entities && isset($entities[$entity_id])) {
+      $entity = $entities[$entity_id];
+    }
+  }
+
+  return $entity;
+}
+
+/**
+ * Implements hook_entity_load().
+ */
+function lingotek_entity_load($entities, $entity_type) {
+  
+  if (empty($entities)) {
+    return;
+  }
+  
+  if ($entity_type == 'field_collection_item') {
+    foreach ($entities as $e) {
+      lingotek_normalize_field_collection_language($entity_type, $e);
+    }
+  }
+  if ($entity_type == 'message_type' || $entity_type == 'taxonomy_term') {
+    foreach ($entities as $e) {
+      lingotek_normalize_language($entity_type, $e);
+    }
+  }
+
+  $global_profile = lingotek_get_global_profile();
+  $node_profile_defaults = lingotek_load_profile_defaults($entity_type); // return assoc array by node type
+  $profiles_list = lingotek_get_profiles();
+
+  $result = db_select('{lingotek_entity_metadata}', 'l')
+      ->fields('l', array('entity_id', 'entity_key', 'value'))
+      ->condition('l.entity_id', array_keys($entities), 'IN')
+      ->condition('l.entity_type', $entity_type)
+      ->condition('l.entity_key', 'target_%', 'NOT LIKE')
+      ->execute();
+
+  $values = array();
+  foreach ($result as $record) {
+    $values[$record->entity_id][$record->entity_key] = $record->value;
+  }
+
+  foreach ($entities as &$entity) {
+//    if (!lingotek_supported_type($entity->type)) {
+//      continue;
+//    }
+    list($id, $vid, $bundle) = lingotek_entity_extract_ids($entity_type, $entity);
+
+    // Node profile inheritance heirarchy
+    // Step 1: get global profile
+    $entity->lingotek = $global_profile;
+    // Step 2: add default profiles
+    if (array_key_exists($bundle, $node_profile_defaults)) {
+      $entity->lingotek = array_merge($entity->lingotek, $node_profile_defaults[$bundle]);
+    }
+    // Step 3: add node-specific profile
+    if ($id && isset($values[$id]['profile']) && is_numeric($values[$id]['profile'])) {
+      $entity->lingotek = array_merge($entity->lingotek, $profiles_list[$values[$id]['profile']]);
+    }
+    // Step 4: add node-specific overrides
+    if ($id && isset($values[$id])) {
+      $entity->lingotek = array_merge($entity->lingotek, $values[$id]);
+    }
+    // Step 5: if no profile, then disabled.
+    if (!isset($entity->lingotek['profile']) || !strlen($entity->lingotek['profile'])) {
+      $entity->lingotek['profile'] = LingotekSync::PROFILE_DISABLED;
+    }
   }
 }
 
-function lingotek_upload_document($node) {  
-  if ( (!lingotek_supported_type($node->type) && $node->lingotek['profile'] == LingotekSync::PROFILE_DISABLED) || !Lingotek::isSupportedLanguage($node->language)) {
+/**
+ * Implements hook_entity_insert().
+ */
+function lingotek_entity_insert($entity, $type) {
+  lingotek_entity_update($entity, $type);
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function lingotek_entity_update($entity, $entity_type) {
+  $managed_entity_types = array_keys(lingotek_managed_entity_types());
+  if (!in_array($entity_type, $managed_entity_types)) {
+    // nothing to do here
+    return;
+  }
+  if ($entity_type == 'node' && !empty($entity->tnid) && ($entity->nid != $entity->tnid)) {//check to make sure it is not a target node
     return;
   }
 
-  if (isset($node->lingotek['node_sync_status']) && ($node->lingotek['node_sync_status'] == LingotekSync::STATUS_DISABLED || $node->lingotek['node_sync_status'] == LingotekSync::STATUS_TARGET)) {
+  list($id, $vid, $bundle) = lingotek_entity_extract_ids($entity_type, $entity);
+
+  lingotek_entity_save($entity, $entity_type);
+}
+
+function lingotek_entity_upload_triggered($entity, $entity_type, $changed = TRUE, &$context = array()) {
+  list($id, $vid, $bundle) = lingotek_entity_extract_ids($entity_type, $entity);
+
+  if (isset($entity->lingotek_upload_override)) {
+    if ($entity->lingotek_upload_override) {
+      lingotek_entity_upload($entity, $entity_type);
+    }
     return;
   }
 
-  if (isset($node->lingotek['document_id'])) {
-    $xml = lingotek_xml_node_body($node);
-    $hash = md5($xml);
-    $oldhash = lingotek_lingonode($node->nid, 'hash');
-    lingotek_lingonode($node->nid, 'hash', $hash);
-    $diff = strcmp($hash, $oldhash);
+  if ((!lingotek_enabled_bundle($entity_type, $bundle) && $entity->lingotek['profile'] == LingotekSync::PROFILE_DISABLED) || !isset($entity->language) || !Lingotek::isSupportedLanguage($entity->language)) {
+    return;
+  }
 
-    if ($diff == 0 && $node->lingotek['node_sync_status'] == 'CURRENT') {
-      return; //node has no changes.
-    }
+  if (isset($entity->lingotek['node_sync_status']) && ($entity->lingotek['node_sync_status'] == LingotekSync::STATUS_TARGET)) {
+    return;
+  }
+
+  if ($entity_type == 'node' && !empty($entity->tnid) && ($entity->nid != $entity->tnid)) {//check to make sure it is not a target node
+    return;
+  }
+
+  if (!$changed && $entity->lingotek['node_sync_status'] == 'CURRENT') {
+    return; //entity has no changes.
+  }
+
+  lingotek_keystore($entity_type, $id, 'node_sync_status', LingotekSync::STATUS_EDITED);
+
+  if ($entity->lingotek['create_lingotek_document']) {
+    lingotek_entity_upload($entity, $entity_type, $context);
+  }
+}
+
+function lingotek_entity_upload($entity, $entity_type, &$context = array()) {
+  if (is_numeric($entity)) {
+    $entity = lingotek_entity_load_single($entity_type, $entity);
   }
   
-// If the user explicitly requested that this item not be pushed to Lingotek, set the Lingonode property so that the
-  // edit form default can be set appropriately on subsequent edits.
-  $send_lingotek_document = NULL;
+  list($id, $vid, $bundle) = lingotek_entity_extract_ids($entity_type, $entity);
   
-  if (isset($node->lingotek_upload_override)) { // this variable can force to either send or not send (1 or 0) when set.
-    $send_lingotek_document = ($node->lingotek_upload_override == 1) ? 1 : 0;
-    $node->lingotek_upload_override = 0;
-  }
-  else {
-    $send_lingotek_document = isset($node->lingotek['create_lingotek_document']) ? $node->lingotek['create_lingotek_document'] : FALSE;
-  }
-  
-  if ($send_lingotek_document) {
-    LingotekSync::resetTargetProgress($node->nid);
+  LingotekLog::trace('Uploading @type @id for translation', array('@type' => $entity_type, '@id' => $id));
+
+  $empty_context = FALSE;
+  if (empty($context)) {
+    $empty_context = TRUE; // preserve the fact that $context *was* empty when passed
+    $context['message'] = t('Uploading @type @id for translation', array('@type' => $entity_type, '@id' => $id));
   }
 
-  // if workbench moderation is enabled for this node and it is being sent, set flag to be moderated
-  // prevents moderation from happening for every downloaded language
-  if ($node->lingotek['sync_method'] == 1 && module_exists('workbench_moderation') && isset($node->workbench_moderation)) {
-    $moderate = ($send_lingotek_document == 1) ? 1 : 0;
-    if ($moderate) {
-      lingotek_lingonode($node->nid, 'workbench_moderate', 0);
-    }
+  if ($entity->lingotek['profile'] == LingotekSync::PROFILE_DISABLED) {
+    return;
   }
 
-  // On node create or edit,  set the node sync status to 'edited' and all the targets to edited.
-  $is_syncing = (isset($node->skip_status_updates) && $node->skip_status_updates) ? TRUE : FALSE;
-  $is_syncing = (isset($_SESSION['lingotek_sync_in_progress'])) ? $_SESSION['lingotek_sync_in_progress'] : $is_syncing;
-
-  if ($is_syncing === FALSE) {
-    LingotekSync::setNodeAndTargetsStatus($node, LingotekSync::STATUS_EDITED, LingotekSync::STATUS_EDITED);
+  if (module_exists('rules')) {
+    rules_invoke_event('lingotek_entity_pre_upload', new EntityDrupalWrapper($entity_type, $entity));
   }
 
   // Items that are only accessible on node add or edit forms for nodes not yet sent to Lingotek.
-  if (!isset($node->lingotek['document_id']) || empty($node->lingotek['document_id'])) {
-    LingotekLog::trace('lingotek_node_update FIRST RUN ONLY', array("nid" => $node->nid, "language" => $node->language));
+  $ln = LingotekEntity::load($entity, $entity_type);
+  $entity_has_doc_id = $ln->getMetadataValue('document_id');
+  if ($entity_has_doc_id) {
+    $success = LingotekApi::instance()->updateContentDocument($ln);
+  }
+  else {
+    $success = LingotekApi::instance()->addContentDocument($ln, TRUE);
+  }
 
-    if ($send_lingotek_document) {
-      lingotek_node_save_readonly($node);
-      $ln = LingotekNode::load($node);
-      if (LingotekApi::instance()->addContentDocument($ln, TRUE)) {
-        drupal_set_message(t('<em>@node_title</em> sent to Lingotek successfully.', array('@node_title' => $node->title)));
-      }
-      else {
-        drupal_set_message(t('Unable to send <em>@node_title</em> to Lingotek.', array('@node_title' => $node->title)), 'error');
-      }
+  if ($empty_context) {
+    if ($success) {
+      drupal_set_message(t('<em>@node_title</em> sent to Lingotek successfully.', array('@node_title' => $ln->getTitle())));
+      lingotek_keystore($entity_type, $id, 'node_sync_status', LingotekSync::STATUS_CURRENT);
     }
     else {
-      lingotek_lingonode($node->nid, 'node_sync_status', LingotekSync::STATUS_EDITED);
+      drupal_set_message(t('Unable to send <em>@node_title</em> to Lingotek.', array('@node_title' => $ln->getTitle())), 'error');
     }
   }
   else {
-    // Keep source document up to date.
-    $router_item = menu_get_item();
-
-    // These are the URLs that should NOT send updates
-    $skip_list = array('lingotek/update', LINGOTEK_MENU_LANG_BASE_URL . '/notifications');
-    $path_match = array_search($router_item['path'], $skip_list);
-    // Also, dont upload if this node update was caused by the sync
-    $is_syncing = ( isset($_SESSION['lingotek_sync_in_progress']) ) ? $_SESSION['lingotek_sync_in_progress'] : FALSE;
-
-    if ($send_lingotek_document && $path_match === FALSE && $is_syncing === FALSE) {
-      LingotekApi::instance()->updateContentDocument($node);
+    if ($success) {
+      $context['results']['uploads'] = isset($context['results']['uploads']) && is_numeric($context['results']['uploads']) ? $context['results']['uploads'] + 1 : 1;
+      if (!isset($context['results']['uploaded_nids']) || !is_array($context['results']['uploaded_nids'])) {
+        $context['results']['uploaded_nids'] = array();
+      }
+      $context['results']['uploaded_nids'][] = $id;
+      lingotek_keystore($entity_type, $id, 'node_sync_status', LingotekSync::STATUS_CURRENT);
     }
     else {
-      lingotek_lingonode($node->nid, 'node_sync_status', LingotekSync::STATUS_EDITED);
+      $context['results']['upload_fails'] = isset($context['results']['upload_fails']) && is_numeric($context['results']['upload_fails']) ? $context['results']['upload_fails'] + 1 : 1;
+      if (!isset($context['results']['upload_fail_nids']) || !is_array($context['results']['upload_fail_nids'])) {
+        $context['results']['upload_fail_nids'] = array();
+      }
+      $context['results']['upload_fail_nids'][] = $id;
     }
+  }
+  
+  lingotek_keystore($entity_type, $id, 'last_uploaded', time());
+  
+  $source = isset($entity->language) ? $entity->language : language_default()->language;
+  $source = Lingotek::convertDrupal2Lingotek($source);
+  $languages = Lingotek::getLanguagesWithoutSource($source);
+
+  // Add pending statuses for all languages on successful upload only
+  if ($success) {
+    foreach ($languages as $lingotek_locale) {
+      lingotek_keystore($entity_type, $id, 'target_sync_status_' . $lingotek_locale, LingotekSync::STATUS_PENDING);
+    }
+  }
+  
+  if (module_exists('entitycache')) {
+    cache_clear_all($id, 'cache_entity_node');
+  }
+
+  if (module_exists('rules')) {
+    rules_invoke_event('lingotek_entity_post_upload', new EntityDrupalWrapper($entity_type, $entity));
   }
 }
 
-/**
- * Update Lingotek table settings for a node.
- * 
- * @param array $settings
- *    Associative array of lingokey => lingovalue
- *
- * @param array $node
- *    Array of node objects like what is returned by node_load_multiple()
- *
- */
-function lingotek_update_node_settings($settings, $nids) {
-  foreach ($nids as $nid) {
-    foreach ($settings as $setting => $value) {
-      lingotek_lingonode($nid, $setting, $value);
-    }
+function lingotek_entity_download_triggered($entity, $entity_type, $lingotek_locale, &$context = FALSE) {
+  if (is_numeric($entity)) {
+    $entity = lingotek_entity_load_single($entity_type, $entity);
   }
+
+  if (!$entity->lingotek['sync_method']) {
+    return FALSE;
+  }
+
+  return lingotek_entity_download($entity, $entity_type, $lingotek_locale, $context);
 }
 
 /*
- * hook_help
+ * Download the translations from the Lingotek platform.
+ *
+ * This updates a node's content with translations for target languages
+ *
+ * @param $node
+ *  Node being updated/synchronized
+ * @param $lingotek_locale
+ *  Target language to be updated/synchronized
+ */
+
+function lingotek_entity_download($entity, $entity_type, $lingotek_locale, &$context = FALSE) {
+  global $_lingotek_client;
+
+  if (is_numeric($entity)) {
+    $entity = lingotek_entity_load_single($entity_type, $entity);
+  }
+
+  if ($entity->lingotek['profile'] == LingotekSync::PROFILE_DISABLED) {
+    return FALSE;
+  }
+
+  if ($entity->language == Lingotek::convertLingotek2Drupal($lingotek_locale)) {
+    return FALSE;
+  }
+
+  list($id, $vid, $bundle) = lingotek_entity_extract_ids($entity_type, $entity);
+
+  if (module_exists('rules')) {
+    rules_invoke_event('lingotek_entity_translation_pre_download', new EntityDrupalWrapper($entity_type, $entity));
+  }
+
+  if ($context) {
+    $context['message'] = t('Downloading "@locale" translation for entity @type @id', array('@locale' => $lingotek_locale, '@type' => $entity_type, '@id' => $id));
+  }
+
+  $document_id = $entity->lingotek['document_id'];
+  LingotekLog::trace('lingotek_download_document @doc_id (@target)', array('@doc_id' => $document_id, '@target' => $lingotek_locale));
+
+  $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale);
+  $params = array(
+    'documentId' => $document_id,
+    'targetLanguage' => $lingotek_locale,
+  );
+
+  //CAREFUL of alternate values for $use_source, must be string 'TRUE' for api, not boolean
+  $use_source = isset($entity->lingotek['use_source']) ? $entity->lingotek['use_source'] : variable_get('lingotek_use_source', FALSE);
+  $params['useSource'] = ($use_source) ? 'TRUE' : 'FALSE'; // API expects a string, not boolean
+  //Get the finished document
+  $text = $_lingotek_client->downloadTriggered("downloadDocument", $params);
+
+  try {
+    $xml = new SimpleXMLElement($text);
+  } catch (Exception $e) {
+    LingotekLog::error("downloadDocument FAILED. Error: @error. Text: !xml.", array('!xml' => $text, '@error' => $e->getMessage()));
+    
+    if ($context) {
+      $context['results']['download_fails'] = isset($context['results']['download_fails']) && is_numeric($context['results']['download_fails']) ? $context['results']['download_fails'] + 1 : 1;
+      if (!isset($context['results']['download_fail_node_targets']) || !is_array($context['results']['download_fail_node_targets'])) {
+        $context['results']['download_fail_node_targets'] = array();
+      }
+      $context['results']['download_fail_node_targets'][] = array("nid" => $id, "locale" => $lingotek_locale);
+    }
+    return FALSE;
+  }
+
+  $storage_method = $entity->lingotek['lingotek_nodes_translation_method'];
+  $url_alias_translation = $entity->lingotek['url_alias_translation'];
+
+  if ($entity_type == 'node' && $storage_method == 'node') { //node-based translations
+    $storage_entity = lingotek_get_translated_node($entity, $drupal_language_code);
+  }
+  else {
+    $storage_entity = $entity;
+  }
+
+  lingotek_process_entity_xml($xml, $storage_entity, $entity_type, $drupal_language_code, $url_alias_translation);
+
+  if ($entity_type == 'node') {
+    //Fix for pathauto expecting the form:
+    $storage_entity->path = path_load(array('source' => 'node/' . $storage_entity->nid, 'language' => $storage_entity->language));
+    $storage_entity->path['alias'] = isset($storage_entity->path['alias']) ? $storage_entity->path['alias'] : '';
+    $storage_entity->path['pathauto'] = 0;
+  }
+
+  cache_clear_all('field:' . $entity_type . ':' . $id, 'cache_field');
+
+  $status = lingotek_keystore($entity_type, $id , 'target_sync_status_' . $lingotek_locale);
+
+  if ($status == LingotekSync::STATUS_READY) {
+    lingotek_keystore($entity_type, $id , 'target_sync_status_' . $lingotek_locale, LingotekSync::STATUS_CURRENT);
+  }
+  elseif (empty($status)) {
+    lingotek_keystore($entity_type, $id , 'target_sync_status_' . $lingotek_locale, LingotekSync::STATUS_PENDING);
+  }
+  
+  if ($context) {
+    $context['results']['downloads'] = isset($context['results']['downloads']) && is_numeric($context['results']['downloads']) ? $context['results']['downloads'] + 1 : 1;
+    if (!isset($context['results']['downloaded_node_targets']) || !is_array($context['results']['downloaded_node_targets'])) {
+      $context['results']['downloaded_node_targets'] = array();
+    }
+    $context['results']['downloaded_node_targets'][] = array("nid" => $id, "locale" => $lingotek_locale);
+  }
+
+  if (module_exists('rules')) {
+    rules_invoke_event('lingotek_entity_translation_post_download', new EntityDrupalWrapper($entity_type, $storage_entity));
+  }
+
+  return TRUE;
+}
+
+/*
+ * Implements hook_help().
  */
 
 function lingotek_help($path, $arg) {
@@ -1423,26 +1679,6 @@ function lingotek_help($path, $arg) {
 }
 
 /**
- * Gets a list of fields with translation enabled.
- *
- * @return array
- *   An array of the machine names for translatable fields in the system.
- */
-function lingotek_translatable_node_fields() {
-  $fields = field_info_fields();
-  $translatable_fields = array();
-  foreach ($fields as $field_id => $field) {
-    foreach ($field['bundles'] as $type => $instance) {
-      if (field_is_translatable($type, $field)) {
-        $translatable_fields[] = $field['field_name'];
-      }
-    }
-  }
-
-  return $translatable_fields;
-}
-
-/**
  * Processing callback for the advanced parsing update batch operation.
  */
 function lingotek_advanced_parsing_update_node($nid, &$context) {
@@ -1450,7 +1686,7 @@ function lingotek_advanced_parsing_update_node($nid, &$context) {
 
   if (!empty($process_node->nid)) {
     $context['message'] = t('Sending advanced parsing data to Lingotek for node @node_id: @node_title', array('@node_id' => $process_node->nid, '@node_title' => $process_node->title));
-    if (LingotekApi::instance()->updateContentDocument(LingotekNode::load($process_node))) {
+    if (LingotekApi::instance()->updateContentDocument(LingotekEntity::load($process_node))) {
       $context['results'][] = t('Updated node: @id', array('@id' => $process_node->nid));
     }
     else {
@@ -1525,7 +1761,6 @@ function lingotek_is_config_missing() {
     'lingotek_workflow',
     'lingotek_vault',
     'lingotek_enabled_fields',
-    'lingotek_translate_comments_node_types',
     'lingotek_oauth_consumer_id',
     'lingotek_oauth_consumer_secret',
   );
@@ -1544,102 +1779,12 @@ function lingotek_is_config_missing() {
       elseif ($required_variable == 'lingotek_enabled_fields') {
         return 'admin/config/lingotek/node-translation-settings';
       }
-      elseif ($required_variable == 'lingotek_translate_comments_node_types') {
-        return 'admin/config/lingotek/comment-translation-settings';
-      }
       elseif ($required_variable == 'lingotek_oauth_consumer_id' || $required_variable == 'lingotek_oauth_consumer_secret') {
         return TRUE;
       }
     }
   }
   return FALSE; // all required configuration variables are set
-}
-
-/**
- * Form constructor for the Lingotek Content push form.
- */
-function lingotek_content_push_form($form, $form_state, $node) {
-  $form = array();
-
-  $form['content_push'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Push Node Content to Lingotek'),
-    '#description' => t("Manually push this node's content to Lingotek"),
-    '#collapsible' => TRUE,
-    '#collapsed' => FALSE,
-  );
-
-  $form['content_push']['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Push Content'),
-  );
-
-  $form['node_id'] = array(
-    '#type' => 'hidden',
-    '#value' => $node->nid,
-  );
-
-  return $form;
-}
-
-/**
- * Submit handler for the lingotek_content_push_form form.
- */
-function lingotek_content_push_form_submit($form, $form_state) {
-  $node = lingotek_node_load_default($form_state['values']['node_id']);
-
-  $api = LingotekApi::instance();
-  if ($existing_document = isset($node->lingotek['document_id']) ? $node->lingotek['document_id'] : NULL) {
-    // Update an existing Lingotek Document.
-    $api->updateContentDocument(LingotekNode::load($node));
-  }
-  else {
-    // Create a new Lingotek Document. 
-    $api->addContentDocument(LingotekNode::load($node), TRUE);
-  }
-
-  drupal_set_message(t('Pushed content for @node_title to Lingotek for translation.', array('@node_title' => $node->title)));
-}
-
-/**
- * Implements hook_comment_insert().
- */
-function lingotek_comment_insert($comment) {
-  // Currently, the behavior for add/update is the same.
-  lingotek_comment_update($comment);
-}
-
-/**
- * Implements hook_comment_update().
- */
-function lingotek_comment_update($comment) {
-  if (LingotekComment::$content_update_in_progress) {
-    return;
-  }
-
-  $target_types = variable_get('lingotek_translate_comments_node_types', array());
-  $comment_node = lingotek_node_load_default($comment->nid);
-  $valid_translation_target = (!empty($comment_node->type) && (isset($target_types[$comment_node->type]) && $target_types[$comment_node->type]));
-  if (class_exists('LingotekComment') && variable_get('lingotek_translate_comments', FALSE) && $valid_translation_target) {
-    $lingotek_comment = LingotekComment::load($comment)->contentUpdated();
-  }
-}
-
-/**
- * Implements hook_comment_delete().
- */
-function lingotek_comment_delete($comment) {
-  $target_types = variable_get('lingotek_translate_comments_node_types', array());
-  $comment_node = lingotek_node_load_default($comment->nid);
-  $valid_translation_target = (!empty($comment_node->type) && isset($target_types[$comment_node->type]));
-  if (class_exists('LingotekComment') && variable_get('lingotek_translate_comments', FALSE) && $valid_translation_target) {
-    $lingotek_comment = LingotekComment::load($comment);
-    $doc_id = $lingotek_comment->getMetadataValue('document_id');
-    if (is_numeric($doc_id)) {
-      $api = LingotekApi::instance();
-      $api->removeDocument($doc_id, FALSE);
-    }
-  }
 }
 
 /**
@@ -1661,62 +1806,202 @@ function lingotek_comment_view($comment, $view_mode, $langcode) {
   }
   
   global $language;
-  $comment->content['lingotek_link']['#markup'] = lingotek_workbench_icon('comment', $comment->cid, Lingotek::convertDrupal2Lingotek($language->language));
+  if ($comment->lingotek['profile'] != LingotekSync::PROFILE_DISABLED) {
+    $comment->content['lingotek_link']['#markup'] = lingotek_workbench_icon('comment', $comment->cid, Lingotek::convertDrupal2Lingotek($language->language));
+  }
 }
 
 /**
  * Implements hook_entity_info_alter().
  */
 function lingotek_entity_info_alter(&$entity_info) {
-  // Only alter the entity handling of comment fields
-  // if Lingotek translation is enabled.
-  if (variable_get('lingotek_translate_comments', FALSE)) {
+  if (isset($entity_info['comment'])) {
     $entity_info['comment']['translation']['lingotek'] = TRUE;
   }
   if (isset($entity_info['field_collection_item'])) {
     $entity_info['field_collection_item']['translation']['lingotek'] = TRUE;
   }
+  if (isset($entity_info['message_type'])) {
+    $entity_info['message_type']['translation']['lingotek'] = TRUE;
+  }
+  if (isset($entity_info['taxonomy_term'])) {
+    $entity_info['taxonomy_term']['translation']['lingotek'] = TRUE;
+  }
 }
 
-function lingotek_normalize_field_collection_language($entity, $from_language_none = TRUE) {
-    $host = $entity->hostEntity();
-    $max_field_collection_depth = 10;
-    // bubble up to the true parent to get its language,
-    // which adds support for deeply nested entity collections
-    for ($i = 0; $i < $max_field_collection_depth; $i++) {
-      if ($host instanceof FieldCollectionItemEntity) {
-        $host = $host->hostEntity();
-      }
-    }
+function lingotek_normalize_language($entity_type, $entity, $read_only = TRUE) {
+  $language = language_default();
+  $site_lang = $language->language;
+
+  if ($read_only) {
     foreach ($entity as $key => $value) {
       if (is_array($value) && array_key_exists(LANGUAGE_NONE, $value)) {
-        if ($from_language_none) {
-          $entity->{$key}[$host->language] = $value[LANGUAGE_NONE];
+        $entity->{$key}[$site_lang] = $value[LANGUAGE_NONE];
+      }
+    }
+  }
+  else {
+    // Prepare the entity for saving.
+    if ($entity_type == 'taxonomy_term') {
+      // Prevent the term's name and description fields from being empty.
+      if (empty($entity->name) && !empty($entity->name_field[$site_lang][0]['value'])) {
+        $entity->name = $entity->name_field[$site_lang][0]['value'];
+      }
+      if (empty($entity->description) && !empty($entity->description_field[$site_lang][0]['value'])) {
+        $entity->description = $entity->description_field[$site_lang][0]['value'];
+      }
+    }
+
+    foreach ($entity as $key => $value) {
+      if (is_array($value) && array_key_exists($site_lang, $value)) {
+        $entity->{$key}[LANGUAGE_NONE] = $value[$site_lang];
+      }
+      else if (is_array($value) && array_key_exists(LANGUAGE_NONE, $value)) {
+        $entity->{$key}[$site_lang] = $value[LANGUAGE_NONE];
+      }
+    }
+  }
+}
+
+function lingotek_get_fc_parent($entity) {
+  $query = new EntityFieldQuery();
+  $query->fieldCondition($entity->fieldInfo(), 'revision_id', $entity->revision_id);
+  if (!$entity->isInUse()) {
+    $query->age(FIELD_LOAD_REVISION);
+  }
+  $result = $query->execute();
+  $num_results = isset($result) ? count($result) : 0;
+  if (!isset($result) || $num_results != 1) {
+    return NULL;
+  }
+  foreach ($result as $parent_type => $parents) {
+    foreach (array_keys($parents) as $parent_id) {
+      return lingotek_entity_load_single($parent_type, $parent_id);
+    }
+  }
+}
+
+function lingotek_get_host_language($entity, $read_only = TRUE) {
+  if (isset($entity->language)) {
+    return $entity->language;
+  }
+
+  $site_default_lang = language_default();
+  $site_default_langcode = $site_default_lang->language;
+
+  if (!$read_only && isset($_POST['language'])) {
+    return $_POST['language'];
+  }
+  $host = lingotek_get_fc_parent($entity);
+  if (!$host) {
+    // unable to locate parent.  Abort.
+    return $site_default_langcode;
+  }
+  $max_field_collection_depth = 10;
+  // bubble up to the true parent to get its language,
+  // which adds support for deeply nested entity collections
+  for ($i = 0; $i < $max_field_collection_depth; $i++) {
+    if ($host instanceof FieldCollectionItemEntity) {
+      $host = lingotek_get_fc_parent($host);
+      continue;
+    }
+    break;
+  }
+  if (!$host) {
+    return $site_default_langcode;
+  }
+  if ($host instanceof FieldCollectionItemEntity) {
+    LingotekLog::error('Field collections nested too deeply, possibly a loop?: @entity', array('@entity' => print_r($entity, TRUE)));
+  }
+  if (isset($host->language)) {
+    return $host->language;
+  }
+  return $site_default_langcode;
+}
+
+function lingotek_is_valid_field_collection_entity($entity_type) {
+  $field_collection_types = array('node', 'field_collection_item');
+  if (in_array($entity_type, $field_collection_types)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+function lingotek_normalize_field_collection_language($entity_type, $entity, $read_only = TRUE) {
+
+  if (!lingotek_is_valid_field_collection_entity($entity_type)) {
+    return;
+  }
+
+  $host_language = lingotek_get_host_language($entity, $read_only);
+  $field_collection_field_types = field_read_fields(array('type' => 'field_collection'));
+  if (!$field_collection_field_types) { // if there are no field collections existing, nothing to do
+    return;
+  }
+
+  foreach ($entity as $key => $value) { // for each field in the entity
+    // if the given field belongs to a field collection then normalize the languages
+    if (isset($field_collection_field_types[$key])) {
+      continue;
+    }
+
+    if (is_array($value) && ($entity instanceof FieldCollectionItemEntity)) {
+      // On entity load, LANGUAGE_NONE should be the authority,
+      // meaning the most current changes should be stored there.
+      if ($read_only) {
+        if (array_key_exists(LANGUAGE_NONE, $value)) {
+          $entity->{$key}[$host_language] = $value[LANGUAGE_NONE];
         }
-        elseif (isset($value[$host->language])) {
-          $entity->{$key}[LANGUAGE_NONE] = $value[$host->language];
+      }
+      // On entity save, LANGUAGE_NONE and host language must
+      // both be destinations for changes so that field collection content
+      // will continue to be visible if the Lingotek module is disabled
+      else {
+        if (count($value) == 1) { // initial creation, so only one language exists
+          if (array_key_exists($host_language, $value)) {
+            $entity->{$key}[LANGUAGE_NONE] = $value[$host_language];
+          }
+          elseif (array_key_exists(LANGUAGE_NONE, $value)) {
+            $entity->{$key}[$host_language] = $value[LANGUAGE_NONE];
+          }
+        }
+        else {
+          // Update by comparing changes with the original entity for the host
+          // language and language neutral.  Save the one that changed.
+          if (isset($entity->original) && isset($entity->original->{$key})) {
+            $original_value = $entity->original->{$key};
+            if (array_key_exists($host_language, $value) && (!array_key_exists($host_language, $original_value) || $value[$host_language] != $original_value[$host_language])) {
+              $entity->{$key}[LANGUAGE_NONE] = $value[$host_language];
+            }
+            elseif (array_key_exists(LANGUAGE_NONE, $value) && (!array_key_exists(LANGUAGE_NONE, $original_value) || $value[LANGUAGE_NONE] != $original_value[LANGUAGE_NONE])) {
+              $entity->{$key}[$host_language] = $value[LANGUAGE_NONE];
+            }
+          }
+          else {
+            // Use the most common way if no original entity exists.
+            if (array_key_exists($host_language, $value) && !isset($value[$host_language][0]['safe_value'])) {
+              $entity->{$key}[LANGUAGE_NONE] = $value[$host_language];
+            }
+            elseif (array_key_exists(LANGUAGE_NONE, $value) && !isset($value[LANGUAGE_NONE][0]['safe_value'])) {
+              $entity->{$key}[$host_language] = $value[LANGUAGE_NONE];
+            }
+          }
         }
       }
     }
-}
-
-/**
- * Implements hook_entity_load().
-  */
-function lingotek_entity_load($entities, $type) {
-  if ($type == 'field_collection_item') {
-    foreach ($entities as $e) {
-      lingotek_normalize_field_collection_language($e);
-    }
+    
   }
 }
 
 /**
  * Implements hook_entity_presave().
-  */
-function lingotek_entity_presave($entity, $type) {
-  if ($type == 'field_collection_item') {
-    lingotek_normalize_field_collection_language($entity, FALSE);
+ */
+function lingotek_entity_presave($entity, $entity_type) {
+  if (module_exists('field_collection')) {
+    lingotek_normalize_field_collection_language($entity_type, $entity, FALSE);
+  }
+  if ($entity_type == 'message_type' || $entity_type == 'taxonomy_term') {
+    lingotek_normalize_language($entity_type, $entity, FALSE);
   }
 }
 
@@ -1724,8 +2009,6 @@ function lingotek_entity_presave($entity, $type) {
  * Implements hook_form_FORMID_alter().
  */
 function lingotek_form_comment_form_alter(&$form, $form_state) {
-  if (variable_get('lingotek_translate_comments', FALSE)) {
-
     // Caution.  There be some wackey voodoo in here.
     // The locale module is going to set the comment's language to the user's browsing language
     // but the form_attach_fields call in comment_form() will have already run
@@ -1775,214 +2058,103 @@ function lingotek_form_comment_form_alter(&$form, $form_state) {
         }
       } // END:  foreach $comment_fields
     } // END:  if $comment_language != $default_language
-  }
 }
 
 /**
  * Implements hook_field_language_alter().
  */
 function lingotek_field_language_alter(&$display_language, $context) {
-  // If we have no language set on the entity itself, do nothing.
-  if (!isset($context['entity']->language) || empty($context['entity']->language)) {
+
+  $entity = $context['entity'];
+  $entity_type = $context['entity_type'];
+  // If no language is set on the entity itself, do nothing.
+  if (!isset($entity->language) || empty($entity->language)) {
     return;
   }
+
+  // If site admins have specifically excluded fallback behavior, or if the entity
+  // type is not handled by the Lingotek Translation module, then do nothing.
+  if (!variable_get('locale_field_language_fallback', TRUE) || !lingotek_managed_entity($entity_type, $entity)) {
+    return;
+  }
+
   // Comments may be in a state where content only exists in the source language
   // because Lingotek translation hasn't finished yet, or synchonization with
   // Lingotek hasn't yet occurred. In this case, fall back to displaying
   // the default language for each field.
+  $field_collection_field_types = field_read_fields(array('type' => 'field_collection'));
+
   foreach ($display_language as $field => $display_language_code) {
-    if (!isset($context['entity']->{$field}[$display_language_code])) {
-      $display_language[$field] = $context['entity']->language;
+    $is_field_collection = isset($field_collection_field_types[$field]);
+    if ($is_field_collection) {
+      continue;
+    }
+    if (!isset($entity->{$field}[$display_language_code])) {
+      $display_language[$field] = $entity->language;
     }
   }
 }
 
-/**
- * Implements hook_workbench_moderation_transition()
+/*
+ * Implements hook_entity_delete().
  *
- * Upload content automatically only if new state corresponds auto-upload workbench_moderation variables
- * Otherwise override upload
- */
-function lingotek_workbench_moderation_transition($node, $old_state, $new_state) {
-  //Do not run unless this node has been properly loaded.
-  if (!isset($node->lingotek) || !array_key_exists('document_id', $node->lingotek)) {
-    return; 
-  }
-  
-  // Check global and node-specific settings
-  // if this node is managed by lingotek, add lingotek wb variables
-  if ((isset($node->lingotek_push_once) && $node->lingotek_push_once) || lingotek_node_pushed($node) || isset($node->is_new) || !lingotek_managed_by_entity_translation($node->type)) {
-    $def_state = $node->lingotek['create_lingotek_document_workbench_moderation'];
-    $states = lingotek_get_workbench_moderation_states();
-
-    // do not change status updates if only moderated (no node_save called)
-    if (!isset($node->workbench_moderation_state_new)) {
-      $node->skip_status_updates = TRUE;
-    }
-//    // set lingonode variable for workbench moderation auto-upload
-//    if (isset($node->create_lingotek_document_workbench_moderation)) {
-//      lingotek_lingonode($node->nid, 'create_lingotek_document_workbench_moderation', $node->create_lingotek_document_workbench_moderation);
-//      $def_state = $node->create_lingotek_document_workbench_moderation;
-//    }
-//    // set lingonode variable for workbench moderation auto-download setting
-//    if (isset($node->syncMethod_wb)) {
-//      lingotek_lingonode($node->nid, 'sync_method_workbench_moderation', $node->syncMethod_wb);
-//    }
-
-    if ($old_state == workbench_moderation_state_published() && $new_state != workbench_moderation_state_published()) { // if changing from published
-      $node->status = 0; // unpublish
-      node_save($node);
-    }
-
-    // Check new state against settings
-    if ($new_state != $states[$def_state]) {// && !isset($node->is_new)) {
-      $node->lingotek_upload_override = 0;
-    }
-  }
-  lingotek_upload_document($node);
-}
-
-/*
- * AJAX callback to update transition options
- */
-
-function lingotek_workbench_moderation_node_callback($form, &$form_state) {
-  return $form['lingotek']['content']['syncMethod_wb_message'];
-}
-
-/*
- * Implements hook_entity_delete()
- * 
  * This removes the lingotek data of an entity.
  */
 
 function lingotek_entity_delete($entity, $type) {
-  db_delete('lingotek_entity_metadata')
-    ->condition('entity_type', $type)
-    ->condition('entity_id', entity_extract_ids($type, $entity))
+  if (isset($entity->lingotek['document_id']) && $entity->lingotek['document_id']) {
+    $api = LingotekApi::instance();
+    $api->removeDocument($entity->lingotek['document_id'], FALSE);
+  }
+  db_delete('{lingotek_entity_metadata}')
+      ->condition('entity_type', $type)
+    ->condition('entity_id', lingotek_entity_extract_ids($type, $entity))
     ->execute();
 }
 
 /**
- * Implements hook_navbar().
+ * Implements hook_form_alter().
  */
-function lingotek_navbar() {
-  
-  //this integration with the navbar module has depencies on javascript files
-  //that Responsive Theme Preview adds. Thus the integration will only show up if 
-  //the Responsive Theme Preview module is enabled.
-  if (!module_exists('responsive_preview') || variable_get('language_count') <= 1 || !variable_get('lingotek_navbar_switcher', TRUE)) {
-    return;
-  }
-  
-  $path = drupal_is_front_page() ? '<front>' : $_GET['q'];
-  $links = language_negotiation_get_switch_links('language', $path);
-  $buttons = array();
-  
-  if (empty($links->links))
-    return;
-  
-  foreach ($links->links as $key => $link) {
-    $link['attributes']['class'] = array('device', 'icon', 'icon-active');
-    $buttons[] = l($link['title'], $link['href'], $link);
-  }
-
-  $items['lingotek'] = array(
-    '#type' => 'navbar_item',
-    'tab' => array(
-      'trigger' => array(
-        '#theme' => 'html_tag',
-        '#tag' => 'button',
-        '#value' => t('Layout preview'),
-        '#value_prefix' => '<span class="element-invisible">',
-        '#value_suffix' => '</span>',
-        '#attributes' => array(
-          'title' => t('Preview page layout'),
-          'class' => array('icon', 'icon-lingotek', 'trigger'),
-        ),
-      ),
-      'device_options' => array(
-        '#theme' => 'item_list',
-        '#items' => $buttons,
-        '#attributes' => array(
-          'class' => array('options'),
-        ),
-      ),
-    ),
-    '#wrapper_attributes' => array(
-      'id' => 'lingotek-navbar-tab',
-      'class' => array('navbar-tab-lingotek'),
-    ),
-    '#attached' => array(
-      'library' => array(
-        array('lingotek', 'lingotek-navbar-switcher'),
-        array('responsive_preview', 'responsive-preview'),
-      ),
-    ),
-    '#weight' => 300,
-  );
-
-  return $items;
-}
-
-/**
- * Implements hook_library().
- */
-function lingotek_library() {
-  $path = drupal_get_path('module', 'lingotek');
-  $options = array(
-    'scope' => 'footer',
-    'attributes' => array('defer' => TRUE),
-  );
-
-  $libraries['lingotek-navbar-switcher'] = array(
-    'title' => 'Lingotek Language Switcher',
-    'version' => VERSION,
-    'css' => array(
-      $path . '/style/lingotek.navbar.css',
-    ),
-    'js' => array(
-      $path . '/js/lingotek-navbar-switcher.js' => $options,
-    ),
-    'dependencies' => array(
-      array('system', 'jquery'),
-      array('responsive_preview', 'debounce'),
-      array('responsive_preview', 'backbone'),
-      array('responsive_preview', 'jquery.ui.position'),
-    ),
-  );
-
-  return $libraries;
-}
-
 function lingotek_form_alter(&$form, &$form_state, $form_id) {
   if (substr($form_id, -9) == 'node_form') {
 
+    global $language;
+    $enabled_languages = lingotek_get_target_locales(TRUE);
+    $lingotek_locale = Lingotek::convertDrupal2Lingotek($form_state['node']->language);
+    if (!in_array($lingotek_locale, $enabled_languages)) {
+      return;
+    }
+
     //disable the language field if the node is synced with lingotek
     if (isset($form['#entity']->nid)) {
-      $document_id = lingotek_lingonode($form['#entity']->nid, 'document_id');
+      $document_id = lingotek_keystore('node', $form['#entity']->nid, 'document_id');
       if (isset($document_id) && $document_id != 0) {
         $form['language']['#disabled'] = TRUE;
       }
     }
 
-    if (isset($form['#entity']->tnid) && $form['#entity']->tnid != 0 && $form['#entity']->nid != $form['#entity']->tnid) {
+    // Protect node-based translations from being edited directly in Drupal.
+    $source_nid = lingotek_is_node_translation($form_state['node']);
+    if (($source_nid) && lingotek_enabled_langcode($form_state['node']->language)) {
       $content_type = $form['type']['#value'];
       $lingotek_fields = variable_get('lingotek_enabled_fields');
-      foreach ($lingotek_fields['node'][$content_type] as $field) {
+      $enabled_fields = !empty($lingotek_fields['node'][$content_type]) ? $lingotek_fields['node'][$content_type] : NULL;
+      if (!$enabled_fields && lingotek_oneoff_translate($form_state['node'])) {
+        $enabled_fields = lingotek_get_translatable_fields_by_content_type('node', $content_type);
+      }
+      foreach ($enabled_fields as $field) {
         $form[$field]['#disabled'] = TRUE;
       }
+      $form['actions']['submit']['#disabled'] = TRUE;
 
-      $lingotek_locale = Lingotek::convertDrupal2Lingotek($form['#entity']->language);
-      $node = lingotek_node_load_default($form['#entity']->tnid);
-      $workbench = 'node/' . $node->nid . '/lingotekworkbench/' . $lingotek_locale;
+      $workbench = 'node/' . $source_nid . '/lingotekworkbench/' . $lingotek_locale;
 
       $message = t('Some fields are not editable because the translations are managed by lingotek.
-        To edit this content in the source language go to the ') . l(t('source node'), 'node/' . $form['#entity']->tnid . '/edit') . '.';
+        To edit this content in the source language go to the ') . l(t('source node'), 'node/' . $source_nid . '/edit') . '.';
 
       $link = l(t('Lingotek workbench'), $workbench, array('attributes' => array('target' => '_blank')));
-      
-      $message .=  '<br>' . t('To make changes to this translation you can go to the !url.', array('!url' => $link));
+
+      $message .= '<br>' . t('To make changes to this translation you can go to the !url.', array('!url' => $link));
 
 
       drupal_set_message($message);
@@ -1992,34 +2164,32 @@ function lingotek_form_alter(&$form, &$form_state, $form_id) {
 
 function lingotek_get_profile_fields($include_readonly = TRUE, $include_changeable = TRUE) {
   $profile_fields = array();
-  
+
   if ($include_readonly) {
     $profile_fields = array_merge($profile_fields, array(
       'lingotek_nodes_translation_method',
       'project_id',
-      'workflow_id',
       'vault_id',
     ));
-  }  
-  
+  }
+
   if ($include_changeable) {
     $profile_fields = array_merge($profile_fields, array(
-      'profile_id',
+      'profile',
       'name',
       'create_lingotek_document',
       'sync_method',
       'allow_community_translation',
       'url_alias_translation',
-      'sync_method_workbench_moderation',
-      'create_lingotek_document_workbench_moderation',
+      'workflow_id',
     ));
   }
-  
+
   return $profile_fields;
 }
 
 /**
- * Implementation of hook_views_api
+ * Implements hook_views_api().
  */
 function lingotek_views_api() {
   return array(
@@ -2030,7 +2200,7 @@ function lingotek_views_api() {
 /**
  * Implements hook_cron().
  *
- * Updates the local cache of commonly used values.
+ * Update the local cache of commonly used values.
  */
 function lingotek_cron() {
 
@@ -2043,7 +2213,9 @@ function lingotek_cron() {
 }
 
 /*
- * Implements hook_l10n_update
+ * Implements hook_l10n_update().
+ *
+ * Reset the projects array in the l10n_update module.
  */
 function lingotek_l10n_update_projects_alter(&$projects) {
   if (variable_get('lingotek_use_translation_from_drupal', 0) != 1) {
@@ -2052,7 +2224,10 @@ function lingotek_l10n_update_projects_alter(&$projects) {
 }
 
 /*
- * Implements hook_node_view_alter
+ * Implements hook_node_view_alter().
+ *
+ * Remove the language label from the node view if the show-language variable
+ * is not set.
  */
 function lingotek_node_view_alter(&$info) {
   if (!variable_get('lingotek_show_language_label', 0)) {
@@ -2110,8 +2285,8 @@ function lingotek_get_change_workflow_form($form, &$form_state, $node = NULL) {
       '#markup' => t('This is a target node for the language code: @lang. To change
         the Lingotek settings please edit the source node.', array('@lang' => $node->language)),
     );
-    
-    return $form; //this is a target node and thus should not have lingotek settings
+    // This is a target node and thus should not have lingotek settings.
+    return $form; 
   }
 
   if (isset($nids)) {
@@ -2120,22 +2295,21 @@ function lingotek_get_change_workflow_form($form, &$form_state, $node = NULL) {
       '#default_value' => json_encode($nids),
     );
   }
-  
+
   $form['lingotek']['lingotek_note'] = array(
     '#type' => 'item',
     '#title' => $title,
     '#description' => t("This option allows you to replace the current workflow with a new workflow. This will result in the removal of any existing translations. You can optionally restore those translations to a phase in the new workflow."),
   );
-  
-  $api = LingotekApi::instance();
 
+  $api = LingotekApi::instance();
 
   if ($workflows = $api->listWorkflows()) {
     if (!isset($form_state['values']['workflow_id'])) {
       $keys = array_keys($workflows);
       $form_state['values']['workflow_id'] = $keys[0];
     }
-    
+
     $form['lingotek']['workflow_id'] = array(
       '#type' => 'select',
       '#title' => t('Workflow'),
@@ -2147,27 +2321,27 @@ function lingotek_get_change_workflow_form($form, &$form_state, $node = NULL) {
         'wrapper' => 'prefill-phases-div',
         'method' => 'replace',
         'effect' => 'fade',
-        ),
+      ),
       '#prefix' => '<div id="prefill-phases-div">',
     );
     if (isset($node)) {
-     $form['lingotek']['workflow_id']['#default_value'] = $node->lingotek['workflow_id'];
+      $form['lingotek']['workflow_id']['#default_value'] = $node->lingotek['workflow_id'];
     }
-    
+
     $form['lingotek']['prefill_phases_checkbox'] = array(
       '#type' => 'checkbox',
       '#title' => t('Restore to a phase in the new workflow'),
       '#default_value' => TRUE,
       '#description' => t('Prefill the new workflow with translations from the previous workflow'),
     );
-    
+
     $form['lingotek']['prefill_phase_select'] = array(
       '#title' => t("Desired Prefill Phase"),
       '#description' => t('Please select the highest phase which should be prefilled for the new workflow'),
       '#type' => 'select',
       '#states' => array(
-          'invisible' => array(':input[name="lingotek[prefill_phases_checkbox]"]' => array('checked' => FALSE)),
-        ),
+        'invisible' => array(':input[name="lingotek[prefill_phases_checkbox]"]' => array('checked' => FALSE)),
+      ),
       '#suffix' => '</div>',
     );
     if (isset($form_state['values']['lingotek']['workflow_id']) && $form_state['values']['lingotek']['workflow_id'] != NULL) {
@@ -2190,11 +2364,22 @@ function lingotek_get_change_workflow_form($form, &$form_state, $node = NULL) {
   return $form;
 }
 
+/**
+ * Workflow form callback.
+ *
+ * @param array $form
+ *   the form loaded
+ * @param array $form_state
+ *   the form state (content)
+ *
+ * @return string
+ *   a workflow UUID
+ */
 function lingotek_get_change_workflow_form_callback($form, $form_state) {
-  if (isset($form_state['values']['lingotek']['prefill_phases_checkbox']) 
+  if (isset($form_state['values']['lingotek']['prefill_phases_checkbox'])
       && $form_state['values']['lingotek']['prefill_phases_checkbox']) {
     return array(
-      $form['lingotek']['prefill_phase_select'], 
+      $form['lingotek']['prefill_phase_select'],
       $form['lingotek']['prefill_phases_checkbox'],
       $form['lingotek']['workflow_id'],
     );
@@ -2202,6 +2387,15 @@ function lingotek_get_change_workflow_form_callback($form, $form_state) {
   return $form['lingotek']['workflow_id'];
 }
 
+/**
+ * Get project phases by workflow ID.
+ *
+ * @param string $workflow_id
+ *   the workflow UUID
+ *
+ * @return array
+ *   an associative array of phases for the given workflow
+ */
 function lingotek_get_phases_by_workflow_id($workflow_id) {
   $api = LingotekApi::instance();
   $response = $api->request('getWorkflow', array('id' => $workflow_id));
@@ -2215,4 +2409,68 @@ function lingotek_get_phases_by_workflow_id($workflow_id) {
     }
   }
   return $phases;
+}
+
+/**
+ * Implements hook_menu_link_insert().
+ *
+ * @see lingotek_menu_link_update()
+ */
+function lingotek_menu_link_insert($link) {
+  lingotek_menu_link_update($link);
+}
+
+/**
+ * Implements hook_menu_link_update().
+ *
+ * Update the menu link's language to be language neutral, if desired,
+ * otherwise set it to be the same as it's node.
+ */
+function lingotek_menu_link_update($link) {
+  if (lingotek_translate_menu_link($link)) {
+    lingotek_set_menu_link_language($link['mlid'], LANGUAGE_NONE);
+  }
+  else {
+    if (!strstr($link['link_path'], '/')) {
+      // No link language to set!
+      return;
+    }
+    list($path, $node_id) = explode('/', $link['link_path']);
+    if ($node_id && (int) $node_id) {
+      // Get the node's language.
+      $node = node_load($node_id);
+      lingotek_set_menu_link_language($link['mlid'], $node->language);
+    }
+  }
+}
+
+/**
+ * Determine whether the menu link should be translated.
+ *
+ * @param object $link
+ *   the link object to be checked
+ *
+ * @return bool
+ *   TRUE or FALSE
+ */
+function lingotek_translate_menu_link($link) {
+  if (isset($link['lingotek_translate']) && $link['lingotek_translate'] == LANGUAGE_NONE) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Set a menu link's language.
+ *
+ * @param int $link_id
+ *   the id of the menu link to be updated
+ * @param string $langcode
+ *   the two-digit language code to be set for the menu link
+ */
+function lingotek_set_menu_link_language($link_id, $langcode) {
+  $updated = db_update('{menu_links}')
+      ->fields(array('language' => $langcode))
+      ->condition('mlid', $link_id)
+      ->execute();
 }

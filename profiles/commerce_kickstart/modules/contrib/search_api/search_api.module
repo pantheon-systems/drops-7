@@ -275,7 +275,7 @@ function search_api_theme() {
       'options' => array(),
       'fields' => array(),
       'indexed_items' => 0,
-      'on_server' => 0,
+      'on_server' => NULL,
       'total_items' => 0,
       'status' => ENTITY_CUSTOM,
       'read_only' => 0,
@@ -662,9 +662,21 @@ function search_api_search_api_index_update(SearchApiIndex $index) {
     }
 
     if ($index->server) {
-      $new_server = $index->server(TRUE);
-      // If the server is enabled, we call addIndex(); otherwise, we save the task.
-      $new_server->addIndex($index);
+      try {
+        $new_server = $index->server(TRUE);
+        // If the server is enabled, we call addIndex(); otherwise, we save the task.
+        $new_server->addIndex($index);
+      }
+      catch (SearchApiException $e) {
+        watchdog_exception('search_api', $e);
+        // If the new server doesn't exist, we remove the index from all
+        // servers. Note that saving an entity in its own update hook is usually
+        // a recipe for disaster, but since we are only doing this if a server
+        // is set and remove the server here before saving, it should be safe
+        // enough.
+        $index->server = NULL;
+        $index->save();
+      }
     }
 
     // We also have to re-index all content.
@@ -1098,7 +1110,14 @@ function search_api_track_item_insert($type, array $item_ids) {
     return;
   }
 
-  search_api_get_datasource_controller($type)->trackItemInsert($item_ids, $indexes);
+  try {
+    search_api_get_datasource_controller($type)->trackItemInsert($item_ids, $indexes);
+  }
+  catch (SearchApiException $e) {
+    $vars['%item_type'] = $type;
+    watchdog_exception('search_api', $e, '%type while inserting items of type %item_type: !message in %function (line %line of %file).', $vars);
+    return;
+  }
 
   foreach ($indexes as $index) {
     if (!empty($index->options['index_directly'])) {
@@ -1128,18 +1147,25 @@ function search_api_track_item_change($type, array $item_ids) {
   if (!$indexes) {
     return;
   }
-  search_api_get_datasource_controller($type)->trackItemChange($item_ids, $indexes);
-  foreach ($indexes as $index) {
-    if (!empty($index->options['index_directly'])) {
-      // For indexes with the index_directly option set, queue the items to be
-      // indexed at the end of the request.
-      try {
-        search_api_index_specific_items_delayed($index, $item_ids);
-      }
-      catch (SearchApiException $e) {
-        watchdog_exception('search_api', $e);
+  try {
+    search_api_get_datasource_controller($type)->trackItemChange($item_ids, $indexes);
+    foreach ($indexes as $index) {
+      if (!empty($index->options['index_directly'])) {
+        // For indexes with the index_directly option set, queue the items to be
+        // indexed at the end of the request.
+        try {
+          search_api_index_specific_items_delayed($index, $item_ids);
+        }
+        catch (SearchApiException $e) {
+          watchdog_exception('search_api', $e);
+        }
       }
     }
+  }
+  catch (SearchApiException $e) {
+    $vars['%item_type'] = $type;
+    watchdog_exception('search_api', $e, '%type while updating items of type %item_type: !message in %function (line %line of %file).', $vars);
+    return;
   }
 }
 
@@ -1158,7 +1184,12 @@ function search_api_track_item_change($type, array $item_ids) {
  *   the Drupal 8 version of this module.
  */
 function search_api_track_item_queued(SearchApiIndex $index, array $item_ids) {
-  $index->datasource()->trackItemQueued($item_ids, $index);
+  try {
+    $index->datasource()->trackItemQueued($item_ids, $index);
+  }
+  catch (SearchApiException $e) {
+    watchdog_exception('search_api', $e);
+  }
 }
 
 /**
@@ -1191,16 +1222,27 @@ function search_api_track_item_delete($type, array $item_ids) {
   );
   $indexes = search_api_index_load_multiple(FALSE, $conditions);
   if ($indexes) {
-    search_api_get_datasource_controller($type)->trackItemDelete($item_ids, $indexes);
+    try {
+      search_api_get_datasource_controller($type)->trackItemDelete($item_ids, $indexes);
+    }
+    catch (SearchApiException $e) {
+      $vars['%item_type'] = $type;
+      watchdog_exception('search_api', $e, '%type while deleting items of type %item_type: !message in %function (line %line of %file).', $vars);
+    }
   }
 
   // Then, delete it from all servers. Servers of disabled indexes have to be
   // considered, too!
   unset($conditions['enabled']);
   foreach (search_api_index_load_multiple(FALSE, $conditions) as $index) {
-    if ($index->server) {
-      $server = $index->server();
-      $server->deleteItems($item_ids, $index);
+    try {
+      if ($server = $index->server()) {
+        $server->deleteItems($item_ids, $index);
+      }
+    }
+    catch (Exception $e) {
+      $vars['%item_type'] = $type;
+      watchdog_exception('search_api', $e, '%type while deleting items of type %item_type: !message in %function (line %line of %file).', $vars);
     }
   }
 }
@@ -1389,7 +1431,7 @@ function search_api_index_recalculate_fields($indexes = FALSE) {
     }
     // Use a more accurate method of determining if the fields settings are
     // equal to avoid needlessly re-indexing the whole index.
-    if (!_search_api_settings_equals($fields, $index->options['fields'])) {
+    if ($fields != $index->options['fields']) {
       $options = $index->options;
       $options['fields'] = $fields;
       $index->update(array('options' => $options));
@@ -1400,9 +1442,6 @@ function search_api_index_recalculate_fields($indexes = FALSE) {
 /**
  * Test two setting arrays (or individual settings) for equality.
  *
- * While a simple == also works in some cases, this function takes into account
- * that the order of keys (usually) doesn't matter in settings arrays.
- *
  * @param mixed $setting1
  *   The first setting (array).
  * @param mixed $setting2
@@ -1410,6 +1449,8 @@ function search_api_index_recalculate_fields($indexes = FALSE) {
  *
  * @return bool
  *   TRUE if both settings are identical, FALSE otherwise.
+ *
+ * @deprecated The simple "==" operator will achieve the same.
  */
 function _search_api_settings_equals($setting1, $setting2) {
   if (!is_array($setting1) || !is_array($setting2)) {
@@ -1495,10 +1536,7 @@ function search_api_index_specific_items(SearchApiIndex $index, array $ids) {
       // some specific setups.
       $type = search_api_get_item_type_info($index->item_type);
       $type = $type ? $type['name'] : $index->item_type;
-      watchdog('search_api',
-          "Error during indexing: invalid item loaded for @type with ID @id.",
-          array('@id' => $id, '@type' => $type),
-          WATCHDOG_WARNING);
+      watchdog('search_api', "Error during indexing: invalid item loaded for @type with ID @id.", array('@id' => $id, '@type' => $type), WATCHDOG_WARNING);
     }
   }
   $indexed = $items ? $index->index($cloned_items) : array();
@@ -1578,25 +1616,14 @@ function search_api_get_items_to_index(SearchApiIndex $index, $limit = -1) {
  * @param $id
  *   The ID or machine name of the index to execute the search on.
  * @param $options
- *   An associative array of options. The following are recognized:
- *   - filters: Either a SearchApiQueryFilterInterface object or an array of
- *     filters used to filter the search.
- *   - sort: An array of sort directives of the form $field => $order, where
- *     $order is either 'ASC' or 'DESC'.
- *   - offset: The position of the first returned search results relative to the
- *     whole result in the index.
- *   - limit: The maximum number of search results to return. -1 means no limit.
- *   - 'query class': The query class to use. Must be a subtype of
- *     SearchApiQueryInterface.
- *   - conjunction: The type of conjunction to use for this query - either
- *     'AND' or 'OR'. 'AND' by default.
- *   - 'parse mode': The mode with which to parse the $keys variable, if it
- *     is set and not already an array. See SearchApiQuery::parseModes() for
- *     parse modes recognized by the SearchApiQuery class.
- *     Subclasses might define additional modes.
+ *   An associative array of options to be passed to
+ *   SearchApiQueryInterface::__construct().
  *
  * @return SearchApiQueryInterface
  *   An object for searching on the specified index.
+ *
+ * @throws SearchApiException
+ *   If the index is unknown or disabled, or some other error was encountered.
  */
 function search_api_query($id, array $options = array()) {
   $index = search_api_index_load($id);
@@ -1607,9 +1634,10 @@ function search_api_query($id, array $options = array()) {
 }
 
 /**
- * Static store for the searches executed on the current page. Can either be
- * used to store an executed search, or to retrieve a previously stored
- * search.
+ * Stores or retrieves a search executed in this page request.
+ *
+ * Static storage for the searches executed during the current page request. Can
+ * used to store an executed search, or to retrieve a previously stored search.
  *
  * @param $search_id
  *   For pages displaying multiple searches, an optional ID identifying the
@@ -2556,12 +2584,18 @@ function search_api_index_url(SearchApiIndex $index) {
  * @param SearchApiIndex $index
  *   The index whose server should be returned.
  *
- * @return SearchApiServer
+ * @return SearchApiServer|null
  *   The server this index currently resides on, or NULL if the index is
  * currently unassigned.
  */
 function search_api_index_get_server(SearchApiIndex $index) {
-  return $index->server();
+  try {
+    return $index->server();
+  }
+  catch (SearchApiException $e) {
+    watchdog_exception('search_api', $e);
+    return NULL;
+  }
 }
 
 /**
@@ -2638,14 +2672,14 @@ function search_api_index_edit_fields($id, array $fields) {
 /**
  * Enables a search index.
  *
- * @param $id
+ * @param string|int $id
  *   The ID or machine name of the index to enable.
  *
- * @throws SearchApiException
- *   If the index' server isn't enabled.
- *
- * @return
+ * @return int|false
  *   1 on success, 0 or FALSE on failure.
+ *
+ * @throws SearchApiException
+ *   If the index's server doesn't exist.
  */
 function search_api_index_enable($id) {
   $index = search_api_index_load($id, TRUE);
@@ -2656,11 +2690,14 @@ function search_api_index_enable($id) {
 /**
  * Disables a search index.
  *
- * @param $id
+ * @param string|int $id
  *   The ID or machine name of the index to disable.
  *
- * @return
+ * @return int|false
  *   1 on success, 0 or FALSE on failure.
+ *
+ * @throws SearchApiException
+ *   If the index's server doesn't exist.
  */
 function search_api_index_disable($id) {
   $index = search_api_index_load($id, TRUE);
@@ -2808,6 +2845,9 @@ function _search_api_convert_custom_type($callback, $value, $original_type, $typ
  * @return int
  *   The number of items found on the server for this index, if the latter is
  *   enabled. 0 otherwise.
+ *
+ * @throws SearchApiException
+ *   If an error prevented the search from completing.
  */
 function _search_api_get_items_on_server(SearchApiIndex $index) {
   if (!$index->enabled) {

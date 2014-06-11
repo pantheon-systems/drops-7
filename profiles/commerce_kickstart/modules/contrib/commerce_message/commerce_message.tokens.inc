@@ -23,7 +23,7 @@ function commerce_message_tokens($type, $tokens, array $data = array(), array $o
   $replacements = array();
   foreach ($tokens as $name => $original) {
     if ($name == 'site-logo') {
-      $replacements[$original] = theme('image', array('path' => theme_get_setting('logo'), 'alt' => variable_get('site_name'), 'title' => variable_get('site_name')));
+      $replacements[$original] = theme('image', array('path' => theme_get_setting('logo', variable_get('theme_default')), 'alt' => variable_get('site_name'), 'title' => variable_get('site_name')));
     }
   }
 

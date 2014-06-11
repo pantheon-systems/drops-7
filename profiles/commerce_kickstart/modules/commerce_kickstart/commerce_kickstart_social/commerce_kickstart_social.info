@@ -27,13 +27,14 @@ features[variable][] = service_links_in_links
 features[variable][] = service_links_in_node
 features[variable][] = service_links_label_in_node
 features[variable][] = service_links_node_types
+features[variable][] = service_links_node_view_modes
 features[variable][] = service_links_show
 features[variable][] = service_links_style
 features[variable][] = service_links_visibility_for_node
 
-; Information added by Drupal.org packaging script on 2014-04-22
-version = "7.x-2.14"
+; Information added by Drupal.org packaging script on 2014-06-11
+version = "7.x-2.15"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1398158656"
+datestamp = "1402495791"
 

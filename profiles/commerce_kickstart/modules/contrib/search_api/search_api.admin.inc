@@ -834,6 +834,15 @@ function search_api_admin_index_view(SearchApiIndex $index, $action = NULL) {
   }
 
   $status = search_api_index_status($index);
+  try {
+    $server = $index->server();
+  }
+  catch (SearchApiException $e) {
+    $server = NULL;
+    $vars['%server'] = $index->server;
+    $message = t('The index has an unknown server (ID: %server) set. Please check the index settings.', $vars);
+    drupal_set_message($message, 'error');
+  }
   $ret['view'] = array(
     '#theme' => 'search_api_index',
     '#id' => $index->id,
@@ -842,15 +851,21 @@ function search_api_admin_index_view(SearchApiIndex $index, $action = NULL) {
     '#description' => $index->description,
     '#item_type' => $index->item_type,
     '#enabled' => $index->enabled,
-    '#server' => $index->server(),
+    '#server' => $server,
     '#options' => $index->options,
     '#fields' => $index->getFields(),
     '#indexed_items' => $status['indexed'],
-    '#on_server' => _search_api_get_items_on_server($index),
+    '#on_server' => NULL,
     '#total_items' => $status['total'],
     '#status' => $index->status,
     '#read_only' => $index->read_only,
   );
+  try{
+    $ret['view']['#on_server'] = _search_api_get_items_on_server($index);
+  }
+  catch (SearchApiException $e) {
+    watchdog_exception('search_api', $e);
+  }
   if ($index->enabled && !$index->read_only) {
     $ret['form'] = drupal_get_form('search_api_admin_index_status_form', $index, $status);
   }
@@ -873,7 +888,8 @@ function search_api_admin_index_view(SearchApiIndex $index, $action = NULL) {
  *   - fields: All indexed fields of the index.
  *   - indexed_items: The number of items already indexed in their latest
  *     version on this index.
- *   - on_server: The number of items actually indexed on the server.
+ *   - on_server: The number of items actually indexed on the server. NULL if
+ *     the search for finding out the item count failed.
  *   - total_items: The total number of items that have to be indexed for this
  *     index.
  *   - status: The entity configuration status (in database, in code, etc.).
@@ -963,15 +979,21 @@ function theme_search_api_index(array $variables) {
     $rows[] = _search_api_deep_copy($row);
 
     $theme = array(
-      'percent' => (int) (100 * $indexed_items / $total_items),
+      'percent' => $total_items ? (int) (100 * $indexed_items / $total_items) : 100,
       'message' => t('@indexed/@total indexed', array('@indexed' => $indexed_items, '@total' => $total_items)),
     );
     $output .= '<h3>' . t('Index status') . '</h3>';
     $output .= '<div class="search-api-index-status">' . theme('progress_bar', $theme) . '</div>';
 
-    $vars['@url'] = url('https://drupal.org/node/2009804#server-index-status');
-    $info = format_plural($on_server, 'There is 1 item indexed on the server for this index. (<a href="@url">More information</a>)', 'There are @count items indexed on the server for this index. (<a href="@url">More information</a>)', $vars);
-    $class = '';
+    if (!isset($on_server)) {
+      $info = t('An error occurred while trying to determine the server index status. Please check the logs for details.');
+      $class = 'error';
+    }
+    else {
+      $vars['@url'] = url('https://drupal.org/node/2009804#server-index-status');
+      $info = format_plural($on_server, 'There is 1 item indexed on the server for this index. (<a href="@url">More information</a>)', 'There are @count items indexed on the server for this index. (<a href="@url">More information</a>)', $vars);
+      $class = '';
+    }
     $label = t('Server index status');
     $rows[] = _search_api_deep_copy($row);
   }
@@ -1178,12 +1200,21 @@ function search_api_admin_index_edit(array $form, array &$form_state, SearchApiI
     '#default_value' => $index->name,
     '#required' => TRUE,
   );
+  try {
+    $enabled_fixed = !$index->enabled && !$index->server();
+  }
+  catch (Exception $e) {
+    watchdog_exception('search_api', $e);
+    // The exception only occurs if the index is disabled, and for an unknown
+    // server we of course want do prevent the index from being enabled.
+    $enabled_fixed = TRUE;
+  }
   $form['enabled'] = array(
     '#type' => 'checkbox',
     '#title' => t('Enabled'),
     '#default_value' => $index->enabled,
     // Can't enable an index lying on a disabled server, or no server at all.
-    '#disabled' => !$index->enabled && (!$index->server() || !$index->server()->enabled),
+    '#disabled' => $enabled_fixed,
   );
   $form['description'] = array(
     '#type' => 'textarea',
@@ -2209,8 +2240,16 @@ function search_api_admin_confirm_submit(array $form, array &$form_state) {
   $action = $values['action'];
   $id = $values['id'];
 
+  $success = FALSE;
   $function = "search_api_{$type}_{$action}";
-  if ($function($id)) {
+  try {
+    // Some actions, like disabling, can actually throw an exception.
+    $success = $function($id);
+  }
+  catch (SearchApiException $e) {
+    watchdog_exception('search_api', $e);
+  }
+  if ($success) {
     drupal_set_message($values['message']);
   }
   else {

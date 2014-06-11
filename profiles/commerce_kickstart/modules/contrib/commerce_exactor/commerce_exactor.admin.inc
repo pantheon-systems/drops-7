@@ -1,8 +1,8 @@
 <?php
 /**
  * @file
- *  commerce_exactor.admin.inc
- *  Administrative forms for Commerce Exactor module.
+ * commerce_exactor.admin.inc
+ *   Administrative forms for Commerce Exactor module.
  */
 
 /**

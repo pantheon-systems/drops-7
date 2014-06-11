@@ -16,7 +16,7 @@ class LingotekAccount {
   const ACTIVE = 'active';
   const UNKNOWN = 'unknown';
   const NONE = 'none';
-  const ENTERPRISE = 'enterprise';
+  const ADVANCED = 'advanced';
 
   /**
    * Holds the static instance of the singleton object.
@@ -37,11 +37,7 @@ class LingotekAccount {
     $this->status = self::UNKNOWN;
     $this->planType = self::UNKNOWN;
 
-    // Load the Current Account Status from Cached local Drupal information.
-    //$current_status = variable_get('lingotek_account_status', NULL);
-    //$current_plan_type = variable_get('lingotek_account_plan_type', NULL);
-
-    // assume an standard active account avoid call to billing
+    // assume an standard active account
     $current_status = variable_get('lingotek_account_status', self::ACTIVE);
     $current_plan_type = variable_get('lingotek_account_plan_type', 'standard');
 
@@ -103,7 +99,7 @@ class LingotekAccount {
   }
 
   public function isPlanType($type) {
-    // isPlanType type values: 'enterprise', 'standard'
+    // isPlanType type values: 'advanced', 'standard'
     $account_type = $this->getPlanType();
     return (strcasecmp($type, $account_type) == 0);
   }
@@ -114,12 +110,8 @@ class LingotekAccount {
     return $details;
   }
 
-  public function isEnterprise() {
-    return $this->isPlanType(self::ENTERPRISE);
-  }
-
-  public function getEnterpriseStatusText() {
-    return ( $this->isPlanType(self::ENTERPRISE) ) ? '<span style="color: green;">Yes</span>' : '<span>No</span>';
+  public function showAdvanced() {
+    return $this->isPlanType(self::ADVANCED);
   }
 
   /**

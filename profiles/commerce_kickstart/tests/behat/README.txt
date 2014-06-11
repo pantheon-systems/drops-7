@@ -14,7 +14,7 @@ Setup
 
  3. Copy behat.yml.example to behat.yml and modify
 
-    mv behat.template.yml behat.yml
+    cp behat.template.yml behat.yml
  
  4. Run Behat and examine test results!
  

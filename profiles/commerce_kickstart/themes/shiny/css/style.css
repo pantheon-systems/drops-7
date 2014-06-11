@@ -884,7 +884,6 @@ ul.action-links li {
 ul.action-links a {
   padding-left: 15px;
   /* LTR */
-  background: transparent url(../images/add.png) no-repeat 0 center;
   line-height: 30px;
 }
 

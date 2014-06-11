@@ -12,6 +12,9 @@ $plugin = array(
   'weight' => -80,
 );
 
+/**
+ * Form generate callback.
+ */
 function commerce_exactor_avs_generate(&$format, &$address, $context = array()) {
   if ($address['country'] == 'US' && $context['mode'] == 'form') {
     // Defaults.
@@ -37,6 +40,9 @@ function commerce_exactor_avs_generate(&$format, &$address, $context = array()) 
   }
 }
 
+/**
+ * Form validation callback.
+ */
 function commerce_exactor_avs_address_form_validate($element, &$form_state, &$form) {
   if (isset($form_state['triggering_element']['#action_name']) && $form_state['triggering_element']['#action_name'] === 'verify') {
     // Get array parents.

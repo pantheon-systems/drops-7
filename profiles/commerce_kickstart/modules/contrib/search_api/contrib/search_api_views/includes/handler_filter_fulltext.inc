@@ -156,8 +156,9 @@ class SearchApiViewsHandlerFilterFulltext extends SearchApiViewsHandlerFilterTex
 
     if ($filter) {
       $filter = $this->query->createFilter('OR');
+      $op = $this->operator === 'NOT' ? '<>' : '=';
       foreach ($fields as $field) {
-        $filter->condition($field, $this->value, $this->operator);
+        $filter->condition($field, $this->value, $op);
       }
       $this->query->filter($filter);
       return;
@@ -166,7 +167,7 @@ class SearchApiViewsHandlerFilterFulltext extends SearchApiViewsHandlerFilterTex
     // If the operator was set to OR or NOT, set OR as the conjunction. (It is
     // also set for NOT since otherwise it would be "not all of these words".)
     if ($this->operator != 'AND') {
-      $this->query->setOption('conjunction', $this->operator);
+      $this->query->setOption('conjunction', 'OR');
     }
 
     $this->query->fields($fields);

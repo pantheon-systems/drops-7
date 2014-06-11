@@ -348,7 +348,7 @@ function _commerce_yotpo_product_format($line_item_wrapper) {
   }
 
   if ($node_wrapper) {
-    $description = $node_wrapper->body->value->value(array('decode' => TRUE));
+    $description = $node_wrapper->body->value(array('decode' => TRUE));
   }
   else {
     $description = $line_item_wrapper->commerce_product->title->value();

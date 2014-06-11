@@ -10,9 +10,9 @@ files[] = i18n_sync.install
 files[] = i18n_sync.module.inc
 files[] = i18n_sync.node.inc
 files[] = i18n_sync.test
-; Information added by drupal.org packaging script on 2013-08-21
-version = "7.x-1.10"
+; Information added by Drupal.org packaging script on 2014-04-16
+version = "7.x-1.11"
 core = "7.x"
 project = "i18n"
-datestamp = "1377069696"
+datestamp = "1397666996"
 

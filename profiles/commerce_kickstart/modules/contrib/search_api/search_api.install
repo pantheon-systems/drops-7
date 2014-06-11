@@ -349,8 +349,13 @@ function search_api_enable() {
     }
   }
   foreach ($types as $type => $indexes) {
-    $controller = search_api_get_datasource_controller($type);
-    $controller->startTracking($indexes);
+    try {
+      $controller = search_api_get_datasource_controller($type);
+      $controller->startTracking($indexes);
+    }
+    catch (SearchApiException $e) {
+      watchdog_exception('search_api', $e);
+    }
   }
 }
 
@@ -961,6 +966,10 @@ function search_api_update_7116() {
     $insert = db_insert('search_api_task')
       ->fields(array('server_id', 'type', 'index_id', 'data'));
     foreach ($tasks as $task) {
+      $task += array(
+        'index_id' => NULL,
+        'data' => NULL,
+      );
       $insert->values($task);
     }
     $insert->execute();

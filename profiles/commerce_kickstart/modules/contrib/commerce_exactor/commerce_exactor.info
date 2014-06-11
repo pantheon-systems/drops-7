@@ -4,9 +4,9 @@ package = Commerce (Tax)
 core = 7.x
 configure = admin/commerce/config/exactor
 
-; Information added by  packaging script on 2013-11-11
-version = "7.x-1.2"
+; Information added by Drupal.org packaging script on 2014-01-13
+version = "7.x-1.3"
 core = "7.x"
 project = "commerce_exactor"
-datestamp = "1384175906"
+datestamp = "1389605916"
 

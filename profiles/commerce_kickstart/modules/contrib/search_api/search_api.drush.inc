@@ -108,6 +108,19 @@ function search_api_drush_command() {
     'aliases' => array('sapi-c'),
   );
 
+  $items['search-api-set-index-server'] = array(
+    'description' => 'Set the search server used by a given index.',
+    'examples' => array(
+      'drush search-api-set-index-server default_node_index my_solr_server' => dt('Set the !index index to use the !server server.', array('!index' => 'default_node_index', '!server' => 'my_solr_server')),
+      'drush sapi-sis default_node_index my_solr_server' => dt('Alias to set the !index index to use the !server server.', array('!index' => 'default_node_index', '!server' => 'my_solr_server')),
+    ),
+    'arguments' => array(
+      'index_id' => dt('The numeric ID or machine name of an index.'),
+      'server_id' => dt('The numeric ID or machine name of a server to set on the index.'),
+    ),
+    'aliases' => array('sapi-sis'),
+  );
+
   return $items;
 }
 
@@ -137,15 +150,21 @@ function drush_search_api_list() {
   foreach ($indexes as $index) {
     $type = search_api_get_item_type_info($index->item_type);
     $type = isset($type['name']) ? $type['name'] : $index->item_type;
-    $server = $index->server();
-    $server = $server ? $server->name : '(' . t('none') . ')';
+    try {
+      $server = $index->server();
+      $server = $server ? $server->name : '(' . dt('none') . ')';
+    }
+    catch (SearchApiException $e) {
+      watchdog_exception('search_api', $e);
+      $server = '(' . dt('unknown: !server', array('server' => $index->server)) . ')';
+    }
     $row = array(
       $index->id,
       $index->name,
       $index->machine_name,
       $server,
       $type,
-      $index->enabled ? t('enabled') : t('disabled'),
+      $index->enabled ? dt('enabled') : dt('disabled'),
       $index->options['cron_limit'],
     );
     $rows[] = $row;
@@ -168,17 +187,24 @@ function drush_search_api_enable($index_id = NULL) {
     return;
   }
   foreach ($indexes as $index) {
+    $vars = array('!index' => $index->name);
     if (!$index->enabled) {
-      drush_log(dt("Enabling index !index and queueing items for indexing.", array('!index' => $index->name)), 'notice');
-      if (search_api_index_enable($index->id)) {
-        drush_log(dt("The index !index was successfully enabled.", array('!index' => $index->name)), 'ok');
+      drush_log(dt("Enabling index !index and queueing items for indexing.", $vars), 'notice');
+      $success = FALSE;
+      try {
+        if ($success = search_api_index_enable($index->id)) {
+          drush_log(dt("The index !index was successfully enabled.", $vars), 'ok');
+        }
       }
-      else {
-        drush_log(dt("Error enabling index !index.", array('!index' => $index->name)), 'error');
+      catch (SearchApiException $e) {
+        drush_log($e->getMessage(), 'error');
+      }
+      if (!$success) {
+        drush_log(dt("Error enabling index !index.", $vars), 'error');
       }
     }
     else {
-      drush_log(dt("The index !index is already enabled.", array('!index' => $index->name)), 'error');
+      drush_log(dt("The index !index is already enabled.", $vars), 'error');
     }
   }
 }
@@ -198,16 +224,23 @@ function drush_search_api_disable($index_id = NULL) {
     return;
   }
   foreach ($indexes as $index) {
+    $vars = array('!index' => $index->name);
     if ($index->enabled) {
-      if (search_api_index_disable($index->id)) {
-        drush_log(dt("The index !index was successfully disabled.", array('!index' => $index->name)), 'ok');
+      $success = FALSE;
+      try {
+        if ($success = search_api_index_disable($index->id)) {
+          drush_log(dt("The index !index was successfully disabled.", $vars), 'ok');
+        }
       }
-      else {
-        drush_log(dt("Error disabling index !index.", array('!index' => $index->name)), 'error');
+      catch (SearchApiException $e) {
+        drush_log($e->getMessage(), 'error');
+      }
+      if (!$success) {
+        drush_log(dt("Error disabling index !index.", $vars), 'error');
       }
     }
     else {
-      drush_log(dt("The index !index is already disabled.", array('!index' => $index->name)), 'error');
+      drush_log(dt("The index !index is already disabled.", $vars), 'error');
     }
   }
 }
@@ -266,7 +299,13 @@ function drush_search_api_index($index_id = NULL, $limit = NULL, $batch_size = N
   }
   foreach ($indexes as $index) {
     // Get the number of remaing items to index.
-    $datasource = $index->datasource();
+    try {
+      $datasource = $index->datasource();
+    }
+    catch (SearchApiException $e) {
+      drush_log($e->getMessage(), 'error');
+      continue;
+    }
     $index_status = $datasource->getIndexStatus($index);
     $remaining = $index_status['total'] - $index_status['indexed'];
     if ($remaining <= 0) {
@@ -367,12 +406,54 @@ function drush_search_api_clear($index_id = NULL) {
 }
 
 /**
- * Helper function to return an index or all indexes as an array.
+ * Set the server for a given index.
+ */
+function drush_search_api_set_index_server($index_id = NULL, $server_id = NULL) {
+  if (search_api_drush_static(__FUNCTION__)) {
+    return;
+  }
+  // Make sure we have parameters to work with.
+  if (empty($index_id) || empty($server_id)) {
+    drush_log(dt('You must specify both an index and server.'), 'error');
+    return;
+  }
+  // Fetch current index and server data.
+  $indexes = search_api_drush_get_index($index_id);
+  $servers = search_api_drush_get_server($server_id);
+  if (empty($indexes) || empty($servers)) {
+    // If the specified index or server can't be found, just return. An
+    // appropriate error message should have been printed already.
+    return;
+  }
+  // Set the new server on the index.
+  $success = FALSE;
+  $index = reset($indexes);
+  $server = reset($servers);
+  try {
+    $success = $index->update(array('server' => $server->machine_name));
+  }
+  catch (SearchApiException $e) {
+    drush_log($e->getMessage(), 'error');
+  }
+  if ($success === FALSE) {
+    drush_log(dt('There was an error setting index !index to use server !server.', array('!index' => $index->name, '!server' => $server->name)), 'error');
+  }
+  elseif (!$success) {
+    drush_log(dt('Index !index was already using server !server.', array('!index' => $index->name, '!server' => $server->name)), 'ok');
+  }
+  else {
+    drush_log(dt('Index !index has been set to use server !server and items have been queued for indexing.', array('!index' => $index->name, '!server' => $server->name)), 'ok');
+  }
+}
+
+/**
+ * Returns an index or all indexes as an array.
  *
- * @param $index_id
- *   (optional) The provided index id.
+ * @param string|int|null $index_id
+ *   (optional) The ID or machine name of the index to load. Defaults to
+ *   loading all available indexes.
  *
- * @return
+ * @return SearchApiIndex[]
  *   An array of indexes.
  */
 function search_api_drush_get_index($index_id = NULL) {
@@ -387,7 +468,34 @@ function search_api_drush_get_index($index_id = NULL) {
 }
 
 /**
- * Static lookup to prevent Drush 4 from running twice.
+ * Returns a server or all servers as an array.
+ *
+ * @param string|int|null $server_id
+ *   (optional) The ID or machine name of the server to load. Defaults to
+ *   loading all available servers.
+ *
+ * @return SearchApiServer[]
+ *   An array of servers.
+ */
+function search_api_drush_get_server($server_id = NULL) {
+  $ids = isset($server_id) ? array($server_id) : FALSE;
+  $servers = search_api_server_load_multiple($ids);
+  if (empty($servers)) {
+    drush_set_error(dt('Invalid server_id or no servers present.'));
+    // @todo: Maybe add logic to print table of all servers.
+  }
+  return $servers;
+}
+
+/**
+ * Does a static lookup to prevent Drush 4 from running twice.
+ *
+ * @param string $function
+ *   The Drush function being called.
+ *
+ * @return bool
+ *   TRUE if the function was already called in this Drush execution, FALSE
+ *   otherwise.
  *
  * @see http://drupal.org/node/704848
  */
@@ -397,4 +505,5 @@ function search_api_drush_static($function) {
     return TRUE;
   }
   $index[$function] = TRUE;
+  return FALSE;
 }

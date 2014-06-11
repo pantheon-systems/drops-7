@@ -1,8 +1,7 @@
 <?php
 /**
  * @file
- *   commerce_exactor_euc.info.inc
- *
+ * commerce_exactor_euc.info.inc
  */
 
 /**

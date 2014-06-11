@@ -11,6 +11,17 @@ $serif: Constantia, "Lucida Bright", Lucidabright, "Lucida Serif", Lucida, "Deja
   background: linear-gradient(to bottom, $from 0%,$to 100%);
 }
 
+@mixin gradient-image($image, $from, $to) {
+  background-image: $image;
+  background-image: $image, -moz-linear-gradient(top, $from 0%, $to 100%); /* FF3.6+ */
+  background-image: $image, -webkit-gradient(linear, left top, left bottom, color-stop(0%,$from), color-stop(100%,#eaeaea)); /* Chrome,Safari4+ */
+  background-image: $image, -webkit-linear-gradient(top,  $from 0%,$to 100%); /* Chrome10+,Safari5.1+ */
+  background-image: $image, -o-linear-gradient(top, $from 0%,$to 100%); /* Opera 11.10+ */
+  background-image: $image, -ms-linear-gradient(top, $from 0%,$to 100%); /* IE10+ */
+  background-image: $image, linear-gradient(to bottom, $from 0%,$to 100%); /* W3C */
+  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='$from', endColorstr='#eaeaea',GradientType=0 ); /* IE6-9 */
+}
+
 @mixin button($border, $highlight) {
   border: 1px solid $border;
   -moz-border-radius: 4px;
@@ -27,6 +38,7 @@ $serif: Constantia, "Lucida Bright", Lucidabright, "Lucida Serif", Lucida, "Deja
 
   &:focus {
     color: #fff;
+    outline: 0;
   }
 }
 
@@ -40,6 +52,7 @@ $serif: Constantia, "Lucida Bright", Lucidabright, "Lucida Serif", Lucida, "Deja
   &:disabled {
     background: #eeeeee;
     color: #5A5A5A;
+    outline: 0;
     text-shadow: 0 -1px 1px #fff;
   }
 

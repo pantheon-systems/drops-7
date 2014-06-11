@@ -10,30 +10,31 @@ function lingotek_perform_action(nid, action) {
 }
   
 (function ($) {
-  function lingotekTriggerModal(id, nids) {
-    nids = [];
+  function lingotekTriggerModal(self) {
+    var $self = $(self);
+    url = $self.attr('href');
+    var entity_ids = [];
     $('#edit-grid-container .form-checkbox').each(function() {
       if($(this).attr('checked')) {
         val = $(this).val();
         if(val != 'on') {
-          nids.push(val);
+          entity_ids.push(val);
         }
       }
     });
-    
-    if(nids.length > 0) {
+    console.log(entity_ids);
+    if(entity_ids.length > 0) {
       $('#edit-actions-select').val('select');
-      url = $(id).attr('href');
       ob = Drupal.ajax[url];
-      ob.element_settings.url = ob.options.url = ob.url = url + '/' + nids.join(',');
-      $(id).trigger('click');
-      $(id).attr('href', url);
+      ob.element_settings.url = ob.options.url = ob.url = url + '/' + entity_ids.join(',');
+      $self.trigger('click');
+      $self.attr('href', url);
       $('.modal-header .close').click( function() {
         location.reload();
       });
     } else {
       var $console = $('#console').length ? $('#console') : $("#lingotek-console");
-      $console.html('<div class="messages warning"><h2 class="element-invisible">Warning message</h2>You must select at least one node to perform this action.</div>');
+      $console.html(Drupal.t('<div class="messages warning"><h2 class="element-invisible">Warning message</h2>You must select at least one entity to perform this action.</div>'));
     }
   }
   
@@ -42,14 +43,14 @@ function lingotek_perform_action(nid, action) {
             
       $('input#edit-actions-submit.form-submit').hide();
       $('#edit-actions-select').change(function() {
-        val = $('#edit-actions-select').val();
+        val = $(this).val();
         
-        if(val == 'reset') {
-          lingotekTriggerModal('#reset-translations-link');
+        if(val == 'reset' || val == 'delete') {
+          lingotekTriggerModal($('#'+val+'-link'));
         } else if(val == 'edit') {
-          lingotekTriggerModal('#edit-settings-link');
+          lingotekTriggerModal($('#edit-settings-link'));
         } else if(val == 'workflow') {
-          lingotekTriggerModal('#change-workflow-link');
+          lingotekTriggerModal($('#change-workflow-link'));
         } else  {
           $('input#edit-actions-submit.form-submit').trigger('click');
         }

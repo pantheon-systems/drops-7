@@ -63,5 +63,18 @@ function commerce_kickstart_social_strongarm() {
   $strongarm->value = array_keys(commerce_product_reference_node_types());
   $export['service_links_node_types'] = $strongarm;
 
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'service_links_node_view_modes';
+  $strongarm->value = array(
+    'full' => 'full',
+    'teaser' => 0,
+    'rss' => 0,
+    'token' => 0,
+    'product_list' => 0,
+  );
+  $export['service_links_node_view_modes'] = $strongarm;
+
   return $export;
 }

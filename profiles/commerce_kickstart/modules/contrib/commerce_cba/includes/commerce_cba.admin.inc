@@ -116,5 +116,28 @@ function commerce_cba_admin_form($form, &$form_state) {
     '#default_value' => variable_get('cba_hide_regular_checkout', 0),
   );
 
+  $form['debug'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Debugging'),
+    '#collapsible' => TRUE,
+    '#collapsed' => !(variable_get('cba_debug_log', 0) || variable_get('cba_debug', 0)),
+  );
+  $form['debug']['cba_debug_log'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Log debug information to the system log'),
+    '#default_value' => variable_get('cba_debug_log', 0),
+  );
+  $form['debug']['cba_debug'] = array(
+    '#type' => 'radios',
+    '#title' => t('Show debug information'),
+    '#default_value' => variable_get('cba_debug', 0),
+    '#options' => array(
+      0 => t('Never'),
+      2 => t('In case of errors'),
+      1 => t('Always'),
+    ),
+    '#description' => t('Debug information is only shown for Amazon requests and is visible for users having the permission <a href="!url">%link</a>.', array('%link' => t('Access the Commerce Checkout by Amazon debug log'), '!url' => url('admin/people/permissions', array('fragment' => 'module-commerce_cba')))),
+  );
+
   return system_settings_form($form);
 }

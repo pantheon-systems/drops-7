@@ -6,7 +6,8 @@
   // Checkout button.
   Drupal.CommerceCba.callbacks.commerce_cba_redirect_checkout = function(widget) {
     if (widget.type == 'InlineCheckoutWidget' || widget.type == 'ExpressCheckoutWidget') {
-      window.location = $.param.querystring('//' + location.host + Drupal.settings.basePath + 'checkout', 'purchaseContractId=' + widget.getPurchaseContractId());
+      // Add redirection property for the widget.
+      widget.redirect = $.param.querystring('//' + location.host + Drupal.settings.basePath + 'checkout', 'purchaseContractId=' + widget.getPurchaseContractId());
       // Checkout flag for the order.
       Drupal.CommerceCba.callbacks.commerce_cba_add_widget_info(widget);
     }
@@ -30,6 +31,11 @@
   Drupal.CommerceCba.callbacks.commerce_cba_add_widget_info = function(widget) {
     if (widget.type == 'AddressWidget') {
       var type = widget.getDestinationName();
+      // WalletWidget on the same page, make it visible.
+      if ($('#amazonwalletwidget').length > 0) {
+        $('#amazonwalletwidget').show();
+        $('#amazonwalletwidget-message').remove();
+      }
     }
     else if (widget.type == 'WalletWidget') {
       var type = 'wallet';
@@ -45,7 +51,12 @@
       dataType: 'json',
       data: {purchaseContractId: widget.purchaseContractId},
       url: Drupal.settings.basePath + 'commerce_cba/setorder/' + type,
-      success: function (data, textStatus, jqXHR) {},
+      success: function (data, textStatus, jqXHR) {
+        // Redirection if needed.
+        if (widget.redirect) {
+          window.location = widget.redirect;
+        }
+      },
       error: function(jqXHR, textStatus, errorThrown) {}
     });
   };
@@ -78,8 +89,13 @@
         for (var index in cba_settings.settings) {
           widget[index] = cba_settings.settings[index];
         }
-
         widget.render(key);
+
+        // AddressWidget and WalletWidget on the same page.
+        // Hide the WalletWidget.
+        if ($('#amazonwalletwidget').length > 0 && $('.commerce_cba_addresswidget #amazonaddresswidget').length > 0) {
+          $('#amazonwalletwidget').hide();
+        }
       }
     }
  };

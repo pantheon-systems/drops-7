@@ -57,14 +57,94 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
     if ($active = $this->adapter->getActiveItems($this->facet)) {
       $item = end($active);
       $field = $this->facet['field'];
-      $regex = str_replace(array('^', '$'), '', FACETAPI_REGEX_DATE);
-      $filter = preg_replace_callback($regex, array($this, 'replaceDateString'), $item['value']);
+      $filter = $this->createRangeFilter($item['value']);
       $this->addFacetFilter($query, $field, $filter);
     }
   }
 
   /**
+   * Rewrites the handler-specific date range syntax to the normal facet syntax.
+   *
+   * @param $value
+   *   The user-facing facet value.
+   *
+   * @return string
+   *   A facet to add as a filter, in the format used internally in this module.
+   */
+  protected function createRangeFilter($value) {
+    // Gets the granularity. Ignore any filters passed directly from the server
+    // (range or missing). We always create filters starting with a year.
+    if (!$value || !ctype_digit($value[0])) {
+      return $value;
+    }
+
+    $parts = explode('-', $value);
+    $date = new DateTime();
+    switch (count($parts)) {
+      case 1:
+        $date->setDate($parts[0], 1, 1);
+        $date->setTime(0, 0, 0);
+        $lower = $date->format('U');
+        $date->setDate($parts[0] + 1, 1, 1);
+        $date->setTime(0, 0, -1);
+        $upper = $date->format('U');
+        break;
+
+      case 2:
+        // Luckily, $month = 13 is treated as January of next year. (The same
+        // goes for all other parameters.) We use the inverse trick for the
+        // seconds of the upper bound, since that's inclusive and we want to
+        // stop at a second before the next segment starts.
+        $date->setDate($parts[0], $parts[1], 1);
+        $date->setTime(0, 0, 0);
+        $lower = $date->format('U');
+        $date->setDate($parts[0], $parts[1] + 1, 1);
+        $date->setTime(0, 0, -1);
+        $upper = $date->format('U');
+        break;
+
+      case 3:
+        $date->setDate($parts[0], $parts[1], $parts[2]);
+        $date->setTime(0, 0, 0);
+        $lower = $date->format('U');
+        $date->setDate($parts[0], $parts[1], $parts[2] + 1);
+        $date->setTime(0, 0, -1);
+        $upper = $date->format('U');
+        break;
+
+      case 4:
+        $date->setDate($parts[0], $parts[1], $parts[2]);
+        $date->setTime($parts[3], 0, 0);
+        $lower = $date->format('U');
+        $date->setTime($parts[3] + 1, 0, -1);
+        $upper = $date->format('U');
+        break;
+
+      case 5:
+        $date->setDate($parts[0], $parts[1], $parts[2]);
+        $date->setTime($parts[3], $parts[4], 0);
+        $lower = $date->format('U');
+        $date->setTime($parts[3], $parts[4] + 1, -1);
+        $upper = $date->format('U');
+        break;
+
+      case 6:
+        $date->setDate($parts[0], $parts[1], $parts[2]);
+        $date->setTime($parts[3], $parts[4], $parts[5]);
+        return $date->format('U');
+
+      default:
+        return $value;
+    }
+
+    return "[$lower TO $upper]";
+  }
+
+  /**
    * Replacement callback for replacing ISO dates with timestamps.
+   *
+   * Not used anymore, but kept for backwards compatibility with potential
+   * subclasses.
    */
   public function replaceDateString($matches) {
     return strtotime($matches[0]);
@@ -86,14 +166,8 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
     $build = array();
     $search = search_api_current_search($search_id);
     $results = $search[1];
-    if (!$results['result count']) {
-      return array();
-    }
     // Gets total number of documents matched in search.
     $total = $results['result count'];
-
-    // Most of the code below is copied from search_facetapi's implementation of
-    // this method.
 
     // Executes query, iterates over results.
     if (isset($results['search_api_facets']) && isset($results['search_api_facets'][$this->facet['name']])) {
@@ -113,13 +187,6 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
             }
           }
           else {
-            $filter = substr($value['filter'], 1, -1);
-            $pos = strpos($filter, ' ');
-            if ($pos !== FALSE) {
-              $lower = facetapi_isodate(substr($filter, 0, $pos), FACETAPI_DATE_DAY);
-              $upper = facetapi_isodate(substr($filter, $pos + 1), FACETAPI_DATE_DAY);
-              $filter = '[' . $lower . ' TO ' . $upper . ']';
-            }
             $build[$filter]['#count'] = $value['count'];
           }
         }
@@ -128,23 +195,28 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
 
     // Get the finest level of detail we're allowed to drill down to.
     $settings = $facet->getSettings()->settings;
-    $granularity = isset($settings['date_granularity']) ? $settings['date_granularity'] : FACETAPI_DATE_MINUTE;
+    $max_granularity = isset($settings['date_granularity']) ? $settings['date_granularity'] : FACETAPI_DATE_MINUTE;
 
     // Gets active facets, starts building hierarchy.
-    $parent = $gap = NULL;
+    $parent = $granularity = NULL;
     $active_items = $this->adapter->getActiveItems($this->facet);
     foreach ($active_items as $value => $item) {
       // If the item is active, the count is the result set count.
       $build[$value] = array('#count' => $total);
 
-      // Gets next "gap" increment.
-      if ($value[0] != '[' || $value[strlen($value) - 1] != ']' || !($pos = strpos($value, ' TO '))) {
+      // Gets next "gap" increment. Ignore any filters passed directly from the
+      // server (range or missing). We always create filters starting with a
+      // year.
+      $value = "$value";
+      if (!$value || !ctype_digit($value[0])) {
         continue;
       }
-      $start = substr($value, 1, $pos);
-      $end = substr($value, $pos + 4, -1);
-      $date_gap = facetapi_get_date_gap($start, $end);
-      $gap = facetapi_get_next_date_gap($date_gap, $granularity);
+
+      $granularity = search_api_facetapi_date_get_granularity($value);
+      if (!$granularity) {
+        continue;
+      }
+      $granularity = facetapi_get_next_date_gap($granularity, $max_granularity);
 
       // If there is a previous item, there is a parent, uses a reference so the
       // arrays are populated when they are updated.
@@ -156,6 +228,7 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
       // Stores the last value iterated over.
       $parent = $value;
     }
+
     if (empty($raw_values)) {
       return $build;
     }
@@ -165,7 +238,7 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
     $timestamps = array_keys($raw_values);
     if (NULL === $parent) {
       if (count($raw_values) > 1) {
-        $gap = facetapi_get_timestamp_gap(min($timestamps), max($timestamps));
+        $granularity = facetapi_get_timestamp_gap(min($timestamps), max($timestamps));
         // Array of numbers used to determine whether the next gap is smaller than
         // the minimum gap allowed in the drilldown.
         $gap_numbers = array(
@@ -178,36 +251,20 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
         );
         // Gets gap numbers for both the gap and minimum gap, checks if the gap
         // is within the limit set by the $granularity parameter.
-        if ($gap_numbers[$gap] < $gap_numbers[$granularity]) {
-          $gap = $granularity;
+        if ($gap_numbers[$granularity] < $gap_numbers[$max_granularity]) {
+          $granularity = $max_granularity;
         }
       }
       else {
-        $gap = $granularity;
+        $granularity = $max_granularity;
       }
     }
 
-    // Converts all timestamps to dates in ISO 8601 format.
-    $dates = array();
-    foreach ($timestamps as $timestamp) {
-      $dates[$timestamp] = facetapi_isodate($timestamp, $gap);
-    }
-
-    // Treat each date as the range start and next date as the range end.
-    $range_end = array();
-    $previous = NULL;
-    foreach (array_unique($dates) as $date) {
-      if (NULL !== $previous) {
-        $range_end[$previous] = facetapi_get_next_date_increment($previous, $gap);
-      }
-      $previous = $date;
-    }
-    $range_end[$previous] = facetapi_get_next_date_increment($previous, $gap);
-
-    // Groups dates by the range they belong to, builds the $build array
-    // with the facet counts and formatted range values.
+    // Groups dates by the range they belong to, builds the $build array with
+    // the facet counts and formatted range values.
+    $format = search_api_facetapi_date_get_granularity_format($granularity);
     foreach ($raw_values as $value => $count) {
-      $new_value = '[' . $dates[$value] . ' TO ' . $range_end[$dates[$value]] . ']';
+      $new_value = date($format, $value);
       if (!isset($build[$new_value])) {
         $build[$new_value] = array('#count' => $count);
       }
@@ -226,4 +283,5 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
 
     return $build;
   }
+
 }

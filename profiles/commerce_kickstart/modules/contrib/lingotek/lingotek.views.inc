@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Lingotek Module + Views
+ */
+
+/**
  * Implements hook_views_data().
  */
 function lingotek_views_data() {

@@ -23,3 +23,7 @@ Feature: Add drinking item to cart
     When I go to "/drinks/drupal-commerce-wake-you"
     And I press "Add to cart"
     Then I should see "ITEM SUCCESSFULLY ADDED TO YOUR CART"
+
+  Scenario: View coffee mug service links
+    When I go to "/drinks/drupal-commerce-wake-you"
+    Then I should see an "div.service-links" element

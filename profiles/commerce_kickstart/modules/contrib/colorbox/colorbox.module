@@ -44,6 +44,7 @@ function colorbox_theme() {
         'node' => NULL,  // Left for legacy support.
         'field' => array(),
         'display_settings' => array(),
+        'delta' => null,
       ),
       'file' => 'colorbox.theme.inc',
     ),
@@ -256,6 +257,7 @@ function colorbox_field_formatter_info() {
       'field types' => array('image'),
       'settings' => array(
         'colorbox_node_style' => '',
+        'colorbox_node_style_first' => '',
         'colorbox_image_style' => '',
         'colorbox_gallery' => 'post',
         'colorbox_gallery_custom' => '',
@@ -284,6 +286,14 @@ function colorbox_field_formatter_settings_form($field, $instance, $view_mode, $
     '#empty_option' => t('None (original image)'),
     '#options' => $image_styles_hide,
     '#description' => t('Image style to use in the content.'),
+  );
+  $element['colorbox_node_style_first'] = array(
+    '#title' => t('Content image style for first image'),
+    '#type' => 'select',
+    '#default_value' => $settings['colorbox_node_style_first'],
+    '#empty_option' => t('No special style.'),
+    '#options' => $image_styles,
+    '#description' => t('Image style to use in the content for the first image.'),
   );
   $element['colorbox_image_style'] = array(
     '#title' => t('Colorbox image style'),
@@ -386,7 +396,7 @@ function colorbox_field_formatter_settings_form($field, $instance, $view_mode, $
  * Validate function for colorbox_gallery_custom.
  */
 function colorbox_gallery_custom_validate($element, &$form_state) {
-  if ($element['#value'] != drupal_html_class($element['#value'])) {
+  if ($form_state['values']['fields']['field_image']['settings_edit_form']['settings']['colorbox_gallery'] == 'custom' && !preg_match('!^[a-z0-9_-]+$!', $element['#value'])) {
     form_error($element, t('%name must only contain lowercase letters, numbers, hyphen and underscores.', array('%name' => $element['#title'])));
   }
 }
@@ -413,6 +423,10 @@ function colorbox_field_formatter_settings_summary($field, $instance, $view_mode
   }
   else {
     $summary[] = t('Content image style: Original image');
+  }
+
+  if (isset($image_styles[$settings['colorbox_node_style_first']])) {
+    $summary[] = t('Content image style of first image: @style', array('@style' => $image_styles[$settings['colorbox_node_style_first']]));
   }
 
   if (isset($image_styles[$settings['colorbox_image_style']])) {
@@ -466,6 +480,7 @@ function colorbox_field_formatter_view($entity_type, $entity, $field, $instance,
         '#node' => $entity, // Left for legacy support.
         '#field' => $field,
         '#display_settings' => $display['settings'],
+        '#delta' => $delta,
       );
     }
   }
@@ -479,7 +494,8 @@ function colorbox_field_formatter_view($entity_type, $entity, $field, $instance,
 function colorbox_insert_styles() {
   $insert_styles = array();
   foreach (image_styles() as $key => $style) {
-    $insert_styles['colorbox__' . $key] = array('label' => t('Colorbox @style', array('@style' => $style['name'])));
+    $label = isset($style['label']) ? $style['label'] : $style['name'];
+    $insert_styles['colorbox__' . $key] = array('label' => t('Colorbox @style', array('@style' => $label)));
   }
 
   return $insert_styles;

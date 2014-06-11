@@ -3,9 +3,9 @@ description = Defines fields (e.g. weight and dimensions) to support describing 
 package = Fields
 core = 7.x
 
-; Information added by drupal.org packaging script on 2013-10-01
-version = "7.x-1.x-dev"
-core = "7.x"
+
+; Information added by drush on 2014-06-11
+version = ""
 project = "physical"
-datestamp = "1380623133"
+datestamp = "1402495803"
 
