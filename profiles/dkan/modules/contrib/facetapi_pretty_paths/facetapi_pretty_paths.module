@@ -241,6 +241,8 @@ function facetapi_pretty_paths_facetapi_pretty_paths_coders() {
     ),
   );
   // Allow other modules to alter the coder definitions.
+  drupal_alter('facetapi_pretty_paths_coders', $coders);
+  // @todo Remove deprecated 7.x-1.x hook in next major version.
   drupal_alter('facetapi_pretty_paths_facetapi_pretty_paths_coders', $coders);
   return $coders;
 }

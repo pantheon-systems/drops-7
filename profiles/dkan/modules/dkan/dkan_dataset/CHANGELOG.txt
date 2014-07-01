@@ -1,0 +1,5 @@
+7.x-1.1 2013-06-27
+------------------
+- Change references to NuCivic organization on github
+- Several bug fixes
+- Some changes for Project Open Data complince, including data.json self-reference

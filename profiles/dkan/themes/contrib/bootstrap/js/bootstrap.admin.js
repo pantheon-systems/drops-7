@@ -55,10 +55,6 @@
           }
           summary.push(bootstrapCDN);
         }
-        // Rebuild registry.
-        if ($context.find('input[name="bootstrap_rebuild_registry"]').is(':checked')) {
-          summary.push(Drupal.t('Rebuild Registry'));
-        }
         return summary.join(', ');
       });
     }

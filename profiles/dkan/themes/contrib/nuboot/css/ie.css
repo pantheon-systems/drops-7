@@ -1,5 +1,4 @@
-/* Welcome to Compass. Use this file to write IE specific override styles. Import this file using the following HTML or equivalent: <!--[if IE]> <link href="/stylesheets/ie.css" media="screen, projection" rel="stylesheet" type="text/css" /> <![endif]--> */
+/* Welcome to Compass. Use this file to write IE specific override styles. */
+#jumbotron .col-md-6 { max-width: 45%; }
 
-.media-overlay img {
-	max-width: 350px;
-}
+.media-overlay a.img { max-width: 350px !important; }

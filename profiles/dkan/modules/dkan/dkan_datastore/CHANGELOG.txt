@@ -1,0 +1,11 @@
+7.x-1.1
+-------
+- Moved dkan_datastore development to NuCivic: https://github.com/NuCivic/dkan_datastore
+- Several bugs fixed.
+
+7.x-1.0
+-------
+- Moved dkan_datastore development to github: https://github.com/nuams/dkan_datastore
+- Added WebTestCase test suite for dkan_datastore and dkan_datastore_api: https://github.com/nuams/dkan_datastore/tree/7.x-1.x/tests
+- Travis + Github integration for all test suites on every commit
+- Several bugs fixed.

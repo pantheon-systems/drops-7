@@ -9,27 +9,19 @@
  */
 function bootstrap_button($variables) {
   $element = $variables['element'];
-  $label = $element['#value'];
-  element_set_attributes($element, array('id', 'name', 'value', 'type'));
 
-  // If a button type class isn't present then add in default.
-  $button_classes = array(
-    'btn-default',
-    'btn-primary',
-    'btn-success',
-    'btn-info',
-    'btn-warning',
-    'btn-danger',
-    'btn-link',
-  );
-  $class_intersection = array_intersect($button_classes, $element['#attributes']['class']);
-  if (empty($class_intersection)) {
-    $element['#attributes']['class'][] = 'btn-default';
+  // Add icons before or after the value.
+  // @see https://drupal.org/node/2219965
+  $value = $element['#value'];
+  if (!empty($element['#icon'])) {
+    if ($element['#icon_position'] === 'before') {
+      $value = $element['#icon'] . ' ' . $value;
+    }
+    elseif ($element['#icon_position'] === 'after') {
+      $value .= ' ' . $element['#icon'];
+    }
   }
 
-  // Add in the button type class.
-  $element['#attributes']['class'][] = 'form-' . $element['#button_type'];
-
   // This line break adds inherent margin between multiple buttons.
-  return '<button' . drupal_attributes($element['#attributes']) . '>' . $label . "</button>\n";
+  return '<button' . drupal_attributes($element['#attributes']) . '>' . $value . "</button>\n";
 }

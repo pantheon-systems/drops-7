@@ -357,15 +357,37 @@ function dkan_dataset_add_resource_access($node) {
   }
 }
 
+/**
+ * Discovers extension based off of mimetype.
+ *
+ * @param string mimetype
+ * Mimetype to search for.
+ *
+ * @return string
+ * Extension or empty string.
+ */
+function dkan_dataset_discovery_extension($mimetype) {
+  include_once DRUPAL_ROOT . '/includes/file.mimetypes.inc';
+  $type = '';
+  $mapping = file_mimetype_mapping();
+  $offset = array_search($mimetype, $mapping['mimetypes']);
+  if ($offset) {
+    $type = array_search($offset, $mapping['extensions']);
+  }
+  return $type;
+}
 
 /**
  * Implements hook_file_mimetype_mapping_alter().
  */
 function dkan_dataset_file_mimetype_mapping_alter(&$mapping) {
   $mapping['extensions']['json'] = 999;
-  $mapping['extensions']['html'] = 998;
   $mapping['mimetypes'][999] = 'application/json';
-  $mapping['mimetypes'][998] = 'text/html; charset=utf-8';
+  // 'Htm' and 'html' have the same mapping number but 'htm' is after
+  // content types of 'text/html' are alway 'htm' without this.
+  unset($mapping['extensions']['htm']);
+  // Same with 'shtml'.
+  unset($mapping['extensions']['shtml']);
 }
 
 /**

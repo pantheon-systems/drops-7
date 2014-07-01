@@ -7,9 +7,9 @@ dependencies[] = beautytips
 dependencies[] = ctools
 
 
-; Information added by drush on 2014-04-30
+; Information added by drush on 2014-07-01
 version = "7.x-2.0-beta2+7-dev"
 core = "7.x"
 project = "beautytips"
-datestamp = "1398829999"
+datestamp = "1404235819"
 

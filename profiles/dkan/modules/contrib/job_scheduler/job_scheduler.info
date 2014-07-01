@@ -7,10 +7,9 @@ files[] = JobSchedulerCronTab.inc
 core = 7.x
 php = 5.2
 
-
-; Information added by drush on 2014-04-30
+; Information added by Drupal.org packaging script on 2014-01-24
 version = "7.x-2.0-alpha3+8-dev"
 core = "7.x"
 project = "job_scheduler"
-datestamp = "1398830045"
+datestamp = "1390572808"
 

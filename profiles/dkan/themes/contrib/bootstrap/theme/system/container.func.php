@@ -16,8 +16,11 @@ function bootstrap_container($variables) {
     if (!isset($element['#attributes']['id'])) {
       $element['#attributes']['id'] = $element['#id'];
     }
-    // Add classes.
+
+    // Core's "form-wrapper" class is required for states.js to function.
     $element['#attributes']['class'][] = 'form-wrapper';
+
+    // Add Bootstrap "form-group" class.
     $element['#attributes']['class'][] = 'form-group';
   }
 

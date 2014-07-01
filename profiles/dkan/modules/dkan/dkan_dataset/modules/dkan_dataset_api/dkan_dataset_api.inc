@@ -16,8 +16,26 @@
  */
 function dkan_open_data_build_rows($nodes) {
 
-  $rows = array();
+  // First row is the catalog itself
+  $catalog_dist = new stdClass();
+  $catalog_dist->accessURL = url('data.json', array('absolute' => TRUE));
+  $catalog_dist->format = 'application/json';
 
+  $catalog_row = new stdClass();
+  $catalog_row->title = variable_get('dkan_catalog_desc', 'Data Catalog');
+  $catalog_row->description = variable_get('dkan_catalog_desc', 'Version 1.0');
+  $catalog_row->keyword = array('catalog');
+  $catalog_row->modified = NULL;
+  $catalog_row->publisher = variable_get('site_name');
+  $catalog_row->contactPoint = variable_get('dkan_catalog_contact', $catalog_row->publisher);
+  $catalog_row->mbox = variable_get('dkan_catalog_mbox', variable_get('site_mail'));
+  $catalog_row->identifier = "1";
+  $catalog_row->accessLevel = 'public';
+  $catalog_row->distribution = array($catalog_dist);
+
+  $rows = array($catalog_row);
+
+  $i = 0;
   foreach ($nodes as $node) {
     $node_wrapper = entity_metadata_wrapper('node', $node);
 
@@ -33,8 +51,11 @@ function dkan_open_data_build_rows($nodes) {
           $tags[] = $tag->name->value();
         }
       }
-      $row->keyword = implode(', ', $tags);
+      $row->keyword = $tags;
       $row->modified = format_date($node_wrapper->changed->value(), 'custom', 'Y-m-d');
+      if ($i == 0) {
+        $rows[0]->modified = $row->modified;
+      }
 
       $publisher = $node_wrapper->og_group_ref->value();
       if (!isset($publisher[0]->title)) {
@@ -61,15 +82,19 @@ function dkan_open_data_build_rows($nodes) {
         $row->distribution = $dist;
       }
       $row->license = dkan_open_data_get_field_value($node, 'field_license', 'value');
-      $row->spatial = dkan_open_data_get_field_value($node, 'field_spatial_geographical_cover', 'value');
-      $row->temporal = dkan_open_data_get_field_value($node, 'field_temporal_coverage', 'value');
+      if ($spatial = dkan_open_data_get_field_value($node, 'field_spatial_geographical_cover', 'value')) {
+        $row->spatial = $spatial;
+      }
+      if ($temporal = dkan_open_data_get_field_value($node, 'field_temporal_coverage', 'value')) {
+        $row->temporal = $temporal;
+      }
 
       // Extended fields.
       if ($accrual = strtolower(dkan_open_data_get_field_value($node, 'field_frequency', 'label'))) {
         $row->references = dkan_open_data_get_field_value($node, 'field_related_content', 'value');
       }
       $language = !isset($node->langauge) && $node->language != 'und' ? $node->language : 'english';
-      $row->language = $language;
+      $row->language = array($language);
       $row->granularity = dkan_open_data_get_field_value($node, 'field_granularity', 'value');
     }
     catch (EntityMetadataWrapperException $e) {
@@ -78,6 +103,7 @@ function dkan_open_data_build_rows($nodes) {
 
     $rows[] = $row;
     unset($row);
+    $i++;
   }
   return $rows;
 }
@@ -122,6 +148,12 @@ function dkan_open_data_build_datasets($nodes) {
           $resources[] = $resource['target_id'];
         }
         $resources = node_load_multiple($resources);
+        // check user access
+        foreach ($resources as $key => $resource) {
+          if (!node_access('view', $resource)) {
+            unset($resources[$key]);
+          }
+        }
         $row->resources = dkan_open_data_build_dataset_resources($resources);
         $row->num_resources = count($resources);
       }

@@ -34,6 +34,15 @@ function nuboot_preprocess_page(&$vars) {
 }
 
 /**
+ * Theme function for iframe link.
+ */
+function nuboot_link_iframe_formatter_original($variables) {
+  $link_options = $variables['element'];
+  $link = l($link_options['title'], $link_options['url'], $link_options);
+  return '<i class="fa fa-external-link"></i>  ' . $link;
+}
+
+/**
  * Implements theme_breadcrumb().
  */
 function nuboot_breadcrumb($variables) {

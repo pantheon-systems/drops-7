@@ -1,3 +1,4 @@
+// $Id: gravatar.js,v 1.3 2010/05/29 20:25:55 davereid Exp $
 
 (function ($) {
 

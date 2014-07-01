@@ -3,7 +3,7 @@
 cd ../profiles
 rm -rf dkan
 git clone --branch 7.x-1.x http://git.drupal.org/project/dkan.git
-git checkout tags/7.x-1.0
+git checkout tags/7.x-1.1
 cd dkan
 rm -rf .git
 rm .gitignore

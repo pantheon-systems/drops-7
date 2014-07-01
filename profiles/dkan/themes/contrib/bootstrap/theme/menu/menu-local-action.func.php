@@ -17,13 +17,13 @@ function bootstrap_menu_local_action($variables) {
     $link['title'] = check_plain($link['title']);
   }
 
-  $icon = _bootstrap_iconize_button($link['title']);
+  $icon = _bootstrap_iconize_text($link['title']);
 
   // Format the action link.
   $output = '<li>';
   if (isset($link['href'])) {
     // Turn link into a mini-button and colorize based on title.
-    if ($class = _bootstrap_colorize_button($link['title'])) {
+    if ($class = _bootstrap_colorize_text($link['title'])) {
       if (!isset($options['attributes']['class'])) {
         $options['attributes']['class'] = array();
       }
@@ -33,13 +33,13 @@ function bootstrap_menu_local_action($variables) {
       }
       $options['attributes']['class'][] = 'btn';
       $options['attributes']['class'][] = 'btn-xs';
-      $options['attributes']['class'][] = $class;
+      $options['attributes']['class'][] = 'btn-' . $class;
       if ($string) {
         $options['attributes']['class'] = implode(' ', $options['attributes']['class']);
       }
     }
-    // Force HTML so we can add the icon rendering element.
-    $options['html'] = TRUE;
+    // Force HTML so we can render any icon that may have been added.
+    $options['html'] = !empty($options['html']) || !empty($icon) ? TRUE : FALSE;
     $output .= l($icon . $link['title'], $link['href'], $options);
   }
   else {

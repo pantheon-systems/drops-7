@@ -1,4 +1,5 @@
 <?php
+// $Id: gravatar.admin.inc,v 1.10.2.1 2011/01/04 20:11:52 davereid Exp $
 
 /**
  * @file

@@ -2,7 +2,6 @@ name = NuBoot - DKAN theme
 description = A Bootstrap theme for DKAN. Built by nücivic.
 core = 7.x
 base theme = bootstrap
-version = 7.x-1.0
 
 ;;;;;;;;;;;;;;;;;;;;;
 ;; Regions
@@ -104,10 +103,3 @@ settings[cdn_bootstrap] = 0
 
 ; Panels Custom Layouts
 ; plugins[panels][layouts] = layouts
-
-; Information added by Drupal.org packaging script on 2014-04-28
-version = "7.x-1.0"
-core = "7.x"
-project = "nuboot"
-datestamp = "1398716028"
-

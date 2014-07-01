@@ -1,0 +1,11 @@
+7.x-1.1 2014-06-27
+------------------
+- Styles for resource download button
+- Change nuams references to NuCivic to reflect branding changes 
+- Left floating resource list
+- Improve colorizer functionality
+
+
+7.x-1.0
+-------
+- Added nuBoot theme as the main out-of-box theme for DKAN distro.
