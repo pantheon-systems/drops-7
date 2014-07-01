@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * @file
+ * Custom elements for groups.
+ */
+
+include_once 'dkan_dataset_groups.features.inc';
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function dkan_dataset_groups_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if ($root_path == 'groups') {
+    // Add "Add Group" link to.
+    $item = menu_get_item('node/add/group');
+    if ($item['access']) {
+      // Reword link name in case display name was overwritten.
+      $item['title'] = t('Add @groupname', array('@groupname' => $item['title']));
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_block_view_alter().
+ */
+function dkan_dataset_groups_block_view_alter(&$data, $block) {
+  if ($block->module == 'views' && $block->delta == 'group_block-block') {
+    $node = menu_get_object();
+    if (isset($node->type) && $node->type == 'group') {
+      global $user;
+      $subscribe_link = dkan_dataset_groups_extras_subscribe('node', $node);
+      // Give appropriate pending notice.
+      if (og_is_member('node', $node->nid, 'user', $user, array(OG_STATE_PENDING))) {
+        $subscribe_link = t('Your membership is pending approval.') . ' ' . l(t('Remove pending membership request'), 'group/node/' . $node->nid . '/unsubscribe');
+      }
+      $data['content']['#markup'] .= '<div class="group-subscribe-message">' . $subscribe_link . '</div>';
+    }
+  }
+}
+
+/**
+ * Create a formatted 'Subscribe' link for this group.
+ * @TODO
+ * Replace with helper function if http://drupal.org/node/1568858 gets in.
+ */
+function dkan_dataset_groups_extras_subscribe($entity_type, $entity) {
+  $display['type'] = 'og_group_subscribe';
+  $group_type = 'node';
+  $group = entity_load_single($group_type, $entity->nid);
+  list(,, $group_bundle) = entity_extract_ids($group_type, $group);
+  $display['settings']['field_name'] = og_get_best_group_audience_field($entity_type, $entity, $group_type, $group_bundle);
+  $elements = og_ui_field_formatter_view($entity_type, $entity, NULL, NULL, NULL, array(), $display);
+  return drupal_render($elements);
+}

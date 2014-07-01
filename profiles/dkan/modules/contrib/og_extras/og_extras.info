@@ -1,0 +1,16 @@
+name = Organic groups extras
+description = Extra functions, blocks, and views for Organic Groups.
+dependencies[] = og (2.x)
+dependencies[] = og_ui
+dependencies[] = og_context
+dependencies[] = views
+core = 7.x
+package = "Organic groups"
+
+
+
+; Information added by drush on 2014-07-01
+version = "b7e3587"
+project = "og_extras"
+datestamp = "1404235845"
+

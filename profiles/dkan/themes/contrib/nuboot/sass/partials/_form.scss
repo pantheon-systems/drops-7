@@ -1,0 +1,214 @@
+input,
+textarea,
+select,
+.input-prepend .add-on,
+.input-append .add-on,
+.uneditable-input,
+.slick-header-column.ui-state-default  {
+  height:auto;
+}
+.form-type-managed-file.form-group {
+  button.btn {
+    @include border-radius(0 4px 4px 0);
+    vertical-align: top;
+  }
+}
+.field-type-text-with-summary{
+  .form-group {
+    margin-bottom:5px;
+  }
+  .panel-body {
+    padding: 0;
+  }
+}
+#field-tags-wrapper .path-form {
+  clear:both;
+  .panel-body {
+    padding: 15px 0;
+  }
+  .add-on {
+    height: 34px;
+    line-height: 32px;
+  }
+  .form-item-path-alias {
+    float: left;
+    .form-control {
+      @include border-radius(0 4px 4px 0);
+    }
+  }
+}
+
+div.image-widget-data {
+  float:none;
+  input.form-file {
+    @include border-radius(4px 0 0 4px);
+    border-right:none;
+    display: inline-block;
+    width: auto;
+  }
+  .form-item {
+    clear:both;
+  }
+}
+.file-widget span.file,
+.field-type-file span.file {
+  display:inline-block;
+  padding:6px;
+  border:1px solid $border;
+  border-right: none;
+  @include border-radius(4px 0 0 4px);
+}
+.form-managed-file.input-group {
+  .form-control {
+    display: inline-block;
+    width:80%;
+  }
+  .input-group-btn {
+    display: inline-block;
+    vertical-align: top;
+  }
+  fieldset {
+    clear:both;
+  }
+}
+fieldset #edit-path-alias {
+  position:relative;
+}
+
+#action-info {
+  margin:15px 15px 0;
+}
+
+a.tabledrag-handle .handle {
+  padding:0.42em 0.6em;
+}
+
+.double-field-elements.container-inline {
+  input {
+    width:40%;
+    float:left;
+    margin-right:10px;
+  }
+}
+
+#edit-field-link-remote-file-und-0-filefield-remotefile-select--2 {
+	@include border-radius(0 4px 4px 0);
+	border-left:none;
+}
+
+.header .recline-pager .pagination input {
+  line-height: 1em;
+  height:auto;
+  width:40px;
+}
+
+div.autocomplete-deluxe-container input.form-control {
+  display: inline-block;
+}
+div.autocomplete-deluxe-multiple {
+  padding:3px 5px;
+}
+div.autocomplete-deluxe-throbber {
+  display: inline-block;
+  float: right;
+  height: 25px;
+}
+
+#url-edit-label {
+  float:none;
+}
+#url-edit-prefix {
+  @include border-radius(4px 0 0 4px);
+  border: 1px solid $smoke;
+  border-right: none;
+  font-size: 14px;
+  padding: 7px 0 7px 6px;
+}
+#url-slug {
+  @include border-radius(0 4px 4px 0);
+  border: 1px solid $smoke;
+  border-left: none;
+  font-size: 14px;
+  padding: 7px 6px 7px 0;
+  margin-left:-1px;
+}
+
+.node-type-dataset,
+.node-type-resource,
+.page-node-add-dataset,
+.page-node-add-resource {
+  fieldset.panel {
+    @include box-shadow(none);
+    border:none;
+    margin:0;
+    legend {
+      display: none;
+    }
+    .panel-body {
+      padding: 0;
+    }
+  }
+  fieldset.field-group-htab .panel-body {
+    padding:6px;
+  }
+  .field-name-body label {
+    margin-top:1em;
+  }
+}
+
+.page-node-edit.node-type-dataset,
+.page-node-edit.node-type-resource {
+  // .region-content .block {
+  //   @include box-shadow(none);
+  //   border:none;
+  //   padding:0;
+  // }
+  fieldset.panel {
+    margin: 0 0 1em 0;
+    legend {
+      border: 1px solid $border;
+      display: block;
+    }
+    fieldset.panel {
+      legend {
+        border: 1px solid $border;
+        margin-bottom: .5em;
+      }
+      .panel-body {
+        padding: 0;
+      }
+    }
+  }
+}
+#node_dataset_form_group_primary legend {
+  display: none;
+}
+#edit-field-spatial,
+#edit-field-temporal-coverage {
+  position:relative;
+  padding-top:40px;
+  fieldset legend {
+      left: 0;
+      position: absolute;
+      top: 0;
+  }
+}
+
+table.field-multiple-table th label {
+  padding-left:6px;
+}
+.vertical-tabs {
+  margin-top: 2em;
+}
+#leaflet-widget_field-spatial-toggle {
+  @include border-radius(5px);
+  background:$brand-primary;
+  color:#fff;
+  display: inline-block;
+  padding:4px 12px;
+  margin:5px 0;
+  &:hover, 
+  &:focus {
+    background:$brand-secondary;
+  }
+}

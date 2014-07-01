@@ -1,0 +1,77 @@
+.page-admin {
+	label {
+		color:#333;
+	}
+	.colorizer-form {
+		label {
+			display: block;
+			float:none;
+		}
+		.form-select {
+			width:auto;
+		}
+		#palette .item-selected {
+			background:none;
+		}
+	}
+	table, thead, tbody, tr, th, td {
+		border:none;
+	}
+}
+#context-blockform td.blocks .label {
+	color:#333;
+}
+#features-export-info #features-export-info,
+#features-export-wrapper #features-export-wrapper {
+	width:auto;
+	.panel {
+		@include border-radius(4px 4px 0 0);
+	}
+	fieldset.features-export-component {
+		margin:0.75em 0 -1px;
+	}
+	.radio input[type="radio"], 
+	.radio-inline input[type="radio"], 
+	.checkbox input[type="checkbox"], 
+	.checkbox-inline input[type="checkbox"] {
+		margin-left:0;
+	}
+	.radio label, .checkbox label {
+		margin-left:5px;
+	}
+}
+
+.system-status-report tr {
+	border-bottom: 1px solid $shade;
+	&.ok {
+		background:rgba($brand-success,.3);
+		.status-icon:before {
+			content:"\f00c";
+			color:$brand-success;
+			font-family: $icon-fa;
+			float:left;
+		}
+	}
+	&.info {
+		background:rgba($brand-info,.3);
+		.status-icon:before {
+			content:"\f05a";
+			color:$brand-info;
+			font-family: $icon-fa;
+			float:left;
+		}
+	}
+	&.warning {
+		background:rgba($brand-warning,.3);
+	}
+}
+
+.views-admin {
+	.form-actions .icon {
+		background-image:none;
+	}
+	.btn {
+		font-size: 12px;
+		padding:1px 6px;
+	}
+}

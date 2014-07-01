@@ -1,0 +1,114 @@
+<?php
+
+/**
+ * @file
+ * Defines SchemaUnitTestCase.
+ */
+
+class SchemaUnitTestCase extends DrupalWebTestCase {
+  protected $profile = 'testing';
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Schema functional tests',
+      'description' => 'Schema functional tests',
+      'group' => 'Schema',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('schema', 'schema_test');
+  }
+
+  /*function testGetFieldTypeMap() {
+    $type = $this->drupalCreateContentType();
+
+    $field = array(
+      'field_name' => 'field_schema_test',
+      'type' => 'schema_test',
+    );
+    field_create_field($field);
+
+    $instance = array(
+      'field_name' => 'field_schema_test',
+      'entity_type' => 'node',
+      'bundle' => $type->type,
+    );
+  }*/
+
+  function testUnprefixTable() {
+    $cases = array();
+
+    // Test without any prefixes.
+    $cases[] = array(
+      'options' => array(),
+      'cases' => array(
+        'a2' => 'a2',
+        'a3' => 'a3',
+        'b2' => 'b2',
+        'b3' => 'b3',
+        'test' => 'test',
+        'aa_test' => 'aa_test',
+        'aaa_test' => 'aaa_test',
+      ),
+    );
+    // Test empty default prefix.
+    $cases[] = array(
+      'options' => array(
+        'prefix' => array(
+          'default' => '',
+          'a2' => 'aa_',
+          'a3' => 'aaa_',
+          'b2' => 'bb_',
+          'b3' => 'bbb_',
+        ),
+      ),
+      'cases' => array(
+        'aa_a2' => 'a2',
+        'aaa_a3' => 'a3',
+        'bb_b2' => 'b2',
+        'bbb_b3' => 'b3',
+        'test' => 'test',
+        'aa_test' => 'aa_test',
+        'aaa_test' => 'aaa_test',
+      ),
+    );
+    // Test empty default prefix.
+    $cases[] = array(
+      'options' => array(
+        'prefix' => array(
+          'default' => 'test_',
+          'a2' => 'aa_',
+          'a3' => '',
+          'b2' => 'bb_',
+          'b3' => '',
+        ),
+      ),
+      'cases' => array(
+        'aa_a2' => 'a2',
+        'test_a3' => 'a3',
+        'bb_b2' => 'b2',
+        'test_b3' => 'b3',
+        'test' => 'test',
+        'test_test' => 'test',
+      ),
+    );
+
+    foreach ($cases as $case) {
+      $connection = new SchemaTestDatabaseConnection($case['options']);
+      $connection->setKey($this->randomName());
+      foreach ($case['cases'] as $input => $expected) {
+        $result = schema_unprefix_table($input, $connection);
+        $this->assertIdentical($result, $expected);
+      }
+    }
+
+    // Test the default connection object parameter.
+    $connection = Database::getConnection();
+    foreach (array('test') as $name) {
+      $input = $connection->prefixTables('{' . $name . '}');
+      $result = schema_unprefix_table($input);
+      $this->assertIdentical($result, $name);
+    }
+  }
+}

@@ -1,0 +1,12 @@
+name = Entity RDF
+description = Describes entity properties in RDF.
+core = 7.x
+dependencies[] = entity
+files[] = entity_rdf.test
+
+
+; Information added by drush on 2014-07-01
+version = "7d91983"
+project = "entity_rdf"
+datestamp = "1404235863"
+

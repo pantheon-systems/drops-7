@@ -1,0 +1,58 @@
+language: php
+
+php:
+  - 5.3
+
+mysql:
+  database: dkan_dataset_test
+  username: root
+  encoding: utf8
+
+before_script:
+  # navigate out of module directory to prevent blown stack by recursive module lookup
+  - cd ../..
+
+  # Install drush from git clone
+  - git clone --branch 6.x https://github.com/drush-ops/drush.git
+  - export PATH="`pwd`/drush:$PATH"
+
+  # install php packages required for running a web server from drush on php 5.3
+  - sudo apt-get update > /dev/null
+  - sudo apt-get install -y --force-yes php5-cgi php5-mysql
+
+  # disable sendmail
+  - echo sendmail_path=`which true` >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
+  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
+  - mysql -e 'create database dkan_dataset_test'
+  - drush --yes core-quick-drupal --profile=testing --no-server --db-url=mysql://root:@127.0.0.1/dkan_dataset_test --enable=simpletest dkan_dataset_test
+
+  # Grab dkan to have the dkan_default_content module at hand
+  - git clone --branch 7.x-1.x http://git.drupal.org/project/dkan.git
+
+  # copy dkan_dataset to sites/all
+  - cp -r $TRAVIS_BUILD_DIR dkan_dataset_test/drupal/sites/all/modules/dkan_dataset
+  # copy dkan_default_content to sites/all
+  - cp -r dkan/modules/dkan/dkan_sitewide/modules/dkan_default_content dkan_dataset_test/drupal/sites/all/modules/dkan_default_content
+  # Jump into setup directory
+  - cd dkan_dataset_test/drupal
+  # Make dkan_dataset
+  - drush make -v --no-core --yes sites/all/modules/dkan_dataset/dkan_dataset.make
+  # Enable modules
+  - drush --yes pm-enable dkan_dataset
+  - drush --yes pm-enable dkan_dataset_groups
+  - drush --yes pm-enable dkan_dataset_api
+
+  # start a web server on port 8080, run in the background; wait for initialization
+  - drush runserver 127.0.0.1:8080 &
+  - until netstat -an 2>/dev/null | grep '8080.*LISTEN'; do true; done
+
+script:
+  # Run test suite
+  - drush test-run --xml 'DKAN Dataset' --uri=http://127.0.0.1:8080
+
+notifications:
+  slack:
+    rooms:
+      nuams:2Eywq0BtPv73ISq3CF6gvRzo#monitor-devops
+      nuams:t3p2KxXdzymmwxitWPvfAsnK#monitor-dkan

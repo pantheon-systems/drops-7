@@ -1,0 +1,17 @@
+name = Imagecache_actions Test Suite
+description = Displays a collection of demo image styles.
+package = Media
+core = 7.x
+
+dependencies[] = imagecache_actions
+dependencies[] = system_stream_wrapper
+
+features[image][] = 'corners_combo'
+
+
+; Information added by drush on 2014-07-01
+version = "7.x-1.4+17-dev"
+core = "7.x"
+project = "imagecache_actions"
+datestamp = "1404235878"
+

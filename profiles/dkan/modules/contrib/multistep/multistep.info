@@ -1,0 +1,20 @@
+name = Multistep
+description = Adds multistep functionality to content types.
+package = Fields
+dependencies[] = field
+dependencies[] = field_group
+core = 7.x
+files[] = multistep.module
+files[] = multistep.install
+files[] = multistep.admin.inc
+files[] = multistep.theme.inc
+files[] = multistep.rules.inc
+;files[] = multistep.views.inc
+configure = admin/config/content/multistep
+
+
+; Information added by drush on 2014-07-01
+version = "3b0d40a"
+project = "multistep"
+datestamp = "1404235839"
+
