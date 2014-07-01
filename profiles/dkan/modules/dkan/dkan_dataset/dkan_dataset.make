@@ -63,8 +63,12 @@ projects[libraries][subdir] = contrib
 projects[link][version] = 1.1
 projects[link][subdir] = contrib
 
-projects[link_iframe_formatter][version] = 1.1
+projects[link_iframe_formatter][download][type] = git
+projects[link_iframe_formatter][download][url] = "http://git.drupal.org/project/link_iframe_formatter.git"
+projects[link_iframe_formatter][download][revision] = 228f9f4
+projects[link_iframe_formatter][patch][2287233] = https://www.drupal.org/files/issues/link_iframe_formatter-coding-standards.patch 
 projects[link_iframe_formatter][subdir] = contrib
+projects[link_iframe_formatter][type] = module
 
 projects[multistep][download][type] = git
 projects[multistep][download][url] = "http://git.drupal.org/project/multistep.git"
@@ -72,7 +76,7 @@ projects[multistep][download][revision] = 3b0d40a
 projects[multistep][subdir] = contrib
 projects[multistep][type] = module
 
-projects[og][version] = 2.4
+projects[og][version] = 2.7
 projects[og][patch][1090438] = http://drupal.org/files/issues/og-add_users_and_entities_with_drush-1090438-12.patch
 projects[og][subdir] = contrib
 
@@ -118,8 +122,10 @@ projects[uuid][subdir] = contrib
 projects[views][version] = 3.7
 projects[views][subdir] = contrib
 
-projects[recline][version] = 1.0
-projects[recline][subdir] = contrib
+projects[recline][download][type] = git
+projects[recline][download][url] = https://github.com/NuCivic/recline.git
+projects[recline][download][branch] = 7.x-1.x
+;projects[recline][download][tag] = 7.x-1.1
 
 projects[entity_rdf][download][type] = git
 projects[entity_rdf][download][url] = http://git.drupal.org/project/entity_rdf.git
@@ -185,7 +191,7 @@ libraries[Leaflet][download][revision] = "81221ae4cd9772a8974b2e3c867d4fb35abd05
 libraries[recline][type] = libraries
 libraries[recline][download][type] = git
 libraries[recline][download][url] = "https://github.com/okfn/recline.git"
-libraries[recline][download][revision] = "300e5ea6a74af4b332b10ff8710d5173d2201dfc"
+libraries[recline][download][revision] = "7757e563ee180e136a8a4008b6ac7b7b56e3050f"
 
 libraries[arc][type] = libraries
 libraries[arc][download][type] = git

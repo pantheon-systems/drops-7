@@ -17,6 +17,9 @@ Drupal.behaviors.verticalTabs = {
     $('.vertical-tabs-panes', context).once('vertical-tabs', function () {
       $(this).addClass('tab-content');
       var focusID = $(':hidden.vertical-tabs-active-tab', this).val();
+      if (typeof focusID === 'undefined' || !focusID.length) {
+        focusID = false;
+      }
       var tab_focus;
 
       // Check if there are some fieldsets that can be converted to vertical-tabs
@@ -41,7 +44,8 @@ Drupal.behaviors.verticalTabs = {
           .addClass('tab-pane vertical-tabs-pane')
           .data('verticalTab', vertical_tab)
           .find('> legend').remove();
-        if (this.id == focusID) {
+        $(this).find('> div').removeClass('panel-collapse collapse').addClass('fade');
+        if (this.id === focusID) {
           tab_focus = $(this);
         }
       });
@@ -108,14 +112,15 @@ Drupal.verticalTab.prototype = {
     this.fieldset
       .siblings('fieldset.vertical-tabs-pane')
         .each(function () {
-          $(this).addClass('fade');
+          $(this).removeClass('active').find('> div').removeClass('in');
           var tab = $(this).data('verticalTab');
           tab.item.removeClass('selected');
         })
         .end()
-        .addClass('fade in')
+        .addClass('active')
         .siblings(':hidden.vertical-tabs-active-tab')
         .val(this.fieldset.attr('id'));
+    this.fieldset.find('> div').addClass('in');
     this.fieldset.data('verticalTab').item.find('a').tab('show');
     this.item.addClass('selected');
     // Mark the active tab for screen readers.

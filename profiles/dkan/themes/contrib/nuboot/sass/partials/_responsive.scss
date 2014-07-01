@@ -15,11 +15,17 @@
       min-height:40px;
       padding:0 125px 0 40px;
       position:relative;
-      a.btn {
+      span.links {
         margin-top:0;
         position:absolute;
-        top:0;
-        right:10px;
+        top: 0px;
+        right: 10px;
+
+        a {
+          position:relative;
+          display: inline-block;
+          margin-left: 3px;
+        }
       }
     }
   }

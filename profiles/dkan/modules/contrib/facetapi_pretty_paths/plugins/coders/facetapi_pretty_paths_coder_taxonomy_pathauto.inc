@@ -56,6 +56,11 @@ class FacetApiPrettyPathsCoderTaxonomyPathauto extends FacetApiPrettyPathsCoderD
           $args['value'] = $exploded[2];
         }
       }
+      else {
+        // If term doesn't exist, just make the value 0. This can help avoid
+        // errors down the line if searches are expecting integer values
+        $args['value'] = 0;
+      }
     }
     return parent::decodePathSegmentValue($args);
   }

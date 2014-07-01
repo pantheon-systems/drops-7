@@ -3,7 +3,7 @@ description = Custom elements for groups.
 core = 7.x
 package = DKAN Features
 version = 7.x-1.0
-project = dkan_dataset_groups
+project = dkan_dataset
 dependencies[] = context
 dependencies[] = ctools
 dependencies[] = dkan_dataset_content_types
@@ -79,10 +79,3 @@ features[views_view][] = group_block
 features[views_view][] = groups_page
 features[views_view][] = groups_search
 features[views_view][] = og_count
-
-; Information added by Drupal.org packaging script on 2014-04-29
-version = "7.x-1.0"
-core = "7.x"
-project = "dkan_dataset"
-datestamp = "1398791955"
-

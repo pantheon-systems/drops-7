@@ -1,6 +1,7 @@
 name = DKAN Dataset Content Types
+description = Custom elements for Datasets.
 core = 7.x
-package = DKAN Features
+package = DKAN
 version = 7.x-1.0
 project = dkan_dataset_content_types
 dependencies[] = autocomplete_deluxe
@@ -19,12 +20,13 @@ dependencies[] = link
 dependencies[] = link_iframe_formatter
 dependencies[] = list
 dependencies[] = options
+dependencies[] = rdf
+dependencies[] = rdfx
 dependencies[] = recline
 dependencies[] = select_or_other
 dependencies[] = strongarm
 dependencies[] = taxonomy
 dependencies[] = text
-datestamp = 1379707733
 features[ctools][] = field_group:field_group:1
 features[ctools][] = strongarm:strongarm:1
 features[features_api][] = api:2
@@ -81,6 +83,8 @@ features[field_instance][] = node-resource-field_upload
 features[field_instance][] = node-resource-og_group_ref
 features[node][] = dataset
 features[node][] = resource
+features[rdf_mappings][] = node-dataset
+features[rdf_mappings][] = node-resource
 features[taxonomy][] = format
 features[taxonomy][] = tags
 features[variable][] = chosen_jquery_selector
@@ -101,10 +105,3 @@ features[variable][] = node_submitted_resource
 features_exclude[dependencies][og] = og
 features_exclude[field_base][og_group_ref] = og_group_ref
 features_exclude[field_instance][node-dataset-og_group_ref] = node-dataset-og_group_ref
-
-; Information added by Drupal.org packaging script on 2014-04-29
-version = "7.x-1.0"
-core = "7.x"
-project = "dkan_dataset"
-datestamp = "1398791955"
-

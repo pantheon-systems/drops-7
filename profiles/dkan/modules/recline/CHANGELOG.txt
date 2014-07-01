@@ -1,0 +1,5 @@
+7.x-1.1 2014-06-27
+------------------
+- Added CHANGELOG.txt
+- Change references to nuCivic
+- Fix bug with negative lattitude (nuams/dkan#138)

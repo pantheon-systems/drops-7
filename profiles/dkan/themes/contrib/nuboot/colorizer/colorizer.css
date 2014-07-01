@@ -66,6 +66,9 @@ a:active {
 	color:#ffffff;
 }
 
+#block-views-group-block-block .block-content .group-subscribe-message {
+	background-color: @top;
+}
 .view-group-block .views-field-nid a,
 .btn-primary {
 	background-color: @top;

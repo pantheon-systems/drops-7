@@ -73,6 +73,7 @@ class FacetapiUrlProcessorPrettyPaths extends FacetapiUrlProcessorStandard {
 
     $this->fullPath = $_GET['q'];
     $this->filterParams = array();
+    $this->pathSegments = array();
     $facets = $this->adapter->getEnabledFacets();
 
     $args = explode('/', $_GET['q']);

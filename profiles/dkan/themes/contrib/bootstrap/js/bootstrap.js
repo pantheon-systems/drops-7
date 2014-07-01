@@ -57,11 +57,36 @@ var Drupal = Drupal || {};
   Drupal.behaviors.bootstrapPopovers = {
     attach: function (context, settings) {
       if (settings.bootstrap && settings.bootstrap.popoverEnabled) {
-        var elements = $(context).find('[data-toggle="popover"]').toArray();
+        var $currentPopover = $();
+        if (settings.bootstrap.popoverOptions.triggerAutoclose) {
+          $(document).on('click', function (e) {
+            if ($currentPopover.length && !$(e.target).is('[data-toggle=popover]') && $(e.target).parents('.popover.in').length === 0) {
+              $currentPopover.popover('hide');
+              $currentPopover = $();
+            }
+          });
+        }
+        var elements = $(context).find('[data-toggle=popover]').toArray();
         for (var i = 0; i < elements.length; i++) {
           var $element = $(elements[i]);
-          var options = $.extend(true, {}, settings.bootstrap.popoverOptions, $element.data());
-          $element.popover(options);
+          var options = $.extend({}, settings.bootstrap.popoverOptions, $element.data());
+          if (!options.content) {
+            options.content = function () {
+              var target = $(this).data('target');
+              return target && $(target) && $(target).length && $(target).clone().removeClass('element-invisible').wrap('<div/>').parent()[$(this).data('bs.popover').options.html ? 'html' : 'text']() || '';
+            }
+          }
+          $element.popover(options).on('click', function (e) {
+            e.preventDefault();
+          });
+          if (settings.bootstrap.popoverOptions.triggerAutoclose) {
+            $element.on('show.bs.popover', function () {
+              if ($currentPopover.length) {
+                $currentPopover.popover('hide');
+              }
+              $currentPopover = $(this);
+            });
+          }
         }
       }
     }
@@ -76,7 +101,7 @@ var Drupal = Drupal || {};
         var elements = $(context).find('[data-toggle="tooltip"]').toArray();
         for (var i = 0; i < elements.length; i++) {
           var $element = $(elements[i]);
-          var options = $.extend(true, {}, settings.bootstrap.tooltipOptions, $element.data());
+          var options = $.extend({}, settings.bootstrap.tooltipOptions, $element.data());
           $element.tooltip(options);
         }
       }
@@ -117,22 +142,28 @@ var Drupal = Drupal || {};
         }
       }
       $scrollableElement.once('bootstrap-anchors', function () {
-        $scrollableElement.on('click.bootstrap-anchors', 'a[href*="#"]:not([data-toggle],[data-target])', function(e) {
+        $scrollableElement.on('click.bootstrap-anchors', 'a[href*="#"]:not([data-toggle],[data-target],[data-slide])', function(e) {
           this.scrollTo(e);
         });
       });
     },
     bootstrapAnchor: function (element) {
-      element.validAnchor = element.nodeName === 'A' && (location.hostname === element.hostname || !element.hostname) && element.hash.replace(/#/,'').length;
+      element.validAnchor = element.nodeName === 'A' && (location.hostname === element.hostname || !element.hostname) && (element.hash.replace(/#/,'').length > 0);
       element.scrollTo = function(event) {
         var attr = 'id';
         var $target = $(element.hash);
+        // Check for anchors that use the name attribute instead.
         if (!$target.length) {
           attr = 'name';
           $target = $('[name="' + element.hash.replace('#', '') + '"');
         }
+        // Immediately stop if no anchors are found.
+        if (!this.validAnchor && !$target.length) {
+          return;
+        }
+        // Anchor is valid, continue if there is an offset.
         var offset = $target.offset().top - parseInt($scrollableElement.css('paddingTop'), 10) - parseInt($scrollableElement.css('marginTop'), 10);
-        if (this.validAnchor && $target.length && offset > 0) {
+        if (offset > 0) {
           if (event) {
             event.preventDefault();
           }
@@ -144,7 +175,7 @@ var Drupal = Drupal || {};
               top: offset + 'px',
               zIndex: -1000
             })
-            .appendTo(document);
+            .appendTo($scrollableElement);
           $target.removeAttr(attr);
           var complete = function () {
             location.hash = element.hash;
@@ -161,6 +192,17 @@ var Drupal = Drupal || {};
         }
       };
     }
+  };
+
+  /**
+   * Tabledrag theming elements.
+   */
+  Drupal.theme.tableDragChangedMarker = function () {
+    return '<span class="tabledrag-changed glyphicon glyphicon-asterisk text-warning"></span>';
+  };
+
+  Drupal.theme.tableDragChangedWarning = function () {
+    return '<div class="tabledrag-changed-warning alert alert-warning messages warning">' + Drupal.theme('tableDragChangedMarker') + ' ' + Drupal.t('Changes made in this table will not be saved until the form is submitted.') + '</div>';
   };
 
 })(jQuery, Drupal);

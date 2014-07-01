@@ -1,6 +1,6 @@
-[![Build Status](https://travis-ci.org/nuams/dkan_dataset.png?branch=7.x-1.x)](https://travis-ci.org/nuams/dkan_dataset)
+[![Build Status](https://travis-ci.org/NuCivic/dkan_dataset.png?branch=7.x-1.x)](https://travis-ci.org/NuCivic/dkan_dataset)
 
-### DKAN Dataset
+# DKAN Dataset
 
 This is a Drupal module containing the content types and other functionality to publish Open Data sets in Drupal.
 
@@ -10,6 +10,20 @@ DKAN Dataset is part of the [DKAN](https://drupal.org/project/dkan "DKAN homepag
 
 DKAN Dataset is currently managed in code on Github but is mirrored on Drupal.org.
 
-## Issues
+## INSTALLATION
 
-Please file issues for DKAN Dataset in the main DKAN project page on Drupal.org https://drupal.org/project/dkan
+This module REQUIRES implementers to use "drush make". If you only use "drush download" you will miss key dependencies for required modules and libraries.
+
+See installation instructions here: http://docs.getdkan.com/dkan-documentation/dkan-developers/adding-dkan-features-existing-drupal-site#Installing_DKAN_Dataset
+
+## Contributing
+
+We are accepting issues in the dkan issue thread only -> https://github.com/NuCivic/dkan/issues -> Please label your issue as **"component: dkan_dataset"** after submitting so we can identify problems and feature requests faster.
+
+If you can, please cross reference commits in this repo to the corresponding issue in the dkan issue thread. You can do that easily adding this text:
+
+```
+NuCivic/dkan#issue_id
+``` 
+
+to any commit message or comment replacing **issue_id** with the corresponding issue id.

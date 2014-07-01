@@ -234,6 +234,7 @@ function _dkan_datastore_api_datastore_index($resource_ids, $filters, $query, $o
 function dkan_datastore_api_add_index_conditions(&$data_select, $filters, $alias = 't') {
   if (is_array($filters)) {
     foreach ($filters as $num => $filter) {
+      $num = str_replace(' ' , '_', $num);
       if (is_array($filter)) {
         foreach ($filter as $key => $value) {
           $data_select->condition($num . '.' . $key, $filter, 'IN');
@@ -254,7 +255,7 @@ function dkan_datastore_api_add_index_conditions(&$data_select, $filters, $alias
 function dkan_datastore_api_add_index_query(&$data_select, $table, $query) {
   if (db_driver() == 'mysql') {
     // Get fulltext fields
-    $ft_result = db_query("SHOW INDEX IN \{$table\} WHERE Index_type = 'FULLTEXT'");
+    $ft_result = db_query("SHOW INDEX IN {$table} WHERE Index_type = 'FULLTEXT'");
     $ft_fields = array();
     foreach($ft_result as $ft_row) {
       $ft_fields[] = $ft_row->Column_name;
@@ -335,7 +336,7 @@ function dkan_datastore_api_tablename($resource_id) {
     $nid = db_query('SELECT nid FROM {node} WHERE uuid = :uuid', array(':uuid' => $resource_id))->fetchField();
     $source_id = dkan_datastore_api_get_feeds_source($nid);
     $table = feeds_flatstore_processor_table_name($source_id, $nid);
-    if (db_table_exists($table)) {
+    if (db_table_exists($table) && dkan_datastore_datastore_api_access($nid)) {
       $tables[$resource_id] = $table;
       return $table;
     }
@@ -440,7 +441,12 @@ function dkan_datastore_api_resource_build_index_list($results, $table, $fields,
       // Don't include fields added by feeds_flatstore_processor.
       if ($name != 'feeds_flatstore_entry_id' && $name != 'timestamp' && $name != 'feeds_entity_id') {
         $name = $meta ? $meta['fields'][$name]['label'] : $name;
-        $return->fields[] = array('id' => $name, 'type' => $field['type']);
+        if ($name ==  'date' || $name ==  'timestamp' || $name ==  'datetime') {
+          $return->fields[] = array('id' => $name, 'type' => 'datetime');
+        }
+        else {
+          $return->fields[] = array('id' => $name, 'type' => $field['type']);
+        }
       }
     }
   }

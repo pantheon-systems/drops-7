@@ -1,14 +1,9 @@
 name = Feeds Flastore Processor
 description = Saves Feeds results to flat database tables.
 package = Feeds
+project = "feeds_flatstore_processor"
 core = 7.x
+
 dependencies[] = feeds
 dependencies[] = data
 files[] = FeedsFlatstoreProcessor.inc
-
-
-; Information added by drush on 2013-09-25
-version = "master-dev"
-project = "feeds_flatstore_processor"
-datestamp = "1380108399"
-

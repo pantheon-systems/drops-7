@@ -139,7 +139,12 @@
     margin: 0;
   }
 }
-
+.data-and-resources .form-group ul.resource-list {
+  li {
+    margin:4px 4px 4px 0;
+    float: left;
+  }
+}
 .form-group ul.resource-list {
   li {
     margin:4px 0;

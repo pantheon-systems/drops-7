@@ -5,6 +5,26 @@
  * Defines a formatter that renders a link like an iframe
  */
 
+
+/**
+ * Implements hook_menu().
+ */
+function link_iframe_formatter_menu() {
+  $items = array();
+
+  $items['admin/config/content/link_iframe_formatter'] = array(
+    'title' => 'Link iframe blacklist',
+    'description' => 'Config blacklist for link iframe formatter',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('link_iframe_formatter_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+
 /**
  * Implements hook_field_formatter_info().
  */
@@ -16,6 +36,9 @@ function link_iframe_formatter_field_formatter_info() {
       'settings' => array(
         'width' => '640',
         'height' => '480',
+        'style' => '',
+        'class' => '',
+        'original' => FALSE,
       ),
     ),
   );
@@ -43,6 +66,31 @@ function link_iframe_formatter_field_formatter_settings_form($field, $instance, 
     '#required' => TRUE,
   );
 
+  $element['style'] = array(
+    '#title' => t('Style'),
+    '#type' => 'textfield',
+    '#default_value' => $settings['style'],
+    '#required' => FALSE,
+  );
+
+  $element['class'] = array(
+    '#title' => t('Class'),
+    '#type' => 'textfield',
+    '#default_value' => $settings['class'],
+    '#required' => FALSE,
+  );
+
+  $element['original'] = array(
+    '#title' => t('Show original link'),
+    '#type' => 'radios',
+    '#options' => array(
+      TRUE => t('On'),
+      FALSE => t('Off'),
+    ),
+    '#default_value' => $settings['original'],
+    '#required' => FALSE,
+  );
+
   return $element;
 }
 
@@ -52,9 +100,103 @@ function link_iframe_formatter_field_formatter_settings_form($field, $instance, 
 function link_iframe_formatter_field_formatter_settings_summary($field, $instance, $view_mode) {
   $settings = $instance['display'][$view_mode]['settings'];
 
-  $summary = t('Width : @width, Height : @height', array('@width' => $settings['width'], '@height' => $settings['height']));
+  $summary = t('Width: @width, Height: @height, Class: @class, Original link is @original and Style is @style', array(
+    '@width' => $settings['width'], '@height' => $settings['height'], '@style' => empty($settings['style']) ? t('Off') : t('On'), '@class' => empty($settings['class']) ? 'None' : $settings['class'], '@original' => $settings['original'] ? t('On') : t('Off')));
 
   return $summary;
+}
+
+/**
+ * Page callback: Link image formatter settings form.
+ *
+ * @see link_iframe_formatter_menu()
+ */
+function link_iframe_formatter_settings($form, &$form_state) {
+  // No need to check URL validity because invalid URL is not going to pass
+  // "link" field check anyway.
+  $form['link_iframe_formatter_blacklist'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Link iframe blacklist'),
+    '#default_value' => variable_get('link_iframe_formatter_blacklist', implode("\n", array(
+      // # below is a domain black list.
+      '*http://www.nytimes.com',
+      '*http://google.com',
+    ))),
+    '#description' => t('URLs in blacklist will display as links instead of iframe. One URL per line. Use "*" at the beginning of the line as a domain name. Use "#" at the beginning of line for comments.'),
+  );
+
+  $return = system_settings_form($form);
+  $return['#submit'][] = '_link_iframe_formatter_clear_cache';
+  return $return;
+}
+
+/**
+ * Clears blacklist cache.
+ */
+function _link_iframe_formatter_clear_cache() {
+  cache_clear_all('link_iframe_formatter_blacklist_table', 'cache');
+}
+
+
+/**
+ * Verifies url is in blacklist or not.
+ *
+ * @param string $url
+ *   The link url
+ *
+ * @return bool
+ *   bool true if $url is in the blacklist
+ */
+function link_iframe_formatter_check_blacklist($url) {
+  // Retrieve cache.
+  $table = &drupal_static(__FUNCTION__);
+  if (!isset($table)) {
+    if ($cache = cache_get('link_iframe_formatter_blacklist_table')) {
+      $table = $cache->data;
+    }
+    else {
+      // Set the cache tables.
+      $domains = array();
+      $urls = array();
+      $list = preg_split('/$\R?^/m', variable_get('link_iframe_formatter_blacklist', ''));
+
+      foreach ($list as $line) {
+        if (isset($line[0]) && $line[0] == '#') {
+          // Skip comments.
+          continue;
+        }
+        elseif (isset($line[0]) && $line[0] == '*') {
+          // Strip off '_', which is invalid char after parse_url().
+          $domain = trim(parse_url(substr($line, 1), PHP_URL_HOST), "_\n\t\r\0\x0B");
+          $domains[$domain] = $domain;
+        }
+        else {
+          // We don't do validation because it's not necessary.
+          // If a blacklist link is not valid URL, it's still not getting
+          // displayed.
+          $link = link_cleanup_url($line);
+          $urls[$link] = $link;
+        }
+      }
+
+      $table = array(
+        'domains' => $domains,
+        'urls' => $urls,
+      );
+      cache_set('link_iframe_formatter_blacklist_table', $table, 'cache');
+    }
+  }
+
+  // Fast check if url is in domain.
+  $domain = parse_url($url, PHP_URL_HOST);
+  if (array_key_exists($domain, $table['domains'])) {
+    return TRUE;
+  }
+  $url = link_cleanup_url($url);
+  if (array_key_exists($url, $table['urls'])) {
+    return TRUE;
+  }
+  return FALSE;
 }
 
 /**
@@ -62,23 +204,89 @@ function link_iframe_formatter_field_formatter_settings_summary($field, $instanc
  */
 function link_iframe_formatter_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
   $elements = array();
-  foreach ($items as $delta => $item) {
-    if ($display['type'] == 'link_iframe_formatter_iframe') {
-      $link_options = $item;
-      unset($link_options['title']);
-      unset($link_options['url']);
-      $elements[$delta] = array(
-        '#type' => 'html_tag',
-        '#tag' => 'iframe',
-        '#attributes' => array(
-          'height' => $display['settings']['height'],
-          'name' => $item['title'],
-          'src' => url($item['url'], $link_options),
-          'width' => $display['settings']['width'],
-        ),
-        '#value' => ''
-      );
+  if ($display['type'] == 'link_iframe_formatter_iframe') {
+    foreach ($items as $delta => $item) {
+      $url = $item['url'];
+      if (link_iframe_formatter_check_blacklist($url)) {
+        // If it's in blacklist, show link only.
+        $elements[$delta] = array(
+          '#markup' => theme('link_iframe_formatter_blacklist_notice', array('element' => $item)),
+        );
+      }
+      else {
+        // Not in blacklist, show url in iframe.
+        $link_options = $item;
+        $settings = $display['settings'];
+        unset($link_options['title']);
+        unset($link_options['url']);
+
+        // TODO: if some settings are not set, do set them.
+        $iframe_element = array(
+          '#type' => 'html_tag',
+          '#tag' => 'iframe',
+          '#attributes' => array(
+            'name' => check_plain($item['title']),
+            'src' => url($item['url'], $link_options),
+            'height' => $settings['height'],
+            'width' => $settings['width'],
+            'style' => $settings['style'],
+            'id' => drupal_html_id('link-iframe-' . $instance['bundle'] . '-' . $instance['field_name'] . '-' . $delta),
+            'class' => drupal_html_class($settings['class']),
+          ),
+          '#value' => '',
+        );
+
+        // Add original link if set to On.
+        if ($settings['original']) {
+          $elements[$delta] = array(
+            'original' => array(
+              '#markup' => theme('link_iframe_formatter_original', array('element' => $item)),
+            ),
+            'iframe' => $iframe_element,
+          );
+        }
+        else {
+          $elements[$delta] = $iframe_element;
+        }
+      }
     }
   }
   return $elements;
+}
+
+
+/**
+ * Implements hook_theme().
+ */
+function link_iframe_formatter_theme() {
+  return array(
+    'link_iframe_formatter_original' => array(
+      'variables' => array(
+        'element' => NULL,
+      ),
+    ),
+    'link_iframe_formatter_blacklist_notice' => array(
+      'variables' => array(
+        'element' => NULL,
+      ),
+    ),
+  );
+}
+
+/**
+ * Theme function for link that is blacklisted.
+ */
+function theme_link_iframe_formatter_blacklist_notice($variables) {
+  $link_options = $variables['element'];
+  $link = l($link_options['title'], $link_options['url'], $link_options);
+  return '<div class="link-iframe-formatter-blacklist-notice">Please click the original link at: ' . $link . '<div>';
+}
+
+/**
+ * Theme function for original link.
+ */
+function theme_link_iframe_formatter_original($variables) {
+  $link_options = $variables['element'];
+  $link = l($link_options['title'], $link_options['url'], $link_options);
+  return '<div class="link-iframe-formatter-original">You may view the original link at: ' . $link . '<div>';
 }

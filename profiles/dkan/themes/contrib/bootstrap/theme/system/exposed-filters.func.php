@@ -17,8 +17,6 @@ function bootstrap_exposed_filters($variables) {
   }
   $form['status']['actions']['#attributes']['class'][] = 'col-sm-offset-2';
   $form['status']['actions']['#attributes']['class'][] = 'col-sm-10';
-  $form['status']['actions']['#prefix'] = '<div class="form-group">';
-  $form['status']['actions']['#suffix'] = '</div>';
 
   if (isset($form['current'])) {
     $items = array();

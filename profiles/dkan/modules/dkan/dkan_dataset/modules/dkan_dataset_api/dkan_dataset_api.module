@@ -157,6 +157,31 @@ function dkan_dataset_api_menu() {
  */
 function dkan_dataset_api_settings() {
   $form = array();
+
+  $form['dkan_dataset_catalog'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Data catalog (data.json) settings'),
+    '#description' => t('Configuration for site\'s public data catalog. See !link for more information.', array('!link' => l(t('Project Open Data'), 'http://project-open-data.github.io/catalog/'))),
+  );
+  $form['dkan_dataset_catalog']['dkan_catalog_desc'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Data Catalog Description'),
+    '#description' => t('Description field for data catalog. Should usually just read "Data Catalog."'),
+    '#default_value' => variable_get('dkan_catalog_desc', 'Data Catalog'),
+  );
+  $form['dkan_dataset_catalog']['dkan_catalog_contact'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Data Catalog Contact Point'),
+    '#description' => t('The name of the main contact point for the data catalog. Usually an individual person.'),
+    '#default_value' => variable_get('dkan_catalog_contact', NULL),
+  );
+  $form['dkan_dataset_catalog']['dkan_catalog_mbox'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Data Catalog Contact Email'),
+    '#description' => t('The main contact email for inquiries regarding the data catalog.'),
+    '#default_value' => variable_get('dkan_catalog_mbox', variable_get('site_mail')),
+  );
+
   $form['dkan_dataset_api'] = array(
     '#type' => 'fieldset',
     '#title' => t('Enabled Dataset APIs.'),
@@ -168,7 +193,7 @@ function dkan_dataset_api_settings() {
     '#description' => t(
       'Demo at !demo. More information on !url.',
       array(
-        '!demo' => l('this link', 'site_read'),
+        '!demo' => l('this link', 'api/3/action/site_read'),
         '!url' => l(t('site_read'), 'http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.get.site_read'),
       )
     ),
@@ -192,7 +217,7 @@ function dkan_dataset_api_settings() {
     '#description' => t(
       'Demo at !demo. More information on !url.',
       array(
-        '!demo' => l('this link', 'revision_list'),
+        '!demo' => l('this link', 'api/3/action/revision_list'),
         '!url' => l(t('dkan_dataset_revision_list'), 'http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.get.revision_list'),
       )
     ),
@@ -204,7 +229,7 @@ function dkan_dataset_api_settings() {
     '#description' => t(
       'Demo at !demo. More information on !url. This also mirrors the deprecated !legacy.',
       array(
-        '!demo' => l('this link', 'package_list'),
+        '!demo' => l('this link', 'api/3/action/package_list'),
         '!url' => l(t('package_list'), 'http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.get.package_list'),
         '!legacy' => l(t('rest/dataset'), 'http://docs.ckan.org/en/latest/legacy-api.html#model-resources'),
       )
@@ -274,7 +299,7 @@ function dkan_dataset_api_settings() {
     '#description' => t(
       'Demo at !demo. More information on !url.',
       array(
-        '!demo' => l('this link', 'group_list', array('query' => array('all_fields' => 'TRUE'))),
+        '!demo' => l('this link', 'api/3/action/group_list', array('query' => array('all_fields' => 'TRUE'))),
         '!url' => l(t('group_list'), 'http://docs.ckan.org/en/latest/api/index.html#ckan.logic.action.get.group_list'),
       )
     ),
@@ -775,7 +800,7 @@ function dkan_dataset_api_group_list() {
           $row->display_name = $group->title;
           $row->created = format_date($group->created, 'custom', 'Y-m-d\TH:i:s.u');
           $row->updated = format_date($group->changed, 'custom', 'Y-m-d\TH:i:s.u');
-          $row->image = file_create_l($group->field_image['und'][0]['uri']);
+          $row->image = file_create_url($group->field_image['und'][0]['uri']);
           $row->status = $group->status ? 'active' : 'disabled';
           $row->revision_id = $group->vuuid;
           $rows[] = $row;

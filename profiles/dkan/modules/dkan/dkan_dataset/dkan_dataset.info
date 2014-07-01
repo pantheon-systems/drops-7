@@ -3,7 +3,6 @@ description = Custom elements for Datasets.
 core = 7.x
 package = DKAN
 php = 5.2.4
-version = 7.x-1.0
 project = dkan_dataset
 dependencies[] = autocomplete_deluxe
 dependencies[] = beautytips
@@ -42,10 +41,3 @@ features[variable][] = pathauto_node_dataset_pattern
 features[variable][] = pathauto_node_resource_pattern
 files[] = tests/dkan_dataset.test
 files[] = tests/dkan_dataset_class.test
-
-; Information added by Drupal.org packaging script on 2014-04-29
-version = "7.x-1.0"
-core = "7.x"
-project = "dkan_dataset"
-datestamp = "1398791955"
-
