@@ -343,7 +343,7 @@ class EntityFieldHandlerHelper {
             $values->_entity_properties[$selector] = $wrapper->value();
           }
           else {
-            $values->_entity_properties[$selector] = isset($wrapper->$field) ? $wrapper->$field->value(array('identifier' => TRUE)) : $default;
+            $values->_entity_properties[$selector] = isset($wrapper->$field) ? $wrapper->$field->value(array('identifier' => TRUE, 'sanitize' => TRUE)) : $default;
           }
         }
         catch (EntityMetadataWrapperException $e) {

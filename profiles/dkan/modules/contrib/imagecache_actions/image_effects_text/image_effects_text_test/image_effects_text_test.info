@@ -9,9 +9,9 @@ dependencies[] = imagecache_canvasactions
 dependencies[] = system_stream_wrapper
 
 
-; Information added by drush on 2014-07-01
+; Information added by drush on 2014-07-18
 version = "7.x-1.4+17-dev"
 core = "7.x"
 project = "imagecache_actions"
-datestamp = "1404235878"
+datestamp = "1405718474"
 

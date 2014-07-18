@@ -758,7 +758,7 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
     elseif ($this->id === FALSE && !$this->data) {
       $this->updateParent(NULL);
     }
-    elseif ($previous_id != $this->id) {
+    elseif ($previous_id !== $this->id) {
       $this->updateParent($this->id);
     }
     return $this;
@@ -824,6 +824,12 @@ class EntityDrupalWrapper extends EntityStructureWrapper {
    */
   public function entityAccess($op, $account = NULL) {
     $entity = $this->dataAvailable() ? $this->value() : NULL;
+    // The value() method could return FALSE on entities such as user 0, so we
+    // need to use NULL instead to conform to the expectations of
+    // entity_access().
+    if ($entity === FALSE) {
+      $entity = NULL;
+    }
     return entity_access($op, $this->type, $entity, $account);
   }
 
@@ -1038,8 +1044,11 @@ class EntityListWrapper extends EntityMetadataWrapper implements IteratorAggrega
     // Support setting lists of fully loaded entities.
     if ($this->isEntityList && $values && is_object(reset($values))) {
       foreach ($values as $key => $value) {
-        list($id, $vid, $bundle) = entity_extract_ids($this->itemType, $value);
-        $values[$key] = $id;
+        // Ignore outdated NULL value references in lists of entities.
+        if (isset($value)) {
+          list($id, $vid, $bundle) = entity_extract_ids($this->itemType, $value);
+          $values[$key] = $id;
+        }
       }
     }
     return parent::set($values);

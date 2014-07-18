@@ -57,9 +57,9 @@ files[] = views/feeds_views_handler_field_source.inc
 files[] = views/feeds_views_handler_filter_severity.inc
 
 
-; Information added by drush on 2014-07-01
+; Information added by drush on 2014-07-18
 version = "7.x-2.0-alpha8+8-dev"
 core = "7.x"
 project = "feeds"
-datestamp = "1404235886"
+datestamp = "1405718476"
 

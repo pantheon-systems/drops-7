@@ -53,13 +53,18 @@ function theme_dkan_dataset_release_date_view($vars) {
  * Output the resource into the node content.
  */
 function theme_dkan_dataset_resource_view($vars) {
+  $output = '<h2>' . t('Data and Resources') . '</h2>';
   $node = entity_metadata_wrapper('node', $vars['node']);
   $nodes = $node->field_resources->value();
   $links = array();
-  $output = '<div property="dcat:distribution">';
+  $output .= '<div property="dcat:distribution">';
 
   if (isset($nodes)) {
     foreach ($nodes as $node) {
+      // Node could be empty if it has been deleted.
+      if (!$node) {
+        continue;
+      }
       $node_wrapper = entity_metadata_wrapper('node', $node);
       $body = $node_wrapper->body->value();
       $term = '';
@@ -82,9 +87,9 @@ function theme_dkan_dataset_resource_view($vars) {
           'attributes' => array(
             'class' => array(
               'btn',
-              'btn-primary'
-            )
-          )
+              'btn-primary',
+            ),
+          ),
         )
       );
       $download_link = '';
@@ -112,7 +117,9 @@ function theme_dkan_dataset_resource_view($vars) {
       ) . $desc . '<span class="links">' . $explore_link . $download_link . '</span></div>';
     }
 
-    $output = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('resource-list'))));
+    $output .= theme('item_list', array('items' => $links, 'attributes' => array('class' => array('resource-list'))));
+    // Close first dcat declaration.
+    $output .= '</div>';
   }
   return $output;
 }
@@ -143,7 +150,7 @@ function theme_dkan_dataset_resource_teaser_view($vars) {
           'url' => 'node/' . $vars['node']->nid,
           'link' => array(
             'attributes' => array(
-              'class' => array('label'),
+              'class' => array('span'),
               'title' => t('Resources') . ': ' . $vars['node']->title,
               'data-format' => $name,
             ),
