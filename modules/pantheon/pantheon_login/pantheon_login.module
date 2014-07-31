@@ -32,7 +32,6 @@ function pantheon_login_menu() {
 function pantheon_login_check() {
   global $user;
   if ($user->uid != 1) {
-    pantheon_api_load_api();
     $authorization = pantheon_api_get_authorization($_GET['YggToken']);
     if ($authorization !== FALSE) {
       $_SESSION['YggToken'] = $_GET['YggToken'];
