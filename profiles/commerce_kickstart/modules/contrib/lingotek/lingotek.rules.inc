@@ -74,6 +74,7 @@ function lingotek_rules_entity_upload($wrapper, $settings, $state) {
   $entity_type = $wrapper->type();
   $id = $wrapper->getIdentifier();
   $entity = lingotek_entity_load_single($entity_type, $id);
+  lingotek_entity_changed($entity_type, $entity, $id);
   lingotek_entity_upload($entity, $entity_type);
 }
 

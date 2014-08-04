@@ -109,6 +109,7 @@ function current_search_block_view($delta = '') {
           $build[$name] = $return;
           $build[$name]['#theme_wrappers'][] = 'current_search_item_wrapper';
           $build[$name]['#current_search_id'] = $settings['id'];
+          $build[$name]['#current_search_name'] = $name;
         }
       }
     }

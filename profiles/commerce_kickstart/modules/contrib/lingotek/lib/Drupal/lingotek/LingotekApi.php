@@ -206,7 +206,7 @@ class LingotekApi {
     if (isset($lingotek_document_id) && !isset($lingotek_project_id)) {
       $parameters['documentId'] = $lingotek_document_id;
     }
-    else if (isset($lingotek_project_id) && !isset($lingotek_document_id)) {
+    elseif (isset($lingotek_project_id) && !isset($lingotek_document_id)) {
       $parameters['projectId'] = $lingotek_project_id;
     }
 
@@ -215,11 +215,10 @@ class LingotekApi {
     }
 
     if ($new_translation_target = $this->request('addTranslationTarget', $parameters)) {
-      return ( $new_translation_target->results == 'success' ) ? TRUE : FALSE;
+      // If the request went through, there was no OAuth error and we should enable.
+      return TRUE;
     }
-    else {
-      return FALSE;
-    }
+    return FALSE;
   }
 
   /**
@@ -248,7 +247,7 @@ class LingotekApi {
     if (isset($lingotek_document_id) && !isset($lingotek_project_id)) {
       $parameters['documentId'] = $lingotek_document_id;
     }
-    else if (isset($lingotek_project_id) && !isset($lingotek_document_id)) {
+    elseif (isset($lingotek_project_id) && !isset($lingotek_document_id)) {
       $parameters['projectId'] = $lingotek_project_id;
     }
 
@@ -442,7 +441,7 @@ class LingotekApi {
     if (is_array($document_ids)) {
       $params['documentId'] = $document_ids;
     }
-    else if (!is_null($project_id)) {
+    elseif (!is_null($project_id)) {
       $params['projectId'] = $project_id;
     }
     $report = $this->request('getProgressReport', $params);
@@ -912,7 +911,7 @@ class LingotekApi {
         <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response<br/><strong>Full Request:</strong> !request', $message_params);
       $response_data = !empty($result) ? $result['body'] : "";
     }
-    else if ((!is_null($response) && $response->results == self::RESPONSE_STATUS_SUCCESS) || $method == 'assignProjectManager') { // SUCCESS
+    elseif ((!is_null($response) && $response->results == self::RESPONSE_STATUS_SUCCESS) || $method == 'assignProjectManager') { // SUCCESS
       LingotekLog::api('<h1>@method</h1> <strong>API URL:</strong> @url
         <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response<br/><strong>Full Request:</strong> !request', $message_params);
       $response_data = $response;

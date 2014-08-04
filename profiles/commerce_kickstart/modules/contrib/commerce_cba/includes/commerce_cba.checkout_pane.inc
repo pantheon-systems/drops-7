@@ -59,8 +59,10 @@ function commerce_cba_addresswidget_pane_checkout_form_validate($form, &$form_st
  * Checkout pane callback: submit the Amazon address checkout pane.
  */
 function commerce_cba_addresswidget_pane_checkout_form_submit(&$form, &$form_state, $checkout_pane, $order) {
-  // Save the Amazon delivery address as customer profiles.
-  commerce_cba_form_commerce_checkout_add_address($form, $form_state, $order);
+  // Save the Amazon delivery address to shipping customer profile address.
+  if (module_exists('commerce_shipping')) {
+    commerce_cba_form_commerce_checkout_add_address($form, $form_state, $order);
+  }
 }
 
  /**

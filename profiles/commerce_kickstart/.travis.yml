@@ -14,6 +14,7 @@ mysql:
 
 env:
   - UPGRADE=none
+  - UPGRADE=7.x-2.14
   - UPGRADE=7.x-2.13
   - UPGRADE=7.x-2.12
   - UPGRADE=7.x-2.11
@@ -29,6 +30,9 @@ env:
   - UPGRADE=7.x-2.1
   - UPGRADE=7.x-2.0
 
+matrix:
+  fast_finish: true
+
 install:
   - sudo apt-get update > /dev/null
   - "mysql -e 'create database drupal;'"
@@ -36,11 +40,17 @@ install:
   # Install latest Drush 6.
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
   - composer global require --no-interaction --prefer-source drush/drush:6.*
+  - drush dl -y drupalorg_drush-7.x-1.x-dev --destination=$HOME/.drush
+  - drush cc drush
 
   # Build Behat dependencies
   - cd ./tests/behat
   - composer install --no-interaction --prefer-source
   - cd ../../../
+
+  # Setting Behat environment
+  - DISTRO=`echo $TRAVIS_BUILD_DIR | sed -e "s/\/[^\/]*$//"`
+  - export BEHAT_PARAMS="extensions[Drupal\\DrupalExtension\\Extension][drupal][drupal_root]=$DISTRO/drupal"
 
   # Build Codebase
   - mkdir private_files
@@ -49,11 +59,15 @@ install:
   - mkdir drupal
   - mv profiles drupal/
 
-  # Test the current branch
+  # Build the current branch
   - cd drupal
   - drush make --yes profiles/commerce_kickstart/drupal-org-core.make --prepare-install
   - drush make --yes profiles/commerce_kickstart/drupal-org.make --no-core --contrib-destination=profiles/commerce_kickstart
   - cd ../
+
+  # Verify that all the .make files will work on Drupal.org.
+  - drush verify-makefile drupal/profiles/commerce_kickstart/drupal-org.make
+  - find drupal/profiles/commerce_kickstart/modules -name \*.make -print0 | xargs -0 -n1 drush verify-makefile
 
   # Download an old version to test upgrading from.
   - if [[ "$UPGRADE" != none ]]; then drush dl commerce_kickstart-$UPGRADE; fi
@@ -67,9 +81,9 @@ install:
   - sleep 5
 
   # Get Selenium
-  - wget http://selenium.googlecode.com/files/selenium-server-standalone-2.37.0.jar
-  - java -jar selenium-server-standalone-2.37.0.jar > /dev/null 2>&1 &
-  - sleep 5
+  - wget http://selenium-release.storage.googleapis.com/2.42/selenium-server-standalone-2.42.1.jar
+  - java -jar selenium-server-standalone-2.42.1.jar > /dev/null 2>&1 &
+  - until netstat -an 2>/dev/null | grep '4444.*LISTEN'; do true; done
 
    # Disable sendmail
   - echo sendmail_path=`which true` >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
@@ -79,6 +93,7 @@ before_script:
   # Do the site install (either the current revision or old for the upgrade).
   - if [[ "$UPGRADE" == none ]]; then cd drupal; else cd commerce_kickstart-$UPGRADE; fi
   - drush si commerce_kickstart --db-url=mysql://root:@127.0.0.1/drupal --account-name=admin --account-pass=admin --site-mail=admin@example.com --site-name="Commerce Kickstart" --yes
+  - drush pm-disable dblog --yes
   - cd ../drupal
 
   # If we're an upgrade test, run the upgrade process.
@@ -86,13 +101,11 @@ before_script:
 
   # Start server
   - drush runserver --server=builtin 8888 > /dev/null 2>&1 &
-  - sleep 3
+  - until netstat -an 2>/dev/null | grep '8888.*LISTEN'; do true; done
   - cd profiles/commerce_kickstart/tests/behat
 
 script:
 
-  - DISTRO=`echo $TRAVIS_BUILD_DIR | sed -e "s/\/[^\/]*$//"`
-  - export BEHAT_PARAMS="extensions[Drupal\\DrupalExtension\\Extension][drupal][drupal_root]=$DISTRO/drupal"
   - ./bin/behat --config behat.travis.yml
 
 notifications:

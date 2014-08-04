@@ -95,7 +95,7 @@ $azure: #d2eeff;
       }
       & > .form-item:first-child input.form-text {
         // TODO: For some reason this icon isn't added.
-        background: white url('../../date/date_api/images/calendar.png') no-repeat 86px 0px; // LTR
+        background: white url('../images/calendar.png') no-repeat 86px 0px; // LTR
         width: 100px;
       }
     }

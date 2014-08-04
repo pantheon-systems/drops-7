@@ -94,6 +94,7 @@ function lingotek_get_trans_obj($document_id, $document_idx) {
  */
 function lingotek_notifications() {
 
+  drupal_page_is_cacheable(FALSE);
   LingotekLog::trace('Received <pre>@data</pre>', array('@data' => var_export($_GET, TRUE)), 'callback');
 
   $document_id = ( isset($_GET['doc_id']) ) ? $_GET['doc_id'] : NULL;// uuid
@@ -215,7 +216,6 @@ function lingotek_form_bulk_sync($form, $form_state) {
   $form['upload'] = array(
     '#type' => 'fieldset',
     '#title' => t('Upload config for translation'),
-    //'#description' => t('Translation management defaults used when creating new nodes. At the node level, these settings can be adjusted.'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
     '#group' => 'administrative_settings',

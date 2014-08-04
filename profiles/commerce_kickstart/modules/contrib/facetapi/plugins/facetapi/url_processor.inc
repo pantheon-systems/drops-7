@@ -181,4 +181,21 @@ abstract class FacetapiUrlProcessor {
   public function getFilterKey() {
     return $this->filterKey;
   }
+
+  /**
+   * Allows for processor specific overrides to the settings form.
+   */
+  public function settingsForm(&$form, &$form_state) {
+    // Nothing to do...
+  }
+
+  /**
+   * Provides default values for the backend specific settings.
+   *
+   * @return array
+   *   The defaults keyed by setting name to value.
+   */
+  public function getDefaultSettings() {
+    return array();
+  }
 }

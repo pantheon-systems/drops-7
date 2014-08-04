@@ -44,9 +44,9 @@ features[variable][] = pathauto_node_slideshow_pattern
 features[views_view][] = demo_content_slideshow
 files[] = commerce_kickstart_slideshow.migrate.inc
 
-; Information added by Drupal.org packaging script on 2014-06-11
-version = "7.x-2.15"
+; Information added by Drupal.org packaging script on 2014-07-25
+version = "7.x-2.16"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1402495791"
+datestamp = "1406281128"
 

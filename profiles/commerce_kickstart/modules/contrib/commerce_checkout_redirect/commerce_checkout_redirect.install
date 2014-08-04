@@ -1,0 +1,15 @@
+<?php
+/**
+ * @file
+ * Install/uninstall implementation.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_checkout_redirect_uninstall() {
+  # clean up variables used by module.
+  variable_del('commerce_checkout_redirect_anonymous');
+  variable_del('commerce_checkout_redirect_anonymous_as_login_option');
+  variable_del('commerce_checkout_redirect_username_as_order_email');
+}

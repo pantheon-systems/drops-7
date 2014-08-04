@@ -160,8 +160,8 @@ function _service_links_link($node, $view_mode) {
 
   if (in_array($view_mode, $view_modes_allowed)) {
     $links = $node->service_links;
-    if (!empty($links)) {
-      $node->content['links']['node']['#links'] = array_merge($node->content['links']['node']['#links'], $links);
+    foreach ($links as $key => $value) {
+      $node->content['links']['node']['#links'][$key] = $value;
     }
   }
 }

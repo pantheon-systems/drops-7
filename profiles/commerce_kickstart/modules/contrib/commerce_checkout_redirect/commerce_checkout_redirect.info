@@ -1,12 +1,13 @@
 name = Commerce Checkout Redirect
 description = Force anonymous users to login before being able to checkout.
 package = Commerce (contrib)
-dependencies[] = commerce_checkout
+dependencies[] = commerce_cart
 core = 7.x
+configure = admin/commerce/config/checkout_redirect
 
-; Information added by drupal.org packaging script on 2013-02-13
-version = "7.x-2.0-beta1"
+; Information added by Drupal.org packaging script on 2014-06-11
+version = "7.x-2.0-beta2"
 core = "7.x"
 project = "commerce_checkout_redirect"
-datestamp = "1360767327"
+datestamp = "1402473227"
 

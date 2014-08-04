@@ -32,16 +32,20 @@ function commerce_cba_iopn_menu() {
  * - Status 503: Force retry in case of timestamp mismatch.
  */
 function commerce_cba_iopn_callback() {
-  $path = drupal_get_path('module', 'commerce_cba_iopn');
+  $path = drupal_get_path('module', 'commerce_cba') . '/includes';
 
   $type = filter_input(INPUT_POST, 'NotificationType');
   $data = filter_input(INPUT_POST, 'NotificationData');
   $uuid = filter_input(INPUT_POST, 'UUID');
   $timestamp = filter_input(INPUT_POST, 'Timestamp');
   $signature = filter_input(INPUT_POST, 'Signature');
+  $debug_log = variable_get('cba_debug_log', FALSE);
+  $success = FALSE;
 
   if (empty($data) || empty($type)) {
-    watchdog('commerce_cba_iopn', 'Bad request. Request details: %request', array('%type' => $type, '%request' => print_r($_POST, 1)), WATCHDOG_ERROR);
+    if ($debug_log) {
+      watchdog('Checkout by Amazon IOPN', 'Bad request. Request details: %request', array('%type' => $type, '%request' => '<pre>' . print_r($_POST, TRUE) . '</pre>'), WATCHDOG_ERROR);
+    }
     drupal_add_http_header('Status', '500 Internal Server Error');
     exit();
 
@@ -51,7 +55,9 @@ function commerce_cba_iopn_callback() {
   // the secret merchant key.
   $comparison_signature = base64_encode(hash_hmac("sha1", $uuid . $timestamp, variable_get('cba_secret_key', ''), TRUE));
   if ($comparison_signature <> $signature) {
-    watchdog('commerce_cba_iopn', 'Signature mismatch on %type Amazon notification. Request details: %request', array('%type' => $type, '%request' => print_r($_POST, 1)), WATCHDOG_ERROR);
+    if ($debug_log) {
+      watchdog('Checkout by Amazon IOPN', 'Signature mismatch on %type Amazon notification. Request details: %request', array('%type' => $type, '%request' => '<pre>' . print_r($_POST, TRUE) . '</pre>'), WATCHDOG_ERROR);
+    }
     drupal_add_http_header('Status', '403 Forbidden');
     exit();
   }
@@ -61,7 +67,9 @@ function commerce_cba_iopn_callback() {
   $date = new DateTime();
   $diff = abs(($date->getTimestamp() - $response_date->getTimestamp()) / 60);
   if ($diff > 15) {
-    watchdog('commerce_cba_iopn', 'More than 15 minutes of timestamp difference on %type Amazon notification. Request details: %request', array('%type' => $type, '%request' => print_r($_POST, 1)), WATCHDOG_ERROR);
+    if ($debug_log) {
+      watchdog('Checkout by Amazon IOPN', 'More than 15 minutes of timestamp difference on %type Amazon notification. Request details: %request', array('%type' => $type, '%request' => print_r($_POST, 1)), WATCHDOG_ERROR);
+    }
     drupal_add_http_header('Status', '503 Service unavailable');
     exit();
   }
@@ -71,7 +79,9 @@ function commerce_cba_iopn_callback() {
   $objDom->loadXML($data);
   if (!$objDom->schemaValidate($path . '/xsd/iopn.xsd')) {
     $allErrors = libxml_get_errors();
-    watchdog('commerce_cba_iopn', 'XML is not valid for on %type Amazon notification. Request details: %request. Error details: %details', array('%type' => $type, '%request' => print_r($_POST, 1), '%details' => $allErrors), WATCHDOG_ERROR);
+    if ($debug_log) {
+      watchdog('Checkout by Amazon IOPN', 'XML is not valid for on %type Amazon notification. Request details: %request. Error details: %details', array('%type' => $type, '%request' => '<pre>' . print_r($_POST, TRUE) . '</pre>', '%details' => $allErrors), WATCHDOG_ERROR);
+    }
     drupal_add_http_header('Status', '500 Internal Server Error');
     exit();
   }
@@ -82,9 +92,14 @@ function commerce_cba_iopn_callback() {
   if ($order = commerce_cba_load_order_by_amazon_id($amazon_order_id)) {
     $shipping_address = (array) $data->ProcessedOrder->ShippingAddress;
     $buyer_info = (array) $data->ProcessedOrder->BuyerInfo;
+    if (isset($data->ProcessedOrder->BillingAddress)) {
+      $billing_address = (array) $data->ProcessedOrder->BillingAddress;
+    }
   }
   else {
-    watchdog('commerce_cba_iopn', 'Order referenced by Amazon call doesn\'t exist. Request details: %request', array('%request' => print_r($_POST, 1)), WATCHDOG_ERROR);
+    if ($debug_log) {
+      watchdog('Checkout by Amazon IOPN', 'Order referenced by Amazon call doesn\'t exist. Request details: %request', array('%request' => '<pre>' . print_r($_POST, TRUE) . '</pre>'), WATCHDOG_ERROR);
+    }
     drupal_add_http_header('Status', '500 Internal Server Error');
     exit();
   }
@@ -92,59 +107,53 @@ function commerce_cba_iopn_callback() {
   switch ($type) {
     case 'NewOrderNotification':
       rules_invoke_all('commerce_cba_iopn_new_order_notification', $order, $shipping_address, $buyer_info);
-      watchdog('commerce_cba_iopn', 'Order updated by Amazon to "New"', array(), WATCHDOG_INFO, l(t('View order'), 'admin/commerce/orders/' . $order->order_id));
+      watchdog('Checkout by Amazon IOPN', 'Order updated by Amazon to "New"', array(), WATCHDOG_INFO, l(t('View order'), 'admin/commerce/orders/' . $order->order_id));
       drupal_add_http_header('Status', '200 OK');
+      $success = TRUE;
       break;
     case 'OrderCancelledNotification':
       rules_invoke_all('commerce_cba_iopn_cancel_order_notification', $order, $shipping_address, $buyer_info);
-      watchdog('commerce_cba_iopn', 'Order canceled by Amazon', array(), WATCHDOG_INFO, l(t('View order'), 'admin/commerce/orders/' . $order->order_id));
+      watchdog('Checkout by Amazon IOPN', 'Order canceled by Amazon', array(), WATCHDOG_INFO, l(t('View order'), 'admin/commerce/orders/' . $order->order_id));
       drupal_add_http_header('Status', '200 OK');
+      $success = TRUE;
       break;
     case 'OrderReadyToShipNotification':
       // If the Ready to ship notification is arriving before the New status
       // we need to return an error 500.
       if (commerce_cba_iopn_order_has_been_new($order->order_id)) {
-        rules_invoke_all('commerce_cba_iopn_rts_order_notification', $order, $shipping_address, $buyer_info);
-        watchdog('commerce_cba_iopn', 'Order updated by Amazon to "Ready to ship"', array(), WATCHDOG_INFO, l(t('View order'), 'admin/commerce/orders/' . $order->order_id));
+        rules_invoke_all('commerce_cba_iopn_rts_order_notification', $order, $shipping_address, $billing_address, $buyer_info);
+        if ($debug_log) {
+          watchdog('Checkout by Amazon IOPN', 'Order updated by Amazon to "Ready to ship"', array(), WATCHDOG_INFO, l(t('View order'), 'admin/commerce/orders/' . $order->order_id));
+        }
         drupal_add_http_header('Status', '200 OK');
+        $success = TRUE;
       }
       else {
-        watchdog('commerce_cba_iopn', 'Error: Order "Ready to Ship" notification has arrived before "New". Request details: %request', array('%request' => print_r($_POST, 1)), WATCHDOG_ERROR);
+        if ($debug_log) {
+          watchdog('Checkout by Amazon IOPN', 'Error: Order "Ready to Ship" notification has arrived before "New". Request details: %request', array('%request' => '<pre>' . print_r($_POST, TRUE) . '</pre>'), WATCHDOG_ERROR);
+        }
         drupal_add_http_header('Status', '500 Internal Server Error');
       }
       break;
     default:
       // If we arrived here, it means something wrong happened that was not covered.
-      watchdog('commerce_cba_iopn', 'Unexpected Amazon return call. Request details: %request', array('%request' => print_r($_POST, 1)), WATCHDOG_ERROR);
+      if ($debug_log) {
+        watchdog('Checkout by Amazon IOPN', 'Unexpected Amazon return call. Request details: %request', array('%request' => '<pre>' . print_r($_POST, TRUE) . '</pre>'), WATCHDOG_ERROR);
+      }
       drupal_add_http_header('Status', '500 Internal Server Error');
       break;
   }
+  // Debugging logs on success.
+  if ($success && $debug_log) {
+    // Build debugging message content.
+    $debug_message = t('Amazon IOPN call.');
+    $debug_message .= '<br /><strong>' . $type . '</strong>:<br />';
+    $debug_message .= '<pre>' . print_r($_POST, TRUE) . '</pre>';
+    // Logs a system message.
+    watchdog('Checkout by Amazon IOPN', $debug_message, array(), WATCHDOG_INFO);
+  }
 
   exit();
-}
-
-
-/**
- * Implements hook_commerce_order_status_info().
- */
-function commerce_cba_iopn_commerce_order_status_info() {
-  $order_statuses = array();
-
-  $order_statuses['amazon_new'] = array(
-    'name' => 'amazon_new',
-    'title' => t('Amazon - New order'),
-    'state' => 'pending',
-    'weight' => 6,
-  );
-
-  $order_statuses['amazon_rts'] = array(
-    'name' => 'amazon_rts',
-    'title' => t('Amazon - Ready to Ship'),
-    'state' => 'pending',
-    'weight' => 7,
-  );
-
-  return $order_statuses;
 }
 
 /**

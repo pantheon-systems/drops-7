@@ -86,3 +86,6 @@
   font-style: italic;
   font-size: smaller;
 }
+.commerce-discount-form .negate-condition input.form-checkbox + label::before {
+  top: inherit;
+}

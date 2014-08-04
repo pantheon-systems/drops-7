@@ -6,8 +6,6 @@
   // Checkout button.
   Drupal.CommerceCba.callbacks.commerce_cba_redirect_checkout = function(widget) {
     if (widget.type == 'InlineCheckoutWidget' || widget.type == 'ExpressCheckoutWidget') {
-      // Add redirection property for the widget.
-      widget.redirect = $.param.querystring('//' + location.host + Drupal.settings.basePath + 'checkout', 'purchaseContractId=' + widget.getPurchaseContractId());
       // Checkout flag for the order.
       Drupal.CommerceCba.callbacks.commerce_cba_add_widget_info(widget);
     }

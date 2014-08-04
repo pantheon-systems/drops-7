@@ -396,7 +396,7 @@ function colorbox_field_formatter_settings_form($field, $instance, $view_mode, $
  * Validate function for colorbox_gallery_custom.
  */
 function colorbox_gallery_custom_validate($element, &$form_state) {
-  if ($form_state['values']['fields']['field_image']['settings_edit_form']['settings']['colorbox_gallery'] == 'custom' && !preg_match('!^[a-z0-9_-]+$!', $element['#value'])) {
+  if (!empty($element['#value']) && !preg_match('!^[a-z0-9_-]+$!', $element['#value'])) {
     form_error($element, t('%name must only contain lowercase letters, numbers, hyphen and underscores.', array('%name' => $element['#title'])));
   }
 }

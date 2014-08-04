@@ -8,22 +8,24 @@
 /**
  * Implements hook_default_rules_configuration().
  */
-function commerce_cba_iopn_default_rules_configuration() {
+function commerce_cba_default_rules_configuration() {
   $rules = array();
 
   $rule = rules_reaction_rule();
   $rule->label = t('New order notification received from Amazon');
   $rule->active = TRUE;
 
-  $rule
-    ->event('commerce_cba_iopn_new_order_notification')
-    ->action('commerce_cba_iopn_save_customer_profile', array(
+  $rule->event('commerce_cba_iopn_new_order_notification');
+  // Save the Customer Shipping profile address from Amazon Shipping address data.
+  if (module_exists('commerce_shipping')) {
+    $rule->action('commerce_cba_iopn_save_customer_profile', array(
       'commerce_order:select' => 'commerce-order',
-      'customer_profile_field' => 'billing',
-      'shipping_address:select' => 'shipping-address',
+      'customer_profile_field' => 'shipping',
+      'amazon_address:select' => 'shipping-address',
       'provides' => array('commerce_customer_profile', 'Customer profile type'),
-    ))
-    ->action('commerce_order_update_status', array(
+    ));
+  }
+  $rule->action('commerce_order_update_status', array(
       'commerce_order:select' => 'commerce-order',
       'order_status' => 'amazon_new',
     ));
@@ -36,6 +38,12 @@ function commerce_cba_iopn_default_rules_configuration() {
 
   $rule
     ->event('commerce_cba_iopn_rts_order_notification')
+    ->action('commerce_cba_iopn_save_customer_profile', array(
+      'commerce_order:select' => 'commerce-order',
+      'customer_profile_field' => 'billing',
+      'amazon_address:select' => 'billing-address',
+      'provides' => array('commerce_customer_profile', 'Customer profile type'),
+    ))
     ->action('commerce_order_update_status', array(
       'commerce_order:select' => 'commerce-order',
       'order_status' => 'amazon_rts',
@@ -55,9 +63,6 @@ function commerce_cba_iopn_default_rules_configuration() {
     ));
 
   $rules['commerce_cba_iopn_cancel_order_notification'] = $rule;
-
-
-
 
   return $rules;
 }

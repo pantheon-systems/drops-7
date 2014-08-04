@@ -146,3 +146,18 @@ function commerce_discount_usage_update_7001() {
     db_create_table('commerce_discount_usage', drupal_get_schema_unprocessed('commerce_discount_usage', 'commerce_discount_usage'));
   }
 }
+
+/**
+ * Migrate from commerce_discount_max_uses to discount_usage_limit.
+ */
+function commerce_discount_usage_update_7002() {
+  foreach (entity_load('commerce_discount') as $discount) {
+    if (empty($discount->discount_usage_limit[LANGUAGE_NONE][0]['value'])
+      && !empty($discount->commerce_discount_max_uses[LANGUAGE_NONE][0]['value'])) {
+      $discount->discount_usage_limit[LANGUAGE_NONE][0]['value'] = $discount->commerce_discount_max_uses[LANGUAGE_NONE][0]['value'];
+      entity_save('commerce_discount', $discount);
+    }
+  }
+
+  field_delete_field('commerce_discount_max_uses');
+}

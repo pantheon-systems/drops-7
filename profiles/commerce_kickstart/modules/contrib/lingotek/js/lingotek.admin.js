@@ -11,10 +11,12 @@ Drupal.behaviors.lingotekAdminForm = {
     //when a content type checkbox is clicked
     $('.form-select', context).change( function() {
       isEnabled = $(this).val() != 'DISABLED';
+      var totalChecked = $(this).parents('tr').find('.form-checkbox:checked').length;
+
       $(this).parents('tr').find('.form-checkbox').each( function() {
-        if(isEnabled) {
+        if(isEnabled && totalChecked === 0) {
           $(this).attr('checked', isEnabled);
-        } else {
+        } else if (!isEnabled) {
           $(this).removeAttr('checked');
         }
       })
@@ -67,18 +69,11 @@ Drupal.behaviors.lingotekAdminForm = {
       if ($(this).children().first().is(':checked')) {
         $('.field.form-checkbox').removeAttr('disabled').attr('checked',true);
       } else {
-        $('.field.form-checkbox').removeAttr('checked').attr('disabled',true);
+        $('.field.form-checkbox:not(#lingotek_use_translation_from_drupal)').attr('disabled',true);
       }
     });
 
     //uncheck dependent-function boxes when primary is not checked
-    $('#edit-config-lingotek-translate-config-builtins').change( function () {
-      if ($('#edit-config-lingotek-translate-config-builtins').is(':checked')) {
-        $('#lingotek_use_translation_from_drupal').removeAttr('disabled');
-      } else {
-        $('#lingotek_use_translation_from_drupal').removeAttr('checked').attr('disabled',true);
-      }
-    });
     $('#edit-config-lingotek-translate-config-blocks').change( function () {
       if ($('#edit-config-lingotek-translate-config-blocks').is(':checked')) {
         $('#lingotek_prepare_config_blocks').removeAttr('disabled').attr('checked',true);
@@ -103,12 +98,6 @@ Drupal.behaviors.lingotekAdminForm = {
 
     // set prep functions to disabled/enabled on initial page load
     $( function () {
-      if ($('#edit-config-lingotek-translate-config-builtins').is(':checked')) {
-        $('#lingotek_use_translation_from_drupal').removeAttr('disabled');
-      } else {
-        $('#lingotek_use_translation_from_drupal').attr('disabled',true);
-      }
-      
       if ($('#edit-config-lingotek-translate-config-blocks').is(':checked')) {
         $('#lingotek_prepare_config_blocks').removeAttr('disabled');
       } else {
@@ -125,6 +114,10 @@ Drupal.behaviors.lingotekAdminForm = {
         $('#lingotek_prepare_config_menus').removeAttr('disabled');
       } else {
         $('#lingotek_prepare_config_menus').attr('disabled',true);
+      }
+
+      if ($('.form-item-config-lingotek-translate-config-views').parent().siblings().last().children().last().val() != 1) {
+        $('#edit-config-lingotek-translate-config-views').attr('disabled',true);
       }
     });
 
@@ -223,6 +216,12 @@ Drupal.behaviors.lingotekAdminForm = {
       // profiles summary
       $('fieldset#ltk-profiles', context).drupalSetSummary(function (context){
         return $(context).find('tbody tr').length + ' ' + Drupal.t('profiles')
+      });
+
+      // change enable text to be accurate for translating field collections
+      $(function(){
+        $('#edit-translation-field-collection-item > .form-item > .description').children().first().remove();
+        $('#edit-translation-field-collection-item > .form-item > .description').children().first().text('(enable all)');
       });
 
       /*

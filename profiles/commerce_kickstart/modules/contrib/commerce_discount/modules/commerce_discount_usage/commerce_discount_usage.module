@@ -166,8 +166,10 @@ function commerce_discount_usage_order_discounts($order) {
   }
 
   // Add the set of discounts directly referenced on the order.
-  foreach ($order_wrapper->commerce_discounts->value() as $discount) {
-    $order_discounts[] = $discount->name;
+  if (!empty($order->commerce_discounts)) {
+    foreach ($order_wrapper->commerce_discounts->value() as $discount) {
+      $order_discounts[] = $discount->name;
+    }
   }
 
   $order_discounts = array_unique($order_discounts);

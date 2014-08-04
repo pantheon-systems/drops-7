@@ -246,7 +246,7 @@ class Lingotek {
           $loc = strtoupper(substr($drupal_language_code, $dash_pos + 1));
           $lingotek_locale = $lang . '_' . $loc;
         } // If it is generic then use the mapping to pick a specific 
-        else if (isset(self::$language_map[$drupal_language_code])) {
+        elseif (isset(self::$language_map[$drupal_language_code])) {
           $lingotek_locale = self::$language_map[$drupal_language_code];
         }
       }
@@ -373,7 +373,7 @@ class Lingotek {
       if ($target_language->lingotek_enabled) { // include all languages enabled
         $languages[$target_language->lingotek_locale] = $language;
       }
-      else if ($include_disabled) { // include all languages, including disabled (lingotek_enabled is 0)
+      elseif ($include_disabled) { // include all languages, including disabled (lingotek_enabled is 0)
         $languages[$target_language->lingotek_locale] = $language;
       }
     }

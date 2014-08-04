@@ -2,10 +2,11 @@ name = Commerce Checkout by Amazon
 description = Checkout by Amazon integration
 package = Commerce (contrib)
 core = 7.x
+
+; Configuration path
 configure = admin/commerce/config/cba
 
-dependencies[] = commerce
-dependencies[] = commerce_checkout
+; Dependencies
 dependencies[] = commerce_cart
 dependencies[] = commerce_customer
 dependencies[] = commerce_payment
@@ -13,9 +14,9 @@ dependencies[] = commerce_payment
 ; Tests
 files[] = tests/commerce_cba.test
 
-; Information added by Drupal.org packaging script on 2014-03-21
-version = "7.x-1.0-alpha5"
+; Information added by Drupal.org packaging script on 2014-07-11
+version = "7.x-1.0-beta1"
 core = "7.x"
 project = "commerce_cba"
-datestamp = "1395416657"
+datestamp = "1405087128"
 

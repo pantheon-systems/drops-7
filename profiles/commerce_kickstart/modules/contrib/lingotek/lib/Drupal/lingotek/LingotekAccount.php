@@ -45,9 +45,6 @@ class LingotekAccount {
       $this->setStatus($current_status);
       $this->setPlanType($current_plan_type);
     }
-    else { // If the Account data isn't cached locally pull it down.
-      $this->getAccountStatus();
-    }
   }
 
   /**
@@ -112,95 +109,6 @@ class LingotekAccount {
 
   public function showAdvanced() {
     return $this->isPlanType(self::ADVANCED);
-  }
-
-  /**
-   * Get Account Status
-   * NOTE:  You shouldnt need to call this directly.  Its called in the constructor.
-   * Request:  https://LINGOTEK_BILLING_SERVER/billing/account.json?community=B2MMD3X5&external_id=community_admin&oauth_key=28c279fa-28dc-452e-93af-68d194a2c366&oauth_secret=0e999486-3b4d-47e4-ba9a-d0f3f0bbda73
-   * Response:  {"state":"active","plan":{"trial_ends_at":0,"state":"active","activated_at":1355267936,"type":"cosmopolitan_monthly","languages_allowed":2,"language_cost_per_period_in_cents":14900}}
-   * Will return FALSE or a json decoded object.
-   */
-  function getAccountStatus() {
-
-    $result = FALSE;
-
-    $parameters = array(
-      'community' => variable_get('lingotek_community_identifier', ''),
-      'external_id' => variable_get('lingotek_login_id', ''),
-      'oauth_key' => variable_get('lingotek_oauth_consumer_id', ''),
-      'oauth_secret' => variable_get('lingotek_oauth_consumer_secret', ''),
-    );
-
-    if (!empty($parameters['community']) && !empty($parameters['external_id']) && !empty($parameters['oauth_key']) && !empty($parameters['oauth_secret'])) {
-
-      $timer_name = 'GET -' . microtime(TRUE);
-      timer_start($timer_name);
-
-      $api_url = LINGOTEK_BILLING_SERVER;
-
-      $ch = curl_init($api_url . '?' . http_build_query($parameters));
-      curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
-      curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, FALSE);
-      //curl_setopt( $ch, CURLINFO_HEADER_OUT, TRUE );
-
-      $response = curl_exec($ch);
-      $info = curl_getinfo($ch);
-      curl_close($ch);
-
-      $response_json = json_decode($response);
-      //debug( $response ); //debug( $info );
-
-      $timer_results = timer_stop($timer_name);
-
-      $message_params = array(
-        '@url' => $api_url,
-        '@method' => 'GET account (billing API)',
-        '!params' => $parameters,
-        //'!request' => $request,
-        '!response' => $response_json,
-        '@response_time' => number_format($timer_results['time']) . ' ms',
-      );
-      
-      if (isset($response_json) && $info['http_code'] == 200) { // Did we get valid json data back?  If not, $json is NULL.
-        //debug ( $json );
-        LingotekLog::api('<h1>@method</h1>
-        <strong>API URL:</strong> @url
-        <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response', $message_params);
-
-        $response_data = $response;
-
-
-        $result = TRUE;
-
-        // Not Found - {"state":"not_found"} - Account isn't setup yet.  The state after autoprovisioning a community, but before setting up your billing account.
-        if ($response_json->state == self::NOT_FOUND) {
-          $this->setStatus(self::NOT_FOUND);
-          $this->setPlan(self::NONE);
-        } // END:  Not Found
-        // Active Account
-        // Additionally, Save the account settings locally.
-        elseif ($response_json->state == self::ACTIVE) {
-
-          $this->setStatus(self::ACTIVE);
-          variable_set('lingotek_account_status', self::ACTIVE);
-
-          if (is_object($response_json->plan)) {
-
-            $this->setPlan($response_json->plan);
-          } // END:  Plan
-
-          menu_rebuild();
-        } // END  Active
-      } // END:  Got 200 Response
-      else {
-        LingotekLog::error('<h1>@method (Failed)</h1>
-        <strong>API URL:</strong> @url
-        <br /><strong>Response Time:</strong> @response_time<br /><strong>Request Params</strong>: !params<br /><strong>Response:</strong> !response<br/><strong>Full Request:</strong> !request', $message_params, 'api');
-      }
-    } // END:  has credentials
-
-    return $result;
   }
 
 }

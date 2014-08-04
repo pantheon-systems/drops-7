@@ -220,7 +220,7 @@
   width: 55px;
 }
 .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
-  background: white url("../../date/date_api/images/calendar.png") no-repeat 86px 0px;
+  background: white url("../images/calendar.png") no-repeat 86px 0px;
   width: 100px;
 }
 .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date > .form-item {

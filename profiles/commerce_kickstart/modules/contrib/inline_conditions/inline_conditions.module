@@ -7,7 +7,6 @@
 // Inline conditions own constants.
 define('INLINE_CONDITIONS_AND', 1);
 define('INLINE_CONDITIONS_OR', 0);
-define('INLINE_CONDITIONS_NOT', -1);
 
 /**
  * Implements hook_menu().
@@ -303,7 +302,11 @@ function inline_conditions_field_load($entity_type, $entities, $field, $instance
           // Unserialize the field settings.
           $item['condition_settings'] = unserialize($item['condition_settings']);
 
-          // Look up for the value of the logic operator.
+          // Look up for the value of the logic operators.
+          if (isset($item['condition_settings']['condition_negate'])) {
+            $item['condition_negate'] = $item['condition_settings']['condition_negate'];
+            unset($item['condition_settings']['condition_negate']);
+          }
           if (isset($item['condition_settings']['condition_logic_operator'])) {
             $item['condition_logic_operator'] = $item['condition_settings']['condition_logic_operator'];
             unset($item['condition_settings']['condition_logic_operator']);
@@ -375,7 +378,8 @@ function inline_conditions_field_prepare_items(&$items) {
           $item['condition_settings'] = serialize(
             array_merge(
               $item['condition_settings'], array(
-                // Store the rule condition logic operator.
+                // Store the rule condition logic operators.
+                'condition_negate' => isset($item['condition_negate']) ? $item['condition_negate'] : NULL,
                 'condition_logic_operator' => isset($item['condition_logic_operator']) ? $item['condition_logic_operator'] : NULL,
               )
             )
@@ -482,6 +486,14 @@ function inline_conditions_field_widget_form(&$form, &$form_state, $field, $inst
       $element[$delta]['#attributes'] = array('class' => array('container-inline'));
     }
 
+    $element[$delta]['condition_negate'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Negate'),
+      '#default_value' => !empty($item['condition_negate']) ? $item['condition_negate'] : FALSE,
+      '#prefix' => '<div class="negate-condition">',
+      '#suffix' => '</div>',
+    );
+
     // Remove condition button.
     $element[$delta]['remove_condition'] = array(
       '#type' => 'button',
@@ -514,7 +526,6 @@ function inline_conditions_field_widget_form(&$form, &$form_state, $field, $inst
         '#options' => array(
           INLINE_CONDITIONS_OR => t('Or:'),
           INLINE_CONDITIONS_AND => t('And:'),
-          INLINE_CONDITIONS_NOT => t('Not:'),
         ),
         '#default_value' => isset($item['condition_logic_operator']) ? $item['condition_logic_operator'] : INLINE_CONDITIONS_AND,
         '#weight' => -50,
@@ -635,38 +646,38 @@ function inline_conditions_build(RulesReactionRule $rule, $field_values) {
       drupal_alter('inline_conditions_build', $value);
 
       // Get the condition info.
-      $condition = inline_conditions_get_info($value['condition_name']);
+      $info = inline_conditions_get_info($value['condition_name']);
 
       // Ensure we got the condition and we have settings for the rule
       // condition.
-      if (!$condition || empty($value['condition_settings'])) {
+      if (!$info || empty($value['condition_settings'])) {
         continue;
       }
 
       // Fulfill the parameters variable with the expecting values.
-      $parameters = array('entity:select' => $condition['entity type']) + $value['condition_settings'];
+      $parameters = array('entity:select' => $info['entity type']) + $value['condition_settings'];
 
       // Find the condition name in order to be attached on the passed rule.
-      $name = isset($condition['rule condition name']) ? $condition['rule condition name'] : $value['condition_name'];
+      $name = isset($info['rule condition name']) ? $info['rule condition name'] : $value['condition_name'];
+
+      $condition = rules_condition($name, $parameters)
+        ->negate(!empty($value['condition_negate']));
 
       // Find out if we need to add a OR / AND condition before the one defined
       // in the current field value.
       if (isset($value['condition_logic_operator'])) {
         switch ($value['condition_logic_operator']) {
-          case INLINE_CONDITIONS_AND || INLINE_CONDITIONS_NOT:
+          case INLINE_CONDITIONS_AND:
             if (is_null($and)) {
               $and = rules_and();
             }
             // Attach the condition in the "AND" group.
-            rules_condition($name, $parameters)
-              // Negate the condition if the given logical operator is NOT.
-              ->negate($value['condition_logic_operator'] == INLINE_CONDITIONS_NOT)
-              ->setParent($and);
+            $condition->setParent($and);
             // Try to add the condition stored in temp variable in the current
             // group.
-            if (!is_null($temp)) {
-              rules_condition($temp['name'], $temp['parameters'])->setParent($and);
-              $temp = NULL;
+            if (isset($temp)) {
+              $temp->setParent($and);
+              unset($temp);
             }
             break;
           case INLINE_CONDITIONS_OR:
@@ -674,12 +685,12 @@ function inline_conditions_build(RulesReactionRule $rule, $field_values) {
               $or = rules_or();
             }
             // Attach the condition in the "OR" group.
-            rules_condition($name, $parameters)->setParent($or);
+            $condition->setParent($or);
             // Try to add the condition stored in temp variable in the current
             // group.
-            if (!is_null($temp)) {
-              rules_condition($temp['name'], $temp['parameters'])->setParent($or);
-              $temp = NULL;
+            if (isset($temp)) {
+              $temp->setParent($or);
+              unset($temp);
             }
             break;
 
@@ -689,10 +700,7 @@ function inline_conditions_build(RulesReactionRule $rule, $field_values) {
 
       // No logical operator found, so we put the condition in the temp array.
       // It will be added to next condition using a logical operator.
-      $temp = array(
-        'name' => $name,
-        'parameters' => $parameters
-      );
+      $temp = $condition;
     }
 
     // Add conditions based on logical operators groups to passed rule.
@@ -703,9 +711,9 @@ function inline_conditions_build(RulesReactionRule $rule, $field_values) {
       $rule->condition($or);
     }
 
-    // If a condition is still present in the temp var, attach it on the rule.
-    if (!is_null($temp)) {
-      $rule->condition($temp['name'], $temp['parameters']);
+    // If a condition is still present in the temp var, attach it to the rule.
+    if (isset($temp)) {
+      $rule->condition($temp);
     }
   }
 }

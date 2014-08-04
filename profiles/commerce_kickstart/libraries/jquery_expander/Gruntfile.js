@@ -89,6 +89,7 @@ module.exports = function(grunt) {
         src: [
           '<%= pkg.name %>.jquery.json',
           'package.json',
+          'bower.json',
           'src/jquery.<%= pkg.name %>.js',
           '<%= pkg.name %>.js'
         ],
@@ -111,7 +112,7 @@ module.exports = function(grunt) {
 
   grunt.registerTask( 'bowerjson', 'update bower.json', function() {
     var comp = grunt.config('bowerjson'),
-        pkg = grunt.config("pkg"),
+        pkg = grunt.config('pkg'),
         json = {};
 
     ['name', 'version', 'dependencies'].forEach(function(el) {
@@ -130,7 +131,7 @@ module.exports = function(grunt) {
     json.name = 'jquery.' + json.name;
 
     grunt.file.write( comp, JSON.stringify(json, null, 2) );
-    grunt.log.writeln( "File '" + comp + "' updated." );
+    grunt.log.writeln( 'File "' + comp + '" updated.' );
   });
 
 
@@ -166,4 +167,5 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-shell');
   grunt.loadNpmTasks('grunt-version');
   grunt.loadNpmTasks('grunt-contrib-qunit');
+  grunt.loadNpmTasks('grunt-contrib-watch');
 };

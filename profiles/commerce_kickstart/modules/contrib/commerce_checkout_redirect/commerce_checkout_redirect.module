@@ -5,13 +5,125 @@
  */
 
 /**
+ * Implements hook_menu().
+ */
+function commerce_checkout_redirect_menu() {
+  $items = array();
+  $items['admin/commerce/config/checkout_redirect'] = array(
+    'title' => t('Checkout Redirect'),
+    'description' => t('Checkout redirect module settings'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_checkout_redirect_settings'),
+    'access arguments' => array('configure store'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Creates settings form for module.
+ */
+function commerce_checkout_redirect_settings($form, &$form_state) {
+  $form = array();
+  $form['commerce_checkout_redirect_path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Checkout redirect path'),
+    '#description' => t('Set the checkout redirect path for an anonymous user.
+      Leave blank to use the default \'user/login\' page. If you redirect to
+      other page then make sure you add user login block on that page.'),
+    '#default_value' => variable_get('commerce_checkout_redirect_path')
+  );
+  $form['commerce_checkout_redirect_message'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Checkout redirect login message'),
+    '#description' => t('The message that should be displayed for the login page in the checkout process.'),
+    '#default_value' => variable_get('commerce_checkout_redirect_message', t('You need to be logged in to be able to checkout.')),
+    '#rows' => 2,
+  );
+  $form['commerce_checkout_redirect_anonymous'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Continue without register'),
+    '#description' => t('Allow anonymous checkout.'),
+    '#default_value' => variable_get('commerce_checkout_redirect_anonymous', FALSE),
+  );
+  $form['commerce_checkout_redirect_username_as_order_email'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use username as order email.'),
+    '#description' => t('This will use the login username to be used as order email.'),
+    '#default_value' => variable_get('commerce_checkout_redirect_username_as_order_email', FALSE),
+    '#states' => array (
+      'visible' => array(
+       ':input[name="commerce_checkout_redirect_anonymous"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['commerce_checkout_redirect_anonymous_as_login_option'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use anonymous checkout as option to login form.'),
+    '#description' => t('This will provide the Anonymous checkout as alternative to login in the login form (radio options).'),
+    '#default_value' => variable_get('commerce_checkout_redirect_anonymous_as_login_option', FALSE),
+    '#states' => array (
+      'visible' => array(
+       ':input[name="commerce_checkout_redirect_anonymous"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  // Chekout button help text for e-mail verification when a visitor creates an account.
+  if (variable_get('user_email_verification', TRUE)) {
+    $form['commerce_checkout_redirect_reset_password_message'] = array(
+      '#type' => 'textarea',
+      '#title' => t('Reset password checkout redirect message'),
+      '#description' => t('The message that should be displayed for the reset password page for new account in the checkout process.'),
+      '#default_value' => variable_get('commerce_checkout_redirect_reset_password_message', t('You can also continue with the checkout process.')),
+      '#rows' => 2,
+    );
+  }
+
+  return system_settings_form($form);
+}
+
+/**
  * Implements hook_commerce_checkout_router().
  */
 function commerce_checkout_redirect_commerce_checkout_router($order, $checkout_page) {
-  if (user_is_anonymous()) {
-    $_SESSION['commerce_checkout_redirect_anonymous'] = TRUE;
-    drupal_set_message(t('You need to be logged in to be able to checkout.'));
-    return drupal_goto('user/login');
+  // Get the id of the first and last checkout page
+  $checkout_pages = commerce_checkout_pages();
+  $first_checkout_page = key($checkout_pages);
+  end($checkout_pages);
+  $last_checkout_page = key($checkout_pages);
+  // Check if the user's shopping cart order exists with something in the cart
+  if (commerce_cart_order_load() && commerce_checkout_redirect_items_in_cart()) {
+    if (($checkout_page['page_id'] == $first_checkout_page)) {
+      if (user_is_anonymous() && empty($_SESSION['commerce_checkout_redirect_bypass'])) {
+        $_SESSION['commerce_checkout_redirect_anonymous'] = TRUE;
+        $commerce_checkout_redirect_message = variable_get('commerce_checkout_redirect_message', t('You need to be logged in to be able to checkout.')); 
+        if (!empty($commerce_checkout_redirect_message)) {
+          drupal_set_message($commerce_checkout_redirect_message);
+        }
+        $redirect_path = variable_get('commerce_checkout_redirect_path', 'user/login');
+        if($redirect_path == '') {
+          $redirect_path = 'user/login';
+        }
+        return drupal_goto($redirect_path);
+      }
+    }
+  }
+  elseif ($checkout_page['page_id'] == $last_checkout_page) {
+    unset($_SESSION['commerce_checkout_redirect_bypass']);
+  }
+}
+
+/**
+ * Implements hook_commerce_checkout_pane_info_alter().
+ *
+ */
+function commerce_checkout_redirect_commerce_checkout_pane_info_alter(&$checkout_panes) {
+  // Disable the Account Information pane if the
+  // login username it will be used for order email.
+  if (variable_get('commerce_checkout_redirect_username_as_order_email', FALSE)) {
+    $checkout_panes['account']['page'] = 'disabled';
+    $checkout_panes['account']['enabled'] = FALSE;
   }
 }
 
@@ -19,9 +131,91 @@ function commerce_checkout_redirect_commerce_checkout_router($order, $checkout_p
  * Implements hook_form_alter().
  */
 function commerce_checkout_redirect_form_alter(&$form, &$form_state, $form_id) {
-  if (in_array($form_id, array('user_login', 'user_register_form'))) {
-    // Append the checkout redirect function on user's forms.
-    $form['#submit'][] = 'commerce_checkout_redirect_redirect_anonymous_submit';
+  $commerce_checkout_redirect_anonymous = variable_get('commerce_checkout_redirect_anonymous', FALSE);
+  // Check if user has an active cart order.
+  if ($order = commerce_cart_order_load()) {
+    // Check if there's anything in the cart and if user has not yet selected checkout method.
+    if (commerce_checkout_redirect_items_in_cart() && empty($_SESSION['commerce_checkout_redirect_bypass']) && !empty($_SESSION['commerce_checkout_redirect_anonymous'])) {
+      if (in_array($form_id, array('user_login', 'user_register_form', 'user_login_block', 'user_profile_form'))) {
+        // Append the checkout redirect function on user's forms.
+        $form['#submit'][] = 'commerce_checkout_redirect_redirect_anonymous_submit';
+        unset($form['#action']);
+        // Anonymous checkout button.
+        if (variable_get('commerce_checkout_redirect_anonymous', FALSE)) {
+          $form_state['#order'] = $order;
+          $form['actions']['continue_button'] = array(
+            '#name' => 'continue_button',
+            '#type'   => 'submit',
+            '#value'  => 'Checkout without an account',
+            '#limit_validation_errors' => array(),
+            '#submit' => array('commerce_checkout_redirect_anonymous_continue_checkout'),
+            '#states' => array (
+              'visible' => array(
+               ':input[name="have_pass"]' => array('value' => 0),
+              ),
+            ),
+          );
+          // Anonymous checkout as alternative to login form.
+          if (variable_get('commerce_checkout_redirect_anonymous_as_login_option', FALSE)) {
+            $form['have_pass'] = array(
+              '#type' => 'radios',
+              '#title' => t('Do you have a password?'),
+              '#options' => array(0 => t('No (You can create an account later)'), 1 => t('Yes')),
+              '#weight' => 10,
+              '#default_value' => 0,
+            );
+            $form['pass']['#states'] = array(
+              'visible' => array(
+               ':input[name="have_pass"]' => array('value' => 1),
+              ),
+            );
+            $form['actions']['submit']['#states'] = array(
+              'visible' => array(
+               ':input[name="have_pass"]' => array('value' => 1),
+              ),
+            );
+            $form['pass']['#weight'] = 10;
+            $form['actions']['continue_button']['#value'] = t('Continue');
+            $form['actions']['continue_button']['#states'] = array (
+              'visible' => array(
+               ':input[name="have_pass"]' => array('value' => 0),
+              ),
+            );
+          }
+          // Use the username as order email.
+          // Email validation for the username form element
+          if (variable_get('commerce_checkout_redirect_username_as_order_email', FALSE)) {
+            $form['name']['#title'] = t('Email');
+            $form['actions']['continue_button']['#limit_validation_errors'] = array(array('name'));
+            $form['actions']['continue_button']['#validate'][] = 'commerce_checkout_redirect_username_as_order_email_form_validate';
+          }
+        }
+      }
+      // Resert password form
+      // E-mail verification when a visitor creates an account.
+      elseif ($form_id == 'user_pass_reset' && !empty($form['actions'])) {
+        // Provide the checkout as an alternative to the new account
+        // reset password process.
+        // Message (help text) for the "Continue with checkout" button.
+        $checkout_redirect_reset_password_message = variable_get('commerce_checkout_redirect_reset_password_message', t('You can also continue with the checkout process.')); 
+        if (!empty($checkout_redirect_reset_password_message)) {
+          $form['actions']['checkout_message']['#markup'] = '<p>' . $checkout_redirect_reset_password_message . '</p>';
+        }
+        // "Continue with checkout" submit button.
+        $form['actions']['checkout'] = array(
+          '#type' => 'submit',
+          '#value' => t('Continue with checkout'),
+        );
+        // Append the checkout redirect function on user's forms.
+        $form['#submit'][] = 'commerce_checkout_redirect_redirect_anonymous_submit';
+        // Unset the action, use submit form function(s) instead.
+        unset($form['#action']);
+      }
+    }
+  }
+  // For resetting the session variables for back to cart checkout button.
+  if (strpos($form_id, 'commerce_checkout_form_') === 0 && !empty($form['buttons']['cancel'])) {
+    $form['buttons']['cancel']['#submit'][] = 'commerce_checkout_redirect_checkout_form_cancel_submit';
   }
 }
 
@@ -32,9 +226,100 @@ function commerce_checkout_redirect_redirect_anonymous_submit($form, &$form_stat
   // Because the user in the order may have been updated (from uid 0 to the real
   // uid for example), clear static cache before trying to get the order.
   drupal_static_reset('commerce_cart_order_id');
-  $order_id = commerce_cart_order_id($GLOBALS['user']->uid);
-  if (!empty($_SESSION['commerce_checkout_redirect_anonymous']) && user_is_logged_in() && $order_id) {
-    unset($_SESSION['commerce_checkout_redirect_anonymous']);
-    $form_state['redirect'] = 'checkout/' . $order_id;
+  if (!empty($_SESSION['commerce_checkout_redirect_anonymous'])) {
+    // One time login link (reset password) for creating new account.
+    if ($form['#form_id'] == 'user_pass_reset') {
+      // Login for the new account to continue
+      // with the checkout process.
+      // @see user_pass_reset()
+      if ($form_state['clicked_button']['#id'] == 'edit-checkout') {
+        global $user;
+        $users = user_load_multiple(array($form_state['build_info']['args'][0]), array('status' => '1'));
+        $user = reset($users);
+        $GLOBALS['user'] = $user;
+        // User login with user_login_finalize().
+        user_login_finalize();
+        // Let the user's password be changed without the current password check.
+        $token = drupal_random_key();
+        $_SESSION['pass_reset_' . $GLOBALS['user']->uid] = $token;
+      }
+      // Continue the reset password process.
+      else {
+        drupal_goto('user/reset/' . implode('/', $form_state['build_info']['args']) . '/login');
+      }
+    }
+    $order_id = commerce_cart_order_id($GLOBALS['user']->uid);
+    if (user_is_logged_in() && $order_id) {
+      unset($_SESSION['commerce_checkout_redirect_anonymous']);
+      $form_state['redirect'] = 'checkout/' . $order_id;
+    }
   }
+}
+
+/**
+ * Form validation handler for login form for using username as order email.
+*/
+function commerce_checkout_redirect_username_as_order_email_form_validate($form, &$form_state) {
+  $mail = trim($form_state['values']['name']);
+  form_set_value($form['name'], $mail, $form_state);
+  // Validate the e-mail address, and check if it is taken by an existing user.
+  if ($error = user_validate_mail($form_state['values']['name'])) {
+    form_set_error('name', $error);
+  }
+  else {
+    $mail_taken = (bool) db_select('users')
+      ->fields('users', array('uid'))
+      ->condition('uid', $GLOBALS['user']->uid, '<>')
+      ->condition('mail', db_like($form_state['values']['name']), 'LIKE')
+      ->range(0, 1)
+      ->execute()
+      ->fetchField();
+    if ($mail_taken) {
+      // Format error message dependent on whether the user is logged in or not.
+      if ($GLOBALS['user']->uid) {
+        form_set_error('name', t('The e-mail address %email is already taken.', array('%email' => $form_state['values']['name'])));
+      }
+      else {
+        form_set_error('name', t('The e-mail address %email is already registered. <a href="@password">Have you forgotten your password?</a>', array('%email' => $form_state['values']['name'], '@password' => url('user/password'))));
+      }
+    }
+  }
+}
+
+/**
+ * Submit callback to allow an anonymous users to continue without logging in.
+ */
+function commerce_checkout_redirect_anonymous_continue_checkout($form, &$form_state) {
+  // If the user chooses to continue without an account, set this variable so user
+  // is only redirected once per order (or once per session if the session expires first).
+  $_SESSION['commerce_checkout_redirect_bypass'] = TRUE;
+  $order = $form_state['#order'];
+  // Using the username as order email.
+  if (variable_get('commerce_checkout_redirect_username_as_order_email', FALSE)) {
+    $order->mail = $form_state['values']['name'];
+    commerce_order_save($order);
+  }
+  $form_state['redirect'] = 'checkout/';
+}
+
+/**
+ * Submit callback for the reset the checkout to cart.
+ */
+function commerce_checkout_redirect_checkout_form_cancel_submit($form, &$form_state) {
+  if (!empty($_SESSION['commerce_checkout_redirect_anonymous'])) {
+    unset($_SESSION['commerce_checkout_redirect_anonymous']);
+  }
+  if (!empty($_SESSION['commerce_checkout_redirect_bypass'])) {
+    unset($_SESSION['commerce_checkout_redirect_bypass']);
+  }
+}
+
+/**
+ * Function to check if the cart contains any items.
+ */
+function commerce_checkout_redirect_items_in_cart(){
+  global $user;
+  $cart = commerce_cart_order_load($user->uid);
+  $line_items = count($cart->commerce_line_items) ? true : false;
+  return $line_items;
 }

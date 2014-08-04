@@ -258,7 +258,7 @@ class amazonAPI {
         $params[$base . 'SKU'] = $product_wrapper->sku->value();
         $params[$base . 'MerchantId'] = $this->merchant_id;
         $params[$base . 'Title'] = substr($product_wrapper->title->value(), 0, 80);
-        $params[$base . 'Description'] = !empty($entity->body) ? text_summary($wrapper->body->value->value(), $wrapper->body->format->value(), '2000') : '';
+        $params[$base . 'Description'] = !empty($entity->body) ? text_summary($wrapper->body->value->value(), $wrapper->body->format->value(), '1000') : '';
         $params[$base . 'UnitPrice.Amount'] = number_format($unit_amount, 2);
         $params[$base . 'UnitPrice.CurrencyCode'] = $unit_currency_code;
         $params[$base . 'Quantity'] = (int) $line_item_wrapper->quantity->value();

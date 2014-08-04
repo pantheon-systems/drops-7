@@ -116,7 +116,7 @@ function lingotek_schema() {
       'value' => array(
         'description' => 'Value for the specified key.',
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 128,
         'not null' => TRUE,
         'default' => '',
       ),
@@ -515,7 +515,7 @@ function lingotek_update_7401(&$sandbox) {
   );
 
   foreach ($agents as $a) {
-    db_merge('{lingotek_translation_agent}')
+    db_merge('lingotek_translation_agent')
         ->key(array('id' => $a['id']))
         ->fields(array('id' => $a['id'], 'name' => $a['name']))
         ->execute();
@@ -634,7 +634,7 @@ function lingotek_update_7408(&$sandbox) {
       $node = lingotek_node_load_default($nid, NULL, TRUE);
       if ($node) {
         if (lingotek_managed_by_entity_translation($node->type)) {
-          lingotek_entity_translation_save_status($node, array(Lingotek::convertLingotek2Drupal($locale)));
+          lingotek_entity_translation_save_status('node', $node, array(Lingotek::convertLingotek2Drupal($locale)));
         }
       }
     }
@@ -842,4 +842,33 @@ function lingotek_update_7508(&$sandbox) {
     db_add_index($table, $index_name, $fields);
   }
   return t('Reduced field size of entity types and keys in the Lingotek entity metadata table.');
+}
+
+/**
+ * Reduce the size of current value field in the lingotek_entity_metadata table
+ */
+function lingotek_update_7509(&$sandbox) {
+  $table = 'lingotek_entity_metadata';
+  $entity_value_spec = array(
+        'description' => 'Value for the specified key.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+  );
+  $indexes = array(
+    'idx_entity_key_and_value' => array('entity_key', 'value'),
+  );
+
+  // drop the related index
+  foreach ($indexes as $index_name => $fields) {
+    db_drop_index($table, $index_name);
+  }
+  // update the field to be 128 instead of 255
+  db_change_field($table, 'value', 'value', $entity_value_spec);
+  // add back related index
+  foreach ($indexes as $index_name => $fields) {
+    db_add_index($table, $index_name, $fields);
+  }
+  return t('Reduced field size of value column in the Lingotek entity metadata table.');
 }

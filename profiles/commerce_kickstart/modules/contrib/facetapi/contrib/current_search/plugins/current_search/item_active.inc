@@ -29,26 +29,54 @@ class CurrentSearchItemActive extends CurrentSearchItem {
     $attributes = ($this->settings['nofollow']) ? array('rel' => 'nofollow') : array();
     $attributes += array('class' => array());
 
+    // Gets the translated pattern with token replacements in tact.
+    $pattern = $this->translate('pattern', $this->settings['pattern']);
+
     // Adds the keywords if any were passed.
     $keys = $adapter->getSearchKeys();
-    if ($this->settings['keys'] && $keys && $keys != '[all items]') {
-      $facets = !empty($_GET['f']) ? array('f' => $_GET['f']) : array();
+    $keys_link = isset($this->settings['keys_link']) ? $this->settings['keys_link'] : FALSE;
+    if ($this->settings['keys'] && !$keys_link && $keys) {
+      $items[] = theme('current_search_keys', array('keys' => $keys, 'adapter' => $adapter));
+    }
+    elseif ($this->settings['keys'] && $keys_link && $keys) {
+      $active_items = $adapter->getAllActiveItems();
+      if (count($active_items) > 0) {
+        $item = $active_items[0];
+        $item['adapter'] = $adapter;
+        $path = $adapter->getUrlProcessor()->getFacetPath($item, $this->getItemValues($item, $adapter), 0);
+        $params = $adapter->getUrlProcessor()->getQueryString($item, $this->getItemValues($item, $adapter), 0);
+      }
+      else {
+        $path = $adapter->getSearchPath();
+        $params = $adapter->getUrlProcessor()->getParams();
+      }
+
+      // Remove the keywords param if one is configured.
+      if ($target_param = $this->settings['keys_param']) {
+        unset($params[$target_param]);
+      }
+      // Otherwise remove the keywords from the last part of the path.
+      elseif (strpos($path, $keys) !== FALSE) {
+        $parts = array_filter(explode('/', $path));
+        if ($keys == end($parts)) {
+          $part = key($parts);
+          unset($parts[$part]);
+          $path = implode('/', $parts);
+        }
+      }
 
       $variables = array(
         'text' => theme('current_search_keys', array('keys' => $keys, 'adapter' => $adapter)),
-        'path' => current_path(),
+        'path' => $path,
         'options' => array(
           'attributes' => $attributes,
           'html' => TRUE,
-          'query' => $facets,
+          'query' => $params,
         ),
       );
 
       $items[] = theme('facetapi_link_active', $variables);
     }
-
-    // Gets the translated pattern with token replacements in tact.
-    $pattern = $this->translate('pattern', $this->settings['pattern']);
 
     // Adds active facets to the current search block.
     foreach ($adapter->getAllActiveItems() as $item) {
@@ -98,7 +126,29 @@ class CurrentSearchItemActive extends CurrentSearchItem {
     $form['keys'] = array(
       '#type' => 'checkbox',
       '#title' => t('Append the keywords passed by the user to the list'),
-      '#default_value' => $this->settings['keys'],
+      '#default_value' => isset($this->settings['keys']) ? $this->settings['keys'] : TRUE,
+    );
+    $form['keys_link'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display the keywords as a link to remove them from the search'),
+      '#default_value' => isset($this->settings['keys_link']) ? $this->settings['keys_link'] : TRUE,
+      '#states' => array(
+        'visible' => array(
+          ':input[name="plugin_settings[' . $this->name . '][keys]"]' => array('checked' => TRUE),
+        ),
+      ),
+    );
+    $form['keys_param'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Keywords parameter'),
+      '#default_value' => isset($this->settings['keys_param']) ? $this->settings['keys_param'] : '',
+      '#description' => t('Provide the URL parameter used for search keywords. For example, enter "query" if the search URL is "search/books?query={keywords}". If no parameter is provided, it is assumed that keywords are the last part of the path.'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="plugin_settings[' . $this->name . '][keys]"]' => array('checked' => TRUE),
+          ':input[name="plugin_settings[' . $this->name . '][keys_link]"]' => array('checked' => TRUE),
+        ),
+      ),
     );
 
     $form['css'] = array(

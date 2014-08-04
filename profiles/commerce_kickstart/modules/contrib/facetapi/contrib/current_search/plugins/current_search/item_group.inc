@@ -36,7 +36,6 @@ class CurrentSearchGroup extends CurrentSearchItem {
 
     // Initializes links attributes, adds rel="nofollow" if configured.
     $attributes = ($this->settings['nofollow']) ? array('rel' => 'nofollow') : array();
-    $attributes += array('class' => array());
 
     // Gets the translated pattern with token replacements in tact.
     $field_pattern = $this->translate('field_pattern', $this->settings['field_pattern']);
@@ -65,6 +64,8 @@ class CurrentSearchGroup extends CurrentSearchItem {
       // If there are items, add the render array.
       if ($items) {
         $build[$facet_name]['#theme_wrappers'] = array('current_search_group_wrapper');
+        $build[$facet_name]['#id'] = drupal_html_id("current-search-group-$searcher-{$this->configName}-{$facet_name}");
+        $build[$facet_name]['#facet_name'] = $facet_name;
 
         // Performs token replacemenets and themes the group title.
         $data = array('facetapi_facet' => facetapi_facet_load($facet_name, $searcher));

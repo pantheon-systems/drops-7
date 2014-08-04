@@ -16,7 +16,7 @@ function commerce_discount_usage_views_default_views_alter(&$views) {
   $view = & $views['commerce_discount_overview'];
   $handler = & $view->display['default']->handler;
 
-  if (!is_array($handler->display->display_options['fields'])) {
+  if (empty($handler->display->display_options['fields']) || !is_array($handler->display->display_options['fields'])) {
     return;
   }
 

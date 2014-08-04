@@ -97,6 +97,10 @@ class FacetapiWidgetLinks extends FacetapiWidget {
     foreach ($build as $value => $item) {
       $row = array('class' => array());
 
+      // Allow adding classes via altering.
+      if (isset($item['#class'])) {
+        $attributes['class'] = array_merge($attributes['class'], $item['#class']);
+      }
       // Initializes variables passed to theme hook.
       $variables = array(
         'text' => $item['#markup'],

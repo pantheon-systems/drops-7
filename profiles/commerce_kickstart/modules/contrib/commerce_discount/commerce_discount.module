@@ -16,7 +16,7 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
   $cloned_line_items = array();
   // Remove all discount references from the order.
   // (If there are none, setting array() would modify the order, so test first.)
-  if ($wrapper->commerce_discounts->value()) {
+  if ($wrapper->__isset('commerce_discounts') && $wrapper->commerce_discounts->value()) {
     $wrapper->commerce_discounts->set(array());
   }
 
@@ -39,9 +39,6 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
       commerce_discount_remove_discount_components($wrapper_line_item->commerce_total);
     }
   }
-
-  // Re-add all applicable discount price components and/or line items.
-  rules_invoke_event('commerce_discount_order', $wrapper->value());
 
   // Save the line items which have changes after removing/re-adding discounts;
   // except if one of our discount type line items still has price 0, delete it.
@@ -76,6 +73,9 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
 
   // Delete line items.
   commerce_line_item_delete_multiple($line_items_to_delete);
+
+  // Re-add all applicable discount price components and/or line items.
+  rules_invoke_event('commerce_discount_order', $wrapper->value());
 }
 
 /**

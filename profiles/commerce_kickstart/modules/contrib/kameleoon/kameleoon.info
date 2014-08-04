@@ -4,9 +4,9 @@ core = 7.x
 configure = admin/config/system/kameleoon
 files[] = kameleoon.test
 
-; Information added by Drupal.org packaging script on 2013-12-20
-version = "7.x-1.0"
+; Information added by Drupal.org packaging script on 2014-06-23
+version = "7.x-1.1"
 core = "7.x"
 project = "kameleoon"
-datestamp = "1387555105"
+datestamp = "1403519328"
 

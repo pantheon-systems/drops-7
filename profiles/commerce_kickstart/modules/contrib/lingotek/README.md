@@ -1,7 +1,7 @@
 Drupal Integration
 ===================
 
-![Lingotek Translation in Drupal](http://devzone.lingotek.com/wp-content/uploads/2013/10/lingotek-chevrons-blue-small.png)
+![Lingotek Translation in Drupal](http://devzone.lingotek.com/img/lingotek_chevrons_blue.png)
 
 Lingotek Translation Module
 ----------------------------

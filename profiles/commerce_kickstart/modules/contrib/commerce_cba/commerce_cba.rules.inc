@@ -8,7 +8,7 @@
 /**
  * Implements hook_rules_event_info().
  */
-function commerce_cba_iopn_rules_event_info() {
+function commerce_cba_rules_event_info() {
   $info = array();
 
   $info['commerce_cba_iopn_new_order_notification'] = array(
@@ -40,6 +40,10 @@ function commerce_cba_iopn_rules_event_info() {
         'label' => t('Commerce order'),
       ),
       'shipping_address' => array(
+        'type' => 'struct',
+        'label' => t('Shipping address returned by Amazon'),
+      ),
+      'billing_address' => array(
         'type' => 'struct',
         'label' => t('Shipping address returned by Amazon'),
       ),
@@ -77,11 +81,12 @@ function commerce_cba_iopn_rules_event_info() {
 /**
  * Implements hook_rules_action_info().
  */
-function commerce_cba_iopn_rules_action_info(){
+function commerce_cba_rules_action_info(){
   $info = array();
 
   $info['commerce_cba_iopn_save_customer_profile'] = array(
     'group' => t('Commerce cba'),
+    'base' => 'commerce_cba_save_customer_profile_from_amazon_address',
     'label' => t('Create/alter the customer profile from the address returned by Amazon'),
     'description' => t('This will override the customer profile associated to the order if any.'),
     'parameter' => array(
@@ -95,9 +100,9 @@ function commerce_cba_iopn_rules_action_info(){
         'label' => t('Customer profile type'),
         'restriction' => 'input',
       ),
-      'shipping_address' => array(
+      'amazon_address' => array(
         'type' => 'struct',
-        'label' => t('Shipping address returned by Amazon'),
+        'label' => t('Address data returned by Amazon'),
       ),
     ),
     'provides' => array(
@@ -114,40 +119,12 @@ function commerce_cba_iopn_rules_action_info(){
 /**
  * Implements hook_rules_data_info().
  */
-function commerce_cba_iopn_rules_data_info() {
+function commerce_cba_rules_data_info() {
   $data['commerce_cba_iopn_select_profile_field'] = array(
     'label' => t('Select customer profile'),
     'ui class' => 'RulesDataUICommerceCbaIopnProfile',
   );
   return $data;
-}
-
-function commerce_cba_iopn_save_customer_profile($order, $profile_name, $shipping_address) {
-  $profile_field = 'commerce_customer_' . $profile_name;
-  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-
-  if (!empty($order->{$profile_field})) {
-    $customer_profile = $order_wrapper->{$profile_field}->value();
-  }
-  else {
-    $customer_profile = commerce_customer_profile_new($profile_name, $order->uid);
-  }
-
-  $address = array(
-    'country' => $shipping_address['CountryCode'],
-    'name_line' => $shipping_address['Name'],
-    'postal_code' => $shipping_address['PostalCode'],
-    'locality' => $shipping_address['City'],
-    'thoroughfare' => isset($shipping_address['AddressFieldTwo']) ? $shipping_address['AddressFieldTwo'] : $shipping_address['AddressFieldOne'],
-    'administrative_area' => $shipping_address['State'],
-    'data' => serialize($shipping_address),
-  );
-  $customer_profile->commerce_customer_address[LANGUAGE_NONE][0] = array_merge($customer_profile->commerce_customer_address[LANGUAGE_NONE][0], $address);
-  commerce_customer_profile_save($customer_profile);
-
-  $order_wrapper->{$profile_field} = $customer_profile->profile_id;
-
-  return $customer_profile;
 }
 
 /**
@@ -169,6 +146,9 @@ class RulesDataUICommerceCbaIopnProfile extends RulesDataUI implements RulesData
       '#title' => t('Select the customer profile field to store the address'),
       '#options' => $options,
     );
+    if (!empty($settings) && !empty($settings['customer_profile_field'])) {
+      $form[$name]['#default_value'] = $settings['customer_profile_field'];
+    }
 
     return $form;
   }
