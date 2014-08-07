@@ -85,7 +85,7 @@ fieldset.vertical-tabs-pane fieldset legend {
  * with "box-sizing" to prevent box model issues from occurring in most browsers.
 */
 .vertical-tabs .form-type-textfield input {
-  width: 100%;
+  width: auto;
   -moz-box-sizing: border-box;
   -webkit-box-sizing: border-box;
   box-sizing: border-box;

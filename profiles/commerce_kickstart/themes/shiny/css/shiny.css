@@ -154,8 +154,8 @@ input.form-radio + label {
 input.form-checkbox,
 input.form-radio {
   opacity: 0;
-  width: 20px;
-  height: 20px;
+  width: 17px;
+  height: 17px;
 }
 
 #foo:checked,
@@ -165,7 +165,7 @@ input.form-radio + label::before {
   cursor: pointer;
   position: absolute;
   top: 4px;
-  left: 2px;
+  left: 0;
   /* LTR */
   height: 15px;
   width: 15px;
@@ -221,6 +221,8 @@ input.form-checkbox:checked + label::before {
   /* W3C */
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$from', endColorstr='#eaeaea',GradientType=0 );
   /* IE6-9 */
+  background-repeat: no-repeat;
+  background-position: center center;
 }
 
 input.form-radio:checked + label::before {
@@ -239,6 +241,8 @@ input.form-radio:checked + label::before {
   /* W3C */
   filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$from', endColorstr='#eaeaea',GradientType=0 );
   /* IE6-9 */
+  background-repeat: no-repeat;
+  background-position: center center;
 }
 
 select.form-select {
@@ -263,12 +267,16 @@ select.form-select:focus {
 }
 
 form table input.form-checkbox,
-form table input.form-radio {
+form table input.form-radio,
+form .fieldset-wrapper table input.form-checkbox,
+form .fieldset-wrapper table input.form-radio,
+form table .fieldset-wrapper input.form-checkbox,
+form table .fieldset-wrapper input.form-radio {
   opacity: 1;
-  height: auto;
-  width: auto;
 }
-form table .form-disabled input.form-checkbox {
+form table .form-disabled input.form-checkbox,
+form .fieldset-wrapper table .form-disabled input.form-checkbox,
+form table .fieldset-wrapper .form-disabled input.form-checkbox {
   opacity: .4;
 }
 
@@ -328,6 +336,8 @@ form table .form-disabled input.form-checkbox {
     /* W3C */
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$from', endColorstr='#eaeaea',GradientType=0 );
     /* IE6-9 */
+    background-repeat: no-repeat;
+    background-position: center center;
   }
   form table input.form-radio {
     height: 16px;
@@ -350,6 +360,8 @@ form table .form-disabled input.form-checkbox {
     /* W3C */
     filter: progid:DXImageTransform.Microsoft.gradient(startColorstr='$from', endColorstr='#eaeaea',GradientType=0 );
     /* IE6-9 */
+    background-repeat: no-repeat;
+    background-position: center center;
   }
   form table .form-disabled input.form-checkbox {
     opacity: .4;
@@ -979,10 +991,9 @@ html.js input.throbbing {
 input.vbo-table-select-all,
 input.vbo-select,
 td.checkbox input.form-checkbox {
-  border: 0;
   opacity: 1;
-  height: 20px;
-  width: 20px;
+  height: 17px;
+  width: 17px;
 }
 
 #module-filter-squeeze td.checkbox input.form-checkbox {

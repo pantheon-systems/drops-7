@@ -20,6 +20,8 @@ $serif: Constantia, "Lucida Bright", Lucidabright, "Lucida Serif", Lucida, "Deja
   background-image: $image, -ms-linear-gradient(top, $from 0%,$to 100%); /* IE10+ */
   background-image: $image, linear-gradient(to bottom, $from 0%,$to 100%); /* W3C */
   filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='$from', endColorstr='#eaeaea',GradientType=0 ); /* IE6-9 */
+  background-repeat: no-repeat;
+  background-position: center center;
 }
 
 @mixin button($border, $highlight) {

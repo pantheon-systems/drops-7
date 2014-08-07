@@ -21,6 +21,22 @@ function commerce_checkout_redirect_menu() {
 }
 
 /**
+ * Implements hook_entity_property_info_alter().
+ */
+function commerce_checkout_redirect_entity_property_info_alter(&$info) {
+  $properties = &$info['user']['properties'];
+
+  // Add the commerce_checkout_redirect property to the user,
+  // useful for resolving redirect conflicts.
+  $properties['commerce_checkout_redirect'] = array(
+    'label' => t('User is in the checkout redirect process'),
+    'description' => t('The user is in the checkout redirect process.'),
+    'type' => 'boolean',
+    'computed' => TRUE,
+  );
+}
+
+/**
  * Creates settings form for module.
  */
 function commerce_checkout_redirect_settings($form, &$form_state) {
@@ -128,6 +144,33 @@ function commerce_checkout_redirect_commerce_checkout_pane_info_alter(&$checkout
 }
 
 /**
+ * Implements hook_module_implements_alter().
+ */
+function commerce_checkout_redirect_module_implements_alter(&$implementations, $hook) {
+  if ($hook != 'user_login') {
+    return;
+  }
+  // Move our hook implementation to the top,
+  // so the commerce_checkout_redirect user property could be used
+  // by other hook implementations.
+  $module = 'commerce_checkout_redirect';
+  $group = array($module => $implementations[$module]);
+  unset($implementations[$module]);
+  $implementations = $group + $implementations;
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function commerce_checkout_redirect_user_login(&$edit, &$account) {
+  // Add commerce_checkout_redirect property to the account object,
+  // on checkout user login.
+  if (!empty($_SESSION['commerce_checkout_redirect_anonymous'])) {
+    $account->commerce_checkout_redirect = TRUE;
+  }
+}
+
+/**
  * Implements hook_form_alter().
  */
 function commerce_checkout_redirect_form_alter(&$form, &$form_state, $form_id) {
@@ -146,7 +189,7 @@ function commerce_checkout_redirect_form_alter(&$form, &$form_state, $form_id) {
           $form['actions']['continue_button'] = array(
             '#name' => 'continue_button',
             '#type'   => 'submit',
-            '#value'  => 'Checkout without an account',
+            '#value'  => t('Checkout without an account'),
             '#limit_validation_errors' => array(),
             '#submit' => array('commerce_checkout_redirect_anonymous_continue_checkout'),
             '#states' => array (
@@ -191,7 +234,7 @@ function commerce_checkout_redirect_form_alter(&$form, &$form_state, $form_id) {
           }
         }
       }
-      // Resert password form
+      // Reset password form.
       // E-mail verification when a visitor creates an account.
       elseif ($form_id == 'user_pass_reset' && !empty($form['actions'])) {
         // Provide the checkout as an alternative to the new account
@@ -251,6 +294,10 @@ function commerce_checkout_redirect_redirect_anonymous_submit($form, &$form_stat
     $order_id = commerce_cart_order_id($GLOBALS['user']->uid);
     if (user_is_logged_in() && $order_id) {
       unset($_SESSION['commerce_checkout_redirect_anonymous']);
+      // Reset commerce_checkout_redirect user property.
+      if (isset($GLOBALS['user']->commerce_checkout_redirect)) {
+        unset($GLOBALS['user']->commerce_checkout_redirect);
+      }
       $form_state['redirect'] = 'checkout/' . $order_id;
     }
   }
@@ -319,7 +366,14 @@ function commerce_checkout_redirect_checkout_form_cancel_submit($form, &$form_st
  */
 function commerce_checkout_redirect_items_in_cart(){
   global $user;
-  $cart = commerce_cart_order_load($user->uid);
-  $line_items = count($cart->commerce_line_items) ? true : false;
-  return $line_items;
+  // Check if there a shopping cart order for the current user
+  // and if it is not empty.
+  if ($order = commerce_cart_order_load($user->uid)) {
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    if (commerce_line_items_quantity($order_wrapper->commerce_line_items, commerce_product_line_item_types()) > 0) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
 }

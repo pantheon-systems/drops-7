@@ -8,9 +8,9 @@ version = VERSION
 files[] = swedish_services.module
 
 
-; Information added by drush on 2014-07-25
+; Information added by drush on 2014-08-07
 version = "7.x-2.3-beta1+4-dev"
 core = "7.x"
 project = "service_links"
-datestamp = "1406281138"
+datestamp = "1407404090"
 

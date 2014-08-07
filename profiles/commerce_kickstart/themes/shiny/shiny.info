@@ -18,9 +18,9 @@ regions[footer] = Footer
 regions_hidden[] = sidebar_first
 
 
-; Information added by Drupal.org packaging script on 2014-05-23
-version = "7.x-1.5"
+; Information added by Drupal.org packaging script on 2014-08-01
+version = "7.x-1.6"
 core = "7.x"
 project = "shiny"
-datestamp = "1400862228"
+datestamp = "1406859228"
 
