@@ -10,9 +10,9 @@ package = "Feeds"
 php = "5.2.4"
 
 
-; Information added by drush on 2014-07-19
+; Information added by drush on 2014-08-08
 version = "7.x-2.0-alpha8+8-dev"
 core = "7.x"
 project = "feeds"
-datestamp = "1405766629"
+datestamp = "1407510773"
 

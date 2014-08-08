@@ -57,7 +57,7 @@ function nuboot_breadcrumb($variables) {
 
     $crumbs = '<ul class="breadcrumb">';
     if (!drupal_is_front_page()) {
-      $crumbs .= '<li class="home-link"><a href="/"><i class="fa fa fa-home"></i><span> Home</span></a></li>';
+      $crumbs .= '<li class="home-link"><a href="' . url('<front>') . '"><i class="fa fa fa-home"></i><span> Home</span></a></li>';
     }
 
     // Remove null values.

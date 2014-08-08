@@ -1,6 +1,7 @@
 name = DKAN Datastore
 description = Creates a datastore designed to make it easy to share open data.
 core = 7.x
+version = "7.x-1.x"
 package = DKAN
 project = dkan_datastore
 dependencies[] = dkan_dataset
