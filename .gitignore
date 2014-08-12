@@ -30,8 +30,7 @@
 ######################
 .DS_Store*
 ehthumbs.db
-Icon?
-Thumbs.db
+IconThumbs.db
 ._*
 
 # Vim generated files #
