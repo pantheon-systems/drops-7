@@ -1,0 +1,19 @@
+/* Adjust the background position when using this widget with a RTL langauge. */
+.fivestar-hearts div.fivestar-widget-static .star span.on {
+  background-position: right -32px;
+}
+.fivestar-hearts div.fivestar-widget div.on a {
+  background-position: right -16px;
+}
+.fivestar-hearts div.fivestar-widget div.hover a,
+.fivestar-hearts div.rating div a:hover {
+  background-position: right -32px;
+}
+.fivestar-hearts div.fivestar-widget .cancel,
+.fivestar-hearts div.fivestar-widget .cancel a {
+  background-position: right 0;
+}
+.fivestar-hearts div.fivestar-widget .star,
+.fivestar-hearts div.fivestar-widget .star a {
+  background-position: right 0;
+}

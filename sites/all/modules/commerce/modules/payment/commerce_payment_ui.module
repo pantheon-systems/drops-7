@@ -1,0 +1,277 @@
+<?php
+
+/**
+ * @file
+ * Default Payment UI for Drupal Commerce.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_payment_ui_menu() {
+  $items = array();
+
+  // Payment tab on orders.
+  $items['admin/commerce/orders/%commerce_order/payment'] = array(
+    'title' => 'Payment',
+    'page callback' => 'commerce_payment_ui_order_tab',
+    'page arguments' => array(3),
+    'access callback' => 'commerce_payment_transaction_order_access',
+    'access arguments' => array('view', 3),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'file' => 'includes/commerce_payment_ui.admin.inc',
+  );
+
+  // Payment transaction operations links.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction'] = array(
+    'title callback' => 'commerce_payment_ui_payment_transaction_title',
+    'title arguments' => array(5),
+    'page callback' => 'commerce_payment_ui_payment_transaction_view',
+    'page arguments' => array(3, 5, 'administrator'),
+    'access callback' => 'commerce_payment_transaction_access',
+    'access arguments' => array('view', 5),
+    'file' => 'includes/commerce_payment_ui.admin.inc',
+  );
+
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'weight' => 0,
+  );
+
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'commerce_payment_ui_payment_transaction_delete_form_wrapper',
+    'page arguments' => array(3, 5),
+    'access callback' => 'commerce_payment_transaction_access',
+    'access arguments' => array('delete', 5),
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 10,
+    'file' => 'includes/commerce_payment_ui.admin.inc',
+  );
+
+  // Payment method Rules administration page.
+  $items['admin/commerce/config/payment-methods'] = array(
+    'title' => 'Payment methods',
+    'description' => 'Enable and configure payment method rule configurations.',
+    'page callback' => 'commerce_payment_ui_admin_page',
+    'access arguments' => array('administer payment methods'),
+    'file' => 'includes/commerce_payment_ui.admin.inc',
+  );
+
+  // Add the menu items for the various Rules forms.
+  $controller = new RulesUIController();
+  $items += $controller->config_menu('admin/commerce/config/payment-methods');
+
+  $items['admin/commerce/config/payment-methods/add'] = array(
+    'title' => 'Add a payment method rule',
+    'description' => 'Adds an additional payment method rule configuration.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_payment_ui_add_payment_rule_form', 'admin/commerce/config/payment-methods'),
+    'access arguments' => array('administer payment methods'),
+    'file path' => drupal_get_path('module', 'rules_admin'),
+    'file' => 'rules_admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Menu item title callback: returns the transaction ID for its pages.
+ *
+ * @param $transaction
+ *   The transaction object as loaded via the URL wildcard.
+ * @return
+ *   A page title of the format "Transaction ##".
+ */
+function commerce_payment_ui_payment_transaction_title($transaction) {
+  return t('Transaction @transaction_id', array('@transaction_id' => $transaction->transaction_id));
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function commerce_payment_ui_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link 'admin/commerce/config/payment-methods/add' on
+  // 'admin/commerce/config/payment-methods'.
+  if ($root_path == 'admin/commerce/config/payment-methods') {
+    $item = menu_get_item('admin/commerce/config/payment-methods/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_help().
+ */
+function commerce_payment_ui_help($path, $arg) {
+  switch ($path) {
+    case 'admin/commerce/config/payment-methods':
+      return t("Payment methods are enabled for use by the rule configurations listed below. An enabled payment rule can specify a payment method to enable using one of the available <em>Enable payment method</em> actions. The action's settings form will contain any necessary settings for the payment method that must be configured before it may be used.");
+
+    case 'admin/commerce/config/payment-methods/add':
+      return t("Submitting this form will create a new rule configuration that enables the selected payment method. You will need to edit the action on the rule to configure the payment method settings. You can also add any conditions that must be met for the payment method to be available on the checkout form, such as a comparison against the customer's country or the order total.");
+  }
+}
+/**
+ * Implements hook_entity_info_alter().
+ */
+function commerce_payment_ui_entity_info_alter(&$entity_info) {
+  // Add a URI callback to the profile entity.
+  $entity_info['commerce_payment_transaction']['uri callback'] = 'commerce_payment_ui_payment_transaction_uri';
+}
+
+/**
+ * Entity uri callback: points to the admin view page of the given payment
+ * transaction.
+ */
+function commerce_payment_ui_payment_transaction_uri($transaction) {
+  // First look for a return value in the default entity uri callback.
+  $uri = commerce_payment_transaction_uri($transaction);
+
+  // If a value was found, return it now.
+  if (!empty($uri)) {
+    return $uri;
+  }
+
+  // Only return a value if the transaction references an order and the user has
+  // permission to view the payment transaction.
+  if ($order = commerce_order_load($transaction->order_id)) {
+    if (commerce_payment_transaction_access('view', $transaction)) {
+      return array(
+        'path' => 'admin/commerce/orders/' . $order->order_id . '/payment/' . $transaction->transaction_id . '/view',
+      );
+    }
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_payment_ui_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_payment_ui') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Adds a Cancel link to the Save button for the payment terminal form that is
+ * part of the View used as the order Payment tab.
+ */
+function commerce_payment_ui_form_commerce_payment_order_transaction_add_form_alter(&$form, &$form_state) {
+  if (!empty($form_state['payment_method'])) {
+    $form['actions']['submit']['#suffix'] = l(t('Cancel'), 'admin/commerce/orders/' . $form_state['order']->order_id . '/payment');
+  }
+}
+
+/**
+ * Implements hook_forms().
+ */
+function commerce_payment_ui_forms($form_id, $args) {
+  $forms = array();
+
+  // Define a wrapper ID for the payment transaction delete confirmation form.
+  $forms['commerce_payment_ui_payment_transaction_delete_form'] = array(
+    'callback' => 'commerce_payment_payment_transaction_delete_form',
+  );
+
+  $forms['commerce_payment_ui_add_payment_rule_form'] = array(
+    'callback' => 'rules_admin_add_reaction_rule',
+  );
+
+  return $forms;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * The Payment UI module instantiates the payment transaction delete form at a
+ * particular path in the Commerce IA. It uses its own form ID to do so and
+ * alters the form here to add in appropriate redirection.
+ *
+ * @see commerce_payment_ui_payment_transaction_delete_form()
+ */
+function commerce_payment_ui_form_commerce_payment_ui_payment_transaction_delete_form_alter(&$form, &$form_state) {
+  $form['actions']['cancel']['#href'] = 'admin/commerce/orders/' . $form_state['order']->order_id . '/payment';
+  $form['#submit'][] = 'commerce_payment_ui_payment_transaction_delete_form_submit';
+}
+
+/**
+ * Submit callback for commerce_payment_ui_payment_transaction_delete_form().
+ *
+ * @see commerce_payment_ui_form_commerce_payment_ui_payment_transaction_delete_form_alter()
+ */
+function commerce_payment_ui_payment_transaction_delete_form_submit($form, &$form_state) {
+  $form_state['redirect'] = 'admin/commerce/orders/' . $form_state['order']->order_id . '/payment';
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * The Payment UI module instantiates the Rules Admin rule configuration add
+ * form at a particular path in the Commerce IA. It uses its own form ID to do
+ * so and alters the form here to select the necessary Rules event. It also lets
+ * the user specify which payment method to enable through the Rule.
+ *
+ * @see commerce_payment_ui_add_payment_rule_form_submit()
+ * @see rules_admin_add_reaction_rule()
+ */
+function commerce_payment_ui_form_commerce_payment_ui_add_payment_rule_form_alter(&$form, &$form_state) {
+  unset($form['settings']['help']);
+  $form['settings']['event']['#type'] = 'value';
+  $form['settings']['event']['#value'] = 'commerce_payment_methods';
+
+  $form['method_id'] = array(
+    '#type' => 'select',
+    '#title' => t('Payment method'),
+    '#options' => commerce_payment_method_get_title(),
+    '#required' => TRUE,
+  );
+
+  // Add function call to the beginning of the submit callback array
+  array_unshift($form['#submit'],'commerce_payment_ui_add_payment_rule_form_submit');
+
+  $form['submit']['#suffix'] = l(t('Cancel'), 'admin/commerce/config/payment-methods');
+}
+
+/**
+ * Submit callback for commerce_payment_ui_form_commerce_payment_ui_add_payment_rule_form_alter().
+ */
+function commerce_payment_ui_add_payment_rule_form_submit($form, &$form_state) {
+  // Enable the selected payment method on the Rule.
+  $method_id = $form_state['values']['method_id'];
+
+  $form_state['rules_config']
+    ->action('commerce_payment_enable_' . $method_id, array(
+      'commerce_order:select' => 'commerce-order',
+      'payment_method' => $method_id,
+    ));
+}
+
+/**
+ * Sets the breadcrumb for transaction pages.
+ *
+ * @param $order
+ *   The order object the transaction is for.
+ * @param $view_mode
+ *   The view mode for the current order page, 'administrator' only for now.
+ *
+ * @deprecated since 7.x-1.4
+ */
+function commerce_payment_ui_set_order_breadcrumb($order, $view_mode = 'administrator') {
+  // This function used to manually set a breadcrumb that is now properly
+  // generated by Drupal itself.
+}

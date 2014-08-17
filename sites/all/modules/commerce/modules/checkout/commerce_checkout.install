@@ -1,0 +1,103 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_checkout_schema() {
+  $schema = array();
+
+  $schema['commerce_checkout_pane'] = array(
+    'description' => 'Checkout pane configuration data.',
+    'fields' => array(
+      'pane_id' => array(
+        'description' => 'The machine readable name of the order state.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'page' => array(
+        'description' => 'The ID of the checkout page on which this pane appears.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '1',
+      ),
+      'fieldset' => array(
+        'description' => 'Boolean value indicating whether or not the pane should appear in a fieldset.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'collapsible' => array(
+        'description' => 'Boolean value indicating whether or not the pane should appear collapsed.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'collapsed' => array(
+        'description' => 'Boolean value indicating whether or not the pane should appear collapsed.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'weight' => array(
+        'description' => 'The sorting weight of the status for lists of statuses.',
+        'type' => 'int',
+        'size' => 'small',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'enabled' => array(
+        'description' => 'Boolean value indicating whether or not the pane is enabled.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'review' => array(
+        'description' => 'Boolean value indicating whether or not the pane should appear on the checkout review.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+    ),
+    'primary key' => array('pane_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_checkout_uninstall() {
+  variable_del('commerce_checkout_completion_message');
+}
+
+/**
+ * Delete the deprecated checkout completion message override variable.
+ */
+function commerce_checkout_update_7100() {
+  variable_del('commerce_checkout_completion_message_override');
+}
+
+/**
+ * Disable the new local action to simulate checkout completion for an order.
+ */
+function commerce_checkout_update_7101() {
+  variable_set('commerce_order_simulate_checkout_link', FALSE);
+  return t('A new local action link on order edit forms for simulating checkout completion for an order has been disabled by default; enable it on the order settings form if desired.');
+}
+
+/**
+ * Disable the new checkout completion rule that updates order created dates to
+ * the checkout completion date.
+ */
+function commerce_checkout_update_7102() {
+  variable_set('enable_commerce_checkout_order_created_date_update', FALSE);
+  return t('A new core checkout completion rule has been added that updates order creation timestamps to the time of checkout completion. It has been disabled by default to not interfere with existing order workflows, but you may enable it in your checkout settings if desired.');
+}

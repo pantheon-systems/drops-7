@@ -1,0 +1,155 @@
+<?php
+/**
+ * @file
+ * Install, update, and uninstall functions of faqfield module.
+ */
+
+/**
+ * Implements hook_field_schema().
+ *
+ * This defines the database schema of the faqfield.
+ */
+function faqfield_field_schema($field) {
+  return array(
+    'columns' => array(
+      'question' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'translatable' => TRUE,
+      ),
+      'answer' => array(
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'medium',
+        'translatable' => TRUE,
+      ),
+      'answer_format' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+  );
+}
+
+/**
+ * Update faqfield settings as some of them have moved or were removed.
+ */
+function faqfield_update_7110() {
+  // Get all faqfields.
+  $faqfields = field_read_fields(array(
+    'type' => 'faqfield',
+  ));
+
+  // Iterate through all existing field tables and alter them as needed.
+  foreach ($faqfields as $field) {
+    // We move the old setting to its new position.
+    if (isset($field['settings']['answer_rows'])) {
+      $field['settings']['advanced']['answer_rows'] = $field['settings']['answer_rows'];
+      unset($field['settings']['answer_rows']);
+    }
+
+    // We set the default values for new options.
+    $field['settings']['advanced']['question_length'] = 255;
+    $field['settings']['advanced']['question_title'] = t('Question');
+    $field['settings']['advanced']['answer_title'] = t('Answer');
+    field_update_field($field);
+
+    if ($field['settings']['answer_widget'] == 'text_format') {
+      // In order to move the old format setting to the instance default value
+      // we got to find out all instances and alter them.
+      $field_info = field_info_field($field['field_name']);
+      // Get the fields instance data.
+      foreach ($field_info['bundles'] as $entity_type => $bundles) {
+        foreach ($bundles as $bundle) {
+          $instance = field_read_instance($entity_type, $field['field_name'], $bundle);
+          if (isset($instance['default_value'][0]['answer']['format'])) {
+            $instance['default_value'][0]['answer']['format'] = $field['settings']['format'];
+            field_update_instance($instance);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Update database tables of the field for formatable text.
+ */
+function faqfield_update_7120() {
+  // Specs of updated database fields.
+  $updated = array(
+    // The new answer format field, holding text formatting informations.
+    'answer_format' => array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+    ),
+  );
+
+  // Get all faqfields.
+  $faqfields = field_read_fields(array(
+    'type' => 'faqfield',
+  ));
+
+  // Iterate through all existing field tables and alter them as needed.
+  foreach ($faqfields as $faqfield) {
+    $field = field_info_field($faqfield['field_name']);
+    if (isset($field['storage']['details']['sql'])) {
+      $tables = $field['storage']['details']['sql'];
+
+      // Iterate through current data tables.
+      foreach ($tables['FIELD_LOAD_CURRENT'] as $data_table => $table_fields) {
+        if (!db_field_exists($data_table, $field['field_name'] . '_answer_format')) {
+          // Add new answer_format field.
+          db_add_field($data_table, $field['field_name'] . '_answer_format', $updated['answer_format']);
+        }
+      }
+      // Iterate through revision data tables.
+      foreach ($tables['FIELD_LOAD_REVISION'] as $data_table => $table_fields) {
+        if (!db_field_exists($data_table, $field['field_name'] . '_answer_format')) {
+          // Add new answer_format field.
+          db_add_field($data_table, $field['field_name'] . '_answer_format', $updated['answer_format']);
+        }
+      }
+
+    }
+  }
+}
+
+/**
+ * Update default values of existing faqfield instances (Issue #1526448).
+ */
+function faqfield_update_7130() {
+  // Get all faqfields.
+  $faqfields = field_read_fields(array(
+    'type' => 'faqfield',
+  ));
+
+  foreach ($faqfields as $faqfield) {
+    // Get all instances of this field.
+    $instances = field_read_instances(array(
+      'field_name' => $faqfield['field_name'],
+    ));
+
+    foreach ($instances as $instance) {
+      // If a default value is set we move it to it's new place.
+      if (isset($instance['default_value'])) {
+        $default_value = $instance['default_value'][0];
+        // If a formatable answer widget is used we have to extract
+        // the default values (value and format) out of it.
+        if (is_array($default_value['answer'])) {
+          $default_value['answer_format'] = $default_value['answer']['format'];
+          $default_value['answer'] = $default_value['answer']['value'];
+        }
+        // The S will make the difference between core's default
+        // value implementation and our custom one.
+        $instance['default_values'] = $default_value;
+        $instance['default_value'] = NULL;
+        // Save the changes to the field instance.
+        field_update_instance($instance);
+      }
+    }
+  }
+}

@@ -1,0 +1,302 @@
+<?php
+/**
+ * @file
+ * Provides tests for Commerce Node Checkout process.
+ */
+
+/**
+ * Base class for other test classes to extend.
+ */
+class CommerceNodeCheckoutBaseTest extends DrupalWebTestCase {
+  // Installation profile
+  public $profile = 'standard';
+
+  // Store our superuser
+  protected $admin;
+
+  /**
+   * Implementation of setUp().
+   */
+  public function setUp() {
+    $modules = array(
+      'entity',
+      'entity_token',
+      'rules',
+      'addressfield',
+      'ctools',
+      'views',
+      'field',
+      'field_ui',
+      'field_sql_storage',
+      'commerce',
+      'commerce_product',
+      'commerce_price',
+      'commerce_customer',
+      'commerce_customer_ui',
+      'commerce_line_item',
+      'commerce_order',
+      'commerce_product_reference',
+      'commerce_tax',
+      'commerce_product_pricing',
+      'entityreference',
+      'commerce_checkout',
+      'commerce_cart',
+      'commerce_product_ui',
+      'commerce_node_checkout',
+      'commerce_order_ui',
+    );
+
+    // See if modules were passed in
+    $args = func_get_args();
+    if (isset($args[0]) && is_array($args[0])) {
+      $modules = array_merge($modules, $args[0]);
+    }
+
+    // General set up
+    parent::setUp($modules);
+
+    drupal_flush_all_caches();
+
+    // Create our admin
+    $this->admin = $this->createAdmin();
+
+    // Create a commerce_node_checkout for the listing.
+    $new_product = commerce_product_new('commerce_node_checkout');
+    $new_product->sku = 'std-listing';
+    $new_product->title = 'Standard listing';
+    // Admin user.
+    $new_product->uid = 1;
+
+    // Standard listing is 30 dollars.
+    $new_product->commerce_price[LANGUAGE_NONE][0]['amount'] = 3000;
+    $new_product->commerce_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
+
+    // Save the product
+    commerce_product_save($new_product);
+
+    // Now associate standard listing with the content type.
+    variable_set('commerce_node_checkout_products_page', array(
+      $new_product->product_id
+    ));
+
+    // Give anonymous and authenticated users the permissions they need
+    foreach (array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID) as $rid) {
+      user_role_grant_permissions($rid, array(
+        'create page content',
+        'edit own page content',
+        'view own unpublished content',
+        'access checkout',
+      ));
+    }
+
+    // Default pages to not be published
+    variable_set('node_options_page', array());
+
+    // Set default country.
+    variable_set('site_default_country', 'AU');
+  }
+
+  /**
+   * Create an admin with all required permissions.
+   *
+   * @param $perms
+   *   Any additional permissions to add to the user.
+   * @return
+   *   The created used.
+   */
+  public function createAdmin($perms = array()) {
+    $perms += array(
+      'access administration pages',
+      'administer checkout',
+      'access checkout',
+      'configure store',
+      'administer commerce_customer_profile entities',
+      'administer customer profile types',
+      'administer line items',
+      'administer line item types',
+      'administer commerce_order entities',
+      'configure order settings',
+      'view any commerce_order entity',
+      'create commerce_order entities',
+      'edit any commerce_order entity',
+      'administer commerce_product entities',
+      'administer product types',
+      'administer rules',
+      'administer nodes',
+      'bypass node access',
+      'access content overview',
+      'administer commerce node checkout',
+      'view any commerce_order entity of bundle commerce_order',
+      'administer users',
+      'access user profiles',
+    );;
+    return $this->drupalCreateUser($perms);
+  }
+
+  /**
+   * Start and complete the checkout process.
+   */
+  public function checkout() {
+    // Go to the cart, if we're not yet there
+    if (!$this->isPath('cart')) {
+      $this->drupalGet('cart');
+    }
+    
+    // Go to the checkout
+    $this->drupalPost(NULL, array(), t('Checkout'));
+
+    // Make sure we got there
+    $matches = array();
+    preg_match('/checkout\/([0-9]+)/', $this->getUrl(), $matches);
+    $this->assertTrue(count($matches) == 2, 'User redirected to checkout');
+
+    // Now we complete checkout form.
+    $edit = array(
+      'customer_profile_billing[commerce_customer_address][und][0][name_line]' => 'Joe Bloggs',
+      'customer_profile_billing[commerce_customer_address][und][0][country]' => 'AU',
+      'customer_profile_billing[commerce_customer_address][und][0][thoroughfare]' => '1 Some St',
+      'customer_profile_billing[commerce_customer_address][und][0][locality]' => 'Somewhere',
+      'customer_profile_billing[commerce_customer_address][und][0][administrative_area]' => 'QLD',
+      'customer_profile_billing[commerce_customer_address][und][0][postal_code]' => '1234'
+    );
+    // If not logged in, provide an email address
+    if (!$this->loggedInUser) {
+      $edit['account[login][mail]'] = 'joe.bloggs@example.com';
+    }
+    $this->drupalPost(NULL, $edit, t('Continue to next step'));
+
+    // This is 'complete' purchase.
+    $this->drupalPost(NULL, array(), t('Continue to next step'));
+
+    // Check order is complete.
+    $this->assertRaw('Checkout complete', 'Checkout was completed');
+  }
+
+  /**
+   * Test if we're on a specific path.
+   *
+   * As far as it seems, we only have $this->getUrl() which returns
+   * an absolute URL.
+   *
+   * @param $path
+   *   The path relative to Drupal.
+   * @return
+   *   TRUE if we're currently on that path, otherwise FALSE.
+   */
+  public function isPath($path) {
+    return ($this->getUrl() == url($path, array('absolute' => TRUE)));
+  }
+
+  /**
+   * Create a basic page node.
+   *
+   * @param $values
+   *   Additional array to merge in to the edit parameter.
+   * @return
+   *   The node that was created, otherwise NULL if an error occurred.
+   */
+  public function createPage($values = array()) {
+    // Go to the node form
+    $this->drupalGet('node/add/page');
+
+    // Build the node
+    $edit = $values + array(
+      'title' => 'Miniature pony',
+      'body[und][0][value]' => 'A lovely 3yo miniature pony named rainbow sparkles'
+    );
+
+    // Save the node by posting to the current url.
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Assert we get the required messages.
+    $status = $this->assertText(format_string('Basic page @title has been created', array('@title' => $edit['title'])), 'Created the page');
+
+    // Load the node, if it was created successfully
+    $node = $status ? $this->loadLastNode() : NULL;
+
+    // Check if the 'Don't add to the shopping cart' checkbox was not checked
+    // was checked
+    if (!isset($edit['commerce_node_checkout_skip']) || ($edit['commerce_node_checkout_skip'] == 0)) {
+      // Make sure the node isn't published.
+      $this->assertFalse((bool) $node->status, 'The node is not published');
+      // Check that the line item was added to the cart
+      $this->assertText('Standard listing added to your cart', 'Listing item added to cart');
+      // Check that the user made it to the cart
+      $this->assertTrue($this->isPath('cart'), 'User redirected to shopping cart');
+    }
+    else {
+      // Check that we're now viewing the node instead of the cart
+      $this->assertTrue(strstr($this->getUrl(), 'node'), 'User skipped the shopping cart after node creation (admin-only)');
+    }
+
+    return $node;    
+  }
+
+  /**
+   * Fully-load the last node that was created, bypassing the cache.
+   *
+   * @return
+   *   A node object, otherwise FALSE.
+   */
+  public function loadLastNode() {
+    // Query for the newest node by node ID
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node');
+    $query->propertyOrderBy('nid', 'DESC');
+    $query->range(0, 1);
+    $results = $query->execute();
+
+    // Load an return the nod
+    return isset($results['node']) ? node_load(key($results['node']), NULL, TRUE) : NULL;
+  }
+}
+
+/**
+ * Test class.
+ */
+class CommerceNodeCheckoutTests extends CommerceNodeCheckoutBaseTest {
+  /**
+   * Implementation of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Commerce Node Checkout',
+      'description' => 'Test the creation and purchasing of a node by an anonymous user.',
+      'group' => 'Drupal Commerce',
+    );
+  }
+
+  /**
+   * Test anonymous users can create content after payment.
+   */
+  public function testAnonymousPublishing() {
+    // Create the page
+    $this->createPage();
+
+    // Checkout
+    $this->checkout();    
+
+    // Login as admin.
+    $this->drupalLogin($this->admin);
+    $this->drupalGet('admin/content/node');
+
+    // Check for the node and published status.
+    $this->assertRaw('Miniature pony', 'Found miniature pony node');
+    $this->assertRaw('published', 'Node is published');
+
+    // Check that the created user is now the node owner
+    $this->assertLink('joe.bloggs@exam...', 0, 'The newly created user is now the node owner');
+
+    // Load the node and see if its published (be sure to pass $reset = TRUE).
+    $node = $this->loadLastNode();
+    $this->assertTrue((bool) $node->status, 'The node is now published');
+
+    // Check that the order status is completed
+    $this->drupalGet('admin/commerce/orders');
+    $this->assertRaw('Completed', 'The order status is completed');
+
+    // Create a node that shouldn't go to the cart; which only admins
+    // can do
+    $this->createPage(array('commerce_node_checkout_skip' => 1));
+  }
+}

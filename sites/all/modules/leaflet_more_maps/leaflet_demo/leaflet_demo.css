@@ -1,0 +1,17 @@
+.form-item-latitude,
+.form-item-longitude,
+.form-item-zoom {
+  float: left;
+  padding-right: 2em;
+}
+.form-item-zoom {
+  width: 200px;
+}
+
+.leaflet-gallery-map {
+  padding: 5px;
+}
+
+.leaflet-container {
+  border: 1px solid lightgrey;
+}

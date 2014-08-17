@@ -1,0 +1,224 @@
+<?php
+/**
+ * @file
+ * Provides install, update, schema and uninstall hooks for the module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function commerce_node_checkout_expire_install() {
+  // If a field type we know should exist isn't found, clear the Field cache.
+  if (!field_info_field_types('interval') ||
+    !field_info_field_types('datestamp')) {
+    field_cache_clear();
+  }
+
+  // Make sure our entity info exists.
+  entity_info_cache_clear();
+
+  // Create our fields.
+  foreach (_commerce_node_checkout_expire_installed_fields() as $field_name => $field_detail) {
+    // Look for existing field.
+    $field = field_info_field($field_name);
+
+    if (empty($field)) {
+      $field = field_create_field($field_detail);
+    }
+  }
+
+  // And their instances.
+  foreach (_commerce_node_checkout_expire_installed_instances() as $field_name => $instance_detail) {
+    // Look for existing instance.
+    $instance = field_info_instance($instance_detail['entity_type'],$field_name, $instance_detail['bundle']);
+
+    if (empty($instance)) {
+      field_create_instance($instance_detail);
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_node_checkout_expire_uninstall() {
+  // Remove the node-type variables
+  foreach (node_type_get_names() as $type => $name) {
+    variable_del('commerce_node_checkout_products_' . $type);
+  }
+
+  // Remove the fields
+  foreach (_commerce_node_checkout_expire_installed_fields() as $name => $field) {
+    field_delete_field($name);
+  }
+}
+
+/**
+ * Implements hook_field_schema().
+ */
+function commerce_node_checkout_expire_field_schema($field) {
+  $columns = array(
+    'enabled' => array(
+      'description'   => 'Whether or not expiration notifications are enabled',
+      'type'          => 'int',
+      'size'          => 'tiny',
+      'not null'      => TRUE,
+      'default'       => 1,
+    ),
+    'sent' => array(
+      'description'   => 'Whether or not the expiration notification was sent',
+      'type'          => 'int',
+      'size'          => 'tiny',
+      'not null'      => TRUE,
+      'default'       => 0,
+    ),
+  );
+  $indexes = array(
+    'enabled' => array('enabled'),
+    'sent' => array('sent'),
+  );
+  return array(
+    'columns' => $columns,
+    'indexes' => $indexes,
+  );
+}
+
+/**
+ * Update the field commerce_node_checkout_expires to fix the timezone
+ * and granularity settings.
+ */
+function commerce_node_checkout_expire_update_7000() {
+  $fields = _commerce_node_checkout_expire_installed_fields();
+  $instances = _commerce_node_checkout_expire_installed_instances();
+  field_update_field($fields['commerce_node_checkout_expires']);
+  field_update_instance($instances['commerce_node_checkout_expires']);
+}
+
+/**
+ * Returns a structured array defining the fields created by this module.
+ *
+ * @return array
+ *   An associative array specifying the fields we wish to add to our
+ *   entities
+ */
+function _commerce_node_checkout_expire_installed_fields() {
+  $field_bases = array();
+  $field_bases['commerce_node_checkout_expire'] = array(
+    'field_name' => 'commerce_node_checkout_expire',
+    'cardinality' => 1,
+    'type'        => 'interval',
+    'settings'    => array(
+      'allowed_periods' => array(
+        'day' => 'day',
+        'week' => 'week',
+        'month' => 'month'
+      ),
+    ),
+  );
+  $field_bases['commerce_node_checkout_expires'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'commerce_node_checkout_expires',
+    'foreign keys' => array(),
+    'indexes' => array(),
+    'locked' => 0,
+    'module' => 'date',
+    'settings' => array(
+      'cache_count' => 4,
+      'cache_enabled' => 0,
+      'granularity' => array(
+        'day' => 'day',
+        'hour' => 'hour',
+        'minute' => 'minute',
+        'month' => 'month',
+        'second' => 'second',
+        'year' => 'year',
+      ),
+      'repeat' => 0,
+      'timezone_db' => 'UTC',
+      'todate' => '',
+      'tz_handling' => 'site',
+    ),
+    'translatable' => 0,
+    'type' => 'datestamp',
+  );
+  return $field_bases;
+}
+
+/**
+ * Returns a structured array defining the instances for this module
+ *
+ * @return array
+ *   An associative array specifying the instances we wish to add to our entities
+ */
+function _commerce_node_checkout_expire_installed_instances() {
+  $t = get_t();
+  $field_instances = array();
+  $field_instances['commerce_node_checkout_expire'] = array(
+    'entity_type' => 'commerce_product',
+    'bundle' => 'commerce_node_checkout',
+    'field_name' => 'commerce_node_checkout_expire',
+    'label'       => $t('Unpublish after'),
+    'widget'      => array(
+      'type'    => 'interval_default',
+    ),
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'type' => 'interval_default',
+      ),
+    ),
+  );
+  $field_instances['commerce_node_checkout_expires'] = array(
+    'bundle' => 'commerce_node_checkout',
+    'commerce_cart_settings' => array(
+      'field_access' => 0,
+    ),
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'module' => 'date',
+        'settings' => array(
+          'format_type' => 'long',
+          'fromto' => 'both',
+          'multiple_from' => '',
+          'multiple_number' => '',
+          'multiple_to' => '',
+          'show_repeat_rule' => 'show',
+        ),
+        'type' => 'date_default',
+        'weight' => 5,
+      ),
+    ),
+    'entity_type' => 'commerce_line_item',
+    'field_name' => 'commerce_node_checkout_expires',
+    'label' => $t('Unpublish on'),
+    'required' => 0,
+    'settings' => array(
+      'default_value' => 'now',
+      'default_value2' => 'same',
+      'default_value_code' => '',
+      'default_value_code2' => '',
+      'user_register_form' => FALSE,
+    ),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'date',
+      'settings' => array(
+        'increment' => 1,
+        'input_format' => 'M j Y - g:i:sa',
+        'input_format_custom' => '',
+        'label_position' => 'above',
+        'text_parts' => array(),
+        'year_range' => '-10:+10',
+      ),
+      'type' => 'date_popup',
+      'weight' => 3,
+    ),
+  );
+  return $field_instances;
+}

@@ -1,0 +1,10 @@
+name = Simplified menu administration
+description = Simplifies the Menu and Shortcut modules by merging "List links" and "Edit menu" into a single administration page.
+core = 7.x
+
+; Information added by drupal.org packaging script on 2011-06-24
+version = "7.x-1.0-beta2"
+core = "7.x"
+project = "simplified_menu_admin"
+datestamp = "1308938520"
+

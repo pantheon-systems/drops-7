@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * @file
+ * Enhanced control over the CSS Classes of any Block.
+ *
+ * Block Class allows users to add classes to any block through the block's
+ * configuration interface. This implementation is based on an alteration of
+ * the Core block database table to leverage the Core Block API functions,
+ * objects and structure.
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function block_class_permission() {
+  return array(
+    'administer block classes' => array(
+      'title' => t('Administer block classes'),
+      'description' => t('Set CSS classes for blocks.'),
+    ),
+  );
+}
+
+/**
+ * Implements theme_preprocess_block().
+ *
+ * Extend block's classes with any user defined classes.
+ */
+function block_class_preprocess_block(&$vars) {
+  $block = $vars['block'];
+  if (isset($block->css_class) && $block->css_class != '') {
+    $vars['classes_array'] = array_merge($vars['classes_array'], explode(' ', $block->css_class));
+  }
+}
+
+/**
+ * Implements hook_preprocess_HOOK().
+ *
+ * Extend panel block's classes with any user defined classes.
+ */
+function block_class_preprocess_panels_pane(&$vars) {
+  if ($vars['pane']->type != 'block') {
+    return;
+  }
+  // Infer the block's $module and $delta from the pane subtype.
+  $block_parts = explode('-', $vars['pane']->subtype);
+  // Load the block based on the block parts.
+  $block = block_load($block_parts[0], $block_parts[1]);
+  // Add a generic 'module type' pane class.
+  $vars['classes_array'][] = drupal_html_class('pane-' . $block->module);
+  // Add $css_class to the $classes_array.
+  if (isset($block->css_class) && $block->css_class != '') {
+    $vars['classes_array'] = array_merge($vars['classes_array'], explode(' ', $block->css_class));
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Alter block edit form to add configuration field.
+ */
+function block_class_form_alter(&$form, &$form_state, $form_id) {
+  if (user_access('administer block classes') && ($form_id == 'block_admin_configure' || $form_id == 'block_add_block_form')) {
+    // Load statically cached block object used to display the form.
+    $block = block_load($form['module']['#value'], $form['delta']['#value']);
+
+    $form['settings']['css_class'] = array(
+      '#type' => 'textfield',
+      '#title' => t('CSS class(es)'),
+      '#default_value' => isset($block->css_class) ? $block->css_class : '',
+      '#description' => t('Customize the styling of this block by adding CSS classes. Separate multiple classes by spaces.'),
+      '#maxlength' => 255,
+    );
+
+    $form['#submit'][] = 'block_class_form_submit';
+  }
+}
+
+/**
+ * Helper function: additional submit callback for block configuration pages.
+ *
+ * Save supplied CSS classes.
+ */
+function block_class_form_submit($form, &$form_state) {
+  if ($form_state['values']['form_id'] == 'block_admin_configure' || $form_state['values']['form_id'] == 'block_add_block_form') {
+    // Only save if value has changed.
+    if (isset($form_state['values']['css_class']) && $form['settings']['css_class']['#default_value'] != $form_state['values']['css_class'] && user_access('administer blocks')) {
+      db_update('block')
+        ->fields(array('css_class' => $form_state['values']['css_class']))
+        ->condition('module', $form_state['values']['module'])
+        ->condition('delta', $form_state['values']['delta'])
+        ->execute();
+      // Flush all context module cache to use the updated css_class.
+      if (module_exists('context')) {
+        cache_clear_all('context', 'cache', TRUE);
+      }
+    }
+  }
+}

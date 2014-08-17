@@ -1,0 +1,731 @@
+<?php
+
+/**
+ * @file
+ * Unit tests for Publish Content module.
+ */
+
+/**
+ * We test to ensure we are not messing up with the default Drupal
+ * access for view node  i.e. a owner of a node can view it even if unpublished.
+ */
+abstract class PublishContentWebTestBase extends DrupalWebTestCase {
+
+  /**
+   * Perform a GET operation on a node.
+   *
+   * This will check the response to access some operation via
+   * the URL of a node. In the case of 'publish' or 'unpublish'
+   * it will first visit the view of a node so that the relevant
+   * tabs can be generated.
+   *
+   * @param int $nid
+   *   The node nid
+   * @param string $op
+   *   An operation such as 'view', 'edit', 'publish', 'unpublish'
+   * @param int $expected_response
+   *   The expexted response code. If the user should not be able to
+   *   see the 'publish' or 'unpublish' tabs, set this to 403, otherwise
+   *   200.
+   * @param string $msg
+   *   (optional) An assertion log message.
+   */
+  public abstract function assertNodeOperationAccess($nid, $op, $expected_response, $msg = '');
+
+  /**
+   * Allow content type to be used with publish content.
+   */
+  public function enablePublishContentForContentType($types) {
+    if (!is_array($types)) {
+      $types = array($types);
+    }
+
+    foreach ($types as $type) {
+      variable_set('publishcontent_' . $type, TRUE);
+    }
+
+    // Rebuild SimpleTests permissions cache.
+    $this->checkPermissions(array(), TRUE);
+  }
+
+  /**
+   * Assert the status of a given node.
+   *
+   * @param int $nid
+   *   The node nid to check
+   * @param int $status
+   *   Either 1 for published or 0 for unpublished
+   */
+  public function assertNodeStatus($nid, $status, $msg = '') {
+    $node = node_load($nid, NULL, TRUE);
+    $msg = !empty($msg) ? $msg : t('Node status is @actual, expecting @expected', array('@actual' => $node->status, '@expected' => $status));
+    $this->assertEqual($node->status, $status, $msg);
+  }
+
+  /**
+   * Set the status of a node.
+   *
+   * @param node|int $node
+   *   A loaded node object or node nid
+   * @param int $status
+   *   The status to set, 1 for published, 0 for unpublished.
+   */
+  public function setNodeStatus($node, $status, $msg = '') {
+    $node = is_object($node) ? $node : node_load($node);
+    if ($node->status != $status) {
+      $node->status = $status;
+      node_save($node);
+    }
+  }
+
+  /**
+   * Check the current user session forbids publish of a given node.
+   *
+   * @param node $node
+   *   The node object to test against.
+   */
+  public function assertCurrentUserCannotPublish($node) {
+    $status = $node->status;
+    $username = $this->loggedInUser->name;
+    $this->setNodeStatus($node, 1, 'Start test with a published node');
+    $this->assertNodeOperationAccess($node->nid, 'publish', 403, $username . ' cannot publish the published node');
+    $this->assertNodeStatus($node->nid, 1, 'node should be still published');
+    $this->assertNodeOperationAccess($node->nid, 'view', 200, $username . ' can view the published node');
+    $this->setNodeStatus($node, 0);
+    $this->assertNodeOperationAccess($node->nid, 'publish', 403, $username . ' cannot publish the unpublished node');
+    $this->assertNodeStatus($node->nid, 0, 'node should be still unpublished');
+    $this->setNodeStatus($node, $status, 'Reset the nodes status');
+  }
+
+  /**
+   * Check the current user session cannot unpublish a given node.
+   *
+   * @param node $node
+   *   The node object to test against.
+   */
+  public function assertCurrentUserCannotUnpublish($node) {
+    $status = $node->status;
+    $username = $this->loggedInUser->name;
+    $this->setNodeStatus($node, 1, 'Start test with a published node');
+    $this->assertNodeOperationAccess($node->nid, 'unpublish', 403, $username . ' cannot unpublish the published node');
+    $this->assertNodeStatus($node->nid, 1, 'node should be still published');
+    $this->assertNodeOperationAccess($node->nid, 'view', 200, $username . ' can view the published node');
+    $this->setNodeStatus($node, 0);
+    $this->assertNodeOperationAccess($node->nid, 'unpublish', 403, $username . ' cannot unpublish an unpublished node');
+    $this->assertNodeStatus($node->nid, 0, 'node should be still unpublished');
+    $this->setNodeStatus($node, $status, 'Reset the nodes status');
+  }
+
+  /**
+   * Check the current user session can publish a given node.
+   *
+   * @param node $node
+   *   The node object to test against.
+   */
+  public function assertCurrentUserCanPublish($node) {
+    $status = $node->status;
+    $username = $this->loggedInUser->name;
+    $this->setNodeStatus($node, 1, 'Start test with a published node');
+    $this->assertNodeOperationAccess($node->nid, 'publish', 403, $username . ' cannot access the publish callback for a node which is already published.');
+    $this->assertNodeOperationAccess($node->nid, 'view', 200, $username . ' can view the published node');
+    $this->setNodeStatus($node, 0);
+    $this->assertNodeOperationAccess($node->nid, 'view', 200, $username . ' can view unpublished node');
+    $this->assertNodeOperationAccess($node->nid, 'publish', 200, $username . ' can access publish callback on an unpublished node');
+    $this->assertNodeStatus($node->nid, 1, 'node should now be published');
+    $this->setNodeStatus($node, $status, 'Reset the nodes status');
+  }
+
+  /**
+   * Check the current user session can unpublish a node.
+   *
+   * @param node $node
+   *   The node to test against.
+   */
+  public function assertCurrentUserCanUnpublish($node) {
+    $status = $node->status;
+    $username = $this->loggedInUser->name;
+    $this->setNodeStatus($node, 1, 'Start test with a published node');
+    $this->assertNodeOperationAccess($node->nid, 'unpublish', 200, $username . ' can access unpublish callback on a published node');
+    $this->assertNodeStatus($node->nid, 0, 'Node should now be unpublished');
+    $this->assertNodeOperationAccess($node->nid, 'view', 200, $username . ' can view the unpublished node.');
+    $this->assertNodeOperationAccess($node->nid, 'unpublish', 403, $username . ' cannot access the unpublish callback of an unpublished node');
+    $this->assertNodeStatus($node->nid, 0, 'Node should still be unpublished');
+    $this->setNodeStatus($node, $status, 'Reset the nodes status');
+  }
+
+  /**
+   * Assert the current user can publish a node from the listing test page.
+   */
+  public function assertCanPublishFromLinksPage($node) {
+    $status = $node->status;
+    $this->setNodeStatus($node, 0, 'Start test with an unpublished node');
+    $this->drupalGet('publishcontent-links');
+    $this->assertResponse(200);
+    $this->assertLink('publish-' . $node->nid);
+    $this->assertNoLink('unpublish-' . $node->nid);
+    $this->clickLink('publish-' . $node->nid);
+    $this->assertResponse(200);
+    $this->assertNodeStatus($node->nid, 1);
+    $this->setNodeStatus($node, $status, 'Reset status');
+  }
+
+  /**
+   * Assert the current user cannot publish a node from the listing test page.
+   */
+  public function assertCannotPublishFromLinksPage($node) {
+    $status = $node->status;
+    $this->setNodeStatus($node, 0, 'Start test with an unpublished node');
+    $this->drupalGet('publishcontent-links');
+    $this->assertResponse(200);
+    $this->assertNoLink('publish-' . $node->nid);
+    $this->assertNoLink('unpublish-' . $node->nid);
+    $this->setNodeStatus($node, $status, 'Reset status');
+  }
+
+  /**
+   * Assert the current user can unpublish a node from the listing test page.
+   */
+  public function assertCanUnpublishFromLinksPage($node) {
+    $status = $node->status;
+    $this->setNodeStatus($node, 1, 'Start test with a published node');
+    $this->drupalGet('publishcontent-links');
+    $this->assertResponse(200);
+    $this->assertLink('unpublish-' . $node->nid);
+    $this->assertNoLink('publish-' . $node->nid);
+    $this->clickLink('unpublish-' . $node->nid);
+    $this->assertResponse(200);
+    $this->assertNodeStatus($node->nid, 0);
+    $this->setNodeStatus($node, $status, 'Reset status');
+  }
+
+  /**
+   * Assert the current user cannot unpublish a node from the listing test page.
+   */
+  public function assertCannotUnpublishFromLinksPage($node) {
+    $status = $node->status;
+    $this->setNodeStatus($node, 1, 'Start test with a published node');
+    $this->drupalGet('publishcontent-links');
+    $this->assertResponse(200);
+    $this->assertNoLink('publish-' . $node->nid);
+    $this->assertNoLink('unpublish-' . $node->nid);
+    $this->setNodeStatus($node, $status, 'Reset status');
+  }
+
+  /**
+   * Check no publish permission by node owner.
+   */
+  public function testNoPublishPermissionByOwner() {
+    $web_user = $this->drupalCreateUser(array('access content'));
+    $this->drupalLogin($web_user);
+
+    $node = $this->drupalCreateNode(
+      array(
+        'type' => 'page',
+        'uid' => $web_user->uid,
+        'status' => 1,
+      )
+    );
+
+    $this->assertCurrentUserCannotPublish($node);
+    $this->assertCurrentUserCannotUnpublish($node);
+
+    $this->setNodeStatus($node, 0);
+    $this->assertNodeOperationAccess($node->nid, 'view', 403, 'Node is not accessible by its owner when unpublished.');
+  }
+
+  /**
+   * Check publishcontent module does not interfere with the normal Drupal.
+   */
+  public function testNoPermissionAndNotOwner() {
+    $node = $this->drupalCreateNode(
+      array(
+        'type' => 'page',
+        'uid' => 0,
+        'status' => 1,
+      )
+    );
+
+    $this->drupalLogin($this->drupalCreateUser(array('access content')));
+
+    $this->assertCurrentUserCannotPublish($node);
+    $this->assertCurrentUserCannotUnpublish($node);
+
+    $this->setNodeStatus($node, 0);
+    $this->assertNodeOperationAccess($node->nid, 'view', 403, 'Node is not viewable by non owner when unpublished by a user without publish or unpublish permissions');
+  }
+
+  /**
+   * Test the combination of publish but not unpublish permissions.
+   */
+  public function testPublishNotUnpublish() {
+    $type = 'page';
+    $this->enablePublishContentForContentType($type);
+
+    $web_user = $this->drupalCreateUser(array(
+      'access content',
+      'publish editable ' . $type . ' content',
+      'view own unpublished content',
+      'edit own ' . $type . ' content',
+    ));
+
+    $this->drupalLogin($web_user);
+
+    $node = $this->drupalCreateNode(
+      array(
+        'type' => $type,
+        'uid' => $web_user->uid,
+        'status' => 0,
+      )
+    );
+
+    $this->drupalGet('node/' . $node->nid . '/edit');
+    $this->assertResponse(200);
+
+    $this->assertCurrentUserCanPublish($node);
+    $this->assertCurrentUserCannotUnpublish($node);
+  }
+
+  /**
+   * Test the combination of unpublish but not publish.
+   */
+  public function testNotPublishUnpublish() {
+    $type = 'page';
+    $this->enablePublishContentForContentType($type);
+
+    $web_user = $this->drupalCreateUser(array(
+      'access content',
+      'unpublish any ' . $type . ' content',
+      'view own unpublished content',
+      'edit own ' . $type . ' content',
+    ));
+    $this->drupalLogin($web_user);
+
+    $node = $this->drupalCreateNode(
+      array(
+        'type' => $type,
+        'uid' => $web_user->uid,
+        'status' => 1,
+      )
+    );
+
+    $this->assertCurrentUserCannotPublish($node);
+    $this->assertCurrentUserCanUnpublish($node);
+  }
+
+  /**
+   * Test the combination of both publish and unpublish.
+   */
+  public function testPublishUnpublish() {
+    $type = 'page';
+    $this->enablePublishContentForContentType($type);
+
+    $web_user_1 = $this->drupalCreateUser(array(
+      'access content',
+      'view own unpublished content',
+      'edit any ' . $type . ' content',
+      'publish any content',
+    ));
+
+    $node1 = $this->drupalCreateNode(
+      array(
+        'type' => $type,
+        'uid' => $web_user_1->uid,
+        'status' => 1,
+      )
+    );
+
+    $this->drupalLogin($web_user_1);
+    $this->assertCurrentUserCanPublish($node1);
+    $this->assertCurrentUserCannotUnpublish($node1);
+
+    $web_user_2 = $this->drupalCreateUser(array(
+      'access content',
+      'view own unpublished content',
+      'edit any ' . $type . ' content',
+      'unpublish any content',
+    ));
+
+    $node2 = $this->drupalCreateNode(
+      array(
+        'type' => $type,
+        'uid' => $web_user_2->uid,
+        'status' => 1,
+      )
+    );
+
+    $this->drupalLogin($web_user_2);
+    $this->assertCurrentUserCannotPublish($node2);
+    $this->assertCurrentUserCanUnpublish($node2);
+
+    $web_user_3 = $this->drupalCreateUser(array(
+      'access content',
+      'view own unpublished content',
+      'edit any ' . $type . ' content',
+      'publish any content',
+      'unpublish any content',
+    ));
+
+    $node3 = $this->drupalCreateNode(
+      array(
+        'type' => $type,
+        'uid' => $web_user_3->uid,
+        'status' => 1,
+      )
+    );
+
+    $this->drupalLogin($web_user_3);
+    $this->assertCurrentUserCanPublish($node3);
+    $this->assertCurrentUserCanUnpublish($node3);
+  }
+
+  /**
+   * Test basic publish ability using the publishcontent_test module.
+   */
+  public function testBasicPublishCallback() {
+    $type = 'page';
+    $this->enablePublishContentForContentType(array($type, 'article'));
+
+    $web_user_1 = $this->drupalCreateUser(array(
+      'access content',
+      'publish any content',
+    ));
+
+    $web_user_2 = $this->drupalCreateUser(array(
+      'access content',
+      'unpublish any content',
+    ));
+
+    $web_user_3 = $this->drupalCreateUser(array(
+      'access content',
+      'publish any content',
+      'unpublish any content',
+    ));
+
+    $web_user_4 = $this->drupalCreateUser(array(
+      'access content',
+      'publish any ' . $type . ' content',
+    ));
+
+    $web_user_5 = $this->drupalCreateUser(array(
+      'access content',
+      'unpublish any ' . $type . ' content',
+    ));
+
+    $web_user_6 = $this->drupalCreateUser(array(
+      'access content',
+      'publish any ' . $type . ' content',
+      'unpublish any ' . $type . ' content',
+    ));
+
+    $web_user_7 = $this->drupalCreateUser(array(
+      'access content',
+      'publish any article content',
+      'unpublish any article content',
+    ));
+
+    $node = $this->drupalCreateNode(
+      array(
+        'type' => $type,
+        'uid' => 1,
+        'status' => 0,
+      )
+    );
+
+    $this->drupalLogin($web_user_1);
+    $this->assertCanPublishFromLinksPage($node, 'Someone with publish any content can publish page node');
+    $this->assertCannotUnpublishFromLinksPage($node, 'Someone with publish any content cannot unpublish page node');
+
+    $this->drupalLogin($web_user_2);
+    $this->assertCannotPublishFromLinksPage($node, 'Someone with unpublish any content cannot publish page node');
+    $this->assertCanUnpublishFromLinksPage($node, 'Someone with unpublish any content can unpublish page node');
+
+    $this->drupalLogin($web_user_3);
+    $this->assertCanPublishFromLinksPage($node, 'Someone with publish and unpublish any content can publish page node');
+    $this->assertCanUnpublishFromLinksPage($node, 'Someone with publish and unpublish any content can unpublish page node');
+
+    $this->drupalLogin($web_user_4);
+    $this->assertCanPublishFromLinksPage($node, 'Someone with publish any page nodes can publish a page node');
+    $this->assertCannotUnpublishFromLinksPage($node, 'Someone with publish any page nodes cannot unpublish page node');
+
+    $this->drupalLogin($web_user_5);
+    $this->assertCannotPublishFromLinksPage($node, 'Someone with unpublish any page node cannot publish a page node');
+    $this->assertCanUnpublishFromLinksPage($node, 'Someone with unpublish any page node can unpublish a page node');
+
+    $this->drupalLogin($web_user_6);
+    $this->assertCanPublishFromLinksPage($node, 'Someone with publish and unpublish any page node can publish a page node');
+    $this->assertCanUnpublishFromLinksPage($node, 'Someone with publish and unpublish any page node can unpublish a page node');
+
+    $this->drupalLogin($web_user_7);
+    $this->assertCannotPublishFromLinksPage($node, 'Someone with publish any article content cannot publish page content');
+    $this->assertCannotUnpublishFromLinksPage($node, 'Someone with unpublish any article content cannot unpublish page content');
+  }
+
+}
+
+/**
+ * Test permissions with the tab method.
+ */
+class PublishContentTabTests extends PublishContentWebTestBase {
+
+  /**
+   * Drupal SimpleTest method: return metadata about the test.
+   */
+  public static function getInfo() {
+    return array(
+      'name'  => t('Publish Content: Tab Tests'),
+      'description'  => t('Executes test suite for Publish Content module with the tab method.'),
+      'group' => t('Publish Content'),
+    );
+  }
+
+  /**
+   * Test setup instructions.
+   */
+  public function setUp() {
+    parent::setUp('publishcontent', 'publishcontent_test');
+    variable_set('publishcontent_method', PUBLISHCONTENT_METHOD_TABS);
+  }
+
+  /**
+   * Perform a GET operation on a node.
+   *
+   * This will check the response to access some operation via
+   * the URL of a node. In the case of 'publish' or 'unpublish'
+   * it will first visit the view of a node so that the relevant
+   * tabs can be generated.
+   *
+   * @param int $nid
+   *   The node nid
+   * @param string $op
+   *   An operation such as 'view', 'edit', 'publish', 'unpublish'
+   * @param int $expected_response
+   *   The expexted response code. If the user should not be able to
+   *   see the 'publish' or 'unpublish' tabs, set this to 403, otherwise
+   *   200.
+   * @param string $msg
+   *   (optional) An assertion log message.
+   */
+  public function assertNodeOperationAccess($nid, $op, $expected_response, $msg = '') {
+    if (in_array($op, array('publish', 'unpublish'))) {
+      $tab_link_text = ucfirst($op);
+
+      // Visit the edit page first to generate the tab.
+      $this->drupalGet("node/{$nid}");
+      $view_response = curl_getinfo($this->curlHandle, CURLINFO_HTTP_CODE);
+      if ($view_response != 200) {
+        $msg .= t('Could not view the node. Response code: @response', array('@response' => $view_response));
+        $this->assert($expected_response == $view_response, $msg);
+        return;
+      }
+
+      // Check the tab exists.
+      $links = $this->xpath('//a[normalize-space(text())=:label]', array(':label' => $tab_link_text));
+      if (!isset($links[0])) {
+        // No tab.
+        $msg .= t('Could not find a tab called @tab', array('@tab' => $tab_link_text));
+        $this->assert($expected_response != 200, $msg);
+        return;
+      }
+
+      // Now visit the tab.
+      $this->clickLink($tab_link_text);
+
+      $node = node_load($nid);
+
+      if ($op == 'publish') {
+        $this->assertText(_publishcontent_get_message($node->nid, $node->title, TRUE),
+          'Publish content message is visible.');
+      }
+      else {
+        $this->assertText(_publishcontent_get_message($node->nid, $node->title, FALSE),
+          'Unpublish message is visible.');
+      }
+    }
+    else {
+      $url = $op == 'view' ? "node/{$nid}" : "node/$nid/$op";
+      $this->drupalGet($url);
+    }
+
+    $this->assertResponse($expected_response, $msg);
+  }
+
+}
+
+/**
+ * Test permissions with the button method.
+ */
+class PublishContentButtonTests extends PublishContentWebTestBase {
+
+  /**
+   * Drupal SimpleTest method: return metadata about the test.
+   */
+  public static function getInfo() {
+    return array(
+      'name'  => t('Publish Content: Button Tests'),
+      'description'  => t('Executes test suite for Publish Content module with the button method.'),
+      'group' => t('Publish Content'),
+    );
+  }
+
+  /**
+   * Test setup instructions.
+   */
+  public function setUp() {
+    parent::setUp('publishcontent', 'publishcontent_test');
+    variable_set('publishcontent_method', PUBLISHCONTENT_METHOD_BUTTON);
+  }
+
+  /**
+   * Perform a GET operation on a node.
+   *
+   * This will check the response to access some operation via
+   * the URL of a node. In the case of 'publish' or 'unpublish'
+   * it will first visit the view of a node so that the relevant
+   * tabs can be generated.
+   *
+   * @param int $nid
+   *   The node nid
+   * @param string $op
+   *   An operation such as 'view', 'edit', 'publish', 'unpublish'
+   * @param int $expected_response
+   *   The expexted response code. If the user should not be able to
+   *   see the 'publish' or 'unpublish' tabs, set this to 403, otherwise
+   *   200.
+   * @param string $msg
+   *   (optional) An assertion log message.
+   */
+  public function assertNodeOperationAccess($nid, $op, $expected_response, $msg = '') {
+    if (in_array($op, array('publish', 'unpublish'))) {
+      $button_text = t(ucfirst($op));
+
+      // Visit the edit page first to generate the tab.
+      $this->drupalGet("node/{$nid}/edit");
+      $view_response = curl_getinfo($this->curlHandle, CURLINFO_HTTP_CODE);
+      if ($view_response != 200) {
+        $msg .= t('Could not view the node. Response code: @response', array('@response' => $view_response));
+        $this->assert($expected_response == $view_response, $msg);
+        return;
+      }
+
+      // Find the button.
+      $buttons = $this->xpath('//input[@value=:label]', array(':label' => $button_text));
+      if (!isset($buttons[0])) {
+        // No button.
+        $msg .= t('Could not find a button called @button', array('@button' => $button_text));
+        $this->assert($expected_response != 200, $msg);
+        return;
+      }
+
+      // Submit the form.
+      $this->drupalPost("node/{$nid}/edit", array(), $button_text);
+    }
+    else {
+      $url = $op == 'view' ? "node/{$nid}" : "node/$nid/$op";
+      $this->drupalGet($url);
+    }
+
+    $this->assertResponse($expected_response, $msg);
+  }
+}
+
+/**
+ * Test permissions with the tab method.
+ */
+class PublishContentCheckboxTests extends PublishContentWebTestBase {
+
+  /**
+   * Drupal SimpleTest method: return metadata about the test.
+   */
+  public static function getInfo() {
+    return array(
+      'name'  => t('Publish Content: Checkbox Tests'),
+      'description'  => t('Executes test suite for Publish Content module with the checkbox method.'),
+      'group' => t('Publish Content'),
+    );
+  }
+
+  /**
+   * Test setup instructions.
+   */
+  public function setUp() {
+    parent::setUp('publishcontent', 'publishcontent_test');
+    variable_set('publishcontent_method', PUBLISHCONTENT_METHOD_NONE);
+  }
+
+  /**
+   * Perform a GET operation on a node.
+   *
+   * This will check the response to access some operation via
+   * the URL of a node. In the case of 'publish' or 'unpublish'
+   * it will first visit the view of a node so that the relevant
+   * tabs can be generated.
+   *
+   * @param int $nid
+   *   The node nid
+   * @param string $op
+   *   An operation such as 'view', 'edit', 'publish', 'unpublish'
+   * @param int $expected_response
+   *   The expexted response code. If the user should not be able to
+   *   see the 'publish' or 'unpublish' tabs, set this to 403, otherwise
+   *   200.
+   * @param string $msg
+   *   (optional) An assertion log message.
+   */
+  public function assertNodeOperationAccess($nid, $op, $expected_response, $msg = '') {
+    if (in_array($op, array('publish', 'unpublish'))) {
+
+      // Visit the edit page first to check for the published checkbox.
+      $this->drupalGet("node/{$nid}/edit");
+      $view_response = curl_getinfo($this->curlHandle, CURLINFO_HTTP_CODE);
+      if ($view_response != 200) {
+        $msg .= t('Could not edit the node. Response code: @response', array('@response' => $view_response));
+        $this->assert($expected_response == $view_response, $msg);
+        return;
+      }
+
+      // Check the checkbox exists.
+      $elements = $this->xpath('//input[@id=:id]', array(':id' => 'edit-status'));
+      if (!isset($elements[0])) {
+        // No checkboxes.
+        $msg .= t('Published status checkbox is not accessible.');
+        $this->assert($expected_response != 200, $msg);
+        return;
+      }
+
+      // At this point the response code for checkboxes is irrelevant, if
+      // they can access the edit page and see the checkbox, they can edit it.
+      $expected_response = 200;
+
+      // Tick or untick the published checkbox and submit the form.
+      $edit_status = ($op == 'publish');
+      $this->drupalPost("node/{$nid}/edit", array('status' => $edit_status), t('Save'));
+    }
+    else {
+      $url = $op == 'view' ? "node/{$nid}" : "node/$nid/$op";
+      $this->drupalGet($url);
+    }
+
+    $this->assertResponse($expected_response, $msg);
+  }
+
+  /**
+   * Test access to the node add page is working.
+   */
+  public function testAccessNodeAdd() {
+    $type = 'page';
+    $this->enablePublishContentForContentType($type);
+
+    $web_user_1 = $this->drupalCreateUser(array(
+      'access content',
+      'view own unpublished content',
+      'create ' . $type . ' content',
+      'publish editable content',
+      'unpublish editable content',
+    ));
+
+    $this->drupalLogin($web_user_1);
+    $this->drupalGet('node/add/' . $type);
+    $this->assertResponse(200);
+    $this->assertFieldChecked('edit-status', t('Ensure the publish checkbox is available.'));
+  }
+}

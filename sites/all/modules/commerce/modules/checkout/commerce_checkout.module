@@ -1,0 +1,1002 @@
+<?php
+
+/**
+ * @file
+ * Enable checkout as a multi-step form with customizable pages and a simple
+ *   checkout pane API.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_checkout_menu() {
+  $items = array();
+
+  $items['checkout/%commerce_order'] = array(
+    'title' => 'Checkout',
+    'page callback' => 'commerce_checkout_router',
+    'page arguments' => array(1),
+    'access arguments' => array('access checkout'),
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/commerce_checkout.pages.inc',
+  );
+  $items['checkout/%commerce_order/%commerce_checkout_page'] = array(
+    'title' => 'Checkout',
+    'page callback' => 'commerce_checkout_router',
+    'page arguments' => array(1, 2),
+    'access arguments' => array('access checkout'),
+    'type' => MENU_CALLBACK,
+    'file' => 'includes/commerce_checkout.pages.inc',
+  );
+
+  $items['admin/commerce/config/checkout'] = array(
+    'title' => 'Checkout settings',
+    'description' => 'Customize the checkout form and configure checkout rules.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_checkout_builder_form'),
+    'access arguments' => array('administer checkout'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'includes/commerce_checkout.admin.inc',
+  );
+  $items['admin/commerce/config/checkout/form'] = array(
+    'title' => 'Checkout form',
+    'description' => 'Build your checkout pages using module defined checkout form elements.',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+    'file' => 'includes/commerce_checkout.admin.inc',
+  );
+  $items['admin/commerce/config/checkout/rules'] = array(
+    'title' => 'Checkout rules',
+    'description' => 'Enable and configure checkout completion rules.',
+    'page callback' => 'commerce_checkout_complete_rules',
+    'access arguments' => array('administer checkout'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+    'file' => 'includes/commerce_checkout.admin.inc',
+  );
+
+  // Add the menu items for the various Rules forms.
+  $controller = new RulesUIController();
+  $items += $controller->config_menu('admin/commerce/config/checkout/rules');
+
+  $items['admin/commerce/config/checkout/rules/add'] = array(
+    'title' => 'Add a checkout rule',
+    'description' => 'Adds an additional checkout completion rule configuration.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_checkout_add_complete_rule_form', 'admin/commerce/config/checkout/rules'),
+    'access arguments' => array('administer checkout'),
+    'file path' => drupal_get_path('module', 'rules_admin'),
+    'file' => 'rules_admin.inc',
+    'type' => MENU_LOCAL_ACTION,
+  );
+
+  $items['admin/commerce/config/checkout/form/pane/%commerce_checkout_pane'] = array(
+    'title callback' => 'commerce_checkout_pane_settings_title',
+    'title arguments' => array(6),
+    'description' => 'Configure the settings for a checkout pane.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_checkout_pane_settings_form', 6),
+    'access arguments' => array('administer checkout'),
+    'file' => 'includes/commerce_checkout.admin.inc',
+  );
+
+  // If the Order UI module is installed, add a local action to it that lets an
+  // administrator invoke the checkout completion event on the order. Modules
+  // that define their own order edit menu item are also responsible for
+  // defining their own local action menu items if needed.
+  if (module_exists('commerce_order_ui')) {
+    $items['admin/commerce/orders/%commerce_order/edit/checkout'] = array(
+      'title' => 'Simulate checkout completion',
+      'description' => 'Directly invokes the checkout completion rules on the order.',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('commerce_checkout_complete_form', 3),
+      'access callback' => 'commerce_checkout_complete_form_access',
+      'access arguments' => array(3),
+      'type' => MENU_LOCAL_ACTION,
+      'file' => 'includes/commerce_checkout.admin.inc',
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Access callback: determines access to the "Simulate checkout completion"
+ * local action.
+ */
+function commerce_checkout_complete_form_access($order) {
+  // Returns TRUE if the link is enabled via the order settings form and the
+  // user has access to update the order.
+  return variable_get('commerce_order_simulate_checkout_link', TRUE) && commerce_order_access('update', 3);
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function commerce_checkout_hook_info() {
+  $hooks = array(
+    'commerce_checkout_page_info' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_checkout_page_info_alter' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_checkout_pane_info' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_checkout_pane_info_alter' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_checkout_router' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_checkout_complete' => array(
+      'group' => 'commerce',
+    ),
+  );
+
+  return $hooks;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_checkout_permission() {
+  $permissions = array(
+    'administer checkout' => array(
+      'title' => t('Administer checkout'),
+      'description' => t('Configure checkout settings including the layout of the checkout form.'),
+      'restrict access' => TRUE,
+    ),
+    'access checkout' => array(
+      'title' => t('Access checkout'),
+      'description' => t('Complete a purchase through the checkout form.'),
+    ),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_help().
+ */
+function commerce_checkout_help($path, $arg) {
+  switch ($path) {
+    case 'admin/commerce/config/checkout':
+    case 'admin/commerce/config/checkout/form':
+      return t('Use the table below to build your checkout form using the available checkout panes and pages defined by modules enabled on your site. You may configure the checkout pane settings using the operations links below.');
+
+    case 'admin/commerce/config/checkout/rules':
+      return t('When a customer advances to the checkout completion page, rules reacting on the <em>Completing the checkout process</em> are evaluated. Default rules handle standard tasks like updating the order status, sending order e-mails, and creating accounts for anonymous users. You can edit these or add additional rules to customize your checkout workflow.');
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_checkout_theme() {
+  return array(
+    'commerce_checkout_builder_form' => array(
+      'render element' => 'form',
+      'file' => 'includes/commerce_checkout.admin.inc',
+    ),
+    'commerce_checkout_review' => array(
+      'render element' => 'form',
+      'file' => 'includes/commerce_checkout.pages.inc',
+    ),
+    'commerce_checkout_help' => array(
+      'variables' => array('help' => NULL),
+      'path' => drupal_get_path('module', 'commerce_checkout') . '/theme',
+      'template' => 'commerce-checkout-help',
+    ),
+    'commerce_checkout_errors_message' => array(
+      'variables' => array('label' => NULL, 'message' => NULL),
+      'path' => drupal_get_path('module', 'commerce_checkout') . '/theme',
+      'template' => 'commerce-checkout-errors-message',
+    ),
+  );
+}
+
+/**
+ * Implements hook_i18n_string_list().
+ */
+function commerce_checkout_i18n_string_list($group) {
+  if ($group == 'commerce') {
+    // Allow the checkout completion message to be translated.
+    $message = variable_get('commerce_checkout_completion_message', commerce_checkout_completion_message_default());
+    $strings['commerce']['checkout']['complete']['message'] = $message['value'];
+
+    return $strings;
+  }
+}
+
+/**
+ * Implements hook_forms().
+ *
+ * Each page of the checkout form is actually a unique form as opposed to a
+ * single multistep form. To accommodate this, we map any form ID beginning with
+ * commerce_checkout_form_ to the same form builder assuming the remainder of
+ * the form ID matches a valid checkout page ID.
+ */
+function commerce_checkout_forms($form_id, $args) {
+  $forms = array();
+
+  // All checkout page forms should be built using the same function.
+  if (strpos($form_id, 'commerce_checkout_form_') === 0) {
+    // Ensure the checkout page is valid.
+    if (commerce_checkout_page_load(substr($form_id, 23))) {
+      $forms[$form_id] = array(
+        'callback' => 'commerce_checkout_form',
+      );
+    }
+  }
+
+  $forms['commerce_checkout_add_complete_rule_form'] = array(
+    'callback' => 'rules_admin_add_reaction_rule',
+  );
+
+  return $forms;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function commerce_checkout_form_alter(&$form, &$form_state, $form_id) {
+  if (strpos($form_id, 'views_form_commerce_cart_form_') === 0) {
+    // Only add the Checkout button if the cart form View shows line items.
+    $view = reset($form_state['build_info']['args']);
+
+    if (!empty($view->result)) {
+      $form['actions']['checkout'] = array(
+        '#type' => 'submit',
+        '#value' => t('Checkout'),
+        '#weight' => 5,
+        '#access' => user_access('access checkout'),
+        '#submit' => array_merge($form['#submit'], array('commerce_checkout_line_item_views_form_submit')),
+      );
+    }
+  }
+}
+
+/**
+ * Submit handler used to redirect to the checkout page.
+ */
+function commerce_checkout_line_item_views_form_submit($form, &$form_state) {
+  $order = commerce_order_load($form_state['order']->order_id);
+
+  // Set the order status to the first checkout page's status.
+  $order_state = commerce_order_state_load('checkout');
+  $form_state['order'] = commerce_order_status_update($order, $order_state['default_status'], TRUE);
+
+  // Skip saving in the status update and manually save here to force a save
+  // even when the status doesn't actually change.
+  if (variable_get('commerce_order_auto_revision', TRUE)) {
+    $form_state['order']->revision = TRUE;
+    $form_state['order']->log = t('Customer proceeded to checkout using a submit button.');
+  }
+
+  commerce_order_save($form_state['order']);
+
+  // Redirect to the checkout page if specified.
+  if ($form_state['triggering_element']['#value'] == $form['actions']['checkout']['#value']) {
+    $form_state['redirect'] = 'checkout/' . $order->order_id;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Adds a checkbox to the order settings form to enable the local action on
+ * order edit forms to simulate checkout completion.
+ */
+function commerce_checkout_form_commerce_order_settings_form_alter(&$form, &$form_state) {
+  $form['commerce_order_simulate_checkout_link'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable the local action link on order edit forms to simulate checkout completion.'),
+    '#default_value' => variable_get('commerce_order_simulate_checkout_link', TRUE),
+    '#weight' => 20,
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * The Checkout module instantiates the Rules Admin rule configuration add form
+ * at a particular path in the Commerce IA. It uses its own form ID to do so and
+ * alters the form here to select the necessary Rules event.
+ *
+ * @see rules_admin_add_reaction_rule()
+ */
+function commerce_checkout_form_commerce_checkout_add_complete_rule_form_alter(&$form, &$form_state) {
+  unset($form['settings']['help']);
+  $form['settings']['event']['#type'] = 'value';
+  $form['settings']['event']['#value'] = 'commerce_checkout_complete';
+  $form['submit']['#suffix'] = l(t('Cancel'), 'admin/commerce/config/checkout/rules');
+}
+
+/**
+ * Implements hook_commerce_order_state_info().
+ */
+function commerce_checkout_commerce_order_state_info() {
+  $order_states = array();
+
+  $order_states['checkout'] = array(
+    'name' => 'checkout',
+    'title' => t('Checkout'),
+    'description' => t('Orders in this state have begun but not completed the checkout process.'),
+    'weight' => -3,
+    'default_status' => 'checkout_' . commerce_checkout_first_checkout_page(),
+  );
+
+  return $order_states;
+}
+
+/**
+ * Implements hook_commerce_order_status_info().
+ */
+function commerce_checkout_commerce_order_status_info() {
+  $order_statuses = array();
+
+  // Create an order status to correspond with every checkout page.
+  foreach (commerce_checkout_pages() as $page_id => $checkout_page) {
+    $order_statuses['checkout_' . $page_id] = array(
+      'name' => 'checkout_' . $page_id,
+      'title' => t('Checkout: @page', array('@page' => $checkout_page['name'])),
+      'state' => 'checkout',
+      'checkout_page' => $page_id,
+      'cart' => $checkout_page['status_cart'],
+      'weight' => $checkout_page['weight'],
+    );
+  }
+
+  return $order_statuses;
+}
+
+/**
+ * Implements hook_commerce_checkout_page_info().
+ */
+function commerce_checkout_commerce_checkout_page_info() {
+  $checkout_pages = array();
+
+  // Define a primary checkout page as the first step.
+  $checkout_pages['checkout'] = array(
+    'title' => t('Checkout'),
+    'weight' => 0,
+  );
+
+  // Define a page for reviewing the data entered during checkout.
+  $checkout_pages['review'] = array(
+    'name' => t('Review'),
+    'title' => t('Review order'),
+    'help' => t('Review your order before continuing.'),
+    'weight' => 10,
+  );
+
+  // Define a page for checkout completion with no submit buttons on it.
+  $checkout_pages['complete'] = array(
+    'name' => t('Complete'),
+    'title' => t('Checkout complete'),
+    'weight' => 50,
+    'status_cart' => FALSE,
+    'buttons' => FALSE,
+  );
+
+  return $checkout_pages;
+}
+
+/**
+ * Implements hook_commerce_checkout_pane_info().
+ */
+function commerce_checkout_commerce_checkout_pane_info() {
+  $checkout_panes = array();
+
+  $checkout_panes['checkout_review'] = array(
+    'title' => t('Review'),
+    'file' => 'includes/commerce_checkout.checkout_pane.inc',
+    'base' => 'commerce_checkout_review_pane',
+    'page' => 'review',
+    'fieldset' => FALSE,
+  );
+
+  $checkout_panes['checkout_completion_message'] = array(
+    'title' => t('Completion message'),
+    'file' => 'includes/commerce_checkout.checkout_pane.inc',
+    'base' => 'commerce_checkout_completion_message_pane',
+    'page' => 'complete',
+    'fieldset' => FALSE,
+  );
+
+  return $checkout_panes;
+}
+
+/**
+ * Returns an array of checkout pages defined by enabled modules.
+ *
+ * @return
+ *   An associative array of checkout page objects keyed by the page_id.
+ */
+function commerce_checkout_pages() {
+  $checkout_pages = &drupal_static(__FUNCTION__);
+
+  // If the checkout pages haven't been defined yet, do so now.
+  if (empty($checkout_pages)) {
+    $checkout_pages = module_invoke_all('commerce_checkout_page_info');
+    drupal_alter('commerce_checkout_page_info', $checkout_pages);
+
+    $count = 0;
+    foreach ($checkout_pages as $page_id => $checkout_page) {
+      $defaults = array(
+        'page_id' => $page_id,
+        'name' => $checkout_page['title'],
+        'title' => '',
+        'help' => '',
+        'status_cart' => TRUE,
+        'buttons' => TRUE,
+        'back_value' => t('Go back'),
+        'submit_value' => t('Continue to next step'),
+        'prev_page' => NULL,
+        'next_page' => NULL,
+      );
+
+      $checkout_pages[$page_id] += $defaults;
+
+      // Set a weight that preserves the order of 0 weighted pages.
+      if (empty($checkout_page['weight'])) {
+        $checkout_pages[$page_id]['weight'] = $count++ / count($checkout_pages);
+      }
+    }
+
+    uasort($checkout_pages, 'drupal_sort_weight');
+
+    // Initialize the previous and next pages.
+    $previous_page_id = NULL;
+
+    foreach ($checkout_pages as &$checkout_page) {
+      // Look for any checkout panes assigned to this page.
+      $checkout_panes = commerce_checkout_panes(array('page' => $checkout_page['page_id'], 'enabled' => TRUE));
+
+      // If this is the completion page or at least one pane was found...
+      if ($checkout_page['page_id'] == 'complete' || !empty($checkout_panes)) {
+        // If a page has been stored as the previous page...
+        if ($previous_page_id) {
+          // Set the current page's previous page and the previous page's next.
+          $checkout_page['prev_page'] = $previous_page_id;
+          $checkout_pages[$previous_page_id]['next_page'] = $checkout_page['page_id'];
+        }
+
+        // Set the current page as the previous page for the next iteration.
+        $previous_page_id = $checkout_page['page_id'];
+      }
+    }
+  }
+
+  return $checkout_pages;
+}
+
+/**
+ * Returns the page ID of the first checkout page sorted by weight.
+ */
+function commerce_checkout_first_checkout_page() {
+  return key(commerce_checkout_pages());
+}
+
+/**
+ * Returns a checkout page object.
+ *
+ * @param $page_id
+ *   The ID of the page to return.
+ *
+ * @return
+ *   The fully loaded page object or FALSE if not found.
+ */
+function commerce_checkout_page_load($page_id) {
+  $checkout_pages = commerce_checkout_pages();
+
+  // If a page was specified that does not exist, return FALSE.
+  if (empty($checkout_pages[$page_id])) {
+    return FALSE;
+  }
+
+  // Otherwise, return the specified page.
+  return $checkout_pages[$page_id];
+}
+
+/**
+ * Return a filtered array of checkout pane objects.
+ *
+ * @param $conditions
+ *   An array of conditions to filter the returned list by; for example, if you
+ *   specify 'enabled' => TRUE in the array, then only checkout panes with an
+ *   enabled value equal to TRUE would be included.
+ * @param $skip_saved_data
+ *   A boolean that will allow the retrieval of checkout panes directly from
+ *   code. Specifically, it will skip the cache and also prevent configured
+ *   checkout panes data from merging.
+ *
+ * @return
+ *   The array of checkout pane objects, keyed by pane ID.
+ */
+function commerce_checkout_panes($conditions = array(), $skip_saved_data = FALSE) {
+  if (!$skip_saved_data) {
+    $checkout_panes = &drupal_static(__FUNCTION__);
+  }
+
+  // Cache the saved checkout pane data if it hasn't been loaded yet.
+  if (!isset($checkout_panes)) {
+    if (!$skip_saved_data) {
+      $saved_panes = db_query('SELECT * FROM {commerce_checkout_pane}')->fetchAllAssoc('pane_id', PDO::FETCH_ASSOC);
+    }
+
+    // Load panes defined by modules.
+    $checkout_panes = array();
+
+    foreach (module_implements('commerce_checkout_pane_info') as $module) {
+      foreach (module_invoke($module, 'commerce_checkout_pane_info') as $pane_id => $checkout_pane) {
+        $checkout_pane['pane_id'] = $pane_id;
+        $checkout_pane['module'] = $module;
+
+        // Update the pane with saved data.
+        if (!$skip_saved_data && !empty($saved_panes[$pane_id])) {
+          $checkout_pane = array_merge($checkout_pane, $saved_panes[$pane_id]);
+          $checkout_pane['saved'] = TRUE;
+        }
+
+        $checkout_panes[$pane_id] = $checkout_pane;
+      }
+    }
+
+    drupal_alter('commerce_checkout_pane_info', $checkout_panes);
+
+    // Merge in defaults.
+    foreach ($checkout_panes as $pane_id => $checkout_pane) {
+      // Set some defaults for the checkout pane.
+      $defaults = array(
+        'base' => $pane_id,
+        'name' => $checkout_pane['title'],
+        'page' => 'checkout',
+        'locked' => FALSE,
+        'fieldset' => TRUE,
+        'collapsible' => FALSE,
+        'collapsed' => FALSE,
+        'weight' => 0,
+        'enabled' => TRUE,
+        'review' => TRUE,
+        'callbacks' => array(),
+        'file' => '',
+      );
+      $checkout_pane += $defaults;
+
+      // Merge in default callbacks.
+      foreach (array('settings_form', 'checkout_form', 'checkout_form_validate', 'checkout_form_submit', 'review') as $callback) {
+        if (!isset($checkout_pane['callbacks'][$callback])) {
+          $checkout_pane['callbacks'][$callback] = $checkout_pane['base'] . '_' . $callback;
+        }
+      }
+
+      $checkout_panes[$pane_id] = $checkout_pane;
+    }
+
+    // Sort the panes by their weight value.
+    uasort($checkout_panes, 'drupal_sort_weight');
+  }
+
+  // Apply conditions to the returned panes if specified.
+  if (!empty($conditions)) {
+    $matching_panes = array();
+
+    foreach ($checkout_panes as $pane_id => $checkout_pane) {
+      // Check the pane against the conditions array to determine whether to add
+      // it to the return array or not.
+      $valid = TRUE;
+
+      foreach ($conditions as $property => $value) {
+        // If the current value for the specified property on the pane does not
+        // match the filter value...
+        if ($checkout_pane[$property] != $value) {
+          // Do not add it to the temporary array.
+          $valid = FALSE;
+        }
+      }
+
+      if ($valid) {
+        $matching_panes[$pane_id] = $checkout_pane;
+      }
+    }
+
+    return $matching_panes;
+  }
+
+  return $checkout_panes;
+}
+
+/**
+ * Resets the cached list of checkout panes.
+ */
+function commerce_checkout_panes_reset() {
+  $checkout_panes = &drupal_static('commerce_checkout_panes');
+  $checkout_panes = NULL;
+}
+
+/**
+ * Saves a checkout pane's configuration to the database.
+ *
+ * @param $checkout_pane
+ *   The fully loaded checkout pane object.
+ *
+ * @return
+ *   The return value of the call to drupal_write_record() to save the checkout
+ *     pane, either FALSE on failure or SAVED_NEW or SAVED_UPDATED indicating
+ *     the type of query performed to save the checkout pane.
+ */
+function commerce_checkout_pane_save($checkout_pane) {
+  return drupal_write_record('commerce_checkout_pane', $checkout_pane, !empty($checkout_pane['saved']) ? 'pane_id' : array());
+}
+
+/**
+ * Loads the data for a specific checkout pane.
+ *
+ * @param $pane_id
+ *   The machine readable ID of the checkout pane.
+ *
+ * @return
+ *   The requested checkout pane array or FALSE if not found.
+ */
+function commerce_checkout_pane_load($pane_id) {
+  // Loads the entire list of panes.
+  $checkout_panes = commerce_checkout_panes();
+
+  // Return FALSE if the pane does not exist.
+  if (empty($checkout_panes[$pane_id])) {
+    return FALSE;
+  }
+
+  return $checkout_panes[$pane_id];
+}
+
+/**
+ * Return the title of a checkout pane settings form page.
+ *
+ * @param $checkout_pane
+ *   The checkout pane object represented on the settings form.
+ */
+function commerce_checkout_pane_settings_title($checkout_pane) {
+  return t("'!pane' checkout pane", array('!pane' => $checkout_pane['name']));
+}
+
+/**
+ * Resets a checkout pane by pane_id to its module defined defaults.
+ */
+function commerce_checkout_pane_reset($pane_id) {
+  db_delete('commerce_checkout_pane')
+    ->condition('pane_id', $pane_id)
+    ->execute();
+}
+
+/**
+ * Returns the specified callback for the given checkout pane if it's available,
+ *   loading the checkout pane include file if specified.
+ *
+ * @param $checkout_pane
+ *   The checkout pane array.
+ * @param $callback
+ *   The callback function to return, one of:
+ *   - settings_form
+ *   - checkout_form
+ *   - checkout_form_validate
+ *   - checkout_form_submit
+ *   - review
+ *
+ * @return
+ *   A string containing the name of the callback function or FALSE if it could
+ *     not be found.
+ */
+function commerce_checkout_pane_callback($checkout_pane, $callback) {
+  // Include the checkout pane file if specified.
+  if (!empty($checkout_pane['file'])) {
+    $parts = explode('.', $checkout_pane['file']);
+    module_load_include(array_pop($parts), $checkout_pane['module'], implode('.', $parts));
+  }
+
+  // If the specified callback function exists, return it.
+  if (!empty($checkout_pane['callbacks'][$callback]) &&
+      function_exists($checkout_pane['callbacks'][$callback])) {
+    return $checkout_pane['callbacks'][$callback];
+  }
+
+  // Otherwise return FALSE.
+  return FALSE;
+}
+
+/**
+ * Checks the current user's access to the specified checkout page and order.
+ *
+ * @param $order
+ *   The fully loaded order object represented on the checkout form.
+ * @param $account
+ *   Alternately provide an account object whose access to check instead of the
+ *   current user.
+ *
+ * @return
+ *   TRUE or FALSE indicating access.
+ */
+function commerce_checkout_access($order, $account = NULL) {
+  global $user;
+
+  // Default to the current user as the account whose access we're checking.
+  if (empty($account)) {
+    $account = clone($user);
+  }
+
+  // First, if this order doesn't belong to the account return FALSE.
+  if ($account->uid) {
+    if ($account->uid != $order->uid) {
+      return FALSE;
+    }
+  }
+  elseif (empty($_SESSION['commerce_cart_completed_orders']) ||
+    !in_array($order->order_id, $_SESSION['commerce_cart_completed_orders'])) {
+    // And then return FALSE if the anonymous user's session doesn't specify
+    // this order ID.
+    if (empty($_SESSION['commerce_cart_orders']) || !in_array($order->order_id, $_SESSION['commerce_cart_orders'])) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Checks access to a particular checkout page for a given order.
+ *
+ * @param $checkout_page
+ *   The fully loaded checkout page object representing the current step in the
+ *   checkout process.
+ * @param $order
+ *   The fully loaded order object represented on the checkout form.
+ *
+ * @return
+ *   TRUE or FALSE indicating access.
+ */
+function commerce_checkout_page_access($checkout_page, $order) {
+  // Load the order status object for the current order.
+  $order_status = commerce_order_status_load($order->status);
+
+  // If the order is not in a checkout status, return FALSE for any page but the
+  // completion page unless the order is still a shopping cart.
+  if ($order_status['state'] != 'checkout' && $checkout_page['page_id'] != 'complete') {
+    if ($order_status['state'] == 'cart') {
+      $checkout_pages = commerce_checkout_pages();
+      $first_page = key($checkout_pages);
+
+      if ($checkout_page['page_id'] != $first_page) {
+        return FALSE;
+      }
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  // If the order is still in checkout, only allow access to pages that it is
+  // currently on or has previously completed.
+  if ($order_status['state'] == 'checkout') {
+    $status_checkout_page = commerce_checkout_page_load($order_status['checkout_page']);
+
+    // This is the page the user is currently on.
+    if ($status_checkout_page['page_id'] == $checkout_page['page_id']) {
+      return TRUE;
+    }
+
+    // Prevent access to later steps of the checkout process.
+    if ($checkout_page['weight'] > $status_checkout_page['weight']) {
+      return FALSE;
+    }
+
+    // Check that there are back buttons in every pages between the current
+    // page and the page the user wants to access.
+    $pages = commerce_checkout_pages();
+    $current_page = $status_checkout_page;
+    do {
+      if (!$current_page['buttons']) {
+        return FALSE;
+      }
+
+      // Look for a previous page ID.
+      $prev_page_id = $current_page['prev_page'];
+
+      // If we cannot find one, do not allow access to the current page, causing
+      // a redirect to the order's current status. This edge case will occur
+      // when a checkout page is removed and a user tries to access an earlier
+      // page for an order that was set to the removed page's status.
+      if (empty($prev_page_id)) {
+        return FALSE;
+      }
+
+      $current_page = $pages[$prev_page_id];
+    }
+    while ($current_page['page_id'] != $checkout_page['page_id']);
+  }
+  // We've now handled above cases where the user is trying to access a checkout
+  // page other than the completion page for an order that is not in a checkout
+  // status.  We then handled cases where the user is trying to access any
+  // checkout page for orders in a checkout status.  We now turn to cases where
+  // the user is accessing the complete page for any other order state.
+  elseif ($checkout_page['page_id'] == 'complete') {
+    // Don't allow completion page access for orders in the cart or canceled states.
+    if (!commerce_checkout_complete_access($order)) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Determines if the given order should have access to the checkout completion
+ * page based on its order status.
+ *
+ * @param $order
+ *   The fully loaded order object.
+ *
+ * @return
+ *   TRUE or FALSE indicating completion access.
+ */
+function commerce_checkout_complete_access($order) {
+  // Load the order state array.
+  $order_status = commerce_order_status_load($order->status);
+  $order_state = commerce_order_state_load($order_status['state']);
+
+  // Check for the checkout_complete property.
+  return !empty($order_state['checkout_complete']);
+}
+
+/**
+ * Implements hook_commerce_order_state_info_alter().
+ *
+ * Adds the checkout_complete property to order state info arrays to determine
+ * access to the completion page for orders in the given state. By default,
+ * neither orders in the canceled or cart states can view the completion page.
+ */
+function commerce_checkout_commerce_order_state_info_alter(&$order_states) {
+  foreach ($order_states as $name => &$order_state) {
+    if (in_array($name, array('canceled', 'cart'))) {
+      $order_state['checkout_complete'] = FALSE;
+    }
+    else {
+      $order_state['checkout_complete'] = TRUE;
+    }
+  }
+}
+
+/**
+ * Returns the current checkout URI for the given order.
+ *
+ * @param $order
+ *   The fully loaded order object.
+ *
+ * @return
+ *   A string containing the URI to the order's current checkout page or NULL if
+ *   the order is in a state that does not have a valid checkout URL.
+ */
+function commerce_checkout_order_uri($order) {
+  $order_status = commerce_order_status_load($order->status);
+
+  if ($order_status['state'] == 'checkout') {
+    $page_id = '/' . $order_status['checkout_page'];
+  }
+  elseif ($order_status['state'] == 'cart') {
+    $page_id = '';
+  }
+  elseif (commerce_checkout_complete_access($order)) {
+    $page_id = '/complete';
+  }
+  else {
+    return NULL;
+  }
+
+  return 'checkout/' . $order->order_id . $page_id;
+}
+
+/**
+ * Determines whether or not the given order can proceed to checkout.
+ *
+ * This function operates as a confirmation rather than a falsification, meaning
+ * that any module implementing hook_commerce_checkout_order_can_checkout() can
+ * confirm the order may proceed to checkout.
+ *
+ * The default core implementation is in commerce_product_reference.module and
+ * allows any order containing a product line item to proceed to checkout.
+ *
+ * More complex logic can be implemented via hook_commerce_checkout_router().
+ *
+ * @param $order
+ *   The order being confirmed for checkout.
+ *
+ * @return
+ *   Boolean value indicating whether or not the order can proceed to checkout.
+ *
+ * @see commerce_product_reference_commerce_checkout_order_can_checkout()
+ */
+function commerce_checkout_order_can_checkout($order) {
+  $proceed = FALSE;
+
+  // Manually invoke hook functions to use the bitwise operator that will update
+  // the return value to TRUE if any implementation returns TRUE and ignore any
+  // FALSE return values if it is already set to TRUE.
+  foreach (module_implements('commerce_checkout_order_can_checkout') as $module) {
+    $function = $module . '_commerce_checkout_order_can_checkout';
+    $proceed |= $function($order);
+  }
+
+  return $proceed;
+}
+
+/**
+ * Completes the checkout process for the given order.
+ */
+function commerce_checkout_complete($order) {
+  rules_invoke_all('commerce_checkout_complete', $order);
+}
+
+/**
+ * Creates a new user account with the specified parameters and notification.
+ *
+ * @param $name
+ *   The new account username.
+ * @param $mail
+ *   The e-mail address associated with the new account.
+ * @param $pass
+ *   The new account password. If left empty, a password will be generated.
+ * @param $status
+ *   TRUE or FALSE indicating the active / blocked status of the account.
+ * @param $notify
+ *   TRUE or FALSE indicating whether or not to e-mail the new account details
+ *     to the user.
+ *
+ * @return
+ *   The account user object.
+ */
+function commerce_checkout_create_account($name, $mail, $pass, $status, $notify = FALSE) {
+  // Setup the account fields array and save it as a new user.
+  $fields = array(
+    'name' => $name,
+    'mail' => $mail,
+    'init' => $mail,
+    'pass' => empty($pass) ? user_password(variable_get('commerce_password_length', 8)) : $pass,
+    'roles' => array(),
+    'status' => $status,
+  );
+  $account = user_save('', $fields);
+
+  // Manually set the password so it appears in the e-mail.
+  $account->password = $fields['pass'];
+
+  // Send the customer their account details if enabled.
+  if ($notify) {
+    // Send the e-mail through the user module.
+    drupal_mail('user', 'register_no_approval_required', $mail, NULL, array('account' => $account), commerce_email_from());
+  }
+
+  return $account;
+}
+
+/**
+ * Returns the default value for the checkout completion message settings form.
+ */
+function commerce_checkout_completion_message_default() {
+  // If the Filtered HTML text format is available, use a default value with
+  // links in it.
+  if (filter_format_load('filtered_html')) {
+    $value = 'Your order number is [commerce-order:order-number]. You can <a href="[commerce-order:url]">view your order</a> on your account page when logged in.'
+      . "\n\n" . '<a href="[site:url]">Return to the front page.</a>';
+    $format = 'filtered_html';
+  }
+  else {
+    // Otherwise select a fallback format and use a plaint text default value.
+    $value = 'Your order number is [commerce-order:order-number]. You can view your order on your account page when logged in.';
+    $format = filter_fallback_format();
+  }
+
+  return array('value' => $value, 'format' => $format);
+}

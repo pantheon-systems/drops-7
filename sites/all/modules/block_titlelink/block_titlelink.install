@@ -1,0 +1,15 @@
+<?php // $Id$
+
+/**
+ * @file Installation file for block_titlelink module
+**/
+
+/**
+ * Implementation of hook_uninstall().
+ * Uses the variables table to store title links. 
+ * This function deletes them.
+ */
+function block_titlelink_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'block_titlelink_%'");
+  cache_clear_all('variables', 'cache');
+}

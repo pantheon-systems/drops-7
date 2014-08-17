@@ -1,0 +1,295 @@
+<?php
+
+/**
+ * @file
+ * Installation functions for Drupal Commerce Payment.
+ */
+
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_payment_schema() {
+  $schema = array();
+
+  $schema['commerce_payment_transaction'] = array(
+    'description' => 'Transaction information for every attempted payment.',
+    'fields' => array(
+      'transaction_id' => array(
+        'description' => 'The primary identifier for a transaction.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'revision_id' => array(
+        'description' => 'The current {commerce_payment_transaction_revision}.revision_id version identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that created this transaction.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'order_id' => array(
+        'description' => 'The {commerce_order}.order_id of the order this payment is for.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'payment_method' => array(
+        'description' => 'The payment method method_id for this transaction.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'instance_id' => array(
+        'description' => 'The payment method instance ID for this transaction.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'remote_id' => array(
+        'description' => 'The remote identifier for this transaction.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'message' => array(
+        'description' => 'The human-readable message associated to this transaction.',
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'message_variables' => array(
+        'description' => 'The variables associated with the human-readable message.',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+      ),
+      'amount' => array(
+        'description' => 'The amount of this transaction.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'currency_code' => array(
+        'description' => 'The currency code for the price.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'The status of this transaction (pending, success, or failure).',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'remote_status' => array(
+        'description' => 'The status of the transaction at the payment provider.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'payload' => array(
+        'description' => 'The payment-gateway specific payload associated with this transaction.',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when this transaction was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when this transaction was last changed.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('transaction_id'),
+    'unique keys' => array(
+      'revision_id' => array('revision_id'),
+    ),
+    'indexes' => array(
+      'payment_method' => array('payment_method'),
+      'uid' => array('uid'),
+      'order_id' => array('order_id'),
+    ),
+    'foreign keys' => array(
+      'payment_transaction_revision' => array(
+        'table' => 'commerce_payment_transaction_revision',
+        'columns'=> array('revision_id' => 'revision_id'),
+      ),
+      'creator' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+      'order_id' => array(
+        'table' => 'commerce_order',
+        'columns'=> array('order_id' => 'order_id'),
+      ),
+    ),
+  );
+
+  $schema['commerce_payment_transaction_revision'] = array(
+    'description' => 'Saves information about each saved revision of a {commerce_payment_transaction}.',
+    'fields' => array(
+      'transaction_id' => array(
+        'description' => 'The primary identifier for a transaction.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'revision_id' => array(
+        'description' => 'The current {commerce_payment_transaction_revision}.revision_id version identifier.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'revision_uid' => array(
+        'description' => 'The {users}.uid that created this revision.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'remote_id' => array(
+        'description' => 'The remote identifier for this transaction.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'message' => array(
+        'description' => 'The human-readable message associated to this transaction.',
+        'type' => 'text',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'message_variables' => array(
+        'description' => 'The variables associated with the human-readable message.',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+      ),
+      'amount' => array(
+        'description' => 'The amount of this transaction.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'currency_code' => array(
+        'description' => 'The currency code for the price.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'The status of this transaction (pending, success, or failure).',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'remote_status' => array(
+        'description' => 'The status of the transaction at the payment provider.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+      ),
+      'log' => array(
+        'description' => 'The log entry explaining the changes in this version.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+      ),
+      'revision_timestamp' => array(
+        'description' => 'The Unix timestamp when this revision was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'indexes' => array(
+      'transaction_id' => array('transaction_id'),
+    ),
+    'primary key' => array('revision_id'),
+    'foreign keys' => array(
+      'payment_transaction' => array(
+        'table' => 'commerce_payment_transaction',
+        'columns'=> array('transaction_id' => 'transaction_id'),
+      ),
+      'creator' => array(
+        'table' => 'users',
+        'columns' => array('revision_uid' => 'uid'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Add an index to the commerce_payment_transaction_revision table on transaction_id.
+ */
+function commerce_payment_update_7100() {
+  if (db_index_exists('commerce_payment_transaction_revision', 'transaction_id')) {
+    db_drop_index('commerce_payment_transaction_revision', 'transaction_id');
+  }
+
+  db_add_index('commerce_payment_transaction_revision', 'transaction_id', array('transaction_id'));
+}
+
+/**
+ * Add indexes to the commerce_payment_transaction table on order_id and uid.
+ */
+function commerce_payment_update_7101() {
+  if (db_index_exists('commerce_payment_transaction', 'uid')) {
+    db_drop_index('commerce_payment_transaction', 'uid');
+  }
+
+  if (db_index_exists('commerce_payment_transaction', 'order_id')) {
+    db_drop_index('commerce_payment_transaction', 'order_id');
+  }
+
+  db_add_index('commerce_payment_transaction', 'uid', array('uid'));
+  db_add_index('commerce_payment_transaction', 'order_id', array('order_id'));
+
+  return t('Database indexes added to the uid and order_id columns of the commerce_payment_transaction table.');
+}
+
+/**
+ * Allow NULL values for revision_id on {commerce_payment_transaction} to avoid locking issues.
+ */
+function commerce_payment_update_7102() {
+  db_change_field('commerce_payment_transaction', 'revision_id', 'revision_id', array(
+    'description' => 'The current {commerce_payment_transaction_revision}.revision_id version identifier.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => FALSE,
+  ));
+
+  return t('Schema for the commerce_payment_transaction table has been updated.');
+}

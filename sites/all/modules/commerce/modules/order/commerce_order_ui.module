@@ -1,0 +1,480 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_order_ui_menu() {
+  $items = array();
+
+  // Note: admin/commerce/orders is defined by a default View.
+
+  // Create an order.
+  $items['admin/commerce/orders/add'] = array(
+    'title' => 'Create an order',
+    'description' => 'Create a new order.',
+    'page callback' => 'commerce_order_ui_order_form_wrapper',
+    'page arguments' => array(commerce_order_new()),
+    'access callback' => 'commerce_order_access',
+    'access arguments' => array('create'),
+    'weight' => 10,
+    'file' => 'includes/commerce_order_ui.orders.inc',
+  );
+  $items['admin/commerce/orders/add/%user'] = array(
+    'title' => 'Create an order',
+    'description' => 'Create a new order for the specified user.',
+    'page callback' => 'commerce_order_ui_order_form_wrapper',
+    'page arguments' => array(commerce_order_new(), 4),
+    'access callback' => 'commerce_order_access',
+    'access arguments' => array('create'),
+    'file' => 'includes/commerce_order_ui.orders.inc',
+  );
+
+  $items['admin/commerce/orders/%commerce_order'] = array(
+    'title callback' => 'commerce_order_ui_order_title',
+    'title arguments' => array(3),
+    'page callback' => 'commerce_order_ui_order_view',
+    'page arguments' => array(3),
+    'access callback' => 'commerce_order_admin_order_view_access',
+    'access arguments' => array(3),
+  );
+  $items['admin/commerce/orders/%commerce_order/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );
+  $items['admin/commerce/orders/%commerce_order/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'commerce_order_ui_order_form_wrapper',
+    'page arguments' => array(3),
+    'access callback' => 'commerce_order_access',
+    'access arguments' => array('update', 3),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => -5,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'file' => 'includes/commerce_order_ui.orders.inc',
+  );
+  $items['admin/commerce/orders/%commerce_order/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'commerce_order_ui_order_delete_form_wrapper',
+    'page arguments' => array(3),
+    'access callback' => 'commerce_order_access',
+    'access arguments' => array('update', 3),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 20,
+    'context' => MENU_CONTEXT_INLINE,
+    'file' => 'includes/commerce_order_ui.orders.inc',
+  );
+
+  $items['admin/commerce/config/order'] = array(
+    'title' => 'Order settings',
+    'description' => 'Configure general order settings, fields, and displays.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_order_settings_form'),
+    'access arguments' => array('configure order settings'),
+    'file' => 'includes/commerce_order_ui.orders.inc',
+  );
+  $items['admin/commerce/config/order/settings'] = array(
+    'title' => 'Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items['user/%user/orders/%commerce_order'] = array(
+    'title callback' => 'commerce_order_ui_order_title',
+    'title arguments' => array(3),
+    'page callback' => 'commerce_order_ui_order_view',
+    'page arguments' => array(3, 'customer'),
+    'access callback' => 'commerce_order_customer_order_view_access',
+    'access arguments' => array(3),
+  );
+
+  return $items;
+}
+
+/**
+ * Menu item title callback: returns the number of an order for its pages.
+ *
+ * @param $order
+ *   The order object as loaded via the URL wildcard.
+ * @return
+ *   A page title of the format "Order ##".
+ */
+function commerce_order_ui_order_title($order) {
+  return t('Order @number', array('@number' => $order->order_number));
+}
+
+/**
+ * Menu item access callback: prevent view access to the admin order display
+ * for customers who have 'view' access to the order but not administration pages.
+ *
+ * @param $order
+ *   The order object as loaded via the menu item wildcard.
+ *
+ * @return
+ *   Boolean indicating the user's access to view the page.
+ */
+function commerce_order_admin_order_view_access($order) {
+  return user_access('access administration pages') && commerce_order_access('view', $order);
+}
+
+/**
+ * Menu item access callback: prevent view access to the customer order display
+ * for orders in a 'cart' status and then perform a normal order access check.
+ *
+ * @param $order
+ *   The order object as loaded via the menu item wildcard.
+ *
+ * @return
+ *   Boolean indicating the user's access to view the page.
+ */
+function commerce_order_customer_order_view_access($order) {
+  // If the order is in a shopping cart order status...
+  if (in_array($order->status, array_keys(commerce_order_statuses(array('cart' => TRUE))))) {
+    // Do not allow the customer to see the page.
+    return FALSE;
+  }
+
+  // Otherwise fallback on normal order access.
+  return commerce_order_access('view', $order);
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function commerce_order_ui_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link 'admin/commerce/orders/add' on 'admin/commerce/orders'.
+  if ($root_path == 'admin/commerce/orders') {
+    $item = menu_get_item('admin/commerce/orders/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+
+  // Add an action link to the order edit page from the user order page.
+  if ($root_path == 'user/%/orders/%') {
+    // Extract the order ID from the current router item and fetch the admin
+    // update menu item.
+    $order_id = $router_item['original_map'][3];
+    $item = menu_get_item('admin/commerce/orders/' . $order_id . '/edit');
+
+    if ($item['access']) {
+      // Override the title.
+      $item['title'] = t('Edit this order');
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_i18n_string_list().
+ */
+function commerce_order_ui_i18n_string_list($group) {
+  if ($group == 'commerce') {
+    // Allow the order creation help text to be translated.
+    $help = variable_get('commerce_order_help_text', '');
+
+    if (!empty($help)) {
+      $strings['commerce']['order']['help']['create'] = $help;
+      return $strings;
+    }
+  }
+}
+
+/**
+ * Implements hook_help().
+ */
+function commerce_order_ui_help($path, $arg) {
+  // Display a user configurable help text on the order add page.
+  if (strpos($path, 'admin/commerce/orders/add') === 0) {
+    $help = variable_get('commerce_order_help_text', '');
+
+    if (!empty($help)) {
+      $help = commerce_i18n_string('commerce:order:help:create', $help, array('sanitize' => FALSE));
+      return '<p>' . filter_xss_admin($help) . '</p>';
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function commerce_order_ui_entity_info_alter(&$entity_info) {
+  // Add a URI callback to the order entity.
+  $entity_info['commerce_order']['uri callback'] = 'commerce_order_ui_order_uri';
+
+  // Expose the order UI for order fields.
+  $entity_info['commerce_order']['bundles']['commerce_order']['admin'] = array(
+    'path' => 'admin/commerce/config/order',
+    'real path' => 'admin/commerce/config/order',
+    'access arguments' => array('configure order settings'),
+  );
+}
+
+/**
+ * Entity uri callback: points to the admin view page of the given order.
+ */
+function commerce_order_ui_order_uri($order) {
+  // First look for a return value in the default entity uri callback.
+  $uri = commerce_order_uri($order);
+
+  // If a value was found, return it now.
+  if (!empty($uri)) {
+    return $uri;
+  }
+
+  // Only return a value if the user has permission to view the order.
+  if (commerce_order_access('view', $order)) {
+    return array(
+      'path' => 'admin/commerce/orders/' . $order->order_id,
+    );
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_forms().
+ */
+function commerce_order_ui_forms($form_id, $args) {
+  $forms = array();
+
+  // Define a wrapper ID for the order add / edit form.
+  $forms['commerce_order_ui_order_form'] = array(
+    'callback' => 'commerce_order_order_form',
+  );
+
+  // Define a wrapper ID for the order delete confirmation form.
+  $forms['commerce_order_ui_order_delete_form'] = array(
+    'callback' => 'commerce_order_order_delete_form',
+  );
+
+  return $forms;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * The Order UI module instantiates the Order add/edit form at particular paths
+ * in the Commerce IA. It uses its own form ID to do so and alters the form
+ * here to add in appropriate redirection.
+ *
+ * @see commerce_order_ui_order_form()
+ */
+function commerce_order_ui_form_commerce_order_ui_order_form_alter(&$form, &$form_state) {
+  // Add a submit handler to the save button to add a redirect.
+  $form['actions']['submit']['#submit'][] = 'commerce_order_ui_order_form_submit';
+  $form['actions']['submit']['#suffix'] = l(t('Cancel'), 'admin/commerce/orders');
+}
+
+/**
+ * Submit callback for commerce_order_ui_order_form().
+ *
+ * @see commerce_order_ui_form_commerce_order_ui_order_form_alter()
+ */
+function commerce_order_ui_order_form_submit($form, &$form_state) {
+  // Apply the redirect based on the clicked button.
+  if ($form_state['triggering_element']['#value'] == t('Save order', array(), array('context' => 'a drupal commerce order'))) {
+    drupal_set_message(t('Order saved.'));
+
+    $form_state['redirect'] = 'admin/commerce/orders/' . $form_state['commerce_order']->order_id . '/edit';
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * The Order UI module instantiates the Order delete form at a particular path
+ * in the Commerce IA. It uses its own form ID to do so and alters the form
+ * here to add in appropriate redirection.
+ *
+ * @see commerce_order_ui_order_delete_form()
+ */
+function commerce_order_ui_form_commerce_order_ui_order_delete_form_alter(&$form, &$form_state) {
+  $form['actions']['cancel']['#href'] = 'admin/commerce/orders';
+  $form['#submit'][] = 'commerce_order_ui_order_delete_form_submit';
+}
+
+/**
+ * Submit callback for commerce_order_ui_order_delete_form().
+ *
+ * @see commerce_order_ui_form_commerce_order_ui_order_delete_form_alter()
+ */
+function commerce_order_ui_order_delete_form_submit($form, &$form_state) {
+  $form_state['redirect'] = 'admin/commerce/orders';
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_order_ui_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_order_ui') . '/includes/views',
+  );
+}
+
+/**
+ * Sets the breadcrumb for order pages.
+ *
+ * @param $view_mode
+ *   The view mode for the current order page, 'administrator' or 'customer'.
+ *
+ * @deprecated since 7.x-1.4
+ */
+function commerce_order_ui_set_breadcrumb($view_mode = 'administrator') {
+  // This function used to manually set a breadcrumb that is now properly
+  // generated by Drupal itself.
+}
+
+/**
+ * Generate an array for rendering the given order.
+ *
+ * @param $order
+ *   A fully loaded order object.
+ * @param $view_mode
+ *   The view mode for displaying the order, 'administrator' or 'customer'.
+ *
+ * @return
+ *   An array as expected by drupal_render().
+ */
+function commerce_order_ui_order_view($order, $view_mode = 'administrator') {
+  drupal_add_css(drupal_get_path('module', 'commerce_order') . '/theme/commerce_order.theme.css');
+  return entity_view('commerce_order', array($order->order_id => $order), $view_mode, NULL, TRUE);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_order_ui_form_entity_translation_admin_form_alter(&$form, &$form_state, $form_id) {
+  // Hide the commerce_order option from entity translation.
+  unset($form['entity_translation_entity_types']['#options']['commerce_order']);
+}
+
+/**
+ * Builds a form to redirect to an order's view page.
+ *
+ * @param $redirect_page
+ *   The page to redirect to, either 'admin', 'customer', or 'select' to add a
+ *   widget to the form so the user can specify which page they want.
+ * @param $identifier
+ *   The identifier to use to determine which order should be viewed; either
+ *   'order_number' (the default), 'order_id', or 'select'.
+ */
+function commerce_order_ui_redirect_form($form, &$form_state, $redirect_page = 'admin', $identifier = 'order_number') {
+  $form['#attached']['css'][] = drupal_get_path('module', 'commerce_order') . '/theme/commerce_order.admin.css';
+
+  if ($identifier == 'select') {
+    $form['identifier'] = array(
+      '#type' => 'select',
+      '#title' => t('Specify order by', array(), array('context' => 'a drupal commerce order')),
+      '#options' => array(
+        'order_number' => t('Order number', array(), array('context' => 'a drupal commerce order')),
+        'order_id' => t('Order ID', array(), array('context' => 'a drupal commerce order')),
+      ),
+      '#default_value' => 'order_number',
+    );
+
+    $order_title = t('Order', array(), array('context' => 'a drupal commerce order'));
+  }
+  else {
+    $form['identifier'] = array(
+       '#type' => 'value',
+       '#value' => $identifier,
+    );
+
+    if ($identifier == 'order_number') {
+      $order_title = t('Order number', array(), array('context' => 'a drupal commerce order'));
+    }
+    else {
+      $order_title = t('Order ID', array(), array('context' => 'a drupal commerce order'));
+    }
+  }
+
+  $form['order_identifier'] = array(
+    '#type' => 'textfield',
+    '#title' => $order_title,
+    '#size' => 16,
+  );
+
+  $form['order'] = array(
+    '#type' => 'value',
+    '#value' => NULL,
+  );
+
+  if ($redirect_page == 'select') {
+    $form['redirect_page'] = array(
+      '#type' => 'select',
+      '#title' => t('Redirect page'),
+      '#options' => array(
+        'admin' => t('Admin view page'),
+        'customer' => t('Customer view page'),
+      ),
+      '#default_value' => 'admin',
+    );
+  }
+  else {
+    $form['redirect_page'] = array(
+      '#type' => 'value',
+      '#value' => $redirect_page,
+    );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('View order'),
+  );
+
+  return $form;
+}
+
+/**
+ * Validate callback: ensure a valid order was specified for viewing.
+ */
+function commerce_order_ui_redirect_form_validate($form, &$form_state) {
+  $order = FALSE;
+
+  // Attempt to load the specified order.
+  if ($form_state['values']['identifier'] == 'order_number') {
+    $order = commerce_order_load_by_number($form_state['values']['order_identifier']);
+  }
+  elseif ($form_state['values']['identifier'] == 'order_id') {
+    $order = commerce_order_load($form_state['values']['order_identifier']);
+  }
+
+  // If the order could not be loaded by ID or number or the user does not have
+  // view access for the order, throw an error.
+  if (empty($order) || !commerce_order_access('view', $order)) {
+    form_set_error('order', t('You have specified an invalid order.'));
+  }
+  else {
+    // If all's clear, store the order in the form state.
+    form_set_value($form['order'], $order, $form_state);
+  }
+}
+
+/**
+ * Submit callback: redirect to the appropriate page for the specified order.
+ */
+function commerce_order_ui_redirect_form_submit($form, &$form_state) {
+  // Extract the order from the form state.
+  $order = $form_state['values']['order'];
+
+  // Redirect to either the admin or customer view page as specified.
+  if ($form_state['values']['redirect_page'] == 'admin') {
+    $form_state['redirect'] = 'admin/commerce/orders/' . $order->order_id;
+  }
+  elseif ($form_state['values']['redirect_page'] == 'customer') {
+    $form_state['redirect'] = 'user/' . $order->uid . '/orders/' . $order->order_id;
+  }
+}

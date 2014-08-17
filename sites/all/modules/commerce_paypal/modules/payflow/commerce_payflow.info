@@ -1,0 +1,19 @@
+name = PayPal Payments Advanced and Payflow Link
+description = Implements PayPal Payments Advanced (U.S. only) and Payflow Link Hosted Checkout pages and Transparent Redirect.
+package = Commerce (PayPal)
+dependencies[] = commerce
+dependencies[] = commerce_ui
+dependencies[] = commerce_payment
+dependencies[] = commerce_order
+dependencies[] = commerce_paypal
+core = 7.x
+
+; Simple tests
+; files[] = tests/commerce_paypal_wps.test
+
+; Information added by Drupal.org packaging script on 2014-01-14
+version = "7.x-2.3"
+core = "7.x"
+project = "commerce_paypal"
+datestamp = "1389740908"
+

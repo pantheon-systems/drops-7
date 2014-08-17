@@ -1,0 +1,20 @@
+name = Product UI
+description = Exposes a default UI for Products through product edit forms and default Views.
+package = Commerce
+dependencies[] = field_ui
+dependencies[] = commerce
+dependencies[] = commerce_ui
+dependencies[] = commerce_product
+dependencies[] = views
+core = 7.x
+configure = admin/commerce/products/types
+
+; Simple tests
+files[] = tests/commerce_product_ui.test
+
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
+core = "7.x"
+project = "commerce"
+datestamp = "1394061805"
+

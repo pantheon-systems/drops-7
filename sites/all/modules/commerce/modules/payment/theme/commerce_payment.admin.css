@@ -1,0 +1,59 @@
+
+/**
+ * @file
+ * Administration styles for the Commerce Payment module.
+ *
+ * Optimized for the Seven administration theme.
+ */
+
+.views-field-operations .links.operations {
+  text-transform: lowercase;
+  margin-left: 0; /* LTR */
+}
+
+/**
+ * Add styles for administrative payment transaction displays.
+ */
+.views-field-status img.pending {
+  position: relative;
+  top: 3px;
+}
+
+.payment-totals-table {
+  width: 33%;
+  float: right; /* LTR */
+}
+
+.payment-totals-table tr.order-balance {
+  background-color: #D3E9F4;
+  font-weight: bold;
+}
+
+.payment-totals-table .total,
+.payment-totals-table .balance {
+  text-align: right; /* LTR */
+}
+
+.add-payment .form-item-payment-method {
+  float: left; /* LTR */
+}
+.add-payment .form-submit {
+  float: left; /* LTR */
+  margin: 5px;
+}
+
+.add-payment .ajax-progress .message {
+  display: none;
+}
+
+.payment-terminal {
+  clear: right; /* LTR */
+}
+
+.payment-terminal-amount div {
+  display: inline;
+}
+
+table.payment-transaction td {
+  vertical-align: top;
+}

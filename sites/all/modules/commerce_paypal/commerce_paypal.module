@@ -1,0 +1,661 @@
+<?php
+
+/**
+ * @file
+ * Implements PayPal payment services for use with Drupal Commerce.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_paypal_menu() {
+  $items = array();
+
+  // Define an always accessible path to receive IPNs.
+  $items['commerce_paypal/ipn'] = array(
+    'page callback' => 'commerce_paypal_process_ipn',
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  // Define an additional IPN path that is payment method / instance specific.
+  $items['commerce_paypal/ipn/%commerce_payment_method_instance'] = array(
+    'page callback' => 'commerce_paypal_process_ipn',
+    'page arguments' => array(2),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Returns the IPN URL.
+ *
+ * @param $method_id
+ *   Optionally specify a payment method instance ID to include in the URL.
+ */
+function commerce_paypal_ipn_url($instance_id = NULL) {
+  $parts = array(
+    'commerce_paypal',
+    'ipn',
+  );
+
+  if (!empty($instance_id)) {
+    $parts[] = $instance_id;
+  }
+
+  return url(implode('/', $parts), array('absolute' => TRUE));
+}
+
+/**
+ * Processes an incoming IPN.
+ *
+ * @param $payment_method
+ *   The payment method instance array that originally made the payment.
+ * @param $debug_ipn
+ *   Optionally specify an IPN array for debug purposes; if left empty, the IPN
+ *     be pulled from the $_POST. If an IPN is passed in, validation of the IPN
+ *     at PayPal will be bypassed.
+ *
+ * @return
+ *   TRUE or FALSE indicating whether the IPN was successfully processed or not.
+ */
+function commerce_paypal_process_ipn($payment_method = NULL, $debug_ipn = array()) {
+  // Retrieve the IPN from $_POST if the caller did not supply an IPN array.
+  // Note that Drupal has already run stripslashes() on the contents of the
+  // $_POST array at this point, so we don't need to worry about them.
+  if (empty($debug_ipn)) {
+    $ipn = $_POST;
+
+    // Exit now if the $_POST was empty.
+    if (empty($ipn)) {
+      watchdog('commerce_paypal', 'IPN URL accessed with no POST data submitted.', array(), WATCHDOG_WARNING);
+      return FALSE;
+    }
+
+    // Prepare an array to POST back to PayPal to validate the IPN.
+    $variables = array('cmd=_notify-validate');
+
+    foreach ($ipn as $key => $value) {
+      $variables[] = $key . '=' . urlencode($value);
+    }
+
+    // Determine the proper PayPal server to POST to.
+    if (!empty($ipn['test_ipn']) && $ipn['test_ipn'] == 1) {
+      $host = 'https://www.sandbox.paypal.com/cgi-bin/webscr';
+    }
+    else {
+      $host = 'https://www.paypal.com/cgi-bin/webscr';
+    }
+
+    // Process the HTTP request to validate the IPN.
+    $response = drupal_http_request($host, array('method' => 'POST', 'data' => implode('&', $variables)));
+
+    // If an error occurred during processing, log the message and exit.
+    if (property_exists($response, 'error')) {
+      watchdog('commerce_paypal', 'Attempt to validate IPN failed with error @code: @error', array('@code' => $response->code, '@error' => $response->error), WATCHDOG_ERROR);
+      return FALSE;
+    }
+
+    // If the IPN was invalid, log a message and exit.
+    if ($response->data == 'INVALID') {
+      watchdog('commerce_paypal', 'Invalid IPN received and ignored.', array(), WATCHDOG_ALERT);
+      return FALSE;
+    }
+  }
+  else {
+    $ipn = $debug_ipn;
+  }
+
+  // If the payment method specifies full IPN logging, do it now.
+  if (!empty($payment_method['settings']['ipn_logging']) &&
+    $payment_method['settings']['ipn_logging'] == 'full_ipn') {
+    if (!empty($ipn['txn_id'])) {
+      watchdog('commerce_paypal', 'Attempting to process IPN @txn_id. !ipn_log', array('@txn_id' => $ipn['txn_id'], '!ipn_log' => '<pre>' . check_plain(print_r($ipn, TRUE)) . '</pre>'), WATCHDOG_NOTICE);
+    }
+    else {
+      watchdog('commerce_paypal', 'Attempting to process an IPN. !ipn_log', array('!ipn_log' => '<pre>' . check_plain(print_r($ipn, TRUE)) . '</pre>'), WATCHDOG_NOTICE);
+    }
+  }
+
+  // Exit if the IPN has already been processed.
+  if (!empty($ipn['txn_id']) && $prior_ipn = commerce_paypal_ipn_load($ipn['txn_id'])) {
+    if ($prior_ipn['payment_status'] == $ipn['payment_status']) {
+      watchdog('commerce_paypal', 'Attempted to process an IPN that has already been processed with transaction ID @txn_id.', array('@txn_id' => $ipn['txn_id']), WATCHDOG_NOTICE);
+      return FALSE;
+    }
+  }
+
+  // Load the order based on the IPN's invoice number.
+  if (!empty($ipn['invoice']) && strpos($ipn['invoice'], '-') !== FALSE) {
+    list($ipn['order_id'], $timestamp) = explode('-', $ipn['invoice']);
+  }
+  elseif (!empty($ipn['invoice'])) {
+    $ipn['order_id'] = $ipn['invoice'];
+  }
+  else {
+    $ipn['order_id'] = 0;
+    $timestamp = 0;
+  }
+
+  if (!empty($ipn['order_id'])) {
+    $order = commerce_order_load($ipn['order_id']);
+  }
+  else {
+    $order = FALSE;
+  }
+
+  // Give the payment method module an opportunity to validate the receiver
+  // e-mail address and amount of the payment if possible. If a validate
+  // function exists, it is responsible for setting its own watchdog message.
+  if (!empty($payment_method)) {
+    $callback = $payment_method['base'] . '_paypal_ipn_validate';
+
+    // If a validator function existed...
+    if (function_exists($callback)) {
+      // Only exit if the function explicitly returns FALSE.
+      if ($callback($order, $payment_method, $ipn) === FALSE) {
+        return FALSE;
+      }
+    }
+  }
+
+  // Give the payment method module an opportunity to process the IPN.
+  if (!empty($payment_method)) {
+    $callback = $payment_method['base'] . '_paypal_ipn_process';
+
+    // If a processing function existed...
+    if (function_exists($callback)) {
+      // Skip saving if the function explicitly returns FALSE, meaning the IPN
+      // wasn't actually processed.
+      if ($callback($order, $payment_method, $ipn) !== FALSE) {
+        // Save the processed IPN details.
+        commerce_paypal_ipn_save($ipn);
+      }
+    }
+  }
+
+  // Invoke the hook here so implementations have access to the order and
+  // payment method if available and a saved IPN array that includes the payment
+  // transaction ID if created in the payment method's default process callback.
+  module_invoke_all('commerce_paypal_ipn_process', $order, $payment_method, $ipn);
+}
+
+/**
+ * Loads a stored IPN by ID.
+ *
+ * @param $id
+ *   The ID of the IPN to load.
+ * @param $type
+ *   The type of ID you've specified, either the serial numeric ipn_id or the
+ *     actual PayPal txn_id. Defaults to txn_id.
+ *
+ * @return
+ *   The original IPN with some meta data related to local processing.
+ */
+function commerce_paypal_ipn_load($id, $type = 'txn_id') {
+  return db_select('commerce_paypal_ipn', 'cpi')
+    ->fields('cpi')
+    ->condition('cpi.' . $type, $id)
+    ->execute()
+    ->fetchAssoc();
+}
+
+/**
+ * Saves an IPN with some meta data related to local processing.
+ *
+ * @param $ipn
+ *   An IPN array with additional parameters for the order_id and Commerce
+ *     Payment transaction_id associated with the IPN.
+ *
+ * @return
+ *   The operation performed by drupal_write_record() on save; since the IPN is
+ *     received by reference, it will also contain the serial numeric ipn_id
+ *     used locally.
+ */
+function commerce_paypal_ipn_save(&$ipn) {
+  if (!empty($ipn['ipn_id']) && commerce_paypal_ipn_load($ipn['txn_id'])) {
+    $ipn['changed'] = REQUEST_TIME;
+
+    return drupal_write_record('commerce_paypal_ipn', $ipn, 'ipn_id');
+  }
+  else {
+    $ipn['created'] = REQUEST_TIME;
+    $ipn['changed'] = REQUEST_TIME;
+
+    return drupal_write_record('commerce_paypal_ipn', $ipn);
+  }
+}
+
+/**
+ * Deletes a stored IPN by ID.
+ *
+ * @param $id
+ *   The ID of the IPN to delete.
+ * @param $type
+ *   The type of ID you've specified, either the serial numeric ipn_id or the
+ *     actual PayPal txn_id. Defaults to txn_id.
+ */
+function commerce_paypal_ipn_delete($id, $type = 'txn_id') {
+  db_delete('commerce_paypal_ipn')
+    ->condition($type, $id)
+    ->execute();
+}
+
+/**
+ * Returns a unique invoice number based on the Order ID and timestamp.
+ */
+function commerce_paypal_ipn_invoice($order) {
+  return $order->order_id . '-' . REQUEST_TIME;
+}
+
+/**
+ * Returns an appropriate message given a pending reason.
+ */
+function commerce_paypal_ipn_pending_reason($pending_reason) {
+  switch ($pending_reason) {
+    case 'address':
+      return t('The payment is pending because your customer did not include a confirmed shipping address and your Payment Receiving Preferences is set to allow you to manually accept or deny each of these payments.');
+    case 'authorization':
+      return t('You set the payment action to Authorization and have not yet captured funds.');
+    case 'echeck':
+      return t('The payment is pending because it was made by an eCheck that has not yet cleared.');
+    case 'intl':
+      return t('The payment is pending because you hold a non-U.S. account and do not have a withdrawal mechanism.');
+    case 'multi-currency':
+      return t('You do not have a balance in the currency sent, and you do not have your Payment Receiving Preferences set to automatically convert and accept this payment.');
+    case 'order':
+      return t('You set the payment action to Order and have not yet captured funds.');
+    case 'paymentreview':
+      return t('The payment is pending while it is being reviewed by PayPal for risk.');
+    case 'unilateral':
+      return t('The payment is pending because it was made to an e-mail address that is not yet registered or confirmed.');
+    case 'upgrade':
+      return t('The payment is pending because it was either made via credit card and you do not have a Business or Premier account or you have reached the monthly limit for transactions on your account.');
+    case 'verify':
+      return t('The payment is pending because you are not yet verified.');
+    case 'other':
+      return t('The payment is pending for a reason other than those listed above. For more information, contact PayPal Customer Service.');
+  }
+}
+
+/**
+ * Submits an API request to PayPal.
+ *
+ * This function is currently used by PayPal Payments Pro and Express Checkout.
+ *
+ * This function may be used for any PayPal payment method that uses the same
+ * settings array structure as these other payment methods and whose API
+ * requests should be submitted to the same URLs as determined by the function
+ * commerce_paypal_api_server_url().
+ *
+ * @param $payment_method
+ *   The payment method instance array associated with this API request.
+ * @param $nvp
+ *   The set of name-value pairs describing the transaction to submit.
+ * @param $order
+ *   The order the payment request is being made for.
+ *
+ * @return
+ *   The response array from PayPal if successful or FALSE on error.
+ */
+function commerce_paypal_api_request($payment_method, $nvp = array(), $order = NULL) {
+  // Get the API endpoint URL for the payment method's transaction mode.
+  $url = commerce_paypal_api_server_url($payment_method['settings']['server']);
+
+  // Add the default name-value pairs to the array.
+  $nvp += array(
+    // API credentials
+    'USER' => $payment_method['settings']['api_username'],
+    'PWD' => $payment_method['settings']['api_password'],
+    'SIGNATURE' => $payment_method['settings']['api_signature'],
+    'VERSION' => '76.0',
+  );
+
+  // Allow modules to alter parameters of the API request.
+  drupal_alter('commerce_paypal_api_request', $nvp, $order, $payment_method);
+
+  // Log the request if specified.
+  if ($payment_method['settings']['log']['request'] == 'request') {
+    // Mask the credit card number and CVV.
+    $log_nvp = $nvp;
+    $log_nvp['PWD'] = str_repeat('X', strlen($log_nvp['PWD']));
+    $log_nvp['SIGNATURE'] = str_repeat('X', strlen($log_nvp['SIGNATURE']));
+
+    if (!empty($log_nvp['ACCT'])) {
+      $log_nvp['ACCT'] = str_repeat('X', strlen($log_nvp['ACCT']) - 4) . substr($log_nvp['ACCT'], -4);
+    }
+
+    if (!empty($log_nvp['CVV2'])) {
+      $log_nvp['CVV2'] = str_repeat('X', strlen($log_nvp['CVV2']));
+    }
+
+    watchdog('commerce_paypal', 'PayPal API request to @url: !param', array('@url' => $url, '!param' => '<pre>' . check_plain(print_r($log_nvp, TRUE)) . '</pre>'), WATCHDOG_DEBUG);
+  }
+
+  // Prepare the name-value pair array to be sent as a string.
+  $pairs = array();
+
+  foreach ($nvp as $key => $value) {
+    $pairs[] = $key . '=' . urlencode($value);
+  }
+
+  // Setup the cURL request.
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_VERBOSE, 0);
+  curl_setopt($ch, CURLOPT_POST, 1);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, implode('&', $pairs));
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_NOPROGRESS, 1);
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+
+  // Commerce PayPal requires SSL peer verification, which may prevent out of
+  // date servers from successfully processing API requests. If you get an error
+  // related to peer verification, you may need to download the CA certificate
+  // bundle file from http://curl.haxx.se/docs/caextract.html, place it in a
+  // safe location on your web server, and update your settings.php to set the
+  // commerce_paypal_cacert variable to contain the absolute path of the file.
+  // Alternately, you may be able to update your php.ini to point to the file
+  // with the curl.cainfo setting.
+  if (variable_get('commerce_paypal_cacert', FALSE)) {
+    curl_setopt($ch, CURLOPT_CAINFO, variable_get('commerce_paypal_cacert', ''));
+  }
+
+  $result = curl_exec($ch);
+
+  // Log any errors to the watchdog.
+  if ($error = curl_error($ch)) {
+    watchdog('commerce_paypal', 'cURL error: @error', array('@error' => $error), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  curl_close($ch);
+
+  // Make the response an array.
+  $response = array();
+
+  foreach (explode('&', $result) as $nvp) {
+    list($key, $value) = explode('=', $nvp);
+    $response[urldecode($key)] = urldecode($value);
+  }
+
+  // Log the response if specified.
+  if ($payment_method['settings']['log']['response'] == 'response') {
+    watchdog('commerce_paypal', 'PayPal server response: !param', array('!param' => '<pre>' . check_plain(print_r($response, TRUE)) . '</pre>', WATCHDOG_DEBUG));
+  }
+
+  return $response;
+}
+
+/**
+ * Returns the URL to the specified PayPal API server.
+ *
+ * @param $server
+ *   Either sandbox or live indicating which server to get the URL for.
+ *
+ * @return
+ *   The URL to use to submit requests to the PayPal API server.
+ */
+function commerce_paypal_api_server_url($server) {
+  switch ($server) {
+    case 'sandbox':
+      return 'https://api-3t.sandbox.paypal.com/nvp';
+    case 'live':
+      return 'https://api-3t.paypal.com/nvp';
+  }
+}
+
+/**
+ * Loads the payment transaction matching the PayPal transaction ID.
+ *
+ * @param $txn_id
+ *   The PayPal transaction ID to search for in the remote_id field.
+ *
+ * @return
+ *   The loaded payment transaction.
+ */
+function commerce_paypal_payment_transaction_load($txn_id) {
+  $transactions = commerce_payment_transaction_load_multiple(array(), array('remote_id' => $txn_id));
+  return $transactions ? reset($transactions) : FALSE;
+}
+
+/**
+ * Returns the relevant PayPal payment action for a given transaction type.
+ *
+ * @param $txn_type
+ *   The type of transaction whose payment action should be returned; currently
+ *   supports COMMERCE_CREDIT_AUTH_CAPTURE and COMMERCE_CREDIT_AUTH_ONLY.
+ */
+function commerce_paypal_payment_action($txn_type) {
+  switch ($txn_type) {
+    case COMMERCE_CREDIT_AUTH_ONLY:
+      return 'Authorization';
+    case COMMERCE_CREDIT_AUTH_CAPTURE:
+      return 'Sale';
+  }
+}
+
+/**
+ * Returns the description of a transaction type for a PayPal payment action.
+ */
+function commerce_paypal_reverse_payment_action($payment_action) {
+  switch (strtoupper($payment_action)) {
+    case 'AUTHORIZATION':
+      return t('Authorization only');
+    case 'SALE':
+      return t('Authorization and capture');
+  }
+}
+
+/**
+ * Returns an array of all possible currency codes for the different PayPal
+ * payment methods.
+ *
+ * @param $method_id
+ *   The ID of the PayPal payment method whose currencies should be returned.
+ *
+ * @return
+ *   An associative array of currency codes with keys and values being the
+ *   currency codes accepted by the specified PayPal payment method.
+ */
+function commerce_paypal_currencies($method_id) {
+  switch ($method_id) {
+    case 'paypal_wpp':
+    case 'paypal_ec':
+    case 'payflow_link':
+      return drupal_map_assoc(array('AUD', 'CAD', 'CHF', 'CZK', 'DKK', 'EUR', 'GBP', 'HKD', 'HUF', 'JPY', 'NOK', 'NZD', 'PLN', 'SEK', 'SGD', 'USD'));
+    case 'paypal_ppa':
+      return drupal_map_assoc(array('AUD', 'CAD', 'EUR', 'GBP', 'JPY', 'USD'));
+    case 'paypal_wps':
+      return drupal_map_assoc(array('AUD', 'BRL', 'CAD', 'CHF', 'CZK', 'DKK', 'EUR', 'GBP', 'HKD', 'HUF', 'ILS', 'JPY', 'MXN', 'MYR', 'NOK', 'NZD', 'PHP', 'PLN', 'SEK', 'SGD', 'THB', 'TRY', 'TWD', 'USD'));
+  }
+}
+
+
+/**
+ * Returns an appropriate message given an AVS code.
+ */
+function commerce_paypal_avs_code_message($code) {
+  if (is_numeric($code)) {
+    switch ($code) {
+      case '0':
+        return t('All the address information matched.');
+      case '1':
+        return t('None of the address information matched; transaction declined.');
+      case '2':
+        return t('Part of the address information matched.');
+      case '3':
+        return t('The merchant did not provide AVS information. Not processed.');
+      case '4':
+        return t('Address not checked, or acquirer had no response. Service not available.');
+      case 'Null':
+      default:
+        return t('No AVS response was obtained.');
+    }
+  }
+
+  switch ($code) {
+    case 'A':
+    case 'B':
+      return t('Address matched; postal code did not');
+    case 'C':
+    case 'N':
+      return t('Nothing matched; transaction declined');
+    case 'D':
+    case 'F':
+    case 'X':
+    case 'Y':
+      return t('Address and postal code matched');
+    case 'E':
+      return t('Not allowed for MOTO transactions; transaction declined');
+    case 'G':
+      return t('Global unavailable');
+    case 'I':
+      return t('International unavailable');
+    case 'P':
+    case 'W':
+    case 'Z':
+      return t('Postal code matched; address did not');
+    case 'R':
+      return t('Retry for validation');
+    case 'S':
+      return t('Service not supported');
+    case 'U':
+      return t('Unavailable');
+    default:
+      return t('An unknown error occurred.');
+  }
+}
+
+/**
+ * Returns an appropriate message given a CVV2 match code.
+ */
+function commerce_paypal_cvv_match_message($code) {
+  if (is_numeric($code)) {
+    switch ($code) {
+      case '0':
+        return t('Matched');
+      case '1':
+        return t('No match');
+      case '2':
+        return t('The merchant has not implemented CVV2 code handling.');
+      case '3':
+        return t('Merchant has indicated that CVV2 is not present on card.');
+      case '4':
+        return t('Service not available');
+      default:
+        return t('Unkown error');
+    }
+  }
+
+  switch ($code) {
+    case 'M':
+    case 'Y':
+      return t('Match');
+    case 'N':
+      return t('No match');
+    case 'P':
+      return t('Not processed');
+    case 'S':
+      return t('Service not supported');
+    case 'U':
+      return t('Service not available');
+    case 'X':
+      return t('No response');
+    default:
+      return t('Not checked');
+  }
+}
+
+/**
+ * Returns a short description of the pending reason based on the given value.
+ */
+function commerce_paypal_short_pending_reason($pendingreason) {
+  switch ($pendingreason) {
+    case 'none':
+      return t('No pending reason.');
+    case 'authorization':
+      return t('Authorization pending capture.');
+    case 'address':
+      return t('Pending unconfirmed address review.');
+    case 'echeck':
+      return t('eCheck has not yet cleared.');
+    case 'intl':
+      return t('Pending international transaction review.');
+    case 'multi-currency':
+      return t('Pending multi-currency review.');
+    case 'verify':
+      return t('Payment held until your account is verified.');
+    case 'completed':
+      return t('Payment has been completed.');
+    case 'other':
+      return t('Pending for an unknown reason.');
+    default:
+      return '';
+  }
+}
+
+/**
+ * Returns an array of PayPal payment methods.
+ */
+function commerce_paypal_payment_methods() {
+  return array(
+    'visa' => t('Visa'),
+    'mastercard' => t('Mastercard'),
+    'amex' => t('American Express'),
+    'discover' => t('Discover'),
+    'echeck' => t('eCheck'),
+    'paypal' => t('PayPal'),
+  );
+}
+
+/**
+ * Returns an array of PayPal payment method icon img elements.
+ *
+ * @param $methods
+ *   An array of PayPal payment method names to include in the icons array; if
+ *   empty, all icons will be returned.
+ *
+ * @return
+ *   The array of themed payment method icons keyed by name: visa, mastercard,
+ *   amex, discover, echeck, paypal
+ */
+function commerce_paypal_icons($methods = array()) {
+  $icons = array();
+
+  foreach (commerce_paypal_payment_methods() as $name => $title) {
+    if (empty($methods) || in_array($name, $methods, TRUE)) {
+      $variables = array(
+        'path' => drupal_get_path('module', 'commerce_paypal') . '/images/' . $name . '.gif',
+        'title' => $title,
+        'alt' => $title,
+        'attributes' => array(
+          'class' => array('commerce-paypal-icon'),
+        ),
+      );
+      $icons[$name] = theme('image', $variables);
+    }
+  }
+
+  return $icons;
+}
+
+/**
+ * Formats a price amount into a decimal value as expected by PayPal.
+ *
+ * @param $amount
+ *   An integer price amount.
+ * @param $currency_code
+ *   The currency code of the price.
+ *
+ * @return
+ *   The decimal price amount as expected by PayPal API servers.
+ */
+function commerce_paypal_price_amount($amount, $currency_code) {
+  $rounded_amount = commerce_currency_round($amount, commerce_currency_load($currency_code));
+  return number_format(commerce_currency_amount_to_decimal($rounded_amount, $currency_code), 2, '.', '');
+}

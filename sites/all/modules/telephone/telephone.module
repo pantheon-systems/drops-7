@@ -1,0 +1,185 @@
+<?php
+
+/**
+ * @file
+ * Defines a simple telephone number field type.
+ */
+
+/**
+ * Implements hook_field_info().
+ */
+function telephone_field_info() {
+  return array(
+    'telephone' => array(
+      'label' => t('Telephone number'),
+      'description' => t('This field stores a telephone number in the database.'),
+      'default_widget' => 'telephone_default',
+      'default_formatter' => 'telephone_link',
+      'property_type' => 'text',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_info_alter().
+ */
+function telephone_field_info_alter(&$info) {
+  if (module_exists('text')) {
+    $info['telephone']['default_formatter'] = 'text_plain';
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function telephone_field_is_empty($item, $field) {
+  return !isset($item['value']) || $item['value'] === '';
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function telephone_field_widget_info() {
+  return array(
+    'telephone_default' => array(
+      'label' => t('Telephone number'),
+      'field types' => array('telephone'),
+      'settings' => array(
+        'placeholder' => '',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_settings_form().
+ */
+function telephone_field_widget_settings_form($field, $instance) {
+  $widget = $instance['widget'];
+  $settings = $widget['settings'];
+
+  $element['placeholder'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Placeholder'),
+    '#default_value' => $settings['placeholder'],
+    '#description' => t('The placeholder is a short hint (a word or short phrase) intended to aid the user with data entry. A hint could be a sample value or a brief description of the expected format.'),
+    '#access' => module_exists('elements') || module_exists('placeholder'),
+  );
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function telephone_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $widget = $instance['widget'];
+  $settings = $widget['settings'];
+
+  $element += array(
+    '#type' => module_exists('elements') ? 'telfield' : 'textfield',
+    '#default_value' => isset($items[$delta]['value']) ? $items[$delta]['value'] : '',
+    '#placeholder' => $settings['placeholder'],
+  );
+  return array('value' => $element);
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function telephone_field_formatter_info() {
+  return array(
+    'telephone_link' => array(
+      'label' => t('Telephone link'),
+      'field types' => array('telephone'),
+      'settings' => array(
+        'title' => '',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info_alter().
+ */
+function telephone_field_formatter_info_alter(&$info) {
+  if (isset($info['text_plain'])) {
+    $info['text_plain']['field types'][] = 'telephone';
+  }
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function telephone_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $elements['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title to replace basic numeric telephone number display.'),
+    '#default_value' => $settings['title'],
+  );
+
+  return $elements;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function telephone_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+  $summary = '';
+
+  if (!empty($settings['title'])) {
+    $summary = t('Link using text: @title', array('@title' => $settings['title']));
+  }
+  else {
+    $summary = t('Link using provided telephone number.');
+  }
+
+  return $summary;
+}
+
+/**
+ * Implements hook_field_formatter_prepare_view().
+ */
+function telephone_field_formatter_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items, $displays) {
+  foreach ($entities as $id => $entity) {
+    $settings = $displays[$id]['settings'];
+    foreach ($items[$id] as &$item) {
+      // If available, set custom link text.
+      if (!empty($settings['title'])) {
+        $item['title'] = $settings['title'];
+      }
+      // Otherwise, use telephone number itself as title.
+      else {
+        $item['title'] = $item['value'];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function telephone_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $settings = $display['settings'];
+
+  foreach ($items as $delta => $item) {
+    // Prepend 'tel:' to the telephone number.
+    $href = 'tel:' . rawurlencode(preg_replace('/\s+/', '', $item['value']));
+
+    // Render each element as link.
+    $element[$delta] = array(
+      '#type' => 'link',
+      '#title' => $item['title'],
+      '#href' => $href,
+      '#options' => array('external' => TRUE),
+    );
+  }
+
+  return $element;
+}

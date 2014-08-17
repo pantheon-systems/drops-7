@@ -1,0 +1,60 @@
+<?php
+
+/**
+ * @file
+ * A dummy module for listing all nodes with their publish, unpublish
+ * callback links to test permissions with.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function publishcontent_test_menu() {
+  $items = array();
+
+  $items['publishcontent-links'] = array(
+    'title' => 'Node access test',
+    'page callback' => 'publishcontent_test_nodes',
+    'access arguments' => array('access content'),
+    'type' => MENU_SUGGESTED_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Menu callback.
+ *
+ * List all nodes on the site with publish, unpublish links.
+ */
+function publishcontent_test_nodes() {
+  $output = '';
+  $query = new EntityFieldQuery();
+  $result = $query->entityCondition('entity_type', 'node')
+    ->execute();
+
+  if (!empty($result['node'])) {
+
+    $output .= '<ul>';
+
+    foreach (node_load_multiple(array_keys($result['node'])) as $node) {
+      $op = '';
+
+      if (empty($node->status) && publishcontent_publish_access($node)) {
+        $op = 'publish';
+      }
+      elseif (!empty($node->status) && publishcontent_unpublish_access($node)) {
+        $op = 'unpublish';
+      }
+      else {
+        continue;
+      }
+
+      $output .= '<li>' . $node->title . ' ' . l("{$op}-{$node->nid}", "node/{$node->nid}/{$op}/" . drupal_get_token(), array('query' => drupal_get_destination())) . '</li>';
+    }
+
+    $output .= '</ul>';
+  }
+
+  return $output;
+}

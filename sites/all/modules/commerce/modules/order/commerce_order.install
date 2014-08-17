@@ -1,0 +1,473 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_order_schema() {
+  $schema = array();
+
+  $schema['commerce_order'] = array(
+    'description' => 'The base table for orders.',
+    'fields' => array(
+      'order_id' => array(
+        'description' => 'The primary identifier for an order.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'order_number' => array(
+        'description' => 'The order number displayed to the customer.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'revision_id' => array(
+        'description' => 'The current {commerce_order_revision}.revision_id version identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'type' => array(
+        'description' => 'The type of this order.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that owns this order.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'mail' => array(
+        'description' => 'The e-mail address associated with the order.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'status' => array(
+        'description' => 'The status name of this order.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the order was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the order was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'hostname' => array(
+        'description' => 'The IP address that created this order.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('order_id'),
+    'unique keys' => array(
+      'order_number' => array('order_number'),
+      'revision_id' => array('revision_id'),
+    ),
+    'indexes' => array(
+      'uid' => array('uid'),
+    ),
+    'foreign keys' => array(
+      'current_revision' => array(
+        'table' => 'commerce_order_revision',
+        'columns'=> array('revision_id' => 'revision_id'),
+      ),
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  $schema['commerce_order_revision'] = array(
+    'description' => 'Saves information about each saved revision of a {commerce_order}.',
+    'fields' => array(
+      'order_id' => array(
+        'description' => 'The {commerce_order}.order_id of the order this revision belongs to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'order_number' => array(
+        'description' => 'The order number displayed to the customer for this revision.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+      'revision_id' => array(
+        'description' => 'The primary identifier for this revision.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'revision_uid' => array(
+        'description' => 'The {users}.uid that owns the order at this revision.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'mail' => array(
+        'description' => 'The e-mail address associated with the order at this revision.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'The status name of this revision.',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+      ),
+      'log' => array(
+        'description' => 'The log entry explaining the changes in this version.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+      ),
+      'revision_timestamp' => array(
+        'description' => 'The Unix timestamp when this revision was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'revision_hostname' => array(
+        'description' => 'The IP address that created this order.',
+        'type' => 'varchar',
+        'length' => 128,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('revision_id'),
+    'indexes' => array(
+      'order_id' => array('order_id'),
+    ),
+    'foreign keys' => array(
+      'order' => array(
+        'table' => 'commerce_order',
+        'columns'=> array('order_id' => 'order_id'),
+      ),
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_order_uninstall() {
+  // Delete any field instance attached to an order type.
+  module_load_include('module', 'commerce');
+  commerce_delete_instances('commerce_order');
+
+  variable_del('commerce_order_help_text');
+}
+
+/**
+ * Between 7.x-1.0-beta2 and 7.x-1.0-beta3 we determined we needed to revise the
+ * way we handled price amounts, preferring to preserve integer amounts as
+ * loaded from the database until formatting them as decimal values upon display
+ * instead of converting them to decimals upon loading. The initial reasons and
+ * related issues are outlined in http://drupal.org/node/1124416.
+ *
+ * While the fix did not involve changing the database schema at all, it did
+ * change the way price amounts were stored in the components array of a price's
+ * data array. Therefore, the following update functions are responsible for
+ * loading and resaving entities the change will affect, primarily to result in
+ * a recalculated order total components array./
+ */
+
+/**
+ * Loads and resaves all the products on the site, updating the default price
+ * field to have proper component price amount values.
+ */
+function commerce_order_update_7100(&$sandbox) {
+  // Ensure there are no stale prices in the field cache.
+  field_cache_clear();
+
+  // Establish the progress variables.
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['current_product_id'] = 0;
+    $sandbox['max'] = db_query("SELECT COUNT(DISTINCT product_id) FROM {commerce_product}")->fetchField();
+  }
+
+  // Load the next 50 products.
+  $products = db_select('commerce_product', 'cp')
+    ->fields('cp', array('product_id'))
+    ->condition('product_id', $sandbox['current_product_id'], '>')
+    ->range(0, 50)
+    ->orderBy('product_id', 'ASC')
+    ->execute();
+
+  // Loop over the products, loading, adjusting, and resaving each one.
+  foreach ($products as $product) {
+    $product = commerce_product_load($product->product_id);
+
+    // If the commerce_price field has a components array, multiply its price
+    // amounts by the proper value for its currency.
+    if (!empty($product->commerce_price)) {
+      foreach ($product->commerce_price as $langcode => &$data) {
+        foreach ($data as $delta => &$item) {
+          if (!empty($item['data']['components'])) {
+            foreach ($item['data']['components'] as $key => &$component) {
+              $component['price']['amount'] = commerce_currency_decimal_to_amount($component['price']['amount'], $component['price']['currency_code'], FALSE);
+            }
+          }
+        }
+      }
+    }
+
+    commerce_product_save($product);
+
+    $sandbox['progress']++;
+    $sandbox['current_product_id'] = $product->product_id;
+  }
+
+  $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
+
+  return t('All products have been loaded and saved with updated price component arrays.');
+}
+
+/**
+ * Loads and resaves all the line items on the site, updating the unit price
+ * field to have proper component price amount values.
+ */
+function commerce_order_update_7101(&$sandbox) {
+  // Ensure there are no stale prices in the field cache.
+  field_cache_clear();
+
+  // Establish the progress variables.
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['current_line_item_id'] = 0;
+    $sandbox['max'] = db_query("SELECT COUNT(DISTINCT line_item_id) FROM {commerce_line_item}")->fetchField();
+  }
+
+  // Load the next 50 line items.
+  $line_items = db_select('commerce_line_item', 'cli')
+    ->fields('cli', array('line_item_id'))
+    ->condition('line_item_id', $sandbox['current_line_item_id'], '>')
+    ->range(0, 50)
+    ->orderBy('line_item_id', 'ASC')
+    ->execute();
+
+  // Loop over the line items, loading, adjusting, and resaving each one.
+  foreach ($line_items as $line_item) {
+    $line_item = commerce_line_item_load($line_item->line_item_id);
+
+    // If the commerce_unit_price field has a components array, multiply its
+    // amounts by the proper value for its currency.
+    if (!empty($line_item->commerce_unit_price)) {
+      foreach ($line_item->commerce_unit_price as $langcode => &$data) {
+        foreach ($data as $delta => &$item) {
+          if (!empty($item['data']['components'])) {
+            foreach ($item['data']['components'] as $key => &$component) {
+              $component['price']['amount'] = commerce_currency_decimal_to_amount($component['price']['amount'], $component['price']['currency_code'], FALSE);
+            }
+          }
+        }
+      }
+    }
+
+    commerce_line_item_save($line_item);
+
+    $sandbox['progress']++;
+    $sandbox['current_line_item_id'] = $line_item->line_item_id;
+  }
+
+  $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
+
+  return t('All line items have been loaded and saved with updated price component arrays.');
+}
+
+/**
+ * Loads and resaves all the orders on the site to rebuild the order total price
+ * component arrays.
+ */
+function commerce_order_update_7102(&$sandbox) {
+  // Ensure there are no stale prices in the field cache.
+  field_cache_clear();
+
+  // Establish the progress variables.
+  if (!isset($sandbox['progress'])) {
+    $sandbox['progress'] = 0;
+    $sandbox['current_order_id'] = 0;
+    $sandbox['max'] = db_query("SELECT COUNT(DISTINCT order_id) FROM {commerce_order}")->fetchField();
+  }
+
+  // Load the next 50 orders.
+  $orders = db_select('commerce_order', 'co')
+    ->fields('co', array('order_id'))
+    ->condition('order_id', $sandbox['current_order_id'], '>')
+    ->range(0, 50)
+    ->orderBy('order_id', 'ASC')
+    ->execute();
+
+  // Loop over the orders, loading and resaving each one.
+  foreach ($orders as $order) {
+    $order = commerce_order_load($order->order_id);
+
+    // Save the order as a new revision with an update log message.
+    $order->revision = TRUE;
+    $order->log = t('Order updated for 7.0-1.0-beta3 price component changes.');
+
+    commerce_order_save($order);
+
+    $sandbox['progress']++;
+    $sandbox['current_order_id'] = $order->order_id;
+  }
+
+  $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
+
+  return t('All orders have been loaded and saved with updated price component arrays.');
+}
+
+/**
+ * Truncates the pre-calculated price table.
+ */
+function commerce_order_update_7103() {
+  db_truncate('commerce_calculated_price')->execute();
+  return t('The calculated price table has been cleared. If your site uses product sell price pre-calculation, you will need to recalculate these prices.');
+}
+
+/**
+ * Update permission names for order entity management.
+ */
+function commerce_order_update_7104() {
+  // Load utility functions.
+  module_load_install('commerce');
+
+  $map = array(
+    'administer orders' => 'administer commerce_order entities',
+    'access orders' => 'view any commerce_order entity',
+    'create orders' => 'create commerce_order entities',
+    'edit any order' => 'edit any commerce_order entity',
+    'edit own orders' => 'edit own commerce_order entities',
+    'view own orders' => 'view own commerce_order entities',
+  );
+
+  commerce_update_rename_permissions($map);
+
+  return t('Role and custom View permissions updated for order entity management. Access checks in modules and permissions on default Views must be updated manually.');
+}
+
+/**
+ * Add an index to the commerce_order_revision table on order_id.
+ */
+function commerce_order_update_7105() {
+  if (db_index_exists('commerce_order_revision', 'order_id')) {
+    db_drop_index('commerce_order_revision', 'order_id');
+  }
+
+  db_add_index('commerce_order_revision', 'order_id', array('order_id'));
+}
+
+/**
+ * Assign the new 'Configure order settings' permission to roles that already
+ * have the 'Administer orders' permission.
+ */
+function commerce_order_update_7106() {
+  $roles = db_query("SELECT * FROM {role_permission} WHERE permission = 'administer commerce_order entities'")->fetchAllAssoc('rid', PDO::FETCH_ASSOC);
+
+  foreach ($roles as $rid => $permission) {
+    db_insert('role_permission')
+      ->fields(array('rid', 'permission', 'module'), array($rid, 'configure order settings', 'commerce_order'))
+      ->execute();
+  }
+
+  return t('All roles that had the <em>Administer orders</em> permission now also have the new <em>Configure order settings</em> permission.');
+}
+
+/**
+ * Add an index to the commerce_order table on uid.
+ */
+function commerce_order_update_7107() {
+  if (db_index_exists('commerce_order', 'uid')) {
+    db_drop_index('commerce_order', 'uid');
+  }
+
+  db_add_index('commerce_order', 'uid', array('uid'));
+
+  return t('Database index added to the uid column of the commerce_order table.');
+}
+
+/**
+ * Allow NULL values for order_number and revision_id on {commerce_order}, and
+ * order_number on {commerce_order_revision}.
+ */
+function commerce_order_update_7108() {
+  $order_number_spec = array(
+    'description' => 'The order number displayed to the customer.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+  );
+  $revision_id_spec = array(
+    'description' => 'The current {commerce_order_revision}.revision_id version identifier.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => FALSE,
+    'default' => 0,
+  );
+  $order_number_revision_spec = array(
+    'description' => 'The order number displayed to the customer for this revision.',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+  );
+
+  db_change_field('commerce_order', 'order_number', 'order_number', $order_number_spec);
+  db_change_field('commerce_order', 'revision_id', 'revision_id', $revision_id_spec);
+  db_change_field('commerce_order_revision', 'order_number', 'order_number', $order_number_revision_spec);
+
+  return t('Schema for the commerce_order and commerce_order_revision tables has been updated.');
+}
+
+/**
+ * Remove the default value for revision_id on {commerce_order}.
+ */
+function commerce_order_update_7109() {
+  db_change_field('commerce_order', 'revision_id', 'revision_id', array(
+    'description' => 'The current {commerce_order_revision}.revision_id version identifier.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => FALSE,
+  ));
+
+  return t('Schema for the commerce_order table has been updated.');
+}

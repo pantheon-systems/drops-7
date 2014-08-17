@@ -1,0 +1,12 @@
+name = Commerce UI
+description = Defines menu items common to the various Drupal Commerce UI modules.
+package = Commerce
+dependencies[] = commerce
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
+core = "7.x"
+project = "commerce"
+datestamp = "1394061805"
+

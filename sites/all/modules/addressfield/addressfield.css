@@ -1,0 +1,33 @@
+div.addressfield-container-inline > div.form-item {
+  float: left; /* LTR */
+  margin-right: 1em; /* LTR */
+}
+
+div.addressfield-container-inline.country-GB > div.form-item {
+  float: none;
+  margin-right: auto; /* LTR */
+}
+
+div.addressfield-container-inline.country-BR > div.form-item:first-child,
+div.addressfield-container-inline.country-BR > div.form-item:last-child {
+  clear: both;
+  float: none;
+  margin-right: auto; /* LTR */
+}
+
+/* Clear-fix markup for the inline container */
+div.addressfield-container-inline:after {
+  content: ".";
+  display: block;
+  height: 0;
+  clear: both;
+  visibility: hidden;
+}
+/* IE6 */
+* html div.addressfield-container-inline {
+  height: 1%;
+}
+/* IE7 */
+*:first-child + html div.addressfield-container-inline {
+  min-height: 1%;
+}

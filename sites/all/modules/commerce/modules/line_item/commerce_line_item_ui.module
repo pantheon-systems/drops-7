@@ -1,0 +1,114 @@
+<?php
+
+/**
+ * @file
+ * Provides the user interface for managing Line Item types.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_line_item_ui_menu() {
+  $items = array();
+
+  $items['admin/commerce/config/line-items'] = array(
+    'title' => 'Line item types',
+    'description' => 'Manage line item types for your store.',
+    'page callback' => 'commerce_line_item_ui_types_overview',
+    'access arguments' => array('administer line item types'),
+    'file' => 'includes/commerce_line_item_ui.types.inc',
+  );
+
+  foreach (commerce_line_item_types() as $type => $line_item_type) {
+    // Convert underscores to hyphens for the menu item argument.
+    $type_arg = strtr($type, '_', '-');
+
+    $items['admin/commerce/config/line-items/' . $type_arg] = array(
+      'title' => $line_item_type['name'],
+      'page callback' => 'commerce_line_item_ui_line_item_type_redirect',
+      'page arguments' => array($type_arg),
+      'access arguments' => array('administer line item types'),
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Redirects a line item type URL to its fields management page.
+ */
+function commerce_line_item_ui_line_item_type_redirect($type) {
+  drupal_goto('admin/commerce/config/line-items/' . $type . '/fields');
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function commerce_line_item_ui_menu_alter(&$items) {
+  // Transform the field UI tabs into contextual links.
+  foreach (commerce_line_item_types() as $type => $line_item_type) {
+    // Convert underscores to hyphens for the menu item argument.
+    $type_arg = strtr($type, '_', '-');
+    $items['admin/commerce/config/line-items/' . $type_arg . '/fields']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
+    $items['admin/commerce/config/line-items/' . $type_arg . '/display']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_line_item_ui_theme() {
+  return array(
+    'line_item_type_admin_overview' => array(
+      'variables' => array('type' => NULL),
+      'file' => 'includes/commerce_line_item_ui.types.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * Expose the admin UI for line item fields.
+ */
+function commerce_line_item_ui_entity_info_alter(&$entity_info) {
+  foreach ($entity_info['commerce_line_item']['bundles'] as $type => &$bundle) {
+    $bundle['admin'] = array(
+      'path' => 'admin/commerce/config/line-items/' . strtr($type, '_', '-'),
+      'access arguments' => array('administer line item types'),
+    );
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function commerce_line_item_ui_form_alter(&$form, &$form_state, $form_id) {
+  // On field administration forms for line item types set the title.
+  if (in_array($form_id, array('field_ui_field_overview_form', 'field_ui_display_overview_form'))) {
+    if ($form['#entity_type'] == 'commerce_line_item') {
+      // Load the line item type being modified for this form.
+      $line_item_type = commerce_line_item_type_load($form['#bundle']);
+
+      drupal_set_title($line_item_type['name']);
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_line_item_ui_form_entity_translation_admin_form_alter(&$form, &$form_state, $form_id) {
+  // Hide the commerce_line_item option from entity translation.
+  unset($form['entity_translation_entity_types']['#options']['commerce_line_item']);
+}
+
+/**
+ * Implements hook_help().
+ */
+function commerce_line_item_ui_help($path, $arg) {
+  switch ($path) {
+    case 'admin/commerce/config/line-items':
+      return '<p>' . t('Line items represent anything on an order that affects the order total. Each line item must be of one of the line item types listed below, which define how these items interact with Add to Cart forms, the shopping cart, the order edit page, and more. Line item types are defined by modules, with some modules also allowing you to clone line item types through this interface.') . '</p>';
+  }
+}

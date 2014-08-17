@@ -1,0 +1,16 @@
+name = Leaflet Demo
+description = Creates a block showcasing all Leaflet-powered maps available on your system. Optionally use with "IP Geolocation Views and Maps" to center the maps on your current location.
+core = 7.x
+dependencies[] = leaflet
+; While packaged with it, leaflet_more_maps does not have to be enabled, if you
+; do not wish the maps provided by leaflet_more_maps to appear, but only those
+; those provided external to leaflet_more_maps.
+; IP Geolocation Views and Maps (ip_geoloc) is required if you wish to center
+; the demo maps on your current location, using HTML5 for position retrieval.
+
+; Information added by Drupal.org packaging script on 2014-02-28
+version = "7.x-1.9"
+core = "7.x"
+project = "leaflet_more_maps"
+datestamp = "1393555436"
+

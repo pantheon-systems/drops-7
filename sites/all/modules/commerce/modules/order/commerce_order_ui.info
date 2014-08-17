@@ -1,0 +1,24 @@
+name = Order UI
+description = Exposes a default UI for Orders through order edit forms and default Views.
+package = Commerce
+dependencies[] = field_ui
+dependencies[] = commerce
+dependencies[] = commerce_ui
+dependencies[] = commerce_line_item
+dependencies[] = commerce_order
+dependencies[] = views
+core = 7.x
+configure = admin/commerce/config/order
+
+; Views handlers
+files[] = includes/views/handlers/commerce_order_ui_handler_area_view_order_form.inc
+
+; Simple tests
+files[] = tests/commerce_order_ui.test
+
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
+core = "7.x"
+project = "commerce"
+datestamp = "1394061805"
+

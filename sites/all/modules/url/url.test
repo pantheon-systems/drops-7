@@ -1,0 +1,225 @@
+<?php
+
+/**
+ * @file
+ * Tests for url.module.
+ */
+
+/**
+ * Tests for URL field types.
+ */
+class URLFieldTestCase extends DrupalWebTestCase {
+  protected $field;
+  protected $instance;
+  protected $web_user;
+
+  public static function getInfo() {
+    return array(
+      'name'  => 'URL field',
+      'description'  => 'Test the creation of URL fields.',
+      'group' => 'Field types',
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('url', 'field_test'));
+    $this->web_user = $this->drupalCreateUser(array('access field_test content', 'administer field_test content', 'administer content types'));
+    $this->drupalLogin($this->web_user);
+  }
+
+  /**
+   * Test number_decimal field.
+   */
+  function testURLFieldValidation() {
+    // Create a field with settings to validate.
+    $this->field = array(
+      'field_name' => drupal_strtolower($this->randomName()),
+      'type' => 'url',
+    );
+    field_create_field($this->field);
+    $this->instance = array(
+      'field_name' => $this->field['field_name'],
+      'entity_type' => 'test_entity',
+      'bundle' => 'test_bundle',
+      'settings' => array(
+        'title_field' => FALSE,
+        'title_fetch' => FALSE,
+      ),
+      'widget' => array(
+        'type' => 'url_external',
+      ),
+      'display' => array(
+        'default' => array(
+          'type' => 'url_default',
+        ),
+      ),
+    );
+    field_create_instance($this->instance);
+
+    // Display creation form.
+    $this->drupalGet('test-entity/add/test-bundle');
+    $langcode = LANGUAGE_NONE;
+    $this->assertFieldByName("{$this->field['field_name']}[$langcode][0][value]", '', 'URL value field is displayed');
+    $this->assertNoFieldByName("{$this->field['field_name']}[$langcode][0][title]", '', 'URL title field is not displayed');
+
+    // Submit a signed URL value.
+    $value = 'http://www.google.com/';
+    $edit = array(
+      "{$this->field['field_name']}[$langcode][0][value]" => $value,
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    preg_match('|test-entity/manage/(\d+)/edit|', $this->url, $match);
+    $id = $match[1];
+    $this->assertRaw(t('test_entity @id has been created.', array('@id' => $id)), 'Entity was created');
+    $this->assertRaw($value, 'Value is displayed.');
+
+    // Try to create entries with invalid URLs.
+    $wrong_entries = array(
+      // Missing protcol
+      'not-an-url',
+      // Invalid protocol
+      'invalid://not-a-valid-protocol',
+      // Missing host name
+      'http://',
+    );
+
+    foreach ($wrong_entries as $wrong_entry) {
+      $this->drupalGet('test-entity/add/test-bundle');
+      $edit = array(
+        "{$this->field['field_name']}[$langcode][0][value]" => $wrong_entry,
+      );
+      $this->drupalPost(NULL, $edit, t('Save'));
+      $this->assertText(t('The URL @url is not valid.', array('@url' => $wrong_entry)), 'Correctly failed to save invalid URL');
+    }
+  }
+
+  function _testURLFieldWithTitles() {
+    // Create a field with settings to validate.
+    $this->field = array(
+      'field_name' => drupal_strtolower($this->randomName()),
+      'type' => 'url',
+    );
+    field_create_field($this->field);
+    $this->instance = array(
+      'field_name' => $this->field['field_name'],
+      'entity_type' => 'test_entity',
+      'bundle' => 'test_bundle',
+      'settings' => array(
+        'title_field' => TRUE,
+        'title_fetch' => FALSE,
+      ),
+      'widget' => array(
+        'type' => 'url_external',
+      ),
+      'display' => array(
+        'default' => array(
+          'type' => 'url_default',
+        ),
+      ),
+    );
+    field_create_instance($this->instance);
+
+    // Display creation form.
+    $this->drupalGet('test-entity/add/test-bundle');
+    $langcode = LANGUAGE_NONE;
+    $this->assertFieldByName("{$this->field['field_name']}[$langcode][0][value]", '', 'URL value field is displayed');
+    $this->assertFieldByName("{$this->field['field_name']}[$langcode][0][title]", '', 'URL title field is displayed');
+
+    // Submit a signed URL value.
+    $value = 'http://www.google.com/';
+    $edit = array(
+      "{$this->field['field_name']}[$langcode][0][value]" => $value,
+      "{$this->field['field_name']}[$langcode][0][title]" => '',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    preg_match('|test-entity/manage/(\d+)/edit|', $this->url, $match);
+    $id = $match[1];
+    $this->assertRaw(t('test_entity @id has been created.', array('@id' => $id)), 'Entity was created');
+
+    $expected_link = l($value, $value);
+    $this->assertRaw($expected_link, 'Link with URL as the title is displayed.');
+
+    $title = $this->randomName();
+    $edit = array(
+      "{$this->field['field_name']}[$langcode][0][title]" => $title,
+    );
+    $this->drupalPost("test-entity/manage/$id/edit", $edit, t('Save'));
+    $this->assertRaw(t('test_entity @id has been updated.', array('@id' => $id)), 'Entity was updated');
+
+    $expected_link = l($title, $value);
+    $this->assertRaw($expected_link, 'Link with overridden title is displayed.');
+  }
+
+  function testURLFieldAutomaticTitles() {
+    $node = $this->drupalCreateNode(array('title' => 'Node "title"'));
+
+    // Create a field with settings to validate.
+    $this->field = array(
+      'field_name' => drupal_strtolower($this->randomName()),
+      'type' => 'url',
+    );
+    field_create_field($this->field);
+    $this->instance = array(
+      'field_name' => $this->field['field_name'],
+      'entity_type' => 'test_entity',
+      'bundle' => 'test_bundle',
+      'settings' => array(
+        'title_field' => FALSE,
+        'title_fetch' => TRUE,
+      ),
+      'widget' => array(
+        'type' => 'url_external',
+      ),
+      'display' => array(
+        'default' => array(
+          'type' => 'url_default',
+        ),
+      ),
+    );
+    field_create_instance($this->instance);
+
+    // Submit an URL on the current site.
+    $langcode = LANGUAGE_NONE;
+    $value = url('node/' . $node->nid, array('absolute' => TRUE));
+    $edit = array(
+      "{$this->field['field_name']}[$langcode][0][value]" => $value,
+    );
+    $this->drupalPost('test-entity/add/test-bundle', $edit, t('Save'));
+    preg_match('|test-entity/manage/(\d+)/edit|', $this->url, $match);
+    $id = $match[1];
+
+    $entity = field_test_entity_test_load($id);
+    $expected_title = t('!title | !sitename', array('!title' => $node->title, '!sitename' => variable_get('site_name', 'Drupal')));
+    $this->assertEqual($entity->{$this->field['field_name']}[$langcode][0]['title'], $expected_title, 'Title fetched and decoded from URL');
+  }
+
+  /**
+   * Test URL field creation from the UI.
+   */
+  function testURLFieldCreation() {
+    // Display the "Add content type" form.
+    $this->drupalGet('admin/structure/types/add');
+
+    // Add a content type.
+    $name = $this->randomName();
+    $type = drupal_strtolower($name);
+    $edit = array('name' => $name, 'type' => $type);
+    $this->drupalPost(NULL, $edit, t('Save and add fields'));
+
+    // Add an URL field to the newly-created type.
+    $label = $this->randomName();
+    $field_name = drupal_strtolower($label);
+    $edit = array(
+      'fields[_add_new_field][label]'=> $label,
+      'fields[_add_new_field][field_name]' => $field_name,
+      'fields[_add_new_field][type]' => 'url',
+      'fields[_add_new_field][widget_type]' => 'url_external',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Load the formatter page to check that the settings summary does not
+    // generate warnings.
+    // @todo Mess with the formatter settings a bit here.
+    $this->drupalGet("admin/structure/types/manage/$type/display");
+  }
+}

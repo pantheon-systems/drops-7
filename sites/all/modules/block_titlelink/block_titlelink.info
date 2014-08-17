@@ -1,0 +1,14 @@
+name = Block Title Link
+description = Allows assigning links to Block Titles
+core = 7.x
+files[] = block_titlelink.info
+files[] = block_titlelink.install
+files[] = block_titlelink.module
+files[] = README.txt
+
+; Information added by drupal.org packaging script on 2012-04-23
+version = "7.x-1.3"
+core = "7.x"
+project = "block_titlelink"
+datestamp = "1335213673"
+

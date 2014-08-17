@@ -1,0 +1,537 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_product_ui_menu() {
+  $items = array();
+
+  // Note: admin/commerce/products is defined by a default View.
+
+  // Add a product.
+  $items['admin/commerce/products/add'] = array(
+    'title' => 'Add a product',
+    'description' => 'Add a new product for sale.',
+    'page callback' => 'commerce_product_ui_add_page',
+    'access callback' => 'commerce_product_ui_product_add_any_access',
+    'weight' => 10,
+    'file' => 'includes/commerce_product_ui.products.inc',
+  );
+  foreach (commerce_product_types() as $type => $product_type) {
+    $items['admin/commerce/products/add/' . strtr($type, array('_' => '-'))] = array(
+      'title' => 'Create !name',
+      'title arguments' => array('!name' => $product_type['name']),
+      'description' => $product_type['description'],
+      'page callback' => 'commerce_product_ui_product_form_wrapper',
+      'page arguments' => array(commerce_product_new($type)),
+      'access callback' => 'commerce_product_access',
+      'access arguments' => array('create', commerce_product_new($type)),
+      'file' => 'includes/commerce_product_ui.products.inc',
+    );
+  }
+
+  $items['admin/commerce/products/%commerce_product'] = array(
+    'title callback' => 'commerce_product_ui_product_title',
+    'title arguments' => array(3),
+    'page callback' => 'commerce_product_ui_product_form_wrapper',
+    'page arguments' => array(3),
+    'access callback' => 'commerce_product_access',
+    'access arguments' => array('update', 3),
+    'weight' => 0,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'file' => 'includes/commerce_product_ui.products.inc',
+  );
+  $items['admin/commerce/products/%commerce_product/edit'] = array(
+    'title' => 'Edit',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+  );
+  $items['admin/commerce/products/%commerce_product/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'commerce_product_ui_product_delete_form_wrapper',
+    'page arguments' => array(3),
+    'access callback' => 'commerce_product_access',
+    'access arguments' => array('update', 3),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 20,
+    'context' => MENU_CONTEXT_INLINE,
+    'file' => 'includes/commerce_product_ui.products.inc',
+  );
+
+  $items['admin/commerce/products/types'] = array(
+    'title' => 'Product types',
+    'description' => 'Manage products types for your store.',
+    'page callback' => 'commerce_product_ui_types_overview',
+    'access arguments' => array('administer product types'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+    'file' => 'includes/commerce_product_ui.types.inc',
+  );
+  $items['admin/commerce/products/types/add'] = array(
+    'title' => 'Add product type',
+    'page callback' => 'commerce_product_ui_product_type_form_wrapper',
+    'page arguments' => array(commerce_product_ui_product_type_new()),
+    'access arguments' => array('administer product types'),
+    'type' => MENU_LOCAL_ACTION,
+    'file' => 'includes/commerce_product_ui.types.inc',
+  );
+  foreach (commerce_product_types() as $type => $product_type) {
+    // Convert underscores to hyphens for the menu item argument.
+    $type_arg = strtr($type, '_', '-');
+
+    $items['admin/commerce/products/types/' . $type_arg] = array(
+      'title' => $product_type['name'],
+      'page callback' => 'commerce_product_ui_product_type_form_wrapper',
+      'page arguments' => array($type),
+      'access arguments' => array('administer product types'),
+      'file' => 'includes/commerce_product_ui.types.inc',
+    );
+
+    if ($product_type['module'] == 'commerce_product_ui') {
+      $items['admin/commerce/products/types/' . $type_arg . '/edit'] = array(
+        'title' => 'Edit',
+        'access callback' => 'commerce_product_ui_product_type_update_access',
+        'access arguments' => array($type),
+        'type' => MENU_DEFAULT_LOCAL_TASK,
+        'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+      );
+      $items['admin/commerce/products/types/' . $type_arg . '/delete'] = array(
+        'title' => 'Delete',
+        'page callback' => 'commerce_product_ui_product_type_delete_form_wrapper',
+        'page arguments' => array($type),
+        'access callback' => 'commerce_product_ui_product_type_update_access',
+        'access arguments' => array($type),
+        'type' => MENU_LOCAL_TASK,
+        'context' => MENU_CONTEXT_INLINE,
+        'weight' => 10,
+        'file' => 'includes/commerce_product_ui.types.inc',
+      );
+    }
+  }
+
+  return $items;
+}
+
+/**
+ * Menu item title callback: returns the SKU of a product for its pages.
+ *
+ * @param $product
+ *   The product object as loaded via the URL wildcard.
+ * @return
+ *   A page title of the format "Product: [SKU]".
+ */
+function commerce_product_ui_product_title($product) {
+  return t('Product: @sku', array('@sku' => $product->sku));
+}
+
+/**
+ * Access callback: determines if the user can create any type of product.
+ */
+function commerce_product_ui_product_add_any_access() {
+  // Grant automatic access to users with administer products permission.
+  if (user_access('administer commerce_product entities')) {
+    return TRUE;
+  }
+
+  // Check the user's access on a product type basis.
+  foreach (commerce_product_types() as $type => $product_type) {
+    if (commerce_product_access('create', commerce_product_new($type))) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Access callback: determines if the user can edit or delete a product type.
+ *
+ * @param $type
+ *   The machine-name of the product type to be edited or deleted.
+ */
+function commerce_product_ui_product_type_update_access($type) {
+  $product_type = commerce_product_type_load($type);
+
+  if ($product_type['module'] == 'commerce_product_ui') {
+    return user_access('administer product types');
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function commerce_product_ui_menu_alter(&$items) {
+  // Transform the field UI tabs into contextual links.
+  foreach (commerce_product_types() as $type => $product_type) {
+    // Convert underscores to hyphens for the menu item argument.
+    $type_arg = strtr($type, '_', '-');
+
+    $items['admin/commerce/products/types/' . $type_arg . '/fields']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
+    $items['admin/commerce/products/types/' . $type_arg . '/display']['context'] = MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE;
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function commerce_product_ui_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link 'admin/commerce/products/add' on 'admin/commerce/products'.
+  if ($root_path == 'admin/commerce/products') {
+    $item = menu_get_item('admin/commerce/products/add');
+    if ($item['access']) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_admin_menu_map().
+ */
+function commerce_product_ui_admin_menu_map() {
+  // Add awareness to the administration menu of the various product types so
+  // they are included in the dropdown menu.
+  $type_args = array();
+
+  foreach (array_keys(commerce_product_types()) as $type) {
+    $type_args[] = strtr($type, '_', '-');
+  }
+
+  $map['admin/commerce/products/types/%'] = array(
+    'parent' => 'admin/commerce/products/types',
+    'arguments' => array(
+      array('%' => $type_args),
+    ),
+  );
+
+  return $map;
+}
+
+/**
+ * Implements hook_help().
+ */
+function commerce_product_ui_help($path, $arg) {
+  switch ($path) {
+    case 'admin/commerce/products/types/add':
+      return '<p>' . t('Individual product types can have different fields assigned to them.') . '</p>';
+  }
+
+  // Return the user defined help text per product type when adding or editing products.
+  if ($arg[1] == 'commerce' && $arg[2] == 'products' && $arg[3] == 'add' && $arg[4]) {
+    $product_type = commerce_product_type_load($arg[4]);
+    return (!empty($product_type['help']) ? '<p>' . filter_xss_admin($product_type['help']) . '</p>' : '');
+  }
+  elseif ($arg[1] == 'commerce' && $arg[2] == 'products' && is_numeric($arg[3])) {
+    $product = commerce_product_load($arg[3]);
+    $product_type = commerce_product_type_load($product->type);
+    return (!empty($product_type['help']) ? '<p>' . filter_xss_admin($product_type['help']) . '</p>' : '');
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_product_ui_theme() {
+  return array(
+    'product_add_list' => array(
+      'variables' => array('content' => array()),
+      'file' => 'includes/commerce_product_ui.products.inc',
+    ),
+    'product_type_admin_overview' => array(
+      'variables' => array('type' => NULL),
+      'file' => 'includes/commerce_product_ui.types.inc',
+    ),
+  );
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function commerce_product_ui_entity_info_alter(&$entity_info) {
+  // Add a URI callback to the product entity.
+  $entity_info['commerce_product']['uri callback'] = 'commerce_product_ui_product_uri';
+
+  // Add callbacks and urls for administer translations.
+  $entity_info['commerce_product']['translation']['entity_translation'] += array(
+    'base path' => 'admin/commerce/products/%commerce_product',
+  );
+
+  // Expose the admin UI for product fields.
+  foreach ($entity_info['commerce_product']['bundles'] as $type => &$bundle) {
+    $bundle['admin'] = array(
+      'path' => 'admin/commerce/products/types/' . strtr($type, '_', '-'),
+      'access arguments' => array('administer product types'),
+    );
+  }
+}
+
+/**
+ * Entity uri callback: points to the edit form of the given product if no other
+ *   URI is specified.
+ */
+function commerce_product_ui_product_uri($product) {
+  // First look for a return value in the default entity uri callback.
+  $uri = commerce_product_uri($product);
+
+  // If a value was found, return it now.
+  if (!empty($uri)) {
+    return $uri;
+  }
+
+  // Otherwise return an admin URI if the user has permission.
+  if (commerce_product_access('update', $product)) {
+    return array(
+      'path' => 'admin/commerce/products/' . $product->product_id,
+    );
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_commerce_product_type_info().
+ */
+function commerce_product_ui_commerce_product_type_info() {
+  return db_query('SELECT * FROM {commerce_product_type}')->fetchAllAssoc('type', PDO::FETCH_ASSOC);
+}
+
+/**
+ * Returns an initialized product type array.
+ */
+function commerce_product_ui_product_type_new() {
+  return array(
+    'type' => '',
+    'name' => '',
+    'description' => '',
+    'help' => '',
+    'revision' => 1,
+  );
+}
+
+/**
+ * Saves a product type.
+ *
+ * This function will either insert a new product type if $product_type['is_new']
+ * is set or attempt to update an existing product type if it is not. It does
+ * not currently support changing the machine-readable name of the product type,
+ * nor is this possible through the form supplied by the Product UI module.
+ *
+ * @param $product_type
+ *   The product type array containing the basic properties as initialized in
+ *     commerce_product_ui_product_type_new().
+ * @param $configure
+ *   Boolean indicating whether or not product type configuration should be
+ *     performed in the event of a new product type being saved.
+ * @param $skip_reset
+ *   Boolean indicating whether or not this save should result in product types
+ *     being reset and the menu being rebuilt; defaults to FALSE. This is useful
+ *     when you intend to perform many saves at once, as menu rebuilding is very
+ *     costly in terms of performance.
+ *
+ * @return
+ *   The return value of the call to drupal_write_record() to save the product
+ *     type, either FALSE on failure or SAVED_NEW or SAVED_UPDATED indicating
+ *     the type of query performed to save the product type.
+ */
+function commerce_product_ui_product_type_save($product_type, $configure = TRUE, $skip_reset = FALSE) {
+  $op = drupal_write_record('commerce_product_type', $product_type, empty($product_type['is_new']) ? 'type' : array());
+
+  // If this is a new product type and the insert did not fail...
+  if (!empty($product_type['is_new']) && $op !== FALSE) {
+    // Notify the field API that a new bundle has been created.
+    field_attach_create_bundle('commerce_product', $product_type['type']);
+
+    // Add the default price field to the product type.
+    if ($configure) {
+      commerce_product_configure_product_type($product_type['type']);
+    }
+
+    // Notify other modules that a new product type has been created.
+    module_invoke_all('commerce_product_type_insert', $product_type, $skip_reset);
+  }
+  elseif ($op !== FALSE) {
+    // Notify other modules that an existing product type has been updated.
+    module_invoke_all('commerce_product_type_update', $product_type, $skip_reset);
+  }
+
+  // Rebuild the menu to add this product type's menu items.
+  if (!$skip_reset) {
+    commerce_product_types_reset();
+    variable_set('menu_rebuild_needed', TRUE);
+  }
+
+  return $op;
+}
+
+/**
+ * Deletes a product type.
+ *
+ * @param $type
+ *   The machine-readable name of the product type.
+ * @param $skip_reset
+ *   Boolean indicating whether or not this delete should result in product
+ *     types being reset and the menu being rebuilt; defaults to FALSE. This is
+ *     useful when you intend to perform many saves at once, as menu rebuilding
+ *     is very costly in terms of performance.
+ */
+function commerce_product_ui_product_type_delete($type, $skip_reset = FALSE) {
+  $product_type = commerce_product_type_load($type);
+
+  db_delete('commerce_product_type')
+    ->condition('type', $type)
+    ->execute();
+
+  // Rebuild the menu to get rid of this product type's menu items.
+  if (!$skip_reset) {
+    commerce_product_types_reset();
+    variable_set('menu_rebuild_needed', TRUE);
+  }
+
+  // Notify the field API that this bundle has been destroyed.
+  field_attach_delete_bundle('commerce_product', $type);
+
+  // Notify other modules that this product type has been deleted.
+  module_invoke_all('commerce_product_type_delete', $product_type, $skip_reset);
+}
+
+/**
+ * Checks to see if a given product type already exists.
+ *
+ * @param $type
+ *   The string to match against existing types.
+ *
+ * @return
+ *   TRUE or FALSE indicating whether or not the product type exists.
+ */
+function commerce_product_ui_validate_product_type_unique($type) {
+  // Look for a match of the type.
+  if ($match_id = db_query('SELECT type FROM {commerce_product_type} WHERE type = :type', array(':type' => $type))->fetchField()) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * Implements hook_forms().
+ */
+function commerce_product_ui_forms($form_id, $args) {
+  $forms = array();
+
+  // Define a wrapper ID for the product add / edit form.
+  $forms['commerce_product_ui_product_form'] = array(
+    'callback' => 'commerce_product_product_form',
+  );
+
+  // Define a wrapper ID for the product delete confirmation form.
+  $forms['commerce_product_ui_product_delete_form'] = array(
+    'callback' => 'commerce_product_product_delete_form',
+  );
+
+  return $forms;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * The Product UI module instantiates the Product add/edit form at particular
+ * paths in the Commerce IA. It uses its own form ID to do so and alters the
+ * form here to add in appropriate redirection and an additional button.
+ *
+ * @see commerce_product_ui_product_form()
+ */
+function commerce_product_ui_form_commerce_product_ui_product_form_alter(&$form, &$form_state) {
+  $product = $form_state['commerce_product'];
+
+  // Add a submit handler to the save button to add a redirect.
+  $form['actions']['submit']['#submit'][] = 'commerce_product_ui_product_form_submit';
+
+
+  // Add the save and continue button for new products.
+  if (empty($product->product_id)) {
+    $form['actions']['save_continue'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save and add another'),
+      '#submit' => $form['actions']['submit']['#submit'],
+      '#suffix' => l(t('Cancel'), 'admin/commerce/products'),
+      '#weight' => 45,
+    );
+  }
+  else {
+    $form['actions']['submit']['#suffix'] = l(t('Cancel'), 'admin/commerce/products');
+  }
+}
+
+/**
+ * Submit callback for commerce_product_ui_product_form().
+ *
+ * @see commerce_product_ui_form_commerce_product_ui_product_form_alter()
+ */
+function commerce_product_ui_product_form_submit($form, &$form_state) {
+  // Set the redirect based on the button clicked.
+  $array_parents = $form_state['triggering_element']['#array_parents'];
+  $submit_element = array_pop($array_parents);
+
+  if ($submit_element == 'save_continue') {
+    $form_state['redirect'] = 'admin/commerce/products/add/' . strtr($form_state['commerce_product']->type, array('_' => '-'));
+  }
+  elseif (arg(2) == 'products' && arg(3) == 'add') {
+    $form_state['redirect'] = 'admin/commerce/products';
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * The Product UI module instantiates the Product delete form at a particular
+ * path in the Commerce IA. It uses its own form ID to do so and alters the
+ * form here to add in appropriate redirection.
+ *
+ * @see commerce_product_ui_product_delete_form()
+ */
+function commerce_product_ui_form_commerce_product_ui_product_delete_form_alter(&$form, &$form_state) {
+  $form['actions']['cancel']['#href'] = 'admin/commerce/products';
+  $form['#submit'][] = 'commerce_product_ui_product_delete_form_submit';
+}
+
+/**
+ * Submit callback for commerce_product_ui_product_delete_form().
+ *
+ * @see commerce_product_ui_form_commerce_product_ui_product_delete_form_alter()
+ */
+function commerce_product_ui_product_delete_form_submit($form, &$form_state) {
+  $form_state['redirect'] = 'admin/commerce/products';
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_product_ui_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_product_ui') . '/includes/views',
+  );
+}
+
+/**
+ * Sets the breadcrumb for administrative product pages.
+ *
+ * @param $product_types
+ *   TRUE or FALSE indicating whether or not the breadcrumb should include the
+ *     product types administrative page.
+ *
+ * @deprecated since 7.x-1.4
+ */
+function commerce_product_ui_set_breadcrumb($product_types = FALSE) {
+  // This function used to manually set a breadcrumb that is now properly
+  // generated by Drupal itself.
+}

@@ -1,0 +1,23 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall hooks for IP Geolocation Views & Maps.
+ */
+
+/**
+ * Implments hook_enable().
+ */
+function ip_geoloc_generator_enable() {
+  drupal_set_message(t('Geolocation Generator is now enabled. Proceed to the <a href="!config_page">configuration page</a> to generate locations.', array(
+    '!config_page' => url('admin/config/system/ip_geolocation_generator'),
+  )));
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ip_geoloc_generator_uninstall() {
+  // Delete all ip_geoloc_generator_* variables at once.
+  db_query("DELETE FROM {variable} WHERE name LIKE 'ip_geoloc_generator_%%'");
+}

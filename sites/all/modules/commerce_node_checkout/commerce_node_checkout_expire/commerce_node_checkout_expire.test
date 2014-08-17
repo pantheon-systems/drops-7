@@ -1,0 +1,194 @@
+<?php
+/**
+ * @file
+ * Provides tests for Commerce Node Checkout Expire process.
+ */
+
+/**
+ * Test class.
+ */
+class CommerceNodeCheckoutExpireTests extends CommerceNodeCheckoutBaseTest {
+  /**
+   * Implementation of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Commerce Node Checkout Expire',
+      'description' => 'Test expiration, renewal, and notifications of purchased content.',
+      'group' => 'Drupal Commerce',
+    );
+  }
+
+  /**
+   * Implementation of setUp().
+   */
+  public function setUp() {
+    parent::setUp(array(
+      'date_api',
+      'date',
+      'date_popup',
+      'interval',
+      'commerce_node_checkout_expire'
+    ));
+
+    // Load the product we've created
+    $product = commerce_product_load_by_sku('std-listing');
+
+    // Set the expiration of 5 minutes
+    $wrapper = entity_metadata_wrapper('commerce_product', $product);
+    $wrapper->commerce_node_checkout_expire->set(array('interval' => 5, 'period' => 'minute'));
+    $this->assertTrue((bool) $wrapper->save(), 'Expiration interval set on product');
+
+    // Set the node type to accept notifications
+    commerce_node_checkout_expire_add_notifications_field('page');
+
+    // See if the field was added to the page node
+    $this->assertTrue((bool) field_info_field(COMMERCE_NODE_CHECKOUT_NOTIFICATION_FIELD), 'Node (notification) field is present');
+
+    // Check the line item fields
+    $this->assertTrue((bool) field_info_field('commerce_node_checkout_node'), 'Line item (associated node) field is present');
+    $this->assertTrue((bool) field_info_field('commerce_node_checkout_expires'), 'Line item (unpublish on) field is present');
+  }
+
+  /**
+   * Get a node's expiration date, if one is set.
+   *
+   * @param $node
+   *   The node object.
+   * @return
+   *   The timestamp of expiration, otherwise NULL if not set.
+   */
+  public function getNodeExpiration($node) {
+    // Make sure we don't get old data
+    drupal_static_reset('commerce_node_checkout_expire_get_node_last_line_item');
+    entity_get_controller('commerce_line_item')->resetCache();
+
+    // Get the expiration date
+    return commerce_node_checkout_expire_get_node_expiration($node);
+  }
+
+  /**
+   * Relist a given node and optionally checkout as well.
+   *
+   * @param $node
+   *   The node to relist and optionally purchase.
+   */
+  public function relistNode($node, $checkout = TRUE) {
+    $this->drupalGet("node/{$node->nid}/relist");
+    $this->assertRaw('Add to cart', 'Relist form has been loaded');
+    $this->drupalPost(NULL, array(), t('Add to cart'));
+
+    // Checkout to relist the node
+    if ($checkout) {
+      $this->checkout();
+    }
+  }
+
+  /**
+   * Get node notification data from the custom field.
+   *
+   * @param $node
+   *   A node object
+   * @return
+   *   The notification data stored in the custom field.
+   */
+  public function getNodeNotificationData($node) {
+    $wrapper = entity_metadata_wrapper('node', $node);
+    return $wrapper->{COMMERCE_NODE_CHECKOUT_NOTIFICATION_FIELD}->value();
+  }
+
+  /**
+   * Test everything we need to do with content, expiration, notifications,
+   * etc.
+   */
+  public function testCommerceNodeCheckoutExpire() {
+    // Create a user and login
+    $account = $this->drupalCreateUser();
+    $this->drupalLogin($account);
+    
+    // Create and buy the page node
+    $node = $this->createPage();
+    $this->checkout();
+
+    // Check that the expiration time is set
+    $expiration = commerce_node_checkout_expire_get_node_expiration($node);
+    $this->assertTrue((bool) $expiration, 'Node has an expiration date set');
+
+    // Check that the expiration time accurate (5 or less minutes remaining)
+    $this->assertTrue(($expiration - time()) <= (5 * 60), 'Node expiration is accurate');
+    
+    // Check that the notifications are active and set as not yet sent
+    $notification = $this->getNodeNotificationData($node);
+    $this->assertTrue(isset($notification['enabled']) && $notification['enabled'], 'Notifications are enabled for the node');
+    $this->assertTrue(isset($notification['sent']) && !$notification['sent'], 'Notifications not yet sent for the node');
+
+    // Run cron to send out the notification
+    $this->cronRun();
+
+    // Check the notification email
+    $this->assertMail('subject', 'Your post is expiring in 7 days', 'Notification email was sent');
+
+    // Reload the node
+    $node = $this->loadLastNode();
+
+    // Check that the notification status is marked as sent
+    $notification = $this->getNodeNotificationData($node);
+    $this->assertTrue(isset($notification['enabled']) && $notification['sent'], 'Notifications are now disabled for the node');
+
+    // Switch to the admin
+    $this->drupalLogin($this->admin);
+
+    // Navigate to the form to adjust the expiration date of the node
+    $new_expiration = strtotime('-2 days');
+    $this->drupalGet("node/{$node->nid}/expiration");
+    $this->assertRaw('Unpublish on', 'Expiration adjustment form has been loaded');
+    $edit = array(
+      'commerce_node_checkout_expires[und][0][value][date]' => format_date($new_expiration, 'custom', 'M j Y'),
+      'commerce_node_checkout_expires[und][0][value][time]' => format_date($new_expiration, 'custom', 'g:i:sa'),
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // Check if the expiration date has been change
+    $this->assertTrue($new_expiration == $this->getNodeExpiration($node), 'The node expiration date was updated');
+
+    // Run cron to expire the node
+    $this->cronRun();
+
+    // Check that is expired and is now unpublished
+    $node = $this->loadLastNode();
+    $this->assertTrue($node->status == NODE_NOT_PUBLISHED, 'The node has expired and is unpublished');
+
+    // Switch back to the regular user
+    $this->drupalLogin($account);
+    
+    // Fill out the form to relist the node
+    $this->relistNode($node);
+
+    // Check that is published again
+    $node = $this->loadLastNode();
+    $this->assertTrue($node->status == NODE_PUBLISHED, 'The node has been relisted and is published');
+
+    // Check that the expiration time is now in the future
+    $this->assertTrue(REQUEST_TIME < $this->getNodeExpiration($node), 'The node expiration time has been reset.');
+    
+    // Make sure the notification sent status is now 0
+    $notification = $this->getNodeNotificationData($node);
+    $this->assertTrue(isset($notification['sent']) && !$notification['sent'], 'Notifications changed to not yet sent for the node');
+
+    // Test disabling notifications on a new node
+    $node = $this->createPage(array('commerce_node_notification[und][0][enabled]' => 0));
+    $notification = $this->getNodeNotificationData($node);
+    $this->assertTrue(isset($notification['enabled']) && !$notification['enabled'], 'Notifications purposely disabled for a new node');
+
+    // Buy the new node
+    $this->checkout();
+
+    // Determine the current expiration time
+    $expiration = $this->getNodeExpiration($node);
+
+    // Test relisting the node which hasn't yet expired and make sure
+    // the expiration count has now been incremented
+    $this->relistNode($node);
+    $this->assertTrue(($expiration + (5 * 60)) == $this->getNodeExpiration($node), 'The expiration time was incremented after a relisting');
+  }
+}

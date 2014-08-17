@@ -1,0 +1,25 @@
+<?php
+
+/**
+ * @file
+ * Install hooks for Responsive Menus.
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function responsive_menus_enable() {
+  // Need to clear caches for Context to see our new reaction.
+  cache_clear_all('plugins:context:plugins', 'cache');
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function responsive_menus_uninstall() {
+  $variables = db_query("SELECT name FROM {variable} WHERE name LIKE :name",
+    array(':name' => 'responsive_menus' . '%'))->fetchAll();
+  foreach ($variables as $variable) {
+    variable_del($variable->name);
+  }
+}

@@ -1,0 +1,45 @@
+<?php
+/**
+ * @file
+ * Provides field schema for interval field
+ * @copyright Copyright(c) 2011 Rowlands Group
+ * @license GPL v2+ http://www.fsf.org/licensing/licenses/gpl.html
+ * @author Lee Rowlands leerowlands at rowlandsgroup dot com
+ *
+ */
+
+
+/**
+ * Implements hook_field_schema().
+ *
+ * Defines the database schema of the field, using the format used by the
+ * Schema API.
+ * @ingroup interval
+ */
+function interval_field_schema($field) {
+  $columns = array(
+    'interval' => array(
+      'description'   => 'The number of multiples of the period',
+      'type'          => 'int',
+      'size'          => 'medium',
+      'not null'      => TRUE,
+      'default'       => 0
+    ),
+    'period' => array(
+      'description'   => 'The period machine name',
+      'type'          => 'varchar',
+      'size'          => 'normal',
+      'length'        => 20,
+      'not null'      => TRUE,
+      'default'       => 'day'
+    ),
+  );
+  $indexes = array(
+    'period' => array('period'),
+    'interval' => array('interval'),
+  );
+  return array(
+    'columns' => $columns,
+    'indexes' => $indexes,
+  );
+}

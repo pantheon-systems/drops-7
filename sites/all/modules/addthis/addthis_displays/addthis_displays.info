@@ -1,0 +1,13 @@
+name = AddThis Displays
+description = Adds the AddThis display types to render several basic types of AddThis buttons.
+core = 7.x
+package = Sharing
+dependencies[] = addthis
+files[] = addthis_displays.field.inc
+
+; Information added by Drupal.org packaging script on 2014-01-22
+version = "7.x-4.0-alpha4"
+core = "7.x"
+project = "addthis"
+datestamp = "1390384409"
+

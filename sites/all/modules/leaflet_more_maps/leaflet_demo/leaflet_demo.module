@@ -1,0 +1,186 @@
+<?php
+/**
+ * @file
+ * "Leaflet Demo" showcases in a block all Leaflet-powered maps enabled on your
+ * Drupal site.
+ *
+ * Try it in combination with
+ * o "Leaflet More Maps" (drupal.org/project/leaflet_more_maps)
+ * o "IP Geolocation Views and Maps" (drupal.org/project/ip_geoloc).
+ */
+
+define('LEAFLET_DEMO_DEFAULT_LAT', 51.4777);
+define('LEAFLET_DEMO_DEFAULT_LNG', -0.0015);
+define('LEAFLET_DEMO_DEFAULT_ZOOM', 11);
+
+/**
+ * Implements hook_block_info().
+ */
+function leaflet_demo_block_info() {
+  $blocks['leaflet_maps'] = array(
+    'info' => t('Leaflet-powered maps showcase'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_configure().
+ */
+function leaflet_demo_block_configure($delta = '') {
+  $form = array();
+  if ($delta == 'leaflet_maps') {
+    // Do nothing.
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_block_save().
+ */
+function leaflet_demo_block_save($delta = '', $edit = array()) {
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function leaflet_demo_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case 'leaflet_maps':
+      $block['subject'] = t('Examples of available maps');
+      $block['content'] = drupal_get_form('leaflet_demo_map_parameters_form');
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Create the demo map parameters form.
+ */
+function leaflet_demo_map_parameters_form($form, $form_state) {
+
+  $show_coords = TRUE;
+  if (!empty($form_state['storage']['latitude'])) {
+    $latitude  = $form_state['storage']['latitude'];
+    $longitude = $form_state['storage']['longitude'];
+  }
+  elseif (isset($_SESSION['ip_geoloc']['location']['latitude'])) {
+    // Get HTML5-retrieved location, if it's there (requires module
+    // "IP Geolocation Views & Maps")
+    $location = $_SESSION['ip_geoloc']['location'];
+    $latitude  = $location['latitude'];
+    $longitude = $location['longitude'];
+    // $show_coords = FALSE;
+  }
+  else {
+    // Fall back to default.
+    $latitude  = LEAFLET_DEMO_DEFAULT_LAT;
+    $longitude = LEAFLET_DEMO_DEFAULT_LNG;
+  }
+  $zoom = isset($form_state['storage']['zoom']) ? $form_state['storage']['zoom'] : LEAFLET_DEMO_DEFAULT_ZOOM;
+
+  $form['map_parameters'] = array(
+    '#suffix' => leaflet_demo_output_maps($latitude, $longitude, $zoom),
+    '#type' => 'fieldset',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    '#title' => t('Map parameters'),
+    '#description' => t('All maps below are centered on the same latitude, longitude and have the same initial zoom level.<br/>You may pan/drag and zoom each map individually.'),
+  );
+  $form['map_parameters']['latitude'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Latitude'),
+    // '#field_suffix' => t('degrees'),
+    '#description' => t('-90 .. 90 degrees'),
+    '#size' => 12,
+    '#default_value' => $show_coords ? $latitude : '',
+  );
+  $form['map_parameters']['longitude'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Longitude'),
+    // '#field_suffix' => t('degrees'),
+    '#description' => t('-180 .. 180 degrees'),
+    '#size' => 12,
+    '#default_value' => $show_coords ? $longitude : '',
+  );
+  $form['map_parameters']['zoom'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Zoom'),
+    '#field_suffix' => t('(0..18)'),
+    '#description' => t('Some zoom levels may not be available in some maps.'),
+    '#size' => 2,
+    '#default_value' => LEAFLET_DEMO_DEFAULT_ZOOM,
+  );
+  $form['map_parameters']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit map parameters'),
+  );
+
+  $form['map_parameters']['#attached'] = array(
+    'css' => array(drupal_get_path('module', 'leaflet_demo') . '/leaflet_demo.css'),
+  );
+  return $form;
+}
+
+/**
+ * Validation handler for leaflet_demo_map_parameters_form().
+ */
+function leaflet_demo_map_parameters_form_validate($form, &$form_state) {
+  $values = $form_state['values'];
+  // Frankly, can't be bothered...
+}
+
+/**
+ * Submit handler for leaflet_demo_map_parameters_form().
+ */
+function leaflet_demo_map_parameters_form_submit($form, &$form_state) {
+  $form_state['storage']['latitude']  = $form_state['values']['latitude'];
+  $form_state['storage']['longitude'] = $form_state['values']['longitude'];
+  $form_state['storage']['zoom'] = $form_state['values']['zoom'];
+  // To preserve entered values and storage array.
+  $form_state['rebuild'] = TRUE;
+}
+
+/**
+ * Outputs the HTML for all available Leaflet maps, centered on supplied coords.
+ *
+ * @param string $latitude
+ *   the latitude
+ * @param string $longitude
+ *   the longitude
+ *
+ * @return string
+ *   the map string as rendered html
+ */
+function leaflet_demo_output_maps($latitude = LEAFLET_DEMO_DEFAULT_LAT, $longitude = LEAFLET_DEMO_DEFAULT_LNG, $zoom = LEAFLET_DEMO_DEFAULT_ZOOM) {
+
+  if (!is_numeric($latitude) || !is_numeric($longitude) || !is_numeric($zoom)) {
+    return '';
+  }
+  $center = array('lat' => $latitude, 'lon' => $longitude);
+  $features = array(
+    array(
+      'type' => 'point',
+      'lat' => $latitude,
+      'lon' => $longitude,
+      'popup' => 'Your auto-retrieved or manually entered location',
+    ),
+  );
+  $output = '<div class="leaflet-gallery">';
+  $map_info = leaflet_map_get_info();
+  foreach ($map_info as $map_id => $map) {
+    $map['settings']['zoom'] = $zoom;
+    $map['center'] = $center;
+    $features[0]['leaflet_id'] = "demo-$map_id";
+    $title = $map_info[$map_id]['label'];
+    $built_map = leaflet_build_map($map, $features, '300px');
+    $output .=
+        '<div class="leaflet-gallery-map">'
+      .   "<div>$title</div>"
+      .   render($built_map)
+      . '</div>';
+  }
+  $output .= '</div>';
+  return $output;
+}

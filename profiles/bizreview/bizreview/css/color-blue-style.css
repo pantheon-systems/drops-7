@@ -1,0 +1,227 @@
+﻿/* $Id: color-blue-style.css,v 1.0.0 2013/09/25 08:18:15 symphonythemes Exp $ */
+/*------------------------------------*\
+	RESET
+\*------------------------------------*/
+
+a,
+a:link,
+a:visited {
+  color: #00bff3;
+}
+.themecolor-text {
+  color: #00bff3;
+}
+pre,
+div.code {
+  border-left: 5px solid #00bff3;
+}
+.highlight {
+  background: #00bff3;
+}
+blockquote::before {
+  color: #00bff3;
+}
+
+h2.home-block-title:after,
+h2.block-title:after,
+.node-type-full-page h1.page-title:after {
+  background: #00bff3;
+}
+a.btn-default,
+.btn-default {
+  border-color: #00bff3;
+  background-color: #00bff3;
+  color: #fff;
+}
+.btn-border {
+  border-color: #00bff3;
+  background: #fff;
+}
+.btn-default:hover {
+  background-color: #00bff3;
+  border-color: #00bff3;
+}
+a.btn-primary,
+.btn-primary {
+  background-color: #00bff3;
+  border-color: #1896b8;
+  color: #FFFFFF;
+}
+/*------------------------------------*\
+	Pages CSS
+\*------------------------------------*/
+#search-wrapper,
+#main-menu-wrapper,
+#color-background-wrapper {
+  background: #00bff3;
+}
+
+
+/*------------------------------------*\
+	NAVIGATION CSS
+\*------------------------------------*/
+li a.active {
+  color: #00bff3;
+}
+
+@media (max-width: 767px) {  
+  .navbar-collapse {
+	background:#00bff3;
+  }
+}
+
+#main-navigation ul ul {
+  background: #00bff3;
+}
+#main-navigation ul ul li {
+  border-bottom: 1px solid #6edbf8;
+}
+#main-navigation li:hover,
+#main-navigation li.open,
+#main-navigation li.active-trail a,
+#main-navigation li.active-trail  span.nolink,
+#main-navigation li a.active,
+#main-navigation li a:hover,
+#main-navigation li a.current,
+#main-navigation li a.selected,
+#main-navigation li span.nolink:hover,
+#main-navigation li.active-trail span.nolink,
+#main-navigation li span.nolink.selected {
+  color:#fff;
+  background: #00bff3;
+}
+
+/* Block user menu on top left */
+#header-top-left .block-menu ul.menu li a:hover,
+#header-top-left .block-menu ul.menu li a.active {
+  background: none;
+  color: #00bff3;
+}
+
+
+/*------------------------------------*\
+	BUSINESS CSS
+\*------------------------------------*/
+/* Business List */
+.extra-content {
+  background: rgba(0,191,243,0.8);
+}
+#block-views-exp-map-list-business-page-1 h2.block-title {
+  background: #00bff3;
+  border-right: 1px solid #6edbf8;
+}
+#block-views-exp-map-list-business-page-1 h2.block-title:after {
+  border-color: rgba(0, 191, 243, 0);
+  border-left-color: #00bff3;
+}
+#block-views-exp-map-list-business-page-1 h2.block-title:before {
+  border-color: rgba(110, 219, 248, 0);
+  border-left-color: #6edbf8;
+}
+.view-list-business .views-row .views-field-field-address i,
+.view-list-business .views-row .views-field-field-phone i,
+.view-list-business .views-row .views-field-field-website i {
+  color: #00bff3;
+}
+
+.node-business .content .field .field-label {
+  color: #00bff3;
+}
+
+.node-business .content .field.field-name-body:before,
+.node-business .content .field.field-name-field-website:before,
+.node-business .content .field.field-name-field-open-time:before,
+.node-business .content .field.field-name-field-price-range:before,
+.node-business .content .field.field-name-field-highlights:before,
+.node-business .content .field.field-name-field-location:before,
+.node-business .content .field.field-name-field-photos:before,
+.node-business .content .field.field-name-field-tags:before,
+.node-business .content .field.field-name-field-category:before {
+  background: #00bff3;
+}
+
+fieldset.group-purchase-options {
+  background: #00bff3;
+}
+
+/* Block Featured Biz */
+.jcarousel-skin-default .jcarousel-prev-horizontal,
+.jcarousel-skin-default .jcarousel-next-horizontal {
+  border-color: #00bff3;
+}
+.jcarousel-skin-default .jcarousel-prev-horizontal:hover,
+.jcarousel-skin-default .jcarousel-next-horizontal:hover {
+  background-color: #00bff3;
+}
+.jcarousel-skin-default .jcarousel-prev-horizontal:before,
+.jcarousel-skin-default .jcarousel-next-horizontal:before {
+  color: #00bff3;
+}
+.jcarousel-skin-default .jcarousel-prev-horizontal:hover:before,
+.jcarousel-skin-default .jcarousel-next-horizontal:hover:before {
+  color: #fff;
+  background: #00bff3;
+}
+
+
+/* Block Category */
+.block-featured-biz .views-row .information-group .field-title a:hover {
+  color: #00bff3;
+}
+
+/* Business Category List */
+.list-categories .icon {
+  background: #00bff3;
+}
+.view-categories .views-row .views-row-inner .views-field-name:after {
+  background: #00bff3;
+}
+.view-categories .views-row .views-row-inner .views-field-name a:hover {
+  color: #00bff3;
+}
+.view-categories .views-row .views-row-inner .views-field-field-category-image .field-node-count {
+  background: rgba(0,191,243,0.8);
+}
+
+/* News */
+.view-list-news .views-field-title a:hover {
+  color: #00bff3;
+}
+
+/* Member */
+.view-member .view-content {
+  background: #00bff3;
+}
+
+/* Block Contact information */
+.block-contact-informations ul li i {
+  color: #00bff3;
+}
+
+/* Sep boxed pricing */
+.sep-boxed-pricing ul li.footer-row a.button {
+  background: #fafafa;
+  border: 1px solid #ccc;
+  color: #00bff3;  
+}
+.sep-boxed-pricing ul li.footer-row a.button:hover {
+  background: #00bff3;
+  color: #fafafa;  
+  border: 1px solid #00bff3;
+}
+.sep-boxed-pricing ul li.title-row {
+  background: #47d2f8;
+  border-color: #47d2f8;
+}
+.sep-boxed-pricing ul li.pricing-row {
+  background: #00bff3;
+  border-color: #82e0fa #00bff3 #00bff3;
+}
+.sep-boxed-pricing .price strong {
+  color: #000;
+}
+
+/* FlexSlider */
+.flex-control-paging li a.flex-active {
+  background: #00bff3;
+}

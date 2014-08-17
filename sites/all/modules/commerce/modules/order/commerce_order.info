@@ -1,0 +1,44 @@
+name = Order
+description = Defines the Order entity and associated features.
+package = Commerce
+dependencies[] = commerce
+dependencies[] = commerce_customer
+dependencies[] = commerce_line_item
+dependencies[] = commerce_price
+dependencies[] = entity
+dependencies[] = rules
+core = 7.x
+
+; Module includes
+files[] = includes/commerce_order.controller.inc
+
+; Views handlers
+files[] = includes/views/handlers/commerce_order_handler_area_empty_text.inc
+files[] = includes/views/handlers/commerce_order_handler_area_order_total.inc
+files[] = includes/views/handlers/commerce_order_handler_argument_order_order_id.inc
+files[] = includes/views/handlers/commerce_order_handler_field_order.inc
+files[] = includes/views/handlers/commerce_order_handler_field_order_status.inc
+files[] = includes/views/handlers/commerce_order_handler_field_order_state.inc
+files[] = includes/views/handlers/commerce_order_handler_field_order_type.inc
+files[] = includes/views/handlers/commerce_order_handler_field_order_link.inc
+files[] = includes/views/handlers/commerce_order_handler_field_order_link_delete.inc
+files[] = includes/views/handlers/commerce_order_handler_field_order_link_edit.inc
+files[] = includes/views/handlers/commerce_order_handler_field_order_mail.inc
+files[] = includes/views/handlers/commerce_order_handler_field_order_operations.inc
+files[] = includes/views/handlers/commerce_order_handler_filter_order_status.inc
+files[] = includes/views/handlers/commerce_order_handler_filter_order_state.inc
+files[] = includes/views/handlers/commerce_order_handler_filter_order_type.inc
+
+; Views plugins
+files[] = includes/views/handlers/commerce_order_plugin_argument_validate_user.inc
+
+; Tests
+files[] = tests/commerce_order.rules.test
+files[] = tests/commerce_order.test
+
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
+core = "7.x"
+project = "commerce"
+datestamp = "1394061805"
+

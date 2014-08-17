@@ -1,0 +1,336 @@
+<?php
+
+/**
+ * @file
+ * Tests for the AddThis-module.
+ */
+
+class AddThisFunctionalityTestCase extends DrupalWebTestCase {
+
+  private $user;
+
+  public function setUp() {
+    parent::setUp(AddThis::MODULE_NAME);
+    $this->createAndLoginUser();
+  }
+
+  public static function getInfo() {
+    return array(
+      'name' => 'AddThis: Functionality tests',
+      'description' => 'Functionality tests for the AddThis-module.',
+      'group' => 'AddThis',
+    );
+  }
+
+  public function testFunctionality() {
+    $this->addThisShouldProvideHelp();
+
+    $this->addThisShouldDefineField();
+
+    $this->addThisShouldDefineBlock();
+
+    $this->addThisShouldBeAbleToBeUsedAsField();
+
+    $this->addThisSystemSettingsShouldBeAbleToBeSaved();
+  }
+
+  private function addThisShouldProvideHelp() {
+    $helpText = module_invoke(AddThis::MODULE_NAME, 'help', 'admin/help#addthis', NULL);
+    $this->assertTrue(TestHelper::stringContains($helpText, t('About')), 'AddThis-module should provide help.');
+  }
+
+  private function addThisShouldDefineField() {
+    $fieldInfo = module_invoke(AddThis::MODULE_NAME, 'field_info');
+    $this->assertTrue(is_array($fieldInfo), t('AddThis-module should define a field.'));
+  }
+
+  private function addThisShouldDefineBlock() {
+    $blockInfo = module_invoke(AddThis::MODULE_NAME, 'block_info');
+    $this->assertTrue(is_array($blockInfo), t('AddThis-module should define a block.'));
+  }
+
+  private function addThisShouldBeAbleToBeUsedAsField() {
+    $edit = array();
+    $label = TestHelper::generateRandomLowercaseString();
+    $edit["fields[_add_new_field][label]"] = $label;
+    $edit["fields[_add_new_field][field_name]"] = $label;
+    $edit["fields[_add_new_field][type]"] = AddThis::FIELD_TYPE;
+    $edit["fields[_add_new_field][widget_type]"] = AddThis::WIDGET_TYPE;
+
+    $this->drupalPost('admin/structure/types/manage/article/fields', $edit, t('Save'));
+
+    $this->assertText($label, 'AddThis-module should be able to be added as a field.');
+
+    $this->addThisShouldNotHaveConfigurableFieldLevelSettings($label);
+
+    $this->drupalGet('admin/structure/types/manage/article/display');
+  }
+
+  private function addThisShouldNotHaveConfigurableFieldLevelSettings($label) {
+    $this->assertText(t("@name has no field settings.", array('@name' => $label)),
+                     'AddThis-module should not have configurable field level settings.');
+  }
+
+  private function addThisSystemSettingsShouldBeAbleToBeSaved() {
+    $edit_basic = array();
+
+    // Basic settings
+    $profileId = TestHelper::generateRandomLowercaseString();
+    $edit_basic[AddThis::PROFILE_ID_KEY] = $profileId;
+
+    $uiDelay = 400;
+    $edit_basic[AddThis::UI_DELAY_KEY] = $uiDelay;
+
+    $uiHeaderBackgroundColor = '#000000';
+    $edit_basic[AddThis::UI_HEADER_BACKGROUND_COLOR_KEY] = $uiHeaderBackgroundColor;
+
+    $uiHeaderColor = '#ffffff';
+    $edit_basic[AddThis::UI_HEADER_COLOR_KEY] = $uiHeaderColor;
+
+    $coBrand = TestHelper::generateRandomLowercaseString();
+    $edit_basic[AddThis::CO_BRAND_KEY] = $coBrand;
+
+    $edit_basic[AddThis::COMPLIANT_508_KEY] = TRUE;
+
+    $edit_basic[AddThis::CLICKBACK_TRACKING_ENABLED_KEY] = TRUE;
+
+    // Can only be tested with Google Analytics module installed.
+    //$edit_basic[AddThis::GOOGLE_ANALYTICS_TRACKING_ENABLED_KEY] = TRUE;
+
+    //$edit_basic[AddThis::GOOGLE_ANALYTICS_SOCIAL_TRACKING_ENABLED_KEY] = TRUE;
+
+    $edit_basic[AddThis::ADDRESSBOOK_ENABLED_KEY] = TRUE;
+
+    $edit_basic[AddThis::CLICK_TO_OPEN_COMPACT_MENU_ENABLED_KEY] = TRUE;
+
+    $edit_basic[AddThis::OPEN_WINDOWS_ENABLED_KEY] = TRUE;
+
+    $edit_basic[AddThis::STANDARD_CSS_ENABLED_KEY] = TRUE;
+
+    $serviceName = '2linkme';
+    $edit_basic["addthis_enabled_services[$serviceName]"] = $serviceName;
+
+    $this->drupalPost('admin/config/user-interface/addthis', $edit_basic, t('Save configuration'));
+
+    $this->assertText(t('The configuration options have been saved.'), 'AddThis system settings should be able to be saved.');
+
+    $this->addThisProfileIdShouldBeAbleToBeSaved($profileId);
+
+    $this->addThisUiDelayShouldBeAbleToBeSaved($uiDelay);
+
+    $this->addThisUiHeaderBackgroundColorShouldBeAbleToBeSaved($uiHeaderBackgroundColor);
+
+    $this->addThisUiHeaderColorShouldBeAbleToBeSaved($uiHeaderColor);
+
+    $this->addThisCoBrandShouldBeAbleToBeSaved($coBrand);
+
+    $this->addThis508CompliantSettingShouldBeAbleToBeSaved();
+
+    $this->addThisClickbackTrackingEnabledSettingShouldBeAbleToBeSaved();
+
+    // Can only be tested with Google Analytics module installed.
+    //$this->addThisGoogleAnalyticsTrackingEnabledSettingShouldBeAbleToBeSaved();
+
+    //$this->addThisGoogleAnalyticsSocialTrackingEnabledSettingShouldBeAbleToBeSaved();
+
+    $this->addThisClickToOpenCompactMenuEnabledSettingShouldBeAbleToBeSaved();
+
+    $this->addThisOpenWindowsEnabledSettingShouldBeAbleToBeSaved();
+
+    $this->addThisStandardCssEnabledSettingShouldBeAbleToBeSaved();
+
+    $this->addThisEnabledServicesShouldBeAbleToBeSaved($serviceName);
+
+    // Advanced configuration
+    $edit_basic = array();
+
+    $servicesCssUrl = AddThis::DEFAULT_SERVICES_CSS_URL;
+    $edit_basic[AddThis::SERVICES_CSS_URL_KEY] = $servicesCssUrl;
+
+    $servicesJsonUrl = AddThis::DEFAULT_SERVICES_JSON_URL;
+    $edit_basic[AddThis::SERVICES_JSON_URL_KEY] = $servicesJsonUrl;
+
+    $widgetJsUrl = AddThis::DEFAULT_WIDGET_JS_URL;
+    $edit_basic[AddThis::WIDGET_JS_URL_KEY] = $widgetJsUrl;
+
+    $edit_basic[AddThis::CUSTOM_CONFIGURATION_CODE_ENABLED_KEY] = TRUE;
+
+    $customConfigurationCode = TestHelper::generateRandomLowercaseString();
+    $edit_basic[AddThis::CUSTOM_CONFIGURATION_CODE_KEY] = $customConfigurationCode;
+
+    $this->drupalPost('admin/config/user-interface/addthis/advanced', $edit_basic, t('Save configuration'));
+
+    $this->addThisServicesCssUrlShouldBeAbleToBeSaved($servicesCssUrl);
+
+    $this->addThisServicesJsonUrlShouldBeAbleToBeSaved($servicesJsonUrl);
+
+    $this->addThisWidgetJsUrlShouldBeAbleToBeSaved($widgetJsUrl);
+
+    $this->addThisCustomConfigurationCodeEnabledSettingShouldBeAbleToBeSaved();
+  }
+
+  private function addThisProfileIdShouldBeAbleToBeSaved($profileId) {
+    $this->assertFieldByName(AddThis::PROFILE_ID_KEY, $profileId, 
+                             'AddThis profile ID should be able to be saved.');
+  }
+
+  private function addThisServicesCssUrlShouldBeAbleToBeSaved($servicesCssUrl) {
+    $this->assertFieldByName(AddThis::SERVICES_CSS_URL_KEY, $servicesCssUrl,
+                             'AddThis services stylesheet URL should be able to be saved.');
+  }
+
+  private function addThisServicesJsonUrlShouldBeAbleToBeSaved($servicesJsonUrl) {
+    $this->assertFieldByName(AddThis::SERVICES_JSON_URL_KEY, $servicesJsonUrl,
+                             'AddThis services json URL should be able to be saved.');
+  }
+
+  private function addThisWidgetJsUrlShouldBeAbleToBeSaved($widgetJsUrl) {
+    $this->assertFieldByName(AddThis::WIDGET_JS_URL_KEY, $widgetJsUrl,
+                             'AddThis javascript widget URL should be able to be saved.');
+  }
+
+  private function addThis508CompliantSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-508-compliant',
+                              'AddThis 508 compliant setting should be able to be saved.');
+  }
+
+  private function addThisClickbackTrackingEnabledSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-clickback-tracking-enabled',
+                              'AddThis clickback tracking enabled setting should be able to be saved.');
+  }
+
+  private function addThisGoogleAnalyticsTrackingEnabledSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-google-analytics-tracking-enabled',
+                              'AddThis Google Analytics tracking enabled setting should be able to be saved.');
+  }
+
+  private function addThisGoogleAnalyticsSocialTrackingEnabledSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-google-analytics-tracking-enabled',
+                              'AddThis Google Analytics social tracking enabled setting should be able to be saved.');
+  }
+
+  private function addThisClickToOpenCompactMenuEnabledSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-click-to-open-compact-menu-enabled',
+                              'AddThis click to open compact menu setting should be able to be saved.');
+  }
+
+  private function addThisOpenWindowsEnabledSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-open-windows-enabled',
+                              'AddThis open windows setting should be able to be saved.');
+  }
+
+  private function addThisStandardCssEnabledSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-open-windows-enabled',
+                              'AddThis open windows setting should be able to be saved.');
+  }
+
+  private function addThisFacebookLikeEnabledSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-facebook-like-enabled',
+                              'AddThis Facebook Like enabled setting should be able to be saved.');
+  }
+
+  private function addThisAddressbookEnabledSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-addressbook-enabled',
+                              'AddThis addressbook enabled setting should be able to be saved.');
+  }
+
+  private function addThisCustomConfigurationCodeEnabledSettingShouldBeAbleToBeSaved() {
+    $this->assertFieldChecked('edit-addthis-custom-configuration-code-enabled',
+                              'AddThis custom configuration code enabled setting should be able to be saved.');
+  }
+
+  private function addThisCustomConfigurationCodeShouldBeAbleToBeSaved($customConfigurationCode) {
+    $this->assertFieldByName(AddThis::CUSTOM_CONFIGURATION_CODE_KEY, $customConfigurationCode,
+                             'AddThis custom configuration code should be able to be saved.');
+  }
+
+  private function addThisUiHeaderColorShouldBeAbleToBeSaved($uiHeaderColor) {
+    $this->assertFieldByName(AddThis::UI_HEADER_COLOR_KEY, $uiHeaderColor,
+                             'AddThis UI header color should be able to be saved.');
+  }
+
+  private function addThisUiDelayShouldBeAbleToBeSaved($uiDelay) {
+    $this->assertFieldByName(AddThis::UI_DELAY_KEY, $uiDelay,
+                             'AddThis UI delay should be able to be saved.');
+  }
+
+  private function addThisUiHeaderBackgroundColorShouldBeAbleToBeSaved($uiHeaderBackgroundColor) {
+    $this->assertFieldByName(AddThis::UI_HEADER_BACKGROUND_COLOR_KEY, $uiHeaderBackgroundColor,
+                             'AddThis UI header background color should be able to be saved.');
+  }
+
+  private function addThisCoBrandShouldBeAbleToBeSaved($coBrand) {
+    $this->assertFieldByName(AddThis::CO_BRAND_KEY, $coBrand,
+                             'AddThis co-brand should be able to be saved.');
+  }
+
+  private function addThisEnabledServicesShouldBeAbleToBeSaved($serviceName) {
+    $this->assertFieldChecked('edit-addthis-enabled-services-' . $serviceName,
+                              'AddThis enabled services should be able to be saved.');
+  }
+
+  private function createAndLoginUser() {
+    $this->user = $this->createAdminUser();
+    $this->drupalLogin($this->user);
+  }
+
+  private function createAdminUser() {
+    return $this->drupalCreateUser(
+      array(
+        AddThis::PERMISSION_ADMINISTER_ADDTHIS,
+        AddThis::PERMISSION_ADMINISTER_ADVANCED_ADDTHIS,
+        'administer blocks',
+        'administer content types',
+        'administer nodes'
+      )
+    );
+  }
+}
+
+class AddThisPermissionsTestCase extends DrupalWebTestCase {
+
+  public function setUp() {
+    parent::setUp(AddThis::MODULE_NAME);
+  }
+
+  public static function getInfo() {
+    return array(
+      'name' => 'AddThis: Permission tests',
+      'description' => 'Permission tests for the AddThis-module.',
+      'group' => 'AddThis',
+    );
+  }
+
+  public function testUserWithoutAdministerAddThisPermissionShouldNotBeAllowedToAccessAddThisSystemSettings() {
+    $this->drupalLogin($this->createAdminUserWithoutAddThisAdministrationPermission());
+    $this->drupalGet('admin/config/system/addthis');
+    $this->assertRaw(t('Access denied'),
+                     'A user without administer addthis permission should not be able to access AddThis system settings.');
+  }
+
+  public function testUserWithoutAdministerAdvancedAddThisPermissionShouldNotBeAllowedToAccessAdvancedAddThisSystemSettings() {
+    $this->drupalLogin($this->createAdminUserWithoutAdvancedAddThisAdministrationPermission());
+    $this->drupalGet('admin/config/system/addthis');
+    $this->assertNoRaw(t('Advanced settings'),
+                       'A user without administer advanced addthis permission should not be able to access advanced AddThis system settings.');
+  }
+
+  private function createAdminUserWithoutAddThisAdministrationPermission() {
+    return $this->drupalCreateUser(array('administer content types'));
+  }
+
+  private function createAdminUserWithoutAdvancedAddThisAdministrationPermission() {
+    return $this->drupalCreateUser(array('administer content types', AddThis::PERMISSION_ADMINISTER_ADDTHIS));
+  }
+}
+
+class TestHelper {
+
+  public static function stringContains($string, $contains) {
+    return strpos($string, $contains) !== FALSE;
+  }
+
+  public static function generateRandomLowercaseString() {
+    return drupal_strtolower(DrupalWebTestCase::randomName());
+  }
+}

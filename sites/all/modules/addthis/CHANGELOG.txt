@@ -1,0 +1,40 @@
+# 7.x-4.0-alpha3
+
+Major changes
+- Configuration possible to blocks. [#1694868]
+- Fixed tracking not working. [#1919156]
+- Added DOM loading and basic include.
+- Changed loading of widget.js be done only when a display is rendered.
+
+Minor changes
+- Coding standard fixes. Still more to do.
+- Changing label text to describe compact menu enabled services.
+- Fixed https loading of basic button. [#1734752]
+- Fixed test on clickback tracking settings. [#2164647]
+- Removed block dependency [#1814428]
+- Updated AddThis js version from 250 to 300.
+- Removed some files[] from the info because they did not contain classes. [#2151315]
+
+======
+
+Added namespace adding for Facebook Like.
+Added counter bubble orientation in Basic Toolbox display type.
+Fixed getDisplayTypes() to work with blocks. Also provide default settings always.
+Add t() to description of Google Analytics elements in config page.
+
+Removed legacy display types.
+  AddThis module contained some small non generic display types. They where
+  removed in favor of the display types added in the addthis_displays submodule.
+
+Redesigned the config page.
+  The settings page has been made more condensed and options have been merged
+  into clear categories. There are some options that where removed because of
+  legacy functionality that is now support inside the display types.
+
+Fixed default value for ui_co_brand setting.
+Added alter hook for configuration.
+Added alter hook for markup options.
+Added alter hook for markup render array.
+Fixed async loading of widget.js.
+Fix for #1308970 reported by vasike,fixed by matglas86. Error in block configure.
+Changed dir name for submodule from addthis_display to addthis_displays.

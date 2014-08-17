@@ -1,0 +1,291 @@
+<?php
+
+/**
+ * @file
+ * Installation file for fivestar module.
+ */
+
+function fivestar_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE 'fivestar_%'");
+}
+
+/**
+ * hook_field_schema().
+ */
+function fivestar_field_schema() {
+  return array(
+    'columns' => array(
+      'rating' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'sortable' => TRUE
+      ),
+      'target' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE
+      ),
+    ),
+  );
+}
+
+/**
+ * Fixes the axis value stored for fivestar fields
+ */
+function fivestar_update_7201() {
+  drupal_load('module', 'fivestar');
+  $fields = field_read_fields(array('module' => 'fivestar'));
+  $tags_numeric = array_values(fivestar_get_tags());
+
+  foreach ($fields as $field) {
+    if (is_numeric($field['settings']['axis'])) {
+      $field['settings']['axis'] = $tags_numeric[$field['settings']['axis']];
+    }
+  }
+}
+
+/**
+ * Moves the field settings to field instance settings
+ */
+function fivestar_update_7202() {
+  $fields = field_read_fields(array('module' => 'fivestar'));
+
+  foreach ($fields as $field) {
+    $instances = field_read_instances(array('field_name' => $field['field_name']));
+    foreach ($instances as $instance) {
+      $instance['settings'] = $field['settings'];
+      field_update_instance($instance);
+    }
+  }
+}
+
+
+/**
+ * Convert all existing fivestar/node_type settings into fields with exposed fivestar formatters
+ */
+function fivestar_update_7203() {
+  // Gather the node types
+  $query = db_select('node_type', 'n');
+  $query->addField('n', 'type');
+  $result = $query->execute();
+  $types = $result->fetchCol();
+
+  // Gather the tags.  In the case that fivestar_get_tags() is ever removed from
+  // the module, this update still needs to run.
+  $tags_txt = variable_get('fivestar_tags', 'vote');
+  $tags_exploded = explode(',', $tags_txt);
+
+  $tags = array();
+  $got_vote = FALSE;
+  foreach ($tags_exploded as $tag) {
+    $tag_trimmed = trim($tag);
+    if ($tag_trimmed) {
+      $tags[] = $tag_trimmed;
+      if ($tag_trimmed == 'vote') {
+        $got_vote = TRUE;
+      }
+    }
+  }
+
+  if (!$got_vote) {
+    $tags[] = 'vote';
+  }
+  $tags;
+
+  foreach ($tags as $tag) {
+    $suffix = '';
+    foreach ($types as $type) {
+      $var_suffix = $type . ($tag == 'vote' ? '' : '_' . $tag);
+
+      $settings = array(
+        'stars' => variable_get('fivestar_stars_' . $var_suffix, 6),
+        'allow_clear' => variable_get('fivestar_unvote_' . $var_suffix, 0),
+        'feedback_enable' => variable_get('fivestar_feedback_' . $var_suffix, 1),
+        'style' => variable_get('fivestar_style_' . $var_suffix, 'average'),
+        'text' => variable_get('fivestar_text_' . $var_suffix, 'dual'),
+        'title' => variable_get('fivestar_title_' . $var_suffix, 1),
+      );
+
+      if (variable_get('fivestar_' . $var_suffix, FALSE)) {
+        // Check to see if a field for this tag exists and create one if needed
+        $field_name = 'field_' . $tag;
+        $field = field_read_field($field_name . $suffix, array('include_deleted' => TRUE));
+
+        $i = 0;
+        while (!empty($field) && $field['type'] != 'fivestar') {
+          $suffix = '_' . $i;
+          $field = field_read_field($field_name . $suffix, array('include_deleted' => TRUE));
+          $i++;
+        }
+        if (empty($field)) {
+          $field_values = array(
+            'field_name' => $field_name . $suffix,
+            'type' => 'fivestar',
+            'settings' => array(
+              'axis' => $tag,
+            ),
+          );
+          $field = field_create_field($field_values);
+        }
+
+        // Create an instance of the field in this bundle
+        $instance = field_read_instance('node', $field['field_name'], $type, array('include_deleted' => TRUE));
+        if (empty($instance)) {
+          $instance_info = array(
+            'field_name' => $field['field_name'],
+            'entity_type' => 'node',
+            'bundle' => $type,
+            'widget' => array(
+              'type' => 'stars',
+            ),
+            'display' => array(
+              'default' => array(
+                'type' => 'fivestar_formatter_exposed_stars',
+                'settings' => $settings,
+              ),
+            ),
+            'settings' => array(
+              'stars' => $settings['stars'],
+              'target' => 'self',
+            ),
+          );
+
+          if (variable_get('fivestar_position_teaser_' . $var_suffix, 'hidden') != 'hidden') {
+            $instance_info['display']['teaser'] = array(
+              'type' => 'fivestar_formatter_exposed_stars',
+              'settings' => $settings,
+            );
+          }
+
+          // Set the widget.
+          $widget = variable_get('fivestar_widget' . $var_suffix, 'default');
+          $instance_info['widget']['settings']['widget']['fivestar_widget'] = $widget;
+
+          field_create_instance($instance_info);
+        }
+      }
+    }
+  }
+
+  // Rebuild the menu to remove the node type tag form paths
+  menu_rebuild();
+  _field_info_collate_fields(TRUE);
+}
+
+/**
+ * Preserve settings from fivestar_formatter_exposed_stars and convert to
+ * fivestar_formatter_default.
+ */
+function fivestar_update_7204() {
+  $fields = field_read_fields(array('type' => 'fivestar'));
+  foreach ($fields as $field) {
+    // Iterate through the instances of the field.
+    $instances = field_read_instances(array('field_name' => $field['field_name']));
+    foreach ($instances as $instance) {
+      // The default should be to not allow clearing.
+      $instance['settings']['allow_clear'] = FALSE;
+      // Check each of the displays on the field instance an convert the formatter
+      // from fivestar_formatter_exposed_stars to fivestar_formatter_default.
+      foreach ($instance['display'] as $key => $display) {
+        if ($display['type'] == 'fivestar_formatter_exposed_stars') {
+          // Convert the formatter and set the exposed settings.
+          $instance['display'][$key]['type'] == 'fivestar_formatter_default';
+          $instance['display'][$key]['settings']['expose'] = TRUE;
+
+          // The widget type needs to be exposed for the widget to be exposed.
+          $instance['widget']['type'] = 'exposed';
+
+          // If one of the displays allowed clearing change the field settings
+          // to allow clearing.
+          if ($display['settings']['allow_clear'] == TRUE) {
+            $instance['settings']['allow_clear'] = TRUE;
+          }
+        }
+      }
+      // Update the instance
+      field_update_instance($instance);
+    }
+  }
+}
+
+/**
+ * Rename fivestar 'select' widget to 'fivestar_select'
+ * @see http://drupal.org/node/1285456
+ */
+function fivestar_update_7205() {
+  $fields = field_read_fields(array('type' => 'fivestar'));
+  foreach ($fields as $field) {
+    // Iterate through the instances of the field.
+    $instances = field_read_instances(array('field_name' => $field['field_name']));
+    foreach ($instances as $instance) {
+      // If the widget type is select, lets change it.
+      if ($instance['widget']['type'] == 'select') {
+        $instance['widget']['type'] = 'fivestar_select';
+        // Update the instance
+        field_update_instance($instance);
+      }
+    }
+  }
+}
+
+/**
+ * Preserve setting after new feature preventing re-votes
+ * @see http://drupal.org/node/356605
+ */
+function fivestar_update_7206() {
+  $fields = field_read_fields(array('type' => 'fivestar'));
+  foreach ($fields as $field) {
+    // Iterate through the instances of the field.
+    $instances = field_read_instances(array('field_name' => $field['field_name']));
+    foreach ($instances as $instance) {
+      // The default should be to allow re-voting.
+      $instance['settings']['allow_revote'] = TRUE;
+        // Update the instance
+        field_update_instance($instance);
+    }
+  }
+}
+
+/**
+ * Preserve setting after new feature preventing own votes
+ * @see http://drupal.org/node/189527
+ */
+function fivestar_update_7207() {
+  $fields = field_read_fields(array('type' => 'fivestar'));
+  foreach ($fields as $field) {
+    // Iterate through the instances of the field.
+    $instances = field_read_instances(array('field_name' => $field['field_name']));
+    foreach ($instances as $instance) {
+      // The default should be to allow own votes.
+      $instance['settings']['allow_ownvote'] = TRUE;
+        // Update the instance
+        field_update_instance($instance);
+    }
+  }
+}
+
+/**
+ * Change field formatters to ensure unique.
+ * @see http://drupal.org/node/1063754
+ */
+function fivestar_update_7208() {
+  $fields = field_read_fields(array('type' => 'fivestar'));
+  foreach ($fields as $field) {
+    // Iterate through the instances of the field.
+    $instances = field_read_instances(array('field_name' => $field['field_name']));
+    foreach ($instances as $instance) {
+      $updated = FALSE;
+      foreach ($instance['display'] as &$display) {
+        if (in_array($display['type'], array('default', 'percentage', 'rating'))) {
+          $updated = TRUE;
+          $display['type'] = 'fivestar_formatter_' . $display['type'];
+        }
+      }
+      if ($updated) {
+        // Only trigger instance update if we actually changed anything.
+        field_update_instance($instance);
+      }
+    }
+  }
+}

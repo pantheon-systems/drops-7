@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * Install file for the publish content module.
+ */
+
+/**
+ * Copy tabs preference into new variable called publishcontent_method.
+ */
+function publishcontent_update_7001() {
+  $new_method = variable_get('publishcontent_tabs', TRUE) ? PUBLISHCONTENT_METHOD_TABS : PUBLISHCONTENT_METHOD_NONE;
+  variable_set('publishcontent_method', $new_method);
+  variable_del('publishcontent_tabs');
+}

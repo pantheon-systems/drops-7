@@ -1,0 +1,19 @@
+name = Price
+description = Defines the price field and a price alteration system.
+package = Commerce
+dependencies[] = commerce
+core = 7.x
+
+; Module file includes
+files[] = commerce_price.rules.inc
+
+; Views handlers
+files[] = includes/views/handlers/commerce_price_handler_field_commerce_price.inc
+files[] = includes/views/handlers/commerce_price_handler_filter_commerce_price_amount.inc
+
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
+core = "7.x"
+project = "commerce"
+datestamp = "1394061805"
+

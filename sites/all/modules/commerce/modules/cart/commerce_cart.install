@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * Make all fields that were previously eligible for attribute selection on the
+ * Add to Cart form continue to use the attribute selection widget.
+ */
+function commerce_cart_update_7100() {
+  // Loop over all the field instances on product bundles.
+  foreach (field_info_instances('commerce_product') as $bundle_name => $instances) {
+    foreach ($instances as $instance) {
+      $field = field_info_field_by_id($instance['field_id']);
+
+      // If the field meets attribute eligibility, it should continue to use the
+      // select widget as an attribute field on the Add to Cart form.
+      if ($field['cardinality'] == 1 && function_exists($field['module'] . '_options_list')) {
+        $instance['commerce_cart_settings'] = array(
+          'attribute_field' => TRUE,
+          'attribute_widget' => 'select',
+        );
+      }
+
+      // Save the updated field instance.
+      field_update_instance($instance);
+    }
+  }
+
+  return t('All eligible product attribute fields have been updated to continue using the attribute selection widget.');
+}
+
+/**
+ * Disable the new local action to apply pricing rules to an order.
+ */
+function commerce_cart_update_7101() {
+  variable_set('commerce_order_apply_pricing_rules_link', FALSE);
+  return t('A new local action link on order edit forms for applying pricing rules to an order has been disabled by default; enable it on the order settings form if desired.');
+}
+
+/**
+ * Adjust the new shopping cart refresh frequency to occur continuously to match
+ * the long-standing behavior of the process.
+ */
+function commerce_cart_update_7102() {
+  variable_set('commerce_cart_refresh_frequency', 0);
+  return t('New order settings have been added to let you reduce the frequency of the shopping cart refresh. This update set it to occur continuously as it has been, but we recommend you implement some delay unless you have a unique product pricing situation that demands pricing updates every time a shopping cart is loaded.');
+}

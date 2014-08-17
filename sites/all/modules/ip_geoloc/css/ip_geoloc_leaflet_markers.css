@@ -1,0 +1,60 @@
+/* Note that the name of the marker directory, e.g. "/amarkers" is output in
+   the HTML as a CSS class, so you can customise a version to go with your
+   specific markers by prefixing your CSS rules with .amarkers (or whatever the
+   name of your marker directory is)
+*/
+
+.leaflet-tagged-marker div, /* element used for marker tags */
+.leaflet-tagged-marker i {
+  /* element used for the special font-icon chars */
+  position: relative;
+  top: -35px;
+  left: -41px;
+  min-width: 80px; /* -2x left */
+  text-align: center;
+  height: 0;  /* to avoid marker position shifting */
+}
+.leaflet-tagged-marker div {
+  font-size: 11px;
+}
+.leaflet-tagged-marker i {
+  font-size: 17px;
+  font-style: normal;
+  display: block; /* block and zero width to avoid marker position shifting */
+  width: 0;
+}
+/* adjust for the Google-style markers that live in the /markers directory */
+.markers .leaflet-tagged-marker i {
+  font-size: 11px;
+  top: -30px;
+}
+
+.leaflet-tagged-marker div.tag-above-marker {
+  top: -56px;
+  color: red;
+}
+.leaflet-tagged-marker div.tag-below-marker {
+  top: -1px;
+  color: red;
+}
+
+.leaflet-marker-icon.tag-rounded-corners {
+  font-size: 10px;
+  width: 60px;
+  padding: 0 3px 1px 2px;
+  border-radius: 0 9px 9px 9px;
+  border: 1px solid black;
+  background-color: white;
+}
+
+.leaflet-marker-icon.tag-pointy-circle {
+  text-align: center;
+  width: 30px;
+  height: 25px;
+  padding-top: 5px;
+  border-radius: 0 20px 20px 20px;
+  border: 1px solid black;
+  border-top: 1px solid red;
+  border-left: 1px solid red;
+  background-color: white;
+}

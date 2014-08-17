@@ -1,0 +1,11 @@
+name = Instant Filter
+description = Provides a Javascript utility to instantly filter data.
+core = 7.x
+files[] = instantfilter.module
+
+; Information added by drupal.org packaging script on 2011-08-15
+version = "7.x-1.0-beta2"
+core = "7.x"
+project = "instantfilter"
+datestamp = "1313423216"
+

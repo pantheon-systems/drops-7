@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * Implements hook_field_schema().
+ */
+function url_field_schema($field) {
+  $schema['columns']['value'] = array(
+    'description' => 'The URL string.',
+    'type' => 'text',
+    'size' => 'big',
+    'not null' => FALSE,
+  );
+  $schema['columns']['title'] = array(
+    'description' => 'The title of the URL.',
+    'type' => 'varchar',
+    'length' => 1024,
+    'not null' => FALSE,
+  );
+  $schema['columns']['attributes'] = array(
+    'description' => 'The serialized array of attributes of the URL.',
+    'type' => 'blob',
+    'size' => 'big',
+    'not null' => FALSE,
+    'serialize' => TRUE,
+  );
+
+  return $schema;
+}
+
+/**
+ * Fix incorrect default values of URL field instances.
+ */
+function url_update_7100() {
+  $fields = field_read_fields(array('type' => 'url'));
+  foreach ($fields as $field) {
+    $instances = field_read_instances(array('field_name' => $field['field_name']));
+    foreach ($instances as $instance) {
+      _url_fix_field_default_value($field, $instance);
+    }
+  }
+}
+
+/**
+ * Helper function to fix incorrect default values of URL field instances.
+ *
+ * @see http://drupal.org/node/1899498
+ */
+function _url_fix_field_default_value($field, &$instance) {
+  if (!empty($instance['default_value'])) {
+    $items = $instance['default_value'];
+    url_field_presave(NULL, NULL, $field, $instance, LANGUAGE_NONE, $items);
+    if ($items !== $instance['default_value']) {
+      $instance['default_value'] = $items;
+      field_update_instance($instance);
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
