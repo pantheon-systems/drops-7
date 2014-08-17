@@ -1,0 +1,15 @@
+name = Address Field Example
+description = Example module for how to implement an addressfield format handler.
+core = 7.x
+package = Fields
+hidden = TRUE
+
+dependencies[] = ctools
+dependencies[] = addressfield
+
+; Information added by Drupal.org packaging script on 2013-12-06
+version = "7.x-1.0-beta5"
+core = "7.x"
+project = "addressfield"
+datestamp = "1386309505"
+

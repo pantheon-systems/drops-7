@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall hooks for Leaflet More Maps module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function leaflet_more_maps_uninstall() {
+  variable_del('leaflet_more_maps_custom_maps');
+}

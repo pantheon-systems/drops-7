@@ -1,0 +1,57 @@
+.paypal-ec-order-form,
+.paypal-bml-order-form {
+  text-align: right;
+}
+
+.paypal-ec-bml-separator {
+  font-weight: bold;
+  padding: 0 55px 10px 0;
+}
+
+#edit-paypal-ec,
+#edit-paypal-bml {
+  background: none;
+  border: none;
+  margin: 0 .5em 0 0;
+  padding: 0;
+}
+
+.commerce-paypal-ec-icon-wrapper,
+.commerce-paypal-bml-icon-wrapper {
+  line-height: 3em;
+}
+
+.commerce-paypal-ec-icon,
+.commerce-paypal-bml-icon {
+  position: relative;
+  top: 15px;
+}
+
+.paypal-bml-text {
+  margin: 0 .5em 0 0;
+}
+
+#edit-paypal-ec-banners .form-item-settings-banner-size {
+  position: relative;
+}
+
+#edit-paypal-ec-banners .form-item-settings-banner-size .form-radio {
+  position: absolute;
+  top: 50%;
+}
+
+#edit-paypal-ec-banners .form-item-settings-banner-size label {
+  display: block;
+}
+
+#edit-paypal-ec-banners .form-item-settings-banner-size #edit-settings-banner-size label {
+  margin-left: 20px;
+}
+
+#edit-paypal-ec-banners .form-item-settings-banner-size label img {
+  border: 1px solid #C0C0C0;
+}
+
+#edit-paypal-ec-banners .form-item-settings-server {
+  clear: both;
+}

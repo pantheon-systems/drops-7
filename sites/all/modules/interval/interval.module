@@ -1,0 +1,525 @@
+<?php
+/**
+ * @file
+ * Defines an interval field
+ * @copyright Copyright(c) 2011 Rowlands Group
+ * @license GPL v2+ http://www.fsf.org/licensing/licenses/gpl.html
+ * @author Lee Rowlands leerowlands at rowlandsgroup dot com
+ *
+ */
+
+
+/***************************************************************
+ * Field Type API hooks
+ ***************************************************************/
+
+/**
+ * Implements hook_field_info().
+ *
+ * Provides the description of the field.
+ */
+function interval_field_info() {
+  return array(
+    // We name our field as the associative name of the array.
+    'interval' => array(
+      'label' => t('Interval'),
+      'description' => t('Provides an interval field allowing you to enter a number and select a period.'),
+      'default_widget' => 'interval_default',
+      'default_formatter' => 'interval_default',
+      // Add entity property metadata for the entity api module.
+      'property_type' => 'field_item_interval',
+      'property_callbacks' => array('interval_field_entity_property_info_alter'),
+    ),
+  );
+}
+
+/**
+ * Defines the data structure used for interval field items.
+ */
+function interval_entity_property_field_item_interval_info() {
+  return array(
+    'interval' => array(
+      'type' => 'integer',
+      'label' => t('Interval number'),
+      'description' => t('The number of multiples of the period.'),
+    ),
+    'period' => array(
+      'type' => 'token',
+      'label' => t('Interval period'),
+      'options list' => 'interval_period_options_list',
+    ),
+  );
+}
+
+/**
+ * Callback to alter the property info of interval fields.
+ *
+ * @see interval_field_info()
+ */
+function interval_field_entity_property_info_alter(&$info, $entity_type, $field, $instance, $field_type) {
+  $name = $field['field_name'];
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+
+  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+  $property['property info'] = interval_entity_property_field_item_interval_info();
+  unset($property['query callback']);
+}
+
+/**
+ * Implements hook_field_validate().
+ *
+ * @see interval_field_widget_error()
+ */
+function interval_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  foreach ($items as $delta => $item) {
+    if (!empty($item['interval'])) {
+      if (!is_numeric($item['interval'])) {
+        $errors[$field['field_name']][$langcode][$delta][] = array(
+          'error' => 'interval_non_numeric',
+          'message' => t('You must enter a numeric value.'),
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function interval_field_is_empty($item, $field) {
+  return ($item['interval'] == '');
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ *
+ * We need to tell Drupal that we have two different types of formatters
+ * for this field. One will change the text color, and the other will
+ * change the background color.
+ *
+ * @see interval_field_formatter_view()
+ */
+function interval_field_formatter_info() {
+  return array(
+    // This formatter just displays the interval and period wrapped in a div.
+    'interval_default' => array(
+      'label' => t('Plain'),
+      'field types' => array('interval'),
+    ),
+    // Same as default formatter but without the wrapper div.
+    'interval_raw' => array(
+      'label' => t('Raw'),
+      'field types' => array('interval'),
+    ),
+    'interval_php' => array(
+      'label' => t('PHP date/time'),
+      'field types' => array('interval'),
+      'description' => t('A valid PHP date/time string.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ *
+ * @see interval_field_formatter_info()
+ */
+function interval_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  switch ($display['type']) {
+    // This formatter simply outputs the interval/period wrapped in a div.
+    case 'interval_default':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          '#type' => 'html_tag',
+          '#attributes' => array('class' => array('interval-value')),
+          '#tag' => 'div',
+          '#value' => interval_format_interval($item)
+        );
+      }
+      break;
+
+    // This formatter outputs the interval/period.
+    case 'interval_raw':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          '#markup' => check_plain(interval_format_interval($item))
+        );
+      }
+      break;
+
+    // This formatter outputs the interval/period as a PHP date/time string.
+    case 'interval_php':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          '#markup' => check_plain(interval_php_interval($item)),
+        );
+      }
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_instance_settings_form().
+ *
+ * Allow the user to choose from available periods
+ */
+function interval_field_instance_settings_form($field, $instance) {
+  $form = array();
+  $settings = $instance['settings'];
+
+  $widget = $instance['widget']['type'];
+  if ($widget == 'interval_default') {
+    $options = array();
+    $intervals = interval_get_intervals();
+    foreach ($intervals as $key => $detail) {
+      $options[$key] = $detail['plural'];
+    }
+    $form['allowed_periods'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Allowed periods'),
+      '#options' => $options,
+      '#description' => t('Select the periods you wish to be available in the dropdown. Selecting none will make all of them available.'),
+      '#default_value' => isset($settings['allowed_periods']) ? $settings['allowed_periods'] : array()
+    );
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ *
+ * @see interval_field_widget_form()
+ */
+function interval_field_widget_info() {
+  return array(
+    'interval_default' => array(
+      'label' => t('Interval and Period'),
+      'field types' => array('interval'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function interval_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  // Convenience variables.
+  $value = isset($items[$delta]) ? $items[$delta] : array('interval' => NULL, 'period' => NULL);
+  $field_name = $instance['field_name'];
+
+  // We need to check our form_state values for ajax completion.
+  if (isset($form_state['values']) &&
+      !empty($form_state['values'][$field_name][$langcode][$delta])) {
+    // We use the current form state values instead of those from the db.
+    $value = $form_state['values'][$field_name][$langcode][$delta];
+  }
+  $element['#default_value'] = $value;
+
+  $settings = $instance['settings'];
+  $widget = $instance['widget'];
+
+  // Available periods.
+  if (isset($settings['allowed_periods'])) {
+    $element['#periods'] = array_keys(array_filter($settings['allowed_periods']));
+  }
+
+  switch ($widget['type']) {
+    case 'interval_default':
+      $element += array(
+        '#type' => 'interval',
+      );
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_widget_error().
+ *
+ * @see interval_field_validate()
+ * @see form_error()
+ */
+function interval_field_widget_error($element, $error, $form, &$form_state) {
+  switch ($error['error']) {
+    case 'interval_non_numeric':
+      form_error($element['interval'], $error['message']);
+      break;
+  }
+}
+
+/***************************************************************
+ * Form element hooks
+ ***************************************************************/
+
+/**
+ * Implements hook_element_info().
+ */
+function interval_element_info() {
+  $types = array();
+  $types['interval'] = array(
+    '#input' => TRUE,
+    '#process' => array('interval_element_process'),
+    '#theme' => 'interval',
+    '#theme_wrappers' => array('form_element'),
+  );
+
+  return $types;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function interval_theme() {
+  $hooks = array(
+    'interval' => array(
+      'render element' => 'element',
+    ),
+  );
+
+  return $hooks;
+}
+
+/**
+ * Returns HTML for an interval form element.
+ */
+function theme_interval($variables) {
+  $element = $variables['element'];
+  $element['interval']['#size'] = 8;
+
+  $attributes = array();
+  if (isset($element['#id'])) {
+    $attributes['id'] = $element['#id'];
+  }
+  if (!empty($element['#attributes']['class'])) {
+    $attributes['class'] = (array) $element['#attributes']['class'];
+  }
+  $attributes['class'][] = 'container-inline';
+
+  return '<div' . drupal_attributes($attributes) . '>' . drupal_render_children($element) . '</div>';
+}
+
+/**
+ * Process function to expand the interval element type.
+ */
+function interval_element_process($element, &$form_state, $form) {
+  $value = !empty($element['#default_value'])?$element['#default_value']:array('interval' => NULL, 'period' => NULL);
+
+  $element['interval'] = array(
+    '#type' => 'textfield',
+    '#default_value' => $value['interval'],
+    '#required' => $element['#required'],
+  );
+
+  $intervals = interval_get_intervals();
+  $periods = !empty($element['#periods'])?$element['#periods']:array_keys($intervals);
+  $period_options = array();
+  foreach ($intervals as $key => $detail) {
+    if (in_array($key, $periods) && isset($detail['plural'])) {
+      $period_options[$key] = $detail['plural'];
+    }
+  }
+  $element['period'] = array(
+    '#type' => 'select',
+    '#options' => $period_options,
+    '#default_value' => $value['period'],
+    '#required' => $element['#required'],
+  );
+
+  return $element;
+}
+
+/***************************************************************
+ * Non core hooks
+ ***************************************************************/
+
+/**
+ * Implements hook_interval_intervals
+ */
+function interval_interval_intervals() {
+  return array(
+    'second' => array(
+      'plural' => t('Seconds', array(), array('context' => 'interval')),
+      'singular' => t('Second', array(), array('context' => 'interval')),
+      'php' => 'seconds',
+      'multiplier' => 1,
+    ),
+    'minute' => array(
+      'plural' => t('Minutes', array(), array('context' => 'interval')),
+      'singular' => t('Minute', array(), array('context' => 'interval')),
+      'php' => 'minutes',
+      'multiplier' => 1,
+    ),
+    'hour' => array(
+      'plural' => t('Hours', array(), array('context' => 'interval')),
+      'singular' => t('Hour', array(), array('context' => 'interval')),
+      'php' => 'hours',
+      'multiplier' => 1,
+    ),
+    'day' => array(
+      'plural' => t('Days', array(), array('context' => 'interval')),
+      'singular' => t('Day', array(), array('context' => 'interval')),
+      'php' => 'days',
+      'multiplier' => 1,
+    ),
+    'month' => array(
+      'plural' => t('Months', array(), array('context' => 'interval')),
+      'singular' => t('Month', array(), array('context' => 'interval')),
+      'php' => 'months',
+      'multiplier' => 1,
+    ),
+    'year' => array(
+      'plural' => t('Years', array(), array('context' => 'interval')),
+      'singular' => t('Year', array(), array('context' => 'interval')),
+      'php' => 'years',
+      'multiplier' => 1,
+    ),
+    'week' => array(
+      'plural' => t('Weeks', array(), array('context' => 'interval')),
+      'singular' => t('Week', array(), array('context' => 'interval')),
+      'php' => 'days',
+      'multiplier' => 7,
+    ),
+    'fortnight' => array(
+      'plural' => t('Fortnights', array(), array('context' => 'interval')),
+      'singular' => t('Fortnight', array(), array('context' => 'interval')),
+      'php' => 'days',
+      'multiplier' => 14,
+    ),
+    'quarter' => array(
+      'plural' => t('Quarters', array(), array('context' => 'interval')),
+      'singular' => t('Quarter', array(), array('context' => 'interval')),
+      'php' => 'months',
+      'multiplier' => 3,
+    ),
+  );
+}
+
+/***************************************************************
+ * Module functions
+ ***************************************************************/
+/**
+ * Util function to fetch defined intervals
+ */
+function interval_get_intervals() {
+  $intervals = &drupal_static(__FUNCTION__);
+  if (!isset($intervals)) {
+    // First prime of the static - try cache.
+    $cached = cache_get('interval_intervals');
+    if ($cached && $cached->data) {
+      $intervals = $cached->data;
+    }
+    else {
+      // Non-primed cache too - initialize with module_invoke_all.
+      $intervals = module_invoke_all('interval_intervals');
+      // Cache them.
+      cache_set('interval_intervals', $intervals);
+    }
+  }
+  return $intervals;
+}
+
+/**
+ * Applies the interval values to a given date
+ *
+ * @param object $date
+ *   A DateTime object to which the interval needs to be applied
+ * @param array $item
+ *   An array of values for the interval item consisting of:
+ *   - interval: the interval (int)
+ *   - period: the interval period
+ * @param bool $limit
+ *   When calling the interval apply function with months or a month multiplier,
+ *   keep the date in the last day of the month if this was exceeded.
+ *   Example, with $limit set to TRUE, January 31st +1 month will result in
+ *   February 28th.
+ *
+ * @return bool
+ *   TRUE/FALSE
+ */
+function interval_apply_interval($date, $item, $limit = FALSE) {
+  if (is_object($date)) {
+    $old_date = clone $date;
+    $intervals = interval_get_intervals();
+    $interval = $intervals[$item['period']];
+    $datetime = interval_php_interval($item);
+    $date->modify($datetime);
+
+    if ($limit && $interval['php'] == 'months') {
+      $dateinterval = $date->diff($old_date);
+      if ($dateinterval->d <> 0) {
+        $date->modify("last day of last month");
+      }
+    }
+
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Returns a PHP date/time string for a given interval.
+ *
+ * @param array $item
+ *   An array of values for the interval item consisting of:
+ *   - interval: the interval (int)
+ *   - period: the interval period
+ * @param array $interval
+ *   An array of interval properties.
+ *
+ * @return string
+ *   The PHP date/time string.
+ *
+ * @see interval_get_intervals
+ */
+function interval_php_interval($item, $interval = NULL) {
+  if (!isset($interval)) {
+    $intervals = interval_get_intervals();
+    $interval = $intervals[$item['period']];
+  }
+  $value = $item['interval'] * $interval['multiplier'];
+  $datetime = $value . ' ' . $interval['php'];
+
+  return $datetime;
+}
+
+/**
+ * Formats an interval
+ *
+ * Takes the given interval values and formats them as a string
+ *
+ * @param array $item
+ *   An array of values for the interval item consisting of:
+ *   - interval: the interval (int)
+ *   - period: the interval period
+ *
+ * @return string
+ *   The formatted interval
+ */
+function interval_format_interval($item) {
+  $intervals = interval_get_intervals();
+  $interval = $intervals[$item['period']];
+  return format_plural(
+    $item['interval'], '1 @singular', '@count @plural',
+    array(
+      '@singular' => $interval['singular'],
+      '@plural' => $interval['plural']
+    )
+  );
+}
+
+/**
+ * Returns an options list of all supported interval periods.
+ */
+function interval_period_options_list() {
+  $options = array();
+  foreach (interval_get_intervals() as $interval => $info) {
+    $options[$interval] = $info['plural'];
+  }
+  return $options;
+}

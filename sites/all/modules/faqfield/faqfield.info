@@ -1,0 +1,10 @@
+name = FAQ Field
+description = Provides a field for frequently asked questions.
+core = 7.x
+
+; Information added by Drupal.org packaging script on 2014-03-19
+version = "7.x-1.2"
+core = "7.x"
+project = "faqfield"
+datestamp = "1395249258"
+

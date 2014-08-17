@@ -1,0 +1,18 @@
+name = Commerce Node Checkout Expire
+description = Automatic expiration of nodes published via purchase
+core = 7.x
+dependencies[] = rules
+dependencies[] = commerce_node_checkout
+dependencies[] = interval
+dependencies[] = date
+dependencies[] = date_popup
+package = Commerce (contrib)
+files[] = commerce_node_checkout_expire.test
+files[] = includes/views/handlers/commerce_node_checkout_expire_field_node_relist_form.inc
+
+; Information added by Drupal.org packaging script on 2014-05-16
+version = "7.x-1.0-beta1"
+core = "7.x"
+project = "commerce_node_checkout"
+datestamp = "1400256828"
+

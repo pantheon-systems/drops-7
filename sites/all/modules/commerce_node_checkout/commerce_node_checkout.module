@@ -1,0 +1,334 @@
+<?php
+/**
+ * @file
+ *   Provides core hooks and the like for the module
+ */
+
+/**
+ * Implements hook_help().
+ */
+function commerce_node_checkout_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#commerce_node_checkout':
+      return t('Enables users to pay to publish content');
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_node_checkout_permission() {
+  return array(
+    'administer commerce node checkout' => array(
+      'title' => t('Administer Commerce Node'),
+      'description' => t('Perform administration tasks for Commerce Node Checkout.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function commerce_node_checkout_field_extra_fields() {
+  $info = array();
+
+  // Iterate all node types
+  foreach (node_type_get_types() as $node_type) {
+    // See if this node type has products
+    if (commerce_node_checkout_get_node_type_enabled_products($node_type->type)) {
+      // Add the form field to select the product
+      $info['node'][$node_type->type]['form']['commerce_node_checkout'] = array(
+        'label' => t('Commerce node checkout'),
+        'description' => t('Product selection'),
+        'weight' => 5,
+      );
+    }
+  }
+
+  return $info;
+}
+
+/**
+ * Implements hook_field_attach_form().
+ */
+function commerce_node_checkout_field_attach_form($entity_type, $entity, &$form, &$form_state, $langcode) {
+  list($id, , $bundle) = entity_extract_ids($entity_type, $entity);
+
+  // Only proceed for new nodes
+  if (!$id && ($entity_type == 'node')) {
+    // Make sure there are products available for this node type
+    if ($enabled_products = commerce_node_checkout_get_node_type_enabled_products($bundle)) {
+      // Add the product selection
+      $form['commerce_node_checkout'] = array(
+        '#type' => 'commerce_node_checkout',
+        '#node_type' => $bundle,
+        // Give admins the option to skip checkout
+        'commerce_node_checkout_skip' => array(
+          '#type' => 'checkbox',
+          '#title' => t('Don\'t add to the shopping cart'),
+          '#description' => t('If checked, this node will be created without adding it to the shopping cart. This option is only available for administrators.'),
+          '#default_value' => 0,
+          '#access' => user_access('administer commerce node checkout'),
+          '#weight' => 10,
+        ),
+      );
+      // Include a submit handler
+      $form['actions']['submit']['#submit'][] = 'commerce_node_checkout_node_form_submit';
+    }
+  }
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function commerce_node_checkout_element_info() {
+  $types = array();
+  $types['commerce_node_checkout'] = array(
+    '#process' => array('commerce_node_checkout_process_element'),
+  );
+  return $types;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_node_checkout_form_node_type_form_alter(&$form, $form_state) {
+  $product_list = commerce_node_checkout_get_product_list();
+  $form['commerce_node_checkout'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Commerce Node Checkout'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+    '#access' => !empty($product_list),
+    '#group' => 'additional_settings',
+  );
+  $form['commerce_node_checkout']['commerce_node_checkout_products'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Applicable products'),
+    '#default_value' => commerce_node_checkout_get_node_type_enabled_products($form['#node_type']->type),
+    '#options' => $product_list,
+    '#description' => t('Purchasing this product will enable the user to publish their node.'),
+  );
+}
+
+/**
+ * Implements hook_commerce_line_item_type_info().
+ */
+function commerce_node_checkout_commerce_line_item_type_info() {
+  $line_item_types = array();
+  $line_item_types['commerce_node_checkout'] = array(
+    'name' => t('Commerce Node Checkout'),
+    'description' => t('Example Line Item type of line item'),
+    'product' => TRUE,
+    'add_form_submit_value' => t('Place listing'),
+    'base' => 'commerce_product_line_item',
+    'callbacks' => array(
+      'title' => 'commerce_node_checkout_line_item_title_callback',
+    ),
+  );
+  return $line_item_types;
+}
+
+/**
+ * Element process callback to build the product selection form widget
+ * for a node.
+ */
+function commerce_node_checkout_process_element($element) {
+  // Get the available products for this node
+  $products = commerce_node_checkout_get_node_type_product_list($element['#node_type']);
+
+  // Add a selection for the product
+  $element['commerce_node_checkout_product'] = array(
+    '#type' => (count($products) > 1) ? 'select' : 'radios',
+    '#title' => t('Listing option'),
+    '#options' => $products,
+    '#description' => t('Select your desired listing option.'),
+    '#default_value' => key($products),
+    '#required' => TRUE,
+    '#access' => !empty($products),
+  );
+
+  return $element;
+}
+
+/**
+ * Fetch the enabled products for a given node.
+ *
+ * @param $type
+ *   Node type machine name.
+ * @return
+ *   An array of product IDs that are enabled for the given node type.
+ */
+function commerce_node_checkout_get_node_type_enabled_products($type) {
+  return variable_get('commerce_node_checkout_products_' . $type, array());
+}
+
+/**
+ * Fetch the a list of available products for all node types.
+ *
+ * @param $available_products
+ *   An optional array of product IDs to filter the list by.
+ * @return array
+ *   Array of product names keyed by product ID.
+ */
+function commerce_node_checkout_get_product_list($available_products = array()) {
+  $options = array();
+
+  // Set the options for the search
+  $field = array('field_name' => 'commerce_node_checkout_products');
+  $instance = array('settings' => array('referenceable_types' => array('commerce_node_checkout')));
+
+  // Execute the search
+  $products = commerce_product_match_products($field, $instance, '', 'contains', $available_products);
+
+  // Loop through all product matches.
+  foreach ($products as $pid => $data) {
+    // Add them to the options list.
+    $options[$pid] = check_plain($data['title']);
+  }
+
+  return $options;
+}
+
+/**
+ * Provide a formatted list of products enabled for a specific node type
+ * that can be used to present to a user.
+ *
+ * @param $type
+ *   The node type.
+ * @return
+ *   An array of products keyed by product ID with a value of the product
+ *   name with the price appended.
+ */
+function commerce_node_checkout_get_node_type_product_list($type) {
+  $products = array();
+
+  // See if this node type has enabled products
+  if ($enabled = commerce_node_checkout_get_node_type_enabled_products($type)) {
+    // Load and iterate the enabled products
+    foreach (commerce_product_load_multiple($enabled) as $pid => $product) {
+      // Create a wrapper
+      $wrapper = entity_metadata_wrapper('commerce_product', $product);
+
+      // Extract the price
+      $price_data = $wrapper->commerce_price->value();
+      $price = commerce_currency_format($price_data['amount'], $price_data['currency_code'], $product);
+
+      // Format the title along with the price
+      $products[$pid] = $wrapper->title->value() . ($price ? (' - ' . $price) : '');
+    }
+  }
+
+  return $products;
+}
+
+/**
+ * Form submission handler that executes only when a new node that contains
+ * the product selection widget is saved.
+ *
+ * This is used to potentially add the node to the user's cart.
+ */
+function commerce_node_checkout_node_form_submit($form, &$form_state) {
+  // Only add to the cart if the admin didn't choose to skip this step
+  if (!$form_state['values']['commerce_node_checkout_skip']) {
+    // Make sure we can load the product that was selected
+    if ($product = commerce_product_load($form_state['values']['commerce_node_checkout_product'])) {
+      // Add the node product to the user's cart
+      commerce_node_checkout_add_node($form_state['node'], $product);
+    }
+    // Redirect to the user's cart
+    $form_state['redirect'] = 'cart';
+  }
+}
+
+/**
+ * Adds a node to a line item in the user's cart
+ *
+ * @param $node
+ *   The node object to be associated with the line item.
+ * @param $product
+ *   The product chosen by the user.
+ * @return
+ *   The line item object that was created when the node was added to
+ *   the cart, or FALSE, if an error occurred.
+ */
+function commerce_node_checkout_add_node($node, $product) {
+  global $user;
+
+  // Create our new line item.
+  if ($line_item = commerce_product_line_item_new($product, 1, 0, array(), 'commerce_node_checkout')) {
+    // Set the reference field value.
+    $line_item->commerce_node_checkout_node[LANGUAGE_NONE][0]['target_id'] = $node->nid;
+
+    // Let other modules alter the line item before it's added to the cart.
+    drupal_alter('commerce_node_checkout_line_item', $line_item, $product, $node);
+
+    // Add to cart.
+    if ($line_item = commerce_cart_product_add($user->uid, $line_item, FALSE)) {
+      return $line_item;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Title callback for the Commerce Node Checkout line item type.
+ *
+ * @param $line_item
+ *   A Commerce line item object.
+ * @return
+ *   The title to render for the line item.
+ *
+ * @see
+ *   commerce_node_checkout_commerce_line_item_type_info()
+ */
+function commerce_node_checkout_line_item_title_callback($line_item) {
+  // Default to the normal title
+  $title =  commerce_product_line_item_title($line_item);
+
+  // Create a wrapper for the line item
+  $wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+  // Load the referenced node
+  if ($node = $wrapper->commerce_node_checkout_node->value()) {
+    // Get the node's URI
+    $uri = entity_uri('node', $node);
+
+    // Generate a link and append to the title
+    $title .= ' (' . l($node->title, $uri['path']) . ')';
+  }
+
+  return $title;
+}
+
+/**
+ * Extract the products from a given order.
+ *
+ * Does Commerce already offer this somewhere?
+ *
+ * @param $order
+ *   An order entity.
+ * @return
+ *   An array of products from the order keyed by delta.
+ */
+function commerce_node_checkout_get_order_products($order) {
+  $products = &drupal_static(__FUNCTION__, array());
+
+  // Check the static cache
+  if (!isset($products[$order->order_id])) {
+    // Create a wrapper for the order
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    // Iterate the line items
+    foreach ($wrapper->commerce_line_items as $delta => $line_item) {
+      // Extract the product
+      if ($product = $line_item->commerce_product->value()) {
+        // Add it to be returned
+        $products[$order->order_id][$delta] = $product;
+      }
+    }
+  }
+
+  return $products[$order->order_id];
+}

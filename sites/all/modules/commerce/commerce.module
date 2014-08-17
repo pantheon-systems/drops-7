@@ -1,0 +1,1352 @@
+<?php
+
+/**
+ * @file
+ * Defines features and functions common to the Commerce modules.
+ */
+
+
+// Define our own rounding constants since we can't depend on PHP 5.3.
+define('COMMERCE_ROUND_NONE', 0);
+define('COMMERCE_ROUND_HALF_UP', 1);
+define('COMMERCE_ROUND_HALF_DOWN', 2);
+define('COMMERCE_ROUND_HALF_EVEN', 3);
+define('COMMERCE_ROUND_HALF_ODD', 4);
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_permission() {
+  $permissions = array(
+    'configure store' => array(
+      'title' => t('Configure store settings'),
+      'description' => t('Allows users to update store currency and contact settings.'),
+      'restrict access' => TRUE,
+    ),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function commerce_hook_info() {
+  $hooks = array(
+    'commerce_currency_info' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_currency_info_alter' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_entity_access' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_entity_access_condition_alter' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_entity_create_alter' => array(
+      'group' => 'commerce',
+    ),
+  );
+
+  return $hooks;
+}
+
+/**
+ * Implements hook_system_info_alter().
+ *
+ * Drupal's Field module doesn't allow field type providing modules to be
+ * disabled while fields and instances of those types exist in the system.
+ * See http://drupal.org/node/943772 for further explanation.
+ *
+ * That approach doesn't work for Commerce, creating circular dependencies
+ * and making uninstall impossible. This function removes the requirement,
+ * allowing Commerce to implement its own workaround.
+ *
+ * @see commerce_delete_field()
+ */
+function commerce_system_info_alter(&$info, $file, $type) {
+  $modules = array(
+    'commerce_product_reference',
+    'commerce_price',
+    'commerce_customer',
+    'commerce_line_item',
+  );
+
+  if ($type == 'module' && in_array($file->name, $modules)) {
+    unset($info['required']);
+    unset($info['explanation']);
+  }
+}
+
+/**
+ * Finds all fields of a particular field type.
+ *
+ * @param $field_type
+ *   The type of field to search for.
+ * @param $entity_type
+ *   Optional entity type to restrict the search to.
+ *
+ * @return
+ *   An array of the matching fields keyed by the field name.
+ */
+function commerce_info_fields($field_type, $entity_type = NULL) {
+  $fields = array();
+
+  // Loop through the fields looking for any fields of the specified type.
+  foreach (field_info_field_map() as $field_name => $field_stub) {
+    if ($field_stub['type'] == $field_type) {
+      // Add this field to the return array if no entity type was specified or
+      // if the specified type exists in the field's bundles array.
+      if (empty($entity_type) || in_array($entity_type, array_keys($field_stub['bundles']))) {
+        $field = field_info_field($field_name);
+        $fields[$field_name] = $field;
+      }
+    }
+  }
+
+  return $fields;
+}
+
+/**
+ * Deletes a reference to another entity from an entity with a reference field.
+ *
+ * @param $entity
+ *   The entity that contains the reference field.
+ * @param $field_name
+ *   The name of the entity reference field.
+ * @param $col_name
+ *   The name of the column in the field's schema containing the referenced
+ *   entity's ID.
+ * @param $ref_entity_id
+ *   The ID of the entity to delete from the reference field.
+ */
+function commerce_entity_reference_delete($entity, $field_name, $col_name, $ref_entity_id) {
+  // Exit now if the entity does not have the expected field.
+  if (empty($entity->{$field_name})) {
+    return;
+  }
+
+  // Loop over each of the field's items in every language.
+  foreach ($entity->{$field_name} as $langcode => $items) {
+    $rekey = FALSE;
+    foreach ($items as $delta => $item) {
+      // If the item references the specified entity...
+      if (!empty($item[$col_name]) && $item[$col_name] == $ref_entity_id) {
+        // Unset the reference.
+        unset($entity->{$field_name}[$langcode][$delta]);
+        $rekey = TRUE;
+      }
+    }
+
+    if ($rekey) {
+      // Rekey the field items if necessary.
+      $entity->{$field_name}[$langcode] = array_values($entity->{$field_name}[$langcode]);
+
+      // If the reference field is empty, wipe its data altogether.
+      if (count($entity->{$field_name}[$langcode]) == 0) {
+        unset($entity->{$field_name}[$langcode]);
+      }
+    }
+  }
+}
+
+/**
+ * Attempts to directly activate a field that was disabled due to its module
+ * being disabled.
+ *
+ * The normal API function for updating fields, field_update_field(), will not
+ * work on disabled fields. As a workaround, this function directly updates the
+ * database, but it is up to the caller to clear the cache.
+ *
+ * @param $field_name
+ *   The name of the field to activate.
+ *
+ * @return
+ *   Boolean indicating whether or not the field was activated.
+ */
+function commerce_activate_field($field_name) {
+  // Set it to active via a query because field_update_field() does
+  // not work on inactive fields.
+  $updated = db_update('field_config')
+    ->fields(array('active' => 1))
+    ->condition('field_name', $field_name, '=')
+    ->condition('deleted', 0, '=')
+    ->execute();
+
+  return !empty($updated) ? TRUE : FALSE;
+}
+
+/**
+ * Enables and deletes fields of the specified type.
+ *
+ * @param $type
+ *   The type of fields to enable and delete.
+ *
+ * @see commerce_delete_field()
+ */
+function commerce_delete_fields($type) {
+  // Read the fields for any active or inactive field of the specified type.
+  foreach (field_read_fields(array('type' => $type), array('include_inactive' => TRUE)) as $field_name => $field) {
+    commerce_delete_field($field_name);
+  }
+}
+
+/**
+ * Enables and deletes the specified field.
+ *
+ * The normal API function for deleting fields, field_delete_field(), will not
+ * work on disabled fields. As a workaround, this function first activates the
+ * fields of the specified type and then deletes them.
+ *
+ * @param $field_name
+ *   The name of the field to enable and delete.
+ */
+function commerce_delete_field($field_name) {
+  // In case the field is inactive, first activate it and clear the field cache.
+  if (commerce_activate_field($field_name)) {
+    field_cache_clear();
+  }
+
+  // Delete the field.
+  field_delete_field($field_name);
+}
+
+/**
+ * Deletes any field instance attached to entities of the specified type,
+ * regardless of whether or not the field is active.
+ *
+ * @param $entity_type
+ *   The type of entity whose fields should be deleted.
+ * @param $bundle
+ *   Optionally limit instance deletion to a specific bundle of the specified
+ *   entity type.
+ */
+function commerce_delete_instances($entity_type, $bundle = NULL) {
+  // Prepare a parameters array to load the specified instances.
+  $params = array(
+    'entity_type' => $entity_type,
+  );
+
+  if (!empty($bundle)) {
+    $params['bundle'] = $bundle;
+    // Delete this bundle's field bundle settings.
+    variable_del('field_bundle_settings_' . $entity_type . '__' . $bundle);
+  }
+  else {
+    // Delete all field bundle settings for this entity type.
+    db_delete('variable')
+      ->condition('name', db_like('field_bundle_settings_' . $entity_type . '__') . '%', 'LIKE')
+      ->execute();
+  }
+
+  // Read and delete the matching field instances.
+  foreach (field_read_instances($params, array('include_inactive' => TRUE)) as $instance) {
+    commerce_delete_instance($instance);
+  }
+}
+
+/**
+ * Deletes the specified instance and handles field cleanup manually in case the
+ * instance is of a disabled field.
+ *
+ * @param $instance
+ *   The field instance info array to be deleted.
+ */
+function commerce_delete_instance($instance) {
+  // First activate the instance's field if necessary.
+  $field_name = $instance['field_name'];
+  $activated = commerce_activate_field($field_name);
+
+  // Clear the field cache if we just activated the field.
+  if ($activated) {
+    field_cache_clear();
+  }
+
+  // Then delete the instance.
+  field_delete_instance($instance, FALSE);
+
+  // Now check to see if there are any other instances of the field left.
+  $field = field_info_field($field_name);
+
+  if (count($field['bundles']) == 0) {
+    field_delete_field($field_name);
+  }
+  elseif ($activated) {
+    // If there are remaining instances but the field was originally disabled,
+    // disabled it again now.
+    $field['active'] = 0;
+    field_update_field($field);
+  }
+}
+
+/**
+ * Makes any required form elements in a form unrequired.
+ *
+ * @param $form
+ *   The form array to search for required elements.
+ */
+function commerce_unrequire_form_elements(&$form) {
+  array_walk_recursive($form, '_commerce_unrequire_element');
+}
+
+/**
+ * array_walk_recursive callback: makes an individual element unrequired.
+ *
+ * @param &$value
+ *   The value of the form array being walked.
+ * @param $key
+ *   The key of the form array corresponding to the present value.
+ */
+function _commerce_unrequire_element(&$value, $key) {
+  if ($key === '#required') {
+    $value = FALSE;
+  }
+}
+
+/**
+ * Returns the callback for a form ID as defined by hook_forms().
+ *
+ * @param $form_id
+ *   The form ID to find the callback for.
+ * @return
+ *   A string containing the form's callback function name.
+ *
+ * @see drupal_retrieve_form()
+ * @see hook_forms()
+ */
+function commerce_form_callback($form_id, $form_state) {
+  // If a function named after the $form_id does not exist, look for its
+  // definition in hook_forms().
+  if (!function_exists($form_id)) {
+    $forms = &drupal_static(__FUNCTION__);
+
+    // In cases where many form_ids need to share a central builder function,
+    // such as the product editing form, modules can implement hook_forms(). It
+    // maps one or more form_ids to the correct constructor functions.
+    if (!isset($forms) || !isset($forms[$form_id])) {
+      $forms = module_invoke_all('forms', $form_id, $form_state['build_info']['args']);
+    }
+
+    if (isset($forms[$form_id]['callback'])) {
+      return $forms[$form_id]['callback'];
+    }
+  }
+
+  return $form_id;
+}
+
+/**
+ * Renders a View for display in some other element.
+ *
+ * @param $view_key
+ *   The ID of the View to embed.
+ * @param $display_id
+ *   The ID of the display of the View that will actually be rendered.
+ * @param $arguments
+ *   An array of arguments to pass to the View.
+ * @param $override_url
+ *   A url that overrides the url of the current view.
+ *
+ * @return
+ *   The rendered output of the chosen View display.
+ */
+function commerce_embed_view($view_id, $display_id, $arguments, $override_url = '') {
+  // Load the specified View.
+  $view = views_get_view($view_id);
+  $view->set_display($display_id);
+
+  // Set the specific arguments passed in.
+  $view->set_arguments($arguments);
+
+  // Override the view url, if an override was provided.
+  if (!empty($override_url)) {
+    $view->override_url = $override_url;
+  }
+
+  // Prepare and execute the View query.
+  $view->pre_execute();
+  $view->execute();
+
+  // Return the rendered View.
+  return $view->render();
+}
+
+/**
+ * Returns the e-mail address from which to send commerce related e-mails.
+ *
+ * Currently this is just using the site's e-mail address, but this may be
+ * updated to use a specific e-mail address when we add a settings form for the
+ * store's physical address and contact information.
+ */
+function commerce_email_from() {
+  return variable_get('site_mail', ini_get('sendmail_from'));
+}
+
+/**
+ * Translate a data structure using i18n_string, if available.
+ *
+ * @param $type
+ *   The i18n object type.
+ * @param $object
+ *   The object or array to translate.
+ * @param $options
+ *   An array of options passed along to i18n.
+ *
+ * @return
+ *   The translated data structure if i18_string is available, the original
+ *   otherwise.
+ *
+ * @see i18n_string_object_translate()
+ */
+function commerce_i18n_object($type, $object, $options = array()) {
+  // Clone the object, to ensure the original remains untouched.
+  if (is_object($object)) {
+    $object = clone $object;
+  }
+
+  if (module_exists('i18n_string')) {
+    return i18n_string_object_translate($type, $object, $options);
+  }
+  else {
+    return $object;
+  }
+}
+
+/**
+ * Implements hook_i18n_string_info().
+ */
+function commerce_i18n_string_info() {
+  $groups['commerce'] = array(
+    'title' => t('Drupal Commerce'),
+    'format' => TRUE,
+  );
+  return $groups;
+}
+
+/**
+ * Translate a string using i18n_string, if available.
+ *
+ * @param $name
+ *   Textgroup and context glued with ':'.
+ * @param $default
+ *   String in default language. Default language may or may not be English.
+ * @param $options
+ *   An associative array of additional options, with the following keys:
+ *   - langcode: the language code to translate to a language other than what is
+ *     used to display the page; defaults to the current language
+ *   - filter: filtering callback to apply to the translated string only
+ *   - format: input format to apply to the translated string only
+ *   - callback: callback to apply to the result (both to the translated or
+ *     untranslated string)
+ *   - update: whether to update source table; defaults to FALSE
+ *   - translate: whether to return a translation; defaults to TRUE
+ *
+ * @return
+ *   The translated string if i18n_string is available, the original otherwise.
+ *
+ * @see i18n_string()
+ */
+function commerce_i18n_string($name, $default, $options = array()) {
+  if (module_exists('i18n_string')) {
+    $result = i18n_string($name, $default, $options);
+  }
+  else {
+    $result = $default;
+    $options += array(
+      'format' => NULL,
+      'sanitize' => FALSE,
+    );
+    if ($options['sanitize']) {
+      $result = check_markup($result, $options['format']);
+    }
+  }
+
+  return $result;
+}
+
+/**
+ * Returns the currency code of the site's default currency.
+ */
+function commerce_default_currency() {
+  return variable_get('commerce_default_currency', 'USD');
+}
+
+/**
+ * Returns a single currency array.
+ *
+ * @param $currency_code
+ *   The code of the currency to return or NULL to return the default currency.
+ *
+ * @return
+ *   The specified currency array or FALSE if it does not exist.
+ */
+function commerce_currency_load($currency_code = NULL) {
+  $currencies = commerce_currencies();
+
+  // Check to see if we should return the default currency.
+  if (empty($currency_code)) {
+    $currency_code = commerce_default_currency();
+  }
+
+  return isset($currencies[$currency_code]) ? $currencies[$currency_code] : FALSE;
+}
+
+/**
+ * Returns an array of all available currencies.
+ *
+ * @param $enabled
+ *   Boolean indicating whether or not to return only enabled currencies.
+ * @param $reset
+ *   Boolean indicating whether or not the cache should be reset before currency
+ *     data is loaded and returned.
+ *
+ * @return
+ *   An array of altered currency arrays keyed by the currency code.
+ */
+function commerce_currencies($enabled = FALSE, $reset = FALSE) {
+  global $language;
+  $currencies = &drupal_static(__FUNCTION__);
+
+  // If there is no static cache for currencies yet or a reset was specified...
+  if (!isset($currencies) || $reset) {
+    // First attempt to load currency data from the cache if we simply didn't
+    // have it statically cached and a reset hasn't been specified.
+    if (!$reset && $currencies_cached = cache_get('commerce_currencies:' . $language->language)) {
+      $currencies['all'] = $currencies_cached->data;
+    }
+    else {
+      // Otherwise we'll load currency definitions afresh from enabled modules.
+      // Begin by establishing some default values for currencies.
+      $defaults = array(
+        'symbol' => '',
+        'minor_unit' => '',
+        'decimals' => 2,
+        'rounding_step' => 0,
+        'thousands_separator' => ',',
+        'decimal_separator' => '.',
+        'symbol_placement' => 'hidden',
+        'symbol_spacer' => ' ',
+        'code_placement' => 'after',
+        'code_spacer' => ' ',
+        'format_callback' => '',
+        'conversion_callback' => '',
+        'conversion_rate' => 1,
+      );
+
+      // Include the currency file and invoke the currency info hook.
+      module_load_include('inc', 'commerce', 'includes/commerce.currency');
+      $currencies['all'] = module_invoke_all('commerce_currency_info');
+      drupal_alter('commerce_currency_info', $currencies['all'], $language->language);
+
+      // Add default values if they don't exist.
+      foreach ($currencies['all'] as $currency_code => $currency) {
+        $currencies['all'][$currency_code] = array_merge($defaults, $currency);
+      }
+
+      // Sort the currencies
+      ksort($currencies['all']);
+
+      cache_set('commerce_currencies:' . $language->language, $currencies['all']);
+    }
+
+    // Form an array of enabled currencies based on the variable set by the
+    // checkboxes element on the currency settings form.
+    $enabled_currencies = array_diff(array_values(variable_get('commerce_enabled_currencies', array('USD' => 'USD'))), array(0));
+    $currencies['enabled'] = array_intersect_key($currencies['all'], drupal_map_assoc($enabled_currencies));
+  }
+
+  return $enabled ? $currencies['enabled'] : $currencies['all'];
+}
+
+/**
+ * Returns an associative array of the specified currency codes.
+ *
+ * @param $enabled
+ *   Boolean indicating whether or not to include only enabled currencies.
+ */
+function commerce_currency_get_code($enabled = FALSE) {
+  return drupal_map_assoc(array_keys(commerce_currencies($enabled)));
+}
+
+/**
+ * Wraps commerce_currency_get_code() for use by the Entity module.
+ */
+function commerce_currency_code_options_list() {
+  return commerce_currency_get_code(TRUE);
+}
+
+/**
+ * Returns the symbol of any or all currencies.
+ *
+ * @param $code
+ *   Optional parameter specifying the code of the currency whose symbol to return.
+ *
+ * @return
+ *   Either an array of all currency symbols keyed by the currency code or a
+ *     string containing the symbol for the specified currency. If a currency is
+ *     specified that does not exist, this function returns FALSE.
+ */
+function commerce_currency_get_symbol($currency_code = NULL) {
+  $currencies = commerce_currencies();
+
+  // Return a specific currency symbol if specified.
+  if (!empty($currency_code)) {
+    if (isset($currencies[$currency_code])) {
+      return $currencies[$currency_code]['symbol'];
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  // Otherwise turn the array values into the type name only.
+  foreach ($currencies as $currency_code => $currency) {
+    $currencies[$currency_code] = $currency['symbol'];
+  }
+
+  return $currencies;
+}
+
+/**
+ * Formats a price for a particular currency.
+ *
+ * @param $amount
+ *   A numeric price amount value.
+ * @param $currency_code
+ *   The three character code of the currency.
+ * @param $object
+ *   When present, the object to which the price is attached.
+ * @param $convert
+ *   Boolean indicating whether or not the amount needs to be converted to a
+ *   decimal price amount when formatting.
+ *
+ * @return
+ *   A fully formatted currency.
+ */
+function commerce_currency_format($amount, $currency_code, $object = NULL, $convert = TRUE) {
+  // First load the currency array.
+  $currency = commerce_currency_load($currency_code);
+
+  // Then convert the price amount to the currency's major unit decimal value.
+  if ($convert == TRUE) {
+    $amount = commerce_currency_amount_to_decimal($amount, $currency_code);
+  }
+
+  // Invoke the custom format callback if specified.
+  if (!empty($currency['format_callback'])) {
+    return $currency['format_callback']($amount, $currency, $object);
+  }
+
+  // Format the price as a number.
+  $price = number_format(commerce_currency_round(abs($amount), $currency), $currency['decimals'], $currency['decimal_separator'], $currency['thousands_separator']);
+
+  // Establish the replacement values to format this price for its currency.
+  $replacements = array(
+    '@code_before' => $currency['code_placement'] == 'before' ? $currency['code'] : '',
+    '@symbol_before' => $currency['symbol_placement'] == 'before' ? $currency['symbol'] : '',
+    '@price' => $price,
+    '@symbol_after' => $currency['symbol_placement'] == 'after' ? $currency['symbol'] : '',
+    '@code_after' => $currency['code_placement'] == 'after' ? $currency['code'] : '',
+    '@negative' => $amount < 0 ? '-' : '',
+    '@symbol_spacer' => $currency['symbol_spacer'],
+    '@code_spacer' => $currency['code_spacer'],
+  );
+
+  return trim(t('@code_before@code_spacer@negative@symbol_before@price@symbol_spacer@symbol_after@code_spacer@code_after', $replacements));
+}
+
+/**
+ * Rounds a price amount for the specified currency.
+ *
+ * Rounding of the minor unit with a currency specific step size. For example,
+ * Swiss Francs are rounded using a step size of 0.05. This means a price of
+ * 10.93 is converted to 10.95.
+ *
+ * @param $amount
+ *   The numeric amount value of the price to be rounded.
+ * @param $currency
+ *   The currency array containing the rounding information pertinent to this
+ *     price. Specifically, this function looks for the 'rounding_step' property
+ *     for the step size to round to, supporting '0.05' and '0.02'. If the value
+ *     is 0, this function performs normal rounding to the nearest supported
+ *     decimal value.
+ *
+ * @return
+ *   The rounded numeric amount value for the price.
+ */
+function commerce_currency_round($amount, $currency) {
+  if (!$currency['rounding_step']) {
+    return round($amount, $currency['decimals']);
+  }
+
+  $modifier = 1 / $currency['rounding_step'];
+
+  return round($amount * $modifier) / $modifier;
+}
+
+/**
+ * Converts a price amount from a currency to the target currency based on the
+ *   current currency conversion rates.
+ *
+ * The Commerce module establishes a default conversion rate for every currency
+ * as 1, so without any additional information there will be a 1:1 conversion
+ * from one currency to the next. Other modules can provide UI based or web
+ * service based alterations to the conversion rate of the defined currencies as
+ * long as every rate is calculated relative to a single base currency. It does
+ * not matter which currency is the base currency as long as the same one is
+ * used for every rate calculation.
+ *
+ * To convert an amount from one currency to another, we simply take the amount
+ * value and multiply it by the current currency's conversion rate divided by
+ * the target currency's conversion rate.
+ *
+ * @param $amount
+ *   The numeric amount value of the price to be rounded.
+ * @param $currency_code
+ *   The currency code for the current currency of the price.
+ * @param $target_currency_code
+ *   The currency code for the target currency of the price.
+ *
+ * @return
+ *   The numeric amount value converted to its equivalent in the target currency.
+ */
+function commerce_currency_convert($amount, $currency_code, $target_currency_code) {
+  $currency = commerce_currency_load($currency_code);
+
+  // Invoke the custom conversion callback if specified.
+  if (!empty($currency['conversion_callback'])) {
+    return $currency['conversion_callback']($amount, $currency_code, $target_currency_code);
+  }
+
+  $target_currency = commerce_currency_load($target_currency_code);
+
+  // First multiply the amount to accommodate differences in decimals between
+  // the source and target currencies.
+  $exponent = $target_currency['decimals'] - $currency['decimals'];
+  $amount *= pow(10, $exponent);
+
+  return $amount * ($currency['conversion_rate'] / $target_currency['conversion_rate']);
+}
+
+/**
+ * Converts a price amount to an integer value for storage in the database.
+ *
+ * @param $decimal
+ *   The decimal amount to convert to a price amount.
+ * @param $currency_code
+ *   The currency code of the price whose decimals value will be used to
+ *     multiply by the proper factor when converting the decimal amount.
+ * @param $round
+ *   Whether or not the return value should be rounded and cast to an integer;
+ *     defaults to TRUE as necessary for standard price amount column storage.
+ *
+ * @return
+ *   The appropriate price amount based on the currency's decimals value.
+ */
+function commerce_currency_decimal_to_amount($decimal, $currency_code, $round = TRUE) {
+  static $factors;
+
+  // If the divisor for this currency hasn't been calculated yet...
+  if (empty($factors[$currency_code])) {
+    // Load the currency and calculate its factor as a power of 10.
+    $currency = commerce_currency_load($currency_code);
+    $factors[$currency_code] = pow(10, $currency['decimals']);
+  }
+
+  // Ensure the amount has the proper number of decimal places for the currency.
+  if ($round) {
+    $decimal = commerce_currency_round($decimal, commerce_currency_load($currency_code));
+    return (int) round($decimal * $factors[$currency_code]);
+  }
+  else {
+    return $decimal * $factors[$currency_code];
+  }
+}
+
+/**
+ * Converts a price amount to a decimal value based on the currency.
+ *
+ * @param $amount
+ *   The price amount to convert to a decimal value.
+ * @param $currency_code
+ *   The currency code of the price whose decimals value will be used to
+ *     divide by the proper divisor when converting the amount.
+ *
+ * @return
+ *   The decimal amount depending on the number of places the currency uses.
+ */
+function commerce_currency_amount_to_decimal($amount, $currency_code) {
+  static $divisors;
+
+  // If the divisor for this currency hasn't been calculated yet...
+  if (empty($divisors[$currency_code])) {
+    // Load the currency and calculate its divisor as a power of 10.
+    $currency = commerce_currency_load($currency_code);
+    $divisors[$currency_code] = pow(10, $currency['decimals']);
+  }
+
+  return $amount / $divisors[$currency_code];
+}
+
+/**
+ * Returns an associative array of month names keyed by numeric representation.
+ */
+function commerce_months() {
+  return array(
+    '01' => t('January'),
+    '02' => t('February'),
+    '03' => t('March'),
+    '04' => t('April'),
+    '05' => t('May'),
+    '06' => t('June'),
+    '07' => t('July'),
+    '08' => t('August'),
+    '09' => t('September'),
+    '10' => t('October'),
+    '11' => t('November'),
+    '12' => t('December'),
+  );
+}
+
+/**
+ * Returns an array of numerical comparison operators for use in Rules.
+ */
+function commerce_numeric_comparison_operator_options_list() {
+  return drupal_map_assoc(array('<', '<=', '=', '>=', '>'));
+}
+
+/**
+ * Returns an options list of round modes.
+ */
+function commerce_round_mode_options_list() {
+  return array(
+    COMMERCE_ROUND_NONE => t('Do not round at all'),
+    COMMERCE_ROUND_HALF_UP => t('Round the half up'),
+    COMMERCE_ROUND_HALF_DOWN => t('Round the half down'),
+    COMMERCE_ROUND_HALF_EVEN => t('Round the half to the nearest even number'),
+    COMMERCE_ROUND_HALF_ODD => t('Round the half to the nearest odd number'),
+  );
+}
+
+/**
+ * Rounds a number using the specified rounding mode.
+ *
+ * @param $round_mode
+ *   The round mode specifying which direction to round the number.
+ * @param $number
+ *   The number to round.
+ *
+ * @return
+ *   The number rounded based on the specified mode.
+ *
+ * @see commerce_round_mode_options_list()
+ */
+function commerce_round($round_mode, $number) {
+  // Remember if this is a negative or positive number and make it positive.
+  $negative = $number < 0;
+  $number = abs($number);
+
+  // Store the decimal value of the number.
+  $decimal = $number - floor($number);
+
+  // No need to round if there is no decimal value.
+  if ($decimal == 0) {
+    return $negative ? -$number : $number;
+  }
+
+  // Round it now according to the specified round mode.
+  switch ($round_mode) {
+    // PHP's round() function defaults to rounding the half up.
+    case COMMERCE_ROUND_HALF_UP:
+      $number = round($number);
+      break;
+
+    // PHP < 5.3.0 does not support rounding the half down, so we compare the
+    // decimal value and use floor() / ceil() directly.
+    case COMMERCE_ROUND_HALF_DOWN:
+      if ($decimal <= .5) {
+        $number = floor($number);
+      }
+      else {
+        $number = ceil($number);
+      }
+      break;
+
+    // PHP < 5.3.0 does not support rounding to the nearest even number, so we
+    // determine it ourselves if the decimal is .5.
+    case COMMERCE_ROUND_HALF_EVEN:
+      if ($decimal == .5) {
+        if (floor($number) % 2 == 0) {
+          $number = floor($number);
+        }
+        else {
+          $number = ceil($number);
+        }
+      }
+      else {
+        $number = round($number);
+      }
+      break;
+
+    // PHP < 5.3.0 does not support rounding to the nearest odd number, so we
+    // determine it ourselves if the decimal is .5.
+    case COMMERCE_ROUND_HALF_ODD:
+      if ($decimal == .5) {
+        if (floor($number) % 2 == 0) {
+          $number = ceil($number);
+        }
+        else {
+          $number = floor($number);
+        }
+      }
+      else {
+        $number = round($number);
+      }
+      break;
+
+    case COMMERCE_ROUND_NONE:
+    default:
+      break;
+  }
+
+  // Return the number preserving the initial negative / positive value.
+  return $negative ? -$number : $number;
+}
+
+/**
+ * Adds child elements to a SimpleXML element using the data provided.
+ *
+ * @param $simplexml_element
+ *   The SimpleXML element that will be populated with children from the child
+ *   data array. This should already be initialized with its container element.
+ * @param $child_data
+ *   The array of data. It can be of any depth, but it only provides support for
+ *   child elements and their values - not element attributes. If an element can
+ *   have multiple child elements with the same name, you cannot depend on a
+ *   simple associative array because of key collision. You must instead include
+ *   each child element as a value array in a numerically indexed array.
+ */
+function commerce_simplexml_add_children(&$simplexml_element, $child_data) {
+  // Loop over all the child data...
+  foreach ($child_data as $key => $value) {
+    // If the current child is itself a container...
+    if (is_array($value)) {
+      // If it has a non-numeric key...
+      if (!is_numeric($key)) {
+        // Add a child element to the current element with the key as the name.
+        $child_element = $simplexml_element->addChild("$key");
+
+        // Add the value of this element to the child element.
+        commerce_simplexml_add_children($child_element, $value);
+      }
+      else {
+        // Otherwise assume we have multiple child elements of the same name and
+        // pass through to add the child data from the current value array to
+        // current element.
+        commerce_simplexml_add_children($simplexml_element, $value);
+      }
+    }
+    else {
+      // Otherwise add the child element with its simple value.
+      $simplexml_element->addChild("$key", "$value");
+    }
+  }
+}
+
+/**
+ * Generic access control for Drupal Commerce entities.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create' or
+ *   'delete'.
+ * @param $entity
+ *   Optionally an entity to check access for. If no entity is given, it will be
+ *   determined whether access is allowed for all entities of the given type.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the global user.
+ * @param $entity_type
+ *   The entity type of the entity to check for.
+ *
+ * @see entity_access()
+ */
+function commerce_entity_access($op, $entity, $account, $entity_type) {
+  global $user;
+  $account = isset($account) ? $account : $user;
+
+  $entity_info = entity_get_info($entity_type);
+
+  if ($op == 'view') {
+    if (isset($entity)) {
+      // When trying to figure out access to an entity, query the base table using
+      // our access control tag.
+      if (!empty($entity_info['access arguments']['access tag']) && module_implements('query_' . $entity_info['access arguments']['access tag'] . '_alter')) {
+        $query = db_select($entity_info['base table']);
+        $query->addExpression('1');
+        return (bool) $query
+          ->addTag($entity_info['access arguments']['access tag'])
+          ->addMetaData('account', $account)
+          ->condition($entity_info['entity keys']['id'], $entity->{$entity_info['entity keys']['id']})
+          ->range(0, 1)
+          ->execute()
+          ->fetchField();
+      }
+      else {
+        return TRUE;
+      }
+    }
+    else {
+      return user_access('view any ' . $entity_type . ' entity', $account);
+    }
+  }
+  else {
+    // First grant access to the entity for the specified operation if no other
+    // module denies it and at least one other module says to grant access.
+    $access_results = module_invoke_all('commerce_entity_access', $op, $entity, $account, $entity_type);
+
+    if (in_array(FALSE, $access_results, TRUE)) {
+      return FALSE;
+    }
+    elseif (in_array(TRUE, $access_results, TRUE)) {
+      return TRUE;
+    }
+
+    // Grant generic administrator level access.
+    if (user_access('administer ' . $entity_type . ' entities', $account)) {
+      return TRUE;
+    }
+
+    // Grant access based on entity type and bundle specific permissions with
+    // special handling for the create operation since the entity passed in will
+    // be initialized without ownership.
+    if ($op == 'create') {
+      // Assuming an entity was passed in and we know its bundle key, perform
+      // the entity type and bundle-level access checks.
+      if (isset($entity) && !empty($entity_info['entity keys']['bundle'])) {
+        return user_access('create ' . $entity_type . ' entities', $account) || user_access('create ' . $entity_type . ' entities of bundle ' . $entity->{$entity_info['entity keys']['bundle']}, $account);
+      }
+      else {
+        // Otherwise perform an entity type-level access check.
+        return user_access('create ' . $entity_type . ' entities', $account);
+      }
+    }
+    else {
+      // Next perform checks for the edit and delete operations. Begin by
+      // extracting the bundle name from the entity if available.
+      $bundle_name = '';
+
+      if (isset($entity) && !empty($entity_info['entity keys']['bundle'])) {
+        $bundle_name = $entity->{$entity_info['entity keys']['bundle']};
+      }
+
+      // For the edit and delete operations, first perform the entity type and
+      // bundle-level access check for any entity.
+      if (user_access('edit any ' . $entity_type . ' entity', $account) ||
+        user_access('edit any ' . $entity_type . ' entity of bundle ' . $bundle_name, $account)) {
+        return TRUE;
+      }
+
+      // Then check an authenticated user's access to edit his own entities.
+      if ($account->uid && !empty($entity_info['access arguments']['user key']) && isset($entity->{$entity_info['access arguments']['user key']}) && $entity->{$entity_info['access arguments']['user key']} == $account->uid) {
+        if (user_access('edit own ' . $entity_type . ' entities', $account) ||
+          user_access('edit own ' . $entity_type . ' entities of bundle ' . $bundle_name, $account)) {
+          return TRUE;
+        }
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Return permission names for a given entity type.
+ */
+function commerce_entity_access_permissions($entity_type) {
+  $entity_info = entity_get_info($entity_type);
+  $labels = $entity_info['permission labels'];
+
+  $permissions = array();
+
+  // General 'administer' permission.
+  $permissions['administer ' . $entity_type . ' entities'] = array(
+    'title' => t('Administer @entity_type', array('@entity_type' => $labels['plural'])),
+    'description' => t('Allows users to perform any action on @entity_type.', array('@entity_type' => $labels['plural'])),
+    'restrict access' => TRUE,
+  );
+
+  // Generic create and edit permissions.
+  $permissions['create ' . $entity_type . ' entities'] = array(
+    'title' => t('Create @entity_type of any type', array('@entity_type' => $labels['plural'])),
+  );
+  if (!empty($entity_info['access arguments']['user key'])) {
+    $permissions['edit own ' . $entity_type . ' entities'] = array(
+      'title' => t('Edit own @entity_type of any type', array('@entity_type' => $labels['plural'])),
+    );
+  }
+  $permissions['edit any ' . $entity_type . ' entity'] = array(
+    'title' => t('Edit any @entity_type of any type', array('@entity_type' => $labels['singular'])),
+    'restrict access' => TRUE,
+  );
+  if (!empty($entity_info['access arguments']['user key'])) {
+    $permissions['view own ' . $entity_type . ' entities'] = array(
+      'title' => t('View own @entity_type of any type', array('@entity_type' => $labels['plural'])),
+    );
+  }
+  $permissions['view any ' . $entity_type . ' entity'] = array(
+    'title' => t('View any @entity_type of any type', array('@entity_type' => $labels['singular'])),
+    'restrict access' => TRUE,
+  );
+
+  // Per-bundle create and edit permissions.
+  if (!empty($entity_info['entity keys']['bundle'])) {
+    foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+      $permissions['create ' . $entity_type . ' entities of bundle ' . $bundle_name] = array(
+        'title' => t('Create %bundle @entity_type', array('@entity_type' => $labels['plural'], '%bundle' => $bundle_info['label'])),
+      );
+      if (!empty($entity_info['access arguments']['user key'])) {
+        $permissions['edit own ' . $entity_type . ' entities of bundle ' . $bundle_name] = array(
+          'title' => t('Edit own %bundle @entity_type', array('@entity_type' => $labels['plural'], '%bundle' => $bundle_info['label'])),
+        );
+      }
+      $permissions['edit any ' . $entity_type . ' entity of bundle ' . $bundle_name] = array(
+        'title' => t('Edit any %bundle @entity_type', array('@entity_type' => $labels['singular'], '%bundle' => $bundle_info['label'])),
+        'restrict access' => TRUE,
+      );
+      if (!empty($entity_info['access arguments']['user key'])) {
+        $permissions['view own ' . $entity_type . ' entities of bundle ' . $bundle_name] = array(
+          'title' => t('View own %bundle @entity_type', array('@entity_type' => $labels['plural'], '%bundle' => $bundle_info['label'])),
+        );
+      }
+      $permissions['view any ' . $entity_type . ' entity of bundle ' . $bundle_name] = array(
+        'title' => t('View any %bundle @entity_type', array('@entity_type' => $labels['singular'], '%bundle' => $bundle_info['label'])),
+        'restrict access' => TRUE,
+      );
+    }
+  }
+
+  return $permissions;
+}
+
+/**
+ * Generic implementation of hook_query_alter() for Drupal Commerce entities.
+ */
+function commerce_entity_access_query_alter($query, $entity_type, $base_table = NULL, $account = NULL) {
+  global $user;
+
+  // Read the account from the query if available or default to the current user.
+  if (!isset($account) && !$account = $query->getMetaData('account')) {
+    $account = $user;
+  }
+
+  // Do not apply any conditions for users with administrative view permissions.
+  if (user_access('administer ' . $entity_type . ' entities', $account)
+    || user_access('view any ' . $entity_type . ' entity', $account)) {
+    return;
+  }
+
+  // Get the entity type info array for the current access check and prepare a
+  // conditions object.
+  $entity_info = entity_get_info($entity_type);
+
+  // If a base table wasn't specified, attempt to read it from the query if
+  // available, look for a table in the query's tables array that matches the
+  // base table of the given entity type, or just default to the first table.
+  if (!isset($base_table) && !$base_table = $query->getMetaData('base_table')) {
+    // Initialize the base table to the first table in the array. If a table can
+    // not be found that matches the entity type's base table, this will result
+    // in an invalid query if the first table is not the table we expect,
+    // forcing the caller to actually properly pass a base table in that case.
+    $tables = $query->getTables();
+    reset($tables);
+    $base_table = key($tables);
+
+    foreach ($tables as $table_info) {
+      if (!($table_info instanceof SelectQueryInterface)) {
+        // If this table matches the entity type's base table, use its table
+        // alias as the base table for the purposes of bundle and ownership
+        // access checks.
+        if ($table_info['table'] == $entity_info['base table']) {
+          $base_table = $table_info['alias'];
+        }
+      }
+    }
+  }
+
+  // Prepare an OR container for conditions. Conditions will be added that seek
+  // to grant access, meaning any particular type of permission check may grant
+  // access even if none of the others apply. At the end of this function, if no
+  // conditions have been added to the array, a condition will be added that
+  // always returns FALSE (1 = 0).
+  $conditions = db_or();
+
+  // Perform bundle specific permission checks for the specified entity type.
+  // In the event that the user has permission to view every bundle of the given
+  // entity type, $really_restricted will remain FALSE, indicating that it is
+  // safe to exit this function without applying any additional conditions. If
+  // the user only had such permission for a subset of the defined bundles,
+  // conditions representing those access checks would still be added.
+  $really_restricted = FALSE;
+
+  // Loop over every possible bundle for the given entity type.
+  foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+    // If the user has access to view entities of the current bundle...
+    if (user_access('view any ' . $entity_type . ' entity of bundle ' . $bundle_name, $account)) {
+      // Add a condition granting access if the entity specified by the view
+      // query is of the same bundle.
+      $conditions->condition($base_table . '.' . $entity_info['entity keys']['bundle'], $bundle_name);
+    }
+    elseif ($account->uid && !empty($entity_info['access arguments']['user key']) && user_access('view own ' . $entity_type . ' entities of bundle ' . $bundle_name, $account)) {
+      // Otherwise if an authenticated user has access to view his own entities
+      // of the current bundle and the given entity type has a user ownership key...
+      $really_restricted = TRUE;
+
+      // Add an AND condition group that grants access if the entity specified
+      // by the view query matches the same bundle and belongs to the user.
+      $conditions->condition(db_and()
+        ->condition($base_table . '.' . $entity_info['entity keys']['bundle'], $bundle_name)
+        ->condition($base_table . '.' . $entity_info['access arguments']['user key'], $account->uid)
+      );
+    }
+    else {
+      $really_restricted = TRUE;
+    }
+  }
+
+  // No further conditions need to be added to the query if we determined above
+  // that the user has an administrative view permission for any entity of the
+  // type and bundles represented by the query.
+  if (!$really_restricted) {
+    return;
+  }
+
+  // If the given entity type has a user ownership key...
+  if (!empty($entity_info['access arguments']['user key'])) {
+    // Perform 'view own' access control for the entity in the query if the user
+    // is authenticated.
+    if ($account->uid && user_access('view own ' . $entity_type . ' entities', $account)) {
+      $conditions->condition($base_table . '.' . $entity_info['access arguments']['user key'], $account->uid);
+    }
+  }
+
+  // Prepare an array of condition alter hooks to invoke and an array of context
+  // data for the current query.
+  $hooks = array(
+    'commerce_entity_access_condition_' . $entity_type,
+    'commerce_entity_access_condition'
+  );
+
+  $context = array(
+    'account' => $account,
+    'entity_type' => $entity_type,
+    'base_table' => $base_table
+  );
+
+  // Allow other modules to add conditions to the array as necessary.
+  drupal_alter($hooks, $conditions, $context);
+
+  // If we have more than one condition based on the entity access permissions
+  // and any hook implementations...
+  if (count($conditions)) {
+    // Add the conditions to the query.
+    $query->condition($conditions);
+  }
+  else {
+    // Otherwise, since we don't have any possible conditions to match against,
+    // we falsify this query. View checks are access grants, not access denials.
+    $query->where('1 = 0');
+  }
+}
+
+/**
+ * Ensures an options list limit value is either empty or a positive integer.
+ */
+function commerce_options_list_limit_validate($element, &$form_state, $form) {
+  if (!empty($element['#value']) && (!is_numeric($element['#value']) || $element['#value'] < 1)) {
+    form_error($element, t('Use a positive number for the options list limit or else leave it blank for no limit.'));
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * The Entity API theme function template_preprocess_entity() assumes the
+ * presence of a path key in an entity URI array, which isn't strictly required
+ * by Drupal core itself. Until this is fixed in the Entity API code, we replace
+ * that function with a Commerce specific version.
+ *
+ * @todo Remove when https://drupal.org/node/1934382 is resolved.
+ */
+function commerce_theme_registry_alter(&$theme_registry) {
+  // Copy the preprocess functions array and remove the core preprocess function
+  // along with the Entity API's and this module's.
+  $functions = drupal_map_assoc($theme_registry['entity']['preprocess functions']);
+  unset($functions['template_preprocess'], $functions['template_preprocess_entity'], $functions['commerce_preprocess_entity']);
+
+  // Unshift the core preprocess function and the Commerce specific function so
+  // they appear at the beginning of the array in the desired order.
+  array_unshift($functions, 'template_preprocess', 'commerce_preprocess_entity');
+
+  // Update the function list in the theme registry.
+  $theme_registry['entity']['preprocess functions'] = array_values($functions);
+}
+
+/**
+ * Processes variables for entity.tpl.php, replacing template_preprocess_entity().
+ *
+ * @see commerce_theme_registry_alter()
+ * @todo Remove when https://drupal.org/node/1934382 is resolved.
+ */
+function commerce_preprocess_entity(&$variables) {
+  $variables['view_mode'] = $variables['elements']['#view_mode'];
+  $entity_type = $variables['elements']['#entity_type'];
+  $variables['entity_type'] = $entity_type;
+  $entity = $variables['elements']['#entity'];
+  $variables[$variables['elements']['#entity_type']] = $entity;
+  $info = entity_get_info($entity_type);
+
+  $variables['title'] = check_plain(entity_label($entity_type, $entity));
+
+  $uri = entity_uri($entity_type, $entity);
+  $variables['url'] = $uri && isset($uri['path']) ? url($uri['path'], $uri['options']) : FALSE;
+
+  if (isset($variables['elements']['#page'])) {
+    // If set by the caller, respect the page property.
+    $variables['page'] = $variables['elements']['#page'];
+  }
+  else {
+    // Else, try to automatically detect it.
+    $variables['page'] = $uri && isset($uri['path']) && $uri['path'] == $_GET['q'];
+  }
+
+  // Helpful $content variable for templates.
+  $variables['content'] = array();
+  foreach (element_children($variables['elements']) as $key) {
+    $variables['content'][$key] = $variables['elements'][$key];
+  }
+
+  if (!empty($info['fieldable'])) {
+    // Make the field variables available with the appropriate language.
+    field_attach_preprocess($entity_type, $entity, $variables['content'], $variables);
+  }
+  list(, , $bundle) = entity_extract_ids($entity_type, $entity);
+
+  // Gather css classes.
+  $variables['classes_array'][] = drupal_html_class('entity-' . $entity_type);
+  $variables['classes_array'][] = drupal_html_class($entity_type . '-' . $bundle);
+
+  // Add RDF type and about URI.
+  if (module_exists('rdf')) {
+    $variables['attributes_array']['about'] = empty($uri['path']) ? NULL: url($uri['path']);
+    $variables['attributes_array']['typeof'] = empty($entity->rdf_mapping['rdftype']) ? NULL : $entity->rdf_mapping['rdftype'];
+  }
+
+  // Add suggestions.
+  $variables['theme_hook_suggestions'][] = $entity_type;
+  $variables['theme_hook_suggestions'][] = $entity_type . '__' . $bundle;
+  $variables['theme_hook_suggestions'][] = $entity_type . '__' . $bundle . '__' . $variables['view_mode'];
+  if ($id = entity_id($entity_type, $entity)) {
+    $variables['theme_hook_suggestions'][] = $entity_type . '__' . $id;
+  }
+}

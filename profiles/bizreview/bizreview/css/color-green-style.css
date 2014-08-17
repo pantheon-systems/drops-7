@@ -1,0 +1,230 @@
+﻿/* $Id: color-green-style.css,v 1.0.0 2013/09/25 08:18:15 symphonythemes Exp $ */
+/*------------------------------------*\
+	RESET
+\*------------------------------------*/
+
+a,
+a:link,
+a:visited {
+  color: #8dc27b;
+}
+.themecolor-text {
+  color: #8dc27b;
+}
+pre,
+div.code {
+  border-left: 5px solid #8dc27b;
+}
+.highlight {
+  background: #8dc27b;
+}
+blockquote::before {
+  color: #8dc27b;
+}
+
+h2.home-block-title:after,
+h2.block-title:after,
+.node-type-full-page h1.page-title:after {
+  background: #8dc27b;
+}
+
+a.btn-default,
+.btn-default {
+  border-color: #8dc27b;
+  background-color: #8dc27b;
+  color: #fff;
+}
+.btn-border {
+  border-color: #8dc27b;
+  background: #fff;
+}
+.btn-default:hover {
+  background-color: #8dc27b;
+  border-color: #8dc27b;
+}
+a.btn-primary,
+.btn-primary {
+  background-color: #8dc27b;
+  border-color: #569141;
+  color: #FFFFFF;
+}
+/*------------------------------------*\
+	Pages CSS
+\*------------------------------------*/
+#search-wrapper,
+#main-menu-wrapper,
+#color-background-wrapper {
+  background: #8dc27b;
+}
+
+
+/*------------------------------------*\
+	NAVIGATION CSS
+\*------------------------------------*/
+li a.active {
+  color: #8dc27b;
+}
+
+@media (max-width: 767px) {  
+  .navbar-collapse {
+	background:#8dc27b;
+  }
+}
+
+#main-navigation ul ul {
+  background: #8dc27b;
+}
+#main-navigation ul ul li {
+  border-bottom: 1px solid #b9e6aa;
+}
+#main-navigation li:hover,
+#main-navigation li.open,
+#main-navigation li.active-trail a,
+#main-navigation li.active-trail  span.nolink,
+#main-navigation li a.active,
+#main-navigation li a:hover,
+#main-navigation li a.current,
+#main-navigation li a.selected,
+#main-navigation li span.nolink:hover,
+#main-navigation li.active-trail span.nolink,
+#main-navigation li span.nolink.selected {
+  color:#fff;
+  background: #8dc27b;
+}
+
+/* Block user menu on top left */
+#header-top-left .block-menu ul.menu li a:hover,
+#header-top-left .block-menu ul.menu li a.active {
+  background: none;
+  color: #8dc27b;
+}
+
+
+/*------------------------------------*\
+	BUSINESS CSS
+\*------------------------------------*/
+/* Business List */
+.extra-content {
+  background: rgba(141,194,123,0.8);
+}
+
+#block-views-exp-map-list-business-page-1 h2.block-title {
+  background: #8dc27b;
+  border-right: 1px solid #b9e6aa;
+}
+#block-views-exp-map-list-business-page-1 h2.block-title:after {
+  border-color: rgba(141,194,123, 0);
+  border-left-color: #8dc27b;
+}
+#block-views-exp-map-list-business-page-1 h2.block-title:before {
+  border-color: rgba(185, 230, 170, 0);
+  border-left-color: #b9e6aa;
+}
+.view-list-business .views-row .views-field-field-address i,
+.view-list-business .views-row .views-field-field-telephone i,
+.view-list-business .views-row .views-field-field-website i {
+  color: #8dc27b;
+}
+
+.node-business .content .field .field-label {
+  color: #8dc27b;
+}
+
+.node-business .content .field.field-name-body:before,
+.node-business .content .field.field-name-field-website:before,
+.node-business .content .field.field-name-field-open-time:before,
+.node-business .content .field.field-name-field-price-range:before,
+.node-business .content .field.field-name-field-highlights:before,
+.node-business .content .field.field-name-field-location:before,
+.node-business .content .field.field-name-field-photos:before,
+.node-business .content .field.field-name-field-tags:before,
+.node-business .content .field.field-name-field-category:before {
+  background: #8dc27b;
+}
+
+fieldset.group-purchase-options {
+  background: #8dc27b;
+}
+
+/* Block Featured Biz */
+.jcarousel-skin-default .jcarousel-prev-horizontal,
+.jcarousel-skin-default .jcarousel-next-horizontal {
+  border-color: #8dc27b;
+}
+.jcarousel-skin-default .jcarousel-prev-horizontal:hover,
+.jcarousel-skin-default .jcarousel-next-horizontal:hover {
+  background-color: #8dc27b;
+}
+.jcarousel-skin-default .jcarousel-prev-horizontal:before,
+.jcarousel-skin-default .jcarousel-next-horizontal:before {
+  color: #8dc27b;
+}
+.jcarousel-skin-default .jcarousel-prev-horizontal:hover:before,
+.jcarousel-skin-default .jcarousel-next-horizontal:hover:before {
+  color: #fff;
+  background: #8dc27b;
+}
+
+/* Block Category */
+.block-featured-biz .views-row .information-group .field-title a:hover {
+  color: #8dc27b;
+}
+
+/* Business Category List */
+.list-categories .icon {
+  background: #8dc27b;
+}
+.view-categories .views-row .views-row-inner .views-field-name:after {
+  background: #8dc27b;
+}
+.view-categories .views-row .views-row-inner .views-field-name a:hover {
+  color: #8dc27b;
+}
+
+.view-categories .views-row .views-row-inner .views-field-field-category-image .field-node-count {
+  background: rgba(141,194,123,0.8);
+}
+
+/* News */
+.view-list-news .views-field-title a:hover {
+  color: #8dc27b;
+}
+
+/* Member */
+.view-member .view-content {
+  background: #8dc27b;
+}
+
+/* Block Contact information */
+.block-contact-informations ul li i {
+  color: #8dc27b;
+}
+
+/* Sep boxed pricing */
+.sep-boxed-pricing ul li.footer-row a.button {
+  background: #fafafa;
+  border: 1px solid #ccc;
+  color: #8dc27b;  
+}
+.sep-boxed-pricing ul li.footer-row a.button:hover {
+  background: #8dc27b;
+  color: #fafafa;  
+  border: 1px solid #8dc27b;
+}
+.sep-boxed-pricing ul li.title-row {
+  background: #9ed58b;
+  border-color: #9ed58b;
+}
+.sep-boxed-pricing ul li.pricing-row {
+  background: #8dc27b;
+  border-color: #a9e494 #8dc27b #8dc27b;
+}
+.sep-boxed-pricing .price strong {
+  color: #000;
+}
+
+
+/* FlexSlider */
+.flex-control-paging li a.flex-active {
+  background: #8dc27b;
+}

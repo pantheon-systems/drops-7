@@ -1,0 +1,12 @@
+name = Geolocation Generator
+description = Generates random locations to test IP Geolocation Views & Maps module
+core = 7.x
+configure = admin/config/system/ip_geolocation_generator
+dependencies[] = views
+
+; Information added by Drupal.org packaging script on 2014-03-30
+version = "7.x-1.25"
+core = "7.x"
+project = "ip_geoloc"
+datestamp = "1396180746"
+

@@ -1,0 +1,1593 @@
+<?php
+
+/**
+ * @file
+ * Implements PayPal Payments Advanced (U.S. only) and Payflow Link Hosted
+ * Checkout pages and Transparent Redirect.
+ */
+
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_payflow_menu() {
+  $items = array();
+
+  // Add a menu item for capturing authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/payflow-link-capture'] = array(
+    'title' => 'Capture',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_payflow_link_capture_form', 3, 5),
+    'access callback' => 'commerce_payflow_link_capture_void_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_payflow.admin.inc',
+  );
+
+  // Add a menu item for processing reference transactions.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/payflow-link-reference'] = array(
+    'title' => 'Reference',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_payflow_link_reference_form', 3, 5),
+    'access callback' => 'commerce_payflow_link_reference_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 2,
+    'file' => 'includes/commerce_payflow.admin.inc',
+  );
+
+  // Add a menu item for voiding authorizations.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/payflow-link-void'] = array(
+    'title' => 'Void',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_payflow_link_void_form', 3, 5),
+    'access callback' => 'commerce_payflow_link_capture_void_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 4,
+    'file' => 'includes/commerce_payflow.admin.inc',
+  );
+
+  // Add a menu item for refunding settled transactions.
+  $items['admin/commerce/orders/%commerce_order/payment/%commerce_payment_transaction/payflow-link-refund'] = array(
+    'title' => 'Refund',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_payflow_link_refund_form', 3, 5),
+    'access callback' => 'commerce_payflow_link_refund_access',
+    'access arguments' => array(3, 5),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'weight' => 4,
+    'file' => 'includes/commerce_payflow.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Determines access to the prior authorization capture form or void form for
+ * Payflow Link credit card transactions.
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return
+ *   TRUE or FALSE indicating access.
+ */
+function commerce_payflow_link_capture_void_access($order, $transaction) {
+  // Return FALSE if the transaction isn't for Payflow Link or isn't awaiting capture.
+  $valid_types = array('A', 'Pending');
+
+  if (!in_array($transaction->payment_method, array('payflow_link', 'paypal_ppa')) || !in_array($transaction->remote_status, $valid_types)) {
+    return FALSE;
+  }
+
+  // Return FALSE if the transaction is not pending.
+  if ($transaction->status != COMMERCE_PAYMENT_STATUS_PENDING) {
+    return FALSE;
+  }
+
+  // Return FALSE if the transaction was created through Express Checkout.
+  if (!empty($transaction->data['commerce_payflow']['tender']) && $transaction->data['commerce_payflow']['tender'] == 'P') {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 29 days past the original authorization.
+  if (REQUEST_TIME - $transaction->created > 86400 * 29) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update payments on this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determines access to the reference transaction form for Payflow Link credit
+ * card transactions.
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return
+ *   TRUE or FALSE indicating access.
+ */
+function commerce_payflow_link_reference_access($order, $transaction) {
+  // Return FALSE if the transaction isn't valid for reference transactions:
+  // Sale, Authorization, Delayed Capture, Void, or Credit. This list includes
+  // both the Payflow Link codes and Express Checkout statuses.
+  $valid_types = array('S', 'A', 'D', 'V', 'C', 'Pending', 'Completed', 'Voided', 'Refunded');
+
+  if (!in_array($transaction->payment_method, array('payflow_link', 'paypal_ppa', 'paypal_ec')) ||
+    !in_array($transaction->remote_status, $valid_types)) {
+    return FALSE;
+  }
+
+  // Return FALSE if the transaction was a failure.
+  if ($transaction->status == COMMERCE_PAYMENT_STATUS_FAILURE) {
+    return FALSE;
+  }
+
+  // Return FALSE if the transaction is an Express Checkout transaction that
+  // does not have Payflow data.
+  if ($transaction->payment_method == 'paypal_ec' && empty($transaction->data['commerce_payflow'])) {
+    return FALSE;
+  }
+
+  // Return FALSE if the transaction came through PayPal and does not have a
+  // billing agreement ID.
+  if (!empty($transaction->data['commerce_payflow']['tender']) &&
+    $transaction->data['commerce_payflow']['tender'] == 'P' &&
+    empty($transaction->data['commerce_payflow']['baid'])) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 365 days since the original transaction.
+  if (REQUEST_TIME - $transaction->created > 86400 * 365) {
+    return FALSE;
+  }
+
+  // Return FALSE if the payment method instance does not have reference
+  // transaction support enabled.
+  $payment_method = commerce_payment_method_instance_load($transaction->instance_id);
+  if (empty($payment_method['settings']['reference_transactions'])) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update payments on this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Determines access to the refund form for Payflow Link credit card transactions.
+ *
+ * @param $order
+ *   The order the transaction is on.
+ * @param $transaction
+ *   The payment transaction object to be captured.
+ *
+ * @return
+ *   TRUE or FALSE indicating access.
+ */
+function commerce_payflow_link_refund_access($order, $transaction) {
+  // Return FALSE if the transaction isn't valid for credit transactions:
+  // Sale or Delayed Capture.
+  $valid_types = array('S', 'D');
+
+  if (!in_array($transaction->payment_method, array('payflow_link', 'paypal_ppa')) ||
+    !in_array($transaction->remote_status, $valid_types)) {
+    return FALSE;
+  }
+
+  // Return FALSE if the transaction was created through Express Checkout.
+  if (!empty($transaction->data['commerce_payflow']['tender']) && $transaction->data['commerce_payflow']['tender'] == 'P') {
+    return FALSE;
+  }
+
+  // Return FALSE if the transaction was not a success.
+  if ($transaction->status != COMMERCE_PAYMENT_STATUS_SUCCESS) {
+    return FALSE;
+  }
+
+  // Return FALSE if it is more than 60 days since the original transaction.
+  if (REQUEST_TIME - $transaction->created > 86400 * 60) {
+    return FALSE;
+  }
+
+  // Allow access if the user can update payments on this transaction.
+  return commerce_payment_transaction_access('update', $transaction);
+}
+
+/**
+ * Implements hook_commerce_payment_method_info().
+ */
+function commerce_payflow_commerce_payment_method_info() {
+  $payment_methods = array();
+
+  $payment_methods['payflow_link'] = array(
+    'base' => 'commerce_payflow_link',
+    'buttonsource' => 'CommerceGuys_Cart_PFL',
+    'title' => t('Payflow Link'),
+    'short_title' => t('Payflow Link'),
+    'description' => t('Payflow Link Hosted Checkout Pages'),
+    'terminal' => FALSE,
+    'offsite' => TRUE,
+    'offsite_autoredirect' => FALSE,
+  );
+
+  // Note that the PayPal Payments Advanced payment method uses the same 'base'
+  // value as Payflow Link. These are the same service offered by PayPal, they
+  // just offer US merchants the ability to use Payflow Link with PayPal as the
+  // payment processor and call it PayPal Payments Advanced. We reuse the same
+  // code for these two methods .with the exception of a thin wrapper around the
+  // settings form. This means data from PPA transactions may be stored in
+  // variables as payflow_link data, but it's all one and the same.
+  $payment_methods['paypal_ppa'] = array(
+    'base' => 'commerce_payflow_link',
+    'buttonsource' => 'CommerceGuys_Cart_PPA',
+    'title' => t('PayPal Payments Advanced'),
+    'short_title' => t('PayPal Payments Advanced'),
+    'description' => t('PayPal Payments Advanced Hosted Checkout Pages'),
+    'terminal' => FALSE,
+    'offsite' => TRUE,
+    'offsite_autoredirect' => FALSE,
+    'callbacks' => array(
+      'settings_form' => 'commerce_paypal_ppa_settings_form',
+    ),
+  );
+
+  return $payment_methods;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function commerce_payflow_page_alter(&$page) {
+  // Add a registration link to the PayPal Payments Advanced and Payflow Link
+  // payment method rules on the payment methods admin page.
+  if (!empty($page['content']['system_main']['#page_callback']) &&
+    $page['content']['system_main']['#page_callback'] == 'commerce_payment_ui_admin_page') {
+    // Ensure we loop over both enabled and disabled rules.
+    foreach (array('enabled', 'disabled') as $key) {
+      foreach ($page['content']['system_main'][$key]['rules']['#rows'] as $row_key => &$row) {
+        $services = array(
+          'commerce_payment_payflow_link' => 'payflow_link',
+          'commerce_payment_paypal_ppa' => 'paypal_ppa',
+        );
+
+        foreach ($services as $rule_name => $method_id) {
+          if (strpos($row[0]['data']['description']['settings']['machine_name']['#markup'], $rule_name) > 0) {
+            $row[0]['data']['#suffix'] = '<div class="service-description">' . commerce_payflow_service_description($method_id) . '</div></div>';
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Returns a service description and registration link for the specified method.
+ */
+function commerce_payflow_service_description($method_id) {
+  switch ($method_id) {
+    case 'payflow_link':
+      return t('Accept payment securely on your site via credit card, debit card, or PayPal using a merchant account of your choice. This payment method requires a PayPal Payflow account. <a href="!url">Sign up here</a> and edit this rule to start accepting payments.', array('!url' => 'https://www.paypal.com/webapps/mpp/referral/paypal-payflow-link?partner_id=VZ6B9QLQ8LZEE'));
+    case 'paypal_ppa':
+      return t('Accept payment securely on your site via credit card, debit card, or PayPal using PayPal as your payment processor. This payment method requires a PayPal Payflow account. <a href="!url">Sign up here</a> and edit this rule to start accepting payments.', array('!url' => 'https://www.paypal.com/webapps/mpp/referral/paypal-payments-advanced?partner_id=VZ6B9QLQ8LZEE'));
+  }
+}
+
+/**
+ * Returns the default settings for the PayPal WPS payment method.
+ */
+function commerce_payflow_link_default_settings() {
+  $default_currency = commerce_default_currency();
+
+  return array(
+    'partner' => 'PayPal',
+    'vendor' => '',
+    'user' => '',
+    'password' => '',
+    'mode' => 'test',
+    'trxtype' => 'S',
+    'currency_code' => in_array($default_currency, array_keys(commerce_paypal_currencies('payflow_link'))) ? $default_currency : 'USD',
+    'allow_supported_currencies' => FALSE,
+    'payment_icons' => drupal_map_assoc(array_keys(array_diff_key(commerce_paypal_payment_methods(), array('echeck' => '')))),
+    'redirect_mode' => 'iframe',
+    'cancel_link' => TRUE,
+    'paypal_ec_instance' => '',
+    'paypal_ec_disable' => TRUE,
+    'reference_transactions' => FALSE,
+    'ba_desc' => '',
+    'show_payment_instructions' => FALSE,
+    'emailcustomer' => FALSE,
+    'log' => array('request' => 0, 'response' => 0),
+    'silent_post_logging' => 'notification',
+  );
+}
+
+/**
+ * Payment method callback: settings form.
+ */
+function commerce_payflow_link_settings_form($settings = array(), $payment_method = NULL) {
+  $form = array();
+
+  // Default to the Payflow Link payment method if none is passed in.
+  if (empty($payment_method)) {
+    $payment_method = commerce_payment_method_load('payflow_link');
+  }
+
+  // Merge default settings into the stored settings array.
+  $settings = (array) $settings + commerce_payflow_link_default_settings();
+
+  $form['service_description'] = array(
+    '#markup' => '<div>' . commerce_payflow_service_description($payment_method['method_id']) . ' '
+      . t('Your PayPal Manager login information should be used to configure these first four textfields.') . '<br /><br />'
+      . t('<strong>Important:</strong> Refer to the <a href="!url" target="_blank">module documentation</a> to ensure your PayPal Manager service settings are configured properly.', array('!url' => 'http://drupal.org/node/1902734')) . '</div>',
+  );
+
+  // Add the Payflow account form fields.
+  $form['partner'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Partner'),
+    '#description' => t('Either PayPal or the name of the reseller who registered your @title account.', array('@title' => $payment_method['title'])),
+    '#default_value' => $settings['partner'],
+    '#required' => TRUE,
+  );
+  $form['vendor'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Merchant login'),
+    '#description' => t('The merchant login ID you chose when you created your @title account.', array('@title' => $payment_method['title'])),
+    '#default_value' => $settings['vendor'],
+    '#required' => TRUE,
+  );
+  $form['user'] = array(
+    '#type' => 'textfield',
+    '#title' => t('User'),
+    '#description' => t('The name of the user on the account you want to use to process transactions or the merchant login if you have not created users.'),
+    '#default_value' => $settings['user'],
+    '#required' => TRUE,
+  );
+  $form['password'] = array(
+    '#type' => 'password',
+    '#title' => t('Password'),
+    '#description' => t('The password created for the user specified in the previous textfield.'),
+    '#default_value' => $settings['password'],
+    '#required' => TRUE,
+  );
+  $form['mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Processing mode'),
+    '#description' => t('Either mode requires a @title account with Hosted Checkout Pages. "Enable Secure Token" must be set to "Yes" in the PayPal Manager service settings.', array('@title' => $payment_method['title'])),
+    '#options' => array(
+      'test' => ('Test - process test transactions to an account in test mode'),
+      'live' => ('Live - process real transactions to a live account'),
+    ),
+    '#default_value' => $settings['mode'],
+  );
+
+  // Add the checkout and transaction option form elements.
+  $form['trxtype'] = array(
+    '#type' => 'radios',
+    '#title' => t('Default transaction type'),
+    '#options' => array(
+      'S' => t('Sale - authorize and capture the funds at the time the payment is processed'),
+      'A' => t('Authorization - reserve funds on the card to be captured later through your PayPal account'),
+    ),
+    '#default_value' => $settings['trxtype'],
+  );
+  $form['currency_code'] = array(
+    '#type' => 'select',
+    '#title' => t('Default currency'),
+    '#description' => t('Transactions in other currencies will be converted to this currency, so multi-currency sites must be configured to use appropriate conversion rates.') . '<br />' . t('Note: valid currencies will differ depending on your country and processor. Check before selecting a different currency.'),
+    '#options' => commerce_paypal_currencies($payment_method['method_id']),
+    '#default_value' => $settings['currency_code'],
+  );
+  $form['allow_supported_currencies'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow Express Checkout transactions to use any currency in the options list above.'),
+    '#description' => t('Transactions in unsupported currencies will still be converted into the default currency.') . '<br />' . t('In most cases, a single currency balance is the only option, so this should be tested thoroughly before being enabled on a live site.'),
+    '#default_value' => $settings['allow_supported_currencies'],
+  );
+  $form['payment_icons'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Payment option icons to show on the checkout form'),
+    '#description' => t('Your payment processor and @title account settings may limit which of these payment options are actually available on the payment form.', array('@title' => $payment_method['title'])),
+    '#options' => array_diff_key(commerce_paypal_payment_methods(), array('echeck' => '')),
+    '#default_value' => $settings['payment_icons'],
+  );
+  $form['redirect_mode'] = array(
+    '#type' => 'radios',
+    '#title' => t('Checkout redirect mode'),
+    '#options' => array(
+      'iframe' => t('Stay on this site using an iframe to embed the hosted checkout page'),
+      'post' => t('Redirect to the hosted checkout page via POST through an automatically submitted form'),
+      'get' => t('Redirect to the hosted checkout page immediately with a GET request'),
+    ),
+    '#default_value' => $settings['redirect_mode'],
+  );
+  $form['cancel_link'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Display a cancel link beneath the iframe of an embedded hosted checkout page.'),
+    '#default_value' => $settings['cancel_link'],
+  );
+
+  // Prepare a list of PayPal Express Checkout payment method rule options.
+  if (module_exists('commerce_paypal_ec')) {
+    $options = commerce_paypal_ec_enabled_rules();
+  }
+  else {
+    $options = array();
+  }
+
+  $form['paypal_ec_instance'] = array(
+    '#type' => 'select',
+    '#title' => t('PayPal Express Checkout payment method rule'),
+    '#description' => t('Specify the payment method rule that contains your corresponding PayPal Express Checkout configuration for this @title instance.', array('@title' => $payment_method['title'])) . '<br />' . t('If none is selected, you must disable Express Checkout in your Hosted Checkout Pages service settings in the PayPal Manager.'),
+    '#options' => $options,
+    '#default_value' => $settings['paypal_ec_instance'],
+    '#empty_value' => '',
+  );
+  $form['paypal_ec_disable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable the selected PayPal Express Checkout payment method rule on the checkout form so customers just see the option on the hosted checkout page.'),
+    '#default_value' => $settings['paypal_ec_disable'],
+  );
+
+  $form['reference_transactions'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable reference transactions for payments captured through this @title account.', array('@title' => $payment_method['title'])),
+    '#description' => t('Contact PayPal if you are unsure if this option is available to you.'),
+    '#default_value' => $settings['reference_transactions'],
+  );
+  $form['ba_desc'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Express Checkout billing agreement description'),
+    '#description' => t('If you have a PayPal account that supports reference transactions and need them for Express Checkout payments captured through @title, you must specify a billing agreement description.', array('@title' => $payment_method['title'])),
+    '#default_value' => $settings['ba_desc'],
+  );
+  $form['show_payment_instructions'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show a message on the checkout form when @title is selected telling the customer to "Continue with checkout to complete payment via PayPal."', array('@title' => $payment_method['title'])),
+    '#default_value' => $settings['show_payment_instructions'],
+  );
+  $form['emailcustomer'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Instruct PayPal to e-mail payment receipts to your customers upon payment.'),
+    '#default_value' => $settings['emailcustomer'],
+  );
+
+  // Add the logging configuration form elements.
+  $form['log'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Log the following messages for debugging'),
+    '#options' => array(
+      'request' => t('API request messages'),
+      'response' => t('API response messages'),
+    ),
+    '#default_value' => $settings['log'],
+  );
+
+  /**
+   * @todo Uncomment this setting when Silent POST is integrated.
+   *
+  $form['silent_post_logging'] = array(
+    '#type' => 'radios',
+    '#title' => t('Silent POST logging'),
+    '#options' => array(
+      'notification' => t('Log notifications during validation and processing.'),
+      'full_post' => t('Log notifications with the full API request / response during validation and processing (used for debugging).'),
+    ),
+    '#default_value' => $settings['silent_post_logging'],
+  );
+   */
+
+  return $form;
+}
+
+/**
+ * Payment method callback: settings form.
+ */
+function commerce_paypal_ppa_settings_form($settings = array()) {
+  // Grab the default Payflow Link settings.
+  $settings += commerce_payflow_link_default_settings();
+
+  // Ensure the default currency code is PPA compatible.
+  if (!in_array($settings['currency_code'], array_keys(commerce_paypal_currencies('paypal_ppa')))) {
+    $settings['currency_code'] = 'USD';
+  }
+
+  $form = commerce_payflow_link_settings_form($settings, commerce_payment_method_load('paypal_ppa'));
+
+  return $form;
+}
+
+/**
+ * Payment method callback: adds a message to the submission form if enabled in
+ * the payment method settings.
+ */
+function commerce_payflow_link_submit_form($payment_method, $pane_values, $checkout_pane, $order) {
+  $form = array();
+
+  if (!empty($payment_method['settings']['show_payment_instructions'])) {
+    $class = ($payment_method['method_id'] == 'payflow_link') ? 'commerce-payflow-link-info' : 'commerce-paypal-pa-info';
+
+    $form[$payment_method['method_id'] . '_information'] = array(
+      '#markup' => '<span class="' . $class . '">' . t('(Continue with checkout to complete payment via PayPal.)') . '</span>',
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Payment method callback: submit form validation.
+ */
+function commerce_payflow_link_submit_form_validate($payment_method, $pane_form, $pane_values, $order, $form_parents = array()) {
+  // Return an error if the enabling action's settings haven't been configured.
+  foreach (array('partner', 'vendor', 'user', 'password') as $key) {
+    if (empty($payment_method['settings'][$key])) {
+      drupal_set_message(t('@title is not configured for use. Please contact an administrator to resolve this issue.', array('@title' => $payment_method['title'])), 'error');
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Payment method callback: submit form submission.
+ */
+function commerce_payflow_link_submit_form_submit($payment_method, $pane_form, $pane_values, $order, $charge) {
+  // Update the order to reference the Payflow Link payment method.
+  $order->data['payment_method'] = $payment_method['instance_id'];
+
+  // Generate a payment redirect key and Secure Token ID.
+  $order->data['payment_redirect_key'] = drupal_hash_base64(time());
+  $order->data['commerce_payflow'] = array(
+    'tokenid' => str_replace('.', '', uniqid('', TRUE)),
+  );
+
+  // Request a token from Payflow Link.
+  $payment_method['settings']['ba_desc'] = trim($payment_method['settings']['ba_desc']);
+
+  if (!empty($payment_method['settings']['ba_desc'])) {
+    $token = commerce_payflow_link_create_secure_token($payment_method, $order, $payment_method['settings']['ba_desc']);
+  }
+  else {
+    $token = commerce_payflow_link_create_secure_token($payment_method, $order);
+  }
+
+  // If we got one back...
+  if (!empty($token)) {
+    // Set the Payflow Link data array and proceed to the redirect page.
+    $order->data['commerce_payflow']['token'] = $token;
+    return TRUE;
+  }
+  else {
+    // Otherwise show an error message and remain on the current page.
+    drupal_set_message(t('Communication with PayPal failed. Please try again or contact an administrator to resolve the issue.'), 'error');
+    return FALSE;
+  }
+}
+
+/**
+ * Payment method callback: redirect form.
+ */
+function commerce_payflow_link_redirect_form($form, &$form_state, $order, $payment_method) {
+  $mode = $payment_method['settings']['mode'];
+
+  // If we didn't get a valid redirect token...
+  if (empty($order->data['commerce_payflow']['token'])) {
+    // Clear the payment related information from the data array.
+    unset($order->data['payment_method']);
+    unset($order->data['commerce_payflow']);
+
+    // Show an error message and go back a page.
+    drupal_set_message(t('Redirect to PayPal failed. Please try again or contact an administrator to resolve the issue.'), 'error');
+    commerce_payment_redirect_pane_previous_page($order, t('Redirect to @description failed.', array('@description' => $payment_method['description'])));
+  }
+  elseif (!in_array(arg(3), array('back', 'return'))) {
+    // Otherwise determine how to process the redirect based on the payment
+    // method settings.
+    switch ($payment_method['settings']['redirect_mode']) {
+      // For GET, redirect to Payflow Link with the parameters in the URL.
+      case 'get':
+        drupal_goto(commerce_payflow_link_hosted_checkout_url($payment_method, $order));
+
+      // For POST, render a form that submits to the Payflow Link server.
+      case 'post':
+        // Set the form to submit to Payflow Link.
+        $form['#action'] = commerce_payflow_link_server_url($mode);
+
+        // Store the Payflow payment method instance in the form array.
+        $form['commerce_payflow_payment_method'] = array(
+          '#type' => 'value',
+          '#value' => $payment_method,
+        );
+
+        // Add the Secure Token and Secure Token ID from the order's data array.
+        $data = array(
+          'SECURETOKEN' => $order->data['commerce_payflow']['token'],
+          'SECURETOKENID' => $order->data['commerce_payflow']['tokenid'],
+        );
+
+        // If the payment method is in test mode, add the appropriate parameter.
+        if ($mode == 'test') {
+          $data['MODE'] = 'TEST';
+        }
+
+        // Add the parameters as hidden form elements to the form array.
+        foreach ($data as $name => $value) {
+          if (!empty($value)) {
+            $form[$name] = array('#type' => 'hidden', '#value' => $value);
+          }
+        }
+
+        $form['submit'] = array(
+          '#type' => 'submit',
+          '#value' => t('Proceed to payment server'),
+          '#attached' => array(
+            'js' => array(drupal_get_path('module', 'commerce_payment') . '/commerce_payment.js'),
+          ),
+        );
+
+        return $form;
+
+      // In iframe mode, embed the Payflow checkout page into the Payment page.
+      case 'iframe':
+        // Store the Payflow payment method instance in the form array.
+        $form['commerce_payflow_payment_method'] = array(
+          '#type' => 'value',
+          '#value' => $payment_method,
+        );
+
+        // Add the iframe in a markup element.
+        $form['iframe'] = array(
+          '#markup' => commerce_payflow_link_hosted_checkout_iframe($payment_method, $order),
+        );
+
+        // Add a cancel link if configured.
+        if ($payment_method['settings']['cancel_link']) {
+          $form['iframe']['#suffix'] = '<div class="commerce-payflow-cancel">' . l(t('Cancel payment and go back'), 'checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key']) . '</div>';
+        }
+
+        return $form;
+    }
+  }
+}
+
+/**
+ * Payment method callback: redirect form back callback.
+ */
+function commerce_payflow_link_redirect_form_back($order, $payment_method) {
+  // Display a message indicating the customer canceled payment.
+  drupal_set_message(t('You have canceled payment at PayPal but may resume the checkout process here when you are ready.'));
+
+  // Remove the payment information from the order data array.
+  unset($order->data['commerce_payflow']);
+  unset($order->data['payment_method']);
+}
+
+/**
+ * Payment method callback: redirect form return validation.
+ */
+function commerce_payflow_link_redirect_form_validate($order, $payment_method) {
+  if (!empty($payment_method['settings']['silent_post_logging']) &&
+    $payment_method['settings']['silent_post_logging'] == 'full_post') {
+    watchdog('commerce_payflow', 'Customer returned from Payflow with the following POST data: !data', array('!data' => '<pre>' . check_plain(print_r($_POST, TRUE)) . '</pre>'), WATCHDOG_NOTICE);
+  }
+
+  // If for some reason the payment redirect key in this return post does not
+  // match that in the order, prevent processing.
+  if (!empty($_POST['USER1']) && $_POST['USER1'] != $order->data['payment_redirect_key']) {
+    watchdog('commerce_payflow', 'Customer returned from Payflow with a non-matching redirect key.', array(), WATCHDOG_WARNING);
+    return FALSE;
+  }
+
+  // This may be an unnecessary step, but if for some reason the user does end
+  // up returning at the success URL with a Failed payment, go back.
+  if (isset($_POST['RESULT']) && !commerce_payflow_link_validate_result($_POST['RESULT'])) {
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order_total = $order_wrapper->commerce_order_total->value();
+
+    // Determine the currency code used to actually process the transaction,
+    // which will either be the default currency code or the currency code of
+    // the charge if it's supported by PayPal if that option is enabled.
+    $currency_code = $payment_method['settings']['currency_code'];
+
+    if (!empty($payment_method['settings']['allow_supported_currencies']) && in_array($order_total['currency_code'], array_keys(commerce_paypal_currencies($payment_method['method_id'])))) {
+      $currency_code = $order_total['currency_code'];
+    }
+
+    // Provide a more descriptive error message in the failed transaction and
+    // the watchdog.
+    $transaction = commerce_payment_transaction_new($payment_method['method_id'], $order->order_id);
+    $transaction->instance_id = $payment_method['instance_id'];
+    $transaction->amount = commerce_currency_decimal_to_amount(isset($_POST['AMT']) ? $_POST['AMT'] : 0, $currency_code);
+    $transaction->currency_code = $currency_code;
+    $transaction->payload[REQUEST_TIME] = $_POST;
+    $transaction->status = COMMERCE_PAYMENT_STATUS_FAILURE;
+    $transaction->message = commerce_payflow_link_result_message($_POST['RESULT']);
+    commerce_payment_transaction_save($transaction);
+
+    return FALSE;
+  }
+}
+
+/**
+ * Payment method callback: redirect form return submission.
+ */
+function commerce_payflow_link_redirect_form_submit($order, $payment_method) {
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $order_total = $order_wrapper->commerce_order_total->value();
+
+  // Determine the currency code used to actually process the transaction,
+  // which will either be the default currency code or the currency code of the
+  // charge if it's supported by PayPal if that option is enabled.
+  if (!empty($_POST['CURRENCY'])) {
+    $currency_code = $_POST['CURRENCY'];
+  }
+  else {
+    $currency_code = $payment_method['settings']['currency_code'];
+
+    if (!empty($payment_method['settings']['allow_supported_currencies']) && in_array($order_total['currency_code'], array_keys(commerce_paypal_currencies($payment_method['method_id'])))) {
+      $currency_code = $order_total['currency_code'];
+    }
+  }
+
+  // Convert the order total to the currency specified by the settings.
+  $amount = commerce_currency_convert($order_total['amount'], $order_total['currency_code'], $currency_code);
+
+  // Prepare a transaction object to log the API response.
+  $transaction = commerce_payment_transaction_new($payment_method['method_id'], $order->order_id);
+  $transaction->instance_id = $payment_method['instance_id'];
+  $transaction->amount = commerce_currency_decimal_to_amount($_POST['AMT'], $currency_code);
+  $transaction->currency_code = $currency_code;
+  $transaction->payload[REQUEST_TIME] = $_POST;
+  $transaction->remote_id = $_POST['PNREF'];
+  $transaction->data['commerce_payflow']['pnref'] = $_POST['PNREF'];
+
+  // Determine the type of transaction.
+  if (!empty($_POST['TRXTYPE'])) {
+    $trxtype = $_POST['TRXTYPE'];
+  }
+  elseif (!empty($_POST['TYPE'])) {
+    $trxtype = $_POST['TYPE'];
+  }
+  else {
+    $trxtype = $payment_method['settings']['trxtype'];
+  }
+
+  // Store the type of transaction in the remote status.
+  $transaction->remote_status = $trxtype;
+
+  $trxtype_name = commerce_payflow_trxtype_name($trxtype);
+
+  // Build a meaningful response message.
+  $message = array();
+
+  // Set the transaction status based on the type of transaction this was.
+  if (intval($_POST['RESULT']) == 0) {
+    switch ($trxtype) {
+      case 'S':
+        $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
+        break;
+
+      case 'A':
+      default:
+        $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+        break;
+    }
+    $message[] = '<b>' . t('@action - Success', array('@action' => $trxtype_name)) . '</b>';
+  }
+  elseif (intval($_POST['RESULT']) == 126) {
+    $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+    $message[] = '<b>' . t('@action - Pending fraud review', array('@action' => $trxtype_name)) . '</b>';
+  }
+
+  // Store the tender type in the transaction's data array.
+  $transaction->data['commerce_payflow']['tender'] = $_POST['TENDER'];
+
+  // Add the CC info if present.
+  if (!empty($_POST['ACCT']) && !empty($_POST['EXPDATE'])) {
+    // Convert the MMYY expiration date to a MM/YY format.
+    $exp = str_pad($_POST['EXPDATE'], 4, '0', STR_PAD_LEFT);
+    $exp = substr($exp, 0, 2) . '/' . substr($exp, -2);
+
+    if (isset($_POST['CARDTYPE'])) {
+      $message[] = t('@cardtype ending in @last4, exp. @exp', array('@cardtype' => commerce_payflow_cardtype_name($_POST['CARDTYPE']), '@last4' => $_POST['ACCT'], '@exp' => $exp));
+    }
+    else {
+      $message[] = t('Credit card ending in @last4, exp. @exp', array('@last4' => $_POST['ACCT'], '@exp' => $exp));
+    }
+  }
+
+  // Add the AVS response if present.
+  if (!empty($_POST['AVSADDR']) || !empty($_POST['AVSZIP']) || !empty($_POST['AVSDATA'])) {
+    if (!empty($_POST['AVSDATA'])) {
+      $avsdata = $_POST['AVSDATA'];
+    }
+    else {
+      $avsdata = '';
+
+      if (!empty($_POST['AVSADDR'])) {
+        $avsdata .= $_POST['AVSADDR'];
+      }
+
+      if (!empty($_POST['AVSZIP'])) {
+        $avsdata .= $_POST['AVSZIP'];
+      }
+    }
+
+    $message[] = t('AVS response: @avs', array('@avs' => $avsdata));
+  }
+
+  // Add the CVV response if present.
+  if (!empty($_POST['PROCCVV2'])) {
+    $message[] = t('CVV2 match: @cvv', array('@cvv' => commerce_paypal_cvv_match_message($_POST['PROCCVV2'])));
+  }
+
+  // Add the pending reason if present.
+  if (!empty($_POST['PENDINGREASON']) && $_POST['PENDINGREASON'] != 'completed') {
+    $message[] = commerce_paypal_short_pending_reason($_POST['PENDINGREASON']);
+
+    // And ensure the local and remote status are pending.
+    $transaction->status = COMMERCE_PAYMENT_STATUS_PENDING;
+
+  }
+
+  // If this was a PayPal payment, store whether or not it came with a billing
+  // agreement for use in reference transactions.
+  if ($_POST['TENDER'] == 'P') {
+    $message[] = t('Payment initiated from a PayPal account.');
+
+    // Add the PayPal fees if given.
+    if (!empty($_POST['FEEAMT'])) {
+      $message[] = t('PayPal fees: @feeamt', array('@feeamt' => $_POST['FEEAMT']));
+    }
+
+    // Store the payment type so we know if the payment is via echeck.
+    if (!empty($_POST['PAYMENTTYPE'])) {
+      $transaction->data['commerce_paypal_ec']['paymenttype'] = $_POST['PAYMENTTYPE'];
+    }
+    else {
+      $transaction->data['commerce_paypal_ec']['paymenttype'] = '';
+    }
+
+    // Store the billing agreement ID if applicable.
+    if (!empty($_POST['BAID'])) {
+      $transaction->data['commerce_payflow']['baid'] = $_POST['BAID'];
+      $message[] = t('Billing agreement ID: @baid', array('@baid' => $_POST['BAID']));
+    }
+    else {
+      $transaction->data['commerce_payflow']['baid'] = '';
+    }
+
+    // Because follow-up API requests for this transaction must be submitted
+    // directly to PayPal, check to see if there's a corresponding Express
+    // Checkout payment method configured and update the remote ID to the PayPal
+    // transaction ID.
+    if (module_exists('commerce_paypal_ec') && !empty($payment_method['settings']['paypal_ec_instance'])) {
+      $transaction->remote_id = $_POST['PPREF'];
+
+      // Also update the remote status to match one expected by PayPal.
+      if (!is_null(commerce_payflow_paypal_remote_status($trxtype))) {
+        $transaction->remote_status = commerce_payflow_paypal_remote_status($trxtype);
+      }
+
+      // Finally set the method_id and instance_id to point to the Express
+      // Checkout instance.
+      $transaction->data['commerce_payflow']['original_instance'] = $payment_method['instance_id'];
+      $transaction->payment_method = 'paypal_ec';
+      $transaction->instance_id = 'paypal_ec|' . $payment_method['settings']['paypal_ec_instance'];
+    }
+  }
+
+  // Set the final message.
+  $transaction->message = implode('<br />', $message);
+
+  // Save the transaction information.
+  commerce_payment_transaction_save($transaction);
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function commerce_payflow_form_alter(&$form, &$form_state, $form_id) {
+  // If we're altering a checkout form that has the Payflow Link radio button...
+  if (strpos($form_id, 'commerce_checkout_form_') === 0 && !empty($form['commerce_payment']['payment_method'])) {
+    $payflow_link = FALSE;
+
+    foreach ($form['commerce_payment']['payment_method']['#options'] as $key => &$value) {
+      list($method_id, $rule_name) = explode('|', $key);
+
+      // If we find Payflow Link, include its CSS on the form and exit the loop.
+      if (in_array($method_id, array('payflow_link', 'paypal_ppa'))) {
+        // Merge in the default settings in case the payment method has not been
+        // configured yet.
+        $payment_method = commerce_payment_method_instance_load($key);
+        $payment_method['settings'] += commerce_payflow_link_default_settings();
+
+        $payment_icons = array_values($payment_method['settings']['payment_icons']);
+        $payflow_link = TRUE;
+
+        // Prepare an icons array that only includes enabled icons.
+        $icons = commerce_paypal_icons($payment_icons);
+
+        if (in_array('paypal', $payment_icons, TRUE)) {
+          $value = t('Credit card, debit card, or PayPal:') . ' ' . implode(' ', $icons);
+        }
+        else {
+          $value = t('Credit card or debit card:') . ' ' . implode(' ', $icons);
+        }
+
+        // Check to see if we should disable a corresponding Express Checkout
+        // payment method option.
+        if (!empty($payment_method['settings']['paypal_ec_disable']) && !empty($payment_method['settings']['paypal_ec_instance'])) {
+          $ec_instance_id = 'paypal_ec|' . $payment_method['settings']['paypal_ec_instance'];
+
+          // Remove the option from the list.
+          unset($form['commerce_payment']['payment_method']['#options'][$ec_instance_id]);
+
+          // Reset the default selection if that happened to be it.
+          if ($form['commerce_payment']['payment_method']['#default_value'] == $ec_instance_id) {
+            reset($form['commerce_payment']['payment_method']['#options']);
+            $default_value = key($form['commerce_payment']['payment_method']['#options']);
+
+            // Set the new default value of the payment method radio buttons.
+            $form['commerce_payment']['payment_method']['#default_value'] = $default_value;
+
+            // Update the payment details area of the form if necessary.
+            $default_payment_method = commerce_payment_method_instance_load($default_value);
+
+            if ($callback = commerce_payment_method_callback($default_payment_method, 'submit_form')) {
+              $form['commerce_payment']['payment_details'] = $callback($default_payment_method, array(), commerce_checkout_pane_load('commerce_payment'), $form_state['order']);
+            }
+            else {
+              $form['commerce_payment']['payment_details'] = array();
+            }
+          }
+        }
+      }
+    }
+
+    // If we did find Payflow Link, include its CSS now.
+    if ($payflow_link) {
+      // Include its CSS on the form.
+      $form['commerce_payment']['payment_method']['#attached']['css'][] = drupal_get_path('module', 'commerce_payflow') . '/theme/commerce_payflow.theme.css';
+    }
+  }
+
+  // Alter the Payment checkout page form for Payflow Link.
+  if ($form_id == 'commerce_checkout_form_payment' && !empty($form['commerce_payflow_payment_method'])) {
+    switch ($form['commerce_payflow_payment_method']['#value']['settings']['redirect_mode']) {
+      // Display the automatic redirection for POST redirects.
+      case 'post':
+        $form['help']['#markup'] = '<div class="checkout-help">' . t('Please wait while you are redirected to the payment server. If nothing happens within 10 seconds, please click on the button below.') . '</div>';
+        break;
+
+      // Clear the help text for embedded iframe payment.
+      case 'iframe':
+        unset($form['help']);
+        break;
+    }
+  }
+
+  // Alter the Review checkout page form for Payflow Link.
+  if ($form_id == 'commerce_checkout_form_review' && !empty($form_state['order']->data['commerce_payflow'])) {
+    drupal_add_js(array('commercePayflow' => array('page' => 'review')), 'setting');
+    $form['#attached']['js'][] = drupal_get_path('module', 'commerce_payflow') . '/commerce_payflow.js';
+
+    // If the Payflow query variable is present, reshow the error message and
+    // reload the page.
+    if (!empty($_GET['payflow-page']) && $_GET['payflow-page'] == 'review') {
+      drupal_set_message(t('Payment failed at the payment server. Please review your information and try again.'), 'error');
+      drupal_goto('checkout/' . $form_state['order']->order_id . '/review');
+    }
+  }
+
+  // Alter the Completion checkout page form for Payflow Link.
+  if ($form_id == 'commerce_checkout_form_complete' && !empty($form_state['order']->data['commerce_payflow'])) {
+    $form['#attached']['js'][] = drupal_get_path('module', 'commerce_payflow') . '/commerce_payflow.js';
+  }
+}
+
+/**
+ * Requests a Secure Token from Payflow for use in follow-up API requests.
+ *
+ * @param $payment_method
+ *   The payment method instance to use to generate the Secure Token.
+ * @param $order
+ *   The order whose details should be submitted in the Secure Token request.
+ * @param $billing_agreement
+ *   The name to use for PayPal billing agreements if the customer pays via
+ *   Express Checkout and the site needs to perform reference transactions.
+ *
+ * @return
+ *   The Secure Token if successfully retrieved or FALSE on failure.
+ */
+function commerce_payflow_link_create_secure_token($payment_method, $order, $billing_agreement = NULL) {
+  // Extract the order total value array.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $order_total = $order_wrapper->commerce_order_total->value();
+
+  // Determine the currency code to use to actually process the transaction,
+  // which will either be the default currency code or the currency code of the
+  // order if it's supported by PayPal if that option is enabled.
+  $currency_code = $payment_method['settings']['currency_code'];
+  $order_currency_code = $order_total['currency_code'];
+
+  if (!empty($settings['allow_supported_currencies']) && in_array($order_currency_code, array_keys(commerce_paypal_currencies($payment_method['method_id'])))) {
+    $currency_code = $order_currency_code;
+  }
+
+  // Prepare a transaction amount value in the proper currency.
+  $amt = commerce_currency_convert($order_total['amount'], $order_total['currency_code'], $currency_code);
+
+  // Prepare the billing address for use in the request.
+  $billing_address = $order_wrapper->commerce_customer_billing->commerce_customer_address->value();
+
+  if (empty($billing_address['first_name'])) {
+    $name_parts = explode(' ', $billing_address['name_line']);
+    $billing_address['first_name'] = array_shift($name_parts);
+    $billing_address['last_name'] = implode(' ', $name_parts);
+  }
+
+  // Build a name-value pair array for this transaction.
+  $nvp = array(
+    // Request a secure token using our order's token ID.
+    'CREATESECURETOKEN' => 'Y',
+    'SECURETOKENID' => $order->data['commerce_payflow']['tokenid'],
+
+    // Indicate the type and amount of the transaction.
+    'TRXTYPE' => $payment_method['settings']['trxtype'],
+    'AMT' => commerce_paypal_price_amount($amt, $currency_code),
+    'CURRENCY' => $currency_code,
+    'INVNUM' => commerce_paypal_ipn_invoice($order),
+
+    // Add the billing address.
+    'BILLTOEMAIL' => substr($order->mail, 0, 60),
+    'BILLTOFIRSTNAME' => substr($billing_address['first_name'], 0, 45),
+    'BILLTOLASTNAME' => substr($billing_address['last_name'], 0, 45),
+    'BILLTOSTREET' => substr($billing_address['thoroughfare'], 0, 150),
+    'BILLTOCITY' => substr($billing_address['locality'], 0, 45),
+    'BILLTOSTATE' => substr($billing_address['administrative_area'], 0, 2),
+    'BILLTOCOUNTRY' => substr($billing_address['country'], 0, 2),
+    'BILLTOZIP' => substr($billing_address['postal_code'], 0, 10),
+
+    // Add application specific parameters.
+    'BUTTONSOURCE' => $payment_method['buttonsource'],
+    'ERRORURL' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+    'RETURNURL' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+    'CANCELURL' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
+    'DISABLERECEIPT' => 'TRUE',
+    // @todo Support the 'MOBILE' template if we have a way to determine the
+    // site is currently using a responsive theme.
+    'TEMPLATE' => $payment_method['settings']['redirect_mode'] == 'iframe' ? 'MINLAYOUT' : 'TEMPLATEA',
+    'CSCREQUIRED' => 'TRUE',
+    'CSCEDIT' => 'TRUE',
+    'URLMETHOD' => 'POST',
+
+    // Store the payment redirect key in a custom field.
+    'USER1' => $order->data['payment_redirect_key'],
+  );
+
+  // If Express Checkout is enabled, include the IPN URL.
+  if (module_exists('commerce_paypal_ec') && !empty($payment_method['settings']['paypal_ec_instance'])) {
+    // Ensure the Rule is still valid to receive Express Checkout IPNs.
+    if (in_array($payment_method['settings']['paypal_ec_instance'], array_keys(commerce_paypal_ec_enabled_rules()))) {
+      $nvp['NOTIFYURL'] = commerce_paypal_ipn_url('paypal_ec|' . $payment_method['settings']['paypal_ec_instance']);
+    }
+    else {
+      watchdog('commerce_payflow', 'Payflow Link is configured to use a disabled or non-existent Express Checkout payment method rule.', array(), WATCHDOG_WARNING);
+    }
+  }
+
+  // If reference transactions are supported by the payment method isntance and
+  // a billing agreement description is passed in, set its parameters.
+  if (!empty($payment_method['settings']['reference_transactions']) &&
+    !is_null($billing_agreement)) {
+    $nvp['BILLINGTYPE'] = 'MerchantInitiatedBilling';
+
+    if (!empty($billing_agreement)) {
+      $nvp['BA_DESC'] = $billing_agreement;
+    }
+  }
+
+  // If enabled, email the customer a receipt from PayPal.
+  if (!empty($payment_method['settings']['emailcustomer'])) {
+    $nvp['EMAILCUSTOMER'] = 'TRUE';
+  }
+
+  // If the Shipping module is on and we have a shipping address...
+  if (module_exists('commerce_shipping') && !empty($order_wrapper->commerce_customer_shipping->commerce_customer_address)) {
+    $shipping_address = $order_wrapper->commerce_customer_shipping->commerce_customer_address->value();
+
+    // Add the shipping address parameters to the request.
+    $nvp += array(
+      'SHIPTOFIRSTNAME' => substr($shipping_address['first_name'], 0, 45),
+      'SHIPTOLASTNAME' => substr($shipping_address['last_name'], 0, 45),
+      'SHIPTOSTREET' => substr($shipping_address['thoroughfare'], 0, 150),
+      'SHIPTOCITY' => substr($shipping_address['locality'], 0, 45),
+      'SHIPTOSTATE' => substr($shipping_address['administrative_area'], 0, 2),
+      'SHIPTOCOUNTRY' => substr($shipping_address['country'], 0, 2),
+      'SHIPTOZIP' => substr($shipping_address['postal_code'], 0, 10),
+    );
+  }
+
+  // Add the line item details to the array.
+  $nvp += commerce_payflow_link_itemize_order($order, $currency_code);
+
+  // Submit the API request to Payflow.
+  $response = commerce_payflow_api_request($payment_method, 'pro', $nvp, $order);
+
+  // If the request is successful, return the token.
+  if (isset($response['RESULT']) && $response['RESULT'] == '0') {
+    return $response['SECURETOKEN'];
+  }
+
+  // Otherwise indicate failure by returning FALSE.
+  return FALSE;
+}
+
+/**
+ * Returns an itemized order data array for use in a name-value pair array.
+ *
+ * @param $order
+ *   The order whose line items should be converted into name-value pairs.
+ * @param $currency_code
+ *   The currency code to use to calculate all amounts.
+ *
+ * @return
+ *   The name-value pair array representing the line items that should be added
+ *   to the name-value pair array for an API request.
+ */
+function commerce_payflow_link_itemize_order($order, $currency_code) {
+  $nvp = array();
+  $currency = commerce_currency_load($currency_code);
+
+  // Extract the order total value array.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $order_total = $order_wrapper->commerce_order_total->value();
+
+  // Initialize the order level amount parameter.
+  $amt = commerce_currency_convert($order_total['amount'], $order_total['currency_code'], $currency_code);
+
+  // Loop over all the line items on the order.
+  $i = 0;
+
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    // Extract the unit price total value array.
+    $unit_price = $line_item_wrapper->commerce_unit_price->value();
+
+    // Calculate the cost as the unit price minus the tax amount and add it to
+    // the running total for the order.
+    $l_cost = commerce_currency_convert($unit_price['amount'], $unit_price['currency_code'], $currency_code);
+
+    // Add the line item to the return array.
+    $nvp += array(
+      'L_NAME' . $i => commerce_line_item_title($line_item_wrapper->value()),
+      'L_COST' . $i => commerce_paypal_price_amount($l_cost, $currency_code),
+      'L_QTY' . $i => round($line_item_wrapper->quantity->value()),
+    );
+
+    // If it was a product line item, add the SKU.
+    if (in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
+      $nvp += array(
+        'L_SKU' . $i => $line_item_wrapper->line_item_label->value(),
+      );
+    }
+
+    $i++;
+  }
+
+  // Determine the order level item amount and tax amount line items. To prevent
+  // rounding problems getting in the way, we calculate them based on the order
+  // total instead of tallying it from each line item.
+  if (module_exists('commerce_tax')) {
+    $taxamt = commerce_round(COMMERCE_ROUND_HALF_UP, commerce_tax_total_amount($order_total['data']['components'], FALSE, $currency_code));
+  }
+  else {
+    $taxamt = 0;
+  }
+
+  // Add payment details line items.
+  $nvp += array(
+    'ITEMAMT' => commerce_paypal_price_amount($amt - $taxamt, $currency_code),
+    'TAXAMT' => commerce_paypal_price_amount($taxamt, $currency_code),
+  );
+
+  return $nvp;
+}
+
+/**
+ * Submits an API request to Payflow.
+ *
+ * This function is currently used by PayPal Payments Advanced and Payflow Link.
+ *
+ * This function may be used for any PayPal payment method that uses the same
+ * settings array structure as these other payment methods and whose API
+ * requests should be submitted to the same URLs as determined by the function
+ * commerce_payflow_api_server_url().
+ *
+ * @param $payment_method
+ *   The payment method instance array associated with this API request.
+ * @param $api
+ *   Either 'pro' or 'link' indicating which API server the request should be
+ *   sent to.
+ * @param $nvp
+ *   The set of name-value pairs describing the transaction to submit.
+ * @param $order
+ *   The order the payment request is being made for.
+ *
+ * @return
+ *   The response array from PayPal if successful or FALSE on error.
+ */
+function commerce_payflow_api_request($payment_method, $api, $nvp = array(), $order = NULL) {
+  $mode = $payment_method['settings']['mode'];
+
+  // Get the API endpoint URL for the payment method's transaction mode.
+  if ($api == 'pro') {
+    $url = commerce_payflow_pro_server_url($mode);
+  }
+  else {
+    $url = commerce_payflow_link_server_url($mode);
+  }
+
+  // Add the default name-value pairs to the array.
+  $nvp += array(
+    // API credentials
+    'PARTNER' => $payment_method['settings']['partner'],
+    'VENDOR' => $payment_method['settings']['vendor'],
+    'USER' => $payment_method['settings']['user'],
+    'PWD' => $payment_method['settings']['password'],
+
+    // Set the mode based on which server we're submitting to.
+    'MODE' => $mode == 'test' ? 'TEST' : 'LIVE',
+  );
+
+  // Allow modules to alter parameters of the API request.
+  drupal_alter('commerce_payflow_api_request', $nvp, $order, $payment_method);
+
+  // Log the request if specified.
+  if ($payment_method['settings']['log']['request'] == 'request') {
+    // Mask sensitive request data.
+    $log_nvp = $nvp;
+    $log_nvp['PWD'] = str_repeat('X', strlen($log_nvp['PWD']));
+
+    if (!empty($log_nvp['ACCT'])) {
+      $log_nvp['ACCT'] = str_repeat('X', strlen($log_nvp['ACCT']) - 4) . substr($log_nvp['ACCT'], -4);
+    }
+
+    if (!empty($log_nvp['CVV2'])) {
+      $log_nvp['CVV2'] = str_repeat('X', strlen($log_nvp['CVV2']));
+    }
+
+    watchdog('commerce_payflow', 'Payflow API request to @url: !param', array('@url' => $url, '!param' => '<pre>' . check_plain(print_r($log_nvp, TRUE)) . '</pre>'), WATCHDOG_DEBUG);
+  }
+
+  // Prepare the name-value pair array to be sent as a string.
+  $pairs = array();
+
+  foreach ($nvp as $key => $value) {
+    // Since we aren't supposed to urlencode parameter values for PFL / PPA API
+    // requests, we strip out ampersands and equals signs to
+    $pairs[] = $key . '=' . str_replace(array('&', '=', '#'), array(''), $value);
+  }
+
+  // Setup the cURL request.
+  $ch = curl_init();
+  curl_setopt($ch, CURLOPT_URL, $url);
+  curl_setopt($ch, CURLOPT_VERBOSE, 0);
+  curl_setopt($ch, CURLOPT_POST, 1);
+  curl_setopt($ch, CURLOPT_POSTFIELDS, implode('&', $pairs));
+  curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+  curl_setopt($ch, CURLOPT_NOPROGRESS, 1);
+  curl_setopt($ch, CURLOPT_FOLLOWLOCATION, 0);
+  curl_setopt($ch, CURLOPT_TIMEOUT, 45);
+  curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 1);
+
+  // Commerce PayPal requires SSL peer verification, which may prevent out of
+  // date servers from successfully processing API requests. If you get an error
+  // related to peer verification, you may need to download the CA certificate
+  // bundle file from http://curl.haxx.se/docs/caextract.html, place it in a
+  // safe location on your web server, and update your settings.php to set the
+  // commerce_paypal_cacert variable to contain the absolute path of the file.
+  // Alternately, you may be able to update your php.ini to point to the file
+  // with the curl.cainfo setting.
+  if (variable_get('commerce_paypal_cacert', FALSE)) {
+    curl_setopt($ch, CURLOPT_CAINFO, variable_get('commerce_paypal_cacert', ''));
+  }
+
+  $result = curl_exec($ch);
+
+  // Log any errors to the watchdog.
+  if ($error = curl_error($ch)) {
+    watchdog('commerce_payflow', 'cURL error: @error', array('@error' => $error), WATCHDOG_ERROR);
+    return FALSE;
+  }
+  curl_close($ch);
+
+  // Make the response an array.
+  $response = array();
+
+  foreach (explode('&', $result) as $nvp) {
+    list($key, $value) = explode('=', $nvp);
+    $response[urldecode($key)] = urldecode($value);
+  }
+
+  // Log the response if specified.
+  if ($payment_method['settings']['log']['response'] == 'response') {
+    watchdog('commerce_payflow', 'Payflow server response: !param', array('!param' => '<pre>' . check_plain(print_r($response, TRUE)) . '</pre>', WATCHDOG_DEBUG));
+  }
+
+  return $response;
+}
+
+/**
+ * Returns the URL to a Payflow Pro API server.
+ *
+ * @param $mode
+ *   Either 'test' or 'live' indicating which server's URL to return.
+ *
+ * @return
+ *   The request URL with a trailing slash.
+ */
+function commerce_payflow_pro_server_url($mode) {
+  switch ($mode) {
+    case 'test':
+      return 'https://pilot-payflowpro.paypal.com/';
+    case 'live':
+      return 'https://payflowpro.paypal.com/';
+  }
+}
+
+/**
+ * Returns the URL to a Payflow Link API server.
+ *
+ * @param $mode
+ *   Either 'test' or 'live' indicating which server's URL to return.
+ *
+ * @return
+ *   The request URL with a trailing slash.
+ */
+function commerce_payflow_link_server_url($mode) {
+  switch ($mode) {
+    case 'test':
+      return 'https://pilot-payflowlink.paypal.com/';
+    case 'live':
+      return 'https://payflowlink.paypal.com/';
+  }
+}
+
+/**
+ * Returns the URL to the specified Payflow Link Hosted Checkout page.
+ *
+ * @param $payment_method
+ *   The payment method instance used to generate a Secure Token for the order.
+ * @param $order
+ *   The order object the hosted checkout is for.
+ *
+ * @return
+ *   The URL to use to redirect to Payflow's Hosted Checkout page.
+ */
+function commerce_payflow_link_hosted_checkout_url($payment_method, $order) {
+  $mode = $payment_method['settings']['mode'];
+
+  // Build a query array using information from the order object.
+  $query = array(
+    'SECURETOKEN' => $order->data['commerce_payflow']['token'],
+    'SECURETOKENID' => $order->data['commerce_payflow']['tokenid'],
+  );
+
+  // Set the MODE parameter if the URL is for the test server.
+  if ($mode == 'test') {
+    $query['MODE'] = 'TEST';
+  }
+
+  // Grab the base URL of the appropriate API server.
+  return url(commerce_payflow_link_server_url($mode), array('query' => $query));
+}
+
+/**
+ * Returns an iframe embedding the specified Payflow Link Hosted Checkout page.
+ *
+ * @param $payment_method
+ *   The payment method instance used to generate a Secure Token for the order.
+ * @param $order
+ *   The order object the hosted checkout is for.
+ *
+ * @return
+ *   The iframe HTML to use to embed Payflow's Hosted Checkout page on-site.
+ */
+function commerce_payflow_link_hosted_checkout_iframe($payment_method, $order) {
+  $name = ($payment_method['method_id'] == 'payflow_link') ? 'embedded-payflow-link' : 'embedded-paypal-ppa';
+  return '<iframe src="' . commerce_payflow_link_hosted_checkout_url($payment_method, $order) . '" name="' . $name . '" scrolling="no" frameborder="0" width="490px" height="565px"></iframe>';
+}
+
+/**
+ * Determines whether or not a transaction was accepted based on the RESULT.
+ *
+ * @param $result
+ *   The RESULT value from a Payflow transaction.
+ *
+ * @return
+ *   Boolean indicating whether or not a transaction was accepted.
+ */
+function commerce_payflow_link_validate_result($result) {
+  // Return TRUE for a transaction that was either accepted or has been flagged
+  // for manual review by the merchant.
+  if (in_array(intval($result), array(0, 126))) {
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Returns the message to display to a customer explaining the RESULT of a
+ * Payflow transaction.
+ *
+ * @param $result
+ *   The RESULT value from a Payflow transaction.
+ *
+ * @return
+ *   An error or explanation message fit for display to a customer.
+ */
+function commerce_payflow_link_result_message($result) {
+  switch (intval($result)) {
+    case 0:
+      return t('Transaction approved.');
+    case 1:
+    case 5:
+    case 26:
+      return t('The Payflow hosted checkout page is not configured for use. Please contact an administrator to resolve this issue.');
+    case 2:
+    case 25:
+      return t('You have attempted to use an invalid payment method. Please check your payment information and try again.');
+    case 3:
+      return t('The specified transaction type is not appropriate for this transaction.');
+    case 4:
+    case 6:
+      return t('The payment request specified an invalid amount format or currency code. Please contact an administrator to resolve this issue.');
+    case 7:
+    case 8:
+    case 9:
+    case 10:
+    case 19:
+    case 20:
+      return t('The payment request included invalid parameters. Please contact an administrator to resolve this issue.');
+    case 11:
+    case 115:
+    case 160:
+    case 161:
+    case 162:
+      return t('The payment request timed out. Please try again or contact an administrator to resolve the issue.');
+    case 12:
+    case 13:
+    case 22:
+    case 23:
+    case 24:
+      return t('Payment declined. Please check your payment information and try again.');
+    case 27:
+    case 28:
+    case 29:
+    case 30:
+    case 31:
+    case 32:
+    case 33:
+    case 34:
+    case 35:
+    case 36:
+    case 37:
+    case 52:
+    case 99:
+    case 100:
+    case 101:
+    case 102:
+    case 103:
+    case 104:
+    case 105:
+    case 106:
+    case 107:
+    case 108:
+    case 109:
+    case 110:
+    case 111:
+    case 113:
+    case 116:
+    case 118:
+    case 120:
+    case 121:
+    case 122:
+    case 132:
+    case 133:
+    case 150:
+    case 151:
+      return t('The transaction failed at PayPal. Please contact an administrator to resolve this issue.');
+    case 50:
+    case 51:
+      return t('Payment was declined due to insufficient funds or transaction limits. Please check your payment information and try again.');
+    case 112:
+      return t('Address and Zip code do not match. Please check your payment information and try again.');
+    case 114:
+      return t('Card Security Code (CSC) does not match. Please check your payment information and try again.');
+    case 117:
+    case 125:
+    case 127:
+    case 128:
+      return t('Payment was declined due to merchant fraud settings. Please contact an administrator to resolve this issue.');
+    case 126:
+      return t('Payment was flagged for review by the merchant. We will validate the payment and update your order as soon as possible.');
+  }
+}
+
+/**
+ * Returns the description of a transaction type for a Payflow payment action.
+ */
+function commerce_payflow_trxtype_name($trxtype) {
+  switch ($trxtype) {
+    case 'A':
+      return t('Authorization only');
+    case 'S':
+      return t('Authorization and capture');
+    case 'D':
+      return t('Prior authorization capture');
+    case 'V':
+      return t('Void');
+    case 'C':
+      return t('Refund');
+    default:
+      return t('Unknown transaction type');
+  }
+}
+
+/**
+ * Returns the PayPal remote status that corresponds to the given Payflow
+ * transaction type.
+ */
+function commerce_payflow_paypal_remote_status($trxtype) {
+  switch ($trxtype) {
+    case 'A':
+      return 'Pending';
+    case 'S':
+    case 'D':
+      return 'Completed';
+    case 'V':
+      return 'Voided';
+    case 'C':
+      return 'Refunded';
+    default:
+      return NULL;
+  }
+}
+
+/**
+ * Returns the name of the credit card type matching the CARDTYPE value.
+ */
+function commerce_payflow_cardtype_name($cardtype) {
+  switch (intval($cardtype)) {
+    case 0:
+      return t('Visa');
+    case 1:
+      return t('MasterCard');
+    case 2:
+      return t('Discover');
+    case 3:
+      return t('American Express');
+    case 4:
+      return t("Diner's Club");
+    case 5:
+      return t('JCB');
+    default:
+      return t('Credit card');
+  }
+}

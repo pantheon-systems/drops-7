@@ -1,0 +1,55 @@
+/* Anno 2013 background images for options in a <select> work in Firefox ... */
+
+select.marker-color {
+  height: 2em;
+}
+select.marker-color option {
+  padding: 9px 0 11px 27px;
+}
+
+select.marker-color option[value="drupal"] {
+  background: url(../markers/drupal.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="blue"] {
+  background: url(../markers/blue.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="blue with hole"] {
+  background: url("../markers/blue with hole.png") no-repeat 0px 0px;
+  height: 22px;
+}
+select.marker-color option[value="green"] {
+  background: url(../markers/green.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="grey"] {
+  background: url(../markers/grey.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="light blue"] {
+  background: url("../markers/light blue.png") no-repeat 2px 1px;
+}
+select.marker-color option[value="orange"] {
+  background: url(../markers/orange.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="pink"] {
+  background: url(../markers/pink.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="purple"] {
+  background: url(../markers/purple.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="red"] {
+  background: url(../markers/red.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="red cluster"] {
+  background: url("../markers/red cluster.png") no-repeat 2px 1px;
+}
+select.marker-color option[value="red+dot"] {
+  background: url(../markers/red+dot.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="red+square"] {
+  background: url(../markers/red+square.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="white"] {
+  background: url(../markers/white.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="yellow"] {
+  background: url(../markers/yellow.png) no-repeat 2px 1px;
+}

@@ -1,0 +1,12 @@
+name = Leaflet More Maps
+description = Adds a swag of map styles to Leaflet, e.g Thunderforest, Esri, MapBox
+core = 7.x
+dependencies[] = leaflet
+config = admin/config/system/leaflet_more_maps
+
+; Information added by Drupal.org packaging script on 2014-02-28
+version = "7.x-1.9"
+core = "7.x"
+project = "leaflet_more_maps"
+datestamp = "1393555436"
+

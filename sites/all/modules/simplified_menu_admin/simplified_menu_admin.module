@@ -1,0 +1,211 @@
+<?php
+
+/**
+ * @file
+ * Simplifies the Menu and Shortcut modules by merging "List links" and "Edit menu" into a single administration page.
+ */
+
+/**
+ * Implements hook_menu_alter().
+ */
+function simplified_menu_admin_menu_alter(&$items) {
+  // Remove the Menu module's "list links" local task, and make the page for
+  // editing the menu become the default local task.
+  unset($items['admin/structure/menu/manage/%menu/list']);
+  if (isset($items['admin/structure/menu/manage/%menu/edit'])) {
+    $items['admin/structure/menu/manage/%menu/edit'] = array(
+      'title' => $items['admin/structure/menu/manage/%menu/edit']['title'],
+      'weight' => -10,
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+      'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    );
+  }
+
+  // Remove the Shortcut module's "list links" local task, and make the page
+  // for editing the shortcut set become the default local task.
+  unset($items['admin/config/user-interface/shortcut/%shortcut_set/links']);
+  if (isset($items['admin/config/user-interface/shortcut/%shortcut_set/edit'])) {
+    $items['admin/config/user-interface/shortcut/%shortcut_set/edit'] = array(
+      'title' => 'Edit shortcut set',
+      'weight' => -10,
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    );
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function simplified_menu_admin_theme() {
+  return array(
+    'simplified_menu_admin_menu_overview_form' => array(
+      'render element' => 'form',
+    ),
+  );
+}
+
+/**
+ * Implements MODULE_preprocess_HOOK().
+ */
+function simplified_menu_admin_preprocess_table(&$variables) {
+  $item = menu_get_item();
+
+  // Modify the table shown on the menu overview page to get rid of the "list
+  // links" operation.
+  if ($item['page_callback'] == 'menu_overview_page') {
+    foreach ($variables['rows'] as $index => &$row) {
+      unset($row[1]);
+    }
+    $variables['header'][1]['colspan']--;
+  }
+
+  // Modify the table shown on the shortcut administration page to get rid of
+  // the "list links" operation and rename the "edit set name" operation to
+  // "edit set".
+  elseif ($item['page_callback'] == 'shortcut_set_admin') {
+    $shortcut_set_names = array_keys(shortcut_sets());
+    foreach ($variables['rows'] as $index => &$row) {
+      unset($row[1]);
+      $set_name = $shortcut_set_names[$index];
+      $row[2] = l(t('edit set'), "admin/config/user-interface/shortcut/$set_name/edit");
+    }
+    $variables['header'][1]['colspan']--;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function simplified_menu_admin_form_menu_overview_form_alter(&$form, &$form_state) {
+  // Merge in the menu_edit_menu() form, which allows editing the menu name and
+  // description, to the current form (which allows editing the menu links).
+  _simplified_menu_admin_add_form($form, $form_state, 'menu_edit_menu', 'edit', $form['#menu']);
+
+  // Hide the menu description field unless an "edit description" checkbox is
+  // selected. This prevents the list of menu links from being pushed too far
+  // down the page.
+  $form['description_toggle'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Edit description'),
+  );
+  if (isset($form['description']['#access'])) {
+    $form['description_toggle']['#access'] = $form['description']['#access'];
+  }
+  $form['description']['#states']['visible'][':input[name="description_toggle"]']['checked'] = TRUE;
+
+  // Modify the theming of the form so we can control the order in which the
+  // items we've added are rendered.
+  $form['#simplified_menu_admin']['original_theme'] = $form['#theme'];
+  $form['#theme'] = 'simplified_menu_admin_menu_overview_form';
+}
+
+/**
+ * Returns HTML for the combined form that allows editing a menu and its links.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - form: A render element representing the form.
+ *
+ * @ingroup themeable
+ */
+function theme_simplified_menu_admin_menu_overview_form($variables) {
+  // Render the items we added to the form at the top.
+  $output = drupal_render($variables['form']['title']);
+  $output .= drupal_render($variables['form']['menu_name']);
+  $output .= drupal_render($variables['form']['description_toggle']);
+  $output .= drupal_render($variables['form']['description']);
+
+  // Then add the original form (with its original theming) at the bottom.
+  $output .= theme($variables['form']['#simplified_menu_admin']['original_theme'], $variables);
+
+  return $output;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function simplified_menu_admin_form_shortcut_set_customize_alter(&$form, &$form_state) {
+  // Unfortunately we have to get this from the URL (it's not provided in $form
+  // or $form_state).
+  $shortcut_set = menu_get_object('shortcut_set', 4);
+
+  // Add a submit handler that will run after the shortcut set's links are
+  // saved, but before the shortcut set itself is saved.
+  $form['#submit'][] = 'simplified_menu_admin_shortcut_set_customize_submit';
+
+  // Merge in the shortcut_set_edit_form() form, which allows editing the
+  // shortcut set name, to the current form (which allows editing the shortcut
+  // set's links).
+  _simplified_menu_admin_add_form($form, $form_state, 'shortcut_set_edit_form', $shortcut_set);
+}
+
+/**
+ * Custom submit handler for shortcut_set_customize().
+ */
+function simplified_menu_admin_shortcut_set_customize_submit($form, &$form_state) {
+  // This submit handler runs afer the shortcut set's links have been saved,
+  // but before the set itself is saved in shortcut_set_edit_form_submit(). So
+  // we need to reload the up-to-date set into $form_state['values'], to make
+  // sure we don't lose the changes to the links the second time it is saved.
+  $form_state['values']['shortcut_set'] = shortcut_set_load($form_state['values']['shortcut_set']->set_name);
+}
+
+/**
+ * Merges in a new form to an existing one.
+ *
+ * @param $form
+ *   The current form array.
+ * @param $form_state
+ *   An array representing the current state of the form.
+ * @param $form_id
+ *   The ID of the form to merge in.
+ * @param ...
+ *   Any additional arguments to pass to the form builder function.
+ */
+function _simplified_menu_admin_add_form(&$form, $form_state, $form_id) {
+  // Get the additional arguments that will be passed to the form builder
+  // function.
+  $args = array_slice(func_get_args(), 3);
+
+  // First call the form builder function and add the new form to the existing
+  // $form array. Note that this will replace any common form elements (e.g.,
+  // submit buttons) with ones from the second form, but so far that's exactly
+  // what we want for this module.
+  $form = call_user_func_array($form_id, array_merge(array($form, &$form_state), $args));
+  drupal_alter(array('form', "form_{$form_id}"), $form, $form_state, $form_id);
+
+  // Now actually build a full copy of the form we're adding, and use it to
+  // merge in that form's #validate and #submit handlers to the overall form.
+  $built_form = call_user_func_array('drupal_get_form', array_merge(array($form_id), $args));
+  foreach (array('#validate', '#submit') as $handler_type) {
+    if (!empty($built_form[$handler_type])) {
+      foreach ($built_form[$handler_type] as $handler) {
+        // Do not add a handler that is already there, e.g. if it was added in
+        // hook_form_alter() above.
+        if (!isset($form[$handler_type]) || !in_array($handler, $form[$handler_type])) {
+          $form[$handler_type][] = $handler;
+        }
+      }
+    }
+  }
+
+  // The forms we're merging in this module each use drupal_set_message() to
+  // indicate success. Add a submit handler that forces only the first such
+  // message to be used.
+  $form['#submit'][] = '_simplified_menu_admin_limit_to_one_status_message';
+}
+
+/**
+ * Removes all the current user's status messages except the first one.
+ *
+ * This is useful when multiple forms are merged together, because each might
+ * use drupal_set_message() in its submit handler to indicate success. This
+ * function assumes that the first such message is the one you want to keep,
+ * and it removes any other status messages that were previously set.
+ */
+function _simplified_menu_admin_limit_to_one_status_message() {
+  if (!empty($_SESSION['messages']['status'])) {
+    $first_message = array_shift($_SESSION['messages']['status']);
+    $_SESSION['messages']['status'] = array($first_message);
+  }
+}

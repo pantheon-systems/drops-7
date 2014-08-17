@@ -1,0 +1,11 @@
+/* Adjust the background position when using this widget with a RTL langauge. */
+.fivestar-outline div.fivestar-widget-static .star span.on {
+  background-position: right -28px;
+}
+.fivestar-outline div.fivestar-widget div.on a {
+  background-position: right -14px;
+}
+.fivestar-outline div.fivestar-widget div.hover a,
+.fivestar-outline div.rating div a:hover {
+  background-position: right -28px;
+}

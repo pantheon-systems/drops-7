@@ -1,0 +1,84 @@
+<?php
+
+/**
+ * Implements hook_library().
+ */
+function leaflet_markercluster_library() {
+
+  if (!($path = leaflet_markercluster_get_library_path())) {
+    return NULL;
+  }
+  $libraries['leaflet_markercluster'] = array(
+    'title' => 'Leaflet Markercluster',
+    'version' => 0.4,
+    'js' => array(
+      array(
+        'type' => 'file',
+        'data' => "$path/leaflet.markercluster.js",
+        'group' => JS_LIBRARY,
+        'preprocess' => FALSE,
+        'weight' => 1,
+      ),
+    ),
+    'css' => array(
+      "$path/MarkerCluster.css" => array(
+        'type' => 'file',
+        'media' => 'screen',
+      ),
+      "$path/MarkerCluster.Default.css" => array(
+        'type' => 'file',
+        'media' => 'screen',
+      ),
+      "$path/MarkerCluster.Default.ie.css" => array(
+        'type' => 'file',
+        'media' => 'screen',
+        'every_page' => TRUE,
+        'browsers' => array('IE' => 'lte IE 8', '!IE' => FALSE, 'preprocess' => FALSE),
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_leaflet_map_prebuild_alter().
+ */
+function leaflet_markercluster_leaflet_map_prebuild_alter(&$vars = NULL) {
+  if (!isset($vars['map']['settings']['maxClusterRadius']) || $vars['map']['settings']['maxClusterRadius'] > 0) {
+    drupal_add_library('leaflet_markercluster', 'leaflet_markercluster');
+    // Increase weight so we're included after 'leaflet.drupal.js'
+    $options = array('type' => 'file', 'weight' => 1);
+    drupal_add_js(drupal_get_path('module', 'leaflet_markercluster') . '/leaflet_markercluster.drupal.js', $options);
+  }
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function leaflet_markercluster_requirements($phase) {
+
+  if ($phase != 'runtime') {
+    return array();
+  }
+  $requirements['leaflet_markercluster']['title'] = t('Leaflet MarkerCluster library');
+  if ($path = leaflet_markercluster_get_library_path()) {
+    $file = "$path/leaflet.markercluster.js";
+  }
+  if ($path && file_exists($file)) {
+    $requirements['leaflet_markercluster']['value'] = t('Installed');
+    $requirements['leaflet_markercluster']['severity'] = REQUIREMENT_OK;
+  }
+  else {
+    $requirements['leaflet_markercluster']['value'] =
+      $path ? t('File not found: %file', array('%file' => $file)) : t('/leaflet_markercluster library directory missing');
+    $requirements['leaflet_markercluster']['severity'] = REQUIREMENT_ERROR;
+  }
+
+  return $requirements;
+}
+
+function leaflet_markercluster_get_library_path() {
+  $path = libraries_get_path('leaflet_markercluster');
+  return $path ? "$path/dist" : FALSE;
+}

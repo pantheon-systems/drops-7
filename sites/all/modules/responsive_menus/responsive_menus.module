@@ -1,0 +1,978 @@
+<?php
+
+/**
+ * @file
+ * Responsify menus in Drupal.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function responsive_menus_menu() {
+  $items = array();
+
+  $items['admin/config/user-interface/responsive_menus'] = array(
+    'title' => 'Responsive Menus',
+    'description' => 'Settings for Responsive Menus module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('responsive_menus_admin_form'),
+    'access arguments' => array('administer responsive menus'),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function responsive_menus_permission() {
+  return array(
+    'administer responsive menus' => array(
+      'title' => t('Administer Responsive Menus'),
+      'description' => t('Configure settings for responsive menus module.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_help().
+ */
+function responsive_menus_help($path, $arg) {
+  switch ($path) {
+    // On the help overview page.
+    case 'admin/help#responsive_menus':
+      return '<p>' . t('Responsify your menus! Using any jQuery compatible selector, make elements mobile friendly. Technically you could use this on more than menus... The <a href="@admin">administration page</a> provides settings to control which menus to control, what screen size to react to, and a few other options.', array('@admin' => url('admin/config/user-interface/responsive_menus'))) . '</p>';
+
+    // On the admin settings page.
+    case 'admin/config/user-interface/responsive_menus':
+      return '<p>' . t('This page provides configuration options for responsive menus. You may configure any amount of menus to respond to any screen size by simply adding a jQuery compatible selector to the list below. There is also an option to ignore admin pages where you might not want responsive menus.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function responsive_menus_ctools_plugin_api($module, $api) {
+  if ($module == 'context' && $api == 'plugins') {
+    return array('version' => 3);
+  }
+}
+
+/**
+ * Implements hook_context_registry().
+ */
+function responsive_menus_context_registry() {
+  $registry = array();
+
+  $registry['reactions'] = array(
+    'responsive_menus_general' => array(
+      'title' => t('Responsive Menus'),
+      'description' => t('Add & configure a Responsive Menus module reaction.'),
+      'plugin' => 'responsive_menus_context_reaction_general',
+    ),
+  );
+
+  return $registry;
+}
+
+/**
+ * Implements hook_context_plugins().
+ */
+function responsive_menus_context_plugins() {
+  $plugins = array();
+
+  $plugins['responsive_menus_context_reaction_general'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'responsive_menus') . '/plugins/context',
+      'file' => 'responsive_menus_context_reaction_general.inc',
+      'class' => 'responsive_menus_context_reaction_general',
+      'parent' => 'context_reaction',
+    ),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_libraries_info().
+ * @note : Libraries 2.x
+ */
+function responsive_menus_libraries_info() {
+  $libraries['ResponsiveMultiLevelMenu'] = array(
+    'name' => 'ResponsiveMultiLevelMenu (codrops)',
+    'vendor url' => 'http://tympanus.net/Development/ResponsiveMultiLevelMenu/',
+    'download url' => 'http://tympanus.net/Development/ResponsiveMultiLevelMenu/ResponsiveMultiLevelMenu.zip',
+    'version arguments' => array(
+      'file' => 'js/jquery.dlmenu.js',
+      'pattern' => '/v([\d\.]+)/',
+      'lines' => 3,
+      'columns' => 40,
+    ),
+    'files' => array(
+      'js' => array(
+        'js/modernizr.custom.js',
+        'js/jquery.dlmenu.js',
+      ),
+      'css' => array(
+        'css/component.css',
+      ),
+    ),
+    'integration files' => array(
+      'responsive_menus' => array(
+        'js' => array('styles/ResponsiveMultiLevelMenu/js/responsive_menus_codrops_responsive_multi.js'),
+      ),
+    ),
+  );
+
+  $libraries['sidr'] = array(
+    'name' => 'Sidr',
+    'vendor url' => 'http://www.berriart.com/sidr',
+    'download url' => 'https://github.com/artberri/sidr-package/archive/1.2.1.zip',
+    'version arguments' => array(
+      'file' => 'jquery.sidr.min.js',
+      'pattern' => '/v([\d\.]+)/',
+      'lines' => 1,
+      'columns' => 40,
+    ),
+    'files' => array(
+      'js' => array(
+        'jquery.sidr.min.js',
+      ),
+      'css' => array(
+        'stylesheets/jquery.sidr.dark.css',
+      ),
+    ),
+    'integration files' => array(
+      'responsive_menus' => array(
+        'js' => array('styles/sidr/js/responsive_menus_sidr.js'),
+      ),
+    ),
+  );
+
+  $libraries['GoogleNexusWebsiteMenu'] = array(
+    'name' => 'Google Nexus (codrops)',
+    'vendor url' => 'http://tympanus.net/codrops/2013/07/30/google-nexus-website-menu/',
+    'download url' => 'http://tympanus.net/Tutorials/GoogleNexusWebsiteMenu/GoogleNexusWebsiteMenu.zip',
+    'version arguments' => array(
+      'file' => 'js/gnmenu.js',
+      'pattern' => '/v([\d\.]+)/',
+      'lines' => 2,
+      'columns' => 40,
+    ),
+    'files' => array(
+      'js' => array(
+        'js/gnmenu.js',
+        'js/classie.js',
+      ),
+      'css' => array(
+        'css/component.css',
+      ),
+    ),
+    'integration files' => array(
+      'responsive_menus' => array(
+        'js' => array('styles/google_nexus/js/responsive_menus_google_nexus.js'),
+        'css' => array('styles/google_nexus/css/responsive_menus_google_nexus.css'),
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Admin settings form for which menus to responsify.
+ */
+function responsive_menus_admin_form($form, &$form_state) {
+  // Gather enabled styles.
+  $styles = responsive_menus_styles();
+  foreach ($styles as $style => $values) {
+    $style_options[$style] = $values['name'];
+  }
+  // Get style settings form elements from ajax or the currently enabled style.
+  if (!empty($form_state['values']['responsive_menus_style'])) {
+    $current_style = $form_state['values']['responsive_menus_style'];
+  }
+  else {
+    $current_style = variable_get('responsive_menus_style', 'responsive_menus_simple');
+  }
+  // Reminders about jQuery requirements if applicable.
+  $form['responsive_menus_no_jquery_update'] = array(
+    '#type' => 'checkboxes',
+    '#description' => t("If the style you want requires newer jQuery version and you don't want to use jquery_update module."),
+    '#options' => array(1 => t('I will provide my own jQuery library.')),
+    '#default_value' => variable_get('responsive_menus_no_jquery_update', array(1 => 0)),
+  );
+  $jq_update_ignore = $form['responsive_menus_no_jquery_update']['#default_value'];
+  $style_info = responsive_menus_style_load($current_style, $jq_update_ignore);
+
+  $form['responsive_menus_style'] = array(
+    '#type' => 'select',
+    '#title' => t('Responsive menu style'),
+    '#options' => $style_options,
+    '#default_value' => $current_style,
+    '#ajax' => array(
+      'callback' => 'responsive_menus_style_settings_form',
+      'wrapper' => 'rm-style-options',
+      'method' => 'replace',
+      'effect' => 'fade',
+    ),
+  );
+  $form['responsive_menus_style_settings'] = array(
+    '#title' => t('Style settings'),
+    '#description' => t('Settings for chosen menu style.'),
+    '#prefix' => '<div id="rm-style-options">',
+    '#suffix' => '</div>',
+    '#type' => 'fieldset',
+    '#tree' => TRUE,
+  );
+
+  if (!empty($style_info['selector'])) {
+    $form['responsive_menus_style_settings']['selector_info'] = array(
+      '#type' => 'item',
+      '#title' => t('Selector(s) to use for this style:'),
+      '#markup' => $style_info['selector'],
+    );
+  }
+  // Build additional style settings from style plugins.
+  if (!empty($styles[$current_style]['form']) && function_exists($styles[$current_style]['form'])) {
+    $styles_function = $styles[$current_style]['form'];
+    foreach ($styles_function() as $name => $element) {
+      $form['responsive_menus_style_settings'][$name] = $element;
+    }
+  }
+
+  $form['responsive_menus_ignore_admin'] = array(
+    '#type' => 'checkboxes',
+    '#options' => array(1 => t('Ignore admin pages?')),
+    '#default_value' => variable_get('responsive_menus_ignore_admin', array(1 => 1)),
+  );
+
+  $form['actions']['#type'] = 'actions';
+  $form['actions']['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save configuration'),
+  );
+
+  if (!empty($_POST) && form_get_errors()) {
+    drupal_set_message(t('The settings have not been saved because of the errors.'), 'error');
+  }
+  $form['#submit'][] = 'responsive_menus_admin_form_submit';
+
+  return $form;
+}
+
+/**
+ * Ajax callback for switching styles.
+ */
+function responsive_menus_style_settings_form($form, $form_state) {
+  return $form['responsive_menus_style_settings'];
+}
+
+/**
+ * Submit handler for resopnsive_menus_admin_form.
+ */
+function responsive_menus_admin_form_submit($form, &$form_state) {
+  // Exclude unnecessary elements.
+  form_state_values_clean($form_state);
+
+  foreach ($form_state['values'] as $key => $value) {
+    if (is_array($value) && isset($form_state['values']['array_filter'])) {
+      $value = array_keys(array_filter($value));
+    }
+    if ($key == 'responsive_menus_style_settings') {
+      foreach ($value as $style_key => $style_value) {
+        variable_set($style_key, $style_value);
+      }
+    }
+    else {
+      variable_set($key, $value);
+    }
+  }
+
+  drupal_set_message(t('The configuration options have been saved.'));
+}
+
+/**
+ * Gather available styles for Responsive Menus.
+ *
+ * @return array
+ *   Array of available styles.
+ */
+function responsive_menus_styles() {
+  $data = &drupal_static(__FUNCTION__, array());
+  if (!isset($data['styles'])) {
+    $data['styles'] = module_invoke_all('responsive_menus_style_info');
+    drupal_alter('responsive_menus_styles', $data['styles']);
+  }
+
+  return $data['styles'];
+}
+
+/**
+ * Load a single style.
+ *
+ * @param string $style
+ *   Style id to be loaded.
+ */
+function responsive_menus_style_load($style, $jq_update_ignore) {
+  $styles = responsive_menus_styles();
+  $data = &drupal_static(__FUNCTION__, array());
+  if (!isset($data[$style]) && !empty($styles[$style])) {
+    $style_info = $styles[$style];
+    // Check for this style's requirements.
+    if (!empty($style_info['jquery_version'])) {
+      if (!$jq_update_ignore[1]) {
+        if (!module_exists('jquery_update')) {
+          // jQuery Update not installed.
+          drupal_set_message(t('@style style requires !link set to version !version or higher.  Please enable jquery_update.', array('@style' => $style_info['name'], '!link' => l(t('jQuery Update'), 'http://drupal.org/project/jquery_update'), '!version' => $style_info['jquery_version'])), 'warning');
+          $error = TRUE;
+        }
+        elseif (variable_get('jquery_update_jquery_version', 1.5) < $style_info['jquery_version']) {
+          // jQuery Update version not high enough.
+          drupal_set_message(t('@style style requires !link set to version !version or higher.', array('@style' => $style_info['name'], '!version' => $style_info['jquery_version'], '!link' => l(t('jQuery Update'), 'admin/config/development/jquery_update', array('query' => array('destination' => 'admin/config/user-interface/responsive_menus'))))), 'warning');
+          $error = TRUE;
+        }
+      }
+      else {
+        drupal_set_message(t('@style style requires !link library version !version or higher, but you have opted to provide your own library.  Please ensure you have the proper version of jQuery included.  (note: this is not an error)', array('@style' => $style_info['name'], '!link' => l(t('jQuery'), 'http://jquery.com'), '!version' => $style_info['jquery_version'])), 'warning');
+      }
+    }
+    // For integration with Libraries.
+    if (isset($style_info['use_libraries'])) {
+      // Try libraries module.
+      if (module_exists('libraries')) {
+        if ($library = libraries_load($style_info['library'])) {
+          if (!empty($library['error']) || empty($library['loaded'])) {
+            drupal_set_message(t('!message !link and extract to your libraries directory as "@library_name". Example: sites/all/libraries/@library_name.  If you are getting "version detection" errors, check file permissions on the library.', array('!message' => $library['error message'], '@library_name' => $style_info['library'], '!link' => l(t('Download it'), $library['download url']))), 'error');
+            $error = TRUE;
+          }
+        }
+      }
+      else {
+        // Libraries module not installed.
+        drupal_set_message(t('@style style requires !link module enabled.', array('@style' => $style_info['name'], '!link' => l(t('Libraries 2.x'), 'http://drupal.org/project/libraries'))), 'warning');
+        $error = TRUE;
+      }
+    }
+    // Check for errors and load into $data if there are none.
+    if (!isset($error)) {
+      $data[$style] = $style_info;
+      return $data[$style];
+    }
+    else {
+      // Something was wrong loading this style.
+      drupal_set_message(t('Responsive Menus found a problem.  Please check the errors.'), 'error');
+      return FALSE;
+    }
+
+  }
+  else {
+    // This style is already loaded.
+    return $data[$style];
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_responsive_menus_style_info().
+ */
+function responsive_menus_responsive_menus_style_info() {
+  $path = drupal_get_path('module', 'responsive_menus') . '/styles';
+  $styles = array(
+    'responsive_menus_simple' => array(
+      'name' => t('Simple expanding'),
+      'form' => 'responsive_menus_simple_style_settings',
+      'js_files' => array($path . '/responsive_menus_simple/js/responsive_menus_simple.js'),
+      'css_files' => array($path . '/responsive_menus_simple/css/responsive_menus_simple.css'),
+      'js_settings' => 'responsive_menus_simple_style_js_settings',
+      'selector' => t('Anything.  Example: Given <code>@code</code> you could use !use', array('@ul' => '<ul>', '@code' => '<div id="parent-div"> <ul class="menu"> </ul> </div>', '!use' => '<strong>#parent-div or .menu</strong>')),
+    ),
+    'mean_menu' => array(
+      'name' => t('Mean Menu'),
+      'form' => 'responsive_menus_mean_menu_style_settings',
+      'js_files' => array(
+        $path . '/meanMenu/jquery.meanmenu.min.js',
+        $path . '/meanMenu/responsive_menus_mean_menu.js',
+      ),
+      'css_files' => array($path . '/meanMenu/meanmenu.min.css'),
+      'js_settings' => 'responsive_menus_mean_menu_style_js_settings',
+      'jquery_version' => 1.7,
+      'selector' => t('Parent of the @ul.  Example: Given <code>@code</code> you would use !use', array('@ul' => '<ul>', '@code' => '<div id="parent-div"> <ul class="menu"> </ul> </div>', '!use' => '<strong>#parent-div</strong>')),
+    ),
+    'codrops_responsive_multi' => array(
+      'name' => t('ResponsiveMultiLevelMenu (codrops)'),
+      'form' => 'responsive_menus_codrops_responsive_multi_style_settings',
+      'js_settings' => 'responsive_menus_codrops_responsive_multi_style_js_settings',
+      'use_libraries' => TRUE,
+      'library' => 'ResponsiveMultiLevelMenu',
+      'jquery_version' => 1.7,
+      'selector' => t('Parent of the @ul.  Example: Given <code>@code</code> you would use !use', array('@ul' => '<ul>', '@code' => '<div id="parent-div"> <ul class="menu"> </ul> </div>', '!use' => '<strong>#parent-div</strong>')),
+    ),
+    'sidr' => array(
+      'name' => t('Sidr'),
+      'form' => 'responsive_menus_sidr_style_settings',
+      'js_settings' => 'responsive_menus_sidr_style_js_settings',
+      'use_libraries' => TRUE,
+      'library' => 'sidr',
+      'selector' => t('Anything (parent of ul preferred).  Example: Given <code>@code</code> you could use !use', array('@ul' => '<ul>', '@code' => '<div id="parent-div"> <ul class="menu"> </ul> </div>', '!use' => '<strong>#parent-div or .menu</strong>')),
+    ),
+    'google_nexus' => array(
+      'name' => t('Google Nexus (codrops)'),
+      'form' => 'responsive_menus_google_nexus_style_settings',
+      'js_settings' => 'responsive_menus_google_nexus_style_js_settings',
+      'use_libraries' => TRUE,
+      'library' => 'GoogleNexusWebsiteMenu',
+      'selector' => t('The @ul.  Example: Given <code>@code</code> you would use !use', array('@ul' => '<ul>', '@code' => '<div id="parent-div"> <ul class="menu"> </ul> </div>', '!use' => '<strong>.menu</strong>')),
+    ),
+  );
+
+  return $styles;
+}
+
+/**
+ * Form callback from hook_responsive_menus_style_info().
+ *
+ * @return array
+ *   Drupal FAPI formatted array.
+ */
+function responsive_menus_simple_style_settings() {
+  $form['responsive_menus_simple_absolute'] = array(
+    '#type' => 'checkboxes',
+    '#options' => array(1 => t('Use absolute positioning?')),
+    '#default_value' => variable_get('responsive_menus_simple_absolute', array(1 => 1)),
+    '#description' => t('Using absolute, the menu will open over the page rather than pushing it down.'),
+  );
+  $form['responsive_menus_disable_mouse_events'] = array(
+    '#type' => 'checkboxes',
+    '#options' => array(1 => t('Disable other mouse events?')),
+    '#default_value' => variable_get('responsive_menus_disable_mouse_events', array(1 => 0)),
+    '#description' => t('Disable things like drop-down menus on hover.'),
+  );
+  $form['responsive_menus_remove_attributes'] = array(
+    '#type' => 'checkboxes',
+    '#options' => array(1 => t('Remove other classes & IDs when responded?')),
+    '#default_value' => variable_get('responsive_menus_remove_attributes', array(1 => 1)),
+    '#description' => t('Helps to ensure styling of menu.'),
+  );
+  $form['responsive_menus_css_selectors'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Selectors for which menus to responsify'),
+    '#default_value' => variable_get('responsive_menus_css_selectors', '#main-menu'),
+    '#description' => t('Enter CSS/jQuery selectors of menus to responsify.  Comma separated or 1 per line'),
+  );
+  $form['responsive_menus_simple_text'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text or HTML for the menu toggle button'),
+    '#default_value' => variable_get('responsive_menus_simple_text', '☰ Menu'),
+  );
+  $form['responsive_menus_media_size'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Screen width to respond to'),
+    '#size' => 5,
+    '#default_value' => variable_get('responsive_menus_media_size', 768),
+    '#description' => t('Width in pixels when we swap out responsive menu e.g. 768'),
+  );
+
+  return $form;
+}
+
+/**
+ * JS callback from hook_responsive_menus_style_info().
+ */
+function responsive_menus_simple_style_js_settings($js_defaults = array()) {
+  $js_settings = array();
+
+  $js_settings['toggler_text'] = responsive_menus_var_get('responsive_menus_simple_text', '☰ Menu', $js_defaults);
+  $js_settings['selectors'] = responsive_menus_explode_list('responsive_menus_css_selectors', '#main-menu', $js_defaults);
+  $js_settings['media_size'] = responsive_menus_var_get('responsive_menus_media_size', 768, $js_defaults);
+  $absolute = responsive_menus_var_get('responsive_menus_simple_absolute', array(1 => 1), $js_defaults);
+  $disable_mouse = responsive_menus_var_get('responsive_menus_disable_mouse_events', array(1 => 0), $js_defaults);
+  $remove_attributes = responsive_menus_var_get('responsive_menus_remove_attributes', array(1 => 1), $js_defaults);
+  if ($absolute[1]) {
+    $js_settings['absolute'] = TRUE;
+  }
+  if ($disable_mouse[1]) {
+    $js_settings['disable_mouse_events'] = TRUE;
+  }
+  if ($remove_attributes[1]) {
+    $js_settings['remove_attributes'] = TRUE;
+  }
+
+  return $js_settings;
+}
+
+/**
+ * Form callback from hook_responsive_menus_style_info().
+ *
+ * @return array
+ *   Drupal FAPI formatted array.
+ */
+function responsive_menus_mean_menu_style_settings() {
+  $form['responsive_menus_mean_menu_css_selectors'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CSS selectors for which menu to responsify'),
+    '#default_value' => variable_get('responsive_menus_mean_menu_css_selectors', '#main-menu'),
+    '#description' => t('Enter CSS/jQuery selector of menus to responsify.'),
+  );
+  $form['responsive_menus_mean_menu_trigger_txt'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text or HTML for trigger button'),
+    '#default_value' => variable_get('responsive_menus_mean_menu_trigger_txt', '<span /><span /><span />'),
+    '#description' => t('Default of 3 spans will show the triple bars (!bars).', array('!bars' => '☰')),
+  );
+  $form['responsive_menus_mean_menu_close_txt'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text or HTML for close button'),
+    '#default_value' => variable_get('responsive_menus_mean_menu_close_txt', 'X'),
+  );
+  $form['responsive_menus_mean_menu_close_size'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Size of close button'),
+    '#size' => 5,
+    '#default_value' => variable_get('responsive_menus_mean_menu_close_size', '18px'),
+    '#description' => t('Size in px, em, %'),
+  );
+  $form['responsive_menus_mean_menu_position'] = array(
+    '#type' => 'select',
+    '#title' => t('Position of the open/close buttons'),
+    '#options' => array(
+      'right' => t('right'),
+      'left' => t('left'),
+      'center' => t('center'),
+    ),
+    '#default_value' => variable_get('responsive_menus_mean_menu_position', 'right'),
+  );
+  $form['responsive_menus_mean_menu_media_size'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Screen width to respond to'),
+    '#size' => 5,
+    '#default_value' => variable_get('responsive_menus_mean_menu_media_size', 480),
+    '#description' => t('Width in pixels when we swap out responsive menu e.g. 768'),
+  );
+  $form['responsive_menus_mean_menu_show_children'] = array(
+    '#type' => 'select',
+    '#title' => t('Allow multi-level menus'),
+    '#options' => array(
+      1 => t('Yes'),
+      0 => t('No'),
+    ),
+    '#default_value' => variable_get('responsive_menus_mean_menu_show_children', 1),
+  );
+  $form['responsive_menus_mean_menu_expand_children'] = array(
+    '#type' => 'select',
+    '#title' => t('Ability to expand & collapse children'),
+    '#options' => array(
+      1 => t('Yes'),
+      0 => t('No'),
+    ),
+    '#default_value' => variable_get('responsive_menus_mean_menu_expand_children', 1),
+  );
+  $form['responsive_menus_mean_menu_expand_txt'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Text for the expand children button'),
+    '#size' => 5,
+    '#default_value' => variable_get('responsive_menus_mean_menu_expand_txt', '+'),
+  );
+  $form['responsive_menus_mean_menu_contract_txt'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Text for the collapse children button'),
+    '#size' => 5,
+    '#default_value' => variable_get('responsive_menus_mean_menu_contract_txt', '-'),
+  );
+  $form['responsive_menus_mean_menu_remove_attrs'] = array(
+    '#type' => 'select',
+    '#title' => t('Temporarily remove other classes & IDs (Recommended)'),
+    '#options' => array(
+      1 => t('Yes'),
+      0 => t('No'),
+    ),
+    '#default_value' => variable_get('responsive_menus_mean_menu_remove_attrs', 1),
+    '#description' => t('This will help ensure the style of Mean Menus.'),
+  );
+
+  return $form;
+}
+
+/**
+ * JS callback from hook_responsive_menus_style_info().
+ */
+function responsive_menus_mean_menu_style_js_settings($js_defaults = array()) {
+  $js_settings = array();
+
+  $js_settings['selectors'] = responsive_menus_var_get('responsive_menus_mean_menu_css_selectors', '#main-menu', $js_defaults);
+  $js_settings['trigger_txt'] = responsive_menus_var_get('responsive_menus_mean_menu_trigger_txt', '<span /><span /><span />', $js_defaults);
+  $js_settings['close_txt'] = responsive_menus_var_get('responsive_menus_mean_menu_close_txt', 'X', $js_defaults);
+  $js_settings['close_size'] = responsive_menus_var_get('responsive_menus_mean_menu_close_size', '18px', $js_defaults);
+  $js_settings['position'] = responsive_menus_var_get('responsive_menus_mean_menu_position', 'right', $js_defaults);
+  $js_settings['media_size'] = responsive_menus_var_get('responsive_menus_mean_menu_media_size', 480, $js_defaults);
+  $js_settings['show_children'] = responsive_menus_var_get('responsive_menus_mean_menu_show_children', 1, $js_defaults);
+  $js_settings['expand_children'] = responsive_menus_var_get('responsive_menus_mean_menu_expand_children', 1, $js_defaults);
+  $js_settings['expand_txt'] = responsive_menus_var_get('responsive_menus_mean_menu_expand_txt', '+', $js_defaults);
+  $js_settings['contract_txt'] = responsive_menus_var_get('responsive_menus_mean_menu_contract_txt', '-', $js_defaults);
+  $js_settings['remove_attrs'] = responsive_menus_var_get('responsive_menus_mean_menu_remove_attrs', 1, $js_defaults);
+
+  return $js_settings;
+}
+
+/**
+ * Form callback from hook_responsive_menus_style_info().
+ *
+ * @return array
+ *   Drupal FAPI formatted array.
+ */
+function responsive_menus_codrops_responsive_multi_style_settings() {
+  $form['responsive_menus_codrops_responsive_multi_css_selectors'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CSS selectors for which menu to responsify'),
+    '#default_value' => variable_get('responsive_menus_codrops_responsive_multi_css_selectors', '#main-menu'),
+    '#description' => t('Enter CSS/jQuery selector of menus to responsify.'),
+  );
+  $form['responsive_menus_codrops_responsive_multi_media_size'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Screen width to respond to'),
+    '#size' => 5,
+    '#default_value' => variable_get('responsive_menus_codrops_responsive_multi_media_size', 768),
+    '#description' => t('Width in pixels when we swap out responsive menu e.g. 768'),
+  );
+  $form['responsive_menus_codrops_responsive_multi_ani_in'] = array(
+    '#type' => 'select',
+    '#title' => t('In-animation'),
+    '#options' => array(
+      'dl-animate-in-1' => t('One'),
+      'dl-animate-in-2' => t('Two'),
+      'dl-animate-in-3' => t('Three'),
+      'dl-animate-in-4' => t('Four'),
+      'dl-animate-in-5' => t('Five'),
+    ),
+    '#default_value' => variable_get('responsive_menus_codrops_responsive_multi_ani_in', 'dl-animate-in-1'),
+  );
+  $form['responsive_menus_codrops_responsive_multi_ani_out'] = array(
+    '#type' => 'select',
+    '#title' => t('Out-animation'),
+    '#options' => array(
+      'dl-animate-out-1' => t('One'),
+      'dl-animate-out-2' => t('Two'),
+      'dl-animate-out-3' => t('Three'),
+      'dl-animate-out-4' => t('Four'),
+      'dl-animate-out-5' => t('Five'),
+    ),
+    '#default_value' => variable_get('responsive_menus_codrops_responsive_multi_ani_out', 'dl-animate-out-1'),
+  );
+
+  return $form;
+}
+
+/**
+ * JS callback from hook_responsive_menus_style_info().
+ */
+function responsive_menus_codrops_responsive_multi_style_js_settings($js_defaults = array()) {
+  $js_settings = array();
+
+  $js_settings['selectors'] = responsive_menus_var_get('responsive_menus_codrops_responsive_multi_css_selectors', '#main-menu', $js_defaults);
+  $js_settings['media_size'] = responsive_menus_var_get('responsive_menus_codrops_responsive_multi_media_size', 768, $js_defaults);
+  $js_settings['animation_in'] = responsive_menus_var_get('responsive_menus_codrops_responsive_multi_ani_in', 'dl-animate-in-1', $js_defaults);
+  $js_settings['animation_out'] = responsive_menus_var_get('responsive_menus_codrops_responsive_multi_ani_out', 'dl-animate-out-1', $js_defaults);
+
+  return $js_settings;
+}
+
+/**
+ * Form callback from hook_responsive_menus_style_info().
+ *
+ * @return array
+ *   Drupal FAPI formatted array.
+ */
+function responsive_menus_sidr_style_settings() {
+  $form['responsive_menus_sidr_css_selectors'] = array(
+    '#type' => 'textarea',
+    '#title' => t('CSS selectors for which menu to responsify'),
+    '#default_value' => variable_get('responsive_menus_sidr_css_selectors', '#main-menu'),
+    '#description' => t('Enter CSS/jQuery selectors of menus to responsify.  Comma separated or 1 per line'),
+  );
+  $form['responsive_menus_sidr_trigger_txt'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Text or HTML for trigger button'),
+    '#default_value' => variable_get('responsive_menus_sidr_trigger_txt', t('Menu')),
+  );
+  $form['responsive_menus_sidr_menu_side'] = array(
+    '#type' => 'select',
+    '#title' => t('Position of the menu (left/right)'),
+    '#options' => array(
+      'left' => t('Left'),
+      'right' => t('Right'),
+    ),
+    '#default_value' => variable_get('responsive_menus_sidr_menu_side', array('left' => 'Left')),
+  );
+  $form['responsive_menus_sidr_animation_speed'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Sidr animation speed'),
+    '#size' => 5,
+    '#default_value' => variable_get('responsive_menus_sidr_animation_speed', 200),
+    '#description' => t('Speed of menu open/close.  See !documentation for examples.', array('!documentation' => l(t('Sidr documentation'), 'http://www.berriart.com/sidr/#documentation'))),
+  );
+  $form['responsive_menus_sidr_media_size'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Screen width to respond to'),
+    '#size' => 5,
+    '#default_value' => variable_get('responsive_menus_sidr_media_size', 768),
+    '#description' => t('Width in pixels when we swap out responsive menu e.g. 768'),
+  );
+  $form['responsive_menus_sidr_displace'] = array(
+    '#type' => 'select',
+    '#title' => t('Displace body content?'),
+    '#options' => array(
+      1 => t('Yes'),
+      0 => t('No'),
+    ),
+    '#default_value' => variable_get('responsive_menus_sidr_displace', 1),
+    '#description' => t('This setting controls whether the page is pushed when menu is opened.'),
+  );
+  $form['responsive_menus_sidr_on_open'] = array(
+    '#type' => 'textarea',
+    '#title' => t('onOpen callback (function)'),
+    '#description' => t('See !documentation for examples.', array('!documentation' => l(t('Sidr documentation'), 'http://www.berriart.com/sidr/#documentation'))),
+    '#default_value' => variable_get('responsive_menus_sidr_on_open', ''),
+  );
+  $form['responsive_menus_sidr_on_close'] = array(
+    '#type' => 'textarea',
+    '#title' => t('onClose callback (function)'),
+    '#description' => t('See !documentation for examples.', array('!documentation' => l(t('Sidr documentation'), 'http://www.berriart.com/sidr/#documentation'))),
+    '#default_value' => variable_get('responsive_menus_sidr_on_close', ''),
+  );
+
+  /*
+   * Other sidr attributes not implemented:
+
+  renaming (Boolean) Default: true
+  When filling the sidr with existing content, choose to rename or not the classes and ids.
+
+  body (String) Default: 'body' [ Version 1.1.0 an above ]
+  For doing the page movement the 'body' element is animated by default, you can select another element to animate with this option.
+
+  displace (Boolean) Default: true [ Version 1.2.0 an above ]
+  Displace the body content or not.
+  */
+
+  return $form;
+}
+
+/**
+ * JS callback from hook_responsive_menus_style_info().
+ */
+function responsive_menus_sidr_style_js_settings($js_defaults = array()) {
+  $js_settings = array();
+
+  $js_settings['selectors'] = responsive_menus_explode_list('responsive_menus_sidr_css_selectors', '#main-menu', $js_defaults);
+  $js_settings['trigger_txt'] = responsive_menus_var_get('responsive_menus_sidr_trigger_txt', t('Menu'), $js_defaults);
+  $js_settings['side'] = responsive_menus_var_get('responsive_menus_sidr_menu_side', array('left' => 'Left'), $js_defaults);
+  $js_settings['speed'] = responsive_menus_var_get('responsive_menus_sidr_animation_speed', 200, $js_defaults);
+  $js_settings['media_size'] = responsive_menus_var_get('responsive_menus_sidr_media_size', 768, $js_defaults);
+  $js_settings['displace'] = responsive_menus_var_get('responsive_menus_sidr_displace', 1, $js_defaults);
+  $js_settings['onOpen'] = responsive_menus_var_get('responsive_menus_sidr_on_open', '', $js_defaults);
+  $js_settings['onClose'] = responsive_menus_var_get('responsive_menus_sidr_on_close', '', $js_defaults);
+
+  return $js_settings;
+}
+
+/**
+ * Form callback from hook_responsive_menus_style_info().
+ *
+ * @return array
+ *   Drupal FAPI formatted array.
+ */
+function responsive_menus_google_nexus_style_settings() {
+  $form['responsive_menus_google_nexus_css_selectors'] = array(
+    '#type' => 'textfield',
+    '#title' => t('CSS selectors for which menu to responsify'),
+    '#default_value' => variable_get('responsive_menus_google_nexus_css_selectors', '#main-menu'),
+    '#description' => t('Enter CSS/jQuery selector of menus to responsify.'),
+  );
+  $form['responsive_menus_google_nexus_use_ecoicons'] = array(
+    '#type' => 'select',
+    '#title' => t('Use ecofonts font-family'),
+    '#options' => array(
+      1 => t('Yes'),
+      0 => t('No'),
+    ),
+    '#default_value' => variable_get('responsive_menus_google_nexus_use_ecoicons', 1),
+    '#description' => t('Uses the ecofonts font-family included with GoogleNexusWebsiteMenu library for icons.'),
+  );
+  $form['responsive_menus_google_nexus_icons'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Icons for menu items'),
+    '#default_value' => variable_get('responsive_menus_google_nexus_icons', "\ue005\n\ue006"),
+    '#description' => t('Enter 1 per-line or comma-separated.  See !documentation for examples.', array('!documentation' => l(t('Unicode Character Table'), 'http://unicode-table.com/en/'))),
+  );
+  $form['responsive_menus_google_nexus_icon_fallback'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Fallback icon for extra menu items'),
+    '#default_value' => variable_get('responsive_menus_google_nexus_icon_fallback', '&#57347;'),
+    '#description' => t('This icon will be used for any number of menu items beyond the amount of icons you specified above.  See !documentation for examples.', array('!documentation' => l(t('Unicode Character Table'), 'http://unicode-table.com/en/'))),
+  );
+
+  return $form;
+}
+
+/**
+ * JS callback from hook_responsive_menus_style_info().
+ */
+function responsive_menus_google_nexus_style_js_settings($js_defaults = array()) {
+  $js_settings = array();
+
+  $js_settings['selectors'] = responsive_menus_var_get('responsive_menus_google_nexus_css_selectors', '#main-menu', $js_defaults);
+  $js_settings['use_ecoicons'] = responsive_menus_var_get('responsive_menus_google_nexus_use_ecoicons', 1, $js_defaults);
+  $js_settings['icons'] = responsive_menus_explode_list('responsive_menus_google_nexus_icons', "\ue005\n\ue006", $js_defaults);
+  $js_settings['icon_fallback'] = responsive_menus_var_get('responsive_menus_google_nexus_icon_fallback', '&#57347;', $js_defaults);
+
+  return $js_settings;
+}
+
+/**
+ * Slight modification of variable_get for context and other usage.
+ *
+ * @param string $name
+ *   Name of the variable.
+ * @param mixed $default
+ *   The variable's default fallback value.
+ * @param array $rm_defaults
+ *   The array of values that context (and possibly others) will pass.
+ */
+function responsive_menus_var_get($name, $default, $rm_defaults = array()) {
+  if (!empty($rm_defaults) && !empty($rm_defaults[$name])) {
+    return $rm_defaults[$name];
+  }
+  return variable_get($name, $default);
+}
+
+/**
+ * Return array of selectors for JS settings.
+ *
+ * @return array
+ *   Array of settings to pass with drupal_add_js().
+ */
+function responsive_menus_explode_list($style_var, $default, $js_defaults = array()) {
+  $selectors = responsive_menus_var_get($style_var, $default, $js_defaults);
+  $delimiter = ', ';
+  // Strip out carriage returns.
+  $selectors = str_replace("\r", '', $selectors);
+  // Replace new lines with delimiter.
+  $selectors = str_replace("\n", $delimiter, $selectors);
+  // Explode to include original delimited.
+  $values = explode($delimiter, $selectors);
+  $values = array_filter($values);
+
+  return $values;
+}
+
+/**
+ * Recursively glob for directories.
+ *
+ * @param string $directory
+ *   Directory to glob.
+ * @param array $directories
+ *   Increasing array of matching directories.
+ */
+function responsive_menus_glob_recursive($directory, &$directories = array()) {
+  foreach (glob($directory, GLOB_ONLYDIR | GLOB_NOSORT) as $folder) {
+    $directories[] = $folder;
+    responsive_menus_glob_recursive("{$folder}/*", $directories);
+  }
+}
+
+/**
+ * Recursively search through directories for files with given extension.
+ *
+ * @param string $directory
+ *   Directory to search.
+ * @param string $extension
+ *   File extensions to look for.
+ *
+ * @return array
+ *   Array of matching files.
+ */
+function responsive_menus_glob_files($directory, $extension) {
+  $directories = (empty($directories) ? array() : $directories);
+  responsive_menus_glob_recursive($directory, $directories);
+  $files = array();
+  foreach ($directories as $directory) {
+    $files = array_merge($files, glob("{$directory}/*.{$extension}"));
+  }
+
+  return $files;
+}
+
+/**
+ * Implements hook_page_build().
+ */
+function responsive_menus_page_build(&$page) {
+  // Context rules.
+  if (module_exists('context')) {
+    if ($plugin = context_get_plugin('reaction', 'responsive_menus_general')) {
+      $plugin->execute();
+    }
+  }
+  // Non-context additions.
+  responsive_menus_execute();
+}
+
+/**
+ * Final execution for Responsive Menus.  Add any js/css and settings required.
+ */
+function responsive_menus_execute($style = NULL, $js_defaults = array()) {
+  // Load our style.
+  if (!isset($style)) {
+    $ignore_admin = variable_get('responsive_menus_ignore_admin', array(1 => 1));
+    if ($ignore_admin[1] && path_is_admin(current_path())) {
+      return;
+    }
+    $style = variable_get('responsive_menus_style', 'responsive_menus_simple');
+  }
+  $jq_update_ignore = variable_get('responsive_menus_no_jquery_update', array(1 => 0));
+  $style_info = responsive_menus_style_load($style, $jq_update_ignore);
+  if (!$style_info) {
+    return;
+  }
+  $data = &drupal_static(__FUNCTION__, array());
+  if (!isset($data['execute_index'])) {
+    $data['execute_index'] = -1;
+  }
+  $data['execute_index']++;
+
+  $js_settings = array();
+  $js_files = array();
+  $css_files = array();
+  // Load JS files from folder.
+  if (!empty($style_info['js_folder'])) {
+    $js_files = responsive_menus_glob_files($style_info['js_folder'], 'js');
+  }
+  // Load CSS files from folder.
+  if (!empty($style_info['css_folder'])) {
+    $css_files = responsive_menus_glob_files($style_info['css_folder'], 'css');
+  }
+  // Load individual JS files.
+  if (!empty($style_info['js_files'])) {
+    $js_files = array_unique(array_merge($js_files, $style_info['js_files']));
+  }
+  // Load individual CSS files.
+  if (!empty($style_info['css_files'])) {
+    $css_files = array_unique(array_merge($css_files, $style_info['css_files']));
+  }
+  // Add JS files.
+  if (!empty($js_files)) {
+    foreach ($js_files as $js_file) {
+      drupal_add_js($js_file);
+    }
+  }
+  // Add CSS files.
+  if (!empty($css_files)) {
+    foreach ($css_files as $css_file) {
+      drupal_add_css($css_file);
+    }
+  }
+  // Add JS settings.
+  $js_settings[$data['execute_index']] = $style_info['js_settings']($js_defaults);
+  $js_settings[$data['execute_index']]['responsive_menus_style'] = $style;
+  drupal_alter('responsive_menus_execute', $js_settings);
+  drupal_add_js(array('responsive_menus' => $js_settings), 'setting');
+}

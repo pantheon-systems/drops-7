@@ -1,0 +1,422 @@
+<?php
+
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_product_schema() {
+  $schema = array();
+
+  $schema['commerce_product'] = array(
+    'description' => 'The base table for products.',
+    'fields' => array(
+      'product_id' => array(
+        'description' => 'The primary identifier for a product, used internally only.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'revision_id' => array(
+        'description' => 'The current {commerce_product_revision}.revision_id version identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'sku' => array(
+        'description' => 'The unique, human-readable identifier for a product.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => 'The title of this product, always treated as non-markup plain text.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'type' => array(
+        'description' => 'The {commerce_product_type}.type of this product.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'language' => array(
+        'description' => 'The {languages}.language of this product.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that created this product.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'Boolean indicating whether or not the product appears in lists and may be added to orders.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the product was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the product was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('product_id'),
+    'indexes' => array(
+      'product_type' => array('type'),
+      'uid' => array('uid'),
+    ),
+    'unique keys' => array(
+      'sku' => array('sku'),
+      'revision_id' => array('revision_id'),
+    ),
+    'foreign keys' => array(
+      'current_revision' => array(
+        'table' => 'commerce_product_revision',
+        'columns'=> array('revision_id' => 'revision_id'),
+      ),
+      'creator' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  $schema['commerce_product_revision'] = array(
+    'description' => 'Saves information about each saved revision of a {commerce_product}.',
+    'fields' => array(
+      'product_id' => array(
+        'description' => 'The {commerce_product}.product_id of the product this revision belongs to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'revision_id' => array(
+        'description' => 'The primary identifier for this revision.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'sku' => array(
+        'description' => 'The unique, human-readable identifier of a product for this revision.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => 'The title of this product for this revision',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'revision_uid' => array(
+        'description' => 'The {users}.uid that owns the product at this revision.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'The status of this revision.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 1,
+      ),
+      'log' => array(
+        'description' => 'The log entry explaining the changes in this version.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+      ),
+      'revision_timestamp' => array(
+        'description' => 'The Unix timestamp when this revision was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data for this revision.',
+      ),
+    ),
+    'primary key' => array('revision_id'),
+    'indexes' => array(
+      'product_id' => array('product_id'),
+      'revision_uid' => array('revision_uid'),
+    ),
+    'foreign keys' => array(
+      'product' => array(
+        'table' => 'commerce_product',
+        'columns' => array('product_id' => 'product_id'),
+      ),
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('revision_uid' => 'uid'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_product_uninstall() {
+  // Delete any field instance attached to a product type.
+  module_load_include('module', 'commerce');
+  commerce_delete_instances('commerce_product');
+}
+
+/**
+ * Changes the name of the 'type' index on the commerce_product table to ensure
+ * compatibility with sqlite despite http://drupal.org/node/1008128.
+ */
+function commerce_product_update_7100() {
+  if (db_index_exists('commerce_product', 'type')) {
+    db_drop_index('commerce_product', 'type');
+  }
+  db_add_index('commerce_product', 'product_type', array('type'));
+}
+
+/**
+ * Update permission names for product entity management.
+ */
+function commerce_product_update_7101() {
+  // Load utility functions.
+  module_load_install('commerce');
+
+  $map = array(
+    'administer products' => 'administer commerce_product entities',
+    'access products' => 'view any commerce_product entity',
+  );
+  $entity_info = entity_get_info('commerce_product');
+  foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+    $map['create ' . $bundle_name . ' products'] = 'create commerce_product entities of bundle ' . $bundle_name;
+    $map['edit any ' . $bundle_name . ' product'] = 'edit any commerce_product entity of bundle ' . $bundle_name;
+    $map['edit own ' . $bundle_name . ' products'] = 'edit own commerce_product entities of bundle ' . $bundle_name;
+  }
+
+  commerce_update_rename_permissions($map);
+
+  return t('Role and custom View permissions updated for product entity management. Access checks in modules and permissions on default Views must be updated manually.');
+}
+
+/**
+ * Add an index to the commerce_product table on uid.
+ */
+function commerce_product_update_7102() {
+  if (db_index_exists('commerce_product', 'uid')) {
+    db_drop_index('commerce_product', 'uid');
+  }
+
+  db_add_index('commerce_product', 'uid', array('uid'));
+
+  return t('Database index added to the uid column of the commerce_product table.');
+}
+
+/**
+ * Add support for product revisions.
+ */
+function commerce_product_update_7103(&$sandbox) {
+  if (!isset($sandbox['progress'])) {
+    $commerce_product_revision_schema = array(
+      'description' => 'Saves information about each saved revision of a {commerce_product}.',
+      'fields' => array(
+        'product_id' => array(
+          'description' => 'The {commerce_product}.product_id of the product this revision belongs to.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'revision_id' => array(
+          'description' => 'The primary identifier for this revision.',
+          'type' => 'serial',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'sku' => array(
+          'description' => 'The unique, human-readable identifier of a product for this revision.',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+        ),
+        'title' => array(
+          'description' => 'The title of this product for this revision',
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+        'revision_uid' => array(
+          'description' => 'The {users}.uid that owns the product at this revision.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'status' => array(
+          'description' => 'The status of this revision.',
+          'type' => 'int',
+          'size' => 'tiny',
+          'not null' => TRUE,
+          'default' => 1,
+        ),
+        'log' => array(
+          'description' => 'The log entry explaining the changes in this version.',
+          'type' => 'text',
+          'not null' => TRUE,
+          'size' => 'big',
+        ),
+        'revision_timestamp' => array(
+          'description' => 'The Unix timestamp when this revision was created.',
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => 0,
+        ),
+        'data' => array(
+          'type' => 'blob',
+          'not null' => FALSE,
+          'size' => 'big',
+          'serialize' => TRUE,
+          'description' => 'A serialized array of additional data for this revision.',
+        ),
+      ),
+      'primary key' => array('revision_id'),
+      'indexes' => array(
+        'product_id' => array('product_id'),
+        'revision_uid' => array('revision_uid'),
+      ),
+      'foreign keys' => array(
+        'product' => array(
+          'table' => 'commerce_product',
+          'columns' => array('product_id' => 'product_id'),
+        ),
+        'owner' => array(
+          'table' => 'users',
+          'columns' => array('revision_uid' => 'uid'),
+        ),
+      ),
+    );
+
+    if (!db_table_exists('commerce_product_revision')) {
+      db_create_table('commerce_product_revision', $commerce_product_revision_schema);
+    }
+
+    // If another module had added a {commerce_product}.revision_id field,
+    // then change it to the expected specification. Otherwise, add the field.
+    $product_revision_id_spec = array(
+      'description' => 'The current {commerce_product_revision}.revision_id version identifier.',
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => FALSE,
+      'default' => NULL,
+    );
+    if (db_field_exists('commerce_product', 'revision_id')) {
+      // db_change_field() will fail if any records have type = NULL, so update
+      // them to the new default value.
+      db_update('commerce_product')->fields(array('revision_id' => $product_revision_id_spec['default']))->isNull('revision_id')->execute();
+
+      // Indexes using a field being changed must be dropped prior to calling
+      // db_change_field(). However, the database API doesn't provide a way to do
+      // this without knowing what the old indexes are. Therefore, it is the
+      // responsibility of the module that added them to drop them prior to
+      // allowing this module to be updated.
+      db_change_field('commerce_product', 'revision_id', 'revision_id', $product_revision_id_spec);
+    }
+    else {
+      db_add_field('commerce_product', 'revision_id', $product_revision_id_spec);
+    }
+
+    if (!db_index_exists('commerce_product', 'revision_id')) {
+      db_add_unique_key('commerce_product', 'revision_id', array('revision_id'));
+    }
+  }
+
+  $max_products = db_query('SELECT COUNT(DISTINCT product_id) FROM {commerce_product}')->fetchField();
+
+  // If we have already products in the {commerce_product} table we must create
+  // the current revision for them.
+  if ($max_products) {
+    if (!isset($sandbox['progress'])) {
+      $sandbox['progress'] = 0;
+      $sandbox['current_product_id'] = 0;
+      $sandbox['max'] = $max_products;
+    }
+
+    $products = db_select('commerce_product', 'cp')
+      ->fields('cp', array('product_id', 'sku', 'title', 'uid', 'status', 'created', 'data'))
+      ->condition('product_id', $sandbox['current_product_id'], '>')
+      ->range(0, 50)
+      ->orderBy('product_id', 'ASC')
+      ->execute()->fetchAllAssoc('product_id', PDO::FETCH_ASSOC);
+
+    foreach ($products as $product) {
+      // The log can't be empty.
+      $product['log'] = '';
+      $product['revision_uid'] = $product['uid'];
+      $product['revision_timestamp'] = $product['created'];
+      unset($product['uid']);
+      unset($product['created']);
+
+      $revision_id = db_insert('commerce_product_revision')
+        ->fields($product)
+        ->execute();
+      db_update('commerce_product')
+        ->fields(array('revision_id' => $revision_id))
+        ->condition('product_id', $product['product_id'])
+        ->execute();
+
+      $sandbox['progress']++;
+      $sandbox['current_product_id'] = $product['product_id'];
+    }
+
+    if ((empty($sandbox['progress']) || $sandbox['progress'] == $max_products)) {
+      $sandbox['progress'] = $sandbox['max'];
+    }
+
+    $sandbox['#finished'] = empty($sandbox['max']) ? 1 : ($sandbox['progress'] / $sandbox['max']);
+  }
+
+  return t('The update for commerce product revisions ran successfully.');
+}
+
+/**
+ * Remove the default value for revision_id on {commerce_product}.
+ */
+function commerce_product_update_7104() {
+  db_change_field('commerce_product', 'revision_id', 'revision_id', array(
+    'description' => 'The current {commerce_product_revision}.revision_id version identifier.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => FALSE,
+  ));
+
+  return t('Schema for the commerce_product table has been updated.');
+}

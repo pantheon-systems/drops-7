@@ -1,0 +1,32 @@
+/**
+ * @file
+ * Styling for Google Nexus style menu in Responsive Menus module.
+ */
+.gn-menu li a {
+  padding: 0;
+  color: #5f6f81;
+}
+
+.gn-menu li a:before {
+  content: attr(data-content);
+  display: inline-block;
+  width: 60px;
+  text-align: left;
+  text-transform: none;
+  font-weight: normal;
+  font-style: normal;
+  font-variant: normal;
+  line-height: 1;
+  speak: none;
+  -webkit-font-smoothing: antialiased;
+  padding: 0 0 0 20px;
+}
+
+.gn-menu.ecoicons li a:before {
+  font-family: 'ecoicons';
+}
+
+.gn-menu .gn-submenu li a {
+  padding-left: 20px;
+  color: #5f6f81;
+}

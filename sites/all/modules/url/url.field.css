@@ -1,0 +1,5 @@
+div.field-type-url div.field-value-url,
+div.field-type-url div.field-value-title {
+  float: left;
+  margin-right: 1em;
+}

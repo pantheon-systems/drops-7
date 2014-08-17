@@ -1,0 +1,151 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the block_class module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function block_class_install() {
+  $schema['block'] = array();
+  block_class_schema_alter($schema);
+  foreach ($schema['block']['fields'] as $field => $spec) {
+    if (db_field_exists('block', $field)) {
+      watchdog('system', 'Module install: Attempt to recreate field: "%field", when it already exists.', array('%field' => $field), WATCHDOG_WARNING);
+    }
+    else {
+      db_add_field('block', $field, $spec);
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function block_class_uninstall() {
+  $schema['block'] = array();
+  block_class_schema_alter($schema);
+  foreach ($schema['block']['fields'] as $field => $specs) {
+    db_drop_field('block', $field);
+  }
+}
+
+/**
+ * Implements hook_schema_alter().
+ *
+ * Other modules, such as i18n_block also modify the block database table.
+ */
+function block_class_schema_alter(&$schema) {
+  if (isset($schema['block'])) {
+    $schema['block']['fields']['css_class'] = array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => TRUE,
+      'default' => '',
+      'description' => 'String containing the classes for the block.',
+    );
+  }
+}
+
+/**
+ * Alters the structure of {block_class} schema.
+ */
+function block_class_update_7100() {
+  // Check if the block_class table exists to prevent installation profiles
+  // from running this update for versions without the block_class table.
+  if (db_table_exists('block_class')) {
+    // Update the schema.
+    db_drop_primary_key('block_class');
+
+    db_change_field('block_class', 'module', 'module',
+      array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The module to which the block belongs.',
+      )
+    );
+
+    db_change_field('block_class', 'delta', 'delta',
+      array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => "The ID of the module's block.",
+      )
+    );
+
+    db_change_field('block_class', 'css_class', 'css_class',
+      array(
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'String containing the classes for the block.',
+      )
+    );
+
+    // Restore the primary key.
+    db_add_primary_key('block_class', array('module', 'delta'));
+  }
+}
+
+/**
+ * Fix too long primary key length in {block_class}.
+ */
+function block_class_update_7101() {
+  // Ensure the block_class table exists, which is not true for all versions.
+  if (db_table_exists('block_class')) {
+    // Drop current primary key.
+    db_drop_primary_key('block_class');
+
+    db_change_field('block_class', 'module', 'module', array(
+      'type' => 'varchar',
+      'length' => 64,
+      'not null' => TRUE,
+      'default' => '',
+      'description' => 'The module to which the block belongs.',
+    ));
+    db_change_field('block_class', 'delta', 'delta', array(
+      'type' => 'varchar',
+      'length' => 32,
+      'not null' => TRUE,
+      'default' => '',
+      'description' => "The ID of the module's block.",
+    ));
+
+    // Create new primary key.
+    db_add_primary_key('block_class', array('module', 'delta'));
+  }
+}
+
+/**
+ * Migration from block_class table to new field css_class in core block table.
+ */
+function block_class_update_7103() {
+  if (!db_field_exists('block', 'block_class')) {
+    $schema['block'] = array();
+    block_class_schema_alter($schema);
+    foreach ($schema['block']['fields'] as $field => $specs) {
+      db_add_field('block', $field, $specs);
+    }
+  }
+
+  if (db_table_exists('block_class')) {
+    // Migrate all existing records from block_class table to block table.
+    $result = db_query('SELECT css_class, module, delta FROM {block_class}');
+    while ($record = $result->fetchObject()) {
+      db_update('block')
+        ->fields(array('css_class' => $record->css_class))
+        ->condition('module', $record->module)
+        ->condition('delta', $record->delta)
+        ->execute();
+    }
+    // Remove the block_class table.
+    db_drop_table('block_class');
+  }
+}

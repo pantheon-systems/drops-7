@@ -1,0 +1,93 @@
+name = Biz Review
+description = Created by SymphonyThemes.
+core = 7.x
+base theme = bootstrap
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Regions
+;;;;;;;;;;;;;;;;;;;;;
+
+regions[main_navigation]	    = 'Main Navigation'
+regions[sub_navigation] 	    = 'Sub Navigation'
+regions[header_top_left]	    = Header Top Left
+regions[header_top_right]		= Header Top Right
+regions[header]           		= Header
+regions[help]           		= 'Help'
+regions[search]        			= 'Search'
+regions[full_width]        		= 'Full Width'
+regions[preface_first]        	= 'Preface First'
+regions[preface_second]        	= 'Preface Second'
+regions[content_top_first]      = 'Content Top First'
+regions[content_top_second]     = 'Content Top Second'
+regions[content_top_third]      = 'Content Top Third'
+regions[image_background_top]   = 'Image Background Top'
+regions[content]        		= 'Content'
+regions[color_background]       = 'Theme Color Background'
+regions[content_bottom_first]   = 'Content Bottom First'
+regions[content_bottom_second]  = 'Content Bottom Second'
+regions[content_bottom_third]   = 'Content Bottom Third'
+regions[content_bottom_fourth]  = 'Content Bottom Fourth'
+regions[content_bottom_fifth]   = 'Content Bottom Fifth'
+regions[image_background]       = 'Image Background'
+regions[image_background_second]       = 'Image Background Second'
+regions[sidebar_first]  		= 'Primary'
+regions[sidebar_second] 		= 'Secondary'
+regions[footer_first] 			= Footer First
+regions[footer_second] 			= Footer Second
+regions[footer_third] 			= Footer Third
+regions[footer_fourth] 			= Footer Fourth
+regions[footer_fifth] 			= Footer Fifth
+regions[footer_sixth] 			= Footer Sixth
+regions[sub_footer_first] 		= Sub Footer First
+regions[sub_footer_second] 		= Sub Footer Second
+regions[page_top]       		= 'Page top'
+regions[page_bottom]    		= 'Page bottom'
+
+
+;;;;;;;;;;;;;;;;;;;;;
+;; Stylesheets
+;;;;;;;;;;;;;;;;;;;;;
+
+stylesheets[all][] = bootstrap/css/bootstrap.css
+stylesheets[all][] = css/style.css
+stylesheets[all][] = color/colors.css
+stylesheets[all][] = css/local.css
+
+; For information on choosing the desired method, please read the Drupal
+; Bootstrap sub-theme "how-to" documentation:
+; https://drupal.org/node/1978010
+
+; ;----------------------------------
+; ; METHOD 1: Bootstrap Source Files
+; ;----------------------------------
+; 
+; ;;;;;;;;;;;;;;;;;;;;;
+; ;; Scripts
+; ;;;;;;;;;;;;;;;;;;;;;
+scripts[] = 'js/custom.js'
+scripts[] = 'bootstrap/js/bootstrap.min.js'
+
+; 
+; scripts[] = 'bootstrap/js/affix.js'
+; scripts[] = 'bootstrap/js/alert.js'
+; scripts[] = 'bootstrap/js/button.js'
+; scripts[] = 'bootstrap/js/carousel.js'
+; scripts[] = 'bootstrap/js/collapse.js'
+; scripts[] = 'bootstrap/js/dropdown.js'
+; scripts[] = 'bootstrap/js/modal.js'
+; scripts[] = 'bootstrap/js/tooltip.js'
+; scripts[] = 'bootstrap/js/popover.js'
+; scripts[] = 'bootstrap/js/scrollspy.js'
+; scripts[] = 'bootstrap/js/tab.js'
+; scripts[] = 'bootstrap/js/transition.js'
+;
+; ; Disable BootstrapCDN if using Bootstrap source files in your sub-theme.
+; settings[bootstrap_cdn] = ''
+
+
+
+settings[breadcrumb_display]= 1
+settings[scrolltop_display]= 1
+settings[responsive_respond]= 1
+settings[bootstrap_js_include]= 1

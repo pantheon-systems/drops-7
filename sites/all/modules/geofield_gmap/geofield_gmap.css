@@ -1,0 +1,9 @@
+.geofield-gmap-cnt {
+	width: 600px;
+	height: 400px;
+	display: block;
+  margin: 10px 0;
+}
+.geofield-gmap-buttons {
+  margin: 10px 0;
+}

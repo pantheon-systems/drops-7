@@ -1,0 +1,987 @@
+<?php
+
+/**
+ * @file
+ * A simple n-star voting widget, usable in other forms.
+ */
+
+include_once dirname(__FILE__) . '/includes/fivestar.field.inc';
+
+/**
+ * Implementation of hook_help().
+ */
+function fivestar_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case 'admin/config/content/fivestar':
+      $output = t('This page is used to configure site-wide features of the Fivestar module.');
+    break;
+  }
+  return $output;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function fivestar_menu() {
+  $items = array();
+  $items['admin/config/content/fivestar'] = array(
+    'title'             => 'Fivestar',
+    'description'       => 'Configure site-wide widgets used for Fivestar rating.',
+    'page callback'     => 'drupal_get_form',
+    'page arguments'    => array('fivestar_settings'),
+    'access callback'   => 'user_access',
+    'access arguments'  => array('administer site configuration'),
+    'type'              => MENU_NORMAL_ITEM,
+    'file'              => 'includes/fivestar.admin.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_microdata_suggestions().
+ */
+function fivestar_microdata_suggestions() {
+  $mappings = array();
+
+  // Add the review mapping for Schema.org
+  $mappings['fields']['fivestar']['schema.org'] = array(
+    '#itemprop' => array('aggregateRating'),
+    '#is_item' => TRUE,
+    '#itemtype' => array('http://schema.org/AggregateRating'),
+    'average_rating' => array(
+      '#itemprop' => array('ratingValue'),
+    ),
+    'rating_count' => array(
+      '#itemprop' => array('ratingCount'),
+    ),
+  );
+
+  return $mappings;
+}
+
+/**
+ * Implementation of hook_permission().
+ *
+ * Exposes permissions for rating content.
+ */
+function fivestar_permission() {
+  return array(
+    'rate content' => array(
+      'title' => t('rate content'),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function fivestar_theme() {
+  return array(
+    // Fivestar theme functions.
+    'fivestar' => array(
+      'render element' => 'element',
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_select' => array(
+      'render element' => 'element',
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_static' => array(
+      'variables' => array('rating' => NULL, 'stars' => 5, 'tag' => 'vote', 'widget' => array('name' => 'default', 'css' => '')),
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_static_element' => array(
+      'variables' => array('star_display' => NULL, 'title' => NULL, 'description' => NULL),
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_summary' => array(
+      'variables' => array('user_rating' => NULL, 'average_rating' => NULL, 'votes' => 0, 'stars' => 5, 'microdata' => array()),
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    // fivestar.admin.inc.
+    'fivestar_preview' => array(
+      'variables' => array('style' => NULL, 'text' => NULL, 'stars' => NULL, 'unvote' => NULL, 'title' => NULL),
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_preview_widget' => array(
+      'variables' => array('css' => NULL, 'name' => NULL),
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_preview_wrapper' => array(
+      'variables' => array('content' => NULL, 'type' => 'direct'),
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_settings' => array(
+      'render element' => 'form',
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_color_form' => array(
+      'render element' => 'form',
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_formatter_default' => array(
+      'render element' => 'element',
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_formatter_rating' => array(
+      'render element' => 'element',
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+    'fivestar_formatter_percentage' => array(
+      'render element' => 'element',
+      'file' => 'includes/fivestar.theme.inc',
+    ),
+  );
+}
+
+function _fivestar_variables() {
+  return array('fivestar', 'fivestar_unvote', 'fivestar_style', 'fivestar_stars', 'fivestar_comment', 'fivestar_position', 'fivestar_position_teaser', 'fivestar_labels_enable', 'fivestar_labels', 'fivestar_text', 'fivestar_title', 'fivestar_feedback');
+}
+
+/**
+ * Internal function to handle vote casting, flood control, XSS, IP based
+ * voting, etc...
+ */
+
+function _fivestar_cast_vote($entity_type, $id, $value, $tag = NULL, $uid = NULL, $skip_validation = FALSE, $vote_source = NULL) {
+  global $user;
+  $tag = empty($tag) ? 'vote' : $tag;
+  $uid = isset($uid) ? $uid : $user->uid;
+  // Bail out if the user's trying to vote on an invalid object.
+  if (!$skip_validation && !fivestar_validate_target($entity_type, $id, $tag, $uid)) {
+    return array();
+  }
+  // Sanity-check the incoming values.
+  if (is_numeric($id) && is_numeric($value)) {
+    if ($value > 100) {
+      $value = 100;
+    }
+
+    // Get the user's current vote.
+    $criteria = array('entity_type' => $entity_type, 'entity_id' => $id, 'tag' => $tag, 'uid' => $uid);
+    // Get the unique identifier for the user (IP Address if anonymous).
+
+    if ($vote_source != NULL) {
+      $user_criteria = array('vote_source' => $vote_source);
+      $limit = 1;
+    }
+    else {
+      $user_criteria = votingapi_current_user_identifier();
+      $limit = 0;
+    }
+    $user_votes = votingapi_select_votes($criteria + $user_criteria, $limit);
+
+    if ($value == 0) {
+      votingapi_delete_votes($user_votes);
+    }
+    else {
+      $votes = $criteria += array('value' => $value);
+      votingapi_set_votes($votes);
+    }
+
+    // Moving the calculationg after saving/deleting the vote but before getting the votes.
+    votingapi_recalculate_results($entity_type, $id);
+    return fivestar_get_votes($entity_type, $id, $tag, $uid);
+  }
+}
+
+/**
+ * Utility function to retrieve VotingAPI votes.
+ *
+ * Note that this should not be used for general vote retrieval, instead the
+ * VotingAPI function votingapi_select_results() should be used, which is more
+ * efficient when retrieving multiple votes.
+ *
+ * @param $entity_type
+ *   The Entity type for which to retrieve votes.
+ * @param $id
+ *   The ID for which to retrieve votes.
+ * @param $tag
+ *   The VotingAPI tag for which to retrieve votes.
+ * @param $uid
+ *   Optional. A user ID for which to retrieve votes.
+ * @return
+ *   An array of the following keys:
+ *   - average: An array of VotingAPI results, including the average 'value'.
+ *   - count: An array of VotingAPI results, including the count 'value'.
+ *   - user: An array of VotingAPI results, including the user's vote 'value'.
+ */
+function fivestar_get_votes_multiple($entity_type, $ids, $tag = 'vote', $uid = NULL) {
+  global $user;
+
+  if (!isset($uid)) {
+    $uid = $user->uid;
+  }
+
+  $criteria = array(
+    'entity_type' => $entity_type,
+    'entity_id' => $ids,
+    'value_type' => 'percent',
+    'tag' => $tag,
+  );
+
+  $votes = array();
+
+  // Initialize defaults.
+  foreach($ids as $id) {
+    $votes[$entity_type][$id] = array(
+      'average' => array(),
+      'count' => array(),
+      'user' => array(),
+    );
+  }
+
+  $results = votingapi_select_results($criteria);
+  $user_votes = array();
+  if(!empty($results)) {
+    foreach(votingapi_select_votes($criteria += array('uid' => $uid)) as $uv) {
+      $user_votes[$uv['entity_type']][$uv['entity_id']] = $uv;
+    }
+  }
+
+  foreach ($results as $result) {
+    if ($result['function'] == 'average') {
+      $votes[$result['entity_type']][$result['entity_id']]['average'] = $result;
+    }
+    if ($result['function'] == 'count') {
+      $votes[$result['entity_type']][$result['entity_id']]['count'] = $result;
+    }
+	  if ($uid) {
+	    if (!empty($user_votes[$result['entity_type']][$result['entity_id']])) {
+        $votes[$result['entity_type']][$result['entity_id']]['user'] = $user_votes[$result['entity_type']][$result['entity_id']];
+        $votes[$result['entity_type']][$result['entity_id']]['user']['function'] = 'user';
+	    }
+	  }
+	  else {
+	    // If the user is anonymous, we never bother loading their existing votes.
+	    // Not only would it be hit-or-miss, it would break page caching. Safer to always
+	    // show the 'fresh' version to anon users.
+      $votes[$result['entity_type']][$result['entity_id']]['user'] = array('value' => 0);
+	  }
+  }
+
+  return $votes;
+}
+
+function fivestar_get_votes($entity_type, $id, $tag = 'vote', $uid = NULL) {
+  $multiple = fivestar_get_votes_multiple($entity_type, array($id), $tag, $uid);
+  return $multiple[$entity_type][$id];
+}
+
+/**
+ * Check that an item being voted upon is a valid vote.
+ *
+ * @param $entity_type
+ *   Type of target.
+ * @param $id
+ *   Identifier within the type.
+ * @param $tag
+ *   The VotingAPI tag string.
+ * @param $uid
+ *   The user trying to cast the vote.
+ *
+ * @return boolean
+ */
+function fivestar_validate_target($entity_type, $id, $tag, $uid = NULL) {
+  if (!isset($uid)) {
+    $uid = $GLOBALS['user']->uid;
+  }
+
+  $access = module_invoke_all('fivestar_access', $entity_type, $id, $tag, $uid);
+  foreach ($access as $result) {
+    if ($result == TRUE) {
+      return TRUE;
+    }
+    if ($result === FALSE) {
+      return FALSE;
+    }
+  }
+}
+
+/**
+ * Implementation of hook_fivestar_access().
+ *
+ * This hook is called before every vote is cast through Fivestar. It allows
+ * modules to allow voting on any type of entity, such as nodes, users, or
+ * comments.
+ *
+ * @param $entity_type
+ *   Type entity.
+ * @param $id
+ *   Identifier within the type.
+ * @param $tag
+ *   The VotingAPI tag string.
+ * @param $uid
+ *   The user ID trying to cast the vote.
+ *
+ * @return boolean or NULL
+ *   Returns TRUE if voting is supported on this object.
+ *   Returns NULL if voting is not supported on this object by this module.
+ *   If needing to absolutely deny all voting on this object, regardless
+ *   of permissions defined in other modules, return FALSE. Note if all
+ *   modules return NULL, stating no preference, then access will be denied.
+ */
+function fivestar_fivestar_access($entity_type, $id, $tag, $uid) {
+  // Check to see if there is a field instance on this entity.
+  $fields = field_read_fields(array('module' => 'fivestar'));
+  foreach ($fields as $field) {
+    if ($field['settings']['axis'] == $tag) {
+      $params = array(
+        'entity_type' => $entity_type,
+        'field_name' => $field['field_name'],
+      );
+      $instance = field_read_instances($params);
+      if (!empty($instance)) {
+        return TRUE;
+      }
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_comment_form_alter().
+ *
+ * This hook removes the parent node, together with the fivestar field, from
+ * the comment preview page. If this is left in, when the user presses the
+ * "Save" button after the preview page has been displayed, the fivestar widget
+ * gets the input rather than the comment; the user's input is lost. Based on a
+ * suggestion by ChristianAdamski in issue 1289832-3.
+ */
+function fivestar_form_comment_form_alter(&$form, &$form_state, $form_id) {
+  $is_fivestar = FALSE;
+  if (isset($form['comment_output_below'])) {
+    foreach($form['comment_output_below'] as $key => $value) {
+      if (is_array($value) && !empty($value['#field_type'])) {
+        if ($value['#field_type'] =='fivestar') {
+          $is_fivestar = TRUE;
+          $fivestar_key = $key;
+        }
+      }
+    }
+  }
+  if ($is_fivestar) {
+    unset($form['comment_output_below'][$fivestar_key]);
+  }
+}
+
+/**
+ * Implementation of hook_fivestar_widgets().
+ *
+ * This hook allows other modules to create additional custom widgets for
+ * the fivestar module.
+ *
+ * @return array
+ *   An array of key => value pairs suitable for inclusion as the #options in a
+ *   select or radios form element. Each key must be the location of a css
+ *   file for a fivestar widget. Each value should be the name of the widget.
+ */
+function fivestar_fivestar_widgets() {
+  $widgets = &drupal_static(__FUNCTION__);
+  if (!isset($widgets)) {
+    $cache = cache_get(__FUNCTION__);
+    if ($cache) {
+      $widgets = $cache->data;
+    }
+  }
+
+  if (!isset($widgets)) {
+    $widgets_directory = drupal_get_path('module', 'fivestar') . '/widgets';
+    $files = file_scan_directory($widgets_directory, '/\.css$/');
+    foreach ($files as $file) {
+      if (strpos($file->filename, '-rtl.css') === FALSE) {
+        $widgets[$file->uri] = drupal_ucfirst(str_replace('-color', '', $file->name));
+      }
+    }
+    cache_set(__FUNCTION__, $widgets);
+  }
+  return $widgets;
+}
+
+/**
+ * Form builder; Build a custom Fivestar rating widget with arbitrary settings.
+ *
+ * This function is usually not called directly, instead call
+ * drupal_get_form('fivestar_custom_widget', $values, $settings) when wanting
+ * to display a widget.
+ *
+ * @param $form_state
+ *   The form state provided by Form API.
+ * @param $values
+ *   An array of current vote values from 0 to 100, with the following array
+ *   keys:
+ *   - user: The user's current vote.
+ *   - average: The average vote value.
+ *   - count: The total number of votes so far on this content.
+ * @param $settings
+ *   An array of settings that configure the properties of the rating widget.
+ *   Available keys for the settings include:
+ *   - content_type: The type of content which will be voted upon.
+ *   - content_id: The content ID which will be voted upon.
+ *   - stars: The number of stars to display in this widget, from 2 to 10.
+ *     Defaults to 5.
+ *   - autosubmit: Whether the form should be submitted upon star selection.
+ *     Defaults to TRUE.
+ *   - allow_clear: Whether or not to show the "Clear current vote" icon when
+ *     showing the widget. Defaults to FALSE.
+ *   - required: Whether this field is required before the form can be
+ *     submitted. Defaults to FALSE.
+ *   - tag: The VotingAPI tag that will be registered by this widget. Defaults
+ *     to "vote".
+ */
+function fivestar_custom_widget($form, &$form_state, $values, $settings) {
+  $form = array(
+    '#attributes' => array(
+      'class' => array('fivestar-widget')
+    ),
+  );
+  $form['#submit'][] = 'fivestar_form_submit';
+
+  $form_state['settings'] = $settings;
+
+  $form['vote'] = array(
+    '#type' => 'fivestar',
+    '#stars' => $settings['stars'],
+    '#auto_submit' => isset($settings['autosubmit']) ? $settings['autosubmit'] : TRUE,
+    '#allow_clear' => $settings['allow_clear'],
+    '#allow_revote' => $settings['allow_revote'],
+    '#allow_ownvote' => $settings['allow_ownvote'],
+    '#required' => isset($settings['required']) ? $settings['required'] : FALSE,
+    '#widget' => isset($settings['widget']) ? $settings['widget'] : array('name' => 'default', 'css' => 'default'),
+    '#values' => $values,
+    '#settings' => $settings,
+    '#description' => $settings['description'],
+  );
+
+  $form['fivestar_submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Rate'),
+    '#attributes' => array('class' => array('fivestar-submit')),
+  );
+
+  return $form;
+}
+
+/**
+ * Submit handler for the above form (non-javascript version).
+ */
+function fivestar_form_submit($form, &$form_state) {
+
+  // Cast the vote.
+  _fivestar_cast_vote($form_state['settings']['content_type'], $form_state['settings']['content_id'], $form_state['values']['vote'], $form_state['settings']['tag']);
+
+  // Set a message that the vote was received.
+  if ($form_state['values']['vote'] === '0') {
+    drupal_set_message(t('Your vote has been cleared.'));
+  }
+  elseif (is_numeric($form_state['values']['vote'])) {
+    drupal_set_message(t('Thank you for your vote.'));
+  }
+}
+
+/**
+ * AJAX submit handler for fivestar_custom_widget
+ */
+function fivestar_ajax_submit($form, $form_state) {
+  if (!empty($form_state['settings']['content_id'])) {
+    $entity = entity_load($form_state['settings']['entity_type'], array($form_state['settings']['entity_id']));
+    $entity = reset($entity);
+    _fivestar_update_field_value($form_state['settings']['content_type'], $entity, $form_state['settings']['field_name'], $form_state['settings']['langcode'], $form_state['values']['vote']);
+    $votes = _fivestar_cast_vote($form_state['settings']['content_type'], $form_state['settings']['content_id'], $form_state['values']['vote'], $form_state['settings']['tag']);
+  }
+
+  $values = array();
+  $values['user'] = isset($votes['user']['value']) ? $votes['user']['value'] : 0;
+  $values['average'] = isset($votes['average']['value']) ? $votes['average']['value'] : 0;
+  $values['count'] = isset($votes['count']['value']) ? $votes['count']['value'] : 0;
+
+  // We need to process the 'fivestar' element with the new values.
+  $form['vote']['#values'] = $values;
+  $new_element = fivestar_expand($form['vote']);
+  // Update the description. Since it doesn't account of our cast vote above.
+  // TODO: Look into all this, I honestly don't like it and it's a bit weird.
+  $form['vote']['vote']['#description'] = isset($new_element['vote']['#description']) ? $new_element['vote']['#description'] : '';
+
+  return array(
+    '#type' => 'ajax',
+    '#commands' => array(
+      array(
+        'command' => 'fivestarUpdate',
+        'data' => drupal_render($form['vote']),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_elements().
+ *
+ * Defines 'fivestar' form element type
+ */
+function fivestar_element_info() {
+  $type['fivestar'] = array(
+    '#input' => TRUE,
+    '#stars' => 5,
+    '#allow_clear' => FALSE,
+    '#allow_revote' => FALSE,
+    '#allow_ownvote' => FALSE,
+    '#auto_submit' => FALSE,
+    '#process' => array('fivestar_expand'),
+    '#theme_wrappers' => array('form_element'),
+    '#widget' => array(
+      'name' => 'default',
+      'css' => 'default',
+    ),
+    '#values' => array(
+      'user' => 0,
+      'average' => 0,
+      'count' => 0,
+    ),
+    '#settings' => array(
+      'style' => 'user',
+      'text' => 'none',
+    ),
+  );
+  return $type;
+}
+
+/**
+ * Process callback for fivestar_element -- see fivestar_element()
+ */
+function fivestar_expand($element) {
+  if (!_fivestar_allow_vote($element)){
+    $element['#input'] = FALSE;
+  }
+
+  // Add CSS and JS
+  $path = drupal_get_path('module', 'fivestar');
+  $element['#attached']['js'][] = $path . '/js/fivestar.js';
+  $element['#attached']['css'][] = $path . '/css/fivestar.css';
+  $settings = $element['#settings'];
+  $values = $element['#values'];
+  $class[] = 'clearfix';
+
+  $options = array('-' => t('Select rating'));
+  for ($i = 1; $i <= $element['#stars']; $i++) {
+    $this_value = ceil($i * 100/$element['#stars']);
+    $options[$this_value] = t('Give it @star/@count', array('@star' => $i, '@count' => $element['#stars']));
+  }
+  // Display clear button only if enabled.
+  if ($element['#allow_clear'] == TRUE) {
+    $options[0] = t('Cancel rating');
+  }
+
+  $element['vote'] = array(
+    '#type' => 'select',
+    '#options' => $options,
+    '#required' => $element['#required'],
+    '#attributes' => $element['#attributes'],
+    '#theme' => _fivestar_allow_vote($element) ? 'fivestar_select' : 'fivestar_static',
+    '#default_value' => _fivestar_get_element_default_value($element),
+    '#weight' => -2,
+  );
+
+  if (isset($element['#parents'])) {
+    $element['vote']['#parents'] = $element['#parents'];
+  }
+
+  switch ($settings['text']) {
+    case 'user':
+      $element['vote']['#description'] = theme('fivestar_summary', array(
+        'user_rating' => $values['user'],
+        'votes' => $settings['style'] == 'dual' ? NULL : $values['count'],
+        'stars' => $settings['stars'],
+        'microdata' => $settings['microdata'],
+      ));
+      $class[] = 'fivestar-user-text';
+      break;
+    case 'average':
+      $element['vote']['#description'] = $settings['style'] == 'dual' ? NULL : theme('fivestar_summary', array(
+        'average_rating' => $values['average'],
+        'votes' => $values['count'],
+        'stars' => $settings['stars'],
+        'microdata' => $settings['microdata'],
+      ));
+      $class[] = 'fivestar-average-text';
+      break;
+    case 'smart':
+      $element['vote']['#description'] = ($settings['style'] == 'dual' && !$values['user']) ? NULL : theme('fivestar_summary', array(
+        'user_rating' => $values['user'],
+        'average_rating' => $values['user'] ? NULL : $values['average'],
+        'votes' => $settings['style'] == 'dual' ? NULL : $values['count'],
+        'stars' => $settings['stars'],
+        'microdata' => $settings['microdata'],
+      ));
+      $class[] = 'fivestar-smart-text';
+      $class[] = $values['user'] ? 'fivestar-user-text' : 'fivestar-average-text';
+      break;
+    case 'dual':
+      $element['vote']['#description'] = theme('fivestar_summary', array(
+        'user_rating' => $values['user'],
+        'average_rating' => $settings['style'] == 'dual' ? NULL : $values['average'],
+        'votes' => $settings['style'] == 'dual' ? NULL : $values['count'],
+        'stars' => $settings['stars'],
+        'microdata' => $settings['microdata'],
+      ));
+      $class[] = ' fivestar-combo-text';
+      break;
+    case 'none':
+      $element['vote']['#description'] = NULL;
+      break;
+  }
+
+  switch ($settings['style']) {
+    case 'average':
+      $class[] = 'fivestar-average-stars';
+      break;
+    case 'user':
+      $class[] = 'fivestar-user-stars';
+      break;
+    case 'smart':
+      $class[] = 'fivestar-smart-stars ' . ($values['user'] ? 'fivestar-user-stars' : 'fivestar-average-stars');
+      break;
+    case 'dual':
+      $class[] = 'fivestar-combo-stars';
+      $static_average = theme('fivestar_static', array(
+        'rating' => $values['average'],
+        'stars' => $settings['stars'],
+        'tag' => $settings['tag'],
+        'widget' => $settings['widget'],
+      ));
+      if ($settings['text'] != 'none') {
+        $static_description = theme('fivestar_summary', array(
+          'average_rating' => $settings['text'] == 'user' ? NULL : (isset($values['average']) ? $values['average'] : 0),
+          'votes' => isset($values['count']) ? $values['count'] : 0,
+          'stars' => $settings['stars'],
+        ));
+      }
+      else {
+        $static_description = '&nbsp;';
+      }
+      $element['average'] = array(
+        '#type' => 'markup',
+        '#markup' => theme('fivestar_static_element', array(
+          'star_display' => $static_average,
+          'title' => '',
+          'description' => $static_description,
+        )),
+        '#weight' => -1,
+      );
+      break;
+  }
+  $class[] = 'fivestar-form-item';
+  $class[] = 'fivestar-' . $element['#widget']['name'];
+  if ($element['#widget']['name'] != 'default') {
+    $element['#attached']['css'][] = $element['#widget']['css'];
+  }
+  $element['#prefix'] = '<div ' . drupal_attributes(array('class' => $class)) . '>';
+  $element['#suffix'] = '</div>';
+
+  // Add AJAX handling if necessary.
+  if (!empty($element['#auto_submit'])) {
+    $element['vote']['#ajax'] = array(
+      'callback' => 'fivestar_ajax_submit',
+    );
+    $element['vote']['#attached']['js'][] = $path . '/js/fivestar.ajax.js';
+  }
+
+  if (empty($element['#input'])) {
+    $static_stars = theme('fivestar_static', array(
+      'rating' => $element['vote']['#default_value'],
+      'stars' => $settings['stars'],
+      'tag' => $settings['tag'],
+      'widget' => $settings['widget'],
+    ));
+
+    $element['vote'] = array(
+      '#type' => 'markup',
+      '#markup' => theme('fivestar_static_element', array(
+        'star_display' => $static_stars,
+        'title' => '',
+        'description' => $element['vote']['#description'],
+      )),
+    );
+  }
+
+  // Add validation function that considers a 0 value as empty.
+  $element['#element_validate'] = array('fivestar_validate');
+
+  return $element;
+}
+
+/**
+ * Helper function to get the correct default value for a fivestar element.
+ *
+ * @param $element
+ *   The fivestar element
+ * @return
+ *   The default value for the element.
+ */
+function _fivestar_get_element_default_value($element) {
+  if (isset($element['#default_value'])) {
+    $default_value = $element['#default_value'];
+  }
+  else {
+    switch ($element['#settings']['style']) {
+      case 'average':
+        $default_value = $element['#values']['average'];
+        break;
+      case 'user':
+        $default_value = $element['#values']['user'];
+        break;
+      case 'smart':
+        $default_value = (!empty($element['#values']['user']) ? $element['#values']['user'] : $element['#values']['average']);
+        break;
+      case 'dual':
+        $default_value = $element['#values']['user'];
+        break;
+      default:
+        $default_value = $element['#values']['average'];
+    }
+  }
+
+  for ($i = 0; $i <= $element['#stars']; $i++) {
+    $this_value = ceil($i * 100/$element['#stars']);
+    $next_value = ceil(($i+1) * 100/$element['#stars']);
+
+    // Round up the default value to the next exact star value if needed.
+    if ($this_value < $default_value && $next_value > $default_value) {
+      $default_value = $next_value;
+    }
+  }
+
+  return $default_value;
+}
+
+/**
+ * An #element_validate function for "fivestar" elements.
+ */
+function fivestar_validate($element, &$form_state) {
+  if ($element['#required'] && (empty($element['#value']) || $element['#value'] == '-')) {
+    form_error($element, t('@name field is required.', array('@name' => $element['#title'])));
+  }
+}
+
+/**
+ * Implementation of hook_votingapi_metadata_alter().
+ */
+function fivestar_votingapi_metadata_alter(&$data) {
+  foreach (fivestar_get_tags() as $tag) {
+    // Add several custom tags that are being used by fivestar.
+    $data['tags'][$tag] = array(
+      'name' => t($tag),
+      'description' => t('@tag used by fivestar.', array('@tag' => $tag)),
+      'module' => 'fivestar',
+    );
+  }
+}
+
+function fivestar_get_tags() {
+  $tags_txt = variable_get('fivestar_tags', 'vote');
+  $tags_exploded = explode(',', $tags_txt);
+
+  $tags = array();
+  $got_vote = FALSE;
+  foreach ($tags_exploded as $tag) {
+    $tag_trimmed = trim($tag);
+    if ($tag_trimmed) {
+      $tags[$tag_trimmed] = $tag_trimmed;
+      if ($tag_trimmed == 'vote') {
+        $got_vote = TRUE;
+      }
+    }
+  }
+
+  if (!$got_vote) {
+    $tags['vote'] = 'vote';
+  }
+  return $tags;
+}
+
+function fivestar_get_targets($field, $instance, $key = FALSE, $entity = FALSE, $langcode = LANGUAGE_NONE) {
+  $options = array();
+  $targets = module_invoke_all('fivestar_target_info', $field, $instance);
+  if ($key == FALSE) {
+    foreach ($targets as $target => $info) {
+      $options[$target] = $info['title'];
+    }
+    return $options;
+  }
+  else {
+    if (isset($targets[$key]) && !empty($targets[$key]['callback']) && function_exists($targets[$key]['callback'])) {
+      return call_user_func($targets[$key]['callback'], $entity, $field, $instance, $langcode);
+    }
+  }
+}
+
+/**
+ * Implements hook_fivestar_target_info().
+ */
+function fivestar_fivestar_target_info($field, $instance) {
+  $entity_type = $instance['entity_type'];
+  $bundle = $instance['bundle'];
+  $options = array(
+    'none' => array(
+      'title' => t('None'),
+    ),
+  );
+  // Add node_referrence support.
+  if (module_exists('node_reference')) {
+    $field_names = array_keys(field_read_fields(array('module' => 'node_reference')));
+    if (!empty($field_names)) {
+      $field_instances = field_read_instances(array('entity_type' => $entity_type, 'bundle' => $bundle, 'field_name' => $field_names));
+      if (!empty($field_instances)) {
+        foreach ($field_instances as $field_instance) {
+          $options[$field_instance['field_name']] = array(
+            'title' => t('Node reference: @field', array('@field' => $field_instance['field_name'])),
+            'callback' => '_fivestar_target_node_reference'
+          );
+        }
+      }
+    }
+  }
+
+  // Add entityreference support.
+  if (module_exists('entityreference')) {
+    $field_names = array_keys(field_read_fields(array('module' => 'entityreference')));
+    if (!empty($field_names)) {
+      $field_instances = field_read_instances(array('entity_type' => $entity_type, 'bundle' => $bundle, 'field_name' => $field_names));
+      if (!empty($field_instances)) {
+        foreach ($field_instances as $field_instance) {
+          $options[$field_instance['field_name']] = array(
+            'title' => t('Entity reference: @field', array('@field' => $field_instance['field_name'])),
+            'callback' => '_fivestar_target_entityreference'
+          );
+        }
+      }
+    }
+  }
+
+  // Add user reference support.
+  if (module_exists('user_reference')) {
+    $field_names = array_keys(field_read_fields(array('module' => 'user_reference')));
+    if (!empty($field_names)) {
+      $field_instances = field_read_instances(array('entity_type' => $entity_type, 'bundle' => $bundle, 'field_name' => $field_names));
+      if (!empty($field_instances)) {
+        foreach ($field_instances as $field_instance) {
+          $options[$field_instance['field_name']] = array(
+            'title' => t('User reference: @field', array('@field' => $field_instance['field_name'])),
+            'callback' => '_fivestar_target_user_reference'
+          );
+        }
+      }
+    }
+  }
+
+  // Add comment module support.
+  if ($instance['entity_type'] == 'comment') {
+    $options['parent_node'] = array(
+      'title' => t('Parent Node'),
+      'callback' => '_fivestar_target_comment_parent_node'
+    );
+  }
+
+  return $options;
+}
+
+/**
+ *
+ * @return array
+ *   array('entity_type', 'entity_id').
+ */
+function _fivestar_target_node_reference($entity, $field, $instance, $langcode) {
+  $target = array();
+
+  $node_reference = $instance['settings']['target'];
+  if (isset($entity->{$node_reference}[$langcode][0]) && is_numeric($entity->{$node_reference}[$langcode][0]['nid'])) {
+    $target['entity_id'] = $entity->{$node_reference}[$langcode][0]['nid'];
+    $target['entity_type'] = 'node';
+  }
+
+  return $target;
+}
+
+/**
+ * @return (array) array('entity_type', 'entity_id')
+ */
+function _fivestar_target_entityreference($entity, $field, $instance, $langcode) {
+  $target = array();
+
+  $entityreference = $instance['settings']['target'];
+
+  // Retrieve entity settings for the referenced field.
+  $field_info = field_info_field($entityreference);
+
+  if (isset($entity->{$entityreference}[$langcode][0]) && isset($entity->{$entityreference}[$langcode][0]['target_id']) && is_numeric($entity->{$entityreference}[$langcode][0]['target_id'])) {
+    $target['entity_id'] = $entity->{$entityreference}[$langcode][0]['target_id'];
+    $target['entity_type'] = $field_info['settings']['target_type'];
+  }
+
+  return $target;
+}
+
+/**
+ *
+ * @return array
+ *   array('entity_type', 'entity_id').
+ */
+function _fivestar_target_user_reference($entity, $field, $instance, $langcode) {
+  $target = array();
+
+  $user_reference = $instance['settings']['target'];
+  if (isset($entity->{$user_reference}[$langcode][0]) && is_numeric($entity->{$user_reference}[$langcode][0]['uid'])) {
+    $target['entity_id'] = $entity->{$user_reference}[$langcode][0]['uid'];
+    $target['entity_type'] = 'user';
+  }
+
+  return $target;
+}
+
+function _fivestar_target_comment_parent_node($entity, $field, $instance, $langcode) {
+  return array(
+    'entity_id' => $entity->nid,
+    'entity_type' => 'node',
+  );
+}
+
+/**
+ * Helper function to determine if a user can vote on content.
+ *
+ * @return Boolean
+ */
+function _fivestar_allow_vote($element) {
+  global $user;
+
+  // Check allowed to re-vote.
+  $can_revote = FALSE;
+  if ($element['#allow_revote']) {
+    $can_revote = TRUE;
+  }
+  else {
+    $criteria = array(
+      'entity_id' => isset($element['#settings']['content_id']) ? $element['#settings']['content_id'] : NULL,
+      'entity_type' => isset($element['#settings']['content_type']) ? $element['#settings']['content_type'] : NULL,
+      'uid' => $user->uid,
+    );
+
+  $can_revote = !votingapi_select_votes($criteria);
+  }
+  if (!$can_revote) {
+    return FALSE;
+  }
+  // Check allowed own vote.
+  if ($element['#allow_ownvote']) {
+    return TRUE;
+  }
+  // Check that we have entity details, allow if not.
+  if (!isset($element['#settings']['entity_id']) || !isset($element['#settings']['entity_type'])) {
+    return TRUE;
+  }
+  $entity_id = $element['#settings']['entity_id'];
+  $entity = entity_load($element['#settings']['entity_type'], array($entity_id));
+  $entity = $entity[$entity_id];
+  $uid1 = $entity->uid;
+  $uid2 = $user->uid;
+  return $entity->uid != $user->uid;
+}

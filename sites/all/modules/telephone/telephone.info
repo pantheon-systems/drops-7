@@ -1,0 +1,13 @@
+name = Telephone
+description = "Defines a field type for telephone numbers."
+package = Fields
+core = 7.x
+dependencies[] = field
+files[] = telephone.migrate.inc
+
+; Information added by Drupal.org packaging script on 2014-01-14
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "telephone"
+datestamp = "1389736105"
+

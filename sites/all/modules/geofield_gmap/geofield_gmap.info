@@ -1,0 +1,20 @@
+name = Geofield Gmap
+description = "Google Map widget and formatter for geofield."
+dependencies[] = geofield
+core = 7.x
+
+files[] = geofield_gmap.admin.inc
+files[] = geofield_gmap.install
+files[] = geofield_gmap.module
+
+stylesheets[all][] = geofield_gmap.css
+
+scripts[] = geofield_gmap.js
+
+configure = admin/config/content/geofield_gmap
+; Information added by Drupal.org packaging script on 2014-03-25
+version = "7.x-2.x-dev"
+core = "7.x"
+project = "geofield_gmap"
+datestamp = "1395752659"
+

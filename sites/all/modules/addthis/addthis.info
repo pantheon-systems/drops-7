@@ -1,0 +1,19 @@
+name = AddThis
+description = AddThis.com provides an easy way to share your content across the web.
+core = 7.x
+package = Sharing
+
+dependencies[] = field
+
+files[] = addthis.test
+files[] = classes/AddThis.php
+files[] = classes/AddThisJson.php
+
+configure = admin/config/user-interface/addthis
+
+; Information added by Drupal.org packaging script on 2014-01-22
+version = "7.x-4.0-alpha4"
+core = "7.x"
+project = "addthis"
+datestamp = "1390384409"
+

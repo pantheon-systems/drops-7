@@ -1,0 +1,970 @@
+<?php
+
+/**
+ * @file
+ * Defines the core Commerce product entity, including the entity itself, the
+ * bundle definitions (product types), and various API functions to manage
+ * products and interact with them through forms and autocompletes.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_product_menu() {
+  $items = array();
+
+  $items['commerce_product/autocomplete'] = array(
+    'title' => 'commerce_product autocomplete',
+    'page callback' => 'commerce_product_autocomplete',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function commerce_product_hook_info() {
+  $hooks = array(
+    'commerce_product_type_info' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_type_info_alter' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_type_insert' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_type_update' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_type_delete' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_uri' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_view' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_presave' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_insert' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_update' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_can_delete' => array(
+      'group' => 'commerce',
+    ),
+    'commerce_product_delete' => array(
+      'group' => 'commerce',
+    ),
+  );
+
+  return $hooks;
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function commerce_product_entity_info() {
+  $return = array(
+    'commerce_product' => array(
+      'label' => t('Commerce Product'),
+      'controller class' => 'CommerceProductEntityController',
+      'base table' => 'commerce_product',
+      'revision table' => 'commerce_product_revision',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'product_id',
+        'bundle' => 'type',
+        'label' => 'title',
+        'revision' => 'revision_id',
+        'language' => 'language',
+      ),
+      'bundle keys' => array(
+        'bundle' => 'type',
+      ),
+      'bundles' => array(),
+      'load hook' => 'commerce_product_load',
+      'view modes' => array(
+        'full' => array(
+          'label' => t('Admin display'),
+          'custom settings' => FALSE,
+        ),
+      ),
+      'uri callback' => 'commerce_product_uri',
+      'metadata controller class' => '',
+      'token type' => 'commerce-product',
+      'access callback' => 'commerce_entity_access',
+      'access arguments' => array(
+        'user key' => 'uid',
+        'access tag' => 'commerce_product_access',
+      ),
+      'permission labels' => array(
+        'singular' => t('product'),
+        'plural' => t('products'),
+      ),
+
+      // Prevent Redirect alteration of the product form.
+      'redirect' => FALSE,
+
+      // Add translation support.
+      'translation' => array(
+        'locale' => TRUE,
+        'entity_translation' => array(
+          'class' => 'EntityTranslationCommerceProductHandler',
+          'bundle callback' => 'commerce_product_entity_translation_supported_type',
+          'default settings' => array(
+            'default_language' => LANGUAGE_NONE,
+            'hide_language_selector' => FALSE,
+          ),
+        ),
+      ),
+
+      // Add title replacement support for translations.
+      'field replacement' => array(
+        'title' => array(
+          'field' => array(
+            'type' => 'text',
+            'cardinality' => 1,
+            'translatable' => TRUE,
+          ),
+          'instance' => array(
+            'label' => t('Title'),
+            'required' => TRUE,
+            'settings' => array(
+              'text_processing' => 0,
+            ),
+            'widget' => array(
+              'weight' => -5,
+            ),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  foreach (commerce_product_type_get_name() as $type => $name) {
+    $return['commerce_product']['bundles'][$type] = array(
+      'label' => $name,
+    );
+  }
+
+  return $return;
+}
+
+/**
+ * Entity uri callback: gives modules a chance to specify a path for a product.
+ */
+function commerce_product_uri($product) {
+  // Allow modules to specify a path, returning the first one found.
+  foreach (module_implements('commerce_product_uri') as $module) {
+    $uri = module_invoke($module, 'commerce_product_uri', $product);
+
+    // If the implementation returned data, use that now.
+    if (!empty($uri)) {
+      return $uri;
+    }
+  }
+
+  return NULL;
+}
+
+/**
+ * Implements hook_file_download_access().
+ *
+ * This hook is grants access to files based on a user's access to the entity
+ * a file is attached to. For example, users with access to a product should be
+ * allowed to download files attached to that product. Here we do this on a per-
+ * field basis for files attached to products.
+ *
+ * @param $field
+ *   The field to which the file belongs.
+ * @param $entity_type
+ *   The type of $entity; for example, 'node' or 'user' or 'commerce_product'.
+ * @param $entity
+ *   The $entity to which $file is referenced.
+ *
+ * @return
+ *   TRUE if access should be allowed by this entity or FALSE if denied. Note
+ *   that denial may be overridden by another entity controller, making this
+ *   grant permissive rather than restrictive.
+ */
+function commerce_product_file_download_access($field, $entity_type, $entity) {
+  if ($entity_type == 'commerce_product') {
+    return field_access('view', $field, $entity_type, $entity);
+  }
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function commerce_product_field_extra_fields() {
+  $extra = array();
+
+  foreach (commerce_product_types() as $type => $product_type) {
+    $extra['commerce_product'][$type] = array(
+      'form' => array(
+        'sku' => array(
+          'label' => t('Product SKU'),
+          'description' => t('Product module SKU form element'),
+          'weight' => -10,
+        ),
+        'title' => array(
+          'label' => t('Title'),
+          'description' => t('Product module title form element'),
+          'weight' => -5,
+        ),
+        'status' => array(
+          'label' => t('Status'),
+          'description' => t('Product module status form element'),
+          'weight' => 35,
+        ),
+      ),
+      'display' => array(
+        'sku' => array(
+          'label' => t('SKU'),
+          'description' => t('The human readable identifier of the product'),
+          'theme' => 'commerce_product_sku',
+          'weight' => -10,
+        ),
+        'title' => array(
+          'label' => t('Title'),
+          'description' => t('Full product title'),
+          'theme' => 'commerce_product_title',
+          'weight' => -5,
+        ),
+        'status' => array(
+          'label' => t('Status'),
+          'description' => t('Whether the product is active or disabled'),
+          'theme' => 'commerce_product_status',
+          'weight' => 5,
+        ),
+      ),
+    );
+  }
+
+  return $extra;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function commerce_product_theme() {
+  return array(
+    'commerce_product_sku' => array(
+      'variables' => array('sku' => NULL, 'label' => NULL, 'product' => NULL),
+      'path' => drupal_get_path('module', 'commerce_product') . '/theme',
+      'template' => 'commerce-product-sku',
+    ),
+    'commerce_product_title' => array(
+      'variables' => array('title' => NULL, 'label' => NULL, 'product' => NULL),
+      'path' => drupal_get_path('module', 'commerce_product') . '/theme',
+      'template' => 'commerce-product-title',
+    ),
+    'commerce_product_status' => array(
+      'variables' => array('status' => NULL, 'label' => NULL, 'product' => NULL),
+      'path' => drupal_get_path('module', 'commerce_product') . '/theme',
+      'template' => 'commerce-product-status',
+    ),
+  );
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_product_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_product') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function commerce_product_permission() {
+  $permissions = array(
+    'administer product types' => array(
+      'title' => t('Administer product types'),
+      'description' => t('Allows users to configure product types and their fields.'),
+      'restrict access' => TRUE,
+    ),
+  );
+
+  $permissions += commerce_entity_access_permissions('commerce_product');
+
+  return $permissions;
+}
+
+/**
+ * Implements hook_enable().
+ */
+function commerce_product_enable() {
+  commerce_product_configure_product_types();
+}
+
+/**
+ * Implements hook_modules_enabled().
+ */
+function commerce_product_modules_enabled($modules) {
+  commerce_product_configure_product_fields($modules);
+}
+
+/**
+ * Configure the product types defined by enabled modules.
+ */
+function commerce_product_configure_product_types() {
+  foreach (commerce_product_types() as $type => $product_type) {
+    commerce_product_configure_product_type($type);
+  }
+}
+
+/**
+ * Ensures a base price field is present on a product type bundle.
+ */
+function commerce_product_configure_product_type($type) {
+  commerce_price_create_instance('commerce_price', 'commerce_product', $type, t('Price'), 0, 'calculated_sell_price');
+}
+
+/**
+ * Configures the fields on product types provided by other modules.
+ *
+ * @param $modules
+ *   An array of module names whose product type fields should be configured;
+ *   if left NULL, will default to all modules that implement
+ *   hook_commerce_product_type_info().
+ */
+function commerce_product_configure_product_fields($modules = NULL) {
+  // If no modules array is passed, recheck the fields for all product types
+  // defined by enabled modules.
+  if (empty($modules)) {
+    $modules = module_implements('commerce_product_type_info');
+  }
+
+  // Reset the product type cache to get types added by newly enabled modules.
+  commerce_product_types_reset();
+
+  // Loop through all the enabled modules.
+  foreach ($modules as $module) {
+    // If the module implements hook_commerce_product_type_info()...
+    if (module_hook($module, 'commerce_product_type_info')) {
+      $product_types = module_invoke($module, 'commerce_product_type_info');
+
+      // Loop through and configure the product types defined by the module.
+      foreach ($product_types as $type => $product_type) {
+        commerce_product_configure_product_type($type);
+      }
+    }
+  }
+}
+
+/**
+ * Returns an array of product type arrays keyed by type.
+ */
+function commerce_product_types() {
+  // First check the static cache for a product types array.
+  $product_types = &drupal_static(__FUNCTION__);
+
+  // If it did not exist, fetch the types now.
+  if (!isset($product_types)) {
+    $product_types = array();
+
+    // Find product types defined by hook_commerce_product_type_info().
+    foreach (module_implements('commerce_product_type_info') as $module) {
+      foreach (module_invoke($module, 'commerce_product_type_info') as $type => $product_type) {
+        // Set the module each product type is defined by and revision handling
+        // if they aren't set yet.
+        $product_type += array(
+          'module' => $module,
+          'revision' => 1,
+        );
+        $product_types[$type] = $product_type;
+      }
+    }
+
+    // Last allow the info to be altered by other modules.
+    drupal_alter('commerce_product_type_info', $product_types);
+  }
+
+  return $product_types;
+}
+
+/**
+ * Resets the cached list of product types.
+ */
+function commerce_product_types_reset() {
+  $product_types = &drupal_static('commerce_product_types');
+  $product_types = NULL;
+  entity_info_cache_clear();
+}
+
+/**
+ * Loads a product type.
+ *
+ * @param $type
+ *   The machine-readable name of the product type; accepts normal machine names
+ *     and URL prepared machine names with underscores replaced by hyphens.
+ */
+function commerce_product_type_load($type) {
+  $type = strtr($type, array('-' => '_'));
+  $product_types = commerce_product_types();
+  return !empty($product_types[$type]) ? $product_types[$type] : FALSE;
+}
+
+/**
+ * Returns the human readable name of any or all product types.
+ *
+ * @param $type
+ *   Optional parameter specifying the type whose name to return.
+ *
+ * @return
+ *   Either an array of all product type names keyed by the machine name or a
+ *     string containing the human readable name for the specified type. If a
+ *     type is specified that does not exist, this function returns FALSE.
+ */
+function commerce_product_type_get_name($type = NULL) {
+  $product_types = commerce_product_types();
+
+  // Return a type name if specified and it exists.
+  if (!empty($type)) {
+    if (isset($product_types[$type])) {
+      return $product_types[$type]['name'];
+    }
+    else {
+      // Return FALSE if it does not exist.
+      return FALSE;
+    }
+  }
+
+  // Otherwise turn the array values into the type name only.
+  foreach ($product_types as $key => $value) {
+    $product_types[$key] = $value['name'];
+  }
+
+  return $product_types;
+}
+
+/**
+ * Wraps commerce_product_type_get_name() for the Entity module.
+ */
+function commerce_product_type_options_list() {
+  return commerce_product_type_get_name();
+}
+
+/**
+ * Returns a path argument from a product type.
+ */
+function commerce_product_type_to_arg($type) {
+  return strtr($type, '_', '-');
+}
+
+/**
+ * Returns an initialized product object.
+ *
+ * @param $type
+ *   The machine-readable type of the product.
+ *
+ * @return
+ *   A product object with all default fields initialized.
+ */
+function commerce_product_new($type = '') {
+  return entity_get_controller('commerce_product')->create(array('type' => $type));
+}
+
+/**
+ * Saves a product.
+ *
+ * @param $product
+ *   The full product object to save.
+ *
+ * @return
+ *   SAVED_NEW or SAVED_UPDATED depending on the operation performed.
+ */
+function commerce_product_save($product) {
+  return entity_get_controller('commerce_product')->save($product);
+}
+
+/**
+ * Loads a product by ID.
+ */
+function commerce_product_load($product_id) {
+  if (empty($product_id)) {
+    return FALSE;
+  }
+
+  $products = commerce_product_load_multiple(array($product_id), array());
+  return $products ? reset($products) : FALSE;
+}
+
+/**
+ * Loads a product by SKU.
+ */
+function commerce_product_load_by_sku($sku) {
+  $products = commerce_product_load_multiple(array(), array('sku' => $sku));
+  return $products ? reset($products) : FALSE;
+}
+
+/**
+ * Loads multiple products by ID or based on a set of matching conditions.
+ *
+ * @see entity_load()
+ *
+ * @param $product_ids
+ *   An array of product IDs.
+ * @param $conditions
+ *   An array of conditions on the {commerce_product} table in the form
+ *     'field' => $value.
+ * @param $reset
+ *   Whether to reset the internal product loading cache.
+ *
+ * @return
+ *   An array of product objects indexed by product_id.
+ */
+function commerce_product_load_multiple($product_ids = array(), $conditions = array(), $reset = FALSE) {
+  if (empty($product_ids) && empty($conditions)) {
+    return array();
+  }
+
+  return entity_load('commerce_product', $product_ids, $conditions, $reset);
+}
+
+/**
+ * Determines whether or not the give product can be deleted.
+ *
+ * @param $product
+ *   The product to be checked for deletion.
+ *
+ * @return
+ *   Boolean indicating whether or not the product can be deleted.
+ */
+function commerce_product_can_delete($product) {
+  // Return FALSE if the given product does not have an ID; it need not be
+  // deleted, which is functionally equivalent to cannot be deleted as far as
+  // code depending on this function is concerned.
+  if (empty($product->product_id)) {
+    return FALSE;
+  }
+
+  // If any module implementing hook_commerce_product_can_delete() returns FALSE
+  // the product cannot be deleted. Return TRUE if none return FALSE.
+  return !in_array(FALSE, module_invoke_all('commerce_product_can_delete', $product));
+}
+
+/**
+ * Deletes a product by ID.
+ *
+ * @param $product_id
+ *   The ID of the product to delete.
+ *
+ * @return
+ *   TRUE on success, FALSE otherwise.
+ */
+function commerce_product_delete($product_id) {
+  return commerce_product_delete_multiple(array($product_id));
+}
+
+/**
+ * Deletes multiple products by ID.
+ *
+ * @param $product_ids
+ *   An array of product IDs to delete.
+ *
+ * @return
+ *   TRUE on success, FALSE otherwise.
+ */
+function commerce_product_delete_multiple($product_ids) {
+  return entity_get_controller('commerce_product')->delete($product_ids);
+}
+
+/**
+ * Checks product access for various operations.
+ *
+ * @param $op
+ *   The operation being performed. One of 'view', 'update', 'create' or
+ *   'delete'.
+ * @param $product
+ *   Optionally a product to check access for or for the create operation the
+ *   product type. If nothing is given access permissions for all products are returned.
+ * @param $account
+ *   The user to check for. Leave it to NULL to check for the current user.
+ */
+function commerce_product_access($op, $product = NULL, $account = NULL) {
+  return commerce_entity_access($op, $product, $account, 'commerce_product');
+}
+
+/**
+ * Implements hook_query_TAG_alter().
+ */
+function commerce_product_query_commerce_product_access_alter(QueryAlterableInterface $query) {
+  return commerce_entity_access_query_alter($query, 'commerce_product');
+}
+
+/**
+ * Performs token replacement on a SKU for valid tokens only.
+ *
+ * TODO: This function currently limits acceptable Tokens to Product ID and type
+ * with no ability to use Tokens for the Fields attached to the product. That
+ * might be fine for a core Token replacement, but we should at least open the
+ * $valid_tokens array up to other modules to enable various Tokens for use.
+ *
+ * @param $sku
+ *   The raw SKU string including any tokens as entered.
+ * @param $product
+ *   A product object used to perform token replacement on the SKU.
+ *
+ * @return
+ *   The SKU with tokens replaced or else FALSE if it included invalid tokens.
+ */
+function commerce_product_replace_sku_tokens($sku, $product) {
+  // Build an array of valid SKU tokens.
+  $valid_tokens = array('product-id', 'type');
+
+  // Ensure that only valid tokens were used.
+  $invalid_tokens = FALSE;
+
+  foreach (token_scan($sku) as $type => $token) {
+    if ($type !== 'product') {
+      $invalid_tokens = TRUE;
+    }
+    else {
+      foreach (array_keys($token) as $value) {
+        if (!in_array($value, $valid_tokens)) {
+          $invalid_tokens = TRUE;
+        }
+      }
+    }
+  }
+
+  // Register the error if an invalid token was detected.
+  if ($invalid_tokens) {
+    return FALSE;
+  }
+
+  return $sku;
+}
+
+/**
+ * Checks to see if a given SKU already exists for another product.
+ *
+ * @param $sku
+ *   The string to match against existing SKUs.
+ * @param $product_id
+ *   The ID of the product the SKU is for; an empty value represents the SKU is
+ *     meant for a new product.
+ *
+ * @return
+ *   TRUE or FALSE indicating whether or not the SKU exists for another product.
+ */
+function commerce_product_validate_sku_unique($sku, $product_id) {
+  // Look for an ID of a product matching the supplied SKU.
+  if ($match_id = db_query('SELECT product_id FROM {commerce_product} WHERE sku = :sku', array(':sku' => $sku))->fetchField()) {
+    // If this SKU is supposed to be for a new product or a product other than
+    // the one that matched...
+    if (empty($product_id) || $match_id != $product_id) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Checks to ensure a given SKU does not contain invalid characters.
+ *
+ * @param $sku
+ *   The string to validate as a SKU.
+ *
+ * @return
+ *   TRUE or FALSE indicating whether or not the SKU is valid.
+ */
+function commerce_product_validate_sku($sku) {
+  // Do not allow commas in a SKU.
+  if (strpos($sku, ',')) {
+    return FALSE;
+  }
+
+  return TRUE;
+}
+
+/**
+ * Callback for getting product properties.
+ * @see commerce_product_entity_property_info()
+ */
+function commerce_product_get_properties($product, array $options, $name) {
+  switch ($name) {
+    case 'creator':
+      return $product->uid;
+    case 'edit_url':
+      return url('admin/commerce/products/' . $product->product_id . '/edit', $options);
+  }
+}
+
+/**
+ * Callback for setting product properties.
+ * @see commerce_product_entity_property_info()
+ */
+function commerce_product_set_properties($product, $name, $value) {
+  if ($name == 'creator') {
+    $product->uid = $value;
+  }
+}
+
+/**
+ * Returns output for product autocompletes.
+ *
+ * The values returned will be keyed by SKU and appear as such in the textfield,
+ * even though the preview in the autocomplete list shows "SKU: Title".
+ */
+function commerce_product_autocomplete($entity_type, $field_name, $bundle, $string = '') {
+  $field = field_info_field($field_name);
+  $instance = field_info_instance($entity_type, $field_name, $bundle);
+
+  $matches = array();
+
+  // Extract the SKU string from the URL while preserving support for SKUs that
+  // contain slashes. Whereas we previously relied on the $string parameter, its
+  // value was being truncated when any SKUs in the autocomplete widget had a /.
+  // @see http://drupal.org/node/1962144
+  $args = explode('/', request_path());
+
+  if (count($args) <= 5) {
+    drupal_json_output($matches);
+    return;
+  }
+
+  // Trim off leading arguments from other modules such as Locale.
+  $offset = array_search('commerce_product', $args);
+
+  array_splice($args, 0, 5 + $offset);
+  $string = implode('/', $args);
+
+  // The user enters a comma-separated list of tags. We only autocomplete the last tag.
+  $tags_typed = drupal_explode_tags($string);
+  $tag_last = drupal_strtolower(array_pop($tags_typed));
+
+  if (!empty($tag_last)) {
+    $prefix = count($tags_typed) ? implode(', ', $tags_typed) . ', ' : '';
+
+    // Determine the type of autocomplete match to use when searching for products.
+    $match = isset($field['widget']['autocomplete_match']) ? $field['widget']['autocomplete_match'] : 'contains';
+
+    // Get an array of matching products.
+    $products = commerce_product_match_products($field, $instance, $tag_last, $match, array(), 10);
+
+    // Loop through the products and convert them into autocomplete output.
+    foreach ($products as $product_id => $data) {
+      $matches[$prefix . $data['sku']] = $data['rendered'];
+    }
+  }
+
+  drupal_json_output($matches);
+}
+
+/**
+ * Fetches an array of all products matching the given parameters.
+ *
+ * This info is used in various places (allowed values, autocomplete results,
+ * input validation...). Some of them only need the product_ids, others
+ * product_id + titles, others yet product_id + titles + rendered row (for
+ * display in widgets).
+ *
+ * The array we return contains all the potentially needed information,
+ * and lets calling functions use the parts they actually need.
+ *
+ * @param $field
+ *   The field description.
+ * @param $string
+ *   Optional string to filter SKUs and titles on (used by autocomplete).
+ * @param $match
+ *   Operator to match filtered SKUs and titles against, can be any of:
+ *   'contains', 'equals', 'starts_with'
+ * @param $ids
+ *   Optional product ids to lookup (used when $string and $match arguments are
+ *   not given).
+ * @param $limit
+ *   If non-zero, limit the size of the result set.
+ * @param $access_tag
+ *   Boolean indicating whether or not an access control tag should be added to
+ *   the query to find matching product data. Defaults to FALSE.
+ *
+ * @return
+ *   An array of valid products in the form:
+ *   array(
+ *     product_id => array(
+ *       'product_sku' => The product SKU,
+ *       'title' => The product title,
+ *       'rendered' => The text to display in widgets (can be HTML)
+ *     ),
+ *     ...
+ *   )
+ */
+function commerce_product_match_products($field, $instance = NULL, $string = '', $match = 'contains', $ids = array(), $limit = NULL, $access_tag = FALSE) {
+  $results = &drupal_static(__FUNCTION__, array());
+
+  // Create unique id for static cache.
+  $cid = implode(':', array(
+    $field['field_name'],
+    $match,
+    ($string !== '' ? $string : implode('-', $ids)),
+    $limit,
+  ));
+
+  if (!isset($results[$cid])) {
+    $matches = _commerce_product_match_products_standard($instance, $string, $match, $ids, $limit, $access_tag);
+
+    // Store the results.
+    $results[$cid] = !empty($matches) ? $matches : array();
+  }
+
+  return $results[$cid];
+}
+
+/**
+ * Helper function for commerce_product_match_products().
+ *
+ * Returns an array of products matching the specific parameters.
+ */
+function _commerce_product_match_products_standard($instance, $string = '', $match = 'contains', $ids = array(), $limit = NULL, $access_tag = FALSE) {
+  // Build the query object with the necessary fields.
+  $query = db_select('commerce_product', 'cp');
+
+  // Add the access control tag if specified.
+  if ($access_tag) {
+    $query->addTag('commerce_product_access');
+  }
+
+  // Add a global query tag so anyone can alter this query.
+  $query->addTag('commerce_product_match');
+
+  $product_id_alias = $query->addField('cp', 'product_id');
+  $product_sku_alias = $query->addField('cp', 'sku');
+  $product_title_alias = $query->addField('cp', 'title');
+  $product_type_alias = $query->addField('cp', 'type');
+
+  // Add a condition to the query to filter by matching product types.
+  if (!empty($instance['settings']['referenceable_types'])) {
+    $types = array_diff(array_values($instance['settings']['referenceable_types']), array(0, NULL));
+
+    // Only filter by type if some types have been specified.
+    if (!empty($types)) {
+      $query->condition('cp.type', $types, 'IN');
+    }
+  }
+
+  if ($string !== '') {
+    $args = array();
+
+    // Build a where clause matching on either the SKU or title.
+    switch ($match) {
+      case 'contains':
+        $where = '(cp.sku LIKE :sku_match OR cp.title LIKE :title_match)';
+        $args['sku_match'] = '%' . $string . '%';
+        $args['title_match'] = '%' . $string . '%';
+        break;
+
+      case 'starts_with':
+        $where = '(cp.sku LIKE :sku_match OR cp.title LIKE :title_match)';
+        $args['sku_match'] = $string . '%';
+        $args['title_match'] = $string . '%';
+        break;
+
+      case 'equals':
+      default:
+        $where = '(cp.sku = :sku_match OR cp.title = :title_match)';
+        $args['sku_match'] = $string;
+        $args['title_match'] = $string;
+        break;
+    }
+
+    $query->where($where, $args);
+  }
+  elseif ($ids) {
+    // Otherwise add a product_id specific condition if specified.
+    $query->condition($product_id_alias, $ids, 'IN', $ids);
+  }
+
+  // Order the results by SKU, title, and then product type.
+  $query
+    ->orderBy($product_sku_alias)
+    ->orderBy($product_title_alias)
+    ->orderBy($product_type_alias);
+
+  // Add a limit if specified.
+  if ($limit) {
+    $query->range(0, $limit);
+  }
+
+  // Execute the query and build the results array.
+  $result = $query->execute();
+
+  $matches = array();
+
+  foreach ($result->fetchAll() as $product) {
+    $matches[$product->product_id] = array(
+      'sku' => $product->sku,
+      'type' => $product->type,
+      'title' => $product->title,
+      'rendered' => t('@sku: @title', array('@sku' => $product->sku, '@title' => $product->title)),
+    );
+  }
+
+  return $matches;
+}
+
+/**
+ * Access callback: determines access to a product's translation tab.
+ */
+function commerce_product_entity_translation_tab_access($product) {
+  return entity_translation_tab_access('commerce_product', $product);
+}
+
+/**
+ * Returns whether the given product type has support for translations.
+ *
+ * @param $type
+ *   The machine-name of the product type to check for translation support.
+ *
+ * @return
+ *   TRUE or FALSE indicating translation support for the requested type.
+ */
+function commerce_product_entity_translation_supported_type($type) {
+  return variable_get('language_product_type_' . $type, 0) == ENTITY_TRANSLATION_ENABLED;
+}
+
+/**
+ * Sanitizes the product SKU before output.
+ */
+function template_preprocess_commerce_product_sku(&$variables) {
+  $variables['sku'] = check_plain($variables['sku']);
+}
+
+/**
+ * Sanitizes the product title before output.
+ */
+function template_preprocess_commerce_product_title(&$variables) {
+  $variables['title'] = check_plain($variables['title']);
+}
+
+/**
+ * Returns the options list for the product status property.
+ */
+function commerce_product_status_options_list() {
+  return array(
+    0 => t('Disabled'),
+    1 => t('Active'),
+  );
+}
+
+/**
+ * Converts the product status integer to a string before output.
+ */
+function template_preprocess_commerce_product_status(&$variables) {
+  $variables['status'] = empty($variables['status']) ? t('Disabled') : t('Active');
+}

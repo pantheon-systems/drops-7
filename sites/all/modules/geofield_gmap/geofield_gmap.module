@@ -1,0 +1,222 @@
+<?php
+
+
+/**
+ * Implements hook_menu().
+ */
+function geofield_gmap_menu() {
+  $items['admin/config/content/geofield_gmap'] = array(
+    'title' => 'Geofield Gmap',
+    'description' => 'Settings for Geofield Gmap.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('geofield_gmap_admin_settings'),
+    'access arguments' => array('administer geofield_gmap'),
+    'file' => 'geofield_gmap.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+
+/**
+ * Implements hook_field_widget_info_alter().
+ */
+function geofield_gmap_field_widget_info_alter(&$info) {
+  $info['geofield_gmap'] = array(
+    'label' => t('Google Map'),
+    'field types' => array('geofield'),
+    'settings' => array(
+      'map_type' => 'ROADMAP',
+      'confirm_center_marker' => FALSE,
+      'click_to_place_marker' => FALSE,
+    ),
+    'module' => 'geofield_gmap',
+  );
+}
+
+/**
+ * Implements hook_init().
+ */
+function geofield_gmap_init() {
+  drupal_add_js('http://maps.google.com/maps/api/js?sensor=false', array(
+    'type' => 'external',
+    'preprocess' => FALSE,
+  ));
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function geofield_gmap_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $base) {
+  $element = $base;
+
+  $widget = $instance['widget'];
+  $settings = $widget['settings'];
+
+  if ($widget['type'] == 'geofield_gmap') {
+    if (!isset($settings['map_type'])) {
+      $settings['map_type'] = 'ROADMAP';
+    }
+    if (!isset($settings['confirm_center_marker'])) {
+      $settings['confirm_center_marker'] = FALSE;
+    }
+    if (!isset($settings['click_to_place_marker'])) {
+      $settings['click_to_place_marker'] = FALSE;
+    }
+
+    drupal_add_library('system', 'ui.autocomplete');
+
+    $latlon_value = array(
+      'lat' => '',
+      'lon' => '',
+    );
+    if (isset($items[$delta]['lat'])) {
+      $latlon_value['lat'] = floatval($items[$delta]['lat']);
+    }
+    if (isset($items[$delta]['lon'])) {
+      $latlon_value['lon'] = floatval($items[$delta]['lon']);
+    }
+    $element['geom'] = array(
+      '#type' => 'geofield_latlon',
+      '#title' => check_plain($instance['label']),
+      '#description' => t($instance['description']),
+      '#default_value' => $latlon_value,
+      '#required' => $instance['required'],
+      '#geolocation' => (!empty($instance['widget']['settings']['html5_geolocation'])) ? $instance['widget']['settings']['html5_geolocation'] : FALSE,
+    );
+
+    // $element['input_format'] is not a db field, but we use it determine how to parse/calculate values in our widget.
+    $element['input_format'] = array(
+      '#type' => 'value',
+      '#attributes' => array('class' => array('geofield_input_format')),
+      '#value' => GEOFIELD_INPUT_LAT_LON,
+    );
+
+    $element['master_column']['#value'] = 'latlon';
+
+    $element['#gmap_id'] = geofield_gmap_get_id($element);
+    $element['#gmap_map_type'] = $settings['map_type'];
+    $element['#gmap_confirm_center_marker'] = $settings['confirm_center_marker'];
+    $element['#gmap_click_to_place_marker'] = $settings['click_to_place_marker'];
+    $element['#after_build'] = array('geofield_gmap_widget_gmap_afterbuild');
+
+  }
+
+  return $element;
+}
+
+/**
+ * Callback for afterbuild for widget for js addition
+ */
+function geofield_gmap_widget_gmap_afterbuild($element, &$form_state) {
+  $id = $element['#gmap_id'];
+  $gmapid = 'gmap-' . $id;
+
+  $element['geom']['lat']['#prefix'] = '<div class="form-item">';
+  $element['geom']['lat']['#prefix'] .= '<label>' . t("Geocode address") . '</label><input size="64" id="search-' . $id . '" class="form-text form-autocomplete geofield-gmap-search" type="text"/>';
+  $element['geom']['lat']['#prefix'] .= '<div id="' . $gmapid . '" class="geofield-gmap-cnt"></div>';
+  $element['geom']['lat']['#prefix'] .= '<div class="geofield-gmap-buttons">';
+  $element['geom']['lat']['#prefix'] .= '<label>' . t("Drag the marker to narrow the location") . '</label>';
+  $element['geom']['lat']['#prefix'] .= '<button class="geofield-gmap-center" onclick="geofield_gmap_center(\'' . $gmapid . '\'); return false;">' . t('Find marker') . '</button>';
+  $element['geom']['lat']['#prefix'] .= '<button class="geofield-gmap-marker" onclick="geofield_gmap_marker(\'' . $gmapid . '\'); return false;">' . t('Place marker here') . '</button>';
+  $element['geom']['lat']['#prefix'] .= '</div>';
+  $element['geom']['lat']['#prefix'] .= '</div>';
+
+  $js = 'geofield_gmap_initialize({';
+  $js .= 'lat: ' . floatval($element['geom']['lat']['#default_value']) . ', ';
+  $js .= 'lng: ' . floatval($element['geom']['lon']['#default_value']) . ', ';
+  $js .= 'latid: "' . $element['geom']['lat']['#id'] . '", ';
+  $js .= 'lngid: "' . $element['geom']['lon']['#id'] . '", ';
+  $js .= 'searchid: "search-' . $id . '", ';
+  $js .= 'mapid: "' . $gmapid . '", ';
+  $js .= 'widget: true, ';
+  $js .= 'map_type: "' . $element['#gmap_map_type'] . '", ';
+  $js .= 'confirm_center_marker: ' . ($element['#gmap_confirm_center_marker'] ? 'true' : 'false') . ', ';
+  $js .= 'click_to_place_marker: ' . ($element['#gmap_click_to_place_marker'] ? 'true' : 'false') . ', ';
+  $js .= '});';
+
+  //$js = 'jQuery(document).ready(function() { ' . $js . ' });';
+  // drupal_add_js($js, array('type' => 'inline', 'scope'=>'footer'));
+  // drupal_add_js does not work.
+
+  $element['#attached']['js'] = array(
+    $js => array(
+      'type' => 'inline',
+      'scope' => 'footer',
+      'preprocess' => FALSE,
+    ),
+  );
+
+  return $element;
+}
+
+function geofield_gmap_widget_gmap_ajax_callback($element, &$form_state) {
+
+}
+
+function geofield_gmap_get_id($element, $type = 'id') {
+  switch ($type) {
+    default:
+      return strtr($element['#field_name'] . '-' . $element['#language'] . '-' . $element['#delta'], '_', '-');
+  }
+}
+
+/**
+ * Implements hook_field_widget_settings_form().
+ */
+function geofield_gmap_field_widget_settings_form($field, $instance) {
+  $widget = $instance['widget'];
+  $settings = $widget['settings'];
+  if (!isset($settings['map_type'])) {
+    $settings['map_type'] = 'ROADMAP';
+  }
+  if (!isset($settings['confirm_center_marker'])) {
+    $settings['confirm_center_marker'] = FALSE;
+  }
+  if (!isset($settings['click_to_place_marker'])) {
+    $settings['click_to_place_marker'] = FALSE;
+  }
+
+  $form = array();
+
+  if ($widget['type'] == 'geofield_gmap') {
+
+    $form['map_type'] = array(
+      '#type' => 'select',
+      '#title' => t('Map type'),
+      '#default_value' => $settings['map_type'],
+      '#options' => array(
+        'ROADMAP' => t('Roadmap'),
+        'SATELITE' => t('Satelite'),
+        'HYBRID' => t('Hybrid'),
+        'TERRAIN' => t('Terrain'),
+      ),
+    );
+
+    $form['confirm_center_marker'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Confirm center marker'),
+      '#default_value' => $settings['confirm_center_marker'],
+    );
+
+    $form['click_to_place_marker'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Click to place marker'),
+      '#default_value' => $settings['click_to_place_marker'],
+    );
+
+  }
+  return $form;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function geofield_gmap_permission() {
+  return array(
+    'administer geofield_gmap' => array(
+      'title' => t('Administer Geofield Gmap'),
+      'description' => t('Administer Geofield Gmap.'),
+    ),
+  );
+}

@@ -1,0 +1,299 @@
+<?php // $Id$
+
+/**
+ * @file module for adding a link to a block title
+*/
+
+// Variable Table Prefex
+define('BLOCK_TITLELINK_VARIABLE_PREFIX', 'block_titlelink_');
+
+/**
+ * Implementation of hook_form_alter
+*/
+function block_titlelink_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'block_admin_configure' || $form_id == 'block_add_block_form') {
+    $block = new stdClass();
+    $block->module = $form['module']['#value'];
+    $block->delta = $form['delta']['#value'];
+    $titlelink_data = _block_titlelink_get_data($block);
+    $url = (isset($titlelink_data['url'])) ? $titlelink_data['url'] : NULL;
+    $title = (isset($titlelink_data['title'])) ? check_plain($titlelink_data['title']) : NULL;
+    $display_link = (isset($titlelink_data['display'])) ? $titlelink_data['display'] : TRUE;
+    //Define Titlelink form elements
+    $form['settings']['block_titlelink'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Block Title Link Settings'),
+      '#collapsible' => TRUE,
+      '#weight' => 0,
+      '#tree' => TRUE,
+    );
+    $form['settings']['block_titlelink']['title_link'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title Path'),
+      '#default_value' => $url,
+      '#description' => t('URL path of Block Title. Tokens are supported.'),
+    );
+    $form['settings']['block_titlelink']['title_link_title'] = array(
+      '#type' => 'textfield',
+      '#title' => t('Title Attribute'),
+      '#description' => t('Value for the &lt;a&gt; title attribute.'),
+      '#default_value' => $title,
+    );
+    $form['settings']['block_titlelink']['display_link'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Display Link'),
+      '#description' => t('Select this option if title should render as a link. If deselected, the title path value is stored within the block object as $block->title_link but is not rendered. This is useful if you wish to use the link elsewhere in the block template (ex: as an icon).'),
+      '#default_value' => $display_link,
+    );
+    //Provide Token Help
+    $form['settings']['block_titlelink']['token_help'] = array(
+      '#theme' => 'token_tree',
+      '#token_types' => array('user'),
+    );
+    //Assign weight to block title so it appears above link
+    if (!isset($form['block_settings']['#weight'])) {
+      $form['block_settings']['#weight'] = -1;
+    }
+    $form['#validate'][] = 'block_titlelink_form_validate';
+    $form['#submit'][] = 'block_titlelink_form_submit';
+  }
+}
+
+/**
+ * Implementation of hook_validate()
+*/
+function block_titlelink_form_validate(&$elements, &$form_state, $form_id = NULL) {
+  $title_link = trim($form_state['values']['block_titlelink']['title_link']);
+  $valid = _block_titlelink_validate_url($title_link);
+  if(!empty($title_link) && !$valid) {
+    form_error($elements['settings']['block_titlelink']['title_link'], t('The title path appears to contain an invalid URL.'));
+  }
+}
+
+/**
+ * Implementation of hook_submit()
+*/
+function block_titlelink_form_submit($form, &$form_state) {
+  $block = new stdClass();
+  $block->module = $form['module']['#value'];
+  $block->delta = $form_state['values']['delta'];
+  $url = trim($form_state['values']['block_titlelink']['title_link']);
+  $data = array(
+    'url' => $url,
+    'display' => $form_state['values']['block_titlelink']['display_link'],
+    'title' => $form_state['values']['block_titlelink']['title_link_title'],
+  );
+  if(empty($url)) {
+    _block_titlelink_delete_data($block);
+  }
+  else {
+    _block_titlelink_save_data($block, $data);
+  }
+}
+
+/**
+ * Implementation of hook_preprocess_block
+*/
+function block_titlelink_preprocess_block(&$vars, $hook) {
+  global $user;
+  if ($hook == 'block') {
+    $data = _block_titlelink_get_data($vars['block']);
+    if($data) {
+      $vars['block']->title_link = (isset($data['url'])) ? trim($data['url']) : NULL;
+      $vars['block']->title_link_title = (isset($data['title'])) ? check_plain($data['title']) : NULL;
+      // Add Tokens
+      if(function_exists('token_replace')) {
+        $token_params = array(
+          'user' => $user,
+        );
+        $vars['block']->title_link = token_replace($vars['block']->title_link, $token_params);
+      }
+      // PHP Eval
+      if (module_exists('php')) {
+        $vars['block']->title_link = php_eval($vars['block']->title_link);
+      }
+      $display = (isset($data['display'])) ? $data['display'] : TRUE;
+      if (!empty($vars['block']->title_link) && $display) {
+        $attributes = array(
+          'attributes' => array(
+            'class' => array('block-title-link'),
+          ),
+          'html' => TRUE,
+        );
+        if(!empty($vars['block']->title_link_title)) {
+          $attributes['attributes']['title'] = $vars['block']->title_link_title;
+        }
+        $vars['block']->subject = l(t($vars['block']->subject), $vars['block']->title_link, $attributes);
+      }
+    }
+  }
+}
+
+/**
+ * Function to return a title link of a block
+ * @param object $block - Block to search by
+ * @return string Title Link
+*/
+function _block_titlelink_get_link($block) {
+  if (!isset($block->module) && !isset($block->delta)) {
+    return FALSE;
+  }
+  $varname = BLOCK_TITLELINK_VARIABLE_PREFIX . $block->module .'_'. $block->delta;
+  $data = variable_get($varname, NULL);
+  if(!empty($data['url'])) {
+    return $data['url'];
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Function to return the data associated with a block_titlelink
+ * @param object $block - Block to search by
+ * @return array containing display_link and title_link variable.
+ *
+*/
+function _block_titlelink_get_data($block) {
+  if (!isset($block->module) && !isset($block->delta)) {
+    return FALSE;
+  }
+  $varname = BLOCK_TITLELINK_VARIABLE_PREFIX . $block->module .'_'. $block->delta;
+  $result = variable_get($varname, NULL);
+  //Older versions of this module stored variable as string, return as array
+  if(is_string($result)) {
+    return array('url' => $result, 'display' => TRUE);
+  }
+  elseif(is_array($result)) {
+    return $result;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Function to save titlelink data
+ * @param object - Block object
+ * @param array - Array containing data
+ * $data['url'] - String, link to save
+ * $data['display'] - Boolean, display title as link
+*/
+function _block_titlelink_save_data($block, $data) {
+  if (empty($block->module) || empty($block->delta)) {
+    return FALSE;
+  }
+  $varname = BLOCK_TITLELINK_VARIABLE_PREFIX . $block->module .'_'. $block->delta;
+  variable_set($varname, $data);
+}
+
+/**
+ * Function to delete block data
+ * @param object - Block object
+*/
+function _block_titlelink_delete_data($block) {
+  if (!isset($block->module) && !isset($block->delta)) {
+    return FALSE;
+  }
+  $varname = BLOCK_TITLELINK_VARIABLE_PREFIX . $block->module .'_'. $block->delta;
+  variable_del($varname);
+}
+
+/**
+ * Heisted the url validation from the link field module.
+*/
+function _block_titlelink_validate_url($url) {
+  $text = $url;
+  // These constants were heisted from the field_module.
+  // Check if they exist
+  if(!defined('LINK_EXTERNAL')) {
+    define('LINK_EXTERNAL', 'external');
+  }
+  if(!defined('LINK_INTERNAL')) {
+    define('LINK_INTERNAL', 'internal');
+  }
+  if(!defined('LINK_FRONT')) {
+    define('LINK_FRONT', 'front');
+  }
+  if(!defined('LINK_EMAIL')) {
+    define('LINK_EMAIL', 'email');
+  }
+  if(!defined('LINK_NEWS')) {
+    define('LINK_NEWS', 'news');
+  }
+  if(!defined('LINK_DOMAINS')) {
+    define('LINK_DOMAINS', 'aero|arpa|asia|biz|com|cat|coop|edu|gov|info|int|jobs|mil|museum|name|nato|net|org|pro|travel|mobi|local');
+  }
+
+  $LINK_ICHARS_DOMAIN = (string) html_entity_decode(implode("", array(
+    "&#x00E6;", // æ
+    "&#x00C6;", // Æ
+    "&#x00F8;", // ø
+    "&#x00D8;", // Ø
+    "&#x00E5;", // å
+    "&#x00C5;", // Å
+    "&#x00E4;", // ä
+    "&#x00C4;", // Ä
+    "&#x00F6;", // ö
+    "&#x00D6;", // Ö
+    "&#x00FC;", // ü
+    "&#x00DC;", // Ü
+    "&#x00D1;", // Ñ
+    "&#x00F1;", // ñ
+  )), ENT_QUOTES, 'UTF-8');
+
+  $LINK_ICHARS = $LINK_ICHARS_DOMAIN . (string) html_entity_decode(implode("", array(
+    "&#x00DF;", // ß
+  )), ENT_QUOTES, 'UTF-8');
+  $allowed_protocols = variable_get('filter_allowed_protocols', array('http', 'https', 'ftp', 'news', 'nntp', 'telnet', 'mailto', 'irc', 'ssh', 'sftp', 'webcal'));
+
+  $protocol = '(('. implode("|", $allowed_protocols) .'):\/\/)';
+  $authentication = '(([a-z0-9%' . $LINK_ICHARS . ']+(:[a-z0-9%'. $LINK_ICHARS . '!]*)?)?@)';
+  $domain = '(([a-z0-9' . $LINK_ICHARS_DOMAIN . ']([a-z0-9'. $LINK_ICHARS_DOMAIN . '\-_\[\]])*)(\.(([a-z0-9' . $LINK_ICHARS_DOMAIN . '\-_\[\]])+\.)*('. LINK_DOMAINS .'|[a-z]{2}))?)';
+  $ipv4 = '([0-9]{1,3}(\.[0-9]{1,3}){3})';
+  $ipv6 = '([0-9a-fA-F]{1,4}(\:[0-9a-fA-F]{1,4}){7})';
+  $port = '(:([0-9]{1,5}))';
+
+  // Pattern specific to external links.
+  $external_pattern = '/^'. $protocol .'?'. $authentication .'?('. $domain .'|'. $ipv4 .'|'. $ipv6 .' |localhost)'. $port .'?';
+
+  // Pattern specific to internal links.
+  $internal_pattern = "/^([a-z0-9". $LINK_ICHARS ."_\-+\[\]]+)";
+  $internal_pattern_file = "/^([a-z0-9". $LINK_ICHARS ."_\-+\[\]\.]+)$/i";
+
+  $directories = "(\/[a-z0-9". $LINK_ICHARS ."_\-\.~+%=&,$'!():;*@\[\]]*)*";
+  // Yes, four backslashes == a single backslash.
+  $query = "(\/?\?([?a-z0-9". $LINK_ICHARS ."+_|\-\.\/\\\\%=&,$'():;*@\[\]{} ]*))";
+  $anchor = "(#[a-z0-9". $LINK_ICHARS ."_\-\.~+%=&,$'():;*@\[\]\/\?]*)";
+
+  // The rest of the path for a standard URL.
+  $end = $directories .'?'. $query .'?'. $anchor .'?'.'$/i';
+
+  $message_id = '[^@].*@'. $domain;
+  $newsgroup_name = '([0-9a-z+-]*\.)*[0-9a-z+-]*';
+  $news_pattern = '/^news:('. $newsgroup_name .'|'. $message_id .')$/i';
+
+  $user = '[a-zA-Z0-9'. $LINK_ICHARS .'_\-\.\+\^!#\$%&*+\/\=\?\`\|\{\}~\'\[\]]+';
+  $email_pattern = '/^mailto:'. $user .'@'.'('. $domain .'|'. $ipv4 .'|'. $ipv6 .'|localhost)'. $query .'?$/';
+
+  if (strpos($text, '<front>') === 0) {
+    return LINK_FRONT;
+  }
+  if (in_array('mailto', $allowed_protocols) && preg_match($email_pattern, $text)) {
+    return LINK_EMAIL;
+  }
+  if (in_array('news', $allowed_protocols) && preg_match($news_pattern, $text)) {
+    return LINK_NEWS;
+  }
+  if (preg_match($internal_pattern . $end, $text)) {
+    return LINK_INTERNAL;
+  }
+  if (preg_match($external_pattern . $end, $text)) {
+    return LINK_EXTERNAL;
+  }
+  if (preg_match($internal_pattern_file, $text)) {
+    return LINK_INTERNAL;
+  }
+
+  return FALSE;
+}

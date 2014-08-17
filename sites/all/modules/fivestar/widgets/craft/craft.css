@@ -1,0 +1,153 @@
+/**
+ * Settings for all stars.
+ */
+.fivestar-craft div.fivestar-widget-static .star,
+.fivestar-craft div.fivestar-widget .star,
+.fivestar-craft div.fivestar-widget div.on a {
+  height: 31px;
+}
+
+.fivestar-craft div.fivestar-widget .star,
+.fivestar-craft div.fivestar-widget .star a,
+.fivestar-craft div.fivestar-widget-static .star,
+.fivestar-craft div.fivestar-widget-static .star span.on {
+  background: no-repeat 0 -62px;
+}
+
+/**
+ * Unique default setting for each star.
+ */
+.fivestar-craft div.fivestar-widget .star-1,
+.fivestar-craft div.fivestar-widget .star-1 a,
+.fivestar-craft div.fivestar-widget-static .star-1,
+.fivestar-craft div.fivestar-widget-static .star-1 span.on {
+  width: 8px;
+  background-image: url(craft-01.png);
+}
+.fivestar-craft div.fivestar-widget .star-2,
+.fivestar-craft div.fivestar-widget .star-2 a,
+.fivestar-craft div.fivestar-widget-static .star-2,
+.fivestar-craft div.fivestar-widget-static .star-2 span.on {
+  width: 9px;
+  background-image: url(craft-02.png);
+}
+.fivestar-craft div.fivestar-widget .star-3,
+.fivestar-craft div.fivestar-widget .star-3 a,
+.fivestar-craft div.fivestar-widget-static .star-3,
+.fivestar-craft div.fivestar-widget-static .star-3 span.on {
+  width: 9px;
+  background-image: url(craft-03.png);
+}
+.fivestar-craft div.fivestar-widget .star-4,
+.fivestar-craft div.fivestar-widget .star-4 a,
+.fivestar-craft div.fivestar-widget-static .star-4,
+.fivestar-craft div.fivestar-widget-static .star-4 span.on {
+  width: 10px;
+  background-image: url(craft-04.png);
+}
+.fivestar-craft div.fivestar-widget .star-5,
+.fivestar-craft div.fivestar-widget .star-5 a,
+.fivestar-craft div.fivestar-widget-static .star-5,
+.fivestar-craft div.fivestar-widget-static .star-5 span.on {
+  width: 10px;
+  background-image: url(craft-05.png);
+}
+.fivestar-craft div.fivestar-widget .star-6,
+.fivestar-craft div.fivestar-widget .star-6 a,
+.fivestar-craft div.fivestar-widget-static .star-6,
+.fivestar-craft div.fivestar-widget-static .star-6 span.on {
+  width: 12px;
+  background-image: url(craft-06.png);
+}
+.fivestar-craft div.fivestar-widget .star-7,
+.fivestar-craft div.fivestar-widget .star-7 a,
+.fivestar-craft div.fivestar-widget-static .star-7,
+.fivestar-craft div.fivestar-widget-static .star-7 span.on {
+  width: 15px;
+  background-image: url(craft-07.png);
+}
+.fivestar-craft div.fivestar-widget .star-8,
+.fivestar-craft div.fivestar-widget .star-8 a,
+.fivestar-craft div.fivestar-widget-static .star-8,
+.fivestar-craft div.fivestar-widget-static .star-8 span.on {
+  width: 16px;
+  background-image: url(craft-08.png);
+}
+.fivestar-craft div.fivestar-widget .star-9,
+.fivestar-craft div.fivestar-widget .star-9 a,
+.fivestar-craft div.fivestar-widget-static .star-9,
+.fivestar-craft div.fivestar-widget-static .star-9 span.on {
+  width: 22px;
+  background-image: url(craft-09.png);
+}
+.fivestar-craft div.fivestar-widget .star-10,
+.fivestar-craft div.fivestar-widget .star-10 a,
+.fivestar-craft div.fivestar-widget-static .star-10,
+.fivestar-craft div.fivestar-widget-static .star-10 span.on {
+  width: 27px;
+  background-image: url(craft-10.png);
+}
+
+/**
+ * Some specific settings for the 5-star count version.
+ */
+.fivestar-craft div.fivestar-widget-5 .star-2,
+.fivestar-craft div.fivestar-widget-5 .star-2 a,
+.fivestar-craft div.fivestar-widget-static-5 .star-2,
+.fivestar-craft div.fivestar-widget-static-5 .star-2 span.on {
+  width: 9px;
+  background-image: url(craft-03.png);
+}
+.fivestar-craft div.fivestar-widget-5 .star-3,
+.fivestar-craft div.fivestar-widget-5 .star-3 a,
+.fivestar-craft div.fivestar-widget-static-5 .star-3,
+.fivestar-craft div.fivestar-widget-static-5 .star-3 span.on {
+  width: 15px;
+  background-image: url(craft-07.png);
+}
+.fivestar-craft div.fivestar-widget-5 .star-4,
+.fivestar-craft div.fivestar-widget-5 .star-4 a,
+.fivestar-craft div.fivestar-widget-static-5 .star-4,
+.fivestar-craft div.fivestar-widget-static-5 .star-4 span.on {
+  width: 16px;
+  background-image: url(craft-08.png);
+}
+.fivestar-craft div.fivestar-widget-5 .star-5,
+.fivestar-craft div.fivestar-widget-5 .star-5 a,
+.fivestar-craft div.fivestar-widget-static-5 .star-5,
+.fivestar-craft div.fivestar-widget-static-5 .star-5 span.on {
+  width: 27px;
+  background-image: url(craft-10.png);
+}
+
+
+/**
+ * Dynamic rollovers.
+ */
+.fivestar-craft div.fivestar-widget-static .star span.on,
+.fivestar-craft div.fivestar-widget-static .star span.on a,
+.fivestar-craft div.fivestar-widget div.on a {
+  background-position: 0 0;
+}
+.fivestar-craft div.fivestar-widget div.hover a,
+div.rating div a:hover {
+  background-position: 0 -31px;
+}
+.fivestar-craft div.fivestar-widget-static .star span.off {
+  background-position: 0 -62px;
+}
+
+/**
+ * Cancel button.
+ */
+.fivestar-craft div.fivestar-widget .cancel,
+.fivestar-craft div.fivestar-widget .cancel a {
+  width: 9px;
+  height: 31px;
+  background: url(craft-cancel.png) no-repeat 0 0;
+}
+.fivestar-craft div.fivestar-widget .cancel a:hover {
+  width: 9px;
+  height: 31px;
+  background-position: 0 -31px;
+}

@@ -1,0 +1,267 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_customer_schema() {
+  $schema = array();
+
+  $schema['commerce_customer_profile'] = array(
+    'description' => 'The base table for customer profiles.',
+    'fields' => array(
+      'profile_id' => array(
+        'description' => 'The primary identifier for a customer profile.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'revision_id' => array(
+        'description' => 'The current {commerce_customer_profile_revision}.revision_id version identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+      ),
+      'type' => array(
+        'description' => 'The {commerce_customer_profile_type}.type of this profile.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'uid' => array(
+        'description' => 'The {users}.uid that this profile belongs to.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'Boolean indicating whether the profile is active or not.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the profile was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the profile was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('profile_id'),
+    'unique keys' => array(
+      'revision_id' => array('revision_id'),
+    ),
+    'indexes' => array(
+      'uid' => array('uid'),
+      'customer_profile_type' => array('type'),
+      'uid_by_type' => array('uid', 'type'),
+    ),
+    'foreign keys' => array(
+      'customer_profile_revision' => array(
+        'table' => 'commerce_customer_profile_revision',
+        'columns'=> array('revision_id' => 'revision_id'),
+      ),
+      'owner' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  $schema['commerce_customer_profile_revision'] = array(
+    'description' => 'Saves information about each saved revision of a {commerce_customer_profile}.',
+    'fields' => array(
+      'profile_id' => array(
+        'description' => 'The {commerce_customer_profile}.customer_id of the profile this revision belongs to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'revision_id' => array(
+        'description' => 'The primary identifier for this revision.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'revision_uid' => array(
+        'description' => 'The {users}.uid that created this profile at this revision.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'Boolean indicating whether the profile is active or not.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'log' => array(
+        'description' => 'The log entry explaining the changes in this version.',
+        'type' => 'text',
+        'not null' => TRUE,
+        'size' => 'big',
+      ),
+      'revision_timestamp' => array(
+        'description' => 'The Unix timestamp when this revision was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('revision_id'),
+    'indexes' => array(
+      'profile_id' => array('profile_id'),
+    ),
+    'foreign keys' => array(
+      'customer_profile' => array(
+        'table' => 'commerce_customer_profile',
+        'columns'=> array('profile_id' => 'profile_id'),
+      ),
+      'creator' => array(
+        'table' => 'users',
+        'columns' => array('uid' => 'uid'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_field_schema().
+ */
+function commerce_customer_field_schema($field) {
+  if ($field['type'] == 'commerce_customer_profile_reference') {
+    return array(
+      'columns' => array(
+        'profile_id' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ),
+      ),
+      'indexes' => array(
+        'profile_id' => array('profile_id'),
+      ),
+      'foreign keys' => array(
+        'profile_id' => array(
+          'table' => 'commerce_customer_profile',
+          'columns' => array('profile_id' => 'profile_id'),
+        ),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_customer_uninstall() {
+  module_load_include('module', 'commerce');
+
+  // Delete any field instance attached to a customer profile type.
+  commerce_delete_instances('commerce_customer_profile');
+
+  // Delete any customer profile reference fields.
+  commerce_delete_fields('commerce_customer_profile_reference');
+}
+
+/**
+ * Update permission names for customer profile entity management.
+ */
+function commerce_customer_update_7000() {
+  // Load utility functions.
+  module_load_install('commerce');
+
+  $map = array(
+    'administer customer profiles' => 'administer commerce_customer_profile entities',
+    'access customer profiles' => 'view any commerce_customer_profile entity',
+  );
+  $entity_info = entity_get_info('commerce_product');
+  foreach ($entity_info['bundles'] as $bundle_name => $bundle_info) {
+    $map['create ' . $bundle_name . ' customer profiles'] = 'create commerce_customer_profile entities of bundle ' . $bundle_name;
+    $map['edit any ' . $bundle_name . ' customer profile'] = 'edit any commerce_customer_profile entity of bundle ' . $bundle_name;
+    $map['edit own ' . $bundle_name . ' customer profiles'] = 'edit own commerce_customer_profile entities of bundle ' . $bundle_name;
+  }
+
+  commerce_update_rename_permissions($map);
+
+  return t('Role and custom View permissions updated for order entity management. Access checks in modules and permissions on default Views must be updated manually.');
+}
+
+/**
+ * Add an index to the commerce_customer_profile_revision table on profile_id.
+ */
+function commerce_customer_update_7100() {
+  if (db_index_exists('commerce_customer_profile_revision', 'profile_id')) {
+    db_drop_index('commerce_customer_profile_revision', 'profile_id');
+  }
+
+  db_add_index('commerce_customer_profile_revision', 'profile_id', array('profile_id'));
+}
+
+/**
+ * Add indexes to the commerce_customer_profile table on uid, type, and both together.
+ */
+function commerce_customer_update_7101() {
+  if (db_index_exists('commerce_customer_profile', 'uid')) {
+    db_drop_index('commerce_customer_profile', 'uid');
+  }
+
+  if (db_index_exists('commerce_customer_profile', 'type')) {
+    db_drop_index('commerce_customer_profile', 'type');
+  }
+
+  if (db_index_exists('commerce_customer_profile', 'customer_profile_type')) {
+    db_drop_index('commerce_customer_profile', 'type');
+  }
+
+  if (db_index_exists('commerce_customer_profile', 'idx_type_uid')) {
+    db_drop_index('commerce_customer_profile', 'idx_type_uid');
+  }
+
+  if (db_index_exists('commerce_customer_profile', 'uid_by_type')) {
+    db_drop_index('commerce_customer_profile', 'uid_by_type');
+  }
+
+  db_add_index('commerce_customer_profile', 'uid', array('uid'));
+  db_add_index('commerce_customer_profile', 'customer_profile_type', array('type'));
+  db_add_index('commerce_customer_profile', 'uid_by_type', array('uid', 'type'));
+
+  return t('Database indexes added to the uid and type columns of the commerce_customer_profile table.');
+}
+
+/**
+ * Allow NULL values for revision_id on {commerce_customer} to avoid locking issues.
+ */
+function commerce_customer_update_7102() {
+  db_change_field('commerce_customer_profile', 'revision_id', 'revision_id', array(
+    'description' => 'The current {commerce_customer_profile_revision}.revision_id version identifier.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => FALSE,
+  ));
+
+  return t('Schema for the commerce_customer_profile table has been updated.');
+}

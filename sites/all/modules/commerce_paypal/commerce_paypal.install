@@ -1,0 +1,142 @@
+<?php
+
+/**
+ * @file
+ * Installs the tables required by Commerce PayPal.
+ */
+
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_paypal_schema() {
+  $schema = array();
+
+  $schema['commerce_paypal_ipn'] = array(
+    'description' => 'Stores processed IPNs.',
+    'fields' => array(
+      'ipn_id' => array(
+        'description' => 'Serial numeric ID of the IPN in the local database.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'txn_id' => array(
+        'description' => 'The PayPal transaction ID.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'txn_type' => array(
+        'description' => 'The PayPal transaction type.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'receiver_email' => array(
+        'description' => 'The e-mail of the payment receiever.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'payer_email' => array(
+        'description' => 'The e-mail of the payer.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'order_id' => array(
+        'description' => 'The order ID the payment belongs to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'transaction_id' => array(
+        'description' => 'The payment transaction ID the payment belongs to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'mc_gross' => array(
+        'description' => 'The gross payment amount.',
+        'type' => 'numeric',
+        'size' => 'normal',
+        'precision' => 10,
+        'scale' => 2,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'mc_currency' => array(
+        'description' => 'The currency code of the payment.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'mc_fee' => array(
+        'description' => 'The amount of fees collected by PayPal for this payment.',
+        'type' => 'numeric',
+        'size' => 'normal',
+        'precision' => 10,
+        'scale' => 2,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'payment_status' => array(
+        'description' => 'The status of the payment at PayPal.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'payment_type' => array(
+        'description' => 'The type of the payment.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the IPN was received.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the IPN was last updated.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'test_ipn' => array(
+        'description' => 'Boolean indicating whether or not this was a test IPN sent by the Sandbox.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('ipn_id'),
+    'foreign keys' => array(
+      'order_id' => array(
+        'table' => 'commerce_order',
+        'columns'=> array('order_id' => 'order_id'),
+      ),
+      'transaction_id' => array(
+        'table' => 'commerce_payment_transaction',
+        'columns'=> array('payment_id' => 'payment_id'),
+      ),
+    ),
+    'indexes' => array(
+      'txn_id' => array('txn_id'),
+    ),
+  );
+
+  return $schema;
+}

@@ -1,0 +1,249 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall hooks for IP Geolocation Views & Maps.
+ */
+
+/**
+ * Implments hook_enable().
+ */
+function ip_geoloc_enable() {
+  drupal_set_message(t('IP Geolocation Views & Maps is now enabled. Please note that some of the canned Views that come with this module require the <a target="project_page" href="!views_php">Views PHP</a> module. The "Refine your location" block requires <a target="project_page" href="!geocoder">Geocoder</a>. <br/>Modules <a target="project_page" href="!session_cache">Session Cache API</a> and <a target="project_page" href="!js">High-performance JS Callback Handler</a> are optional and recommended.', array(
+    '!views_php' => url('http://drupal.org/project/views_php'),
+    '!geocoder' => url('http://drupal.org/project/geocoder'),
+    '!session_cache' => url('http://drupal.org/project/session_cache'),
+    '!js' => url('http://drupal.org/project/js'),
+  )));
+}
+
+/**
+ * Implements hook_requirements().
+ *
+ * $phase typically is one of 'install', 'runtime', 'update'.
+ */
+function ip_geoloc_requirements($phase) {
+
+  $requirements = array();
+  // Avoid 'undefined function: ip_geoloc_get_css_library_path' during 'install'
+  // and some warnings not relevant while executing an 'update'.
+  if ($phase != 'runtime') {
+    return $requirements;
+  }
+  $t = get_t();
+
+  $geolocation_methods = array();
+  if (variable_get('ip_geoloc_google_to_reverse_geocode', TRUE)) {
+    $geolocation_methods[] = $t('Google Maps reverse-geocode');
+  }
+  if (variable_get('ip_geoloc_smart_ip_as_backup', TRUE)) {
+    if (module_exists('smart_ip')) {
+      $geolocation_methods[] = 'Smart IP';
+    }
+    else {
+      $requirements['ip_geoloc_lbs']['severity'] = REQUIREMENT_WARNING;
+      $requirements['ip_geoloc_lbs']['description'] = $t('Smart IP is configured as a backup in case the Google Maps reverse-geocode fails. However the Smart IP module is not enabled.');
+    }
+  }
+  elseif (module_exists('geoip')) {
+    $geolocation_methods[] = 'GeoIP API';
+  }
+  $geolocation_methods = array_merge($geolocation_methods, module_implements('get_ip_geolocation_alter'));
+
+  $requirements['ip_geoloc_lbs']['title'] = $t('IP Geolocation Views & Maps data collection methods employed');
+  $requirements['ip_geoloc_lbs']['value'] = implode(', ', $geolocation_methods);
+  if (empty($geolocation_methods)) {
+    $warning = $t('You currently have no data collection methods enabled. Therefore no new address information can be added to the IP geolocation database.');
+    if (empty($requirements['ip_geoloc']['description'])) {
+      $requirements['ip_geoloc_lbs']['severity'] = REQUIREMENT_WARNING;
+      $requirements['ip_geoloc_lbs']['description'] = $warning;
+    }
+    else {
+      $requirements['ip_geoloc_lbs']['description'] .= ' ' . $warning;
+    }
+  }
+  $css_file = FALSE;
+  $requirements['ip_geoloc_font_awesome']['title'] = $t('IP Geolocation Views & Maps <em>Font Awesome</em> extension');
+  if ($css_path = ip_geoloc_get_ccs_library_path('font-awesome')) {
+    $css_file = "$css_path/font-awesome.min.css";
+  }
+  if (file_exists($css_file)) {
+    $requirements['ip_geoloc_font_awesome']['value'] = $t('Font library installed at %css_file', array('%css_file' => $css_file));
+    $requirements['ip_geoloc_font_awesome']['severity'] = REQUIREMENT_OK;
+  }
+  else {
+    $s1 = $t('%dir found, but required .css file not present: %file', array(
+      '%dir' => $css_path, '%file' => $css_file)
+    );
+    $s2 = $t('The optional <em>font-awesome</em> library directory was not found, so you will not be able to superimpose any Font Awesome symbols on top of your markers. See the <a href="@README">README</a> for instructions on downloading the Font Awesome library.', array(
+      '@README' => url(drupal_get_path('module', 'ip_geoloc') . '/README.txt'))
+    );
+    $requirements['ip_geoloc_font_awesome']['value'] = $css_path ? $s1 : $s2;
+    $requirements['ip_geoloc_font_awesome']['severity'] = REQUIREMENT_WARNING;
+  }
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ */
+function ip_geoloc_install() {
+  // Set high weight so our implementation of hook init comes last.
+  db_update('system')
+    ->fields(array('weight' => 10))
+    ->condition('name', 'ip_geoloc')
+    ->execute();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ip_geoloc_uninstall() {
+  // Delete all ip_geoloc_* variables at once.
+  db_query("DELETE FROM {variable} WHERE name LIKE 'ip_geoloc_%%'");
+}
+
+/**
+ * Implements hook_schema().
+ *
+ * Smart IP module provides:
+ *  IP address
+ *  Latitude/Longitude
+ *  Country
+ *  Country Code
+ *  Region
+ *  Region Code (usually empty for Australia)
+ *  City
+ *  ZIP (which we store under Postal Code)
+ *
+ * GeoIP City provides:
+ *  TBA
+ *
+ * Google provides:
+ *  TBA
+ *
+ * Note: some of the varchar should be varbinary, see drupal.org/node/1793674
+ */
+function ip_geoloc_schema() {
+  $schema['ip_geoloc'] = array(
+    'description' => 'Store visitor IP addresses and geolocation information',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Unique id',
+        'type'        => 'serial',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'ip_address' => array(
+        'description' => 'IP address',
+        'type'        => 'varchar',
+        // Support IPv6 as well as standard IPv4 addresses, e.g. 
+        // 2001:0db8:0000:0000:0000:ff00:0042:8329
+        // http://en.wikipedia.org/wiki/IPv6
+        'length'      => '64',
+        'not null'    => TRUE,
+      ),
+      'latitude' => array(
+        'description' => 'Latitude',
+        'type'        => 'float',
+        'size'        => 'big',
+        'not null'    => FALSE,
+      ),
+      'longitude' => array(
+        'description' => 'Longitude',
+        'type'        => 'float',
+        'size'        => 'big',
+        'not null'    => FALSE,
+      ),
+      'country' => array(
+        'description' => 'Country',
+        'type'        => 'varchar',
+        'length'      => 64,
+        'not null'    => FALSE,
+      ),
+      'country_code' => array(
+        'description' => 'ISO 3166 2-Character Country Code',
+        'type'        => 'varchar',
+        'length'      => 3,
+        'not null'    => FALSE,
+      ),
+      'region' => array(
+        'description' => 'Region',
+        'type'        => 'varchar',
+        'length'      => 64,
+        'not null'    => FALSE,
+      ),
+      'region_code' => array(
+        'description' => '2-Character Region Code',
+        'type'        => 'varchar',
+        'length'      => 3,
+        'not null'    => FALSE,
+      ),
+      'city' => array(
+        'description' => 'City',
+        'type'        => 'varchar',
+        'length'      => 64,
+        'not null'    => FALSE,
+      ),
+      'postal_code' => array(
+        'description' => 'Post code',
+        'type'        => 'varchar',
+        'length'      => 12,
+        'not null'    => FALSE,
+      ),
+      'locality' => array(
+        'description' => 'Suburb',
+        'type'        => 'varchar',
+        'length'      => 64,
+        'not null'    => FALSE,
+      ),
+      'route' => array(
+        'description' => 'Street',
+        'type'        => 'varchar',
+        'length'      => 64,
+        'not null'    => FALSE,
+      ),
+      'street_number' => array(
+        'description' => 'Street number',
+        'type'        => 'varchar',
+        'length'      => 32,
+        'not null'    => FALSE,
+      ),
+      'administrative_area_level_1' => array(
+        'description' => 'State or province',
+        'type'        => 'varchar',
+        'length'      => 64,
+        'not null'    => FALSE,
+      ),
+      'formatted_address' => array(
+        'description' => 'Address',
+        'type'        => 'varchar',
+        'length'      => 128,
+        'not null'    => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'ip_address' => array('ip_address'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Allow for the storage of ipv6 as well as standard IP addresses.
+ */
+function ip_geoloc_update_7125() {
+  db_drop_index('ip_geoloc', 'ip_address');
+  $spec = array(
+    'description' => 'IP address',
+    'type'        => 'varchar',
+    // Support IPv6 as well as standard IPv4 addresses.
+    'length'      => '64',
+    'not null'    => TRUE,
+  );
+  $index = array('indexes' => array('ip_address' => array('ip_address')));
+  db_change_field('ip_geoloc', 'ip_address', 'ip_address', $spec, $index);
+  //db_add_index('ip_geoloc', 'ip_address', array('ip_address'));
+  return t('ip_address column updated.');
+}

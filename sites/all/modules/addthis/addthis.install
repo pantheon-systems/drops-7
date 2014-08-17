@@ -1,0 +1,64 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the AddThis module.
+ */
+
+// We need some constant values from the AddThis class.
+include_once('classes/AddThis.php');
+
+/**
+ * Implements hook_field_schema().
+ */
+function addthis_field_schema($field) {
+  $schema = array();
+  if ($field['type'] == AddThis::FIELD_TYPE) {
+    $columns = array(
+      'value' => array(
+        'type' => 'varchar',
+        'length' => $field['settings']['max_length'],
+        'not null' => FALSE,
+      ),
+    );
+    $schema = array(
+      'columns' => $columns,
+      'indexes' => array(),
+      'foreign keys' => array(),
+    );
+  }
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function addthis_uninstall() {
+  variable_del(AddThis::ADDRESSBOOK_ENABLED_KEY);
+  variable_del(AddThis::BLOCK_WIDGET_TYPE_KEY);
+  variable_del(AddThis::BOOKMARK_URL_KEY);
+  variable_del(AddThis::CLICKBACK_TRACKING_ENABLED_KEY);
+  variable_del(AddThis::CLICK_TO_OPEN_COMPACT_MENU_ENABLED_KEY);
+  variable_del(AddThis::CO_BRAND_KEY);
+  variable_del(AddThis::COMPLIANT_508_KEY);
+  variable_del(AddThis::CUSTOM_CONFIGURATION_CODE_ENABLED_KEY);
+  variable_del(AddThis::CUSTOM_CONFIGURATION_CODE_KEY);
+  variable_del(AddThis::ENABLED_SERVICES_KEY);
+  variable_del(AddThis::OPEN_WINDOWS_ENABLED_KEY);
+  variable_del(AddThis::PROFILE_ID_KEY);
+  variable_del(AddThis::SERVICES_CSS_URL_KEY);
+  variable_del(AddThis::SERVICES_JSON_URL_KEY);
+  variable_del(AddThis::STANDARD_CSS_ENABLED_KEY);
+  variable_del(AddThis::UI_DELAY_KEY);
+  variable_del(AddThis::UI_HEADER_BACKGROUND_COLOR_KEY);
+  variable_del(AddThis::UI_HEADER_COLOR_KEY);
+  variable_del(AddThis::WIDGET_JS_URL_KEY);
+  variable_del(AddThis::WIDGET_JS_LOAD_TYPE);
+}
+
+/**
+ * Remove old WIDGET_JS_ASYNC variable.
+ */
+function addthis_update_7401() {
+  variable_del('addthis_widget_async');
+}

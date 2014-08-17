@@ -1,0 +1,20 @@
+name = Commerce Node Checkout
+description = Allows users to pay to publish nodes.
+core = 7.x
+package = Commerce (contrib)
+dependencies[] = commerce
+dependencies[] = commerce_cart
+dependencies[] = commerce_checkout
+dependencies[] = commerce_price
+dependencies[] = commerce_product_reference
+dependencies[] = commerce_product_ui
+dependencies[] = entityreference
+dependencies[] = rules
+files[] = commerce_node_checkout.test
+
+; Information added by Drupal.org packaging script on 2014-05-16
+version = "7.x-1.0-beta1"
+core = "7.x"
+project = "commerce_node_checkout"
+datestamp = "1400256828"
+

@@ -1,0 +1,255 @@
+<?php
+
+/**
+ * @file
+ * Test the Block Class module.
+ */
+
+/**
+ * Provides common functionality for the Block Class test classes.
+ */
+class BlockClassTestCase extends DrupalWebTestCase {
+
+  /**
+   * User object to perform site browsing
+   * @var object
+   */
+  protected $privilegedUser;
+
+  /**
+   * Machine name of the module providing the block coupled with delta.
+   * @var string
+   */
+  protected $module = 'system';
+
+  /**
+   * Block delta as provided by its module.
+   * @var string
+   */
+  protected $delta = 'main';
+
+  /**
+   * Permissions required by the user to perform the tests.
+   * @var array
+   */
+  protected $permissions = array(
+    'administer blocks',
+    'administer block classes',
+  );
+
+  /**
+   * Enable modules and create user with specific permissions.
+   *
+   * By default Test Cases are carried on the "Main page content" Block.
+   */
+  public function setUp() {
+    // Merge inherited classes modules, see FieldUITestCase for an example.
+    $modules = func_get_args();
+    if (isset($modules[0]) && is_array($modules[0])) {
+      $modules = $modules[0];
+    }
+    $modules[] = 'block_class';
+    parent::setUp($modules);
+
+    // Authenticate test user.
+    $this->privilegedUser = $this->drupalCreateUser($this->permissions);
+    $this->drupalLogin($this->privilegedUser);
+  }
+
+  /**
+   * Update Block CSS class and assert whether it is found when displayed.
+   *
+   * @param bool $anon
+   *   (optional) Set to TRUE to view block with anon user, defaults to TRUE.
+   * @param string $module
+   *   (optional) Machine name of the module Defaults to
+   *   $this->module if set to NULL.
+   * @param string $delta
+   *   (optional) Block delta as provided by its module. Defaults to
+   *   $this->delta if set to NULL.
+   */
+  public function assertUpdateBlockClass($anon = FALSE, $module = NULL, $delta = NULL) {
+    // Initialize $module and $delta by default if no value is provided.
+    if (!isset($module)) {
+      $module = $this->module;
+    }
+    if (!isset($delta)) {
+      $delta = $this->delta;
+    }
+    // Test with three random class names.
+    $css_classes = implode(' ', array(
+      $this->randomName(8),
+      $this->randomName(8),
+      $this->randomName(8),
+    ));
+    // Update Block CSS class field.
+    $this->drupalPost("admin/structure/block/manage/$module/$delta/configure", array('css_class' => $css_classes), t('Save block'));
+    // Check Block configuration was saved successfully.
+    $this->assertText(t('The block configuration has been saved.'));
+    // Browse to the homepage.
+    $this->drupalGet('');
+    // Log out if the test is for anonymous user.
+    if ($anon) {
+      $this->drupalLogout();
+      // Browse back to the homepage.
+      $this->drupalGet('');
+    }
+    // Check if the Block CSS classes could be found.
+    $this->assertPattern('/class=\"(.*?)' . $css_classes . '(.*?)\"/', format_string('The CSS classes were found: @css_classes', array('@css_classes' => $css_classes)));
+    // Login again after testing with the anonumous user.
+    if ($anon) {
+      $this->drupalLogin($this->privilegedUser);
+    }
+  }
+}
+
+/**
+ * Test the update and display of the CSS class for a Block.
+ */
+class BlockClassUpdateDisplayTestCase extends BlockClassTestCase {
+
+  /**
+   * Implements DrupalWebTestCase::getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Block CSS class update and display',
+      'description' => 'Test the update of a Block CSS class field and the display for the Main Page Content Block.',
+      'group' => 'Block Class',
+    );
+  }
+
+  /**
+   * Update and display a Block multiple times to ensure CSS class is found.
+   *
+   * A Block is updated and displayed several times and with logged in or
+   * anonymous user, with Block cache turned enabled or disabled.
+   */
+  public function testUpdateDisplayClass() {
+    // Edit the block, change the class and check if the CSS classes are found.
+    $this->assertUpdateBlockClass();
+
+    // Now, turn on caching programmatically and set it to 15 min expiry.
+    variable_set('block_cache', TRUE);
+    variable_set('cache_lifetime', 900);
+    variable_set('page_cache_maximum_age', 900);
+
+    // Edit the block, change the class and check with the anonymous user.
+    $this->assertUpdateBlockClass(TRUE);
+
+    // Edit the block, change the class and check with the anonymous user.
+    $this->assertUpdateBlockClass(TRUE);
+  }
+}
+
+/**
+ * Test Block Class permissions.
+ */
+class BlockClassPermissionTestCase extends BlockClassTestCase {
+
+  /**
+   * Implements DrupalWebTestCase::getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Administer block classes permission',
+      'description' => 'Test the permission added by the module to administer block classes.',
+      'group' => 'Block Class',
+    );
+  }
+
+  /**
+   * Enable modules and create user with specific permissions.
+   */
+  public function setUp() {
+    // Remove the 'administer block classes' permission from the base class.
+    $this->permissions = array('administer blocks');
+    parent::setUp();
+  }
+
+  /**
+   * Ensure Block CSS classes field is only visible with the right permissions.
+   *
+   * Test if a user without 'administer block classes' permission has access to
+   * the Block CSS classes field on the block configuration page.
+   */
+  public function testPermission() {
+    // Browse to the "Main page content" block editing form page.
+    $this->drupalGet("admin/structure/block/manage/{$this->module}/{$this->delta}/configure");
+    // Check that the css_class field couldn't be found.
+    // If the field is not found, it can't be submitted through drupalPost.
+    $this->assertNoFieldById('css_class', 'The Css classes field was not found on the page.');
+  }
+}
+
+/**
+ * Test Block Class integration with Context.
+ */
+class BlockClassContextTestCase extends BlockClassUpdateDisplayTestCase {
+
+  /**
+   * Implements DrupalWebTestCase::getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Integration with Context',
+      'description' => 'Test the integration of Block Class with the Context module and the update/display of a Block CSS class.',
+      // Include required contributed modules context and ctools for the test.
+      'dependencies' => array('context', 'ctools'),
+      'group' => 'Block Class',
+    );
+  }
+
+  /**
+   * Enable modules and create user with specific permissions.
+   */
+  public function setUp() {
+    // Override default module and delta to test with the "Who's online" block.
+    $this->module = 'user';
+    $this->delta = 'online';
+    // Include the Context module and its dependencies to be loaded.
+    parent::setUp('context', 'ctools');
+    // Initialize a test context with the test block.
+    $this->initializeContext();
+  }
+
+  /**
+   * Helper function to initialize a test Context with a test block.
+   */
+  public function initializeContext() {
+    // Import a basic context exported through the admin interface.
+    $context = new stdClass();
+    $context->disabled = FALSE;
+    $context->api_version = 3;
+    $context->name = 'front';
+    $context->description = 'Frontpage Context';
+    $context->tag = '';
+    $context->conditions = array(
+      'path' => array(
+        'values' => array(
+          '<front>' => '<front>',
+        ),
+      ),
+    );
+    $context->reactions = array(
+      'block' => array(
+        'blocks' => array(
+          $this->module . '-' . $this->delta => array(
+            'module' => $this->module,
+            'delta' => $this->delta,
+            'region' => 'content',
+            'weight' => '-10',
+          ),
+        ),
+      ),
+    );
+    $context->condition_mode = 0;
+
+    // Translatables
+    // Included for use with string extractors like potx.
+    t('Frontpage Context');
+
+    // Save the context.
+    context_save($context);
+  }
+}

@@ -1,0 +1,175 @@
+<?php
+/**
+ * @file
+ * Provides install, update, schema and uninstall hooks for the module
+ */
+
+/**
+ * Implements hook_install().
+ */
+function commerce_node_checkout_install() {
+  $t = get_t();
+  // Create the node checkout product type - we do this for the
+  // commerce_node_checkout_expiry sub-module to be able to target the product
+  // with additional product types.
+  $product_types = commerce_product_types();
+  if (empty($product_types['commerce_node_checkout'])) {
+    $product_type = commerce_product_ui_product_type_new();
+
+    $product_type['type'] = 'commerce_node_checkout';
+    $product_type['name'] = $t('Pay to publish');
+    $product_type['description'] = $t('A product associated with publishing a node.');
+    $product_type['is_new'] = TRUE;
+
+    commerce_product_ui_product_type_save($product_type, FALSE);
+    commerce_price_create_instance('commerce_price', 'commerce_product', 'commerce_node_checkout', $t('Price'), 0, 'calculated_sell_price');
+  }
+
+  // If a field type we know should exist isn't found, clear the Field cache.
+  if (!field_info_field_types('node_reference')) {
+    field_cache_clear();
+  }
+
+  // Make sure our entity info exists.
+  entity_info_cache_clear();
+
+  // Setup line item type.
+  commerce_line_item_configure_line_item_type(array('type' => 'commerce_node_checkout'));
+  commerce_product_line_item_configuration(array('type' => 'commerce_node_checkout'));
+
+  // Create our fields.
+  foreach (_commerce_node_checkout_installed_fields() as $field_name => $field_detail) {
+    // Look for existing field.
+    $field = field_info_field($field_name);
+
+    if (empty($field)) {
+      $field = field_create_field($field_detail);
+    }
+  }
+
+  // And their instances.
+  foreach (_commerce_node_checkout_installed_instances() as $field_name => $instance_detail) {
+    // Look for existing instance.
+    $instance = field_info_instance($instance_detail['entity_type'], $field_name, $instance_detail['bundle']);
+
+    if (empty($instance)) {
+      field_create_instance($instance_detail);
+    }
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_node_checkout_uninstall() {
+  // Remove the fields
+  foreach (_commerce_node_checkout_installed_fields() as $name => $field) {
+    field_delete_field($name);
+  }
+}
+
+/**
+ * Make sure we've migrated from References to Entity reference.
+ */
+function commerce_node_checkout_update_7000() {
+  // Load the reference field used for nodes
+  if ($field = field_info_field('commerce_node_checkout_node')) {
+    // Make sure it's the right type
+    if ($field['type'] == 'entityreference') {
+      // We're good
+      return;
+    }
+  }
+
+  throw new DrupalUpdateException('You must migrate from References to Entity reference. Please refer to this module and guide: https://drupal.org/project/entityreference_migration');
+}
+
+/**
+ * Returns a structured array defining the fields created by this module.
+ *
+ * @return array
+ *   An associative array specifying the fields we wish to add to our
+ *   entities
+ */
+function _commerce_node_checkout_installed_fields() {
+  $field_bases = array();
+  $field_bases['commerce_node_checkout_node'] = array(
+    'active' => 1,
+    'cardinality' => 1,
+    'deleted' => 0,
+    'entity_types' => array(),
+    'field_name' => 'commerce_node_checkout_node',
+    'foreign keys' => array(
+      'node' => array(
+        'columns' => array(
+          'target_id' => 'nid',
+        ),
+        'table' => 'node',
+      ),
+    ),
+    'indexes' => array(
+      'target_entity' => array(
+        0 => 'target_id',
+      ),
+      'target_id' => array(
+        0 => 'target_id',
+      ),
+    ),
+    'locked' => 0,
+    'module' => 'entityreference',
+    'settings' => array(
+      'handler' => 'base',
+      'handler_settings' => array(
+        'target_bundles' => array(),
+      ),
+      'handler_submit' => 'Change handler',
+      'target_type' => 'node',
+    ),
+    'translatable' => 0,
+    'type' => 'entityreference',
+  );
+  return $field_bases;
+}
+
+/**
+ * Returns a structured array defining the instances for this module
+ *
+ * @return array
+ *   An associative array specifying the instances we wish to add to our entities
+ */
+function _commerce_node_checkout_installed_instances() {
+  $t = get_t();
+  $field_instances = array();
+  $field_instances['commerce_node_checkout_node'] = array(
+    'bundle' => 'commerce_node_checkout',
+    'default_value' => NULL,
+    'deleted' => 0,
+    'description' => '',
+    'display' => array(
+      'default' => array(
+        'label' => 'hidden',
+        'module' => 'entityreference',
+        'settings' => array(
+          'link' => TRUE,
+        ),
+        'type' => 'entityreference_label',
+        'weight' => 4,
+      ),
+    ),
+    'entity_type' => 'commerce_line_item',
+    'field_name' => 'commerce_node_checkout_node',
+    'label' => $t('Associated content'),
+    'widget' => array(
+      'active' => 1,
+      'module' => 'options',
+      'settings' => array(
+        'match_operator' => 'CONTAINS',
+        'path' => '',
+        'size' => 60,
+      ),
+      'type' => 'options_select',
+      'weight' => 2,
+    ),
+  );
+  return $field_instances;
+}

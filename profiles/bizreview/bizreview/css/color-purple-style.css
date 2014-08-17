@@ -1,0 +1,228 @@
+﻿/* $Id: color-purple-style.css,v 1.0.0 2013/09/25 08:18:15 symphonythemes Exp $ */
+/*------------------------------------*\
+	RESET
+\*------------------------------------*/
+
+a,
+a:link,
+a:visited {
+  color: #9a82bc;
+}
+.themecolor-text {
+  color: #9a82bc;
+}
+pre,
+div.code {
+  border-left: 5px solid #9a82bc;
+}
+.highlight {
+  background: #9a82bc;
+}
+blockquote::before {
+  color: #9a82bc;
+}
+
+h2.home-block-title:after,
+h2.block-title:after,
+.node-type-full-page h1.page-title:after {
+  background: #9a82bc;
+}
+
+a.btn-default,
+.btn-default {
+  border-color: #9a82bc;
+  background-color: #9a82bc;
+  color: #fff;
+}
+.btn-border {
+  border-color: #9a82bc;
+  background: #fff;
+}
+.btn-default:hover {
+  background-color: #9a82bc;
+  border-color: #9a82bc;
+}
+a.btn-primary,
+.btn-primary {
+  background-color: #9a82bc;
+  border-color: #70519c;
+  color: #FFFFFF;
+}
+/*------------------------------------*\
+	Pages CSS
+\*------------------------------------*/
+#search-wrapper,
+#main-menu-wrapper,
+#color-background-wrapper {
+  background: #9a82bc;
+}
+
+
+/*------------------------------------*\
+	NAVIGATION CSS
+\*------------------------------------*/
+li a.active {
+  color: #9a82bc;
+}
+
+@media (max-width: 767px) {  
+  .navbar-collapse {
+	background:#9a82bc;
+  }
+}
+
+#main-navigation ul ul {
+  background: #9a82bc;
+}
+#main-navigation ul ul li {
+  border-bottom: 1px solid #c5b0e3;
+}
+#main-navigation li:hover,
+#main-navigation li.open,
+#main-navigation li.active-trail a,
+#main-navigation li.active-trail  span.nolink,
+#main-navigation li a.active,
+#main-navigation li a:hover,
+#main-navigation li a.current,
+#main-navigation li a.selected,
+#main-navigation li span.nolink:hover,
+#main-navigation li.active-trail span.nolink,
+#main-navigation li span.nolink.selected {
+  color:#fff;
+  background: #9a82bc;
+}
+
+/* Block user menu on top left */
+#header-top-left .block-menu ul.menu li a:hover,
+#header-top-left .block-menu ul.menu li a.active {
+  background: none;
+  color: #9a82bc;
+}
+
+
+/*------------------------------------*\
+	BUSINESS CSS
+\*------------------------------------*/
+/* Business List */
+.extra-content {
+  background: rgba(154,130,188,0.8);
+}
+#block-views-exp-map-list-business-page-1 h2.block-title {
+  background: #9a82bc;
+  border-right: 1px solid #c5b0e3;
+}
+#block-views-exp-map-list-business-page-1 h2.block-title:after {
+  border-color: rgba(154,130,188, 0);
+  border-left-color: #9a82bc;
+}
+#block-views-exp-map-list-business-page-1 h2.block-title:before {
+  border-color: rgba(197, 176, 227, 0);
+  border-left-color: #c5b0e3;
+}
+.view-list-business .views-row .views-field-field-address i,
+.view-list-business .views-row .views-field-field-phone i,
+.view-list-business .views-row .views-field-field-website i {
+  color: #9a82bc;
+}
+
+.node-business .content .field .field-label {
+  color: #9a82bc;
+}
+
+.node-business .content .field.field-name-body:before,
+.node-business .content .field.field-name-field-website:before,
+.node-business .content .field.field-name-field-open-time:before,
+.node-business .content .field.field-name-field-price-range:before,
+.node-business .content .field.field-name-field-highlights:before,
+.node-business .content .field.field-name-field-location:before,
+.node-business .content .field.field-name-field-photos:before,
+.node-business .content .field.field-name-field-tags:before,
+.node-business .content .field.field-name-field-category:before {
+  background: #9a82bc;
+}
+
+fieldset.group-purchase-options {
+  background: #9a82bc;
+}
+
+/* Block Featured Biz */
+.jcarousel-skin-default .jcarousel-prev-horizontal,
+.jcarousel-skin-default .jcarousel-next-horizontal {
+  border-color: #9a82bc;
+}
+.jcarousel-skin-default .jcarousel-prev-horizontal:hover,
+.jcarousel-skin-default .jcarousel-next-horizontal:hover {
+  background-color: #9a82bc;
+}
+.jcarousel-skin-default .jcarousel-prev-horizontal:before,
+.jcarousel-skin-default .jcarousel-next-horizontal:before {
+  color: #9a82bc;
+}
+.jcarousel-skin-default .jcarousel-prev-horizontal:hover:before,
+.jcarousel-skin-default .jcarousel-next-horizontal:hover:before {
+  color: #fff;
+  background: #9a82bc;
+}
+
+/* Block Category */
+.block-featured-biz .views-row .information-group .field-title a:hover {
+  color: #9a82bc;
+}
+
+/* Business Category List */
+.list-categories .icon {
+  background: #9a82bc;
+}
+.view-categories .views-row .views-row-inner .views-field-name:after {
+  background: #9a82bc;
+}
+.view-categories .views-row .views-row-inner .views-field-name a:hover {
+  color: #9a82bc;
+}
+.view-categories .views-row .views-row-inner .views-field-field-category-image .field-node-count {
+  background: rgba(154,130,188,0.8);
+}
+
+/* News */
+.view-list-news .views-field-title a:hover {
+  color: #9a82bc;
+}
+
+
+/* Member */
+.view-member .view-content {
+  background: #9a82bc;
+}
+
+/* Block Contact information */
+.block-contact-informations ul li i {
+  color: #9a82bc;
+}
+
+/* Sep boxed pricing */
+.sep-boxed-pricing ul li.footer-row a.button {
+  background: #fafafa;
+  border: 1px solid #ccc;
+  color: #9a82bc;  
+}
+.sep-boxed-pricing ul li.footer-row a.button:hover {
+  background: #9a82bc;
+  color: #fafafa;  
+  border: 1px solid #9a82bc;
+}
+.sep-boxed-pricing ul li.title-row {
+  background: #b395dc;
+  border-color: #b395dc;
+}
+.sep-boxed-pricing ul li.pricing-row {
+  background: #9a82bc;
+  border-color: #c9b5e6 #9a82bc #9a82bc;
+}
+.sep-boxed-pricing .price strong {
+  color: #000;
+}
+
+/* FlexSlider */
+.flex-control-paging li a.flex-active {
+  background: #9a82bc;
+}

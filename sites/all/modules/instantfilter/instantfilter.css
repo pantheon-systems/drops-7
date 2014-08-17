@@ -1,0 +1,20 @@
+
+.form-type-instantfilter {
+  float: right;
+  width: 25em;
+  text-align: right;
+}
+.form-type-instantfilter + * {
+  clear: right;
+}
+
+.form-type-instantfilter .form-text {
+  width: 15em;
+}
+.form-type-instantfilter .form-submit {
+  margin: 0 0 0 1em;
+}
+
+html.js .form-type-instantfilter .form-submit {
+  display: none;
+}

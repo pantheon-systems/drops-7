@@ -1,0 +1,15 @@
+name = jCarousel
+description = Create jQuery-based carousel rotators.
+package = User interface
+core = 7.x
+
+files[] = jcarousel.module
+files[] = includes/jcarousel.views.inc
+files[] = includes/jcarousel_style_plugin.inc
+
+; Information added by drupal.org packaging script on 2011-11-24
+version = "7.x-2.6"
+core = "7.x"
+project = "jcarousel"
+datestamp = "1322116852"
+

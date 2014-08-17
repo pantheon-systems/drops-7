@@ -1,0 +1,20 @@
+name = Tax
+description = Define tax rates and configure tax rules for applicability and display.
+package = Commerce
+dependencies[] = commerce
+dependencies[] = commerce_line_item
+dependencies[] = commerce_price
+dependencies[] = commerce_product_pricing
+dependencies[] = entity
+dependencies[] = rules
+core = 7.x
+
+; Simple tests
+;files[] = tests/commerce_tax.test
+
+; Information added by Drupal.org packaging script on 2014-03-05
+version = "7.x-1.9"
+core = "7.x"
+project = "commerce"
+datestamp = "1394061805"
+

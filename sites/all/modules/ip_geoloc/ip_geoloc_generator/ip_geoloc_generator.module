@@ -1,0 +1,141 @@
+<?php
+
+/**
+ * @file ip_geoloc_generator.module
+ */
+
+define('IP_GEOLOC_GENERATOR_GREENWICH_OBSERVATORY_LAT', 51.4777);
+define('IP_GEOLOC_GENERATOR_GREENWICH_OBSERVATORY_LON', -0.0015);
+
+/**
+ * Implements hook-help().
+ */
+function ip_geoloc_generator_help($path, $arg) {
+  if ($path == 'admin/help#ip_geoloc_generator') {
+    return t('Instructions can be found in the <a href="@README">README</a> file.', array(
+      '@README' => url(drupal_get_path('module', 'ip_geoloc_generator') . '/README.txt'),
+    ));
+  }
+}
+
+/**
+ * Implements hook_ip_geoloc_marker_locations_alter().
+ */
+function ip_geoloc_generator_ip_geoloc_marker_locations_alter(&$marker_locations, &$view) {
+
+  $enabled_views = variable_get('ip_geoloc_generator_views', array());
+  if (!in_array($view->name, $enabled_views)) {
+    return;
+  }
+  $center_lat = variable_get('ip_geoloc_generator_center_lat');
+  if (empty($center_lat)) {
+    $center_lat = IP_GEOLOC_GENERATOR_GREENWICH_OBSERVATORY_LAT;
+  }
+  $center_lon = variable_get('ip_geoloc_generator_center_lon');
+  if (empty($center_lon)) {
+    $center_lon = IP_GEOLOC_GENERATOR_GREENWICH_OBSERVATORY_LON;
+  }
+
+  $range_lat = variable_get('ip_geoloc_generator_range_lat', 0.02);
+  $range_lon = variable_get('ip_geoloc_generator_range_lon', 0.12);
+
+  $no_points  = variable_get('ip_geoloc_generator_no_points', 10);
+  for ($i = 1; $i <= $no_points; $i++) {
+    $marker = new stdClass();
+    //$marker->id = $i;
+    //$marker->type = 'point';
+    //$marker->marker_color = 'yellow';
+    $marker->latitude  = $center_lat + $range_lat * (mt_rand() / mt_getrandmax() - 0.5);
+    $marker->longitude = $center_lon + $range_lon * (mt_rand() / mt_getrandmax() - 0.5);
+    $marker->balloon_text = "Random #$i <br/>(" . $marker->latitude . ', ' . $marker->longitude . ')';
+    $marker_locations[] = $marker;
+  }
+}
+
+function ip_geoloc_generator_settings_form($form, &$form_state) {
+  $form = array();
+  $form['generation_pars'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => FALSE,
+    '#title' => t('Geolocation generation parameters'),
+  );
+  $form['generation_pars']['ip_geoloc_generator_no_points'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Number of random locations to generate'),
+    '#default_value' => variable_get('ip_geoloc_generator_no_points', 10),
+    '#description' => t(''),
+  );
+  $form['generation_pars']['ip_geoloc_generator_center_lat'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Latitude of center of location cluster'),
+    '#default_value' => variable_get('ip_geoloc_generator_center_lat', IP_GEOLOC_GENERATOR_GREENWICH_OBSERVATORY_LAT),
+    '#field_suffix' => t('degrees'),
+    '#description' => t('Must be in range -90..90 degrees.'),
+  );
+  $form['generation_pars']['ip_geoloc_generator_center_lon'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Longitude of center of location cluster'),
+    '#default_value' => variable_get('ip_geoloc_generator_center_lon', IP_GEOLOC_GENERATOR_GREENWICH_OBSERVATORY_LON),
+    '#field_suffix' => t('degrees'),
+    '#description' => t('Must be in range -180..180 degrees.'),
+  );
+  $form['generation_pars']['ip_geoloc_generator_range_lat'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Latitude range'),
+    '#default_value' => variable_get('ip_geoloc_generator_range_lat', 0.02),
+    '#field_suffix' => t('degrees'),
+    '#description' => t(''),
+  );
+  $form['generation_pars']['ip_geoloc_generator_range_lon'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Longitude range'),
+    '#default_value' => variable_get('ip_geoloc_generator_range_lon', 0.12),
+    '#field_suffix' => t('degrees'),
+    '#description' => t(''),
+  );
+  $form['generation_views'] = array(
+    '#type' => 'fieldset',
+    '#collapsible' => FALSE,
+    '#title' => t('Affected Views'),
+  );
+  $options = array('' => t('- None -'));
+  foreach (views_get_all_views() as $view) {
+    $view_name = empty($view->human_name) ? $view->name : $view->human_name;
+    foreach ($view->display as $display) {
+      if (isset($display->display_options['style_plugin']) &&
+        in_array($display->display_options['style_plugin'], array('ip_geoloc_map', 'ip_geoloc_leaflet', 'ip_geoloc_openlayers'))) {
+        $options[$view->name] = $view_name;
+        if (views_view_is_disabled($view)) {
+           $options[$view->name] .= ' [' . t('disabled') . ']';
+        }
+        break;
+      }
+    }
+  }
+  $form['generation_views']['ip_geoloc_generator_views'] = array(
+    '#type' => 'select',
+    '#multiple' => TRUE,
+    '#size' => min(10, count($options)),
+    '#title' => t('Views to add locations to'),
+    '#options' => $options,
+    '#default_value' => variable_get('ip_geoloc_generator_views', array('')),
+    '#description' => t('Select the Views to add marker clusters to.'),
+  );
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_menu().
+ */
+function ip_geoloc_generator_menu() {
+  $items = array();
+  // Put the administrative settings under System on the Configuration page.
+  $items['admin/config/system/ip_geoloc_generator'] = array(
+    'title' => 'Geolocation Generator',
+    'description' => 'Generates random locations to test maps produced with IP Geolocation Views & Maps.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ip_geoloc_generator_settings_form'),
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}

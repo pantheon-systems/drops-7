@@ -1,0 +1,288 @@
+<?php
+/**
+ * @file
+ * Hook implementations for the AddThis-module. Most of the logic is defined
+ * in a separate AddThis-class to keep the .module-file clean.
+ */
+
+if (module_exists('block')) {
+  module_load_include('inc', 'addthis', 'includes/addthis.block');
+}
+module_load_include('inc', 'addthis', 'includes/addthis.field');
+
+/**
+ * Implements hook_hook_info().
+ *
+ * Define hook_addthis_display_markup in the addthis group so that
+ * $module.addthis.inc files will be included. See addthis.addthis.inc for
+ * examples of the hook implementation.
+ */
+function addthis_hook_info() {
+  $hooks['addthis_display_markup'] = array(
+    'group' => 'addthis',
+  );
+  return $hooks;
+}
+
+/**
+ * Implements hook_help().
+ */
+function addthis_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#addthis':
+      $output = '<h3>' . t('About') . '</h3>';
+      $output .= '<p>';
+      $output .= t('The AddThis module defines AddThis field type for the Field module. A AddThis field may contain a button, toolbox, sharecount or customized sharing tool using <a href="http://addthis.com/">AddThis.com</a>.');
+      $output .= '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_filter_format_update().
+ */
+function addthis_filter_format_update($format) {
+  field_cache_clear();
+}
+
+/**
+ * Implements hook_filter_format_disable().
+ */
+function addthis_filter_format_disable($format) {
+  field_cache_clear();
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function addthis_menu() {
+  $menu_items['admin/config/user-interface/addthis'] = array(
+    'title' => 'AddThis',
+    'description' => 'Configure AddThis settings.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('addthis_admin_settings_form'),
+    'access arguments' => array(AddThis::PERMISSION_ADMINISTER_ADDTHIS),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => AddThis::ADMIN_INCLUDE_FILE,
+    'weight' => 0,
+  );
+  $menu_items['admin/config/user-interface/addthis/basic'] = array(
+    'title' => t('Basic settings'),
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $menu_items['admin/config/user-interface/addthis/advanced'] = array(
+    'title' => t('Advanced settings'),
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('addthis_admin_settings_advanced_form'),
+    'access arguments' => array(AddThis::PERMISSION_ADMINISTER_ADDTHIS),
+    'file' => AddThis::ADMIN_INCLUDE_FILE,
+    'weight' => 10
+  );
+  return $menu_items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function addthis_permission() {
+  return array(
+    AddThis::PERMISSION_ADMINISTER_ADDTHIS => array(
+      'title' => t('Administer AddThis'),
+      'description' => t('Perform maintenance tasks for AddThis.'),
+    ),
+    AddThis::PERMISSION_ADMINISTER_ADVANCED_ADDTHIS => array(
+      'title' => t('Administer advanced AddThis'),
+      'description' => t('Perform advanced maintenance tasks for AddThis.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Hide the instance fieldset because there aren't any values per instance.
+ */
+function addthis_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#field']['type'] == AddThis::FIELD_TYPE && $form['#field']['type'] == AddThis::MODULE_NAME) {
+    $form['field']['#access'] = FALSE;
+    $form['instance']['required']['#access'] = FALSE;
+    $form['instance']['description']['#access'] = FALSE;
+    $form['instance']['default_value_widget']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_rdf_namespaces().
+ */
+function addthis_rdf_namespaces() {
+  if (AddThis::getInstance()->isFacebookLikeCountSupportEnabled()) {
+    return array(
+      'fb' => 'http://www.facebook.com/2008/fbml',
+    );
+  }
+  return array();
+}
+
+/**
+ * Implements hook_theme().
+ */
+function addthis_theme($existing, $type, $theme, $path) {
+  return array(
+    'addthis_wrapper' => array(
+      'render element' => 'addthis_wrapper',
+    ),
+    'addthis_element' => array(
+      'render element' => 'addthis_element',
+    ),
+    'addthis' => array(
+      'render element' => 'addthis',
+    ),
+  );
+}
+
+/**
+ * Implements hook_preprocess() for theme_addthis.
+ */
+function template_preprocess_addthis(&$variables) {
+  if (isset($variables[0]) && count($variables) == 3) {
+    $variables['#display'] = $variables[0];
+    unset($variables[0]);
+  }
+}
+
+function theme_addthis($variables) {
+  $markup = AddThis::getInstance()->getDisplayMarkup($variables['#display']);
+  return render($markup);
+}
+
+function theme_addthis_wrapper($variables) {
+  $element = $variables['addthis_wrapper'];
+  $output = '<' . $element['#tag'] . drupal_attributes($element['#attributes']) . '>';
+  $children = element_children($element);
+
+  if (count($children) > 0) {
+    foreach ($children as $child) {
+      $output .= render($element[$child]);
+    }
+  }
+
+  $output .= '</' . $element['#tag'] . ">\n";
+  return $output;
+}
+
+/**
+ * Theme the elements that are created in the AddThis module.
+ *
+ * This is created with hook_addthis_element.
+ */
+function theme_addthis_element($variables) {
+  $element = $variables['addthis_element'];
+
+  if (!isset($element['#value'])) {
+    return '<' . $element['#tag'] . drupal_attributes($element['#attributes']) . " />\n";
+  }
+
+  $output = '<' . $element['#tag'] . drupal_attributes($element['#attributes']) . '>';
+  if (isset($element['#value_prefix'])) {
+    $output .= $element['#value_prefix'];
+  }
+  $output .= $element['#value'];
+  if (isset($element['#value_suffix'])) {
+    $output .= $element['#value_suffix'];
+  }
+  $output .= '</' . $element['#tag'] . ">\n";
+  return $output;
+}
+
+/**
+ * Create a addthis settings form.
+ */
+function _addthis_settings_form($form = array(), &$form_state, $display_type = NULL, $display_settings = NULL) {
+  // Toggle variables
+  $no_js = FALSE;
+
+
+  // Default display type if not set in the parameters.
+  $display_type = (isset($display_type)) ? $display_type : 'addthis_disabled';
+  // Load setting type from the form_state.
+  if (isset($form_state['values']['addthis_settings']['type'])) {
+    $display_type = $form_state['values']['addthis_settings']['type'];
+  }
+
+  // Container used as the replace for ajax.
+  $form['#type'] = 'container';
+  $form['#attributes'] = array();
+  $form['#id'] = 'addthis_settings';
+
+  // The list of formatters.
+  $formatter_options = AddThis::getInstance()->getDisplayTypes();
+  $form['type'] = array(
+    '#type' => 'select',
+    '#title' => t('Formatter for @title', array('@title' => 'AddThis block')),
+    '#title_display' => 'invisible',
+    '#options' => $formatter_options,
+    '#default_value' => $display_type,
+    '#parents' => array('addthis_settings', 'type'),
+    '#attributes' => array('class' => array('addthis-display-type')),
+    '#ajax' => array(
+      'callback' => '_addthis_settings_form_submit_callback',
+      'wrapper' => 'addthis_settings',
+      'name' => 'switch_display',
+      'event' => 'change',
+    )
+  );
+
+  if ($no_js) {
+    $form['choose'] = array(
+      '#type' => 'submit',
+      '#name' => 'Switch display',
+      '#value' => 'Switch display',
+      '#op' => 'switch_display',
+      '#id' => 'switch-display',
+      '#submit' => array('_addthis_settings_form_submit'),
+    );
+  }
+
+  // Formatter settings.
+
+  // Check the currently selected formatter, and merge persisted values for
+  // formatter settings.
+  $formatter_type = $display_type;
+
+  // Get the settings if set.
+  $settings = $display_settings;
+  $formatter_settings = field_info_formatter_settings($formatter_type);
+  $settings += $formatter_settings;
+
+  $field = array();
+  $instance = array();
+  $view_mode = 'block';
+
+  $instance['display'][$view_mode]['type'] = $formatter_type;
+  $formatter = field_info_formatter_types($formatter_type);
+  $instance['display'][$view_mode]['module'] = $formatter['module'];
+  $instance['display'][$view_mode]['settings'] = $settings;
+
+  $settings_form = array();
+  $function = $formatter['module'] . '_field_formatter_settings_form';
+  if (function_exists($function)) {
+    $settings_form = $function($field, $instance, $view_mode, $form, $form_state);
+    $settings_form['#tree'] = TRUE;
+    $settings_form['#parents'] = array('addthis_settings', 'settings');
+  }
+
+  $form['settings'] = $settings_form;
+
+  return $form;
+}
+
+function _addthis_settings_form_submit($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+}
+
+function _addthis_settings_form_submit_callback($form, &$form_state) {
+  $form_state['rebuild'] = TRUE;
+  return $form['addthis_settings']['form'];
+}

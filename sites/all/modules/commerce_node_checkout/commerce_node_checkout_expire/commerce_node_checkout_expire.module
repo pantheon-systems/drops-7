@@ -1,0 +1,685 @@
+<?php
+/**
+ * @file
+ *   Provides core hooks and the like for the module.
+ */
+
+// The field name for the expiration notifications field
+define('COMMERCE_NODE_CHECKOUT_NOTIFICATION_FIELD', 'commerce_node_notification');
+
+/**
+ * Implements hook_help().
+ */
+function commerce_node_checkout_expire_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#commerce_node_checkout_expire':
+      return t('Enables content published via Commerce Node Checkout to be unpublished after a given time period.');
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function commerce_node_checkout_expire_menu() {
+  $items = array();
+  $items['node/%node/relist'] = array(
+    'title' => 'Relist',
+    'description' => 'Renew your listing.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_node_checkout_expire_relist_form', 1),
+    'access arguments' => array(1),
+    'access callback' => 'commerce_node_checkout_expire_relist_access',
+    'weight' => 1,
+    'type' => MENU_LOCAL_TASK,
+    // We don't use an include here because the form uses AJAX and it
+    // won't be loaded
+  );
+  $items['node/%node/expiration'] = array(
+    'title' => 'Adjust expiration',
+    'description' => 'Adjust the expiration time of this node.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('commerce_node_checkout_expire_adjust_expiration_form', 1),
+    'access arguments' => array(1),
+    'access callback' => 'commerce_node_checkout_expire_adjust_expiration_access',
+    'weight' => 2,
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'commerce_node_checkout_expire.pages.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function commerce_node_checkout_expire_field_info() {
+  return array(
+    'commerce_node_checkout_expire_notification' => array(
+      'label' => t('Commerce node checkout notification'),
+      'description' => t('Allows the user to opt-in to be reminded when this node is set to expire.'),
+      'settings' => array(),
+      'instance_settings' => array(),
+      'default_formatter' => 'commerce_node_checkout_expire_notification',
+      'default_widget' => 'commerce_node_checkout_expire_notification',
+      'no_ui' => TRUE,
+      // Add entity property metadata for the entity api module.
+      'property_type' => 'commerce_node_checkout_expire_notification',
+      'property_callbacks' => array('commerce_node_checkout_expire_field_entity_property_info_alter'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function commerce_node_checkout_expire_field_widget_info() {
+  return array(
+    'commerce_node_checkout_expire_notification' => array(
+      'label' => t('Option'),
+      'field types' => array('commerce_node_checkout_expire_notification'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function commerce_node_checkout_expire_field_formatter_info() {
+  return array(
+    'commerce_node_checkout_expire_notification' => array(
+      'label' => t('Notification status'),
+      'field types' => array('commerce_node_checkout_expire_notification'),
+      'settings' => array(
+        'on_value' => t('Enabled'),
+        'off_value' => t('Disabled'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function commerce_node_checkout_expire_field_is_empty($item, $field) {
+  return ($item['enabled'] == '');
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function commerce_node_checkout_expire_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $widget = $element;
+  $widget['#delta'] = $delta;
+
+  switch ($instance['widget']['type']) {
+    case 'commerce_node_checkout_expire_notification':
+      // Extract the enabled status
+      $enabled = isset($items[$delta]['enabled']) ? $items[$delta]['enabled'] : 1;
+      // Extract the sent status
+      $sent = isset($items[$delta]['sent']) ? $items[$delta]['sent'] : 0;
+      // Build the widget
+      $widget += array(
+        '#type' => 'radios',
+        '#options' => array(
+          1 => t('Enabled'),
+          0 => t('Disabled'),
+        ),
+        '#default_value' => $enabled,
+      );
+      $element['enabled'] = $widget;
+
+      // Store the value for sent
+      $element['sent'] = array(
+        '#type' => 'value',
+        '#value' => $sent,
+      );
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_form().
+ */
+function commerce_node_checkout_expire_field_formatter_settings_form($field, $instance, $view_mode, $form, &$form_state) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $element = array();
+
+  if ($display['type'] == 'commerce_node_checkout_expire_notification') {
+    $element['on_value'] = array(
+      '#title' => t('Enabled text'),
+      '#type' => 'textfield',
+      '#default_value' => $settings['on_value'],
+      '#description' => t('The text that shows if expiration notifications are enabled.'),
+      '#required' => TRUE,
+    );
+    $element['off_value'] = array(
+      '#title' => t('Disabled text'),
+      '#type' => 'textfield',
+      '#default_value' => $settings['off_value'],
+      '#description' => t('The text that shows if expiration notifications are disabled.'),
+      '#required' => TRUE,
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_field_formatter_settings_summary().
+ */
+function commerce_node_checkout_expire_field_formatter_settings_summary($field, $instance, $view_mode) {
+  $display = $instance['display'][$view_mode];
+  $settings = $display['settings'];
+
+  $summary = '';
+
+  if ($display['type'] == 'commerce_node_checkout_expire_notification') {
+    $summary = $settings['on_value'] . ' / ' . $settings['off_value'];
+  }
+
+  return $summary;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function commerce_node_checkout_expire_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+
+  switch ($display['type']) {
+    case 'commerce_node_checkout_expire_notification':
+      // There can only be one value
+      $element[0] = array(
+        '#markup' => (isset($items[0]['enabled']) && $items[0]['enabled']) ? $display['settings']['on_value'] : $display['settings']['off_value'],
+      );
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * Implements hook_form_field_ui_field_edit_form_alter().
+ */
+function commerce_node_checkout_expire_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#field']['type'] == 'commerce_node_checkout_expire_notification') {
+    // Only allow one value for this field
+    $form['field']['cardinality']['#options'] = array(1 => 1);
+  }
+}
+
+/**
+ * Implements hook_form_node_type_form_alter().
+ */
+function commerce_node_checkout_expire_form_node_type_form_alter(&$form, $form_state) {
+  // See if this node type has notifications enabled
+  $enabled = (int) field_info_instance('node', COMMERCE_NODE_CHECKOUT_NOTIFICATION_FIELD, $form['#node_type']->type);
+  $form['commerce_node_checkout']['commerce_node_checkout_notifications'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow expiration notifications'),
+    '#default_value' => $enabled,
+    '#disabled' => $enabled,
+    '#description' => t('If checked, a field will be added to the node which allows node authors to opt-in for notifications about the pending expiration of the node. The Rules admin interface is where the notification emails can be configured. To disable notifications, you must delete the field from the "Manage fields" screen.'),
+  );
+  $form['#submit'][] = 'commerce_node_checkout_expire_form_node_type_form_submit';
+}
+
+/**
+ * Implements hook_forms().
+ */
+function commerce_node_checkout_expire_forms($form_id) {
+  $forms = array();
+
+  // Add a central relist form handler for when the form is called with
+  // a node ID appended (ie, Views). 
+  if (strpos($form_id, 'commerce_node_checkout_expire_relist_form_') === 0) {
+    $forms[$form_id]['callback'] = 'commerce_node_checkout_expire_relist_form';
+  }
+  return $forms;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function commerce_node_checkout_expire_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_node_checkout_expire') . '/includes/views',
+  );
+}
+
+/**
+ * Form submit callback for the node type settings form.
+ */
+function commerce_node_checkout_expire_form_node_type_form_submit($form, &$form_state) {
+  // See if notifications have been enabled
+  if ($form_state['values']['commerce_node_checkout_notifications']) {
+    // Add the notifications field to this node
+    commerce_node_checkout_expire_add_notifications_field($form_state['values']['type']);
+  }
+
+  // We do not let notifications be disabled from this page so we do
+  // not need to act if they have been turned off.
+
+  // This variable will be created automatically and we do not need it
+  variable_del('commerce_node_checkout_notifications_' . $form_state['values']['type']);
+}
+
+/**
+ * Add our custom notifications field to a given node type.
+ *
+ * This allows users to enable notifications for a given node when it
+ * becomes close to expiration. Since this field is special, we do not
+ * allow it to be added to nodes via the field interface. Instead, it
+ * must be enabled via the node type settings.
+ *
+ * @param $type
+ *   The node type to add the field to.
+ */
+function commerce_node_checkout_expire_add_notifications_field($type) {
+  // Create the field if it hasn't yet been created
+  if (!field_info_field(COMMERCE_NODE_CHECKOUT_NOTIFICATION_FIELD)) {
+    $field = array(
+      'active' => 1,
+      'cardinality' => 1,
+      'field_name' => COMMERCE_NODE_CHECKOUT_NOTIFICATION_FIELD,
+      'settings' => array(),
+      'type' => 'commerce_node_checkout_expire_notification',
+    );
+    field_create_field($field);
+  }
+
+  // Create the field instance if it hasn't yet been created
+  if (!field_info_instance('node', COMMERCE_NODE_CHECKOUT_NOTIFICATION_FIELD, $type)) {
+    $instance = array(
+      'bundle' => $type,
+      'default_value' => array(
+        0 => array(
+          'enabled' => 1,
+          'sent' => 0,
+        ),
+      ),
+      'deleted' => 0,
+      'description' => t('If enabled, you will receive an email reminder when this item is close to expiring.'),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'module' => 'commerce_node_checkout_expire',
+          'settings' => array(
+            'off_value' => 'Disabled',
+            'on_value' => 'Enabled',
+          ),
+          'type' => 'commerce_node_checkout_expire_notification',
+          'weight' => 1,
+        ),
+        'teaser' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => 0,
+        ),
+      ),
+      'entity_type' => 'node',
+      'field_name' => COMMERCE_NODE_CHECKOUT_NOTIFICATION_FIELD,
+      'label' => 'Notification of expiration',
+      'required' => 0,
+      'widget' => array(
+        'active' => 0,
+        'module' => 'commerce_node_checkout_expire',
+        'settings' => array(),
+        'type' => 'commerce_node_checkout_expire_notification',
+        'weight' => 5,
+      ),
+    );
+    field_create_instance($instance);
+  }
+}
+
+/**
+ * Access callback to check associated node is able to be relisted.
+ *
+ * @param object $node
+ *   The node object
+ * @param object $account
+ *   Optionally supply the user account to check access for. If omitted,
+ *   the current user will be used.
+ * @return
+ *   TRUE if the user has access to relist the given node, otherwise FALSE.
+ */
+function commerce_node_checkout_expire_relist_access($node, $account = NULL) {
+  if (!$account) {
+    global $user;
+    $account = clone $user;
+  }
+
+  // Make sure we have products enabled for this node
+  if (commerce_node_checkout_get_node_type_enabled_products($node->type)) {
+    // Make sure there is an existing line item for this node
+    if (commerce_node_checkout_expire_get_node_last_line_item($node)) {
+      // See if the user owns this node
+      if ($account->uid == $node->uid) {
+        return TRUE;
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Access callback to adjust a node's expiration date.
+ *
+ * @param object $node
+ *   The node object
+ * @param object $account
+ *   Optionally supply the user account to check access for. If omitted,
+ *   the current user will be used.
+ * @return
+ *   TRUE if the user has access to adjust the expiration date of the
+ *   given node, otherwise FALSE.
+ */
+function commerce_node_checkout_expire_adjust_expiration_access($node, $account = NULL) {
+  if (!$account) {
+    global $user;
+    $account = clone $user;
+  }
+
+  // Make sure we have products enabled for this node
+  if (commerce_node_checkout_get_node_type_enabled_products($node->type)) {
+    // Make sure there is an existing line item for this node
+    if (commerce_node_checkout_expire_get_node_last_line_item($node)) {
+      // Only admins can perform this operation
+      return user_access('administer commerce node checkout', $account);
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Entity API property callback for the expiration notifications field.
+ *
+ * @see commerce_node_checkout_expire_field_info().
+ */
+function commerce_node_checkout_expire_field_entity_property_info_alter(&$info, $entity_type, $field, $instance, $field_type) {
+  $name = $field['field_name'];
+  $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
+
+  $property['getter callback'] = 'entity_metadata_field_verbatim_get';
+  $property['setter callback'] = 'entity_metadata_field_verbatim_set';
+  $property['property info'] = array(
+    'enabled' => array(
+      'type' => 'boolean',
+      'label' => t('Status'),
+      'description' => t('If the expiration notifications are enabled.'),
+    ),
+    'sent' => array(
+      'type' => 'boolean',
+      'label' => t('Sent'),
+      'description' => t('If the expiration notifications were sent.'),
+    ),
+  );
+}
+
+/**
+ * Fetch most current line item associated with a node.
+ *
+ * @param $node
+ *   The node object.
+ * @return
+ *   The associated line item object, otherwise NULL if none exist.
+ */
+function commerce_node_checkout_expire_get_node_last_line_item($node) {
+  $items = &drupal_static(__FUNCTION__, array());
+
+  // Check the static cache
+  if (!isset($items[$node->nid])) {
+    // Initialize the static cache
+    $items[$node->nid] = NULL;
+
+    // Build the query
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'commerce_line_item');
+    $query->entityCondition('bundle', 'commerce_node_checkout');
+    $query->fieldCondition('commerce_node_checkout_node', 'target_id', $node->nid);
+    $query->fieldOrderBy('commerce_node_checkout_expires', 'value', 'DESC');
+    // We only need the one that expires last.
+    $query->range(0, 1);
+
+    // Execute the query
+    $results = $query->execute();
+
+    // See if we were able to return a line item
+    if (!empty($results['commerce_line_item'])) {
+      // Load the line item
+      $items[$node->nid] = commerce_line_item_load(key($results['commerce_line_item']));
+    }
+  }
+
+  return $items[$node->nid];
+}
+
+/**
+ * Load all nodes that are expiring at or before a specific time.
+ *
+ * @param $time_string
+ *   A time string that can be passed in to DateObject(). For example,
+ *   if 'now' is passed in, all node returns will be those that are now
+ *   expired. If '+10 days' is passed in, all nodes that will be expired
+ *   in 10 days will be returned (including those already expired, etc).
+ *   'now' is the default input.
+ * @return
+ *   An array of loaded nodes keyed by node ID.
+ */
+function commerce_node_checkout_expire_load_expiring_nodes($time_string = 'now') {
+  $nodes = &drupal_static(__FUNCTION__, array());
+
+  // Check the static cache
+  if (!isset($nodes[$time_string])) {
+    // Generate a date object based on the time string parameter
+    $time = new DateObject($time_string);
+
+    // Query to find nodes that are expiring within the time frame.
+    // We cannot use EntityFieldQuery because it doesn't yet support
+    // using groupBy()
+    // @todo: Performance can't be good with this.. What to do?
+    $query = db_select('field_data_commerce_node_checkout_expires', 'e');
+    $query->addExpression('max(e.commerce_node_checkout_expires_value)', 'expires');
+    $query->fields('n', array('commerce_node_checkout_node_target_id'));
+    $query->leftJoin('field_data_commerce_node_checkout_node', 'n', 'n.entity_id = e.entity_id');
+    $query->leftJoin('node', 'node', 'n.commerce_node_checkout_node_target_id = node.nid');
+    $query->leftJoin('commerce_line_item', 'cli', 'e.entity_id = cli.line_item_id');
+    $query->having('expires <= :time', array(':time' => $time->format('U')));
+    $query->condition('node.status', NODE_PUBLISHED);
+    $query->groupBy('n.commerce_node_checkout_node_target_id');
+
+    // Add a tag and meta information for other modules
+    $query->addTag('commerce_node_checkout_expire_expiring_nodes');
+    $query->addMetaData('time_string', $time_string);
+
+    // Fetch the results
+    $results = $query->execute()->fetchAllAssoc('commerce_node_checkout_node_target_id');
+
+    // Load the nodes
+    $nodes[$time_string] = !empty($results) ? node_load_multiple(array_keys($results)) : array();
+  }
+
+  return $nodes[$time_string];
+}
+
+/**
+ * Determine if a given node is in a given user's shopping cart.
+ *
+ * @param $node
+ *   The node object.
+ * @param $account
+ *   Optionally supply the user account to load the cart for. If omitted,
+ *   the current user will be used.
+ * @return
+ *   TRUE if the node is in the user's cart, otherwise FALSE.
+ */
+function commerce_node_checkout_expire_node_in_cart($node, $account = NULL) {
+  if (!$account) {
+    global $user;
+    $account = clone $user;
+  }
+
+  // Load the cart
+  if ($order = commerce_cart_order_load($account->uid)) {
+    // Create a wrapper for the order
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    // See if there are items present
+    if ($lines = $wrapper->commerce_line_items->value()) {
+      // Iterate the lines to see if this node is present
+      foreach ($lines as $line) {
+        // See if this is a node checkout item
+        if ($line->type == 'commerce_node_checkout') {
+          // Extract the node
+          if ($nid = $line->commerce_node_checkout_node[LANGUAGE_NONE][0]['target_id']) {
+            if ($nid == $node->nid) {
+              return TRUE;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Get the expiration time for a given node.
+ *
+ * @param $node
+ *   A node object.
+ * @return
+ *   A timestamp of when the node expires, or expired. If the node does
+ *   not have an expiration, NULL will be returned.
+ */
+function commerce_node_checkout_expire_get_node_expiration($node) {
+  // Load the last line item
+  if ($line_item = commerce_node_checkout_expire_get_node_last_line_item($node)) {
+    // Create a wrapper
+    $wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+
+    // Extract the expiration date
+    return $wrapper->commerce_node_checkout_expires->value();
+  }
+
+  return NULL;
+}
+
+/**
+ * Provides form to enable a user to relist an expired/expiring node
+ *
+ * This isn't put in module.pages.inc because it won't load with
+ * AJAX submissions.
+ *
+ * @param $node
+ *   The node object to relist.
+ * @param $add_expiration
+ *   TRUE if the expiration date and message should be added, otherwise
+ *   FALSE.
+ */
+function commerce_node_checkout_expire_relist_form($form, &$form_state, $node, $add_expiration = TRUE) {
+  $form['#node'] = $node;
+
+  // Add the expiration date and message, if desired
+  if ($add_expiration) {
+    // @todo: Add a message about how buying adds to the expiration time?
+    $expiration = commerce_node_checkout_expire_get_node_expiration($node);
+    $form['expiration'] = array(
+      '#type' => 'item',
+      '#title' => ($expiration > REQUEST_TIME) ? t('This item expires on:') : t('This item expired on:'),
+      '#markup' => format_date($expiration, 'long'),
+    );
+  }
+
+  // Add the product selection
+  $form['product'] = array(
+    '#type' => 'commerce_node_checkout',
+    '#node_type' => $node->type,
+  );
+
+  // AJAX submit button
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add to cart'),
+    '#ajax' => array(
+      'callback' => 'commerce_node_checkout_expire_relist_form_ajax',
+      'wrapper' => str_replace('_', '-', $form_state['build_info']['form_id']),
+      'method' => 'html',
+      'effect' => 'fade',
+    ),
+  );
+
+  return $form;
+}
+
+/**
+ * Validation handler for the node relist form.
+ */
+function commerce_node_checkout_expire_relist_form_validate($form, &$form_state) {
+  // Make sure this relisting isn't already in the cart.
+  // We need to enforce this because the new expiration time after the
+  // relisting will be based on the current expiration time in the
+  // line item.
+  if (commerce_node_checkout_expire_node_in_cart($form['#node'])) {
+    form_set_error('', t('A relisting for this item has already been added to your !link.', array('!link' => l(t('shopping cart'), 'cart'))));
+  }
+
+  // To be safe, make sure the product still exists
+  $product_id = $form_state['values']['commerce_node_checkout_product'];
+  if (!($form_state['values']['product'] = commerce_product_load($product_id))) {
+    form_set_error('', t('An error occurred. Please refresh the page and try again.')); 
+  }
+
+  // We load the node again just in case because the Views form is currently
+  // using a mock-node object to remain light.
+  if (!($form_state['values']['node'] = node_load($form['#node']->nid))) {
+    form_set_error('', t('This content is no longer available.'));
+  }
+}
+
+/**
+ * Submit handler for the node relist form.
+ */
+function commerce_node_checkout_expire_relist_form_submit($form, &$form_state) {
+  // Extract the objects we need
+  $node = $form_state['values']['node'];
+  $product = $form_state['values']['product'];
+  
+  // Add to the cart
+  if (commerce_node_checkout_add_node($node, $product)) {
+    // Redirect to the cart
+    $form_state['redirect'] = 'cart';
+  }
+  else {
+    // Could not add the product to the cart
+    form_set_error('', t('An error occurred while trying to add this to your shopping cart. Please try again.'));
+  }
+}
+
+/**
+ * AJAX submit handler for the node relist form.
+ */
+function commerce_node_checkout_expire_relist_form_ajax($form, &$form_state) {
+  $commands = array();
+  
+  // See if the form had errors
+  if (form_get_errors()) {
+    // Prepend the error messages
+    $commands[] = ajax_command_prepend(NULL, theme('status_messages'));
+  }
+  else {
+    // Replace with just the status message
+    $commands[] = ajax_command_replace(NULL, theme('status_messages'));
+  }
+
+  return array('#type' => 'ajax', '#commands' => $commands);
+}

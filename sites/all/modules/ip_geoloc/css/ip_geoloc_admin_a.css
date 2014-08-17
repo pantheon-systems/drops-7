@@ -1,0 +1,48 @@
+/* Anno 2013 background images for options in a <select> work in Firefox ... */
+
+select.marker-color {
+  height: 2em;
+}
+select.marker-color option {
+  padding: 14px 0 16px 36px;
+}
+
+select.marker-color option[value="black"] {
+  background: url(../amarkers/black.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="blue"] {
+  background: url(../amarkers/blue.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="green"] {
+  background: url(../amarkers/green.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="grey"] {
+  background: url(../amarkers/grey.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="light blue"] {
+  background: url("../amarkers/light blue.png") no-repeat 2px 1px;
+}
+select.marker-color option[value="magenta"] {
+  background: url(../amarkers/magenta.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="orange"] {
+  background: url(../amarkers/orange.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="pink"] {
+  background: url(../amarkers/pink.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="purple"] {
+  background: url(../amarkers/purple.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="red"] {
+  background: url(../amarkers/red.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="red brick"] {
+  background: url("../amarkers/red brick.png") no-repeat 2px 1px;
+}
+select.marker-color option[value="white"] {
+  background: url(../amarkers/white.png) no-repeat 2px 1px;
+}
+select.marker-color option[value="yellow"] {
+  background: url(../amarkers/yellow.png) no-repeat 2px 1px;
+}

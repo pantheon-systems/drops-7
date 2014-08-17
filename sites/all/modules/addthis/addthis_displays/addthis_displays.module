@@ -1,0 +1,4 @@
+<?php
+
+// Seperated field hooks for the purpose of keeping it clean.
+module_load_include('inc', 'addthis_displays', 'addthis_displays.field');

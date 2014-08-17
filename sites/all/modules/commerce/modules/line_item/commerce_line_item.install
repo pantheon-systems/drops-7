@@ -1,0 +1,199 @@
+<?php
+
+/**
+ * Implements hook_schema().
+ */
+function commerce_line_item_schema() {
+  $schema = array();
+
+  $schema['commerce_line_item'] = array(
+    'description' => 'The base table for line items.',
+    'fields' => array(
+      'line_item_id' => array(
+        'description' => 'The primary identifier for a line item.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'order_id' => array(
+        'description' => 'The unique ID of the order the line item belongs to.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'type' => array(
+        'description' => 'The module defined type of this line item.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'line_item_label' => array(
+        'description' => 'The merchant defined label for a line item.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'quantity' => array(
+        'type' => 'numeric',
+        'size' => 'normal',
+        'not null' => TRUE,
+        'default' => 0,
+        'precision' => 10,
+        'scale' => 2,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the line item was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the line item was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of additional data.',
+      ),
+    ),
+    'primary key' => array('line_item_id'),
+    'indexes' => array(
+      'order_id' => array('order_id'),
+      'line_item_type' => array('type'),
+    ),
+    'foreign keys' => array(
+      'order_id' => array(
+        'table' => 'commerce_order',
+        'columns'=> array('order_id' => 'order_id'),
+      ),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_field_schema().
+ */
+function commerce_line_item_field_schema($field) {
+  if ($field['type'] == 'commerce_line_item_reference') {
+    return array(
+      'columns' => array(
+        'line_item_id' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ),
+      ),
+      'indexes' => array(
+        'line_item_id' => array('line_item_id'),
+      ),
+      'foreign keys' => array(
+        'line_item_id' => array(
+          'table' => 'commerce_line_item',
+          'columns' => array('line_item_id' => 'line_item_id'),
+        ),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_line_item_uninstall() {
+  module_load_include('module', 'commerce');
+
+  // Delete any field instance attached to a line item type.
+  commerce_delete_instances('commerce_line_item');
+
+  // Delete any line item reference fields.
+  commerce_delete_fields('commerce_line_item_reference');
+}
+
+/**
+ * Update Rules using unit price manipulation actions to set a default value for
+ * the rounding mode to use on the updated unit price amount.
+ */
+function commerce_line_item_update_7000() {
+  drupal_flush_all_caches();
+
+  // Loop over all defined Rules configurations.
+  foreach (rules_config_load_multiple(FALSE) as $rule) {
+    if ($rule instanceof RulesContainerPlugin) {
+      _commerce_line_item_update_rule_container_round_mode($rule);
+    }
+    else {
+      _commerce_line_item_update_rule_round_mode($rule);
+    }
+  }
+
+  return t('Rules updated to set a default rounding mode actions that manipulate unit prices.');
+}
+
+/**
+ * Iterates over a container's children to recursively find non-container
+ * plugins whose settings should be updated.
+ */
+function _commerce_line_item_update_rule_container_round_mode($rule) {
+  foreach ($rule->getIterator() as $child) {
+    if ($child instanceof RulesContainerPlugin) {
+      _commerce_line_item_update_rule_container_round_mode($child);
+    }
+    else {
+      _commerce_line_item_update_rule_round_mode($child);
+    }
+  }
+}
+
+/**
+ * Given a Rule configuration, checks its element name to see if it is an action
+ * that requires a value for the new round_mode setting used in unit price
+ * manipulation actions.
+ */
+function _commerce_line_item_update_rule_round_mode($rule) {
+  // Build an array of all element names that require this new setting.
+  $action_names = array(
+    'commerce_line_item_unit_price_add',
+    'commerce_line_item_unit_price_subtract',
+    'commerce_line_item_unit_price_multiply',
+    'commerce_line_item_unit_price_divide',
+    'commerce_line_item_unit_price_amount',
+  );
+
+  // If the Rule passed in is one of these actions...
+  if (in_array($rule->getElementName(), $action_names)) {
+    // Initialize its round_mode setting to match the previous behavior of not
+    // rounding at all and save it.
+    $rule->settings['round_mode'] = COMMERCE_ROUND_HALF_UP;
+    $rule->save();
+  }
+}
+
+/**
+ * Add indexes to the commerce_line_item table on order_id and type.
+ */
+function commerce_line_item_update_7101() {
+  if (db_index_exists('commerce_line_item', 'order_id')) {
+    db_drop_index('commerce_line_item', 'order_id');
+  }
+
+  if (db_index_exists('commerce_line_item', 'type')) {
+    db_drop_index('commerce_line_item', 'type');
+  }
+
+  if (db_index_exists('commerce_line_item', 'line_item_type')) {
+    db_drop_index('commerce_line_item', 'line_item_type');
+  }
+
+  db_add_index('commerce_line_item', 'order_id', array('order_id'));
+  db_add_index('commerce_line_item', 'line_item_type', array('type'));
+
+  return t('Database indexes added to the order_id and type columns of the commerce_line_item table.');
+}
