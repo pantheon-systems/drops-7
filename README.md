@@ -1,8 +1,13 @@
-[![Build Status](https://travis-ci.org/nuams/dkan-drops-7.png?branch=master)](https://travis-ci.org/nuams/dkan-drops-7)
+# Fully Made Version of DKAN
+This is a version of DKAN that has already been "made" with drush make. It includes Drupal core as well as the DKAN installation profile which can be found in "profiles/dkan".
 
-# Dkan 7 for DROPs (Pantheon)
+To install, follow the same directions as Drupal core: https://www.drupal.org/documentation/install
 
-Fork based on [Pantheon DROPs](https://github.com/pantheon-systems/drops-7)
+See the main DKAN repository for further instructions, support, and community: http://github.com/nucivic/dkan
+
+# DKAN on Pantheon
+
+This is a fork based on [Pantheon DROPs](https://github.com/pantheon-systems/drops-7)
 
 ## How to update Drupal Drop from Pantheon Git Repository
 
