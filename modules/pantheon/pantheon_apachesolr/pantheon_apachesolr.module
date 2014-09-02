@@ -82,7 +82,7 @@ function pantheon_apachesolr_menu() {
     'description' => 'Check communication with Pantheon\'s Apache Solr Service',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('pantheon_apachesolr_status'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer search'),
   );
 
   $items['admin/config/search/pantheon/status'] = array(
@@ -96,7 +96,7 @@ function pantheon_apachesolr_menu() {
     'description' => "Post schema.xml to Pantheon's Apache Solr Service",
     'page callback' => 'drupal_get_form',
     'page arguments' => array('pantheon_apachesolr_post_schema_form'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer search'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 10,
   );
@@ -106,7 +106,7 @@ function pantheon_apachesolr_menu() {
     'description' => "Send raw query string Pantheon's Apache Solr Service for debugging",
     'page callback' => 'drupal_get_form',
     'page arguments' => array('pantheon_apachesolr_query'),
-    'access arguments' => array('access administration pages'),
+    'access arguments' => array('administer search'),
     'type' => MENU_LOCAL_TASK,
     'weight' => 11,
   );
