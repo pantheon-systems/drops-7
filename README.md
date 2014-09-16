@@ -5,8 +5,6 @@ To install, follow the same directions as Drupal core: https://www.drupal.org/do
 
 See the main DKAN repository for further instructions, support, and community: http://github.com/nucivic/dkan
 
-See full DKAN documentation here: http://docs.getdkan.com/
-
 # DKAN on Pantheon
 
 This is a fork based on [Pantheon DROPs](https://github.com/pantheon-systems/drops-7)
