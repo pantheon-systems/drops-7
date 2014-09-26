@@ -1,0 +1,13 @@
+name = reCAPTCHA Mailhide
+description = "Uses the reCAPTCHA web service to protect email addresses."
+package = "Spam control"
+core = 7.x
+
+files[] = recaptcha_mailhide.module
+
+; Information added by Drupal.org packaging script on 2014-02-06
+version = "7.x-1.11"
+core = "7.x"
+project = "recaptcha"
+datestamp = "1391701492"
+

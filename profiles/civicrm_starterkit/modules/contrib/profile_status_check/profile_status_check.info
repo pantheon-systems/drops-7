@@ -1,0 +1,15 @@
+name = Profile Status Check
+description = 'Adds an Status tab to module list to show list modules being pulled from 
+sites/all/modules or sites/default/modules instead of profile/'
+
+core = 7.x
+
+configure = admin/modules/status
+
+
+; Information added by  packaging script on 2013-11-21
+version = "7.x-1.0-beta1"
+core = "7.x"
+project = "profile_status_check"
+datestamp = "1385041708"
+

@@ -1,0 +1,252 @@
+<?php
+
+/**
+ * @file
+ * Uses the reCAPTCHA web service to improve the CAPTCHA system.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function recaptcha_help($path, $arg) {
+  $output = '';
+  switch ($path) {
+    case 'admin/modules#name':
+      $output .= t('reCAPTCHA');
+      break;
+    case 'admin/modules#description':
+    case 'admin/user/captcha/recaptcha':
+      $output .= t('Uses the <a href="@url" target="_blank">reCAPTCHA</a> web service to improve the CAPTCHA system and protect email addresses.', array('@url' => url('https://www.google.com/recaptcha')));
+      break;
+    case 'admin/help#recaptcha':
+      $output .= '<p>' .
+        t('Uses the reCAPTCHA web service to improve the CAPTCHA module and protect email addresses. For more information on what reCAPTCHA is, visit <a href="@url" target="_blank">the official website</a>.', array('@url' => url('https://www.google.com/recaptcha'))) .
+        '</p><h3>' .
+        t('Configuration') .
+        '</h3><p>' .
+        t('The settings associated with reCAPTCHA can be found in the <a href="@recaptchatab">reCAPTCHA tab</a>, in the <a href="@captchasettings">CAPTCHA settings</a>. You must set your public and private reCAPTCHA keys in order to use the module. Once the public and private keys are set, visit the <a href="@captchasettings">CAPTCHA settings</a>, where you can choose where reCAPTCHA should be displayed.', array('@recaptchatab' => url('admin/user/captcha/recaptcha'), '@captchasettings' => url('admin/user/captcha'))) .
+        '</p>';
+      break;
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function recaptcha_menu() {
+  $items = array();
+  $items['admin/config/people/captcha/recaptcha'] = array(
+    'title' => 'reCAPTCHA',
+    'description' => 'Administer the reCAPTCHA web service.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recaptcha_admin_settings'),
+    'access arguments' => array('administer recaptcha'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'recaptcha.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function recaptcha_permission() {
+  return array(
+    'administer recaptcha' => array(
+      'title' => t('reCaptcha Administration'),
+      'description' => t('Administer reCaptcha settings'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_captcha().
+ */
+function recaptcha_captcha() {
+  $args = func_get_args();
+  $op = array_shift($args);
+  switch ($op) {
+    case 'list':
+      return array('reCAPTCHA');
+
+    case 'generate':
+      $captcha_type = array_shift($args);
+      $captcha = array();
+      if ($captcha_type == 'reCAPTCHA') {
+        // Retrieve configuration variables.
+        $recaptcha_theme = variable_get('recaptcha_theme', 'red');
+        $recaptcha_tabindex = variable_get('recaptcha_tabindex', NULL);
+        $recaptcha_public_key = variable_get('recaptcha_public_key', FALSE);
+        $recaptcha_ajax_api = variable_get('recaptcha_ajax_api', FALSE);
+
+        // Test if reCAPTCHA can be used, falling back to Math if it is not
+        // configured, the library won't load, or the server is down.
+        if (!$recaptcha_public_key || !_recaptcha_load_library() || !_recaptcha_test_recaptcha_server()) {
+          return captcha_captcha('generate', 'Math', $args);
+        }
+
+        if ($recaptcha_ajax_api) {
+          // By default CAPTCHA turns off page caching on any page where a
+          // CAPTCHA challenge appears. If recaptcha is using AJAX API, set
+          // caching back to its old state as stored in DB.
+          global $conf;
+          $conf['cache'] = unserialize(db_query("SELECT value FROM {variable} WHERE name = 'cache'")->fetchField());
+        }
+
+        $recaptcha_options = array(
+          'theme' => $recaptcha_theme,
+        );
+
+        // Localization support.
+        global $language;
+        if (isset($language->language)) {
+          // reCAPTCHA uses two-character language codes, so 'pt-br' must be
+          // passed as 'pt'; cf. https://developers.google.com/recaptcha/docs/customization#i18n
+          $recaptcha_options['lang'] = drupal_substr($language->language, 0, 2);
+        }
+
+        // Construct the Javascript, but only display it once.
+        static $_recaptcha_jsadded = FALSE;
+        if ($_recaptcha_jsadded == FALSE && $recaptcha_ajax_api == FALSE) {
+          $_recaptcha_jsadded = TRUE;
+
+          // Add support to display the custom theme.
+          if ($recaptcha_theme == 'custom') {
+            $recaptcha_options['custom_theme_widget'] = 'recaptcha_custom_theme_widget';
+          }
+
+          // Set the default tab index.
+          if (!empty($recaptcha_tabindex)) {
+            $recaptcha_options['tabindex'] = $recaptcha_tabindex;
+          }
+          drupal_add_js('var RecaptchaOptions = ' . drupal_json_encode($recaptcha_options) . ';', array('type' => 'inline'));
+        }
+
+        // Create the form. Captcha requires TRUE to be returned in solution.
+        $captcha['solution'] = TRUE;
+        $captcha['captcha_validate'] = 'recaptcha_captcha_validation';
+
+        // If 'Disable Client-Side Cookies' is set, then add query string to
+        // end of the public key string before passing to recaptchalib.
+        if (variable_get('recaptcha_nocookies', FALSE)) {
+          $recaptcha_public_key .= '&nocookie=1';
+        }
+
+        $captcha['form']['captcha_response'] = array(
+          '#type' => 'hidden',
+          '#value' => 'reCAPTCHA',
+        );
+
+        // Expose the form, either straight HTML, or using the AJAX API.
+        // Build the custom theme HTML if necessary.
+        $recaptcha_custom_html = ($recaptcha_theme == 'custom') ? theme('recaptcha_custom_widget') : '';
+        if ($recaptcha_ajax_api == FALSE) {
+          // Only generate recaptcha_get_html() if we're not using the AJAX API.
+          $html = recaptcha_get_html($recaptcha_public_key, NULL, TRUE);
+          $captcha['form']['captcha_form'] = array(
+            '#type' => 'item',
+            '#markup' => (!empty($recaptcha_custom_html) ? '<div id="recaptcha_custom_theme_widget">' . $recaptcha_custom_html . '</div>' : '') . $html,
+          );
+        }
+        else {
+          $captcha['form']['captcha_form'] = array(
+            '#type' => 'item',
+            // Create the destination container, inserting any custom theme HTML
+            // necessary ($recaptcha_custom_html will be empty if we are not
+            // using custom theme).
+            '#markup' => '<div id="recaptcha_ajax_api_container">' . $recaptcha_custom_html . '</div>',
+          );
+          drupal_add_js('https://www.google.com/recaptcha/api/js/recaptcha_ajax.js', array('type' => 'external'));
+          $recaptcha_options['public_key'] = $recaptcha_public_key;
+          $recaptcha_options['container'] = 'recaptcha_ajax_api_container';
+          drupal_add_js(array('recaptcha' => $recaptcha_options), 'setting');
+          drupal_add_js(drupal_get_path('module', 'recaptcha') . '/recaptcha.js');
+        }
+      }
+      return $captcha;
+  }
+}
+
+/**
+ * @return boolean
+ *   Whether or not the reCAPTCHA server is up.
+ */
+function _recaptcha_test_recaptcha_server() {
+  $fs = @fsockopen(RECAPTCHA_VERIFY_SERVER, 80, $errno, $errstr, 10);
+  if ($fs) {
+    fclose($fs);
+    return TRUE;
+  }
+  else {
+    drupal_set_message(t('Unable to connect with the reCAPTCHA server (@server): @errno: @errstr', array(
+      '@server' => RECAPTCHA_VERIFY_SERVER,
+      '@errno' => $errno,
+      '@errstr' => $errstr,
+    )), 'error');
+    return FALSE;
+  }
+}
+
+/**
+ * CAPTCHA Callback; Validates the reCAPTCHA code.
+ */
+function recaptcha_captcha_validation($solution = NULL, $response = NULL) {
+  global $user;
+  $recaptcha_private_key = variable_get('recaptcha_private_key', FALSE);
+  $ip_address = ip_address();
+  if ($recaptcha_private_key && $ip_address && $response === 'reCAPTCHA' && !empty($_POST['recaptcha_challenge_field']) && !empty($_POST['recaptcha_response_field']) && _recaptcha_test_recaptcha_server()) {
+    $resp = recaptcha_check_answer(
+      $recaptcha_private_key,
+      $ip_address,
+      check_plain($_POST['recaptcha_challenge_field']),
+      check_plain($_POST['recaptcha_response_field'])
+    );
+    return $resp->is_valid;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function recaptcha_theme() {
+  return array(
+    'recaptcha_custom_widget' => array(
+      'arguments' => array(),
+    ),
+  );
+}
+
+/**
+ * Theme function: creates the custom themed recaptcha widget.
+ *
+ * @ingroup themeable
+ */
+function theme_recaptcha_custom_widget() {
+  $recaptcha_only_if_incorrect_sol = t('Incorrect please try again');
+  $recaptcha_only_if_image_enter = t('Enter the words above:');
+  $recaptcha_only_if_audio_enter = t('Enter the words you hear:');
+  $recaptcha_get_another_captcha = t('Get another CAPTCHA');
+  $recaptcha_only_if_image = t('Get an audio CAPTCHA');
+  $recaptcha_only_if_audio = t('Get an image CAPTCHA');
+  $help = t('Help');
+  return <<<EOT
+    <div id="recaptcha_image"></div>
+    <div class="recaptcha_only_if_incorrect_sol" style="color:red">$recaptcha_only_if_incorrect_sol</div>
+    <span class="recaptcha_only_if_image">$recaptcha_only_if_image_enter</span>
+    <span class="recaptcha_only_if_audio">$recaptcha_only_if_audio_enter</span>
+    <input type="text" id="recaptcha_response_field" name="recaptcha_response_field" />
+    <div class="recaptcha_get_another_captcha"><a href="javascript:Recaptcha.reload()">$recaptcha_get_another_captcha</a></div>
+    <div class="recaptcha_only_if_image"><a href="javascript:Recaptcha.switch_type('audio')">$recaptcha_only_if_image</a></div>
+    <div class="recaptcha_only_if_audio"><a href="javascript:Recaptcha.switch_type('image')">$recaptcha_only_if_audio</a></div>
+    <div class="recaptcha_help"><a href="javascript:Recaptcha.showhelp()">$help</a></div>
+EOT;
+}
+
+/**
+ * Load the recaptcha library.
+ */
+function _recaptcha_load_library() {
+  return module_load_include('php', 'recaptcha', 'recaptcha-php-1.11/recaptchalib');
+}
