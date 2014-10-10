@@ -91,34 +91,50 @@ h2.block-title {
     width: 200px;
   }
 }
+.front #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar {
+  .form-submit {
+    top: 0;
+  }
+}
 #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar {
   @include searchbox;
   width:172px;
   form {
     width:172px;
   }
-    input.form-control {
-      width:170px;
-    }
-    .views-exposed-form .form-submit {
-      margin:22px 0 0;
-      color:#fff;
-      text-shadow: none;
-    }
+  input.form-control {
+    width:170px;
+  }
+  #edit-submit {
+    margin:22px 0 0;
+    color:#fff;
+    text-shadow: none;
+  }
+}
+#block-dkan-sitewide-dkan-sitewide-search-bar--2 {
+  @include searchbox;
+  width: 370px;
+  form {
+    width:290px;
+  }
+  #edit-submit {
+    margin:22px 0 0;
+    color:#fff;
+    text-shadow: none;
+    right: 45px;
+  }
 }
 
 #views-exposed-form-user-profile-search-entity-view-1,
 #views-exposed-form-groups-search-entity-view-1,
 #views-exposed-form-dataset-page {
-  @include searchbox;
-  width:372px;
-    input.form-control {
-      width:370px;
-    }
-    .views-exposed-form .form-submit {
+    #edit-submit {
       top: -20px !important;
       color:#fff;
       text-shadow: none;
+    }
+    .views-exposed-form .form-submit {
+      margin: 0;
     }
 }
 #block-dkan-sitewide-demo-front-dkan-search-front #views-exposed-form-dataset-page .views-exposed-form .description { top:7px; }

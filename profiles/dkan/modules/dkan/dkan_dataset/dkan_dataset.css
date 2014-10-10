@@ -270,76 +270,53 @@ padding: 4px 6px;
 }
 .format-label[data-format=data],
 .format-label[data-format*=data] {
-  width: 32px;
-  height: 35px;
   background-position: 0px -62px;
 }
 .format-label[data-format=rdf],
 .format-label[data-format*=rdf] {
-  width: 32px;
-  height: 35px;
   background-position: -32px -62px;
 }
 .format-label[data-format=pdf],
 .format-label[data-format*=pdf] {
-  width: 32px;
-  height: 35px;
   background-position: -64px -62px;
 }
 .format-label[data-format=api],
 .format-label[data-format*=api] {
-  width: 32px;
-  height: 35px;
   background-position: -96px -62px;
 }
 .format-label[data-format=zip],
 .format-label[data-format*=zip] {
-  width: 32px;
-  height: 35px;
   background-position: -128px -62px;
 }
 .format-label[data-format=xls],
 .format-label[data-format*=xls] {
-  width: 32px;
-  height: 35px;
   background-position: -160px -62px;
 }
 .format-label[data-format=txt],
 .format-label[data-format*=txt] {
-  width: 32px;
-  height: 35px;
   background-position: -224px -62px;
 }
 .format-label[data-format=xml],
 .format-label[data-format*=xml] {
-  width: 32px;
-  height: 35px;
   background-position: -256px -62px;
 }
 .format-label[data-format=json],
 .format-label[data-format*=json] {
-  width: 32px;
-  height: 35px;
   background-position: -288px -62px;
 }
 .format-label[data-format=CSV],
 .format-label[data-format=csv],
 .format-label[data-format*=csv] {
-  width: 32px;
-  height: 35px;
   background-position: -192px -62px;
 }
 .format-label[data-format=HTML],
 .format-label[data-format=html],
 .format-label[data-format*=html] {
-  width: 32px;
-  height: 35px;
   background-position: -320px -62px;
 }
 .format-label {
   background-image: url("images/sprite-ckan-icons.png");
   background-repeat: no-repeat;
-  background-position: 16px 16px;
   text-indent: -900em;
   background: url("images/sprite-resource-icons.png") no-repeat 0 0;
   font-size: 16px;
@@ -347,8 +324,14 @@ padding: 4px 6px;
   vertical-align: text-bottom;
   position: relative;
   top: 2px;
-  width: 16px;
-  height: 16px;
+  text-indent: 40px;
+  margin-bottom: 20px;
+  padding-top: 8px;
+  font-weight: bold;
+  white-space: nowrap;
+  width: 32px;
+  height: 35px;
+  background-position: 0px -62px;
 }
 .block .item-list li > a {
   display: block;
@@ -408,6 +391,7 @@ ul.resource-list li {
   padding: 0 0 0 40px;
 }
 .resource-list li .format-label {
+  text-indent: -9999px;
   position: absolute;
   top: 0;
   left: 0;

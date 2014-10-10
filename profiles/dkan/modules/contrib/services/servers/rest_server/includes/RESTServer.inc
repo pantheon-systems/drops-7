@@ -648,29 +648,29 @@ class RESTServer {
 
     switch ($error_code) {
       case 204:
-        $error_header_status_message = '204 No Content: ' . $error_message;
+        $error_header_status_message = $this->formatHttpHeaderStatusMessage('204 No Content', $error_message);
         break;
       case 304:
-        $error_header_status_message =  '304 Not Modified: ' . $error_message;
+        $error_header_status_message = $this->formatHttpHeaderStatusMessage('304 Not Modified', $error_message);
         break;
       case 401:
-        $error_header_status_message =  '401 Unauthorized: ' . $error_message;
+        $error_header_status_message = $this->formatHttpHeaderStatusMessage('401 Unauthorized', $error_message);
         break;
       case 404:
-        $error_header_status_message =  '404 Not found: ' . $error_message;
+        $error_header_status_message = $this->formatHttpHeaderStatusMessage('404 Not found', $error_message);
         break;
       case 406:
-        $error_header_status_message = '406 Not Acceptable: ' . $error_message;
+        $error_header_status_message = $this->formatHttpHeaderStatusMessage('406 Not Acceptable', $error_message);
         break;
       case 200:
-        $error_header_status_message = '200 ' . $error_message;
+        $error_header_status_message = $this->formatHttpHeaderStatusMessage('200', $error_message);
         break;
       default:
         if ($error_code >= 400 && $error_code < 600) {
-          $error_header_status_message = $error_code . ' :' . $error_message;
+          $error_header_status_message = $this->formatHttpHeaderStatusMessage($error_code, $error_message);
         }
         else {
-          $error_header_status_message = '500 Internal Server Error: An error occurred (' . $error_code . '): ' . $error_message;
+          $error_header_status_message = $this->formatHttpHeaderStatusMessage('500 Internal Server Error', "An error occurred ({$error_code}): {$error_message}");
         }
         break;
     }
@@ -682,8 +682,23 @@ class RESTServer {
     );
     drupal_alter('rest_server_execute_errors', $error_alter_array, $controller, $arguments);
 
-    drupal_add_http_header('Status', strip_tags($error_header_status_message));
+    drupal_add_http_header('Status', strip_tags(str_replace(PHP_EOL, '', $error_header_status_message)));
 
     return $error_data;
+  }
+
+  /**
+   * Formats a status code and message for use as an HTTP header message.
+   *
+   * @param $status_code
+   *   An HTTP status code, e.g. "404 Not found" or "200".
+   * @param $message
+   *   A message string.
+   *
+   * @return string
+   *   A properly formatted HTTP header status message.
+   */
+  protected function formatHttpHeaderStatusMessage($status_code, $message) {
+    return "{$status_code} : {$message}";
   }
 }

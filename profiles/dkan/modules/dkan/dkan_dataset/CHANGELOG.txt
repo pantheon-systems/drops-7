@@ -1,5 +1,13 @@
+7.x-1.4  2014-10-10
+--------------------------
+ - Many warnings fixed with proper isset calls
+ - Changes in make file (fixed versions on some components)
+ - Additional Info block on dataset page
+ - Added docx as allowed format for field_upload
+ - 
+
 7.x-1.1 2013-06-27
 ------------------
 - Change references to NuCivic organization on github
 - Several bug fixes
-- Some changes for Project Open Data complince, including data.json self-reference
+- Some changes for Project Open Data compliance, including data.json self-reference

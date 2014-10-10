@@ -63,6 +63,7 @@ table.table {
         @include background-image(linear-gradient(#F5F5F5, #F0F0F0));
         border:1px solid $border !important;
         padding:4px 8px;
+        font-weight: bold;
     }
     thead th:first-child {
         @inlclude border-top-left-radius(4px);

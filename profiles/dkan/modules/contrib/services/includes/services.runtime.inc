@@ -127,7 +127,7 @@ function _services_controller_execute_preserve_user_switch_anonymous($controller
   global $user;
   services_set_server_info('original_user', $user);
 
-  $preserve_session = strpos($controller['callback'], 'login') === FALSE && strpos($controller['callback'], 'logout') === FALSE;
+  $preserve_session = !is_string($controller['callback']) || (strpos($controller['callback'], 'login') === FALSE && strpos($controller['callback'], 'logout') === FALSE);
   services_set_server_info('preserve_session', $preserve_session);
   if ($preserve_session) {
     $original_session_state = drupal_save_session();

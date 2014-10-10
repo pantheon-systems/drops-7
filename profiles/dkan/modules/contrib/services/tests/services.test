@@ -501,6 +501,9 @@ class ServicesWebTestCase extends DrupalWebTestCase {
           'register' => array(
             'enabled' => 1,
           ),
+          'request_new_password' => array(
+            'enabled' => 1,
+          ),
         ),
         'targeted_actions' => array(
           'cancel' => array(

@@ -11,6 +11,7 @@ dependencies[] = chosen
 dependencies[] = ctools
 dependencies[] = date
 dependencies[] = date_popup
+dependencies[] = dkan_dataset
 dependencies[] = double_field
 dependencies[] = entity
 dependencies[] = entityreference

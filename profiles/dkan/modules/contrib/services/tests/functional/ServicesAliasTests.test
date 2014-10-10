@@ -62,6 +62,14 @@ class ServicesAliasTests extends ServicesWebTestCase {
           ),
         ),
       ),
+      'node' => array(
+        'alias' => 'node_alias',
+        'operations' => array(
+          'retrieve' => array(
+            'enabled' => 1,
+          ),
+        ),
+      ),
     );
     $endpoint->debug = 1;
     $endpoint->export_type = FALSE;
@@ -100,5 +108,19 @@ class ServicesAliasTests extends ServicesWebTestCase {
                   && isset($response_data->user)
                   && $response_data->user->name == $account->name;
     $this->assertTrue($proper_answer, 'User successfully logged in.', 'Alias: User login');
+  }
+  /**
+   * Testing parser functionality.
+   */
+  public function testUnderscoreAlias() {
+    // Create and log in our privileged user.
+    $this->privilegedUser = $this->drupalCreateUser(array(
+      'administer services',
+    ));
+    $this->drupalLogin($this->privilegedUser);
+    $node = $this->drupalCreateNode();
+    $responseArray = $this->servicesGet($this->endpoint->path . '/node_alias/' . $node->nid);
+    $this->assertTrue($node->title == $responseArray['body']->title,
+      'Successfully received Node info', 'Alias: node Retrieve');
   }
 }

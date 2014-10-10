@@ -7,9 +7,9 @@ dependencies[] = rdfx
 files[] = rdfui.test
 
 
-; Information added by drush on 2014-08-08
+; Information added by drush on 2014-10-10
 version = "7.x-2.0-alpha4+9-dev"
 core = "7.x"
 project = "rdfx"
-datestamp = "1407510769"
+datestamp = "1412979807"
 

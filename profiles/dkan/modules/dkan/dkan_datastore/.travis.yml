@@ -59,5 +59,6 @@ script:
 notifications:
   slack:
     rooms:
-      nuams:2Eywq0BtPv73ISq3CF6gvRzo#monitor-devops
-      nuams:t3p2KxXdzymmwxitWPvfAsnK#monitor-dkan
+      - nucivic:t3p2KxXdzymmwxitWPvfAsnK#monitor-devops
+      - nucivic:t3p2KxXdzymmwxitWPvfAsnK#monitor-dkan
+      - nucivic:t3p2KxXdzymmwxitWPvfAsnK#monitor-data-starter

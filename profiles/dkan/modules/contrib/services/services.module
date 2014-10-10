@@ -10,6 +10,169 @@
  */
 define('SERVICES_REQUIRED_CTOOLS_API', '1.7');
 
+/*
+ * Function to return list of batch options
+ */
+function services_security_get_update_options() {
+  return array(
+    'services_security_update_reset_users_since_date',
+    'services_security_update_reset_users_with_password_one',
+    'services_security_update_do_nothing',
+  );
+}
+
+/*
+ * Function to setup batch processing.
+ */
+function services_security_setup_batch($op, $drush = FALSE) {
+  switch ($op) {
+    case 'services_security_update_reset_users_since_date':
+      services_security_update_reset_users_since_date();
+      services_security_user_update_finish();
+      break;
+
+    case 'services_security_update_reset_users_with_password_one':
+      batch_set(services_security_update_reset_users_with_password_one());
+      if ($drush) {
+        $batch =& batch_get();
+        //Because we are doing this on the back-end, we set progressive to false.
+        $batch['progressive'] = FALSE;
+        //Start processing the batch operations.
+        drush_backend_batch_process();
+      }
+      break;
+
+    case 'services_security_update_do_nothing':
+      services_security_user_update_finish();
+      break;
+  }
+}
+
+function services_security_update_reset_users_since_date() {
+  // Update all users created since August 30th, 2013
+  $result = db_update('users')
+    ->fields(array(
+      'pass' => "ZZZservices_security",
+    ))
+    ->condition('created', 1377892483, '>=')
+    ->execute();
+    drupal_set_message($result . ' users were updated');
+}
+
+function services_security_user_update_finished($success, $results, $operations) {
+  if ($success) {
+    drupal_set_message(t('@count users passwords were reset.', array('@count' => count($results))));
+    services_security_user_update_finish();
+  }
+  else {
+    $error_operation = reset($operations);
+    drupal_set_message(
+      t('An error occurred while processing @operation with arguments : @args',
+        array(
+          '@operation' => $error_operation[0],
+          '@args' => print_r($error_operation[0], TRUE),
+        )
+      )
+    );
+  }
+}
+
+/**
+ * Executes final tasks at the end of the security update follow up.
+ */
+function services_security_user_update_finish() {
+  drupal_set_message('Services security update follow up is complete.');
+  variable_set('services_security_update_1', TRUE);
+  if (!drupal_is_cli()) {
+    drupal_goto('admin/reports/status');
+  }
+}
+
+function services_security_update_reset_users_with_password_one() {
+  $users = array();
+  // Query the database to get all user ID
+  $query = db_select('users', 'u')
+    ->fields('u', array('uid'));
+  $users = $query->execute()->fetchAll();
+  $num_of_users = count($users);
+
+  $progress = 0; // where to start
+  $limit = variable_get('services_security_reset_limit_per_batch', 10); // how many to process for each run
+  $max = $num_of_users; // how many records to process until stop
+
+  //Set up our batch operations
+  while ($progress < $max) {
+    $operations[] = array('services_security_update_reset_users_with_password_one_op', array($progress, $limit, $max));
+    $progress = $progress + $limit;
+  }
+
+  // build the batch instructions
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'services_security_user_update_finished',
+    'file' => drupal_get_path('module', 'services') . '/services.admin.inc',
+    'progress_message' => t('Processed batch #@current out of @total.'),
+  );
+
+  return $batch;
+}
+
+function services_security_update_reset_users_with_password_one_op($progress, $limit, $max, &$context) {
+  //Set default starting values
+  if (empty($context['sandbox'])) {
+    $context['sandbox'] = array();
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['current_user'] = 0;
+    $context['sandbox']['max'] = $limit;
+  }
+  //required for user_check_password
+  require_once('./includes/password.inc');
+  //Set the password we are looking for.
+  $password = "1";
+  //Fetch all users in our current range.
+  $result = db_select('users', 'u')
+    ->fields('u', array('uid', 'pass',))
+    ->orderBy('u.uid', 'ASC')
+    ->range($progress, $limit)
+    ->execute()
+    ->fetchAll();
+  // Loop through our ranged results and check their password.
+  foreach ($result as $row) {
+    $uid = $row->uid;
+    $pass = $row->pass;
+    //Setup account object, much faster than user_load
+    $account = new stdClass();
+    $account->uid = $uid;
+    $account->pass = $pass;
+
+    // Check the current user's password against the password.
+    if (user_check_password($password, $account)) {
+      // This means we have a matched password.
+      // Process the user
+      $updated_user = db_update('users')
+        ->fields(array(
+          'pass' => "ZZZservices_security",
+        ))
+        ->condition('uid', $uid)
+        ->execute();
+      $context['results'][] = 'Updating user uid: '. $uid;
+    }
+    // Update our progress information.
+    $context['sandbox']['progress']++;
+    $context['sandbox']['current_user'] = $uid;
+    // update progress for message
+    $shown_progress = $progress + $limit;
+    // update message during each run so you know where you are in the process
+    $context['message'] = 'Checking user uid: '. $uid;
+  }
+
+  // Inform the batch engine that we are not finished,
+  // and provide an estimation of the completion level we reached.
+  if ($context['sandbox']['progress'] != $context['sandbox']['max']) {
+    $context['finished'] = (($context['sandbox']['max'] - $context['sandbox']['progress']) <= $limit) || ($context['sandbox']['progress'] >= $context['sandbox']['max']);
+  }
+}
+
 /**
  * Implements hook_help().
  */
@@ -105,7 +268,15 @@ function services_menu() {
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
-
+  $items['admin/config/services/services-security'] = array(
+    'type' => MENU_NORMAL_ITEM,
+    'title' => 'Services Security update',
+    'description' => 'Services module security updates',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('services_security_admin_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'services.admin.inc',
+  );
   return $items;
 }
 
@@ -282,7 +453,7 @@ function services_endpoint_save($endpoint) {
       $endpoint->{$endpoint_field} = array();
     }
   }
-
+  ctools_include('export');
   ctools_export_crud_save('services_endpoint', $endpoint);
   ctools_export_load_object_reset('services_endpoint');
   menu_rebuild();
@@ -295,6 +466,7 @@ function services_endpoint_save($endpoint) {
  * @return void
  */
 function services_endpoint_delete($endpoint) {
+  ctools_include('export');
   ctools_export_crud_delete('services_endpoint', $endpoint);
   ctools_export_load_object_reset('services_endpoint');
   menu_rebuild();
@@ -573,12 +745,42 @@ function _services_version_header_options() {
       }
     }
   }
+  $headers = _services_parse_request_headers();
+
   foreach($available_headers as $key => $version_header_option) {
-    if(array_key_exists($version_header_option, $headers = getallheaders())) {
-      $version = $headers[$version_header_option];
+    $header_key = _services_fix_header_key($version_header_option);
+    $headers = _services_parse_request_headers();
+    if(array_key_exists($header_key, $headers)) {
+      $version = $headers[$header_key];
     }
   }
   return isset($version) ? $version : FALSE;
+}
+
+/**
+ * Returns all request headers.
+ * @return
+ * And array with all request headers
+ */
+function _services_parse_request_headers() {
+  $headers = array();
+  foreach($_SERVER as $key => $value) {
+    $length = 5;
+    if (substr($key, 0, $length) <> 'HTTP_') {
+      continue;
+    }
+    $header = _services_fix_header_key($key, $length);
+    $headers[$header] = $value;
+  }
+  return $headers;
+}
+/**
+ * Fixes request headers to match what PHP gives us.
+ * @return
+ *   a string with the correct syntax for a header value.
+ */
+function _services_fix_header_key($key, $length = 0) {
+  return str_replace(' ', '-', ucwords(str_replace('_', ' ', strtolower(substr($key, $length)))));
 }
 
 /**
@@ -781,7 +983,7 @@ function services_resource_build_index_list($results, $type, $field) {
  *  @param $account
  *    Object user object.
  */
-function services_remove_user_data(&$account) {
+function services_remove_user_data($account) {
   global $user;
 
   // Remove the user password from the account object.
@@ -789,7 +991,7 @@ function services_remove_user_data(&$account) {
 
   // Remove the user mail, if current user don't have "administer users"
   // permission, and the requested account not match the current user.
-  if (!user_access('administer users') && $account->uid !== $user->uid) {
+  if (!user_access('administer users') && isset($account->uid) && isset($user->uid) && $account->uid !== $user->uid) {
     unset($account->mail);
   }
 

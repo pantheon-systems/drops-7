@@ -164,7 +164,7 @@ function entity_metadata_field_image_callback(&$info, $entity_type, $field, $ins
   if (empty($instance['settings']['alt_field'])) {
     unset($property['property info']['alt']);
   }
-  if (empty($field['settings']['title_field'])) {
+  if (empty($instance['settings']['title_field'])) {
     unset($property['property info']['title']);
   }
 }
