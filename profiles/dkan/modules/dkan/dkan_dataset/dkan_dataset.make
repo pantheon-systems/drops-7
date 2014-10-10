@@ -27,8 +27,13 @@ projects[date][subdir] = contrib
 projects[double_field][version] = 2.3
 projects[double_field][subdir] = contrib
 
-projects[entity][version] = 1.5
+projects[entity][download][type] = git
+projects[entity][download][branch] = 7.x-1.x
+projects[entity][download][url] = "http://git.drupal.org/project/entity.git"
+projects[entity][download][revision] = "4d2cc6f"
+projects[entity][patch][2341611] = https://www.drupal.org/files/issues/entity-multivalue-token-replacement-fix-2341611-0.patch
 projects[entity][subdir] = contrib
+projects[entity][type] = module
 
 projects[entityreference][version] = 1.1
 projects[entityreference][subdir] = contrib
@@ -52,7 +57,12 @@ projects[field_group][subdir] = contrib
 projects[filefield_sources][version] = 1.9
 projects[filefield_sources][subdir] = contrib
 
+projects[gravatar][download][type] = git
+projects[gravatar][download][url] = "http://git.drupal.org/project/gravatar.git"
+projects[gravatar][download][revision] = e933db3
+projects[gravatar][patch][1568162] = http://drupal.org/files/views-display-user-picture-doesn-t-display-gravatar-1568162-10.patch
 projects[gravatar][subdir] = contrib
+projects[gravatar][type] = module
 
 projects[jquery_update][version] = 2.3
 projects[jquery_update][subdir] = contrib
@@ -66,7 +76,7 @@ projects[link][subdir] = contrib
 projects[link_iframe_formatter][download][type] = git
 projects[link_iframe_formatter][download][url] = "http://git.drupal.org/project/link_iframe_formatter.git"
 projects[link_iframe_formatter][download][revision] = 228f9f4
-projects[link_iframe_formatter][patch][2287233] = https://www.drupal.org/files/issues/link_iframe_formatter-coding-standards.patch 
+projects[link_iframe_formatter][patch][2287233] = https://www.drupal.org/files/issues/link_iframe_formatter-coding-standards.patch
 projects[link_iframe_formatter][subdir] = contrib
 projects[link_iframe_formatter][type] = module
 
@@ -164,6 +174,15 @@ projects[imagecache_actions][download][branch] = 7.x-1.x
 projects[imagecache_actions][download][revision] = cd19d2a
 projects[imagecache_actions][subdir] = contrib
 projects[imagecache_actions][type] = module
+
+projects[views_responsive_grid][version] = 1.3
+projects[views_responsive_grid][subdir] = contrib
+
+projects[views_bulk_operations][version] = 3.2
+projects[views_bulk_operations][subdir] = contrib
+
+projects[pathauto][version] = 1.2
+projects[pathauto][subdir] = contrib
 
 ; Libraries
 libraries[chosen][type] = libraries

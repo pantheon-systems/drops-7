@@ -345,8 +345,16 @@ function services_edit_form_endpoint_resources($form, &$form_state, $endpoint) {
           );
 
           $controller_settings = array();
+          $info = array(
+            'op' => $op + array('name' => $op_name),
+            'class' => $class,
+            'resource' => $resource,
+            'endpoint' => $endpoint,
+          );
+
           // Let modules add their own settings.
-          drupal_alter('controller_settings', $controller_settings);
+          drupal_alter('controller_settings', $controller_settings, $info);
+
           // Get service update versions.
           $update_versions = services_get_update_versions($resource_key, $op_name);
           $options = array(
@@ -358,9 +366,8 @@ function services_edit_form_endpoint_resources($form, &$form_state, $endpoint) {
           if (isset($op['endpoint']) && isset($op['endpoint']['services'])) {
             $default_api_value = $op['endpoint']['services']['resource_api_version'];
           }
-          $disabled = (count($options) == 1);
           // Add the version information if it has any
-          if (!$disabled) {
+          if (count($options) !== 1) {
             $controller_settings['services'] = array(
               '#title' => 'Services',
               '#type' => 'item',
@@ -369,7 +376,7 @@ function services_edit_form_endpoint_resources($form, &$form_state, $endpoint) {
                 '#options' => $options,
                 '#default_value' => $default_api_value,
                 '#title' => 'Resource API Version',
-                '#disabled' => $disabled,
+                '#disabled' => TRUE,
               ),
             );
           }
@@ -387,7 +394,7 @@ function services_edit_form_endpoint_resources($form, &$form_state, $endpoint) {
               $disabled = FALSE;
             }
           }
-          if (!$disabled) {
+          if (!empty($controller_settings)) {
             $res_item[$class][$op_name]['settings'] = $controller_settings;
           }
         }

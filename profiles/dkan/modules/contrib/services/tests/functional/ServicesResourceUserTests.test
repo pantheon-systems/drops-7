@@ -111,15 +111,23 @@ class ServicesResourceUsertests extends ServicesWebtestCase {
   /**
    * Test register method.
    *
-   * Register user, load user.
+   * Register user, load user, attempt to login.
    */
   function testRegisterUser() {
     // Verify logged out state can create users
     $this->drupalLogout();
 
+    $username = $this->randomName();
+    $password = user_password();
+
     $user = array();
-    $user['name']   = $this->randomName();
+    $user['name']   = $username;
+    $user['pass']   = $password;
     $user['mail']   = $user['name'] . '@example.com';
+    $user['status'] = 1;
+
+    variable_set('user_email_verification', FALSE);
+    variable_set('user_register', TRUE);
 
     $response = $this->servicesPost($this->endpoint->path . '/user/register', $user);
     $account = $response['body'];
@@ -128,7 +136,18 @@ class ServicesResourceUsertests extends ServicesWebtestCase {
 
     // Load user.
     $user_load = user_load($account['uid']);
+
     $this->assertTrue(!empty($user_load), 'Newly created user has been loaded successfully.', 'UserResource: Create');
+
+    $response = $this->servicesPost($this->endpoint->path . '/user/login',
+      array('username' => $username, 'password' => $password));
+
+    $response = $response['body'];
+
+    $proper_answer = isset($response->sessid)
+                  && isset($response->user)
+                  && $response->user->name == $username;
+    $this->assertTrue($proper_answer, 'User successfully logged in.', 'UserResource: Login');
   }
 
   /**
@@ -175,7 +194,7 @@ class ServicesResourceUsertests extends ServicesWebtestCase {
   function testUpdateUserName() {
     // Create user.
     $account = $this->drupalCreateUser();
-	$name = $this->randomName();
+    $name = $this->randomName();
     // Update mail of the user.
     $updated_account = array(
       'name' => $name,
@@ -565,14 +584,14 @@ class ServicesResourceUsertests extends ServicesWebtestCase {
 
     // Go through set of default error while we're having attempts
     if ($account_blocking_limit > 2) {
-      for ($i = 0; $i < $account_blocking_limit - 2; $i++) {
+      for ($i = 0; $i < $account_blocking_limit - 1; $i++) {
         // Just trigger login operation to write fails to flood table
         $this->servicesPost($this->endpoint->path . '/user/login', array('username' => $account->name, 'password' => $this->randomString()));
       }
     }
 
     // Now account will be locked after 5 failed attempts
-    $response = $this->servicesPost($this->endpoint->path . '/user/login', array('username' => $account->name, 'password' => $this->randomString()));
+    $response = $this->servicesPost($this->endpoint->path . '/user/login', array('username' => $account->name, 'password' => $account->pass_raw));
 
     $this->assertTrue(strpos($response['status'], 'Account is temporarily blocked.') !== FALSE,
       'After ' . $account_blocking_limit . '-th failed login account is temporary blocked.', 'UserResource: Login Flood Control');
@@ -593,7 +612,7 @@ class ServicesResourceUsertests extends ServicesWebtestCase {
     $account2 = $this->drupalCreateUser();
 
     // Now ip will be locked after 50 failed attempts
-    $response = $this->servicesPost($this->endpoint->path . '/user/login', array('username' => $account2->name, 'password' => $this->randomString()));
+    $response = $this->servicesPost($this->endpoint->path . '/user/login', array('username' => $account2->name, 'password' => $account2->pass_raw));
 
     $this->assertTrue(strpos($response['status'], 'This IP address is temporarily blocked.') !== FALSE,
       'After ' . $ip_blocking_limit . '-th failed login ip is temporary blocked.', 'UserResource: Login Flood Control');
@@ -616,5 +635,40 @@ class ServicesResourceUsertests extends ServicesWebtestCase {
     $response = $this->servicesPost($this->endpoint->path . '/user/logout');
     $this->assertTrue(strpos($response['status'], 'User is not logged in'),
       'User cannot logout when is anonymous', 'UserResource: Logout');
+  }
+
+  /**
+   * Test request_new_password method.
+   */
+  function testRequestNewPassword() {
+    // Create user.
+    $account = $this->drupalCreateUser(array('administer services'));
+
+    // Request new password for user by name.
+    $data = array('name' => $account->name);
+    $response = $this->servicesPost($this->endpoint->path . '/user/request_new_password', $data);
+    $this->assertTrue($response['body'],
+      'Resource to request a new password for user name has been called successfully.',
+      'UserResource: request_new_password');
+
+    // Request new password for user by e-mail address.
+    $data = array('name' => $account->mail);
+    $response = $this->servicesPost($this->endpoint->path . '/user/request_new_password', $data);
+    $this->assertTrue($response['body'],
+      'Resource to request a new password for user name has been called successfully.',
+      'UserResource: request_new_password');
+
+    // Assert 406 response for user that does not exist.
+    $data = array('name' => $this->randomName(10) . '@example.com');
+    $response = $this->servicesPost($this->endpoint->path . '/user/request_new_password', $data);
+    $this->assertEqual(406, $response['code'],
+      'Resource to request new password for non-existing user name returned content not acceptable.',
+      'UserResource: request_new_password');
+
+    // Assert that 2 e-mails were sent in this test. The drupalGetMails()
+    // method does not provide immediate feedback about e-mails sent during the
+    // test, and so this assertion can only be done at this point.
+    $mails = $this->drupalGetMails();
+    $this->assertEqual(2, count($mails), 'Only 2 e-mails were sent during this test.');
   }
 }

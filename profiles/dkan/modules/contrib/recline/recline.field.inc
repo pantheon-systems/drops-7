@@ -324,23 +324,32 @@ function theme_recline_default_formatter($variables) {
   $output = recline_default_formatter_output($variables);
 
   if (isset($variables['item']['filemime']) && $variables['item']['filemime'] == 'application/zip') {
-    // List files if item is an archive.
-    $archiver = archiver_get_archiver($variables['item']['uri']);
-    if ($archiver) {
-      $module_path = drupal_get_path('module', 'recline');
-      drupal_add_css($module_path . '/recline.css');
+    $uri = $variables['item']['uri'];
+    if (is_numeric(strpos($uri, 'public://'))) {
+      // List files if item is an archive.
+      $archiver = archiver_get_archiver($uri);
+      if ($archiver) {
+        $module_path = drupal_get_path('module', 'recline');
+        drupal_add_css($module_path . '/recline.css');
+        $output['ziplist'] = array(
+          '#theme' => 'item_list',
+          '#prefix' => '<div id="recline-zip-list">',
+          '#suffix' => '</div>',
+          '#title' => t('%number files in this archive', array('%number' => count($archiver->listContents()))),
+          '#items' => $archiver->listContents(),
+        );
+      }
+      elseif ($format == 'zip') {
+        $archivers_available = implode(', ', array_keys(archiver_get_info()));
+        drupal_set_message(t('Unable to provide file listing for zip format on this system. Available archiver formats are: %s',
+          array('%s' => $archivers_available)));
+      }
+    }
+    else {
       $output['ziplist'] = array(
         '#theme' => 'item_list',
-        '#prefix' => '<div id="recline-zip-list">',
-        '#suffix' => '</div>',
-        '#title' => t('%number files in this archive', array('%number' => count($archiver->listContents()))),
-        '#items' => $archiver->listContents(),
+        '#title' => t('Unable to provide file listing for remote zip file.'),
       );
-    }
-    elseif ($format == 'zip') {
-      $archivers_available = implode(', ', array_keys(archiver_get_info()));
-      drupal_set_message(t('Unable to provide file listing for zip format on this system. Available archiver formats are: %s',
-        array('%s' => $archivers_available)));
     }
   }
 

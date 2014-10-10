@@ -41,7 +41,7 @@ class ServicesArgumentsTestCase extends ServicesWebtestCase {
       format_string('Services arguments test @arg1 @arg2 0', array('@arg1' => $arg1, '@arg2' => $arg2)),
       'Path arguments with default value work properly.', 'Arguments');
     $result = $this->servicesGet($this->endpoint->path . '/services_arguments_test/' . $arg1);
-    $this->assertEqual($result['status'], 'HTTP/1.1 404 Not found: Could not find the controller.', 'Error triggered when required argument is missing.', 'Arguments');
+    $this->assertEqual($result['status'], 'HTTP/1.1 404 Not found : Could not find the controller.', 'Error triggered when required argument is missing.', 'Arguments');
   }
 
   public function saveNewEndpoint() {

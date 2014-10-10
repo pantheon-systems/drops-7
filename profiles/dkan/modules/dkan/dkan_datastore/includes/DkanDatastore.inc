@@ -309,7 +309,7 @@ class DkanDatastore extends Datastore implements DatastoreForm {
     foreach ($importer_ids as $importer_id) {
       $source = feeds_source($importer_id, $node->nid);
       $table_name = feeds_flatstore_processor_table_name($source->id, $source->feed_nid);
-      $table = data_get_table($table_name);
+      $table = data_get_table($table_name) ? data_get_table($table_name) : db_table_exists($table_name);
       if ($table) {
         array_push($tables_to_drop, $table_name);
       }
@@ -344,7 +344,12 @@ class DkanDatastore extends Datastore implements DatastoreForm {
     module_load_include('module', 'data', 'data');
     foreach ($form_state['#tables_to_drop'] as $table_name) {
       $table = data_get_table($table_name);
-      $table->drop();
+      if ($table) {
+        $table->drop();
+      }
+      elseif (db_table_exists($table_name)) {
+        db_drop_table($table_name);
+      }
     }
     drupal_set_message(t('Datastore dropped!'));
   }

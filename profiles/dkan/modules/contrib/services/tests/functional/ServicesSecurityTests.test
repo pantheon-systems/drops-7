@@ -42,11 +42,11 @@ class ServicesSecurityTests extends ServicesWebTestCase {
 
     $get_variable_args = array('name' => $variable_name, 'default' => $default_variable_value);
     $response = $this->servicesPostNoCSRFHeader($this->endpoint->path . '/system/get_variable', $get_variable_args);
-    $this->assertEqual($response['status'], 'HTTP/1.1 401 Unauthorized: CSRF validation failed');
+    $this->assertEqual($response['status'], 'HTTP/1.1 401 Unauthorized : CSRF validation failed');
 
     $bad_csrf_token_headers = array('X-CSRF-Token: ' . $this->randomString());
     $response = $this->servicesPostNoCSRFHeader($this->endpoint->path . '/system/get_variable', $get_variable_args, $bad_csrf_token_headers);
-    $this->assertEqual($response['status'], 'HTTP/1.1 401 Unauthorized: CSRF validation failed');
+    $this->assertEqual($response['status'], 'HTTP/1.1 401 Unauthorized : CSRF validation failed');
 
     $csrf_token = $this->drupalGet('services/session/token');
     $good_csrf_token_headers = array('X-CSRF-Token: ' . $csrf_token);

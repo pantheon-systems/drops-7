@@ -12,9 +12,9 @@ files[] = transparency.inc
 files[] = tests/green.imagecache_preset.inc
 
 
-; Information added by drush on 2014-08-08
+; Information added by drush on 2014-10-10
 version = "7.x-1.4+17-dev"
 core = "7.x"
 project = "imagecache_actions"
-datestamp = "1407510771"
+datestamp = "1412979809"
 

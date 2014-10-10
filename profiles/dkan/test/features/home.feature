@@ -15,11 +15,11 @@ Feature: Homepage
     Given I am on the homepage
     Then I should see "Datasets"
     Then I should see "Groups"
-    #Then I should see "About"
+    Then I should see "About"
 
   Scenario: Viewing footer
     Given I am on the homepage
-    Then I should see "powered by DKAN"
+    Then I should see "Powered by DKAN, a project of NuCivic"
 
   Scenario: Viewing tags
     Given I am on the homepage

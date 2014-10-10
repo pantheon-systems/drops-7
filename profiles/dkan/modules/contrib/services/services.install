@@ -84,7 +84,29 @@ function services_schema() {
       ),
     ),
   );
-
+  $schema['services_user'] = array(
+    'description' => 'Stores users created/updated by services.',
+    'fields' => array(
+      'uid' => array(
+        'type'        => 'int',
+        'description' => 'User id that has been created by Drupal',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the node was most recently created by services.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the user was most recently updated by services.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+  );
   return $schema;
 }
 
@@ -123,11 +145,31 @@ function services_requirements($phase) {
         'title' => 'Services Authentication Mechanism',
       );
     }
+
+    $services_security_update = variable_get('services_security_update_1', FALSE);
+    if(!$services_security_update) {
+      $url = url('admin/config/services/services-security');
+      $requirements['services'] = array(
+        'description' => $t('Services has issued a security update with the most recent module release. Administrative steps are required to secure your Drupal installation <a href="!url">here</a>.', array('!url' => $url)),
+        'severity' => REQUIREMENT_ERROR,
+        'value' => 'Steps needed',
+        'title' => 'Services Authentication Mechanism',
+      );
+    }
   }
 
   return $requirements;
 }
 
+/**
+ * Implements hook_install().
+ */
+function services_install() {
+  $ret = array();
+  //Set our security update to true since it wont need to be displayed
+  //on the status report page
+  variable_set('services_security_update_1', TRUE);
+}
 /**
  * Implements hook_uninstall().
  */
@@ -234,4 +276,33 @@ function services_update_7400() {
     $endpoint->server_settings = $settings;
     services_endpoint_save($endpoint);
   }
+}
+/**
+ * Update 7402 adds services_user table so that services can see users created/update by itself.
+ */
+function services_update_7402() {
+  $schema['services_user'] = array(
+    'description' => 'Stores users created/updated by services.',
+    'fields' => array(
+      'uid' => array(
+        'type'        => 'int',
+        'description' => 'User id that has been created by Drupal',
+        'unsigned'    => TRUE,
+        'not null'    => TRUE,
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the node was most recently created by services.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the user was most recently updated by services.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+  );
+  db_create_table('services_user', $schema['services_user']);
 }

@@ -205,7 +205,9 @@ function entity_token_tokens($type, $tokens, array $data = array(), array $optio
           try {
             // Pass on 'struct' properties wrapped, else un-wrap the data.
             $value = ($token_info['type'] == 'struct') ? $wrapper->$property_name : $wrapper->$property_name->value();
-            $replacements += token_generate($token_info['type'], $chained_tokens, array($token_info['type'] => $value), $options);
+            if (!empty($value)) {
+              $replacements += token_generate($token_info['type'], $chained_tokens, array($token_info['type'] => $value), $options);
+            }
           }
           catch (EntityMetadataWrapperException $e) {
             // If tokens for not existing values are requested, just do nothing.
@@ -238,7 +240,10 @@ function entity_token_tokens($type, $tokens, array $data = array(), array $optio
         if (is_numeric($delta) && $chained_tokens = token_find_with_prefix($tokens, $delta)) {
           $wrapper = !isset($wrapper) ? _entity_token_wrap_data($type, "list<$token_types[$item_token_type]>", $data[$type], $options) : $wrapper;
           try {
-            $replacements += token_generate($item_token_type, $chained_tokens, array($item_token_type => $wrapper->get($delta)->value()), $options);
+            $value = $wrapper->get($delta)->value();
+            if (!empty($value)) {
+              $replacements += token_generate($item_token_type, $chained_tokens, array($item_token_type => $value), $options);
+            }
           }
           catch (EntityMetadataWrapperException $e) {
             // If tokens for not existing values are requested, just do nothing.

@@ -148,7 +148,7 @@ function feeds_flatstore_processor_table(FeedsSource $source, $parser_result) {
 
     $db_prefix = $GLOBALS['databases']['default']['default']['prefix'];
     $prefixed = $table_name;
-    
+
     if ($db_prefix) {
       if (is_array($db_prefix) && isset($db_prefix['default'])) {
         $db_prefix = $db_prefix['default'];
@@ -158,6 +158,10 @@ function feeds_flatstore_processor_table(FeedsSource $source, $parser_result) {
     }
 
     $table = data_create_table($table_name, $schema, $title);
+    if (!$table) {
+      $table = DataTable::instance($table_name);
+      $table->adopt();
+    }
     $table->update(array('meta' => $meta));
 
     // Adding limited search with default MySQL installs.

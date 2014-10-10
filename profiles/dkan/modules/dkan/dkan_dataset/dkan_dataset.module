@@ -71,6 +71,11 @@ function dkan_dataset_form_settings() {
     '#title' => t('Use Ajax on resource node.'),
     '#default_value' => variable_get('dkan_resource_form_ajax', 0),
   );
+  $form['dkan_dataset_form_additional_info'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Divide Dataset form into main form and "Additional Data" (CKAN style).'),
+    '#default_value' => variable_get('dkan_dataset_form_additional_info', 1),
+  );
   return system_settings_form($form);
 }
 
@@ -142,6 +147,9 @@ function dkan_dataset_node_view($node, $view_mode, $langcode) {
       '#suffix' => '</div>',
       '#weight' => '20',
     );
+  }
+  elseif ($view_mode == 'full' && $node->type == 'resource') {
+    $node->content['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/dkan_dataset.css';
   }
 }
 
@@ -275,15 +283,33 @@ function dkan_dataset_libraries_info() {
 function dkan_form_create_stages($op, $dataset_nid = NULL, $resource_nid = NULL) {
   // TODO: should be theme function.
   $stages = '<div id="dkan-stages">';
+  // Omit "Additional Info" depending on variable.
+  $stages_additional_1 = $stages_additional_2 = $stages_additional_3 = $stages_additional_4 = '';
+  if (variable_get('dkan_dataset_form_additional_info', 1)) {
+    $stages_additional_1 = '
+     <li class="last uncomplete">
+        <span class="highlight">' . l(t('Additional data'), 'node/' . $dataset_nid . '/edit', array('query' => array('additional' => TRUE))) . '</span>
+    </li>';
+    $stages_additional_2 = '
+    <li class="last active">
+      <span class="highlight" name="save" value="go-metadata" type="submit">' . l(t('Additional data'), 'node/' . $dataset_nid . '/edit', array('query' => array('additional' => TRUE))) . '</span>
+    </li> ';
+    $stages_additional_3 = '
+        <li class="last uncomplete">
+          <span class="highlight">' . t('Additional data') . '</span>
+        </li> ';
+    $stages_additional_4 = '
+    <li class="last complete">
+        <span class="highlight">' . l(t('Additional data'), 'node/' . $dataset_nid . '/edit', array('query' => array('additional' => TRUE))) . '</span>
+    </li> ';
+
+  }
   if ($op == 'resource-edit' || $op == 'resource-create') {
     $stages .= '<ol class="stages stage-3">
       <li class="first complete"><span class="highlight">' . l(t('Edit dataset'), 'node/' . $dataset_nid . '/edit') . '</span></li>
       <li class="middle active">
           <span class="highlight">Add data</span>
-      </li>
-      <li class="last uncomplete">
-          <span class="highlight">' . l(t('Additional data'), 'node/' . $dataset_nid . '/edit', array('query' => array('additional' => TRUE))) . '</span>
-      </li>
+      </li> ' . $stages_additional_1 .  '
     </ol>';
   }
   if ($op == 'dataset-additional') {
@@ -293,10 +319,7 @@ function dkan_form_create_stages($op, $dataset_nid = NULL, $resource_nid = NULL)
       </li>
       <li class="middle complete">
           <span class="highlight">' . l(t('Add dataset'), 'node/add/resource', array('query' => array('dataset' => $dataset_nid))) . '</span>
-      </li>
-      <li class="last active">
-        <span class="highlight" name="save" value="go-metadata" type="submit">' . l(t('Additional data'), 'node/' . $dataset_nid . '/edit', array('query' => array('additional' => TRUE))) . '</span>
-      </li>
+      </li> ' . $stages_additional_2 . '
     </ol>';
   }
   if ($op == 'dataset-create') {
@@ -307,10 +330,7 @@ function dkan_form_create_stages($op, $dataset_nid = NULL, $resource_nid = NULL)
           </li>
           <li class="middle uncomplete">
             <span class="highlight">' . t('Add data') . ' </span>
-          </li>
-          <li class="last uncomplete">
-            <span class="highlight">' . t('Additional data') . '</span>
-          </li>
+          </li> ' . $stages_additional_3 . '
         </ol>';
   }
   if ($op == 'dataset-edit') {
@@ -320,10 +340,7 @@ function dkan_form_create_stages($op, $dataset_nid = NULL, $resource_nid = NULL)
       </li>
       <li class="middle complete">
           <span class="highlight">' . l(t('Add data'), 'node/add/resource', array('query' => array('dataset' => $dataset_nid))) . '</span>
-      </li>
-      <li class="last complete">
-          <span class="highlight">' . l(t('Additional data'), 'node/' . $dataset_nid . '/edit', array('query' => array('additional' => TRUE))) . '</span>
-      </li>
+      </li> ' . $stages_additional_4 . '
     </ol>';
   }
   $stages .= '</div>';
@@ -349,19 +366,22 @@ function dkan_dataset_add_resource_access($node) {
   if ($node->type != 'dataset') {
     return FALSE;
   }
+  elseif (node_hook($node->type, 'form') && node_access('create', $node->type)) {
+    return TRUE;
+  }
   else {
-    return _node_add_access();
+   return FALSE;
   }
 }
 
 /**
  * Discovers extension based off of mimetype.
  *
- * @param string mimetype
- * Mimetype to search for.
+ * @param string $mimetype
+ *   Mimetype to search for.
  *
  * @return string
- * Extension or empty string.
+ *   Extension or empty string.
  */
 function dkan_dataset_discovery_extension($mimetype) {
   include_once DRUPAL_ROOT . '/includes/file.mimetypes.inc';
@@ -479,7 +499,8 @@ function dkan_dataset_sync_groups($node) {
   if (array_diff_key($new_resources, $orig_resources) && $groups_new) {
     foreach ($new_resources as $nid => $resource) {
       foreach ($orig_resources as $orig_nid => $orig_resource) {
-        if (!isset($orig_resources[$nid])) {
+        // Don't process unless the resource has a referenced dataset.
+        if (!isset($orig_resources[$nid]) && $resource->field_dataset_ref) {
           $resources_added[$nid] = $resource;
         }
       }
@@ -636,7 +657,7 @@ function dkan_dataset_page_alter(&$page) {
   if (arg(0) == 'dataset' && is_array($breadcrumbs)) {
     $breadcrumbs[1] = t('Datasets');
     $breadcrumbs[2] = t('Search');
-    // we can return here because page_title is handled by views.
+    // We can return here because page_title is handled by views.
     drupal_set_breadcrumb($breadcrumbs);
   }
 }

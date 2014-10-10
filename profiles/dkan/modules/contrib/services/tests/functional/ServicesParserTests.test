@@ -93,7 +93,7 @@ class ServicesParserTests extends ServicesWebTestCase {
     // 'application/x-www-form-urlencoded' type. So it should be refused.
     $response = $this->servicesPost($this->endpoint->path . '/user/login', array('username' => $account->name, 'password' => $account->pass_raw));
 
-    $this->assertTrue(strpos($response['header'], '406 Not Acceptable: Unsupported request content type application/x-www-form-urlencoded') !== FALSE,
+    $this->assertTrue(strpos($response['header'], '406 Not Acceptable : Unsupported request content type application/x-www-form-urlencoded') !== FALSE,
       'Do not accept application/x-www-form-urlencoded if disabled.', 'Parser');
   }
 

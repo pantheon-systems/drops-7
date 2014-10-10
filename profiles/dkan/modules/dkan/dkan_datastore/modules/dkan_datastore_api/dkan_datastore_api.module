@@ -7,56 +7,50 @@
  */
 
 /**
- * Implements hook_menu().
- */
-function dkan_datastore_api_menu() {
-  $items = array();
-
-  $items['api/3/action/%'] = array(
-    'title' => 'API Redirect',
-    'page callback' => 'dkan_datastore_api_redirect',
-    'page arguments' => array(3),
-    // TODO: use services permissions?
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-  );
-  $items['api/3/action/datastore_search/%'] = array(
-    'title' => 'API Redirect',
-    'page callback' => 'dkan_datastore_api_redirect',
-    'page arguments' => array(5),
-    // TODO: use services permissions?
-    'access arguments' => array('access content'),
-    'type' => MENU_CALLBACK,
-  );
-
-  return $items;
-}
-
-/**
  * Implements hook_init().
  */
 function dkan_datastore_api_init() {
-  if (isset($_GET['resource_id']) && $_GET['q'] != 'api/action/datastore/search.json') {
-    $_GET['query'] = $_GET['q'];
-    unset($_GET['q']);
-    drupal_goto('api/action/datastore/search.json', array('query' => $_GET));
-  }
-}
+  // This abomination redirects between datastore_search and the 'q' request.
+  //
+  // Drupal redirects everything through the 'q' query string.
+  // CKAN uses the 'q' string for searches.
+  // Services module won't allow an endpoint to have an underscore so
+  // datastore_search is redircted to datastore/search.
+  //
+  // We can't just search for the api/action/datastore/search.json request
+  // string since we support search.xml, search.jsonp etc.
 
-/**
- * Redirects from CKAN API url to DKAN.
- *
- * Necessary since Services wouldn't accept datastore_search as an endpoint.
- */
-function dkan_datastore_api_redirect($path) {
-  $args = '';
-  if ($path == 'datastore_search') {
-    foreach ($_GET as $key => $value) {
-      if ($key != 'q') {
-        $args[$key] = $value;
-      }
+  // If the request doesn't have datastore_search, we need to redirect 'q' to
+  // 'query' if it does not have /api/action/datastore/search in it.
+  if (isset($_GET['resource_id']) && !strpos($_SERVER['REQUEST_URI'], 'datastore_search')) {
+    $request = explode('/', $_SERVER['REQUEST_URI']);
+    $query = explode('/', $_GET['q']);
+    $query_val = array();
+    foreach ($query as $key => $val) {
+      $query_val[$val] = 1;
     }
-    drupal_goto('api/action/datastore/search.json', array('query' => $args));
+    if (!isset($query_val['api']) && !isset($query_val['action']) && !isset($query_val['datastore'])) {
+      $matches = array();
+      preg_match("/(search\.)(\S*)(\?)/", $_SERVER['REQUEST_URI'], $matches);
+      $_GET['query'] = $_GET['q'];
+      unset($_GET['q']);
+      drupal_goto('api/action/datastore/search.' . $matches[2], array('query' => $_GET));
+    }
+  }
+  // If the request does have datastore_search, redirect.
+  elseif (isset($_GET['resource_id']) && strpos($_SERVER['REQUEST_URI'], 'datastore_search')) {
+    $args = $_GET;
+    // Redirect to search.json.
+    if ($args['q'] == 'api/3/action/datastore_search') {
+      unset($args['q']);
+      drupal_goto('api/action/datastore/search.json', array('query' => $args));
+    }
+    // There is an actual search in the 'q' string, so redirect that to 'query'.
+    elseif ($args['q'] != 'api/action/datastore/search.json') {
+      $args['query'] = $args['q'];
+      unset($args['q']);
+      drupal_goto('api/action/datastore/search.json', array('query' => $args));
+    }
   }
 }
 
@@ -224,8 +218,26 @@ function _dkan_datastore_api_datastore_index($resource_ids, $filters, $query, $o
   catch(Exception $ex) {
     return array('Caught exception: ' . $ex->getMessage());
   }
+  $count = dkan_datastore_api_count($table, $offset, $limit, $fields, $filters, $query);
   $results = services_resource_execute_index_query($data_select);
-  return dkan_datastore_api_resource_build_index_list($results, $table, $fields, $resource_ids);
+  return dkan_datastore_api_resource_build_index_list($results, $table, $fields, $resource_ids, $count);
+}
+
+/**
+ * Retrieves count given fully query without paging limit.
+ */
+function dkan_datastore_api_count($table, $offset, $limit, $fields, $filters, $query) {
+
+  $count_select = db_select($table, 'counter');
+  $count_select->addExpression('COUNT(feeds_flatstore_entry_id)', 'count');
+  if ($filters) {
+    dkan_datastore_api_add_index_conditions($count_select, $filters, 'counter');
+  }
+  if ($query) {
+    dkan_datastore_api_add_index_query($count_select, $table, $query);
+  }
+  $result = $count_select->execute()->fetchAll();
+  return $result[0]->count;
 }
 
 /**
@@ -234,7 +246,7 @@ function _dkan_datastore_api_datastore_index($resource_ids, $filters, $query, $o
 function dkan_datastore_api_add_index_conditions(&$data_select, $filters, $alias = 't') {
   if (is_array($filters)) {
     foreach ($filters as $num => $filter) {
-      $num = str_replace(' ' , '_', $num);
+      $num = str_replace(' ', '_', $num);
       if (is_array($filter)) {
         foreach ($filter as $key => $value) {
           $data_select->condition($num . '.' . $key, $filter, 'IN');
@@ -254,10 +266,10 @@ function dkan_datastore_api_add_index_conditions(&$data_select, $filters, $alias
  */
 function dkan_datastore_api_add_index_query(&$data_select, $table, $query) {
   if (db_driver() == 'mysql') {
-    // Get fulltext fields
+    // Get fulltext fields.
     $ft_result = db_query("SHOW INDEX IN {$table} WHERE Index_type = 'FULLTEXT'");
     $ft_fields = array();
-    foreach($ft_result as $ft_row) {
+    foreach ($ft_result as $ft_row) {
       $ft_fields[] = $ft_row->Column_name;
     }
     if (count($ft_fields)) {
@@ -266,12 +278,12 @@ function dkan_datastore_api_add_index_query(&$data_select, $table, $query) {
       return;
     }
   }
-  // If no FULLTEXT indexes, try concat method if on mysql or postgres
+  // If no FULLTEXT indexes, try concat method if on mysql or postgres.
   if ($field_list = feeds_flatstore_fulltext_fields(drupal_get_schema($table))) {
     if (db_driver() == 'mysql' || db_driver() == 'pgsql') {
       $data_select->where("CONCAT_WS(' ', $field_list) LIKE :query", array(':query' => "%$query%"));
     }
-    // For MS SQL Server, use alternate concat syntax
+    // For MS SQL Server, use alternate concat syntax.
     elseif (db_driver() == 'sqlsrv') {
       $ft_fields = explode(',', $field_list);
       $field_list = implode("+' '+", $ft_fields);
@@ -310,7 +322,7 @@ function dkan_datastore_api_build_additional_index_query(&$data_select, $table, 
  * Makes sure we are using column names for sorts.
  */
 function dkan_datastore_api_sort_clean($sort) {
-  if (strpos($sort,' asc') !== false) {
+  if (strpos($sort, ' asc') !== FALSE) {
     $type = 'asc';
   }
   elseif (strpos($sort, ' desc') !== FALSE) {
@@ -400,7 +412,7 @@ function _dkan_datastore_api_datastore_access($op) {
 /**
  * Builds index link with results of the query.
  */
-function dkan_datastore_api_resource_build_index_list($results, $table, $fields, $resource_ids) {
+function dkan_datastore_api_resource_build_index_list($results, $table, $fields, $resource_ids, $count) {
   // Put together array of matching items to return.
   $items = array();
   $endpoint_name = services_get_server_info('endpoint');
@@ -410,7 +422,6 @@ function dkan_datastore_api_resource_build_index_list($results, $table, $fields,
   }
 
   $help = array('help' => dkan_datastore_api_resource_help());
-  $count = array('limit' => count($items));
   $success = count($items) ? array('success' => TRUE) : array('success' => FALSE);
   // Use labels from data module if available.
   if ($data_table = data_get_table($table)) {
@@ -441,7 +452,7 @@ function dkan_datastore_api_resource_build_index_list($results, $table, $fields,
       // Don't include fields added by feeds_flatstore_processor.
       if ($name != 'feeds_flatstore_entry_id' && $name != 'timestamp' && $name != 'feeds_entity_id') {
         $name = $meta ? $meta['fields'][$name]['label'] : $name;
-        if ($name ==  'date' || $name ==  'timestamp' || $name ==  'datetime') {
+        if ($name == 'date' || $name == 'timestamp' || $name == 'datetime') {
           $return->fields[] = array('id' => $name, 'type' => 'datetime');
         }
         else {
@@ -459,11 +470,11 @@ function dkan_datastore_api_resource_build_index_list($results, $table, $fields,
     $fields = $output_fields;
   }
   $return->resource_id = $resource_ids;
-  $return->limit = $count['limit'];
+  $return->limit = count($items);
   $query = db_select($table, 't');
   $query->addExpression('count(t.timestamp)', 'count');
   $total = $query->execute()->fetchCol();
-  $return->total = $total[0];
+  $return->total = $count;
   $return->records = $items;
 
   return $help + $success + array('result' => $return);

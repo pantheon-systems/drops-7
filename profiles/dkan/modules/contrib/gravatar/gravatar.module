@@ -1,5 +1,4 @@
 <?php
-// $Id: gravatar.module,v 1.16.2.4 2011/02/17 19:23:56 davereid Exp $
 
 /**
  * @file
@@ -168,33 +167,35 @@ function gravatar_preprocess_user_picture(&$variables) {
  *   A string with the path to the user's picture.
  */
 function _gravatar_get_account_user_picture($account) {
+  // If the user has an uploaded picture, use it first.
   if (!empty($account->picture->uri)) {
-    // If the user has an uploaded picture, use it first.
     return $account->picture->uri;
   }
+  // If the user does not have access to use gravatars or has gravatars
+  // disabled for their account, use the global default image.
   elseif (!user_access('use gravatar', $account) || (user_access('disable own gravatar', $account) && isset($account->data['gravatar']) && !$account->data['gravatar'])) {
-    // If the user does not have access to use gravatars or has gravatars
-    // disabled for their account, use the global default image.
     return variable_get('user_picture_default', '');
   }
-  else {
-    // Otherwise, show a gravatar with the appropraite default picture.
-    $mail = $account->mail;
-    $options = array();
-    if (empty($mail)) {
+  // Otherwise, show a gravatar with the appropraite default picture.
+  else {  
+    // Use email 
+    if (!empty($account->mail)) {
+      return gravatar_get_gravatar($account->mail);
+    }
+    // Use various fallbacks to provide a unique default gravatar.
+    else {
       $options['force default'] = TRUE;
-      // Use various fallbacks to provide a unique default gravatar.
       if (!empty($account->hostname)) {
-        $mail = $account->hostname;
+        $fallback = $account->hostname;
       }
       elseif (!empty($account->homepage)) {
-        $mail = $account->homepage;
+        $fallback = $account->homepage;
       }
       else {
-        $mail = serialize($account);
+        $fallback = serialize($account);
       }
+      return gravatar_get_gravatar($fallback, $options);
     }
-    return gravatar_get_gravatar($mail, $options);
   }
 }
 
@@ -452,4 +453,42 @@ function gravatar_var($name, $default = NULL) {
   }
 
   return variable_get($name, isset($default) || !isset($defaults[$name]) ? $default : $defaults[$name]);
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function gravatar_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'gravatar'),
+  );
+}
+
+function gravatar_views_handlers() {
+  $path = drupal_get_path('module', 'gravatar');
+  return array(
+    'handlers' => array(
+      // fields
+      'gravatar_views_handler_gravatar' => array(
+        'parent' => 'gravatar_views_handler_gravatar',
+        'path' => $path,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_views_data()
+ */
+function gravatar_views_data() {
+  $data['users']['user_gravatar_picture'] = array(
+    'real field' => 'mail',
+    'title' => t('Gravatar'),
+    'help' => t('User Gravatar'),
+    'field' => array(
+      'handler' => 'gravatar_views_handler_gravatar',
+    ),
+  );
+  return $data;
 }

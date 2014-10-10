@@ -27,7 +27,9 @@ class ServicesJSONPFormatter extends ServicesJSONFormatter {
     $json = parent::render($data);
 
     if (isset($_GET['callback'])) {
-      return sprintf('%s(%s);', $_GET['callback'], $json);
+      $callback = preg_replace("/[^A-Za-z0-9_\-]/", '', $_GET['callback']);
+      $callback = substr($callback, 0, 60);
+      return sprintf('%s(%s);', $callback, $json);
     }
     return $json;
   }
