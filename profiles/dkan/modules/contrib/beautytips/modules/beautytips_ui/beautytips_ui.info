@@ -7,9 +7,9 @@ files[] = beautytips_ui.module
 dependencies[] = beautytips
 
 
-; Information added by drush on 2014-10-10
+; Information added by drush on 2014-10-15
 version = "7.x-2.0-beta2+7-dev"
 core = "7.x"
 project = "beautytips"
-datestamp = "1412979781"
+datestamp = "1413398496"
 

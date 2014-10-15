@@ -8,8 +8,8 @@ files[] = views_handler_gravatar.inc
 configure = admin/config/people/gravatar
 
 
-; Information added by drush on 2014-10-10
+; Information added by drush on 2014-10-15
 version = "e933db3"
 project = "gravatar"
-datestamp = "1412979791"
+datestamp = "1413398508"
 

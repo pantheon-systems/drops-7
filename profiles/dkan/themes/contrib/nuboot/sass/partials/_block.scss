@@ -111,7 +111,7 @@ h2.block-title {
     text-shadow: none;
   }
 }
-#block-dkan-sitewide-dkan-sitewide-search-bar--2 {
+ #block-dkan-sitewide-demo-front-dkan-search-front {
   @include searchbox;
   width: 370px;
   form {
@@ -128,14 +128,21 @@ h2.block-title {
 #views-exposed-form-user-profile-search-entity-view-1,
 #views-exposed-form-groups-search-entity-view-1,
 #views-exposed-form-dataset-page {
-    #edit-submit {
-      top: -20px !important;
-      color:#fff;
-      text-shadow: none;
-    }
-    .views-exposed-form .form-submit {
-      margin: 0;
-    }
+  #edit-submit-dataset {
+    top: -20px !important;
+    color:#fff;
+    text-shadow: none;
+  }
+  .views-exposed-form .form-submit {
+    margin: 0;
+  }
+  .views-exposed-form .views-exposed-widget {
+    float: left;
+    padding: .5em .7em 0 0;
+  }
+  .views-exposed-form .views-exposed-widget.views-submit-button {
+    padding-right: 0;
+  }
 }
 #block-dkan-sitewide-demo-front-dkan-search-front #views-exposed-form-dataset-page .views-exposed-form .description { top:7px; }
 
