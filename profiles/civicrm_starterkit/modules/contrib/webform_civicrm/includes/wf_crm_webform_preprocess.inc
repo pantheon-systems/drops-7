@@ -74,8 +74,9 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
     else {
       $count = count($this->data['contact']);
       for ($i = 1; $i <= $count; ++$i) {
-        if ($existing_component = wf_crm_aval($this->enabled, "civicrm_{$i}_contact_1_contact_existing")) {
-          $this->findContact($this->node->webform['components'][$existing_component]);
+        $existing_component = $this->getComponent("civicrm_{$i}_contact_1_contact_existing");
+        if ($existing_component) {
+          $this->findContact($existing_component);
         }
       }
     }
@@ -165,7 +166,14 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       $page_id = $this->data['contribution'][1]['contribution'][1]['contribution_page_id'];
       $key = CRM_Core_Key::get('CRM_Contribute_Controller_Contribution', TRUE);
       $js_vars['contributionCallback'] = url('civicrm/contribute/transact', array('query' => array('reset' => 1, 'id' => $page_id, 'qfKey' => $key, 'snippet' => 4), 'alias' => TRUE));
-      $js_vars['paymentProcessor'] = wf_crm_aval($this->data, 'contribution:1:contribution:1:payment_processor_id');
+      // Add payment processor - note we have to search in 2 places because $this->loadMultipageData hasn't been run. Maybe it should be?
+      $fid = 'civicrm_1_contribution_1_contribution_payment_processor_id';
+      if (!empty($this->enabled[$fid])) {
+        $js_vars['paymentProcessor'] = wf_crm_aval($this->form_state, 'storage:submitted:' . $this->enabled[$fid]);
+      }
+      else {
+        $js_vars['paymentProcessor'] = $this->getData($fid);
+      }
     }
     if ($js_vars) {
       $this->form['#attached']['js'][] = array(
@@ -180,9 +188,15 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
    * @param $aid
    */
   private function populateActivityAndCaseFromUrl($aid) {
+    $return = array('target_contact_id', 'assignee_contact_id', 'source_contact_id', 'activity_type_id');
+    foreach ($this->enabled as $field => $id) {
+      if (strpos($field, 'civicrm_1_activity_1_activity_') === 0) {
+        $return[] = substr($field, 30);
+      }
+    };
     $result = wf_crm_apivalues('activity', 'get', array(
-      'activity_id' => $aid,
-      'return' => array('target_contact_id', 'assignee_contact_id', 'source_contact_id', 'activity_type_id'),
+      'id' => $aid,
+      'return' => $return,
     ));
     if (isset($result[$aid])) {
       $act = $result[$aid];
@@ -190,7 +204,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
       if ($act['activity_type_id'] == $this->data['activity'][1]['activity'][1]['activity_type_id']) {
         foreach ($this->id['cid'] as $cid) {
           if ($act['source_contact_id'] == $cid || in_array($cid, $act['target_contact_id']) || in_array($cid, $act['assignee_contact_id'])) {
-            $activity = array('activity' => array(1 => $result['values'][$aid]));
+            $activity = array('activity' => array(1 => $act));
             $custom = $this->getCustomData($aid, 'activity');
             $this->info['activity'] = array(1 => ($activity + $custom));
             $this->id['act'][1] = $aid;
@@ -501,6 +515,7 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
         if ($field = wf_crm_aval($fields, $table . '_' . $name)) {
           $component = $element['#webform_component'];
           $element['#attributes']['class'][] = 'civicrm-enabled';
+          $dt = NULL;
           if (!empty($field['data_type'])) {
             $dt = $element['#civicrm_data_type'] = $field['data_type'];
             // Add CiviCRM JS to link fields
@@ -552,10 +567,12 @@ class wf_crm_webform_preprocess extends wf_crm_webform_base {
                 $val = array_pop($val);
               }
             }
-            // Set data for contact image
-            if ($name == 'image_URL') {
-              if ($val && in_array($element['#type'], array('file', 'managed_file'))) {
-                $js = "jQuery(function() {wfCivi.contactImage('$eid', '$val')});";
+            // Contact image & custom file fields
+            if ($dt == 'File') {
+              $fileInfo = $this->getFileInfo($name, $val);
+              if ($fileInfo && in_array($element['#type'], array('file', 'managed_file'))) {
+                $fileInfo = json_encode($fileInfo);
+                $js = "jQuery(function() {wfCivi.initFileField('$eid', $fileInfo)});";
                 $element['#attached']['js'][$js] = array('type' => 'inline');
               }
             }

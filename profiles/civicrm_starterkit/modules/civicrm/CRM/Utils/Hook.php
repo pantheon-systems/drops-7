@@ -181,7 +181,7 @@ abstract class CRM_Utils_Hook {
   }
 
   function requireCiviModules(&$moduleList) {
-    $civiModules = CRM_Core_PseudoConstant::getModuleExtensions();
+    $civiModules = CRM_Core_PseudoConstant::getModuleExtensions('NOCACHE');
     foreach ($civiModules as $civiModule) {
       if (!file_exists($civiModule['filePath'])) {
         CRM_Core_Session::setStatus(

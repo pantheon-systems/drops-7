@@ -121,6 +121,7 @@ function wf_crm_field_options($field, $context, $data) {
  * @param null|int|string $param
  */
 function wf_crm_get_states($param = NULL) {
+  $ret = array();
   if (!$param || $param == 'default') {
     $config = CRM_Core_Config::singleton();
     if (!$param && !empty($config->provinceLimit)) {
@@ -262,10 +263,11 @@ function wf_crm_get_surveys($act = array()) {
 /**
  * Get list of activity types
  * @param string $case_type_name
+ * @param array $campaign_act_types
  *
  * @return array
  */
-function wf_crm_get_activity_types($case_type_name = NULL) {
+function wf_crm_get_activity_types($case_type_name, &$campaign_act_types) {
   // Return activities only appropriate to this case
   if ($case_type_name) {
     $case_info = new CRM_Case_XMLProcessor_Process();
@@ -285,8 +287,11 @@ function wf_crm_get_activity_types($case_type_name = NULL) {
 
   $ret = array();
   foreach (wf_crm_apivalues('option_value', 'get', $params) as $val) {
-    if (empty($val['component_id']) || $val['component_id'] == $campaign_type) {
+    if (empty($val['component_id'])) {
       $ret[$val['value']] = $val['label'];
+    }
+    elseif ($val['component_id'] == $campaign_type) {
+      $campaign_act_types[$val['value']] = $ret[$val['value']] = $val['label'];
     }
   }
 
@@ -458,6 +463,7 @@ function wf_crm_get_fields($var = 'fields') {
       'phone' => array('entity_type' => 'contact', 'label' => t('Phone'), 'max_instances' => 9),
       'email' => array('entity_type' => 'contact', 'label' => t('Email'), 'max_instances' => 9),
       'website' => array('entity_type' => 'contact', 'label' => t('Website'), 'max_instances' => 9),
+      'im' => array('entity_type' => 'contact', 'label' => t('Instant Message'), 'max_instances' => 9),
       'activity' => array('entity_type' => 'activity', 'label' => t('Activity')),
       'relationship' => array('entity_type' => 'contact', 'label' => t('Relationship'), 'help_text' => TRUE),
     );
@@ -491,6 +497,7 @@ function wf_crm_get_fields($var = 'fields') {
         'search_prompt' => t('- Choose existing -'),
       ),
     );
+    // Organization / household names
     foreach (array('organization' => t('Organization Name'), 'legal' => t('Legal Name'), 'household' => t('Household Name')) as $key => $label) {
       $fields['contact_' . $key . '_name'] = array(
         'name' => $label,
@@ -498,20 +505,39 @@ function wf_crm_get_fields($var = 'fields') {
         'contact_type' => $key == 'household' ? 'household' : 'organization',
       );
     }
-    foreach (array('first_name' => t('First Name'), 'nick_name' => t('Nickname'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'job_title' => t('Job Title')) as $key => $label) {
-      $fields['contact_' . $key] = array(
-        'name' => $label,
-        'type' => 'textfield',
-        'contact_type' => $key == 'nick_name' ? NULL : 'individual',
-      );
+    // Individual names
+    if (empty($config->civiVersion) || substr($config->civiVersion, 0, 3) == '4.4') {
+      // This setting doesn't exist prior to 4.5 so hard-code it.
+      $enabled_names = array('Prefix', 'Suffix', 'First Name', 'Middle Name', 'Last Name');
     }
-    foreach (array('prefix' => t('Name Prefix'), 'suffix' => t('Name Suffix'), 'gender' => t('Gender')) as $key => $label) {
-      $fields['contact_' . $key . '_id'] = array(
-        'name' => $label,
-        'type' => 'select',
-        'contact_type' => 'individual',
-      );
+    else {
+      $enabled_names = wf_crm_explode_multivalue_str(CRM_Core_BAO_Setting::getItem(CRM_Core_BAO_Setting::SYSTEM_PREFERENCES_NAME, 'contact_edit_options'));
+      $name_options = CRM_Core_OptionGroup::values('contact_edit_options', FALSE, FALSE, FALSE, NULL, 'name');
+      $enabled_names = array_intersect_key($name_options, array_flip($enabled_names));
     }
+    foreach (array('prefix_id' => t('Name Prefix'), 'formal_title' => t('Formal Title'), 'first_name' => t('First Name'), 'middle_name' => t('Middle Name'), 'last_name' => t('Last Name'), 'suffix_id' => t('Name Suffix')) as $key => $label) {
+      if (in_array(ucwords(str_replace(array('_id', '_'), array('', ' '), $key)), $enabled_names)) {
+        $fields['contact_' . $key] = array(
+          'name' => $label,
+          'type' => strpos($key, '_id') ? 'select' : 'textfield',
+          'contact_type' => 'individual',
+        );
+      }
+    }
+    $fields['contact_nick_name'] = array(
+      'name' => t('Nickname'),
+      'type' => 'textfield',
+    );
+    $fields['contact_gender_id'] = array(
+      'name' => t('Gender'),
+      'type' => 'select',
+      'contact_type' => 'individual',
+    );
+    $fields['contact_job_title'] = array(
+      'name' => t('Job Title'),
+      'type' => 'textfield',
+      'contact_type' => 'individual',
+    );
     $fields['contact_birth_date'] = array(
       'name' => t('Birth Date'),
       'type' => 'date',
@@ -541,6 +567,7 @@ function wf_crm_get_fields($var = 'fields') {
         'name' => t('Upload Image'),
         'type' => 'file',
         'extra' => array('width' => 40),
+        'data_type' => 'File',
       );
     }
     $fields['contact_contact_id'] = array(
@@ -564,6 +591,21 @@ function wf_crm_get_fields($var = 'fields') {
       'data_type' => 'ContactReference',
       'contact_type' => 'individual',
       'reference_contact_type' => 'organization'
+    );
+    $fields['contact_is_deceased'] = array(
+      'name' => t('Is Deceased'),
+      'type' => 'select',
+      'extra' => array('aslist' => 0),
+      'contact_type' => 'individual',
+    );
+    $fields['contact_deceased_date'] = array(
+      'name' => t('Deceased Date'),
+      'type' => 'date',
+      'extra' => array(
+        'start_date' => '-100 years',
+        'end_date' => 'now',
+      ),
+      'contact_type' => 'individual',
     );
     $fields['email_email'] = array(
       'name' => t('Email'),
@@ -589,10 +631,6 @@ function wf_crm_get_fields($var = 'fields') {
         'description' => t('+4 digits of Zip Code'),
       ),
     );
-    $fields['address_county_id'] = array(
-      'name' => t('District/County'),
-      'type' => 'textfield',
-    );
     $fields['address_country_id'] = array(
       'name' => t('Country'),
       'type' => 'select',
@@ -607,6 +645,10 @@ function wf_crm_get_fields($var = 'fields') {
         'width' => 4,
       ),
       'data_type' => 'state_province_abbr',
+    );
+    $fields['address_county_id'] = array(
+      'name' => t('District/County'),
+      'type' => 'textfield',
     );
     $fields['address_master_id'] = array(
       'name' => t('Share address of'),
@@ -632,13 +674,24 @@ function wf_crm_get_fields($var = 'fields') {
       'table' => 'phone',
       'expose_list' => TRUE,
     );
-    foreach (array('address' => t('Address # Location'), 'phone' => t('Phone # Location'), 'email' => t('Email # Location')) as $key => $label) {
-      $fields[$key . '_location_type_id'] = array(
-        'name' => $label,
-        'type' => 'select',
-        'expose_list' => TRUE,
-        'value' => '1',
-      );
+    $fields['im_name'] = array(
+      'name' => t('Screen Name'),
+      'type' => 'textfield',
+    );
+    $fields['im_provider_id'] = array(
+      'name' => t('IM Provider'),
+      'type' => 'select',
+      'expose_list' => TRUE,
+    );
+    foreach (array('address' => t('Address # Location'), 'phone' => t('Phone # Location'), 'email' => t('Email # Location'), 'im' => t('IM # Location')) as $key => $label) {
+      if (isset($sets[$key])) {
+        $fields[$key . '_location_type_id'] = array(
+          'name' => $label,
+          'type' => 'select',
+          'expose_list' => TRUE,
+          'value' => '1',
+        );
+      }
     }
     $fields['website_url'] = array(
       'name' => t('Website'),
@@ -987,6 +1040,7 @@ function wf_crm_get_fields($var = 'fields') {
       'Select State/Province' => array('type' => 'select'),
       'Multi-Select State/Province' => array('type' => 'select', 'extra' => array('multiple' => 1)),
       'Autocomplete-Select' => array('type' => 'select'),
+      'File' => array('type' => 'file'),
     );
     list($contact_types) = wf_crm_get_contact_types();
     $custom_extends = "'" . implode("','", array_keys($contact_types + $sets)) . "'";
@@ -1273,6 +1327,9 @@ function wf_civicrm_api($entity, $operation, $params) {
  *   Values from API call
  */
 function wf_crm_apivalues($entity, $operation, $params = array(), $value = NULL) {
+  if (is_numeric($params)) {
+    $params = array('id' => $params);
+  }
   $params += array('options' => array());
   // Work around the api's default limit of 25
   $params['options'] += array('limit' => 9999);
@@ -1330,24 +1387,7 @@ function wf_crm_required_contact_fields($contact_type) {
  * @return array
  */
 function wf_crm_location_fields() {
-  return array('address', 'email', 'phone', 'website');
-}
-
-/**
- * Fetch the path of a file
- * And format it as a public url that CiviCRM can read
- *
- * @param $id
- *   Drupal file id
- *
- * @return string|void: url of file if found
- */
-function wf_crm_filepath($id) {
-  if ($file = file_load($id)) {
-    global $base_url;
-    // Escape all characters except : and /
-    return str_replace('public://', $base_url . '/' . variable_get('file_public_path', conf_path() . '/files') . '/', str_replace(array('%3A', '%2F'), array(':', '/'), rawurlencode($file->uri)));
-  }
+  return array('address', 'email', 'phone', 'website', 'im');
 }
 
 /**

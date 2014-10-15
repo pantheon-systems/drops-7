@@ -55,7 +55,7 @@ class webform_exporter {
    * @param $file_handle
    *   A PHP file handle to the export file.
    */
-  function eof(&$file_handle) {
+  function eof(&$file_handle, $row_count, $col_count) {
   }
 
   /**

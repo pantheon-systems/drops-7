@@ -2066,7 +2066,7 @@ CREATE TABLE `civicrm_mapping_field` (
      `relationship_type_id` int unsigned    COMMENT 'Relationship type, if required',
      `relationship_direction` varchar(6)    ,
      `grouping` int unsigned   DEFAULT 1 COMMENT 'Used to group mapping_field records into related sets (e.g. for criteria sets in search builder mappings).',
-     `operator` enum('=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN', 'LIKE', 'NOT LIKE', 'IS NULL', 'IS NOT NULL')    COMMENT 'SQL WHERE operator for search-builder mapping fields (search criteria).',
+     `operator` enum('=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN', 'LIKE', 'NOT LIKE', 'IS NULL', 'IS NOT NULL', 'IS EMPTY', 'IS NOT EMPTY', 'RLIKE')    COMMENT 'SQL WHERE operator for search-builder mapping fields (search criteria).',
      `value` varchar(255)    COMMENT 'SQL WHERE value for search-builder mapping fields.' 
 ,
     PRIMARY KEY ( `id` )

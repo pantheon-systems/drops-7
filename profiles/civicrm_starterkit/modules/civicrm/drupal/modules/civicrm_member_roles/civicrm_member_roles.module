@@ -148,8 +148,8 @@ function civicrm_member_roles_show_rules($action = NULL, $id = NULL) {
   //Begin building main output table.
   $header = array('rid' => t('Rule ID'),
     'rule_name' => t('Rule Name ("CiviMember Membership Type" --> "Drupal Role")'),
-    'current_code' => t('Current Codes'),
-    'expired_code' => t('Expired Codes'),
+    'current_code' => t('Add When Status Is'),
+    'expired_code' => t('Remove When Status Is'),
     'options' => t('Operation'),
   );
   $data = array();
@@ -296,20 +296,20 @@ function civicrm_member_roles_add_rule_form($form = NULL, $form_state = NULL, $i
   $form['status_code'] = array(
     '#type' => 'fieldset',
     '#title' => t('CiviMember Status Rules'),
-    '#description' => t('Select which CiviMember Status Rules will be used for "Current" and "Expired" status. A "Current" status rule will add the above role to a user account. An "Expired" status rule will remove the above role from a user account.'),
+    '#description' => t('Select which CiviMember Statuses will be used to add or remove from the Drupal Role. An "Add" status rule will add the above role to a user account. A "Removal" status rule will remove the above role from a user account.'),
     '#tree' => TRUE,
   );
   $form['status_code']['current'] = array(
     '#type' => 'checkboxes',
-    '#title' => t('Current Status'),
-    '#description' => t('Select all CiviMember Status Rule(s) that represent current status.'),
+    '#title' => t('Add Statuses'),
+    '#description' => t('Select all CiviMember Status Rule(s) that represent an \'add\' status.'),
     '#options' => $status_options,
     '#required' => TRUE,
   );
   $form['status_code']['expired'] = array(
     '#type' => 'checkboxes',
-    '#title' => t('Expired Status'),
-    '#description' => t('Select all CiviMember Status Rule(s) that represent expired status.'),
+    '#title' => t('Removal Statuses'),
+    '#description' => t('Select all CiviMember Status Rule(s) that represent a \'removal\' status.'),
     '#options' => $status_options,
     '#required' => TRUE,
   );

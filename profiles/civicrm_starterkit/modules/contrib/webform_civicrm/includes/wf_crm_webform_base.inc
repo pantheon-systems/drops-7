@@ -34,7 +34,7 @@ abstract class wf_crm_webform_base {
     $cid = $this->id['cid'][$c];
     $contact = $this->data['contact'][$c];
     $prefix = 'civicrm_' . $c . '_contact_1_';
-    foreach (array('contact', 'address', 'email', 'phone', 'website') as $ent) {
+    foreach (array_merge(array('contact'), wf_crm_location_fields()) as $ent) {
       if ((!empty($contact['number_of_' . $ent]) && !in_array($ent, $exclude)) || $ent == 'contact') {
         $params = array('contact_id' => $cid);
         if ($ent != 'contact' && $ent != 'website') {
@@ -111,7 +111,7 @@ abstract class wf_crm_webform_base {
             $types += array_keys($this->getExposedOptions($prefix . 'relationship_type_id'));
           }
         }
-        $rel = $this->getRelationship($types, $cid, $this->id['cid'][$r]);
+        $rel = $this->getRelationship($types, $cid, wf_crm_aval($this->id['cid'], $r));
         if ($rel) {
           $info['relationship'][$r] = $rel;
           // Fetch custom data
@@ -189,24 +189,34 @@ abstract class wf_crm_webform_base {
    * @return array
    */
   protected function getExposedOptions($field_key, $exclude = array()) {
-    if ($field_key && isset($this->enabled[$field_key])) {
-      $field = $this->node->webform['components'][$this->enabled[$field_key]];
-      if ($field['type'] == 'select') {
-        // Fetch static options
-        if (empty($field['extra']['civicrm_live_options'])) {
-          $exposed = wf_crm_str2array($field['extra']['items']);
-        }
-        // Fetch live options
-        else {
-          $exposed = wf_crm_field_options($field, 'live_options', $this->data);
-        }
-        foreach ($exclude as $i) {
-          unset($exposed[$i]);
-        }
-        return $exposed;
+    $field = $this->getComponent($field_key);
+    if ($field && $field['type'] == 'select') {
+      // Fetch static options
+      if (empty($field['extra']['civicrm_live_options'])) {
+        $exposed = wf_crm_str2array($field['extra']['items']);
       }
+      // Fetch live options
+      else {
+        $exposed = wf_crm_field_options($field, 'live_options', $this->data);
+      }
+      foreach ($exclude as $i) {
+        unset($exposed[$i]);
+      }
+      return $exposed;
     }
     return array();
+  }
+
+  /**
+   * Fetch a webform component given its civicrm field key
+   * @param $field_key
+   * @return array|null
+   */
+  protected function getComponent($field_key) {
+    if ($field_key && isset($this->enabled[$field_key])) {
+      return wf_crm_aval($this->node->webform, 'components:' . $this->enabled[$field_key]);
+    }
+    return NULL;
   }
 
   /**
@@ -512,6 +522,8 @@ abstract class wf_crm_webform_base {
 
   /**
    * CiviCRM JS can't be attached to a drupal form so have to manually re-add this during validation
+   *
+   * @return int|null
    */
   function addPaymentJs() {
     $credit_card_types = CRM_Core_Payment_Form::getCreditCardCSSNames();
@@ -519,6 +531,68 @@ abstract class wf_crm_webform_base {
       ->addCoreResources()
       ->addSetting(array('config' => array('creditCardTypes' => $credit_card_types)))
       ->addScriptFile('civicrm', 'templates/CRM/Core/BillingBlock.js', -10, 'html-header');
+  }
+
+  /**
+   * Copies a drupal file into the Civi file system
+   *
+   * @param int $id: drupal file id
+   * @return int|null Civi file id
+   */
+  static function saveDrupalFileToCivi($id) {
+    $file = file_load($id);
+    if ($file) {
+      $config = CRM_Core_Config::singleton();
+      $path = file_unmanaged_copy($file->uri, $config->customFileUploadDir);
+      if ($path) {
+        $result = wf_civicrm_api('file', 'create', array(
+          'uri' => str_replace($config->customFileUploadDir, '', $path),
+          'mime_type' => $file->filemime,
+        ));
+        return wf_crm_aval($result, 'id');
+      }
+    }
+    return NULL;
+  }
+
+  /**
+   * Retrieve info needed for pre-filling a webform file field
+   * @param string $fieldName
+   * @param string|int $val: url or civi file id
+   * @return array|null
+   */
+  function getFileInfo($fieldName, $val) {
+    if (!$val) {
+      return NULL;
+    }
+    if ($fieldName === 'image_URL') {
+      return array(
+        'data_type' => 'File',
+        'name' => NULL,
+        'icon' => $val,
+      );
+    }
+    $file = wf_crm_apivalues('file', 'get', $val);
+    if (!empty($file[$val])) {
+      return array(
+        'data_type' => 'File',
+        'name' => CRM_Utils_File::cleanFileName($file[$val]['uri']),
+        'icon' => file_icon_url((object) array('filemime' => $file[$val]['mime_type'])),
+      );
+    }
+    return NULL;
+  }
+
+  /**
+   * Fetch the public url of a file in the Drupal file system
+   *
+   * @param $id Drupal file id
+   *
+   * @return string|bool: url of file if found
+   */
+  function getDrupalFileUrl($id) {
+    $file = file_load($id);
+    return $file ? file_create_url($file->uri) : FALSE;
   }
 
 }

@@ -4,12 +4,12 @@ sites/all/modules or sites/default/modules instead of profile/'
 
 core = 7.x
 
-configure = admin/modules/status
+configure = admin/config/development/profile-status-check
 
 
-; Information added by  packaging script on 2013-11-21
-version = "7.x-1.0-beta1"
+; Information added by Drupal.org packaging script on 2014-09-17
+version = "7.x-1.0-beta2"
 core = "7.x"
 project = "profile_status_check"
-datestamp = "1385041708"
+datestamp = "1410977223"
 

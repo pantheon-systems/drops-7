@@ -20,7 +20,7 @@ class wf_crm_admin_help {
       '<li>' . t('Enable fields for one or more contacts.') . '</li>' .
       '<li>' . t('Arrange and configure those fields on the "Webform" tab.') . '</li>' .
       '<li>' . t('Click the blue help icons to learn more.') . '</li>' .
-      '<li><a href="http://drupal.org/node/1615380" target="_blank">' . t('Read the instructions.') . '</a></li>' .
+      '<li><a href="http://wiki.civicrm.org/confluence/display/CRMDOC/Webform+CiviCRM+Integration" target="_blank">' . t('Read the instructions.') . '</a></li>' .
       '</ul>';
   }
 

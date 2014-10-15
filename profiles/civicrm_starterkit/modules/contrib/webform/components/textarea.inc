@@ -151,6 +151,7 @@ function _webform_render_textarea($component, $value = NULL, $filter = TRUE) {
 function _webform_display_textarea($component, $value, $format = 'html') {
   return array(
     '#title' => $component['name'],
+    '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
     '#weight' => $component['weight'],
     '#theme' => 'webform_display_textarea',
     '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),

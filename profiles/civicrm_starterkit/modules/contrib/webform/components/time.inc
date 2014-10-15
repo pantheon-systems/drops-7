@@ -297,6 +297,7 @@ function _webform_display_time($component, $value, $format = 'html') {
 
   return array(
     '#title' => $component['name'],
+    '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
     '#weight' => $component['weight'],
     '#theme' => 'webform_display_time',
     '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),

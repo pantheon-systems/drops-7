@@ -30,9 +30,9 @@ dependencies[] = civicrmtheme
 
 
 
-; Information added by Drupal.org packaging script on 2014-02-10
-version = "7.x-4.4-rc9"
+; Information added by Drupal.org packaging script on 2014-10-15
+version = "7.x-4.4-rc12"
 core = "7.x"
 project = "civicrm_starterkit"
-datestamp = "1392049106"
+datestamp = "1413401925"
 

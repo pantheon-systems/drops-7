@@ -230,7 +230,7 @@ function update_menu() {
   // Customize the titles of the action links depending on where they appear.
   // We use += array() to let the translation extractor find these menu titles.
   $items['admin/reports/updates/install'] += array('title' => 'Install new module or theme');
-  $items['admin/modules/install'] += array('title' => 'Install new module');
+  $items['admin/modules/install'] += array('title' => 'Install or override a module');
   $items['admin/appearance/install'] += array('title' => 'Install new theme');
 
   // Menu callback used for the confirmation page after all the releases
@@ -517,36 +517,24 @@ function _update_get_cached_available_releases() {
  * @see drupal_mail()
  * @see _update_cron_notify()
  * @see _update_message_text()
- *
- * This function is updated by Pantheon to direct users to their dashboard for
- * core updates. Hence the $core variable, etc.
  */
 function update_mail($key, &$message, $params) {
   $language = $message['language'];
   $langcode = $language->language;
-  $core = FALSE;
   $message['subject'] .= t('New release(s) available for !site_name', array('!site_name' => variable_get('site_name', 'Drupal')), array('langcode' => $langcode));
   foreach ($params as $msg_type => $msg_reason) {
-    if ($msg_type == 'core') {
-      $core = TRUE;
-    }
     $message['body'][] = _update_message_text($msg_type, $msg_reason, FALSE, $language);
   }
   $message['body'][] = t('See the available updates page for more information:', array(), array('langcode' => $langcode)) . "\n" . url('admin/reports/updates', array('absolute' => TRUE, 'language' => $language));
+  if (update_manager_access()) {
+    $message['body'][] = t('You can automatically install your missing updates using the Update manager:', array(), array('langcode' => $langcode)) . "\n" . url('admin/reports/updates/update', array('absolute' => TRUE, 'language' => $language));
+  }
   $settings_url = url('admin/reports/updates/settings', array('absolute' => TRUE));
   if (variable_get('update_notification_threshold', 'all') == 'all') {
     $message['body'][] = t('Your site is currently configured to send these emails when any updates are available. To get notified only for security updates, !url.', array('!url' => $settings_url));
   }
   else {
     $message['body'][] = t('Your site is currently configured to send these emails only when security updates are available. To get notified for any available updates, !url.', array('!url' => $settings_url));
-  }
-  if ($core) {
-    // Add Pantheon link to beginning/end of mesage.
-    // TODO: have the $dashboard link directly to the site.
-    $dashboard = 'https://dashboard.getpantheon.com/account';
-    $text = t('Drupal core updates should be performed directly from <a href="@link">your Pantheon dashboard</a>.', array('@link' => $dashboard));
-    array_unshift($message['body'], $text);
-    $message['body'][] = t('Core updates should be performed directly from your Pantheon dashboard:', array(), array('langcode' => $langcode)) ."\n$dashboard";
   }
 }
 

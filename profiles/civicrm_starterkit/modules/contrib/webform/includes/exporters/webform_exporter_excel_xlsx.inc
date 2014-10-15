@@ -69,14 +69,14 @@ class webform_exporter_excel_xlsx extends webform_exporter {
           else {
             $style_format = 3;
           }
-  
+
           $output .= '<c r="' . $cell_position . '" s="' . $style_format . '"><v>';
           $output .= $excel_timestamp;
           $output .= '</v></c>';
         }
       }
       else {
-        $output .= '<c r="' . $cell_position . '" t="inlineStr"><is><t>';
+        $output .= '<c r="' . $cell_position . '" t="inlineStr"' . (strpos($value, "\n") === FALSE ? '' : ' s="4"') . '><is><t>';
         $output .= htmlspecialchars($value, ENT_QUOTES);
         $output .= '</t></is></c>';
       }
@@ -199,11 +199,14 @@ EOL;
   <fills count="1"><fill><patternFill patternType="none"/></fill></fills>
   <borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>
   <cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>
-  <cellXfs count="4">
+  <cellXfs count="5">
     <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>
     <xf numFmtId="14" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
     <xf numFmtId="18" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
     <xf numFmtId="22" fontId="0" fillId="0" borderId="0" xfId="0" applyNumberFormat="1"/>
+    <xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0" applyAlignment="1">
+      <alignment wrapText="1"/>
+    </xf>
   </cellXfs>
   <cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles>
   <dxfs count="0"/>

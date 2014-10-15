@@ -202,6 +202,7 @@ class CRM_Dedupe_Merger {
         'civicrm_contribution_page' => array('created_id'),
         'civicrm_contribution_recur' => array('contact_id'),
         'civicrm_contribution_soft' => array('contact_id'),
+        'civicrm_financial_item' => array('contact_id'),
         'civicrm_custom_group' => array('created_id'),
         'civicrm_entity_tag' => array('entity_id'),
         'civicrm_event' => array('created_id'),
@@ -890,7 +891,8 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
         }
         $rows["move_$field"][$moniker] = $label;
         if ($moniker == 'other') {
-          if ($value === NULL) {
+          //CRM-14334
+          if ($value === NULL || $value == '') {
             $value = 'null';
           }
           if ($value === 0 or $value === '0') {
@@ -1185,9 +1187,10 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
       if ($value == $qfZeroBug) {
         $value = '0';
       }
-      if ((in_array(substr($key, 5), CRM_Dedupe_Merger::getContactFields()) or
-          substr($key, 0, 12) == 'move_custom_'
-        ) and $value != NULL) {
+      if ((in_array(substr($key, 5), CRM_Dedupe_Merger::getContactFields()) ||
+        substr($key, 0, 12) == 'move_custom_') &&
+        $value != NULL
+      ) {
         $submitted[substr($key, 5)] = $value;
       }
       elseif (substr($key, 0, 14) == 'move_location_' and $value != NULL) {
@@ -1533,7 +1536,7 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
    */
   static function getContactFields() {
     $contactFields = CRM_Contact_DAO_Contact::fields();
-    $invalidFields = array('api_key', 'contact_is_deleted', 'created_date', 'display_name', 'hash', 'id', 'modified_date', 
+    $invalidFields = array('api_key', 'contact_is_deleted', 'created_date', 'display_name', 'hash', 'id', 'modified_date',
       'primary_contact_id', 'sort_name', 'user_unique_id');
     foreach ($contactFields as $field => $value) {
       if (in_array($field, $invalidFields)) {
@@ -1576,4 +1579,3 @@ INNER JOIN  civicrm_membership membership2 ON membership1.membership_type_id = m
     }
   }
 }
-

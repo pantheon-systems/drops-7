@@ -268,7 +268,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         $this->validateThisPage($elements[$key]);
         if (!empty($element['#civicrm_data_type'])
           && substr(wf_crm_aval($element, '#type', ''), 0, 4) === 'text'
-          && $element['#value'] !== NULL
+          && isset($element['#value'])
           && $element['#value'] !== '') {
           $dt = $element['#civicrm_data_type'];
           // Validate state/prov abbreviation
@@ -475,7 +475,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
   private function verifyExistingContact($cid, $fid) {
     if ($cid && is_numeric($cid) && !empty($this->enabled[$fid])) {
       module_load_include('inc', 'webform_civicrm', 'includes/contact_component');
-      $component = $this->node->webform['components'][$this->enabled[$fid]];
+      $component = $this->getComponent($fid);
       $filters = wf_crm_search_filters($this->node, $component);
       // Verify access to this contact
       if (wf_crm_contact_access($component, $filters, $cid) !== FALSE) {
@@ -662,6 +662,10 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
             if (!($params['state_province_id'] = wf_crm_state_abbr($params['state_province_id'], 'id', wf_crm_aval($params, 'country_id', $config->defaultContactCountry)))) {
               $params['state_province_id'] = '';
             }
+          }
+          // Substitute county stub ('-' is a hack to get around required field when there are no available counties)
+          if (isset($params['county_id']) && $params['county_id'] === '-') {
+            $params['county_id'] = '';
           }
           // Update drupal email address
           if ($location == 'email' && !empty($params['email']) && $i == 1) {
@@ -1021,8 +1025,13 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
         unset($params['status_id']);
         // Pay later status
         if ($this->contributionIsPayLater && $this->getMembershipTypeField($params['membership_type_id'], 'minimum_fee')) {
+          $params['is_pay_later'] = TRUE;
           $params['status_id'] = 'Pending';
         }
+      }
+      // Override status
+      else {
+        $params['is_override'] = 1;
       }
       $params['contact_id'] = $cid;
       // The api won't let us manually set status without this weird param
@@ -1240,7 +1249,9 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    * @return bool
    */
   private function isPaymentPage() {
-    return !empty($this->crmValues['civicrm_1_contribution_1_contribution_contribution_page_id']) &&
+    $page = wf_crm_aval($this->form_state, 'storage:page_num', 1);
+    $field = $this->getComponent('civicrm_1_contribution_1_contribution_contribution_page_id');
+    return $page == $field['page_num'] &&
       !empty($this->data['contribution'][1]['contribution'][1]['payment_processor_id']);
   }
 
@@ -1398,8 +1409,8 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function payLaterContribution() {
     $params = $this->contributionParams();
-    $params['receive_date'] = 'now';
     $params['contribution_status_id'] = 'Pending';
+    $params['is_pay_later'] = 1;
     $result = wf_civicrm_api('contribution', 'create', $params);
     $this->id['contribution'] = $result['id'];
     $this->contributionIsPayLater = TRUE;
@@ -1550,18 +1561,26 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           }
           continue;
         }
+        $dataType = wf_crm_aval($field, 'data_type');
         if (!empty($field['extra']['multiple'])) {
           // Merge with existing data
           if (!empty($this->data[$ent][$c][$table][$n][$name]) && is_array($this->data[$ent][$c][$table][$n][$name])) {
             $val = array_unique(array_merge($val, $this->data[$ent][$c][$table][$n][$name]));
           }
           // Implode data that will be stored as a string
-          if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && wf_crm_aval($field, 'data_type') != 'ContactReference') {
-            $val = $sp . implode($sp, $val) . $sp;
+          if ($table !== 'other' && $name !== 'event_id' && $name !== 'relationship_type_id' && $table !== 'contact' && $dataType != 'ContactReference') {
+            $val = CRM_Utils_Array::implodePadded($val);
           }
         }
         elseif ($name === 'image_URL') {
-          if (empty($val[0]) || !($val = wf_crm_filepath($val[0]))) {
+          if (empty($val[0]) || !($val = $this->getDrupalFileUrl($val[0]))) {
+            // This field can't be emptied due to the nature of file uploads
+            continue;
+          }
+        }
+        elseif ($dataType == 'File') {
+          if (empty($val[0]) || !($val = $this->saveDrupalFileToCivi($val[0]))) {
+            // This field can't be emptied due to the nature of file uploads
             continue;
           }
         }
@@ -1619,7 +1638,7 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
    */
   private function isFieldHiddenByExistingContactSettings($ent, $c, $table, $n, $name) {
     if ($ent == 'contact' && isset($this->enabled["civicrm_{$c}_contact_1_contact_existing"])) {
-      $component = $this->node->webform['components'][$this->enabled["civicrm_{$c}_contact_1_contact_existing"]];
+      $component = $this->getComponent("civicrm_{$c}_contact_1_contact_existing");
       $existing_contact_val = $this->submissionValue($component['cid']);
       // Fields are hidden if value is empty (no selection) or a numeric contact id
       if (!$existing_contact_val[0] || is_numeric($existing_contact_val[0])) {
@@ -1646,9 +1665,11 @@ class wf_crm_webform_postprocess extends wf_crm_webform_base {
           && empty($params['state_province_id'])
           && empty($params['country_id'])
           && empty($params['postal_code'])
-          && empty($params['master_id']);
+          && (empty($params['master_id']) || $params['master_id'] == 'null');
       case 'website':
         return empty($params['url']);
+      case 'im':
+        return empty($params['name']);
       default:
         return empty($params[$location]);
     }

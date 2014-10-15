@@ -185,6 +185,11 @@ function _civicrm_api3_job_geocode_spec(&$params) {
  *
  */
 function civicrm_api3_job_send_reminder($params) {
+  //note that $params['rowCount' can be overridden by one of the preferred syntaxes ($options['limit'] = x
+  //It's not clear whether than syntax can be passed in via the UI config - but this keeps the pre 4.4.4 behaviour
+  // in that case (ie. makes it unconfigurable via the UI). Another approach would be to set a default of 0
+  // in the _spec function - but since that is a deprecated value it seems more contentious than this approach
+  $params['rowCount'] = 0;
   $lock = new CRM_Core_Lock('civimail.job.EmailProcessor');
   if (!$lock->isAcquired()) {
     return civicrm_api3_create_error('Could not acquire lock, another EmailProcessor process is running');
@@ -434,7 +439,7 @@ function civicrm_api3_job_process_participant($params) {
 function civicrm_api3_job_process_membership($params) {
   $lock = new CRM_Core_Lock('civimail.job.updateMembership');
   if (!$lock->isAcquired()) {
-    return civicrm_api3_create_error('Could not acquire lock, another EmailProcessor process is running');
+    return civicrm_api3_create_error('Could not acquire lock, another Membership Processing process is running');
   }
 
   $result = CRM_Member_BAO_Membership::updateAllMembershipStatus();

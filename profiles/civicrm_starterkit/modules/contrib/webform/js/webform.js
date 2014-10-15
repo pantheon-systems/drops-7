@@ -148,6 +148,7 @@ Drupal.webform.conditionalCheck = function(e) {
       }
 
       // Flip the result of the action is to hide.
+      var showComponent;
       if (ruleGroup['action'] == 'hide') {
         showComponent = !conditionalResult;
       }
@@ -155,13 +156,18 @@ Drupal.webform.conditionalCheck = function(e) {
         showComponent = conditionalResult;
       }
 
+      var $target = $form.find('.' + ruleGroup['target']);
+      var $targetElements;
       if (showComponent) {
-        $form.find('.' + ruleGroup['target']).find('.webform-conditional-disabled').removeAttr('disabled').removeClass('webform-conditional-disabled').end().show();
+        $targetElements = $target.find('.webform-conditional-disabled').removeClass('webform-conditional-disabled');
+        $.fn.prop ? $targetElements.prop('disabled', false) : $targetElements.removeAttr('disabled');
+        $target.show();
       }
       else {
-        $form.find('.' + ruleGroup['target']).find(':input').attr('disabled', true).addClass('webform-conditional-disabled').end().hide();
+        $targetElements = $target.find(':input').addClass('webform-conditional-disabled');
+        $.fn.prop ? $targetElements.prop('disabled', true) : $targetElements.attr('disabled', true);
+        $target.hide();
       }
-
     });
   }
 
@@ -250,15 +256,7 @@ Drupal.webform.conditionalOperatorStringEmpty = function(element, existingValue,
 };
 
 Drupal.webform.conditionalOperatorStringNotEmpty = function(element, existingValue, ruleValue) {
-  var currentValue = Drupal.webform.stringValue(element, existingValue);
-  var empty = false;
-  $.each(currentValue, function(n, value) {
-    if (value === '') {
-      empty = true;
-      return false; // break.
-    }
-  });
-  return !empty;
+  return !Drupal.webform.conditionalOperatorStringEmpty(element, existingValue, ruleValue);
 };
 
 Drupal.webform.conditionalOperatorNumericEqual = function(element, existingValue, ruleValue) {
@@ -288,7 +286,7 @@ Drupal.webform.conditionalOperatorNumericLessThan = function(element, existingVa
 };
 
 Drupal.webform.conditionalOperatorDateEqual = function(element, existingValue, ruleValue) {
-  var currentValue = Drupal.webform.timeValue(element, existingValue);
+  var currentValue = Drupal.webform.dateValue(element, existingValue);
   return currentValue === ruleValue;
 };
 
@@ -364,11 +362,11 @@ Drupal.webform.dateValue = function(element, existingValue) {
     if (month) {
       month--;
     }
-    return (year !== '' && month !== '' && day !== '') ? Date.UTC(year, month, day) : false;
+    return (year !== '' && month !== '' && day !== '') ? Date.UTC(year, month, day) / 1000 : false;
   }
   else {
     var existingValue = existingValue.length ? existingValue[0].split('-') : existingValue;
-    return existingValue.length ? Date.UTC(existingValue[0], existingValue[1], existingValue[2]) : false;
+    return existingValue.length ? Date.UTC(existingValue[0], existingValue[1], existingValue[2]) / 1000 : false;
   }
 };
 
@@ -389,11 +387,11 @@ Drupal.webform.timeValue = function(element, existingValue) {
       hour = (hour < 12 && ampm == 'pm') ? hour + 12 : hour;
       hour = (hour === 12 && ampm == 'am') ? 0 : hour;
     }
-    return (hour !== '' && minute !== '') ? Date.UTC(1970, 0, 1, hour, minute) : false;
+    return (hour !== '' && minute !== '') ? Date.UTC(1970, 0, 1, hour, minute) / 1000 : false;
   }
   else {
     var existingValue = existingValue.length ? existingValue[0].split(':') : existingValue;
-    return existingValue.length ? Date.UTC(1970, 0, 1, existingValue[0], existingValue[1]) : false;
+    return existingValue.length ? Date.UTC(1970, 0, 1, existingValue[0], existingValue[1]) / 1000 : false;
   }
 };
 

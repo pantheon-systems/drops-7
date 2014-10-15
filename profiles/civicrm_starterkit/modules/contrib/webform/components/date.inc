@@ -167,6 +167,10 @@ function webform_expand_date($element) {
     $timestring = webform_strtodate('c', $element['#default_value'], $timezone);
     $element['#default_value'] = webform_date_array($timestring, 'date');
   }
+  // Prevent an error in PHP 5.4 caused by core's treatment of the #value.
+  if (isset($element['#value'])) {
+    unset($element['#value']);
+  }
 
   // Set defaults according to existing #default_value (set by Form API)
   if (isset($element['#default_value']['month']) || isset($element['#default_value']['day']) || isset($element['#default_value']['year'])) {
@@ -277,15 +281,21 @@ function theme_webform_date($variables) {
  * Element validation for Webform date fields.
  */
 function webform_validate_date($element, $form_state) {
-  // Check if the user filled the required fields.
-  foreach (array('day', 'month', 'year') as $field_type) {
-    if (!is_numeric($element[$field_type]['#value']) && $element['#required']) {
-      form_error($element, t('!name field is required.', array('!name' => $element['#title'])));
+  if ($element['month']['#value'] !== '' || $element['day']['#value'] !== '' || $element['year']['#value'] !== '') {
+    // Check that each part of the date has been filled in.
+    $missing_fields = array();
+    foreach (array('day', 'month', 'year') as $field_type) {
+      if (empty($element[$field_type]['#value'])) {
+        $missing_fields[] = $field_type;
+      }
+    }
+    if (count($missing_fields)) {
+      foreach ($missing_fields as $missing_field) {
+        form_error($element[$missing_field], t('!part in !name is missing.', array('!name' => $element['#title'], '!part' => $element[$missing_field]['#title'])));
+      }
       return;
     }
-  }
 
-  if ($element['month']['#value'] !== '' || $element['day']['#value'] !== '' || $element['year']['#value'] !== '') {
     // Check for a valid date.
     if (!checkdate((int) $element['month']['#value'], (int) $element['day']['#value'], (int) $element['year']['#value'])) {
       form_error($element, t('Entered !name is not a valid date.', array('!name' => $element['#title'])));
@@ -322,6 +332,9 @@ function webform_validate_date($element, $form_state) {
       }
     }
   }
+  elseif ($element['#required']) {
+    form_error($element, t('!name field is required.', array('!name' => $element['#title'])));
+  }
 }
 
 /**
@@ -340,6 +353,7 @@ function _webform_display_date($component, $value, $format = 'html') {
 
   return array(
     '#title' => $component['name'],
+    '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
     '#weight' => $component['weight'],
     '#theme' => 'webform_display_date',
     '#theme_wrappers' => $format == 'html' ? array('webform_element') : array('webform_element_text'),

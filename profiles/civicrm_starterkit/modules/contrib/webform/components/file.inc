@@ -78,6 +78,7 @@ function _webform_edit_file($component) {
         'js' => array(drupal_get_path('module', 'webform') . '/js/webform-admin.js'),
         'css' => array(drupal_get_path('module', 'webform') . '/css/webform-admin.css'),
       ),
+      '#type' => 'webform_file_extensions',
       '#weight' => 2,
     );
 
@@ -100,7 +101,7 @@ function _webform_edit_file($component) {
       '#default_value' => array_intersect($current_types, $types),
     );
 
-    $types = array('txt', 'rtf', 'html', 'pdf', 'doc', 'docx', 'ppt', 'pptx', 'xls', 'xlsx', 'xml');
+    $types = array('txt', 'rtf', 'html', 'pdf', 'doc', 'docx', 'odt', 'ppt', 'pptx', 'odp', 'xls', 'xlsx', 'ods', 'xml');
     $form['validation']['extensions']['types']['documents'] = array(
       '#type' => 'checkboxes',
       '#title' => t('Documents'),
@@ -213,7 +214,7 @@ function _webform_edit_file_check_directory($element) {
   $scheme = $element['extra']['scheme']['#value'];
   $directory = $element['extra']['directory']['#value'];
 
-  $destination_dir = file_stream_wrapper_uri_normalize($scheme . '://' . $directory . '/webform');
+  $destination_dir = file_stream_wrapper_uri_normalize($scheme . '://webform/' . $directory);
 
   // Sanity check input to prevent use parent (../) directories.
   if (preg_match('/\.\.[\/\\\]/', $destination_dir . '/')) {
@@ -333,6 +334,10 @@ function _webform_render_file($component, $value = NULL, $filter = TRUE) {
     '#translatable' => array('title', 'description'),
   );
 
+  if ($filter) {
+    $element['#description'] = theme('file_upload_help', array('description' => $element['#description'], 'upload_validators' => $element['#upload_validators']));
+  }
+
   return $element;
 }
 
@@ -374,6 +379,7 @@ function _webform_display_file($component, $value, $format = 'html') {
   $fid = isset($value[0]) ? $value[0] : NULL;
   return array(
     '#title' => $component['name'],
+    '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
     '#value' => $fid ? webform_get_file($fid) : NULL,
     '#weight' => $component['weight'],
     '#theme' => 'webform_display_file',
@@ -533,4 +539,3 @@ function webform_file_usage_adjust($submission) {
     }
   }
 }
-

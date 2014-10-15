@@ -36,6 +36,15 @@
  * This class contains all contact related functions that are called using AJAX (jQuery)
  */
 class CRM_Contact_Page_AJAX {
+  /**
+   * When a user chooses a username, CHECK_USERNAME_TTL
+   * is the time window in which they can check usernames
+   * (without reloading the overall form).
+   */
+  const CHECK_USERNAME_TTL = 10800; // 3hr; 3*60*60
+
+  const AUTOCOMPLETE_TTL = 21600; // 6hr; 6*60*60
+
   static function getContactList() {
     // if context is 'customfield'
     if (CRM_Utils_Array::value('context', $_GET) == 'customfield') {
@@ -102,14 +111,14 @@ class CRM_Contact_Page_AJAX {
     // check that this is a valid, active custom field of Contact Reference type
     $params           = array('id' => $cfID);
     $returnProperties = array('filter', 'data_type', 'is_active');
-    $fldValues        = array();
+    $fldValues = $cf = array();
     CRM_Core_DAO::commonRetrieve('CRM_Core_DAO_CustomField', $params, $cf, $returnProperties);
     if (!$cf['id'] || !$cf['is_active'] || $cf['data_type'] = !'ContactReference') {
       echo "$name|error\n";
       CRM_Utils_System::civiExit();
     }
 
-    if ($cf['filter']) {
+    if (!empty($cf['filter'])) {
       $filterParams = array();
       parse_str($cf['filter'], $filterParams);
 
@@ -253,6 +262,13 @@ class CRM_Contact_Page_AJAX {
    * Function to fetch the values
    */
   static function autocomplete() {
+    $signer = new CRM_Utils_Signer(CRM_Core_Key::privateKey(), array('cfid', 'ogid', 'sigts'));
+    if (CRM_Utils_Time::getTimeRaw() > $_REQUEST['sigts'] + self::AUTOCOMPLETE_TTL
+      || !$signer->validate($_REQUEST['sig'], $_REQUEST)
+    ) {
+      CRM_Utils_System::civiExit();
+    }
+
     $fieldID       = CRM_Utils_Type::escape($_GET['cfid'], 'Integer');
     $optionGroupID = CRM_Utils_Type::escape($_GET['ogid'], 'Integer');
     $label         = CRM_Utils_Type::escape($_GET['s'], 'String');
@@ -339,25 +355,6 @@ class CRM_Contact_Page_AJAX {
     echo json_encode($values);
     CRM_Utils_System::civiExit();
   }
-
-  /**
-   * Function to obtain list of permissioned employer for the given contact-id.
-   */
-  static function getPermissionedEmployer() {
-    $cid  = CRM_Utils_Type::escape($_GET['cid'], 'Integer');
-    $name = trim(CRM_Utils_Type::escape($_GET['s'], 'String'));
-    $name = str_replace('*', '%', $name);
-
-    $elements = CRM_Contact_BAO_Relationship::getPermissionedEmployer($cid, $name);
-
-    if (!empty($elements)) {
-      foreach ($elements as $cid => $name) {
-        echo $element = $name['name'] . "|$cid\n";
-      }
-    }
-    CRM_Utils_System::civiExit();
-  }
-
 
   static function groupTree() {
     $gids = CRM_Utils_Type::escape($_GET['gids'], 'String');
@@ -634,6 +631,17 @@ WHERE sort_name LIKE '%$name%'";
      *
     */
   static public function checkUserName() {
+    $signer = new CRM_Utils_Signer(CRM_Core_Key::privateKey(), array('for', 'ts'));
+    if (
+      CRM_Utils_Time::getTimeRaw() > $_REQUEST['ts'] + self::CHECK_USERNAME_TTL
+      || $_REQUEST['for'] != 'civicrm/ajax/cmsuser'
+      || !$signer->validate($_REQUEST['sig'], $_REQUEST)
+    ) {
+      $user = array('name' => 'error');
+      echo json_encode($user);
+      CRM_Utils_System::civiExit();
+    }
+
     $config = CRM_Core_Config::singleton();
     $username = trim($_REQUEST['cms_name']);
 
@@ -661,6 +669,9 @@ WHERE sort_name LIKE '%$name%'";
   static function getContactEmail() {
     if (CRM_Utils_Array::value('contact_id', $_REQUEST)) {
       $contactID = CRM_Utils_Type::escape($_REQUEST['contact_id'], 'Positive');
+      if (!CRM_Contact_BAO_Contact_Permission::allow($contactID, CRM_Core_Permission::EDIT)) {
+        return;
+      }
       list($displayName,
         $userEmail
       ) = CRM_Contact_BAO_Contact_Location::getEmailDetails($contactID);
@@ -1074,7 +1085,7 @@ LIMIT {$offset}, {$rowCount}
     $sEcho     = CRM_Utils_Type::escape($_REQUEST['sEcho'], 'Integer');
     $offset    = isset($_REQUEST['iDisplayStart']) ? CRM_Utils_Type::escape($_REQUEST['iDisplayStart'], 'Integer') : 0;
     $rowCount  = isset($_REQUEST['iDisplayLength']) ? CRM_Utils_Type::escape($_REQUEST['iDisplayLength'], 'Integer') : 25;
-    $sort      = isset($_REQUEST['iSortCol_0']) ? $sortMapper[CRM_Utils_Type::escape($_REQUEST['iSortCol_0'], 'Integer')] : 'sort_name';
+    $sort      = 'sort_name';
     $sortOrder = isset($_REQUEST['sSortDir_0']) ? CRM_Utils_Type::escape($_REQUEST['sSortDir_0'], 'String') : 'asc';
 
     $gid         = isset($_REQUEST['gid']) ? CRM_Utils_Type::escape($_REQUEST['gid'], 'Integer') : 0;
@@ -1135,7 +1146,7 @@ LIMIT {$offset}, {$rowCount}
   /**
    * Function to retrieve Paper Size dimensions
    */
-  function paperSize() {
+  static function paperSize() {
     $paperSizeName = CRM_Utils_Type::escape($_REQUEST['paperSizeName'], 'String');
 
     $paperSize = CRM_Core_BAO_PaperSize::getByName($paperSizeName);

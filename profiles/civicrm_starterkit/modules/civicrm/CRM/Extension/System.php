@@ -71,7 +71,7 @@ class CRM_Extension_System {
   }
 
   public function __construct($parameters = array()) {
-    $config = CRM_Core_Config::singleton();
+    $config = CRM_Core_Config::singleton(FALSE);
     if (!array_key_exists('extensionsDir', $parameters)) {
       $parameters['extensionsDir'] = $config->extensionsDir;
     }

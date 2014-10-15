@@ -13,14 +13,15 @@ class WebformTestCase extends DrupalWebTestCase {
   /**
    * Implements setUp().
    */
-  function setUp() {
+  function setUp($added_modules = array()) {
     // Enable Webform and Token module if available.
     if (module_exists('token')) {
-      parent::setUp('webform', 'token');
+      $modules = array('webform', 'token');
     }
     else {
-      parent::setUp('webform');
+      $modules = array('webform');
     }
+    parent::setUp(array_merge($modules, $added_modules));
 
     // Create a profile field to test [user:?] tokens.
     $field = array(
@@ -521,7 +522,7 @@ class WebformTestCase extends DrupalWebTestCase {
         ),
         'sample values' => 'admin@localhost.localhost',
         'database values' => array('admin@localhost.localhost'),
-        'database default values' => module_exists('token') ? array($this->webform_users['admin']->mail) : array(),
+        'database default values' => array($this->webform_users['admin']->mail),
         // Conditionals match against the 'sample values'.
         'match conditional values' => array(
           'equal' => 'admin@localhost.localhost',
@@ -646,7 +647,7 @@ class WebformTestCase extends DrupalWebTestCase {
         // TODO: Update after http://drupal.org/node/1347790 is finished.
         'sample values' => module_exists('token') ? NULL : 'bar',
         'database values' => array('bar'),
-        'database default values' => array('bar'),
+        'database default values' => module_exists('token') ? array('bar') : array(''),
       ),
       'textfield_profile' => array(
         'component' => array(
@@ -665,7 +666,7 @@ class WebformTestCase extends DrupalWebTestCase {
         'database values' => array('Female'),
         // The default value will be blank if token does not exist.
         // TODO: Update after http://drupal.org/node/1347790 is finished.
-        'database default values' => module_exists('token') ? array($this->webform_users['admin']->gender[LANGUAGE_NONE][0]['value']) : '',
+        'database default values' => module_exists('token') ? array($this->webform_users['admin']->gender[LANGUAGE_NONE][0]['value']) : array(''),
       ),
 
       // Test time components.
@@ -921,18 +922,7 @@ class WebformTestCase extends DrupalWebTestCase {
      'format' => '1',
      'webform' => array(
         'confirmation' => 'Thanks!',
-        'confirmation_format' => filter_default_format(),
-        'redirect_url' => '<confirmation>',
-        'allow_draft' => '1',
-        'submit_text' => '',
-        'submit_limit' => '-1',
-        'submit_interval' => '-1',
-        'submit_notice' => '1',
-        'roles' => array('1', '2'),
-        'components' => array(),
-        'conditionals' => array(),
-        'emails' => array(),
-      ),
+      ) + webform_node_defaults(),
     );
 
     $cid = 0;

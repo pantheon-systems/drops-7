@@ -939,10 +939,15 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
           }
         }
 
-        CRM_Member_BAO_Membership::postProcessMembership($membershipParams, $contactID,
-          $this, $premiumParams, $customFieldsFormatted,
-          $fieldTypes
-        );
+        try {
+          CRM_Member_BAO_Membership::postProcessMembership($membershipParams, $contactID,
+            $this, $premiumParams, $customFieldsFormatted,
+            $fieldTypes
+          );
+        } catch (CRM_Core_Exception $e) {
+          CRM_Core_Session::singleton()->setStatus($e->getMessage());
+          CRM_Utils_System::redirect(CRM_Utils_System::url('civicrm/contribute/transact', "_qf_Main_display=true&qfKey={$this->_params['qfKey']}"));
+        }
       }
     }
     else {
@@ -1652,7 +1657,7 @@ class CRM_Contribute_Form_Contribution_Confirm extends CRM_Contribute_Form_Contr
 
       // CRM-6243 says to pick the first org even if more than one match
       if (count($dupeIDs) >= 1) {
-        $behalfOrganization['contact_id'] = $dupeIDs[0];
+        $behalfOrganization['contact_id'] = $orgID = $dupeIDs[0];
         // don't allow name edit
         unset($behalfOrganization['organization_name']);
       }

@@ -22,8 +22,8 @@ class WebformSubmissionTestCase extends WebformTestCase {
   /**
    * Implements setUp().
    */
-  function setUp() {
-    parent::setUp();
+  function setUp($added_modules = array()) {
+    parent::setUp($added_modules);
   }
 
   /**
@@ -133,7 +133,7 @@ class WebformSubmissionTestCase extends WebformTestCase {
     foreach ($node->webform['components'] as $cid => $component) {
       $stable_value = $value_type == 'sample' ? $component_info[$component['form_key']]['database values'] : $component_info[$component['form_key']]['database default values'];
       $actual_value = $actual_submission->data[$cid];
-      $result = $this->assertEqual($stable_value, $actual_value, t('Component @form_key data integrity check', array('@form_key' => $component['form_key'])), t('Webform'));
+      $result = $this->assertEqual($stable_value, $actual_value, t('Component @form_key data integrity check when using @type values.', array('@form_key' => $component['form_key'], '@type' => $value_type)), t('Webform'));
       if (!$result || $result === 'fail') {
         $this->fail(t('Expected !expected', array('!expected' => print_r($stable_value, TRUE))) . "\n\n" . t('Recieved !recieved', array('!recieved' => print_r($actual_value, TRUE))), t('Webform'));
       }

@@ -271,6 +271,11 @@ function _webform_edit_validate_options($element, &$form_state) {
   // Options saved for grid components.
   else {
     $form_state['values']['extra']['custom_' . rtrim($key, 's') . '_keys'] = $element_options['custom_keys'];
+    // There is only one 'value', but grids have two options widgets, one for questions and one for options.
+    // Only options have a default 'value'. Note that multiple selection is now allowed for grid options.
+    if ($key == 'options') {
+      $form_state['values']['value'] = $element_options['default_value'];
+    }
   }
 }
 
@@ -323,20 +328,22 @@ function _webform_render_select($component, $value = NULL, $filter = TRUE) {
   // Set the component options.
   $element['#options'] = $options;
 
-  // Set the default value.
+  // Set the default value. Note: "No choice" is stored as an empty string,
+  // which will match a 0 key for radios; NULL is used to avoid unintentional
+  // defaulting to the 0 option.
   if (isset($value)) {
     if ($component['extra']['multiple']) {
       // Set the value as an array.
       $element['#default_value'] = array();
       foreach ((array) $value as $key => $option_value) {
-        $element['#default_value'][] = $option_value;
+        $element['#default_value'][] = $option_value === '' ? NULL : $option_value;
       }
     }
     else {
       // Set the value as a single string.
       $element['#default_value'] = '';
       foreach ((array) $value as $option_value) {
-        $element['#default_value'] = $option_value;
+        $element['#default_value'] = $option_value === '' ? NULL : $option_value;
       }
     }
   }
@@ -449,8 +456,7 @@ function webform_expand_select_or_other($element) {
 }
 
 /**
- * Drupal 6 hack that properly *renders* checkboxes in multistep forms. This is
- * different than the value hack needed in Drupal 5, which is no longer needed.
+ * Webform-specific checkbox #process function. Sanitize values before output.
  */
 function webform_expand_checkboxes($element) {
   // Elements that have a value set are already in the form structure cause
@@ -474,6 +480,7 @@ function webform_expand_checkboxes($element) {
   foreach ($default_value as $key => $val) {
     $element[$key]['#default_value'] = $val;
   }
+
   return $element;
 }
 
@@ -489,7 +496,7 @@ function webform_expand_select_ids($element) {
     $element[$key]['#id'] = $id . '-' . $delta;
 
     // Prevent scripts or CSS in the labels for each checkbox or radio.
-    $element[$key]['#title'] = webform_filter_xss($element[$key]['#title']);
+    $element[$key]['#title'] = isset($element[$key]['#title']) ? webform_filter_xss($element[$key]['#title']) : '';
   }
   return $element;
 }
@@ -500,6 +507,7 @@ function webform_expand_select_ids($element) {
 function _webform_display_select($component, $value, $format = 'html') {
   return array(
     '#title' => $component['name'],
+    '#title_display' => $component['extra']['title_display'] ? $component['extra']['title_display'] : 'before',
     '#weight' => $component['weight'],
     '#multiple' => $component['extra']['multiple'],
     '#theme' => 'webform_display_select',
@@ -744,7 +752,7 @@ function _webform_csv_headers_select($component, $export_options) {
   if ($component['extra']['multiple'] && $export_options['select_format'] == 'separate') {
     $headers[0][] = '';
     $headers[1][] = $export_options['header_keys'] ? $component['form_key'] : $component['name'];
-    $items = _webform_select_options($component, TRUE, FALSE);
+    $items = _webform_select_options($component, TRUE);
     if ($component['extra']['other_option']) {
       if ($export_options['header_keys']) {
         $other_label = $component['form_key'] . '_other';
@@ -782,7 +790,7 @@ function _webform_csv_headers_select($component, $export_options) {
  * Implements _webform_csv_data_component().
  */
 function _webform_csv_data_select($component, $export_options, $value) {
-  $options = _webform_select_options($component, TRUE, FALSE);
+  $options = _webform_select_options($component, TRUE);
   $return = array();
 
   if ($component['extra']['multiple']) {
@@ -838,8 +846,8 @@ function _webform_csv_data_select($component, $export_options, $value) {
  * $options = webform_component_invoke($component['type'], 'options', $component);
  * @endcode
  */
-function _webform_options_select($component, $flat = FALSE, $filter = TRUE) {
-  return _webform_select_options($component, $flat, $filter);
+function _webform_options_select($component, $flat = FALSE) {
+  return _webform_select_options($component, $flat);
 }
 
 /**
@@ -850,7 +858,7 @@ function webform_select_options_ajax($source_name = '') {
 
   $component['extra']['options_source'] = $source_name;
   if ($source_name && isset($info[$source_name])) {
-    $options = _webform_select_options_to_text(_webform_select_options($component, !$component['extra']['aslist'], FALSE));
+    $options = _webform_select_options_to_text(_webform_select_options($component, FALSE, FALSE));
   }
   else {
     $options = '';
@@ -869,13 +877,34 @@ function webform_select_options_ajax($source_name = '') {
  */
 function _webform_select_options($component, $flat = FALSE, $filter = TRUE) {
   if ($component['extra']['options_source']) {
-    $options = _webform_select_options_callback($component['extra']['options_source'], $component, $flat, $filter);
+    $options = _webform_select_options_callback($component['extra']['options_source'], $component, $flat);
   }
   else {
-    $options = _webform_select_options_from_text($component['extra']['items'], $flat, $filter);
+    $options = _webform_select_options_from_text($component['extra']['items'], $flat);
+  }
+
+  // Replace tokens if needed in the options.
+  if ($filter) {
+    $node = node_load($component['nid']);
+    $options = _webform_select_replace_tokens($options, $node);
   }
 
   return isset($options) ? $options : array();
+}
+
+/**
+ * Replace tokens in the values of a list of select options.
+ */
+function _webform_select_replace_tokens($options, $node) {
+  foreach ($options as $key => $option) {
+    if (is_array($option)) {
+      $options[$key] = _webform_select_replace_tokens($option, $node);
+    }
+    else {
+      $options[$key] = webform_replace_tokens($option, $node);
+    }
+  }
+  return $options;
 }
 
 /**
@@ -907,10 +936,8 @@ function _webform_select_options_info() {
  *   The full Webform component.
  * @param $flat
  *   Whether the information returned should exclude any nested groups.
- * @param $filter
- *   Whether information returned should be sanitized. Defaults to TRUE.
  */
-function _webform_select_options_callback($name, $component, $flat = FALSE, $filter = TRUE) {
+function _webform_select_options_callback($name, $component, $flat = FALSE) {
   $info = _webform_select_options_info();
 
   // Include any necessary files.
@@ -929,7 +956,7 @@ function _webform_select_options_callback($name, $component, $flat = FALSE, $fil
       $arguments = $info[$name]['options arguments'];
     }
 
-    return $function($component, $flat, $filter, $arguments);
+    return $function($component, $flat, $arguments);
   }
 }
 
@@ -937,14 +964,16 @@ function _webform_select_options_callback($name, $component, $flat = FALSE, $fil
  * Utility function to split user-entered values from new-line separated
  * text into an array of options.
  *
- * @param $text
+ * @param string $text
  *   Text to be converted into a select option array.
- * @param $flat
+ * @param bool $flat
  *   Optional. If specified, return the option array and exclude any optgroups.
- * @param $filter
- *   Optional. Whether or not to filter returned values.
+ * @return array
+ *   An array of options suitable for use as a #options property. Note that
+ *   values are not filtered and may contain tokens. Individual values should be
+ *   run through webform_replace_tokens() if displaying to an end-user.
  */
-function _webform_select_options_from_text($text, $flat = FALSE, $filter = TRUE) {
+function _webform_select_options_from_text($text, $flat = FALSE) {
   static $option_cache = array();
 
   // Keep each processed option block in an array indexed by the MD5 hash of
@@ -972,17 +1001,16 @@ function _webform_select_options_from_text($text, $flat = FALSE, $filter = TRUE)
           unset($group);
         }
         elseif (!$flat) {
-          $group = $filter ? webform_replace_tokens($matches[1]) : $matches[1];
+          $group = $matches[1];
         }
       }
       elseif (preg_match('/^([^|]+)\|(.*)$/', $option, $matches)) {
-        $key = $filter ? webform_replace_tokens($matches[1]) : $matches[1];
-        $value = $filter ? webform_replace_tokens($matches[2]) : $matches[2];
+        $key = $matches[1];
+        $value = $matches[2];
         isset($group) ? $options[$group][$key] = $value : $options[$key] = $value;
       }
       else {
-        $filtered_option = $filter ? webform_replace_tokens($option) : $option;
-        isset($group) ? $options[$group][$filtered_option] = $filtered_option : $options[$filtered_option] = $filtered_option;
+        isset($group) ? $options[$group][$option] = $option : $options[$option] = $option;
       }
     }
 

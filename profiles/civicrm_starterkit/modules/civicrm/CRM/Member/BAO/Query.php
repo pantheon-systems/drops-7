@@ -231,6 +231,7 @@ class CRM_Member_BAO_Query {
             $query->_qill[$grouping][] = ts('Membership is a Test');
           }
         }
+        $query->_tables['civicrm_membership'] = $query->_whereTables['civicrm_membership'] = 1;
         return;
 
       case 'member_auto_renew':
@@ -294,7 +295,9 @@ class CRM_Member_BAO_Query {
         $names = array();
         $membershipTypes = CRM_Member_PseudoConstant::membershipType();
         foreach ($value as $id => $dontCare) {
-          $names[] = $membershipTypes[$id];
+          if(!empty($membershipTypes[$id])) {
+            $names[] = $membershipTypes[$id];
+          }
         }
         $query->_qill[$grouping][] = ts('Membership Type %1', array(1 => $op)) . ' ' . implode(' ' . ts('or') . ' ', $names);
         $query->_where[$grouping][] = CRM_Contact_BAO_Query::buildClause("civicrm_membership.membership_type_id",

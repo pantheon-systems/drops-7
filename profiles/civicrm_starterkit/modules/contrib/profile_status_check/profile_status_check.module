@@ -4,7 +4,6 @@
  * Profile Module Check
  */
 
-
 /**
  * Implementation of hook_menu().
  */
@@ -12,12 +11,32 @@ function profile_status_check_menu() {
   $items = array();
 
   $items['admin/modules/status'] = array(
-    'title' => 'Status',
+    'title' => 'Review Overrides',
     'description' => '',
     'page callback' => 'profile_status_check_system_listing',
     'access arguments' => array('access administration pages'),
     'weight' => 99,
     'type' => MENU_LOCAL_TASK,
+  );
+  
+  $items['admin/modules/status/export/all'] = array(
+    'title' => 'Export Report',
+    'description' => '',
+    'page callback' => 'profile_status_check_export',
+    'access arguments' => array('access administration pages'),
+    'weight' => 0,
+    'type' => MENU_CALLBACK,
+  );
+  
+    // Administration settings.
+  
+  $items['admin/config/development/profile-status-check'] = array(
+    'title' => 'Profile Status Check',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('profile_status_check_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer modules'),
+    'description' => t('Configure settings Profile Status Check'),
   );
     
   return $items;
@@ -25,10 +44,155 @@ function profile_status_check_menu() {
 }
 
 /**
- * Returns lists of modules being overridden
+ * Implements hook_menu_local_tasks_alter().
+ */
+function profile_status_check_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  // Add action link to 'file/add' on 'admin/content/file/thumbnails' page.
+  if ($root_path == 'admin/modules/status') {
+    $item = menu_get_item('admin/modules/status/export/all');
+    if (!empty($item['access'])) {
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+        '#weight' => $item['weight'],
+      );
+    }
+  }
+}
+
+/**
+ * Builds the admininstration settings form.
+ *
+ * @return $form
+ */
+function profile_status_check_admin_settings($form, &$form_state) {
+
+  $form['profile_status_check_prefix'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Orgnaization Prefix'),
+    '#default_value' => variable_get('profile_status_check_prefix', NULL),
+    '#description' => t('Lowercase text used in custom module and features names.  Examples would be pcm, ca, mnn, ecat, phillycam, amherst, retn, etc. If configured, any modules or features that begin with this text will be broken out in the report and the prefix will be added to the export filename'),
+  );
+
+  return system_settings_form($form);
+}
+
+function profile_status_check_export() {
+  // Add the headers needed to let the browser know this is a csv file download.
+  
+  $date = date("Y-m-d");
+  $prefix = variable_get('profile_status_check_prefix', NULL);
+  $file_prefix = isset($prefix) ? $prefix . '-' : NULL;
+  
+  drupal_add_http_header('Content-Type', 'text/csv; utf-8');
+  drupal_add_http_header('Content-Disposition', 'attachment; filename = '  . $file_prefix . $date . '-profile-status-check.csv');
+  
+  // $modules[$file_key]['title'] = $info['name'];
+  // $modules[$file_key]['value'] = $value;
+  // $modules[$file_key]['severity'] = $status; 
+  // $modules[$file_key]['description'] = $message; 
+  
+  $name = drupal_get_profile();
+  $path = drupal_get_path('module', $name) . '/' . $name . '.info';
+  $profile = drupal_parse_info_file($path);
+  
+  //print '<pre>';
+  //print_r($profile);  
+  
+  //print $profile['name'];
+  //print $profile['version'];
+  //print date("m/d/y", $profile['datestamp']);
+  
+  // $status = 2;
+  // $value = t('Overridden, Enabled');
+       
+  // $status = 1;
+  // $value = t('Overridden, Not Enabled');
+  
+  // $status = 1;
+  // $value = t('Added, Enabled');
+     
+  // $status = -1;
+  // $value = t('Added, Not Enabled');
+        
+  
+  $modules = profile_status_check_list_modules();
+  
+  // Instead of writing to a file, we write to the output stream.
+  $fh = fopen('php://output', 'w');
+ 
+  // Add a header row
+  fputcsv($fh, array('PROFILE', 'VERSIONS'));
+  fputcsv($fh, array($profile['name'], $profile['version'] . ' packaged on ' . date("m/d/y", $profile['datestamp'])));
+ 
+  // Add a header row
+  fputcsv($fh, array('OVERRIDDEN MODULES', 'DESCRIPTION'));
+  
+  if (!$modules) {
+    fputcsv($fh, array('NONE', ''));
+  } 
+  
+  // Loop through our modules and write the csv data.
+  foreach($modules as $module) {
+    if ($module['value'] == 'Overridden, Enabled') {
+      fputcsv($fh, array($module['title'], $module['description']));
+    }
+  }
+  
+  // Add a header row
+  fputcsv($fh, array('ADDED MODULES', 'DESCRIPTION'));
+  
+  if (!$modules) {
+    fputcsv($fh, array('NONE', ''));
+  } 
+  
+  foreach($modules as $module) {
+    if ($module['value'] == 'Added, Enabled') {
+      fputcsv($fh, array($module['title'], $module['description']));      
+    }
+  }
+ 
+  // Add a header row
+  fputcsv($fh, array('CUSTOM MODULES AND FEATURES', 'DESCRIPTION'));
+  
+  if (!$modules) {
+    fputcsv($fh, array('NONE', ''));
+  } 
+  
+  foreach($modules as $module) {
+    if ($module['value'] == 'Custom, Enabled') {
+      fputcsv($fh, array($module['title'], $module['description']));      
+    }
+  }
+ 
+  
+  // Close the output stream.
+  fclose($fh);
+
+}
+
+/**
+ * Themes alphabetical lists of modules and their status
  *
  */
 function profile_status_check_system_listing() {
+
+  $modules = profile_status_check_list_modules();
+  
+  if ($modules) {
+    ksort($modules);
+    return theme('status_report', array('requirements' => $modules)); 
+  } else {
+    return drupal_set_message(t('There are no overridden or additional modules.'), 'status');
+  }
+}
+
+/**
+ * Returns array of modules and their status
+ *
+ */
+function profile_status_check_list_modules() {
+
   $modules = array();
   $mask = '/^' . DRUPAL_PHP_FUNCTION_PATTERN . '\.module$/';
   $directory = 'modules';
@@ -86,14 +250,24 @@ function profile_status_check_system_listing() {
           $info = drupal_parse_info_file($info_file);
           
           if (module_exists($file_key)) {
-            $message = 'Enabled from ' . dirname($file->uri);
-            $status = 1;
-            $value = t('Added, Enabled');
+            // check to see if the module starts w/ the prefix.  Custom modules and features handled last.
+            $prefix = variable_get('profile_status_check_prefix', NULL);
+            if ( $prefix && strpos($file_key, $prefix) === 0) {
+              $message = 'Enabled from ' . dirname($file->uri);
+              $status = 1;
+              $value = t('Custom, Enabled');
+            } else {
+              $message = 'Enabled from ' . dirname($file->uri);
+              $status = 1;
+              $value = t('Added, Enabled');
+            }
           } else {
             $message = 'Not enabled, but exists in ' . dirname($file->uri);
             $status = -1;
             $value = t('Added, Not Enabled');
           } 
+          
+          
              
           $modules[$file_key]['title'] = $info['name'];
           $modules[$file_key]['value'] = $value;
@@ -102,6 +276,8 @@ function profile_status_check_system_listing() {
         }
       }
     }
+    
+    
     
     // Duplicate files found in later search directories take precedence over
     // earlier ones, so we want them to overwrite keys in our resulting
@@ -151,9 +327,10 @@ function profile_status_check_system_listing() {
     
     $files = array_merge($files, $files_to_add);
   }
-  if (!isset($message)) {
-    return drupal_set_message(t('There are no overridden or additional modules.'), 'status');
-  } else {
-    return theme('status_report', array('requirements' => $modules));
-  }
+  
+  if(!isset($message)) {
+    return FALSE;
+  } 
+  
+  return $modules;
 }

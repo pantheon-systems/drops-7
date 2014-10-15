@@ -203,11 +203,25 @@ class CRM_Contact_BAO_ProximityQuery {
         $distance
       );
 
+    // DONT consider NAN values (which is returned by rad2deg php function)
+    // for checking BETWEEN geo_code's criteria as it throws obvious 'NAN' field not found DB: Error
+    $geoCodeWhere = array();
+    if (!is_nan($minLatitude)) {
+      $geoCodeWhere[] = "{$tablePrefix}.geo_code_1  >= $minLatitude ";
+    }
+    if (!is_nan($maxLatitude)) {
+      $geoCodeWhere[] = "{$tablePrefix}.geo_code_1  <= $maxLatitude ";
+    }
+    if (!is_nan($minLongitude)) {
+      $geoCodeWhere[] = "{$tablePrefix}.geo_code_2 >= $minLongitude ";
+    }
+    if (!is_nan($maxLongitude)) {
+      $geoCodeWhere[] = "{$tablePrefix}.geo_code_2 <= $maxLongitude ";
+    }
+    $geoCodeWhereClause = implode(' AND ', $geoCodeWhere);
+
     $where = "
-{$tablePrefix}.geo_code_1  >= $minLatitude  AND
-{$tablePrefix}.geo_code_1  <= $maxLatitude  AND
-{$tablePrefix}.geo_code_2 >= $minLongitude AND
-{$tablePrefix}.geo_code_2 <= $maxLongitude AND
+{$geoCodeWhereClause} AND
 ACOS(
     COS(RADIANS({$tablePrefix}.geo_code_1)) *
     COS(RADIANS($latitude)) *
@@ -216,7 +230,6 @@ ACOS(
     SIN(RADIANS($latitude))
   ) * 6378137  <= $distance
 ";
-
     return $where;
   }
 
@@ -262,7 +275,7 @@ ACOS(
     if (!isset($proximityAddress['country_id'])) {
       // get it from state if state is present
       if (isset($proximityAddress['state_province_id'])) {
-        $proximityAddress['country_id'] = CRM_Core_PseudoConstant::countryForState($proximityAddress['state_province_id']);
+        $proximityAddress['country_id'] = CRM_Core_PseudoConstant::countryIDForStateID($proximityAddress['state_province_id']);
       }
       elseif (isset($config->defaultContactCountry)) {
         $proximityAddress['country_id'] = $config->defaultContactCountry;

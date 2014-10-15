@@ -4,16 +4,16 @@
 ; This is used to test the packaging BEFORE committing
 ; drush make civicrm_starterkit.make
 
-core = 7.26
+core = 7.31
 api = 2
 
 ; Drupal Core
-projects[drupal][version] = "7.26"
+projects[drupal][version] = "7.31"
 
 ; ====== CIVICRM RELATED =========
 
 libraries[civicrm][download][type] = get
-libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.4-starterkit.tgz"
+libraries[civicrm][download][url] = "http://downloads.civicrm.org/civicrm-4.4.7-starterkit.tgz"
 libraries[civicrm][destination] = modules
 libraries[civicrm][directory_name] = civicrm
 
@@ -25,7 +25,7 @@ libraries[civicrm][patch][1978838] = http://drupal.org/files/issues/1978838-pre-
 libraries[civicrm][patch][2177647] = https://drupal.org/files/issues/2177647-sessions-fix.patch
 
 ;PATCHES THAT SHOULD BE ADDRESSED IN FUTURE CIVICRM RELEASES
-libraries[civicrm][patch][1844558] = http://drupal.org/files/1844558-run-civicrm-from-profile-dir-config-2.patch
+libraries[civicrm][patch][1844558] = https://drupal.org/files/issues/1844558-run-civicrm-from-profile-dir-config-3.patch
 libraries[civicrm][patch][1940074] = http://drupal.org/files/1940074-openFlashChart_tpl_javascript-4.patch
 libraries[civicrm][patch][1967972] = http://drupal.org/files/1967972-bootsrap-fixes.patch
 libraries[civicrm][patch][2130213] = http://drupal.org/files/issues/2130213-ignore-timezone-on-install-2.patch
@@ -337,7 +337,7 @@ libraries[ckeditor-civicrm][destination] = "modules/civicrm/packages"
 libraries[ckeditor-civicrm][directory_name] = ckeditor
 
 libraries[tinymce-civicrm][download][type] = get
-libraries[tinymce-civicrm][download][url] = "https://github.com/downloads/tinymce/tinymce/tinymce_3.4.8.zip"
+libraries[tinymce-civicrm][download][url] = "http://download.moxiecode.com/tinymce/tinymce_3.5.11.zip"
 libraries[tinymce-civicrm][destination] = "modules/civicrm/packages"
 libraries[tinymce-civicrm][directory_name] = tinymce
 
@@ -354,10 +354,10 @@ projects[civicrm_cron][subdir] = "contrib"
 projects[civicrm_cron][version] = "2.0-beta2"
 
 projects[ctools][subdir] = "contrib"
-projects[ctools][version] = "1.3"
+projects[ctools][version] = "1.4"
 
 projects[captcha][subdir] = "contrib"
-projects[captcha][version] = "1.0"
+projects[captcha][version] = "1.1"
 
 projects[features][subdir] = "contrib"
 projects[features][version] = "2.0"
@@ -366,19 +366,19 @@ projects[fontyourface][subdir] = "contrib"
 projects[fontyourface][version] = "2.8"
 
 projects[imce][subdir] = "contrib"
-projects[imce][version] = "1.8"
+projects[imce][version] = "1.9"
 
 projects[imce_wysiwyg][subdir] = "contrib"
 projects[imce_wysiwyg][version] = "1.0"
 
 projects[libraries][subdir] = "contrib"
-projects[libraries][version] = "2.1"
+projects[libraries][version] = "2.2"
 
 projects[module_filter][subdir] = "contrib"
 projects[module_filter][version] = "1.8"
 
 projects[options_element][subdir] = "contrib"
-projects[options_element][version] = "1.10"
+projects[options_element][version] = "1.12"
 
 projects[profile_status_check][subdir] = "contrib"
 projects[profile_status_check][version] = "1.0-beta1"
@@ -390,13 +390,13 @@ projects[recaptcha][subdir] = "contrib"
 projects[recaptcha][version] = "1.11"
 
 projects[views][subdir] = "contrib"
-projects[views][version] = "3.7"
+projects[views][version] = "3.8"
 
 projects[webform][subdir] = "contrib"
-projects[webform][version] = "4.0-beta1"
+projects[webform][version] = "4.0-rc4"
 
 projects[webform_civicrm][subdir] = "contrib"
-projects[webform_civicrm][version] = "4.5"
+projects[webform_civicrm][version] = "4.7"
 
 projects[wysiwyg][subdir] = "contrib"
 projects[wysiwyg][version] = "2.2"
@@ -410,6 +410,6 @@ libraries[ckeditor][destination] = libraries
 libraries[ckeditor][directory_name] = ckeditor
 
 libraries[tinymce][download][type] = get
-libraries[tinymce][download][url] = "https://github.com/downloads/tinymce/tinymce/tinymce_3.5.8.zip"
+libraries[tinymce][download][url] = "http://download.moxiecode.com/tinymce/tinymce_3.5.11.zip"
 libraries[tinymce][destination] = libraries
 libraries[tinymce][directory_name] = tinymce

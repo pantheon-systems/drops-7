@@ -100,7 +100,7 @@ class webform_handler_field_submission_data extends views_handler_field {
         return $component['name'];
       }
     }
-    elseif (isset($this->options['label'])) {
+    elseif ($this->options['custom_label'] === 'custom' && isset($this->options['label'])) {
       return $this->options['label'];
     }
     return '';
@@ -111,23 +111,44 @@ class webform_handler_field_submission_data extends views_handler_field {
    */
   function render($row) {
     $sid = $this->get_value($row);
-    if (isset($sid)) {
-      $nid = $this->options['webform_nid'];
-      $cid = $this->options['webform_cid'];
+    $nid = $this->options['webform_nid'];
+    $cid = $this->options['webform_cid'];
+    $webform = $this->webform_node;
+    if (isset($sid) && isset($webform->webform['components'][$cid])) {
 
-      $component = $this->webform_node->webform['components'][$cid];
+      $component = $webform->webform['components'][$cid];
       $submission = $this->view->_webform_submissions[$nid][$sid];
+      if ($submission->nid != $nid) {
+        // The actual submission is from a different webform than the one used to define the view.
+        // Rather than using the component with the same cid, try to match the form_key.
+        if (!isset($this->view->_webform_components[$nid][$submission->nid][$cid])) {
+          if (!isset($this->view->_webform_components[$nid][$submission->nid]['webform'])) {
+            $this->view->_webform_components[$nid][$submission->nid]['webform'] = $webform;
+          }
+          $this->view->_webform_components[$nid][$submission->nid][$cid] = $component;
+          $submission_node = node_load($submission->nid);
+          foreach ($submission_node->webform['components'] as $sub_cid => $sub_component) {
+            if ($sub_component['form_key'] == $component['form_key'] && $sub_component['type'] == $component['type']) {
+              $this->view->_webform_components[$nid][$submission->nid]['webform'] = $submission_node;
+              $this->view->_webform_components[$nid][$submission->nid][$cid] = $sub_component;
+              break;
+            }
+          }
+        }
+        $webform = $this->view->_webform_components[$nid][$submission->nid]['webform'];
+        $component = $this->view->_webform_components[$nid][$submission->nid][$cid];
+        // Note: $nid and $cid refer to the definition webform, not the submission webform
+        // whereas $component refers to the submission component.
+      }
 
       $render = array();
       $format = $this->options['format'];
 
-      _webform_client_form_add_component($this->webform_node, $component, NULL, $render, $render, $submission->data, $format);
+      _webform_client_form_add_component($webform, $component, NULL, $render, $render, $submission->data, $format);
       $render = $render[$component['form_key']];
 
       // Remove display label.
-      if (empty($this->options['display_label'])) {
-        $render['#theme_wrappers'] = array();
-      }
+      $render['#theme_wrappers'] = array();
 
       return render($render);
     }

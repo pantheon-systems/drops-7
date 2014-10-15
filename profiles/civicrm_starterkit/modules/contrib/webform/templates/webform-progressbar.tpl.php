@@ -25,7 +25,7 @@
     <div class="webform-progressbar-outer">
       <div class="webform-progressbar-inner" style="width: <?php print number_format($percent, 0); ?>%">&nbsp;</div>
       <?php for ($n = 1; $n <= $page_count; $n++): ?>
-        <span class="webform-progressbar-page<?php if ($n < $page_num) { print ' completed'; }; ?><?php if ($n == $page_num) { print ' current'; }; ?>" style="left: <?php print number_format(($n - 1) / ($page_count - 1), 4) * 100; ?>%">
+        <span class="webform-progressbar-page<?php if ($n < $page_num) { print ' completed'; }; ?><?php if ($n == $page_num) { print ' current'; }; ?>" style="<?php print ($GLOBALS['language']->direction == 0) ? 'left' : 'right'; ?>: <?php print number_format(($n - 1) / ($page_count - 1), 4) * 100; ?>%">
           <span class="webform-progressbar-page-number"><?php print $n; ?></span>
           <?php if ($progressbar_pagebreak_labels): ?>
           <span class="webform-progressbar-page-label">

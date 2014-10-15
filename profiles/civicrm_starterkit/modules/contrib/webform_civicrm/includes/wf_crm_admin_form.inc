@@ -105,6 +105,17 @@ class wf_crm_admin_form {
   private function rebuildForm() {
     $this->settings = wf_crm_aval($this->form_state['storage'], 'vals', $this->form_state['values']);
     $this->rebuildData();
+    // Hack for nicer UX: pre-check phone, email, etc when user increments them
+    if (!empty($_POST['_triggering_element_name'])) {
+      foreach (array('phone' => 'phone', 'email' => 'email', 'website' => 'url', 'im' => 'name') as $ent => $field) {
+        if (strpos($_POST['_triggering_element_name'], "_number_of_$ent")) {
+          list(, $c) = explode('_', $_POST['_triggering_element_name']);
+          for ($n = 1; $n <= $this->data['contact'][$c]["number_of_$ent"]; ++$n) {
+            $this->settings["civicrm_{$c}_contact_{$n}_{$ent}_{$field}"] = 1;
+          }
+        }
+      }
+    }
     unset($this->form_state['storage']['vals']);
   }
 
@@ -375,10 +386,11 @@ class wf_crm_admin_form {
     $campaign_act_types = array();
     if ($case_types && !empty($this->data['case'][1]['case'][1]['case_type_id'])) {
       $case_type = $this->form['act']['case_type_id']['#default_value'] = $this->data['case'][1]['case'][1]['case_type_id'];
-      $case_type_name = $case_types[$case_type];
+      $case_type_names = wf_crm_apivalues('case', 'getoptions', array('field' => 'case_type_id', 'context' => 'validate'));
+      $case_type_name = $case_type_names[$case_type];
       $this->form['act']['case']['case_fields'] = array(
         '#type' => 'fieldset',
-        '#title' => $case_type_name . ' ' . t('Case'),
+        '#title' => $case_types[$case_type] . ' ' . t('Case'),
       );
       $this->form['act']['case']['case_fields']['existing_case_status'] = array(
         '#type' => 'select',
@@ -389,7 +401,7 @@ class wf_crm_admin_form {
       );
       $this->help($this->form['act']['case']['case_fields']['existing_case_status'], 'existing_case_status');
     }
-    $act_types = wf_crm_get_activity_types($case_type_name);
+    $act_types = wf_crm_get_activity_types($case_type_name, $campaign_act_types);
     $this->form['act']['case']['activity_type_id'] = array(
       '#type' => 'select',
       '#title' => t('Activity Type'),
@@ -1106,8 +1118,10 @@ class wf_crm_admin_form {
         elseif ($val === 'create_civicrm_webform_element') {
           $val = '';
         }
-        // Saves all non-empty values with a hack for membership_num_terms which needs to be saved even when 0
-        if (isset($this->fields[$table . '_' . $name]['expose_list']) && (!empty($val) || $name === 'num_terms')) {
+        // Saves all non-empty values with a hack for fields which needs to be saved even when 0
+        // FIXME: Really ought to change the select placeholder value to be '' instead of 0
+        if (isset($this->fields[$table . '_' . $name]['expose_list']) &&
+          (!empty($val) || (in_array($name, array('num_terms', 'is_active', 'is_test'))))) {
           // Don't add data for non-existent contacts
           if (!in_array($ent, array('contact', 'participant', 'membership')) || isset($this->data['contact'][$c])) {
             $this->data[$ent][$c][$table][$n][$name] = $val;

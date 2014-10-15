@@ -29,6 +29,11 @@ function image_captcha_image() {
 
   // Only generate captcha if code exists in the session.
   if ($code !== FALSE) {
+    // Seed the random generators used for image CAPTCHA distortion based on session and code
+    // to counter attacks that re-request the same challenge and pick the simplest image one or combine info.
+    $seed = hexdec(substr(md5($captcha_sid . $code), 0, 8));
+    srand($seed);
+    mt_srand($seed);
     // generate the image
     $image = @_image_captcha_generate_image($code);
     // check of generation was successful
@@ -124,12 +129,12 @@ function _image_captcha_generate_image($code) {
   $distortion_amplitude = .25 * $font_size * variable_get('image_captcha_distortion_amplitude', 0) / 10.0;
   if ($distortion_amplitude > 1) {
     // distortion parameters
-    $wavelength_xr = (2+3*lcg_value())*$font_size;
-    $wavelength_yr = (2+3*lcg_value())*$font_size;
+    $wavelength_xr = (2 + 3 * mt_rand(0, 1000) / 1000) * $font_size;
+    $wavelength_yr = (2 + 3 * mt_rand(0, 1000) / 1000) * $font_size;
     $freq_xr = 2 * 3.141592 / $wavelength_xr;
     $freq_yr = 2 * 3.141592 / $wavelength_yr;
-    $wavelength_xt = (2+3*lcg_value())*$font_size;
-    $wavelength_yt = (2+3*lcg_value())*$font_size;
+    $wavelength_xt = (2 + 3 * mt_rand(0, 1000) / 1000) * $font_size;
+    $wavelength_yt = (2 + 3 * mt_rand(0, 1000) / 1000) * $font_size;
     $freq_xt = 2 * 3.141592 / $wavelength_xt;
     $freq_yt = 2 * 3.141592 / $wavelength_yt;
 

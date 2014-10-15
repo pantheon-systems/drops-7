@@ -249,7 +249,7 @@ SELECT r.payment_processor_id
       $recur->save();
 
       $dao = CRM_Contribute_BAO_ContributionRecur::getSubscriptionDetails($recurId);
-      if ($dao->recur_id) {
+      if ($dao && $dao->recur_id) {
         $details = CRM_Utils_Array::value('details', $activityParams);
         if ($dao->auto_renew && $dao->membership_id) {
           // its auto-renewal membership mode
@@ -335,7 +335,7 @@ SELECT r.payment_processor_id
       $params[$recurDAO->id]['contactId'] = $recurDAO->contact_id;
       $params[$recurDAO->id]['start_date'] = $recurDAO->start_date;
       $params[$recurDAO->id]['end_date'] = $recurDAO->end_date;
-      $params[$recurDAO->id]['next_sched_contribution_date'] = $recurDAO->next_sched_contribution;
+      $params[$recurDAO->id]['next_sched_contribution_date'] = $recurDAO->next_sched_contribution_date;
       $params[$recurDAO->id]['amount'] = $recurDAO->amount;
       $params[$recurDAO->id]['currency'] = $recurDAO->currency;
       $params[$recurDAO->id]['frequency_unit'] = $recurDAO->frequency_unit;

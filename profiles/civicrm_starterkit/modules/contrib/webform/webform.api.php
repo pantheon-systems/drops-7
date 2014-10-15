@@ -71,17 +71,13 @@ function hook_webform_select_options_info_alter(&$items) {
  *   of key => value pairs. Select components support up to one level of
  *   nesting, but when results are displayed, the list needs to be returned
  *   without the nesting.
- * @param $filter
- *   Boolean value indicating whether the included options should be passed
- *   through the webform_replace_tokens() function for token replacement (only)
- *   needed if your list contains tokens).
  * @param $arguments
  *   The "options arguments" specified in hook_webform_select_options_info().
  * @return
  *   An array of key => value pairs suitable for a select list's #options
  *   FormAPI property.
  */
-function webform_options_example($component, $flat, $filter, $arguments) {
+function webform_options_example($component, $flat, $arguments) {
   $options = array(
     'one' => t('Pre-built option one'),
     'two' => t('Pre-built option two'),
@@ -102,6 +98,31 @@ function hook_webform_submission_load(&$submissions) {
   foreach ($submissions as $sid => $submission) {
     $submissions[$sid]->new_property = 'foo';
   }
+}
+
+/**
+ * Respond to the creation of a new submission from form values.
+ *
+ * This hook is called when a user has completed a submission to initialize the
+ * submission object. After this object has its values populated, it will be
+ * saved by webform_submission_insert(). Note that this hook is only called for
+ * new submissions, not for submissions being edited. If responding to the
+ * saving of all submissions, it's recommended to use
+ * hook_webform_submission_presave().
+ *
+ * @param $submission
+ *   The submission object that has been created.
+ * @param $node
+ *   The Webform node for which this submission is being saved.
+ * @param $account
+ *   The user account that is creating the submission.
+ * @param $form_state
+ *   The contents of form state that is the basis for this submission.
+ *
+ * @see webform_submission_create()
+ */
+function hook_webform_submission_create($submission, $node, $account, $form_state) {
+  $submission->new_property = TRUE;
 }
 
 /**
@@ -206,6 +227,27 @@ function hook_webform_submission_actions($node, $submission) {
   }
 
   return $actions;
+}
+
+/**
+ * Modify the draft to be presented for editing.
+ *
+ * When drafts are enabled for the webform, by default, a pre-existig draft is
+ * presented when the webform is displayed to that user. To allow multiple
+ * drafts, implement this alter function to set the $sid to NULL, or use your
+ * application's business logic to determine whether a new draft or which of
+ * he pre-existing drafts should be presented.
+ *
+ * @param integer $sid
+ *    The id of the most recent submission to be presented for editing. Change
+ *    to a different draft's sid or set to NULL for a new draft.
+ * @param array $context
+ *    Array of context with indices 'nid' and 'uid'.
+ */
+function hook_webform_draft_alter(&$sid, $context) {
+  if ($_GET['newdraft']) {
+    $sid = NULL;
+  }
 }
 
 /**
@@ -597,6 +639,8 @@ function hook_webform_submission_access($node, $submission, $op = 'view', $accou
  *
  * Note in addition to the view access to the results granted here, the $account
  * must also have view access to the Webform node in order to see results.
+ * Access via this hook is in addition (adds permission) to the standard
+ * webform access.
  *
  * @see webform_results_access().
  *
@@ -616,6 +660,26 @@ function hook_webform_results_access($node, $account) {
     return FALSE;
   }
 }
+
+/**
+ * Determine if a user has access to clear the results of a webform.
+ *
+ * Access via this hook is in addition (adds permission) to the standard
+ * webform access (delete all webform submissions).
+ *
+ * @see webform_results_clear_access().
+ *
+ * @param $node object
+ *   The Webform node to check access on.
+ * @param $account object
+ *   The user account to check access on.
+ * @return boolean
+ *   TRUE or FALSE if the user can access the webform results.
+ */
+function hook_webform_results_clear_access($node, $account) {
+  return user_access('my additional access', $account);
+}
+
 
 /**
  * Return an array of files associated with the component.
@@ -658,6 +722,50 @@ function _webform_attachments_component($component, $value) {
  */
 function hook_webform_node_defaults_alter(&$defaults) {
   $defaults['allow_draft'] = '1';
+}
+
+/**
+ * Add additional fields to submission data downloads.
+ *
+ * @return
+ *   Keys and titles for default submission information.
+ *
+ * @see hook_webform_results_download_submission_information_data()
+ */
+function hook_webform_results_download_submission_information_info() {
+  return array(
+    'field_key_1' => t('Field Title 1'),
+    'field_key_2' => t('Field Title 2'),
+  );
+}
+
+/**
+ * Return values for submission data download fields.
+ *
+ * @param $token
+ *   The name of the token being replaced.
+ * @param $submission
+ *   The data for an individual submission from webform_get_submissions().
+ * @param $options
+ *   A list of options that define the output format. These are generally passed
+ *   through from the GUI interface.
+ * @param $serial_start
+ *   The starting position for the Serial column in the output.
+ * @param $row_count
+ *   The number of the row being generated.
+ *
+ * @return
+ *   Value for requested submission information field.
+ *
+ * @see hook_webform_results_download_submission_information_info()
+ */
+function hook_webform_results_download_submission_information_data($token, $submission, array $options, $serial_start, $row_count) {
+  switch ($token) {
+    case 'field_key_1':
+      return 'Field Value 1';
+    case 'field_key_2':
+      return 'Field Value 2';
+  }
 }
 
 /**
@@ -891,10 +999,9 @@ function _webform_submit_component($component, $value) {
  */
 function _webform_delete_component($component, $value) {
   // Delete corresponding files when a submission is deleted.
-  $filedata = unserialize($value['0']);
-  if (isset($filedata['filepath']) && is_file($filedata['filepath'])) {
-    unlink($filedata['filepath']);
-    db_query("DELETE FROM {files} WHERE filepath = '%s'", $filedata['filepath']);
+  if (!empty($value[0]) && ($file = webform_get_file($value[0]))) {
+    file_usage_delete($file, 'webform');
+    file_delete($file);
   }
 }
 
@@ -1111,6 +1218,18 @@ function _webform_csv_data_component($component, $export_options, $value) {
     $return[] = isset($value[$key]) ? $value[$key] : '';
   }
   return $return;
+}
+
+/**
+ * Modify the list of mail systems that are capable of sending HTML email.
+ *
+ * @param array &$systems
+ *   An array of mail system class names.
+ */
+function hook_webform_html_capable_mail_systems_alter(&$systems) {
+  if (module_exists('my_module')) {
+    $systems[] = 'MyModuleMailSystem';
+  }
 }
 
 /**

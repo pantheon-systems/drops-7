@@ -243,6 +243,29 @@ function _civicrm_core_data(&$data, $enabled) {
       'handler' => 'views_handler_sort',
     ),
   );
+  $data['civicrm_contact']['preferred_communication_method'] = array(
+    // The item it appears as on the UI,
+    'title' => t('Preferred communication method'),
+    // The help that appears on the UI,
+    'real field' => 'preferred_communication_method',
+    'help' => t('Prefix'),
+    'field' => array(
+      'handler' => 'civicrm_handler_field_pseudo_constant',
+      'click sortable' => TRUE,
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'get',
+      'dao class' => 'CRM_Contact_BAO_Contact',
+    ),
+    'sort' => array(
+      'handler' => 'views_handler_sort',
+    ),
+    'filter' => array(
+      'handler' => 'civicrm_handler_filter_pseudo_constant',
+      'pseudo class' => 'CRM_Core_PseudoConstant',
+      'pseudo method' => 'get',
+      'dao class' => 'CRM_Contact_BAO_Contact',
+    ),
+  );
   // Prefix
   $data['civicrm_contact']['prefix_id'] = array(
     // The item it appears as on the UI,
@@ -627,7 +650,7 @@ function _civicrm_core_data(&$data, $enabled) {
       'handler' => 'civicrm_handler_sort_date',
      ),
   );
-  
+
   // add the other generic fields
   $objType = 'Individual';
   $fields = CRM_Contact_BAO_Contact::exportableFields($objType);

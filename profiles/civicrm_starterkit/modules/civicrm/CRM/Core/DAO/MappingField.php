@@ -162,7 +162,7 @@ class CRM_Core_DAO_MappingField extends CRM_Core_DAO
   /**
    * SQL WHERE operator for search-builder mapping fields (search criteria).
    *
-   * @var enum('=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN', 'LIKE', 'NOT LIKE', 'IS NULL', 'IS NOT NULL')
+   * @var enum('=', '!=', '>', '<', '>=', '<=', 'IN', 'NOT IN', 'LIKE', 'NOT LIKE', 'IS NULL', 'IS NOT NULL', 'IS EMPTY', 'IS NOT EMPTY', 'RLIKE')
    */
   public $operator;
   /**
@@ -292,7 +292,7 @@ class CRM_Core_DAO_MappingField extends CRM_Core_DAO
           'type' => CRM_Utils_Type::T_ENUM,
           'title' => ts('Operator') ,
           'enumValues' => '=, !=, >, <, >=, <=,
-       IN, NOT IN, LIKE, NOT LIKE, IS NULL, IS NOT NULL',
+       IN, NOT IN, LIKE, NOT LIKE, IS NULL, IS NOT NULL, IS EMPTY, IS NOT EMPTY, RLIKE',
         ) ,
         'value' => array(
           'name' => 'value',
@@ -441,6 +441,9 @@ class CRM_Core_DAO_MappingField extends CRM_Core_DAO
           'NOT LIKE' => ts('NOT LIKE') ,
           'IS NULL' => ts('IS NULL') ,
           'IS NOT NULL' => ts('IS NOT NULL') ,
+          'IS EMPTY' => ts('IS EMPTY') ,
+          'IS NOT EMPTY' => ts('IS NOT EMPTY') ,
+          'RLIKE' => ts('RLIKE') ,
         ) ,
       );
     }

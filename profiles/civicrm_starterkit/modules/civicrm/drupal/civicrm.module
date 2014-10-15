@@ -1221,3 +1221,16 @@ function civicrm_modules_uninstalled($modules) {
   CRM_Core_Invoke::rebuildMenuAndCaches(TRUE);
 }
 
+/**
+ * Implementation of hook civicrm_metatag_page_cache_cid_parts_alter
+ * Append the query string to the key under which the page title is cached to prevent cross-contamination
+ * from urls such as civicrm/contribute/transact
+ *
+ * If metadata module is not installed this function will not fire
+ * @param array $cid_parts
+ */
+function civicrm_metatag_page_cache_cid_parts_alter(&$cid_parts) {
+  if (substr($cid_parts['path'], 0, 7) =='civicrm') {
+    $cid_parts['path'] .=  '/' . md5(implode('_',$_GET));
+  }
+}

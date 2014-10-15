@@ -259,7 +259,7 @@ UNION
    * @access public
    * @static
    */
-  static function createCurrentEmployerRelationship($contactID, $organization, $previousEmployerID = NULL) {
+  static function createCurrentEmployerRelationship($contactID, $organization, $previousEmployerID = NULL, $newContact = FALSE) {
     $organizationId = NULL;
 
     // if organization id is passed.
@@ -316,8 +316,8 @@ UNION
       ) = CRM_Contact_BAO_Relationship::create($relationshipParams, $cid);
 
 
-      // In case we change employer, clean prveovious employer related records.
-      if (!$previousEmployerID) {
+      // In case we change employer, clean previous employer related records.
+      if (!$previousEmployerID && !$newContact) {
         $previousEmployerID = CRM_Core_DAO::getFieldValue('CRM_Contact_DAO_Contact', $contactID, 'employer_id');
       }
       if ($previousEmployerID &&
@@ -461,23 +461,13 @@ WHERE id={$contactId}; ";
    * @static
    *
    */
-  static function buildOnBehalfForm(&$form,
-    $contactType       = 'Individual',
-    $countryID         = NULL,
-    $stateID           = NULL,
-    $title             = 'Contact Information',
-    $contactEditMode   = FALSE,
-    $maxLocationBlocks = 1
-  ) {
-    if ($title == 'Contact Information') {
-      $title = ts('Contact Information');
-    }
+  static function buildOnBehalfForm(&$form, $contactType, $countryID, $stateID, $title) {
 
     $config = CRM_Core_Config::singleton();
 
     $form->assign('contact_type', $contactType);
     $form->assign('fieldSetTitle', $title);
-    $form->assign('contactEditMode', $contactEditMode);
+    $form->assign('contactEditMode', TRUE);
 
     $attributes = CRM_Core_DAO::getAttribute('CRM_Contact_DAO_Contact');
     if ($form->_contactId) {
@@ -486,41 +476,11 @@ WHERE id={$contactId}; ";
 
     switch ($contactType) {
       case 'Organization':
-        $session = CRM_Core_Session::singleton();
-        $contactID = $session->get('userID');
-
-        if ($contactID) {
-          $employers = CRM_Contact_BAO_Relationship::getPermissionedEmployer($contactID);
-        }
-
-        $locDataURL = CRM_Utils_System::url('civicrm/ajax/permlocation', 'cid=', FALSE, NULL, FALSE);
-        $form->assign('locDataURL', $locDataURL);
-
-        if (!$contactEditMode && $contactID && (count($employers) >= 1)) {
-
-          $dataURL = CRM_Utils_System::url('civicrm/ajax/employer',
-            'cid=' . $contactID,
-            FALSE, NULL, FALSE
-          );
-          $form->assign('employerDataURL', $dataURL);
-
-          $form->add('text', 'organization_id', ts('Select an existing related Organization OR Enter a new one'));
-          $form->add('hidden', 'onbehalfof_id', '', array('id' => 'onbehalfof_id'));
-          $orgOptions = array('0' => ts('Create new organization'),
-            '1' => ts('Select existing organization'),
-          );
-          $orgOptionExtra = array('onclick' => "showHideByValue('org_option','true','select_org','table-row','radio',true);showHideByValue('org_option','true','create_org','table-row','radio',false);");
-          $form->addRadio('org_option', ts('options'), $orgOptions, $orgOptionExtra);
-          $form->assign('relatedOrganizationFound', TRUE);
-        }
-
         $form->add('text', 'organization_name', ts('Organization Name'), $attributes['organization_name'], TRUE);
         break;
 
       case 'Household':
-        $form->add('text', 'household_name', ts('Household Name'),
-          $attributes['household_name']
-        );
+        $form->add('text', 'household_name', ts('Household Name'),  $attributes['household_name']);
         break;
 
       default:
@@ -1097,4 +1057,3 @@ WHERE id IN (" . implode(',', $contactIds) . ")";
     }
   }
 }
-

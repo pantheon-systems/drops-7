@@ -373,8 +373,9 @@ function civicrm_views_get_join_table($entity_type) {
     case "Individual":
     case "Household":
     case "Organization":
-    case "Group":
       return 'civicrm_contact';
+    case "Group":
+      return 'civicrm_group';
     case "Address":
       return 'civicrm_address';
     case "Event":

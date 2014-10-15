@@ -263,6 +263,10 @@ class CRM_Extension_Mapper {
     if ($this->cache && !$fresh) {
       $moduleExtensions = $this->cache->get($this->cacheKey . '/moduleFiles');
     }
+    
+    if ($fresh == 'NOCACHE') {
+      $moduleExtensions = NULL;
+    }
 
     if (!is_array($moduleExtensions)) {
       // Check canonical module list

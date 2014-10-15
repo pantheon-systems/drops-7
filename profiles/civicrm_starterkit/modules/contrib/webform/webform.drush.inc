@@ -61,7 +61,7 @@ function drush_webform_export($nid = FALSE, $file_name = NULL, $batch_number = N
 
   // Pull in options from drush to override the defaults.
   $format = drush_get_option('format', 'delimited');
-  $options = webform_results_download_default_options($node);
+  $options = webform_results_download_default_options($node, $format);
   foreach ($options as $option_name => $option_value) {
     $options[$option_name] = drush_get_option(str_replace('_', '-', $option_name), $option_value);
   }

@@ -16,6 +16,10 @@ function webform_token_info() {
     'needs-data' => 'webform-submission',
   );
 
+  $info['tokens']['submission']['serial'] = array(
+    'name' => t('Serial number'),
+    'description' => t('The serial number of this webform submission.'),
+  );
   $info['tokens']['submission']['sid'] = array(
     'name' => t('Submission ID'),
     'description' => t('The unique indentifier for the webform submission.'),
@@ -41,7 +45,7 @@ function webform_token_info() {
   );
   $info['tokens']['submission']['values'] = array(
     'name' => t('Webform submission values'),
-    'description' => t('Webform tokens from submitted data. Replace the "?" with the "field key", including any parent field keys separated by colons. You may append ":label" for just the label or ":withlabel" for both the label and value together.'),
+    'description' => t('Webform tokens from submitted data. Replace the "?" with the "field key", including any parent field keys separated by colons. You may append ":label" for just the label or ":withlabel" for both the label and value together. Append ":key" for just the key in a key|label pair.'),
     'dynamic' => TRUE,
   );
 
@@ -71,12 +75,15 @@ function webform_tokens($type, $tokens, array $data = array(), array $options = 
     $submission = $data['webform-submission'];
     $node = isset($data['node']) ? $data['node'] : node_load($submission->nid);
     $email = isset($data['webform-email']) ? $data['webform-email'] : NULL;
+    $excluded_components = isset($email['excluded_components']) ? $email['excluded_components'] : array();
     $format = $sanitize ? 'html' : 'text';
-    $submission_renderable = webform_submission_render($node, $submission, $email, $format);
 
     // Replace individual tokens that have an exact replacement.
     foreach ($tokens as $name => $original) {
       switch ($name) {
+        case 'serial':
+          $replacements[$original] = $submission->serial;
+          break;
         case 'sid':
           $replacements[$original] = $submission->sid;
           break;
@@ -98,6 +105,7 @@ function webform_tokens($type, $tokens, array $data = array(), array $options = 
           $replacements[$original] = url("node/{$node->nid}/submission/{$submission->sid}/edit", $url_options);
           break;
         case 'values':
+          $submission_renderable = webform_submission_render($node, $submission, $email, $format, $excluded_components);
           $replacements[$original] = drupal_render($submission_renderable);
           break;
       }
@@ -105,61 +113,73 @@ function webform_tokens($type, $tokens, array $data = array(), array $options = 
 
     // Webform submission tokens for individual components.
     if ($value_tokens = token_find_with_prefix($tokens, 'values')) {
-      foreach ($value_tokens as $name => $original) {
-        foreach ($node->webform['components'] as $cid => $component) {
-          // Build the list of parents for this component.
-          $parents = ($component['pid'] == 0) ? array($component['form_key']) : webform_component_parent_keys($node, $component);
-          $parent_token = implode(':', $parents);
-          if (strpos($name, $parent_token) === 0) {
-            // An exact match.
-            if (strcmp($name, $parent_token) === 0) {
-              $match = TRUE;
-              $modifier = NULL;
-            }
+      // Get the full submission renderable without $excluded_components so that
+      // individually referenced values are available.
+      $submission_renderable = webform_submission_render($node, $submission, $email, $format);
+      $available_modifiers = array(
+        'label',
+        'withlabel',
+        'nolabel',
+        'key',
+      );
+
+      foreach ($node->webform['components'] as $cid => $component) {
+        // Build the list of parents for this component.
+        $parents = ($component['pid'] == 0) ? array($component['form_key']) : webform_component_parent_keys($node, $component);
+        $parent_token = implode(':', $parents);
+        foreach ($value_tokens as $name => $original) {
+          if (strpos($name, $parent_token) !== 0) {
+            // Token not found as a prefix or exact match for this component.
+            continue;   // Token loop continue.
+          }
+          // Assume an exact match.
+          $modifier = NULL;
+          if (strcmp($name, $parent_token) !== 0) {
             // Check if this matches the key plus a modifier.
-            else {
-              $modifier = substr($name, strrpos($name, ':') + 1);
-              // TODO: Allow components to provide additional modifiers per
-              // type, i.e. key, day, hour, minute, etc.
-              $available_modifiers = array(
-                'label',
-                'withlabel',
-                'nolabel',
-              );
-              if (strcmp($name, $parent_token . ':' . $modifier) === 0 && in_array($modifier, $available_modifiers)) {
-                $match = TRUE;
-              }
-              else {
-                $match = FALSE;
-              }
-            }
-
-            if ($match) {
-              // Drill down into the renderable to find the element.
-              $display_element = $submission_renderable;
-              foreach ($parents as $parent) {
-                $display_element = $display_element[$parent];
-              }
-              // Individual tokens always have access granted even if they're
-              // not displayed when printing the whole renderable.
-              $display_element['#access'] = TRUE;
-
-              if ($modifier === 'label') {
-                $replacements[$original] = webform_filter_xss($display_element['#title']);
-              }
-              else {
-                // Remove theme wrappers for the nolabel modifier.
-                if ($modifier === 'nolabel' || empty($modifier)) {
-                  $display_element['#theme_wrappers'] = array();
-                }
-                $replacements[$original] = render($display_element);
-              }
-              break;
+            $modifier = substr($name, strrpos($name, ':') + 1);
+            // TODO: Allow components to provide additional modifiers per
+            // type, i.e. key, day, hour, minute, etc.
+            if (strcmp($name, $parent_token . ':' . $modifier) !== 0 || !in_array($modifier, $available_modifiers)) {
+              // No match.
+              continue;   // Token loop continue.
             }
           }
-        }
 
+          // Drill down into the renderable to find the element.
+          $display_element = $submission_renderable;
+          foreach ($parents as $parent) {
+            if (!isset($display_element[$parent])) {
+              // Sometimes an element won't exist in the submission renderable
+              // due to conditional logic. If not found, skip that element.
+              continue 2;   // Token loop continue.
+            }
+            $display_element = $display_element[$parent];
+          }
+          // Individual tokens always have access granted even if they're
+          // not displayed when printing the whole renderable.
+          $display_element['#access'] = TRUE;
+
+          if ($modifier === 'label') {
+            $replacements[$original] = webform_filter_xss($display_element['#title']);
+          }
+          elseif ($modifier === 'key' && $display_element['#webform_component']['type'] === 'select') {
+            $values = array();
+            foreach ($display_element['#value'] as $value) {
+              $values[] = webform_filter_xss($value);
+            }
+            $replacements[$original] = implode(' ', $values);
+          }
+          else {
+            // Remove theme wrappers for the nolabel modifier.
+            if ($modifier === 'nolabel' || empty($modifier)) {
+              $display_element['#theme_wrappers'] = array();
+            }
+            $replacements[$original] = render($display_element);
+          }
+          // Continue processing tokens in case another modifier is used.
+        }
       }
+
     }
 
     // Chained token relationships.

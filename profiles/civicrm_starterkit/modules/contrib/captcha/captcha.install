@@ -263,7 +263,6 @@ function captcha_update_6201() {
   return $items;
 }
 
-
 /**
  * Implementation of hook_update_N()
  * Add a CAPTCHA token column to captcha_sessions table.
@@ -274,8 +273,6 @@ function captcha_update_6202() {
   return $ret;
 }
 
-
-
 /**
  * Implementation of hook_update_N()
  * Rename the type field to captcha_type in captcha_points.
@@ -285,7 +282,6 @@ function captcha_update_6203() {
   db_change_field($ret, 'captcha_points', 'type', 'captcha_type', array('type' => 'varchar', 'length' => 64));
   return $ret;
 }
-
 
 /**
  * Migrate form configuration for changed form ids in Drupal 7.

@@ -20,6 +20,13 @@ function webform_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      'next_serial' => array(
+        'description' => 'The serial number to give to the next submission to this webform.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 1,
+      ),
       'confirmation' => array(
         'description' => 'The confirmation message or URL displayed to the user after submitting a form.',
         'type' => 'text',
@@ -34,7 +41,7 @@ function webform_schema() {
       'redirect_url' => array(
         'description' => 'The URL a user is redirected to after submitting a form.',
         'type' => 'varchar',
-        'length' => 255,
+        'length' => 2048,
         'default' => '<confirmation>',
       ),
       'status' => array(
@@ -147,6 +154,43 @@ function webform_schema() {
         'type' => 'varchar',
         'length' => 255,
       ),
+      'preview' => array(
+        'description' => 'Boolean value indicating if this form includes a page for previewing the submission.',
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'preview_next_button_label' => array(
+        'description' => 'The text for the button that will proceed to the preview page.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'preview_prev_button_label' => array(
+        'description' => 'The text for the button to go backwards from the preview page.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'preview_title' => array(
+        'description' => 'The title of the preview page, as used by the progress bar.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'preview_message' => array(
+        'description' => 'Text shown on the preview page of the form.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'preview_message_format' => array(
+        'description' => 'The {filter_format}.format of the preview page message.',
+        'type' => 'varchar',
+        'length' => 255,
+      ),
+      'preview_excluded_components' => array(
+        'description' => 'Comma-separated list of component IDs that should not be included in this form\'s confirmation page.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
     ),
     'primary key' => array('nid'),
   );
@@ -184,8 +228,8 @@ function webform_schema() {
       ),
       'name' => array(
         'description' => 'The label for this component.',
-        'type' => 'varchar',
-        'length' => 255,
+        'type' => 'text',
+        'not null' => TRUE,
       ),
       'type' => array(
         'description' => 'The field type of this component (textfield, select, hidden, etc.).',
@@ -346,20 +390,17 @@ function webform_schema() {
       ),
       'subject' => array(
         'description' => 'The e-mail subject that will be used. This may be a string, the special key "default" or a numeric value. If a numeric value is used, the value of a component will be substituted on submission.',
-        'type' => 'varchar',
-        'length' => '255',
+        'type' => 'text',
         'not null' => FALSE,
       ),
       'from_name' => array(
         'description' => 'The e-mail "from" name that will be used. This may be a string, the special key "default" or a numeric value. If a numeric value is used, the value of a component will be substituted on submission.',
-        'type' => 'varchar',
-        'length' => '255',
+        'type' => 'text',
         'not null' => FALSE,
       ),
       'from_address' => array(
         'description' => 'The e-mail "from" e-mail address that will be used. This may be a string, the special key "default" or a numeric value. If a numeric value is used, the value of a component will be substituted on submission.',
-        'type' => 'varchar',
-        'length' => '255',
+        'type' => 'text',
         'not null' => FALSE,
       ),
       'template' => array(
@@ -434,6 +475,12 @@ function webform_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'serial' => array(
+        'description' => 'The serial number of this submission.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
       'uid' => array(
         'description' => 'The id of the user that completed this submission.',
         'type' => 'int',
@@ -463,6 +510,7 @@ function webform_schema() {
     'primary key' => array('sid'),
     'unique keys' => array(
       'sid_nid' => array('sid', 'nid'),
+      'nid_serial' => array('nid', 'serial'),
     ),
     'indexes' => array(
       'nid_uid_sid' => array('nid', 'uid', 'sid'),
@@ -569,6 +617,16 @@ function webform_requirements($phase) {
       'value' => $t('Missing'),
       'severity' => REQUIREMENT_WARNING,
       'description' => $t('PHP does not have the zip archive extension available. Webform module requires zip support for exporting submissions to Microsoft Excel.'),
+    );
+  }
+  // Though the .info file specifies PHP version as well, this will prevent
+  // users from upgrading from 3.x if their PHP version is too old.
+  if (version_compare(phpversion(), '5.3') < 0) {
+    $requirements['webform_php'] = array(
+      'title' => $t('Webform PHP requirements'),
+      'value' => phpversion(),
+      'severity' => REQUIREMENT_ERROR,
+      'description' => $t('Webform requires PHP 5.3 or higher.'),
     );
   }
 
@@ -1198,6 +1256,18 @@ function _webform_update_7401_batch(&$sandbox, $patterns, $replacements, $dpatte
  * Add the webform_conditional database table.
  */
 function webform_update_7402() {
+  // Sanity checks.
+  if (db_table_exists('webform_conditional')) {
+    // Both tables exist, so these are Webform-core provided tables.
+    if (db_table_exists('webform_conditional_rules')) {
+      return;
+    }
+    // Webform Conditional module was installed previously but not uninstalled.
+    else {
+      throw new DrupalUpdateException(t('The "Webform Conditional" module has previously been installed on your site. Either uninstall the module or drop the database table "webform_conditional".'));
+    }
+  }
+
   $schema['webform_conditional'] = array(
     'description' => 'Holds information about conditional logic.',
     'fields' => array(
@@ -1445,7 +1515,7 @@ function webform_update_7405() {
   $schema = array(
     'description' => 'A serialized array of additional options for the e-mail configuration, including excluded components and value mapping for the TO and FROM addresses for select lists.',
     'type' => 'text',
-    'not null' => FALSE,
+    'not null' => TRUE,
     'initial' => '',
   );
   if (!db_field_exists('webform_emails', 'extra')) {
@@ -1514,7 +1584,9 @@ function webform_update_7408() {
     'not null' => TRUE,
     'default' => 0,
   );
-  db_change_field('webform_component', 'mandatory', 'required', $spec);
+  if (!db_field_exists('webform_component', 'required')) {
+    db_change_field('webform_component', 'mandatory', 'required', $spec);
+  }
 }
 
 /**
@@ -1564,7 +1636,7 @@ function webform_update_7409() {
 function webform_update_7410() {
   if (db_field_exists('webform', 'teaser')) {
     db_drop_field('webform', 'teaser');
-    return t('Removed "teaser" column. All forms that had the "Show form in teaser" option disabled will now show forms in their teasers. Use view modes to hide the form if desired.');
+    return t('Removed "teaser" column. All forms that had the "Show complete form in teaser" option disabled will now show forms in their teasers. Use view modes to hide the form if desired.');
   }
 }
 
@@ -1611,4 +1683,211 @@ function webform_update_7412() {
     variable_set('webform_node_' . $type, TRUE);
   }
   variable_del('webform_node_types');
+}
+
+/**
+ * Add preview page columns to the webform table.
+ */
+function webform_update_7413() {
+  if (!db_field_exists('webform', 'preview')) {
+    $int_schema = array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    );
+    $varchar_schema = array(
+      'type' => 'varchar',
+      'length' => 255,
+    );
+    $text_schema = array(
+      'type' => 'text',
+      'not null' => TRUE,
+      'initial' => '',
+    );
+
+    $int_schema['description'] = 'Boolean value indicating if this form includes a page for previewing the submission.';
+    db_add_field('webform', 'preview', $int_schema);
+
+    $varchar_schema['description'] = 'The text for the button that will proceed to the preview page.';
+    db_add_field('webform', 'preview_next_button_label', $varchar_schema);
+
+    $varchar_schema['description'] = 'The text for the button to go backwards from the preview page.';
+    db_add_field('webform', 'preview_prev_button_label', $varchar_schema);
+
+    $varchar_schema['description'] = 'The title of the preview page, as used by the progress bar.';
+    db_add_field('webform', 'preview_title', $varchar_schema);
+
+    $text_schema['description'] = 'Text shown on the preview page of the form.';
+    db_add_field('webform', 'preview_message', $text_schema);
+
+    $varchar_schema['description'] = 'The {filter_format}.format of the preview page message.';
+    db_add_field('webform', 'preview_message_format', $varchar_schema);
+
+    $text_schema['description'] = 'Comma-separated list of component IDs that should not be included in this form\'s confirmation page.';
+    db_add_field('webform', 'preview_excluded_components', $text_schema);
+
+    return t('New webform columns added.');
+  }
+}
+
+/**
+ * Change email subject, from_name and from_address fields to type 'TEXT'.
+ */
+function webform_update_7414() {
+  $schema = array(
+    'subject' => array(
+      'description' => 'The e-mail subject that will be used. This may be a string, the special key "default" or a numeric value. If a numeric value is used, the value of a component will be substituted on submission.',
+      'type' => 'text',
+      'not null' => FALSE,
+    ),
+    'from_name' => array(
+      'description' => 'The e-mail "from" name that will be used. This may be a string, the special key "default" or a numeric value. If a numeric value is used, the value of a component will be substituted on submission.',
+      'type' => 'text',
+      'not null' => FALSE,
+    ),
+    'from_address' => array(
+      'description' => 'The e-mail "from" e-mail address that will be used. This may be a string, the special key "default" or a numeric value. If a numeric value is used, the value of a component will be substituted on submission.',
+      'type' => 'text',
+      'not null' => FALSE,
+    ),
+  );
+
+  db_change_field('webform_emails', 'subject', 'subject', $schema['subject']);
+  db_change_field('webform_emails', 'from_name', 'from_name', $schema['from_name']);
+  db_change_field('webform_emails', 'from_address', 'from_address', $schema['from_address']);
+
+  return t('Custom email columns successfully changed.');
+}
+
+/**
+ * Increase length of webform.redirect_url.
+ */
+function webform_update_7415() {
+  $spec = array(
+    'description' => 'The URL a user is redirected to after submitting a form.',
+    'type' => 'varchar',
+    'length' => 2048,
+    'default' => '<confirmation>',
+  );
+  db_change_field('webform', 'redirect_url', 'redirect_url', $spec);
+}
+
+/**
+ * Add columns for serial numbered submissions. Add serial numbers to existing submissions.
+ */
+function webform_update_7416() {
+  // SQL database implementations vary in how DDL statements are handled within
+  // transactions. Since this update routine should be run in maintenance mode
+  // without concurrent transactions, no DDL statements are executed within a
+  // transaction.
+
+  // Add next_serial column to webform.
+  $spec = array(
+    'description' => 'The serial number to give to the next submission to this webform.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+    'not null' => TRUE,
+    'default' => 1,
+  );
+  if (!db_field_exists('webform', 'next_serial')) {
+    db_add_field('webform', 'next_serial', $spec);
+  }
+
+  // Add serial column to webform_submissions.
+  $spec = array(
+    'description' => 'The serial number of this submission.',
+    'type' => 'int',
+    'unsigned' => TRUE,
+  );
+  if (!db_field_exists('webform_submissions', 'serial')) {
+    db_add_field('webform_submissions', 'serial', $spec);
+  }
+
+  // Begin a transaction for updating the serial numbers. The transaction will
+  // commit when $txn is unset or goesout-of-scope.
+  $txn = db_transaction();
+
+  // Delete stray entries from the Webform tables before adding serial numbers.
+  db_query("DELETE FROM {webform_submissions} WHERE nid NOT IN (SELECT nid FROM {webform})");
+  db_query("DELETE FROM {webform_submitted_data} WHERE nid NOT IN (SELECT nid FROM {webform})");
+
+
+  // Add serial numbers to all submissions.
+
+  // Repeat for every Webform.
+  $nids = db_select('webform', 'w')
+    ->fields('w', array('nid'))
+    ->execute();
+  while ($nid = $nids->fetchColumn()) {
+    $serial = 1;
+    // Repeat for every submission in this Webform.
+    $sids = db_select('webform_submissions', 'ws')
+      ->forUpdate()
+      ->fields('ws', array('sid'))
+      ->condition('nid', $nid)
+      ->orderBy('sid')
+      ->execute();
+    while ($sid = $sids->fetchColumn()) {
+      // Set the serial number.
+      db_update('webform_submissions')
+        ->fields(array('serial' => $serial))
+        ->condition('nid', $nid)
+        ->condition('sid', $sid)
+        ->execute();
+      $serial++;
+    }
+    // Set the next serial number.
+    db_update('webform')
+      ->fields(array('next_serial' => $serial))
+      ->condition('nid', $nid)
+      ->execute();
+  }
+  // Commit the transaction
+  unset ($txn);
+
+  // Now that every submission has a serial number, make serial numbers required.
+  $spec['not null'] = TRUE;
+  $keys = array();
+  // Create a unique index if it does not already exist.
+  if (!db_index_exists('webform_submissions', 'nid_serial')) {
+    $keys = array(
+      'unique keys' => array(
+        'nid_serial' => array('nid', 'serial'),
+      ),
+    );
+  }
+  db_change_field('webform_submissions', 'serial', 'serial', $spec, $keys);
+
+  return t('Columns for serial numbered submissions successfully added. Serial numbers added to existing submissions.');
+}
+
+/**
+ * Change webform_component.name to text to allow for longer labels.
+ */
+function webform_update_7417() {
+  db_change_field('webform_component', 'name', 'name', array('type' => 'text', 'not null' => TRUE));
+}
+
+/**
+ * Upgrade the "extra" column in the e-mail table to be consistent with a new
+ * webform installation.
+ *
+ * In version 7.x-4.0-rc6 and earlier, the extra field was added with 'not null'
+ * FALSE, cause the schema module to report in mismatch. While functionally this
+ * causes no problem, this update removes the schema module's warning.
+ */
+function webform_update_7418() {
+  // While there should never be any NULL values in the extra field, change them to '' to be safe.
+  db_update('webform_emails')
+    ->fields(array('extra' => ''))
+    ->isNull('extra')
+    ->execute();
+  // Pass a complete field specification to db_change_field for cross-database compatiblity.
+  $spec = array(
+    'description' => 'A serialized array of additional options for the e-mail configuration, including excluded components and value mapping for the TO and FROM addresses for select lists.',
+    'type' => 'text',
+    'not null' => TRUE,
+  );
+  db_change_field('webform_emails', 'extra', 'extra', $spec);
 }

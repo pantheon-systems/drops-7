@@ -54,8 +54,8 @@ function _webform_edit_pagebreak($component) {
   );
   $form['extra']['prev_page_label'] = array(
     '#type' => 'textfield',
-    '#title' => t('Prev page button label'),
-    '#description' => t('This is used for the <em>Prev Page</em> button on the page after this page break. Default: <em>&lt; Prev Page</em>'),
+    '#title' => t('Previous page button label'),
+    '#description' => t('This is used for the <em>Previous Page</em> button on the page after this page break. Default: <em>&lt; Prev Page</em>'),
     '#default_value' => $component['extra']['prev_page_label'],
     '#size' => 30,
   );

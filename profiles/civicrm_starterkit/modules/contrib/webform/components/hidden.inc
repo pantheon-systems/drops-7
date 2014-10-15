@@ -77,7 +77,7 @@ function _webform_render_hidden($component, $value = NULL, $filter = TRUE) {
   }
 
   $element = array(
-    '#title' => $filter ? webform_filter_xss($component['name']) : $component['name'],
+    '#title' => $filter ? NULL : $component['name'],
     '#weight' => $component['weight'],
     '#translatable' => array('title'),
   );
@@ -89,6 +89,12 @@ function _webform_render_hidden($component, $value = NULL, $filter = TRUE) {
   else {
     $element['#type'] = 'hidden';
     $element['#default_value'] = $default_value;
+
+    // Same-page conditionals depend on the wrapper around elements for getting
+    // values. Wrap, but hide, the wrapper around hidden elements.
+    $element['#theme_wrappers'] = array('webform_element');
+    $element['#wrapper_attributes']['class'] = array();
+    $element['#wrapper_attributes']['style'] = array('display: none');
   }
 
   return $element;

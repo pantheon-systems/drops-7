@@ -140,7 +140,7 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution {
 
     // contribution status is missing, choose Completed as default status
     // do this for create mode only
-    if (!CRM_Utils_Array::value('contribution', $ids) && !CRM_Utils_Array::value('contribution_status_id', $params)) {
+    if (!$contributionID && !CRM_Utils_Array::value('contribution_status_id', $params)) {
       $params['contribution_status_id'] = CRM_Core_OptionGroup::getValue('contribution_status', 'Completed', 'name');
     }
 
@@ -173,7 +173,7 @@ class CRM_Contribute_BAO_Contribution extends CRM_Contribute_DAO_Contribution {
 
     //add Account details
     $params['contribution'] = $contribution;
-    self::recordFinancialAccounts($params, $ids);
+    self::recordFinancialAccounts($params);
 
     // reset the group contact cache for this group
     CRM_Contact_BAO_GroupContactCache::remove();
@@ -2714,8 +2714,8 @@ WHERE  contribution_id = %1 ";
     $itemAmount = $trxnID = NULL;
     //get all the statuses
     $contributionStatus = CRM_Contribute_PseudoConstant::contributionStatus(NULL, 'name');
-    if (($params['prevContribution']->contribution_status_id == array_search('Pending', $contributionStatus) 
-      || $params['prevContribution']->contribution_status_id == array_search('In Progress', $contributionStatus)) 
+    if (($params['prevContribution']->contribution_status_id == array_search('Pending', $contributionStatus)
+      || $params['prevContribution']->contribution_status_id == array_search('In Progress', $contributionStatus))
       && $params['contribution']->contribution_status_id == array_search('Completed', $contributionStatus)
       && $context == 'changePaymentInstrument') {
       return;
@@ -2763,7 +2763,7 @@ WHERE  contribution_id = %1 ";
 
     if ($context == 'changedStatus') {
       if (($params['prevContribution']->contribution_status_id == array_search('Pending', $contributionStatus)
-        || $params['prevContribution']->contribution_status_id == array_search('In Progress', $contributionStatus)) 
+        || $params['prevContribution']->contribution_status_id == array_search('In Progress', $contributionStatus))
         && ($params['contribution']->contribution_status_id == array_search('Completed', $contributionStatus))) {
         $query = "UPDATE civicrm_financial_item SET status_id = %1 WHERE entity_id = %2 and entity_table = 'civicrm_line_item'";
         $sql = "SELECT id, amount FROM civicrm_financial_item WHERE entity_id = %1 and entity_table = 'civicrm_line_item'";

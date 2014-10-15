@@ -629,6 +629,7 @@ function civicrm_group_roles_add_remove_groups($roles, $user, $op) {
       $variables = array( '@mail' => $user->mail );
       watchdog( 'civicrm',  $msg, $variables );
       if ( $debug_mode ) drupal_set_message( t( 'CiviCRM contact not found for %mail', array( '%mail' => $user->mail ) ) );
+      return;
     }
 
     $contact_id = CRM_Utils_Array::value( 'contact_id', $contact['values'][0] );

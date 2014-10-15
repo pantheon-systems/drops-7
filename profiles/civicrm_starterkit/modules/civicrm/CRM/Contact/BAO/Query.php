@@ -339,6 +339,12 @@ class CRM_Contact_BAO_Query {
   public static $_openedPanes = array();
 
   /**
+   * For search builder - which custom fields are location-dependent
+   * @var array
+   */
+  public $_locationSpecificCustomFields = array();
+
+  /**
    * The tables which have a dependency on location and/or address
    *
    * @var array
@@ -715,15 +721,19 @@ class CRM_Contact_BAO_Query {
               // also get the id of the tableName
               $tName = substr($tableName, 8);
               if (in_array($tName, array('country', 'state_province', 'county'))) {
-                $pf = ($tName == 'state_province') ? 'state_province_name' : $name;
-                $this->_pseudoConstantsSelect[$pf] =
-                  array('pseudoField' => "{$tName}_id", 'idCol' => "{$tName}_id", 'bao' => 'CRM_Core_BAO_Address',
-                    'table' => "civicrm_{$tName}", 'join' => " LEFT JOIN civicrm_{$tName} ON civicrm_address.{$tName}_id = civicrm_{$tName}.id ");
-
                 if ($tName == 'state_province') {
+                  $this->_pseudoConstantsSelect['state_province_name'] =
+                    array('pseudoField' => "{$tName}", 'idCol' => "{$tName}_id", 'bao' => 'CRM_Core_BAO_Address',
+                     'table' => "civicrm_{$tName}", 'join' => " LEFT JOIN civicrm_{$tName} ON civicrm_address.{$tName}_id = civicrm_{$tName}.id ");
+
                   $this->_pseudoConstantsSelect[$tName] =
                     array('pseudoField' => 'state_province_abbreviation', 'idCol' => "{$tName}_id",
                       'table' => "civicrm_{$tName}", 'join' => " LEFT JOIN civicrm_{$tName} ON civicrm_address.{$tName}_id = civicrm_{$tName}.id ");
+                }
+                else {
+                  $this->_pseudoConstantsSelect[$name] =
+                  array('pseudoField' => "{$tName}_id", 'idCol' => "{$tName}_id", 'bao' => 'CRM_Core_BAO_Address',
+                  'table' => "civicrm_{$tName}", 'join' => " LEFT JOIN civicrm_{$tName} ON civicrm_address.{$tName}_id = civicrm_{$tName}.id ");
                 }
 
                 $this->_select["{$tName}_id"] = "civicrm_address.{$tName}_id as {$tName}_id";
@@ -765,13 +775,13 @@ class CRM_Contact_BAO_Query {
                   $this->_select[$name] = "contact_a.{$fieldName}  as `$name`";
                 }
               }
-              elseif (in_array($tName, array('state_province', 'country', 'county'))) {
-                $this->_pseudoConstantsSelect[$pf]['select'] = "{$field['where']} as `$name`";
-                $this->_pseudoConstantsSelect[$pf]['element'] = $name;
-                if ($tName == 'state_province') {
-                  $this->_pseudoConstantsSelect[$tName]['select'] = "{$field['where']} as `$name`";
-                  $this->_pseudoConstantsSelect[$tName]['element'] = $name;
-                }
+              elseif (in_array($tName, array('country', 'county'))) {
+                $this->_pseudoConstantsSelect[$name]['select'] = "{$field['where']} as `$name`";
+                $this->_pseudoConstantsSelect[$name]['element'] = $name;
+              }
+              elseif ($tName == 'state_province') {
+                $this->_pseudoConstantsSelect[$tName]['select'] = "{$field['where']} as `$name`";
+                $this->_pseudoConstantsSelect[$tName]['element'] = $name;
               }
               else {
                 $this->_select[$name] = "{$field['where']} as `$name`";
@@ -870,7 +880,7 @@ class CRM_Contact_BAO_Query {
     CRM_Contact_BAO_Query_Hook::singleton()->alterSearchQuery($this, 'select');
 
     if (!empty($this->_cfIDs)) {
-      $this->_customQuery = new CRM_Core_BAO_CustomQuery($this->_cfIDs, TRUE);
+      $this->_customQuery = new CRM_Core_BAO_CustomQuery($this->_cfIDs, TRUE, $this->_locationSpecificCustomFields);
       $this->_customQuery->query();
       $this->_select = array_merge($this->_select, $this->_customQuery->_select);
       $this->_element = array_merge($this->_element, $this->_customQuery->_element);
@@ -1180,10 +1190,10 @@ class CRM_Contact_BAO_Query {
     }
 
     if (!empty($addressCustomFieldIds)) {
-      $cfIDs = $addressCustomFieldIds;
-      $customQuery = new CRM_Core_BAO_CustomQuery($cfIDs);
+      $customQuery = new CRM_Core_BAO_CustomQuery($addressCustomFieldIds);
       foreach ($addressCustomFieldIds as $cfID => $locTypeName) {
         foreach ($locTypeName as $name => $dnc) {
+          $this->_locationSpecificCustomFields[$cfID] = array($name, array_search($name, $locationTypes));
           $fieldName = "$name-custom_{$cfID}";
           $tName = "$name-address-custom-{$cfID}";
           $aName = "`$name-address-custom-{$cfID}`";
@@ -1234,12 +1244,16 @@ class CRM_Contact_BAO_Query {
    * @param boolean $count
    * @param boolean $sortByChar
    * @param boolean $groupContacts
+   * @param boolean $onlyDeleted
    *
    * @return the sql string for that query (this will most likely
    * change soon)
    * @access public
    */
-  function query($count = FALSE, $sortByChar = FALSE, $groupContacts = FALSE) {
+  function query($count = FALSE, $sortByChar = FALSE, $groupContacts = FALSE, $onlyDeleted = FALSE) {
+    // build permission clause
+    $this->generatePermissionClause($onlyDeleted, $count);
+
     if ($count) {
       if (isset($this->_distinctComponentClause)) {
         // we add distinct to get the right count for components
@@ -1312,6 +1326,15 @@ class CRM_Contact_BAO_Query {
     $where = '';
     if (!empty($this->_whereClause)) {
       $where = "WHERE {$this->_whereClause}";
+    }
+
+    if (!empty($this->_permissionWhereClause)) {
+      if (empty($where)) {
+        $where = "WHERE $this->_permissionWhereClause";
+      }
+      else {
+        $where = "$where AND $this->_permissionWhereClause";
+      }
     }
 
     $having = '';
@@ -1625,6 +1648,7 @@ class CRM_Contact_BAO_Query {
       case 'activity_subject':
       case 'test_activities':
       case 'activity_type_id':
+      case 'activity_type':
       case 'activity_survey_id':
       case 'activity_tags':
       case 'activity_taglist':
@@ -1938,7 +1962,9 @@ class CRM_Contact_BAO_Query {
         $name, $op, $value, $grouping,
         CRM_Core_PseudoConstant::worldRegion(),
         $field,
-        ts('World Region')
+        ts('World Region'),
+        'Positive',
+        TRUE
       );
     }
     elseif ($name === 'birth_date') {
@@ -4254,7 +4280,6 @@ civicrm_relationship.is_permission_a_b = 0
         break;
       }
     }
-    $this->generatePermissionClause($onlyDeleted, $count);
 
     // building the query string
     $groupBy = NULL;
@@ -4353,16 +4378,7 @@ civicrm_relationship.is_permission_a_b = 0
     // note : this modifies _fromClause and _simpleFromClause
     $this->includePseudoFieldsJoin($sort);
 
-    list($select, $from, $where, $having) = $this->query($count, $sortByChar, $groupContacts);
-
-    if(!empty($this->_permissionWhereClause)){
-      if (empty($where)) {
-        $where = "WHERE $this->_permissionWhereClause";
-      }
-      else {
-        $where = "$where AND $this->_permissionWhereClause";
-      }
-    }
+    list($select, $from, $where, $having) = $this->query($count, $sortByChar, $groupContacts, $onlyDeleted);
 
     if ($additionalWhereClause) {
       $where = $where . ' AND ' . $additionalWhereClause;
@@ -4389,7 +4405,6 @@ civicrm_relationship.is_permission_a_b = 0
     if ($returnQuery) {
       return $query;
     }
-
     if ($count) {
       return CRM_Core_DAO::singleValueQuery($query);
     }
@@ -5110,6 +5125,9 @@ AND   displayRelType.is_active = 1
       list($tableName, $fieldName) = explode('.', $field['where'], 2);
       if ($tableName == 'civicrm_contact') {
         $wc = "contact_a.$fieldName";
+      }
+      else {
+        $wc = "$tableName.id";
       }
     }
     else {

@@ -620,20 +620,33 @@ function civicrm_drush_cache_clear(&$types) {
 function drush_civicrm_cacheclear() {
   _civicrm_init();
 
-  require_once 'CRM/Core/Config.php';
-  $config = CRM_Core_Config::singleton();
+  // Clear the classloader cache variable
+  // Should be done in CiviCRM core so that the system flush always deletes
+  // the variable, however, it needs to be done early enough before the
+  // ClassLoader initialization. FIXME.
+  variable_del('civicrm_class_loader');
 
-  // clear db caching
-  CRM_Core_Config::clearDBCache();
+  // Flush all caches using the API
+  $params = array(
+    'version' => 3,
+  );
 
-  // also cleanup the templates_c directory
-  $config->cleanup(1, FALSE);
+  if (drush_get_option('triggers', FALSE)) {
+    $params['triggers'] = 1;
+  }
 
-  CRM_Core_BAO_WordReplacement::rebuild();
+  if (drush_get_option('sessions', FALSE)) {
+    $params['session'] = 1;
+  }
 
-  // also cleanup the session object
-  $session = CRM_Core_Session::singleton();
-  $session->reset(1);
+  $result = civicrm_api('System', 'flush', $params);
+
+  if ($result['is_error']) {
+    drush_log(dt('An error occured: !message', array('!message' => $result['error_message'])), 'error');
+    return;
+  }
+
+  drush_log(dt('The CiviCRM cache has been cleared.'), 'ok');
 }
 
 /**
