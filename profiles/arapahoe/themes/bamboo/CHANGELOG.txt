@@ -1,0 +1,78 @@
+-- Change Log --
+
+bamboo 7.x-1.x-dev | May 2, 2013
+[#1922768]  by highrockmedia and mheinke
+Allow for a custom path for local.css
+
+bamboo 7.x-1.x-dev | May 2, 2013
+[#1975464]  by highrockmedia
+Please add Pinch and Zoom Gesture Support
+
+bamboo 7.x-1.x-dev | April 10, 2013
+[#1966526]  by highrockmedia:
+IE8 - no menu
+
+bamboo 7.x-1.x-dev | April 3, 2013
+[#1957084]  by highrockmedia:
+Calendar Next Prev positions
+
+bamboo 7.x-1.x-dev | April 3, 2013
+- Added RDF namespaces
+- Themed <h1> to be within <article> tag for better semantics
+
+bamboo 7.x-1.x-dev | February 26, 2013
+[#1925230]  by highrockmedia:
+- Openlayers maps breaks with img set to max-width: 100%;
+
+bamboo 7.x-1.x-dev | February 20, 2013
+[#1921294]  by highrockmedia:
+- Google Fonts cause unsecure warnings when using SSL
+
+bamboo 7.x-1.x-dev | February 20, 2013
+[#1920544]  by highrockmedia:
+- Block region ordering
+
+bamboo 7.x-1.x-dev | February 18, 2013
+[#1920112] and [#1916072]  by highrockmedia:
+- Menu appears twice on mobile device
+- infinite scroll bug multiple menus
+
+bamboo 7.x-1.x-dev | February 10, 2013
+[#1913098] by highrockmedia:
+- bug in auto-complete forms
+
+bamboo 7.x-1.x-dev | January 16, 2013
+[#1870828] by highrockmedia:
+- Tentative fix for Mobile menu not working when
+    JQuery update is installed
+
+bamboo 7.x-1.0-alpha8 | January 16, 2013
+[#1862200] by highrockmedia:
+- [Feature request] theme sub-sub or 'tertiary' menus
+- New theme setting for tertiary menus (yes / no option in
+    theme settings)
+
+bamboo 7.x-1.x-dev | December 14, 2012
+[#1866334] by highrockmedia:
+- Undefined variable: node_block
+
+bamboo 7.x-1.x-dev | December 13, 2012
+- Added local.sample.css, node block region,
+    main menu region for third party menus,
+    Hero1 and Hero2 regions, more slideshow
+    theme tweaking, updated documentation.
+
+bamboo 7.x-1.x-dev | December 11, 2012
+- Adding a new background.
+
+bamboo 7.x-1.x-dev | December 8, 2012
+- Fixing some issues with IE9 not rendering gradients.
+- fixing some form element issues
+
+bamboo 7.x-1.x-dev | December 8, 2012
+[#1860768] by highrockmedia:
+- Mobile menu on iPad is finicky
+
+bamboo 7.x-1.x-dev | December 6, 2012
+[#1860268] by highrockmedia:
+- html_attributes variable problem

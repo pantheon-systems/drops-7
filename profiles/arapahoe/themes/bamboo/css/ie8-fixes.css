@@ -1,0 +1,77 @@
+/**
+ * @file
+ * IE 8 Style hacks.
+ */
+
+span.drop-arrow {
+  background: url('../images/arrows-ffffff.png') 10px -100px;
+  display: block;
+  height: 10px;
+  position: absolute;
+  right: 1px;
+  top: 13px;
+  width: 11px;
+  z-index: 201;
+}
+
+.menu.ul-depth-1 span.drop-arrow {
+  background: url('../images/arrows-right.png') 10px -2px;
+}
+
+#main-menu ul.menu.ul-depth-0 li.expanded.active-trail {
+  background: #777;
+  background: -moz-linear-gradient(#777, #555);
+  background: -webkit-linear-gradient(#777, #555);
+  background: -o-linear-gradient(#777, #555);
+  background: -ms-linear-gradient(#777, #555);
+  background: linear-gradient(#777, #555);
+  color: #fff;
+}
+
+#main-menu ul.menu.ul-depth-2 li {
+  border-left: 1px dotted #667;
+  left: 207px;
+  position: relative;
+  top: -42px;
+}
+
+#main-menu ul.menu.ul-depth-2 li a {
+  -moz-border-radius-bottomright: 0;
+  -webkit-border-bottom-right-radius: 0;
+  -moz-border-radius-bottomleft: 0;
+  -webkit-border-bottom-left-radius: 0;
+  border-radius: 0;
+}
+
+body.bg-green-gradient {
+  background: #dbe9b6 url("../images/bg-green-grad.jpg") repeat-x fixed !important;
+}
+
+body.bg-purple-gradient {
+  background: #626584 url("../images/bg-purple-grad.jpg") repeat-x fixed !important;
+}
+
+body.bg-gray-gradient {
+  background: #e8e8e8 url("../images/bg-gray-grad.jpg") repeat-x fixed !important;
+}
+
+body.bg-rust-gradient {
+  background: #ce4c14 url("../images/bg-rust-grad.jpg") repeat-x fixed !important;
+}
+
+#main-menu ul {
+  display: block;
+}
+
+.sidebar-left .column,
+.sidebar-left .columns {
+  margin-left: 0;
+}
+
+.sidebar-left #content-wrapper .columns {
+  float: right;
+}
+
+.sidebar-left aside h2 {
+  margin-left: 10px;
+}

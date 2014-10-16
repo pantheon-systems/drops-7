@@ -1,0 +1,13 @@
+name = Article
+description = Article content type.
+core = 7.x
+package = Arapahoe
+version = 7.x-1.0
+project = arapahoe_article
+dependencies[] = features
+dependencies[] = text
+features[features_api][] = api:1
+features[field_base][] = body
+features[field_instance][] = node-article-body
+features[node][] = article
+features_exclude[field][node-article-body] = node-article-body

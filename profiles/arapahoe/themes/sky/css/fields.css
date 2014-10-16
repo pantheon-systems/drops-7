@@ -1,0 +1,27 @@
+/* Fields */
+.field {
+  padding: 0 0 10px 0;
+}
+.field .field-label {
+  font-size: 1em;
+  font-weight: 400;
+  line-height: inherit;
+  margin: 0;
+}
+.field-label-inline .field-label,
+.field-label-inline .field-items {
+  display: inline;
+}
+.field-type-image figure {
+  margin: 10px 0;
+}
+.field-type-image figcaption {
+  font-size: 0.823em;
+  font-style: italic;
+  line-height: 1.3;
+  padding: 4px 0 0;
+}
+tabel .field-type-image img {
+  width: 100%;
+  height: auto;
+}

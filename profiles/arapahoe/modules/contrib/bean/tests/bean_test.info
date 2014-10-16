@@ -1,0 +1,15 @@
+name = Bean Test
+description = Creates test plugins for bean
+core = 7.x
+
+dependencies[] = bean
+files[] = bean_test.module
+
+hidden = TRUE
+
+; Information added by  packaging script on 2013-11-29
+version = "7.x-1.7"
+core = "7.x"
+project = "bean"
+datestamp = "1385749410"
+

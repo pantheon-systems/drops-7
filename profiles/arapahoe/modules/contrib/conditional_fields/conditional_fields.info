@@ -1,0 +1,14 @@
+name = Conditional Fields
+description = Define dependencies between fields based on their states and values.
+core = 7.x
+package = Fields
+
+dependencies[] = field
+configure = admin/structure/dependencies
+
+; Information added by  packaging script on 2013-11-18
+version = "7.x-3.0-alpha1"
+core = "7.x"
+project = "conditional_fields"
+datestamp = "1384798705"
+

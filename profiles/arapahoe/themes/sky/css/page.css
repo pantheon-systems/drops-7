@@ -1,0 +1,242 @@
+/* Page and genereral module styles */
+
+/* Gutters - if gutters are set in theme settings they will override these
+   values: see Extensions > Modify Output > Design */
+#main-content,
+.block-inner,
+.pane-inner,
+.menu-wrapper,
+.branding-elements,
+.breadcrumb-wrapper,
+.attribution,
+.at-panel .rounded-corner,
+.block-panels-mini > .block-title,
+div.messages {
+  margin-left: 20px;
+  margin-right: 20px;
+}
+/* Panel pages need negative margin equal to the gutter width applied to #content,
+  this is taken care of in theme settings as per above for normal gutters */
+#content .panel-display,
+#content .panel-flexible {
+  margin-left: -20px;
+  margin-right: -20px;
+}
+.columns-inner {
+  padding-top: 20px;
+}
+#page > header {
+  clear: both;
+  padding: 20px 0 0;
+}
+#branding {
+  float: left;
+  margin: 0 0 40px;
+  width: 40%;
+}
+#logo {
+  padding: 0 20px;
+  float: left;
+}
+#page > header > .h-group {
+  line-height: 1.2;
+  margin: 0 20px;
+}
+
+h1#site-name { /* 48px */
+  font-size: 3.692em;
+  margin: 0 0 0.2em 0;
+  padding: 0;
+}
+h2#site-slogan {
+  font-size: 1.077em;
+  margin: 0;
+  padding: 0;
+}
+#site-name {
+  font-size: 1.846em;
+}
+#site-name a    {
+  text-decoration: none;
+}
+#site-name a:visited {}
+#site-name a:hover   {}
+#site-name a:focus   {}
+#site-name a:active  {}
+
+#site-slogan {
+  font-size: 1.077em;
+  font-weight: 400;
+}
+.region-header {
+  float: right;
+  max-width: 60%;
+  clear: none;
+}
+h1#page-title {
+  margin-top: 0;
+}
+.in-maintenance h1#page-title {
+  padding: 10px;
+  margin-top: 0;
+}
+#content-column,
+.region-sidebar-first,
+.region-sidebar-second {
+  margin-bottom: 20px;
+  margin-top: 20px;
+}
+.region-content-aside {
+  padding-top: 20px;
+}
+.region-tertiary-content {
+  padding-bottom: 20px;
+}
+
+a.feed-icon {
+  padding: 10px;
+}
+
+/* Footer - the main page footer only */
+#page > footer {
+  padding: 20px 0;
+}
+
+/* Feed icons */
+.feed-icon img {
+  padding: 0 10px;
+}
+
+/* Search results list. */
+.search-results {
+  margin: 0;
+}
+.search-results .search-result {}
+.search-results .title {
+  font-size: 1.154em;
+}
+.search-results .search-snippet-info {
+  padding: 0;
+}
+.search-results p {
+  margin: 0;
+}
+.search-results .search-snippet {}
+.search-results .search-info {
+  font-size: .923em;
+}
+
+/* Maintenance page */
+.maintenance-page #skip-link {
+  position: absolute;
+  top: -99em;
+}
+.maintenance-page footer {
+  margin: 10px 0 0;
+}
+.maintenance-page footer a {
+  text-decoration: none;
+  color: #ccc;
+}
+div.messages {
+  margin: 5px 20px;
+}
+
+/* Override max-width 100% for Gmaps and Getlocations modules */
+.gmap img,
+.view-gmap img,
+#getlocations_map_canvas img {
+  max-width: none;
+}
+
+/* Collapsible region */
+.js .region-collapsible,
+.collapsible-toggle {
+  display: none;
+}
+.region-collapsible-wrapper {
+  display: none;
+}
+.toggle-active .region-collapsible-wrapper {
+  display: block;
+}
+.section-collapsible,
+.region-highlighted {
+  padding: 1em 0;
+}
+.js .section-collapsible {
+  bottom: 0;
+  height: 50%;
+  height: auto !important;
+  max-height: 50%;
+  position: fixed;
+  right: 0;
+  z-index: 100;
+}
+.section-collapsible.toggle-active {
+  overflow: auto;
+  -moz-box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  -webkit-box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  box-shadow: 0 0 12px rgba(0,0,0,0.5);
+}
+.region-collapsible {
+  padding: 15px 30px 15px 15px;
+  overflow: hidden;
+}
+.region-collapsible  .block {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+.js .collapsible-toggle {
+  border: none;
+  display: block;
+  font-size: 1.077em;
+  font-weight: 500;
+  margin: 0;
+  position: relative;
+  text-transform: uppercase;
+}
+.collapsible-toggle a,
+.collapsible-toggle a:visited {
+  background: url(images/black.png) no-repeat 16px -248px;
+  bottom: 0;
+  display: inline-block;
+  height: 20px;
+  padding: 1em;
+  position: fixed;
+  right: 0;
+  text-indent: -999em;
+  width: 20px;
+  z-index: 1;
+  -moz-border-radius: 4px 0 0 0;
+  -webkit-border-radius: 4px 0 0 0;
+  border-radius: 4px 0 0 0;
+  -moz-box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  -webkit-box-shadow: 0 0 12px rgba(0,0,0,0.5);
+  box-shadow: 0 0 12px rgba(0,0,0,0.5);
+}
+.toggle-active .collapsible-toggle a {
+  background-position: 16px -390px;
+  position: relative;
+  float: right;
+  -moz-border-radius: 0 0 0 4px;
+  -webkit-border-radius: 0 0 0 4px;
+  border-radius: 0 0 0 4px;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+}
+.collapsible-toggle a:hover,
+.collapsible-toggle a:focus,
+.collapsible-toggle a:active {
+  background-image: url(images/gray.png);
+  outline: 0;
+}
+.link { background-position: 0 0; }
+.locked { background-position: 0 -66px; }
+.minus { background-position: 0 -132px; }
+.plus { background-position: 0 -198px; }
+.popout { background-position: 0 -264px; }
+.search { background-position: 0 -330px; }
+.x { background-position: 0 -396px;}

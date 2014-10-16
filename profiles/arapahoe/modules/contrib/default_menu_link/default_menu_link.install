@@ -1,0 +1,35 @@
+<?php
+
+/**
+* Implements hook_install().
+*/
+function default_menu_link_install() {
+  // Set the weight to 1
+  db_update('system')
+    ->fields(array('weight' => 1))
+    ->condition('type', 'module')
+    ->condition('name', 'default_menu_link')
+    ->execute();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function default_menu_link_uninstall() {
+	$node_types = node_type_get_names();
+	
+	foreach ($node_types AS $type => $name) {
+	  variable_del('default_menu_link_enabled_' . $type);
+	}
+}
+
+/**
+ * Removes some variables the module is no longer using.
+ */
+function default_menu_link_update_7100() {
+	$node_types = node_type_get_names();
+	
+	foreach ($node_types AS $type => $name) {
+		variable_del('default_menu_link_' . $type . '_enabled');
+	}
+}

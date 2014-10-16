@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * @file
+ * Implement UUID/Entity hooks for integrating with deploy and other modules.
+ */
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function bean_uuid_entity_info_alter(&$entity_info) {
+  // Set the properties bellow for bean entity so UUIDs get created on sync.
+  $entity_info['bean']['uuid'] = TRUE;
+  $entity_info['bean']['entity keys']['uuid'] = 'uuid';
+  $entity_info['bean']['entity keys']['revision uuid'] = 'vuuid';
+}

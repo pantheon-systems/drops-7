@@ -1,0 +1,15 @@
+body {
+  padding: 0 8px;
+}
+h1#site-name {
+  font-size: 2em;
+}
+#menu-bar .menu-wrapper li a,
+#menu-bar .menu-wrapper .menu li a {
+  padding: 0 1em;
+  font-size: .9em;
+}
+#menu-bar .menu-wrapper li,
+#menu-bar .menu-wrapper .menu li {
+  margin-right: 2px;
+}

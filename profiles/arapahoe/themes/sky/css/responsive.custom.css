@@ -1,0 +1,7 @@
+/* Work around for legacy IE */
+@media only screen and (min-width:320px) and (max-width:480px) {
+  .ie6-7 .mbp-c #menu-bar .menu-wrapper  ul,
+  .ie6-7 .mbp-c #menu-bar .menu-wrapper  .sf-menu li {
+    left: auto;
+  }
+}

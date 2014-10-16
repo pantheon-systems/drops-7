@@ -1,0 +1,238 @@
+/* Page */
+html, body {
+  background-color: #efedea;
+  color: #000;
+}
+
+ul.secondary,
+.section-collapsible,
+.region-highlighted,
+#columns {
+  background-color: #ffffff;
+}
+
+/* tasks */
+#skip-link a,
+ul.tabs li a,
+ul.tabs li a:visited {
+  background-color: #fffffe;
+  color: #101010;
+}
+ul.tabs li a:hover,
+ul.tabs li a:focus,
+ul.tabs li a:active,
+ul.tabs li a.active,
+ul.tabs li a.active:visited {
+  background-color: #efedeb;
+  color: #111111;
+}
+
+/* Links */
+a,
+a:visited {
+  color: #1c6ea0;
+}
+a:hover,
+a:focus,
+a:active {
+  color: #42a9be;
+}
+.pager a:hover,
+.pager a:active,
+.pager a:focus {
+  background-color: #1c6ea0;
+  color: #fff;
+}
+
+/* Identity */
+h1#site-name a,
+h1#site-name a:visited {
+  color: #4c4742;
+}
+h2#site-slogan {
+  color: #837b72;
+}
+
+/* Header */
+.region-header,
+.nav .block-menu,
+.region-header h2.block-title,
+.nav .block-menu h2.block-title {
+  color: #101000;
+}
+.region-header a,
+.region-header a:visited {
+  color: #0679be;
+}
+.region-header a:hover,
+.region-header a:focus,
+.region-header a:active {
+  color: #42a9ba;
+}
+
+/* Footer */
+.breadcrumb,
+#page > footer,
+#page > footer .block-title {
+  background-color: #e3e1df;
+  color: #010101;
+}
+.breadcrumb a,
+#page > footer a,
+#page > footer a:visited {
+ color: #126598;
+}
+.breadcrumb a:hover,
+.breadcrumb a:focus,
+.breadcrumb a:active,
+#page > footer a:hover,
+#page > footer a:focus,
+#page > footer a:active {
+  color: #127ba5;
+}
+
+/* Menu bar */
+.menu-toggle a {
+  color: #4d453e;
+  background-color: #ffffff;
+}
+#menu-bar-wrapper {
+  background: transparent;
+}
+.nav .block-menu ul li a {
+  color: #4d453e;
+  background-color: #e1dfdc;
+}
+.nav .block-menu ul a:focus,
+.nav .block-menu ul a:hover,
+.nav .block-menu ul a:active {
+  background: #ffffff;
+}
+.nav .block-menu ul li a.active {
+  color: #4d453e;
+  background-color: #ffffff;
+}
+
+/* Superfish Skin - we keep the Superfish skin seperate so we can special case
+   if we really need to */
+.sf-menu.sf-style-default a {
+   border: 0;
+   color: #4d453e;
+   background-color: #e1dfdc;
+}
+.sf-menu.sf-style-default li.last a {
+}
+.sf-menu.sf-style-default a,
+.sf-menu.sf-style-default a:visited {
+  color: #4d453e;
+}
+.sf-menu.sf-style-default span.sf-description {
+  color: #4d453e;
+}
+.sf-menu.sf-style-default li li,
+.sf-menu.sf-style-default.sf-navbar li ul {
+  background-color: #2e2e2d;
+}
+.sf-menu.sf-style-default li li li {
+  background-color: #efedeb;
+}
+.sf-menu.sf-style-default li {
+  background: transparent;
+}
+.sf-menu.sf-style-default.sf-navbar {
+  background: #efedeb;
+}
+.sf-menu.sf-style-default li a,
+.sf-menu.sf-style-default li a:visited {
+  color: #4d453e;
+}
+.sf-menu.sf-style-default li:hover,
+.sf-menu.sf-style-default li.sfHover,
+.sf-menu.sf-style-default a:focus,
+.sf-menu.sf-style-default a:hover,
+.sf-menu.sf-style-default a:active {
+  background-color: #ffffff;
+  color: #4d453e;
+}
+/* Reverse colors for sub menus */
+.sf-menu.sf-style-default li li:hover,
+.sf-menu.sf-style-default li li.sfHover,
+.sf-menu.sf-style-default li li a:focus,
+.sf-menu.sf-style-default li li a:hover,
+.sf-menu.sf-style-default li li a:active {
+  background-color: #4d453e;
+  color: #ffffff;
+}
+.sf-menu.sf-style-default .active-trail.sf-depth-1,
+.sf-menu.sf-style-default .sf-depth-1 > a.active {
+  color: #4d453e;
+  background-color: #ffffff;
+}
+#menu-bar-wrapper .sf-menu.sf-style-default .active-trail.sf-depth-1,
+#menu-bar-wrapper .sf-menu.sf-style-default .sf-depth-1 > a.active {
+  background-color: #ffffff;
+}
+/* .sf-navbar */
+.sf-navbar.sf-style-default li ul {
+  background-color: transparent !important;
+  width: 100%;
+}
+.sf-navbar > li > ul > li {
+  border-bottom: 1px solid #473e34;
+}
+.sf-menu.sf-style-default.sf-navbar li ul li ul {
+  background-color: transparent;
+}
+
+/* If you adjust your media queries for mobile you must replicate those changes here */
+@media only screen and (max-width:480px) {
+  .sf-menu.sf-style-default li li:hover,
+  .sf-menu.sf-style-default li li.sfHover,
+  .sf-menu.sf-style-default li li a,
+  .sf-menu.sf-style-default li li a:focus,
+  .sf-menu.sf-style-default li li a:hover,
+  .sf-menu.sf-style-default li li a:active,
+  .sf-menu.sf-style-default li li a:visited {
+    background-color: #4D453E;
+    color: #E1DFDC;
+  }
+}
+
+/* top menu bar */
+.region-top-menu {
+  background-color: #ffffff;
+}
+.region-top-menu a {
+  color: #4d453e;
+}
+.region-top-menu .sf-menu.sf-style-default > li > a {
+  border: 0;
+  color: #4d453e;
+  background-color: transparent;
+}
+
+/* Node links */
+article .links a,
+article .links a:visited {
+  background-color: #e7e5e3;
+  color: #100100;
+}
+article .links a:hover,
+article .links a:focus,
+article .links a:active {
+  background-color: #d7d5d3;
+  color: #100101;
+}
+
+/* Titles */
+h1 {
+  color: #100001;
+}
+h2 {
+  color: #5e5247; /* need to update */
+}
+.comment header h3 a,
+h1 a,
+h1.node-title a {
+  color: #100011;
+}
