@@ -21,9 +21,9 @@ files[] = includes/views/handlers/commerce_customer_handler_filter_customer_prof
 ; Simple tests
 ; files[] = tests/commerce_customer.test
 
-; Information added by Drupal.org packaging script on 2014-03-05
-version = "7.x-1.9"
+; Information added by Drupal.org packaging script on 2014-09-10
+version = "7.x-1.10"
 core = "7.x"
 project = "commerce"
-datestamp = "1394061805"
+datestamp = "1410366834"
 

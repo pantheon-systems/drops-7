@@ -11,9 +11,9 @@ files[] = commerce_price.rules.inc
 files[] = includes/views/handlers/commerce_price_handler_field_commerce_price.inc
 files[] = includes/views/handlers/commerce_price_handler_filter_commerce_price_amount.inc
 
-; Information added by Drupal.org packaging script on 2014-03-05
-version = "7.x-1.9"
+; Information added by Drupal.org packaging script on 2014-09-10
+version = "7.x-1.10"
 core = "7.x"
 project = "commerce"
-datestamp = "1394061805"
+datestamp = "1410366834"
 

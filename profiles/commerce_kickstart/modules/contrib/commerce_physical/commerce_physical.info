@@ -9,8 +9,8 @@ dependencies[] = physical
 core = 7.x
 
 
-; Information added by drush on 2014-08-07
+; Information added by drush on 2014-10-16
 version = ""
 project = "commerce_physical"
-datestamp = "1407404096"
+datestamp = "1413427412"
 

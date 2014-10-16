@@ -12,6 +12,7 @@
 define('COMMERCE_CART_REFRESH_ALWAYS', 'always');
 define('COMMERCE_CART_REFRESH_OWNER_ONLY', 'owner_only');
 define('COMMERCE_CART_REFRESH_ACTIVE_CART_ONLY', 'active_cart_only');
+define('COMMERCE_CART_REFRESH_DEFAULT_FREQUENCY', 15);
 
 /**
  * Implements hook_menu().
@@ -106,7 +107,7 @@ function commerce_cart_order_refresh_form_access($order) {
 
   // Returns TRUE if the link is enabled via the order settings form and the
   // user has access to update the order.
-  return variable_get('commerce_order_apply_pricing_rules_link', TRUE) && commerce_order_access('update', 3);
+  return variable_get('commerce_order_apply_pricing_rules_link', TRUE) && commerce_order_access('update', $order);
 }
 
 /**
@@ -379,7 +380,7 @@ function commerce_cart_form_commerce_order_settings_form_alter(&$form, &$form_st
     '#type' => 'textfield',
     '#title' => t('Shopping cart refresh frequency'),
     '#description' => t('Shopping carts will only be refreshed if more than the specified number of seconds have passed since they were last refreshed.'),
-    '#default_value' => variable_get('commerce_cart_refresh_frequency', 30),
+    '#default_value' => variable_get('commerce_cart_refresh_frequency', COMMERCE_CART_REFRESH_DEFAULT_FREQUENCY),
     '#required' => TRUE,
     '#size' => 32,
     '#field_suffix' => t('seconds'),
@@ -663,7 +664,7 @@ function commerce_cart_block_view($delta) {
         // Build the variables array to send to the cart block template.
         $variables = array(
           'order' => $order,
-          'contents_view' => commerce_embed_view('commerce_cart_block', 'defaults', array($order->order_id), $_GET['q']),
+          'contents_view' => commerce_embed_view('commerce_cart_block', 'default', array($order->order_id), $_GET['q']),
         );
 
         $content = theme('commerce_cart_block', $variables);
@@ -721,7 +722,7 @@ function commerce_cart_order_can_refresh($order) {
   }
 
   // Check to see if the last cart refresh happened long enough ago.
-  $seconds = variable_get('commerce_cart_refresh_frequency', 15);
+  $seconds = variable_get('commerce_cart_refresh_frequency', COMMERCE_CART_REFRESH_DEFAULT_FREQUENCY);
 
   if (!empty($seconds) && !empty($order->data['last_cart_refresh']) &&
     REQUEST_TIME - $order->data['last_cart_refresh'] < $seconds) {
