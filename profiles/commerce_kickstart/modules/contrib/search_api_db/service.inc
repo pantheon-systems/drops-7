@@ -7,6 +7,31 @@
 
 /**
  * Indexes and searches items using the database.
+ *
+ * Database SELECT queries issued by this service class will be marked with tags
+ * according to their context. The following are used:
+ * - search_api_db_search: For all queries that are based on a search query.
+ * - search_api_db_facets_base: For the query which creates a temporary results
+ *   table to be used for facetting. (Is always used in conjunction with
+ *   "search_api_db_search".)
+ * - search_api_db_facet: For queries on the temporary results table for
+ *   determining the items of a specific facet.
+ * - search_api_db_facet_all: For queries to return all indexed values for a
+ *   specific field. Is used when a facet has a "min_count" of 0.
+ * - search_api_db_autocomplete: For queries which create a temporary results
+ *   table to be used for computing autocomplete suggestions. (Is always used in
+ *   conjunction with "search_api_db_search".)
+ *
+ * The following metadata will be present for those SELECT queries:
+ * - search_api_query: The Search API query object. (Always present.)
+ * - search_api_db_fields: Internal storage information for the indexed fields,
+ *   as used by this service class. (Always present.)
+ * - search_api_db_facet: The settings array of the facet currently being
+ *   computed. (Present for "search_api_db_facet" and "search_api_db_facet_all"
+ *   queries.)
+ * - search_api_db_autocomplete: An array containing the parameters of the
+ *   getAutocompleteSuggestions() call, except "query". (Present for
+ *   "search_api_db_autocomplete" queries.)
  */
 class SearchApiDbService extends SearchApiAbstractService {
 
@@ -82,7 +107,6 @@ class SearchApiDbService extends SearchApiAbstractService {
       $form = array(
         'database' => array(
           '#type' => 'value',
-          '#title' => t('Database'), // Slight hack for the "View server" page.
           '#value' => $this->options['database'],
         ),
         'database_text' => array(
@@ -152,8 +176,67 @@ class SearchApiDbService extends SearchApiAbstractService {
       'search_api_autocomplete' => TRUE,
       'search_api_facets' => TRUE,
       'search_api_facets_operator_or' => TRUE,
+      'search_api_service_extra' => TRUE,
     );
     return isset($supported[$feature]);
+  }
+
+  /**
+   * Overrides SearchApiAbstractService::viewSettings().
+   *
+   * Returns an empty string since information is instead added via
+   * getExtraInformation().
+   */
+  public function viewSettings() {
+    return '';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getExtraInformation() {
+    // Set default settings.
+    $options = $this->options + array(
+      'min_chars' => 1,
+      'partial_matches' => FALSE,
+    );
+
+    $info = array();
+
+    $info[] = array(
+      'label' => t('Database'),
+      'info' => check_plain(str_replace(':', ' > ', $options['database'])),
+    );
+    if ($options['min_chars'] > 1) {
+      $info[] = array(
+        'label' => t('Minimum word length'),
+        'info' => $options['min_chars'],
+      );
+    }
+    $info[] = array(
+      'label' => t('Search on parts of a word'),
+      'info' => $options['partial_matches'] ? t('enabled') : t('disabled'),
+    );
+    if (!empty($options['autocomplete'])) {
+      $options['autocomplete'] += array(
+        'suggest_suffix' => TRUE,
+        'suggest_words' => TRUE,
+      );
+      $autocomplete_modes = array();
+      if ($options['autocomplete']['suggest_suffix']) {
+        $autocomplete_modes[] = t('Suggest word endings');
+      }
+      if ($options['autocomplete']['suggest_words']) {
+        $autocomplete_modes[] = t('Suggest additional words');
+      }
+      $autocomplete_modes = $autocomplete_modes ? implode('; ', $autocomplete_modes) : t('none');
+      $info[] = array(
+        'label' => t('Autocomplete suggestions'),
+        'info' => $autocomplete_modes,
+      );
+    }
+
+    return $info;
   }
 
   /**
@@ -247,11 +330,11 @@ class SearchApiDbService extends SearchApiAbstractService {
       $maxbytes -= strlen($db_prefix);
     }
 
-    $base = $table = mb_strcut($prefix . drupal_strtolower(preg_replace('/[^a-z0-9]/i', '_', $name)), 0, $maxbytes);
+    $base = $table = self::mbStrcut($prefix . drupal_strtolower(preg_replace('/[^a-z0-9]/i', '_', $name)), 0, $maxbytes);
     $i = 0;
     while ($this->connection->schema()->tableExists($table)) {
       $suffix = '_' . ++$i;
-      $table = mb_strcut($base, 0, $maxbytes - strlen($suffix)) . $suffix;
+      $table = self::mbStrcut($base, 0, $maxbytes - strlen($suffix)) . $suffix;
     }
     return $table;
   }
@@ -276,13 +359,13 @@ class SearchApiDbService extends SearchApiAbstractService {
   protected function findFreeColumn($table, $column) {
     $maxbytes = 62;
 
-    $base = $name = mb_strcut(drupal_strtolower(preg_replace('/[^a-z0-9]/i', '_', $column)), 0, $maxbytes);
+    $base = $name = self::mbStrcut(drupal_strtolower(preg_replace('/[^a-z0-9]/i', '_', $column)), 0, $maxbytes);
     // If the table does not exist yet, the initial name is not taken.
     if ($this->connection->schema()->tableExists($table)) {
       $i = 0;
       while ($this->connection->schema()->fieldExists($table, $name)) {
         $suffix = '_' . ++$i;
-        $name = mb_strcut($base, 0, $maxbytes - strlen($suffix)) . $suffix;
+        $name = self::mbStrcut($base, 0, $maxbytes - strlen($suffix)) . $suffix;
       }
     }
     return $name;
@@ -935,7 +1018,7 @@ class SearchApiDbService extends SearchApiAbstractService {
                   watchdog('search_api_db', 'An overlong word (more than 50 characters) was encountered while indexing: %word.<br />' .
                       'Database search servers currently cannot index such words correctly – the word was therefore trimmed to the allowed length.',
                       array('%word' => $word), WATCHDOG_WARNING);
-                  $word = mb_strcut($word, 0, 50);
+                  $word = self::mbStrcut($word, 0, 50);
                 }
                 $tokens[] = array(
                   'value' => $word,
@@ -957,7 +1040,7 @@ class SearchApiDbService extends SearchApiAbstractService {
           return date('c', $value);
         }
         if (strlen($value) > 255) {
-          $value = mb_strcut($value, 0, 255);
+          $value = self::mbStrcut($value, 0, 255);
           watchdog('search_api_db', 'An overlong value (more than 255 characters) was encountered while indexing: %value.<br />' .
               'Database search servers currently cannot index such values correctly – the value was therefore trimmed to the allowed length.',
               array('%value' => $value), WATCHDOG_WARNING);
@@ -1039,6 +1122,11 @@ class SearchApiDbService extends SearchApiAbstractService {
 
     $db_query = $this->createDbQuery($query, $fields);
 
+    // Allow subclasses and other modules to alter the query (before a count
+    // query is constructed from it).
+    drupal_alter('search_api_db_query', $db_query, $query);
+    $this->preQuery($db_query, $query);
+
     $time_processing_done = microtime(TRUE);
     $results = array();
 
@@ -1060,48 +1148,7 @@ class SearchApiDbService extends SearchApiAbstractService {
         $db_query->range($offset, $limit);
       }
 
-      $sort = $query->getSort();
-      if ($sort) {
-        foreach ($sort as $field_name => $order) {
-          if ($order != 'ASC' && $order != 'DESC') {
-            $msg = t('Unknown sort order @order. Assuming "ASC".', array('@order' => $order));
-            $this->warnings[$msg] = $msg;
-            $order = 'ASC';
-          }
-          if ($field_name == 'search_api_relevance') {
-            $db_query->orderBy('score', $order);
-            continue;
-          }
-          if ($field_name == 'search_api_id') {
-            $db_query->orderBy('item_id', $order);
-            continue;
-          }
-          if (!isset($fields[$field_name])) {
-            throw new SearchApiException(t('Trying to sort on unknown field @field.', array('@field' => $field_name)));
-          }
-          $field = $fields[$field_name];
-          if (search_api_is_list_type($field['type'])) {
-            throw new SearchApiException(t('Cannot sort on field @field of a list type.', array('@field' => $field_name)));
-          }
-          if (search_api_is_text_type($field['type'])) {
-            throw new SearchApiException(t('Cannot sort on fulltext field @field.', array('@field' => $field_name)));
-          }
-          $alias = $this->getTableAlias($field, $db_query);
-          $db_query->orderBy($alias . '.' . $fields[$field_name]['column'], $order);
-          // PostgreSQL automatically adds a field to the SELECT list when
-          // sorting on it. Therefore, if we have aggregrations present we also
-          // have to add the field to the GROUP BY (since Drupal won't do it for
-          // us). However, if no aggregations are present, a GROUP BY would lead
-          // to another error. Therefore, we only add it if there is already a
-          // GROUP BY.
-          if ($db_query->getGroupBy()) {
-            $db_query->groupBy($alias . '.' . $fields[$field_name]['column']);
-          }
-        }
-      }
-      else {
-        $db_query->orderBy('score', 'DESC');
-      }
+      $this->setQuerySort($query, $db_query, $fields);
 
       $result = $db_query->execute();
       $time_queries_done = microtime(TRUE);
@@ -1123,6 +1170,8 @@ class SearchApiDbService extends SearchApiAbstractService {
 
     $results['warnings'] = array_keys($this->warnings);
     $results['ignored'] = array_keys($this->ignored);
+
+    $this->postQuery($results, $query);
 
     $time_end = microtime(TRUE);
     $results['performance'] = array(
@@ -1375,7 +1424,7 @@ class SearchApiDbService extends SearchApiAbstractService {
     $nested = array();
     $negated = array();
     $db_query = NULL;
-    $mul_words = FALSE;
+    $word_hits = array();
     $neg_nested = $neg && $conj == 'AND';
 
     foreach ($keys as $i => $key) {
@@ -1398,13 +1447,13 @@ class SearchApiDbService extends SearchApiAbstractService {
       }
     }
     $subs = count($words) + count($nested);
-    $not_nested = ($subs <= 1 && count($fields) == 1) || ($neg && $conj == 'OR' && !$negated);
+    $mul_words = count($words) > 1;
+    $not_nested = ($subs <= 1 && !$mul_words) || ($neg && $conj == 'OR' && !$negated);
 
     if ($words) {
       // All text fields in the index share a table. Get name from the first.
       $field = reset($fields);
       $db_query = $this->connection->select($field['table'], 't');
-      $mul_words = count($words) > 1;
       if ($neg_nested) {
         $db_query->fields('t', array('item_id', 'word'));
       }
@@ -1412,10 +1461,15 @@ class SearchApiDbService extends SearchApiAbstractService {
         $db_query->fields('t', array('item_id'));
       }
       elseif ($not_nested) {
-        $db_query->fields('t', array('item_id', 'score'));
+        $db_query->fields('t', array('item_id'));
+        $db_query->addExpression('SUM(score)', 'score');
+        $db_query->groupBy('item_id');
       }
       else {
-        $db_query->fields('t', array('item_id', 'score', 'word'));
+        $db_query->fields('t', array('item_id', 'word'));
+        $db_query->addExpression('SUM(score)', 'score');
+        $db_query->groupBy('item_id');
+        $db_query->groupBy('word');
       }
 
       if (empty($this->options['partial_matches'])) {
@@ -1423,17 +1477,26 @@ class SearchApiDbService extends SearchApiAbstractService {
       }
       else {
         $db_or = db_or();
-        $db_query->groupBy('t.item_id');
+        // GROUP BY all existing non-grouped, non-aggregated columns – except
+        // "word", which we remove since it will be useless to us in this case.
+        $columns = &$db_query->getFields();
+        unset($columns['word']);
+        foreach (array_keys($columns) as $column) {
+          $db_query->groupBy($column);
+        }
+
         foreach ($words as $i => $word) {
           $db_or->condition('t.word', '%' . $this->connection->escapeLike($word) . '%', 'LIKE');
 
           // Add an expression for each keyword that shows whether the indexed
           // word matches that particular keyword. That way we don't return a
           // result multiple times if a single indexed word (partially) matches
-          // multiple keywords.
+          // multiple keywords. We also remember the column name so we can
+          // afterwards verify that each word matched at least once.
           $alias = 'w' . $i;
           $alias = $db_query->addExpression("t.word LIKE '%" . $this->connection->escapeLike($word) . "%'", $alias);
           $db_query->groupBy($alias);
+          $word_hits[] = $alias;
         }
         $db_query->condition($db_or);
       }
@@ -1473,7 +1536,13 @@ class SearchApiDbService extends SearchApiAbstractService {
         if (!$db_query->getGroupBy()) {
           $db_query->groupBy('t.item_id');
         }
-        if ($mul_words) {
+        if ($word_hits) {
+          // Simply check whether each word matched at least once.
+          foreach ($word_hits as $column) {
+            $db_query->having("SUM($column) >= 1");
+          }
+        }
+        elseif ($mul_words) {
           $db_query->having('COUNT(DISTINCT t.word) >= ' . $var, array($var => $subs));
         }
         else {
@@ -1630,6 +1699,97 @@ class SearchApiDbService extends SearchApiAbstractService {
   }
 
   /**
+   * Preprocesses a search's database query before it is executed.
+   *
+   * This allows subclasses to apply custom changes before the query (and the
+   * count query) is executed.
+   *
+   * @param SelectQueryInterface $db_query
+   *   The database query to be executed for the search. Will have "item_id" and
+   *   "score" columns in its result.
+   * @param SearchApiQueryInterface $query
+   *   The search query that is being executed.
+   *
+   * @see hook_search_api_db_query_alter()
+   */
+  protected function preQuery(SelectQueryInterface &$db_query, SearchApiQueryInterface $query) {
+  }
+
+  /**
+   * Postprocess search results.
+   *
+   * This allows subclasses to apply custom changes before the results are
+   * returned.
+   *
+   * @param array $results
+   *   The results array that will be returned for the search, in the format
+   *   defined by SearchApiQueryInterface::execute().
+   * @param SearchApiQueryInterface $query
+   *   The executed search query.
+   */
+  protected function postQuery(array &$results, SearchApiQueryInterface $query) {
+  }
+
+  /**
+   * Adds the query sort to a search database query.
+   *
+   * @param SearchApiQueryInterface $query
+   *   The search query whose sorts should be applied.
+   * @param SelectQueryInterface $db_query
+   *   The database query used for the search.
+   * @param array $fields
+   *   An array containing information about the internal server storage of the
+   *   indexed fields.
+   *
+   * @throws SearchApiException
+   *   If an illegal sort was specified.
+   */
+  protected function setQuerySort(SearchApiQueryInterface $query, SelectQueryInterface $db_query, array $fields) {
+    $sort = $query->getSort();
+    if ($sort) {
+      foreach ($sort as $field_name => $order) {
+        if ($order != 'ASC' && $order != 'DESC') {
+          $msg = t('Unknown sort order @order. Assuming "ASC".', array('@order' => $order));
+          $this->warnings[$msg] = $msg;
+          $order = 'ASC';
+        }
+        if ($field_name == 'search_api_relevance') {
+          $db_query->orderBy('score', $order);
+          continue;
+        }
+        if ($field_name == 'search_api_id') {
+          $db_query->orderBy('item_id', $order);
+          continue;
+        }
+        if (!isset($fields[$field_name])) {
+          throw new SearchApiException(t('Trying to sort on unknown field @field.', array('@field' => $field_name)));
+        }
+        $field = $fields[$field_name];
+        if (search_api_is_list_type($field['type'])) {
+          throw new SearchApiException(t('Cannot sort on field @field of a list type.', array('@field' => $field_name)));
+        }
+        if (search_api_is_text_type($field['type'])) {
+          throw new SearchApiException(t('Cannot sort on fulltext field @field.', array('@field' => $field_name)));
+        }
+        $alias = $this->getTableAlias($field, $db_query);
+        $db_query->orderBy($alias . '.' . $fields[$field_name]['column'], $order);
+        // PostgreSQL automatically adds a field to the SELECT list when sorting
+        // on it. Therefore, if we have aggregrations present we also have to
+        // add the field to the GROUP BY (since Drupal won't do it for us).
+        // However, if no aggregations are present, a GROUP BY would lead to
+        // another error. Therefore, we only add it if there is already a GROUP
+        // BY.
+        if ($db_query->getGroupBy()) {
+          $db_query->groupBy($alias . '.' . $fields[$field_name]['column']);
+        }
+      }
+    }
+    else {
+      $db_query->orderBy('score', 'DESC');
+    }
+  }
+
+  /**
    * Computes facets for a search query.
    *
    * @param SearchApiQueryInterface $query
@@ -1642,6 +1802,11 @@ class SearchApiDbService extends SearchApiAbstractService {
    */
   protected function getFacets(SearchApiQueryInterface $query, SelectQueryInterface $db_query) {
     try {
+      // Add a tag to the database query to identify it as a facet base query.
+      $db_query->addTag('search_api_db_facets_base');
+
+      // Store the results of the query in a temporary table to run facet
+      // queries on it afterwards.
       $table = $this->getTemporaryResultsTable($db_query);
       if (!$table) {
         return array();
@@ -1675,6 +1840,12 @@ class SearchApiDbService extends SearchApiAbstractService {
           $select = $this->connection->select($or_db_query, 't');
         }
 
+        // Add tags and metadata.
+        $select->addTag('search_api_db_facet');
+        $select->addMetaData('search_api_query', $query);
+        $select->addMetaData('search_api_db_fields', $fields);
+        $select->addMetaData('search_api_db_facet', $facet);
+
         // If "Include missing facet" is disabled, we use an INNER JOIN and add
         // IS NOT NULL for shared tables.
         $alias = $this->getTableAlias($field, $select, TRUE, $facet['missing'] ? 'leftJoin' : 'innerJoin');
@@ -1691,7 +1862,7 @@ class SearchApiDbService extends SearchApiAbstractService {
           $select->range(0, $limit);
         }
         if ($facet['min_count'] > 1) {
-          $select->having('num >= :count', array(':count' => $facet['min_count']));
+          $select->having('COUNT(DISTINCT t.item_id) >= :count', array(':count' => $facet['min_count']));
         }
 
         $terms = array();
@@ -1722,6 +1893,13 @@ class SearchApiDbService extends SearchApiAbstractService {
             $select->condition($field['column'], $values, 'NOT IN');
           }
           $select->isNotNull($field['column']);
+
+          // Add tags and metadata.
+          $select->addTag('search_api_db_facet_all');
+          $select->addMetaData('search_api_query', $query);
+          $select->addMetaData('search_api_db_fields', $fields);
+          $select->addMetaData('search_api_db_facet', $facet);
+
           foreach ($select->execute() as $row) {
             $terms[] = array(
               'count' => 0,
@@ -1770,8 +1948,10 @@ class SearchApiDbService extends SearchApiAbstractService {
     $expressions = &$db_query->getExpressions();
     $expressions = array();
 
+    // If there's a GROUP BY for item_id, we leave that, all others need to be
+    // discarded.
     $group_by = &$db_query->getGroupBy();
-    $group_by = array();
+    $group_by = array_intersect_key($group_by, array('t.item_id' => TRUE));
 
     $db_query->distinct();
     if (!$db_query->preExecute()) {
@@ -1805,6 +1985,10 @@ class SearchApiDbService extends SearchApiAbstractService {
     $suggestions = array();
     $passes = array();
 
+    // Make the input lowercase as the indexed data is also all lowercase.
+    $user_input = drupal_strtolower($user_input);
+    $incomplete_key = drupal_strtolower($incomplete_key);
+
     // Decide which methods we want to use.
     if ($incomplete_key && $settings['suggest_suffix']) {
       $passes[] = 1;
@@ -1831,6 +2015,15 @@ class SearchApiDbService extends SearchApiAbstractService {
         $query->keys($user_input);
       }
       $db_query = $this->createDbQuery($query, $fields);
+
+      // Add additional tags and metadata.
+      $db_query->addTag('search_api_db_autocomplete');
+      $db_query->addMetaData('search_api_db_autocomplete', array(
+        'search' => $search,
+        'incomplete_key' => $incomplete_key,
+        'user_input' => $user_input,
+        'pass' => $pass,
+      ));
 
       // We need a list of all current results to match the suggestions against.
       // However, since MySQL doesn't allow using a temporary table multiple
@@ -1881,7 +2074,7 @@ class SearchApiDbService extends SearchApiAbstractService {
       $db_query->addExpression('COUNT(DISTINCT item_id)', 'results');
       $db_query->fields('t', array('word'))
         ->groupBy('word')
-        ->having('results <= :max', array(':max' => $max_occurrences))
+        ->having('COUNT(DISTINCT item_id) <= :max', array(':max' => $max_occurrences))
         ->orderBy('results', 'DESC')
         ->range(0, ceil($limit));
       $incomp_len = strlen($incomplete_key);
@@ -1916,6 +2109,31 @@ class SearchApiDbService extends SearchApiAbstractService {
       }
     }
     return $fields;
+  }
+
+  /**
+   * Emulates self::mbStrcut() if that is not available.
+   *
+   * Though the Mbstring PHP extension is recommended for running Drupal, it is
+   * not required. Therefore, we have to wrap calls to its functions.
+   *
+   * @param string $str
+   *   The string being cut.
+   * @param int $start
+   *   Starting position in bytes.
+   * @param int|null $length
+   *   (optional) Length in bytes. If NULL is passed, extract all bytes to the
+   *   end of the string.
+   *
+   * @return string
+   *   The portion of $str specified by the $start and $length parameters.
+   */
+  protected static function mbStrcut($str, $start, $length = NULL) {
+    global $multibyte;
+    if ($multibyte == UNICODE_MULTIBYTE) {
+      return mb_strcut($str, $start, $length);
+    }
+    return substr($str, $start, $length);
   }
 
 }

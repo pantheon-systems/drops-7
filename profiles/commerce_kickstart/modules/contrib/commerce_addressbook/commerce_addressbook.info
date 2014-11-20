@@ -3,10 +3,11 @@ description = Prepopulates and provides a dropdown for previously added addresse
 package = Commerce (contrib)
 core = 7.x
 dependencies[] = commerce_customer
+dependencies[] = commerce_checkout
 
-; Information added by drupal.org packaging script on 2013-05-19
-version = "7.x-2.0-rc7"
+; Information added by Drupal.org packaging script on 2014-10-04
+version = "7.x-2.0-rc8"
 core = "7.x"
 project = "commerce_addressbook"
-datestamp = "1369004411"
+datestamp = "1412458729"
 

@@ -5,9 +5,9 @@ package = Service Links - Services
 dependencies[] = service_links
 
 
-; Information added by drush on 2014-10-16
+; Information added by drush on 2014-11-20
 version = "7.x-2.3-beta1+4-dev"
 core = "7.x"
 project = "service_links"
-datestamp = "1413427402"
+datestamp = "1416496474"
 

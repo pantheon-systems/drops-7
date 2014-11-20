@@ -494,20 +494,34 @@ function commerce_addressbook_get_default_profile_id($uid, $type) {
 }
 
 /**
- * Implements hook_commerce_order_insert().
+ * Implements hook_commerce_order_presave().
+ *
+ * This hook sets the default profile as initial value on the corresponding
+ * checkout panes.
  */
-function commerce_addressbook_commerce_order_insert($order) {
+function commerce_addressbook_commerce_order_presave($order) {
   global $user;
   if ($user->uid) {
     foreach (commerce_checkout_panes() as $pane_id => $checkout_pane) {
+      // Only for panes for which the address book is enabled.
       if (variable_get('commerce_' . $pane_id . '_addressbook', FALSE)) {
-        if (($field_name = variable_get('commerce_' . $pane_id . '_field', '')) && empty($order->{$field_name})) {
-          $field = field_info_field($field_name);
-          $default_profile_id = commerce_addressbook_get_default_profile_id($user->uid, $field['settings']['profile_type']);
-          if ($default_profile_id) {
-            $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-            $order_wrapper->{$field_name} = $default_profile_id;
-            $order_wrapper->save();
+        $type = substr($checkout_pane['pane_id'], 17); // Removes 'customer_profile_'
+        // Does this profile type have a default?
+        $default_profile_id = commerce_addressbook_get_default_profile_id($user->uid, $type);
+        if ($default_profile_id) {
+          // Is this profile stored in a field or in the data association?
+          if (($field_name = variable_get('commerce_' . $pane_id . '_field', '')) && empty($order->{$field_name})) {
+            // Check to ensure the specified profile reference field exists on
+            // the current order type.
+            if (field_info_instance('commerce_order', $field_name, $order->type)) {
+              $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+              $order_wrapper->{$field_name} = $default_profile_id;
+            }
+          }
+          else {
+            // Or store it in the association stored in the order's data array
+            // if no field is set.
+            $order->data['profiles'][$checkout_pane['pane_id']] = $default_profile_id;
           }
         }
       }
@@ -521,7 +535,21 @@ function commerce_addressbook_commerce_order_insert($order) {
  * Set the new customer profile as default if there's none.
  */
 function commerce_addressbook_commerce_customer_profile_insert($profile) {
-  if (!empty($profile->profile_id)) {
+  if (!empty($profile->profile_id) && $profile->uid <> 0) {
+    $default_profile = commerce_addressbook_get_default_profile_id($profile->uid, $profile->type);
+    if (!$default_profile) {
+      commerce_addressbook_set_default_profile($profile);
+    }
+  }
+}
+
+/**
+ * Implements hook_commerce_customer_profile_update().
+ *
+ * Set the last updated customer profile as default if there's none.
+ */
+function commerce_addressbook_commerce_customer_profile_update($profile) {
+  if (!empty($profile->profile_id) && $profile->uid <> 0) {
     $default_profile = commerce_addressbook_get_default_profile_id($profile->uid, $profile->type);
     if (!$default_profile) {
       commerce_addressbook_set_default_profile($profile);

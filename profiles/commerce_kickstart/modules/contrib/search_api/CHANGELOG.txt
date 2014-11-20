@@ -1,3 +1,16 @@
+Search API 1.13 (07/23/2014):
+-----------------------------
+- #2281535 by areynolds, nicola85: Adapted to latest changes in Views cache
+  plugins.
+- #2145547 by aaronbauman: Fixed duplicated sorts (one exposed) in Views.
+- #2146435 by alanmackenzie: Fixed Views paging with custom pager add-ons.
+- #2278791 by drunken monkey | tksmd: Fixed excerpt when searching single CJK
+  word.
+- #2272983 by idflood, drunken monkey: Fixed Highlighting processor for queries
+  without returned results.
+- #2216345 by bacardi55, fabianderijk, drunken monkey: Fixed array to string
+  conversion in Highlighting processor.
+
 Search API 1.12 (05/23/2014):
 -----------------------------
 - #2265349 by drunken monkey: Marked _search_api_settings_equals() as
@@ -9,7 +22,8 @@ Search API 1.12 (05/23/2014):
 - #2135697 by drunken monkey: Fixed handling of HTML attributes in the
   Highlighting processor.
 - #2179755 by drunken monkey, fago: Fixed whitespaces after HTML filter.
-- pagination
+- #2204847 by drunken monkey, alanmackenzie: Fixed Views caching issues with
+  pagination.
 - #2198791 by drunken monkey: Fixed empty Views entity filters.
 - #2195469 by freakalis, drunken monkey: Added "Exclude fields" options to
   Highlighting processor.

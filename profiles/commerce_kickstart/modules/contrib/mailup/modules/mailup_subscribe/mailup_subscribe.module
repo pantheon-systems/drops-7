@@ -1,0 +1,2115 @@
+<?php
+/**
+ * @file
+ * mailup_subscribe module
+ */
+
+require_once 'mailup_subscribe.field.inc';
+
+/**
+ * Implements hook_enable().
+ */
+function mailup_subscribe_enable() {
+  mailup_subscribe_configure_fields();
+}
+
+
+/**
+ * Implements hook_cron().
+ */
+function mailup_subscribe_cron() {
+
+  $queue = DrupalQueue::get('mailup_subscribe_recipient_update');
+
+  /*
+  By limiting the queue size to the number of recipients
+  we avoid queuing the same recipient twice.
+  This also allows new uses fair entry into the queue.
+  */
+  $target_queue_size = db_query("SELECT COUNT(uid) FROM {mailup_users_recipients}")->fetchField();
+  $current_queue_size = $queue->numberOfItems();
+
+  if ($current_queue_size < $target_queue_size) {
+
+    // How many items do we need to add to top up
+    $deficit = $target_queue_size - $current_queue_size;
+
+    // Get recipients ordered by "sync pass" date
+    $query = db_select('mailup_users_recipients', 'r')
+      ->fields('r', array('uid', 'recipient_id', 'mail', 'hash'))
+      ->orderBy('sync_pass', 'ASC')
+      ->orderBy('uid', 'ASC')
+      ->range(0, $deficit); // Limit to that deficit
+
+    $result = $query->execute();
+
+    // Add the recipients to the cron queue
+    while ($record = $result->fetchObject()) {
+      if ($queue->createItem($record)) {
+        if (mailup_subscribe_save_recipient_metadata(array('uid' => $record->uid, 'sync_pass' => REQUEST_TIME))) {
+
+        }
+        else {
+          // log error
+        }
+      }
+    }
+  }
+
+}
+
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function mailup_subscribe_cron_queue_info() {
+
+  $queues['mailup_subscribe_recipient_update'] = array(
+    'worker callback' => 'mailup_subscribe_recipient_update_queue_worker'
+  );
+
+  return $queues;
+}
+
+
+function mailup_subscribe_recipient_update_queue_worker($item) {
+
+  // @todo: load full record to check the hash
+
+  if ($recipient_meta = mailup_subscribe_load_recipient_metadata(array('uid' => $item->uid))) {
+    if ($user = user_load($item->uid)) {
+      // Build an updated recipient object
+      $recipient = mailup_subscribe_build_recipient_from_user($user, $item->recipient_id);
+      $hash = mailup_subscribe_get_recipient_hash($recipient);
+
+      // If recipient has changed
+      if ($hash != $recipient_meta['hash']) {
+        if ($client = mailup_get_client()) {
+          try {
+            // Update the recipient on MailUp
+            $response = $client->updateRecipient($recipient);
+            // API returns updated recipient object
+            if (!empty($response['idRecipient'])) {
+              // Successful, update our record
+              mailup_subscribe_save_recipient_metadata(array('uid' => $recipient_meta['uid'], 'hash' => $hash));
+            }
+          }
+          catch (MailUpException $e) {
+            watchdog('mailup_subscribe', 'Unable to update recipient. @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function mailup_subscribe_theme() {
+  return array(
+    'mailup_subscription' => array(
+      'render element' => 'elements',
+      'template' => 'mailup-subscription'
+    ),
+    'mailup_subscribe_checkbox' => array(
+      'render element' => 'element',
+      'template' => 'mailup-subscription-form',
+    ),
+    'mailup_subscribe_status' => array(
+      'variables' => array(
+        'subscribed' => NULL,
+        'available_groups' => NULL,
+        'subscribed_groups' => NULL,
+        'expose_groups' => FALSE
+      )
+    )
+  );
+}
+
+
+/**
+ * Implements hook_element_info().
+ */
+function mailup_subscribe_element_info() {
+  $types['mailup_subscribe_checkbox'] = array(
+    '#input' => TRUE,
+    '#return_value' => TRUE,
+    '#process' => array('mailup_subscribe_checkbox_process', 'ajax_process_form'),
+    '#theme' => 'mailup_subscribe_checkbox',
+    '#theme_wrappers' => array('form_element'),
+    '#title_display' => 'after',
+    '#subscription_target' => NULL,
+    '#element_validate' => array('mailup_subscribe_checkbox_validate'),
+    '#value_callback' => 'form_type_mailup_subscribe_checkbox_value'
+  );
+
+  return $types;
+}
+
+
+
+function mailup_subscribe_checkbox_validate($element, &$form_state) {
+  return;  
+}
+
+/**
+ * Element #value_callback for 'mailup_subscribe_checkbox'
+ * @see mailup_subscribe_element_info()
+ */
+function form_type_mailup_subscribe_checkbox_value($element, $input = FALSE) {
+
+  $empty = array('subscribe' => FALSE, 'groups' => NULL);
+
+  if ($input === FALSE) {
+    return isset($element['#default_value']) ? $element['#default_value'] : $empty;
+  }
+  else {
+    return isset($input) ? $element['#return_value'] : $empty;
+  }
+}
+
+/**
+ * Helper to interpret mailup status for mailup_subscribe_checkbox element
+ */
+function mailup_subscribe_status_to_boolean($status) {
+
+  $status = (int) $status;
+
+  switch ($status) {
+    case MAILUP_STATUS_SUBSCRIBED:
+    case MAILUP_STATUS_PENDING:
+    case MAILUP_STATUS_SUBSCRIBE_REQUESTED:
+      return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Element #process callback for 'mailup_subscribe_checkbox'
+ * @see mailup_subscribe_element_info()
+ */
+function mailup_subscribe_checkbox_process($element, &$form_state, $complete_form) {
+
+  $value = is_array($element['#value']) ? $element['#value'] : array();
+
+  $subscription = $element['#subscription_target'];
+
+  $label = entity_label('mailup_subscription', $subscription);
+
+  $language = $subscription->language;
+  $field_name = 'mailup_list_reference';
+
+  $list_reference = $subscription->{$field_name}[$language][0];
+  $list = mailup_list_load($list_reference['target_id']);
+
+  $renderable_entities = entity_view('mailup_subscription', array($subscription));
+
+  $element['#tree'] = TRUE;
+
+  // The rendered MailupList
+  $element['display'] = $renderable_entities['mailup_subscription'];
+
+  // Subscribe checkbox
+  $element['subscribe'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Subscribe'), // check_plain( $list_reference['name'] ),
+    '#default_value' => isset($value['subscribe']) ? $value['subscribe'] : NULL
+  );
+
+  $available_group_ids = empty($list_reference['target_groups']) ? array() : array_filter($list_reference['target_groups']);
+
+  // Present checkboxes to the user
+  if (!empty($list_reference['settings']['expose_groups'])) {
+
+    // The actual group data for available as stored in the mailup_list entity
+    $available_groups = array_intersect_key($list->groups, $available_group_ids);
+
+    // Build the options from this
+    $group_options = array();
+    foreach ($available_groups as $id => $group) {
+      $group_options[$id] = $group['Name'];
+    }
+
+    $element['groups'] = array(
+      '#type' => 'checkboxes',
+      '#prefix' => '<fieldset class="form-wrapper"><legend><span class="fieldset-legend">Groups</span></legend><div class="fieldset-wrapper">',
+      '#suffix' => '</div></fieldset>',
+      '#options' => $group_options,
+      '#default_value' => !empty($element['#value']['groups']) ? $element['#value']['groups'] : array()
+    );
+  }
+  else {
+    // Just store the admin-configured groups
+    $element['groups'] = array(
+      '#type' => 'value',
+      '#value' => $available_group_ids
+    );
+  }
+
+  return $element;
+}
+
+
+/**
+ * Default theme function for 'mailup_subscribe_checkbox'
+ * @see hook_theme()
+ */
+function template_preprocess_mailup_subscribe_checkbox(&$vars) {
+
+  $element = $vars['element'];
+
+  $vars['form'] = &$element;
+  $vars['form']['subscribe']['#title'] = t('Subscribe');
+
+  $vars['mailup_subscription'] = $element['#subscription_target'];
+  $vars['label'] = $vars['mailup_subscription']->mailup_list_reference[$vars['mailup_subscription']->language][0]['name'];
+}
+
+
+function _mailup_subscribe_import_recipient_fields_op($time, &$context) {
+  
+  if ($recipient_fields = mailup_build_recipient_item_fields()) {
+    variable_set('mailup_subscribe_recipient_fields', $recipient_fields);
+    // Store total for finished message
+    $context['results']['total'] = count($recipient_fields);
+  }
+  else {
+    $context['results']['error'] = t('Unable to fetch recipient fields from MailUp');
+  }
+}
+
+function mailup_subscribe_import_recipient_fields_finished($success, $results, $operations) {
+
+  if (empty($results['error'])) {
+    drupal_set_message(t('Successfully imported @total recipient fields', array('@total' => $results['total'])));
+  }
+  else {
+    drupal_set_message(t('An error occurred while importing recipient fields'), 'error');
+  }
+}
+
+/**
+ * Access for Subscriptions admin pages.
+ *
+ * @return
+ * TRUE if the current user has access to MailUp settings
+ * and MailUp account credentials are set.
+ */
+function mailup_subscribe_administer_access() {
+  $mailup_username = variable_get('mailup_username', NULL);
+  return user_access('administer mailup lists') && !empty($mailup_username);
+}
+
+function test() {
+
+  // Find all term reference fields on product bundles
+  $field_info = field_info_field_map();
+  
+  $product_term_ref_fields = array();
+  foreach ($field_info as $field_name => $field) {
+    if ($field['type'] == 'taxonomy_term_reference' && !empty($field['bundles']['commerce_product'])) {
+      $product_term_ref_fields[] = $field_name;
+    }
+  }
+
+
+  // Add objects for token replacement
+  $token_data = array(
+    'user' => user_load(14),
+  );
+
+  // Get mailup field definitions
+  $fields = mailup_subscribe_get_imported_recipient_fields();
+
+  foreach (mailup_subscribe_get_recipient_field_map() as $key => $details) {
+
+    $value = token_replace($details['value'], $token_data, array('clear' => TRUE));
+
+    // known field
+    if (array_key_exists($key, $fields)) {
+      if (!empty($fields[$key]['base_field'])) {
+        // base field
+        $recipient[$key] = $value;
+      }
+      else {
+        // dynamic field
+        $recipient['Fields'][] = array(
+          'Description' => $details['name'],
+          'Id' => $key,
+          'Value' => $value
+        );        
+      }
+    }
+  }
+
+  return array();
+}
+
+/**
+ * Implements hook_menu().
+ */
+function mailup_subscribe_menu() {
+  $items = array();
+
+  $items['test'] = array(
+    'title' => 'test',
+    'page callback' => 'test',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/config/services/mailup/lists'] = array(
+    'title' => 'Lists',
+    'description' => 'Manage MailUp Lists.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mailup_lists_admin_overview_form'),
+    'access callback' => 'mailup_subscribe_administer_access',
+    'file' => 'mailup_subscribe.admin.inc',
+    'type' => MENU_LOCAL_TASK
+  );
+
+  $items['admin/config/services/mailup/lists/overview'] = array(
+    'title' => 'Overview',
+    'description' => 'Manage MailUp Subscriptions.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mailup_lists_admin_overview_form'),
+    'access callback' => 'mailup_subscribe_administer_access',
+    'file' => 'mailup_subscribe.admin.inc',
+    'type' => MENU_DEFAULT_LOCAL_TASK
+  );
+
+  $items['admin/config/services/mailup/lists/list/%mailup_subscribe_list'] = array(
+    'title' => 'MailUp List',
+    'page callback' => 'mailup_subscribe_list_view',
+    'page arguments' => array(6),
+    'access callback' => 'mailup_subscribe_administer_access',
+    'access arguments' => array(6),
+    'type' => MENU_CALLBACK
+  );
+
+  $items['admin/config/services/mailup/fields'] = array(
+    'title' => 'Recipient Fields',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mailup_subscribe_recipient_field_mapping'),
+    'access callback' => 'mailup_subscribe_administer_access',
+    'file' => 'mailup_subscribe.admin.inc',
+    'type' => MENU_LOCAL_TASK
+  );
+
+  $items['admin/config/services/mailup/webhooks'] = array(
+    'title' => 'Webhooks',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mailup_subscribe_webhook_settings'),
+    'access callback' => 'mailup_subscribe_administer_access',
+    'file' => 'mailup_subscribe.admin.inc',
+    'type' => MENU_LOCAL_TASK
+  );
+
+
+  // $items['admin/config/services/mailup/lists/add'] = array(
+  //   'title' => 'Make a list available for subscription',
+  //   'page callback' => 'mailup_list_page_edit',
+  //   'access callback' => 'mailup_list_administer_access',
+  //   'type' => MENU_LOCAL_ACTION,
+  //   'file' => 'mailup_list.admin.inc',
+  // );
+
+  $items['admin/config/services/mailup/lists/subscription/%mailup_subscription'] = array(
+    'title' => 'MailUp Subscription',
+    'page callback' => 'mailup_subscription_view',
+    'page arguments' => array(6),
+    'access callback' => 'mailup_subscribe_administer_access',
+    'access arguments' => array(6),
+    'file' => 'mailup_subscribe.admin.inc',
+    'weight' => 10,
+    'type' => MENU_NORMAL_ITEM
+  );
+
+  $items['admin/config/services/mailup/lists/subscription/%mailup_subscription/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'mailup_subscribe_subscription_edit',
+    'page arguments' => array(6),
+    'access callback' => 'mailup_subscribe_administer_access',
+    'access arguments' => array(6),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'mailup_subscribe.admin.inc',
+    'weight' => 20,
+  );
+
+  $items['admin/config/services/mailup/lists/subscription/%mailup_subscription/edit'] = array(
+    'title' => 'Edit',
+    'page callback' => 'mailup_subscribe_subscription_edit',
+    'page arguments' => array(6),
+    'access callback' => 'mailup_subscribe_administer_access',
+    'access arguments' => array(6),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'mailup_subscribe.admin.inc',
+    'weight' => 20,
+  );
+
+  $items['admin/config/services/mailup/lists/subscription/%mailup_subscription/delete'] = array(
+    'title' => 'Delete',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mailup_subscribe_subscription_delete_confirm', 6),
+    'access callback' => 'mailup_subscribe_administer_access',
+    'access arguments' => array(6),
+    'type' => MENU_CALLBACK,
+    'file' => 'mailup_subscribe.admin.inc',
+    'weight' => 20,
+  );
+
+  $items['mailup'] = array(
+    'title' => 'Mailup Webhook Callback',
+    'page callback' => 'mailup_subscribe_webhook',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK
+  );
+
+  return $items;
+}
+
+function _mailup_subscribe_crypt_rc4($key, $str) {
+  $s = array();
+  for ($i = 0; $i < 256; $i++) {
+    $s[$i] = $i;
+  }
+  $j = 0;
+  for ($i=0; $i < 256; $i++) {
+     $j = ($j + $s[$i] + ord($key[$i % strlen($key)])) % 256;
+     $x = $s[$i];
+     $s[$i] = $s[$j];
+     $s[$j] = $x;
+  }
+  $j = $i = 0;
+  $output = '';
+  for ($y=0; $y < strlen($str); $y++) {
+     $i = ($i + 1) % 256;
+     $j = ($j + $s[$i]) % 256;
+     $x = $s[$i];
+     $s[$i] = $s[$j];
+     $s[$j] = $x;
+     $output .= chr(ord($str[$y]) ^ $s[($s[$i] + $s[$j]) % 256]);
+  }
+  return $output;
+}
+
+function mailup_subscribe_webhook() {
+
+  $key = variable_get('mailup_webhook_key', '');
+
+  if (strlen($key)) {
+
+    $data = array();
+    $raw_post_data = file_get_contents('php://input');
+    
+    if (strlen($raw_post_data)) {
+      
+      $post_data_base64 = urldecode($raw_post_data);
+      $post_data_rc4 = base64_decode($post_data_base64);
+      $post_data_url_encoded = _mailup_subscribe_crypt_rc4($key, $post_data_rc4);
+
+      parse_str($post_data_url_encoded, $data);
+
+      if (!empty($data)) {
+        module_invoke_all('mailup_webhook_receive', $data);
+      }
+      else {
+        watchdog('mailup_subscribe', 'Unable to decrypt MailUp webhook data. Please check encryption key settings on Drupal and MailUp console', NULL, WATCHDOG_ERROR);
+      }
+    }
+  }
+  else {
+    watchdog('mailup_subscribe', 'MailUp Webhook call received, but no encryption key is setup', NULL, WATCHDOG_ERROR);
+  }
+
+  return array('#markup' => '');
+}
+
+/**
+ * Implements hook_mailup_webhook_receive().
+ */
+function mailup_subscribe_mailup_webhook_receive($data) {
+  watchdog('mailup_subscribe', 'hook_mailup_webhook_receive ' . print_r($data, 1), NULL, WATCHDOG_INFO);
+
+  // Only act if recipient exists
+  if ($recipient_meta = mailup_subscribe_load_recipient_metadata(array('mail' => $data['email']))) {
+
+    watchdog('mailup_subscribe', 'hook_mailup_webhook_receive found', NULL, WATCHDOG_INFO);
+
+    // Only act on tracked lists
+    if ($list = mailup_list_load($data['list'])) {
+      switch ($data['type']) {
+        case 'SUBSCRIBE':
+          // add subscription
+          $recipient_id = $recipient_meta['recipient_id'];
+
+          $record = array(
+            'recipient_id' => $recipient_meta['recipient_id'],
+            'list_id' => $data['list'],
+            'status' => MAILUP_STATUS_SUBSCRIBED,
+            'groups' => serialize(array()),
+            'updated' => REQUEST_TIME
+          );
+          mailup_subscribe_save_recipient_subscription($record);
+          break;
+
+        case 'UNSUBSCRIBE':
+          // remove subscription
+          db_delete('mailup_recipient_subscriptions')
+            ->condition('recipient_id', $recipient_meta['recipient_id'])
+            ->condition('list_id', $list->id)
+            ->execute();
+          break;
+      }
+    }
+
+  }
+}
+
+
+/**
+ * Implementation of hook_entity_info().
+ */
+function mailup_subscribe_entity_info() {
+
+  return array(
+    'mailup_list' => array(
+      'label' => t('MailUp List'),
+      'entity class' => 'MailUpList',
+      'controller class' => 'MailUpListEntityController',
+      'base table' => 'mailup_list',
+      'uri callback' => 'mailup_subscribe_list_uri',
+      'label callback' => 'mailup_subscribe_list_label',
+      'fieldable' => FALSE,
+      'entity keys' => array(
+        'id' => 'id'
+      ),
+      'view modes' => array(
+        'full' => array(
+          'label' => t('Mailup List'),
+          'custom settings' => FALSE,
+        ),
+      ),
+    ),
+
+    'mailup_subscription' => array(
+      'label' => t('MailUp Subscription'),
+      'entity class' => 'MailUpSubscription',
+      'controller class' => 'MailUpSubscriptionEntityController',
+      'base table' => 'mailup_subscription',
+      'uri callback' => 'mailup_subscription_uri',
+      'label callback' => 'mailup_subscription_label',
+      'fieldable' => TRUE,
+      'entity keys' => array(
+        'id' => 'id',
+        'language' => 'language',
+      ),
+      'module' => 'mailup_subscribe',
+      'static cache' => TRUE,
+      'load hook' => 'mailup_subscription_load',
+      'bundles' => array(
+        'mailup_subscription' => array(
+          'label' => t('MailUp Subscriptions'),
+          'admin' => array(
+            'path' => 'admin/config/services/mailup/lists',
+            'access arguments' => array('administer mailup'),
+          ),
+        ),
+      ),
+      'admin ui' => array(
+        'path' => 'admin/config/services/mailup/lists/subscriptions',
+        'menu wildcard' => '%mailup_subscription',
+      ),
+      'view modes' => array(
+        'full' => array(
+          'label' => t('MailUp Subscription'),
+          'custom settings' => FALSE,
+        ),
+      ),
+      'view callback' => 'entity_metadata_view_single',
+      'metadata controller class' => '',
+
+      // Add translation support.
+      'translation' => array(
+        'locale' => TRUE
+      ),
+
+    )
+  );
+}
+
+function mailup_subscribe_entity_info_alter(&$entity_info) {
+  if (module_exists('entity_translation')) {
+    $entity_info['mailup_subscription']['translation']['entity_translation'] = array(
+      'class' => 'EntityTranslationMailUpSubscriptionHandler',
+      'default settings' => array(
+        'default_language' => LANGUAGE_NONE,
+        'hide_language_selector' => FALSE,
+      ),
+      'base path' => 'admin/config/services/mailup/lists/subscription/%mailup_subscription',
+      'access callback' => 'mailup_subscription_administer_access',
+    );
+  }
+}
+
+
+/**
+ * Load local subscription states for a user
+ */
+function mailup_subscribe_load_user_subscriptions($user=NULL) {
+
+  if ($user) {
+    // Check if recipient exists already
+    if ($recipient_meta = mailup_subscribe_load_recipient_metadata(array('uid' => $user->uid))) {
+      return mailup_subscribe_load_recipient_subscriptions($recipient_meta['recipient_id']);
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ *
+ */
+function mailup_subscribe_load_recipient_by_mail($mail) {
+
+  try {
+    $result = db_select('mailup_users_recipients', 'r')
+      ->fields('r')
+      ->condition('mail', $mail)
+      ->execute()
+      ->fetchAssoc();
+
+    return $result;
+  }
+  catch (Exception $e) {
+    return FALSE;
+  }
+}
+
+
+/**
+ * Retrieve recipient record from database
+ */
+function mailup_subscribe_load_recipient_metadata($conditions=array()) {
+
+  $query = db_select('mailup_users_recipients', 'r')->fields('r');
+
+  $valid_fields = array('uid' => TRUE, 'recipient_id' => TRUE, 'mail' => TRUE);
+  foreach ($conditions as $key => $value) {
+    if (!empty($valid_fields[$key])) {
+      $query->condition($key, $value);
+    }
+  }
+
+  return $query->execute()->fetchAssoc();
+}
+
+
+function mailup_subscribe_save_recipient_subscription($record) {
+
+  if (is_object($record)) {
+    $record = (array) $record;
+  }
+
+  if ($exists = db_query("SELECT 1 FROM {mailup_recipient_subscriptions} WHERE recipient_id = :recipient_id AND list_id = :list_id", array(':recipient_id' => $record['recipient_id'], ':list_id' => $record['list_id']))->fetchField()) {
+
+    db_update('mailup_recipient_subscriptions')
+      ->fields($record)
+      ->condition('recipient_id', $record['recipient_id'])
+      ->condition('list_id', $record['list_id'])
+      ->execute();
+  }
+  else {
+    db_insert('mailup_recipient_subscriptions')->fields($record)->execute();
+  }
+
+}
+
+function mailup_subscribe_save_recipient_metadata($record) {
+
+  if (is_object($record)) {
+    $record = (array) $record;
+  }
+
+  if ($existing = mailup_subscribe_load_recipient_metadata(array('uid' => $record['uid']))) {
+    try {
+      db_update('mailup_users_recipients')->fields($record)->condition('uid', $record['uid'])->execute();
+      return TRUE;
+    }
+    catch (Exception $e) {
+    }
+  }
+  else {
+    try {
+      db_insert('mailup_users_recipients')->fields($record)->execute();
+      return TRUE;
+    }
+    catch (Exception $e) {
+    }
+  }
+
+  return FALSE;
+}
+
+
+/**
+ * Get imported recipient field definitions.
+ * When no fields imported, returns the known base fields.
+ */
+function mailup_subscribe_get_imported_recipient_fields() {
+
+  $fields = variable_get('mailup_subscribe_recipient_fields', array());
+
+  if (empty($fields)) {
+    $fields = array(
+      'Email' => array(
+        'Id' => 'Email',
+        'Description' => 'Email',
+        'base_field' => TRUE,
+        'required' => TRUE,
+      ),
+      'Name' => array(
+        'Id' => 'Name',
+        'Description' => 'Name',
+        'base_field' => TRUE,
+        'required' => TRUE,
+      ),
+      'MobilePrefix' => array(
+        'Id' => 'MobilePrefix',
+        'Description' => 'MobilePrefix',
+        'base_field' => TRUE,
+      ),
+      'MobileNumber' => array(
+        'Id' => 'MobileNumber',
+        'Description' => 'MobileNumber',
+        'base_field' => TRUE,
+      ),
+    );
+  }
+
+  return $fields;
+}
+
+/**
+ * Get recipient field map.
+ * Provides required defaults where no stored map exists.
+ */
+function mailup_subscribe_get_recipient_field_map() {
+
+  $map = variable_get('mailup_subscribe_recipient_field_map', FALSE);
+
+  if (empty($map)) {
+    $map =  array(
+      'Email' => array('name' => 'Email', 'value' => '[user:mail]'),
+      'Name' => array('name' => 'Name', 'value' => '[user:name]')
+    );
+  }
+
+  return $map;
+}
+
+/**
+ * Helper to create hash of 
+ */
+function mailup_subscribe_get_recipient_hash($recipient) {
+  return md5(serialize($recipient));
+}
+
+
+
+/**
+ * Build up recipient data from field mapping for a user
+ */
+function mailup_subscribe_build_recipient_from_user($user, $recipient_id=NULL) {
+
+  if (!is_object($user)) {
+    $user = user_load($user);
+  }
+
+  $recipient = array();
+
+  // Add the recipient ID if available
+  if (!empty($recipient_id)) {
+    $recipient['idRecipient'] = $recipient_id;
+  }
+
+  // Add objects for token replacement
+  $token_data = array(
+    'user' => $user
+  );
+
+  // Get mailup field definitions
+  $fields = mailup_subscribe_get_imported_recipient_fields();
+
+  foreach (mailup_subscribe_get_recipient_field_map() as $key => $details) {
+
+    $value = token_replace($details['value'], $token_data, array('clear' => TRUE));
+
+    // known field
+    if (array_key_exists($key, $fields)) {
+      if (!empty($fields[$key]['base_field'])) {
+        // base field
+        $recipient[$key] = $value;
+      }
+      else {
+        // dynamic field
+        $recipient['Fields'][] = array(
+          'Description' => $details['name'],
+          'Id' => $key,
+          'Value' => $value
+        );        
+      }
+    }
+  }
+
+  return $recipient;
+}
+
+/**
+ * Get a ConsoleRecipientItem object from entity / mapping
+ */
+function mailup_recipient_from_entity($entity, $entity_type) {
+
+  $map = mailup_subscribe_get_recipient_field_map();
+
+  $token_data = array(
+    $entity_type => $entity
+  );
+
+  $data = array();
+
+  // Try and extract recipient ID
+  if (!empty($entity->data['mailup_recipient_id'])) {
+    $data['idRecipient'] = $entity->data['mailup_recipient_id'];
+  }
+
+  foreach ($map as $key => $details) {
+    $data[$key] = token_replace($details['value'], $token_data);
+  }
+
+  return new ConsoleRecipientItem($data);
+}
+
+
+function mailup_group_subscribe_rest($group_id, $recipient_id) {
+
+  $client = mailup_get_client();
+
+  try {
+    return $client->groupSubscribe($group_id, $recipient_id);
+  }
+  catch (MailUpException $e) {
+    return FALSE;
+  }
+}
+
+
+
+/**
+ * Drupal wrapper around Unsubscribe method
+ */
+function mailup_unsubscribe($list_id, $recipient_id) {
+
+  $client = mailup_get_client();
+
+  try {
+    return $client->listUnsubscribe($list_id, $recipient_id);
+  }
+  catch (MailUpException $e) {
+    return FALSE;
+  }
+}
+
+function mailup_subscribe_get_recipient_by_email($list_id, $email) {
+
+  $client = mailup_get_client();
+
+  try {
+    $result = $client->getListRecipients($list_id, 'Subscribed', "Email.Contains('" . $email . "')");
+
+    if (!empty($result['Items'])) {
+      return reset($result['Items']);
+    }
+  }
+  catch (MailUpException $e) {
+  }
+
+  return NULL;
+}
+
+
+
+function mailup_subscribe_check_subcription_status($list_id, $list_guid, $mail) {
+
+  if ($client = mailup_get_client()) {
+
+    try {
+      $status = (int) $client->checkSubscriptionStatusFrontEnd(
+        $list_guid,
+        $list_id,
+        $mail
+      );
+
+      $response_map = array(
+        MAILUP_RESPONSE_SUBSCRIBED => MAILUP_STATUS_SUBSCRIBED,
+        MAILUP_RESPONSE_PENDING => MAILUP_STATUS_PENDING
+      );
+
+      // Subscribed or Pending
+      if (array_key_exists($status, $response_map)) {
+        return $response_map[$status];
+      }
+    }
+    catch (MailUpException $e) {
+      throw new DrupalMailUpException(t('Unable to query subscriptions status. @msg', array('@msg' => $e->getMessage())));
+    }
+  }
+
+  // All other status return false
+  return FALSE;
+}
+
+function mailup_subscribe_fetch_list_recipient_by_mail($list_id, $status, $mail) {
+
+  $status_map = array(
+    MAILUP_STATUS_SUBSCRIBED => 'Subscribed',
+    MAILUP_STATUS_PENDING => 'Pending'
+  );
+
+  if ($client = mailup_get_client()) {
+
+    $params = array('filterby' => "Email.Contains('" . $mail . "')");
+      
+    try {
+      $result = $client->getListRecipients($list_id, $status_map[$status], $params);
+
+      if (is_array($result['Items']) && count($result['Items'])) {
+        return reset($result['Items']);
+      }
+    }
+    catch (MailUpException $e) {
+      throw new DrupalMailUpException(t('Unable to fetch list recipient by email. @msg', array('@msg' => $e->getMessage())));
+    }
+  }
+
+  return FALSE;
+}
+
+function mailup_subscribe_remove_groups($list_id, $groups_ids, $user) {
+
+  if ($recipient_meta = mailup_subscribe_load_recipient_metadata(array('uid' => $user->uid))) {
+
+    if ($client = mailup_get_client()) {
+
+      // Combine added groups with existing ones
+      $current_groups = array();
+      if ($stored_groups = db_query("SELECT groups FROM {mailup_recipient_subscriptions} WHERE recipient_id = :recipient_id AND list_id = :list_id", array(':recipient_id' => $recipient_meta['recipient_id'], ':list_id' => $list_id))->fetchField()) {
+        $current_groups = unserialize($stored_groups);
+      }
+
+      foreach ($groups_ids as $group_id) {
+        try {
+          $client->groupUnsubscribe($group_id, $recipient_meta['recipient_id']);
+          unset($current_groups[$group_id]);
+        }
+        catch (MailUpException $e) {
+          watchdog('mailup_subscribe', 'Unable to remove recipient from group.', array(), WATCHDOG_ERROR);
+        }
+      }
+
+      $record = array(
+        'recipient_id' => $recipient_meta['recipient_id'],
+        'list_id' => $list_id,
+        'groups' => serialize($current_groups),
+        'updated' => REQUEST_TIME
+      );
+
+      mailup_subscribe_save_recipient_subscription($record);
+    }
+  }
+
+  return FALSE;
+}
+
+function mailup_subscribe_subscribe_user($subscribe_to, $user, $coi=TRUE) {
+  // Get structured RecipientItem array from user data
+  $recipient = mailup_subscribe_build_recipient_from_user($user);
+
+  $recipient_metadata = array();
+
+  // Check if known recipient
+  $known_recipient = FALSE;
+  if ($recipient_metadata = mailup_subscribe_load_recipient_metadata(array('uid' => $user->uid))) {
+    $known_recipient = TRUE;
+  }
+
+  try {
+    
+    // Extract list ids and group ids from $subscribe_to array
+    $list_ids = array();
+    $group_ids = array();
+
+    foreach ($subscribe_to as $list_id => $details) {
+      $list_ids[] = $list_id;
+      foreach ($details['group_ids'] as $group_id) {
+        $group_ids[$group_id] = TRUE; 
+      }
+    }
+    $group_ids = array_keys($group_ids);
+
+    // HTTP API uses confirmed opt-in by default
+    if (mailup_subscribe_front_end($list_ids, $group_ids, $recipient, $coi, reset($list_ids))) {
+
+      // If successful, retrieve recipient metadata with additional queries
+      if (!$known_recipient) {
+
+        /*
+        Check the subscription status for the user, as the getListRecipients query
+        requires a specific status for search. It could be 'Pending' or 'Subscribed'
+        */
+        $nominal_list = reset($subscribe_to);
+        $status = mailup_subscribe_check_subcription_status($nominal_list['id'], $nominal_list['guid'], $recipient['Email']);
+        
+        if ($status === FALSE) {
+          watchdog('mailup_subscribe', 'Unable to query recipient after subscribing to list.', array(), WATCHDOG_ERROR);
+          return FALSE;
+        }
+
+        if ($remote_recipient = mailup_subscribe_fetch_list_recipient_by_mail($nominal_list['id'], $status, $recipient['Email'])) {
+
+          $recipient_metadata = array(
+            'uid' => $user->uid,
+            'recipient_id' => $remote_recipient['idRecipient'],
+            'mail' => $remote_recipient['Email'],
+          );
+
+          // Store the recipient meta
+          mailup_subscribe_save_recipient_metadata($recipient_metadata);
+        }
+      }
+
+      // @TODO: update the recipient hash
+
+      foreach ($subscribe_to as $list_id => $details) {
+
+        $recipient_id = $recipient_metadata['recipient_id'];
+
+        // Combine added groups with existing ones
+        $groups = array();
+        if ($stored_groups = db_query("SELECT groups FROM {mailup_recipient_subscriptions} WHERE recipient_id = :recipient_id AND list_id = :list_id", array(':recipient_id' => $recipient_id, ':list_id' => $list_id))->fetchField()) {
+          $groups = unserialize($stored_groups);
+        }
+        if (!empty($details['group_ids'])) {
+          foreach ($details['group_ids'] as $group_id) {
+            $groups[$group_id] = $group_id;
+          }
+        }
+
+        $record = array(
+          'recipient_id' => $recipient_metadata['recipient_id'],
+          'list_id' => $list_id,
+          'status' => $coi ? MAILUP_STATUS_PENDING : MAILUP_STATUS_SUBSCRIBED,
+          'groups' => serialize($groups),
+          'updated' => REQUEST_TIME
+        );
+
+        mailup_subscribe_save_recipient_subscription($record);      
+      }
+
+      return TRUE;
+    }
+  }
+  catch (DrupalMailUpException $e) {
+    watchdog('mailup_subscribe', 'Unable to subscribe recipient on MailUp FrontEnd Web Service. @error', array('@error' => $e->getMessage()), WATCHDOG_ERROR);
+  }
+
+
+}
+
+function mailup_unsubscribe_front_end($list_id, $list_guid, $email) {
+
+  // Attempt to implicitly enable the HTTP frontend service
+  // Where not already enabled for the current IP address
+  if (!_mailup_web_service_was_enabled('frontend')) {
+    if (!_mailup_enable_web_service_for_current_ip('frontend')) {
+      throw new DrupalMailUpException(t('Unable to enable the MailUp FrontEnd web service for the IP.'));
+    }
+  }
+
+  if ($client = mailup_get_client()) {
+    try {
+      $response = (int) $client->unsubscribeFromListFrontEnd($list_guid, $list_id, $email);
+
+      switch ($response) {
+        case MAILUP_HTTP_SUBSCRIBE_RESPONSE_SUCCESS:
+        case MAILUP_HTTP_SUBSCRIBE_RESPONSE_EXISTS:
+          return TRUE;
+        default:
+          return FALSE;
+      }
+    }
+    catch (MailUpException $e) {
+      return FALSE;
+    }
+  }
+}
+
+function mailup_subscribe_field_attach_view_alter(&$output, $context) {
+
+ if (empty($context['view_mode']) || empty($context['display']) || $context['view_mode'] != $context['display']) {
+    return;
+  }
+
+  $entity_type = $context['entity_type'];
+
+  if ($entity_type == 'user') {
+    
+    foreach (element_children($output) as $field_name) {
+      $element = &$output[$field_name];
+
+      if ($element['#field_type'] == 'mailup_subscription') {
+
+        if (!empty($element['#object'])) {
+        }
+      }
+    }
+  }
+
+}
+
+
+function theme_mailup_subscribe_status($variables) {
+  
+  $label = $variables['subscribed'] ? t('Subscribed') : t('Not subscribed');
+
+  $output = '<div class="mailup-status-wrapper">';
+  $output .= '<p class="subscribe-status">' . $label . '</p>';
+
+  if ($variables['expose_groups']) {
+    $output .= theme('item_list', $variables['subscribed_groups']);
+  }
+  $output .= '</div>';
+
+  return $output;
+}
+
+function mailup_subscribe_get_user_status_from_target($user, $subscription) {
+
+  $user_subscriptions = mailup_subscribe_load_user_subscriptions($user);
+  $config = mailup_subscribe_extract_target_config($subscription);
+
+  $subscribed = !empty($user_subscriptions[$config['target_id']]);
+  
+  $available_groups = array();
+  if ($list = mailup_list_load($config['target_id'])) {
+    foreach ($list->groups as $id => $details) {
+      $available_groups[$id] = $details['Name'];
+    }
+  }
+
+  $subscribed_groups = array();
+  if ($subscribed) {
+    $subscribed_groups = array_intersect_key($available_groups, $user_subscriptions[$config['target_id']]['groups']);
+  }
+
+  return array(
+    'subscribed' => $subscribed,
+    'subscribed_groups' => $subscribed_groups,
+    'available_groups' => $available_groups,
+    'expose_groups' => !empty($config['settings']['expose_groups'])
+  );
+}
+
+/**
+ * Template preprocess for Mailup Subscription
+ */
+function template_preprocess_mailup_subscription(&$vars) {
+  
+  $vars['mailup_subscription'] = $vars['elements']['#entity'];
+  $mailup_subscription = $vars['mailup_subscription'];
+
+  // Flatten the node object's member fields.
+  // $vars = array_merge((array) $mailup_subscription, $vars);
+  $vars['mailup_title'] = $mailup_subscription->label;
+  $vars['title'] = $vars['mailup_subscription']->mailup_list_reference[$vars['mailup_subscription']->language][0]['name'];
+
+  // Helpful $content variable for templates.
+  $vars += array('content' => array());
+  foreach (element_children($vars['elements']) as $key) {
+    $vars['content'][$key] = $vars['elements'][$key];
+  }
+
+  $vars['classes_array'][] = !empty($vars['content']['status']['#subscribed']) ? 'subscribed' : 'not-subscribed';
+}
+
+
+function mailup_subscribe_entity_view($entity, $type, $view_mode = 'default', $langcode = NULL) {
+
+  if ($type == 'mailup_subscription') {
+
+    // Start setting up the content.
+    $entity->content = array(
+      '#view_mode' => $view_mode,
+      '#theme' => 'mailup_subscription',
+    );
+
+    field_attach_prepare_view($type, array($entity->id => $entity), $view_mode);
+    entity_prepare_view($type, array($entity->id => $entity));
+
+    $entity->content += field_attach_view($type, $entity, $view_mode);
+
+    // Add subscription info for the user passed on context
+    if (!empty($entity->mailup_user)) {
+
+      $status = mailup_subscribe_get_user_status_from_target($entity->mailup_user, $entity);
+
+      $entity->content['status'] = array(
+        '#theme' => 'mailup_subscribe_status',
+        '#subscribed' => $status['subscribed'],
+        '#available_groups' => $status['available_groups'],
+        '#subscribed_groups' => $status['subscribed_groups'],
+        '#expose_groups' => $status['expose_groups']
+      );
+    }
+
+  }
+}
+
+function mailup_subscribe_front_end($list_ids, $group_ids, $recipient, $coi=TRUE, $confirm_id=NULL) {
+
+  if (is_object($recipient)) {
+    $recipient = (array)$recipient;
+  }
+
+  // Attempt to implicitly enable the HTTP frontend service
+  // Where not already enabled for the current IP address
+  if (!_mailup_web_service_was_enabled('frontend')) {
+    if (!_mailup_enable_web_service_for_current_ip('frontend')) {
+      throw new DrupalMailUpException(t('Unable to enable the MailUp FrontEnd web service for the IP.'));
+    }
+  }
+
+  if ($client = mailup_get_client()) {
+    $params = array();
+
+    if (!$coi) {
+      $params['confirm'] = 'off';
+    }
+    else {
+      if (!empty($confirm_id)) {
+        // Intentionally disabled pending API change
+        // $params['confirmlistid'] = $confirm_id;
+      }
+    }
+
+    if (!empty($recipient['Fields'])) {
+      $field_names = array();
+      $field_values = array();
+      foreach ($recipient['Fields'] as $field) {
+        $field_names[] = 'campo' . $field['Id'];
+        $field_values[] = $field['Value'];
+      }
+
+      $params['csvFldNames'] = implode(';', $field_names);
+      $params['csvFldValues'] = implode(';', $field_values);
+    }
+
+    if (!empty($group_ids) && is_array($group_ids)) {
+      $params['group'] = implode(',', $group_ids);
+    }
+
+    try {
+      // Get the Email from the 'Email' field
+      $response = (int) $client->subscribeToListFrontEnd($recipient['Email'], $list_ids, $params);
+      switch ($response) {
+        case MAILUP_HTTP_SUBSCRIBE_RESPONSE_SUCCESS:
+        case MAILUP_HTTP_SUBSCRIBE_RESPONSE_EXISTS:
+          return TRUE;
+        default:
+          return FALSE;
+      }
+    }
+    catch (MailUpException $e) {
+      return FALSE;
+    }
+  }
+}
+
+/**
+ * Returns an initialized mailup_remote_list object.
+ *
+ * @return
+ *   A mailup_list object with all default fields initialized.
+ */
+function mailup_subscribe_list_create($values=array()) {
+  return entity_get_controller('mailup_list')->create($values);
+}
+
+/**
+ * Returns an initialized mailup_remote_list object.
+ *
+ * @return
+ *   A mailup_subscription object with all default fields initialized.
+ */
+function mailup_subscription_create($values=array()) {
+  return entity_get_controller('mailup_subscription')->create($values);
+}
+
+/**
+ * Load an individiual mailup_subscription
+ */
+function mailup_subscription_load($id = NULL, $reset = FALSE) {
+  $ids = (isset($id) ? array($id) : array());
+  $mailup_subscriptions = mailup_subscription_load_multiple($ids, array(), $reset);
+  return $mailup_subscriptions ? reset($mailup_subscriptions) : FALSE;
+}
+
+
+/**
+ * MailUp List entity View callback.
+ */
+function mailup_subscription_view($subscription, $view_mode = 'full') {
+  return $subscription->view($view_mode);
+}
+
+
+
+/**
+ * Deletes a mailup_subscription.
+ */
+function mailup_subscription_delete(MailUpSubscription $subscription) {
+  $subscription->delete();
+}
+
+/**
+ * Delete multiple mailup_subscriptions.
+ *
+ * @param $ids
+ *   An array of subscription IDs.
+ */
+function mailup_subscription_delete_multiple(array $ids) {
+  entity_get_controller('mailup_subscription')->delete($ids);
+}
+
+/**
+ * Load an individiual mailup_list
+ */
+function mailup_list_load($id = NULL, $reset = FALSE) {
+  $ids = (isset($id) ? array($id) : array());
+  $mailup_lists = mailup_list_load_multiple($ids, array(), $reset);
+  return $mailup_lists ? reset($mailup_lists) : FALSE;
+}
+
+
+/**
+ * Implements hook_user_insert().
+ */
+function mailup_subscribe_user_insert(&$edit, $account, $category) {
+
+  if (!empty($account->mail)) {
+    try {
+      mailup_subscribe_sync_subscriptions_for_user($account);
+    }
+    catch (DrupalMailUpException $e) {
+
+    }
+  }
+}
+
+
+function mailup_subscribe_load_subscription_state_for_user($user) {
+
+}
+
+function mailup_subscribe_load_recipient_subscriptions($recipient_id, $reset=FALSE) {
+
+  $subscription_states = &drupal_static(__FUNCTION__);
+
+  if (empty($subscription_states[$recipient_id]) || $reset) {
+
+    $query = db_select('mailup_recipient_subscriptions', 's')
+      ->fields('s')
+      ->condition('recipient_id', $recipient_id);
+
+    $result = $query->execute();
+    while ($subscription = $result->fetchAssoc()) {
+      // Unserialize the groups state
+      $subscription['groups'] = unserialize($subscription['groups']);
+      $subscription_states[$recipient_id][$subscription['list_id']] = $subscription;
+    }
+  }
+
+  return $subscription_states[$recipient_id];
+}
+
+/**
+ * Implements hook_user_delete().
+ */
+function mailup_subscribe_user_delete($account) {
+
+  if ($recipient_id = db_query("SELECT recipient_id FROM {mailup_users_recipients} WHERE uid = :uid", array(':uid' => $account->uid))->fetchField()) {
+
+    // Delete the subscription info
+    db_delete('mailup_recipient_subscriptions')
+      ->condition('recipient_id', $recipient_id)
+      ->execute();
+
+    // Delete the 
+    db_delete('mailup_users_recipients')
+      ->condition('uid', $account->uid)
+      ->execute();
+  }
+}
+
+
+/**
+ * Sync subscription status
+ * for a single user on all tracked lists
+ *
+ * @param $user
+ *   A user object or uid
+ */
+function mailup_subscribe_sync_subscriptions_for_user($user) {
+
+  if (!is_object($user)) {
+    $user = user_load($user);
+  }
+
+  if (!empty($user->uid)) {
+
+    if ($client = mailup_get_client()) {
+
+      // Initialize mail with user account mail
+      $mail = $user->mail;
+
+      /*
+        Check if we have an existing user <-> recipient mapping.
+        Load the email from here if so - We're using the MailUp HTTP API for efficiency,
+        which uses email instead of recipient ID as key
+      */
+      $existing_recipient = FALSE;
+      if ($recipient_mail = db_query("SELECT mail FROM {mailup_users_recipients} WHERE uid = :uid", array(':uid' => $user->uid))->fetchField()) {
+        $mail = $recipient_mail;
+        $existing_recipient = TRUE;
+      }
+
+      $status_map = array(
+        MAILUP_STATUS_SUBSCRIBED => 'Subscribed',
+        MAILUP_STATUS_PENDING => 'Pending'
+      );
+
+      // Store the remote recipient object
+      $recipient = NULL;
+
+      // For every tracked list
+      foreach (mailup_list_load_multiple(FALSE, array(), TRUE) as $list_entity_id => $list_entity) {
+        try {
+          // Check the subscription status for the user
+          $status = (int) $client->checkSubscriptionStatusFrontEnd(
+            $list_entity->guid,
+            $list_entity->id,
+            $mail
+          );
+
+          // We are only interested in 'Subscribed' and 'Pending'
+          if (array_key_exists($status, $status_map)) {
+
+            // Fetch the recipient we don't have it
+            // So we can make further API calls
+            if (empty($recipient)) {
+
+              $params = array('filterby' => "Email.Contains('" . $mail . "')");
+              $recipient_result = $client->getListRecipients($list_entity->id, $status_map[$status], $params);
+              $recipient = reset($recipient_result['Items']);
+
+              if (!$existing_recipient) {
+
+                // Add a recipient record for the user
+                db_insert('mailup_users_recipients')->fields(array(
+                  'uid' => $user->uid,
+                  'recipient_id' => $recipient['idRecipient'],
+                  'mail' => $recipient['Email']
+                ))->execute();
+              }
+            }
+
+            $groups_result = $client->getRecipientListGroups($recipient['idRecipient'], $list_entity->id);
+            $groups = $groups_result['Items'];
+
+            // Store groups in a structure compatible with form #options
+            $groups_options = array();
+            foreach ($groups as $group) {
+              $groups_options[$group['idGroup']] = $group['idGroup'];
+            }
+
+            // Update our record for this recipient and list
+            $transaction = db_transaction();
+
+            try {
+              // Delete any existing record for this subscription
+              db_delete('mailup_recipient_subscriptions')
+                ->condition('recipient_id', $recipient['idRecipient'])
+                ->condition('list_id', $list_entity->id)
+                ->execute();
+
+              // Store the subscription details for this list
+              db_insert('mailup_recipient_subscriptions')->fields(array(
+                'recipient_id' => $recipient['idRecipient'],
+                'list_id' => $list_entity->id,
+                'status' => $status,
+                'groups' => serialize($groups_options),
+                'updated' => REQUEST_TIME
+              ))->execute();
+            }
+            catch (Exception $e) {
+              $transaction->rollback();
+              throw new DrupalMailUpException(t('Unable to save recipient subscription details for user. @error', array($e->getMessage())));
+              return FALSE;
+            }
+          }
+        }
+        catch (MailUpException $e) {
+          throw new DrupalMailUpException($e->getMessage());
+        }
+      }
+    }
+  }
+  return TRUE;
+}
+
+
+
+/**
+ * Load multiple mailup lists based on certain conditions.
+ *
+ * @param $lists_ids
+ *   An array of Lists IDs.
+ * @param $conditions
+ *   An array of conditions to match against the {mailup_list} table.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of mailup lists objects, indexed by mul_id.
+ *
+ * @see entity_load()
+ * @see mailup_list_load()
+ */
+function mailup_list_load_multiple($mul_ids = FALSE, $conditions = array(), $reset = FALSE) {
+  return entity_load('mailup_list', $mul_ids, $conditions, $reset);
+}
+
+
+function mailup_subscribe_sync_list_entities_batch($selected_lists=array()) {
+
+  $operations = array(
+    array('_mailup_subscribe_fetch_lists_for_batch', array($selected_lists)),
+    array('_mailup_subscribe_process_list_groups', array()),
+    array('_mailup_subscribe_import_user_subscription_data_for_lists', array())
+  );
+
+  $batch = array(
+    'operations' => $operations,
+    'finished' => 'mailup_subscribe_sync_list_entities_finished',
+    'title' => t('Importing List Details from MailUp'),
+    'init_message' => t('Fetching list information from MailUp.'),
+    'progress_message' => t('Processed @current out of @total tasks.'),
+    'error_message' => t('The import encountered an error.'),
+  );
+
+  return $batch;
+}
+
+function mailup_subscribe_sync_list_groups_batch($selected_lists=array()) {
+
+  $operations = array(
+    array('_mailup_subscribe_fetch_lists_for_batch', array($selected_lists)),
+    array('_mailup_subscribe_process_list_groups', array()),
+  );
+
+  $batch = array(
+    'operations' => $operations,
+    'finished' => TRUE,
+    'title' => t('Importing group information from MailUp'),
+    'init_message' => t('Importing group information from MailUp'),
+    'progress_message' => t('Processed @current out of @total tasks.'),
+    'error_message' => t('The import encountered an error.'),
+  );
+
+  return $batch;
+}
+
+
+/**
+ * Get an individual page of recipients for a list
+ */
+function mailup_subscribe_get_recipients_page($list_id_remote, $items_per_page=100, $page=0, $type = 'Subscribed') {
+
+  if ($client = mailup_get_client()) {
+    try {
+      $result = $client->getListRecipientsPaged($list_id_remote, $items_per_page, $page, $type);
+
+      return array(
+        'result' => $result['Items'],
+        'page_info' => _mailup_result_extract_page_info($result),
+      );
+    }
+    catch (MailUpException $e) {
+      throw new DrupalMailUpException(t('Unable to get MailUp list recipients: @msg', array('@msg' => $e->getMessage())));
+    }
+  }
+
+  return FALSE;
+}
+
+
+function _mailup_subscribe_import_user_subscription_data_for_lists(&$context) {
+
+  // Stop if there was an error in previous operation
+  if (!empty($context['results']['error'])) {
+    $context['finished'] = 1;
+    return;
+  }
+
+  // Otherwise process the list recipients
+  if (empty($context['sandbox'])) {
+
+    /* we timestamp records, allowing us to purge old records
+    on the affected lists. this allows unsubscribes to be handled
+    without additional calls to the MailUp API. */
+    $context['results']['timestamp'] = REQUEST_TIME;
+
+    $context['sandbox']['current_list_index'] = 0;
+    $context['sandbox']['recipients_result_page'] = 0;
+
+    $context['sandbox']['types'] = array('Pending', 'Subscribed');
+    $context['sandbox']['total_types'] = count($context['sandbox']['types']);
+    $context['sandbox']['type_index'] = 0;
+  }
+
+  $list_id = $context['results']['list_keys'][ $context['sandbox']['current_list_index'] ];
+  $list = $context['results']['lists'][ $list_id ];
+
+
+  $context['message'] = t('Retreiving @type recipients on list @name', array(
+    '@type' => $context['sandbox']['types'][ $context['sandbox']['type_index'] ],
+    '@name' => $list['Name']
+  ));
+
+  if ($client = mailup_get_client()) {
+
+    // Query subscribed recipients for the list on MailUp
+    try {
+
+      $paged_recipients = mailup_subscribe_get_recipients_page($list_id, 50, $context['sandbox']['recipients_result_page'], $context['sandbox']['types'][$context['sandbox']['type_index']]);
+
+      $recipients = $paged_recipients['result'];
+
+      $context['results']['pass'][] = array(
+        'type' => $context['sandbox']['types'][$context['sandbox']['type_index']],
+        'page_info' => $paged_recipients['page_info'],
+        'list_index' => $context['sandbox']['current_list_index'],
+        'recipients' => $recipients,
+        'list' => $list,
+        'list_id' => $list_id
+      );
+
+      foreach ($recipients as $item) {
+
+        $recipient_is_site_user = FALSE;
+
+        // Check if we have an existing recipient user mapping
+        $recipient_mail = db_query("SELECT mail FROM {mailup_users_recipients} WHERE recipient_id = :recipient_id", array(':recipient_id' => $item['idRecipient']))->fetchField();
+
+        if ($recipient_mail) {
+          $recipient_is_site_user = TRUE;
+
+          // Update the email in the recipient table if needed
+          if ($recipient_mail != $item['Email']) {
+            db_update('mailup_users_recipients')
+              ->fields(array(
+                'mail' => $item['Email']
+              ))
+              ->condition('recipient_id', $item['idRecipient'])
+              ->execute();
+          }
+        }
+        else {
+          // Check if a user with this email exists
+          $uid = db_query("SELECT uid FROM {users} WHERE mail = :mail", array(':mail' => $item['Email']))->fetchField();
+
+          // And create a recipient mapping
+          if ($uid) {
+            $recipient_is_site_user = TRUE;
+            db_insert('mailup_users_recipients')->fields(array(
+              'uid' => $uid,
+              'recipient_id' => $item['idRecipient'],
+              'mail' => $item['Email']
+            ))->execute();
+          }
+        }
+
+        if ($recipient_is_site_user) {
+
+          $recipient_id = $item['idRecipient'];
+          $groups_result = $client->getRecipientListGroups($recipient_id, $list['idList']);
+
+          // Store our groups in manner compatible with form #options
+          $groups_options = array();
+          if (!empty($groups_result['Items'])) {
+            $groups = $groups_result['Items'];
+            foreach ($groups as $group) {
+              $groups_options[$group['idGroup']] = $group['idGroup'];
+            }
+          }
+
+          // Update our record for this recipient and list
+          $transaction = db_transaction();
+
+          try {
+
+            // Delete any existing record for this subscription
+            db_delete('mailup_recipient_subscriptions')
+              ->condition('recipient_id', $recipient_id)
+              ->condition('list_id', $list_id)
+              ->execute();
+
+            $subscription_status = $context['sandbox']['types'][ $context['sandbox']['type_index'] ] == 'Pending' ? MAILUP_STATUS_PENDING : MAILUP_STATUS_SUBSCRIBED;
+
+            db_insert('mailup_recipient_subscriptions')->fields(array(
+              'recipient_id' => $recipient_id,
+              'list_id' => $list_id,
+              'status' => $subscription_status,
+              'groups' => serialize($groups_options),
+              'updated' => $context['results']['timestamp']
+            ))->execute();
+          }
+          catch (Exception $e) {
+            $transaction->rollback();
+            $context['results']['error'] = $e->getMessage();
+            $context['finished'] = 1;
+          }
+
+        }
+      }
+
+
+      // When there are still result pages to fetch, increment the inner counter
+      if (!empty($paged_recipients['page_info']) && $paged_recipients['page_info']['has_more']) {
+        $context['sandbox']['recipients_result_page']++;
+      }
+      else {
+
+        // Otherwise increment the main counters
+        if ($context['sandbox']['type_index'] < ($context['sandbox']['total_types'] - 1)) {
+          $context['sandbox']['type_index']++;
+          $context['sandbox']['recipients_result_page'] = 0;
+        }
+        else {
+          $context['sandbox']['type_index'] = 0;
+          $context['sandbox']['recipients_result_page'] = 0;
+
+          // And move onto the next list
+          $context['sandbox']['current_list_index']++;
+        }
+      }
+
+      // Update batch operation progress
+      if ($context['sandbox']['current_list_index'] < $context['results']['total_lists']) {
+
+        $lists_total = $context['results']['total_lists'];
+        $types_total = $context['sandbox']['total_types'];
+        // Pages total from current result
+        $pages_total = empty($paged_recipients['page_info']['total_pages']) ? 1 : $paged_recipients['page_info']['total_pages'];
+
+        $lists_position = $context['sandbox']['current_list_index'];
+        $types_position = $context['sandbox']['type_index'];
+        $pages_position = $context['sandbox']['recipients_result_page'];
+
+        $lists_progress = $lists_position / $lists_total;
+        $types_progress = $types_position / ($lists_total * $types_total);
+        $pages_progress = $pages_position / ($lists_total * $types_total * $pages_total);
+
+        $context['finished'] = $lists_progress + $types_progress + $pages_progress;
+
+        $context['results']['pass_progress'][] = array(
+          'list_position' => $lists_position,
+          'lists_total' => $lists_total,
+          'types_total' => $types_total,
+          'pages_togal' => $pages_total,
+          'types_position' => $types_position,
+          'pages_position' => $pages_position,
+          'progress' => $context['finished']
+        );
+      }
+
+    }
+    catch (DrupalMailUpException $e) {
+      $context['results']['error'] = $e->getMessage();
+      $context['finished'] = 1;
+    }
+
+  }
+
+}
+
+
+
+/**
+ * Batch Finished callback for List Sync
+ */
+function mailup_subscribe_sync_list_entities_finished($success, $results, $operations) {
+
+  if (empty($results['error'])) {
+    drupal_set_message(t('Successfully synced @total MailUp lists', array('@total' => $results['total_lists'])));
+
+    try {
+      db_delete('mailup_recipient_subscriptions')
+        ->condition('updated', $results['timestamp'], '<')
+        ->condition('list_id', $results['list_keys'], 'IN')
+        ->execute();
+    }
+    catch (Exception $e) {
+      drupal_set_message(t('Unable to purge outdated subscriptions: @msg', array('@msg' => $e->getMessage())), 'error');
+    }
+
+  }
+  else {
+    drupal_set_message(t('An error occurred when importing lists: @error', array('@error' => $results['error'])), 'error');
+  }
+}
+
+/**
+ * Batch operation callback for querying mailup lists
+ */
+function _mailup_subscribe_fetch_lists_for_batch($selected_lists, &$context) {
+
+  try {
+    $lists = mailup_service_get_lists();
+
+    // Reduce the lists to those we have been asked to sync
+    $context['results']['lists'] = array_intersect_key($lists, $selected_lists);
+    $context['results']['list_keys'] = array_keys($context['results']['lists']);
+
+    $context['results']['total_lists'] = count($context['results']['lists']);
+  }
+  catch (DrupalMailUpException $e) {
+    $context['results']['error'] = $e->getMessage();
+  }
+
+  // This is a one-off operation
+  $context['finished'] = 1;
+}
+
+
+function _mailup_subscribe_process_list_groups(&$context) {
+
+  // Stop if there was an error in previous operation
+  if (!empty($context['results']['error'])) {
+    $context['finished'] = 1;
+    return;
+  }
+
+  // Otherwise process the lists
+  if (empty($context['sandbox'])) {
+    $context['sandbox']['current_index'] = 0;
+  }
+
+  // Update the progress
+  if ($context['sandbox']['current_index'] < $context['results']['total_lists']) {
+    $context['finished'] = ($context['sandbox']['current_index'] + 1) / $context['results']['total_lists'];
+  }
+
+  $list_id = $context['results']['list_keys'][ $context['sandbox']['current_index'] ];
+  $list = $context['results']['lists'][ $list_id ];
+
+  $values = array(
+    'id' => $list['idList'],
+    'guid' => $list['listGuid'],
+    'name' => $list['Name'],
+    'description' => $list['Description'],
+    'company' => $list['Company']
+  );
+
+  // Where a list entity already exists, update it
+  if ($list_entity = mailup_list_load($values['id'])) {
+    foreach ($values as $property_key => $property_value) {
+      $list_entity->{$property_key} = $property_value;
+    }
+  }
+  else {
+
+    if (!empty($values['id'])) {
+      // Otherwise create a new one
+      $list_entity = new MailUpList($values);
+    }
+    else {
+      $context['results']['error'] = t('Batch operation received invalid list data. Please try again.');
+    }
+  }
+
+  try {
+    $list_entity->groups = mailup_service_get_groups_for_list($list_entity->id);
+  }
+  catch (DrupalMailUpException $e) {
+    $context['results']['error'] = $e->getMessage();
+  }
+
+  // Save the list
+  $list_entity->save();
+
+  // Update message to show next list name,
+  if ($context['sandbox']['current_index'] < $context['results']['total_lists']) {
+    $list_id = $context['results']['list_keys'][ $context['sandbox']['current_index'] ];
+    $context['message'] = t('Importing List @name', array('@name' => $context['results']['lists'][ $list_id ]['Name']));
+  }
+
+  // And onto the next one
+  $context['sandbox']['current_index']++;
+}
+
+
+function mailup_subscribe_sync_list_entities() {
+
+  $lists = mailup_service_get_lists();
+
+  foreach ($lists as $list) {
+    $values = array(
+      'id' => $list['idList'],
+      'guid' => $list['listGuid'],
+      'name' => $list['Name'],
+      'description' => $list['Description'],
+      'company' => $list['Company']
+    );
+
+    // Update the existing entity
+    if ($list_entity = mailup_list_load($values['id'])) {
+      foreach ($values as $property_key => $property_value) {
+        $list_entity->{$property_key} = $property_value;
+      }
+    }
+    else {
+      $list_entity = new MailUpList($values);
+    }
+
+    // Now fetch the groups for the list
+    try {
+      $list_entity->groups = mailup_service_get_groups_for_list($list_entity->id);      
+    }
+    catch (DrupalMailUpException $e) {
+
+    }
+
+    // Save the changes
+    $list_entity->save();
+  }
+}
+
+
+
+
+/**
+ * Load multiple mailup lists based on certain conditions.
+ *
+ * @param $lists_ids
+ *   An array of Lists IDs.
+ * @param $conditions
+ *   An array of conditions to match against the {mailup_list} table.
+ * @param $reset
+ *   A boolean indicating that the internal cache should be reset.
+ * @return
+ *   An array of mailup lists objects, indexed by mul_id.
+ *
+ * @see entity_load()
+ * @see mailup_list_load()
+ */
+function mailup_subscription_load_multiple($ids = FALSE, $conditions = array(), $reset = FALSE) {
+  return entity_load('mailup_subscription', $ids, $conditions, $reset);
+}
+
+/**
+ * Helper to extract value of list reference field from mailup_subscription entity
+ */
+function mailup_subscribe_extract_target_config(MailUpSubscription $mailup_subscription) {
+
+  $field_name = 'mailup_list_reference';
+  $language = $mailup_subscription->language;
+
+  if (!empty($mailup_subscription->{$field_name}[$language][0])) {
+    return $mailup_subscription->{$field_name}[$language][0];
+  }
+
+  return NULL;
+}
+
+
+function mailup_subscribe_list_uri(MailUpList $list) {
+
+  return array(
+    'path' => 'admin/config/services/mailup/lists/list/' . $list->id
+  );
+}
+
+/**
+ * Implements callback_entity_info_uri().
+ */
+function mailup_subscription_uri($mailup_subscription) {
+  return array(
+    'path' => 'admin/config/services/mailup/lists/subscription/' . $mailup_subscription->id
+  );
+}
+
+function mailup_subscribe_list_label($entity, $entity_type) {
+  return $entity->name;
+}
+
+function mailup_subscription_label($entity, $entity_type) {
+
+  $lang = empty($entity->language) ? LANGUAGE_NONE : $entity->language;
+  return empty($entity->label) ? 'MailUp Subscription ' . $entity->id : $entity->label;
+}
+
+/**
+ * MailUp List entity View callback.
+ */
+function mailup_subscribe_list_view(MailUpList $list, $view_mode = 'full') {
+  return $list->view($view_mode);
+}
+
+
+function mailup_subscribe_create_subscription_from_list(MailUpList $list) {
+
+  // Check we have a list reference field
+  $fields = field_read_fields(array('type' => 'mailup_list_reference'));
+
+  // Take the first one
+  if ($field = reset($fields)) {
+    
+    $field_name = $field['field_name'];
+
+    // Check we have an instance on the mailup_subscription bundle
+    if ($instance = field_read_instance('mailup_subscription', $field_name, 'mailup_subscription')) {
+      $label = entity_label('mailup_list', $list);
+
+      $list_reference_values = array(
+        'name' => $label,
+        'target_id' => $list->id
+      );
+
+      $subscription = new MailUpSubscription(array('language' => LANGUAGE_NONE, 'label' => $label));
+      $subscription->{$field_name}[LANGUAGE_NONE][0] = $list_reference_values;
+
+      return $subscription;
+    }
+  }
+
+  return NULL;
+}
+
+
+
+
+
+

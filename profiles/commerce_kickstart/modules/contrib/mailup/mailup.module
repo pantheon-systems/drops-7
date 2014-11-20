@@ -1,0 +1,395 @@
+<?php
+
+/**
+ * @file
+ * The MailUp module, which provides integration with MailUp service
+ */
+
+define('MAILUP_HTTP_SUBSCRIBE_RESPONSE_SUCCESS', 0);
+define('MAILUP_HTTP_SUBSCRIBE_RESPONSE_ERROR', 1);
+define('MAILUP_HTTP_SUBSCRIBE_RESPONSE_INVALID', 2);
+define('MAILUP_HTTP_SUBSCRIBE_RESPONSE_EXISTS', 3);
+define('MAILUP_HTTP_SUBSCRIBE_RESPONSE_IPNOTREGISTEREED', -1011);
+
+define('MAILUP_RESPONSE_ERROR', 1);
+define('MAILUP_RESPONSE_SUBSCRIBED', 2);
+define('MAILUP_RESPONSE_UNSUBSCRIBED', 3);
+define('MAILUP_RESPONSE_PENDING', 4);
+
+define('MAILUP_STATUS_UNKNOWN', 0);
+define('MAILUP_STATUS_SUBSCRIBED', 2);
+define('MAILUP_STATUS_UNSUBSCRIBED', 3);
+define('MAILUP_STATUS_PENDING', 4);
+// Special status representing local tasks
+define('MAILUP_STATUS_SUBSCRIBE_REQUESTED', 102);
+define('MAILUP_STATUS_UNSUBSCRIBE_REQUESTED', 103);
+
+class DrupalMailUpException extends Exception {}
+
+/**
+ * Implements hook_menu().
+ */
+function mailup_menu() {
+  
+  $items = array();
+
+  $items['admin/config/services/mailup'] = array(
+    'title' => 'MailUp Settings',
+    'description' => 'Configure MailUp Integration Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('mailup_settings_form'),
+    'access arguments' => array('administer mailup'),
+    'file' => 'includes/mailup.admin.inc'
+  );
+
+  $items['admin/config/services/mailup/account'] = array(
+    'title' => 'Account',
+    'type' => MENU_DEFAULT_LOCAL_TASK
+  );
+
+  return $items;
+}
+
+function _mailup_web_service_was_enabled($ws_name='') {
+
+  $services_enabled = variable_get('mailup_services_enabled', array());
+  $ws_name_lower = strtolower($ws_name);
+
+  return !empty($services_enabled[$_SERVER['SERVER_ADDR']][$ws_name_lower]);
+}
+
+function _mailup_enable_web_service_for_current_ip($ws_name='') {
+
+  $console_url = variable_get('mailup_console_url', '');
+
+  if ($client = mailup_get_client()) {
+    try {
+      if ($client->enableWebServiceForCurrentIP($console_url, $ws_name)) {
+
+        $services_enabled = variable_get('mailup_services_enabled', array());
+
+        // Store status for current IP
+        $ws_name_lower = strtolower($ws_name);
+        $services_enabled[$_SERVER['SERVER_ADDR']][$ws_name_lower] = TRUE;
+        variable_set('mailup_services_enabled', $services_enabled);
+
+        return TRUE;
+      }
+    }
+    catch (MailUpException $e) {
+    }
+  }
+
+  return FALSE;
+}
+
+function _mailup_get_trial_request_id() {
+  return variable_get('mailup_trial_request', FALSE);
+}
+
+/**
+ * Get configuration array
+ */
+function mailup_get_config() {
+
+  $items = array('console_url', 'username', 'password');
+
+  $config = array();
+  foreach ($items as $key) {
+    if ($value = variable_get('mailup_' . $key, '')) {
+      $config[$key] = $value;
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  return $config;
+}
+
+/**
+ * Get the MailUpClient class object.
+ *
+ * @return object
+ *   MailUp client object, NULL if the account credentials are not valid.
+ *
+ * @param reset: clear session tokens
+ */
+function mailup_get_client($auth=TRUE) {
+
+  if ($auth) {
+    if ($config = mailup_get_config()) {
+      $clients = &drupal_static(__FUNCTION__);
+      if (empty($clients[$config['username']])) {
+        $clients[$config['username']] = new MailUpClient($config['username'], $config['password'], $config['console_url']);
+      }
+      return $clients[$config['username']];
+    }
+    else {
+      drupal_set_message(t('Could not create MailUp client. Please configure your MailUp account. (<a href="@url">MailUp Settings</a>)', array('@url' => url('admin/config/services/mailup')), 'error'));
+    }
+  }
+  else {
+    // In some cases we want a client with no credentials
+    return new MailUpClient(NULL, NULL);
+  }
+
+  return NULL;
+}
+
+
+/**
+ * Get the Lists from MailUp.
+ */
+function mailup_service_get_lists() {
+
+  if ($client = mailup_get_client()) {
+    try {
+      $response = $client->getLists();
+      $keyed = array();
+      foreach ($response['Items'] as $list) {
+        $keyed[$list['idList']] = $list;
+      }
+      return $keyed;
+    }
+    catch (MailUpException $e) {
+      throw new DrupalMailUpException($e->getMessage());
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Get the Lists from MailUp.
+ */
+function mailup_service_get_groups_for_list($list_id) {
+
+  $groups = &drupal_static(__FUNCTION__);
+
+  if (empty($groups[$list_id])) {
+    if ($client = mailup_get_client()) {
+      try {
+        $response = $client->getListGroups($list_id);
+
+        // Key the array by Group ID
+        $list_groups = array();
+        foreach ($response['Items'] as $item) {
+          $list_groups[$item['idGroup']] = $item;
+        }
+        $groups[$list_id] = $list_groups;
+      }
+      catch (MailUpException $e) {
+        throw new DrupalMailUpException($e->getMessage());
+      }
+    }
+    else {
+      return FALSE;
+    }
+  }
+
+  return $groups[$list_id];
+}
+
+
+
+
+/**
+ * Get the Recipient fields from MailUp.
+ */
+function mailup_fetch_recipient_fields() {
+
+  // Cache the api response
+  $response = &drupal_static(__FUNCTION__);
+
+  $client = mailup_get_client();
+  
+  if (!isset($fields)) {
+    try {
+      $response = $client->getFields();
+    }
+    catch (MailUpException $e) {
+      throw new DrupalMailUpException(t('Unable to fetch Recipient Fields (@msg)', array('@msg' => $e->getMessage())));
+    }
+  }
+
+  return $response['Items'];
+}
+
+/**
+ * Helper function for paging API requests
+ */
+function _mailup_result_has_more($result) {
+
+  $page_info = _mailup_result_extract_page_info($result);
+  if ($page_info !== FALSE) {
+    return $page_info['has_more'];
+  }
+  return FALSE;
+}
+
+/**
+ * Helper function for paging API requests
+ */
+function _mailup_result_extract_page_info($result) {
+
+  if (!$result['IsPaginated']) {
+    return FALSE;
+  }
+
+  $properties = array(
+    'Skipped' => NULL,
+    'TotalElementsCount' => NULL,
+    'PageNumber' => NULL,
+    'PageSize' => NULL
+  );
+  $pager_info = array_intersect_key($result, $properties);
+  if (count($pager_info) != 4) {
+    return FALSE;
+  }
+
+  // Sanity check. If we're already beyond the last result.
+  if ($pager_info['Skipped'] >= $pager_info['TotalElementsCount']) {
+    return FALSE;
+  }
+  else {
+    $total_pages = ceil($pager_info['TotalElementsCount'] / $pager_info['PageSize']);
+    return array(
+      // page number is 0 indexed
+      'has_more' => ($pager_info['PageNumber'] < $total_pages - 1),
+      'total_pages' => $total_pages,
+      'current_page' => $pager_info['PageNumber'] + 1,
+      'current_page_index' => $pager_info['PageNumber']
+    );
+  }
+}
+
+
+function mailup_get_all_recipients_for_list($list_id_remote) {
+
+  $all_recipients = array();
+  $items_per_page = 100;
+
+  if ($client = mailup_get_client()) {
+    try {
+      $next_page = 0;
+      do {
+        $recipient_result_page = $client->getListRecipientsPaged($list_id_remote, $items_per_page, $next_page++);
+        // Add this page to the results
+        $all_recipients = array_merge($all_recipients, $recipient_result_page['Items']);
+      } while (_mailup_result_has_more($recipient_result_page));
+
+      return $all_recipients;
+    }
+    catch (MailUpException $e) {
+      throw new DrupalMailUpException(t('Unable to get MailUp list recipients: @msg', array('@msg' => $e->getMessage())));
+    }
+  }
+
+  return FALSE;
+}
+
+
+function _mailup_query_tracked_list_subscriptions() {
+
+  // Lists we're tracking
+  $list_entities = mailup_list_load_multiple();
+
+  // Where we cache our structure before writing
+  $subscriptions = array();
+
+  if ($client = mailup_get_client()) {
+
+    // For every tracked list
+    foreach ($list_entities as $list_entity_id => $list_entity) {
+
+      try {
+        // Query subscribed recipients for the list on MailUp
+        $recipients = mailup_get_all_recipients_for_list($list_entity->id);
+
+        foreach ($recipients as $item) {
+
+          // Check if a user with this email exists on the site
+          $uid = db_query(
+            "SELECT uid FROM {users} WHERE mail = :mail",
+            array(':mail' => $item['Email'])
+          )->fetchField();
+
+          // Check recipient ID here so we can delete strays
+
+          if ($uid) {
+
+
+            if (empty($subscriptions[$uid])) {
+              // Store the recipient ID so we can query API on this
+              $subscriptions[$uid] = array('recipient_id' => $item['idRecipient']);
+            }
+
+            $groups = $client->getRecipientListGroups($itemdetails['id'], $list_id);
+            // We have some groups
+            if (!empty($groups['Items'])) {
+              // Extract the IDs
+              $group_ids = array();
+              foreach ($groups['Items'] as $group) {
+                $group_ids[] = $group['idGroup'];
+              }
+              // Add the groups to our existing structure
+              $user_subscriptions[$uid]['lists'][$list_id] = $group_ids;
+            }
+
+
+            // The remote list ID
+            $subscriptions[$uid]['lists'][$list_entity_id] = array();
+          }
+
+        }
+      }
+      catch (DrupalMailUpException $e) {
+
+      }
+    }
+  }
+
+  return $subscriptions;
+}
+
+
+/**
+ * Get the Recipient fields from MailUp.
+ */
+function mailup_build_recipient_item_fields() {
+
+  try {
+    $recipient_fields = mailup_fetch_recipient_fields();
+  }
+  catch (DrupalMailUpException $e) {
+    return FALSE;
+  }
+
+  $base_fields = array(
+    'Email' => array(
+      'Id' => 'Email',
+      'Description' => 'Email',
+      'base_field' => TRUE,
+      'required' => TRUE,
+    ),
+    'Name' => array(
+      'Id' => 'Name',
+      'Description' => 'Name',
+      'base_field' => TRUE,
+      'required' => TRUE,
+    ),
+    'MobilePrefix' => array(
+      'Id' => 'MobilePrefix',
+      'Description' => 'MobilePrefix',
+      'base_field' => TRUE,
+    ),
+    'MobileNumber' => array(
+      'Id' => 'MobileNumber',
+      'Description' => 'MobileNumber',
+      'base_field' => TRUE,
+    ),
+  );
+
+  return $base_fields + $recipient_fields;
+}

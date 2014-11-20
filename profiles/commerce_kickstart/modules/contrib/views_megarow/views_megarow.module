@@ -47,8 +47,11 @@ function views_megarow_get_page_theme() {
   // Find the path of the parent page.
   $url = parse_url($_SERVER['HTTP_REFERER']);
 
+  // If the Drupal install is in a subdirectory, discard that part.
+  $path = substr($url['path'], strlen($GLOBALS['base_path']));
+
   // Use the admin theme if it's an admin page.
-  if (user_access('view the administration theme') && path_is_admin(substr($url['path'], 1))) {
+  if (user_access('view the administration theme') && path_is_admin($path)) {
     return variable_get('admin_theme', 'seven');
   }
   else {
@@ -61,15 +64,24 @@ function views_megarow_get_page_theme() {
  * Page callback: Returns a view limited to a single row, used by the
  * "megarow_refresh_parent" ajax command.
  *
+ * @param $view_name
+ *  The machine name of the view to load.
+ *
+ * @param $display
+ *  The display_id for the view.
+ *
+ * @param $args
+ *  Arguments to be passed to the view, formatted in JSON.
+ *
  * @todo This code forces the active display to have a base field argument.
  *  Perhaps try supporting a custom display only for refreshing, so that
  *  the user can use arguments for something else.
  */
-function views_megarow_get_row($view_name, $display, $entity_id) {
+function views_megarow_get_row($view_name, $display, $args) {
   $output = '';
   $view = views_get_view($view_name);
   if ($view) {
-    $output = $view->preview($display, array($entity_id));
+    $output = $view->preview($display, drupal_json_decode($args));
   }
 
   return $output;
@@ -334,9 +346,29 @@ function views_megarow_command_dismiss($entity_id) {
 
 /**
  * Refresh the parent row of a megarow.
+ *
+ * @param $entity_id
+ *  The unique id of the base table entity being displayed whose data needs
+ *  to be refreshed.
+ *
+ * @param $display_id
+ *  The display_id of the view where the refresh target is displayed.
+ *
+ * @param $args
+ *  An array of arguments the view needs to function.
+ *
  */
-function views_megarow_command_refresh_parent($entity_id, $display_id) {
+function views_megarow_command_refresh_parent($entity_id, $display_id, $args = array()) {
   drupal_add_js(array('ViewsMegarow' => array('display_id' => $display_id)), 'setting');
+
+  // If no arguments are passed, default to the entity_id
+  if (empty($args)) {
+    $args = array($entity_id);
+  }
+
+  drupal_add_js(array('ViewsMegarow' => array('args' => drupal_json_encode($args))),
+    'setting'
+  );
   return array(
     'command' => 'megarow_refresh_parent',
     'entity_id' => $entity_id,

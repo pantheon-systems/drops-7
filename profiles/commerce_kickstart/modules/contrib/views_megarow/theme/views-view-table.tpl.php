@@ -21,6 +21,7 @@
   <?php if (!empty($title)) : ?>
     <caption><?php print $title; ?></caption>
   <?php endif; ?>
+  <?php if (!empty($header)) : ?>
   <thead>
     <tr>
       <?php foreach ($header as $field => $label): ?>
@@ -30,6 +31,7 @@
       <?php endforeach; ?>
     </tr>
   </thead>
+  <?php endif; ?>
   <tbody>
     <?php foreach ($rows as $count => $row): ?>
       <tr class="<?php print implode(' ', $row_classes[$count]); ?>" <?php if (isset($row_attributes[$count]) && is_array($row_attributes[$count])) { print drupal_attributes($row_attributes[$count] ); } ?>>

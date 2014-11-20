@@ -77,22 +77,24 @@ class SearchApiViewsCache extends views_plugin_cache_time {
   }
 
   /**
-   * Overrides views_plugin_cache::get_results_key().
+   * Overrides views_plugin_cache::get_cache_key().
    *
-   * Use the Search API query as the main source for the key.
+   * Use the Search API query as the main source for the key. Note that in
+   * Views < 3.8, this function does not exist.
    */
-  public function get_results_key() {
+  public function get_cache_key($key_data = array()) {
     global $user;
 
     if (!isset($this->_results_key)) {
       $query = $this->getSearchApiQuery();
       $query->preExecute();
-      $key_data = array(
+      $key_data += array(
         'query' => $query,
         'roles' => array_keys($user->roles),
         'super-user' => $user->uid == 1, // special caching for super user.
         'language' => $GLOBALS['language']->language,
         'base_url' => $GLOBALS['base_url'],
+        'current_page' => $this->view->get_current_page(),
       );
       // Not sure what gets passed in exposed_info, so better include it. All
       // other parameters used in the parent method are already reflected in the
@@ -100,8 +102,19 @@ class SearchApiViewsCache extends views_plugin_cache_time {
       if (isset($_GET['exposed_info'])) {
         $key_data['exposed_info'] = $_GET['exposed_info'];
       }
+    }
+    $key = md5(serialize($key_data));
+    return $key;
+  }
 
-      $this->_results_key = $this->view->name . ':' . $this->display->id . ':results:' . md5(serialize($key_data));
+  /**
+   * Overrides views_plugin_cache::get_results_key().
+   *
+   * This is unnecessary for Views >= 3.8.
+   */
+  public function get_results_key() {
+    if (!isset($this->_results_key)) {
+      $this->_results_key = $this->view->name . ':' . $this->display->id . ':results:' . $this->get_cache_key();
     }
 
     return $this->_results_key;

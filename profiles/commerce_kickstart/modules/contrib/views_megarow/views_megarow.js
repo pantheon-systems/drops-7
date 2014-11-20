@@ -67,7 +67,7 @@
     wrapper_html +=      $(megarowContent).html();
     wrapper_html += '   </div>';
     wrapper_html += '  </td>';
-    wrapper_html += '</tr>;'
+    wrapper_html += '</tr>';
     $('tr.item-' + entityId, views_table).after(wrapper_html);
 
     // Mark the parent row as active.
@@ -238,9 +238,18 @@
     var table = $('tr.item-' + response.entity_id).parents('table');
     var viewName = table.attr('data-view-name');
     var display = Drupal.settings.ViewsMegarow.display_id;
-    if (display === undefined) display = table.attr('data-view-display');
 
-    var url = Drupal.settings.basePath + 'views_megarow/refresh/' + viewName + '/' + display + '/' + response.entity_id;
+    // If we don't have a specify display defined extract it from our table.
+    if (display === undefined) {
+      display = table.attr('data-view-display');
+    }
+
+    var url = Drupal.settings.basePath + 'views_megarow/refresh/' + viewName + '/' + display;
+
+    // Add arguments to the url if they have been passed in.
+    if (Drupal.settings.ViewsMegarow.args !== undefined) {
+      url += '/' + Drupal.settings.ViewsMegarow.args;
+    }
 
     $.get(url, function(data) {
       $('tr.item-' + response.entity_id + ' td', data).each(function(index) {

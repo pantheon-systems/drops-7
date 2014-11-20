@@ -3,7 +3,7 @@ core = 7.x
 api = 2
 
 ; Basic contributed modules.
-projects[ctools][version] = 1.4
+projects[ctools][version] = 1.5
 projects[ctools][subdir] = "contrib"
 projects[entity][version] = 1.5
 projects[entity][subdir] = "contrib"
@@ -31,7 +31,7 @@ projects[taxonomy_menu][version] = 1.5
 projects[taxonomy_menu][subdir] = "contrib"
 projects[libraries][version] = 2.2
 projects[libraries][subdir] = "contrib"
-projects[views_megarow][version] = 1.3
+projects[views_megarow][version] = 1.4
 projects[views_megarow][subdir] = "contrib"
 
 ; Drupal Commerce and Commerce contribs.
@@ -40,7 +40,7 @@ projects[commerce][subdir] = "contrib"
 projects[commerce_features][version] = 1.0
 projects[commerce_features][subdir] = "contrib"
 projects[commerce_features][patch][] = "http://drupal.org/files/1402762_export_flat_rate_commerce_features-6.patch"
-projects[commerce_addressbook][version] = 2.0-rc7
+projects[commerce_addressbook][version] = 2.0-rc8
 projects[commerce_addressbook][subdir] = "contrib"
 projects[commerce_shipping][version] = 2.1
 projects[commerce_shipping][subdir] = "contrib"
@@ -115,7 +115,7 @@ projects[commerce_firstdata_gge4][subdir] = "contrib"
 ; Other contribs.
 projects[bean][version] = 1.7
 projects[bean][subdir] = "contrib"
-projects[countries][version] = 2.1
+projects[countries][version] = 2.3
 projects[countries][subdir] = "contrib"
 projects[remote_stream_wrapper][version] = 1.0-rc1
 projects[remote_stream_wrapper][subdir] = "contrib"
@@ -172,7 +172,7 @@ projects[date][version] = 2.8
 projects[date][subdir] = "contrib"
 projects[yottaa][version] = 1.2
 projects[yottaa][subdir] = "contrib"
-projects[menu_attributes][version] = 1.0-rc2
+projects[menu_attributes][version] = 1.0-rc3
 projects[menu_attributes][subdir] = "contrib"
 projects[fences][version] = "1.0"
 projects[fences][subdir] = "contrib"
@@ -183,11 +183,13 @@ projects[title][subdir] = "contrib"
 projects[title][patch][] = "http://drupal.org/files/title-translation_overwrite-1269076-35.patch"
 projects[kameleoon][subdir] = "contrib"
 projects[kameleoon][version] = "1.1"
+projects[mailup][subdir] = "contrib"
+projects[mailup][version] = "1.0"
 
 ; Search related modules.
-projects[search_api][version] = 1.12
+projects[search_api][version] = 1.13
 projects[search_api][subdir] = "contrib"
-projects[search_api_db][version] = 1.3
+projects[search_api_db][version] = 1.4
 projects[search_api_db][subdir] = "contrib"
 projects[search_api_ranges][version] = 1.5
 projects[search_api_ranges][subdir] = "contrib"
@@ -203,7 +205,7 @@ projects[module_filter][version] = 1.8
 projects[module_filter][subdir] = "contrib"
 projects[image_delta_formatter][version] = 1.0-rc1
 projects[image_delta_formatter][subdir] = "contrib"
-projects[link][version] = 1.2
+projects[link][version] = 1.3
 projects[link][subdir] = "contrib"
 projects[pathauto][version] = 1.2
 projects[pathauto][subdir] = "contrib"

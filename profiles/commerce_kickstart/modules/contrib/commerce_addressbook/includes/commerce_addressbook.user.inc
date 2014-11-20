@@ -143,9 +143,10 @@ function commerce_addressbook_profile_options_default($account, $customer_profil
 }
 
 /**
- * Access callback for path /user/%user/addressbook.
+ * Page callback for path /user/%user/addressbook.
  *
- * Displays first enabled profile type addressbook page if user is logged in, or access denied for anonymous
+ * Displays first enabled profile type addressbook page if user is logged in,
+ * or access denied for anonymous.
  */
 function commerce_addressbook_page($account) {
   if ($account->uid) {
@@ -154,8 +155,11 @@ function commerce_addressbook_page($account) {
       return menu_execute_active_handler(NULL, FALSE);
     }
   }
-  return FALSE;
+  // The below line should never get called but in case it does we will return
+  // an empty address book message.
+  return '<div class="addressbook-nodata">' . t('Your address book is currently empty.') . '</div>';
 }
+
 /**
  * Page callback for listing customer profiles of a certain type.
  *
@@ -173,7 +177,12 @@ function commerce_addressbook_profile_page($account, $profile_type) {
   if (!empty($list_view->result)) {
     $output .= '<div id="commerce-addressbook-' . $profile_type . '-list">' . $list_view->render() . '</div>';
   }
-  return $output;
+  if ($output == '') {
+    return '<div class="addressbook-nodata">' . t('Your @profile_type address book is currently empty.', array('@profile_type' => $profile_type)) . '</div>';
+  }
+  else {
+    return $output;
+  }
 }
 
 /**

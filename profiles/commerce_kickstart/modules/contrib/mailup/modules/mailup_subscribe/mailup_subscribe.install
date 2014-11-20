@@ -1,0 +1,265 @@
+<?php
+
+/**
+ * @file
+ * Install functionality
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function mailup_subscribe_schema() {
+  $schema = array();
+
+  $schema['mailup_list'] = array(
+    'description' => 'The base table for MailUp List entity',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The remote ID of the list',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'guid' => array(
+        'description' => 'The remote GUID of the list',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'name' => array(
+        'description' => 'The remote name for the list',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+      ),
+      'description' => array(
+        'description' => 'the remote description for the list',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'company' => array(
+        'description' => 'the company for the list',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => FALSE,
+        'default' => '',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the record was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the record was most recently saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'groups' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => 'A serialized object that stores the groups available within the list.',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  $schema['mailup_subscription'] = array(
+    'description' => 'The base table for MailUp Subscriptions.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier for a MailUp Subscription.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'label' => array(
+        'description' => 'A human-readable label for this profile.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'created' => array(
+        'description' => 'The Unix timestamp when the subscription was created.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'changed' => array(
+        'description' => 'The Unix timestamp when the subscription was last saved.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'language' => array(
+        'description' => 'The {languages}.language of this subscription.',
+        'type' => 'varchar',
+        'length' => 12,
+        'not null' => TRUE,
+        'default' => '',
+      )
+    ),
+    'primary key' => array('id'),
+    'indexes' => array(
+      'mus_changed' => array('changed'),
+      'mus_created' => array('created'),
+      'language' => array('language'),
+    ),
+  );
+
+  $schema['mailup_recipient_subscriptions'] = array(
+    'description' => 'TODO: please describe this table!',
+    'fields' => array(
+      'recipient_id' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'list_id' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'status' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'groups' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => FALSE,
+      ),
+      'updated' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('recipient_id', 'list_id'),
+    'indexes' => array(
+      'revision' => array('updated'),
+    ),
+  );
+
+  $schema['mailup_users_recipients'] = array(
+    'description' => 'TODO: please describe this table!',
+    'fields' => array(
+      'uid' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'recipient_id' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'mail' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'varchar',
+        'length' => '255',
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'hash' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'char',
+        'length' => '32',
+        'not null' => FALSE,
+      ),
+      'sync_pass' => array(
+        'description' => 'TODO: please describe this field!',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('uid'),
+    'indexes' => array(
+      'recipient_id' => array('recipient_id'),
+      'sync_pass' => array('sync_pass'),
+    ),
+  );
+
+
+  return $schema;
+}
+
+function mailup_subscribe_field_mailup_list_reference_schema() {
+  return array(
+    'columns' => array(
+      'name' => array(
+        'description' => 'The name of the subscription, editable value.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description_value' => array(
+        'type' => 'text',
+        'not null' => FALSE,
+        'size' => 'big',
+        'description' => 'The description for the subscription, editable value.',
+      ),
+      'description_format' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'description' => 'The filter format ID of the description.',
+      ),
+      'target_id' => array(
+        'description' => 'The idList of the List, value provided by MailUp.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0
+      ),
+      'target_groups' => array(
+        'description' => 'The groups targeted by this subscription',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => FALSE,
+        'serialize' => TRUE
+      ),
+      'settings' => array(
+        'description' => 'A serialized object that stores the settings for the specific list.',
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'mailup_list' => array('target_id'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_field_schema().
+ */
+function mailup_subscribe_field_schema($field) {
+
+  // Call our function for each field schema
+  $call = 'mailup_subscribe_field_' . $field['type'] . '_schema';
+
+  if (function_exists($call)) {
+    return $call();
+  }
+}
+

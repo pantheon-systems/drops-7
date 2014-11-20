@@ -388,7 +388,7 @@ class SearchApiIndex extends Entity {
       return $this->datasource()->getEntityType();
     }
     catch (SearchApiException $e) {
-      return '';
+      return NULL;
     }
   }
 

@@ -11,6 +11,10 @@ function commerce_addressbook_views_data() {
       'left_field' => 'profile_id',
       'field' => 'profile_id',
     ),
+    'users' => array(
+      'left_field' => 'uid',
+      'field'      => 'uid',
+    ),
   );
   $data['commerce_addressbook_defaults']['profile_id'] = array(
     'title' => t('Profile ID'),

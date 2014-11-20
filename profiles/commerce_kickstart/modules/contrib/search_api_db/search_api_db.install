@@ -324,11 +324,35 @@ function _search_api_db_update_find_free_table($table, DatabaseConnection $conne
     $maxbytes -= strlen($db_prefix);
   }
 
-  $base = $table = mb_strcut($table, 0, $maxbytes);
+  $base = $table = _search_api_db_mb_strcut($table, 0, $maxbytes);
   $i = 0;
   while ($connection->schema()->tableExists($table)) {
     $suffix = '_' . ++$i;
-    $table = mb_strcut($base, 0, $maxbytes - strlen($suffix)) . $suffix;
+    $table = _search_api_db_mb_strcut($base, 0, $maxbytes - strlen($suffix)) . $suffix;
   }
   return $table;
+}
+
+/**
+ * Emulates mb_strcut() if that is not available.
+ *
+ * Though the Mbstring PHP extension is recommended for running Drupal, it is
+ * not required. Therefore, we have to wrap calls to its functions.
+ *
+ * @param string $str
+ *   The string being cut.
+ * @param int $start
+ *   Starting position in bytes.
+ * @param int|null $length
+ *   (optional) Length in bytes. If NULL is passed, extract all bytes to the
+ *   end of the string.
+ *
+ * @return string
+ *   The portion of $str specified by the $start and $length parameters.
+ */
+function _search_api_db_mb_strcut($str, $start, $length = NULL) {
+  if (function_exists('mb_strcut')) {
+    return mb_strcut($str, $start, $length);
+  }
+  return substr($str, $start, $length);
 }

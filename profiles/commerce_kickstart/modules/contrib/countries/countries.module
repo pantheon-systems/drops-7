@@ -123,7 +123,7 @@ function countries_menu() {
  *   The santitised country name.
  */
 function countries_page_title($country) {
-  return check_plain($country->name);
+  return check_plain($country->label());
 }
 
 
@@ -162,9 +162,7 @@ function countries_countries_alter(&$countries) {
   if (empty($enabled_countries)) {
     $enabled_countries = countries_get_countries('name', array('enabled' => COUNTRIES_ENABLED));
   }
-  $countries = array_intersect_key($enabled_countries, $countries);
-  $countries = array_merge($countries, array_diff_key($enabled_countries, $countries));
-  uasort($countries, 'countries_sort');
+  $countries = $enabled_countries;
 }
 
 /**
@@ -261,7 +259,7 @@ function countries_load_multiple($cids = array(), $conditions = array(), $reset 
  *   defined defaults.
  */
 function country_create($properties = array()) {
-  return (object) ($properties + array(
+  return entity_create('country', $properties + array(
     'cid' => NULL,
     'iso2' => '',
     'iso3' => '',
@@ -333,7 +331,7 @@ function country_validate(&$country) {
   $defaults = country_create();
 
   foreach (countries_core_properties() as $key => $label) {
-    $country->$key = isset($country->$key) ? trim($country->$key) : $defaults[$key];
+    $country->$key = isset($country->$key) ? trim($country->$key) : $defaults->{$key};
     if ($length = drupal_strlen($country->$key)) {
       if ($error = countries_property_invalid($key, $country->$key)) {
         $errors[$key] = $error;
@@ -376,11 +374,18 @@ function country_validate(&$country) {
  * @param object $country
  *   The country object to save.
  *
+ * @param bool $clear_cache
+ *   A flag to prevent cache flushes.
+ *
  * @return int
  *   SAVED_NEW or SAVED_UPDATED is returned depending on the operation.
  */
-function country_save(&$country) {
-  return entity_save('country', $country);
+function country_save(&$country, $clear_cache = TRUE) {
+  $result = entity_save('country', $country);
+  if ($clear_cache) {
+    countries_clear_caches();
+  }
+  return $result;
 }
 
 /**
@@ -389,12 +394,20 @@ function country_save(&$country) {
  * @param string $iso2
  *   The countries ISO alpha-2 code.
  *
+ * @param bool $clear_cache
+ *   A flag to prevent cache flushes.
+ *
  * @return mixed
  *   There is no standard result from this callback. However, FALSE would almost
  *   certainly indicate a failure.
  */
-function country_delete($iso2) {
-  return entity_delete('country', $iso2);
+function country_delete($iso2, $clear_cache = TRUE) {
+  $iso2 = drupal_strtoupper($iso2);
+  $result = entity_delete('country', $iso2);
+  if ($clear_cache) {
+    countries_clear_caches();
+  }
+  return $result;
 }
 
 /**
@@ -410,6 +423,16 @@ function country_is_locked($country) {
   include_once DRUPAL_ROOT . '/includes/iso.inc';
   $countries = _country_get_predefined_list();
   return !empty($country->iso2) && array_key_exists($country->iso2, $countries);
+}
+
+/**
+ * Helper function to clear various caches.
+ */
+function countries_clear_caches() {
+  drupal_static('countries_get_countries', NULL, TRUE);
+  drupal_static('countries_get_continents', NULL, TRUE);
+  drupal_static('countries_countries_alter', NULL, TRUE);
+  entity_get_controller('country')->resetCache();
 }
 
 /**
@@ -665,7 +688,12 @@ function countries_get_countries($property = 'all', $filters = array()) {
   $mapped_countries = array();
   foreach ($filtered_countries as $country) {
     if (isset($country->$property)) {
-      $mapped_countries[$country->iso2] = $country->$property;
+      if ($property == 'name') {
+        $mapped_countries[$country->iso2] = $country->label();
+      }
+      else {
+        $mapped_countries[$country->iso2] = $country->$property;
+      }
     }
   }
   uasort($mapped_countries, 'countries_sort');
@@ -744,7 +772,11 @@ function country_property($country, $property, $default = NULL, $sanitize = TRUE
         $output = $country->official_name;
       }
       elseif (!isset($default)) {
-        $output = $country->name;
+        // Entity->label() returns an empty string if not set.
+        $output = $country->label();
+        if (!$output) {
+          $output = NULL;
+        }
       }
       break;
 
@@ -752,6 +784,14 @@ function country_property($country, $property, $default = NULL, $sanitize = TRUE
       // We do not need to sanitize this output.
       if (!empty($country->numcode)) {
         return theme('countries_number', array('country' => $country));
+      }
+      break;
+
+    case 'name':
+      // Entity->label() returns an empty string if not set.
+      $output = $country->label();
+      if (!$output) {
+        $output = NULL;
       }
       break;
 
@@ -868,7 +908,7 @@ function theme_country_icon_adapter($variables) {
     'code'    => $country->iso2,
     'iconset' => $icon_set_name,
     'alt'     => $country->iso2,
-    'title'   => $country->name,
+    'title'   => $country->label(),
   );
 
   $icon = '';
@@ -914,6 +954,14 @@ function countries_country_expand($element) {
   return _countries_country_expand($element);
 }
 
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function countries_ctools_plugin_directory($module, $plugin) {
+  if (in_array($module, array('ctools')) && $plugin == 'arguments') {
+    return "plugins/$plugin";
+  }
+}
 
 /**
  * Implements hook_views_api().
@@ -934,6 +982,42 @@ function countries_migrate_api() {
     'field handlers' => array('MigrateCountryFieldHandler'),
   );
   return $api;
+}
+
+/**
+ * Implements hook_action_info().
+ */
+function countries_action_info() {
+  return array(
+    'country_enable_action' => array(
+      'type' => 'country',
+      'label' => t('Enable country'),
+      'configurable' => FALSE,
+      'behavior' => array('changes_property'),
+    ),
+    'country_disable_action' => array(
+      'type' => 'country',
+      'label' => t('Disable country'),
+      'configurable' => FALSE,
+      'behavior' => array('changes_property'),
+    ),
+  );
+}
+
+/**
+ * Enable country action
+ */
+function country_enable_action($country, $context = array()) {
+  $country->enabled = 1;
+  country_save($country);
+}
+
+/**
+ * Disable country action
+ */
+function country_disable_action($country, $context = array()) {
+  $country->enabled = 0;
+  country_save($country);
 }
 
 /**
@@ -978,8 +1062,6 @@ function countries_apachesolr_map_callback(array $values) {
   foreach ($values as $value) {
     if ($country = country_load($value)) {
       $map[$value] = countries_t($country, 'name');
-      // ApacheSolr does no sanitation, so trust nothing.
-      $map[$value] = check_plain($map[$value]);
     }
   }
   return $map;
@@ -1010,4 +1092,13 @@ function countries_apachesolr_display_callback($facet, $options) {
     return check_plain(countries_t($country, 'name'));
   }
   return '';
+}
+
+/**
+ * Callback for getting extra country properties.
+ *
+ * @see countries_entity_property_info_alter()
+ */
+function countries_get_properties($data = FALSE, array $options, $name) {
+  return country_property($data, $name);
 }

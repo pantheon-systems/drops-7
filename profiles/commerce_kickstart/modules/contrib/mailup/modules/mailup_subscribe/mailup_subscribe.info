@@ -1,0 +1,23 @@
+name = MailUp Subscribe
+description = Provides functionality for managing and subscribing to MailUp Lists
+package = MailUp
+
+core = 7.x
+; Configuration path
+configure = admin/config/services/mailup/lists
+
+; Dependencies
+dependencies[] = mailup
+dependencies[] = entity
+dependencies[] = ctools
+dependencies[] = token
+
+; Module includes
+files[] = mailup_subscribe.entity.inc
+files[] = mailup_subscribe.translate.inc
+; Information added by Drupal.org packaging script on 2014-10-24
+version = "7.x-1.0"
+core = "7.x"
+project = "mailup"
+datestamp = "1414157629"
+
