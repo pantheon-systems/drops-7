@@ -1,0 +1,361 @@
+{
+  "type": "object", 
+  "$schema": "http://json-schema.org/draft-03/schema#", 
+  "description": "JSON Schema Representation of an OGPD prototype dataset/document/app aligned with theCKAN metadata schema", 
+  "properties": {
+    "name": {
+      "required": true, 
+      "description": "Name: Ein für Menschen lesbarer Bezeichner des Datensatzes, des Dokuments oder der Apps, der für eine Identifizierung genutzt werden kann (einfache ASCII-Präsentation des Titels, auch für die Pretty-Link-URL, Linked Data URIs). Um Dopplungen zu vermeiden, wird empfohlen, dem eigentlichen Namen Land, Bundesland und ggf. feinerer Gebietskörperschaft im ISO 3166-1 und -2 Code voranzustellen, z.B. de-mv-rostock-polizeidienststellen.",
+      "pattern": "^[a-z0-9_-]{2,}$", 
+      "type": "string"
+    }, 
+    "title": {
+      "required": true, 
+      "description": "Titel: Der Titel beschreibt den Datensatz, das Dokument oder die App prägnant und wird z. B. in Suchergebnissen und Listen angezeigt.",
+      "type": "string"
+    }, 
+    "author": {
+      "required": true, 
+      "description": "Veröffentlichende Stelle: Die Behörde, von der die Daten stammen. Bei Apps der App-Hersteller.",
+      "type": "string"
+    }, 
+    "author_email": {
+      "required": false, 
+      "description": "Veröffentlichende Stelle Email: Email-Adresse oder Kontaktformular der Veröffentlichenden Stelle.",
+      "format": "uri",
+      "type": "string"
+    }, 
+    "maintainer": {
+      "required": false, 
+      "description": "Datenverantwortliche Stelle: Dieser Ansprechpartner kann bei Fragen und Anmerkungen zu den Daten kontaktiert werden.",
+      "type": "string"
+    }, 
+    "maintainer_email": {
+      "required": false, 
+      "description": "Datenverantwortliche Stelle Email: Email-Adresse oder Kontaktformular der Datenverantwortlichen Stelle.",
+      "format": "uri",
+      "type": "string"
+    }, 
+    "notes": {
+      "required": true, 
+      "description": "Beschreibung: Beschreibung und weitere Informationen zum Datensatz, zum Dokument oder zur App, wird auf der Detailseite dargestellt und kann mehrere Absätze umfassen.",
+      "type": "string"
+    }, 
+    "groups": {
+      "required": true, 
+      "description": "Kategorien: Kategorien für die Datensätze und Dokumente. Die Kategorien sind statisch und werden vom Portalbetreiber langfristig gepflegt, s.u. bzw. <a href='https://github.com/fraunhoferfokus/ogd-metadata/blob/master/kategorien/deutschland.json'>Liste</a>",
+      "type": "array", 
+      "items": {
+        "enum": ["wirtschaft_arbeit", "transport_verkehr", "umwelt_klima", "geo", "gesundheit", "verbraucher", "infrastruktur_bauen_wohnen", "bildung_wissenschaft", "verwaltung", "gesetze_justiz", "bevoelkerung", "politik_wahlen", "soziales", "kultur_freizeit_sport_tourismus"], 
+        "type": "string", 
+        "description": "Liste der vordefinierten Kategorien"
+      } 
+    },
+    "tags": {
+      "required": false, 
+      "description": "Schlagwörter: Freie Schlüsselwörter des Datensatzes, des Dokuments oder der App",
+      "items": {
+        "type": "string"
+      }, 
+      "type": "array"
+    },
+    "url": {
+      "required": false, 
+      "description": "Website: Die ursprüngliche Webadresse des Datensatzes, Dokuments oder der App, um zu weiteren Informationen über den Datensatz, das Dokument oder die App zu gelangen. Wird auf der Detailseite als Link angezeigt.", 
+      "type": "string", 
+      "format": "uri"
+    }, 
+    "type": {
+      "required": true, 
+      "description": "Typ: Zeigt an, ob ein Datensatz, ein Dokument, eine App beschrieben wird. Entscheidet darüber, in welchem Bereich diese Metadaten angezeigt werden.", 
+      "type": "string", 
+      "enum": ["datensatz", "dokument", "app"]
+    }, 
+    "resources": {
+      "required": true, 
+      "description": "Ressourcen: Folgende Felder können für jede Ressource individuell angegeben werden.",
+      "type": "array", 
+      "items": {
+        "required": true, 
+        "type": "object", 
+        "properties": {
+          "url": {
+            "required": true, 
+            "description": "URL: Verweis auf die eigentliche Datendatei, das Dokument oder die Anwendung.", 
+            "type": "string", 
+            "format": "uri"
+          },
+          "format": {
+            "required": true, 
+            "description": "Format: Typ der Ressource (MIME Types)",
+            "type": "string"
+          },
+          "description": {
+            "required": false, 
+            "description": "Beschreibung: Erläuterung, welche Rolle die Ressource für den Datensatz, das Dokument bzw. die App spielt (z. B. ob es sich dabei um eine bestimmte Zeitscheibe oder Schlüsselliste handelt. Der Beschreibungstext, wird mit dem Link zur Ressource unterlegt.)",
+            "type": "string"
+          }, 
+          "language": {
+            "required": false, 
+            "description": "Sprache: Sprache als ISO 639-1-Code, in der die Ressource verfasst ist.",
+            "pattern": "^[a-z]{2}$", 
+            "type": "string"
+          }, 
+          "hash": {
+            "required": false, 
+            "description": "Prüfsumme: Bei statischen Dateien die SHA2-Prüfsumme bzw. bei dynamischen Daten ein Zertifikat zur Überprüfung der Integrität.",
+            "type": "string"
+          } 
+        }
+      } 
+    },
+    "license_id": {
+  	  "enum": ["apache", "app_commercial", "app_freeware", "app_opensource", "bsd-license", "cc-by", "cc-by-sa", "cc-nc", "cc-by-nd", "cc-zero", "dl-de-by-1.0", "dl-de-by-nc-1.0", "geolizenz-v1.2.1-open", "geolizenz-v1.2-1a", "geolizenz-v1.2-1b", "geolizenz-v1.2-2a", "geolizenz-v1.2-2b", "geolizenz-v1.2-3a", "geolizenz-v1.2-3b", "geolizenz-v1.2-4a", "geolizenz-v1.2-4b", "geonutzv-de-2013-03-19", "gfdl", "gpl-3.0", "mozilla", "odc-by", "odc-odbl", "odc-pddl", "official-work", "other-closed", "other-open"], 
+      "type": "string", 
+      "required": true, 
+      "description": "Lizenz-ID: Lizenz aus einer festen Liste, s.u. bzw. <a href='https://github.com/fraunhoferfokus/ogd-metadata/blob/master/lizenzen/deutschland.json'>Liste</a>"
+    }, 
+    "extras": {
+      "required": true, 
+      "type": "object", 
+      "description": "Extras: Zusaetzliche Angaben", 
+      "properties": {
+        "contacts": {
+          "required": false, 
+          "description": "Kontakte: Liste der Kontakte zu Metadaten, Daten, Dokument bzw. App.",
+          "type": "array", 
+          "items": {
+            "type": "object", 
+            "properties": {
+              "role": {
+                "enum": ["vertrieb", "autor"], 
+                "type": "string", 
+                "required": true,
+                "description": "Rolle: Rolle, die dieser Kontakt für das Metadatum innehat. Unter Veröffentlichende Stelle wird die zuständige Behörde bzw. Organisationseinheit verstanden verstanden. Diese Angabe wird auch für den Filter 'nach Bereitsteller' genutzt. Der 'ansprechpartner' soll dagegen von den Datennutzern bei Fragen und Kommentaren kontaktiert werden, daher können auch Funktionstitel und Funktions-Emailadressen angegeben werden."
+              }, 
+              "name": {
+                "description": "Name: Name der Person oder Funktion",
+                "required": true,
+                "type": "string" 
+              }, 
+              "url": {
+                "description": "Website: Webseite des Kontakts",
+                "type": "string",
+                "format": "uri"
+              }, 
+              "email": {
+                "description": "Email: Email-Adresse des Kontakts, wird auch für Benachrichtigungen genutzt.",
+                "type": "string" 
+              }, 
+              "address": {
+                "description": "Adresse: Postalische Adresse des Kontakts",
+                "type": "string"
+              } 
+            }
+          }
+        },
+        "dates": {
+          "required": true, 
+          "description": "Kalender-Daten: Erstellungs-, Veröffentlichungs- und Aktualisierungsdaten von Daten, Dokumenten, Apps und ihren Metadaten. Wird in der Oberfläche so angezeigt, dass Datennutzer einen Eindruck davon bekommen, wie aktuell die Daten sind.",
+          "type": "array", 
+          "items": {
+            "type": "object", 
+            "properties": {
+              "role": {
+                "enum": ["erstellt", "veroeffentlicht", "aktualisiert"], 
+                "type": "string", 
+                "description": "Rolle: Rolle, die dieses Datum für den Datensatz spielt"
+              }, 
+              "date": {
+                "description": "Datum: Das Kalender-Datum",
+                "type": "string", 
+                "format": "date-time"
+              } 
+            }
+          }
+        },
+        "terms_of_use": {
+          "required": false, 
+          "description": "Nutzungsbestimmungen: Festlegung der spezifischen Nutzungsbestimmungen des Datensatzes, des Dokuments oder der App.", 
+          "type": "object", 
+          "properties": {
+            "other": {
+              "type": "string", 
+              "required": false, 
+              "description": "Freitext: Freitext, der die Nutzungsbestimmungen festlegt, falls diese keiner allgemein bekannten Lizenz entsprechen."
+            }, 
+            "license_url": {
+              "type": "string", 
+                "required": false, 
+              "description": "URL: URL, auf der die Lizenz des Datensatzes, Dokuments oder der App beschrieben und erklärt ist.", 
+              "format": "uri"
+            },
+            "attribution_text": {
+              "type": "string", 
+                "required": false, 
+              "description": "Namensnennungs-Text: Der exakte Text, der im Rahmen der Namensnennung anzugeben ist."
+            },
+            "is_free_to_use": {
+              "type": "boolean", 
+              "required": false, 
+              "description": "Nutzungsfreiheit: Die Information, ob der Datensatz/das Dokument/die App kostenfrei und zweckoffen ist (muss gesetzt werden, wenn Freitext bei der Lizenzangabe genutzt wird)."
+            }
+          }
+        },
+        "subgroups": {
+          "required": false, 
+          "description": "Unterkategorien: Unterkategorien für die Datensätze und Dokumente. Im Gegensatz zu den Kategorien werden hier genau die (fachlichen) Kategorien der Datenbereitsteller genutzt, d.h. jeder neu angeschlossene Datenbereitsteller kann hier benötigte Unterkategorien hinzufügen,  beispielsweise aus INSPIRE oder EVAS. Vgl.  <a href='https://github.com/fraunhoferfokus/ogd-metadata/blob/master/kategorien/'>Liste</a>. Unterkategorien werden auch für die Navigation und für Filter genutzt.",
+          "type": "array", 
+          "items": {
+            "description": "Unterkategorien: Unterkategorien des Datensatzes, des Dokuments oder der App",
+            "type": "string"
+          } 
+        },
+        "metadata_original_portal": {
+          "required": false, 
+          "description": "Original-Metadaten-Portal: URL des Portals, von dem der Metadateneintrag des Datensatzes oder des Dokuments geharvestet wurde.", 
+          "type": "string", 
+          "format": "uri"
+        }, 
+        "metadata_original_id": {
+          "required": false, 
+          "description": "Original-Metadaten-Schlüssel: Der Identifier des ursprünglichen Metadateneintrags der Datensätze oder der Dokumente. Damit kann schnell die Originalposition von geharvesteten Datensätzen oder Dokumenten nachvollzogen und Dubletten erkannt werden. Wird nicht in der Oberfläche angezeigt.",
+          "type": "string"
+        },
+        "metadata_original_xml": {
+          "required": false, 
+          "description": "Original-Metadaten-XML: URL des Original-Metadateneintrags in der urspruenglichen Form. Wird nicht in der Oberfläche angezeigt. Erscheint als Link in der Detailseite.", 
+          "type": "string", 
+          "format": "uri"
+        }, 
+        "metadata_original_html": {
+          "required": false, 
+          "description": "Original-Metadaten-HTML: URL des Original-Metadateneintrags in der HTML-Represantationsform. Erscheint als Link in der Detailseite.", 
+          "type": "string", 
+          "format": "uri"
+        },
+        "metadata_transformer": {
+          "required": false,
+          "enum": ["author", "harvester"],
+          "type": "string",
+          "description": "Metadaten-Transformator: Dubletten von transformierten Metadaten werden über die 'metadata_original_id' identifiziert. In diesem Fall werden durch den Autor bereitgestellte Metadaten bevorzugt."
+        },
+        "spatial": {
+          "required": false, 
+          "description": "Abdeckung in Koordinaten: Die geographische Abdeckung des Datensatzes in WGS 84 Koordinaten nach GeoJSON http://geojson.org . Wird später für eine geographische Suche verwendet.", 
+          "type": "object", 
+          "properties": {
+            "type": {
+              "type": "string",
+              "description": "Art der Form: Hier ist zunächst nur Polygon vorgesehen, andere waeren vorstellbar.",
+              "enum": ["polygon"]
+            }, 
+            "coordinates": {
+              "type": "array",
+              "description": "Liste der LinearRing Koordinaten-Liste. Dabei ist zu beachten, dass der erste Eintrag den äußeren Ring darstellt und die folgenden Einträge innere Ringe oder Löcher darstellen.",
+              "items": {
+                "type": "array", 
+                "description": "Koordinatenliste die einen LinearRing bildet",
+                "items": {
+                  "type": "array",
+                  "description": "Koordinatenliste bestehend aus x,y Koordinaten",
+                  "minItems": 2,
+                  "maxItems": 2,
+                  "items": {
+                    "type": "number",
+                    "description": "x bzw. y Koordinate"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "spatial_reference": {
+          "required": false,
+          "description": "Räumliche Abdeckung der Datensätzen: Kann durch verschiedene Nomenklaturen oder Standards beschrieben werden.",
+          "type": "object",
+          "properties": {
+            "ags": {
+              "description": "Geographische Abdeckung durch den Amtlichen Gemeindeschlüssel (AGS).",
+              "type": "string",
+              "pattern": "^[0-9 ]*$"
+            },
+            "nuts": {
+              "description": "Geographische Abdeckung durch NUTS-Code",
+              "type": "string",
+              "pattern": "^[A-Z]{2}[0-9A-Z]{0,3}$"
+            },
+            "uri": {
+              "description": "Linked Data Ressource die per URI identifiziert ist und der geographischen Abdeckung entspricht.",
+              "type": "string",
+              "format": "uri"
+            },
+            "text": {
+              "description": "Abdeckung als Freitext falls keine der Nomenklaturen oder Standards verwendet werden können.", 
+              "type": "string"
+            }
+          }
+        }, 
+        "geographical_granularity": {
+          "required": false, 
+          "description": "Räumliche Auflösung: Die geographische Granularität des Datensatzes, eines Dokuments, einer App. Wird später zum Filtern verwendet.", 
+          "enum": ["bund", "land", "kommune", "stadt"],
+          "type": "string"
+        }, 
+        "temporal_coverage_from": {
+          "required": false, 
+          "description": "Start-Datum: Der Zeitpunkt, von dem an der Datensatz, das Dokument oder die App einschließlich Daten enthält. Wird insb. zum Filtern verwendet.", 
+          "type": "string", 
+          "format": "date-time"
+        }, 
+        "temporal_coverage_to": {
+          "required": false, 
+          "description": "End-Datum: Der Zeitpunkt, bis zu dem der Datensatz, das Dokument oder die App einschließlich Daten enthält. Wird insb. zum Filtern verwendet.", 
+          "type": "string", 
+          "format": "date-time"
+        }, 
+        "temporal_granularity": {
+          "required": false, 
+          "description": "Zeitliche Auflösung: Die zeitliche Auflösung der enthaltenen Daten, des Dokuments oder der App. Wird später zum Filtern verwendet.", 
+          "type": "string", 
+          "enum": ["sekunde", "minute", "stunde", "tag", "woche", "monat", "quartal", "jahr", "5-jahre"]
+        },
+        "temporal_granularity_factor": {
+            "required": false, 
+          "description": "Faktor für zeitliche Auflösung: Mit diesem Faktor kann die zeitliche Auflösung auf n mal temporal_granularity festgelegt werden, z.B. 15 Minuten.", 
+          "type": "number"
+        },
+        "used_datasets": {
+          "required": false, 
+          "description": "Verwendete Datensätze: Die verwendeten Datensätze von Apps mithilfe einer Liste mit URLs auf Metadaten. Wird auf der Detailseite von Apps angezeigt und ausgewertet um festzustellen, ob die App Open Data verwendet.",
+          "type": "array", 
+          "items": {
+            "type": "string", 
+            "format": "uri"
+          }
+        }, 
+        "sector": {
+          "required": false, 
+          "description": "Sektor: Zeigt an, ob eine App oder ein Dokument aus dem öffentlichem, dem privaten oder einem anderen Bereich kommt. Wird in einen Piktogramm auf der Detailseite zum Ausdruck gebracht.", 
+          "enum": ["oeffentlich", "privat", "andere"],
+          "type": "string"
+        }, 
+        "images": {
+          "required": false, 
+          "description": "Bilder: Links zu Bildern, die zu den Metadaten zählen, z.B. Vorschau oder Screenshot.",
+          "type": "array", 
+          "items": {
+            "type": "string",
+            "format": "uri"
+          } 
+        },
+        "ogd_version": {
+          "required": false, 
+          "description": "Struktur-Version: Zeigt an, in welcher Version der OGD Metadaten-Struktur das Metadatum geschrieben ist. Wird nur intern verwendet, um nach Änderungen dieser Struktur festzustellen, ob die Metadaten schon angepasst wurden.", 
+          "enum": ["v1.0", "v1.1"],
+          "type": "string"
+        }
+        }
+      }
+  } 
+}

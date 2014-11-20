@@ -1,6 +1,6 @@
-7.x-1.5 2014-10-15
---------------------------
- - This point release does not include new code. Created to keep up to date with DKAN 7.x-1.5  release.
+7.x-1.6
+---------
+ - Fix services module reference at dkan_datastore.make file
 
 7.x-1.4  2014-10-10
 --------------------------

@@ -118,6 +118,9 @@ class DkanDatasetClassWebTestCase extends DrupalWebTestCase {
     ctools_include('datasets', 'dkan_default_content');
     ctools_include('Dataset', 'dkan_dataset');
 
+    // Create taxonomies
+    dkan_default_content_taxonomy_create();
+
     // Create default content groups for datasets.
     $groups = dkan_default_content_available_groups();
     foreach ($groups as $key => $loadable) {

@@ -63,6 +63,7 @@ class DkanDatasetWebTestCase extends DrupalWebTestCase {
     $modules[] = 'dkan_dataset';
     $modules[] = 'dkan_dataset_groups';
     $modules[] = 'dkan_dataset_content_types';
+    $modules[] = 'dkan_default_content';
     $modules[] = 'features';
     $modules[] = 'double_field';
     $modules[] = 'entityreference';

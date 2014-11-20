@@ -367,6 +367,7 @@ function recline_default_formatter_output($variables) {
   $icon = '';
 
   $format = recline_get_data_type($file['filemime']);
+  drupal_alter('recline_format', $format, $variables['item']['entity']);
 
   // Set options as per anchor format described at
   // http://microformats.org/wiki/file-format-examples
@@ -397,6 +398,11 @@ function recline_default_formatter_output($variables) {
     }
   }
   $recline = '';
+
+  $recline = libraries_load('recline');
+  $recline_deeplink = libraries_load('recline_deeplink');
+  $deep_diff = libraries_load('deep_diff');
+
   if (isset($variables['item']['grid']) &&
     isset($variables['item']['graph']) &&
     isset($variables['item']['map']) &&
@@ -404,7 +410,7 @@ function recline_default_formatter_output($variables) {
     if ($variables['item']['map'] || $variables['item']['grid'] || $variables['item']['graph'] || $variables['item']['embed']) {
       $uuid = isset($variables['item']['entity']->uuid) ? $variables['item']['entity']->uuid : FALSE;
       drupal_add_library('system', 'ui.sortable');
-      $recline = libraries_load('recline');
+
       $module_path = drupal_get_path('module', 'recline');
       drupal_add_js($module_path . '/backend.ckan_get.js');
       drupal_add_js($module_path . '/recline.app.js');
@@ -427,7 +433,9 @@ function recline_default_formatter_output($variables) {
   else {
     $uuid = isset($variables['item']['entity']->uuid) ? $variables['item']['entity']->uuid : FALSE;
     drupal_add_library('system', 'ui.sortable');
-    $recline = libraries_load('recline');
+
+
+
     $module_path = drupal_get_path('module', 'recline');
     drupal_add_js($module_path . '/backend.ckan_get.js');
     drupal_add_js($module_path . '/recline.app.js');

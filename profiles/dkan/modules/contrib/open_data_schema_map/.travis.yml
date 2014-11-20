@@ -1,0 +1,67 @@
+language: php
+
+php:
+  - 5.4
+
+mysql:
+  database: open_data_schema_map_test
+  username: root
+  encoding: utf8
+
+
+install:
+  - cd test
+  - mysql -e 'create database open_data_schema_map_test;'
+  - sudo apt-get update > /dev/null
+  - sudo apt-get --quiet=2 install php5-cgi php5-curl php5-gd php5-mysql > /dev/null
+
+  # disable sendmail
+  - echo sendmail_path=`which true` >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
+  # Install latest Drush 7.
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+  - composer global require --no-interaction drush/drush:dev-master
+  - composer global require --no-interaction youngj/httpserver:*
+
+before_script:
+  # navigate out of module directory to prevent blown stack by recursive module lookup
+  - cd ../..
+
+  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
+  - drush --yes core-quick-drupal --profile=testing --no-server --db-url=mysql://root:@127.0.0.1/open_data_schema_map_test --enable=simpletest open_data_schema_map_test
+
+  # Grab dependencies
+  - git clone --branch 7.x-1.x https://github.com/NuCivic/dkan.git
+  - git clone --branch 7.x-1.x https://github.com/NuCivic/dkan_dataset.git
+  # For now, when this gets in we need to merge that branch on odsm dkan module
+  - git clone --branch master https://github.com/NuCivic/open_data_schema_map_dkan.git
+
+  # copy dependencies to sites/all
+  - cp -r $TRAVIS_BUILD_DIR open_data_schema_map_test/drupal/sites/all/modules/
+  - cp -r open_data_schema_map_dkan open_data_schema_map_test/drupal/sites/all/modules/
+  - cp -r dkan/modules/dkan/dkan_sitewide/modules/dkan_default_content open_data_schema_map_test/drupal/sites/all/modules/
+  - cp -r dkan_dataset open_data_schema_map_test/drupal/sites/all/modules/
+
+  # Jump into setup directory
+  - cd open_data_schema_map_test/drupal
+
+  # Make dkan_dataset
+  - drush make -v --no-core --yes sites/all/modules/dkan_dataset/dkan_dataset.make
+
+  # Enable modules
+  - drush --yes pm-enable dkan_dataset_content_types open_data_schema_map open_data_schema_map_dkan
+
+  # start a web server on port 8888, run in the background; wait for initialization
+  - drush --quiet --yes --root=$PWD runserver :8888 > /dev/null 2>&1 &
+  - sleep 4
+
+script:
+  # Run test suite
+  - drush test-run --xml 'Open Data Schema Map' --uri=http://127.0.0.1:8888
+
+notifications:
+  slack:
+    rooms:
+      - nucivic:t3p2KxXdzymmwxitWPvfAsnK#monitor-devops
+      - nucivic:t3p2KxXdzymmwxitWPvfAsnK#monitor-dkan
+      - nucivic:t3p2KxXdzymmwxitWPvfAsnK#monitor-data-starter

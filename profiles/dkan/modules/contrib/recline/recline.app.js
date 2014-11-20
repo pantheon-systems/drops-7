@@ -160,6 +160,7 @@
         }
 
         window.dataExplorer = new recline.View.MultiView(Drupal.settings.recline.args);
+        router = new recline.DeepLink.Router(window.dataExplorer);
         $.event.trigger('createDataExplorer');
         return views;
     }

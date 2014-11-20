@@ -28,7 +28,7 @@ before_script:
   - drush --yes core-quick-drupal --profile=testing --no-server --db-url=mysql://root:@127.0.0.1/dkan_dataset_test --enable=simpletest dkan_dataset_test
 
   # Grab dkan to have the dkan_default_content module at hand
-  - git clone --branch 7.x-1.x http://git.drupal.org/project/dkan.git
+  - git clone --branch 7.x-1.x https://github.com/NuCivic/dkan.git
 
   # copy dkan_dataset to sites/all
   - cp -r $TRAVIS_BUILD_DIR dkan_dataset_test/drupal/sites/all/modules/dkan_dataset
@@ -41,7 +41,9 @@ before_script:
   # Enable modules
   - drush --yes pm-enable dkan_dataset
   - drush --yes pm-enable dkan_dataset_groups
-  - drush --yes pm-enable dkan_dataset_api
+  - drush --yes pm-enable open_data_schema_map
+  - drush --yes pm-enable open_data_schema_map_dkan
+  - drush --yes pm-enable dkan_default_content
 
   # start a web server on port 8080, run in the background; wait for initialization
   - drush runserver 127.0.0.1:8080 &

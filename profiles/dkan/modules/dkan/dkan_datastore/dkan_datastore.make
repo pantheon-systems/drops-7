@@ -25,8 +25,13 @@ projects[feeds_flatstore_processor][type] = module
 
 projects[schema][subdir] = contrib
 projects[schema][patch][1237974] = http://drupal.org/files/schema-support-custom-types-1237974-48.patch
+
 projects[services][subdir] = contrib
+projects[services][patch][2369946] = http://www.drupal.org/files/issues/services.spyc_make-2369946-2.patch
+projects[services][version] = 3.10
+
 projects[data][subdir] = contrib
 projects[data][version] = 1.x
+
 projects[job_scheduler][subdir] = contrib
 projects[job_scheduler][version] = 2.x
