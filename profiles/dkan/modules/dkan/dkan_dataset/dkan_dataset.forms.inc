@@ -340,50 +340,97 @@ function dkan_dataset_resource_node_form_validate($form, &$form_state) {
   // Get langcode for field_format.
   $field_format_langcode = dkan_dataset_form_field_language($form, 'field_format');
 
+  // See if file link, api link, or file upload.
   $link = isset($form_state['values']['field_link_file'][$field_link_file_langcode]) ? $form_state['values']['field_link_file'][$field_link_file_langcode][0]['url'] : NULL;
   $api = isset($form_state['values']['field_link_api']) ? $form_state['values']['field_link_api'][$field_link_api_langcode][0]['url'] : NULL;
   $upload_fid = $form_state['values']['field_upload'][$field_upload_langcode][0]['fid'];
   $link_fid = isset($form_state['values']['field_link_remote_file'][$field_upload_langcode]) ? $form_state['values']['field_link_remote_file'][$field_upload_langcode][0]['fid'] : NULL;
+
+  $format_name = isset($form_state['values']['field_format'][$field_upload_langcode][0]) ? $form_state['values']['field_format'][$field_upload_langcode][0]['name'] : NULL;
+  $format_tid = isset($form_state['values']['field_format'][$field_upload_langcode][0]) ? $form_state['values']['field_format'][$field_upload_langcode][0]['tid'] : NULL;
+  $old_format_tid = isset($form['#node']->field_format[$field_upload_langcode][0]) ? $form['#node']->field_format[$field_upload_langcode][0]['tid'] : NULL;
+
+  if ($format_tid && !$format_name) {
+    $new_tax = taxonomy_term_load($format_tid);
+    $format_name = $new_tax->name;
+  }
+  $type = NULL;
+  // A format has been entered.
+  if ($format_name) {
+    // Previous format is the same, make no change.
+    if ($old_format_tid == $format_tid) {
+      $type = $format_name;
+    }
+    // No previous format, so user entered the format.
+    elseif (!$old_format_tid) {
+      $type = $format_name;
+    }
+    else {
+      // User entered new taxonomy term that is different from previous.
+      if ($old_tax = taxonomy_term_load($old_format_tid)) {
+        if ($old_tax->name != $format_name) {
+          $type = $format_name;
+        }
+      }
+    }
+  }
   // Ensure that only one type of resource is uploaded or linked to.
   if ($link && ($api || $upload_fid || $link_fid) || $api && ($link || $upload_fid || $link_fid) || ($upload_fid && $api || $link) || ($link_fid && $api || $link)) {
     form_set_error('field_link_file', 'Only one resource type can be added.');
   }
-  // Autodetect file type.
-  if ($upload_fid || $link_fid || $api) {
-    if ($upload_fid) {
-      $file = file_load($upload_fid);
-      $type = substr($file->filename, strrpos($file->filename, '.') + 1);
-    }
-    elseif ($link_fid) {
-      $file = file_load($link_fid);
-      $type = substr($file->filename, strrpos($file->filename, '.') + 1);
-    }
-    elseif ($api) {
-      $request = drupal_http_request($api);
-      if (!isset($request->error)) {
-        // Remove char type or other info from content type.
-        $strpos = strpos($request->headers['content-type'],';');
-        $mimetype = ($strpos !== false) ? substr($request->headers['content-type'], 0, $strpos) : $request->headers['content-type'];
-        $type = dkan_dataset_discovery_extension($mimetype);
+  // Autodetect file type if a new one is not provided.
+  if (!$type) {
+    if ($upload_fid || $link_fid || $api) {
+      if ($upload_fid) {
+        $file = file_load($upload_fid);
+        $type = isset($file->filemime) ? recline_get_data_type($file->filemime) : '';
       }
-    }
-    else {
-      $type = substr($link, strrpos($link, '.') + 1);
-    }
-    $vocabs = taxonomy_vocabulary_get_names();
-    $type = isset($type) ? $type : 'data';
-    if (isset($vocabs['format'])) {
-      $form_state['values']['field_format'][$field_format_langcode][0]['vid'] = $vocabs['format']->vid;
-      if ($tax = taxonomy_get_term_by_name($type, 'format')) {
-        $tax = array_values($tax);
-        $form_state['values']['field_format'][$field_format_langcode][0]['tid'] = $tax[0]->tid;
-        $form_state['values']['field_format'][$field_format_langcode][0]['name'] = $tax[0]->name;
+      elseif ($link_fid) {
+        $file = file_load($link_fid);
+        $type = isset($file->filemime) ? recline_get_data_type($file->filemime) : '';
+      }
+      elseif ($api) {
+        $request = drupal_http_request($api);
+        if (!isset($request->error)) {
+          // Remove char type or other info from content type.
+          $strpos = strpos($request->headers['content-type'], ';');
+          $mimetype = ($strpos !== FALSE) ? substr($request->headers['content-type'], 0, $strpos) : $request->headers['content-type'];
+          if (is_object(json_decode($request->data))) {
+            $type = 'json';
+          }
+          else {
+            $type = isset($file->filemime) ? recline_get_data_type($file->filemime) : '';
+          }
+        }
       }
       else {
-        $form_state['values']['field_format'][$field_format_langcode][0]['tid'] = 'autocreate';
-        $form_state['values']['field_format'][$field_format_langcode][0]['name'] = $type;
+        $type = substr($link, strrpos($link, '.') + 1);
       }
     }
+  }
+  $vocabs = taxonomy_vocabulary_get_names();
+
+  $type = isset($type) ? $type : 'data';
+  if (isset($vocabs['format'])) {
+    $form_state['values']['field_format'][$field_format_langcode][0]['vid'] = $vocabs['format']->vid;
+    if ($tax = taxonomy_get_term_by_name($type, 'format')) {
+      $tax = array_values($tax);
+      $form_state['values']['field_format'][$field_format_langcode][0]['tid'] = $tax[0]->tid;
+      $form_state['values']['field_format'][$field_format_langcode][0]['name'] = $tax[0]->name;
+    }
+    else {
+      $form_state['values']['field_format'][$field_format_langcode][0]['tid'] = 'autocreate';
+      $form_state['values']['field_format'][$field_format_langcode][0]['name'] = $type;
+    }
+  }
+}
+
+/**
+ * Implements hook_recline_format_alter().
+ */
+function dkan_dataset_recline_format_alter(&$format, $entity) {
+  if (isset($entity->field_format['und'][0]['taxonomy_term']->name)) {
+    $format = $entity->field_format['und'][0]['taxonomy_term']->name;
   }
 }
 

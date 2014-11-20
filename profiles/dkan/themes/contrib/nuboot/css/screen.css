@@ -166,12 +166,12 @@ h2.block-title { background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, co
 #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar .views-exposed-form .views-widget-filter-search_api_views_fulltext { float: none; position: relative; }
 #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar label { display: none; }
 #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar .views-exposed-widget { padding: 0; }
-#nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar .form-submit { color: transparent; background: none !important; border: none; padding: 0; position: absolute; right: 10px; top: -20px; width: 25px; text-indent: -40px; }
+#nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar .form-submit { color: transparent; background: none !important; border: none; padding: 0; position: absolute; right: 10px; width: 25px; top: 0; text-indent: -40px; }
 #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar .form-submit:after { font-family: "FontAwesome"; font-size: 1.5em; content: '\f002'; color: #cccccc; }
 #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar .description { text-shadow: none; position: absolute; color: #999999; font-size: 12px; left: 7px; top: 10px; }
 #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar form { width: 172px; }
 #nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar input.form-control { width: 170px; }
-#nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar #edit-submit { margin: 22px 0 0; color: #fff; text-shadow: none; }
+#nav-wrapper #block-dkan-sitewide-dkan-sitewide-search-bar #edit-submit { margin: 0; color: #fff; text-shadow: none; }
 
 #block-dkan-sitewide-demo-front-dkan-search-front { display: inline-block; position: relative; margin-top: 8px; position: relative; width: 370px; }
 #block-dkan-sitewide-demo-front-dkan-search-front form { margin: 0; }
@@ -179,11 +179,11 @@ h2.block-title { background-image: -webkit-gradient(linear, 50% 0%, 50% 100%, co
 #block-dkan-sitewide-demo-front-dkan-search-front .views-exposed-form .views-widget-filter-search_api_views_fulltext { float: none; position: relative; }
 #block-dkan-sitewide-demo-front-dkan-search-front label { display: none; }
 #block-dkan-sitewide-demo-front-dkan-search-front .views-exposed-widget { padding: 0; }
-#block-dkan-sitewide-demo-front-dkan-search-front .form-submit { color: transparent; background: none !important; border: none; padding: 0; position: absolute; right: 10px; top: -20px; width: 25px; text-indent: -40px; }
+#block-dkan-sitewide-demo-front-dkan-search-front .form-submit { color: transparent; background: none !important; border: none; padding: 0; position: absolute; right: 10px; width: 25px; top: 0; text-indent: -40px; }
 #block-dkan-sitewide-demo-front-dkan-search-front .form-submit:after { font-family: "FontAwesome"; font-size: 1.5em; content: '\f002'; color: #cccccc; }
 #block-dkan-sitewide-demo-front-dkan-search-front .description { text-shadow: none; position: absolute; color: #999999; font-size: 12px; left: 7px; top: 10px; }
 #block-dkan-sitewide-demo-front-dkan-search-front form { width: 290px; }
-#block-dkan-sitewide-demo-front-dkan-search-front #edit-submit { margin: 22px 0 0; color: #fff; text-shadow: none; right: 45px; }
+#block-dkan-sitewide-demo-front-dkan-search-front #edit-submit { color: #fff; text-shadow: none; right: 45px; }
 
 #views-exposed-form-user-profile-search-entity-view-1 #edit-submit-dataset, #views-exposed-form-groups-search-entity-view-1 #edit-submit-dataset, #views-exposed-form-dataset-page #edit-submit-dataset { top: -20px !important; color: #fff; text-shadow: none; }
 #views-exposed-form-user-profile-search-entity-view-1 .views-exposed-form .form-submit, #views-exposed-form-groups-search-entity-view-1 .views-exposed-form .form-submit, #views-exposed-form-dataset-page .views-exposed-form .form-submit { margin: 0; }

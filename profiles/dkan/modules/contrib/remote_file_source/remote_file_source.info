@@ -5,9 +5,10 @@ core = 7.x
 package = Fields
 dependencies[] = filefield_sources
 dependencies[] = remote_stream_wrapper
-; Information added by drupal.org packaging script on 2012-03-09
-version = "7.x-1.0"
+
+; Information added by drush on 2014-11-20
+version = "7.x-1.x-dev"
 core = "7.x"
 project = "remote_file_source"
-datestamp = "1331310646"
+datestamp = "1416522485"
 

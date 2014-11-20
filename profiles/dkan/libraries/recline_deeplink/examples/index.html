@@ -1,0 +1,118 @@
+<html>
+<head>
+  <!-- bootstrap -->
+  <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
+  <!--[if lt IE 9]>
+    <script src="http://html5shim.googlecode.com/svn/trunk/html5.js"></script>
+  <![endif]-->
+  <link rel="stylesheet" href="../vendor/bootstrap-css/css/bootstrap.css" />
+
+  <link rel="stylesheet" href="../vendor/leaflet/dist/leaflet.css">
+  <link rel="stylesheet" href="../vendor/leaflet.markercluster/dist/MarkerCluster.css">
+  <link rel="stylesheet" href="../vendor/leaflet.markercluster/dist/MarkerCluster.Default.css">
+  <link rel="stylesheet" href="../vendor/slickgrid/slick.grid.css">
+  <link rel="stylesheet" href="../vendor/timeline/css/timeline.css">
+
+  <!-- Recline CSS components -->
+  <link rel="stylesheet" href="../css/grid.css">
+  <link rel="stylesheet" href="../css/slickgrid.css">
+  <link rel="stylesheet" href="../css/flot.css">
+  <link rel="stylesheet" href="../css/map.css">
+  <link rel="stylesheet" href="../css/multiview.css">
+  <link rel="stylesheet" href="../css/timeline.css">
+  <!-- /Recline CSS components -->
+
+  <!-- 3rd party JS libraries -->
+  <!--script type="text/javascript" src="../vendor/jquery/1.7.1/jquery.js"></script-->
+  <script src="../vendor/slickgrid/lib/jquery-1.7.min.js"></script>
+  <script type="text/javascript" src="../vendor/underscore/underscore.js"></script>
+  <script type="text/javascript" src="../vendor/backbone/backbone.js"></script>
+  <script type="text/javascript" src="../vendor/mustache/mustache.js"></script>
+  <script type="text/javascript" src="../vendor/bootstrap-css/js/bootstrap.js"></script>
+  <!--[if lte IE 8]>
+  <script language="javascript" type="text/javascript" src="../vendor/flot/excanvas.min.js"></script>
+  <![endif]-->
+  <script type="text/javascript" src="../vendor/flot/jquery.flot.js"></script>
+  <script type="text/javascript" src="../vendor/flot/jquery.flot.time.js"></script>
+  <script type="text/javascript" src="../vendor/leaflet/dist/leaflet.js"></script>
+  <script type="text/javascript" src="../vendor/leaflet.markercluster/dist/leaflet.markercluster.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/lib/jquery-ui-1.8.16.custom.min.js"></script>
+  <script src="../vendor/slickgrid/lib/jquery.event.drag-2.0.min.js"></script>
+  <script src="../vendor/slickgrid/lib/jquery.event.drop-2.0.min.js"></script>
+
+  <script type="text/javascript" src="../vendor/slickgrid/slick.core.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.formatters.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.editors.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/slick.grid.js"></script>
+
+  <script type="text/javascript" src="../vendor/slickgrid/plugins/slick.rowselectionmodel.js"></script>
+  <script type="text/javascript" src="../vendor/slickgrid/plugins/slick.rowmovemanager.js"></script>
+
+
+  <script type="text/javascript" src="../vendor/moment/moment.js"></script>
+  <script type="text/javascript" src="../vendor/timeline/js/timeline.js"></script>
+  <script type="text/javascript" src="../vendor/deep-diff/releases/deep-diff-0.3.0.min.js"></script>
+  <!--[if lte IE 7]>
+  <script language="javascript" type="text/javascript" src="../vendor/json/json2.js"></script>
+  <![endif]-->
+
+  <!--
+    ## Just use the all in one library version rather than individual files
+
+  <script type="text/javascript" src="dist/recline.js"></script>
+
+  -->
+
+  <!-- model and backends -->
+  <script type="text/javascript" src="../lib/ecma-fixes.js"></script>
+  <script type="text/javascript" src="../lib/model.js"></script>
+  <script type="text/javascript" src="../lib/backend.memory.js"></script>
+  <script type="text/javascript" src="../lib/backend.dataproxy.js"></script>
+  <script type="text/javascript" src="http://okfnlabs.org/recline.backend.gdocs/backend.gdocs.js"></script>
+  <script type="text/javascript" src="http://okfnlabs.org/csv.js/csv.js"></script>
+
+  <!-- views -->
+  <script type="text/javascript" src="../lib/view.grid.js"></script>
+  <script type="text/javascript" src="../lib/view.slickgrid.js"></script>
+  <script type="text/javascript" src="../lib/view.flot.js"></script>
+  <script type="text/javascript" src="../lib/view.graph.js"></script>
+  <script type="text/javascript" src="../lib/view.map.js"></script>
+  <script type="text/javascript" src="../lib/view.timeline.js"></script>
+  <script type="text/javascript" src="../lib/widget.pager.js"></script>
+  <script type="text/javascript" src="../lib/widget.queryeditor.js"></script>
+  <script type="text/javascript" src="../lib/widget.filtereditor.js"></script>
+  <script type="text/javascript" src="../lib/widget.valuefilter.js"></script>
+  <script type="text/javascript" src="../lib/widget.facetviewer.js"></script>
+  <script type="text/javascript" src="../lib/widget.fields.js"></script>
+  <script type="text/javascript" src="../lib/view.multiview.js"></script>
+</head>
+
+<style type="text/css">
+.recline-slickgrid {
+  height: 300px;
+}
+
+.recline-timeline .vmm-timeline {
+  height: 550px;
+}
+
+.changelog {
+  display: none;
+  border-bottom: 1px solid #ccc;
+  margin-bottom: 10px;
+}
+</style>
+<body>
+<div class="changelog">
+  <h3>Changes</h3>
+</div>
+
+<div class="data-explorer-here"></div>
+
+<div style="clear: both;"></div>
+
+<script type="text/javascript" src="app.js"></script>
+<script type="text/javascript" src="../src/recline.deeplink.js"></script>
+
+</body>
+</html>

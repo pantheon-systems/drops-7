@@ -1,0 +1,105 @@
+<?php
+
+/**
+ * @file
+ * Provides Schema mapping for Project Open Data.
+ */
+
+/**
+ * Implements hook_open_data_schema().
+ */
+function open_data_schema_pod_open_data_schema() {
+  $path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_pod') . '/data/single_entry.json';
+  return array(
+    array(
+      'short_name' => 'pod',
+      'title' => 'Project Open Data',
+      'schema_file' => $path,
+      'description' => t('Project Open Data schema. See http://project-open-data.github.io/schema/ for more awesome details.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function open_data_schema_pod_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    // Adds "catalog" items form which is requested as part of the endpoint but
+    // not a part of the site content.
+    case 'open_data_schema_map_manage':
+      if (isset($form_state['build_info']['args'][0]->api_schema) && $form_state['build_info']['args'][0]->api_schema == 'pod') {
+        $form['pod_catalog'] = array(
+          '#type' => 'fieldset',
+          '#title' => t('Data catalog (data.json) settings'),
+          '#description' => t("Configuration for site's public data catalog. See !link for more information.", array('!link' => l(t('Project Open Data'), 'http://project-open-data.github.io/catalog/'))),
+          '#weight' => 2,
+        );
+        $form['pod_catalog']['desc'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Data Catalog Description'),
+          '#description' => t('Description field for data catalog. Should usually just read "Data Catalog."'),
+          '#default_value' => variable_get('pod_catalog_desc', 'Data Catalog'),
+        );
+        $form['pod_catalog']['publisher'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Data Catalog Publisher'),
+          '#description' => t('Description field for data catalog. Should usually just read "Data Catalog."'),
+          '#default_value' => variable_get('pod_catalog_publisher', variable_get('site_name')),
+        );
+        $form['pod_catalog']['contact'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Data Catalog Contact Point'),
+          '#description' => t('The name of the main contact point for the data catalog. Usually an individual person.'),
+          '#default_value' => variable_get('pod_catalog_contact', NULL),
+        );
+        $form['pod_catalog']['mbox'] = array(
+          '#type' => 'textfield',
+          '#title' => t('Data Catalog Contact Email'),
+          '#description' => t('The main contact email for inquiries regarding the data catalog.'),
+          '#default_value' => variable_get('pod_catalog_mbox', variable_get('site_mail')),
+        );
+
+        $form['#submit'] = array_merge(array('open_data_schema_pod_extra_settings_submit'), $form['#submit']);
+      }
+      break;
+  }
+}
+
+/**
+ * Callback for api settings form.
+ */
+function open_data_schema_pod_extra_settings_submit(&$form, $form_state) {
+  if ($form_state['values']['pod_catalog']) {
+    variable_set('pod_catalog_desc', $form_state['values']['pod_catalog']['desc']);
+    variable_set('pod_catalog_contact', $form_state['values']['pod_catalog']['contact']);
+    variable_set('pod_catalog_mbox', $form_state['values']['pod_catalog']['mbox']);
+    variable_set('pod_catalog_publisher', $form_state['values']['pod_catalog']['publisher']);
+  }
+}
+
+/**
+ * Implements hook_open_data_schema_map_results_alter().
+ */
+function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $machine_name, $api_schema) {
+  if ($api_schema == 'pod') {
+    // Adds additional catalog entry.
+    $catalog_dist = array();
+    $catalog_dist['accessURL'] = url('data.json', array('absolute' => TRUE));
+    $catalog_dist['format'] = 'application/json';
+
+    $catalog_row = array();
+    $catalog_row['title'] = variable_get('pod_catalog_desc', 'Data Catalog');
+    $catalog_row['description'] = variable_get('pod_catalog_desc', 'Version 1.0');
+    $catalog_row['keyword'] = array('catalog');
+    $catalog_row['modified'] = NULL;
+    $catalog_row['publisher'] = variable_get('pod_catalog_publisher');
+    $catalog_row['contactPoint'] = variable_get('pod_catalog_contact', $catalog_row['publisher']);
+    $catalog_row['mbox'] = variable_get('pod_catalog_mbox', variable_get('site_mail'));
+    $catalog_row['identifier'] = "1";
+    $catalog_row['accessLevel'] = 'public';
+    $catalog_row['distribution'] = array($catalog_dist);
+    // Puts catalog at top of results list.
+    array_unshift($result, $catalog_row);
+  }
+}

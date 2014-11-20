@@ -1,0 +1,301 @@
+<?php
+
+/**
+ * @file
+ * Provides Schema mapping for CKAN.
+ */
+
+/**
+ * Implements hook_open_data_schema_map_endpoints_alter().
+ */
+function open_data_schema_ckan_open_data_schema_map_endpoints_alter(&$records) {
+  $records[] = 'ckan_site_read';
+  $records[] = 'ckan_revision_list';
+  $records[] = 'ckan_package_revision_list';
+}
+
+/**
+ * Implements hook_open_data_schema_map_load().
+ */
+function open_data_schema_ckan_open_data_schema_map_load($machine_name) {
+  if ($machine_name == 'ckan_site_read') {
+    $record = new stdClass();
+    $record->name = 'CKAN Site Read';
+    $record->enabled = TRUE;
+    $record->api_schema = 'ckan_no_schema';
+    $record->entity = '';
+    $record->bundle = '';
+    $record->arguments = array();
+    $record->machine_name = 'ckan_site_read';
+    $record->endpoint = 'api/3/action/site_read';
+    $record->callback = 'open_data_schema_ckan_site_read_callback';
+    return $record;
+  }
+  elseif ($machine_name == 'ckan_revision_list') {
+    $record = new stdClass();
+    $record->name = 'CKAN Revision List';
+    $record->enabled = TRUE;
+    $record->api_schema = 'ckan_dataset';
+    $record->entity = '';
+    $record->bundle = '';
+    $record->arguments = array();
+    $record->machine_name = 'ckan_revision_list';
+    $record->endpoint = 'api/3/action/revision_list';
+    $record->callback = 'open_data_schema_ckan_revision_list_callback';
+    return $record;
+  }
+  elseif ($machine_name == 'ckan_package_revision_list') {
+    $record = new stdClass();
+    $record->name = 'CKAN Package Revision List';
+    $record->enabled = TRUE;
+    $record->api_schema = 'ckan_dataset';
+    $record->entity = '';
+    $record->bundle = '';
+    $record->arguments = array('1' => array('field' => 'id', 'required' => 1));
+    $record->machine_name = 'ckan_package_revision_list';
+    $record->endpoint = 'api/3/action/package_revision_list';
+    $record->callback = 'open_data_schema_ckan_package_revision_list_callback';
+    return $record;
+  }
+}
+
+/**
+ * Site read callback.
+ */
+function open_data_schema_ckan_site_read_callback() {
+  return TRUE;
+}
+
+/**
+ * Revision list callback.
+ */
+function open_data_schema_ckan_revision_list_callback() {
+  $revisions = open_data_schema_ckan_node_revision_list('dataset', array('vuuid'));
+  return $revisions;
+}
+
+/**
+ * Package revision list callback.
+ */
+function open_data_schema_ckan_package_revision_list_callback($args) {
+  $uuid_id = open_data_schema_map_normalize_id('dataset', $args['id']);
+  $node_revisions = open_data_schema_ckan_node_revision_list('dataset',
+    array('vuuid', 'timestamp', 'log'),
+    array($uuid_id['uuid']));
+  $revisions = array();
+  foreach ($node_revisions as $vid => $revision) {
+    $revision_mapping = array(
+      'id' => $revision->vuuid,
+      'timestamp' => $revision->timestamp,
+      'message' => $revision->log,
+      'author' => $revision->name,
+      'approved_timestamp' => NULL,
+    );
+    $revisions[] = $revision_mapping;
+  };
+  return $revisions;
+}
+
+/**
+ * Custom revision list function.
+ */
+function open_data_schema_ckan_node_revision_list($content_type = 'dataset', $fields = array('vuuid'), $uuids = array()) {
+  $query = db_select('node_revision', 'r');
+  $query->leftJoin('node', 'n', 'n.nid = r.nid');
+  $query->fields('r', $fields);
+  $query->fields('u', array('name'));
+  $query->join('users', 'u', 'u.uid = r.uid');
+  $query->condition('n.type', $content_type, '=');
+  $query->orderBy('r.timestamp', 'DESC');
+
+  if (!empty($uuids)) {
+    $query->condition('n.uuid', $uuids, 'IN');
+  }
+
+  if (count($fields) > 1) {
+    $revisions = $query->execute()->fetchAll();
+  }
+  else {
+    $revisions = $query->execute()->fetchCol(reset($fields));
+  }
+
+  return $revisions;
+}
+
+/**
+ * Check if $guid is a valid uuid.
+ */
+function open_data_schema_ckan_is_valid_guid($guid) {
+  return !empty($guid) && preg_match('/^(\{)?[a-f\d]{8}(-[a-f\d]{4}){4}[a-f\d]{8}(?(1)\})$/i', $guid);
+}
+
+/**
+ * Normalize id parameter.
+ */
+function open_data_schema_map_normalize_id($content_type, $id) {
+  if (open_data_schema_ckan_is_valid_guid($id)) {
+    $uuid = $id;
+    $nid = reset(entity_get_id_by_uuid('node', array($nid), FALSE));
+    return array('nid' => $nid, 'uuid' => $uuid);
+  }
+  else {
+    $node_path = explode('/', drupal_lookup_path('source', $content_type . '/' . $id, NULL));
+    $nid = (!empty($node_path) && isset($node_path[1])) ? $node_path[1] : NULL;
+    $uuid = current(entity_get_uuid_by_id('node', array($nid), FALSE));
+    return array('nid' => $nid, 'uuid' => $uuid);
+  }
+}
+
+/**
+ * Implements hook_open_data_schema().
+ */
+function open_data_schema_ckan_open_data_schema() {
+  $schemas_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_ckan') . '/data/';
+  return array(
+    array(
+      'short_name' => 'ckan_dataset',
+      'title' => 'CKAN Dataset',
+      'schema_file' => $schemas_path . 'ckan_dataset_schema.json',
+      'description' => t('CKAN Dataset Schema. See http://ckan.org for more awesome details.'),
+    ),
+    array(
+      'short_name' => 'ckan_group',
+      'title' => 'CKAN Group',
+      'schema_file' => $schemas_path . 'ckan_group_schema.json',
+      'description' => t('CKAN Group Schema. See http://ckan.org for more awesome details.'),
+    ),
+    array(
+      'short_name' => 'ckan_resource',
+      'title' => 'CKAN Resource',
+      'schema_file' => $schemas_path . 'ckan_resource_schema.json',
+      'description' => t('CKAN Resource Schema. See http://ckan.org for more awesome details.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_open_data_schema_map_endpoint_query().
+ */
+function open_data_schema_ckan_open_data_schema_map_endpoint_query_alter(&$query, $machine_name) {
+  if ($machine_name == 'ckan_current_package_list_with_resources') {
+    unset($query->order);
+    $query->propertyOrderBy('changed', 'DESC');
+  }
+}
+
+/**
+ * Implements hook_open_data_schema_map_args_alter().
+ */
+function open_data_schema_ckan_open_data_schema_map_args_alter(&$field, &$args_value, $machine_name) {
+  if ($machine_name == 'ckan_group_package_show') {
+    $field[0] = 'node';
+    $field[1] = 'og_group_ref';
+    $nid_uuid = open_data_schema_map_normalize_id('group', $args_value['query']);
+    if (empty($nid_uuid['nid'])) {
+      $error_data = array(
+        '__type' => 'Not Found Error',
+        'message' => 'Not Found',
+      );
+      throw new OpenDataSchemaMapException($error_data['message'], 404, $error_data);
+    }
+    $nid = $nid_uuid['nid'];
+    if (!empty($nid)) {
+      $args_value['query'] = $nid;
+    }
+    $args_value['value'] = 'target_id';
+  }
+  // CKAN accepts either uuid as name in the id parameter.
+  if ($args_value['field'] == 'id' && !open_data_schema_ckan_is_valid_guid($args_value['query']) && $machine_name != 'ckan_group_package_show') {
+    $args_value['field'] = 'name';
+    $args_value['token']['value'] = '[node:url:args:last]';
+    $field[1] = 'name';
+  }
+}
+
+/**
+ * Implements hook_open_data_schema_map_results_alter().
+ */
+function open_data_schema_ckan_open_data_schema_map_results_alter(&$result, $machine_name, $api_schema) {
+  $ckan_schemas = array(
+    'ckan_dataset',
+    'ckan_group',
+    'ckan_resource',
+    'ckan_no_schema',
+  );
+  if (in_array($api_schema, $ckan_schemas)) {
+    // CKAN expects results wrapped in help, success, result.
+    $response = array(
+      'help' => '',
+      'success' => TRUE,
+      'result' => $result,
+    );
+    if ($machine_name == 'ckan_package_show') {
+      $response['help'] = t('Return the metadata of a dataset (package) and its resources. :param id: the id or name of the dataset :type id: string');
+      $response['result'] = isset($result[0]) ? $result[0] : NULL;
+    }
+    elseif ($machine_name == 'ckan_package_list') {
+      $list = array();
+      $response['help'] = t("Return a list of the names of the site's datasets (packages).\n\n :param limit: if given, the list of datasets will be broken into pages of\n at most ``limit`` datasets per page and only one page will be returned\n at a time (optional)\n :type limit: int\n :param offset: when ``limit`` is given, the offset to start returning packages from\n :type offset: int\n\n :rtype: list of strings\n\n");
+      foreach ($response['result'] as $num => $data) {
+        // This endpoint just produces a list.
+        $list[] = $data['name'];
+      }
+      $response['result'] = $list;
+    }
+    elseif ($machine_name == 'ckan_group_list') {
+      $list = array();
+      $response['help'] = t("Return a list of the names of the site's groups.\n\n    :param order_by: the field to sort the list by, must be ``'name'`` or\n      ``'packages'`` (optional, default: ``'name'``) Deprecated use sort.\n    :type order_by: string\n    :param sort: sorting of the search results.  Optional.  Default:\n        \"name asc\" string of field name and sort-order. The allowed fields are\n        'name' and 'packages'\n    :type sort: string\n    :param all_fields: return full group dictionaries instead of  just names\n        (optional, default: ``False``)\n    :type all_fields: boolean\n\n    :rtype: list of strings");
+      foreach ($response['result'] as $num => $data) {
+        // This endpoint just produces a list.
+        foreach ($data as $api_field => $item) {
+          $list[] = $item;
+        }
+      }
+      $response['result'] = $list;
+    }
+    elseif ($machine_name == 'ckan_current_package_list_with_resources') {
+      $response['help'] = t("Return a list of the site's datasets (packages) and their resources. The list is sorted most-recently-modified first. :param limit: if given, the list of datasets will be broken into pages of at most ``limit`` datasets per page and only one page will be returned at a time (optional) :type limit: int :param offset: when ``limit`` is given, the offset to start returning packages from :type offset: int :param page: when ``limit`` is given, which page to return, Deprecated use ``offset`` :type page: int :rtype: list of dictionaries");
+    }
+    elseif ($machine_name == 'ckan_resource_show') {
+      $response['help'] = t('Return the metadata of a resource. :param id: the id of the resource :type id: string :rtype: dictionary');
+      $response['result'] = isset($result[0]) ? $result[0] : NULL;
+    }
+    elseif ($machine_name == 'ckan_group_package_show') {
+      $response['help'] = t('Return the datasets (packages) of a group. :param id: the id or name of the group :type id: string :param limit: the maximum number of datasets to return (optional) :type limit: int :rtype: list of dictionaries');
+    }
+    elseif ($machine_name == 'ckan_site_read') {
+      $response['help'] = t('Return ``True``. :rtype: boolean');
+      $response['result'] = TRUE;
+    }
+    elseif ($machine_name == 'ckan_revision_list') {
+      $response['help'] = t("Return a list of the IDs of the site's revisions.\n\n :rtype: list of strings.");
+      $response['result'] = $result;
+
+    }
+    elseif ($machine_name == 'ckan_package_revision_list') {
+      $response['help'] = t("Return a dataset (package)'s revisions as a list of dictionaries. :param id: the id or name of the dataset :type id: string");
+      $response['result'] = $result;
+    }
+
+    if (isset($result['error'])) {
+      $response['success'] = FALSE;
+      $response['error'] = $result['error'];
+      unset($response['result']);
+    }
+
+    /*
+    * Since this hook insn't wrapped in the try catch stament
+    * we need to manage not found error by hand
+    */
+    if (!isset($result['error']) && $response['result'] === NULL) {
+      $error = array(
+        '__type' => 'Not Found Error',
+        'message' => 'Not Found',
+      );
+      $response['error'] = $error;
+      unset($response['result']);
+      drupal_add_http_header('Status', '404 Not Found');
+    }
+    $result = $response;
+  }
+}

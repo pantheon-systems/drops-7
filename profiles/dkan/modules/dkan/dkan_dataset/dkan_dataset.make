@@ -21,7 +21,7 @@ projects[context][subdir] = contrib
 projects[ctools][version] = 1.4
 projects[ctools][subdir] = contrib
 
-projects[date][version] = 2.7
+projects[date][version] = 2.8
 projects[date][subdir] = contrib
 
 projects[double_field][version] = 2.3
@@ -96,15 +96,30 @@ projects[og_extras][download][revision] = "b7e3587"
 projects[og_extras][subdir] = contrib
 projects[og_extras][type] = module
 
+projects[open_data_schema_map][type] = module
+projects[open_data_schema_map][download][type] = git
+projects[open_data_schema_map][download][url] = https://github.com/NuCivic/open_data_schema_map.git
+projects[open_data_schema_map][download][branch] = master
+projects[open_data_schema_map][download][revision] = a962d05a921b66772aa9b084c677fafec4721ae7
+projects[open_data_schema_map][subdir] = contrib
+
+projects[open_data_schema_map_dkan][type] = module
+projects[open_data_schema_map_dkan][download][type] = git
+projects[open_data_schema_map_dkan][download][url] = https://github.com/NuCivic/open_data_schema_map_dkan.git
+projects[open_data_schema_map_dkan][download][branch] = master
+projects[open_data_schema_map_dkan][download][revision] = b652a71d6f7c46b289ec795cd7130c69bcb68f91
+projects[open_data_schema_map_dkan][subdir] = contrib
+
 projects[ref_field][download][type] = git
 projects[ref_field][download][url] = "http://git.drupal.org/project/ref_field.git"
 projects[ref_field][download][patch][1670356] = http://drupal.org/files/removed_notice-1670356-1.patch
-projects[ref_field][download][patch][2201735] = https://drupal.org/files/issues/ref_field-invalid_argument_supplied_for_foreach-2201735-2.patch
+projects[ref_field][download][patch][2360019] = https://www.drupal.org/files/issues/ref_field-delete-insert-warning-2360019-0.patch
 projects[ref_field][download][revision] = 9dbf7cf
 projects[ref_field][subdir] = contrib
 projects[ref_field][type] = module
 
-projects[remote_file_source][version] = 1.0
+projects[remote_file_source][version] = 1.x
+projects[remote_file_source][download][patch][2362487] = https://www.drupal.org/files/issues/remote_file_source-location-content-dist.patch
 projects[remote_file_source][subdir] = contrib
 
 projects[remote_stream_wrapper][version] = 1.0-beta4
@@ -190,6 +205,18 @@ libraries[chosen][download][type] = git
 libraries[chosen][download][url] = "https://github.com/harvesthq/chosen.git"
 libraries[chosen][directory_name] = chosen
 libraries[chosen][download][revision] = "a0ca7da1ae52235b5abb6f66d9218a20450116c1"
+
+libraries[deep_diff][type] = libraries
+libraries[deep_diff][download][type] = git
+libraries[deep_diff][download][url] = "https://github.com/flitbit/diff.git"
+libraries[deep_diff][directory_name] = deep_diff
+libraries[deep_diff][download][revision] = "07e91c624e5016be5c5c6560a9eabe49ef3ba2d0"
+
+libraries[recline_deeplink][type] = libraries
+libraries[recline_deeplink][download][type] = git
+libraries[recline_deeplink][download][url] = "https://github.com/NuCivic/recline-deeplink.git"
+libraries[recline_deeplink][directory_name] = recline_deeplink
+libraries[recline_deeplink][download][revision] = "3175e9332b5bee893ad2e4c3018b81d1b4cde455"
 
 libraries[slugify][type] = libraries
 libraries[slugify][download][type] = git

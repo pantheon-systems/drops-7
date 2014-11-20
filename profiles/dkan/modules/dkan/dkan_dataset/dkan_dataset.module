@@ -52,10 +52,23 @@ function dkan_dataset_menu() {
     'page arguments' => array('dkan_dataset_form_settings'),
     'access arguments' => array('administer site configuration'),
   );
-
+  if (module_exists('open_data_schema_map_dkan')) {
+    $items['admin/dkan/dataset_api'] = array(
+      'title' => 'DKAN Dataset API',
+      'description' => 'Settings for DKAN Dataset APIs.',
+      'page callback' => 'dkan_dataset_api_menu_settings',
+      'access arguments' => array('administer site configuration'),
+    );
+  }
   return $items;
 }
 
+/**
+ * Menu Callback for DKAN Dataset settings.
+ */
+function dkan_dataset_api_menu_settings() {
+  drupal_goto('admin/config/services/odsm');
+}
 /**
  * Menu Callback for DKAN Dataset settings.
  */
