@@ -1,5 +1,5 @@
 
-Drupal 7.34, 2014-11-19
+Drupal 7.34, 2014-11-19.
 ----------------------
 - Fixed security issues (multiple vulnerabilities). See SA-CORE-2014-006.
 
