@@ -10,9 +10,9 @@ configure = admin/config/user-interface/beautytips
 
 
 
-; Information added by drush on 2014-11-20
+; Information added by drush on 2014-12-22
 version = "7.x-2.0-beta2+7-dev"
 core = "7.x"
 project = "beautytips"
-datestamp = "1416522466"
+datestamp = "1419279634"
 
