@@ -144,6 +144,7 @@ this.recline.DeepLink = this.recline.DeepLink || {};
      */
     self.updateControls = function(){
       var id = multiview.state.get('currentView');
+      multiview.pager.render();
       if(id === 'graph' || id === 'map') {
         var index = self.getCurrentViewIndex();
         var menuMap = {graph:'editor', map:'menu'};
@@ -273,8 +274,11 @@ this.recline.DeepLink = this.recline.DeepLink || {};
      * @return {String}
      */
     self.escapeStrings = function(str){
-      str = str.replace(/"([a-zA-Z-]+)"\s?:/g ,  "$1:");
-      return str.replace(/"([a-zA-Z-#]+)"/g ,  "!$1");
+      //stripping quotes from keys
+      str = str.replace(/"([a-zA-Z-_.]+)"\s?:/g ,  "$1:");
+      //replacing spaces between quotes with underscores
+      str = str.replace(/\x20(?![^"]*("[^"]*"[^"]*)*$)/g, "_");
+      return str.replace(/"([a-zA-Z-#_.-]+)?"/g ,  "!$1");
     };
 
     /**
@@ -283,8 +287,11 @@ this.recline.DeepLink = this.recline.DeepLink || {};
      * @return {String}
      */
     self.parseStrings = function(str){
-      str = str.replace(/([a-zA-Z-]+)\s?:/g ,  "\"$1\":");
-      return str.replace(new RegExp('!([a-zA-Z-#]+)', 'g'),  "\"$1\"");
+      //adding quotes to keys
+      str = str.replace(/([a-zA-Z-_.]+)\s?:/g ,  "\"$1\":");
+      //replacing underscores with spaces for any word that start with !
+      str = str.replace(/![a-zA-Z0-9_. -]+/g, function(x) { return x.replace(/_/g, ' '); });
+      return str.replace(new RegExp('!([a-zA-Z-# .-]+)?', 'g'),  "\"$1\"");
     };
   };
 

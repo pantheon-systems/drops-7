@@ -15,9 +15,9 @@ files[] = rdfx.restws.formats.inc
 files[] = rdfx.test
 
 
-; Information added by drush on 2014-11-20
+; Information added by drush on 2014-12-22
 version = "7.x-2.0-alpha4+9-dev"
 core = "7.x"
 project = "rdfx"
-datestamp = "1416522495"
+datestamp = "1419279684"
 

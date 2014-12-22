@@ -100,7 +100,7 @@ projects[open_data_schema_map][type] = module
 projects[open_data_schema_map][download][type] = git
 projects[open_data_schema_map][download][url] = https://github.com/NuCivic/open_data_schema_map.git
 projects[open_data_schema_map][download][branch] = master
-projects[open_data_schema_map][download][revision] = a962d05a921b66772aa9b084c677fafec4721ae7
+projects[open_data_schema_map][download][revision] = 1a62a7084c1c81fcf5569acc3c9bba1a0a8ba5f1
 projects[open_data_schema_map][subdir] = contrib
 
 projects[open_data_schema_map_dkan][type] = module
@@ -200,23 +200,14 @@ projects[pathauto][version] = 1.2
 projects[pathauto][subdir] = contrib
 
 ; Libraries
+
+includes[recline_make] = https://raw.githubusercontent.com/NuCivic/recline/7.x-1.x/recline.make
+
 libraries[chosen][type] = libraries
 libraries[chosen][download][type] = git
 libraries[chosen][download][url] = "https://github.com/harvesthq/chosen.git"
 libraries[chosen][directory_name] = chosen
 libraries[chosen][download][revision] = "a0ca7da1ae52235b5abb6f66d9218a20450116c1"
-
-libraries[deep_diff][type] = libraries
-libraries[deep_diff][download][type] = git
-libraries[deep_diff][download][url] = "https://github.com/flitbit/diff.git"
-libraries[deep_diff][directory_name] = deep_diff
-libraries[deep_diff][download][revision] = "07e91c624e5016be5c5c6560a9eabe49ef3ba2d0"
-
-libraries[recline_deeplink][type] = libraries
-libraries[recline_deeplink][download][type] = git
-libraries[recline_deeplink][download][url] = "https://github.com/NuCivic/recline-deeplink.git"
-libraries[recline_deeplink][directory_name] = recline_deeplink
-libraries[recline_deeplink][download][revision] = "3175e9332b5bee893ad2e4c3018b81d1b4cde455"
 
 libraries[slugify][type] = libraries
 libraries[slugify][download][type] = git
@@ -233,11 +224,6 @@ libraries[Leaflet][type] = libraries
 libraries[Leaflet][download][type] = git
 libraries[Leaflet][download][url] = "https://github.com/Leaflet/Leaflet.git"
 libraries[Leaflet][download][revision] = "81221ae4cd9772a8974b2e3c867d4fb35abd052d"
-
-libraries[recline][type] = libraries
-libraries[recline][download][type] = git
-libraries[recline][download][url] = "https://github.com/okfn/recline.git"
-libraries[recline][download][revision] = "7757e563ee180e136a8a4008b6ac7b7b56e3050f"
 
 libraries[arc][type] = libraries
 libraries[arc][download][type] = git

@@ -1,5 +1,8 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
   <!-- bootstrap -->
   <!-- Le HTML5 shim, for IE6-8 support of HTML elements -->
   <!--[if lt IE 9]>
@@ -85,34 +88,50 @@
   <script type="text/javascript" src="../lib/widget.facetviewer.js"></script>
   <script type="text/javascript" src="../lib/widget.fields.js"></script>
   <script type="text/javascript" src="../lib/view.multiview.js"></script>
+  <style type="text/css">
+  body{
+    margin-bottom: 50px;
+  }
+  .recline-slickgrid {
+    height: 300px;
+  }
+  </style>
 </head>
 
-<style type="text/css">
-.recline-slickgrid {
-  height: 300px;
-}
-
-.recline-timeline .vmm-timeline {
-  height: 550px;
-}
-
-.changelog {
-  display: none;
-  border-bottom: 1px solid #ccc;
-  margin-bottom: 10px;
-}
-</style>
 <body>
-<div class="changelog">
-  <h3>Changes</h3>
-</div>
+  <div class="container">
+    <h2>Recline DeepLink</h2>
+    <p>Saves the current multiview state allowing to share a visualization by url.</p>
 
-<div class="data-explorer-here"></div>
+    <h3>Requirementes</h3>
+    <ul>
+      <li>Recline multiview</li>
+    </ul>
+    <h4>To save time we recommend to install this tools:</h4>
+    <ul>
+      <li><a href="https://www.npmjs.org/">NPM</a></li>
+      <li><a href="http://gruntjs.com/">Grunt</a></li>
+      <li><a href="http://bower.io/">Bower</a></li>
+    </ul>
 
-<div style="clear: both;"></div>
+    <h3>Usage</h3>
+    <p>You only have to pass a valid multiview object as value to recline.DeepLink.Router constructor.</p>
+    <div class="highlight highlight-javascript"><pre><span class="kt">var</span> router <span class="o">=</span> <span class="o">new</span> <span class="no">recline</span>.DeepLink.Router(multiview);</pre></div>
 
-<script type="text/javascript" src="app.js"></script>
-<script type="text/javascript" src="../src/recline.deeplink.js"></script>
+    <h3>Installation</h3>
+    <pre>git clone https://github.com/NuCivic/recline-deeplink.git
+cd recline-deeplink
+bower install
+npm install</pre>
 
+    <h3>Run demo</h3>
+    <pre>grunt</pre>
+
+    <h3>Example</h3>
+    <div class="data-explorer-here"></div>
+    <div style="clear: both;"></div>
+  </div>
+  <script type="text/javascript" src="app.js"></script>
+  <script type="text/javascript" src="../src/recline.deeplink.js"></script>
 </body>
 </html>

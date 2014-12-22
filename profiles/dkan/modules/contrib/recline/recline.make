@@ -4,7 +4,7 @@ api = 2
 libraries[recline][type] = libraries
 libraries[recline][download][type] = git
 libraries[recline][download][url] = "https://github.com/okfn/recline.git"
-libraries[recline][download][revision] = "7757e563ee180e136a8a4008b6ac7b7b56e3050f"
+libraries[recline][download][revision] = "abbab59ce581740ae4d2e7619a2503e5c55f49a9"
 
 libraries[deep_diff][type] = libraries
 libraries[deep_diff][download][type] = git
@@ -16,4 +16,4 @@ libraries[recline_deeplink][type] = libraries
 libraries[recline_deeplink][download][type] = git
 libraries[recline_deeplink][download][url] = "https://github.com/NuCivic/recline-deeplink.git"
 libraries[recline_deeplink][directory_name] = recline_deeplink
-libraries[recline_deeplink][download][revision] = "4fcf3c49ca37d436ab03e767764ff48184034c45"
+libraries[recline_deeplink][download][revision] = "3364b97d42b1d9f8b16df081a39a9d94e263b2f5"

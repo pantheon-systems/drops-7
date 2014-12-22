@@ -38,3 +38,9 @@ grunt
 ```bash
 grunt lint
 ```
+
+## Build example
+
+```bash
+make
+```

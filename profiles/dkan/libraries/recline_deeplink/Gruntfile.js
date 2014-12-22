@@ -4,7 +4,7 @@ module.exports = function(grunt) {
     pkg: grunt.file.readJSON('package.json'),
     uglify: {
       options: {
-        banner: '/*! <%= pkg.name %> <%= grunt.template.today("yyyy-mm-dd") %> */\n'
+        banner: '/*! <%= pkg.name %> v0.1 */\n'
       },
       build: {
         src: 'src/<%= pkg.name %>.js',
@@ -52,6 +52,11 @@ module.exports = function(grunt) {
     'express',
     'open',
     'watch'
+  ]);
+
+  grunt.registerTask('build', [
+    'jshint',
+    'uglify'
   ]);
 
   grunt.registerTask('lint', ['jshint']);

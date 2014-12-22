@@ -457,7 +457,7 @@ function recline_default_formatter_output($variables) {
   }
   if ($recline) {
     // Necessary to fix https://github.com/mapbox/mapbox.js/issues/339
-    $leaflet_imgs = $recline['library path'] . '/vendor/leaflet/0.4.4/images';
+    $leaflet_imgs = $recline['library path'] . '/vendor/leaflet/0.7.3/images';
     drupal_add_js('L.Icon.Default.imagePath = "/' . $leaflet_imgs . '"', 'inline');
   }
 

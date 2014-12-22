@@ -16,7 +16,7 @@ class context_reaction_menu extends context_reaction {
         list($menu_name, $mlid) = explode(':', $id);
         // Store the title each menu for reference.
         if ($mlid == '0') {
-          $menu_names[$menu_name] = check_plain($title);
+          $menu_names[$menu_name] = $title;
         }
         else {
           $link = menu_link_load($mlid);
