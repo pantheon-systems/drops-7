@@ -637,8 +637,9 @@ function pantheon_apachesolr_requirements($phase) {
     if ($pantheon_apachesolr_schema == '') {
       $requirements['pantheon_apachesolr']['severity'] = REQUIREMENT_ERROR;
       $requirements['pantheon_apachesolr']['value'] = t('Schema not posted!');
-      $requirements['pantheon_apachesolr']['description'] = t('You have not posted the schema.xml to the @pantheon_environment environment using the <a href="@url">post schema</a> interface.', array(
+      $requirements['pantheon_apachesolr']['description'] = t('You have not posted the schema.xml to the @pantheon_environment environment. Make sure you have <a href="@enableurl" target="_blank">enabled the Pantheon Apache Solr add on</a> and then <a href="@url">post your schema</a> using the module interface. ', array(
         '@url' => url('admin/config/search/pantheon/schema'),
+        '@enableurl' => 'https://www.getpantheon.com/docs/articles/sites/apache-solr/',
         '@pantheon_environment' => variable_get('pantheon_environment', 'dev'),
       ));
     }
