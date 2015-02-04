@@ -23,7 +23,7 @@ function pantheon_apachesolr_help($path, $arg) {
       $output .= '<ol>';
       $output .= '<li>' . t('For each Pantheon environment (dev, test and live), post the desired schema.xml to the Apache Solr server using the <a href="@url">post schema</a> interface. Step-by-step instructions can be found in <a href="@desk">Apache Solr on Pantheon</a>.', array(
         '@url' => url('admin/config/search/pantheon/schema'),
-        '@desk' => url('http://helpdesk.getpantheon.com/customer/portal/articles/361249'),
+        '@desk' => url('https://www.getpantheon.com/docs/articles/sites/apache-solr/'),
       )) . '</p>';
       $output .= '</ol>';
 
