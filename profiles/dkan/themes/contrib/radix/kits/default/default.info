@@ -1,0 +1,34 @@
+name        = {{Name}}
+description = {{Description}}
+screenshot  = screenshot.png
+core        = 7.x
+
+; Base - Radix
+base theme  = radix
+hidden = true
+
+; Regions
+regions[content] = Content
+
+; Panels
+plugins[panels][layouts] = panels/layouts
+plugins[panels][styles] = panels/styles
+
+; CSS - General
+stylesheets[all][]     = assets/stylesheets/screen.css
+stylesheets[print][]   = assets/stylesheets/print.css
+
+; CSS - Conditional
+stylesheets-conditional[lte IE 9][all][] = assets/stylesheets/ie.css
+stylesheets-conditional[IE 7][all][] = assets/stylesheets/ie7.css
+stylesheets-conditional[IE 8][all][] = assets/stylesheets/ie8.css
+
+; Javascript
+scripts[] = assets/javascripts/script.js
+
+; Information added by Drupal.org packaging script on 2014-12-09
+version = "7.x-3.0-rc1"
+core = "7.x"
+project = "radix"
+datestamp = "1418143643"
+

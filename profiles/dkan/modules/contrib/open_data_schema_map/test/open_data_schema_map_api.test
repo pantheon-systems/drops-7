@@ -63,7 +63,7 @@ class OpenDataSchemaMapAPIWebTestCase extends DrupalWebTestCase {
    * Change /data.json path to /json during tests.
    */
   protected function fixJsonEndpoint() {
-    $data_json = open_data_schema_map_api_load('data_json');
+    $data_json = open_data_schema_map_api_load('data_json_1_1');
     $data_json->endpoint = 'json';
     drupal_write_record('open_data_schema_map', $data_json, 'id');
     drupal_static_reset('open_data_schema_map_api_load_all');
@@ -75,11 +75,11 @@ class OpenDataSchemaMapAPIWebTestCase extends DrupalWebTestCase {
    */
   public function testDkanDatasetAPIRead() {
     // Get all data.json succesful responses.
-    $responses = $this->runQuerys('data_json');
+    $responses = $this->runQuerys('data_json_1_1');
     // Get all data.json sucessful responses.
     foreach ($responses as $r) {
       // There should be only one item.
-      foreach ($r as $dataset) {
+      foreach ($r->dataset as $dataset) {
         // Test if title is set.
         $this->assertTrue(isset($dataset->title));
       }

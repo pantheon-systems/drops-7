@@ -26,14 +26,14 @@
             // This is the very basic state collection.
             var state = recline.View.parseQueryString(decodeURIComponent(window.location.hash));
             if ('#map' in state) {
-                state['currentView'] = 'map';
+                state.currentView = 'map';
             } else if ('#graph' in state) {
-                state['currentView'] = 'graph';
+                state.currentView = 'graph';
             } else if ('#timeline' in state) {
-                state['currentView'] = 'timeline';
+                state.currentView = 'timeline';
             }
             // Checks if dkan_datastore is installed.
-            if (dkan || fileType == 'text/csv') {
+            if (dkan || fileType == 'text/csv' || fileType == 'csv') {
                 var drupal_base_path = Drupal.settings.basePath;
                 var DKAN_API = drupal_base_path + 'api/action/datastore/search.json';
                 var url = dkan ? (window.location.origin + DKAN_API + '?resource_id=' + uuid) : file;
@@ -179,8 +179,28 @@
             views: views
         };
 
+        // Getting base embed url.
+        var urlBaseEmbed = $('.embed-code').text();
+        var iframeOptions = {src: urlBaseEmbed, width:850, height:400};
+        // Attaching router to dataexplorer state.
         window.dataExplorer = new recline.View.MultiView(Drupal.settings.recline.args);
-        router = new recline.DeepLink.Router(window.dataExplorer);
+        window.router = new recline.DeepLink.Router(window.dataExplorer);
+
+        // Adding router listeners.
+        changeEmbedCode = getEmbedCode(iframeOptions);
+        window.router.on('init', changeEmbedCode);
+        window.router.on('stateChange', changeEmbedCode);
+
+        // Add map dependency just for map views.
+        _.each(window.dataExplorer.pageViews, function(item, index){
+            if(item.id && item.id === 'map'){
+                var map = window.dataExplorer.pageViews[index].view.map;
+                window.router.addDependency(new recline.DeepLink.Deps.Map(map, window.router));
+            }
+        });
+        // Start to track state chages.
+        window.router.start();
+
         $.event.trigger('createDataExplorer');
         return views;
     };
@@ -189,6 +209,16 @@
       $(this).parents('.recline-embed').find('.embed-code-wrapper').toggle();
       return false;
     });
+
+    function getEmbedCode(options){
+        return function(state){
+            var iframeOptions = _.clone(options);
+            var iframeTmpl = _.template('<iframe width="<%= width %>" height="<%= height %>" src="<%= src %>" frameborder="0"></iframe>');
+            _.extend(iframeOptions, {src: iframeOptions.src + '#' + (state.serializedState || '')});
+            var html = iframeTmpl(iframeOptions);
+            $('.embed-code').text(html);
+        };
+    }
 
     function isInverted(){
         return dataExplorer.pageViews[1].view.state.attributes.graphType === 'bars';

@@ -11,6 +11,6 @@
 <div class="recline-embed">
   <a class="embed-link" href="#"><?php print t('Embed'); ?></a>
   <div class="embed-code-wrapper">
-    <textarea class="embed-code" style="height: 25px;"><iframe width="700" height="400" src="<?php print $embed_url ?>" frameborder="0"></iframe></textarea>
+    <textarea class="embed-code" style="height: 25px;" onclick="select()"><?php print $embed_url ?></textarea>
   </div>
 </div>

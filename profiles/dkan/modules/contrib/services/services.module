@@ -983,7 +983,7 @@ function services_resource_build_index_list($results, $type, $field) {
  *  @param $account
  *    Object user object.
  */
-function services_remove_user_data($account) {
+function services_remove_user_data(&$account) {
   global $user;
 
   // Remove the user password from the account object.

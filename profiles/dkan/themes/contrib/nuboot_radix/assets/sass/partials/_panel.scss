@@ -1,0 +1,104 @@
+//
+// Styles for panels and panes.
+// --------------------------------------------------
+.region-content {
+	margin: 0 15px;
+}
+
+.breadcrumb,
+.alert,
+.tabs--primary,
+.page-header {
+  margin: 0 15px 15px;
+}
+
+.page-admin {
+	.region-content {
+		margin: 0;
+	}
+	.breadcrumb,
+	.alert,
+	.tabs--primary,
+	.page-header {
+		margin: 0 0 15px;
+	}
+}
+
+.front {
+	.region-content {
+		margin: 0;
+	}
+	.alert {
+		margin: 10px 15px;
+	}
+}
+
+#panels-choose-layout .form-type-radio input, 
+.panels-choose-layout .form-type-radio input {
+	width: 15px;
+}
+
+.radix-layouts-sidebar {
+	.pane-title {
+		@include block-title;
+	}
+	.pane-block {
+		@include popblock;
+	}
+	// facet blocks.
+	div[class*="pane-facetapi"] .pane-content,
+	.pane-dkan-sitewide-dkan-sitewide-social .pane-content {
+		padding: 0;
+	}
+}
+.page-user .radix-layouts-content .pane-content {
+  padding: 0;
+  .profile {
+  	margin-top: 0;
+  }
+}
+.radix-layouts-content {
+	.pane-title {
+		font-size: 30px;
+  	line-height: 36px;
+		margin:0 0 15px 0;
+		padding:0;
+	}
+	.pane-content {
+		@include popblock;
+		padding: 20px;
+		margin-bottom: 3em;
+	}
+	.pane-page-breadcrumb {
+		@include block-plain;
+		.breadcrumb {
+			display: block;
+			margin: 0 0 15px 0;
+		}
+	}
+}
+
+.page-manager-wrapper .panel-region {
+	.pane-title {
+		background-image: none;
+		border: none;
+		font-size: 1em;
+		line-height: normal;
+	}
+	.panel-pane-collapsible {
+		@include block-plain;
+		.pane-content {
+			padding: 10px 15px;
+		}
+	}
+}
+
+.panel-full-width .panel-bottom {
+	.panel-col-first,
+	.panel-col-second,
+	.panel-col-third {
+		inside {
+			//padding: 15px;
+		}
+	}
+}

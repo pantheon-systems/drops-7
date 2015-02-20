@@ -44,6 +44,13 @@ function data_ui_views_default_views() {
     $view->disabled = FALSE;
     $handler = $view->new_display('default', 'Default', 'default');
 
+    // Add a pager.
+    $handler->display->display_options['pager']['type'] = 'full';
+    $handler->display->display_options['pager']['options']['items_per_page'] = '50';
+    $handler->display->display_options['pager']['options']['offset'] = '0';
+    $handler->display->display_options['pager']['options']['id'] = '0';
+    $handler->display->display_options['pager']['options']['quantity'] = '9';
+
     // Add our columns to the view's fields.
     $fields = array();
     $meta_fields = $meta['fields'];

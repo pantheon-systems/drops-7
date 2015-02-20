@@ -17,3 +17,5 @@ features[open_data_schema_apis][] = ckan_package_list
 features[open_data_schema_apis][] = ckan_package_show
 features[open_data_schema_apis][] = ckan_resource_show
 features[open_data_schema_apis][] = data_json
+features[open_data_schema_apis][] = data_json_1_1
+mtime = 1418761948

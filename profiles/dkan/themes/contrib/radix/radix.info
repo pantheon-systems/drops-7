@@ -1,0 +1,37 @@
+name        = Radix
+description = A Drupal theme with Bootstrap and Sass.
+screenshot  = screenshot.png
+core        = 7.x
+
+; CSS - General
+stylesheets[all][]     = assets/stylesheets/radix-style.css
+stylesheets[print][]   = assets/stylesheets/radix-print.css
+
+; CSS - Conditional
+stylesheets-conditional[lte IE 9][all][] = assets/stylesheets/ie.css
+stylesheets-conditional[IE 7][all][] = assets/stylesheets/radix-ie7.css
+stylesheets-conditional[IE 8][all][] = assets/stylesheets/radix-ie8.css
+
+; Javascript
+scripts[] = assets/javascripts/radix-script.js
+
+; Regions
+regions[content] = Content
+
+; Features
+features[] = logo
+features[] = name
+features[] = favicon
+
+; Information added by drush on 2014-02-23
+version = "7.x-3.0-alpha2+4-dev"
+core = "7.x"
+project = "radix"
+datestamp = "1393170697"
+
+; Information added by Drupal.org packaging script on 2014-12-09
+version = "7.x-3.0-rc1"
+core = "7.x"
+project = "radix"
+datestamp = "1418143643"
+

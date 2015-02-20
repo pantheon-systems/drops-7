@@ -72,6 +72,10 @@ function open_data_schema_map_delete_submit(array $form, array &$form_state) {
   db_delete('open_data_schema_map')
   ->condition('id', $id)
     ->execute();
+  
+  // Rebuild menu so the API is not available anymore.
+  menu_rebuild();
+  
   drupal_set_message(t('API %name has been deleted', array('%name' => $api->name)));
   drupal_goto('admin/config/services/odsm');
 }
@@ -358,6 +362,8 @@ function open_data_schema_map_manage_submit($form, $form_state) {
   }
   drupal_static_reset('open_data_schema_map_api_load_all');
   if (drupal_write_record('open_data_schema_map', $record, $update)) {
+    // Rebuild menus in order to update/add the API.
+    menu_rebuild();
     drupal_set_message($message);
   }
   drupal_goto('admin/config/services/odsm/edit/' . $values['machine_name']);
@@ -382,38 +388,12 @@ function open_data_schema_map_add_type(&$values, $mapping) {
  * Creates endpoint.
  */
 function open_data_schema_map_endpoint($api) {
-  $queries = drupal_get_query_parameters();
-  try {
-    $args = open_data_schema_map_endpoint_args($api->mapping, $queries, $api->arguments);
-    if (isset($args['required'])) {
-      $error_data = array(
-        '__type' => 'Validation Error',
-        'name_or_id' => array('Missing Value'),
-      );
-      throw new OpenDataSchemaMapException(t('Required field "!field" is missing', array('!field' => $args['required'])), 400, $error_data);
-    }
-    // This endpoint is created in code.
-    if (isset($api->callback) && function_exists($api->callback)) {
-      $function = $api->callback;
-      $result = $function($queries, $api->arguments);
-    }
-    // This endpoint was created with the UI.
-    else {
-      if (isset($api->callback) && function_exists($api->callback)) {
-        $function = $api->callback;
-        return $function($api->args, $queries, $api->arguments);
-      }
-      $offset = open_data_schema_map_endpoint_special_arg($args, 'offset');
-      $limit = open_data_schema_map_endpoint_special_arg($args, 'limit');
-      $ids = open_data_schema_map_endpoint_query($api, $limit, $offset, $args);
-      $result = open_data_schema_map_endpoint_process_map($ids, $api);
-    }
-  }
-  catch (OpenDataSchemaMapException $e) {
-    drupal_add_http_header('Status', $e->getHTTPError());
-    $result['error'] = $e->getData();
-  }
-  drupal_alter('open_data_schema_map_results', $result, $api->machine_name, $api->api_schema);
+  $render = open_data_schema_map_render_api($api);
+  $headers = $render['headers'];
+  $result = $render['result'];
 
+  foreach ($headers as $key => $value) {
+    drupal_add_http_header($key, $value);
+  }
   return drupal_json_output($result);
 }

@@ -85,8 +85,13 @@ function filefield_source_remotefile_process($element, &$form_state, $form) {
  * A #filefield_value_callback function.
  */
 function filefield_source_remotefile_value($element, &$item) {
-  if (isset($item['filefield_remotefile']['url']) && drupal_strlen($item['filefield_remotefile']['url']) > 0 && $item['filefield_remotefile']['url'] != REMOTE_FILE_SOURCE_HINT_TEXT) {    
+  // A remote url has been entered.
+  if (isset($item['filefield_remotefile']['url'])
+    && drupal_strlen($item['filefield_remotefile']['url']) > 0
+    && $item['filefield_remotefile']['url'] != REMOTE_FILE_SOURCE_HINT_TEXT) {
+
     $value = $item['filefield_remotefile']['url'];
+
     if (!valid_url($value, TRUE)) {
       form_error($element, t('Invalid Remote File URL.'));
       return;
@@ -104,25 +109,55 @@ function filefield_source_remotefile_value($element, &$item) {
         return;
       }
     }
-    
+
     try {
       $file = remote_stream_wrapper_file_load_by_uri($value);
       if (!$file) {
+        // Check if it has a Location and treat that as the location.
         $file = remote_stream_wrapper_file_create_by_uri($value);
+        $curl = curl_init();
+        curl_setopt_array($curl, array(
+        CURLOPT_HEADER => TRUE,
+        CURLOPT_NOBODY => TRUE,
+        CURLOPT_RETURNTRANSFER => TRUE,
+        CURLOPT_URL => $value));
+        $headers = explode("\n", curl_exec($curl));
+        curl_close($curl);
+
+        foreach ($headers as $header) {
+          if (preg_match('/Location: (.+)/', $header, $matches)) {
+            $exploded = explode('/', $matches[1]);
+            if ($exploded && count($exploded) > 1) {
+              $file->filename = $exploded[count($exploded) - 1];
+            }
+          }
+          // Content-Disposition: attachment; filename="FILE NAME HERE"
+          elseif (preg_match('/Content-Disposition:.*?filename="(.+?)"/', $header, $matches)) {
+            $file->filename = trim($matches[1]);
+          }
+          // Content-Disposition: attachment; filename=file.ext
+          elseif (preg_match('/Content-Disposition:.*?filename=([^; ]+)/', $header, $matches)) {
+            $file->filename = trim($matches[1]);
+          }
+          elseif (preg_match('/Content-Type:[ ]*([a-z0-9_\-]+\/[a-z0-9_\-]+)/i', $header, $matches)) {
+            $mime_type = $matches[1];
+            $file->filemime = _remote_file_source_mime_extension($mime_type);
+          }
+        }
         $file->status = FALSE;
-        file_save($file);
+        $file = file_save($file);
       }
     }
     catch (Exception $e) {
       form_set_error('url', $e->getMessage());
       return;
     }
-  
+
     if (empty($file->fid)) {
       form_set_error($element, t('Unable to add file from URL %file.', array('%file' => $value)));
       return;
     }
-    
+
     // Run all the normal validations, minus file size restrictions.
     if (isset($element['#upload_validators']['file_validate_size'])) {
       unset($element['#upload_validators']['file_validate_size']);
@@ -130,6 +165,29 @@ function filefield_source_remotefile_value($element, &$item) {
 
     if (filefield_sources_element_validate($element, (object) $file)) {
       $item = array_merge($item, (array) $file);
-    }    
+    }
   }
+}
+
+/**
+ * Get/set the remote file extension in a static variable.
+ */
+function _remote_file_source_mime_extension($curl_mime_type = NULL) {
+  static $extension = NULL;
+  if (isset($curl_mime_type)) {
+    include_once DRUPAL_ROOT . '/includes/file.mimetypes.inc';
+    $curl_mime_type = drupal_strtolower($curl_mime_type);
+    $mapping = file_mimetype_mapping();
+    // See if this matches a known MIME type.
+    $map_id = array_search($curl_mime_type, $mapping['mimetypes']);
+    if ($map_id !== FALSE) {
+      // If we have a match, get this list of likely extensions. For some reason
+      // Drupal lists the "most common" extension last for most file types
+      // including php, jpg, and doc.
+      if ($extensions = array_keys($mapping['extensions'], $map_id)) {
+        $extension = end($extensions);
+      }
+    }
+  }
+  return $extension;
 }

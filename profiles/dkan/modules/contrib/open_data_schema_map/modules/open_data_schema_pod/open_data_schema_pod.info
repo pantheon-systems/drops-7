@@ -1,5 +1,5 @@
-name = Project Open Data Schema
-description = Provides Project Open Data Schema for Open Data Schema Map.
+name = POD Schema
+description = Provides POD Schema for Open Data Schema Map.
 core = 7.x
 package = Open Data
 version = 7.x-1.x

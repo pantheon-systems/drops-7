@@ -33,12 +33,8 @@ before_script:
   # Grab dependencies
   - git clone --branch 7.x-1.x https://github.com/NuCivic/dkan.git
   - git clone --branch 7.x-1.x https://github.com/NuCivic/dkan_dataset.git
-  # For now, when this gets in we need to merge that branch on odsm dkan module
-  - git clone --branch master https://github.com/NuCivic/open_data_schema_map_dkan.git
 
   # copy dependencies to sites/all
-  - cp -r $TRAVIS_BUILD_DIR open_data_schema_map_test/drupal/sites/all/modules/
-  - cp -r open_data_schema_map_dkan open_data_schema_map_test/drupal/sites/all/modules/
   - cp -r dkan/modules/dkan/dkan_sitewide/modules/dkan_default_content open_data_schema_map_test/drupal/sites/all/modules/
   - cp -r dkan_dataset open_data_schema_map_test/drupal/sites/all/modules/
 
@@ -47,6 +43,9 @@ before_script:
 
   # Make dkan_dataset
   - drush make -v --no-core --yes sites/all/modules/dkan_dataset/dkan_dataset.make
+  # Copy actual version of odsm to sites/all/modules
+  - rm -rf sites/all/modules/open_data_schema_map
+  - cp -r $TRAVIS_BUILD_DIR sites/all/modules/
 
   # Enable modules
   - drush --yes pm-enable dkan_dataset_content_types open_data_schema_map open_data_schema_map_dkan

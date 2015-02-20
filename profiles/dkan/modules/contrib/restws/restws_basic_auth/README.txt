@@ -15,3 +15,14 @@ You can configure the regex (suitable for preg_match()) in your settings.php,
 e.g.:
 
 $conf['restws_basic_auth_user_regex'] = '/^web_service.*/';
+
+
+Compatibility with Apache + PHP as CGI/FCGI:
+--------------------------------------------
+
+Unfortunately PHP_AUTH_USER & PHP_AUTH_PW server variables are not available
+when PHP is run as CGI/FCGI under Apache. However, it is possible to make the
+module work in such an environment by adding the following line to your
+.htaccess file:
+
+  RewriteRule .* - [E=HTTP_AUTHORIZATION:%{HTTP:Authorization}]

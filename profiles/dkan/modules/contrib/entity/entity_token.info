@@ -6,9 +6,9 @@ files[] = entity_token.module
 dependencies[] = entity
 
 
-; Information added by drush on 2014-12-22
+; Information added by drush on 2015-02-20
 version = "7.x-1.5+2-dev"
 core = "7.x"
 project = "entity"
-datestamp = "1419279643"
+datestamp = "1424464704"
 

@@ -189,47 +189,4 @@ class SchemaDatabaseSchema_mysql extends DatabaseSchema_mysql {
     return $tables;
   }
 
-  
-  
-  /**
-   * Get parent's type mapping and add missing
-   * 3rd-party module defined types.
-   *
-   * @return
-   *   An array with engine-specific type mappings
-   */
-  public function getFieldTypeMap() {
-    static $map = null;
-    
-    if(!$map) {
-      // get our parent class mapping first
-      $map = parent::getFieldTypeMap();
-      $db_type = db_driver().'_type';
-      
-      // Load all table schema fields. This has the effect of
-      //  loading in any 3rd-party module field_schemas
-      $fields = field_read_fields(array(), array('include_deleted' => TRUE, 'include_inactive' => TRUE));
-
-      foreach($fields as $field) {
-        $cols = $field['columns'];
-        
-        // loop thru each column and add any missing mappings
-        foreach($cols as $name=>$col) {
-          // Schema API says "type" is a required field - bail if it's missing
-          if(!isset($col['type'])) continue;
-          $type = $col['type'];
-          $size = (isset($col['size']) ? $col['size'] : 'normal');
-          $generic_type = $type.':'.$size;
-          if(!isset($map[$generic_type])) {
-            // use engine specific type if it exists
-            $map[$generic_type] = drupal_strtoupper(isset($col[$db_type]) ? $col[$db_type] : $type);
-          }
-        }
-
-      }
-    }
-
-    return $map;
-  }
-  
 }

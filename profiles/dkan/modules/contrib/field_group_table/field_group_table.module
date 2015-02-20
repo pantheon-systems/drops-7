@@ -112,7 +112,7 @@ function field_group_table_field_group_pre_render(&$element, $group, &$form) {
 
       foreach (element_children($element) as $k) {
         // Grab rendered version first.
-        $rendered = theme($element[$k]['#theme'], $element[$k]);
+        $rendered = isset($element[$k]['#theme']) ? theme($element[$k]['#theme'], $element[$k]) : '';
         // Don't render this via the standard field template.
         unset($element[$k]['#theme']);
 

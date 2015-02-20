@@ -17,6 +17,16 @@ Its companion Data UI provides
 * UI to add or alter columns to existing tables managed by Data module
 * Default views for tables managed by Data module
 
+Use Data Entity module if you would like to declare your data tables as entity
+types, and thus each record as an entity:
+
+* Install Data Entity
+* Go to admin/structure/data
+* Edit table to be declared as an entity type
+* Click on "Entity type" tab
+* Select the "Define table as an entity type" checkbox
+* Select a field to use as the entity ID (this must be integer or serial)
+
 Use Data Search module if you would like to search one or more columns of your
 data tables:
 
@@ -25,20 +35,6 @@ data tables:
 * Edit table to be indexed
 * Click on "Configure search" tab
 * Check table columns to be indexed
-
-Use Data Node module if you would like to relate nodes to data records:
-
-* Install Data Node
-* Go to admin/content/data
-* Edit table to relate to nodes
-* Click on "Relate to nodes" tab
-* Pick a content type
-* Pick which id in table will be related to a node id
-* Optionally:
-  * Use views field handler for adding/removing a data table record to
-    a node.
-  * Configure Data Node block to show up in sidebar for selecting an
-    active node to add a data table record to.
 
 Working with HTML Fields
 

@@ -1,0 +1,39 @@
+//
+// Styles for individual pages
+// --------------------------------------------------
+#page-header {
+  padding: 0 15px;
+}
+.main {
+  padding:20px 0;
+}
+.front .main {
+  padding: 0;
+}
+.page-admin .main {
+  padding: 20px 15px;
+}
+.page-groups {
+  article.node-teaser {
+    height: 365px;
+    margin-bottom: 20px;
+    .field-name-field-image img {
+      border:1px solid $shade;
+    }
+    h2.node-title {
+      font-size: 1.25em;
+      margin: .75em 0;
+    }
+    .view-og-count {
+      margin:8px 0;
+    }
+  }
+}
+
+#footer {
+  margin:0 ;
+}
+.footer {
+  padding:40px 0;
+  margin: 0;
+}

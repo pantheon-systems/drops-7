@@ -1,13 +1,23 @@
 module.exports = function(grunt) {
+  'use strict';
   // Project configuration.
   grunt.initConfig({
     pkg: grunt.file.readJSON('package.json'),
+    concat: {
+      options: {
+        separator: ';'
+      },
+      dist: {
+        src: ['src/**/*.js'],
+        dest: 'dist/<%= pkg.name %>.min.js'
+      }
+    },
     uglify: {
       options: {
         banner: '/*! <%= pkg.name %> v0.1 */\n'
       },
       build: {
-        src: 'src/<%= pkg.name %>.js',
+        src: ['src/**/*.js'],
         dest: 'dist/<%= pkg.name %>.min.js'
       }
     },
@@ -19,7 +29,7 @@ module.exports = function(grunt) {
         options: {
           bases: ['./'],
           port: 8080,
-          hostname: "0.0.0.0",
+          hostname: '0.0.0.0',
           livereload: true
         }
       }
@@ -38,7 +48,10 @@ module.exports = function(grunt) {
       }
     },
     jshint: {
-      all: ['Gruntfile.js', 'src/**/*.js']
+      all: ['Gruntfile.js', 'src/**/*.js', 'examples/*.js'],
+      options: {
+        jshintrc: true
+      }
     }
   });
 
@@ -47,15 +60,20 @@ module.exports = function(grunt) {
   grunt.loadNpmTasks('grunt-express');
   grunt.loadNpmTasks('grunt-livereload');
   grunt.loadNpmTasks('grunt-contrib-uglify');
+  grunt.loadNpmTasks('grunt-contrib-concat');
   // Default task(s).
   grunt.registerTask('default', [
     'express',
+    'jshint',
+    'concat',
+    'uglify',
     'open',
     'watch'
   ]);
 
   grunt.registerTask('build', [
     'jshint',
+    'concat',
     'uglify'
   ]);
 
