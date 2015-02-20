@@ -66,20 +66,42 @@ class FeedsFlatstoreProcessor extends FeedsProcessor {
   /**
    * Adds geolocation to data array.
    */
-  function geocode($data, $address_fields, $service = 'mapquest_nominatim') {
+  public function geocode($data, $address_fields, $service = 'mapquest_nominatim') {
     $address = '';
     if (!is_array($address_fields)) {
       $address_fields = explode(',', $address_fields);
     }
-    foreach ($data as $label => $value) {
-      if (in_array($label, $address_fields)) {
-        $address = $value . ' ' . $address;
+    $this->addressFieldPrepare($address_fields);
+    foreach ($address_fields as $key => $field) {
+      // If constant just add to address.
+      if (substr(trim($field), 0, 1) === '!') {
+        $field = substr(trim($field), 1);
+        $address = $address . ' ' . $field;
+      }
+      // Get data if not using constant.
+      else {
+        if (isset($data[$field])) {
+          $address = $address . ' ' . $data[$field];
+        }
       }
     }
     $geo = geocoder($service, $address);
     $data['latitude'] = $geo->coords['1'];
     $data['longitude'] = $geo->coords['0'];
     return $data;
+  }
+
+  /**
+   * Prepares address fields.
+   */
+  public function addressFieldPrepare(&$address_fields) {
+    foreach ($address_fields as $key => $field) {
+      if (substr(trim($field), 0, 1) !== '!') {
+        $field = strtolower(trim($field));
+        $field = str_replace(' ', '_', $field);
+      }
+      $address_fields[$key] = $field;
+    }
   }
 
   /**
@@ -112,20 +134,23 @@ class FeedsFlatstoreProcessor extends FeedsProcessor {
     }
   }
 
+  /**
+   * Schedules job.
+   */
   public function schedule() {
     $source = feeds_source($this->id, $this->feed_nid);
     $job = array(
-       'type' => $this->id,
-       'period' => 0,
-       'periodic' => TRUE,
-     );
-     if (FEEDS_EXPIRE_NEVER != $this->processor->expiryTime()) {
-       $job['period'] = 3600;
-       JobScheduler::get('feeds_importer_expire')->set($job);
-     }
-     else {
-       JobScheduler::get('feeds_importer_expire')->remove($job);
-     }
+      'type' => $this->id,
+      'period' => 0,
+      'periodic' => TRUE,
+    );
+    if (FEEDS_EXPIRE_NEVER != $this->processor->expiryTime()) {
+      $job['period'] = 3600;
+      JobScheduler::get('feeds_importer_expire')->set($job);
+    }
+    else {
+      JobScheduler::get('feeds_importer_expire')->remove($job);
+    }
   }
 
   /**
@@ -179,11 +204,20 @@ class FeedsFlatstoreProcessor extends FeedsProcessor {
       '#description' => t('Attempt to provide goelocation information. Warning: this will slow import. Use of this also depends on rate limits and ToS for services.'),
       '#default_value' => isset($source_config['geolocate']) ? $source_config['geolocate'] : FALSE,
     );
+    if (!module_exists('geocoder')) {
+      $form['geolocate']['#disabled'] = TRUE;
+      $form['geolocate']['#description'] = t('Geocoding requires enabling the Geocoder module');
+      $form['geolocate']['#default_value'] = FALSE;
+    }
     $form['geolocater'] = array(
       '#type' => 'select',
       '#title' => t('Geolocation Service'),
-      '#description' => t('Headers to use when attempting to geolocate.'),
-      '#options' => array('google' => t('Google'), 'yahoo' => t('Yahoo'), 'mapquest_nominatim' => t('Nominatim'), 'yandex' => t('Yandex')),
+      '#description' => t('Service to use when Geolocating.'),
+      '#options' => array(
+        'google' => t('Google'),
+        'yahoo' => t('Yahoo'),
+        'mapquest_nominatim' => t('Nominatim'),
+        'yandex' => t('Yandex')),
       '#default_value' => isset($source_config['geolocater']) ? $source_config['geolocater'] : 'google',
       '#states' => array(
         'visible' => array(
@@ -194,7 +228,7 @@ class FeedsFlatstoreProcessor extends FeedsProcessor {
     $form['geolocate_addresses'] = array(
       '#type' => 'textfield',
       '#title' => t('Geolocate Addresses'),
-      '#description' => t('Headers to use when attempting to geolocate. To add multiple comma separate values.'),
+      '#description' => t('Headers to use when attempting to geolocate. To add multiple use a comma separate values. Use "!" before values that should be constants. For example if every street is in same city use "!City Name". An example of a full address might be "Address, !Philadelphia, !PA,  Postal Code". Here all values are in Philadelphia though "Philadelphia" was not included in the data table.'),
       '#default_value' => isset($source_config['geolocate_addresses']) ? $source_config['geolocate_addresses'] : '',
       '#states' => array(
         'visible' => array(

@@ -74,17 +74,17 @@ function data_ui_menu() {
     'page arguments' => array('data_ui_adopt_form'),
     'file' => 'data_ui.admin.inc',
     'access arguments' => array('administer data tables'),
-    'type' => MENU_LOCAL_TASK,
+    'type' => MENU_LOCAL_ACTION,
     'weight' => 10,
   );
   $items['admin/structure/data/create'] = array(
-    'title' => 'Create a table',
+    'title' => 'Create new table',
     'description' => 'Create a data table.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('data_ui_create_form'),
     'file' => 'data_ui.admin.inc',
     'access arguments' => array('administer data tables'),
-    'type' => MENU_CALLBACK,
+    'type' => MENU_LOCAL_ACTION,
   );
 
   // Menu items in the tab set that data_entity adds Field UI tabs to need to

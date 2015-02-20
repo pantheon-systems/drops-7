@@ -467,69 +467,73 @@ function dkan_dataset_sync_groups($node) {
   $node_orig = entity_metadata_wrapper('node', $node->original);
   $node_new = entity_metadata_wrapper('node', $node);
   // Groups.
-  $groups_orig = $node_orig->og_group_ref->value();
-  $groups_new = $node_new->og_group_ref->value();
-  // Resources.
-  $resources_new = $node_new->field_resources->value();
-  $resources_orig = $node_orig->field_resources->value();
+  $groups_orig = $node_orig->__isset('og_group_ref') ? $node_orig->og_group_ref->value() : '';
+  $groups_new = $node_new->__isset('og_group_ref') ? $node_new->og_group_ref->value() : '';
+  if ($groups_new && $groups_orig) {
+    // Resources.
+    $resources_new = $node_orig->__isset('field_resources') ? $node_orig->field_resources->value() : '';
+    $resources_orig = $node_new->__isset('field_resources') ? $node_new->field_resources->value() : '';
+    if ($resources_new && $resources_orig) {
 
-  $new_groups = array();
-  $orig_groups = array();
-  $new_resources = array();
-  $orig_resources = array();
-  // If group is a singular value field process differently.
-  if (is_object($groups_new)) {
-    if ($groups_new->vuuid != $groups_orig->vuuid) {
-      dkan_dataset_process_groups($resources_new, $groups_new);
-    }
-  }
-  else {
-    // Grouping by nid to make it easier to compare.
-    foreach ($groups_new as $new_key => $new_group) {
-      $new_groups[$new_key] = $new_group->title;
-    }
-    foreach ($groups_orig as $orig_key => $orig_group) {
-      $orig_groups[$orig_key] = $orig_group->title;
-    }
-    foreach ($resources_new as $new_key => $new_resource) {
-      $new_resources[$new_resource->nid] = $new_resource;
-    }
-    foreach ($resources_orig as $orig_key => $orig_resource) {
-      if ($orig_resource) {
-        $orig_resources[$orig_resource->nid] = $orig_resource;
-      }
-    }
-    // Groups have changed.
-    $additional_groups = array();
-    $resources_added = array();
-    if ((array_diff($orig_groups, $new_groups) || array_diff($new_groups, $orig_groups)) && $resources_new) {
-      $additional_groups = dkan_dataset_resource_groups($resources_new, $node);
-      $groups_new = $groups_new + $additional_groups;
-      dkan_dataset_process_groups($resources_new, $groups_new);
-    }
-  }
-  // Resources have been added.
-  if (array_diff_key($new_resources, $orig_resources) && $groups_new) {
-    foreach ($new_resources as $nid => $resource) {
-      foreach ($orig_resources as $orig_nid => $orig_resource) {
-        // Don't process unless the resource has a referenced dataset.
-        if (!isset($orig_resources[$nid]) && $resource->field_dataset_ref) {
-          $resources_added[$nid] = $resource;
+      $new_groups = array();
+      $orig_groups = array();
+      $new_resources = array();
+      $orig_resources = array();
+      // If group is a singular value field process differently.
+      if (is_object($groups_new)) {
+        if ($groups_new->vuuid != $groups_orig->vuuid) {
+          dkan_dataset_process_groups($resources_new, $groups_new);
         }
       }
+      else {
+        // Grouping by nid to make it easier to compare.
+        foreach ($groups_new as $new_key => $new_group) {
+          $new_groups[$new_key] = $new_group->title;
+        }
+        foreach ($groups_orig as $orig_key => $orig_group) {
+          $orig_groups[$orig_key] = $orig_group->title;
+        }
+        foreach ($resources_new as $new_key => $new_resource) {
+          $new_resources[$new_resource->nid] = $new_resource;
+        }
+        foreach ($resources_orig as $orig_key => $orig_resource) {
+          if ($orig_resource) {
+            $orig_resources[$orig_resource->nid] = $orig_resource;
+          }
+        }
+        // Groups have changed.
+        $additional_groups = array();
+        $resources_added = array();
+        if ((array_diff($orig_groups, $new_groups) || array_diff($new_groups, $orig_groups)) && $resources_new) {
+          $additional_groups = dkan_dataset_resource_groups($resources_new, $node);
+          $groups_new = $groups_new + $additional_groups;
+          dkan_dataset_process_groups($resources_new, $groups_new);
+        }
+      }
+      // Resources have been added.
+      if (array_diff_key($new_resources, $orig_resources) && $groups_new) {
+        foreach ($new_resources as $nid => $resource) {
+          foreach ($orig_resources as $orig_nid => $orig_resource) {
+            // Don't process unless the resource has a referenced dataset.
+            if (!isset($orig_resources[$nid]) && $resource->field_dataset_ref) {
+              $resources_added[$nid] = $resource;
+            }
+          }
+        }
+        $additional_groups = dkan_dataset_resource_groups($resources_added, $node);
+        $groups_new = $groups_new + $additional_groups;
+        dkan_dataset_process_groups($resources_added, $groups_new);
+      }
+      // Resources have been removed.
+      if (array_diff_key($orig_resources, $new_resources)) {
+        $resources_removed = array_diff_key($orig_resources, $new_resources);
+        $additional_groups = dkan_dataset_resource_groups($resources_removed, $node);
+        // This resource should only still have groups if it is attached to
+        // another dataset that has groups.
+        $groups_new = $additional_groups;
+        dkan_dataset_process_groups($resources_removed, $groups_new, 'removed');
+      }
     }
-    $additional_groups = dkan_dataset_resource_groups($resources_added, $node);
-    $groups_new = $groups_new + $additional_groups;
-    dkan_dataset_process_groups($resources_added, $groups_new);
-  }
-  // Resources have been removed.
-  if (array_diff_key($orig_resources, $new_resources)) {
-    $resources_removed = array_diff_key($orig_resources, $new_resources);
-    $additional_groups = dkan_dataset_resource_groups($resources_removed, $node);
-    // This resource should only still have groups if it is attached to
-    // another dataset that has groups.
-    $groups_new = $additional_groups;
-    dkan_dataset_process_groups($resources_removed, $groups_new, 'removed');
   }
 }
 

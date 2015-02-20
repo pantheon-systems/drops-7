@@ -1,3 +1,11 @@
+7.x-1.7  2015-02-20
+--------------------------
+ - Adds Project Open Data v1.1 schema through open_data_schema_map update
+ - Adds dkan data.json v1.1 complaint implementation through open_data_schema_map_dkan update
+ - Adds Panels implementation for dkan_dataset_groups: http://docs.getdkan.com/dkan-documentation/dkan-users-guide/customize-dkan-pages-layouts-and-components-using-panels
+ - Updates to dkan_dataset stylesheet to make them radix compatible
+ - Security updates for several modules
+
 7.x-1.6
 ---------
  - Creating taxonomies during setup test

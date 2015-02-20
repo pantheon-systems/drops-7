@@ -193,7 +193,7 @@ function open_data_schema_map_form_recursion(&$form, $schema, $api, $defaults = 
       $form[$key] = array(
         '#title' => $value['title'],
         '#type' => 'textfield',
-        '#maxlength' => 256,
+        '#maxlength' => 512,
         '#description' => $description,
         '#default_value' => $default,
       );
@@ -334,6 +334,7 @@ function open_data_schema_map_api_load_all() {
   foreach ($list as $item) {
     $records[] = open_data_schema_map_api_load($item);
   }
+
   return $records;
 }
 
@@ -370,6 +371,10 @@ function open_data_schema_map_schema_load($schema_name) {
   $json_file = $loaded_schema['schema_file'];
   $json = file_get_contents($json_file);
   $schema = drupal_json_decode($json);
+  foreach (module_implements('open_data_schema_fill_references') as $module) {
+    $hook_implementation = $module . '_open_data_schema_fill_references';
+    $hook_implementation($schema_name, $schema);
+  }
   return $schema;
 }
 
@@ -616,7 +621,7 @@ function open_data_schema_map_json_4($schema, $api, $defaults) {
     $form[$item] = array(
       '#title' => $data['title'] . ' (' . $item . ')',
       '#type' => 'textfield',
-      '#maxlength' => 256,
+      '#maxlength' => 512,
       '#description' => $desc,
       '#default_value' => isset($defaults[$item]['value']) ? $defaults[$item]['value'] : '',
       '#field_type' => $data['type'],
@@ -638,7 +643,8 @@ function open_data_schema_map_json_4($schema, $api, $defaults) {
         '#description' => t('This array can iterate over multi-value fields. Select multi-value field to use. If none is selected this output will not loop and accept single value tokens. Selecting and saving an entity reference will produce a list of chaiabale tokens. For non entity reference fields, replace "?" with "Nth:value". "Nth" represents iteratable tokens.') . $osd_key_map,
       );
       foreach ($data['anyOf'][0]['items']['properties'] as $subitem => $subdata) {
-        $desc = isset($subdata['description']) ? $subdata['description'] . t('Type:') . $subdata['type'] : t('Type:') . $subdata['type'];
+        $desc = isset($subdata['description']) ? $subdata['description'] : '';
+        $desc .= isset($subdata['type']) ? t(' Type:') . $subdata['type'] : '';
         $form[$item][$subitem] = array(
           '#title' => $subdata['title'] . ' (' . $subitem . ')',
           '#type' => 'textfield',
@@ -648,8 +654,31 @@ function open_data_schema_map_json_4($schema, $api, $defaults) {
         );
       }
     }
+    if ($data['type'] == 'object') {
+      $description = '';
+      if ( isset($data['description']) ) {
+        $description = $data['description'];
+      }
+      $form[$item] = array(
+        '#title' => $data['title'],
+        '#type' => 'fieldset',
+        '#description' => $description,
+      );
+      if ( isset($data['properties']) ) {
+        foreach ($data['properties'] as $subitem => $subdata) {
+          $desc = isset($subdata['description']) ? $subdata['description'] : '';
+          $desc .= isset($subdata['type']) ? t(' Type:') . $subdata['type'] : '';
+          $form[$item][$subitem] = array(
+            '#title' => $subdata['title'] . ' (' . $subitem . ')',
+            '#type' => 'textfield',
+            '#maxlength' => 512,
+            '#description' => $desc,
+            '#default_value' => isset($defaults[$item][$subitem]['value']) ? $defaults[$item][$subitem]['value'] : '',
+          );
+        }
+      }
+    }
   }
-
   return $form;
 }
 
@@ -667,6 +696,7 @@ function open_data_schema_map_json_3_recursion(&$form, $schema, $api, $defaults 
     $form[$item] = array(
       '#title' => $item,
       '#type' => 'textfield',
+      '#maxlength' => 512,
       '#description' => $data['description'],
       '#field_type' => $field_type,
       '#default_value' => $default_value,
@@ -807,6 +837,7 @@ function open_data_schema_map_endpoint_process_map($ids, $api) {
  */
 function open_data_schema_map_endpoint_process_map_recursion(&$result, $map, $type, $entity) {
   foreach ($map as $api_field => $token) {
+    
     // Don't show results for fields without tokens.
     if ($token) {
       if (isset($token['value']) && !$token['value']) {
@@ -843,8 +874,17 @@ function open_data_schema_map_endpoint_process_map_recursion(&$result, $map, $ty
         }
       }
       else {
-        // Don't return empty fields.
-        if ($field_value = open_data_schema_map_endpoint_process_field($api_field, $token, $type, $entity)) {
+        if (!in_array('value', array_keys($token)) && count($token)) {
+          // If field has depth make recursive call.
+          $result[$api_field] = array();
+          open_data_schema_map_endpoint_process_map_recursion($result[$api_field], $map[$api_field], $type, $entity);
+          // foreach ($token as $subfield => $subtoken) {
+          //   if ($field_value = open_data_schema_map_endpoint_process_field($subfield, $subtoken, $type, $entity)) {
+          //     $result[$api_field][$subfield] = $field_value;    
+          //   }
+          // }
+        }
+        else if ($field_value = open_data_schema_map_endpoint_process_field($api_field, $token, $type, $entity)) {
           $result[$api_field] = $field_value;
         }
         else {
@@ -935,4 +975,48 @@ function open_data_schema_map_open_data_schema_map_args_alter(&$field, &$arg) {
       }
     }
   }
+}
+
+/**
+ * Function that renders and odsm api for endpoint.
+ */
+function open_data_schema_map_render_api($api, $query = NULL, $queries = NULL) {
+  if (!isset($queries)) {
+    $queries = drupal_get_query_parameters();
+  }
+  if (!isset($query)) {
+    $query = $_GET;
+  }
+  $headers = array();
+  try {
+    $args = open_data_schema_map_endpoint_args($api->mapping, $queries, $api->arguments);
+    if (isset($args['required'])) {
+      $error_data = array(
+        '__type' => 'Validation Error',
+        'name_or_id' => array('Missing Value'),
+      );
+      throw new OpenDataSchemaMapException(t('Required field "!field" is missing', array('!field' => $args['required'])), 400, $error_data);
+    }
+    // This endpoint is created in code.
+    if (isset($api->callback) && function_exists($api->callback)) {
+      $function = $api->callback;
+      $result = $function($queries, $api->arguments);
+    }
+    // This endpoint was created with the UI.
+    else {
+      $offset = open_data_schema_map_endpoint_special_arg($args, 'offset');
+      $limit = open_data_schema_map_endpoint_special_arg($args, 'limit');
+      $ids = open_data_schema_map_endpoint_query($api, $limit, $offset, $args);
+      $result = open_data_schema_map_endpoint_process_map($ids, $api);
+    }
+  }
+  catch (OpenDataSchemaMapException $e) {
+    $headers['Status'] = $e->getHTTPError();
+    $result['error'] = $e->getData();
+  }
+  drupal_alter('open_data_schema_map_results', $result, $api->machine_name, $api->api_schema);
+  return array(
+    'result' => $result,
+    'headers' => $headers,
+  );
 }

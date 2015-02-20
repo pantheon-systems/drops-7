@@ -184,6 +184,9 @@
   top: 0;
 }
 #field-tags-wrapper .path-form .add-on {
+  position: relative;
+  height: 34px;
+  padding: 7px;
   float: left;
   -webkit-border-radius: 3px 0 0 3px;
   -moz-border-radius: 3px 0 0 3px;
@@ -191,8 +194,6 @@
   display: inline-block;
   width: auto;
   min-width: 16px;
-  height: 19px;
-  padding: 1px 6px;
   font-weight: normal;
   line-height: 18px;
   text-align: center;
@@ -203,9 +204,9 @@
   z-index: 1;
 }
 #edit-path-alias {
-position: absolute;
-top: 0;
-padding: 4px 6px;
+  position: absolute;
+  top: 0;
+  padding: 4px 6px 4px 85px;
 }
 .form-item-path-alias {
   position: relative;

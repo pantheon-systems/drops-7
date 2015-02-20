@@ -134,17 +134,27 @@ function hook_restws_request_alter(array &$request) {
  *
  * @param mixed $response
  *   The response data being returned by the REST service (not yet serialized).
- *
  * @param string $function
  *   The function being called on the REST service.
- *
  * @param string $format
  *   The name of the format serializing the response.
+ * @param RestWSResourceControllerInterface $resourceController
+ *   The resource controller.
  */
-function hook_restws_response_alter(&$response, $function, $formatName) {
+function hook_restws_response_alter(&$response, $function, $formatName, $resourceController) {
   if ($function == 'viewResource' && $formatName == 'json') {
     $response['site_name'] = variable_get('site_name', '');
   }
+}
+
+/**
+ * Alter the list of allowed meta controls.
+ *
+ * @param array $controls
+ *   A list of allowed meta controlers
+ */
+function hook_restws_meta_controls_alter(&$controls) {
+  $controls['deep-load-refs'] = 'deep-load-refs';
 }
 
 /**

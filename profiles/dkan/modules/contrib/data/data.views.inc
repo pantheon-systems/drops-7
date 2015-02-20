@@ -111,6 +111,16 @@ function data_get_table_field_views_data($type, $table, $field_name, $default = 
         'help' => $title,
         'click sortable' => TRUE,
       );
+
+      // Extra options.
+      // Configure the Views numeric field handler to offer options for decimal
+      // numbers.
+      if ($views_data['handler'] == 'views_handler_field_numeric') {
+        if ($schema['fields'][$field_name]['type'] == 'float' || $schema['fields'][$field_name]['type'] == 'numeric') {
+          $views_data['float'] = TRUE;
+        }
+      }
+
       break;
 
     case 'filter':

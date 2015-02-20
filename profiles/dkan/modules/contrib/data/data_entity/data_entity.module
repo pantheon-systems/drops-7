@@ -7,11 +7,20 @@
 /**
  * Get all data tables which are declared as entities.
  *
- * @todo This is just a wrapper around data_get_all_tables() for now;
- *  add an admin UI later.
+ * @return
+ *  An array of table objects, keyed by table name, for the tables that are
+ *  declared as entity types.
  */
-function data_entity_get_entity_tables() {
-  return data_get_all_tables();
+function data_entity_get_entity_tables($reset = FALSE) {
+  $tables = data_get_all_tables($reset);
+  $entity_tables = array();
+  foreach ($tables as $name => $table) {
+    $meta = $table->get('meta');
+    if (!empty($meta['is_entity_type'])) {
+      $entity_tables[$name] = $table;
+    }
+  }
+  return $entity_tables;
 }
 
 /**
@@ -92,7 +101,7 @@ function data_entity_entity_info() {
  * Implements hook_menu().
  */
 function data_entity_menu() {
-  $tables = data_entity_get_entity_tables();
+  $tables = data_get_all_tables();
 
   foreach ($tables as $table_name => $table) {
     // Items that are in the same tab set as Field UI tabs need to have separate
@@ -107,7 +116,14 @@ function data_entity_menu() {
       'type' => MENU_LOCAL_TASK,
       'weight' => -3,
     );
- 
+
+    // The following menu items only concern tables that are declared as
+    // entity types, so skip those that are not.
+    $meta = $table->get('meta');
+    if (empty($meta['is_entity_type'])) {
+      continue;
+    }
+
     $items['admin/structure/data/edit/' . $table_name . '/entity-form'] = array(
       'title' => 'Configure entity form',
       'description' => 'Administer data tables.',
@@ -181,7 +197,7 @@ function data_entity_permission() {
 
   foreach ($tables as $table_name => $table) {
     $permissions['edit data in table ' . $table_name] = array(
-      'title' => t('Edit data in the %table_name table', array('%table_name' => $table->title)), 
+      'title' => t('Edit data in the %table_name table', array('%table_name' => $table->title)),
     );
   }
 
@@ -225,5 +241,72 @@ function data_entity_views_api() {
     'api' => '3.0-alpha1',
     'path' => drupal_get_path('module', 'data_entity') . '/views',
   );
+}
+
+/**
+ * Implements hook_feeds_processor_targets_alter().
+ *
+ * @see data_entity_feed_unique_callback()
+ */
+function data_entity_feeds_processor_targets_alter(&$targets, $entity_type, $bundle_name) {
+  // Get the information about this entity.
+  $entity_info = entity_get_info($entity_type);
+
+  // See if this is a Data entity.
+  if ($entity_info['module'] == 'data_entity') {
+    // Add a unique callback for each target field.
+    foreach ($targets as &$target) {
+      $target['unique_callbacks'][] = 'data_entity_feed_unique_callback';
+      $target['bundle_name'] = $bundle_name;
+      $target['optional_unique'] = TRUE;
+    }
+  }
+}
+
+/**
+ * Feeds unique callback for Data table field targets.
+ *
+ * @param FeedsSource $source
+ *   The Feed source.
+ * @param string $entity_type
+ *   Entity type for the entity to be processed.
+ * @param string $bundle
+ *   Bundle name for the entity to be processed.
+ * @param string $target
+ *   A string identifying the unique target on the entity.
+ * @param array $values
+ *   The unique values to be checked.
+ *
+ * @return int
+ *   The existing entity id, or NULL if nothing is found.
+ *
+ * @see data_entity_feeds_processor_targets_alter().
+ * @see FeedsProcessor::existingEntityId()
+ */
+function data_entity_feed_unique_callback(FeedsSource $source, $entity_type, $bundle, $target, $values) {
+  // Get the information about this entity.
+  $entity_info = entity_get_info($entity_type);
+  // Extract the entity ID key.
+  $entity_id_key = $entity_info['entity keys']['id'];
+
+  // Attempt to load the table.
+  if ($table = data_get_table($entity_info['base table'])) {
+    // Get the single value out of the array. Not sure why it has to be an array
+    // but as we deal in database columns, we know it's always a single value.
+    $value = array_pop($values);
+
+    // Check if this value already exists in this table.
+    if ($record = $table->handler()->load(array($target => $value))) {
+      // Use the first record.
+      $record = reset($record);
+
+      // Determine the primary key value.
+      if (isset($record[$entity_id_key])) {
+        return $record[$entity_id_key];
+      }
+    }
+  }
+
+  // Nothing found.
 }
 

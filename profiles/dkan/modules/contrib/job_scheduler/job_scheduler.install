@@ -5,6 +5,14 @@
  * Schema definitions install/update/uninstall hooks.
  */
 
+/*
+ * Implementation hook_uninstall().
+ */
+function job_scheduler_uninstall() {
+  db_query("DELETE FROM {variable} WHERE name LIKE :name", array(':name' => 'job_scheduler_class_%'));
+  variable_del('job_scheduler_rebuild_all');
+}
+
 /**
  * Implements hook_schema().
  */

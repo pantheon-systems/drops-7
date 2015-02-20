@@ -291,7 +291,12 @@ function feeds_flatstore_processor_find_columns($parsed_result, $limit, $headers
   }
   $colcount = count($headers);
 
+  // List of possible types, from least to most specific.
+  $types = array('bigtext' => 0, 'datetime' => 0, 'float' => 0, 'int' => 0);
   $type_counter = array();
+  foreach ($headers as $key => $value) {
+    $type_counter[$key]  = $types;
+  }
   foreach ($parsed_result as $row) {
     foreach ($row as $key => $value) {
       if ($value == '') {
@@ -300,11 +305,11 @@ function feeds_flatstore_processor_find_columns($parsed_result, $limit, $headers
       // TODO: Determine if default data sizes are sufficient.
       // Int.
       if (preg_match('/^-?\d+$/', $value)) {
-        isset($type_counter[$key]['int']) ? $type_counter[$key]['int']++ : $type_counter[$key]['int'] = 1;
+        $type_counter[$key]['int']++;
       }
       // Float.
       elseif (preg_match('/^-?(?:\d+|\d*\.\d+)$/', trim($value))) {
-        isset($type_counter[$key]['float']) ? $type_counter[$key]['float']++ : $type_counter[$key]['float'] = 1;
+        $type_counter[$key]['float']++;
       }
       // Datetime.
       elseif (preg_match("/\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}/", trim($value)) ||
@@ -313,10 +318,10 @@ function feeds_flatstore_processor_find_columns($parsed_result, $limit, $headers
               preg_match("/\d{2}\-\d{2}\-\d{4} \d{2}:\d{2}/", trim($value)) ||
               preg_match("/\d{4}\/\d{2}\/\d{2}/", trim($value)) ||
               preg_match("/\d{2}\.\d{2}\.\d{4}/", trim($value))) {
-        isset($type_counter[$key]['datetime']) ? $type_counter[$key]['datetime']++ : $type_counter[$key]['datetime'] = 1;
+        $type_counter[$key]['datetime']++;
       }
       else {
-        isset($type_counter[$key]['bigtext']) ? $type_counter[$key]['bigtext']++ : $type_counter[$key]['bigtext'] = 1;
+        $type_counter[$key]['bigtext']++;
       }
     }
   }
@@ -328,7 +333,8 @@ function feeds_flatstore_processor_find_columns($parsed_result, $limit, $headers
     }
     $max = isset($type_counter[$key]) ? max($type_counter[$key]) : '';
     if ($max != $limit) {
-      $type = array_keys($type_counter[$key]);
+      // From the types that were encountered take the first one in the list.
+      $type = array_keys(array_filter($type_counter[$key]));
       $result['type'][$header] = $type[0];
     }
     else {

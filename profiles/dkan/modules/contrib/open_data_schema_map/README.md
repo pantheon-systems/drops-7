@@ -46,7 +46,7 @@ You will need to create the API record before adding arguments and mappings.
 
 The results of the API call can be filtered by a particular field via arguments in the URL. To add an argument, first choose the schema field then, if you are filtering by a custom field API field (ie, a field whose machine name begins with "field\_"), identify the database column that would contain the actual argument value. Leave off the field name prefix; for instance, if filtering by a DKAN tag (a term reference field), the correct column is field_tags_tid, so you would enter "tid". Which Drupal field to use will be extrapolated from the token you map to that schema field.
 
-![Screen Shot 2014-07-14 at 3.55.49 PM.png | uploaded via ZenHub](https://www.zenhub.io/files/53c43afae5dcd8b26d002496)
+![Screen Shot 2014-07-14 at 3.55.49 PM.png | uploaded via ZenHub](https://cloud.githubusercontent.com/assets/512243/5281816/992d1138-7ac6-11e4-8e7b-bcaefa733648.png)
 
 ### Field Mapping
 
@@ -101,7 +101,7 @@ You can chose which of the available multivalue fields on your selected bundle t
 
 When you return to the tags section of the form after saving, you will now see a special token navigator you can use to find tokens that will work with this iterative approach (using "Nth" in place of the standard delta value in the token):
 
-![Screen Shot 2014-07-16 at 12.22.00 AM.png | uploaded via ZenHub](https://www.zenhub.io/files/53c5fdebe5dcd8b26d003560)
+![screen shot 2014-07-16 at 12 22 00 am](https://cloud.githubusercontent.com/assets/512243/5281826/ad5e3eac-7ac6-11e4-8c7d-91076527c84d.png)
 
 ## Customizing
 

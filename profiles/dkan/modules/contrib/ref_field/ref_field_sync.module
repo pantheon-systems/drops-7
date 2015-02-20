@@ -156,7 +156,7 @@ function ref_field_sync_field_update_field($field, $prior_field, $has_data) {
     $sync_field_name = $field['settings']['sync'];
     $sync_field = field_read_field($sync_field_name);
 
-    if ($sync_field && $sync_field['settings']['sync'] != $field['field_name']) {
+    if ($sync_field && isset($sync_field['settings']['sync']) && $sync_field['settings']['sync'] != $field['field_name']) {
       $sync_field['settings']['sync'] = $field['field_name'];
       field_update_field($sync_field);
     }
@@ -165,7 +165,7 @@ function ref_field_sync_field_update_field($field, $prior_field, $has_data) {
   // Check old association
   // If there was an association, call old sync field and remove association to
   // this one.
-  if (isset($prior_field['settings']['sync']) && $prior_field['settings']['sync'] && $prior_field['settings']['sync'] != $field['settings']['sync']) {
+  if (isset($prior_field['settings']['sync']) && $prior_field['settings']['sync'] != $field['settings']['sync']) {
     $prior_sync_field_name = $prior_field['settings']['sync'];
     $prior_sync_field = field_read_field($prior_sync_field_name);
 
@@ -202,7 +202,7 @@ function ref_field_sync_entity_insert($entity, $type) {
 
         // Save values from new entity.
         $fields_name = field_get_items($type, $entity, $field_name);
-        if (isset($fields_name)) {
+        if ($fields_name) {
           foreach ($fields_name as $value) {
             $new[] = $value['target_id'];
           }
@@ -313,7 +313,7 @@ function ref_field_sync_entity_delete($entity, $type) {
 
       // Get values from deleted entity.
       $items = field_get_items($type, $entity, $field_name);
-      if (isset($items)) {
+      if ($items) {
         foreach ($items as $item) {
           $delete[] = $item['target_id'];
         }

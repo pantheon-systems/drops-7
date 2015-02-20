@@ -1,0 +1,241 @@
+//
+// Styles for Tabs, Messages, ..etc
+// --------------------------------------------------
+body {
+  font-family:$font-family-sans-serif;
+  line-height:1.35em;
+}
+body.modal-open {
+  overflow: visible !important;
+}
+.branding {
+  position: relative;
+}
+.site-name {
+  display: inline-block;
+  float: left;
+  font-size: 2em;
+  line-height: 1.15em;
+  margin: 38px 20px 5px;
+  @media(max-width:460px) {
+    clear: left;
+    float: none;
+    margin: 10px 20px 5px 0;
+  }
+}
+.site-slogan {
+  clear: left;
+  padding-bottom: 10px;
+}
+h1 {
+  font-size: 30px;
+  line-height: 36px;
+  margin-bottom: 15px;
+}
+h1,h2,h3,h4 {
+  color:$gray-dark;
+  font-weight:bold;
+}
+h3.media-heading {
+  margin:.5em 0;
+}
+
+a {
+  color:$brand-primary;
+  &:hover {
+    color:$brand-secondary;
+  }
+}
+p,
+p:last-child {
+  margin: 0 0 1.25em 0;
+}
+
+.breadcrumb {
+  background: none;
+  border: none;
+  font-size: 1em;
+  list-style: none;
+  padding: 0;
+  position: relative;
+  li {
+    float:none;
+    a {
+      span {
+        display:none;
+      }
+    }
+    &.home-link a {
+      font-size:1.3em;
+      i {
+        display: block;
+      }
+    }
+  }
+}
+
+.alert {
+  border: none;
+  padding: 15px 35px;
+  position: relative;
+  .close {
+    line-height: 18px;
+    position: absolute;
+    right: 10px;
+    top: 5px;
+  }
+  &.alert-warning {
+    background: $brand-warning;
+  }
+  &:before {
+    font-family: $icon-fa;
+    font-size: 1.5em;
+    position: absolute;
+    top: 15px;
+    left: 10px;
+  }
+  &.alert-danger:before {
+    content: '\f06a';
+    color: $brand-danger;
+  }
+  &.alert-warning:before {
+    content: '\f05a';
+    color: #8a6d3b;
+  }
+  &.alert-success:before {
+    content: '\f058';
+    color: $brand-success;
+  }
+}
+.page-admin .alert {
+  margin: 10px 0;
+}
+
+table.group_additional {
+  border-collapse:collapse;
+  margin:1em 0;
+  width:100%;
+  thead > tr > th {
+    //@include background-image(linear-gradient(#F5F5F5, #F0F0F0));
+    background-color: $border;
+    border: 1px solid $border !important;
+    padding: 4px 8px;
+    font-weight: bold;
+  }
+  thead th:first-child {
+    @inlclude border-top-left-radius(4px);
+  }
+  thead th:last-child,
+  thead th:last-child {
+    @include border-top-right-radius(4px);
+  }
+  tbody th,
+  td {
+    border:1px solid $border;
+    padding:4px 8px;
+    vertical-align:top;
+  }
+  tr:hover {
+    background:#FFFEEE;
+  }
+}
+
+table.group_additional,
+.field-name-field-additional-info table {
+  th:nth-of-type(1n),
+  td:nth-of-type(1n) {
+    width: 30%;
+  }
+  th:nth-of-type(2n),
+  td:nth-of-type(2n) {
+    width: 70%;
+  }
+}
+.node-form {
+  table.group_additional,
+  .field-name-field-additional-info table {
+    th,
+    td,
+    th:nth-of-type(1n),
+    td:nth-of-type(1n),
+    th:nth-of-type(2n),
+    td:nth-of-type(2n) {
+      width: auto;
+      .form-control {
+        display: inline;
+        width: auto;
+      }
+    }
+  }
+}
+
+// Admin tables.
+.table-bordered > thead > tr > th,
+.table-bordered > tbody > tr > th,
+.table-bordered > tbody > tr > td {
+  border: none;
+}
+table thead > tr > th.checkbox, 
+table.table thead > tr > th.checkbox,
+.table-bordered > tbody > tr > th.checkbox,
+.table-bordered > tbody > tr > td.checkbox,
+.table-striped > tbody > tr:nth-child(odd) > td.checkbox,
+.table-striped > tbody > tr:nth-child(odd) > th.checkbox {
+  background-color: transparent;
+  border: none;
+  margin: 0;
+  display: table-cell;
+  position: relative;
+}
+.table-striped > tbody > tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+.table tbody tr:hover td, 
+.table tbody tr:hover th,
+.table tbody tr:hover td.checkbox, 
+.table tbody tr:hover th.checkbox,
+.table-striped tbody tr:nth-child(odd):hover td,
+.table-striped tbody tr:nth-child(odd):hover td.checkbox {
+  background-color: #FFFEEE;
+}
+table th.checkbox, 
+table td.checkbox {
+  label {
+    line-height:0;
+    padding: 4px;
+    vertical-align: top;
+  }
+  input[type="checkbox"],
+  input {
+    float: none !important;
+    margin: 0 !important;
+    position: relative;
+  }
+}
+
+table .checkbox input[type="checkbox"] {
+  position: relative;
+}
+
+dl {
+  margin:0;
+  padding:0;
+  clear:both;
+  overflow:hidden;
+}
+dt {
+  margin:0;
+  padding:8px 5px;
+  float:left;
+  width:28%;
+}
+dd {
+  margin:0;
+  padding:8px 5px;
+  float:right;
+  width:72%;
+}
+dt:nth-of-type(2n),
+dd:nth-of-type(2n) {
+  background:$shade;
+}

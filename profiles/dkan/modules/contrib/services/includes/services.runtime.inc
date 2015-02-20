@@ -177,14 +177,21 @@ function _services_controller_execute_internals($controller, $args, $options) {
   $resource_name = array_shift($path);
   $options['version'] = _services_version_header_options() ? _services_version_header_options() : NULL;
   $options['resource'] = $resource_name;
+  //because index is never filled, we have to add this on an else, $remove_index is just a paranoid variable to make sure that futher code flow is not altered.
+  $remove_index = FALSE;
+
   if (isset($path[0])) {
     $options['method'] = $path[0];
+  } else{
+    $options['method'] = 'index';
+    $remove_index = TRUE;
   }
-
   if (!empty($options['version'])) {
     services_request_apply_version($controller, $options);
   }
-
+  if($remove_index){
+    unset($options['method']);
+  }
   drupal_alter('services_request_preprocess', $controller, $args, $options);
 
   // Log the arguments.

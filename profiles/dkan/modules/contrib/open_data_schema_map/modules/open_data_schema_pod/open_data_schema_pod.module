@@ -9,14 +9,20 @@
  * Implements hook_open_data_schema().
  */
 function open_data_schema_pod_open_data_schema() {
-  $path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_pod') . '/data/single_entry.json';
+  $module_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_pod');
   return array(
     array(
       'short_name' => 'pod',
-      'title' => 'Project Open Data',
-      'schema_file' => $path,
-      'description' => t('Project Open Data schema. See http://project-open-data.github.io/schema/ for more awesome details.'),
+      'title' => 'Project Open Data v1.0',
+      'schema_file' => $module_path . '/data/v1.0/single_entry.json',
+      'description' => t('Project Open Data v1.0 schema. See http://project-open-data.github.io/schema/ for more awesome details.'),
     ),
+    array(
+      'short_name' => 'pod_v1_1',
+      'title' => 'Project Open Data v1.1',
+      'schema_file' => $module_path . '/data/v1.1/dataset.json',
+      'description' => t('Project Open Data v1.1 schema. See http://project-open-data.github.io/schema/ for more awesome details.'),
+    )
   );
 }
 
@@ -24,45 +30,47 @@ function open_data_schema_pod_open_data_schema() {
  * Implements hook_form_alter().
  */
 function open_data_schema_pod_form_alter(&$form, $form_state, $form_id) {
-  switch ($form_id) {
-    // Adds "catalog" items form which is requested as part of the endpoint but
-    // not a part of the site content.
-    case 'open_data_schema_map_manage':
-      if (isset($form_state['build_info']['args'][0]->api_schema) && $form_state['build_info']['args'][0]->api_schema == 'pod') {
-        $form['pod_catalog'] = array(
-          '#type' => 'fieldset',
-          '#title' => t('Data catalog (data.json) settings'),
-          '#description' => t("Configuration for site's public data catalog. See !link for more information.", array('!link' => l(t('Project Open Data'), 'http://project-open-data.github.io/catalog/'))),
-          '#weight' => 2,
-        );
-        $form['pod_catalog']['desc'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Data Catalog Description'),
-          '#description' => t('Description field for data catalog. Should usually just read "Data Catalog."'),
-          '#default_value' => variable_get('pod_catalog_desc', 'Data Catalog'),
-        );
-        $form['pod_catalog']['publisher'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Data Catalog Publisher'),
-          '#description' => t('Description field for data catalog. Should usually just read "Data Catalog."'),
-          '#default_value' => variable_get('pod_catalog_publisher', variable_get('site_name')),
-        );
-        $form['pod_catalog']['contact'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Data Catalog Contact Point'),
-          '#description' => t('The name of the main contact point for the data catalog. Usually an individual person.'),
-          '#default_value' => variable_get('pod_catalog_contact', NULL),
-        );
-        $form['pod_catalog']['mbox'] = array(
-          '#type' => 'textfield',
-          '#title' => t('Data Catalog Contact Email'),
-          '#description' => t('The main contact email for inquiries regarding the data catalog.'),
-          '#default_value' => variable_get('pod_catalog_mbox', variable_get('site_mail')),
-        );
+  if ($form_id == 'open_data_schema_map_manage') {
+    if (isset($form_state['build_info']['args'][0]->api_schema)) {
+      switch ($form_state['build_info']['args'][0]->api_schema) {
+        case 'pod':
+          $form['pod_catalog'] = array(
+            '#type' => 'fieldset',
+            '#title' => t('Data catalog (data.json) settings'),
+            '#description' => t("Configuration for site's public data catalog. See !link for more information.", array('!link' => l(t('Project Open Data'), 'http://project-open-data.github.io/catalog/'))),
+            '#weight' => 2,
+          );
+          $form['pod_catalog']['desc'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Data Catalog Description'),
+            '#description' => t('Description field for data catalog. Should usually just read "Data Catalog."'),
+            '#default_value' => variable_get('pod_catalog_desc', 'Data Catalog'),
+          );
+          $form['pod_catalog']['publisher'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Data Catalog Publisher'),
+            '#description' => t('Description field for data catalog. Should usually just read "Data Catalog."'),
+            '#default_value' => variable_get('pod_catalog_publisher', variable_get('site_name')),
+          );
+          $form['pod_catalog']['contact'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Data Catalog Contact Point'),
+            '#description' => t('The name of the main contact point for the data catalog. Usually an individual person.'),
+            '#default_value' => variable_get('pod_catalog_contact', NULL),
+          );
+          $form['pod_catalog']['mbox'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Data Catalog Contact Email'),
+            '#description' => t('The main contact email for inquiries regarding the data catalog.'),
+            '#default_value' => variable_get('pod_catalog_mbox', variable_get('site_mail')),
+          );
 
-        $form['#submit'] = array_merge(array('open_data_schema_pod_extra_settings_submit'), $form['#submit']);
+          $form['#submit'] = array_merge(array('open_data_schema_pod_extra_settings_submit'), $form['#submit']);
+          break;
+        case 'pod_v1_1':
+          break;
       }
-      break;
+    }
   }
 }
 
@@ -82,24 +90,96 @@ function open_data_schema_pod_extra_settings_submit(&$form, $form_state) {
  * Implements hook_open_data_schema_map_results_alter().
  */
 function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $machine_name, $api_schema) {
-  if ($api_schema == 'pod') {
-    // Adds additional catalog entry.
-    $catalog_dist = array();
-    $catalog_dist['accessURL'] = url('data.json', array('absolute' => TRUE));
-    $catalog_dist['format'] = 'application/json';
+  switch ($api_schema) {
+    case 'pod':
+      // Adds additional catalog entry.
+      $catalog_dist = array();
+      $catalog_dist['accessURL'] = url('data.json', array('absolute' => TRUE));
+      $catalog_dist['format'] = 'application/json';
+      $catalog_row = array();
+      $catalog_row['title'] = variable_get('pod_catalog_desc', 'Data Catalog');
+      $version = 'Version 1.0';
+      $catalog_row['description'] = variable_get('pod_catalog_desc', $version);
+      $catalog_row['keyword'] = array('catalog');
+      $catalog_row['modified'] = NULL;
+      $catalog_row['publisher'] = variable_get('pod_catalog_publisher');
+      $catalog_row['contactPoint'] = variable_get('pod_catalog_contact', $catalog_row['publisher']);
+      $catalog_row['mbox'] = variable_get('pod_catalog_mbox', variable_get('site_mail'));
+      $catalog_row['identifier'] = "1";
+      $catalog_row['accessLevel'] = 'public';
+      $catalog_row['distribution'] = array($catalog_dist);
+      // Puts catalog at top of results list.
+      array_unshift($result, $catalog_row);
+      break;
+    case 'pod_v1_1':
+      $dataset_row = array();
+      foreach ($result as $key => $dataset) {
+        if (!isset($dataset['accessLevel']) || $dataset['accessLevel'] == '') {
+          $dataset['accessLevel'] = 'public';
+        }
+        if (isset($dataset['license'])) {
+          if ($dataset['license'] != 'notspecified') {
+            $dataset['license'] = 'http://opendefinition.org/licenses/' . $dataset['license'];
+          }
+          else {
+            unset($dataset['license']);
+          }
+        }
+        array_push($dataset_row, $dataset);
+        unset($result[$key]);
+      }
+      $result['@context'] = 'https://project-open-data.cio.gov/v1.1/schema/catalog.jsonld';
+      $result['@id'] = url('data.json', array('absolute' => TRUE));
+      $result['@type'] = 'dcat:Catalog';
+      $result['conformsTo'] = 'https://project-open-data.cio.gov/v1.1/schema';
+      $result['describedBy'] = 'https://project-open-data.cio.gov/v1.1/schema/catalog.json';
+      $result['dataset'] = $dataset_row;
+      break;
+  }
+}
 
-    $catalog_row = array();
-    $catalog_row['title'] = variable_get('pod_catalog_desc', 'Data Catalog');
-    $catalog_row['description'] = variable_get('pod_catalog_desc', 'Version 1.0');
-    $catalog_row['keyword'] = array('catalog');
-    $catalog_row['modified'] = NULL;
-    $catalog_row['publisher'] = variable_get('pod_catalog_publisher');
-    $catalog_row['contactPoint'] = variable_get('pod_catalog_contact', $catalog_row['publisher']);
-    $catalog_row['mbox'] = variable_get('pod_catalog_mbox', variable_get('site_mail'));
-    $catalog_row['identifier'] = "1";
-    $catalog_row['accessLevel'] = 'public';
-    $catalog_row['distribution'] = array($catalog_dist);
-    // Puts catalog at top of results list.
-    array_unshift($result, $catalog_row);
+/**
+ * Implements hook_open_data_schema_fill_references().
+ */
+function open_data_schema_pod_open_data_schema_fill_references($schema_name, &$schema) {
+  $module_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'open_data_schema_pod');
+  switch ($schema_name) {
+    case 'pod_v1_1':
+      $references = array(
+        'distribution',
+        'publisher',
+        'contactPoint',
+      );
+      $files = array();
+      // Process $ref keys to include referenced json file
+      foreach ($references as $key) {
+        $json = $module_path . '/data/v1.1/';
+        if (isset($schema['properties'][$key]['anyOf'])) {
+          $json = $json . $schema['properties'][$key]['anyOf'][0]['items']['$ref'];
+        }
+        else {
+         $json = $json . $schema['properties'][$key]['$ref']; 
+        }
+        $json = file_get_contents($json);
+        $json = drupal_json_decode($json);
+        unset($json['$schema']);
+        unset($json['id']);
+        if (isset($schema['properties'][$key]['anyOf'])) {
+          unset($json['title']);
+          unset($schema['properties'][$key]['anyOf'][0]['items']['$ref']);
+          if (isset($schema['properties'][$key]['anyOf'][0]['items']['minItems'])) {
+            $schema['properties'][$key]['anyOf'][0]['minItems'] = $schema['properties'][$key]['anyOf'][0]['items']['minItems'];  
+          }
+          if ($schema['properties'][$key]['anyOf'][0]['items']['uniqueItems']) {
+            $schema['properties'][$key]['anyOf'][0]['uniqueItems'] = $schema['properties'][$key]['anyOf'][0]['items']['uniqueItems'];
+          }
+          $schema['properties'][$key]['anyOf'][0]['uniqueItems'] = $schema['properties'][$key]['anyOf'][0]['items']['uniqueItems'];
+          $schema['properties'][$key]['anyOf'][0]['items'] = $json;  
+        }
+        else {
+          $schema['properties'][$key] = $json;
+        }
+      }
+      break;
   }
 }

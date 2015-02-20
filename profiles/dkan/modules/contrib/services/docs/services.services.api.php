@@ -94,10 +94,11 @@
  *       'data' (indicating the POST data), 'param' (indicating the query
  *       string) or 'path' (indicating the url path). In the case of path,
  *       an additional parameter must be passed indicating the index to be used.
- *       In the case of 'data' unless you put things in an array, you will get 
+ *       In the case of 'data' unless you put things in an array, you will get
  *       passed to your functions. 'source' => array('data' => 'nid'), will pass
- *       them off as a single variable, 'source' => array('data') will give you 
- *       all argument values to each argument. 
+ *       them off as a single variable, 'source' => array('data') will give you
+ *       all argument values to each argument. 'source' is always an array
+ *       but can be a string if you want to use data, ie 'source' => 'data'
  *     - default value: this is a value that will be passed to the method for
  *       this particular argument if no argument value is passed
  *
