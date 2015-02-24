@@ -6,8 +6,8 @@ dependencies[] = entityreference
 dependencies[] = entity
 
 
-; Information added by drush on 2015-02-20
+; Information added by drush on 2015-02-24
 version = "9dbf7cf"
 project = "ref_field"
-datestamp = "1424464723"
+datestamp = "1424813740"
 
