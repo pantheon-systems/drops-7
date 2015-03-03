@@ -37,7 +37,9 @@ function pantheon_api_image_path_flush($path) {
     $image_path = image_style_path($style['name'], $path);
     if (strpos($image_path, 'public://') === 0) {
       $paths[] = str_replace('public://', '/', $image_path);
-    }
+    } elseif (strpos($image_path, 'private://') === 0) {
+      $paths[] = str_replace('private://', '/', $image_path);
+    }    
   }
   if (count($paths) > 0) {
     pantheon_bulk_file_delete($paths);
