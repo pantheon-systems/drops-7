@@ -39,7 +39,7 @@ function pantheon_api_image_path_flush($path) {
       $paths[] = str_replace('public://', '/', $image_path);
     }
   }
-  if (count($paths) > 0) {
+  if (count($paths) > 0 && function_exists('pantheon_bulk_file_delete')) {
     pantheon_bulk_file_delete($paths);
   }
 }
