@@ -35,9 +35,7 @@ function pantheon_api_image_path_flush($path) {
   $paths = array();
   foreach($styles as $style) {
     $image_path = image_style_path($style['name'], $path);
-    if (strpos($image_path, 'public://') === 0) {
-      $paths[] = str_replace('public://', '/', $image_path);
-    }
+    $paths[] = file_uri_target($image_path);
   }
   if (count($paths) > 0 && function_exists('pantheon_bulk_file_delete')) {
     pantheon_bulk_file_delete($paths);
