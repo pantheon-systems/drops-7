@@ -120,6 +120,38 @@ class i18nStringTestCase extends Drupali18nTestCase {
         $this->assertText($string_cache->data['string']);
       }
     }
+
+    // Test that un-translated strings are cached correctly.
+    $textgroup = 'test_cached';
+    $key = 3;
+    $string = self::randomName(100);
+    $name = "$textgroup:item:$key:title";
+    i18n_string_update($name, $string);
+
+    // Generate the cache entry.
+    $string_object = i18n_string_build($name, $string);
+    $langcode = i18n_langcode();
+    $string_object->get_translation($langcode);
+
+    // Destroy the textgroup object to write the cache entry.
+    $textgroup_object = i18n_string_textgroup($textgroup);
+    $textgroup_object->__destruct();
+    $this->assertTrue(cache_get($string_object->get_cid()) !== FALSE, "Cache entry created.");
+    drupal_static_reset('i18n_string_textgroup');
+
+    // Reset the loaded translation variable.
+    variable_del('i18n_loaded_translations');
+    $loaded_translations = variable_get('i18n_loaded_translations', array());
+    $this->verbose(var_export($loaded_translations, TRUE));
+
+    // Rebuild the string.
+    $string_object = i18n_string_build($name, $string);
+    $string_object->get_translation($langcode);
+
+    // Check that the string hasn't been loaded.
+    $loaded_translations = variable_get('i18n_loaded_translations', array());
+    $this->verbose(var_export($loaded_translations, TRUE));
+    $this->assertFalse(isset($loaded_translations['test_cached:item:3:title']), "The untranslated string was correctly cached.");
   }
 
 

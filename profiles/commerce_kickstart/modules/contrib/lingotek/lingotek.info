@@ -28,7 +28,7 @@ dependencies[] = potx
 files[] = lib/Drupal/lingotek/Lingotek.php
 files[] = lib/Drupal/lingotek/LingotekApi.php
 files[] = lib/Drupal/lingotek/LingotekAccount.php
-files[] = lib/Drupal/lingotek/LingotekConfigChunk.php
+files[] = lib/Drupal/lingotek/LingotekConfigSet.php
 files[] = lib/Drupal/lingotek/LingotekDocument.php
 files[] = lib/Drupal/lingotek/LingotekLog.php
 files[] = lib/Drupal/lingotek/LingotekEntity.php
@@ -44,9 +44,9 @@ files[] = lingotek_views_handler_workbench_link.inc
 
 stylesheets[all][] = style/base.css
 
-; Information added by Drupal.org packaging script on 2014-07-01
-version = "7.x-5.09"
+; Information added by Drupal.org packaging script on 2014-12-12
+version = "7.x-6.01"
 core = "7.x"
 project = "lingotek"
-datestamp = "1404182629"
+datestamp = "1418427783"
 

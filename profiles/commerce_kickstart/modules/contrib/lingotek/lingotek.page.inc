@@ -315,7 +315,7 @@ function lingotek_pm($node) {
     ),
   );
   
-  $sync_status = $node->lingotek['node_sync_status'];
+  $sync_status = $node->lingotek['upload_status'];
 
   // node translation support
   if ($node->tnid != 0 && $node->tnid != $node->nid) {
@@ -335,7 +335,7 @@ function lingotek_pm($node) {
 
   if (lingotek_supported_node($node) && Lingotek::isSupportedLanguage($node->language)) {
 
-    if (($node->lingotek['node_sync_status'] == LingotekSync::STATUS_EDITED)) {
+    if (($node->lingotek['upload_status'] == LingotekSync::STATUS_EDITED)) {
       $content_push_form = drupal_get_form('lingotek_push_form', $node);
       $output['content_push'] = array(
         '#markup' => drupal_render($content_push_form),
@@ -651,8 +651,9 @@ function lingotek_workbench_redirect($entity_type, $entity_id, $lingotek_locale)
   }
 
   $entity = lingotek_entity_load_single($entity_type, $entity_id);
+  $ln = LingotekEntity::load($entity, $entity_type);
 
-  if ($entity->language == $drupal_language_code) {
+  if ($ln->language == $drupal_language_code && empty($entity->lingotek['allow_source_overwriting'])) {
     drupal_goto($entity_type . '/' . $entity_id . '/edit');
   }
   else {

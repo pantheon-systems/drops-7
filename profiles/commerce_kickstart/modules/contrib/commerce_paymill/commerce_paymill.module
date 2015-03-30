@@ -608,7 +608,7 @@ function commerce_paymill_payment_initialize($submitted_values, $payment_method_
     $client_mail = $order->mail;
     $client_uid = $order->uid;
   }
-  $client_id = commerce_paymill_get_client_id($client_mail, $client_uid, $payment_method_instance['settings']);
+  $client_id = commerce_paymill_get_client_id($client_mail, $client_uid, $payment_method_instance);
   if (!$client_id) {
     commerce_paymill_error_message();
     return FALSE;
@@ -805,18 +805,24 @@ function commerce_paymill_submit_form_submit($payment_method, $pane_form, $pane_
 /**
  * Get the client ID from the Paymill backend.
  */
-function commerce_paymill_get_client_id($mail, $uid, $settings) {
-  global $user;
-
+function commerce_paymill_get_client_id($mail, $uid, $payment_method) {
   // Extra Paymill client options.
   $extra_options = array();
 
-  $mode = $settings['mode'];
+  $mode = $payment_method['settings']['mode'];
+
+  $account = user_load($uid);
+  if (!$account) {
+    return FALSE;
+  }
+
+  list($method_id, $rule_name) = explode('|', $payment_method['instance_id'], 2);
 
   // Does the current user already have a client instance?
-  if (isset($user->data)) {
-    if (isset($user->data['commerce_paymill_client_id_' . $mode])) {
-      return $user->data['commerce_paymill_client_id_' . $mode];
+  $data_key = 'commerce_paymill_client_id:' . $rule_name . ':' . $mode;
+  if (isset($account->data)) {
+    if (isset($account->data[$data_key])) {
+      return $account->data[$data_key];
     }
   }
 
@@ -826,7 +832,7 @@ function commerce_paymill_get_client_id($mail, $uid, $settings) {
   }
 
   // Instantiate client service.
-  $api_key = commerce_paymill_get_key($settings);
+  $api_key = commerce_paymill_get_key($payment_method['settings']);
   $client_service = new Services_Paymill_Clients($api_key, COMMERCE_PAYMILL_SERVER, $extra_options);
 
   // Create client.
@@ -855,13 +861,9 @@ function commerce_paymill_get_client_id($mail, $uid, $settings) {
   }
 
   // Update current user with client ID.
-  if ($user->uid > 0) {
-    // We should not save global user.
-    $user_entity = user_load($user->uid);
-    $user_entity->data['commerce_paymill_client_id'] = $client['id'];
-    $edit = array('data' => $user_entity->data);
-    user_save($user_entity, $edit);
-  }
+  $account->data[$data_key] = $client['id'];
+  $edit = array('data' => $account->data);
+  user_save($account, $edit);
 
   return $client['id'];
 }
@@ -1250,7 +1252,7 @@ function commerce_paymill_process_transaction($payment_method_instance, $payment
     $client_mail = $order->mail;
     $client_uid = $order->uid;
   }
-  $client_id = commerce_paymill_get_client_id($client_mail, $client_uid, $payment_method_instance['settings']);
+  $client_id = commerce_paymill_get_client_id($client_mail, $client_uid, $payment_method_instance);
   if (!$client_id) {
     commerce_paymill_error_message('error', empty($order));
     return FALSE;
@@ -1314,6 +1316,7 @@ function commerce_paymill_process_transaction($payment_method_instance, $payment
     'currency' => $charge['currency_code'],
     'payment' => $payment_id,
     'description' => $transaction_description,
+    'source' => 'commerceguys',
   );
 
   $response = $payment_service->create($transaction_params);

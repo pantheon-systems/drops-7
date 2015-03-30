@@ -216,7 +216,7 @@ function rules_data_action_info() {
         'restriction' => 'input',
       ),
       'value' => array(
-        'type' => array('decimal', 'integer', 'text'),
+        'type' => array('decimal', 'integer', 'text', 'token'),
         'label' => t('Value to convert'),
         'default mode' => 'selector',
       ),
@@ -255,6 +255,7 @@ function rules_action_data_convert_types_options(RulesPlugin $element, $param_na
     'decimal' => t('Decimal'),
     'integer' => t('Integer'),
     'text' => t('Text'),
+    'token' => t('Token'),
   );
 }
 

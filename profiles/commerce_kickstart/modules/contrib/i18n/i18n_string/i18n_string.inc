@@ -166,7 +166,7 @@ class i18n_string_object {
    * Get translation to language from string object
    */
   public function get_translation($langcode) {
-    if (empty($this->translations[$langcode])) {
+    if (!isset($this->translations[$langcode])) {
       $translation = $this->textgroup()->load_translation($this, $langcode);
       if ($translation && isset($translation->translation)) {
         $this->set_translation($translation, $langcode);
@@ -1234,7 +1234,7 @@ class i18n_string_object_wrapper extends i18n_object_wrapper {
    */
   public function translate($langcode, $options = array()) {
     // We may have it already translated. As objects are statically cached, translations are too.
-    if (empty($this->translations[$langcode])) {
+    if (!isset($this->translations[$langcode])) {
       $this->translations[$langcode] = $this->translate_object($langcode, $options);
     }
     return $this->translations[$langcode];

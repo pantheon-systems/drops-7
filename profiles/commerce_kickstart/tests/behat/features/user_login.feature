@@ -11,18 +11,13 @@ Feature: Login Commerce Kickstart
         | Forgot your password?    |
         | Create an account        |
 
-  Scenario Outline: Username validation: Invalid username
+  Scenario: Username validation: Invalid username
     When I go to "/user/login"
-      And I fill in "Username" with "<name>"
-      And I fill in "Password" with random text
+      And I fill in "Username" with "randomname"
+      And I fill in "Password" with "invalidpassword"
       And I press "Log in"
     Then I should see "Sorry, unrecognized username or password."
       And the field "Username" should be outlined in red
-  Examples:
-    | name           |
-    | randomname     |
-    | 123453         |
-    | mail@mail.com  |
 
   Scenario: User should be able to login and see the user profile
     When I go to "/user/login"
@@ -57,4 +52,3 @@ Feature: Login Commerce Kickstart
       | Update email/password |
       | Connections           |
       | Order history         |
-

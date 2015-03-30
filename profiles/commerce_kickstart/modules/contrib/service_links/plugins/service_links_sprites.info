@@ -7,9 +7,9 @@ dependencies[] = service_links
 configure = admin/config/services/service-links
 
 
-; Information added by drush on 2014-11-20
+; Information added by drush on 2015-03-20
 version = "7.x-2.3-beta1+4-dev"
 core = "7.x"
 project = "service_links"
-datestamp = "1416496474"
+datestamp = "1426860556"
 

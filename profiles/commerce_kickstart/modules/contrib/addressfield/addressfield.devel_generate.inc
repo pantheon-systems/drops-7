@@ -45,7 +45,7 @@ function _addressfield_sample_addresses() {
       if (is_resource($handle)) {
         $addresses = array();
         while (($buffer = fgets($handle)) !== false) {
-          list($country, $administrative_area, $sub_administrative_area, $locality, $dependent_locality, $postal_code, $thoroughfare, $premise) = explode("\t", $buffer);
+          list($country, $administrative_area, $sub_administrative_area, $locality, $dependent_locality, $postal_code, $thoroughfare, $premise, $sub_premise) = explode("\t", $buffer);
           $fields[] = array(
             'country' => ($country == 'NULL') ? NULL : trim($country),
             'administrative_area' => ($administrative_area == 'NULL') ? NULL : trim($administrative_area),
@@ -55,6 +55,7 @@ function _addressfield_sample_addresses() {
             'postal_code' => ($postal_code == 'NULL') ? NULL : trim($postal_code),
             'thoroughfare' => ($thoroughfare == 'NULL') ? NULL : trim($thoroughfare),
             'premise' => ($premise == 'NULL') ? NULL : trim($premise),
+            'sub_premise' => ($sub_premise == 'NULL') ? NULL : trim($sub_premise),
           );
         }
       }

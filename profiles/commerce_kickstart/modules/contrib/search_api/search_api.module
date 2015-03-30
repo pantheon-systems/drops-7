@@ -684,26 +684,15 @@ function search_api_search_api_index_update(SearchApiIndex $index) {
   }
 
   // If the fields were changed, call the appropriate service class hook method
-  // and re-index the content, if necessary. Also, clear the fields cache.
+  // and re-index the content, if necessary.
   $old_fields = $index->original->options + array('fields' => array());
   $old_fields = $old_fields['fields'];
   $new_fields = $index->options + array('fields' => array());
   $new_fields = $new_fields['fields'];
   if ($old_fields != $new_fields) {
-    cache_clear_all($index->getCacheId(), 'cache', TRUE);
     if ($index->server) {
       $index->server()->fieldsUpdated($index);
     }
-  }
-
-  // If additional fields changed, clear the index's specific cache which
-  // includes them.
-  $old_additional = $index->original->options + array('additional fields' => array());
-  $old_additional = $old_additional['additional fields'];
-  $new_additional = $index->options + array('additional fields' => array());
-  $new_additional = $new_additional['additional fields'];
-  if ($old_additional != $new_additional) {
-    cache_clear_all($index->getCacheId() . '-0-1', 'cache');
   }
 
   // If the index's enabled or read-only status is being changed, queue or
@@ -1963,7 +1952,14 @@ function search_api_search_api_query_alter(SearchApiQueryInterface $query) {
       }
     }
     else {
-      watchdog('search_api', 'An illegal user UID was given for node access: @uid.', array('@uid' => $query->getOption('search_api_access_account', $user)), WATCHDOG_WARNING);
+      $account = $query->getOption('search_api_access_account', '(' . t('none') . ')');
+      if (is_object($account)) {
+        $account = $account->uid;
+      }
+      if (!is_scalar($account)) {
+        $account = var_export($account, TRUE);
+      }
+      watchdog('search_api', 'An illegal user UID was given for node access: @uid.', array('@uid' => $account), WATCHDOG_WARNING);
     }
   }
 }

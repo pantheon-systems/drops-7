@@ -238,7 +238,7 @@ class SearchApiFacetapiDate extends SearchApiFacetapiTerm implements FacetapiQue
     $timestamps = array_keys($raw_values);
     if (NULL === $parent) {
       if (count($raw_values) > 1) {
-        $granularity = facetapi_get_timestamp_gap(min($timestamps), max($timestamps));
+        $granularity = facetapi_get_timestamp_gap(min($timestamps), max($timestamps), $max_granularity);
         // Array of numbers used to determine whether the next gap is smaller than
         // the minimum gap allowed in the drilldown.
         $gap_numbers = array(

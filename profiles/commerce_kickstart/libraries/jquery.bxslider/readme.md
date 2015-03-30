@@ -1,4 +1,4 @@
-#bxSlider 4.1.2
+#bxSlider 4.2.3
 ##The fully-loaded, responsive jQuery content slider
 
 ###Why should I use this slider?
@@ -347,6 +347,13 @@ default: null
 options: jQuery selector
 ```
 
+**keyboardEnabled**
+Enable keyboard navigation for visible sliders
+```
+default: false
+options: boolean (true / false)
+```
+
 ###Auto
 
 **auto**
@@ -560,6 +567,73 @@ slider.destroySlider();
 ```
 
 ## Changelog
+
+### Version 4.2.3
+* Minor bug fix
+
+### Version 4.2.2
+* Fix: Remove unused plugin variable (#733)
+* Fix: `updateAfterSlideTransition` not being called (#704)
+* Fix: Slider stops auto advancing (#702)
+* Fix: Refresh page, slider show the last item at the first in mode: 'horizontal' (#694)
+* Fix: horizintal ticker stutters on loop (#669)
+* Fix: Wrong bx-wrapper bottom margin with controls=true and pager=false (#647)
+* Fix: add css tickerHover. (#629)
+* Fix: Slider refusing to scale down, only up (#611)
+* Fix: bxSlider freezes on touch devices (#540)
+* Fix: Multiple fixes and improvements for Windows Mobile Devices (#596)
+* Fix: Accessing bxslider's slider object inside its “onSliderLoad” callback returns undefined (#475)
+* Fix: infiniteLoop glitch when scrolling from first to last slide (#429)
+* Enhancement: Cancel transitions on callbacks by returning false. (#411)
+* Enhancement: Added Keyboard arrow left and right support (#239)
+
+### Version 4.2.1
+* Fix: Merge Conflict in dist
+* Fix: modified bower.json
+
+### Version 4.2.0
+* Fix: Reverse #714, fixes #722.
+* Fix: Repo Tag #729
+* Fix: #720 pagerCustom issues
+
+4.2.0 Introduces a streamlined build process using [gulp](www.gulpjs.com). Along with this new build process the projects folder structure has been changed. You will find a `dist` folder with all assets ready to use, including both minified and unminified versions of the javascript. These assets should be ready to go. In `src` you will find the uncompiled assets, including a new less version of the css for bxslider. This is an important step for bxslider. It will help speed development up and keep work clean. It also paves the way for a big revamp we have planned in the future.
+
+**Unfamiliar with npm? Don't have node installed?** [Download and install node.js](http://nodejs.org/download/) before proceeding.
+
+From the command line:
+
+1. Install [gulp](http://gulpjs.com) globally with `npm install -g gulp`
+2. Navigate to the project directory, then run `npm install`
+
+You now have all the necessary dependencies to run the build process.
+
+### Available gulp commands
+
+* `gulp` — Compile and optimize all files to `dist`
+* `gulp styles` — Compile css assets only to `dist`
+* `gulp scripts` — Compile js assets only to `dist`
+* `gulp images` - Run lossless compression on all the images and copy to `dist`
+* `gulp jshint` — Checks JS and JSON code for errors based on our .jshintrc settings
+
+
+### Version 4.1.3
+* Fix: responsive issue for horizontal mode for issue #611, #714
+* Fix: extra space on the left when using fade mode. #715
+* Fix: wrongly removing custom pager in destroySlider #610
+* Fix: bug with reloading slider with custom pager #545
+* Fix: Issue with infinite scroll sometimes returning to 0 #481
+* Fix: When "infiniteLoop" is used, true is not passed to a clone method. #346
+* Fix: "pagerCustom" won't work when using reloadSlider #171
+* Fix: Remove vendor prefix for translateZ(0) #565
+* Fix: give styles on focus for accessibility #228
+* Fix: Minified Version out of sync.
+* Fix: Remove -5px left #517
+* Enhancement: Invert order call of appendControls() and appendPager() #226
+* Enhancement: Various Indentation and typos in docs fixed. #551, #578
+* Enhancement: Update jsDelivr with update.json for autoupdate of CDN
+* Enhancement: Tag Repo so it can be included in CDNJS
+* Created development branch to work from. Eventually will restructure entire repo to follow best practice setup.
+
 
 ### Version 4.1.2
 * Added `bower.json` configuration file. Manage bxSlider as a dependency using [bower](http://bower.io/).

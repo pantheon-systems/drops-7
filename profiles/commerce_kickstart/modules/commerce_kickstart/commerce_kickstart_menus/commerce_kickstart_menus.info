@@ -6,9 +6,9 @@ dependencies[] = toolbar_megamenu
 
 stylesheets[all][] = commerce_kickstart_menus.css
 
-; Information added by Drupal.org packaging script on 2014-11-20
-version = "7.x-2.20"
+; Information added by Drupal.org packaging script on 2015-03-20
+version = "7.x-2.22"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1416496447"
+datestamp = "1426860543"
 

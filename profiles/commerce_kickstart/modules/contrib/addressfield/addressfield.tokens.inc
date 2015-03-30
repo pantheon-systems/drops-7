@@ -49,7 +49,11 @@ function addressfield_token_info() {
   );
   $info['premise'] = array(
     'name' => t('Premise (i.e. Street address)'),
-    'description' => t('The thoroughfare value.'),
+    'description' => t('The premise value.'),
+  );
+  $info['sub_premise'] = array(
+    'name' => t('Sub Premise (i.e. Suite, Apartment, Floor, Unknown.)'),
+    'description' => t('The sub premise value.'),
   );
   $info['organisation'] = array(
     'name' => t('Organisation'),
@@ -161,6 +165,10 @@ function addressfield_tokens($type, $tokens, array $data = array(), array $optio
 
         case 'premise':
           $replacements[$original] = $sanitize ? check_plain($address['premise']) : $address['premise'];
+          break;
+
+        case 'sub_premise':
+          $replacements[$original] = $sanitize ? check_plain($address['sub_premise']) : $address['sub_premise'];
           break;
 
         case 'organisation':

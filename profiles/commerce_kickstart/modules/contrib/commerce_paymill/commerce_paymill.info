@@ -7,9 +7,9 @@ dependencies[] = libraries
 core = 7.x
 configure = admin/settings/commerce-paymill
 
-; Information added by Drupal.org packaging script on 2013-12-15
-version = "7.x-2.3"
+; Information added by Drupal.org packaging script on 2014-09-29
+version = "7.x-2.4"
 core = "7.x"
 project = "commerce_paymill"
-datestamp = "1387121009"
+datestamp = "1411981758"
 

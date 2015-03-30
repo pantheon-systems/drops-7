@@ -39,7 +39,7 @@ Feature: Checkout and pay
       | Full name | My full name |
       | Address 1 | My address   |
       | City      | My city      |
-      | ZIP Code  | 90120        |
+      | ZIP code  | 90120        |
       And I select "California" from "State"
       And I press "Continue to next step"
       # Just choose the default shipping method

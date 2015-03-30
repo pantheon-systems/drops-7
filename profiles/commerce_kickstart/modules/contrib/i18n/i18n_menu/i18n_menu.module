@@ -530,7 +530,7 @@ function _i18n_menu_link_process(&$link) {
       }
     }
     // Skip if administering this menu item through the node edit form.
-    elseif (arg(0) == 'node' && arg(2) == 'edit') {
+    elseif (arg(0) == 'node' && arg(2) == 'edit' && $link['link_path'] == arg(0) . '/' . arg(1)) {
       return FALSE;
     }
     return TRUE;

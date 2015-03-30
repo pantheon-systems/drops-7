@@ -2099,3 +2099,50 @@ class RulesEventDispatcherTestCase extends DrupalWebTestCase {
     }
   }
 }
+
+/**
+ * Test early bootstrap Rules invocation.
+ */
+class RulesInvocationEnabledTestCase extends DrupalWebTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Rules invocation enabled',
+      'description' => 'Tests that Rules events are enabled during menu item loads.',
+      'group' => 'Rules',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp('dblog', 'rules', 'rules_test', 'rules_test_invocation');
+  }
+
+  /**
+   * Tests that a Rules event is triggered on node menu item loading.
+   *
+   * @see rules_test_invocation_node_load()
+   */
+  public function testInvocationOnNodeMenuLoading() {
+    // Create a test node.
+    $node = $this->drupalCreateNode(array('title' => 'Test'));
+    // Enable Rules logging on the INFO level so that entries are written to
+    // dblog.
+    variable_set('rules_log_errors', RulesLog::INFO);
+    // Create an empty rule that will fire in our node load hook.
+    $rule = rules_reaction_rule();
+    $rule->event('rules_test_event');
+    $rule->save('test_rule');
+
+    // Visit the node page which should trigger the load hook.
+    $this->drupalGet('node/' . $node->nid);
+    $result = db_query("SELECT * FROM {watchdog} WHERE type = 'rules' AND message = 'Reacting on event %label.'")->fetch();
+    $this->assertFalse(empty($result), 'Rules event was triggered and logged.');
+  }
+
+}

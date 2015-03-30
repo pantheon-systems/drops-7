@@ -184,3 +184,33 @@ function addressfield_update_7000() {
     }
   }
 }
+
+/**
+ * Sets the value of the new "Default country" setting.
+ */
+function addressfield_update_7001() {
+  $address_fields = array();
+  foreach (field_info_fields() as $field_name => $field_info) {
+    if ($field_info['type'] == 'addressfield') {
+      $address_fields[$field_name] = $field_name;
+    }
+  }
+
+  foreach (field_info_instances() as $entity_type => $bundles) {
+    foreach ($bundles as $bundle_name => $instances) {
+      foreach (array_intersect_key($instances, $address_fields) as $field_name => $instance) {
+        // Optional fields get the None default. Required fields get the
+        // previously selected default country.
+        $default_country = '';
+        if (!empty($instance['required']) && !empty($instance['default_value'])) {
+          $default_country = $instance['default_value']['country'];
+        }
+
+        $instance['widget']['settings']['default_country'] = $default_country;
+        unset($instance['default_value']);
+
+        field_update_instance($instance);
+      }
+    }
+  }
+}

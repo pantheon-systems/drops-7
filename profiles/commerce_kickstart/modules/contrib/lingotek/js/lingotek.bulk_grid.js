@@ -8,7 +8,7 @@ function lingotek_perform_action(nid, action) {
   jQuery('#edit-actions-select').val(action);
   jQuery('#edit-actions-select').trigger('change');
 }
-  
+
 (function ($) {
   function lingotekTriggerModal(self) {
     var $self = $(self);
@@ -37,14 +37,42 @@ function lingotek_perform_action(nid, action) {
       $console.html(Drupal.t('<div class="messages warning"><h2 class="element-invisible">Warning message</h2>You must select at least one entity to perform this action.</div>'));
     }
   }
-  
+
+  var message_already_shown = false;
+
   Drupal.behaviors.lingotekBulkGrid = {
     attach: function (context) {
-            
+      $('.form-checkbox').change(function() {
+        var cells_of_selected_row = $(this).parents("tr").children();
+
+        var selected_set_name = cells_of_selected_row.children('.set_name').text();
+
+        var rows_in_same_set = $("tr").children().children('.set_name:contains("' + selected_set_name + '")').parent().parent();
+
+        var rows_with_incompletes = rows_in_same_set.children().children('.target-pending, .target-ready, .target-edited').parent().parent();
+        var boxes_checked = rows_in_same_set.children().children().children("input:checkbox:checked").length;
+        if ($(this).is(':checked')) {
+          rows_with_incompletes.addClass('selected');
+        }
+        else if (boxes_checked <= 0) {
+          rows_in_same_set.removeClass('selected');
+        }
+        else {
+          // only uncheck the box that was clicked
+        }
+        var this_row_incomplete = $.inArray($(this).parents('tr')[0], rows_with_incompletes) !== -1;
+        var other_rows_with_incompletes = rows_with_incompletes.length - this_row_incomplete;
+
+        if (!message_already_shown && other_rows_with_incompletes > 0) {
+          $('#edit-grid-container').prepend('<div class="messages warning">All items in the same config set will be updated simultaneously, therefore some items are automatically highlighted. Disassociation will occur on an individual basis and only checked items will be affected.</div>');
+          message_already_shown = true;
+        }
+      });
+
       $('input#edit-actions-submit.form-submit').hide();
       $('#edit-actions-select').change(function() {
         val = $(this).val();
-        
+
         if(val == 'reset' || val == 'delete') {
           lingotekTriggerModal($('#'+val+'-link'));
         } else if(val == 'edit') {
@@ -55,7 +83,7 @@ function lingotek_perform_action(nid, action) {
           $('input#edit-actions-submit.form-submit').trigger('click');
         }
       });
-      
+
       $('#edit-limit-select').change(function() {
         $('#edit-search-submit.form-submit').trigger('click');
       });

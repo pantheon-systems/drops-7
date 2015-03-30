@@ -3,27 +3,28 @@ core = 7.x
 api = 2
 
 ; Basic contributed modules.
-projects[ctools][version] = 1.5
+projects[ctools][version] = 1.6
 projects[ctools][subdir] = "contrib"
-projects[entity][version] = 1.5
+projects[entity][version] = 1.6
 projects[entity][subdir] = "contrib"
 projects[entityreference][version] = 1.1
 projects[entityreference][subdir] = "contrib"
 projects[entityreference][patch][] = "http://drupal.org/files/1580348-universal-formatters-17.patch"
-projects[rules][version] = 2.7
+projects[rules][version] = 2.9
 projects[rules][subdir] = "contrib"
-projects[views][version] = 3.8
+projects[views][version] = 3.10
 projects[views][subdir] = "contrib"
 projects[views][patch][] = "http://drupal.org/files/2059555-reduce-formatter-form-state.patch"
 projects[views_bulk_operations][version] = 3.2
 projects[views_bulk_operations][subdir] = "contrib"
-projects[addressfield][version] = 1.0-beta5
+projects[addressfield][version] = 1.0
 projects[addressfield][subdir] = "contrib"
 projects[features][version] = 1.0
 projects[features][patch][] = "http://drupal.org/files/1572578-part-one.patch"
 projects[features][patch][] = "http://drupal.org/files/1597186-1-features-do-not-cache-includes.patch"
 projects[features][patch][] = "http://drupal.org/files/927566-multiple-link_path.patch"
 projects[features][patch][] = "http://drupal.org/files/1669720-fix-features-flush-cache.patch"
+projects[features][patch][] = "http://drupal.org/files/1588596-11-features-array_diff_assoc_recursive.patch"
 projects[features][subdir] = "contrib"
 projects[strongarm][version] = 2.0
 projects[strongarm][subdir] = "contrib"
@@ -35,7 +36,7 @@ projects[views_megarow][version] = 1.4
 projects[views_megarow][subdir] = "contrib"
 
 ; Drupal Commerce and Commerce contribs.
-projects[commerce][version] = 1.10
+projects[commerce][version] = 1.11
 projects[commerce][subdir] = "contrib"
 projects[commerce_features][version] = 1.0
 projects[commerce_features][subdir] = "contrib"
@@ -103,12 +104,13 @@ projects[commerce_exactor][version] = 1.3
 projects[commerceguys_marketplace][version] = 1.0-beta4
 projects[commerceguys_marketplace][subdir] = "contrib"
 projects[commerce_paymill][subdir] = "contrib"
-projects[commerce_paymill][version] = 2.3
+projects[commerce_paymill][version] = 2.4
 projects[commerce_nosto_tagging][subdir] = "contrib"
 projects[commerce_nosto_tagging][version] = 1.0
 projects[commerce_nosto_tagging][patch][] = https://drupal.org/files/issues/issue-2225883.patch
 projects[commerce_yotpo][subdir] = "contrib"
 projects[commerce_yotpo][version] = 1.1
+projects[commerce_yotpo][patch][] = https://www.drupal.org/files/issues/issue-2376233.patch
 projects[commerce_firstdata_gge4][version] = 1.0
 projects[commerce_firstdata_gge4][subdir] = "contrib"
 
@@ -154,7 +156,7 @@ projects[mailsystem][version] = 2.34
 projects[mailsystem][subdir] = "contrib"
 projects[mimemail][version] = 1.0-beta3
 projects[mimemail][subdir] = "contrib"
-projects[token][version] = 1.5
+projects[token][version] = 1.6
 projects[token][subdir] = "contrib"
 projects[token][patch][] = "http://drupal.org/files/token-token_asort_tokens-1712336_0.patch"
 projects[eva][version] = 1.2
@@ -184,10 +186,10 @@ projects[title][patch][] = "http://drupal.org/files/title-translation_overwrite-
 projects[kameleoon][subdir] = "contrib"
 projects[kameleoon][version] = "1.1"
 projects[mailup][subdir] = "contrib"
-projects[mailup][version] = "1.0"
+projects[mailup][version] = "1.1"
 
 ; Search related modules.
-projects[search_api][version] = 1.13
+projects[search_api][version] = 1.14
 projects[search_api][subdir] = "contrib"
 projects[search_api_db][version] = 1.4
 projects[search_api_db][subdir] = "contrib"
@@ -225,9 +227,9 @@ projects[chosen][download][branch] = 7.x-2.x
 ; Internationalization
 projects[variable][version] = 2.5
 projects[variable][subdir] = "contrib"
-projects[i18n][version] = "1.11"
+projects[i18n][version] = "1.12"
 projects[i18n][subdir] = "contrib"
-projects[lingotek][version] = 5.09
+projects[lingotek][version] = 6.01
 projects[lingotek][subdir] = "contrib"
 
 ; Base theme.

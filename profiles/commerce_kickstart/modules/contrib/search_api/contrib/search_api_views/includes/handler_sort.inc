@@ -28,6 +28,7 @@ class SearchApiViewsHandlerSort extends views_handler_sort {
       unset($this->query->orderby);
       $sort = &$this->query->getSort();
       $sort = array();
+      unset($sort);
     }
 
     // If two of the same fields are used for sort, ignore the latter in order
@@ -38,7 +39,12 @@ class SearchApiViewsHandlerSort extends views_handler_sort {
       return;
     }
 
-    $this->query->sort($this->real_field, $this->options['order']);
+    try {
+      $this->query->sort($this->real_field, $this->options['order']);
+    }
+    catch (SearchApiException $e) {
+      $this->query->abort($e->getMessage());
+    }
   }
 
 }

@@ -193,6 +193,12 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
         return isset($a) ? min($a, $b) : $b;
       case 'first':
         return isset($a) ? $a : $b;
+      case 'list':
+        if (!isset($a)) {
+          $a = array();
+        }
+        $a[] = $b;
+        return $a;
     }
   }
 
@@ -261,6 +267,7 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
           'max' => t('Maximum'),
           'min' => t('Minimum'),
           'first' => t('First'),
+          'list' => t('List'),
         );
       case 'type':
         return array(
@@ -270,6 +277,7 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
           'max' => 'integer',
           'min' => 'integer',
           'first' => 'string',
+          'list' => 'list<string>',
         );
       case 'description':
         return array(
@@ -279,6 +287,7 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
           'max' => t('The Maximum aggregation computes the numerically largest contained field value.'),
           'min' => t('The Minimum aggregation computes the numerically smallest contained field value.'),
           'first' => t('The First aggregation will simply keep the first encountered field value. This is helpful foremost when you know that a list field will only have a single value.'),
+          'list' => t('The List aggregation collects all field values into a multi-valued field containing all values.'),
         );
     }
   }
@@ -289,6 +298,8 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
   public function formButtonSubmit(array $form, array &$form_state) {
     $button_name = $form_state['triggering_element']['#name'];
     if ($button_name == 'op') {
+      // Increment $i until the corresponding field is not set, then create the
+      // field with that number as suffix.
       for ($i = 1; isset($this->options['fields']['search_api_aggregation_' . $i]); ++$i) {
       }
       $this->options['fields']['search_api_aggregation_' . $i] = array(

@@ -24,6 +24,9 @@ function addressfield_format_name_full_generate(&$format, $address) {
       'class' => array('addressfield-container-inline', 'name-block'),
     ),
     '#weight' => -100,
+    // The addressfield is considered empty without a country, hide all fields
+    // until one is selected.
+    '#access' => !empty($address['country']),
   );
   $format['name_block']['first_name'] = array(
     '#title' => t('First name'),

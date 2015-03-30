@@ -16,6 +16,7 @@ lingotek.forms = lingotek.forms || {};
         $('#edit-lingotek-sync-method').change(updateVerticalTabSummary);
         $('#edit-lingotek-profile').change(updateVerticalTabSummary);
         $('#edit-lingotek-profile').change(checkForEnablement);
+        $('#edit-lingotek-allow-source-overwriting').change(updateVerticalTabSummary);
         updateVerticalTabSummary();
         checkForEnablement();
         toggleMenuSelector();
@@ -116,6 +117,26 @@ lingotek.forms = lingotek.forms || {};
               summaryMessages.push( autoDownload ? Drupal.t("auto-download") : Drupal.t("manual download"));
             } else {
               summaryMessages.push($('#edit-lingotek-profile option:selected').text());
+            }
+
+            if($('#edit-lingotek-allow-source-overwriting').is(":visible")) {
+                if($('#edit-lingotek-allow-source-overwriting').is(":checked")) {
+                  $('.form-item-language-override').show();
+                }
+                else {
+                  $('.form-item-language-override option[value=""]').attr('selected', 'selected');
+                  $('.form-item-language-override').hide();
+                }
+            }
+            else {
+                var profile_lang_override = '[name=\''.concat($('#edit-lingotek-profile').val()).concat('_override\']');
+                if($(profile_lang_override).val() == 'true') {
+                  $('.form-item-language-override').show();
+                }
+                else {
+                  $('.form-item-language-override option[value=""]').attr('selected', 'selected');
+                  $('.form-item-language-override').hide();
+                }
             }
         }
         

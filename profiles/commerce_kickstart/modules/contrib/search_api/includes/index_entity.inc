@@ -172,8 +172,8 @@ class SearchApiIndex extends Entity {
   /**
    * Constructor as a helper to the parent constructor.
    */
-  public function __construct(array $values = array()) {
-    parent::__construct($values, 'search_api_index');
+  public function __construct(array $values = array(), $entity_type = 'search_api_index') {
+    parent::__construct($values, $entity_type);
   }
 
   /**
@@ -1005,12 +1005,14 @@ class SearchApiIndex extends Entity {
   }
 
   /**
-   * Reset internal static caches.
+   * Reset internal caches.
    *
    * Should be used when things like fields or data alterations change to avoid
    * using stale data.
    */
   public function resetCaches() {
+    cache_clear_all($this->getCacheId(''), 'cache', TRUE);
+
     $this->datasource = NULL;
     $this->server_object = NULL;
     $this->callbacks = NULL;

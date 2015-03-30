@@ -14,6 +14,10 @@ mysql:
 
 env:
   - UPGRADE=none
+  - UPGRADE=7.x-2.21
+  - UPGRADE=7.x-2.20
+  - UPGRADE=7.x-2.19
+  - UPGRADE=7.x-2.18
   - UPGRADE=7.x-2.17
   - UPGRADE=7.x-2.16
   - UPGRADE=7.x-2.15
@@ -53,7 +57,7 @@ install:
 
   # Setting Behat environment
   - DISTRO=`echo $TRAVIS_BUILD_DIR | sed -e "s/\/[^\/]*$//"`
-  - export BEHAT_PARAMS="extensions[Drupal\\DrupalExtension\\Extension][drupal][drupal_root]=$DISTRO/drupal"
+  - export BEHAT_PARAMS="{\"extensions\":{\"Drupal\\\DrupalExtension\":{\"drupal\":{\"drupal_root\":\"$DISTRO/drupal\"}}}}"
 
   # Build Codebase
   - mkdir private_files

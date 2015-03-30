@@ -94,7 +94,7 @@ class SearchApiViewsCache extends views_plugin_cache_time {
         'super-user' => $user->uid == 1, // special caching for super user.
         'language' => $GLOBALS['language']->language,
         'base_url' => $GLOBALS['base_url'],
-        'current_page' => $this->view->get_current_page(),
+        'offset' => $this->view->get_current_page() . '*' . $this->view->get_items_per_page() . '+' . $this->view->get_offset(),
       );
       // Not sure what gets passed in exposed_info, so better include it. All
       // other parameters used in the parent method are already reflected in the

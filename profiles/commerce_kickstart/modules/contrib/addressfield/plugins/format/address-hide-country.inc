@@ -18,10 +18,9 @@ $plugin = array(
  * @see CALLBACK_addressfield_format_callback()
  */
 function addressfield_format_address_hide_country(&$format, $address, $context = array()) {
-  // When building the format for a form, we expect the country element to have
-  // an #options list. If it does, and there is only one option, hide the field
-  // by setting #access to FALSE.
-  if ($context['mode'] == 'form') {
+  // Hide the country element only if the whole field is required, otherwise
+  // there will always be an additional None option.
+  if ($context['mode'] == 'form' && $context['instance']['required']) {
     if (!empty($format['country']['#options']) && count($format['country']['#options']) == 1) {
       $format['country']['#access'] =  FALSE;
     }

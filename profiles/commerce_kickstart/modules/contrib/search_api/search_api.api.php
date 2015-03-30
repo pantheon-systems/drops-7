@@ -335,7 +335,7 @@ function hook_search_api_items_indexed(SearchApiIndex $index, array $item_ids) {
  * Lets modules alter a search query before executing it.
  *
  * @param SearchApiQueryInterface $query
- *   The SearchApiQueryInterface object representing the search query.
+ *   The search query being executed.
  */
 function hook_search_api_query_alter(SearchApiQueryInterface $query) {
   // Exclude entities with ID 0. (Assume the ID field is always indexed.)

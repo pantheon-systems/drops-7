@@ -297,46 +297,72 @@ function drush_search_api_index($index_id = NULL, $limit = NULL, $batch_size = N
   if (empty($indexes)) {
     return;
   }
+
+  $process_batch = FALSE;
   foreach ($indexes as $index) {
-    // Get the number of remaing items to index.
-    try {
-      $datasource = $index->datasource();
-    }
-    catch (SearchApiException $e) {
-      drush_log($e->getMessage(), 'error');
-      continue;
-    }
-    $index_status = $datasource->getIndexStatus($index);
-    $remaining = $index_status['total'] - $index_status['indexed'];
-    if ($remaining <= 0) {
-      drush_log(dt("The index !index is up to date.", array('!index' => $index->name)), 'ok');
-      continue;
-    }
-
-    // Get the number of items to index per batch run.
-    if (!isset($batch_size)) {
-      $batch_size = empty($index->options['cron_limit']) ? SEARCH_API_DEFAULT_CRON_LIMIT : $index->options['cron_limit'];
-    }
-    elseif ($batch_size <= 0) {
-      $batch_size = $remaining;
-    }
-
-    // Get the number items to index.
-    if (!isset($limit) || !is_int($limit += 0) || $limit <= 0) {
-      $limit = $remaining;
-    }
-
-    drush_log(dt("Indexing a maximum number of !limit items (!batch_size items per batch run) for the index !index.", array('!index' => $index->name, '!limit' => $limit, '!batch_size' => $batch_size)), 'ok');
-
-    // Create the batch.
-    if (!_search_api_batch_indexing_create($index, $batch_size, $limit, $remaining, TRUE)) {
-      drush_log(dt("Couldn't create a batch, please check the batch size and limit parameters."), 'error');
-    }
-    else {
-      // Launch the batch process.
-      drush_backend_batch_process();
+    if (_drush_search_api_batch_indexing_create($index, $limit, $batch_size)) {
+      $process_batch = TRUE;
     }
   }
+
+  if ($process_batch) {
+    drush_backend_batch_process();
+  }
+}
+
+/**
+ * Creates and sets a batch for indexing items for a particular index.
+ *
+ * @param SearchApiIndex $index
+ *   The index for which items should be indexed.
+ * @param int $limit
+ *   (optional) The maximum number of items to index, or NULL to index all
+ *   items.
+ * @param int $batch_size
+ *   (optional) The number of items to index per batch, or NULL to index all
+ *   items at once.
+ *
+ * @return bool
+ *   TRUE if batch was created, FALSE otherwise.
+ */
+function _drush_search_api_batch_indexing_create(SearchApiIndex $index, $limit = NULL, $batch_size = NULL) {
+  // Get the number of remaining items to index.
+  try {
+    $datasource = $index->datasource();
+  }
+  catch (SearchApiException $e) {
+    drush_log($e->getMessage(), 'error');
+    return FALSE;
+  }
+  $index_status = $datasource->getIndexStatus($index);
+  $remaining = $index_status['total'] - $index_status['indexed'];
+  if ($remaining <= 0) {
+    drush_log(dt("The index !index is up to date.", array('!index' => $index->name)), 'ok');
+    return FALSE;
+  }
+
+  // Get the number of items to index per batch run.
+  if (!isset($batch_size)) {
+    $batch_size = empty($index->options['cron_limit']) ? SEARCH_API_DEFAULT_CRON_LIMIT : $index->options['cron_limit'];
+  }
+  elseif ($batch_size <= 0) {
+    $batch_size = $remaining;
+  }
+
+  // Get the total number of items to index.
+  if (!isset($limit) || !is_int($limit += 0) || $limit <= 0) {
+    $limit = $remaining;
+  }
+
+  drush_log(dt("Indexing a maximum number of !limit items (!batch_size items per batch run) for the index !index.", array('!index' => $index->name, '!limit' => $limit, '!batch_size' => $batch_size)), 'ok');
+
+  // Create the batch.
+  if (!_search_api_batch_indexing_create($index, $batch_size, $limit, $remaining, TRUE)) {
+    drush_log(dt("Couldn't create a batch, please check the batch size and limit parameters."), 'error');
+    return FALSE;
+  }
+
+  return TRUE;
 }
 
 /**

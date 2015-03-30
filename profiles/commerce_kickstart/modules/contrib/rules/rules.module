@@ -9,9 +9,45 @@
 require_once dirname(__FILE__) . '/modules/events.inc';
 
 /**
+ * Implements hook_module_implements_alter().
+ */
+function rules_module_implements_alter(&$implementations, $hook) {
+  // Ensures the invocation of hook_menu_get_item_alter() triggers
+  // rules_menu_get_item_alter() first so the rules invocation is ready for all
+  // sub-sequent hook implementations.
+  if ($hook == 'menu_get_item_alter' && array_key_exists('rules', $implementations)) {
+    $group = $implementations['rules'];
+    unset($implementations['rules']);
+    $implementations = array_merge(array('rules' => $group), $implementations);
+  }
+}
+
+/**
+ * Implements hook_menu_get_item_alter().
+ */
+function rules_menu_get_item_alter() {
+  // Make sure that event invocation is enabled before menu items are loaded.
+  // But make sure later calls to menu_get_item() won't automatically re-enabled
+  // the rules invocation.
+  // Example: modules that implement hook_entity_ENTITY_TYPE_load() might want
+  // to invoke Rules events in that load hook, which is also invoked for menu
+  // item loading. Since this can happen even before hook_init() we need to make
+  // sure that firing Rules events is enabled at that point. A typical use case
+  // for this is Drupal Commerce with commerce_cart_commerce_order_load().
+  if (!drupal_static('rules_init', FALSE)) {
+    rules_event_invocation_enabled(TRUE);
+  }
+}
+
+/**
  * Implements hook_init().
  */
 function rules_init() {
+  // See rules_menu_get_item_alter().
+  $rules_init = &drupal_static(__FUNCTION__, FALSE);
+  $rules_init = TRUE;
+  // Enable event invocation once hook_init() was invoked for Rules.
+  rules_event_invocation_enabled(TRUE);
   rules_invoke_event('init');
 }
 
@@ -186,7 +222,11 @@ function rules_log($msg, $args = array(), $priority = RulesLog::INFO, RulesPlugi
     if (isset($element) && isset($element->root()->name)) {
       $link = l(t('edit configuration'), RulesPluginUI::path($element->root()->name, 'edit', $element));
     }
+    // Disabled rules invocation to avoid an endless loop when using
+    // watchdog - which would trigger a rules event.
+    rules_event_invocation_enabled(FALSE);
     watchdog('rules', $msg, $args, $priority == RulesLog::WARN ? WATCHDOG_WARNING : WATCHDOG_ERROR, $link);
+    rules_event_invocation_enabled(TRUE);
   }
   // Do nothing in case debugging is totally disabled.
   if (!$settings['rules_debug_log'] && !$settings['rules_debug']) {
@@ -216,6 +256,7 @@ function rules_fetch_data($hook) {
   );
 
   if (!isset($data[$hook])) {
+    $data[$hook] = array();
     foreach (module_implements('rules_' . $hook) as $module) {
       $result = call_user_func($module . '_rules_' . $hook);
       if (isset($result) && is_array($result)) {
@@ -321,22 +362,39 @@ function &rules_get_cache($cid = 'data') {
     if ($get = cache_get($cid . $cid_suffix, 'cache_rules')) {
       $cache[$cid] = $get->data;
     }
-    elseif ($cid === 'data') {
-      // There is no 'data' cache so we need to rebuild it. Make sure subsequent
-      // cache gets of the main 'data' cache during rebuild get the interim
-      // cache by passing in the reference of the static cache variable.
-      _rules_rebuild_cache($cache['data']);
-    }
-    elseif (strpos($cid, 'comp_') === 0) {
-      $cache[$cid] = FALSE;
-      _rules_rebuild_component_cache();
-    }
-    elseif (strpos($cid, 'event_') === 0) {
-      $cache[$cid] = FALSE;
-      RulesEventSet::rebuildEventCache();
-    }
     else {
-      $cache[$cid] = FALSE;
+      // Prevent stampeding by ensuring the cache is rebuilt just once at the
+      // same time.
+      while (!lock_acquire(__FUNCTION__ . $cid . $cid_suffix, 60)) {
+        rules_log('Cache rebuild lock hit: !cid', array('!cid' => $cid), RulesLog::WARN);
+        // Now wait until the lock is released.
+        lock_wait(__FUNCTION__ . $cid . $cid_suffix, 10);
+        // If the lock is released it's likely the cache was rebuild. Thus check
+        // again if we can fetch it from the persistent cache.
+        if ($get = cache_get($cid . $cid_suffix, 'cache_rules')) {
+          $cache[$cid] = $get->data;
+          return $cache[$cid];
+        }
+      }
+      if ($cid === 'data') {
+        // There is no 'data' cache so we need to rebuild it. Make sure subsequent
+        // cache gets of the main 'data' cache during rebuild get the interim
+        // cache by passing in the reference of the static cache variable.
+        _rules_rebuild_cache($cache['data']);
+      }
+      elseif (strpos($cid, 'comp_') === 0) {
+        $cache[$cid] = FALSE;
+        _rules_rebuild_component_cache();
+      }
+      elseif (strpos($cid, 'event_') === 0 || $cid == 'rules_event_whitelist') {
+        $cache[$cid] = FALSE;
+        RulesEventSet::rebuildEventCache();
+      }
+      else {
+        $cache[$cid] = FALSE;
+      }
+      // Ensure a set lock is released.
+      lock_release(__FUNCTION__ . $cid . $cid_suffix);
     }
   }
   return $cache[$cid];
@@ -423,7 +481,6 @@ function rules_flush_caches() {
  */
 function rules_clear_cache() {
   cache_clear_all('*', 'cache_rules', TRUE);
-  variable_del('rules_event_whitelist');
   drupal_static_reset('rules_get_cache');
   drupal_static_reset('rules_fetch_data');
   drupal_static_reset('rules_config_update_dirty_flag');
@@ -960,17 +1017,16 @@ function rules_invoke_all() {
  * @see rules_invoke_event_by_args()
  */
 function rules_invoke_event() {
-  global $conf;
-
   $args = func_get_args();
   $event_name = $args[0];
   unset($args[0]);
   // We maintain a whitelist of configured events to reduces the number of cache
-  // reads. We access it directly via the global $conf as this is fast without
-  // having to introduce another static cache. Then, if the whitelist is unset,
-  // we ignore it so cache rebuilding is triggered.
-  if (!defined('MAINTENANCE_MODE') && (!isset($conf['rules_event_whitelist']) || isset($conf['rules_event_whitelist'][$event_name])) && $event = rules_get_cache('event_' . $event_name)) {
-    $event->executeByArgs($args);
+  // reads. If the whitelist is empty we proceed and it is rebuilt.
+  if (rules_event_invocation_enabled()) {
+    $whitelist = rules_get_cache('rules_event_whitelist');
+    if ((empty($whitelist) || isset($whitelist[$event_name])) && $event = rules_get_cache('event_' . $event_name)) {
+      $event->executeByArgs($args);
+    }
   }
 }
 
@@ -992,14 +1048,13 @@ function rules_invoke_event() {
  * @see rules_invoke_event()
  */
 function rules_invoke_event_by_args($event_name, $args = array()) {
-  global $conf;
-
   // We maintain a whitelist of configured events to reduces the number of cache
-  // reads. We access it directly via the global $conf as this is fast without
-  // having to introduce another static cache. Then, if the whitelist is unset,
-  // we ignore it so cache rebuilding is triggered.
-  if (!defined('MAINTENANCE_MODE') && (!isset($conf['rules_event_whitelist']) || isset($conf['rules_event_whitelist'][$event_name])) && $event = rules_get_cache('event_' . $event_name)) {
-    $event->executeByArgs($args);
+  // reads. If the whitelist is empty we proceed and it is rebuilt.
+  if (rules_event_invocation_enabled()) {
+    $whitelist = rules_get_cache('rules_event_whitelist');
+    if ((empty($whitelist) || isset($whitelist[$event_name])) && $event = rules_get_cache('event_' . $event_name)) {
+      $event->executeByArgs($args);
+    }
   }
 }
 
@@ -1636,4 +1691,26 @@ function rules_entity_metadata_wrapper_all_properties_callback(EntityMetadataWra
   $properties = entity_get_all_property_info($info['type']);
   $property_info['properties'] += $properties;
   return $property_info;
+}
+
+/**
+ * Helper to enable or disable the invocation of rules events.
+ *
+ * Rules invocation is disabled by default, such that Rules does not operate
+ * when Drupal is not fully bootstrapped. It gets enabled in rules_init() and
+ * rules_enable().
+ *
+ * @param bool|NULL $enable
+ *   NULL to leave the setting as is and TRUE / FALSE to change the behaviour.
+ *
+ * @return bool
+ *   Whether the rules invocation is enabled or disabled.
+ */
+function rules_event_invocation_enabled($enable = NULL) {
+  static $invocation_enabled = FALSE;
+  if (isset($enable)) {
+    $invocation_enabled = (bool) $enable;
+  }
+  // Disable invocation if configured or if site runs in maintenance mode.
+  return $invocation_enabled && !defined('MAINTENANCE_MODE');
 }

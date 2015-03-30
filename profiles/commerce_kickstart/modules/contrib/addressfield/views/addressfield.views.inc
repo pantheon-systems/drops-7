@@ -27,14 +27,18 @@ function addressfield_field_views_data($field) {
   $implemented = array(
     'country' => 'addressfield_views_handler_field_country',
     'administrative_area' => 'views_handler_field',
+    'sub_administrative_area' => 'views_handler_field',
+    'dependent_locality' => 'views_handler_field',
     'locality' => 'views_handler_field',
     'postal_code' => 'views_handler_field',
     'thoroughfare' => 'views_handler_field',
     'premise' => 'views_handler_field',
+    'sub_premise' => 'views_handler_field',
     'organisation_name' => 'views_handler_field',
     'name_line' => 'views_handler_field',
     'first_name' => 'views_handler_field',
     'last_name' => 'views_handler_field',
+    'data' => 'views_handler_field_serialized',
   );
 
   // Get the translated field information.

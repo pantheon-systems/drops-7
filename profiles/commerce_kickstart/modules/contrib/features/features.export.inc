@@ -187,7 +187,7 @@ function features_export_prepare($export, $module_name, $reset = FALSE) {
     }
   }
 
-  $export = array_diff_assoc($export, $standard_info);
+  $export = features_array_diff_assoc_recursive($export, $standard_info);
   ksort($export);
   return array_merge($standard_info, $export);
 }

@@ -930,3 +930,39 @@ function features_hook_info() {
   );
   return array_fill_keys($hooks, array('group' => 'features'));
 }
+
+/**
+ * Recursively computes the difference of arrays with additional index check.
+ *
+ * This is a version of array_diff_assoc() that supports multidimensional
+ * arrays.
+ *
+ * @param array $array1
+ *   The array to compare from.
+ * @param array $array2
+ *   The array to compare to.
+ *
+ * @return array
+ *   Returns an array containing all the values from array1 that are not present
+ *   in array2.
+ */
+function features_array_diff_assoc_recursive(array $array1, array $array2) {
+  $difference = array();
+  foreach ($array1 as $key => $value) {
+    if (is_array($value)) {
+      if (!isset($array2[$key]) || !is_array($array2[$key])) {
+        $difference[$key] = $value;
+      }
+      else {
+        $new_diff = features_array_diff_assoc_recursive($value, $array2[$key]);
+        if (!empty($new_diff)) {
+          $difference[$key] = $new_diff;
+        }
+      }
+    }
+    elseif (!isset($array2[$key]) || $array2[$key] != $value) {
+      $difference[$key] = $value;
+    }
+  }
+  return $difference;
+}

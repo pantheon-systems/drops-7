@@ -1,3 +1,30 @@
+Search API 1.14 (12/26/2014):
+-----------------------------
+- #2382385 by illusionuk, drunken monkey: Fixed error handling when using
+  invalid fulltext or sort field in Views.
+- #2371099 by drunken monkey: Fixed display of active "Exclude" facets.
+- #1861134 by Cyberwolf, jackbravo, drunken monkey: Fixed indexing on multiple
+  indexes with Drush.
+- #2347367 by drunken monkey, das-peter: Fixed forgotten usages of
+  $index->item_type.
+- #2359201 by drunken monkey: Added a "List" option to "Aggregated fields".
+- #2364247 by drunken monkey: Fixed documentation for
+  SearchApiQueryFilterInterface::getFilters().
+- #2364875 by Xano: Fixed Views argument handler for fulltext fields.
+- #2174163 by drunken monkey: Fixed detection of field type changes by data
+  alterations.
+- #2305755 by drunken monkey, pfrenssen: Fixed invalidation of the stored index
+  fields cache.
+- #2334727 by Alex Bukach, drunken monkey: Fixed Views caching does not take
+  items_per_page into account.
+- #1372092 by drunken monkey: Added an error message when no service class is
+  available when creating a server.
+- #2305627 by drunken monkey, cpliakas: Fixed date facets not displayed when
+  the configured granularity is larger than the calculated granularity.
+- #2319263 by solotandem: Added easier way to subclass entity classes.
+- #2278737 by drunken monkey: Fixed use of multiple Views fulltext search
+  filters.
+
 Search API 1.13 (07/23/2014):
 -----------------------------
 - #2281535 by areynolds, nicola85: Adapted to latest changes in Views cache

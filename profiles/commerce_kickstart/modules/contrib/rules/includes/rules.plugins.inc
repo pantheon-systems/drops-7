@@ -809,7 +809,7 @@ class RulesEventSet extends RulesRuleSet {
     }
     // Cache a whitelist of configured events so we can use it to speed up later
     // calls. See rules_invoke_event().
-    variable_set('rules_event_whitelist', array_flip(array_keys($sets)));
+    rules_set_cache('rules_event_whitelist', array_flip(array_keys($sets)));
   }
 
   protected function stateVariables($element = NULL) {

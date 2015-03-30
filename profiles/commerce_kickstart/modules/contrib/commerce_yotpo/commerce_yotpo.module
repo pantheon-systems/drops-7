@@ -69,7 +69,7 @@ function commerce_yotpo_block_info() {
   );
   $blocks['product_reviews'] = array(
     'info' => t('Yotpo Product Reviews'),
-    'cache' => DRUPAL_CACHE_GLOBAL,
+    'cache' => DRUPAL_CACHE_PER_PAGE,
   );
   $blocks['product_bottomline'] = array(
     'info' => t('Yotpo Product Bottom Line'),

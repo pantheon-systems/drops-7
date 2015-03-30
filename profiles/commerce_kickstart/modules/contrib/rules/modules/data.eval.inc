@@ -217,6 +217,9 @@ function rules_action_data_convert($arguments, RulesPlugin $element, $state) {
     case 'text':
       $result = strval($arguments['value']);
       break;
+    case 'token':
+      $result = strval($arguments['value']);
+      break;
   }
 
   return array('conversion_result' => $result);
@@ -245,6 +248,9 @@ function rules_action_data_convert_info_alter(&$element_info, RulesAbstractPlugi
         break;
       case 'text':
         $sources = array('integer', 'decimal', 'token', 'uri', 'date', 'duration', 'boolean');
+        break;
+      case 'token':
+        $sources = array('integer', 'decimal', 'text', 'uri', 'date', 'duration', 'boolean');
         break;
     }
     $element_info['parameter']['value']['type'] = $sources;

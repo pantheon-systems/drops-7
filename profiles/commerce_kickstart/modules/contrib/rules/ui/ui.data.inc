@@ -330,9 +330,12 @@ class RulesDataUIBoolean extends RulesDataUI implements RulesDataDirectInputForm
     $settings += array($name => isset($info['default value']) ? $info['default value'] : NULL);
     // Note: Due to the checkbox even optional parameter always receive a value.
     $form[$name] = array(
-      '#type' => 'checkbox',
-      '#title' => check_plain($info['label']),
+      '#type' => 'radios',
       '#default_value' => $settings[$name],
+      '#options' => array(
+        TRUE => t('@label: True.', array('@label' => $info['label'])),
+        FALSE => t('@label: False.', array('@label' => $info['label'])),
+      ),
     );
     return $form;
   }

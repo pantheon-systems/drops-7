@@ -156,6 +156,17 @@ a.language-icon {
   border: 1px #ccc solid;
 }
 
+.language-icon.target-target_localize {
+  background-color:#999;
+  border: 1px solid #999;
+}
+
+.language-icon.target-target_edited {
+  color: #000 !important;
+  background-color:inherit;
+  border: 1px #000 solid;
+}
+
 .language-icon.target-pending.target-disabled {
   background-color: inherit;
   border: 1px solid rgba(206,32,41,0.5);

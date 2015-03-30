@@ -619,7 +619,7 @@ function lingotek_project_vault_select_form_submit($form, $form_state) {
 function lingotek_setup_language_switcher_form($form, $form_state) {
   $current_theme = variable_get('theme_default', 'none'); //global $theme_key;
 
-  $query = db_select('{block}', 'b');
+  $query = db_select('block', 'b');
   $query->fields('b');
   $query->condition('module', 'locale');
   $query->condition('delta', 'language');
@@ -706,7 +706,7 @@ function lingotek_setup_node_translation_settings_form($form, $form_state) {
   $form['lingotek_nodes_translation_method'] = $content_defaults['defaults']['lingotek_nodes_translation_method'];
   $form['lingotek_nodes_translation_method']['#weight'] = -3;
   
-  $c = db_select('{node}', 'n')
+  $c = db_select('node', 'n')
       ->fields('n', array('tnid'))
     ->condition('n.tnid', 0, '<>')
     ->distinct()
@@ -764,7 +764,7 @@ function lingotek_setup_node_translation_settings_form_submit($form, &$form_stat
   lingotek_admin_entity_bundle_profiles_form_submit($form, $form_state);
   
   if ($form_state['values']['lingotek_nodes_translation_method'] == 'node' && $form_state['values']['lingotek_overwrite']) {
-    $nodes = db_select('{node}', 'n')
+    $nodes = db_select('node', 'n')
         ->fields('n', array('nid', 'tnid'))
         ->where('n.nid <> n.tnid AND n.tnid <> 0')
         ->execute()
@@ -774,7 +774,7 @@ function lingotek_setup_node_translation_settings_form_submit($form, &$form_stat
     
     foreach ($nodes as $row) {
       $ops[] = array('lingotek_keystore', array('node', $row->nid, 'profile', LingotekSync::PROFILE_DISABLED));
-      $ops[] = array('lingotek_keystore', array('node', $row->nid, 'node_sync_status', LingotekSync::STATUS_TARGET));
+      $ops[] = array('lingotek_keystore', array('node', $row->nid, 'upload_status', LingotekSync::STATUS_TARGET));
     }
 
     $batch = array(
@@ -823,8 +823,8 @@ function lingotek_setup_additional_translation_settings_form($form, &$form_state
   drupal_add_js(drupal_get_path('module', 'lingotek') . '/js/lingotek.admin.js');
   $form = lingotek_admin_additional_translation_settings_form($form, $form_state);
 
-  if (is_array($_SESSION['lingotek_setup_path'])) {
-    if (end($_SESSION['lingotek_setup_path']) == lingotek_get_entity_setup_path('additional')) {
+  if (!empty($_SESSION['lingotek_setup_path'])) {
+    if (end($_SESSION['lingotek_setup_path']) == lingotek_get_entity_setup_path('config')) {
       $null = array_pop($_SESSION['lingotek_setup_path']);
     } // if the user went back, remove the last element, which is this page.
     $form['additional_translation']['actions']['lingotek_back_button'] = lingotek_setup_link(end($_SESSION['lingotek_setup_path']), t('Previous Step'));
@@ -846,7 +846,7 @@ function lingotek_setup_additional_translation_settings_form_submit($form, &$for
   
   lingotek_setup_allowed_translation_formats();
   $operations = array();
-  $_SESSION['lingotek_setup_path'][] = lingotek_get_entity_setup_path('additional');
+  $_SESSION['lingotek_setup_path'][] = lingotek_get_entity_setup_path('config');
   
   lingotek_admin_additional_translation_settings_form_submit($form, $form_state, $additional_operations=$operations);
 }

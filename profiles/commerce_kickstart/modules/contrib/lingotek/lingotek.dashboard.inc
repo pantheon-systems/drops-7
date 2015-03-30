@@ -41,6 +41,8 @@ function lingotek_dashboard() {
     return $output;
   }
 
+  lingotek_notify_if_no_languages_added();
+
   return array(
     'script' => array(
       '#type' => 'markup',

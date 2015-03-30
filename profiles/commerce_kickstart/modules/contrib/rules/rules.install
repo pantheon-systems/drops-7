@@ -5,6 +5,14 @@
  */
 
 /**
+ * Implements hook_enable().
+ */
+function rules_enable() {
+  // Enable evaluation of Rules right after enabling the module.
+  rules_event_invocation_enabled(TRUE);
+}
+
+/**
  * Implements hook_install().
  */
 function rules_install() {
@@ -499,4 +507,22 @@ function rules_update_7213() {
         ->execute();
     }
   }
+}
+
+/**
+ * Switch out the rules_event_whitelist variable for a cache equivalent.
+ */
+function rules_update_7214() {
+  // Set new event_whitelist cache cid.
+  rules_set_cache('rules_event_whitelist', variable_get('rules_event_whitelist', array()));
+  // Delete old conf variable.
+  variable_del('rules_event_whitelist');
+  // Avoid any missing class errors.
+  registry_rebuild();
+  // Clear and rebuild Rules caches.
+  // See: rules_admin_settings_cache_rebuild_submit.
+  rules_clear_cache();
+  rules_get_cache();
+  _rules_rebuild_component_cache();
+  RulesEventSet::rebuildEventCache();
 }

@@ -455,11 +455,15 @@ function rules_condition_entity_is_new_help() {
  * Returns options for choosing a field for the selected entity.
  */
 function rules_condition_entity_has_field_options(RulesAbstractPlugin $element) {
-  $options = array();
-  foreach (field_info_fields() as $field_name => $field) {
-    $options[$field_name] = $field_name;
+  // The field_info_field_map() function was introduced in Drupal 7.22 (see
+  // https://drupal.org/node/1915646).
+  if (function_exists('field_info_field_map')) {
+    $fields = field_info_field_map();
   }
-  return $options;
+  else {
+    $fields = field_info_fields();
+  }
+  return drupal_map_assoc(array_keys($fields));
 }
 
 /**

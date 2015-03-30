@@ -169,7 +169,7 @@ class SearchApiViewsQuery extends views_plugin_query {
       '#default_value' => $this->options['search_api_bypass_access'],
     );
 
-    if (entity_get_info($this->index->item_type)) {
+    if ($this->index->getEntityType()) {
       $form['entity_access'] = array(
         '#type' => 'checkbox',
         '#title' => t('Additional access checks on result entities'),
@@ -374,9 +374,9 @@ class SearchApiViewsQuery extends views_plugin_query {
     // First off, we try to gather as much field values as possible without
     // loading any items.
     foreach ($results as $id => $result) {
-      if (!empty($this->options['entity_access'])) {
-        $entity = entity_load($this->index->item_type, array($id));
-        if (!entity_access('view', $this->index->item_type, $entity[$id])) {
+      if (!empty($this->options['entity_access']) && ($entity_type = $this->index->getEntityType())) {
+        $entity = entity_load($entity_type, array($id));
+        if (!entity_access('view', $entity_type, $entity[$id])) {
           continue;
         }
       }

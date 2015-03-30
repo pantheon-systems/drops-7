@@ -198,7 +198,7 @@ function lingotek_rules_entity_all_translations_of_status($wrapper, $status) {
   if (empty($target_status_keys)) {
     return FALSE;
   }
-  $query = db_select('{lingotek_entity_metadata}', 'lem')
+  $query = db_select('lingotek_entity_metadata', 'lem')
       ->fields('lem', array('entity_id'))
       ->condition('lem.entity_id', $entity_id)
       ->condition('lem.entity_type', $entity_type)

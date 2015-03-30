@@ -2,28 +2,33 @@
 
 /**
  * @file
- * Defines LingotekConfigChunk.
+ * Defines LingotekConfigSet.
  */
 
 /**
- * A class wrapper for Lingotek-specific behavior on ConfigChunks.
+ * A class wrapper for Lingotek-specific behavior on ConfigSets.
  */
-class LingotekConfigChunk implements LingotekTranslatableEntity {
+class LingotekConfigSet implements LingotekTranslatableEntity {
   /**
    * The Drupal entity type associated with this class
    */
 
-  const DRUPAL_ENTITY_TYPE = 'config_chunk';
+  const DRUPAL_ENTITY_TYPE = 'config_set';
   const TAG_PREFIX = 'config_';
   const TAG_PREFIX_LENGTH = 7; // length of 'config_'
 
   /**
-   * A Drupal config_chunk.
+   * The title of the document
+   */
+  protected $title = NULL;
+
+  /**
+   * A Drupal config_set.
    *
    * @var object
    */
 
-  protected $cid;
+  protected $sid;
 
   /**
    * Array for storing source and target translation strings
@@ -48,21 +53,19 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
    *
    * This is private since we want consumers to instantiate via the factory methods.
    *
-   * @param $chunk_id
-   *   A Config Chunk ID.
+   * @param $set_id
+   *   A Config Set ID.
    */
-  private function __construct($chunk_id = NULL) {
-    $this->cid = $chunk_id;
-    $this->chunk_size = LINGOTEK_CONFIG_CHUNK_SIZE;
-    $this->source_data = self::getAllSegments($this->cid);
-    $this->source_meta = self::getChunkMeta($this->cid);
+  private function __construct($set_id = NULL) {
+    $this->sid = $set_id;
+    $this->set_size = LINGOTEK_CONFIG_SET_SIZE;
+    $this->source_data = self::getAllSegments($this->sid);
+    $this->source_meta = self::getSetMeta($this->sid);
     $this->language = language_default();
     if (!isset($this->language->lingotek_locale)) { // if Drupal variable 'language_default' does not exist
       $this->language->lingotek_locale = Lingotek::convertDrupal2Lingotek($this->language->language);
     }
     $this->language_targets = Lingotek::getLanguagesWithoutSource($this->language->lingotek_locale);
-    $this->min_lid = $this->getMinLid();
-    $this->max_lid = $this->getMaxLid();
   }
 
   /**
@@ -76,120 +79,249 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   /**
-   * Return the status of the target locale for the given chunk_id
+   * Return the status of the target locale for the given set_id
    *
-   * @param int $chunk_id
-   *   The id of the chunk to search for
+   * @param int $set_id
+   *   The id of the set to search for
    * @param string $target_locale
    *   The lingotek locale to search for
    *
    * @return string
-   *   The status of the target locale for the given chunk_id
+   *   The status of the target locale for the given set_id
    */
-  public static function getTargetStatusById($chunk_id, $target_locale) {
-    $result = db_select('{lingotek_config_metadata}', 'meta')
+  public static function getTargetStatusById($set_id, $target_locale) {
+    $result = db_select('lingotek_config_metadata', 'meta')
         ->fields('meta', array('value'))
-        ->condition('id', $chunk_id)
+        ->condition('id', $set_id)
         ->condition('config_key', 'target_sync_status_' . $target_locale)
         ->execute();
     if ($result && $value = $result->fetchField()) {
       return $value;
     }
-    LingotekLog::error('Did not find a target status for chunk ID "@id"', array('@id' => $chunk_id));
+    LingotekLog::error('Did not find a target status for set ID "@id"', array('@id' => $set_id));
     return FALSE;
   }
 
   /**
-   * Return the chunk ID for the current chunk
+   * Return the set ID for the current set
    *
    * @return int
-   *   The ID of the current chunk, if it exists, otherwise NULL
+   *   The ID of the current set, if it exists, otherwise NULL
    */
   public function getId() {
-    return $this->cid;
+    return $this->sid;
   }
 
   /**
-   * Return the title for the current chunk
+   * Return the title for the current set
    *
    * @return string
-   *   The title of the current chunk
+   *   The title of the current set
    */
   public function getTitle() {
-    return 'Drupal configuration (' . $this->min_lid . '-' . $this->max_lid . ')';
+    if ($this->title) {
+      return $this->title;
+    }
+    $this->title = self::getTitleBySetId($this->sid);
+    return $this->title;
   }
 
   /**
-   * Return the description for the current chunk
+   * Set the display name for the document in the TMS
+   */
+  public function setTitle($title) {
+    $this->title = $title;
+  }
+
+  /**
+   * Return the title for the given set id
    *
    * @return string
-   *   The description of the current chunk
+   *   The title of the current set
    */
-  public function getDescription() {
-    return 'Drupal configuration (' . $this->min_lid . '-' . $this->max_lid . ')';//'Drupal configuration strings (locales source table) between ' . $this->min_lid . ' and ' . $this->max_lid . '.';
+  public static function getTitleBySetId($set_id) {
+    $textgroup = db_select('lingotek_config_metadata', 'l')
+        ->fields('l', array('value'))
+        ->condition('id', $set_id)
+        ->condition('config_key', 'textgroup')
+        ->execute()
+        ->fetchField();
+
+    $all_from_group = db_select('lingotek_config_metadata', 'l')
+        ->fields('l', array('id'))
+        ->condition('config_key', 'textgroup')
+        ->condition('value', $textgroup)
+        ->orderBy('id')
+        ->execute()
+        ->fetchCol();
+    $num_in_group = array_search($set_id, $all_from_group);
+    $textgroup = ($textgroup == 'default') ? 'Built-in Interface' : $textgroup;
+    return ucfirst($textgroup) . ' ' . (1 + $num_in_group);
   }
 
   /**
-   * Return the chunk ID for a given segment from the locales source
+   * Return the description for the current set
+   *
+   * @return string
+   *   The description of the current set
+   */
+  public function getDescription() {
+    return $this->getTitle();
+  }
+
+  /**
+   * Return the set ID for a given segment from the locales source
    *
    * @param int
    *   the lid of a segment from the locales source
    *
    * @return int
-   *   the ID of a chunk of configuration segments
+   *   the ID of a set of configuration segments
    */
-  public static function getIdBySegment($lid) {
-    return intval($lid / LINGOTEK_CONFIG_CHUNK_SIZE) + 1;
+  public static function getSetId($lid, $assign = TRUE) {
+    // Check if the lid already has a set:
+    $existing_sid = db_select('lingotek_config_map', 'l')
+        ->fields('l', array('set_id'))
+        ->condition('lid', $lid)
+        ->execute()
+        ->fetchField();
+    // If not, assign one to it
+    if (!$existing_sid && $assign) {
+      $new_sid = self::assignSetId($lid);
+      return $new_sid;
+    }
+    return $existing_sid;
   }
 
-  /**
-   * Return the segments by lid (from locales source) for a given chunk ID
-   *
-   * @param int
-   *   the ID of a chunk of configuration segments
-   *
-   * @return array
-   *   an array of lids from locales_source
-   */
-  public static function getSegmentIdsById($chunk_id) {
-    $max_length = variable_get('lingotek_config_max_source_length', LINGOTEK_CONFIG_MAX_SOURCE_LENGTH);
-    $include_misc_textgroups = FALSE;
-    $textgroups_array = self::getTextgroupsForTranslation();
-    if (in_array('misc', $textgroups_array)) {
-      $include_misc_textgroups = TRUE;
+  protected static function assignSetId($lid) {
+    // get the $lid's textgroup
+    $textgroup = db_select('locales_source', 'l')
+        ->fields('l', array('textgroup'))
+        ->condition('lid', $lid)
+        ->execute()
+        ->fetchField();
+
+    $open_set_id = self::getOpenSet($textgroup);
+    if ($open_set_id === FALSE) {
+      $open_set_id = self::createSet($textgroup);
     }
-    $textgroups = "-1,'" . implode("','", $textgroups_array) . "'";
-    $result = db_query(" SELECT ls.lid
-                        FROM {locales_source} ls
-                        WHERE ls.lid >= :minLid
-                        AND ls.lid <= :maxLid
-                        AND LENGTH(ls.source) < :maxLen
-                        AND (ls.textgroup IN ($textgroups)
-                        ".$include_misc?"OR ls.textgroup NOT IN ('default','blocks','taxonomy','menu','views','field'))":")",
-      array(':minLid' => self::minLid($chunk_id),
-            ':maxLid' => self::maxLid($chunk_id),
-            ':maxLen' => $max_length,
-        )
-    );
-    return $result->fetchCol();
+    // assign lid to that set
+    db_merge('lingotek_config_map')
+        ->key(array('lid' => $lid))
+        ->fields(array(
+          'lid' => $lid,
+          'set_id' => $open_set_id,
+        ))
+        ->execute();
+    return $open_set_id;
   }
-  
+
+  protected static function getOpenSet($textgroup) {
+    $full_sets = self::getFullSets();
+
+    $query = db_select('lingotek_config_metadata', 'l')
+        ->fields('l', array('id'))
+        ->condition('config_key', 'textgroup')
+        ->condition('value', $textgroup);
+    if (!empty($full_sets)) {
+      $query->condition('id', $full_sets, 'NOT IN');
+    }
+    $query->orderBy('id');
+    $result = $query->execute();
+    $set_ids = $result->fetchCol();
+    $open_set_id = FALSE;
+    foreach ($set_ids as $key => $set_id) {
+      if (!self::hasMaxChars($set_id)) {
+        $open_set_id = $set_ids[$key];
+        break;
+      }
+    }
+    return $open_set_id;
+  }
+
+  protected static function getFullSets() {
+    $query = db_query('SELECT set_id, COUNT(*) c FROM {lingotek_config_map} GROUP BY set_id HAVING c >= :max_size', array(':max_size' => LINGOTEK_CONFIG_SET_SIZE));
+
+    $full_sets = $query->fetchCol();
+    return $full_sets;
+  }
+
+  protected static function hasMaxChars($set_id) {
+    $lids = self::getLidsFromSets($set_id);
+    if (!empty($lids)) {
+      $query = db_select('locales_source', 'ls')
+          ->fields('ls', array('source'))
+          ->condition('lid', $lids, 'IN')
+          ->execute();
+      $strings_array = $query->fetchCol();
+      $strings = implode('', $strings_array);
+      if (strlen($strings) > LINGOTEK_CONFIG_MAX_SOURCE_LENGTH) {
+        return TRUE;
+      }
+    }
+    return FALSE;
+  }
+
+  protected static function createSet($textgroup) {
+    $timestamp = time();
+    $next_id = self::getNextSetId();
+    db_insert('lingotek_config_metadata')
+        ->fields(array(
+          'id' => $next_id,
+          'config_key' => 'textgroup',
+          'value' => $textgroup,
+          'created' => $timestamp,
+          'modified' => $timestamp
+        ))
+        ->execute();
+
+    return $next_id;
+  }
+
+  protected static function getNextSetId() {
+    $query = db_select('lingotek_config_metadata', 'lcm');
+    $query->addExpression('MAX(id)');
+    $max_set_id = $query->execute()->fetchField();
+    if ($max_set_id) {
+      return (int) $max_set_id + 1;
+    }
+    return 1;
+  }
+
+  public static function getDocId($set_id) {
+    $doc_id = db_select('lingotek_config_metadata', 'l')
+        ->fields('l', array('value'))
+        ->condition('id', $set_id)
+        ->condition('config_key', 'document_id')
+        ->execute()
+        ->fetchField();
+    return $doc_id;
+  }
+
+  public static function getAllConfigDocIds() {
+    $doc_ids = db_select('lingotek_config_metadata', 'l')
+        ->fields('l', array('value'))
+        ->condition('config_key', 'document_id')
+        ->execute()
+        ->fetchCol();
+    return $doc_ids;
+  }
+
   public function getSourceLocale() {
     return $this->language->lingotek_locale;
   }
 
   /**
-   * Set all segments for a given chunk ID to CURRENT status
+   * Set all segments for a given set ID to CURRENT status
    *
    * @param int
-   *   the ID of a chunk of configuration segments
+   *   the ID of a set of configuration segments
    */
-  public static function setSegmentStatusToCurrentById($chunk_id) {
+  public static function setSegmentStatusToCurrentById($set_id) {
+    $lids = self::getLidsFromSets($set_id);
     $result = db_update('locales_target')
         ->fields(array('i18n_status' => I18N_STRING_STATUS_CURRENT))
-        ->condition('lid', self::minLid($chunk_id), '>=')
-        ->condition('lid', self::maxLid($chunk_id), '<=')
-        ->condition('translation_agent_id', self::getLingotekTranslationAgentId())
+        ->condition('lid', $lids, 'IN')
         ->execute();
   }
 
@@ -208,7 +340,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
     // except for the i18n_status field, which should preserve its
     // currently-set flags, and the plid and plural fields which just
     // take default values for now.
-    db_merge('{locales_target}')
+    db_merge('locales_target')
         ->key(array('lid' => $lid, 'language' => $target_language,))
         ->fields(array(
           'lid' => $lid,
@@ -220,123 +352,148 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
 
   /**
     /**
-   * Return the chunk ID for a given Lingotek document ID, if it exists
+   * Return the set ID for a given Lingotek document ID, if it exists
    *
    * @param int
    *   the id of a lingotek document
    *
    * @return int
-   *   the ID of a chunk of configuration segments
+   *   the ID of a set of configuration segments
    */
   public static function getIdByDocId($doc_id) {
-    $query = db_select('{lingotek_config_metadata}', 'meta');
+    $query = db_select('lingotek_config_metadata', 'meta');
     $query->fields('meta', array('id'));
     $query->condition('config_key', 'document_id');
     $query->condition('value', $doc_id);
-    $result = $query->execute();
-    if ($id = $result->fetchField()) {
-      return $id;
+    $set_id = $query->execute()->fetchField();
+    if ($set_id !== FALSE) {
+      return $set_id;
     }
     return FALSE;
   }
 
   /**
-   * Factory method for getting a loaded LingotekConfigChunk object.
+   * Factory method for getting a loaded LingotekConfigSet object.
    *
-   * @param object $config_chunk
-   *   A Drupal config_chunk.
+   * @param object $config_set
+   *   A Drupal config_set.
    *
-   * @return LingotekConfigChunk
-   *   A loaded LingotekConfigChunk object.
+   * @return LingotekConfigSet
+   *   A loaded LingotekConfigSet object.
    */
-  public static function load($config_chunk) {
+  public static function load($config_set) {
     // WTD: not sure how to build this yet, so just raise NYI for now...
     throw new Exception('Not yet implemented');
   }
 
   /**
-   * Factory method for getting a loaded LingotekConfigChunk object.
+   * Factory method for getting a loaded LingotekConfigSet object.
    *
-   * @param int $chunk_id
-   *   A Drupal config chunk ID.
+   * @param int $set_id
+   *   A Drupal config set ID.
    *
    * @return mixed
-   *   A loaded LingotekConfigChunk object if found, FALSE if the chunk could not be loaded.
+   *   A loaded LingotekConfigSet object if found, FALSE if the set could not be loaded.
    */
-  public static function loadById($chunk_id) {
-    $chunk = FALSE;
-    // get any segments that should be associated with this chunk
-    // if segments exist, return a LingotekConfigChunk instance
+  public static function loadById($set_id) {
+    $set = FALSE;
+    // get any segments that should be associated with this set
+    // if segments exist, return a LingotekConfigSet instance
     // otherwise, return FALSE
-    $chunk_segments = self::getAllSegments($chunk_id);
-
-    if ($chunk_segments) {
-      $chunk = new LingotekConfigChunk($chunk_id);
-      $chunk->setApi(LingotekApi::instance());
+    $set_segments = self::getLidsFromSets($set_id);
+    if ($set_segments) {
+      $set = new LingotekConfigSet($set_id);
+      $set->setApi(LingotekApi::instance());
     }
 
-    return $chunk;
+    return $set;
   }
 
   /**
-   * Return all segments from the database that belong to a given chunk ID
+   * Return all segments from the database that belong to a given set ID
    *
-   * @param int $chunk_id
+   * @param int $set_id
    *
    * @return array
    *   An array containing the translation sources from the locales_source table
    */
-  protected static function getAllSegments($chunk_id) {
-    $chunk_size = LINGOTEK_CONFIG_CHUNK_SIZE;
-    $chunk_min = (intval($chunk_id) - 1) * intval($chunk_size) + 1;
-    $chunk_max = (intval($chunk_id) - 1) * intval($chunk_size) + $chunk_size;
-    $max_length = variable_get('lingotek_config_max_source_length', LINGOTEK_CONFIG_MAX_SOURCE_LENGTH);
-    $textgroups_array = self::getTextgroupsForTranslation();
-    $textgroups = "-1,'" . implode("','", $textgroups_array) . "'";
+  protected static function getAllSegments($set_id) {
+    $max_length = variable_get('lingotek_config_max_source_length', LINGOTEK_CONFIG_MAX_SOURCE_LENGTH); //is this just to make sure there are no enormous config items or is there another reason? How often does this come into play?
 
-    $query = "SELECT ls.lid, ls.source
-      FROM {locales_source} ls
-      WHERE ls.lid >= :minLid
-      AND ls.lid <= :maxLid
-      AND LENGTH(ls.source) < :maxLen
-      ";
-    if (in_array('misc', $textgroups_array)) {
-      $query .= "AND (ls.textgroup IN ($textgroups)
-        OR ls.textgroup NOT IN ('default','taxonomy','blocks','menu','views','field'))
-        ";
-    }
-    else {
-      $query .= "AND ls.textgroup IN ($textgroups)";
+    $lids = self::getLidsFromSets($set_id);
+    if (empty($lids)) {
+      return $lids;
     }
 
-    $results = db_query($query, array(
-      ':minLid' => $chunk_min,
-      ':maxLid' => $chunk_max,
-      ':maxLen' => $max_length,
-        )
-    );
+    $results = db_select('locales_source', 'ls')
+        ->fields('ls', array('lid', 'source'))
+        ->condition('lid', $lids, 'IN')
+        ->orderBy('lid')
+        ->execute();
 
     $response = array();
     while ($r = $results->fetchAssoc()) {
-      $response[$r['lid']] = $r['source'];
+      if(strlen($r['source']) < $max_length) {
+        $response[$r['lid']] = $r['source'];
+      }
+      else {
+        LingotekLog::warning("Config item @id was not sent to Lingotek for translation because it exceeds the max length of 4096 characters.", array('@id' => $r['lid']));
+        // Remove it from the set in the config_map table so it doesn't get marked as uploaded or translated.
+        self::disassociateSegments($r['lid']);
+      }
     }
-    // required to be in order ascending
-    ksort($response, SORT_NUMERIC);
+
     return $response;
   }
 
+  public static function getLidsFromSets($set_ids) {
+    $set_ids = is_array($set_ids) ? $set_ids : array($set_ids);
+    if (empty($set_ids)) {
+      return array();
+    }
+    $lids = db_select('lingotek_config_map', 'lcm')
+        ->fields('lcm', array('lid'))
+        ->condition('set_id', $set_ids, 'IN')
+        ->execute()
+        ->fetchCol();
+    return $lids;
+  }
+
+  protected static function getLidsForTextgroup($textgroup) {
+    $query = db_select('locales_source', 'ls')
+        ->fields('ls', array('lid'))
+        ->condition('textgroup', $textgroup)
+        ->execute();
+
+    $lids = $query->fetchCol();
+    return $lids;
+  }
+
+  public static function getLidsByStatus($status) {
+    $target_language_search = '%';
+    $query = db_select('lingotek_config_metadata', 'l');
+    $query->fields('l', array('id'));
+    $query->condition('config_key', 'target_sync_status_' . $target_language_search, 'LIKE');
+    $query->condition('value', $status);
+    $result = $query->execute();
+    $set_ids = $result->fetchCol(); //$result->fetchAllAssoc('nid');
+
+    $lids = self::getLidsFromSets($set_ids);
+    return $lids;
+  }
+
   /**
-   * Return any metadata for the given chunk ID, if it exists
+   * Return any metadata for the given set ID, if it exists
    *
-   * @param int $chunk_id
+   * @param int $set_id
    *
    * @return array
-   *   An array containing anything for the chunk_id from table lingotek_config_metadata
+   *   An array containing anything for the set_id from table lingotek_config_metadata
    */
-  protected static function getChunkMeta($chunk_id) {
-    $query = db_select('{lingotek_config_metadata}', 'l');
+  protected static function getSetMeta($set_id) {
+    $query = db_select('lingotek_config_metadata', 'l');
     $query->fields('l', array('id', 'config_key', 'value'));
-    $query->condition('l.id', $chunk_id);
+    $query->condition('l.id', $set_id);
     $result = $query->execute();
     $response = array();
     while ($record = $result->fetch()) {
@@ -346,76 +503,39 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   /**
-   * Return lid lower limit for the given chunk ID
-   *
-   * @param int $chunk_id
-   *
-   * @return int
-   *   the lower limit for the given chunk ID
-   */
-  public static function minLid($chunk_id) {
-    return (($chunk_id - 1) * LINGOTEK_CONFIG_CHUNK_SIZE) + 1;
-  }
-
-  /**
-   * Return lid upper limit for the given chunk ID
-   *
-   * @param int $chunk_id
-   *
-   * @return int
-   *   the upper limit for the given chunk ID
-   */
-  public static function maxLid($chunk_id) {
-    return $chunk_id * LINGOTEK_CONFIG_CHUNK_SIZE;
-  }
-
-  protected function getMinLid() {
-    if ($this->chunk_id) {
-      return self::minLid($this->chunk_id);
-    }
-    return (intval(key($this->source_data) / $this->chunk_size) * $this->chunk_size) + 1;
-  }
-
-  protected function getMaxLid() {
-    if ($this->chunk_id) {
-      return self::maxLid($this->chunk_id);
-    }
-    return (intval(key($this->source_data) / $this->chunk_size) * $this->chunk_size) + $this->chunk_size;
-  }
-
-  /**
-   * Loads a LingotekConfigChunk by Lingotek Document ID.
+   * Loads a LingotekConfigSet by Lingotek Document ID.
    *
    * @param string $lingotek_document_id
-   *   The Document ID whose corresponding chunk should be loaded.
+   *   The Document ID whose corresponding set should be loaded.
    * @param string $lingotek_language_code
    *   The language code associated with the Lingotek Document ID.
    * @param int $lingotek_project_id
    *   The Lingotek project ID associated with the Lingotek Document ID.
    *
    * @return mixed
-   *   A LingotekConfigChunk object on success, FALSE on failure.
+   *   A LingotekConfigSet object on success, FALSE on failure.
    */
   public static function loadByLingotekDocumentId($lingotek_document_id) {
-    $chunk = FALSE;
+    $set = FALSE;
 
-    // Get the Chunk entries in the system associated with the document ID.
-    $query = db_select('{lingotek_config_metadata}', 'meta')
+    // Get the set entries in the system associated with the document ID.
+    $query = db_select('lingotek_config_metadata', 'meta')
         ->fields('meta', array('id'))
         ->condition('config_key', 'document_id')
         ->condition('value', $lingotek_document_id)
         ->execute();
-    $id = $query->fetchField();
+    $set_id = $query->fetchField();
 
-    if ($id) {
-      $chunk = self::loadById($id);
+    // this returns a 0 for the first id then the if shows false
+    if (isset($set_id)) {
+      $set = self::loadById($set_id);
     }
     
-    return $chunk;
+    return $set;
   }
 
   /**
-   * Event handler for updates to the config chunk's data.
+   * Event handler for updates to the config set's data.
    */
   public function contentUpdated() {
 
@@ -428,7 +548,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
     }
 
     // Synchronize the local content with the translations from Lingotek.
-    // We instruct the users to configure config chunk translation with a
+    // We instruct the users to configure config set translation with a
     // single-phase machine translation-only Workflow, so the updated content
     // should be available right after our create/update document calls from above.
     // If it isn't, Lingotek will call us back via LINGOTEK_NOTIFICATIONS_URL
@@ -445,13 +565,13 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
         }
       }
       else {
-        LingotekLog::error('Unable to retrieve Lingotek Document ID for config chunk @id', array('@id' => $this->cid));
+        LingotekLog::error('Unable to retrieve Lingotek Document ID for config set @id', array('@id' => $this->sid));
       }
     }
   }
 
   /**
-   * Creates a Lingotek Document for this config chunk.
+   * Creates a Lingotek Document for this config set.
    *
    * @return bool
    *   TRUE if the document create operation was successful, FALSE on error.
@@ -461,7 +581,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   /**
-   * Updates the existing Lingotek Documemnt for this config chunk.
+   * Updates the existing Lingotek Documemnt for this config set.
    *
    * @return bool
    *   TRUE if the document create operation was successful, FALSE on error.
@@ -472,17 +592,17 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   /**
-   * Gets the local Lingotek metadata for this config chunk.
+   * Gets the local Lingotek metadata for this config set.
    *
    * @return array
-   *   An array of key/value data for the current config chunk.
+   *   An array of key/value data for the current config set.
    */
   protected function metadata() {
     $metadata = array();
 
-    $results = db_select('{lingotek_config_metadata}', 'meta')
+    $results = db_select('lingotek_config_metadata', 'meta')
         ->fields('meta')
-        ->condition('id', $this->cid)
+        ->condition('id', $this->sid)
         ->execute();
 
     foreach ($results as $result) {
@@ -493,32 +613,32 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   /**
-   * Return true if current chunk already has an assigned Lingotek Document ID
+   * Return true if current set already has an assigned Lingotek Document ID
    *
    * @return boolean TRUE/FALSE
    */
   public function hasLingotekDocId() {
     $has_id = array_key_exists('document_id', $this->source_meta);
-    if ($has_id && ($this->source_meta['document_id'] > 0)) {
+    if ($has_id && (strlen($this->source_meta['document_id']) > 0)) {
       return TRUE;
     }
     return FALSE;
   }
 
   /**
-   * Get the chunk's target translation status for the given locale
+   * Get the set's target translation status for the given locale
    */
   public function getTargetStatus($lingotek_locale) {
-    $result = db_select('{lingotek_config_metadata}', 'meta')
+    $result = db_select('lingotek_config_metadata', 'meta')
         ->fields('meta', array('value'))
-        ->condition('id', $this->cid)
+        ->condition('id', $this->sid)
         ->condition('config_key', 'target_sync_status_' . $lingotek_locale)
         ->execute();
     return $result->value;
   }
 
   /**
-   * Set the chunk's document ID in the config metadata table
+   * Assign the set's document ID in the config metadata table
    */
   public function setDocumentId($doc_id) {
     $this->setMetadataValue('document_id', $doc_id);
@@ -526,7 +646,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   /**
-   * Set the chunk's project ID in the config metadata table
+   * Assign the set's project ID in the config metadata table
    */
   public function setProjectId($project_id) {
     $this->setMetadataValue('project_id', $project_id);
@@ -534,15 +654,15 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   /**
-   * Set the chunk's status in the config metadata table
+   * Assign the set's status in the config metadata table
    */
   public function setStatus($status) {
-    $this->setMetadataValue('chunk_sync_status', $status);
+    $this->setMetadataValue('upload_status', $status);
     return $this;
   }
 
   /**
-   * Set the chunk's last error in the config metadata table
+   * Assign the set's last error in the config metadata table
    */
   public function setLastError($errors) {
     $this->setMetadataValue('last_sync_error', substr($errors, 0, 255));
@@ -550,7 +670,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   /**
-   * Set the chunk's target status(es) in the config metadata table
+   * Assign the set's target status(es) in the config metadata table
    */
   public function setTargetsStatus($status, $lingotek_locale = 'all') {
     if ($lingotek_locale != 'all') {
@@ -573,7 +693,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   public function documentLingotekXML() {
     $translatable = array();
 
-    // for now, assume all strings in locales_source table for the given chunk are translatable
+    // for now, assume all strings in locales_source table for the given set are translatable
     if (TRUE) {
       $translatable = array_keys($this->source_data);
     }
@@ -603,10 +723,10 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
    *   The value for the specified key, if it exists.
    */
   public function getMetadataValue($key) {
-    return db_select('{lingotek_config_metadata}', 'meta')
+    return db_select('lingotek_config_metadata', 'meta')
             ->fields('meta', array('value'))
             ->condition('config_key', $key)
-            ->condition('id', $this->cid)
+            ->condition('id', $this->sid)
             ->execute()
             ->fetchField();
   }
@@ -623,9 +743,9 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
     $metadata = $this->metadata();
     $timestamp = time();
     if (!isset($metadata[$key])) {
-      db_insert('{lingotek_config_metadata}')
+      db_insert('lingotek_config_metadata')
           ->fields(array(
-            'id' => $this->cid,
+            'id' => $this->sid,
             'config_key' => $key,
             'value' => $value,
             'created' => $timestamp,
@@ -634,12 +754,12 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
           ->execute();
     }
     else {
-      db_update('{lingotek_config_metadata}')
+      db_update('lingotek_config_metadata')
           ->fields(array(
             'value' => $value,
             'modified' => $timestamp
           ))
-          ->condition('id', $this->cid)
+          ->condition('id', $this->sid)
           ->condition('config_key', $key)
           ->execute();
     }
@@ -654,8 +774,8 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   public function deleteMetadataValue($key) {
     $metadata = $this->metadata();
     if (isset($metadata[$key])) {
-      db_delete('{lingotek_config_metadata}')
-          ->condition('id', $this->cid)
+      db_delete('lingotek_config_metadata')
+          ->condition('id', $this->sid)
         ->condition('config_key', $key, 'LIKE')
         ->execute();
     }
@@ -672,7 +792,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
     $document_id = $metadata['document_id'];
 
     if (empty($document_id)) {
-      LingotekLog::error('Unable to refresh local contents for config chunk @cid. Could not find Lingotek Document ID.', array('@cid' => $this->cid));
+      LingotekLog::error('Unable to refresh local contents for config set @sid. Could not find Lingotek Document ID.', array('@sid' => $this->sid));
       return FALSE;
     }
 
@@ -697,7 +817,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
     $document_id = $metadata['document_id'];
 
     if (empty($document_id)) {
-      LingotekLog::error('Unable to refresh local contents for config chunk @cid. Could not find Lingotek Document ID.', array('@cid' => $this->cid));
+      LingotekLog::error('Unable to refresh local contents for config set @sid. Could not find Lingotek Document ID.', array('@sid' => $this->sid));
       return FALSE;
     }
 
@@ -707,18 +827,19 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
 
     /* FAST VERSION (git history for slow version) */
     // 1. save the dirty targets associated with given language
-    $dirty_lids = self::getDirtyLidsByChunkIdAndLanguage($this->cid, $target_language);
+    $dirty_lids = self::getDirtyLidsBySetIdAndLanguage($this->sid, $target_language);
     // 2. delete all segment targets associated with given language
-    self::deleteSegmentTranslationsByChunkIdAndLanguage($this->cid, $target_language);
+    self::deleteSegmentTranslationsBySetIdAndLanguage($this->sid, $target_language);
     // 3. insert all segments for the given language
     self::saveSegmentTranslations($document_xml, $target_language);
     // 4. return the dirty targets' statuses
     self::restoreDirtyLids($dirty_lids);
     /* END FAST */
 
-    // set chunk status to current
+    // assign set status to current
     $this->setStatus(LingotekSync::STATUS_CURRENT);
     $this->setTargetsStatus(LingotekSync::STATUS_CURRENT, $lingotek_locale);
+    self::markSetsCurrent($this->sid);
 
     return TRUE;
   }
@@ -727,18 +848,18 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
    * Return all target segments by ID marked to be updated
    *
    * This is a preparatory step before resetting the locales targets for a given
-   * chunk.
+   * set.
    *
    * @param int
-   *    the ID of the chunk under which to search
+   *    the ID of the set under which to search
    * @param string
    *    the language code for which to get the segments that need updating
    */
-  public static function getDirtyLidsByChunkIdAndLanguage($chunk_id, $language) {
-    $result = db_select('{locales_target}', 'lt')
+  public static function getDirtyLidsBySetIdAndLanguage($set_id, $language) {
+    $lids = self::getLidsFromSets($set_id);
+    $result = db_select('locales_target', 'lt')
         ->fields('lt', array('lid'))
-        ->condition('lid', self::minLid($chunk_id), '>=')
-        ->condition('lid', self::maxLid($chunk_id), '<=')
+        ->condition('lid', $lids, 'IN')
         ->condition('language', $language)
         ->condition('i18n_status', I18N_STRING_STATUS_CURRENT, '!=')
         ->condition('translation_agent_id', self::getLingotekTranslationAgentId())
@@ -746,10 +867,23 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
     return $result->fetchCol();
   }
 
+  public static function getEditedLidsInSets($set_ids) {
+    $set_ids = is_array($set_ids) ? $set_ids : array($set_ids);
+    $query = db_select('lingotek_config_map', 'lcm')
+        ->fields('lcm', array('lid'))
+        ->condition('set_id', $set_ids, 'IN')
+        ->condition('current', 1);
+    $query->join('locales_target', 'lt', 'lt.lid = lcm.lid');
+    $query->condition('i18n_status', 1);
+    $result = $query->execute()->fetchCol();
+    $edited_lids = array_unique($result);
+    return $edited_lids;
+  }
+
   /**
    * Mark as dirty all target segments passed, in the locales targets
    *
-   * @param array
+   * @param array $dirty_lids
    *    the list of segments that need updating
    */
   public static function restoreDirtyLids($dirty_lids) {
@@ -762,19 +896,112 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   /**
-   * Delete all target segments for a given chunk
+   * Return bool if a specific lid is current
+   *
+   * @param int $lid
+   *    a single lid
+   */
+  public static function isLidCurrent($lid) {
+    $query = db_select('lingotek_config_map', 'lcm')
+        ->fields('lcm', array('current'))
+        ->condition('lid', $lid)
+        ->execute();
+    $current = $query->fetchField();
+    return $current;
+  }
+
+  /**
+   * Mark all lids passed as current or not current, in the lingotek_config_map table
+   *
+   * @param array $lids
+   *    the list of lids that are current
+   */
+  public static function markLidsNotCurrent($lids) {
+    $query = db_update('lingotek_config_map')
+        ->fields(array('current' => 0));
+    if ($lids != 'all') {
+      $query->condition('lid', $lids, 'IN');
+    }
+    $query->execute();
+  }
+
+  /**
+   * Mark all sets passed as current, in the lingotek_config_map table
+   *
+   * @param array $set_ids
+   *    the list of lids that are current
+   */
+  protected static function markSetsCurrent($set_ids) {
+    $query = db_update('lingotek_config_map')
+        ->fields(array('current' => 1));
+    if ($set_ids != 'all') {
+      $set_ids = is_array($set_ids) ? $set_ids : array($set_ids);
+      $query->condition('set_id', $set_ids, 'IN');
+    }
+    $query->execute();
+  }
+
+  /**
+   * Get all lids marked as current or not, in the lingotek_config_map table
+   *
+   * @param int $current
+   *    1 to get lids of all current segments, 0 to get lids for segments that are not current
+   * @param array $lids
+   *    a subset of lids to check, defaults to look for all current segments
+   */
+  public static function getLidsToUpdate($current = 0, $lids = 'all') {
+    $textgroups = array_merge(array(-1), LingotekConfigSet::getTextgroupsForTranslation());
+
+    $query = db_select('lingotek_config_map', 'lcm')
+        ->fields('lcm', array('lid'));
+    if ($lids !== 'all') {
+      $query->condition('lcm.lid', $lids, 'IN');
+    }
+    $query->join('locales_source', 'ls', "lcm.lid = ls.lid");
+    $query->condition('ls.textgroup', $textgroups, 'IN');
+
+    $query->join('locales_target', 'lt', "lcm.lid = lt.lid");
+    $or = db_or();
+    $or->condition('lcm.current', $current);
+    $or->condition('lt.i18n_status', 1);
+    $query->condition($or);
+
+    $lids = $query->execute()->fetchCol();
+    return array_unique($lids);
+  }
+
+  /**
+   * Delete all target segments for a given set
    *
    * @param int
-   *    the ID of the chunk for which to delete target segments
+   *    the ID of the set for which to delete target segments
    * @param string
    *    the language code for which to delete target segments
    */
-  public static function deleteSegmentTranslationsByChunkIdAndLanguage($chunk_id, $target_language) {
-    db_delete('{locales_target}')
+  public static function deleteSegmentTranslationsBySetIdAndLanguage($set_id, $target_language) {
+    $lids = self::getLidsFromSets($set_id);
+    db_delete('locales_target')
         ->condition('language', $target_language)
-        ->condition('lid', self::minLid($chunk_id), '>=')
-        ->condition('lid', self::maxLid($chunk_id), '<=')
+        ->condition('lid', $lids, 'IN')
         ->condition('translation_agent_id', self::getLingotekTranslationAgentId())
+        ->execute();
+  }
+
+  public static function deleteSegmentTranslations($lids) {
+    $lids = is_array($lids) ? $lids : array($lids);
+    db_delete('locales_target')
+        ->condition('lid', $lids, 'IN')
+        ->execute();
+
+    db_delete('lingotek_config_map')
+        ->condition('lid', $lids, 'IN')
+        ->execute();
+  }
+
+  public static function disassociateSegments($lids) {
+    $lids = is_array($lids) ? $lids : array($lids);
+    db_delete('lingotek_config_map')
+        ->condition('lid', $lids, 'IN')
         ->execute();
   }
 
@@ -782,7 +1009,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
    * Get lingotek translation agent ID
    */
   public static function getLingotekTranslationAgentId() {
-    $result = db_select('{lingotek_translation_agent}', 'lta')
+    $result = db_select('lingotek_translation_agent', 'lta')
         ->fields('lta', array('id'))
         ->condition('name', 'Lingotek')
         ->execute();
@@ -797,7 +1024,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
     foreach ($document_xml as $drupal_field_name => $xml_obj) {
       $lids[] = self::getLidFromTag($drupal_field_name);
     }
-    $result = db_select('{locales_target}', 'lt')
+    $result = db_select('locales_target', 'lt')
         ->fields('lt', array('lid'))
         ->condition('lid', $lids, 'IN')
         ->condition('language', $target_language)
@@ -868,7 +1095,7 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
   
   /**
-   * Magic get for access to chunk and chunk properties.
+   * Magic get for access to set and set properties.
    */
   public function __get($property_name) {
     $property = NULL;
@@ -892,15 +1119,24 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   public function getWorkflowId() {
-    return variable_get('lingotek_translate_config_workflow_id', '');
+    $profiles = variable_get('lingotek_profiles');
+    $config_profile = $profiles[LingotekSync::PROFILE_CONFIG];
+    $workflow_id = array_key_exists('workflow_id', $config_profile) ? $config_profile['workflow_id'] : variable_get('lingotek_translate_config_workflow_id', '');
+    return $workflow_id;
   }
-  
+
   public function getProjectId() {
-    return variable_get('lingotek_project', '');
+    $profiles = variable_get('lingotek_profiles');
+    $config_profile = $profiles[LingotekSync::PROFILE_CONFIG];
+    $project_id = array_key_exists('project_id', $config_profile) ? $config_profile['project_id'] : variable_get('lingotek_project', '');
+    return $project_id;
   }
-  
+
    public function getVaultId() {
-    return variable_get('lingotek_vault', '');
+    $profiles = variable_get('lingotek_profiles');
+    $config_profile = $profiles[LingotekSync::PROFILE_CONFIG];
+    $vault_id = array_key_exists('vault_id', $config_profile) ? $config_profile['vault_id'] : variable_get('lingotek_vault', '');
+    return $vault_id;
   }
 
   /**
@@ -933,20 +1169,19 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
   
   public static function getLidBySource($source_string) {
-    return db_select('{locales_source}', 's')
+    return db_select('locales_source', 's')
             ->fields('s', array('lid'))
         ->condition('s.source', $source_string)
         ->execute()
         ->fetchField();
   }
 
-
 /*
  * Return all document IDs related to config translation
  */
 
   public static function getAllDocumentIds() {
-  $result = db_select('{lingotek_config_metadata}', 'c')
+  $result = db_select('lingotek_config_metadata', 'c')
         ->fields('c', array('value'))
       ->condition('c.config_key', 'document_id')
       ->execute();
@@ -967,6 +1202,13 @@ class LingotekConfigChunk implements LingotekTranslatableEntity {
   }
 
   public function preDownload($lingotek_locale, $completed) {
+    // If auto download is turned off, you need to uncomment these lines and set status to READY.
+    /* if ($completed) {
+      $this->setTargetsStatus(LingotekSync::STATUS_READY, $lingotek_locale);
+      // The following lines mark the whole set as ready rather than just the changed items.
+      $lids = array_keys(self::getAllSegments($set_id));
+      self::markLidsNotCurrent($lids)
+    } */
   }
 
   public function postDownload($lingotek_locale, $completed) {

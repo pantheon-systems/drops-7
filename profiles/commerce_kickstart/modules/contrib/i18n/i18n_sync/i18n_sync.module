@@ -11,8 +11,6 @@
  *
  * Notes:
  * This module needs to run after taxonomy, i18n, translation. Check module weight.
- *
- * @ TODO Test with CCK when possible, api may have changed.
  */
 
 /**
@@ -68,15 +66,6 @@ function i18n_sync_field_info_alter(&$fields) {
     if (isset($fields[$type])) {
       $fields[$type]['i18n_sync_callback'] = 'i18n_sync_field_file_sync';
     }
-  }
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- */
-function i18n_sync_form_node_admin_content_alter(&$form, &$form_state) {
-  if (!empty($form['operation']) && $form['operation']['#value'] == 'delete') {
-    $form['#submit'] = array_merge(array('i18n_sync_node_delete_submit'), $form['#submit']);
   }
 }
 

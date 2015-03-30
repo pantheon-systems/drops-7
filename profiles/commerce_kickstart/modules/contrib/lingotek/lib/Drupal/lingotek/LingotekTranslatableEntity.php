@@ -94,6 +94,8 @@ interface LingotekTranslatableEntity {
   
   public function postDownload($lingotek_locale, $completed);
   
+  public function setTitle($title);
+
   public function setStatus($status);
 
   public function setTargetsStatus($status);

@@ -1,20 +1,15 @@
 <?php
 
+use Behat\Behat\Context\Context;
+use Behat\Behat\Context\SnippetAcceptingContext;
+use Behat\Gherkin\Node\PyStringNode;
+use Behat\Gherkin\Node\TableNode;
+use Drupal\DrupalExtension\Context\RawDrupalContext;
 use Behat\Behat\Context\ClosuredContextInterface,
-  Behat\Behat\Context\TranslatedContextInterface,
-  Behat\Behat\Context\BehatContext,
-  Behat\Behat\Exception\PendingException;
-use Behat\Gherkin\Node\PyStringNode,
-  Behat\Gherkin\Node\TableNode;
-use Drupal\DrupalExtension\Context\DrupalContext;
-
-use Symfony\Component\Process\Process;
-use Behat\Behat\Context\Step\Given;
-use Behat\Behat\Context\Step\When;
-use Behat\Behat\Context\Step\Then;
-use Behat\Behat\Event\ScenarioEvent;
-use Behat\Behat\Event\StepEvent;
-use Behat\Mink\Exception\ElementNotFoundException;
+    Behat\Behat\Context\TranslatedContextInterface,
+    Behat\Behat\Event\ScenarioEvent,
+    Behat\Behat\Exception\PendingException;
+use Drupal\Component\Utility\Random;
 
 require 'vendor/autoload.php';
 
@@ -28,14 +23,14 @@ require 'vendor/autoload.php';
 /**
  * Features context.
  */
-class FeatureContext extends DrupalContext {
+class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext {
   /**
    * Initializes context.
    * Every scenario gets its own context object.
    *
    * @param array $parameters context parameters (set them up through behat.yml)
    */
-  public function __construct(array $parameters) {
+  public function __construct() {
     // Initialize your context here
   }
 
@@ -66,7 +61,7 @@ class FeatureContext extends DrupalContext {
     foreach ($table as $key => $value) {
       $link = $table[$key]['links'];
       $result = $page->findLink($link);
-      if(empty($result)) {
+      if (empty($result)) {
         throw new Exception("The link '" . $link . "' was not found");
       }
     }
@@ -81,7 +76,7 @@ class FeatureContext extends DrupalContext {
     foreach ($table as $key => $value) {
       $link = $table[$key]['links'];
       $result = $page->findLink($link);
-      if(!empty($result)) {
+      if (!empty($result)) {
         throw new Exception("The link '" . $link . "' was found");
       }
     }
@@ -110,17 +105,6 @@ class FeatureContext extends DrupalContext {
     if (!in_array("error", $class)) {
       throw new Exception('The field "' . $field . '" is not outlined with red');
     }
-  }
-
-  /**
-   * @Given /^I fill in "([^"]*)" with random text$/
-   */
-  public function iFillInWithRandomText($label) {
-    // A @Tranform would be more elegant.
-    $randomString = $this->randomString(10);
-
-    $step = "I fill in \"$label\" with \"$randomString\"";
-    return new Then($step);
   }
 
   /**

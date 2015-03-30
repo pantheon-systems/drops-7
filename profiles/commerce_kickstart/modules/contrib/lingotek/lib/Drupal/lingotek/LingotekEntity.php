@@ -4,30 +4,35 @@
  * @file
  * Defines LingotekEntity.
  */
- 
+
 /**
  * A class wrapper for Lingotek-specific behavior on nodes.
  */
-class LingotekEntity implements LingotekTranslatableEntity {  
+class LingotekEntity implements LingotekTranslatableEntity {
   /**
    * A Drupal node.
    *
    * @var object
    */
   protected $entity;
-  
+
   /**
    * The Drupal entity type associated with this class
    */
   protected $entity_type;
-  
+
+  /**
+   * The title of the document
+   */
+  protected $title = NULL;
+
   /**
    * A reference to the Lingotek API.
    *
    * @var LingotekApi
    */
   protected $api = NULL;
-  
+
   public $language = '';
 
   /**
@@ -40,12 +45,16 @@ class LingotekEntity implements LingotekTranslatableEntity {
    */
   private function __construct($entity, $entity_type) {
     $this->entity = $entity;
-    $this->language = $entity->language;
-    $this->language_targets = Lingotek::getLanguagesWithoutSource($this->language);
     $this->entity_type = $entity_type;
     $this->info = entity_get_info($this->entity_type);
+    if (!empty($entity->language_override)) {
+      $this->setLanguage($entity->language_override);
+    }
+    else {
+      $this->setLanguage();
+    }
   }
-  
+
   /**
    * Injects reference to an API object.
    *
@@ -55,7 +64,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
   public function setApi(LingotekApi $api) {
     $this->api = $api;
   }
-  
+
   /**
    * Factory method for getting a loaded LingotekEntity object
    *
@@ -70,7 +79,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
     $entity->setApi(LingotekApi::instance());
     return $entity;
   }
-  
+
   /**
    * Loads a LingotekNode by Lingotek Document ID.
    *
@@ -82,8 +91,8 @@ class LingotekEntity implements LingotekTranslatableEntity {
    */
   public static function loadByLingotekDocumentId($lingotek_document_id) {
     $entity = FALSE;
-    
-    $query = db_select('{lingotek_entity_metadata}', 'l')->fields('l');
+
+    $query = db_select('lingotek_entity_metadata', 'l')->fields('l');
     $query->condition('entity_key', 'document_id');
     $query->condition('value', $lingotek_document_id);
     $result = $query->execute();
@@ -92,11 +101,11 @@ class LingotekEntity implements LingotekTranslatableEntity {
       $id = $record['entity_id'];
       $entity_type = $record['entity_type'];
     }
-    
+
     if ($id) {
       $entity = self::loadById($id, $entity_type);
     }
-    
+
     return $entity;
   }
 
@@ -105,13 +114,13 @@ class LingotekEntity implements LingotekTranslatableEntity {
    * Gets the Lingotek document ID for this entity.
    *
    * @return mixed
-   *   The integer document ID if the entity is associated with a 
+   *   The integer document ID if the entity is associated with a
    *   Lingotek document. FALSE otherwise.
    */
   public function lingotekDocumentId() {
     return $this->entity->lingotek['document_id'];
   }
-  
+
   /**
    * Gets the contents of this item formatted as XML that can be sent to Lingotek.
    *
@@ -121,27 +130,27 @@ class LingotekEntity implements LingotekTranslatableEntity {
   public function documentLingotekXML() {
     $xml = lingotek_entity_xml_body($this->entity_type, $this->entity);
     return $xml;
-  }  
-  
+  }
+
   /**
    * Magic get for access to node and node properties.
-   */  
+   */
   public function __get($property_name) {
     $property = NULL;
-    
+
     if ($property === 'node') {
       $property = $this->entity;
     }
     elseif (isset($this->entity->$property_name)) {
       $property = $this->entity->$property_name;
     } else {
-      $val = lingotek_keystore($this->getEntityType(), $this->getId(), $property_name); 
+      $val = lingotek_keystore($this->getEntityType(), $this->getId(), $property_name);
       $property = ($val !== FALSE) ? $val : $property;
-    } 
-    
+    }
+
     return $property;
   }
-  
+
 
   /**
    * Gets the local Lingotek metadata for this entity.
@@ -152,7 +161,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
   protected function metadata() {
     $metadata = array();
 
-    $results = db_select('{lingotek_entity_metadata}', 'meta')
+    $results = db_select('lingotek_entity_metadata', 'meta')
         ->fields('meta')
       ->condition('entity_id', $this->getId())
       ->condition('entity_type', $this->entity_type)
@@ -175,7 +184,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
    *   The value for the specified key, if it exists.
    */
   public function getMetadataValue($key) {
-    return db_select('{lingotek_entity_metadata}', 'meta')
+    return db_select('lingotek_entity_metadata', 'meta')
             ->fields('meta', array('value'))
       ->condition('entity_key', $key)
       ->condition('entity_id', $this->getId())
@@ -195,7 +204,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
   public function setMetadataValue($key, $value) {
     $metadata = $this->metadata();
     if (!isset($metadata[$key])) {
-      db_insert('{lingotek_entity_metadata}')
+      db_insert('lingotek_entity_metadata')
           ->fields(array(
           'entity_id' => $this->getId(),
           'entity_type' => $this->getEntityType(),
@@ -206,7 +215,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
 
     }
     else {
-      db_update('{lingotek_entity_metadata}')
+      db_update('lingotek_entity_metadata')
           ->fields(array(
           'value' => $value
         ))
@@ -216,17 +225,17 @@ class LingotekEntity implements LingotekTranslatableEntity {
         ->execute();
     }
   }
-  
+
   /**
    * Deletes a Lingotek metadata value for this item
-   * 
+   *
    * @param string $key
    *  The key for a name/value pair
    */
   public function deleteMetadataValue($key) {
     $metadata = $this->metadata();
     if (isset($metadata[$key])) {
-      db_delete('{lingotek_entity_metadata}')
+      db_delete('lingotek_entity_metadata')
           ->condition('entity_id', $this->getId())
         ->condition('entity_type', $this->getEntityType())
         ->condition('entity_key', $key, 'LIKE')
@@ -248,39 +257,49 @@ class LingotekEntity implements LingotekTranslatableEntity {
     }
     return lingotek_entity_download_triggered($this->entity, $this->entity_type, $lingotek_locale);
   }
-  
+
   public function getWorkflowId() {
     return $this->entity->lingotek['workflow_id'];
   }
-  
+
   public function getProjectId() {
     return $this->entity->lingotek['project_id'];
   }
-  
+
   public function getVaultId() {
     return $this->entity->lingotek['vault_id'];
   }
-  
+
   public function getTitle() {
+    if (!empty($this->title)) {
+      return $this->title;
+    }
     if (!empty($this->info['entity keys']['label']) && !empty($this->entity->{$this->info['entity keys']['label']})) {
-      return $this->entity->{$this->info['entity keys']['label']};
+      $this->title = $this->entity->{$this->info['entity keys']['label']};
     }
-    if ($this->entity_type == 'comment') {
-      return $this->entity->subject;
+    elseif ($this->entity_type == 'comment') {
+      $this->title = $this->entity->subject;
     }
-    LingotekLog::info('Did not find a label for @entity_type #!entity_id, using default label.',
-        array('@entity_type' => $this->entity_type, '@entity_id' => $this->entity_id));
-    return $this->entity_type . " #" . $this->entity_id;
+    else {
+      LingotekLog::info('Did not find a label for @entity_type #!entity_id, using default label.',
+          array('@entity_type' => $this->entity_type, '@entity_id' => $this->entity_id));
+      $this->title = $this->entity_type . " #" . $this->entity_id;
+    }
+    return $this->title;
   }
-  
+
+  public function setTitle($title) {
+    $this->title = $title;
+  }
+
   public function getDescription() {
     return $this->getTitle();
   }
-  
+
   public function getEntity() {
     return $this->entity;
   }
-  
+
     /**
    * Return the Drupal Entity type
    *
@@ -301,11 +320,18 @@ class LingotekEntity implements LingotekTranslatableEntity {
     list($id, $vid, $bundle) = lingotek_entity_extract_ids($this->entity_type, $this->entity);
     return $id;
   }
-  
+
   public function getSourceLocale() {
-    return Lingotek::convertDrupal2Lingotek($this->entity->language);
+    if ($this->entity_type == 'taxonomy_term') {
+      $vocabulary = taxonomy_vocabulary_machine_name_load($this->vocabulary_machine_name);
+      // If vocab uses 'Localize', change language from undefined to English.
+      if ($vocabulary->i18n_mode == LINGOTEK_TAXONOMY_LOCALIZE_VALUE) {
+        return 'en_US';
+      }
+    }
+    return Lingotek::convertDrupal2Lingotek($this->language);
   }
-  
+
   public function getDocumentName() {
     return $this->getTitle();
     //return $this->getEntityType() . ' - ' . $this->getId();
@@ -314,7 +340,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
   public function getNote() {
     return $this->getTitle();
   }
-  
+
   public function getUrl() {
     global $base_url;
     if ($this->entity_type == 'node' || $this->entity_type == 'comment') {
@@ -323,18 +349,18 @@ class LingotekEntity implements LingotekTranslatableEntity {
     }
     return '';
   }
-  
+
   public function preDownload($lingotek_locale, $completed) {
     if ($completed) {
-      lingotek_keystore($this->getEntityType(), $this->getId(), 'target_sync_status_' . $lingotek_locale, LingotekSync::STATUS_READY); 
+      lingotek_keystore($this->getEntityType(), $this->getId(), 'target_sync_status_' . $lingotek_locale, LingotekSync::STATUS_READY);
     }
   }
-  
+
   public function postDownload($lingotek_locale, $completed) {
     $type = $this->getEntityType();
     $entity = $this->getEntity();
     $id = $this->getId();
-    
+
     if ($type == 'node') {
       // clear any caching from entitycache module to allow the new translation to show immediately
       if (module_exists('entitycache')) {
@@ -344,7 +370,7 @@ class LingotekEntity implements LingotekTranslatableEntity {
   }
 
   public function setStatus($status) {
-    $this->setMetadataValue('node_sync_status', $status);
+    $this->setMetadataValue('upload_status', $status);
     return $this;
   }
 
@@ -366,5 +392,24 @@ class LingotekEntity implements LingotekTranslatableEntity {
       }
     }
     return $this;
+  }
+
+  /**
+   * Set the entity's language to be used by Lingotek, which will
+   * sometimes be different from the stated Drupal language.
+   */
+  public function setLanguage($language = NULL) {
+    if (empty($language)) {
+      $drupal_locale = Lingotek::convertDrupal2Lingotek($this->entity->language);
+      if (!empty($this->entity->lingotek['allow_source_overwriting']) && !empty($this->entity->lingotek['source_language_' . $drupal_locale])) {
+        $language = $this->entity->lingotek['source_language_' . $drupal_locale];
+      }
+      else {
+        $language = $this->entity->language;
+      }
+    }
+    $this->language = $language;
+    $this->locale = Lingotek::convertDrupal2Lingotek($this->language);
+    $this->language_targets = Lingotek::getLanguagesWithoutSource($this->locale);
   }
 }

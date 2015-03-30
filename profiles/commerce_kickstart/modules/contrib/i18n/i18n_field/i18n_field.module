@@ -248,13 +248,13 @@ function i18n_field_field_widget_form_alter(&$element, &$form_state, $context) {
       if ($filefield && $single_value && $no_default) {
         $help_variables = array(
           'description' => field_filter_xss($instance['description']),
-          'upload_validators' => $alter_element['#upload_validators'],
+          'upload_validators' => isset($alter_element['#upload_validators']) ? $alter_element['#upload_validators'] : array(),
         );
         $original_description = theme('file_upload_help', $help_variables);
         if ($alter_element['#description'] == $original_description) {
           $help_variables = array(
             'description' => field_filter_xss($instance_current['description']),
-            'upload_validators' => $alter_element['#upload_validators'],
+            'upload_validators' => isset($alter_element['#upload_validators']) ? $alter_element['#upload_validators'] : array(),
           );
           $alter_element['#description'] = theme('file_upload_help', $help_variables);
         }
@@ -403,7 +403,9 @@ function i18n_field_translate_allowed_values($field, $langcode = NULL) {
  * Translate field default.
  */
 function i18n_field_translate_default($instance, $value, $langcode = NULL) {
-  return i18n_string_translate(array('field', $instance['field_name'], $instance['bundle'], 'default_value'), $value, array('langcode' => $langcode));
+  // The default value does not need sanitizing in a text_textfield widget.
+  $sanitize = !($instance['widget']['type'] == 'text_textfield' && $instance['widget']['module'] == 'text');
+  return i18n_string_translate(array('field', $instance['field_name'], $instance['bundle'], 'default_value'), $value, array('langcode' => $langcode, 'sanitize' => $sanitize));
 }
 
 /**

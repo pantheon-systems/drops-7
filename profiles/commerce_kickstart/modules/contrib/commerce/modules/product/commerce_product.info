@@ -25,9 +25,9 @@ files[] = includes/commerce_product.translation_handler.inc
 ; Simple tests
 files[] = tests/commerce_product.test
 
-; Information added by Drupal.org packaging script on 2014-09-10
-version = "7.x-1.10"
+; Information added by Drupal.org packaging script on 2015-01-16
+version = "7.x-1.11"
 core = "7.x"
 project = "commerce"
-datestamp = "1410366834"
+datestamp = "1421426596"
 

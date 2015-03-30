@@ -10,9 +10,9 @@ dependencies[] = commerce_product_reference
 core = 7.x
 configure = admin/commerce/config/product-pricing
 
-; Information added by Drupal.org packaging script on 2014-09-10
-version = "7.x-1.10"
+; Information added by Drupal.org packaging script on 2015-01-16
+version = "7.x-1.11"
 core = "7.x"
 project = "commerce"
-datestamp = "1410366834"
+datestamp = "1421426596"
 

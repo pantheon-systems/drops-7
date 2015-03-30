@@ -226,28 +226,32 @@ function mailup_settings_form_submit($form, &$form_state) {
 
     // When changing mailup account
     if ($form_state['values']['mailup_username'] != variable_get('mailup_username', '')) {
-      // Delete all existing subscriptions
-      $mailup_subscriptions = mailup_subscription_load_multiple(FALSE);
-      foreach ($mailup_subscriptions as $mailup_subscription) {
-        $mailup_subscription->delete();
+
+      if (module_exists('mailup_subscribe')) {
+        // Delete all existing subscriptions
+        $mailup_subscriptions = mailup_subscription_load_multiple(FALSE);
+        foreach ($mailup_subscriptions as $mailup_subscription) {
+          $mailup_subscription->delete();
+        }
+
+        // Delete all existing lists
+        $mailup_lists = mailup_list_load_multiple(FALSE);
+        foreach ($mailup_lists as $mailup_list) {
+          $mailup_list->delete();
+        }
+
+        // And truncate the subscription data for the existing account
+        db_truncate('mailup_users_recipients')->execute();
+        db_truncate('mailup_recipient_subscriptions')->execute();
+        
+        // Clear cached remote lists
+        variable_set('mailup_remote_lists', array());
+        // Field mapping
+        variable_set('mailup_subscribe_recipient_field_map', array());
+        // And remote field list
+        variable_set('mailup_subscribe_recipient_fields', array());
       }
 
-      // Delete all existing lists
-      $mailup_lists = mailup_list_load_multiple(FALSE);
-      foreach ($mailup_lists as $mailup_list) {
-        $mailup_list->delete();
-      }
-
-      // And truncate the subscription data for the existing account
-      db_truncate('mailup_users_recipients')->execute();
-      db_truncate('mailup_recipient_subscriptions')->execute();
-
-      // Clear cached remote lists
-      variable_set('mailup_remote_lists', array());
-      // Field mapping
-      variable_set('mailup_subscribe_recipient_field_map', array());
-      // And remote field list
-      variable_set('mailup_subscribe_recipient_fields', array());
     }
 
     system_settings_form_submit($form, $form_state);

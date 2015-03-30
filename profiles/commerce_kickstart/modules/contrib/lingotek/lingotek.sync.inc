@@ -74,7 +74,7 @@ function lingotek_get_trans_obj($document_id, $document_idx) {
       break;
     }
 
-    if ($trans_obj = LingotekConfigChunk::loadByLingotekDocumentId($document_id)) {
+    if ($trans_obj = LingotekConfigSet::loadByLingotekDocumentId($document_id)) {
       break;
     }
 
@@ -205,283 +205,6 @@ function lingotek_sync_endpoint() {
   return lingotek_json_output_cors($response, $status, array('methods_allowed' => 'GET'));
 }
 
-function lingotek_form_bulk_sync($form, $form_state) {
-
-  global $base_url;
-  module_load_include('admin.inc', 'lingotek');
-  $submit_functions = array('lingotek_form_bulk_sync_submit');
-  $report = LingotekSync::getReport();
-  $upload_count_total = isset($report['upload_config_count']) ? $report['upload_config_count'] : 0;
-  // Upload
-  $form['upload'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Upload config for translation'),
-    '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
-    '#group' => 'administrative_settings',
-    '#prefix' => '<div id="upload_wrapper">',
-    '#suffix' => '</div>',
-  );
-
-
-  if (variable_get('lingotek_translate_config') && $upload_count_total > 0) {
-    // pre-build include/exclude messages based on enabled config types
-    $config_types = array(
-      'lingotek_translate_config_builtins' => t('Include built-in interface data'),
-      'lingotek_translate_config_blocks' => t('blocks'),
-      'lingotek_translate_config_menus' => t('menus'),
-      'lingotek_translate_config_views' => t('views'),
-      'lingotek_translate_config_taxonomies' => t('taxonomy vocabularies & terms'),
-      'lingotek_translate_config_fields' => t('field labels'),
-      'lingotek_translate_config_misc' => t('other miscellaneous strings'),
-    );
-    $config_types_included = array();
-    $config_types_excluded = array();
-    foreach ($config_types as $k => $v) {
-      if (variable_get($k, 0)) {
-        $config_types_included[$k] = $v;
-      }
-      else {
-        $config_types_excluded[$k] = $v;
-      }
-    }
-    $cf_included_str = implode(', ', $config_types_included);
-    if (count($config_types_included) > 1) {
-      $cf_included_str = substr_replace($cf_included_str, ' ' . t('and') . ' ' . substr($cf_included_str, strrpos($cf_included_str, ', ') + 2), strrpos($cf_included_str, ', '));
-    }
-    $cf_excluded_str = implode(', ', $config_types_excluded);
-    if (count($config_types_excluded) > 1) {
-      $cf_excluded_str = substr_replace($cf_excluded_str, ' ' . t('and') . ' ' . substr($cf_excluded_str, strrpos($cf_excluded_str, ', ') + 2), strrpos($cf_excluded_str, ', '));
-    }
-    $form['upload']['upload_config_json'] = array('#type' => 'hidden', '#value' => json_encode($report['upload_config']));
-    $form['upload']['upload_config'] = array(
-      '#type' => 'checkbox',
-      '#title' => $cf_included_str 
-          . ' (<span id="upload-config-total">' 
-          . $report['upload_config_count'] . ' ' 
-          . format_plural($report['upload_config_count'], 'set', 'sets') 
-          . ' ' . t('of additions/changes') . '</span>)',
-      '#default_value' => $report['upload_config_count'] == 0 ? 0 : 1,
-      '#disabled' => $report['upload_config_count'] == 0,
-    );
-    $additional_desc = '';
-    if (count($config_types_excluded)) {
-      $additional_desc .= t('(You can also enable translation for')
-          . ' ' . $cf_excluded_str . ' '
-          . t('within') . ' ' . t('Translation Configuration in') . ' '
-          . l(t('Lingotek Settings'), 'admin/settings/lingotek/settings')
-          . ')<br/>';
-    }
-    if (variable_get('lingotek_use_translation_from_drupal')) {
-      $modules = lingotek_admin_get_enabled_modules();
-      $updates = lingotek_check_for_l10n_translations($modules);
-      if (!empty($updates)) {
-        $additional_desc .= format_plural(
-            count($updates), 
-          'You have 1 pending localization import from Drupal included in this step.', 
-          'You have @count pending localization imports from Drupal included in this step.');
-      }
-    }
-    if ($additional_desc) {
-      $form['upload']['upload_config']['#description'] = $additional_desc;
-    }
-  }
-  else {
-    $form['upload']['none'] = array(
-      '#markup' => t('There are currently no new/modified items to be uploaded.'),
-    );
-  }
-
-  // Download  
-  $form['download'] = array(
-    '#type' => 'fieldset',
-    '#title' => t('Download config translations'),
-    '#collapsible' => FALSE,
-    '#collapsed' => FALSE,
-    '#group' => 'vertical_tab',
-  );
-  $form['download']['download_targets_workflow_complete_json'] = array('#type' => 'hidden', '#value' => json_encode($report['download_targets_workflow_complete']));
-  $form['download']['download_targets_workflow_incomplete_json'] = array('#type' => 'hidden', '#value' => json_encode($report['download_targets_workflow_incomplete']));
-
-  $download_count_total = $report['download_targets_workflow_complete_count'] + (isset($report['download_targets_workflow_incomplete_count']) ? $report['download_targets_workflow_incomplete_count'] : 0);
-
-  $available_targets = Lingotek::getLanguages();
-  $options_complete = array(); // locale => label
-  $options_incomplete = array();
-
-  foreach ($available_targets as $target) {
-    $label = $target->name . ' / ' . $target->native . ' (' . $target->lingotek_locale . ')';
-    $locale_complete_count = 0;
-    foreach ($report['download_targets_workflow_complete'] as $download_target) {
-      if ($target->lingotek_locale == $download_target['locale']) {
-        $locale_complete_count++;
-      }
-    }
-    $locale_incomplete_count = 0;
-    foreach ($report['download_targets_workflow_incomplete'] as $download_target) {
-      if ($target->lingotek_locale == $download_target['locale']) {
-        $locale_incomplete_count++;
-      }
-    }
-    if ($locale_complete_count > 0) {
-      $row = array(
-        array('data' => $label, 'width' => '20%'),
-        array('data' => $locale_complete_count, 'width' => '80%'),
-      );
-      $options_complete[$target->lingotek_locale] = $row;
-    }
-    if ($locale_incomplete_count > 0) {
-      $row = array(
-        array('data' => $label, 'width' => '20%'),
-        array('data' => $locale_incomplete_count, 'width' => '80%'),
-      );
-      $options_incomplete[$target->lingotek_locale] = $row;
-    }
-  }
-
-  if (empty($options_complete) && empty($options_incomplete)) {
-    $form['download']['none'] = array(
-      '#markup' => t('There are currently no pending translations to be downloaded.'),
-    );
-  }
-
-
-  if (!empty($options_complete)) {
-    $form['download']['download_locales_complete'] = array(
-      '#type' => 'tableselect',
-      '#prefix' => t('Completed Translations'),
-      '#header' => array(
-        t('Language'),
-        t('Translations')
-      ),
-      '#options' => $options_complete,
-      '#default_value' => array_fill_keys(array_keys($options_complete), 1)
-    );
-  }
-  if (!empty($options_incomplete)) {
-    /* $form['download']['download_locales_incomplete_check'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Download Incomplete Translations'),
-      '#default_value' => 0,
-      ); */
-    $form['download']['download_locales_incomplete'] = array(
-      '#type' => 'tableselect',
-      '#prefix' => t('Incomplete Translations'),
-      '#header' => array(
-        t('Language'),
-        t('Translations')
-      ),
-      '#options' => $options_incomplete,
-      '#default_value' => array_fill_keys(array_keys($options_complete), 0),
-        /* '#states' => array(
-          'visible' => array(
-          ':input[name="download_locales_incomplete_check"]' => array('checked' => TRUE),
-          ),
-          ), */
-    );
-  }
-
-  $form['submit'] = array(
-    '#type' => 'submit',
-    '#value' => t('Sync'),
-    '#disabled' => ($upload_count_total == 0 && $download_count_total == 0),
-    '#submit' => $submit_functions,
-  );
-
-  $form['force_download'] = array(
-    '#type' => 'submit',
-    '#value' => t('Force Download All'),
-    '#submit' => $submit_functions,
-  );
-
-  return $form;
-}
-
-/**
- * Submit handler for the lingotek_form_bulk_sync form.
- * Calls the function that creates a batch job to do bulk sync.
- *
- * @param array $form
- *   The FAPI form array.
- * @param array $form_state
- *   The FAPI form state array.
- */
-function lingotek_form_bulk_sync_submit($form, $form_state) {
-
-  $extra_operations = array();
-  $upload_config = array();
-  $download_targets_incomplete = array();
-  $vals = $form_state['values'];
-
-  if ($vals['op'] == 'Force Download All') {
-    $document_ids = LingotekConfigChunk::getAllDocumentIds();
-    $available_targets = Lingotek::getLanguages();
-    unset($available_targets['en_US']); // all locales_source is assumed by i18n modules to be English
-    $download_targets = array();
-    foreach ($document_ids as $doc_id) {
-      foreach (array_keys($available_targets) as $lang) {
-        $target = new stdClass();
-        $target->document_id = $doc_id;
-        $target->locale = $lang;
-        $download_targets[] = $target;
-      }
-    }
-    lingotek_sync_batch_create($upload_config, $download_targets, $download_targets_incomplete, NULL, $extra_operations);
-    return;
-  }
-
-  // upload config
-  $upload_config = array();
-  if (isset($vals['upload_config']) && $vals['upload_config'] && isset($vals['upload_config_json'])) {
-    $upload_config = json_decode($vals['upload_config_json']);
-  }
-
-  //download - complete
-  $download_locales_complete = array();
-  if (isset($vals['download_locales_complete'])) {
-    foreach ($vals['download_locales_complete'] as $locale => $enabled) {
-      if ($enabled) {
-        $download_locales_complete[] = $locale;
-      }
-    }
-  }
-  $document_ids = array();
-  $download_targets = array();
-  if (!empty($download_locales_complete) && isset($vals['download_targets_workflow_complete_json'])) {
-    $all_download_targets = json_decode($vals['download_targets_workflow_complete_json']);
-    foreach ($all_download_targets as $download_target) {
-      if (in_array($download_target->locale, $download_locales_complete)) {
-        $document_ids[] = $download_target->document_id;
-        $download_targets[] = $download_target;
-      }
-    }
-  }
-
-  //download - incomplete
-  $download_locales_incomplete = array();
-  if (isset($vals['download_locales_incomplete'])) {
-    foreach ($vals['download_locales_incomplete'] as $locale => $enabled) {
-      if ($enabled) {
-        $download_locales_incomplete[] = $locale;
-      }
-    }
-  }
-  $download_targets_incomplete = array();
-  if (!empty($download_locales_incomplete) && isset($vals['download_targets_workflow_incomplete_json'])) {
-    $all_download_targets = json_decode($vals['download_targets_workflow_incomplete_json']);
-    foreach ($all_download_targets as $download_target) {
-      if (in_array($download_target->locale, $download_locales_incomplete)) {
-        $document_ids[] = $download_target->document_id;
-        $download_targets_incomplete[] = $download_target;
-      }
-    }
-  }
-
-  $document_ids = array_unique($document_ids);
-
-  lingotek_sync_batch_create($upload_config, $download_targets, $download_targets_incomplete, NULL, $extra_operations);
-}
-
 /**
 * Updates the 'target_sync_status_[lang-code]' field for every target in the lingotek table
 * with the overall progress returned by TMS
@@ -490,7 +213,8 @@ function lingotek_form_bulk_sync_submit($form, $form_state) {
 *    array of Document IDs that you want to update
 *
 */
-function lingotek_get_and_update_target_progress($entity_type, $document_ids) {
+function lingotek_get_and_update_target_progress($entity_type, $document_ids, $current_nids, $total_nids, &$context) {
+  $context['message'] = t('Checking status of translations (@current of @total complete)', array('@current' => $current_nids, '@total' => $total_nids));
   $api = LingotekApi::Instance();
   if (empty($document_ids)) {
     return;
@@ -514,11 +238,11 @@ function lingotek_get_and_update_target_progress($entity_type, $document_ids) {
         list($entity_id, $entity_type) = LingotekSync::getEntityIdFromDocId($doc_id, $entity_type);
         switch ($error->status) {
           case 'IN_QUEUE':
-            lingotek_keystore($entity_type, $entity_id, 'node_sync_status', LingotekSync::STATUS_PENDING);
+            lingotek_keystore($entity_type, $entity_id, 'upload_status', LingotekSync::STATUS_PENDING);
             break;
           case 'NOT_FOUND':
           default:
-            lingotek_keystore($entity_type, $entity_id, 'node_sync_status', LingotekSync::STATUS_FAILED);
+            lingotek_keystore($entity_type, $entity_id, 'upload_status', LingotekSync::STATUS_FAILED);
             lingotek_keystore($entity_type, $entity_id, 'last_sync_error', substr($error, 0, 255));
             LingotekLog::error('Received unexpected error status (@status) from Lingotek for @entity_type #@id: <pre>@error</pre>', array('@status' => $error->status, '@entity_type' => $entity_type, '@id' => $entity_id, '@error' => $error));
         }
@@ -552,9 +276,9 @@ function lingotek_get_and_update_target_progress($entity_type, $document_ids) {
         }
       }
       // update source status when necessary
-      $entity_source_status = lingotek_keystore($entity_type, $entity_id, 'node_sync_status');
+      $entity_source_status = lingotek_keystore($entity_type, $entity_id, 'upload_status');
       if ($entity_source_status == LingotekSync::STATUS_FAILED || $entity_source_status == LingotekSync::STATUS_PENDING) {
-        lingotek_keystore($entity_type, $entity_id, 'node_sync_status', LingotekSync::STATUS_CURRENT);
+        lingotek_keystore($entity_type, $entity_id, 'upload_status', LingotekSync::STATUS_CURRENT);
       }
     }
 
@@ -563,7 +287,7 @@ function lingotek_get_and_update_target_progress($entity_type, $document_ids) {
       $entity_id = (isset($record['entity_id']) ? $record['entity_id'] : $record[1]);
       $entity_key = (isset($record['entity_key']) ? $record['entity_key'] : $record[2]);
       $value = (isset($record['value']) ? $record['value'] : $record[3]);
-      $query = db_merge('{lingotek_entity_metadata}')
+      $query = db_merge('lingotek_entity_metadata')
           ->key(array('entity_id' => $entity_id, 'entity_type' => $entity_type, 'entity_key' => $entity_key))
         ->fields(array(
             'entity_type' => $entity_type,
@@ -604,7 +328,8 @@ function lingotek_update_config_progress($document_ids) {
   if (!is_array($document_ids)) {
     $document_ids = array($document_ids);
   }
-  $project_id = variable_get('lingotek_project', NULL);
+  $config_profile = lingotek_get_profile_settings(LingotekSync::PROFILE_CONFIG);
+  $project_id = array_key_exists('project_id', $config_profile) ? $config_profile['project_id'] : variable_get('lingotek_project', '');
 
   $progress_report = $api->getProgressReport($project_id, $document_ids);
 
@@ -615,21 +340,21 @@ function lingotek_update_config_progress($document_ids) {
     
     if (isset($progress_report->errors)) {
       foreach (get_object_vars($progress_report->errors) as $doc_id => $error) {
-        $chunk = LingotekConfigChunk::loadByLingotekDocumentId($doc_id);
+        $set = LingotekConfigSet::loadByLingotekDocumentId($doc_id);
         switch ($error->status) {
           case 'IN_QUEUE':
-            $chunk->setMetadataValue('chunk_sync_status', LingotekSync::STATUS_PENDING);
+            $set->setMetadataValue('upload_status', LingotekSync::STATUS_PENDING);
             break;
           case 'NOT_FOUND':
           default:
-            $chunk->setMetadataValue('chunk_sync_status', LingotekSync::STATUS_FAILED);
+            $set->setMetadataValue('upload_status', LingotekSync::STATUS_FAILED);
             LingotekLog::error('Received unexpected error status (@status) from Lingotek for config chunk #@id: <pre>@error</pre>', array('@status' => $error->status, '@id' => $chunk, '@error' => $error));
         }
       }
     }
     
     foreach ($progress_report->byDocumentIdAndTargetLocale as $doc_id => $completion) {
-      $trans_obj = LingotekConfigChunk::loadByLingotekDocumentId($doc_id);
+      $trans_obj = LingotekConfigSet::loadByLingotekDocumentId($doc_id);
       if (!$trans_obj) {
         LingotekLog::error("Lingotek doc ID '@doc_id' not found", array('@doc_id' => $doc_id));
         continue;
@@ -649,14 +374,14 @@ function lingotek_update_config_progress($document_ids) {
           else { // If the workflow is not complete
             $to_status = LingotekSync::STATUS_PENDING; // Set it to pending
           }
-          $cfg_values[] = array($trans_obj->cid, 'target_sync_status_' . $language, $to_status);
+          $cfg_values[] = array($trans_obj->sid, 'target_sync_status_' . $language, $to_status);
         }
       }
     }
 
     // insert status info for config
     foreach ($cfg_values as $record) {
-      $query = db_merge('{lingotek_config_metadata}')
+      $query = db_merge('lingotek_config_metadata')
           ->key(array('id' => $record[0], 'config_key' => $record[1]))
         ->fields(array(
             'id' => $record[0],
