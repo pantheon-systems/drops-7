@@ -51,7 +51,10 @@ function entity_metadata_field_default_property_callback(&$info, $entity_type, $
     $property = &$info[$entity_type]['bundles'][$instance['bundle']]['properties'][$name];
     $instance += array('property info' => array());
     $property = $instance['property info'] + array(
-      'label' => $instance['label'],
+      // Since the label will be exposed via hook_token_info() and it is not
+      // clearly defined if that should be sanitized already we prevent XSS
+      // right here (field labels are user provided text).
+      'label' => filter_xss_admin($instance['label']),
       'type' => $field_type['property_type'],
       'description' => t('Field "@name".', array('@name' => $name)),
       'getter callback' => 'entity_metadata_field_property_get',

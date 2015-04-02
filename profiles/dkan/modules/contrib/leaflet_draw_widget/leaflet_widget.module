@@ -217,8 +217,8 @@ function leaflet_widget_process_geojson($geojson) {
  */
 function leaflet_widget_library() {
   $path = drupal_get_path('module', 'leaflet_widget');
-  $leaflet_draw = libraries_get_path('Leaflet.draw');
-  $leaflet_core = libraries_get_path('Leaflet');
+  $leaflet_draw = libraries_get_path('leaflet_draw');
+  $leaflet_core = libraries_get_path('leaflet_core');
 
   $libraries = array();
 
@@ -229,11 +229,11 @@ function leaflet_widget_library() {
       "$path/js/draw.js" => array(),
     ),
     'dependencies' => array(
-      array('leaflet_widget', 'Leaflet.draw'),
+      array('leaflet_widget', 'leaflet_draw'),
     ),
   );
 
-  $libraries['Leaflet.draw'] = array(
+  $libraries['leaflet_draw'] = array(
     'title' => 'Leaflet.draw',
     'version' => '2.x',
     'css' => array(
@@ -243,13 +243,11 @@ function leaflet_widget_library() {
       "$leaflet_draw/dist/leaflet.draw.js" => array(),
     ),
     'dependencies' => array(
-      array('leaflet_widget', 'Leaflet'),
+      array('leaflet_widget', 'leaflet_core'),
     ),
   );
 
-  // If available, use the same Leaflet as Leaflet module. Otherwise use the
-  // one bundled with Leaflet.widget.
-  $libraries['Leaflet'] = array(
+  $libraries['leaflet_core'] = array(
     'title' => 'Leaflet (Leaflet Widget)',
     'version' => '6',
     'css' => array(

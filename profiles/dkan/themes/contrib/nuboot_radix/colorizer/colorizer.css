@@ -72,25 +72,28 @@ div.vertical-tabs ul.vertical-tabs-list li a:hover {
 #block-dkan-sitewide-dkan-sitewide-user-menu .links a:focus { background-color:@bottom; color: #fff; }
 
 
-.nav-pills li a,
+.nav.nav-pills li a,
 .tabs--primary li a {
   border:1px solid @toolbarborder;
   background: @bg;
   color:  @top;
 }
 
+.nav.nav-pills li a:hover,
 .tabs--primary li a:hover {
   border:1px solid @bottom;
   background: @bottom;
   color: #ffffff;
 }
 
-.nav-pills li a.active,
-.nav-pills li.active a:hover,
-.nav-pills li.active a:focus,
-.tabs--primary li a.active {
-  border:1px solid @top;
-  background: @top;
+.nav.nav-pills > li > a.active,
+.nav.nav-pills > li > a:focus
+.nav.nav-pills li.active a:hover,
+.nav.nav-pills li.active a:focus,
+.tabs--primary li a.active
+.tabs--primary li a:focus {
+  border:1px solid @linkactive;
+  background: @linkactive;
   color:#ffffff;
 }
 
@@ -99,27 +102,35 @@ div.vertical-tabs ul.vertical-tabs-list li a:hover {
   background-color: @top;
 }
 .view-group-block .views-field-nid a,
-.btn-default,
 .btn-primary,
-.btn-small {
+.links .btn,
+input.btn {
   background-color: @top;
   border:1px solid @top;
   color:#ffffff;
 }
 
 .view-group-block .views-field-nid a:hover,
-.btn-default:hover,
 .btn-primary:hover,
-.btn-small:hover {
+.links .btn:hover,
+input.btn:hover,
+input[type="submit"]:hover {
   background:@bottom;
   border:1px solid @bottom;
   color:#ffffff;
 }
-#edit-submit:hover,
-#edit-submit:focus, 
-#edit-submit:active {
+
+.btn-primary:focus, 
+.btn-primary:active, 
+.btn-primary.active,
+.links .btn:focus,
+.links .btn.focus,
+input.btn:focus, 
+input[type="submit"]:focus, 
+input[type="submit"]:active {
   background: @linkactive;
   border-color: @linkactive;
+  color: #ffffff;
 }
 
 .region-sidebar-first .block-facetapi ul li.leaf a:hover,
@@ -183,10 +194,6 @@ div.autocomplete-deluxe-multiple,
   background-color: @linkactive;
   border-color: @toolbarborder;
   color: @bg;
-}
-
-table.group_additional thead > tr > th {
-  background-color: @toolbarborder;
 }
 
 .node-dataset #data-and-resources ul.resource-list li .heading, 

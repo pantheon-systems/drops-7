@@ -272,14 +272,6 @@
   }
 }
 
-table.group_additional,
-.field-name-field-additional-info table {
-  th:nth-of-type(1n),
-  td:nth-of-type(1n) {
-    width: 30%;
-  }
-  th:nth-of-type(2n),
-  td:nth-of-type(2n) {
-    width: 70%;
-  }
+.field-name-field-additional-info {
+  margin-top: 2em;
 }

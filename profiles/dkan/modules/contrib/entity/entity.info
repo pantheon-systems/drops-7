@@ -26,9 +26,8 @@ files[] = views/handlers/entity_views_handler_relationship_by_bundle.inc
 files[] = views/handlers/entity_views_handler_relationship.inc
 files[] = views/plugins/entity_views_plugin_row_entity_view.inc
 
-; Information added by drush on 2015-02-24
-version = "7.x-1.5+2-dev"
-core = "7.x"
+; Information added by drush on 2015-04-02
+version = "unknown"
 project = "entity"
-datestamp = "1424813702"
+datestamp = "1428002560"
 

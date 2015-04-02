@@ -67,7 +67,7 @@
                             // Converts line endings in either format to unix format.
                             data = data.replace(/(\r\n|\n|\r)/gm,"\n");
                             dataset = new recline.Model.Dataset({
-                                records: recline.Backend.CSV.parseCSV(data, options)
+                                records: recline.Backend.CSV.parse(data, options)
                             });
                             dataset.fetch();
                             views = createExplorer(dataset, state, dataExplorerSettings);

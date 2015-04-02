@@ -3,7 +3,8 @@
 /**
  * @file
  * Test file for dkan datastore module.
- *  DKAN Datastore API
+ *
+ * DKAN Datastore API
  * 1) Check queries against API once file is loaded.
  * 2) Queries
  *    1. Limit
@@ -238,7 +239,7 @@ class DkanDatastoreWebTestCase extends DrupalWebTestCase {
 
   /**
    * Assert that a datastore table for a node exists.
-   * 
+   *
    * @param object $resource
    *   A resource node.
    *
@@ -256,7 +257,7 @@ class DkanDatastoreWebTestCase extends DrupalWebTestCase {
 
   /**
    * Assert that certain data exists in a table.
-   * 
+   *
    * @param object $resource
    *   A resource node.
    * @param int $id
@@ -287,7 +288,7 @@ class DkanDatastoreWebTestCase extends DrupalWebTestCase {
    *
    * @param object $resource
    *   The resource node.
-   * @param array  $options
+   * @param array $options
    *   An associate array containing the query data.
    *
    * @return object
@@ -347,4 +348,5 @@ class DkanDatastoreWebTestCase extends DrupalWebTestCase {
     );
     return json_decode($r);
   }
+
 }

@@ -19,6 +19,21 @@ require_once dirname(__FILE__) . '/includes/contrib.inc';
  * Implements template_preprocess_html().
  */
 function radix_preprocess_html(&$variables) {
+  global $base_url;
+
+  // Add Bootstrap JS from CDN if bootstrap library is not installed.
+  if (!module_exists('bootstrap_library')) {
+    $base = parse_url($base_url);
+    $url = $base['scheme'] . '://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js';
+    drupal_add_js($url, 'external');
+  }
+
+  // Add support for the Modenizr module.
+  // Load modernizr.js only if modernizr module is not present.
+  if (!module_exists('modernizr')) {
+    drupal_add_js(drupal_get_path('theme', 'radix') . '/assets/javascripts/modernizr.js');
+  }
+
   // Add meta for Bootstrap Responsive.
   // <meta name="viewport" content="width=device-width, initial-scale=1.0">
   $element = array(
@@ -71,19 +86,23 @@ function radix_css_alter(&$css) {
  */
 function radix_js_alter(&$javascript) {
   // Add radix-modal when required.
-  $ctools_modal = drupal_get_path('module', 'ctools') . '/js/modal.js';
-  $radix_modal = drupal_get_path('theme', 'radix') . '/assets/javascripts/radix-modal.js';
-  if (!empty($javascript[$ctools_modal]) && empty($javascript[$radix_modal])) {
-    $javascript[$radix_modal] = array_merge(
-      drupal_js_defaults(), array('group' => JS_THEME, 'data' => $radix_modal));
+  if (module_exists('ctools')) {
+    $ctools_modal = drupal_get_path('module', 'ctools') . '/js/modal.js';
+    $radix_modal = drupal_get_path('theme', 'radix') . '/assets/javascripts/radix-modal.js';
+    if (!empty($javascript[$ctools_modal]) && empty($javascript[$radix_modal])) {
+      $javascript[$radix_modal] = array_merge(
+        drupal_js_defaults(), array('group' => JS_THEME, 'data' => $radix_modal));
+    }
   }
 
   // Add radix-field-slideshow when required.
-  $field_slideshow = drupal_get_path('module', 'field_slideshow') . '/field_slideshow.js';
-  $radix_field_slideshow = drupal_get_path('theme', 'radix') . '/assets/javascripts/radix-field-slideshow.js';
-  if (!empty($javascript[$field_slideshow]) && empty($javascript[$radix_field_slideshow])) {
-    $javascript[$radix_field_slideshow] = array_merge(
-      drupal_js_defaults(), array('group' => JS_THEME, 'data' => $radix_field_slideshow));
+  if (module_exists('field_slideshow')) {
+    $field_slideshow = drupal_get_path('module', 'field_slideshow') . '/field_slideshow.js';
+    $radix_field_slideshow = drupal_get_path('theme', 'radix') . '/assets/javascripts/radix-field-slideshow.js';
+    if (!empty($javascript[$field_slideshow]) && empty($javascript[$radix_field_slideshow])) {
+      $javascript[$radix_field_slideshow] = array_merge(
+        drupal_js_defaults(), array('group' => JS_THEME, 'data' => $radix_field_slideshow));
+    }
   }
 
   // Add radix-progress when required.
@@ -99,20 +118,6 @@ function radix_js_alter(&$javascript) {
  * Implements template_preprocess_page().
  */
 function radix_preprocess_page(&$variables) {
-  global $base_url;
-
-  // Add Bootstrap JS from CDN if bootstrap library is not installed.
-  if (!module_exists('bootstrap_library')) {
-    $base = parse_url($base_url);
-    drupal_add_js($base['scheme'] . '://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js', 'external');
-  }
-
-  // Add support for the Modenizr module.
-  // Load modernizr.js only if modernizr module is not present.
-  if (!module_exists('modernizr')) {
-    drupal_add_js(drupal_get_path('theme', 'radix') . '/assets/javascripts/modernizr.js');
-  }
-
   // Determine if the page is rendered using panels.
   $variables['is_panel'] = FALSE;
   if (module_exists('page_manager') && count(page_manager_get_current_page())) {
@@ -125,15 +130,20 @@ function radix_preprocess_page(&$variables) {
   }
 
   // Theme action links as buttons.
-  foreach ($variables['action_links'] as $key => &$link) {
-    $link['#link']['localized_options']['attributes'] = array('class' => array('btn', 'btn-primary'));
+  if (!empty($variables['action_links'])) {
+    foreach (element_children($variables['action_links']) as $key) {
+      $variables['action_links'][$key]['#link']['localized_options']['attributes'] = array(
+        'class' => array('btn', 'btn-primary', 'btn-sm'),
+      );
+    }
   }
 
   // Add search_form to theme.
   $variables['search_form'] = '';
   if (module_exists('search') && user_access('search content')) {
     $search_box_form = drupal_get_form('search_form');
-    $search_box_form['basic']['keys']['#title'] = '';
+    $search_box_form['basic']['keys']['#title'] = 'Search';
+    $search_box_form['basic']['keys']['#title_display'] = 'invisible';
     $search_box_form['basic']['keys']['#size'] = 20;
     $search_box_form['basic']['keys']['#attributes'] = array('placeholder' => 'Search');
     $search_box_form['basic']['keys']['#attributes']['class'][] = 'form-control';

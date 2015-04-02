@@ -25,6 +25,34 @@ function radix_form($variables) {
 }
 
 /**
+ * Implements theme_container().
+ */
+function radix_container($variables) {
+  $element = $variables['element'];
+
+  // Special handling for form elements.
+  if (isset($element['#array_parents'])) {
+    // Assign an html ID.
+    if (!isset($element['#attributes']['id'])) {
+      $element['#attributes']['id'] = $element['#id'];
+    }
+
+    // Remove any set form-control class at this point.
+    // Not needed for form-wrappers.
+    if (!empty($element['#attributes']['class'])) {
+      if (($key = array_search('form-control', $element['#attributes']['class'])) !== false) {
+        unset($element['#attributes']['class'][$key]);
+      }
+    }
+
+    // Add the 'form-wrapper' class.
+    $element['#attributes']['class'][] = 'form-wrapper';
+  }
+
+  return '<div' . drupal_attributes($element['#attributes']) . '>' . $element['#children'] . '</div>';
+}
+
+/**
  * Implements hook_element_info_alter().
  */
 function radix_element_info_alter(&$elements) {

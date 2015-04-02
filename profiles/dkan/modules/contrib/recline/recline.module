@@ -131,159 +131,138 @@ function recline_libraries_info() {
         'css/grid.css',
         'css/slickgrid.css',
         'css/flot.css',
-        'css/transform..css',
         'css/map.css',
         'css/multiview.css',
-        'css/site/pygments.css',
-        'css/site/site.css',
-        'vendor/bootstrap/2.3.2/css/bootstrap.css',
-        'vendor/leaflet/0.7.3/leaflet.css',
-        'vendor/slickgrid/2.0.1/slick.grid.css',
-        'vendor/timeline/20120520/css/timeline.css',
+        'css-site/pygments.css',
+        'vendor/bootstrap/3.2.0/css/bootstrap.css',
       ),
       'js' => array(
-        // The following could interfere with other libraries.
-        // TODO: Make option for individual downloads.
-        'vendor/underscore/1.4.4/underscore.js',
-        'vendor/backbone/1.0.0/backbone.js',
-        'vendor/mustache/0.5.0-dev/mustache.js',
-        'vendor/bootstrap/2.3.2/bootstrap.js',
-        'vendor/leaflet/0.7.3/leaflet.js',
-        'vendor/slickgrid/2.0.1/plugins/slick.rowselectionmodel.js',
-        'vendor/slickgrid/2.0.1/plugins/slick.rowmovemanager.js',
-        'vendor/slickgrid/2.0.1/jquery.event.drag-2.0.min.js',
-        'vendor/slickgrid/2.0.1/slick.grid.min.js',
-        'vendor/moment/2.0.0/moment.js',
-        'vendor/timeline/js/timeline.js',
-        'vendor/flot/jquery.flot.js',
+        'vendor/bootstrap/3.2.0/js/bootstrap.js',
         'dist/recline.js',
       ),
     ),
   );
-  $libraries['underscore'] = array(
-    'name' => 'Underscore',
-    'vendor url' => 'http://underscorejs.org',
-    'download url' => 'http://underscorejs.org/underscore-min.js',
-    'path' => 'underscore/underscore-min.js',
+
+  $libraries['lodash'] = array(
+    'name' => 'lodash',
+    'vendor url' => 'https://github.com/lodash/lodash',
+    'download url' => 'https://github.com/lodash/lodash/archive/master.zip',
     'version arguments' => array(
-      'file' => 'underscore/underscore-min.js',
-      'pattern' => '@majorVersion[=:]["\'](\d).+?minorVersion[=:]["\']([\d\.]+)@',
-      'lines' => 1,
-      'cols' => 100,
-    ),
-  );
-  $libraries['backbone'] = array(
-    'name' => 'Backbone',
-    'vendor url' => 'http://backbone.org',
-    'download url' => 'http://backbone.org/backbone-min.js',
-    'path' => 'backbone/backbone-min.js',
-    'version arguments' => array(
-      'file' => 'backbone/backbone-min.js',
-      'pattern' => '@majorVersion[=:]["\'](\d).+?minorVersion[=:]["\']([\d\.]+)@',
-      'lines' => 1,
-      'cols' => 100,
-    ),
-  );
-  $libraries['mustache'] = array(
-    'name' => 'Mustache',
-    'vendor url' => 'http://mustache.github.com',
-    'download url' => 'http://mustache.github.com',
-    'path' => 'mustache/mustache.js',
-    'version arguments' => array(
-      'file' => 'mustache/mustache.js',
-      'pattern' => '@majorVersion[=:]["\'](\d).+?minorVersion[=:]["\']([\d\.]+)@',
-      'lines' => 22,
-      'cols' => 100,
-    ),
-  );
-  $libraries['bootstrap_transition'] = array(
-    'name' => 'Bootstrap Transition',
-    'vendor url' => 'http://twitter.github.com/bootstrap',
-    'download url' => 'http://twitter.github.com/bootstrap/assets/bootstrap.zip',
-    'path' => 'bootstrap/js/transition.js',
-    'version arguments' => array(
-      'file' => 'backbone/backbone-min.js',
-      'pattern' => '@majorVersion[=:]["\'](\d).+?minorVersion[=:]["\']([\d\.]+)@',
-      'lines' => 2,
-      'cols' => 100,
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
     ),
     'files' => array(
-      'css' => array(
-        'docs/assests/css/bootstrap.css',
-        'docs/assests/css/bootstrap-responsive.css',
+      'js' => array(
+        'dist/lodash.compat.min.js',
       ),
     ),
   );
-  $libraries['flotr2'] = array(
-    'name' => 'flotr2',
-    'vendor url' => 'https://github.com/HumbleSoftware/Flotr2',
-    'download url' => 'https://github.com/HumbleSoftware/Flotr2',
-    'path' => 'flotr2/flotr2.js',
-    'version arguments' => array(
-      'file' => 'flotr2/flotr2.js',
-      'pattern' => '@majorVersion[=:]["\'](\d).+?minorVersion[=:]["\']([\d\.]+)@',
-      'lines' => 566,
-      'cols' => 100,
+
+  $libraries['backbone'] = array(
+    'name' => 'backbone',
+    'vendor url' => 'https://github.com/jashkenas/backbone',
+    'download url' => 'https://github.com/jashkenas/backbone/archive/master.zip',
+    'version' => '1.1.2',
+    'files' => array(
+      'js' => array(
+        'backbone-min.js',
+      ),
     ),
   );
+
+  $libraries['csv'] = array(
+    'name' => 'csv',
+    'vendor url' => 'https://github.com/okfn/csv.js',
+    'version' => '0.0.1',
+    'files' => array(
+      'js' => array(
+        'csv.js',
+      ),
+    ),
+  );
+
+  $libraries['slickgrid'] = array(
+    'name' => 'SlickGrid',
+    'vendor url' => 'https://github.com/mleibman/SlickGrid',
+    'download url' => 'https://github.com/mleibman/SlickGrid/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'slick.grid.js',
+      'pattern' => '/SlickGrid v(\d+\.\d+)/',
+    ),
+    'files' => array(
+      'js' => array(
+        'lib/jquery.event.drag-2.2.js',
+        'lib/jquery.event.drop-2.2.js',
+        'slick.core.js',
+        'slick.formatters.js',
+        'slick.editors.js',
+        'slick.grid.js',
+        'lib/jquery-ui-1.8.16.custom.min.js',
+        'plugins/slick.rowselectionmodel.js',
+        'plugins/slick.rowmovemanager.js',
+      ),
+      'css' => array(
+        'slick.grid.css',
+      ),
+    ),
+  );
+
+  $libraries['mustache'] = array(
+    'name' => 'mustache',
+    'vendor url' => 'http://github.com/janl/mustache.js',
+    'download url' => 'http://github.com/janl/mustache.js.zip',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'mustache.min.js',
+      ),
+    ),
+  );
+
+  $libraries['moment'] = array(
+    'name' => 'moment',
+    'vendor url' => 'https://github.com/moment/moment',
+    'download url' => 'https://github.com/moment/moment/archive/master.zip',
+    'version arguments' => array(
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'min/moment.min.js',
+      ),
+    ),
+  );
+
   $libraries['leaflet'] = array(
     'name' => 'Leaflet',
     'vendor url' => 'http://leaflet.cloudmade.com',
-    'download url' => 'http://leaflet.cloudmade.com/download.html',
-    'path' => 'Leaflet/dist/leaflet.js',
+    'download url' => 'https://github.com/Leaflet/Leaflet.git',
     'version arguments' => array(
-      'file' => 'Leaflet/dist/leaflet.js',
-      'pattern' => '@majorVersion[=:]["\'](\d).+?minorVersion[=:]["\']([\d\.]+)@',
-      'lines' => 6,
-      'cols' => 100,
+      'file' => 'package.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
     ),
     'files' => array(
       'js' => array(
-        'leaflet/spec/after.js',
+        'dist/leaflet.js',
       ),
       'css' => array(
-        'leaflet/dist/leaflet.css',
+        'dist/leaflet.css',
       ),
     ),
   );
-  $libraries['leaflet_markercluster'] = array(
-    'name' => 'Leaflet MarkerCluster',
-    'vendor url' => 'https://github.com/Leaflet/Leaflet.markercluster',
-    'download url' => 'https://github.com/Leaflet/Leaflet.markercluster/archive/c5864dbfca9e71c86ac61b432862cc77f8fd8e68.zip',
-    'path' => '',
-    'version arguments' => array(
-      'file' => 'CHANGELOG.md',
-      'pattern' => '@([0-9][.][0-9])@',
-      'lines' => 20,
-      'cols' => 100,
-    ),
+
+  $libraries['flot'] = array(
+    'name' => 'Flot',
+    'vendor url' => 'https://github.com/flot/flot',
+    'download url' => 'https://github.com/flot/flot.git',
+    'version' => '0.8.1',
     'files' => array(
-      'css' => array(
-        'dist/MarkerCluster.css',
-        'dist/MarkerCluster.Default.css',
-      ),
       'js' => array(
-        'dist/leaflet.markercluster.js'
-      ),
-    ),
-  );
-  $libraries['slickgrid'] = array(
-    'name' => 'SlickGrid',
-    'vendor url' => 'https://github.com/mleibman/SlickGrid/wiki',
-    'download url' => 'https://github.com/mleibman/SlickGrid',
-    'path' => 'slickgrid/slick.grid.js',
-    'version arguments' => array(
-      'file' => 'slickgrid/slick.grid.js',
-      'pattern' => '@majorVersion[=:]["\'](\d).+?minorVersion[=:]["\']([\d\.]+)@',
-      'lines' => 10,
-      'cols' => 100,
-    ),
-    'files' => array(
-      'css' => array(
-        'slickgrid/css/slick.grid.css',
-      ),
-      'js' => array(
-        'slickgrid/lib/jquery.event.drag-2.0.min.js',
+        'jquery.flot.js',
       ),
     ),
   );
@@ -320,6 +299,28 @@ function recline_libraries_info() {
     'files' => array(
       'js' => array(
         'releases/deep-diff-0.3.0.min.js',
+      ),
+    ),
+  );
+
+  $libraries['leaflet_markercluster'] = array(
+    'name' => 'Leaflet MarkerCluster',
+    'vendor url' => 'https://github.com/Leaflet/Leaflet.markercluster',
+    'download url' => 'https://github.com/Leaflet/Leaflet.markercluster/archive/c5864dbfca9e71c86ac61b432862cc77f8fd8e68.zip',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'CHANGELOG.md',
+      'pattern' => '@([0-9][.][0-9])@',
+      'lines' => 20,
+      'cols' => 100,
+    ),
+    'files' => array(
+      'css' => array(
+        'dist/MarkerCluster.css',
+        'dist/MarkerCluster.Default.css',
+      ),
+      'js' => array(
+        'dist/leaflet.markercluster.js'
       ),
     ),
   );

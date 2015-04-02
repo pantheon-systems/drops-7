@@ -451,10 +451,19 @@ function recline_default_formatter_output($variables) {
   }
   $recline = '';
 
+  libraries_load('lodash');
+  libraries_load('backbone');
   $recline = libraries_load('recline');
-  $recline_deeplink = libraries_load('recline_deeplink');
-  $leaflet_markercluster = libraries_load('leaflet_markercluster');
-  $deep_diff = libraries_load('deep_diff');
+  libraries_load('csv');
+  libraries_load('mustache');
+  libraries_load('moment');
+  libraries_load('slickgrid');
+  libraries_load('leaflet');
+
+  libraries_load('flot');
+  libraries_load('deep_diff');
+  libraries_load('recline_deeplink');
+  libraries_load('leaflet_markercluster');
 
   if (isset($variables['item']['grid']) &&
     isset($variables['item']['graph']) &&

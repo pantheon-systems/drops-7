@@ -5,15 +5,15 @@ api = 2
 projects[dkan_dataset][subdir] = dkan
 projects[dkan_dataset][download][type] = git
 projects[dkan_dataset][download][url] = https://github.com/NuCivic/dkan_dataset.git
-projects[dkan_dataset][download][tag] = 7.x-1.7
+projects[dkan_dataset][download][tag] = 7.x-1.8
 
 projects[dkan_datastore][subdir] = dkan
 projects[dkan_datastore][download][type] = git
 projects[dkan_datastore][download][url] = https://github.com/NuCivic/dkan_datastore.git
-projects[dkan_datastore][download][tag] = 7.x-1.7
+projects[dkan_datastore][download][tag] = 7.x-1.8
 
-includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.7/dkan_dataset.make
-includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.7/dkan_datastore.make
+includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.8/dkan_dataset.make
+includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.8/dkan_datastore.make
 
 ; Contrib Modules
 projects[admin_menu][version] = 3.0-rc5
@@ -96,7 +96,7 @@ projects[nuboot_radix][subdir] = contrib
 projects[nuboot_radix][download][type] = git
 projects[nuboot_radix][download][url] = https://github.com/NuCivic/nuboot_radix.git
 projects[nuboot_radix][download][branch] = 7.x-1.x
-projects[nuboot_radix][download][revision] = "4fe9a15613f12946966927583ad15df08cbe99b3"
+projects[nuboot_radix][download][revision] = "1397b88a2837e7ae6d3114b4dfaac55b68dacff9"
 projects[nuboot_radix][type] = theme
 
 projects[radix][subdir] = contrib
@@ -114,3 +114,4 @@ libraries[spyc][download][url] = "https://raw.github.com/mustangostang/spyc/79f6
 libraries[spyc][filename] = "../spyc.php"
 libraries[spyc][directory_name] = "lib"
 libraries[spyc][destination] = "modules/contrib/services/servers/rest_server"
+
