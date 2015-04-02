@@ -1,3 +1,9 @@
+7.x-1.8  2015-04-02
+--------------------------
+ - Adding CRUD functions to Datastore.inc class
+ - Adding drush interface to CRUD functions in order to create instances from the cli
+ 
+
 
 
 7.x-1.7  2015-02-20
@@ -16,12 +22,15 @@
 
 7.x-1.1
 -------
-- Moved dkan_datastore development to NuCivic: https://github.com/NuCivic/dkan_datastore
+- Moved dkan_datastore development to NuCivic: 
+  https://github.com/NuCivic/dkan_datastore
 - Several bugs fixed.
 
 7.x-1.0
 -------
-- Moved dkan_datastore development to github: https://github.com/nuams/dkan_datastore
-- Added WebTestCase test suite for dkan_datastore and dkan_datastore_api: https://github.com/nuams/dkan_datastore/tree/7.x-1.x/tests
+- Moved dkan_datastore development to github: 
+  https://github.com/nuams/dkan_datastore
+- Added WebTestCase test suite for dkan_datastore and dkan_datastore_api: 
+  https://github.com/nuams/dkan_datastore/tree/7.x-1.x/tests
 - Travis + Github integration for all test suites on every commit
 - Several bugs fixed.

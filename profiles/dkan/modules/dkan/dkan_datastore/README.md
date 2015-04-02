@@ -22,6 +22,35 @@ cd dkan_datastore
 drush make --no-core dkan_datastore.make
 ```
 
+## Managing datastores with Drush
+
+The DKAN Datastore API module provides the functionality needed to manage the
+datastores using Drush. The available commands are:
+
+### To create a datastore from a local file:
+
+```bash
+drush dsc (path-to-local-file)
+```
+
+### To update a datastore from a local file:
+
+```bash
+drush dsu (datastore-id) (path-to-local-file)
+```
+
+### To delete a datastore file (imported items will be deleted as well):
+
+```bash
+drush dsfd (datastore-id)
+```
+
+### To get the URI of the datastore file:
+
+```bash
+drush dsfuri (datastore-id)
+```
+
 ## Contributing
 
 We are accepting issues in the dkan issue thread only -> https://github.com/NuCivic/dkan/issues -> Please label your issue as **"component: dkan_datastore"** after submitting so we can identify problems and feature requests faster.
@@ -30,6 +59,6 @@ If you can, please cross reference commits in this repo to the corresponding iss
 
 ```
 NuCivic/dkan#issue_id
-``` 
+```
 
 to any commit message or comment replacing **issue_id** with the corresponding issue id.

@@ -2,7 +2,7 @@
 
 /**
  * @file
- * Datastore class and helper functions.
+ * Datastore.inc.
  */
 
 /**
@@ -26,6 +26,9 @@ abstract class Datastore {
     $this->node = $this->node($uuid);
   }
 
+  /**
+   * Config defaults.
+   */
   public function configDefaults() {
   }
 
@@ -38,7 +41,6 @@ abstract class Datastore {
       $nid = $this->getNid($uuid);
       if (!$nid) {
         throw new Exception(t("uuid !uuid not found.", array('!uuid' => $uuid)));
-        return FALSE;
       }
       else {
         $nodes[$uuid] = node_load($nid);
@@ -68,8 +70,21 @@ abstract class Datastore {
   public static function instance($class, $id) {
     // This is useful at least as long as we're developing.
     if (empty($id)) {
-      throw new Exception(t('Empty configuration identifier.'));
+      // Create an empty resource.
+      $resource = new stdClass();
+      $resource->title = t('Automatically created by datastore');
+      $resource->type = 'resource';
+      $resource->language = LANGUAGE_NONE;
+      $resource->status = '1';
+      $resource->promote = '0';
+      $resource->sticky = '0';
+      $resource->comment = '0';
+      $resource->translate = '0';
+      node_save($resource);
+
+      $id = $resource->uuid;
     }
+
     static $instances = array();
     if (!isset($instances[$class][$id])) {
       $instances[$class][$id] = new $class($id);
@@ -129,6 +144,27 @@ abstract class Datastore {
   }
 
   /**
+   * Updates the datastore with file.
+   */
+  public function updateByFile($uri, $truncate = TRUE) {
+
+  }
+
+  /**
+   * Creates a datastore with file.
+   */
+  public function createByFile($uri) {
+
+  }
+
+  /**
+   * Deletes the file.
+   */
+  public function deleteFile() {
+
+  }
+
+  /**
    * Retrieves file URI.
    */
   public function fileUri() {
@@ -168,23 +204,46 @@ abstract class Datastore {
 }
 
 /**
+ * Declares interface for forms.
+ *
  * Declares interface for forms required for interaction with Datastores through
  * the DKAN user interface.
  */
 interface DatastoreForm {
 
+  /**
+   * Manage form.
+   */
   public function manageForm(&$form_state);
 
+  /**
+   * Manage form submit.
+   */
   public function manageFormSubmit(&$form_state);
 
+  /**
+   * Delete form.
+   */
   public function deleteForm(&$form_state);
 
+  /**
+   * Delete form submit.
+   */
   public function deleteFormSubmit(&$form_state);
 
+  /**
+   * Drop form.
+   */
   public function dropForm(&$form_state);
 
+  /**
+   * Drop form submit.
+   */
   public function dropFormSubmit(&$form_state);
 
+  /**
+   * Api form.
+   */
   public function apiForm();
 
 }

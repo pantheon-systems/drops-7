@@ -3,6 +3,7 @@
 /**
  * @file
  * Data API via services.
+ *
  * TODO: Add search element, investigate caching, add uuids.
  */
 
@@ -19,7 +20,6 @@ function dkan_datastore_api_init() {
   //
   // We can't just search for the api/action/datastore/search.json request
   // string since we support search.xml, search.jsonp etc.
-
   // If the request doesn't have datastore_search, we need to redirect 'q' to
   // 'query' if it does not have /api/action/datastore/search in it.
   if (isset($_GET['resource_id']) && !strpos($_SERVER['REQUEST_URI'], 'datastore_search')) {
@@ -215,7 +215,7 @@ function _dkan_datastore_api_datastore_index($resource_ids, $filters, $query, $o
       dkan_datastore_api_add_index_query($data_select, $table, $query);
     }
   }
-  catch(Exception $ex) {
+  catch (Exception $ex) {
     return array('Caught exception: ' . $ex->getMessage());
   }
   $count = dkan_datastore_api_count($table, $offset, $limit, $fields, $filters, $query);

@@ -282,6 +282,9 @@ function feeds_flatstore_processor_get_csv_results($filepath, $separator = ",", 
 /**
  * Finds the schema type for values in an array.
  */
+/**
+ * Finds the schema type for values in an array.
+ */
 function feeds_flatstore_processor_find_columns($parsed_result, $limit, $headers = array()) {
   $rowcount = count($parsed_result);
   if (!$headers) {
@@ -292,7 +295,7 @@ function feeds_flatstore_processor_find_columns($parsed_result, $limit, $headers
   $colcount = count($headers);
 
   // List of possible types, from least to most specific.
-  $types = array('bigtext' => 0, 'datetime' => 0, 'float' => 0, 'int' => 0);
+  $types = array('bigtext' => 0, 'datetime' => 0, 'float' => 0, 'int' => 0, 'bigint' => 0);
   $type_counter = array();
   foreach ($headers as $key => $value) {
     $type_counter[$key]  = $types;
@@ -302,15 +305,21 @@ function feeds_flatstore_processor_find_columns($parsed_result, $limit, $headers
       if ($value == '') {
         continue;
       }
-      // TODO: Determine if default data sizes are sufficient.
-      // Int.
-      if (preg_match('/^-?\d+$/', $value)) {
+
+      // If a value is a number but with more than 19 chars then is treated as text.
+      if (preg_match('/^-?\d+$/', $value) && strlen($value) > 9 && strlen($value) < 19) {
+        $type_counter[$key]['bigint']++;
+      }
+      // Integer.
+      elseif (preg_match('/^-?\d+$/', $value) && strlen($value) <= 9) {
         $type_counter[$key]['int']++;
       }
+
       // Float.
       elseif (preg_match('/^-?(?:\d+|\d*\.\d+)$/', trim($value))) {
         $type_counter[$key]['float']++;
       }
+
       // Datetime.
       elseif (preg_match("/\d{4}\-\d{2}\-\d{2} \d{2}:\d{2}:\d{2}/", trim($value)) ||
               preg_match("/\d{2}\-\d{2}\-\d{4} \d{2}:\d{2}:\d{2}/", trim($value)) ||

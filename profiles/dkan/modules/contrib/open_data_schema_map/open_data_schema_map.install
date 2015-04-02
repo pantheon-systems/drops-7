@@ -67,6 +67,13 @@ function open_data_schema_map_schema() {
         'size' => 'big',
         'serialize' => TRUE,
       ),
+      'outputformat' => array(
+        'description' => 'Output Format.',
+        'type' => 'varchar',
+        'length' => 20,
+        'not null' => True,
+        'default' => 'json',
+      ),
       'endpoint' => array(
         'type' => 'varchar',
         'length' => 256,
@@ -84,4 +91,28 @@ function open_data_schema_map_schema() {
     'primary key' => array('id'),
   );
   return $schema;
+}
+
+
+/**
+ *
+ * Ensures that the output format field is in the table
+ * Also sets outputformat to 'json' for all existing entries
+ *
+ */
+
+function open_data_schema_map_update_7001() {
+
+  $column = array(
+    'type' => 'varchar',
+    'description' => "Output Format",
+    'length' => 20,
+    'not null' => True,
+    'default' => 'json',
+  );
+
+  $data_table_name = 'open_data_schema_map';
+  if (!db_field_exists('open_data_schema_map', 'outputformat')) {
+    db_add_field($data_table_name, 'outputformat', $column);
+  }
 }

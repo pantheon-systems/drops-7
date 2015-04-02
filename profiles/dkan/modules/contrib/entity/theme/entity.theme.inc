@@ -80,8 +80,11 @@ function template_preprocess_entity_property(&$variables, $hook) {
   );
 
   // Populate the content with sensible defaults.
-  if (!isset($variables['content'])) {
+  if (!isset($element['#content'])) {
     $variables['content'] = entity_property_default_render_value_by_type($element['#entity_wrapped']->{$element['#property_name']});
+  }
+  else {
+    $variables['content'] = $element['#content'];
   }
 }
 
@@ -169,7 +172,7 @@ function template_preprocess_entity(&$variables) {
   $variables['title'] = check_plain(entity_label($entity_type, $entity));
 
   $uri = entity_uri($entity_type, $entity);
-  $variables['url'] = $uri ? url($uri['path'], $uri['options']) : FALSE;
+  $variables['url'] = $uri && !empty($uri['path']) ? url($uri['path'], $uri['options']) : FALSE;
 
   if (isset($variables['elements']['#page'])) {
     // If set by the caller, respect the page property.
@@ -177,7 +180,7 @@ function template_preprocess_entity(&$variables) {
   }
   else {
     // Else, try to automatically detect it.
-    $variables['page'] = $uri && $uri['path'] == $_GET['q'];
+    $variables['page'] = $uri && !empty($uri['path']) && $uri['path'] == $_GET['q'];
   }
 
   // Helpful $content variable for templates.

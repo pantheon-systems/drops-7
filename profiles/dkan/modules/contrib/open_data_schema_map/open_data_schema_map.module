@@ -321,6 +321,7 @@ function open_data_schema_map_api_exist($machine_name) {
  * Loads all APIs.
  */
 function open_data_schema_map_api_load_all() {
+  $list = array();
   $records = &drupal_static(__FUNCTION__, array());
   if ($records) {
     return $records;
@@ -331,6 +332,7 @@ function open_data_schema_map_api_load_all() {
   }
 
   drupal_alter('open_data_schema_map_endpoints', $list);
+  
   foreach ($list as $item) {
     $records[] = open_data_schema_map_api_load($item);
   }
@@ -644,7 +646,7 @@ function open_data_schema_map_json_4($schema, $api, $defaults) {
       );
       foreach ($data['anyOf'][0]['items']['properties'] as $subitem => $subdata) {
         $desc = isset($subdata['description']) ? $subdata['description'] : '';
-        $desc .= isset($subdata['type']) ? t(' Type:') . $subdata['type'] : '';
+        $desc .= isset($subdata['type']) ? ' ' . t('Type:') . $subdata['type'] : '';
         $form[$item][$subitem] = array(
           '#title' => $subdata['title'] . ' (' . $subitem . ')',
           '#type' => 'textfield',
@@ -656,7 +658,7 @@ function open_data_schema_map_json_4($schema, $api, $defaults) {
     }
     if ($data['type'] == 'object') {
       $description = '';
-      if ( isset($data['description']) ) {
+      if (isset($data['description'])) {
         $description = $data['description'];
       }
       $form[$item] = array(
@@ -664,10 +666,10 @@ function open_data_schema_map_json_4($schema, $api, $defaults) {
         '#type' => 'fieldset',
         '#description' => $description,
       );
-      if ( isset($data['properties']) ) {
+      if (isset($data['properties'])) {
         foreach ($data['properties'] as $subitem => $subdata) {
           $desc = isset($subdata['description']) ? $subdata['description'] : '';
-          $desc .= isset($subdata['type']) ? t(' Type:') . $subdata['type'] : '';
+          $desc .= isset($subdata['type']) ? ' ' . t('Type:') . $subdata['type'] : '';
           $form[$item][$subitem] = array(
             '#title' => $subdata['title'] . ' (' . $subitem . ')',
             '#type' => 'textfield',
@@ -820,10 +822,11 @@ function open_data_schema_map_endpoint_args(&$map, $queries, $args = array()) {
  * Process entities using api.
  */
 function open_data_schema_map_endpoint_process_map($ids, $api) {
-  $result = $output = array();
+  $output = array();
   if ($ids) {
     $schema = open_data_schema_map_schema_load($api->api_schema);
     foreach ($ids as $key => $id) {
+      $result = array();
       $entity = entity_load_single($api->type, $id);
       open_data_schema_map_endpoint_process_map_recursion($result, $api->mapping, $api->type, $entity);
       $output[] = $result;
@@ -837,7 +840,6 @@ function open_data_schema_map_endpoint_process_map($ids, $api) {
  */
 function open_data_schema_map_endpoint_process_map_recursion(&$result, $map, $type, $entity) {
   foreach ($map as $api_field => $token) {
-    
     // Don't show results for fields without tokens.
     if ($token) {
       if (isset($token['value']) && !$token['value']) {
@@ -878,13 +880,8 @@ function open_data_schema_map_endpoint_process_map_recursion(&$result, $map, $ty
           // If field has depth make recursive call.
           $result[$api_field] = array();
           open_data_schema_map_endpoint_process_map_recursion($result[$api_field], $map[$api_field], $type, $entity);
-          // foreach ($token as $subfield => $subtoken) {
-          //   if ($field_value = open_data_schema_map_endpoint_process_field($subfield, $subtoken, $type, $entity)) {
-          //     $result[$api_field][$subfield] = $field_value;    
-          //   }
-          // }
         }
-        else if ($field_value = open_data_schema_map_endpoint_process_field($api_field, $token, $type, $entity)) {
+        elseif ($field_value = open_data_schema_map_endpoint_process_field($api_field, $token, $type, $entity)) {
           $result[$api_field] = $field_value;
         }
         else {
@@ -1014,9 +1011,40 @@ function open_data_schema_map_render_api($api, $query = NULL, $queries = NULL) {
     $headers['Status'] = $e->getHTTPError();
     $result['error'] = $e->getData();
   }
-  drupal_alter('open_data_schema_map_results', $result, $api->machine_name, $api->api_schema);
+  drupal_alter('open_data_schema_map_results', $result, $api->machine_name, $api->api_schema, $ids);
   return array(
     'result' => $result,
     'headers' => $headers,
   );
+}
+
+/**
+ * Discovers additional fields.
+ */
+function open_data_schema_map_additional_fields($api) {
+  $tokens = array();
+  foreach ($api->mapping as $schema_id => $item) {
+    if (isset($item['value']) && $item['value'] && !is_array($item['value'])) {
+      $tokens[] = $item['value'];
+    }
+  }
+  $unsused_fields = array();
+  $fields = field_info_instances('node', 'dataset');
+  foreach ($fields as $field_name => $instance) {
+    if (!in_array('[node:' . $field_name . ']', $tokens)) {
+      $addtional_fields[] = $field_name;
+    }
+  }
+  return $addtional_fields;
+}
+
+/**
+ * Adds additional fields to mapping.
+ */
+function open_data_schema_map_additional_fields_add($fields, $api) {
+  foreach ($fields as $field_name) {
+    $api->mapping['dkan_additional_fields'][$field_name]['value'] = '[node:' . $field_name . ']';
+    $api->mapping['dkan_additional_fields'][$field_name]['type'] = 'array';
+  }
+  return $api;
 }

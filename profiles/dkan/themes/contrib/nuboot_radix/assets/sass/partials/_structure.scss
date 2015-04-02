@@ -111,23 +111,24 @@ p:last-child {
   margin: 10px 0;
 }
 
+table,
 table.group_additional {
   border-collapse:collapse;
   margin:1em 0;
   width:100%;
   thead > tr > th {
     //@include background-image(linear-gradient(#F5F5F5, #F0F0F0));
-    background-color: $border;
+    background-color: lighten($border, 4%);
     border: 1px solid $border !important;
     padding: 4px 8px;
     font-weight: bold;
   }
   thead th:first-child {
-    @inlclude border-top-left-radius(4px);
+    //@inlclude border-top-left-radius(4px);
   }
   thead th:last-child,
   thead th:last-child {
-    @include border-top-right-radius(4px);
+    //@include border-top-right-radius(4px);
   }
   tbody th,
   td {
@@ -145,6 +146,7 @@ table.group_additional,
   th:nth-of-type(1n),
   td:nth-of-type(1n) {
     width: 30%;
+    border-right: 1px solid $border;
   }
   th:nth-of-type(2n),
   td:nth-of-type(2n) {
@@ -168,53 +170,65 @@ table.group_additional,
     }
   }
 }
+.table > thead:first-child > tr:first-child > th,
+table thead:first-child tr:first-child th {
+  border: 1px solid $border;
+}
+.table-bordered > thead > tr > th,
+table thead > tr > th {
+  background-color: lighten($border, 4%);
+  border: 1px solid $border;
+  padding:4px 8px;
+}
 
 // Admin tables.
-.table-bordered > thead > tr > th,
-.table-bordered > tbody > tr > th,
-.table-bordered > tbody > tr > td {
-  border: none;
-}
-table thead > tr > th.checkbox, 
-table.table thead > tr > th.checkbox,
-.table-bordered > tbody > tr > th.checkbox,
-.table-bordered > tbody > tr > td.checkbox,
-.table-striped > tbody > tr:nth-child(odd) > td.checkbox,
-.table-striped > tbody > tr:nth-child(odd) > th.checkbox {
-  background-color: transparent;
-  border: none;
-  margin: 0;
-  display: table-cell;
-  position: relative;
-}
-.table-striped > tbody > tr:nth-child(odd) {
-  background-color: #f9f9f9;
-}
-.table tbody tr:hover td, 
-.table tbody tr:hover th,
-.table tbody tr:hover td.checkbox, 
-.table tbody tr:hover th.checkbox,
-.table-striped tbody tr:nth-child(odd):hover td,
-.table-striped tbody tr:nth-child(odd):hover td.checkbox {
-  background-color: #FFFEEE;
-}
-table th.checkbox, 
-table td.checkbox {
-  label {
-    line-height:0;
-    padding: 4px;
-    vertical-align: top;
+.page-admin {
+  .table-bordered > thead > tr > th,
+  .table-bordered > tbody > tr > th,
+  .table-bordered > tbody > tr > td {
+    border: none;
   }
-  input[type="checkbox"],
-  input {
-    float: none !important;
-    margin: 0 !important;
+  table thead > tr > th.checkbox, 
+  table.table thead > tr > th.checkbox,
+  .table-bordered > tbody > tr > th.checkbox,
+  .table-bordered > tbody > tr > td.checkbox,
+  .table-striped > tbody > tr:nth-child(odd) > td.checkbox,
+  .table-striped > tbody > tr:nth-child(odd) > th.checkbox {
+    background-color: transparent;
+    border: none;
+    margin: 0;
+    display: table-cell;
     position: relative;
   }
-}
+  .table-striped > tbody > tr:nth-child(odd) {
+    background-color: #f9f9f9;
+  }
+  .table tbody tr:hover td, 
+  .table tbody tr:hover th,
+  .table tbody tr:hover td.checkbox, 
+  .table tbody tr:hover th.checkbox,
+  .table-striped tbody tr:nth-child(odd):hover td,
+  .table-striped tbody tr:nth-child(odd):hover td.checkbox {
+    background-color: #FFFEEE;
+  }
+  table th.checkbox, 
+  table td.checkbox {
+    label {
+      line-height:0;
+      padding: 4px;
+      vertical-align: top;
+    }
+    input[type="checkbox"],
+    input {
+      float: none !important;
+      margin: 0 !important;
+      position: relative;
+    }
+  }
 
-table .checkbox input[type="checkbox"] {
-  position: relative;
+  table .checkbox input[type="checkbox"] {
+    position: relative;
+  }
 }
 
 dl {

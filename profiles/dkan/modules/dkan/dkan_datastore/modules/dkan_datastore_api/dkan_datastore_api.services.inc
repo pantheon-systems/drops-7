@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * dkan_datastore_api.services.inc
+ * Dkan_datastore_api.services.inc.
  */
 
 /**

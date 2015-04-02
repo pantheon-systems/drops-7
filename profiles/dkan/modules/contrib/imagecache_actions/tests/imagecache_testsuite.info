@@ -9,9 +9,9 @@ dependencies[] = system_stream_wrapper
 features[image][] = 'corners_combo'
 
 
-; Information added by drush on 2015-02-24
+; Information added by drush on 2015-04-02
 version = "7.x-1.4+17-dev"
 core = "7.x"
 project = "imagecache_actions"
-datestamp = "1424813723"
+datestamp = "1428002567"
 
