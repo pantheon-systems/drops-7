@@ -8,9 +8,9 @@ files[] = engines/pgsql.inc
 files[] = tests/schema_regression.test
 
 
-; Information added by drush on 2015-04-02
+; Information added by drush on 2015-04-09
 version = "7.x-1.2"
 core = "7.x"
 project = "schema"
-datestamp = "1428002589"
+datestamp = "1428592309"
 
