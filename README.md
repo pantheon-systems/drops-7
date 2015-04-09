@@ -22,7 +22,7 @@ Any time you want to integrate their changes into this repo
 # Make a branch so we can test if their work pass our testing
 git checkout -b updating_from_pantheon_drops
 # Pull their master into your branch (solve conflicts if any)
-git pull --rebase pantheon master:updating_from_pantheon_drops
+git merge pantheon/master -X theirs
 # Push changes and wait for travis to run the build on the 'updating_from_pantheon_drops' branch.  
 git push origin updating_from_pantheon_drops
 ```
