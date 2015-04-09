@@ -10,5 +10,5 @@ dependencies[] = image
 version = "7.x-1.4+17-dev"
 core = "7.x"
 project = "imagecache_actions"
-datestamp = "1428592277"
+datestamp = "1428594279"
 
