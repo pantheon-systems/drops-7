@@ -119,7 +119,7 @@ function dkan_datastore_api_datastore_update($id = NULL, $file = NULL) {
 
   if ($datastore = get_datastore($id)) {
     // IMPROVEMENT: Add option truncate.
-    $result = $datastore->updateByFile($file);
+    $result = $datastore->updateByFile($file, TRUE);
 
     if ($result) {
       drush_print('The new file has been saved and the items were imported.');
@@ -135,14 +135,9 @@ function dkan_datastore_api_datastore_update($id = NULL, $file = NULL) {
  */
 function dkan_datastore_api_datastore_create($file = NULL) {
 
-  if (!$file) {
-    drush_print('No file was provided.');
-    return;
-  }
-
   if ($datastore = dkan_datastore_go()) {
 
-    $result = $datastore->createByFile($file);
+    $result = $datastore->createByFile($file, TRUE);
 
     if ($result) {
       drush_print('The new file has been saved and the items were imported.');

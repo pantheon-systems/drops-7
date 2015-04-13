@@ -73,7 +73,7 @@ abstract class Datastore {
       // Create an empty resource.
       $resource = new stdClass();
       $resource->title = t('Automatically created by datastore');
-      $resource->type = 'resource';
+      $resource->type = dkan_datastore_node_type();
       $resource->language = LANGUAGE_NONE;
       $resource->status = '1';
       $resource->promote = '0';
@@ -146,14 +146,14 @@ abstract class Datastore {
   /**
    * Updates the datastore with file.
    */
-  public function updateByFile($uri, $truncate = TRUE) {
+  public function updateByFile($uri = '', $copy_file = TRUE, $truncate = TRUE) {
 
   }
 
   /**
    * Creates a datastore with file.
    */
-  public function createByFile($uri) {
+  public function createByFile($uri = '', $copy_file = TRUE) {
 
   }
 

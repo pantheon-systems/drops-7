@@ -18,7 +18,7 @@ h1,h2,h3,h4 {
 #featured .tint,
 .panel-top .tint,
 .pane-dkan-sitewide-demo-front-dkan-demo-front .pane-content {
-  background-color: @tint;
+  background-color: @top_rgb;
 }
 
 .form-actions {

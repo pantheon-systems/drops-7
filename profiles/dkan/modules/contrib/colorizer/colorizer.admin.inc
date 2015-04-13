@@ -72,7 +72,7 @@ function colorizer_admin_form($show_files = TRUE, $show_submit = TRUE) {
   );
 
   $preview_file = drupal_get_path('theme', $theme) . '/' . $preview_file;
-  if (file_exists($preview_file)) {
+  if (is_file($preview_file)) {
     $preview_data = file_get_contents($preview_file);
     $form['colorizer_colors']['preview'] = array(
       '#markup' => $preview_data,
@@ -192,16 +192,22 @@ function colorizer_admin_form($show_files = TRUE, $show_submit = TRUE) {
     $form['actions'] = array(
       '#type' => 'actions',
     );
-    $form['actions']['submit'] = array(
+    if (!$show_files) {
+      // only show regular Save button when not on the global config page
+      $form['actions']['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Save configuration'),
+      );
+    }
+    $form['actions']['save_default'] = array(
       '#type' => 'submit',
-      '#value' => t('Save configuration'),
+      '#value' => t('Save as default'),
     );
     $form['actions']['colorizer_clearcache'] = array(
       '#type' => 'submit',
       '#value' => t('Clear Colorizer Cache'),
     );
   }
-
   return $form;
 }
 
@@ -241,6 +247,8 @@ function colorizer_admin_settings_validate($form, &$form_state) {
  * Mostly copied from Color module
  */
 function colorizer_admin_form_submit($form, &$form_state) {
+  global $theme_key;
+
   // Save the file locations
   if (!empty($form_state['values']['op']) && ($form_state['values']['op'] == $form_state['values']['colorizer_clearcache'])) {
     // clear the colorizer css cache
@@ -252,8 +260,13 @@ function colorizer_admin_form_submit($form, &$form_state) {
     variable_set('colorizer_previewfile', $form_state['values']['colorizer_previewfile']);
   }
 
+  $instance = !empty($form_state['values']['instance']) ? $form_state['values']['instance'] : '';
+  if (!empty($form_state['values']['op']) && ($form_state['values']['op'] == $form_state['values']['save_default'])) {
+    // save as default instance
+    $instance = $theme_key;
+  }
+
   if (!empty($form_state['values']['colorizer_reset'])) {
-    $instance = $form_state['values']['instance'];
     variable_del('colorizer_' . $instance . '_palette');
     // Delete old files.
     foreach (variable_get('colorizer_' . $instance . '_files', array()) as $file) {
@@ -263,6 +276,11 @@ function colorizer_admin_form_submit($form, &$form_state) {
       @drupal_rmdir($file);
     }
     variable_del('colorizer_' . $instance . '_files');
+    // Remove unused CSS colorized files after reset.
+    colorizer_clearcache();
+    // Clear Drupal's cache so the changes are reflected immediatelly for
+    // anonymous users.
+    cache_clear_all();
     return;
   }
 
@@ -272,7 +290,6 @@ function colorizer_admin_form_submit($form, &$form_state) {
     return;
   }
   $theme = $form_state['values']['theme'];
-  $instance = $form_state['values']['instance'];
   $info = $form_state['values']['info'];
 
   // Resolve palette.

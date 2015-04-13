@@ -96,7 +96,7 @@ function theme_dkan_dataset_resource_view($vars) {
       if (isset($node->field_upload[LANGUAGE_NONE])) {
         $url = file_create_url($node->field_upload[LANGUAGE_NONE][0]['uri']);
         $download_link = l(
-          '<i class="fa fa-download"></i>',
+          '<i class="fa fa-download"><span> Download</span></i>',
           $url,
           array(
             'html' => TRUE,
