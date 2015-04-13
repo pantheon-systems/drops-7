@@ -5,15 +5,15 @@ api = 2
 projects[dkan_dataset][subdir] = dkan
 projects[dkan_dataset][download][type] = git
 projects[dkan_dataset][download][url] = https://github.com/NuCivic/dkan_dataset.git
-projects[dkan_dataset][download][tag] = 7.x-1.8
+projects[dkan_dataset][download][branch] = 7.x-1.x
 
 projects[dkan_datastore][subdir] = dkan
 projects[dkan_datastore][download][type] = git
 projects[dkan_datastore][download][url] = https://github.com/NuCivic/dkan_datastore.git
-projects[dkan_datastore][download][tag] = 7.x-1.8
+projects[dkan_datastore][download][branch] = 7.x-1.x
 
-includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.8/dkan_dataset.make
-includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.8/dkan_datastore.make
+includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.x/dkan_dataset.make
+includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.x/dkan_datastore.make
 
 ; Contrib Modules
 projects[admin_menu][version] = 3.0-rc5
@@ -23,8 +23,9 @@ projects[bueditor][version] = 1.7
 projects[bueditor][patch][1931862] = http://drupal.org/files/dont-render-bueditor-for-plain-text-textareas.patch
 projects[bueditor][subdir] = contrib
 
-projects[colorizer][version] = 1.0
-projects[colorizer][patch][2227651] = http://drupal.org/files/issues/colorizer-2227651.patch
+projects[colorizer][version] = 1.4
+projects[colorizer][patch][2227651] = https://www.drupal.org/files/issues/colorizer-add-rgb-vars-2227651-4b.patch
+projects[colorizer][patch][2444249] = https://www.drupal.org/files/issues/colorizer-2444249.patch
 projects[colorizer][subdir] = contrib
 
 projects[diff][version] = 3.2
@@ -96,7 +97,7 @@ projects[nuboot_radix][subdir] = contrib
 projects[nuboot_radix][download][type] = git
 projects[nuboot_radix][download][url] = https://github.com/NuCivic/nuboot_radix.git
 projects[nuboot_radix][download][branch] = 7.x-1.x
-projects[nuboot_radix][download][revision] = "1397b88a2837e7ae6d3114b4dfaac55b68dacff9"
+projects[nuboot_radix][download][revision] = "6e51be20ccfa8a0a42a698cdc34e3ce09ac415a8"
 projects[nuboot_radix][type] = theme
 
 projects[radix][subdir] = contrib

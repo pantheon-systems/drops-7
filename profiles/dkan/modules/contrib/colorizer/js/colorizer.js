@@ -15,7 +15,6 @@ Drupal.behaviors.colorizer = {
       return;
     }
     var inputs = [];
-    var hooks = [];
     var locks = [];
     var focused = null;
 
@@ -120,6 +119,7 @@ Drupal.behaviors.colorizer = {
      * shift_color(d, b, a) == c.
      */
     function shift_color(given, ref1, ref2) {
+      console.log(given, ref1, ref2);
       // Convert to HSL.
       given = farb.RGBToHSL(farb.unpack(given));
 
@@ -170,20 +170,24 @@ Drupal.behaviors.colorizer = {
 
       // Change input value.
       if ($(input).val() && $(input).val() != color) {
+        var prev_color = farb.RGBToHSL(farb.unpack($(input).val()));
         $(input).val(color);
 
         // Update locked values.
         if (propagate) {
+          console.log(locks);
           i = input.i;
-          for (j = i + 1; ; ++j) {
-            if (!locks[j - 1] || $(locks[j - 1]).is('.unlocked')) break;
-            matched = shift_color(color, reference[input.key], reference[inputs[j].key]);
-            callback(inputs[j], matched, false);
-          }
-          for (j = i - 1; ; --j) {
-            if (!locks[j] || $(locks[j]).is('.unlocked')) break;
-            matched = shift_color(color, reference[input.key], reference[inputs[j].key]);
-            callback(inputs[j], matched, false);
+          console.log(i);
+          var base_color = farb.RGBToHSL(farb.unpack(color));
+          var ref_color;
+          for (j = 0; j < inputs.length; j++) {
+            console.log(j);
+            if ((j != i) && locks[j] && !$(locks[j]).is('.unlocked')) {
+              console.log('locked');
+              ref_color = farb.RGBToHSL(farb.unpack($(inputs[j]).val()));
+              matched = shift_color(color, prev_color, ref_color);
+              callback(inputs[j], matched, false);
+            }
           }
 
           // Update preview.
@@ -235,35 +239,16 @@ Drupal.behaviors.colorizer = {
 
       // Add lock.
       var i = inputs.length;
-      if (inputs.length) {
-        var lock = $('<div class="lock"></div>').toggle(
-          function () {
-            $(this).addClass('unlocked');
-            $(hooks[i - 1]).attr('class',
-              locks[i - 2] && $(locks[i - 2]).is(':not(.unlocked)') ? 'hook up' : 'hook'
-            );
-            $(hooks[i]).attr('class',
-              locks[i] && $(locks[i]).is(':not(.unlocked)') ? 'hook down' : 'hook'
-            );
-          },
-          function () {
-            $(this).removeClass('unlocked');
-            $(hooks[i - 1]).attr('class',
-              locks[i - 2] && $(locks[i - 2]).is(':not(.unlocked)') ? 'hook both' : 'hook down'
-            );
-            $(hooks[i]).attr('class',
-              locks[i] && $(locks[i]).is(':not(.unlocked)') ? 'hook both' : 'hook up'
-            );
-          }
-        );
-        $(this).after(lock);
-        locks.push(lock);
-      };
-
-      // Add hook.
-      var hook = $('<div class="hook"></div>');
-      $(this).after(hook);
-      hooks.push(hook);
+      var lock = $('<div class="lock"></div>').toggle(
+        function () {
+          $(this).addClass('unlocked');
+        },
+        function () {
+          $(this).removeClass('unlocked');
+        }
+      );
+      $(this).after(lock);
+      locks.push(lock);
 
       $(this).parent().find('.lock').click();
       this.i = i;

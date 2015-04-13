@@ -20,7 +20,7 @@ function dkan_datastore_feeds_importer_default() {
     'fetcher' => array(
       'plugin_key' => 'FeedsFileFieldFetcher',
       'config' => array(
-        'file_field' => 'field_upload',
+        'file_field' => dkan_datastore_file_upload_field(),
       ),
     ),
     'parser' => array(
@@ -40,7 +40,7 @@ function dkan_datastore_feeds_importer_default() {
         'truncate' => 1,
       ),
     ),
-    'content_type' => 'resource',
+    'content_type' => dkan_datastore_node_type(),
     'weight' => '0',
     'update' => 0,
     'import_period' => '-1',
@@ -60,7 +60,7 @@ function dkan_datastore_feeds_importer_default() {
     'fetcher' => array(
       'plugin_key' => 'FeedsFileFieldFetcher',
       'config' => array(
-        'file_field' => 'field_link_remote_file',
+        'file_field' => dkan_datastore_file_link_field(),
       ),
     ),
     'parser' => array(
@@ -80,7 +80,7 @@ function dkan_datastore_feeds_importer_default() {
         'truncate' => 1,
       ),
     ),
-    'content_type' => 'resource',
+    'content_type' => dkan_datastore_node_type(),
     'weight' => '0',
     'update' => 0,
     'import_period' => '-1',

@@ -80,6 +80,9 @@ function dkan_datastore_api_ctools_plugin_api($owner, $api) {
  * Implements hook_services_resources().
  */
 function dkan_datastore_api_services_resources() {
+
+  $datastore_node_type = dkan_datastore_node_type();
+
   return array(
     'dkan_datastore_search' => array(
       'index' => array(
@@ -159,6 +162,109 @@ function dkan_datastore_api_services_resources() {
         'access callback' => '_dkan_datastore_api_datastore_access',
         'access arguments' => array('view'),
         'access arguments append' => FALSE,
+      ),
+    ),
+    'dkan_datastore' => array(
+      'operations' => array(
+        'create' => array(
+          'file' => array(
+            'type' => 'module',
+            'module' => 'dkan_datastore_api',
+            'name' => 'dkan_datastore_api',
+          ),
+          'help' => 'Create a store with a file with base64 encoded data',
+          'callback' => '_dkan_datastore_api_datastore_create',
+          'access arguments' => array('create ' . $datastore_node_type . ' content'),
+          'args' => array(
+            array(
+              'name' => 'file',
+              'type' => 'array',
+              'description' => t('An array representing a file.'),
+              'source' => 'data',
+              'optional' => FALSE,
+            ),
+          ),
+        ),
+        'update' => array(
+          'file' => array(
+            'type' => 'module',
+            'module' => 'dkan_datastore_api',
+            'name' => 'dkan_datastore_api',
+          ),
+          'help' => 'Update a store with a file with base64 encoded data',
+          'callback' => '_dkan_datastore_api_datastore_update',
+          'access arguments' => array('edit any ' . $datastore_node_type . ' content'),
+          'args' => array(
+            array(
+              'name' => 'id',
+              'optional' => FALSE,
+              'type' => 'string',
+              'description' => 'Datastore ID',
+              'default value' => '',
+              'source' => array('path' => 0),
+            ),
+            array(
+              'name' => 'file',
+              'type' => 'array',
+              'description' => t('An array representing a file.'),
+              'source' => 'data',
+              'optional' => FALSE,
+            ),
+          ),
+        ),
+      ),
+      'actions' => array(
+        'create' => array(
+          'help' => 'Create store with a file with raw data.',
+          'file' => array(
+            'type' => 'module',
+            'module' => 'dkan_datastore_api',
+            'name' => 'dkan_datastore_api',
+          ),
+          'callback' => '_dkan_datastore_api_datastore_create_raw',
+          'access arguments' => array('create ' . $datastore_node_type . ' content'),
+        ),
+        'update' => array(
+          'help' => 'Update a store with a file with raw data.',
+          'file' => array(
+            'type' => 'module',
+            'module' => 'dkan_datastore_api',
+            'name' => 'dkan_datastore_api',
+          ),
+          'callback' => '_dkan_datastore_api_datastore_update_raw',
+          'access arguments' => array('edit any ' . $datastore_node_type . ' content'),
+          'args' => array(
+            array(
+              'name' => 'id',
+              'optional' => FALSE,
+              'type' => 'string',
+              'description' => 'Datastore ID',
+              'default value' => '',
+              'source' => array('path' => 1),
+            ),
+          ),
+        ),
+      ),
+    ),
+    'dkan_datastore_file' => array(
+      'delete' => array(
+        'file' => array(
+          'type' => 'module',
+          'module' => 'dkan_datastore_api',
+          'name' => 'dkan_datastore_api',
+        ),
+        'callback' => '_dkan_datastore_api_datastore_file_delete',
+        'access arguments' => array('edit any ' . $datastore_node_type . ' content'),
+        'args' => array(
+          array(
+            'name' => 'id',
+            'optional' => FALSE,
+            'type' => 'string',
+            'description' => 'Datastore ID',
+            'default value' => '',
+            'source' => array('path' => 0),
+          ),
+        ),
       ),
     ),
   );
@@ -485,4 +591,196 @@ function dkan_datastore_api_resource_build_index_list($results, $table, $fields,
  */
 function dkan_datastore_api_resource_help() {
   return t('Search a datastore table. :param resource_id: id or alias of the data that is going to be selected.');
+}
+
+/**
+ * For arguments, see: dkan_datastore_api_services_resources().
+ */
+function _dkan_datastore_api_datastore_create($file) {
+
+  $file = _services_arg_value($file, 'file');
+
+  // If the file data or filename is empty then bail.
+  if (!isset($file['file']) || empty($file['filename'])) {
+    return services_error(t("Missing data the file upload can not be completed"), 500);
+  }
+
+  $file_saved = process_file_argument($file);
+
+  if ($file_saved) {
+    $datastore = dkan_datastore_go();
+    if ($datastore) {
+      if ($datastore->createByFile($file_saved->uri, FALSE)) {
+
+        $result = new stdClass();
+        $result->result = 'success';
+        $result->datastore_id = $datastore->node->uuid;
+        $result->node_id = $datastore->node->nid;
+        return $result;
+      }
+    }
+  }
+  else {
+    return services_error(t('The store could not be created.'));
+  }
+}
+
+/**
+ * For arguments, see: dkan_datastore_api_services_resources().
+ */
+function _dkan_datastore_api_datastore_create_raw() {
+
+  $validators = array(
+    'file_validate_extensions' => array(),
+    'file_validate_size' => array(),
+  );
+
+  foreach ($_FILES['files']['name'] as $field_name => $file_name) {
+    $file = file_save_upload($field_name, $validators, file_default_scheme() . "://");
+
+    if (!empty($file->fid)) {
+      $file->status = FILE_STATUS_PERMANENT;
+      file_save($file);
+
+      // Required to be able to reference this file.
+      file_usage_add($file, 'dkan_datastore_api', 'files', $file->fid);
+
+      $datastore = dkan_datastore_go();
+      if ($datastore) {
+        if ($datastore->createByFile($file->uri, FALSE)) {
+
+          $result = new stdClass();
+          $result->result = 'success';
+          $result->datastore_id = $datastore->node->uuid;
+          $result->node_id = $datastore->node->nid;
+          return $result;
+        }
+      }
+    }
+    else {
+      return services_error(t('An unknown error occured'), 500);
+    }
+  }
+
+  return services_error(t('An unknown error occured'), 500);
+}
+
+/**
+ * For arguments, see: dkan_datastore_api_services_resources().
+ */
+function _dkan_datastore_api_datastore_update($id, $file) {
+
+  $file = _services_arg_value($file, 'file');
+
+  if (!isset($file['file']) || empty($file['filename'])) {
+    return services_error(t("The file is missing or empty."), 500);
+  }
+
+  $file_saved = process_file_argument($file);
+
+  if ($file_saved) {
+    $datastore = dkan_datastore_go($id);
+    if ($datastore) {
+      if ($datastore->updateByFile($file_saved->uri, FALSE)) {
+
+        $result = new stdClass();
+        $result->result = 'success';
+        $result->datastore_id = $datastore->node->uuid;
+        $result->node_id = $datastore->node->nid;
+        return $result;
+      }
+    }
+  }
+  else {
+    return services_error(t('The store could not be updated.'));
+  }
+}
+
+/**
+ * For arguments, see: dkan_datastore_api_services_resources().
+ */
+function _dkan_datastore_api_datastore_update_raw($id) {
+
+  $validators = array(
+    'file_validate_extensions' => array(),
+    'file_validate_size' => array(),
+  );
+
+  foreach ($_FILES['files']['name'] as $field_name => $file_name) {
+    $file = file_save_upload($field_name, $validators, file_default_scheme() . "://");
+
+    if (!empty($file->fid)) {
+      $file->status = FILE_STATUS_PERMANENT;
+      file_save($file);
+
+      file_usage_add($file, 'dkan_datastore_api', 'files', $file->fid);
+
+      $datastore = dkan_datastore_go($id);
+      if ($datastore) {
+        if ($datastore->updateByFile($file->uri, FALSE)) {
+
+          $result = new stdClass();
+          $result->result = 'success';
+          $result->datastore_id = $datastore->node->uuid;
+          $result->node_id = $datastore->node->nid;
+          return $result;
+        }
+      }
+    }
+    else {
+      return services_error(t('The store could not be updated.'));
+    }
+  }
+
+  return services_error(t('An unknown error occured'), 500);
+}
+
+/**
+ * For arguments, see: dkan_datastore_api_services_resources().
+ */
+function _dkan_datastore_api_datastore_file_delete($id) {
+
+  $datastore = dkan_datastore_go($id);
+  if ($datastore) {
+    if ($datastore->deleteFile()) {
+
+      $result = new stdClass();
+      $result->result = 'success';
+      $result->datastore_id = $datastore->node->uuid;
+      $result->node_id = $datastore->node->nid;
+      return $result;
+    }
+  }
+}
+
+/**
+ * Saves the received file.
+ */
+function process_file_argument($file) {
+
+  if (!isset($file['file']) || empty($file['filename'])) {
+    return FALSE;
+  }
+
+  if (empty($file['filepath'])) {
+    $file['filepath'] = file_default_scheme() . '://' . $file['filename'];
+  }
+  $dir = drupal_dirname($file['filepath']);
+
+  if (!file_prepare_directory($dir, FILE_CREATE_DIRECTORY)) {
+    return FALSE;
+  }
+
+  if (!$file_saved = file_save_data(base64_decode($file['file']), $file['filepath'], FILE_EXISTS_RENAME)) {
+    return FALSE;
+  }
+
+  if (isset($file['status']) && $file['status'] == 0) {
+    $file_saved->status = FILE_STATUS_PERMANENT;
+    file_save($file_saved);
+  }
+
+  file_usage_add($file_saved, 'dkan_datastore_api', 'files', $file_saved->fid);
+
+  return $file_saved;
 }

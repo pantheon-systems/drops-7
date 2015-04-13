@@ -25,11 +25,14 @@
 .colorizer-form label {
   float: left; /* LTR */
   clear: left; /* LTR */
-  width: 20em;
+  width: 40%;
+  line-height: 120%;
 }
 .colorizer-form .form-text,
 .colorizer-form .form-select {
   float: left; /* LTR */
+  width: 40%;
+  margin-left: 1em;
 }
 .colorizer-form .form-text {
   text-align: center;
@@ -37,29 +40,11 @@
   cursor: pointer;
 }
 
-#palette .hook {
-  float: left; /* LTR */
-  margin-top: 3px;
-  width: 16px;
-  height: 16px;
-}
-#palette .down,
-#palette .up,
-#palette .both {
-  background: url(images/hook.png) no-repeat 100% 0; /* LTR */
-}
-#palette .up {
-  background-position: 100% -27px; /* LTR */
-}
-#palette .both {
-  background-position: 100% -54px; /* LTR */
-}
-
 #palette .lock {
   float: left; /* LTR */
   position: relative;
-  top: -1.4em;
-  left: -10px; /* LTR */
+  top: 0.4em;
+  left: 0; /* LTR */
   width: 20px;
   height: 25px;
   background: url(../images/lock.png) no-repeat 50% 2px;
@@ -69,7 +54,7 @@
   background-position: 50% -22px;
 }
 #palette .form-item {
-  width: 20em;
+  width: 50%;
 }
 #palette .item-selected {
   background: #eee;
