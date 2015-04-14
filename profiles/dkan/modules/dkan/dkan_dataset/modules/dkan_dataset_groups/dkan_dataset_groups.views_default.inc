@@ -537,13 +537,15 @@ function dkan_dataset_groups_views_default_views() {
   $handler->display->display_options['fields']['gid']['relationship'] = 'og_membership_rel';
   $handler->display->display_options['fields']['gid']['group_type'] = 'count';
   $handler->display->display_options['fields']['gid']['label'] = '';
-  $handler->display->display_options['fields']['gid']['alter']['alter_text'] = TRUE;
   $handler->display->display_options['fields']['gid']['alter']['text'] = '[gid] Datasets';
   $handler->display->display_options['fields']['gid']['alter']['make_link'] = TRUE;
   $handler->display->display_options['fields']['gid']['alter']['path'] = 'node/!1';
   $handler->display->display_options['fields']['gid']['alter']['link_class'] = 'btn btn-small btn-primary';
   $handler->display->display_options['fields']['gid']['element_label_colon'] = FALSE;
   $handler->display->display_options['fields']['gid']['element_default_classes'] = FALSE;
+  $handler->display->display_options['fields']['gid']['format_plural'] = TRUE;
+  $handler->display->display_options['fields']['gid']['format_plural_singular'] = '1 Dataset';
+  $handler->display->display_options['fields']['gid']['format_plural_plural'] = '@count Datasets';
   /* Contextual filter: OG membership: Group ID */
   $handler->display->display_options['arguments']['gid']['id'] = 'gid';
   $handler->display->display_options['arguments']['gid']['table'] = 'og_membership';
