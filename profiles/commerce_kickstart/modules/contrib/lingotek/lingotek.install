@@ -663,7 +663,7 @@ function lingotek_update_7408(&$sandbox) {
       $node = lingotek_node_load_default($nid, NULL, TRUE);
       if ($node) {
         if (lingotek_managed_by_entity_translation($node->type)) {
-          lingotek_entity_translation_save_status('node', $node, array(Lingotek::convertLingotek2Drupal($locale)));
+          lingotek_entity_translation_save_status('node', $node, array(Lingotek::convertLingotek2Drupal($locale, FALSE)));
         }
       }
     }
@@ -945,6 +945,7 @@ function lingotek_update_7602(&$sandbox) {
  * Create translation profile for Lingotek settings of config items.
  */
 function lingotek_update_7603(&$sandbox) {
+  registry_rebuild();
   $default_profile = array();
   lingotek_save_config_profile($default_profile);
   return t('Created Lingotek translation profile for config items.');
@@ -965,4 +966,31 @@ function lingotek_update_7604(&$sandbox) {
   }
   variable_set('lingotek_entity_profiles', $entity_profiles);
   return t('Removed Lingotek translation profiles for bundles that not longer exist.');
+}
+
+/**
+ * Remove unnecessary 'config' variable, created as a byproduct of the additional-translation form.
+ */
+function lingotek_update_7605(&$sandbox) {
+  // Make sure this is not another module's variable.
+  $config = variable_get('config', FALSE);
+  if (isset($config['lingotek_translate_config_blocks'])) {
+    variable_del('config');
+  }
+  return t("Removed unnecessary 'config' variable from the variables table.");
+}
+
+/**
+ * If module was setup previously, add a setting confirming comment translation setup.
+ */
+function lingotek_update_7606(&$sandbox) {
+  // When upgrading from 5.x, if no comments were enabled for translation, then
+  // as long as the module has been setup, just initialize the comment variable
+  // to save the user from having to go through the setup process again.
+  $enabled_fields = variable_get('lingotek_enabled_fields', FALSE);
+  if (isset($enabled_fields['node']) && !isset($enabled_fields['comment'])) {
+    $enabled_fields['comment'] = array();
+    variable_set('lingotek_enabled_fields', $enabled_fields);
+    return t("Added flag confirming setup complete for comment translation (currently disabled).");
+  }
 }

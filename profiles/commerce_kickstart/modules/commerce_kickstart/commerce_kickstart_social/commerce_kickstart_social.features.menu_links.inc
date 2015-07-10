@@ -27,11 +27,12 @@ function commerce_kickstart_social_menu_default_menu_links() {
       ),
     ),
     'module' => 'menu',
-    'hidden' => '0',
-    'external' => '1',
-    'has_children' => '0',
-    'expanded' => '0',
-    'weight' => '-49',
+    'hidden' => 0,
+    'external' => 1,
+    'has_children' => 0,
+    'expanded' => 0,
+    'weight' => -49,
+    'customized' => 1,
   );
   // Exported menu link: menu-social-connection_like-us-on-facebook:https://www.facebook.com/commerceguys
   $menu_links['menu-social-connection_like-us-on-facebook:https://www.facebook.com/commerceguys'] = array(
@@ -50,11 +51,12 @@ function commerce_kickstart_social_menu_default_menu_links() {
       ),
     ),
     'module' => 'menu',
-    'hidden' => '0',
-    'external' => '1',
-    'has_children' => '0',
-    'expanded' => '0',
-    'weight' => '-50',
+    'hidden' => 0,
+    'external' => 1,
+    'has_children' => 0,
+    'expanded' => 0,
+    'weight' => -50,
+    'customized' => 1,
   );
   // Exported menu link: menu-social-connection_what-we-like-on-pinterest:http://pinterest.com/
   $menu_links['menu-social-connection_what-we-like-on-pinterest:http://pinterest.com/'] = array(
@@ -73,11 +75,12 @@ function commerce_kickstart_social_menu_default_menu_links() {
       ),
     ),
     'module' => 'menu',
-    'hidden' => '0',
-    'external' => '1',
-    'has_children' => '0',
-    'expanded' => '0',
-    'weight' => '-48',
+    'hidden' => 0,
+    'external' => 1,
+    'has_children' => 0,
+    'expanded' => 0,
+    'weight' => -48,
+    'customized' => 1,
   );
   // Translatables
   // Included for use with string extractors like potx.

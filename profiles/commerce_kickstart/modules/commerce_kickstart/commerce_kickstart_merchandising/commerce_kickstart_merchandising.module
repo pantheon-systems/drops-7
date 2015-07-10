@@ -20,3 +20,21 @@ function commerce_kickstart_merchandising_migrate_api() {
     );
   }
 }
+
+/**
+ * Implements hook_features_export_alter().
+ *
+ * Merchandising and Slidehow share the same fields, however they do not depend
+ * on one another. This is a Features 1.x -> 2.x gotcha. So we alter the export
+ * to remove/fix dependency and prevent the feature from appearing overridden in
+ * it's default state.
+ */
+function commerce_kickstart_merchandising_features_export_alter(&$export, $module_name) {
+  if ($module_name == 'commerce_kickstart_merchandising') {
+    if (isset($export['dependencies']['commerce_kickstart_slideshow'])) {
+      unset($export['dependencies']['commerce_kickstart_slideshow']);
+    }
+    $export['features']['field_base']['field_link'] = 'field_link';
+    $export['features']['field_base']['field_tagline'] = 'field_tagline';
+  }
+}

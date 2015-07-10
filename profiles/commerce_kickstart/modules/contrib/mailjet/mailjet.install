@@ -1,0 +1,52 @@
+<?php
+/**
+ * @file
+ * Functions called while installing, uninstalling or activation of the module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function mailjet_install()
+{
+    variable_set('mailjet_debug', FALSE);
+    cache_clear_all();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function mailjet_uninstall()
+{
+    variable_del('mailjet_from');
+    variable_del('mailjet_host');
+    variable_del('mailjet_on');
+    variable_del('mailjet_password');
+    variable_del('mailjet_port');
+    variable_del('mailjet_protocol');
+    variable_del('mailjet_test');
+    variable_del('mailjet_test_address');
+    variable_del('mailjet_username');
+    variable_del('mailjet_allowhtml');
+    variable_del('mailjet_debug');
+}
+
+/**
+ * Implements hook_disable().
+ */
+function mailjet_disable()
+{
+    variable_set('mailjet_on', FALSE);
+    variable_set('mail_system', array('default-system' => 'DefaultMailSystem'));
+}
+
+/**
+ * Implements hook_update().
+ */
+function mailjet_update_7000()
+{
+    if (variable_get('mailjet_on', FALSE)) {
+        variable_set('mail_system', array('default-system' => 'MailjetSmtpMailSystem'));
+    }
+    cache_clear_all();
+}

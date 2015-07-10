@@ -97,19 +97,13 @@ function commerce_discount_views_default_views() {
     ),
   );
   $handler->display->display_options['style_options']['empty_table'] = TRUE;
-  /* Footer: Global: Text area */
-  $handler->display->display_options['footer']['area']['id'] = 'area';
-  $handler->display->display_options['footer']['area']['table'] = 'views';
-  $handler->display->display_options['footer']['area']['field'] = 'area';
-  $handler->display->display_options['footer']['area']['label'] = 'Rules link';
-  $handler->display->display_options['footer']['area']['content'] = 'Access to <a href="/admin/config/workflow/rules?event=0&tag=Commerce+Discount">promotion rules</a>';
-  $handler->display->display_options['footer']['area']['format'] = 'full_html';
+
   /* No results behavior: Global: Text area */
   $handler->display->display_options['empty']['area']['id'] = 'area';
   $handler->display->display_options['empty']['area']['table'] = 'views';
   $handler->display->display_options['empty']['area']['field'] = 'area';
   $handler->display->display_options['empty']['area']['content'] = 'No discounts found.';
-  $handler->display->display_options['empty']['area']['format'] = 'filtered_html';
+
   /* Relationship: Entity Reference: Referenced Entity */
   $handler->display->display_options['relationships']['commerce_discount_offer_target_id']['id'] = 'commerce_discount_offer_target_id';
   $handler->display->display_options['relationships']['commerce_discount_offer_target_id']['table'] = 'field_data_commerce_discount_offer';

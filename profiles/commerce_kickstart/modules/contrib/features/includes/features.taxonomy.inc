@@ -49,6 +49,7 @@ function taxonomy_features_export($data, &$export, $module_name = '') {
       $fields = field_info_instances('taxonomy_term', $machine_name);
       foreach ($fields as $name => $field) {
         $pipe['field'][] = "taxonomy_term-{$field['bundle']}-{$field['field_name']}";
+        $pipe['field_instance'][] = "taxonomy_term-{$field['bundle']}-{$field['field_name']}";
       }
     }
   }

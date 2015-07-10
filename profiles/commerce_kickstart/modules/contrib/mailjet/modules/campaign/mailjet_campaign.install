@@ -1,0 +1,53 @@
+<?php
+/**
+ * @file
+ * Functions called while installing, uninstalling or activation of the module.
+ */
+
+/**
+ * Create the campaign table.
+ */
+function mailjet_campaign_schema() {
+  $schema['mailjet_campaign'] = array(
+    'description' => 'Campaigns',
+    'fields' => array(
+      'campaign_id' => array(
+        'description' => 'Primary key',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'order_id' => array(
+        'type' => 'int',
+        'length' => 10,
+        'description' => 'Order id',
+        'not null' => TRUE,
+        'default' => 0,
+       ),
+      'name' => array(
+        'type' => 'varchar',
+        'length' => 500,
+        'description' => 'Campaign name',
+        'not null' => TRUE,
+        'default' => 0,
+       ),
+      'created' => array(
+        'type' => 'int',
+        'length' => 20,
+        'description' => 'Created date',
+        'not null' => TRUE,
+        'default' => 0,
+       ),
+     ),
+    'primary key' => array('campaign_id'),
+    'foreign keys' => array(
+      'order_ids' => array(
+        'table' => 'commerce_order',
+        'columns' => array('order_id' => 'order_id'),
+      ),
+    ),
+  );
+  cache_clear_all();
+  return $schema;
+
+}

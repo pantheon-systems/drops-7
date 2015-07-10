@@ -5,9 +5,9 @@ dependencies[] = commerce
 dependencies[] = commerce_shipping
 core = 7.x
 
-; Information added by Drupal.org packaging script on 2014-02-19
-version = "7.x-2.1"
+; Information added by Drupal.org packaging script on 2015-04-08
+version = "7.x-2.2"
 core = "7.x"
 project = "commerce_shipping"
-datestamp = "1392818306"
+datestamp = "1428479882"
 

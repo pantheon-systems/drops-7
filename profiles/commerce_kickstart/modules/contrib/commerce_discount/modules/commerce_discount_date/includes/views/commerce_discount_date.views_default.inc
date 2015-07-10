@@ -11,6 +11,10 @@
  * Add start and end date to the discount overview.
  */
 function commerce_discount_date_views_default_views_alter(&$views) {
+  if (!isset($views['commerce_discount_overview'])) {
+    return NULL;
+  }
+
   $date_fields = _commerce_discount_date_views_get_view_delta();
 
   $view = &$views['commerce_discount_overview'];

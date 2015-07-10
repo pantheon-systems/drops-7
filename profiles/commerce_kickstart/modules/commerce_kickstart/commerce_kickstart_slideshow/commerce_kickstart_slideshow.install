@@ -6,14 +6,7 @@
  * Rebuilds the feature immediately after it's enabled.
  */
 function commerce_kickstart_slideshow_enable() {
-  // Rebuild the features static caches.
-  features_include(TRUE);
-
-  $module = 'commerce_kickstart_slideshow';
-  $feature = feature_load($module);
-  $items[$module] = array_keys($feature->info['features']);
-  _features_restore('enable', $items);
-  _features_restore('rebuild', $items);
+  commerce_kickstart_rebuild_feature('commerce_kickstart_slideshow');
 }
 
 /**

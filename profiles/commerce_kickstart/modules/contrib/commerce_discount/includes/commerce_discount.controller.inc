@@ -20,8 +20,10 @@ class CommerceDiscountControllerExportable extends EntityAPIControllerExportable
     // Add commerce_discout_offer full entity export.
     $wrapper = entity_metadata_wrapper('commerce_discount', $entity);
     $discount_offer = $wrapper->commerce_discount_offer->value();
-    unset($discount_offer->discount_offer_id);
-    $vars['commerce_discount_offer'] = get_object_vars($discount_offer);
+    if (!empty($discount_offer)) {
+      unset($discount_offer->discount_offer_id);
+      $vars['commerce_discount_offer'] = get_object_vars($discount_offer);
+    }
 
     unset($vars[$this->statusKey], $vars[$this->moduleKey], $vars['is_new']);
     if ($this->nameKey != $this->idKey) {

@@ -1,0 +1,15 @@
+name = Mailjet Lists
+description = "Add support for MailJet Lists."
+core = 7.x
+php = 5.3
+package = MailJet
+
+dependencies[] = mailjet
+dependencies[] = viewfield
+
+; Information added by Drupal.org packaging script on 2015-05-08
+version = "7.x-2.3"
+core = "7.x"
+project = "mailjet"
+datestamp = "1431081784"
+

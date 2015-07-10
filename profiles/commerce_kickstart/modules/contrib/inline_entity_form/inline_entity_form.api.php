@@ -31,7 +31,7 @@ function hook_inline_entity_form_entity_form_alter(&$entity_form, &$form_state) 
  *   The form state of the parent form.
  */
 function hook_inline_entity_form_reference_form_alter(&$reference_form, &$form_state) {
-  $reference_form['entity_id']['description'] = t('New autocomplete description');
+  $reference_form['entity_id']['#description'] = t('New autocomplete description');
 }
 
 /**
@@ -63,7 +63,23 @@ function hook_inline_entity_form_settings_alter(&$settings, $field, $instance) {
  * hook_entity_property_info().
  *
  * @param $fields
- *   The fields to alter.
+ *   The table fields to alter. Each field is represented by an associative
+ *   array containing the following keys:
+ *   - type: either 'property', 'field' or 'callback' to specify how the data is
+ *     defined on the related entity.
+ *   - label: the title of the table field's column in the IEF table.
+ *   - sanitized: for 'property' type table fields, a boolean indicating whether
+ *     or not the data has already been sanitized for output; if not present or
+ *     FALSE, theme_inline_entity_form_entity_table() will sanitize the data for
+ *     output using check_plain().
+ *   - formatter: for 'field' type table fields, the machine-name of the display
+ *     formatter to use to render the field data. If this is used, then further
+ *     keys will be set in the array passed to field_view_field() as the
+ *     $display parameter. This allows any of the settings defined in the field
+ *     formatter's hook_field_formatter_info() to be used.
+ *   - weight: the sort order of the column in the IEF table.
+ *   - render_callback: for 'callback' type table fields, a function name that
+ *     returns a renderable array.
  * @param $context
  *   An array with the following keys:
  *   - parent_entity_type: The type of the parent entity.

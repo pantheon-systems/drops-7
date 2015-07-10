@@ -700,7 +700,11 @@ class LingotekConfigSet implements LingotekTranslatableEntity {
 
     $content = '';
     foreach ($translatable as $field) {
-      $text = lingotek_filter_placeholders($this->source_data[$field], TRUE);
+      $field_data = $this->source_data[$field];
+      if (variable_get('lingotek_config_encode_ampersand', FALSE)) {
+        $field_data = str_replace("&", "&amp;", $field_data);
+      }
+      $text = lingotek_filter_placeholders($field_data, TRUE);
 
       if ($text) {
         $current_field = '<' . self::TAG_PREFIX . $field . '>';

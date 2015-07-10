@@ -274,7 +274,7 @@ class LingotekSession {
       $this->logged_in = FALSE;
       $this->last_login_msg = $error;
       LingotekLog::error(
-          "Unable to log in", array(
+          "Unable to log into: " . $this->url, array(
         'params' => $params,
         'error' => $error,
         'response' => json_encode($response),

@@ -10,7 +10,7 @@ function lingotek_perform_action(nid, action) {
 }
 
 (function ($) {
-  function lingotekTriggerModal(self) {
+  function lingotek_trigger_modal(self) {
     var $self = $(self);
     url = $self.attr('href');
     var entity_ids = [];
@@ -74,11 +74,11 @@ function lingotek_perform_action(nid, action) {
         val = $(this).val();
 
         if(val == 'reset' || val == 'delete') {
-          lingotekTriggerModal($('#'+val+'-link'));
+          lingotek_trigger_modal($('#'+val+'-link'));
         } else if(val == 'edit') {
-          lingotekTriggerModal($('#edit-settings-link'));
+          lingotek_trigger_modal($('#edit-settings-link'));
         } else if(val == 'workflow') {
-          lingotekTriggerModal($('#change-workflow-link'));
+          lingotek_trigger_modal($('#change-workflow-link'));
         } else  {
           $('input#edit-actions-submit.form-submit').trigger('click');
         }

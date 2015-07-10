@@ -47,5 +47,6 @@ function commerce_yotpo_requirements($phase) {
       );
     }
   }
+
   return $requirements;
 }

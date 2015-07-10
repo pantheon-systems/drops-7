@@ -1,0 +1,134 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function mailjet_list_enable() {
+
+  // Clear the field info cache so the type is known.
+  field_info_cache_clear();
+
+  // Add the customer profile reference fields for each profile type.
+  $field_name = 'mailjet_list_view';
+
+  $field = field_info_field($field_name);
+  $instance = field_info_instance('mailjet_list', $field_name, 'mailjet_list');
+
+  if (empty($field)) {
+    $field = array(
+        'field_name' => $field_name,
+        'type' => 'viewfield',
+        'cardinality' => 1,
+        'required' => TRUE,
+        'entity_types' => array('mailjet_list'),
+        'translatable' => FALSE,
+        'settings' => array(),
+    );
+    $field = field_create_field($field);
+  }
+
+  if (empty($instance)) {
+    $instance = array(
+        'field_name' => $field_name,
+        'entity_type' => 'mailjet_list',
+        'bundle' => 'mailjet_list',
+        'label' => 'List View',
+        'description' => 'Use this drop down to select which Drupal contact view you wish to associate with your Mailjet Contact List.',
+        'required' => TRUE,
+        'widget' => array(
+            'type' => 'viewfield_select',
+            'weight' => -5,
+        ),
+        'settings' => array(
+            'allowed_style' => 'mailjet_list'
+        ),
+        'display' => array(),
+    );
+
+    field_create_instance($instance);
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function mailjet_list_schema() {
+  $schema = array();
+
+  $schema['mailjet_list'] = array(
+      'description' => 'The base table for mailjet list entities.',
+      'fields' => array(
+          'id' => array(
+              'description' => 'The primary identifier for a list entity, used internally only.',
+              'type' => 'serial',
+              'unsigned' => TRUE,
+              'not null' => TRUE,
+          ),
+          'uid' => array(
+              'description' => 'The {users}.uid that owns the recurring entity.',
+              'type' => 'int',
+              'not null' => TRUE,
+              'default' => 0,
+          ),
+          'status' => array(
+              'description' => 'Boolean indicating whether or not the recurring entity is active.',
+              'type' => 'int',
+              'size' => 'tiny',
+              'not null' => TRUE,
+              'default' => 1,
+          ),
+          'label' => array(
+              'description' => 'Title of your list (max length 60 characters).',
+              'type' => 'varchar',
+              'length' => 60,
+              'not null' => TRUE,
+              'default' => '',
+          ),
+          'name' => array(
+              'description' => 'List name used as name at lists.mailjet.com.',
+              'type' => 'varchar',
+              'length' => 60,
+              'not null' => TRUE,
+              'default' => '',
+          ),
+          'list_id' => array(
+              'description' => 'Mailjet List ID.',
+              'type' => 'int',
+              'not null' => FALSE,
+          ),
+          'data' => array(
+              'type' => 'blob',
+              'not null' => FALSE,
+              'size' => 'big',
+              'serialize' => TRUE,
+              'description' => 'A serialized array of additional data.',
+          ),
+      ),
+      'primary key' => array('id'),
+      'indexes' => array(
+          'list_id' => array('list_id'),
+          'uid' => array('uid'),
+      ),
+      'foreign keys' => array(
+          'creator' => array(
+              'table' => 'users',
+              'columns' => array('uid' => 'uid'),
+          ),
+      ),
+  );
+
+  return $schema;
+}
+
+function mailjet_list_uninstall() {
+    if (field_info_field('mailjet_list_view')) {
+        field_delete_field('mailjet_list_view');
+        // Purge field data now to allow mailjet stats module to be uninstalled
+        // if this is the only field remaining.
+        field_purge_batch(10);
+    }
+}

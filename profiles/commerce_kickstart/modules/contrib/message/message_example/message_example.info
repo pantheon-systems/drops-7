@@ -29,9 +29,9 @@ features[variable][] = field_bundle_settings_message__example_create_node
 features[variable][] = field_bundle_settings_message__example_user_register
 features[views_view][] = message_example
 
-; Information added by drupal.org packaging script on 2013-07-23
-version = "7.x-1.9"
+; Information added by Drupal.org packaging script on 2015-04-19
+version = "7.x-1.10"
 core = "7.x"
 project = "message"
-datestamp = "1374541036"
+datestamp = "1429477691"
 

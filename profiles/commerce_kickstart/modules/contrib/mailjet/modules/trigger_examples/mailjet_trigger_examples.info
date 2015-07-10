@@ -1,0 +1,22 @@
+name = Mailjet Trigger Examples
+description = "Examples of displaying information for customer's orders"
+core = 7.x
+php = 5.3
+package = MailJet
+
+dependencies[] = mailjet
+dependencies[] = rules
+dependencies[] = commerce_message
+dependencies[] = entityreference
+dependencies[] = entity_token
+dependencies[] = message
+dependencies[] = message_notify
+;dependencies[] = commerce_abandoned_cart_notification
+
+files[] = mailjet_trigger_examples.rules_defaults.inc
+; Information added by Drupal.org packaging script on 2015-05-08
+version = "7.x-2.3"
+core = "7.x"
+project = "mailjet"
+datestamp = "1431081784"
+

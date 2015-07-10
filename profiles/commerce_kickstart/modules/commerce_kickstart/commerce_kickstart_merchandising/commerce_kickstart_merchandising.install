@@ -4,13 +4,7 @@
  * Implements hook_enable().
  */
 function commerce_kickstart_merchandising_enable() {
-  // Rebuild the feature.
-  features_include(TRUE);
-  $module = 'commerce_kickstart_merchandising';
-  $feature = feature_load($module);
-  $items[$module] = array_keys($feature->info['features']);
-  _features_restore('enable', $items);
-  _features_restore('rebuild', $items);
+  commerce_kickstart_rebuild_feature('commerce_kickstart_merchandising');
 
   drupal_static_reset();
   $default_theme = variable_get('theme_default', 'omega_kickstart');

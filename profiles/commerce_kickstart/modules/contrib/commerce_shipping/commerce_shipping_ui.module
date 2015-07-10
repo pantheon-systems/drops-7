@@ -106,7 +106,7 @@ function commerce_shipping_ui_menu() {
 
       $items['admin/commerce/config/shipping/services/' . $service_name_arg] = array(
         'title callback' => 'commerce_shipping_service_get_title',
-        'title arguments' => array($service_name),
+        'title arguments' => array((string) $service_name),
         'description' => 'Redirect to the shipping service list.',
         'page callback' => 'drupal_goto',
         'page arguments' => array('admin/commerce/config/shipping/services/' . $method_name_arg),

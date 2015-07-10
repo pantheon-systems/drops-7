@@ -1,0 +1,272 @@
+<?php
+
+/**
+ * Implements hook_views_api().
+ */
+function mailjet_event_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'mailjet_event') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function mailjet_event_menu() {
+  $items = array();
+
+  $items['mailjetevent'] = array(
+    'page callback' => 'mailjet_event_callback',
+    'access arguments' => array(
+      'administer mailjet module'
+    ),
+    'type' => MENU_CALLBACK
+  );
+
+  return $items;
+}
+
+/**
+ * Impliments hook_entity_info().
+ */
+function mailjet_event_entity_info() {
+  $data = array();
+
+  $data['mailjet_event'] = array(
+    'label' => t('Mailjet Event'),
+    'plural label' => t('Mailjet Events'),
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'views controller class' => 'EntityDefaultViewsController',
+    'base table' => 'mailjet_event',
+    'uri callback' => 'mailjet_event_uri',
+    'fieldable' => FALSE,
+    'entity keys' => array(
+      'id' => 'id',
+    ),
+    'bundles' => array(
+      'mailjet_event' => array(
+        'label' => t('Mailjet Event'),
+      ),
+    ),
+    'load hook' => 'mailjet_event_load',
+    'access callback' => 'mailjet_event_access',
+    'module' => 'mailjet_event',
+  );
+
+  return $data;
+}
+
+/**
+ * Returns an initialized MailJet Event Entity
+ */
+function mailjet_event_new($mailjet_user, $event) {
+  $values = array(
+  	'id' => NULL,
+    'uid' => $mailjet_user->uid,
+    'event' => $event,
+  );
+
+  return entity_create('mailjet_list', $values);
+}
+
+/**
+ * Saves a MailJet Event Entity
+ */
+function mailjet_event_save($mailjet_event) {
+  return entity_save('mailjet_event', $mailjet_event);
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function mailjet_event_form_mailjet_api_form_alter(&$form, &$form_state, $form_id) {
+
+  $form['event'] = array(
+  	'#type' => 'fieldset',
+    '#title' => t('Event Callback URL'),
+  );
+  $form['event']['event_url'] = array(
+  	'#type' => 'markup',
+    '#markup' => url('mailjetevent', array('absolute' => TRUE)),
+  );
+  variable_set("mj_callback_url", url('mailjetevent', array('absolute' => TRUE)));
+
+}
+
+/**
+ * Callback for handling MailJet API calls
+ */
+function mailjet_event_callback() {
+  // No Event sent.
+  if ($_SERVER['REQUEST_METHOD'] != 'POST') {
+    drupal_not_found();
+  }
+
+  $post = trim(file_get_contents('php://input'));
+
+  // Decode Trigger Informations.
+  $event = json_decode($post, TRUE);
+
+  // No Informations sent with the Event.
+  if (!is_array($event) || !isset($event['event'])) {
+    drupal_not_found();
+  }
+
+  if (isset($event['email'])) {
+    $mail_user = user_load_by_mail($event['email']);
+  }
+  elseif (isset($event['original_address'])) {
+    $mail_user = user_load_by_mail($event['original_address']);
+  }
+
+  $mailjet_event = mailjet_event_new($mail_user, $event);
+  mailjet_event_save($mailjet_event);
+
+  switch ($event['event']) {
+    case 'open' :
+      rules_invoke_event('mailjet_open', $mailjet_event);
+
+      break;
+    case 'click' :
+      rules_invoke_event('mailjet_click', $mailjet_event);
+      break;
+
+    case 'bounce' :
+      rules_invoke_event('mailjet_bounce', $mailjet_event);
+      break;
+
+    case 'spam' :
+      rules_invoke_event('mailjet_spam', $mailjet_event);
+      break;
+
+    case 'blocked' :
+      rules_invoke_event('mailjet_blocked', $mailjet_event);
+      break;
+
+    case 'unsub' :
+      rules_invoke_event('mailjet_unsub', $mailjet_event);
+      break;
+
+    case 'typofix' :
+      $mail_user = user_load_by_mail($event['original_address']);
+      rules_invoke_event('mailjet_typofix', $mailjet_event);
+      drupal_send_headers();
+      break;
+
+    // No handler
+    default :
+      drupal_not_found();
+      break;
+  }
+
+  drupal_send_headers();
+  drupal_exit();
+}
+
+/**
+ * Returns a list of error options
+ */
+function mailjet_event_error_list() {
+  return array(
+    'recipient|user unknown' => array(
+      'title' => t("User Unkown"),
+      'description' => t("Email address doesn't exist, double check it for typos !")
+    ),
+    'recipient|mailbox inactive' => array(
+      'title' => t("Mailbox Inactive"),
+      'description' => t("Account has been inactive for too long, you should consider this address doesn't exist anymore.")
+    ),
+    'recipient|quota exceeded' => array(
+      'title' => t("Quota Exceeded"),
+      'description' => t("Even though this may be a non permanent error, most of the time when accounts are over quota, it means they are inactive.")
+    ),
+    'domain|invalid domain' => array(
+      'title' => t("Invalid Domain"),
+      'description' => t("There's a typo in the domain name part of the address. Or the address is so old that its domain has expired !")
+    ),
+    'domain|no mail host' => array(
+      'title' => t("No mail host"),
+      'description' => t("Nobody answers when we knock at the door..")
+    ),
+    'domain|relay/access denied' => array(
+      'title' => t("Relay/Access Denied"),
+      'description' => t("The destination mail server is refusing to talk to us.")
+    ),
+    'domain|greylisted' => array(
+      'title' => t("Graylisted"),
+      'description' => t("This is always very temporary, and you should never see this for a bounce !")
+    ),
+    'spam|sender blocked' => array(
+      'title' => t("Sender Blocked"),
+      'description' => t("This is quite bad! You should contact us to investigate this issue.")
+    ),
+    'spam|content blocked' => array(
+      'title' => t("Content Blocked"),
+      'description' => t("Something in your email has triggered an antispam and your email was rejected. Please contact us so we can study the email content and report any false positive.")
+    ),
+    'spam|policy issue' => array(
+      'title' => t("Policy issue"),
+      'description' => t("We do our best to avoid these, with outbound throttling and following the best practices. We receive alerts when this happens, but make sure to contact us for further information and workaround.")
+    ),
+    'system|system issue' => array(
+      'title' => t("System Issue"),
+      'description' => t("Something went wrong with our servers. This should not happen, and never be permanent !")
+    ),
+    'system|protocol issue' => array(
+      'title' => t("Protocal Issue"),
+      'description' => t("Something went wrong with our servers. This should not happen, and never be permanent !")
+    ),
+    'system|connection issue' => array(
+      'title' => t("Connection Issue"),
+      'description' => t("Something went wrong with our servers. This should not happen, and never be permanent !")
+    ),
+    'mailjet|preblocked' => array(
+      'title' => t("Preblocked"),
+      'description' => t("You tried to send an email to an address that recently (or repeatedly) bounced. We didn't try to send it to avoid damaging your reputation. (Soon: see options to bypass email blocking)")
+    ),
+    'mailjet|duplicate in campaign' => array(
+      'title' => t("Duplicate in campaign"),
+      'description' => t("You used X-Mailjet-DeduplicateCampaign and sent more than one email to a single recipient. Only the first was sent, others are blocked.")
+    )
+  );
+}
+
+/**
+ * Returns a options select list of errors
+ */
+function mailjet_event_error_options() {
+  $error_list = mailjet_event_error_list();
+  $error_options = array();
+  foreach ($error_list as $key => $error) {
+    $error_options[$key] = $error['title'];
+  }
+  return $error_options;
+}
+
+/**
+ * Callback for getting payment transaction properties.
+ */
+function mailjet_event_get_properties($data, array $options, $name) {
+  switch ($name) {
+  	case 'error':
+  	  if (isset($data->event['error_related_to']) && isset($data->event['error'])) {
+  	    return $data->event['error_related_to'] . '|' . $data->event['error'];
+  	  }
+  	  else {
+  	    return NULL;
+  	  }
+  	  break;
+
+	  case 'error_message':
+	    if (isset($data->event['error_related_to']) && isset($data->event['error'])) {
+	      $mailjet_errors = mailjet_event_error_list();
+	      return $mailjet_errors[$data->event['error_related_to'] . '|' . $data->event['error']]['description'];
+	    }
+	    else {
+	      return NULL;
+	    }
+	    break;
+  }
+}

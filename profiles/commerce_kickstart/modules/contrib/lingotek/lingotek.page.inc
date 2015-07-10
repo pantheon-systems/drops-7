@@ -12,7 +12,7 @@ function lingotek_download_translations_form($form, $form_state, $node, $documen
 
   module_load_include('lingotek', 'lingotek.bulk_grid', 'inc');
   $form = array();
-  
+
   $document = is_null($document) ? LingotekDocument::load($node->lingotek['document_id']) : $document;
 
   $document_progress = $document->getProgress();
@@ -153,7 +153,7 @@ function lingotek_push_form($form, $form_state, $node) {
     '#collapsible' => TRUE,
     '#collapsed' => FALSE,
   );
-  
+
   $form['content_push']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Upload'),
@@ -271,7 +271,7 @@ function lingotek_publish_form_submit($form, $form_state) {
     $languages_updated_html = "<ul><li>" . implode("</li><li>", $languages_updated) . "</li></ul>";
 
     if ($updates > 0) {
-      drupal_set_message(t('The following languages have been <b><i>@publish_status_text</i></b>: ' . $languages_updated_html, array('@publish_status_text' => $publish_status_text, '@languages_updated_html' => $languages_updated_html))); //'@node_title' => $node->title, 
+      drupal_set_message(t('The following languages have been <b><i>@publish_status_text</i></b>: ' . $languages_updated_html, array('@publish_status_text' => $publish_status_text, '@languages_updated_html' => $languages_updated_html))); //'@node_title' => $node->title,
     }
     else {
       drupal_set_message(t('Nothing was changed, since no languages were selected'));
@@ -314,7 +314,7 @@ function lingotek_pm($node) {
       ),
     ),
   );
-  
+
   $sync_status = $node->lingotek['upload_status'];
 
   // node translation support
@@ -346,14 +346,14 @@ function lingotek_pm($node) {
 
       $document = LingotekDocument::load($node->lingotek['document_id']);
       $progress = $document->getProgress();
-      
+
       if ($progress->results == 'success') {
 
         $download_form = drupal_get_form('lingotek_download_translations_form', $node, $document);
         $output[] = array(
           '#markup' => drupal_render($download_form),
         );
-        
+
         if ($document->hasPhasesToComplete()) {
           // Add the mark as complete table if there are complete-eligible phrases.
           $drupal_phase_complete_from = drupal_get_form('lingotek_mark_phases_complete', $node, $document);
@@ -383,9 +383,9 @@ function lingotek_pm($node) {
           '#collapsible' => TRUE,
           '#collapsed' => TRUE,
         );
-      
+
       }
-      
+
       /* REMOVE DISASSOCIATE_TRANSLTIONS FORM FROM THE TRANSLATE PAGE, FOR NOW
       $disassociate_translations_form = drupal_get_form('lingotek_entity_disassociate_form', $node->nid);
       $output['disassociate_translations'] = array(
@@ -513,7 +513,7 @@ function lingotek_mark_phases_complete($form, $form_state, $node, $document = NU
   if (class_exists('LingotekPhase') && $document_id) {
     $api = LingotekApi::instance();
     $progress = $document->getProgress();
-    
+
     if ($progress) {
       $targets = $progress->translationTargets;
 
@@ -641,7 +641,7 @@ function page_sync_comment_translations($comment_id) {
 }
 
 /*
- * 
+ *
  */
 function lingotek_workbench_redirect($entity_type, $entity_id, $lingotek_locale) {
   $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale);
@@ -650,7 +650,19 @@ function lingotek_workbench_redirect($entity_type, $entity_id, $lingotek_locale)
     cache_clear_all($entity_id, "cache_entity_$entity_type");
   }
 
-  $entity = lingotek_entity_load_single($entity_type, $entity_id);
+  if ($entity_type == 'config') {
+    // special-case handling of non-entity redirect
+    $set_id = LingotekConfigSet::getSetId($entity_id);
+    $doc_id = LingotekConfigSet::getDocId($set_id);
+    $entity = (object) array(
+          'id' => $entity_id,
+          'lingotek' => array('document_id' => $doc_id),
+          'language' => 'placeholder for the config language',
+    );
+  }
+  else {
+    $entity = lingotek_entity_load_single($entity_type, $entity_id);
+  }
   $ln = LingotekEntity::load($entity, $entity_type);
 
   if ($ln->language == $drupal_language_code && empty($entity->lingotek['allow_source_overwriting'])) {

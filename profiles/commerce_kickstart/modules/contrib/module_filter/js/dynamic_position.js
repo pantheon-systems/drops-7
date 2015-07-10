@@ -1,33 +1,48 @@
 (function($) {
-  Drupal.behaviors.moduleFilterDynamicPosition = {
-    attach: function() {
-      $(window).scroll(function() {
+
+Drupal.behaviors.moduleFilterDynamicPosition = {
+  attach: function(context) {
+    var $window = $(window);
+
+    $('#module-filter-wrapper', context).once('dynamic-position', function() {
+      // Move the submit button just below the tabs.
+      $('#module-filter-tabs').append($('#module-filter-submit'));
+
+      var positionSubmit = function() {
+        var $tabs = $('#module-filter-tabs');
+        var $submit = $('#module-filter-submit', $tabs);
+
         // Vertical movement.
-        var top = $('#module-filter-tabs').offset().top;
-        var bottom = top + $('#module-filter-tabs').height();
-        var windowHeight = $(window).height();
-        if (((bottom - windowHeight) > ($(window).scrollTop() - $('#module-filter-submit').height())) && $(window).scrollTop() + windowHeight - $('#module-filter-submit').height() - $('#all-tab').height() > top) {
-          $('#module-filter-submit').removeClass('fixed-top').addClass('fixed fixed-bottom');
+        var bottom = $tabs.offset().top + $tabs.outerHeight();
+        if ($submit.hasClass('fixed-bottom')) {
+          bottom += $submit.height();
         }
-        else if (bottom < $(window).scrollTop()) {
-          $('#module-filter-submit').removeClass('fixed-bottom').addClass('fixed fixed-top');
+        if (bottom >= $window.height() + $window.scrollTop()) {
+          $submit.addClass('fixed fixed-bottom');
+          $tabs.css('padding-bottom', $submit.height());
         }
         else {
-          $('#module-filter-submit').removeClass('fixed fixed-bottom fixed-top');
+          $submit.removeClass('fixed fixed-bottom');
+          $tabs.css('padding-bottom', 0);
         }
 
         // Horizontal movement.
-        if ($('#module-filter-submit').hasClass('fixed-bottom') || $('#module-filter-submit').hasClass('fixed-top')) {
-          var left = $('#module-filter-tabs').offset().left - $(window).scrollLeft();
-          if (left != $('#module-filter-submit').offset().left - $(window).scrollLeft()) {
-            $('#module-filter-submit').css('left', left);
+        if ($submit.hasClass('fixed-bottom') || $submit.hasClass('fixed-top')) {
+          var left = $tabs.offset().left - $window.scrollLeft();
+          if (left != $submit.offset().left - $window.scrollLeft()) {
+            $submit.css('left', left);
           }
         }
-      });
-      $(window).trigger('scroll');
-      $(window).resize(function() {
-        $(window).trigger('scroll');
-      });
-    }
+      };
+
+      // Control the positioning.
+      $window.scroll(positionSubmit);
+      $window.resize(positionSubmit);
+      var moduleFilter = $('input[name="module_filter[name]"]').data('moduleFilter');
+      moduleFilter.element.bind('moduleFilter:adjustHeight', positionSubmit);
+      moduleFilter.adjustHeight();
+    });
   }
+};
+
 })(jQuery);

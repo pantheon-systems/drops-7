@@ -1,0 +1,17 @@
+<?php
+
+include_once('features_test.features.inc');
+
+/**
+ * Implements hook_system_info_alter().
+ */
+ function features_test_system_info_alter(&$info, $file, $type) {
+  // Don't run during installation.
+  if (variable_get('install_task') != 'done') {
+    return;
+  }
+  // Unhide the test module so tests can run properly.
+  if ($type == 'module' && in_array($file->name, array('features_test'))) {
+    $info['hidden'] = FALSE;
+  }
+}

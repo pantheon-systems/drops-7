@@ -161,12 +161,6 @@ function lingotek_get_sync_upload_batch_elements($entity_type, $upload_nids = ar
  * etc.), that need to be uploaded.
  */
 function lingotek_get_sync_upload_config_batch_elements($set_ids = array()) {
-  // pull outstanding imports from localize.drupal.org, if desired
-  if (variable_get('lingotek_use_translation_from_drupal')) {
-    module_load_include('admin.inc', 'lingotek');
-    $modules = lingotek_admin_get_enabled_modules();
-    lingotek_admin_load_l10n_update_batch($modules);  // sets a separate batch for processing module imports from Drupal
-  }
 
   $operations = array();
   if (is_array($set_ids)) {
@@ -287,11 +281,11 @@ function lingotek_sync_upload_node_finished($success, $results, $operations, $co
     $message .= (isset($results['uploaded_nids']) && is_array($results['uploaded_nids'])) ? ' (' . format_plural($count, 'entity id', 'entity ids') . ': ' . implode(", ", $results['uploaded_nids']) . ')' : '';
     $message .= (isset($results['disabled'])) ? ' ' . t("<i>(Note: entities with the Disabled profile must be set to an enabled profile to be uploaded)</i>") : "";
     $status = (isset($results['disabled'])) ? 'warning' : 'status';
-    drupal_set_message($message, $status);
+    drupal_set_message(filter_xss($message), $status);
   }
   else {
     $message = t('Finished with an error.');
-    drupal_set_message($message, 'error');
+    drupal_set_message(filter_xss($message), 'error');
   }
 }
 
@@ -473,11 +467,11 @@ function lingotek_field_language_data_cleanup_update_entity($entity_type, $entit
   // Use 'language' as a fallback in case the entity doesn't give lang field.
   $language_field = isset($info['entity keys']['language']) ? $info['entity keys']['language'] : 'language';
   $context['message'] = t('Preparing translatable content for @entity_type: @entity_title', array('@entity_type' => $entity_type, '@entity_title' => $entity->$label_field));
-  if ($entity->$language_field != 'und') {
+  if ($entity->$language_field != LANGUAGE_NONE && ($entity_type != 'node' || !lingotek_uses_node_translation($entity))) {
     $translatable_fields = lingotek_translatable_fields();
     foreach ($translatable_fields as $field_name) {
-      if (!empty($entity->{$field_name}['und']) && empty($entity->{$field_name}[$entity->{$language_field}])) {
-        $entity->{$field_name}[$entity->{$language_field}] = $entity->{$field_name}['und'];
+      if (!empty($entity->{$field_name}[LANGUAGE_NONE]) && empty($entity->{$field_name}[$entity->{$language_field}])) {
+        $entity->{$field_name}[$entity->{$language_field}] = $entity->{$field_name}[LANGUAGE_NONE];
         $edited = TRUE;
       }
     }

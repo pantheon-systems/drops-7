@@ -11,6 +11,12 @@ class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntity
    * Overrides EntityInlineEntityFormController::entityForm().
    */
   public function entityForm($entity_form, &$form_state) {
+    // If we're cloning, we want to clone the offer entity too.
+    if ($form_state['op'] === 'clone') {
+      unset($entity_form['#entity']->discount_offer_id);
+      $entity_form['#entity']->is_new = TRUE;
+    }
+
     $offer = $entity_form['#entity'];
     if (!empty($form_state['values'])) {
       $offer_values = drupal_array_get_nested_value($form_state['values'], $entity_form['#parents']);

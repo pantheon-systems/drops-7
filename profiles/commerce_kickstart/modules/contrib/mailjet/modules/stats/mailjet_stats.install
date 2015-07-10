@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * Installs the stats module.
+ */
+function mailjet_stats_install() {
+  $field_name = 'mailjet_campaign_id';
+  commerce_activate_field($field_name);
+  field_cache_clear();
+
+  $field = field_info_field($field_name);
+  $instance = field_info_instance('commerce_order', $field_name, 'commerce_order');
+
+  if (empty($field)) {
+    $field = array(
+      'field_name' => $field_name,
+      'type' => 'text',
+      'cardinality' => 1,
+      'entity_types' => array('commerce_order'),
+      'translatable' => FALSE,
+      'locked' => TRUE,
+    );
+    $field = field_create_field($field);
+  }
+
+  if (empty($instance)) {
+    $instance = array(
+      'field_name' => $field_name,
+      'entity_type' => 'commerce_order',
+      'bundle' => 'commerce_order',
+      'label' => t('Mailjet Campaign ID'),
+      'settings' => array(),
+      'widget' => array(
+        'type' => 'text_default',
+        'weight' => -10,
+      ),
+      'display' => array(),
+    );
+
+    field_create_instance($instance);
+  }
+  cache_clear_all();
+}
+
+/**
+ * Uninstall the stats module.
+ */
+function mailjet_stats_uninstall() {
+    if (field_info_field('mailjet_campaign_id')) {
+        field_delete_field('mailjet_campaign_id');
+        // Purge field data now to allow mailjet stats module to be uninstalled
+        // if this is the only field remaining.
+        field_purge_batch(10);
+    }
+}

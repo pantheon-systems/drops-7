@@ -167,10 +167,12 @@ function lingotek_bulk_grid_form($form, $form_state) {
 
   $modal_size = $entity_type == 'config' ? 'ctools-modal-lingotek-small' : 'ctools-modal-lingotek-large';
   $modal_classes = array('ctools-use-modal', $modal_size, 'ltk-action');
+  $search_title = l('<i class="fa fa-search"></i>', LINGOTEK_MENU_MAIN_BASE_URL . '/manage/filters/' . $entity_type, array('html' => TRUE, 'attributes' => array('title' => t('Advanced Search'), 'class' => $modal_classes))) . ' ' . t('Search') . ': ';
+
   $form['search'] = array(
     '#type' => 'textfield',
     '#default_value' => isset($_SESSION['grid_filters']['search']) ? $_SESSION['grid_filters']['search'] : '',
-    '#title' => l('<i class="fa fa-search"></i>', LINGOTEK_MENU_MAIN_BASE_URL . '/manage/filters/' . $entity_type, array('html' => TRUE, 'attributes' => array('title' => t('Advanced Search'), 'class' => $modal_classes))) . ' ' . t('Search') . ': ',
+    '#title' => filter_xss($search_title),
     '#size' => 30,
   );
 
@@ -246,9 +248,10 @@ function lingotek_bulk_grid_form($form, $form_state) {
       'modalSize' => array(
         'type' => 'fixed',
         'width' => 450,
-        'height' => 400,
+        'height' => 450,
       ),
       'closeImage' => theme('image', array('path' => drupal_get_path('module', 'lingotek') . '/images/close.png', 'alt' => t('Close window'), 'title' => t('Close window'))),
+      'closeText' => '',
       'animation' => 'fadeIn',
     ),
   ), 'setting');
@@ -261,6 +264,7 @@ function lingotek_bulk_grid_form($form, $form_state) {
         'height' => .8,
       ),
       'closeImage' => theme('image', array('path' => drupal_get_path('module', 'lingotek') . '/images/close.png', 'alt' => t('Close window'), 'title' => t('Close window'))),
+      'closeText' => '',
       'animation' => 'fadeIn',
     ),
   ), 'setting');
@@ -367,7 +371,9 @@ function lingotek_config_search_options() {
     'interface' => t('Built-in interface'),
     'field' => t('Field labels'),
     'menu' => t('Menu'),
+    'misc' => t('Miscellaneous'),
     'taxonomy' => t('Taxonomy'),
+    'views' => t('Views'),
   );
 
   return $search_options;
@@ -830,7 +836,7 @@ function lingotek_grid_download_ready($entity_type) {
   if ($entity_type === 'config') {
     // Looks clean but actually gets set_ids, convert those to lids, then the next function converts back to set_ids.
     $lids = LingotekConfigSet::getLidsByStatus(LingotekSync::STATUS_READY);
-    lingotek_config_download_selected($lids);
+    lingotek_config_download_selected('download_all', $lids);
     return;
   }
   $targets = LingotekSync::getTargetsByStatus($entity_type, LingotekSync::STATUS_READY);
@@ -865,7 +871,7 @@ function lingotek_grid_download_ready($entity_type) {
 }
 
 function lingotek_grid_upload_edited($entity_type) {
-  if($entity_type === 'config') {
+  if ($entity_type === 'config') {
     // Only get the ones that need to be uploaded.
     $lids = LingotekConfigSet::getLidsToUpdate();
     lingotek_config_upload_selected($lids);
@@ -1088,14 +1094,27 @@ function lingotek_config_build_filters($form_state) {
   foreach ($languages as $code => $language) {
     $search_languages[$code] = t($language->name) . ' (' . $language->lingotek_locale . ')';
   }
+  $modules = array_map('ucfirst', module_list(FALSE, FALSE, TRUE));
 
   $filters = array(
+    'lid' => array(
+      '#type' => 'textfield',
+      '#default_value' => isset($_SESSION['grid_filters']['lid']) ? $_SESSION['grid_filters']['lid'] : '',
+      '#title' => t('Config Entity ID is'),
+      '#size' => 8,
+    ),
     'document_id' => array(
       '#type' => 'textfield',
       '#default_value' => isset($_SESSION['grid_filters']['document_id']) ? $_SESSION['grid_filters']['document_id'] : '',
       '#title' => t('Doc ID is'),
       '#size' => 10,
     ),
+    'location' => array(
+      '#type' => 'select',
+      '#default_value' => isset($_SESSION['grid_filters']['location']) ? $_SESSION['grid_filters']['location'] : '',
+      '#title' => t('Module'),
+      '#options' => array('' => '') + $modules,
+      ),
     'upload_status' => array(
       '#type' => 'select',
       '#default_value' => isset($_SESSION['grid_filters']['upload_status']) ? $_SESSION['grid_filters']['upload_status'] : 'all',
@@ -1107,7 +1126,7 @@ function lingotek_config_build_filters($form_state) {
         'never' => t('Never uploaded'),
       ),
       '#multiple' => FALSE,
-    )
+    ),
   );
 
   // Include a content-type filter if there are bundles by which to filter.
@@ -1603,7 +1622,7 @@ function lingotek_bulk_grid_parse_table_data($table_data_raw, $entity_properties
     $configuration = lingotek_render_configuration($row, $profiles, $disabled_class);
     $source = lingotek_render_source($entity_properties['type'], $row, $icon, $languages, $entity_properties['language_col']);
     $actions = lingotek_render_actions($entity_properties['type'], $entity_id, $disabled_class);
-    $title = $entity_properties['label_col'] ? lingotek_render_title($row, $entity_properties['info'], $GLOBALS['language']) : '';
+    $title = $entity_properties['label_col'] ? lingotek_render_title($row, $entity_properties, $GLOBALS['language']) : '';
 
     // Build the data to be output for this row
     $data = array(
@@ -1684,9 +1703,20 @@ function lingotek_build_locales_statuses($row, $t_prefix = TRUE) {
   return $locales_statuses;
 }
 
-function lingotek_render_title($row, $info, $language) {
+function lingotek_render_title($row, $entity_properties, $language) {
+  $info = $entity_properties['info'];
+  $entity_type = $entity_properties['type'];
   $no_localized_title = (language_default()->language != $language->language) && (!isset($row->localized_title) or $row->localized_title == '');
-  $uri = isset($info['uri callback']) ? call_user_func($info['uri callback'], $row) : '';
+
+  // special handling of taxonomy terms for URI generation
+  if ($entity_type == 'taxonomy_term') {
+    $term_obj = lingotek_entity_load_single($entity_type, $row->tid);
+    $uri = isset($info['uri callback']) ? call_user_func($info['uri callback'], $term_obj) : '';
+  }
+  else {
+    $uri = isset($info['uri callback']) ? call_user_func($info['uri callback'], $row) : '';
+  }
+
   $uri['options']['attributes'] = array('target' => '_blank');
   $title_to_show = (isset($row->localized_title) ? $row->localized_title : $row->title);
   $title = ($no_localized_title ? '<span class="no-localized-title">' : '');
@@ -1714,6 +1744,9 @@ function lingotek_render_source($entity_type, $row, $icon, $languages, $language
   elseif ($entity_type == 'taxonomy_term') {
     $id = $row->tid;
     $row->language = isset($row->translation_mode) && $row->translation_mode == '1' ? 'en' : $row->language;
+  }
+  elseif (!empty($row->id)) {
+    $id = $row->id;
   }
   $source = '<span class="lingotek-language-source" style="white-space: nowrap;">' . $icon . ' ';
   $source .= ($language_col ? lingotek_get_upload_string($row, $languages) : '');
@@ -1790,7 +1823,7 @@ function lingotek_get_entity_edit_link($entity_type, $entity_id, $url_only = FAL
   return $url_only ? url($edit_link, array('query' => $query)) : l('<i title="' . t('Edit') . '" class="fa fa-edit"></i>', $edit_link, array('html' => TRUE, 'attributes' => array('target' => '_blank'), 'query' => $query));
 }
 
-function lingotek_lang_icons($entity_type, $languages, $entity_id, $locale_statuses = array(), $disabled = FALSE, $source_language = NULL, $allow_source_overwriting = FALSE, $allow_target_localization = FALSE) {
+function lingotek_lang_icons($entity_type, $languages, $entity_id, $locale_statuses = array(), $disabled = FALSE, $source_language = NULL, $allow_source_overwriting = FALSE, $allow_target_localization = FALSE, $non_lingotek_config_translations = array()) {
   $icons = array();
 
   $legend = array(
@@ -1801,27 +1834,30 @@ function lingotek_lang_icons($entity_type, $languages, $entity_id, $locale_statu
     LingotekSync::STATUS_UNTRACKED => t('Untracked'),
     LingotekSync::STATUS_TARGET_LOCALIZE => t('Pending localization'),
     LingotekSync::STATUS_TARGET_EDITED => t('Needs to be uploaded'),
+    LingotekSync::STATUS_NON_LINGOTEK => t('Non-Lingotek Translation'),
     ''
   );
   $default_link = 'lingotek/workbench/' . $entity_type . '/' . $entity_id . '/';
   $manual_link = $entity_type . '/' . $entity_id . '/lingotek_pm/';
   $untracked_link = 'lingotek/view/' . $entity_type . '/' . $entity_id . '/';
+  $untracked_config_link = 'admin/' . $entity_type . '/regional/translate/edit/' . $entity_id . '/';
 
   $link_map = array(
     LingotekSync::STATUS_PENDING => $default_link,
     LingotekSync::STATUS_READY => $default_link,
     LingotekSync::STATUS_CURRENT => $default_link,
-    LingotekSync::STATUS_EDITED => $manual_link,
+    LingotekSync::STATUS_EDITED => $default_link,
     LingotekSync::STATUS_UNTRACKED => $untracked_link,
     LingotekSync::STATUS_TARGET_LOCALIZE => $untracked_link,
     LingotekSync::STATUS_TARGET_EDITED => $untracked_link,
+    LingotekSync::STATUS_NON_LINGOTEK => $untracked_config_link,
   );
 
   $lingotek_languages = Lingotek::getLanguages();
 
   foreach ($locale_statuses as $locale => $locale_status) {
     // if it's lingotek enabled
-    if (key_exists($locale, $lingotek_languages)) {
+    if (array_key_exists($locale, $lingotek_languages)) {
       // could this ever be false? I thought all $lingotek_languages would be enabled
       $locale_enabled = $lingotek_languages[$locale]->lingotek_enabled; //array_key_exists($locale, $lingotek_languages) ? $lingotek_languages[$locale]->lingotek_enabled : FALSE;
       $lang_code = $lingotek_languages[$locale]->language;
@@ -1829,14 +1865,32 @@ function lingotek_lang_icons($entity_type, $languages, $entity_id, $locale_statu
       if (!$allow_source_overwriting && !is_null($source_language) && $lang_code === $source_language) {
         continue; // hide source language targets (shouldn't exist anyways)
       }
+
       if ($locale_enabled) { // exclude language translations that are not lingotek_enabled (we may consider showing everything later)
         $status = strtoupper($locale_status);
         $status = $disabled && strtoupper($status) != LingotekSync::STATUS_CURRENT ? LingotekSync::STATUS_UNTRACKED : $status;
-        $css_classes = 'target-' . strtolower($status);
-        $css_classes .= $disabled ? ' target-disabled' : '';
-        $tip = $languages[$lang_code]->name . ' - ' . $legend[$status];
-        $status = $disabled ? LingotekSync::STATUS_UNTRACKED : $status; // all disabled entities should link to view page (not workbench)
-        $current_icon = l($lang_code, $link_map[$status] . $lingotek_locale, array('attributes' => array('target' => '_blank', 'title' => $tip, 'class' => array('language-icon', $css_classes))));
+
+        // styling for the icons based on status and whether the translation is owned by Lingotek or not
+        if ($entity_type == 'config' && (array_key_exists($entity_id, $non_lingotek_config_translations) && in_array($lang_code, explode(',', $non_lingotek_config_translations[$entity_id]->language_codes)))) {
+          $css_classes = 'target-non-lingotek';
+          $status = 'NON_LINGOTEK';
+          $tip = $languages[$lang_code]->name . ' - ' . $legend[$status];
+        }
+        else { //styling for all icons except Config/NON_LINGOTEK items
+          $css_classes = 'target-' . strtolower($status);
+          $css_classes .= $disabled ? ' target-disabled' : '';
+          $tip = $languages[$lang_code]->name . ' - ' . $legend[$status];
+          $status = $disabled ? LingotekSync::STATUS_UNTRACKED : $status; // all disabled entities should link to view page (not workbench)
+        }
+
+        // link redirects to the translate interface for the config string rather than the Lingotek workbench if is an untracked config item
+        if ($entity_type == 'config' && $status == LingotekSync::STATUS_UNTRACKED) {
+          $current_icon = l($lang_code, $untracked_config_link . $lingotek_locale, array('attributes' => array('target' => '_blank', 'title' => $tip, 'class' => array('language-icon', $css_classes))));
+        }
+        else {
+          $current_icon = l($lang_code, $link_map[$status] . $lingotek_locale, array('attributes' => array('target' => '_blank', 'title' => $tip, 'class' => array('language-icon', $css_classes))));
+        }
+
         if (!is_null($source_language) && $lang_code === $source_language) {
           $icons['source'] = $current_icon;
         }
@@ -1992,7 +2046,7 @@ function lingotek_entity_delete_form($form, &$form_state, $nids = array(), $coll
     '#type' => 'fieldset',
     '#prefix' => format_plural(count($entity_ids), '', '<div class="messages warning">' . t('This action will apply to @count entities.') . '</div>'),
     '#title' => t('Are you sure you want to delete these entities?'),
-    '#description' => $content_details_string,
+    '#description' => filter_xss($content_details_string),
     '#suffix' => '<i>' . t("Note: this action cannot be undone.") . '</i>',
     '#collapsible' => $collapse_fieldset,
     '#collapsed' => $collapse_fieldset,
@@ -2076,24 +2130,24 @@ function lingotek_entity_disassociate_form($form, $form_state, $entity_ids = arr
     $entity_ids = array($entity_ids);
   }
 
+  $entity_type = $form_state['entity_type'];
+
   $form['disassociate_translations'] = array(
     '#type' => 'fieldset',
     '#prefix' => format_plural(count($entity_ids), '', '<div class="messages warning">' . t('This action will apply to @count entities.') . '</div>'),
     '#title' => t('Disassociate Translations'),
-    '#description' => t("Disassociates the entity translations on Lingotek's servers from the copies downloaded to Drupal. Additional translation using Lingotek will require re-uploading the entity to restart the translation process."),
-    '#suffix' => '<i>' . t("Note: This action should only be used to change the Lingotek project or TM vault associated with the entities.") . '<i>',
+    '#description' => t("Disassociates the entity translations on Lingotek's servers from the copies downloaded to Drupal. Additional translation using Lingotek will require re-uploading the entity to restart the translation process. <br/><br/>"),
+    '#suffix' => $note = ($entity_type === 'config') ? '<span style="color:red"><b><i>' . t("Note: Deleting documents on the TMS will affect all strings in the associated config sets.") . '<b><i></span>' : '<i>' . t("Note: This action should only be used to change the Lingotek project or TM vault associated with the entities.") . '<i>',
     '#collapsible' => $collapse_fieldset,
     '#collapsed' => $collapse_fieldset,
   );
 
-  $entity_type = $form_state['entity_type'];
-  if ($entity_type !== 'config') {
-    $form['disassociate_translations']['confirm'] = array(
-      '#type' => 'checkbox',
-      '#title' => t('Also remove all document(s) from Lingotek TMS'),
-      '#default_value' => FALSE,
-    );
-  }
+  $form['disassociate_translations']['confirm'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Also remove all document(s) from Lingotek TMS'),
+    '#default_value' => FALSE,
+  );
+
   $submit_function = ($entity_type === 'config') ? 'lingotek_config_disassociate_form_submit' : 'lingotek_entity_disassociate_form_submit';
 
   $form['disassociate_translations']['submit'] = array(
@@ -2168,7 +2222,7 @@ function lingotek_get_upload_string($row, $languages) {
     $response = '<span title="' . $span_title . '">' . t($original_language) . (!empty($row->overridden_source_target_icon) ? '&nbsp;&nbsp;&nbsp;' . $row->overridden_source_target_icon : '') . '</span>';
   }
   else {
-    $response = $row->language == LANGUAGE_NONE ? t('Language Neutral') : t($languages[$row->language]->name);
+    $response = (empty($row->language) || $row->language == LANGUAGE_NONE) ? t('Language Neutral') : t($languages[$row->language]->name);
   }
   return $response;
 }
@@ -2200,12 +2254,28 @@ function lingotek_config_disassociate_form_submit($form, $form_state) {
   elseif (isset($form_state['lids'])) {
     $lids = json_decode($form_state['entity_ids']);
   }
-  /*
+
   $api = LingotekApi::instance();
   $remove_from_tms = $form_state['values']['confirm'];
   $set_ids = LingotekSync::getSetIdsFromLids($lids);
   $doc_ids = LingotekSync::getConfigDocIdsFromSetIds($set_ids);
-  */
+
+  if ($remove_from_tms) { //disassociate on TMS
+    $result = lingotek_batch_disassociate_content_worker($api, $doc_ids);
+    //Deletes document data from lingotek_config_metadata table
+    $query1 = db_delete('lingotek_config_metadata')
+      ->condition('id', $set_ids)
+      ->execute();
+    $query2 = db_delete('lingotek_config_map')
+      ->condition('set_id', $set_ids)
+      ->execute();
+
+    if (!$result) {
+      drupal_set_message(t('Failed to remove documents from Lingotek TMS.'), 'warning', FALSE);
+      return;
+    }
+  }
+
   if (!empty($lids)) {
     LingotekConfigSet::disassociateSegments($lids);
   }

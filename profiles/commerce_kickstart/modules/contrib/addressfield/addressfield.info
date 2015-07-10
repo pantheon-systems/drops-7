@@ -9,9 +9,9 @@ files[] = addressfield.migrate.inc
 files[] = views/addressfield_views_handler_field_country.inc
 files[] = views/addressfield_views_handler_filter_country.inc
 
-; Information added by Drupal.org packaging script on 2015-01-16
-version = "7.x-1.0"
+; Information added by Drupal.org packaging script on 2015-04-23
+version = "7.x-1.1"
 core = "7.x"
 project = "addressfield"
-datestamp = "1421426885"
+datestamp = "1429819382"
 

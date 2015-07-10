@@ -1,0 +1,49 @@
+<?php
+
+/**
+ * @file
+ * Send notification emails.
+ */
+// Until Entity API can load this itself.
+require_once dirname(__FILE__) . '/includes/mailjet_trigger_examples.message.inc';
+
+/**
+ * Implements hook_views_api().
+ */
+function mailjet_trigger_examples_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'mailjet_trigger_examples') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function mailjet_trigger_examples_menu() {
+  $items = array();
+
+  $items['admin/mailjet/triggered_marketing'] = array(
+    'title' => 'Triggered Marketing',
+    'description' => t('Click here to define and activate different email marketing triggers (order reminder, purchase anniversary, etc.)'),
+    'type' => MENU_NORMAL_ITEM,
+    'access arguments' => array('administer mailjet module'),
+    'page callback' => 'drupal_goto',
+    'weight' => 3,
+    'page arguments' => array('admin/structure/messages'),
+  );
+  
+  if (module_exists('commerce_abandoned_cart_notification')) {
+    $items['admin/mailjet/abandoned_cart_notification'] = array(
+      'title' => 'Abandoned Cart Triggers',
+      'description' => t('Click here to define and activate different abandoned cart triggers'),
+      'type' => MENU_NORMAL_ITEM,
+      'access arguments' => array('administer mailjet module'),
+      'page callback' => 'drupal_goto',
+      'weight' => 4,
+      'page arguments' => array('admin/commerce/config/abandoned_cart_notification'),
+    );
+  }
+
+  return $items;
+}

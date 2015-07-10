@@ -10,6 +10,3 @@ Integration consists of creating a field of the "inline_conditions" type on the
 entity, and later calling inline_conditions_build_rule() from the implementation
 of hook_default_rules_configuration().
 See inline_conditions.api.php for more information.
-
-This module is a dependency of Commerce Discount.
-Included in the Commerce Kickstart v2 distribution.

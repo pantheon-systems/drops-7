@@ -26,14 +26,7 @@ function commerce_kickstart_social_install() {
  * Implements hook_enable().
  */
 function commerce_kickstart_social_enable() {
-  // Rebuild the features static caches.
-  features_include(TRUE);
-
-  $module = 'commerce_kickstart_social';
-  $feature = feature_load($module);
-  $items[$module] = array_keys($feature->info['features']);
-  _features_restore('enable', $items);
-  _features_restore('rebuild', $items);
+  commerce_kickstart_rebuild_feature('commerce_kickstart_social');
 
   $default_theme = variable_get('theme_default', 'omega_kickstart');
   // Make sure that the region list is populated for our theme.
@@ -61,4 +54,11 @@ function commerce_kickstart_social_enable() {
     'required' => 0,
   );
   oauthconnector_fields_save('email', $values);
+}
+
+/**
+ * Rebuild Commerce Kickstart Social to ensure Service Links settings.
+ */
+function commerce_kickstart_social_update_7200() {
+  commerce_kickstart_rebuild_feature('commerce_kickstart_social');
 }

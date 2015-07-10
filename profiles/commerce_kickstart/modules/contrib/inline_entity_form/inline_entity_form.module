@@ -422,7 +422,7 @@ function inline_entity_form_field_widget_form(&$form, &$form_state, $field, $ins
   $element = array(
     '#type' => 'fieldset',
     '#tree' => TRUE,
-    '#description' => $instance['description'],
+    '#description' => filter_xss_admin($instance['description']),
     '#prefix' => '<div id="' . $wrapper . '">',
     '#suffix' => '</div>',
     '#attached' => array(
@@ -545,6 +545,7 @@ function inline_entity_form_field_widget_form(&$form, &$form_state, $field, $ins
     );
     drupal_alter('inline_entity_form_table_fields', $fields, $context);
     $element['entities']['#table_fields'] = $fields;
+    $weight_delta = max(ceil(count($form_state['inline_entity_form'][$ief_id]['entities']) * 1.2), 50);
 
     foreach ($form_state['inline_entity_form'][$ief_id]['entities'] as $key => $value) {
       // Data used by theme_inline_entity_form_entity_table().
@@ -592,7 +593,7 @@ function inline_entity_form_field_widget_form(&$form, &$form_state, $field, $ins
         $row = &$element['entities'][$key];
         $row['delta'] = array(
           '#type' => 'weight',
-          '#delta' => 50,
+          '#delta' => $weight_delta,
           '#default_value' => $value['weight'],
           '#attributes' => array('class' => array('ief-entity-delta')),
         );
@@ -706,19 +707,20 @@ function inline_entity_form_field_widget_form(&$form, &$form_state, $field, $ins
             '#value' => reset($settings['create_bundles']),
           );
         }
-
-        $element['actions']['ief_add'] = array(
-          '#type' => 'submit',
-          '#value' => t('Add new @type_singular', array('@type_singular' => $labels['singular'])),
-          '#name' => 'ief-' . $ief_id . '-add',
-          '#limit_validation_errors' => array(array_merge($parents, array('actions'))),
-          '#ajax' => array(
-            'callback' => 'inline_entity_form_get_element',
-            'wrapper' => $wrapper,
-          ),
-          '#submit' => array('inline_entity_form_open_form'),
-          '#ief_form' => 'add',
-        );
+        if ($controller->getSetting('allow_new')) {
+          $element['actions']['ief_add'] = array(
+            '#type' => 'submit',
+            '#value' => t('Add new @type_singular', array('@type_singular' => $labels['singular'])),
+            '#name' => 'ief-' . $ief_id . '-add',
+            '#limit_validation_errors' => array(array_merge($parents, array('actions'))),
+            '#ajax' => array(
+              'callback' => 'inline_entity_form_get_element',
+              'wrapper' => $wrapper,
+            ),
+            '#submit' => array('inline_entity_form_open_form'),
+            '#ief_form' => 'add',
+          );
+        }
       }
 
       if ($controller->getSetting('allow_existing')) {
@@ -1384,7 +1386,11 @@ function inline_entity_form_close_row_form($form, &$form_state) {
  */
 function inline_entity_form_close_child_forms($form, &$form_state) {
   $element = inline_entity_form_get_element($form, $form_state);
-  inline_entity_form_close_all_forms($element, $form_state);
+  foreach (element_children($element) as $key) {
+    if (!empty($element[$key])) {
+      inline_entity_form_close_all_forms($element[$key], $form_state);
+    }
+  }
 }
 
 /**
@@ -1490,13 +1496,21 @@ function inline_entity_form_field_attach_submit($parent_entity_type, $parent_ent
       uasort($values['entities'], 'drupal_sort_weight');
       // Go through the IEF data and assemble a list of ids.
       $entity_ids = array();
+      $need_reset = false;
       foreach ($values['entities'] as $item) {
         if ($item['needs_save']) {
           $controller->save($item['entity'], $context);
+          $need_reset = true;
         }
 
         list($entity_id) = entity_extract_ids($entity_type, $item['entity']);
         $entity_ids[] = array($values['settings']['column'] => $entity_id);
+      }
+
+      // Prevent the entity from showing up in subsequent add forms.
+      // @todo Investigate a cleaner fix.
+      if (isset($form['#op']) && $form['#op'] == 'add' && $need_reset) {
+        $form_state['inline_entity_form'][$ief_id]['entities'] = array();
       }
 
       if (!empty($entity_ids)) {
@@ -1531,11 +1545,13 @@ function inline_entity_form_cleanup_entity_form_state($entity_form, &$form_state
   $instances = field_info_instances($entity_form['#entity_type'], $bundle);
   foreach ($instances as $instance) {
     $field_name = $instance['field_name'];
-    $parents = $entity_form[$field_name]['#parents'];
-    array_pop($parents);
-    $langcode = $entity_form[$field_name]['#language'];
-    $field_state = array();
-    field_form_set_state($parents, $field_name, $langcode, $form_state, $field_state);
+    if (!empty($entity_form[$field_name]['#parents'])) {
+      $parents = $entity_form[$field_name]['#parents'];
+      array_pop($parents);
+      $langcode = $entity_form[$field_name]['#language'];
+      $field_state = array();
+      field_form_set_state($parents, $field_name, $langcode, $form_state, $field_state);
+    }
   }
 }
 
@@ -1655,7 +1671,7 @@ function theme_inline_entity_form_entity_table($variables) {
         $property = $wrapper->{$field_name};
         // label() returns human-readable versions of token and list properties.
         $data = $property->label() ? $property->label() : $property->value();
-        $data = check_plain($data);
+        $data = empty($field['sanitized']) ? check_plain($data) : $data;
       }
       elseif ($field['type'] == 'field' && isset($entity->{$field_name})) {
         $display = array(
@@ -1679,6 +1695,9 @@ function theme_inline_entity_form_entity_table($variables) {
           }
         }
         $data = drupal_render($renderable_data);
+      }
+      elseif ($field['type'] == 'callback' && isset($field['render_callback']) && function_exists($field['render_callback'])) {
+        $data = call_user_func($field['render_callback'], $entity_type, $entity);
       }
 
       $cells[] = array('data' => $data, 'class' => array('inline-entity-form-' . $entity_type . '-' . $field_name));

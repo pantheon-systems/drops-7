@@ -51,7 +51,6 @@ Drupal.behaviors.lingotekAdminForm = {
     });
     //when a field checkbox is clicked
     var exemptions = [
-      "lingotek_use_translation_from_drupal",
       "lingotek_prepare_config_blocks",
       "lingotek_prepare_config_taxonomies",
       "lingotek_prepare_config_menus"
@@ -84,8 +83,6 @@ Drupal.behaviors.lingotekAdminForm = {
     $('.select-all').change( function () {
       if ($(this).children().first().is(':checked')) {
         $('.field.form-checkbox').removeAttr('disabled').attr('checked',true);
-      } else {
-        $('.field.form-checkbox:not(#lingotek_use_translation_from_drupal)').attr('disabled',true);
       }
     });
 
@@ -95,13 +92,6 @@ Drupal.behaviors.lingotekAdminForm = {
         $('#lingotek_prepare_config_blocks').removeAttr('disabled').attr('checked',true);
       } else {
         $('#lingotek_prepare_config_blocks').removeAttr('checked').attr('disabled',true);
-      }
-    });
-    $('#edit-config-lingotek-translate-config-taxonomies').change( function () {
-      if ($('#edit-config-lingotek-translate-config-taxonomies').is(':checked')) {
-        $('#lingotek_prepare_config_taxonomies').removeAttr('disabled').attr('checked',true);
-      } else {
-        $('#lingotek_prepare_config_taxonomies').removeAttr('checked').attr('disabled',true);
       }
     });
     $('#edit-config-lingotek-translate-config-menus').change( function () {
@@ -214,10 +204,6 @@ Drupal.behaviors.lingotekAdminForm = {
                 name = name.substring(name.lastIndexOf('_') + 1, name.length - 1);
                 $list.push(name);
             }
-            else if (name === 'lingotek_use_translation_from_drupal') {
-                extra_text = "+";
-                $list[$list.length-1] += extra_text;
-            }
           }
         });
         if ($list.length === 0 && extra_text.length === 0) {
@@ -246,7 +232,7 @@ Drupal.behaviors.lingotekAdminForm = {
 
 })(jQuery);
 
-function lingotekSetAll(sel, val) {
+function lingotek_set_all(sel, val) {
   fieldset = jQuery(sel);
   console.log(jQuery(sel));
   jQuery(sel).find('.form-select').each( function() {

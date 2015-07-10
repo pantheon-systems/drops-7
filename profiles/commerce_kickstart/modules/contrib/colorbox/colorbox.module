@@ -82,7 +82,7 @@ function colorbox_libraries_info() {
     'download url' => 'https://github.com/jackmoore/colorbox/archive/1.x.zip',
     'version arguments' => array(
       'file' => 'jquery.colorbox-min.js',
-      'pattern' => '@(?i:Colorbox) v([0-9\.a-z]+)@',
+      'pattern' => '@(?i:Colorbox)\sv?([0-9\.a-z]+)@',
       'lines' => 5,
     ),
     'files' => array(

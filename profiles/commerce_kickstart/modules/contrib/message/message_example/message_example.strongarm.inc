@@ -85,14 +85,6 @@ function message_example_strongarm() {
           ),
         ),
         'message__message_text__1' => array(
-          'message_notify_email_subject' => array(
-            'visible' => FALSE,
-            'weight' => 0,
-          ),
-          'message_notify_email_body' => array(
-            'visible' => TRUE,
-            'weight' => 0,
-          ),
           'default' => array(
             'weight' => '1',
             'visible' => TRUE,
@@ -154,14 +146,6 @@ function message_example_strongarm() {
           ),
         ),
         'message__message_text__1' => array(
-          'message_notify_email_subject' => array(
-            'visible' => FALSE,
-            'weight' => 0,
-          ),
-          'message_notify_email_body' => array(
-            'visible' => TRUE,
-            'weight' => 0,
-          ),
           'full' => NULL,
         ),
       ),

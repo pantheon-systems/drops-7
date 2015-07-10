@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function mailjet_stats_menu() {
+  $items = array();
+
+  $items['admin/mailjet/stats'] = array(
+    'title' => 'Dashboard',
+    'page callback' => 'mailjet_stats_iframe',
+    'weight' => 5,
+    'access arguments' => array('administer mailjet module'),
+    'description' => t('Click here to gain insight into your user engagement (Clicks, Opens, Geographies, User Agents, Unsubs, etc.)'),
+    'file path' => drupal_get_path('module', 'mailjet_stats'),
+    'file' => 'includes/mailjet_stats.iframes.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function mailjet_stats_views_api($module, $api) {
+  if ($module == 'views' && $api == 'views_default') {
+    return array('version' => 2);
+  }
+}
+
+/**
+ * Implements hook_init().
+ */
+function mailjet_stats_init() {
+  if (isset($_GET['token'])) {
+    $mailjet_campaign_id = $_GET['token'];
+    $_SESSION['mailjet_campaign_id'] = $mailjet_campaign_id;
+  }
+}
+
+/**
+ * Implements hook_commerce_checkout_complete().
+ */
+function mailjet_stats_commerce_checkout_complete($order) {
+  if (isset($_SESSION['mailjet_campaign_id'])) {
+    $order->mailjet_campaign_id[LANGUAGE_NONE][0]['value'] = $_SESSION['mailjet_campaign_id'];
+    $mailjet_campaign = mailjet_campaign_load($_SESSION['mailjet_campaign_id']);
+    $mailjet_campaign->order_id = $order->order_id;
+    mailjet_campaign_save($mailjet_campaign);
+  }
+
+  unset($_SESSION['mailjet_campaign_id']);
+}

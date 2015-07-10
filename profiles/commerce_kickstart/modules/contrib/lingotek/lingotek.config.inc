@@ -1,4 +1,10 @@
 <?php
+
+/**
+ * @file
+ * Config grid form elements
+ */
+
 // All the stuff for the new config menu goes in here
 function lingotek_config_filter_inline_submit($form, $form_state) {
   unset($_SESSION['grid_filters']['textgroup']);
@@ -35,17 +41,27 @@ function lingotek_config_get_rows($entity_type, $form, &$form_state, $count_only
   $columns = isset($form_state['values']['columns']) ? $form_state['values']['columns'] : array();
   $header = lingotek_config_header();
   $form_state['values']['grid_header'] = lingotek_bulk_grid_refine_source_header($header, $columns);
-  $query = lingotek_config_start_query($form_state);
-  lingotek_config_add_query_filters($query);
+  $query1 = lingotek_config_start_query($form_state, 'not taxonomy');
+  lingotek_config_add_query_filters($query1);
+  $query2 = lingotek_config_start_query($form_state, 'taxonomy name');
+  lingotek_config_add_query_filters($query2);
+  $query3 = lingotek_config_start_query($form_state, 'taxonomy desc');
+  lingotek_config_add_query_filters($query3);
+  $query1->union($query2, 'UNION');
+  $query1->union($query3, 'UNION');
 
   if ($count_only) {
-    $result = $query->execute();
+    $result = $query1->execute();
     return $result->rowCount();
   }
 
+  $query = db_select($query1, 'query_union')->fields('query_union');
   $limit = isset($_SESSION['limit_select']) ? $_SESSION['limit_select'] : 10;
-  $table_data_raw = $query->extend('PagerDefault')
+  $table_data_raw = $query
+      ->extend('PagerDefault')
+      ->extend('TableSort')
       ->limit($limit)
+      ->orderByHeader($form_state['values']['grid_header'])
       ->execute()
       ->fetchAllAssoc('lid');
 
@@ -64,17 +80,15 @@ function lingotek_config_add_existing_translations($lids, $lang_codes) {
   foreach ($result as $key => $value) {
     $lang = Lingotek::convertDrupal2Lingotek($value->language);
     // This check is performed in lang_icons anyway so you might remove it
-    if (array_key_exists($lang, $lang_codes)) {
+    if ($lang && array_key_exists($lang, $lang_codes)) {
       $existing_translations[$value->lid][] = Lingotek::convertDrupal2Lingotek($value->language);
     }
   }
   return $existing_translations;
 }
 
-function lingotek_config_start_query($form_state) {
-  $query = db_select('locales_source', 's')
-      ->extend('TableSort')
-      ->orderByHeader($form_state['values']['grid_header']);
+function lingotek_config_start_query($form_state, $union_part_desc) {
+  $query = db_select('locales_source', 's');
 
   // Gets sync statuses for each language.
   $query->addExpression("(SELECT COUNT(*) FROM {locales_target} target LEFT JOIN {lingotek_config_map} map ON map.lid = target.lid WHERE map.lid = s.lid AND map.current = 1 AND target.i18n_status = 0)", 'current_target_count');
@@ -109,18 +123,32 @@ function lingotek_config_start_query($form_state) {
   $custom_fields_subquery->fields('tv', array('vid'));
   $custom_fields_subquery->join('field_config_instance', 'fci', 'tv.machine_name = fci.bundle');
 
-  $query->leftJoin('taxonomy_term_data', 'term_name', 'term_name.name = s.source AND term_name.vid NOT IN (' . implode(',', array_merge(array(-1), $translate_ids)) . ') AND term_name.vid NOT IN (' . $custom_fields_subquery . ')');
-  $query->addField('term_name', 'tid', 'tid_from_name');
+  if ($union_part_desc == 'taxonomy name') {
+    $query->leftJoin('taxonomy_term_data', 'term_name', 'term_name.name = s.source AND term_name.vid NOT IN (' . implode(',', array_merge(array(-1), $translate_ids)) . ') AND term_name.vid NOT IN (' . $custom_fields_subquery . ')');
+    $query->addField('term_name', 'tid', 'tid_from_name');
+  }
+  else {
+    $query->addExpression('NULL', 'tid_from_name');
+  }
 
-  $query->leftJoin('taxonomy_term_data', 'term_description', 'term_description.description = s.source AND term_description.vid NOT IN (' . implode(',', array_merge(array(-1), $translate_ids)) . ') AND term_description.vid NOT IN (' . $custom_fields_subquery . ')');
-  $query->addField('term_description', 'tid', 'tid_from_description');
+  if ($union_part_desc == 'taxonomy desc') {
+    $query->leftJoin('taxonomy_term_data', 'term_description', 'term_description.description = s.source AND term_description.vid NOT IN (' . implode(',', array_merge(array(-1), $translate_ids)) . ') AND term_description.vid NOT IN (' . $custom_fields_subquery . ')');
+    $query->addField('term_description', 'tid', 'tid_from_description');
+  }
+  else {
+    $query->addExpression('NULL', 'tid_from_description');
+  }
 
   // For all taxonomy terms, only show if it has a name or description.
-  $or = db_or();
-  $or->condition('s.textgroup', 'taxonomy', '<>');
-  $or->isNotNull('term_name.tid');
-  $or->isNotNull('term_description.tid');
-  $query->condition($or);
+  if ($union_part_desc == 'not taxonomy') {
+    $query->condition('s.textgroup', 'taxonomy', '<>');
+  }
+  elseif ($union_part_desc == 'taxonomy name') {
+    $query->isNotNull('term_name.tid');
+  }
+  elseif ($union_part_desc = 'taxonomy desc') {
+    $query->isNotNull('term_description.tid');
+  }
 
   return $query;
 }
@@ -131,7 +159,7 @@ function lingotek_config_add_query_filters($query) {
   }
   $filters = $_SESSION['grid_filters'];
   if (isset($filters['search']) && strlen($filters['search'])) {
-    $query->condition('source', '%' . $filters['search'] . '%', 'LIKE');
+    $query->where("LOWER(CONVERT(source USING utf8)) LIKE :source_string", array(':source_string' => '%' . strtolower($filters['search'] . '%')));
   }
 
   if (isset($filters['textgroup'])) {
@@ -150,6 +178,17 @@ function lingotek_config_add_query_filters($query) {
     elseif ($filters['textgroup'] == 'field') {
       $query->condition('textgroup', 'field');
     }
+    elseif ($filters['textgroup'] == 'views') {
+      $query->condition('textgroup', 'views');
+    }
+    elseif ($filters['textgroup'] == 'misc') {
+      $query->condition('textgroup', 'misc');
+    }
+  }
+
+  // Module Filter
+  if (isset($filters['location']) && $filters['location'] != '') {
+    $query->condition('s.location', '%' . $filters['location'] . '%', 'LIKE');
   }
 
   lingotek_filter_by_document_id($query, $filters);
@@ -170,6 +209,27 @@ function lingotek_config_add_query_filters($query) {
       $query->condition('lt.i18n_status', '0');
     }
   }
+
+  // Entity ID
+  if (isset($filters['lid']) && $filters['lid'] != '') {
+    $query->condition('s.lid', $filters['lid']);
+  }
+}
+
+/**
+ * Gets record of all Non-Lingotek translations (translation_agent_id != 3)
+ */
+function lingotek_get_locked_config_translations($lids = NULL) {
+  $query = db_select('locales_target', 'lt')
+    ->fields('lt', array('lid'));
+  $query->addExpression('GROUP_CONCAT(lt.language)', 'language_codes');
+  $query->condition('lt.translation_agent_id', LingotekConfigSet::getLingotekTranslationAgentId(), '!=');
+  if (is_array($lids) && !empty($lids)) {
+    $query->condition('lt.lid', $lids, 'IN');
+  }
+  $query->groupBy('lid');
+
+  return $query->execute()->fetchAllAssoc('lid');
 }
 
 function lingotek_bulk_grid_parse_config_data($table_data_raw, $entity_type) {
@@ -180,6 +240,7 @@ function lingotek_bulk_grid_parse_config_data($table_data_raw, $entity_type) {
 
   $languages = language_list();
   $global_profile = lingotek_get_global_profile();
+  $non_lingotek_config_translations = lingotek_get_locked_config_translations($lids);
   $table_data = array();
   foreach ($table_data_raw as $row) {
     $lid = $row->{'lid'};
@@ -220,7 +281,7 @@ function lingotek_bulk_grid_parse_config_data($table_data_raw, $entity_type) {
     $escaped_source = htmlentities($row->{'source'});
     $source_text = lingotek_truncate_grid_text($escaped_source, 55);
 
-    $translation_icons = lingotek_lang_icons($entity_type, $languages, $lid, $locale_statuses, FALSE, $row->language); // show translation statuses
+    $translation_icons = lingotek_lang_icons($entity_type, $languages, $lid, $locale_statuses, FALSE, $row->language, FALSE, FALSE, $non_lingotek_config_translations); // show translation statuses
     $target_icons_str = implode('', array_values($translation_icons));
     $icon = lingotek_source_uploaded_icon($row);
     $source_uploaded = lingotek_render_source($entity_type, $row, $icon, $languages, 'language');
@@ -229,7 +290,7 @@ function lingotek_bulk_grid_parse_config_data($table_data_raw, $entity_type) {
 
     $data = array(
       'lid' => $lid ? : t('??'),
-      'source' => $source_text,
+      'source' => '<a class="tooltips">' . $source_text . '<span>' . $escaped_source . '</span></a>',
       'source_uploaded' => $source_uploaded,
       'location' => $row->{'location'},
       'context' => $row->{'context'},
@@ -268,7 +329,7 @@ function lingotek_config_action_submit($form, $form_state) {
         lingotek_config_upload_selected($lids);
       }
       elseif (substr($action, 0, 8) == 'download') { // If downloading all targets
-        lingotek_config_download_selected($lids);
+        lingotek_config_download_selected($action, $lids);
       }
       elseif ($action == 'sync') { // If syncing the progress
         lingotek_config_update_selected($lids); // Run batch operations to get the progress report from Lingotek
@@ -312,7 +373,7 @@ function lingotek_config_upload_selected($lids) {
   batch_process($redirect); // Run batch operations to upload all of the selected nodes to Lingotek
 }
 
-function lingotek_config_download_selected($lids) {
+function lingotek_config_download_selected($action, $lids) {
   $set_ids = array_unique(LingotekSync::getSetIdsFromLids($lids));
   if (empty($set_ids)) {
     drupal_set_message(t('No translations to download at this time. Make sure configuration items have been uploaded to Lingotek before trying to get translations for them.'), 'status', FALSE);
@@ -321,12 +382,28 @@ function lingotek_config_download_selected($lids) {
   $document_ids = LingotekSync::getConfigDocIdsFromSetIds($set_ids);
   $available_targets = Lingotek::getLanguages();
   unset($available_targets['en_US']); // all locales_source is assumed by i18n modules to be English
+
+  list($verb, $target_locale) = explode('_', $action, 2);
+  if ($verb != 'download') {
+    throw LingotekException("Config download verb mismatch: expected 'download', received '$verb'");
+  }
+  if ($target_locale != 'all' && empty($available_targets[$target_locale])) {
+    throw LingotekException("Config download received unknown target: $target_locale");
+  }
   $download_targets = array();
   foreach ($document_ids as $doc_id) {
-    foreach (array_keys($available_targets) as $lang) {
+    if ($target_locale == 'all') {
+      foreach (array_keys($available_targets) as $locale) {
+        $target = new stdClass();
+        $target->document_id = $doc_id;
+        $target->locale = $locale;
+        $download_targets[] = $target;
+      }
+    }
+    else {
       $target = new stdClass();
       $target->document_id = $doc_id;
-      $target->locale = $lang;
+      $target->locale = $target_locale;
       $download_targets[] = $target;
     }
   }

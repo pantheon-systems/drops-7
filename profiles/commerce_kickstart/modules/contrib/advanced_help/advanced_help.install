@@ -50,7 +50,10 @@ function advanced_help_schema() {
     'primary key' => array('sid'),
     'indexes' => array('language' => array('language')),
     'foreign keys' => array(
-      'module' => array('system' => 'name'),
+      'system' => array(
+        'table' => 'system',
+        'columns' => array('name' => 'name'),
+      ),
     ),
   );
 

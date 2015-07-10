@@ -5,6 +5,7 @@ package = Commerce Kickstart
 php = 5.2.4
 dependencies[] = block
 dependencies[] = connector_action_default_register_form
+dependencies[] = ctools
 dependencies[] = features
 dependencies[] = http_client
 dependencies[] = menu
@@ -15,7 +16,7 @@ dependencies[] = strongarm
 dependencies[] = widget_services
 features[ctools][] = oauthconnector:oauthconnector:1
 features[ctools][] = strongarm:strongarm:1
-features[features_api][] = api:1
+features[features_api][] = api:2
 features[menu_custom][] = menu-social-connection
 features[menu_links][] = menu-social-connection_follow-us-on-twitter:https://twitter.com/commerceguys
 features[menu_links][] = menu-social-connection_like-us-on-facebook:https://www.facebook.com/commerceguys
@@ -32,9 +33,9 @@ features[variable][] = service_links_show
 features[variable][] = service_links_style
 features[variable][] = service_links_visibility_for_node
 
-; Information added by Drupal.org packaging script on 2015-03-20
-version = "7.x-2.22"
+; Information added by Drupal.org packaging script on 2015-07-10
+version = "7.x-2.26"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1426860543"
+datestamp = "1436555946"
 

@@ -46,6 +46,16 @@ function commerce_shipping_hook_info() {
 }
 
 /**
+ * Implements hook_views_api().
+ */
+function commerce_shipping_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'commerce_shipping') . '/includes/views',
+  );
+}
+
+/**
  * Implements hook_permission().
  */
 function commerce_shipping_permission() {
@@ -619,7 +629,7 @@ function commerce_shipping_service_rate_calculate($service, $price, $order_id = 
  *   An options array of calculated shipping rates labeled using the display
  *   title of the shipping services.
  */
-function commerce_shipping_service_rate_options($order) {
+function commerce_shipping_service_rate_options($order, &$form_state) {
   $options = array();
 
   foreach ($order->shipping_rates as $name => $line_item) {
@@ -632,7 +642,7 @@ function commerce_shipping_service_rate_options($order) {
   }
 
   // Allow modules to alter the options array generated for the rates.
-  drupal_alter('commerce_shipping_service_rate_options', $options, $order);
+  drupal_alter('commerce_shipping_service_rate_options', $options, $order, $form_state);
 
   return $options;
 }
@@ -791,6 +801,10 @@ function commerce_shipping_line_item_title($line_item) {
 function commerce_shipping_line_item_add_form($form, &$form_state) {
   // Collect the available shipping rates for this order.
   $order = $form_state['commerce_order'];
+  // If possible load the order, since it sometimes is in a stale state.
+  if (!empty($order->order_id)) {
+    $order = commerce_order_load($order->order_id);
+  }
   commerce_shipping_collect_rates($order);
 
   // Store the available rates in the form.
@@ -804,7 +818,7 @@ function commerce_shipping_line_item_add_form($form, &$form_state) {
   );
 
   // Create an options array based on the rated services.
-  $options = commerce_shipping_service_rate_options($order);
+  $options = commerce_shipping_service_rate_options($order, $form_state);
   $options['manual'] = t('Manually specify a shipping service and rate.');
 
   $form['shipping_service'] = array(
@@ -1069,7 +1083,7 @@ function commerce_shipping_form_commerce_checkout_form_alter(&$form, &$form_stat
   if (commerce_shipping_recalculate_services($form)) {
     // Build an array to limit validation errors to customer profile data and
     // the currently selected shipping service.
-    $limit_validation = array(array('commerce_shipping', 'shipping_service'));
+    $limit_validation = array(array('commerce_shipping', 'shipping_service'), array('commerce_shipping', 'service_details'));
 
     foreach (commerce_customer_profile_types() as $type => $profile_type) {
       $limit_validation[] = array('customer_profile_' . $type);

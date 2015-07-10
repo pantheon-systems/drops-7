@@ -141,6 +141,7 @@ class EntityInlineEntityFormController {
    */
   public function defaultSettings() {
     $defaults = array();
+    $defaults['allow_new'] = TRUE;
     $defaults['allow_existing'] = FALSE;
     $defaults['match_operator'] = 'CONTAINS';
     $defaults['delete_references'] = FALSE;
@@ -168,6 +169,11 @@ class EntityInlineEntityFormController {
     $states_prefix = 'instance[widget][settings][type_settings]';
 
     $form = array();
+    $form['allow_new'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Allow users to add new @label.', array('@label' => $labels['plural'])),
+      '#default_value' => $this->settings['allow_new'],
+    );
     $form['allow_existing'] = array(
       '#type' => 'checkbox',
       '#title' => t('Allow users to add existing @label.', array('@label' => $labels['plural'])),

@@ -187,7 +187,7 @@ function hook_commerce_shipping_calculate_rate($line_item) {
  *
  * @see commerce_shipping_service_rate_options()
  */
-function hook_commerce_shipping_service_rate_options_alter(&$options, $order) {
+function hook_commerce_shipping_service_rate_options_alter(&$options, $order, &$form_state) {
   // No example.
 }
 

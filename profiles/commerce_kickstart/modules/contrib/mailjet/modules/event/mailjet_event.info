@@ -1,0 +1,14 @@
+name = Mailjet Event API
+description = "Add support for MailJet Events."
+core = 7.x
+package = MailJet
+
+dependencies[] = entity
+dependencies[] = mailjet
+
+; Information added by Drupal.org packaging script on 2015-05-08
+version = "7.x-2.3"
+core = "7.x"
+project = "mailjet"
+datestamp = "1431081784"
+

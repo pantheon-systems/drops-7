@@ -298,10 +298,9 @@ function addressfield_theme() {
 function theme_addressfield_container($variables) {
   $element = $variables['element'];
   $element['#children'] = trim($element['#children']);
-  // Remove the autocomplete attributes because the W3C validator complains.
-  // They are only used on forms anyway.
+  // Remove the autocomplete attribute because the W3C validator complains.
+  // It's only used on forms anyway.
   unset($element['#attributes']['autocomplete']);
-  unset($element['#attributes']['x-autocompletetype']);
 
   if (strlen($element['#children']) > 0) {
     $output = '<' . $element['#tag'] . drupal_attributes($element['#attributes']) . '>';
@@ -375,9 +374,15 @@ function addressfield_field_info() {
 function addressfield_default_values($field, $instance, array $address = array()) {
   $available_countries = _addressfield_country_options_list($field, $instance);
   $default_country = $instance['widget']['settings']['default_country'];
-  // If the default country is not in the list of available countries,
-  // fallback to the first country in the list.
-  if ($default_country && !isset($available_countries[$default_country])) {
+  // Resolve the special site_default option.
+  if ($default_country == 'site_default') {
+    $default_country = variable_get('site_default_country', '');
+  }
+  // Fallback to the first country in the list if the default country is not
+  // available, or is empty even though the field is required.
+  $not_available = $default_country && !isset($available_countries[$default_country]);
+  $empty_but_required = empty($default_country) && !empty($instance['required']);
+  if ($not_available || $empty_but_required) {
     $default_country = key($available_countries);
   }
 
@@ -458,7 +463,10 @@ function addressfield_field_widget_info() {
     'field types' => array('addressfield'),
     'settings' => array(
       'available_countries' => array(),
-      'default_country' => '',
+      // Can't use variable_get('site_default_country') here because it would
+      // set the value in stone. Instead, the site_default option allows the
+      // default country to always reflect the current site setting.
+      'default_country' => 'site_default',
       'format_handlers' => array('address'),
     ),
   );
@@ -487,7 +495,7 @@ function addressfield_field_widget_settings_form($field, $instance) {
     $form['default_country'] = array(
       '#type' => 'select',
       '#title' => t('Default country'),
-      '#options' => _addressfield_country_options_list(),
+      '#options' => array('site_default' => t('- Site default -')) + _addressfield_country_options_list(),
       '#default_value' => $settings['default_country'],
       '#empty_value' => '',
     );

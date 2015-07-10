@@ -96,7 +96,6 @@ ul li {
   margin: 0.4em 0 0.4em .5em; /* LTR */
 }
 
-
 #content {
   margin: .5em 1em 1em 1em;
 }
@@ -117,10 +116,9 @@ div#breadcrumb .breadcrumb {
   padding: 0;
 }
 
-code,
 pre {
   background: #f1f1f1;
-  border: 1px solid #444;
+  border: 1px solid #ccc;
   display: block;
   margin: 1em;
   padding: .2em;

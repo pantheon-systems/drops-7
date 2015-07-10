@@ -23,7 +23,7 @@ function addressfield_devel_generate($object, $field, $instance, $bundle) {
  */
 function _addressfield_devel_generate($object, $field, $instance, $bundle) {
   // Set default value
-  $object_field = addressfield_default_values();
+  $object_field = addressfield_default_values($field, $instance);
   $addresses = _addressfield_sample_addresses();
   $object_field = array_merge($object_field, $addresses[array_rand($addresses)]);
   unset($object_field['data']);

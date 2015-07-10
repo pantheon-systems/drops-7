@@ -1,0 +1,253 @@
+<?php
+
+/**
+ * Implements hook_menu().
+ */
+function mailjet_campaign_menu() {
+  $items = array();
+
+  $items['admin/mailjet/campaign'] = array(
+    'title' => 'Campaigns',
+    'page callback' => 'mailjet_campaign_iframe',
+    'access arguments' => array('administer mailjet module'),
+    'description' => t('Click here to access the Mailjet drag-and-drop newsletter tool, templates and more for your marketing campaigns'),
+    'file path' => drupal_get_path('module', 'mailjet_campaign'),
+    'file' => 'includes/mailjet_campaign.iframes.inc',
+    'type' => MENU_NORMAL_ITEM,
+    'weight' => 2,
+  );
+
+  $items['admin/mailjet/campaign/alter_callback'] = array(
+    'title' => 'Campaigns',
+    'page callback' => '_mailjet_campaign_alter_callback',
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ *  Implementation of hook_views_api().
+ */
+function mailjet_campaign_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'mailjet_campaign') . '/includes/views',
+  );
+}
+
+/**
+ * Implements hook_entity_info().
+ */
+function mailjet_campaign_entity_info() {
+  $data = array();
+
+  $data['mailjet_campaign'] = array(
+    'label' => t('Campaign'),
+    'plural label' => t('Campaigns'),
+    'entity class' => 'Entity',
+    'controller class' => 'EntityAPIController',
+    'views controller class' => 'EntityDefaultViewsController',
+    'base table' => 'mailjet_campaign',
+    'fieldable' => FALSE,
+    'entity keys' => array(
+      'id' => 'campaign_id',
+      'label' => 'campaign_id',
+    ),
+    'bundles' => array(),
+    'load hook' => 'mailjet_campaign_load',
+    'view modes' => array(
+      'full' => array(
+        'label' => t('Administrator'),
+        'custom settings' => FALSE,
+      ),
+    ),
+    'uri callback' => 'mailjet_campaign_uri',
+    'access callback' => 'mailjet_campaign_access',
+    'token type' => 'mailjet_campaign',
+    'metadata controller class' => '',
+    'permission labels' => array(
+      'singular' => t('campaign'),
+      'plural' => t('campaigns'),
+    ),
+  );
+
+  return $data;
+}
+
+/**
+ * Loads campaign by id.
+ */
+function mailjet_campaign_load($campaign_id) {
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'mailjet_campaign')
+  ->propertyCondition('campaign_id', $campaign_id);
+  $result = $query->execute();
+  $return = array();
+  if (!empty($result['mailjet_campaign'])) {
+    foreach($result['mailjet_campaign'] as $campaign) {
+      $return[] = entity_load_single('mailjet_campaign', $campaign->campaign_id);
+    }
+  }
+  return $return ? reset($return) : FALSE;
+}
+
+/**
+ * Creates new campaign.
+ */
+function mailjet_campaign_new($campaign_id = '') {
+  return entity_get_controller('mailjet_campaign')->create(array(
+  	'campaign_id' => !empty($campaign_id) ? $campaign_id : '',
+  ));
+}
+
+/**
+ * Saves new campaign.
+ */
+function mailjet_campaign_save($campaign) {
+  return entity_get_controller('mailjet_campaign')->save($campaign);
+}
+
+/**
+ * Does a replacement of a link in a email template, adds a tracking token to the link.
+ */
+function _mailjet_campaign_alter_callback() {
+  watchdog('mailjet', json_encode($_POST));
+  watchdog('mailjet', print_r($_POST,true));
+  $html = '';
+  $mj = mailjet_new();
+
+	if (isset($_POST['data'])) {
+		$data = (object) $_POST['data'];
+	}
+	else if (isset($_POST['mailjet'])) {
+		$mailjet = json_decode($_POST['mailjet']);
+		$data = $mailjet->data;
+	}
+
+  // Get request response.
+  if(isset($_POST['response'])) {
+    $response = (object) $_POST['response'];
+  }
+
+  if($response->message == 'last change of campaigns parameters') {
+
+    // Get the HTML for the email template.
+    $res = $mj->data('newsletter', $data->campaign_id, 'HTML', 'text/html', null, 'GET', 'LAST')->getResponse();
+
+    // Find the body for the email template.
+    $html = $res;
+    $get_body_part_html = strstr($html, '<!-- #nl_content -->');
+    $actuall_body_part = strstr($get_body_part_html, '</table>', TRUE);
+
+    // Get all links in the body.
+    $links = explode('<a', $actuall_body_part);
+    if (!empty($links)) {
+      foreach ($links as $key => $value) {
+        if ($key != 0) {
+          $link_beginning = explode('href="', $value);
+          $link = strstr($link_beginning[1], '"', TRUE);
+          $array_links[] = $link;
+        }
+      }
+
+      // To avoid duplication use only the unique values.
+      $array_links = array_unique($array_links);
+      foreach ($array_links as $k => $v) {
+        $replacement_url = $v . '?token=' . $data->campaign_id;
+        $html = str_replace($v, $replacement_url, $html);
+      }
+    }
+
+    $res = $mj->data('newsletter', $data->campaign_id, 'HTML', 'text/html', $html, 'PUT', 'LAST')->getResponse();
+
+  }
+
+  if($response->message == 'send details saved successfully') {
+    $user_infos = mailjet_user_infos();
+    $url = 'http://api.mailjet.com/v3/REST/user/' . $user_infos['Email'];
+    $result = $mj->generalRequest(FALSE, array(), 'GET', $url);
+    sleep(3);
+    $result_arr = json_decode($result);
+    $user_id = $result_arr->Data[0]->ID;
+
+    $url = 'http://api.mailjet.com/v3/REST/apikey?User=' . $user_id;
+    $result_app = $mj->generalRequest(FALSE, array(), 'GET', $url);
+    sleep(3);
+    $result_decode = json_decode($result_app);
+    $akid = $result_decode->Data[0]->ID;
+
+    $url = 'http://api.mailjet.com/v3/REST/campaign?akid=' . $akid . '&sort=id%20desc&fromTS=1&limit=1';
+    $result_campaign = $mj->generalRequest(FALSE, array(), 'GET', $url);
+    sleep(3);
+    $decoded_response = json_decode($result_campaign);
+
+    $created_date = strtotime($decoded_response->Data[0]->CreatedAt);
+    $campaign_name = $decoded_response->Data[0]->Subject;
+
+    $mailjet_campaign = mailjet_campaign_new($data->campaign_id);
+    $mailjet_campaign->name = $campaign_name;
+    $mailjet_campaign->created = $created_date;
+    mailjet_campaign_save($mailjet_campaign);
+  }
+
+
+
+  if ($data->campaign_id && strpos($data->next_step_url,"summary")!==false) {
+
+  	if (
+	    isset($data->block_type)
+	    && $data->block_type
+	    && isset($data->block_content)
+	    && $data->block_content
+	  ) {
+  		$html = $data->block_content;
+  		watchdog('mailjet-danny1', $html);
+  		$html = str_replace("test msg", "new msg", $html);
+  		watchdog('mailjet-danny2', $html);
+
+  		$res = array(
+		    "code" => 1, // necessary for Mailjet's system to proceed
+		    "continue" => true,
+		    "continue_address" => $_POST['data']['next_step_url'],
+		    "block_content" => $html,
+		  );
+
+		  echo json_encode($res);
+		  drupal_exit();
+	  }
+  }
+  $res = array(
+    "code" => 1, // necessary for Mailjet's system to proceed
+    "continue" => true,
+    "continue_address" => $_POST['data']['next_step_url'],
+  );
+
+  echo json_encode($res);
+  drupal_exit();
+}
+
+/**
+ * Get campaign id.
+ */
+function getCampaignHTML($id){
+  $mj = mailjet_new();
+  $res = $mj->data('newsletter', $id, 'HTML', 'text/html', null, 'GET', 'LAST')->getResponse();
+
+  $response = $res;
+
+  return $response;
+}
+
+/**
+ * Update campaign html.
+ */
+function updateCampaignHTML($id,$html){
+  $mj = mailjet_new();
+  $res = $mj->data('newsletter', $id, 'HTML', 'text/html', $html, 'PUT', 'LAST')->getResponse();
+
+  $response = $res;
+
+  return $response;
+}

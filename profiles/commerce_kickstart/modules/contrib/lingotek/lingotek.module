@@ -680,7 +680,7 @@ function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
   $ln = LingotekEntity::load($node, 'node');
 
   $node_language = $ln->language;
-  if (lingotek_uses_node_translation($source_node) && $node_language != 'und') {
+  if (lingotek_uses_node_translation($source_node) && $node_language != LANGUAGE_NONE) {
     // a node-based edit, so use the node's language'
     $current_language = $node_language;
   }
@@ -691,6 +691,11 @@ function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
 
   // Include the translation-management tab always
   $form = lingotek_get_node_settings_form($form, $form_state, $node);
+
+  // Set the default language on new node creation.
+  if (empty($source_node->nid) && $form['language']['#default_value'] == LANGUAGE_NONE) {
+    $form['language']['#default_value'] = lingotek_get_source_language();
+  }
 
   // No more changes to the node form if the node or language aren't enabled for Lingotek translation
   if (!lingotek_enabled_langcode($current_language) || !lingotek_managed_entity('node', $source_node)) {
@@ -703,11 +708,6 @@ function lingotek_form_node_form_alter(&$form, $form_state, $form_id) {
 
 
   $form = array_merge($form, lingotek_get_language_override_form($form, $form_state, $node));
-
-  // Set the default language on new node creation.
-  if (empty($source_node->nid)) {
-    $form['language']['#default_value'] = lingotek_get_source_language();
-  }
 
 // Disable the language field if the node is synced with Lingotek.
   if (!empty($node->nid)) {
@@ -897,14 +897,18 @@ function lingotek_get_node_settings_form($form, &$form_state, $node = NULL) {
     '#title' => $title,
     '#description' => t("The Lingotek Translation module was developed to help you translate your site. The module integrates the Lingotek translation management system directly into Drupal, so that your users can leverage the power of Lingotek's translation tools and services without ever having to leave the comfort of your Drupal environment."),
   );
+  if (!empty($node->lingotek['document_id'])) {
+    $form['lingotek']['lingotek_note']['#description'] .= t('<p><b>NOTE: This node has already been uploaded to Lingotek. To change the workflow, you must use the <i>Change Workflow</i> action on the Manage tab rather than modifying the Translation Profile here.</b></p>');
+  }
 
   // With the Translation Management tab in place, disable it and return the
   // form if Lingotek hasn't been set up yet.
   if (!lingotek_is_module_setup(FALSE)) {
     $lingotek_setup_link = l(t('set up the module'), 'admin/settings/lingotek');
+    $setup_description = t("To begin Lingotek Translation, please !set_up_the_module.", array('!set_up_the_module' => $lingotek_setup_link));
     $form['lingotek']['lingotek_setup_note'] = array(
       '#type' => 'item',
-      '#description' => t("To begin Lingotek Translation, please !set_up_the_module.", array('!set_up_the_module' => $lingotek_setup_link)),
+      '#description' => filter_xss($setup_description),
     );
     return $form;
   }
@@ -1081,7 +1085,7 @@ function lingotek_entity_save($entity, $entity_type) {
     $query->execute();
 
     // check for a workflow change
-    if (isset($entity->lingotek['workflow_id']) && isset($entity->lingotek['document_id'])) {
+    if (!empty($entity->lingotek['workflow_id']) && !empty($entity->lingotek['document_id'])) {
       $curr_workflow = $entity->lingotek['workflow_id'];
       $document_id = $entity->lingotek['document_id'];
       if (!isset($entity->original->lingotek['workflow_id']) ||
@@ -1403,19 +1407,23 @@ function lingotek_entity_load_single($entity_type, $entity_id) {
   if ($entity_type == 'node') {
     $entity = lingotek_node_load_default($entity_id);
   }
-  elseif ($entity_type == 'config') {
-    $set_id = LingotekConfigSet::getSetId($entity_id);
-    $doc_id = LingotekConfigSet::getDocId($set_id);
-    $entity->lingotek['document_id'] = $doc_id;
-    $entity->language = 'placeholder for the config language';
-  }
   else {
     $entities = entity_load($entity_type, array($entity_id));
-    if ($entities && isset($entities[$entity_id])) {
-      $entity = $entities[$entity_id];
+    if (empty($entities[$entity_id])) {
+      return;
+    }
+    $entity = $entities[$entity_id];
+
+    // Handle field collections, both beta7 and beta8
+    if ($entity_type == 'field_collection_item') {
+      if (method_exists($entity, 'langcode')) {
+        $entity->language = $entity->langcode();
+      }
+      else {
+        $entity->language = LANGUAGE_NONE;
+      }
     }
   }
-
   return $entity;
 }
 
@@ -1695,7 +1703,7 @@ function lingotek_entity_download($entity, $entity_type, $lingotek_locale, &$con
   $document_id = $entity->lingotek['document_id'];
   LingotekLog::trace('lingotek_download_document @doc_id (@target)', array('@doc_id' => $document_id, '@target' => $lingotek_locale));
 
-  $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale);
+  $drupal_language_code = Lingotek::convertLingotek2Drupal($lingotek_locale, FALSE);
   $params = array(
     'documentId' => $document_id,
     'targetLanguage' => $lingotek_locale,
@@ -2249,17 +2257,6 @@ function lingotek_cron() {
 }
 
 /*
- * Implements hook_l10n_update().
- *
- * Reset the projects array in the l10n_update module.
- */
-function lingotek_l10n_update_projects_alter(&$projects) {
-  if (variable_get('lingotek_use_translation_from_drupal', 0) != 1) {
-    $projects = array();
-  }
-}
-
-/*
  * Implements hook_node_view_alter().
  *
  * Remove the language label from the node view if the show-language variable
@@ -2562,11 +2559,12 @@ function lingotek_clear_exceptions_form($form, $form_state) {
   $entity_profiles = variable_get('lingotek_entity_profiles');
   $profile_index = $entity_profiles['node'][$content_type];
   $profile = $profile_options[$profile_index];
+  $description = t("This will apply the selected profile (@profile) to all @content_type nodes that have previously been configured independent of the rest of their content type. Note: some settings may remain different such as vault, project, workflow, and translation method (node-based/field-based).", array('@profile' => $profile, '@content_type' => $content_type));
 
   $form['clear_exceptions'] = array(
     '#type' => 'fieldset',
     '#title' => t('Clear Profile Exceptions'),
-    '#description' => t("This will apply the selected profile (" . $profile . ") to all " . $content_type . " nodes that have previously been configured independent of the rest of their content type. Note: some settings may remain different such as vault, project, workflow, and translation method (node-based/field-based)."),
+    '#description' => filter_xss($description),
   );
   $form['clear_exceptions']['submit'] = array(
     '#type' => 'submit',
@@ -2585,7 +2583,7 @@ function lingotek_clear_exceptions_form_submit($form_state, $form) {
   $delete_keys = "'allow_community_translation', 'create_lingotek_document', 'sync_method', 'url_alias_translation', 'profile'";
   $delete_query = db_query("DELETE lem.* FROM {node} AS n JOIN lingotek_entity_metadata AS lem ON n.nid = lem.entity_id WHERE entity_key IN (" . $delete_keys . ") AND type = '" . $content_type . "'");
   $delete_query->execute();
-  drupal_set_message(t('All translation profile exceptions for ' . $content_type . ' have been removed.'));
+  drupal_set_message(t('All translation profile exceptions for nodes of type "@content_type" have been removed.', array('@content_type' => $content_type)));
 }
 
 function lingotek_add_workflow_settings_form($form, $form_state, $node) {
@@ -2716,8 +2714,8 @@ function lingotek_add_menu_link_form($form, $form_state, $node) {
       '#type' => 'select',
       '#title' => 'Menu translation through Lingotek',
       '#description' => t('Select whether to allow this link to be translated into all enabled languages.'),
-      '#default_value' => isset($form_state['node']->menu['language']) ? $form_state['node']->menu['language'] : 'und',
-      '#options' => array('und' => 'Allow link to be translated', 'en' => 'Show link only in English'),
+      '#default_value' => isset($form_state['node']->menu['language']) ? $form_state['node']->menu['language'] : LANGUAGE_NONE,
+      '#options' => array(LANGUAGE_NONE => 'Allow link to be translated', 'en' => 'Show link only in English'),
       '#prefix' => '<div id="edit-menu-english">',
       '#suffix' => '</div>',
     );

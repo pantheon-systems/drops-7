@@ -82,16 +82,9 @@ function commerce_yotpo_settings_form($form_state) {
   $form = system_settings_form($form);
 
   if (variable_get('commerce_yotpo_utoken', FALSE)) {
-    $query = new EntityFieldQuery();
-    $query->entityCondition('entity_type', 'commerce_order')
-    ->propertyCondition('created', strtotime('-90 days'), '>=')
-    ->propertyCondition('state', 'completed')
-    ->fieldCondition('commerce_customer_billing', 'profile_id', 'NULL', 'IS NOT NULL')
-    ->count();
+    $count_commerce_orders = commerce_yotpo_get_completed_orders(TRUE);
 
-    $result = $query->execute();
-
-    if (count($result > 0)) {
+    if ($count_commerce_orders > 0) {
       $form['actions']['sync_orders'] = array(
         '#type' => 'submit',
         '#submit' => array('commerce_yotpo_settings_form_send_orders'),
@@ -127,16 +120,13 @@ function commerce_yotpo_settings_form_token($form, &$form_state) {
  * Send Orders callback.
  */
 function commerce_yotpo_settings_form_send_orders($form, &$form_state) {
-  $query = new EntityFieldQuery();
-  $query->entityCondition('entity_type', 'commerce_order')
-    ->propertyCondition('created', strtotime('-90 days'), '>=')
-    ->propertyCondition('state', 'completed')
-    ->fieldCondition('commerce_customer_billing', 'profile_id', 'NULL', 'IS NOT NULL');
+  // Get the commerce orders available for Yotpo.
+  $commerce_orders = commerce_yotpo_get_completed_orders();
+  if (!$commerce_orders) {
+    drupal_set_message(t('There are no completed orders to be posted to Yotpo.'));
+    return;
+  }
 
-  $result = $query->execute();
-
-  $order_ids = array_keys($result['commerce_order']);
-  $commerce_orders = commerce_order_load_multiple($order_ids);
   $response = commerce_yotpo_bulk_order_post($commerce_orders);
 
   if (isset($response->code) && $response->code == 200) {
@@ -233,9 +223,7 @@ function commerce_yotpo_register_form($form_state) {
  * Implements hook_form_submit().
  */
 function commerce_yotpo_register_form_submit($form, &$form_state) {
-
   if ($yotpo = commerce_yotpo_new()) {
-
     $data = array();
     $data['email'] = $form_state['values']['yotpo_email'];
     $data['display_name'] = $form_state['values']['yotpo_name'];
@@ -249,7 +237,6 @@ function commerce_yotpo_register_form_submit($form, &$form_state) {
     $data['install_step'] = 'done';
 
     $response = $yotpo->create_user($data);
-
   }
   else {
     watchdog('commerce_yotpo', 'Could not load Yotpo library');
@@ -270,17 +257,14 @@ function commerce_yotpo_register_form_submit($form, &$form_state) {
       $data['shop_domain'] = $form_state['values']['yotpo_domain'];
 
       $platform_responce = $yotpo->create_account_platform($data);
-
     }
 
     $message = t('Congratulations - Your sign up to Yotpo was successful!');
     drupal_set_message($message);
     drupal_goto('admin/commerce/config/yotpo/settings');
   }
-
   else {
     form_set_error('form', t('There was an error contacting the registration service'));
     $form_state['redirect'] = FALSE;
   }
-
 }

@@ -193,7 +193,7 @@ function commerce_discount_install_helper() {
       ),
       'field_name' => 'commerce_discounts',
       'type' => 'entityreference',
-      'locked' => TRUE,
+      'locked' => FALSE,
       'cardinality' => FIELD_CARDINALITY_UNLIMITED,
     );
     field_create_field($field);
@@ -218,6 +218,27 @@ function commerce_discount_install_helper() {
     );
     field_create_field($field);
   }
+  // Creating field for percent off of shipping
+  if (module_exists('commerce_shipping') && empty($fields['commerce_percent_off_shipping'])) {
+    $field = array(
+      'entity_types' => array('commerce_discount_offer'),
+      'field_name' => 'commerce_percent_off_shipping',
+      'type' => 'number_decimal',
+      'locked' => TRUE,
+    );
+    field_create_field($field);
+  }
+  // Creating field for percent off of shipping
+  if (module_exists('commerce_shipping') && empty($fields['commerce_percent_off_ship_serv'])) {
+    $field = array(
+      'entity_types' => array('commerce_discount_offer'),
+      'field_name' => 'commerce_percent_off_ship_serv',
+      'type' => 'text',
+      'locked' => TRUE,
+    );
+    field_create_field($field);
+  }
+
   // Creating field for free products offer type.
   if (empty($fields['commerce_free_products']) && isset($field_types['commerce_product_reference'])) {
     $field = array(
@@ -319,6 +340,34 @@ function commerce_discount_install_helper() {
     );
     field_create_instance($instance);
   }
+
+  if (module_exists('commerce_shipping') && empty($instances['commerce_discount_offer']['percent_off_shipping']['commerce_percent_off_shipping'])) {
+    // Add decimal selection
+    $instance = array(
+      'field_name' => 'commerce_percent_off_shipping',
+      'entity_type' => 'commerce_discount_offer',
+      'bundle' => 'percent_off_shipping',
+      'label' => t('Percentage off of shipping'),
+      'settings' => array(
+        'suffix' => '%',
+      ),
+      'required' => TRUE,
+    );
+    field_create_instance($instance);
+
+    // Add service selection
+    $instance = array(
+      'field_name' => 'commerce_percent_off_ship_serv',
+      'entity_type' => 'commerce_discount_offer',
+      'bundle' => 'percent_off_shipping',
+      'label' => t('Shipping service to take % off shipping'),
+      'widget' => array(
+        'type' => 'options_select',
+      ),
+    );
+    field_create_instance($instance);
+  }
+
   if (empty($instances['commerce_discount_offer']['free_products']['commerce_free_products'])) {
     $instance = array(
       'field_name' => 'commerce_free_products',
@@ -352,6 +401,8 @@ function commerce_discount_uninstall() {
   field_attach_delete_bundle('commerce_discount_offer', 'fixed_amount');
   field_attach_delete_bundle('commerce_discount_offer', 'percentage');
   field_attach_delete_bundle('commerce_discount_offer', 'free_shipping');
+  field_attach_delete_bundle('commerce_discount_offer', 'commerce_percent_off_shipping');
+  field_attach_delete_bundle('commerce_discount_offer', 'commerce_percent_off_ship_serv');
   field_attach_delete_bundle('commerce_discount_offer', 'free_products');
 
   // Then delete the related fields
@@ -361,6 +412,8 @@ function commerce_discount_uninstall() {
   commerce_delete_field('commerce_discounts');
   commerce_delete_field('inline_conditions');
   commerce_delete_field('commerce_free_shipping');
+  commerce_delete_field('commerce_percent_off_shipping');
+  commerce_delete_field('commerce_percent_off_ship_serv');
   commerce_delete_field('commerce_free_products');
 
   // Delete all rules added by commerce_discount module.

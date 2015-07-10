@@ -116,6 +116,7 @@ function message_entity_info() {
       'id' => 'id',
       'label' => 'description',
       'name' => 'category',
+      'language' => 'language',
     ),
     'exportable' => TRUE,
     'export' => array(
@@ -138,8 +139,13 @@ function message_entity_info() {
       'label' => 'description',
       'name' => 'name',
       'bundle' => 'category',
+      'language' => 'language',
     ),
-    'bundles' => array(),
+    'bundles' => array(
+      'message_type' => array(
+        'label' => t('Message type'),
+      ),
+    ),
     'bundle keys' => array(
       'bundle' => 'category',
     ),
@@ -189,6 +195,7 @@ function message_entity_info() {
       // The message has no label.
       'label' => FALSE,
       'bundle' => 'type',
+      'language' => 'language',
     ),
     'bundles' => array(),
     'bundle keys' => array(
@@ -319,27 +326,77 @@ function message_cron() {
  * Implements hook_entity_delete().
  *
  * Handles messages deletion when referenced entities are being deleted.
+ *
+ * @param $entity
+ *  The entity object.
+ * @param $entity_type
+ *  The type of entity being deleted (i.e. node, user, comment).
  */
 function message_entity_delete($entity, $entity_type) {
   if ($entity_type == 'message') {
     return;
   }
 
+  if (!$field_names = _message_get_referenced_fields($entity_type, $entity)) {
+    return;
+  }
+
+  list($entity_id) = entity_extract_ids($entity_type, $entity);
+
+  // A deleted message with no reference doesn't need to create a queue worker.
+  $delete_referenced_entities = FALSE;
+  foreach ($field_names as $field_name) {
+    $field = field_info_field($field_name);
+    $columns = array_keys($field['columns']);
+    // Fetch messages with fields referencing the deleted entity.
+    $query = new EntityFieldQuery();
+    $result = $query->entityCondition('entity_type', 'message')
+      ->fieldCondition($field['field_name'], $columns[0], $entity_id)
+      ->execute();
+
+    if (!empty($result['message'])) {
+      $delete_referenced_entities = TRUE;
+      break;
+    }
+  }
+
+  if (!$delete_referenced_entities) {
+    return;
+  }
+
+  if (variable_get('message_use_queue')) {
+    $data = array(
+      'range' => 200,
+      'last_mid' => 0,
+      'field_names' => $field_names,
+      'entity_id' => $entity_id,
+    );
+    $queue = DrupalQueue::get('message_entity_delete');
+
+    return $queue->createItem($data);
+  }
+
+  _message_delete_messages($field_names, $entity_id);
+}
+
+/**
+ * Helper function for getting the fields which holds the reference to the
+ * message.
+ *
+ * @param $entity_type
+ *  The type of entity being deleted (i.e. node, user, comment).
+ * @param $entity
+ *  The entity object.
+ */
+function _message_get_referenced_fields($entity_type, $entity) {
   $entity_types = variable_get('message_delete_on_entity_delete',  array('node', 'user', 'taxonomy_term', 'comment'));
   if (!$entity_types || !in_array($entity_type, $entity_types)) {
     return;
   }
 
-  list($id, , $bundle) = entity_extract_ids($entity_type, $entity);
+  list(,,$bundle) = entity_extract_ids($entity_type, $entity);
 
-  // List of messages to delete.
-  $deletable_mids = array();
-  // List of messages that might be deleted;
-  // Messages with references to fields with mutiple cardinality will be
-  // stored in $check_mids in order to check if the entity being deleted
-  // is the last one referenced by a given field.
-  // Keyd by message ID, pointing to array of the relevant field names.
-  $check_mids = array();
+  $field_names = array();
 
   // Search for fields in which messages referenced the deleted entity.
   foreach (field_info_fields() as $field) {
@@ -360,31 +417,67 @@ function message_entity_delete($entity, $entity_type) {
       if ($field['settings']['handler_settings']['target_bundles'] && !in_array($bundle, $field['settings']['handler_settings']['target_bundles'])) {
         continue;
       }
-      // The reference column;
-      $column = 'target_id';
     }
     elseif ($field['type'] == 'taxonomy_term_reference') {
       if ($entity_type != 'taxonomy_term') {
         continue;
       }
-      $column = 'tid';
     }
     else {
       continue;
     }
 
+    $field_names[] = $field['field_name'];
+  }
+
+  return $field_names;
+}
+
+/**
+ * Delete messages that the reference to is still exists.
+ *
+ * @param $field_names
+ *  Array of fields names which holds the reference to the message.
+ * @param $entity_id
+ *  The message referenced entity that were deleted.
+ * @param $last_mid
+ *  The last Message ID we process.
+ * @param $range
+ *  Optional;The number of message to process each time.
+ * @return
+ *  The last Message ID we process.
+ */
+function _message_delete_messages($field_names, $entity_id, $last_mid = 0, $range = NULL) {
+  // List of messages to delete.
+  $deletable_mids = array();
+  // List of messages that might be deleted;
+  // Messages with references to fields with multiple cardinality will be
+  // stored in $check_mids in order to check if the entity being deleted
+  // is the last one referenced by a given field.
+  // Keyed by message ID, pointing to array of the relevant field names.
+  $check_mids = array();
+
+  foreach ($field_names as $field_name) {
+    $field = field_info_field($field_name);
+    $columns = array_keys($field['columns']);
     // Fetch messages with fields referencing the deleted entity.
     $query = new EntityFieldQuery();
-    $result = $query->entityCondition('entity_type', 'message')
-      ->fieldCondition($field['field_name'], $column, $id)
-      ->execute();
+    $query->entityCondition('entity_type', 'message')
+      ->propertyCondition('mid', $last_mid, '>')
+      ->fieldCondition($field['field_name'], $columns[0], $entity_id);
+
+    if ($range) {
+      $query->range(0, $range);
+    }
+
+    $result = $query->execute();
 
     // Continue to next field if no such messages exist.
     if (empty($result['message'])) {
       continue;
     }
 
-    // If the field has single cardinallity it's safe to delete the
+    // If the field has single cardinality it's safe to delete the
     // messages.
     if ($field['cardinality'] == 1) {
       $deletable_mids += array_keys($result['message']);
@@ -403,7 +496,7 @@ function message_entity_delete($entity, $entity_type) {
     }
   }
 
-  // Check messages with multiple cardinallity refrences; Only delete such
+  // Check messages with multiple cardinality references; Only delete such
   // messages if the entity being deleted is the last one referenced by the
   // message.
   if ($check_mids) {
@@ -435,6 +528,7 @@ function message_entity_delete($entity, $entity_type) {
 
   if ($deletable_mids) {
     message_delete_multiple($deletable_mids);
+    return reset($deletable_mids);
   }
 }
 
@@ -735,6 +829,9 @@ function message_type_delete($message) {
  *     the message type.
  *   - "timestamp" - The unix timestamp of the creation time of the message. If
  *     empty the current time will be used.
+ *   - "uid" - The user->uid to associate the message with, this will overwrite
+ *     $account param, and it's useful when you don't have the full user object
+ *     loaded into memory.
  * @param $account
  *   Optional; The user object to associate the message with. If empty, the
  *   current user will be used.
@@ -983,4 +1080,40 @@ function message_features_pipe_message_type_alter(&$pipe, $data, $export) {
   foreach ($data as $message_type) {
     $pipe['variable'][] = "field_bundle_settings_message__{$message_type}";
   }
+}
+
+/**
+ * Implements hook_cron_queue_info().
+ */
+function message_cron_queue_info() {
+  $items['message_entity_delete'] = array(
+    'title' => t('Message'),
+    'worker callback' => 'message_entity_delete_queue_worker',
+    'time' => 60,
+  );
+  return $items;
+}
+
+/**
+ * Queue API worker; Process a queue item.
+ *
+ * The item holds the fields information(field name, column, id and cardinality),
+ * the last Message ID we processed and the range.
+ */
+function message_entity_delete_queue_worker($data) {
+  extract($data);
+
+  if (!$mid = _message_delete_messages($field_names, $entity_id, $last_mid, $range)) {
+    return;
+  }
+
+  $data = array(
+    'range' => 200,
+    'last_mid' => $mid,
+    'field_names' => $field_names,
+    'entity_id' => $entity_id,
+  );
+
+  $queue = DrupalQueue::get('message_entity_delete');
+  return $queue->createItem($data);
 }

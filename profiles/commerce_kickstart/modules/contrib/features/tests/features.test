@@ -45,7 +45,7 @@ class FeaturesUserTestCase extends DrupalWebTestCase {
     module_load_include('inc', 'features', 'features.export');
 
     $components = array_filter(array(
-      'field' => 'field',
+      'field_instance' => 'field',
       'filter' => 'filter',
       'image' => 'image',
       'node' => 'node',
@@ -85,7 +85,7 @@ class FeaturesUserTestCase extends DrupalWebTestCase {
     }
   }
 
-  protected function _test_field($op = 'load') {
+  protected function _test_field_instance($op = 'load') {
     switch ($op) {
       case 'load':
         return field_info_instance('node', 'field_features_test', 'features_test');
@@ -266,6 +266,13 @@ class FeaturesCtoolsIntegrationTest extends DrupalWebTestCase {
       $this->assertFalse(function_exists($function), 'Chaos tools functions for ' . $module . ' do not exist while it is disabled.');
       // Module enable will trigger declaring the new functions.
       module_enable(array($module));
+    }
+
+    // CTools hooks only created when there is an actual feature exportable
+    // enabled.
+    module_enable(array('features_test'));
+
+    foreach ($try as $module) {
       if (module_exists($module)) {
         $function_exists = function_exists($function);
         if ($function_exists) {
@@ -278,5 +285,45 @@ class FeaturesCtoolsIntegrationTest extends DrupalWebTestCase {
         $this->assertTrue($function_exists, 'Chaos tools functions for ' . $module . ' exist when it is enabled.');
       }
     }
+  }
+}
+
+
+/**
+ * Test detecting modules as features. 
+ */
+class FeaturesDetectionTestCase extends DrupalWebTestCase {
+  protected $profile = 'testing';
+
+  /**
+   * Test info.
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('Feature Detection tests'),
+      'description' => t('Run tests for detecting items as features.') ,
+      'group' => t('Features'),
+    );
+  }
+
+  /**
+   * Set up test.
+   */
+  public function setUp() {
+    parent::setUp(array(
+      'features',
+    ));
+  }
+
+  /**
+   * Run test.
+   */
+  public function test() {
+    module_load_include('inc', 'features', 'features.export');
+    // First test that features_populate inserts the features api key.
+    $export = features_populate(array(), array(), 'features_test_empty_fake');
+    $this->assertTrue(!empty($export['features']['features_api']) && key($export['features']['features_api']) == 'api:' . FEATURES_API, 'Features API key added to new export.');
+    $this->assertTrue((bool)features_get_features('features_test'), 'Features test recognized as a feature.');
+    $this->assertFalse((bool)features_get_features('features'), 'Features module not recognized as a feature.');
   }
 }

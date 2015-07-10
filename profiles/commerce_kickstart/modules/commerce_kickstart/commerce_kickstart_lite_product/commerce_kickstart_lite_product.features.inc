@@ -5,26 +5,9 @@
  */
 
 /**
- * Implements hook_commerce_product_default_types().
- */
-function commerce_kickstart_lite_product_commerce_product_default_types() {
-  $items = array(
-    'product' => array(
-      'type' => 'product',
-      'name' => 'Product',
-      'description' => 'A basic product type.',
-      'help' => '',
-      'revision' => '1',
-    ),
-  );
-  return $items;
-}
-
-/**
  * Implements hook_ctools_plugin_api().
  */
-function commerce_kickstart_lite_product_ctools_plugin_api() {
-  list($module, $api) = func_get_args();
+function commerce_kickstart_lite_product_ctools_plugin_api($module = NULL, $api = NULL) {
   if ($module == "strongarm" && $api == "strongarm") {
     return array("version" => "1");
   }
@@ -50,12 +33,13 @@ function commerce_kickstart_lite_product_image_default_styles() {
         'module' => 'image',
         'name' => 'image_scale_and_crop',
         'data' => array(
-          'width' => '400',
-          'height' => '550',
+          'width' => 400,
+          'height' => 550,
         ),
-        'weight' => '1',
+        'weight' => 1,
       ),
     ),
+    'label' => 'product_full',
   );
 
   // Exported image style: product_medium.
@@ -72,12 +56,13 @@ function commerce_kickstart_lite_product_image_default_styles() {
         'module' => 'image',
         'name' => 'image_scale_and_crop',
         'data' => array(
-          'width' => '230',
-          'height' => '260',
+          'width' => 230,
+          'height' => 260,
         ),
-        'weight' => '1',
+        'weight' => 1,
       ),
     ),
+    'label' => 'product_medium',
   );
 
   // Exported image style: product_thumbnail.
@@ -94,30 +79,14 @@ function commerce_kickstart_lite_product_image_default_styles() {
         'module' => 'image',
         'name' => 'image_scale_and_crop',
         'data' => array(
-          'width' => '110',
-          'height' => '130',
+          'width' => 110,
+          'height' => 130,
         ),
-        'weight' => '1',
+        'weight' => 1,
       ),
     ),
+    'label' => 'product_thumbnail',
   );
 
   return $styles;
-}
-
-/**
- * Implements hook_node_info().
- */
-function commerce_kickstart_lite_product_node_info() {
-  $items = array(
-    'product_display' => array(
-      'name' => t('Product display'),
-      'base' => 'node_content',
-      'description' => '',
-      'has_title' => '1',
-      'title_label' => t('Title'),
-      'help' => '',
-    ),
-  );
-  return $items;
 }

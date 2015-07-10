@@ -8,19 +8,7 @@
  * Implements hook_enable().
  */
 function commerce_kickstart_block_enable() {
-  // Rebuild the features static caches.
-  features_include(TRUE);
-
-  $module = 'commerce_kickstart_block';
-  $feature = feature_load($module);
-  $items[$module] = array_keys($feature->info['features']);
-  _features_restore('enable', $items);
-  _features_restore('rebuild', $items);
-
-  // For some unknown reason, we need to manually trigger the rebuild of the
-  // menu links, in features otherwise they won't appear.
-  // @todo Investigate.
-  features_revert(array($module => array('menu_links')));
+  commerce_kickstart_rebuild_feature('commerce_kickstart_block');
 
   $default_theme = variable_get('theme_default', 'omega_kickstart');
   // Make sure that the region list is populated for our theme.

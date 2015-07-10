@@ -29,9 +29,9 @@ function addressfield_format_organisation_generate(&$format, $address) {
   $format['organisation_block']['organisation_name'] = array(
     '#title' => t('Company'),
     '#size' => 30,
+    '#maxlength' => 255,
     '#attributes' => array(
       'class' => array('organisation-name'),
-      'x-autocompletetype' => 'organization',
       'autocomplete' => 'organization',
     ),
   );

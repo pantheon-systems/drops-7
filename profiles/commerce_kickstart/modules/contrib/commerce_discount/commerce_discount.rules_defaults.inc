@@ -15,6 +15,8 @@ function commerce_discount_default_rules_configuration() {
   $rules = array();
 
   // Create a rule for each commerce discount entity.
+  entity_get_controller('commerce_discount')->resetCache();
+
   foreach (entity_load('commerce_discount') as $discount) {
     $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
     $wrapper_properties = $wrapper->getPropertyInfo();

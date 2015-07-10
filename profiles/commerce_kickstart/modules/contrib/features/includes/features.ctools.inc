@@ -11,6 +11,12 @@ function ctools_features_declare_functions($reset = FALSE) {
       if (!function_exists("{$info['module']}_features_api")) {
         $code .= 'function '. $info['module'] .'_features_api() { return ctools_component_features_api("'. $info['module'] .'"); }';
       }
+
+      // ctools component with owner defined as "ctools"
+      if (!function_exists("{$component}_features_api") && $info['module'] === 'ctools') {
+        $code .= 'function '. $component .'_features_api() { return ctools_component_features_api("'. $component .'"); }';
+      }
+
       if (!function_exists("{$component}_features_export")) {
         $code .= 'function '. $component .'_features_export($data, &$export, $module_name = "") { return ctools_component_features_export("'. $component .'", $data, $export, $module_name); }';
       }
@@ -77,10 +83,9 @@ function ctools_features_export_render($module, $data) {
       // For background on why we change the output for hook_views_api()
       // see http://drupal.org/node/1459120.
       if ($info['module'] == 'views') {
-        $code[] = '  return array("version" => "3.0");';
+        $code[] = '  return array("api" => "3.0");';
       }
       else {
-        $code[] = '  list($module, $api) = func_get_args();';
         $code[] = '  if ($module == "'. $info['module'] .'" && $api == "'. $info['api'] .'") {';
         $code[] = '    return array("version" => "'. $info['current_version'] .'");';
         $code[] = '  }';
@@ -90,10 +95,13 @@ function ctools_features_export_render($module, $data) {
     $plugin_api_hook_name = ctools_plugin_api_get_hook($info['module'], $info['api']);
 
     if (key_exists($plugin_api_hook_name, $component_exports)) {
-        $component_exports[$plugin_api_hook_name] .= "\n" . implode("\n", $code);
+      $component_exports[$plugin_api_hook_name]['code'] .= "\n" . implode("\n", $code);
     }
     else {
-        $component_exports[$plugin_api_hook_name] = implode("\n", $code);
+      $component_exports[$plugin_api_hook_name] = array(
+        'code' => implode("\n", $code),
+        'args' => '$module = NULL, $api = NULL',
+      );
     }
   }
 
@@ -110,7 +118,8 @@ function ctools_features_export_render($module, $data) {
 function ctools_component_features_api($module_name) {
   $api = array();
   foreach (_ctools_features_get_info() as $component => $info) {
-    if ($info['module'] == $module_name) {
+    // if module owner is set to "ctools" we need to compare the component
+    if ($info['module'] == $module_name || ($info['module'] === 'ctools' && $component == $module_name) ) {
       $api[$component] = $info;
     }
   }
@@ -259,7 +268,7 @@ function _ctools_features_get_info($identifier = NULL, $reset = FALSE) {
       return $components[$identifier];
     }
     // New API identifier. Allows non-exportables related CTools APIs to be
-    // supported by an explicit `module:api:current_version` key. 
+    // supported by an explicit `module:api:current_version` key.
     else if (substr_count($identifier, ':') === 2) {
       list($module, $api, $current_version) = explode(':', $identifier);
       // If a schema component matches the provided identifier, provide that
@@ -345,6 +354,25 @@ function page_manager_pages_features_revert($module) {
     require_once drupal_get_path('module', 'ctools') . '/page_manager/plugins/tasks/page.inc';
     foreach ($pages as $page) {
       page_manager_page_delete($page);
+    }
+  }
+}
+
+/**
+ * Implements hook_features_pipe_COMPONENT_alter() for views_view.
+ */
+function views_features_pipe_views_view_alter(&$pipe, $data, $export) {
+  // @todo Remove this check before next stable release.
+  if (!function_exists('views_plugin_list')) {
+    return;
+  }
+
+  $map = array_flip($data);
+  foreach (views_plugin_list() as $plugin) {
+    foreach ($plugin['views'] as $view_name) {
+      if (isset($map[$view_name])) {
+        $pipe['dependencies'][$plugin['module']] = $plugin['module'];
+      }
     }
   }
 }

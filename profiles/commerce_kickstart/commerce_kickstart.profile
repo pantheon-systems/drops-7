@@ -261,3 +261,44 @@ function commerce_kickstart_crumbs_get_info() {
 
   return $crumbs;
 }
+
+/**
+ * Rebuilds a feature using the same logic as features_modules_enabled().
+ *
+ * Called from the hook_enable() of every Kickstart feature.
+ *
+ * features_modules_enabled() runs too late, so when a feature's hook_enable()
+ * or hook_install() runs, the feature hasn't been rebuild yet, no exported
+ * structures exist in the system and can't be modified.
+ * It also rebuilds all features at once, which makes it prone to timeouts.
+ * This is why Kickstart disables features_modules_enabled() and rebuilds
+ * each feature manually in its hook_enable() hook.
+ */
+function commerce_kickstart_rebuild_feature($module) {
+  $feature = features_load_feature($module, TRUE);
+  $items[$module] = array_keys($feature->info['features']);
+  // Need to include any new files.
+  features_include_defaults(NULL, TRUE);
+  _features_restore('enable', $items);
+  // Rebuild the list of features includes.
+  features_include(TRUE);
+  // Reorders components to match hook order and removes non-existant.
+  $all_components = array_keys(features_get_components());
+  foreach ($items as $module => $components) {
+    $items[$module] = array_intersect($all_components, $components);
+  }
+  _features_restore('rebuild', $items);
+}
+
+/**
+ * Implements hook_features_api_alter().
+ *
+ * Commerce Kickstart provides different Features that can be utilized
+ * individually, which means there are conflicting field bases. This allows
+ * the feature structure to exist, including customizations by users.
+ */
+function commerce_kickstart_features_api_alter(&$components) {
+  if (isset($components['field_base'])) {
+    $components['field_base']['duplicates'] = FEATURES_DUPLICATES_ALLOWED;
+  }
+}

@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * Implements hook_install().
  */
 function commerce_discount_usage_install() {
@@ -16,10 +16,7 @@ function _commerce_discount_usage_install_helper() {
   $fields = field_info_fields();
   $instances = field_info_instances();
 
-  /*
-   * Discount usage per-person
-   */
-
+  // Discount usage per-person.
   if (empty($fields['discount_usage_per_person'])) {
     // Create entity reference field.
     $field = array(
@@ -50,10 +47,7 @@ function _commerce_discount_usage_install_helper() {
     }
   }
 
-  /*
-   * Discount usage
-   */
-
+  // Discount usage.
   if (empty($fields['discount_usage_limit'])) {
     // Create entity reference field.
     $field = array(
@@ -85,7 +79,7 @@ function _commerce_discount_usage_install_helper() {
   }
 }
 
-/*
+/**
  * Implements hook_schema().
  */
 function commerce_discount_usage_schema() {
@@ -141,7 +135,7 @@ function commerce_discount_usage_schema() {
  * Create usage table
  */
 function commerce_discount_usage_update_7001() {
-  // Add usage table
+  // Add usage table.
   if (!db_table_exists('commerce_discount_usage')) {
     db_create_table('commerce_discount_usage', drupal_get_schema_unprocessed('commerce_discount_usage', 'commerce_discount_usage'));
   }
@@ -152,9 +146,10 @@ function commerce_discount_usage_update_7001() {
  */
 function commerce_discount_usage_update_7002() {
   foreach (entity_load('commerce_discount') as $discount) {
-    if (empty($discount->discount_usage_limit[LANGUAGE_NONE][0]['value'])
-      && !empty($discount->commerce_discount_max_uses[LANGUAGE_NONE][0]['value'])) {
-      $discount->discount_usage_limit[LANGUAGE_NONE][0]['value'] = $discount->commerce_discount_max_uses[LANGUAGE_NONE][0]['value'];
+    $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+    if (!isset($wrapper->discount_usage_limit) || $wrapper->discount_usage_limit->value() == FALSE
+      && isset($wrapper->commerce_discount_max_uses) && $wrapper->commerce_discount_max_uses->value()) {
+      $wrapper->discount_usage_limit = $wrapper->commerce_discount_max_uses->value();
       entity_save('commerce_discount', $discount);
     }
   }

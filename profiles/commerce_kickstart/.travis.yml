@@ -2,6 +2,7 @@ language: php
 
 php:
   - 5.4
+  - 5.5
 
 branches:
   except:
@@ -14,6 +15,8 @@ mysql:
 
 env:
   - UPGRADE=none
+  - UPGRADE=7.x-2.23
+  - UPGRADE=7.x-2.22
   - UPGRADE=7.x-2.21
   - UPGRADE=7.x-2.20
   - UPGRADE=7.x-2.19
@@ -24,18 +27,6 @@ env:
   - UPGRADE=7.x-2.14
   - UPGRADE=7.x-2.13
   - UPGRADE=7.x-2.12
-  - UPGRADE=7.x-2.11
-  - UPGRADE=7.x-2.10
-  - UPGRADE=7.x-2.9
-  - UPGRADE=7.x-2.8
-  - UPGRADE=7.x-2.7
-  - UPGRADE=7.x-2.6
-  - UPGRADE=7.x-2.5
-  - UPGRADE=7.x-2.4
-  - UPGRADE=7.x-2.3
-  - UPGRADE=7.x-2.2
-  - UPGRADE=7.x-2.1
-  - UPGRADE=7.x-2.0
 
 matrix:
   fast_finish: true
@@ -70,6 +61,8 @@ install:
   - cd drupal
   - drush make --yes profiles/commerce_kickstart/drupal-org-core.make --prepare-install
   - drush make --yes profiles/commerce_kickstart/drupal-org.make --no-core --contrib-destination=profiles/commerce_kickstart
+  # Download Diff module for checking overridden features through Drush.
+  - drush dl diff
   - cd ../
 
   # Verify that all the .make files will work on Drupal.org.
@@ -104,7 +97,7 @@ before_script:
   - cd ../drupal
 
   # If we're an upgrade test, run the upgrade process.
-  - if [[ "$UPGRADE" != none ]]; then cp -a ../commerce_kickstart-$UPGRADE/sites/default/* sites/default/ && drush updb --yes; fi
+  - if [[ "$UPGRADE" != none ]]; then cp -a ../commerce_kickstart-$UPGRADE/sites/default/* sites/default/ && drush updb --yes; drush cc all;  fi
 
   # Start server
   - drush runserver --server=builtin 8888 > /dev/null 2>&1 &
@@ -113,6 +106,10 @@ before_script:
 
 script:
 
+  # If this isn't an upgrade, we test if any features are overridden.
+  - if [[ "$UPGRADE" == none ]]; then ../../scripts/check-overridden.sh; fi
+
+  # Run Behat tests.
   - ./bin/behat --config behat.travis.yml
 
 notifications:

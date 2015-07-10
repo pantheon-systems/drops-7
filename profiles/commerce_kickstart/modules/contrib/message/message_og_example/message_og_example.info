@@ -20,9 +20,9 @@ name = "Message OG example"
 package = "Message"
 php = "5.2.4"
 
-; Information added by drupal.org packaging script on 2013-07-23
-version = "7.x-1.9"
+; Information added by Drupal.org packaging script on 2015-04-19
+version = "7.x-1.10"
 core = "7.x"
 project = "message"
-datestamp = "1374541036"
+datestamp = "1429477691"
 

@@ -203,7 +203,7 @@ function addressfield_update_7001() {
         // previously selected default country.
         $default_country = '';
         if (!empty($instance['required']) && !empty($instance['default_value'])) {
-          $default_country = $instance['default_value']['country'];
+          $default_country = $instance['default_value'][0]['country'];
         }
 
         $instance['widget']['settings']['default_country'] = $default_country;

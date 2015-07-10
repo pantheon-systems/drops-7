@@ -31,28 +31,28 @@ class LingotekLog {
     self::log($msg, $data, $depth = 1, WATCHDOG_INFO, $tag);
   }
 
-  public static function info($msg, $data, $tag = '') {
+  public static function info($msg, $data, $tag = 'info') {
     if (!variable_get('lingotek_api_debug', self::getDefault())) {
       return;
     }
     self::log($msg, $data, $depth = 1, WATCHDOG_INFO, $tag);
   }
 
-  public static function error($msg, $data, $tag = '') {
+  public static function error($msg, $data, $tag = 'error') {
     if (!variable_get('lingotek_error_log', TRUE)) {
       return;
     }
     self::log($msg, $data, $depth = 1, WATCHDOG_ERROR, $tag);
   }
 
-  public static function warning($msg, $data, $tag = '') {
+  public static function warning($msg, $data, $tag = 'warning') {
     if (!variable_get('lingotek_warning_log', TRUE)) {
       return;
     }
     self::log($msg, $data, $depth = 1, WATCHDOG_WARNING, $tag);
   }
 
-  public static function trace($msg, $data = NULL, $tag = '') {
+  public static function trace($msg, $data = NULL, $tag = 'trace') {
     if (!variable_get('lingotek_trace_log', FALSE)) {
       return;
     }
@@ -63,31 +63,28 @@ class LingotekLog {
     return is_string($obj) ? $obj : '<pre>' . print_r($obj, TRUE) . '</pre>'; //htmlspecialchars(var_export($obj, TRUE))
   }
 
-  public static function log($msg, $data = NULL, $depth = 0, $severity = WATCHDOG_NOTICE, $tag = '') {
+  public static function log($msg, $data = NULL, $depth = 0, $severity = WATCHDOG_NOTICE, $tag = 'general') {
     $backtrace = debug_backtrace();
     $location = $backtrace[$depth]['file'] . ':' . $backtrace[$depth]['line'];
     $function = $backtrace[$depth + 1]['function'];
     $args = @json_encode($backtrace[$depth + 1]['args']);
+    if (!$data) {
+      $data = array();
+    }
+    $data_output = json_encode($data);
 
-    $data_output = "";
-    if (isset($data)) {
-      $data_output = json_encode($data);
-    }
-    $data_array = array();
-    if (is_array($data)) {
-      foreach ($data as $k => $v) {
-        $data_array[$k] = LingotekLog::format($v);
-      }
-    }
-    watchdog
-        ('lingotek', format_string((empty($tag) ? $msg : '[' . $tag . '] ' . $msg), $data_array) . ' <div style="word-break: break-all; padding-top: 10px; color: #666;"><b>FUNCTION:</b> %function<br /><b>ARGS:</b> %args<br /><b>FILE:</b> %location<br /><b>MESSAGE:</b> %msg <br /><b>DATA:</b> %data <br /></div>', array(
-      '%msg' => $msg,
-      '%data' => $data_output,
+    $data_array = array(
+      '@tag' => $tag,
       '%location' => $location,
       '%function' => $function,
       '%args' => $args,
-        ), $severity
     );
+    // format the passed-in arguments
+    foreach ($data as $k => $v) {
+      $data_array[$k] = LingotekLog::format($v);
+    }
+
+    watchdog('lingotek', '[@tag] <div style="word-break: break-all; padding-top: 10px; color: #666;">' . $msg . '<br /><b>FUNCTION:</b> %function<br /><b>ARGS:</b> %args<br /><b>FILE:</b> %location<br /></div>', $data_array, $severity);
 
     if (variable_get('lingotek_error_log', FALSE) && $tag == 'error') {
       error_log("FUNCTION: $function ARGS: $args  FILE: $location MESSAGE: $msg DATA: $data_output ");

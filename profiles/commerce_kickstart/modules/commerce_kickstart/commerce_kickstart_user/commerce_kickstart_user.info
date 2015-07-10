@@ -2,7 +2,6 @@ name = Commerce Kickstart User
 description = Provides user related functionality.
 core = 7.x
 package = Commerce Kickstart
-php = 5.2.4
 dependencies[] = block
 dependencies[] = commerce_addressbook
 dependencies[] = commerce_customer
@@ -12,7 +11,7 @@ dependencies[] = features
 dependencies[] = menu
 dependencies[] = strongarm
 features[ctools][] = strongarm:strongarm:1
-features[features_api][] = api:1
+features[features_api][] = api:2
 features[menu_custom][] = menu-user-menu
 features[menu_links][] = menu-user-menu_create-account:user/register
 features[menu_links][] = menu-user-menu_log-in:user/login
@@ -40,9 +39,9 @@ features[variable][] = user_email_verification
 features[variable][] = user_pictures
 features[variable][] = user_register
 
-; Information added by Drupal.org packaging script on 2015-03-20
-version = "7.x-2.22"
+; Information added by Drupal.org packaging script on 2015-07-10
+version = "7.x-2.26"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1426860543"
+datestamp = "1436555946"
 

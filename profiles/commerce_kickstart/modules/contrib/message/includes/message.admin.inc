@@ -105,6 +105,13 @@ function message_user_admin_settings($form_state) {
     );
   }
 
+  $form['message_use_queue'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Use queue'),
+    '#description' => t('Delete messages without existing reference via queue.'),
+    '#default_value' => variable_get('message_use_queue', FALSE),
+  );
+
   return system_settings_form($form);
 }
 

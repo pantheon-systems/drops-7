@@ -8,7 +8,7 @@ $GLOBALS['_lingotek_client'] = new LingotekSession();
 
 /*
  * This function is only used for node-based translations.
- * 
+ *
  * @param $node
  *  Node in the source language
  * @param $drupal_language_code
@@ -70,7 +70,7 @@ function lingotek_get_target_node($node, $drupal_language_code) {
     $localized_node->comment = $node->comment;
     $localized_node->promote = $node->promote;
     $localized_node->sticky = $node->sticky;
-    $localized_node->status = 0;
+    $localized_node->status = 1; // default to published if revisions are not enabled.
     $localized_node->create_lingotek_document = FALSE;
 
     // Grandfather field settings/values from source node to target.
@@ -94,10 +94,10 @@ function lingotek_get_target_node($node, $drupal_language_code) {
             $f[$drupal_language_code][$key]['format'] = $value['format'];
         }
       }
-      
+
       $localized_node->$field_name = $f;
     }
-        
+
     node_save($localized_node);
     lingotek_keystore('node', $localized_node->nid, 'upload_status', LingotekSync::STATUS_TARGET);
     // Child node should keep its parent node's profile, for rules integration.
@@ -110,7 +110,7 @@ function lingotek_get_target_node($node, $drupal_language_code) {
   return $localized_node;
 }
 
-function lingotek_process_entity_xml($xml, $entity, $entity_type, $drupal_language_code, $node_based_translation = FALSE, $url_alias_translation = 0) {
+function lingotek_process_entity_xml($xml, &$entity, $entity_type, $drupal_language_code, $node_based_translation = FALSE, $url_alias_translation = 0) {
   list($id, $vid, $bundle) = lingotek_entity_extract_ids($entity_type, $entity);
 
   // Set $node_based if the entity type is a node, inherit otherwise.
@@ -126,7 +126,7 @@ function lingotek_process_entity_xml($xml, $entity, $entity_type, $drupal_langua
   if ($vid === NULL || $entity_type == 'comment') {
     $vid = $id;
   }
-  
+
   $delta = 0;
   $last_tag = NULL;
   foreach ($xml as $tag => $content) {
@@ -162,16 +162,25 @@ function lingotek_process_entity_xml($xml, $entity, $entity_type, $drupal_langua
     }
     else { //this part of the xml is a field
       $drupal_field_name = $tag;
-      $field = field_info_field($drupal_field_name);
-      $source_field_data = field_get_items($entity_type, $source_entity, $drupal_field_name);
-      $translatable_field = !empty($field['translatable']);
-      $field_language = $node_based_translation && !$translatable_field ? LANGUAGE_NONE : $drupal_language_code;
       $target_key = 'value';
       $subfield_parts = explode('__', $tag);
       if (count($subfield_parts) == 2) {
         $drupal_field_name = $subfield_parts[0];
         $target_key = $subfield_parts[1];
       }
+
+      $field = field_info_field($drupal_field_name);
+
+      // Try to get the source field's text format, if available
+      try {
+        $source_field_data = field_get_items($entity_type, $source_entity, $drupal_field_name);
+      } catch (EntityMalformedException $e) {
+        $source_field_data = array();
+      }
+
+      $translatable_field = !empty($field['translatable']);
+      $field_language = $node_based_translation && !$translatable_field ? LANGUAGE_NONE : $drupal_language_code;
+
       if (isset($field)) {
         $curr_field_data = & $entity->$drupal_field_name;
         $index = 0;
@@ -232,7 +241,6 @@ function lingotek_process_entity_xml($xml, $entity, $entity_type, $drupal_langua
         }
         else {
           foreach ($content as $text) {
-            // Set all field-collection fields to translatable, if not node-based.
             if ($entity_type == 'field_collection_item' && !$node_based_translation && $field['translatable'] != 1) {
               $field['translatable'] = 1;
               field_update_field($field);
@@ -271,7 +279,6 @@ function lingotek_process_entity_xml($xml, $entity, $entity_type, $drupal_langua
             $index++;
           }
         }
-
         foreach ($field_names as $field_name) {
           // using drupal_write_record to avoid node_save - node_save overwrites publications unless called on both revised and published versions of the node (i.e. workbench_moderation)
           // UPDATE: This could perhaps be rewritten now that workbench_moderation is supported through the rules module
@@ -292,6 +299,9 @@ function lingotek_process_entity_xml($xml, $entity, $entity_type, $drupal_langua
       }
 
       cache_clear_all('field:' . $entity_type . ':' . $id, 'cache_field');
+      entity_get_controller($entity_type)->resetCache(array($id));
+      // Pull the latest changes from the database
+      $entity = lingotek_entity_load_single($entity_type, $id);
 
       //Set URL alias
       if ($tag == 'title_field' && $url_alias_translation == 2 && module_exists('pathauto') && $entity->language != LANGUAGE_NONE) {

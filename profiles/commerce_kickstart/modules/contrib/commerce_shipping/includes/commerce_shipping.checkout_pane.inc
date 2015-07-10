@@ -52,7 +52,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
   commerce_shipping_collect_rates($order);
 
   // Generate an array of shipping service rate options.
-  $options = commerce_shipping_service_rate_options($order);
+  $options = commerce_shipping_service_rate_options($order, $form_state);
 
   // If at least one shipping option is available...
   if (!empty($options)) {
@@ -81,7 +81,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
     // Find the default shipping method using either the pre-selected value
     // stored as a line item on the order or the first available method.
     $pane_values = !empty($form_state['values'][$checkout_pane['pane_id']]) ? $form_state['values'][$checkout_pane['pane_id']] : array();
-    $pane_values['service_details'] = array();
+    $pane_values['service_details'] = !empty($form_state['values'][$checkout_pane['pane_id']]['service_details']) ? $form_state['values'][$checkout_pane['pane_id']]['service_details'] : array();
 
     // First check for a shipping service selection in the pane values.
     if (!empty($pane_values['shipping_service']) && !empty($options[$pane_values['shipping_service']])) {
@@ -92,7 +92,7 @@ function commerce_shipping_pane_checkout_form($form, &$form_state, $checkout_pan
       $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
       foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
-        if ($line_item_wrapper->type->value() == 'shipping' && !empty($options[$line_item_wrapper->commerce_shipping_service->value()])) {
+        if ($line_item_wrapper->value() && $line_item_wrapper->type->value() == 'shipping' && !empty($options[$line_item_wrapper->commerce_shipping_service->value()])) {
           $default_value = $line_item_wrapper->commerce_shipping_service->value();
 
           // If the service details value is empty, see if there are any values
@@ -178,6 +178,20 @@ function commerce_shipping_recalculate_services_refresh($form, $form_state) {
  * Validate callback for recalculating shipping services.
  */
 function commerce_shipping_recalculate_services_validate($form, &$form_state) {
+
+  // Load latest version of the order.
+  $order = commerce_order_load($form_state['order']->order_id);
+  // Check if the order is still on the same checkout step.
+  $checkout_page = $form_state['checkout_page'];
+  if ($form_state['order']->changed < $order->changed || !commerce_checkout_page_access($checkout_page, $order)) {
+    // Clear all errors.
+    form_clear_error();
+    watchdog('access denied', check_plain($_GET['q']), NULL, WATCHDOG_WARNING);
+    drupal_set_message(t('You are not authorized to access this command.'), 'error');
+    $form_state['rebuild'] = TRUE;
+    return FALSE;
+  }
+
   // Call all validation callbacks.
   $recalculate = commerce_shipping_recalculate_services($form, $form_state);
 
@@ -285,7 +299,7 @@ function commerce_shipping_recalculate_services_submit($form, &$form_state) {
   if ($rebuild) {
     // Avoid overwriting an already updated order.
     $stored_order = commerce_order_load($order->order_id);
-    if ($stored_order->changed < $order->changed) {
+    if ($stored_order->changed <= $order->changed) {
       commerce_order_save($order);
     }
     $form_state['rebuild'] = TRUE;
@@ -404,7 +418,7 @@ function commerce_shipping_pane_review($form, $form_state, $checkout_pane, $orde
       // Return its label and formatted total price.
       $total_price = $line_item_wrapper->commerce_total->value();
       $rate = commerce_currency_format($total_price['amount'], $total_price['currency_code'], $line_item_wrapper->value());
-      return t('@service: @rate', array('@service' => $line_item_wrapper->line_item_label->value(), '@rate' => $rate));
+      return t('!service: !rate', array('!service' => $line_item_wrapper->line_item_label->value(), '!rate' => $rate));
     }
   }
 }

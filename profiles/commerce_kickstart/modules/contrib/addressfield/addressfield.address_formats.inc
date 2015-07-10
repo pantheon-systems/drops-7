@@ -42,7 +42,7 @@ function addressfield_get_address_format($country_code) {
   $countries_with_optional_postal_code = array(
     'AC', 'AD', 'AL', 'AZ', 'BA', 'BB', 'BD', 'BG', 'BH', 'BM', 'BN', 'BT',
     'CR', 'CY', 'CZ', 'DO', 'DZ', 'EC', 'EH', 'ET', 'FO', 'GE', 'GN', 'GT',
-    'GW', 'HR', 'HT', 'HU', 'IL', 'IS', 'JO', 'KE', 'KG', 'KH', 'KW', 'LA',
+    'GW', 'HR', 'HT', 'IL', 'IS', 'JO', 'KE', 'KG', 'KH', 'KW', 'LA',
     'LA', 'LB', 'LK', 'LR', 'LS',  'MA', 'MC', 'MD', 'ME', 'MG', 'MK', 'MM',
     'MT', 'MU', 'MV', 'NE', 'NP', 'OM', 'PK', 'PY', 'RO', 'RS', 'SA', 'SI',
     'SK', 'SN', 'SZ', 'TA', 'TJ', 'TM', 'TN', 'VA', 'VC', 'VG', 'XK', 'ZM',
@@ -57,7 +57,7 @@ function addressfield_get_address_format($country_code) {
   // postal code in 'used_fields' and 'required_fields'.
   $countries_with_required_postal_code = array(
     'AT', 'AX', 'BE', 'BL', 'CH', 'DE', 'DK', 'FI', 'FK', 'FR', 'GF', 'GG',
-    'GL', 'GP', 'GR', 'GS', 'IM', 'IO', 'JE', 'LI', 'LU', 'MF', 'MQ', 'NC',
+    'GL', 'GP', 'GR', 'GS', 'HU', 'IM', 'IO', 'JE', 'LI', 'LU', 'MF', 'MQ', 'NC',
     'NL', 'NO', 'PL', 'PM', 'PN', 'PT', 'RE', 'SE', 'SH', 'SJ', 'TC', 'WF',
     'YT',
   );
@@ -245,6 +245,7 @@ function addressfield_get_address_format($country_code) {
     'used_fields' => array('locality', 'administrative_area', 'postal_code'),
     'required_fields' => array('locality', 'administrative_area', 'postal_code'),
     'administrative_area_label' => t('Region', array(), array('context' => 'Territory of a country')),
+    'render_administrative_area_value' => TRUE,
   );
   $address_formats['LT'] = array(
     'used_fields' => array('locality', 'administrative_area', 'postal_code'),
@@ -343,6 +344,7 @@ function addressfield_get_address_format($country_code) {
   $address_formats['RU'] = array(
     'used_fields' => array('locality', 'administrative_area', 'postal_code'),
     'required_fields' => array('locality', 'postal_code'),
+    'render_administrative_area_value' => TRUE,
   );
   $address_formats['SC'] = array(
     'used_fields' => array('locality', 'administrative_area'),

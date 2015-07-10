@@ -2,7 +2,6 @@ name = Commerce Kickstart Block
 description = Provides blocks and menus.
 core = 7.x
 package = Commerce Kickstart
-php = 5.2.4
 dependencies[] = block
 dependencies[] = ctools
 dependencies[] = features
@@ -10,7 +9,7 @@ dependencies[] = menu
 dependencies[] = special_menu_items
 dependencies[] = strongarm
 features[ctools][] = strongarm:strongarm:1
-features[features_api][] = api:1
+features[features_api][] = api:2
 features[menu_custom][] = menu-footer-navigation
 features[menu_custom][] = menu-payment-methods
 features[menu_custom][] = secondary-navigation
@@ -33,9 +32,9 @@ features[menu_links][] = secondary-navigation_contact:node/1
 features[variable][] = menu_secondary_links_source
 files[] = commerce_kickstart_block.module
 
-; Information added by Drupal.org packaging script on 2015-03-20
-version = "7.x-2.22"
+; Information added by Drupal.org packaging script on 2015-07-10
+version = "7.x-2.26"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1426860543"
+datestamp = "1436555946"
 

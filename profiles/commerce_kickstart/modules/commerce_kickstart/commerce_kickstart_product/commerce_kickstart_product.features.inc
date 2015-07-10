@@ -27,7 +27,7 @@ function commerce_kickstart_product_commerce_flat_rate_default_services() {
       'module' => 'commerce_flat_rate',
       'title' => 'Express Shipping',
       'base_rate' => array(
-        'amount' => '1500',
+        'amount' => 1500,
         'currency_code' => 'USD',
         'data' => array(),
       ),
@@ -52,7 +52,7 @@ function commerce_kickstart_product_commerce_flat_rate_default_services() {
       'module' => 'commerce_flat_rate',
       'title' => 'Free Shipping',
       'base_rate' => array(
-        'amount' => '0',
+        'amount' => 0,
         'currency_code' => 'USD',
         'data' => array(),
       ),
@@ -77,7 +77,7 @@ function commerce_kickstart_product_commerce_flat_rate_default_services() {
       'module' => 'commerce_flat_rate',
       'title' => 'Standard Shipping',
       'base_rate' => array(
-        'amount' => '800',
+        'amount' => 800,
         'currency_code' => 'USD',
         'data' => array(),
       ),
@@ -98,42 +98,42 @@ function commerce_kickstart_product_commerce_product_default_types() {
       'name' => 'Bags & Cases',
       'description' => '<em>Bags & Cases</em> are products which contain a size and a color.',
       'help' => '',
-      'revision' => '1',
+      'revision' => 1,
     ),
     'drinks' => array(
       'type' => 'drinks',
       'name' => 'Drinks',
       'description' => '<em>Drinks</em> are products which contain a color.',
       'help' => '',
-      'revision' => '1',
+      'revision' => 1,
     ),
     'hats' => array(
       'type' => 'hats',
       'name' => 'Hats',
       'description' => '<em>Hats</em> are products which contain a size and a color.',
       'help' => '',
-      'revision' => '1',
+      'revision' => 1,
     ),
     'shoes' => array(
       'type' => 'shoes',
       'name' => 'Shoes',
       'description' => '<em>Shoes</em> are products which contain a size and a color.',
       'help' => '',
-      'revision' => '1',
+      'revision' => 1,
     ),
     'storage_devices' => array(
       'type' => 'storage_devices',
       'name' => 'Storage Devices',
       'description' => '<em>Storage devices</em> are products which contain a capacity.',
       'help' => '',
-      'revision' => '1',
+      'revision' => 1,
     ),
     'tops' => array(
       'type' => 'tops',
       'name' => 'Tops',
       'description' => '<em>Tops</em> are products which contain a size and a color.',
       'help' => '',
-      'revision' => '1',
+      'revision' => 1,
     ),
   );
   return $items;
@@ -142,8 +142,10 @@ function commerce_kickstart_product_commerce_product_default_types() {
 /**
  * Implements hook_ctools_plugin_api().
  */
-function commerce_kickstart_product_ctools_plugin_api() {
-  list($module, $api) = func_get_args();
+function commerce_kickstart_product_ctools_plugin_api($module = NULL, $api = NULL) {
+  if ($module == "commerce_autosku" && $api == "autosku_pattern") {
+    return array("version" => "1");
+  }
   if ($module == "strongarm" && $api == "strongarm") {
     return array("version" => "1");
   }
@@ -157,68 +159,47 @@ function commerce_kickstart_product_image_default_styles() {
 
   // Exported image style: product_full.
   $styles['product_full'] = array(
-    'name' => 'product_full',
     'effects' => array(
       1 => array(
-        'label' => 'Scale and crop',
-        'help' => 'Scale and crop will maintain the aspect-ratio of the original image, then crop the larger dimension. This is most useful for creating perfectly square thumbnails without stretching the image.',
-        'effect callback' => 'image_scale_and_crop_effect',
-        'dimensions callback' => 'image_resize_dimensions',
-        'form callback' => 'image_resize_form',
-        'summary theme' => 'image_resize_summary',
-        'module' => 'image',
         'name' => 'image_scale_and_crop',
         'data' => array(
-          'width' => '400',
-          'height' => '550',
+          'width' => 400,
+          'height' => 550,
         ),
-        'weight' => '1',
+        'weight' => 1,
       ),
     ),
+    'label' => 'product_full',
   );
 
   // Exported image style: product_medium.
   $styles['product_medium'] = array(
-    'name' => 'product_medium',
     'effects' => array(
       1 => array(
-        'label' => 'Scale and crop',
-        'help' => 'Scale and crop will maintain the aspect-ratio of the original image, then crop the larger dimension. This is most useful for creating perfectly square thumbnails without stretching the image.',
-        'effect callback' => 'image_scale_and_crop_effect',
-        'dimensions callback' => 'image_resize_dimensions',
-        'form callback' => 'image_resize_form',
-        'summary theme' => 'image_resize_summary',
-        'module' => 'image',
         'name' => 'image_scale_and_crop',
         'data' => array(
-          'width' => '230',
-          'height' => '260',
+          'width' => 230,
+          'height' => 260,
         ),
-        'weight' => '1',
+        'weight' => 1,
       ),
     ),
+    'label' => 'product_medium',
   );
 
   // Exported image style: product_thumbnail.
   $styles['product_thumbnail'] = array(
-    'name' => 'product_thumbnail',
     'effects' => array(
       1 => array(
-        'label' => 'Scale and crop',
-        'help' => 'Scale and crop will maintain the aspect-ratio of the original image, then crop the larger dimension. This is most useful for creating perfectly square thumbnails without stretching the image.',
-        'effect callback' => 'image_scale_and_crop_effect',
-        'dimensions callback' => 'image_resize_dimensions',
-        'form callback' => 'image_resize_form',
-        'summary theme' => 'image_resize_summary',
-        'module' => 'image',
         'name' => 'image_scale_and_crop',
         'data' => array(
-          'width' => '110',
-          'height' => '130',
+          'width' => 110,
+          'height' => 130,
         ),
-        'weight' => '1',
+        'weight' => 1,
       ),
     ),
+    'label' => 'product_thumbnail',
   );
 
   return $styles;
@@ -278,5 +259,6 @@ function commerce_kickstart_product_node_info() {
       'help' => '',
     ),
   );
+  drupal_alter('node_info', $items);
   return $items;
 }

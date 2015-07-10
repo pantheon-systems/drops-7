@@ -274,6 +274,16 @@ class LingotekEntity implements LingotekTranslatableEntity {
     if (!empty($this->title)) {
       return $this->title;
     }
+    try {
+      $title_field = field_get_items($this->entity_type, $this->entity, 'title_field', $this->language);
+      $this->title = $title_field[0]['value'];
+      if (!empty($this->title)) {
+        return $this->title;
+      }
+    }
+    catch (Exception $e) {
+        // Must not have values in the title field, so continue.
+    }
     if (!empty($this->info['entity keys']['label']) && !empty($this->entity->{$this->info['entity keys']['label']})) {
       $this->title = $this->entity->{$this->info['entity keys']['label']};
     }

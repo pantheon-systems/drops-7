@@ -29,8 +29,8 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
       $line_items_to_delete[] = $wrapper_line_item->line_item_id->value();
       $wrapper->commerce_line_items->offsetUnset($delta);
     }
-    else {
-      $cloned_line_items[$wrapper_line_item->getIdentifier()] = clone($wrapper_line_item->value());
+    elseif (is_object($wrapper_line_item) && $line_item = $wrapper_line_item->value()) {
+      $cloned_line_items[$wrapper_line_item->getIdentifier()] = clone $line_item;
 
       // Remove discount components from the line item price fields; the line
       // item may be a discount (so the price will become 0) or another line
@@ -81,20 +81,31 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
 /**
  * Remove discount components from a given price and recalculate the total.
  *
- * @param $price_wrapper
+ * @param object $price_wrapper
  *   Wrapped commerce price.
  */
 function commerce_discount_remove_discount_components($price_wrapper) {
-  $data = $price_wrapper->data->value();
+  $data = (array) $price_wrapper->data->value() + array('components' => array());
   $component_removed = FALSE;
   // Remove price components belonging to order discounts.
   foreach ($data['components'] as $key => $component) {
-    if (empty($component['price']['data']['discount_name'])) {
-      continue;
+    $remove = FALSE;
+
+    // Remove all discount components.
+    if (!empty($component['price']['data']['discount_name'])) {
+      $discount_name = $component['price']['data']['discount_name'];
+      $wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
+      if (!$wrapper->value() || $wrapper->getBundle() == 'order_discount') {
+        $remove = TRUE;
+      }
+    } else if ($component['name'] != 'base_price') {
+      // As long as the component is neither base price nor discount, allow other modules to say whether it gets reset.
+      // This is so that discounts can apply against a price that has been stripped of components from modules that
+      // need to apply against a post-discount price.
+      drupal_alter('commerce_discount_remove_price_component', $component, $remove);
     }
-    $discount_name = $component['price']['data']['discount_name'];
-    $wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
-    if (!$wrapper->value() || $wrapper->getBundle() == 'order_discount') {
+
+    if ($remove) {
       unset($data['components'][$key]);
       $component_removed = TRUE;
     }
@@ -113,13 +124,33 @@ function commerce_discount_remove_discount_components($price_wrapper) {
 }
 
 /**
+ * Implements hook_commerce_cart_order_empty().
+ */
+function commerce_discount_commerce_cart_order_empty($order) {
+  // Clean-up task to remove commerce_discount line items when cart is emptied.
+  $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+  $line_items_to_delete = array();
+  foreach ($order_wrapper->commerce_line_items as $delta => $line_item_wrapper) {
+    if ($line_item_wrapper->getBundle() == 'commerce_discount') {
+      $line_items_to_delete[] = $line_item_wrapper->getIdentifier();
+      $order_wrapper->commerce_line_items->offsetUnset($delta);
+    }
+  }
+
+  // Delete line items.
+  commerce_line_item_delete_multiple($line_items_to_delete);
+}
+
+/**
  * Implements hook_commerce_shipping_method_collect_rates().
  *
- * Invoke the commerce_discount_free_shipping event when the shipping rates
+ * Invoke the commerce_discount_free_shipping event and the
+ * commerce_discount_percent_off_shipping event when the shipping rates
  * are being collected.
  */
 function commerce_discount_commerce_shipping_method_collect_rates($method, $order) {
   rules_invoke_event('commerce_discount_free_shipping', $order);
+  rules_invoke_event('commerce_discount_percent_off_shipping', $order);
 }
 
 /**
@@ -141,6 +172,7 @@ function commerce_discount_entity_info() {
       'name' => 'name',
       'label' => 'label',
       'bundle' => 'type',
+      'status' => 'export_status',
     ),
     'bundles' => array(),
     'module' => 'commerce_discount',
@@ -269,7 +301,7 @@ function commerce_discount_commerce_price_formatted_components_alter(&$component
 function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state) {
   // Add clearfix to the discount type container.
   $form['commerce_discount_type']['#attributes']['class'][] = 'clearfix';
-  $form['commerce_discount_fields']['commerce_discount_offer']['und']['form']['type']['#attributes']['class'][] = 'clearfix';
+  $form['commerce_discount_fields']['commerce_discount_offer'][LANGUAGE_NONE]['form']['type']['#attributes']['class'][] = 'clearfix';
 
   if (empty($form_state['commerce_discount']->discount_id)) {
     // Entity is new.
@@ -292,11 +324,18 @@ function commerce_discount_form_commerce_discount_form_alter(&$form, $form_state
  * Implements hook_field_widget_form_alter().
  */
 function commerce_discount_field_widget_form_alter(&$element, &$form_state, $context) {
-  if (isset($element['#field_name']) && $element['#field_name'] == 'commerce_free_shipping') {
+  if (isset($element['#field_name']) && ($element['#field_name'] == 'commerce_free_shipping'
+    || $element['#field_name'] == 'commerce_percent_off_ship_serv')) {
     $element['#options'] += commerce_shipping_service_options_list();
     if ($form_state['op'] == 'edit') {
       $wrapper_offer = entity_metadata_wrapper('commerce_discount_offer', $element['#entity']);
-      $element['#default_value'] = $wrapper_offer->commerce_free_shipping->value();
+      if($element['#field_name'] == 'commerce_free_shipping'){
+        $element['#default_value'] = $wrapper_offer->commerce_free_shipping->value();
+      }
+      else{
+        $element['#default_value'] = $wrapper_offer->commerce_percent_off_ship_serv->value();
+      }
+
     }
   }
 }
@@ -365,7 +404,7 @@ function commerce_discount_commerce_discount_type_info() {
 function commerce_discount_commerce_discount_offer_type_info() {
   $types = array();
   $types['fixed_amount'] = array(
-    'label' => t('$ off'),
+    'label' => t('@currency off', array('@currency' => commerce_currency_get_symbol(variable_get('commerce_default_currency', 'USD')))),
     'action' => 'commerce_discount_fixed_amount',
     'entity types' => array('commerce_order', 'commerce_line_item'),
   );
@@ -382,6 +421,12 @@ function commerce_discount_commerce_discount_offer_type_info() {
       'action' => 'commerce_discount_free_shipping_service',
       'entity types' => array('commerce_order'),
       'event' => 'commerce_discount_free_shipping',
+    );
+    $types['percent_off_shipping'] = array(
+      'label' => t('% off of shipping'),
+      'action' => 'commerce_discount_percent_off_shipping_service',
+      'entity types' => array('commerce_order'),
+      'event' => 'commerce_discount_percent_off_shipping',
     );
   }
 
@@ -402,7 +447,7 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
   $discount_offer = $wrapper->commerce_discount_offer->value();
   $wrapper_discount_offer = entity_metadata_wrapper('commerce_discount_offer', $discount_offer);
 
-  // Check if property is attached.
+  // Check if property is attached to commerce free shipping!
   if (isset($wrapper_discount_offer->commerce_free_shipping)) {
     if (!$shipping_service = $wrapper_discount_offer->commerce_free_shipping->value()) {
       // No need to change the rules event.
@@ -424,7 +469,7 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
 /**
  * Return an array of all defined discount types.
  *
- * @return
+ * @return array
  *   The array of types, keyed by type name.
  */
 function commerce_discount_types() {
@@ -453,10 +498,10 @@ function commerce_discount_types() {
 /**
  * Loads the data for a specific discount type.
  *
- * @param $discount_type
+ * @param string $discount_type
  *   The machine name of a discount type.
  *
- * @return
+ * @return mixed
  *   The requested array or FALSE if not found.
  */
 function commerce_discount_type($discount_type) {
@@ -468,10 +513,10 @@ function commerce_discount_type($discount_type) {
 /**
  * Returns the human readable name of any or all discount types.
  *
- * @param $type
+ * @param string $type
  *   Optional parameter specifying the type whose name to return.
  *
- * @return
+ * @return mixed
  *   Either an array of all discount type names keyed by the machine name or a
  *     string containing the human readable name for the specified type. If a
  *     type is specified that does not exist, this function returns FALSE.
@@ -501,7 +546,7 @@ function commerce_discount_type_get_name($type = NULL) {
 /**
  * Return an array of all defined discount offer types.
  *
- * @return
+ * @return array
  *   The array of types, keyed by type name.
  */
 function commerce_discount_offer_types() {
@@ -530,10 +575,10 @@ function commerce_discount_offer_types() {
 /**
  * Loads the data for a specific discount offer type.
  *
- * @param $offer_type
+ * @param string $offer_type
  *   The machine name of an offer type.
  *
- * @return
+ * @return mixed
  *   The requested array or FALSE if not found.
  */
 function commerce_discount_offer_type($offer_type) {
@@ -545,10 +590,10 @@ function commerce_discount_offer_type($offer_type) {
 /**
  * Returns the human readable name of any or all discount offer types.
  *
- * @param $type
+ * @param string $type
  *   Optional parameter specifying the offer type whose name to return.
  *
- * @return
+ * @return mixed
  *   Either an array of all discount offer type names keyed by the machine name
  *   or a string containing the human readable name for the specified type.
  *   If a type is specified that does not exist, this function returns FALSE.

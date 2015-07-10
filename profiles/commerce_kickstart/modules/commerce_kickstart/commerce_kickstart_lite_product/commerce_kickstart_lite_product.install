@@ -6,14 +6,7 @@
  * Rebuilds the feature immediately after it's enabled.
  */
 function commerce_kickstart_lite_product_enable() {
-  // Rebuild the features static caches.
-  features_include(TRUE);
-
-  $module = 'commerce_kickstart_lite_product';
-  $feature = feature_load($module);
-  $items[$module] = array_keys($feature->info['features']);
-  _features_restore('enable', $items);
-  _features_restore('rebuild', $items);
+  commerce_kickstart_rebuild_feature('commerce_kickstart_lite_product');
 
   // Set up the zoom if it's enabled.
   if (variable_get('commerce_kickstart_product_zoom_enabled', FALSE)) {
@@ -84,10 +77,37 @@ function commerce_kickstart_lite_product_enable() {
  * Implementation of hook_install()
  */
 function commerce_kickstart_lite_product_install() {
+  $t = get_t();
+
   db_update('system')
     ->fields(array('weight' => 10))
     ->condition('name', 'commerce_kickstart_lite_product')
     ->execute();
+
+  // Generate a product display content type.
+  // @note: We do this here and not Features so it can be deleted by users.
+  $product_display = array(
+    'type' => 'product_display',
+    'name' => $t('Product display'),
+    'base' => 'node_content',
+    'description' => $t('Use product displays for adding product pages to your store'),
+    'custom' => 1,
+    'modified' => 1,
+    'locked' => 0,
+  );
+  $product_display = node_type_set_defaults($product_display);
+  node_type_save($product_display);
+  node_add_body_field($product_display);
+
+  // Create a default catalog vocabulary.
+  // @note: We do this here and not Features so it can be deleted by users.
+  $vocabulary = (object) array(
+    'name' => $t('Product category'),
+    'description' => '',
+    'machine_name' => 'product_category',
+    'hierarchy' => 0,
+  );
+  taxonomy_vocabulary_save($vocabulary);
 
   // Create a "Free shipping" service so that the shipping pane is not empty.
   $shipping_service = commerce_flat_rate_service_new();
@@ -99,4 +119,13 @@ function commerce_kickstart_lite_product_install() {
     'data' => array(),
   );
   commerce_flat_rate_service_save($shipping_service);
+}
+
+/**
+ * Release the product display node type from Features.
+ */
+function commerce_kickstart_lite_product_update_7201() {
+  $product_display_type = node_type_load('product_display');
+  $product_display_type->custom = 1;
+  node_type_save($product_display_type);
 }
