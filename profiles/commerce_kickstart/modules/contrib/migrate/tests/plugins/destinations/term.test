@@ -21,7 +21,7 @@ class MigrateTaxonomyUnitTest extends DrupalWebTestCase {
     parent::setUp('taxonomy', 'migrate', 'migrate_example');
 
     // Make sure the migrations are registered.
-    migrate_get_module_apis();
+    migrate_static_registration();
   }
 
   function testTermImport() {

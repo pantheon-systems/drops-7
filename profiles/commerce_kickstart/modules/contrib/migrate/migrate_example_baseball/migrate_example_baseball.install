@@ -9,10 +9,10 @@ function migrate_example_baseball_enable() {
   $path = dirname(__FILE__) . '/data';
   migrate_example_baseball_get_files($path);
   for ($i=0; $i<=9; $i++) {
-    $file = 'gl200' . $i . '.txt';
+    $file = 'GL200' . $i . '.TXT';
     Migration::registerMigration('GameBaseball',
       pathinfo($file, PATHINFO_FILENAME),
-      array('source_file' => $path . '/' . $file));
+      array('source_file' => $path . '/' . $file, 'group_name' => 'baseball'));
   }
 }
 
@@ -53,14 +53,7 @@ function migrate_example_baseball_uninstall() {
 }
 
 function migrate_example_baseball_disable() {
-  for ($i=0; $i<=9; $i++) {
-    $file = 'gl200' . $i . '.txt';
-    Migration::deregisterMigration(pathinfo($file, PATHINFO_FILENAME));
-    $filename = dirname(__FILE__) . '/data/' . $file;
-    if (file_exists($filename)) {
-      unlink($filename);
-    }
-  }
+  MigrateGroup::deregister('baseball');
 }
 
 /**

@@ -5,7 +5,7 @@ api = 2
 defaults[projects][subdir] = contrib
 
 ; Basic contributed modules.
-projects[ctools][version] = 1.7
+projects[ctools][version] = 1.9
 projects[entity][version] = 1.6
 projects[entityreference][version] = 1.1
 projects[entityreference][patch][] = "http://drupal.org/files/1580348-universal-formatters-17.patch"
@@ -17,6 +17,8 @@ projects[addressfield][version] = 1.1
 projects[features][version] = "2.6"
 projects[features][patch][2143765] = "http://drupal.org/files/issues/features-fix-modules-enabled-2143765-1.patch"
 projects[features][patch][2479803] = "https://www.drupal.org/files/issues/ignore_hidden_modules-2479803-1.patch"
+projects[features][patch][2534138] = "https://www.drupal.org/files/issues/2534138-field-base-exception-catch-1.patch"
+projects[features_override][version] = 2.0-rc2
 projects[strongarm][version] = 2.0
 projects[taxonomy_menu][version] = 1.5
 projects[libraries][version] = 2.2
@@ -24,17 +26,17 @@ projects[views_megarow][version] = 1.4
 
 ; Drupal Commerce and Commerce contribs.
 projects[commerce][version] = 1.11
-projects[commerce_features][version] = 1.0
-projects[commerce_features][patch][] = "http://drupal.org/files/1402762_export_flat_rate_commerce_features-6.patch"
+projects[commerce_features][version] = 1.1
 projects[commerce_addressbook][version] = 2.0-rc8
 projects[commerce_shipping][version] = 2.2
 projects[commerce_flat_rate][version] = 1.0-beta2
 projects[commerce_fancy_attributes][version] = 1.0
 projects[commerce_autosku][version] = 1.x-dev
 projects[commerce_autosku][download][type] = git
-projects[commerce_autosku][download][revision] = 562b9a5
+projects[commerce_autosku][download][revision] = 32e86f4
 projects[commerce_autosku][download][branch] = 7.x-1.x
 projects[commerce_migrate][version] = 1.1
+projects[commerce_migrate][patch][1931302] = https://www.drupal.org/files/commerce_products_source_migration-1931302-2.patch
 projects[commerce_discount][version] = 1.x-dev
 projects[commerce_discount][download][type] = git
 projects[commerce_discount][download][revision] = 7a78225
@@ -101,7 +103,7 @@ projects[token][patch][] = "http://drupal.org/files/token-token_asort_tokens-171
 projects[eva][version] = 1.2
 projects[message][version] = 1.10
 projects[message_notify][version] = 2.5
-projects[migrate][version] = 2.5
+projects[migrate][version] = 2.8
 projects[migrate_extras][version] = 2.5
 projects[migrate_extras][patch][] = "http://drupal.org/files/migrate_extras-fix-destid2-array-1951904-4.patch"
 projects[date][version] = 2.8
@@ -123,6 +125,7 @@ projects[search_api_ranges][version] = 1.5
 projects[search_api_ranges][patch][] = "https://drupal.org/files/issues/search_api_ranges-rewrite-data-alteration-callback-2001846-4.patch"
 projects[facetapi][version] = 1.5
 projects[facetapi][patch][] = "https://drupal.org/files/1616518-term_remove_link-24.patch"
+projects[facetapi][patch][2378693] = "https://www.drupal.org/files/issues/notice_undefined-2378693-3.patch"
 projects[search_api_sorts][version] = 1.5
 
 ; UI improvement modules.
@@ -139,6 +142,8 @@ projects[chosen][version] = 2.x-dev
 projects[chosen][download][type] = git
 projects[chosen][download][revision] = e7a0d22
 projects[chosen][download][branch] = 7.x-2.x
+projects[admin_views][version] = 1.5
+projects[distro_update][version] = 1.0-beta4
 
 ; Internationalization
 projects[variable][version] = 2.5

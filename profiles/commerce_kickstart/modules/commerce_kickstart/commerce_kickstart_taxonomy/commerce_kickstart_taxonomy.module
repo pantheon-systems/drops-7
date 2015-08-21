@@ -1,6 +1,18 @@
 <?php
 
 /**
+ * Implements hook_preprocess_page().
+ */
+function commerce_kickstart_taxonomy_preprocess_page(&$variables) {
+  // Remove collection_taxonomy_term view title.
+  $router_item = menu_get_item(current_path());
+  $machine_name = variable_get('commerce_kickstart_demo_store', FALSE) ? 'collection' : 'product_category';
+  if ($router_item['path'] == $machine_name . '/%') {
+    $variables['title'] = '';
+  }
+}
+
+/**
  * Implements hook_taxonomy_menu_path().
  */
 function commerce_kickstart_taxonomy_taxonomy_menu_path() {

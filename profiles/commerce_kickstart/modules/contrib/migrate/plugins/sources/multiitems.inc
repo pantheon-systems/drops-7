@@ -47,8 +47,18 @@ abstract class MigrateItems {
    * @return stdClass
    */
   abstract public function getItem($id);
-}
 
+  /**
+   * Implementors may optionally implement a hash function, applied to the
+   * entire source row, if this particular item type makes it difficult to
+   * do on the raw row.
+   *
+   * @param $row
+   *
+   * @return mixed
+   */
+  //abstract public function hash($row);
+}
 
 /**
  * Implementation of MigrateItems, for providing a list of IDs and for
@@ -177,10 +187,23 @@ class MigrateSourceMultiItems extends MigrateSource {
         $sourceKey = $this->activeMap->getSourceKey();
         $key_name = key($sourceKey);
         $row->$key_name = $id;
+        break;
       }
-      break;
     }
     return $row;
   }
-}
 
+  /**
+   * Overrides MigrateSource::hash().
+   */
+  protected function hash($row) {
+    // Let the item class override the default hash function.
+    if (method_exists($this->itemsClass, 'hash')) {
+      $hash = $this->itemsClass->hash($row);
+    }
+    else {
+      $hash = parent::hash($row);
+    }
+    return $hash;
+  }
+}

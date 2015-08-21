@@ -1,23 +1,28 @@
 <?php
 
 /**
+ * @file
+ * Features integration on behalf of Commerce Customer.
+ */
+
+/**
  * Implements hook_features_export().
  */
 function commerce_customer_features_export($data, &$export, $module_name = '') {
   $pipe = array();
 
-  // Add commerce_customer_profile as dependency
+  // Add commerce_customer_profile as dependency.
   $export['dependencies']['features'] = 'features';
   $export['dependencies']['commerce_features'] = 'commerce_features';
   $export['dependencies']['commerce_customer_ui'] = 'commerce_customer_ui';
 
   $info = commerce_customer_profile_types();
   foreach ($data as $type) {
-    // Add module dependencies
+    // Add module dependencies.
     $export['dependencies'][$info[$type]['module']] = $info[$type]['module'];
     $export['features']['commerce_customer_type'][$type] = $type;
 
-    // Fetch fields of the profile type and add them as dependency
+    // Fetch fields of the profile type and add them as dependency.
     $fields = field_info_instances('commerce_customer_profile', $type);
     foreach ($fields as $name => $field) {
       $pipe['field'][] = "commerce_customer_profile-{$field['bundle']}-{$field['field_name']}";
@@ -44,7 +49,7 @@ function commerce_customer_features_export_options() {
  * Implements hook_features_export_render().
  */
 function commerce_customer_features_export_render($module, $data) {
-  // Return nothing, since the appropriate code has to exist already
+  // Return nothing, since the appropriate code has to exist already.
   return array();
 }
 
@@ -52,7 +57,7 @@ function commerce_customer_features_export_render($module, $data) {
  * Implements hook_features_revert().
  */
 function commerce_customer_features_revert($module) {
-  // Nothing to do here besides recaching - fields are handled by the fields
+  // Nothing to do here besides re-caching - fields are handled by the fields
   // implementation of features.
   // Re-Cache
   drupal_static_reset('commerce_customer_profile_types');

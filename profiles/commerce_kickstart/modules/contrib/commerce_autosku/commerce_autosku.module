@@ -12,7 +12,7 @@ define('COMMERCE_AUTOSKU_REPLACEMENT', '');
  * Implements hook_form_FORM_ID_alter().
  */
 function commerce_autosku_form_commerce_product_ui_product_type_form_alter(&$form, &$form_state) {
-  if (isset($form_state['product_type']['autosku']['pattern'])) {
+  if (!empty($form_state['product_type']['autosku']['pattern'])) {
     $pattern = $form_state['product_type']['autosku']['pattern'];
     $advanced = $form_state['product_type']['autosku']['advanced'];
   }
@@ -41,6 +41,8 @@ function commerce_autosku_form_commerce_product_ui_product_type_form_alter(&$for
     '#type' => 'textfield',
     '#title' => t('SKU Pattern'),
     '#default_value' => $pattern,
+    '#maxlength' => 255,
+    '#size' => 128,
     '#states' => array(
       'required' => array(
         ':input[name="product_type[autosku_status]"]' => array('checked' => TRUE),
@@ -96,7 +98,7 @@ function commerce_autosku_form_commerce_product_ui_product_type_form_alter(&$for
     '#type' => 'select',
     '#title' => t('SKU Case'),
     '#options' => array(
-      0 => t('Do not change'),
+      'original' => t('Do not change'),
       'uppercase' => t('Uppercase'),
       'lowercase' => t('Lowercase'),
     ),
@@ -147,6 +149,29 @@ function commerce_autosku_form_commerce_product_product_form_alter(&$form, &$for
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function commerce_autosku_form_commerce_bpc_create_bulk_form_alter(&$form, &$form_state) {
+  if (!isset($form_state['commerce_product'])) {
+    $form_state['commerce_product'] = $form['static_values']['#entity'];
+  }
+  if ($settings = commerce_autosku_get_settings($form_state['commerce_product'])) {
+    $form['product']['sku_fragment']['#required'] = FALSE;
+    $form['product']['sku_fragment']['#disabled'] = TRUE;
+    if ($settings['advanced']['hide_sku']) {
+      $form['product']['sku_fragment']['#access'] = FALSE;
+    }
+    else {
+      $form['product']['sku_fragment']['#description'] = t('SKU will be automatically generated.');
+    }
+
+    if (isset($form['product']['sku_fragment']['#element_validate'])) {
+      unset($form['product']['sku_fragment']['#element_validate']);
+    }
+  }
+}
+
+/**
  * Generate a random, temporary SKU to use when saving a new node.
  */
 function _commerce_autosku_get_temporary_sku() {
@@ -186,7 +211,7 @@ function _commerce_autosku_default_settings() {
   return array(
     'update_existing' => TRUE,
     'hide_sku' => TRUE,
-    'case' => 0,
+    'case' => 'original',
   );
 }
 

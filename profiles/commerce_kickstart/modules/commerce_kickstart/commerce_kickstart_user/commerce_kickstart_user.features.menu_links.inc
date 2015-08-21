@@ -25,7 +25,7 @@ function commerce_kickstart_user_menu_default_menu_links() {
     'external' => 0,
     'has_children' => 0,
     'expanded' => 0,
-    'weight' => -49,
+    'weight' => 2,
     'customized' => 1,
   );
   // Exported menu link: menu-user-menu_log-in:user/login
@@ -43,7 +43,7 @@ function commerce_kickstart_user_menu_default_menu_links() {
     'external' => 0,
     'has_children' => 0,
     'expanded' => 0,
-    'weight' => -50,
+    'weight' => 1,
     'customized' => 1,
   );
   // Exported menu link: menu-user-menu_log-out:user/logout
@@ -61,7 +61,7 @@ function commerce_kickstart_user_menu_default_menu_links() {
     'external' => 0,
     'has_children' => 0,
     'expanded' => 0,
-    'weight' => -47,
+    'weight' => 4,
     'customized' => 1,
   );
   // Exported menu link: menu-user-menu_my-account:user
@@ -80,7 +80,7 @@ function commerce_kickstart_user_menu_default_menu_links() {
     'external' => 0,
     'has_children' => 0,
     'expanded' => 0,
-    'weight' => -48,
+    'weight' => 3,
     'customized' => 1,
   );
   // Translatables

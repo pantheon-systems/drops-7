@@ -20,6 +20,7 @@ Feature: Handle discounts
     Then I should see "Discounts"
       And I should see "Test create discount"
     When I click "open"
+      And I wait for AJAX to finish
     When I click "delete"
     When I press "Confirm"
     Then I should see "Deleted Commerce Discount Test create discount."
@@ -52,6 +53,7 @@ Feature: Handle discounts
     When I am logged in as a user with the "administrator" role
       And I go to "/admin/commerce/store/discounts"
     When I click "open"
+      And I wait for AJAX to finish
     When I click "delete"
     When I press "Confirm"
     Then I should see "Deleted Commerce Discount Test discount."

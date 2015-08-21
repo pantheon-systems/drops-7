@@ -1,12 +1,16 @@
 <?php
 
 /**
+ * @file
+ * Features integration on behalf of Commerce Coupon.
+ */
+
+/**
  * Implements hook_features_export().
  */
 function commerce_coupon_type_features_export($data, &$export, $module_name = '') {
   $pipe = array();
 
-  $map = features_get_default_map('commerce_coupon_type');
   $export['dependencies']['features'] = 'features';
   $export['dependencies']['commerce_features'] = 'commerce_features';
   $export['dependencies']['commerce_coupon'] = 'commerce_coupon';
@@ -32,8 +36,10 @@ function commerce_coupon_type_features_export_options() {
   $feature_types = array();
   $coupon_types = commerce_coupon_get_types();
   if (!empty($coupon_types)) {
-    foreach($coupon_types as $type) {
-      $feature_types[$type->type] = $type->label;
+    foreach ($coupon_types as $type => $coupon_type) {
+      // Ensure commerce coupon 2.x doesn't throw notices.
+      $coupon_type = (object) $coupon_type;
+      $feature_types[$type] = $coupon_type->label;
     }
   }
   return $feature_types;
@@ -49,7 +55,7 @@ function commerce_coupon_type_features_export_render($module, $data, $export = N
   foreach ($data as $type) {
     if (isset($info[$type]) && $coupon_type = $info[$type]) {
       $output[] = "    '{$type}' => array(";
-      foreach($coupon_type as $key => $value) {
+      foreach ($coupon_type as $key => $value) {
         $output[] = "      '{$key}' => " . features_var_export($value, '      ') . ",";
       }
       $output[] = "    ),";
@@ -65,16 +71,16 @@ function commerce_coupon_type_features_export_render($module, $data, $export = N
  * Implements hook_features_revert().
  */
 function commerce_coupon_type_features_revert($module = NULL) {
-  // Get default coupon types
+  // Get default coupon types.
   if (module_hook($module, 'commerce_coupon_default_types')) {
     $default_types = module_invoke($module, 'commerce_coupon_default_types');
     $existing_types = commerce_coupon_get_types();
     foreach ($default_types as $type) {
-      // Add / or update
+      // Add / or update.
       if (!isset($existing_types[$type['type']])) {
         $type['is_new'] = TRUE;
       }
-      // Use UI function because it provides already the logic we need
+      // Use UI function because it provides already the logic we need.
       $type = new CommerceCouponType($type);
 
       module_invoke('commerce_coupon', 'type_save', $type);
@@ -87,7 +93,7 @@ function commerce_coupon_type_features_revert($module = NULL) {
 
   // Reset the caches.
   entity_defaults_rebuild();
-  rules_clear_cache(TRUE);
+  rules_clear_cache();
   // Schedule a menu rebuild.
   variable_set('menu_rebuild_needed', TRUE);
   return TRUE;

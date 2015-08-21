@@ -2,13 +2,19 @@
 
 /**
  * @file
- *  Migrations for commerce_kickstart_slideshow.
+ * Migrations for commerce_kickstart_slideshow.
  */
 
+/**
+ * Class CommerceKickstartSlideshow.
+ */
 class CommerceKickstartSlideshow extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import slideshow nodes.');
     $this->softDependencies = array('CommerceKickstartPages');
 
@@ -43,7 +49,13 @@ class CommerceKickstartSlideshow extends CommerceKickstartMigration {
     $this->addFieldMapping('uid', 'uid')->defaultValue(1);
   }
 
-  function csvcolumns() {
+  /**
+   * Returns CSV header mappings.
+   *
+   * @return mixed
+   *    Array of mappings.
+   */
+  public function csvcolumns() {
     // "Title", "Headline", "Tagline", "Link", "Images"
     $columns[0] = array('title', 'Title');
     $columns[1] = array('headline', 'Headline');

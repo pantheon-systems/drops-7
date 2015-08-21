@@ -13,17 +13,21 @@
 function migrate_example_baseball_migrate_api() {
   $api = array(
     'api' => 2,
+    'groups' => array(
+      'baseball' => array(
+        'title' => t('Baseball'),
+      ),
+    ),
   );
   return $api;
 }
 
 /**
- * A dynamic migration that is reused for each source CSV file.
+ * A migration that is reused for each source CSV file.
  */
-class GameBaseball extends DynamicMigration {
-  public function __construct(array $arguments) {
-    $this->arguments = $arguments;
-    parent::__construct();
+class GameBaseball extends Migration {
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import box scores from CSV file.');
 
     // Create a map object for tracking the relationships between source rows
@@ -81,7 +85,7 @@ class GameBaseball extends DynamicMigration {
     }
   }
 
-  function csvcolumns() {
+  protected function csvcolumns() {
     // Note: Remember to subtract 1 from column number at http://www.retrosheet.org/gamelogs/glfields.txt
     $columns[0] = array('start_date', 'Date of game');
     $columns[3] = array('visiting_team', 'Visiting team');
@@ -102,7 +106,7 @@ class GameBaseball extends DynamicMigration {
     return $columns;
   }
 
-  function prepareRow($row) {
+  public function prepareRow($row) {
     // Collect all the batters into one multi-value field.
     for ($i=1; $i <= 9; $i++ ) {
       $key = "visiting_batter_$i";
@@ -123,7 +127,7 @@ class GameBaseball extends DynamicMigration {
                                       PATHINFO_FILENAME));
   }
 
-  function fields() {
+  public function fields() {
     return array(
       'title' => 'A composite field made during prepareRow().',
       'home_batters' => 'An array of batters, populated during prepareRow().',

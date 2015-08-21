@@ -30,6 +30,19 @@ class MigrateFieldMapping {
   }
 
   /**
+   * @var int
+   */
+  const MAPPING_SOURCE_CODE = 1;
+  const MAPPING_SOURCE_DB = 2;
+  protected $mappingSource = self::MAPPING_SOURCE_CODE;
+  public function getMappingSource() {
+    return $this->mappingSource;
+  }
+  public function setMappingSource($mapping_source) {
+    $this->mappingSource = $mapping_source;
+  }
+
+  /**
    * Default value for simple mappings, when there is no source mapping or the
    * source field is empty. If both this and the sourceField are omitted, the
    * mapping is just a stub for annotating the destination field.
@@ -96,6 +109,7 @@ class MigrateFieldMapping {
    * 'source_field' - Name of the source field in the incoming row containing the
    *  value to be assigned
    * 'default_value' - A constant value to be assigned in the absence of source_field
+   * Deprecated - subfield notation is now preferred.
    *
    * @var array
    */
@@ -173,6 +187,9 @@ class MigrateFieldMapping {
   }
 
   public function arguments($arguments) {
+    if (variable_get('migrate_deprecation_warnings', 1)) {
+      MigrationBase::displayMessage(t('The field mapping arguments() method is now deprecated - please use subfield notation instead.'));
+    }
     $this->arguments = $arguments;
     return $this;
   }

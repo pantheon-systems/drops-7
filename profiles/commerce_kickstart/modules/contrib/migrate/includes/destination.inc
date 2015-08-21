@@ -105,11 +105,22 @@ abstract class MigrateDestination {
  * All destination handlers should be derived from MigrateDestinationHandler
  */
 abstract class MigrateDestinationHandler extends MigrateHandler {
-  // abstract function arguments(...)
+  // Any one or more of these methods may be implemented
+
   /**
-   * Any one or more of these methods may be implemented
+   * Documentation of any fields added to the destination by this handler.
+   *
+   * @param $entity_type
+   *  The entity type (node, user, etc.) for which to list fields.
+   * @param $bundle
+   *  The bundle (article, blog, etc.), if any, for which to list fields.
+   * @param Migration $migration
+   *  Optionally, the migration providing the context.
+   * @return array
+   *  An array keyed by field name, with field descriptions as values.
    */
-  //abstract public function fields();
+  //abstract public function fields($entity_type, $bundle, $migration = NULL);
+
   //abstract public function prepare($entity, stdClass $row);
   //abstract public function complete($entity, stdClass $row);
 }

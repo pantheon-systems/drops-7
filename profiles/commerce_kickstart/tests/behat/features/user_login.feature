@@ -52,3 +52,11 @@ Feature: Login Commerce Kickstart
       | Update email/password |
       | Connections           |
       | Order history         |
+      But I should not see an "#breadcrumb" element
+
+  @api @variables
+  Scenario: Login with user breadcrumbs enabled
+    When I am logged in as a user with the "administrator" role
+      And user breadcrumbs are enabled
+      And I go to "/user"
+    Then I should see an "#breadcrumb" element

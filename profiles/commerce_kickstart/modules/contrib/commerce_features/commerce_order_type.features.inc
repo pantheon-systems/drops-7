@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Features integration on behalf of Commerce Order Types.
+ */
+
+/**
  * Implements hook_features_export().
  */
 function commerce_order_type_features_export($data, &$export, $module_name = '') {
@@ -48,9 +53,9 @@ function commerce_order_type_features_export_render($module, $data, $export = NU
   $schema = drupal_get_schema('commerce_order_types_order_types');
   foreach ($data as $type) {
     if (isset($order_types[$type]) && $order_type = $order_types[$type]) {
-      foreach ($order_type as $key => $type) {
+      foreach ($order_type as $key => $value) {
         if (!empty($schema['fields'][$key]['serialize'])) {
-          $order_type[$key] = unserialize($type);
+          $order_type[$key] = unserialize($value);
         }
       }
       $output[] = "    '{$type}' => " . features_var_export($order_type, '    ') . ",";
@@ -66,7 +71,7 @@ function commerce_order_type_features_export_render($module, $data, $export = NU
  * Implements hook_features_revert().
  */
 function commerce_order_type_features_revert($module = NULL) {
-  // Get default line item types
+  // Get default order types.
   if (module_hook($module, 'commerce_order_default_types')) {
     $default_types = module_invoke($module, 'commerce_order_default_types');
     $existing_types = commerce_order_types_order_types();

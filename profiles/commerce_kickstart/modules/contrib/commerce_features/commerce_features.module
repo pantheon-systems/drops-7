@@ -20,8 +20,7 @@ function commerce_features_features_api() {
     );
   }
   if (module_exists('commerce_tax')) {
-    $features['commerce_tax_type']
-        = array(
+    $features['commerce_tax_type'] = array(
       'name' => t('Commerce tax types'),
       'feature_source' => TRUE,
       'default_hook' => 'commerce_tax_default_types',
@@ -51,12 +50,15 @@ function commerce_features_features_api() {
     );
   }
   if (module_exists('commerce_coupon')) {
-    $features['commerce_coupon_type'] = array(
-      'name' => t('Commerce coupon types'),
-      'feature_source' => TRUE,
-      'default_hook' => 'commerce_coupon_default_types',
-      'file' => drupal_get_path('module', 'commerce_features') . '/commerce_coupon_type.features.inc',
-    );
+    $module_info = system_get_info('module', 'commerce_coupon');
+    if (version_compare($module_info['version'], '7.x-2', '<')) {
+      $features['commerce_coupon_type'] = array(
+        'name' => t('Commerce coupon types'),
+        'feature_source' => TRUE,
+        'default_hook' => 'commerce_coupon_default_types',
+        'file' => drupal_get_path('module', 'commerce_features') . '/commerce_coupon_type.features.inc',
+      );
+    }
   }
   if (module_exists('commerce_customer')) {
     $features['commerce_customer'] = array(
@@ -66,7 +68,7 @@ function commerce_features_features_api() {
       'file' => drupal_get_path('module', 'commerce_features') . '/commerce_customer.features.inc',
     );
   }
-  if (module_exists('commerce_flat_rate'))  {
+  if (module_exists('commerce_flat_rate')) {
     $features['commerce_flat_rate_services'] = array(
       'name' => t('Commerce flat rate services'),
       'features_source' => TRUE,
@@ -136,7 +138,9 @@ function commerce_features_menu_alter(&$items) {
 }
 
 /**
- * Implements hook_form_FORM_ID_alter() for Product Types.
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * For Product Types.
  */
 function commerce_features_form_commerce_product_ui_product_type_form_alter(&$form, &$form_state) {
   $commerce_product_default_types = module_invoke_all('commerce_product_default_types');
@@ -147,7 +151,9 @@ function commerce_features_form_commerce_product_ui_product_type_form_alter(&$fo
 }
 
 /**
- * Implements hook_form_FORM_ID_alter() for Tax Types.
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * For Tax Types.
  */
 function commerce_features_form_commerce_tax_ui_tax_type_form_alter(&$form, &$form_state) {
   $commerce_tax_default_types = module_invoke_all('commerce_tax_default_types');
@@ -158,7 +164,9 @@ function commerce_features_form_commerce_tax_ui_tax_type_form_alter(&$form, &$fo
 }
 
 /**
- * Implements hook_form_FORM_ID_alter() for Tax Rates.
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * For Tax Rates.
  */
 function commerce_features_form_commerce_tax_ui_tax_rate_form_alter(&$form, &$form_state) {
   $commerce_tax_default_rates = module_invoke_all('commerce_tax_default_rates');
@@ -169,7 +177,9 @@ function commerce_features_form_commerce_tax_ui_tax_rate_form_alter(&$form, &$fo
 }
 
 /**
- * Implements hook_form_FORM_ID_alter() for Line item types.
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * For Line item types.
  */
 function commerce_features_form_commerce_custom_product_line_item_type_form_alter(&$form, &$form_state) {
   $commerce_line_item_default_types = module_invoke_all('commerce_line_item_default_types');
@@ -180,7 +190,9 @@ function commerce_features_form_commerce_custom_product_line_item_type_form_alte
 }
 
 /**
- * Implements hook_form_FORM_ID_alter() for Coupon Types.
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * For Coupon Types.
  */
 function commerce_features_form_commerce_coupon_ui_type_form_alter(&$form, &$form_state) {
   $commerce_coupon_default_types = module_invoke_all('commerce_coupon_default_types');

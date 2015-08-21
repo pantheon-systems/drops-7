@@ -60,8 +60,11 @@ class MigrateCommerceProductReferenceFieldHandler extends MigrateFieldHandler {
     $language = $this->getFieldLanguage($entity, $field_info, $arguments);
     // Setup the standard Field API array for saving.
     $delta = 0;
+    if(!is_array(reset($values))) {
+      $values = array($values);
+    }
     foreach (array_filter($values) as $value) {
-      $return[$language][$delta]['product_id'] = $value;
+      $return[$language][$delta]['product_id'] = reset($value);
       $delta++;
     }
     if (!isset($return)) {

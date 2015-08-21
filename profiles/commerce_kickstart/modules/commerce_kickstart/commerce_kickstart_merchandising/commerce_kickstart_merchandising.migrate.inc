@@ -2,13 +2,19 @@
 
 /**
  * @file
- *  Migrations for commerce_kickstart_merchandising.
+ * Migrations for commerce_kickstart_merchandising.
  */
 
+/**
+ * Class CommerceKickstartAdPush.
+ */
 class CommerceKickstartAdPush extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import ad-push nodes.');
     $this->softDependencies = array('CommerceKickstartPages');
 
@@ -42,7 +48,13 @@ class CommerceKickstartAdPush extends CommerceKickstartMigration {
     $this->addFieldMapping('uid', 'uid')->defaultValue(1);
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     // "Title", "Tagline", "Link", "Images"
     $columns[0] = array('title', 'Title');
     $columns[1] = array('tagline', 'Tagline');

@@ -23,6 +23,10 @@ Feature: Blog
     Then I should see the heading "Social Logins Made Simple"
     When I click "Log in"
 
+  Scenario: Blog terms display page title (#2118059)
+    When I am on "/blog-category/cmt"
+    Then the "#page-title" element should contain "CMT"
+
   @drush
   Scenario: Comments should be open for authenticated users
     When I am logged in as a user with the "authenticated user" role

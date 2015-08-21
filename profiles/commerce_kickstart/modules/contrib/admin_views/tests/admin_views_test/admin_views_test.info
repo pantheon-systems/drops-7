@@ -1,0 +1,14 @@
+name = Administration views test
+description = Administration views test module
+core = 7.x
+package = administration
+hidden = TRUE
+
+dependencies[] admin_views
+
+; Information added by Drupal.org packaging script on 2015-07-08
+version = "7.x-1.5"
+core = "7.x"
+project = "admin_views"
+datestamp = "1436376676"
+

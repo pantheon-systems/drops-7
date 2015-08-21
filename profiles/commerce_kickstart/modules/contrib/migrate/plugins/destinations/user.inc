@@ -75,41 +75,41 @@ class MigrateDestinationUser extends MigrateDestinationEntity {
   public function fields($migration = NULL) {
     $fields = array();
     // First the core (users table) properties
-    $fields['uid'] = t('User: <a href="@doc">Existing user ID</a>',
+    $fields['uid'] = t('<a href="@doc">Existing user ID</a>',
             array('@doc' => 'http://drupal.org/node/1349632#uid'));
-    $fields['mail'] = t('User: <a href="@doc">Email address</a>',
+    $fields['mail'] = t('<a href="@doc">Email address</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#mail'));
-    $fields['name'] = t('User: <a href="@doc">Username</a>',
+    $fields['name'] = t('<a href="@doc">Username</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#name'));
-    $fields['pass'] = t('User: <a href="@doc">Password (plain text)</a>',
+    $fields['pass'] = t('<a href="@doc">Password</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#pass'));
-    $fields['status'] = t('User: <a href="@doc">Status</a>',
+    $fields['status'] = t('<a href="@doc">Status</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#status'));
-    $fields['created'] = t('User: <a href="@doc">Registered timestamp</a>',
+    $fields['created'] = t('<a href="@doc">Registered timestamp</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#created'));
-    $fields['access'] = t('User: <a href="@doc">Last access timestamp</a>',
+    $fields['access'] = t('<a href="@doc">Last access timestamp</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#access'));
-    $fields['login'] = t('User: <a href="@doc">Last login timestamp</a>',
+    $fields['login'] = t('<a href="@doc">Last login timestamp</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#login'));
-    $fields['roles'] = t('User: <a href="@doc">Role IDs</a>',
+    $fields['roles'] = t('<a href="@doc">Role IDs</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#roles'));
-    $fields['role_names'] = t('User: <a href="@doc">Role Names</a>',
+    $fields['role_names'] = t('<a href="@doc">Role Names</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#role_names'));
-    $fields['picture'] = t('User: <a href="@doc">Picture</a>',
+    $fields['picture'] = t('<a href="@doc">Picture</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#picture'));
-    $fields['signature'] = t('User: <a href="@doc">Signature</a>',
+    $fields['signature'] = t('<a href="@doc">Signature</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#signature'));
-    $fields['signature_format'] = t('User: <a href="@doc">Signature format</a>',
+    $fields['signature_format'] = t('<a href="@doc">Signature format</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#signature_format'));
-    $fields['timezone'] = t('User: <a href="@doc">Timezone</a>',
+    $fields['timezone'] = t('<a href="@doc">Timezone</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#timezone'));
-    $fields['language'] = t('User: <a href="@doc">Language</a>',
+    $fields['language'] = t('<a href="@doc">Language</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#language'));
-    $fields['theme'] = t('User: <a href="@doc">Default theme</a>',
+    $fields['theme'] = t('<a href="@doc">Default theme</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#theme'));
-    $fields['init'] = t('User: <a href="@doc">Init</a>',
+    $fields['init'] = t('<a href="@doc">Init</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#init'));
-    $fields['data'] = t('User: <a href="@doc">Data</a>',
+    $fields['data'] = t('<a href="@doc">Data</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#init'));
     $fields['is_new'] = t('Option: <a href="@doc">Indicates a new user with the specified uid should be created</a>',
                 array('@doc' => 'http://drupal.org/node/1349632#is_new'));
@@ -230,6 +230,9 @@ class MigrateDestinationUser extends MigrateDestinationEntity {
       $account->login = MigrationBase::timestamp($account->login);
     }
 
+    // Validate field data prior to saving.
+    MigrateDestinationEntity::fieldAttachValidate('user', $account);
+
     migrate_instrument_start('user_save');
     $newaccount = user_save($old_account, (array)$account);
     migrate_instrument_stop('user_save');
@@ -262,6 +265,14 @@ class MigrateDestinationUser extends MigrateDestinationEntity {
       }
       else {
         $this->numCreated++;
+        // user_save() doesn't update file_usage on account creation, we have
+        // to do it ourselves.
+        if (!empty($newaccount->picture)) {
+          $file = file_load($newaccount->picture);
+          if (is_object($file)) {
+            file_usage_add($file, 'user', 'user', $newaccount->uid);
+          }
+        }
       }
       $this->complete($newaccount, $row);
       $return = array($newaccount->uid);
@@ -324,9 +335,9 @@ class MigrateDestinationRole extends MigrateDestinationTable {
           throw new MigrateException(t("Incoming id !id and map destination id !destid don't match",
             array('!id' => $entity->rid, '!destid' => $row->migrate_map_destid1)));
         }
-        else {
-          $entity->rid = $row->migrate_map_destid1;
-        }
+      }
+      else {
+        $entity->rid = $row->migrate_map_destid1;
       }
     }
 

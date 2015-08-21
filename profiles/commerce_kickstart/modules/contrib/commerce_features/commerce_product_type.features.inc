@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Features integration on behalf of Commerce Product UI.
+ */
+
+/**
  * Implements hook_features_export().
  */
 function commerce_product_type_features_export($data, &$export, $module_name = '') {
@@ -59,17 +64,17 @@ function commerce_product_type_features_export_render($module, $data, $export = 
  * Implements hook_features_revert().
  */
 function commerce_product_type_features_revert($module = NULL) {
-  // Get default product types
+  // Get default product types.
   if (module_hook($module, 'commerce_product_default_types')) {
     $default_types = module_invoke($module, 'commerce_product_default_types');
-    // Read the product types from the database instead of calling all
+    // Read the product types from the database instead of calling all.
     $existing_types = commerce_product_ui_commerce_product_type_info();
     foreach ($default_types as $type) {
       // Add or update.
       if (!isset($existing_types[$type['type']])) {
         $type['is_new'] = TRUE;
       }
-      // Use UI function because it provides already the logic we need
+      // Use UI function because it provides already the logic we need.
       commerce_product_ui_product_type_save($type, TRUE, TRUE);
     }
   }

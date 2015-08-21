@@ -1,10 +1,14 @@
 <?php
+
+/**
+ * @file
+ * Features integration on behalf of Commerce Flat Rate.
+ */
+
 /**
  * Implements hook_features_export().
  */
 function commerce_flat_rate_services_features_export($data, &$export, $module_name = '') {
-  $pipe = array();
-
   $export['dependencies']['features'] = 'features';
   $export['dependencies']['commerce_features'] = 'commerce_features';
   $export['dependencies']['commerce_flat_rate'] = 'commerce_flat_rate';
@@ -16,11 +20,11 @@ function commerce_flat_rate_services_features_export($data, &$export, $module_na
   foreach ($data as $service) {
     if (isset($info[$service]['module'])) {
       $export['dependencies'][$info[$service]['module']] = $info[$service]['module'];
+      $export['features']['commerce_flat_rate_services'][$service] = $service;
+      $export['features']['rules_config']['commerce_shipping_service_' . $service] = 'commerce_shipping_service_' . $service;
     }
-    $export['features']['commerce_flat_rate_services'][$service] = $service;
-    $export['features']['rules_config']['commerce_flat_rate_services_' . $service] = 'commerce_flat_rate_services_' . $service;
   }
-  return $pipe;
+  return $export;
 }
 
 /**
@@ -47,6 +51,8 @@ function commerce_flat_rate_services_features_export_render($module, $data, $exp
   $output[] = '  $items = array(';
   foreach ($data as $service) {
     if (isset($info[$service]) && $flat_rate_service = $info[$service]) {
+      // Add a key to be able to identify this as a features export.
+      $flat_rate_service['is_features'] = TRUE;
       $output[] = "    '{$service}' => " . features_var_export($flat_rate_service, '    ') . ",";
     }
 
@@ -61,13 +67,12 @@ function commerce_flat_rate_services_features_export_render($module, $data, $exp
  * Implements hook_features_revert().
  */
 function commerce_flat_rate_services_features_revert($module = NULL) {
-  // Get default flat rate services
-
+  // Get default flat rate services.
   if (module_hook($module, 'commerce_flat_rate_default_services')) {
     $default_types = module_invoke($module, 'commerce_flat_rate_default_services');
     $existing_types = commerce_shipping_services('flat_rate');
     foreach ($default_types as $type) {
-      // Add / or update
+      // Add / or update.
       if (!isset($existing_types[$type['name']])) {
         $type['is_new'] = TRUE;
       }
@@ -82,7 +87,6 @@ function commerce_flat_rate_services_features_revert($module = NULL) {
   // Reset the caches.
   commerce_shipping_services_reset();
   entity_defaults_rebuild();
-  rules_clear_cache(TRUE);
   // Schedule a menu rebuild.
   variable_set('menu_rebuild_needed', TRUE);
 

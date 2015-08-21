@@ -21,7 +21,7 @@ class MigrateCommentUnitTest extends DrupalWebTestCase {
     parent::setUp('taxonomy', 'image', 'comment', 'migrate', 'migrate_example');
 
     // Make sure the migrations are registered.
-    migrate_get_module_apis();
+    migrate_static_registration();
   }
 
   function testCommentImport() {

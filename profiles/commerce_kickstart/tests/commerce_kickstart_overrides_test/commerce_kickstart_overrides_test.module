@@ -1,0 +1,23 @@
+<?php
+/**
+ * @file
+ * Code for the Commerce Kickstart Overrides Test feature.
+ */
+
+include_once 'commerce_kickstart_overrides_test.features.inc';
+
+/**
+ * Implements hook_system_info_alter().
+ *
+ * @see features_test_system_info_alter()
+ */
+function commerce_kickstart_overrides_test_system_info_alter(&$info, $file, $type) {
+  // Don't run during installation.
+  if (variable_get('install_task') != 'done') {
+    return;
+  }
+  // Unhide the test module so tests can run properly.
+  if ($type == 'module' && in_array($file->name, array('commerce_kickstart_overrides_test'))) {
+    $info['hidden'] = FALSE;
+  }
+}

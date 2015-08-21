@@ -149,91 +149,6 @@ function commerce_kickstart_system_info_alter(&$info, $file, $type) {
 }
 
 /**
- * Implements hook_update_projects_alter().
- */
-function commerce_kickstart_update_projects_alter(&$projects) {
-  // Enable update status for the Commerce Kickstart profile.
-  $modules = system_rebuild_module_data();
-  // The module object is shared in the request, so we need to clone it here.
-  $kickstart = clone $modules['commerce_kickstart'];
-  $kickstart->info['hidden'] = FALSE;
-  _update_process_info_list($projects, array('commerce_kickstart' => $kickstart), 'module', TRUE);
-}
-
-/**
- * Implements hook_update_status_alter().
- *
- * Disable reporting of projects that are in the distribution, but only
- * if they have not been updated manually.
- *
- * Projects with insecure / revoked / unsupported releases are only shown
- * after two days, which gives enough time to prepare a new Kickstart release
- * which the users can install and solve the problem.
- */
-function commerce_kickstart_update_status_alter(&$projects) {
-  $bad_statuses = array(
-    UPDATE_NOT_SECURE,
-    UPDATE_REVOKED,
-    UPDATE_NOT_SUPPORTED,
-  );
-
-  $make_filepath = drupal_get_path('module', 'commerce_kickstart') . '/drupal-org.make';
-  if (!file_exists($make_filepath)) {
-    return;
-  }
-
-  $make_info = drupal_parse_info_file($make_filepath);
-  foreach ($projects as $project_name => $project_info) {
-    // Never unset the drupal project to avoid hitting an error with
-    // _update_requirement_check(). See http://drupal.org/node/1875386.
-    if ($project_name == 'drupal' || !isset($project_info['releases']) || !isset($project_info['recommended'])) {
-      continue;
-    }
-    // Hide Kickstart projects, they have no update status of their own.
-    if (strpos($project_name, 'commerce_kickstart_') !== FALSE) {
-      unset($projects[$project_name]);
-    }
-    // Hide bad releases (insecure, revoked, unsupported) if they are younger
-    // than two days (giving Kickstart time to prepare an update).
-    elseif (isset($project_info['status']) && in_array($project_info['status'], $bad_statuses)) {
-      $two_days_ago = strtotime('2 days ago');
-      if ($project_info['releases'][$project_info['recommended']]['date'] < $two_days_ago) {
-        unset($projects[$project_name]);
-      }
-    }
-    // Hide projects shipped with Kickstart if they haven't been manually
-    // updated.
-    elseif (isset($make_info['projects'][$project_name])) {
-      $version = $make_info['projects'][$project_name]['version'];
-      if (strpos($version, 'dev') !== FALSE || (DRUPAL_CORE_COMPATIBILITY . '-' . $version == $project_info['info']['version'])) {
-        unset($projects[$project_name]);
-      }
-    }
-  }
-}
-
-/**
- * Implements hook_form_FORM_ID_alter().
- *
- * Disable the update for Commerce Kickstart.
- */
-function commerce_kickstart_form_update_manager_update_form_alter(&$form, &$form_state, $form_id) {
-  if (isset($form['projects']['#options']) && isset($form['projects']['#options']['commerce_kickstart'])) {
-    if (count($form['projects']['#options']) > 1) {
-      unset($form['projects']['#options']['commerce_kickstart']);
-    }
-    else {
-      unset($form['projects']);
-      // Hide Download button if there's no other (disabled) projects to update.
-      if (!isset($form['disabled_projects'])) {
-        $form['actions']['#access'] = FALSE;
-      }
-      $form['message']['#markup'] = t('All of your projects are up to date.');
-    }
-  }
-}
-
-/**
  * Provides a list of Crumbs plugins and their weights.
  */
 function commerce_kickstart_crumbs_get_info() {
@@ -301,4 +216,68 @@ function commerce_kickstart_features_api_alter(&$components) {
   if (isset($components['field_base'])) {
     $components['field_base']['duplicates'] = FEATURES_DUPLICATES_ALLOWED;
   }
+}
+
+/**
+ * Implements hook_field_default_field_bases_alter().
+ *
+ * Helper alter to aid in Features Override of Features 1.x override exports
+ * of Fields and Field Base config.
+ */
+function commerce_kickstart_field_default_field_bases_alter(&$fields) {
+  if (module_exists('features_override')) {
+    $possible_alters = commerce_kickstart_get_fields_default_alters();
+    drupal_alter('field_default_fields_alter', $possible_alters);
+    foreach ($possible_alters as $identifier => $field_default) {
+      // Check if the alter added a field base value.
+      $field_name = $field_default['field_name'];
+      if (!isset($field_default['field_base']) || !isset($fields[$field_name])) {
+        continue;
+      }
+      $fields[$field_name] = drupal_array_merge_deep($fields[$field_name], $field_default['field_base']);
+    }
+  }
+}
+
+/**
+ * Implements hook_field_default_field_instances_alter().
+ *
+ * Helper alter to aid in Features Override of Features 1.x override exports
+ * of Fields and Field Instance config.
+ */
+function commerce_kickstart_field_default_field_instances_alter(&$fields) {
+  if (module_exists('features_override')) {
+    $possible_alters = commerce_kickstart_get_fields_default_alters();
+    drupal_alter('field_default_fields', $possible_alters);
+    foreach ($possible_alters as $identifier => $field_default) {
+      // Check if the alter added a field instance value.
+      if (!isset($field_default['field_instance']) || !isset($fields[$identifier])) {
+        continue;
+      }
+      $fields[$identifier] = drupal_array_merge_deep($fields[$identifier], $field_default['field_instance']);
+    }
+  }
+}
+
+/**
+ * Gets Features Override alters for field from 1.x
+ */
+function commerce_kickstart_get_fields_default_alters() {
+  $cache = drupal_static(__FUNCTION__, array());
+  if (empty($cache)) {
+    module_load_include('inc', 'features', 'features.export');
+    features_include();
+    // Features 1.x labeled all field data same as field instance in 2.x
+    features_include_defaults('field_instance');
+    $default_hook = features_get_default_hooks('field_instance');
+
+    // Invoke each Feature to see if they provide default field instances,
+    // so that we can have all possible field identifiers.
+    foreach (array_keys(features_get_features()) as $module) {
+      if (module_hook($module, $default_hook)) {
+        $cache = array_merge($cache, call_user_func("{$module}_{$default_hook}"));
+      }
+    }
+  }
+  return $cache;
 }

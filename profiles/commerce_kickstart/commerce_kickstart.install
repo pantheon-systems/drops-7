@@ -138,8 +138,8 @@ function install_welcome($form, &$form_state, &$install_state) {
     '#markup' => $eula,
   );
   $form['eula-accept'] = array(
-    '#title' => st('I agree to the User Agreement'),
-    '#title_display' => 'attribute',
+    '#title' => st('Privacy Policy and User Agreement'),
+    '#title_display' => 'invisible',
     '#type' => 'radios',
     '#default_value' => 1,
     '#options' => array(
@@ -204,6 +204,18 @@ function commerce_kickstart_configure_store_form() {
     '#description' => st('Shows you everything Commerce Kickstart can do. Includes a custom theme, sample content and products.'),
     '#options' => $options,
     '#default_value' => '1',
+  );
+  $form['functionality']['notice'] = array(
+    '#type' => 'item',
+    '#markup' => '<p>' . t('<strong>Important</strong>: Once installed, products type cannot be deleted. Not recommended for development.') . '</p>',
+    '#attributes' => array(
+      'style' => 'clear: both;',
+    ),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="install_demo_store"]' => array('value' => '1'),
+      ),
+    ),
   );
   $form['localization'] = array(
     '#type' => 'fieldset',
@@ -1240,4 +1252,25 @@ function commerce_kickstart_update_7221() {
  */
 function commerce_kickstart_update_7222() {
   _commerce_kickstart_disable_modules(array('commerceguys_marketplace'));
+}
+
+/**
+ * Rebuild registry now that contributed themes are in contrib subfolder.
+ */
+function commerce_kickstart_update_7223() {
+  registry_rebuild();
+}
+
+/**
+ * Enable Administration Views.
+ */
+function commerce_kickstart_update_7224() {
+  module_enable(array('admin_views'));
+}
+
+/**
+ * Enable the Distribution Update Status Manager module.
+ */
+function commerce_kickstart_update_7225() {
+  module_enable(array('distro_update'));
 }

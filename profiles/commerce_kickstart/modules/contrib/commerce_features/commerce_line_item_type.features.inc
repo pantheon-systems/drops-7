@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Features integration on behalf of Commerce Custom Product.
+ */
+
+/**
  * Implements hook_features_export().
  */
 function commerce_line_item_type_features_export($data, &$export, $module_name = '') {
@@ -14,7 +19,7 @@ function commerce_line_item_type_features_export($data, &$export, $module_name =
   foreach ($data as $type) {
     $export['features']['commerce_line_item_type'][$type] = $type;
 
-    // Fetch fields of the profile type and add them as dependency
+    // Fetch fields of the profile type and add them as dependency.
     $fields = field_info_instances('commerce_line_item', $type);
     foreach ($fields as $field) {
       $pipe['field'][] = "commerce_line_item-{$field['bundle']}-{$field['field_name']}";
@@ -59,7 +64,7 @@ function commerce_line_item_type_features_export_render($module, $data, $export 
  * Implements hook_features_revert().
  */
 function commerce_line_item_type_features_revert($module) {
-  // Get default line item types
+  // Get default line item types.
   if (module_hook($module, 'commerce_line_item_default_types')) {
     $default_types = module_invoke($module, 'commerce_line_item_default_types');
     foreach ($default_types as $type => $line_item_type) {
@@ -86,4 +91,3 @@ function commerce_line_item_type_features_revert($module) {
 function commerce_line_item_type_features_rebuild($module) {
   return commerce_line_item_type_features_revert($module);
 }
-

@@ -31,9 +31,9 @@ files[] = commerce_discount.test
 test_dependencies[] = commerce_shipping
 
 
-; Information added by drush on 2015-07-10
+; Information added by drush on 2015-08-20
 version = "7.x-1.0-alpha5+0-dev"
 core = "7.x"
 project = "commerce_discount"
-datestamp = "1436555980"
+datestamp = "1440110608"
 

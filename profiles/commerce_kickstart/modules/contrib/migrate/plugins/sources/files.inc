@@ -62,6 +62,7 @@ class MigrateListFiles extends MigrateList {
   protected $fileMask;
   protected $directoryOptions;
   protected $parser;
+  protected $getContents;
 
   /**
    * Constructor.
@@ -86,8 +87,12 @@ class MigrateListFiles extends MigrateList {
    * @param $options
    *   Options that will be passed on to file_scan_directory(). See docs of that
    *   core Drupal function for more information.
+   * @param MigrateContentParser $parser
+   *   Content parser class to use.
+   * @param $get_contents
+   *   Whether to load the contents of files.
    */
-  public function __construct($list_dirs, $base_dir, $file_mask = NULL, $options = array(), MigrateContentParser $parser = NULL) {
+  public function __construct($list_dirs, $base_dir, $file_mask = NULL, $options = array(), MigrateContentParser $parser = NULL, $get_contents = TRUE) {
     if (!$parser) {
       $parser = new MigrateSimpleContentParser();
     }
@@ -97,6 +102,7 @@ class MigrateListFiles extends MigrateList {
     $this->fileMask = $file_mask;
     $this->directoryOptions = $options;
     $this->parser = $parser;
+    $this->getContents = $get_contents;
   }
 
   /**
@@ -136,11 +142,16 @@ class MigrateListFiles extends MigrateList {
   protected function getIDsFromFiles(array $files) {
     $ids = array();
     foreach ($files as $file) {
-      $contents = file_get_contents($file->uri);
-      $this->parser->setContent($contents);
-      if ($this->parser->getChunkCount() > 1) {
-        foreach ($this->parser->getChunkIDs() as $chunk_id) {
-          $ids[] = str_replace($this->baseDir, '', (string) $file->uri) . MIGRATE_CHUNK_SEPARATOR . $chunk_id;
+      if ($this->getContents) {
+        $contents = file_get_contents($file->uri);
+        $this->parser->setContent($contents);
+        if ($this->parser->getChunkCount() > 1) {
+          foreach ($this->parser->getChunkIDs() as $chunk_id) {
+            $ids[] = str_replace($this->baseDir, '', (string) $file->uri) . MIGRATE_CHUNK_SEPARATOR . $chunk_id;
+          }
+        }
+        else {
+          $ids[] = str_replace($this->baseDir, '', (string) $file->uri);
         }
       }
       else {
@@ -206,7 +217,7 @@ class MigrateItemFile extends MigrateItem {
   public function getItem($id) {
     $pieces = explode(MIGRATE_CHUNK_SEPARATOR ,$id);
     $item_uri = $this->baseDir . $pieces[0];
-    $chunk = $pieces[1];
+    $chunk = !empty($pieces[1]) ? $pieces[1] : '';
 
     // Get the file data at the specified URI
     $data = $this->loadFile($item_uri);

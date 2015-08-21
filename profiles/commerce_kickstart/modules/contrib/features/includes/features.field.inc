@@ -276,11 +276,21 @@ function field_base_features_rebuild($module) {
         $existing_field = $existing_fields[$field['field_name']];
         $array_diff_result = drupal_array_diff_assoc_recursive($field + $existing_field, $existing_field);
         if (!empty($array_diff_result)) {
-          field_update_field($field);
+          try {
+            field_update_field($field);
+          }
+          catch (FieldException $e) {
+            watchdog('features', 'Attempt to update field %label failed: %message', array('%label' => $field['field_name'], '%message' => $e->getMessage()), WATCHDOG_ERROR);
+          }
         }
       }
       else {
-        field_create_field($field);
+        try {
+          field_create_field($field);
+        }
+        catch (FieldException $e) {
+          watchdog('features', 'Attempt to create field %label failed: %message', array('%label' => $field['field_name'], '%message' => $e->getMessage()), WATCHDOG_ERROR);
+        }
         $existing_fields[$field['field_name']] = $field;
       }
       variable_set('menu_rebuild_needed', TRUE);

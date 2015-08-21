@@ -2,16 +2,22 @@
 
 /**
  * @file
- *  Migrations for commerce_kickstart_product.
+ * Migrations for commerce_kickstart_product.
  */
 
+/**
+ * Class CommerceKickstartBagsCases.
+ */
 class CommerceKickstartBagsCases extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments = array()) {
+    parent::__construct($arguments);
     $this->description = t('Import bags cases from CSV file.');
 
-    // Create a map object for tracking the relationships between source rows
+    // Create a map object for tracking the relationships between source rows.
     $this->map = new MigrateSQLMap($this->machineName,
       array(
         'sku' => array(
@@ -20,7 +26,7 @@ class CommerceKickstartBagsCases extends CommerceKickstartMigration {
           'not null' => TRUE,
         ),
       ),
-      MigrateDestinationEntityAPI::getKeySchema('commerce_product', 'bags_cases')
+      MigrateDestinationEntityAPI::getKeySchema('commerce_product')
     );
 
     // Create a MigrateSource object.
@@ -32,19 +38,19 @@ class CommerceKickstartBagsCases extends CommerceKickstartMigration {
     $this->addFieldMapping('sku', 'sku');
     $this->addFieldMapping('commerce_price', 'price');
 
-    // Size
+    // Size.
     $this->addFieldMapping('field_bag_size', 'size');
     $this->addFieldMapping('field_bag_size:create_term')
       ->defaultValue(TRUE);
 
-    // Images
+    // Images.
     $this->addFieldMapping('field_images', 'product_images');
     $this->addFieldMapping('field_images:file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
     $this->addFieldMapping('field_images:source_dir')
       ->defaultValue(drupal_get_path('module', 'commerce_kickstart_product') . '/import/images');
 
-    // Color
+    // Color.
     $this->addFieldMapping('field_color', 'color');
     $this->addFieldMapping('field_color:additional_field', 'hexadecimal');
     $this->addFieldMapping('field_color:create_term')
@@ -54,7 +60,13 @@ class CommerceKickstartBagsCases extends CommerceKickstartMigration {
     $this->addFieldMapping('language', 'language');
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     $columns[0] = array('title', 'Title');
     $columns[1] = array('sku', 'SKU');
     $columns[2] = array('color', 'Color');
@@ -65,26 +77,42 @@ class CommerceKickstartBagsCases extends CommerceKickstartMigration {
     return $columns;
   }
 
-  function fields() {
+  /**
+   * Returns mapping for fields.
+   *
+   * @return array
+   *    Array of fields names and description.
+   */
+  public function fields() {
     return array(
       'product_images' => 'An array of images, populated during prepareRow().',
     );
   }
 
-  function prepareRow($row) {
+  /**
+   * {@inheritdoc}
+   */
+  public function prepareRow($row) {
     $row->product_images = explode(', ', $row->images);
     $row->uid = 1;
     $row->language = LANGUAGE_NONE;
   }
+
 }
 
+/**
+ * Class CommerceKickstartDrinks.
+ */
 class CommerceKickstartDrinks extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import drinks from CSV file.');
 
-    // Create a map object for tracking the relationships between source rows
+    // Create a map object for tracking the relationships between source rows.
     $this->map = new MigrateSQLMap($this->machineName,
       array(
         'sku' => array(
@@ -105,14 +133,14 @@ class CommerceKickstartDrinks extends CommerceKickstartMigration {
     $this->addFieldMapping('sku', 'sku');
     $this->addFieldMapping('commerce_price', 'price');
 
-    // Images
+    // Images.
     $this->addFieldMapping('field_images', 'product_images');
     $this->addFieldMapping('field_images:file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
     $this->addFieldMapping('field_images:source_dir')
       ->defaultValue(drupal_get_path('module', 'commerce_kickstart_product') . '/import/images');
 
-    // Color
+    // Color.
     $this->addFieldMapping('field_color', 'color');
     $this->addFieldMapping('field_color:additional_field', 'hexadecimal');
     $this->addFieldMapping('field_color:create_term')
@@ -122,7 +150,13 @@ class CommerceKickstartDrinks extends CommerceKickstartMigration {
     $this->addFieldMapping('language', 'language');
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     // "Title","SKU","Color","Price","Images"
     $columns[0] = array('title', 'Title');
     $columns[1] = array('sku', 'SKU');
@@ -133,26 +167,42 @@ class CommerceKickstartDrinks extends CommerceKickstartMigration {
     return $columns;
   }
 
-  function fields() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function fields() {
     return array(
       'product_images' => 'An array of images, populated during prepareRow().',
     );
   }
 
-  function prepareRow($row) {
+  /**
+   * {@inheritdoc}
+   */
+  public function prepareRow($row) {
     $row->product_images = explode(', ', $row->images);
     $row->uid = 1;
     $row->language = LANGUAGE_NONE;
   }
+
 }
 
+/**
+ * Class CommerceKickstartHats.
+ */
 class CommerceKickstartHats extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import hats from CSV file.');
 
-    // Create a map object for tracking the relationships between source rows
+    // Create a map object for tracking the relationships between source rows.
     $this->map = new MigrateSQLMap($this->machineName,
       array(
         'sku' => array(
@@ -173,19 +223,19 @@ class CommerceKickstartHats extends CommerceKickstartMigration {
     $this->addFieldMapping('sku', 'sku');
     $this->addFieldMapping('commerce_price', 'price');
 
-    // Images
+    // Images.
     $this->addFieldMapping('field_images', 'product_images');
     $this->addFieldMapping('field_images:file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
     $this->addFieldMapping('field_images:source_dir')
       ->defaultValue(drupal_get_path('module', 'commerce_kickstart_product') . '/import/images');
 
-    // Size
+    // Size.
     $this->addFieldMapping('field_hat_size', 'size');
     $this->addFieldMapping('field_hat_size:create_term')
       ->defaultValue(TRUE);
 
-    // Color
+    // Color.
     $this->addFieldMapping('field_color', 'color');
     $this->addFieldMapping('field_color:additional_field', 'hexadecimal');
     $this->addFieldMapping('field_color:create_term')
@@ -195,7 +245,13 @@ class CommerceKickstartHats extends CommerceKickstartMigration {
     $this->addFieldMapping('language', 'language');
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     // "title","SKU","Color","Size","Price","Images"
     $columns[0] = array('title', 'Title');
     $columns[1] = array('sku', 'SKU');
@@ -207,26 +263,42 @@ class CommerceKickstartHats extends CommerceKickstartMigration {
     return $columns;
   }
 
-  function fields() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function fields() {
     return array(
       'product_images' => 'An array of images, populated during prepareRow().',
     );
   }
 
-  function prepareRow($row) {
+  /**
+   * {@inheritdoc}
+   */
+  public function prepareRow($row) {
     $row->product_images = explode(', ', $row->images);
     $row->uid = 1;
     $row->language = LANGUAGE_NONE;
   }
+
 }
 
+/**
+ * Class CommerceKickstartTops.
+ */
 class CommerceKickstartTops extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import tops from CSV file.');
 
-    // Create a map object for tracking the relationships between source rows
+    // Create a map object for tracking the relationships between source rows.
     $this->map = new MigrateSQLMap($this->machineName,
       array(
         'sku' => array(
@@ -247,19 +319,19 @@ class CommerceKickstartTops extends CommerceKickstartMigration {
     $this->addFieldMapping('sku', 'sku');
     $this->addFieldMapping('commerce_price', 'price');
 
-    // images
+    // Images.
     $this->addFieldMapping('field_images', 'product_images');
     $this->addFieldMapping('field_images:file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
     $this->addFieldMapping('field_images:source_dir')
       ->defaultValue(drupal_get_path('module', 'commerce_kickstart_product') . '/import/images');
 
-    // Size
+    // Size.
     $this->addFieldMapping('field_top_size', 'size');
     $this->addFieldMapping('field_top_size:create_term')
       ->defaultValue(TRUE);
 
-    // Color
+    // Color.
     $this->addFieldMapping('field_color', 'color');
     $this->addFieldMapping('field_color:additional_field', 'hexadecimal');
     $this->addFieldMapping('field_color:create_term')
@@ -269,7 +341,13 @@ class CommerceKickstartTops extends CommerceKickstartMigration {
     $this->addFieldMapping('language', 'language');
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     // "Title","SKU","Color","Size","Price","Images"
     $columns[0] = array('title', 'Title');
     $columns[1] = array('sku', 'SKU');
@@ -281,26 +359,42 @@ class CommerceKickstartTops extends CommerceKickstartMigration {
     return $columns;
   }
 
-  function fields() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function fields() {
     return array(
       'product_images' => 'An array of images, populated during prepareRow().',
     );
   }
 
-  function prepareRow($row) {
+  /**
+   * {@inheritdoc}
+   */
+  public function prepareRow($row) {
     $row->product_images = explode(', ', $row->images);
     $row->uid = 1;
     $row->language = LANGUAGE_NONE;
   }
+
 }
 
+/**
+ * Class CommerceKickstartShoes.
+ */
 class CommerceKickstartShoes extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import shoes from CSV file.');
 
-    // Create a map object for tracking the relationships between source rows
+    // Create a map object for tracking the relationships between source rows.
     $this->map = new MigrateSQLMap($this->machineName,
       array(
         'sku' => array(
@@ -321,19 +415,19 @@ class CommerceKickstartShoes extends CommerceKickstartMigration {
     $this->addFieldMapping('sku', 'sku');
     $this->addFieldMapping('commerce_price', 'price');
 
-    // Images
+    // Images.
     $this->addFieldMapping('field_images', 'product_images');
     $this->addFieldMapping('field_images:file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
     $this->addFieldMapping('field_images:source_dir')
       ->defaultValue(drupal_get_path('module', 'commerce_kickstart_product') . '/import/images');
 
-    // Size
+    // Size.
     $this->addFieldMapping('field_shoe_size', 'size');
     $this->addFieldMapping('field_shoe_size:create_term')
       ->defaultValue(TRUE);
 
-    // Color
+    // Color.
     $this->addFieldMapping('field_color', 'color');
     $this->addFieldMapping('field_color:additional_field', 'hexadecimal');
     $this->addFieldMapping('field_color:create_term')
@@ -343,7 +437,13 @@ class CommerceKickstartShoes extends CommerceKickstartMigration {
     $this->addFieldMapping('language', 'language');
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     // "Title","SKU","Color","Size","Price","Images"
     $columns[0] = array('title', 'Title');
     $columns[1] = array('sku', 'SKU');
@@ -355,26 +455,42 @@ class CommerceKickstartShoes extends CommerceKickstartMigration {
     return $columns;
   }
 
-  function fields() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function fields() {
     return array(
       'product_images' => 'An array of images, populated during prepareRow().',
     );
   }
 
-  function prepareRow($row) {
+  /**
+   * {@inheritdoc}
+   */
+  public function prepareRow($row) {
     $row->product_images = explode(', ', $row->images);
     $row->uid = 1;
     $row->language = LANGUAGE_NONE;
   }
+
 }
 
+/**
+ * Class CommerceKickstartStorage.
+ */
 class CommerceKickstartStorage extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import storage from CSV file.');
 
-    // Create a map object for tracking the relationships between source rows
+    // Create a map object for tracking the relationships between source rows.
     $this->map = new MigrateSQLMap($this->machineName,
       array(
         'sku' => array(
@@ -395,20 +511,20 @@ class CommerceKickstartStorage extends CommerceKickstartMigration {
     $this->addFieldMapping('sku', 'sku');
     $this->addFieldMapping('commerce_price', 'price');
 
-    // Images
+    // Images.
     $this->addFieldMapping('field_images', 'product_images');
     $this->addFieldMapping('field_images:file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
     $this->addFieldMapping('field_images:source_dir')
       ->defaultValue(drupal_get_path('module', 'commerce_kickstart_product') . '/import/images');
 
-    // Capacity ("size")
+    // Capacity ("size").
     $this->addFieldMapping('field_storage_capacity', 'capacity');
     $this->addFieldMapping('field_storage_capacity:weight', 'weight');
     $this->addFieldMapping('field_storage_capacity:create_term')
       ->defaultValue(TRUE);
 
-    // Color
+    // Color.
     $this->addFieldMapping('field_color', 'color');
     $this->addFieldMapping('field_color:additional_field', 'hexadecimal');
     $this->addFieldMapping('field_color:create_term')
@@ -418,7 +534,13 @@ class CommerceKickstartStorage extends CommerceKickstartMigration {
     $this->addFieldMapping('language', 'language');
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     // "Title","SKU","Color","Capacity","Price","Images"
     $columns[0] = array('title', 'Title');
     $columns[1] = array('sku', 'SKU');
@@ -431,28 +553,51 @@ class CommerceKickstartStorage extends CommerceKickstartMigration {
     return $columns;
   }
 
-  function fields() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function fields() {
     return array(
       'product_images' => 'An array of images, populated during prepareRow().',
     );
   }
 
-  function prepareRow($row) {
+  /**
+   * {@inheritdoc}
+   */
+  public function prepareRow($row) {
     $row->product_images = explode(', ', $row->images);
     $row->uid = 1;
     $row->language = LANGUAGE_NONE;
   }
+
 }
 
-class CommerceKickstartNode extends DynamicMigration {
+/**
+ * Class CommerceKickstartNode.
+ */
+class CommerceKickstartNode extends Migration {
 
-  public function __construct(array $arguments) {
-    $this->arguments = $arguments;
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import product nodes.');
-    $this->dependencies = array('CommerceKickstartBagsCases', 'CommerceKickstartDrinks', 'CommerceKickstartHats', 'CommerceKickstartShoes', 'CommerceKickstartStorage', 'CommerceKickstartTops', 'CommerceKickstartPages');
+    $this->dependencies = array(
+      'CommerceKickstartBagsCases',
+      'CommerceKickstartDrinks',
+      'CommerceKickstartHats',
+      'CommerceKickstartShoes',
+      'CommerceKickstartStorage',
+      'CommerceKickstartTops',
+      'CommerceKickstartPages',
+    );
 
-    // Create a map object for tracking the relationships between source rows
+    // Create a map object for tracking the relationships between source rows.
     $this->map = new MigrateSQLMap($this->machineName,
       array(
         'title' => array(
@@ -490,16 +635,25 @@ class CommerceKickstartNode extends DynamicMigration {
     $this->addFieldMapping('field_product', 'skus');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function prepareRow($row) {
     $products = array();
-    foreach(explode(', ', $row->sku) as $sku) {
+    foreach (explode(', ', $row->sku) as $sku) {
       $product = commerce_product_load_by_sku($sku);
       $products[] = $product->product_id;
     }
     $row->skus = $products;
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     $columns[0] = array('title', 'Title');
     $columns[1] = array('description', 'Description');
     $columns[2] = array('collection', 'Collection');
@@ -512,27 +666,37 @@ class CommerceKickstartNode extends DynamicMigration {
   }
 
   /**
-   * Construct the machine name from the source file name.
+   * {@inheritdoc}
    */
   protected function generateMachineName($class_name = NULL) {
     return drupal_strtolower('CommerceKickstartNode' . $this->arguments['type']);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function processImport(array $options = array()) {
     parent::processImport($options);
     // Do not force menu rebuilding. Otherwise pathauto will try to rebuild
     // in each node_insert invocation.
     variable_set('menu_rebuild_needed', FALSE);
   }
+
 }
 
+/**
+ * Class CommerceKickstartCollection.
+ */
 class CommerceKickstartCollection extends Migration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import collections terms.');
 
-    // Create a map object for tracking the relationships between source rows
+    // Create a map object for tracking the relationships between source rows.
     $this->map = new MigrateSQLMap($this->machineName,
       array(
         'name' => array(
@@ -550,7 +714,7 @@ class CommerceKickstartCollection extends Migration {
     $this->destination = new MigrateDestinationTerm('collection');
 
     $this->addFieldMapping('name', 'name');
-    // Images
+    // Images.
     $this->addFieldMapping('field_image', 'images');
     $this->addFieldMapping('field_image:file_replace')
       ->defaultValue(FILE_EXISTS_REPLACE);
@@ -558,10 +722,17 @@ class CommerceKickstartCollection extends Migration {
       ->defaultValue(drupal_get_path('module', 'commerce_kickstart_product') . '/import/images');
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     // "Name", "Images"
     $columns[0] = array('name', 'Name');
     $columns[1] = array('images', 'Images');
     return $columns;
   }
+
 }

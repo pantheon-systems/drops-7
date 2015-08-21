@@ -1,0 +1,39 @@
+.ctools-collapsible-container {
+  border: 1px solid #ccc;
+  background: none repeat scroll 0 0 #fbfbfb;
+  margin-left: 1em;
+  margin-bottom: 2em;
+  padding-right: 1em;
+  padding-bottom: 1em;
+  border-top: 0;
+}
+.ctools-collapsible-container.ctools-collapsed {
+  border-top: 0;
+  border-right: 1;
+  border-bottom: 1;
+  border-left: 1;
+  padding-bottom: 0;
+}
+
+.ctools-collapsible-content {
+  padding-left: 1.5em;
+}
+
+.ctools-collapsible-content h3 {
+  display: none;
+}
+
+.ctools-collapsible-content div.update {
+  display: none;
+}
+
+table.update {
+  margin-bottom: 0;
+}
+
+body.page-admin-reports-updates .table-striped > tbody > tr:nth-child(2n+1) > td,
+body.page-admin-reports-updates .table-striped > tbody > tr:nth-child(2n+1) > th,
+body.page-admin-reports-updates .table-striped tbody > tr:nth-child(2n+1) > td,
+body.page-admin-reports-updates .table-striped tbody > tr:nth-child(2n+1) > th {
+  background-color: inherit;
+}

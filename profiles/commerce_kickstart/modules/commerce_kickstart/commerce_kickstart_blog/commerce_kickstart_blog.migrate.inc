@@ -2,13 +2,19 @@
 
 /**
  * @file
- *  Migrations for commerce_kickstart_blog.
+ * Migrations for commerce_kickstart_blog.
  */
 
+/**
+ * Class CommerceKickstartBlogPost.
+ */
 class CommerceKickstartBlogPost extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import blog-post nodes.');
     $this->dependencies = array('CommerceKickstartPages');
 
@@ -48,7 +54,13 @@ class CommerceKickstartBlogPost extends CommerceKickstartMigration {
     $this->addFieldMapping('uid', 'uid')->defaultValue(1);
   }
 
-  function csvcolumns() {
+  /**
+   * Returns CSV header mappings.
+   *
+   * @return mixed
+   *    Array of mappings.
+   */
+  public function csvcolumns() {
     // "Title", "Images", "Tags", "Body"
     $columns[0] = array('title', 'Title');
     $columns[1] = array('images', 'Images');

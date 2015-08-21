@@ -21,7 +21,7 @@ class MigrateNodeUnitTest extends DrupalWebTestCase {
     parent::setUp('list', 'number', 'taxonomy', 'image', 'migrate', 'migrate_example');
 
     // Make sure the migrations are registered.
-    migrate_get_module_apis();
+    migrate_static_registration();
   }
 
   function testNodeImport() {

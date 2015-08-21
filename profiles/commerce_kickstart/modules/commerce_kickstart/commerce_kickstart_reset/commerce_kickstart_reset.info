@@ -2,9 +2,9 @@ name = Commerce Kickstart Reset
 core = 7.x
 package = Commerce Kickstart
 
-; Information added by Drupal.org packaging script on 2015-07-10
-version = "7.x-2.26"
+; Information added by Drupal.org packaging script on 2015-08-20
+version = "7.x-2.28"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1436555946"
+datestamp = "1440110572"
 

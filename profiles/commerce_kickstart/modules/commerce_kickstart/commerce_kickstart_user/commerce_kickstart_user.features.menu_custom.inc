@@ -13,12 +13,12 @@ function commerce_kickstart_user_menu_default_menu_custom() {
   // Exported menu: menu-user-menu.
   $menus['menu-user-menu'] = array(
     'menu_name' => 'menu-user-menu',
-    'title' => 'User menu',
+    'title' => 'Kickstart User menu',
     'description' => '',
   );
   // Translatables
   // Included for use with string extractors like potx.
-  t('User menu');
+  t('Kickstart User menu');
 
 
   return $menus;

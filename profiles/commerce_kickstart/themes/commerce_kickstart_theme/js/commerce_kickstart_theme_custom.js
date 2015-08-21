@@ -30,27 +30,25 @@
   // Switch list elements to select lists on faceted blocks.
   Drupal.behaviors.commerce_kickstart_theme_custom_search = {
     attach: function(context, settings) {
-      $('body').bind('responsivelayout', function(e, d) {
+      $('body', context).bind('responsivelayout', function(e, d) {
         if($(this).hasClass("responsive-layout-mobile")) {
           $('.block-facetapi', context).each(function(index) {
-            $('.facetapi-checkbox').remove();
-            $('.element-invisible').remove();
+            var $facetBlock = $(this);
+
+            // Clean up <li> children so select list looks okay.
+            $facetBlock.find('label.element-invisible', context).remove();
+            $facetBlock.find('span.element-invisible', context).remove();
+            $facetBlock.find('input.facetapi-checkbox', context).remove();
 
             // Get block title.
-            var list_title;
-            $(this).find('.block-title').each(function() {
-              list_title = $(this).text().toLowerCase();
-            });
+            var list_title = $facetBlock.find('.block-title', context).text().toLowerCase();
 
             // Get list elements.
-            var list_element;
-            $(this).find('ul').each(function() {
-              list_element = $(this).attr('id');
-              $(this).addClass('facetapi-lists');
-            });
+            var $list_element = $facetBlock.find('ul', context);
+            $list_element.addClass('facetapi-lists');
 
-            if(list_element != 'undefined') {
-              selectnav(list_element, {
+            if(typeof $list_element !== 'undefined') {
+              selectnav($list_element.attr('id'), {
                 label: 'Select a ' + list_title + '...',
                 activeclass: 'false'
               });

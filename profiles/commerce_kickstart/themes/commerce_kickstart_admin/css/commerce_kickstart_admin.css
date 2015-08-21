@@ -159,6 +159,9 @@ body.in-maintenance .form-item-install-demo-store .description {
   padding: 3px 5px 5px 23px;
   /* LTR */
 }
+body.in-maintenance #edit-notice {
+  clear: both;
+}
 body.in-maintenance div.form-type-password {
   width: 500px;
 }

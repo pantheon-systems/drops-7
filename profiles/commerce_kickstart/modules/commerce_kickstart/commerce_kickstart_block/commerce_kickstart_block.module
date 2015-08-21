@@ -92,10 +92,6 @@ function commerce_kickstart_block_preprocess_page(&$variables) {
     // Remove the title from this page.
     $variables['title'] = '';
   }
-  if (arg(0) == 'taxonomy' && arg(1) == 'term' && is_numeric(arg(2))) {
-    // Remove collection_taxonomy_term view title.
-    $variables['title'] = '';
- }
 }
 
 /**

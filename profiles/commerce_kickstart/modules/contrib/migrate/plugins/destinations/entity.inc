@@ -138,6 +138,11 @@ abstract class MigrateDestinationEntity extends MigrateDestination {
     migrate_handler_invoke_all('Entity', 'prepare', $entity, $source_row);
     // Then call any entity-specific handlers
     migrate_handler_invoke_all($this->entityType, 'prepare', $entity, $source_row);
+
+    // Apply defaults, removing empty fields from the entity object.
+    $form = $form_state = array();
+    _field_invoke_default('submit', $this->entityType, $entity, $form, $form_state);
+
     // Then call any prepare handler for this specific Migration.
     if (method_exists($migration, 'prepare')) {
       $migration->prepare($entity, $source_row);
@@ -168,6 +173,36 @@ abstract class MigrateDestinationEntity extends MigrateDestination {
         // If we catch any errors here, save the messages without letting
         // the exception prevent the saving of the entity being recorded.
         $migration->saveMessage($e->getMessage());
+      }
+    }
+  }
+
+  /**
+   * Perform field validation against the field data in an entity. Wraps
+   * field_attach_validate to handle exceptions cleanly and provide maximum
+   * information for identifying the cause of validation errors.
+   *
+   * @param $entity_type
+   *   The type of $entity; e.g. 'node' or 'user'.
+   * @param $entity
+   *   The entity with fields to validate.
+   */
+  static public function fieldAttachValidate($entity_type, $entity) {
+    try {
+      field_attach_validate($entity_type, $entity);
+    }
+    catch (FieldValidationException $e) {
+      $migration = Migration::currentMigration();
+      foreach ($e->errors as $field_name => $field_errors) {
+        foreach ($field_errors as $langcode => $errors) {
+          foreach ($errors as $delta => $error_list) {
+            foreach ($error_list as $index => $error) {
+              $message = $error['message'];
+              $migration->saveMessage(t('Field validation error for !field_name: !message',
+                array('!field_name' => $field_name, '!message' => $message)));
+            }
+          }
+        }
       }
     }
   }

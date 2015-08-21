@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Features integration on behalf of Commerce Tax (Rates).
+ */
+
+/**
  * Implements hook_features_export().
  */
 function commerce_tax_rate_features_export($data, &$export, $module_name = '') {
@@ -29,7 +34,7 @@ function commerce_tax_rate_features_export_options() {
   $feature_types = array();
   $tax_rates = commerce_tax_rates();
   if (!empty($tax_rates)) {
-    foreach($tax_rates as $rate) {
+    foreach ($tax_rates as $rate) {
       $feature_types[$rate['name']] = $rate['title'];
     }
   }
@@ -65,11 +70,11 @@ function commerce_tax_rate_features_revert($module = NULL) {
     $default_rates = module_invoke($module, 'commerce_tax_default_rates');
     $existing_rates = commerce_tax_rates();
     foreach ($default_rates as $rate) {
-      // Add / or update
+      // Add / or update,
       if (!isset($existing_rates[$rate['name']])) {
         $rate['is_new'] = TRUE;
       }
-      // Use UI function because it provides already the logic we need
+      // Use UI function because it provides already the logic we need,
       module_invoke('commerce_tax_ui', 'tax_rate_save', $rate, TRUE);
     }
   }
@@ -81,7 +86,7 @@ function commerce_tax_rate_features_revert($module = NULL) {
   // Reset the caches.
   commerce_tax_rates_reset();
   entity_defaults_rebuild();
-  rules_clear_cache(TRUE);
+  rules_clear_cache();
   // Schedule a menu rebuild.
   variable_set('menu_rebuild_needed', TRUE);
 

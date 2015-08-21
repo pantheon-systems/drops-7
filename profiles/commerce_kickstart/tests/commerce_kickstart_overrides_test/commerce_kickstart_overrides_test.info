@@ -1,0 +1,35 @@
+name = Commerce Kickstart Overrides Test
+core = 7.x
+package = Commerce Kickstart
+dependencies[] = commerce_kickstart_blog
+dependencies[] = features_override
+hidden = TRUE
+features[features_api][] = api:1
+features[features_override_items][] = field.node-blog_post-body
+features[features_override_items][] = field.node-blog_post-field_blog_category
+features[features_override_items][] = field.node-blog_post-field_image
+features[features_override_items][] = field.node-blog_post-field_tags
+features[features_override_items][] = field.node-blog_post-title_field
+features[features_override_items][] = variable.field_bundle_settings_node__blog_post
+features[features_overrides][] = field.node-blog_post-body.field_instance|label
+features[features_overrides][] = field.node-blog_post-body.field_instance|required
+features[features_overrides][] = field.node-blog_post-field_blog_category.field_instance|display|default|module
+features[features_overrides][] = field.node-blog_post-field_blog_category.field_instance|display|default|type
+features[features_overrides][] = field.node-blog_post-field_blog_category.field_instance|display|teaser|module
+features[features_overrides][] = field.node-blog_post-field_blog_category.field_instance|display|teaser|type
+features[features_overrides][] = field.node-blog_post-field_image.field_instance|fences_wrapper
+features[features_overrides][] = field.node-blog_post-field_image.field_instance|label
+features[features_overrides][] = field.node-blog_post-field_tags.field_instance|display|default|module
+features[features_overrides][] = field.node-blog_post-field_tags.field_instance|display|default|type
+features[features_overrides][] = field.node-blog_post-field_tags.field_instance|display|teaser|module
+features[features_overrides][] = field.node-blog_post-field_tags.field_instance|display|teaser|type
+features[features_overrides][] = field.node-blog_post-title_field.field_instance|display|default|weight
+features[features_overrides][] = field.node-blog_post-title_field.field_instance|display|teaser|weight
+features[features_overrides][] = variable.field_bundle_settings_node__blog_post.value|view_modes|product_list|custom_settings
+
+; Information added by Drupal.org packaging script on 2015-08-20
+version = "7.x-2.28"
+core = "7.x"
+project = "commerce_kickstart"
+datestamp = "1440110572"
+

@@ -79,6 +79,20 @@ abstract class MigrateSource implements Iterator {
   protected $highwaterField;
 
   /**
+   * The highwater mark at the beginning of the import operation.
+   *
+   * @var
+   */
+  protected $originalHighwater = '';
+
+  /**
+   * Used in the case of multiple key sources that need to use idlist.
+   *
+   * @var string
+   */
+  protected $multikeySeparator = ':';
+
+  /**
    * List of source IDs to process.
    *
    * @var array
@@ -115,6 +129,14 @@ abstract class MigrateSource implements Iterator {
    * @var boolean
    */
   protected $skipCount = FALSE;
+
+  /**
+   * If TRUE, we will maintain hashed source rows to determine whether incoming
+   * data has changed.
+   *
+   * @var bool
+   */
+  protected $trackChanges = FALSE;
 
   /**
    * By default, next() will directly read the map row and add it to the data
@@ -186,6 +208,9 @@ abstract class MigrateSource implements Iterator {
     if (!empty($options['cache_key'])) {
       $this->cacheKey = $options['cache_key'];
     }
+    if (!empty($options['track_changes'])) {
+      $this->trackChanges = $options['track_changes'];
+    }
   }
 
   /**
@@ -229,6 +254,9 @@ abstract class MigrateSource implements Iterator {
     $this->numProcessed = 0;
     $this->numIgnored = 0;
     $this->highwaterField = $this->activeMigration->getHighwaterField();
+    if (!empty($this->highwaterField)) {
+      $this->originalHighwater = $this->activeMigration->getHighwater();
+    }
     if ($this->activeMigration->getOption('idlist')) {
       $this->idList = explode(',', $this->activeMigration->getOption('idlist'));
     }
@@ -248,9 +276,11 @@ abstract class MigrateSource implements Iterator {
   public function next() {
     $this->currentKey = NULL;
     $this->currentRow = NULL;
+
     migrate_instrument_start(get_class($this) . ' getNextRow');
     while ($row = $this->getNextRow()) {
       migrate_instrument_stop(get_class($this) . ' getNextRow');
+
       // Populate the source key for this row
       $this->currentKey = $this->activeMigration->prepareKey(
         $this->activeMap->getSourceKey(), $row);
@@ -267,23 +297,24 @@ abstract class MigrateSource implements Iterator {
         }
       }
 
-      // First, determine if this row should be passed to prepareRow(), or skipped
-      // entirely. The rules are:
+      // First, determine if this row should be passed to prepareRow(), or
+      // skipped entirely. The rules are:
       // 1. If there's an explicit idlist, that's all we care about (ignore
       //    highwaters and map rows).
       $prepared = FALSE;
       if (!empty($this->idList)) {
-        if (in_array(reset($this->currentKey), $this->idList)) {
-          // In the list, fall through.
-        }
-        else {
-          // Not in the list, skip it
-          $this->currentRow = NULL;
-          continue;
+        // Check first source key.
+        if (!in_array(reset($this->currentKey), $this->idList)) {
+          // If this is a compound source key, check the full key.
+          $compoundKey = implode($this->multikeySeparator, $this->currentKey);
+          if (count($this->currentKey) == 1 || !in_array($compoundKey, $this->idList)) {
+            // Could not find the key, skip.
+            continue;
+          }
         }
       }
-      // 2. If the row is not in the map (we have never tried to import it before),
-      //    we always want to try it.
+      // 2. If the row is not in the map (we have never tried to import it
+      //    before), we always want to try it.
       elseif (!isset($row->migrate_map_sourceid1)) {
         // Fall through
       }
@@ -293,35 +324,51 @@ abstract class MigrateSource implements Iterator {
       }
       // 4. At this point, we have a row which has previously been imported and
       //    not marked for update. If we're not using highwater marks, then we
-      //    will not take this row.
+      //    will not take this row. Except, if we're looking for changes in the
+      //    data, we need to go through prepareRow() before we can decide to
+      //    skip it.
       elseif (empty($this->highwaterField)) {
-        // No highwater, skip
-        $this->currentRow = NULL;
-        continue;
+        if ($this->trackChanges) {
+          if ($this->prepareRow($row) !== FALSE) {
+            if ($this->dataChanged($row)) {
+              // This is a keeper
+              $this->currentRow = $row;
+              break;
+            }
+            else {
+              // No change, skip it.
+              continue;
+            }
+          }
+          else {
+            // prepareRow() told us to skip it.
+            continue;
+          }
+        }
+        else {
+          // No highwater and not tracking changes, skip.
+          continue;
+        }
       }
       // 5. The initial highwater mark, before anything is migrated, is ''. We
       //    want to make sure we don't mistakenly skip rows with a highwater
       //    field value of 0, so explicitly handle '' here.
-      elseif ($this->activeMigration->getHighwater() === '') {
+      elseif ($this->originalHighwater === '') {
         // Fall through
       }
-      // 6. So, we are using highwater marks. Take the row if its highwater field
-      //    value is greater than the saved mark, otherwise skip it.
+      // 6. So, we are using highwater marks. Take the row if its highwater
+      //    field value is greater than the saved mark, otherwise skip it.
       else {
         // Call prepareRow() here, in case the highwaterField needs preparation
         if ($this->prepareRow($row) !== FALSE) {
-          if ($row->{$this->highwaterField['name']} > $this->activeMigration->getHighwater()) {
+          if ($row->{$this->highwaterField['name']} > $this->originalHighwater) {
             $this->currentRow = $row;
             break;
           }
           else {
             // Skip
-            $this->currentRow = NULL;
             continue;
           }
-        }
-        else {
-          $this->currentRow = NULL;
         }
         $prepared = TRUE;
       }
@@ -358,6 +405,10 @@ abstract class MigrateSource implements Iterator {
     migrate_instrument_stop(get_class($this->activeMigration) . ' prepareRow');
     // We're explicitly skipping this row - keep track in the map table
     if ($return === FALSE) {
+      // Make sure we replace any previous messages for this item with any
+      // new ones.
+      $this->activeMigration->getMap()->delete($this->currentKey, TRUE);
+      $this->activeMigration->saveQueuedMessages();
       $this->activeMigration->getMap()->saveIDMapping($row, array(),
         MigrateMap::STATUS_IGNORED, $this->activeMigration->rollbackAction);
       $this->numIgnored++;
@@ -366,8 +417,62 @@ abstract class MigrateSource implements Iterator {
     }
     else {
       $return = TRUE;
+      // When tracking changed data, We want to quietly skip (rather than
+      // "ignore") rows with changes. The caller needs to make that decision,
+      // so we need to provide them with the necessary information (before and
+      // after hashes).
+      if ($this->trackChanges) {
+        $unhashed_row = clone ($row);
+        // Remove all map data, otherwise we'll have a false positive on the
+        // second import (attempt) on a row.
+        foreach ($unhashed_row as $field => $data) {
+          if (strpos($field, 'migrate_map_') === 0) {
+            unset($unhashed_row->$field);
+          }
+        }
+        $row->migrate_map_original_hash = isset($row->migrate_map_hash) ?
+          $row->migrate_map_hash : '';
+        $row->migrate_map_hash = $this->hash($unhashed_row);
+      }
+      else {
+        $row->migrate_map_hash = '';
+      }
     }
+
     $this->numProcessed++;
     return $return;
+  }
+
+  /**
+   * Determine whether this row has changed, and therefore whether it should
+   * be processed.
+   *
+   * @param $row
+   *
+   * @return bool
+   */
+  protected function dataChanged($row) {
+    if ($row->migrate_map_original_hash != $row->migrate_map_hash) {
+      $return = TRUE;
+    }
+    else {
+      $return = FALSE;
+    }
+
+    return $return;
+  }
+
+  /**
+   * Generate a hash of the source row.
+   *
+   * @param $row
+   *
+   * @return string
+   */
+  protected function hash($row) {
+    migrate_instrument_start('MigrateSource::hash');
+    $hash = md5(serialize($row));
+    migrate_instrument_stop('MigrateSource::hash');
+    return $hash;
   }
 }

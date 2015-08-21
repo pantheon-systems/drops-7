@@ -134,10 +134,12 @@ function commerce_kickstart_product_ui_library() {
  */
 function commerce_kickstart_product_ui_form_alter(&$form, &$form_state, $form_id) {
   if (strstr($form_id, 'commerce_cart_add_to_cart_form')) {
-    // Add quantity spinner widget & read more link
-    $form['#attached']['library'][] = array('commerce_kickstart_product_ui', 'jquery_expander');
-    $form['#attached']['library'][] = array('commerce_kickstart_product_ui', 'jquery_ui_spinner');
-    $form['#attached']['js'][] = drupal_get_path('module', 'commerce_kickstart_product_ui') . '/commerce_kickstart_product_ui.js';
+    // Add quantity spinner widget & read more link.
+    if (!variable_get('commerce_kickstart_product_ui_spinner_disable', FALSE)) {
+      $form['#attached']['library'][] = array('commerce_kickstart_product_ui', 'jquery_expander');
+      $form['#attached']['library'][] = array('commerce_kickstart_product_ui', 'jquery_ui_spinner');
+      $form['#attached']['js'][] = drupal_get_path('module', 'commerce_kickstart_product_ui') . '/commerce_kickstart_product_ui.js';
+    }
 
     // Rename add-to-cart form fields label (quantity).
     $form['quantity']['#title'] = t('Enter Quantity');
@@ -154,9 +156,9 @@ function commerce_kickstart_product_ui_form_alter(&$form, &$form_state, $form_id
  * Implements hook_page_alter().
  */
 function commerce_kickstart_product_ui_page_alter(&$page) {
-  // Disable breadcumb on user, checkout and cart pages.
+  // Disable breadrcumb on checkout and cart pages.
   $current_path = current_path();
-  $exclude_path = "user*\ncheckout/*\ncart";
+  $exclude_path = "checkout/*\ncart";
   $match = drupal_match_path(drupal_strtolower($current_path), drupal_strtolower($exclude_path));
   if ($match) {
     drupal_set_breadcrumb(array());

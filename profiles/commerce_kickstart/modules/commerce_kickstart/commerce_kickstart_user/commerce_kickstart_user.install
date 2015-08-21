@@ -27,3 +27,10 @@ function commerce_kickstart_user_enable() {
     throw $e;
   }
 }
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_kickstart_user_uninstall() {
+  variable_del('commerce_kickstart_user_breadcrumbs');
+}

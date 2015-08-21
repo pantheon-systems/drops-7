@@ -1,8 +1,8 @@
 language: php
+sudo: false
 
 php:
   - 5.4
-  - 5.5
 
 branches:
   except:
@@ -15,6 +15,9 @@ mysql:
 
 env:
   - UPGRADE=none
+  - UPGRADE=7.x-2.26
+  - UPGRADE=7.x-2.25
+  - UPGRADE=7.x-2.24
   - UPGRADE=7.x-2.23
   - UPGRADE=7.x-2.22
   - UPGRADE=7.x-2.21
@@ -30,25 +33,42 @@ env:
 
 matrix:
   fast_finish: true
+  include:
+    - php: 5.5
+      env: UPGRADE=none
+    - php: 5.5
+      env: UPGRADE=7.x-2.23 TEST_FEATURES_OVERRIDES=1
+    - php: 5.6
+      env: UPGRADE=none
+
+# Cache Composer & Drush directories.
+cache:
+  directories:
+    - $HOME/.composer/cache
+    - $HOME/.drush/cache
 
 install:
-  - sudo apt-get update > /dev/null
   - "mysql -e 'create database drupal;'"
 
   # Install latest Drush 6.
+  - travis_retry composer self-update && composer --version
+  - travis_retry composer global require "drush/drush:6.*"
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
-  - composer global require --no-interaction --prefer-source drush/drush:6.*
+
+  # Drupal.org verify tool
   - drush dl -y drupalorg_drush-7.x-1.x-dev --destination=$HOME/.drush
   - drush cc drush
 
   # Build Behat dependencies
   - cd ./tests/behat
-  - composer install --no-interaction --prefer-source
+  - travis_retry composer install --prefer-dist --no-interaction
   - cd ../../../
 
   # Setting Behat environment
-  - DISTRO=`echo $TRAVIS_BUILD_DIR | sed -e "s/\/[^\/]*$//"`
-  - export BEHAT_PARAMS="{\"extensions\":{\"Drupal\\\DrupalExtension\":{\"drupal\":{\"drupal_root\":\"$DISTRO/drupal\"}}}}"
+  - BUILD_TOP=`dirname $TRAVIS_BUILD_DIR`
+  - BEHAT_PARAMS='{"extensions":{"Drupal\\DrupalExtension":{"drupal":{"drupal_root":"BUILD_TOP/drupal"}}}}'
+  - BEHAT_PARAMS=`echo $BEHAT_PARAMS | sed -e s#BUILD_TOP#$BUILD_TOP#`
+  - export BEHAT_PARAMS
 
   # Build Codebase
   - mkdir private_files
@@ -73,7 +93,7 @@ install:
   - if [[ "$UPGRADE" != none ]]; then drush dl commerce_kickstart-$UPGRADE; fi
 
   # Setup files
-  - sudo chmod -R 777 drupal/sites/all
+  - chmod -R 777 drupal/sites/all
 
   # Setup display for Selenium
   - export DISPLAY=:99.0
@@ -83,17 +103,41 @@ install:
   # Get Selenium
   - wget http://selenium-release.storage.googleapis.com/2.42/selenium-server-standalone-2.42.1.jar
   - java -jar selenium-server-standalone-2.42.1.jar > /dev/null 2>&1 &
-  - until netstat -an 2>/dev/null | grep '4444.*LISTEN'; do true; done
+  - nc -zvv localhost 4444; out=$?; while [[ $out -ne 0 ]]; do echo "Retry hit port 4444..."; nc -zvv localhost 4444; out=$?; sleep 5; done
 
    # Disable sendmail
   - echo sendmail_path=`which true` >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
+  # Increase the MySQL connection timeout on the PHP end.
+  - echo "mysql.connect_timeout=3000" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "default_socket_timeout=3000" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
+  # Increase the MySQL server timetout and packet size.
+  - mysql -e "SET GLOBAL wait_timeout = 36000;"
+  - mysql -e "SET GLOBAL max_allowed_packet = 33554432;"
+
+  # Enable APC
+  - |
+    if [[ $TRAVIS_PHP_VERSION < "5.5" ]]; then
+      echo "extension=apc.so" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+      echo "apc.shm_size=256M" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+    fi
 
 before_script:
 
   # Do the site install (either the current revision or old for the upgrade).
   - if [[ "$UPGRADE" == none ]]; then cd drupal; else cd commerce_kickstart-$UPGRADE; fi
+
+
+  # Copy override module into sites/default/modules so it carries over when testing upgrades.
+  - if [[ "$TEST_FEATURES_OVERRIDES" == 1 ]]; then mkdir sites/default/modules && cp -r ../drupal/profiles/commerce_kickstart/tests/commerce_kickstart_overrides_test sites/default/modules/commerce_kickstart_overrides_test; fi
+
   - drush si commerce_kickstart --db-url=mysql://root:@127.0.0.1/drupal --account-name=admin --account-pass=admin --site-mail=admin@example.com --site-name="Commerce Kickstart" --yes
   - drush pm-disable dblog --yes
+
+  # If testing the override, enable it and revert feature it's overriding (because we didn't on the same install.)
+  - if [[ "$TEST_FEATURES_OVERRIDES" == 1 ]]; then drush en -y commerce_kickstart_overrides_test && drush fr -y commerce_kickstart_blog; fi
+
   - cd ../drupal
 
   # If we're an upgrade test, run the upgrade process.
@@ -101,7 +145,7 @@ before_script:
 
   # Start server
   - drush runserver --server=builtin 8888 > /dev/null 2>&1 &
-  - until netstat -an 2>/dev/null | grep '8888.*LISTEN'; do true; done
+  - nc -zvv localhost 8888; out=$?; while [[ $out -ne 0 ]]; do echo "Retry hit port 8888..."; nc -zvv localhost 8888; out=$?; sleep 5; done
   - cd profiles/commerce_kickstart/tests/behat
 
 script:
@@ -110,7 +154,8 @@ script:
   - if [[ "$UPGRADE" == none ]]; then ../../scripts/check-overridden.sh; fi
 
   # Run Behat tests.
-  - ./bin/behat --config behat.travis.yml
+  - if [[ "$TEST_FEATURES_OVERRIDES" != 1 ]]; then ./bin/behat --config behat.travis.yml --tags ~@overrides; fi
+  - if [[ "$TEST_FEATURES_OVERRIDES" == 1 ]]; then ./bin/behat --config behat.travis.yml --tags @overrides; fi
 
 notifications:
 

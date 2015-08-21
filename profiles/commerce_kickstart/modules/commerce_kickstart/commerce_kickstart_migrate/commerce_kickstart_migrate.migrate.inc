@@ -2,7 +2,7 @@
 
 /**
  * @file
- *  Contains base migration classes used by other Commerce Kickstart modules.
+ * Contains base migration classes used by other Commerce Kickstart modules.
  */
 
 /**
@@ -10,21 +10,31 @@
  */
 abstract class CommerceKickstartMigration extends Migration {
 
+  /**
+   * {@inheritdoc}
+   */
   public function processImport(array $options = array()) {
     parent::processImport($options);
     // Do not force menu rebuilding. Otherwise pathauto will try to rebuild
     // in each node_insert invocation.
     variable_set('menu_rebuild_needed', FALSE);
   }
+
 }
 
+/**
+ * Class CommerceKickstartPages.
+ */
 class CommerceKickstartPages extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import pages nodes.');
 
-    // Create a map object for tracking the relationships between source rows
+    // Create a map object for tracking the relationships between source rows.
     $this->map = new MigrateSQLMap($this->machineName,
       array(
         'title' => array(
@@ -51,7 +61,13 @@ class CommerceKickstartPages extends CommerceKickstartMigration {
     $this->addFieldMapping('is_new', 'is_new')->defaultValue(TRUE);
   }
 
-  function csvcolumns() {
+  /**
+   * Returns CSV header mappings.
+   *
+   * @return mixed
+   *    Array of mappings.
+   */
+  public function csvcolumns() {
     // "nid", "Title", "Path", "Body"
     $columns[0] = array('nid', 'nid');
     $columns[1] = array('title', 'Title');
@@ -59,4 +75,5 @@ class CommerceKickstartPages extends CommerceKickstartMigration {
     $columns[3] = array('body', 'Body');
     return $columns;
   }
+
 }

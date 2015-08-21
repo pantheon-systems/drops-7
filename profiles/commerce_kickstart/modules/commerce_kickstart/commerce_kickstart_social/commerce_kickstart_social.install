@@ -60,5 +60,14 @@ function commerce_kickstart_social_enable() {
  * Rebuild Commerce Kickstart Social to ensure Service Links settings.
  */
 function commerce_kickstart_social_update_7200() {
-  commerce_kickstart_rebuild_feature('commerce_kickstart_social');
+  // Proper fix for upgrade path from #2245219.
+  if (!variable_get('service_links_node_view_modes')) {
+    variable_set('service_links_node_view_modes', array(
+      'full' => 'full',
+      'teaser' => 0,
+      'rss' => 0,
+      'token' => 0,
+      'product_list' => 0,
+    ));
+  }
 }

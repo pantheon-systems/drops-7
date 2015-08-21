@@ -1,0 +1,19 @@
+<?php
+/**
+ * @file
+ * An installation file for Panopoly Core
+ */
+
+/**
+ * Implemenetation of hook_uninstall()
+ */
+function distro_update_uninstall() {
+  variable_del('distro_update_allow_status_update');
+  variable_del('distro_update_hide_children');
+  variable_del('distro_update_current_make');
+  variable_del('distro_update_child_make_not_supported');
+  variable_del('distro_update_parent_make_not_supported');
+  variable_del('distro_update_lag_time');
+  variable_del('distro_update_block_parent_update');
+  variable_del('distro_update_block_child_update');
+}

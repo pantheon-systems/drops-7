@@ -10,25 +10,32 @@ class MigratePathEntityHandler extends MigrateDestinationHandler {
     $this->registerTypes(array('entity'));
   }
 
-  public function fields($entity_type, $bundle) {
+  /**
+   * Implementation of MigrateDestinationHandler::fields().
+   */
+  public function fields($entity_type, $bundle, $migration = NULL) {
     if (module_exists('path')) {
-      switch ($entity_type) {
-        case 'node':
-          return array('path' => t('Node: Path alias'));
-        case 'user':
-          return array('path' => t('User: Path alias'));
-        case 'taxonomy_term':
-          return array('path' => t('Term: Path alias'));
-      }
+      return array('path' => t('Path alias'));
     }
     return array();
   }
 
   public function prepare($entity, stdClass $row) {
     if (module_exists('path') && isset($entity->path)) {
-      $path = $entity->path;
-      $entity->path = array();
-      $entity->path['alias'] = $path;
+      // Make sure the alias doesn't already exist
+      $query = db_select('url_alias')
+        ->condition('alias', $entity->path)
+        ->condition('language', $entity->language);
+      $query->addExpression('1');
+      $query->range(0, 1);
+      if (!$query->execute()->fetchField()) {
+        $path = $entity->path;
+        $entity->path = array();
+        $entity->path['alias'] = $path;
+      }
+      else {
+        unset($entity->path);
+      }
     }
   }
 }

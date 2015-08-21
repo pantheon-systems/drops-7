@@ -28,16 +28,8 @@ function commerce_kickstart_product_default_rules_configuration() {
       "LABEL" : "Rate Free Shipping",
       "PLUGIN" : "rule",
       "OWNER" : "rules",
-      "REQUIRES" : [ "rules", "commerce_shipping" ],
-      "USES VARIABLES" : { "commerce_order" : { "label" : "Order", "type" : "commerce_order" } },
-      "IF" : [
-        { "NOT data_is" : {
-            "data" : [ "commerce-order:commerce-order-total:amount" ],
-            "op" : "\\u003C",
-            "value" : "9999"
-          }
-        }
-      ],
+      "REQUIRES" : [ "commerce_shipping" ],
+      "USES VARIABLES" : { "commerce_order" : { "type" : "commerce_order", "label" : "Order" } },
       "DO" : [
         { "commerce_shipping_service_rate_order" : {
             "shipping_service_name" : "free_shipping",
@@ -51,16 +43,8 @@ function commerce_kickstart_product_default_rules_configuration() {
       "LABEL" : "Rate Standard Shipping",
       "PLUGIN" : "rule",
       "OWNER" : "rules",
-      "REQUIRES" : [ "rules", "commerce_shipping" ],
+      "REQUIRES" : [ "commerce_shipping" ],
       "USES VARIABLES" : { "commerce_order" : { "type" : "commerce_order", "label" : "Order" } },
-      "IF" : [
-        { "data_is" : {
-            "data" : [ "commerce-order:commerce-order-total:amount" ],
-            "op" : "\\u003C",
-            "value" : "9999"
-          }
-        }
-      ],
       "DO" : [
         { "commerce_shipping_service_rate_order" : {
             "shipping_service_name" : "standard_shipping",

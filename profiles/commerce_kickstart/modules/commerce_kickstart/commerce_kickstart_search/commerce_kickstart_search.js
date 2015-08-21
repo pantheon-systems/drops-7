@@ -4,7 +4,7 @@
   // multi-clic
   Drupal.behaviors.kickstartSearch = {
     attach:function (context) {
-      $('.facetapi-checkbox').live('click', function(e) {
+      $('.facetapi-checkbox').bind('click', function(e) {
         $('.facetapi-checkbox').attr("disabled", true);
       });
     }

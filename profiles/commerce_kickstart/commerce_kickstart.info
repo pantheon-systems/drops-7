@@ -66,6 +66,7 @@ dependencies[] = commerce_tax_ui
 ; Install contribs.
 dependencies[] = chosen
 dependencies[] = crumbs
+dependencies[] = distro_update
 dependencies[] = module_filter
 dependencies[] = image_delta_formatter
 dependencies[] = taxonomy_menu
@@ -89,6 +90,7 @@ dependencies[] = commerce_amex
 dependencies[] = menu_attributes
 dependencies[] = fences
 dependencies[] = title
+dependencies[] = admin_views
 
 ; Install Features
 dependencies[] = features
@@ -116,9 +118,9 @@ dependencies[] = commerce_kickstart_migrate
 ; System Requirements.
 php_memory_limit = 128M
 
-; Information added by Drupal.org packaging script on 2015-07-10
-version = "7.x-2.26"
+; Information added by Drupal.org packaging script on 2015-08-20
+version = "7.x-2.28"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1436555946"
+datestamp = "1440110572"
 

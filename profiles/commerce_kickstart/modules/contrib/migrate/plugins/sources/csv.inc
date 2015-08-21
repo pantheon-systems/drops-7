@@ -186,6 +186,8 @@ class MigrateSourceCSV extends MigrateSource {
   public function getNextRow() {
     $row = $this->getNextLine();
     if ($row) {
+      // only use rows specified in $this->csvcolumns().
+      $row = array_intersect_key($row, $this->csvcolumns);
       // Set meaningful keys for the columns mentioned in $this->csvcolumns().
       foreach ($this->csvcolumns as $int => $values) {
         list($key, $description) = $values;

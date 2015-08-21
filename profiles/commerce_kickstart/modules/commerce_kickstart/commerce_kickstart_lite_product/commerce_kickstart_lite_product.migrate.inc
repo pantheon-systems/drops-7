@@ -2,13 +2,19 @@
 
 /**
  * @file
- *  Migrations for commerce_kickstart_lite_product.
+ * Migrations for commerce_kickstart_lite_product.
  */
 
+/**
+ * Class CommerceKickstartProduct.
+ */
 class CommerceKickstartProduct extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import products.');
 
     // Create a map object for tracking the relationships between source rows
@@ -20,7 +26,7 @@ class CommerceKickstartProduct extends CommerceKickstartMigration {
           'not null' => TRUE,
         ),
       ),
-      MigrateDestinationEntityAPI::getKeySchema('commerce_product', 'product')
+      MigrateDestinationEntityAPI::getKeySchema('commerce_product')
     );
 
     // Create a MigrateSource object.
@@ -43,7 +49,13 @@ class CommerceKickstartProduct extends CommerceKickstartMigration {
     $this->addFieldMapping('language', 'language');
   }
 
-  function csvcolumns() {
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
+  public function csvcolumns() {
     $columns[0] = array('title', 'Title');
     $columns[1] = array('sku', 'SKU');
     $columns[2] = array('price', 'Price');
@@ -52,24 +64,38 @@ class CommerceKickstartProduct extends CommerceKickstartMigration {
     return $columns;
   }
 
-  function fields() {
+  /**
+   * Returns mapping for fields.
+   *
+   * @return array
+   *    Array of fields names and description.
+   */
+  public function fields() {
     return array(
       'product_images' => 'An array of images, populated during prepareRow().',
     );
   }
 
-  function prepareRow($row) {
+  /**
+   * {@inheritdoc}
+   */
+  public function prepareRow($row) {
     $row->product_images = explode(', ', $row->images);
     $row->uid = 1;
     $row->language = LANGUAGE_NONE;
   }
 }
 
-
+/**
+ * Class CommerceKickstartNode.
+ */
 class CommerceKickstartNode extends CommerceKickstartMigration {
 
-  public function __construct() {
-    parent::__construct();
+  /**
+   * {@inheritdoc}
+   */
+  public function __construct($arguments) {
+    parent::__construct($arguments);
     $this->description = t('Import product nodes.');
 
     $this->dependencies = array(
@@ -104,6 +130,9 @@ class CommerceKickstartNode extends CommerceKickstartMigration {
     $this->addFieldMapping('field_product', 'skus');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function prepareRow($row) {
     $products = array();
     foreach (explode(', ', $row->sku) as $sku) {
@@ -113,6 +142,12 @@ class CommerceKickstartNode extends CommerceKickstartMigration {
     $row->skus = $products;
   }
 
+  /**
+   * Maps CSV column headers.
+   *
+   * @return array
+   *    Array of mappings
+   */
   function csvcolumns() {
     $columns[0] = array('title', 'Title');
     $columns[1] = array('description', 'Description');

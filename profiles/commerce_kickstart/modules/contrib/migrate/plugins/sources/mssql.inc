@@ -125,7 +125,8 @@ class MigrateSourceMSSQL extends MigrateSource {
     migrate_instrument_start('MigrateSourceMSSQL count');
     if ($this->connect()) {
       $result = mssql_query($this->countQuery);
-      $count = reset(mssql_fetch_object($result));
+      $result_array = mssql_fetch_array($result);
+      $count = reset($result_array);
     }
     else {
       // Do something else?

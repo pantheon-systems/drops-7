@@ -14,7 +14,7 @@ class MigrateSourceSQL extends MigrateSource {
    *
    * @var SelectQueryInterface
    */
-  protected $originalQuery, $query, $countQuery;
+  protected $originalQuery, $query, $countQuery, $alteredQuery;
 
   /**
    * Return a reference to the base query, in particular so Migration classes
@@ -24,7 +24,7 @@ class MigrateSourceSQL extends MigrateSource {
    * @return SelectQueryInterface
    */
   public function &query() {
-    return $this->originalQuery();
+    return $this->originalQuery;
   }
 
   /**
@@ -41,6 +41,21 @@ class MigrateSourceSQL extends MigrateSource {
    * @var int
    */
   protected $numProcessed = 0;
+
+  /**
+   * Current data batch.
+   *
+   * @var int
+   */
+  protected $batch = 0;
+
+  /**
+   * Number of records to fetch from the database during each batch. A value
+   * of zero indicates no batching is to be done.
+   *
+   * @var int
+   */
+  protected $batchSize = 0;
 
   /**
    * List of available source fields.
@@ -118,6 +133,18 @@ class MigrateSourceSQL extends MigrateSource {
       $this->countQuery = $count_query;
     }
 
+    if (isset($options['batch_size'])) {
+      $this->batchSize = $options['batch_size'];
+      // Joining to the map table is incompatible with batching, disable it.
+      $options['map_joinable'] = FALSE;
+    }
+
+    // If we're tracking changes, then we need to fetch all rows to see if
+    // they've changed, we can't make that determination through a direct join.
+    if (!empty($options['track_changes'])) {
+      $options['map_joinable'] = FALSE;
+    }
+
     if (isset($options['map_joinable'])) {
       $this->mapJoinable = $options['map_joinable'];
     }
@@ -153,14 +180,15 @@ class MigrateSourceSQL extends MigrateSource {
     }
   }
 
-
   /**
    * Return a string representing the source query.
    *
    * @return string
    */
   public function __toString() {
-    return (string) $this->query;
+    $query = clone $this->query;
+    $query = $query->extend('MigrateConnectionQuery');
+    return $query->getString();
   }
 
   /**
@@ -243,6 +271,7 @@ class MigrateSourceSQL extends MigrateSource {
   public function performRewind() {
     $this->result = NULL;
     $this->query = clone $this->originalQuery;
+    $this->batch = 0;
 
     // Get the key values, for potential use in joining to the map table, or
     // enforcing idlist.
@@ -259,7 +288,41 @@ class MigrateSourceSQL extends MigrateSource {
     // 1. If idlist is provided, then only process items in that list (AND key
     //    IN (idlist)). Only applicable with single-value keys.
     if ($this->idList) {
-      $this->query->condition($keys[0], $this->idList, 'IN');
+      $simple_ids = array();
+      $compound_ids = array();
+      $key_count = count($keys);
+
+      foreach ($this->idList as $id) {
+        // Look for multi-key separator. If there is only 1 key, ignore.
+        if (strpos($id, $this->multikeySeparator) === FALSE || $key_count == 1) {
+          $simple_ids[] = $id;
+          continue;
+        }
+
+        $compound_ids[] = explode($this->multikeySeparator, $id);
+      }
+
+      // Check for compunded ids. If present add them with subsequent OR statements.
+      if (!empty($compound_ids)) {
+        $condition = db_or();
+        if (!empty($simple_ids)) {
+          $condition->condition($keys[0], $simple_ids, 'IN');
+        }
+
+        foreach ($compound_ids as $values) {
+          $temp_and = db_and();
+          foreach ($values as $pos => $value) {
+            $temp_and->condition($keys[$pos], $value);
+          }
+
+          $condition->condition($temp_and);
+        }
+
+        $this->query->condition($condition);
+      }
+      else {
+        $this->query->condition($keys[0], $simple_ids, 'IN');
+      }
     }
     else {
       // 2. If the map is joinable, join it. We will want to accept all rows
@@ -313,19 +376,42 @@ class MigrateSourceSQL extends MigrateSource {
       // 3. If we are using highwater marks, also include rows above the mark.
       //    But, include all rows if the highwater mark is not set.
       if (isset($this->highwaterField['name']) && $this->activeMigration->getHighwater() !== '') {
-        if (isset($this->highwaterField['alias'])) {
-          $highwater = $this->highwaterField['alias'] . '.' . $this->highwaterField['name'];
+        // But, if there are any existing items marked as needing update which
+        // fall below the highwater mark, and map_joinable is FALSE, those
+        // items will be skipped. Thus, in that case do not add the highwater
+        // optimization to the query.
+        $add_highwater_condition = TRUE;
+        if (!$this->mapJoinable) {
+          $count_needs_update = db_query('SELECT COUNT(*) FROM {' .
+            $this->activeMap->getQualifiedMapTable() . '} WHERE needs_update = 1')
+            ->fetchField();
+          if ($count_needs_update > 0) {
+            $add_highwater_condition = FALSE;
+          }
         }
-        else {
-          $highwater = $this->highwaterField['name'];
+        if ($add_highwater_condition) {
+          if (isset($this->highwaterField['alias'])) {
+            $highwater = $this->highwaterField['alias'] . '.' . $this->highwaterField['name'];
+          }
+          else {
+            $highwater = $this->highwaterField['name'];
+          }
+          $conditions->condition($highwater, $this->activeMigration->getHighwater(), '>');
+          $condition_added = TRUE;
         }
-        $conditions->condition($highwater, $this->activeMigration->getHighwater(), '>');
-        $condition_added = TRUE;
       }
       if ($condition_added) {
         $this->query->condition($conditions);
       }
+
+      // 4. Download data in batches for performance.
+      if ($this->batchSize > 0) {
+        $this->query->range($this->batch * $this->batchSize, $this->batchSize);
+      }
     }
+
+    // Save our fixed-up query so getNextBatch() matches it.
+    $this->alteredQuery = clone $this->query;
 
     migrate_instrument_start('MigrateSourceSQL execute');
     $this->result = $this->query->execute();
@@ -338,6 +424,71 @@ class MigrateSourceSQL extends MigrateSource {
    * @return object
    */
   public function getNextRow() {
-    return $this->result->fetchObject();
+    $row = $this->result->fetchObject();
+
+    // We might be out of data entirely, or just out of data in the current batch.
+    // Attempt to fetch the next batch and see.
+    if (!is_object($row) && $this->batchSize > 0) {
+      $this->getNextBatch();
+      $row = $this->result->fetchObject();
+    }
+    if (is_object($row)) {
+      return $row;
+    }
+    else {
+      return NULL;
+    }
+  }
+
+  /**
+   * Downloads the next set of data from the source database.
+   */
+  protected function getNextBatch() {
+    $this->batch++;
+    $query = clone $this->alteredQuery;
+    $query->range($this->batch * $this->batchSize, $this->batchSize);
+    $this->result = $query->execute();
+  }
+
+}
+
+/**
+ * Query extender for retrieving the connection used on the query.
+ */
+class MigrateConnectionQuery extends SelectQueryExtender {
+
+  public function __construct(SelectQueryInterface $query, DatabaseConnection $connection) {
+    parent::__construct($query, $connection);
+    // Add the connection as metadata if anything else wants to access it.
+    $query->addMetaData('connection', $connection);
+  }
+
+  /**
+   * Return a string representing the source query.
+   *
+   * This is copied from devel module's dpq() function.
+   *
+   * @param bool $prefix
+   *   If the tables should be prefixed. If FALSE will return tables names in
+   *   the query like {tablename}.
+   *
+   * @return string
+   *   The SQL query.
+   */
+  public function getString($prefix = TRUE) {
+    $query = $this;
+    if (method_exists($this, 'preExecute')) {
+      $query->preExecute();
+    }
+    $sql = (string) $this;
+    $quoted = array();
+    foreach ((array) $this->arguments() as $key => $val) {
+      $quoted[$key] = $this->connection->quote($val);
+    }
+    $sql = strtr($sql, $quoted);
+    if ($prefix) {
+      $sql = $this->connection->prefixTables($sql);
+    }
+    return $sql;
   }
 }

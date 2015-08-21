@@ -33,6 +33,7 @@ function commerce_kickstart_product_commerce_flat_rate_default_services() {
       ),
       'data' => array(),
       'admin_list' => TRUE,
+      'is_features' => TRUE,
     ),
     'free_shipping' => array(
       'name' => 'free_shipping',
@@ -58,6 +59,7 @@ function commerce_kickstart_product_commerce_flat_rate_default_services() {
       ),
       'data' => array(),
       'admin_list' => TRUE,
+      'is_features' => TRUE,
     ),
     'standard_shipping' => array(
       'name' => 'standard_shipping',
@@ -83,6 +85,7 @@ function commerce_kickstart_product_commerce_flat_rate_default_services() {
       ),
       'data' => array(),
       'admin_list' => TRUE,
+      'is_features' => TRUE,
     ),
   );
   return $items;

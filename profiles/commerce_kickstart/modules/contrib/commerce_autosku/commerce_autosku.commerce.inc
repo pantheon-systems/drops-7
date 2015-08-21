@@ -75,16 +75,9 @@ function commerce_autosku_commerce_product_presave($product) {
     }
     //@todo: Replace TRUE with a check if we should update existing SKUS.
     elseif (empty($product->sku) || _commerce_autosku_is_temporary_sku($product->sku) || $settings['advanced']['update_existing']) {
-      // Determine the casing to use for the generated SKU from the settings.
-      if (!empty($settings['advanced']['case'])) {
-        $case = $settings['advanced']['case'];
-      }
-      else {
-        $case = 'original';
-      }
 
       // Generate the SKU.
-      $product->sku = commerce_autosku_generate_sku($product, $settings['pattern'], $case);
+      $product->sku = commerce_autosku_generate_sku($product, $settings['pattern'], $settings['advanced']['case']);
     }
   }
 }

@@ -5,9 +5,9 @@ configure = admin/config/user-interface/chosen
 core = 7.x
 
 
-; Information added by drush on 2015-07-10
+; Information added by drush on 2015-08-20
 version = "7.x-2.0-beta4+1-dev"
 core = "7.x"
 project = "chosen"
-datestamp = "1436555966"
+datestamp = "1440110594"
 

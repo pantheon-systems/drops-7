@@ -54,18 +54,32 @@ function commerce_kickstart_lite_product_enable() {
         'image_style' => 'product_medium',
       ),
       'type' => 'image_delta',
-      'weight' => '3',
+      'weight' => '1',
     );
+    $settings_add_to_cart_confirm = array(
+      'label' => 'hidden',
+      'module' => 'image_delta_formatter',
+      'settings' => array(
+        'deltas' => 0,
+        'deltas_reversed' => 0,
+        'image_link' => '',
+        'image_style' => 'product_thumbnail',
+      ),
+      'type' => 'image_delta',
+      'weight' => 0,
+    );
+
     $instance = array(
       'entity_type' => 'commerce_product',
       'bundle' => 'product',
       'field_name' => 'field_images',
       'label' => 'Images',
       'display' => array(
+        'add_to_cart_confirmation_view' => $settings_add_to_cart_confirm,
         'default' => $settings,
         'node_product_list' => $settings_node_product_list,
-        ),
-      );
+      ),
+    );
     $field_instance = field_read_instance('commerce_product', 'field_images', 'product');
     $field_settings = $field_instance['display']['default'];
     variable_set('commerce_kickstart_product_zoom_settings', $field_settings);

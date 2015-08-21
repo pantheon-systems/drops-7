@@ -1,0 +1,803 @@
+<?php
+
+/**
+ * @file
+ * Distribution Update Manager module file.
+ */
+
+/**
+ * Implements hook_update_projects_alter().
+ *
+ * Adds the distribution to the project list. Optionally removes any
+ * distribution related projects from the project list to avoid getting a status
+ * update for.
+ */
+function distro_update_update_projects_alter(&$projects) {
+  // Add the distribution to the list of projects.
+  $profile_name = drupal_get_profile();
+  if (!empty($profile_name) && $profile = distro_update_get_profile($profile_name)) {
+    $projects[$profile_name] = $profile;
+  }
+
+  // Block projects defined through .make files from getting a status update.
+  if (!variable_get('distro_update_allow_status_update', TRUE)) {
+    $project_make_data = distro_update_rebuild_make_data();
+
+    foreach ($project_make_data as $project_name => $make_data) {
+      // Never unset the drupal project to avoid hittin an error with
+      // _update_requirement_check(). See http://drupal.org/node/1875386.
+      if (!empty($make_data['parents']) && $project_name != 'drupal') {
+        unset($projects[$project_name]);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_update_status_alter().
+ *
+ * Evaluate the project's current version to the project's .make version. The
+ * following options are configurable.
+ * - Current version is not secure or revoked then we display that status after
+ *   a configurable amount of time to allow for distribution maintainers to
+ *   respond.
+ * - If current version is not supported or not current but it matches the make
+ *   version then we alter the status to supported.
+ * - If the current version does not match the make version then we alter the
+ *   parent (owner of .make file) project's status to not supported.
+ * - If the current version does not match the make version then we alter the
+ *   child (as defined in .make file) project's status to not supported.
+ */
+function distro_update_update_status_alter(&$projects) {
+  $project_make_data = distro_update_rebuild_make_data();
+
+  // If we don't have any project make data then there is nothing to alter.
+  if (empty($project_make_data)) {
+    return;
+  }
+
+  foreach ($project_make_data as $project_name => $make_data) {
+    // A make file may include projects that are not enabled, therefore they are
+    // not in the $projects array. If that is the case then just continue on.
+    if (empty($projects[$project_name])) {
+      continue;
+    }
+    // If projects do not have a parent then continue.  This should only be the
+    // case for the distribution/profile.
+    if (empty($make_data['parents'])) {
+      continue;
+    }
+
+    $project_current_version = distro_update_get_project_version($project_name, $projects);
+    $project_make_version = distro_update_get_make_version($project_name, $projects);
+
+    // If a project's current status is a 'bad status' then after a set amount
+    // of days we display the bad status, otherwise we ignore it and let the
+    // other conditions take care of it. This gives the distribution maintainer
+    // time to respond.
+    if ($lag_time_days = variable_get('distro_update_lag_time', 2)) {
+      $lag_time = strtotime("{$lag_time_days} days ago");
+      if (in_array($projects[$project_name]['status'], array(UPDATE_NOT_SECURE, UPDATE_REVOKED)) && $projects[$project_name]['releases'][$projects[$project_name]['recommended']]['date'] > $lag_time) {
+        continue;
+      }
+    }
+
+    // Any child projects found in the make files may have newer versions
+    // available, however if the current version is consistent with the make
+    // file then consider it current. Distributions may also contain -dev
+    // releases of contribs along with patches. This results in a not
+    // supported status. As long as the current version matches the .make file
+    // then we consider them current. If both versions contain '-dev' then they
+    // are considered equivalent since we cannot track to the specific commit.
+    if (in_array($projects[$project_name]['status'], array(UPDATE_NOT_CURRENT, UPDATE_NOT_SUPPORTED, UPDATE_NOT_SECURE, UPDATE_REVOKED)) && distro_update_same_version($project_current_version, $project_make_version)) {
+      if (variable_get('distro_update_current_make', TRUE) || $projects[$project_name]['status'] != UPDATE_NOT_CURRENT) {
+        $projects[$project_name]['status'] = UPDATE_CURRENT;
+        $first_parent = reset($make_data['parents']);
+        $projects[$project_name]['extra']['distro_update'] = array(
+          'class' => array('distro-update__admin-note'),
+          'label' => t('Distro Update Manager'),
+          'data' => t('Matches .make file from @first_parent', array('@first_parent' => $first_parent)),
+        );
+      }
+    }
+
+    // If the current version does not match the make version then change the
+    // status and 'extra' messaging on the *parent projects*. We also update the
+    // child project status. If both versions contain '-dev' then they are
+    // considered equivalent since we cannot track to the specific commit.
+    if (!distro_update_same_version($project_current_version, $project_make_version)) {
+      foreach ($make_data['parents'] as $parent_project_name) {
+        // Parent project.
+        if (variable_get('distro_update_parent_make_not_supported', TRUE) && !empty($projects[$parent_project_name])) {
+          $projects[$parent_project_name]['status'] = UPDATE_NOT_SUPPORTED;
+          $projects[$parent_project_name]['extra']["distro_update__{$project_name}"] = array(
+            'class' => array('distro-update__admin-warning'),
+            'label' => t('Distro Update Manager'),
+            'data' => t('@project_name version @project_current_version does not match .make file version @project_make_version from @parent_project_name.', array(
+              '@project_name' => $project_name,
+              '@project_current_version' => $project_current_version,
+              '@project_make_version' => $project_make_version,
+              '@parent_project_name' => $parent_project_name)),
+          );
+        }
+        // Child project.
+        if (variable_get('distro_update_child_make_not_supported', TRUE)) {
+          $projects[$project_name]['status'] = UPDATE_NOT_SUPPORTED;
+          $projects[$project_name]['extra']["distro_update__{$project_name}"] = array(
+            'class' => array('distro-update__admin-warning'),
+            'label' => t('Distro Update Manager'),
+            'data' => t('@project_name version @project_current_version does not match .make file version @project_make_version from @parent_project_name.', array('@project_name' => $project_name, '@project_current_version' => $project_current_version, '@project_make_version' => $project_make_version, '@parent_project_name' => $parent_project_name)),
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function distro_update_theme_registry_alter(&$theme_registry) {
+  $theme_registry['update_report']['function'] = 'distro_update_update_report';
+}
+
+/**
+ * Update report theming function.
+ *
+ * Provide our own theming function that wraps the theme_update_report theme
+ * function of the update module. The projects are then nested based on .make
+ * files. If a module includes a .make file then those .make file modules are
+ * considered children of the module that has the .make file.
+ *
+ * @param array $variables
+ *   The variables as defined by theme_update_report in the update module.
+ * @return string
+ *   The rendered markup of the update report.
+ *
+ * @see theme_update_report()
+ *
+ * @todo get a drupal.org documentation page created that generically outlines
+ *   how to update a distro and/or why not to update modules individually. Then
+ *   link to that page from the update manager admin UI pages.
+ */
+function distro_update_update_report($variables) {
+  $profile_name = drupal_get_profile();
+  $project_make_data = distro_update_rebuild_make_data();
+
+  drupal_add_css(drupal_get_path('module', 'distro_update') . '/distro_update.css');
+
+  // Get the help text to throw at the top of the page/form.
+  $output = distro_update_form_help_text();
+
+  // If we're not dealing with a distribution then render the drupal core
+  // project, then begin traversing the project make data to render the
+  // parent/child make projects.
+  if (empty($variables['data'][$profile_name])) {
+    $project_data['data']['drupal'] = $variables['data']['drupal'];
+    $markup = theme_update_report($project_data);
+    $output['drupal_core'] = array(
+      'project' => array(
+        '#markup' => $markup,
+      ),
+    );
+    unset($variables['data']['drupal']);
+  }
+
+  // Loop through each module that is a parent or child based on the .make data
+  // we can locate.
+  foreach ($project_make_data as $project_name => $make_data) {
+    $project_data = array();
+    // If we're missing project data (project is not enabled) then continue.
+    if (empty($variables['data'][$project_name])) {
+      continue;
+    }
+    // If the project does not have any children projects then continue; this
+    // allows the remaining projects to be rendered outside of this foreach.
+    if (empty($make_data['projects'])) {
+      continue;
+    }
+
+    // Render the project and its children.
+    $project_data['data'][$project_name] = $variables['data'][$project_name];
+    $markup = theme_update_report($project_data);
+    $markup = str_replace(array('<h3>' . t('Modules') . '</h3>', '<h3>' . t('Themes') . '</h3>'), '', $markup);
+    $output[$project_name] = array(
+      'project' => array(
+        '#markup' => $markup,
+      ),
+      'children' => distro_update_report_with_children($project_name, $variables, $project_make_data),
+    );
+  }
+
+  // Render any remaining projects that were not referenced in a make file.
+  $markup = theme_update_report($variables);
+  $markup = str_replace(array('<h3>' . t('Modules') . '</h3>', '<h3>' . t('Themes') . '</h3>'), '', $markup);
+  $output['projects']['#markup'] = $markup;
+
+  return render($output);
+}
+
+/**
+ * Helper function that recursively renders the children projects.
+ *
+ * The parent project will get rendered immediately and then a recursive call is
+ * made on the child projects that also have children. On the return trip the
+ * remaining projects are rendered.
+ *
+ * The report may be configured to not render any children, however that logic
+ * check simply avoids building that part of the render array. The recursive
+ * calls are still made because they also unset the project from the $variables
+ * to avoid rendering them later.
+ *
+ * Children projects are rendered in a collapsible div. The $collapsed state is
+ * determined by the status of the children projects. If a child project is not
+ * secure, not supported, etc. then the div is not collapsed.
+ *
+ * @param string $project_name
+ *   The machine name of the parent project.
+ * @param array $variables
+ *   The variables as defined by theme_update_report in the update module.
+ * @param array $project_make_data
+ *   The array of .make file data as returned from
+ *   distro_update_rebuild_make_data().
+ *
+ * @return string
+ *   The rendered output of the project/children.
+ */
+function distro_update_report_with_children($project_name, &$variables, $project_make_data) {
+  $bad_statuses = array(
+    UPDATE_NOT_SECURE,
+    UPDATE_REVOKED,
+    UPDATE_NOT_SUPPORTED,
+  );
+
+  // CTools is used to render the children in a collapsible div.
+  $project_display_name = !empty($variables['data'][$project_name]['info']) && !empty($variables['data'][$project_name]['info']['name']) ? $variables['data'][$project_name]['info']['name'] : $project_name;
+  $themed_output = array(
+    '#theme' => 'ctools_collapsible',
+    '#handle' => t('@project_name Makefile Projects', array('@project_name' => $project_display_name)),
+    '#collapsed' => TRUE,
+  );
+
+  // If drupal core is a child project (as defined by a distribution) then make
+  // sure to render that first.
+  if (!empty($project_make_data[$project_name]['projects']['drupal']) && !empty($variables['data']['drupal'])) {
+    $project_data['data']['drupal'] = $variables['data']['drupal'];
+    $markup = theme_update_report($project_data);
+    $markup = str_replace(array('<h3>' . t('Modules') . '</h3>', '<h3>' . t('Themes') . '</h3>'), '', $markup);
+    $output['drupal_core'] = array(
+      'project' => array(
+        '#markup' => $markup,
+      ),
+    );
+    unset($variables['data']['drupal']);
+  }
+
+  // Loop through the project's children projects to build the variables to pass
+  // to the theming function.  If a child project also has children then we
+  // render the child project and recursively go through the grandchildren.
+  foreach ($project_make_data[$project_name]['projects'] as $child_project_name => $child_project_version) {
+    $project_data = array();
+    $children = '';
+
+    // If we don't have project data for a child project then we can ignore it.
+    // This happens when a make file downloads a project but the project is not
+    // in use on the site.
+    if (empty($variables['data'][$child_project_name])) {
+      continue;
+    }
+
+    // If an issue is found with a child project then uncollapse the wrapper.
+    // Only do this if child projects are being displayed or if the project is
+    // drupal core.
+    if (in_array($variables['data'][$child_project_name]['status'], $bad_statuses) && (distro_update_display_children() || $child_project_name == 'drupal')) {
+      $themed_output['#collapsed'] = FALSE;
+    }
+
+    // Build the variable data for the child projects.
+    $children_variables['data'][$child_project_name] = $variables['data'][$child_project_name];
+
+    // If we encounter a theme that has base_themes it is most likely the case
+    // that the parent project has already been rendered and an php notice will
+    // be thrown. The base_theme is used to alter the status of the sub-theme.
+    // For now we will just remove the base_theme identifier.
+    // @see http://www.drupal.org/node/2325131
+    if (!empty($children_variables['data'][$child_project_name]['project_type']) && $children_variables['data'][$child_project_name]['project_type'] == 'theme') {
+      $children_variables['data'][$child_project_name]['base_themes'] = array();
+    }
+
+    // If there are no (grand)children projects then continue. This means that
+    // we will render this in the set of projects outside of the foreach loop.
+    if (empty($project_make_data[$child_project_name]['projects'])) {
+      unset($variables['data'][$child_project_name]);
+      continue;
+    }
+
+    // We have (grand)children projects so render the child project and
+    // recursively render the (grand)children. We check whether we want to
+    // display children prior to calling the theme_update_report() function as
+    // opposed to distro_update_report_with_children() to allow for projects to
+    // be unset as we recursively dive deeper.
+    $project_data['data'][$child_project_name] = $children_variables['data'][$child_project_name];
+    unset($children_variables['data'][$child_project_name]);
+    $markup = distro_update_display_children() ? theme_update_report($project_data) : NULL;
+    $markup = str_replace(array('<h3>' . t('Modules') . '</h3>', '<h3>' . t('Themes') . '</h3>'), '', $markup);
+    $children = distro_update_report_with_children($child_project_name, $variables, $project_make_data);
+    if (distro_update_display_children()) {
+      $output[$child_project_name] = array(
+        'project' => array(
+          '#markup' => $markup,
+        ),
+        'children' => $children,
+      );
+    }
+    unset($variables['data'][$child_project_name]);
+  }
+
+  unset($variables['data'][$project_name]);
+
+  // Render the rest of the projects that did not have (grand)children.
+  if (!empty($children_variables) && distro_update_display_children()) {
+    $markup = theme_update_report($children_variables);
+    $markup = str_replace(array('<h3>' . t('Modules') . '</h3>', '<h3>' . t('Themes') . '</h3>'), '', $markup);
+    $output['projects'] = array(
+      '#markup' => $markup,
+    );
+  }
+
+  $themed_output['#content'] = render($output);
+  return !empty($output) ? $themed_output : NULL;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Optionally modify the update admin UI page where an administrator could
+ * manually update a project. This is to avoid updating projects that should be
+ * updated holistically with the distribution.
+ */
+function distro_update_form_update_manager_update_form_alter(&$form, &$form_state) {
+  // If the form doesn't have any projects then we can jump out early and let
+  // the form render normally.
+  if (empty($form['projects'])) {
+    return;
+  }
+
+  array_unshift($form, distro_update_form_help_text());
+
+  $project_make_data = distro_update_rebuild_make_data();
+
+  // Loop through each project option.
+  foreach ($form['projects']['#options'] as $project_name => $option) {
+    // Remove any parent projects that include the .make file.
+    if (variable_get('distro_update_block_parent_update', TRUE) && !empty($project_make_data[$project_name]['projects'])) {
+      unset($form['projects']['#options'][$project_name]);
+      continue;
+    }
+    // Remove any children projects that are defined in the .make files.
+    if (variable_get('distro_update_block_child_update', TRUE) && !empty($project_make_data[$project_name]['parents'])) {
+      unset($form['projects']['#options'][$project_name]);
+      continue;
+    }
+    // Since disto_update modifies the status of a project based on its
+    // definition in a .make file, it may appear as a project with an update
+    // available. This is not always the case so we attempt to test here to
+    // see if the project's recommended version is the current version and hide
+    // it from this form.
+    if (!empty($option['recommended_version']) && !empty($option['installed_version']) && strpos($option['recommended_version'], $option['installed_version']) === 0) {
+      unset($form['projects']['#options'][$project_name]);
+      continue;
+    }
+    // Any remaining projects add information about what project defines the
+    // .make file.
+    if (!empty($project_make_data[$project_name]['parents'])) {
+      // Add helper note
+      $parent_links = array();
+      $project_make_version = '';
+      foreach ($project_make_data[$project_name]['parents'] as $parent_project_name) {
+        $parent_links[] = l($parent_project_name, 'http://drupal.org/project/' . $parent_project_name, array('external' => TRUE));
+        $project_make_version = $project_make_data[$parent_project_name]['projects'][$project_name];
+      }
+      $make_helper = '<br/>(' . t("Warning: this project bundled by !urls", array('!urls' => implode(',', $parent_links))) . ')';
+      $form['projects']['#options'][$project_name]['title'] .= $make_helper;
+      // Add additional recommended .make version.
+      $make_version_helper = '<div><strong>Distribution Recommendation: ' . t('@version', array('@version' => $project_make_version)) . '</strong></div>';
+      $make_version_helper .= 'Project Recommendation: ';
+      $form['projects']['#options'][$project_name]['recommended_version'] = $make_version_helper . $form['projects']['#options'][$project_name]['recommended_version'];
+    }
+  }
+
+  // If we have no options left, then alter the remaining form elements to
+  // appear as if all projects are up-to-date.
+  if (empty($form['projects']['#options'])) {
+    $form['message'] = array(
+      '#markup' => t('All of your projects are up to date.'),
+    );
+
+    unset($form['available_backends']);
+    unset($form['projects']);
+    unset($form['project_downloads']);
+    unset($form['actions']);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Alter the update manager settings form to include additional configuration
+ * options.
+ */
+function distro_update_form_update_settings_alter(&$form, &$form_state) {
+  $form['distro_update'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Distribution Update Status Manager'),
+    '#description' => '<p>' .
+      t('WARNING: Distributions rely on specific versions of contrib projects. Upgrading distributions requires a different process than just updating individual projects at a time. To help avoid user error in this regard, the update status admin pages have been altered to hide certain projects and upgrade capabilities. The following options are pre-configured with recommended settings by the Distribution Update Status Manager module and the Distributions.') .
+      '</p><p>' .
+      t('Altering these settings will not break the distribution, however UPGRADE MODULES AT YOUR OWN RISK.') .
+      '</p>',
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['distro_update']['distro_update_allow_status_update'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow projects defined through .make files to perform a status update?'),
+    '#description' => t('Uncheck this option to completely block a project from having the status check via the Update Manager. It is <strong>recommended</strong> to leave this checked. This allows the administrator to see when a .make defined project is not the correct version.'),
+    '#default_value' => variable_get('distro_update_allow_status_update', TRUE),
+  );
+  $form['distro_update']['distro_update_hide_children'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Hide projects that are defined through .make files?'),
+    '#description' => t('This simply hides projects from being displayed on the Available Updates list page (admin/reports/updates) and does not stop the system from actually checking for the status.'),
+    '#default_value' => variable_get('distro_update_hide_children', TRUE),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="distro_update_allow_status_update"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['distro_update']['distro_update_current_make'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Set non-current projects to current if the version matches the .make file?'),
+    '#description' => t('A project may come out with a new release, however the distribution may require an earlier version or may not have updated the project. Use this option to denote a project as current if it matches the .make file.'),
+    '#default_value' => variable_get('distro_update_current_make', TRUE),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="distro_update_hide_children"]' => array('checked' => FALSE),
+        ':input[name="distro_update_allow_status_update"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['distro_update']['distro_update_child_make_not_supported'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Set the status of a project to not-supported if the version does not match the .make file?'),
+    '#description' => t('A contrib project may be updated without updating the distribution. This could potentially break the distribution. This option will mark that project as not-supported to signify this.'),
+    '#default_value' => variable_get('distro_update_child_make_not_supported', TRUE),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="distro_update_hide_children"]' => array('checked' => FALSE),
+        ':input[name="distro_update_allow_status_update"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['distro_update']['distro_update_parent_make_not_supported'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Set the status of the <em>-parent-</em> project to not-supported if the <em>-child-</em> project version does not match the .make file?'),
+    '#description' => t('A contrib project may be updated without updating the distribution. This could potentially break the distribution. This option will mark the <em>-parent-</em> project as not-supported to signify this.'),
+    '#default_value' => variable_get('distro_update_parent_make_not_supported', TRUE),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="distro_update_hide_children"]' => array('checked' => FALSE),
+        ':input[name="distro_update_allow_status_update"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['distro_update']['distro_update_lag_time'] = array(
+    '#type' => 'select',
+    '#title' => t('Security / Revoked Status Lag Time Notification (in days)'),
+    '#description' => t('A project may become revoked or have a security update, however the distribution should be releasing an update to rectify this. Use this option to set the lag time before the site recognizes the project as insecure / revoked. Use 0 to disable.'),
+    '#field_suffix' => ' ' . t('days'),
+    '#options' => array(0, 1, 2, 3, 4, 5, 6, 7),
+    '#default_value' => variable_get('distro_update_lag_time', 2),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="distro_update_hide_children"]' => array('checked' => FALSE),
+        ':input[name="distro_update_allow_status_update"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['distro_update']['distro_update_block_parent_update'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Block distribution projects (those that include the .make files) from being updated through the admin UI?'),
+    '#description' => t('A distribution project that includes .make files should not be updated through the admin UI. Doing so would not update the projects defined in the .make files. Check this option to remove these from the admin UI update page.'),
+    '#default_value' => variable_get('distro_update_block_parent_update', TRUE),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="distro_update_hide_children"]' => array('checked' => FALSE),
+        ':input[name="distro_update_allow_status_update"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+  $form['distro_update']['distro_update_block_child_update'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Block contrib projects (those defined in .make files) from being updated through the admin UI?'),
+    '#description' => t('Contrib projects that have specific versions defined in .make files should not be updated individually. The distribution projects should be updated / built so that they also update the contrib projects. Check this option to remove these from the admin UI update page.'),
+    '#default_value' => variable_get('distro_update_block_child_update', TRUE),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="distro_update_hide_children"]' => array('checked' => FALSE),
+        ':input[name="distro_update_allow_status_update"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+}
+
+/**
+ * Rebuild the project make data array that is used to alter the project/status.
+ *
+ * Creates an array of all projects using or referenced in a .make file.
+ * Building the return array does require hitting the file system to look for
+ * the .make files. The return array could also be rather large for some
+ * distributions. This should be rather quick but we'll make sure to static
+ * cache the results in case we need this multiple times in a single request.
+ *
+ * @return array
+ *   An array of projects found in .make files throughout the system. The
+ *   parent/child relationship along with version #s are included. Drupal core
+ *   and the distribution projects/versions are also included.
+ *
+ * @see distro_update_update_status_alter()
+ *
+ * @todo make sure projects that define make files are listed first.
+ */
+function distro_update_rebuild_make_data() {
+  $data = &drupal_static(__FUNCTION__);
+  if (isset($data)) {
+    return $data;
+  }
+
+  // Get any .make files provided by modules, themes and the distribution.
+  $profile_name = drupal_get_profile();
+  $make_files = array();
+  // The conditions surrounding the profile is to allow for sites built with one
+  // of the core profiles but include modules with .make files, even if the site
+  // was not built using the .make file.
+  $profile = distro_update_get_profile($profile_name);
+  if (!empty($profile)) {
+    if ($drupal_org_make = drupal_system_listing("/drupal-org.make$/", "profiles/{$profile_name}", 'name', 0)) {
+      $make_files[$profile_name] = $drupal_org_make['drupal-org'];
+
+      // Get the distribution version #.
+      if ($build_profile_make = drupal_system_listing("/build-{$profile_name}.make$/", "profiles/{$profile_name}", 'name', 0)) {
+        $make_file = drupal_parse_info_file($build_profile_make["build-{$profile_name}"]->uri);
+        $version = !empty($make_file['projects'][$profile_name]['version']) ? DRUPAL_CORE_COMPATIBILITY . '-' . $make_file['projects'][$profile_name]['version'] : DRUPAL_CORE_COMPATIBILITY . '-' . $make_file['projects'][$profile_name]['download']['branch'] . '-dev';
+        $data[$profile_name]['version'] = $version;
+      }
+
+      // Also check for the version of core so we can later tell if that differs
+      // from what a distribution calls for. We add this as a child project to
+      // the distribution project since the disto is what has defined the
+      // version of core to use. This is manually added to the $data array that
+      // is stored as a variable to avoid adding the logic conditions within the
+      // foreach loop below.
+      if ($drupal_org_core_make = drupal_system_listing("/drupal-org-core.make$/", "profiles/{$profile_name}", 'name', 0)) {
+        $make_file = drupal_parse_info_file($drupal_org_core_make['drupal-org-core']->uri);
+        $data[$profile_name]['projects']['drupal'] = $make_file['projects']['drupal']['version'];
+        $data['drupal']['parents'][$profile_name] = $profile_name;
+        $data['drupal']['version'] = $make_file['projects']['drupal']['version'];
+      }
+    }
+  }
+  $make_files += drupal_system_listing("/\.make$/", "modules", 'name', 0);
+  $make_files += drupal_system_listing("/\.make$/", "themes", 'name', 0);
+
+  // Grab the projects from the .make file to build the project parent/child
+  // relationship that we will need for later.
+  foreach ($make_files as $project_name => $make_file_info) {
+    $make_file = drupal_parse_info_file($make_file_info->uri);
+    // If we don't have any projects for this make file then we can just
+    // continue on.  This could happen if a .make file simply includes
+    // libraries.
+    if (empty($make_file['projects'])) {
+      continue;
+    }
+
+    // Add each child project version to the data array so we know which project
+    // "owns" another project. Also add parent project reference.
+    foreach ($make_file['projects'] as $child_project_name => $child_project_info) {
+      // In some situations a child distribution may only contain patch
+      // information to a contrib module that is defined in a parent distro make
+      // file. If we cannot find the version or branch information then continue
+      // on.
+      if (empty($child_project_info['version']) && empty($child_project_info['download'])) {
+        continue;
+      }
+
+      $version = !empty($child_project_info['version']) ? DRUPAL_CORE_COMPATIBILITY . '-' . $child_project_info['version'] : $child_project_info['download']['branch'] . '-dev';
+      // Captures the children project versions.
+      $data[$project_name]['projects'][$child_project_name] = $version;
+      // Adds the child project at the top level with a reference to the parent
+      // project for easier reference later. Parents is an array in case
+      // multiple .make files download the same project.
+      $data[$child_project_name]['parents'][$project_name] = $project_name;
+      $data[$child_project_name]['version'] = $version;
+    }
+  }
+
+  return $data;
+}
+
+/**
+ * Build the Project array needed by Update module for profile_name.
+ *
+ * Most of this has been taken from the oa_update module.
+ */
+function distro_update_get_profile($profile_name) {
+  // Get the distribution's profile info so we can add it to the project list to
+  // look up the status.
+  $uri = 'profiles/' . $profile_name . '/' . $profile_name . '.profile';
+  $filename = dirname($uri) . '/' . $profile_name . '.info';
+  $info = drupal_parse_info_file($filename);
+
+  // If we're dealing with one of the Drupal core profiles then we do not need
+  // to return the profile / project info.
+  if (!empty($info['project']) && $info['project'] == 'drupal') {
+    return FALSE;
+  }
+
+  $info['project'] = $profile_name;
+  $info['hidden'] = FALSE;
+  if (!isset($info['_info_file_ctime'])) {
+    $info['_info_file_ctime'] = filectime($filename);
+  }
+  if (!isset($info['datestamp'])) {
+    $info['datestamp'] = 0;
+  }
+  $profile = array(
+    'name' => $profile_name,
+    'title' => $info['name'],
+    'info' => $info,
+    'project_type' => 'module',
+    'project_status' => TRUE,
+    'datestamp' => 0,
+    'includes' => array($profile_name => $info['name']),
+  );
+
+  return $profile;
+}
+
+/**
+ * Helper function: Whether to display children projects.
+ *
+ * Checks two different configuration options to determine if children projects
+ * should be rendered on the update report.
+ *
+ * @return boolean
+ *   TRUE/FALSE if the children projects should be rendered.
+ */
+function distro_update_display_children() {
+  return variable_get('distro_update_allow_status_update', TRUE) && !variable_get('distro_update_hide_children', TRUE);
+}
+
+/**
+ * Helper function: Get project version as defined in the make files.
+ *
+ * @param  string $project_name
+ *   The machine name of the project to lookup.
+ * @param  array $projects
+ *   The array of enabled projects as provided by the projects and status alter
+ *   hooks.
+ * @param  string $parent_project_name
+ *   (Optional) machine name of the parent project to identify the main project
+ *   version.
+ *
+ * @return string
+ *   The version of the project defined in the .make files.
+ *   'Unknown' if unable to identify.
+ */
+function distro_update_get_make_version($project_name, $projects, $parent_project_name = NULL) {
+  $project_make_data = distro_update_rebuild_make_data();
+
+  // If the project is missing from the make data or the enabled projects then
+  // return 'Unknown'. Similarly if a parent project is provided and that project is
+  // not enabled in the projects then also return 'Unknown'.
+  if (empty($project_make_data[$project_name]) || empty($projects[$project_name]) || (!empty($parent_project_name) && empty($projects[$parent_project_name]))) {
+    return 'Unknown';
+  }
+
+  // If the parent project name is provided then get the project version from
+  // that parent project's make file.
+  if (!empty($parent_project_name)) {
+    return $project_make_data[$parent_project_name]['projects'][$project_name];
+  }
+
+  // Otherwise loop through the project's parents that are enabled projects and
+  // pull the first version found.
+  // @todo should this be in reverse order?  does the project make data need to
+  // be sorted? reverse order here seems to do the trick.
+  foreach (array_reverse($project_make_data[$project_name]['parents']) as $parent_project_name) {
+    if (!empty($projects[$parent_project_name])) {
+      return $project_make_data[$parent_project_name]['projects'][$project_name];
+    }
+    // Several scenarios appear where the parent project is enabled but not
+    // showing up in the $projects list. This could be due to the project being
+    // pulled from a source (e.g. github/bitbucket) outside of drupal.org or
+    // for some unknown reason update manager is not getting the project status
+    // of a module (e.g. panopoly_seo).
+    // So we do check if the parent project is enabled, and if so we grab the
+    // project make version directly.
+    elseif (module_exists($parent_project_name)) {
+      return $project_make_data[$project_name]['version'];
+    }
+  }
+
+  return 'Unknown';
+}
+
+/**
+ * Helper function: Get the project's current enabled version.
+ *
+ * @param  string $project_name
+ *   The machine name of the project to lookup.
+ * @param  array $projects
+ *   The array of enabled projects as provided by the projects and status alter
+ *   hooks.
+ *
+ * @return string
+ *   The version of the enabled project.
+ *   'Unknown' if unable to identify.
+ */
+function distro_update_get_project_version($project_name, $projects) {
+  // If the project is not enabled / in projects array then return unknown.
+  if (empty($projects[$project_name])) {
+    return 'Unknown';
+  }
+
+  // If the existing_version is available then return it.
+  if (!empty($projects[$project_name]['existing_version'])) {
+    return $projects[$project_name]['existing_version'];
+  }
+
+  return 'Unknown';
+}
+
+/**
+ * Helper function: Compare two version strings to determine if the same.
+ *
+ * If the strings are an exact match then they are considered equal. It is also
+ * possible that development (-dev) versions of the module are called for. If
+ * this is the case and both version strings contain -dev then consider these
+ * equal.
+ *
+ * @param  string $project_version
+ *   The version string of the enabled project.
+ * @param  string $project_make_version
+ *   The version string defined in the .make files.
+ *
+ * @return boolean
+ *   TRUE / FALSE whether the two version strings are considered equivalent.
+ */
+function distro_update_same_version($project_current_version, $project_make_version) {
+  return ($project_current_version == $project_make_version
+    || ((strpos($project_current_version, '-dev') || $project_current_version == 'Unknown')
+      && (strpos($project_make_version, '-dev') || $project_make_version == 'Unknown')));
+}
+
+
+function distro_update_form_help_text() {
+  $output['#sorted'] = TRUE;
+  $output['header'] = array(
+    '#theme' => 'html_tag',
+    '#tag' => 'h3',
+    '#value' => t('Do not manually update projects within distributions! This includes any project defined in a .make file.'),
+  );
+  $output['help'] = array(
+    '#markup' => '<p>' .
+      t('Drupal Distributions contain a carefully selected set of module
+      versions along with specific patches.  You should never update individual modules
+      within a distribution unless you are an experienced developer.')
+      . '</p>',
+  );
+
+  return $output;
+}

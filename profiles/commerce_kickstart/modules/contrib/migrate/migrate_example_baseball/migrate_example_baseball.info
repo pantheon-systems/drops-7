@@ -21,12 +21,12 @@ features[field][] = "node-migrate_example_baseball-field_visiting_team"
 features[node][] = "migrate_example_baseball"
 files[] = "migrate_example_baseball.migrate.inc"
 name = "migrate_example_baseball"
-package = "Migrate Examples"
+package = "Migration"
 php = "5.2.4"
 
-; Information added by drupal.org packaging script on 2012-11-07
-version = "7.x-2.5"
+; Information added by Drupal.org packaging script on 2015-07-01
+version = "7.x-2.8"
 core = "7.x"
 project = "migrate"
-datestamp = "1352299007"
+datestamp = "1435760949"
 

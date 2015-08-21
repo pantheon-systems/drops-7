@@ -91,6 +91,17 @@ function commerce_kickstart_user_module_implements_alter(&$implementations, $hoo
 }
 
 /**
+ * Implements hook_page_alter().
+ */
+function commerce_kickstart_user_page_alter(&$page) {
+  // Disable breadcrumb on user.
+  $match = drupal_match_path(drupal_strtolower(current_path()), drupal_strtolower('user*'));
+  if ($match && !variable_get('commerce_kickstart_user_breadcrumbs', FALSE)) {
+    drupal_set_breadcrumb(array());
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  *
  * Hide the Mime Mail settings on the user settings page.

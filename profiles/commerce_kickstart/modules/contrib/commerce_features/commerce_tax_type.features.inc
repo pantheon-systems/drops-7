@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Features integration on behalf of Commerce Tax (Types).
+ */
+
+/**
  * Implements hook_features_export().
  */
 function commerce_tax_type_features_export($data, &$export, $module_name = '') {
@@ -28,7 +33,7 @@ function commerce_tax_type_features_export_options() {
   $feature_types = array();
   $tax_types = commerce_tax_types();
   if (!empty($tax_types)) {
-    foreach($tax_types as $type) {
+    foreach ($tax_types as $type) {
       $feature_types[$type['name']] = $type['title'];
     }
   }
@@ -57,16 +62,16 @@ function commerce_tax_type_features_export_render($module, $data, $export = NULL
  * Implements hook_features_revert().
  */
 function commerce_tax_type_features_revert($module = NULL) {
-  // Get default tax types
+  // Get default tax types.
   if (module_hook($module, 'commerce_tax_default_types')) {
     $default_types = module_invoke($module, 'commerce_tax_default_types');
     $existing_types = commerce_tax_types();
     foreach ($default_types as $type) {
-      // Add / or update
+      // Add / or update.
       if (!isset($existing_types[$type['name']])) {
         $type['is_new'] = TRUE;
       }
-      // Use UI function because it provides already the logic we need
+      // Use UI function because it provides already the logic we need.
       module_invoke('commerce_tax_ui', 'tax_type_save', $type, TRUE);
     }
   }
@@ -78,7 +83,7 @@ function commerce_tax_type_features_revert($module = NULL) {
   // Reset the caches.
   commerce_tax_types_reset();
   entity_defaults_rebuild();
-  rules_clear_cache(TRUE);
+  rules_clear_cache();
   // Schedule a menu rebuild.
   variable_set('menu_rebuild_needed', TRUE);
 
