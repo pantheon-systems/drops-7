@@ -152,38 +152,7 @@
     margin: 0;
   }
 }
-.data-and-resources .form-group ul.resource-list {
-  li {
-    margin:4px 4px 4px 0;
-    float: left;
-  }
-}
-.form-group ul.resource-list {
-  li {
-    margin:4px 0;
-  }
-  a.label {
-    margin-left:3px;
-  }
-}
-#data-and-resources ul.resource-list {
-  li {
-    padding:0 0 0 40px;
-  }
-  a.btn {
-    display: block;
-    margin:0 0 25px 15px;
-    position:relative;
-    top:auto;
-    right:auto;
-  }
-}
-.node-dataset label {
-  font-size: 18px;
-  font-weight: bold;
-  line-height: 27px;
-  margin:10px 0;
-}
+
 #action-info {
   color: $brand-danger;
   margin: 1em 0;
@@ -197,41 +166,9 @@
     vertical-align: middle;
   }
 }
-
-.data-and-resources .label {
-  display: inline;
-  padding: 1px 4px 2px;
-  @include border-radius($border-radius-base);
-  font-size: 10.998px;
-  font-weight: bold;
-  line-height: 14px;
-  color: white;
-  vertical-align: baseline;
-  white-space: nowrap;
-  text-shadow: 0 -1px 0 rgba(0, 0, 0, 0.25);
-}
-@media(min-width:768px){
-  #data-and-resources ul.resource-list {
-    margin:1em 0;
-    li {
-      margin:.5em 0;
-      min-height:40px;
-      padding:0 175px 0 40px;
-      position:relative;
-      span.links {
-        margin-top:0;
-        position:absolute;
-        top: 0px;
-        right: 10px;
-
-        a {
-          position:relative;
-          display: inline-block;
-          margin-left: 3px;
-        }
-      }
-    }
-  }
+.resource-list a,
+.field-name-body a {
+  overflow-wrap: break-word;
 }
 .field-name-body {
   ul {
@@ -258,7 +195,7 @@
     margin:10px 15px 0 0;
     padding:6px 0;
     position:absolute;
-    top:0;
+    top:-6px;
     width:30px;
   }
 }
@@ -271,7 +208,9 @@
     margin: 0;
   }
 }
-
+.field-type-text-with-summary {
+  padding: 0;
+}
 .field-name-field-additional-info {
   margin-top: 2em;
 }

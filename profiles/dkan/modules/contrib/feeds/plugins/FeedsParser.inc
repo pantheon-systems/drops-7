@@ -264,7 +264,27 @@ class FeedsGeoTermElement extends FeedsTermElement {
  * Enclosure element, can be part of the result array.
  */
 class FeedsEnclosure extends FeedsElement {
-  protected $mime_type;
+
+  /**
+   * The mime type of the enclosure.
+   *
+   * @param string
+   */
+   protected $mime_type;
+
+   /**
+   * The default list of allowed extensions.
+   *
+   * @param string
+   */
+  protected $allowedExtensions = 'jpg jpeg gif png txt doc xls pdf ppt pps odt ods odp';
+
+  /**
+   * The sanitized local file name.
+   *
+   * @var string
+   */
+  protected $safeFilename;
 
   /**
    * Constructor, requires MIME type.
@@ -288,6 +308,17 @@ class FeedsEnclosure extends FeedsElement {
   }
 
   /**
+   * Sets the list of allowed extensions.
+   *
+   * @param string $extensions
+   *   The list of allowed extensions separated by a space.
+   */
+  public function setAllowedExtensions($extensions) {
+    // Normalize whitespace so that empty extensions are not allowed.
+    $this->allowedExtensions = drupal_strtolower(trim(preg_replace('/\s+/', ' ', $extensions)));
+  }
+
+  /**
    * Use this method instead of FeedsElement::getValue() when fetching the file
    * from the URL.
    *
@@ -301,20 +332,74 @@ class FeedsEnclosure extends FeedsElement {
   }
 
   /**
-   * Use this method instead of FeedsElement::getValue() to get the file name
-   * transformed for better local saving (underscores instead of spaces)
+   * Returns the full path to the file URI with a safe file name.
    *
-   * @return
-   *   Value with space characters changed to underscores.
+   * @return string
+   *   The safe file URI.
    *
-   * @see FeedsElement::getValue()
+   * @throws RuntimeException
+   *   Thrown if the file extension is invalid.
    */
-  public function getLocalValue() {
-    return str_replace(' ', '_', $this->getValue());
+  public function getSanitizedUri() {
+    return drupal_dirname($this->getValue()) . '/' . $this->getSafeFilename();
   }
 
   /**
-   * @return
+   * Returns the file name transformed for better local saving.
+   *
+   * @return string
+   *   Value with space characters changed to underscores.
+   *
+   * @throws RuntimeException
+   *   Thrown if the file extension is invalid.
+   */
+  public function getLocalValue() {
+    return str_replace(' ', '_', $this->getSafeFilename());
+  }
+
+  /**
+   * Returns the safe file name.
+   *
+   * @return string
+   *   A filename that is safe to save to the filesystem.
+   *
+   * @throws RuntimeException
+   *   Thrown if the file extension is invalid.
+   */
+  protected function getSafeFilename() {
+    if (isset($this->safeFilename)) {
+      return $this->safeFilename;
+    }
+
+    // Strip any query string or fragment from file name.
+    list($filename) = explode('?', $this->getValue());
+    list($filename) = explode('#', $filename);
+
+    $filename = rawurldecode(drupal_basename($filename));
+
+    // Remove leading and trailing whitespace and periods.
+    $filename = trim($filename, " \t\n\r\0\x0B.");
+
+    if (strpos($filename, '.') === FALSE) {
+      $extension = FALSE;
+    }
+    else {
+      $extension = drupal_strtolower(substr($filename, strrpos($filename, '.') + 1));
+    }
+
+    if (!$extension || !in_array($extension, explode(' ', $this->allowedExtensions), TRUE)) {
+      throw new RuntimeException(t('The file @file has an invalid extension.', array('@file' => $filename)));
+    }
+
+    $this->safeFilename = file_munge_filename($filename, $this->allowedExtensions, FALSE);
+
+    return $this->safeFilename;
+  }
+
+  /**
+   * Downloads the content from the file URL.
+   *
+   * @return string
    *   The content of the referenced resource.
    */
   public function getContent() {
@@ -340,18 +425,19 @@ class FeedsEnclosure extends FeedsElement {
    *   If file object could not be created.
    */
   public function getFile($destination) {
-
+    $file = NULL;
     if ($this->getValue()) {
       // Prepare destination directory.
       file_prepare_directory($destination, FILE_MODIFY_PERMISSIONS | FILE_CREATE_DIRECTORY);
       // Copy or save file depending on whether it is remote or local.
-      if (drupal_realpath($this->getValue())) {
+      if (drupal_realpath($this->getSanitizedUri())) {
         $file           = new stdClass();
         $file->uid      = 0;
-        $file->uri      = $this->getValue();
-        $file->filemime = $this->mime_type;
-        $file->filename = basename($file->uri);
-        if (dirname($file->uri) != $destination) {
+        $file->uri      = $this->getSanitizedUri();
+        $file->filemime = $this->getMIMEType();
+        $file->filename = $this->getSafeFilename();
+
+        if (drupal_dirname($file->uri) !== $destination) {
           $file = file_copy($file, $destination);
         }
         else {
@@ -368,15 +454,17 @@ class FeedsEnclosure extends FeedsElement {
         }
       }
       else {
-        $filename = basename($this->getLocalValue());
-        if (module_exists('transliteration')) {
-          require_once drupal_get_path('module', 'transliteration') . '/transliteration.inc';
-          $filename = transliteration_clean_filename($filename);
-        }
         if (file_uri_target($destination)) {
           $destination = trim($destination, '/') . '/';
         }
         try {
+          $filename = $this->getLocalValue();
+
+          if (module_exists('transliteration')) {
+            require_once drupal_get_path('module', 'transliteration') . '/transliteration.inc';
+            $filename = transliteration_clean_filename($filename);
+          }
+
           $file = file_save_data($this->getContent(), $destination . $filename);
         }
         catch (Exception $e) {
@@ -388,8 +476,9 @@ class FeedsEnclosure extends FeedsElement {
       if (!$file) {
         throw new Exception(t('Invalid enclosure %enclosure', array('%enclosure' => $this->getValue())));
       }
+
+      return $file;
     }
-    return $file;
   }
 }
 
@@ -592,11 +681,16 @@ class FeedsDateTime extends DateTime {
    *   PHP DateTimeZone object, NULL allowed
    */
   public function __construct($time = '', $tz = NULL) {
-    // Assume UNIX timestamp if numeric.
     if (is_numeric($time)) {
-      // Make sure it's not a simple year
-      if ((is_string($time) && strlen($time) > 4) || is_int($time)) {
+      // Assume UNIX timestamp if it doesn't look like a simple year.
+      if (strlen($time) > 4) {
         $time = "@" . $time;
+      }
+      // If it's a year, add a default month too, because PHP's date functions
+      // won't parse standalone years after 2000 correctly (see explanation at
+      // http://aaronsaray.com/blog/2007/07/11/helpful-strtotime-reminders/#comment-47).
+      else {
+        $time = 'January ' . $time;
       }
     }
 
@@ -605,7 +699,7 @@ class FeedsDateTime extends DateTime {
     $time = str_replace("GMT+", "+", $time);
 
     // Some PHP 5.2 version's DateTime class chokes on invalid dates.
-    if (!strtotime($time)) {
+    if (!date_create($time)) {
       $time = 'now';
     }
 

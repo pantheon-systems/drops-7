@@ -1,6 +1,7 @@
 # Require any additional compass plugins here.
 require 'bootstrap-sass';
 require "compass_radix";
+require 'sass-globbing';
 require File.join(File.dirname(__FILE__), 'extensions/css_splitter/css_splitter.rb');
 
 # Set environment [development, production]

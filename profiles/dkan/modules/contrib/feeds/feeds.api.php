@@ -136,16 +136,16 @@ function hook_feeds_before_update(FeedsSource $source, $item, $entity_id) {
  * Invoked before a feed item is saved.
  *
  * @param FeedsSource $source
- *  FeedsSource object that describes the source that is being imported.
+ *   FeedsSource object that describes the source that is being imported.
  * @param $entity
  *   The entity object.
  * @param array $item
  *   The parser result for this entity.
  * @param int|null $entity_id
- *  The id of the current item which is going to be updated. If this is a new
- *  item, then NULL is passed.
+ *   The id of the current item which is going to be updated. If this is a new
+ *   item, then NULL is passed.
  */
-function hook_feeds_presave(FeedsSource $source, $entity, $item) {
+function hook_feeds_presave(FeedsSource $source, $entity, $item, $entity_id) {
   if ($entity->feeds_item->entity_type == 'node') {
     // Skip saving this entity.
     $entity->feeds_item->skip = TRUE;
@@ -188,6 +188,13 @@ function hook_feeds_after_save(FeedsSource $source, $entity, $item, $entity_id) 
  */
 function hook_feeds_after_import(FeedsSource $source) {
   // See geotaxonomy module's implementation for an example.
+
+  // We can also check for an exception in this hook. The exception should not
+  // be thrown here, Feeds will handle it.
+  if (isset($source->exception)) {
+    watchdog('mymodule', 'An exception occurred during importing!', array(), WATCHDOG_ERROR);
+    mymodule_panic_reaction($source);
+  }
 }
 
 /**
@@ -250,24 +257,28 @@ function my_source_get_source(FeedsSource $source, FeedsParserResult $result, $k
 }
 
 /**
- * Alter mapping targets for entities. Use this hook to add additional target
- * options to the mapping form of Node processors.
+ * Adds mapping targets for processors.
+ *
+ * This hook allows additional target options to be added to the processors
+ * mapping form.
  *
  * If the key in $targets[] does not correspond to the actual key on the node
  * object ($node->key), real_target MUST be specified. See mappers/link.inc
  *
- * For an example implementation, see mappers/content.inc
+ * For an example implementation, see mappers/text.inc
  *
- * @param &$targets
- *   Array containing the targets to be offered to the user. Add to this array
- *   to expose additional options. Remove from this array to suppress options.
- *   Remove with caution.
- * @param $entity_type
+ * @param string $entity_type
  *   The entity type of the target, for instance a 'node' entity.
- * @param $bundle_name
- *   The bundle name for which to alter targets.
+ * @param string $bundle
+ *   The entity bundle to return targets for.
+ *
+ * @return array
+ *   Array containing the targets to be offered to the user. This function must
+ *   return an array, even an empty one.
  */
-function hook_feeds_processor_targets_alter(&$targets, $entity_type, $bundle_name) {
+function hook_feeds_processor_targets($entity_type, $bundle) {
+  $targets = array();
+
   if ($entity_type == 'node') {
     $targets['my_node_field'] = array(
       'name' => t('My custom node field'),
@@ -276,8 +287,8 @@ function hook_feeds_processor_targets_alter(&$targets, $entity_type, $bundle_nam
 
       // Specify both summary_callback and form_callback to add a per mapping
       // configuration form.
-      'summary_callback' => 'my_module_summary_callback',
-      'form_callback' => 'my_module_form_callback',
+      'summary_callbacks' => array('my_module_summary_callback'),
+      'form_callbacks' => array('my_module_form_callback'),
     );
     $targets['my_node_field2'] = array(
       'name' => t('My Second custom node field'),
@@ -285,53 +296,92 @@ function hook_feeds_processor_targets_alter(&$targets, $entity_type, $bundle_nam
       'callback' => 'my_module_set_target2',
       'real_target' => 'my_node_field_two', // Specify real target field on node.
     );
+    $targets['my_node_field3'] = array(
+      'name' => t('My third custom node field'),
+      'description' => t('Description of what my third custom node field does.'),
+      'callback' => 'my_module_set_target3',
+
+      // Set optional_unique to TRUE and specify unique_callbacks to allow the
+      // target to be unique. Existing entities can be updated based on unique
+      // targets.
+      'optional_unique' => TRUE,
+      'unique_callbacks' => array('my_module_mapper_unique'),
+
+      // Preprocess callbacks are called before the actual callback allowing you
+      // to prepare values on the entity or mapping array.
+      'preprocess_callbacks' => array('my_module_preprocess_callback'),
+    );
+  }
+
+  return $targets;
+}
+
+/**
+ * Alters the target array.
+ *
+ * This hook allows modifying the target array.
+ *
+ * @param array &$targets
+ *   Array containing the targets to be offered to the user. Add to this array
+ *   to expose additional options.
+ * @param string $entity_type
+ *   The entity type of the target, for instance a 'node' entity.
+ * @param string $bundle
+ *   The entity bundle to return targets for.
+ *
+ * @see hook_feeds_processor_targets()
+ */
+function hook_feeds_processor_targets_alter(array &$targets, $entity_type, $bundle) {
+  if ($entity_type == 'node' && $bundle == 'article') {
+    if (isset($targets['nid'])) {
+      $targets['nid']['unique_callbacks'][] = 'my_module_mapper_unique';
+      $targets['nid']['optional_unique'] = TRUE;
+    }
   }
 }
 
 /**
- * Example callback specified in hook_feeds_processor_targets_alter().
+ * Example callback specified in hook_feeds_processor_targets().
  *
- * @param $source
+ * @param FeedsSource $source
  *   Field mapper source settings.
- * @param $entity
+ * @param object $entity
  *   An entity object, for instance a node object.
- * @param $target
+ * @param string $target
  *   A string identifying the target on the node.
- * @param $value
+ * @param array $values
  *   The value to populate the target with.
- * @param $mapping
+ * @param array $mapping
  *  Associative array of the mapping settings from the per mapping
  *  configuration form.
  */
-function my_module_set_target($source, $entity, $target, $value, $mapping) {
-  $entity->{$target}[$entity->language][0]['value'] = $value;
+function my_module_set_target(FeedsSource $source, $entity, $target, array $values, array $mapping) {
+  $entity->{$target}[$entity->language][0]['value'] = reset($values);
   if (isset($source->importer->processor->config['input_format'])) {
-    $entity->{$target}[$entity->language][0]['format'] =
-      $source->importer->processor->config['input_format'];
+    $entity->{$target}[$entity->language][0]['format'] = $source->importer->processor->config['input_format'];
   }
 }
 
 /**
- * Example of the summary_callback specified in
- * hook_feeds_processor_targets_alter().
+ * Example of the summary_callback specified in hook_feeds_processor_targets().
  *
- * @param $mapping
+ * @param array $mapping
  *   Associative array of the mapping settings.
- * @param $target
+ * @param string $target
  *   Array of target settings, as defined by the processor or
  *   hook_feeds_processor_targets_alter().
- * @param $form
+ * @param array $form
  *   The whole mapping form.
- * @param $form_state
+ * @param array $form_state
  *   The form state of the mapping form.
  *
- * @return
+ * @return string
  *   Returns, as a string that may contain HTML, the summary to display while
  *   the full form isn't visible.
  *   If the return value is empty, no summary and no option to view the form
  *   will be displayed.
  */
-function my_module_summary_callback($mapping, $target, $form, $form_state) {
+function my_module_summary_callback(array $mapping, $target, array $form, array $form_state) {
   if (empty($mapping['my_setting'])) {
     return t('My setting <strong>not</strong> active');
   }
@@ -341,18 +391,17 @@ function my_module_summary_callback($mapping, $target, $form, $form_state) {
 }
 
 /**
- * Example of the form_callback specified in
- * hook_feeds_processor_targets_alter().
+ * Example of the form_callback specified in hook_feeds_processor_targets().
  *
  * The arguments are the same that my_module_summary_callback() gets.
  *
- * @return
+ * @return array
  *   The per mapping configuration form. Once the form is saved, $mapping will
  *   be populated with the form values.
  *
  * @see my_module_summary_callback()
  */
-function my_module_form_callback($mapping, $target, $form, $form_state) {
+function my_module_form_callback(array $mapping, $target, array $form, array $form_state) {
   return array(
     'my_setting' => array(
       '#type' => 'checkbox',
@@ -360,6 +409,60 @@ function my_module_form_callback($mapping, $target, $form, $form_state) {
       '#default_value' => !empty($mapping['my_setting']),
     ),
   );
+}
+
+/**
+ * Example of the unique_callbacks specified in hook_feeds_processor_targets().
+ *
+ * @param FeedsSource $source
+ *   The Feed source.
+ * @param string $entity_type
+ *   Entity type for the entity to be processed.
+ * @param string $bundle
+ *   Bundle name for the entity to be processed.
+ * @param string $target
+ *   A string identifying the unique target on the entity.
+ * @param array $values
+ *   The unique values to be checked.
+ *
+ * @return int|null
+ *   The existing entity id, or NULL if no existing entity is found.
+ *
+ * @see hook_feeds_processor_targets()
+ * @see FeedsProcessor::existingEntityId()
+ */
+function my_module_mapper_unique(FeedsSource $source, $entity_type, $bundle, $target, array $values) {
+  list($field_name, $column) = explode(':', $target . ':value');
+  // Example for if the target is a field.
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', $entity_type)
+    ->entityCondition('bundle', $bundle)
+    ->fieldCondition($field_name, $column, $values)
+    ->execute();
+
+  if (!empty($result[$entity_type])) {
+    return key($result[$entity_type]);
+  }
+}
+
+/**
+ * Example of the preprocess_callbacks specified in hook_feeds_processor_targets().
+ *
+ * @param FeedsSource $source
+ *   The Feed source.
+ * @param object $entity
+ *   The entity being processed.
+ * @param array $target
+ *   The full target definition.
+ * @param array &$mapping
+ *   The mapping configuration.
+ *
+ * @see hook_feeds_processor_targets()
+ */
+function my_module_preprocess_callback(FeedsSource $source, $entity, array $target, array &$mapping) {
+  // Add in default values.
+  $mapping += array('setting_value' => TRUE);
 }
 
 /**

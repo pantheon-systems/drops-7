@@ -57,7 +57,7 @@ function colorizer_admin_form($show_files = TRUE, $show_submit = TRUE) {
     );
   }
 
-  $file = variable_get('colorizer_' . $instance . '_stylesheet', '');
+  $file = colorizer_load($instance, 'stylesheet');
   if (!empty($file)) {
     $form['colorizer_reset'] = array(
       '#type' => 'checkbox',
@@ -97,7 +97,7 @@ function colorizer_admin_form($show_files = TRUE, $show_submit = TRUE) {
 
     // See if we're using a predefined scheme.
     // Note: we use the original theme when the default scheme is chosen.
-    $current_scheme = variable_get('colorizer_' . $instance . '_palette', array());
+    $current_scheme = colorizer_load($instance, 'palette');
     foreach ($schemes as $key => $scheme) {
       if ($current_scheme == $scheme) {
         $scheme_name = $key;
@@ -267,20 +267,7 @@ function colorizer_admin_form_submit($form, &$form_state) {
   }
 
   if (!empty($form_state['values']['colorizer_reset'])) {
-    variable_del('colorizer_' . $instance . '_palette');
-    // Delete old files.
-    foreach (variable_get('colorizer_' . $instance . '_files', array()) as $file) {
-      @drupal_unlink($file);
-    }
-    if (isset($file) && $file = dirname($file)) {
-      @drupal_rmdir($file);
-    }
-    variable_del('colorizer_' . $instance . '_files');
-    // Remove unused CSS colorized files after reset.
-    colorizer_clearcache();
-    // Clear Drupal's cache so the changes are reflected immediatelly for
-    // anonymous users.
-    cache_clear_all();
+    colorizer_delete($instance);
     return;
   }
 
@@ -303,7 +290,7 @@ function colorizer_admin_form_submit($form, &$form_state) {
     $palette += $info['schemes']['default']['colors'];
   }
 
-  variable_set('colorizer_' . $instance . '_palette', $palette);
+  colorizer_save($instance, array('palette' => $palette));
 
   colorizer_update_stylesheet($theme, $instance, $palette);
 }

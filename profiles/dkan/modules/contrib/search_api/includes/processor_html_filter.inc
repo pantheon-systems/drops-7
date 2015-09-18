@@ -102,6 +102,8 @@ class SearchApiHtmlFilter extends SearchApiAbstractProcessor {
     }
     else {
       $value = strip_tags($text);
+      // Remove any multiple or leading/trailing spaces we might have introduced.
+      $value = preg_replace('/\s\s+/', ' ', trim($value));
     }
   }
 
@@ -109,8 +111,11 @@ class SearchApiHtmlFilter extends SearchApiAbstractProcessor {
     $ret = array();
     while (($pos = strpos($text, '<')) !== FALSE) {
       if ($boost && $pos > 0) {
+        $token = html_entity_decode(substr($text, 0, $pos), ENT_QUOTES, 'UTF-8');
+        // Remove any multiple or leading/trailing spaces we might have introduced.
+        $token = preg_replace('/\s\s+/', ' ', trim($token));
         $ret[] = array(
-          'value' => html_entity_decode(substr($text, 0, $pos), ENT_QUOTES, 'UTF-8'),
+          'value' => $token,
           'score' => $boost,
         );
       }
@@ -130,8 +135,11 @@ class SearchApiHtmlFilter extends SearchApiAbstractProcessor {
       }
     }
     if ($text) {
+      $token = html_entity_decode($text, ENT_QUOTES, 'UTF-8');
+      // Remove any multiple or leading/trailing spaces we might have introduced.
+      $token = preg_replace('/\s\s+/', ' ', trim($token));
       $ret[] = array(
-        'value' => html_entity_decode($text, ENT_QUOTES, 'UTF-8'),
+        'value' => $token,
         'score' => $boost,
       );
       $text = '';

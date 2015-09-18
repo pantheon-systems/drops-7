@@ -1,10 +1,11 @@
 # Require any additional compass plugins here.
 require 'bootstrap-sass';
 require "compass_radix";
+require 'sass-globbing';
 require File.join(File.dirname(__FILE__), 'extensions/css_splitter/css_splitter.rb');
 
 # Set environment [development, production]
-environment = :development
+environment = :production
 
 # Set this to the root of your project when deployed:
 http_path = "/"
@@ -17,7 +18,7 @@ extensions_dir = "extensions"
 
 # You can select your preferred output style here (can be overridden via the command line):
 # output_style = :expanded or :nested or :compact or :compressed
-output_style = (environment == :development) ? :expanded : :compressed
+output_style = :expanded
 
 # To enable relative paths to assets via compass helper functions. Uncomment:
 relative_assets = true

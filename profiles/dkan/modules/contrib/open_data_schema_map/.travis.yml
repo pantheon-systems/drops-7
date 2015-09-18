@@ -22,6 +22,7 @@ install:
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
   - composer global require --no-interaction drush/drush:dev-master
   - composer global require --no-interaction youngj/httpserver:*
+  - drush dl registry_rebuild
 
 before_script:
   # navigate out of module directory to prevent blown stack by recursive module lookup
@@ -44,19 +45,22 @@ before_script:
   # Make dkan_dataset
   - drush make -v --no-core --yes sites/all/modules/dkan_dataset/dkan_dataset.make
   # Copy actual version of odsm to sites/all/modules
-  - rm -rf sites/all/modules/open_data_schema_map
+  - rm -rf sites/all/modules/contrib/open_data_schema_map
   - cp -r $TRAVIS_BUILD_DIR sites/all/modules/
 
-  # Enable modules
+  # Enable modules.
   - drush --yes pm-enable dkan_dataset_content_types open_data_schema_map open_data_schema_map_dkan
-
+  # Clean up
+  - drush cc all
+  - drush rr
   # start a web server on port 8888, run in the background; wait for initialization
   - drush --quiet --yes --root=$PWD runserver :8888 > /dev/null 2>&1 &
   - sleep 4
+  - drush cache-clear drush
 
 script:
   # Run test suite
-  - drush test-run --xml 'Open Data Schema Map' --uri=http://127.0.0.1:8888
+  - drush test-run --verbose --xml 'Open Data Schema Map' --uri=http://127.0.0.1:8888
 
 notifications:
   slack:

@@ -1,0 +1,27 @@
+Conditional Styles 7.x-2.2, 2013-07-12
+------------------------------------------
+- #580440 by quicksketch: Add support for Downlevel-revealed Conditional Comments
+
+Conditional Styles 7.x-2.1, 2012-03-12
+--------------------------------------
+- #1478242: Weight needed for conditional stylesheets added via drupal_add_css()
+
+Conditional Styles 7.x-2.0, 2011-01-18
+--------------------------------------
+- #1030830: Add tests
+- #1029696: Update .info syntax to use expression expected by drupal_pre_render_conditional_comments()
+- #1027844: Port to Drupal 7
+
+Conditional Styles 6.x-1.x-dev, xxxx-xx-xx
+--------------------------------------
+- When db is down, allow include file to work from within themes (like Zen).
+
+Conditional Styles 6.x-1.1, 2009-05-25
+--------------------------------------
+- #389988 by BWPanda: Add "clear .info cache" reminder to documentation
+- #337975 by tombigel: Add missing support for RTL languages
+- Added support for maintenance theme page (pending #454462)
+
+Conditional Styles 6.x-1.0, 2008-09-15
+--------------------------------------
+- Initial release

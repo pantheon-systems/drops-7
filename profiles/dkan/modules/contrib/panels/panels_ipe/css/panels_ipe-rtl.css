@@ -49,8 +49,8 @@ div.panels-ipe-control .form-submit {
   padding: 0 34px 2px 0.8em;
 }
 
-input#panels-ipe-save,
-input#panels-ipe-cancel {
+#panels-ipe-save,
+#panels-ipe-cancel {
   background-position: 86% 0;
 }
 

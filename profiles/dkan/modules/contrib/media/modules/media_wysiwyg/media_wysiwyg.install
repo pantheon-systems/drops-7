@@ -1,0 +1,20 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the Media WYSIWYG module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function media_wysiwyg_uninstall() {
+  // Remove variables.
+  variable_del('media_wysiwyg_wysiwyg_title');
+  variable_del('media_wysiwyg_wysiwyg_icon_title');
+  variable_del('media_wysiwyg_wysiwyg_default_view_mode');
+  variable_del('media_wysiwyg_wysiwyg_upload_directory');
+  variable_del('media_wysiwyg_wysiwyg_allowed_types');
+  variable_del('media_wysiwyg_wysiwyg_allowed_attributes');
+  variable_del('media_wysiwyg_wysiwyg_browser_plugins');
+}

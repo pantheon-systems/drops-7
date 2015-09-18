@@ -9,9 +9,22 @@
  * Callback for Data API instructions.
  */
 function dkan_datastore_datastore_api($node) {
-  $datastore = dkan_datastore_go($node->uuid);
-  $output = $datastore->apiForm();
-  return $output;
+  $status = dkan_datastore_status($node);
+  switch ($status) {
+    case DKAN_DATASTORE_EXISTS:
+      $datastore = dkan_datastore_go($node->uuid);
+      $output = $datastore->apiForm();
+      return $output;
+    case DKAN_DATASTORE_FILE_EXISTS:
+      drupal_set_message(t('You need to add your file to the datastore in order to use the DATA API'));
+      $redirect_path = 'node/' . $node->nid . '/datastore';
+      break;
+    default:
+      drupal_set_message(t('This resource can not be added to the datastore'));
+      $redirect_path = 'node/' . $node->nid;
+      break;
+  }
+  drupal_goto($redirect_path);
 }
 
 /**
@@ -20,8 +33,9 @@ function dkan_datastore_datastore_api($node) {
 function dkan_datastore_download($node) {
   $node_wrapper = entity_metadata_wrapper('node', $node);
   $file_field = dkan_datastore_file_upload_field();
-  $link_field = dkan_datastore_file_link_field();
-  if ($file = $node_wrapper->{$file_field}->value()) {
+  $type = dkan_datastore_node_type();
+
+  if ($node->type == $type && $file = $node_wrapper->{$file_field}->value()) {
     $uri = isset($file->uri) ? $file->uri : $file['uri'];
     $url = file_create_url($uri);
     return drupal_goto($url);

@@ -1,3 +1,36 @@
+Search API Database Search 1.4 (09/08/2014):
+--------------------------------------------
+- #2318865 by drunken monkey: Fixed error when Mbstring extension is not
+  available.
+- #2231453 by Johnny vd Laar, valderama: Fixed case sensitivity of autocomplete
+  suggestions.
+- #2305107 by drunken monkey: Fixed standards-compliance of the generated SQL
+  queries.
+- #2286329 by drunken monkey: Fixed incorrect facet counts for multi-word
+  search.
+- #2237829 by drunken monkey: Added a hook and methods for more specific
+  altering of searches.
+- #2265353 by drunken monkey: Removed uses of _search_api_settings_equals().
+
+Search API Database Search 1.3 (05/23/2014):
+--------------------------------------------
+- #1299238 by Johnny vd Laar, drunken monkey, JeroenT: Added the option to
+  return partial matches.
+- #1912332 by drunken monkey: Fixed error when facet calculation leads to
+  exception.
+- #2231829 by krisahil, drunken monkey: Fixed indexed scores to be integers.
+- #2219525 by drunken monkey: Fixed tests in PostgreSQL.
+- #2207205 by drumm: Changed score from float to int.
+- #2140321 by drunken monkey: Fixed grouping error in PostgreSQL.
+- #2170689 by drumm: Added a (word, field_name) covering index on text tables.
+- #1144620 by drunken monkey, cmonnow: Fixed problems with umlauts, accented
+  characters, etc, in PostgreSQL.
+- #1390586 by Damien Tournoud, drunken monkey: Added support for OR facets.
+- #1658964 by figureone, drunken monkey: Fixed support for facets with count 0.
+- #2170681 by drumm: Improved fulltext search performance further.
+- #2155767 by drumm, drunken monkey: Added fulltext search performance
+  improvement.
+
 Search API Database Search 1.2 (12/25/2013):
 --------------------------------------------
 - #2156151 by drunken monkey: Fixed exception when clearing a server.

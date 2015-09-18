@@ -11,6 +11,14 @@ include_once 'dkan_dataset.theme.inc';
 include_once 'dkan_dataset.forms.inc';
 
 /**
+ * Implements hook_preprocess_html().
+ */
+function dkan_dataset_preprocess_html(&$vars) {
+  $path = drupal_get_path('module', 'dkan_dataset');
+  drupal_add_css($path . '/css/dkan_dataset.css');
+}
+
+/**
  * Implements hook_menu().
  */
 function dkan_dataset_menu() {
@@ -32,6 +40,15 @@ function dkan_dataset_menu() {
     'access callback' => 'dkan_dataset_back_access',
     'access arguments' => array(1),
     'type' => MENU_LOCAL_TASK,
+    'file' => 'dkan_dataset.pages.inc',
+    'file path' => $path,
+  );
+  $items['node/%node/dataset/download'] = array(
+    'title' => 'Download Dataset',
+    'page callback' => 'dkan_dataset_download',
+    'page arguments' => array(1),
+    'access callback' => 'dkan_dataset_download_access',
+    'access arguments' => array(1),
     'file' => 'dkan_dataset.pages.inc',
     'file path' => $path,
   );
@@ -106,7 +123,8 @@ function dkan_dataset_node_view($node, $view_mode, $langcode) {
       '#suffix' => '</div>',
       '#view_mode' => $view_mode,
     );
-    $node->content['resources']['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/dkan_dataset.css';
+    $node->content['resources']['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/css/dkan_dataset.css';
+    $node->content['resources']['#attached']['js'][] = drupal_get_path('module', 'dkan_dataset') . '/js/dkan_tooltip.js';
     $node->content['release_date'] = array(
       '#theme' => 'dkan_dataset_release_date_view',
       '#node' => $node,
@@ -162,7 +180,8 @@ function dkan_dataset_node_view($node, $view_mode, $langcode) {
     );
   }
   elseif ($view_mode == 'full' && $node->type == 'resource') {
-    $node->content['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/dkan_dataset.css';
+    $node->content['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/css/dkan_dataset.css';
+    $node->content['#attached']['js'][] = drupal_get_path('module', 'dkan_dataset') . '/js/dkan_tooltip.js';
   }
 }
 
@@ -242,6 +261,26 @@ function dkan_dataset_get_resource_nodes($nid) {
   }
   $nodes = isset($nids) ? node_load_multiple($nids) : array();
   return $nodes;
+}
+
+/**
+ * Helper to get the format string for a resource node
+ *
+ * @param $node
+ *   A resource node
+ *
+ * @return
+ *   The format string (eg, "csv", "html", etc.). Defaults to "data".
+ */
+function dkan_dataset_get_resource_format($node) {
+  $node_wrapper = entity_metadata_wrapper('node', $node);
+  if ($node_wrapper->getBundle() != 'resource') {
+    return FALSE;
+  }
+  if (isset($node->field_format['und']) && $node_wrapper->field_format->value()->name) {
+    return $node_wrapper->field_format->value()->name; 
+  }
+  return 'data';
 }
 
 /**
@@ -369,6 +408,28 @@ function dkan_dataset_back_access($node) {
   }
   else {
     return node_access('view', $node);
+  }
+}
+
+/**
+ * Access callback for 'Download Dataset' tab.
+ */
+function dkan_dataset_download_access($node) {
+  if ($node->type != 'dataset') {
+    return FALSE;
+  }
+  else {
+    $node = entity_metadata_wrapper('node', $node);
+    $resources = $node->field_resources->value();
+    $file_count = 0;
+    foreach ($resources as $resource) {
+      if (isset($resource->field_upload[LANGUAGE_NONE])) {
+        $file_count++;
+      }
+    }
+    if ($file_count > 1) {
+      return TRUE;
+    }
   }
 }
 

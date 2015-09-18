@@ -1,0 +1,158 @@
+<?php
+
+/**
+ * @file
+ * Test classes for uuidreference.
+ */
+
+/**
+ * Tests the uuidreference field.
+ */
+class UuidReferenceTest extends DrupalWebTestCase {
+
+  /**
+   * The content type used for this test.
+   *
+   * @var stdClass
+   */
+  protected $contentType;
+
+  /**
+   * The field data for the uuidreference field.
+   *
+   * @var array
+   */
+  protected $field;
+
+  /**
+   * The field instance data for the uuidreference_test.
+   *
+   * @var array
+   */
+  protected $fieldInstance;
+
+  /**
+   * An array of test users.
+   *
+   * @var array
+   */
+  protected $users = array();
+
+  /**
+   * A node object used for this test.
+   *
+   * @var stdClass
+   */
+  protected $node;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'uuidreference field',
+      'description' => 'Test the UUID reference field.',
+      'group' => 'UUID',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('uuid', 'uuidreference');
+
+    // Create test content type.
+    $this->contentType = $this->drupalCreateContentType();
+
+    // Create field.
+    $this->field = array(
+      'field_name' => 'uuidreference_test',
+      'type' => 'uuidreference',
+      'cardinality' => -1,
+      'settings' => array(
+        'target_type' => 'user',
+      ),
+    );
+    field_create_field($this->field);
+
+    // Create field instance for test content type.
+    $this->fieldInstance = array(
+      'field_name' => $this->field['field_name'],
+      'entity_type' => 'node',
+      'bundle' => $this->contentType->type,
+      'label' => $this->randomName(),
+      'description' => '',
+      'widget' => array('type' => 'uuidreference_textfield'),
+    );
+    field_create_instance($this->fieldInstance);
+
+    // Create our users.
+    for ($i = 0; $i < 2; $i++) {
+      $this->users[] = $this->drupalCreateUser();
+    }
+
+    // Create the field structure to save.
+    $refs = array();
+    foreach ($this->users as $user) {
+      $refs[] = array('target_type' => 'user', 'target_uuid' => $user->uuid);
+    }
+
+    // Create a node with values in the uuidreference field.
+    $params = array(
+      'type' => $this->contentType->type,
+      'uuidreference_test' => array(
+        LANGUAGE_NONE => $refs,
+      ),
+    );
+    $this->node = $this->drupalCreateNode($params);
+
+    // Log in an admin user.
+    // We just need this permission for the get AJAX call.
+    $this->adminUser = $this->drupalCreateUser(array('access content', 'bypass node access'));
+    $this->drupalLogin($this->adminUser);
+  }
+
+  /**
+   * Tests the uuidreference field.
+   *
+   * All assertions are in this test run, to speed things up.
+   */
+  public function testField() {
+    // Test the uuidreference_field_is_empty() function.
+    $this->assertTrue(uuidreference_field_is_empty(array('target_uuid' => ''), array()));
+    $this->assertTrue(uuidreference_field_is_empty(array('target_uuid' => NULL), array()));
+    $this->assertTrue(uuidreference_field_is_empty(array('target_uuid' => NULL), array()));
+    // Test an invalid uuid.
+    $this->assertTrue(uuidreference_field_is_empty(array('target_uuid' => 'a340-4b3c-a363-865397307630'), array()));
+    // Valid uuid, this should return false - i.e. field is not empty.
+    $this->assertFalse(uuidreference_field_is_empty(array('target_uuid' => '61dd3b36-a340-4b3c-a363-865397307630'), array()));
+
+    // Test the uuidreference_autocomplete() function.
+    $user = $this->users[0];
+    $expected = array(
+      "{$user->name} [$user->uuid]" => $user->name,
+    );
+    $json = $this->drupalGetAJAX('uuidreference/autocomplete/node/' . $this->contentType->type . '/uuidreference_test/' . $user->name);
+    $this->assertIdentical($json, $expected);
+
+    // Test the formatter on a node_view.
+    $this->drupalGet("node/{$this->node->nid}");
+    $field_items = field_get_items('node', $this->node, 'uuidreference_test');
+    // Check the field label is present.
+    $this->assertText($this->fieldInstance['label']);
+    // Check both user names are present from the formatter.
+    foreach ($this->users as $delta => $user) {
+      $this->assertIdentical($field_items[$delta]['target_uuid'], $user->uuid);
+      $this->assertIdentical($field_items[$delta]['target_type'], 'user');
+      $this->assertText($user->name);
+    }
+
+    // Save the field formatter options to use a link.
+    $instance = field_info_instance('node', 'uuidreference_test', $this->contentType->type);
+    $instance['display']['default']['settings']['link'] = TRUE;
+    field_update_instance($instance);
+
+    $this->drupalGet("node/{$this->node->nid}");
+
+    // Check both user links are present from the formatter.
+    foreach ($this->users as $user) {
+      $this->assertLinkByHref("user/{$user->uid}");
+    }
+  }
+
+}

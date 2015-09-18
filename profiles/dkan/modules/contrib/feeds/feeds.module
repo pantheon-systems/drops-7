@@ -35,6 +35,7 @@ function feeds_hook_info() {
     'feeds_after_save',
     'feeds_after_import',
     'feeds_after_clear',
+    'feeds_processor_targets',
     'feeds_processor_targets_alter',
     'feeds_parser_sources_alter',
   );
@@ -46,20 +47,25 @@ function feeds_hook_info() {
  * Implements hook_cron().
  */
 function feeds_cron() {
-  if ($importers = feeds_reschedule()) {
-    foreach ($importers as $id) {
-      feeds_importer($id)->schedule();
-      $rows = db_query("SELECT feed_nid FROM {feeds_source} WHERE id = :id", array(':id' => $id));
-      foreach ($rows as $row) {
-        feeds_source($id, $row->feed_nid)->schedule();
-      }
-    }
-    feeds_reschedule(FALSE);
-  }
   // Expire old log entries.
   db_delete('feeds_log')
     ->condition('request_time', REQUEST_TIME - 604800, '<')
     ->execute();
+
+  // Find importers that need to be rescheduled.
+  if (!$importers = feeds_reschedule()) {
+    return;
+  }
+
+  // @todo Maybe we should queue this somehow as well. This could be potentially
+  // very long.
+  $sources = db_query("SELECT feed_nid, id FROM {feeds_source} WHERE id IN (:ids)", array(':ids' => $importers));
+
+  foreach ($sources as $source) {
+    feeds_source($source->id, $source->feed_nid)->schedule();
+  }
+
+  feeds_reschedule(FALSE);
 }
 
 /**
@@ -75,8 +81,8 @@ function feeds_cron_job_scheduler_info() {
   $info['feeds_source_clear'] = array(
     'queue name' => 'feeds_source_clear',
   );
-  $info['feeds_importer_expire'] = array(
-    'queue name' => 'feeds_importer_expire',
+  $info['feeds_source_expire'] = array(
+    'queue name' => 'feeds_source_expire',
   );
   $info['feeds_push_unsubscribe'] = array(
     'queue name' => 'feeds_push_unsubscribe',
@@ -91,72 +97,66 @@ function feeds_cron_queue_info() {
   $queues = array();
   $queues['feeds_source_import'] = array(
     'worker callback' => 'feeds_source_import',
-    'time' => 15,
+    'time' => 60,
   );
   $queues['feeds_source_clear'] = array(
     'worker callback' => 'feeds_source_clear',
-    'time' => 15,
   );
-  $queues['feeds_importer_expire'] = array(
-    'worker callback' => 'feeds_importer_expire',
-    'time' => 15,
+  $queues['feeds_source_expire'] = array(
+    'worker callback' => 'feeds_source_expire',
   );
   $queues['feeds_push_unsubscribe'] = array(
     'worker callback' => 'feeds_push_unsubscribe',
-    'time' => 15,
   );
+
   return $queues;
 }
 
 /**
  * Scheduler callback for importing from a source.
  */
-function feeds_source_import($job) {
-  $source = feeds_source($job['type'], $job['id']);
-  try {
-    $source->existing()->import();
-  }
-  catch (FeedsNotExistingException $e) {
-    // Do nothing.
-  }
-  catch (Exception $e) {
-    $source->log('import', $e->getMessage(), array(), WATCHDOG_ERROR);
-  }
+function feeds_source_import(array $job) {
+  $source = _feeds_queue_worker_helper($job, 'import');
   $source->scheduleImport();
 }
 
 /**
  * Scheduler callback for deleting all items from a source.
  */
-function feeds_source_clear($job) {
-  $source = feeds_source($job['type'], $job['id']);
-  try {
-    $source->existing()->clear();
-  }
-  catch (FeedsNotExistingException $e) {
-    // Do nothing.
-  }
-  catch (Exception $e) {
-    $source->log('clear', $e->getMessage(), array(), WATCHDOG_ERROR);
-  }
+function feeds_source_clear(array $job) {
+  $source = _feeds_queue_worker_helper($job, 'clear');
   $source->scheduleClear();
 }
 
 /**
  * Scheduler callback for expiring content.
  */
-function feeds_importer_expire($job) {
-  $importer = feeds_importer($job['type']);
+function feeds_source_expire(array $job) {
+  $source = _feeds_queue_worker_helper($job, 'expire');
+  $source->scheduleExpire();
+}
+
+/**
+ * Executes a method on a feed source.
+ *
+ * @param array $job
+ *   The job being run.
+ * @param string $method
+ *   The method to execute.
+ */
+function _feeds_queue_worker_helper(array $job, $method) {
+  $source = feeds_source($job['type'], $job['id']);
   try {
-    $importer->existing()->expire();
+    $source->existing()->$method();
   }
   catch (FeedsNotExistingException $e) {
     // Do nothing.
   }
   catch (Exception $e) {
-    $importer->log('expire', $e->getMessage(), array(), WATCHDOG_ERROR);
+    $source->log($method, $e->getMessage(), array(), WATCHDOG_ERROR);
   }
-  $importer->scheduleExpire();
+
+  return $source;
 }
 
 /**
@@ -198,28 +198,36 @@ function feeds_batch($method, $importer_id, $feed_nid = 0, &$context) {
 /**
  * Reschedule one or all importers.
  *
- * @param $importer_id
+ * @param string $importer_id
  *   If TRUE, all importers will be rescheduled, if FALSE, no importers will
  *   be rescheduled, if an importer id, only importer of that id will be
  *   rescheduled.
  *
- * @return
- *   TRUE if all importers need rescheduling. FALSE if no rescheduling is
- *   required. An array of importers that need rescheduling.
+ * @return array
+ *   An list of importers that need rescheduling.
  */
 function feeds_reschedule($importer_id = NULL) {
   $reschedule = variable_get('feeds_reschedule', FALSE);
+
   if ($importer_id === TRUE || $importer_id === FALSE) {
     $reschedule = $importer_id;
   }
   elseif (is_string($importer_id) && $reschedule !== TRUE) {
-    $reschedule = is_array($reschedule) ? $reschedule : array();
+    $reschedule = array_filter((array) $reschedule);
     $reschedule[$importer_id] = $importer_id;
   }
-  variable_set('feeds_reschedule', $reschedule);
+
+  if (isset($importer_id)) {
+    variable_set('feeds_reschedule', $reschedule);
+  }
+
   if ($reschedule === TRUE) {
     return feeds_enabled_importers();
   }
+  elseif ($reschedule === FALSE) {
+    return array();
+  }
+
   return $reschedule;
 }
 
@@ -274,7 +282,7 @@ function feeds_menu() {
     'access callback' => 'feeds_page_access',
     'file' => 'feeds.pages.inc',
   );
-  $items['import/%'] = array(
+  $items['import/%feeds_importer'] = array(
     'title callback' => 'feeds_importer_title',
     'title arguments' => array(1),
     'page callback' => 'drupal_get_form',
@@ -283,12 +291,12 @@ function feeds_menu() {
     'access arguments' => array('import', 1),
     'file' => 'feeds.pages.inc',
   );
-  $items['import/%/import'] = array(
+  $items['import/%feeds_importer/import'] = array(
     'title' => 'Import',
     'type' => MENU_DEFAULT_LOCAL_TASK,
     'weight' => -10,
   );
-  $items['import/%/delete-items'] = array(
+  $items['import/%feeds_importer/delete-items'] = array(
     'title' => 'Delete items',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feeds_delete_tab_form', 1),
@@ -297,7 +305,7 @@ function feeds_menu() {
     'file' => 'feeds.pages.inc',
     'type' => MENU_LOCAL_TASK,
   );
-  $items['import/%/unlock'] = array(
+  $items['import/%feeds_importer/unlock'] = array(
     'title' => 'Unlock',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('feeds_unlock_tab_form', 1),
@@ -306,7 +314,7 @@ function feeds_menu() {
     'file' => 'feeds.pages.inc',
     'type' => MENU_LOCAL_TASK,
   );
-  $items['import/%/template'] = array(
+  $items['import/%feeds_importer/template'] = array(
     'page callback' => 'feeds_importer_template',
     'page arguments' => array(1),
     'access callback' => 'feeds_access',
@@ -353,17 +361,36 @@ function feeds_menu() {
 }
 
 /**
+ * Implements hook_admin_paths().
+ */
+function feeds_admin_paths() {
+  $paths = array(
+    'import' => TRUE,
+    'import/*' => TRUE,
+    'node/*/import' => TRUE,
+    'node/*/delete-items' => TRUE,
+    'node/*/log' => TRUE,
+  );
+  return $paths;
+}
+
+/**
  * Menu loader callback.
  */
 function feeds_importer_load($id) {
-  return feeds_importer($id);
+  try {
+    return feeds_importer($id)->existing();
+  }
+  catch (FeedsNotExistingException $e) {}
+  catch (InvalidArgumentException $e) {}
+
+  return FALSE;
 }
 
 /**
  * Title callback.
  */
-function feeds_importer_title($id) {
-  $importer = feeds_importer($id);
+function feeds_importer_title(FeedsImporter $importer) {
   return $importer->config['name'];
 }
 
@@ -410,20 +437,23 @@ function feeds_access($action, $param) {
     // If checking the access of a single importer build the array manually.
     $importer_ids[$param] = $param;
   }
+  elseif ($param instanceof FeedsImporter) {
+    $importer_ids[$param->id] = $param->id;
+  }
   elseif ($param->type) {
     // If checking the access for a content type, check all importers available
     // for it.
     $importer_ids = feeds_get_importer_ids($param->type);
   }
 
-  // Loop through all importers. if the user has access to one, they have access
-  // to the item.
-  foreach ($importer_ids as $importer_id){
-    // Check for permissions if feed id is present, otherwise return FALSE.
-    if ($importer_id) {
-      if (user_access('administer feeds') || user_access($action . ' ' . $importer_id .' feeds')) {
-        return TRUE;
-      }
+   // Loop through all importers. if the user has access to one, they have access
+   // to the item.
+   foreach ($importer_ids as $importer_id){
+     // Check for permissions if feed id is present, otherwise return FALSE.
+     if ($importer_id) {
+       if (user_access('administer feeds') || user_access($action . ' ' . $importer_id .' feeds')) {
+         return TRUE;
+       }
     }
   }
   return FALSE;
@@ -557,7 +587,7 @@ function feeds_entity_delete($entity, $type) {
     ->execute();
 }
 
-/**
+/*
  * Implements hook_node_prepare().
  */
 function feeds_node_prepare($node) {
@@ -607,7 +637,7 @@ function feeds_node_validate($node, $form, &$form_state) {
       catch (Exception $e) {
         drupal_set_message($e->getMessage(), 'error');
         form_set_error('title', t('Could not retrieve title from feed.'), array('error' => array('title')));
-      }
+     }
     }
   }
 }
@@ -642,9 +672,8 @@ function feeds_node_insert($node) {
       if (feeds_importer($importer_id)->config['import_on_create'] && !isset($node->feeds['suppress_import'])) {
         $source->startImport();
       }
-      // Schedule source and importer.
+      // Schedule the source.
       $source->schedule();
-      feeds_importer($importer_id)->schedule();
     }
   }
 }
@@ -724,6 +753,124 @@ function feeds_field_extra_fields() {
     }
   }
   return $extras;
+}
+
+/**
+ * Implements hook_features_pipe_COMPONENT_alter() for component "feeds_importer".
+ *
+ * Automatically adds dependencies when a Feed importer is selected in Features.
+ */
+function feeds_features_pipe_feeds_importer_alter(&$pipe, $data, &$export) {
+  foreach ($data as $importer_id) {
+    if ($importer = feeds_importer_load($importer_id)) {
+      $export['dependencies'] = array_merge($export['dependencies'], $importer->dependencies());
+    }
+  }
+}
+
+/**
+ * Implements hook_system_info_alter().
+ *
+ * Goes through a list of all modules that provide Feeds plugins and makes them
+ * required if there are any importers using those plugins.
+ */
+function feeds_system_info_alter(array &$info, $file, $type) {
+  if ($type !== 'module' || !module_hook($file->name, 'feeds_plugins')) {
+    return;
+  }
+
+  // Don't make Feeds require itself, otherwise you can't disable Feeds until
+  // all importers are deleted.
+  if ($file->name === 'feeds' || !function_exists('ctools_include')) {
+    return;
+  }
+
+  // Get the plugins that belong to the current module.
+  ctools_include('plugins');
+  $module_plugins = array();
+  foreach (ctools_get_plugins('feeds', 'plugins') as $plugin_id => $plugin) {
+    if ($file->name === $plugin['module']) {
+      $module_plugins[$plugin_id] = TRUE;
+    }
+  }
+
+  // Check if any importers are using any plugins from the current module.
+  foreach (feeds_importer_load_all(TRUE) as $importer) {
+
+    // Skip importers that are defined in code and are provided by the current
+    // module. This ensures that modules that define both an importer and a
+    // plugin can still be disabled.
+    if ($importer->export_type == EXPORT_IN_CODE) {
+      $configs = ctools_export_load_object('feeds_importer', 'names', array($importer->id));
+      if (isset($configs[$importer->id]) && $configs[$importer->id]->export_module === $file->name) {
+        continue;
+      }
+    }
+
+    $configuration = $importer->getConfig();
+
+    foreach (array('fetcher', 'parser', 'processor') as $plugin_type) {
+      $plugin_key = $configuration[$plugin_type]['plugin_key'];
+      if (isset($module_plugins[$plugin_key])) {
+        $info['required'] = TRUE;
+        break 2;
+      }
+    }
+  }
+
+  if (empty($info['required'])) {
+    return;
+  }
+
+  if (module_exists('feeds_ui') && user_access('administer feeds')) {
+    $info['explanation'] = t('Feeds is currently using this module for one or more <a href="@link">importers</a>', array('@link' => url('admin/structure/feeds')));
+  }
+  else {
+    $info['explanation'] = t('Feeds is currently using this module for one or more importers');
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function feeds_module_implements_alter(array &$implementations, $hook) {
+  if ($hook === 'feeds_processor_targets_alter') {
+    // We need two implementations of this hook, so we add one that gets
+    // called first, and move the normal one to last.
+    $implementations = array('_feeds' => FALSE) + $implementations;
+
+    // Move normal implementation to last.
+    $group = $implementations['feeds'];
+    unset($implementations['feeds']);
+    $implementations['feeds'] = $group;
+  }
+}
+
+/**
+ * Implements hook_feeds_processor_targets_alter().
+ *
+ * @see feeds_feeds_processor_targets()
+ * @see feeds_feeds_processor_targets_alter()
+ */
+function _feeds_feeds_processor_targets_alter(array &$targets, $entity_type, $bundle) {
+  // If hook_feeds_processor_targets() hasn't been called, for instance, by
+  // older processors, invoke it ourself.
+  if (!drupal_static('feeds_feeds_processor_targets', FALSE)) {
+    $targets += module_invoke_all('feeds_processor_targets', $entity_type, $bundle);
+  }
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function feeds_flush_caches() {
+  // The update to add the table needs to have run.
+  include_once DRUPAL_ROOT . '/includes/install.inc';
+
+  if (drupal_get_installed_schema_version('feeds') >= 7212) {
+    return array('cache_feeds_http');
+  }
+  return array();
 }
 
 /**
@@ -854,6 +1001,7 @@ function _feeds_importer_digest() {
 function feeds_cache_clear($rebuild_menu = TRUE) {
   cache_clear_all('_feeds_importer_digest', 'cache');
   drupal_static_reset('_feeds_importer_digest');
+  cache_clear_all('plugins:feeds:plugins', 'cache');
   ctools_include('export');
   ctools_export_load_object_reset('feeds_importer');
   drupal_static_reset('_node_types_build');
@@ -994,22 +1142,21 @@ function feeds_source($importer_id, $feed_nid = 0) {
 /**
  * Gets an instance of a class for a given plugin and id.
  *
- * @param $plugin
+ * @param string $plugin
  *   A string that is the key of the plugin to load.
- * @param $id
+ * @param string $id
  *   A string that is the id of the object.
  *
- * @return
+ * @return FeedsPlugin
  *   A FeedsPlugin object.
- *
- * @throws Exception
- *   If plugin can't be instantiated.
  */
 function feeds_plugin($plugin, $id) {
   ctools_include('plugins');
+
   if ($class = ctools_plugin_load_class('feeds', 'plugins', $plugin, 'handler')) {
-    return FeedsConfigurable::instance($class, $id);
+    return FeedsPlugin::instance($class, $id, ctools_get_plugins('feeds', 'plugins', $plugin));
   }
+
   $args = array('%plugin' => $plugin, '@id' => $id);
   if (user_access('administer feeds')) {
     $args['@link'] = url('admin/structure/feeds/' . $id);
@@ -1018,8 +1165,10 @@ function feeds_plugin($plugin, $id) {
   else {
     drupal_set_message(t('Missing Feeds plugin %plugin. Please contact your site administrator.', $args), 'warning', FALSE);
   }
+
   $class = ctools_plugin_load_class('feeds', 'plugins', 'FeedsMissingPlugin', 'handler');
-  return FeedsConfigurable::instance($class, $id);
+
+  return FeedsPlugin::instance($class, $id);
 }
 
 /**
@@ -1034,77 +1183,73 @@ function feeds_plugin($plugin, $id) {
 /**
  * Includes a library file.
  *
- * @param $file
+ * @param string $file
  *   The filename to load from.
- * @param $library
+ * @param string $library
  *   The name of the library. If libraries module is installed,
  *   feeds_include_library() will look for libraries with this name managed by
  *   libraries module.
  */
 function feeds_include_library($file, $library) {
   static $included = array();
-  static $ignore_deprecated = array('simplepie');
 
-  if (!isset($included[$file])) {
-    // Disable deprecated warning for libraries known for throwing them
-    if (in_array($library, $ignore_deprecated)) {
-       $level = error_reporting();
-       // We can safely use E_DEPRECATED since Drupal 7 requires PHP 5.3+
-       error_reporting($level ^ E_DEPRECATED ^ E_STRICT);
-    }
+  $key = $library . '/' . $file;
+
+  if (!isset($included[$key])) {
+    $included[$key] = FALSE;
 
     $library_dir = variable_get('feeds_library_dir', FALSE);
     $feeds_library_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'feeds') . "/libraries/$file";
+    $libraries_path = module_exists('libraries') ? libraries_get_path($library) : FALSE;
 
     // Try first whether libraries module is present and load the file from
     // there. If this fails, require the library from the local path.
-    if (module_exists('libraries') && file_exists(libraries_get_path($library) . "/$file")) {
-      require libraries_get_path($library) . "/$file";
-      $included[$file] = TRUE;
+    if ($libraries_path && is_file("$libraries_path/$file")) {
+      require "$libraries_path/$file";
+      $included[$key] = TRUE;
     }
-    elseif ($library_dir && file_exists("$library_dir/$library/$file")) {
-      require "$library_dir/$library/$file";
-      $included[$file] = TRUE;
+    elseif (is_file(DRUPAL_ROOT . '/sites/all/libraries/' . $key)) {
+      require DRUPAL_ROOT . '/sites/all/libraries/' . $key;
+      $included[$key] = TRUE;
     }
-    elseif (file_exists($feeds_library_path)) {
+    elseif ($library_dir && is_file($library_dir . '/' . $key)) {
+      require $library_dir . '/' . $key;
+      $included[$key] = TRUE;
+    }
+    elseif (is_file($feeds_library_path)) {
       // @todo: Throws "Deprecated function: Assigning the return value of new
       // by reference is deprecated."
       require $feeds_library_path;
-      $included[$file] = TRUE;
-    }
-    // Restore error reporting level
-    if (isset($level)) {
-      error_reporting($level);
+      $included[$key] = TRUE;
     }
   }
-  if (isset($included[$file])) {
-    return TRUE;
-  }
-  return FALSE;
+
+  return $included[$key];
 }
 
 /**
  * Checks whether a library is present.
  *
- * @param $file
+ * @param string $file
  *   The filename to load from.
- * @param $library
+ * @param string $library
  *   The name of the library. If libraries module is installed,
  *   feeds_library_exists() will look for libraries with this name managed by
  *   libraries module.
  */
 function feeds_library_exists($file, $library) {
-
-  if (module_exists('libraries') && file_exists(libraries_get_path($library) . "/$file")) {
+  $path = module_exists('libraries') ? libraries_get_path($library) : FALSE;
+  if ($path && is_file($path . '/' . $file)) {
     return TRUE;
   }
-
-  elseif (file_exists(DRUPAL_ROOT . '/' . drupal_get_path('module', 'feeds') . "/libraries/$file")) {
+  elseif (is_file(DRUPAL_ROOT . "/sites/all/libraries/$library/$file")) {
     return TRUE;
   }
-
+  elseif (is_file(DRUPAL_ROOT . '/' . drupal_get_path('module', 'feeds') . "/libraries/$file")) {
+    return TRUE;
+  }
   elseif ($library_dir = variable_get('feeds_library_dir', FALSE)) {
-    if (file_exists("$library_dir/$library/$file")) {
+    if (is_file("$library_dir/$library/$file")) {
       return TRUE;
     }
   }
@@ -1242,24 +1387,18 @@ function feeds_get_subscription_jobs() {
  * Implements hook_entity_property_info_alter().
  */
 function feeds_entity_property_info_alter(&$info) {
-  // Gather entities supported by Feeds processors.
-  $processors = FeedsPlugin::byType('processor');
-  $supported_entities = array();
-  foreach ($processors as $processor) {
-    $instance = feeds_plugin($processor['handler']['class'], '__none__');
-    if (method_exists($instance, 'entityType')) {
-      $supported_entities[] = $instance->entityType();
-    }
-  }
-  // Feeds processors can fake the entity info. Only set the property for
-  // defined entities.
-  $supported_entities = array_intersect(array_keys($info), $supported_entities);
 
-  foreach ($supported_entities as $entity_type) {
+  foreach ($info as $entity_type => $entity_info) {
     $info[$entity_type]['properties']['feed_nid'] = array(
       'label' => 'Feed NID',
       'type' => 'integer',
       'description' => t('Nid of the Feed Node that imported this entity.'),
+      'getter callback' => 'feeds_get_feed_nid_entity_callback',
+    );
+    $info[$entity_type]['properties']['feed_node'] = array(
+      'label' => 'Feed node',
+      'type' => 'node',
+      'description' => t('Feed Node that imported this entity.'),
       'getter callback' => 'feeds_get_feed_nid_entity_callback',
     );
   }
@@ -1271,10 +1410,17 @@ function feeds_entity_property_info_alter(&$info) {
 function feeds_get_feed_nid_entity_callback($entity, array $options, $name, $entity_type) {
   list($entity_id, , ) = entity_extract_ids($entity_type, $entity);
 
-  $feed_nid = feeds_get_feed_nid($entity_id, $entity_type);
-
-  if ($feed_nid === FALSE) {
-    return NULL;
+  $feed_nid = NULL;
+  if ($entity_id) {
+    $feed_nid = feeds_get_feed_nid($entity_id, $entity_type);
+    if ($feed_nid === FALSE) {
+      return NULL;
+    }
+  }
+  // If the entity has no ID (yet) try read the feed nid from the object
+  // directly.
+  elseif (isset($entity->feeds_item->feed_nid)) {
+    $feed_nid = $entity->feeds_item->feed_nid;
   }
   return $feed_nid;
 }

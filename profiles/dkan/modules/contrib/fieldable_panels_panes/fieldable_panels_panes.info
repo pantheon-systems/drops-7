@@ -1,0 +1,40 @@
+name = "Fieldable Panels Panes"
+description = "Allow the creation of fieldable panels pane entities."
+package = "Panels"
+core = "7.x"
+dependencies[] = ctools (>= 1.8)
+dependencies[] = panels (>= 3.5)
+dependencies[] = views
+
+configure = admin/structure/fieldable-panels-panes
+
+files[] = includes/PanelsPaneController.class.php
+files[] = includes/translation.handler.fieldable_panels_pane.inc
+files[] = includes/fieldable_panels_pane.migrate.inc
+
+files[] = plugins/views/fieldable_panels_panes_handler_argument_bundle.inc
+files[] = plugins/views/fieldable_panels_panes_handler_field_bundle.inc
+files[] = plugins/views/fieldable_panels_panes_handler_field_delete_entity.inc
+files[] = plugins/views/fieldable_panels_panes_handler_field_edit_entity.inc
+files[] = plugins/views/fieldable_panels_panes_handler_field_view_entity.inc
+files[] = plugins/views/fieldable_panels_panes_handler_filter_bundle.inc
+
+files[] = plugins/views/fieldable_panels_panes_handler_field_delete_revision.inc
+files[] = plugins/views/fieldable_panels_panes_handler_field_edit_revision.inc
+files[] = plugins/views/fieldable_panels_panes_handler_field_view_revision.inc
+
+files[] = plugins/views/fieldable_panels_panes_handler_field_is_current.inc
+files[] = plugins/views/fieldable_panels_panes_handler_field_make_current.inc
+
+; Entity API integration.
+files[] = fieldable_panels_panes.info.inc
+
+; Inline Entity Form integration.
+files[] = includes/FieldablePanelsPaneInlineEntityFormController.class.php
+
+; Information added by Drupal.org packaging script on 2015-09-02
+version = "7.x-1.7"
+core = "7.x"
+project = "fieldable_panels_panes"
+datestamp = "1441216775"
+

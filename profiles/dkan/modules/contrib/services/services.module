@@ -1010,6 +1010,53 @@ function services_remove_user_data(&$account) {
 }
 
 /**
+ * Helper function to remove fields from an entity according to field_access
+ *
+ * @param $op What you want to do with the entity. ie, view
+ * @param $entity_type The entity type. ie node, or user
+ * @param $entity The physical entity object
+ *
+ * returns $cloned_entity with fields removed that are needed.
+ */
+function services_field_permissions_clean($op, $entity_type, $entity) {
+  $cloned_entity = clone $entity;
+  //Each entity type seems to have a different key needed from field_info_instances
+  //Lets determine that key here.
+  switch ($entity_type) {
+    case 'comment':
+      $key = $cloned_entity->node_type;
+      break;
+    case 'user':
+      $key = $entity_type;
+      break;
+    case 'node':
+      $key = $cloned_entity->type;
+      break;
+    case 'taxonomy_term':
+      $key = $cloned_entity->vocabulary_machine_name;
+      break;
+    default:
+      $key = $entity_type;
+  }
+  //Allow someone to alter the field lookup key in the case they used their own entity.
+  drupal_alter('services_field_permissions_field_lookup_key', $key);
+
+  //load the fields info
+  $fields_info = field_info_instances($entity_type);
+  //Loop through all the fields on the content type
+  foreach ($fields_info[$key] as $field_name => $field_data) {
+    //check for access on our op
+    $access = field_access($op, field_info_field($field_name), $entity_type, $entity);
+    //If no access unset the field.
+    if (!$access) {
+      unset($cloned_entity->$field_name);
+    }
+  }
+  return $cloned_entity;
+}
+
+
+/**
  * Helper function to execute a index query.
  *
  * @param $query

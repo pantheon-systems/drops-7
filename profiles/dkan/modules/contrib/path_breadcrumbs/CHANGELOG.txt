@@ -1,6 +1,12 @@
 Path Breadcrumbs 7.x-3.x, xxxx-xx-xx
 
 
+Path Breadcrumbs 7.x-3.3, 2015-07-15
+by Spleshka: Added new token current-page:path-menu-trail:pb-join:* which generates breadcrumbs from menu items based on path bits.
+by Spleshka: Improved performance with static caching of heavy path_breadcrumbs_load_variant() function.
+#2473109 by Fant0m, kalabro, petu: Fixed destination parameter is present but doesn't work during editing breadcrumb.
+
+
 Path Breadcrumbs 7.x-3.2, 2015-02-04
 by kalabro: Added new option to enable Path Breadcrumbs on 403/404 pages.
 

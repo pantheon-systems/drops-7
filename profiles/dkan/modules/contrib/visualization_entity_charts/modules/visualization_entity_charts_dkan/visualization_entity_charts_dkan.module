@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ * Drupal needs this blank file.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function visualization_entity_charts_dkan_menu() {
+  $items = array();
+
+  $items['resource_by_nid/%'] = array(
+    'title' => 'Resource by NID',
+    'page callback' => 'visualization_entity_charts_resource_by_nid',
+    'page arguments' => array(1),
+    'access arguments' => array('access content'),
+    'type' => MENU_SUGGESTED_ITEM,
+  );
+
+  return $items;
+}
+
+/**
+ * Returns resource given nid.
+ */
+function visualization_entity_charts_resource_by_nid($nid) {
+  if ($cache = cache_get('resource_by_nid_' . $nid)) {
+    drupal_json_output($cache->data);
+  }
+  else {
+    $node = node_load($nid);
+    if ($file = dkan_datastore_file_field($node)) {
+      $status = dkan_datastore_status($node);
+      if ($status == DKAN_DATASTORE_EXISTS) {
+        $output = array(
+          'type' => 'api',
+          'url' => '/api/action/datastore/search.json?resource_id=' . $node->uuid,
+          'uuid' => $node->uuid,
+        );
+      }
+      else {
+        $output = array(
+          'type' => 'file',
+          'url' => file_create_url($file->uri),
+        );
+      }
+      cache_set('resource_by_nid_' . $nid, $output, 'cache');
+      return drupal_json_output($output);
+    }
+    return drupal_json_output(array());
+  }
+}

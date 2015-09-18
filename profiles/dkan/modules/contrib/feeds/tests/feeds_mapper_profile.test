@@ -2,13 +2,14 @@
 
 /**
  * @file
- * Test suite for profile mapper mappers/profile.inc.
+ * Contains FeedsMapperProfileTestCase.
  */
 
 /**
- * Class for testing Feeds profile mapper.
+ * Test suite for profile mapper mappers/profile.inc.
  */
 class FeedsMapperProfileTestCase extends FeedsMapperTestCase {
+
   public static function getInfo() {
     return array(
       'name' => 'Mapper: Profile',
@@ -17,7 +18,7 @@ class FeedsMapperProfileTestCase extends FeedsMapperTestCase {
     );
   }
 
-  function setUp() {
+  public function setUp() {
     // Call parent setup with required modules.
     parent::setUp(array('profile'));
   }
@@ -25,8 +26,7 @@ class FeedsMapperProfileTestCase extends FeedsMapperTestCase {
   /**
    * Basic test loading a doulbe entry CSV file.
    */
-  function test() {
-
+  public function test() {
     // Create profile fields.
     $edit = array(
       'category' => 'test',
@@ -99,4 +99,5 @@ class FeedsMapperProfileTestCase extends FeedsMapperTestCase {
     $this->assertEqual($account->profile_textfield_test, 'blue', 'User profile_textfield_test is correct');
     $this->assertEqual($account->profile_select_test, 'beta', 'User profile_select_test is correct');
   }
+
 }

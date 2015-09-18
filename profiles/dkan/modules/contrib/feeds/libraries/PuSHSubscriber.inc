@@ -161,7 +161,7 @@ class PuSHSubscriber {
         if (isset($_SERVER['HTTP_X_HUB_SIGNATURE']) && ($sub = $this->subscription())) {
           $result = array();
           parse_str($_SERVER['HTTP_X_HUB_SIGNATURE'], $result);
-          if (isset($result['sha1']) && $result['sha1'] == hash_hmac('sha1', $raw, $sub->secret)) {
+          if (isset($result['sha1']) && $result['sha1'] === hash_hmac('sha1', $raw, $sub->secret)) {
             return $raw;
           }
           else {
@@ -183,47 +183,44 @@ class PuSHSubscriber {
    * method handles the challenge.
    */
   public function verifyRequest() {
-    if (isset($_GET['hub_challenge'])) {
-      /**
-       * If a subscription is present, compare the verify token. If the token
-       * matches, set the status on the subscription record and confirm
-       * positive.
-       *
-       * If we cannot find a matching subscription and the hub checks on
-       * 'unsubscribe' confirm positive.
-       *
-       * In all other cases confirm negative.
-       */
-      if ($sub = $this->subscription()) {
-        if ($_GET['hub_verify_token'] == $sub->post_fields['hub.verify_token']) {
-          if ($_GET['hub_mode'] == 'subscribe' && $sub->status == 'subscribe') {
-            $sub->status = 'subscribed';
-            $sub->post_fields = array();
-            $sub->save();
-            $this->log('Verified "subscribe" request.');
-            $verify = TRUE;
-          }
-          elseif ($_GET['hub_mode'] == 'unsubscribe' && $sub->status == 'unsubscribe') {
-            $sub->status = 'unsubscribed';
-            $sub->post_fields = array();
-            $sub->save();
-            $this->log('Verified "unsubscribe" request.');
-            $verify = TRUE;
-          }
-        }
-      }
-      elseif ($_GET['hub_mode'] == 'unsubscribe') {
-        $this->log('Verified "unsubscribe" request.');
-        $verify = TRUE;
-      }
-      if ($verify) {
-        header('HTTP/1.1 200 "Found"', NULL, 200);
-        print $_GET['hub_challenge'];
-        drupal_exit();
-      }
+    if (!isset($_GET['hub_challenge'])) {
+      return $this->rejectRequest();
     }
-    header('HTTP/1.1 404 "Not Found"', NULL, 404);
-    $this->log('Could not verify subscription.', 'error');
+
+    // Don't accept modes of 'subscribed' or 'unsubscribed'.
+    if ($_GET['hub_mode'] !== 'subscribe' && $_GET['hub_mode'] !== 'unsubscribe') {
+      return $this->rejectRequest();
+    }
+
+    // No available subscription.
+    if (!$sub = $this->subscription()) {
+      return $this->rejectRequest();
+    }
+
+    // Not what we asked for.
+    if ($_GET['hub_mode'] !== $sub->status) {
+      return $this->rejectRequest();
+    }
+
+    // Wrong URL.
+    if ($_GET['hub_topic'] !== $sub->topic) {
+      return $this->rejectRequest();
+    }
+
+    if ($sub->status === 'subscribe') {
+      $sub->status = 'subscribed';
+      $this->log('Verified "subscribe" request.');
+    }
+    else {
+      $sub->status = 'unsubscribed';
+      $this->log('Verified "unsubscribe" request.');
+    }
+
+    $sub->post_fields = array();
+    $sub->save();
+
+    header('HTTP/1.1 200 "Found"', NULL, 200);
+    print check_plain($_GET['hub_challenge']);
     drupal_exit();
   }
 
@@ -244,7 +241,7 @@ class PuSHSubscriber {
    * @todo Make concurrency safe.
    */
   protected function request($hub, $topic, $mode, $callback_url) {
-    $secret = hash('sha1', uniqid(rand(), TRUE));
+    $secret = drupal_random_key(40);
     $post_fields = array(
       'hub.callback' => $callback_url,
       'hub.mode' => $mode,
@@ -252,7 +249,6 @@ class PuSHSubscriber {
       'hub.verify' => 'sync',
       'hub.lease_seconds' => '', // Permanent subscription.
       'hub.secret' => $secret,
-      'hub.verify_token' => md5(session_id() . rand()),
     );
     $sub = new $this->subscription_class($this->domain, $this->subscriber_id, $hub, $topic, $secret, $mode, $post_fields);
     $sub->save();
@@ -310,6 +306,16 @@ class PuSHSubscriber {
   protected function log($msg, $level = 'status') {
     $this->env->log("{$this->domain}:{$this->subscriber_id}\t$msg", $level);
   }
+
+  /**
+   * Rejects a request subscription request.
+   */
+  protected function rejectRequest() {
+    header('HTTP/1.1 404 "Not Found"', NULL, 404);
+    $this->log('Could not verify subscription.', 'error');
+    drupal_exit();
+  }
+
 }
 
 /**

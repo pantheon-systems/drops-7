@@ -87,7 +87,7 @@
                     };
                 }
                 else {
-                    ajax_options.timeout = 500;
+                    ajax_options.timeout = Drupal.settings.recline.ajax_timeout;
                     ajax_options.error = function(x, t, m) {
                         if (t === "timeout") {
                             $('.data-explorer').append('<div class="messages status">File was too large or unavailable for preview.</div>');

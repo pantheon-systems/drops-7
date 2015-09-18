@@ -27,7 +27,7 @@ function autocomplete_deluxe_field_widget_info() {
 /**
  * Custom taxonomy callback, which also accepts an empty string search.
  */
-function taxonomy_autocomplete_deluxe($field_name, $tags_typed = '', $limit = 10) {
+function autocomplete_deluxe_taxonomy_callback($field_name, $tags_typed = '', $limit = 10) {
   $field = field_info_field($field_name);
   $use_synonyms = !empty($_GET['synonyms']);
 
@@ -163,6 +163,12 @@ function autocomplete_deluxe_field_widget_settings_form($field, $instance) {
     '#default_value' => isset($settings['delimiter']) ? $settings['delimiter'] : '',
     '#size' => 1,
   );
+  $form['not_found_message'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Term not found message.'),
+    '#description' => t('A message text which will be displayed, if the entered term was not found.'),
+    '#default_value' => isset($settings['not_found_message']) ? $settings['not_found_message'] : "The term '@term' will be added.",
+  );
 
   if (module_exists('synonyms')) {
     $form['use_synonyms'] = array(
@@ -219,6 +225,7 @@ function autocomplete_deluxe_field_widget_form(&$form, &$form_state, $field, $in
     '#min_length' => isset($instance['widget']['settings']['min_length']) ? $instance['widget']['settings']['min_length'] : 0,
     '#use_synonyms' =>isset($instance['widget']['settings']['use_synonyms']) ? $instance['widget']['settings']['use_synonyms'] : 0,
     '#delimiter' =>isset($instance['widget']['settings']['delimiter']) ? $instance['widget']['settings']['delimiter'] : '',
+    '#not_found_message' =>isset($instance['widget']['settings']['not_found_message']) ? $instance['widget']['settings']['not_found_message'] : "The term '@term' will be added.",
   );
 
   $multiple = $field['cardinality'] > 1 || $field['cardinality'] == FIELD_CARDINALITY_UNLIMITED ? TRUE : FALSE;
@@ -276,6 +283,7 @@ function autocomplete_deluxe_element_process($element) {
     'min_length' => isset($element['#min_length']) ? $element['#min_length'] : 0,
     'use_synonyms' => isset($element['#use_synonyms']) ? $element['#use_synonyms'] : 0,
     'delimiter' => isset($element['#delimiter']) ? $element['#delimiter'] : '',
+    'not_found_message' => isset($element['#not_found_message']) ? $element['#not_found_message'] : "The term '@term' will be added.",
   );
 
   if (isset($element['#autocomplete_deluxe_path'])) {
@@ -384,7 +392,7 @@ function autocomplete_deluxe_element_info() {
 function autocomplete_deluxe_menu() {
   $items['autocomplete_deluxe/taxonomy'] = array(
     'title' => 'Autocomplete deluxe taxonomy',
-    'page callback' => 'taxonomy_autocomplete_deluxe',
+    'page callback' => 'autocomplete_deluxe_taxonomy_callback',
     'access arguments' => array('access content'),
     'type' => MENU_CALLBACK,
   );

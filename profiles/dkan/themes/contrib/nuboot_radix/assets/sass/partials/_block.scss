@@ -11,7 +11,6 @@
     padding: 0;
     li {
       margin:0;
-      font-size: 12px;
       line-height: 1.1666666666666667em;
       padding: 0;
       border-bottom: 1px dotted #CCC;
@@ -34,7 +33,7 @@
   a.btn {
     background-image: auto;
     border:1px solid $smoke;
-    padding:8px 10px 8px 36px;
+    padding:0 10px 0 36px;
     position:relative;
     i {
       background-position: 0 0;
@@ -186,13 +185,21 @@ div[class*="pane-facetapi"],
     content:"\f151";
   }
 }
+// Wrap long value strings.
+.facetapi-facet-field-license a {
+  @include wrap;
+}
 
 // Groups
 .pane-views-group-block-block,
 #block-views-group-block-block {
   overflow:hidden;
-  .view-content {
-    padding:0;
+  .views-field-title a {
+    display: block;
+    padding: .5em 0;
+  }
+  .views-field-body p {
+    margin: .5em 0 1em;
   }
   .group-subscribe-message {
     @include border-bottom-radius(4px);
@@ -236,7 +243,6 @@ div[class*="pane-facetapi"],
 .pane-dkan-sitewide-demo-front-dkan-demo-front,
 #block-dkan-sitewide-demo-front-dkan-demo-front {
   @include box-shadow(0 0 8px rgba(0, 0, 0, 0.3));
-  // Let colorizer supply the background color.
   //background-color: rgba($brand-primary, 0.5);
   p {
     color: $white;

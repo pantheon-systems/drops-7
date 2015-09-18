@@ -105,9 +105,16 @@ function _radix_process_input(&$element, &$form_state) {
     'webform_number',
     'number',
   );
-  if (!empty($element['#type']) && (in_array($element['#type'], $types))) {
+
+  // Skip elements with these #theme key.
+  $skip_themes = array(
+    'select_as_checkboxes',
+  );
+
+  if (!empty($element['#type']) && in_array($element['#type'], $types) && !in_array($element['#theme'], $skip_themes)) {
     $element['#attributes']['class'][] = 'form-control';
   }
+
   return $element;
 }
 
@@ -303,6 +310,14 @@ function radix_button($variables) {
     $element['#attributes']['class'][] = 'btn-primary';
   }
 
+  if (!empty($element['#button_icon'])) {
+    $value  = theme('radix_icon', array('icon' => $element['#button_icon']));
+    $value .= ' ';
+    $value .= '<span class="button-text">' . check_plain($element['#value']) . '</span>';
+
+    return '<button' . drupal_attributes($element['#attributes']) . '>' . $value . '</button>';
+  }
+
   return '<input' . drupal_attributes($element['#attributes']) . ' />';
 }
 
@@ -342,7 +357,7 @@ function radix_fieldset($variables) {
   if (!empty($element['#description'])) {
     $output .= '<p class="help-block">' . $element['#description'] . '</p>';
   }
-  $output .= $element['#children'];
+  $output .= render($element['#children']);
   if (isset($element['#value'])) {
     $output .= $element['#value'];
   }

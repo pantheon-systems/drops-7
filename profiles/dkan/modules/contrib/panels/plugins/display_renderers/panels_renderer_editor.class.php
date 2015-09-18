@@ -161,7 +161,7 @@ class panels_renderer_editor extends panels_renderer_standard {
     if ($buttons) {
       $output .= '<span class="buttons">' . $buttons . '</span>';
     }
-    $output .= '<span class="text">' . $title . '</span>';
+    $output .= '<span class="text" title="' . check_plain($title) . '">' . $title . '</span>';
     $output .= '</div>'; // grabber
 
     $output .= '<div class="panel-pane-collapsible">';
@@ -467,21 +467,24 @@ class panels_renderer_editor extends panels_renderer_standard {
     drupal_alter('get_pane_links', $links, $pane, $content_type);
 
     $dropdown_links = $links['top'];
-    foreach (array(
-  'style' => 'Style',
-  'visibility' => 'Visibility rules',
-  'lock' => 'Locking',
-  'cache' => 'Caching'
-    ) as $category => $label) {
-      $dropdown_links[] = array(
-        'title' => '<hr />',
-        'html' => TRUE,
-      );
-      $dropdown_links[] = array(
-        'title' => '<span class="dropdown-header">' . t($label) . '</span>' . theme_links(array('links' => $links[$category], 'attributes' => array(), 'heading' => array())),
-        'html' => TRUE,
-        'attributes' => array('class' => array('panels-sub-menu')),
-      );
+    $category_labels = array(
+      'style' => 'Style',
+      'visibility' => 'Visibility rules',
+      'lock' => 'Locking',
+      'cache' => 'Caching',
+    );
+    foreach ($category_labels as $category => $label) {
+      if (array_key_exists($category, $links)) {
+        $dropdown_links[] = array(
+          'title' => '<hr />',
+          'html' => TRUE,
+        );
+        $dropdown_links[] = array(
+          'title' => '<span class="dropdown-header">' . t($label) . '</span>' . theme_links(array('links' => $links[$category], 'attributes' => array(), 'heading' => array())),
+          'html' => TRUE,
+          'attributes' => array('class' => array('panels-sub-menu')),
+        );
+      }
     }
 
     $dropdown_links[] = array(
@@ -944,8 +947,11 @@ class panels_renderer_editor extends panels_renderer_standard {
         ctools_include('content');
         $pane = &$this->display->content[$pid];
         $style = isset($pane->style['style']) ? $pane->style['style'] : 'default';
-        $subtype = ctools_content_get_subtype($pane->type, $pane->subtype);
-        $title = t('Pane style for "!pane"', array('!pane' => $subtype['title']));
+        $title = ctools_content_admin_title($pane->type, $pane->subtype, $pane->configuration, $this->display->context);
+        if (!$title) {
+          $title = $pane->type;
+        }
+        $title = t('Pane style for "!title"', array('!title' => $title));
         break;
 
       default:
@@ -1160,9 +1166,21 @@ class panels_renderer_editor extends panels_renderer_standard {
       unset($this->cache->style);
     }
 
+    if (!empty($form_state['cancel'])) {
+      // The cache must be saved prior to dismissing the modal.
+      panels_edit_cache_set($this->cache);
+      $this->commands[] = ctools_modal_command_dismiss();
+      return;
+    }
+
     // Copy settings from form state back into the cache.
     if(!empty($form_state['values']['settings'])) {
-      $this->cache->display->content[$pid]->style['settings'] = $form_state['values']['settings'];
+      if ($type == 'pane') {
+        $this->cache->display->content[$pid]->style['settings'] = $form_state['values']['settings'];
+      }
+      else if($type == 'region') {
+        $this->cache->display->panel_settings['style_settings'][$pid] = $form_state['values']['settings'];
+      }
     }
 
     panels_edit_cache_set($this->cache);
@@ -1697,7 +1715,26 @@ function panels_edit_style_settings_form($form, &$form_state) {
     '#value' => t('Save'),
   );
 
+
+  // Need a cancel button since the style cache can persist and impact the wrong
+  // pane (or region, or display).
+  $form['cancel_style'] = array(
+    '#type' => 'submit',
+    '#value' => t('Cancel'),
+    '#submit' => array('panels_edit_style_settings_form_cancel'),
+  );
+
   return $form;
+}
+
+/**
+ * Cancel style settings form.
+ *
+ * Clears the editing cache to prevent styles being applied to incorrect regions
+ * or panes.
+ */
+function panels_edit_style_settings_form_cancel($form, &$form_state) {
+  $form_state['cancel'] = TRUE;
 }
 
 /**

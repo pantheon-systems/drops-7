@@ -41,10 +41,6 @@ before_script:
   # Make dkan_datastore
   - drush make -v --no-core --yes sites/all/modules/dkan_datastore/dkan_datastore.make
 
-  # Add patched version of feeds_flatstore_processor
-  - rm -rf sites/all/modules/contrib/feeds_flatstore_processor
-  - git clone https://github.com/nuams/feeds_flatstore_processor.git sites/all/modules/contrib/feeds_flatstore_processor
-
   # Enable modules
   - drush --yes pm-enable dkan_datastore_api
 

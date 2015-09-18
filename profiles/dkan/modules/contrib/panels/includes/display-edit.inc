@@ -240,7 +240,7 @@ function panels_edit_display_settings_form($form, &$form_state) {
       '#type' => 'textfield',
       '#default_value' => $display->title,
       '#title' => t('Title'),
-      '#description' => t('The title of this panel. If left blank, a default title may be used. Set to No Title if you want the title to actually be blank.'),
+      '#description' => t('The title of this panel. If left blank, a default title may be used. If you want the title actually to be blank, change the "Title type" dropdown from "Manually Set" to "No Title".'),
       '#process' => array('ctools_dependent_process'),
       '#dependency' => array('edit-display-title-hide-title' => array(PANELS_TITLE_FIXED)),
       '#maxlength' => 255,

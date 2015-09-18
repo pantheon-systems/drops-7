@@ -1,0 +1,12 @@
+name = Visualization Entity Recline Field Reference
+core = 7.x
+package = NuCivic
+dependencies[] = entityreference
+dependencies[] = features
+dependencies[] = recline
+dependencies[] = uuidreference
+dependencies[] = uuidreference_select
+features[features_api][] = api:2
+features[field_base][] = field_uuid_resource
+mtime = 1426610294
+project path = sites/all/modules/nucivic

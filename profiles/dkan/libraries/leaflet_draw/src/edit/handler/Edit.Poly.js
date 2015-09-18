@@ -18,6 +18,14 @@ L.Edit.Poly = L.Handler.extend({
 	},
 
 	addHooks: function () {
+		var poly = this._poly;
+
+		if (!(poly instanceof L.Polygon)) {
+			poly.options.editing.fill = false;
+		}
+
+		poly.setStyle(poly.options.editing);
+
 		if (this._poly._map) {
 			if (!this._markerGroup) {
 				this._initMarkers();
@@ -27,8 +35,12 @@ L.Edit.Poly = L.Handler.extend({
 	},
 
 	removeHooks: function () {
-		if (this._poly._map) {
-			this._poly._map.removeLayer(this._markerGroup);
+		var poly = this._poly;
+
+		poly.setStyle(poly.options.original);
+
+		if (poly._map) {
+			poly._map.removeLayer(this._markerGroup);
 			delete this._markerGroup;
 			delete this._markers;
 		}
@@ -46,7 +58,7 @@ L.Edit.Poly = L.Handler.extend({
 		this._markers = [];
 
 		var latlngs = this._poly._latlngs,
-		    i, j, len, marker;
+			i, j, len, marker;
 
 		// TODO refactor holes implementation in Polygon to support it here
 
@@ -89,6 +101,20 @@ L.Edit.Poly = L.Handler.extend({
 		return marker;
 	},
 
+	_removeMarker: function (marker) {
+		var i = marker._index;
+
+		this._markerGroup.removeLayer(marker);
+		this._markers.splice(i, 1);
+		this._poly.spliceLatLngs(i, 1);
+		this._updateIndexes(i, -1);
+
+		marker
+			.off('drag', this._onMarkerDrag, this)
+			.off('dragend', this._fireEdit, this)
+			.off('click', this._onMarkerClick, this);
+	},
+
 	_fireEdit: function () {
 		this._poly.edited = true;
 		this._poly.fire('edit');
@@ -110,17 +136,16 @@ L.Edit.Poly = L.Handler.extend({
 	},
 
 	_onMarkerClick: function (e) {
-		// we want to remove the marker on click, but if latlng count < 3, polyline would be invalid
-		if (this._poly._latlngs.length < 3) { return; }
+		var minPoints = L.Polygon && (this._poly instanceof L.Polygon) ? 4 : 3,
+			marker = e.target;
 
-		var marker = e.target,
-		    i = marker._index;
+		// If removing this point would create an invalid polyline/polygon don't remove
+		if (this._poly._latlngs.length < minPoints) {
+			return;
+		}
 
 		// remove the marker
-		this._markerGroup.removeLayer(marker);
-		this._markers.splice(i, 1);
-		this._poly.spliceLatLngs(i, 1);
-		this._updateIndexes(i, -1);
+		this._removeMarker(marker);
 
 		// update prev/next links of adjacent markers
 		this._updatePrevNext(marker._prev, marker._next);
@@ -172,7 +197,7 @@ L.Edit.Poly = L.Handler.extend({
 			marker._index = i;
 
 			marker
-			    .off('click', onClick)
+			    .off('click', onClick, this)
 			    .on('click', this._onMarkerClick, this);
 
 			latlng.lat = marker.getLatLng().lat;
@@ -186,6 +211,8 @@ L.Edit.Poly = L.Handler.extend({
 			marker2._index++;
 			this._updatePrevNext(marker1, marker);
 			this._updatePrevNext(marker, marker2);
+
+			this._poly.fire('editstart');
 		};
 
 		onDragEnd = function () {
@@ -221,10 +248,10 @@ L.Edit.Poly = L.Handler.extend({
 
 	_getMiddleLatLng: function (marker1, marker2) {
 		var map = this._poly._map,
-		    p1 = map.latLngToLayerPoint(marker1.getLatLng()),
-		    p2 = map.latLngToLayerPoint(marker2.getLatLng());
+		    p1 = map.project(marker1.getLatLng()),
+		    p2 = map.project(marker2.getLatLng());
 
-		return map.layerPointToLatLng(p1._add(p2)._divideBy(2));
+		return map.unproject(p1._add(p2)._divideBy(2));
 	}
 });
 

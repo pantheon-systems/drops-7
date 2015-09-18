@@ -6,7 +6,9 @@
 
 require_once dirname(__FILE__) . '/includes/utilities.inc';
 require_once dirname(__FILE__) . '/includes/theme.inc';
+require_once dirname(__FILE__) . '/includes/maintenance.inc';
 require_once dirname(__FILE__) . '/includes/structure.inc';
+require_once dirname(__FILE__) . '/includes/field.inc';
 require_once dirname(__FILE__) . '/includes/form.inc';
 require_once dirname(__FILE__) . '/includes/menu.inc';
 require_once dirname(__FILE__) . '/includes/comment.inc';
@@ -24,7 +26,7 @@ function radix_preprocess_html(&$variables) {
   // Add Bootstrap JS from CDN if bootstrap library is not installed.
   if (!module_exists('bootstrap_library')) {
     $base = parse_url($base_url);
-    $url = $base['scheme'] . '://netdna.bootstrapcdn.com/bootstrap/3.2.0/js/bootstrap.min.js';
+    $url = $base['scheme'] . '://netdna.bootstrapcdn.com/bootstrap/3.1.1/js/bootstrap.min.js';
     drupal_add_js($url, 'external');
   }
 
@@ -67,14 +69,18 @@ function radix_preprocess_html(&$variables) {
  */
 function radix_css_alter(&$css) {
   // Unset some panopoly css.
-  $panopoly_admin_path = drupal_get_path('module', 'panopoly_admin');
-  if (isset($css[$panopoly_admin_path . '/panopoly-admin.css'])) {
-    unset($css[$panopoly_admin_path . '/panopoly-admin.css']);
+  if (module_exists('panopoly_admin')) {
+    $panopoly_admin_path = drupal_get_path('module', 'panopoly_admin');
+    if (isset($css[$panopoly_admin_path . '/panopoly-admin.css'])) {
+      unset($css[$panopoly_admin_path . '/panopoly-admin.css']);
+    }
   }
 
-  $panopoly_magic_path = drupal_get_path('module', 'panopoly_magic');
-  if (isset($css[$panopoly_magic_path . '/css/panopoly-modal.css'])) {
-    unset($css[$panopoly_magic_path . '/css/panopoly-modal.css']);
+  if (module_exists('panopoly_magic')) {
+    $panopoly_magic_path = drupal_get_path('module', 'panopoly_magic');
+    if (isset($css[$panopoly_magic_path . '/css/panopoly-modal.css'])) {
+      unset($css[$panopoly_magic_path . '/css/panopoly-modal.css']);
+    }
   }
 
   // Unset some core css.
@@ -155,7 +161,11 @@ function radix_preprocess_page(&$variables) {
   }
 
   // Format and add main menu to theme.
-  $variables['main_menu'] = menu_tree(variable_get('menu_main_links_source', 'main-menu'));
+  $main_menu_data = menu_build_tree(variable_get('menu_main_links_source', 'main-menu'), array(
+    'min_depth' => 1,
+    'max_depth' => 2,
+  ));
+  $variables['main_menu'] = menu_tree_output($main_menu_data);
   $variables['main_menu']['#theme_wrappers'] = array();
 
   // Add a copyright message.

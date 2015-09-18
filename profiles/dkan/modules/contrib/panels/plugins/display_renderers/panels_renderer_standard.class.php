@@ -407,14 +407,23 @@ class panels_renderer_standard {
    * their CSS added in the right order: inner content before outer content.
    */
   function add_meta() {
+    global $theme;
+
     if (!empty($this->plugins['layout']['css'])) {
+      // Do not use the path_to_theme() function, because it returns the
+      // $GLOBALS['theme_path'] value, which may be overriden in the theme()
+      // function when the theme hook defines the key 'theme path'.
+      $theme_path = isset($theme) ? drupal_get_path('theme', $theme) : '';
+
       $css = $this->plugins['layout']['css'];
       if (!is_array($css)) {
         $css = array($css);
       }
-      foreach($css as $file) {
-        if (file_exists(path_to_theme() . '/' . $file)) {
-          $this->add_css(path_to_theme() . '/' . $file);
+
+      // Load each of the CSS files defined in this layout.
+      foreach ($css as $file) {
+        if (!empty($theme_path) && file_exists($theme_path . '/' . $file)) {
+          $this->add_css($theme_path . '/' . $file);
         }
         else {
           $this->add_css($this->plugins['layout']['path'] . '/' . $file);
@@ -427,7 +436,7 @@ class panels_renderer_standard {
       if (!is_array($admin_css)) {
         $admin_css = array($admin_css);
       }
-      foreach($admin_css as $file) {
+      foreach ($admin_css as $file) {
         $this->add_css($this->plugins['layout']['path'] . '/' . $file);
       }
     }

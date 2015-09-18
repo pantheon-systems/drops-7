@@ -2,7 +2,7 @@
  * L.Mixin.Events is used to add custom events functionality to Leaflet classes.
  */
 
-var key = '_leaflet_events';
+var eventsKey = '_leaflet_events';
 
 L.Mixin = {};
 
@@ -10,49 +10,45 @@ L.Mixin.Events = {
 
 	addEventListener: function (types, fn, context) { // (String, Function[, Object]) or (Object[, Object])
 
-		var events = this[key] = this[key] || {},
-		    type, i, len, evt,
-		    contextId, objKey, objLenKey, eventsObj;
-
 		// types can be a map of types/handlers
-		if (typeof types === 'object') {
-			for (type in types) {
-				if (types.hasOwnProperty(type)) {
-					this.addEventListener(type, types[type], fn);
-				}
-			}
+		if (L.Util.invokeEach(types, this.addEventListener, this, fn, context)) { return this; }
 
-			return this;
-		}
+		var events = this[eventsKey] = this[eventsKey] || {},
+		    contextId = context && context !== this && L.stamp(context),
+		    i, len, event, type, indexKey, indexLenKey, typeIndex;
 
 		// types can be a string of space-separated words
 		types = L.Util.splitWords(types);
 
 		for (i = 0, len = types.length; i < len; i++) {
-			evt = {
+			event = {
 				action: fn,
 				context: context || this
 			};
-			contextId = context && context._leaflet_id;
+			type = types[i];
 
 			if (contextId) {
 				// store listeners of a particular context in a separate hash (if it has an id)
 				// gives a major performance boost when removing thousands of map layers
 
-				objKey = types[i] + '_idx',
-				objLenKey = objKey + '_len',
-				eventsObj = events[objKey] = events[objKey] || {};
+				indexKey = type + '_idx';
+				indexLenKey = indexKey + '_len';
 
-				if (eventsObj[contextId]) {
-					eventsObj[contextId].push(evt);
-				} else {
-					eventsObj[contextId] = [evt];
-					events[objLenKey] = (events[objLenKey] || 0) + 1;
+				typeIndex = events[indexKey] = events[indexKey] || {};
+
+				if (!typeIndex[contextId]) {
+					typeIndex[contextId] = [];
+
+					// keep track of the number of keys in the index to quickly check if it's empty
+					events[indexLenKey] = (events[indexLenKey] || 0) + 1;
 				}
 
+				typeIndex[contextId].push(event);
+
+
 			} else {
-				events[types[i]] = events[types[i]] || [];
-				events[types[i]].push(evt);
+				events[type] = events[type] || [];
+				events[type].push(event);
 			}
 		}
 
@@ -60,54 +56,68 @@ L.Mixin.Events = {
 	},
 
 	hasEventListeners: function (type) { // (String) -> Boolean
-		return (key in this) &&
-		       (((type in this[key]) && this[key][type].length > 0) ||
-		        (this[key][type + '_idx_len'] > 0));
+		var events = this[eventsKey];
+		return !!events && ((type in events && events[type].length > 0) ||
+		                    (type + '_idx' in events && events[type + '_idx_len'] > 0));
 	},
 
-	removeEventListener: function (types, fn, context) { // (String[, Function, Object]) or (Object[, Object])
-		var events = this[key],
-			type, i, len, listeners, j,
-			contextId, objKey, objLenKey;
+	removeEventListener: function (types, fn, context) { // ([String, Function, Object]) or (Object[, Object])
 
-		if (typeof types === 'object') {
-			for (type in types) {
-				if (types.hasOwnProperty(type)) {
-					this.removeEventListener(type, types[type], fn);
-				}
-			}
+		if (!this[eventsKey]) {
 			return this;
 		}
+
+		if (!types) {
+			return this.clearAllEventListeners();
+		}
+
+		if (L.Util.invokeEach(types, this.removeEventListener, this, fn, context)) { return this; }
+
+		var events = this[eventsKey],
+		    contextId = context && context !== this && L.stamp(context),
+		    i, len, type, listeners, j, indexKey, indexLenKey, typeIndex, removed;
 
 		types = L.Util.splitWords(types);
 
 		for (i = 0, len = types.length; i < len; i++) {
-			if (this.hasEventListeners(types[i])) {
+			type = types[i];
+			indexKey = type + '_idx';
+			indexLenKey = indexKey + '_len';
 
-				// if the context has an id, use it to find the listeners
-				contextId = context && context._leaflet_id;
-				objKey = types[i] + '_idx';
+			typeIndex = events[indexKey];
 
-				if (contextId && events[objKey]) {
-					listeners =  events[objKey][contextId] || [];
-				} else {
-					listeners = events[types[i]] || [];
-				}
+			if (!fn) {
+				// clear all listeners for a type if function isn't specified
+				delete events[type];
+				delete events[indexKey];
+				delete events[indexLenKey];
 
-				for (j = listeners.length - 1; j >= 0; j--) {
-					if ((!fn || listeners[j].action === fn) && (!context || (listeners[j].context === context))) {
-						listeners.splice(j, 1);
+			} else {
+				listeners = contextId && typeIndex ? typeIndex[contextId] : events[type];
+
+				if (listeners) {
+					for (j = listeners.length - 1; j >= 0; j--) {
+						if ((listeners[j].action === fn) && (!context || (listeners[j].context === context))) {
+							removed = listeners.splice(j, 1);
+							// set the old action to a no-op, because it is possible
+							// that the listener is being iterated over as part of a dispatch
+							removed[0].action = L.Util.falseFn;
+						}
 					}
-				}
 
-				if (contextId && listeners.length === 0) {
-					objLenKey = objKey + '_len';
-					delete events[objKey][contextId];
-					events[objLenKey] = (events[objLenKey] || 1) - 1;
+					if (context && typeIndex && (listeners.length === 0)) {
+						delete typeIndex[contextId];
+						events[indexLenKey]--;
+					}
 				}
 			}
 		}
 
+		return this;
+	},
+
+	clearAllEventListeners: function () {
+		delete this[eventsKey];
 		return this;
 	},
 
@@ -116,42 +126,53 @@ L.Mixin.Events = {
 			return this;
 		}
 
-		var event = L.Util.extend({}, data, {
-			type: type,
-			target: this
-		});
+		var event = L.Util.extend({}, data, { type: type, target: this });
 
-		var listeners, i, len, eventsObj, contextId;
+		var events = this[eventsKey],
+		    listeners, i, len, typeIndex, contextId;
 
-		if (this[key][type]) {
-			listeners = this[key][type].slice();
+		if (events[type]) {
+			// make sure adding/removing listeners inside other listeners won't cause infinite loop
+			listeners = events[type].slice();
 
 			for (i = 0, len = listeners.length; i < len; i++) {
-				listeners[i].action.call(listeners[i].context || this, event);
+				listeners[i].action.call(listeners[i].context, event);
 			}
 		}
 
 		// fire event for the context-indexed listeners as well
+		typeIndex = events[type + '_idx'];
 
-		eventsObj = this[key][type + '_idx'];
+		for (contextId in typeIndex) {
+			listeners = typeIndex[contextId].slice();
 
-		if (eventsObj) {
-			for (contextId in eventsObj) {
-				if (eventsObj.hasOwnProperty(contextId)) {
-					listeners = eventsObj[contextId];
-					if (listeners) {
-						for (i = 0, len = listeners.length; i < len; i++) {
-							listeners[i].action.call(listeners[i].context || this, event);
-						}
-					}
+			if (listeners) {
+				for (i = 0, len = listeners.length; i < len; i++) {
+					listeners[i].action.call(listeners[i].context, event);
 				}
 			}
 		}
 
 		return this;
+	},
+
+	addOneTimeEventListener: function (types, fn, context) {
+
+		if (L.Util.invokeEach(types, this.addOneTimeEventListener, this, fn, context)) { return this; }
+
+		var handler = L.bind(function () {
+			this
+			    .removeEventListener(types, fn, context)
+			    .removeEventListener(types, handler, context);
+		}, this);
+
+		return this
+		    .addEventListener(types, fn, context)
+		    .addEventListener(types, handler, context);
 	}
 };
 
 L.Mixin.Events.on = L.Mixin.Events.addEventListener;
 L.Mixin.Events.off = L.Mixin.Events.removeEventListener;
+L.Mixin.Events.once = L.Mixin.Events.addOneTimeEventListener;
 L.Mixin.Events.fire = L.Mixin.Events.fireEvent;

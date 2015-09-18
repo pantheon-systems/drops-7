@@ -391,9 +391,9 @@ function dkan_dataset_content_types_field_default_field_instances() {
     'display' => array(
       'default' => array(
         'label' => 'hidden',
-        'module' => 'select_or_other',
+        'module' => 'dkan_dataset_content_types',
         'settings' => array(),
-        'type' => 'select_or_other_formatter',
+        'type' => 'render_license',
         'weight' => 13,
       ),
       'teaser' => array(
@@ -415,6 +415,7 @@ function dkan_dataset_content_types_field_default_field_instances() {
       'active' => 1,
       'module' => 'select_or_other',
       'settings' => array(
+        'apply_chosen' => '',
         'available_options' => 'cc-by|Creative Commons Attribution
 cc-by-sa|Creative Commons Attribution Share-Alike
 cc-zero|Creative Commons CCZero

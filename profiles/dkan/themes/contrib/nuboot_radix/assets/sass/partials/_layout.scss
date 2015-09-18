@@ -15,7 +15,7 @@ section.col-sm-9 {
   background-size:cover !important;
   overflow:hidden;
   position: relative;
-  z-index: 1;
+  z-index: 0;
   .tint {
     // Let colorizer supply the background color.
     //background-color:rgba(10 , 119 , 189, .45);
@@ -24,7 +24,6 @@ section.col-sm-9 {
     width:100%;
     z-index: -1;
   }
-  h2,
   .pane-dkan-sitewide-demo-front-dkan-demo-front .pane-title,
   .pane-views-popular-tags-block .pane-title,
   .pane-dkan-sitewide-demo-front-dkan-add-front .pane-title {
@@ -39,7 +38,6 @@ section.col-sm-9 {
   .panel-pane,
   .block-content {
     color:$white;
-    font-size: 1.25em;
     line-height: 1.33em;
     margin:0 15px;
   }

@@ -5,6 +5,10 @@
  * Maps entity types to Open Data schemas.
  */
 
+$module_path = drupal_get_path('module', 'open_data_schema_map');
+require_once $module_path . '/open_data_schema_map.file_cache.inc';
+
+
 class OpenDataSchemaMapException extends Exception {
 
   /**
@@ -1011,7 +1015,26 @@ function open_data_schema_map_render_api($api, $query = NULL, $queries = NULL) {
     $headers['Status'] = $e->getHTTPError();
     $result['error'] = $e->getData();
   }
-  drupal_alter('open_data_schema_map_results', $result, $api->machine_name, $api->api_schema, $ids);
+
+  // This is easier to debug than drupal_alter().
+  $modules = module_implements('open_data_schema_map_results_alter');
+  // Make SURE pod is last.
+  if (in_array('open_data_schema_pod', $modules) && end($modules) != 'open_data_schama_pod') {
+    $temp = array();
+    foreach ($modules as $module) {
+      if ($module != 'open_data_schema_pod') {
+        $temp[] = $module;
+      }
+    }
+    $temp[] = 'open_data_schema_pod';
+    $modules = $temp;
+  }
+  
+  foreach ($modules as $module) {
+    $function = $module . '_open_data_schema_map_results_alter';
+    $function($result, $api->machine_name, $api->api_schema, $ids);
+  }
+
   return array(
     'result' => $result,
     'headers' => $headers,

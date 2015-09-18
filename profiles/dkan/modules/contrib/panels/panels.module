@@ -6,7 +6,22 @@
  * Core functionality for the Panels engine.
  */
 
-define('PANELS_REQUIRED_CTOOLS_API', '2.0-alpha');
+define('PANELS_REQUIRED_CTOOLS_API', '2.0.8');
+
+/**
+ * The current working panels version.
+ *
+ * In a release, it should be 7.x-3.x, which should match what drush make will
+ * create. In a dev format, it should be 7.x-3.(x+1)-dev, which will allow
+ * modules depending on new features in panels to depend on panels > 7.x-3.x.
+ *
+ * To define a specific version of Panels as a dependency for another module,
+ * simply include a dependency line in that module's info file, e.g.:
+ *   ; Requires Panels v7.x-3.4 or newer.
+ *   dependencies[] = panels (>=3.4)
+ */
+define('PANELS_VERSION', '7.x-3.5');
+
 
 define('PANELS_TITLE_FIXED', 0); // Hide title use to be true/false. So false remains old behavior.
 define('PANELS_TITLE_NONE', 1); // And true meant no title.
@@ -43,7 +58,7 @@ function panels_theme() {
     'variables' => array('id' => NULL, 'image' => NULL, 'title' => NULL),
   );
   $theme['panels_pane'] = array(
-    'variables' => array('output' => array(), 'pane' => array(), 'display' => array()),
+    'variables' => array('content' => array(), 'pane' => array(), 'display' => array()),
     'path' => drupal_get_path('module', 'panels') . '/templates',
     'template' => 'panels-pane',
   );
@@ -269,7 +284,7 @@ function panels_permission() {
   return array(
     'use panels dashboard' => array(
       'title' => t("Use Panels Dashboard"),
-      'description' => t("Allows a user to access the !link.", array('!link' => l('Panels Dashboard', 'admin/structure/panels'))),
+      'description' => t('Allows a user to access the <a href="@url">Panels Dashboard</a>.', array('@url' => url('admin/structure/panels'))),
     ),
     'view pane admin links' => array( // @todo
       'title' => t("View administrative links on Panel panes"),
@@ -329,7 +344,9 @@ function panels_permission() {
  * Implements hook_flush_caches().
  */
 function panels_flush_caches() {
-  return array('cache_panels');
+  if (db_table_exists('cache_panels')) {
+    return array('cache_panels');
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -786,6 +803,7 @@ function panels_new_pane($type, $subtype, $set_defaults = FALSE) {
     $content_subtype = ctools_content_get_subtype($content_type, $subtype);
     $pane->configuration = ctools_content_get_defaults($content_type, $content_subtype);
   }
+  drupal_alter('panels_new_pane', $pane);
 
   return $pane;
 }
@@ -1316,6 +1334,7 @@ function template_preprocess_panels_pane(&$vars) {
   $vars['pane_suffix'] = !empty($content->pane_suffix) ? $content->pane_suffix : '';
 
   $vars['title'] = !empty($content->title) ? $content->title : '';
+  $vars['title_heading'] = !empty($content->title_heading) ? $content->title_heading : 'h2';
   $vars['title_attributes_array']['class'][] = 'pane-title';
 
   $vars['feeds'] = !empty($content->feeds) ? implode(' ', $content->feeds) : '';
@@ -1772,6 +1791,98 @@ function _panels_builder_filter($layout) {
   return empty($layout['builder']);
 }
 
+/**
+ * Implements hook_get_pane_links_alter().
+ *
+ * add links to the Panels pane dropdown menu.
+ */
+function panels_get_pane_links_alter(&$links, $pane, $content_type) {
+  if ($pane->type === "block"){
+    $prefixed_name = $pane->subtype;
+
+    // breakup the subtype string into parts.
+    $exploded_subtype = explode('-', $pane->subtype);
+
+    // get the first part of the string.
+    $subtype_prefix = $exploded_subtype[0];
+
+    // get the first part of the string and add a hyphen.
+    $subtype_prefix_hyphen = $exploded_subtype[0] . '-';
+
+    // remove the prefix block- to get the name.
+    $name_of_block = ltrim( $prefixed_name, $subtype_prefix_hyphen);
+
+    // check for user added menus created at /admin/structure/menu/add
+    // menus of that type have a subtype that is prefixed with menu-menu-
+    if (substr($prefixed_name, 0, 10) === "menu-menu-"){
+      // remove the first prefix menu- from menu-menu- to get the name.
+      $name_of_block = substr($prefixed_name, 5);
+
+      $links['top'][] = array(
+        'title' => t('Edit block'),
+        'href' => url('admin/structure/block/manage/' . $subtype_prefix . '/' . $name_of_block . '/configure', array('absolute' => TRUE)),
+        'attributes' => array('target' => array('_blank')),
+      );
+
+      $links['top'][] = array(
+        'title' => t('Edit menu links'),
+        'href' => url('admin/structure/menu/manage/' . $name_of_block, array('absolute' => TRUE)),
+        'attributes' => array('target' => array('_blank')),
+      );
+    }
+
+    // check for module provided menu blocks like Devels or Features
+    // menus of that type have a subtype that is prefixed with menu-
+    elseif(substr($prefixed_name, 0, 5) === "menu-"){
+      // remove the first prefix menu- to get the name.
+      $name_of_block = substr($prefixed_name, 5);
+
+      $links['top'][] = array(
+        'title' => t('Edit block'),
+        'href' => url('admin/structure/block/manage/' . $subtype_prefix . '/' . $name_of_block . '/configure', array('absolute' => TRUE)),
+        'attributes' => array('target' => array('_blank')),
+      );
+
+      $links['top'][] = array(
+        'title' => t('Edit menu links'),
+        'href' => url('admin/structure/menu/manage/' . $name_of_block, array('absolute' => TRUE)),
+        'attributes' => array('target' => array('_blank')),
+      );
+    }
+
+    // check for system blocks with menu links
+    elseif(substr($prefixed_name, 0, 7) === "system-") {
+      // remove the first prefix system- to get the name
+      $name_of_block = substr($prefixed_name, 7);
+
+      $names_of_system_menus = menu_list_system_menus();
+
+      $links['top'][] = array(
+        'title' => t('Edit block'),
+        'href' => url('admin/structure/block/manage/' . $subtype_prefix . '/' . $name_of_block . '/configure', array('absolute' => TRUE)),
+        'attributes' => array('target' => array('_blank')),
+      );
+
+      if (array_key_exists($name_of_block, $names_of_system_menus)){
+        $links['top'][] = array(
+          'title' => t('Edit menu links'),
+          'href' => url('admin/structure/menu/manage/' . $name_of_block, array('absolute' => TRUE)),
+          'attributes' => array('target' => array('_blank')),
+        );
+      }
+    }
+
+    // for all other blocks without menus
+    else{
+      $links['top'][] = array(
+        'title' => t('Edit block'),
+        'href' => url('admin/structure/block/manage/' . $subtype_prefix . '/' . $name_of_block . '/configure', array('absolute' => TRUE)),
+        'attributes' => array('target' => array('_blank')),
+      );
+    }
+  }
+}
+
 // --------------------------------------------------------------------------
 // Deprecated functions
 //
@@ -1791,7 +1902,7 @@ function panels_get_path($file, $base_path = FALSE, $module = 'panels') {
 function panels_preprocess_html(&$vars) {
   $panel_body_css = &drupal_static('panel_body_css');
   if (!empty($panel_body_css['body_classes_to_remove'])) {
-    $classes_to_remove = explode(' ', $panel_body_css['body_classes_to_remove']);
+    $classes_to_remove = array_filter(explode(' ', $panel_body_css['body_classes_to_remove']), 'strlen');
     foreach ($vars['classes_array'] as $key => $css_class) {
       if (in_array($css_class, $classes_to_remove)) {
         unset($vars['classes_array'][$key]);

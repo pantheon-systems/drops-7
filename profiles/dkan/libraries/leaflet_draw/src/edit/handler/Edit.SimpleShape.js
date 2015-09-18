@@ -18,8 +18,12 @@ L.Edit.SimpleShape = L.Handler.extend({
 	},
 
 	addHooks: function () {
-		if (this._shape._map) {
-			this._map = this._shape._map;
+		var shape = this._shape;
+
+		shape.setStyle(shape.options.editing);
+
+		if (shape._map) {
+			this._map = shape._map;
 
 			if (!this._markerGroup) {
 				this._initMarkers();
@@ -29,7 +33,11 @@ L.Edit.SimpleShape = L.Handler.extend({
 	},
 
 	removeHooks: function () {
-		if (this._shape._map) {
+		var shape = this._shape;
+
+		shape.setStyle(shape.options.original);
+
+		if (shape._map) {
 			this._unbindMarker(this._moveMarker);
 
 			for (var i = 0, l = this._resizeMarkers.length; i < l; i++) {
@@ -92,14 +100,16 @@ L.Edit.SimpleShape = L.Handler.extend({
 
 	_unbindMarker: function (marker) {
 		marker
-			.off('dragstart', this._onMarkerDragStart)
-			.off('drag', this._onMarkerDrag)
-			.off('dragend', this._onMarkerDragEnd);
+			.off('dragstart', this._onMarkerDragStart, this)
+			.off('drag', this._onMarkerDrag, this)
+			.off('dragend', this._onMarkerDragEnd, this);
 	},
 
 	_onMarkerDragStart: function (e) {
 		var marker = e.target;
 		marker.setOpacity(0);
+
+		this._shape.fire('editstart');
 	},
 
 	_fireEdit: function () {
@@ -124,7 +134,6 @@ L.Edit.SimpleShape = L.Handler.extend({
 		var marker = e.target;
 		marker.setOpacity(1);
 
-		this._shape.fire('edit');
 		this._fireEdit();
 	},
 

@@ -4,9 +4,8 @@
 	<title>Leaflet.draw drawing and editing tools</title>
 
 	<link rel="stylesheet" href="libs/leaflet.css" />
-	<!--[if lte IE 8]><link rel="stylesheet" href="libs/leaflet.ie.css" /><![endif]-->
 	<link rel="stylesheet" href="../dist/leaflet.draw.css" />
-	<!--[if lte IE 8]><link rel="stylesheet" href="../dist/leaflet.draw.ie.css" /><![endif]-->
+	
 
 	<script src="libs/leaflet-src.js"></script>
 
@@ -26,9 +25,10 @@
 	<script src="../src/draw/handler/Draw.Marker.js"></script>
 
 	<script src="../src/ext/LatLngUtil.js"></script>
+	<script src="../src/ext/GeometryUtil.js"></script>
 	<script src="../src/ext/LineUtil.Intersect.js"></script>
-	<script src="../src/ext/Polygon.Intersect.js"></script>
 	<script src="../src/ext/Polyline.Intersect.js"></script>
+	<script src="../src/ext/Polygon.Intersect.js"></script>
 
 	<script src="../src/Control.Draw.js"></script>
 	<script src="../src/Tooltip.js"></script>
@@ -43,20 +43,26 @@
 	<div id="map" style="width: 800px; height: 600px; border: 1px solid #ccc"></div>
 	<button id="changeColor">Rectangle -> Blue</button>
 	<script>
-		
-		var cloudmadeUrl = 'http://{s}.tile.cloudmade.com/BC9A493B41014CAABB98F0471D759707/997/256/{z}/{x}/{y}.png',
-			cloudmade = new L.TileLayer(cloudmadeUrl, {maxZoom: 18}),
-			map = new L.Map('map', {layers: [cloudmade], center: new L.LatLng(-37.7772, 175.2756), zoom: 15 });
+		var osmUrl = 'http://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+			osmAttrib = '&copy; <a href="http://openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+			osm = L.tileLayer(osmUrl, {maxZoom: 18, attribution: osmAttrib}),
+			map = new L.Map('map', {layers: [osm], center: new L.LatLng(-37.7772, 175.2756), zoom: 15 });
 
 		var drawnItems = new L.FeatureGroup();
 		map.addLayer(drawnItems);
 
+		// Set the title to show on the polygon button
+		L.drawLocal.draw.toolbar.buttons.polygon = 'Draw a sexy polygon!';
+
 		var drawControl = new L.Control.Draw({
+			position: 'topright',
 			draw: {
-				position: 'topleft',
+				polyline: {
+					metric: true
+				},
 				polygon: {
-					title: 'Draw a sexy polygon!',
 					allowIntersection: false,
+					showArea: true,
 					drawError: {
 						color: '#b00b00',
 						timeout: 1000
@@ -69,10 +75,12 @@
 					shapeOptions: {
 						color: '#662d91'
 					}
-				}
+				},
+				marker: false
 			},
 			edit: {
-				featureGroup: drawnItems
+				featureGroup: drawnItems,
+				remove: false
 			}
 		});
 		map.addControl(drawControl);

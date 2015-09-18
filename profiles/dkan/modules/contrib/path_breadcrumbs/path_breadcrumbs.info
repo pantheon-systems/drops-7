@@ -7,9 +7,9 @@ dependencies[] = ctools
 dependencies[] = entity
 dependencies[] = entity_token
 
-; Information added by Drupal.org packaging script on 2015-02-04
-version = "7.x-3.2"
+; Information added by Drupal.org packaging script on 2015-07-15
+version = "7.x-3.3"
 core = "7.x"
 project = "path_breadcrumbs"
-datestamp = "1423071784"
+datestamp = "1436947141"
 

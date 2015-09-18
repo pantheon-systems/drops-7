@@ -13,11 +13,19 @@ body.overlay {
   color: @titleslogan;
 }
 h1,h2,h3,h4 {
-  color: @text;
+  color: @title;
 }
+
+.front .panel-top h1.pane-title,
+.front .panel-top h2.pane-title,
+.front .panel-top h3.pane-title,
+.front .panel-top h4.pane-title {
+  color: @herotitle
+}
+
+.pane-dkan-sitewide-demo-front-dkan-demo-front .pane-content,
 #featured .tint,
-.panel-top .tint,
-.pane-dkan-sitewide-demo-front-dkan-demo-front .pane-content {
+.panel-top .tint {
   background-color: @top_rgb;
 }
 
@@ -54,16 +62,28 @@ div.vertical-tabs ul.vertical-tabs-list li a:hover {
   background: @toolbarbtn;
 }
 .navbar-default .navbar-nav li > a,
-.navbar-default .user-menu li > a { color: #fff; }
+.navbar-default .user-menu li > a { color: #FFFFFF; }
 
+.navbar-default .navbar-nav li.open > a,
+.navbar-default .navbar-nav .dropdown-menu { background: @top; }
+
+.navbar-default .navbar-nav .open .dropdown-menu li > a:hover,
+.navbar-default .navbar-nav .open .dropdown-menu li > a:focus,
+.navbar-default .navbar-nav .open .dropdown-menu li > a:active { background-color:@bottom; }
+
+.navbar-default .navbar-nav li.open > a:hover,
+.navbar-default .navbar-nav li.open > a:focus,
+.navbar-default .navbar-nav li.open > a:active,
 .navbar-default .navbar-nav li > a:hover,
 .navbar-default .navbar-nav li > a:focus,
+.navbar-default .navbar-nav li > a:active,
 .navbar-default .user-menu li > a:hover,
 .navbar-default .user-menu li > a:focus { background-color:@bottom; color: #fff; }
 
 .navbar-default .navbar-nav li.active > a,
 .navbar-default .navbar-nav li.active > a:hover,
 .navbar-default .navbar-nav li.active > a:focus,
+.navbar-default .navbar-nav li.active > a:active,
 .navbar-default .user-menu li.active > a,
 .navbar-default .user-menu li.active > a:hover,
 .navbar-default .user-menu li.active > a:focus { background:@linkactive; color: #fff; }
@@ -72,24 +92,24 @@ div.vertical-tabs ul.vertical-tabs-list li a:hover {
 #block-dkan-sitewide-dkan-sitewide-user-menu .links a:focus { background-color:@bottom; color: #fff; }
 
 
-.nav.nav-pills li a,
+.tabs--primary.nav-pills li a,
 .tabs--primary li a {
   border:1px solid @toolbarborder;
   background: @bg;
   color:  @top;
 }
 
-.nav.nav-pills li a:hover,
+.tabs--primary.nav-pills li a:hover,
 .tabs--primary li a:hover {
   border:1px solid @bottom;
   background: @bottom;
   color: #ffffff;
 }
 
-.nav.nav-pills > li > a.active,
-.nav.nav-pills > li > a:focus
-.nav.nav-pills li.active a:hover,
-.nav.nav-pills li.active a:focus,
+.tabs--primary.nav-pills > li > a.active,
+.tabs--primary.nav-pills > li > a:focus
+.tabs--primary.nav-pills li.active a:hover,
+.tabs--primary.nav-pills li.active a:focus,
 .tabs--primary li a.active
 .tabs--primary li a:focus {
   border:1px solid @linkactive;
@@ -101,6 +121,7 @@ div.vertical-tabs ul.vertical-tabs-list li a:hover {
 #block-views-group-block-block .block-content .group-subscribe-message {
   background-color: @top;
 }
+
 .view-group-block .views-field-nid a,
 .btn-primary,
 .links .btn,
@@ -119,6 +140,7 @@ input[type="submit"]:hover {
   border:1px solid @bottom;
   color:#ffffff;
 }
+
 
 .btn-primary:focus, 
 .btn-primary:active, 
@@ -157,11 +179,14 @@ div.autocomplete-deluxe-multiple,
 }
 
 .panel-default > .panel-heading {
-  color: @text;
+  color: @title;
   background-color: @toolbarborder;
   border-color: @toolbarborder;
 }
 
+.panel-full-width .panel-top {
+  background:@bottom;
+}
 .radix-layouts-sidebar .pane-block .pane-content,
 .radix-layouts-content .pane-content,
 .view-front-page-group-grid .span6 span, 
@@ -171,7 +196,7 @@ div.autocomplete-deluxe-multiple,
 }
 .radix-layouts-sidebar .pane-title {
   background: @toolbarborder;
-  color: @text;
+  color: @title;
 }
 .radix-layouts-sidebar div[class*="pane-facetapi"] .pane-title {
   background: #dddddd;
@@ -182,7 +207,7 @@ div.autocomplete-deluxe-multiple,
 }
 
 .horizontal-tabs ul.horizontal-tabs-list .selected strong {
-  color: @text;
+  color: @title;
 }
 
 #url-edit-prefix {
@@ -196,9 +221,9 @@ div.autocomplete-deluxe-multiple,
   color: @bg;
 }
 
-.node-dataset #data-and-resources ul.resource-list li .heading, 
-.node-dataset #data-and-resources ul.resource-list li .heading:hover {
-  color: @text;
+ul.resource-list li .heading, 
+ul.resource-list li .heading:hover {
+  color: @title;
 }
 
 .footer {

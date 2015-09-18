@@ -22,6 +22,7 @@ var deps = {
 
 	EditHandlers: {
 		src: [
+			'edit/handler/Edit.Marker.js',
 			'edit/handler/Edit.Poly.js',
 			'edit/handler/Edit.SimpleShape.js',
 			'edit/handler/Edit.Rectangle.js',
@@ -34,6 +35,7 @@ var deps = {
 	Extensions: {
 		src: [
 			'ext/LatLngUtil.js',
+			'ext/GeometryUtil.js',
 			'ext/LineUtil.Intersect.js',
 			'ext/Polyline.Intersect.js',
 			'ext/Polygon.Intersect.js'

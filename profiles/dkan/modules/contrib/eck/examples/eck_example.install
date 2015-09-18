@@ -1,0 +1,66 @@
+<?php
+
+/**
+ * @file
+ * Install and configure and entity type. Then uninstal it.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function eck_example_install() {
+
+  // To create a new Entity Type simple create an object of the Entity Type
+  // class.
+  $entity_type = new EntityType();
+
+  // An entity type is composed of 3 things: name, lable, and properties. The
+  // name is a the machine name (letters, numbers, and underscores only, no
+  // spaces). The label is the human readable name and it is used mainly for GUI
+  // displays.
+  $entity_type->name = "eck_employee";
+  $entity_type->label = "Employee";
+
+  // By default our entity types come with 2 properties, an id, and a type. This
+  // means that any entity of this type that is created (and since it is
+  // deafult, any entity creted to eck at all), will have an id and an type
+  // properties. The id is a unique to this type numerical identifier. The type
+  // property is used to store the bundle of the entity.
+  // We can easily add new properties to an entity type by using the addProperty
+  // method.
+  $entity_type->addProperty('name', 'Name', 'text');
+
+  // If you look at the method in eck.classes.inc, you will notice that it takes
+  // 3 arguments and 1 optional argument. The required arguments are 'name',
+  // 'label', and 'type'. The name an the lable serve the same function that
+  // name and label serve as part of the entity type. The type argument defines
+  // the type of data that we can store in that property.
+  // SUPPORTED TYPES: 'text', 'integer', 'decimal', 'positive_integer', 'uuid'
+  // If you want more information on how what this types look like in terms of
+  // their schema, you can look at the function eck_property_type_schema() in
+  // eck.properties.inc
+  // @todo: Allow users to define new types.
+  // The last argument is a behavior.
+  // After all of the properties we want have been added, we simply need to save
+  // the property.
+  $entity_type->save();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function eck_example_uninstall() {
+  // Deleting and entity type, and all of its content is as easy as creating
+  // one. All we have to do is load the entity types that we want to delete, and
+  // called the delete method.
+  $entity_type = EntityType::loadByName('eck_employee');
+
+  // Even though our entity type was created from code, it is possible that it
+  // was deleted from the interface, so we check to make sure we still have
+  // and entity type.
+  if ($entity_type) {
+    $entity_type->delete();
+  }
+
+  // After the module is uninstalled, the entity type is gone.
+}

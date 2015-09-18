@@ -2,16 +2,17 @@
 
 /**
  * @file
- * Test case for CCK date field mapper mappers/date.inc.
+ * Contains FeedsMapperDateTestCase.
  */
 
 /**
- * Class for testing Feeds <em>content</em> mapper.
+ * Test case for CCK date field mapper mappers/date.inc.
  *
  * @todo: Add test method iCal
  * @todo: Add test method for end date
  */
 class FeedsMapperDateTestCase extends FeedsMapperTestCase {
+
   public static function getInfo() {
     return array(
       'name' => 'Mapper: Date',
@@ -118,4 +119,154 @@ class FeedsMapperDateTestCase extends FeedsMapperTestCase {
       return parent::getFormFieldsNames($field_name, $index);
     }
   }
+
+  /**
+   * Tests if values are cleared out when an empty value is provided.
+   */
+  public function testClearOutValues() {
+    // Create content type.
+    $typename = $this->createContentType(array(), array(
+      'date' => 'date',
+      'datestamp' => 'datestamp',
+      'datetime' => 'datetime',
+    ));
+
+    // Hack to get date fields to not round to every 15 minutes.
+    foreach (array('date', 'datestamp', 'datetime') as $field) {
+      $field = 'field_' . $field;
+      $edit = array(
+        'widget_type' => 'date_select',
+      );
+      $this->drupalPost('admin/structure/types/manage/' . $typename . '/fields/' . $field . '/widget-type', $edit, 'Continue');
+      $edit = array(
+        'instance[widget][settings][increment]' => 1,
+        'field[settings][enddate_get]' => 1,
+      );
+      $this->drupalPost('admin/structure/types/manage/' . $typename . '/fields/' . $field, $edit, 'Save settings');
+      $edit = array(
+        'widget_type' => 'date_text',
+      );
+      $this->drupalPost('admin/structure/types/manage/' . $typename . '/fields/' . $field . '/widget-type', $edit, 'Continue');
+    }
+
+    // Create and configure importer.
+    $this->createImporterConfiguration('Content CSV', 'csv');
+    $this->setSettings('csv', NULL, array(
+      'content_type' => '',
+      'import_period' => FEEDS_SCHEDULE_NEVER,
+    ));
+    $this->setPlugin('csv', 'FeedsFileFetcher');
+    $this->setPlugin('csv', 'FeedsCSVParser');
+    $this->setSettings('csv', 'FeedsNodeProcessor', array(
+      'bundle' => $typename,
+      'update_existing' => 1,
+    ));
+    $this->addMappings('csv', array(
+      0 => array(
+        'source' => 'title',
+        'target' => 'title',
+        'unique' => TRUE,
+      ),
+      1 => array(
+        'source' => 'created',
+        'target' => 'field_date:start',
+      ),
+      2 => array(
+        'source' => 'end',
+        'target' => 'field_date:end',
+      ),
+      3 => array(
+        'source' => 'created',
+        'target' => 'field_datestamp:start',
+      ),
+      4 => array(
+        'source' => 'end',
+        'target' => 'field_datestamp:end',
+      ),
+      5 => array(
+        'source' => 'created',
+        'target' => 'field_datetime:start',
+      ),
+      6 => array(
+        'source' => 'end',
+        'target' => 'field_datetime:end',
+      ),
+    ));
+
+    // Import CSV file.
+    $this->importFile('csv', $this->absolutePath() . '/tests/feeds/content_date.csv');
+    $this->assertText('Created 2 nodes');
+
+    // Check the imported nodes.
+    $date_values = array(
+      1 => array(
+        'created' => '09/03/2009 - 00:12',
+        'end' => '11/03/2012 - 09:58',
+      ),
+      2 => array(
+        'created' => '09/02/2009 - 22:59',
+        'end' => '11/03/2012 - 08:46',
+      ),
+    );
+    for ($i = 1; $i <= 2; $i++) {
+      $this->drupalGet("node/$i/edit");
+      $this->assertNodeFieldValue('date', $date_values[$i]['created']);
+      $this->assertFieldByName('field_date[und][0][value2][date]', $date_values[$i]['end']);
+      $this->assertNodeFieldValue('datestamp', $date_values[$i]['created']);
+      $this->assertFieldByName('field_datestamp[und][0][value2][date]', $date_values[$i]['end']);
+      $this->assertNodeFieldValue('datetime', $date_values[$i]['created']);
+      $this->assertFieldByName('field_datetime[und][0][value2][date]', $date_values[$i]['end']);
+    }
+
+    // Import CSV file with empty values.
+    $this->importFile('csv', $this->absolutePath() . '/tests/feeds/content_empty.csv');
+    $this->assertText('Updated 2 nodes');
+
+    // Check if all values were cleared out for both nodes.
+    for ($i = 1; $i <= 2; $i++) {
+      $this->drupalGet("node/$i/edit");
+      $this->assertNoNodeFieldValue('date', $date_values[$i]['created']);
+      $this->assertNoFieldByName('field_date[und][0][value2][date]', $date_values[$i]['end']);
+      $this->assertNoNodeFieldValue('datestamp', $date_values[$i]['created']);
+      $this->assertNoFieldByName('field_datestamp[und][0][value2][date]', $date_values[$i]['end']);
+      $this->assertNoNodeFieldValue('datetime', $date_values[$i]['created']);
+      $this->assertNoFieldByName('field_datetime[und][0][value2][date]', $date_values[$i]['end']);
+      $this->drupalGet("node/$i");
+      $this->assertNoText('date_label');
+      $this->assertNoText('datestamp_label');
+      $this->assertNoText('datetime_label');
+    }
+
+    // Re-import the first file again and check if the values returned.
+    $this->importFile('csv', $this->absolutePath() . '/tests/feeds/content_date.csv');
+    $this->assertText('Updated 2 nodes');
+    for ($i = 1; $i <= 2; $i++) {
+      $this->drupalGet("node/$i/edit");
+      $this->assertNodeFieldValue('date', $date_values[$i]['created']);
+      $this->assertFieldByName('field_date[und][0][value2][date]', $date_values[$i]['end']);
+      $this->assertNodeFieldValue('datestamp', $date_values[$i]['created']);
+      $this->assertFieldByName('field_datestamp[und][0][value2][date]', $date_values[$i]['end']);
+      $this->assertNodeFieldValue('datetime', $date_values[$i]['created']);
+      $this->assertFieldByName('field_datetime[und][0][value2][date]', $date_values[$i]['end']);
+    }
+
+    // Import CSV file with non-existent values.
+    $this->importFile('csv', $this->absolutePath() . '/tests/feeds/content_non_existent.csv');
+    $this->assertText('Updated 2 nodes');
+
+    // Check if all values were cleared out for node 1.
+    $this->drupalGet('node/1/edit');
+    $this->assertNoNodeFieldValue('date', $date_values[1]['created']);
+    $this->assertNoFieldByName('field_date[und][0][value2][date]', $date_values[1]['end']);
+    $this->assertNoNodeFieldValue('datestamp', $date_values[1]['created']);
+    $this->assertNoFieldByName('field_datestamp[und][0][value2][date]', $date_values[1]['end']);
+    $this->assertNoNodeFieldValue('datetime', $date_values[1]['created']);
+    $this->assertNoFieldByName('field_datetime[und][0][value2][date]', $date_values[1]['end']);
+    // Check if labels for fields that should be cleared out are not shown.
+    $this->drupalGet('node/1');
+    $this->assertNoText('date_label');
+    $this->assertNoText('datestamp_label');
+    $this->assertNoText('datetime_label');
+  }
+
 }

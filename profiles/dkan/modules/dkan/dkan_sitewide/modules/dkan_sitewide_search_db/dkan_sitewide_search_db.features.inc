@@ -29,70 +29,79 @@ function dkan_sitewide_search_db_views_api($module = NULL, $api = NULL) {
 function dkan_sitewide_search_db_default_search_api_index() {
   $items = array();
   $items['datasets'] = entity_import('search_api_index', '{
-    "name" : "Datasets",
+    "name" : "datasets",
     "machine_name" : "datasets",
     "description" : null,
     "server" : "datasets",
     "item_type" : "node",
     "options" : {
+      "datasource" : { "bundles" : [ "dataset" ] },
       "index_directly" : 1,
       "cron_limit" : "50",
       "fields" : {
-        "type" : { "type" : "string" },
-        "title" : { "type" : "string" },
-        "status" : { "type" : "boolean" },
-        "changed" : { "type" : "date" },
         "author" : { "type" : "integer", "entity_type" : "user" },
+        "changed" : { "type" : "date" },
+        "created" : { "type" : "date" },
+        "field_author" : { "type" : "string" },
         "field_license" : { "type" : "string" },
+        "field_resources:body:value" : { "type" : "list\\u003Ctext\\u003E" },
+        "field_resources:field_format" : { "type" : "list\\u003Cinteger\\u003E", "entity_type" : "taxonomy_term" },
         "field_tags" : { "type" : "list\\u003Cinteger\\u003E", "entity_type" : "taxonomy_term" },
         "og_group_ref" : { "type" : "list\\u003Cinteger\\u003E", "entity_type" : "node" },
+        "search_api_access_node" : { "type" : "list\\u003Cstring\\u003E" },
         "search_api_language" : { "type" : "string" },
         "search_api_viewed" : { "type" : "text" },
-        "search_api_access_node" : { "type" : "list\\u003Cstring\\u003E" },
-        "field_resources:field_format" : { "type" : "list\\u003Cinteger\\u003E", "entity_type" : "taxonomy_term" },
-        "field_resources:body:value" : { "type" : "list\\u003Ctext\\u003E" }
+        "status" : { "type" : "boolean" },
+        "title" : { "type" : "string" }
       },
       "data_alter_callbacks" : {
-        "search_api_alter_bundle_filter" : {
-          "status" : 1,
-          "weight" : "-10",
-          "settings" : { "default" : "0", "bundles" : { "dataset" : "dataset" } }
-        },
         "search_api_alter_node_access" : { "status" : 1, "weight" : "0", "settings" : [] },
-        "search_api_alter_node_status" : { "status" : 0, "weight" : "0", "settings" : [] },
+        "search_api_alter_node_status" : { "status" : 1, "weight" : "0", "settings" : [] },
         "search_api_alter_add_hierarchy" : { "status" : 0, "weight" : "0", "settings" : { "fields" : [] } },
         "search_api_alter_add_viewed_entity" : { "status" : 1, "weight" : "0", "settings" : { "mode" : "full" } },
-        "search_api_alter_add_url" : { "status" : 0, "weight" : "0", "settings" : [] },
-        "search_api_alter_add_aggregation" : { "status" : 0, "weight" : "0", "settings" : [] }
+        "search_api_alter_add_aggregation" : { "status" : 0, "weight" : "0", "settings" : [] },
+        "search_api_alter_add_url" : { "status" : 0, "weight" : "0", "settings" : [] }
       },
       "processors" : {
-        "search_api_case_ignore" : {
-          "status" : 0,
-          "weight" : "0",
-          "settings" : { "fields" : { "title" : true } }
-        },
+        "search_api_case_ignore" : { "status" : 0, "weight" : "0", "settings" : { "fields" : [] } },
         "search_api_html_filter" : {
           "status" : 0,
           "weight" : "10",
           "settings" : {
-            "fields" : { "title" : true },
+            "fields" : [],
             "title" : 0,
             "alt" : 1,
             "tags" : "h1 = 5\\r\\nh2 = 3\\r\\nh3 = 2\\r\\nstrong = 2\\r\\nb = 2\\r\\nem = 1.5\\r\\nu = 1.5"
           }
         },
         "search_api_tokenizer" : {
-          "status" : 0,
+          "status" : 1,
           "weight" : "20",
-          "settings" : { "fields" : [], "spaces" : "[^[:alnum:]]", "ignorable" : "[\\u0027]" }
+          "settings" : {
+            "fields" : { "search_api_viewed" : true },
+            "spaces" : "[^[:alnum:]]",
+            "ignorable" : "[\\u0027]"
+          }
         },
         "search_api_stopwords" : {
           "status" : 0,
           "weight" : "30",
           "settings" : {
-            "fields" : { "title" : true },
+            "fields" : [],
             "file" : "",
             "stopwords" : "but\\r\\ndid\\r\\nthe this that those\\r\\netc"
+          }
+        },
+        "search_api_highlighting" : {
+          "status" : 0,
+          "weight" : "35",
+          "settings" : {
+            "prefix" : "\\u003Cstrong\\u003E",
+            "suffix" : "\\u003C\\/strong\\u003E",
+            "excerpt" : 1,
+            "excerpt_length" : "256",
+            "exclude_fields" : [],
+            "highlight" : "always"
           }
         }
       }
@@ -110,60 +119,26 @@ function dkan_sitewide_search_db_default_search_api_index() {
 function dkan_sitewide_search_db_default_search_api_server() {
   $items = array();
   $items['datasets'] = entity_import('search_api_server', '{
-    "name" : "Datasets",
+    "name" : "datasets",
     "machine_name" : "datasets",
     "description" : "",
     "class" : "search_api_db_service",
     "options" : {
       "database" : "default:default",
-      "min_chars" : "1",
+      "min_chars" : "2",
+      "partial_matches" : 0,
       "indexes" : { "datasets" : {
-          "type" : {
-            "table" : "search_api_db_datasets_type",
-            "type" : "string",
-            "boost" : "1.0"
-          },
           "title" : {
-            "table" : "search_api_db_datasets_title",
+            "table" : "search_api_db_datasets",
+            "column" : "title",
             "type" : "string",
-            "boost" : "1.0"
-          },
-          "status" : {
-            "table" : "search_api_db_datasets_status",
-            "type" : "boolean",
             "boost" : "1.0"
           },
           "author" : {
-            "table" : "search_api_db_datasets_author",
+            "table" : "search_api_db_datasets",
+            "column" : "author",
             "type" : "integer",
             "boost" : "1.0"
-          },
-          "search_api_language" : {
-            "table" : "search_api_db_datasets_search_api_language",
-            "type" : "string",
-            "boost" : "1.0"
-          },
-          "search_api_viewed" : {
-            "table" : "search_api_db_datasets_search_api_viewed",
-            "type" : "text",
-            "boost" : "1.0"
-          },
-          "search_api_access_node" : {
-            "table" : "search_api_db_datasets_search_api_access_node",
-            "type" : "list\\u003Cstring\\u003E",
-            "boost" : "1.0"
-          },
-          "changed" : {
-            "table" : "search_api_db_datasets",
-            "column" : "changed",
-            "type" : "date",
-            "boost" : "1.0"
-          },
-          "field_license" : {
-            "table" : "search_api_db_datasets",
-            "type" : "string",
-            "boost" : "1.0",
-            "column" : "field_license"
           },
           "field_tags" : {
             "table" : "search_api_db_datasets_field_tags",
@@ -171,10 +146,39 @@ function dkan_sitewide_search_db_default_search_api_server() {
             "type" : "list\\u003Cinteger\\u003E",
             "boost" : "1.0"
           },
-          "og_group_ref" : {
-            "table" : "search_api_db_datasets_og_group_ref",
+          "field_author" : {
+            "table" : "search_api_db_datasets",
+            "column" : "field_author",
+            "type" : "string",
+            "boost" : "1.0"
+          },
+          "field_license" : {
+            "table" : "search_api_db_datasets",
+            "column" : "field_license",
+            "type" : "string",
+            "boost" : "1.0"
+          },
+          "search_api_language" : {
+            "table" : "search_api_db_datasets",
+            "column" : "search_api_language",
+            "type" : "string",
+            "boost" : "1.0"
+          },
+          "status" : {
+            "table" : "search_api_db_datasets",
+            "column" : "status",
+            "type" : "boolean",
+            "boost" : "1.0"
+          },
+          "search_api_viewed" : {
+            "table" : "search_api_db_datasets_text",
+            "type" : "text",
+            "boost" : "1.0"
+          },
+          "search_api_access_node" : {
+            "table" : "search_api_db_datasets_search_api_access_node",
             "column" : "value",
-            "type" : "list\\u003Cinteger\\u003E",
+            "type" : "list\\u003Cstring\\u003E",
             "boost" : "1.0"
           },
           "field_resources:field_format" : {
@@ -184,8 +188,26 @@ function dkan_sitewide_search_db_default_search_api_server() {
             "boost" : "1.0"
           },
           "field_resources:body:value" : {
-            "table" : "search_api_db_datasets_field_resources_body_value",
+            "table" : "search_api_db_datasets_text",
             "type" : "list\\u003Ctext\\u003E",
+            "boost" : "1.0"
+          },
+          "og_group_ref" : {
+            "boost" : "1.0",
+            "column" : "value",
+            "table" : "search_api_db_datasets_og_group_ref_2",
+            "type" : "list\\u003Cinteger\\u003E"
+          },
+          "created" : {
+            "table" : "search_api_db_datasets",
+            "column" : "created",
+            "type" : "date",
+            "boost" : "1.0"
+          },
+          "changed" : {
+            "table" : "search_api_db_datasets",
+            "column" : "changed",
+            "type" : "date",
             "boost" : "1.0"
           }
         }

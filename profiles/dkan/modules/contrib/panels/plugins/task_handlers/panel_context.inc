@@ -317,11 +317,21 @@ function panels_panel_context_render($handler, $base_contexts, $args, $test = TR
   // Remove and add body element classes
   $panel_body_css = &drupal_static('panel_body_css');
 
-  if (isset($handler->conf['body_classes_to_remove']) && !isset($panel_body_css['body_classes_to_remove'])) {
-    $panel_body_css['body_classes_to_remove'] = $handler->conf['body_classes_to_remove'];
+  if (isset($handler->conf['body_classes_to_remove'])) {
+    if (!isset($panel_body_css['body_classes_to_remove'])) {
+      $panel_body_css['body_classes_to_remove'] = $handler->conf['body_classes_to_remove'];
+    }
+    else{
+      $panel_body_css['body_classes_to_remove'] .= ' ' . $handler->conf['body_classes_to_remove'];
+    }
   }
-  if (isset($handler->conf['body_classes_to_add']) && !isset($panel_body_css['body_classes_to_add'])) {
-    $panel_body_css['body_classes_to_add'] = $handler->conf['body_classes_to_add'];
+  if (isset($handler->conf['body_classes_to_add'])) {
+    if (!isset($panel_body_css['body_classes_to_add'])) {
+      $panel_body_css['body_classes_to_add'] = $handler->conf['body_classes_to_add'];
+    }
+    else {
+      $panel_body_css['body_classes_to_add'] .= ' '. $handler->conf['body_classes_to_add'];
+    }
   }
 
   $info = array(
@@ -763,7 +773,7 @@ function panels_panel_context_edit_settings($form, &$form_state) {
   $form['conf']['body_classes_to_remove'] = array(
     '#type' => 'textfield',
     '#size' => 128,
-    '#default_value' => $conf['body_classes_to_remove'],
+    '#default_value' => empty($conf['body_classes_to_remove']) ? '' : $conf['body_classes_to_remove'],
     '#title' => t('Remove body CSS classes'),
     '#description' => t('The CSS classes to remove from the body element of this page. Separated by a space. For example: no-sidebars one-sidebar sidebar-first sidebar-second two-sidebars.'),
   );
@@ -771,7 +781,7 @@ function panels_panel_context_edit_settings($form, &$form_state) {
   $form['conf']['body_classes_to_add'] = array(
     '#type' => 'textfield',
     '#size' => 128,
-    '#default_value' => $conf['body_classes_to_add'],
+    '#default_value' => empty($conf['body_classes_to_add']) ? '' : $conf['body_classes_to_add'],
     '#title' => t('Add body CSS classes'),
     '#description' => t('The CSS classes to add to the body element of this page. Separated by a space. For example: no-sidebars one-sidebar sidebar-first sidebar-second two-sidebars.'),
   );

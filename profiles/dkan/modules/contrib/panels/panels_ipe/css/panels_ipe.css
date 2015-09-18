@@ -241,7 +241,9 @@ div.panels-ipe-handlebar-wrapper li.delete a span {
 div.panels-ipe-handlebar-wrapper li a:hover,
 div.panels-ipe-dragtitle span:hover,
 div.panels-ipe-newblock a:hover,
-span.panels-ipe-draghandle-icon:hover {
+span.panels-ipe-draghandle-icon:hover,
+div.panels-ipe-handlebar-wrapper li a:focus,
+div.panels-ipe-newblock a:focus {
   background: #E6E6E6;
   background-image: linear-gradient(bottom, #C5C5C5 0%, #FAFAFA 100%);
   background-image: -o-linear-gradient(bottom, #C5C5C5 0%, #FAFAFA 100%);
@@ -382,6 +384,7 @@ div.panels-ipe-control .form-submit {
 
 div.panels-ipe-control input.panels-ipe-save, div.panels-ipe-control input.panels-ipe-cancel,
 div.panels-ipe-control input.panels-ipe-save:hover, div.panels-ipe-control input.panels-ipe-cancel:hover,
+div.panels-ipe-control input.panels-ipe-save:focus, div.panels-ipe-control input.panels-ipe-cancel:focus,
 div.panels-ipe-control input.panels-ipe-save:active, div.panels-ipe-control input.panels-ipe-cancel:active {
   background-repeat: no-repeat;
 }
@@ -394,7 +397,7 @@ div.panels-ipe-pseudobutton-container a {
   text-decoration: none;
 }
 
-div.panels-ipe-control input.panels-ipe-save {
+div.panels-ipe-control .panels-ipe-save {
   background-image: url(../images/icon-save.png);
   background-image: url(../images/icon-save.png), linear-gradient(bottom, #383838 0%, #666666 100%);
   background-image: url(../images/icon-save.png), -o-linear-gradient(bottom, #383838 0%, #666666 100%);
@@ -411,7 +414,7 @@ div.panels-ipe-control input.panels-ipe-save {
   );
 }
 
-div.panels-ipe-control input.panels-ipe-cancel {
+div.panels-ipe-control .panels-ipe-cancel {
   background-image: url(../images/icon-close.png);
   background-image: url(../images/icon-close.png), linear-gradient(bottom, #383838 0%, #666666 100%);
   background-image: url(../images/icon-close.png), -o-linear-gradient(bottom, #383838 0%, #666666 100%);
@@ -429,7 +432,9 @@ div.panels-ipe-control input.panels-ipe-cancel {
 }
 
 div.panels-ipe-pseudobutton-container:hover,
-div.panels-ipe-control .form-submit:hover {
+div.panels-ipe-control .form-submit:hover,
+div.panels-ipe-pseudobutton-container:focus,
+div.panels-ipe-control .form-submit:focus {
   background: #999999;
   background-image: linear-gradient(bottom, #3D3D3D 0%, #999999 100%);
   background-image: -o-linear-gradient(bottom, #3D3D3D 0%, #999999 100%);
@@ -447,11 +452,13 @@ div.panels-ipe-control .form-submit:hover {
   color: #FFF;
 }
 
-div.panels-ipe-pseudobutton-container a:hover {
+div.panels-ipe-pseudobutton-container a:hover,
+div.panels-ipe-pseudobutton-container a:focus {
   color: #FFF;
 }
 
-div.panels-ipe-control input.panels-ipe-cancel:hover {
+div.panels-ipe-control .panels-ipe-cancel:hover,
+div.panels-ipe-control .panels-ipe-cancel:focus {
   background-image: url(../images/icon-close.png), linear-gradient(bottom, #3D3D3D 0%, #999999 100%);
   background-image: url(../images/icon-close.png), -o-linear-gradient(bottom, #3D3D3D 0%, #999999 100%);
   background-image: url(../images/icon-close.png), -moz-linear-gradient(bottom, #3D3D3D 0%, #999999 100%);
@@ -467,7 +474,8 @@ div.panels-ipe-control input.panels-ipe-cancel:hover {
   );
 }
 
-div.panels-ipe-control input.panels-ipe-save:hover {
+div.panels-ipe-control .panels-ipe-save:hover,
+div.panels-ipe-control .panels-ipe-save:focus {
   background-image: url(../images/icon-save.png), linear-gradient(bottom, #3D3D3D 0%, #999999 100%);
   background-image: url(../images/icon-save.png), -o-linear-gradient(bottom, #3D3D3D 0%, #999999 100%);
   background-image: url(../images/icon-save.png), -moz-linear-gradient(bottom, #3D3D3D 0%, #999999 100%);
@@ -507,7 +515,7 @@ div.panels-ipe-pseudobutton-container a:active {
   color: #CCC;
 }
 
-div.panels-ipe-control input.panels-ipe-cancel:active {
+div.panels-ipe-control .panels-ipe-cancel:active {
   background-image: url(../images/icon-close.png), linear-gradient(bottom, #616161 0%, #333333 100%);
   background-image: url(../images/icon-close.png), -o-linear-gradient(bottom, #616161 0%, #333333 100%);
   background-image: url(../images/icon-close.png), -moz-linear-gradient(bottom, #616161 0%, #333333 100%);
@@ -523,7 +531,7 @@ div.panels-ipe-control input.panels-ipe-cancel:active {
   );
 }
 
-div.panels-ipe-control input.panels-ipe-save:active {
+div.panels-ipe-control .panels-ipe-save:active {
   background-image: url(../images/icon-save.png), linear-gradient(bottom, #616161 0%, #333333 100%);
   background-image: url(../images/icon-save.png), -o-linear-gradient(bottom, #616161 0%, #333333 100%);
   background-image: url(../images/icon-save.png), -moz-linear-gradient(bottom, #616161 0%, #333333 100%);
@@ -537,6 +545,12 @@ div.panels-ipe-control input.panels-ipe-save:active {
     color-stop(0, #616161),
     color-stop(1, #333333)
   );
+}
+
+div.panels-ipe-control .panels-ipe-save, div.panels-ipe-control .panels-ipe-cancel,
+div.panels-ipe-control .panels-ipe-save:hover, div.panels-ipe-control .panels-ipe-cancel:hover,
+div.panels-ipe-control .panels-ipe-save:active, div.panels-ipe-control .panels-ipe-cancel:active {
+  background-repeat: no-repeat;
 }
 
 div.panels-ipe-pseudobutton-container a.panels-ipe-startedit {
@@ -556,4 +570,8 @@ div.panels-ipe-button-container {
 
 form#panels-ipe-edit-control-form {
   text-align: center;
+}
+
+.panels-ipe-dragbar-admin-title{
+  font-size: 0.9em;
 }

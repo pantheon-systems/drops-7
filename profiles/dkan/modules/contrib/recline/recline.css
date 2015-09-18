@@ -59,3 +59,9 @@ select, textarea, input[type="text"], input[type="password"], input[type="dateti
  height: 200px;
  overflow: auto;
 }
+
+#recline-embeded .download,
+#recline-embeded .recline-embed,
+#recline-embeded .field-label{
+  display: none;
+}

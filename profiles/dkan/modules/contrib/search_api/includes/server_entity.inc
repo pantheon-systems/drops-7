@@ -74,8 +74,8 @@ class SearchApiServer extends Entity {
   /**
    * Constructor as a helper to the parent constructor.
    */
-  public function __construct(array $values = array()) {
-    parent::__construct($values, 'search_api_server');
+  public function __construct(array $values = array(), $entity_type = 'search_api_server') {
+    parent::__construct($values, $entity_type);
   }
 
   /**

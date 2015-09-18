@@ -30,22 +30,33 @@ files[] = plugins/FeedsUserProcessor.inc
 
 ; Tests
 files[] = tests/feeds.test
+files[] = tests/common_syndication_parser.test
 files[] = tests/feeds_date_time.test
 files[] = tests/feeds_mapper_date.test
 files[] = tests/feeds_mapper_date_multiple.test
 files[] = tests/feeds_mapper_field.test
 files[] = tests/feeds_mapper_file.test
+files[] = tests/feeds_mapper_hooks.test
+files[] = tests/feeds_mapper_link.test
 files[] = tests/feeds_mapper_path.test
 files[] = tests/feeds_mapper_profile.test
+files[] = tests/feeds_mapper_unique.test
 files[] = tests/feeds_mapper.test
 files[] = tests/feeds_mapper_config.test
 files[] = tests/feeds_fetcher_file.test
+files[] = tests/feeds_mapper_format_config.test
+files[] = tests/feeds_fetcher_http.test
+files[] = tests/feeds_parser_sitemap.test
+files[] = tests/feeds_parser_syndication.test
 files[] = tests/feeds_processor_node.test
 files[] = tests/feeds_processor_term.test
 files[] = tests/feeds_processor_user.test
+files[] = tests/feeds_push.test
 files[] = tests/feeds_scheduler.test
 files[] = tests/feeds_mapper_link.test
+files[] = tests/feeds_mapper_summary.test
 files[] = tests/feeds_mapper_taxonomy.test
+files[] = tests/http_request.test
 files[] = tests/parser_csv.test
 
 ; Views integration
@@ -55,11 +66,9 @@ files[] = views/feeds_views_handler_field_log_message.inc
 files[] = views/feeds_views_handler_field_severity.inc
 files[] = views/feeds_views_handler_field_source.inc
 files[] = views/feeds_views_handler_filter_severity.inc
+files[] = views/feeds_views_plugin_argument_validate_feed_nid.inc
 
-
-; Information added by drush on 2015-04-14
-version = "7.x-2.0-alpha8+8-dev"
-core = "7.x"
+; Information added by drush on 2015-07-02
+version = "7.x-2.0-beta1+0-dev"
 project = "feeds"
-datestamp = "1429038843"
-
+datestamp = "1435854944"

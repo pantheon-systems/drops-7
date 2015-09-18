@@ -1,4 +1,11 @@
-7.x-2.x
+7.x-1.9 2015-09-17
+--------------------------
+- Add support for SVG logos
+- New option to use solid color for background/hero graphic instead of image
+- Improved Colorizer support for different page elements
+- Numerous bug fixes and small styling improvements
+
+7.x-1.2
 ------------------
 - Switch to radix subtheme
 - Updates for panels layouts

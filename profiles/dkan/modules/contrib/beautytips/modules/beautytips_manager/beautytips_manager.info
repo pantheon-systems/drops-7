@@ -6,10 +6,7 @@ core = 7.x
 dependencies[] = beautytips
 dependencies[] = ctools
 
-
-; Information added by drush on 2015-04-14
+; Information added by drush on 2012-11-02
 version = "7.x-2.0-beta2+7-dev"
-core = "7.x"
 project = "beautytips"
-datestamp = "1429038366"
-
+datestamp = "1351892263"

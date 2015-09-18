@@ -28,8 +28,23 @@ class SearchApiViewsHandlerSort extends views_handler_sort {
       unset($this->query->orderby);
       $sort = &$this->query->getSort();
       $sort = array();
+      unset($sort);
     }
-    $this->query->sort($this->real_field, $this->options['order']);
+
+    // If two of the same fields are used for sort, ignore the latter in order
+    // for the prior to take precedence. (Temporary workaround until
+    // https://www.drupal.org/node/2145547 is fixed in Views.)
+    $alreadySorted = $this->query->getSort();
+    if (is_array($alreadySorted) && isset($alreadySorted[$this->real_field])) {
+      return;
+    }
+
+    try {
+      $this->query->sort($this->real_field, $this->options['order']);
+    }
+    catch (SearchApiException $e) {
+      $this->query->abort($e->getMessage());
+    }
   }
 
 }

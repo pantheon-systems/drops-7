@@ -1,0 +1,120 @@
+<?php
+
+/**
+ * Implements hook_views_api().
+ */
+function draggableviews_book_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'draggableviews_book'),
+  );
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function draggableviews_book_ctools_plugin_directory($module, $plugin) {
+  if (($module == 'draggableviews') && ($plugin == 'handler' || $plugin == 'hierarchy_handler')) {
+    return 'handlers';
+  }
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * Set custom access callback to "Order Outline" view.
+ */
+function draggableviews_book_menu_alter(&$items) {
+  $items['node/%/book']['access callback'] = '_draggableviews_book_access';
+  $items['node/%/book']['access arguments'] = array(1);
+}
+
+/**
+ * Check whether item has children.
+ */
+function _draggableviews_book_access($nid) {
+  return db_query('SELECT has_children FROM {menu_links} WHERE module = :module AND link_path = :link_path', array(':module' => 'book', ':link_path' => 'node/' . $nid))->fetchField();
+}
+
+/**
+ * Implements hook_views_post_execute().
+ *
+ * We manually sort results array according to the weights of depth levels.
+ */
+function draggableviews_book_views_post_execute($view) {
+  if (!isset($view->result[0]->draggableviews_book_mlid)) {
+    return;
+  }
+
+  // First prepare array of mlid keyed items.
+  $keyed_result = array();
+  foreach ($view->result as $result_item) {
+    $result_item->weight = array();
+    $keyed_result[$result_item->draggableviews_book_mlid] = $result_item;
+  }
+
+  // Set the weights arrays for every item. This collects weights of all parents
+  // plus its own weight. Weights are saved according to depth levels.
+  foreach ($keyed_result as &$item) {
+    _draggableviews_book_result_set_weight($item, $keyed_result);
+  }
+
+  // Sort items with custom sort callback.
+  usort($keyed_result, '_draggableviews_book_uasort');
+
+  $view->result = $keyed_result;
+}
+
+/**
+ * Set the weight array of item.
+ */
+function _draggableviews_book_result_set_weight(&$item, $result) {
+  // If weight is already calculated we simply return it.
+  if (!empty($item->weight)) {
+    return $item->weight;
+  }
+
+  // Load weights array of parent (if parent item is available).
+  $parent_weight = array();
+  if (isset($result[$item->draggableviews_book_plid])) {
+    $parent_weight = _draggableviews_book_result_set_weight($result[$item->draggableviews_book_plid], $result);
+  }
+
+  // Set the weight as sum of parents weights and
+  // its own weight according to depth.
+  $item->weight = $parent_weight + array($item->draggableviews_book_depth => $item->draggableviews_book_weight);
+
+  return $item->weight;
+}
+
+/**
+ * Custom sort callback based on weights arrays.
+ */
+function _draggableviews_book_uasort($item1, $item2) {
+  for ($i = 0; $i < 10; $i++) {
+    // Item 1 is less than item 2.
+    if (isset($item1->weight[$i]) && !isset($item2->weight[$i])) {
+      return 1;
+    }
+
+    // Item 2 is less than item 1.
+    if (!isset($item1->weight[$i]) && isset($item2->weight[$i])) {
+      return -1;
+    }
+
+    if (isset($item1->weight[$i]) && isset($item2->weight[$i])) {
+      if ($item1->weight[$i] != $item2->weight[$i]) {
+        return ($item1->weight[$i] < $item2->weight[$i]) ? -1 : 1;
+      }
+      elseif (isset($item1->weight[$i+1]) || isset($item2->weight[$i+1])) {
+        // Loop again as there are more weights at a greater depth to compare.
+        continue;
+      }
+      else {
+        // By elimination, we know the weight and depth are the same.  Sort by title.
+        return strcmp($item1->node_title, $item2->node_title);
+
+      }
+    }
+  }
+}

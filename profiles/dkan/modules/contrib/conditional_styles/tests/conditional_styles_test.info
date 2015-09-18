@@ -1,0 +1,15 @@
+name = "Conditional Stylesheets Tests"
+package = Testing
+
+core = 7.x
+hidden = TRUE
+dependencies[] = conditional_styles
+
+files[] = conditional_styles_test.module
+
+; Information added by drupal.org packaging script on 2013-07-11
+version = "7.x-2.2"
+core = "7.x"
+project = "conditional_styles"
+datestamp = "1373559072"
+

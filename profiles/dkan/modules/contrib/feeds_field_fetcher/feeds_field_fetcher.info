@@ -4,9 +4,7 @@ package = Feeds
 core = 7.x
 dependencies[] = feeds
 
-
-; Information added by drush on 2015-04-14
+; Information added by drush on 2013-04-15
 version = "master-dev"
 project = "feeds_field_fetcher"
-datestamp = "1429038844"
-
+datestamp = "1366048821"

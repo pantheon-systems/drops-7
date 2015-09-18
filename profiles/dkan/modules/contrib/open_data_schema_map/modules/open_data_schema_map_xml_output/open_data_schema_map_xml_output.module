@@ -56,7 +56,12 @@ function open_data_schema_map_xml_output_odsm_page_overview_alter(&$data) {
  */
 function open_data_schema_map_xml_output_odsm_output_format() {
   return array(
-    'xml' => 'open_data_schema_map_xml_output_render'
+    'xml' => array(
+      'callback' => 'open_data_schema_map_xml_output_render',
+      'headers' => array(
+        'Content-Type' => 'application/xml',
+      ),
+    ),
   );
 }
 

@@ -8,8 +8,9 @@
  * Implements theme_settings().
  */
 function nuboot_radix_form_system_theme_settings_alter(&$form, &$form_state) {
+  //drupal_set_message('<pre>' . print_r($form, TRUE) . '</pre>');
   // Ensure this include file is loaded when the form is rebuilt from the cache.
-  $form_state['build_info']['files']['form'] = drupal_get_path('theme', 'default') . '/theme-settings.php';
+  $form_state['build_info']['files']['form'] = drupal_get_path('theme', 'nuboot_radix') . '/theme-settings.php';
 
   // Add theme settings here.
   $form['nuboot_radix_theme_settings'] = array(
@@ -32,70 +33,68 @@ function nuboot_radix_form_system_theme_settings_alter(&$form, &$form_state) {
     '#title' => t('Hero Unit'),
     '#group' => 'general',
   );
-  // Default path for image.
-  $hero_path = theme_get_setting('hero_path');
-  if (file_uri_scheme($hero_path) == 'public') {
-    $hero_path = file_uri_target($hero_path);
-  }
-
-  // Helpful text showing the file name, non-editable.
-  $form['hero']['hero_path'] = array(
-    '#type' => 'textfield',
-    '#title' => 'Path to front page background image',
-    '#default_value' => $hero_path,
-    '#disabled' => TRUE,
-  );
   // Upload field.
-  $form['hero']['hero_upload'] = array(
-    '#type' => 'file',
-    '#title' => 'Upload a new photo for the hero unit',
+  $form['hero']['hero_file'] = array(
+    '#type' => 'managed_file',
+    '#title' => t('Upload a new photo for the hero section background'),
     '#description' => t('<p>The hero unit is the large featured area located on the front page. 
       This theme supplies a default background image for this area. You may upload a different 
       photo here and it will replace the default background image.</p><p>Max. file size: 2 MB
       <br>Recommended pixel size: 1920 x 400<br>Allowed extensions: .png .jpg .jpeg</p>'),
+    '#required' => FALSE,
+    '#upload_location' => file_default_scheme() . '://theme/backgrounds/',
+    '#default_value' => theme_get_setting('hero_file'), 
     '#upload_validators' => array(
-      'file_validate_extensions' => array('png jpg jpeg'),
+      'file_validate_extensions' => array('gif png jpg jpeg'),
     ),
   );
-  // Attach custom submit handler to the form.
-  $form['#submit'][] = 'nuboot_radix_settings_submit';
 
+  // Solid color background.
+  $form['hero']['background_option'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Solid color option'),
+    '#description' => t('<p>Enter a hex value here to use a solid background color rather than an image in the hero unit. Make sure the image field above is empty.'),
+    '#required' => FALSE,
+    '#default_value' => theme_get_setting('background_option'),
+    '#element_validate' => array('_background_option_setting'),
+  );
+
+  // Add svg logo option.
+  $form['logo']['settings']['svg_logo'] = array(
+    '#type' => 'managed_file',
+    '#title' => t('Upload an .svg version of your logo'),
+    '#description' => t('<p>Be sure to also add a .png version of your logo with the <em>Upload logo image</em> field above for older browsers that do not support .svg files. Both files should have the same name, only the suffix should change (i.e. logo.png & logo.svg).</p>'),
+    '#required' => FALSE,
+    '#upload_location' => file_default_scheme() . '://',
+    '#default_value' => theme_get_setting('svg_logo'), 
+    '#upload_validators' => array(
+      'file_validate_extensions' => array('svg'),
+    ),
+  );
   // Return the additional form widgets.
   return $form;
 }
 
 /**
- * Implements hook_setings_submit().
+ * Helper function to validate background color field
  */
-function nuboot_radix_settings_submit($form, &$form_state) {
-  $settings = array();
-  // If the user entered a path relative to the system files directory for
-  // for the hero unit, store a public:// URI so the theme system can handle it.
-  if (!empty($values['hero_path'])) {
-    $values['hero_path'] = _system_theme_settings_validate_path($values['hero_path']);
-  }
-  // Get the previous value.
-  $previous = $form['hero']['hero_path']['#default_value'];
-  if ($previous !== 'profiles/dkan/themes/contrib/nuboot_radix/assets/images/hero.jpg') {
-    $previous = 'public://' . $previous;
-  }
-  else {
-    $previous = FALSE;
-  }
-  if ($file = file_save_upload('hero_upload')) {
-    $parts = pathinfo($file->filename);
-    $destination = 'public://' . $parts['basename'];
-    $file->status = FILE_STATUS_PERMANENT;
-    if (file_copy($file, $destination, FILE_EXISTS_REPLACE)) {
-      $_POST['hero_path'] = $form_state['values']['hero_path'] = $destination;
-      // If new file has a different name than the old one, delete the old.
-      if ($previous && $destination != $previous) {
-        drupal_unlink($previous);
-      }
+function _background_option_setting($element, &$form, &$form_state) {
+  if(!empty($element['#value'])) {
+    $hex = $element['#value'];
+    // Must be a string.
+    $valid = is_string($hex);
+    // Hash prefix is optional.
+    $hex = ltrim($hex, '#');
+    // Must be either RGB or RRGGBB.
+    $length = strlen($hex);
+    $valid = $valid && ($length === 3 || $length === 6);
+    // Must be a valid hex value.
+    $valid = $valid && ctype_xdigit($hex);
+    if ($valid) {
+      return;
     }
-  }
-  else {
-    // Avoid error when the form is submitted without specifying a new image.
-    $_POST['hero_path'] = $form_state['values']['hero_path'] = $previous;
+    else {
+      form_error($element, t('Must be a valid hexadecimal CSS color value.'));
+    }
   }
 }

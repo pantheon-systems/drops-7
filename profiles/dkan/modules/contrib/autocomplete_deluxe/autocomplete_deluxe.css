@@ -114,7 +114,7 @@ div.autocomplete-deluxe-multiple {
   background: no-repeat -38px -22px, -o-linear-gradient(top, #eeeeee 1%, #ffffff 15%);
   background: no-repeat -38px -22px, -ms-linear-gradient(top, #eeeeee 1%, #ffffff 15%);
   background: no-repeat -38px -22px, linear-gradient(top, #eeeeee 1%, #ffffff 15%);
-  padding: 4px 5px 4px 20px;
+  padding: 4px 5px;
   border: 1px solid #AAAAAA;
   cursor: text;
   height: auto !important;

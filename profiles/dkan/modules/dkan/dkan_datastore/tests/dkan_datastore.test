@@ -152,6 +152,9 @@ class DkanDatastoreWebTestCase extends DrupalWebTestCase {
    * DKAN Datastore Tests.
    */
   public function testDkanDatastore() {
+    // Save resource node.
+    $this->drupalGet('node/' . $this->resource->nid . '/edit');
+    $this->drupalPost('node/' . $this->resource->nid . '/edit', array(), 'Save');
     // Get Resource Datastore Page and test that the node isn't imported yet.
     $this->drupalGet('node/' . $this->resource->nid . '/datastore');
     $this->assertText('No imported items.');

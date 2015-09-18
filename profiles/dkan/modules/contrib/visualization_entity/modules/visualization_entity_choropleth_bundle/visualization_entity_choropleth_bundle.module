@@ -1,0 +1,502 @@
+<?php
+/**
+ * @file
+ * Code for the Visualization Entity Choropleth Bundle feature.
+ */
+
+include_once 'visualization_entity_choropleth_bundle.features.inc';
+
+define('DEFAULT_CSV_DELIMITER', ',');
+define('GEOJSON_KEY_DEFAULT', 'code');
+
+/**
+ * Implements hook_field_widget_form_alter().
+ */
+function visualization_entity_choropleth_bundle_field_widget_form_alter(&$element, &$form_state, $context) {
+  $field = $context['field'];
+  if (isset($field['bundles']) && isset($field['bundles']['visualization'])) {
+    switch ($field['field_name']) {
+      case 'field_average_multiple_rows':
+        $element['#title'] = t('Average multiple rows?');
+        $element['#description'] = t('What to do when a given set of filters returns multiple rows as numerical sources for the coloring of a given polygon. If this is checked, it will average rows. If not, it will sum every row.');
+        break;
+
+      case 'field_data_column':
+        $element['value']['#description'] = t('Determine which columns will be used as data for color shading. Enter columns separated by commas. If no column is specified then multiple possible columns will be prompted to the user to be selected from radio buttons).');
+        break;
+
+      case 'field_data_breakpoints':
+        $element['value']['#description'] = t('Determine what values will be used as "breakpoints" for color shading. Enter breakpoints as a comma separated list. For example, if you want your map to include 4 colors where 0-24 is visualized as the lightest color, 25-49 medium light, 50-74 dark, 75-100 darkest, you would enter this: 25, 50, 75..');
+        break;
+
+      case 'field_color_scale':
+        $color_scale = isset($element['value']['#default_value']) ? $element['value']['#default_value'] : FALSE;
+        $color_scale_options = visualization_entity_choropleth_bundle_color_scale_tableselect_options();
+        $element['#title'] = 'Color Scale';
+        $element['#description'] = t('Select desired color scale for the map polygons.');
+        $element['#type'] = 'fieldset';
+        $element['value']['#type'] = 'tableselect';
+        $element['value']['#header'] = array(
+          'colors' => t('Colors'),
+        );
+        $element['value']['#multiple'] = FALSE;
+        $element['value']['#default_value'] = $color_scale;
+        $element['value']['#options'] = $color_scale_options;
+        break;
+
+      case 'field_ve_geojson_key':
+        $key = $element['value']['#default_value'];
+        $key = isset($key) ? $key : GEOJSON_KEY_DEFAULT;
+        $element['value']['#default_value'] = $key;
+        break;
+    }
+  }
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function visualization_entity_choropleth_bundle_libraries_info() {
+  $libraries = array();
+  $libraries['chroma'] = array(
+    'name' => 'Chroma JS',
+    'vendor url' => 'http://driven-by-data.net/about/chromajs/#/0',
+    'download url' => 'https://github.com/gka/chroma.js/zipball/master',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'bower.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'chroma.min.js',
+      ),
+    ),
+  );
+  $libraries['numeral'] = array(
+    'name' => 'Numeral JS',
+    'vendor url' => 'http://numeraljs.com/',
+    'download url' => 'https://github.com/adamwdraper/Numeral-js/zipball/master',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'bower.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'min/numeral.min.js'
+      ),
+    ),
+  );
+  $libraries['recline_choropleth'] = array(
+    'name' => 'Recline Choropleth View',
+    'vendor url' => 'https://github.com/NuCivic/recline.view.choroplethmap.js',
+    'download url' => 'https://github.com/NuCivic/recline.view.choroplethmap.js/archive/master.zip',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'CHANGELOG.txt',
+      'pattern' => '/v(\d+\.\w+)/',
+    ),
+    'files' => array(
+      'js' => array(
+        'recline.view.ChoroplethMap.js',
+        'recline.view.MultiDatasetChoroplethMap.js',
+      ),
+      'css' => array(
+        'choropleth.css',
+      ),
+    ),
+  );
+  return $libraries;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function visualization_entity_choropleth_bundle_theme($existing, $type, $theme, $path) {
+  $tpls_path = drupal_get_path('module', 'visualization_entity_choropleth_bundle') . '/theme';
+  return array(
+    'visualization__choropleth_embed' => array(
+      'variables' => array(),
+      'template' => 'visualization--choropleth-embed',
+      'path' => $tpls_path,
+    ),
+    'visualization-entity-choropleth-color-scale-option' => array(
+      'variables' => array(),
+      'template' => 'choropleth-color-scale-option',
+      'path' => $tpls_path,
+    ),
+    'visualization_entity_field_color_scale' => array(
+      'variables' => array('item' => NULL),
+    ),
+    'visualization__choropleth_visualization' => array(
+      'render element' => 'elements',
+      'template' => 'visualization--choropleth',
+      'path' => $tpls_path,
+    ),
+  );
+}
+
+/**
+ * Load required libraries.
+ */
+function visualization_entity_choropleth_bundle_load_required_libraries() {
+  libraries_load('lodash');
+  libraries_load('backbone');
+  libraries_load('mustache');
+  libraries_load('csv');
+  libraries_load('recline');
+  libraries_load('leaflet');
+  libraries_load('leaflet_zoomtogeometries');
+  libraries_load('numeral');
+  libraries_load('chroma');
+  libraries_load('recline_choropleth');
+}
+
+/**
+ * Load a geojson file entity.
+ */
+function visualization_entity_choropleth_bundle_load_geojson($target_id) {
+  $geojson = entity_load_single('geo_file', $target_id);
+  $geojson_name_attribute = $geojson->field_name_attribute[LANGUAGE_NONE][0]['value'];
+  $geojson = $geojson->field_file[LANGUAGE_NONE][0]['uri'];
+  $geojson = drupal_realpath($geojson);
+  return json_decode(file_get_contents($geojson));
+}
+
+/**
+ * Creates renderable view for a visualization given a view mode.
+ */
+function visualization_entity_choropleth_bundle_render_map($visualization, $view_mode) {
+  if (!empty($visualization)) {
+    return entity_view('visualization', array($visualization), $view_mode);
+  }
+  else {
+    return MENU_NOT_FOUND;
+  }
+}
+
+function visualization_entity_choropleth_bundle_visualization_entity_embed_render_alter($vars) {
+  $visualization = $vars['visualization'];
+  if (!empty($visualization) && $visualization->type == 'choropleth_visualization' && $vars['conf']['local_source']) {
+    // TODO: In order to uncomment this code, visualization_entity_choropleth_map.js needs to
+    // be adapted to work with multiple viz intances at the same page.
+    // $entity_view = visualization_entity_choropleth_bundle_render_map($vars['visualization'], 'embed');
+    // $vars['block']->content = drupal_render($entity_view);
+  }
+}
+
+/**
+ * Implements hook_preprocess_entity().
+ */
+function visualization_entity_choropleth_bundle_preprocess_entity(&$vars) {
+  if ($vars['entity_type'] == 'visualization' && $vars['view_mode'] == 'embed') {
+    $vars['theme_hook_suggestions'] = array('visualization__choropleth_embed');
+  }
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function visualization_entity_choropleth_bundle_entity_view_alter(&$build, $type) {
+  if ($type === 'visualization' && $build['#entity']->type === 'choropleth_visualization') {
+    // Load libraries.
+    visualization_entity_choropleth_bundle_load_required_libraries();
+
+    // Build settings.
+    $settings = array();
+
+    $settings['eid'] = $build['#entity']->id;
+
+    // Build geojson file.
+    $geojson = visualization_entity_choropleth_bundle_load_geojson($build['field_geojson']['#items'][0]['target_id']);
+
+    $settings['geojson'] = $geojson;
+
+    // Build color scale settings.
+    if (isset($build['field_color_scale'])) {
+      $color_scale_settings = visualization_entity_choropleth_bundle_color_scale_settings();
+      $color_scale = (int) $build['field_color_scale']['#items'][0]['value'];
+      $color_scale_settings = $color_scale_settings[$color_scale];
+      $settings['colors'] = $color_scale_settings;
+    }
+
+    // Build breakpoints.
+    if (isset($build['field_data_breakpoints'])) {
+      $breakpoints = $build['field_data_breakpoints']['#items'][0]['value'];
+      $breakpoints = explode(',', $breakpoints);
+      $breakpoints = array_map('trim', $breakpoints);
+      $settings['breakpoints'] = $breakpoints;
+    }
+
+    // Build geojson_key.
+    if (isset($build['field_ve_geojson_key'])) {
+      $settings['geojson_key'] = $build['field_ve_geojson_key']['#items'][0]['value'];
+    }
+    else {
+      $settings['geojson_key'] = GEOJSON_KEY_DEFAULT;
+    }
+
+    // Build geojson_label.
+    if (isset($build['field_ve_geojson_label'])) {
+      $settings['geojson_label'] = $build['field_ve_geojson_label']['#items'][0]['value'];
+    }
+    else {
+      $settings['geojson_label'] = $settings['geojson_key'];
+    }
+
+    // Build map_column.
+    if (isset($build['field_ve_map_column'])) {
+      $settings['map_column'] = $build['field_ve_map_column']['#items'][0]['value'];
+    }
+    else {
+      $settings['map_column'] = $geojson_name_attribute;
+    }
+
+    // Build data_column.
+    if (isset($build['field_data_column'])) {
+      $data_columns = $build['field_data_column']['#items'][0]['value'];
+      $data_columns = explode(',', $data_columns);
+      $data_columns = array_map('trim', $data_columns);
+      $settings['data_column'] = $data_columns;
+    }
+
+    // Get resource related data.
+    $average = $build['field_average_multiple_rows']['#items'][0]['value'] == 1 ? TRUE : FALSE;
+    $unit_of_measure = isset($build['field_data_units']) ? $build['field_data_units']['#items'][0]['value'] : '';
+
+    // Build resources files.
+    $resources = visualization_entity_recline_field_reference_load_resources($build['field_uuid_resource']['#items']);
+
+    // Build resource js settings.
+    $settings['resources'] = array();
+    foreach ($resources as $key => $resource) {
+      $title = $resource->title;
+      $resource_settings = array(
+        'title' => $title,
+        'avg' => $average,
+        'datastoreStatus' => dkan_datastore_status($resource),
+        'unitOfMeasure' => $unit_of_measure,
+        'map' => FALSE,
+      );
+      $file_field = $resource->recline_file_field;
+
+      if (dkan_datastore_status($resource) === 2 || count($resources) > 1) {
+        $delimiter = $file_field[LANGUAGE_NONE][0]['delimiter'];
+        $delimiter = $delimiter !== NULL ? $delimiter : DEFAULT_CSV_DELIMITER;
+        $resource_path = $file_field[LANGUAGE_NONE][0]['uri'];
+        $resource_path = drupal_realpath($resource_path);
+        $resource_file = file_get_contents($resource_path);
+        $resource_settings += array(
+          'delimiter' => $delimiter,
+          'dataset' => $resource_file,
+          'avg' => $average,
+        );
+      }
+      elseif (dkan_datastore_status($resource) === 1 && count($resources) === 1) {
+        $resource_settings += array(
+          'resource_id' => $resource->uuid,
+        );
+      }
+      $settings['resources'][] = $resource_settings;
+    }
+
+    // Build label column and geojson file.
+    $geojson = entity_load_single(
+      'geo_file',
+      $build['field_geojson']['#items'][0]['target_id']
+    );
+    $settings['label_column'] = $geojson->field_name_attribute[LANGUAGE_NONE][0]['value'];
+
+    $geojson = $geojson->field_file[LANGUAGE_NONE][0]['uri'];
+    $geojson = drupal_realpath($geojson);
+    $geojson = json_decode(file_get_contents($geojson));
+    $settings['geojson'] = $geojson;
+
+    $settings = array(
+      'visualization_choropleth' => $settings,
+    );
+
+    // Add settings.
+    drupal_add_js($settings, 'setting');
+
+    // Add js controller and stylesheets.
+    $module_path = drupal_get_path('module', 'visualization_entity_choropleth_bundle');
+    drupal_add_js($module_path . '/visualization_entity_choropleth_bundle.js');
+    drupal_add_css($module_path . '/visualization_entity_choropleth_bundle.css');
+  }
+}
+
+/**
+ * Returns an array of Color Scales for the map.
+ *
+ * @return array
+ *   array of Color Scales for the map.
+ */
+function visualization_entity_choropleth_bundle_color_scale_settings() {
+  return array(
+    0 => array('#ffffcc', '#ffeda0', '#fed976', '#feb24c', '#fd8d3c', '#fc4e2a', '#e31a1c', '#bd0026', '#800026'),
+    1 => array('#ffffe5', '#fff7bc', '#fee391', '#fec44f', '#fe9929', '#ec7014', '#cc4c02', '#993404', '#662506'),
+    2 => array('#ffffd9', '#edf8b1', '#c7e9b4', '#7fcdbb', '#41b6c4', '#1d91c0', '#225ea8', '#253494', '#081d58'),
+    3 => array('#ffffe5', '#f7fcb9', '#d9f0a3', '#addd8e', '#78c679', '#41ab5d', '#238443', '#006837', '#004529'),
+    4 => array('#fff7f3', '#fde0dd', '#fcc5c0', '#fa9fb5', '#f768a1', '#dd3497', '#ae017e', '#7a0177', '#49006a'),
+    5 => array('#f7f4f9', '#e7e1ef', '#d4b9da', '#c994c7', '#df65b0', '#e7298a', '#ce1256', '#980043', '#67001f'),
+    6 => array('#fff7fb', '#ece2f0', '#d0d1e6', '#a6bddb', '#67a9cf', '#3690c0', '#02818a', '#016c59', '#014636'),
+    7 => array('#fff7fb', '#ece7f2', '#d0d1e6', '#a6bddb', '#74a9cf', '#3690c0', '#0570b0', '#045a8d', '#023858'),
+    8 => array('#fff7ec', '#fee8c8', '#fdd49e', '#fdbb84', '#fc8d59', '#ef6548', '#d7301f', '#b30000', '#7f0000'),
+    9 => array('#f7fcf0', '#e0f3db', '#ccebc5', '#a8ddb5', '#7bccc4', '#4eb3d3', '#2b8cbe', '#0868ac', '#084081'),
+    10 => array('#f7fcfd', '#e0ecf4', '#bfd3e6', '#9ebcda', '#8c96c6', '#8c6bb1', '#88419d', '#810f7c', '#4d004b'),
+    11 => array('#f7fcfd', '#e5f5f9', '#ccece6', '#99d8c9', '#66c2a4', '#41ae76', '#238b45', '#006d2c', '#00441b'),
+  );
+}
+
+/**
+ * Returns an array of options for the color scale select on the admin.
+ *
+ * @return array
+ *   array of options for the color scale select on the admin.
+ */
+function visualization_entity_choropleth_bundle_color_scale_tableselect_options() {
+  $settings = visualization_entity_choropleth_bundle_color_scale_settings();
+  $output = array();
+  foreach ($settings as $key => $colors) {
+    $output[] = array(
+      'uid' => $key,
+      'colors' => theme('visualization-entity-choropleth-color-scale-option', array('colors' => $colors)),
+    );
+  }
+  return $output;
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function visualization_entity_choropleth_bundle_field_formatter_info() {
+  $formatters = array(
+    'choropleth_color_scale' => array(
+      'label' => t('Visualization Entity Color Scale Formatter'),
+      'field types' => array('text'),
+      'settings' => array(),
+    ),
+  );
+  return $formatters;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function visualization_entity_choropleth_bundle_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch ($display['type']) {
+    case 'choropleth_color_scale':
+      foreach ($items as $delta => $item) {
+        $element[$delta] = array(
+          '#theme' => 'visualization_entity_field_color_scale',
+          '#item' => $item,
+        );
+      }
+      break;
+
+  }
+  return $element;
+}
+
+function theme_visualization_entity_field_color_scale($variables) {
+  $colors = visualization_entity_choropleth_bundle_color_scale_settings();
+  $color_scale = (int) $variables['item']['value'];
+  $colors = $colors[$color_scale];
+  $output = theme(
+    'visualization-entity-choropleth-color-scale-option',
+    array(
+      'colors' => $colors,
+    )
+  );
+  return $output;
+}
+
+/**
+ * Implementation of hook_form_alter().
+ */
+function visualization_entity_choropleth_bundle_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'eck__entity__form_add_visualization_choropleth_visualization' || $form_id == 'eck__entity__form_edit_visualization_choropleth_visualization') {
+
+    $options_geojson = &$form['field_geojson'][LANGUAGE_NONE]['#options'];
+
+    $geojson_params = array('geo_file', 'field_file', 'visualization_entity_is_geojson');
+    $resource_params = array('node', 'visualization_entity_choropleth_is_valid_csv');
+
+    visualization_entity_filter_array_by_key($options_geojson, 'visualization_entity_preload_n_validate_file', $geojson_params);
+
+    if (isset($form['field_uuid_resource'][LANGUAGE_NONE]['#options'])) {
+      $options_uuid_resources = &$form['field_uuid_resource'][LANGUAGE_NONE];
+    }
+    else {
+      $options_uuid_resources = &$form['field_uuid_resource'][LANGUAGE_NONE][0]['target_uuid'];
+    }
+
+    $field = field_read_field('field_uuid_resource');
+    $target_type = $field['settings']['target_type'];
+    $options_uuid_resources['#options'] = visualization_entity_recline_field_reference_filter_compatible_instances(
+      $options_uuid_resources['#options'],
+      $target_type,
+      'visualization_entity_choropleth_is_valid_csv'
+    );
+    $form['#validate'][] = 'visualization_entity_choropleth_bundle_form_validate';
+  }
+}
+
+/**
+ *  Implementation of hook_form_validate().
+ */
+function visualization_entity_choropleth_bundle_form_validate(&$form, &$form_state) {
+  $resources = visualization_entity_recline_field_reference_load_resources(
+    $form_state['values']['field_uuid_resource'][LANGUAGE_NONE]
+  );
+  $data_columns = $form_state['values']['field_data_column'][LANGUAGE_NONE][0]['value'];
+  $data_columns = explode(',', $data_columns);
+  $data_columns = array_map('trim', $data_columns);
+  foreach ($resources as $resource) {
+    $upload = $resource->recline_file_field[LANGUAGE_NONE][0];
+    $errors = array();
+    foreach ($data_columns as $key => $data_column) {
+      if (!visualization_entity_choropleth_bundle_has_data_column($data_column, $upload)) {
+        array_push(
+          $errors,
+          t(
+            '@data_column is not a selectable column from @title resource file',
+            array(
+              '@data_column' => $data_column,
+              '@title' => $resource->title,
+            )
+          )
+        );
+      }
+    }
+  }
+  if (count($errors)) {
+    $errors = implode(', ', $errors);
+    form_set_error('field_data_column', $errors);
+  }
+}
+
+/**
+ *  Check if a given file has the $data_column parameter
+ */
+function visualization_entity_choropleth_bundle_has_data_column($data_column, $file_field) {
+  if (empty($data_column)) {
+    return TRUE;
+  }
+  $columns = visualization_entity_csv_columns($file_field);
+  return in_array(strtolower($data_column), $columns);
+}
+
+/**
+ *  Check if a given file is a csv file and has a numeric field.
+ */
+function visualization_entity_choropleth_is_valid_csv($file_field) {
+  $is_csv = visualization_entity_has_csv_extension($file_field);
+  $is_csv = $is_csv ? visualization_entity_has_numeric_field($file_field) : FALSE;
+  // Returns true if extension matchs.
+  return $is_csv === TRUE;
+}
+

@@ -7,6 +7,7 @@
 
 $module_path = drupal_get_path('module', 'open_data_schema_map');
 require_once $module_path . '/open_data_schema_map.output.inc';
+require_once $module_path . '/open_data_schema_map.file_cache.inc';
 
 /**
  * Callback for ODSM overiew page.
@@ -421,21 +422,35 @@ function open_data_schema_map_add_type(&$values, $mapping) {
  * Creates endpoint.
  */
 function open_data_schema_map_endpoint($api) {
-  $render = open_data_schema_map_render_api($api);
-  $headers = $render['headers'];
-  $result = $render['result'];
-
-  foreach ($headers as $key => $value) {
-    drupal_add_http_header($key, $value);
-  }
-
-  $output_formats = open_data_schema_map_retrieve_output_formats();
-  if (in_array($api->outputformat, array_keys($output_formats))) {
-    $function = $output_formats[$api->outputformat];
-    $response = $function($api, $result);
-    echo $response;
+  if (open_data_schema_map_file_cache_exits($api)) {
+    // This will only work for data.json (for now).
+    $filename = open_data_schema_map_file_cache_name_helper($api);
+    drupal_add_http_header('Content-Type', 'application/json');
+    drupal_add_http_header('Expires', gmdate('D, d M Y H:i:s \G\M\T', time() + 3600));
+    ob_clean();
+    flush();
+    readfile($filename);
   }
   else {
-    drupal_set_message("Invalid output format", "error");
+    $render = open_data_schema_map_render_api($api);
+    $headers = $render['headers'];
+    $result = $render['result'];
+
+    foreach ($headers as $key => $value) {
+      drupal_add_http_header($key, $value);
+    }
+
+    $output_formats = open_data_schema_map_retrieve_output_formats();
+    if (in_array($api->outputformat, array_keys($output_formats))) {
+      $function = $output_formats[$api->outputformat]['callback'];
+      foreach ($output_formats[$api->outputformat]['headers'] as $header => $value) {
+        
+      }
+      $response = $function($api, $result);
+      echo $response;
+    }
+    else {
+      drupal_set_message("Invalid output format", "error");
+    }
   }
 }

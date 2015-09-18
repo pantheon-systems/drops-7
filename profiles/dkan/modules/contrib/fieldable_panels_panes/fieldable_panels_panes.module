@@ -1,0 +1,1372 @@
+<?php
+
+/**
+ * @file
+ *
+ * Maintains an entity that appears as panel pane content.
+ */
+
+// -------------------------------------------------------------------------
+// Drupal core hooks
+
+/**
+ * Implements hook_entity_info()
+ */
+function fieldable_panels_panes_entity_info() {
+  $info = array();
+
+  ctools_include('export');
+  $bundles = array();
+
+  foreach (ctools_export_crud_load_all('fieldable_panels_pane_type') as $type) {
+    $bundles[$type->name] = array(
+      'label' => $type->title,
+      'admin' => array(
+        'path' => 'admin/structure/fieldable-panels-panes/%fieldable_panels_pane_type',
+        'bundle argument' => 3,
+        'real path' => 'admin/structure/fieldable-panels-panes/' . $type->name,
+        'access arguments' => array('administer fieldable panels panes'),
+      ),
+    );
+  }
+
+  $info['fieldable_panels_pane'] = array(
+    'label' => t('Fieldable panel pane'),
+    'controller class' => 'PanelsPaneController',
+    'base table' => 'fieldable_panels_panes',
+    'revision table' => 'fieldable_panels_panes_revision',
+    'fieldable' => TRUE,
+    'uuid' => TRUE,
+    'entity keys' => array(
+      'id' => 'fpid',
+      'revision' => 'vid',
+      'bundle' => 'bundle',
+      'label' => 'title', // This key is required for proper integration with Title module.
+      'language' => 'language',
+      'uuid' => 'uuid',
+      'revision uuid' => 'vuuid',
+    ),
+    'bundles' => $bundles,
+    'bundle keys' => array('bundle' => 'name'),
+    'label callback' => 'fieldable_panels_panes_entity_label_callback',
+    'uri callback' => 'fieldable_panels_panes_entity_uri_callback',
+    'view modes' => array(
+      // @todo we should support view modes.
+      'full' => array(
+        'label'  => t('Full'),
+        'custom settings' => FALSE,
+      ),
+      'preview' => array(
+        'label'  => t('Preview'),
+        'custom settings' => FALSE,
+      ),
+    ),
+    'inline entity form' => array(
+      'controller' => 'FieldablePanelsPaneInlineEntityFormController',
+    ),
+
+    // Entity API module callbacks.
+    'view callback' => 'entity_metadata_view_single',
+    'creation callback' => 'fieldable_panels_panes_create',
+    'access callback' => 'fieldable_panels_panes_access',
+    'save callback' => 'fieldable_panels_panes_save',
+    'deletion callback' => 'fieldable_panels_panes_delete',
+
+    // Entity translation support
+    'translation' => array(
+      'entity_translation' => array(
+        'class' => 'EntityTranslationFieldablePanelsPaneHandler',
+        'base path' =>  'admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes',
+        'edit path' =>  'admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/edit',
+        'path wildcard' => '%fieldable_panels_panes',
+      ),
+    ),
+
+    // Title module support
+    'field replacement' => array(
+      'title' => array(
+        'field' => array(
+          'type' => 'text',
+          'cardinality' => 1,
+          'translatable' => TRUE,
+        ),
+        'instance' => array(
+          'label' => t('Title'),
+          'description' => t('A field replacing fieldable panel pane title.'),
+          'required' => FALSE,
+          'settings' => array(
+            'text_processing' => 0,
+          ),
+          'widget' => array(
+            'weight' => -10,
+          ),
+        ),
+      ),
+    ),
+  );
+
+  // Optional support for the entitycache module.
+  if (module_exists('entitycache')) {
+    $info['fieldable_panels_pane']['field cache'] = FALSE;
+    $info['fieldable_panels_pane']['entity cache'] = TRUE;
+  }
+
+  return $info;
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function fieldable_panels_panes_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'entity_info_alter') {
+    // Fieldable Panels Panes will do a bit of clean-up to prevent issues with
+    // obsolete paths found in legacy bundles that are provided by modules via
+    // hook_entity_info_alter(), but we need to make sure that our
+    // implementation is called last.
+    $group = $implementations['fieldable_panels_panes'];
+    unset($implementations['fieldable_panels_panes']);
+    $implementations['fieldable_panels_panes'] = $group;
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function fieldable_panels_panes_entity_info_alter(&$info) {
+  $old_base_path = 'admin/structure/panels/entity/manage';
+  $new_base_path = 'admin/structure/fieldable-panels-panes';
+
+  if (is_array($info) && !empty($info)) {
+    foreach ($info['fieldable_panels_pane']['bundles'] as $name => &$bundle) {
+      if (isset($bundle['admin']['path']) && strpos($bundle['admin']['path'], $old_base_path) !== FALSE) {
+        $bundle['admin']['path'] = str_replace($old_base_path, $new_base_path, $bundle['admin']['path']);
+        $bundle['admin']['real path'] = str_replace($old_base_path, $new_base_path, $bundle['admin']['real path']);
+        $bundle['admin']['bundle argument'] = $bundle['admin']['bundle argument'] - 2;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function fieldable_panels_panes_hook_info() {
+  $defaults = array(
+    'group' => 'fieldable_panels_panes',
+  );
+  $hooks = array(
+    'fieldable_panels_pane_delete' => $defaults,
+    'fieldable_panels_pane_insert' => $defaults,
+    'fieldable_panels_pane_presave' => $defaults,
+    'fieldable_panels_pane_update' => $defaults,
+    'fieldable_panels_pane_view' => $defaults,
+  );
+  return $hooks;
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function fieldable_panels_panes_field_extra_fields() {
+  $extra = array();
+
+  $entity_info = entity_get_info('fieldable_panels_pane');
+  foreach ($entity_info['bundles'] as $bundle => $info) {
+    $extra['fieldable_panels_pane'][$bundle] = array(
+      'form' => array(
+        'title' => array(
+          'label' => t('Title'),
+          'description' => t('The displayed title of the entity.'),
+          'weight' => -5,
+        ),
+      ),
+      'display' => array(
+        'title' => array(
+          'label' => t('Title'),
+          'description' => t('The displayed title of the entity.'),
+          'weight' => -5,
+        ),
+      ),
+    );
+  }
+
+  return $extra;
+}
+
+/**
+ * Implements hook_field_extra_fields_display_alter().
+ */
+function fieldable_panels_panes_field_extra_fields_display_alter(&$displays, $context) {
+  if ($context['entity_type'] == 'fieldable_panels_pane' && $context['view_mode'] == 'full') {
+    // Hide display of the title field on the 'full' view mode (because it gets
+    // displayed as the Pane title).
+
+    // Ensure the 'title' key exists, since some other modules may have remove it. This
+    // is the case of the Title module for example.
+    if (isset($displays['title'])) {
+      $displays['title']['visible'] = FALSE;
+    }
+  }
+}
+
+/**
+ * Implements hook_menu()
+ */
+function fieldable_panels_panes_menu() {
+  $items = array();
+
+  $base = array(
+    'access arguments' => array('administer fieldable panels panes'),
+    'file' => 'includes/admin.inc',
+  );
+
+  // Legacy paths to support the old method of providing bundles via entity_hook_info().
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes'] = array(
+    'title callback' => 'fieldable_panels_panes_entity_title',
+    'title arguments' => array(4),
+    'page callback' => 'fieldable_panels_panes_entity_view_page',
+    'page arguments' => array(4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('view', 4),
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/view'] = array(
+    'title' => 'Preview',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'page callback' => 'fieldable_panels_panes_entity_view_page',
+    'page arguments' => array(4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('view', 4),
+    'weight' => -10,
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/edit'] = array(
+    'title' => 'Edit',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'page callback' => 'fieldable_panels_panes_entity_edit_page',
+    'page arguments' => array(4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('update', 4),
+    'weight' => -9,
+  ) + $base;
+
+  // Access control
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/access'] = array(
+    'title' => 'Access control',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'fieldable_panels_panes_entity_edit_access_page',
+    'page arguments' => array('view', 4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('update', 4),
+    'weight' => 10,
+  ) + $base;
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/access/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/access/update'] = array(
+    'title' => 'Edit',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'fieldable_panels_panes_entity_edit_access_page',
+    'page arguments' => array('edit', 4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('update', 4),
+    'weight' => 10,
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/delete'] = array(
+    'title' => 'Delete',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fieldable_panels_panes_entity_delete_form', 4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('delete', 4),
+    'weight' => -8,
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/revision'] = array(
+    'title' => 'Revisions',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'fieldable_panels_panes_entity_list_revisions_page',
+    'page arguments' => array(4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('delete', 4),
+    'weight' => -7,
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/revision/%'] = array(
+    'title callback' => 'fieldable_panels_panes_entity_title',
+    'title arguments' => array(4),
+    'page callback' => 'fieldable_panels_panes_entity_view_page',
+    'page arguments' => array(4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('view', 4),
+    'load arguments' => array(6),
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/revision/%/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'page callback' => 'fieldable_panels_panes_entity_view_page',
+    'page arguments' => array(4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('view', 4),
+    'load arguments' => array(6),
+    'weight' => -10,
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/revision/%/edit'] = array(
+    'title' => 'Edit',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'page callback' => 'fieldable_panels_panes_entity_edit_page',
+    'page arguments' => array(4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('update', 4),
+    'weight' => -8,
+    'load arguments' => array(6),
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/revision/%/delete'] = array(
+    'title' => 'Delete',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fieldable_panels_panes_entity_delete_revision_form', 4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('delete', 4),
+    'weight' => -7,
+    'load arguments' => array(6),
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/revision/%/make-current'] = array(
+    'title' => 'Make current',
+    'type' => MENU_LOCAL_TASK,
+    'context' => MENU_CONTEXT_INLINE,
+    'page callback' => 'fieldable_panels_panes_entity_make_current_page',
+    'page arguments' => array(4),
+    'access callback' => 'fieldable_panels_panes_entity_make_current_access',
+    'access arguments' => array(4),
+    'weight' => -8,
+    'load arguments' => array(6),
+  ) + $base;
+
+  if (module_exists('devel')) {
+    $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/devel'] = array(
+      'title' => 'Devel',
+      'page callback' => 'devel_load_object',
+      'page arguments' => array('fieldable_panels_pane', 4),
+      'access arguments' => array('access devel information'),
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 100,
+      'file' => 'devel.pages.inc',
+      'file path' => drupal_get_path('module', 'devel'),
+    );
+
+    $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/devel/load'] = array(
+      'title' => 'Load',
+      'type' => MENU_DEFAULT_LOCAL_TASK,
+    );
+
+    $items['admin/structure/fieldable-panels-panes/view/%fieldable_panels_panes/devel/render'] = array(
+      'title' => 'Render',
+      'page callback' => 'devel_render_object',
+      // Normally this would be the name of the entity type, but slightly
+      // modified in order to call the right function.
+      'page arguments' => array('fieldable_panels_panes', 4),
+      'access arguments' => array('access devel information'),
+      'file' => 'devel.pages.inc',
+      'file path' => drupal_get_path('module', 'devel'),
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 100,
+    );
+  }
+
+  $items['admin/structure/fieldable-panels-panes/manage/%fieldable_panels_pane_type'] = array(
+    'title callback' => 'fieldable_panels_panes_entities_title',
+    'title arguments' => array(4),
+    'page callback' => 'fieldable_panels_panes_entities_list_page',
+    'page arguments' => array(4),
+  ) + $base;
+
+  $items['admin/structure/fieldable-panels-panes/manage/%fieldable_panels_pane_type/list'] = array(
+    'title' => 'List',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+
+  $items['admin/structure/fieldable-panels-panes/manage/%fieldable_panels_pane_type/add'] = array(
+    'title' => 'Add fieldable panel pane',
+    'page callback' => 'fieldable_panels_panes_entities_add_page',
+    'page arguments' => array(4),
+    'access callback' => 'fieldable_panels_panes_access',
+    'access arguments' => array('create', 4),
+    'type' => MENU_LOCAL_ACTION,
+  ) + $base;
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission()
+ */
+function fieldable_panels_panes_permission() {
+  $perms = array(
+    'administer fieldable panels panes' => array(
+      'title' => t('Administer fieldable panels panes'),
+      'description' => t('Allows users complete control over fieldable panel pane entities. This permission overrides any other permission.'),
+    ),
+  );
+
+  $entity_info = entity_get_info('fieldable_panels_pane');
+  foreach ($entity_info['bundles'] as $bundle => $info) {
+    $perms["create fieldable $bundle"] = array(
+      'title' => t('Create new %type', array('%type' => $info['label'])),
+      'description' => t('Allows users to create new fieldable panel pane entities of bundle %type.', array('%type' => $info['label'])),
+    );
+    $perms["edit fieldable $bundle"] = array(
+      'title' => t('Edit %type', array('%type' => $info['label'])),
+      'description' => t('Allows users to edit fieldable panel pane entities of bundle %type. This is a minimum permission; it is required to be able to edit a fieldable pane at all, but higher access requirements on an individual pane can override it.', array('%type' => $info['label'])),
+    );
+    $perms["delete fieldable $bundle"] = array(
+      'title' => t('Delete %type', array('%type' => $info['label'])),
+      'description' => t('Allows users to delete fieldable panel pane entities of bundle %type. Users must also be able to edit the pane to delete it.', array('%type' => $info['label'])),
+    );
+  }
+
+  return $perms;
+}
+
+/**
+ * Implements hook_theme()
+ */
+function fieldable_panels_panes_theme() {
+  return array(
+    'fieldable_panels_pane' => array(
+      'render element' => 'elements',
+      'template'  => 'fieldable-panels-pane',
+    ),
+  );
+}
+
+/**
+ * Implements hook_admin_menu_map().
+ */
+function fieldable_panels_panes_admin_menu_map() {
+  $map = array();
+
+  $bundle_keys = array();
+  $info = entity_get_info('fieldable_panels_pane');
+  foreach ($info['bundles'] as $bundle_name => $bundle_info) {
+    $bundle_keys[] = $bundle_name;
+  }
+
+  $map['admin/structure/fieldable-panels-panes/%fieldable_panels_pane_type'] = array(
+    'parent' => 'admin/structure/fieldable-panels-panes',
+    'arguments' => array(
+      array('%ctools_export_ui' => $bundle_keys),
+    ),
+  );
+
+  return $map;
+}
+
+/**
+ * Implements hook_admin_menu_map_alter().
+ *
+ * Add mapping for the individual fields if the Field UI module is enabled,
+ * and the mappings are not already added by field_ui_admin_menu_map().
+ */
+function fieldable_panels_panes_admin_menu_map_alter(array &$map) {
+  if (!module_exists('field_ui')) {
+    return;
+  }
+
+  $bundles = array();
+  $info = entity_get_info('fieldable_panels_pane');
+  foreach ($info['bundles'] as $bundle_name => $bundle_info) {
+    if (isset($bundle_info['admin'])) {
+      $admin_path = $bundle_info['admin']['path'];
+
+      // Fields mapping may already be supported by field_ui_admin_menu_map()
+      // so only add it if it doesn't exist.
+      if (isset($map["$admin_path/fields/%field_ui_menu"])) {
+        continue;
+      }
+
+      $fields = array();
+
+      foreach (field_info_instances('fieldable_panels_pane', $bundle_name) as $field) {
+        $fields[] = $field['field_name'];
+      }
+
+      if (!empty($fields)) {
+        $map["$admin_path/fields/%field_ui_menu"]['parent'] = "$admin_path/fields";
+        $map["$admin_path/fields/%field_ui_menu"]['arguments'][] = array(
+          '%ctools_export_ui' => array($bundle_name),
+          '%field_ui_menu' => $fields,
+        );
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_flush_caches().
+ */
+function fieldable_panels_panes_flush_caches() {
+  return array('cache_entity_fieldable_panels_pane');
+}
+
+/**
+ * Implementation of hook_panels_dashboard_blocks().
+ */
+function fieldable_panels_panes_panels_dashboard_blocks(&$vars) {
+  ctools_include('export');
+
+  $vars['links']['fieldable_panels_panes'] = array(
+    'title' => l(t('Fieldable Panels Panes'), 'admin/structure/fieldable-panels-panes'),
+    'description' => t('Fieldable Panels Panes are fieldable entities that can be created directly in the Panels UI or created in a separate administrative UI to reuse later in a panel pane.'),
+  );
+
+  $count = 0;
+  $rows = array();
+
+  foreach (ctools_export_crud_load_all('fieldable_panels_pane_type') as $type) {
+    $rows[] = array(
+      $type->title,
+      l(t('List'), 'admin/structure/fieldable-panels-panes/' . $type->name),
+      l(t('Add'), 'admin/structure/fieldable-panels-panes/' . $type->name . '/add'),
+      l(t('Manage Fields'), 'admin/structure/fieldable-panels-panes/' . $type->name . '/fields'),
+      l(t('Manage Display'), 'admin/structure/fieldable-panels-panes/' . $type->name . '/display'),
+    );
+
+    // Only display 10.
+    if (++$count >= 10) {
+      break;
+    }
+  }
+
+  if ($rows) {
+    $content = theme('table', array('rows' => $rows, 'attributes' => array('class' => 'panels-manage')));
+  }
+  else {
+    $content = '<p>' . t('There are no fieldable panel pane types.') . '</p>';
+  }
+
+  $vars['blocks']['fieldable_panels_panes'] = array(
+    'weight' => -100,
+    'title' => t('Manage fieldable panels panes'),
+    'link' => l(t('Go to list'), 'admin/structure/fieldable-panels-panes'),
+    'content' => $content,
+    'class' => 'dashboard-fieldable-panels-panes',
+    'section' => 'right',
+  );
+}
+
+// -------------------------------------------------------------------------
+// Menu callbacks for things like titles, access control, etc.
+
+/**
+ * Properly format the type from the URL version to the internal version.
+ */
+function fieldable_panels_pane_type_load($type) {
+  $type = str_replace('-', '_', $type);
+  $entity_info = entity_get_info('fieldable_panels_pane');
+
+  if (isset($entity_info['bundles'][$type])) {
+    return $type;
+  }
+}
+
+/**
+ * @depricated Backwards compatability layer.
+ *
+ * @see fieldable_panels_pane_type_load().
+ */
+function fieldable_panels_panes_type_load($type) {
+  return fieldable_panels_pane_type_load($type);
+}
+
+/**
+ * Provide a safe title for an entity pane type based upon the URL.
+ */
+function fieldable_panels_panes_entities_title($type) {
+  $type = str_replace('-', '_', $type);
+  $entity_info = entity_get_info('fieldable_panels_pane');
+
+  if (isset($entity_info['bundles'][$type])) {
+    return $entity_info['bundles'][$type]['label'];
+  }
+}
+
+/**
+ * Title callback for fieldable panels panes exportable items.
+ *
+ * @param $item
+ *   A %ctools_export_ui object.
+ */
+function fieldable_panels_pane_type_title($item) {
+  return $item->title;
+}
+
+/**
+ * Ensure an entity can be accessed via URL.
+ *
+ * This requires only administrative access.
+ */
+/*
+function fieldable_panels_panes_access($entity) {
+  return $entity && user_access('administer fieldable panels panes');
+}
+*/
+/**
+ * Provide a safe title for an entity from the entity.
+ */
+function fieldable_panels_panes_entity_title($entity) {
+  if (!empty($entity->admin_title)) {
+    return $entity->admin_title;
+  }
+
+  if (!empty($entity->title)) {
+    return $entity->title;
+  }
+
+  return t('No title');
+}
+
+/**
+ * Access callback to set a revision of a fieldable panel pane as current.
+ *
+ * @param object $entity_info
+ *   A fieldable panel pane object.
+ *
+ * @return bool
+ *   TRUE if the specific revision of the panel pane can be set as the current
+ *   revision, otherwise, FALSE.
+ */
+function fieldable_panels_panes_entity_make_current_access($entity) {
+  return fieldable_panels_panes_access('update', $entity) && $entity->vid != $entity->current_vid;
+}
+
+// -------------------------------------------------------------------------
+// CTools hooks
+
+/**
+ * Implements hook_ctools_plugin_directory()
+ */
+function fieldable_panels_panes_ctools_plugin_directory($owner, $plugin_type) {
+  if ($owner == 'ctools' && $plugin_type == 'export_ui') {
+    return 'plugins/' . $plugin_type;
+  }
+
+  if ($owner == 'ctools' && $plugin_type == 'content_types') {
+    return 'plugins/' . $plugin_type;
+  }
+
+  if ($owner == 'panelizer' && defined('PANELIZER_VERSION') && version_compare(PANELIZER_VERSION, '3.0', '>=')) {
+    return 'plugins/' . $plugin_type;
+  }
+}
+
+/**
+ * Check if the user has 'update' access for an FPP object.
+ *
+ * @param mixed $argument
+ *
+ * @return bool
+ *   Whether or not the user has access to update an FPP object.
+ */
+function fieldable_panels_panes_check_access_update($argument) {
+  // If the argument is empty, either an empty string or an empty array, then
+  // CTools is most likely processing a deleted FPP.
+  if (empty($argument)) {
+    return FALSE;
+  }
+
+  // If the argument passed in as an array, try looking for an 'entity_id'
+  // element, it should contain the ID of the item that's needed.
+  $id = '';
+  if (is_array($argument)) {
+    if (isset($argument['entity_id'])) {
+      $id = $argument['entity_id'];
+    }
+    else {
+      $id = '';
+    }
+  }
+  else {
+    $id = $argument;
+  }
+
+  // The id should be in the format 'fpid:123', 'vid:123' or 'vuuid:123'.
+  if (empty($id) || strpos($id, ':') === FALSE) {
+    return FALSE;
+  }
+
+  // Try loading the FPP via the ID.
+  $entity = fieldable_panels_panes_load_from_subtype_force($id);
+
+  // If either the FPP couldn't be loaded, or the user does not have 'update'
+  // access to the FPP, then the visitor does not have access.
+  if (empty($entity) || !fieldable_panels_panes_access('update', $entity)) {
+    return FALSE;
+  }
+
+  // Getting to this point means that the visitor does have access to edit the
+  // FPP.
+  return TRUE;
+}
+
+/**
+ * Implement CTools access form caching callback: get.
+ */
+function fieldable_panels_panes_ctools_access_get($argument) {
+  if (!fieldable_panels_panes_check_access_update($argument)) {
+    return;
+  }
+
+  // First, see if there's a cache:
+  ctools_include('object-cache');
+  $access = ctools_object_cache_get('fieldable_panels_panes', $argument);
+  if (!$access) {
+    $access = $entity->{$op . '_access'};
+  }
+
+  $context = fieldable_panels_panes_get_base_context($entity);
+
+  return array($access, $context);
+}
+
+/**
+ * Implement CTools access form caching callback: set.
+ */
+function fieldable_panels_panes_ctools_access_set($argument, $access) {
+  if (!fieldable_panels_panes_check_access_update($argument)) {
+    return;
+  }
+
+  ctools_include('object-cache');
+  ctools_object_cache_set('fieldable_panels_panes', $argument, $access);
+}
+
+/**
+ * Implement CTools access form caching callback: get.
+ */
+function fieldable_panels_panes_ctools_access_clear($argument) {
+  if (!fieldable_panels_panes_check_access_update($argument)) {
+    return;
+  }
+
+  ctools_include('object-cache');
+  ctools_object_cache_clear('fieldable_panels_panes', $argument);
+}
+
+// -------------------------------------------------------------------------
+// Views hooks
+
+/**
+ * Implements hook_views_api
+ */
+function fieldable_panels_panes_views_api() {
+  return array(
+    'api' => 2,
+    'path' => drupal_get_path('module', 'fieldable_panels_panes') . '/plugins/views',
+  );
+}
+
+// -------------------------------------------------------------------------
+// Theming
+
+/**
+ * Preprocess function for fieldable-panels-pane.tpl.php
+ */
+function template_preprocess_fieldable_panels_pane(&$vars) {
+  $vars += array('content' => array());
+  foreach (element_children($vars['elements']) as $key) {
+    $vars['content'][$key] = $vars['elements'][$key];
+  }
+
+  // Make the field variables available with the appropriate language.
+  field_attach_preprocess('fieldable_panels_pane', $vars['elements']['#element'], $vars['content'], $vars);
+
+  $vars['theme_hook_suggestions'][] = 'fieldable_panels_pane__' . $vars['elements']['#element']->bundle;
+}
+
+/**
+ * Add a class for our bundle to the normal panels pane theme.
+ */
+function fieldable_panels_panes_preprocess_panels_pane(&$vars) {
+  if ($vars['pane']->type == 'fieldable_panels_pane') {
+    if (!empty($vars['content']['#fieldable_panels_pane']) && is_object($vars['content']['#fieldable_panels_pane'])) {
+      $entity = $vars['content']['#fieldable_panels_pane'];
+      if (!empty($entity->link) && !empty($vars['title'])) {
+        $vars['title'] = l($vars['title'], $entity->path);
+      }
+      ctools_include('cleanstring');
+      $vars['classes_array'][] = 'pane-bundle-' . ctools_cleanstring($entity->bundle, array('lower case' => TRUE));
+    }
+  }
+}
+
+/**
+ * Process variables for fieldable-panels-pane.tpl.php.
+ */
+function fieldable_panels_panes_process_fieldable_panels_pane(&$variables) {
+  if (module_exists('title')) {
+    title_field_replacement_hide_label('fieldable_panels_pane', $variables['elements']['#element'], $variables['content']);
+  }
+}
+
+// -------------------------------------------------------------------------
+// Database and general entity API functions
+
+/**
+ * Panel pane entity loader.
+ *
+ * @see entity_load().
+ */
+function fieldable_panels_panes_load($fpid, $vid = NULL) {
+  if (!is_numeric($fpid)) {
+    return FALSE;
+  }
+
+  $conditions = (isset($vid) ? array('vid' => $vid) : array());
+
+  $entities = fieldable_panels_panes_load_multiple(array($fpid), $conditions);
+  return !empty($entities) ? reset($entities) : FALSE;
+}
+
+/**
+ * Properly load the FPP entity via its subtype.
+ *
+ * @param string $subtype_name
+ *   A string combining an indicator of the type of ID, e.g. 'fpid', 'vid' or
+ *   'vuuid', and an integer ID, separated by a colon; e.g. "fpid:123".
+ *
+ * @return object
+ *   The requested FPP object.
+ */
+function fieldable_panels_panes_load_from_subtype($subtype_name) {
+  ctools_include('content');
+  $plugin = ctools_get_content_type('fieldable_panels_pane');
+
+  // Next, check to see how the subtype is configured.
+  $subtype_info = ctools_content_get_subtype($plugin, $subtype_name);
+
+  // This means we're probably in the process of creating a new one.
+  if (isset($subtype_info['bundle'])) {
+    return fieldable_panels_panes_create(array('bundle' => $subtype_info['bundle']));
+  }
+
+  // And try it this way.
+  if (isset($subtype_info['entity_id'])) {
+    return fieldable_panels_panes_load_from_subtype_force($subtype_info['entity_id']);
+  }
+
+  // Finally, try this:
+  return fieldable_panels_panes_load_from_subtype_force($subtype_name);
+}
+
+/**
+ * Properly load the entity via $subtype_name.
+ *
+ * @param string $subtype_name
+ *   A string combining an indicator of the type of ID, e.g. 'fpid', 'vid' or
+ *   'vuuid', and an integer ID, separated by a colon; e.g. "fpid:123".
+ *
+ * @return object
+ *   The requested FPP object.
+ */
+function fieldable_panels_panes_load_from_subtype_force($subtype_name) {
+  $object = NULL;
+
+  // Split the string up into the object type and the ID.
+  list($type, $id) = explode(':', $subtype_name);
+
+  // UUID integration.
+  if ($type == 'uuid' && module_exists('uuid')) {
+    $ids = entity_get_id_by_uuid('fieldable_panels_pane', array($id));
+    if ($object = entity_load('fieldable_panels_pane', $ids)) {
+      $object = reset($object);
+    }
+  }
+
+  // If the type is 'vid' then a specific FPP revision is being requested.
+  elseif ($type == 'vid') {
+    $fpid = db_query('SELECT fpid FROM {fieldable_panels_panes_revision} WHERE vid = :vid', array(':vid' => $id))->fetchField();
+    $object = fieldable_panels_panes_load($fpid, $id);
+  }
+
+  // The remaining scenario is that it's a regular FPP id, i.e. an "fpid", so
+  // just load the object.
+  else {
+    $object = fieldable_panels_panes_load($id);
+  }
+
+  return $object;
+}
+
+/**
+ * Load multiple fieldable panel panes.
+ *
+ * @see entity_load_multiple().
+ */
+function fieldable_panels_panes_load_multiple($ids, $conditions = array(), $reset = FALSE) {
+  return entity_load('fieldable_panels_pane', $ids, $conditions, $reset);
+}
+
+/**
+ * Save a fieldable panel pane.
+ *
+ * @see node_save()
+ */
+function fieldable_panels_panes_save($entity) {
+  return entity_get_controller('fieldable_panels_pane')->save($entity);
+}
+
+/**
+ * Delete a fieldable panel pane.
+ *
+ * @param $fpid
+ *   A fieldable panel pane ID.
+ */
+function fieldable_panels_panes_delete($fpid) {
+  fieldable_panels_panes_delete_multiple(array($fpid));
+}
+
+/**
+ * Delete a revision for a fieldable panel pane.
+ *
+ * @param $fpid
+ *   A fieldable panel pane ID.
+ * @param $vid
+ *   The revision id to delete.
+ */
+function fieldable_panels_panes_delete_revision($fpid, $vid) {
+  if ($revision = fieldable_panels_panes_load($fpid, $vid)) {
+    // Prevent deleting the current revision.
+    $entity = fieldable_panels_panes_load($revision->fpid);
+    if (empty($entity) || empty($entity->vid)) {
+      return FALSE;
+    }
+
+    db_delete('fieldable_panels_panes_revision')
+      ->condition('fpid', $revision->fpid)
+      ->condition('vid', $revision->vid)
+      ->execute();
+    field_attach_delete_revision('fieldable_panels_pane', $revision);
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Delete multiple fieldable panel panes.
+ *
+ * @param $fpids
+ *   An array of fieldable panel pane IDs.
+ */
+function fieldable_panels_panes_delete_multiple($fpids) {
+  return entity_get_controller('fieldable_panels_pane')->delete($fpids);
+}
+
+/**
+ * View a fieldable panel pane.
+ *
+ * @see node_view()
+ */
+function fieldable_panels_panes_view($entity, $view_mode = 'full', $langcode = NULL) {
+  return entity_get_controller('fieldable_panels_pane')->view($entity, $view_mode, $langcode);
+}
+
+/**
+ * Entity API callback to view a fieldable panel pane.
+ *
+ * This is essentially a duplicate of fieldable_panels_panes_view() but the
+ * function name has to match the entity type with is singular.
+ *
+ * @see entity_view()
+ */
+function fieldable_panels_pane_view($entity, $view_mode = 'full', $langcode) {
+  return entity_get_controller('fieldable_panels_pane')->view($entity, $view_mode, $langcode);
+}
+
+/**
+ * Callback to create a new entity.
+ */
+function fieldable_panels_panes_create($values = array()) {
+  return entity_get_controller('fieldable_panels_pane')->create($values);
+}
+
+/**
+ * Determine if a user has access to a fieldable panel pane entity.
+ */
+function fieldable_panels_panes_access($op, $entity = NULL, $account = NULL) {
+  return entity_get_controller('fieldable_panels_pane')->access($op, $entity, $account);
+}
+
+/**
+ * Get the safe human readable name of an entity bundle.
+ */
+function fieldable_panels_panes_get_bundle_label($bundle) {
+  $entity_info = entity_get_info('fieldable_panels_pane');
+  if (empty($entity_info['bundles'][$bundle]['label'])) {
+    $output = t('Unknown content type');
+  }
+
+  return $entity_info['bundles'][$bundle]['label'];
+}
+
+/**
+ * Get an array of entity bundle names, suitable for an options form.
+ */
+function fieldable_panels_panes_get_bundle_labels() {
+  $bundles = array();
+  $entity_info = entity_get_info('fieldable_panels_pane');
+
+  foreach ($entity_info['bundles'] as $bundle => $info) {
+    $bundles[$bundle] = $info['label'];
+  }
+
+  asort($bundles);
+
+  return $bundles;
+}
+
+/**
+ * Get a "base" context for this pane.
+ *
+ * This is used to provide the base context for access control.
+ */
+function fieldable_panels_panes_get_base_context($entity = NULL) {
+  ctools_include('context');
+  if ($entity) {
+    $context = ctools_context_create('entity:fieldable_panels_pane', $entity);
+  }
+  else {
+    $context = ctools_context_create_empty('entity:fieldable_panels_pane');
+    // The placeholder is needed to create the form used for the live
+    // preview.
+    $context->placeholder = array(
+      'type' => 'context',
+      'conf' => array(
+        'name' => 'fieldable_panels_pane',
+        'identifier' => t('This entity'),
+        'keyword' => 'pane',
+        'context_settings' => array(),
+      ),
+    );
+  }
+
+  $context->identifier = t('This entity');
+  $context->keyword = 'pane';
+  return array('fieldable-pane' => $context);
+}
+
+/**
+ * Basic edit form for the pane entity.
+ *
+ * The entity being edited should be stored in $form_state['entity']
+ * when this form is built.
+ */
+function fieldable_panels_panes_entity_edit_form($form, &$form_state) {
+  $entity = $form_state['entity'];
+
+  // Map these properties for entity translations.
+  $form['#entity_type'] = array(
+    '#type' => 'value',
+    '#value' => $entity->bundle,
+  );
+  $form_state['fieldable_panels_pane'] = $form_state['entity'];
+
+  // fixes a bug in wysiwyg
+  // oh wysiwyg. We need a better way to address this.
+//  drupal_add_css('sites/all/libraries/ckeditor/skins/kama/editor.css');
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Title'),
+    '#default_value' => $entity->title,
+    '#weight' => -10,
+  );
+
+  $form['language'] = array(
+    '#type' => 'value',
+    '#value' => $entity->language,
+  );
+
+  $form['link'] = array(
+    '#type' => 'container',
+    '#states' => array(
+      'visible' => array(
+        ':input[name="title"]' => array('empty' => FALSE),
+      ),
+    ),
+  );
+
+  $form['link']['link'] = array(
+    '#title' => t('Make title a link'),
+    '#type' => 'checkbox',
+    '#default_value' => $entity->link,
+    '#description' => t('Check here to make the title link to another page.'),
+  );
+
+  $form['link']['path'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Path'),
+    '#description' => t('The path for this link. This can be an internal Drupal path such as %add-node or an external URL such as %drupal. Enter %front to link to the front page.', array('%front' => '<front>', '%add-node' => 'node/add', '%drupal' => 'http://drupal.org')),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="link"]' => array('checked' => TRUE),
+      ),
+    ),
+    '#default_value' => $entity->path,
+  );
+
+  $form['additional_settings'] = array(
+    '#type' => 'vertical_tabs',
+    '#weight' => 99,
+  );
+
+  $form['reusable'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Reusability'),
+    '#collapsible' => TRUE,
+    '#collapsed' => empty($entity->reusable),
+    '#group' => 'additional_settings',
+    '#attributes' => array(
+      'class' => array('fieldable-pane-pane-form-reusable-information'),
+    ),
+    '#attached' => array(
+      'js' => array(
+        'vertical-tabs' => drupal_get_path('module', 'fieldable_panels_panes') . '/fieldable_panels_panes.vertical-tabs.js',
+      ),
+    ),
+    '#weight' => 10,
+  );
+
+  $form['revision'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Revision'),
+    '#collapsible' => TRUE,
+    '#collapsed' => empty($entity->revision),
+    '#group' => 'additional_settings',
+    '#attributes' => array(
+      'class' => array('fieldable-pane-pane-form-revision-information'),
+    ),
+    '#attached' => array(
+      'js' => array(
+        'vertical-tabs' => drupal_get_path('module', 'fieldable_panels_panes') . '/fieldable_panels_panes.vertical-tabs.js',
+      ),
+    ),
+    '#weight' => 30,
+  );
+
+  if (empty($entity->fpid)) {
+    $form['revision']['#access'] = FALSE;
+  }
+
+  $form['reusable']['reusable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Make this entity reusable'),
+    '#default_value' => $entity->reusable,
+  );
+
+  $form['reusable']['category'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Category'),
+    '#description' => t('The category this content will appear in the "Add content" modal. If left blank the category will be "Miscellaneous".'),
+    '#default_value' => $entity->category,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="reusable"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  $form['reusable']['admin_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Administrative title'),
+    '#description' => t('The name this content will appear in the "Add content" modal.'),
+    '#default_value' => $entity->admin_title,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="reusable"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  $form['reusable']['admin_description'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Administrative description'),
+    '#description' => t('A description of what this content is, does or is for, for administrative use.'),
+    '#default_value' => $entity->admin_description,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="reusable"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  $form['revision']['revision'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Create new revision'),
+    '#default_value' => 1,
+  );
+
+  if (!user_access('administer fieldable panels panes') || $entity->vid != $entity->current_vid) {
+    $form['revision']['revision']['#disabled'] = TRUE;
+    $form['revision']['revision']['#value'] = TRUE;
+  }
+
+  $form['revision']['log'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Log message'),
+    '#description' => t('Provide an explanation of the changes you are making. This will help other authors understand your motivations.'),
+    '#default_value' => '',
+    '#states' => array(
+      'visible' => array(
+        ':input[name="revision"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  $language = NULL;
+  if (function_exists('entity_language')) {
+    // entity_language() was added in Drupal 7.15.
+    $language = entity_language('fieldable_panels_pane', $entity);
+  }
+  field_attach_form('fieldable_panels_pane', $entity, $form, $form_state, $language);
+
+  if (!empty($form_state['add submit'])) {
+    $form['actions'] = array(
+      '#type' => 'actions',
+    );
+
+    $form['actions']['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('Save'),
+    );
+  }
+
+  return $form;
+}
+
+/**
+ * Validate callback for the pane entity.
+ */
+function fieldable_panels_panes_entity_edit_form_validate($form, &$form_state) {
+  field_attach_form_validate('fieldable_panels_pane', $form_state['entity'], $form, $form_state);
+}
+
+/**
+ * Submit callback for the pane entity.
+ */
+function fieldable_panels_panes_entity_edit_form_submit($form, &$form_state) {
+  $entity = $form_state['entity'];
+
+  // Copy hardcoded fields.
+  $entity->title = $form_state['values']['title'];
+  $entity->link = $form_state['values']['link'];
+  $entity->path = $form_state['values']['path'];
+  $entity->language = $form_state['values']['language'];
+  $entity->reusable = $form_state['values']['reusable'];
+  $entity->category = $form_state['values']['category'];
+  $entity->admin_title = $form_state['values']['admin_title'];
+  $entity->admin_description = $form_state['values']['admin_description'];
+
+  $entity->revision = $form_state['values']['revision'];
+  // Only set a log message if there was a new revision. This prevents
+  // overwriting a log message on the current revision
+  if ($entity->revision) {
+    $entity->log = $form_state['values']['log'];
+  }
+
+  field_attach_submit('fieldable_panels_pane', $entity, $form, $form_state);
+
+  fieldable_panels_panes_save($entity);
+  if (!empty($form_state['add submit'])) {
+    drupal_set_message(t('The entity has been saved.'));
+  }
+}
+
+/**
+ * Returns whether the current page is the preview view of the passed-in pane.
+ *
+ * @param object $pane
+ *   A fieldable panel pane object.
+ *
+ * @return bool
+ *   TRUE if this is a full pane page view, otherwise FALSE.
+ */
+function fieldable_panels_pane_is_page($pane) {
+  $page_page = menu_get_object('fieldable_panels_panes', 4);
+  return (!empty($page_page) ? $page_page->fpid == $pane->fpid : FALSE);
+}
+
+/**
+ * Entity property callback.
+ */
+function fieldable_panels_panes_metadata_fpp_get_properties($entity, array $options, $name, $entity_type) {
+  if ($name == 'path') {
+    return url($entity->path);
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter for ctools_export_ui_edit_item_form.
+ *
+ * Minor improvements to the FPP bundle/type form.
+ */
+function fieldable_panels_panes_form_ctools_export_ui_edit_item_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form_state['plugin']['name']) && $form_state['plugin']['name'] == 'fieldable_panels_pane') {
+    $form['info']['description']['#description'] = t('The administrative description of this type. Also used as the icon tooltip when attempting to add an item of this type via the Panels interface.');
+  }
+}
+
+/**
+ * Callback function for the FPP entity label.
+ */
+function fieldable_panels_panes_entity_label_callback($entity, $type) {
+  // First, try the real label.
+  if (!empty($entity->admin_title)) {
+    return $entity->admin_title;
+  }
+
+  // Then, the user visible title.
+  if (!empty($entity->title)) {
+    return $entity->title;
+  }
+
+  // Then, the bundle label with FPID.
+  $info = entity_get_info($type);
+  if (!empty($info['bundles'][$entity->bundle]['label'])) {
+    return t('@label (id: @fpid)', array(
+      '@label' => $info['bundles'][$entity->bundle]['label'],
+      '@fpid' => $entity->fpid,
+    ));
+  }
+
+  // Finally, the ultimate fallback: the entity name with bundle and FPID.
+  return t('@label (type: @bundle, id: @fpid)', array(
+    // FYI, we use $info['label'] rather than the literal string in case it was
+    // translated.
+    '@label' => $info['label'],
+    '@bundle' => $entity->bundle,
+    '@fpid' => $entity->fpid,
+  ));
+}
+
+/**
+ * Callback function for the FPP entity uri.
+ */
+function fieldable_panels_panes_entity_uri_callback($entity) {
+  return array(
+    'path' => 'admin/structure/fieldable-panels-panes/view/' . $entity->fpid,
+    'options' => array(),
+  );
+}

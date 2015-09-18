@@ -157,7 +157,8 @@ function hook_features_export_options() {
  *   of the module, e.g. the key for `hook_example` should simply be `example`
  *   The values in the array can also be in the form of an associative array
  *   with the required key of 'code' and optional key of 'args', if 'args' need
- *   to be added to the hook.
+ *   to be added to the hook. Alternate it can be an associative array in the
+ *   same style as hook_features_export_files() to add additional files.
  */
 function hook_features_export_render($module_name, $data, $export = NULL) {
   $code = array();
@@ -220,6 +221,42 @@ function hook_features_rebuild($module_name) {
 }
 
 /**
+ * Invoked before a restore operation is run.
+ *
+ * This hook is called before any of the restore operations on the components is
+ * run.
+ *
+ * @param string $op
+ *   The operation that is triggered: revert, rebuild, disable, enable
+ * @param array $items
+ *   The items handled by the operation.
+ */
+function hook_features_pre_restore($op, $items) {
+  if ($op == 'rebuild') {
+    // Use features rebuild to rebuild the features independent exports too.
+    entity_defaults_rebuild();
+  }
+}
+
+/**
+ * Invoked after a restore operation is run.
+ *
+ * This hook is called after any of the restore operations on the components is
+ * run.
+ *
+ * @param string $op
+ *   The operation that is triggered: revert, rebuild, disable, enable
+ * @param array $items
+ *   The items handled by the operation.
+ */
+function hook_features_post_restore($op, $items) {
+  if ($op == 'rebuild') {
+    // Use features rebuild to rebuild the features independent exports too.
+    entity_defaults_rebuild();
+  }
+}
+
+/**
  * Alter the final array of Component names to be exported, just prior to
  * the rendering of defaults. Allows modules a final say in whether or not
  * certain Components are exported (the Components' actual data, however,
@@ -278,6 +315,26 @@ function hook_features_pipe_alter(&$pipe, $data, $export) {
   }
 }
 
+
+/**
+ * Add extra files to the exported file.
+ *
+ * @return array
+ *   An array of files, keyed by file name that will appear in feature and
+ *   with either file_path key to indicate where to copy the file from or
+ *   file_content key to indicate the contents of the file.
+ */
+function hook_features_export_files($module_name, $export) {
+  return array('css/main.css' => array('file_content' => 'body {background-color:blue;}'));
+}
+
+/**
+ * Alter the extra files added to the export.
+ */
+function hook_features_export_files_alter(&$files, $module_name, $export) {
+  $files['css/main.css']['file_content'] = 'body {background-color:black;}';
+}
+
 /**
  * @defgroup features_component_alter_hooks Feature's component alter hooks
  * @{
@@ -293,12 +350,32 @@ function hook_features_pipe_alter(&$pipe, $data, $export) {
  */
 
 /**
+ * Deprecated as of 7.x-2.0.
+ *
  * Alter the default fields right before they are cached into the database.
  *
  * @param &$fields
  *   By reference. The fields that have been declared by another feature.
  */
 function hook_field_default_fields_alter(&$fields) {
+}
+
+/**
+ * Alter the base fields right before they are cached into the database.
+ *
+ * @param &$fields
+ *   By reference. The fields that have been declared by another feature.
+ */
+function hook_field_default_field_bases_alter(&$fields) {
+}
+
+/**
+ * Alter the field instances right before they are cached into the database.
+ *
+ * @param &$fields
+ *   By reference. The fields that have been declared by another feature.
+ */
+function hook_field_default_field_instances_alter(&$fields) {
 }
 
 /**

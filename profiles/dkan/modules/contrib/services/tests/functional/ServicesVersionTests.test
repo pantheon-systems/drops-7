@@ -11,7 +11,7 @@
  * Run test cases for the endpoint with no authentication turned on.
  *
  */
-class ServicesVersionTests extends ServicesWebtestCase {
+class ServicesVersionTests extends ServicesWebTestCase {
   // Class variables
   protected $privileged_user = NULL ;
   // Endpoint details.

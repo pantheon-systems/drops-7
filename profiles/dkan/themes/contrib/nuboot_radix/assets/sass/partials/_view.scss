@@ -21,7 +21,7 @@
 .view-content h2 {
   font-size: 1.25em;
   font-weight:bold;
-  margin:.5em 0 .25em;
+  margin:1em 0 .25em;
 }
 .view-groups-search .views-row {
   border-bottom:1px dotted $smoke;
@@ -130,11 +130,8 @@
     &.views-reset-button,
     &.views-submit-button {
       margin: 0;
-      padding: .5em .5em 0 0;
+      padding: 2.1em .5em 0 0;
     }
-  }
-  label {
-    display: none;
   }
   .description {
     @include text-shadow(none);
@@ -147,3 +144,17 @@
 }
 
 #views-exposed-form-dkan-datasets-panel-pane-1 .views-exposed-form .description { display: none;}
+
+.view-dkan-groups-featured,
+.pane-dkan-groups-featured {
+  .row {
+    text-align: center;
+    div[class*='views-column'] {
+      margin-bottom: 1.25em;
+    }
+  }
+}
+
+.view-admin-content table {
+  margin-top: 0;
+}

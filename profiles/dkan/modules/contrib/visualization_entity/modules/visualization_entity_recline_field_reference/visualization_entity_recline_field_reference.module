@@ -1,0 +1,87 @@
+<?php
+/**
+ * @file
+ * Code for visualization entity recline fields.
+ */
+
+/**
+ * Provide a list of content types that implement the recline field.
+ *
+ *
+ * @return array List of content types have a recline field.
+ */
+
+function visualization_entity_recline_field_reference_compatible_bundles($entity_type = 'node') {
+  $fields = field_read_fields(array('type' => 'recline_field'));
+  $types = array();
+  foreach ($fields as $key => $field) {
+    $instances = field_read_instances(array('field_name' => $key));
+    foreach($instances as $instance) {
+      if ($instance['entity_type'] == $entity_type) {
+        $types[$instance['bundle']] = $key;
+      }
+    }
+  }
+  return $types;
+}
+
+/**
+ * Implements hook_uuidreference_select_query_alter().
+ */
+function visualization_entity_recline_field_reference_uuidreference_select_query_alter(&$query, $entity_type, $bundle, $field_name) {
+  if ($entity_type == 'visualization' && $field_name = 'field_uuid_resource') {
+    $bundles = visualization_entity_recline_field_reference_compatible_bundles();
+    $entity_info = entity_get_info($entity_type);
+    if (!empty($bundles)) {
+      $query->condition($entity_info['entity keys']['bundle'], array_keys($bundles));
+    }
+  }
+}
+
+/**
+ * Returns an array of resources from field_uuid_resource build items.
+ */
+function visualization_entity_recline_field_reference_load_resources($resources) {
+  // Get field_uuid_resource settings.
+  $field = field_read_field('field_uuid_resource');
+  $target_type = $field['settings']['target_type'];
+  $recline_fields = visualization_entity_recline_field_reference_compatible_bundles($target_type);
+
+  // Build resources files.
+  $uuids = array();
+  foreach ($resources as $key => $resource) {
+    $uuids[] = $resources[$key]['target_uuid'];
+  }
+  $resources = entity_uuid_load($target_type, $uuids);
+  foreach ($resources as $key => $resource) {
+    $resources[$key]->recline_file_field = $resource->{$recline_fields[$resource->type]};
+  }
+  return $resources;
+}
+
+/**
+ * Filter an uuid array by key if has recline_field
+ */
+function visualization_entity_recline_field_reference_filter_compatible_instances($options, $entity_type = 'node', $validator) {
+  if (is_array($options)) {
+    $keys = array_keys($options);
+    $entities = entity_uuid_load($entity_type, $keys);
+    $map = visualization_entity_recline_field_reference_compatible_bundles($entity_type);
+    foreach ($entities as $entity) {
+      if (in_array($entity->type, array_keys($map))) {
+        $file_field = $map[$entity->type];
+        $eid = $entity_type[0] . 'id';
+        $eid = $entity->{$eid};
+        $valid_file = visualization_entity_validate_file($entity, $file_field, $validator);
+
+        if ($valid_file === FALSE) {
+          unset($options[$entity->uuid]);
+        }
+      }
+      else {
+        unset($options[$entity->uuid]);
+      }
+    }
+  }
+  return $options;
+}

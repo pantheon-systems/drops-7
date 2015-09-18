@@ -6,6 +6,84 @@
  */
 
 /**
+ * Saves the info for an instance
+ *
+ * @param $instance
+ *   The instance to save the data for.
+ * @param $data
+ *   An array of data that corresponds to fields in table.
+ *    'stylesheet': Path to a colorizer stylesheet.
+ *    'palette': The palette for the instance.
+ *    'files': An array of files.
+ */
+function colorizer_save($instance, $data) {
+  if ($current = colorizer_load($instance)) {
+    $data += $current;
+  }
+  else {
+    $data += array(
+      'palette' => array(),
+      'stylesheet' => '',
+    );
+  }
+  $data['palette'] = serialize($data['palette']);
+  db_merge('colorizer_instance')
+    ->key(array('instance' => $instance))
+    ->fields($data)
+    ->execute();
+  cache_clear_all('colorizer_data_' . $instance, 'cache');
+  drupal_static_reset('colorizer_load');
+}
+
+/**
+ * Deletes the info for an instance
+ *
+ * @param $instance
+ *   The instance to delete the data for.
+ */
+function colorizer_delete($instance) {
+  db_delete('colorizer_instance')
+    ->condition('instance', $instance)
+    ->execute();
+  cache_clear_all('colorizer_data_' . $instance, 'cache');
+  drupal_static_reset('colorizer_load');
+}
+
+/**
+ * Loads data for an instance.
+ *
+ * @param $instance
+ *   The instance to load the data for.
+ * @param $field
+ *   Return just specific field if configured.
+ *
+ * @return
+ *   The data or NULL if not set.
+ */
+function colorizer_load($instance, $field = NULL) {
+  $data = &drupal_static(__FUNCTION__, array());
+  if (!array_key_exists($instance, $data)) {
+    if ($cache = cache_get('colorizer_data_' . $instance)) {
+      $data[$instance] = $cache->data;
+    }
+    else {
+      $data[$instance] = db_select('colorizer_instance', 'ci')
+        ->fields('ci', array('stylesheet', 'palette'))
+        ->condition('instance', $instance)
+        ->execute()
+        ->fetchAssoc();
+      if (!empty($data[$instance]['palette'])) {
+        $data[$instance]['palette'] = unserialize($data[$instance]['palette']);
+      }
+    }
+  }
+  if ($field) {
+    return isset($data[$instance][$field]) ? $data[$instance][$field] : NULL;
+  }
+  return $data[$instance];
+}
+
+/**
  * Implements hook_menu().
  */
 function colorizer_menu() {
@@ -35,6 +113,10 @@ function colorizer_init() {
     // don't run colorizer during installer
     return;
   }
+  // If update hasn't run, this won't run.
+  if (!db_table_exists('colorizer_instance')) {
+    return;
+  }
 
   // check to see if colorizer css file exists on site
   $source_path = drupal_get_path('theme', $theme_key) . '/';
@@ -48,7 +130,7 @@ function colorizer_init() {
   // allows for group-specific color instances rather than tying to theme
   drupal_alter('colorizer_instance', $instance);
 
-  $file = variable_get('colorizer_' . $instance . '_stylesheet', '');
+  $file = colorizer_load($instance, 'stylesheet');
 
   // recreate any missing colorize css files
   if (!file_exists($file)) {
@@ -105,8 +187,10 @@ function colorizer_get_palette($theme, $instance = '', $default = FALSE) {
   $palette = $info['schemes']['default']['colors'];
   $instance = empty($instance) ? $theme : $instance;
 
-  // Load variable.
-  return $default ? $palette : variable_get('colorizer_' . $instance . '_palette', $palette);
+  if (!$default && ($loaded_palette = colorizer_load($instance, 'palette'))) {
+    return $loaded_palette;
+  }
+  return $palette;
 }
 
 /**
@@ -142,7 +226,7 @@ function colorizer_fill_defaults($info) {
  */
 function colorizer_update_stylesheet($theme, $instance, $palette) {
   // Delete old files.
-  $current_file = variable_get('colorizer_' . $instance . '_stylesheet', '');
+  $current_file = colorizer_load($instance, 'stylesheet');
   @drupal_unlink($current_file);
 
   // Prepare target locations for generated files.
@@ -177,13 +261,8 @@ function colorizer_update_stylesheet($theme, $instance, $palette) {
   }
 
   if (!empty($target_file)) {
-    variable_set('colorizer_' . $instance . '_stylesheet', $target_file);
+    colorizer_save($instance, array('stylesheet' => $target_file));
   }
-
-  // Clear Drupal's cache so the changes are reflected immediatelly for
-  // anonymous users.
-  cache_clear_all();
-
   return $target_file;
 }
 

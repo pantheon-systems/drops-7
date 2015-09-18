@@ -5,6 +5,9 @@
  * Integrates Recline.js visualization tools.
  */
 
+define('RECLINE_AJAX_CALL_TIMEOUT', 'recline_ajax_call_timeout');
+define('RECLINE_AJAX_CALL_DEFAULT_TIMEOUT', 500);
+
 module_load_include('inc', 'recline', 'recline.field');
 
 /**
@@ -13,6 +16,13 @@ module_load_include('inc', 'recline', 'recline.field');
 function recline_menu() {
   $items = array();
 
+  $items['admin/dkan/recline'] = array(
+    'title' => 'Recline Configuration',
+    'description' => 'Configurable items for recline module',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('recline_configuration_form'),
+    'access arguments' => array('access recline configuration'),
+  );
   $items['node/%node/recline-embed'] = array(
     'title' => 'Embed',
     'page callback' => 'recline_embed',
@@ -22,6 +32,53 @@ function recline_menu() {
   );
 
   return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function recline_permission() {
+  $permissions['access recline configuration'] = array(
+    'title' => t('Configure recline module items.'),
+    'description' => t('Access recline module configuration items.'),
+  );
+
+  return $permissions;
+}
+
+/**
+ * Callback for admin/dkan/recline page.
+ */
+function recline_configuration_form() {
+  $form = array();
+  $form['description'] = array(
+    '#type' => 'markup',
+    '#markup' => '<p>' . t('
+      Recline\'s module configuration items'
+    ) . '</p>',
+  );
+  $form['ajax_timeout'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Preview ajax call timeout'),
+    '#element_validate' => array('element_validate_integer_positive'),
+    '#default_value' => variable_get(RECLINE_AJAX_CALL_TIMEOUT, RECLINE_AJAX_CALL_DEFAULT_TIMEOUT),
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => 'Save',
+    '#submit' => array('recline_configuration_form_save'),
+  );
+  return $form;
+}
+
+/**
+ * Submit function for recline_configuration_form
+ */
+function recline_configuration_form_save($form, &$form_state) {
+  if (isset($form['ajax_timeout']['#value'])) {
+    variable_set(RECLINE_AJAX_CALL_TIMEOUT, $form['ajax_timeout']['#value']);
+    drupal_set_message(t('Recline Configuration saved'), 'status', FALSE);
+  }
 }
 
 /**

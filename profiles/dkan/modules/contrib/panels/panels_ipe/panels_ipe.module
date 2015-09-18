@@ -133,18 +133,22 @@ function template_preprocess_panels_ipe_pane_wrapper(&$vars) {
 function theme_panels_ipe_pane_wrapper($vars) {
   $output = $vars['output'];
   $pane = $vars['pane'];
+  $display = $vars['display'];
 
   $attributes = array(
     'class' => 'panels-ipe-linkbar',
   );
 
+  $type = ctools_get_content_type($pane->type);
+  $title ='<span class = "panels-ipe-dragbar-admin-title">' . ctools_content_admin_title($type, $pane->subtype, $pane->configuration, $display->context) . '</span>';
+
   $links = theme('links', array('links' => $vars['links'], 'attributes' => $attributes));
 
   if (!empty($pane->locks['type']) && $pane->locks['type'] == 'immovable') {
-    $links = '<div class="panels-ipe-dragbar panels-ipe-nodraghandle clearfix">' . $links . '</div>';
+    $links = '<div class="panels-ipe-dragbar panels-ipe-nodraghandle clearfix">' . $links .$title .'</div>';
   }
   else {
-    $links = '<div class="panels-ipe-dragbar panels-ipe-draghandle clearfix">' . $links . '<span class="panels-ipe-draghandle-icon"><span class="panels-ipe-draghandle-icon-inner"></span></span></div>';
+    $links = '<div class="panels-ipe-dragbar panels-ipe-draghandle clearfix">' . $links . $title . '<span class="panels-ipe-draghandle-icon"><span class="panels-ipe-draghandle-icon-inner"></span></span></div>';
   }
 
   $handlebar = '<div class="panels-ipe-handlebar-wrapper panels-ipe-on">' . $links . '</div>';

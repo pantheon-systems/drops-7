@@ -112,6 +112,7 @@ function panels_mini_block_view($delta = 0) {
       $contexts = ctools_context_match_required_contexts($panel_mini->requiredcontexts, $current_page['contexts']);
     }
   }
+  drupal_alter('panels_mini_block_contexts', $contexts, $panel_mini);
 
   $panel_mini->context = $panel_mini->display->context =  ctools_context_load_contexts($panel_mini, FALSE, $contexts);
   $panel_mini->display->css_id = panels_mini_get_id($panel_mini->name);
@@ -196,8 +197,8 @@ function panels_mini_get_pane_links_alter(&$links, $pane, $content_type) {
  */
 function panels_mini_contextual_links_view_alter(&$element, $items) {
 
-  // Add contextual links to all mini panel blocks.
-  if (isset($element['#element']['#block']) && strpos((string) $element['#element']['#block']->bid, 'panels_mini') === 0) {
+  // Add contextual links to all mini panel blocks with bid property.
+  if (isset($element['#element']['#block']) && isset($element['#element']['#block']->bid) && strpos((string) $element['#element']['#block']->bid, 'panels_mini') === 0) {
 
     $admin_pages = array(
       t('Configure mini panel settings') => 'basic',
@@ -517,4 +518,15 @@ function panels_mini_panels_dashboard_blocks(&$vars) {
     'section' => 'left',
   );
 
+}
+
+/**
+ * Implements template_preprocess_ctools_wizard_trail().
+ *
+ * Customize the divider used in the CTools wizard to build the edit pages for
+ * Mini Panels as a stop-gap measure until the UX can be completely re-done.
+ */
+function panels_mini_preprocess_ctools_wizard_trail(&$variables) {
+  $variables['divider'] = ' | ';
+  drupal_add_css(drupal_get_path('module', 'panels_mini') . '/panels_mini.css');
 }
