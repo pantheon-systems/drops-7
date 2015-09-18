@@ -161,7 +161,7 @@ function dkan_dataset_groups_default_search_api_index() {
     "server" : "groups_server",
     "item_type" : "node",
     "options" : {
-      "datasource" : { "bundles" : [ "dkan_data_story" ] },
+      "datasource" : { "bundles" : [ "dataset" ] },
       "index_directly" : 1,
       "cron_limit" : "50",
       "fields" : {
