@@ -1522,7 +1522,7 @@ function _filter_xss_split($m, $store = FALSE) {
     return '&lt;';
   }
 
-  if (!preg_match('%^<\s*(/\s*)?([a-zA-Z0-9]+)([^>]*)>?|(<!--.*?-->)$%', $string, $matches)) {
+  if (!preg_match('%^<\s*(/\s*)?([a-zA-Z0-9\-]+)([^>]*)>?|(<!--.*?-->)$%', $string, $matches)) {
     // Seriously malformed.
     return '';
   }
@@ -3802,7 +3802,7 @@ function drupal_load_stylesheet_content($contents, $optimize = FALSE) {
 
   // Replaces @import commands with the actual stylesheet content.
   // This happens recursively but omits external files.
-  $contents = preg_replace_callback('/@import\s*(?:url\(\s*)?[\'"]?(?![a-z]+:)([^\'"\()]+)[\'"]?\s*\)?\s*;/', '_drupal_load_stylesheet', $contents);
+  $contents = preg_replace_callback('/@import\s*(?:url\(\s*)?[\'"]?(?![a-z]+:)(?!\/\/)([^\'"\()]+)[\'"]?\s*\)?\s*;/', '_drupal_load_stylesheet', $contents);
   return $contents;
 }
 
@@ -6346,13 +6346,21 @@ function drupal_render_cid_parts($granularity = NULL) {
   }
 
   if (!empty($granularity)) {
+    $cache_per_role = $granularity & DRUPAL_CACHE_PER_ROLE;
+    $cache_per_user = $granularity & DRUPAL_CACHE_PER_USER;
+    // User 1 has special permissions outside of the role system, so when
+    // caching per role is requested, it should cache per user instead.
+    if ($user->uid == 1 && $cache_per_role) {
+      $cache_per_user = TRUE;
+      $cache_per_role = FALSE;
+    }
     // 'PER_ROLE' and 'PER_USER' are mutually exclusive. 'PER_USER' can be a
     // resource drag for sites with many users, so when a module is being
     // equivocal, we favor the less expensive 'PER_ROLE' pattern.
-    if ($granularity & DRUPAL_CACHE_PER_ROLE) {
+    if ($cache_per_role) {
       $cid_parts[] = 'r.' . implode(',', array_keys($user->roles));
     }
-    elseif ($granularity & DRUPAL_CACHE_PER_USER) {
+    elseif ($cache_per_user) {
       $cid_parts[] = "u.$user->uid";
     }
 
@@ -7155,6 +7163,23 @@ function _drupal_schema_initialize(&$schema, $module, $remove_descriptions = TRU
 }
 
 /**
+ * Retrieves the type for every field in a table schema.
+ *
+ * @param $table
+ *   The name of the table from which to retrieve type information.
+ *
+ * @return
+ *   An array of types, keyed by field name.
+ */
+function drupal_schema_field_types($table) {
+  $table_schema = drupal_get_schema($table);
+  foreach ($table_schema['fields'] as $field_name => $field_info) {
+    $field_types[$field_name] = isset($field_info['type']) ? $field_info['type'] : NULL;
+  }
+  return $field_types;
+}
+
+/**
  * Retrieves a list of fields from a table schema.
  *
  * The returned list is suitable for use in an SQL query.
@@ -7778,6 +7803,7 @@ function entity_get_info($entity_type = NULL) {
         // Prepare entity schema fields SQL info for
         // DrupalEntityControllerInterface::buildQuery().
         if (isset($entity_info[$name]['base table'])) {
+          $entity_info[$name]['base table field types'] = drupal_schema_field_types($entity_info[$name]['base table']);
           $entity_info[$name]['schema_fields_sql']['base table'] = drupal_schema_fields_sql($entity_info[$name]['base table']);
           if (isset($entity_info[$name]['revision table'])) {
             $entity_info[$name]['schema_fields_sql']['revision table'] = drupal_schema_fields_sql($entity_info[$name]['revision table']);
