@@ -4,7 +4,21 @@
  * @file
  * Provides Schema mapping for Project Open Data.
  */
+/**
+ * Implements hook_menu().
+ */
+function open_data_schema_pod_menu() {
+  $items['admin/config/services/odsm/validate/pod'] = array(
+    'title' => 'Project Open Data validation',
+    'page callback' => 'open_data_schema_pod_validation_page',
+    'page arguments' => array(),
+    'access arguments' => array('Administer Open Data Schema Mapper'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'open_data_schema_pod.pages.inc',
+  );
 
+  return $items;
+}
 /**
  * Implements hook_open_data_schema().
  */
@@ -22,7 +36,7 @@ function open_data_schema_pod_open_data_schema() {
       'title' => 'Project Open Data v1.1',
       'schema_file' => $module_path . '/data/v1.1/dataset.json',
       'description' => t('Project Open Data v1.1 schema. See http://project-open-data.github.io/schema/ for more awesome details.'),
-    )
+    ),
   );
 }
 
@@ -67,6 +81,7 @@ function open_data_schema_pod_form_alter(&$form, $form_state, $form_id) {
 
           $form['#submit'] = array_merge(array('open_data_schema_pod_extra_settings_submit'), $form['#submit']);
           break;
+
         case 'pod_v1_1':
           break;
       }
@@ -111,18 +126,92 @@ function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $mach
       // Puts catalog at top of results list.
       array_unshift($result, $catalog_row);
       break;
+
     case 'pod_v1_1':
+      // See: https://project-open-data.cio.gov/v1.1/schema.
       $dataset_row = array();
       foreach ($result as $key => $dataset) {
-        if (!isset($dataset['accessLevel']) || $dataset['accessLevel'] == '') {
-          $dataset['accessLevel'] = 'public';
+        if (isset($dataset['accessLevel'])) {
+          $dataset['accessLevel'] = strtolower($dataset['accessLevel']);
+          if ($dataset['accessLevel'] == 'restricted') {
+            $dataset['accessLevel'] = 'restricted public';
+          }
         }
-        if (isset($dataset['license'])) {
-          if ($dataset['license'] != 'notspecified') {
-            $dataset['license'] = 'http://opendefinition.org/licenses/' . $dataset['license'];
+        if (isset($dataset['temporal']) && $dataset['temporal'] == "/") {
+          unset($dataset['temporal']);
+        }
+        if (isset($dataset['contactPoint']['hasEmail']) &&
+          !filter_var($dataset['contactPoint']['hasEmail'], FILTER_VALIDATE_EMAIL)) {
+          $dataset['contactPoint']['hasEmail'] = '';
+        }
+        // License must be a URL.
+        if (isset($dataset['license']) && !filter_var($dataset['license'], FILTER_VALIDATE_URL)) {
+          // This function was introduced within the last year.
+          if (function_exists('dkan_dataset_content_types_license_allowed_values')) {
+            $values = dkan_dataset_content_types_license_subscribed_values();
+            if (isset($values[$dataset['license']]['uri'])) {
+              $dataset['license'] = $values[$dataset['license']]['uri'];
+            }
           }
           else {
             unset($dataset['license']);
+          }
+        }
+        if (isset($dataset['dataQuality'])) {
+          if ($dataset['dataQuality'] == 'TRUE') {
+            $dataset['dataQuality'] = (bool) TRUE;
+          }
+          elseif ($dataset['dataQuality'] == 'FALSE') {
+            $dataset['dataQuality'] = (bool) FALSE;
+          }
+        }
+        if (isset($dataset['distribution'])) {
+          foreach ($dataset['distribution'] as $num => $dist) {
+            if ($dist['format'] && !$dist['mediaType']) {
+              include_once DRUPAL_ROOT . '/includes/file.mimetypes.inc';
+              $map = file_mimetype_mapping();
+              $dataset['distribution'][$num]['mediaType'] = isset($map['mimetypes'][$map['extensions'][$dist['format']]]) ? $map['mimetypes'][$map['extensions'][$dist['format']]] : 'text/html';
+            }
+            if ($dist['downloadURL'] && !$dist['mediaType']) {
+              if ($dist['format']) {
+                $media_type = recline_get_data_type($dist['format']);
+                $dist['mediaType'] = $media_type ? $media_type : t('unknown');
+              }
+              else {
+                $dist['mediaType'] = t('unknown');
+              }
+            }
+            // Remove empty items.
+            foreach ($dist as $i => $v) {
+              if (!$v) {
+                unset($dataset['distribution'][$num][$i]);
+              }
+            }
+          }
+        }
+        if (isset($dataset['bureauCode']) && module_exists('open_data_federal_extras')) {
+          foreach ($dataset['bureauCode'] as $num => $code) {
+            $code = str_replace("-", ":", substr($code, 0, 6));
+            $dataset['bureauCode'][$num] = $code;
+          }
+        }
+        if (isset($dataset['issued']) && strpos($dataset['issued'], ' - ')) {
+          $dataset['issued'] = date("Y-m-d", strtotime(substr($dataset['issued'], 0, strpos($dataset['issued'], ' - '))));
+        }
+        if (variable_get('odsm_data_json_defaults', TRUE)) {
+          odsm_add_data_JSON_defaults($dataset);
+        }
+        if (isset($dataset['contactPoint']) && $dataset['contactPoint']['hasEmail'] == 'mailto:') {
+          $dataset['contactPoint']['hasEmail'] = 'mailto:' . variable_get('site_mail', ini_get('sendmail_from'));
+        }
+        if (isset($dataset['publisher']) && !isset($dataset['publisher']['name'])) {
+          global $base_url;
+          $name = parse_url($base_url, PHP_URL_HOST);
+          if (!is_null($name)) {
+            $dataset['publisher']['name'] = $name;
+          }
+          else {
+            $dataset['publisher']['name'] = variable_get('site_name', FALSE);
           }
         }
         array_push($dataset_row, $dataset);
@@ -139,6 +228,46 @@ function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $mach
 }
 
 /**
+ * Adds POD required fields.
+ *
+ * The following fields are required by POD.
+ * - title
+ * - description
+ * - keyword
+ * - publisher
+ * - contactPoint
+ * - accessLevel
+ * - bureauCode
+ * - programCode
+ */
+function odsm_add_data_JSON_defaults(&$dataset) {
+  if ((isset($dataset['title']) && !$dataset['title']) || !isset($dataset['title'])) {
+    $dataset['title'] = t("No title provided");
+  }
+  if ((isset($dataset['description']) && !$dataset['description']) || !isset($dataset['description'])) {
+    $dataset['description'] = t("No description provided");
+  }
+  if ((isset($dataset['keyword']) && !$dataset['keyword']) || !isset($dataset['keyword'])) {
+    $dataset['keyword'] = array(t("No keyword provided"));
+  }
+  if ((isset($dataset['contactPoint']['hasEmail']) && !$dataset['contactPoint']['hasEmail']) || !isset($dataset['contactPoint']['hasEmail'])) {
+    $dataset['contactPoint']['hasEmail'] = 'mailto:' . variable_get('pod_default_email', 'noemailprovided@usa.gov');
+  }
+  if ((isset($dataset['contactPoint']['fn']) && !$dataset['contactPoint']['fn']) || !isset($dataset['contactPoint']['fn'])) {
+    $dataset['contactPoint']['fn'] = t('unknown');
+  }
+  if ((isset($dataset['accessLevel']) && !$dataset['accessLevel']) || !isset($dataset['accessLevel'])) {
+    $dataset['accessLevel'] = 'public';
+  }
+  if ((isset($dataset['bureauCode']) && !$dataset['bureauCode']) || !isset($dataset['bureauCode'])) {
+    $dataset['bureauCode'] = array('000:00');
+  }
+  if ((isset($dataset['programCode']) && !$dataset['programCode']) || !isset($dataset['programCode'])) {
+    $dataset['programCode'] = array('000:000');
+  }
+}
+
+/**
  * Implements hook_open_data_schema_fill_references().
  */
 function open_data_schema_pod_open_data_schema_fill_references($schema_name, &$schema) {
@@ -151,14 +280,14 @@ function open_data_schema_pod_open_data_schema_fill_references($schema_name, &$s
         'contactPoint',
       );
       $files = array();
-      // Process $ref keys to include referenced json file
+      // Process $ref keys to include referenced json file.
       foreach ($references as $key) {
         $json = $module_path . '/data/v1.1/';
         if (isset($schema['properties'][$key]['anyOf'])) {
           $json = $json . $schema['properties'][$key]['anyOf'][0]['items']['$ref'];
         }
-        else {
-         $json = $json . $schema['properties'][$key]['$ref']; 
+        elseif(isset($schema['properties'][$key]['$ref'])) {
+          $json = $json . $schema['properties'][$key]['$ref'];
         }
         $json = file_get_contents($json);
         $json = drupal_json_decode($json);
@@ -168,13 +297,13 @@ function open_data_schema_pod_open_data_schema_fill_references($schema_name, &$s
           unset($json['title']);
           unset($schema['properties'][$key]['anyOf'][0]['items']['$ref']);
           if (isset($schema['properties'][$key]['anyOf'][0]['items']['minItems'])) {
-            $schema['properties'][$key]['anyOf'][0]['minItems'] = $schema['properties'][$key]['anyOf'][0]['items']['minItems'];  
+            $schema['properties'][$key]['anyOf'][0]['minItems'] = $schema['properties'][$key]['anyOf'][0]['items']['minItems'];
           }
           if ($schema['properties'][$key]['anyOf'][0]['items']['uniqueItems']) {
             $schema['properties'][$key]['anyOf'][0]['uniqueItems'] = $schema['properties'][$key]['anyOf'][0]['items']['uniqueItems'];
           }
           $schema['properties'][$key]['anyOf'][0]['uniqueItems'] = $schema['properties'][$key]['anyOf'][0]['items']['uniqueItems'];
-          $schema['properties'][$key]['anyOf'][0]['items'] = $json;  
+          $schema['properties'][$key]['anyOf'][0]['items'] = $json;
         }
         else {
           $schema['properties'][$key] = $json;
@@ -182,4 +311,122 @@ function open_data_schema_pod_open_data_schema_fill_references($schema_name, &$s
       }
       break;
   }
+}
+
+/**
+ * Implements hook_tokens_alter().
+ */
+function open_data_schema_pod_tokens_alter(array &$replacements, array $context) {
+  if (isset($replacements['[node:field-odfe-program-code]']) && !empty($context['data']['node']->field_odfe_program_code['und'])) {
+    $field = array();
+    foreach ($context['data']['node']->field_odfe_program_code['und'] as $key => $item) {
+      $field[] = str_replace("-", ":", $item['value']);
+    }
+    $replacements['[node:field-odfe-program-code]'] = implode(", ", $field);
+  }
+  if (isset($replacements['[node:field_related_content]']) && isset($context['data']['node']->field_related_content['und'])) {
+    $field = array();
+    foreach ($context['data']['node']->field_related_content['und'] as $key => $item) {
+      $field[] = $item['url'];
+    }
+    $replacements['[node:field_related_content]'] = implode(", ", $field);
+  }
+  if (isset($replacements['[node:field-frequency]']) && isset($context['data']['node']->field_frequency['und'])) {
+    $replacements['[node:field-frequency]'] = open_data_schema_pod_accrual_iso_8601_value($replacements['[node:field-frequency]']);
+  }
+}
+
+/**
+ * Provides value for human readable name.
+ */
+function open_data_schema_pod_accrual_iso_8601_value($name) {
+  if ($name == 'Annually') {
+    $name = 'Annual';
+  }
+  $iso = open_data_schema_pod_accrual_iso_8601();
+  if (isset($iso[$name])) {
+    return $iso[$name];
+  }
+  else {
+    return '';
+  }
+}
+
+/**
+ * Provides iso 8601 accrual periodicity.
+ */
+function open_data_schema_pod_accrual_iso_8601() {
+  return array(
+    'Decennial' => 'R/P10Y',
+    'Quadrennial' => 'R/P4Y',
+    'Annual' => 'R/P1Y',
+    'Bimonthly' => 'R/P2M',
+    'Semiweekly' => 'R/P3.5D',
+    'Daily' => 'R/P1D',
+    'Biweekly' => 'R/P2W',
+    'Semiannual' => 'R/P6M',
+    'Biennial' => 'R/P2Y',
+    'Triennial' => 'R/P3Y',
+    'Three times a week' => 'R/P0.33W',
+    'Three times a month' => 'R/P0.33M',
+    'Continuously updated' => 'R/PT1S',
+    'Monthly' => 'R/P1M',
+    'Quarterly' => ' R/P3M',
+    'Semimonthly' => 'R/P0.5M',
+    'Three times a year' => 'R/P4M',
+    'Weekly' => 'R/P1W',
+  );
+}
+
+/**
+ * Validates individual datasets.
+ */
+function open_data_schema_pod_process_validate($url, $clear_cache = FALSE) {
+  include 'podValidator.php';
+  if (!$clear_cache && $cache = cache_get('pod_validate_result')) {
+    $results = $cache->data;
+    $results['cache_date'] = $cache->created;
+  }
+  else {
+    $podValidator = new podValidator\validate($url);
+    $podValidator->processAll();
+    $count = $podValidator->datasetCount();
+    $ids = array();
+    $error_datasets = array();
+    $total_errors = 0;
+    if ($errors = $podValidator->getErrors()) {
+      $total_errors = count($errors);
+      foreach ($errors as $error) {
+        $error_datasets[$error['id']] = 1;
+      }
+      $errors = open_data_schema_pod_validation_process_errors($errors);
+    }
+    $results = array(
+      'errors' => $errors,
+      'count' => $count,
+      'total_errors' => $total_errors,
+      'error_datasets' => $error_datasets,
+    );
+    $cache = cache_set('pod_validate_result', $results, 'cache');
+  }
+  return $results;
+}
+
+/**
+ * Adds node links to errors.
+ */
+function open_data_schema_pod_validation_process_errors($rows) {
+  foreach ($rows as $key => $row) {
+    if (!isset($ids[$row['id']])) {
+      $nid = entity_get_id_by_uuid('node', array($row['id']));
+      $nid = $nid[$row['id']];
+      $node = node_load($nid);
+      $ids[$row['id']] = $node;
+    }
+    else {
+      $node = $ids[$row['id']];
+    }
+    $rows[$key]['title'] = l($node->title,'node/' . $node->nid);
+  }
+  return $rows;
 }

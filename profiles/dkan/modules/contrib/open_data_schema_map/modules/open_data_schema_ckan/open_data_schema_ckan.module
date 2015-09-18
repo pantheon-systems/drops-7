@@ -239,7 +239,7 @@ function open_data_schema_ckan_open_data_schema_map_results_alter(&$result, $mac
     elseif ($machine_name == 'ckan_package_list') {
       $list = array();
       $response['help'] = t("Return a list of the names of the site's datasets (packages).\n\n :param limit: if given, the list of datasets will be broken into pages of\n at most ``limit`` datasets per page and only one page will be returned\n at a time (optional)\n :type limit: int\n :param offset: when ``limit`` is given, the offset to start returning packages from\n :type offset: int\n\n :rtype: list of strings\n\n");
-      foreach ($response['result'] as $num => $data) {
+      foreach ($response['result'][0] as $num => $data) {
         // This endpoint just produces a list.
         $list[] = $data['name'];
       }

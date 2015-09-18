@@ -20,6 +20,7 @@
   position:relative;
   z-index:3;
 }
+
 .navbar-default {
   background:transparent;
   border:none;
@@ -32,15 +33,32 @@
     margin:0;
     position:relative;
     z-index:3;
+    a.dropdown-toggle {
+      color: #FFFFFF;
+    }
+    .open > a,
     li > a {
+      color: #FFFFFF;
       display: block;
-      font-size:12px;
       line-height: 20px;
-      padding:15px 10px;
+      padding:15px;
+      &:active,
       &:hover,
       &:focus {
+        background: $brand-secondary;
         color: #FFFFFF;
         text-decoration:none;
+      }
+    }
+    .dropdown-menu {
+      background: $brand-primary;
+      padding: 0;
+      li {
+        display: block;
+        a {
+          display: block;
+          color: #ffffff;
+        }
       }
     }
   }
@@ -54,6 +72,10 @@
       a {
         display: inline-block;
       }
+      .dropdown-menu li,
+      .dropdown-menu li a {
+        display: block;
+      }
     }
   }
   .navbar-nav.secondary li {
@@ -65,14 +87,38 @@
     }
   }
 }
+@media all and (max-width:767px) {
+  .nav > li {
+    clear: both;
+  }
+  .navbar-default .navbar-nav .open .dropdown-menu,
+  .navbar-default .navbar-nav .dropdown-menu {
+    @include box-shadow(none);
+    border: none;
+    display: block;
+    width: 100%;
+    position: relative;
+    li > a {
+      color: #ffffff;
+      display: block;
+      padding:15px 10px 15px 35px;
+      &:hover,
+      &:focus,
+      &:active {
+        background: $brand-secondary;
+        color: #ffffff;
+        clear: both;
+      }
+    }
+  }
+}
 
 #block-dkan-sitewide-dkan-sitewide-user-menu {
   .links a {
     color: #FFFFFF;
     display: block;
-    font-size:12px;
     line-height: 20px;
-    padding:15px 10px;
+    padding:15px;
     &:hover,
     &:focus {
       background: $brand-secondary;
@@ -95,8 +141,9 @@
 .navbar .nav > li > a {
   text-shadow:none;
 }
+
 // Large screen.
-@media(min-width:768px){
+@media(min-width:768px) {
   .container > .navbar-header {
     margin-left:0;
   }
@@ -130,19 +177,17 @@
 .nav-tabs {
   li a {
     color:$brand-primary;
-    &:hover {
-      //color:darken($brand-primary,10%);
-    }
   }
 }
 
-.nav-pills li a.active,
-.nav-pills li.active a:hover,
-.nav-pills li.active a:focus,
-.tabs--primary li a.active {
-  border:1px solid $brand-primary;
-  background: $brand-primary;
-  color:#ffffff;
+.tabs--primary {
+  .nav-pills li a.active,
+  .nav-pills li.active a:hover,
+  .nav-pills li.active a:focus {
+    border:1px solid $brand-primary;
+    background: $brand-primary;
+    color:#ffffff;
+  }
 }
 .btn-primary {
   background:$brand-primary;
@@ -173,7 +218,7 @@ a.embed-link {
   //background:$brand-primary;
   color: #fff;
   display: inline-block;
-  padding:5px 15px 5px 30px;
+  padding:5px 15px 5px 35px;
   position:relative;
   margin:1em 0;
   text-decoration: none;
@@ -202,9 +247,7 @@ textarea.embed-code {
 ul.action-links {
   margin:1em 15px;
 }
-.data-explorer .btn {
-  border:1px solid $smoke;
-}
+
 .btn:active, 
 .btn.active {
   @include box-shadow(none);

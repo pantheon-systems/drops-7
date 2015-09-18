@@ -15,7 +15,7 @@
 }
 .page-groups {
   article.node-teaser {
-    height: 365px;
+    min-height: 365px;
     margin-bottom: 20px;
     .field-name-field-image img {
       border:1px solid $shade;

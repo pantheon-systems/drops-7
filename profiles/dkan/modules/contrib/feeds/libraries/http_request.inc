@@ -38,7 +38,7 @@ class HRCurlException extends Exception {}
  *   The discovered feed, or FALSE if the URL is not reachable or there was an
  *   error.
  */
-function http_request_get_common_syndication($url, $settings = NULL) {
+function http_request_get_common_syndication($url, $settings = array()) {
 
   $accept_invalid_cert = isset($settings['accept_invalid_cert']) ? $settings['accept_invalid_cert'] : FALSE;
   $download = http_request_get($url, NULL, NULL, $accept_invalid_cert);
@@ -54,7 +54,7 @@ function http_request_get_common_syndication($url, $settings = NULL) {
   // @see http_request_get.
   $downloaded_string = $download->data;
   // If this happens to be a feed then just return the url.
-  if (http_request_is_feed($download->headers['content-type'], $downloaded_string)) {
+  if (isset($download->headers['content-type']) && http_request_is_feed($download->headers['content-type'], $downloaded_string)) {
     return $url;
   }
 
@@ -100,8 +100,8 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
     // Handle password protected feeds.
     $url_parts = parse_url($url);
     if (!empty($url_parts['user'])) {
-      $password = $url_parts['pass'];
-      $username = $url_parts['user'];
+      $password = urldecode($url_parts['pass']);
+      $username = urldecode($url_parts['user']);
     }
   }
 
@@ -110,7 +110,7 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
   // Only download and parse data if really needs refresh.
   // Based on "Last-Modified" and "If-Modified-Since".
   $headers = array();
-  if ($cache = cache_get('feeds_http_download_' . md5($url))) {
+  if ($cache = http_request_get_cache($url)) {
     $last_result = $cache->data;
     $last_headers = array_change_key_case($last_result->headers);
 
@@ -213,7 +213,12 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
       // considered by CURLINFO_HEADER_SIZE (possibly cURL bug).
       // This data is only added when to HTTP header when working with a proxy.
       // Example string added: <HTTP/1.0 200 Connection established\r\n\r\n>
-      if ($proxy_server && _drupal_http_use_proxy($uri['host'])) {
+      // This was fixed in libcurl version 7.30.0 (0x71e00) (April 12, 2013),
+      // so this workaround only removes the proxy-added headers if we are using
+      // an older version of libcurl.
+      $curl_ver = curl_version();
+
+      if ($proxy_server && $curl_ver['version_number'] < 0x71e00 && _drupal_http_use_proxy($uri['host'])) {
         $http_header_break = "\r\n\r\n";
         $response = explode($http_header_break, $data);
         if (count($response) > 2) {
@@ -265,13 +270,13 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
     else {
       // It's a tragedy, this file must exist and contain good data.
       // In this case, clear cache and repeat.
-      cache_clear_all('feeds_http_download_' . md5($url), 'cache');
+      http_request_clear_cache($url);
       return http_request_get($url, $username, $password, $accept_invalid_cert, $request_timeout);
     }
   }
 
   // Set caches.
-  cache_set('feeds_http_download_' . md5($url), $result);
+  http_request_set_cache($url, $result);
   $download_cache[$url] = $result;
 
   return $result;
@@ -281,7 +286,7 @@ function http_request_get($url, $username = NULL, $password = NULL, $accept_inva
  * Decides if it's possible to use cURL or not.
  *
  * @return bool
- *   TRUE if cURL is available, FALSE otherwise.
+ *   TRUE if cURL may be used, FALSE otherwise.
  */
 function http_request_use_curl() {
   // Allow site administrators to choose to not use cURL.
@@ -289,16 +294,54 @@ function http_request_use_curl() {
     return FALSE;
   }
 
-  // Check availability of cURL on the system.
-  $basedir = ini_get("open_basedir");
-  return function_exists('curl_init') && !ini_get('safe_mode') && empty($basedir);
+  // Check that the PHP cURL extension has been enabled.
+  if (!extension_loaded('curl')) {
+    return FALSE;
+  }
+
+  // cURL below PHP 5.6.0 must not have open_basedir or safe_mode enabled.
+  if (version_compare(PHP_VERSION, '5.6.0', '<')) {
+    return !ini_get('safe_mode') && !ini_get('open_basedir');
+  }
+
+  // cURL in PHP 5.6.0 and above re-enables CURLOPT_FOLLOWLOCATION with
+  // open_basedir so there is no need to check for this.
+  return TRUE;
 }
 
 /**
  * Clear cache for a specific URL.
+ *
+ * @param string $url
+ *   The URL to clear.
  */
 function http_request_clear_cache($url) {
-  cache_clear_all('feeds_http_download_' . md5($url), 'cache');
+  cache_clear_all(hash('sha256', $url), 'cache_feeds_http');
+}
+
+/**
+ * Gets the cache for a specific URL.
+ *
+ * @param string $url
+ *   The URL to find the cached item.
+ *
+ * @return object|false
+ *   The cache or FALSE on failure.
+ */
+function http_request_get_cache($url) {
+  return cache_get(hash('sha256', $url), 'cache_feeds_http');
+}
+
+/**
+ * Sets the cache for a specific URL.
+ *
+ * @param string $url
+ *   The URL to cache.
+ * @param stdClass $result
+ *   The result of the HTTP request.
+ */
+function http_request_set_cache($url, stdClass $result) {
+  cache_set(hash('sha256', $url), $result, 'cache_feeds_http');
 }
 
 /**
@@ -351,7 +394,11 @@ function http_request_find_feeds($html) {
     preg_match_all(HTTP_REQUEST_PCRE_TAG_ATTRIBUTES, $link_tag, $attributes, PREG_SET_ORDER);
     foreach ($attributes as $attribute) {
       // Find the key value pairs, attribute[1] is key and attribute[2] is the
-      // value.
+      // value.  However, if the link tag used single quotes, the value might
+      // be in attribute[3] instead.
+      if (empty($attribute[2])) {
+        $attribute[2] = $attribute[3];
+      }
       if (!empty($attribute[1]) && !empty($attribute[2])) {
         $candidate[drupal_strtolower($attribute[1])] = drupal_strtolower(decode_entities($attribute[2]));
       }

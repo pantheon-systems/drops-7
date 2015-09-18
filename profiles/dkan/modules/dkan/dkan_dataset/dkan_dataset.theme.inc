@@ -53,16 +53,17 @@ function theme_dkan_dataset_release_date_view($vars) {
  * Output the resource into the node content.
  */
 function theme_dkan_dataset_resource_view($vars) {
-  $output = '<h2>' . t('Data and Resources') . '</h2>';
+  $output = '<h4>' . t('Data and Resources') . '</h4>';
   $node = entity_metadata_wrapper('node', $vars['node']);
   $nodes = $node->field_resources->value();
   $links = array();
   $output .= '<div property="dcat:distribution">';
 
   if (isset($nodes)) {
+    $file_count = 0;
     foreach ($nodes as $node) {
       // Node could be empty if it has been deleted.
-      if (!$node) {
+      if (!$node || !node_access('view', $node)) {
         continue;
       }
       $node_wrapper = entity_metadata_wrapper('node', $node);
@@ -75,7 +76,7 @@ function theme_dkan_dataset_resource_view($vars) {
         $desc = '<p class="description"></p>';
       }
       if (isset($node->field_format) && $node->field_format && $node_wrapper->field_format->value()) {
-        $term .= '<span class="format-label" property="dc:format" data-format="' . $node_wrapper->field_format->value()->name . '">' . $node_wrapper->field_format->value()->name  . '</span>';
+        $term .= '<span data-toggle="tooltip" data-placement="top" data-original-title="' . $node_wrapper->field_format->value()->name . '" class="format-label" property="dc:format" data-format="' . $node_wrapper->field_format->value()->name . '">' . $node_wrapper->field_format->value()->name  . '</span>';
       }
       else {
         $term = '<span class="format-label" property="dc:format" data-format="data">Data</span>';
@@ -94,6 +95,7 @@ function theme_dkan_dataset_resource_view($vars) {
       );
       $download_link = '';
       if (isset($node->field_upload[LANGUAGE_NONE])) {
+        $file_count++;
         $url = file_create_url($node->field_upload[LANGUAGE_NONE][0]['uri']);
         $download_link = l(
           '<i class="fa fa-download"><span> Download</span></i>',
@@ -116,7 +118,17 @@ function theme_dkan_dataset_resource_view($vars) {
         ))
       ) . $desc . '<span class="links">' . $explore_link . $download_link . '</span></div>';
     }
-
+    if ($file_count > 1) {
+      $download_all = '<div property="dcat:Distribution"><span class="links">';
+      $download_all .= l('Download All<i class="fa fa-download"><span> Download</span></i>', 'node/' . $vars['node']->nid . '/dataset/download', array(
+        'html' => TRUE,
+        'attributes' => array(
+          'class' => array('btn', 'btn-primary')
+        )
+      ));
+      $download_all .= '</span></div>';
+      $links[] = $download_all;
+    }
     $output .= theme('item_list', array('items' => $links, 'attributes' => array('class' => array('resource-list'))));
     // Close first dcat declaration.
     $output .= '</div>';
@@ -141,24 +153,28 @@ function theme_dkan_dataset_resource_teaser_view($vars) {
     $links_data = array();
     foreach ($nodes as $node) {
       $node_wrapper = entity_metadata_wrapper('node', $node);
-      $name = isset($node->field_format['und']) ? $node_wrapper->field_format->value()->name : '';
+      $name = dkan_dataset_get_resource_format($node);
       $term = '';
-      if (!isset($links_data[$name])) {
-        $links_data[$name] = array(
-          'term_name' => $name,
-          'count' => 1,
-          'url' => 'node/' . $vars['node']->nid,
-          'link' => array(
-            'attributes' => array(
-              'class' => array('label'),
-              'title' => t('Resources') . ': ' . $vars['node']->title,
-              'data-format' => $name,
+
+      //Check node is published.
+      if ($node->status) {
+        if (!isset($links_data[$name])) {
+          $links_data[$name] = array(
+            'term_name' => $name,
+            'count' => 1,
+            'url' => 'node/' . $vars['node']->nid,
+            'link' => array(
+              'attributes' => array(
+                'class' => array('label'),
+                'title' => t('Resources') . ': ' . $vars['node']->title,
+                'data-format' => $name,
+              ),
             ),
-          ),
-        );
-      }
-      else {
-        $links_data[$name]['count'] = $links_data[$name]['count'] + 1;
+          );
+        }
+        else {
+          $links_data[$name]['count'] = $links_data[$name]['count'] + 1;
+        }
       }
     }
     foreach ($links_data as $term_name => $link) {

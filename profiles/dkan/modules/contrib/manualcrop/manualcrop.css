@@ -1,0 +1,230 @@
+/* Overlay */
+.manualcrop-overlay {
+  position: fixed;
+  left: 0px;
+  top: 0px;
+  z-index: 10000;
+}
+.manualcrop-overlay-bg {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  z-index: 10001;
+  opacity: 0.90;
+  filter: alpha(opacity=90);
+  -ms-filter: "alpha(opacity=90)";
+  -khtml-opacity: 0.90;
+  -moz-opacity: 0.90;
+  background-color: #000000;
+}
+/* Croptool: image */
+.manualcrop-overlay .manualcrop-image-holder {
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  z-index: 10002;
+}
+.manualcrop-inline .manualcrop-image-holder {
+  position: relative;
+}
+.manualcrop-image {
+  max-width: none;
+  max-height: none;
+  cursor: crosshair;
+}
+.manualcrop-overlay .manualcrop-image {
+  margin: 2em 2em 4.2em 2em;
+}
+.manualcrop-inline .manualcrop-image {
+  margin: 1em 0em 1em 0em;
+}
+/* Croptool instant preview */
+.manualcrop-instantpreview {
+  position: relative;
+  overflow: hidden;
+}
+.manualcrop-instantpreview img {
+  max-width: none;
+}
+.manualcrop-overlay .manualcrop-instantpreview {
+  width: 150px;
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  z-index: 10002;
+}
+.toolbar .manualcrop-overlay .manualcrop-instantpreview {
+  top: 35px;
+}
+.toolbar-drawer .manualcrop-overlay .manualcrop-instantpreview {
+  top: 70px;
+}
+.manualcrop-inline .manualcrop-instantpreview {
+  margin-right: 1em;
+  width: 30%;
+  float: left;
+}
+/* Croptool: selection info */
+.manualcrop-selection-info {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0px;
+  left: 0px;
+  z-index: 1;
+  opacity: 0.70;
+}
+.manualcrop-selection-label {
+  height: 1em;
+  display: inline-block;
+}
+.manualcrop-selection-label-content {
+  padding: 1px 5px 2px 5px;
+  color: #FFFFFF;
+  font-size: 0.7em;
+  line-height: normal;
+  text-align: center;
+  background-color: #333333;
+  -webkit-border-radius: 5px;
+  -moz-border-radius: 5px;
+  -ms-border-radius: 5px;
+  border-radius: 5px;
+}
+.manualcrop-selection-xy {
+  position: absolute;
+  top: -3px;
+  left: 0px;
+}
+.manualcrop-selection-xy .manualcrop-selection-label-content {
+  position: relative;
+  top: -100%;
+  left: -50%;
+}
+.manualcrop-selection-width {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+}
+.manualcrop-selection-width .manualcrop-selection-label-content {
+  margin-top: 3px;
+  position: relative;
+  left: -50%;
+}
+.manualcrop-selection-height {
+  position: absolute;
+  top: 50%;
+  left: -3px;
+}
+.manualcrop-selection-height .manualcrop-selection-label-content {
+  position: relative;
+  top: -50%;
+  left: -100%;
+}
+/* Croptool: style info */
+.manualcrop-style-info {
+  font-weight: bold;
+}
+.manualcrop-overlay .manualcrop-style-info {
+  position: absolute;
+  left: 0.8em;
+  bottom: 0.8em;
+  z-index: 10003;
+  color: #FFFFFF;
+}
+.manualcrop-inline .manualcrop-style-info {
+  margin-right: 1em;
+  padding-bottom: 1em;
+  width: 33%;
+  float: left;
+}
+.manualcrop-style-info span {
+  font-weight: normal;
+  font-style: italic;
+}
+/* Croptool: buttons */
+.manualcrop-overlay .manualcrop-buttons {
+  position: absolute;
+  bottom: 0.8em;
+  right: 0em;
+  z-index: 10004;
+}
+.manualcrop-inline .manualcrop-buttons {
+  padding-bottom: 1em;
+  width: 33%;
+  float: left;
+  font-weight: bold;
+}
+.manualcrop-overlay .manualcrop-button, .manualcrop-overlay .manualcrop-button:hover, .manualcrop-overlay .manualcrop-button:focus {
+  margin-right: 0.8em;
+  padding: 0.1em 0.3em 0.1em 0.3em;
+  display: block;
+  color: #FFFFFF;
+  text-align: center;
+  text-decoration: none;
+  float: right;
+  background-color: #000000;
+  border: 1px solid #545454;
+}
+.manualcrop-overlay .manualcrop-button:hover {
+  color: #000000;
+  background-color: #FFFFFF;
+}
+.manualcrop-buttons .manualcrop-button.manualcrop-clear, .manualcrop-buttons .manualcrop-button.manualcrop-reset {
+  display: none;
+}
+.manualcrop-inline .manualcrop-button.form-submit {
+  margin-bottom: 0.5em;
+}
+/* Style selection list/button */
+.manualcrop-style-button-holder {
+  padding-top: 1em;
+}
+.manualcrop-style-required {
+  color: #FF0000;
+}
+.manualcrop-style-cropped {
+  color: #96CB00;
+}
+/* Crop preview */
+.manualcrop-preview-cropped {
+  display: block;
+  overflow: hidden;
+}
+.manualcrop-preview .manualcrop-preview-cropped img {
+  margin: 0px;
+  max-width: none;
+  display: block;
+}
+/* Thumbnail list */
+.manualcrop-thumblist {
+  margin-top: 0.5em;
+  padding-bottom: 0.2em;
+  overflow: scroll;
+  overflow-x: scroll;
+  overflow-y: hidden;
+}
+.manualcrop-style-thumb, .manualcrop-style-thumb:hover, .manualcrop-style-thumb:focus {
+  margin-right: 1.5em;
+  float: left;
+  display: block;
+  text-align: center;
+  text-decoration: none;
+  border: none;
+}
+.manualcrop-style-thumb strong {
+  margin-bottom: 0.2em;
+  width: 100px;
+  display: block;
+}
+.manualcrop-style-thumb .manualcrop-preview img {
+  margin: 0px;
+  max-width: 100px;
+  height: auto;
+}
+.manualcrop-style-thumb .manualcrop-preview-cropped img {
+  max-width: none;
+  max-height: none;
+}

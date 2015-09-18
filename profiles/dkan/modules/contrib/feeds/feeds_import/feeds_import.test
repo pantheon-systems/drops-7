@@ -100,9 +100,10 @@ class FeedsExamplesNodeTestCase extends FeedsWebTestCase {
     $this->assertText('Updated 7 nodes');
 
     // Import a tab separated file.
+    $this->drupalGet('import/node/delete-items');
     $this->drupalPost('import/node/delete-items', array(), 'Delete');
     $edit = array(
-      'files[feeds]' => $this->absolutePath() . '/tests/feeds/nodes.tsv',
+      'files[node]' => $this->absolutePath() . '/tests/feeds/nodes.tsv',
       'feeds[FeedsCSVParser][delimiter]' => "TAB",
     );
     $this->drupalPost('import/node', $edit, 'Import');

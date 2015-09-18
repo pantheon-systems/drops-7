@@ -53,7 +53,7 @@
       tabs.children('li').first().find('a').tab('show');
 
       if (hash = window.location.hash) {
-        $('.nav-tabs > li > a[href$=' + hash + ']').tab('show');
+        $('.nav-tabs > li > a[href$="' + hash + '"]').tab('show');
       }
     }
   });

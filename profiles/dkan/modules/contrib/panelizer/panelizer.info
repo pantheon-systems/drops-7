@@ -1,0 +1,20 @@
+name = Panelizer
+description = Allow any node type to have custom panel displays, similar to the panel node type.
+package = "Panels"
+dependencies[] = panels
+dependencies[] = ctools
+dependencies[] = page_manager
+core = 7.x
+configure = admin/config/content/panelizer
+
+files[] = plugins/views/panelizer_handler_field_link.inc
+files[] = plugins/views/panelizer_handler_panelizer_status.inc
+files[] = plugins/views/panelizer_handler_filter_panelizer_status.inc
+files[] = plugins/views/panelizer_plugin_row_panelizer_node_view.inc
+
+; Information added by drupal.org packaging script on 2013-02-13
+version = "7.x-3.1"
+core = "7.x"
+project = "panelizer"
+datestamp = "1360785942"
+

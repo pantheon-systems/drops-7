@@ -17,7 +17,7 @@ function panels_requirements_install() {
   // Assume that if the user is running an installation profile that both
   // Panels and CTools are the same release.
   if (!(defined('MAINTENANCE_MODE') && MAINTENANCE_MODE == 'install')) {
-    // apparently the install process doesn't include .module files,
+    // Apparently the install process doesn't include .module files,
     // so we need to force the issue in order for our versioning
     // check to work.
     if (!defined('PANELS_REQUIRED_CTOOLS_API')) {
@@ -30,24 +30,32 @@ function panels_requirements_install() {
       include_once drupal_get_path('module', 'ctools') . '/ctools.module';
     }
     if (!module_invoke('ctools', 'api_version', PANELS_REQUIRED_CTOOLS_API)) {
-       $requirements['panels_ctools'] = array(
-         'title' => $t('CTools API Version'),
-         'value' => CTOOLS_API_VERSION,
-         'severity' => REQUIREMENT_ERROR,
-         'description' => t('The CTools API version is too old for Panels. Panels needs at least %version.', array('%version' => PANELS_REQUIRED_CTOOLS_API))
-       );
+      $requirements['panels_ctools'] = array(
+        'title' => $t('CTools API Version'),
+        'value' => CTOOLS_API_VERSION,
+        'severity' => REQUIREMENT_ERROR,
+        'description' => t('The CTools API version is too old for Panels. Panels needs at least %version.', array('%version' => PANELS_REQUIRED_CTOOLS_API)),
+      );
     }
   }
   return $requirements;
 }
 
 /**
- * Implementation of hook_schema().
+ * Implements of hook_schema().
  */
 function panels_schema() {
-  // This should always point to our 'current' schema. This makes it relatively easy
-  // to keep a record of schema as we make changes to it.
-  return panels_schema_5();
+  // This should always point to our 'current' schema. This makes it relatively
+  // easy to keep a record of schema as we make changes to it.
+  return panels_schema_6();
+}
+
+function panels_schema_6() {
+  $schema = panels_schema_5();
+
+  $schema['cache_panels'] = drupal_get_schema_unprocessed('system', 'cache');
+
+  return $schema;
 }
 
 function panels_schema_5() {
@@ -351,8 +359,6 @@ function panels_schema_3() {
     'primary key' => array('lid'),
   );
 
-  $schema['cache_panels'] = drupal_get_schema_unprocessed('system', 'cache');
-
   return $schema;
 }
 
@@ -402,6 +408,9 @@ function panels_update_7301() {
  * Adding universally unique identifiers to panels.
  */
 function panels_update_7302() {
+  if (!module_load_include('inc', 'ctools', 'includes/uuid')) {
+    throw new DrupalUpdateException(t('Ctools UUID support not detected. You must update to a more recent version of the ctools module.'));
+  }
   // Load the schema.
   $schema = panels_schema_5();
   $msg = array();
@@ -453,6 +462,11 @@ function panels_update_7302() {
 
   $dids = array_unique(array_merge($display_dids, $pane_dids));
 
+  // If the Panels module is disabled we don't have access to
+  // panels_load_displays().
+  if (!function_exists('panels_load_displays')) {
+    module_load_include('module', 'panels');
+  }
   if ($displays = panels_load_displays($dids)) {
     foreach ($displays as $display) {
       // A display save also triggers pane saves.
@@ -471,9 +485,10 @@ function panels_update_7302() {
  * Add a custom cache table for Panels.
  */
 function panels_update_7303() {
+  $schema = panels_schema_6();
+
   $table_name = 'cache_panels';
   if (!db_table_exists($table_name)) {
-    $schema = drupal_get_schema_unprocessed('system', 'cache');
-    db_create_table($table_name, $schema);
+    db_create_table($table_name, $schema[$table_name]);
   }
 }

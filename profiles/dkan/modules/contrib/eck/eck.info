@@ -1,0 +1,22 @@
+name = Entity Construction Kit
+description = ECK (Entity Construction Kit) Allows users to create and administer entity types, bundles, and entities from an easy to use UI
+package = ECK
+core = 7.x
+configure = admin/structure/entity-type
+
+dependencies[] = entity
+dependencies[] = ctools
+
+; Views integration files
+files[] = views/handlers/eck_views_handler_field_link.inc
+files[] = views/handlers/eck_views_handler_field_link_edit.inc
+files[] = views/handlers/eck_views_handler_field_link_delete.inc
+
+; Inline entity form integration
+files[] = includes/eck.inline_entity_form.inc
+; Information added by Drupal.org packaging script on 2015-01-26
+version = "7.x-2.0-rc7"
+core = "7.x"
+project = "eck"
+datestamp = "1422241382"
+

@@ -118,5 +118,20 @@ class FeedsCSVtoUsersTest extends FeedsWebTestCase {
     $this->assertTrue($account, 'Imported user account loaded.');
     $account->pass_raw = 'fest';
     $this->drupalLogin($account);
+
+    // Login as admin.
+    $this->drupalLogin($this->admin_user);
+
+    // Import modified CSV file, one (valid) user is missing.
+    $this->setSettings('user_import', 'FeedsUserProcessor', array('update_existing' => 2, 'update_non_existent' => 'block'));
+    $this->importFile('user_import', $this->absolutePath() . '/tests/feeds/users2.csv');
+    $this->assertText('Blocked 1 user');
+    $this->assertText('Failed importing 2 user');
+
+    // Import the original CSV file again.
+    $this->importFile('user_import', $this->absolutePath() . '/tests/feeds/users.csv');
+    $this->assertText('Updated 1 user');
+    $this->assertText('Failed importing 2 user');
   }
+
 }

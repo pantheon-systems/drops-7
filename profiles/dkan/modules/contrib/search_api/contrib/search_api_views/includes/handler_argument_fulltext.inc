@@ -66,7 +66,13 @@ class SearchApiViewsHandlerArgumentFulltext extends SearchApiViewsHandlerArgumen
    */
   public function query($group_by = FALSE) {
     if ($this->options['fields']) {
-      $this->query->fields($this->options['fields']);
+      try {
+        $this->query->fields($this->options['fields']);
+      }
+      catch (SearchApiException $e) {
+        $this->query->abort($e->getMessage());
+        return;
+      }
     }
     if ($this->options['conjunction'] != 'AND') {
       $this->query->setOption('conjunction', $this->options['conjunction']);

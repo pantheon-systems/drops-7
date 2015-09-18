@@ -154,11 +154,7 @@ function _user_resource_definition() {
           'access callback' => 'services_access_menu',
         ),
         'token' => array(
-          'file' => array(
-            'type' => 'inc',
-            'module' => 'services',
-            'name' => 'user_resource',
-          ),
+          'file' => array('type' => 'inc', 'module' => 'services', 'name' => 'resources/user_resource'),
           'callback' => '_user_resource_get_token',
           'access callback' => 'services_access_menu',
           'help' => t('Returns the CSRF token.'),
@@ -256,6 +252,9 @@ function _user_resource_retrieve($uid) {
   }
 
   services_remove_user_data($account);
+
+  //Lets check field_permissions
+  $account = services_field_permissions_clean('view', 'user', $account);
 
   // Everything went right.
   return $account;
@@ -501,24 +500,10 @@ function _user_resource_cancel($uid) {
   // This defult setting is defined under "admin/config/people/accounts".
   $default_method = variable_get('user_cancel_method', 'user_cancel_block');
 
-  switch ($default_method) {
-    case 'user_cancel_block_unpublish':
-      // Unpublish nodes (current revisions).
-      module_load_include('inc', 'node', 'node.admin');
-      $nodes = db_select('node', 'n')->fields('n', array('nid'))->condition('uid', $account->uid)->execute()->fetchCol();
-      node_mass_update($nodes, array('status' => 0));
-      break;
-
-    case 'user_cancel_reassign':
-      // Anonymize nodes (current revisions).
-      module_load_include('inc', 'node', 'node.admin');
-      $nodes = db_select('node', 'n')->fields('n', array('nid'))->condition('uid', $account->uid)->execute()->fetchCol();
-      node_mass_update($nodes, array('uid' => 0));
-      // Anonymize old revisions.
-      db_update('node_revision')->fields(array('uid' => 0))->condition('uid', $account->uid)->execute();
-      // Clean history.
-      db_delete('history')->condition('uid', $account->uid)->execute();
-      break;
+  // Modules use hook_user_delete() to respond to deletion.
+  if ($default_method != 'user_cancel_delete') {
+    // Allow modules to add further sets to this batch.
+    module_invoke_all('user_cancel', $edit, $account, $default_method);
   }
 
   _user_cancel($edit, $account, $default_method);

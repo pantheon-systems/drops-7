@@ -157,24 +157,19 @@ function _file_resource_create($file) {
     return services_error(t("Missing data the file upload can not be completed"), 500);
   }
 
-  // Get the directory name for the location of the file:
-  if (empty($file['filepath'])) {
-    $file['filepath'] = file_default_scheme() . '://' . $file['filename'];
-  }
-  $dir = drupal_dirname($file['filepath']);
+  // Sanitize the file extension, name, path and scheme provided by the user.
+  $destination = empty($file['filepath'])
+    ? file_default_scheme() . '://' . _services_file_check_destination($file['filename'])
+    : _services_file_check_destination_uri($file['filepath']);
+
+  $dir = drupal_dirname($destination);
   // Build the destination folder tree if it doesn't already exists.
   if (!file_prepare_directory($dir, FILE_CREATE_DIRECTORY)) {
     return services_error(t("Could not create destination directory for file."), 500);
   }
 
-  // Rename potentially executable files, to help prevent exploits.
-  if (preg_match('/\.(php|pl|py|cgi|asp|js)$/i', $file['filename']) && (drupal_substr($file['filename'], -4) != '.txt')) {
-    $file['filepath'] .= '.txt';
-    $file['filename'] .= '.txt';
-  }
-
   // Write the file
-  if (!$file_saved = file_save_data(base64_decode($file['file']), $file['filepath'])) {
+  if (!$file_saved = file_save_data(base64_decode($file['file']), $destination)) {
     return services_error(t("Could not write file to destination"), 500);
   }
 
@@ -193,6 +188,7 @@ function _file_resource_create($file) {
     'uri' => services_resource_uri(array('file', $file_saved->fid)),
   );
 }
+
 /**
  * Adds new files and returns the files array.
  *
@@ -200,14 +196,15 @@ function _file_resource_create($file) {
  *   Array of file objects with URIS to access them
  */
 function _file_resource_create_raw() {
-  $validators = array(
-    'file_validate_extensions' => array(),
-    'file_validate_size' => array(),
-  );
-
   $files = array();
   foreach ($_FILES['files']['name'] as $field_name => $file_name) {
-    $file = file_save_upload($field_name, $validators, file_default_scheme() . "://");
+    // Sanitize the user-input file name before saving to the file system.
+    $_FILES['files']['name'][$field_name] = _services_file_check_name_extension($file_name);
+
+    // file_save_upload() validates the file extension and name's length. File
+    // size is limited by the upload_max_filesize directive in php.ini.
+    $scheme = file_default_scheme();
+    $file = file_save_upload($field_name, array(), "$scheme://");
 
     if (!empty($file->fid)) {
       // Change the file status from temporary to permanent.
@@ -368,4 +365,134 @@ function _file_resource_node_access($op = 'view', $args = array()) {
     return $node->uid == $user->uid && user_access('get own binary files');
   }
   return FALSE;
+}
+
+/**
+ * Sanitizes a user-input file URI.
+ *
+ * @param string $uri
+ *   The file URI to sanitize, including the extension, name, path and scheme.
+ *
+ * @return string
+ *   A safe destination URI to save the file.
+ */
+function _services_file_check_destination_uri($uri) {
+  $scheme = strstr($uri, '://', TRUE);
+  $path = $scheme ? substr($uri, strlen("$scheme://")) : $uri;
+
+  // Sanitize the file extension, name, path and scheme provided by the user.
+  $scheme = _services_file_check_destination_scheme($scheme);
+  $path = _services_file_check_destination($path);
+  return "$scheme://$path";
+}
+
+/**
+ * Sanitizes a user-input file path, name and extension.
+ *
+ * @param string $destination
+ *   The file path, name and extension. The path is optional. Exclude the scheme.
+ *
+ * @return string
+ *   A safe file path, name and extension.
+ */
+function _services_file_check_destination($destination) {
+  // Split the path by directory separators for both windows and unix.
+  $directories = preg_split('![\\/]+!', trim($destination));
+
+  // Sanitize the filename.
+  $name = _services_file_check_name_extension(array_pop($directories));
+
+  // Sanitize the names of each directory.
+  $directories = array_filter(array_map('_services_file_check_name', $directories), 'strlen');
+
+  // Join the directory and file names back together.
+  $directories[] = $name;
+  return implode(DIRECTORY_SEPARATOR, $directories);
+}
+
+/**
+ * Sanitizes a user-input file name and extension.
+ *
+ * @param string $name
+ *   The file name and extension.
+ *
+ * @return string
+ *   A safe file name and extension.
+ */
+function _services_file_check_name_extension($name) {
+  // This whitelist is copied from file_save_upload().
+  $extensions = 'jpg jpeg gif png txt doc xls pdf ppt pps odt ods odp';
+
+  // Get the part of the name after the last period (".").
+  $name = explode('.', $name);
+  $last = array_pop($name);
+
+  // Make it lowercase for consistency as much as security.
+  $extension = strtolower($last);
+
+  // Is this a whitelisted extension?
+  if (!in_array($extension, explode(' ', $extensions))) {
+    // No.  Restore it to the name and use the default extension, 'txt'.
+    $name[] = $last;
+    $extension = 'txt';
+  }
+
+  // Sanitize the name, apart from the extension.
+  $name = _services_file_check_name(implode('.', $name));
+
+  // Is there still a valid name?
+  if (0 === strlen($name)) {
+    // No. Use the default file name of 'file'.
+    $name = 'file';
+  }
+
+  // Munge the non-whitelisted secondary file extensions.
+  return file_munge_filename("$name.$extension", $extensions);
+}
+
+/**
+ * Sanitizes a user-input file or directory name.
+ *
+ * @param string $name
+ *   The file or directory name.
+ *
+ * @return string
+ *   A safe name.
+ */
+function _services_file_check_name($name) {
+  // Punctuation characters that are allowed, but not as first/last character.
+  $punctuation = '-_. ';
+
+  $map = array(
+    // Replace (groups of) whitespace characters.
+    '!\s+!' => ' ',
+    // Replace multiple dots.
+    '!\.+!' => '.',
+    // Remove characters that are not alphanumeric or the allowed punctuation.
+    "![^0-9A-Za-z$punctuation]!" => '',
+  );
+
+  // Apply the regex replacements. Remove any leading or hanging punctuation.
+  return trim(preg_replace(array_keys($map), array_values($map), $name), $punctuation);
+}
+
+/**
+ * Sanitizes a user-input file scheme.
+ *
+ * @param string $scheme
+ *   The user-provided file scheme.
+ *
+ * @return string
+ *   The user-provided scheme if it is valid and a safe destination to save
+ *   files. Otherwise the default scheme, usually "public://".
+ */
+function _services_file_check_destination_scheme($scheme) {
+  // Untrusted users should not be able to write to certain schemes.
+  // @todo Use a white list instead?
+  // @todo Make this list configurable?
+  $unsafe = array('temporary', 'file', 'http', 'https', 'ftp');
+  if (!empty($scheme) && !in_array($scheme, $unsafe) && file_stream_wrapper_valid_scheme($scheme)) {
+    return $scheme;
+  }
+  return file_default_scheme();
 }

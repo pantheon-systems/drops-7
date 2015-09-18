@@ -5,6 +5,7 @@ L.Draw.Marker = L.Draw.Feature.extend({
 
 	options: {
 		icon: new L.Icon.Default(),
+		repeatMode: false,
 		zIndexOffset: 2000 // This should be > than the highest z-index any markers
 	},
 
@@ -19,7 +20,7 @@ L.Draw.Marker = L.Draw.Feature.extend({
 		L.Draw.Feature.prototype.addHooks.call(this);
 
 		if (this._map) {
-			this._tooltip.updateContent({ text: 'Click map to place marker.' });
+			this._tooltip.updateContent({ text: L.drawLocal.draw.handlers.marker.tooltip.start });
 
 			// Same mouseMarker as in Draw.Polyline
 			if (!this._mouseMarker) {
@@ -47,18 +48,18 @@ L.Draw.Marker = L.Draw.Feature.extend({
 
 		if (this._map) {
 			if (this._marker) {
-				this._marker.off('click', this._onClick);
+				this._marker.off('click', this._onClick, this);
 				this._map
-					.off('click', this._onClick)
+					.off('click', this._onClick, this)
 					.removeLayer(this._marker);
 				delete this._marker;
 			}
 
-			this._mouseMarker.off('click', this._onClick);
+			this._mouseMarker.off('click', this._onClick, this);
 			this._map.removeLayer(this._mouseMarker);
 			delete this._mouseMarker;
 
-			this._map.off('mousemove', this._onMouseMove);
+			this._map.off('mousemove', this._onMouseMove, this);
 		}
 	},
 
@@ -80,6 +81,7 @@ L.Draw.Marker = L.Draw.Feature.extend({
 				.addLayer(this._marker);
 		}
 		else {
+			latlng = this._mouseMarker.getLatLng();
 			this._marker.setLatLng(latlng);
 		}
 	},
@@ -88,6 +90,9 @@ L.Draw.Marker = L.Draw.Feature.extend({
 		this._fireCreatedEvent();
 
 		this.disable();
+		if (this.options.repeatMode) {
+			this.enable();
+		}
 	},
 
 	_fireCreatedEvent: function () {

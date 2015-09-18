@@ -35,6 +35,8 @@
     <?php print $scripts; ?>
     </head>
   <body>
+    <div id="recline-embeded">
     <?php print $content; ?>
+    </div>
   </body>
 </html>

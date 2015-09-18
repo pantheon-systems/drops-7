@@ -1,0 +1,40 @@
+<?php
+/**
+ * Implements MODULE_preprocess_html(); adds conditional CSS from the .info file.
+ */
+function conditional_styles_preprocess_html(&$vars, $hook) {
+  // Make a list of base themes and the current theme.
+  $themes = $GLOBALS['base_theme_info'];
+  $themes[] = $GLOBALS['theme_info'];
+  foreach (array_keys($themes) as $key) {
+    $theme_path = dirname($themes[$key]->filename) . '/';
+    if (isset($themes[$key]->info['stylesheets-conditional'])) {
+      foreach (array_keys($themes[$key]->info['stylesheets-conditional']) as $condition) {
+        foreach (array_keys($themes[$key]->info['stylesheets-conditional'][$condition]) as $media) {
+          foreach ($themes[$key]->info['stylesheets-conditional'][$condition][$media] as $stylesheet) {
+            // Add each conditional stylesheet.
+            drupal_add_css(
+              $theme_path . $stylesheet,
+              array(
+                'group' => CSS_THEME,
+                'browsers' => array(
+                  'IE' => $condition,
+                  '!IE' => strpos($condition, '!IE') === FALSE ? FALSE : TRUE,
+                ),
+                'weight' => 999,
+                'every_page' => TRUE,
+              )
+            );
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements MODULE_preprocess_maintenance_page().
+ */
+function conditional_styles_preprocess_maintenance_page(&$vars, $hook) {
+  conditional_styles_preprocess_html($vars, $hook);
+}

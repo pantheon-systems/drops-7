@@ -253,7 +253,7 @@ function data_entity_feeds_processor_targets_alter(&$targets, $entity_type, $bun
   $entity_info = entity_get_info($entity_type);
 
   // See if this is a Data entity.
-  if ($entity_info['module'] == 'data_entity') {
+  if (isset($entity_info['module']) && $entity_info['module'] == 'data_entity') {
     // Add a unique callback for each target field.
     foreach ($targets as &$target) {
       $target['unique_callbacks'][] = 'data_entity_feed_unique_callback';

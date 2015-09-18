@@ -30,7 +30,7 @@ class SearchApiFacetapiTerm extends FacetapiQueryType implements FacetapiQueryTy
     // Return terms for this facet.
     $this->adapter->addFacet($this->facet, $query);
 
-    $settings = $this->adapter->getFacet($this->facet)->getSettings()->settings;
+    $settings = $this->getSettings()->settings;
 
     // First check if the facet is enabled for this search.
     $default_true = isset($settings['default_true']) ? $settings['default_true'] : TRUE;
@@ -54,9 +54,35 @@ class SearchApiFacetapiTerm extends FacetapiQueryType implements FacetapiQueryTy
     }
     elseif ($operator == FACETAPI_OPERATOR_OR) {
       $conjunction = 'OR';
+      // When the operator is OR, remove parent terms from the active ones if
+      // children are active. If we don't do this, sending a term and its
+      // parent will produce the same results as just sending the parent.
+      if ($settings['flatten'] == '0') {
+        // Check the filters in reverse order, to avoid checking parents that
+        // will afterwards be removed anyways.
+        foreach (array_reverse(array_keys($active)) as $filter) {
+          // Skip this filter if it was already removed, or if it is the
+          // "missing value" filter ("!").
+          if (!isset($active[$filter]) || !is_numeric($filter)) {
+            continue;
+          }
+          $parents = taxonomy_get_parents_all($filter);
+          // The return value of taxonomy_get_parents_all() includes the term
+          // itself at index 0. Remove that to only get the term's ancestors.
+          unset($parents[0]);
+          foreach ($parents as $parent) {
+            unset($active[$parent->tid]);
+          }
+        }
+      }
     }
     else {
-      throw new SearchApiException(t('Unknown facet operator %operator.', array('%operator' => $operator)));
+      $vars = array(
+        '%operator' => $operator,
+        '%facet' => !empty($this->facet['label']) ? $this->facet['label'] : $this->facet['name'],
+      );
+      watchdog('search_api_facetapi', 'Unknown facet operator %operator used for facet %facet.', $vars, WATCHDOG_WARNING);
+      return;
     }
     $tags = array('facet:' . $this->facet['field']);
     $facet_filter = $query->createFilter($conjunction, $tags);
@@ -77,7 +103,7 @@ class SearchApiFacetapiTerm extends FacetapiQueryType implements FacetapiQueryTy
     // Test if this filter should be negated.
     $settings = $this->adapter->getFacet($this->facet)->getSettings();
     $exclude = !empty($settings->settings['exclude']);
-    // Integer (or other nun-string) filters might mess up some of the following
+    // Integer (or other non-string) filters might mess up some of the following
     // comparison expressions.
     $filter = (string) $filter;
     if ($filter == '!') {
@@ -143,9 +169,15 @@ class SearchApiFacetapiTerm extends FacetapiQueryType implements FacetapiQueryTy
       return array();
     }
     $search_id = $search_ids[$facet['name']];
-    $search = search_api_current_search($search_id);
+    list(, $results) = search_api_current_search($search_id);
     $build = array();
-    $results = $search[1];
+
+    // Always include the active facet items.
+    foreach ($this->adapter->getActiveItems($this->facet) as $filter)  {
+      $build[$filter['value']]['#count'] = $results['result count'];
+    }
+
+    // Then, add the facets returned by the server.
     if (isset($results['search_api_facets']) && isset($results['search_api_facets'][$this->facet['name']])) {
       $values = $results['search_api_facets'][$this->facet['name']];
       foreach ($values as $value) {

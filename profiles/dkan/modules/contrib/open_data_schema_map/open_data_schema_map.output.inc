@@ -39,8 +39,18 @@ function open_data_schema_map_retrieve_output_formats() {
  */
 function open_data_schema_map_odsm_output_format() {
   return array(
-    'json' => 'open_data_schema_map_json_output',
-    'json-pretty' => 'open_data_schema_map_json_pretty_output',
+    'json' => array(
+      'callback' => 'open_data_schema_map_json_output',
+      'headers' => array(
+        'Content-Type' => 'application/json',
+      ),
+    ),
+    'json-pretty' => array(
+      'callback' => 'open_data_schema_map_json_pretty_output',
+      'headers' => array(
+        'Content-Type' => 'application/json',
+      ),
+    ),
   );
 }
 
@@ -48,7 +58,8 @@ function open_data_schema_map_odsm_output_format() {
  * Default json output.
  */
 function open_data_schema_map_json_output($api, $results) {
-  return drupal_json_output($results);
+  drupal_add_http_header('Content-Type', 'application/json');
+  return drupal_json_encode($results);
 }
 
 /**

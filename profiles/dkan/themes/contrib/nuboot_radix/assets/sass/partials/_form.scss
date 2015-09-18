@@ -1,16 +1,39 @@
 //
 // Styles for Forms
 // --------------------------------------------------
-input[type="submit"] {
+
+input[type="submit"],
+.btn-primary,
+.btn.btn-primary {
   @extend %button;
 }
 input.use-ajax-submit {
   margin-right: 10px;
 }
+button.btn,
+.form-control {
+  line-height: 1.4em;
+  height: 36px;
+}
+
+select.form-control {
+  min-height: 36px;
+  &[multiple="multiple"] {
+    height: auto;
+  }
+}
 
 .ctools-dropbutton {
+  .ctools-content a,
+  input.btn,
   input[type="submit"] {
     color: #666;
+    &:hover,
+    &:focus,
+    &:active {
+      border:none;
+      color: $brand-primary;
+    }
   }
 }
 .field-type-file input[type="submit"],
@@ -81,20 +104,23 @@ fieldset.group-primary {
 .horizontal-tabs fieldset.horizontal-tabs-pane {
   padding: 0;
 }
+div.horizontal-tabs {
+  border: none;
+}
+
 .form-managed-file {
   input.form-file {
     @include border-radius($border-radius-base 0 0 $border-radius-base);
     border: 1px solid $border;
-    padding: 6px;
+    padding: 5px;
     margin: 0 0 10px 0;
   }
-  .input-group,
+  input.form-submit {
+    @extend %button-attached;
+  }
   .input-group-btn {
     display: inline-block;
-    height: 34px;
-    input {
-      @extend %button-attached;
-    }
+    vertical-align: top;
   }
   #edit-field-upload-und-0-remove-button {
     margin: 0 0 10px 10px;
@@ -103,23 +129,12 @@ fieldset.group-primary {
 .image-widget-data input.btn {
   @extend %button-attached;
 }
-.btn {
-  padding: 5px 12px;
-}
 
 .path-form.panel-default {
   border-color: transparent;
   .panel-body {
     padding:0;
   }
-}
-
-.header .recline-pager .pagination input {
-  height: 20px;
-  font-size: .8em;
-}
-.input-prepend .add-on {
-  height: 34px;
 }
 
 // OG.
@@ -134,42 +149,9 @@ fieldset.group-primary {
   padding: 10px;
 }
 
-.page-node-add-dataset,
-.page-node-edit-dataset {
-  .radix-layouts-content {
-    #dkan-stages .stages {
-      margin: 0 0 20px;
-    }
-    .pane-content {
-      padding: 0;
-      fieldset {
-        border: none;
-      }
-    }
-    .vertical-tabs {
-      margin-right: 1em;
-      padding: 1em;
-      ul.vertical-tabs-list {
-        width: 14em;
-      }
-      .vertical-tabs-panes,
-      fieldset.vertical-tabs-pane {
-        padding: 0;
-      }
-      .panel-body {
-        padding: 5px;
-      }
-    }
-    .form-actions {
-      padding: 1em;
-    }
-  }
-}
 #body-add-more-wrapper {
   .panel-body {
     padding: 0;
   }
 }
-div.horizontal-tabs {
-  border: none;
-}
+

@@ -1,0 +1,86 @@
+<?php
+/**
+ * @file
+ * Install procedures for visualization_entity recline field reference.
+ */
+
+/**
+ * Update function to remove all instances of old field_resource.
+ */
+function visualization_entity_recline_field_reference_update_7100() {
+  // Retrieve field settings for field_resource.
+  $field = field_read_field('field_resource');
+  $target_type = $field['settings']['target_type'];
+
+  // Retrieve field instances.
+  $instances = field_read_instances(array('field_name' => 'field_resource'));
+  $bundles = array();
+  foreach($instances as $instance) {
+    $bundles[] = array(
+      'entity_type' => $instance['entity_type'],
+      'bundle' => $instance['bundle']
+    );
+  }
+
+  foreach($bundles as $bundle) {
+    // Query ids for bundle.
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', $bundle['entity_type'], '=')
+          ->propertyCondition('type', $bundle['bundle'], '=');
+    $result = $query->execute();
+    $ids = array_keys($result[$bundle['entity_type']]);
+
+    // Load instances for bundle.
+    $instances = entity_load($bundle['entity_type'], $ids);
+
+    // Instance definition
+    $field_def = array(
+      'entity_type' => $bundle['entity_type'],
+      'field_name' => 'field_uuid_resource',
+      'bundle' => $bundle['bundle'],
+      'label' => 'Resource',
+      'widget_type' => 'uuidreference_select',
+      'widget' => array(
+        'type' => 'uuidreference_select',
+        'settings' => array(
+          'size' => 60
+        ),
+        'module' => 'uuidreference_select'
+      ),
+      'settings' => array('display_summary' => TRUE),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'type' => 'uuidreference_label',
+        ),
+        'teaser' => array(
+          'label' => 'above',
+          'type' => 'hidden',
+        ),
+      ),
+    );
+    field_create_instance($field_def);
+
+    // Sync field_resource with field_uuid_resource for bundle.
+    foreach ($instances as $instance) {
+      $instance->field_uuid_resource[LANGUAGE_NONE] = array();
+      $uuids = array();
+      foreach ($instance->field_resource[LANGUAGE_NONE] as $resource) {
+        $entity = entity_load_single($target_type, $resource['target_id']);
+        $instance->field_uuid_resource[LANGUAGE_NONE][] = array(
+          'target_uuid' => $entity->uuid,
+          'target_type' => $entity->type,
+        );
+      }
+      // Save entity.
+      entity_save($entity->type, $instance);
+
+      // Deletes old field from bundle.
+      if ($instance = field_info_instance($bundle['entity_type'], 'field_resource', $bundle['bundle'])) {
+        field_delete_instance($instance);
+      }
+    }
+  }
+  // Delete field.
+  field_delete_field('field_resource');
+}

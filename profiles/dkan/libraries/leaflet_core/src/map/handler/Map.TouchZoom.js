@@ -3,7 +3,8 @@
  */
 
 L.Map.mergeOptions({
-	touchZoom: L.Browser.touch && !L.Browser.android23
+	touchZoom: L.Browser.touch && !L.Browser.android23,
+	bounceAtZoomLimits: true
 });
 
 L.Map.TouchZoom = L.Handler.extend({
@@ -44,9 +45,9 @@ L.Map.TouchZoom = L.Handler.extend({
 	},
 
 	_onTouchMove: function (e) {
-		if (!e.touches || e.touches.length !== 2) { return; }
-
 		var map = this._map;
+
+		if (!e.touches || e.touches.length !== 2 || !this._zooming) { return; }
 
 		var p1 = map.mouseEventToLayerPoint(e.touches[0]),
 		    p2 = map.mouseEventToLayerPoint(e.touches[1]);
@@ -55,6 +56,11 @@ L.Map.TouchZoom = L.Handler.extend({
 		this._delta = p1._add(p2)._divideBy(2)._subtract(this._startCenter);
 
 		if (this._scale === 1) { return; }
+
+		if (!map.options.bounceAtZoomLimits) {
+			if ((map.getZoom() === map.getMinZoom() && this._scale < 1) ||
+			    (map.getZoom() === map.getMaxZoom() && this._scale > 1)) { return; }
+		}
 
 		if (!this._moved) {
 			L.DomUtil.addClass(map._mapPane, 'leaflet-touching');
@@ -79,16 +85,20 @@ L.Map.TouchZoom = L.Handler.extend({
 		    center = map.layerPointToLatLng(origin),
 		    zoom = map.getScaleZoom(this._scale);
 
-		map._animateZoom(center, zoom, this._startCenter, this._scale, this._delta, true);
+		map._animateZoom(center, zoom, this._startCenter, this._scale, this._delta, false, true);
 	},
 
 	_onTouchEnd: function () {
-		if (!this._moved || !this._zooming) { return; }
+		if (!this._moved || !this._zooming) {
+			this._zooming = false;
+			return;
+		}
 
 		var map = this._map;
 
 		this._zooming = false;
 		L.DomUtil.removeClass(map._mapPane, 'leaflet-touching');
+		L.Util.cancelAnimFrame(this._animRequest);
 
 		L.DomEvent
 		    .off(document, 'touchmove', this._onTouchMove)
@@ -105,7 +115,7 @@ L.Map.TouchZoom = L.Handler.extend({
 		    zoom = map._limitZoom(oldZoom + roundZoomDelta),
 		    scale = map.getZoomScale(zoom) / this._scale;
 
-		map._animateZoom(center, zoom, origin, scale, null, true);
+		map._animateZoom(center, zoom, origin, scale);
 	},
 
 	_getScaleOrigin: function () {

@@ -103,20 +103,22 @@ function dkan_sitewide_block_view($delta = '') {
  */
 function dkan_sitewide_resource_additional_block($nid = '') {
   $node = $nid ? node_load($nid) : menu_get_object();
-  $file_info = array();
-  $lang = $node->language ? $node->language : 'und';
-  $link = isset($node->field_link_remote_file[$lang][0]) ? $node->field_link_remote_file[$lang][0] : NULL;
-  $link = !$link && isset($node->field_link_remote_file['und'][0]) ? $node->field_link_remote_file['und'][0] : $link;
-  $upload = isset($node->field_upload[$lang][0]) ? $node->field_upload[$lang][0] : NULL;
-  $upload = !$upload && isset($node->field_upload['und'][0]) ? $node->field_upload['und'][0] : $upload;
+  if ($node) {
+    $file_info = array();
+    $lang = $node->language ? $node->language : 'und';
+    $link = isset($node->field_link_remote_file[$lang][0]) ? $node->field_link_remote_file[$lang][0] : NULL;
+    $link = !$link && isset($node->field_link_remote_file['und'][0]) ? $node->field_link_remote_file['und'][0] : $link;
+    $upload = isset($node->field_upload[$lang][0]) ? $node->field_upload[$lang][0] : NULL;
+    $upload = !$upload && isset($node->field_upload['und'][0]) ? $node->field_upload['und'][0] : $upload;
 
-  if (($file = $link) || ($file = $upload)) {
-    $file_info[] = array(t('mimetype'), $file['filemime']);
-    $file_info[] = array(t('filesize'), $file['filesize']);
-    $file_info[] = array(t('resource type'), 'file upload');
-    $file_info[] = array(t('timestamp'), date('M d, Y', $file['timestamp']));
-    return theme('table',
-      array('rows' => $file_info, 'header' => array(t('Field'), t('Value'))));
+    if (($file = $link) || ($file = $upload)) {
+      $file_info[] = array(t('mimetype'), $file['filemime']);
+      $file_info[] = array(t('filesize'), $file['filesize']);
+      $file_info[] = array(t('resource type'), 'file upload');
+      $file_info[] = array(t('timestamp'), date('M d, Y', $file['timestamp']));
+      return theme('table',
+        array('rows' => $file_info, 'header' => array(t('Field'), t('Value'))));
+    }
   }
 }
 
@@ -134,12 +136,8 @@ function dkan_sitewide_data_extent_block() {
        $geojson = drupal_json_encode(leaflet_widget_geojson_feature_collection($features));
        $output = "var dataExtent = " . $geojson;
        $output .= "; var map = L.map('map');
-        L.tileLayer('https://{s}.tiles.mapbox.com/v3/{id}/{z}/{x}/{y}.png', {
-        maxZoom: 7,
-        attribution: 'Map data &copy; <a href=\"http://openstreetmap.org\">OpenStreetMap</a> contributors, ' +
-        '<a href=\"http://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA</a>, ' +
-        'Imagery © <a href=\"http://mapbox.com\">Mapbox</a>',
-        id: 'examples.map-20v6611k'
+        L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
+        attribution: 'Map data &copy; <a href=\"http://openstreetmap.org\">OpenStreetMap</a>'
         }).addTo(map);
 
         var geojson = L.geoJson(dataExtent).addTo(map);
@@ -168,37 +166,25 @@ function dkan_sitewide_license_block() {
   else {
     if (isset($node->field_license) && $node->field_license) {
       $key = (isset($node->field_license[$node->language][0])) ? $node->field_license[$node->language][0] : $node->field_license[LANGUAGE_NONE][0];
-      $field = field_info_instance('node', 'field_license', 'dataset');
-      $raw_options = $field['widget']['settings']['available_options'];
-
-      foreach (explode("\n", $raw_options) as $option) {
-        $option = explode("|", $option);
-        $options[$option[0]] = $option[1];
-      }
-
       $key = $key['value'];
-      $label = $options[$key];
-
-      if (!$label) {
-        $output = $key;
+      $subscribed_values = dkan_dataset_content_types_license_subscribed_values();
+      if (isset($subscribed_values[$key])) {
+        $license = $subscribed_values[$key];
+        if (isset($license['uri'])) {
+          $output = l($license['label'], $license['uri']) . '<br/>';
+          $output .= l(
+            '<img class="open-data" src="http://assets.okfn.org/images/ok_buttons/od_80x15_blue.png" alt="[Open Data]">',
+            $license['uri'],
+            array('html' => TRUE)
+          );
+        }
+        else {
+          $output = $license['label'];
+        }
+        return $output;
       }
-      else if (strpos($key,'other') !== false) {
-        $output = $label;
-      }
-      else {
-        $output = l($label, 'http://opendefinition.org/licenses/' . $key) . '<br/>';
-        $output .= l(
-          '<img class="open-data" src="http://assets.okfn.org/images/ok_buttons/od_80x15_blue.png" alt="[Open Data]">',
-          'http://opendefinition.org/licenses/' . $key,
-          array('html' => TRUE)
-        );
-      }
-
-      return $output;
     }
-    else {
-      return t('License not specified');
-    }
+    return t('License not specified');
   }
 }
 
@@ -221,16 +207,18 @@ function dkan_sitewide_footer_author() {
 function dkan_sitewide_social_block() {
   $path = isset($_GET['q']) ? $_GET['q'] : '<front>';
   $link = url($path, array('absolute' => TRUE));
+  $title = drupal_get_title();
 
   $output = array(
     '#theme' => 'item_list',
     '#items' => array(
-      'googleplus' => array(
-        'data' => l('<i class="ckan-icon ckan-icon-gplus fa fa-lg fa-google-plus-square"></i> ' . t('Google+'),
-          'https://plus.google.com/share', array(
+      'twitter' => array(
+        'data' => l('<i class="ckan-icon ckan-icon-twitter fa fa-lg fa-twitter-square"></i> ' . t('Twitter'),
+          'https://twitter.com/share', array(
           'query' => array(
-            'url' => $link
-           ),
+            'url' => $link,
+            'text' => $title
+          ),
           'attributes' => array(
             'target' => '_blank',
           ),
@@ -238,11 +226,40 @@ function dkan_sitewide_social_block() {
         )),
         'class' => array('nav-item'),
       ),
-      'twitter' => array(
-        'data' => l('<i class="ckan-icon ckan-icon-twitter fa fa-lg fa-twitter-square"></i> ' . t('Twitter'),
-          'https://twitter.com/share', array(
+      'linkedin' => array(
+        'data' => l('<i class="ckan-icon ckan-icon-fb fa fa-lg fa-linkedin-square"></i> ' . t('LinkedIn'),
+          'https://www.linkedin.com/shareArticle', array(
           'query' => array(
-            'url' => $link
+            'url' => $link,
+            'title' => $title
+          ),
+          'attributes' => array(
+            'target' => '_blank',
+          ),
+          'html' => TRUE,
+        )),
+        'class' => array('nav-item'),
+      ),   
+      'reddit' => array(
+        'data' => l('<i class="ckan-icon ckan-icon-fb fa fa-lg fa-reddit-square"></i> ' . t('Reddit'),
+          'http://www.reddit.com/submit', array(
+          'query' => array(
+            'url' => $link,
+            'title' => $title
+          ),
+          'attributes' => array(
+            'target' => '_blank',
+          ),
+          'html' => TRUE,
+        )),
+        'class' => array('nav-item'),
+      ),
+      'googleplus' => array(
+        'data' => l('<i class="ckan-icon ckan-icon-gplus fa fa-lg fa-google-plus-square"></i> ' . t('Google+'),
+          'https://plus.google.com/share', array(
+          'query' => array(
+            'url' => $link,
+            'title' => $title
           ),
           'attributes' => array(
             'target' => '_blank',

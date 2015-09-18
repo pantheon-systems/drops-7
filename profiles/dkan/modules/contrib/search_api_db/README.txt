@@ -45,6 +45,10 @@ See [1] for details.
 
 [1] http://drupal.org/node/1144620
 
+Also, using facets with a database server will only work if the database user
+Drupal is using has the "CREATE TEMPORARY TABLES" permission (or similar, in
+DBMSs other than MySQL).
+
 Developer information
 ---------------------
 

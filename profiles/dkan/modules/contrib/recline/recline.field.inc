@@ -488,6 +488,7 @@ function recline_default_formatter_output($variables) {
         'uuid' => $uuid,
         'fileType' => $variables['item']['filemime'],
         'dkan' => $dkan,
+        'ajax_timeout' => variable_get(RECLINE_AJAX_CALL_TIMEOUT, RECLINE_AJAX_CALL_DEFAULT_TIMEOUT),
       );
       drupal_add_js($settings, 'setting');
     }
@@ -514,6 +515,7 @@ function recline_default_formatter_output($variables) {
       'embed' => 1,
       'fileType' => $variables['item']['filemime'],
       'dkan' => $dkan,
+      'ajax_timeout' => variable_get(RECLINE_AJAX_CALL_TIMEOUT, RECLINE_AJAX_CALL_DEFAULT_TIMEOUT),
     );
     drupal_add_js($settings, 'setting');
   }

@@ -53,7 +53,7 @@ function search_api_facetapi_facetapi_searcher_info() {
   $info = array();
   $indexes = search_api_index_load_multiple(FALSE);
   foreach ($indexes as $index) {
-    if ($index->enabled && $index->server()->supportsFeature('search_api_facets')) {
+    if (_search_api_facetapi_index_support_feature($index)) {
       $searcher_name = 'search_api@' . $index->machine_name;
       $info[$searcher_name] = array(
         'label' => t('Search service: @name', array('@name' => $index->name)),
@@ -97,7 +97,7 @@ function search_api_facetapi_facetapi_facet_info(array $searcher_info) {
         'date' => array(
           'query type' => 'date',
           'map options' => array(
-            'map callback' => 'facetapi_map_date',
+            'map callback' => 'search_api_facetapi_map_date',
           ),
         ),
       );
@@ -116,7 +116,7 @@ function search_api_facetapi_facetapi_facet_info(array $searcher_info) {
           'description' => t('Filter by @type.', array('@type' => $field['name'])),
           'allowed operators' => array(
             FACETAPI_OPERATOR_AND => TRUE,
-            FACETAPI_OPERATOR_OR => $index->server()->supportsFeature('search_api_facets_operator_or'),
+            FACETAPI_OPERATOR_OR => _search_api_facetapi_index_support_feature($index, 'search_api_facets_operator_or'),
           ),
           'dependency plugins' => array('role'),
           'facet missing allowed' => TRUE,
@@ -218,12 +218,34 @@ function search_api_facetapi_settings($realm_name, SearchApiIndex $index) {
   if (!$index->enabled) {
     return array('#markup' => t('Since this index is at the moment disabled, no facets can be activated.'));
   }
-  if (!$index->server()->supportsFeature('search_api_facets')) {
+  if (!_search_api_facetapi_index_support_feature($index)) {
     return array('#markup' => t('This index uses a server that does not support facet functionality.'));
   }
   $searcher_name = 'search_api@' . $index->machine_name;
   module_load_include('inc', 'facetapi', 'facetapi.admin');
   return drupal_get_form('facetapi_realm_settings_form', $searcher_name, $realm_name);
+}
+
+/**
+ * Checks whether a certain feature is supported for an index.
+ *
+ * @param SearchApiIndex $index
+ *   The search index which should be checked.
+ * @param string $feature
+ *   (optional) The feature to check for. Defaults to "search_api_facets".
+ *
+ * @return bool
+ *   TRUE if the feature is supported by the index's server (and the index is
+ *   currently enabled), FALSE otherwise.
+ */
+function _search_api_facetapi_index_support_feature(SearchApiIndex $index, $feature = 'search_api_facets') {
+  try {
+    $server = $index->server();
+    return $server && $server->supportsFeature($feature);
+  }
+  catch (SearchApiException $e) {
+    return FALSE;
+  }
 }
 
 /**
@@ -366,7 +388,7 @@ function _search_api_facetapi_facet_create_label(array $values, array $options) 
     $entities = entity_load($type, $values);
     foreach ($entities as $id => $entity) {
       $label = entity_label($type, $entity);
-      if ($label) {
+      if ($label !== FALSE) {
         $map[$id] = $label;
       }
     }
@@ -431,4 +453,132 @@ function search_api_facetapi_search_api_admin_index_fields_submit($form, &$form_
   // Clears this searcher's cached facet definitions.
   $cid = 'facetapi:facet_info:search_api@' . $form_state['index']->machine_name . ':';
   cache_clear_all($cid, 'cache', TRUE);
+}
+
+/**
+ * Computes the granularity of a date facet filter.
+ *
+ * @param $filter
+ *   The filter value to examine.
+ *
+ * @return string|null
+ *   Either one of the FACETAPI_DATE_* constants corresponding to the
+ *   granularity of the filter, or NULL if it couldn't be computed.
+ */
+function search_api_facetapi_date_get_granularity($filter) {
+  // Granularity corresponds to number of dashes in filter value.
+  $units = array(
+    FACETAPI_DATE_YEAR,
+    FACETAPI_DATE_MONTH,
+    FACETAPI_DATE_DAY,
+    FACETAPI_DATE_HOUR,
+    FACETAPI_DATE_MINUTE,
+    FACETAPI_DATE_SECOND,
+  );
+  $count = substr_count($filter, '-');
+  return isset($units[$count]) ? $units[$count] : NULL;
+}
+
+/**
+ * Returns the date format used for a given granularity.
+ *
+ * @param $granularity
+ *   One of the FACETAPI_DATE_* constants.
+ *
+ * @return string
+ *   The date format used for the given granularity.
+ */
+function search_api_facetapi_date_get_granularity_format($granularity) {
+  $formats = array(
+    FACETAPI_DATE_YEAR => 'Y',
+    FACETAPI_DATE_MONTH => 'Y-m',
+    FACETAPI_DATE_DAY => 'Y-m-d',
+    FACETAPI_DATE_HOUR => 'Y-m-d-H',
+    FACETAPI_DATE_MINUTE => 'Y-m-d-H-i',
+    FACETAPI_DATE_SECOND => 'Y-m-d-H-i-s',
+  );
+  return $formats[$granularity];
+}
+
+/**
+ * Constructs labels for date facet filter values.
+ *
+ * @param array $values
+ *   The date facet filter values, as used in URL parameters.
+ * @param array $options
+ *   (optional) Options for creating the mapping. The following options are
+ *   recognized:
+ *   - format callback: A callback for creating a label for a timestamp. The
+ *     function signature is like search_api_facetapi_format_timestamp(),
+ *     receiving a timestamp and one of the FACETAPI_DATE_* constants as the
+ *     parameters and returning a human-readable label.
+ *
+ * @return array
+ *   An array of labels for the given facet filters.
+ */
+function search_api_facetapi_map_date(array $values, array $options = array()) {
+  $map = array();
+  foreach ($values as $value) {
+    // Ignore any filters passed directly from the server (range or missing). We
+    // always create filters starting with a year.
+    $value = "$value";
+    if (!$value || !ctype_digit($value[0])) {
+      continue;
+    }
+
+    // Get the granularity of the filter.
+    $granularity = search_api_facetapi_date_get_granularity($value);
+    if (!$granularity) {
+      continue;
+    }
+
+    // For years, the URL value is already the label.
+    if ($granularity == FACETAPI_DATE_YEAR) {
+      $map[$value] = $value;
+      continue;
+    }
+
+    // Otherwise, parse the timestamp from the known format and format it as a
+    // label.
+    $format = search_api_facetapi_date_get_granularity_format($granularity);
+    $date = DateTime::createFromFormat($format, $value);
+    if (!$date) {
+      continue;
+    }
+    $format_callback = 'search_api_facetapi_format_timestamp';
+    if (!empty($options['format callback']) && is_callable($options['format callback'])) {
+      $format_callback = $options['format callback'];
+    }
+    $map[$value] = call_user_func($format_callback, $date->format('U'), $granularity);
+  }
+  return $map;
+}
+
+/**
+ * Format a date according to the default timezone and the given precision.
+ *
+ * @param int $timestamp
+ *   An integer containing the Unix timestamp being formated.
+ * @param string $precision
+ *   A string containing the formatting precision. See the FACETAPI_DATE_*
+ *   constants for valid values.
+ *
+ * @return string
+ *   A human-readable representation of the timestamp.
+ */
+function search_api_facetapi_format_timestamp($timestamp, $precision = FACETAPI_DATE_YEAR) {
+  $formats = array(
+    FACETAPI_DATE_YEAR => 'Y',
+    FACETAPI_DATE_MONTH => 'F Y',
+    FACETAPI_DATE_DAY => 'F j, Y',
+    FACETAPI_DATE_HOUR => 'H:__',
+    FACETAPI_DATE_MINUTE => 'H:i',
+    FACETAPI_DATE_SECOND => 'H:i:s',
+  );
+
+  if (!isset($formats[$precision])) {
+    $precision = FACETAPI_DATE_YEAR;
+  }
+
+  return format_date($timestamp, 'custom', $formats[$precision]);
 }

@@ -80,7 +80,7 @@ Drupal.Panels.Draggable = {
   regionId: 'panel-region-',
 
   // What to add to the front of a the id to get the form id for a panel
-  formId: 'input#edit-',
+  formId: '#edit-',
 
   maxWidth: 250,
 
@@ -492,8 +492,8 @@ Drupal.behaviors.PanelsDisplayEditor = {
     Drupal.Panels.Draggable.savePositions();
 
     // Bind buttons.
-    $('input#panels-hide-all', context).click(Drupal.Panels.clickHideAll);
-    $('input#panels-show-all', context).click(Drupal.Panels.clickShowAll);
+    $('#panels-hide-all', context).click(Drupal.Panels.clickHideAll);
+    $('#panels-show-all', context).click(Drupal.Panels.clickShowAll);
 
     Drupal.Panels.bindClickDelete(context);
 
@@ -512,6 +512,11 @@ Drupal.behaviors.PanelsDisplayEditor = {
 
         $('#panels-preview').html(html);
       });
+
+    // Bind modal detach behaviors to cancel current form.
+    $(document).bind('CToolsDetachBehaviors', function(event, context) {
+      $('#edit-cancel-style', context).trigger('click');
+    });
 
     var setTitleClass = function () {
       if ($('#edit-display-title-hide-title').val() == 2) {

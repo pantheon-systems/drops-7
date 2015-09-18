@@ -5,6 +5,10 @@
  */
 ?>
 <div class="content-type-button clearfix">
-  <?php print $image_button; ?>
-  <div><?php print $text_button; ?></div>
+  <?php if (isset($icon_text_button)): ?>
+    <?php print $icon_text_button; ?>
+  <?php else: ?>
+    <?php print $image_button; ?>
+    <div><?php print $text_button; ?></div>
+  <?php endif; ?>
 </div>

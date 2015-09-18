@@ -34,17 +34,9 @@ function dkan_dataset_groups_image_default_styles() {
 
   // Exported image style: group_medium.
   $styles['group_medium'] = array(
-    'name' => 'group_medium',
     'label' => 'Group Medium',
     'effects' => array(
       2 => array(
-        'label' => 'Scale',
-        'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
-        'effect callback' => 'image_scale_effect',
-        'dimensions callback' => 'image_scale_dimensions',
-        'form callback' => 'image_scale_form',
-        'summary theme' => 'image_scale_summary',
-        'module' => 'image',
         'name' => 'image_scale',
         'data' => array(
           'width' => 200,
@@ -54,13 +46,6 @@ function dkan_dataset_groups_image_default_styles() {
         'weight' => 2,
       ),
       3 => array(
-        'label' => 'Define canvas',
-        'help' => 'Define the size of the working canvas and background color, this controls the dimensions of the output image.',
-        'effect callback' => 'canvasactions_definecanvas_effect',
-        'dimensions callback' => 'canvasactions_definecanvas_dimensions',
-        'form callback' => 'canvasactions_definecanvas_form',
-        'summary theme' => 'canvasactions_definecanvas_summary',
-        'module' => 'imagecache_canvasactions',
         'name' => 'canvasactions_definecanvas',
         'data' => array(
           'RGB' => array(
@@ -83,13 +68,6 @@ function dkan_dataset_groups_image_default_styles() {
         'weight' => 2,
       ),
       4 => array(
-        'label' => 'Crop',
-        'help' => 'Cropping will remove portions of an image to make it the specified dimensions.',
-        'effect callback' => 'image_crop_effect',
-        'dimensions callback' => 'image_resize_dimensions',
-        'form callback' => 'image_crop_form',
-        'summary theme' => 'image_crop_summary',
-        'module' => 'image',
         'name' => 'image_crop',
         'data' => array(
           'width' => 200,
@@ -103,17 +81,9 @@ function dkan_dataset_groups_image_default_styles() {
 
   // Exported image style: group_thumbnail.
   $styles['group_thumbnail'] = array(
-    'name' => 'group_thumbnail',
     'label' => 'Group Thumbnail',
     'effects' => array(
       6 => array(
-        'label' => 'Scale',
-        'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
-        'effect callback' => 'image_scale_effect',
-        'dimensions callback' => 'image_scale_dimensions',
-        'form callback' => 'image_scale_form',
-        'summary theme' => 'image_scale_summary',
-        'module' => 'image',
         'name' => 'image_scale',
         'data' => array(
           'width' => 100,
@@ -123,13 +93,6 @@ function dkan_dataset_groups_image_default_styles() {
         'weight' => 2,
       ),
       7 => array(
-        'label' => 'Define canvas',
-        'help' => 'Define the size of the working canvas and background color, this controls the dimensions of the output image.',
-        'effect callback' => 'canvasactions_definecanvas_effect',
-        'dimensions callback' => 'canvasactions_definecanvas_dimensions',
-        'form callback' => 'canvasactions_definecanvas_form',
-        'summary theme' => 'canvasactions_definecanvas_summary',
-        'module' => 'imagecache_canvasactions',
         'name' => 'canvasactions_definecanvas',
         'data' => array(
           'RGB' => array(
@@ -152,13 +115,6 @@ function dkan_dataset_groups_image_default_styles() {
         'weight' => 2,
       ),
       8 => array(
-        'label' => 'Crop',
-        'help' => 'Cropping will remove portions of an image to make it the specified dimensions.',
-        'effect callback' => 'image_crop_effect',
-        'dimensions callback' => 'image_resize_dimensions',
-        'form callback' => 'image_crop_form',
-        'summary theme' => 'image_crop_summary',
-        'module' => 'image',
         'name' => 'image_crop',
         'data' => array(
           'width' => 100,
@@ -189,6 +145,7 @@ Groups also enable you to assign roles and authorisation to members of the group
       'help' => '',
     ),
   );
+  drupal_alter('node_info', $items);
   return $items;
 }
 
@@ -204,6 +161,7 @@ function dkan_dataset_groups_default_search_api_index() {
     "server" : "groups_server",
     "item_type" : "node",
     "options" : {
+      "datasource" : { "bundles" : [ "dkan_data_story" ] },
       "index_directly" : 1,
       "cron_limit" : "50",
       "fields" : {
@@ -330,7 +288,7 @@ function dkan_dataset_groups_default_search_api_server() {
             "boost" : "1.0"
           },
           "search_api_viewed" : {
-            "table" : "search_api_db_groups_di_search_api_viewed",
+            "table" : "search_api_db_groups_di_text",
             "type" : "text",
             "boost" : "1.0"
           },
@@ -353,7 +311,7 @@ function dkan_dataset_groups_default_search_api_server() {
             "boost" : "1.0"
           },
           "field_resources:body:value" : {
-            "table" : "search_api_db_groups_di_field_resources_body_value",
+            "table" : "search_api_db_groups_di_text",
             "type" : "list\\u003Ctext\\u003E",
             "boost" : "1.0"
           },

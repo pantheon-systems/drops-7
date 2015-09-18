@@ -30,16 +30,15 @@ L.DomUtil = {
 		    el = element,
 		    docBody = document.body,
 		    docEl = document.documentElement,
-		    pos,
-		    ie7 = L.Browser.ie7;
+		    pos;
 
 		do {
 			top  += el.offsetTop  || 0;
 			left += el.offsetLeft || 0;
 
 			//add borders
-			top += parseInt(L.DomUtil.getStyle(el, "borderTopWidth"), 10) || 0;
-			left += parseInt(L.DomUtil.getStyle(el, "borderLeftWidth"), 10) || 0;
+			top += parseInt(L.DomUtil.getStyle(el, 'borderTopWidth'), 10) || 0;
+			left += parseInt(L.DomUtil.getStyle(el, 'borderLeftWidth'), 10) || 0;
 
 			pos = L.DomUtil.getStyle(el, 'position');
 
@@ -50,6 +49,22 @@ L.DomUtil = {
 				left += docBody.scrollLeft || docEl.scrollLeft || 0;
 				break;
 			}
+
+			if (pos === 'relative' && !el.offsetLeft) {
+				var width = L.DomUtil.getStyle(el, 'width'),
+				    maxWidth = L.DomUtil.getStyle(el, 'max-width'),
+				    r = el.getBoundingClientRect();
+
+				if (width !== 'none' || maxWidth !== 'none') {
+					left += r.left + el.clientLeft;
+				}
+
+				//calculate full y offset since we're breaking out of the loop
+				top += r.top + (docBody.scrollTop  || docEl.scrollTop  || 0);
+
+				break;
+			}
+
 			el = el.offsetParent;
 
 		} while (el);
@@ -62,19 +77,6 @@ L.DomUtil = {
 			top  -= el.scrollTop  || 0;
 			left -= el.scrollLeft || 0;
 
-			// webkit (and ie <= 7) handles RTL scrollLeft different to everyone else
-			// https://code.google.com/p/closure-library/source/browse/trunk/closure/goog/style/bidi.js
-			if (!L.DomUtil.documentIsLtr() && (L.Browser.webkit || ie7)) {
-				left += el.scrollWidth - el.clientWidth;
-
-				// ie7 shows the scrollbar by default and provides clientWidth counting it, so we
-				// need to add it back in if it is visible; scrollbar is on the left as we are RTL
-				if (ie7 && L.DomUtil.getStyle(el, 'overflow-y') !== 'hidden' &&
-				           L.DomUtil.getStyle(el, 'overflow') !== 'hidden') {
-					left += 17;
-				}
-			}
-
 			el = el.parentNode;
 		} while (el);
 
@@ -84,7 +86,7 @@ L.DomUtil = {
 	documentIsLtr: function () {
 		if (!L.DomUtil._docIsLtrCached) {
 			L.DomUtil._docIsLtrCached = true;
-			L.DomUtil._docIsLtr = L.DomUtil.getStyle(document.body, 'direction') === "ltr";
+			L.DomUtil._docIsLtr = L.DomUtil.getStyle(document.body, 'direction') === 'ltr';
 		}
 		return L.DomUtil._docIsLtr;
 	},
@@ -101,44 +103,45 @@ L.DomUtil = {
 		return el;
 	},
 
-	disableTextSelection: function () {
-		if (document.selection && document.selection.empty) {
-			document.selection.empty();
-		}
-		if (!this._onselectstart) {
-			this._onselectstart = document.onselectstart || null;
-			document.onselectstart = L.Util.falseFn;
-		}
-	},
-
-	enableTextSelection: function () {
-		if (document.onselectstart === L.Util.falseFn) {
-			document.onselectstart = this._onselectstart;
-			this._onselectstart = null;
-		}
-	},
-
 	hasClass: function (el, name) {
-		return (el.className.length > 0) &&
-		        new RegExp("(^|\\s)" + name + "(\\s|$)").test(el.className);
+		if (el.classList !== undefined) {
+			return el.classList.contains(name);
+		}
+		var className = L.DomUtil._getClass(el);
+		return className.length > 0 && new RegExp('(^|\\s)' + name + '(\\s|$)').test(className);
 	},
 
 	addClass: function (el, name) {
-		if (!L.DomUtil.hasClass(el, name)) {
-			el.className += (el.className ? ' ' : '') + name;
+		if (el.classList !== undefined) {
+			var classes = L.Util.splitWords(name);
+			for (var i = 0, len = classes.length; i < len; i++) {
+				el.classList.add(classes[i]);
+			}
+		} else if (!L.DomUtil.hasClass(el, name)) {
+			var className = L.DomUtil._getClass(el);
+			L.DomUtil._setClass(el, (className ? className + ' ' : '') + name);
 		}
 	},
 
 	removeClass: function (el, name) {
-
-		function replaceFn(w, match) {
-			if (match === name) { return ''; }
-			return w;
+		if (el.classList !== undefined) {
+			el.classList.remove(name);
+		} else {
+			L.DomUtil._setClass(el, L.Util.trim((' ' + L.DomUtil._getClass(el) + ' ').replace(' ' + name + ' ', ' ')));
 		}
+	},
 
-		el.className = el.className
-		        .replace(/(\S+)\s*/g, replaceFn)
-		        .replace(/(^\s+|\s+$)/, '');
+	_setClass: function (el, name) {
+		if (el.className.baseVal === undefined) {
+			el.className = name;
+		} else {
+			// in case of SVG element
+			el.className.baseVal = name;
+		}
+	},
+
+	_getClass: function (el) {
+		return el.className.baseVal === undefined ? el.className : el.className.baseVal;
 	},
 
 	setOpacity: function (el, value) {
@@ -155,7 +158,8 @@ L.DomUtil = {
 			try {
 				filter = el.filters.item(filterName);
 			} catch (e) {
-				//Don't set opacity to 1 if we haven't already set an opacity, it isn't needed and breaks transparent pngs.
+				// don't set opacity to 1 if we haven't already set an opacity,
+				// it isn't needed and breaks transparent pngs.
 				if (value === 1) { return; }
 			}
 
@@ -204,15 +208,11 @@ L.DomUtil = {
 
 	setPosition: function (el, point, disable3D) { // (HTMLElement, Point[, Boolean])
 
+		// jshint camelcase: false
 		el._leaflet_pos = point;
 
 		if (!disable3D && L.Browser.any3d) {
 			el.style[L.DomUtil.TRANSFORM] =  L.DomUtil.getTranslateString(point);
-
-			// workaround for Android 2/3 stability (https://github.com/CloudMade/Leaflet/issues/69)
-			if (L.Browser.mobileWebkit3d) {
-				el.style.WebkitBackfaceVisibility = 'hidden';
-			}
 		} else {
 			el.style.left = point.x + 'px';
 			el.style.top = point.y + 'px';
@@ -222,6 +222,8 @@ L.DomUtil = {
 	getPosition: function (el) {
 		// this method is only used for elements previously positioned using setPosition,
 		// so it's safe to cache the position for performance
+
+		// jshint camelcase: false
 		return el._leaflet_pos;
 	}
 };
@@ -241,3 +243,47 @@ L.DomUtil.TRANSITION = L.DomUtil.testProp(
 L.DomUtil.TRANSITION_END =
         L.DomUtil.TRANSITION === 'webkitTransition' || L.DomUtil.TRANSITION === 'OTransition' ?
         L.DomUtil.TRANSITION + 'End' : 'transitionend';
+
+(function () {
+    if ('onselectstart' in document) {
+        L.extend(L.DomUtil, {
+            disableTextSelection: function () {
+                L.DomEvent.on(window, 'selectstart', L.DomEvent.preventDefault);
+            },
+
+            enableTextSelection: function () {
+                L.DomEvent.off(window, 'selectstart', L.DomEvent.preventDefault);
+            }
+        });
+    } else {
+        var userSelectProperty = L.DomUtil.testProp(
+            ['userSelect', 'WebkitUserSelect', 'OUserSelect', 'MozUserSelect', 'msUserSelect']);
+
+        L.extend(L.DomUtil, {
+            disableTextSelection: function () {
+                if (userSelectProperty) {
+                    var style = document.documentElement.style;
+                    this._userSelect = style[userSelectProperty];
+                    style[userSelectProperty] = 'none';
+                }
+            },
+
+            enableTextSelection: function () {
+                if (userSelectProperty) {
+                    document.documentElement.style[userSelectProperty] = this._userSelect;
+                    delete this._userSelect;
+                }
+            }
+        });
+    }
+
+	L.extend(L.DomUtil, {
+		disableImageDrag: function () {
+			L.DomEvent.on(window, 'dragstart', L.DomEvent.preventDefault);
+		},
+
+		enableImageDrag: function () {
+			L.DomEvent.off(window, 'dragstart', L.DomEvent.preventDefault);
+		}
+	});
+})();

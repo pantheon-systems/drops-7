@@ -1,0 +1,117 @@
+<?php
+
+/**
+ * @file
+ * Use a different menu as the Administration Menu.
+ */
+
+/**
+ * Implements hook_help().
+ */
+function admin_menu_source_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/administration/admin_menu/source':
+      return '<p>' . t('Set the source menu for the Administration menu per role.') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function admin_menu_source_menu() {
+  $items = array();
+  
+  $items['admin/config/administration/admin_menu/settings'] = array(
+    'title' => 'Settings',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  
+  $items['admin/config/administration/admin_menu/source'] = array(
+    'title' => 'Source',
+    'description' => 'Configure the source for the administration menu.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('admin_menu_source_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    'file' => 'admin_menu_source.inc',
+  );
+  
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function admin_menu_source_theme() {
+  return array(
+    'admin_menu_source_settings_form' => array(
+      'render element' => 'form',
+    ),
+  );
+}
+
+/**
+ * Implements hook_admin_menu_output_alter().
+ */
+function admin_menu_source_admin_menu_output_alter(&$content) {
+  global $user;
+  
+  $rid = key(array_reverse($user->roles, TRUE));
+  $source_menu = _admin_menu_source_get_role_menu($rid);
+  
+  if (!empty($source_menu)) {
+    $content['menu'] = admin_menu_links_menu(admin_menu_tree($source_menu));
+    $content['menu']['#theme'] = 'admin_menu_links';
+    $content['menu']['#weight'] = 0;
+    $content['menu']['#sorted'] = TRUE;
+  }
+}
+
+/**
+ * Returns HTML for a settings form.
+ *
+ * @param $variables
+ *   An associative array containing:
+ *   - form: A render element representing the form.
+ *
+ * @ingroup themeable
+ */
+function theme_admin_menu_source_settings_form($variables) {
+  $output = '';
+  $form = $variables['form'];
+  
+  $rows = array();
+  if (!empty($form['admin_menu_source_settings'])) {
+    foreach (element_children($form['admin_menu_source_settings']) as $key) {
+      $rows[] = array(
+        drupal_render($form['admin_menu_source_settings'][$key]['role']),
+        drupal_render($form['admin_menu_source_settings'][$key]['source']),
+      );
+    }
+  }
+  $output .= theme('table', array('header' => array(t('Role'), t('Menu')), 'rows' => $rows));
+  $output .= drupal_render($form['submit']);
+  $output .= drupal_render_children($form);
+  
+  return $output;
+}
+
+/**
+ * Helper function to get settings for admin_menu_source
+ */
+function _admin_menu_source_get_settings() {
+  return variable_get('admin_menu_source_settings', array());
+}
+
+/**
+ * Helper function to get source menu per role
+ *
+ * @param $rid
+ *  the user role id
+ */
+function _admin_menu_source_get_role_menu($rid) {
+  //load the settings
+  $settings = _admin_menu_source_get_settings();
+  
+  return isset($settings[$rid]['source']) ? $settings[$rid]['source'] : '';
+}

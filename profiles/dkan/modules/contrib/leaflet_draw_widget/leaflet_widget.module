@@ -190,15 +190,19 @@ function leaflet_widget_widget_validate($element, &$form_state) {
   if (!$geophp) return FALSE;
 
   $geojson = json_decode($element['wkt']['#value']);
-
   $results = array();
-  if ($geojson->type === 'FeatureCollection') {
-    foreach ($geojson->features as $feature) {
-      $results[] = array_merge($results, leaflet_widget_process_geojson($feature));
+  if ($geojson) {
+    if ($geojson->type === 'FeatureCollection') {
+      foreach ($geojson->features as $feature) {
+        $results[] = array_merge($results, leaflet_widget_process_geojson($feature));
+      }
+    }
+    else {
+      $results = array(leaflet_widget_process_geojson($geojson));
     }
   }
   else {
-    $results = array(leaflet_widget_process_geojson($geojson));
+    $results = array();
   }
 
   form_set_value($element, $results, $form_state);
@@ -235,7 +239,7 @@ function leaflet_widget_library() {
 
   $libraries['leaflet_draw'] = array(
     'title' => 'Leaflet.draw',
-    'version' => '2.x',
+    'version' => '0.2.4',
     'css' => array(
       "$leaflet_draw/dist/leaflet.draw.css" => array(),
     ),
@@ -249,13 +253,12 @@ function leaflet_widget_library() {
 
   $libraries['leaflet_core'] = array(
     'title' => 'Leaflet (Leaflet Widget)',
-    'version' => '6',
+    'version' => '0.7.3',
     'css' => array(
       "$leaflet_core/dist/leaflet.css" => array(),
-      "$leaflet_core/dist/leaflet.ie.css" => array('browsers' => array('IE' => 'lte IE 8')),
     ),
     'js' => array(
-      "$leaflet_core/dist/leaflet-src.js" => array(),
+      "$leaflet_core/dist/leaflet.js" => array(),
     ),
   );
 

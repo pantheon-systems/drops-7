@@ -28,8 +28,16 @@
     "downloadURL": {
       "title": "Download URL",
       "description": "URL providing direct access to a downloadable file of a dataset",
-      "type": "string",
-      "format": "uri"
+      "anyOf": [
+        {
+          "type": "string",
+          "format": "uri"
+        },
+        {
+          "type": "string",
+          "pattern": "^(\\[\\[REDACTED).*?(\\]\\])$"
+        }
+      ]
     },
     "mediaType": {
       "title": "Media Type",
@@ -40,9 +48,10 @@
           "type": "string"
         },
         {
-          "type": "null"
+          "type": "string",
+          "pattern": "^(\\[\\[REDACTED).*?(\\]\\])$"
         }
-      ]      
+      ]
     },
     "format": {
       "title": "Format",
@@ -51,9 +60,6 @@
         {
           "type": "string",
           "minLength": 1
-        },
-        {
-          "type": "null"
         }
       ]
     },
@@ -66,7 +72,8 @@
           "format": "uri"
         },
         {
-          "type": "null"
+          "type": "string",
+          "pattern": "^(\\[\\[REDACTED).*?(\\]\\])$"
         }
       ]
     },
@@ -77,9 +84,6 @@
         {
           "type": "string",
           "minLength": 1
-        },
-        {
-          "type": "null"
         }
       ]
     },
@@ -90,9 +94,6 @@
         {
           "type": "string",
           "minLength": 1
-        },
-        {
-          "type": "null"
         }
       ]
     },
@@ -105,7 +106,8 @@
           "format": "uri"
         },
         {
-          "type": "null"
+          "type": "string",
+          "pattern": "^(\\[\\[REDACTED).*?(\\]\\])$"
         }
       ]
     },
@@ -118,7 +120,8 @@
           "format": "uri"
         },
         {
-          "type": "null"
+          "type": "string",
+          "pattern": "^(\\[\\[REDACTED).*?(\\]\\])$"
         }
       ]
     },
@@ -131,7 +134,8 @@
           "type": "string"
         },
         {
-          "type": "null"
+          "type": "string",
+          "pattern": "^(\\[\\[REDACTED).*?(\\]\\])$"
         }
       ]
     }

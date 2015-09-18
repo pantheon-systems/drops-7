@@ -29,6 +29,7 @@ class panels_renderer_ipe extends panels_renderer_editor {
       '#type' => 'link',
       '#title' => t('Customize this page'),
       '#href' => $this->get_url('save_form'),
+      '#options' => array('query' => drupal_get_destination()),
       '#id' => 'panels-ipe-customize-page',
       '#attributes' => array(
         'class' => array('panels-ipe-startedit', 'panels-ipe-pseudobutton'),
@@ -49,6 +50,7 @@ class panels_renderer_ipe extends panels_renderer_editor {
         '#type' => 'link',
         '#title' => t('Change layout'),
         '#href' => $this->get_url('change_layout'),
+        '#options' => array('query' => drupal_get_destination()),
         '#attributes' => array(
           'class' => array('panels-ipe-change-layout', 'panels-ipe-pseudobutton', 'ctools-modal-layout'),
         ),

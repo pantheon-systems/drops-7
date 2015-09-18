@@ -1,3 +1,11 @@
+7.x-1.9 2015-09-17
+--------------------------
+- Fixed issues around the group/publisher field in search indexes and facets
+- When multiple resources are available for a dataset, new option to download all as zip file
+- Improvements for resource display in dataset pages and teasers
+- New hooks to allow additional license options https://github.com/NuCivic/dkan/issues/447
+- Numerous small improvements and bugfixes
+
 7.x-1.8  2015-04-02
 --------------------------
  - Several recline.js tweaks

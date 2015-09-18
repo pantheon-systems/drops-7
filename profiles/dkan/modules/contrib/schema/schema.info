@@ -7,10 +7,7 @@ files[] = engines/mysql.inc
 files[] = engines/pgsql.inc
 files[] = tests/schema_regression.test
 
-
-; Information added by drush on 2015-04-14
+; Information added by drush on 2014-03-23
 version = "7.x-1.2"
-core = "7.x"
 project = "schema"
-datestamp = "1429038850"
-
+datestamp = "1395606147"

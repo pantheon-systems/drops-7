@@ -94,7 +94,7 @@ class ServicesArgumentException extends ServicesException {
  */
 function services_controller_execute($controller, $args = array(), $options = array()) {
   $server_info =  services_server_info_object();
-  if ($server_info->debug) {
+  if (!empty($server_info->debug)) {
     watchdog('services', 'Controller: <pre>@controller</pre>', array('@controller' => print_r($controller, TRUE)), WATCHDOG_DEBUG);
     watchdog('services', 'Passed arguments: <pre>@arguments</pre>', array('@arguments' => print_r($args, TRUE)), WATCHDOG_DEBUG);
   }
@@ -112,7 +112,7 @@ function services_controller_execute($controller, $args = array(), $options = ar
 
   _services_controller_execute_restore_user();
 
-  if ($server_info->debug) {
+  if (!empty($server_info->debug)) {
     watchdog('services', 'results: <pre>@results</pre>', array('@results' => print_r($result, TRUE)), WATCHDOG_DEBUG);
   }
   return $result;
@@ -195,7 +195,7 @@ function _services_controller_execute_internals($controller, $args, $options) {
   drupal_alter('services_request_preprocess', $controller, $args, $options);
 
   // Log the arguments.
-  if ($server_info->debug) {
+  if (!empty($server_info->debug)) {
     watchdog('services', 'Called arguments: <pre>@arguments</pre>', array('@arguments' => print_r($args, TRUE)), WATCHDOG_DEBUG);
   }
 
@@ -416,6 +416,9 @@ function _services_access_value($data, $fields) {
  * Plugin that authenticate user will change global $user.
  */
 function _services_authenticate_user($controller, $endpoint, $args, $options) {
+  if (empty($endpoint->authentication)) {
+    return NULL;
+  }
   if (!isset($options['skip_authentication']) || !$options['skip_authentication']) {
     foreach ($endpoint->authentication as $auth_module => $auth_settings) {
       if (!empty($auth_settings)) {

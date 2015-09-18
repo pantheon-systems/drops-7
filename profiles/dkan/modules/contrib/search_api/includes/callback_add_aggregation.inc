@@ -10,6 +10,16 @@
  */
 class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
 
+  /**
+   * The type of aggregation currently performed.
+   *
+   * Used to temporarily store the current aggregation type for use of
+   * SearchApiAlterAddAggregation::reduce() with array_reduce().
+   *
+   * @var string
+   */
+  protected $reductionType;
+
   public function configurationForm() {
     $form['#attached']['css'][] = drupal_get_path('module', 'search_api') . '/search_api.admin.css';
 
@@ -193,7 +203,20 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
         return isset($a) ? min($a, $b) : $b;
       case 'first':
         return isset($a) ? $a : $b;
+      case 'first_char':
+        $b = "$b";
+        if (isset($a) || $b === '') {
+          return $a;
+        }
+        return drupal_substr($b, 0, 1);
+      case 'list':
+        if (!isset($a)) {
+          $a = array();
+        }
+        $a[] = $b;
+        return $a;
     }
+    return NULL;
   }
 
   /**
@@ -261,6 +284,8 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
           'max' => t('Maximum'),
           'min' => t('Minimum'),
           'first' => t('First'),
+          'first_char' => t('First letter'),
+          'list' => t('List'),
         );
       case 'type':
         return array(
@@ -270,6 +295,8 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
           'max' => 'integer',
           'min' => 'integer',
           'first' => 'string',
+          'first_char' => 'string',
+          'list' => 'list<string>',
         );
       case 'description':
         return array(
@@ -279,6 +306,8 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
           'max' => t('The Maximum aggregation computes the numerically largest contained field value.'),
           'min' => t('The Minimum aggregation computes the numerically smallest contained field value.'),
           'first' => t('The First aggregation will simply keep the first encountered field value. This is helpful foremost when you know that a list field will only have a single value.'),
+          'first_char' => t('The "First letter" aggregation uses just the first letter of the first encountered field value as the aggregated value. This can, for example, be used to build a Glossary view.'),
+          'list' => t('The List aggregation collects all field values into a multi-valued field containing all values.'),
         );
     }
   }
@@ -289,6 +318,8 @@ class SearchApiAlterAddAggregation extends SearchApiAbstractAlterCallback {
   public function formButtonSubmit(array $form, array &$form_state) {
     $button_name = $form_state['triggering_element']['#name'];
     if ($button_name == 'op') {
+      // Increment $i until the corresponding field is not set, then create the
+      // field with that number as suffix.
       for ($i = 1; isset($this->options['fields']['search_api_aggregation_' . $i]); ++$i) {
       }
       $this->options['fields']['search_api_aggregation_' . $i] = array(

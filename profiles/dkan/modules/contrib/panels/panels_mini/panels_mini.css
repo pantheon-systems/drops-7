@@ -1,0 +1,12 @@
+/**
+ * @file
+ * Custom CSS for the Mini Panels module.
+ */
+
+/**
+ * Customize the CTools wizard trail / breadcrumb used on the edit pages for
+ * Mini Panels as a stop-gap measure until the UX can be completely re-done.
+ */
+.wizard-trail {
+  text-align: right;
+}

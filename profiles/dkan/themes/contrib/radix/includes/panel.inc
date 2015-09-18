@@ -80,61 +80,6 @@ function radix_preprocess_panels_add_content_modal(&$variables) {
 }
 
 /**
- * Implements template_process_panels_add_content_modal().
- */
-function radix_process_panels_add_content_modal(&$vars) {
-  $content = !empty($vars['categories'][$vars['category']]['content']) ? $vars['categories'][$vars['category']]['content'] : array();
-
-  // If no category is selected or the category is empty or our special empty
-  // category render a 'header' that will appear instead of the columns.
-  if (empty($vars['category']) || empty($content) || $vars['category'] == 'root') {
-    // Nothing to do since there is no preview
-  }
-  else {
-    $titles = array_keys($content);
-    natcasesort($titles);
-    $col_size = count($titles) / $vars['column_count'];
-
-    // Zero out the existing column data
-    $count = 0;
-    foreach ($titles as $title) {
-      $which = floor($count++ / $col_size) + 1;
-      $vars['columns'][$which] = '';
-    }
-
-    // Read the column data with our preview functionality
-    $count = 0;
-    foreach ($titles as $title) {
-      $which = floor($count++ / $col_size) + 1;
-
-      // Add an 'Add' button to widget.
-      $content[$title]['title'] = t('Add');
-      $widget_title = theme('panels_add_content_link', array(
-        'renderer' => $vars['renderer'], 
-        'region' => $vars['region'], 
-        'content_type' => $content[$title],
-      ));
-
-      // Render the widget preview.
-      $widget_preview = (!empty($content[$title]['preview']) ? $content[$title]['preview'] : t('No Preview'));
-
-      // Render the preview output as a fieldset.
-      $preview_output = '<fieldset class="widget-preview panel panel-default">';
-      $preview_output .= '<legend class="panel-heading">';
-      $preview_output .= '<div class="panel-title fieldset-legend pull-left">' . $title . '</div>';
-      $preview_output .= $widget_title;
-      $preview_output .= '</legend>';
-      $preview_output .= '<div class="panel-body">';
-      $preview_output .= $widget_preview;
-      $preview_output .= '</div>';
-      $preview_output .= '</fieldset>';
-
-      $vars['columns'][$which] .= $preview_output;
-    }
-  }
-}
-
-/**
  * Implements template_preprocess_panels_add_content_link().
  */
 function radix_preprocess_panels_add_content_link(&$vars) {

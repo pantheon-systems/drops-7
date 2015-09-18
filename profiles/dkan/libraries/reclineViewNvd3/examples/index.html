@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Recline NVD3</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css" />
+  <link rel="stylesheet" href="http://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/js/bootstrap.min.js" />
+
+  <!-- General styles and overrides -->
+  <link rel="stylesheet" href="../css/style.css">
+
+  <!-- 3rd party JS libraries -->
+  <script type="text/javascript" src="../vendor/slickgrid/lib/jquery-1.7.min.js"></script>
+  <script type="text/javascript" src="../vendor/csv.js/csv.js"></script>
+  <script type="text/javascript" src="../vendor/recline.backend.gdocs/backend.gdocs.js"></script>
+  <script type="text/javascript" src="../vendor/lodash/dist/lodash.compat.min.js"></script>
+  <script type="text/javascript" src="../vendor/lodash.data/dist/lodash.data.min.js"></script>
+  <script type="text/javascript" src="../vendor/backbone/backbone.js"></script>
+  <script type="text/javascript" src="../vendor/mustache/mustache.js"></script>
+  <script type="text/javascript" src="../vendor/bootstrap-css/js/bootstrap.js"></script>
+  <script type="text/javascript" src="../vendor/moment/moment.js"></script>
+
+  <!--[if lte IE 7]>
+  <script language="javascript" type="text/javascript" src="../vendor/json/json2.js"></script>
+  <![endif]-->
+
+
+  <script src="http://okfnlabs.org/recline/dist/recline.js"></script>
+  <script type="text/javascript" src="../vendor/d3/d3.js"></script>
+  <script type="text/javascript" src="../vendor/nvd3/nv.d3.js"></script>
+  <link rel="stylesheet" href="../vendor/nvd3/nv.d3.css">
+
+</head>
+
+<body>
+
+<div class="container">
+  <div class="row">
+    <div class="col-md-12">
+      <h3>Discrete Bar Chart</h3>
+      <div id="discreteBar"></div>
+
+      <h3>Cumulative Chart</h3>
+      <div id="cumulativeLineChart"></div>
+
+      <h3>Line Chart</h3>
+      <div id="lineChart"></div>
+
+      <h3>Line With Focus Chart</h3>
+      <div id="lineWithFocusChart"></div>
+
+      <h3>Multibar Chart</h3>
+      <div id="multiBarChart"></div>
+
+      <h3>Multi Horizontal Bar Chart</h3>
+      <div id="multiBarHorizontalChart"></div>
+
+      <h3>Pie Chart</h3>
+      <div id="pieChart"></div>
+
+      <h3>Scatter Chart</h3>
+      <div id="scatterChart"></div>
+
+      <h3>Stacked Chart</h3>
+      <div id="stackedAreaChart"></div>
+
+    </div>
+  </div>
+</div>
+
+<script type="text/javascript" src="../dist/recline.view.nvd3.min.js"></script>
+<script type="text/javascript" src="../dist/recline.view.nvd3.controls.min.js"></script>
+<script type="text/javascript" src="../vendor/chosen/chosen.jquery.min.js"></script>
+<script type="text/javascript" src="datasets.js"></script>
+<script type="text/javascript" src="app.js"></script>
+</body>
+</html>

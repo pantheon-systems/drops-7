@@ -166,21 +166,20 @@ function feeds_views_data() {
 
   // Add a relationship for each entity type relating the entity's base table
   // to the feeds_item table whre feeds_item.entity_type = 'entity_type'.
-  foreach (array('node', 'taxonomy_term', 'user') as $entity_type) {
-    $info = entity_get_info($entity_type);
-    $data['feeds_item']['table']['join'][$info['base table']] = array(
-      'left_field' => $info['entity keys']['id'],
-      'field' => 'entity_id',
-      'type' => 'LEFT',
-      'extra' => array(
-        array(
-          'table' => 'feeds_item',
-          'field' => 'entity_type',
-          'value' => $entity_type,
-          'operator' => '=',
+  foreach (entity_get_info() as $entity_type => $info) {
+    if (!empty($info['base table'])) {
+      $data['feeds_item']['table']['join'][$info['base table']] = array(
+        'left_field' => $info['entity keys']['id'],
+        'field' => 'entity_id',
+        'type' => 'LEFT',
+        'extra' => array(
+          array(
+            'field' => 'entity_type',
+            'value' => $entity_type,
+          ),
         ),
-      ),
-    );
+      );
+    }
   }
 
   /**
@@ -321,4 +320,18 @@ function feeds_views_data() {
   );
 
   return $data;
+}
+
+/**
+ * Implements hook_views_plugins().
+ */
+function feeds_views_plugins() {
+  return array(
+    'argument validator' => array(
+      'feed_nid' => array(
+        'title' => t('Feed node id'),
+        'handler' => 'feeds_views_plugin_argument_validate_feed_nid',
+      ),
+    ),
+  );
 }

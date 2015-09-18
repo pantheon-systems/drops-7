@@ -72,6 +72,11 @@ function path_breadcrumbs_load_variant($path) {
     return FALSE;
   }
 
+  $path_breadcrumbs_data = &drupal_static(__FUNCTION__ . '::' . $path);
+  if (!empty($path_breadcrumbs_data)) {
+    return $path_breadcrumbs_data;
+  }
+
   // See if user enabled cache for breadcrumbs.
   $cache_enabled = variable_get('path_breadcrumbs_cache_enabled', FALSE);
   $cache_lifetime = variable_get('path_breadcrumbs_cache_lifetime', CACHE_PERMANENT);
@@ -98,6 +103,9 @@ function path_breadcrumbs_load_variant($path) {
         $contexts = path_breadcrumbs_get_contexts_from_arguments($path_breadcrumbs->arguments, FALSE, $path);
         drupal_alter('path_breadcrumbs_view', $built_breadcrumbs, $path_breadcrumbs, $contexts);
       }
+
+      // Store data in static cache.
+      $path_breadcrumbs_data = $cache->data;
 
       return $cache->data;
     }
@@ -224,8 +232,8 @@ function _path_breadcrumbs_build_breadcrumbs($path_breadcrumb, $contexts = array
 
   // Support empty breadcrumbs (disabling).
   if (count($path_breadcrumb->titles_prepared) == 1 &&
-      $path_breadcrumb->titles_prepared[0] == '<none>' &&
-      $path_breadcrumb->paths_prepared[0] == '<none>') {
+    $path_breadcrumb->titles_prepared[0] == '<none>' &&
+    $path_breadcrumb->paths_prepared[0] == '<none>') {
     $path_breadcrumb->titles_prepared = array();
     $path_breadcrumb->paths_prepared = array();
   }

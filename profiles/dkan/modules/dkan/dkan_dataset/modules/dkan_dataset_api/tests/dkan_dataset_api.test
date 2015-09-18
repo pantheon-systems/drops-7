@@ -20,7 +20,7 @@ class DkanDatasetApiWebTestCase extends DrupalWebTestCase {
     return array(
       'name'  => 'DKAN Dataset API Test',
       'description' => 'Test DKAN Dataset API functions and endpoints',
-      'group' => 'DKAN Dataset',
+      'group' => 'DKAN Dataset API',
     );
   }
 

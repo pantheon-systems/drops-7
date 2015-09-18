@@ -82,7 +82,10 @@
     return this;
   };
 
-
+  /**
+   * If there is no result this label will be shown.
+   * @type {{label: string, value: string}}
+   */
   Drupal.autocomplete_deluxe.empty =  {label: '- ' + Drupal.t('None') + ' -', value: "" };
 
   /**
@@ -105,6 +108,9 @@
   Drupal.autocomplete_deluxe.Widget = function() {
   };
 
+  /**
+   * Url for the callback.
+   */
   Drupal.autocomplete_deluxe.Widget.prototype.uri = null;
 
   /**
@@ -119,7 +125,7 @@
   };
 
   Drupal.autocomplete_deluxe.Widget.prototype.init = function(settings) {
-    if ($.browser.msie && $.browser.version === "6.0") {
+    if(navigator.appVersion.indexOf("MSIE 6.") != -1) {
       return;
     }
 
@@ -131,6 +137,7 @@
     this.required = settings.required;
     this.limit = settings.limit;
     this.synonyms = typeof settings.use_synonyms == 'undefined' ? false : settings.use_synonyms;
+    this.not_found_message = typeof settings.use_synonyms == 'undefined' ? "The term '@term' will be added." : settings.not_found_message;
 
     this.wrapper = '""';
 
@@ -139,7 +146,6 @@
     } else {
       this.delimiter =  settings.delimiter.charCodeAt(0);
     }
-
 
     this.items = {};
 
@@ -163,7 +169,7 @@
       }
       if ($.isEmptyObject(result)) {
         result.push({
-          label: Drupal.t("The term '@term' will be added.", {'@term' : term}),
+          label: Drupal.t(self.not_found_message, {'@term' : term}),
           value: term,
           newTerm: true
         });
@@ -203,6 +209,9 @@
     });
 
     var jqObject = this.jqObject;
+
+    var autocompleteDataKey = typeof(this.jqObject.data('autocomplete')) === 'object' ? 'item.autocomplete' : 'ui-autocomplete';
+
     var throbber = $('<div class="autocomplete-deluxe-throbber autocomplete-deluxe-closed">&nbsp;</div>').insertAfter(jqObject);
 
     this.jqObject.bind("autocompletesearch", function(event, ui) {
@@ -224,8 +233,9 @@
         var re = new RegExp('()*""' + escapedValue + '""|' + escapedValue + '()*', 'gi');
         var t = item.label.replace(re,"<span class='autocomplete-deluxe-highlight-char'>$&</span>");
       }
+
       return $( "<li></li>" )
-        .data( "item.autocomplete", item )
+        .data(autocompleteDataKey, item)
         .append( "<a>" + t + "</a>" )
         .appendTo( ul );
     };
@@ -304,23 +314,25 @@
     this.element.remove();
     var values = this.widget.valueForm.val();
     var escapedValue = Drupal.autocomplete_deluxe.escapeRegex( this.item.value );
-    var regex = new RegExp('()*""' + escapedValue + '""|' + escapedValue + '()*', 'gi');
+    var regex = new RegExp('()*""' + escapedValue + '""()*', 'gi');
     this.widget.valueForm.val(values.replace(regex, ''));
     delete this.widget.items[this.value];
   };
 
   Drupal.autocomplete_deluxe.MultipleWidget.prototype.setup = function() {
     var jqObject = this.jqObject;
-    var parent = jqObject.parent();
-    var value_container = jqObject.parent().parent().children('.autocomplete-deluxe-value-container');
-    var value_input = value_container.children().children();
+    var parent = jqObject.parents('.autocomplete-deluxe-container');
+    var value_container = parent.next();
+    var value_input = value_container.find('input');
     var items = this.items;
     var self = this;
     this.valueForm = value_input;
 
     // Override the resize function, so that the suggestion list doesn't resizes
     // all the time.
-    jqObject.data("autocomplete")._resizeMenu = function()  {};
+    var autocompleteDataKey = typeof(this.jqObject.data('autocomplete')) === 'object' ? 'autocomplete' : 'ui-autocomplete';
+
+    jqObject.data(autocompleteDataKey)._resizeMenu = function()  {};
 
     jqObject.show();
 

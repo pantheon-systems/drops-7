@@ -7,7 +7,7 @@
 /**
  * Taxonomy resource test class.
  */
-class ServicesResourceTaxonomyTests extends ServicesWebtestCase {
+class ServicesResourceTaxonomyTests extends ServicesWebTestCase {
   // Class variables
   protected $privileged_user = NULL ;
   // Endpoint details.

@@ -1,0 +1,204 @@
+Fieldable Panels Panes 7.x-1.7, 2015-09-02
+------------------------------------------
+By Chris Burges, dsnopek, DamienMcKenna: Added "check editable" callback for
+  CTools pane definition, refactored FPP object loading.
+
+
+Fieldable Panels Panes 7.x-1.6, 2015-05-29
+------------------------------------------
+#2427275 by DamienMcKenna: Fixed line_entity_form integration.
+#2463965 by dsnopek: PHP notice when FPP is hidden via visibility rules.
+#2457995 by B-Prod: Fixed compatibility with the Title module.
+#1985894 by DamienMcKenna, tanc: Return FALSE in load function if no entities.
+#2493749 by dsnopek: FPP title always shown as link, even if not requested!
+#2483335 by dsnopek: Improved label in File Entity file usage report.
+#2483335 by DamienMcKenna: Made default labels less technical.
+
+
+Fieldable Panels Panes 7.x-1.6-beta1, 2015-02-02
+------------------------------------------------
+#2283165 by DamienMcKenna: Incorrect variable usage broke 'create' permission.
+#2268531 by DamienMcKenna: Ensure variable exists before running strpos() on it.
+#2204837 by Kirby: Fixed call to undefined function ctools_cleanstring().
+#2250293 by DamienMcKenna: Revisions support for Panelizer.
+#1911176 by Dave Reid: Edit form improvements.
+#2237097 by DamienMcKenna: Inline_Entity_Form support.
+#2237137 by DamienMcKenna: Entity API support.
+#1618308 by DamienMcKenna: Follow-up to fix menu paths.
+#2247179 by DamienMcKenna: Fixed Panelizer admin path.
+#1618308 by helior, acrollet, realityloop, magicmyth, DamienMcKenna: UI for
+  managing FPP bundles.
+#2146479: Fixed conflict with recent change to admin_menu
+  (https://drupal.org/node/2146479).
+#2074735 by rogical: Added configure link to admin/structure/fieldable-panels
+  -panes in the info file.
+#2250383 by DamienMcKenna: Require CTools 1.4 or newer.
+#2145209 by primozsusa, eft, DamienMcKenna: Support for the Migrate module.
+#2287015 by eft, DamienMcKenna: Missing deletion callback in hook_entity_info.
+#2283263 by cboyden, DamienMcKenna: Allow FPP description to be overridden.
+#1588882 by jlapp, mcarbone, DamienMcKenna: Use title as the entity label when
+  admin_title isn't present.
+#2246893 by mglaman: Does not properly set pane subtype on content edit form
+  submit.
+#2318033 by mongolito404: Increase FPP 'name' field length to 255 characters.
+#2280457 by magicmyth: Entity API support is broken.
+#2389873 by mkhamash: Add pane config to the entity object.
+#2233363 by mongolito404: Incorrect paths to some FPP admin pages.
+#2098041 by Placinta: Don't call hook_entity_presave twice in one save process.
+#2092477 by rrrob, DamienMcKenna: Make the pane title use the current view mode.
+#2398301 by mglaman: Add hook_fieldable_panels_pane_insert/update/save hooks.
+#2302931 by Adrian Richardson, DamienMcKenna: Fixed PanelsPaneController
+  ->access().
+#2304921 by plopesc: Normalized the entity output.
+#2244541 by DamienMcKenna: The default FPP type can be skipped during
+  installation by assigning a variable, see README.txt for details.
+#2398759 by mglaman: Documented some basic CRUD APIs.
+#2399623 by mglaman: Include original entity when saving an FPP.
+By DamienMcKenna: Document when hook_entity_view_mode_alter() is triggered.
+#2256503 by DamienMcKenna, dsnopek: Title field logic improved, new 'preview'
+  view mode used by default on standalone entity page.
+#2415427 by dsnopek: Avoid loading FPP from database in
+  fieldable_panels_panes_preprocess_panels_pane().
+#2415427 by dsnopek: Follow-up on last commit.
+#2390145 by mrmikedewolf: Add default access callback for admin views.
+#2416001 by DamienMcKenna: Requires the latest releases of CTools and Panels.
+
+
+Fieldable Panels Panes 7.x-1.5, 2013-05-07
+------------------------------------------
+#1989478 by tim.plunkett: Added Implement the new 'create content access'
+  callback for content types.
+Follow-up #1900528: Fixed hook_entity_view_alter() did not have the correct
+  second parameter passed to it.
+#1911926: Move the 'View access' and 'Edit access' tabs under one 'Access
+  control' tab.
+#1911074: Added support for the entitycache module.
+#1900528: Fixed PanelsPaneController::buildContent() invokes
+  hook_entity_view_alter() but not hook_entity_view().
+By Dave Reid: Add an access check for setting current revision that can be
+  re-used.
+
+
+Fieldable Panels Panes 7.x-1.4, 2013-01-25
+------------------------------------------
+#1724394 by swentel, Dave Reid: Dropped dependency on Field UI.
+#1864956 by mrfelton, Dave Reid: Fixed contextual link support for rendered
+  fieldable panel panes.
+#1864950: Increased default pager limit to 50 items in default views.
+  Re-exported for most recent Views updates.
+By Dave Reid: Make the 'Add' tab on the panel pane listing a local action to
+  comply with UX standards.
+#1860484: Added title module support for fieldable panel pane titles.
+#1707852: Fixed compatability with the 'Rendered entity' View row plugin in
+  Entity API.
+#1536944: Ensure that language is added as form element in
+  fieldable_panels_panes_entity_edit_form().
+By Dave Reid: Fixed 'Delete' tab had the same weight as 'Edit' meaning it could
+  show up before 'Edit'.
+#1766182 by cweagans, webflo, Dave Reid: Fixed
+  fieldable_panels_panes_preprocess_panels_pane() does not gracefully fail if
+  fieldable_panels_panes_load_entity() fails.
+#1876724: Added support for hook_entity_view_mode_alter().
+Follow-up #1536944: Fixed language not actually saved on fieldable panel pane
+  entities.
+#1862130: Fixed rollback() does not accept arguments. Standardized watchdog type
+  argument.
+
+
+Fieldable Panels Panes 7.x-1.3, 2012-12-07
+------------------------------------------
+Follow-up #1618152: Removed accidental css class.
+#1707852 by zuuperman, theunraveler: Fixed undefined function error when entity
+  API view callback is used.
+#1618152 by Dave Reid, grndlvl, dalin: Fixed unable to change classes or
+  attributes using preprocess_fieldable_panels_pane.
+#1536944 by Dave Reid, jucallme, mrfelton, stylus, helior: Enabled entity
+  translation for fieldable panel pane entities.
+#1857096: Fixed incorrect argument for access callback.
+#1762362: Fixed incorrect bundle argument position in example code.
+#1818132 by beeradb: entity_uuid_load() is not reliable.
+
+
+Fieldable Panels Panes 7.x-1.2, 2012-08-16
+------------------------------------------
+#1719798 by acrollet: Added Informational text should be displayed on the 'list'
+  tab when no fieldable panels pane entities have been created.
+#1715918 by populist: Added Allow Fieldable Panel Panes to be Loaded by VID in
+  _fieldable_panels_panes_load_entity().
+#1616764 by swentel, zuuperman: Implement PLUGIN_content_type_admin_info().
+
+
+Fieldable Panels Panes 7.x-1.1, 2012-07-27
+------------------------------------------
+#1702050 by mstrelan: Link pane title to another page/url
+#1702050 by mstrelan: Link pane title to another page/url
+#1630892 by helior: Add devel support to reusable panes.
+#1607028 by helior: Move admin path up a level because we are constantly running
+  into menu depth issues.
+Remove old code and replace with newer simpler CTools function call.
+#1548980: Add view mode selector for fieldable panel panes.
+#1616764 by swentel: Implement plugin_content_type_admin_info so that fieldable
+  panes show more information in the Panels backend editor.
+#1598056: Create fieldable pane permission does not work.
+#1533628 by Alan D and mcarbone: Provide template suggestion for pane bundle.
+#1621886 by helior: Use proper name for preprocess function.
+#1555414 by bangpound and helior: Do not call drupal_render() on pane view
+  prematurely.
+#1555400 by bangpound: Remove unneeded and potentially buggy "variables"
+  declaration from hook_theme() implementation.
+Clean up the panelizer integration.
+Pass coder review
+added admin_menu hook to display entities #1607086
+Initial support for panelizer 3.x so that you can panelize pane view modes.
+Applied patch from #1549634 to delete revisions
+#1423994 update UUID support for newest uuid api.
+#1444778 by populist: Allow fieldable panel panes to specify top level and icon.
+commited patch from #1411664
+
+
+Fieldable Panels Panes 7.x-1.0, 2012-01-15
+------------------------------------------
+#1377636: Add a class for the pane bundle in the panel pane template.
+#1369398 by John Morahan: Allow deletion of revision which has a link that does
+  not work.
+#1346096: Make new entities created outside of panels add modal default to
+  resuable.
+Remove hook_modules_installed() as uuid now handles adding the field itself.
+  However we also need to ensure the uuid flag is always set in
+  hook_entity_info() so that it is available at uuid uninstall time.
+#1328966: Error in README.txt.
+#1340984: add UUID support.
+#1363820: Fix rebuilding the form via AJAX before it's been saved.
+Add a comment about renaming the default bundle to README.txt.
+Add a readme describing how to add multiple bundles.
+Fix some minor bugs with entity editing.
+Properly utilize hook_entity_insert and hook_entity_update
+Fix notices.
+Make title adhear to entity display settings
+#1328932: $plugin = array() notation causes new panes to not work right with
+  #ajax operations.
+Fixed php notice when creating new entities
+Change revision wording to match node revision form fields.
+
+
+Fieldable Panels Panes 7.x-1.0-beta2, 2011-10-27
+------------------------------------------------
+Ensure that adding an already reusable entity as a pane to a display does not
+  create a new revision.
+Fully implement revision control on the entities.
+Improvements to revisions, make sure that #ajax (such as with image fields)
+  works properly within the pane editor.
+More work on the revision integration. Revisions seem to load and save now.
+Update for revisions; remove unneeded upgrade path, nobody is currently using
+  this module.
+Implement per bundle permission setting.
+Misc cleanup, plus implement access control. update.php required.
+
+
+Fieldable Panels Panes 7.x-1.0-beta1, 2011-10-19
+------------------------------------------------
+Add all database operations, views support, list page.
+More menu path completed.
+Fix entity view.
+Remove dsms.
+Initial commit.

@@ -6,6 +6,15 @@
  */
 
 /**
+ * Implements hook_schema().
+ */
+function features_schema() {
+  $schema['cache_features'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_features']['description'] = 'Cache table for features to store module info.';
+  return $schema;
+}
+
+/**
  * Implements hook_install().
  */
 function features_install() {
@@ -25,6 +34,16 @@ function features_uninstall() {
   variable_del('features_default_export_path');
   variable_del('features_semaphore');
   variable_del('features_ignored_orphans');
+  variable_del('features_feature_locked');
+  variable_del('features_lock_mode');
+
+  db_delete('variable')
+    ->condition('name', 'features_admin_show_component_%', 'LIKE')
+    ->execute();
+  db_delete('variable')
+    ->condition('name', 'features_component_locked_%', 'LIKE')
+    ->execute();
+
   if (db_table_exists('menu_custom')) {
     db_delete('menu_custom')
       ->condition('menu_name', 'features')
@@ -53,7 +72,7 @@ function _features_install_menu() {
 
 /**
  * Update 6100: Set module on all feature node types to 'features'.
-
+ *
  * This update can be re-run as needed to repair any node types that are not
  * removed after disabling the associated feature.
  *
@@ -119,4 +138,14 @@ function features_update_6101() {
     }
   }
   return array();
+}
+
+/**
+ * Add {cache_features} table.
+ */
+function features_update_7200() {
+  if (!db_table_exists('cache_features')) {
+    $schema = drupal_get_schema_unprocessed('system', 'cache');
+    db_create_table('cache_features', $schema);
+  }
 }

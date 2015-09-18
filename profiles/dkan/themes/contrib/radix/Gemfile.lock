@@ -25,6 +25,8 @@ GEM
     rb-inotify (0.9.5)
       ffi (>= 0.5.0)
     sass (3.4.9)
+    sass-globbing (1.1.1)
+      sass (>= 3.1)
 
 PLATFORMS
   ruby
@@ -33,3 +35,4 @@ DEPENDENCIES
   bootstrap-sass (~> 3.2)
   compass (~> 1.0)
   compass_radix (~> 3.1.5)
+  sass-globbing (~> 1.1.1)

@@ -1,19 +1,28 @@
 language: php
+sudo: false
 
 php:
-  - 5.4
+  - 5.5
 
 mysql:
   database: dkan_travis
   username: root
   encoding: utf8
 
+addons:
+  artifacts:
+    debug: true
+    paths:
+      - ./screens
+    target_paths: $TRAVIS_BUILD_NUMBER
+    working_dir: WORKING_DIR
+    bucket: nucivic-travis-artifacts
+    s3_region: us-east-1
+
 install:
   - cd test
   - composer install
   - mysql -e 'create database dkan_travis;'
-  - sudo apt-get update > /dev/null
-  - sudo apt-get --quiet=2 install php5-cgi php5-curl php5-gd php5-mysql > /dev/null
 
   # Install latest Drush 7.
   - export PATH="$HOME/.composer/vendor/bin:$PATH"
@@ -35,6 +44,7 @@ before_script:
   - cd drupal
   - drush si dkan --sites-subdir=default --db-url=mysql://root:@127.0.0.1:3306/dkan_travis --account-name=admin --account-pass=admin  --site-name="DKAN" install_configure_form.update_status_module='array(FALSE,FALSE)' --yes
   - drush cc all --yes
+  - drush cc drush
   - drush --quiet --yes --root=$PWD runserver :8888 > /dev/null 2>&1 &
   - sleep 4
 
@@ -49,6 +59,8 @@ before_script:
   - sleep 5
 
 script:
+  - bash features-tests.sh $TRAVIS_BUILD_DIR
+  - bin/behat features/administrator.feature
   - bin/behat features/panels.feature
   - bin/behat features/groups.feature
   - bin/behat features/dataset.feature
@@ -57,6 +69,10 @@ script:
   - bin/behat features/home.feature
   - bin/behat features/search.feature
   - bin/behat features/recline.feature
+  - bin/behat features/widgets.feature
+  - bin/behat features/data_dashboard.feature
+  - bin/behat features/dkan_data_story_ui.feature
+  - bin/behat features/role_storyteller.feature
 
 notifications:
   slack:

@@ -49,10 +49,20 @@ Installation
   Feeds News, Feeds Import, Feeds Fast News (more info below).
 - Make sure cron is correctly configured http://drupal.org/cron
 - Go to import/ to import data.
-- To use SimplePie parser, download either the compiled or minified SimplePie 
-  and place simplepie_[version].compiled.php into feeds/libraries as 
-  simplepie.compiled.php. Recommended version: 1.3.
-  http://simplepie.org/
+
+SimplePie Installation
+======================
+
+- To install the SimplePie parser plugin, complete the following steps:
+  1. Download SimplePie from http://simplepie.org/downloads. The recommended
+     version is: 1.3.
+  2. Decompress the downloaded zip file.
+  3. Rename the uncompressed folder to 'simplepie'.
+     For example rename 'simplepie-simplepie-e9472a1' to 'simplepie'.
+  4. Move the folder to sites/all/libraries. The final directory structure
+     should be sites/all/libraries/simplepie.
+  5. Flush the Drupal cache.
+  6. The SimplePie parser should be available now in the list of parsers.
 
 Feature modules
 ===============

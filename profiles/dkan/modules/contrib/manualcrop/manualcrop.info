@@ -1,0 +1,16 @@
+name = Manual Crop
+description = Lets you manually crop an image based upon the image style effects.
+package = Image
+core = 7.x
+
+configure = admin/config/media/manualcrop
+
+dependencies[] = image (>=7.8)
+dependencies[] = libraries (>=2.1)
+
+files[] = includes/views/manualcrop.views.inc
+
+; Information added by drush on 2015-06-03
+version = "7.x-1.5+4-dev"
+project = "manualcrop"
+datestamp = "1433337514"

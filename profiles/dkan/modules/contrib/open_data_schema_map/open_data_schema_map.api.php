@@ -96,7 +96,7 @@ function hook_open_data_schema_map_schema_types_alter(&$schemas) {
 /**
  * Allows overriding final results about to be rendered.
  */
-function open_data_schema_map_results_alter(&$result, $api_machine_name, $schema) {
+function hook_open_data_schema_map_results_alter(&$result, $api_machine_name, $schema) {
   if ($schema == 'new_schema') {
     // Wrap results in 'output' array.
     $result['output'] = $results;

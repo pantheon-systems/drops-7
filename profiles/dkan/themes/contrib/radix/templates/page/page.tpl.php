@@ -21,9 +21,16 @@
           <span class="icon-bar"></span>
           <span class="icon-bar"></span>
         </button>
-        <a href="<?php print $front_page; ?>" id="logo" class="navbar-brand">
-          <?php print $site_name; ?>
-        </a>
+        <?php if ($site_name || $logo): ?>
+          <a href="<?php print $front_page; ?>" class="navbar-brand" rel="home" title="<?php print t('Home'); ?>">
+            <?php if ($logo): ?>
+              <img src="<?php print $logo; ?>" alt="<?php print t('Home'); ?>" id="logo" />
+            <?php endif; ?>
+            <?php if ($site_name): ?>
+              <span class="site-name"><?php print $site_name; ?></span>
+            <?php endif; ?>
+          </a>
+        <?php endif; ?>
       </div> <!-- /.navbar-header -->
 
       <!-- Collect the nav links, forms, and other content for toggling -->

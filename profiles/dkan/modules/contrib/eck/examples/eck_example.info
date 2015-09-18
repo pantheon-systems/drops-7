@@ -1,0 +1,11 @@
+name = ECK Example
+description = A module demonstrating the kind of things that ECK can do from code
+package = ECK
+core = 7.x
+dependencies[] = eck
+; Information added by Drupal.org packaging script on 2015-01-26
+version = "7.x-2.0-rc7"
+core = "7.x"
+project = "eck"
+datestamp = "1422241382"
+

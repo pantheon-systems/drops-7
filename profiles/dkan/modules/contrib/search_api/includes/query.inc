@@ -226,6 +226,9 @@ interface SearchApiQueryInterface {
    *
    * This method should always be called by execute() and contain all necessary
    * operations before the query is passed to the server's search() method.
+   *
+   * @throws SearchApiException
+   *   If any error occurred during the preparation of the query.
    */
   public function preExecute();
 
@@ -366,7 +369,7 @@ class SearchApiQuery implements SearchApiQueryInterface {
   /**
    * The index's machine name.
    *
-   * used during serialization to avoid serializing the whole index object.
+   * Used during serialization to avoid serializing the whole index object.
    *
    * @var string
    */
@@ -717,6 +720,9 @@ class SearchApiQuery implements SearchApiQueryInterface {
   public function postExecute(array &$results) {
     // Postprocess results.
     $this->index->postprocessSearchResults($results, $this);
+
+    // Let modules alter the results.
+    drupal_alter('search_api_results', $results, $this);
   }
 
   /**
@@ -811,6 +817,31 @@ class SearchApiQuery implements SearchApiQueryInterface {
     $this->filter = clone $this->filter;
   }
 
+  /**
+   * Implements the magic __toString() method to simplify debugging.
+   */
+  public function __toString() {
+    $ret = 'Index: ' . $this->index->machine_name . "\n";
+    $ret .= 'Keys: ' . str_replace("\n", "\n  ", var_export($this->orig_keys, TRUE)) . "\n";
+    if (isset($this->keys)) {
+      $ret .= 'Parsed keys: ' . str_replace("\n", "\n  ", var_export($this->keys, TRUE)) . "\n";
+      $ret .= 'Searched fields: ' . (isset($this->fields) ? implode(', ', $this->fields) : '[ALL]') . "\n";
+    }
+    if ($filter = (string) $this->filter) {
+      $filter = str_replace("\n", "\n  ", $filter);
+      $ret .= "Filters:\n  $filter\n";
+    }
+    if ($this->sort) {
+      $sort = array();
+      foreach ($this->sort as $field => $order) {
+        $sort[] = "$field $order";
+      }
+      $ret .= 'Sorting: ' . implode(', ', $sort) . "\n";
+    }
+    $ret .= 'Options: ' . str_replace("\n", "\n  ", var_export($this->options, TRUE)) . "\n";
+    return $ret;
+  }
+
 }
 
 /**
@@ -890,8 +921,11 @@ interface SearchApiQueryFilterInterface {
    * Return all conditions and nested filters contained in this filter.
    *
    * @return array
-   *   An array containing this filter's subfilters. Each of these is either an
-   *   array (field, value, operator), or another SearchApiFilter object.
+   *   An array containing this filter's subfilters. Each of these is either a
+   *   condition, represented as a numerically indexed array with the arguments
+   *   of a previous SearchApiQueryFilterInterface::condition() call (field,
+   *   value, operator); or a nested filter, represented by a
+   *   SearchApiQueryFilterInterface filter object.
    */
   public function &getFilters();
 
@@ -1008,6 +1042,26 @@ class SearchApiQueryFilter implements SearchApiQueryFilterInterface {
         $this->filters[$i] = clone $filter;
       }
     }
+  }
+
+  /**
+   * Implements the magic __toString() method to simplify debugging.
+   */
+  public function __toString() {
+    // Special case for a single, nested filter:
+    if (count($this->filters) == 1 && is_object($this->filters[0])) {
+      return (string) $this->filters[0];
+    }
+    $ret = array();
+    foreach ($this->filters as $filter) {
+      if (is_object($filter)) {
+        $ret[] = "[\n  " . str_replace("\n", "\n    ", (string) $filter) . "\n  ]";
+      }
+      else {
+        $ret[] = "$filter[0] $filter[2] " . str_replace("\n", "\n    ", var_export($filter[1], TRUE));
+      }
+    }
+    return $ret ? '  ' . implode("\n{$this->conjunction}\n  ", $ret) : '';
   }
 
 }

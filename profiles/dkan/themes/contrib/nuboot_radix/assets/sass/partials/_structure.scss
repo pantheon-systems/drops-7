@@ -4,19 +4,24 @@
 body {
   font-family:$font-family-sans-serif;
   line-height:1.35em;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 body.modal-open {
   overflow: visible !important;
 }
 .branding {
   position: relative;
+  .logo {
+    margin: 20px 0;
+  }
 }
 .site-name {
   display: inline-block;
   float: left;
   font-size: 2em;
   line-height: 1.15em;
-  margin: 38px 20px 5px;
+  margin: 50px 20px 0;
   @media(max-width:460px) {
     clear: left;
     float: none;
@@ -25,7 +30,7 @@ body.modal-open {
 }
 .site-slogan {
   clear: left;
-  padding-bottom: 10px;
+  margin-bottom: 20px;
 }
 h1 {
   font-size: 30px;
@@ -38,6 +43,10 @@ h1,h2,h3,h4 {
 }
 h3.media-heading {
   margin:.5em 0;
+}
+h4 {
+  margin-top: 2em;
+  margin-bottom: .5em;
 }
 
 a {
@@ -141,16 +150,41 @@ table.group_additional {
   }
 }
 
-table.group_additional,
-.field-name-field-additional-info table {
-  th:nth-of-type(1n),
-  td:nth-of-type(1n) {
-    width: 30%;
-    border-right: 1px solid $border;
+@media screen and (max-width: 1024px) {
+  .table-responsive > .table > thead > tr > th,
+  .table-responsive > .table > thead > tr > td,
+  .table-responsive > .table > tbody > tr > th,
+  .table-responsive > .table > tbody > tr > td,
+  .table-responsive > .table > tfoot > tr > th,
+  .table-responsive > .table > tfoot > tr > td {
+    white-space: normal;
   }
-  th:nth-of-type(2n),
+}
+.field-name-field-additional-info .field-label {
+  margin-bottom: 1em;
+}
+.group_additional,
+.field-name-field-additional-info table,
+.field-name-field-additional-info .table-responsive {
+  margin: 0;
+  td,
+  th {
+    white-space: normal;
+    width: auto;
+  }
   td:nth-of-type(2n) {
-    width: 70%;
+    @include wrap;
+  }
+  @media all and (min-width:768px) {
+    th:nth-of-type(1n),
+    td:nth-of-type(1n) {
+      width: 30%;
+      border-right: 1px solid $border;
+    }
+    th:nth-of-type(2n),
+    td:nth-of-type(2n) {
+      width: 70%;
+    }
   }
 }
 .node-form {
@@ -181,8 +215,21 @@ table thead > tr > th {
   padding:4px 8px;
 }
 
+// Striped tables.
+.table-striped > tbody > tr:nth-child(odd) {
+  background-color: #f9f9f9;
+}
+.table tbody tr:hover td, 
+.table tbody tr:hover th,
+.table-striped > tbody > tr:nth-child(odd):hover {
+  background-color: #FFFEEE;
+}
+
 // Admin tables.
 .page-admin {
+  .container.main {
+    width: 100%;
+  }
   .table-bordered > thead > tr > th,
   .table-bordered > tbody > tr > th,
   .table-bordered > tbody > tr > td {
@@ -200,15 +247,8 @@ table thead > tr > th {
     display: table-cell;
     position: relative;
   }
-  .table-striped > tbody > tr:nth-child(odd) {
-    background-color: #f9f9f9;
-  }
-  .table tbody tr:hover td, 
-  .table tbody tr:hover th,
   .table tbody tr:hover td.checkbox, 
-  .table tbody tr:hover th.checkbox,
-  .table-striped tbody tr:nth-child(odd):hover td,
-  .table-striped tbody tr:nth-child(odd):hover td.checkbox {
+  .table tbody tr:hover th.checkbox {
     background-color: #FFFEEE;
   }
   table th.checkbox, 
@@ -238,6 +278,7 @@ dl {
   overflow:hidden;
 }
 dt {
+  clear: both;
   margin:0;
   padding:8px 5px;
   float:left;

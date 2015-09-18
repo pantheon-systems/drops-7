@@ -38,10 +38,12 @@ L.Path = (L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? L.Path :
 
 		if (this.options.clickable) {
 			this._map.off('click', this._onClick, this);
+			this._map.off('mousemove', this._onMouseMove, this);
 		}
 
 		this._requestUpdate();
-
+		
+		this.fire('remove');
 		this._map = null;
 	},
 
@@ -136,7 +138,7 @@ L.Path = (L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? L.Path :
 	},
 
 	_onMouseMove: function (e) {
-		if (this._map._animatingZoom) { return; }
+		if (!this._map || this._map._animatingZoom) { return; }
 
 		// TODO don't do on each move
 		if (this._containsPoint(e.layerPoint)) {
@@ -158,12 +160,12 @@ L.Map.include((L.Path.SVG && !window.L_PREFER_CANVAS) || !L.Browser.canvas ? {} 
 		    ctx;
 
 		if (!root) {
-			root = this._pathRoot = document.createElement("canvas");
+			root = this._pathRoot = document.createElement('canvas');
 			root.style.position = 'absolute';
 			ctx = this._canvasCtx = root.getContext('2d');
 
-			ctx.lineCap = "round";
-			ctx.lineJoin = "round";
+			ctx.lineCap = 'round';
+			ctx.lineJoin = 'round';
 
 			this._panes.overlayPane.appendChild(root);
 

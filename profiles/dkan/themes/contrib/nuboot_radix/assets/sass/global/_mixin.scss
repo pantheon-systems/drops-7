@@ -59,7 +59,7 @@
     padding:0;
     position: absolute;
     right:10px;
-    top: 5px;
+    top: 3px;
     width:25px;
   }
 }
@@ -68,6 +68,14 @@
   // background:$brand-primary;
   // border-color:$brand-primary;
   color: white;
+  font-weight: normal;
+  text-align: center;
+  vertical-align: middle;
+  cursor: pointer;
+  white-space: nowrap;
+  padding: 5px 12px;
+  line-height: 1.4em;
+  @include border-radius(4px);
 }
 %button:hover, 
 %button:focus, 
@@ -75,12 +83,33 @@
   // background:$brand-secondary;
   // border-color:$brand-secondary;
   color: white;
+  text-decoration: none;
 }
 %button-attached {
   @include border-radius(0 $border-radius-base $border-radius-base 0);
   margin-left: -1px;
-  padding: 6px 10px 5px 10px;
+  padding: 5px 12px;
+  line-height: 1.4em;
   vertical-align: top;
+}
+
+%screenreader {
+  position: absolute;
+  top:0;
+  left:-9999px
+}
+
+// Force wrap content: https://perishablepress.com/wrapping-content/
+@mixin wrap {
+  white-space: pre;           /* CSS 2.0 */
+  white-space: pre-wrap;      /* CSS 2.1 */
+  white-space: pre-line;      /* CSS 3.0 */
+  white-space: -pre-wrap;     /* Opera 4-6 */
+  white-space: -o-pre-wrap;   /* Opera 7 */
+  white-space: -moz-pre-wrap; /* Mozilla */
+  white-space: -hp-pre-wrap;  /* HP Printers */
+  word-wrap: break-word;      /* IE 5+ */    
+  word-break: break-word;
 }
 
 // Image replacement

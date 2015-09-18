@@ -115,7 +115,8 @@ class SearchApiIndex extends Entity {
   public $item_type;
 
   /**
-   * An array of options for configuring this index. The layout is as follows:
+   * An array of options for configuring this index. The layout is as follows
+   * (with all keys being optional):
    * - cron_limit: The maximum number of items to be indexed per cron batch.
    * - index_directly: Boolean setting whether entities are indexed immediately
    *   after they are created or updated.
@@ -150,6 +151,8 @@ class SearchApiIndex extends Entity {
    *   - weight: Used for sorting the processors.
    *   - settings: Processor-specific settings, configured via the processor's
    *     configuration form.
+   * - datasource: Datasource-specific settings, configured via the datasource's
+   *   configuration form.
    *
    * @var array
    */
@@ -172,20 +175,25 @@ class SearchApiIndex extends Entity {
   /**
    * Constructor as a helper to the parent constructor.
    */
-  public function __construct(array $values = array()) {
-    parent::__construct($values, 'search_api_index');
+  public function __construct(array $values = array(), $entity_type = 'search_api_index') {
+    parent::__construct($values, $entity_type);
   }
 
   /**
    * Execute necessary tasks for a newly created index.
    */
   public function postCreate() {
-    if ($this->enabled) {
-      $this->queueItems();
+    try {
+      if ($server = $this->server()) {
+        // Tell the server about the new index.
+        $server->addIndex($this);
+        if ($this->enabled) {
+          $this->queueItems();
+        }
+      }
     }
-    if ($server = $this->server()) {
-      // Tell the server about the new index.
-      $server->addIndex($this);
+    catch (SearchApiException $e) {
+      watchdog_exception('search_api', $e);
     }
   }
 
@@ -193,8 +201,13 @@ class SearchApiIndex extends Entity {
    * Execute necessary tasks when the index is removed from the database.
    */
   public function postDelete() {
-    if ($server = $this->server()) {
-      $server->removeIndex($this);
+    try {
+      if ($server = $this->server()) {
+        $server->removeIndex($this);
+      }
+    }
+    catch (SearchApiException $e) {
+      watchdog_exception('search_api', $e);
     }
 
     // Stop tracking entities for indexing.
@@ -206,7 +219,12 @@ class SearchApiIndex extends Entity {
    */
   public function queueItems() {
     if (!$this->read_only) {
-      $this->datasource()->startTracking(array($this));
+      try {
+        $this->datasource()->startTracking(array($this));
+      }
+      catch (SearchApiException $e) {
+        watchdog_exception('search_api', $e);
+      }
     }
   }
 
@@ -214,7 +232,12 @@ class SearchApiIndex extends Entity {
    * Remove all records of entities to index.
    */
   public function dequeueItems() {
-    $this->datasource()->stopTracking(array($this));
+    try {
+      $this->datasource()->stopTracking(array($this));
+    }
+    catch (SearchApiException $e) {
+      watchdog_exception('search_api', $e);
+    }
   }
 
   /**
@@ -231,15 +254,24 @@ class SearchApiIndex extends Entity {
     if (empty($this->description)) {
       $this->description = NULL;
     }
-    if (empty($this->server)) {
+    $server = FALSE;
+    if (!empty($this->server)) {
+      $server = search_api_server_load($this->server);
+      if (!$server) {
+        $vars['%server'] = $this->server;
+        $vars['%index'] = $this->name;
+        watchdog('search_api', 'Unknown server %server specified for index %index.', $vars, WATCHDOG_ERROR);
+      }
+    }
+    if (!$server) {
       $this->server = NULL;
       $this->enabled = FALSE;
     }
-    // This will also throw an exception if the server doesn't exist – which is good.
-    elseif (!$this->server(TRUE)->enabled) {
-      $this->enabled = FALSE;
-      $this->server = NULL;
+    if (!empty($this->options['fields'])) {
+      ksort($this->options['fields']);
     }
+
+    $this->resetCaches();
 
     return parent::save();
   }
@@ -305,7 +337,12 @@ class SearchApiIndex extends Entity {
       return TRUE;
     }
 
-    $this->server()->deleteItems('all', $this);
+    try {
+      $this->server()->deleteItems('all', $this);
+    }
+    catch (SearchApiException $e) {
+      watchdog_exception('search_api', $e);
+    }
 
     _search_api_index_reindex($this);
     module_invoke_all('search_api_index_reindex', $this, TRUE);
@@ -350,7 +387,12 @@ class SearchApiIndex extends Entity {
    *   otherwise.
    */
   public function getEntityType() {
-    return $this->datasource()->getEntityType();
+    try {
+      return $this->datasource()->getEntityType();
+    }
+    catch (SearchApiException $e) {
+      return NULL;
+    }
   }
 
   /**
@@ -385,7 +427,7 @@ class SearchApiIndex extends Entity {
    *   SearchApiQueryInterface::__construct().
    *
    * @throws SearchApiException
-   *   If the index is currently disabled.
+   *   If the index is currently disabled or its server doesn't exist.
    *
    * @return SearchApiQueryInterface
    *   A query object for searching this index.
@@ -399,15 +441,20 @@ class SearchApiIndex extends Entity {
 
 
   /**
-   * Indexes items on this index. Will return an array of IDs of items that
-   * should be marked as indexed – i.e., items that were either rejected by a
-   * data-alter callback or were successfully indexed.
+   * Indexes items on this index.
+   *
+   * Will return an array of IDs of items that should be marked as indexed –
+   * i.e., items that were either rejected by a data-alter callback or were
+   * successfully indexed.
    *
    * @param array $items
-   *   An array of items to index.
+   *   An array of items to index, of this index's item type.
    *
    * @return array
    *   An array of the IDs of all items that should be marked as indexed.
+   *
+   * @throws SearchApiException
+   *   If an error occurred during indexing.
    */
   public function index(array $items) {
     if ($this->read_only) {
@@ -925,12 +972,18 @@ class SearchApiIndex extends Entity {
    * @return EntityMetadataWrapper
    *   A wrapper for the item type of this index, optionally loaded with the
    *   given data and having additional fields according to the data alterations
-   *   of this index.
+   *   of this index (if $alter wasn't set to FALSE).
    */
   public function entityWrapper($item = NULL, $alter = TRUE) {
-    $info['property info alter'] = $alter ? array($this, 'propertyInfoAlter') : '_search_api_wrapper_add_all_properties';
-    $info['property defaults']['property info alter'] = '_search_api_wrapper_add_all_properties';
-    return $this->datasource()->getMetadataWrapper($item, $info);
+    try {
+      $info['property info alter'] = $alter ? array($this, 'propertyInfoAlter') : '_search_api_wrapper_add_all_properties';
+      $info['property defaults']['property info alter'] = '_search_api_wrapper_add_all_properties';
+      return $this->datasource()->getMetadataWrapper($item, $info);
+    }
+    catch (SearchApiException $e) {
+      watchdog_exception('search_api', $e);
+      return entity_metadata_wrapper($this->item_type);
+    }
   }
 
   /**
@@ -945,16 +998,24 @@ class SearchApiIndex extends Entity {
    * @see SearchApiDataSourceControllerInterface::loadItems()
    */
   public function loadItems(array $ids) {
-    return $this->datasource()->loadItems($ids);
+    try {
+      return $this->datasource()->loadItems($ids);
+    }
+    catch (SearchApiException $e) {
+      watchdog_exception('search_api', $e);
+      return array();
+    }
   }
 
   /**
-   * Reset internal static caches.
+   * Reset internal caches.
    *
    * Should be used when things like fields or data alterations change to avoid
    * using stale data.
    */
   public function resetCaches() {
+    cache_clear_all($this->getCacheId(''), 'cache', TRUE);
+
     $this->datasource = NULL;
     $this->server_object = NULL;
     $this->callbacks = NULL;

@@ -15,8 +15,11 @@ L.LatLngBounds = function (southWest, northEast) { // (LatLng, LatLng) or (LatLn
 L.LatLngBounds.prototype = {
 	// extend the bounds to contain the given point or bounds
 	extend: function (obj) { // (LatLng) or (LatLngBounds)
-		if (typeof obj[0] === 'number' || typeof obj[0] === 'string' || obj instanceof L.LatLng) {
-			obj = L.latLng(obj);
+		if (!obj) { return this; }
+
+		var latLng = L.latLng(obj);
+		if (latLng !== null) {
+			obj = latLng;
 		} else {
 			obj = L.latLngBounds(obj);
 		}

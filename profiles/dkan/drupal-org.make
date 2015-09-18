@@ -1,107 +1,156 @@
 core = 7.x
 api = 2
 
-; DKAN
+; Set the default subdirectory for projects.
+defaults[projects][subdir] = contrib
+
+; DKAN core modules
+
+;Moved featured groups view
 projects[dkan_dataset][subdir] = dkan
 projects[dkan_dataset][download][type] = git
 projects[dkan_dataset][download][url] = https://github.com/NuCivic/dkan_dataset.git
-projects[dkan_dataset][download][branch] = 7.x-1.x
+projects[dkan_dataset][download][tag] = 7.x-1.9
 
 projects[dkan_datastore][subdir] = dkan
 projects[dkan_datastore][download][type] = git
 projects[dkan_datastore][download][url] = https://github.com/NuCivic/dkan_datastore.git
-projects[dkan_datastore][download][branch] = 7.x-1.x
+projects[dkan_datastore][download][tag] = 7.x-1.9
 
-includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.x/dkan_dataset.make
-includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.x/dkan_datastore.make
+; NuCivic Visualization tools
+
+projects[visualization_entity][download][type] = git
+projects[visualization_entity][download][url] = https://github.com/NuCivic/visualization_entity.git
+projects[visualization_entity][download][revision] = 14f01aba3a3f55a34cd2268d4f46d42792bec019
+projects[visualization_entity][type] = module
+
+projects[visualization_entity_charts][download][type] = git
+projects[visualization_entity_charts][download][url] = https://github.com/NuCivic/visualization_entity_charts.git
+projects[visualization_entity_charts][download][revision] = 902393db995dd5c7e8a75b6945e3066ab7112a5f
+projects[visualization_entity_charts][type] = module
+
+; Includes, since we're doing non-recusive
+
+includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.9/dkan_dataset.make
+includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.9/dkan_datastore.make
+
+includes[visualization_entity_make] = https://raw.githubusercontent.com/NuCivic/visualization_entity/master/visualization_entity.make
+includes[visualization_entity_charts_make] = https://raw.githubusercontent.com/NuCivic/visualization_entity_charts/master/visualization_entity_charts.make
+
+includes[dkan_data_story_make] = modules/dkan/dkan_data_story/dkan_data_story.make
+
+; Patches to other modules
+
+projects[file_entity][patch][2308737] = https://www.drupal.org/files/issues/file_entity-remove-field-status-check-2308737-9509141.patch
 
 ; Contrib Modules
 projects[admin_menu][version] = 3.0-rc5
-projects[admin_menu][subdir] = contrib
 
 projects[bueditor][version] = 1.7
 projects[bueditor][patch][1931862] = http://drupal.org/files/dont-render-bueditor-for-plain-text-textareas.patch
-projects[bueditor][subdir] = contrib
 
-projects[colorizer][version] = 1.4
+projects[colorizer][version] = 1.7
 projects[colorizer][patch][2227651] = https://www.drupal.org/files/issues/colorizer-add-rgb-vars-2227651-4b.patch
-projects[colorizer][patch][2444249] = https://www.drupal.org/files/issues/colorizer-2444249.patch
-projects[colorizer][subdir] = contrib
+
+projects[conditional_styles][version] = 2.2
+
+projects[conditional_styles][version] = 2.2
 
 projects[diff][version] = 3.2
-projects[diff][subdir] = contrib
+
+projects[draggableviews][version] = 2.1
+
+projects[entityreference_filter][version] = 1.5
+
+projects[fieldable_panels_panes][version] = 1.7
+
+projects[honeypot][version] = 1.17
+
+projects[fontyourface][version] = 2.8
 
 projects[imagecache_actions][download][type] = git
 projects[imagecache_actions][download][url] = "http://git.drupal.org/project/imagecache_actions.git"
 projects[imagecache_actions][download][branch] = 7.x-1.x
 projects[imagecache_actions][download][revision] = cd19d2a
-projects[imagecache_actions][subdir] = contrib
 projects[imagecache_actions][type] = module
 
 projects[markdown][version] = 1.2
-projects[markdown][subdir] = contrib
 
 projects[markdowneditor][version] = 1.2
 projects[markdowneditor][patch][2045225] = http://drupal.org/files/remove-dsm-from-hook-install-2045225-1.patch
-projects[markdowneditor][subdir] = contrib
+
+projects[module_filter][version] = 2.0
 
 projects[og_moderation][version] = 2.2
 projects[og_moderation][patch][2231737] = https://drupal.org/files/issues/any-user-with-view-revision-can-revert-delete-2231737-1.patch
-projects[og_moderation][subdir] = contrib
 
-projects[panels][version] = 3.4
-projects[panels][subdir] = contrib
+projects[defaultconfig][version] = 1.0-alpha9
 
-projects[path_breadcrumbs][version] = 3.2
-projects[path_breadcrumbs][subdir] = contrib
+projects[panelizer][version] = 3.1
+
+projects[views_autocomplete_filters][version] = 1.1
+projects[views_autocomplete_filters][patch][2277453] = http://drupal.org/files/issues/ViewsAutocompleteFilters-no_results_on_some_environments-2277453-1.patch
+projects[views_autocomplete_filters][patch][2374709] = http://www.drupal.org/files/issues/views_autocomplete_filters-cache-2374709-2.patch
+projects[views_autocomplete_filters][patch][2317351] = http://www.drupal.org/files/issues/views_autocomplete_filters-content-pane-2317351-4.patch
+
+
+projects[panopoly_widgets][version] = 1.25
+includes[panopoly_widgets_make] = http://cgit.drupalcode.org/panopoly_widgets/plain/panopoly_widgets.make
+projects[panopoly_widgets][patch][1] = patches/panopoly_widgets_overrides.patch
+projects[panopoly_widgets][patch][2] = patches/panopoly_widgets_add_jquery_ui_tabs.patch
+
+
+projects[panopoly_images][version] = 1.21
+includes[panopoly_images_make] = http://cgit.drupalcode.org/panopoly_images/plain/panopoly_images.make
+
+projects[panels][version] = 3.5
+
+projects[path_breadcrumbs][version] = 3.3
 
 projects[pathauto][version] = 1.2
-projects[pathauto][subdir] = contrib
 
 projects[radix_layouts][version] = 3.3
-projects[radix_layouts][subdir] = contrib
 
 projects[r4032login][version] = 1.7
-projects[r4032login][subdir] = contrib
 
 projects[rules][version] = 2.3
-projects[rules][subdir] = contrib
 
 projects[restws][version] = 2.3
-projects[restws][subdir] = contrib
+projects[restws][patch][2484829] = https://www.drupal.org/files/issues/restws-fix-format-extension-2484829-53.patch
 
 projects[schema][version] = 1.2
-projects[schema][subdir] = contrib
+
+projects[adminrole][version] = 1.0
+
+projects[admin_menu_source][version] = 1.0
+projects[admin_menu_source][subdir] = contrib
+
+projects[menu_token][version] = 1.0-beta5
+projects[menu_token][subdir] = contrib
 
 ; Deprecated
 projects[delta][version] = 3.0-beta11
-projects[delta][subdir] = contrib
 
 ; Themes
 projects[omega][version] = 3.1
 projects[omega][patch][1828552] = http://drupal.org/files/1828552-omega-hook_views_mini_pager.patch
-projects[omega][subdir] = contrib
 
-projects[bootstrap][download][version] = 3.x
-projects[bootstrap][download][type] = git
-projects[bootstrap][download][revision] = "0390173732439fd60e898c7086219ab8c99c2f3d"
-projects[bootstrap][subdir] = contrib
+;projects[bootstrap][download][version] = 3.x
+;projects[bootstrap][download][type] = git
+;projects[bootstrap][download][revision] = "0390173732439fd60e898c7086219ab8c99c2f3d"
 
-projects[nuboot][subdir] = contrib
-projects[nuboot][download][type] = git
-projects[nuboot][download][url] = https://github.com/NuCivic/nuboot.git
-projects[nuboot][download][revision] = "fbd7ea2c2f1fa45a5f5a10b4215950940335879e"
-projects[nuboot][download][branch] = 7.x-1.x
+;projects[nuboot][download][type] = git
+;projects[nuboot][download][url] = https://github.com/NuCivic/nuboot.git
+;projects[nuboot][download][revision] = "fbd7ea2c2f1fa45a5f5a10b4215950940335879e"
+;projects[nuboot][download][branch] = 7.x-1.x
 
-projects[nuboot_radix][subdir] = contrib
 projects[nuboot_radix][download][type] = git
 projects[nuboot_radix][download][url] = https://github.com/NuCivic/nuboot_radix.git
-projects[nuboot_radix][download][branch] = 7.x-1.x
-projects[nuboot_radix][download][revision] = "6e51be20ccfa8a0a42a698cdc34e3ce09ac415a8"
+projects[nuboot_radix][download][tag] = 7.x-1.9
 projects[nuboot_radix][type] = theme
 
-projects[radix][subdir] = contrib
 projects[radix][type] = theme
+projects[radix][version] = 3.0-rc4
 
 ; Libraries
 libraries[font_awesome][type] = libraries

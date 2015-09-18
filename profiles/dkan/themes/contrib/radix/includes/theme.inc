@@ -60,6 +60,14 @@ function radix_theme(&$existing, $type, $theme, $path) {
         'type' => 'status',
       ),
     ),
+    'radix_icon' => array(
+      'variables' => array(
+        'icon' => NULL,
+        'text' => NULL,
+        'link' => NULL,
+      ),
+      'function' => 'theme_radix_icon',
+    ),
   );
 }
 
@@ -351,3 +359,27 @@ function template_preprocess_radix_alert(&$variables) {
   $variables['classes_array'][] = 'alert-' . $type;
 }
 
+/**
+ * Implements theme_radix_icon().
+ */
+function theme_radix_icon($variables) {
+  $icon = $variables['icon'];
+  $text = $variables['text'];
+  $link = $variables['link'];
+
+  $html  = '<i class="fa fa-' . check_plain($icon) . '">';
+  if ($text) {
+    $html .= '<span class="element-invisible">' . check_plain($text) . '</span>';
+  }
+  $html .= '</i>';
+
+  if ($link) {
+    $link_options = array('html' => TRUE);
+    if ($text) {
+      $link_options['attributes']['title'] = $text;
+    }
+    return l($html, $link, $link_options);
+  }
+
+  return $html;
+}

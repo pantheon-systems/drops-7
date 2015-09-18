@@ -62,7 +62,7 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
 
   if ($form_id == 'dataset_node_form') {
 
-    $form['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/dkan_dataset.css';
+    $form['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/css/dkan_dataset.css';
     $form['#attached']['js'][] = drupal_get_path('module', 'dkan_dataset') . '/js/dkan_forms.js';
     beautytips_add_beautytips();
 
@@ -187,7 +187,7 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
   }
   if ($form_id == 'resource_node_form') {
     drupal_add_library('system', 'jquery.bbq');
-    $form['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/dkan_dataset.css';
+    $form['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/css/dkan_dataset.css';
     $form['#attached']['js'][] = drupal_get_path('module', 'dkan_dataset') . '/js/dkan_forms.js';
 
     if (isset($form['feeds'])) {

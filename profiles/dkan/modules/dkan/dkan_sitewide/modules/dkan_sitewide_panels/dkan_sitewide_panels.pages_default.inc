@@ -211,6 +211,141 @@ function dkan_sitewide_panels_default_page_manager_handlers() {
   $handler = new stdClass();
   $handler->disabled = FALSE; /* Edit this to true to make a default handler disabled initially */
   $handler->api_version = 1;
+  $handler->name = 'node_view__resource';
+  $handler->task = 'node_view';
+  $handler->subtask = '';
+  $handler->handler = 'panel_context';
+  $handler->weight = 4;
+  $handler->conf = array(
+    'title' => 'Resource',
+    'no_blocks' => 0,
+    'pipeline' => 'standard',
+    'body_classes_to_remove' => '',
+    'body_classes_to_add' => '',
+    'css_id' => '',
+    'css' => '',
+    'contexts' => array(),
+    'relationships' => array(),
+    'name' => 'resource',
+    'access' => array(
+      'plugins' => array(
+        0 => array(
+          'name' => 'node_type',
+          'settings' => array(
+            'type' => array(
+              'resource' => 'resource',
+            ),
+          ),
+          'context' => 'argument_entity_id:node_1',
+          'not' => FALSE,
+        ),
+      ),
+      'logic' => 'and',
+    ),
+  );
+  $display = new panels_display();
+  $display->layout = 'radix_sutro';
+  $display->layout_settings = array();
+  $display->panel_settings = array(
+    'style_settings' => array(
+      'default' => NULL,
+      'header' => NULL,
+      'column1' => NULL,
+      'column2' => NULL,
+      'footer' => NULL,
+    ),
+  );
+  $display->cache = array();
+  $display->title = '';
+  $display->uuid = '346ac7da-4f98-4c21-96f3-a47b9eb0f238';
+  $display->content = array();
+  $display->panels = array();
+    $pane = new stdClass();
+    $pane->pid = 'new-0301d504-1b1e-471b-8239-f207759bb981';
+    $pane->panel = 'column1';
+    $pane->type = 'block';
+    $pane->subtype = 'dkan_dataset-dkan_dataset_resource_nodes';
+    $pane->shown = TRUE;
+    $pane->access = array();
+    $pane->configuration = array(
+      'override_title' => 0,
+      'override_title_text' => '',
+      'override_title_heading' => 'h2',
+    );
+    $pane->cache = array();
+    $pane->style = array(
+      'settings' => NULL,
+    );
+    $pane->css = array();
+    $pane->extras = array();
+    $pane->position = 0;
+    $pane->locks = array();
+    $pane->uuid = '0301d504-1b1e-471b-8239-f207759bb981';
+    $display->content['new-0301d504-1b1e-471b-8239-f207759bb981'] = $pane;
+    $display->panels['column1'][0] = 'new-0301d504-1b1e-471b-8239-f207759bb981';
+    $pane = new stdClass();
+    $pane->pid = 'new-c82392fb-3b88-440e-8485-2c2ec42344be';
+    $pane->panel = 'column2';
+    $pane->type = 'block';
+    $pane->subtype = 'dkan_sitewide-dkan_sitewide_resource_add';
+    $pane->shown = TRUE;
+    $pane->access = array();
+    $pane->configuration = array(
+      'override_title' => 0,
+      'override_title_text' => '',
+      'override_title_heading' => 'h2',
+    );
+    $pane->cache = array();
+    $pane->style = array(
+      'settings' => NULL,
+    );
+    $pane->css = array();
+    $pane->extras = array();
+    $pane->position = 0;
+    $pane->locks = array();
+    $pane->uuid = 'c82392fb-3b88-440e-8485-2c2ec42344be';
+    $display->content['new-c82392fb-3b88-440e-8485-2c2ec42344be'] = $pane;
+    $display->panels['column2'][0] = 'new-c82392fb-3b88-440e-8485-2c2ec42344be';
+    $pane = new stdClass();
+    $pane->pid = 'new-91c4fc62-fd2f-4e23-bd4c-ae4973d4ca46';
+    $pane->panel = 'header';
+    $pane->type = 'node';
+    $pane->subtype = 'node';
+    $pane->shown = TRUE;
+    $pane->access = array();
+    $pane->configuration = array(
+      'nid' => '%1',
+      'links' => 0,
+      'leave_node_title' => 0,
+      'identifier' => '',
+      'build_mode' => 'full',
+      'link_node_title' => 0,
+      'override_title' => 0,
+      'override_title_text' => '',
+      'override_title_heading' => 'h2',
+    );
+    $pane->cache = array();
+    $pane->style = array(
+      'settings' => NULL,
+    );
+    $pane->css = array(
+      'css_id' => '',
+      'css_class' => 'radix-layouts-content',
+    );
+    $pane->extras = array();
+    $pane->position = 0;
+    $pane->locks = array();
+    $pane->uuid = '91c4fc62-fd2f-4e23-bd4c-ae4973d4ca46';
+    $display->content['new-91c4fc62-fd2f-4e23-bd4c-ae4973d4ca46'] = $pane;
+    $display->panels['header'][0] = 'new-91c4fc62-fd2f-4e23-bd4c-ae4973d4ca46';
+  $display->hide_title = PANELS_TITLE_PANE;
+  $display->title_pane = '0';
+  $handler->conf['display'] = $display;
+  $export['node_view__resource'] = $handler;
+
+  $handler = new stdClass();
+  $handler->disabled = FALSE; /* Edit this to true to make a default handler disabled initially */
+  $handler->api_version = 1;
   $handler->name = 'node_view_panel_context';
   $handler->task = 'node_view';
   $handler->subtask = '';
@@ -409,7 +544,7 @@ function dkan_sitewide_panels_default_page_manager_handlers() {
   $handler->handler = 'panel_context';
   $handler->weight = 1;
   $handler->conf = array(
-    'title' => 'Resource or Page',
+    'title' => 'Page',
     'no_blocks' => 0,
     'pipeline' => 'standard',
     'body_classes_to_remove' => '',
@@ -424,7 +559,6 @@ function dkan_sitewide_panels_default_page_manager_handlers() {
           'name' => 'node_type',
           'settings' => array(
             'type' => array(
-              'resource' => 'resource',
               'page' => 'page',
             ),
           ),
@@ -451,21 +585,23 @@ function dkan_sitewide_panels_default_page_manager_handlers() {
   $display->content = array();
   $display->panels = array();
     $pane = new stdClass();
-    $pane->pid = 'new-5771913e-f897-497d-9d56-f76f6b207b18';
+    $pane->pid = 'new-93b93af5-e162-416f-813d-06e7be118cb7';
     $pane->panel = 'contentmain';
-    $pane->type = 'node';
-    $pane->subtype = 'node';
+    $pane->type = 'node_content';
+    $pane->subtype = 'node_content';
     $pane->shown = TRUE;
     $pane->access = array();
     $pane->configuration = array(
-      'nid' => '%1',
       'links' => 1,
-      'leave_node_title' => 0,
-      'identifier' => '',
-      'build_mode' => 'full',
-      'link_node_title' => 0,
+      'no_extras' => 1,
       'override_title' => 0,
       'override_title_text' => '',
+      'identifier' => '',
+      'link' => 0,
+      'leave_node_title' => 0,
+      'build_mode' => 'full',
+      'context' => 'argument_entity_id:node_1',
+      'override_title_heading' => 'h2',
     );
     $pane->cache = array();
     $pane->style = array(
@@ -475,11 +611,11 @@ function dkan_sitewide_panels_default_page_manager_handlers() {
     $pane->extras = array();
     $pane->position = 0;
     $pane->locks = array();
-    $pane->uuid = '5771913e-f897-497d-9d56-f76f6b207b18';
-    $display->content['new-5771913e-f897-497d-9d56-f76f6b207b18'] = $pane;
-    $display->panels['contentmain'][0] = 'new-5771913e-f897-497d-9d56-f76f6b207b18';
+    $pane->uuid = '93b93af5-e162-416f-813d-06e7be118cb7';
+    $display->content['new-93b93af5-e162-416f-813d-06e7be118cb7'] = $pane;
+    $display->panels['contentmain'][0] = 'new-93b93af5-e162-416f-813d-06e7be118cb7';
   $display->hide_title = PANELS_TITLE_PANE;
-  $display->title_pane = 'new-5771913e-f897-497d-9d56-f76f6b207b18';
+  $display->title_pane = '0';
   $handler->conf['display'] = $display;
   $export['node_view_panel_context_2'] = $handler;
 
@@ -864,7 +1000,10 @@ function dkan_sitewide_panels_default_page_manager_pages() {
   $page->admin_title = 'Datasets';
   $page->admin_description = '';
   $page->path = 'dataset';
-  $page->access = array();
+  $page->access = array(
+    'type' => 'none',
+    'settings' => NULL,
+  );
   $page->menu = array(
     'type' => 'normal',
     'title' => 'Datasets',
@@ -1158,7 +1297,10 @@ function dkan_sitewide_panels_default_page_manager_pages() {
   $page->admin_title = 'Front page';
   $page->admin_description = '';
   $page->path = 'welcome';
-  $page->access = array();
+  $page->access = array(
+    'type' => 'none',
+    'settings' => NULL,
+  );
   $page->menu = array();
   $page->arguments = array();
   $page->conf = array(
@@ -1338,7 +1480,10 @@ function dkan_sitewide_panels_default_page_manager_pages() {
   $page->admin_title = 'Groups';
   $page->admin_description = '';
   $page->path = 'groups';
-  $page->access = array();
+  $page->access = array(
+    'type' => 'none',
+    'settings' => NULL,
+  );
   $page->menu = array(
     'type' => 'normal',
     'title' => 'Groups',

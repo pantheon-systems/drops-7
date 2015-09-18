@@ -22,8 +22,6 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
   /**
    * PREG regular expression for splitting words.
    *
-   * We highlight around non-indexable or CJK characters.
-   *
    * @var string
    */
   protected static $split;
@@ -40,7 +38,7 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
         '\x{F900}-\x{FAFF}\x{FF21}-\x{FF3A}\x{FF41}-\x{FF5A}\x{FF66}-\x{FFDC}' .
         '\x{20000}-\x{2FFFD}\x{30000}-\x{3FFFD}';
     self::$boundary = '(?:(?<=[' . PREG_CLASS_UNICODE_WORD_BOUNDARY . $cjk . '])|(?=[' . PREG_CLASS_UNICODE_WORD_BOUNDARY . $cjk . ']))';
-    self::$split = '/[' . PREG_CLASS_UNICODE_WORD_BOUNDARY . $cjk . ']+/iu';
+    self::$split = '/[' . PREG_CLASS_UNICODE_WORD_BOUNDARY . ']+/iu';
   }
 
   /**
@@ -53,6 +51,7 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
       'excerpt' => TRUE,
       'excerpt_length' => 256,
       'highlight' => 'always',
+      'exclude_fields' => array(),
     );
 
     $form['prefix'] = array(
@@ -87,6 +86,22 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
         ),
       ),
     );
+    // Exclude certain fulltextfields
+    $fields = $this->index->getFields();
+    $fulltext_fields = array();
+    foreach ($this->index->getFulltextFields() as $field) {
+      if (isset($fields[$field])) {
+        $fulltext_fields[$field] = $fields[$field]['name'] . ' (' . $field . ')';
+      }
+    }
+    $form['exclude_fields'] = array(
+      '#type' => 'checkboxes',
+      '#title' => t('Exclude fields from excerpt'),
+      '#description' => t('Exclude certain fulltext fields from being displayed in the excerpt.'),
+      '#options' => $fulltext_fields,
+      '#default_value' => $this->options['exclude_fields'],
+      '#attributes' => array('class' => array('search-api-checkboxes-list')),
+    );
     $form['highlight'] = array(
       '#type' => 'select',
       '#title' => t('Highlight returned field data'),
@@ -106,21 +121,29 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
    * {@inheritdoc}
    */
   public function configurationFormValidate(array $form, array &$values, array &$form_state) {
-    // Overridden so $form['fields'] is not checked.
+    $values['exclude_fields'] = array_filter($values['exclude_fields']);
   }
 
   /**
    * {@inheritdoc}
    */
   public function postprocessSearchResults(array &$response, SearchApiQuery $query) {
-    if (!$response['result count'] || !($keys = $this->getKeywords($query))) {
+    if (empty($response['results']) || !($keys = $this->getKeywords($query))) {
       return;
+    }
+
+    $fulltext_fields = $this->index->getFulltextFields();
+    if (!empty($this->options['exclude_fields'])) {
+      $fulltext_fields = drupal_map_assoc($fulltext_fields);
+      foreach ($this->options['exclude_fields'] as $field) {
+        unset($fulltext_fields[$field]);
+      }
     }
 
     foreach ($response['results'] as $id => &$result) {
       if ($this->options['excerpt']) {
         $text = array();
-        $fields = $this->getFulltextFields($response['results'], $id);
+        $fields = $this->getFulltextFields($response['results'], $id, $fulltext_fields);
         foreach ($fields as $data) {
           if (is_array($data)) {
             $text = array_merge($text, $data);
@@ -129,10 +152,11 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
             $text[] = $data;
           }
         }
-        $result['excerpt'] = $this->createExcerpt(implode("\n\n", $text), $keys);
+
+        $result['excerpt'] = $this->createExcerpt($this->flattenArrayValues($text), $keys);
       }
       if ($this->options['highlight'] != 'never') {
-        $fields = $this->getFulltextFields($response['results'], $id, $this->options['highlight'] == 'always');
+        $fields = $this->getFulltextFields($response['results'], $id, $fulltext_fields, $this->options['highlight'] == 'always');
         foreach ($fields as $field => $data) {
           if (is_array($data)) {
             foreach ($data as $i => $text) {
@@ -155,6 +179,8 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
    * @param int|string $i
    *   The index in the results array of the result whose data should be
    *   returned.
+   * @param array $fulltext_fields
+   *   The fulltext fields from which the excerpt should be created.
    * @param bool $load
    *   TRUE if the item should be loaded if necessary, FALSE if only fields
    *   already returned in the results should be used.
@@ -163,7 +189,7 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
    *   An array containing fulltext field names mapped to the text data
    *   contained in them for the given result.
    */
-  protected function getFulltextFields(array &$results, $i, $load = TRUE) {
+  protected function getFulltextFields(array &$results, $i, array $fulltext_fields, $load = TRUE) {
     global $language;
     $data = array();
 
@@ -171,7 +197,6 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
     // Act as if $load is TRUE if we have a loaded item.
     $load |= !empty($result['entity']);
     $result += array('fields' => array());
-    $fulltext_fields = $this->index->getFulltextFields();
     // We only need detailed fields data if $load is TRUE.
     $fields = $load ? $this->index->getFields() : array();
     $needs_extraction = array();
@@ -309,7 +334,7 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
         // Locate a keyword (position $p, always >0 because $text starts with a
         // space).
         $p = 0;
-        if (preg_match('/' . self::$boundary . $key . self::$boundary . '/iu', $text, $match, PREG_OFFSET_CAPTURE, $included[$key])) {
+        if (preg_match('/' . self::$boundary . preg_quote($key, '/') . self::$boundary . '/iu', $text, $match, PREG_OFFSET_CAPTURE, $included[$key])) {
           $p = $match[0][1];
         }
         // Now locate a space in front (position $q) and behind it (position $s),
@@ -379,7 +404,9 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
     $text = (isset($newranges[0]) ? '' : $dots[0]) . implode($dots[1], $out) . $dots[2];
     $text = check_plain($text);
 
-    return $this->highlightField($text, $keys);
+    // Since we stripped the tags at the beginning, highlighting doesn't need to
+    // handle HTML anymore.
+    return $this->highlightField($text, $keys, FALSE);
   }
 
   /**
@@ -389,15 +416,55 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
    *   The text of the field.
    * @param array $keys
    *   Search keywords entered by the user.
+   * @param bool $html
+   *   Whether the text can contain HTML tags or not. In the former case, text
+   *   inside tags (i.e., tag names and attributes) won't be highlighted.
    *
    * @return string
    *   The field's text with all occurrences of search keywords highlighted.
    */
-  protected function highlightField($text, array $keys) {
+  protected function highlightField($text, array $keys, $html = TRUE) {
+    if (is_array($text)) {
+      $text = $this->flattenArrayValues($text);
+    }
+
+    if ($html) {
+      $texts = preg_split('#((?:</?[[:alpha:]](?:[^>"\']*|"[^"]*"|\'[^\']\')*>)+)#i', $text, -1, PREG_SPLIT_DELIM_CAPTURE);
+      for ($i = 0; $i < count($texts); $i += 2) {
+        $texts[$i] = $this->highlightField($texts[$i], $keys, FALSE);
+      }
+      return implode('', $texts);
+    }
     $replace = $this->options['prefix'] . '\0' . $this->options['suffix'];
-    $keys = implode('|', array_map('preg_quote', $keys));
+
+    $keys = implode('|', array_map('preg_quote', $keys, array_fill(0, count($keys), '/')));
     $text = preg_replace('/' . self::$boundary . '(' . $keys . ')' . self::$boundary . '/iu', $replace, ' ' . $text . ' ');
     return substr($text, 1, -1);
+  }
+
+  /**
+   * Flattens a (possibly multidimensional) array into a string.
+   *
+   * @param array $array
+   *   The array to flatten.
+   * @param string $glue
+   *   The separator to insert between individual array items.
+   *
+   * @return string
+   *   The glued string.
+   */
+  protected function flattenArrayValues(array $array, $glue = "\n\n") {
+    $ret = array();
+    foreach ($array as $item) {
+      if (is_array($item)) {
+        $ret[] = $this->flattenArrayValues($item, $glue);
+      }
+      else {
+        $ret[] = $item;
+      }
+    }
+
+    return implode($glue, $ret);
   }
 
 }

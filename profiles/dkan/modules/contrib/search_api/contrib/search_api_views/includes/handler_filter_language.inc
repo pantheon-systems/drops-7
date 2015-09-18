@@ -14,26 +14,14 @@
 class SearchApiViewsHandlerFilterLanguage extends SearchApiViewsHandlerFilterOptions {
 
   /**
-   * Provide a form for setting options.
+   * {@inheritdoc}
    */
-  public function value_form(&$form, &$form_state) {
-    parent::value_form($form, $form_state);
-    $form['value']['#options'] = array(
+  protected function get_value_options() {
+    parent::get_value_options();
+    $this->value_options = array(
       'current' => t("Current user's language"),
       'default' => t('Default site language'),
-    ) + $form['value']['#options'];
-  }
-
-  /**
-   * Provides a summary of this filter's value for the admin UI.
-   */
-  public function admin_summary() {
-    $tmp = $this->definition['options'];
-    $this->definition['options']['current'] = t('current');
-    $this->definition['options']['default'] = t('default');
-    $ret = parent::admin_summary();
-    $this->definition['options'] = $tmp;
-    return $ret;
+    ) + $this->value_options;
   }
 
   /**

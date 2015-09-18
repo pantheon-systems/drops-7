@@ -27,6 +27,20 @@ function dkan_dataset_content_types_strongarm() {
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'chosen_minimum_multiple';
+  $strongarm->value = '0';
+  $export['chosen_minimum_multiple'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
+  $strongarm->name = 'chosen_minimum_single';
+  $strongarm->value = '0';
+  $export['chosen_minimum_single'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'field_bundle_settings_node__dataset';
   $strongarm->value = array(
     'view_modes' => array(

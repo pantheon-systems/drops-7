@@ -1,0 +1,238 @@
+###	recline.View.nvd3.Base
+allow override x and y getters
+
+###	recline.View.nvd3.LineChart
+[
+	{values: [{x:1, y:1 }], key: 'Name of serie', color:'#cccccc'},
+	{values: [{x:1, y:1 }], key: 'Name of serie', color:'#cccccc'}
+]
+
+###	recline.View.nvd3.scatterChart
+[
+	{values: [{x:1, y:1, size: 20, shape: 'circle'}], key: 'Name of serie'},
+	{values: [{x:1, y:1, size: 20, shape: 'circle'}], key: 'Name of serie'}
+]
+
+###	recline.View.nvd3.stackedAreaChart
+[
+	{values: [{x:1, y:1 }], key: 'Name of serie'},
+	{values: [{x:1, y:1 }], key: 'Name of serie'}
+]
+
+###	recline.View.nvd3.discreteBarChart
+[
+	{values: [{x:1, y:1 }], key: 'Name of serie'},
+	{values: [{x:1, y:1 }], key: 'Name of serie'}
+]
+
+###	recline.View.nvd3.multiBarHorizontalChart
+[
+	{values: [{x:1, y:1 }], key: 'Name of serie', color:'#cccccc'},
+	{values: [{x:1, y:1 }], key: 'Name of serie 2', color:'#cccccc'}
+]
+
+###	recline.View.nvd3.linePlusBarChart
+[
+	{values: [{nv.addGraph(function() {
+  var chart = nv.models.lineWithFocusChart();
+
+  chart.xAxis
+      .tickFormat(d3.format(',f'));
+
+  chart.yAxis
+      .tickFormat(d3.format(',.2f'));
+
+  chart.y2Axis
+      .tickFormat(d3.format(',.2f'));
+
+  d3.select('#chart svg')
+      .datum(testData())
+      .transition().duration(500)
+      .call(chart);
+
+  nv.utils.windowResize(chart.update);
+
+  return chart;
+});
+/**************************************
+ * Simple test data generator
+ */
+
+function testData() {
+  return stream_layers(3,128,.1).map(function(data, i) {
+    return {
+      key: 'Stream' + i,
+      values: data
+    };
+  });
+}
+
+/* Inspired by Lee Byron's test data generator. */
+function stream_layers(n, m, o) {
+  if (arguments.length < 3) o = 0;
+  function bump(a) {
+    var x = 1 / (.1 + Math.random()),
+        y = 2 * Math.random() - .5,
+        z = 10 / (.1 + Math.random());
+    for (var i = 0; i < m; i++) {
+      var w = (i / m - y) * z;
+      a[i] += x * Math.exp(-w * w);
+    }
+  }
+  return d3.range(n).map(function() {
+      var a = [], i;
+      for (i = 0; i < m; i++) a[i] = o + o * Math.random();
+      for (i = 0; i < 5; i++) bump(a);
+      return a.map(stream_index);
+    });
+}
+
+/* Another layer generator using gamma distributions. */
+function stream_waves(n, m) {
+  return d3.range(n).map(function(i) {
+    return d3.range(m).map(function(j) {
+        var x = 20 * j / m - i / 3;
+        return 2 * x * Math.exp(-.5 * x);
+      }).map(stream_index);
+    });
+}
+
+function stream_index(d, i) {
+  return {x: i, y: Math.max(0, d)};
+}x:1, y:1 }], key: 'Name of serie', color:'#cccccc', bar: true},
+	{values: [{x:1, y:1 }], key: 'Name of serie 2', color:'#cccccc'}
+]
+
+###	recline.View.nvd3.multiBarChart
+[
+	{values: [{x:1, y:1 }], key: 'Name of serie', color:'#cccccc'},
+	{values: [{x:1, y:1 }], key: 'Name of serie 2', color:'#cccccc'}
+]
+
+###	recline.View.nvd3.cumulativeLineChart
+[
+	{values: [{x:1, y:1 }], key: 'Name of serie', color:'#cccccc'},
+	{values: [{x:1, y:1 }], key: 'Name of serie 2', color:'#cccccc'}
+]
+
+###	recline.View.nvd3.lineWithFocusChart
+[
+	{values: [{x:1, y:1 }], key: 'Name of serie', color:'#cccccc'},
+	{values: [{x:1, y:1 }], key: 'Name of serie 2', color:'#cccccc'}
+]
+
+###	recline.View.nvd3.pieChart
+[
+	{x: 1, y: 1},
+	{x: 1, y: 1}
+]
+
+
+
+instancio la view
+seteo el estado (
+    tengo que computarlo: )
+renderizo
+  instancio el grafico (nvd3)
+  applico las opciones
+  redibujo
+
+
+### To solve
+- Fix x date values
+---- configure url of dataset
+---- Refresh page in the first update
+---- Add x-value field to discrete chart
+- Use options to x field data type.
+- Fix widget resize
+- Review all the type charts
+- Convert state on an embed button
+---- Add rotation labels
+
+### Things regarding x type
+
+---- Infer type or force type
+---- Cast values to this type if they aren't already.
+---- Get format function based on type
+---- Using the format param, create a tickFormater with the format function.
+---- Override tickformater
+---- Add tick formatter for forced labels
+
+### Bugs
+- Avoid javascript errors where chart can't be rendered.
+
+### Roadmap
+- Add loading notice.
+- Add slickgrid plugin
+- Add configurable title for axis
+- Create functions to manipulate data
+  - select
+  - group
+  - where
+  - order
+
+  acum[hash_group_by] = sum(field_value, acum)
+  average[hash_group_by] = avg(count, acum)
+
+  acum = func(acum, value, condition)
+
+
+
+
+  // Returns accesors
+  function select(){
+    var args = [].slice.call(arguments, 0);
+    var op;
+
+    this.q = {};
+    this.q.select = [];
+    console.log(args);
+    this.q.select = _.map(args, function(item){
+      if(_.isObject(item)) {
+        return item;
+      } else {
+          op = {};
+          op[item] = _.iteratee(item);
+          return op;
+      }
+    });
+    return this;
+  }
+
+  function from(data){
+    q.dataset = data;
+  }
+
+  function order(predicate){
+    _(q.dataset).sortBy(predicate);
+  }
+
+  function limit(start, rowCount){
+    return q.dataset.splice(start, rowCount);
+  }
+
+  function execute(){
+
+  }
+
+  _.select('name',{total:_.sum('total')},'lastName', '*')
+  .from(json)
+  .order(function(){ })
+  .limit(0, 20);
+
+
+  _.limit(_.order(_.map(collection, _.select(fields, conditions))))
+
+
+  _.select(['noma','eah']) // this give me the columns. This should be applied on each iteration to extract values.
+   .from(json)
+   .groupBy('')
+
+   //Easiest
+   .custom(function(){})
+   .limit()
+   .order(function(){});
+
+   _.average()
+- Split loadash data.
+

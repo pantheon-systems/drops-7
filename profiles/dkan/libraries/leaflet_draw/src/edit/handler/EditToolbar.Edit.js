@@ -5,28 +5,13 @@ L.EditToolbar.Edit = L.Handler.extend({
 
 	includes: L.Mixin.Events,
 
-	options: {
-		selectedPathOptions: {
-			color: '#fe57a1', /* Hot pink all the things! */
-			opacity: 0.6,
-			dashArray: '10, 10',
-
-			fill: true,
-			fillColor: '#fe57a1',
-			fillOpacity: 0.1
-		}
-	},
-
 	initialize: function (map, options) {
 		L.Handler.prototype.initialize.call(this, map);
 
-		// Set options to the default unless already set
-		options.selectedPathOptions = options.selectedPathOptions || this.options.selectedPathOptions;
-
-		L.Util.setOptions(this, options);
+		L.setOptions(this, options);
 
 		// Store the selectable layer group for ease of access
-		this._featureGroup = this.options.featureGroup;
+		this._featureGroup = options.featureGroup;
 
 		if (!(this._featureGroup instanceof L.FeatureGroup)) {
 			throw new Error('options.featureGroup must be a L.FeatureGroup');
@@ -39,35 +24,44 @@ L.EditToolbar.Edit = L.Handler.extend({
 	},
 
 	enable: function () {
-		if (this._enabled) { return; }
+		if (this._enabled || !this._hasAvailableLayers()) {
+			return;
+		}
+		this.fire('enabled', {handler: this.type});
+			//this disable other handlers
+
+		this._map.fire('draw:editstart', { handler: this.type });
+			//allow drawLayer to be updated before beginning edition.
 
 		L.Handler.prototype.enable.call(this);
-
 		this._featureGroup
 			.on('layeradd', this._enableLayerEdit, this)
 			.on('layerremove', this._disableLayerEdit, this);
-
-		this.fire('enabled', {handler: this.type});
 	},
 
 	disable: function () {
 		if (!this._enabled) { return; }
-
-		this.fire('disabled', {handler: this.type});
-
 		this._featureGroup
-			.off('layeradd', this._enableLayerEdit)
-			.off('layerremove', this._disableLayerEdit);
-
+			.off('layeradd', this._enableLayerEdit, this)
+			.off('layerremove', this._disableLayerEdit, this);
 		L.Handler.prototype.disable.call(this);
+		this._map.fire('draw:editstop', { handler: this.type });
+		this.fire('disabled', {handler: this.type});
 	},
 
 	addHooks: function () {
-		if (this._map) {
+		var map = this._map;
+
+		if (map) {
+			map.getContainer().focus();
+
 			this._featureGroup.eachLayer(this._enableLayerEdit, this);
 
 			this._tooltip = new L.Tooltip(this._map);
-			this._tooltip.updateContent({ text: 'Drag handles, or marker to edit feature.', subtext: 'Click cancel to undo changes.' });
+			this._tooltip.updateContent({
+				text: L.drawLocal.edit.handlers.edit.tooltip.text,
+				subtext: L.drawLocal.edit.handlers.edit.tooltip.subtext
+			});
 
 			this._map.on('mousemove', this._onMouseMove, this);
 		}
@@ -84,7 +78,7 @@ L.EditToolbar.Edit = L.Handler.extend({
 			this._tooltip.dispose();
 			this._tooltip = null;
 
-			this._map.off('mousemove', this._onMouseMove);
+			this._map.off('mousemove', this._onMouseMove, this);
 		}
 	},
 
@@ -119,7 +113,7 @@ L.EditToolbar.Edit = L.Handler.extend({
 					latlng: L.LatLngUtil.cloneLatLng(layer.getLatLng()),
 					radius: layer.getRadius()
 				};
-			} else { // Marker
+			} else if (layer instanceof L.Marker) { // Marker
 				this._uneditedLayerProps[id] = {
 					latlng: L.LatLngUtil.cloneLatLng(layer.getLatLng())
 				};
@@ -137,97 +131,53 @@ L.EditToolbar.Edit = L.Handler.extend({
 			} else if (layer instanceof L.Circle) {
 				layer.setLatLng(this._uneditedLayerProps[id].latlng);
 				layer.setRadius(this._uneditedLayerProps[id].radius);
-			} else { // Marker
+			} else if (layer instanceof L.Marker) { // Marker
 				layer.setLatLng(this._uneditedLayerProps[id].latlng);
 			}
+
+			layer.fire('revert-edited', { layer: layer });
 		}
-	},
-
-	_toggleMarkerHighlight: function (marker) {
-		// This is quite naughty, but I don't see another way of doing it. (short of setting a new icon)
-		var icon = marker._icon;
-
-		icon.style.display = 'none';
-
-		if (L.DomUtil.hasClass(icon, 'leaflet-edit-marker-selected')) {
-			L.DomUtil.removeClass(icon, 'leaflet-edit-marker-selected');
-			// Offset as the border will make the icon move.
-			this._offsetMarker(icon, -4);
-
-		} else {
-			L.DomUtil.addClass(icon, 'leaflet-edit-marker-selected');
-			// Offset as the border will make the icon move.
-			this._offsetMarker(icon, 4);
-		}
-
-		icon.style.display = '';
-	},
-
-	_offsetMarker: function (icon, offset) {
-		var iconMarginTop = parseInt(icon.style.marginTop, 10) - offset,
-			iconMarginLeft = parseInt(icon.style.marginLeft, 10) - offset;
-
-		icon.style.marginTop = iconMarginTop + 'px';
-		icon.style.marginLeft = iconMarginLeft + 'px';
 	},
 
 	_enableLayerEdit: function (e) {
 		var layer = e.layer || e.target || e,
-			options = L.Util.extend({}, this.options.selectedPathOptions);
+			pathOptions;
 
 		// Back up this layer (if haven't before)
 		this._backupLayer(layer);
 
-		// Update layer style so appears editable
-		if (layer instanceof L.Marker) {
-			this._toggleMarkerHighlight(layer);
-		} else {
-			layer.options.previousOptions = layer.options;
+		// Set different style for editing mode
+		if (this.options.selectedPathOptions) {
+			pathOptions = L.Util.extend({}, this.options.selectedPathOptions);
 
-			// Make sure that Polylines are not filled
-			if (!(layer instanceof L.Circle) && !(layer instanceof L.Polygon) && !(layer instanceof L.Rectangle)) {
-				options.fill = false;
+			// Use the existing color of the layer
+			if (pathOptions.maintainColor) {
+				pathOptions.color = layer.options.color;
+				pathOptions.fillColor = layer.options.fillColor;
 			}
 
-			layer.setStyle(options);
+			layer.options.original = L.extend({}, layer.options);
+			layer.options.editing = pathOptions;
 		}
 
-		if (layer instanceof L.Marker) {
-			layer.dragging.enable();
-			layer.on('dragend', this._onMarkerDragEnd);
-		} else {
-			layer.editing.enable();
-		}
+		layer.editing.enable();
 	},
 
 	_disableLayerEdit: function (e) {
 		var layer = e.layer || e.target || e;
+
 		layer.edited = false;
+		layer.editing.disable();
 
-		// Reset layer styles to that of before select
-		if (layer instanceof L.Marker) {
-			this._toggleMarkerHighlight(layer);
-		} else {
-			// reset the layer style to what is was before being selected
-			layer.setStyle(layer.options.previousOptions);
-			// remove the cached options for the layer object
-			delete layer.options.previousOptions;
-		}
-
-		if (layer instanceof L.Marker) {
-			layer.dragging.disable();
-			layer.off('dragend', this._onMarkerDragEnd);
-		} else {
-			layer.editing.disable();
-		}
-	},
-
-	_onMarkerDragEnd: function (e) {
-		var layer = e.target;
-		layer.edited = true;
+		delete layer.options.editing;
+		delete layer.options.original;
 	},
 
 	_onMouseMove: function (e) {
 		this._tooltip.updatePosition(e.latlng);
+	},
+
+	_hasAvailableLayers: function () {
+		return this._featureGroup.getLayers().length !== 0;
 	}
 });

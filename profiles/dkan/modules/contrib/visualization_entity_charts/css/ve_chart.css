@@ -1,0 +1,171 @@
+/* Move to dkan global stylesheet*/
+.file-widget input.btn {
+	margin-left: 10px;
+}
+/* Move to dkan global stylesheet*/
+
+.field-name-field-ve-settings {
+  display: none;
+}
+#chart-with-controls .tab-content {
+  overflow: hidden;
+}
+#iframe-shell h2 {
+  display: none;
+}
+#iframe-shell {
+  overflow: hidden;
+  height: 100%;
+}
+
+body, html {
+  height: 100% !important;
+}
+
+svg {
+  width: auto;
+  height: auto;
+  display: block;
+}
+
+#ve-chart-form .pane-content{
+  overflow: auto;
+}
+
+#ve-chart-form .stages li {
+  width: 25%;
+}
+
+.nvtooltip table * {
+  border: none;
+}
+
+#chart-selector {
+  width: 100%;
+  overflow: auto;
+  padding: 0px;
+}
+#chart-selector li{
+  height: 180px;
+  width: 260px;
+  background-size: 260px 180px;
+  float: left;
+  list-style: none;
+  margin-right: 15px;
+  margin-top: 20px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+.relative {
+  position: relative;
+}
+
+/**
+ * Panels
+ */
+.expander {
+  cursor: pointer;
+  color: #333;
+  background-color: #f5f5f5;
+  border-color: #ddd;
+  padding: 10px 15px;
+  margin-top: 0px;
+  margin-bottom: 0px;
+  position: relative;
+}
+
+.expander span {
+  position: absolute;
+  right: 13px;
+}
+
+.expansible {
+  margin: 10px;
+}
+
+.form-panel {
+  margin-bottom: 8px;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.form-panel .form-group:last-child{
+  margin-bottom: 0px;
+}
+/**
+ * Filters
+ */
+#filter-editor .form-stacked{
+  margin-bottom: 10px;
+}
+
+#query-editor .btn {
+  padding: 6px 12px;
+  border-right: none;
+}
+
+#pager li.prev.action-pagination-update a {
+  border-bottom-right-radius: 0px;
+  border-top-right-radius: 0px;
+}
+
+#pager li.next.action-pagination-update a {
+  border-bottom-left-radius: 0px;
+  border-top-left-radius: 0px
+}
+
+#pager li.page-range a {
+  padding: 3px;
+}
+
+#pager .pagination {
+  margin: 0px 0;
+}
+
+/**
+ * Charts thumbnails
+ */
+#chart-selector li:hover {
+  border-color: #0088cc;
+  cursor: pointer;
+}
+
+#chart-selector li.selected {
+  border-color: #0088cc;
+}
+
+#chart-selector .discreteBarChart {
+  background-image: url('img/discretebar.png');
+}
+
+#chart-selector .multiBarChart {
+  background-image: url('img/stackedbar.png');
+}
+
+#chart-selector .multiBarHorizontalChart {
+  background-image: url('img/horizontalbar.png');
+}
+
+#chart-selector .stackedAreaChart {
+  background-image: url('img/stackedarea.png');
+}
+
+#chart-selector .pieChart {
+  background-image: url('img/pie.png');
+}
+
+#chart-selector .lineChart {
+  background-image: url('img/line.png');
+}
+
+#chart-selector .lineWithFocusChart {
+  background-image: url('img/linewithfocus.png');
+}
+
+#chart-selector .scatterChart {
+  background-image: url('img/scatter.png');
+}
+
+#chart-selector .linePlusBarChart {
+  background-image: url('img/lineplusbar.png');
+}

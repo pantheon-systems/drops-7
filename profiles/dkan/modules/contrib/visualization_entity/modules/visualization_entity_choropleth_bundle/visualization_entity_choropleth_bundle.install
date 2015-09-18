@@ -1,0 +1,59 @@
+<?php
+/**
+ * @file
+ * Update functions for this module.
+ */
+
+/**
+ * Implements hook_update_N().
+ */
+function visualization_entity_choropleth_bundle_update_7001() {
+  $items = array();
+  _field_maxlength_fix('field_data_units');
+  _field_maxlength_fix('field_data_column');
+  _field_maxlength_fix('field_data_breakpoints');
+  return $items;
+}
+
+/**
+ * Sets fields to max length.
+ */
+function _field_maxlength_fix($field_name, $maxlength = 255) {
+  _alter_field_table($field_name, $maxlength);
+  $data = _get_field_data($field_name);
+  $data = _fix_field_data($data, $maxlength);
+  _update_field_config($data, $field_name);
+}
+
+/**
+ * Alters existing field tables.
+ */
+function _alter_field_table($field_name, $maxlength) {
+  db_query("ALTER TABLE field_data_" . $field_name . " CHANGE " . $field_name . "_value " . $field_name . "_value VARCHAR( " . $maxlength . " ) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL");
+  db_query("ALTER TABLE field_revision_" . $field_name . " CHANGE " . $field_name . "_value " . $field_name . "_value VARCHAR( " . $maxlength . " ) CHARACTER SET utf8 COLLATE utf8_general_ci NULL DEFAULT NULL");
+}
+
+/**
+ * Alters config table.
+ */
+function _get_field_data($field_name) {
+  $qry = "SELECT data FROM field_config WHERE field_name = :field_name";
+  $result = db_query($qry, array(':field_name' => $field_name))->fetchObject();
+  return unserialize($result->data);
+}
+
+/**
+ * Alters config table.
+ */
+function _fix_field_data($data, $maxlength) {
+  $data['settings']['max_length'] = (string) $maxlength;
+  return serialize($data);
+}
+
+/**
+ * Alters config table.
+ */
+function _update_field_config($data, $field_name) {
+  $qry = "UPDATE field_config SET data = :data WHERE field_name = :field_name";
+  db_query($qry, array(':data' => $data, ':field_name' => $field_name));
+}

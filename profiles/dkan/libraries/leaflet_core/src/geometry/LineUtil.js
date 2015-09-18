@@ -3,7 +3,7 @@
  * and polylines (clipping, simplification, distances, etc.)
  */
 
-/*jshint bitwise:false */ // allow bitwise oprations for this file
+/*jshint bitwise:false */ // allow bitwise operations for this file
 
 L.LineUtil = {
 
@@ -117,8 +117,8 @@ L.LineUtil = {
 				return false;
 			// other cases
 			} else {
-				codeOut = codeA || codeB,
-				p = this._getEdgeIntersection(a, b, codeOut, bounds),
+				codeOut = codeA || codeB;
+				p = this._getEdgeIntersection(a, b, codeOut, bounds);
 				newCode = this._getBitCode(p, bounds);
 
 				if (codeOut === codeA) {

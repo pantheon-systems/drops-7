@@ -1,0 +1,90 @@
+<?php
+/**
+ * @file
+ * Code for the UUID Reference Select module.
+ */
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function uuidreference_select_field_widget_info() {
+  return array(
+    'uuidreference_select' => array(
+      'label' => t('UUID reference select'),
+      'field types' => array('uuidreference'),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_CUSTOM,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function uuidreference_select_field_widget_form(&$form, &$form_state, $field, $instance, $lang, $items, $delta, $element) {
+  if ($instance['widget']['type'] == 'uuidreference_select') {
+    $target_uuid_field = array(
+      '#title' => $instance['label'],
+      '#type' => 'select',
+      '#multiple' => $field['cardinality'] == 1 ? FALSE : TRUE,
+      '#options' => uuidreference_select_options($field, $instance),
+    );
+    if ($field['cardinality'] == 1) {
+      if (isset($items[$delta])) {
+        $target_uuid_field['#default_value'] = $items[$delta]['target_uuid'];
+      }
+      $element[] = array('target_uuid' => $target_uuid_field);
+    }
+    else {
+      $target_uuid_field['#default_value'] = array();
+      foreach($items as $item) {
+        $target_uuid_field['#default_value'][]= $item['target_uuid'];
+      }
+      // $element['#value_key'] = 'target_uuid';
+      $element += array(
+        '#properties' => array(
+          'strip_tags' => TRUE,
+          'optgroups' => TRUE,
+          'filter_xss' => TRUE,
+        ),
+        '#value_key' => 'target_uuid',
+        '#element_validate' => array('options_field_widget_validate'),
+      );
+      $element += $target_uuid_field;
+    }
+    return $element;
+  }
+}
+
+function uuidreference_select_options($field, $instance) {
+  $options = array();
+  $target_type = $field['settings']['target_type'];
+  $entity_info = entity_get_info($target_type);
+
+  $label_key = isset($entity_info['entity keys']['label']) ? $entity_info['entity keys']['label'] : 'name';
+  $uuid_key = isset($entity_info['array keys']['uuid']) ? $entity_info['array keys']['uuid'] : 'uuid';
+  $query = db_select($entity_info['base table'], 'base')
+    ->fields('base', array($uuid_key, $label_key))
+    ->addTag($target_type . '_access')
+    ->addTag('uuidreference')
+    ->range(0, 15);
+  $target_bundles = array_filter(array_values($field['settings']['target_bundles']));
+  if (!empty($target_bundles)) {
+    $query->condition($entity_info['entity keys']['bundle'], $field['settings']['target_bundles']);
+  }
+  // Invoke hook_uuidreference_select_query_alter() to allow other modules
+  // to alter the select query based on entity_type, bundle, or field
+  // context.
+  foreach (module_implements('uuidreference_select_query_alter') as $module) {
+    $function = $module . '_uuidreference_select_query_alter';
+    $function(
+      $query,
+      $instance['entity_type'],
+      $instance['bundle'],
+      $instance['field_name']
+    );
+  }
+  $options = $query->execute()->fetchAllKeyed();
+  return $options;
+}
