@@ -23,12 +23,22 @@
         var imgWidth = 0,
             imgBoxExtra = 0,
             testWidth = 0;
+        var attrWidth;
 
         // We shouldn't have more than one image in a caption, but it would be
         // possible, so we make sure we have the widest one
         for (var i = 0; i < imageSet.length; i++) {
-          // Must use naturalWidth, not width() for responsive images.
-          testWidth = imageSet[i].naturalWidth;
+          // If we have a hardcoded width attribute from manual resizing in
+          // TinMCE, use that. If not, use the image naturalWidth. We can't
+          // reliably use width() for responsive images.
+          attrWidth = $(imageSet[i]).attr("width");
+          if (typeof attrWidth !== 'undefined') {
+            // attr() returns a string. Must convert to int for math to work.
+            testWidth = parseInt(attrWidth, 10);
+          }
+          else {
+            testWidth = imageSet[i].naturalWidth;
+          }
           if (testWidth > imgWidth) {
             imgWidth = testWidth;
             imgBoxExtra = getWrapperSpacing(imageSet[i])
