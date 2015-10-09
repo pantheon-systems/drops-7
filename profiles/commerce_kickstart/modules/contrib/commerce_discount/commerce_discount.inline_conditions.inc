@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Provides Inline Conditions integration for the Commerce Discount module.
+ */
+
+/**
  * Implements hook_inline_conditions_info().
  */
 function commerce_discount_inline_conditions_info() {
@@ -190,7 +195,7 @@ function commerce_order_compare_order_amount_configure($settings) {
     '#suffix' => '<div class="condition-instructions">' . t(
         'The discount is active only if the order total matches the above condition.
               <br />(the other order discounts are not taken into the comparison process)'
-      ) . '</div>',
+    ) . '</div>',
   );
 
   $form['total']['amount'] = array(
@@ -264,13 +269,13 @@ function commerce_product_has_owner_configure($settings) {
   $form['data:select'] = array(
     '#type' => 'textfield',
     '#access' => FALSE,
-    '#default_value' => 'site:current-user:uid'
+    '#default_value' => 'site:current-user:uid',
   );
 
   $form['op'] = array(
     '#type' => 'textfield',
     '#access' => FALSE,
-    '#default_value' => '=='
+    '#default_value' => '==',
   );
 
   $form['value'] = array(

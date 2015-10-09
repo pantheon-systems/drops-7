@@ -246,7 +246,13 @@ function commerce_addressbook_entity_view($entity, $type, $view_mode, $langcode)
          ),
       );
     }
-    $entity->content['commerce_addressbook_options'] = $links;
+    if ($links) {
+      $entity->content['commerce_addressbook_options'] = array_merge(array(
+        '#weight' => 100,
+        '#prefix' => '<div class="addressbook-links">',
+        '#suffix' => '</div>',
+      ), $links);
+    }
   }
 }
 
@@ -451,9 +457,15 @@ function commerce_addressbook_saved_addresses_validate($element, &$form_state, $
     else {
       $order_wrapper->{$field_name} = NULL;
     }
+
+    // Save the changed customer profile to the order.
+    $order_wrapper->save();
+
     unset($form_state['input'][$pane_id]);
-    $element_key = $form[$pane_id]['commerce_customer_address'][$form[$pane_id]['commerce_customer_address']['#language']][0]['element_key']['#value'];
-    unset($form_state['addressfield'][$element_key]);
+    $element_key = isset($form[$pane_id]['commerce_customer_address'][$form[$pane_id]['commerce_customer_address']['#language']][0]['element_key']['#value']) ? $form[$pane_id]['commerce_customer_address'][$form[$pane_id]['commerce_customer_address']['#language']][0]['element_key']['#value'] : '';
+    if (!empty($element_key)) {
+      unset($form_state['addressfield'][$element_key]);
+    }
   }
 }
 
@@ -469,6 +481,10 @@ function commerce_addressbook_set_default_profile($customer_profile) {
     ))
     ->fields(array('profile_id' => $customer_profile->profile_id))
     ->execute();
+
+  // Allow modules to react to change in customer profile default change.
+  module_invoke_all('commerce_addressbook_set_default', $customer_profile);
+  rules_invoke_event('commerce_addressbook_set_default', $customer_profile);
 }
 
 /**
@@ -500,14 +516,13 @@ function commerce_addressbook_get_default_profile_id($uid, $type) {
  * checkout panes.
  */
 function commerce_addressbook_commerce_order_presave($order) {
-  global $user;
-  if ($user->uid) {
+  if ($order->uid) {
     foreach (commerce_checkout_panes() as $pane_id => $checkout_pane) {
       // Only for panes for which the address book is enabled.
       if (variable_get('commerce_' . $pane_id . '_addressbook', FALSE)) {
         $type = substr($checkout_pane['pane_id'], 17); // Removes 'customer_profile_'
         // Does this profile type have a default?
-        $default_profile_id = commerce_addressbook_get_default_profile_id($user->uid, $type);
+        $default_profile_id = commerce_addressbook_get_default_profile_id($order->uid, $type);
         if ($default_profile_id) {
           // Is this profile stored in a field or in the data association?
           if (($field_name = variable_get('commerce_' . $pane_id . '_field', '')) && empty($order->{$field_name})) {

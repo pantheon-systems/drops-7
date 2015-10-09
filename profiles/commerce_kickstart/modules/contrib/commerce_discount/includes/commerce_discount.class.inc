@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Commerce Discount Entity.
+ */
+
+/**
  * Entity class representing the commerce_discount entity type.
  */
 class CommerceDiscount extends Entity {
@@ -40,13 +45,20 @@ class CommerceDiscount extends Entity {
    */
   public $component_title;
 
+  /**
+   * {@inheritdoc}
+   */
   public function __construct($values = array()) {
     parent::__construct($values, 'commerce_discount');
   }
 
+  /**
+   * {@inheritdoc}
+   */
   protected function defaultUri() {
     $entity_info = entity_get_info('commerce_discount');
     $path = $entity_info['admin ui']['path'] . '/manage';
     return array('path' => $path . '/' . $this->name);
   }
+
 }

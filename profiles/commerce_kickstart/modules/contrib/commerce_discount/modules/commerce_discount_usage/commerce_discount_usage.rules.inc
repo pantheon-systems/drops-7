@@ -1,17 +1,21 @@
 <?php
 
-/*
+/**
+ * @file
+ * Rules integration for the Commerce Discount Usage module.
+ */
+
+/**
  * Implements hook_rules_condition_info().
  */
 function commerce_discount_usage_rules_condition_info() {
-
-  // Max usage per person
+  // Max usage per person.
   $conditions['commerce_discount_usage_max_usage_per_person'] = array(
     'label' => t('Max usage per person'),
     'parameter' => array(
       'order' => array(
         'type' => 'commerce_order',
-        'label' => t('Order')
+        'label' => t('Order'),
       ),
       'commerce_discount' => array(
         'label' => t('Commerce Discount'),
@@ -27,13 +31,13 @@ function commerce_discount_usage_rules_condition_info() {
     'group' => t('Commerce Discount'),
   );
 
-  // Max usage
+  // Max usage.
   $conditions['commerce_discount_usage_max_usage'] = array(
     'label' => t('Max usage'),
     'parameter' => array(
       'order' => array(
         'type' => 'commerce_order',
-        'label' => t('Order')
+        'label' => t('Order'),
       ),
       'commerce_discount' => array(
         'label' => t('Commerce Discount'),
@@ -52,7 +56,7 @@ function commerce_discount_usage_rules_condition_info() {
   return $conditions;
 }
 
-/*
+/**
  * Rules condition callback: evaluate maximum usage per-person of a discount.
  */
 function commerce_discount_usage_max_usage_per_person($order, $discount_name) {
@@ -70,7 +74,7 @@ function commerce_discount_usage_max_usage_per_person($order, $discount_name) {
   return $usage < $per_person_limit;
 }
 
-/*
+/**
  * Rules condition callback: evaluate maximum usage of a discount.
  */
 function commerce_discount_usage_max_usage($order, $discount_name) {

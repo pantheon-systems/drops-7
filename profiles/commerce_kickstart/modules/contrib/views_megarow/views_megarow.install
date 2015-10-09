@@ -1,0 +1,12 @@
+<?php
+
+/**
+ * Implements hook_enable().
+ */
+function views_megarow_enable() {
+  if (module_exists('page_manager')) {
+    $message = 'Dear Page manager users, beware that by default, Views megarow override the user and node edit pages. If you want to override it on your own, please disable Views megarow override in the !settings_page.';
+    $variables = array('!settings_page' => l(t('settings page'), 'admin/config/user-interface/views_megarow'));
+    drupal_set_message(t($message, $variables), 'warning');
+  }
+}

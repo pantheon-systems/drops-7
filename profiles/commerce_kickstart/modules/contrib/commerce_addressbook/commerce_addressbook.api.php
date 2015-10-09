@@ -45,3 +45,15 @@ function hook_commerce_addressbook_callback_alter(&$commands, $form, $form_state
   // Example.
   $commands[] = ajax_command_alert('It works!');
 }
+
+/**
+ * Allow modules to be called when a default address is added/updated.
+ *
+ * @param $customer_profile
+ *   The customer profile set as default.
+ *
+ * @see commerce_addressbook_set_default_profile().
+ */
+function hook_commerce_addressbook_set_default($customer_profile) {
+  // No example.
+}

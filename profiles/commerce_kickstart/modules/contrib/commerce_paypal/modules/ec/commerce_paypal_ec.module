@@ -1383,7 +1383,9 @@ function commerce_paypal_ec_customer_profile($order, $profile_type, $response, $
   );
 
   // Prepare an addressfield array to set to the customer profile.
-  $address = addressfield_default_values();
+  $field = field_info_field('commerce_customer_address');
+  $instance = field_info_instance('commerce_customer_profile', 'commerce_customer_address', $profile_type);
+  $address = addressfield_default_values($field, $instance);
 
   // Use the first name and last name if the profile is a billing profile.
   if ($profile_type == 'billing') {

@@ -353,7 +353,12 @@ function commerce_paypal_wps_paypal_ipn_process($order, $payment_method, &$ipn) 
         // Add the address value.
         $profile_wrapper = entity_metadata_wrapper('commerce_customer_profile', $profile);
 
-        $profile_wrapper->commerce_customer_address = array_merge(addressfield_default_values(), array(
+        // Prepare an addressfield array to set to the customer profile.
+        $field = field_info_field('commerce_customer_address');
+        $instance = field_info_instance('commerce_customer_profile', 'commerce_customer_address', 'billing');
+        $address = addressfield_default_values($field, $instance);
+
+        $profile_wrapper->commerce_customer_address = array_merge($address, array(
           'country' => $ipn['residence_country'],
           'name_line' => $ipn['first_name'] . ' ' . $ipn['last_name'],
           'first_name' => $ipn['first_name'],

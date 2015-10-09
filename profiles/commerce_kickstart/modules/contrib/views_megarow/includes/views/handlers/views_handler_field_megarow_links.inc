@@ -105,9 +105,10 @@ class views_handler_field_megarow_links extends views_handler_field {
       // Do the same for the label.
       $label = $this->replaceTokens($link_parts[0], $entity);
       $label = $this->render_altered(array('text' => $label), $tokens);
+      $label = decode_entities($label);
 
       // Add the link for rendering.
-      $links[] = $this->getLink($label, $url, array('class' => 'views-megarow-open'));
+      $links[] = $this->getLink($label, $url, array('class' => array('views-megarow-open')));
     }
 
     $nb_links = count($links);

@@ -1,44 +1,44 @@
 <?php
 
-/*
+/**
  * Implements hook_commerce_discount_rule_build().
  */
 function commerce_discount_usage_commerce_discount_rule_build($rule, $discount) {
-  $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
 
   // Product level discounts must pass the line item's order.
   $map = array(
     'order_discount' => 'commerce-order',
-    'product_discount' => 'commerce-line-item:order'
+    'product_discount' => 'commerce-line-item:order',
   );
 
   if (isset($map[$discount->type])) {
-    // Add condition for per-person usage
-    if ($wrapper->discount_usage_per_person->value()) {
+    // Add condition for per-person usage.
+    if ($discount_wrapper->discount_usage_per_person->value()) {
       $rule->condition(
         'commerce_discount_usage_max_usage_per_person',
         array(
           'commerce_discount' => $discount->name,
           'order:select' => $map[$discount->type],
-          'usage' => $wrapper->discount_usage_per_person->value(),
+          'usage' => $discount_wrapper->discount_usage_per_person->value(),
         )
       );
     }
-    // For normal usage
-    if ($wrapper->discount_usage_limit->value()) {
+    // For normal usage.
+    if ($discount_wrapper->discount_usage_limit->value()) {
       $rule->condition(
         'commerce_discount_usage_max_usage',
         array(
           'commerce_discount' => $discount->name,
           'order:select' => $map[$discount->type],
-          'usage' => $wrapper->discount_usage_limit->value(),
+          'usage' => $discount_wrapper->discount_usage_limit->value(),
         )
       );
     }
   }
 }
 
-/*
+/**
  * Implements hook_commerce_discount_usages().
  */
 function commerce_discount_usage_flush_caches() {
@@ -96,7 +96,7 @@ function commerce_discount_usage_get_usage($discount_name, $exclude_order_id = F
 }
 
 /**
- * Reset usage statistics for an entire order
+ * Reset usage statistics for an entire order.
  *
  * @param object $order
  *   A fully qualified order object.
@@ -111,12 +111,10 @@ function commerce_discount_usage_reset_order_usage($order) {
 }
 
 /**
- * Record order usage
+ * Record order usage.
  *
  * @param object $order
  *   A fully qualified order object.
- *
- * @return void
  */
 function commerce_discount_usage_record_order_usage($order) {
   // Reset usage for this order first.
@@ -143,17 +141,22 @@ function commerce_discount_usage_record_order_usage($order) {
  *   A fully qualified order object.
  *
  * @return array
- *
+ *  List of order discounts.
  */
 function commerce_discount_usage_order_discounts($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
   $order_discounts = array();
 
   foreach ($order_wrapper->commerce_line_items as $line_item_wrapper) {
+    // If the current line item actually no longer exists, continue.
+    if (!$line_item_wrapper->value() || !isset($line_item_wrapper->commerce_unit_price)) {
+      continue;
+    }
+
     $data = $line_item_wrapper->commerce_unit_price->data->value();
 
     foreach ($data['components'] as $key => $component) {
-      if ($component['name'] == 'discount' || !empty($component['price']['data']['discount_name'])) {
+      if (strpos($component['name'], 'discount|') === 0 && !empty($component['price']['data']['discount_name'])) {
         $order_discount_name = $component['price']['data']['discount_name'];
         $order_discount_wrapper = entity_metadata_wrapper('commerce_discount', $order_discount_name);
         // Make a list of discounts present via the order's line item price
@@ -177,21 +180,21 @@ function commerce_discount_usage_order_discounts($order) {
   return $order_discounts;
 }
 
-/*
+/**
  * Implements hook_commerce_order_update().
  */
 function commerce_discount_usage_commerce_order_update($order) {
   commerce_discount_usage_record_order_usage($order);
 }
 
-/*
+/**
  * Implements hook_commerce_order_insert().
  */
 function commerce_discount_usage_commerce_order_insert($order) {
   commerce_discount_usage_record_order_usage($order);
 }
 
-/*
+/**
  * Implements hook_commerce_order_delete().
  */
 function commerce_discount_usage_commerce_order_delete($order) {
@@ -205,12 +208,12 @@ function commerce_discount_usage_form_commerce_discount_form_alter(&$form, $form
   $form['#attached']['css'][] = drupal_get_path('module', 'commerce_discount_usage') . '/css/commerce_discount_usage.css';
 }
 
-/*
+/**
  * Implements hook_views_api().
  */
 function commerce_discount_usage_views_api() {
   return array(
     'version' => 2,
-    'path' => drupal_get_path('module', 'commerce_discount_usage') . '/includes/views'
+    'path' => drupal_get_path('module', 'commerce_discount_usage') . '/includes/views',
   );
 }

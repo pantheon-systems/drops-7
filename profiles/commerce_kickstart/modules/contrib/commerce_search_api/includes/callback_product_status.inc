@@ -22,7 +22,7 @@ class CommerceSearchApiAlterProductStatus extends SearchApiAbstractAlterCallback
    */
   public function supportsIndex(SearchApiIndex $index) {
     $bundles = commerce_product_reference_node_types();
-    return ($index->item_type == 'node' && !empty($bundles));
+    return ($index->getEntityType() == 'node' && !empty($bundles));
   }
 
   /**
@@ -49,7 +49,7 @@ class CommerceSearchApiAlterProductStatus extends SearchApiAbstractAlterCallback
           }
           else {
             foreach ($node_wrapper->{$field_name} as $delta => $product_wrapper) {
-              if ($product_wrapper->status->raw() == 0) {
+              if (!$product_wrapper->value() || $product_wrapper->status->raw() == 0) {
                 $products_removed++;
                 if ($products_removed != $nb_products) {
                   $node_wrapper->{$field_name}->offsetUnset($delta);

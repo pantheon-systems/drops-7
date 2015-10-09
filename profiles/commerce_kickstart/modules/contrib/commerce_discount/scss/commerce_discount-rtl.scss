@@ -1,19 +1,10 @@
-@import "_mixins.scss";
+@import "mixins";
 
 @mixin btn {
   margin-left: 20px;
-  margin-right: 0;  // RTL
+  margin-right: 0; // RTL
 }
-.form-item.form-type-radio {
-  position: relative;
-  .progress-disabled {
-    float: none;
-  }
-  .ajax-progress-throbber {
-    position: absolute;
-    right: -10px;
-  }
-}
+
 
 @mixin radio-buttons {
   .form-item {
@@ -27,18 +18,19 @@
 
     .date-padding {
       float: left; // LTR
-
-
       & > .form-item:first-child input.form-text {
         // TODO: For some reason this icon isn't added.
-        background: white url('../images/calendar.png') no-repeat 2px 0px;
+        background: white url("../images/calendar.png") no-repeat 2px 0;
       }
     }
+
     label {
       float: right;
-      padding-right: 0px;
+      padding-right: 0;
       padding-left: 10px; // RTL
+
     }
+
     &.end-date-wrapper {
       margin-left: 0; // RTL
       margin-right: 20px;
@@ -46,8 +38,17 @@
   }
 }
 
-html.js input.form-autocomplete {
-  background-position: 0% 2px; // RTL
+.form-item.form-type-radio {
+  position: relative;
+
+  .progress-disabled {
+    float: none;
+  }
+
+  .ajax-progress-throbber {
+    position: absolute;
+    right: -10px;
+  }
 }
 
 /**
@@ -56,6 +57,7 @@ html.js input.form-autocomplete {
 .commerce-discount-form {
   // Position the discount status block on top right region.
   position: relative;
+
   .form-item-status {
     background-color: #eee;
     padding: 10px 10px 20px 10px;
@@ -65,28 +67,33 @@ html.js input.form-autocomplete {
     right: auto; // RTL
     width: 180px;
   }
+
   // Reset
   .form-item-label {
     clear: both;
+
     .form-item {
       @include box;
     }
   }
+
   .form-item.form-type-radio {
     position: relative;
+
     .ajax-progress-throbber {
       position: absolute;
       right: -10px;
-
     }
   }
-  // general block margins
+
+  // General block margins.
   #commerce-discount-fields-wrapper .form-wrapper {
     & > #inline-conditions-inline_conditions .form-wrapper .ajax-progress {
-      display: block; /* RTL */
-      margin-top: 10px; /* RTL */
-      width: 180px; /* RTL */
+      display: block; // RTL
+      margin-top: 10px; // RTL
+      width: 180px; // RTL
     }
+
     & > #inline-conditions-inline_conditions .form-wrapper .condition-wrapper .form-item {
       .ajax-progress {
         display: inline-block;
@@ -96,6 +103,7 @@ html.js input.form-autocomplete {
     }
   }
 }
+
 /**
  * Choose discount type block.
  */
@@ -105,49 +113,48 @@ html.js input.form-autocomplete {
       float: right;
 
       #edit-commerce-discount-type {
-        @include radio-buttons;
-
         .form-item {
+          margin-left: 20px;
+          margin-right: 0;
           float: right;
         }
       }
     }
   }
 }
+
 /**
  * Choose offer type block.
  */
 .field-name-commerce-discount-offer {
   clear: both; // RTL
-
   .form-wrapper .form-wrapper {
     .form-item {
       label {
         padding-right: 5px;
         padding-left: 0; // RTL
+
       }
+
       div.form-radios {
         @include radio-buttons;
-
         border-right: 0; // RTL
         border-left: 1px dotted $gray2;
         float: right;
-        padding-right: 0; // RTL
-        padding-left: 20px;
-
+        padding: 4px 0 4px 20px; // RTL
         label {
           padding-right: 5px;
           padding-left: 0; // RTL
+
         }
       }
     }
+
     .form-wrapper {
       label {
         padding-right: 5px;
         padding-left: 0; // RTL
-      }
-      &.form-item {
-        float: right;
+
       }
     }
   }
@@ -173,28 +180,30 @@ html.js input.form-autocomplete {
       border-bottom: 1px solid $gray2;
     }
   }
+
   .form-item .form-select {
     float: right;
   }
+
   .field-name-commerce-discount-max-uses {
     @include box;
 
     & > div {
       float: left; // LTR
       margin-left: 30px; // LTR
-
       &:first-child {
         margin-left: 0;
       }
-
     }
   }
+
   .field-type-number-integer {
     float: right;
 
     label {
-      margin-left: 0px;
+      margin-left: 0;
       margin-right: 10px; // RTL
+
     }
   }
 }

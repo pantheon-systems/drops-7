@@ -5,9 +5,9 @@ core = 7.x
 dependencies[] = commerce_customer
 dependencies[] = commerce_checkout
 
-; Information added by Drupal.org packaging script on 2014-10-04
-version = "7.x-2.0-rc8"
+; Information added by Drupal.org packaging script on 2015-07-28
+version = "7.x-2.0-rc9"
 core = "7.x"
 project = "commerce_addressbook"
-datestamp = "1412458729"
+datestamp = "1438117143"
 

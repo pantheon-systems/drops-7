@@ -8,13 +8,17 @@
 /**
  * Implements hook_views_default_views_alter().
  *
- * Add analytics field to discounts overview.
+ * Add analytics columns to discounts overview.
  */
 function commerce_discount_usage_views_default_views_alter(&$views) {
+  if (!isset($views['commerce_discount_overview'])) {
+    return;
+  }
+
   $usage_field = _commerce_discount_usage_views_get_view_delta();
 
-  $view = & $views['commerce_discount_overview'];
-  $handler = & $view->display['default']->handler;
+  $view = &$views['commerce_discount_overview'];
+  $handler = &$view->display['default']->handler;
 
   if (empty($handler->display->display_options['fields']) || !is_array($handler->display->display_options['fields'])) {
     return;
@@ -22,7 +26,7 @@ function commerce_discount_usage_views_default_views_alter(&$views) {
 
   $fields = array();
   foreach ($handler->display->display_options['fields'] as $field_id => $field) {
-    // Add the usage column after the status column.
+    // Add the usage column before the status column.
     if ($field_id == 'status') {
       $fields += $usage_field;
     }

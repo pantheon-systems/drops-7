@@ -11,6 +11,7 @@ Installation
 * Visit the admin/commerce/config/checkout page and configure any customer
   profile checkout panes (such as "Billing information") to use the addressbook.
 * The "Addresses on File" select list should now automatically be attached to the checkout form.
+* Enable "create", "edit", and "view" permissons for each profile type addressbook was enabled on.
 
 Updating from Addressbook 1.x
 =============================

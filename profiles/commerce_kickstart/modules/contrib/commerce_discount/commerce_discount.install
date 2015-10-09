@@ -6,7 +6,7 @@
  */
 
 /**
- * Implements hook_schema()
+ * Implements hook_schema().
  */
 function commerce_discount_schema() {
   $schema['commerce_discount'] = array(
@@ -119,10 +119,9 @@ function commerce_discount_requirements($phase) {
 }
 
 /**
- * Helper function to define and create the required fields & instances in case
- * they don't exist already.
+ * Helper function to define and create the required fields & instances.
  *
- * Create the entityreference field on commerce discount, referencing
+ * Ensure creation of an entityreference field on commerce discount, referencing
  * commerce discount offer.
  * The instance will be added for every newly created bundle.
  */
@@ -132,12 +131,9 @@ function commerce_discount_install_helper() {
 
   // Clear field info cache, so entity reference, inline_conditions and
   // commerce_product_reference field types can be used.
-  if (
-    !isset($field_types['entityreference'])
-    ||
-    !isset($field_types['inline_conditions'])
-    ||
-    !isset($field_types['commerce_product_reference'])
+  if (!isset($field_types['entityreference'])
+    || !isset($field_types['inline_conditions'])
+    || !isset($field_types['commerce_product_reference'])
   ) {
     field_info_cache_clear();
   }
@@ -218,7 +214,7 @@ function commerce_discount_install_helper() {
     );
     field_create_field($field);
   }
-  // Creating field for percent off of shipping
+  // Creating field for percent off of shipping.
   if (module_exists('commerce_shipping') && empty($fields['commerce_percent_off_shipping'])) {
     $field = array(
       'entity_types' => array('commerce_discount_offer'),
@@ -228,7 +224,7 @@ function commerce_discount_install_helper() {
     );
     field_create_field($field);
   }
-  // Creating field for percent off of shipping
+  // Creating field for percent off of shipping.
   if (module_exists('commerce_shipping') && empty($fields['commerce_percent_off_ship_serv'])) {
     $field = array(
       'entity_types' => array('commerce_discount_offer'),
@@ -342,7 +338,7 @@ function commerce_discount_install_helper() {
   }
 
   if (module_exists('commerce_shipping') && empty($instances['commerce_discount_offer']['percent_off_shipping']['commerce_percent_off_shipping'])) {
-    // Add decimal selection
+    // Add decimal selection.
     $instance = array(
       'field_name' => 'commerce_percent_off_shipping',
       'entity_type' => 'commerce_discount_offer',
@@ -355,7 +351,7 @@ function commerce_discount_install_helper() {
     );
     field_create_instance($instance);
 
-    // Add service selection
+    // Add service selection.
     $instance = array(
       'field_name' => 'commerce_percent_off_ship_serv',
       'entity_type' => 'commerce_discount_offer',
@@ -394,6 +390,7 @@ function commerce_discount_install_helper() {
  * @see commerce_discount_offer_type_info()
  */
 function commerce_discount_uninstall() {
+  module_load_include('module', 'commerce');
   // Drop all bundles attached on commerce_discount and commerce_discount_offer
   // entity types.
   field_attach_delete_bundle('commerce_discount', 'order_discount');
@@ -405,7 +402,11 @@ function commerce_discount_uninstall() {
   field_attach_delete_bundle('commerce_discount_offer', 'commerce_percent_off_ship_serv');
   field_attach_delete_bundle('commerce_discount_offer', 'free_products');
 
-  // Then delete the related fields
+  // Delete custom line items types.
+  field_attach_delete_bundle('commerce_line_item', 'commerce_discount');
+  field_attach_delete_bundle('commerce_line_item', 'product_discount');
+
+  // Then delete the related fields.
   commerce_delete_field('commerce_discount_offer');
   commerce_delete_field('commerce_fixed_amount');
   commerce_delete_field('commerce_percentage');
@@ -432,13 +433,15 @@ function commerce_discount_uninstall() {
 }
 
 /**
- * #1875524 Update the widget type of field commerce_discount_offer
+ * Update the widget type of field commerce_discount_offer.
+ *
+ * @see https://drupal.org/node/1875524
  */
-function commerce_discount_update_7101(){
+function commerce_discount_update_7101() {
   $instances = field_info_instances('commerce_discount');
-  foreach($instances as $bundle => $bundle_instances ){
-    foreach($bundle_instances as $field_name => $instance){
-      if( $field_name == 'commerce_discount_offer'){
+  foreach ($instances as $bundle => $bundle_instances) {
+    foreach ($bundle_instances as $field_name => $instance) {
+      if ($field_name == 'commerce_discount_offer') {
         $instance['widget']['type'] = 'inline_entity_form_single';
         field_update_instance($instance);
       }
@@ -447,13 +450,21 @@ function commerce_discount_update_7101(){
 }
 
 /**
- * #2034685 Discount component price names.
+ * Discount component price names.
+ *
+ * @see https://drupal.org/node/2034685
  *
  * Add a new column in commerce_discount table in order to display customized
  * component price title for a discount.
  */
 function commerce_discount_update_7102() {
-  db_add_field('commerce_discount', 'component_title', array('description' => 'The component price title', 'type' => 'varchar', 'length' => 255, 'not null' => FALSE));
+  $field_schema = array(
+    'description' => 'The component price title',
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => FALSE,
+  );
+  db_add_field('commerce_discount', 'component_title', $field_schema);
 }
 
 /**
@@ -464,12 +475,26 @@ function commerce_discount_update_7103() {
 }
 
 /**
- * #1854108 Changes to commerce_discount schema.
+ * Changes to commerce_discount schema.
+ *
+ * @see http://drupal.org/node/1854108
  */
 function commerce_discount_update_7104() {
   // Rename "enabled" to "status" and "status" to "export_status".
-  db_change_field('commerce_discount', 'status', 'export_status', array('type' => 'int', 'not null' => TRUE, 'default' => 0x01, 'size' => 'tiny', 'description' => 'The exportable status of the entity.'));
-  db_change_field('commerce_discount', 'enabled', 'status', array('type' => 'int', 'not null' => TRUE, 'default' => 1, 'size' => 'tiny', 'description' => 'Whether the discount is active.'));
+  db_change_field('commerce_discount', 'status', 'export_status', array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0x01,
+    'size' => 'tiny',
+    'description' => 'The exportable status of the entity.',
+  ));
+  db_change_field('commerce_discount', 'enabled', 'status', array(
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 1,
+    'size' => 'tiny',
+    'description' => 'Whether the discount is active.',
+  ));
   // Rebuild the schema.
   drupal_get_complete_schema(TRUE);
 }

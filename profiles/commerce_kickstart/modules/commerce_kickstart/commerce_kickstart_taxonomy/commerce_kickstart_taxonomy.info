@@ -9,9 +9,9 @@ dependencies[] = views
 ; Views files
 files[] = includes/views/handlers/commerce_kickstart_taxonomy_handler_field_text.inc
 
-; Information added by Drupal.org packaging script on 2015-08-20
-version = "7.x-2.28"
+; Information added by Drupal.org packaging script on 2015-10-09
+version = "7.x-2.29"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1440110572"
+datestamp = "1444404848"
 

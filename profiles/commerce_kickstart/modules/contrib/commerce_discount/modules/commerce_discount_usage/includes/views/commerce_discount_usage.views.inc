@@ -1,12 +1,17 @@
 <?php
 
-/*
+/**
+ * @file
+ * Provides support for the Views module.
+ */
+
+/**
  * Implements hook_views_data_alter().
  */
 function commerce_discount_usage_views_data_alter(&$data) {
   if (isset($data['commerce_discount'])) {
 
-    // Usage analytics field
+    // Usage analytics field.
     $data['commerce_discount']['commerce_discount_usage'] = array(
       'title' => t('Analytics'),
       'help' => t('Show discount usage and usage limit.'),
@@ -16,7 +21,7 @@ function commerce_discount_usage_views_data_alter(&$data) {
       'real field' => 'discount_id',
     );
 
-    // Usage relationship
+    // Usage relationship.
     $data['commerce_discount']['discount_usage'] = array(
       'relationship' => array(
         'title' => t('Discount usage'),
@@ -30,7 +35,7 @@ function commerce_discount_usage_views_data_alter(&$data) {
     );
   }
 
-  // Order table: discount usage relationship
+  // Order table: discount usage relationship.
   if (isset($data['commerce_order'])) {
     $data['commerce_order']['discount_usage'] = array(
       'relationship' => array(
@@ -45,7 +50,7 @@ function commerce_discount_usage_views_data_alter(&$data) {
     );
   }
 
-  // User table: discount usage relationship
+  // User table: discount usage relationship.
   $data['users']['discount_usage'] = array(
     'relationship' => array(
       'title' => t('Discount usage'),
@@ -59,14 +64,14 @@ function commerce_discount_usage_views_data_alter(&$data) {
   );
 }
 
-/*
+/**
  * Implements hook_views_data().
  */
 function commerce_discount_usage_views_data() {
   $data = array();
   $data['commerce_discount_usage']['table']['group'] = t('Commerce discount usage');
 
-  // Base table
+  // Base table.
   $data['commerce_discount_usage']['table']['base'] = array(
     'field' => 'mail',
     'title' => t('Commerce Discount Usage'),
@@ -98,7 +103,7 @@ function commerce_discount_usage_views_data() {
       'base' => 'commerce_discount',
       'base field' => 'name',
       'field' => 'discount',
-    )
+    ),
   );
 
   // Customer mail.
@@ -126,7 +131,7 @@ function commerce_discount_usage_views_data() {
       'base' => 'users',
       'base field' => 'mail',
       'field' => 'mail',
-    )
+    ),
   );
 
   // Order ID.
@@ -154,7 +159,7 @@ function commerce_discount_usage_views_data() {
       'base' => 'commerce_order',
       'base field' => 'order_id',
       'field' => 'order_id',
-    )
+    ),
   );
 
   return $data;

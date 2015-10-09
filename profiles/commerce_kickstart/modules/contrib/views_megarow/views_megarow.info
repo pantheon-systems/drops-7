@@ -5,12 +5,14 @@ package = Views
 
 dependencies[] = views
 
+configure = admin/config/user-interface/views_megarow
+
 files[] = includes/views/plugins/views_plugin_style_table_megarows.inc
 files[] = includes/views/handlers/views_handler_field_megarow_links.inc
 
-; Information added by Drupal.org packaging script on 2014-08-01
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2015-08-07
+version = "7.x-1.5"
 core = "7.x"
 project = "views_megarow"
-datestamp = "1406903328"
+datestamp = "1438968242"
 

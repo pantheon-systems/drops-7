@@ -1,10 +1,23 @@
 <?php
+/**
+ * @file
+ * Install, update, and uninstall functions for commerce discount usage module.
+ */
 
 /**
  * Implements hook_install().
  */
 function commerce_discount_usage_install() {
   _commerce_discount_usage_install_helper();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function commerce_discount_usage_uninstall() {
+  module_load_include('module', 'commerce');
+  commerce_delete_field('discount_usage_per_person');
+  commerce_delete_field('discount_usage_limit');
 }
 
 /**
@@ -40,7 +53,7 @@ function _commerce_discount_usage_install_helper() {
           'weight' => 100,
         ),
         'settings' => array(
-          'min' => 0
+          'min' => 0,
         )
       );
       field_create_instance($instance);

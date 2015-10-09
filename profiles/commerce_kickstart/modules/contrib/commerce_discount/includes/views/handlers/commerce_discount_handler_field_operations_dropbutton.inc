@@ -1,11 +1,19 @@
 <?php
 
 /**
+ * @file
+ * Provides a field handler for the Views module.
+ */
+
+/**
  * Field handler to show commerce discount operations in dropbutton.
  */
 class commerce_discount_handler_field_operations_dropbutton extends views_handler_field {
 
-  function construct() {
+  /**
+   * {@inheritdoc}
+   */
+  public function construct() {
     parent::construct();
     $this->additional_fields['discount_id'] = 'discount_id';
 
@@ -13,7 +21,10 @@ class commerce_discount_handler_field_operations_dropbutton extends views_handle
     $this->real_field = 'discount_id';
   }
 
-  function render($values) {
+  /**
+   * {@inheritdoc}
+   */
+  public function render($values) {
     // Load the line item and return its title.
     $discount_id = $this->get_value($values, 'discount_id');
     $commerce_discount = entity_load_single('commerce_discount', $discount_id);
@@ -55,4 +66,5 @@ class commerce_discount_handler_field_operations_dropbutton extends views_handle
 
     return theme('links__ctools_dropbutton', array('links' => $links));
   }
+
 }

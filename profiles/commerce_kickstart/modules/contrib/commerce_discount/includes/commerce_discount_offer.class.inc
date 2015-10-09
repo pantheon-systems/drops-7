@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Commerce Discount Offer Entity.
+ */
+
+/**
  * Entity class representing the commerce_discount_offer entity type.
  */
 class CommerceDiscountOffer extends Entity {
@@ -12,7 +17,11 @@ class CommerceDiscountOffer extends Entity {
    */
   public $type;
 
+  /**
+   * {@inheritdoc}
+   */
   public function __construct($values = array()) {
     parent::__construct($values, 'commerce_discount_offer');
   }
+
 }

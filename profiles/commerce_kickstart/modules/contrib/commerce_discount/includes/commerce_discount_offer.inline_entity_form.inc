@@ -2,9 +2,12 @@
 
 /**
  * @file
- * Defines the inline entity form controller for Commerce Discount Offers.
+ * Provides Inline Entity Form integration for the Commerce Discount module.
  */
 
+/**
+ * Defines the inline entity form controller for Commerce Discount Offers.
+ */
 class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntityFormController {
 
   /**
@@ -56,13 +59,30 @@ class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntity
       '#required' => FALSE,
       '#default_value' => $offer->type,
       '#ajax' => array(
-         'callback' => 'inline_entity_form_get_element',
-         'wrapper' => 'inline-entity-form-' . $entity_form['#ief_id'],
+        'callback' => 'inline_entity_form_get_element',
+        'wrapper' => 'inline-entity-form-' . $entity_form['#ief_id'],
       ),
+      '#weight' => -101,
+    );
+
+    // To ensure form fields float properly, we need to wrap them all in a div.
+    // However, the IEF module currently expects fields to be attached to the
+    // top level of the $entity_form element. This means a container cannot be
+    // used to supply that div, leading us to use static markup HTML with
+    // weights set to ensure they are placed correctly.
+    // @todo Remove this necessity by better form handling in the IEF module.
+    $entity_form['commerce_offer_fields_wrapper_open'] = array(
+      '#markup' => '<div class="commerce-offer-fields-wrapper">',
+      '#weight' => -100,
+    );
+    $entity_form['commerce_offer_fields_wrapper_close'] = array(
+      '#markup' => '</div>',
+      '#weight' => 100,
     );
 
     field_attach_form('commerce_discount_offer', $offer, $entity_form, $form_state, LANGUAGE_NONE);
 
     return $entity_form;
   }
+
 }

@@ -265,6 +265,10 @@ function commerce_yotpo_create_purchase($commerce_order) {
     $data['products'] = $products;
 
     $response = $yotpo->create_purchase($data);
+    if (!isset($response->code) || $response->code != 200) {
+      $code = isset($response->code) ? $response->code : 'NULL';
+      watchdog('commerce_yotpo', 'Unexpected response code: @code', array('@code' => $code));
+    }
   }
   else {
     watchdog('commerce_yotpo', 'Could not load Yotpo library');

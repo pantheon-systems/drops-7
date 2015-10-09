@@ -31,7 +31,6 @@ function views_megarow_menu() {
     'type' => MENU_NORMAL_ITEM,
     'file' => 'views_megarow.admin.inc',
   );
-
   return $items;
 }
 
@@ -145,18 +144,6 @@ function views_megarow_views_api() {
 }
 
 /**
- * Implements hook_theme_registry_alter().
- *
- * @TODO: Change for "template path" in hook_views_api() when
- * http://drupal.org/node/1267482 if fixed.
- */
-function views_megarow_theme_registry_alter(&$theme_registry) {
-  $theme_registry['views_view_table']['path'] = drupal_get_path('module', 'views_megarow') . '/theme';
-  // NOT WORKING
-  // $theme_registry['views_view_table']['theme path'] = drupal_get_path('module', 'views_megarow') . '/theme';
-}
-
-/**
  * Implements hook_preprocess_views_view_table().
  *
  * This preprocess needs to run after the views one which defines 'row_classes'.
@@ -172,7 +159,6 @@ function views_megarow_preprocess_views_view_table(&$vars) {
       $entity = $result_entities[1][$count];
       list($entity_id) = entity_extract_ids($result_entities[0], $entity);
       $vars['row_classes'][$count][] = 'item-' . $entity_id;
-      $vars['row_attributes'][$count]['data-entity-id'] = $entity_id;
     }
   }
 }
@@ -188,12 +174,17 @@ function views_megarow_views_pre_render(&$view) {
     // Store if the row should be automatically closed when the form are
     // processed.
     $_SESSION['views_megarow']['autoclose'] = $view->style_plugin->options['autoclose'];
+
+    // Preserve initial destination URL query parameter.
+    $destination = drupal_get_destination();
+
     $settings = array(
       'ViewsMegarow' => array(
         'loadingText' => $view->style_plugin->options['loading_text'],
         'scrollEnabled' => $view->style_plugin->options['enable_scroll'],
         'scrollPadding' => $view->style_plugin->options['scroll_padding'],
         'close' => $view->style_plugin->options['close'],
+        'destination' => $destination['destination'],
         // An image can also be used, like this:
         //'close' => theme('image', array(
         //  'path' => ctools_image_path('icon-close-window.png'),
@@ -428,7 +419,7 @@ function views_megarow_form_alter(&$form, &$form_state, $form_id) {
 
       // Trigger an extra submit callback offering the possibility to have
       // the megarow automatically closed when the node is submitted.
-      $form['#submit'][] = 'views_megarow_autoclose_megarow';
+      $form['actions']['submit']['#submit'][] = 'views_megarow_autoclose_megarow';
     }
   }
   else if ($form_id == 'user_profile_form') {

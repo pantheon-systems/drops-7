@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Install, update, and uninstall functions for commerce discount date module.
+ */
+
+/**
  * Implements hook_install().
  *
  * Create a date field for commerce discounts.
@@ -39,5 +44,6 @@ function commerce_discount_date_install() {
  * Implements hook_uninstall().
  */
 function commerce_discount_date_uninstall() {
-  field_delete_field('commerce_discount_date');
+  module_load_include('module', 'commerce');
+  commerce_delete_field('commerce_discount_date');
 }

@@ -132,15 +132,23 @@ function mailsystem_create_class($classes) {
   }
   $class_name = implode('__', $classes);
   // Ensure that the mailsystem directory exists.
-  $class_dir = file_build_uri('mailsystem');
-  if (!file_prepare_directory($class_dir, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+  // First we try the private filesystem
+  $private_files = variable_get('file_private_path', '');
+  $private_files_full = $private_files . '/mailsystem';
+  $public_files = variable_get('file_public_path', conf_path() . '/files');
+  $public_files_full = $public_files . '/mailsystem';
+  if ($private_files && file_prepare_directory($private_files_full, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)) {
+    $class_dir = $private_files . '/mailsystem';
+  }
+  // If private filesystem is not defined or writable, we use the plublic filesystem
+  else if (file_prepare_directory($public_files_full, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS)){
+    $class_dir = $public_files . '/mailsystem';
+  }
+  else{
     return FALSE;
   }
   // Build the class filename.
-  $class_file = drupal_realpath($class_dir) . DIRECTORY_SEPARATOR . "$class_name.mail.inc";
-  // Strip DRUPAL_ROOT.
-  $drupal_root = drupal_realpath(DRUPAL_ROOT) . DIRECTORY_SEPARATOR;
-  $class_file = preg_replace('#^' . preg_quote($drupal_root, '#') . '#', '', $class_file);
+  $class_file = $class_dir . DIRECTORY_SEPARATOR . "$class_name.mail.inc";
   // Build the class implementation as a string.
   $class_contents = '<?php
 class ' . $class_name . ' implements MailSystemInterface {';

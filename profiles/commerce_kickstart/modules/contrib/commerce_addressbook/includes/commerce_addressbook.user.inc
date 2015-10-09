@@ -178,7 +178,8 @@ function commerce_addressbook_profile_page($account, $profile_type) {
     $output .= '<div id="commerce-addressbook-' . $profile_type . '-list">' . $list_view->render() . '</div>';
   }
   if ($output == '') {
-    return '<div class="addressbook-nodata">' . t('Your @profile_type address book is currently empty.', array('@profile_type' => $profile_type)) . '</div>';
+    return '<div class="addressbook-nodata">' . t('Your @profile_type address book is currently empty.',
+      array('@profile_type' => commerce_customer_profile_type_get_name($profile_type))) . '</div>';
   }
   else {
     return $output;

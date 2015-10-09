@@ -39,12 +39,10 @@ function commerce_discount_date_modules_enabled($modules) {
  * Implements hook_views_api().
  */
 function commerce_discount_date_views_api($module, $api) {
-  if ($module == 'views') {
-    return array(
-      'version' => 2,
-      'path' => drupal_get_path('module', 'commerce_discount_date') . '/includes/views',
-    );
-  }
+  return array(
+    'version' => 2,
+    'path' => drupal_get_path('module', 'commerce_discount_date') . '/includes/views',
+  );
 }
 
 /**
@@ -86,10 +84,20 @@ function commerce_discount_date_after_build($element, $form_state) {
  * Implements hook_commerce_discount_rule_build().
  */
 function commerce_discount_date_commerce_discount_rule_build($rule, $discount) {
-  $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-  if (!$wrapper->commerce_discount_date->value()) {
+  if (empty($discount->commerce_discount_date)) {
     // No need to add a condition.
     return;
+  }
+
+  // Wrap the discount to compare its date value against the current timestamp.
+  // A quick test showed this actually used less memory than invoking
+  // field_get_items() directly, but I'm sure a more rigorous test could be
+  // considered in the future for checks as straightforward as this.
+  $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+
+  // If the end date for the discount has already passed, disable the rule.
+  if (REQUEST_TIME > $wrapper->commerce_discount_date->value2->value()) {
+    $rule->active = FALSE;
   }
 
   // Add condition to check usage didn't reach max uses.

@@ -33,6 +33,6 @@ function commerce_discount_date_rules_condition_info() {
 function commerce_discount_date_condition($discount_name) {
   $wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
   $time = time();
+
   return $time >= $wrapper->commerce_discount_date->value->value() && $time <= $wrapper->commerce_discount_date->value2->value();
 }
-

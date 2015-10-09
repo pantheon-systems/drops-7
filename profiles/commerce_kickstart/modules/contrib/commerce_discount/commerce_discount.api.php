@@ -74,9 +74,9 @@ function hook_commerce_discount_offer_type_info() {
  * Allow modules alter the rule object, with configuration specifc
  * to commerce discount.
  *
- * @param $rule
+ * @param RulesPlugin $rule
  *   The rule configuration entity, passed by reference.
- * @param $commerce_discount
+ * @param CommerceDiscount $commerce_discount
  *   The commerce discount entity.
  */
 function hook_commerce_discount_rule_build($rule, $commerce_discount) {
@@ -89,12 +89,12 @@ function hook_commerce_discount_rule_build($rule, $commerce_discount) {
  * Alter the context that is going to be passed into a free product line item.
  * Use this to modify the display path.
  *
- * @param $context
- *  The context that is about to be passed into a new free product line item.
- * @param $product
- *  The product that is being offered as free.
- * @param $discount
- *  The discount containing this offer.
+ * @param array $context
+ *   The context that is about to be passed into a new free product line item.
+ * @param object $product
+ *   The product that is being offered as free.
+ * @param CommerceDiscount $discount
+ *   The discount containing this offer.
  */
 function hook_commerce_discount_free_product_context_alter(&$context, $product, $discount) {
   $context['display_path'] = 'any/page';

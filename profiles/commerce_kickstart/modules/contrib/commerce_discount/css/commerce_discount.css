@@ -16,7 +16,7 @@
   clear: both;
 }
 .commerce-discount-form .form-item-label .form-item {
-  padding: 0px;
+  padding: 0;
 }
 .commerce-discount-form .form-item.form-type-radio {
   position: relative;
@@ -63,7 +63,7 @@
   display: none;
 }
 .form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type {
-  padding: 0px;
+  padding: 0;
   clear: both;
   margin-top: 10px;
   clear: none;
@@ -93,7 +93,7 @@
  * Order/Product discount conditions block.
  */
 .commerce-discount-box div.inline-conditions-container > label {
-  border-bottom: 1px solid #cccccc;
+  border-bottom: 1px solid #ccc;
   display: block;
   width: 100%;
 }
@@ -106,65 +106,54 @@
   margin: 0;
   padding: 0;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item {
-  margin-bottom: 2px;
-  padding: 0;
-}
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item label {
-  border-bottom: 1px solid #cccccc;
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type label {
+  border-bottom: 1px solid #ccc;
   padding-left: 5px;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios {
-  padding: 0px;
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios {
   clear: both;
-  margin-top: 10px;
   background-color: transparent;
-  border-right: 1px dotted #cccccc;
-  /* LTR */
+  border-right: 1px dotted #ccc;
   float: left;
-  /* LTR */
-  margin: 10px;
-  padding: 4px;
-  padding-right: 20px;
-  /* LTR */
+  margin: 10px 20px 10px 10px;
+  padding: 4px 20px 4px 0;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios .form-item {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item {
   color: black;
   border-radius: 5px;
   margin-right: 20px;
   margin-bottom: 5px;
   padding: 5px;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios .form-item:hover {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item:hover {
   background-color: #f6f6f6;
   cursor: pointer;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios .form-item:hover label {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item:hover label {
   cursor: pointer;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios .form-item input {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item input {
   display: inline;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios .form-item.selected {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item.selected {
   background-color: #eee;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios .form-item .ajax-progress {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item .ajax-progress {
   display: none;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios label {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios label {
   border-bottom: 0;
   padding-left: 0;
+}
+.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item {
+  margin-bottom: 2px;
 }
 .field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-wrapper label {
   border-bottom: 0;
   padding-left: 0;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-wrapper .form-item {
-    background-color: transparent;
-    float: left;
-    /* LTR */
-    margin: 10px;
-    padding: 4px;
+.field-name-commerce-discount-offer .commerce-offer-fields-wrapper {
+  float: left;
 }
 
 /**
@@ -180,7 +169,7 @@
   width: 100%;
 }
 .field-name-commerce-discount-date fieldset.form-wrapper .fieldset-legend {
-  border-bottom: 1px solid #cccccc;
+  border-bottom: 1px solid #ccc;
   display: block;
   margin-top: 0;
   padding-left: 0;
@@ -191,7 +180,7 @@
   margin: 0;
 }
 .field-name-commerce-discount-date .fieldset-wrapper {
-  padding: 0px;
+  padding: 0;
   background-color: transparent;
   display: inline-block;
   margin: 10px;
@@ -220,7 +209,7 @@
   width: 55px;
 }
 .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
-  background: white url("../images/calendar.png") no-repeat 86px 0px;
+  background: white url("../images/calendar.png") no-repeat 86px 0;
   width: 100px;
 }
 .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date > .form-item {
@@ -239,20 +228,20 @@
  * Usage block.
  */
 .commerce-discount-usage {
-    clear: both;
+  clear: both;
 }
 .commerce-discount-usage .form-item.form-type-select {
   margin: 0;
 }
 .commerce-discount-usage .form-item.form-type-select label {
-  border-bottom: 1px solid #cccccc;
+  border-bottom: 1px solid #ccc;
 }
 .commerce-discount-usage .form-item .form-select {
   float: left;
   margin: 10px;
 }
 .commerce-discount-usage .field-name-commerce-discount-max-uses {
-  padding: 0px;
+  padding: 0;
 }
 .commerce-discount-usage .field-name-commerce-discount-max-uses > div {
   float: left;
@@ -262,7 +251,7 @@
   margin-left: 0;
 }
 .commerce-discount-usage .field-name-commerce-discount-max-uses > div input[disabled] {
-  background: #eeeeee;
+  background: #eee;
 }
 .commerce-discount-usage .field-type-number-integer {
   float: left;
@@ -336,7 +325,7 @@
   position: relative;
 }
 .view-commerce-discount-overview .views-table td .views-field-operations-dropbutton .ctools-dropbutton {
-  border: 1px solid #cccccc;
+  border: 1px solid #ccc;
   border-radius: 10px;
   background-image: linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
   background-image: -o-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
@@ -346,5 +335,7 @@
   background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.36, #fcfdfc), color-stop(0.68, #f0f0f0));
 }
 .view-commerce-discount-overview .views-table td .views-field-operations-dropbutton .ctools-dropbutton .ctools-content {
-  border-right: 1px solid #cccccc;
+  border-right: 1px solid #ccc;
 }
+
+/*# sourceMappingURL=commerce_discount.css.map */

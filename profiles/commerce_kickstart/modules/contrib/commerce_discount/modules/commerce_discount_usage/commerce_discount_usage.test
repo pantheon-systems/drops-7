@@ -47,8 +47,8 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
     $this->drupalGet('admin/commerce/store/discounts/add');
 
     // Check the integrity of the add form.
-    // $this->assertFieldByName('commerce_discount_fields[discount_usage_limit][limit_uses]', NULL, t('Quantity field is present'));
-    $this->assertFieldByName('commerce_discount_fields[discount_usage_limit][und][0][value]', NULL, t('Amount field is present'));
+    $this->assertFieldByName('commerce_discount_fields[discount_usage_per_person][und][0][value]', NULL, 'Maximum usage per customer field is present');
+    $this->assertFieldByName('commerce_discount_fields[discount_usage_limit][und][0][value]', NULL, 'Maximum overall usage field is present');
 
     // Create a discount.
     $values = array(
@@ -65,12 +65,12 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
     $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
 
     // Check the usage fields of the stored discount.
-    $this->assertTrue($wrapper->discount_usage_per_person->value() == 0, t('Discount uses field is empty.'));
-    $this->assertTrue($wrapper->discount_usage_limit->value() == 5, t('Discount max uses stored correctly.'));
+    $this->assertTrue($wrapper->discount_usage_per_person->value() == 0, 'Discount uses field is empty.');
+    $this->assertTrue($wrapper->discount_usage_limit->value() == 5, 'Discount max uses stored correctly.');
 
-    // Check the discounts listing
-    $this->assertText(t('@amount available', array('@amount' => 5)), t('Analytics - Max usage is shown.'));
-    $this->assertText(t('Used @amount times', array('@amount' => 0)), t('Analytics - Usage is shown.'));
+    // Check the discounts listing.
+    $this->assertText(t('@amount available', array('@amount' => 5)), 'Analytics - Max usage is shown.');
+    $this->assertText(t('Used @amount times', array('@amount' => 0)), 'Analytics - Usage is shown.');
   }
 
   /**
@@ -88,8 +88,8 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
     $this->drupalGet('admin/commerce/store/discounts/manage/' . $discount->name);
 
     // Check the integrity of the add form.
-    // $this->assertFieldByName('commerce_discount_fields[discount_usage_limit][limit_uses]', NULL, t('Quantity field is present'));
-    $this->assertFieldByName('commerce_discount_fields[discount_usage_limit][und][0][value]', NULL, t('Amount field is present'));
+    $this->assertFieldByName('commerce_discount_fields[discount_usage_per_person][und][0][value]', NULL, 'Maximum usage per customer field is present');
+    $this->assertFieldByName('commerce_discount_fields[discount_usage_limit][und][0][value]', NULL, 'Maximum overall usage field is present');
 
     // Change the discount values.
     $values = array(
@@ -101,17 +101,17 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
     );
     $this->drupalPost(NULL, $values, t('Save discount'));
 
-    // Load the discount and wrap it.
-    $discount = entity_load_single('commerce_discount', 1);
-    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+    // Load the discount from the database and wrap it.
+    $discounts = entity_load('commerce_discount', array($discount->discount_id), $conditions = array(), $reset = TRUE);
+    $discount_wrapper = entity_metadata_wrapper('commerce_discount', reset($discounts));
 
     // Check the usage fields of the stored discount.
-    $this->assertTrue($discount_wrapper->discount_usage_per_person->value() == 0, t('Discount uses field is empty.'));
-    // $this->assertTrue($discount_wrapper->discount_usage_limit->value() == 5, t('Discount max uses stored correctly.'));
+    $this->assertEqual($discount_wrapper->discount_usage_per_person->value(), 0, 'Discount uses field is empty.');
+    $this->assertEqual($discount_wrapper->discount_usage_limit->value(), 5, 'Discount max uses stored correctly.');
 
-    // Check the discounts listing
-    $this->assertText(t('@amount available', array('@amount' => 5)), t('Analytics - Max usage is shown.'));
-    $this->assertText(t('Used @amount times', array('@amount' => 0)), t('Analytics - Usage is shown.'));
+    // Check the discounts listing.
+    $this->assertText(t('@amount available', array('@amount' => 5)), 'Analytics - Max usage is shown.');
+    $this->assertText(t('Used @amount times', array('@amount' => 0)), 'Analytics - Usage is shown.');
   }
 
   /**
@@ -120,27 +120,28 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
   public function testCommerceDiscountUsageFixedOrderDiscount() {
     // Testing fixed discount.
     // Create a fixed order discount of $3 limited to one use.
-    $discount = $this->createUsageDiscount('order_discount', 'fixed_amount', 300, 1);
+    $this->createUsageDiscount('order_discount', 'fixed_amount', 300, 1);
 
     // Create an order.
-    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'complete');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
     // Recalculate discounts.
     commerce_cart_order_refresh($order);
 
     // Check if the discount was applied on the order total price.
-    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 700, t('Fixed order discount is deducted correctly on the first use.'));
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 700, 'Fixed order discount is deducted correctly on the first use.');
 
     // Create another order to make sure the discount isn't applied again.
-    $order = $this->createDummyOrder($this->store_customer2->uid, array($this->product->product_id => 1), 'complete');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order = $this->createDummyOrder($this->store_customer2->uid, array($this->product->product_id => 1), 'completed');
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
     // Recalculate discounts.
     commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
     // Check if the discount was applied on the order total price.
-    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 1000, t('Fixed order discount is ignored after maximal usage.'));
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 1000, 'Fixed order discount is ignored after maximal usage.');
   }
 
   /**
@@ -149,96 +150,86 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
   public function testCommerceDiscountUsagePercentageOrderDiscount() {
     // Testing percentage discount.
     // Create a percentage order discount of 5% limited to one use.
-    $discount = $this->createUsageDiscount('order_discount', 'percentage', 5, 1);
+    $this->createUsageDiscount('order_discount', 'percentage', 5, 1);
     // Create a completed order.
-    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'complete');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
 
     // Recalculate discounts.
     commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
     // Check if the discount was applied on the order total price.
-    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 950, t('Percentage order discount is deducted correctly.'));
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 950, 'Percentage order discount is deducted correctly.');
 
     // Create another order to make sure the discount isn't applied again.
-    $order = $this->createDummyOrder($this->store_customer2->uid, array($this->product->product_id => 1), 'complete');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order = $this->createDummyOrder($this->store_customer2->uid, array($this->product->product_id => 1), 'completed');
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
     // Recalculate discounts.
     commerce_cart_order_refresh($order);
 
     // Check if the discount was applied on the order total price.
-    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 1000, t('Percentage order discount is ignored after maximal usage.'));
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 1000, 'Percentage order discount is ignored after maximal usage.');
   }
 
   /**
    * Test fixed product discounts.
    */
   public function testCommerceDiscountUsageFixedProductDiscount() {
-    $discount = $this->createUsageDiscount('product_discount', 'fixed_amount', 300, 1);
+    $this->createUsageDiscount('product_discount', 'fixed_amount', 300, 1);
 
     // Create an order.
-    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'complete');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
-    // Invoke line item price re-calculation.
-    $line_item = $wrapper->commerce_line_items->get(0)->value();
-    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
-    // Check if the discount was added as a component to the line item.
-    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-    $price_data = $line_item_wrapper->commerce_unit_price->data->value();
-    $this->assertTrue($price_data['components'][1]['price']['amount'] == -300, t('Fixed product discount is added as a price compoennt to the line item.'));
-
-    // Create another order to make sure the discount isn't applied again.
-    $order = $this->createDummyOrder($this->store_customer2->uid, array($this->product->product_id => 1), 'complete');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
 
     // Recalculate discounts.
     commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
-    // Invoke line item price re-calculation.
-    $line_item = $wrapper->commerce_line_items->get(0)->value();
-    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
     // Check if the discount was added as a component to the line item.
-    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-    $price_data = $line_item_wrapper->commerce_unit_price->data->value();
-    // $this->assertTrue(count($price_data['components']) === 1, t('Fixed product discount is ignored after maximal usage.'));
+    $price = commerce_price_wrapper_value($order_wrapper->commerce_line_items->get(0), 'commerce_unit_price');
+    $this->assertTrue($price['data']['components'][1]['price']['amount'] == -300, 'Fixed product discount is added as a price component to the line item.');
+    commerce_order_save($order);
+
+    // Create another order to make sure the discount isn't applied again.
+    $order = $this->createDummyOrder($this->store_customer2->uid, array($this->product->product_id => 1), 'completed');
+
+    // Recalculate discounts.
+    commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+
+    // Check if the discount was added as a component to the line item.
+    $price = commerce_price_wrapper_value($order_wrapper->commerce_line_items->get(0), 'commerce_unit_price');
+    $this->assertTrue(count($price['data']['components']) === 1, 'Fixed product discount is ignored after maximal usage.');
   }
 
   /**
    * Test percentage product discounts.
    */
   public function testCommerceDiscountUsagePercentageProductDiscount() {
-    $discount = $this->createUsageDiscount('product_discount', 'percentage', 5, 1);
+    $this->createUsageDiscount('product_discount', 'percentage', 5, 1);
 
     // Create an order.
-    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'complete');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
 
     // Recalculate discounts.
     commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
-    // Invoke line item price re-calculation.
-    $line_item = $wrapper->commerce_line_items->get(0)->value();
-    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
     // Check if the discount was added as a component to the line item.
-    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-    $price_data = $line_item_wrapper->commerce_unit_price->data->value();
-    // $this->assertTrue($price_data['components'][1]['price']['amount'] == -500, t('Percentage product discount is added as a price compoennt to the line item.'));
+    $price = commerce_price_wrapper_value($order_wrapper->commerce_line_items->get(0), 'commerce_unit_price');
+    $this->assertEqual($price['data']['components'][1]['price']['amount'], -50, 'Percentage product discount is added as a price component to the line item.');
+    commerce_order_save($order);
 
     // Create another order to make sure the discount isn't applied again.
-    $order = $this->createDummyOrder($this->store_customer2->uid, array($this->product->product_id => 1), 'complete');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order = $this->createDummyOrder($this->store_customer2->uid, array($this->product->product_id => 1), 'completed');
 
     // Recalculate discounts.
     commerce_cart_order_refresh($order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
-    // Invoke line item price re-calculation.
-    $line_item = $wrapper->commerce_line_items->get(0)->value();
-    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
     // Check if the discount was added as a component to the line item.
-    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
-    $price_data = $line_item_wrapper->commerce_unit_price->data->value();
-    $this->assertTrue(count($price_data['components']) == 1, t('Percentage product discount is ignored after maximal usage.'));
+    $price = commerce_price_wrapper_value($order_wrapper->commerce_line_items->get(0), 'commerce_unit_price');
+    $this->assertTrue(count($price['data']['components']) === 1, 'Percentage product discount is ignored after maximal usage.');
   }
 
   /**
@@ -248,9 +239,9 @@ class CommerceDiscountUsageTest extends CommerceDiscountTestBase {
    *   The discount type; Either 'order_discount' or 'product_discount'.
    * @param string $offer_type
    *   The discount offer type; Either 'fixed_amount' or 'percentage'.
-   * @param integer $amount
+   * @param int $amount
    *   The discount offer amount.
-   * @param integer $max_usage
+   * @param int $max_usage
    *   Maximal uses for the discount.
    *
    * @return object

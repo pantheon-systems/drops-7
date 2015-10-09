@@ -2,7 +2,9 @@
 
 /**
  * @file
- * Defines the discount and discount offer entities (always managed together),
+ * Defines the discount and discount offer entities, bundles and functionality.
+ *
+ * Discount and offer entities are always managed together,
  * their bundles, and all surrounding functionality (API, UI).
  */
 
@@ -98,10 +100,12 @@ function commerce_discount_remove_discount_components($price_wrapper) {
       if (!$wrapper->value() || $wrapper->getBundle() == 'order_discount') {
         $remove = TRUE;
       }
-    } else if ($component['name'] != 'base_price') {
-      // As long as the component is neither base price nor discount, allow other modules to say whether it gets reset.
-      // This is so that discounts can apply against a price that has been stripped of components from modules that
-      // need to apply against a post-discount price.
+    }
+    elseif ($component['name'] != 'base_price') {
+      // As long as the component is neither base price nor discount, allow
+      // other modules to say whether it gets reset. This is so that discounts
+      // can apply against a price that has been stripped of components from
+      // modules that need to apply against a post-discount price.
       drupal_alter('commerce_discount_remove_price_component', $component, $remove);
     }
 
@@ -243,12 +247,10 @@ function commerce_discount_permission() {
  * Implements hook_views_api().
  */
 function commerce_discount_views_api($module, $api) {
-  if ($module == 'views') {
-    return array(
-      'version' => 3,
-      'path' => drupal_get_path('module', 'commerce_discount') . '/includes/views',
-    );
-  }
+  return array(
+    'version' => 3,
+    'path' => drupal_get_path('module', 'commerce_discount') . '/includes/views',
+  );
 }
 
 /**
@@ -280,7 +282,6 @@ function commerce_discount_form_features_export_form_alter(&$form, $from_state) 
  * Implements hook_commerce_price_formatted_components_alter().
  */
 function commerce_discount_commerce_price_formatted_components_alter(&$components, $price, $entity) {
-  //
   if (isset($price['data']['components'])) {
     // Loop into price components and alter the component title if the discount
     // component label is found.
@@ -329,13 +330,12 @@ function commerce_discount_field_widget_form_alter(&$element, &$form_state, $con
     $element['#options'] += commerce_shipping_service_options_list();
     if ($form_state['op'] == 'edit') {
       $wrapper_offer = entity_metadata_wrapper('commerce_discount_offer', $element['#entity']);
-      if($element['#field_name'] == 'commerce_free_shipping'){
+      if ($element['#field_name'] == 'commerce_free_shipping') {
         $element['#default_value'] = $wrapper_offer->commerce_free_shipping->value();
       }
-      else{
+      else {
         $element['#default_value'] = $wrapper_offer->commerce_percent_off_ship_serv->value();
       }
-
     }
   }
 }
@@ -658,7 +658,7 @@ function commerce_discount_commerce_line_item_type_info() {
 /**
  * Determine the discount's line item title.
  *
- * @return
+ * @return string
  *   The line item title.
  */
 function commerce_discount_line_item_title() {

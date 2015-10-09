@@ -8,11 +8,11 @@
 /**
  * Implements hook_views_default_views_alter().
  *
- * Add start and end date to the discount overview.
+ * Add start and end date columns to the discount overview.
  */
 function commerce_discount_date_views_default_views_alter(&$views) {
   if (!isset($views['commerce_discount_overview'])) {
-    return NULL;
+    return;
   }
 
   $date_fields = _commerce_discount_date_views_get_view_delta();
@@ -20,18 +20,17 @@ function commerce_discount_date_views_default_views_alter(&$views) {
   $view = &$views['commerce_discount_overview'];
   $handler = &$view->display['default']->handler;
 
-  // In order to insert the date fields in the middle of the fields array,
-  // rebuild it while inserting the date fields after the 'rendered_entity'
-  // field.
   if (empty($handler->display->display_options['fields']) || !is_array($handler->display->display_options['fields'])) {
     return;
   }
-  foreach ($handler->display->display_options['fields'] as $field_id => $field) {
-    $fields[$field_id] = $field;
 
-    if ($field_id == 'rendered_entity') {
+  $fields = array();
+  foreach ($handler->display->display_options['fields'] as $field_id => $field) {
+    // Add the usage column before the status column.
+    if ($field_id == 'status') {
       $fields += $date_fields;
     }
+    $fields[$field_id] = $field;
   }
 
   // Overwrite the original fields array.

@@ -10,6 +10,9 @@
  */
 class CommerceDiscountMetadataController extends EntityDefaultMetadataController {
 
+  /**
+   * {@inheritdoc}
+   */
   public function entityPropertyInfo() {
     $info = parent::entityPropertyInfo();
     $properties = &$info[$this->type]['properties'];
@@ -18,4 +21,5 @@ class CommerceDiscountMetadataController extends EntityDefaultMetadataController
 
     return $info;
   }
+
 }

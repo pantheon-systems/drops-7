@@ -9,10 +9,6 @@
   right: -10px;
 }
 
-html.js input.form-autocomplete {
-  background-position: 0% 2px;
-}
-
 /**
  * Discount form.
  */
@@ -32,7 +28,7 @@ html.js input.form-autocomplete {
   clear: both;
 }
 .commerce-discount-form .form-item-label .form-item {
-  padding: 0px;
+  padding: 0;
 }
 .commerce-discount-form .form-item.form-type-radio {
   position: relative;
@@ -43,11 +39,8 @@ html.js input.form-autocomplete {
 }
 .commerce-discount-form #commerce-discount-fields-wrapper .form-wrapper > #inline-conditions-inline_conditions .form-wrapper .ajax-progress {
   display: block;
-  /* RTL */
   margin-top: 10px;
-  /* RTL */
   width: 180px;
-  /* RTL */
 }
 .commerce-discount-form #commerce-discount-fields-wrapper .form-wrapper > #inline-conditions-inline_conditions .form-wrapper .condition-wrapper .form-item .ajax-progress {
   display: inline-block;
@@ -64,8 +57,6 @@ html.js input.form-autocomplete {
 .form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type .form-item {
   margin-left: 20px;
   margin-right: 0;
-}
-.form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type .form-item {
   float: right;
 }
 
@@ -81,10 +72,9 @@ html.js input.form-autocomplete {
 }
 .field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios {
   border-right: 0;
-  border-left: 1px dotted #cccccc;
+  border-left: 1px dotted #ccc;
   float: right;
-  padding-right: 0;
-  padding-left: 20px;
+  padding: 4px 0 4px 20px;
 }
 .field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item div.form-radios .form-item {
   margin-left: 20px;
@@ -98,9 +88,6 @@ html.js input.form-autocomplete {
   padding-right: 5px;
   padding-left: 0;
 }
-.field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-wrapper .form-item {
-  float: right;
-}
 
 /**
  * Discount dates block.
@@ -112,11 +99,11 @@ html.js input.form-autocomplete {
   float: left;
 }
 .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
-  background: white url("../images/calendar.png") no-repeat 2px 0px;
+  background: white url("../images/calendar.png") no-repeat 2px 0;
 }
 .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date label {
   float: right;
-  padding-right: 0px;
+  padding-right: 0;
   padding-left: 10px;
 }
 .field-name-commerce-discount-date .fieldset-wrapper .container-inline-date.end-date-wrapper {
@@ -131,13 +118,13 @@ html.js input.form-autocomplete {
   margin: 0;
 }
 .commerce-discount-usage .form-item.form-type-select label {
-  border-bottom: 1px solid #cccccc;
+  border-bottom: 1px solid #ccc;
 }
 .commerce-discount-usage .form-item .form-select {
   float: right;
 }
 .commerce-discount-usage .field-name-commerce-discount-max-uses {
-  padding: 0px;
+  padding: 0;
 }
 .commerce-discount-usage .field-name-commerce-discount-max-uses > div {
   float: left;
@@ -150,6 +137,8 @@ html.js input.form-autocomplete {
   float: right;
 }
 .commerce-discount-usage .field-type-number-integer label {
-  margin-left: 0px;
+  margin-left: 0;
   margin-right: 10px;
 }
+
+/*# sourceMappingURL=commerce_discount-rtl.css.map */
