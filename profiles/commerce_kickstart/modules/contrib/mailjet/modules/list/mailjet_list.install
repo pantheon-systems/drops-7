@@ -124,6 +124,9 @@ function mailjet_list_schema() {
   return $schema;
 }
 
+/**
+ * Uninstall the lists.
+ */
 function mailjet_list_uninstall() {
     if (field_info_field('mailjet_list_view')) {
         field_delete_field('mailjet_list_view');

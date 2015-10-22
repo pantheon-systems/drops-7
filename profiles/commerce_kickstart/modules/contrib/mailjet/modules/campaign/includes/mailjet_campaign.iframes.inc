@@ -14,14 +14,14 @@ function mailjet_campaign_iframe() {
   if (!empty($token)) {
     global $base_url;
     global $language;
-  
+
     $langCodesMap = array('en' => 'en_US', 'fr' => 'fr_FR', 'de' => 'de_DE', 'es' => 'es_ES');
     $defaultLang = 'en';
     $locale = isset($langCodesMap[$language->language]) ? $langCodesMap[$language->language] : $langCodesMap[$defaultLang];
-    
+
     $callbackurl = urlencode($base_url . '?q=/admin/mailjet/campaign/alter_callback');
 
-    $default_url = IFRAME_URL."campaigns/?f=ams&r=commerceguys&t={$token}&show_menu=none&locale={$locale}&cb=";
+    $default_url = IFRAME_URL."campaigns/?f=ams&r=commerceguys&t={$token}&show_menu=none&sp=display&locale={$locale}&cb=";
 
     $runningBJs = variable_get('runningBtachJobs', array());
     $still_running = array();
@@ -34,7 +34,7 @@ function mailjet_campaign_iframe() {
     variable_get('runningBtachJobs', $still_running);
     $callbackurl = urldecode($callbackurl);
     $default_url = urldecode($default_url);
-  
+
     return '<iframe src="' . $default_url . $callbackurl . '" width="100%" height="1080px" frameborder="0"></iframe>';
   }
   return t('Unable to generate campaign.');

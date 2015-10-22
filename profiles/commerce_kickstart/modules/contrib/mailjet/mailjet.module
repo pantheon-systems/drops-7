@@ -139,41 +139,43 @@ function mailjet_menu()
     return $items;
 }
 
-/**
- * Form callback for adding a domain.
- */
-function mailjet_domains_add_form($form_state){
-    $form = array();
+   /**
+     * Form callback for adding a domain.
+     */
+    function mailjet_domains_add_form($form_state)
+    {
+        $form = array();
 
-    $form['domain'] = array(
-        '#type' => 'textfield',
-        '#title' => t('Domain'),
-        '#description' => t('The domain you are adding to MailJet.'),
-        '#required' => TRUE
-    );
+        $form['domain'] = array(
+            '#type' => 'textfield',
+            '#title' => t('Domain'),
+            '#description' => t('The domain you are adding to MailJet.'),
+            '#required' => TRUE
+        );
 
-    $form['submit'] = array(
-        '#type' => 'submit',
-        '#value' => t('Add'),
-    );
+        $form['submit'] = array(
+            '#type' => 'submit',
+            '#value' => t('Add'),
+        );
 
-    return $form;
-}
-
-/**
-* Submit callback for adding a domian.
-*/
-function mailjet_domains_add_form_submit($form, &$form_state) {
-    $domain = $form_state['values']['domain'];
-    if (mailjet_user_domain_add($domain)) {
-        drupal_set_message(t('Your domain @domain has successfully been added to MailJet. You will need to create a text file to confirm domain ownership.', array(
-            '@domain' => $domain
-        )));
-        drupal_goto('admin/config/system/mailjet/domains');
-    } else {
-        return FALSE;
+        return $form;
     }
-}
+
+    /**
+     * Submit callback for adding a domian.
+     */
+    function mailjet_domains_add_form_submit($form, &$form_state)
+    {
+        $domain = $form_state['values']['domain'];
+        if (mailjet_user_domain_add($domain)) {
+            drupal_set_message(t('Your domain @domain has successfully been added to MailJet. You will need to create a text file to confirm domain ownership.', array(
+                '@domain' => $domain
+            )));
+            drupal_goto('admin/config/system/mailjet/domains');
+        } else {
+            return FALSE;
+        }
+    }
 
 /**
  * Redirects to external links.

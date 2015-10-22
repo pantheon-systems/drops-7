@@ -13,11 +13,10 @@ projects[rules][version] = 2.9
 projects[views][version] = 3.11
 projects[views_bulk_operations][version] = 3.3
 projects[addressfield][version] = 1.1
-projects[features][version] = "2.6"
+projects[features][version] = "2.7"
 projects[features][patch][2143765] = "http://drupal.org/files/issues/features-fix-modules-enabled-2143765-1.patch"
 projects[features][patch][2479803] = "https://www.drupal.org/files/issues/ignore_hidden_modules-2479803-1.patch"
-projects[features][patch][2534138] = "https://www.drupal.org/files/issues/2534138-field-base-exception-catch-1.patch"
-projects[features_override][version] = 2.0-rc2
+projects[features_override][version] = 2.0-rc3
 projects[strongarm][version] = 2.0
 projects[taxonomy_menu][version] = 1.5
 projects[libraries][version] = 2.2
@@ -112,7 +111,7 @@ projects[title][version] = "1.0-alpha7"
 projects[title][patch][] = "http://drupal.org/files/title-translation_overwrite-1269076-35.patch"
 projects[kameleoon][version] = "1.1"
 projects[mailup][version] = "1.1"
-projects[mailjet][version] = "2.3"
+projects[mailjet][version] = "2.5"
 
 ; Search related modules.
 projects[search_api][version] = 1.16

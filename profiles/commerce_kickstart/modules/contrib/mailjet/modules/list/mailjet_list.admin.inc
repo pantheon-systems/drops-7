@@ -114,16 +114,6 @@ function mailjet_list_form($form, &$form_state, $entity, $op)
 
         field_attach_form('mailjet_list', $entity, $form, $form_state);
 
-        // User.
-        //   $owner = user_load($entity->uid);
-        //   $form['user'] = array(
-        //     '#title' => t('Recurring entity user'),
-        //     '#type' => 'textfield',
-        //     '#autocomplete_path' => 'user/autocomplete',
-        //     '#default_value' => $owner->name,
-        //     '#required' => TRUE,
-        //   );
-
         $form['actions'] = array('#type' => 'actions');
         $form['actions']['submit'] = array(
             '#type' => 'submit',
@@ -145,19 +135,13 @@ function mailjet_list_form_validate(&$form, &$form_state)
         return FALSE;
     }
 
-    // Don't allow chars that are not cm
-    $pattern_label = '/^[A-Za-z0-9 ]+$/';
+    // Don't allow chars that are not cm.
     $pattern_name = '/^[A-Za-z0-9 ]+$/';
 
     if (preg_match($pattern_name, $form['name']['#value']) != 1) {
-        form_set_error('name', 'Only letters and numbers are allowed');
+        form_set_error('name', t('Only letters and numbers are allowed'));
         return FALSE;
     }
-
-    /*if (preg_match($pattern_label, $form['label']['#value']) != 1) {
-      form_set_error('label', 'Only letters and numbers are allowed');
-      return FALSE;
-    }*/
 
     return TRUE;
 }
@@ -171,7 +155,7 @@ function mailjet_list_form_submit(&$form, &$form_state)
     $entity = entity_ui_form_submit_build_entity($form, $form_state);
 
     if (isset($form['del']['#value']) && isset($form['del']['#value']) == 'delete') {
-        //Delete and go back.
+        // Delete and go back.
         $entity->delete();
         $form_state['redirect'] = 'admin/mailjet/list';
     } else {
@@ -185,7 +169,9 @@ function mailjet_list_form_submit(&$form, &$form_state)
  * Form for syncing lists
  */
 
-### SYNC ALL FIELDS
+/**
+ * Sync all fields
+ */
 function mailjet_list_sync_form($form, &$form_state, $mailjet_list)
 {
     $form['mailjet_list'] = array(
@@ -195,12 +181,11 @@ function mailjet_list_sync_form($form, &$form_state, $mailjet_list)
     $view_name = $mailjet_list->mailjet_list_view[LANGUAGE_NONE][0]['vname'];
     $view_name = explode('|', $view_name);
     $view_name = $view_name[0];
-    $view_args = $mailjet_list->mailjet_list_view[LANGUAGE_NONE][0]['vargs'];
+
     $view = views_get_view($view_name);
     $field = $view->display['default']->display_options['style_options']['email'];
     $view->execute();
     $total_rows = $view->total_rows;
-    $wrapper = entity_metadata_wrapper('mailjet_list', $mailjet_list);
 
     $x = 0;
 
@@ -218,18 +203,17 @@ function mailjet_list_sync_form($form, &$form_state, $mailjet_list)
             );
 
             foreach ($user_info as $key => $value) {
-                //ADD ALL FIELDS
+                // ADD ALL FIELDS
                 if (strpos($key, "field_") !== false) {
                     $drupal_users[$view->render_field($field, $x)]['properties'][str_replace('field_', '', $key)] = (!empty($value)) ? $value[LANGUAGE_NONE][0]['value'] : '';
                 }
-                //OR ADD JUST FIELDS IN THIS LIST?!?!?!?!?!?!?!!?!?
             }
         }
 
         $x++;
     }
 
-    //Gets list of contacts.
+    // Gets list of contacts.
     $result = mailjet_list_contacts($mailjet_list);
 
     if ($result) {
@@ -260,33 +244,9 @@ function mailjet_list_sync_form($form, &$form_state, $mailjet_list)
         $i++;
     }
 
-    //Gets the the different users set up in $drupal_users, that are not presented in $mail_jet users.
+    // Gets the the different users set up in $drupal_users, that are not presented in $mail_jet users.
     $form['#mailjet']['new_users'] = array();
-    $form['#mailjet']['new_users'] = mailjet_compare_lists("all", $drupal_users, $mailjet_users); // "all" - sync all drupal users (covers users updates) | "new" - sync only new users (ignores users updates)
-    /*$form['new'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('New Contacts'),
-    );
-    $i = 1;
-    if (!empty($form['#mailjet']['new_users'])) {
-      foreach ($form['#mailjet']['new_users'] as $key => $new_user) {
-        if ($i < 101) {
-          $form['new'][$key] = array(
-            '#type' => 'markup',
-            '#markup' => ($i == count($form['#mailjet']['new_users'])) ? ($key) : ($key . ', '),
-          );
-        }
-        else {
-          $form['new'][$key] = array(
-            '#type' => 'markup',
-            '#markup' => t("+ @count Other New Contacts", array('@count' => count($form['#mailjet']['new_users']) - 100)),
-          );
-          break;
-        }
-        $i++;
-      }
-    }*/
-
+    $form['#mailjet']['new_users'] = mailjet_compare_lists("all", $drupal_users, $mailjet_users);
 
     $form['expired'] = array(
         '#type' => 'fieldset',
@@ -355,10 +315,9 @@ function mailjet_list_sync_form_validate($form, &$form_state)
 {
     $mailjet_list = $form['mailjet_list']['#mailjet'];
     if (!isset($mailjet_list->list_id)) {
-        form_set_error('', 'Could not find mailjet list');
+        form_set_error('', t('Could not find mailjet list'));
         return;
     }
-    //form_set_error('', 'Manual stop cause the import is not yet working');
     mailjet_properties_sync();
 }
 
@@ -371,18 +330,18 @@ function mailjet_list_sync_form_submit($form, &$form_state)
         drupal_set_message(t('The lists are up to date.'), 'status');
         return;
     }
-    // start by creating a new mailjet object if we cant do this then there is no point continuing
+    // Start by creating a new mailjet object if we cant do this then there is no point continuing.
     $mailjet = mailjet_new();
     if (!$mailjet){
         return FALSE;
     }
 
-    //Gets the mailjet list entity from the form.
+    // Gets the mailjet list entity from the form.
     $mailjet_list = $form['mailjet_list']['#mailjet'];
     if (isset($form['#mailjet']['new_users']) && !empty($form['#mailjet']['new_users'])) {
         $newusers_list = $form['#mailjet']['new_users'];
 
-        // create the params to post to mailjet including the comma seperated new users list
+        // Create the params to post to mailjet including the comma seperated new users list.
 
         $csv_str = "email,";
         $cnt = 0;
@@ -419,12 +378,12 @@ function mailjet_list_sync_form_submit($form, &$form_state)
 
             $mailjet->resetRequest();
             $paramsBatchJob = array(
-                'method' => 'JSON',  // JSON
+                'method' => 'JSON',
                 'JobType' => 'Contact list import csv',
                 'DataID' => $clid->ID,
                 'Status' => 'Upload',
                 'RefId' => $mailjet_list->list_id,
-                'Method' => 'addnoforce', // = 'addforce'
+                'Method' => 'addnoforce',
                 'APIKeyALT' => variable_get('mailjet_username')
             );
 
@@ -433,7 +392,7 @@ function mailjet_list_sync_form_submit($form, &$form_state)
             if ($responseBatchJob && $responseBatchJob->Count > 0) {
                 $bjID = $responseBatchJob->Data[0]->ID;
                 $paramsBatchJobCheck = array(
-                    'method' => 'GET',  // JSON
+                    'method' => 'GET',
                     'ID' => $bjID,
                     'APIKeyALT' => variable_get('mailjet_username')
                 );
@@ -449,10 +408,10 @@ function mailjet_list_sync_form_submit($form, &$form_state)
                     drupal_set_message(t('Sync in proggress.'), 'status');
                 }
             } else {
-                form_set_error('', 'Could not create a BatchJob for this import');
+                form_set_error('', t('Could not create a BatchJob for this import'));
             }
         } else {
-            form_set_error('', 'Could not create the contact list');
+            form_set_error('', t('Could not create the contact list'));
         }
 
     }
@@ -473,12 +432,12 @@ function mailjet_list_sync_form_submit($form, &$form_state)
 
             $mailjet->resetRequest();
             $paramsBatchJob = array(
-                'method' => 'JSON',  // JSON
+                'method' => 'JSON',
                 'JobType' => 'Contact list import csv',
                 'DataID' => $clid->ID,
                 'Status' => 'Upload',
                 'RefId' => $mailjet_list->list_id,
-                'Method' => 'remove', // = 'remove' or 'unsub'
+                'Method' => 'remove',
                 'APIKeyALT' => variable_get('mailjet_username')
             );
 
@@ -486,7 +445,7 @@ function mailjet_list_sync_form_submit($form, &$form_state)
 
             if ($responseBatchJob && $responseBatchJob->Count > 0) {
                 $paramsBatchJobCheck = array(
-                    'method' => 'GET',  // JSON
+                    'method' => 'GET',
                     'ID' => $responseBatchJob->Data[0]->ID,
                     'APIKeyALT' => variable_get('mailjet_username')
                 );
@@ -499,17 +458,19 @@ function mailjet_list_sync_form_submit($form, &$form_state)
                     drupal_set_message(t('Sync for expired contants in proggress.'), 'status');
                 }
             } else {
-                form_set_error('', 'Could not create a BatchJob for expired contants');
+                form_set_error('', t('Could not create a BatchJob for expired contants'));
             }
         } else {
-            form_set_error('', 'Could not create the contact list for expired contants');
+            form_set_error('', t('Could not create the contact list for expired contants'));
         }
     }
 
     return;
 }
 
-
+/**
+ * Compares mailjet lists.
+ */
 function mailjet_compare_lists($type, $drupal_users, $mailjet_users)
 {
     $res_users = array();

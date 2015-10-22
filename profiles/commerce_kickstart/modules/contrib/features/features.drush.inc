@@ -607,6 +607,11 @@ function _drush_features_export($info, $module_name = NULL, $directory = NULL) {
       drush_op('mkdir', $directory);
     }
     if (is_dir($directory)) {
+      // Ensure that the export will be created in the English language.
+      // The export language must be set before flushing caches as that can
+      // result into translatables being statically cached.
+      _features_set_export_language();
+
       drupal_flush_all_caches();
       $export = _drush_features_generate_export($info, $module_name);
       $files = features_export_render($export, $module_name, TRUE);
