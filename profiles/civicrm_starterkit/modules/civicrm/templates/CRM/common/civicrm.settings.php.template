@@ -52,25 +52,34 @@
  */
 define( 'CIVICRM_UF'               , '%%cms%%'        );
 
- /**
+/**
  * Pantheon Systems:
  *
  * Repopulate needed variables based on the Pantheon environment if applicable.
  * http://www.kalamuna.com/news/civicrm-pantheon
  *
  */
-if (!empty($_SERVER['PRESSFLOW_SETTINGS'])) {
-  $env = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
-  if (!empty($env['conf']['pantheon_binding'])) {
-    $pantheon_db = $env['databases']['default']['default'];
-    $pantheon_conf = $env['conf'];
+if (defined('PANTHEON_ENVIRONMENT')) {
 
-    //user name and password
-    $db_string = $pantheon_db['driver'] . '://' . $pantheon_db['username'] . ':' . $pantheon_db['password'] . '@';
-    //host
-    $db_string .= 'dbserver.' . $pantheon_conf['pantheon_environment'] . '.' . $pantheon_conf['pantheon_site_uuid'] . '.drush.in' . ':' . $pantheon_db['port'];
-    // database
-    $db_string .= '/' . $pantheon_db['database'] . '?new_link=true';
+    // Kick off dbsetup
+    // Grab some ENV
+    $user = getenv('DB_USER');
+    $password = getenv('DB_PASSWORD');
+    $host = getenv('DB_HOST');
+    $port = getenv('DB_PORT');
+    $database = getenv('DB_NAME');
+    // Set driver
+    // @todo: grab correct driver?
+    $db_string = 'mysql://';
+    // Add user name and password
+    $db_string .= (!empty($password)) ? implode(':', [$user, $password]) : $user;
+    // Add host
+    // @todo: might not have a port?
+    $db_string .= '@' . implode(':', [$host, $port]);
+    // Add database
+    $db_string .= '/' . $database;
+    // Add query
+    $db_string .= '?new_link=true';
 
     // define the database strings
     define('CIVICRM_UF_DSN', $db_string);
@@ -79,28 +88,33 @@ if (!empty($_SERVER['PRESSFLOW_SETTINGS'])) {
     // define the file paths
     global $civicrm_root;
 
-    $civicrm_root = '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/code/%%modulePath%%';
-    define('CIVICRM_TEMPLATE_COMPILEDIR', '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/files/civicrm/templates_c/');
+    // Get the correct pantheon binding
+    // @todo: better existence checks here?
+    $env = json_decode($_SERVER['PRESSFLOW_SETTINGS'], TRUE);
+    $binding = $env['conf']['pantheon_binding'];
+
+    $civicrm_root = '/srv/bindings/' . $binding . '/code/profiles/civicrm_starterkit/modules/civicrm';
+    define('CIVICRM_TEMPLATE_COMPILEDIR', '/srv/bindings/' . $binding . '/files/civicrm/templates_c/');
 
     // Use Drupal base url and path
     global $base_url, $base_path;
     define( 'CIVICRM_UF_BASEURL', $base_url . '/');
     define( 'CIVICRM_SITE_KEY', '%%siteKey%%' );
-    
-    if ( $pantheon_conf['pantheon_environment'] == 'dev' || $pantheon_conf['pantheon_environment'] == 'test' ){ 
-      /**
-      * This setting logs all emails to a file. Useful for debugging any mail (or civimail) issues.
-      * This will not send any email, so ensure this is commented out in production
-      */
-     define( 'CIVICRM_MAIL_LOG', '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/code/sites/default/files/civicrm/templates_c/mail.log' );
+
+    /**
+    * This setting logs all emails to a file. Useful for debugging any mail (or civimail) issues.
+    * This will not send any email, so ensure this is commented out in production
+    */
+    $no_mail = ['kalabox', 'dev', 'test'];
+    if ( in_array(PANTHEON_ENVIRONMENT, $no_mail) ){
+     define( 'CIVICRM_MAIL_LOG', '/srv/bindings/' . $binding . '/code/sites/default/files/civicrm/templates_c/mail.log' );
     }
-    
+
     // Add this line only once above any settings overrides
     global $civicrm_setting;
-    $civicrm_setting['Directory Preferences']['extensionsDir'] = '/srv/bindings/' . $pantheon_conf['pantheon_binding'] . '/code/sites/all/extensions/';
+    $civicrm_setting['Directory Preferences']['extensionsDir'] = '/srv/bindings/' . $binding . '/code/sites/all/extensions/';
     $civicrm_setting['URL Preferences']['userFrameworkResourceURL'] = $base_url . 'sites/all/extensions';
 
-  }
 } else {
 
 /**
@@ -135,10 +149,10 @@ define( 'CIVICRM_UF_DSN'           , 'mysql://%%CMSdbUser%%:%%CMSdbPass%%@%%CMSd
  *      define( 'CIVICRM_DSN'         , 'mysql://civicrm:YOUR_PASSWORD@localhost/civicrm?new_link=true' );
  *
  */
- 
+
 // PANTHEON USERS - These settings are overridden above when running on Pantheon.
 // These settings are ONLY included here to remain compatible all other hosts.
- 
+
 define( 'CIVICRM_DSN'          , 'mysql://%%dbUser%%:%%dbPass%%@%%dbHost%%/%%dbName%%?new_link=true' );
 
 /**
