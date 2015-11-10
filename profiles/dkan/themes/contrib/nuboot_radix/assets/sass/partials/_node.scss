@@ -61,6 +61,14 @@
     }
   }
 }
+// Dataset field labels.
+.field-name-field-tags,
+.field-name-field-topic,
+.field-name-field-preview-thumbail {
+  .field-label {
+    @include h4;
+  }
+}
 
 /** UI Tabs **/
 .node-resource-form .horizontal-tabs {

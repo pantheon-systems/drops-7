@@ -1,74 +1,16 @@
 <?php
+class OpenDataSchemaMap  extends PHPUnit_Framework_TestCase
+{
 
-/**
- * @file
- * Common functionality for DKAN Dataset API tests.
- */
-
-/**
- * Test basic Data API functionality.
- */
-class OpenDataSchemaMapAPIWebTestCase extends DrupalWebTestCase {
-  protected $profile = 'testing';
-  protected $group;
-  protected $dataset;
-  protected $resource;
-  /**
-   * Information about the test.
-   */
-  public static function getInfo() {
-    return array(
-      'name'  => 'Open Data Schema Map DKAN API Test',
-      'description' => 'Test DKAN Dataset API functions and endpoints',
-      'group' => 'Open Data Schema Map',
-    );
-  }
-
-  /**
-   * Setup testcase.
-   */
-  public function setUp() {
-    $args = func_get_args();
-
-    // Build the list of required modules which can be altered by passing in an
-    // array of module names to setUp().
-    if (isset($args[0])) {
-      if (is_array($args[0])) {
-        $modules = $args[0];
-      }
-      else {
-        $modules = $args;
-      }
+    public static function setUpBeforeClass()
+    {
+      // Change /data.json path to /json during tests.
+      $data_json = open_data_schema_map_api_load('data_json_1_1');
+      $data_json->endpoint = 'json';
+      drupal_write_record('open_data_schema_map', $data_json, 'id');
+      drupal_static_reset('open_data_schema_map_api_load_all');
+      menu_rebuild();
     }
-    else {
-      $modules = array();
-    }
-
-    $modules[] = 'dkan_dataset';
-    $modules[] = 'dkan_dataset_groups';
-    $modules[] = 'dkan_dataset_content_types';
-    $modules[] = 'open_data_schema_map';
-    $modules[] = 'open_data_schema_map_dkan';
-    $modules[] = 'dkan_default_content';
-
-    $modules = array_unique($modules);
-    parent::setUp($modules);
-    features_rebuild();
-    // Fix problem with . in the url on simpletest run.
-    $this->fixJsonEndpoint();
-    dkan_default_content_base_install();
-  }
-
-  /**
-   * Change /data.json path to /json during tests.
-   */
-  protected function fixJsonEndpoint() {
-    $data_json = open_data_schema_map_api_load('data_json_1_1');
-    $data_json->endpoint = 'json';
-    drupal_write_record('open_data_schema_map', $data_json, 'id');
-    drupal_static_reset('open_data_schema_map_api_load_all');
-    menu_rebuild();
-  }
 
   /**
    * Test all read api methods with access control.
@@ -101,14 +43,19 @@ class OpenDataSchemaMapAPIWebTestCase extends DrupalWebTestCase {
 
     // Get all package_list succesful responses.
     $responses = $this->runQuerys('ckan_package_list');
+
     // Test specifics to package_list for every succesful response.
+    $uuids = array();
     foreach ($responses as $r) {
       $this->runCommonTest($r, 'Return a list of the names');
-      $uuids = $r->result;
+      $data = drupal_json_decode($r->data);
+      $uuids = $data['result'];
     }
+
     foreach ($uuids as $uuid) {
       // Get all package_revision_list succesful responses.
       $responses = $this->runQuerys('ckan_package_revision_list', $uuid);
+
       foreach ($responses as $r) {
         $this->runCommonTest($r, 'Return a dataset (package)');
         foreach ($r->result as $package) {
@@ -121,23 +68,28 @@ class OpenDataSchemaMapAPIWebTestCase extends DrupalWebTestCase {
       $responses = $this->runQuerys('ckan_package_show', $uuid);
       foreach ($responses as $r) {
         $this->runCommonTest($r, 'Return the metadata of a dataset');
-        $this->runPackageTests($r->result);
+        $data = drupal_json_decode($r->data);
+        $this->runPackageTests($data['result']);
       }
     }
 
     // Get all current_package_list_with_resources succesful responses.
     $responses = $this->runQuerys('ckan_current_package_list_with_resources');
+
     foreach ($responses as $r) {
       $this->runCommonTest($r, 'Return a list of the site\'s datasets');
-      $this->runPackageTests($r->result);
+      $data = drupal_json_decode($r->data);
+      $result = isset($data['result']['result']) ? $data['result']['result'][0] : $data['result'][0];
+      $this->runPackageTests($result);
     }
 
     // Get all group_list succesful responses.
     $responses = $this->runQuerys('ckan_group_list');
-    $uuids = array();
     foreach ($responses as $r) {
       $this->runCommonTest($r, 'Return a list of the names of the site\'s groups');
-      $uuids = $r->result;
+      $data = drupal_json_decode($r->data);
+      $result = isset($data['result']['result']) ? $data['result']['result'][0] : $data['result'][0];
+      $uuids = $result;
     }
 
     foreach ($uuids as $uuid) {
@@ -158,11 +110,12 @@ class OpenDataSchemaMapAPIWebTestCase extends DrupalWebTestCase {
    *   A string to match against the returned help string.
    */
   protected function runCommonTest($result, $text) {
-    if (isset($result->result)  && count($result->result)) {
-      $this->assertTrue($result->result);
-      $this->assertTrue($result->success);
+    $data = drupal_json_decode($result->data);
+    if (isset($data['result'])  && count($data['result'])) {
+      $this->assertTrue(count($data['result']) > 0);
+      $this->assertTrue($data['success']);
     }
-    $this->assertTrue(strpos($result->help, $text) !== FALSE);
+    $this->assertTrue(strpos($data['help'], $text) !== FALSE);
   }
 
   /**
@@ -190,19 +143,19 @@ class OpenDataSchemaMapAPIWebTestCase extends DrupalWebTestCase {
    *   A package object.
    */
   protected function runPackageTest($package) {
-    $this->assertTrue($package->metadata_created);
-    $this->assertTrue($package->metadata_modified);
-    $this->assertTrue($package->id);
-    $this->assertTrue($package->resources);
+    $this->assertTrue(!empty($package['metadata_created']));
+    $this->assertTrue(!empty($package['metadata_modified']));
+    $this->assertTrue(!empty($package['id']));
+    $this->assertTrue(!empty($package['resources']));
 
     // Loop every resource.
     foreach ($package->resources as $resource) {
-      $this->assertTrue($resource->name);
-      $this->assertTrue($resource->id);
-      $this->assertTrue(property_exists($resource, 'revision_id'));
-      $this->assertTrue($resource->created);
+      $this->assertTrue(!empty($resource['name']));
+      $this->assertTrue(!empty($resource['id']));
+      $this->assertTrue(isset($resource['revision_id']));
+      $this->assertTrue(!empty($resource['created']));
       // Using property exists until find correct token for this field.
-      $this->assertTrue(property_exists($resource, 'state'));
+      $this->assertTrue(isset($resource['state']));
     }
   }
 
@@ -230,10 +183,16 @@ class OpenDataSchemaMapAPIWebTestCase extends DrupalWebTestCase {
     $succesful = array();
 
     foreach ($uris as $uri) {
-      $r = json_decode($this->drupalGet($uri['uri'], $uri['options']));
-      $h = $this->drupalGetHeaders();
-      $this->assertTrue(strpos($h[':status'], '200') !== FALSE);
-      $succesful[] = $r;
+      $options = $uri['options'];
+      $options['absolute'] = TRUE;
+      if ($base_url_port = getenv('BASE_URL_PORT')) {
+        global $base_url;
+        $options['base_url'] = $base_url . ':' . $base_url_port;
+      }
+      $url = url($uri['uri'], $options);
+      $result = drupal_http_request($url);
+      $this->assertTrue($result->code == 200 ? TRUE : FALSE);
+      $succesful[] = $result;
     }
 
     // Return succesful querys for further assertions.
@@ -257,4 +216,9 @@ class OpenDataSchemaMapAPIWebTestCase extends DrupalWebTestCase {
     }
     return array($endpoints[$callback]);
   }
+
+    /*public function testDataJsonRollback() {
+      $this->rollback('dkan_migrate_base_example_data_json11');
+    }*/
+
 }

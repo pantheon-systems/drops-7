@@ -142,6 +142,10 @@ function colorizer_init() {
     }
   }
   if (file_exists($file)) {
+    //Add to static
+    $colorizer_file = &drupal_static('colorizer_file');
+    $colorizer_file = $file;
+
     drupal_add_css(file_create_url($file), array(
       'type' => 'external',
       'group' => CSS_THEME,
@@ -311,7 +315,16 @@ function _colorizer_save_stylesheet($file, $style) {
  * They will get recreated in hook_init on demand
  */
 function colorizer_clearcache() {
-  file_unmanaged_delete_recursive('public://colorizer');
+  $colorizer_file = &drupal_static('colorizer_file');
+
+  //Delete all files except current css.
+  $path = 'public://colorizer';
+  $files = scandir($path);
+  foreach ($files as $file) {
+    if ($file != '.' && $file != '..' && $file != basename($colorizer_file)) {
+      file_unmanaged_delete_recursive($path . '/' . $file);
+    }
+  }
 }
 
 /**

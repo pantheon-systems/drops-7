@@ -18,3 +18,16 @@
 .stages li {
   font-size: 14px;
 }
+
+.node-type-dataset {
+  .field-name-field-tags,
+  .field-name-field-topic,
+  .field-name-field-preview-thumbail {
+    .field-label {
+      @include h4;
+    }
+  }
+}
+.field-name-field-topic .field-item {
+  display: inline-block;
+}

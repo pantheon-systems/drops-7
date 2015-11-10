@@ -69,11 +69,11 @@ function visualization_entity_embed_edit_form($form, &$form_state) {
     '#description' => t('Start typing your visualization’s title for autocomplete'),
     '#type' => 'textfield',
     '#autocomplete_path' => 'visualization-entity-embed-autocomplete',
-    '#default_value' => $conf['source'],
+    '#default_value' => $conf['local_source'],
     '#attributes' => array(
       'class' => array('form-control')
     ),
-    '#process' => array('ctools_dependent_process'),
+    '#process' => array('form_process_autocomplete', 'ajax_process_form'),
     '#dependency' => array('radio:source_origin' => array('local')),
     '#required' => FALSE,
   );

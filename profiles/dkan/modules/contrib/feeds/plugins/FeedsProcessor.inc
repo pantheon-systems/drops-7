@@ -5,6 +5,10 @@
  * Contains FeedsProcessor and related classes.
  */
 
+// Insert mode for new items.
+define('FEEDS_SKIP_NEW', 0);
+define('FEEDS_INSERT_NEW', 1);
+
 // Update mode for existing items.
 define('FEEDS_SKIP_EXISTING', 0);
 define('FEEDS_REPLACE_EXISTING', 1);
@@ -183,6 +187,9 @@ abstract class FeedsProcessor extends FeedsPlugin {
       $this->initEntitiesToBeRemoved($source, $state);
     }
 
+    $skip_new = $this->config['insert_new'] == FEEDS_SKIP_NEW;
+    $skip_existing = $this->config['update_existing'] == FEEDS_SKIP_EXISTING;
+
     while ($item = $parser_result->shiftItem()) {
 
       // Check if this item already exists.
@@ -191,24 +198,22 @@ abstract class FeedsProcessor extends FeedsPlugin {
       if ($entity_id) {
         unset($state->removeList[$entity_id]);
       }
-      $skip_existing = $this->config['update_existing'] == FEEDS_SKIP_EXISTING;
 
       module_invoke_all('feeds_before_update', $source, $item, $entity_id);
 
-      // If it exists, and we are not updating, pass onto the next item.
-      if ($entity_id && $skip_existing) {
+      // If it exists, and we are not updating, or if it does not exist, and we
+      // are not inserting, pass onto the next item.
+      if (($entity_id && $skip_existing) || (!$entity_id && $skip_new)) {
         continue;
       }
 
       try {
-
         $hash = $this->hash($item);
-        $changed = ($hash !== $this->getHash($entity_id));
-        $force_update = $this->config['skip_hash_check'];
+        $changed = $hash !== $this->getHash($entity_id);
 
         // Do not proceed if the item exists, has not changed, and we're not
         // forcing the update.
-        if ($entity_id && !$changed && !$force_update) {
+        if ($entity_id && !$changed && !$this->config['skip_hash_check']) {
           continue;
         }
 
@@ -357,8 +362,10 @@ abstract class FeedsProcessor extends FeedsPlugin {
   }
 
   /**
-   * Initialize the array of entities to remove with all existing entities
-   * previously imported from the source.
+   * Initializes the list of entities to remove.
+   *
+   * This populates $state->removeList with all existing entities previously
+   * imported from the source.
    *
    * @param FeedsSource $source
    *   Source information about this import.
@@ -367,33 +374,27 @@ abstract class FeedsProcessor extends FeedsPlugin {
    */
   protected function initEntitiesToBeRemoved(FeedsSource $source, FeedsState $state) {
     $state->removeList = array();
+
     // We fill it only if needed.
-    if (!isset($this->config['update_non_existent']) || $this->config['update_non_existent'] == FEEDS_SKIP_NON_EXISTENT) {
+    if ($this->config['update_non_existent'] == FEEDS_SKIP_NON_EXISTENT) {
       return;
     }
-    // Build base select statement.
-    $info = $this->entityInfo();
-    $id_key = db_escape_field($info['entity keys']['id']);
-    $select = db_select($info['base table'], 'e');
-    $select->addField('e', $info['entity keys']['id'], 'entity_id');
-    $select->join(
-      'feeds_item',
-      'fi',
-      'e.' . $id_key . ' = fi.entity_id AND fi.entity_type = :entity_type', array(
-        ':entity_type' => $this->entityType(),
-    ));
 
-    $select->condition('fi.id', $this->id);
-    $select->condition('fi.feed_nid', $source->feed_nid);
-    // No need to remove item again if same method of removal was already used.
-    $select->condition('fi.hash', $this->config['update_non_existent'], '<>');
-    $entities = $select->execute();
-    // If not found on process, existing entities will be deleted.
-    foreach ($entities as $entity) {
-      // Obviously, items which are still included in the source feed will be
-      // removed from this array when processed.
-      $state->removeList[$entity->entity_id] = $entity->entity_id;
+    // Get the full list of entities for this source.
+    $entity_ids = db_select('feeds_item')
+      ->fields('feeds_item', array('entity_id'))
+      ->condition('entity_type', $this->entityType())
+      ->condition('id', $this->id)
+      ->condition('feed_nid', $source->feed_nid)
+      ->condition('hash', $this->config['update_non_existent'], '<>')
+      ->execute()
+      ->fetchCol();
+
+    if (!$entity_ids) {
+      return;
     }
+
+    $state->removeList = array_combine($entity_ids, $entity_ids);
   }
 
   /**
@@ -406,12 +407,11 @@ abstract class FeedsProcessor extends FeedsPlugin {
    */
   protected function clean(FeedsState $state) {
     // We clean only if needed.
-    if (!isset($this->config['update_non_existent']) || $this->config['update_non_existent'] == FEEDS_SKIP_NON_EXISTENT) {
+    if ($this->config['update_non_existent'] == FEEDS_SKIP_NON_EXISTENT) {
       return;
     }
 
-    $total = count($state->removeList);
-    if ($total) {
+    if ($total = count($state->removeList)) {
       $this->entityDeleteMultiple($state->removeList);
       $state->deleted += $total;
     }
@@ -432,35 +432,25 @@ abstract class FeedsProcessor extends FeedsPlugin {
     $state = $source->state(FEEDS_PROCESS_CLEAR);
 
     // Build base select statement.
-    $info = $this->entityInfo();
-    $select = db_select($info['base table'], 'e');
-    $select->addField('e', $info['entity keys']['id'], 'entity_id');
-    $select->join(
-      'feeds_item',
-      'fi',
-      "e.{$info['entity keys']['id']} = fi.entity_id AND fi.entity_type = '{$this->entityType()}'");
-    $select->condition('fi.id', $this->id);
-    $select->condition('fi.feed_nid', $source->feed_nid);
+    $select = db_select('feeds_item')
+      ->fields('feeds_item', array('entity_id'))
+      ->condition('entity_type', $this->entityType())
+      ->condition('id', $this->id)
+      ->condition('feed_nid', $source->feed_nid);
 
     // If there is no total, query it.
     if (!$state->total) {
-      $state->total = $select->countQuery()
-        ->execute()
-        ->fetchField();
+      $state->total = $select->countQuery()->execute()->fetchField();
     }
 
     // Delete a batch of entities.
-    $entities = $select->range(0, $this->getLimit())->execute();
-    $entity_ids = array();
-    foreach ($entities as $entity) {
-      $entity_ids[$entity->entity_id] = $entity->entity_id;
-    }
+    $entity_ids = $select->range(0, $this->getLimit())->execute()->fetchCol();
     $this->entityDeleteMultiple($entity_ids);
 
-    // Report progress, take into account that we may not have deleted as
-    // many items as we have counted at first.
-    if (count($entity_ids)) {
-      $state->deleted += count($entity_ids);
+    // Report progress, take into account that we may not have deleted as many
+    // items as we have counted at first.
+    if ($deleted_count = count($entity_ids)) {
+      $state->deleted += $deleted_count;
       $state->progress($state->total, $state->deleted);
     }
     else {
@@ -469,6 +459,8 @@ abstract class FeedsProcessor extends FeedsPlugin {
 
     // Report results when done.
     if ($source->progressClearing() == FEEDS_BATCH_COMPLETE) {
+      $info = $this->entityInfo();
+
       if ($state->deleted) {
         $message = format_plural(
           $state->deleted,
@@ -572,16 +564,12 @@ abstract class FeedsProcessor extends FeedsPlugin {
   protected function expiryQuery(FeedsSource $source, $time) {
     // Build base select statement.
     $info = $this->entityInfo();
-    $id_key = db_escape_field($info['entity keys']['id']);
+    $id_key = $info['entity keys']['id'];
 
     $select = db_select($info['base table'], 'e');
-    $select->addField('e', $info['entity keys']['id'], 'entity_id');
-    $select->join(
-      'feeds_item',
-      'fi',
-      "e.$id_key = fi.entity_id AND fi.entity_type = :entity_type", array(
-        ':entity_type' => $this->entityType(),
-    ));
+    $select->addField('e', $id_key);
+    $select->join('feeds_item', 'fi', "e.$id_key = fi.entity_id");
+    $select->condition('fi.entity_type', $this->entityType());
     $select->condition('fi.id', $this->id);
     $select->condition('fi.feed_nid', $source->feed_nid);
 
@@ -770,6 +758,7 @@ abstract class FeedsProcessor extends FeedsPlugin {
     }
     return array(
       'mappings' => array(),
+      'insert_new' => FEEDS_INSERT_NEW,
       'update_existing' => FEEDS_SKIP_EXISTING,
       'update_non_existent' => FEEDS_SKIP_NON_EXISTENT,
       'input_format' => NULL,
@@ -802,6 +791,17 @@ abstract class FeedsProcessor extends FeedsPlugin {
     }
 
     $tokens = array('@entities' => strtolower($info['label plural']));
+
+    $form['insert_new'] = array(
+      '#type' => 'radios',
+      '#title' => t('Insert new @entities', $tokens),
+      '#description' => t('New @entities will be determined using mappings that are a "unique target".', $tokens),
+      '#options' => array(
+        FEEDS_INSERT_NEW => t('Insert new @entities', $tokens),
+        FEEDS_SKIP_NEW => t('Do not insert new @entities', $tokens),
+      ),
+      '#default_value' => $this->config['insert_new'],
+    );
 
     $form['update_existing'] = array(
       '#type' => 'radios',
@@ -1052,12 +1052,13 @@ abstract class FeedsProcessor extends FeedsPlugin {
    * Include mappings as a change in mappings may have an affect on the item
    * produced.
    *
-   * @return Always returns a hash, even with empty, NULL, FALSE:
-   *  Empty arrays return 40cd750bba9870f18aada2478b24840a
-   *  Empty/NULL/FALSE strings return d41d8cd98f00b204e9800998ecf8427e
+   * @return string
+   *   A hash is always returned, even when the item is empty, NULL or FALSE.
    */
   protected function hash($item) {
-    return hash('md5', serialize($item) . serialize($this->config['mappings']));
+    $sources = feeds_importer($this->id)->parser->getMappingSourceList();
+    $mapped_item = array_intersect_key($item, array_flip($sources));
+    return hash('md5', serialize($mapped_item) . serialize($this->config['mappings']));
   }
 
   /**
@@ -1108,7 +1109,7 @@ abstract class FeedsProcessor extends FeedsPlugin {
   }
 
   /**
-   * Creates a log entry for when an exception occured during import.
+   * Creates a log entry for when an exception occurred during import.
    *
    * @param Exception $e
    *   The exception that was throwned during processing the item.

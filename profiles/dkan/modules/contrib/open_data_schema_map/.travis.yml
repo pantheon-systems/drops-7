@@ -1,7 +1,10 @@
 language: php
 
 php:
-  - 5.4
+  - 5.5
+
+env:
+  - BASE_URL_PORT=8888
 
 mysql:
   database: open_data_schema_map_test
@@ -10,6 +13,7 @@ mysql:
 
 
 install:
+  - composer install
   - cd test
   - mysql -e 'create database open_data_schema_map_test;'
   - sudo apt-get update > /dev/null
@@ -57,10 +61,11 @@ before_script:
   - drush --quiet --yes --root=$PWD runserver :8888 > /dev/null 2>&1 &
   - sleep 4
   - drush cache-clear drush
+  - cd "`drush core-status root --format=list`/`drush pmi open_data_schema_map --fields=path --format=list`"
 
 script:
   # Run test suite
-  - drush test-run --verbose --xml 'Open Data Schema Map' --uri=http://127.0.0.1:8888
+  - bin/phpunit --bootstrap=test/boot.php test/OpenDataSchemaMap.php
 
 notifications:
   slack:

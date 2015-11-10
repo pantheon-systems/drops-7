@@ -23,6 +23,11 @@ function file_feeds_processor_targets($entity_type, $bundle_name) {
         'real_target' => $name,
       );
 
+      // Keep the old target name for backwards compatibility, but hide it from
+      // the UI.
+      $targets[$name] = $targets[$name . ':uri'];
+      $targets[$name]['deprecated'] = TRUE;
+
       if ($info['type'] == 'image') {
         $targets[$name . ':alt'] = array(
           'name' => t('@label: Alt', array('@label' => $instance['label'])),

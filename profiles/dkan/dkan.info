@@ -1,7 +1,7 @@
 name = DKAN
 core = 7.x
 exclusive = TRUE
-version = 7.x-1.9
+version = 7.x-1.10
 project = dkan
 
 ; Core
@@ -91,6 +91,7 @@ dependencies[] = views_ui
 dependencies[] = views_bulk_operations
 dependencies[] = visualization_entity
 dependencies[] = visualization_entity_charts
+dependencies[] = visualization_entity_embed
 
 ; Open data
 dependencies[] = entity_rdf

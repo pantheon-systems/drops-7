@@ -180,22 +180,17 @@ $input-group-addon-border-color: $input-border !default;
 
 // Dropdowns
 // -------------------------
+$dropdownBackground:            $white !default;
+$dropdownBorder:                rgba(0,0,0,.2) !default;
+$dropdownDividerTop:            #e5e5e5 !default;
+$dropdownDividerBottom:         $white !default;
 
-$dropdown-bg:                    $brand-primary !default;
-$dropdown-border:                rgba(0,0,0,.15) !default;
-$dropdown-fallback-border:       $brand-primary !default;
-$dropdown-divider-bg:            $brand-primary !default;
+$dropdownLinkColor:             $gray-dark !default;
+$dropdownLinkColorHover:        $link-color !default;
+$dropdownLinkColorActive:       $link-color !default;
 
-$dropdown-link-color:            #ffffff !default;
-$dropdown-link-hover-color:      #ffffff !default;
-$dropdown-link-hover-bg:         $brand-secondary !default;
-
-$dropdown-link-active-color:     #ffffff !default;
-$dropdown-link-active-bg:        darken($brand-secondary, 10%) !default;
-
-$dropdown-link-disabled-color:   $gray-light !default;
-
-$dropdown-header-color:          $brand-primary !default;
+$dropdownLinkBackgroundActive:  #e5e5e5 !default;
+$dropdownLinkBackgroundHover:   #e6e6e6 !default;
 
 
 // COMPONENT VARIABLES

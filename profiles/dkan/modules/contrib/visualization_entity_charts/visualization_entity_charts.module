@@ -223,7 +223,9 @@ function visualization_entity_charts_libraries_info_alter(&$libraries) {
 
     // This file breaks the javascript site.
     $index = array_search('vendor/timeline/js/timeline.js', $recline);
-    unset($libraries['recline']['files']['js'][$index]);
+    if($index !== FALSE) {
+      unset($libraries['recline']['files']['js'][$index]);
+    }
   }
 }
 

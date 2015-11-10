@@ -162,8 +162,8 @@ function recline_field_widget_form(&$form, &$form_state, $field, $instance, $lan
   }
   $elements[$delta]['view'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Recline Views'),
-    '#description' => t('These are views (as in MVC, not Drupal Views module) made available from Recline.js.'),
+    '#title' => t('Data Previews'),
+    '#description' => t('Select desired previews for this file.'),
   );
   // Add option for which views are exposed.
   foreach (recline_view_options() as $view => $label) {

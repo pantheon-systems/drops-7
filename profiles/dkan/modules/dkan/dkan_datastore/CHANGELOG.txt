@@ -1,3 +1,7 @@
+7.x-1.10 2015-11-10
+--------------------------
+- Upgrade Feeds module to latest dev version
+
 7.x-1.9 2015-09-17
 --------------------------
 - Better UX/behavior for the "add to datastore" button: https://github.com/NuCivic/dkan_datastore/pull/39

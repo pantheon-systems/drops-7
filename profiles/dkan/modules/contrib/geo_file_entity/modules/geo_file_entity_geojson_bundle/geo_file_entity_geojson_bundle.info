@@ -1,6 +1,6 @@
 name = Geo File Entity Geojson Bundle
 core = 7.x
-package = NUDATA
+package = NuCivic
 dependencies[] = eck
 dependencies[] = features
 dependencies[] = geo_file_entity

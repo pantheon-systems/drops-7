@@ -49,7 +49,13 @@ function nuboot_radix_preprocess_page(&$variables) {
   $logo_file = !empty($logo_fid) ? file_load($logo_fid) : FALSE;
   if ($logo) {
     if ($default) {
-      $variables['logo'] = '/' . drupal_get_path('theme', $theme ) . '/logo.svg';
+      $svg = drupal_get_path('theme', $theme ) . '/logo.svg';
+      if (file_exists($svg)) {
+        $variables['logo'] = '/' . drupal_get_path('theme', $theme ) . '/logo.svg';
+      }
+      else {
+        $variables['logo'] = '/' . drupal_get_path('theme', $theme ) . '/logo.png'; 
+      }
     }
     elseif($logo_file) {
       $logo_uri = $logo_file->uri;

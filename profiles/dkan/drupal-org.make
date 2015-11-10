@@ -10,29 +10,29 @@ defaults[projects][subdir] = contrib
 projects[dkan_dataset][subdir] = dkan
 projects[dkan_dataset][download][type] = git
 projects[dkan_dataset][download][url] = https://github.com/NuCivic/dkan_dataset.git
-projects[dkan_dataset][download][tag] = 7.x-1.9
+projects[dkan_dataset][download][tag] = 7.x-1.10
 
 projects[dkan_datastore][subdir] = dkan
 projects[dkan_datastore][download][type] = git
 projects[dkan_datastore][download][url] = https://github.com/NuCivic/dkan_datastore.git
-projects[dkan_datastore][download][tag] = 7.x-1.9
+projects[dkan_datastore][download][tag] = 7.x-1.10
 
 ; NuCivic Visualization tools
 
 projects[visualization_entity][download][type] = git
 projects[visualization_entity][download][url] = https://github.com/NuCivic/visualization_entity.git
-projects[visualization_entity][download][revision] = 14f01aba3a3f55a34cd2268d4f46d42792bec019
+projects[visualization_entity][download][revision] = 2413206be446352863ee28cc6cababb76eb245ca
 projects[visualization_entity][type] = module
 
 projects[visualization_entity_charts][download][type] = git
 projects[visualization_entity_charts][download][url] = https://github.com/NuCivic/visualization_entity_charts.git
-projects[visualization_entity_charts][download][revision] = 902393db995dd5c7e8a75b6945e3066ab7112a5f
+projects[visualization_entity_charts][download][revision] = 934fd1d65dcd6700b43a3912b0af63319215ef31
 projects[visualization_entity_charts][type] = module
 
 ; Includes, since we're doing non-recusive
 
-includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.9/dkan_dataset.make
-includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.9/dkan_datastore.make
+includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.10/dkan_dataset.make
+includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.10/dkan_datastore.make
 
 includes[visualization_entity_make] = https://raw.githubusercontent.com/NuCivic/visualization_entity/master/visualization_entity.make
 includes[visualization_entity_charts_make] = https://raw.githubusercontent.com/NuCivic/visualization_entity_charts/master/visualization_entity_charts.make
@@ -51,6 +51,7 @@ projects[bueditor][patch][1931862] = http://drupal.org/files/dont-render-buedito
 
 projects[colorizer][version] = 1.7
 projects[colorizer][patch][2227651] = https://www.drupal.org/files/issues/colorizer-add-rgb-vars-2227651-4b.patch
+projects[colorizer][patch][2599298] = https://www.drupal.org/files/issues/colorizer-bug_system_cron_delete_current_css-2599298-2.patch
 
 projects[conditional_styles][version] = 2.2
 
@@ -146,7 +147,7 @@ projects[omega][patch][1828552] = http://drupal.org/files/1828552-omega-hook_vie
 
 projects[nuboot_radix][download][type] = git
 projects[nuboot_radix][download][url] = https://github.com/NuCivic/nuboot_radix.git
-projects[nuboot_radix][download][tag] = 7.x-1.9
+projects[nuboot_radix][download][tag] = 7.x-1.10
 projects[nuboot_radix][type] = theme
 
 projects[radix][type] = theme

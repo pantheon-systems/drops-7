@@ -120,6 +120,21 @@ abstract class FeedsParser extends FeedsPlugin {
   }
 
   /**
+   * Get list of mapped sources.
+   *
+   * @return array
+   *   List of mapped source names in an array.
+   */
+  public function getMappingSourceList() {
+    $mappings = feeds_importer($this->id)->processor->config['mappings'];
+    $sources = array();
+    foreach ($mappings as $mapping) {
+      $sources[] = $mapping['source'];
+    }
+    return $sources;
+  }
+
+  /**
    * Get an element identified by $element_key of the given item.
    * The element key corresponds to the values in the array returned by
    * FeedsParser::getMappingSources().
