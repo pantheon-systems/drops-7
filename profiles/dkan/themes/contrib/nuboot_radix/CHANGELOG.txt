@@ -1,3 +1,8 @@
+7.x-1.10 2015-11-10
+--------------------------
+- Style improvements for "open with" button
+- Fix default logo path when svg not available
+
 7.x-1.9 2015-09-17
 --------------------------
 - Add support for SVG logos

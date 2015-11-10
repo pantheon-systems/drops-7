@@ -103,6 +103,13 @@ class FeedsCSVParser extends FeedsParser {
   }
 
   /**
+   * Override parent::getMappingSourceList() to use only lower keys.
+   */
+  public function getMappingSourceList() {
+    return array_map('drupal_strtolower', parent::getMappingSourceList());
+  }
+
+  /**
    * Define defaults.
    */
   public function sourceDefaults() {
@@ -125,16 +132,21 @@ class FeedsCSVParser extends FeedsParser {
     $mappings = feeds_importer($this->id)->processor->config['mappings'];
     $sources = $uniques = array();
     foreach ($mappings as $mapping) {
-      $sources[] = check_plain($mapping['source']);
+      if (strpos($mapping['source'], ',') !== FALSE) {
+        $sources[] = '"' . $mapping['source'] . '"';
+      }
+      else {
+        $sources[] = $mapping['source'];
+      }
       if (!empty($mapping['unique'])) {
-        $uniques[] = check_plain($mapping['source']);
+        $uniques[] = $mapping['source'];
       }
     }
     $sources = array_unique($sources);
 
-    $output = t('Import !csv_files with one or more of these columns: !columns.', array('!csv_files' => l(t('CSV files'), 'http://en.wikipedia.org/wiki/Comma-separated_values'), '!columns' => implode(', ', $sources)));
+    $output = t('Import !csv_files with one or more of these columns: @columns.', array('!csv_files' => l(t('CSV files'), 'http://en.wikipedia.org/wiki/Comma-separated_values'), '@columns' => implode(', ', $sources)));
     $items = array();
-    $items[] = format_plural(count($uniques), 'Column <strong>!columns</strong> is mandatory and considered unique: only one item per !columns value will be created.', 'Columns <strong>!columns</strong> are mandatory and values in these columns are considered unique: only one entry per value in one of these column will be created.', array('!columns' => implode(', ', $uniques)));
+    $items[] = format_plural(count($uniques), 'Column <strong>@columns</strong> is mandatory and considered unique: only one item per @columns value will be created.', 'Columns <strong>@columns</strong> are mandatory and values in these columns are considered unique: only one entry per value in one of these column will be created.', array('@columns' => implode(', ', $uniques)));
     $items[] = l(t('Download a template'), 'import/' . $this->id . '/template');
     $form['help'] = array(
       '#prefix' => '<div class="help">',
@@ -239,16 +251,16 @@ class FeedsCSVParser extends FeedsParser {
     $mappings = feeds_importer($this->id)->processor->config['mappings'];
     $sources = $uniques = array();
     foreach ($mappings as $mapping) {
-      if (in_array(check_plain($mapping['source']), $uniques) || in_array(check_plain($mapping['source']), $sources)) {
+      if (in_array($mapping['source'], $uniques) || in_array($mapping['source'], $sources)) {
         // Skip columns we've already seen.
         continue;
       }
 
       if (!empty($mapping['unique'])) {
-        $uniques[] = check_plain($mapping['source']);
+        $uniques[] = $mapping['source'];
       }
       else {
-        $sources[] = check_plain($mapping['source']);
+        $sources[] = $mapping['source'];
       }
     }
     $sep = $this->config['delimiter'];

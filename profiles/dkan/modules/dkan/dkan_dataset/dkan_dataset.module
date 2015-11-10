@@ -16,6 +16,14 @@ include_once 'dkan_dataset.forms.inc';
 function dkan_dataset_preprocess_html(&$vars) {
   $path = drupal_get_path('module', 'dkan_dataset');
   drupal_add_css($path . '/css/dkan_dataset.css');
+  // Add body class for resource teaser type.
+  if ($node = menu_get_object()) {
+    if ($node->type == 'dataset') {
+      $preview = variable_get('dkan_dataset_teaser_preview', 'explore');
+      $vars['classes_array'][] = $preview;
+    }
+  }
+  drupal_add_css($path . '/css/dkan-flaticon.css');
 }
 
 /**
@@ -62,12 +70,21 @@ function dkan_dataset_menu() {
     'file' => 'system.admin.inc',
     'file path' => drupal_get_path('module', 'system'),
   );
+  $items['admin/dkan/dataset_preview'] = array(
+    'title' => 'DKAN Dataset Previews',
+    'description' => 'Settings for DKAN Dataset local and external previews.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('dkan_dataset_preview_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'dkan_dataset.admin.inc',
+  );
   $items['admin/dkan/dataset_forms'] = array(
     'title' => 'DKAN Dataset Forms',
     'description' => 'Form settings for DKAN Datasets.',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('dkan_dataset_form_settings'),
     'access arguments' => array('administer site configuration'),
+    'file' => 'dkan_dataset.admin.inc',
   );
   if (module_exists('open_data_schema_map_dkan')) {
     $items['admin/dkan/dataset_api'] = array(
@@ -75,38 +92,10 @@ function dkan_dataset_menu() {
       'description' => 'Settings for DKAN Dataset APIs.',
       'page callback' => 'dkan_dataset_api_menu_settings',
       'access arguments' => array('administer site configuration'),
+      'file' => 'dkan_dataset.admin.inc',
     );
   }
   return $items;
-}
-
-/**
- * Menu Callback for DKAN Dataset settings.
- */
-function dkan_dataset_api_menu_settings() {
-  drupal_goto('admin/config/services/odsm');
-}
-/**
- * Menu Callback for DKAN Dataset settings.
- */
-function dkan_dataset_form_settings() {
-  $form = array();
-  $form['dkan_dataset_form_ajax'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use Ajax on dataset node.'),
-    '#default_value' => variable_get('dkan_dataset_form_ajax', 0),
-  );
-  $form['dkan_resource_form_ajax'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use Ajax on resource node.'),
-    '#default_value' => variable_get('dkan_resource_form_ajax', 0),
-  );
-  $form['dkan_dataset_form_additional_info'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Divide Dataset form into main form and "Additional Data" (CKAN style).'),
-    '#default_value' => variable_get('dkan_dataset_form_additional_info', 1),
-  );
-  return system_settings_form($form);
 }
 
 /**
@@ -278,7 +267,7 @@ function dkan_dataset_get_resource_format($node) {
     return FALSE;
   }
   if (isset($node->field_format['und']) && $node_wrapper->field_format->value()->name) {
-    return $node_wrapper->field_format->value()->name; 
+    return $node_wrapper->field_format->value()->name;
   }
   return 'data';
 }
@@ -361,7 +350,7 @@ function dkan_form_create_stages($op, $dataset_nid = NULL, $resource_nid = NULL)
       <li class="first complete"><span class="highlight">' . l(t('Edit dataset'), 'node/' . $dataset_nid . '/edit') . '</span></li>
       <li class="middle active">
           <span class="highlight">Add data</span>
-      </li> ' . $stages_additional_1 .  '
+      </li> ' . $stages_additional_1 . '
     </ol>';
   }
   if ($op == 'dataset-additional') {
@@ -737,5 +726,171 @@ function dkan_dataset_page_alter(&$page) {
     $breadcrumbs[2] = t('Search');
     // We can return here because page_title is handled by views.
     drupal_set_breadcrumb($breadcrumbs);
+  }
+}
+
+/**
+ * Retrieves all external preview links for a given dataset node. The
+ * dkan_dataset module ships with three previews - dkan, arcgis and cartodb.
+ * Additional previews can be added by implementing
+ * hook_dkan_dataset_external_previews_alter().
+ *
+ * @param $node
+ *   The dataset node object.
+ *
+ * @return array
+ *   An array of associative arrays, keyed by "machine name" and containing:
+ *     - name: Full name of preview type.
+ *     - link_callback: Callback function for generating the preview link, given
+ *       a node object
+ *     - suggested_formats: array of formats suggested for use with this preview.
+ *       Will populate the format vocabulary and be used in preview definitions.
+ *     - description: Full description of the preview type.
+ *     - format: Array of the formats this preview is currently enabled for.
+ */
+function dkan_dataset_teaser_get_external_previews() {
+  $previews = array();
+  $previews['dkan'] = array(
+    'name' => variable_get('dkan_dataset_teaser_preview_label', variable_get('site_name', t('Local'))) . ' ' . t('Preview'),
+    'link_callback' => 'dkan_dataset_preview_url_local',
+    'suggested_formats' => array('csv', 'xls'),
+    'description' => t('Local preview. Preview tabular data in a grid, basic chart or map. This preview type is not optional and will load only for the suggested formats listed.'),
+  );
+  // For DKAN, we don't add the format mannually, so copy the values from suggested_formats
+  $previews['dkan']['format'] = $previews['dkan']['suggested_formats'];
+
+  $previews['arcgis'] = array(
+    'name' => t('ArcGIS Preview'),
+    'link_callback' => 'dkan_dataset_preview_url_arcgis',
+    'suggested_formats' => array('rest', 'esri rest', 'arcgis'),
+    'description' => t('ArcGIS preview for ESRI endpoints. Requires a URL in the reousrce API field; will not work with resource files.'),
+  );
+  $previews['cartodb'] = array(
+    'name' => t('CartoDB Preview'),
+    'link_callback' => 'dkan_dataset_preview_url_cartodb',
+    'suggested_formats' => array('csv', 'xls', 'excel', 'openxml', 'kml', 'geojson'),
+    'description' => t('Previews resources with geodata in the CartoDB mapping service.'),
+  );
+
+  drupal_alter('dkan_dataset_external_previews', $previews);
+
+  // Load format vocabulary into array of strings
+  $format_vocabulary = taxonomy_vocabulary_machine_name_load('format');
+  $formats = taxonomy_get_tree($format_vocabulary->vid);
+  $format_names = array();
+  // Get an array of just term names
+  foreach ($formats as $format) {
+    $format_names[] = $format->name;
+  }
+
+  // Make sure there is a taxonomy entry for every "suggested" format, and an
+  // array for each $preview[format].
+  $suggested_formats = array();
+  // Collect all suggested formats across preview types.
+  foreach ($previews as $machine_name => $preview) {
+    $suggested_formats = array_merge($suggested_formats, $preview['suggested_formats']);
+    if (!isset($preview['format'])) {
+      $previews[$machine_name]['format'] = array();
+    }
+  }
+  $suggested_formats = array_unique($suggested_formats);
+  foreach ($suggested_formats as $suggested_format) {
+     if (!in_array($suggested_format, $format_names)) {
+        $new_format = new stdClass();
+        $new_format->name = $suggested_format;
+        $new_format->vid = $format_vocabulary->vid;
+        taxonomy_term_save($new_format);
+     }
+  }
+
+  // Now populate the formats array
+  foreach ($formats as $format) {
+    $var_name = "dkan_dataset_format_previews_tid{$format->tid}";
+    $format_settings = variable_get($var_name, array());
+    if (!empty($format_settings)) {
+      foreach ($format_settings as $machine_name => $value) {
+        if ($value) {
+          $previews[$machine_name]['format'][] = $format->name;
+        }
+      }
+    }
+  }
+  return $previews;
+}
+
+/**
+ * Get array of previews for a specific node
+ * @param  object $node The resource node object
+ * @return array       Array of preview arrays.
+ */
+function dkan_dataset_teaser_external_previews_for_resource($node) {
+  $resource_wrapper = entity_metadata_wrapper('node', $node);
+  $previews = dkan_dataset_teaser_get_external_previews();
+  // Get resource format
+  $format = t("data");
+  if ($resource_wrapper->field_format->value()) {
+    $format = $resource_wrapper->field_format->value()->name;
+  }
+  foreach ($previews as $provider => $preview) {
+    // Filter by format and availability of arguments (if any argument is NULL, no dice)
+    // @todo allow individual previews to be disabled in settings
+    if (!in_array($format, $preview['format'])) {
+      unset($previews[$provider]);
+    }
+    else {
+      if ($url = $preview['link_callback']($node)) {
+        $previews[$provider]['url'] = $url;
+      }
+      else {
+        unset($previews[$provider]);
+      }
+    }
+  }
+  return $previews;
+}
+
+/**
+ * Callback function for local preview URLs
+ * @param  object $node Resource node object
+ * @return string       Preview URL
+ */
+function dkan_dataset_preview_url_local($node) {
+  if ($node->type == 'resource') {
+    return url('node/' . $node->nid);
+  }
+}
+
+/**
+ * Callback function for ArcGIS preview URLs
+ * @param  object $node Resource node object
+ * @return string       Preview URL
+ */
+function dkan_dataset_preview_url_arcgis($node) {
+  // Get resource API link URL
+  $resource_wrapper = entity_metadata_wrapper('node', $node);
+  if ($resource_wrapper->field_link_api->value()) {
+    return 'http://www.arcgis.com/home/webmap/viewer.html?url=' . $resource_wrapper->field_link_api->url->value();
+  }
+}
+
+/**
+ * Callback function for CartoDB preview URLs
+ * @param  object $node Resource node object
+ * @return string       Preview URL
+ */
+function dkan_dataset_preview_url_cartodb($node) {
+  // Get resource file URL
+  $resource_file_url = NULL;
+  $resource_wrapper = entity_metadata_wrapper('node', $node);
+  $pattern = 'http://oneclick.cartodb.com/?file=%s';
+
+  if ($resource_wrapper->field_upload->value()) {
+    $resource_file_url = file_create_url($resource_wrapper->field_upload->value()->uri);
+  }
+  elseif ($resource_wrapper->field_link_remote_file->value()) {
+    $resource_file_url = $resource_wrapper->field_link_remote_file->value()->uri;
+  }
+  if ($resource_file_url) {
+    return sprintf($pattern, $resource_file_url);
   }
 }

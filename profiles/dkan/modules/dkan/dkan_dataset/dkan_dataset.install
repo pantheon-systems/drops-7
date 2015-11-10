@@ -19,6 +19,7 @@ function dkan_dataset_install() {
     ->execute();
 
   dkan_dataset_rdf_add_dcat();
+  _dkan_dataset_disable_og_extras_group_members_view();
 }
 
 /**
@@ -33,4 +34,27 @@ function dkan_dataset_rdf_add_dcat() {
 
   // Refresh the static variable that holds the array of namespaces.
   drupal_static_reset('rdfx_get_namespaces');
+}
+
+/**
+ * Disable the og_extras_members view.
+ *
+ * If we do not disable this view, there will be conflicts with the
+ * dkan_og_extras_members view.
+ */
+function _dkan_dataset_disable_og_extras_group_members_view() {
+  $views_status = variable_get('views_defaults', array());
+  $views_status['og_extras_members'] = TRUE;
+  variable_set('views_defaults', $views_status);
+
+  if (function_exists('views_invalidate_cache')) {
+    views_invalidate_cache();
+  }
+}
+
+/**
+ * Implements hook_update_N().
+ */
+function dkan_dataset_update_7001() {
+  _dkan_dataset_disable_og_extras_group_members_view();
 }

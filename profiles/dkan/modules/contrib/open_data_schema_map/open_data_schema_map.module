@@ -336,7 +336,7 @@ function open_data_schema_map_api_load_all() {
   }
 
   drupal_alter('open_data_schema_map_endpoints', $list);
-  
+
   foreach ($list as $item) {
     $records[] = open_data_schema_map_api_load($item);
   }
@@ -863,8 +863,7 @@ function open_data_schema_map_endpoint_process_map_recursion(&$result, $map, $ty
             foreach ($token as $subfield => $subtoken) {
               $subtoken['value'] = str_replace('Nth', $num, $subtoken['value']) ? str_replace('Nth', $num, $subtoken['value']) : $subtoken['value'];
               if ($subtoken['value']) {
-                $subvalue = open_data_schema_mapper_token_replace($subtoken['value'], $type, $entity);
-                $subvalue = open_data_schema_mapper_field_type_check($subvalue, $subtoken);
+                $subvalue = open_data_schema_map_endpoint_process_field($api_field, $subtoken, $type, $entity);
                 $sub_result[$subfield] = $subvalue;
               }
             }
@@ -1019,7 +1018,7 @@ function open_data_schema_map_render_api($api, $query = NULL, $queries = NULL) {
   // This is easier to debug than drupal_alter().
   $modules = module_implements('open_data_schema_map_results_alter');
   // Make SURE pod is last.
-  if (in_array('open_data_schema_pod', $modules) && end($modules) != 'open_data_schama_pod') {
+  if (in_array('open_data_schema_pod', $modules) && end($modules) != 'open_data_schema_pod') {
     $temp = array();
     foreach ($modules as $module) {
       if ($module != 'open_data_schema_pod') {
@@ -1029,7 +1028,7 @@ function open_data_schema_map_render_api($api, $query = NULL, $queries = NULL) {
     $temp[] = 'open_data_schema_pod';
     $modules = $temp;
   }
-  
+
   foreach ($modules as $module) {
     $function = $module . '_open_data_schema_map_results_alter';
     $function($result, $api->machine_name, $api->api_schema, $ids);

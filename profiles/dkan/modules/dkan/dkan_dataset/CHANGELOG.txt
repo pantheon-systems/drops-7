@@ -1,3 +1,10 @@
+7.x-1.10 2015-11-10
+--------------------------
+- Various improvements to dataset teaser displays.
+- Support for external previews (opening catalogued resources instantly in third-party visualization services, including ArcGIS and CartoDB)
+- Support for Flaticon at module level, so vector icons work on any theme
+- Minor improvements and bugfixes
+
 7.x-1.9 2015-09-17
 --------------------------
 - Fixed issues around the group/publisher field in search indexes and facets

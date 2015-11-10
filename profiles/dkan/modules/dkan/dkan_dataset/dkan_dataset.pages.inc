@@ -85,5 +85,5 @@ function _dkan_dataset_zip_filename($title) {
   $filename = strtr(drupal_strtolower($title), array(' ' => '-', '_' => '-', '[' => '-', ']' => ''));
   $filename = preg_replace('/[^A-Za-z0-9\-_]/', '', $filename);
   $filename = preg_replace('/\-+/', '-', $filename);
-  return $filename  . '-All-' . date('Y-m-d_Hi') . '.zip';
+  return $filename . '-All-' . date('Y-m-d_Hi') . '.zip';
 }

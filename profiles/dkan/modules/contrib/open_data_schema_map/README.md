@@ -139,6 +139,31 @@ If you need instructions to install composer globally in your system please refe
 Date formats can be chanaged manually by changing the "Medium" date time format in "admin/config/regional/date-time" or in code by using one of the alter hooks:
 ![screen shot 2014-09-04 at 11 15 01 am](https://cloud.githubusercontent.com/assets/512243/4152408/a9cb06b2-344e-11e4-84c8-c2174b5fc566.png)
 
+## Drush
+
+### odsm-filecache
+#### Use:
+The Open Data Schema Map module now defines a drush command called `odsm-filecache`.  This command takes as  its argument the machine name for an ODSM endpoint.  For example:
+
+```
+drush odsm-filecache data_json_1_1;
+```
+
+The above command triggers the processing for the endpoint defined for the data_json_1_1 ODSM API and results in the following cached file being generated on completion:
+
+```
+public://odsm_cache_data_json_1_1
+```
+
+The command `odsm-filecache` is a direct callback to `open_data_schema_map_file_cache_endpoint` which wraps ` open_data_schema_map_render_api` with some logic for dumping output to a file. 
+
+In order to enable the cached version of an API endpoint you need to run the command above replacing `data_json_1_1` with
+the machine  name of the ODSM endpoint to be cached.
+
+In order to update this cache you need to re-run the command that generated it.
+
+We recommend you set up a cron job to run the command on a regular schedule, perhaps in sync with your data harvesting schedule.
+
 ## Contributing
 
 We are accepting issues in the dkan issue thread only -> https://github.com/NuCivic/dkan/issues -> Please label your issue as **"component: open_data_schema_map"** after submitting so we can identify problems and feature requests faster.

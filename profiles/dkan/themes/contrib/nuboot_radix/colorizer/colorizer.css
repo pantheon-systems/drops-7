@@ -233,3 +233,15 @@ ul.resource-list li .heading:hover {
 .footer a {
   color: @sidebarborders;
 }
+
+.node-dataset #data-and-resources ul.resource-list .btn-group button:nth-of-type(2) {
+  opacity: 1;
+  background-color: @linkactive;
+  border-color: @linkactive;
+}
+.node-dataset #data-and-resources ul.resource-list .btn-group button:nth-of-type(2):hover,
+.node-dataset #data-and-resources ul.resource-list .btn-group button:nth-of-type(2):focus {
+  opacity: 1;
+  background-color: @bottom;
+  border-color: @bottom;   
+}

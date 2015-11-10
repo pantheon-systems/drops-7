@@ -10,7 +10,7 @@ features[feeds_importer][] = node
 features[feeds_importer][] = user
 files[] = feeds_import.test
 
-; Information added by drush on 2015-07-02
-version = "7.x-2.0-beta1+0-dev"
+; Information added by drush on 2015-11-01
+version = "7.x-2.0-beta1+17-dev"
 project = "feeds"
-datestamp = "1435854944"
+datestamp = "1446372284"

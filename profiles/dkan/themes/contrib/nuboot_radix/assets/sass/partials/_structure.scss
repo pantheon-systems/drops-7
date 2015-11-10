@@ -16,6 +16,12 @@ body.modal-open {
     margin: 20px 0;
   }
 }
+@media (max-width: 768px) {
+  .logo img {
+    max-width: 100%;
+  }
+}
+
 .site-name {
   display: inline-block;
   float: left;

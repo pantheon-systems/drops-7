@@ -227,7 +227,7 @@ function hook_feeds_after_clear(FeedsSource $source) {
 function hook_feeds_parser_sources_alter(&$sources, $content_type) {
   $sources['my_source'] = array(
     'name' => t('Images in description element'),
-    'description' => t('Images occuring in the description element of a feed item.'),
+    'description' => t('Images occurring in the description element of a feed item.'),
     'callback' => 'my_source_get_source',
   );
 }
@@ -310,6 +310,16 @@ function hook_feeds_processor_targets($entity_type, $bundle) {
       // Preprocess callbacks are called before the actual callback allowing you
       // to prepare values on the entity or mapping array.
       'preprocess_callbacks' => array('my_module_preprocess_callback'),
+    );
+    $targets['deprecated_target'] = array(
+      'name' => t('A target that cannot be chosen in the UI.'),
+
+      // Set deprecated to TRUE to hide the target from the UI. This can be
+      // useful if you want to rename targets for consistency, but don't want to
+      // break importers that are using the old target name.
+      // If an importer uses this target it will show up as "DEPRECATED" in the
+      // UI.
+      'deprecated' => TRUE,
     );
   }
 

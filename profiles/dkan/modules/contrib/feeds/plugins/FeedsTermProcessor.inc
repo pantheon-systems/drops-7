@@ -112,11 +112,21 @@ class FeedsTermProcessor extends FeedsProcessor {
 
       case 'parentguid':
         // value is parent_guid field value
+        $parent_tid = 0;
         $query = db_select('feeds_item')
           ->fields('feeds_item', array('entity_id'))
           ->condition('entity_type', $this->entityType());
-        $parent_tid = $query->condition('guid', $value)->execute()->fetchField();
-        $target_term->parent[] = ($parent_tid) ? $parent_tid : 0;
+        $term_ids = array_keys($query->condition('guid', $value)->execute()->fetchAllAssoc('entity_id'));
+        if (!empty($term_ids)) {
+          $terms = entity_load($this->entityType(), $term_ids);
+          foreach ($terms as $term) {
+            if ($term->vid == $target_term->vid) {
+              $parent_tid = $term->tid;
+              break;
+            }
+          }
+        }
+        $target_term->parent[] = $parent_tid;
         break;
 
       case 'weight':

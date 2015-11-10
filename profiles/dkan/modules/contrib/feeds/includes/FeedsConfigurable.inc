@@ -55,7 +55,9 @@ abstract class FeedsConfigurable {
     if (!strlen($id)) {
       throw new InvalidArgumentException(t('Empty configuration identifier.'));
     }
-    static $instances = array();
+
+    $instances = &drupal_static(__METHOD__, array());
+
     if (!isset($instances[$class][$id])) {
       $instances[$class][$id] = new $class($id);
     }

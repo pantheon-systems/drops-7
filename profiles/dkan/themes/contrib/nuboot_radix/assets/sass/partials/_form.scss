@@ -11,9 +11,12 @@ input.use-ajax-submit {
   margin-right: 10px;
 }
 button.btn,
+.btn.btn-default,
+.btn.btn-primary,
+.tabs--primary.nav-pills li a,
 .form-control {
-  line-height: 1.4em;
   height: 36px;
+  line-height: 1.5em;
 }
 
 select.form-control {
@@ -65,6 +68,20 @@ div.vertical-tabs .form-type-textfield input {
   background-color: #ffffff;
 }
 // Chosen.
+.form-control.chosen-processed {
+  line-height: 34px;
+  min-height: 34px;
+  height: auto;
+  padding: 0;
+  border: none;
+  .chosen-choices {
+    @include border-radius(4px);
+    border-color: #ccc;
+  }
+}
+.chosen-container-multi .chosen-choices li.search-choice .search-choice-close {
+  background-position: -42px 2px;
+}
 .chzn-container-single {
   max-width: 100%;
 }

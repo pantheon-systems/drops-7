@@ -1,5 +1,5 @@
 .panel-top { -ms-behavior: url(/backgroundsize.min.htc); }
-.panel-top .tint { background: #0A77BD; opacity: 0.4; filter: alpha(opacity=40); -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=40)"; }
+.panel-top .tint { background: #0A77BD; opacity: 0.5; filter: alpha(opacity=50); -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=50)"; }
 
 .format-label { font-size: 0; }
 

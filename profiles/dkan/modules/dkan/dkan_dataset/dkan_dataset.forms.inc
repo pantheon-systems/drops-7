@@ -199,6 +199,11 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
     // Get langcode for field_dataset_ref.
     $field_dataset_ref_langcode = dkan_dataset_form_field_language($form, 'field_dataset_ref');
     $form['field_dataset_ref'][$field_dataset_ref_langcode]['#description'] = t('Dataset that this resource is attached to.');
+    $dataset_options = $form['field_dataset_ref'][$field_dataset_ref_langcode]['#options'];
+    $fix_apostrophes = function($value) {
+      return html_entity_decode($value, ENT_QUOTES, "UTF-8");
+    };
+    $form['field_dataset_ref'][$field_dataset_ref_langcode]['#options'] = array_map($fix_apostrophes, $dataset_options);
 
     // Get langcode for field_upload.
     $field_upload_langcode = dkan_dataset_form_field_language($form, 'field_upload');

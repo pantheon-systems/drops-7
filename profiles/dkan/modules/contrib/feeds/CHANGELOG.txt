@@ -412,7 +412,7 @@ Feeds 7.x 2.0 Alpha 2, 2010-11-02
   FeedsSource::state() has changed.
 - Remove 6.x upgrade hooks.
 - #923318: Fix Fatal error: Call to a member function import() on a non-object
-  occuring on cron.
+  occurring on cron.
 - Clean up basic settings form.
 - Make getConfig() include configuration defaults.
 
