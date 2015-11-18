@@ -14,6 +14,7 @@
  * @return array
  *   The unique URI for the file, based on its stream wrapper, or NULL.
  *
+ * @see hook_media_parse_alter()
  * @see media_parse_to_file()
  * @see media_add_from_url_validate()
  */
@@ -24,6 +25,37 @@ function hook_media_parse($url) {
     // Grab the ID and use it in our URI.
     $id = substr($url, 28, 33);
     return file_stream_wrapper_uri_normalize('examplevideo://video/' . $id);
+  }
+}
+
+/**
+ * Alters the parsing of urls and embedded codes into unique URIs.
+ *
+ * @param string $success
+ *   The unique URI for the file, based on its stream wrapper, or NULL.
+ * @param array $context
+ *   A nested array of contextual information containing the following keys:
+ *   - url: The original URL or embed code to parse.
+ *   - module: The name of the module which is attempting to parse the url or
+ *     embedded code into a unique URI.
+ *
+ * @see hook_media_parse()
+ * @see hook_media_browser_plugin_info()
+ * @see media_get_browser_plugin_info()
+ */
+function hook_media_parse_alter(&$success, $context) {
+  $url = $context['url'];
+  $url_info = parse_url($url);
+
+  // Restrict users to only embedding secure links.
+  if ($url_info['scheme'] != 'https') {
+    $success = NULL;
+  }
+
+  // Use a custom handler for detecting YouTube videos.
+  if ($context['module' == 'media_youtube']) {
+    $handler = new CustomYouTubeHandler($url);
+    $success = $handler->parse($url);
   }
 }
 
@@ -99,6 +131,7 @@ function hook_media_browser_plugins_alter(&$plugin_output) {
  * @see media_set_browser_params()
  */
 function hook_media_browser_params_alter(&$stored_params) {
+  $stored_params['view_mode'] = 'custom';
   $stored_params['types'][] = 'document';
   unset($stored_params['enabledPlugins'][0]);
 }

@@ -17,7 +17,9 @@ function media_file_default_displays() {
   $file_display->name = 'audio__preview__file_field_media_large_icon';
   $file_display->weight = 49;
   $file_display->status = TRUE;
-  $file_display->settings = '';
+  $file_display->settings = array(
+    'image_style' => 'media_thumbnail',
+  );
   $file_displays['audio__preview__file_field_media_large_icon'] = $file_display;
 
   // Document previews should be displayed using a large filetype icon.
@@ -26,7 +28,9 @@ function media_file_default_displays() {
   $file_display->name = 'document__preview__file_field_media_large_icon';
   $file_display->weight = 49;
   $file_display->status = TRUE;
-  $file_display->settings = '';
+  $file_display->settings = array(
+    'image_style' => 'media_thumbnail',
+  );
   $file_displays['document__preview__file_field_media_large_icon'] = $file_display;
 
   // Image previews should be displayed using a large filetype icon.
@@ -35,7 +39,9 @@ function media_file_default_displays() {
   $file_display->name = 'image__preview__file_field_media_large_icon';
   $file_display->weight = 49;
   $file_display->status = TRUE;
-  $file_display->settings = '';
+  $file_display->settings = array(
+    'image_style' => 'media_thumbnail',
+  );
   $file_displays['image__preview__file_field_media_large_icon'] = $file_display;
 
   // Video previews should be displayed using a large filetype icon.
@@ -44,7 +50,9 @@ function media_file_default_displays() {
   $file_display->name = 'video__preview__file_field_media_large_icon';
   $file_display->weight = 49;
   $file_display->status = TRUE;
-  $file_display->settings = '';
+  $file_display->settings = array(
+    'image_style' => 'media_thumbnail',
+  );
   $file_displays['video__preview__file_field_media_large_icon'] = $file_display;
 
   return $file_displays;

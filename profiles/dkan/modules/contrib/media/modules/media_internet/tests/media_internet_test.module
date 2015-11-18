@@ -9,11 +9,28 @@
  * Implements hook_media_internet_providers().
  */
 function media_internet_test_media_internet_providers() {
+  // Allow tests to enable or disable this hook.
+  if (!variable_get('media_internet_test_media_internet_providers', FALSE)) {
+    return array();
+  }
+
   return array(
     'MediaInternetTestHandler' => array(
       'title' => t('Media Internet Test'),
     ),
   );
+}
+
+/**
+ * Implements hook_media_browser_plugin_info_alter_alter().
+ */
+function media_internet_test_media_internet_providers_alter(&$providers) {
+  // Allow tests to enable or disable this hook.
+  if (!variable_get('media_internet_test_media_internet_providers_alter', FALSE)) {
+    return;
+  }
+
+  $providers['MediaInternetTestHandler']['title'] = t('Altered provider title');
 }
 
 /**

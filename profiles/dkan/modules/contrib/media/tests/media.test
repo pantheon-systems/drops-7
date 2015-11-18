@@ -469,6 +469,49 @@ class MediaAdminTestCase extends MediaFileFieldTestCase {
 }
 
 /**
+ * Tests the media hooks.
+ */
+class MediaHooksTestCase extends MediaFileFieldTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Media hooks test',
+      'description' => 'Tests the Media hooks.',
+      'group' => 'Media',
+    );
+  }
+
+  function setUp() {
+    parent::setUp();
+  }
+
+  /**
+   * Tests that the media browser hooks.
+   */
+  function testMediaBrowserHooks() {
+    // Enable media_module_test.module's hook_media_browser_plugin_info()
+    // implementation and ensure it is working as designed.
+    variable_set('media_module_test_media_browser_plugin_info', TRUE);
+
+    $this->drupalGet('media/browser');
+    $this->assertRaw(t('Media module test'), 'Custom browser plugin found.');
+
+    // Enable media_module_test.module's hook_media_browser_plugin_info_alter()
+    // implementation and ensure it is working as designed.
+    variable_set('media_module_test_media_browser_plugin_info_alter', TRUE);
+
+    $this->drupalGet('media/browser');
+    $this->assertRaw(t('Altered plugin title'), 'Custom browser plugin was successfully altered.');
+
+    // Enable media_module_test.module's hook_media_browser_plugins_alter()
+    // implementation and ensure it is working as designed.
+    variable_set('media_module_test_media_browser_plugins_alter', TRUE);
+
+    $this->drupalGet('media/browser');
+    $this->assertRaw(t('Altered browser plugin output.'), 'Custom browser plugin was successfully altered before being rendered.');
+  }
+}
+
+/**
  * Tests the media browser 'Library' tab.
  */
 class MediaBrowserLibraryTestCase extends MediaFileFieldTestCase {
@@ -873,12 +916,11 @@ class MediaElementSettingsTestCase extends MediaFileFieldTestCase {
           '#edit-' . $field_name . '-' . LANGUAGE_NONE . '-0' => array(
             'global' => array(
               'types' => array(
-                0 => 'image',
+                'image' => 'image',
               ),
               'enabledPlugins' => array(),
               'schemes' => array(
-                0 => 'public',
-                1 => 'private',
+                'public' => 'public',
               ),
               'file_directory' => '',
               'file_extensions' => 'txt',

@@ -31,12 +31,14 @@ function media_wysiwyg_hook_info() {
  * Implements hook_menu().
  */
 function media_wysiwyg_menu() {
+  $items = array();
+
   $items['media/%file/format-form'] = array(
     'title' => 'Style selector',
     'description' => 'Choose a format for a piece of media',
     'page callback' => 'drupal_get_form',
     'page arguments' => array('media_wysiwyg_format_form', 1),
-    'access callback' => 'file_entity_access',
+    'access callback' => 'media_wysiwyg_access',
     'access arguments' => array('view', 1),
     'file' => 'includes/media_wysiwyg.pages.inc',
     'theme callback' => 'media_dialog_get_theme_name',
@@ -47,10 +49,94 @@ function media_wysiwyg_menu() {
 }
 
 /**
+ * Implements hook_permission().
+ */
+function media_wysiwyg_permission() {
+  return array(
+    'use media wysiwyg' => array(
+      'title' => t('Use Media WYSIWYG in an editor'),
+      // Marked restrict because the WYSIWYG forms generate image derivatives,
+      // which could lead to a DoS security vulnerability.
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Access callback for WYSIWYG Media.
+ */
+function media_wysiwyg_access($op, $file = NULL, $account = NULL) {
+  return user_access('use media wysiwyg', $account) && file_entity_access($op, $file, $account);
+}
+
+/**
  * Implements hook_element_info_alter().
  */
 function media_wysiwyg_element_info_alter(&$types) {
   $types['text_format']['#pre_render'][] = 'media_wysiwyg_pre_render_text_format';
+}
+
+/**
+ * Builds a map of media tags in the element.
+ *
+ * Builds a map of the media tags in an element that are being rendered to their
+ * rendered HTML. The map is stored in JS, so we can transform them when the
+ * editor is being displayed.
+ */
+function media_wysiwyg_pre_render_text_format($element) {
+  // filter_process_format() copies properties to the expanded 'value' child
+  // element.
+  if (!isset($element['format'])) {
+    return $element;
+  }
+
+  $field = &$element['value'];
+  $settings = array(
+    'field' => $field['#id'],
+  );
+
+  if (!isset($field['#value'])) {
+    return $element;
+  }
+
+  $tagmap = _media_wysiwyg_generate_tagMap($field['#value']);
+
+  if (isset($tagmap)) {
+    $element['#attached']['js'][] = array(
+      'data' => array(
+        'tagmap' => $tagmap,
+      ),
+      'type' => 'setting',
+    );
+  }
+
+  // Load the media browser library.
+  $element['#attached']['library'][] = array('media', 'media_browser');
+  $element['#attached']['library'][] = array('media', 'media_browser_settings');
+
+  // Add wysiwyg-specific settings.
+  $settings = array('wysiwyg_allowed_attributes' => variable_get('media_wysiwyg_wysiwyg_allowed_attributes', _media_wysiwyg_wysiwyg_allowed_attributes_default()));
+  $element['#attached']['js'][] = array(
+    'data' => array(
+      'media' => $settings,
+    ),
+    'type' => 'setting',
+  );
+
+  // Add filter handling.
+  $element['#attached']['js'][] = drupal_get_path('module', 'media_wysiwyg') . '/js/media_wysiwyg.filter.js';
+
+  // Add CKEditor-specific JS.
+  if (module_exists('ckeditor')) {
+    $element['#attached']['js'][] = array(
+      'data' => drupal_get_path('module', 'media_wysiwyg') . '/wysiwyg_plugins/media_ckeditor/library.js',
+      'type' => 'file',
+      'scope' => 'footer',
+      'weight' => -20,
+    );
+  }
+
+  return $element;
 }
 
 /**
@@ -121,6 +207,17 @@ function media_wysiwyg_form_media_admin_config_browser_alter(&$form, &$form_stat
     );
   }
 
+  $form['wysiwyg']['media_wysiwyg_default_render'] = array(
+    '#type' => 'radios',
+    '#title' => t('How should file entities be rendered within a text field?'),
+    '#description' => t("Full file entity rendering is the best choice for most sites. It respects the file entity's display settings specified at admin/structure/file-types. If your site already uses the legacy method, note that changing this option will affect your site's markup. Testing it on a non-production site is recommended."),
+    '#options' => array(
+      'file_entity' => 'Full file entity rendering',
+      'field_attach' => 'Legacy rendering (using field attach)',
+    ),
+    '#default_value' => variable_get('media_wysiwyg_default_render', 'file_entity'),
+  );
+
   $form['wysiwyg']['media_wysiwyg_wysiwyg_allowed_types'] = array(
     '#type' => 'checkboxes',
     '#title' => t('Allowed types in WYSIWYG'),
@@ -156,35 +253,6 @@ function media_wysiwyg_filter_info() {
   );
 
   return $filters;
-}
-
-/**
- * Prepares the page to be able to launch the media browser.
- *
- * Defines default variables.
- */
-function media_wysiwyg_include_browser_js() {
-  static $included;
-  if ($included) {
-    return;
-  }
-  $included = TRUE;
-  module_load_include('inc', 'media', 'includes/media.browser');
-  $javascript = media_browser_js();
-  foreach ($javascript as $key => $definitions) {
-    foreach ($definitions as $definition) {
-      $function = 'drupal_add_' . $key;
-      // Since the arguments to pass are variable, use call_user_func_array().
-      // This will not handle all potential drupal_add_*() functions directly
-      // but covers the js and library needed here, which are unlikely to be
-      // expanded since this function is only a workaround for a wysiwyg
-      // limitation.
-      call_user_func_array($function, $definition);
-    }
-  }
-  // Add wysiwyg-specific settings.
-  $settings = array('wysiwyg_allowed_attributes' => variable_get('media_wysiwyg_wysiwyg_allowed_attributes', _media_wysiwyg_wysiwyg_allowed_attributes_default()));
-  drupal_add_js(array('media' => $settings), 'setting');
 }
 
 /**

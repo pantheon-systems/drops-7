@@ -178,6 +178,9 @@ function dkan_dataset_form_alter(&$form, &$form_state, $form_id) {
         $form['prefix']['#type'] = 'item';
         $form['prefix']['#weight'] = '-20';
         $form['prefix']['#markup'] = dkan_form_create_stages('dataset-additional', arg(1));
+        if (isset($form['actions']['submit'])) {
+          $form['actions']['submit']['#submit'] = array('dkan_dataset_dataset_body_submit', 'node_form_submit');
+        }
       }
     }
     else {
@@ -318,6 +321,20 @@ function dkan_dataset_resource_additional_form_submit($form, &$form_state) {
   if ($query = drupal_get_query_parameters()) {
     if (isset($query['dataset'])) {
       drupal_goto('node/' . $query['dataset'] . '/edit', array('query' => array('additional' => 1)));
+    }
+  }
+}
+
+/**
+ * Resource node form submit handler.
+ */
+function dkan_dataset_dataset_body_submit($form, &$form_state) {
+  // Fixes body getting dropped in "Additional info" form.
+  if (isset($form_state['build_info']['args'][0]->body['und']['0']['value'])) {
+    if ($form_state['build_info']['args'][0]->body['und']['0']['value']) {
+      $form_state['values']['body']['und'][0]['value'] = $form_state['build_info']['args'][0]->body['und']['0']['value'];
+      $form_state['values']['body']['und'][0]['summary'] = $form_state['build_info']['args'][0]->body['und']['0']['summary'];
+      $form_state['values']['body']['und'][0]['format'] = $form_state['build_info']['args'][0]->body['und']['0']['format'];
     }
   }
 }

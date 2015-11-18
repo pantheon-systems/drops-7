@@ -46,6 +46,7 @@
             var source = Drupal.settings.mediaSourceMap[media_definition.fid];
             media = document.createElement(source.tagName);
             media.src = source.src;
+            media.innerHTML = source.innerHTML;
           }
 
           // Apply attributes.
@@ -167,25 +168,39 @@
       // Rewrite the tagmap in case any of the macros have changed.
       Drupal.settings.tagmap = {};
 
-      // Wrap the content to be able to use replaceWith() and html().
-      content = $('<div>').append(content);
-      var media = $('.media-element', content);
-
-      if (media.length) {
-        // Replace all media elements with their respective macros.
-        media.replaceWith(function() {
-          var el = $(this),
-            macro = Drupal.media.filter.create_macro(el);
-
-          // Store the markup for more efficient rendering later.
-          // @see replaceTokenWidthPlaceholder()
-          Drupal.settings.tagmap[macro] = Drupal.media.filter.outerHTML(el);
-
-          return macro;
-        });
+      // Replace all media placeholders with their JSON macro representations.
+      //
+      // There are issues with using jQuery to parse the WYSIWYG content (see
+      // http://drupal.org/node/1280758), and parsing HTML with regular
+      // expressions is a terrible idea (see http://stackoverflow.com/a/1732454/854985)
+      //
+      // WYSIWYG editors act wacky with complex placeholder markup anyway, so an
+      // image is the most reliable and most usable anyway: images can be moved by
+      // dragging and dropping, and can be resized using interactive handles.
+      //
+      // Media requests a WYSIWYG place holder rendering of the file by passing
+      // the wysiwyg => 1 flag in the settings array when calling
+      // media_get_file_without_label().
+      //
+      // Finds the media-element class.
+      var classRegex = 'class=[\'"][^\'"]*?media-element';
+      // Image tag with the media-element class.
+      var regex = '<img[^>]+' + classRegex + '[^>]*?>';
+      // Or a span with the media-element class (used for documents).
+      // \S\s catches any character, including a linebreak; JavaScript does not
+      // have a dotall flag.
+      regex += '|<span[^>]+' + classRegex + '[^>]*?>[\\S\\s]+?</span>';
+      var matches = content.match(RegExp(regex, 'gi'));
+      if (matches) {
+        for (i = 0; i < matches.length; i++) {
+          markup = matches[i];
+          macro = Drupal.media.filter.create_macro($(markup));
+          Drupal.settings.tagmap[macro] = markup;
+          content = content.replace(markup, macro);
+        }
       }
 
-      return content.html();
+      return content;
     },
 
     /**
@@ -227,7 +242,8 @@
         Drupal.media.filter.ensureSourceMap();
         Drupal.settings.mediaSourceMap[info.fid] = {
           tagName: element[0].tagName,
-          src: element[0].src
+          src: element[0].src,
+          innerHTML: element[0].innerHTML
         }
       }
 
@@ -240,13 +256,19 @@
       // Store the fid in the DOM to retrieve the data from the info map.
       element.attr('data-fid', info.fid);
 
-      // Add media-element class so we can find markup element later.
-      var classes = ['media-element'];
+      // Add data-media-element attribute so we can find the markup element later.
+      element.attr('data-media-element', '1')
 
+      var classes = ['media-element'];
       if (info.view_mode) {
         classes.push('file-' + info.view_mode.replace(/_/g, '-'));
       }
       element.addClass(classes.join(' '));
+
+      // Apply link_text if present.
+      if (info.link_text) {
+        $('a', element).html(info.link_text);
+      }
 
       return element;
     },
@@ -260,6 +282,10 @@
     create_macro: function (element) {
       var file_info = Drupal.media.filter.extract_file_info(element);
       if (file_info) {
+        if (typeof file_info.link_text == 'string') {
+          // Make sure the link_text-html-tags are properly escaped.
+          file_info.link_text = file_info.link_text.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        }
         return '[[' + JSON.stringify(file_info) + ']]';
       }
       return false;

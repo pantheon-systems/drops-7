@@ -104,7 +104,7 @@ function media_update_dependencies() {
 function media_requirements($phase) {
   $t = get_t();
   // Make sure that file_entity module is 2.x version.
-  // We can't add this check in .info file because drupal.org testbot cant
+  // We can't add this check in .info file because drupal.org testbot can't
   // handle it. See #1734648.
   $requirements = array();
 
@@ -139,6 +139,10 @@ function media_update_7001() {
  * Create the media_type table from the media_types variable.
  */
 function media_update_7002() {
+  if (db_table_exists('media_type')) {
+    return;
+  }
+
   $schema['media_type'] = array(
     'description' => 'Stores the settings for media types.',
     'fields' => array(
@@ -190,7 +194,7 @@ function media_update_7002() {
   db_create_table('media_type', $schema['media_type']);
 
   drupal_load('module', 'media');
-  $old_types = variable_get('media_types');
+  $old_types = variable_get('media_types', array());
   foreach ($old_types as $type) {
     // Was an error in the original creation.
     if (isset($type->callbacks)) {
@@ -494,6 +498,13 @@ function media_update_7020() {
   if (variable_get('media__wysiwyg_allowed_types') == array('image', 'video')) {
     variable_del('media__wysiwyg_allowed_types');
   }
+}
+
+/**
+ * Rerun media_update_7002() due to a typo that would prevent table creation.
+ */
+function media_update_7021() {
+  media_update_7002();
 }
 
 /**
@@ -1160,9 +1171,7 @@ function media_update_7225() {
 }
 
 /**
- * Accommodate the introduction of a new permission which restricts access to
- * the media browser by granting it to existing users who were able to access
- * it.
+ * Grant existing user access to new media browser permission.
  */
 function media_update_7226() {
   $roles = user_roles(FALSE, 'create files');

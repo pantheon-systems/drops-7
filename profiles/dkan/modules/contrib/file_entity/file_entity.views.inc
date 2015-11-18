@@ -162,3 +162,13 @@ function file_entity_views_plugins() {
     ),
   );
 }
+
+/**
+ * Implements hook_views_query_substitutions().
+ */
+function file_entity_views_query_substitutions() {
+  return array(
+    '***ADMINISTER_FILES***' => intval(user_access('administer files')),
+    '***BYPASS_FILE_ACCESS***' =>  intval(user_access('bypass file access')),
+  );
+}

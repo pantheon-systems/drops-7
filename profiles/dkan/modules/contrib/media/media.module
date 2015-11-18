@@ -358,8 +358,9 @@ function media_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
   }
 
   // Add a validation function to any field instance which uses the media widget
-  // to ensure that the upload destination scheme is one of the allowed schemes.
-  if ($form['instance']['widget']['type']['#value'] == 'media_generic') {
+  // to ensure that the upload destination scheme is one of the allowed schemes
+  // if any defined by settings.
+  if ($form['instance']['widget']['type']['#value'] == 'media_generic' && isset($form['#field']['settings']['uri_scheme'])) {
     $form['#validate'][] = 'media_field_instance_validate';
   }
 
@@ -378,10 +379,10 @@ function media_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
  * allowed schemes.
  */
 function media_field_instance_validate($form, &$form_state) {
-  $allowed_schemes = $form_state['values']['instance']['widget']['settings']['allowed_schemes'];
+  $allowed_schemes = array_filter($form_state['values']['instance']['widget']['settings']['allowed_schemes']);
   $upload_destination = $form_state['values']['field']['settings']['uri_scheme'];
 
-  if (!in_array($upload_destination, array_filter($allowed_schemes))) {
+  if (!empty($allowed_schemes) && !in_array($upload_destination, $allowed_schemes)) {
     form_set_error('allowed_schemes', t('The upload destination must be one of the allowed schemes.'));
   }
 }
@@ -393,8 +394,13 @@ function media_form_alter(&$form, &$form_state, $form_id) {
   // If we're in the media browser, set the #media_browser key to true
   // so that if an ajax request gets sent to a different path, the form
   // still uses the media_browser_form_submit callback.
-  if (current_path() == 'media/browser' && $form_id != 'views_exposed_form') {
-    $form_state['#media_browser'] = TRUE;
+  if (current_path() == 'media/browser') {
+    if ($form_id == 'views_exposed_form') {
+      $form['render'] = array('#type' => 'hidden', '#value' => 'media-popup');
+      $form['#action'] = '/media/browser';
+    } else {
+      $form_state['#media_browser'] = TRUE;
+    }
   }
 
   // If the #media_browser key isset and is true we are using the browser
@@ -478,6 +484,47 @@ function media_library() {
     ),
   );
 
+  // Settings for the dialog etc.
+  $settings = array(
+    'browserUrl' => url('media/browser', array(
+      'query' => array(
+        'render' => 'media-popup'
+      ))
+    ),
+    'styleSelectorUrl' => url('media/-media_id-/format-form', array(
+      'query' => array(
+        'render' => 'media-popup'
+      ))
+    ),
+    'dialogOptions' => array(
+      'dialogclass' => variable_get('media_dialogclass', 'media-wrapper'),
+      'modal' => (boolean)variable_get('media_modal', TRUE),
+      'draggable' => (boolean)variable_get('media_draggable', FALSE),
+      'resizable' => (boolean)variable_get('media_resizable', FALSE),
+      'minwidth' => (int)variable_get('media_minwidth', 500),
+      'width' => (int)variable_get('media_width', 670),
+      'height' => (int)variable_get('media_height', 280),
+      'position' => variable_get('media_position', 'center'),
+      'overlay' => array(
+        'backgroundcolor' => variable_get('media_backgroundcolor', '#000000'),
+        'opacity' => (float)variable_get('media_opacity', 0.4),
+      ),
+      'zindex' => (int)variable_get('media_zindex', 10000),
+    ),
+  );
+
+  $libraries['media_browser_settings'] = array(
+    'title' => 'Media browser settings',
+    'js' => array(
+      0 => array(
+        'data' => array(
+          'media' => $settings,
+        ),
+        'type' => 'setting',
+      ),
+    ),
+  );
+
   foreach ($libraries as &$library) {
     $library += $common;
   }
@@ -538,6 +585,11 @@ function media_parse_to_uri($url) {
   $url = trim($url);
   foreach (module_implements('media_parse') as $module) {
     $success = module_invoke($module, 'media_parse', $url);
+    $context = array(
+      'url' => $url,
+      'module' => $module,
+    );
+    drupal_alter('media_parse', $success, $context);
     if (isset($success)) {
       return $success;
     }
@@ -660,6 +712,11 @@ function media_element_process($element, &$form_state, $form) {
   ctools_include('modal');
   ctools_include('ajax');
   ctools_modal_add_js();
+
+  // Append the '-upload' to the #id so the field label's 'for' attribute
+  // corresponds with the textfield element.
+  $original_id = $element['#id'];
+  $element['#id'] .= '-upload';
   $fid = isset($element['#value']['fid']) ? $element['#value']['fid'] : 0;
 
   // Set some default element properties.
@@ -668,7 +725,7 @@ function media_element_process($element, &$form_state, $form) {
 
   $ajax_settings = array(
     'path' => 'media/ajax/' . implode('/', $element['#array_parents']) . '/' . $form['form_build_id']['#value'],
-    'wrapper' => $element['#id'] . '-ajax-wrapper',
+    'wrapper' => $original_id . '-ajax-wrapper',
     'effect' => 'fade',
   );
 
@@ -765,15 +822,15 @@ function media_element_process($element, &$form_state, $form) {
   $element['browse_button']['#attached']['js'] = array(
     array(
       'type' => 'setting',
-      'data' => array('media' => array('elements' => array('#' . $element['#id'] => $element['#media_options'])))
+      'data' => array('media' => array('elements' => array('#' . $original_id => $element['#media_options'])))
     )
   );
 
-  module_load_include('inc', 'media', 'includes/media.browser');
-  media_attach_browser_js($element);
+  $element['#attached']['library'][] = array('media', 'media_browser');
+  $element['#attached']['library'][] = array('media', 'media_browser_settings');
 
   // Prefix and suffix used for Ajax replacement.
-  $element['#prefix'] = '<div id="' . $element['#id'] . '-ajax-wrapper">';
+  $element['#prefix'] = '<div id="' . $original_id . '-ajax-wrapper">';
   $element['#suffix'] = '</div>';
 
   return $element;
@@ -965,7 +1022,7 @@ function theme_media_element($variables) {
 
   $attributes = array();
   if (isset($element['#id'])) {
-    $attributes['id'] = $element['#id'];
+    $attributes['id'] = drupal_substr($element['#id'], 0, -7);
   }
   if (!empty($element['#attributes']['class'])) {
     $attributes['class'] = (array) $element['#attributes']['class'];
@@ -1015,28 +1072,35 @@ function media_element_pre_render($element) {
 }
 
 /**
- * Media thumbnail render function.
+ * Generates a thumbnail preview of a file.
  *
- * Returns a renderable array with the necessary classes to support a media
- * thumbnail. Also provides default fallback images if no image is available.
+ * Provides default fallback images if an image of the file cannot be generated.
  *
  * @param object $file
  *   A Drupal file object.
+ * @param boolean $link
+ *   (optional) Boolean indicating whether the thumbnail should be linked to the
+ *   file. Defaults to FALSE.
+ * @param string $view_mode
+ *   (optional) The view mode to use when rendering the thumbnail. Defaults to
+ *   'preview'.
  *
  * @return array
- *   Renderable array.
+ *   Renderable array suitable for drupal_render() with the necessary classes
+ *   and CSS to support a media thumbnail.
  */
-function media_get_thumbnail_preview($file, $link = NULL) {
+function media_get_thumbnail_preview($file, $link = FALSE, $view_mode = 'preview') {
   // If a file has an invalid type, allow file_view_file() to work.
   if (!file_type_is_enabled($file->type)) {
     $file->type = file_get_type($file);
   }
 
-  $preview = file_view_file($file, 'preview');
+  $preview = file_view_file($file, $view_mode);
   $preview['#show_names'] = TRUE;
   $preview['#add_link'] = $link;
   $preview['#theme_wrappers'][] = 'media_thumbnail';
   $preview['#attached']['css'][] = drupal_get_path('module', 'media') . '/css/media.css';
+
   return $preview;
 }
 
@@ -1278,6 +1342,9 @@ function media_load_all_exports($module, $directory, $extension, $name = NULL) {
 /**
  * Returns metadata describing Media browser plugins.
  *
+ * @return
+ *   An associative array of plugin information, keyed by plugin.
+ *
  * @see hook_media_browser_plugin_info()
  * @see hook_media_browser_plugin_info_alter()
  */
@@ -1285,15 +1352,8 @@ function media_get_browser_plugin_info() {
   $info = &drupal_static(__FUNCTION__);
 
   if (!isset($info)) {
-    $cid = 'media:browser:plugin:info:' . $GLOBALS['language']->language;
-    if ($cache = cache_get($cid)) {
-      $info = $cache->data;
-    }
-    else {
-      $info = module_invoke_all('media_browser_plugin_info');
-      drupal_alter('media_browser_plugin_info', $info);
-      cache_set($cid, $info);
-    }
+    $info = module_invoke_all('media_browser_plugin_info');
+    drupal_alter('media_browser_plugin_info', $info);
   }
 
   return $info;

@@ -12,7 +12,7 @@ class MediaWYSIWYGViewModeTestHelper extends MediaWYSIWYGTestHelper {
   function setUp() {
     parent::setUp('media_wysiwyg_view_mode');
 
-    $web_user = $this->drupalCreateUser(array('administer media wysiwyg view mode', 'view files'));
+    $web_user = $this->drupalCreateUser(array('administer media wysiwyg view mode', 'view files', 'use media wysiwyg'));
     $this->drupalLogin($web_user);
   }
 }
