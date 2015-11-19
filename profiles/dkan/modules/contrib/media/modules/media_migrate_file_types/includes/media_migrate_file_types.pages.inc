@@ -150,18 +150,22 @@ function media_migrate_file_types_upgrade_file_types_confirm_submit($form, &$for
         $fields_to_move = array_diff($old_fields, $new_fields);
         $fields_to_drop = array_diff($old_fields, $fields_to_move);
 
-        db_update('field_config_instance')
-          ->fields(array('bundle' => $bundle_new->type))
-          ->condition('entity_type',  'file')
-          ->condition('bundle', $bundle_old->type)
-          ->condition('field_name', $fields_to_move, 'IN')
-          ->execute();
+        if (!empty($fields_to_move)) {
+          db_update('field_config_instance')
+            ->fields(array('bundle' => $bundle_new->type))
+            ->condition('entity_type',  'file')
+            ->condition('bundle', $bundle_old->type)
+            ->condition('field_name', $fields_to_move, 'IN')
+            ->execute();
+        }
 
-        db_delete('field_config_instance')
-          ->condition('entity_type',  'file')
-          ->condition('bundle', $bundle_old->type)
-          ->condition('field_name', $fields_to_drop, 'IN')
-          ->execute();
+        if (!empty($fields_to_drop)) {
+          db_delete('field_config_instance')
+            ->condition('entity_type',  'file')
+            ->condition('bundle', $bundle_old->type)
+            ->condition('field_name', $fields_to_drop, 'IN')
+            ->execute();
+        }
 
         field_cache_clear();
         module_invoke_all('field_attach_rename_bundle', 'file', $bundle_old->type, $bundle_new->type);

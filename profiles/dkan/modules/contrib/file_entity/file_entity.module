@@ -79,6 +79,9 @@ function file_entity_hook_info_alter(&$info) {
     // Miscellaneous hooks
     'file_mimetype_mapping_alter',
     'file_url_alter',
+    // Stream wrappers
+    'stream_wrappers',
+    'stream_wrappers_alter',
   );
   $info += array_fill_keys($hooks, array('group' => 'file'));
 }
@@ -875,6 +878,7 @@ function file_entity_theme() {
         'controls' => TRUE,
         'autoplay' => FALSE,
         'loop' => FALSE,
+        'preload' => NULL,
       ),
       'file' => 'file_entity.theme.inc',
     ),
@@ -887,6 +891,7 @@ function file_entity_theme() {
         'muted' => FALSE,
         'width' => NULL,
         'height' => NULL,
+        'preload' => NULL,
       ),
       'file' => 'file_entity.theme.inc',
     ),
@@ -954,8 +959,8 @@ function file_entity_entity_info_alter(&$entity_info) {
 
   // Ensure some of the Entity API callbacks are supported.
   $entity_info['file']['creation callback'] = 'entity_metadata_create_object';
-  $entity_info['file']['view callback'] = 'file_view_multiple';
-  $entity_info['file']['edit callback'] = 'file_entity_metadata_form_file';
+  $entity_info['file']['view callback'] = 'file_entity_metadata_view_file';
+  $entity_info['file']['form callback'] = 'file_entity_metadata_form_file';
   $entity_info['file']['access callback'] = 'file_entity_access';
 
   // Add integration with the Title module for file name replacement support.
@@ -1024,6 +1029,15 @@ function file_entity_uri($file) {
 }
 
 /**
+ * Entity API callback to view files.
+ */
+function file_entity_metadata_view_file($entities, $view_mode = 'full', $langcode = NULL) {
+  $result = file_view_multiple($entities, $view_mode, 0, $langcode);
+  // Make sure to key the result with 'file' instead of 'files'.
+  return array('file' => reset($result));
+}
+
+/**
  * Entity API callback to get the form of a file entity.
  */
 function file_entity_metadata_form_file($file) {
@@ -1036,10 +1050,9 @@ function file_entity_metadata_form_file($file) {
 /**
  * Implements hook_ctools_plugin_directory().
  */
-
-function file_entity_ctools_plugin_directory($module, $type) {
-  if ($module == 'ctools' && $type == 'content_types') {
-    return 'plugins/' . $type;
+function file_entity_ctools_plugin_directory($module, $plugin) {
+  if (in_array($module, array('panelizer', 'ctools', 'page_manager'))) {
+    return 'plugins/' . $plugin;
   }
 }
 
@@ -1491,6 +1504,7 @@ function file_entity_type_get_names() {
   $names = &drupal_static(__FUNCTION__);
 
   if (!isset($names)) {
+    $names = array();
     $info = entity_get_info('file');
     foreach ($info['bundles'] as $bundle => $bundle_info) {
       $names[$bundle] = $bundle_info['label'];
@@ -1563,11 +1577,11 @@ function file_entity_stream_wrappers_alter(&$wrappers) {
 /**
  * Implements hook_ctools_plugin_api().
  */
-function file_entity_ctools_plugin_api($owner, $api) {
-  if ($owner == 'file_entity' && $api == 'file_type') {
+function file_entity_ctools_plugin_api($module, $api) {
+  if (($module == 'file_entity' && $api == 'file_type') || ($module == 'page_manager' && $api == 'pages_default') || $module == 'panelizer') {
     return array('version' => 1);
   }
-  if ($owner == 'file_entity' && $api == 'file_default_displays') {
+  if ($module == 'file_entity' && $api == 'file_default_displays') {
     return array('version' => 1);
   }
 }
@@ -1955,7 +1969,7 @@ function file_entity_file_download($uri) {
     return file_get_content_headers($file);
   }
 
-  return -1;
+  return NULL;
 }
 
 /**

@@ -9,16 +9,6 @@
  * Implements WYSIWYG's hook_INCLUDE_plugin().
  */
 function media_wysiwyg_media_plugin() {
-  // Include the required browser JS.
-  // @todo: wyswiyg should allow libraries and multiple js files
-  // to be defined by this hook.
-  // @see http://drupal.org/node/1039076
-  media_wysiwyg_include_browser_js();
-
-  // Add the filter handling.
-  drupal_add_js(drupal_get_path('module', 'media_wysiwyg') . '/js/media_wysiwyg.filter.js');
-
-  // Plugin definition.
   $plugins['media'] = array(
     'title' => variable_get('media_wysiwyg_wysiwyg_title', t('Media browser')),
     'vendor url' => 'http://drupal.org/project/media',

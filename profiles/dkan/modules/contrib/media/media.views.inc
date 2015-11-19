@@ -74,10 +74,13 @@ function template_preprocess_media_views_view_media_browser(&$vars) {
   $files = file_load_multiple($fids);
 
   // Render the preview for each file.
+  $params = media_get_browser_params();
+  $view_mode = isset($params['view_mode']) ? $params['view_mode'] : 'preview';
+
   foreach ($vars['rows'] as $index => $row) {
     $file = $files[$row->fid];
     // Add url/preview to the file object.
-    media_browser_build_media_item($file);
+    media_browser_build_media_item($file, $view_mode);
     $vars['rows'][$index] = $file;
     $vars['rows'][$index]->preview = $file->preview;
   }
@@ -126,6 +129,5 @@ function template_preprocess_media_views_view_media_browser(&$vars) {
  * Implements hook_views_invalidate_cache().
  */
 function media_views_invalidate_cache() {
-  cache_clear_all('media:browser:plugin', 'cache', TRUE);
   drupal_static_reset('media_get_browser_plugin_info');
 }

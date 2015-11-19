@@ -96,6 +96,9 @@ function theme_file_entity_file_audio($variables) {
   if ($variables['loop']) {
     $audio_attributes['loop'] = 'loop';
   }
+  if (!empty($variables['preload'])) {
+    $audio_attributes['preload'] = $variables['preload'];
+  }
 
   $output .= '<audio' . drupal_attributes($audio_attributes) . '>';
   foreach ($files as $delta => $file) {
@@ -147,6 +150,9 @@ function theme_file_entity_file_video($variables) {
   }
   if ($variables['height']) {
     $video_attributes['height'] = $variables['height'];
+  }
+  if (!empty($variables['preload'])) {
+    $video_attributes['preload'] = $variables['preload'];
   }
 
   $output .= '<video' . drupal_attributes($video_attributes) . '>';

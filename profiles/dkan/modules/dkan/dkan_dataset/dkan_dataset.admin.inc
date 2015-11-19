@@ -10,7 +10,7 @@
 function dkan_dataset_preview_settings() {
   $form = array();
 
-  // Help test for formats
+  // Help text for formats
   $form['preview_list'] = array(
     '#type' => 'fieldset',
     '#title' => t('Available preview descriptions'),
@@ -22,17 +22,6 @@ function dkan_dataset_preview_settings() {
     '#prefix' => '<div id="preview-list-table">',
     '#suffix' => '</div>',
     '#markup' => _dkan_dataset_preview_list_table(),
-  );
-
-
-  $form['dkan_dataset_local_teaser_preview_label'] = array(
-    '#type' => 'textfield',
-    '#default_value' => variable_get('dkan_dataset_teaser_preview_label', variable_get('site_name', t('Local'))),
-    '#title' => t('Label for local data preview'),
-    '#description' => t('Any compatible format (like CSV) can be displayed in
-      the local DKAN data preview. If you enter, for instance, "Data.gov" in
-      this field, the link to the preview will read "Data.gov Preview." This
-      field defaults to your site name.'),
   );
 
   $form['external_previews'] = array(
@@ -66,10 +55,10 @@ function dkan_dataset_preview_settings() {
       if ($machine_name == 'dkan') {
         continue;
       }
-      // Un-comment these lines to restrict available options to sugested formats
-      // if (in_array($format->name, $preview['suggested_formats'])) {
-      $preview_options[$machine_name] = $preview['name'];
-      // }
+      // Restrict available options to sugested formats
+      if (in_array($format->name, $preview['suggested_formats'])) {
+        $preview_options[$machine_name] = $preview['name'];
+      }
       if (in_array($format->name, $preview['format'])) {
         $default_value[] = $machine_name;
       }
@@ -89,6 +78,17 @@ function dkan_dataset_preview_settings() {
       ),
     );
   }
+
+  $form['dkan_dataset_teaser_preview_label'] = array(
+    '#type' => 'textfield',
+    '#default_value' => variable_get('dkan_dataset_teaser_preview_label', ''),
+    '#title' => t('Label for local data preview'),
+    '#description' => t('Any compatible format (like CSV) can be displayed in
+      the local DKAN data preview. If you enter, for instance, "Data.gov" in
+      this field, the link to the preview will read "Data.gov Preview." Leave
+      blank to simply display the word "Preview".'),
+  );
+
   return system_settings_form($form);
 }
 

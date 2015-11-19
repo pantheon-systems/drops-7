@@ -6,6 +6,48 @@
  */
 
 /**
+ * Implements hook_media_browser_plugin_info().
+ */
+function media_module_test_media_browser_plugin_info() {
+  // Allow tests to enable or disable this hook.
+  if (!variable_get('media_module_test_media_browser_plugin_info', FALSE)) {
+    return array();
+  }
+
+  $info['media_module_test'] = array(
+    'title' => t('Media module test'),
+    'class' => 'MediaModuleTest',
+    'weight' => 50,
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_media_browser_plugin_info_alter().
+ */
+function media_module_test_media_browser_plugin_info_alter(&$info) {
+  // Allow tests to enable or disable this hook.
+  if (!variable_get('media_module_test_media_browser_plugin_info_alter', FALSE)) {
+    return;
+  }
+
+  $info['media_module_test']['title'] = t('Altered plugin title');
+}
+
+/**
+ * Implements hook_media_browser_plugins_alter().
+ */
+function media_module_test_media_browser_plugins_alter(&$plugin_output) {
+  // Allow tests to enable or disable this hook.
+  if (!variable_get('media_module_test_media_browser_plugins_alter', FALSE)) {
+    return;
+  }
+
+  $plugin_output['media_module_test']['test']['#markup'] = '<p>' . t('Altered browser plugin output.') . '</p>';
+}
+
+/**
  * Implements hook_menu().
  */
 function media_module_test_menu() {
