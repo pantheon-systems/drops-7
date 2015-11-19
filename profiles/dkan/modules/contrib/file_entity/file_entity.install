@@ -1070,3 +1070,12 @@ function file_entity_update_7215() {
   db_add_primary_key('file_metadata', array('fid', 'name'));
   db_drop_index('file_metadata', 'temp');
 }
+
+/**
+ * This update has been removed and will not run.
+ */
+function file_entity_update_7216() {
+  // This update function previously saved default file displays into the
+  // database. It has been removed due to reported problems and is better
+  // addressed by adding support for ctools default content to features.
+}

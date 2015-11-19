@@ -61,35 +61,39 @@ function media_internet_theme() {
 }
 
 /**
- * Gets the list of providers.
+ * Gets the list of Internet media providers.
  *
- * A "Provider" is a bit of meta-data like a title and a logo and a class which
- * can handle saving remote files.  Each provider is able to parse an embed code or URL
- * and store it as a file object in file_managed.
+ * Each 'Provider' has a title and a class which can handle saving remote files.
+ * Providers are each given a turn at parsing a user-submitted URL or embed code
+ * and, if they recognize that it belongs to a service or protocol they support,
+ * they store a representation of it as a file object in file_managed.
+ *
+ * @return array
+ *   An associative array of provider information keyed by provider name.
  */
 function media_internet_get_providers() {
   $providers = &drupal_static(__FUNCTION__);
 
   if (!isset($providers)) {
-    $cid = 'media:internet:providers';
-    if ($cache = cache_get($cid)) {
-      $providers = $cache->data;
-    }
-    else {
-      $providers = array();
-      foreach (module_implements('media_internet_providers') as $module) {
-        foreach (module_invoke($module, 'media_internet_providers') as $key => $provider) {
-          // Store the module here too for convinience.
-          $providers[$key] = $provider;
-          $providers[$key]['module'] = $module;
-          if (!isset($providers[$key]['weight'])) {
-            $providers[$key]['weight'] = 0;
-          }
+    foreach (module_implements('media_internet_providers') as $module) {
+      foreach (module_invoke($module, 'media_internet_providers') as $class => $info) {
+        $providers[$class] = $info;
+
+        // Store the name of the module which declared the provider.
+        $providers[$class]['module'] = $module;
+
+        // Assign a default value to providers which don't specify a weight.
+        if (!isset($providers[$class]['weight'])) {
+          $providers[$class]['weight'] = 0;
         }
       }
-      uasort($providers, 'drupal_sort_weight');
-      cache_set($cid, $providers);
     }
+
+    // Allow modules to alter the list of providers.
+    drupal_alter('media_internet_providers', $providers);
+
+    // Sort the providers by weight.
+    uasort($providers, 'drupal_sort_weight');
   }
 
   return $providers;
@@ -201,7 +205,7 @@ function media_internet_form_file_entity_add_upload_alter(&$form, &$form_state, 
       $form['embed_code']['#title'] = t('File URL or media resource');
       $form['embed_code']['#description'] = t('Enter a URL to a file or media resource. Many media providers also support identifying media via the embed code used to embed the media into external websites.');
 
-      $form['embed_code']['#description'] = theme('media_internet_embed_help', array('description' => $form['embed_code']['#description'], 'supported_providers' => implode(' ', $providers)));
+      $form['embed_code']['#description'] = theme('media_internet_embed_help', array('description' => $form['embed_code']['#description'], 'supported_providers' => implode(', ', $providers)));
     }
 
     $form['#validators'] = array();

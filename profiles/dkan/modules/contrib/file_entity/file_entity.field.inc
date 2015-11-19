@@ -36,6 +36,7 @@ function file_entity_field_formatter_info() {
       'controls' => TRUE,
       'autoplay' => FALSE,
       'loop' => FALSE,
+      'preload' => '',
       'multiple_file_behavior' => 'tags',
     ),
     'file formatter' => array(
@@ -53,6 +54,7 @@ function file_entity_field_formatter_info() {
       'muted' => FALSE,
       'width' => NULL,
       'height' => NULL,
+      'preload' => '',
       'multiple_file_behavior' => 'tags',
     ),
     'file formatter' => array(
@@ -131,6 +133,13 @@ function file_entity_field_formatter_settings_form($field, $instance, $view_mode
       '#type' => 'checkbox',
       '#default_value' => $settings['loop'],
     );
+    $element['preload'] = array(
+      '#title' => t('Preload'),
+      '#type' => 'select',
+      '#default_value' => $settings['preload'],
+      '#options' => drupal_map_assoc(array('none', 'auto', 'metadata')),
+      '#empty_option' => 'unspecified',
+    );
     $element['multiple_file_behavior'] = array(
       '#title' => t('Display of multiple files'),
       '#type' => 'radios',
@@ -181,6 +190,13 @@ function file_entity_field_formatter_settings_form($field, $instance, $view_mode
       '#maxlength' => 5,
       '#field_suffix' => t('pixels'),
     );
+    $element['preload'] = array(
+      '#title' => t('Preload'),
+      '#type' => 'select',
+      '#default_value' => $settings['preload'],
+      '#options' => drupal_map_assoc(array('none', 'auto', 'metadata')),
+      '#empty_option' => 'unspecified',
+    );
     $element['multiple_file_behavior'] = array(
       '#title' => t('Display of multiple files'),
       '#type' => 'radios',
@@ -222,6 +238,9 @@ function file_entity_field_formatter_settings_summary($field, $instance, $view_m
     if (isset($settings['loop'])) {
       $summary[] = t('Loop: %loop', array('%loop' => $settings['loop'] ? t('yes') : t('no')));
     }
+    if (!empty($settings['preload'])) {
+      $summary[] = t('Preload: %preload', array('%preload' => $settings['preload']));
+    }
     if (isset($settings['multiple_file_behavior'])) {
       $summary[] = t('Multiple files: %multiple', array('%multiple' => $settings['multiple_file_behavior']));
     }
@@ -241,6 +260,9 @@ function file_entity_field_formatter_settings_summary($field, $instance, $view_m
     }
     if ($settings['width'] && $settings['height']) {
       $summary[] = t('Size: %width x %height', array('%width' => $settings['width'], '%height' => $settings['height']));
+    }
+    if (!empty($settings['preload'])) {
+      $summary[] = t('Preload: %preload', array('%preload' => $settings['preload']));
     }
     if (isset($settings['multiple_file_behavior'])) {
       $summary[] = t('Multiple files: %multiple', array('%multiple' => $settings['multiple_file_behavior']));
@@ -357,6 +379,7 @@ function file_entity_field_formatter_view($entity_type, $entity, $field, $instan
         '#controls' => $settings['controls'],
         '#autoplay' => $settings['autoplay'],
         '#loop' => $settings['loop'],
+        '#preload' => $settings['preload'],
       );
     }
   }
@@ -394,6 +417,7 @@ function file_entity_field_formatter_view($entity_type, $entity, $field, $instan
         '#muted' => $settings['muted'],
         '#width' => $settings['width'],
         '#height' => $settings['height'],
+        '#preload' => $settings['preload'],
       );
     }
   }

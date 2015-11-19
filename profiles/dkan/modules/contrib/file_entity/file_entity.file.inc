@@ -166,6 +166,7 @@ function file_entity_file_mimetype_mapping_alter(&$mapping) {
  * Implements hook_file_load().
  */
 function file_entity_file_load($files) {
+  // Add alt and title text to images.
   $alt = variable_get('file_entity_alt', '[file:field_file_image_alt_text]');
   $title = variable_get('file_entity_title', '[file:field_file_image_title_text]');
 
@@ -179,17 +180,35 @@ function file_entity_file_load($files) {
 
     // Load alt and title text from fields.
     if (!empty($alt)) {
-      $file->alt = token_replace($alt, array('file' => $file), $replace_options);
+      $output = token_replace($alt, array('file' => $file), $replace_options);
+
+      // @todo Remove once https://www.drupal.org/node/1713164 is fixed.
+      // There is currently no way to get the raw alt text returned from the
+      // token so we revert the encoding done during tokenization.
+      $file->alt = decode_entities($output);
     }
     if (!empty($title)) {
-      $file->title = token_replace($title, array('file' => $file), $replace_options);
+      $output = token_replace($title, array('file' => $file), $replace_options);
+
+      // @todo Remove once https://www.drupal.org/node/1713164 is fixed.
+      // There is currently no way to get the raw title text returned from the
+      // token so we revert the encoding done during tokenization.
+      $file->title = decode_entities($output);
     }
   }
 
   // Load and unserialize metadata.
   $results = db_query("SELECT * FROM {file_metadata} WHERE fid IN (:fids)", array(':fids' => array_keys($files)));
+
   foreach ($results as $result) {
-    $files[$result->fid]->metadata[$result->name] = unserialize($result->value);
+    $name = $result->name;
+
+    // image.module required height and width to be properties of the file.
+    if ($name == 'height' || $name == 'width') {
+      $files[$result->fid]->$name = unserialize($result->value);
+    }
+
+    $files[$result->fid]->metadata[$name] = unserialize($result->value);
   }
 }
 

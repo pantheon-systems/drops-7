@@ -83,7 +83,7 @@ function media_wysiwyg_format_form($form, &$form_state, $file) {
       they are inserted into an editor.')
   );
 
-  // Add fields from the file, so that we can override them if neccesary.
+  // Add fields from the file, so that we can override them if necessary.
   $form['options']['fields'] = array();
   foreach ($fields as $field_name => $field_value) {
     $file->{$field_name} = $field_value;

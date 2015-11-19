@@ -1,11 +1,15 @@
-name = File entity
+name = File Entity
 description = "Extends Drupal file entities to be fieldable and viewable."
 package = Media
 core = 7.x
+
 dependencies[] = field
 dependencies[] = file
 dependencies[] = ctools
 dependencies[] = system (>=7.9)
+
+test_dependencies[] = token
+
 files[] = views/views_handler_argument_file_type.inc
 files[] = views/views_handler_field_file_rendered.inc
 files[] = views/views_handler_field_file_type.inc
@@ -20,14 +24,15 @@ files[] = views/views_handler_field_file_link_usage.inc
 files[] = views/views_plugin_row_file_rss.inc
 files[] = views/views_plugin_row_file_view.inc
 files[] = file_entity.test
+
 configure = admin/config/media/file-settings
 
 ; We have to add a fake version so Git checkouts do not fail Media dependencies
 version = 7.x-2.x-dev
 
-; Information added by Drupal.org packaging script on 2014-10-04
-version = "7.x-2.0-beta1"
+; Information added by Drupal.org packaging script on 2015-07-14
+version = "7.x-2.0-beta2"
 core = "7.x"
 project = "file_entity"
-datestamp = "1412420930"
+datestamp = "1436896443"
 

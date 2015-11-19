@@ -751,7 +751,7 @@ function dkan_dataset_page_alter(&$page) {
 function dkan_dataset_teaser_get_external_previews() {
   $previews = array();
   $previews['dkan'] = array(
-    'name' => variable_get('dkan_dataset_teaser_preview_label', variable_get('site_name', t('Local'))) . ' ' . t('Preview'),
+    'name' => variable_get('dkan_dataset_teaser_preview_label', '') . ' ' . t('Preview'),
     'link_callback' => 'dkan_dataset_preview_url_local',
     'suggested_formats' => array('csv', 'xls'),
     'description' => t('Local preview. Preview tabular data in a grid, basic chart or map. This preview type is not optional and will load only for the suggested formats listed.'),
@@ -763,7 +763,7 @@ function dkan_dataset_teaser_get_external_previews() {
     'name' => t('ArcGIS Preview'),
     'link_callback' => 'dkan_dataset_preview_url_arcgis',
     'suggested_formats' => array('rest', 'esri rest', 'arcgis'),
-    'description' => t('ArcGIS preview for ESRI endpoints. Requires a URL in the reousrce API field; will not work with resource files.'),
+    'description' => t('ArcGIS preview for ESRI endpoints. Requires a URL in the resource API field; will not work with resource files.'),
   );
   $previews['cartodb'] = array(
     'name' => t('CartoDB Preview'),

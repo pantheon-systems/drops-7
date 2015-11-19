@@ -154,9 +154,14 @@ function media_bulk_upload_forms($form_id, $args) {
   if ($form_id != 'media_edit' && (strpos($form_id, 'media_edit') === 0)) {
     $forms[$form_id] = array(
       'callback' => 'file_entity_edit',
+      'wrapper_callback' => 'media_bulk_upload_prepare_edit_form',
     );
   }
   return $forms;
+}
+
+function media_bulk_upload_prepare_edit_form($form, &$form_state) {
+  form_load_include($form_state, 'inc', 'file_entity', 'file_entity.pages');
 }
 
 /**

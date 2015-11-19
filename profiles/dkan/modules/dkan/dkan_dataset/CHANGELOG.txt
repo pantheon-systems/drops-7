@@ -1,5 +1,6 @@
 7.x-1.10 2015-11-10
 --------------------------
+- NOTE: 7.x-1.10 Was re-released on 2015-11-18 to address bugs in the teaser preview links.
 - Various improvements to dataset teaser displays.
 - Support for external previews (opening catalogued resources instantly in third-party visualization services, including ArcGIS and CartoDB)
 - Support for Flaticon at module level, so vector icons work on any theme
@@ -41,7 +42,7 @@
  - Changes in make file (fixed versions on some components)
  - Additional Info block on dataset page
  - Added docx as allowed format for field_upload
- - 
+ -
 
 7.x-1.1 2013-06-27
 ------------------
