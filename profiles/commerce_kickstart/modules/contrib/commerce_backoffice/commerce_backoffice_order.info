@@ -18,9 +18,9 @@ dependencies[] = views_megarow
 
 files[] = includes/views/handlers/commerce_backoffice_order_handler_field_order_operations.inc
 
-; Information added by Drupal.org packaging script on 2013-12-24
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2015-10-14
+version = "7.x-1.5"
 core = "7.x"
 project = "commerce_backoffice"
-datestamp = "1387900413"
+datestamp = "1444858742"
 

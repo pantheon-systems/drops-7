@@ -80,7 +80,7 @@
 }
 .commerce-backoffice-view .vbo-views-form select {
   float: left;
-  height: 25px;
+  min-height: 25px;
   margin: 2px 10px 2px 0;
   max-width: 250px;
 }
@@ -88,7 +88,7 @@
   position: relative;
 }
 .commerce-backoffice-view .vbo-views-form #edit-select select {
-  height: 25px;
+  min-height: 25px;
 }
 /* Mega Row Styles */
 .commerce-backoffice-view div.views-megarow-content {

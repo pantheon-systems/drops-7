@@ -98,7 +98,7 @@ function commerce_kickstart_taxonomy_term_path($vid, $tid) {
     }
     else {
       $path = $vocabulary->machine_name . '/' . $tid;
-      if (variable_get(_taxonomy_menu_build_variable('display_decendants', $vid), FALSE)) {
+      if (variable_get(_taxonomy_menu_build_variable('display_descendants', $vid), FALSE)) {
         // Use 'all' at the end of the path
         if (variable_get(_taxonomy_menu_build_variable('end_all', $vid), FALSE)) {
           $path .= '/all';

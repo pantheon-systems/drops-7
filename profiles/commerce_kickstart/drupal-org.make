@@ -48,7 +48,7 @@ projects[commerce_moneybookers][version] = 1.2
 projects[commerce_moneybookers][patch][] = "http://drupal.org/files/commerce_moneybookers-disable_payment_method_by_default-1962226-3.patch"
 projects[commerce_paypal][version] = 2.3
 projects[commerce_paypal][patch][2458721] = "https://www.drupal.org/files/issues/commerce_paypal-addressfield-default-values-2458721-1.patch"
-projects[commerce_backoffice][version] = 1.4
+projects[commerce_backoffice][version] = 1.5
 projects[commerce_message][version] = 1.0-rc3
 projects[commerce_search_api][version] = 1.4
 projects[commerce_add_to_cart_confirmation][version] = 1.0-rc2
@@ -142,14 +142,17 @@ projects[distro_update][version] = 1.0-beta4
 
 ; Internationalization
 projects[variable][version] = 2.5
-projects[i18n][version] = "1.12"
+projects[i18n][version] = "1.13"
 projects[lingotek][version] = 6.02
 
 ; Base theme.
 projects[omega][version] = 3.1
 projects[omega][patch][] = "http://drupal.org/files/relative-src-15.patch"
+projects[omega][type] = theme
 projects[omega_kickstart][version] = 3.4
+projects[omega_kickstart][type] = theme
 projects[shiny][version] = 1.6
+projects[shiny][type] = theme
 
 ; Libraries.
 libraries[colorbox][type] = "libraries"

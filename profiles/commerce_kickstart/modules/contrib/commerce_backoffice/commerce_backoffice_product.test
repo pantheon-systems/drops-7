@@ -1,0 +1,109 @@
+<?php
+
+/**
+ * Provides common helper methods for Commerce backoffice product module tests.
+ */
+class CommerceBackofficeProductWebTestCase extends DrupalWebTestCase {
+
+  /**
+   * Create a new product variation type with random name.
+   */
+  function createProductVariationType() {
+    $name = $this->randomName();
+    $type = strtolower($name);
+    $edit = array(
+      'product_type[name]' => $name,
+      'product_type[type]' => $type,
+    );
+    $this->drupalPost('admin/commerce/config/product-variation-types/add', $edit, t('Save product variation type'));
+    commerce_product_types_reset();
+    $variation_type = commerce_product_type_load($type);
+    $this->assertEqual($variation_type['type'], $type, 'Type saved.');
+
+    // Use the inline_entity_form widget
+    $instance = field_info_instance('node', 'field_product', $variation_type['type']);
+    $instance['widget'] = array(
+      'active' => 1,
+      'module' => 'inline_entity_form',
+      'settings' => array(
+        'fields' => array(),
+        'type_settings' => array(
+          'allow_existing' => 0,
+          'autogenerate_title' => 1,
+          'delete_references' => 1,
+          'match_operator' => 'CONTAINS',
+          'use_variation_language' => 1,
+        ),
+      ),
+      'type' => 'inline_entity_form',
+    );
+    field_update_instance($instance);
+
+    return $variation_type;
+  }
+
+  /**
+   * Create a new product display.
+   *
+   * @param $variation_type
+   *   The machine name of the product type.
+   */
+  function createProductDisplay($variation_type) {
+    $title = $this->randomName();
+    $sku = $this->randomName();
+    $price = mt_rand(1, 100);
+    $edit = array(
+      'title' => $title,
+      'field_product[und][form][sku]' => $sku,
+      'field_product[und][form][commerce_price][und][0][amount]' => $price,
+    );
+    $this->drupalPost('node/add/' . $variation_type, $edit, t('Save'));
+
+    $node = $this->drupalGetNodeByTitle($title);
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $this->assertEqual($wrapper->field_product[0]->sku->value(), $sku, 'Sku saved.');
+    $this->assertEqual($wrapper->field_product[0]->commerce_price->amount->value(), $price * 100);
+
+    return $node;
+  }
+}
+
+/**
+ * Tests the commerce backoffice product interface.
+ */
+class CommerceBackofficeProductTestCase extends CommerceBackofficeProductWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Commerce backoffice product interface',
+      'description' => 'Test the commerce backoffice product interface.',
+      'group' => 'Commerce backoffice product',
+    );
+  }
+
+  function setUp() {
+    parent::setUp('inline_entity_form', 'commerce_backoffice_product');
+
+    $this->admin_user = $this->drupalCreateUser(array('administer product types'));
+    $this->drupalLogin($this->admin_user);
+    $this->variationType = $this->createProductVariationType();
+    node_type_cache_reset();
+  }
+
+  /**
+   * Create, display a product display var the user interface.
+   */
+  function testProductDisplay() {
+    // Create a product display.
+    drupal_static_reset('checkPermissions');
+    $admin_user = $this->drupalCreateUser(array('create ' . $this->variationType['type'] . ' content',
+      'create commerce_product entities of bundle ' . $this->variationType['type']));
+    $this->drupalLogin($admin_user);
+    $productDisplay = $this->createProductDisplay($this->variationType['type']);
+    
+    // visit the product display.
+    $this->drupalGet('node/' . $productDisplay->nid);
+    $this->assertResponse(200);
+  }
+}
+

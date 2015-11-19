@@ -8,12 +8,14 @@ dependencies[] = commerce_product
 dependencies[] = commerce_product_ui
 dependencies[] = views_bulk_operations
 dependencies[] = views_megarow
+dependencies[] = commerce_product_reference
 
 files[] = includes/views/handlers/commerce_backoffice_product_handler_field_product_quick_edit_form.inc
+files[] = commerce_backoffice_product.test
 
-; Information added by Drupal.org packaging script on 2013-12-24
-version = "7.x-1.4"
+; Information added by Drupal.org packaging script on 2015-10-14
+version = "7.x-1.5"
 core = "7.x"
 project = "commerce_backoffice"
-datestamp = "1387900413"
+datestamp = "1444858742"
 
