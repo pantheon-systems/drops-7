@@ -1,0 +1,43 @@
+<?php
+/**
+ * @file
+ * Tests for the video_utility class
+ */
+
+/**
+ * Tests for video_utility
+ */
+class VideoUtilityTestCase extends DrupalUnitTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Video Utility tests',
+      'description' => 'Tests for the video_utility class',
+      'group' => 'Video',
+    );
+  }
+
+  function setUp() {
+    drupal_load('module', 'video');
+    require_once dirname(__FILE__) . '/../video.utility.inc';
+    parent::setUp();
+  }
+
+  public function testValidateDimensionList() {
+    $result = video_utility::validateDimensionList('123x456');
+    $this->assertTrue($result, '"123x456" is valid');
+
+    $result = video_utility::validateDimensionList('123x456 ');
+    $this->assertFalse($result, '"123x456 " is invalid');
+
+    $result = video_utility::validateDimensionList('123x456
+456x789');
+    $this->assertTrue($result, '"123x456\n456x789" is valid');
+
+    $result = video_utility::validateDimensionList('023x456
+456x789');
+    $this->assertFalse($result, '"023x456\n456x789" is invalid');
+
+    $result = video_utility::validateDimensionList(video_utility::getDefaultDimensions());
+    $this->assertTrue($result, 'The default dimensions list must be valid');
+  }
+}

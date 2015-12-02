@@ -1,0 +1,235 @@
+<?php
+
+/**
+ * @file
+ * Code for the Environment Readonly module.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function environment_readonly_menu() {
+  $items = array();
+  $items['admin/config/system/environment/readonly'] = array(
+    'title'            => 'Read Only Settings',
+    'description'      => 'Configuration options for Read Only environment state.',
+    'page callback'    => 'drupal_get_form',
+    'page arguments'   => array('environment_readonly_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'file'             => 'environment_readonly.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function environment_readonly_block_info() {
+  // Block that informs the site is in read only mode.
+  $blocks['environment_readonly_alert'] = array(
+    'info' => t('Read Only Environment Alert'),
+    'cache' => DRUPAL_CACHE_GLOBAL,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function environment_readonly_block_view($delta = '') {
+  switch ($delta) {
+    // Block that informs the site is in read only mode.
+    case 'environment_readonly_alert':
+      $block['subject'] = 'The site is currently in Read Only mode';
+      $block['content'] = 'The site is undergoing maintenance and is in Read
+        Only mode.  You can view all content you normally would have access to,
+        but you cannot make any modifications at this time.  We\'ll be back
+        shortly!';
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function environment_readonly_ctools_plugin_api() {
+  list($module, $api) = func_get_args();
+  if ($module == "context" && $api == "context") {
+    return array("version" => 3);
+  }
+}
+
+/**
+ * Implements hook_environment_switch().
+ */
+function environment_readonly_environment_switch($target_env, $current_env, $workflow = NULL) {
+  // Update permissions.
+  _environment_readonly_update_permissions();
+  drupal_set_message('Updated permissions.');
+}
+
+/**
+ * Implements hook_environment().
+ */
+function environment_readonly_environment() {
+  $environments = array();
+
+  $environments['readonly'] = array(
+    'label' => t('Read Only'),
+    'description' => t('Disallows everyone from being able to make any modifications to the site.'),
+    'allowed' => array(
+      'default' => TRUE,
+    ),
+  );
+
+  return $environments;
+}
+
+/**
+ * Implements hook_user_default_permissions_alter().
+ */
+function environment_readonly_user_default_permissions_alter(&$permissions) {
+  $env = environment_current();
+  if ($env == 'readonly') {
+    // Remove all configured roles from action permissions.
+    $role_config = _environment_readonly_get_configured_roles(TRUE);
+    $action_perms = _environment_readonly_get_action_perms();
+    foreach ($permissions as $perm => $data) {
+      // Remove action perms when in readonly mode.
+      if (in_array($perm, $action_perms)) {
+        foreach ($data['roles'] as $key => $role_name) {
+          if (in_array($role_name, $role_config)) {
+            unset($permissions[$perm]['roles'][$key]);
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Get configured roles.
+ *
+ * @param bool $names
+ *   Return configured names.
+ *
+ * @return array
+ *   Return readonly roles.
+ */
+function _environment_readonly_get_configured_roles($names = FALSE) {
+  $role_config = variable_get('environment_readonly_roles', NULL);
+  $user_roles = user_roles();
+  if ($role_config == NULL) {
+    $role_config = $user_roles;
+  }
+  else {
+    foreach ($role_config as $rid => $value) {
+      if (empty($value)) {
+        unset($role_config[$rid]);
+      }
+      else {
+        $role_config[$rid] = $user_roles[$rid];
+      }
+    }
+  }
+
+  if ($names) {
+    return $role_config;
+  }
+  else {
+    foreach ($role_config as $rid => $value) {
+      $role_config[$rid] = $rid;
+    }
+    return $role_config;
+  }
+}
+
+/**
+ * Get permissions.
+ *
+ * @return array
+ *   Permissions.
+ */
+function _environment_readonly_get_perms() {
+  $modules = array();
+  foreach (module_implements('permission') as $module) {
+    $modules[] = $module;
+  }
+  $permissions = array();
+  foreach ($modules as $module) {
+    if ($module_perms = module_invoke($module, 'permission')) {
+      foreach ($module_perms as $perm => $perm_item) {
+        $permissions[$perm] = $perm;
+      }
+    }
+  }
+  return $permissions;
+}
+
+/**
+ * Get action permissions.
+ *
+ * @return array
+ *   Return permissions.
+ */
+function _environment_readonly_get_action_perms() {
+  $settings = variable_get('environment_readonly_permissions', NULL);
+
+  // If there are no settings set, then we'll have to figure out the defaults.
+  if ($settings == NULL) {
+    $edit_text = array(
+      'administer',
+      'cancel',
+      'change',
+      'create',
+      'delete',
+      'edit',
+      'post',
+      'manage',
+      'revert',
+      'select',
+    );
+
+    $settings = array();
+    $permissions = _environment_readonly_get_perms();
+    foreach ($permissions as $perm => $perm_title) {
+      $settings[$perm] = 0;
+      $selected = FALSE;
+      foreach ($edit_text as $text) {
+        // Checking spaces before and after to minimize within-words checks.
+        if (strpos($perm, ' ' . $text) !== FALSE || strpos($perm, $text . ' ') !== FALSE) {
+          $settings[$perm] = $perm;
+        }
+      }
+    }
+  }
+
+  // Remove all the unset permissions.
+  foreach ($settings as $perm => $value) {
+    if (empty($value)) {
+      unset($settings[$perm]);
+    }
+  }
+
+  return $settings;
+}
+
+/**
+ * Update all permission configuration.
+ */
+function _environment_readonly_update_permissions() {
+  $revert = array();
+  features_include();
+  features_include_defaults('user_permission');
+  module_load_include('inc', 'features', 'features.export');
+  // Clear cache just in case.
+  features_get_default('user_permission', NULL, TRUE, TRUE);
+  $modules = module_implements('user_default_permissions');
+  foreach ($modules as $module) {
+    $revert[$module][] = 'user_permission';
+  }
+  if (!empty($revert)) {
+    features_revert($revert);
+  }
+}

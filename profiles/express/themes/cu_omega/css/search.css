@@ -1,0 +1,14 @@
+.cu-search input.form-text { border: none; color: #757575; }
+.cu-search input.form-text:focus { color: #363636; }
+
+.search-form-wrapper, .cu-search { max-width: 180px; }
+
+.banner-white .cu-search input.form-text { border: 1px solid #d7d7d7; }
+
+.banner-black #site-header, .banner-dark #site-header, .banner-black #block-google-appliance-ga-block-search-form, .banner-dark #block-google-appliance-ga-block-search-form { color: #fff; }
+
+.banner-white #site-header, .banner-light #site-header, .banner-white #block-google-appliance-ga-block-search-form, .banner-light #block-google-appliance-ga-block-search-form { color: #363636; }
+
+.banner-black #region-search-box a, .banner-dark #region-search-box a { color: #FFF; }
+
+.banner-white #region-search-box a, .banner-light #region-search-box a { color: #363636; }

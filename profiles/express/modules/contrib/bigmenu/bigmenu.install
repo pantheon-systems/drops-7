@@ -1,0 +1,29 @@
+<?php 
+/**
+ * @file
+ *   Install routines for module
+ */
+
+/**
+ * Implementation of hook_enable()
+ *
+ * Ensure we load after the usual core.
+ */
+function bigmenu_enable() {
+  db_update('system')
+  ->fields(array('weight' => 10))
+  ->condition('name', 'bigmenu')
+  ->execute();
+}
+
+/**
+ * Rebuild menus so menu link
+ *   admin/structure/bigmenu-customize/%menu/subform/%menu_link
+ * becomes
+ *   admin/structure/menu/manage/%menu/bigmenu-customize/subform/%menu_link
+ *
+ * This fixes menu links not editable when bigmenu is used with i18n_menu.
+ */
+function bigmenu_update_7001() {
+  menu_rebuild();
+}

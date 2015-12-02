@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the cu_test_content_context feature.
+ */
+
+include_once 'cu_test_content_context.features.inc';

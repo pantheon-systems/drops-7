@@ -1,0 +1,14 @@
+/*
+ * Bartik floats taxonomy terms.
+ * In the header, with field grouping the float must be cleared.
+*/
+.ui-accordion h3.ui-accordion-header {
+  overflow: hidden;
+}
+
+/*
+ * Fix issues with anchor tags for rdf in field items within the headers
+ */
+.ui-accordion .ui-accordion-header .field-items a {
+  padding: 0 0.5em 1em 1.9em;
+}

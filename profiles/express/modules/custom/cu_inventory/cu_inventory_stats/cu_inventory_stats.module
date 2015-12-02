@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file cu_inventory_stats.module
+ * Provides data about the site and it's content to the CU Inventory.
+ */
+
+function cu_inventory_stats_cron() {
+  $cron_last = variable_get('cron_last', NULL);
+  // Run once a day
+  if (date('ymd', $cron_last) != date('ymd', time())) {
+    if (variable_get('cu_inventory_stats_site_cron', TRUE)) {
+      module_load_include('inc', 'cu_inventory_stats');
+      cu_inventory_stats_process_site_stats();
+    }
+  }
+}

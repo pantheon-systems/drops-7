@@ -1,0 +1,342 @@
+<?php
+
+/**
+ * @file
+ * Our settings.
+ */
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_settings_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'cu_settings') . '/css/cu-settings.css');
+}
+
+/**
+ * Implements hook_navbar_alter().
+ */
+function cu_settings_navbar_alter(&$items) {
+  $items['administration']['#title'] = t('Express');
+  $items['administration']['tab']['#title'] = t('Express');
+}
+
+ /**
+  * Implements hook_menu_alter().
+  */
+function cu_settings_menu_alter(&$items) {
+  // Add new permissions to redirect settings and generate
+  $items['admin/config/search/redirect/settings']['access arguments'] = array('administer redirect settings');
+  $items['admin/config/search/redirect/generate']['access arguments'] = array('administer redirect settings');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_settings_menu() {
+  if (!module_exists('cu_preview')) {
+		$items['admin/settings'] = array(
+			'title' => 'Settings',
+			'type' => MENU_NORMAL_ITEM,
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('cu_settings_admin_settings_form'),
+			'access arguments' => array('administer cu settings'),
+			'weight' => 8,
+		);
+		$items['admin/settings/site'] = array(
+			'title' => 'Site Settings',
+			'type' => MENU_DEFAULT_LOCAL_TASK,
+			'weight' => -10,
+		);
+		$items['admin/settings/contact'] = array(
+			'title' => 'Contact Information',
+			'type' => MENU_LOCAL_TASK,
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('cu_settings_contact_info_form'),
+			'access arguments' => array('administer cu settings'),
+		);
+		$items['admin/settings/error'] = array(
+			'title' => 'Error Pages',
+			'type' => MENU_LOCAL_TASK,
+			'page callback' => 'drupal_get_form',
+			'page arguments' => array('cu_settings_error_form'),
+			'access arguments' => array('administer cu settings'),
+		);
+		$items['admin/settings/redirects'] = array(
+			'title' => 'URL Redirects',
+			'type' => MENU_LOCAL_TASK,
+			'page callback' => 'drupal_goto',
+			'page arguments' => array('admin/config/search/redirect'),
+			'access arguments' => array('administer redirects'),
+		);
+		return $items;
+  }
+}
+
+/**
+ * Page callback for admin/settings.
+ */
+function cu_settings_admin_settings_form($form, &$form_state) {
+  global $base_url;
+  $form = array();
+  $form['name'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Site Name',
+  );
+  $form['name']['site_name_1'] = array(
+    '#title' => t('Site name - line 1'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('site_name_1', 'CU-Boulder'),
+    '#required' => TRUE,
+  );
+  $form['name']['site_name_2'] = array(
+    '#title' => t('Site name - line 2 (optional)'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('site_name_2', ''),
+    '#required' => FALSE,
+  );
+  $form['home'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Home Page',
+  );
+  $form['home']['site_frontpage'] = array(
+    '#title' => t('Default front page'),
+    '#type' => 'textfield',
+    '#default_value' => (variable_get('site_frontpage') != 'node' ? drupal_get_path_alias(variable_get('site_frontpage', 'node')) : ''),
+    '#field_prefix' => $base_url . '/',
+    '#size' => 20,
+    '#required' => TRUE,
+  );
+  $form['ga'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Google Analytics'),
+  );
+  $form['ga']['ga_account'] = array(
+    '#title' => t('Google Analytics Account ID'),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('ga_account', '') ? variable_get('ga_account', '') : '',
+    '#description' => t('Example: UA-123456-1'),
+  );
+
+  $form['#validate'][] = 'cu_settings_validate';
+  // Let system_settings_form_submit run first to variable_set vars.
+  $form = system_settings_form($form);
+  $form['#submit'][] = 'cu_settings_admin_settings_form_submit';
+  return $form;
+}
+
+/**
+ * Submit handler for admin_settings_form.
+ */
+function cu_settings_admin_settings_form_submit($form, &$form_state) {
+  if (variable_get('ga_account', '')) {
+    $js_code = format_string("ga('create', '@ga_account', 'auto', {'name':'customTracker'});  ga('customTracker.send', 'pageview');", array('@ga_account' => variable_get('ga_account', '')));
+    variable_set('googleanalytics_codesnippet_after', $js_code);
+  } else {
+    variable_set('googleanalytics_codesnippet_after', '');
+  }
+  // Save site names as independent variables and concatenated
+  $full_site_name = $form_state['values']['site_name_1'] . ' ' . $form_state['values']['site_name_2'];
+  variable_set('site_name', $full_site_name);
+  // Send potentially updated site name to inventory.
+  if (module_exists('cu_inventory')) {
+    $data = array();
+    $cu_sid = variable_get('cu_sid', '');
+    if ($cu_sid) {
+      $data['sid'] = $cu_sid;
+      $data['name'] = $full_site_name;
+      $response = cu_inventory_update_site($data);
+    }
+  }
+}
+
+/**
+ * Page callback for admin/settings/contact.
+ */
+function cu_settings_contact_info_form($form, &$form_state) {
+
+  $site_info_body = variable_get('site_info_body', array(
+    'value' => t('Put your contact information here'),
+    'format' => 'wysiwyg',
+  ));
+  $form['contact_info'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Contact Information',
+  );
+  $form['contact_info']['site_info_body'] = array(
+    '#type' => 'text_format',
+    '#default_value' => $site_info_body['value'],
+    '#format' => $site_info_body['format'],
+    '#required' => FALSE,
+    '#description' => t('This will display as contact information for your visitors'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Page callback for admin/settings/error.
+ */
+function cu_settings_error_form($form, &$form_state) {
+
+  $form['errors'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Error Pages',
+  );
+  $form['errors']['site_404'] = array(
+    '#title' => t('Default 404 page'),
+    '#description' => t('Allows you to set the default "Not Found" page.'),
+    '#type' => 'textfield',
+    '#field_prefix' => $base_url . '/',
+    '#size' => 20,
+    '#required' => TRUE,
+    '#default_value' => drupal_get_path_alias(variable_get('site_404', 'navigation404')),
+  );
+  $form['errors']['site_403'] = array(
+    '#title' => t('Default 403 page'),
+    '#description' => t('Allows you to set the default "Access Denied" page.'),
+    '#type' => 'textfield',
+    '#field_prefix' => $base_url . '/',
+    '#size' => 20,
+    '#required' => FALSE,
+    '#default_value' => (variable_get('site_403') ? drupal_get_path_alias(variable_get('site_403', '')) : ''),
+  );
+  $form['#validate'][] = 'cu_settings_404_validate';
+
+  return system_settings_form($form);
+}
+
+/**
+ * Validation handler for cu_settings form.
+ */
+function cu_settings_validate($form, &$form_state) {
+  // Taken from system_site_information_settings_validate.
+  // Check for empty front page path.
+  if (empty($form_state['values']['site_frontpage'])) {
+    // Set to default "node".
+    form_set_value($form['home']['site_frontpage'], 'node', $form_state);
+  }
+  else {
+    // Get the normal path of the front page.
+    form_set_value($form['home']['site_frontpage'], drupal_get_normal_path($form_state['values']['site_frontpage']), $form_state);
+  }
+
+  // Ensure ga-account looks like a real account value.
+  if (!empty($form_state['values']['ga_account'])) {
+    $pattern = '/(UA|ua)-[0-9]*-[0-9]*/';
+    $match = preg_match($pattern, $form_state['values']['ga_account']);
+    if (!$match) {
+      form_set_error('ga_account', t('Please enter your google account in the form of "UA-123456-1"'));
+    }
+  }
+
+}
+
+function cu_settings_404_validate($form, &$form_state) {
+  // Check for empty 404 submission.
+  // Since it's required, this should never be hit...but just in case?
+  if (empty($form_state['values']['site_404'])) {
+    // Set default value to navigation404, just in case.
+    // I think a 404 value always MUST be set...right?
+    form_set_value($form['errors']['site_404'], 'naviagtion404', $form_state);
+  }
+}
+
+/**
+ * Preprocess theme variables for a specific theme hook.
+ *
+ * This hook allows modules to preprocess theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme preprocessing for a theme hook it didn't define.
+ *
+ * For more detailed information, see theme().
+ *
+ * @param array $variables
+ *   The variables array (modify in place).
+ */
+function cu_settings_preprocess_page(&$variables) {
+  if (variable_get('site_name_2', '')) {
+    $variables['site_name'] = '<span class="site-name-two-lines">' . variable_get('site_name_1', NULL) . '<br />' . variable_get('site_name_2', NULL) . '</span>';
+    $variables['classes_array'][] = 'two-line-title';
+  }
+}
+
+/**
+ * Preprocess theme variables for a specific theme hook.
+ *
+ * This hook allows modules to preprocess theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme preprocessing for a theme hook it didn't define.
+ *
+ * For more detailed information, see theme().
+ *
+ * @param array $variables
+ *   The variables array (modify in place).
+ */
+function cu_settings_preprocess_html(&$variables) {
+  if (variable_get('site_name_2', '')) {
+    $variables['head_title_array']['name'] = variable_get('site_name_1', NULL) . ' ' . variable_get('site_name_2', NULL);
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function cu_settings_permission() {
+  return array(
+    'administer cu settings' => array(
+      'title' => 'Administer CU Settings',
+      'description' => 'Access admin/settings to configure settings for CU',
+    ),
+    'administer redirect settings' => array(
+      'title' => 'Administer Redirect Settings',
+    ),
+  );
+}
+
+/**
+ * Menu callback; Provide the administration overview page.
+ */
+function cu_settings_management_page() {
+
+  $blocks = array();
+  if ($admin = db_query("SELECT menu_name, mlid FROM {menu_links} WHERE link_path = 'admin/settings'")->fetchAssoc()) {
+    //dsm($admin);
+    $result = db_query("
+      SELECT m.*, ml.*
+      FROM {menu_links} ml
+      INNER JOIN {menu_router} m ON ml.router_path = m.path
+      WHERE ml.link_path <> 'admin/help' AND menu_name = :menu_name AND ml.plid = :mlid AND hidden = 0", $admin, array('fetch' => PDO::FETCH_ASSOC));
+
+      // SELECT m.*, ml.* FROM menu_links ml INNER JOIN menu_router m ON ml.router_path = m.path WHERE menu_name = 'management' AND ml.plid = 559 AND hidden = 0
+    foreach ($result as $item) {
+      //dsm($item);
+      _menu_link_translate($item);
+      if (!$item['access']) {
+        continue;
+      }
+      // The link description, either derived from 'description' in hook_menu()
+      // or customized via menu module is used as title attribute.
+      if (!empty($item['localized_options']['attributes']['title'])) {
+        $item['description'] = $item['localized_options']['attributes']['title'];
+        unset($item['localized_options']['attributes']['title']);
+      }
+      $block = $item;
+      $block['content'] = '';
+      $block['content'] .= theme('admin_block_content', array('content' => system_admin_menu_block($item)));
+      if (!empty($block['content'])) {
+        $block['show'] = TRUE;
+      }
+
+      // Prepare for sorting as in function _menu_tree_check_access().
+      // The weight is offset so it is always positive, with a uniform 5-digits.
+      $blocks[(50000 + $item['weight']) . ' ' . $item['title'] . ' ' . $item['mlid']] = $block;
+    }
+  }
+  if ($blocks) {
+    ksort($blocks);
+    return theme('admin_page', array('blocks' => $blocks));
+  }
+  else {
+    return t('You do not have any administrative items.');
+  }
+}

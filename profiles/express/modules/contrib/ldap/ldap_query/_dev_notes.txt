@@ -1,0 +1,56 @@
+
+Properties:field_name
+---------------------
+queryNumericId: query_numeric_id
+qid
+name
+sid
+status
+
+baseDn: base_dn array
+filter: filter
+attributes: attributes
+
+sizelimit: sizelimit
+timelimit: timelimit
+deref: deref
+  * LDAP_DEREF_NEVER - (default) aliases are never dereferenced.
+  * LDAP_DEREF_SEARCHING - aliases should be dereferenced during the search but not when locating the base object of the search.
+  * LDAP_DEREF_FINDING - aliases should be dereferenced when locating the base object but not during the search.
+  * LDAP_DEREF_ALWAYS - aliases should be dereferenced always.
+
+scope: scope
+  * LDAP_DEREF_NEVER => t(default) aliases are never dereferenced.',
+  * LDAP_DEREF_SEARCHING=> 'aliases should be dereferenced during the search but not when locating the base object of the search.',
+  * LDAP_DEREF_FINDING => 'aliases should be dereferenced when locating the base object but not during the search.',
+  * LDAP_DEREF_ALWAYS => 'aliases should be dereferenced always.',
+
+inDatabase
+detailedWatchdogLog
+
+-------------
+Methods:
+-------------
+execute()  execute query
+save()     save to db
+delete()
+getLdapQueryObjects() statis method to get group of query objects
+getActions() for Admin Interface index
+drupalForm() for admin Interface form
+drupalFormValidate() for admin interface form
+drupalFormSubmit() for admin interface form
+
+
+------------
+Hooks:
+------------
+hook_ldap_query_alter(); basic drupal alter on ldap query
+hook_ldap_query_results_alter(); basic drupal alter on ldap query
+
+
+
+----------------
+User Interfaces:
+----------------
+query index
+query edit form

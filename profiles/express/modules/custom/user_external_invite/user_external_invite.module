@@ -1,0 +1,555 @@
+<?php
+
+/**
+ * @file
+ *
+ */
+
+
+
+/**
+ * Implements hook_permission().
+ */
+function user_external_invite_permission() {
+  return array(
+    'invite new user' => array(
+      'title' => 'Invite new user',
+      'restrict access' => TRUE,
+      'description' => 'Allow access to send invitation email',
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function user_external_invite_menu() {
+  $items = array();
+  $items['admin/people/invite'] = array(
+    'title' => 'Invite user',
+    'page callback' => 'user_external_invite_page',
+    'page arguments' => array('user_external_invite_form'),
+    'access callback' => 'user_external_invite_form_access',
+    //'access arguments' => array('invite new cu uesr'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+  $items['admin/people/invite/cancel/%'] = array(
+    'title' => 'Cancel user invite',
+    'page callback' => 'user_external_invite_cancel_invite',
+    'access callback' => 'user_external_invite_form_access',
+    'page arguments' => array(4),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['user-external/accept-invite'] = array(
+    'title' => 'Accept an invite',
+    'page callback' => 'user_external_invite_accept_invite',
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Page callback for admin/people/invite/cancel/%.
+ *
+ * Cancels a invite.
+ */
+function user_external_invite_cancel_invite($mail) {
+  // @todo verify $mail is valid and invite currently exists.
+  _user_external_invite_remove_invite($mail);
+  drupal_set_message(t('Invite for !mail successfully canceled.', array('!mail' => $mail)));
+  drupal_goto('admin/people/invite');
+}
+
+/**
+ * Access callback for admin/people/invite.
+ *
+ * For some reason, simply using a callback of 'user_access()',
+ * was not working.
+ */
+function user_external_invite_form_access() {
+  if (user_access('invite new user')) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Page callback for admin/people/invite.
+ */
+function user_external_invite_page() {
+  $build['form'] = drupal_get_form('user_external_invite_form');
+  $build['invites'] = _user_external_invite_pending_invites_table();
+  return $build;
+}
+
+function _user_external_invite_pending_invites($mail = NULL) {
+  $query = db_select('user_external_invite', 'i')
+    ->fields('i');
+  if ($mail) {
+    $query->condition('mail', $mail);
+  }
+  $record = $query->execute()->fetchAll();
+  return $record;
+}
+
+function _user_external_invite_pending_invites_table() {
+  $build = array();
+  $pending = _user_external_invite_pending_invites();
+  if (!empty($pending)) {
+    $build['title']['#markup'] = '<h2>Pending Invites</h2>';
+    $build['table']['#theme'] = 'table';
+
+    $build['table']['#header'] = array(
+      t('Email'),
+      t('Role'),
+      t('Expires'),
+      t('Inviter'),
+      t('Actions'),
+    );
+
+    $roles = _user_external_invite_roles();
+
+    foreach ($pending as $r) {
+
+      $inviter = user_load($r->uid);
+      $rows[] = array(
+        $r->mail,
+        $roles[$r->rid],
+        format_date($r->expire, 'short'),
+        $inviter->mail,
+        l('Cancel invite', 'admin/people/invite/cancel/' . $r->mail),
+      );
+    }
+    $build['table']['#rows'] = $rows;
+  }
+  return $build;
+}
+
+function _user_external_invite_roles() {
+  $ao_role = user_role_load_by_name('edit_my_content');
+  $ce_role = user_role_load_by_name('content_editor');
+  $so_role = user_role_load_by_name('site_owner');
+  $roles = array(
+    $ao_role->rid => _user_external_invite_role_name_from_rid($ao_role->rid),
+    $ce_role->rid => _user_external_invite_role_name_from_rid($ce_role->rid),
+    $so_role->rid => _user_external_invite_role_name_from_rid($so_role->rid),
+  );
+  return $roles;
+}
+
+/**
+ * Form to invite a new user as a site owner or content editor.
+ */
+function user_external_invite_form($form, &$form_state) {
+  drupal_set_title('Invite New User');
+  //@TODO: this needs to be generalized
+  $ce_role = user_role_load_by_name('content_editor');
+  $so_role = user_role_load_by_name('site_owner');
+  $role_options = _user_external_invite_roles();
+  $form['rid'] = array(
+    '#title' => t('Role'),
+    '#type' => 'radios',
+    '#options' => $role_options,
+    '#default_value' => $ce_role->rid,
+  );
+  $form['email'] = array(
+    '#title' => t('Email addresses'),
+    '#type' => 'textarea',
+    '#description' => t('Comma separated list of email addresses to send the invitation email to'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Submit'),
+  );
+  return $form;
+}
+
+/**
+ * Validation handler for invite_form.
+ *
+ * Ensures email addresses are in valid format.
+ */
+function user_external_invite_form_validate(&$form, &$form_state) {
+  $email_value = $form_state['values']['email'];
+  // Split on , or line break.
+  $emails = preg_split("/[\r\n,\s]+/", $email_value, -1, PREG_SPLIT_NO_EMPTY);
+  $error = FALSE;
+  foreach ($emails as $mail) {
+    if (!valid_email_address($mail)) {
+      $error = TRUE;
+      form_set_error('email', t('Incorrect email address (%mail). No invites were sent.', array('%mail' => $mail)));
+    }
+    else {
+      $load = _user_external_invite_load_invite($mail);
+      if (isset($load['mail'])) {
+        form_set_error('email', t('Email address (%mail) has already been invited. No invites were sent.', array('%mail' => $mail)));
+      }
+    }
+  }
+  if (!$error) {
+    $form_state['values']['parsed_mails'] = $emails;
+  }
+}
+
+/**
+ * Submit handler for invite_form.
+ *
+ * Add entry to database and send email.
+ */
+function user_external_invite_form_submit(&$form, &$form_state) {
+  global $user;
+  _user_external_invite_add_invite($form_state['values']['rid'], $form_state['values']['parsed_mails'], $user->uid);
+  drupal_set_message(t('Successfully invited new user!'));
+}
+
+/**
+ * Adds invite to database and sends email.
+ */
+function _user_external_invite_add_invite($rid, $emails, $uid) {
+  $now = REQUEST_TIME;
+  // Expire in 3 days.
+  $expire = $now + (3 * 24 * 60 * 60);
+  foreach ($emails as $mail) {
+    $data = db_insert('user_external_invite')
+      ->fields(array(
+        'mail' => $mail,
+        'rid' => $rid,
+        'expire' => $expire,
+        'uid' => $uid,
+      ))
+      ->execute();
+    // Now send the email.
+    _user_external_invite_send_invite($rid, $mail, $expire, $uid);
+  }
+  // After all emails are sent, send confirmation to submitter.
+  global $user;
+  $params = array(
+    'subject' => t('[Web Express] Access request for the !site_name website', array('!site_name' => $site_name)),
+    'rid' => $rid,
+    'role_name' => _user_external_invite_role_name_from_rid($rid),
+    'invites' => $emails,
+    'site_name' => _user_external_invite_site_name(),
+  );
+  $sent_mail = drupal_mail('user_external_invite', 'user_external_invite_sent', $user->mail, language_default(), $params, $from, TRUE);
+
+}
+
+/**
+ * Sends email with special token-login link.
+ */
+function _user_external_invite_send_invite($rid, $email, $expire, $uid) {
+  $hash = _user_external_invite_calculate_hash($rid, $email, $expire);
+  _user_external_invite_send_invite_mail($rid, $email, $expire, $hash, $uid);
+}
+
+/**
+ * Calculates the token based on $rid, $email, and $expire.
+ */
+function _user_external_invite_calculate_hash($rid, $email, $expire) {
+  $hash = drupal_hmac_base64('user_rid:'.$rid.',user_mail:'.$email, drupal_get_hash_salt() . $email . $expire);
+  return $hash;
+}
+
+function _user_external_invite_from_email() {
+  // needs to be configurable
+  return 'noreply@colorado.edu';
+}
+
+function _user_external_invite_role_name_from_rid($rid) {
+  $user_role = user_role_load($rid);
+  return $user_role->name;
+  //$role_name = $user_role->name;
+  // Replace _ with space.
+  //$role_name = preg_replace("/_/usm", " ", $role_name);
+  //return $role_name;
+}
+
+function _user_external_invite_site_name() {
+  //$site_name = implode(array(variable_get('site_name', ''), variable_get('site_name_2', ''), ), ' ');
+  return variable_get('site_name', '');
+}
+
+/**
+ * Sends invitation email with token login link.
+ */
+function _user_external_invite_send_invite_mail($rid, $mail, $expire, $hash, $uid) {
+  $from = _user_external_invite_from_email();
+  $link = url('user-external/accept-invite', array(
+    'query' => array(
+      'key' => $hash,
+      'mail' => $mail,
+    ),
+    'absolute' => TRUE,
+  ));
+  $role_name = _user_external_invite_role_name_from_rid($rid);
+  $site_name = _user_external_invite_site_name();
+  $params = array(
+    'token' => $hash,
+    'rid' => $rid,
+    'role_name' => $role_name,
+    'expire' => $expire,
+    'link' => $link,
+    'uid' => $uid,
+    'site_name' => $site_name,
+    'subject' => t('[Web Express] Invitation to access the !site_name website', array('!site_name' => $site_name)),
+  );
+
+  // Send mail to user who was invited.
+  $sent_mail = drupal_mail('user_external_invite', 'user_external_invite_token', $mail, language_default(), $params, $from, TRUE);
+}
+
+/**
+ * Sends accepted invitation email with login link and extra help.
+ */
+function _user_external_invite_send_invite_accepted_mail($rid, $mail) {
+  $from = _user_external_invite_from_email();
+  $link = url('user/login', array(
+    'absolute' => TRUE,
+  ));
+  $role_name = _user_external_invite_role_name_from_rid($rid);
+  $site_name = _user_external_invite_site_name();
+  $params = array(
+    'rid' => $rid,
+    'role_name' => $role_name,
+    'link' => $link,
+    'site_name' => $site_name,
+    'subject' => t('[Web Express] Access confirmation for the !site_name website', array('!site_name' => $site_name)),
+  );
+  $sent_mail = drupal_mail('user_external_invite', 'user_external_invite_accepted', $mail, language_default(), $params, $from, TRUE);
+}
+
+/**
+ * uid: uid of user who sent the invite
+ * mail: email address of user who was invited
+ * rid: role id that was granted
+ */
+function _user_external_invite_send_inviter_confirmation($uid, $mail, $rid) {
+  $account = user_load($uid);
+  $from = _user_external_invite_from_email();
+  $role_name = _user_external_invite_role_name_from_rid($rid);
+  $site_name = _user_external_invite_site_name();
+  $params = array(
+    'rid' => $rid,
+    'role_name' => $role_name,
+    'site_name' => $site_name,
+    'invite' => $mail,
+    'subject' => t('[Web Express] Access request confirmation'),
+  );
+  $sent_mail = drupal_mail('user_external_invite', 'user_external_invite_confirmation', $account->mail, language_default(), $params, $from, TRUE);
+}
+
+/**
+ * Implements hook_mail().
+ */
+function user_external_invite_mail($key, &$message, $params) {
+  switch ($key) {
+    // Invite email.
+    case 'user_external_invite_token':
+      $message['body'] = array();
+      $message['body'][] = theme('user_external_invite_email', $params);
+      $message['subject'] = $params['subject'];
+      break;
+    case 'user_external_invite_sent':
+      $message['body'] = array();
+      $message['body'][] = theme('user_external_invite_sent_email', $params);
+      $message['subject'] = $params['subject'];
+      break;
+    case 'user_external_invite_accepted':
+      $message['body'] = array();
+      $message['body'][] = theme('user_external_invite_accepted_email', $params);
+      $message['subject'] = $params['subject'];
+      break;
+    case 'user_external_invite_confirmation':
+      $message['body'] = array();
+      $message['body'][] = theme('user_external_invite_confirmation_email', $params);
+      $message['subject'] = $params['subject'];
+      break;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function user_external_invite_theme($existing, $type, $theme, $path) {
+  return array(
+    'user_external_invite_email' => array(
+      'variables' => array(
+        'token' => '',
+        'rid' => '',
+        'role_name' => '',
+        'expire' => '',
+        'link' => '',
+        'uid' => '',
+        'site_name' => '',
+      ),
+      'template' => 'user-external-invite-email',
+    ),
+    'user_external_invite_sent_email' => array(
+      'variables' => array(
+        'rid' => '',
+        'role_name' => '',
+        'expire' => '',
+        'site_name' => '',
+        'invites' => array(),
+      ),
+      'template' => 'user-external-invite-sent-email',
+    ),
+    'user_external_invite_accepted_email' => array(
+      'variables' => array(
+        'rid' => '',
+        'role_name' => '',
+        'link' => '',
+        'site_name' => '',
+      ),
+      'template' => 'user-external-invite-accepted-email',
+    ),
+    'user_external_invite_confirmation_email' => array(
+      'variables' => array(
+        'rid' => '',
+        'role_name' => '',
+        'site_name' => '',
+        'invite' => '',
+      ),
+      'template' => 'user-external-invite-confirmation-email',
+    ),
+  );
+}
+
+/**
+ * Page callback for accepting an invite.
+ *
+ * If logged in, checks invite token and grants role, sends to user page.
+ * If not logged in, sends to user/login with correct params to grant
+ * role on successful login.
+ */
+function user_external_invite_accept_invite() {
+  if (isset($_GET['key']) && isset($_GET['mail'])) {
+    if (user_is_logged_in()) {
+      global $user;
+      user_external_invite_grant_invite($_GET['key'], $_GET['mail'], $user);
+      drupal_goto('user');
+    }
+    else {
+      drupal_goto('user/login', array(
+        'query' => array(
+          'key' => $_GET['key'],
+          'mail' => $_GET['mail'],
+        )
+      ));
+    }
+  }
+}
+
+/**
+ * Grants an invite given a token and mail.
+ *
+ * Checks invite key+mail token is valid,
+ * Grants role, sends emails, and removes invite from db.
+ */
+function user_external_invite_grant_invite($key, $mail, $account) {
+  $grant_rid = _user_external_invite_dehash($key, $mail);
+
+  if ($grant_rid) {
+    // check to see if the user already has the role.  Becuase the email
+    // used in the invite is not always = to LDAP, they could already be
+    // in the role
+
+    global $user;
+    $role = user_role_load($grant_rid);
+    if (in_array($role->name, $user->roles)) {
+      return;
+    }
+    $data = db_insert('users_roles')
+      ->fields(array(
+        'uid' => $account->uid,
+        'rid' => $grant_rid,
+      ))
+      ->execute();
+    // Send acceptance email.
+    _user_external_invite_send_invite_accepted_mail($grant_rid, $account->mail);
+
+    // Load the invite to send email to inviter.
+    $invite = _user_external_invite_load_invite($mail);
+
+    // Send email to inviter.
+    _user_external_invite_send_inviter_confirmation($invite['uid'], $invite['mail'], $invite['rid']);
+
+    // Once granted, remove entry from database.
+    _user_external_invite_remove_invite($mail);
+  }
+  else {
+    drupal_set_message(t('Invite invalid or has expired! If you feel you have received this in error, please contact a site owner.'), 'error');
+  }
+}
+
+/**
+ * Implements hook_user_login().
+ *
+ * Upon successful login, if key and mail are set, grant role.
+ */
+function user_external_invite_user_login(&$edit, $account) {
+  if (isset($_GET['key']) && isset($_GET['mail'])) {
+    user_external_invite_grant_invite($_GET['key'], $_GET['mail'], $account);
+    drupal_goto('user');
+  }
+}
+
+function _user_external_invite_load_invite($mail) {
+  return db_select('user_external_invite', 'i')
+    ->fields('i')
+    ->condition('mail', $mail)
+    ->execute()
+    ->fetchAssoc();
+}
+
+/**
+ * Remove invite row from {user_external_invite}.
+ *
+ * Called after invite has been used, or on cron after expiration.
+ */
+function _user_external_invite_remove_invite($mail) {
+  db_delete('user_external_invite')
+    ->condition('mail', $mail)
+    ->execute();
+}
+
+/**
+ * Given a key-token and mail, calculate expected hash, if same as key,
+ * return $rid of role to be granted.
+ */
+function _user_external_invite_dehash($key, $mail) {
+  $result = db_select('user_external_invite', 'i')
+    ->fields('i')
+    ->condition('mail', $mail)
+    ->execute()
+    ->fetchAssoc();
+  if ($result['expire'] < REQUEST_TIME) {
+    // Token has expired.
+    // @todo: need a better error here.
+    return FALSE;
+  }
+  $expected_hash = _user_external_invite_calculate_hash($result['rid'], $result['mail'], $result['expire']);
+  if ($key == $expected_hash) {
+    drupal_set_message(t('Invite accepted!'));
+    return $result['rid'];
+  }
+
+  return FALSE;
+}
+
+function _user_external_invite_calculate_hash_old($rid, $email, $expire) {
+  $hash = drupal_hmac_base64('cu_user_rid:'.$rid.',cu_user_mail:'.$email, drupal_get_hash_salt() . $email . $expire);
+  return $hash;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function user_external_invite_cron() {
+  // Delete expired invites.
+  $query = db_delete('user_external_invite')
+    ->condition('expire', REQUEST_TIME, '<');
+  $record = $query->execute();
+}

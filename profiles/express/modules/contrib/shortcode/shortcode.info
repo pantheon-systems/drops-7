@@ -1,0 +1,12 @@
+name = Shortcode
+description = Provides shortcodes filter framework and API (like WP shortcodes)
+package = Shortcode
+core = 7.x
+dependencies[] = filter
+
+; Information added by Drupal.org packaging script on 2015-05-14
+version = "7.x-2.22"
+core = "7.x"
+project = "shortcode"
+datestamp = "1431601290"
+

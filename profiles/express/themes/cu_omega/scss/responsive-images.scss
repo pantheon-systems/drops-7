@@ -1,0 +1,54 @@
+.image-square_thumbnail {
+  float:left;
+  width:50px;
+  height: 50px;
+  margin:0 10px 10px 0;
+}
+.grid-2 .image-square_thumbnail,
+.grid-3 .image-square_thumbnail,
+.grid-4 .image-square_thumbnail,
+.grid-5 .image-square_thumbnail {
+  width:50px;
+  height: 50px;
+}
+.field-type-text-with-summary img,
+.field-type-text-long img {
+  max-width:100%;
+  margin:0;
+}
+
+@media all and (min-width: 740px) and (min-device-width: 740px), (max-device-width: 800px) and (min-width: 740px) and (orientation:landscape) {
+
+  .image-square_thumbnail {
+    float:left;
+    width:100px;
+    height: 100px;
+    margin:0 10px 10px 0;
+  }
+  .grid-2 .image-square_thumbnail,
+  .grid-3 .image-square_thumbnail,
+  .grid-4 .image-square_thumbnail,
+  .grid-5 .image-square_thumbnail {
+    width:65px;
+    height: 65px;
+  }
+
+}
+
+@media all and (min-width: 980px) and (min-device-width: 980px), all and (max-device-width: 1024px) and (min-width: 1024px) and (orientation:landscape) {
+
+  .image-square_thumbnail {
+    float:left;
+    width:100px;
+    height: 100px;
+    margin:0 10px 10px 0;
+  }
+  .grid-2 .image-square_thumbnail,
+  .grid-3 .image-square_thumbnail,
+  .grid-4 .image-square_thumbnail,
+  .grid-5 .image-square_thumbnail {
+    width:65px;
+    height: 65px;
+  }
+
+}

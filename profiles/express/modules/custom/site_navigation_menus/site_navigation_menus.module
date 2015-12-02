@@ -1,0 +1,94 @@
+<?php
+/**
+ * @file
+ * Code for the Site Navigation Menus feature.
+ */
+
+include_once 'site_navigation_menus.features.inc';
+
+/**
+ * @file
+ * Programmatically create VCR content. Oh Yeah!
+ *
+ * Will create pages, menus and menu items, beans and more.
+ * More power!
+ */
+
+/**
+ * Implements hook_menu_block_blocks().
+ */
+function site_navigation_menus_menu_block_blocks() {
+  // The array key is the block delta used by menu block.
+  return array(
+    'site_navigation_menus-1' => array(
+      'menu_name'   => MENU_TREE__CURRENT_PAGE_MENU,
+      'parent_mlid' => 0,
+      'title_link'  => 0,
+      'admin_title' => 'Subnavigation',
+      'level'       => 2,
+      'follow'      => 0,
+      'depth'       => 0,
+      'expanded'    => 0,
+      'sort'        => 0,
+      'title'       => '<none>',
+    ),
+    'site_navigation_menus-2' => array(
+      'menu_name'   => MENU_TREE__CURRENT_PAGE_MENU,
+      'parent_mlid' => 0,
+      'title_link'  => 0,
+      'admin_title' => 'Expandable Main Menu',
+      'level'       => 1,
+      'follow'      => 0,
+      'depth'       => 0,
+      'expanded'    => 0,
+      'sort'        => 0,
+      'title'       => '<none>',
+    ),
+    'site_navigation_menus-3' => array(
+      'menu_name'   => MENU_TREE__CURRENT_PAGE_MENU,
+      'parent_mlid' => 0,
+      'title_link'  => 1,
+      'admin_title' => 'Single Level Sub Navigation',
+      'level'       => 2,
+      'follow'      => 'child',
+      'depth'       => 0,
+      'expanded'    => 0,
+      'sort'        => 0,
+    ),
+    'site_navigation_menus-4' => array(
+      'menu_name'   => MENU_TREE__CURRENT_PAGE_MENU,
+      'parent_mlid' => 0,
+      'title_link'  => 0,
+      'admin_title' => 'Toggle Subnavigation',
+      'level'       => 2,
+      'follow'      => 'child',
+      'depth'       => 2,
+      'expanded'    => 0,
+      'sort'        => 0,
+    ),
+  );
+}
+
+/**
+ * TODO: Write fucntion doco.
+ */
+function site_navigation_menus_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'site_navigation_menus');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/**
+ * TODO: Write fucntion doco.
+ */
+function site_navigation_menus_preprocess_menu_block_wrapper(&$vars) {
+  $vars['theme_hook_suggestions'][] = 'menu_block_wrapper__' . $vars['delta'];
+}

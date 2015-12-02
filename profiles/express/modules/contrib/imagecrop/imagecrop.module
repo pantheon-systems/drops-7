@@ -1,0 +1,542 @@
+<?php
+/**
+ * @file
+ * Provides a javascript toolbox through an imagecache action.
+ *
+ * @author Zuuperman - http://drupal.org/user/361625 - http://www.menhir.be
+ *
+ * @date
+ * Oct 13, 2010
+ */
+
+// @todo There doesn't seem to be a way to specify a file in hook_image_effect_info
+// so placing this here for the time being.
+module_load_include('inc', 'imagecrop', 'includes/imagecrop.effects');
+
+/**
+ * Implements hook_permission().
+ */
+function imagecrop_permission() {
+  return array(
+    'crop any image' => array(
+      'title' => t('Crop any image'),
+    ),
+    'crop own images' => array(
+      'title' => t('Crop own images'),
+    ),
+    'administer imagecrop' => array(
+      'title' => t('Administer imagecrop settings'),
+      'description' => t('Administer the basic settings from image javascript crop'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function imagecrop_theme() {
+
+  return array(
+    'page-imagecrop' => array(
+      'variables' => array(),
+      'file' => 'includes/imagecrop.theme.inc',
+      'function' => 'imagecrop_page',
+    ),
+    'html-imagecrop' => array(
+      'variables' => array(),
+      'template' => 'html-imagecrop',
+    ),
+    'imagecrop_crop_ui' => array(
+      'variables' => array(
+        'style_selection' => array(),
+        'settings_form' => array(),
+        'scale_form' => array(),
+        'imagecrop' => NULL,
+      ),
+      'template' => 'imagecrop-crop-ui',
+    ),
+    'imagecrop_crop_ui_advanced' => array(
+      'variables' => array(
+        'style_selection' => array(),
+        'settings_form' => array(),
+        'scale_form' => array(),
+        'imagecrop' => NULL,
+      ),
+      'template' => 'imagecrop-crop-ui-advanced',
+    ),
+    'imagecrop_overview' => array(
+      'variables' => array(
+        'style_selection' => array(),
+        'viewed_style' => NULL,
+        'edit_url' => NULL,
+      ),
+      'template' => 'imagecrop-crop-overview',
+    ),
+    'imagecrop_effect_summary' => array(
+      'variables' => array('data' => NULL),
+      'file' => 'includes/imagecrop.theme.inc',
+    ),
+    'imagecrop_reuse_effect_summary' => array(
+      'variables' => array('data' => NULL),
+      'file' => 'includes/imagecrop.theme.inc',
+    ),
+  );
+
+}
+
+/**
+ * Implements hook_menu().
+ */
+function imagecrop_menu() {
+
+  $items = array();
+
+  $items['admin/config/media/imagecrop'] = array(
+    'title' => 'Image javascript crop',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('imagecrop_settings_form'),
+    'access arguments' => array('administer imagecrop'),
+    'file' => 'includes/imagecrop.admin.inc',
+  );
+
+  $items['imagecrop/overview/%/%'] = array(
+    'page callback' => 'imagecrop_image_styles_overview',
+    'page arguments' => array(2, 3),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'imagecrop_has_access',
+    'file' => 'includes/imagecrop.admin.inc',
+    'title' => 'Imagecrop overview',
+  );
+
+  $items['imagecrop/crop/%/%/%'] = array(
+    'page callback' => 'imagecrop_cropping_page',
+    'page arguments' => array(2, 3, 4),
+    'type' => MENU_CALLBACK,
+    'access callback' => 'imagecrop_has_access',
+    'file' => 'includes/imagecrop.admin.inc',
+  );
+
+  $items['imagecrop/generate_image'] = array(
+    'page callback' => 'imagecrop_generate_cropready_image',
+    'access callback' => 'imagecrop_has_access',
+    'file' => 'includes/imagecrop.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+
+}
+
+/**
+ * Implements hook_imagecrop_popups().
+ */
+function imagecrop_imagecrop_popups() {
+
+  $popups = array();
+
+  $popups['imagecrop_iframe'] = t('Iframe');
+  if (module_exists('colorbox')) {
+    $popups['imagecrop_colorbox'] = t('Colorbox');
+  }
+
+  return $popups;
+
+}
+
+/**
+ * Implements hook_form_field_ui_field_edit_form_alter().
+ * Add the imagecrop setting to an imagefield.
+ */
+function imagecrop_form_field_ui_field_edit_form_alter(&$form, $form_state) {
+
+  if ($form['#field']['type'] == 'image' || $form['#field']['type'] == 'media') {
+    $styles = get_imagecrop_styles();
+    if (count($styles) > 0) {
+      $form['instance']['settings']['imagecrop'] = array(
+        '#type' => 'checkboxes',
+        '#options' => $styles,
+        '#title' => t('Available imagecrop styles'),
+        '#description' => t('Select which imagecrop styles should be available for this field'),
+        '#weight' => 12,
+        '#default_value' => isset($form_state['build_info']['args'][0]['settings']['imagecrop']) ? $form_state['build_info']['args'][0]['settings']['imagecrop'] : array(),
+      );
+    }
+
+  }
+
+}
+
+/**
+ * Implements hook_form_media_edit_alter().
+ * Add imagecrop to media edit form.
+ */
+function imagecrop_form_media_edit_alter(&$form, $form_state) {
+
+  if (isset($form['preview']['#file']) && $form['preview']['#file']->type == 'image') {
+
+    $imagecrop = new Imagecrop();
+    $imagecrop->setFile($form['preview']['#file']);
+
+    global $user;
+    if (!$imagecrop->hasUserAccess($user)) {
+      return;
+    }
+
+    $form['imagecrop'] = array(
+      '#type' => 'markup',
+      '#weight' => 10,
+      '#prefix' => '<div class="imagecrop form-item">',
+      '#suffix' => '</div>',
+      '#markup' => imagecrop_linkitem($form['fid']['#value'], $form, get_imagecrop_styles()),
+      '#weight' => -9,
+    );
+
+  }
+
+}
+
+/**
+ * Implements hook_form_image_effect_form_alter().
+ * Add the reset checkbox when editing an effect.
+ */
+function imagecrop_form_image_effect_form_alter(&$form, $form_state, $form_id) {
+
+  if (!empty($form['data']['width']['#default_value']) && !empty($form['data']['height']['#default_value'])) {
+
+    $form['reset-crops'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Reset the already cropped images to the new width and height'),
+      '#description' => t('All crop selections that have the same width / height as old settings, will be updated to the new width and height.'),
+      '#weight' => -1,
+    );
+
+    $form['old-height'] = array(
+      '#type' => 'hidden',
+      '#value' => $form['data']['height']['#default_value'],
+    );
+
+    $form['old-width'] = array(
+      '#type' => 'hidden',
+      '#value' => $form['data']['width']['#default_value'],
+    );
+
+    $form['#submit'][] = 'imagecrop_javascript_effect_submit';
+
+  }
+}
+
+/**
+ * Implements hook_form_user_profile_form_alter().
+ * Add imagecrop to profile picture, if enabled.
+ */
+function imagecrop_form_user_profile_form_alter(&$form, $form_state, $form_id) {
+
+  $hooks = variable_get('imagecrop_modules', array());
+  if (!empty($form['picture']['picture']['#value']) && in_array('profile_picture', $hooks)) {
+    $styles = get_imagecrop_styles();
+    if (count($styles) > 0) {
+
+      // Create fake file object for permission check.
+      $file = new stdClass();
+      $file->uid = $form['#user']->uid;
+
+      $imagecrop = new Imagecrop();
+      $imagecrop->setFile($file);
+
+      global $user;
+      if (!$imagecrop->hasUserAccess($user)) {
+        return;
+      }
+
+      $form['picture']['picture_current']['#markup'] .= imagecrop_linkitem($form['picture']['picture']['#value']->fid, $form, $styles);
+    }
+  }
+}
+
+/**
+ * Implements hook_element_info_alter().
+ */
+function imagecrop_element_info_alter(&$type) {
+  $type['managed_file']['#after_build'][] = 'process_imagecrop_form_element';
+  $type['media']['#after_build'][] = 'process_imagecrop_form_element';
+}
+
+/**
+ * Process function for imagecrop-enabled fields.
+ */
+function process_imagecrop_form_element($element) {
+
+  // Leave alone if we are on the field ui settings.
+  if (!isset($element['#field_name']) || $element['#id'] == 'edit-picture-upload') {
+    return $element;
+  }
+
+  $imagecrop = new ImageCrop();
+  $file = NULL;
+  $fid = 0;
+  $new_element = isset($element['#file']);
+  if ($new_element) {
+    $imagecrop->setFile($element['#file']);
+  }
+  // Media widget
+  else {
+    $new_element = FALSE;
+    if (!empty($element['fid']['#value'])) {
+      $file = file_load($element['fid']['#value']);
+      // Only add when the file is an image
+      if ($file->type != 'image') {
+        return $element;
+      }
+      $imagecrop->loadFile($element['fid']['#value'], TRUE);
+    }
+  }
+
+  // Leave alone if no access.
+  global $user;
+  if (!$imagecrop->hasUserAccess($user)) {
+    return;
+  }
+
+  $enabled_styles = imagecrop_get_fields_enabled_styles($element['#entity_type'], $element['#field_name'], $element['#bundle']);
+
+  // Leave element when no image styles are found for current field.
+  if (count($enabled_styles) == 0) {
+    return $element;
+  }
+
+  if ($new_element) {
+
+    $element['imagecrop'] = array(
+      '#type' => 'markup',
+      '#weight' => 10,
+      '#suffix' => '</div>',
+    );
+
+    if ($element['fid']['#value']) {
+      $element['imagecrop']['#prefix'] = '<div class="imagecrop form-item">';
+      $element['imagecrop']['#markup'] = imagecrop_linkitem($element['fid']['#value'], $element, $enabled_styles);
+    }
+    else {
+      $element['imagecrop']['#prefix'] = '<div class="description">';
+      $element['imagecrop']['#markup'] = t('After uploading an image you\'ll be able to crop it.');
+    }
+
+  }
+  // Media module
+  else {
+
+    $fid = (empty($element['fid']['#value']) ? 0 : $element['fid']['#value']);
+    $prefix = '<div class="imagecrop form-item" style="display: '. ($fid ? 'inline-block' : 'none' ).'">';
+    $markup = imagecrop_linkitem($element['fid']['#value'], $element, $enabled_styles);
+    $element['preview']['#suffix'] .= $prefix . $markup . '</div>';
+
+  }
+
+  return $element;
+
+}
+
+/**
+ * Implements hook_preprocess_page().
+ * Set the theme hook suggestion to page-imagecrop for imagecrop pages.
+ */
+function imagecrop_preprocess_page(&$variables) {
+
+  if (arg(0) == 'imagecrop') {
+    $variables['theme_hook_suggestion'] = 'page-imagecrop';
+    include_once(dirname(__FILE__) . '/includes/imagecrop.theme.inc');
+  }
+
+}
+
+/**
+ * Implements hook_process_html().
+ * Set the theme hook suggestion to html-imagecrop for imagecrop pages.
+ */
+function imagecrop_process_html(&$variables) {
+
+  if (arg(0) == 'imagecrop') {
+
+    $js = drupal_add_js();
+    if (module_exists('admin_menu')) {
+      $path = drupal_get_path('module', 'admin_menu');
+      if (isset($js[$path . '/admin_menu.js'])) {
+        unset($js[$path . '/admin_menu.js']);
+        $variables['scripts'] = drupal_get_js('header', $js);
+      }
+    }
+
+    $variables['theme_hook_suggestion'] = 'html-imagecrop';
+
+  }
+
+}
+
+/**
+ * Check if the current user has one of the required permissions.
+ */
+function imagecrop_has_access() {
+  return (user_access('crop any image') || user_access('crop own images'));
+}
+
+/**
+ * Helper function to get all the enabled styles for a given field.
+ */
+function imagecrop_get_fields_enabled_styles($entity_type, $field_name, $bundle) {
+
+  $instance = field_info_instance($entity_type, $field_name, $bundle);
+
+  // No imagecrop settings are found.
+  if (!isset($instance['settings']['imagecrop'])) {
+    return array();
+  }
+
+  return array_filter($instance['settings']['imagecrop']);
+
+}
+
+/**
+ * Helper function to add click link.
+ *
+ * @param $fid fid from the file to crop
+ * @param $element the form element
+ * @param $styles The enabled styles
+ * @param $add_setting Boolean to indicate if settings need to be added.
+ *
+ * @return link for opening the imagecrop admin.
+ */
+function imagecrop_linkitem($fid, &$element, $styles) {
+
+  $popup_link_function = variable_get('imagecrop_popup', 'basic');
+  $width = variable_get('imagecrop_popup_width', 700);
+  $height = variable_get('imagecrop_popup_height', 600);
+
+  $skip_preview = variable_get('imagecrop_skip_preview', FALSE);
+  $first_style = current($styles);
+  $action = ($skip_preview) ? 'crop' : 'overview';
+  $url = 'imagecrop/' . $action . '/' . $fid . '/' . $first_style . '/';
+
+  $settings_url = url('imagecrop/' . $action . '/fid/' . $first_style, array('absolute' => TRUE));
+  $setting = array('imagecrop' => array(
+    'cropUrl' => $settings_url,
+    'popupWidth' => $width,
+    'popupHeight' => $height,
+  ));
+
+  $element['#attached']['js'][] = array('type' => 'setting', 'data' => $setting);
+  $element['#attached']['js'][] = drupal_get_path('module', 'imagecrop') . '/js/imagecrop_field.js';
+$element['#attached']['library'][] = 'ui.dialog';
+  if (isset($element['#entity_type'], $element['#bundle'], $element['#field_name'])) {
+    $url .= $element['#entity_type'] . '/' . $element['#bundle'] . '/' . $element['#field_name'];
+  }
+  $url = url($url, array('absolute' => TRUE));
+
+  if ($popup_link_function != 'basic' && function_exists($popup_link_function) && $link = $popup_link_function($url, $width, $height)) {
+    return $link;
+  }
+  else {
+    return '<a href="'. $url . '" onclick="Drupal.Imagecrop.openPopup(this); return false;" class="button">' . t('Crop this image') . '</a>';
+  }
+
+}
+
+/**
+ * Check if the user has access to the given file.
+ */
+function imagecrop_access_denied($file) {
+
+  // User doesn't have acess to imagecrop.
+  if (!user_access('crop any image') && !user_access('crop own images')) {
+    return;
+  }
+
+  // User doesn't have access to crop current file.
+  global $user;
+  if ($file && !user_access('crop any image') && $file->uid != $user->uid) {
+    return;
+  }
+
+}
+
+/**
+ * Return a list of presets.
+ *
+ * @param $enabled_styles array of styles that are enabled for a field
+ * @return $presets array with presetid to load and list of all other possible presets.
+ */
+function get_imagecrop_styles($enabled_styles = array()) {
+
+  $apply_filter = (count($enabled_styles) > 0);
+
+  $all_styles = image_styles();
+  $styles = array();
+  foreach ($all_styles as $machine_name => $style) {
+    foreach ($style['effects'] as $effect) {
+      if ($effect['name'] == 'imagecrop_javascript') {
+
+        // Skip if current style is not enabled.
+        if ($apply_filter && !in_array($machine_name, $enabled_styles)) {
+          continue;
+        }
+
+        $styles[$machine_name] = $style['name'];
+
+      }
+    }
+  }
+
+  return $styles;
+
+}
+
+/**
+ * Get the style name from the current requested url.
+ */
+function imagecrop_get_style_name_from_url() {
+
+  $args = explode('/', $_GET['q']);
+  $key = array_search('styles', $args);
+
+  if ($key != FALSE) {
+    return $args[$key + 1];
+  }
+
+  return 0;
+
+}
+
+/**
+ * Render the imagecrop links for colorbox.
+ */
+function imagecrop_colorbox($url, $width, $height) {
+
+  if (!module_exists('colorbox')) {
+    return FALSE;
+  }
+
+  // Force colorbox to load on this path.
+  global $conf;
+  $colorbox_pages = variable_get('colorbox_pages', "admin*\nimg_assist*\nimce*\nnode/add/*\nnode/*/edit");
+  $conf['colorbox_pages'] = 'none';
+  _colorbox_doheader();
+  drupal_add_js(drupal_get_path('module', 'colorbox') . '/js/colorbox_load.js');
+  $conf['colorbox_pages'] = $colorbox_pages;
+
+  return '<a class="colorbox-load button" href="'. $url .'?iframe=true&height='. $height .'&width='. $width .'">'. t('Crop this image') .'</a>';
+
+}
+
+/**
+ * Render the imagecrop as an iframe.
+ */
+function imagecrop_iframe($url, $width, $height) {
+
+  $output = '<div class="form-item">';
+  $output .= '<div><label>' . t('Crop this image') . '</label></div>';
+  $output .= '<div>';
+  $output .= '<iframe src="' . $url . '" width="' . $width . '" height="' . $height . '"></iframe>';
+  $output .= '</div></div>';
+
+  return $output;
+
+}

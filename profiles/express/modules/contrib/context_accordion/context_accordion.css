@@ -1,0 +1,46 @@
+.ui-accordion .ui-accordion-header .ui-icon {
+	position: static;
+	display: block;
+	float: left;
+	left: 0;
+	top: 0;
+	margin: 0;
+}
+
+.ui-accordion .ui-accordion-header {
+	background-color: #EEE;
+	border-top: 0 none;
+	border-left: 0 none;
+	border-right: 0 none;
+	color: #0074BD;
+	font-weight: normal;
+	padding: 6px 0;
+}
+
+.ui-accordion .ui-accordion-content {
+	border-bottom: 0 none;
+	border-left: 0 none;
+	border-right: 0 none;
+	border-top: 0 none;
+	max-height: none !important;
+}
+
+/** 
+ * Override default context styles
+ *
+ * TODO: CSS weight needs to be changed so that the !important can be removed
+ **/
+
+#context-blockform .context-blockform-selector {
+  height: 100% !important;
+}
+
+
+/** 
+ * Override possible admin theme styles
+ *
+ **/
+ 
+#context-blockform .selector {
+  vertical-align: top;
+} 

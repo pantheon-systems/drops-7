@@ -1,0 +1,155 @@
+<?php
+
+/**
+ * @file
+ * Tests for reCAPTCHA module.
+ */
+class ReCaptchaBasicTest extends DrupalWebTestCase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => t('reCAPTCHA basic tests'),
+      'description' => t('Test basic functionality of reCAPTCHA module.'),
+      'group' => t('reCAPTCHA'),
+      'dependencies' => array('captcha'),
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp() {
+    parent::setUp('captcha', 'recaptcha');
+    module_load_include('inc', 'captcha');
+
+    // Create a normal user.
+    $permissions = array(
+      'access content',
+    );
+    $this->normal_user = $this->drupalCreateUser($permissions);
+
+    // Create an admin user.
+    $permissions += array(
+      'administer CAPTCHA settings',
+      'skip CAPTCHA',
+      'administer permissions',
+      'administer content types',
+      'administer recaptcha',
+    );
+    $this->admin_user = $this->drupalCreateUser($permissions);
+  }
+
+  /**
+   * Test access to the administration page.
+   */
+  function testReCaptchaAdminAccess() {
+    $this->drupalLogin($this->admin_user);
+    $this->drupalGet('admin/config/people/captcha/recaptcha');
+    $this->assertNoText(t('Access denied'), 'Admin users should be able to access the reCAPTCHA admin page', 'reCAPTCHA');
+    $this->drupalLogout();
+  }
+
+  /**
+   * Test the reCAPTCHA settings form.
+   */
+  function testReCaptchaAdminSettingsForm() {
+    $this->drupalLogin($this->admin_user);
+
+    $site_key = $this->randomName(40);
+    $secret_key = $this->randomName(40);
+
+    // Check form validation.
+    $edit['recaptcha_site_key'] = '';
+    $edit['recaptcha_secret_key'] = '';
+    $edit['recaptcha_tabindex'] = $this->randomName(2);
+    $this->drupalPost('admin/config/people/captcha/recaptcha', $edit, t('Save configuration'));
+
+    $this->assertRaw(t('Site key field is required.'), '[testReCaptchaConfiguration]: Empty site key detected.');
+    $this->assertRaw(t('Secret key field is required.'), '[testReCaptchaConfiguration]: Empty secret key detected.');
+    $this->assertRaw(t('The tabindex must be an integer.'), '[testReCaptchaConfiguration]: Invalid value for tab index detected.');
+
+    // Save form with valid values.
+    $edit['recaptcha_site_key'] = $site_key;
+    $edit['recaptcha_secret_key'] = $secret_key;
+    $edit['recaptcha_tabindex'] = 0;
+    $this->drupalPost('admin/config/people/captcha/recaptcha', $edit, t('Save configuration'));
+    $this->assertRaw(t('The configuration options have been saved.'), '[testReCaptchaConfiguration]: The configuration options have been saved.');
+
+    $this->assertNoRaw(t('Site key field is required.'), '[testReCaptchaConfiguration]: Site key was not empty.');
+    $this->assertNoRaw(t('Secret key field is required.'), '[testReCaptchaConfiguration]: Secret key was not empty.');
+    $this->assertNoRaw(t('The tabindex must be an integer.'), '[testReCaptchaConfiguration]: Tab index had a valid input.');
+
+    $this->drupalLogout();
+  }
+
+  /**
+   * Testing the protection of the user login form.
+   */
+  function testReCaptchaOnLoginForm() {
+    global $language;
+
+    $site_key = $this->randomName(40);;
+    $secret_key = $this->randomName(40);;
+    $grecaptcha = '<div class="g-recaptcha" data-sitekey="' . $site_key . '" data-theme="light" data-type="image"></div>';
+
+    // Test if login works.
+    $this->drupalLogin($this->normal_user);
+    $this->drupalLogout();
+
+    $this->drupalGet('user');
+    $this->assertNoRaw($grecaptcha, '[testReCaptchaOnLoginForm]: reCAPTCHA is not shown on form.');
+
+    // Enable 'captcha/Math' CAPTCHA on login form.
+    captcha_set_form_id_setting('user_login', 'captcha/Math');
+
+    $this->drupalGet('user');
+    $this->assertNoRaw($grecaptcha, '[testReCaptchaOnLoginForm]: reCAPTCHA is not shown on form.');
+
+    // Enable 'recaptcha/reCAPTCHA' on login form.
+    captcha_set_form_id_setting('user_login', 'recaptcha/reCAPTCHA');
+    $result = captcha_get_form_id_setting('user_login');
+    $this->assertNotNull($result, 'A configuration has been found for CAPTCHA point: user_login', 'reCAPTCHA');
+    $this->assertEqual($result->module, 'recaptcha', 'reCAPTCHA module configured for CAPTCHA point: user_login', 'reCAPTCHA');
+    $this->assertEqual($result->captcha_type, 'reCAPTCHA', 'reCAPTCHA type has been configured for CAPTCHA point: user_login', 'reCAPTCHA');
+
+    // Check if a Math CAPTCHA is still shown on the login form. The site key
+    // and security key have not yet configured for reCAPTCHA. The module need
+    // to fall back to math captcha.
+    $this->drupalGet('user');
+    $this->assertRaw(t('Math question'), '[testReCaptchaOnLoginForm]: Math CAPTCHA is shown on form.');
+
+    // Configure site key and security key to show reCAPTCHA and no fall back.
+    variable_set('recaptcha_site_key', $site_key);
+    variable_set('recaptcha_secret_key', $secret_key);
+
+    // Check if there is a reCAPTCHA on the login form.
+    $this->drupalGet('user');
+    $this->assertRaw($grecaptcha, '[testReCaptchaOnLoginForm]: reCAPTCHA is shown on form.');
+    $this->assertRaw('<script src="https://www.google.com/recaptcha/api.js?hl=' . $language->language . '" async="async" defer="defer"></script>', '[testReCaptchaOnLoginForm]: reCAPTCHA is shown on form.');
+    $this->assertNoRaw($grecaptcha . '<noscript>', '[testReCaptchaOnLoginForm]: NoScript code is not enabled for the reCAPTCHA.');
+
+    // Test if the fall back url is properly build and noscript code added.
+    variable_set('recaptcha_noscript', 1);
+    $this->drupalGet('user');
+    $this->assertRaw($grecaptcha . '<noscript>', '[testReCaptchaOnLoginForm]: NoScript for reCAPTCHA is shown on form.');
+    $this->assertRaw('https://www.google.com/recaptcha/api/fallback?k=' . $site_key . '&amp;hl=' . $language->language, '[testReCaptchaOnLoginForm]: Fallback URL with IFRAME has been found.');
+
+    // Try to log in, which should fail.
+    $edit['name'] = $this->normal_user->name;
+    $edit['pass'] = $this->normal_user->pass_raw;
+    $edit['captcha_response'] = '?';
+
+    $this->drupalPost('user', $edit, t('Log in'));
+    // Check for error message.
+    $this->assertText(t('The answer you entered for the CAPTCHA was not correct.'), 'CAPTCHA should block user login form', 'reCAPTCHA');
+
+    // And make sure that user is not logged in: check for name and password fields on ?q=user
+    $this->drupalGet('user');
+    $this->assertField('name', t('Username field found.'), 'reCAPTCHA');
+    $this->assertField('pass', t('Password field found.'), 'reCAPTCHA');
+  }
+
+}

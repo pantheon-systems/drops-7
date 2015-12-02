@@ -1,0 +1,56 @@
+$radius_small: 3px;
+$radius_medium: 5px;
+$radius_large: 7px;
+$radius_none: 0px;
+
+$spacing: 20px;
+
+@mixin rounded($radius) {
+  -webkit-border-radius: $radius;
+  -moz-border-radius: $radius;
+  border-radius: $radius;
+  // keeps background from busting out of border 
+  //-webkit-background-clip: padding-box;
+  //-moz-background-clip: padding;
+  //background-clip: padding-box;
+}
+
+$base_font: "Neue Helvetica W01", "Helvetica Neue", Helvetica, Arial, sans-serif;
+
+@mixin border_outline($color, $stroke) {
+  border:$stroke solid $color;
+}
+
+@mixin font-size( $value: 15 ) { 
+  font-size: $value + px;
+  font−size: ($value / 10) + rem;
+}
+
+@mixin gradient($color, $color2:false) {
+  @if $color2 {
+  
+  }
+  @else {
+    $color2: darken($color, 10%);
+  } 
+  background-color: $color;
+  background-image: -webkit-gradient(linear, left top, left bottom, from($color), to($color2));
+  background-image: -webkit-linear-gradient(top, $color, $color2);
+  background-image: -moz-linear-gradient(top, $color, $color2);
+  background-image: -o-linear-gradient(top, $color, $color2);
+  background-image: -ms-linear-gradient(top, $color, $color2);
+  background-image: linear-gradient(top, $color, $color2);
+  filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#{ie_hex_str($color)}', EndColorStr='#{ie_hex_str($color2)}');
+} 
+
+@mixin rgbshadow($x, $y, $blur, $rgb) {
+  -webkit-box-shadow: $x $y $blur $rgb;
+  -moz-box-shadow:    $x $y $blur $rgb;
+  box-shadow:         $x $y $blur $rgb;
+}
+
+@mixin rgbashadow($x, $y, $blur, $rgb, $transparency) {
+  -webkit-box-shadow: $x $y $blur rgba($rgb, $transparency);
+  -moz-box-shadow:    $x $y $blur rgba($rgb, $transparency);
+  box-shadow:         $x $y $blur rgba($rgb, $transparency);
+}

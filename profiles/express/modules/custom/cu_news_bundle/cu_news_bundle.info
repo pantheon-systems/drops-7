@@ -1,0 +1,6 @@
+name = News and Articles
+description = NEEDS DESCRIPTION
+core = 7.x
+package = CU-News and Articles
+
+dependencies[] = cu_article

@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * @file
+ * Install file for Express and Express-based profiles.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function cu_module_manager_install() {
+  // change for #FIT-583 for https://www.drupal.org/node/2172293
+  variable_set('webform_install_add_body_field', TRUE);
+
+}
+
+/**
+ * Fix for CU-FIT 1.6.5.
+ *
+ * forces captcha settings defaults to for forms like login
+ */
+function cu_module_manager_update_7165() {
+  // check to see if the user_login form is populated
+
+  $result = db_query('SELECT captcha_type FROM {captcha_points} WHERE form_id = :form', array(':form' => 'user_login'));
+
+  if (!$result->rowCount()) {
+    // if not, insert proper values
+
+    $values = array(
+      array(
+      'form_id' => 'user_login',
+      'module' => NULL,
+      'captcha_type' => NULL,
+      ),
+      array(
+      'form_id' => 'user_login_block',
+      'module' => NULL,
+      'captcha_type' => NULL,
+      ),
+      array(
+      'form_id' => 'user_pass',
+      'module' => NULL,
+      'captcha_type' => NULL,
+      ),
+      array(
+      'form_id' => 'user_register_form',
+      'module' => NULL,
+      'captcha_type' => NULL,
+      ),
+    );
+    $query = db_insert('captcha_points')->fields(array('form_id', 'module', 'captcha_type'));
+    foreach ($values as $record) {
+      $query->values($record);
+    }
+    $query->execute();
+    drupal_set_message(t('Fixed Captcha Settings'), 'status');
+  }
+}

@@ -1,0 +1,209 @@
+@import "../../cu_omega/scss/modules/_global.scss";
+@import "../../cu_omega/scss/modules/_colors.scss";
+
+
+body {
+  background-color: #333;
+}
+.layout-wide #backstretch {
+  display:none;
+}
+.layout-boxed {
+  background-color:#111;
+  .page-wrapper {
+    width:960px;
+    margin: 20px auto;
+    @include rgbashadow(0,0,80px,#000, .5);
+  }
+}
+.layout-boxed.is-responsive .page-wrapper {
+  width:auto;
+  max-width: 960px;
+}
+#zone-secondary-menu {
+  background-color: #333;
+  color:#ccc;
+  font-weight: 600;
+  a {
+    display: inline-block;
+    color:#ccc;
+    &:hover,
+    &:focus,
+    &.active,
+    &.active-trail {
+      color:$cugold;
+    }
+  }
+}
+#zone-menu {
+  background-color: #272727;
+  a {
+    color:#ccc;
+    font-weight: 600;
+  }
+  a.active,
+  a.active-trail,
+  a:hover,
+  a:focus {
+    color:$cugold;
+  }
+  a#home-link {
+    background-color: transparent;
+    color: #ccc;
+  }
+  #region-menu {
+    width:auto;
+    margin: 0 10px;
+    float: none;
+    display: block;
+  }
+}
+#section-content {
+  background-color: #f1f1f1;
+
+}
+#zone-intro {
+  background-color: #fff;
+  margin: 0 auto;
+  width: 960px;
+}
+.is-reponsive #zone-intro {
+  width:100%;
+  max-width: 960px;
+}
+#zone-slider,
+#zone-content,
+#zone-after-content,
+#zone-after-content-2 {
+  background-color: #fff;
+}
+@media screen and (min-width: 960px) {
+  .page-title-image-wrapper .container-content {
+    max-width: 1000px;
+  }
+}
+
+#section-footer {
+  background-color: #333;
+
+  color:#fff;
+  a {
+    color:$cugold;
+    &:hover,
+    &:focus {
+      color:#fff;
+    }
+  }
+}
+#zone-footer {
+  background-color: #222;
+  padding-top: 20px;
+
+}
+#site-information-wrapper {
+
+
+}
+#footer-links-wrapper,
+.footer-menu-gray,
+.footer-menu-gold {
+  background-color: transparent;
+  padding: 0;
+}
+.footer-menu-gray #footer-links {
+  padding:10px 0;
+  background-color: #111;
+}
+.footer-menu-gold #footer-links {
+  padding:10px 0;
+  background-color: $cugold;
+}
+
+// Subnav
+$defaultFG: #656565;
+$hoverFG: #202020;
+$activeBG: #262626;
+$activeFG: $cugold;
+$border: #e7e7e7;
+
+#block-menu-block-site-navigation-menus-1,
+#block-menu-block-site-navigation-menus-2,
+#block-menu-block-site-navigation-menus-3,
+#section-navigation {
+
+  $indent: 10px;
+
+  .menu-block-wrapper {
+    font-weight: 500;
+    border-bottom: 1px solid $border;
+  }
+  ul.menu a {
+    padding:10px;
+    border:1px solid $border;
+    margin-bottom: -1px;
+    color:$defaultFG;
+    line-height: 120%;
+    &:hover,
+    &:focus {
+      background-color: $border;
+      color:$hoverFG;
+    }
+    &.active-trail {
+      border-bottom: none;
+    }
+    &.active {
+      color:$activeFG;
+      background-color: $activeBG;
+      font-weight: 500 !important;
+    }
+  }
+  li.active-trail {
+    border-left:3px solid $activeBG;
+
+    a {
+      border-left-color: $activeBG;
+    }
+  }
+  li.active-trail > a {
+
+  }
+  li.active-trail li {
+    border:none;
+  }
+  ul.menu ul.menu a {
+    padding-left: $indent * 2;
+    font-size: 90%;
+    padding-top:7px;
+    padding-bottom: 7px;
+    border-top: none;
+    border-bottom: none;
+    font-weight: normal;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 3;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 4;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 5;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 6;
+  }
+}
+
+#block-menu-block-site-navigation-menus-3 h2.block-title {
+  font-size: 100%;
+  line-height: 120%;
+  padding: 0;
+  margin: 0;
+
+  a {
+    display: block;
+    padding:10px;
+    background-color: $activeBG;
+    color:$activeFG;
+    font-weight: 600;
+  }
+}

@@ -1,0 +1,143 @@
+<?php
+
+/**
+ * @file
+ * Add icons to block titles.
+ *
+ * This uses font awesome.
+ */
+
+/**
+ * Implements hook_page_alter().
+ */
+function block_title_icons_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'block_title_icons') . '/block_title_icons.css');
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function block_title_icons_form_block_admin_configure_alter(&$form, &$form_state, &$form_id) {
+  // Get saved values.
+  $module = $form['module']['#value'];
+  $delta = $form['delta']['#value'];
+  $var_name = $module . '-' . $delta;
+  $block_icon = block_title_icons_get();
+  $form['block_title_icons'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Block Title Icons'),
+    '#weight' => 0,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['block_title_icons']['block_title_icons_options'] = array(
+    '#type' => 'radios',
+    '#title' => '',
+    '#options' => cu_font_awesome_icon_list(),
+    '#default_value' => isset($block_icon[$var_name]) ? $block_icon[$var_name] : '',
+  );
+  $form['#submit'][] = 'block_title_icons_update';
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * This will be used to alter the block bean creation/modification to add
+ *  a icon selection.
+ */
+function block_title_icons_form_bean_form_alter(&$form, &$form_state, $form_id) {
+
+  $delta = $form['bean']['#value']->delta;
+
+  if(isset($delta)) {
+    $form['module'] = array(
+      '#type' => 'hidden',
+      '#value' => 'bean',
+    );
+    $module = 'bean';
+    $form['delta'] = array(
+      '#type' => 'hidden',
+      '#value' => $form['bean']['#value']->delta,
+    );
+    $var_name = $module . '-' . $delta;
+    $block_icon = block_title_icons_get();
+    $form['block_title_icons'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Block Title Icons'),
+      '#weight' => 90,
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+    );
+    $form['block_title_icons']['block_title_icons_options'] = array(
+      '#type' => 'radios',
+      '#title' => '',
+      '#options' => cu_font_awesome_icon_list(),
+      '#default_value' => isset($block_icon[$var_name]) ? $block_icon[$var_name] : '',
+    );
+    $form['#submit'][] = 'block_title_icons_update';
+  }
+}
+
+
+
+
+
+/**
+ * Update an existing block after the block form has been submitted.
+ */
+function block_title_icons_update($form_id, &$form_state) {
+  $var_name = $form_state['values']['module'] . '-' . $form_state['values']['delta'];
+  $icons_value = block_title_icons_get();
+  $icons_value[$var_name] = $form_state['values']['block_title_icons_options'];
+  block_title_icons_set($icons_value);
+}
+
+/**
+ * Set Responsive Toggle custom block settings.
+ */
+function block_title_icons_set($icons_value) {
+  variable_set('block_title_icons', $icons_value);
+}
+
+/**
+ * Preprocess theme variables for a specific theme hook.
+ *
+ * This hook allows modules to preprocess theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme preprocessing for a theme hook it didn't define.
+ *
+ * For more detailed information, see theme().
+ *
+ * @param array $variables
+ *   The variables array (modify in place).
+ */
+function block_title_icons_preprocess_block(&$variables) {
+  if ($block_icon = block_title_icons_get_display($variables['block'])) {
+    $elements = $variables['elements']['#block'];
+    $elements->subject = '<i class="blockicon fa ' . $block_icon  . '"></i><span class="blockicontext">' . $elements->subject . '</span>';
+  }
+}
+
+/**
+ * Gets block.
+ */
+function block_title_icons_get_display($block) {
+  $block_icon = block_title_icons_get();
+  $var_name = $block->module . '-' . $block->delta;
+  if (isset($block_icon[$var_name])) {
+    return $block_icon[$var_name];
+  }
+}
+
+
+/**
+ * Get Responsive Toggle custom block settings.
+ */
+function block_title_icons_get() {
+  static $icons_value;
+  if (empty($icons_value)) {
+    $icons_value = variable_get('block_title_icons', array());
+  }
+  return $icons_value;
+}

@@ -1,0 +1,222 @@
+<?php
+
+/**
+ * @file
+ * Code for the cu_bucket feature.
+ */
+
+include_once('cu_bucket.features.inc');
+
+/**
+ * Implements hook_permission().
+ */
+function cu_bucket_permission() {
+  return array(
+    'bypass follow form validation' => array(
+      'title' => t('Bypass follow form validation'),
+      'description' => t('Do not verify that follow urls contain network domain.'),
+    ),
+    'edit locked contexts' => array(
+      'title' => t('Edit locked contexts'),
+      'description' => t('Any context tagged with \'locked\' will only be editable by those with this permission.'),
+    ),
+    'change administration theme' => array(
+      'title' => t('Change administration theme'),
+      'description' => t('Only privileged users can change the administration theme.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * If user has access, removes validation of network url in follow.module.
+ */
+function cu_bucket_form_follow_links_form_alter(&$form, &$form_state) {
+  if (user_access('bypass follow form validation')) {
+    foreach (element_children($form['follow_links']) as $network) {
+      unset($form['follow_links'][$network]['url']['#element_validate']);
+    }
+  }
+}
+
+
+
+/**
+ * Process theme variables for a specific theme hook.
+ *
+ * This hook allows modules to process theme variables for a specific theme
+ * hook. It should only be used if a module needs to override or add to the
+ * theme processing for a theme hook it didn't define.
+ *
+ * Implements theme_process_table().
+ *
+ * For more detailed information, see theme().
+ *
+ * @param $variables
+ *   The variables array (modify in place).
+ */
+function cu_bucket_process_table(&$variables) {
+  // On the context administration table
+  // The first part of this if statement will get rid of that pesky notice.
+  if (array_key_exists('id', $variables['attributes']) && isset($variables['attributes']['id'])) {
+    if (isset($variables['attributes']['class'])) {
+      if ($variables['attributes']['id'] == 'ctools-export-ui-list-items' && in_array('context-admin', $variables['attributes']['class'])) {
+        // If no access to edit locked contexts, remove them from the table.
+        // This only removes them from the UI, access is controlled via cu_bucket_menu_alter().
+        if (!user_access('edit locked contexts')) {
+          foreach ($variables['rows'] as $key => $row) {
+            if (substr($key, 0, 6) == 'locked') {
+              unset($variables['rows'][$key]);
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Alter the data being saved to the {menu_router} table after hook_menu is invoked.
+ *
+ * This hook is invoked by menu_router_build(). The menu definitions are passed
+ * in by reference. Each element of the $items array is one item returned
+ * by a module from hook_menu. Additional items may be added, or existing items
+ * altered.
+ *
+ * @param $items
+ *   Associative array of menu router definitions returned from hook_menu().
+ */
+function cu_bucket_menu_alter(&$items) {
+  // Only allow people who can edit locked contexts to change context settings.
+  $items['admin/structure/context/settings']['access arguments'] = array('edit locked contexts');
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Set access denied on context's whose tag is 'locked' and user doesnt have permission.
+ */
+function cu_bucket_form_ctools_export_ui_edit_item_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_state['item']->table == 'context' && $form_state['item']->tag == 'locked' && !user_access('edit locked contexts')) {
+    $form['#access'] = FALSE;
+    drupal_access_denied();
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * On admin/appearance, only allow users with 'change administration theme' permission,
+ * (provided by this module) to change the admin theme.
+ */
+function cu_bucket_form_system_themes_admin_form_alter(&$form, &$form_state, $form_id) {
+  if (!user_access('change administration theme')) {
+    $form['admin_theme']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_form_alter()
+ *
+ * Clearing the cache cause the block titles were persisiting for a long time even after they were saved.
+ */
+function cu_bucket_form_alter(&$form, &$form_state, $form_id) {
+  switch($form_id) {
+    case 'block_admin_configure':
+    case 'bean_form':
+    case 'quicktabs_form':
+      $form['#submit'][] = '_cu_bucket_clear_cache';
+      break;
+    case 'ctools_export_ui_edit_item_form':
+      // Rename bean to blocks
+      $form['reactions']['plugins']['block']['selector']['bean']['#title'] = 'blocks';
+
+      if (!user_access('edit locked contexts')) {
+
+        // Unset which conditions are available to use
+        $conditions = &$form['conditions']['selector']['#options'];
+        unset($conditions['environment']);
+        unset($conditions['taxonomy_term']);
+        unset($conditions['user']);
+        unset($conditions['user_page']);
+        unset($conditions['views']);
+
+        // Restrict which blocks are available to place
+        $blocks = &$form['reactions']['plugins']['block']['selector'];
+        $blocks['boxes']['#access'] = FALSE;
+        $blocks['context_ui']['#access'] = FALSE;
+        $blocks['cu_alerts']['#access'] = FALSE;
+        $blocks['cu_block_selector']['#access'] = FALSE;
+        $blocks['devel']['#access'] = FALSE;
+        $blocks['diff']['#access'] = FALSE;
+        $blocks['google_appliance']['#access'] = FALSE;
+        $blocks['node']['#access'] = FALSE;
+        $blocks['quicktabs']['#access'] = FALSE;
+        $blocks['shortcut']['#access'] = FALSE;
+        $blocks['system']['#access'] = FALSE;
+        $blocks['user']['#access'] = FALSE;
+
+        // Unset which regions are available to place blocks in
+        $regions = &$form['reactions']['plugins']['block']['blocks'];
+        unset($regions['branding']);
+        unset($regions['search_box']);
+        unset($regions['menu']);
+        unset($regions['secondary_menu']);
+        unset($regions['help']);
+        unset($regions['alerts']);
+
+        // Unset which reactions are available to use
+        $reactions = &$form['reactions']['selector']['#options'];
+        unset($reactions['debug']);
+        unset($reactions['template_suggestions']);
+        unset($reactions['theme']);
+        unset($reactions['theme_html']);
+      }
+      break;
+  }
+}
+
+/**
+ * Caleld from cu_bucket_form_alter
+ */
+function _cu_bucket_clear_cache() {
+  block_flush_caches();
+  cache_clear_all('*', 'cache_block', TRUE);
+}
+
+
+/**
+ * Implements hook_page_alter()
+ */
+function cu_bucket_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'cu_bucket') . '/css/cu-bucket.css');
+}
+
+/**
+ * Implements hook_themes_enabled().
+ *
+ * Makes sure blocks are set properly on structure/blocks for all new themes
+ */
+function cu_bucket_themes_enabled() {
+  $query = db_update('block')
+    ->fields(array(
+      'region' => '-1',
+      'status' => '0',
+    ))
+    ->execute();
+  $query = db_update('block')
+    ->fields(array(
+      'region' => 'content',
+      'status' => '1',
+    ))
+    ->condition('delta', 'main')
+    ->execute();
+  $query = db_update('block')
+    ->fields(array(
+      'region' => 'help',
+      'status' => '1',
+    ))
+    ->condition('delta', 'help')
+    ->execute();
+}

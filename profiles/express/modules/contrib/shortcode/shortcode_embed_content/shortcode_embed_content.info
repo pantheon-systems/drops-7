@@ -1,0 +1,13 @@
+name = Shortcode Embed Content Tag
+description = "Provides a shortcode tag for embedding a node content into text."
+package = Shortcode
+core = 7.x
+dependencies[] = filter
+dependencies[] = shortcode
+
+; Information added by Drupal.org packaging script on 2015-05-14
+version = "7.x-2.22"
+core = "7.x"
+project = "shortcode"
+datestamp = "1431601290"
+

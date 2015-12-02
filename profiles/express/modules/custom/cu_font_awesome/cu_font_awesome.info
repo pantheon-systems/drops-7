@@ -1,0 +1,5 @@
+name = Font Awesome
+core = 7.x
+package = CU-Boulder
+description = Adds Font Awesome to site.
+version = 7.x-1.0

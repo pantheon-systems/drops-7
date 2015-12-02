@@ -1,0 +1,131 @@
+<?php
+// $Id: ldap_query.module,v 1.5.2.1 2011/02/08 06:01:00 johnbarclay Exp $
+
+
+
+define('LDAP_QUERY_MENU_BASE_PATH', 'admin/config/people/ldap');
+define('LDAP_QUERY_INDEX_BASE_PATH', 'admin/config/people/ldap/query');
+define('LDAP_QUERY_MENU_BASE_PATH_PARTS', 4); // for argument offsets
+
+
+function ldap_query_menu() {
+  $menu_offset = 4;
+
+  $items['admin/config/people/ldap/query'] = array(
+    'title' => 'Queries',
+    'page callback' => 'ldap_query_index',
+    'page arguments' => array(),
+    'weight' => 6,
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('administer site configuration'),
+    'file' => 'ldap_query.admin.inc',
+  );
+
+  $items['admin/config/people/ldap/query/list'] = array(
+    'title' => 'Queries',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['admin/config/people/ldap/query/add'] = array(
+    'title' => 'Add LDAP Query',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ldap_query_admin_form', 'add'),
+    'type' => MENU_LOCAL_TASK + MENU_CONTEXT_INLINE,
+    'weight' => 3,
+    'access arguments' => array('administer site configuration'),
+    'file' => 'ldap_query.admin.inc',
+  );
+
+  $items['admin/config/people/ldap/query/edit/%'] = array(
+    'title' => 'Edit LDAP Query',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ldap_query_admin_form', 'edit', $menu_offset + 2),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'ldap_query.admin.inc',
+  );
+
+  $items['admin/config/people/ldap/query/test/%'] = array(
+    'title' => 'Test LDAP Query',
+    'page callback' => 'ldap_query_test',
+    'page arguments' => array($menu_offset + 2),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'ldap_query.admin.inc',
+  );
+
+  $items['admin/config/people/ldap/query/delete/%'] = array(
+    'title' => 'Delete LDAP Query',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ldap_query_admin_delete', $menu_offset + 2),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'ldap_query.admin.inc',
+  );
+
+  $items['admin/config/people/ldap/query/enable/%'] = array(
+    'title' => 'Enable LDAP Query',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ldap_query_admin_enable_disable', $menu_offset + 1, $menu_offset + 2),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'ldap_query.admin.inc',
+  );
+
+  $items['admin/config/people/ldap/query/disable/%'] = array(
+    'title' => 'Enable LDAP Query',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ldap_query_admin_enable_disable', $menu_offset + 1, $menu_offset + 2),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'ldap_query.admin.inc',
+  );
+
+  return $items;
+}
+
+
+
+function ldap_query_theme() {
+  return array(
+    'ldap_query_list' => array(
+      'variables' => array('ldap_query' => NULL, 'actions' => TRUE, 'type' => 'table'),
+      'render element' => 'element',
+      'file' => 'ldap_query.theme.inc'
+    ),
+    'ldap_query' => array(
+      'variables' => array('ldap_server' => NULL, 'actions' => FALSE, 'type' => 'detail'),
+      'render element' => 'element',
+      'file' => 'ldap_query.theme.inc'
+    ),
+    'ldap_query_results' => array(
+      'variables' => array('ldap_query' => NULL, 'result' => FALSE, 'show_query' => TRUE),
+      'render element' => 'element',
+      'file' => 'ldap_query.theme.inc'
+    ),
+  );
+}
+
+function ldap_query_cache_clear() {
+  $discard = ldap_query_get_queries(NULL, 'all', FALSE, TRUE);
+}
+/**
+ *
+ * return ldap query objects
+ *
+ * @param alphanum $qid
+ * @param enum $type 'all', 'enabled',
+ * @param boolean $flatten signifies if array or single object returned.  Only works if sid is specified
+ * @param boolean $reset do not use cached or static result
+ * @return - array of server conf object keyed on sid
+ *         - single server conf object (if flatten == TRUE)
+ */
+function ldap_query_get_queries($qid = NULL, $type, $flatten = FALSE, $reset = FALSE) {
+  ldap_server_module_load_include('inc', 'ldap_query', 'ldap_query');
+  if (variable_get('ldap_simpletest', FALSE)) {
+    return _ldap_query_get_simpletest_queries($qid, $type, $flatten, $reset);
+  }
+  else {
+    return _ldap_query_get_queries($qid, $type, $flatten, $reset);
+  }
+}
+
+function ldap_query_fields() {
+  ldap_server_module_load_include('php', 'ldap_query', 'LdapQuery.class');
+  return LdapQuery::fields();
+}

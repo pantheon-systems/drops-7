@@ -1,0 +1,1 @@
+need to change basedn in server definition to say base dn for users and group queries; or create a separate one.

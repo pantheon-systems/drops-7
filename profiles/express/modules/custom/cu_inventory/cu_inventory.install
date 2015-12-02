@@ -1,0 +1,49 @@
+<?php
+
+// Removed the install, enable, and disable functions from cu_apihooks.
+// Install and Disable had early 'return' exits. Enable reported users,
+// which we really don't know at install/enable.
+
+
+/**
+ * Implements hook_requirements().
+ */
+function cu_inventory_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $t = get_t();
+    // SITE ID
+    if ($cu_sid = variable_get('cu_sid', FALSE)) {
+      $requirements['cu_inventory_sid'] = array(
+        'title' => $t('CU Inventory Site ID'),
+        'value' => $t('This site reports an site id of !cu_sid.', array('!cu_sid' => $cu_sid)),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['cu_inventory_sid'] = array(
+        'title' => $t('CU Inventory Site ID'),
+        'value' => $t('This has no site id'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+    // API IS UP
+    if (cu_inventory_is_up()) {
+      $inventory_env = cu_inventory_connected_env();
+      $requirements['cu_inventory_is_up'] = array(
+        'title' => $t('CU Inventory Status'),
+        'value' => $t('Is up and running.  Currently configured to use !inventory_env', array('!inventory_env' => $inventory_env)),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    else {
+      $requirements['cu_inventory_is_up'] = array(
+        'title' => $t('CU Inventory Status'),
+        'value' => $t('is down.'),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+  return $requirements;
+}

@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * Change light to white and black to dark in link/background color  field.
+ */
+function cu_hero_unit_update_7001() {
+  // deprecated background colors -> dark_gray
+  $query = db_update('field_data_field_hero_unit_bg_color')
+    ->fields(array(
+      'field_hero_unit_bg_color_value' => 'dark_gray',
+    ))
+    ->condition('field_hero_unit_bg_color_value', array('blue', 'green', 'red', 'orange'), 'in')
+    ->execute();
+  
+  // deprecated link colors -> blue 
+  $query = db_update('field_data_field_hero_unit_link_color')
+    ->fields(array(
+      'field_hero_unit_link_color_value' => 'blue',
+    ))
+    ->condition('field_hero_unit_link_color_value', array('green', 'red', 'orange'), 'in')
+    ->execute();
+
+ 
+}

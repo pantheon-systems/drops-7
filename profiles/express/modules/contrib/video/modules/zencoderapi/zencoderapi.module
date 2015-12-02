@@ -1,0 +1,48 @@
+<?php
+/**
+ * @file
+ * Libraries hooks for the Zencoder API module.
+ */
+
+/**
+ * Implements hook_libraries_info().
+ */
+function zencoderapi_libraries_info() {
+  $libraries = array();
+
+  $libraries['zencoder'] = array(
+    'name' => 'Zencoder',
+    'vendor url' => 'http://zencoder.com',
+    'download url' => 'https://github.com/zencoder/zencoder-php/tags',
+    'version arguments' => array(
+      'file' => 'Services/Zencoder.php',
+      'pattern' => '/Release: ([\d.]+)/i',
+      'lines' => 10,
+      'cols' => 50,
+    ),
+    'versions' => array(
+      '2' => array(
+        'files' => array(
+          'php' => array('Services/Zencoder.php'),
+        ),
+      ),
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_registry_files_alter().
+ */
+function zencoderapi_registry_files_alter(&$files, $modules) {
+  $lib = libraries_detect('zencoder');
+
+  if ($lib['installed']) {
+    $files[$lib['library path'] . '/Services/Zencoder.php'] =  array(
+      'module' => 'zencoderapi',
+      'weight' => 0,
+    );
+  }
+}
+

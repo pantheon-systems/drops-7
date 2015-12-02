@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+  
+function cu_people_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the Article content type.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_people_bundle_express_help($variables) {
+  $variables['admin/settings/people'][] = array(
+    'title' => 'Create People List Categories & Filters',
+    'short_title' => 'People List Categories and Filters',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/create-people-list-categories-filters',
+  );
+  $variables['block/add/people-list-block'][] = array(
+    'title' => 'Adding People List Blocks Help',
+    'short_title' => 'People List Blocks',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/people-list-block',
+  );
+  $variables['node/add/person'][] = array(
+    'title' => 'Add Person Help',
+    'short_title' => 'Add Person',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-person',
+  );
+  $variables['node/add/person'][] = array(
+    'title' => 'Person Job Titles and Departments',
+    'short_title' => 'Job Titles and Departments',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/person-job-titles-departments',
+  );
+  $variables['node/add/people-list-page'][] = array(
+    'title' => 'Adding People List Page Help',
+    'short_title' => 'People List Page',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-people-list-page',
+  );
+  $variables['node/add/people-list-page'][] = array(
+    'title' => 'Apply People List Filters',
+    'short_title' => 'People List Filters',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/apply-people-list-filters',
+  );
+
+  return $variables;
+}

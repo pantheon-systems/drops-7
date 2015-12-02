@@ -1,0 +1,23 @@
+
+
+Microsoft Forefront Threat Management Gateway
+http://technet.microsoft.com/en-us/library/cc441438.aspx
+
+Overview of authentication in Forefront TMG
+http://technet.microsoft.com/en-us/library/cc441695.aspx
+
+
+About authentication in Web publishing
+http://technet.microsoft.com/en-us/library/cc441671.aspx
+-- third component of TMG authentication for web publishing is: "Delegation of authentication ot web servers behind FTMG".  This is where LDAP modules need to be integrated.  This aspect is configured in the "publishing rule" such that a single listener can have multiple types of delegation.
+
+1) The Web server must be configured to use the authentication scheme that matches the delegation method used by Forefront TMG. Delegation of client credentials is configured on the publishing rule. In the Publishing Rule wizard, configure this on the Authentication Delegation page. In the publishing rule properties, the authentication settings are on the Authentication Delegation tab.
+
+2) Delegation options are (sorted in order of what I think are desireable)
+- NTLM/Kerberos (Negotiate).  Tries for Kerberos ticket and goes for credentials via NTLM.
+- NTLM. "In NTLM delegation, Forefront TMG delegates the credentials by using the NTLM challenge/response authentication protocol. If authentication fails, Forefront TMG replaces the delegation with the authentication type used by the Web listener. If the server requires a different type of credentials, Forefront TMG triggers an alert."
+- No delegation, and client cannot authenticate directly.  Not useful.  Just for avoiding false passing of credentials when not needed.
+- No delegation, but client may authenticate directly.  User credentials passed to drupal.  Not desireable.
+- Basic.  cleartext passing of credentials to drupal.  Not desireable.
+- SecurID
+- Kerberos constrained delegation

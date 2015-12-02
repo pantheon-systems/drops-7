@@ -1,0 +1,135 @@
+<?php
+
+/**
+ * @file
+ * Database schema of
+ * @see themekey_ui.module
+ *
+ * @author Markus Kalkbrenner | Cocomore AG
+ *   @see http://drupal.org/user/124705
+ */
+
+
+/**
+ * Implements hook_schema().
+ */
+function themekey_ui_schema() {
+  $schema = array();
+
+  $schema['themekey_ui_node_theme'] = array(
+    'fields' => array(
+      'nid' => array(
+        'description' => 'The {node} this version belongs to.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'description' => 'The primary identifier for this version.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'theme' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('nid', 'vid'),
+  );
+
+  $schema['themekey_ui_author_theme'] = array(
+    'fields' => array(
+      'uid' => array(
+        'description' => 'The user id.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'theme' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+    ),
+    'primary key' => array('uid'),
+  );
+
+  return $schema;
+}
+
+
+/**
+ * Implements hook_disable().
+ */
+function themekey_ui_disable() {
+  module_load_include('inc', 'themekey', 'themekey_build');
+  themekey_update_static_rule('themekey_ui:node_triggers_theme', FALSE);
+  themekey_update_static_rule('themekey_ui:node_author_triggers_theme', FALSE);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function themekey_ui_uninstall() {
+  // Remove variables
+  db_delete('variable')
+  ->condition('name', 'themekey_ui%%', 'LIKE')
+  ->execute();
+
+  cache_clear_all('variables', 'cache');
+}
+
+
+/**
+ * Implements hook_update_N().
+ */
+function themekey_ui_update_6100() {
+
+  // moved to themekey_update_6105() to not break upgrades from ThemeKey 6.x-1.1 to 6.x-2.0
+
+  // hook_update_N() no longer returns a $ret array. Instead, return
+  // nothing or a translated string indicating the update ran successfully.
+  // See http://drupal.org/node/224333#update_sql.
+  return '' /* array() */;
+}
+
+
+/**
+ * Implements hook_update_N().
+ */
+function themekey_ui_update_6200() {
+
+  if (!db_table_exists('themekey_ui_author_theme')) {
+    $schema['themekey_ui_author_theme'] = array(
+      'fields' => array(
+        'uid' => array(
+          'description' => 'The user id.',
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'theme' => array(
+          'type' => 'varchar',
+          'length' => 255,
+          'not null' => TRUE,
+          'default' => '',
+        ),
+      ),
+      'primary key' => array('uid'),
+    );
+
+    $ret = array();
+    db_create_table('themekey_ui_author_theme', $schema['themekey_ui_author_theme']);
+    // hook_update_N() no longer returns a $ret array. Instead, return
+    // nothing or a translated string indicating the update ran successfully.
+    // See http://drupal.org/node/224333#update_sql.
+    return t('Created table themekey_ui_author_theme') /* $ret */;
+  }
+  else {
+    return '';
+  }
+}

@@ -1,0 +1,15 @@
+;$Id: client_ui_control.info,v 1.2 2010/11/17 23:44:03 himerus Exp $
+name = Client UI Control
+description = <a href="">Client UI Control</a> gives the ability to hide certain elements from users (even administrators) of a site. This is primarily intended to hide elements of the interface that could completely break site functionality if edited/changed/etc. 
+package = Administration
+core = 7.x
+
+configure = admin/config/user-interface/client_ui_control
+
+files[] = client_ui_control.module
+; Information added by drupal.org packaging script on 2010-11-17
+version = "7.x-1.0-alpha3"
+core = "7.x"
+project = "client_ui_control"
+datestamp = "1290037580"
+

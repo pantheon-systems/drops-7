@@ -1,0 +1,543 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * ldap_authentication simpletests
+ *
+ */
+require_once(drupal_get_path('module', 'ldap_servers') . '/tests/LdapTestFunctions.class.php');
+
+class LdapAuthenticationTestCase extends DrupalWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'LDAP Authentication Tests',
+      'description' => 'Test ldap authentication.',
+      'group' => 'LDAP Authentication'
+    );
+  }
+
+  public $module_name = 'ldap_authentication';
+  public $testFunctions;
+  public $testData;
+  public $sid;
+
+  function setUp($addl_modules = array()) {
+    parent::setUp(array('ldap_authentication', 'ldap_authorization', 'ldap_authorization_drupal_role')); // don't need any real servers, configured, just ldap_servers code base
+    variable_set('ldap_simpletest', 1);
+    variable_set('ldap_help_watchdog_detail', 0);
+  }
+
+
+  function tearDown() {
+    parent::tearDown();
+    variable_del('ldap_help_watchdog_detail');
+    variable_del('ldap_simpletest');
+  }
+
+
+  /**
+   * prepTestData create an ldap_authorization configuration and stores fake ldap server configuration.
+   *
+   * @param string $testid the name of the test.  used to determine which configuration file to include
+   * @return object consumer configuration object (class = LdapAuthorizationConsumerConfAdmin)
+   *
+   */
+  function prepTestData($sid, $testid) {
+    $this->testFunctions = new LdapTestFunctions();
+
+    include(drupal_get_path('module', 'ldap_authentication') . '/tests/LdapServerTestData.' . $sid . '.inc');
+    $this->testFunctions->prepTestServers($test_data['servers']);
+    $this->testData = $test_data;
+    $authentication_conf = (is_array($testid)) ? $testid : $test_data['ldap_authentication'][$testid];
+    $this->testFunctions->configureAuthentication($authentication_conf);
+
+
+
+     // set up authorization conf.  needed for some tests.
+    $consumer_conf = $test_data['ldap_authorization_conf']['consumer_conf'];
+    $consumer_obj = ldap_authorization_get_consumer_object($consumer_conf['consumerType']);
+    $consumer_conf_admin = new LdapAuthorizationConsumerConfAdmin($consumer_obj, TRUE);
+    foreach ($consumer_conf as $property_name => $property_value) {
+      $consumer_conf_admin->{$property_name} = $property_value;
+    }
+    $consumer_conf_admin->save();
+
+
+  }
+
+  public function AttemptLogon($dn, $goodpwd = TRUE) {
+
+    $this->drupalLogout();
+    $user = $this->testData['servers'][$this->sid]['users'][$dn]['attr'];
+    $parts = ldap_explode_dn($dn, 0);
+    $cn_parts = explode('=', $parts[0]);
+    $edit = array(
+      'name' => ldap_pear_unescape_dn_value($cn_parts[1]),
+      'pass' => $user['password'][0],
+    );
+    $user = user_load_by_name($edit['name']);
+    if ($user) {
+      user_delete($user->uid);
+    }
+    $this->drupalPost('user', $edit, t('Log in'));
+  }
+
+  /**
+   * difficult to test install and uninstall since setUp does module enabling and installing.
+   */
+  function testInstall() {
+    $sid = 'ldapauthen1';
+    include(drupal_get_path('module', 'ldap_authentication') . '/tests/LdapServerTestData.' . $sid . '.inc');
+    $testid = $this->module_name . ': setup success';
+    // just to give warning if setup doesn't succeed.  may want to take these out at some point.
+
+    $setup_success = (
+        module_exists('ldap_authentication') &&
+        module_exists('ldap_servers')
+      );
+
+    $this->assertTrue($setup_success, ' ldap_authentication setup successful', $testid);
+
+  }
+
+
+/**
+ *  LDAP Authentication Mixed Mode User Logon Test (ids = LDAP_authen.MM.ULT.*)
+ */
+
+
+  function testMixedModeUserLogon() {
+
+    $sid = 'ldapauthen1';
+    $testid = 'MixedModeUserLogon';
+    $this->prepTestData($sid, $testid);
+    $ldap_servers = ldap_servers_get_servers($sid, 'enabled');
+    $this->assertTrue(count($ldap_servers) == 1, ' ldap_authentication test server setup successful', $testid);
+
+    /**
+     * LDAP_authen.MM.ULT.user1.goodpwd -- result: Successful logon as user 1
+     */
+
+    $user1 = user_load(1);
+    $password = $this->randomString(20);
+    require_once(DRUPAL_ROOT . '/includes/password.inc');
+    $account = array(
+      'name' => $user1->name,
+      'pass' => user_hash_password(trim($password)),
+    );
+    db_update('users')
+      ->fields($account)
+      ->condition('uid', 1)
+      ->execute();
+
+    $edit = array(
+      'name' => $user1->name,
+      'pass' => $password,
+    );
+
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'User 1 successfully authenticated', $testid);
+    $this->drupalGet('user/logout');
+
+    /** LDAP_authen.MM.ULT.user1.badpwd  -- result: Drupal logon error message. **/
+
+    $edit = array(
+      'name' => $user1->name,
+      'pass' => 'mydabpassword',
+    );
+
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Sorry, unrecognized username or password'), 'User 1 failed with bad password', $testid);
+    $this->drupalLogout();
+
+    /** LDAP_authen.MM.ULT.drupal.goodpwd - result: Successful logon **/
+
+    $drupal_user = $this->drupalCreateUser();
+    $raw_pass = $drupal_user->pass_raw;
+    $edit = array(
+      'name' => $drupal_user->name,
+      'pass' => $raw_pass,
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'Drupal user successfully authenticated', $testid);
+    $this->drupalGet('user/logout');
+
+    /** LDAP_authen.MM.ULT.drupal.badpwd - result: Drupal logon error message. **/
+    $edit = array(
+      'name' => $drupal_user->name,
+      'pass' => 'mydabpassword',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Sorry, unrecognized username or password'), 'Drupal user with bad password failed to authenticate.', $testid);
+    $this->drupalGet('user/logout');
+
+    /** LDAP_authen.MM.ULT.ldap.newaccount.badpwd - result: Drupal logon error message. **/
+    $edit = array(
+      'name' => 'jkool',
+      'pass' => 'mydabpassword',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Sorry, unrecognized username or password'), 'New Ldap user with bad password failed to authenticate.', $testid);
+    $this->drupalGet('user/logout');
+
+
+    /** LDAP_authen.MM.ULT.ldap.newaccount.goodpwd - result: Successful logon, with user record created and authmapped to ldap **/
+    $edit = array(
+      'name' => 'jkool',
+      'pass' => 'goodpwd',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'New Ldap user with good password authenticated.');
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('jkool'), 'Ldap user properly authmapped.', $testid);
+    $this->drupalGet('user/logout');
+
+
+    /** LDAP_authen.MM.ULT.existingacct.badpwd - result: Drupal logon error message. **/
+    $edit = array(
+      'name' => 'jkool',
+      'pass' => 'mydabpassword',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Sorry, unrecognized username or password'), 'Existing Ldap user with bad password failed to authenticate.', $testid);
+    $this->drupalGet('user/logout');
+
+    /** LDAP_authen.MM.ULT.existingacct.goodpwd - result: Successful logon. **/
+    $edit = array(
+      'name' => 'jkool',
+      'pass' => 'goodpwd',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'Existing Ldap user with good password authenticated.');
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('jkool'), 'Existing Ldap user still properly authmapped.', $testid);
+    $this->drupalGet('user/logout');
+  }
+
+
+/**
+ *  LDAP Authentication Exclusive Mode User Logon Test (ids = LDAP_authen.EM.ULT.*)
+ */
+  function testExclusiveModeUserLogon() {
+
+    $sid = 'ldapauthen1';
+    $testid = 'ExclusiveModeUserLogon';
+    $this->prepTestData($sid, $testid);
+    $ldap_servers = ldap_servers_get_servers($sid, 'enabled');
+    $this->assertTrue(count($ldap_servers) == 1, ' ldap_authentication test server setup successful', $testid);
+
+    /**
+     * LDAP_authen.EM.ULT.user1.goodpwd -- result: Successful logon as user 1
+     */
+
+    $user1 = user_load(1);
+    $password = $this->randomString(20);
+    require_once(DRUPAL_ROOT . '/includes/password.inc');
+    $account = array(
+      'name' => $user1->name,
+      'pass' => user_hash_password(trim($password)),
+    );
+    db_update('users')
+      ->fields($account)
+      ->condition('uid', 1)
+      ->execute();
+
+    $edit = array(
+      'name' => $user1->name,
+      'pass' => $password,
+    );
+
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'User 1 successfully authenticated', $testid);
+    $this->drupalGet('user/logout');
+
+    /** LDAP_authen.EM.ULT.user1.badpwd  -- result: Drupal logon error message. **/
+
+    $edit = array(
+      'name' => $user1->name,
+      'pass' => 'mydabpassword',
+    );
+
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Sorry, unrecognized username or password'),  'User 1 failed with bad password', $testid );
+    $this->drupalLogout();
+
+    /** LDAP_authen.EM.ULT.drupal.goodpwd - result: failed logon **/
+
+    $drupal_user = $this->drupalCreateUser();
+    $raw_pass = $drupal_user->pass_raw;
+    $edit = array(
+      'name' => $drupal_user->name,
+      'pass' => $raw_pass,
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Sorry, unrecognized username or password'), 'Drupal user successfully authenticated', $testid );
+    $this->drupalGet('user/logout');
+
+    /** LDAP_authen.EM.ULT.drupal.badpwd - result: Drupal logon error message. **/
+    $edit = array(
+      'name' => $drupal_user->name,
+      'pass' => 'mydabpassword',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Sorry, unrecognized username or password'), 'Drupal user with bad password failed to authenticate.', $testid );
+    $this->drupalGet('user/logout');
+
+    /** LDAP_authen.EM.ULT.ldap.newaccount.badpwd - result: Drupal logon error message. **/
+    $edit = array(
+      'name' => 'jkool',
+      'pass' => 'mydabpassword',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Sorry, unrecognized username or password'), 'New Ldap user with bad password failed to authenticate.', $testid );
+    $this->drupalGet('user/logout');
+
+
+    /** LDAP_authen.EM.ULT.ldap.newaccount.goodpwd - result: Successful logon, with user record created and authmapped to ldap **/
+    $edit = array(
+      'name' => 'jkool',
+      'pass' => 'goodpwd',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'New Ldap user with good password authenticated.');
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('jkool'), 'Ldap user properly authmapped.', $testid );
+    $this->drupalGet('user/logout');
+
+
+    /** LDAP_authen.EM.ULT.existingacct.badpwd - result: Drupal logon error message. **/
+    $edit = array(
+      'name' => 'jkool',
+      'pass' => 'mydabpassword',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Sorry, unrecognized username or password'), 'Existing Ldap user with bad password failed to authenticate.', $testid );
+    $this->drupalGet('user/logout');
+
+    /** LDAP_authen.MM.ULT.existingacct.goodpwd - result: Successful logon. **/
+    $edit = array(
+      'name' => 'jkool',
+      'pass' => 'goodpwd',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'Existing Ldap user with good password authenticated.');
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('jkool'), 'Existing Ldap user still properly authmapped.', $testid );
+    $this->drupalGet('user/logout');
+  }
+
+
+
+  function testAuthenticationWhitelistTests() {
+    require_once(drupal_get_path('module', 'ldap_authentication') . '/LdapAuthenticationConfAdmin.class.php');
+
+    $sid = 'ldapauthen1';
+    $this->sid = $sid;
+    $testid = 'WL1';
+    $this->prepTestData($sid, $testid);
+    $ldap_servers = ldap_servers_get_servers($sid, 'enabled');
+    $this->assertTrue(count($ldap_servers) == 1, ' ldap_authentication test server setup successful', $testid);
+
+    // these 2 modules are configured in setup, but disabled for most authentication tests
+    module_disable(array('ldap_authorization_drupal_role', 'ldap_authorization'));
+
+    /**
+     * LDAP_authen.WL.user1  test for user 1 being excluded from white and black list tests
+     */
+
+    $user1 = user_load(1);
+    $password = $this->randomString(20);
+    require_once(DRUPAL_ROOT . '/includes/password.inc');
+    $account = array(
+      'name' => $user1->name,
+      'pass' => user_hash_password(trim($password)),
+    );
+    db_update('users')
+      ->fields($account)
+      ->condition('uid', 1)
+      ->execute();
+
+    $edit = array(
+      'name' => $user1->name,
+      'pass' => $password,
+    );
+
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'User 1 successfully authenticated in LDAP_authen.WL.user1', $testid);
+    $this->drupalGet('user/logout');
+
+    module_enable(array('ldap_authorization'));
+    module_enable(array('ldap_authorization_drupal_role'));
+
+
+    /**
+    * prep LDAP_authen.WL.allow
+    */
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+    $authenticationConf->allowOnlyIfTextInDn = array('ou=guest accounts');
+    $authenticationConf->save();
+
+
+   /**
+    * LDAP_authen.WL.allow.match -- desirect_result: authenticate success
+    */
+
+    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(t('Member for'), 'User able to authenticate because in white list (allowOnlyIfTextInDn).', $testid);
+
+   /**
+    *  LDAP_authen.WL.allow.miss -- desirect_result: authenticate fail
+    */
+
+    $this->attemptLogon('cn=unkool,ou=lost,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(t('Sorry, unrecognized username or password'), 'User unable to authenticate because not in white list (allowOnlyIfTextInDn).', $testid);
+
+
+    /**
+    * undo LDAP_authen.WL.allow settings
+    */
+
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+    $authenticationConf->allowOnlyIfTextInDn = array();
+    $authenticationConf->save();
+
+    /**
+    * prep LDAP_authen.WL.exclude
+    */
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+    $authenticationConf->excludeIfTextInDn = array('cn=unkool');
+    $authenticationConf->save();
+
+
+   /**
+    * LDAP_authen.WL.exclude.match -- desirect_result: authenticate fail
+    */
+
+    $this->attemptLogon('cn=unkool,ou=lost,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(t('Sorry, unrecognized username or password'), 'User unable to authenticate in exclude list (excludeIfTextInDn).', $testid);
+
+   /**
+    *  LDAP_authen.WL.exclude.miss-- desirect_result: authenticate success
+    */
+
+    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(t('Member for'), 'Able to authenticate because not in exclude list (allowOnlyIfTextInDn).', $testid);
+
+    /**
+    * undo LDAP_authen.WL.allow settings
+    */
+
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+    $authenticationConf->excludeIfTextInDn = array();
+    $authenticationConf->save();
+
+
+    /**
+    * prep LDAP_authen.WL.php
+    */
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+    $authenticationConf->allowTestPhp = "\n
+      //exclude users with guests.myuniversity.edu email address \n
+      if (strpos(\$_ldap_user_entry['attr']['mail'][0], '@guests.myuniversity.edu') === FALSE) {\n
+        print 1;\n
+      }\n
+      else {
+        print 0;\n
+      }
+      ";
+
+    $authenticationConf->save();
+
+   /**
+    * LDAP_authen.WL.php.php disabled -- desired result: authenticate fail with warning the authentication disabled
+    */
+    module_disable(array('php'));
+    $this->attemptLogon('cn=verykool,ou=special guests,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(LDAP_AUTHENTICATION_DISABLED_FOR_BAD_CONF_MSG, 'With php disabled and php code in whitelist, refuse authentication. (allowTestPhp).', $testid);
+    module_enable(array('php'));
+
+
+   /**
+    * LDAP_authen.WL.php.true -- desired result: authenticate success
+    */
+    $this->attemptLogon('cn=verykool,ou=special guests,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(t('Member for'), 'Able to authenticate because php returned true (allowTestPhp).', $testid);
+
+   /**
+    *  LDAP_authen.WL.php.false-- desired result: authenticate fail
+    */
+
+    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(t('User disallowed'), 'User unable to authenticate  because php returned false (allowTestPhp).', $testid);
+
+
+  /**
+    * clear LDAP_authen.WL.php
+    */
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+    $authenticationConf->allowTestPhp = '';
+    $authenticationConf->save();
+  /***  multiple options used in whitelist **/
+
+   /**
+    * LDAP_authen.WL.allow[match].exclude[match] -- desired result: authenticate fail
+    */
+
+
+
+   /**
+    *  LDAP_authen.WL.allow[match].exclude[miss] -- desired result: authenticate success
+    */
+
+
+    /**
+    * LDAP_authen.WL.exclude[match].*-- desirect_result: authenticate fail
+    */
+
+
+
+   /**
+    *  LDAP_authen.WL.exclude[match].php[false] -- desired result: authenticate fail
+    */
+
+
+  /**
+     * LDAP_authen.WL1.excludeIfNoAuthorizations.hasAuthorizations
+     * test for excludeIfNoAuthorizations set to true and consumer granted authorizations
+     */
+
+   // these 2 modules are configured in setup, but disabled for most authentication tests
+    module_disable(array('ldap_authorization_drupal_role', 'ldap_authorization'));
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+    $authenticationConf->excludeIfNoAuthorizations = 1;
+    $authenticationConf->save();
+
+    /**
+     * LDAP_authen.WL1.excludeIfNoAuthorizations.failsafe
+     * test for excludeIfNoAuthorizations set to true and ldap_authorization disabled
+     * to make sure authentication fails completely
+     */
+
+
+    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(LDAP_AUTHENTICATION_DISABLED_FOR_BAD_CONF_MSG, t('Authentication prohibited when excludeIfNoAuthorizations = true and LDAP Authorization disabled. LDAP_authen.WL1.excludeIfNoAuthorizations.failsafe'), $testid);
+
+    module_enable(array('ldap_authorization_drupal_role'), TRUE);
+    $this->attemptLogon('cn=jkool,ou=guest accounts,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(t('Member for'), 'User able to authenticate because of excludeIfNoAuthorizations setting.', $testid);
+
+    /**
+     * LDAP_authen.WL1.excludeIfNoAuthorizations.hasNoAuthorizations
+     * test for excludeIfNoAuthorizations set to true and No consumer granted authorizations
+     */
+
+    $this->attemptLogon('cn=unkool,ou=lost,dc=ad,dc=myuniversity,dc=edu');
+    $this->assertText(t('Sorry, unrecognized username or password'), 'User unable to authenticate because of excludeIfNoAuthorizations setting.', $testid);
+
+    $authenticationConf = new LdapAuthenticationConfAdmin();
+    $authenticationConf->excludeIfNoAuthorizations = 0;
+    $authenticationConf->save();
+    module_disable(array('ldap_authorization_drupal_role', 'ldap_authorization'));
+
+
+}
+
+
+}

@@ -1,0 +1,200 @@
+<?php
+
+/**
+ * @file
+ * Standard installation functions for name.
+ */
+
+/**
+ * Implements hook_field_schema().
+ *
+ * There is no path backwards in Drupal 7 when it comes to dropping columns or
+ * reducing the size of the columns (via coresponence mid 2010). So as a varchar
+ * is just the data + a terminator byte, all fields get all columns with vc(255).
+ */
+function name_field_schema($field) {
+  module_load_include('module', 'name');
+  $columns = array();
+  foreach (_name_translations() as $key => $title) {
+    $columns[$key] = array(
+      'type' => 'varchar',
+      'length' => 255,
+      'not null' => FALSE,
+    );
+  }
+  return array(
+    'columns' => $columns,
+    'indexes' => array(
+      'given' => array('given'),
+      'family' => array('family'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_schema().
+ */
+function name_schema() {
+  $schema = array();
+  $schema['name_custom_format'] = array(
+    'fields' => array(
+      'ncfid' => array(
+        'description' => 'The primary identifier for a custom format.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The name to identify the custom format to a user.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'machine_name' => array(
+        'description' => 'The machine name to identify the custom format to the system.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'format' => array(
+        'description' => 'The format string to apply to names.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('ncfid'),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_install().
+ *
+ * Inserts some common name formats into the database.
+ */
+function name_install() {
+  name_install_default_formats();
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function name_uninstall() {
+  variable_del('name_settings');
+  variable_del('name_user_preferred');
+}
+
+/**
+ * This adds the formats that would otherwise be inserted during installation.
+ */
+function name_update_6000() {
+  $ret = array();
+
+  // Create the table.
+  $schema = array(
+    'fields' => array(
+      'ncfid' => array(
+        'description' => t('The primary identifier for a custom format.'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => t('The name to identify the custom format to a user.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'machine_name' => array(
+        'description' => t('The machine name to identify the custom format to the system.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+      'format' => array(
+        'description' => t('The format string to apply to names.'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array('ncfid'),
+  );
+  db_create_table('name_custom_format', $schema);
+
+  // Install some default values.
+  $t = get_t();
+  name_install_default_formats();
+
+  // Clear the caches.
+  cache_clear_all('*', 'cache', TRUE);
+  cache_clear_all('*', 'cache_content', TRUE);
+  if (module_exists('views')) {
+    // Needed because this can be called from .install files
+    module_load_include('module', 'views');
+    views_invalidate_cache();
+  }
+
+  return t('Created name formats table {name_custom_format}.') . '<br/>'
+      . $t('The default set of custom name format strings was generated and saved. These are listed !here.',
+      array('!here' => l($t('here', 'admin/config/regional/name'))));
+}
+
+/**
+ * Move the user field selected realname into a variable to avoid doing lookups
+ * on all user fields / instances during hook_user_load().
+ */
+function name_update_7000() {
+  foreach (field_info_instances('user', 'user') as $instance) {
+    $field = field_info_field($instance['field_name']);
+    if ($field['type'] == 'name' && !empty($instance['settings']['override_username'])) {
+      variable_set('name_user_preferred', $instance['field_name']);
+      break;
+    }
+  }
+}
+
+/**
+ * Inserts some common formats.
+ */
+function name_install_default_formats() {
+  $t = get_t();
+  $formats = array(
+    array(
+      'format' => '((((t+ig)+im)+if)+is)+jc',
+      'name' => $t('Full'),
+      'machine_name' => 'full',
+    ),
+    array(
+      'format' => 'g',
+      'name' => $t('Given'),
+      'machine_name' => 'given',
+    ),
+    array(
+      'format' => 'f',
+      'name' => $t('Family'),
+      'machine_name' => 'family',
+    ),
+    array(
+      'format' => 't+if',
+      'name' => $t('Title Family'),
+      'machine_name' => 'formal',
+    ),
+    array(
+      'format' => 'g+if',
+      'name' => $t('Given Family'),
+      'machine_name' => 'short_full',
+    ),
+  );
+
+  foreach ($formats as $format) {
+    db_insert('name_custom_format')
+      ->fields(array(
+          'name' => $format['name'],
+          'machine_name' => $format['machine_name'],
+          'format' => $format['format'],
+        ))
+      ->execute();
+  }
+}

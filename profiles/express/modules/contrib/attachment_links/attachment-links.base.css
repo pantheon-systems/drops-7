@@ -1,0 +1,11 @@
+/**
+ * CSS for attachment_links module. Paths are to core file module.
+ */
+.al-file {display: inline-block; padding-left: 18px; }
+.text-plain {background: url('/modules/file/icons/text-plain.png') no-repeat left 1px; }
+.text-html {background: url('/modules/file/icons/text-html.png') no-repeat left 1px; }
+.image-jpeg,
+.image-jpg,
+.image-gif,
+.image-png {background: url('/modules/file/icons/image-x-generic.png') no-repeat left 1px; }
+.application-pdf {background: url('/modules/file/icons/application-pdf.png') no-repeat left 1px; }

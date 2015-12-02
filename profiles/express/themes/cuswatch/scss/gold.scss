@@ -1,0 +1,14 @@
+@import "../../cu_omega/scss/modules/_colors.scss";
+
+
+#zone-menu-wrapper {
+  a.active,
+  a.active-trail {
+    background-color: $cugold;
+    color:#111;
+  }
+}
+.more-link a {
+  background-color: $cugold;
+  color:#111;
+}

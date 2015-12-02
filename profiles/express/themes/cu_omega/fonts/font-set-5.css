@@ -1,0 +1,7 @@
+body.font-set-5 #zone-content,
+body.font-set-5 #zone-after-content {
+  font-family: "Frutiger Serif LT W01", "Georgia", serif;
+}
+h1,h2,h3,h4,h5,h6,a.button {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}

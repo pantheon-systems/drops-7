@@ -1,0 +1,7 @@
+name = Grid Images
+description = Image sizes for grid-based sites.
+core = 7.x
+package = CU-Boulder
+version = 7.x-1.0
+project = grid_images
+dependencies[] = image

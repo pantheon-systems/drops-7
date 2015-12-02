@@ -1,0 +1,412 @@
+<?php
+// $Id: ldap_authentication.module,v 1.1.4.3 2011/02/08 20:05:41 johnbarclay Exp $
+
+/**
+ * @file
+ * This module injects itself into Drupal's Authentication stack.
+ */
+
+/**
+ * @todo fix advanced help for ../ldap/authentication settings page
+ *
+ */
+define('LDAP_AUTHENTICATION_PROJECT_TAG', 'ldap');
+
+define('LDAP_AUTHENTICATION_MIXED',        1);
+define('LDAP_AUTHENTICATION_EXCLUSIVE',    2);
+define('LDAP_AUTHENTICATION_MODE_DEFAULT', 1);
+
+define('LDAP_AUTHENTICATION_EXCL_IF_NO_AUTHZ_DEFAULT', 0);
+define('LDAP_AUTHENTICATION_CONFLICT_LOG',             1);
+define('LDAP_AUTHENTICATION_CONFLICT_RESOLVE',         2);
+define('LDAP_AUTHENTICATION_CONFLICT_RESOLVE_DEFAULT', 2);
+
+define('LDAP_AUTHENTICATION_EMAIL_UPDATE_ON_LDAP_CHANGE_ENABLE_NOTIFY',  1);
+define('LDAP_AUTHENTICATION_EMAIL_UPDATE_ON_LDAP_CHANGE_ENABLE',         2);
+define('LDAP_AUTHENTICATION_EMAIL_UPDATE_ON_LDAP_CHANGE_DISABLE',        3);
+define('LDAP_AUTHENTICATION_EMAIL_UPDATE_ON_LDAP_CHANGE_DEFAULT',        1);
+
+define('LDAP_AUTHENTICATION_EMAIL_ALLOW_DRUPAL_EMAIL', 1);
+define('LDAP_AUTHENTICATION_EMAIL_FIELD_REMOVE',       2);
+define('LDAP_AUTHENTICATION_EMAIL_FIELD_DISABLE',      3);
+define('LDAP_AUTHENTICATION_EMAIL_FIELD_DEFAULT',      3);
+
+define('LDAP_AUTHENTICATION_RESULT_FAIL_CONNECT',      1);
+define('LDAP_AUTHENTICATION_RESULT_FAIL_BIND',         2);
+define('LDAP_AUTHENTICATION_RESULT_FAIL_FIND',         3);
+define('LDAP_AUTHENTICATION_RESULT_FAIL_DISALLOWED',   4);
+define('LDAP_AUTHENTICATION_RESULT_FAIL_CREDENTIALS',  5);
+define('LDAP_AUTHENTICATION_RESULT_SUCCESS',           6);
+define('LDAP_AUTHENTICATION_RESULT_FAIL_GENERIC',      7);
+define('LDAP_AUTHENTICATION_RESULT_FAIL_SERVER'      , 8);
+
+define('LDAP_AUTHENTICATION_ACCT_CREATION_DEFAULT',                4);
+define('LDAP_AUTHENTICATION_ACCT_CREATION_USER_SETTINGS_FOR_LDAP', 1);
+define('LDAP_AUTHENTICATION_ACCT_CREATION_LDAP_BEHAVIOR',          4);
+
+define('LDAP_AUTHENTICATION_HELP_LINK_TEXT_DEFAULT', 'Logon Help');
+
+define('LDAP_AUTHENTICATION_DISABLED_FOR_BAD_CONF_MSG' , 'The site logon is currently not working due to a configuration error.  Please see logs for additional details.');
+define('LDAP_AUTHENTICATION_COOKIE_EXPIRE', 0);
+
+/**
+ * Implements hook_menu().
+ */
+function ldap_authentication_menu() {
+  $items = array();
+
+  $items['admin/config/people/ldap/authentication'] = array(
+    'title' => 'Authentication',
+    'description' => 'Configure LDAP Authentication',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ldap_authentication_admin_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 2,
+    'file' => 'ldap_authentication.admin.inc',
+  );
+
+  return $items;
+}
+
+ /**
+ * Implements hook_menu_alter().
+ * since menu items are cached, only useful to add or alter callbacks
+ * for ldap authentication driven menu items.
+ *
+ */
+function ldap_authentication_menu_alter(&$items) {
+  ldap_server_module_load_include('inc', 'ldap_authentication', 'ldap_authentication');
+  $items['user/password']['access callback'] = 'ldap_authentication_show_reset_pwd';
+  $auth_conf = ldap_authentication_get_valid_conf();
+  if (@$auth_conf->ldapUserHelpLinkUrl) {
+    $items['user/ldaphelp'] = array(
+      'title' => $auth_conf->ldapUserHelpLinkText,
+      'page callback' => 'drupal_goto',
+      'page arguments' => array($auth_conf->ldapUserHelpLinkUrl),
+      'access callback' => 'ldap_authentication_show_ldap_help_link',
+      'type' => MENU_LOCAL_TASK,
+    );
+  }
+}
+
+
+function ldap_authentication_theme() {
+  return array(
+    'ldap_authentication_user_login_block_links' => array(
+      'variables' => array('ldap_user_help_link' => NULL, 'user_register' => TRUE),
+      'render element' => 'element',
+      'file' => 'ldap_authentication.theme.inc'
+    ),
+    'ldap_authentication_user_pass_message' => array(
+      'variables' => array('show_reset_pwd' => NULL, 'auth_conf' => TRUE),
+      'render element' => 'element',
+      'file' => 'ldap_authentication.theme.inc'
+    ),
+    'ldap_authentication_user_pass_validate_ldap_authenticated' => array(
+      'variables' => array('account' => NULL, 'auth_conf' => TRUE),
+      'render element' => 'element',
+      'file' => 'ldap_authentication.theme.inc'
+    ),
+    'ldap_authentication_login_message' => array(
+      'render element' => 'element',
+      'variables' => array('message' => NULL),
+      'file' => 'ldap_authentication.theme.inc'
+    ),
+    'ldap_authentication_message_not_found' => array(
+      'render element' => 'element',
+      'variables' => array('message' => NULL),
+      'file' => 'ldap_authentication.theme.inc'
+    ),
+    'ldap_authentication_message_not_authenticated' => array(
+      'render element' => 'element',
+      'variables' => array('message' => NULL),
+      'file' => 'ldap_authentication.theme.inc'
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_help().
+ */
+
+function ldap_authentication_help($path, $arg) {
+
+  $authentication_help = t('LDAP authentication allows authentication against an LDAP server.  It
+        may be used alongside other authentication means such as built in drupal authentication,
+        open id, etc.  More detailed help is available on drupal.org at !helplink.',
+          array(
+            '!helplink' => l(LDAP_SERVERS_DRUPAL_HELP_URL, LDAP_SERVERS_DRUPAL_HELP_URL),
+          ));
+
+  switch ($path) {
+    case 'admin/config/people/ldap/authentication':
+      $output = '<p>' . $authentication_help . '</p>';
+      return $output;
+
+    case 'admin/help#ldap_authentication':
+      $output = '<p>' . $authentication_help . '</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_info().
+ */
+function ldap_authentication_info($field = 0) {
+  $info['name']= 'ldap_authentication';
+  $info['protocol'] = 'LDAP';
+
+  if ($field) {
+    return $info[$field];
+  }
+
+  return $info;
+}
+
+
+/**
+ *
+ * @param object $user
+ * @return boolean
+ *    true if user is recorded as ldap authenticated and identified (ldap_authentified)
+ *
+ * notes to developers
+ * -  make user object explicit for clarity; don't default to current user as admins could be editing profile pages
+ * -  don't use $user->data['ldap_authentified'] as it is geared toward ldap_authentication data, not where the user is currently ldap authenticated
+ * -
+ */
+function ldap_authentication_ldap_authenticated($user) {
+
+  if (is_numeric($user)) {
+    $user = @user_load((int)$user);
+  }
+  if (!is_object($user) || $user->uid == 0) {
+    return FALSE;
+  }
+
+  $authmaps = db_query("SELECT module, authname FROM {authmap} WHERE uid = :uid", array(':uid' => $user->uid))->fetchAllKeyed();
+  return isset($authmaps['ldap_authentication']);
+
+}
+
+/**
+ * A user access callback for using the single sign-on URL, denying access to
+ * authenticated users, and granting access to anonymous users and menu
+ * administrators viewing the menu item.
+ *
+ */
+function _ldap_authentication_user_access() {
+  return (boolean)(!$GLOBALS['user']->uid || !empty($GLOBALS['menu_admin']));
+}
+
+
+
+/**
+ * get LdapAuthenticationConf object
+ *
+ * @return object LdapAuthenticationConf object if configured, otherwise FALSE
+ *
+ */
+
+function ldap_authentication_get_valid_conf() {
+
+  static $auth_conf;
+  if (is_object($auth_conf)) {
+    return $auth_conf;
+  }
+  ldap_server_module_load_include('php', 'ldap_authentication', 'LdapAuthenticationConf.class');
+
+  $auth_conf = new LdapAuthenticationConf();
+  return ($auth_conf->inDatabase) ? $auth_conf : FALSE;
+
+}
+
+/**
+ * Implements hook_ldap_ldap_server_in_use().
+ */
+function ldap_authentication_ldap_server_in_use($sid, $server_name) {
+
+  $use_warnings = array();
+  $auth_conf = ldap_authentication_get_valid_conf();
+  if (in_array($sid, array_keys($auth_conf->sids)) && $auth_conf->sids[$sid] == 1) {
+    $use_warnings[] = t('This server (%server_name) may not be deleted or
+      disabled because it is being used for ldap authentication.',
+      array('%server_name' => $server_name));
+  }
+  return $use_warnings;
+}
+
+function ldap_authentication_show_reset_pwd($user = NULL) {
+
+  if (!$user) {
+    global $user;
+  }
+  $auth_conf = ldap_authentication_get_valid_conf();
+  if (current_path() == 'user/password' || $user->uid == 1 || !$auth_conf) {
+    return TRUE;
+   // always show at user/passwordurl. otherwise user 1 will not be able to reset password.
+   // LDAP_authen.login_forms.MM.user1, LDAP_authen.login_forms.EM.user1
+  }
+
+  if ($user->uid == 0) {
+    // hide reset password for anonymous users if ldap only authentication, otherwise show
+    // LDAP_authen.login_forms.MM.anon, LDAP_authen.login_forms.EM.anon
+    return ($auth_conf->authenticationMode != LDAP_AUTHENTICATION_EXCLUSIVE);
+  }
+  else {
+    // authenticated user.  hide if ldap authenticated otherwise show.
+    // LDAP_authen.login_forms.EM.ldap, LDAP_authen.login_forms.EM.drupal,
+    // LDAP_authen.login_forms.MM.drupal, LDAP_authen.login_forms.MM.ldap
+    return (!ldap_authentication_ldap_authenticated($user));
+  }
+
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+
+function ldap_authentication_form_user_pass_alter(&$form, $form_state) {
+  // the following could be in a theme preproces function
+  $auth_conf = ldap_authentication_get_valid_conf();
+  $form['ldap_warning'] = array(
+     '#type' => 'item',
+     '#markup' => theme('ldap_authentication_user_pass_message', array('auth_conf' => $auth_conf)),
+     '#weight' => 10,
+      );
+
+  // need to insert before user_pass_validate
+  array_unshift($form['#validate'], 'ldap_authentication_user_pass_validate');
+}
+
+
+function ldap_authentication_user_pass_validate(&$form_state) {
+  $name_or_mail = trim($form_state['name']['#value']);
+  if ($account = user_load_by_mail($name_or_mail)) {
+
+  }
+  else {
+    $account = user_load_by_name($name_or_mail);
+  }
+
+  if (ldap_authentication_ldap_authenticated($account)) {
+    $vars = array(
+      'account' => $account,
+      'auth_conf' => ldap_authentication_get_valid_conf(),
+    );
+    form_set_error('name', theme('ldap_authentication_user_pass_validate_ldap_authenticated', $vars));
+  }
+}
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+
+function ldap_authentication_form_user_register_alter(&$form, $form_state) {
+
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter(). for user_profile_form
+ */
+function ldap_authentication_form_user_profile_form_alter(&$form, $form_state) {
+  ldap_server_module_load_include('inc', 'ldap_authentication', 'ldap_authentication');
+  _ldap_authentication_form_user_profile_form_alter($form, $form_state, 'user_login');
+
+}
+
+
+/**
+ * Implements hook_form_FORM_ID_alter(). for user_login
+ */
+function ldap_authentication_form_user_login_alter(&$form, &$form_state) {
+  ldap_server_module_load_include('inc', 'ldap_authentication', 'ldap_authentication');
+  _ldap_authentication_login_form_alter($form, $form_state, 'user_login');
+
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter(). for user_login_block
+ */
+function ldap_authentication_form_user_login_block_alter(&$form, &$form_state) {
+  ldap_server_module_load_include('inc', 'ldap_authentication', 'ldap_authentication');
+  _ldap_authentication_login_form_alter($form, $form_state, 'user_login_block');
+
+}
+
+/**
+ * validate function for user logon forms.
+ */
+function ldap_authentication_user_login_authenticate_validate($form, &$form_state) {
+  ldap_server_module_load_include('inc', 'ldap_authentication', 'ldap_authentication');
+  return _ldap_authentication_user_login_authenticate_validate($form_state);
+}
+
+/**
+ * submit function for user logon forms
+ */
+function ldap_authentication_login_form_submit(&$form, $form_state) {
+  ldap_server_module_load_include('inc', 'ldap_authentication', 'ldap_authentication');
+  _ldap_authentication_login_form_submit($form, $form_state);
+
+}
+
+
+/**
+ * Implements hook_user_presave().
+ *  A user account is about to be created or updated.
+ */
+
+function ldap_authentication_user_presave(&$edit, $account, $category = NULL) {
+
+}
+
+
+/**
+ * Implements hook_user_insert().
+ *
+ * A user account was created.
+ * The module should save its custom additions to the user object into the database.
+ */
+
+function ldap_authentication_user_insert(&$edit, $account, $category) {
+
+}
+
+
+/**
+ * Implements hook_user_update().
+ *
+ *  A user account was updated.
+ *  Modules may use this hook to update their user data in a custom storage after a user account has been updated.
+ */
+
+
+function ldap_authentication_user_update($edit, $user, $category) {
+
+}
+
+function ldap_authentication_show_ldap_help_link($user = NULL) {
+  global $user;
+
+  if (!$auth_conf = ldap_authentication_get_valid_conf()) {
+    return FALSE;
+  }
+
+  if ($auth_conf->authenticationMode == LDAP_AUTHENTICATION_MIXED) {
+    return (ldap_authentication_ldap_authenticated($user));
+  // LDAP_authen.login_forms.MM.*  // show ldap help only if ldap authenticated in mixed mode
+
+  }
+  elseif ($auth_conf->authenticationMode == LDAP_AUTHENTICATION_EXCLUSIVE) {
+    if ($user->uid == 0 || ldap_authentication_ldap_authenticated($user)) {
+    // LDAP_authen.login_forms.EM.anon, LDAP_authen.login_forms.EM.ldap
+      return TRUE;
+    }
+    else {
+      return FALSE; // LDAP_authen.login_forms.EM.user1, LDAP_authen.login_forms.EM.drupal
+    }
+  }
+}

@@ -1,0 +1,44 @@
+/* IMAGES */
+
+.field-type-text-with-summary img,
+.field-type-text-long img,
+img.image-large,
+img.image-medium,
+img.image-large_square_thumbnail,
+img.image-large_wide_thumbnail,
+img.image-square_thumbnail,
+img.image-square,
+img.image-thumbnail,
+img.image-small_thumbnail,
+img.image-grid-9,
+img.image-grid-12,
+img.image-grid-6,
+img.image-grid-4,
+img.image-grid-3 {
+  max-width:100%;
+  height: auto;
+  min-width: 50px;
+}
+#zone-intro,
+#zone-wide-2 {
+  img {
+    max-width: none;
+    width: 100%;
+    height: auto;
+  }
+  .field-type-text-long p:last-child {
+    margin-bottom: 0;
+  }
+}
+/* styles for importing wordpress content */
+.image-alignright {
+  float:right !important;
+  margin:0 0 20px 20px;
+}
+.image-alignleft {
+  float:left !important;
+  margin:0 20px 20px 0;
+}
+
+
+

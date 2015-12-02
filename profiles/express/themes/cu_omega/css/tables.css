@@ -1,0 +1,34 @@
+/* TABLES */
+table { border-collapse: collapse; border: none; border: 1px solid #e0e0e0; }
+table tbody { border: none; }
+table tr.even td { background: #f9f9f9; }
+table td { padding: 8px; vertical-align: top; border: 1px solid #e0e0e0; }
+table th { background: #e0e0e0; border: 1px solid #e0e0e0; border: none; padding: 8px; font-weight: 500; }
+table th a:link, table th a:visited { color: #007bc8; }
+table caption { text-align: left; font-size: 180%; font-weight: normal; padding: 4px 0; }
+
+table.table-zebra tr:nth-child(odd) td { background: #f3f3f3; }
+
+table.table-condensed td, table.table-condensed th, div.table-condensed table td, div.table-condensed table th { padding: 4px; }
+
+table.table-small, div.table-small table { font-size: 80%; }
+table.table-small td, table.table-small th, div.table-small table td, div.table-small table th { padding: 4px; }
+
+table.table-horizontal td, div.table-horizontal table td { border-left: none; border-right: none; }
+
+table.table-vertical td, div.table-vertical table td { border-top: none; border-bottom: none; }
+
+#footer table, #site-info table { border: none; }
+
+#footer table td, #site-info table td { background: none; border: none; }
+
+table.tablesorter { font-size: 90%; }
+
+table.tablesorter thead tr th, table.tablesorter tfoot tr th { background-color: #ccc; }
+
+table.noborder, table.noborder tr, table.noborder tr.odd, table.noborder tr.even, table.noborder td, table.noborder th { border: none; }
+
+table td p:last-child { margin-bottom: 0; }
+
+.is-not-responsive .grid-3 .events-calendar-grid table, .is-not-responsive .grid-4 .events-calendar-grid table { font-size: 85%; }
+.is-not-responsive .grid-3 .events-calendar-grid table th, .is-not-responsive .grid-3 .events-calendar-grid table td, .is-not-responsive .grid-4 .events-calendar-grid table th, .is-not-responsive .grid-4 .events-calendar-grid table td { padding: 4px; }

@@ -1,0 +1,21 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the LDAP profile module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function ldap_profile_install() {
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ldap_profile_uninstall() {
+  variable_del('ldap_profile_conf');
+}
+

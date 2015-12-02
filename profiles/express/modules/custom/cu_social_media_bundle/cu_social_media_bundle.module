@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+  
+function cu_social_media_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for social media functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_social_media_bundle_express_help($variables) {
+  $variables['block/add/facebook-activity'][] = array(
+    'title' => 'Adding Facebook Activity Block Help',
+    'short_title' => 'Facebook Activity Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/facebook-activity-block',
+  );
+  $variables['block/add/facebook-like-button'][] = array(
+    'title' => 'Adding Facebook Like Button Help',
+    'short_title' => 'Facebook Like Button',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/facebook-block',
+  );
+  $variables['block/add/social-links'][] = array(
+    'title' => 'Adding Social Links Block Help',
+    'short_title' => 'Social Links Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/social-links-block',
+  );
+  $variables['block/add/twitter-block'][] = array(
+    'title' => 'Adding Twitter Block Help',
+    'short_title' => 'Twitter Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/twitter-block',
+  );
+
+  return $variables;
+}

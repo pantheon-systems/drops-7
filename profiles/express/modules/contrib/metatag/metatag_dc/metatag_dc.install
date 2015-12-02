@@ -1,0 +1,12 @@
+<?php
+/**
+ * @file
+ * Installation and update scripts for metatag_dc_advanced.
+ */
+
+/**
+ * The Dublic Core Additional Tags meta tags are now in a new submodule.
+ */
+function metatag_dc_update_7100() {
+  drupal_set_message(t('The Dublic Core Additional Tags meta tags have been moved into the new "Metatag: Dublin Core Advanced" submodule.'));
+}

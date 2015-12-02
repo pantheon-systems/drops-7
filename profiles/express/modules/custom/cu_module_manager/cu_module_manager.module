@@ -1,0 +1,385 @@
+<?php
+
+/**
+ * @file
+ * Alters grouping in admin/modules using hook_system_info_alter
+ */
+
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+function cu_module_manager_secure_permissions($role) {
+  $permissions = array(
+    'administrator' => array(
+      'enable module bundles',
+    ),
+    'anonymous user' => array(),
+    'authenticated user' => array(),
+    'content_editor' => array(),
+    'developer' => array(
+      'enable module bundles',
+    ),
+    'site_owner' => array(
+      'enable module bundles',
+    ),
+  );
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_system_info_alter().
+ */
+function cu_module_manager_system_info_alter(&$info, $file, $type) {
+
+
+  // define array of modules for each grouping
+
+  // all modules being removed should be listed here first
+  $cu_legacy = array();
+
+  // all modules being removed should be listed here first
+  $cu_deprecated = array();
+  
+  //deleted in 1.7.6
+  // auto_content_anchors
+  // block_titlelink
+  // blockcache_alter
+  // ckeditor',
+  // collapse_text
+  // defaultcontent
+  // elements
+  // field_boxes
+  // field_slideshow
+  // field_collection_table
+  // imagemagick
+  // linkit
+  // menu_icons
+  // maxlength
+  // nodeformcols
+  // nodeblock
+  // references
+  // save_draft
+  // semanticviews
+  // simplehtmldom
+  // taxonomy_menu
+  // term_reference_tree
+  // uuid
+  // variable
+  
+  //deleted in 1.7.5
+  // auto_node_title
+  // media
+  // migrate
+
+  // cu_clicktrack
+  // cu_article_lists
+  // cu_helpers
+  // cu_site_notifications
+  // cu_table_sorter
+  // cu_override
+
+  // deleted in 1.7.7
+  // typogrify
+
+
+  // these shouldn't change very often
+  $cu_tests = array('cu_test_content');
+  $cu_development = array('cu_local', 'devel', 'cu_styleguide');
+  $cu_site_building = array('clone', 'feeds', 'scheduler', 'cu_featherweight', 'cu_heavyweight');
+
+  if($type == 'module' && $info['package'] == 'CU-Boulder') {
+    $info['package'] = 'CU-Core';
+  }
+  
+  if($type == 'module' && $info['package'] == 'CU-Active') {
+    $info['package'] = 'CU-Core';
+  }
+
+  if($type == 'module' && in_array($file->name, $cu_site_building)) {
+    $info['package'] = 'CU-Site Building';
+  }
+
+  if($type == 'module' && in_array($file->name, $cu_legacy)) {
+    $info['package'] = 'CU-Legacy';
+  }
+
+  if($type == 'module' && in_array($file->name, $cu_deprecated)) {
+    $info['package'] = 'CU-Deprecated';
+  }
+
+  if($type == 'module' && in_array($file->name, $cu_tests)) {
+    $info['package'] = 'CU-Tests';
+  }
+
+  if($type == 'module' && in_array($file->name, $cu_development)) {
+    $info['package'] = 'CU-Development';
+  }
+
+}
+
+function cu_module_manager_is_config_ideal(){
+  $reality = module_list();
+  $ideal = cu_module_manager_should_be_enabled();
+
+  //is the reality ideal?
+  $diff1 = array_diff_assoc($reality, $ideal);
+  $diff2 = array_diff_assoc($ideal, $reality);
+  $diff = array_merge($diff1, $diff2);
+
+  //$enabled_themes = list_themes();
+  //dsm($enabled_themes);
+  return $diff;
+}
+
+// get from profile's .info
+function cu_module_manager_should_be_enabled() {
+    $projects = array(
+      'actions_permissions' => 'actions_permissions',
+      'administerusersbyrole' => 'administerusersbyrole',
+      'advanced_link' => 'advanced_link',
+      'attachment_links' => 'attachment_links',
+      'auto_entitylabel' => 'auto_entitylabel',
+      'backstretch' => 'backstretch',
+      'bean' => 'bean',
+      'bean_admin_ui' => 'bean_admin_ui',
+      'bigmenu' => 'bigmenu',
+      'block' => 'block',
+      'blocktheme' => 'blocktheme',
+      'block_styles' => 'block_styles',
+      'block_title_icons' => 'block_title_icons',
+      'captcha' => 'captcha',
+      'captcha_webform' => 'captcha_webform',
+      'cck' => 'cck',
+      'chain_menu_access' => 'chain_menu_access',
+      'ckeditor_link' => 'ckeditor_link',
+      'client_ui_control' => 'client_ui_control',
+      'color' => 'color',
+      'colorbox' => 'colorbox',
+      'content_lock' => 'content_lock',
+      'content_menu' => 'content_menu',
+      'context' => 'context',
+      'contextual' => 'contextual',
+      'context_accordion' => 'context_accordion',
+      'context_ui' => 'context_ui',
+      'ctools' => 'ctools',
+      'cu_accessibility' => 'cu_accessibility',
+      'cu_alerts' => 'cu_alerts',
+      'cu_article' => 'cu_article',
+      'cu_back_to_top' => 'cu_back_to_top',
+      'cu_block' => 'cu_block',
+      'cu_block_row' => 'cu_block_row',
+      'cu_block_section' => 'cu_block_section',
+      'cu_block_selector' => 'cu_block_selector',
+      'cu_bucket' => 'cu_bucket',
+      'cu_cache' => 'cu_cache',
+      'cu_column_override' => 'cu_column_override',
+      'cu_content_lock' => 'cu_content_lock',
+      'cu_custom_logo' => 'cu_custom_logo',
+      'cu_date_formats' => 'cu_date_formats',
+      'cu_default_image_style_override' => 'cu_default_image_style_override',
+      'cu_events_calendar_block' => 'cu_events_calendar_block',
+      'cu_extended_content_search' => 'cu_extended_content_search',
+      'cu_facebook_activity' => 'cu_facebook_activity',
+      'cu_facebook_like_button' => 'cu_facebook_like_button',
+      'cu_faq' => 'cu_faq',
+      'cu_feature_callout' => 'cu_feature_callout',
+      'cu_feedback' => 'cu_feedback',
+      'cu_fit' => 'cu_fit',
+      'cu_font_awesome' => 'cu_font_awesome',
+      'cu_give_buttons' => 'cu_give_buttons',
+      'cu_hero_unit' => 'cu_hero_unit',
+      'cu_home_page' => 'cu_home_page',
+      'cu_image_styles' => 'cu_image_styles',
+      'cu_inventory' => 'cu_inventory',
+      'cu_inventory_stats' => 'cu_inventory_stats',
+      'cu_jquery' => 'cu_jquery',
+      'cu_ldap' => 'cu_ldap',
+      'cu_livechat' => 'cu_livechat',
+      'cu_menu_icon' => 'cu_menu_icon',
+      'cu_module_manager' => 'cu_module_manager',
+      'cu_page' => 'cu_page',
+      'cu_permissions' => 'cu_permissions',
+      'cu_quicktab_styles' => 'cu_quicktab_styles',
+      'cu_search' => 'cu_search',
+      'cu_settings' => 'cu_settings',
+      'cu_shortcodes' => 'cu_shortcodes',
+      'cu_shortcodes_wysiwyg' => 'cu_shortcodes_wysiwyg',
+      'cu_shortcuts' => 'cu_shortcuts',
+      'cu_sitewide' => 'cu_sitewide',
+      'cu_site_info' => 'cu_site_info',
+      'cu_slider' => 'cu_slider',
+      'cu_social_links' => 'cu_social_links',
+      'cu_sticky_menu' => 'cu_sticky_menu',
+      'cu_theme_picker' => 'cu_theme_picker',
+      'cu_title_image' => 'cu_title_image',
+      'cu_twitter_feed' => 'cu_twitter_feed',
+      'cu_users' => 'cu_users',
+      'cu_version' => 'cu_version',
+      'cu_video' => 'cu_video',
+      'cu_video_reveal' => 'cu_video_reveal',
+      'cu_view_modes' => 'cu_view_modes',
+      'cu_webform' => 'cu_webform',
+      'cu_wysiwyg' => 'cu_wysiwyg',
+      'date' => 'date',
+      'date_api' => 'date_api',
+      'date_popup' => 'date_popup',
+      'date_views' => 'date_views',
+      'diff' => 'diff',
+      'disable_node_menu_item' => 'disable_node_menu_item',
+      'ds' => 'ds',
+      'email' => 'email',
+      'entity' => 'entity',
+      'entityreference' => 'entityreference',
+      'entity_token' => 'entity_token',
+      'environment' => 'environment',
+      'environment_indicator' => 'environment_indicator',
+      'eva' => 'eva',
+      'features' => 'features',
+      'fences' => 'fences',
+      'field' => 'field',
+      'field_collection' => 'field_collection',
+      'field_group' => 'field_group',
+      'field_sql_storage' => 'field_sql_storage',
+      'field_ui' => 'field_ui',
+      'file' => 'file',
+      'files' => 'files',
+      'files_undo_remove' => 'files_undo_remove',
+      'file_entity' => 'file_entity',
+      'filter' => 'filter',
+      'fitvids' => 'fitvids',
+      'flexslider' => 'flexslider',
+      'flexslider_views' => 'flexslider_views',
+      'flexslider_views_slideshow' => 'flexslider_views_slideshow',
+      'focal_point' => 'focal_point',
+      'globalredirect' => 'globalredirect',
+      'googleanalytics' => 'googleanalytics',
+      'google_appliance' => 'google_appliance',
+      'grid_images' => 'grid_images',
+      'grid_size_blocks' => 'grid_size_blocks',
+      'help' => 'help',
+      'honeypot' => 'honeypot',
+      'image' => 'image',
+      'image_url_formatter' => 'image_url_formatter',
+      'inline_entity_form' => 'inline_entity_form',
+      'insert' => 'insert',
+      'jquery_update' => 'jquery_update',
+      'ldap_authentication' => 'ldap_authentication',
+      'ldap_servers' => 'ldap_servers',
+      'libraries' => 'libraries',
+      'link' => 'link',
+      'link_icons' => 'link_icons',
+      'list' => 'list',
+      'memcache' => 'memcache',
+      'menu' => 'menu',
+      'menu_block' => 'menu_block',
+      'menu_firstchild' => 'menu_firstchild',
+      'metatag' => 'metatag',
+      'modernizr' => 'modernizr',
+      'module_filter' => 'module_filter',
+      'more_menus' => 'more_menus',
+      'navigation404' => 'navigation404',
+      'node' => 'node',
+      'number' => 'number',
+      'options' => 'options',
+      'overlay' => 'overlay',
+      'path' => 'path',
+      'pathauto' => 'pathauto',
+      'pathologic' => 'pathologic',
+      'people_content_type' => 'people_content_type',
+      'photo_gallery' => 'photo_gallery',
+      'quicktabs' => 'quicktabs',
+      'quicktabs_tabstyles' => 'quicktabs_tabstyles',
+      'quicktab_beans' => 'quicktab_beans',
+      'recaptcha' => 'recaptcha',
+      'redirect' => 'redirect',
+      'role_delegation' => 'role_delegation',
+      'securepages' => 'securepages',
+      'secure_permissions' => 'secure_permissions',
+      'shortcode' => 'shortcode',
+      'shortcut' => 'shortcut',
+      'site_navigation_menus' => 'site_navigation_menus',
+      'smartcrop' => 'smartcrop',
+      'smart_trim' => 'smart_trim',
+      'stringoverrides' => 'stringoverrides',
+      'strongarm' => 'strongarm',
+      'syslog' => 'syslog',
+      'system' => 'system',
+      'taxonomy' => 'taxonomy',
+      'taxonomy_formatter' => 'taxonomy_formatter',
+      'text' => 'text',
+      'token' => 'token',
+      'toolbar' => 'toolbar',
+      'transliteration' => 'transliteration',
+      'user' => 'user',
+      'user_external_invite' => 'user_external_invite',
+      'varnish' => 'varnish',
+      'video_embed_field' => 'video_embed_field',
+      'video_filter' => 'video_filter',
+      'views' => 'views',
+      'views_accordion' => 'views_accordion',
+      'views_bulk_operations' => 'views_bulk_operations',
+      'views_slideshow' => 'views_slideshow',
+      'views_slideshow_cycle' => 'views_slideshow_cycle',
+      'views_ui' => 'views_ui',
+      'vppr' => 'vppr',
+      'webform' => 'webform',
+      'wysiwyg' => 'wysiwyg',
+      'wysiwyg_filter' => 'wysiwyg_filter',
+  );
+
+  // Express+
+  $sid = variable_get('cu_sid', NULL);
+  if ($sid) {
+    $site = cu_inventory_get_site($sid);
+
+    if (isset($site['packages']['custom'][0])) {
+	  //@TODO: for each if there are more than one custom
+	  $name = $site['packages']['custom'][0];
+	  $plus_projects = array();
+      $project = drupal_parse_info_file(drupal_get_path('module', $name) . '/' . $name . '.info');
+      foreach( $project['dependencies'] as $dependency) {
+        $plus_projects[$dependency] = $dependency;
+      }
+      $plus_projects[$name] = $name;
+      $projects = array_merge($projects, $plus_projects);
+    }
+  }
+
+
+  //cu_debug?
+  if (module_exists('cu_debug')) {
+	$debug_projects = array();
+    $project = drupal_parse_info_file(drupal_get_path('module', 'cu_debug') . '/cu_debug.info');
+    foreach( $project['dependencies'] as $dependency) {
+      $debug_projects[$dependency] = $dependency;
+    }
+    $debug_projects['cu_debug'] = 'cu_debug';
+    $projects = array_merge($projects, $debug_projects);
+    // unset the modules cu_debug disables
+    unset($projects['varnish']);
+    unset($projects['cu_cache']);
+    unset($projects['memcache']);
+  }
+
+ return $projects;
+}
+
+function cu_module_manager_module_bundle($bundle) {
+  $bundles = array(
+    'seo' => array(
+      'metatag',
+    ),
+  );
+}

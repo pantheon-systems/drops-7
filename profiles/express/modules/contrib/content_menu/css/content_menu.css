@@ -1,0 +1,323 @@
+
+#menu-overview-form tr.ok td {
+  background: #dfd;
+}
+
+.menu-overview-title-link {
+  float: left;
+}
+
+.menu-overview-title-edit-trigger {
+  margin-left: 8px;
+  display: none;
+}
+
+tr:hover .menu-overview-title-edit-trigger {
+  display: inline;
+}
+
+#menu-overview-form table.sticky-header {
+  z-index: 1;
+}
+
+table#menu-overview .menu-enabled .form-type-textfield,
+table#menu-overview .menu-disabled .form-type-textfield {
+  display: inline;
+  display: none;
+}
+
+.menu-enabled .form-type-textfield input,
+.menu-disabled .form-type-textfield input {
+  /*border-width: 0px;*/
+  margin-left: 0px;
+}
+
+.menu-additem .form-item-additem-hidden input {
+  margin-top: 2em;
+}
+
+.menu-additem .form-item-additem-title input {
+  margin: 0px;
+}
+
+.menu-additem td {
+  padding-bottom: 2em;
+}
+
+.menu-additem .tabledrag-changed {
+  position: absolute;
+}
+
+td.menu-target-content {
+  color: #888;
+  font-size: 11px;
+}
+
+.menu-target-content {
+  width: 90px;
+}
+
+.menu-operations {
+  width: 120px;
+}
+
+
+/* ctools dropbutton styling */
+
+
+.ctools-button {
+  margin-top: -1em;
+}
+
+
+.ctools-button ul {
+  margin: 0em !important;
+  /* evil "!important" to override even more eveler theme style */
+}
+
+
+/* Taken from views/css/views-admin.ctools.css */
+
+
+
+/* @group Buttons */
+
+
+.ctools-button-processed {
+  background-color: #ffffff;
+  border-color: #cccccc;
+  font-size: 11px;
+  padding-bottom: 2px;
+  padding-top: 2px;
+}
+
+.ctools-button-processed,
+.ctools-button-processed input {
+  text-transform: lowercase;
+}
+
+.ctools-button-processed:hover {
+  border-color: #b8b8b8;
+}
+
+.ctools-button-processed:active {
+  border-color: #a0a0a0;
+}
+
+.ctools-button-processed .ctools-content {
+  padding-bottom: 0;
+  padding-top: 0;
+}
+
+.ctools-dropbutton-processed {
+  position: absolute;
+}
+
+.ctools-dropbutton-processed .ctools-content {
+  border-right: 1px solid #e8e8e8;
+}
+
+.ctools-dropbutton-processed .ctools-content ul {
+  margin: 0;
+  padding: 0;
+}
+
+.ctools-content ul.actions {
+  margin-top: 0;
+  margin-bottom: 0;
+  padding-left: 0;
+}
+
+.ctools-button-processed .ctools-content a {
+  background-image: none;
+  border: medium none;
+}
+
+.ctools-dropbutton-processed.open:hover {
+  border-color: #D0D0D0;
+}
+
+.ctools-dropbutton-processed.open {
+  z-index: 100;
+}
+
+.ctools-dropbutton-processed .ctools-link {
+  border-left: 1px solid #ffffff;
+}
+
+.ctools-dropbutton-processed.open .ctools-content {
+  padding-bottom: 4px;
+}
+
+.ctools-dropbutton-processed li a,
+.ctools-dropbutton-processed li input {
+  padding-right: 9px;
+}
+
+.ctools-dropbutton-processed.open li + li {
+  border-top: 1px solid #efefef;
+  margin-top: 4px;
+  padding-bottom: 0;
+  padding-top: 4px;
+}
+
+.ctools-twisty:focus {
+  outline: medium none;
+}
+
+.ctools-no-js .ctools-content ul {
+  margin-bottom: 0;
+  margin-top: 0;
+  padding-left: 0;
+}
+
+
+
+
+
+/*
+#menu-overview .ctools-button-processed {
+  position: absolute;
+  right: 5px;
+  top: 4px;
+}
+*/
+/*
+.ctools-button-processed li a,
+.ctools-button-processed input {
+  background: none;
+  border: medium;
+  font-family: inherit;
+  font-size: 12px;
+  padding-bottom: 0;
+  padding-left: 12px;
+  padding-top: 0;
+  margin-bottom: 0;
+}
+
+.ctools-button-processed input:hover {
+  background: none;
+}
+*/
+/* @end */
+
+
+
+/* Taken from views/css/views-admin.seven.css */
+
+
+
+/* @group Buttons */
+
+.ctools-button-processed ul {
+  margin: 0;
+}
+
+/* Override for input elements that are themed like ctools-buttons */
+.ctools-button-processed input.form-submit:hover {
+  background-image: none;
+  color: #0074BD;
+  text-shadow: none;
+}
+
+.ctools-button-processed input.form-submit:active {
+  background: none;
+  border: medium none;
+  color: #0074BD;
+  text-shadow: none;
+}
+
+/* @end */
+
+
+
+/* @group Buttons */
+
+.ctools-button-processed {
+  background-image:
+    -moz-linear-gradient(
+      -90deg,
+      #ffffff 0px,
+      #f9f9f9 100%);
+  background-image:
+    -webkit-gradient(
+      linear,
+      left top,
+      left bottom,
+      color-stop(0.0, rgba(255, 255, 255, 1.0)),
+      color-stop(1.0, rgba(249, 249, 249, 1.0))
+    );
+  background-image:
+    -webkit-linear-gradient(
+      -90deg,
+      #ffffff 0px,
+      #f9f9f9 100%);
+  background-image:
+    linear-gradient(
+      -90deg,
+      #ffffff 0px,
+      #f9f9f9 100%);
+  -moz-border-radius: 11px 11px 11px 11px;
+  -webkit-border-radius: 11px 11px 11px 11px;
+  border-radius: 11px 11px 11px 11px;
+}
+
+.ctools-button-processed:hover {
+  background-image:
+    -moz-linear-gradient(
+      -90deg,
+      #ffffff 0px,
+      #f1f1f1 100%);
+  background-image:
+    -webkit-gradient(
+      linear,
+      left top,
+      left bottom,
+      color-stop(0.0, rgba(255, 255, 255, 1.0)),
+      color-stop(1.0, rgba(241, 241, 241, 1.0))
+    );
+  background-image:
+    -webkit-linear-gradient(
+      -90deg,
+      #ffffff 0px,
+      #f1f1f1 100%);
+  background-image:
+    linear-gradient(
+      -90deg,
+      #ffffff 0px,
+      #f1f1f1 100%);
+}
+
+.ctools-dropbutton-processed.open:hover {
+  background-image:
+    -moz-linear-gradient(
+      -90deg,
+      #ffffff 0px,
+      #f9f9f9 100%);
+  background-image:
+    -webkit-gradient(
+      linear,
+      left top,
+      left bottom,
+      color-stop(0.0, rgba(255, 255, 255, 1.0)),
+      color-stop(1.0, rgba(249, 249, 249, 1.0))
+    );
+  background-image:
+    -webkit-linear-gradient(
+      -90deg,
+      #ffffff 0px,
+      #f9f9f9 100%);
+  background-image:
+    linear-gradient(
+      -90deg,
+      #ffffff 0px,
+      #f9f9f9 100%);
+}
+
+.ctools-dropbutton-processed.open {
+  -moz-box-shadow: 1px 1px 2px rgba(0,0,0,0.25);
+  -webkit-box-shadow: 1px 1px 2px rgba(0,0,0,0.25);
+  box-shadow: 1px 1px 2px rgba(0,0,0,0.25);
+}
+
+/* @end */

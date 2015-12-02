@@ -1,0 +1,312 @@
+$margin: 4%;
+@function col_width($col) {  
+  $width: percentage((100/12) * $col / 100);
+  @return ($width - 4);
+}
+@function col_padding($col) {
+  $width: percentage((100/12) * $col / 100);
+  @return $width;
+}
+
+/*
+ * ==========================================================
+ * Grid
+ * ==========================================================
+ */
+
+.grid-1, .grid-2, .grid-3, .grid-4, .grid-5, .grid-6, .grid-7, .grid-8, .grid-9, .grid-10, 
+.grid-11, .grid-12 {
+  display: inline;
+  float: left;
+  position: relative;
+  margin-left: 2%;
+  margin-right: 2%;
+}
+
+.push-1, .pull-1, .push-2, .pull-2, .push-3, .pull-3, .push-4, .pull-4,
+.push-5, .pull-5, .push-6, .pull-6, .push-7, .pull-7, .push-8, .pull-8,
+.push-9, .pull-9, .push-10, .pull-10, .push-11, .pull-11, .push-12, .pull-12 {
+  position: relative;
+}
+
+/*
+ * ==========================================================
+ * Alpha - Omega
+ * ==========================================================
+ */
+
+.alpha {
+  margin-left: 0;
+}
+
+.omega {
+  margin-right: 0;
+}
+
+/*
+ * ==========================================================
+ * Container
+ * ==========================================================
+ */
+
+body {
+  min-width: 960px;
+}
+
+.container-12 {
+  margin-left: auto;
+  margin-right: auto;
+  width: 100%;
+}
+
+/*
+ * ==========================================================
+ * Columns
+ * ==========================================================
+ */
+
+.container-12 .grid-1 {
+	width:col_width(1);
+}
+
+.container-12 .grid-2 {
+	width:col_width(2);
+}
+
+.container-12 .grid-3 {
+	width:col_width(3);
+}
+
+.container-12 .grid-4 {
+	width:col_width(4);
+}
+
+.container-12 .grid-5 {
+	width:col_width(5);
+}
+
+.container-12 .grid-6 {
+	width:col_width(6);
+}
+
+.container-12 .grid-7 {
+	width:col_width(7);
+}
+
+.container-12 .grid-8 {
+	width:col_width(8);
+}
+
+.container-12 .grid-9 {
+	width:col_width(9);
+}
+
+.container-12 .grid-10 {
+	width:col_width(10);
+}
+
+.container-12 .grid-11 {
+	width:col_width(11);
+}
+
+.container-12 .grid-12 {
+	width:col_width(12);
+}
+
+/*
+ * ==========================================================
+ * Prefix
+ * ==========================================================
+ */
+
+.container-12 .prefix-1 {
+	padding-left:col_padding(1);
+}
+
+.container-12 .prefix-2 {
+	padding-left:col_padding(2);
+}
+
+.container-12 .prefix-3 {
+	padding-left:col_padding(3);
+}
+
+.container-12 .prefix-4 {
+	padding-left:col_padding(4);
+}
+
+.container-12 .prefix-5 {
+	padding-left:col_padding(5);
+}
+
+.container-12 .prefix-6 {
+	padding-left:col_padding(6);
+}
+
+.container-12 .prefix-7 {
+	padding-left:col_padding(7);
+}
+
+.container-12 .prefix-8 {
+	padding-left:col_padding(8);
+}
+
+.container-12 .prefix-9 {
+	padding-left:col_padding(9);
+}
+
+.container-12 .prefix-10 {
+	padding-left:col_padding(10);
+}
+
+.container-12 .prefix-11 {
+	padding-left:col_padding(11);
+}
+/*
+ * ==========================================================
+ * Suffix
+ * ==========================================================
+ */
+
+.container-12 .suffix-1 {
+	padding-right:col_padding(1);
+}
+
+.container-12 .suffix-2 {
+	padding-right:col_padding(2);
+}
+
+.container-12 .suffix-3 {
+	padding-right:col_padding(3);
+}
+
+.container-12 .suffix-4 {
+	padding-right:col_padding(4);
+}
+
+.container-12 .suffix-5 {
+	padding-right:col_padding(5);
+}
+
+.container-12 .suffix-6 {
+	padding-right:col_padding(6);
+}
+
+.container-12 .suffix-7 {
+	padding-right:col_padding(7);
+}
+
+.container-12 .suffix-8 {
+	padding-right:col_padding(8);
+}
+
+.container-12 .suffix-9 {
+	padding-right:col_padding(9);
+}
+
+.container-12 .suffix-10 {
+	padding-right:col_padding(10);
+}
+
+.container-12 .suffix-11 {
+	padding-right:col_padding(11);
+}
+/*
+ * ==========================================================
+ * Push
+ * ==========================================================
+ */
+
+.container-12 .push-1 {
+	left:col_padding(1);
+}
+
+.container-12 .push-2 {
+	left:col_padding(2);
+}
+
+.container-12 .push-3 {
+	left:col_padding(3);
+}
+
+.container-12 .push-4 {
+	left:col_padding(4);
+}
+
+.container-12 .push-5 {
+	left:col_padding(5);
+}
+
+.container-12 .push-6 {
+	left:col_padding(6);
+}
+
+.container-12 .push-7 {
+	left:col_padding(7);
+}
+
+.container-12 .push-8 {
+	left:col_padding(8);
+}
+
+.container-12 .push-9 {
+	left:col_padding(9);
+}
+
+.container-12 .push-10 {
+	left:col_padding(10);
+}
+
+.container-12 .push-11 {
+	left:col_padding(11);
+}
+
+/*
+ * ==========================================================
+ * Pull
+ * ==========================================================
+ */
+
+.container-12 .pull-1 {
+	left:col_padding(-1);
+}
+
+.container-12 .pull-2 {
+	left:col_padding(-2);
+}
+
+.container-12 .pull-3 {
+	left:col_padding(-3);
+}
+
+.container-12 .pull-4 {
+	left:col_padding(-4);
+}
+
+.container-12 .pull-5 {
+	left:col_padding(-5);
+}
+
+.container-12 .pull-6 {
+	left:col_padding(-6);
+}
+
+.container-12 .pull-7 {
+	left:col_padding(-7);
+}
+
+.container-12 .pull-8 {
+	left:col_padding(-8);
+}
+
+.container-12 .pull-9 {
+	left:col_padding(-9);
+}
+
+.container-12 .pull-10 {
+	left:col_padding(-10);
+}
+
+.container-12 .pull-11 {
+	left:col_padding(-11);
+}

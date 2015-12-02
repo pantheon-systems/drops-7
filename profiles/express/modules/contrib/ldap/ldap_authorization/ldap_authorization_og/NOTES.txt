@@ -1,0 +1,33 @@
+
+
+
+
+
+
+
+
+
+
+
+Summary of Methods to Synch LDAP and OG, including via Drupal Roles
+-------------------------------------------------------------------
+
+--------
+LDAP -> Organic Group Memberships and Roles
+
+This is the bridge implemented in LDAP Authorization Organic Groups.
+
+--------
+LDAP -> Drupal Roles -> Organic Group Memberships and Roles
+
+Ideally there would be a module to map Drupal roles to OG group roles for use cases where a small number of groups and roles was involved.  This functionality is not desired by og maintainers as of Drupal 7.  Modules to do this have existed in the past, but none since Drupal 7.
+
+--------
+LDAP -> Feeds Module -> Organic Group Memberships and Roles
+
+A Feeds Processor would need to be writen for this.  As of Drupal 7, none are in the works (see http://drupal.org/node/856644).  This would be a fairly simple processor to write since an OG Membership is simply a DB record joining a user or node to the group it is a member of.
+
+
+
+
+

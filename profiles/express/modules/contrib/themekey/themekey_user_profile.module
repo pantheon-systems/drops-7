@@ -1,0 +1,143 @@
+<?php
+
+/**
+ * @file
+ * ThemeKey User Profile allows the user to select a personal theme in
+ * her user profile. This theme will be used to render the pages instead
+ * of the theme the administrator configured as soon as the user logs in.
+ *
+ * ThemeKey User Profile replaces the corresponding feature that existed
+ * in Drupal 6 Core but has been removed in Drupal 7 Core.
+ *
+ * @see http://drupal.org/node/292253
+ * @see http://drupal.org/node/559306
+ * @see http://drupal.org/node/1046214
+ *
+ * @author Markus Kalkbrenner | Cocomore AG
+ *   @see http://drupal.org/user/124705
+ */
+
+
+/**
+ * Implements hook_permission().
+ *
+ * Backward compatible to Drupal 6 core.
+ * @see http://drupal.org/node/559306
+ */
+function themekey_user_profile_permission() {
+  return array(
+    'select different theme' => array(
+      'title' => t('Select different theme'),
+      'description' => t('A User is able to select a personal theme other than the default theme set by the site administrator.'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_help().
+ */
+function themekey_user_profile_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#themekey_user_profile':
+      return themekey_help('admin/help#themekey', $arg);
+  }
+}
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function themekey_user_profile_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'user_profile_form':
+      if (user_access('select different theme') && variable_get('themekey_ui_user_profile', 0)) {
+        module_load_include('inc', 'themekey_ui', 'themekey_ui_admin');
+        $theme = !empty($form_state['input']['theme']) ? $form_state['input']['theme'] : !empty($form_state['user']->theme) ? $form_state['user']->theme : 'default';
+        $tmp_form = array();
+        themekey_ui_theme_select_form($tmp_form, t('Theme configuration'), t('Selecting a different theme will change the look and feel of the site.'), $theme ? $theme : 'default', NULL, TRUE, 'theme');
+        $form['theme_select'] = $tmp_form['themekey_ui_themes'];
+      }
+      break;
+
+    case 'themekey_ui_settings_form':
+      $form['themekey_ui']['themekey_ui_user_profile'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Add theme option to user profile'),
+        '#default_value' => variable_get('themekey_ui_user_profile', 0),
+        '#description' => t('A User is able to select a personal theme other than the default theme set by the site administrator.'),
+      );
+
+      $form['#submit'][] = 'themekey_user_profile_form_alter_submit';
+      break;
+
+    case 'themekey_help_tutorials_form':
+      module_load_include('inc', 'themekey_user_profile', 'themekey_user_profile_help');
+      themekey_user_profile_help_tutorials($form);
+      break;
+  }
+}
+
+
+/**
+ * Function taxonomy_theme_form_alter_submit().
+ */
+function themekey_user_profile_form_alter_submit($form, &$form_state) {
+  themekey_update_static_rule('user:profile_triggers_theme', $form_state['values']['themekey_ui_user_profile']);
+}
+
+
+/**
+ * Implements hook_themekey_properties().
+ *
+ * Provides additional properties for module ThemeKey:
+ *   user:profile_theme
+ *
+ * @return
+ *   array of themekey properties
+ */
+function themekey_user_profile_themekey_properties() {
+
+  // Attributes for properties
+  $attributes = array();
+
+  $attributes['user:profile_triggers_theme'] = array(
+    'description' => t("Property user:profile_triggers_theme could not be selected from the property drop down. You get this static property by activating !link. Afterwards you can move the property to any position in the rule chain. When done it triggers the switch to the theme assigned to a user profile using ThemeKey User Profile if the current user has selected a theme in her profile.",
+      array('!link' => l(t('Add theme option to user profile'), 'admin/config/user-interface/themekey/settings/ui'))),
+    'page cache' => THEMEKEY_PAGECACHE_SUPPORTED,
+    'static' => TRUE,
+  );
+
+  // Mapping functions
+  $maps = array();
+
+  $maps[] = array(
+    'src' => 'user:uid',
+    'dst' => 'user:profile_triggers_theme',
+    'callback' => 'themekey_user_profile_uid2profile_theme',
+  );
+
+  return array('attributes' => $attributes, 'maps' => $maps);
+}
+
+
+/**
+ * Set custom theme from given user id (uid)
+ *
+ * @param  $uid user id
+ * @return null|string
+ */
+function themekey_user_profile_uid2profile_theme($uid) {
+  $custom_theme = &drupal_static('themekey_custom_theme', '');
+
+  $theme = db_select('users', 'u')->fields('u', array('theme'))->condition('uid', $uid)->execute()->fetchField();
+
+  if ('default' != $theme) {
+    if (themekey_check_theme_enabled($theme)) {
+      $custom_theme = $theme;
+      return 'static';
+    }
+  }
+
+  return NULL;
+}

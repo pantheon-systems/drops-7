@@ -1,0 +1,11 @@
+name = Menu Firstchild
+description = Allows to create parent menu items without path that link to their first viewable children.
+core = 7.x
+dependencies[] = menu
+
+; Information added by drupal.org packaging script on 2011-11-08
+version = "7.x-1.1"
+core = "7.x"
+project = "menu_firstchild"
+datestamp = "1320754836"
+

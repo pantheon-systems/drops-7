@@ -1,0 +1,157 @@
+/* This file will hold styles that are loaded using the same media query as the narrow grid. */
+/* If you are using the default media queries provided by Omega, these styles will also
+ *  apply to the normal and widescreen layouts. You may override these styles in the normal
+ *  and widescreen CSS files as appropriate. */
+
+.field-type-text-with-summary img,
+.field-type-text-long img {
+  max-width:100%;
+  height: auto;
+}
+.field-type-text-with-summary img[style*="float:left"],
+.field-type-text-long img[style*="float:left"] {
+  float:left !important;
+  margin:0 10px 10px 0;
+  max-width: 100%;
+  height: auto;
+}
+.field-type-text-with-summary img[style*="float:right"],
+.field-type-text-long img[style*="float:right"] {
+  float:right !important;
+  margin:0 0 10px 10px;
+  max-width: 100%;
+  height: auto;
+}
+
+
+
+#zone-branding {
+  min-height: 120px;
+}
+.branding-data  {
+  padding-bottom:20px;
+}
+.region-branding-inner {
+  padding-top:20px;
+}
+img#logo {
+  position:absolute;
+  top:0;
+  left:0px;
+  width:48px;
+  height: auto;
+}
+.site-name-slogan {
+  margin-left:56px;
+  margin-right: 0;
+}
+h1.site-title,
+h2.site-title {
+  font-size: 21px;
+  margin:10px 0 0 0;
+  padding:0;
+  line-height: 110%;
+}
+.two-line-title h1.site-title,
+.two-line-title h2.site-title {
+  font-size: 18px;
+  margin-top: 0;
+}
+
+h6.site-slogan {
+  margin:8px 0 0 0;
+  font-size: 11px;
+  text-transform: uppercase;
+}
+.region-search-box {
+  padding-top:36px;
+}
+#block-google-appliance-ga-block-search-form {
+  float: right;
+  margin-left:0;
+}
+#block-google-appliance-ga-block-search-form,
+#block-google-appliance-ga-block-search-form .culinks {
+  display: block;
+}
+.mobile-menu-toggle {
+  display: none;
+}
+#tablet-menu-toggle {
+  display: inline-block;
+}
+
+/* Secondary MENU NAVIGATION */
+
+#zone-secondary-menu {
+  display: none;
+}
+
+.region-secondary-menu .secondary-navigation  ul li a {
+  padding:0 5px;
+}
+
+#zone-menu {
+  display: block !important;
+}
+.region-menu .navigation {
+  display: none;
+}
+.region-menu .navigation ul li {
+  display: inline;
+}
+.region-menu .navigation ul li a {
+  float:none;
+  display: block;
+  padding:0 10px;
+}
+
+span.home-link-text {
+  display: inline-block;
+  text-indent: -9999px;
+}
+#home-link .icon-home {
+  display: inline;
+}
+#mobile-menu {
+  display: none;
+}
+
+/* PAGER */
+.item-list .pager li.pager-item {
+  display: block;
+}
+
+.container-12 .view-photo-gallery .grid-2  {
+  width: auto;
+  margin:0;
+}
+.view-photo-gallery .grid-2 img {
+  width:80px;
+  height: auto;
+  margin:0 20px 20px 0;
+}
+
+img.beboulder {
+  width:75%;
+  height:auto;
+  max-width:220px;
+}
+
+/* PAGE TITLE IMAGE */
+
+#page-title-image {
+  padding:40px 20px;
+  padding: 80px 20px 0 20px;
+}
+
+#page-title-image h1 {
+  max-width:75%;
+  font-size: 220%;
+}
+
+/* Section Navigation for Responsive Sites */
+
+#block-menu-block-site-navigation-menus-4 {
+  display: none;
+}

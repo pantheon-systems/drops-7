@@ -1,0 +1,278 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * see getInfo() for test summary
+ */
+
+require_once(drupal_get_path('module', 'ldap_authorization') . '/tests/LdapAuthorizationTestCase.class.php');
+
+class LdapAuthorizationBasicTests  extends LdapAuthorizationTestCase {
+
+  public function setUp($addl_modules = array()) {
+    parent::setUp(array());
+  }
+
+  public static function getInfo() {
+    return array(
+      'group' => 'LDAP Authorization',
+      'name' => 'LDAP Authorization: Basic Tests',
+      'description' => 'Basic functionality tests.',
+    );
+  }
+
+  /**
+   * just make sure install succeeds.  doesn't really need to be tested
+   */
+  function testSimpleStuff() {
+    $this->ldapTestId = $this->module_name . ': setup success';
+    // just to give warning if setup doesn't succeed.  may want to take these out at some point.
+    $setup_success = (
+        module_exists('ldap_authentication') &&
+        module_exists('ldap_servers') &&
+        module_exists('ldap_authorization') &&
+        module_exists('ldap_authorization_drupal_role') &&
+        (variable_get('ldap_simpletest', 0) == 1)
+      );
+    $this->assertTrue($setup_success, ' ldap_authorizations setup successful', $this->ldapTestId);
+
+
+    $this->ldapTestId = $this->module_name . ': test for api functions';
+    // no need for prep for this.
+    $api_functions = array(
+      'ldap_authorization_get_consumer_object' => array(1, 1),
+      'ldap_authorization_get_consumers'  => array(3, 0),
+      'ldap_authorizations_user_authorizations'  => array(4, 1),
+    );
+
+    foreach ($api_functions as $api_function_name => $param_count) {
+      $reflector = new ReflectionFunction($api_function_name);
+      $this->assertTrue(
+        function_exists($api_function_name) &&
+        $param_count[1] == $reflector->getNumberOfRequiredParameters() &&
+        $param_count[0] == $reflector->getNumberOfParameters()
+        , ' api function ' . $api_function_name . ' parameters and required parameters count unchanged.', $this->ldapTestId);
+    }
+
+    $this->ldapTestId = $this->module_name . ': cron test';
+    $this->assertTrue(drupal_cron_run(), t('Cron can run with ldap authorization enabled.'), $this->ldapTestId);
+
+
+    /**
+    * authorizations are tested in ldap_authorization.Derivations.test
+    *
+    * this is geared toward testing logon functionality
+    */
+
+    $this->ldapTestId = 'BasicTests';
+    $this->serversData = 'BasicTests/ldap_servers.inc';
+    $this->authorizationData = 'BasicTests/ldap_authorization.simple.inc';
+    $this->authenticationData = 'BasicTests/ldap_authentication.inc';
+    $this->consumerType = 'drupal_role';
+    $this->prepTestData();
+
+    // test for same role mapped multiple times:  issue #1174332
+    $edit = array(
+      'name' => 'verykool',
+      'pass' => 'goodpwd',
+    );
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'New Ldap user with good password authenticated.', $this->ldapTestId);
+    $this->assertTrue($this->testFunctions->ldapUserIsAuthmapped('verykool'), 'Ldap user properly authmapped.', $this->ldapTestId);
+
+    $verykool = user_load_by_name('verykool');
+    $correct_roles = in_array('content editors', array_values($verykool->roles)) && in_array('content approvers', array_values($verykool->roles));
+    if (!$correct_roles) {
+      debug('verykool roles'); debug($verykool->roles);
+    }
+    $this->assertTrue($correct_roles, 'verykool granted 2 roles on actual logon "content editors" and "content approvers" drupal roles ', $this->ldapTestId . '.duplicate_entry');
+
+    $this->drupalGet('user/logout');
+
+
+    /**
+     * test that exportables are supported.  since exportables is just used for loading
+     * and saving the configuration,
+     *
+     * -- test auth conf loads correctly and conf is saved correctly when ctools enabled
+     * -- test auth conf loads correctly and conf is saved correctly when ctools not enabled
+     * -- @todo: test auth conf loads correctly from an enabled Features module
+     * -- @todo: its difficult to test generation of a feature module. ignore this as configurables in d8 will be different
+     */
+
+    $ctools_originally_enabled = module_exists('ctools');
+    foreach (array('no_ctools', 'ctools') as $mode) { // should add 'feature' instance to test feature
+
+      if ($mode == 'ctools') {
+        module_enable(array('ctools'));
+        $label_text = "ctool enabled";
+      }
+      elseif ($mode == 'no_ctools') {
+        module_disable(array('ctools'), TRUE);
+        $label_text = "ctools disabled";
+      }
+
+      // make small change and make sure additional rows are not created,
+      // change is saved, change is loaded, and numeric id is present.
+      // #1601270, #1468990, #1588854
+      $rows = db_query('select * from ldap_authorization')->fetchAllAssoc('numeric_consumer_conf_id');
+      $initial_count = count(array_keys($rows));
+
+      $consumer_conf_admin = ldap_authorization_get_consumer_admin_object($this->consumerType);
+      $consumer_conf_admin->status = 0;
+    //  $consumer_conf_admin->deriveFromDnAttr = "blah";
+      $consumer_conf_admin->save();
+      $consumer_conf_admin = ldap_authorization_get_consumer_admin_object($this->consumerType);
+
+      $rows = db_query('select * from ldap_authorization')->fetchAllAssoc('numeric_consumer_conf_id');
+      $second_count = count(array_keys($rows));
+      $this->ldapTestId = $this->module_name . ": $label_text save doesn't break record count";
+      $this->assertTrue(($initial_count == $second_count), t("ldap_authorization record count consistent with $label_text, intiial count = $initial_count, final count=$second_count"), $this->ldapTestId);
+
+      $this->ldapTestId = $this->module_name . ": $label_text saves status correctly";
+      $this->assertTrue(($consumer_conf_admin->status === 0), t("ldap_authorization status saved correctly."), $this->ldapTestId);
+
+      $this->ldapTestId = $this->module_name . ": $label_text loads numericConsumerConfId correctly";
+      $this->assertTrue(($consumer_conf_admin->numericConsumerConfId > 0), t("ldap_authorization loaded numericConsumerConfId correctly.(" . $consumer_conf_admin->numericConsumerConfId . ")"), $this->ldapTestId);
+
+      $consumer_conf_admin->status = 1;
+      $consumer_conf_admin->save();
+      $consumer_conf_admin = ldap_authorization_get_consumer_admin_object($this->consumerType);
+
+    }
+    if ($ctools_originally_enabled) {
+      module_enable(array('ctools'));
+    }
+    else {
+      module_disable(array('ctools'), TRUE);
+    }
+}
+
+/**
+ * flag (binary switches) tests clumped together
+ */
+function testFlags() {
+
+  $this->ldapTestId = 'Flags';
+  $this->serversData = 'BasicTests/ldap_servers.inc';
+  $this->authorizationData = 'BasicTests/ldap_authorization.flags.inc';
+  $this->authenticationData = 'BasicTests/ldap_authentication.inc';
+  $this->consumerType = 'drupal_role';
+  $this->prepTestData();
+
+  /**
+   * test:  LDAP_authorz.Flags.enable
+   */
+
+  $user = $this->drupalCreateUser(array());
+  $jkool = $this->testFunctions->drupalLdapUpdateUser(array('name' => 'jkool', 'mail' =>  'jkool@guests.myuniversity.edu'), TRUE, $user);
+  list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($jkool, 'query');  // just see if the correct ones are derived.
+  $roles1 = $new_authorizations[$this->consumerType];
+
+
+  $consumer_conf_admin = ldap_authorization_get_consumer_admin_object($this->consumerType);
+  $consumer_conf_admin->status = 0;
+  $consumer_conf_admin->save();
+  $consumer_conf_admin = ldap_authorization_get_consumer_admin_object($this->consumerType);
+  list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($jkool, 'query', $this->consumerType);  // just see if the correct ones are derived.
+  $roles2 = isset($new_authorizations[$this->consumerType]) ? $new_authorizations[$this->consumerType] : array();
+  $this->assertTrue((count($roles1) == 1 && count($roles2) == 0), 'disable consumer configuration disallows authorizations.', $this->ldapTestId . '.enable');
+
+
+  /**
+   * LDAP_authorz.Flags.onlyLdapAuthenticated (I) - create normal user and apply authorization query
+   */
+  $consumer_conf_admin->onlyApplyToLdapAuthenticated = 1;
+  $consumer_conf_admin->status = 1;
+  $consumer_conf_admin->save();
+
+  // remove authmap for jkool then test
+  $jkool = user_save($user, array('name' => 'jkool', 'mail' =>  'jkool@guests.myuniversity.edu'));
+  user_set_authmaps($jkool, array('authname_ldap_authentication' => NULL));
+  list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($jkool, 'query');  // just see if the correct ones are derived.
+  $roles = isset($new_authorizations['drupal_role']) ? $new_authorizations['drupal_role'] : array();
+  $this->assertTrue((count($roles) == 0), ' only apply to ldap authenticated grants no roles for non ldap user.', $this->ldapTestId . '.enable');
+  user_set_authmaps($jkool, array('authname_ldap_authentication' => 'jkool'));
+
+  /**
+   * LDAP_authorz.Flags.applyOnLogon  (IV.B) - execute logon and check that roles are applied
+   */
+
+
+
+   /**
+   * LDAP_authorz.Flags.revokeRoles (IV.C) - select this option, grant user role not deserved, and execute manual call
+   */
+
+  // set correct roles
+  list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($jkool, 'set');
+  $consumer_conf_admin->onlyApplyToLdapAuthenticated = 0;
+  $consumer_conf_admin->revokeLdapProvisioned = 1;
+  $consumer_conf_admin->save();
+
+  // add an underserved, ldap granted drupal role
+  $jkool = user_load($jkool->uid);
+
+  $data = array(
+    'roles' =>  array(3 => 'administrator'),
+    'data' => array('ldap_authorizations' =>
+      array(
+        'drupal_role' =>
+        array(
+          'administrator' =>
+          array('date_granted' => 1304216778),
+        ),
+      ),
+    ),
+  );
+  $jkool = user_save($jkool, $data);
+  $was_set = isset($jkool->roles[3]);
+  //debug('user load jkool1, was_set='. $was_set); debug($jkool);
+  // apply correct authorizations.  should remove the administrator role.
+  list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($jkool, 'set', $this->consumerType, 'logon');
+ // debug('authorizations'); debug(array($new_authorizations, $notifications));
+  $jkool = user_load($jkool->uid);
+//  debug('user load jkool'); debug($jkool);
+  $this->assertTrue(($was_set && !isset($jkool->roles[3])), ' revoke ldap granted roles when no longer deserved.', $this->ldapTestId . '.revokeRoles');
+
+
+   /**
+   * LDAP_authorz.Flags.regrantRoles IV.C) - select this option, execute manual call to get deserved roles, remove a role, execute manual call to get deserved roles, make sure role regranted
+   */
+
+
+   /**
+   * LDAP_authorz.Flags.createRoles IV.C) - select this option, delete some roles or make sure they don't exist.  manually execute.  check role created and granted to user
+   */
+
+  // take roles away from user
+  $jkool = user_load($jkool->uid);
+  $data = array(
+    'roles' =>  array(),
+    'data' => array('ldap_authorizations' => array()),
+    );
+  $jkool = user_save($jkool, $data);
+
+  $consumer_conf_admin->createConsumers = 1;
+  $consumer_conf_admin->save();
+
+  // make sure role doesn't exist
+  if (in_array('guests', array_values(user_roles()))) {
+    user_role_delete('guests');
+  }
+  $guest_role_deleted = !in_array('guests', array_values(user_roles()));
+
+  // set authorizations for user.  this should create role
+  list($new_authorizations, $notifications) = ldap_authorizations_user_authorizations($jkool, 'set', 'drupal_role', 'logon');
+  $jkool = user_load($jkool->uid);
+  $guest_role_recreated = in_array('guests', array_values(user_roles()));
+  $roles_by_name = array_flip(user_roles());
+ // debug('roles_by_name'); debug($roles_by_name);
+  $jkool_granted_guest = isset($jkool->roles[$roles_by_name['guests']]);
+  $this->assertTrue(($guest_role_deleted && $guest_role_recreated && $jkool_granted_guest), ' create consumers (e.g. roles)', $this->ldapTestId . '.createRoles');
+
+}
+
+
+}

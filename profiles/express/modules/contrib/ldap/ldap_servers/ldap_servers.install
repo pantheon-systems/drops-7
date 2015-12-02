@@ -1,0 +1,249 @@
+<?php
+// $Id: ldap_servers.install,v 1.5.2.1 2011/02/08 06:01:00 johnbarclay Exp $
+
+/**
+ * @file
+ * Install, update and uninstall functions for the LDAP API module.
+ */
+
+
+/**
+ * Implements hook_install().
+ */
+function ldap_servers_install() {
+  variable_set('ldap_servers_encryption', LDAP_SERVERS_ENC_TYPE_CLEARTEXT);
+  variable_set('ldap_servers_require_ssl_for_credentails', 0);
+
+  if (! ($key = variable_get('ldap_servers_encrypt_key', NULL))) {
+ 	module_load_include('inc', 'ldap_servers','ldap_servers.functions');
+    ldap_server_module_load_include('inc', 'ldap_servers', 'ldap_servers.encryption');
+    $key = ldap_servers_random_salt(10);
+    variable_set('ldap_servers_encrypt_key', $key);
+  }
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ldap_servers_uninstall() {
+  variable_del('ldap_servers_encryption');
+  variable_del('ldap_servers_require_ssl_for_credentails');
+  variable_del('ldap_servers_encrypt_key');
+
+}
+/**
+ * Implements hook_requirements().
+ */
+function ldap_servers_requirements($phase) {
+  $requirements = array();
+  $requirements['ldap_extension_loaded']['title'] = t('LDAP Extension Loaded');
+  if (extension_loaded('ldap') && function_exists('ldap_search')) {
+    $requirements['ldap_extension_loaded']['value'] = t('Passed');
+    $requirements['ldap_extension_loaded']['severity'] = REQUIREMENT_OK;
+  }
+  else {
+    $requirements['ldap_extension_loaded']['value'] = t('Failed');
+    $requirements['ldap_extension_loaded']['severity'] = REQUIREMENT_ERROR;
+    $requirements['ldap_extension_loaded']['description'] = t('No LDAP Extension is loaded for PHP, so LDAP will not work properly.');
+  }
+
+  if ($phase != "install" && db_table_exists('ldapauth')) {
+    $requirements['ldap_servers_ldap_integration']['title'] = t('LDAP Integration LDAP Auth to LDAP Servers Upgrade Concern');
+    $requirements['ldap_servers_ldap_integration']['severity'] = REQUIREMENT_WARNING;
+    $requirements['ldap_servers_ldap_integration']['value'] = NULL;
+    $requirements['ldap_servers_ldap_integration']['description'] = t('Upgrade from Drupal 6 LDAP Auth to Drupal 7
+      LDAP Servers is not automatic.  LDAP Servers will need to be configured by hand.
+      See http://drupal.org/node/1023016. This message will go away when the ldapauth database table is removed.');
+  }
+  // check that ldapauth not installed.
+  return $requirements;
+}
+
+/**
+ * Implements hook_schema().
+ */
+function ldap_servers_schema() {
+  module_load_include('inc', 'ldap_servers','ldap_servers.functions');
+  ldap_server_module_load_include('module', 'ldap_servers', 'ldap_servers'); // to get the LDAP_SERVERS_ENC_TYPE_CLEARTEXT constants issue#1209576
+  ldap_server_module_load_include('php', 'ldap_servers', 'LdapServerAdmin.class');
+
+  $schema['ldap_servers'] = array(
+    'export' => array(
+      'key' => 'sid',
+      'key name' => 'Server ID',
+      'primary key' => 'numeric_sid',
+      'identifier' => 'ldap_servers_conf',
+      'api' => array(
+        'owner' => 'ldap_servers',
+        'api' => 'ldap_servers',
+        'minimum_version' => 1,
+        'current_version' => 1,
+        ),
+      ),
+    'primary key' => array('numeric_sid'),
+    'unique keys' => array('name' => array('name')),
+  );
+
+  $fields = LdapServerAdmin::fields();
+  foreach ($fields as $name => $props) {
+    if (isset($props['schema'])) {
+      $schema['ldap_servers']['fields'][$name] = $props['schema'];
+    }
+  }
+
+  return $schema;
+
+}
+
+/**
+ * rename ldap_servers type field to ldap_type
+ */
+
+function ldap_servers_update_7100() {
+
+  db_change_field('ldap_servers', 'type', 'ldap_type', array(
+    'type' => 'varchar',
+    'length' => 20,
+    'not null' => FALSE
+  ));
+
+  return t('ldap_servers table field "type" renamed to "ldap_type"');
+
+}
+
+/**
+ * ldap_server table field changes
+ */
+
+function ldap_servers_update_7101() {
+
+  db_add_field(
+    'ldap_servers',
+    'allow_conflicting_drupal_accts',
+    array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => FALSE,
+      'default' => 0,
+    )
+  );
+
+  db_add_field(
+    'ldap_servers',
+    'unique_persistent_attr',
+    array(
+      'type' => 'varchar',
+      'length' => '64',
+      'not null' => FALSE,
+    )
+  );
+
+  db_add_field(
+    'ldap_servers',
+    'mail_template',
+    array(
+      'type' => 'varchar',
+      'length' => '255',
+      'not null' => FALSE,
+    )
+  );
+
+  db_change_field('ldap_servers', 'ldap_to_drupal_user', 'ldap_to_drupal_user', array(
+    'type' => 'varchar',
+    'length' => 1024,
+    'not null' => FALSE
+  ));
+
+  db_change_field('ldap_servers', 'binddn', 'binddn', array(
+    'type' => 'varchar',
+    'length' => 511,
+  ));
+
+
+  return t('Updated LDAP Server to include "allow_conflicting_drupal_accts" and "unique_persistent_attr" fields.');
+}
+
+
+/**
+ * add bind_method field to ldap_servers table
+ */
+function ldap_servers_update_7102() {
+
+  if (!db_field_exists('ldap_servers', 'bind_method')) {
+    db_add_field('ldap_servers', 'bind_method', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+    $msg = t('"bind_method" field added to ldap_servers table');
+  }
+
+  return ($msg) ? $msg :  t('No database changes made.');
+}
+
+/**
+ * add group_object_category field to ldap_servers table
+ */
+function ldap_servers_update_7103() {
+
+  if (!db_field_exists('ldap_servers', 'group_object_category')) {
+    db_add_field('ldap_servers', 'group_object_category', array(
+      'type' => 'varchar',
+      'length' => 64,
+      'not null' => FALSE,
+    ));
+    $msg = t('"group_object_category" field added to ldap_servers table');
+  }
+
+  return ($msg) ? $msg :  t('No database changes made.');
+}
+
+
+/**
+ * add pagination fields to ldap_servers table
+ */
+function ldap_servers_update_7104() {
+
+  if (!db_field_exists('ldap_servers', 'search_pagination')) {
+    db_add_field('ldap_servers', 'search_pagination', array(
+      'type' => 'int',
+      'size' => 'tiny',
+      'not null' => FALSE,
+      'default' => 0,
+    ));
+    $msg = t('"search_pagination" field added to ldap_servers table');
+  }
+
+  if (!db_field_exists('ldap_servers', 'search_page_size')) {
+    db_add_field('ldap_servers', 'search_page_size', array(
+      'type' => 'int',
+      'size' => 'medium',
+      'not null' => FALSE,
+      'default' => 1000,
+    ));
+    $msg .= '<br/>' . t('"search_page_size" field added to ldap_servers table');
+  }
+
+  return ($msg) ? $msg :  t('No database changes made.');
+}
+
+
+/**
+ * add account_name_attr field to ldap_servers table
+ */
+function ldap_servers_update_7105() {
+  if (!db_field_exists('ldap_servers', 'account_name_attr')) {
+	db_add_field('ldap_servers', 'account_name_attr', array(
+    'description' => 'The attribute to be used as the account name if not the user_attr',
+	  'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+	  'default' => '',
+  ));
+    $msg = t('"account_name_attr" field added to ldap_servers table');
+  }
+
+  return ($msg) ? $msg :  t('No database changes made.');
+}

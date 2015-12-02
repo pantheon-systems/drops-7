@@ -1,0 +1,13 @@
+name = Metatag: Dublin Core Advanced
+description = Provides forty additional meta tags from the <a href="http://dublincore.org/">Dublin Core Metadata Institute</a>.
+package = SEO
+core = 7.x
+dependencies[] = metatag
+dependencies[] = metatag_dc
+
+; Information added by Drupal.org packaging script on 2015-07-24
+version = "7.x-1.7"
+core = "7.x"
+project = "metatag"
+datestamp = "1437763741"
+

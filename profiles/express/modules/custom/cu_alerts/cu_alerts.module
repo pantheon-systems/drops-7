@@ -1,0 +1,168 @@
+<?php
+
+/**
+ * @file
+ * CU Alerts module
+ */
+
+/**
+ * Implements hook_init().
+ */
+function cu_alerts_init() {
+  /* Load JS if specified */
+  if (variable_get('cu_alerts_use_js', FALSE)) {
+    drupal_add_js(drupal_get_path('module', 'cu_alerts') . "/js/cu_alerts.js", array('scope' => 'header'));
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_alerts_menu() {
+  $items['admin/config/system/cu_alerts'] = array(
+    'title' => 'CU Alerts Configuration',
+    'description' => 'Configure the CU-Boulder Alerts block.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_alerts_admin_settings_form'),
+    'access arguments' => array('administer cu alerts'),
+    'file' => 'cu_alerts.admin.inc',
+  );
+  return $items;
+}
+
+/**
+ * Implemets of hook_permission().
+ */
+function cu_alerts_permission() {
+  return array(
+    'administer cu alerts' => array(
+      'title' => t('Administer CU Alerts'),
+      'description' => t('Allows admins to administer the emergency api post hooks.'),
+      'restrict access' => TRUE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function cu_alerts_block_info() {
+  $blocks['cu_alerts'] = array(
+    'info' => t('CU Alerts'),
+    'cache' => DRUPAL_NO_CACHE,
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function cu_alerts_block_view($delta = '') {
+  $block = array();
+  switch ($delta) {
+    case 'cu_alerts':
+      $data = cu_alerts_data();
+      $block['content'] = array(
+        '#theme' => 'cu_alerts_alerts',
+        '#data' => $data,
+        '#remote_url' => cu_alerts_remote_url(),
+      );
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Gets the remote JSON data and return it decoded.
+ */
+function cu_alerts_remote_data() {
+  /* TODO: Detect whether or not curl is compiled in and fall back to file_get_contents if not */
+
+  $options = array(
+    // Return web page.
+    CURLOPT_RETURNTRANSFER => TRUE,
+    // Don't return headers.
+    CURLOPT_HEADER         => FALSE,
+    // Follow redirects.
+    CURLOPT_FOLLOWLOCATION => TRUE,
+    // Handle all encodings.
+    CURLOPT_ENCODING       => "",
+    // Who am i.
+    CURLOPT_USERAGENT      => "spider",
+    // Set referer on redirect.
+    CURLOPT_AUTOREFERER    => TRUE,
+    // Timeout on connect.
+    CURLOPT_CONNECTTIMEOUT => 120,
+    // Timeout on response.
+    CURLOPT_TIMEOUT        => 60,
+    // Stop after 10 redirects.
+    CURLOPT_MAXREDIRS      => 10,
+  );
+
+  $url = cu_alerts_remote_url();
+
+  $ch      = curl_init($url);
+  curl_setopt_array($ch, $options);
+  $content = curl_exec($ch);
+  $err     = curl_errno($ch);
+  $errmsg  = curl_error($ch);
+  $header  = curl_getinfo($ch);
+  curl_close($ch);
+  if ($content) {
+    $data = json_decode($content);
+  }
+  else {
+    $data = json_decode(array());
+  }
+  return $data;
+}
+
+/**
+ * Internal function cu_alerts_data().
+ *
+ * Function to return the data for use in the block
+ * This currently returns the results of remote_data.
+ * I put it in this wrapper to make it easier to add
+ * possible caching options in the future.
+ */
+function cu_alerts_data() {
+  /* Just return the results of the remote data grab */
+  return cu_alerts_remote_data();
+}
+
+/**
+ * Module defined function to get the remote_url.
+ *
+ * To read based on the environment, test or production.
+ */
+function cu_alerts_remote_url() {
+  /*Get the current protocol so we can serve up the correct content from either SSL or standard*/
+  if (isset($_SERVER['HTTPS']) && strtolower($_SERVER['HTTPS']) == 'on') {
+    $protocol = 'https://';
+  }
+  else {
+    $protocol = 'http://';
+  }
+
+  /* Pull our environment, default to production */
+  $environment = variable_get('cu_alerts_environment', 'production');
+  if ($environment == 'test') {
+    $remote_url = $protocol . 'test.cu-boulder-alerts.gotpantheon.com/json_alerts?limit=1';
+  }
+  else {
+    $remote_url = $protocol . 'alerts.colorado.edu/json_alerts?limit=1';
+  }
+  return $remote_url;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function cu_alerts_theme($existing, $type, $theme, $path) {
+  return array(
+    'cu_alerts_alerts' => array(
+      'variables' => array('data' => NULL, 'remote_url' => NULL),
+      'template' => 'cu_alerts',
+    ),
+  );
+}

@@ -1,0 +1,417 @@
+<?php
+
+/**
+ * Hook for providing page/screen level help links.
+ */
+ function hook_express_help($variables) {
+
+  return $variables = array();
+}
+
+ /**
+  * Hook for providing field level help links.
+  */
+function hook_express_help_fields($variables) {
+  $variables['article_node_form']['fields'] = array(
+    'field_article_external_url' => array(
+      'title' => 'External URL Help',
+      'short_title' => 'External URL',
+      'url' => 'http://www.colorado.edu/webcentral/tutorials/article/external_url',
+    ),
+    'metatags' => array(
+      'title' => 'Metatags Help',
+      'short_title' => 'Metatags',
+      'url' => 'http://www.colorado.edu/webcentral/tutorials/article/external_url',
+    ),
+  );
+  return $variables;
+}
+
+/**
+ * Implements hook_express_help().
+ */
+function cu_help_express_help($variables) {
+  $variables['admin/config/search/redirect'][] = array(
+    'title' => 'Adding Redirects Help',
+    'short_title' => 'Adding Redirects',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-redirect',
+  );
+  $variables['admin/config/user-interface/shortcut'][] = array(
+    'title' => 'Toolbars and Shortcuts Help',
+    'short_title' => 'Toolbars and Shortcuts',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/administrative-toolbars',
+  );
+  $variables['admin/content'][] = array(
+    'title' => 'Finding Content Help',
+    'short_title' => 'Find Content',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/find-content-section',
+  );
+  $variables['admin/content'][] = array(
+    'title' => 'What Are Content Types?',
+    'short_title' => 'Content Types?',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/what-are-content-types',
+  );
+  $variables['admin/content/blocks'][] = array(
+    'title' => 'What Are Blocks?',
+    'short_title' => 'Blocks?',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/what-are-blocks',
+  );
+  $variables['admin/people'][] = array(
+    'title' => 'Adding More Admins to Site',
+    'short_title' => 'Adding Admins',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/site-administrators',
+  );
+  $variables['admin/people'][] = array(
+    'title' => 'Removing/Modifying Admins from Site',
+    'short_title' => 'Removing Admins',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/removemodify-site-admins',
+  );
+  $variables['admin/settings'][] = array(
+    'title' => 'Site Name and Contact Information Help',
+    'short_title' => 'Site Name & Contact Information',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/site-name-contact-information',
+  );
+  $variables['admin/settings/contact'][] = array(
+    'title' => 'Site Name and Contact Information Help',
+    'short_title' => 'Site Name & Contact Information',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/site-name-contact-information',
+  );
+  $variables['admin/settings/error'][] = array(
+    'title' => 'Error Pages Help',
+    'short_title' => 'Error Pages',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/404-not-found-page',
+  );
+  $variables['admin/structure/menu'][] = array(
+    'title' => 'Turning Off Main Menu Help',
+    'short_title' => 'Turn Off Main Menu',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/turning-main-menu',
+  );
+  $variables['admin/structure/menu/settings'][] = array(
+    'title' => 'Turning Off Main Menu Help',
+    'short_title' => 'Turn Off Main Menu',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/turning-main-menu',
+  );
+  $variables['admin/structure/menu/manage/main-menu'][] = array(
+    'title' => 'Main Menu Help',
+    'short_title' => 'Main Menu',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/main-menu',
+  );
+  $variables['admin/structure/menu/manage/menu-footer-menu'][] = array(
+    'title' => 'Footer Menu Help',
+    'short_title' => 'Footer Menu',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/footer-menu',
+  );
+  $variables['admin/structure/menu/manage/menu-secondary-menu'][] = array(
+    'title' => 'Secondary Menu Help',
+    'short_title' => 'Secondary Menu',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/secondary-menu',
+  );
+  $variables['admin/theme'][] = array(
+    'title' => 'Selecting a Theme',
+    'short_title' => 'Select Theme',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/how-select-theme',
+  );
+  $variables['admin/theme'][] = array(
+    'title' => 'Theme Descriptions',
+    'short_title' => 'Theme Descriptions',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/theme-descriptions',
+  );
+  $variables['block/add/block'][] = array(
+    'title' => 'Text Block Help',
+    'short_title' => 'Text Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/text-block',
+  );
+  $variables['block/add/hero-unit'][] = array(
+    'title' => 'Hero Unit Block Help',
+    'short_title' => 'Hero Unit',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/hero-unit-block',
+  );
+  $variables['block/add/slider'][] = array(
+    'title' => 'Slider Block Help',
+    'short_title' => 'Slider Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/slider-block',
+  );
+  $variables['node/add/faqs'][] = array(
+    'title' => 'Adding FAQs Help',
+    'short_title' => 'FAQs',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/frequently-asked-questions-pages',
+  );
+  $variables['node/add/file'][] = array(
+    'title' => 'Uploading Files Help',
+    'short_title' => 'Uploading Files',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/upload-files-doc-pdf-etc',
+  );
+  $variables['node/add/page'][] = array(
+    'title' => 'Adding Basic Page Help',
+    'short_title' => 'Basic Page',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-basic-page',
+  );
+  $variables['node/%/blocks'][] = array(
+   'title' => 'Edit Blocks Help',
+   'short_title' => 'Edit Blocks',
+   'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/edit-blocks',
+  );
+  $variables['node/%/blocks'][] = array(
+    'title' => 'Place Blocks While Editing Help',
+    'short_title' => 'Place Blocks When Editing',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/place-blocks-while-editing-page',
+  );
+  return $variables;
+}
+
+/**
+ * Implements hook_express_help_fields().
+ */
+function cu_help_express_help_fields($variables) {
+  $variables['bean_form']['fields'] = array(
+    'field_callout_columns' => array(
+      'title' => 'Content Grid Columns Help',
+      'short_title' => 'Content Grid Columns',
+      'url' => 'http://www.colorado.edu/webcentral/tutorials/contentgrid',
+    ),
+  );
+  $variables['cu_settings_admin_settings_form']['fields'] = array(
+    'ga' => array(
+      'title' => 'Google Analytics Help',
+      'short_title' => 'Google Analytics',
+      'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/google-analytics',
+    ),
+  );
+  $variables['page_node_form']['fields'] = array(
+    'field_photo' => array(
+      'title' => 'Adding Images Help',
+      'short_title' => 'Images',
+      'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-images',
+    ),
+  );
+  $variables['system_theme_settings']['fields'] = array(
+    'cu_omega_theme_settings' => array(
+      'title' => 'Configuring Theme Settings',
+      'short_title' => 'Theme Settings',
+      'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/configuring-theme-settings',
+    ),
+  );
+
+  return $variables;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_help_menu() {
+  $items['admin/express/help'] = array(
+    'title' => 'Web Express Help',
+    'page callback' => '_cu_help_list',
+    'access arguments' => array('administer nodes'),
+    'weight' => 500,
+  );
+  $items['admin/express/help/view'] = array(
+    'title' => 'Web Express Help',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/express/help/admin'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Web Express Help Admin',
+    'page callback' => '_cu_help_list_admin',
+    'access arguments' => array('administer site configuration'),
+  );
+  return $items;
+}
+/**
+ * Implements hook_menu_alter().
+ */
+function cu_help_menu_alter(&$items) {
+  // Send user to express help page instead of default help page
+  //$items['admin/help']['page callback'] = 'drupal_goto';
+  //$items['admin/help']['page arguments'] = array( 'admin/express/help');
+  unset($items['admin/help']);
+}
+
+/**
+ * Callback function for admin/express/help.
+ */
+function _cu_help_list() {
+  $output = array();
+  // Get page/screen help
+  if ($cache = cache_get('express_help_links')) {
+    $express_help = $cache->data;
+  } else {
+    $express_help = module_invoke_all('express_help', $variables = NULL);
+    // Save this for 30 days - it should only be cleared on a code update
+    cache_set('express_help_links', $express_help, 'cache', time() + 60 * 60 * 24 * 30);
+  }
+  // Get form/field help
+  if ($cache = cache_get('express_help_field_links')) {
+    $help_fields = $cache->data;
+  } else {
+    $help_fields = module_invoke_all('express_help_fields', $variables = NULL);
+    // Save this for 30 days - it should only be cleared on a code update
+    cache_set('express_help_field_links', $help_fields, 'cache', time() + 60 * 60 * 24 * 30);
+  }
+
+  $help_list = array(
+    'items' => array(),
+  // Leave the title element empty to omit the ul title.
+    'title' => '',
+    'type' => 'ul',
+    'attributes' => array('class' => array(
+      'help-list',
+    )),
+  );
+  foreach ($express_help as $help) {
+    $help_list['items'][$help['short_title']] = l($help['short_title'], $help['url'], array('attributes' => array('target'=>'_blank')));
+  }
+  foreach ($help_fields as $form) {
+    foreach ($form['fields'] as $field) {
+      $help_list['items'][$field['short_title']] = l($field['short_title'], $field['url'], array('attributes' => array('target'=>'_blank')));
+    }
+  }
+  ksort($help_list['items']);
+  $output['list']['#markup'] =  theme('item_list', $help_list);
+  $output['more']['#markup'] = l('Find more Web Express help at www.colorado.edu/webcentral', 'http://www.colorado.edu/webcentral', array('attributes' => array('target'=>'_blank', 'class' => array('help-more-link'))));
+  $output['more']['#prefix'] = '<p>';
+  $output['more']['#suffix'] = '</p>';
+  return $output;
+}
+
+/**
+ * Callback function for admin/express/help/admin.
+ */
+function _cu_help_list_admin() {
+  $modules_page_help = module_implements('express_help');
+  $modules_field_help = module_implements('express_help_fields');
+  $files = system_rebuild_module_data();
+  // Do page/screen level help first
+  $items = array();
+  foreach ($modules_page_help as $module) {
+    $items[] = check_plain($files[$module]->info['name']);
+  }
+
+  $output['page_help']['#markup'] = theme('item_list', array('items' => $items));
+  $output['page_help']['#prefix'] = t('<strong>These modules provide page/screen level help:</strong>');
+
+  // Now do field/fieldset level help
+  $items = array();
+  foreach ($modules_field_help as $module) {
+    $items[] = check_plain($files[$module]->info['name']);
+  }
+  $output['field_help']['#markup'] = theme('item_list', array('items' => $items));
+  $output['field_help']['#prefix'] = t('<strong>These modules provide field/fieldset level help:</strong>');
+  return $output;
+}
+
+/**
+ * Implements hook_preprocess_page().
+ */
+function cu_help_preprocess_page(&$vars) {
+  // Get help paths from cache
+  if ($cache = cache_get('express_help_links')) {
+    $express_help = $cache->data;
+  } else {
+    $express_help = module_invoke_all('express_help', $variables = NULL);
+    // Save this for 30 days - it should only be cleared on a code update
+    cache_set('express_help_links', $express_help, 'cache', time() + 60 * 60 * 24 * 30);
+  }
+  // Get current path, if on a node/%/edit page, build a node/add/% path
+  $current_path = current_path();
+  if ((arg(0) == 'node') && (arg(2) == 'edit')) {
+    $current_path = 'node/add/' . $vars['node']->type;
+  } elseif (arg(0) == 'node' && arg(2) == 'webform-results') {
+    $current_path = 'node/%/webform-results';
+  } elseif (arg(0) == 'admin' && arg(1) == 'structure' && arg(2) == 'quicktabs') {
+    $current_path = 'admin/structure/quicktabs/%';
+  } elseif (arg(0) == 'node' && is_numeric(arg(1))) {
+    $current_path = explode('/', $current_path);
+    $current_path[1] = '%';
+    $current_path = implode('/', $current_path);
+  }
+  // If there is a $key for the current path, add the help link variable
+  if (!empty($express_help[$current_path])) {
+    $vars['express_help'] = '';
+    foreach ($express_help[$current_path] as $key => $value) {
+      $title = $express_help[$current_path][$key]['title'];
+      $url = $express_help[$current_path][$key]['url'];
+      if (isset($title) && isset($url)) {
+        $help_link = l($title, $url, array('attributes' => array('target' => '_blank')));
+          $vars['express_help'] .= $help_link . '<br/>';
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function cu_help_form_alter(&$form, &$form_state, $form_id) {
+  // Get help paths from cache
+  if ($cache = cache_get('express_help_field_links')) {
+    $help_fields = $cache->data;
+  } else {
+    $combined_keys = array();
+    // Get all help field hooks
+    $help_fields = module_invoke_all('express_help_fields', $variables = NULL);
+    foreach ($help_fields as $key => $help_field) {
+      // Check for combined form keys
+      if (strpos($key, ',') !== FALSE) {
+        $fields = $help_field['fields'];
+        // Save combined keys so we can remove them later
+        $combined_keys[] = $key;
+        $form_keys = array();
+        $form_keys = explode(',', $key);
+        foreach ($form_keys as $form_key) {
+          // If form already has some field help, merge them
+          if (!empty($help_fields[$form_key])) {
+            $help_fields[$form_key]['fields'] = array_merge($help_fields[$form_key]['fields'], $fields);
+          } else {
+            $help_fields[$form_key]['fields'] = $fields;
+          }
+        }
+      }
+    }
+    // Remove combined keys because we don't need them anymore.
+    foreach ($combined_keys as $combined_key) {
+      unset($help_fields[$combined_key]);
+    }
+    // Save this for 30 days - it should only be cleared on a code update
+    cache_set('express_help_field_links', $help_fields, 'cache', time() + 60 * 60 * 24 * 30);
+  }
+
+  // If the form_id is a key in our field help array, proceed with alter
+  if (array_key_exists($form_id, $help_fields)) {
+    foreach ($form as $key =>  $field) {
+      if (!empty($help_fields[$form_id]['fields'][$key])) {
+        $help_link = l('<span class="element-invisible">' . $help_fields[$form_id]['fields'][$key]['title'] . '</span>', $help_fields[$form_id]['fields'][$key]['url'], array('attributes' => array('target'=>'_blank', 'class' => 'field-help-link'), 'html' => TRUE));
+        // If description is set at this level (i.e. a fieldset), add help
+        if ($form[$key]['#type'] == 'fieldset') {
+          if (isset($form[$key]['#description'])) {
+          $form[$key]['#description'] = $form[$key]['#description'] . ' ' . $help_link;
+          } else {
+            $form[$key]['#description'] = $help_link;
+          }
+        }
+        // otherwise add help here
+        else {
+          if (isset($form[$key][LANGUAGE_NONE][0]['#description'])) {
+            $form[$key][LANGUAGE_NONE][0]['#description'] = $form[$key][LANGUAGE_NONE][0]['#description'] . ' ' . $help_link;
+          } else {
+            $form[$key][LANGUAGE_NONE][0]['#description'] = $help_link;
+          }
+          if (isset($form[$key][LANGUAGE_NONE]['#description'])) {
+            $form[$key][LANGUAGE_NONE]['#description'] = $form[$key][LANGUAGE_NONE]['#description'] . ' ' . $help_link;
+          } else {
+            $form[$key][LANGUAGE_NONE]['#description'] = $help_link;
+          }
+          if (isset($form[$key]['#description'])) {
+            $form[$key]['#description'] = $form[$key]['#description'] . ' ' . $help_link;
+          } else {
+            $form[$key]['#description'] = $help_link;
+          }
+        }
+      }
+    }
+  }
+}
+
+function cu_help_field_widget_form_alter(&$element, &$form_state, $context)	{
+
+}

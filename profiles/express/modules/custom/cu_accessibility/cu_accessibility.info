@@ -1,0 +1,5 @@
+name = CU Accessibility
+description = Making things more accessible
+core = 7.x
+package = CU-Boulder
+version = 7.x-1.0

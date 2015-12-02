@@ -1,0 +1,333 @@
+<?php
+
+/**
+ * @file
+ * Defines simple advanced_link widget.
+ */
+
+define('ADVANCED_LINK_EXTERNAL', 'external');
+define('ADVANCED_LINK_INTERNAL', 'internal');
+define('ADVANCED_LINK_BOTH', 'both');
+define('ADVANCED_LINK_SEARCH_START', 'start');
+define('ADVANCED_LINK_SEARCH_CONTAINS', 'contains');
+
+/**
+ * Implements hook_permission().
+ */
+function advanced_link_permission() {
+  return array(
+    'access advanced_link autocomplete' => array(
+      'title' => t('Access Advanced Link autocomplete'),
+      'description' => t('Allow access Advanced Link autocomplete functionality.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function advanced_link_menu() {
+  $items = array();
+
+  $items['advanced_link/autocomplete'] = array(
+    'page callback' => 'advanced_link_autocomplete',
+    'access callback' => 'advanced_link_autocomplete_access',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Checks if current user has access to autocomplete.
+ */
+function advanced_link_autocomplete_access() {
+  return user_access('access advanced_link autocomplete') || user_access('administer nodes');
+}
+
+/**
+ * Menu callback for autocomplete. 
+ * 
+ * Example: start/string/that/we/search/for.
+ */
+function advanced_link_autocomplete() {
+  $args = func_get_args();
+
+  // Search string is in all args except first one.
+  $string = implode('/', array_slice($args, 2));
+
+  $matches = advanced_link_url_load($args[0], $args[1], $string);
+  if (!$matches) {
+    $matches[''] = t('No matching results.');
+  }
+  drupal_json_output($matches);
+}
+
+/**
+ * Filtering pathes and aliases before fetching.
+ */
+function advanced_link_autocomplete_url_filter_conditions($urls_filter, $query, $collumn) {
+
+  if ($urls_filter) {
+    $urls_filter = str_replace("*", "%", $urls_filter);
+    $filters = explode("\n", $urls_filter);
+    $or = db_or();
+
+    foreach ($filters as $filter) {
+      $filter = trim($filter);
+      $or->condition($collumn, $filter, 'LIKE');
+    }
+    $query->condition($or);
+
+    return $query;
+  }
+
+  else {
+    return $query;
+  }
+}
+
+/**
+ * Loads list of matching URLs.
+ */
+function advanced_link_url_load($field_name, $bundle, $string = NULL) {
+
+  // Getting urls_filter settings from table 'field_config_instances'
+  $instance = field_read_instances(array('field_name' => $field_name, 'bundle' => $bundle), array());
+  $search_type = $instance[0]['widget']['settings']['urls_search'];
+  $urls_filter = (isset($instance[0]['widget']['settings']['urls_filter'])) ? trim($instance[0]['widget']['settings']['urls_filter']) : NULL;
+
+  if ($search_type == ADVANCED_LINK_SEARCH_CONTAINS) {
+    // Search for urls that contain our string.
+    $condition_menu = db_like($string) . '[^\%]*$';
+    $condition_alias = '%' . db_like($string) . '%';
+  }
+  else {
+    // Search for urls that start string.
+    $condition_menu = '^' . db_like($string) . '[^\%]*$';
+    $condition_alias = db_like($string) . '%';
+  }
+
+  if ($string) {
+    $urls_list = array();
+    $urls_list_menu = array();
+
+    // If database connection type is pgsql we should use '~'
+    // instead 'REGEXP' in query condition.
+    if (db_driver() == 'pgsql') {
+      $operator = '~';
+    }
+    else {
+      $operator = 'REGEXP';
+    }
+
+    // $operator use for exclude urls with '%' character.
+    $query = db_select('menu_router', 'mr')
+      ->fields('mr', array('path'))
+      ->condition('mr.path', $condition_menu, $operator)
+      ->range(0, 20)
+      ->orderBy('mr.path', 'ASC');
+
+    $query = advanced_link_autocomplete_url_filter_conditions($urls_filter, $query, 'mr.path');
+
+    $result = $query->execute()->fetchAll();
+
+    foreach ($result as $record) {
+      $urls_list[$record->path] = $record->path;
+    }
+
+    $query = db_select('url_alias', 'ua')
+      ->fields('ua', array('alias'))
+      ->condition('ua.alias', $condition_alias, 'LIKE')
+      ->range(0, 20 - count($urls_list))
+      ->orderBy('ua.alias', 'ASC');
+
+    $query = advanced_link_autocomplete_url_filter_conditions($urls_filter, $query, 'ua.alias');
+
+    $result = $query->execute()->fetchAll();
+
+    foreach ($result as $record) {
+      $urls_list_menu[$record->alias] = $record->alias;
+    }
+    
+    return $urls_list + $urls_list_menu;
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function advanced_link_field_widget_info() {
+  return array(
+    'advanced_link' => array(
+      'label' => t('Advanced Link'),
+      'field types' => array('link_field'),
+      'multiple values' => FIELD_BEHAVIOR_NONE,
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_settings_form().
+ */
+function advanced_link_field_widget_settings_form($field, $instance) {
+  $form = array();
+  $widget = $instance['widget'];
+  $settings = $widget['settings'];
+  $form['urls_allowed'] = array(
+    "#weight" => -10,
+    '#type' => 'radios',
+    '#title' => t('URLs allowed'),
+    '#options' => array(
+      ADVANCED_LINK_INTERNAL => t('Allowed only internal.'),
+      ADVANCED_LINK_EXTERNAL => t('Allowed only external.'),
+      ADVANCED_LINK_BOTH => t('Allowed both (external and internal).'),
+    ),
+    '#default_value' => isset($settings['urls_allowed']) ? $settings['urls_allowed'] : ADVANCED_LINK_BOTH,
+    '#description' => t('More filtering options can be found in "URLs filter" textfield.'),
+  );
+  $form['urls_filter'] = array(
+    "#weight" => -9,
+    '#type' => 'textarea',
+    '#title' => t('URLs filter'),
+    '#default_value' => isset($settings['urls_filter']) ? $settings['urls_filter'] : '',
+    '#description' => t('Enter the list of allowed urls separated by new line.<br />Leave empty to allow user input any urls.<br />The "*" character is a wildcard.<br />Example paths: blog for the <em>blog</em> page, blog/* for every personal blog, facebook.com/* for any page on Facebook site.'),
+  );
+  $form['default_titles'] = array(
+    "#weight" => -9,
+    '#type' => 'textarea',
+    '#title' => t('List of allowed titles'),
+    '#default_value' => isset($settings['default_titles']) ? $settings['default_titles'] : '',
+    '#description' => t('Enter the list of allowed titles separated by new line.<br />Leave empty to allow user input any text in title.'),
+  );
+  $form['urls_search'] = array(
+    "#weight" => -9,
+    '#type' => 'radios',
+    '#title' => t('Suggest urls that'),
+    '#options' => array(
+      ADVANCED_LINK_SEARCH_START => t('start with specified characters'),
+      ADVANCED_LINK_SEARCH_CONTAINS => t('contain specified characters'),
+    ),
+    '#default_value' => isset($settings['urls_search']) ? $settings['urls_search'] : ADVANCED_LINK_SEARCH_START,
+    '#description' => t('Select search type for autocomplete suggestion.'),
+  );
+  return $form;
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function advanced_link_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $element += array(
+    '#type' => $instance['widget']['type'],
+    '#field' => array(
+      'widget' => array(
+        'settings' => array(
+          'urls_allowed' => isset($instance['widget']['settings']['urls_allowed']) ? $instance['widget']['settings']['urls_allowed'] : ADVANCED_LINK_BOTH,
+          'urls_filter' => isset($instance['widget']['settings']['urls_filter']) ? $instance['widget']['settings']['urls_filter'] : '',
+          'default_titles' => isset($instance['widget']['settings']['default_titles']) ? $instance['widget']['settings']['default_titles'] : '',
+          'urls_search' => isset($instance['widget']['settings']['urls_search']) ? $instance['widget']['settings']['urls_search'] : ADVANCED_LINK_SEARCH_START,
+        ),
+      ),
+    ),
+    '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
+  );
+  return $element;
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function advanced_link_element_info() {
+  $elements = array();
+  $elements['advanced_link'] = array(
+    '#input' => TRUE,
+    '#process' => array('advanced_link_field_process'),
+    '#theme' => 'advanced_link',
+    '#theme_wrappers' => array('form_element'),
+  );
+  return $elements;
+}
+
+/**
+ * Create element array.
+ */
+function advanced_link_field_process($element, $form_state, $complete_form) {
+  $element = link_field_process($element, $form_state, $complete_form);
+  $urls_allowed = $element['#field']['widget']['settings']['urls_allowed'];
+
+  if (($urls_allowed != ADVANCED_LINK_EXTERNAL) && advanced_link_autocomplete_access()) {
+    $element['url']['#autocomplete_path'] = 'advanced_link/autocomplete/' . $element['#field_name'] . '/' . $element['#bundle'];
+  }
+
+  if (isset($element['#field']['widget']['settings']['default_titles']) && $element['#field']['widget']['settings']['default_titles']) {
+    $element['title']['#type'] = 'select';
+    $options = advanced_link_extract_allowed_values($element['#field']['widget']['settings']['default_titles']);
+    $element['title']['#options'] = $options;
+  }
+
+  $element['url']['#element_validate'] = array('advanced_link_widget_url_validate');
+  $element['url']['#field']['widget']['urls_allowed'] = $urls_allowed;
+  $element['url']['#field']['widget']['urls_filter'] = $element['#field']['widget']['settings']['urls_filter'];
+
+  return $element;
+}
+
+/**
+ * Extracts textarea values to array.
+ */
+function advanced_link_extract_allowed_values($values) {
+  $values_as_array = explode("\n", $values);
+  $result_values = array('' => ' ');
+  foreach ($values_as_array as $title) {
+    $result_values[trim(htmlentities($title))] = trim(htmlentities($title));
+  }
+  return $result_values;
+}
+
+/**
+ * Validate typed values.
+ */
+function advanced_link_widget_url_validate($element, &$form_state) {
+  $urls_allowed = (isset($element['#field']['widget']['urls_allowed'])) ? $element['#field']['widget']['urls_allowed'] : ADVANCED_LINK_BOTH;
+  $urls_filter = (isset($element['#field']['widget']['urls_filter'])) ? trim($element['#field']['widget']['urls_filter']) : NULL;
+  $url = $element['#value'];
+
+  if ($url) {
+    // Gettings link type (internal, external).
+    if ($urls_allowed != ADVANCED_LINK_BOTH) {
+      $type = link_validate_url($url);
+      if ($type != $urls_allowed) {
+        form_set_error(implode('][', $element['#parents']), t('URLs need to be @url_allowed', array('@url_allowed' => $urls_allowed)));
+      }
+    }
+    // Checking link URL by URL filter patterns.
+    if ($urls_filter) {
+      $match = drupal_match_path($url, $urls_filter);
+      if (!$match) {
+        form_set_error(implode('][', $element['#parents']), t("You can't use such URLs."));
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function advanced_link_theme() {
+  return array(
+    'advanced_link' => array(
+      'render element' => 'element',
+    ),
+  );
+}
+
+/**
+ * FAPI theme for an individual text elements.
+ */
+function theme_advanced_link($vars) {
+  return theme_link_field($vars);
+}

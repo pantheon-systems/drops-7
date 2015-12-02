@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+  
+function cu_events_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for events functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_events_bundle_express_help($variables) {
+  $variables['block/add/cu-events-calendar-block'][] = array(
+    'title' => 'Adding Events Calendar Block Help',
+    'short_title' => 'Event Calendar Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/events-calendar-block',
+  );
+  $variables['block/add/events-calendar-grid'][] = array(
+    'title' => 'Adding Events Calendar Grid Block Help',
+    'short_title' => 'Event Calendar Grid Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/events-calendar-grid-block-0',
+  );
+
+  return $variables;
+}

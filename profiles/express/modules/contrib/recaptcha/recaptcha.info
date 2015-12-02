@@ -1,0 +1,24 @@
+name = reCAPTCHA
+description = Protect your website from spam and abuse while letting real people pass through with ease. 
+core = 7.x
+package = Spam control
+dependencies[] = captcha
+configure = admin/config/people/captcha/recaptcha
+php = 5.3.2
+
+files[] = recaptcha.test
+files[] = recaptcha-php/src/ReCaptcha/ReCaptcha.php
+files[] = recaptcha-php/src/ReCaptcha/RequestMethod.php
+files[] = recaptcha-php/src/ReCaptcha/RequestParameters.php
+files[] = recaptcha-php/src/ReCaptcha/Response.php
+files[] = recaptcha-php/src/ReCaptcha/RequestMethod/Post.php
+files[] = recaptcha-php/src/ReCaptcha/RequestMethod/Socket.php
+files[] = recaptcha-php/src/ReCaptcha/RequestMethod/SocketPost.php
+files[] = src/ReCaptcha/RequestMethod/Drupal7.php
+
+; Information added by Drupal.org packaging script on 2015-05-28
+version = "7.x-2.0"
+core = "7.x"
+project = "recaptcha"
+datestamp = "1432847597"
+

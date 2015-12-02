@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * cu_default_image_style_override.module
+ * Kickass way to override default image styles
+ * without overriding features.
+ */
+
+/**
+ * Modify any image styles provided by other modules or the user.
+ *
+ * This hook allows modules to modify, add, or remove image styles. This may
+ * be useful to modify default styles provided by other modules or enforce
+ * that a specific effect is always enabled on a style. Note that modifications
+ * to these styles may negatively affect the user experience, such as if an
+ * effect is added to a style through this hook, the user may attempt to remove
+ * the effect but it will be immediately be re-added.
+ *
+ * The best use of this hook is usually to modify default styles, which are not
+ * editable by the user until they are overridden, so such interface
+ * contradictions will not occur. This hook can target default (or user) styles
+ * by checking the $style['storage'] property.
+ *
+ * If your module needs to provide a new style (rather than modify an existing
+ * one) use hook_image_default_styles() instead.
+ *
+ * @see hook_image_default_styles()
+ */
+function cu_default_image_style_override_image_styles_alter(&$styles) {
+  if (isset ($styles['large']['storage'])) {
+    if ($styles['large']['storage'] == IMAGE_STORAGE_DEFAULT) {
+      // Check that we only affect a default style.
+      $styles['large']['effects'][0] = array(
+        'label' => 'Scale',
+        'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+        'effect callback' => 'image_scale_effect',
+        'dimensions callback' => 'image_scale_dimensions',
+        'form callback' => 'image_scale_form',
+        'summary theme' => 'image_scale_summary',
+        'module' => 'image',
+        'name' => 'image_scale',
+        'data' => array(
+          'width' => 960,
+          'height' => '',
+          'upscale' => 0,
+        ),
+        'weight' => 1,
+      );
+    }
+  }
+  if (isset ($styles['medium']['storage'])) {
+    if ($styles['medium']['storage'] == IMAGE_STORAGE_DEFAULT) {
+      // Check that we only affect a default style.
+      $styles['medium']['effects'][0] = array(
+        'label' => 'Scale',
+        'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+        'effect callback' => 'image_scale_effect',
+        'dimensions callback' => 'image_scale_dimensions',
+        'form callback' => 'image_scale_form',
+        'summary theme' => 'image_scale_summary',
+        'module' => 'image',
+        'name' => 'image_scale',
+        'data' => array(
+          'width' => 480,
+          'height' => '',
+          'upscale' => 1,
+        ),
+        'weight' => 1,
+      );
+    }
+  }
+}

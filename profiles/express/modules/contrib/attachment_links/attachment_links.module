@@ -1,0 +1,361 @@
+<?php
+
+/**
+ * @file
+ * The Attachment Links module provides permanent links to files attached to a
+ * node. A single, easy-to-remember URL can be used to retrieve the preferred
+ * (canonical) or newest version of a file regardless of how many versions of
+ * that file have been attached to a node.
+ */
+
+include('attachment_links.field-formatters.inc');
+
+/**
+ * Implements hook_menu().
+ */
+function attachment_links_menu() {
+  $items['node/%node/attachment'] = array(
+    'title' => 'Authoritative Attachment',
+    'description' => 'The canonical or "lightest" attached file.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'attachment_links_retrieve',
+    'page arguments' => array(1, 'authoritative'),
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+  );
+
+  $items['node/%node/attachment/newest'] = array(
+    'title' => 'Latest Attachment',
+    'description' => 'The most recently attached file.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'attachment_links_retrieve',
+    'page arguments' => array(1, 'newest'),
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function attachment_links_node_view($node, $view_mode, $langcode) {
+  $file_field_name = variable_get('attachment_links_selection_' . $node->type, 0);
+  // Add the links to the node display, for easy access.
+  if ($file_field_name) {
+    // Grab the files from the current node for the selected field.
+    $files = field_get_items('node', $node, $file_field_name);
+
+    if ($files) {
+      $node->content['attachment_links'] = array(
+        '#markup' => theme('attachment_links', array('node' => $node)),
+        '#weight' => 3,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function attachment_links_node_insert($node) {
+  if (variable_get('attachment_links_create_alias_' . $node->type, FALSE)) {
+    path_delete(array('source' => 'node/' . $node->nid . '/attachment'));
+    attachment_links_save_alias($node);
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function attachment_links_node_update($node) {
+  path_delete(array('source' => 'node/' . $node->nid . '/attachment'));
+  attachment_links_save_alias($node);
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function attachment_links_node_delete($node) {
+  // Delete all aliases associated with this node attachment.
+  path_delete(array('source' => 'node/' . $node->nid . '/attachment'));
+}
+
+/**
+ * Save the convenience alias.
+ */
+function attachment_links_save_alias($node) {
+  $create_alias = variable_get('attachment_links_create_alias_' . $node->type, FALSE);
+
+  if ($create_alias) {
+    // Make sure that attachment links are enabled for a field on this node type.
+    $file_field_name = variable_get('attachment_links_selection_' . $node->type, 0);
+    if ($file_field_name) {
+      // Grab the files from the current node for the selected field.
+      $files = field_get_items('node', $node, $file_field_name);
+      if (!empty($files)) {
+        // Retreive the 'authorative' file.
+        $file = reset($files);
+        $file = file_load($file['fid']);
+
+        if (!empty($node->path['alias'])) {
+          $node_alias = $node->path['alias'];
+          $alias_parts = explode('/', $node_alias);
+          if (count($alias_parts) > 1) {
+            array_pop($alias_parts);
+            $node_alias = implode('/', $alias_parts);
+          }
+          $alias = $node_alias . '/' . $file->filename;
+
+          $source = 'node/' . $node->nid . '/attachment';
+          $new_alias = array(
+            'source' => $source,
+            'alias' => $alias,
+            'language' => $node->language,
+          );
+          path_save($new_alias);
+          return TRUE;
+        }
+      }
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function attachment_links_theme($existing, $type, $theme, $path) {
+  $hooks['attachment_links'] = array(
+    'template' => 'attachment-links',
+    'variables' => array(
+      'node' => NULL,
+    ),
+  );
+  $hooks['attachment_links_formatter_attachment_links_preferred'] = array(
+    'arguments' => array(
+      'element' => NULL
+    ),
+  );
+  $hooks['attachment_links_formatter_attachment_links_newest'] = array(
+    'arguments' => array(
+      'element' => NULL
+    ),
+  );
+
+  return $hooks;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function attachment_links_form_node_type_form_alter(&$form, &$form_state) {
+  // Add a section to the node type edit form that allows the user to select
+  // which file field will be used by Attachment links, as there may be multiple.
+  if (isset($form['type'])) {
+    $node_type = $form['#node_type']->type;
+    if (isset($node_type)) {
+      // Get all file fields on this node type for select options:
+      $options = array(0 => 'Disabled');
+      $instances = field_info_instances('node', $node_type);
+
+      foreach ($instances as $field_name => $instance) {
+        $field_info = field_info_field($field_name);
+        if ($field_info['type'] == 'file') {
+          $options[$field_name] = $instances[$field_name]['label'] . " ($field_name)";
+        }
+      }
+
+      $form['attachment_links'] = array(
+        '#type' => 'fieldset',
+        '#title' => t('Attachment links'),
+        '#group' => 'additional_settings',
+      );
+      $form['attachment_links']['attachment_links_selection'] = array(
+        '#type' => 'select',
+        '#title' => t('Select file field'),
+        '#description' => t('When hitting attachment links URLs, it will deliver files from this file field.'),
+        '#default_value' => variable_get('attachment_links_selection_' . $node_type, 0),
+        '#options' => $options,
+        '#weight' => 5,
+      );
+      $form['attachment_links']['attachment_links_create_alias'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Generate convenience aliases'),
+        '#description' => t('Uses the file extension and node alias to create a file alias, see README.txt for more info.'),
+        '#default_value' => variable_get('attachment_links_create_alias_' . $node_type, FALSE),
+        '#weight' => 6,
+      );
+    }
+    // Add a submit handler so that we can clear the fields info cache when this
+    // form is submitted.
+    $form['#submit'][] = 'attachment_links_node_type_form_submit';
+  }
+}
+
+/**
+ * Submit handler for the node type form.
+ */
+function attachment_links_node_type_form_submit($form, &$form_state) {
+  // Clear the fields info cache. This is only so that the pseudo-field that
+  // appears in 'Display fields' will show for the correct content types only.
+  // Otherwise, we'd have to show the pseudo field for all content types.
+  field_info_cache_clear();
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function attachment_links_form_node_form_alter(&$form, &$form_state) {
+  $node = $form['#node'];
+  // Provide some help and info on the node edit form.
+  if (isset($form['type']) && isset($node)) {
+    $file_field_name = variable_get('attachment_links_selection_' . $node->type, 0);
+    if ($file_field_name) {
+      $instances = field_info_instances('node', $node->type);
+      $label = $instances[$file_field_name]['label'];
+
+      $form['attachment_links'] = array(
+        '#type' => 'fieldset',
+        '#collapsible' => TRUE,
+        '#collapsed' => TRUE,
+        '#title' => t('Attachment links'),
+        '#group' => 'additional_settings',
+        '#weight' => 50,
+      );
+      $help_blurb = t('Attachment links provides permanent links for files in the field %field. The "preferred" version is the first file listed on the field %field above. Click and drag the handles to the left of each file to reorder them. You can choose a different field in the content type settings.', array('%field' => $label));
+
+      // Display different help text for node creation and node editing forms.
+      if ($form['nid']['#value']) {
+        $help_blurb .= theme('attachment_links', array('node' => $node));
+      }
+      else {
+        $help_blurb .= '<div><strong>' . t('Attachment links will be shown here after you save the node.') . '</strong></div>';
+      }
+
+      $form['attachment_links']['current'] = array(
+        '#type' => 'item',
+        '#title' => t('Attachment links on %field', array('%field' => $label . ' (' . $file_field_name . ')')),
+        '#markup' => $help_blurb,
+      );
+    }
+  }
+}
+
+/**
+ * Menu callback to fetch the reqested file for the given node.
+ */
+function attachment_links_retrieve($node, $type) {
+  // Make sure that attachment links are enabled for a field on this node type.
+  $file_field_name = variable_get('attachment_links_selection_' . $node->type, 0);
+  if (!$file_field_name) {
+    return MENU_NOT_FOUND;
+  }
+
+  // Grab the files from the current node for the selected field.
+  $files = field_get_items('node', $node, $file_field_name);
+
+  // If we have files, continue, else return 404.
+  if (!empty($files)) {
+    switch ($type) {
+      case 'authoritative':
+        // Return the first element of the array, which is the 'highest' one.
+        $file = reset($files);
+        $uri = $file['uri'];
+      break;
+
+      case 'newest':
+        // Get the newest item by timestamp. In the case of multiple timestamps
+        // being equal, the 'highest' one will be selected. The handy part is
+        // that the array returned by field_get_items is already in weight order,
+        // with key 0 being the lightest.
+        $max_timestamp = 0;
+        foreach ($files as $key => $file) {
+          if ($file['timestamp'] > $max_timestamp) {
+            $max_timestamp = $file['timestamp'];
+            $max_key = $key;
+          }
+        }
+        $uri = $files[$max_key]['uri'];
+      break;
+    }
+
+    // We check for public, and redirect to the file path in that case. In the
+    // case of private, we start serving the file in the current request instead
+    // of redirecting, this saves resources and is useful when we have an alias
+    // for the file path.
+    $scheme = file_uri_scheme($uri);
+    if ($scheme == 'public') {
+      $file_url = file_create_url($uri);
+      drupal_goto($file_url);
+    }
+    else if ($scheme == 'private') {
+      // Serve the file from private files.
+      if ($wrapper = file_stream_wrapper_get_instance_by_uri($uri)) {
+        // Unfortunately we have to do this str_replace nonsense because the
+        // function that we want to call (getTarget) is protected in the stream
+        // wrapper.
+        $file_url = $wrapper->getExternalUrl();
+        $file_url = str_replace(url('system/files/', array('absolute' => TRUE)), '', $file_url);
+
+        // The file_url will have URL entities encoded, but file_download()
+        // expects a real filename. Decode first (i.e. turn "%20" into " ")
+        $file_url = urldecode($file_url);
+
+        $args = explode('/', $file_url);
+        array_unshift($args, 'private');
+
+        // Need to send the filename since we aren't redirecting to a file
+        // but sending the stream directly. file_download() will handle sending
+        // the MIME type and other necessaryt headers.
+        header('Content-Disposition: attachment; filename="' . end($args) . '"');
+
+        // This calls the menu callback for private files directly, ensuring that
+        // all access permissions are taken care of.
+        call_user_func_array('file_download', $args);
+      }
+    }
+    else {
+      return MENU_NOT_FOUND;
+    }
+  }
+  else {
+    return MENU_NOT_FOUND;
+  }
+}
+
+/**
+ * Process variables for attachment-links.tpl.php.
+ */
+function template_preprocess_attachment_links(&$vars) {
+  $node = $vars['node'];
+  $options = array('absolute' => TRUE);
+  $vars['items'] = array(
+    t('Preferred version: !link', array('!link' => l(url("node/$node->nid/attachment", $options), "node/$node->nid/attachment"))),
+    t('Newest version: !link', array('!link' => l(url("node/$node->nid/attachment/newest", $options), "node/$node->nid/attachment/newest"))),
+  );
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ */
+function attachment_links_field_extra_fields() {
+  $types = node_type_get_types();
+  foreach ($types as $key => $type) {
+    if (variable_get('attachment_links_selection_' . $key, 0)) {
+      $extra['node'][$key] = array(
+        'display' => array(
+          'attachment_links' => array(
+            'label' => t('Attachment links'),
+            'description' => t('Links to the canonical or preferred version of the attached files.'),
+            'weight' => 3,
+          )
+        )
+      );
+    }
+  }
+  if (isset($extra)) {
+    return $extra;
+  }
+}

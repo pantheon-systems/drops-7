@@ -1,0 +1,10 @@
+<?php
+
+/**
+ * Implements hook_update_N().
+ *
+ * Change cusearch.colorado.edu to gsa.colorado.edu
+ */
+function cu_search_update_7001() {
+  variable_set('google_appliance_hostname', 'http://gsa.colorado.edu');
+}

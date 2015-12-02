@@ -1,0 +1,16 @@
+<?php
+/**
+ * @file
+ * Drupal needs this blank file.
+ */
+ 
+ /**
+* Implementation of hook_wysiwyg_editor_settings_alter().
+*/
+function cu_wysiwyg_wysiwyg_editor_settings_alter(&$settings, $context) {
+  if($context['profile']->editor == 'ckeditor') {
+    $settings['basicEntities'] = FALSE;
+    $settings['entities'] = FALSE;
+    $settings['height'] = 320;
+  }
+}

@@ -1,0 +1,92 @@
+.article-image img {
+  width:50%;
+  height: auto;
+  float:right;
+  margin: 0 0 20px 20px;
+}
+.article-view-mode-teaser {
+  margin-bottom:20px;
+  border-bottom:1px solid #e0e0e0;
+}
+.article-view-mode-teaser-content {
+  overflow: auto;
+}
+.article-view-mode-title a {
+  display: block;
+  padding: 5px 0;
+}
+.article-summary {
+  padding:5px 0 20px;
+}
+.article-summary .more-link {
+  white-space: nowrap;
+}
+.article-summary .more-link:before {
+  content: " ";
+}
+
+.article-view-mode-sidebar {
+  margin-bottom: 10px;
+  padding-bottom:10px;
+  border-bottom:1px solid #e0e0e0;
+}
+.list-article-list li:last-child .article-view-mode-sidebar {
+  border: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.article-view-mode-sidebar img.image-square,
+.article-view-mode-sidebar img.image-square_thumbnail {
+  margin-bottom: 0;
+}
+.article-view-mode-sidebar-content {
+  overflow: hidden;
+}
+
+.view-article-slider .field-name-field-article-thumbnail,
+.view-article-slider  .views-field-title {
+  margin:0 10px;
+}
+
+.view-article-slider .flex-nav-container .flex-direction-nav a,
+.view-article-slider .flex-nav-container .flex-direction-nav a.flex-prev,
+.view-article-slider .flex-nav-container .flex-direction-nav a.flex-next {
+  width:21px;
+  height: 21px;
+  display: block;
+}
+.view-article-slider .flex-direction-nav a.flex-prev {
+  background-image: url(../images/article-slider-arrows.png);
+  left:0px;
+}
+.view-article-slider .flex-direction-nav a.flex-next {
+  background-image: url(../images/article-slider-arrows.png);
+  right:0px;
+  background-position: -21px 0;
+}
+.view-article-slider .flex-viewport {
+  margin:0 20px;
+  height: auto !important;
+}
+.view-article-slider .flex-direction-nav a {
+  top:40%;
+}
+.article-view-mode-teaser-content p.date {
+  margin-bottom: 0;
+}
+p.date {
+  margin-bottom: 20px;
+}
+p.tags {
+  margin-top:20px;
+}
+.item-list ul.list-article-list {
+  margin: 0;
+  padding: 0;
+  padding-left:1.5em;
+  list-style-image: none;
+  list-style: none;
+}
+.item-list ul.list-article-list li {
+  margin: 0;
+}

@@ -1,0 +1,170 @@
+<?php
+
+/**
+ * Implements hook_features_api().
+ */
+function themekey_features_features_api() {
+  return array(
+    'themekey_features_rule_chain' => array(
+      'name' => t('ThemeKey Rule Chain'),
+      'default_hook' => 'themekey_features_rule_chain_import',
+  ),
+  );
+}
+
+
+/**
+ * Implements hook_features_export_options().
+ */
+function themekey_features_rule_chain_features_export_options() {
+  $options = array();
+  $rules = themekey_features_load_rule_childs();
+
+  if (!empty($rules)) {
+    foreach ($rules as $rule) {
+      $options[md5(serialize($rule))] = $rule['string'];
+    }
+  }
+
+  return $options;
+}
+
+
+/**
+ * Implements hook_features_export().
+ */
+function themekey_features_rule_chain_features_export($data, &$export, $module_name = '') {
+  $export['dependencies']['features'] = 'features';
+  $export['dependencies']['themekey_features'] = 'themekey_features';
+  // TODO set dependencies to providers of each single themekey property
+
+  foreach ($data as $rule_md5) {
+    $export['features']['themekey_features_rule_chain'][$rule_md5] = $rule_md5;
+  }
+
+  return array();
+}
+
+
+/**
+ * Implements hook_features_export_render().
+ */
+function themekey_features_rule_chain_features_export_render($module_name, $data, $export = NULL) {
+  $rules = themekey_features_load_rule_childs();
+  $keep_rules = array();
+
+  foreach ($rules as $rule) {
+    if (in_array(md5(serialize($rule)), $data)) {
+      $keep_rules[] = $rule;
+    }
+  }
+
+  $code = array();
+  $code[] = "if (!defined('THEMEKEY_PAGECACHE_UNSUPPORTED')) {
+    define('THEMEKEY_PAGECACHE_UNSUPPORTED', 0);
+    define('THEMEKEY_PAGECACHE_SUPPORTED', 1);
+    define('THEMEKEY_PAGECACHE_TIMEBASED', 2);
+  }";
+  $code[] = '$rules = ' . features_var_export($keep_rules) . ';';
+  $code[] = '';
+  $code[] = 'return $rules;';
+
+
+
+  return array('themekey_features_rule_chain_import' => implode("\n", $code));
+}
+
+
+/**
+ * Implements hook_features_rebuild().
+ */
+function themekey_features_rule_chain_features_rebuild($module) {
+  module_load_include('inc', 'themekey', 'themekey_build');
+
+  db_truncate('themekey_properties');
+  themekey_rebuild();
+
+  $rules = module_invoke($module, 'themekey_features_rule_chain_import');
+
+  themekey_features_save_rule_childs($rules);
+
+  // fast deletion of page cache (truncate)
+  cache_clear_all('*', 'cache_page', TRUE);
+
+  return TRUE;
+}
+
+
+/**
+ * Implements hook_features_revert().
+ */
+function themekey_features_rule_chain_features_revert($module) {
+  return themekey_features_rule_chain_features_rebuild($module);
+}
+
+/**
+ * Loads current ThemeKey Rule Chain as array.
+ *
+ * @param $parent
+ *   internal use in recursion
+ *
+ * @return
+ *   serialized ThemeKey Rule Chain as array
+ */
+function themekey_features_load_rule_childs($parent = 0) {
+  module_load_include('inc', 'themekey', 'themekey_base');
+  module_load_include('inc', 'themekey', 'themekey_build');
+
+  $rules = array();
+
+  if ($result = db_select('themekey_properties', 'tp')
+      ->fields('tp', array('id'))
+      ->condition('parent', $parent)
+      ->orderBy('weight', 'ASC')
+      ->execute()
+  ) {
+
+    foreach ($result as $record) {
+
+      // we have to load the rule again using themekey_rule_get() which applies some transformations
+      $rule = themekey_rule_get($record->id);
+      if ('drupal:path' != $rule->property) {
+        themekey_complete_path($rule);
+      }
+      unset($rule->id);
+      unset($rule->parent);
+      unset($rule->weight);
+
+      $rules[] = array(
+        'rule' => $rule,
+        'string' => themekey_format_rule_as_string($record->id),
+        'childs' => themekey_features_load_rule_childs($record->id),
+      );
+
+    }
+
+  }
+
+  return $rules;
+}
+
+
+/**
+ * Takes a serialized ThemeKey Rule Chain as created by
+ * themekey_features_load_rule_childs() and replaces the current
+ * one in the database eith it.
+ *
+ * @param $childs
+ *   serialized ThemeKey Rule Chain as array
+ * @param $parent
+ *   internal use in recursion
+ */
+function themekey_features_save_rule_childs($childs, $parent = 0) {
+  module_load_include('inc', 'themekey', 'themekey_build');
+
+  foreach ($childs as $child) {
+    $child['rule']['parent'] = $parent;
+    themekey_rule_set($child['rule']);
+    themekey_features_save_rule_childs($child['childs'], $child['rule']['id']);
+  }
+}

@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function cu_test_content_install() {
+  module_enable(array(
+    'cu_test_content_articles',
+    'cu_test_content_blocks',
+    'cu_test_content_context',
+    'cu_test_content_gallery',
+    'cu_test_content_pages',
+    'cu_test_content_people'
+  ));
+}
+
+/**
+ * Implements hook_install().
+ */
+function cu_test_content_disable() {
+
+  module_disable(array(
+    'cu_test_content_articles',
+    'cu_test_content_blocks',
+    'cu_test_content_context',
+    'cu_test_content_gallery',
+    'cu_test_content_pages',
+    'cu_test_content_people'
+  ));
+  drupal_uninstall_modules(array(
+    'cu_test_content_articles',
+    'cu_test_content_blocks',
+    'cu_test_content_context',
+    'cu_test_content_gallery',
+    'cu_test_content_pages',
+    'cu_test_content_people'
+  ));
+}

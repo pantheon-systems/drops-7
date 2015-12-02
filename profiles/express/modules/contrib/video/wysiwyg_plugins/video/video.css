@@ -1,0 +1,8 @@
+.wysiwyg-video {
+  display: block;
+  border: 1px dotted #ccc;
+  margin: 1em 0;
+  width: 640px;
+  height: 360px;
+  background: transparent url(images/video-place-holder.gif) no-repeat center top;
+}

@@ -1,0 +1,80 @@
+<?php
+
+/**
+ * @file
+ * Site info.
+ */
+
+/**
+ * Implements hook_block_info().
+ */
+function cu_site_info_block_info() {
+  $blocks['site_info'] = array(
+    'info' => t('Site Information'),
+  );
+  return $blocks;
+}
+
+/**
+ * Return a rendered or renderable view of a block.
+ *
+ * @param string $delta
+ *   Which block to render. This is a unique identifier for the block
+ *   within the module, defined in hook_block_info().
+ *
+ * @return array
+ *   An array containing the following elements:
+ *   - subject: The default localized title of the block. If the block does not
+ *     have a default title, this should be set to NULL.
+ *   - content: The content of the block's body. This may be a renderable array
+ *     (preferable) or a string containing rendered HTML content.
+ *
+ * For a detailed usage example, see block_example.module.
+ *
+ * @see hook_block_info()
+ * @see hook_block_view_alter()
+ * @see hook_block_view_MODULE_DELTA_alter()
+ */
+function cu_site_info_block_view($delta = '') {
+  switch ($delta) {
+    case 'site_info':
+
+      $block['subject'] = '<a href="' . base_path() . '">' . variable_get('site_name', NULL) . '</a>';
+      $value = variable_get('site_info_body',
+               array(
+                 'value' => t('Put your contact information here'),
+                 'format' => 'wysiwyg',
+               )
+      );
+      $value = check_markup($value['value'], $value['format']);
+      $block['content'] = $value;
+      break;
+  }
+  return $block;
+}
+
+/**
+ * Implements hook_contextual_links_view_alter().
+ *
+ * Link users to admin/settings to edit block content
+ */
+function cu_site_info_contextual_links_view_alter(&$element, &$items) {
+  if (isset($element['#element']['#block'])) {
+    switch ($element['#element']['#block']->delta) {
+      case 'site_info':
+        $element['#links']['site-settings'] = array(
+          'title' => t('Edit Site Information'),
+          'href' => 'admin/settings',
+        );
+        break;
+    }
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_site_info_page_alter(&$page) {
+  // Add module css.
+  drupal_add_css(drupal_get_path('module', 'cu_site_info') . '/site_info.css');
+}

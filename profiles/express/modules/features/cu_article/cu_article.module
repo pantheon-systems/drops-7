@@ -1,0 +1,444 @@
+<?php
+/**
+ * @file
+ * Code for the Articles feature.
+ */
+
+include_once 'cu_article.features.inc';
+
+/**
+ *  Implements hook_form_FORM_ID_alter.
+ */
+function cu_article_form_article_list_page_node_form_alter(&$form, &$form_state, $form_id) {
+  $form['menu']['enabled']['#default_value'] = TRUE;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_article_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/cu-article.css');
+  drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/cu-article-grid.css');
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got bean--articles.tpl.php in our module
+ * directory.
+ */
+function cu_article_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_article');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'bean', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+  $theme_registry['bean__articles']['preprocess functions'][] = 'cu_article_preprocess_bean';
+  // Take advantage of columns on admin theme for article node edit pages.
+  if (variable_get('admin_theme', '') == 'cuseven' && variable_get('node_admin_theme', 0) == 1) {
+    $theme_registry['node_form']['preprocess functions'][] = 'cu_article_preprocess_form_node';
+  }
+}
+
+/**
+ * Implements hook_preprocess_entity().
+ *
+ * Prepare content for article list and article grid beans
+ */
+function cu_article_preprocess_entity(&$vars) {
+  if ($vars['elements']['#bundle'] == 'articles') {
+    $content = $vars['content'];
+    global $base_url;
+
+
+    // Get configs.
+    $items = $vars['elements']['#entity']->field_article_items_display[LANGUAGE_NONE][0]['value'];
+    $display = $vars['elements']['#entity']->field_article_display[LANGUAGE_NONE][0]['value'];
+    $pager = $vars['elements']['#entity']->field_article_pager[LANGUAGE_NONE][0]['value'];
+
+    // Start query.
+    $query = db_select('node', 'n');
+
+    // Display pager or only set number of items.
+    if ($pager) {
+      $query = $query->extend('PagerDefault')->limit($items);
+    }
+    else {
+      $query->range(0, $items);
+    }
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title'));
+
+    // Filter by tag.
+    if (isset($vars['elements']['#entity']->field_article_term[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_term[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Display the newest first.
+    $query->orderBy('created', 'DESC');
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+
+
+    // Pass a tag type to use for node titles - this is used in the article node tpl
+    foreach ($nodes as $key => $node) {
+      $nodes[$key]->heading_tag['#tag'] = 'strong';
+    }
+    // Build output.
+    if (!empty($nodes)) {
+      $rows = array();
+      $output['articles'] = node_view_multiple($nodes, $display);
+
+      if ($pager == 1) {
+        $output['pager'] = array(
+          '#theme' => 'pager',
+          '#tags' => array());
+      }
+      elseif ($pager == 2) {
+        $output['pager'] = array(
+          '#theme' => 'views_mini_pager',
+          '#tags' => array(),
+          '#prefix' => '<div class="mini-pager">',
+          '#suffix' => '</div>',
+        );
+      }
+      else {
+        if (!empty($vars['elements']['#entity']->field_article_link[LANGUAGE_NONE][0]['url']) && !empty($vars['elements']['#entity']->field_article_link[LANGUAGE_NONE][0]['title'])) {
+          $output['more_link'] = array(
+            '#theme' => 'link',
+            '#path' => $vars['elements']['#entity']->field_article_link[LANGUAGE_NONE][0]['url'],
+            '#text' => $vars['elements']['#entity']->field_article_link[LANGUAGE_NONE][0]['title'],
+            '#options' => array('attributes' => array()),
+            '#prefix' => '<div class="more-link">',
+            '#suffix' => '</div>',
+          );
+        }
+      }
+      if (isset($output)) {
+        $vars['content'] = $output;
+      }
+    } else {
+      $vars['content'] = '';
+    }
+
+  }
+
+  if ($vars['elements']['#bundle'] == 'article_grid') {
+
+    $content = $vars['content'];
+    global $base_url;
+
+    // Start query.
+    $query = db_select('node', 'n');
+
+    // Set number of items.
+    $items = $content['field_article_grid_items'][0]['#markup'] ? $content['field_article_grid_items'][0]['#markup'] : 3;
+    $query = $query->extend('PagerDefault')->limit($items);
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title'));
+
+
+    // Filter by tag.
+    if (isset($vars['elements']['#entity']->field_article_grid_filter[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_grid_filter[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Display the newest first.
+    $query->orderBy('created', 'DESC');
+
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+
+    // Build output.
+    if (!empty($nodes)) {
+      $output = array();
+      $rows = array();
+      $rows[1] = 'alpha';
+      $rows[2] = '';
+      $rows[3] = 'omega';
+      $i = 1;
+      $output['articles'] = node_view_multiple($nodes, 'grid');
+      unset($output['articles']['nodes']['#sorted']);
+      foreach ($output['articles']['nodes'] as $nid => $node) {
+        if ($i > 3) {
+          $i = 1;
+        }
+        $output['articles']['nodes'][$nid]['#prefix'] = '<div class="article-view-mode-grid ' . $rows[$i] . '">';
+        $output['articles']['nodes'][$nid]['#suffix'] = '</div>';
+        $i++;
+      }
+    }
+    $vars['content'] = array_merge($vars['content'], $output);
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ *
+ * Replaces original tags linked to term pages with tags linked to article list
+ * pages.
+ */
+function cu_article_preprocess_node(&$vars) {
+  if ($vars['node']->type == 'article') {
+    $vars['content']['new_tags']['#weight'] = 50;
+    if (isset($vars['field_tags'])) {
+      foreach ($vars['field_tags'] as $tid) {
+        if (isset($tid['tid'])) {
+          $tids[] = $tid['tid'];
+        }
+      }
+    }
+    if (isset ($tids)) {
+      $terms = taxonomy_term_load_multiple($tids);
+      foreach ($terms as $term) {
+        if (isset($term->name)) {
+          $tag = $term->name;
+          if (!empty($term->field_tag_term_page_link)) {
+            $new_tags[] = l($tag, $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url']);
+          }
+          else {
+            $new_tags[] = $tag;
+          }
+        }
+      }
+      $markup = implode(', ', $new_tags);
+      $vars['content']['article_tags'][0]['#markup'] = $markup;
+    }
+  }
+  if ($vars['node']->type == 'article_list_page') {
+    // Start query.
+    $query = db_select('node', 'n');
+
+    $query = $query->extend('PagerDefault')->limit(10);
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title'));
+
+    // Filter by tag.
+    if (isset($vars['node']->field_article_page_filter[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['node']->field_article_page_filter[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Display the newest first.
+    $query->orderBy('created', 'DESC');
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+    $output['articles'] = node_view_multiple($nodes, 'teaser');
+    $output['articles']['#weight'] = 99;
+    $output['pager'] = array(
+          '#theme' => 'pager',
+          '#tags' => array(),
+          '#weight' => 100.
+    );
+    $vars['content'] = array_merge($vars['content'], $output);
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ *
+ * Set field_tag_term_page_link on the term to this node.
+ */
+function cu_article_node_update($node) {
+  global $base_url;
+  if ($node->type == 'article_list_page') {
+    $nid = $node->nid;
+    $tid = $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'];
+    if ($tid) {
+      $term = taxonomy_term_load($tid);
+      // Check to see if there is already a page linked to this term and let the
+      // user know.
+      if (isset($term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'])) {
+        $url = '<a href="' . $base_url . '/' . $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] . '">' . $base_url . '/' . $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] . '</a>';
+        drupal_set_message('There is already a article list page set for this term: ' . $url);
+      }
+      else {
+        $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] = 'node/' . $nid;
+        taxonomy_term_save($term);
+        drupal_set_message('The taxonomy term has been linked to this page.');
+      }
+    }
+  }
+  if ($node->type == 'article') {
+    // Get tags on article node.
+    $tags = $node->field_tags;
+
+    // Let's step through one tag at a time.
+    foreach ($tags[LANGUAGE_NONE] as $tag) {
+      $tid = $tag['tid'];
+
+      // Build query of article list pages to see if one already exists with
+      // this term.
+      $query = db_select('node', 'n');
+      $query->condition('n.type', 'article_list_page', '=');
+      $query->fields('n', array('nid', 'title'));
+
+      // Join to see if the article_list_page node has the same tid.
+      $query->join("field_data_field_article_page_filter", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_article_page_filter_tid'));
+      $query->condition('tags.field_article_page_filter_tid', $tid, '=');
+
+      $nids = $query->execute()->fetchCol();
+
+      // Create a article list page node if one doesn't already exist.
+      if (empty($nids)) {
+        _cu_article_create_list_page($tid);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_insert().
+ *
+ * Set field_tag_term_page_link on the term to this node.
+ */
+function cu_article_node_insert($node) {
+  global $base_url;
+  if ($node->type == 'article_list_page') {
+    $nid = $node->nid;
+    $tid = $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'];
+    if ($tid) {
+      $term = taxonomy_term_load($tid);
+      // Check to see if there is already a page linked to this term and let the
+      // user know.
+      if (isset($term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'])) {
+        $url = '<a href="' . $base_url . '/' . $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] . '">' . $base_url . '/' . $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] . '</a>';
+        drupal_set_message('There is already a article list page set for this term: ' . $url);
+      }
+      else {
+        $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] = 'node/' . $nid;
+        taxonomy_term_save($term);
+        drupal_set_message('The taxonomy term has been linked to this page.');
+      }
+    }
+  }
+  if ($node->type == 'article') {
+    // Get tags on article node.
+    if (isset ($node->field_tags)) {
+      $tags = $node->field_tags;
+
+      // Let's step through one tag at a time.
+      foreach ($tags[LANGUAGE_NONE] as $tag) {
+        $tid = $tag['tid'];
+
+        // Build query of article list pages to see if one already exists with
+        // this term.
+        $query = db_select('node', 'n');
+        $query->condition('n.type', 'article_list_page', '=');
+        $query->fields('n', array('nid', 'title'));
+
+        // Join to see if the article_list_page node has the same tid.
+        $query->join("field_data_field_article_page_filter", "tags", "n.nid = tags.entity_id");
+        $query->fields('tags', array('field_article_page_filter_tid'));
+        $query->condition('tags.field_article_page_filter_tid', $tid, '=');
+
+        $nids = $query->execute()->fetchCol();
+
+        // Create a article list page node if one doesn't already exist.
+        if (empty($nids)) {
+          _cu_article_create_list_page($tid);
+        }
+      }
+    }
+  }
+
+}
+
+/**
+ * Implements hook_node_delete().
+ *
+ * Clear field_tag_term_page_link on the term that used to be linked to this
+ * node.
+ */
+function cu_article_node_delete($node) {
+  // Make sure we are only working on article_list_page_nodes
+  if ($node->type == 'article_list_page' && isset($node->field_article_page_filter[LANGUAGE_NONE][0]['tid'])) {
+    $nid = $node->nid;
+    $tid = $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'];
+    $term = taxonomy_term_load($tid);
+    $node_nid = 'node/' . $nid;
+    if ($term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] == $node_nid) {
+      $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] = '';
+      taxonomy_term_save($term);
+      drupal_set_message('The taxonomy term link has been removed.');
+    }
+  }
+}
+
+/**
+ * Create a new article list page node when article node tags are added/updated.
+ */
+function _cu_article_create_list_page($tid) {
+  // Get term name.
+  $term = taxonomy_term_load($tid);
+  $node = new StdClass();
+  $node->language = LANGUAGE_NONE;
+  $node->type = 'article_list_page';
+
+  // Capitalize the first letter of each word in term and set as the node title.
+  $node->title = ucwords($term->name);
+
+  // Set the term filter to the tid that was passed in.
+  $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'] = $tid;
+
+  node_save($node);
+  drupal_set_message('An Article List Page has been created for the tags on the article node you just created/updated.');
+}
+
+/**
+ * Implements hook_node_view().
+ * Redirecting users without edit permissions to the external url,
+ * Displays message to users with permissions
+ */
+function cu_article_node_view($node, $view_mode) {
+  switch($node->type) {
+    case 'article':
+      if ($view_mode == 'full' && !empty($node->field_article_external_url[LANGUAGE_NONE][0]['url'])) {
+        $redirect = $node->field_article_external_url[LANGUAGE_NONE][0]['url'];
+        if (user_access("edit any article content")) {
+          drupal_set_message(t('A user without editing permissions would have been redirected to !redirect',
+              array('!redirect' => l($redirect, $redirect))),
+            'notice');
+        }
+        else {
+          drupal_goto($redirect);
+        }
+      }
+      break;
+  }
+}
+
+function _cu_article_list_block_display_options() {
+  return array(
+    'teaser' => 'Teaser (Title, thumbnail & summary)',
+    'sidebar' => 'Sidebar (Title, thumbnail)',
+    'title' => 'Title',
+  );
+}

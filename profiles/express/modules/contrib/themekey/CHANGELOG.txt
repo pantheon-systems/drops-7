@@ -1,0 +1,389 @@
+
+ThemeKey 7.x-1.0-rc2, 2011-04-15
+--------------------------------
+[#1062966] mkalkbrenner: PHP 5.3 strict warning in themekey_help()
+[        ] mkalkbrenner: fixed fatal error in ThemekeyMultipleNodePropertiesTestCase
+[        ] mkalkbrenner: moved ThemeKey Example module to Development package
+[#1065878] mkalkbrenner: Error messages when activating all Themekey modules on a Standard English Drupal-7.0 installation
+[#1125920] mkalkbrenner: don't set $custom_theme to 'default'
+[#1096356] mkalkbrenner: taxonomy:tid and taxonomy:tid_and_childs change themes for term nodes but not for nodes referencing terms
+[#1074066] mkalkbrenner: Theme Key works for a nodes comments/reply, but not for comments/n/edit or comments/n/delete
+
+
+ThemeKey 7.x-1.0-rc1, 2011-02-11
+--------------------------------
+[        ] mkalkbrenner: fixed admin theme and node admin theme in overlay again in a better way
+[#1046214] mkalkbrenner: fixed fatal error during installation
+
+
+ThemeKey 7.x-1.0-beta3, 2011-02-04
+----------------------------------
+[        ] mkalkbrenner: fixed admin theme and node admin theme in overlay
+[        ] mkalkbrenner: removed information about lazy session intitialization in Drupal 6
+[        ] mkalkbrenner: removed hook_themekey_load_validators and introduced 'file' and 'path' as arguments in hook_themekey_properties() instead
+[        ] mkalkbrenner: added module "ThemeKey Example" for developers
+[        ] mkalkbrenner: documented ThemeKey API aka hooks
+
+
+ThemeKey 7.x-1.0-beta2, 2011-02-01
+----------------------------------
+[        ] mkalkbrenner: fixed a warning and cleaned up some code
+[        ] mkalkbrenner: ThemeKey UI: Support multiple theme select form elements in one form
+[#1047316] mkalkbrenner: Selectable themes in theme form element provided by ThemeKey UI should be configurable
+[        ] mkalkbrenner: fixed fatal error when disabling module ThemeKey UI
+[        ] mkalkbrenner: fixed coding style
+[#1046214] mkalkbrenner: Selection of theme for user - Replacement for D6 Core feature that has been removed in D7 Core
+ 
+
+ThemeKey 7.x-1.0-beta1, 2011-01-31
+----------------------------------
+[       ] mkalkbrenner: fixed debug message constraints on settings page
+[#958174] LoMo: Edited English strings
+[#958824] LoMo: Extend themekey_browser_detection to include recognition of Windows 7 as useragent.
+[#997330] technicolorenvy: fixed formatting of error messages
+[#997330] technicolorenvy: fixed undefined function in themekey.install
+[#1022166] mkalkbrenner: Call to undefined function themekey_invoke_modules() during database update when updating from an old version
+[#1030268] mkalkbrenner: Toggle "Property drupal:path is case sensitive" does not work; drupal:path is always case sensitive
+[#1036138] mkalkbrenner: book_nodeapi() is not used on D7 : fatal error
+[        ] mkalkbrenner: created basic test framework for further simple tests
+[#731728] carstenmueller: added new property views:vid
+[#1037902] mkalkbrenner: D7: Errors in help section after installation
+[        ] carstenmueller: fixed wrong uri in themekey debug properties to set new rule
+[#1045094] webflo, LoMo: more SimpleTests
+[        ] carstenmueller, mkalkbrenner: set undefined language and LANGUAGE_NONE ('und') to 'neutral'
+[        ] pixeltank: ported some DB statements to the new API
+
+
+ThemeKey 7.x-1.0-alpha2, 2010-10-18
+-----------------------------------
+[       ] mkalkbrenner: rewritten rule chain form validation
+[       ] mkalkbrenner: moved dedicated debug code from themekey.module to themekey_debug.module
+[       ] mkalkbrenner: extended the debug module to detect if something else set a custom theme if no ThemeKey rule matched
+
+
+ThemeKey 7.x-1.0-alpha1, 2010-10-17
+-----------------------------------
+[       ] mkalkbrenner: used new hook_custom_theme instead of hook_init and replaced global variable $custom_theme by drupal_static
+[       ] mkalkbrenner: used coder module to convert ThemeKey to Drupal 7
+[       ] carstenmueller: upgraded themekey.install to Drupal 7
+[       ] carstenmueller: upgraded themekey_ui.install to Drupal 7
+[       ] carstenmueller: added files[] in themekey.info for upgreading to Drupal 7
+[       ] carstenmueller: improved themekey_ui_update_6200()
+[       ] carstenmueller: fixed db_fetch_array() calls in updates in themekey.install 
+[       ] mkalkbrenner: adjusted database code turned condition into object in themekey_match_rule_childs and themekey_match_condition
+[       ] carstenmueller: fixed db_fetch_array() calls in updates in themekey_ui_helper.ui 
+[       ] cspitzlay: moved examples and validators over from the themekey_properties module (which will be merged into themekey)
+[       ] carstenmueller: fixed db_fetch_array() calls
+[       ] mkalkbrenner: adjusted database code in themekey_load_rules and turned parameter into object in themekey_complete_path
+[       ] carstenmueller: fixed db_fetch_object() calls
+[       ] carstenmueller: replaced db_lock_table() by transactions (see http://drupal.org/node/355875)
+[       ] cspitzlay: moved property definitions, mapping definitions and mapping implementations over from the themekey_properties module; renamed browser detection class to contain "themekey"
+[       ] mkalkbrenner: fixed themekey_theme
+[       ] mkalkbrenner: fixed css classes in rule chain form
+[       ] mkalkbrenner: got themekey_debug to work
+[       ] carstenmueller: ported themekey_ui.module to Drupal 7
+[       ] mkalkbrenner: themekey_debug prevented theme switching
+[       ] mkalkbrenner: render forms in help section
+[       ] mkalkbrenner: don't scan for new properties provided by other modules on form submission
+[       ] cspitzlay: fixed signature of help form functions so default value for "collapsed" works
+[       ] cspitzlay: renamed property functions moved over from themekey_properties module
+[       ] mkalkbrenner: changed detection if theme switching fails due to another module
+[       ] cspitzlay: fixed the help forms: HTML content is displayed now.
+[       ] mkalkbrenner: fixed rule deletion and menu entries
+[       ] mkalkbrenner: set bartik as default theme
+[       ] mkalkbrenner: adjusted README
+[       ] mkalkbrenner: addded Configure links to module page
+[       ] carstenmueller: modified function themekey_taxonomy_vid2tid() to fit new taxonomy with field api
+[       ] carstenmueller: modified function themekey_taxonomy_vid2vid() to fit new taxonomy with field api
+[       ] EugenMayer, mkalkbrenner: ported themekey java script to D7
+[       ] mkalkbrenner: sanitized a lot of strings according to coder module
+[       ] carstenmueller: modified function themekey_ui_pathalias() to fit Drupal 7
+
+
+ThemeKey 6.x-3.0, 2010-10-14
+----------------------------
+[       ] mkalkbrenner: Show tooltips about possible property values at rule chain edit form
+[#908640] mkalkbrenner: explain operators
+[       ] mkalkbrenner: avoid duplicate notes after saving theme switching rule chain
+[       ] mkalkbrenner: added warnings about properties and page cache
+
+
+ThemeKey 6.x-3.0-rc2, 2010-09-02
+--------------------------------
+[       ] mkalkbrenner: fixed Undefined variable: _SESSION in themekey_init() when using Pressflow or Cocomore Drupal Core
+[       ] mkalkbrenner: fixed links in descriptions and help texts
+[       ] mkalkbrenner: fixed typing error
+
+
+ThemeKey 6.x-3.0-rc1, 2010-08-20
+--------------------------------
+[#884862] flamingvan, mkalkbrenner: taxonomy properties and node revisions
+[       ] mkalkbrenner: improved comments
+[       ] mkalkbrenner: don't execute rule chain when cron has been started by drush
+
+
+ThemeKey 6.x-3.0-beta1, 2010-08-16
+----------------------------------
+[       ] mkalkbrenner: fixed warning: Undefined variable: object
+[       ] mkalkbrenner: fixed warnings in rule chain form
+[       ] mkalkbrenner: changed code according to drupal coding standards
+[#847204] mkalkbrenner: ThemeKey UI: Unable to change themes for nodes already created
+
+
+ThemeKey 6.x-3.0-alpha3, 2010-07-30
+-----------------------------------
+[       ] mkalkbrenner: added icons to Theme Switching Rule Chain that show the page cache compatibility of this rule
+[       ] mkalkbrenner: check names of new properties added via hook_themekey_properties()
+[       ] mkalkbrenner: added explainations of page cache compatibility
+[#863252] mkalkbrenner: Administration theme overrides the default theme if Rule Chain is empty
+
+
+ThemeKey 6.x-3.0-alpha2, 2010-07-27
+-----------------------------------
+[       ] mkalkbrenner: ThemeKey Debug: fixed fatal error: Call to undefined function themekey_rule_get()
+[       ] mkalkbrenner: fixed critical error: property setting from path did not work correctly
+
+
+ThemeKey 6.x-3.0-alpha1, 2010-07-22
+-----------------------------------
+[       ] mkalkbrenner: improved some descriptions
+[#445538] Sansui, mkalkbrenner: added new tutorial to help section: "Allowing users to select a theme for all content they create"
+[#812114] mkalkbrenner: fast deletion of page cache after modifications to Theme Switching Rule Chain
+[       ] mkalkbrenner: removed table themekey_paths and introduced the preprocessed variable themekey_paths instead which should be faster
+[       ] mkalkbrenner: removed some obsolete internal functions
+[#812114] mkalkbrenner: fast deletion of page cache after modifications to user profile theme setting
+[#812114] mkalkbrenner: wildcard deletion of page cache after modifications to path alias theme setting
+[#812114] mkalkbrenner: introduced classification of page cache support for themekey properties
+[       ] mkalkbrenner: allow '0' as value when creating a new rule
+[#812114] mkalkbrenner: introduced themekey cron to clean up page cache depending on rules containing time based properties
+[       ] mkalkbrenner: aded some documentation
+
+
+ThemeKey 6.x-2.2, 2010-07-19
+----------------------------
+[#445538] mkalkbrenner: allow the author himself to select a theme for all his nodes
+[#754978] mkalkbrenner: Completed Debug for non root users/visitors
+[#855026] mkalkbrenner: Add "administration theme", additionally to "System default" in theme select box
+[       ] mkalkbrenner: fixed debug message on block configuration page
+[#567222] JMTorres, mkalkbrenner: ajax views do not work with the themekey module
+
+
+ThemeKey 6.x-2.1, 2010-06-15
+----------------------------
+[#808858] mkalkbrenner: Scanning modules may not work
+[#807624] mkalkbrenner: Use of "t()" function can produce wrong theme when using theme_debug
+[#825868] mkalkbrenner: "Retain the theme until a new theme is set for anonymous users" option is not working
+[#754978] mkalkbrenner: Debug for non root users/visitors
+
+
+ThemeKey 6.x-2.0, 2010-05-14
+----------------------------
+[#797332] mkalkbrenner: undefined function - same in themekey_ui_admin.inc
+
+
+ThemeKey 6.x-2.0-rc5, 2010-05-13
+--------------------------------
+[#796306] mkalkbrenner: fixed warning
+[#797318] mkalkbrenner: Can't configure Themekey - configuration page is blank
+[#797332] mkalkbrenner: undefined function
+
+
+ThemeKey 6.x-2.0-rc4, 2010-05-10
+--------------------------------
+[#707208] kfritsche: Out of Memory - removed obsolete constant PATH_MAX_PARTS
+[#777312] AlexisWilke, mkalkbrenner: Theme silently not changed when there is a conflict...
+[       ] mkalkbrenner: lazy loading of themekey_base.inc
+[#778556] AlexisWilke, mkalkbrenner: Fixed E_NOTICE about $wildcard
+[#756556] mkalkbrenner: Non matching child rules might terminate rule chain evaluation
+
+
+ThemeKey 6.x-2.0-rc3, 2010-04-20
+--------------------------------
+[#771686] AlexisWilke: Errors with E_NOTICE turned on
+[#707208] mkalkbrenner: Out of Memory - more effective algorithm to check property drupal:path
+[       ] mkalkbrenner: documented property drupal:path
+
+
+ThemeKey 6.x-2.0-rc2, 2010-03-26
+--------------------------------
+[#745932] mkalkbrenner: property node:type should be set at node/add/XYZ
+[       ] mkalkbrenner: introduced new property drupal:get_q to solve #745932
+[#707208] mkalkbrenner: Out of Memory - turn off ThemeKey when cron runs
+[#754210] mkalkbrenner: Fatal error when turning off module themekey_debug with debug options enabled
+
+
+ThemeKey 6.x-2.0-rc1, 2010-03-16
+--------------------------------
+[#682626] mkalkbrenner: added setting to treat paths case sensitive or case insensitive
+[       ] mkalkbrenner: added possible value 'neutral' to property node:language
+[#684868] mkalkbrenner: Imagecache breaks, avoid node_load() in hook_init()
+[#740412] AlexisWilke: DELETE variables must use %% instead of %
+[#741268] mkalkbrenner: added switch for custom theme overriding
+[#730254] mkalkbrenner: made theme_themekey_ui_theme_select_form more robust
+[       ] mkalkbrenner: fixed default value of checkbox "Retain the theme until a new theme is set for anonymous users"
+[       ] mkalkbrenner: fixed layout of theme selection form element of ThemeKey UI
+[#701642] will_in_wi, emueller, mkalkbrenner: Editing a node removes theme defined
+[#685108] butler360, mkalkbrenner: ThemeKey won't work correctly until you click 'Save configuration' at ThemeKey settings
+
+
+ThemeKey 6.x-2.0-beta7, 2009-01-12
+----------------------------------
+[       ] mkalkbrenner: improved ThemeKey's help
+[       ] mkalkbrenner: added a tutorial about Rule Chaining
+[       ] mkalkbrenner: integrated ThemeKey Properties Debug into ThemeKey
+[#681358] mkalkbrenner: debug messages might stop ThemeKey to switch themes
+[       ] mkalkbrenner: added rule matching debugging
+
+
+ThemeKey 6.x-2.0-beta6, 2009-01-07
+----------------------------------
+[       ] mkalkbrenner: improved validator for drupal:path
+[       ] mkalkbrenner: hide delete link if active rule has child
+[       ] mkalkbrenner: repeat ThemeKey rule on delete confirm page
+[       ] mkalkbrenner: don't offer delete link for static rules
+[#676322] mkalkbrenner: wildcard handling for path aliases is broken
+
+
+ThemeKey 6.x-2.0-beta5, 2009-01-06
+----------------------------------
+[       ] mkalkbrenner: Introduced new right 'assign path alias themes' for ThemeKey UI
+[#669376] mkalkbrenner: ThemeKey UI is incompatible to Organic Groups (Illegal choice when I select a theme using themekey)
+[       ] mkalkbrenner: ThemeKey UI uses beautified theme selector
+[#675952] mkalkbrenner: "Tables not locked" error
+
+
+ThemeKey 6.x-2.0-beta4, 2009-01-04
+-----------------------------------
+[#665710] mkalkbrenner: wrong strategy for checking multi valued properties for some operators
+[       ] mkalkbrenner: added themekey_validator_time()
+[       ] mkalkbrenner: improved validators and documented validators in source code
+[       ] mkalkbrenner: applied "coder" and fixed warnings
+[       ] mkalkbrenner: commented more source code
+[       ] mkalkbrenner: cleaned up code and API
+[#669994] mkalkbrenner: wrong detection of "identical theme switching rules in the chain"
+[       ] mkalkbrenner: themekey_ui_get_path_theme() should only return themes assigened to rules without children
+[       ] mkalkbrenner: lock table to prevent race condition in function themekey_properties_del()
+[#670086] mkalkbrenner: ThemeKey UI: Unable to set different themes for different path aliases
+[#301904] Carsten Müller: Meaning of propertys: added help texts for properties
+[       ] mkalkbrenner: always add new rules at the end of the chain
+[       ] mkalkbrenner: introduced hook_themekey_load_validators()
+[       ] mkalkbrenner: added help section
+
+
+ThemeKey 6.x-2.0-beta3, 2009-12-18
+-----------------------------------
+[       ] Carsten Müller, mkalkbrenner: added validation function themekey_validator_string_boolean() and improved themekey_validator_nummeric_boolean()
+[#662786] mkalkbrenner: Error Message after upgrading to latest beta
+
+
+ThemeKey 6.x-2.0-beta2, 2009-12-17
+-----------------------------------
+[       ] Carsten Müller: improved validator themekey_validator_nummeric_boolean()
+[       ] mkalkbrenner: moved modules into package ThemeKey
+[       ] mkalkbrenner: fixed theme for path detection in ThemeKey UI in combination with different operators
+[       ] mkalkbrenner: improved help section a little
+[       ] mkalkbrenner: API: introduced static properties as generic concept for ThemeKey UI and Taxonomy Theme
+
+
+ThemeKey 6.x-2.0-beta1, 2009-12-15
+----------------------------------
+[       ] mkalkbrenner: API: replaced concept of conditions by chaining simple property based rules
+[       ] mkalkbrenner: API: don't allow altering of themekey_attributes, themekey_properties and themekey_maps via hook
+[       ] mkalkbrenner: API: introduced validators for rules depending on selected property
+[       ] mkalkbrenner: new properties node:created_date_time, node:created_date, node:changed_date_time, node:changed_date
+[       ] mkalkbrenner: optimized database performance
+[       ] mkalkbrenner: improved user interface
+[       ] mkalkbrenner: adjusted more default values
+[       ] mkalkbrenner: allow <= and >= as operator for conditions
+[       ] mkalkbrenner: removed pager from "Theme Switching Rule Chain"
+[       ] mkalkbrenner: refactored upgrade path from ThemeKey 6.x-1.1 to 6.x-2.0beta1
+[       ] mkalkbrenner: refactored upgrade path from ThemeKey 6.x-1.2beta7 to 6.x-2.0beta1
+[#442192] mkalkbrenner: Main condition not =
+[#654368] metaphysis, mkalkbrenner: Update from 6.x-1.2-beta1 to beta7 fails with postgresql
+
+
+ThemeKey 6.x-2.0-alpha3, 2009-11-25
+-----------------------------------
+[       ] mkalkbrenner: fixed error during fresh installation: Key column 'custom' doesn't exist in table
+[       ] mkalkbrenner: simplified installation process and changed default values
+
+
+ThemeKey 6.x-2.0-alpha2, 2009-11-25
+-----------------------------------
+[       ] mkalkbrenner: API: hook_themekey_properties(): removed attribute 'path'
+[#629676#comment-2304878] mkalkbrenner: API: object based node property mapping is completely removed and replaced by "normal" map functions
+[       ] mkalkbrenner: fixed warning when using drupal:path in combination with wildcards on a non aliased path
+[#619940#comment-2303706] mkalkbrenner: no other node properties than node:nid are working
+[#619940#comment-2303706] mkalkbrenner: algorithm to build path ancestors returned incomplete result
+
+
+ThemeKey 6.x-2.0-alpha1, 2009-11-24
+-----------------------------------
+[       ] mkalkbrenner: API: hook_themekey_properties(): removed attributes 'multiple' and 'weight'
+[       ] mkalkbrenner: API: removed themekey custom path concept. Themekey custom paths became properties using drupal:path 
+[       ] mkalkbrenner: API: removed requirement to turn properties on or off 
+[#625176] mkalkbrenner: Let admin adjust path and property weight
+[#591200] mkalkbrenner: Performance: Some property callbacks get called multiple times
+[#639808] mkalkbrenner: Conditions always return TRUE if property is NULL
+[#582738] mkalkbrenner: Themekey 'Retain the theme until a new theme is set' setting not working with cached pages for anonymous users
+
+
+ThemeKey 6.x-1.2-beta7, 2009-11-24
+----------------------------------
+[#634028] mkalkbrenner: Callbacks for properties seems to be senseless
+[#638426] mkalkbrenner: Two queries failed when upgrading from beta4 to beta6
+
+
+ThemeKey 6.x-1.2-beta6, 2009-11-13
+----------------------------------
+[#631946] donquixote, mkalkbrenner: Incorrect table definition (themekey_ui_).
+[#631900] mkalkbrenner: Warning when entering first path at /admin/settings/themekey
+
+
+ThemeKey 6.x-1.2-beta5, 2009-11-12
+----------------------------------
+[#319581] mkalkbrenner: GET parameters break theme switching based on url aliases
+[#627974] mkalkbrenner: Rewrite ThemeKey UI
+[#629672] mkalkbrenner: taxonomy:tid_and_childs still not working in all cases => rewrite of property value detection required
+[#629676] mkalkbrenner: turn object property mapping into node property mapping
+[#626254] mkalkbrenner: problem after changes in the general tab => "Discover all node properties for selection" is incompatible to some modules
+
+
+ThemeKey 6.x-1.2-beta4, 2009-11-05
+----------------------------------
+[       ] mkalkbrenner: subfolder modules was missing in 6.x-1.2-beta3
+
+
+ThemeKey 6.x-1.2-beta3, 2009-11-05
+----------------------------------
+[#619940] mkalkbrenner: Allow themekey properties as conditions for themekey paths
+[#591200] mkalkbrenner: Performance: Some property callbacks get called multiple times
+[#624374] mkalkbrenner: Validate property conditions before saving
+[#624124] mkalkbrenner: Impossible to set two identical paths with different conditions
+
+
+ThemeKey 6.x-1.2-beta2, 2009-10-30
+----------------------------------
+[#616946] mkalkbrenner: Temporally deactivated Taxonomy Menu custom path support because code is outdated since a long time 
+[#617990] FVANtom, mkalkbrenner: Themekey disables themes after configuration
+[#442188] kratib, mkalkbrenner: Supporting regex
+[#615720] mkalkbrenner: Condition operators don't work on properties based on array values
+[#607394] dankh, mkalkbrenner: Property "taxonomy:tid_and_childs" incompatible with module "Taxonomy Menu"
+
+
+ThemeKey 6.x-1.2-beta1, 2009-10-01
+----------------------------------
+[#482766] mkalkbrenner: Themekey overriding administration theme on node edit
+[#558044] mkalkbrenner: ThemeKey does not respect theme enabled/disabled
+[#587872] mkalkbrenner: removed menu properties
+[#587868] mkalkbrenner: finish book properties
+
+
+ThemeKey 6.x-1.2-alpha1, 2009-09-25
+-----------------------------------
+[#584982] sinasalek, mkalkbrenner: Does not respect hierarchy of terms - added new property taxonomy:tid_and_childs
+[#434242] mkalkbrenner, cspitzlay: Non-array properties do not work correctly
+[#570642] mkalkbrenner: ThemeKey breaks core block configuration
+[       ] mkalkbrenner: mention ThemeKey Properties at README.txt
+[       ] mkalkbrenner: added CHANGELOG.txt
+

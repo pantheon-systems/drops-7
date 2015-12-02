@@ -1,0 +1,14 @@
+name = Chain Menu Access API
+description = Helps client modules to chain their access callbacks into other modules' menu items.
+package = Other
+core = 7.x
+
+files[] = chain_menu_access.module
+files[] = tests/chain_menu_access.test
+
+; Information added by drupal.org packaging script on 2012-08-30
+version = "7.x-2.0"
+core = "7.x"
+project = "chain_menu_access"
+datestamp = "1346338604"
+

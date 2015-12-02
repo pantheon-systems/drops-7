@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * @file
+ * Update migration code for administerusersbyrole.
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function administerusersbyrole_install() {
+  // We need to run after various other modules
+  // - After entity so that our hook_entity_info_alter is used.
+  // - After admin_views else due to a bug (https://www.drupal.org/node/2425121) it will break menu access settings.
+  // - After any other access modules so that our hook_menu_alter is used, as we will try harder than most modules
+  //   to take account of other module's settings.
+  db_query("UPDATE {system} SET weight = 25 WHERE name = 'administerusersbyrole'");
+}
+ 
+/**
+ * Update permissions to match the new values used in version 2.
+ */
+function administerusersbyrole_update_7200() {
+  $roles = user_roles(TRUE);
+  foreach ($roles as $rid => $role) {
+    // Rename permissions from old value to new.
+    foreach (array('edit', 'cancel') as $op) {
+      $new_name = _administerusersbyrole_build_perm_string($rid, $op);
+      if ($rid === DRUPAL_AUTHENTICATED_RID) {
+       $old_name = "$op users with no custom roles";
+      }
+      else {
+        $old_name = _administerusersbyrole_old_perm_string($role, $op);
+      }
+      $old_name_extra = _administerusersbyrole_old_perm_string($rid, $op, TRUE);
+
+      // Perform the database updates.
+      db_update('role_permission')
+        ->fields(array('permission' => $new_name))
+        ->condition(db_or()->condition('permission', $old_name), db_or()->condition('permission', $old_name_extra))
+        ->condition('module', 'administerusersbyrole')
+        ->execute();
+    }
+
+    // Degrade 'administer users' permission to 'access users overview' for non-admins.
+    // We have to make a guess as to what counts as an admin.
+    $perms = user_role_permissions(array($rid => $role));
+    if ($perms[$rid]['administer users'] && !$perms[$rid]['administer permissions']) {
+      user_role_change_permissions($rid, array('administer users' => FALSE, 'access users overview' => TRUE));
+    }
+  }
+
+  return t('Role permissions updated for upgrade to Administer Users by Role version 2.  Please check the new permissions are correct, in particular for "administer users".');
+}
+
+/**
+ * Update module weight and add dependency on chain_menu_access.
+ */
+function administerusersbyrole_update_7201() {
+  db_query("UPDATE {system} SET weight = 25 WHERE name = 'administerusersbyrole'");
+
+  // Enable new dependencies.
+  if (!module_enable(array('chain_menu_access'))) {
+    throw new DrupalUpdateException('To use latest version of "Administer Users by Role", please download the "Chain Menu Access API" module.');
+  }
+  
+  // Rebuild menus using chain_menu_access.
+  menu_rebuild();
+}
+
+/**
+ * Generates a permission string for a given a role name.
+ */
+function _administerusersbyrole_old_perm_string($role_name, $op = 'edit', $other = FALSE) {
+  $perm = "$op users with role ";
+  $perm .= preg_replace('/[^a-zA-Z0-9]/', '', $role_name);
+  if ($other) {
+    $perm .= ' and other roles';
+  }
+  return $perm;
+}
+

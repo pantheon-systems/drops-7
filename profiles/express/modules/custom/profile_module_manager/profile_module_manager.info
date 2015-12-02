@@ -1,0 +1,6 @@
+name = Profile Module Manager
+description = Allows a users to extend a profile with module bundles
+package = System
+core = 7.x
+
+configure = admin/config/system/module-manager

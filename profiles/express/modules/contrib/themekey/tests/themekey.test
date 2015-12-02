@@ -1,0 +1,103 @@
+<?php
+
+
+/**
+ * @file
+ * Implements tests for the theme switching rules.
+ */
+
+
+class ThemekeyWebTestCase extends DrupalWebTestCase {
+  protected $privileged_user;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Themekey test',
+      'description' => 'Test the themekey module.',
+      'group' => 'Themekey',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp('themekey');
+
+    $this->privileged_user = $this->drupalCreateUser(array('administer theme assignments', 'administer themekey settings'));
+    $this->drupalLogin($this->privileged_user);
+    theme_enable(array('garland'));
+  }
+
+  public function simplePropertyTest($property, $operator, $value, $url = array()) {
+    debug($property . $operator . $value, 'Testing Rule');
+
+    $url += array(
+      'path' => '<front>',
+      'options' => array(),
+    );
+
+    // load page
+    $this->drupalGet($url['path'], $url['options']);
+    // theme is bartik
+    $this->assertTheme('bartik');
+    // create ThemeKey Rule
+    $this->addThemeKeyRule($property, $operator, $value, 'garland');
+    // load page
+    $this->drupalGet($url['path'], $url['options']);
+    // theme is garland
+    $this->assertTheme('garland');
+  }
+
+
+  /**
+   * add multiple properties
+   * @param array $properties
+   *  - property: the property
+   *  - operator: the operator for the rule
+   *  - value: the value
+   *  - url: the url to call (array)
+   */
+  public function multiplePropertyTest($properties_array) {
+
+    if (!empty($properties_array)) {
+      foreach ($properties_array as $key => $property) {
+
+        if (empty($property['url']['path'])) {
+          $property['path'] = '<front>';
+        }
+        if (empty($property['url']['options'])) {
+          $property['url']['options'] = array();
+        }
+
+        debug($property['property'] . $property['operator'], $property['value']);
+
+        // load page
+        $this->drupalGet($property['url']['path'], $property['url']['options']);
+        // theme is bartik
+        $this->assertTheme('bartik');
+        // create ThemeKey Rule
+        $this->addThemeKeyRule($property['property'], $property['operator'], $property['value'], 'garland');
+        // load page
+        $this->drupalGet($property['url']['path'], $property['url']['options']);
+        // theme is garland
+        $this->assertTheme('garland');
+
+      }
+    }
+
+  }
+
+  public function assertTheme($theme) {
+    $this->assertRaw('themes/' . $theme, 'current theme is ' . $theme);
+  }
+
+  public function addThemeKeyRule($property, $operator, $value, $theme, $enabled = '1', $wildcard = '') {
+    $edit = array(
+      'new_item[property]' => $property,
+      'new_item[wildcard]' => $wildcard,
+      'new_item[operator]' => $operator,
+      'new_item[value]' => $value,
+      'new_item[theme]' => $theme,
+      'new_item[enabled]' => $enabled,
+    );
+    $this->drupalPost('admin/config/user-interface/themekey/properties', $edit, t('Save configuration'));
+  }
+}

@@ -1,0 +1,21 @@
+#edit-icon {
+  border-top:1px solid #ddd;
+  margin-top: 20px;
+  -webkit-column-count: 8;
+  -webkit-column-gap: 20px;
+  -webkit-column-rule: 1px solid #ddd;
+
+  -moz-column-count: 8;
+  -moz-column-gap: 20px;
+  -moz-column-rule: 1px solid #ddd;
+
+  column-count: 8;
+  column-gap: 20px;
+  column-rule: 1px solid #ddd;
+}
+#edit-icon .form-type-radio {
+  padding:5px;
+}
+#edit-icon i {
+  font-size: 150%;
+}

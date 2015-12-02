@@ -1,0 +1,163 @@
+<?php
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function emfield_field_widget_info() {
+  return array(
+    'enfield_widget' => array(
+      'label' => t('Embedded media field'),
+      'field types' => array('file'),
+      'settings' => array('size' => 60),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+        'default value' => FIELD_BEHAVIOR_DEFAULT,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_settings_form().
+ */
+function emfield_field_widget_settings_form($field, $instance) {
+  $widget = $instance['widget'];
+  $settings = $widget['settings'];
+
+  $form['size'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Size of textfield'),
+    '#default_value' => $settings['size'],
+    '#required' => TRUE,
+    '#element_validate' => array('element_validate_integer_positive'),
+  );
+
+  return $form;
+}
+
+/**
+ * Implements hook_field_widget_error().
+ */
+function emfield_field_widget_error($element, $error, $form, &$form_state) {
+  form_error($element['fid'], $error['message']);
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function emfield_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $element += array(
+    '#type' => 'textfield',
+    '#default_value' => isset($items[$delta]) ? $items[$delta] : '',
+    '#size' => $instance['widget']['settings']['size'],
+    '#maxlength' => 1024,
+    '#element_validate' => array('emfield_widget_validate'),
+    '#value_callback' => 'emfield_widget_value',
+  );
+  return array('fid' => $element, 'display' => array(
+      '#type' => 'value',
+      '#value' => 1,
+    ));
+}
+
+/**
+ * Validation callback for an emfield element.
+ */
+function emfield_widget_validate($element, &$form_state, $form) {
+  $field = field_widget_field($element, $form_state);
+  $instance = field_widget_instance($element, $form_state);
+
+  $value = $element['#value'];
+  $fid = NULL;
+
+  if (!empty($value)) {
+    // Get the fid of a referencable file from the entered url.
+    try {
+      $provider = media_internet_get_provider($value);
+    }
+    catch (Exception $error) {
+      form_error($element, t('%name: Found no valid media with that url.', array('%name' => $instance['label'])));
+      return;
+    }
+    $file = $provider->save();
+    $fid = $file->fid;
+  }
+  // Set the element's value as the file id that was extracted from the entered
+  // input.
+  form_set_value($element, $fid, $form_state);
+}
+
+
+/**
+ * Value callback for an emfield element.
+ *
+ * Replace the file fid with a url.
+ */
+function emfield_widget_value($element, $input = FALSE, $form_state) {
+  if ($input === FALSE) {
+    // We're building the displayed 'default value': expand the raw fid into
+    // "uri [fid:n]".
+    $fid = $element['#default_value'];
+    if (!empty($fid)) {
+      $q = db_select('file_managed', 'f');
+      $q->addField('f', 'uri');
+      $q->addTag('file_access')
+        ->condition('f.fid', $fid)
+        ->range(0, 1);
+      $result = $q->execute();
+      // @todo If no result (file doesn't exist or no access).
+      $uri = $result->fetchField();
+      return file_create_url($uri);
+    }
+  }
+}
+
+/**
+ * Implements hook_content_migrate_field_alter().
+ */
+function emfield_content_migrate_field_alter(&$field_value, &$instance_value) {
+  if (in_array($field_value['module'], array('emfield', 'emimage', 'emaudio', 'emvideo'))) {
+    $field_value['module'] = 'file';
+    $field_value['type'] = 'file';
+    // TODO: need to convert settings etc for this field to the D7 version.
+  }
+}
+
+/**
+ * Implements hook_content_migrate_instance_alter().
+ */
+function emfield_content_migrate_instance_alter(&$instance_value, &$field_value) {
+  if (in_array($instance_value['widget']['module'], array('emfield', 'emimage', 'emaudio', 'emvideo'))) {
+    $instance_value['widget']['module'] = 'media';
+    $instance_value['widget']['type'] = 'media_generic';
+    $instance_value['widget_type'] = 'media_generic';
+    // TODO: need to convert settings etc to the D7 version.
+  }
+}
+
+/**
+ * Implements hook_content_migrate_data_record_alter().
+ */
+function emfield_content_migrate_data_record_alter(&$record, &$field, $instance) {
+  if (!empty($record[$field['field_name'] . '_embed'])) {
+    $provider = media_internet_get_provider($record[$field['field_name'] . '_embed']);
+    // This is a hack to stop content migrate from misreading the content.
+    unset($field['type']);
+    if ($provider) {
+        $file = $provider->save();
+        $record[$field['field_name'] . '_fid'] = $file->fid;
+    }
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter();
+ */
+function emfield_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'content_migrate_data_record_alter') {
+    // Move emfield_content_migrate_data_record_alter() to the top of the list.
+    $group = $implementations['emfield'];
+    unset($implementations['emfield']);
+    $implementations = array('emfield'  => $group) + $implementations;
+  }
+}

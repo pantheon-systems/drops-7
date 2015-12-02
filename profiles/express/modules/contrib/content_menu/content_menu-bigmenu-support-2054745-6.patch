@@ -1,0 +1,152 @@
+diff --git a/content_menu.js b/content_menu.js
+index f51d8ce..a8efe52 100644
+--- a/content_menu.js
++++ b/content_menu.js
+@@ -1,13 +1,26 @@
+-(function($){
+-    Drupal.behaviors.content_menu ={
+-        attach:function(context, settings){
+-            // Show menu item title input field when clicking on the trigger.
+-            $('.menu-overview-title-edit-trigger', context).click(function(e) {
+-                $(this).siblings('.form-type-textfield').show().children('input').focus();
+-                $(this).siblings('.menu-overview-title-link').hide();
+-                $(this).hide();
+-                e.stopPropagation();
+-                e.stopImmediatePropagation();
+-            });
+-        }
+-    };})(jQuery);
++(function($) {
++  Drupal.behaviors.content_menu = {
++    attach:function(context, settings) {
++      // Show menu item title input field when clicking on the trigger.
++      $('.menu-overview-title-edit-trigger', context).click(function(e) {
++        var textfield = $(this).siblings('.form-type-textfield');
++        textfield.show();
++        textfield.addClass('visible');
++        textfield.children('input').focus();
++        $(this).siblings('.menu-overview-title-link').hide();
++        $(this).hide();
++        e.stopPropagation();
++        e.stopImmediatePropagation();
++      });
++      // Hide when clicking outside the item
++      $('html', context).not('.form-type-textfield.visible').click(function(e) {
++        var editTrigger = $(this).find('.menu-overview-title-edit-trigger');
++        var textfield = $(editTrigger).siblings('.form-type-textfield');
++        textfield.hide();
++        textfield.addClass('visible');
++        $(editTrigger).siblings('.menu-overview-title-link').show();
++        $(editTrigger).removeAttr('style');
++      });
++    }
++  };
++})(jQuery);
+diff --git a/content_menu.menu_admin.inc b/content_menu.menu_admin.inc
+index a87abb4..3417cad 100644
+--- a/content_menu.menu_admin.inc
++++ b/content_menu.menu_admin.inc
+@@ -33,7 +33,7 @@ function _content_menu_menu_overview_page_extended() {
+  * Overhaul the menu_overview_form to improve menu authoring experience.
+  */
+ function _content_menu_form_menu_overview_form_alter(&$form, &$form_state, $form_id) {
+-  $form['#theme'][0] = 'menu_overview_form_extended';
++  $form['#theme'] = 'menu_overview_form_extended';
+ 
+   // Check whether any filtering element should be acitvated.
+   $filtering_active = TRUE;
+@@ -123,7 +123,7 @@ function _content_menu_form_menu_overview_form_alter(&$form, &$form_state, $form
+     }
+ 
+     // Add inline-editing for menu item title.
+-    if ($el['#inline_edit_title'] && isset($el['title'])) {
++    if ($el['#inline_edit_title'] && isset($el['title']) && (!isset($el['title']['#type']) || $el['title']['#type'] != 'textfield')) {
+       // ToDo: Check title inplace-edit for multilanguage compatibility issues.
+       $title = $el['#item']['title'];
+       $el['title'] = array(
+@@ -140,7 +140,9 @@ function _content_menu_form_menu_overview_form_alter(&$form, &$form_state, $form
+   }
+ 
+   // Add "add item" item/row/elements.
+-  content_menu_form_menu_overview_form_alter_additem($form);
++  if ($form_id != 'bigmenu_slice_form') {
++    content_menu_form_menu_overview_form_alter_additem($form);
++  }
+ 
+   // Add css as via drupal_add_css and put it after ctools button css files.
+   drupal_add_css(drupal_get_path('module', 'content_menu') . "/css/content_menu.css", array('weight' => 2));
+@@ -150,14 +152,12 @@ function _content_menu_form_menu_overview_form_alter(&$form, &$form_state, $form
+   // Prevent 'destination' from hijacking our submit.
+   unset($_GET['destination']);
+ 
+-  if (!isset($form['actions'])) {
+-    $form['actions'] = array('#type' => 'actions');
+-    $form['actions']['submit'] = array(
++  if (!isset($form['submit'])) {
++    $form['submit'] = array(
+       '#type' => 'submit',
+-      '#value' => t('Save'),
++      '#value' => t('Save Configuration'),
+     );
+   }
+-  $form['actions']['submit']['#value'] = t('Save');
+ }
+ 
+ 
+@@ -394,6 +394,10 @@ function content_menu_form_menu_overview_form_alter_additem(&$form) {
+  * @ingroup themeable
+  */
+ function theme_menu_overview_form_extended($variables) {
++  if (module_exists('bigmenu')) {
++    drupal_add_js(drupal_get_path('module', 'bigmenu') . '/bigmenu.js');
++    drupal_add_css(drupal_get_path('module', 'bigmenu') . '/bigmenu.css');
++  }
+   $form = $variables['form'];
+ 
+   drupal_add_tabledrag('menu-overview', 'match', 'parent', 'menu-plid', 'menu-plid', 'menu-mlid', TRUE, MENU_MAX_DEPTH - 1);
+diff --git a/content_menu.module b/content_menu.module
+index 1d22af1..1a1103a 100644
+--- a/content_menu.module
++++ b/content_menu.module
+@@ -349,6 +349,23 @@ function content_menu_form_menu_overview_form_alter(&$form, &$form_state, $form_
+   }
+ }
+ 
++/**
++ * Implementation of hook_form_FORM_ID_alter().
++ *
++ * Call our menu overview altering function for the bigmenu overview form, if present.
++ */
++function content_menu_form_bigmenu_overview_form_alter(&$form, &$form_state, $form_id) {
++  content_menu_form_menu_overview_form_alter($form, $form_state, $form_id);
++}
++
++/**
++ * Implementation of hook_form_FORM_ID_alter().
++ *
++ * Call our menu overview altering function for the bigmenu slice form, if present.
++ */
++function content_menu_form_bigmenu_slice_form_alter(&$form, &$form_state, $form_id) {
++  content_menu_form_menu_overview_form_alter($form, $form_state, $form_id);
++}
+ 
+ /**
+  * Implements hook_menu_local_tasks_alter().
+diff --git a/css/content_menu.css b/css/content_menu.css
+index 7681bd4..a2244dc 100644
+--- a/css/content_menu.css
++++ b/css/content_menu.css
+@@ -3,8 +3,11 @@
+   background: #dfd;
+ }
+ 
+-.menu-overview-title-edit-trigger
+-{
++.menu-overview-title-link {
++  float: left;
++}
++
++.menu-overview-title-edit-trigger {
+   margin-left: 8px;
+   display: none;
+ }

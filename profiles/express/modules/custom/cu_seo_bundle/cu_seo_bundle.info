@@ -1,0 +1,6 @@
+name = Search Engine Optimization
+description = Adds metatag, sitemap, and other SEO related features.
+core = 7.x
+package = CU-Search Engine Optimization
+
+dependencies[] = metatag

@@ -1,0 +1,17 @@
+
+
+div.ldap-pwd-abscent {
+  background-image:url('/misc/message-16-error.png');
+  background-repeat:no-repeat;
+  background-position: 2px 10px;
+  padding-left: 20px;
+  border: solid 1px #ebb;
+  }
+
+div.ldap-pwd-present  {
+  background-image:url('/misc/message-16-ok.png');
+  background-repeat:no-repeat;
+  background-position: 2px 10px;
+  padding-left: 20px;
+  border: solid 1px #beb;
+  }
