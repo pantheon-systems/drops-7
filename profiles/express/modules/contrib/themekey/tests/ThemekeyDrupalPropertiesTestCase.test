@@ -1,0 +1,21 @@
+<?php
+
+
+/**
+ * @file
+ * Implements tests for the theme switching rules.
+ */
+
+class ThemekeyDrupalPropertiesTestCase extends ThemekeyWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Themekey Drupal Properties',
+      'description' => 'Test the themekey node properties (drupal:).',
+      'group' => 'Themekey',
+    );
+  }
+
+  public function testPropertyDrupalIsFrontPage() {
+    $this->simplePropertyTest('drupal:is_front_page', '=', 'true');
+  }
+}

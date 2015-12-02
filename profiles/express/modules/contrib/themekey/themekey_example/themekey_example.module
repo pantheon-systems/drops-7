@@ -1,0 +1,96 @@
+<?php
+
+
+/**
+ * @file
+ *   ThemeKey Example demonstrates the usage
+ *   of ThemeKeys API to add more properties
+ *   to ThemeKey.
+ */
+
+
+/**
+ * Implements hook_themekey_properties().
+ *
+ * A mapping function declared here only runs
+ * if really required during a page request.
+ *
+ * So complicated, time and memory consuming
+ * properties should be added to ThemeKey
+ * by implementing hook_themekey_properties().
+ */
+function themekey_example_themekey_properties() {
+  // Attributes of properties
+  $attributes = array();
+
+  $attributes['example:number_one'] = array(
+    'description' => t('Example: always returns "1"'),
+    'validator' => 'themekey_example_validator_number_one',
+    'file' => 'themekey_example_validators.inc',
+    'page cache' => THEMEKEY_PAGECACHE_SUPPORTED,
+  );
+
+  $attributes['example:global_one'] = array(
+    'description' => t('Example: always returns "1"'),
+    'validator' => 'themekey_example_validator_number_one',
+    'file' => 'themekey_example_validators.inc',
+    'page cache' => THEMEKEY_PAGECACHE_SUPPORTED,
+  );
+
+  $attributes['example:path_number'] = array(
+    'description' => t('Example: always returns "1"'),
+    'validator' => 'themekey_validator_ctype_digit',
+    'page cache' => THEMEKEY_PAGECACHE_SUPPORTED,
+  );
+
+  // Mapping functions
+  $maps = array();
+
+  $maps[] = array(
+    'src' => 'system:dummy',
+    'dst' => 'example:number_one',
+    'callback' => 'themekey_example_dummy2number_one',
+    'file' => 'themekey_example_mappers.inc',
+  );
+
+  return array('attributes' => $attributes, 'maps' => $maps);
+}
+
+
+/**
+ * Implements hook_themekey_global().
+ *
+ * This function sets some properties
+ * on every page request.
+ *
+ * So only easy stuff with low time and memory
+ * consumtion should be done by
+ * implementing hook_themekey_global().
+ */
+function themekey_example_themekey_global() {
+
+  $parameters = array();
+
+  $parameters['example:global_one'] = "1";
+
+  return $parameters;
+}
+
+
+/**
+ * Implements hook_themekey_paths().
+ *
+ * This function sets some properties
+ * on every page request.
+ *
+ * Using this function you directly map parts of
+ * the path to property values.
+ */
+function themekey_example_themekey_paths() {
+  $paths = array();
+
+  // a path like 'example/27/foo will set property example:path_number to '27'
+  $paths[] = array('path' => 'example/#example:path_number');
+
+  return $paths;
+}

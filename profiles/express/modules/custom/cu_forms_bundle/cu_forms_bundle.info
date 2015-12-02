@@ -1,0 +1,10 @@
+name = Forms
+description = NEEDS DESCRIPTION
+core = 7.x
+package = CU-Forms
+
+dependencies[] = cu_webform
+dependencies[] = cu_feedback
+dependencies[] = captcha
+dependencies[] = recaptcha
+dependencies[] = captcha_webform

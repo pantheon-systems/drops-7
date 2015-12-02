@@ -1,0 +1,15 @@
+name = CU Shortcuts
+description = Shortcuts associated with cu_fit install profile.
+core = 7.x
+package = CU-Active
+version = 7.x-1.0
+project = cu_shortcuts
+dependencies[] = shortcut
+
+features[features_api][] = api:2
+features[menu_custom][] = shortcut-set-1
+features[menu_links][] = shortcut-set-1_add-content:node/add
+features[menu_links][] = shortcut-set-1_blocks:admin/content/blocks
+features[menu_links][] = shortcut-set-1_context:admin/structure/context
+features[menu_links][] = shortcut-set-1_find-content:admin/content
+features[menu_links][] = shortcut-set-1_main-menu:admin/structure/menu/manage/main-menu

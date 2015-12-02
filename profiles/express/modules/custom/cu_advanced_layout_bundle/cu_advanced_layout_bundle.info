@@ -1,0 +1,15 @@
+name = Advanced Layout
+description = Adds backstretch, context, title image, video reveal and other advanced layout features.
+core = 7.x
+package = CU-Advanced Layout
+
+dependencies[] = context_ui
+dependencies[] = backstretch
+dependencies[] = cu_column_override
+dependencies[] = cu_menu_icon
+dependencies[] = cu_video_reveal
+dependencies[] = cu_font_awesome
+dependencies[] = cu_title_image
+dependencies[] = cu_block_section
+dependencies[] = block_title_icons
+dependencies[] = video_reveal

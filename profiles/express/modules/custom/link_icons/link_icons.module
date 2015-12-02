@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Link icons.
+ */
+
+/**
+ * Implements hook_page_alter().
+ */
+function link_icons_page_alter(&$page) {
+  // Add link icons css.
+  drupal_add_css(drupal_get_path('module', 'link_icons') . '/css/link_icons.css');
+}

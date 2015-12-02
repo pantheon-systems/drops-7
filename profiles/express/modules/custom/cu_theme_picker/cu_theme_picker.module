@@ -1,0 +1,130 @@
+<?php
+
+/**
+ * Implements hook_permission().
+ */
+function cu_theme_picker_permission() {
+  return array(
+    'administer cu theme picker' => array(
+      'title' => 'Use the Theme Picker',
+      'description' => 'Choose and configure themes',
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_age_alter().
+ */
+function cu_theme_picker_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'cu_theme_picker').'/cu_theme_picker.css');
+}
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function cu_theme_picker_form_system_theme_settings_alter(&$form, &$form_state) {
+  if (!user_access('administer themes')) {
+    $form['theme_settings']['#access'] = FALSE;
+    $form['logo']['#access'] = FALSE;
+    $form['favicon']['#access'] = FALSE;
+    $form['alpha_settings']['#access'] = FALSE;
+    $form['jquery_update']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function cu_theme_picker_menu() {
+  $items['admin/theme'] = array(
+    'title' => 'Design',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_theme_picker_settings_form'),
+    'access arguments' => array('administer cu theme picker'),
+    'weight' => 8,
+  );
+  $items['admin/theme/config/%'] = array(
+    'title' => 'Configure Theme Settings',
+    'title arguments' => array(3),
+    'title callback' => 'cu_theme_picker_page_title',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'cu_theme_picker_config',
+    'page arguments' => array(3),
+    'access arguments' => array('administer cu theme picker'),
+    'weight' => 8,
+  );
+  return $items;
+}
+
+/**
+ * Page Title callback for admin/theme/config/%.
+ */
+function cu_theme_picker_page_title($theme) {
+  // Get enabled themes so we can get a theme name
+  foreach (list_themes() as $key => $value) {
+    $options[$key] = $value->info['name'];
+  }
+  return $options[$theme];
+}
+
+/**
+ * Page callback for admin/theme/config/%.
+ */
+function cu_theme_picker_config($theme) {
+  global $base_url;
+  // Get enabled themes so we can get a theme name
+  foreach (list_themes() as $key => $value) {
+    $options[$key] = $value->info['name'];
+  }
+  ctools_include('system.admin', 'system', '');
+  $output['heading']['#markup'] = '<h2>' . $options[$theme] . ' Theme Configuration</h2>';
+  $output['screenshot']['#markup'] = '<img src="' . $base_url . '/' . drupal_get_path('theme', $theme) . '/screenshot.png" class="theme-screenshot" />';
+  $output['settings'] = drupal_get_form('system_theme_settings', $theme);
+  return $output;
+}
+
+
+/**
+ * Page callback for admin/theme.
+ */
+function cu_theme_picker_settings_form() {
+  global $base_url;
+
+  $header = array(
+    'title' => 'Title',
+    'preview' => 'Preview',
+    'config' => 'Configure',
+  );
+  $options = array();
+  foreach (list_themes() as $theme => $data) {
+    if ($data->status) {
+      //$themes[$key] = $data->info['name'];
+      $name = '<strong>' . $data->info['name'] . '</strong><br />' . $data->info['description'];
+      $screenshot = '<img src="' . $base_url . '/' . drupal_get_path('theme', $theme) . '/screenshot.png"/>';
+      $config = l('configure', current_path() . '/config/' . $theme);
+      $options[$theme] = array(
+        'title' => $name,
+        'preview' => $screenshot,
+        'config' => $config,
+      );
+    }
+  }
+  $active_theme = variable_get('theme_default');
+  $options = array($active_theme => $options[$active_theme]) + $options;
+
+  $form = array();
+  $form['theme_default'] = array(
+    '#type' => 'tableselect',
+    '#title' => t('Express Themes'),
+    '#header' => $header,
+    '#options' => $options,
+    '#default_value' => variable_get('theme_default', 'elegant_black'),
+    '#required' => TRUE,
+    '#multiple' => FALSE,
+  );
+
+  return system_settings_form($form);
+}

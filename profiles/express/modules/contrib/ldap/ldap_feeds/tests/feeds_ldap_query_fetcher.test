@@ -1,0 +1,167 @@
+<?php
+// $Id: $
+
+/**
+ * @file
+ * File fetcher tests.
+ */
+
+
+
+require_once(drupal_get_path('module', 'feeds') . '/tests/feeds.test.inc');
+
+class LdapFeedsTestCase extends FeedsWebTestCase {
+
+  /**
+   * Describe this test.
+   */
+  public function getInfo() {
+    return array(
+      'name' => t('Ldap query fetcher'),
+      'description' => t('Tests for Ldap query fetcher.'),
+      'group' => t('LDAP'),
+    );
+  }
+
+  public $testFunctions;
+
+
+  function setUp() {
+    parent::setUp(array('ldap_servers')); // don't need any real servers, configured, just ldap_servers code base
+    variable_set('ldap_simpletest', 1);
+  }
+
+
+  function tearDown() {
+    parent::tearDown();
+    variable_del('ldap_simpletest');
+  }
+
+/**
+   * prepTestData create  fake ldap server configuration.
+   *
+   * @param string $testid the name of the test.  used to determine which configuration file to include
+   * @return object consumer configuration object (class = LdapAuthorizationConsumerConfAdmin)
+   *
+   */
+  function prepTestData($testid) {
+    $this->testFunctions = new LdapTestFunctions();
+    // create fake ldap server configuration instance
+    include(drupal_get_path('module', 'ldap_feeds') . '/tests/LdapServerTestData.inc');
+    $this->testFunctions->prepTestServers($test_data['servers']);
+
+  }
+
+
+  // see readme.txt for test steps also.
+
+  /**
+   * This test should create a complete importer
+   */
+  //public function testLdapQueryFetcherAndParser() {
+
+
+    /** the following code is not finished or tested
+    $test_id = 'LdapQueryFetcherAndParser';
+    $conf_id = 'LdapQueryFetcherAndParser';
+    $consumer_conf_admin = $this->prepTestData($conf_id);
+
+    // Set up an importer.
+    $this->createImporterConfiguration('Node import', 'node');
+
+    // 1. create importer (Basic Settings at admin/structure/feeds/edit/node/settings)
+    $basic_settings = array(
+      'name' => 'ldap_test_importer',
+      'description' => 'ldap_test_importer',
+      'content_type' => '',
+    );
+    $this->drupalPost('admin/structure/feeds/edit/node/settings', $basic_settings, 'Save');
+
+
+    // 2. setup fetcher
+    $this->setPlugin('node', 'FeedsLdapQueryFetcher');
+    $fetcher_conf = array(
+      'sid' => 'ldapfeeds',
+      'basedn' => 'ou=campus accounts,dc=ad,dc=myuniversity,dc=edu',
+      'filter' => 'objectclass=user',
+      'attributes' => '"dn","mail","cn","sn"',
+      'sizelimit' => 5
+      );
+    $this->drupalPost('admin/structure/feeds/edit/node/settings/FeedsLdapQueryFetcher', $fetcher_conf, 'Save');
+
+    // 3. set parser.
+    $this->setPlugin('node', 'FeedsLdapEntryParser');
+    // no settings for parser.
+
+
+    // 4. set processor
+    $this->setPlugin('node', 'FeedsNodeProcessor');
+    //@todo need to have field_sn and field_mail in this content type.
+    $bundle = $this->createContentType(NULL, array(
+      'field_sn' => 'text',
+      'field_mail' => 'text',
+    ));
+    $mappings = array(
+      '0' => array(
+        'source' => 'dn',
+        'target' => 'title',
+      ),
+      '1' => array(
+        'source' => 'cn',
+        'target' => 'body',
+      ),
+      '2' => array(
+        'source' => 'sn',
+        'target' => 'field_sn',
+      ),
+      '3' => array(
+        'source' => 'mail',
+        'target' => 'field_mail',
+      ),
+    );
+    $this->addMappings('node', $mappings);
+
+    //@todo what is path to import without feed node?
+    $edit = array();
+    $this->drupalPost('import/test_ldap', $edit, t('Import'));
+    $this->assertText('Created 3 nodes');
+
+    $query = new EntityFieldQuery;
+
+    $entities = $query
+      ->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', $bundle)
+      ->fieldOrderBy('field_mail', 'value', 'ASC')
+      ->execute();
+    $nodes = entity_load('node', array_keys($entities['node']));
+
+    /**
+     *
+      0 => array(
+      'count' => 4,
+      'dn' => 'cn=bkool,ou=campus accounts,dc=ad,dc=myuniversity,dc=edu',
+      'mail' => 'bkool@myuniversity.edu',
+      'cn' => 'bkool',
+      'sn' => 'kool',
+      ),
+
+     * 1 => array(
+      'count' => 4,
+      'dn' => 'cn=jkool,ou=campus accounts,dc=ad,dc=myuniversity,dc=edu',
+      'mail' => 'jkool@myuniversity.edu',
+      'cn' => 'jkool',
+      'sn' => 'kool',
+      ),
+
+    2 => array(
+      'count' => 4,
+      'dn' => 'cn=rkool,ou=campus accounts,dc=ad,dc=myuniversity,dc=edu',
+      'mail' => 'rkool@myuniversity.edu',
+      'cn' => 'rkool',
+      'sn' => 'kool',
+      ),
+
+ */
+
+ // }
+}

@@ -1,0 +1,18 @@
+<?php
+
+// @TODO: On install, add captcha to existing forms?
+
+/**
+ * Enable the CAPTCHA module.
+ */
+function captcha_webform_update_7100() {
+  if (!module_exists('captcha')) {
+    $enabled = module_enable(array('captcha'));
+
+    if (!$enabled) {
+      throw new DrupalUpdateException('Something went wrong. Please make sure the CAPTCHA module is within your modules folder and try again.');
+    }
+
+    return t('CAPTCHA is enabled.');
+  }
+}

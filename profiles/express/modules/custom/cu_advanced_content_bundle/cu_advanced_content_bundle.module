@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+  
+function cu_advanced_content_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the Advanced content like Quicktabs.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_advanced_content_bundle_express_help($variables) {
+  $variables['admin/structure/quicktabs/%'][] = array(
+    'title' => 'Quicktabs Help',
+    'short_title' => 'Quicktabs',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/quicktabs',
+  );
+  $variables['block/add/feature-callout'][] = array(
+    'title' => 'Content Grid Block Help',
+    'short_title' => 'Content Grid',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/content-grid-block',
+  );
+
+  return $variables;
+}

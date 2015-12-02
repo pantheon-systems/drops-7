@@ -1,0 +1,18 @@
+name = SmartCrop
+description = Crops low-entropy parts of the image.
+core = 7.x
+dependencies[] = image
+package = Image
+
+files[] = imageapi_gd.inc
+files[] = smartcrop.install
+files[] = smartcrop.module
+files[] = smartcrop.effects.inc
+files[] = tests/smartcrop.test
+
+; Information added by drupal.org packaging script on 2013-10-01
+version = "7.x-1.0-beta2+1-dev"
+core = "7.x"
+project = "smartcrop"
+datestamp = "1380628753"
+

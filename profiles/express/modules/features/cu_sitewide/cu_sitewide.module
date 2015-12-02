@@ -1,0 +1,30 @@
+<?php
+/**
+ * @file
+ * Code for the CU Sitewide feature.
+ */
+
+include_once 'cu_sitewide.features.inc';
+
+
+/**
+ * Implments hook_context_block_info_alter.
+ * Set content group as bean->type so context ui is improved.
+ */
+function cu_sitewide_context_block_info_alter(&$block_info) {
+  // Loading bean types this way isntead of bean_get_types() so we can get labels, not just machine names.
+  $bean_info = bean_entity_info();
+  $bean_types = $bean_info['bean']['bundles'];
+  foreach ($block_info as $key => $block) {
+    if ($block->module == 'bean') {
+      // Get bean type.
+      $type = db_select('bean', 'b')
+        ->condition('b.delta', $block->delta, '=')
+        ->fields('b', array('type'))
+        ->execute()
+        ->fetchField();
+      // Set context group to group beans - set to lowercase so list sorts correctly.
+      $block->context_group = strtolower($bean_types[$type]['label']);
+    }
+  }
+}

@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * Change light to white and black to dark in twitter style field.
+ */
+function cu_twitter_feed_update_7001() {
+  // Light -> White
+  $query = db_update('field_data_field_twitter_style')
+    ->fields(array(
+      'field_twitter_style_value' => 'white',
+    ))
+    ->condition('field_twitter_style_value', 'light')
+    ->execute();
+
+  // Black -> Dark
+  $query = db_update('field_data_field_twitter_style')
+    ->fields(array(
+      'field_twitter_style_value' => 'dark',
+    ))
+    ->condition('field_twitter_style_value', 'black')
+    ->execute();
+}

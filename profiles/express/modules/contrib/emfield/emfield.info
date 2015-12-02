@@ -1,0 +1,16 @@
+name = Embedded Media Field
+description = Provides an embedded media widget for file fields.
+dependencies[] = media
+dependencies[] = media_internet
+package = Media
+core = 7.x
+files[] = emfield.install
+files[] = emfield.module
+
+
+; Information added by drupal.org packaging script on 2011-12-14
+version = "7.x-1.0-alpha1"
+core = "7.x"
+project = "emfield"
+datestamp = "1323874542"
+

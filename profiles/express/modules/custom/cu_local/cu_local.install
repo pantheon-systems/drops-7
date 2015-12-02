@@ -1,0 +1,51 @@
+<?php
+/*
+ * Implements hook_enable()
+ */
+
+function cu_local_enable() {
+  module_enable(_cu_local_enable_modules());
+  module_disable(_cu_local_disable_modules());
+  drupal_set_message('Disabling ' . join(', ', _cu_local_disable_modules()));
+  drupal_set_message('Enabling ' . join(', ', _cu_local_enable_modules()));
+  variable_set('cu_inventory_site_cron', FALSE);
+  variable_set('cu_inventory_user_cron', FALSE);
+}
+
+
+/*
+ * Implements hook_disable()
+ */
+
+function cu_local_disable() {
+  module_disable(_cu_local_enable_modules());
+  module_enable(_cu_local_disable_modules());
+  drupal_set_message('Disabling ' . join(', ', _cu_local_enable_modules()));
+  drupal_set_message('Enabling ' . join(', ', _cu_local_disable_modules()));
+
+}
+
+
+/*
+ * Modules to be enabled/disabled
+ */
+
+function _cu_local_enable_modules() {
+  return array(
+    'devel',
+    'devel_generate',
+    'search_krumo',
+    'module_filter',
+    'ds_ui',
+    'advanced_help',
+    'security_review',
+  );
+}
+
+function _cu_local_disable_modules() {
+  return array(
+    'cu_cache',
+    'varnish',
+    'memcache',
+  );
+}

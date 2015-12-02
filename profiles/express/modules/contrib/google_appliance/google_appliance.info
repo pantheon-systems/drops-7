@@ -1,0 +1,20 @@
+; $Id google_appliance.info $
+name = "Google Appliance"
+package = Google Appliance
+description = "Provides a search interface to a dedicated Google Search Appliance (GSA) hardware device."
+core = 7.x
+configure = admin/config/search/google_appliance/settings
+
+files[] = testing/google_appliance.test
+
+stylesheets[all][] = theme/google_appliance.css
+
+
+
+
+; Information added by Drupal.org packaging script on 2014-12-04
+version = "7.x-1.13"
+core = "7.x"
+project = "google_appliance"
+datestamp = "1417722535"
+

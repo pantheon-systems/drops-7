@@ -1,0 +1,22 @@
+#cu-alerts .alert {
+	background: #990000;
+	padding: 15px;
+	color: #fff;
+	margin: 0;
+	font-weight: normal;
+	font-size: 21px;
+	line-height: 120%;
+}
+
+#cu-alerts a:link,
+#cu-alerts a:visited {
+	color: #990000;
+	background: #fff;
+  font-size: 16px;	
+	display: inline-block;
+	line-height: 110%;
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	padding: 1px 4px;
+}

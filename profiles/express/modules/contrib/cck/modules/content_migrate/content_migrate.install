@@ -1,0 +1,56 @@
+<?php
+
+/**
+ * Transfer weights from the D6 Manage Fields screen
+ * to the D7 stored settings array. Do this once only, on install,
+ * so later changes to these values in the Field UI screen will
+ * not be overwritten.
+ */
+function content_migrate_install() {
+  foreach (node_type_get_names() as $type_name => $label) {
+    $bundle_settings = field_bundle_settings('node', $type_name);
+    $bundle_settings += array(
+      'extra_fields' => array('form' => array(), 'display' => array()),
+      'view_modes' => array(),
+    );
+    $weights = variable_get('content_extra_weights_'. $type_name, array());
+    
+    // If body has never been set in D6, it should be set to 0 to match the way D6 worked.
+    // The D7 core update may have set it to a value like -4.
+    if (empty($weights) || !array_key_exists('body_field', $weights)) {
+      $bundle_settings['extra_fields']['form']['body'] = array('weight' => 0);
+    }
+      
+    // If a field name provided by a custom module has changed from D6 to D7,
+    // they will have to alter this array too. We will set the original
+    // field name, other modules could take this information and move it 
+    // to a setting with the new field name.
+
+    // @TODO Have any of the other core field names changed?
+    // @TODO Should we do anything to alter the display settings?
+    foreach ($weights as $field => $weight) {
+      switch ($field) {
+        case 'body_field':
+          $new_field = 'body';
+          break;
+        default:
+          $new_field = $field;
+          break;
+      }
+      $bundle_settings['extra_fields']['form'][$new_field] = array('weight' => $weight);
+    }
+
+    // While we're here, update the body field with the right weight.
+    $body_weight = !empty($weights['body_field']) ? $weights['body_field'] : 0;
+    $instance = field_info_instance('node', 'body', $type_name);
+    if (!empty($instance)) {
+      $instance['widget']['weight'] = $body_weight;
+      foreach ($instance['display'] as $context => $format) {
+        $instance['display'][$context]['weight'] = $body_weight;
+      }
+      field_update_instance($instance);
+    }
+    field_bundle_settings('node', $type_name, $bundle_settings);
+  }
+  field_info_cache_clear();
+}

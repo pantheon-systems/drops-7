@@ -1,0 +1,8 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function cu_featherweight_install() {
+  db_query("UPDATE {system} SET weight = -9999 WHERE name = 'cu_featherweight'");
+}

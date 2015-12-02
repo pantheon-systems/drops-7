@@ -1,0 +1,6 @@
+name = Events
+description = NEEDS DESCRIPTION
+core = 7.x
+package = CU-Events
+
+dependencies[] = cu_article

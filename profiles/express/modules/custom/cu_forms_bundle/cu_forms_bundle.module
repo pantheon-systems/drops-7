@@ -1,0 +1,80 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+  
+function cu_forms_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for Webforms.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_forms_bundle_express_help($variables) {
+  $variables['node/add/webform'][] = array(
+    'title' => 'Create Webform Help',
+    'short_title' => 'Create Webform',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/create-webform',
+  );
+  $variables['node/add/webform'][] = array(
+    'title' => 'Webform Overview Help',
+    'short_title' => 'Webform Overview',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/webform-overview',
+  );
+  $variables['node/%/webform'][] = array(
+    'title' => 'Adding Webform Components',
+    'short_title' => 'Webform Components',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/second-add-form-components',
+  );
+  $variables['node/%/webform/components/new/select'][] = array(
+    'title' => 'Adding Select Options to Webforms',
+    'short_title' => 'Webform Select Options',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/checkboxes-radio-buttons-select-lists',
+  );
+  $variables['node/%/webform/configure'][] = array(
+    'title' => 'Add Spam Prevention to Webforms',
+    'short_title' => 'Webform Spam Prevention',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-spam-prevention-webforms',
+  );
+  $variables['node/%/webform/configure'][] = array(
+    'title' => 'Adjust Webform Settings',
+    'short_title' => 'Webform Settings',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/fourth-adjust-webform-settings',
+  );
+  $variables['node/%/webform/emails'][] = array(
+    'title' => 'Configure Email for Webforms',
+    'short_title' => 'Webform Emails',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/third-configure-email-submissions',
+  );
+  $variables['node/%/webform/emails'][] = array(
+    'title' => 'Configure Email Templates for Webforms',
+    'short_title' => 'Webform Email Template',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/edit-email-submission-template',
+  );
+  $variables['node/%/webform-results'][] = array(
+    'title' => 'Check Webform Results',
+    'short_title' => 'Webform Results',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/check-webform-results',
+  );
+
+  return $variables;
+}

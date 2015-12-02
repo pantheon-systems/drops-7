@@ -1,0 +1,6 @@
+name = User External Invite
+description = "Allows users with permissions to assign a role and email invitations to other users. Requires external authetication."
+core = 7.x
+package = People
+version = 7.x-1.0
+

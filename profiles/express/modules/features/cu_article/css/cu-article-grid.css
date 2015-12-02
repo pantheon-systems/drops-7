@@ -1,0 +1,36 @@
+.article-grid .article-view-mode-grid {
+  width: 30.66%;
+  float:left;
+  margin-right:4%;
+  margin-bottom: 20px;
+}
+.article-grid .article-view-mode-grid img {
+  width: 100%;
+  height: auto;
+}
+
+.article-grid .alpha {
+  margin-left: 0;
+  clear: both;
+}
+.article-grid .omega {
+  margin-right: 0;
+}
+
+.article-grid-summary-display .article-grid-article-title {
+  font-weight: 600;
+}
+.article-view-mode-grid h3 {
+  margin: 5px 0;
+  padding: 0;
+  font-size: 100%;
+}
+.article-grid-summary-hide .article-view-mode-grid h3 {
+  font-weight: normal;
+}
+.article-grid-summary {
+  font-size: 85%;
+}
+.article-grid-summary-hide .article-grid-summary {
+  display: none;
+}

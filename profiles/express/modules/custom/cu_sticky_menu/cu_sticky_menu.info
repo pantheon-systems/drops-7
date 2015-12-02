@@ -1,0 +1,5 @@
+name = Sticky Menu
+description = Displays main menu at top of page when user scrolls.
+core = 7.x
+package = CU-Advanced Layout
+version = 7.x-1.0

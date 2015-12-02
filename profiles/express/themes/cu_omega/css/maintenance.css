@@ -1,0 +1,28 @@
+body {
+  margin:0;
+  padding: 0;
+  font-size: 16px;
+  font-family: "Helvetica-Neue", Helvetica, Arial;
+  color:#363636;
+}
+.container {
+  width:600px;
+  margin:80px auto 20px;
+}
+.content {
+  padding:20px 0;
+  margin-top: 20px;
+}
+.copyright {
+  margin-top:20px;
+  padding-top: 20px;
+  border-top:1px solid #e7e7e7;
+  font-size: 85%;
+}
+a:link, a:visited {
+  color:#007DBB;
+  text-decoration: none;
+}
+a:hover, a:focus, a:active {
+  color: #e9572a;
+}

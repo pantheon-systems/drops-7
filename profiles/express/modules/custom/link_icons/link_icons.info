@@ -1,0 +1,6 @@
+name = Link Icons
+description = "Displays icons for links that link to pdfs, docs, email"
+core = 7.x
+package = CU-Boulder
+version = 7.x-1.0
+stylesheets[all][] = css/link_icons.css

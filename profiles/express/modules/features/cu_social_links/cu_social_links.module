@@ -1,0 +1,188 @@
+<?php
+/**
+ * @file
+ * Code for the cu_social_links feature.
+ */
+
+include_once 'cu_social_links.features.inc';
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_social_links_page_alter(&$page) {
+  // Add the css file to the page.
+  drupal_add_css(drupal_get_path('module', 'cu_social_links') . '/css/social_links.css');
+}
+
+/**
+ * Implements hook_FORM_ID_form_alter().
+ */
+function cu_social_links_form_bean_form_alter(&$form, &$form_state, $form_id) {
+  if ($form['#bundle'] == 'social_links') {
+    $items = $form['field_social_links_collection'][LANGUAGE_NONE];
+    $children = array_intersect_key($items, element_children($items));
+    if (!empty($children)) {
+      foreach ($children as $key => $value) {
+        unset($form['field_social_links_collection'][LANGUAGE_NONE][$key]['redirect']);
+        if (isset($value['field_social_link_url'][LANGUAGE_NONE][0]['#default_value']['url'])) {
+          $submitted_url = $value['field_social_link_url'][LANGUAGE_NONE][0]['#default_value']['url'];
+
+          // If url begins with mailto:, remove it, we'll add it back in presave().
+          // This is simply to make things easier on our users by not requiring
+          // them to remeber "mailto:".
+          if (substr($submitted_url, 0, 7) == 'mailto:') {
+            $form['field_social_links_collection'][LANGUAGE_NONE][$key]['field_social_link_url'][LANGUAGE_NONE][0]['#default_value']['url'] = substr($submitted_url, 7);
+          }
+        }
+      }
+    }
+  }
+}
+/**
+ * Implements hook_field_collection_item_presave().
+ *
+ * Add mailto: to url on email types.
+ */
+function cu_social_links_field_collection_item_presave($fc_item) {
+  if ($fc_item->field_name == 'field_social_links_collection') {
+    if ($fc_item->field_social_link_type[LANGUAGE_NONE][0]['value'] == 'email') {
+      $submitted_url = $fc_item->field_social_link_url[LANGUAGE_NONE][0]['url'];
+      if (substr($submitted_url, 0, 7) != 'mailto:') {
+        $fc_item->field_social_link_url[LANGUAGE_NONE][0]['url'] = 'mailto:' . $submitted_url;
+      }
+    }
+  }
+}
+
+/**
+ * Implements preprocess_entity().
+ *
+ * Turns the social_link_collection field collection in to a item_list.
+ */
+function cu_social_links_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+
+  // Only preprocess social_link beans.
+  if ($entity_type == 'bean' && $bundle == 'social_links') {
+    // Grab the field_info so that we know the 'title' of the link_type.
+    $field_info = field_info_field('field_social_link_type');
+
+    // Get social link configs
+    $arrangement = $vars['bean']->field_social_links_arrangement[LANGUAGE_NONE][0]['value'];
+    $size = $vars['bean']->field_social_links_size[LANGUAGE_NONE][0]['value'];
+
+    // If set to icons only, set text to element-invisible so it's still accessible
+    $text_class = $arrangement == 'horizontal-icons-only' ? 'element-invisible' : '';
+
+    // Find all the field_collection_items.
+    $children = element_children($vars['content']['field_social_links_collection']);
+    foreach (element_children($vars['content']['field_social_links_collection']) as $child) {
+      // Grab the field_collection_item entity.
+      $fc_item = array_pop($vars['content']['field_social_links_collection'][$child]['entity']['field_collection_item']);
+
+      // Dig in to the fc_items and extract the type, url, and name.
+      $link_type = $fc_item['field_social_link_type'][0]['#markup'];
+      $link_url = $fc_item['field_social_link_url'][0]['#element']['url'];
+      $types = cu_social_links_types();
+      $link_name = $types[$link_type];
+
+      // Create an array of items.
+      if (isset($link_name, $link_url, $link_type)) {
+        $icon_classes = array(
+          'socicon',
+          'soc-' . $link_type,
+        );
+
+        // build classes for text link
+        $text_classes = array(
+          'social-links-text',
+          'social-links-text-' . $link_type,
+          $text_class,
+        );
+        $icon_classes = join(' ' , $icon_classes);
+        $text_classes = join(' ', $text_classes);
+        $link_text = '<span class="' . $icon_classes . '"></span>';
+        $link_text .= '<span class="' . $text_classes . '">' . $link_name  .'</span>';
+        $link_options = array(
+          'html' => TRUE,
+        );
+        // If homepage url set, add markup to send structured data to Google.
+        if (isset($vars['field_social_links_homepage_url'])) {
+          $link_options['attributes']['itemprop'] = 'sameAs';
+        }
+        $link_options['attributes']['title'] = $link_name;
+        $items[] = l($link_text, $link_url, $link_options);
+      }
+    }
+
+    // Add classes to ul tag
+    $ul_classes = array(
+      'social-links',
+      'social-links-' . $arrangement,
+      'social-links-' . $size,
+      'soc',
+    );
+
+    if (isset($items)) {
+      // If homepage url set, add markup to send structured data to Google.
+      if (isset($vars['field_social_links_homepage_url'])) {
+        $vars['content']['link'] = array(
+          '#markup' => '<link itemprop="url" href="' . $vars['field_social_links_homepage_url'][0]['url'] . '" />',
+        );
+        $vars['content_attributes_array']['itemscope'] = '';
+        $vars['content_attributes_array']['itemtype'] = $vars['field_social_links_homepage_url'][0]['url'];
+      }
+      // Add item_list of social links to content.
+      $vars['content']['social_links'] = array(
+        '#theme' => 'item_list',
+        '#items' => $items,
+        '#weight' => '99',
+        '#attributes' => array(
+          'class' => $ul_classes,
+        ),
+      );
+    }
+
+    // Remove the unneeded fields.
+    unset($vars['content']['field_social_links_collection']);
+    unset($vars['content']['field_social_links_arrangement']);
+    unset($vars['content']['field_social_links_size']);
+    unset($vars['content']['field_social_links_homepage_url']);
+  }
+}
+
+/**
+ * Social Link types.
+ */
+function cu_social_links_types() {
+  $types = array(
+    'facebook' => 'Facebook',
+    'twitter' => 'Twitter',
+    'feed' => 'Feed',
+    'youtube' => 'YouTube',
+    'vimeo' => 'Vimeo',
+    'flickr' => 'Flickr',
+    'instagram' => 'Instagram',
+    'linkedin' => 'LinkedIn',
+    'googleplus' => 'Google Plus',
+    'pinterest' => 'Pinterest',
+    'myspace' => 'MySpace',
+    'email' => 'Email',
+    'blogger' => 'Blogger',
+    'vine' => 'Vine',
+  );
+  return $types;
+}
+
+/**
+ * Social Link display options.
+ */
+function cu_social_links_display() {
+  $display = array(
+    'vertical' => 'Vertical',
+    'horizontal' => 'Horizontal',
+    'horizontal-icons-only' => 'Horizontal Icons Only',
+  );
+  return $display;
+}

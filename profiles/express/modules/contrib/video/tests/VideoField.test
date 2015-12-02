@@ -1,0 +1,450 @@
+<?php
+/**
+ * @file
+ * Tests for the the Video field type
+ */
+
+/**
+ * Tests for the the Video field type
+ *
+ * @todo Test node revisions
+ */
+class VideoFieldTestCase extends DrupalWebTestCase {
+  private $user;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Video Field tests',
+      'description' => 'Tests for the the Video field type',
+      'group' => 'Video',
+    );
+  }
+
+  function setUp() {
+    parent::setUp(array('video', 'node', 'locale'));
+
+    // Build test entity type
+    field_create_field(array('field_name' => 'videofield', 'type' => 'video', 'settings' => array('autoconversion' => 1)));
+    field_create_instance(array('field_name' => 'videofield', 'entity_type' => 'node', 'bundle' => 'page'));
+
+    // Test items
+    $this->user = $this->drupalCreateUser();
+  }
+
+  /**
+   * Tests basic behavior for saving a new video and adding it to a node.
+   */
+  public function testSaveVideoFieldItem() {
+    // Build test data
+    $file = $this->createFile();
+
+    $node = new stdClass();
+    $node->uid = $this->user->uid;
+    $node->type = 'page';
+    $node->title = 'Test node';
+    $node->videofield['und'][0] = array('fid' => $file->fid, 'dimensions' => '100x60');
+    node_save($node);
+    $node = node_load($node->nid);
+
+    // Check file status set to permanent
+    $file = file_load($file->fid);
+    $this->assertEqual(FILE_STATUS_PERMANENT, $file->status, 'The file should be permanent');
+    $this->assertTrue(file_exists($file->uri), 'The file should exist');
+
+    // Check queue result
+    $queues = $this->getQueues($file->fid);
+    $this->assertEqual(1, count($queues), 'One video_queue entry should be present');
+    $queue = array_shift($queues);
+    $this->assertEqual($file->fid, $queue->fid, 'video_queue entry should have fid ' . $file->fid);
+    $this->assertEqual('node', $queue->entity_type, 'video_queue entry should entity_type node');
+    $this->assertEqual($node->nid, $queue->entity_id, 'video_queue entry should entity_id ' . $node->nid);
+    $this->assertEqual(VIDEO_RENDERING_PENDING, $queue->status, 'video_queue entry should have status ' . VIDEO_RENDERING_PENDING);
+    $this->assertEqual('100x60', $queue->dimensions, 'video_queue entry should have dimensions 100x60');
+    $this->assertNull($queue->duration, 'video_queue entry should have empty duration');
+    $this->assertEqual(0, $queue->started, 'video_queue entry should have started 0');
+    $this->assertEqual(0, $queue->completed, 'video_queue entry should have completed 0');
+    $this->assertEqual('videofield', $queue->data['field_name'], 'video_queue entry should have field_name videofield');
+    $this->assertEqual('und', $queue->data['langcode'], 'video_queue entry should have langcode und');
+    $this->assertEqual(0, $queue->data['delta'], 'video_queue entry should have delta 0');
+
+    // No converted files and thumbnails at this point
+    $this->assertEqual(0, count($this->getConvertedFiles($file->fid)), 'There should be no converted files immediately after saving');
+    $this->assertEqual(0, count($this->getThumbnailFiles($file->fid)), 'There should be no thumbnail files immediately after saving');
+
+    // Transcode the video
+    $this->transcodeVideo($node, $queue->vid, $file->fid);
+
+    // Test the transcoded video
+    $queues = $this->getQueues($file->fid);
+    $this->assertEqual(1, count($queues), 'One video_queue entry should be present');
+    $queue = array_shift($queues);
+    $this->assertEqual(VIDEO_RENDERING_COMPLETE, $queue->status, 'video_queue entry should have status ' . VIDEO_RENDERING_COMPLETE);
+
+    // One converted video
+    $conv = $this->getConvertedFiles($file->fid);
+    $this->assertEqual(1, count($conv), 'There should be one converted files after transcoding');
+
+    // Five thumbnails files
+    $tn = $this->getThumbnailFiles($file->fid);
+    $this->assertEqual(5, count($tn), 'There should be five thumbnail files after transcoding');
+
+    // One usage entry for the video
+    $u = $this->getFileUsage($file->fid);
+    $this->assertEqual(1, count($u), 'There should be one usage entry immediately after saving');
+    $this->assertEqual($file->fid, $u[0]->fid, 'usage entry should have fid ' . $file->fid);
+    $this->assertEqual('file', $u[0]->module, 'usage entry should have module file');
+    $this->assertEqual('node', $u[0]->type, 'usage entry should have type node');
+    $this->assertEqual($node->nid, $u[0]->id, 'usage entry should have id ' . $node->nid);
+    $this->assertEqual(1, $u[0]->count, 'usage entry should have count 1');
+
+    // Check usage for converted video and thumbnails
+    foreach ($conv + $tn as $df) {
+      $u = $this->getFileUsage($df->fid);
+      $this->assertEqual(1, count($u), 'There should be one usage entry for derived file ' . $df->fid . ' immediately after saving');
+      if (count($u) == 0) continue;
+      $this->assertEqual('node', $u[0]->type, 'usage entry for derived file ' . $df->fid . ' should have type node');
+      $this->assertEqual($node->nid, $u[0]->id, 'usage entry for derived file ' . $df->fid . ' should have id ' . $node->nid);
+    }
+  }
+
+  /**
+   * Tests basic behavior for deleting a video from a node
+   */
+  public function testDeleteVideoFieldItem() {
+    // Build test data
+    $file = $this->createFile('file1.mp4');
+
+    $node = new stdClass();
+    $node->uid = $this->user->uid;
+    $node->type = 'page';
+    $node->title = 'Test node';
+    $node->videofield['und'][0] = array('fid' => $file->fid, 'dimensions' => '100x60');
+
+    node_save($node);
+    $node = node_load($node->nid);
+
+    // Quick sanity checks
+    $queues = $this->getQueues($file->fid);
+    $this->assertEqual(1, count($queues), 'One video_queue entry should be present');
+    $this->assertEqual(1, count($this->getFileUsage($file->fid)), 'There should be one usage entry immediately after saving');
+
+    $this->transcodeVideo($node, $queues[0]->vid, $file->fid);
+    $tn = $this->getThumbnailFiles($file->fid);
+    $conv = $this->getConvertedFiles($file->fid);
+
+    // Delete the file
+    unset($node->videofield['und'][0]);
+    node_save($node);
+
+    // Check if everything is deleted properly
+    $this->assertEqual(0, count($this->getQueues($file->fid)), 'video_queue entry should be removed');
+    $this->assertEqual(0, count($this->getFileUsage($file->fid)), 'There should be no usage entries after deleting');
+    $this->assertEqual(0, count($this->getThumbnailFiles($file->fid)), 'There should be no thumbnail entries after deleting');
+    $this->assertEqual(0, count($this->getConvertedFiles($file->fid)), 'There should be no converted entries after deleting');
+
+    // Check usage for converted video and thumbnails
+    foreach ($conv + $tn as $df) {
+      $u = $this->getFileUsage($df->fid);
+      $this->assertEqual(0, count($u), 'There should be no usage entries for derived file ' . $df->fid . ' immediately after saving');
+    }
+  }
+
+  /**
+   * Tests saving a new video and adding it to two different nodes
+   */
+  public function testSaveVideoFieldItemTwice() {
+    // Build test data
+    $file = $this->createFile('file2.mp4');
+
+    $node1 = new stdClass();
+    $node1->uid = $this->user->uid;
+    $node1->type = 'page';
+    $node1->title = 'Test node';
+    $node1->videofield['und'][0] = array('fid' => $file->fid, 'dimensions' => '100x60');
+    node_save($node1);
+
+    $node2 = new stdClass();
+    $node2->uid = $this->user->uid;
+    $node2->type = 'page';
+    $node2->title = 'Test node';
+    $node2->videofield['und'][0] = array('fid' => $file->fid, 'dimensions' => '100x60');
+    node_save($node2);
+
+    // Check queue result
+    $queues = $this->getQueues($file->fid);
+    $this->assertEqual(1, count($queues), 'One video_queue entry should be present');
+    $queue = array_shift($queues);
+
+    $node1 = node_load($node1->nid);
+
+    $this->transcodeVideo($node1, $queue->vid, $file->fid);
+
+    $node2 = node_load($node2->nid);
+
+    // @todo the video module should not reference the entity itself because one fid can be associated with multiple entities
+    $this->assertEqual($node1->nid, $queue->entity_id, 'video_queue entry should entity_id ' . $node1->nid);
+
+    // Two usage entries for the video
+    $u = $this->getFileUsage($file->fid);
+    $this->assertEqual(2, count($u), 'There should be two usage entries immediately after saving');
+
+    // First usage row
+    $this->assertEqual($file->fid, $u[0]->fid, 'usage entry should have fid ' . $file->fid);
+    $this->assertEqual('file', $u[0]->module, 'usage entry should have module file');
+    $this->assertEqual('node', $u[0]->type, 'usage entry should have type node');
+    $this->assertEqual($node1->nid, $u[0]->id, 'usage entry should have id ' . $node1->nid);
+    $this->assertEqual(1, $u[0]->count, 'usage entry should have count 1');
+
+    // Second usage row
+    $this->assertEqual($file->fid, $u[1]->fid, 'usage entry should have fid ' . $file->fid);
+    $this->assertEqual('file', $u[1]->module, 'usage entry should have module file');
+    $this->assertEqual('node', $u[1]->type, 'usage entry should have type node');
+    $this->assertEqual($node2->nid, $u[1]->id, 'usage entry should have id ' . $node2->nid);
+    $this->assertEqual(1, $u[1]->count, 'usage entry should have count 1');
+  }
+
+  /**
+   * Tests adding a video to two different nodes and deleting them one by one
+   */
+  public function testDeleteVideoFieldItemTwice() {
+    // Build test data
+    $file = $this->createFile('file3.mp4');
+
+    $node1 = new stdClass();
+    $node1->uid = $this->user->uid;
+    $node1->type = 'page';
+    $node1->title = 'Test node';
+    $node1->videofield['und'][0] = array('fid' => $file->fid, 'dimensions' => '100x60');
+    node_save($node1);
+
+    $node2 = new stdClass();
+    $node2->uid = $this->user->uid;
+    $node2->type = 'page';
+    $node2->title = 'Test node';
+    $node2->videofield['und'][0] = array('fid' => $file->fid, 'dimensions' => '100x60');
+    node_save($node2);
+
+    $node1 = node_load($node1->nid);
+    $node2 = node_load($node2->nid);
+
+    // Sanity checks
+    $queues = $this->getQueues($file->fid);
+    $this->assertEqual(1, count($queues), 'One video_queue entry should be present');
+    $this->assertEqual(2, count($this->getFileUsage($file->fid)), 'There should be two usage entries immediately after saving');
+
+    $queue = array_shift($queues);
+    $this->transcodeVideo($node1, $queue->vid, $file->fid);
+    node_save($node2);
+
+    // Check converted files and thumbnails
+    $conv = $this->getConvertedFiles($file->fid);
+    $tn = $this->getThumbnailFiles($file->fid);
+    $this->assertEqual(1, count($conv), 'There should be 1 converted file immediately after saving');
+    $this->assertEqual(5, count($tn), 'There should be 5 thumbnail files immediately after saving');
+
+    // Check usage of derived files: 2 usages should be registered
+    foreach ($conv + $tn as $df) {
+      $u = $this->getFileUsage($df->fid);
+      $this->assertEqual(2, count($u), 'There should be one usage entry for derived file ' . $df->fid . ' after saving both nodes');
+      if (count($u) == 0) continue;
+      $this->assertEqual('node', $u[0]->type, 'usage entry for derived file ' . $df->fid . ' should have type node');
+      $this->assertEqual($node1->nid, $u[0]->id, 'usage entry for derived file ' . $df->fid . ' should have id ' . $node1->nid);
+      $this->assertEqual('node', $u[1]->type, 'usage entry for derived file ' . $df->fid . ' should have type node');
+      $this->assertEqual($node2->nid, $u[1]->id, 'usage entry for derived file ' . $df->fid . ' should have id ' . $node2->nid);
+    }
+
+    // Delete the video from node 1
+    unset($node1->videofield['und'][0]);
+    node_save($node1);
+
+    // Check usage of derived files: 1 usages should be registered
+    foreach ($conv + $tn as $df) {
+      $u = $this->getFileUsage($df->fid);
+      $this->assertEqual(1, count($u), 'There should be one usage entry for derived file ' . $df->fid . ' after deleting the video from one node');
+      if (count($u) == 0) continue;
+      $this->assertEqual('node', $u[0]->type, 'usage entry for derived file ' . $df->fid . ' should have type node');
+      $this->assertEqual($node2->nid, $u[0]->id, 'usage entry for derived file ' . $df->fid . ' should have id ' . $node2->nid);
+    }
+
+    // Queue entry should still be there, one usage should remain
+    $this->assertEqual(1, count($this->getQueues($file->fid)), 'One video_queue entry should be present after deleting the video from one node');
+    $this->assertEqual(1, count($this->getFileUsage($file->fid)), 'There should be one usage entry remaining after deleting the video from one node');
+
+    // Check whether the converted files and thumbnails still exist
+    $this->assertEqual(1, count($this->getConvertedFiles($file->fid)), 'There should be 1 converted file immediately after deleting the video from one node');
+    $this->assertEqual(5, count($this->getThumbnailFiles($file->fid)), 'There should be 5 thumbnail files immediately after deleting the video from one node');
+
+    // Delete the video from node 2
+    unset($node2->videofield['und'][0]);
+    node_save($node2);
+
+    // Check if everything is deleted properly
+    $this->assertEqual(0, count($this->getQueues($file->fid)), 'video_queue entry should be removed');
+    $this->assertEqual(0, count($this->getFileUsage($file->fid)), 'There should be no usage entries after deleting');
+    $this->assertEqual(0, count($this->getThumbnailFiles($file->fid)), 'There should be no thumbnail entries after deleting');
+    $this->assertEqual(0, count($this->getConvertedFiles($file->fid)), 'There should be no converted entries after deleting');
+
+    // Check usage of derived files: 0 usages should be registered
+    foreach ($conv + $tn as $df) {
+      $u = $this->getFileUsage($df->fid);
+      $this->assertEqual(0, count($u), 'There should be no usage entry for derived file ' . $df->fid . ' after saving both nodes');
+    }
+  }
+
+  /**
+   * Tests adding a video to two different nodes and deleting the nodes
+   */
+  public function testDeleteVideoFieldItemTwice_EntityDelete() {
+    // Build test data
+    $file = $this->createFile('file4.mp4');
+
+    $node1 = new stdClass();
+    $node1->uid = $this->user->uid;
+    $node1->type = 'page';
+    $node1->title = 'Test node';
+    $node1->videofield['und'][0] = array('fid' => $file->fid, 'dimensions' => '100x60');
+    node_save($node1);
+
+    $node2 = new stdClass();
+    $node2->uid = $this->user->uid;
+    $node2->type = 'page';
+    $node2->title = 'Test node';
+    $node2->videofield['und'][0] = array('fid' => $file->fid, 'dimensions' => '100x60');
+    node_save($node2);
+
+    $node1 = node_load($node1->nid);
+    $node2 = node_load($node2->nid);
+
+    // Sanity checks
+    $queues = $this->getQueues($file->fid);
+    $this->assertEqual(1, count($queues), 'One video_queue entry should be present');
+    $this->assertEqual(2, count($this->getFileUsage($file->fid)), 'There should be two usage entries immediately after saving');
+    $this->assertTrue(file_exists($file->uri), 'The file should exist');
+
+    $queue = array_shift($queues);
+    $this->transcodeVideo($node1, $queue->vid, $file->fid);
+    node_save($node2);
+
+    // Delete node 1
+    node_delete($node1->nid);
+
+    // Queue entry should still be there, one usage should remain
+    $this->assertEqual(1, count($this->getQueues($file->fid)), 'One video_queue entry should be present after deleting one node');
+    $this->assertEqual(1, count($this->getFileUsage($file->fid)), 'There should be one usage entry remaining after deleting one node');
+    $this->assertTrue(file_exists($file->uri), 'The file should exist after deleting one node');
+
+    // Check whether the converted files and thumbnails still exist
+    $this->assertEqual(1, count($this->getConvertedFiles($file->fid)), 'There should be 1 converted file immediately after video from one node');
+    $this->assertEqual(5, count($this->getThumbnailFiles($file->fid)), 'There should be 5 thumbnail files immediately after video from one node');
+
+    // Delete node 2
+    node_delete($node2->nid);
+
+    // Queue entry and usage entry should still be removed
+    $this->assertEqual(0, count($this->getQueues($file->fid)), 'No video_queue entry should be present after deleting all nodes');
+    $this->assertEqual(0, count($this->getFileUsage($file->fid)), 'There should be no usage entries remaining after deleting all nodes');
+    $this->assertFalse(file_exists($file->uri), 'The file should be removed after deleting the video from all nodes');
+  }
+
+  /**
+   * Tests validation logic in video_field_validate().
+   */
+  public function testVideoFieldValidate() {
+    // Build test data
+    $file = $this->createFile('test.txt', 'text/plain');
+
+    $node = new stdClass();
+    $node->uid = $this->user->uid;
+    $node->type = 'page';
+    $node->title = 'Test node';
+    $node->videofield['und'][0] = array('fid' => $file->fid, 'dimensions' => '100x60');
+    node_save($node);
+  }
+
+  private function createFile($name = 'file.mp4', $mime = 'video/mp4') {
+    $dir = 'public://videos/original/';
+    file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+
+    $uri = $dir . $name;
+    $filesize = 123;
+
+    file_put_contents($uri, str_repeat('0', $filesize));
+
+    $fid = db_insert('file_managed')->fields(array(
+      'filemime' => $mime,
+      'uri' => $uri,
+      'filename' => $name,
+      'filesize' => $filesize,
+      'status' => 0,
+      'timestamp' => time(),
+      'uid' => $this->user->uid,
+    ))->execute();
+
+    return file_load(intval($fid));
+  }
+
+  private function getQueues($fid) {
+    $queues = array();
+
+    $result = db_query('SELECT q.* FROM {video_queue} q WHERE q.fid = :fid', array(':fid' => $fid))->fetchAll();
+    foreach ($result as $q) {
+      $q->data = unserialize($q->data);
+      $queues[] = $q;
+    }
+
+    return $queues;
+  }
+
+  private function getConvertedFiles($originalfid) {
+    return db_query('SELECT o.*, f.* FROM {video_output} o INNER JOIN {file_managed} f ON (f.fid = o.output_fid) WHERE o.original_fid = :fid', array(':fid' => $originalfid))->fetchAllAssoc('fid');
+  }
+
+  private function getThumbnailFiles($videofid) {
+    return db_query('SELECT t.*, f.* FROM {video_thumbnails} t INNER JOIN {file_managed} f ON (f.fid = t.thumbnailfid) WHERE t.videofid = :fid', array(':fid' => $videofid))->fetchAllAssoc('fid');
+  }
+
+  private function getFileUsage($fid) {
+    return db_query('SELECT u.* FROM {file_usage} u WHERE u.fid = :fid', array(':fid' => $fid))->fetchAll();
+  }
+
+  /**
+   * Makes changes in the database such that a video looks transcoded.
+   *
+   * @todo use a fake transcoder class to transcode the file
+   */
+  private function transcodeVideo(stdClass &$node, $vid, $fid) {
+    db_update('video_queue')->fields(array(
+      'status' => VIDEO_RENDERING_COMPLETE,
+      'started' => time(),
+      'completed' => time(),
+    ))->execute();
+
+    // Converted file
+    $of = $this->createFile('video_' . $fid . '_transcoded.mp4');
+    $of->status = FILE_STATUS_PERMANENT;
+    file_save($of);
+
+    db_insert('video_output')->fields(array(
+      'vid' => $vid,
+      'original_fid' => $fid,
+      'output_fid' => $of->fid,
+    ))->execute();
+
+    // Thumbnails
+    for ($i = 0; $i < variable_get('video_thumbnail_count', 5); $i++) {
+      $tnf = $this->createFile('thumbnail-' . $fid . '_' . sprintf('%04d', $i) . '.jpg', 'image/jpeg');
+      $tnf->status = FILE_STATUS_PERMANENT;
+      file_save($tnf);
+
+      db_insert('video_thumbnails')->fields(array(
+        'videofid' => $fid,
+        'thumbnailfid' => $tnf->fid,
+      ))->execute();
+    }
+
+    // Save the node to trigger usage generation
+    node_save($node);
+    $node = node_load($node->nid);
+  }
+}
+

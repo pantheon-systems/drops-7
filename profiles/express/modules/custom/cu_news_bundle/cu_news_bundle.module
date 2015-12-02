@@ -1,0 +1,93 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+  
+function cu_news_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for news functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_news_bundle_express_help($variables) {
+
+  $variables['node/add/article'][] = array(
+    'title' => 'Adding Article Help',
+    'short_title' => 'Article',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-article',
+  );
+  $variables['node/add/article-list-page'][] = array(
+    'title' => 'Adding Article List Page Help',
+    'short_title' => 'Article List Page',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-article-list-page',
+  );
+  $variables['block/add/article-grid'][] = array(
+    'title' => 'Adding Article Grid Block Help',
+    'short_title' => 'Article Grid Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/article-grid-block',
+  );
+  $variables['block/add/articles'][] = array(
+    'title' => 'Adding Article List Block Help',
+    'short_title' => 'Article List Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/article-list-block',
+  );
+  $variables['block/add/article-slider'][] = array(
+    'title' => 'Adding Article Slider Block Help',
+    'short_title' => 'Article Slider Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/article-slider-block',
+  );
+
+  return $variables;
+}
+
+/**
+ * Implements hook_express_help_fields().
+ *  * Add contextual help for the news functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_news_bundle_express_help_fields($variables) {
+
+  $variables['article_node_form']['fields'] = array(
+    'field_image' => array(
+      'title' => 'Adding Images Help',
+      'short_title' => 'Images',
+      'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-images',
+    ),
+    'author' => array(
+      'title' => 'Change Article Order',
+      'short_title' => 'Article Order',
+      'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/change-article-order',
+    ),
+    'field_article_external_url' => array(
+      'title' => 'Including External Articles',
+      'short_title' => 'External Articles',
+      'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/including-external-articles-your-news-feed',
+    ),
+  );
+
+  return $variables;
+}

@@ -1,0 +1,79 @@
+<?php
+
+/**
+ * Define site permissions in code.
+ *
+ * Create a secure_permissions_data module directory and place this function
+ * in secure_permissions_data.module.
+ *
+ * @param $role
+ *   The role for which the permissions are being requested.
+ *
+ * @return
+ *   An array defining all the permissions for the site.
+ */
+  
+function cu_advanced_layout_bundle_secure_permissions($role) {
+  // INSERT PERMISSIONS FOR THIS BUNDLE
+  if (isset($permissions[$role])) {
+    return $permissions[$role];
+  }
+}
+
+/**
+ * Implements hook_express_help()
+ *
+ * Add contextual help for the Advanced content like Quicktabs.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_advanced_layout_bundle_express_help($variables) {
+  $variables['admin/theme'][] = array(
+    'title' => 'Add a Site Background Image',
+    'short_title' => 'Site Background Image',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-site-background-image',
+  );
+  $variables['admin/theme'][] = array(
+    'title' => 'Add Page Title Background',
+    'short_title' => 'Page Title Background',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-page-title-image-background',
+  );
+  $variables['admin/structure/context'][] = array(
+    'title' => 'Place Blocks With Context Help',
+    'short_title' => 'Blocks & Context',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/place-blocks-context',
+  );
+  $variables['admin/structure/context'][] = array(
+    'title' => 'Context Overview',
+    'short_title' => 'Context',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/context',
+  );
+  $variables['block/add/block-section'][] = array(
+    'title' => 'Block Section Help',
+    'short_title' => 'Block Section',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/block-section',
+  );
+  $variables['block/add/video-reveal'][] = array(
+    'title' => 'Adding Video Reveal Block Help',
+    'short_title' => 'Video Reveal Block',
+    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/video-reveal',
+  );
+
+  return $variables;
+}
+
+/**
+ * Implements hook_express_help_fields().
+ *
+ * Add contextual help for advanced layout functionality.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_advanced_layout_bundle_express_help_fields($variables) {
+
+  return $variables;
+}

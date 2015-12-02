@@ -1,0 +1,17 @@
+Your view must meet the following requirements:
+<ul>
+  <li><a href="topic:views/style-row">Row style</a> must be set to <a href="topic:views/style-fields">Fields</a>.</li>
+  <li>Provide at least two fields to show.</li>
+</ul>
+Choose Views Accordion in the Style dialog within your view, which will prompt you to configure:
+<ul>
+  <li>Transition time: How fast you want the opening and closing of the sections to last for, in seconds.
+      Default is half a second.</li>
+  <li>Start with the first row opened: Whether or not the first row of the view should start opened when the view is first shown.
+      Uncheck this if you would like the accordion to start closed.</li>
+  <li>Use the module's default styling:  If you disable this, the CSS file in the module's directory (views-accordion.css) will not be loaded.
+      You can uncheck this if you plan on doing your own CSS styling.</li>
+</ul>
+<strong>IMPORTANT</strong>
+The first <a href="topic:views/field">field</a> WILL be used as the header for each accordion section, all others will be displayed when the header is clicked. The module creates an accordion section per row of results from the view.
+If the first field includes a link, this link will not function, (the js returns false) Nothing will break though.

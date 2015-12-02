@@ -1,0 +1,149 @@
+<?php
+
+/**
+ * @file
+ * An API module to help client modules chain their access callbacks into
+ * other modules' menu items.
+ */
+
+/**
+ * @class Exception class used to throw error.
+ */
+class ChainMenuAccessChainException extends Exception {}
+
+/**
+ * Prepend the given access callback to the chain.
+ *
+ * The client module should call this function from its hook_menu_alter()
+ * implementation to install its access callback.
+ *
+ * NOTE: hook_menu_alter() is called only when the menu router table is
+ * rebuilt after the menu cache was flushed.
+ *
+ * NOTE: MENU_DEFAULT_LOCAL_TASK items should not specify access parameters
+ * but inherit them from their parent item, because access should not be
+ * different between the two. If a client module tries to chain to such an item,
+ * the item's access parameters are cleared only.
+ *
+ * @param array $items
+ *   The menu router items array.
+ *   Do not try to chain MENU_DEFAULT_LOCAL_TASK items -- chain their parent
+ *   items instead.
+ * @param string $path
+ *   The index into $items to the item to modify.
+ * @param string $new_access_callback
+ *   The name of the client's access callback function, as documented for
+ *   the 'access callback' key in hook_menu().
+ * @param array $new_access_arguments
+ *   An array holding the arguments to be passed to the new access callback,
+ *   as documented for the 'access arguments' key in hook_menu().
+ * @param bool $or_or_pass_index
+ *   Pass FALSE to evaluate ($new_access_callback() && $old_access_callback()).
+ *   Pass TRUE to evaluate ($new_access_callback() || $old_access_callback()).
+ *   Pass a number to evaluate $old_access_callback() first and then pass
+ *   the result as the $pass_index-th argument in $new_access_arguments to
+ *   $new_access_callback().
+ *
+ * @return bool
+ *   TRUE if the chaining succeeded, FALSE if a MENU_DEFAULT_LOCAL_TASK item.
+ */
+function chain_menu_access_chain(array &$items, $path, $new_access_callback, array $new_access_arguments = array(), $or_or_pass_index = FALSE) {
+  $item =& $items[$path];
+  if (isset($item['type']) && $item['type'] == MENU_DEFAULT_LOCAL_TASK) {
+    // Inherit the parent's access! See http://drupal.org/node/1186208.
+    unset($item['access callback'], $item['access arguments']);
+    return FALSE;
+  }
+
+  // Look through the child items for the MENU_DEFAULT_LOCAL_TASK.
+  $child_paths = array_filter(array_keys($items), create_function('$p', "return preg_match('#^$path/[^/]*$#', \$p);"));
+  foreach ($child_paths as $child_path) {
+    $child_item =& $items[$child_path];
+    if (isset($child_item['type']) && $child_item['type'] == MENU_DEFAULT_LOCAL_TASK) {
+      // The default local task must inherit its access from its parent.
+      unset($child_item['access callback'], $child_item['access arguments']);
+    }
+  }
+
+  // Normalize the menu router item.
+  if (!isset($item['access callback']) && isset($item['access arguments'])) {
+    // Default callback.
+    $item['access callback'] = 'user_access';
+  }
+  if (!isset($item['access callback'])) {
+    $item['access callback'] = 0;
+  }
+  if (is_bool($item['access callback'])) {
+    $item['access callback'] = intval($item['access callback']);
+  }
+  $old_access_arguments = isset($item['access arguments']) ? $item['access arguments'] : array();
+  if (is_bool($new_access_callback)) {
+    $new_access_callback = intval($new_access_callback);
+  }
+
+  // Prepend a parameter array plus the $new_access_arguments to the existing
+  // access arguments array. This works repeatedly, too.
+  $or = ($or_or_pass_index === TRUE);
+  $pass_index = ($or_or_pass_index === TRUE ? FALSE : $or_or_pass_index);
+  $item['access arguments'] = array_merge(
+    array(array($item['access callback'], $new_access_callback, count($new_access_arguments), $or, $pass_index)),
+    $new_access_arguments,
+    $old_access_arguments
+  );
+  $item['access callback'] = '_chain_menu_access_callback';
+  return TRUE;
+}
+
+/*
+ * Internal helper function to recursively unwrap and call the chained
+ * callbacks, LIFO style.
+ */
+function _chain_menu_access_callback() {
+  $args = func_get_args();
+  // Recover the parameters from the array, plus the $new_access_arguments.
+  $parms = array_shift($args);
+  if (count($parms) != 5) {
+    // Something's wrong (see chain_menu_access_chain() above).
+    throw new ChainMenuAccessChainException('Unexpected arguments; client module probably missed calling chain_menu_access_chain() on MENU_DEFAULT_LOCAL_TASK.');
+  }
+  list($old_access_callback, $new_access_callback, $count, $or, $pass_index) = $parms;
+  $new_access_arguments = array_splice($args, 0, (int) $count, array());
+  if ($pass_index !== FALSE || $old_access_callback == 'user_access' || is_numeric($old_access_callback)) {
+    // Call the $old_access_callback first either if we need to pass its result
+    // to the $new_access_callback or if it's a user_access() call or constant
+    // number (which would be very quick to evaluate).
+    $old_result = (bool) _chain_menu_access_callback_call($old_access_callback, $args);
+    if ($pass_index !== FALSE) {
+      $new_access_arguments[$pass_index] = $old_result;
+    }
+    elseif ($or == $old_result) {
+      // Do shortcut evaluation on the second operand first!
+      return $or;
+    }
+  }
+  $new_result = _chain_menu_access_callback_call($new_access_callback, $new_access_arguments);
+  // Do normal shortcut evaluation on the first operand (or simply return the
+  // result if we have a $pass_index).
+  if ($pass_index !== FALSE || $or == $new_result) {
+    return $new_result;
+  }
+  // Call $old_access_callback if we haven't called it yet.
+  if (!isset($old_result)) {
+    $old_result = _chain_menu_access_callback_call($old_access_callback, $args);
+  }
+  return $old_result;
+}
+
+/**
+ * Internal helper function to call one callback.
+ */
+function _chain_menu_access_callback_call($access_callback, $access_arguments) {
+  $access_callback = empty($access_callback) ? 0 : trim($access_callback);
+  if (is_numeric($access_callback)) {
+    // It's a number (see hook_menu()).
+    return (bool) $access_callback;
+  }
+  if (function_exists($access_callback)) {
+    return call_user_func_array($access_callback, $access_arguments);
+  }
+}

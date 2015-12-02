@@ -1,0 +1,12 @@
+<?php
+/*
+ * Implements hook_enable()
+ */
+
+function cu_social_media_bundle_enable() {
+  //module_enable(FROM .INFO?);
+
+}
+
+
+

@@ -1,0 +1,45 @@
+<?php
+
+
+/**
+ * @file
+ * Implements tests for the theme switching rules.
+ */
+
+class ThemekeySystemPropertiesTestCase extends ThemekeyWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Themekey System Properties',
+      'description' => 'Test the themekey system properties (system:).',
+      'group' => 'Themekey',
+    );
+  }
+
+  public function testPropertySystemDummy() {
+    $this->simplePropertyTest('system:dummy', '=', 'dummy');
+  }
+
+  public function testPropertySystemQuery_Param() {
+    $url = array(
+      'options' => array(
+        'query' => array(
+          'test' => TRUE,
+        ),
+      ),
+    );
+    
+    $this->simplePropertyTest('system:query_param', '=', 'test=1', $url);
+  }
+
+  public function testPropertySystemQuery_String() {
+    $url = array(
+      'options' => array(
+        'query' => array(
+          'test' => TRUE,
+        ),
+      ),
+    );
+    
+    $this->simplePropertyTest('system:query_string', '=', 'test=1', $url);
+  }
+}

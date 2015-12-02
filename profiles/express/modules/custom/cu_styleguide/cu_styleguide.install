@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * @file
+ * Example of CU-Boulder style.
+ */
+
+/**
+ * Perform necessary actions after module is enabled.
+ *
+ * The hook is called every time the module is enabled. It should be
+ * implemented in the module's .install file. The implementation can
+ * rely on the .module file being loaded.
+ *
+ * @see module_enable()
+ * @see hook_install()
+ * @see hook_modules_enabled()
+ */
+function cu_styleguide_enable() {
+
+  $file_path = DRUPAL_ROOT . '/' . drupal_get_path('module', 'cu_styleguide') . '/files/testimage.jpg';
+
+  $file = (object) array(
+    'uid' => $count,
+    'uri' => $file_path,
+    'filemime' => file_get_mimetype($file_path),
+    'status' => 1,
+  );
+  $file = file_copy($file, 'public://');
+}

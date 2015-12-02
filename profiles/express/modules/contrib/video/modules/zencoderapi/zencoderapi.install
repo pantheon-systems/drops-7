@@ -1,0 +1,49 @@
+<?php
+/**
+ * @file
+ * Requirements hooks for the Zencoder API module.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function zencoderapi_requirements($phase) {
+  if ($phase != 'runtime') {
+    return array();
+  }
+
+  $t = get_t();
+  $requirements = array();
+
+  $path = 'sites/all/libraries';
+  $loadresult = libraries_load('zencoder');
+  if (!$loadresult['installed'] || !class_exists('Services_Zencoder')) {
+    $requirements['zencoder_library'] = array(
+      'title' => $t('Zencoder library'),
+      'description' => $t('The <a href="@zencoder-library-url">Zencoder API library</a> is not installed. Download the library and install it to a directory called %dirname in a library path such as %libpath.', array('@zencoder-library-url' => url('https://github.com/zencoder/zencoder-php'), '%libpath' => $path, '%dirname' => 'zencoder')),
+      'value' => NULL,
+      'severity' => REQUIREMENT_ERROR,
+    );
+  }
+  else {
+    // Instantiate the Zencoder API to catch errors during initialization
+    try {
+      $temp = new Services_Zencoder();
+
+      $requirements['zencoder_library'] = array(
+        'title' => $t('Zencoder library'),
+        'value' => check_plain($loadresult['version']),
+        'severity' => REQUIREMENT_OK,
+      );
+    }
+    catch (Exception $e) {
+      $requirements['zencoder_library'] = array(
+        'title' => $t('Zencoder library'),
+        'value' => $e->getMessage(),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    }
+  }
+
+  return $requirements;
+}

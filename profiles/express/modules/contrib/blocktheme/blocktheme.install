@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * @file
+ *   Install file for blocktheme module.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function blocktheme_uninstall() {
+  variable_del('blocktheme');
+  variable_del('blocktheme_show_custom_block_theme');
+  variable_del('blocktheme_themes');
+  variable_del('blocktheme_vars');
+}

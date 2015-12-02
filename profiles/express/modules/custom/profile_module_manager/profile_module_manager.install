@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ * Install file for Express and Express-based profiles.
+ */
+
+
+
+/**
+ * Implements hook_requirements().
+ */
+function profile_module_manager_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $t = get_t();
+
+    // add list of extra modules here?
+    if ($diff = profile_module_manager_is_config_ideal()) {
+      $checks =  implode(", ", $diff);
+      $requirements['profile_module_manager'] = array(
+        'title' => $t('Profile Module Manager'),
+        'value' => $t('Some required modules either not enabled or extra modules are enabled. Check ' . $checks),
+        'severity' => REQUIREMENT_ERROR,
+      );
+    } else {
+      $requirements['profile_module_manager'] = array(
+        'title' => $t('Profile Module Manager'),
+        'value' => $t('All required modules are enabled.'),
+        'severity' => REQUIREMENT_OK,
+      );
+
+    }
+  }
+
+  return $requirements;
+}

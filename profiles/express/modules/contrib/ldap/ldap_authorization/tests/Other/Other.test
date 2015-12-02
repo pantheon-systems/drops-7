@@ -1,0 +1,84 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * see getInfo() for test summary
+ */
+
+require_once(drupal_get_path('module', 'ldap_authorization') . '/tests/LdapAuthorizationTestCase.class.php');
+
+class LdapAuthorizationOtherAuthenticationTests  extends LdapAuthorizationTestCase {
+  public static function getInfo() {
+    return array(
+      'group' => 'LDAP Authorization',
+      'name' => 'non ldap_authentication',
+      'description' => 'Test for ldap authorization without ldap_authentication module authentication',
+
+    );
+  }
+
+  /**
+   * test drupal user authentication with ldap authorization
+   */
+  function testDrupalAuthnWithLdapAuthor() {
+    $this->ldapTestId = $this->module_name . ': drupal authentication';
+
+    $this->ldapTestId = 'AuthorizationIntegration';
+    $this->serversData = 'Other/ldap_servers.inc';
+    $this->authorizationData = 'Other/ldap_authorization.inc';
+    $this->authenticationData = 'Other/ldap_authentication.inc';
+    //set authentication data anyway even though module disabled to keep prepTestData() method simple
+    $this->consumerType = 'drupal_role';
+    $this->prepTestData();
+    module_disable(array('ldap_authentication'));
+    $this->ldapTestId = $this->module_name . ': test for integration with drupal authentication';
+
+    $consumer_conf_admin = ldap_authorization_get_consumer_admin_object($this->consumerType);
+    $consumer_conf_admin->onlyApplyToLdapAuthenticated = 0;
+    $consumer_conf_admin->save();
+
+
+    $verykool = $this->drupalCreateUser(array('access content'));
+    $password = $verykool->pass_raw;
+    $verykool = user_save($verykool, array('name' => 'verykool'));
+    $edit = array('pass' =>  $password, 'name' => 'verykool');
+    $this->drupalPost('user', $edit, t('Log in'));
+    $this->assertText(t('Member for'), 'Drupal User successfully authenticated with ldap authorization.', $this->ldapTestId);
+
+    $verykool = user_load_by_name('verykool');
+    $correct_roles = in_array('special guests', array_values($verykool->roles)) && in_array('guests', array_values($verykool->roles));
+    $this->assertTrue($correct_roles, 'verykool granted correct drupal roles via ldap authorization with drupal authentication ', $this->ldapTestId . '.duplicate_entry');
+    $this->drupalGet('user/logout');
+    user_delete($verykool->uid);
+
+
+  }
+
+
+
+  /**
+   * test cas user authentication with ldap authorization
+   */
+
+  function x_testCasAuthnWithLdapAuthor() {
+    $this->ldapTestId = $this->module_name . ': drupal authentication';
+
+    $this->ldapTestId = 'AuthorizationIntegration';
+    $this->serversData = 'ldapauthor1.ldap_server.test_data.inc';
+    $this->authorizationData = 'Derivations.ldap_authorization.DeriveFromDN.inc';
+    $this->authenticationData = 'ldapauthor1.ldap_authentication.test_data.inc';
+    $this->consumerType = 'drupal_role';
+    $this->prepTestData();
+
+    $this->ldapTestId = $this->module_name . ': test for integration with drupal authentication';
+
+    // create drupal user that has ldap entry mapping
+    // enable authorization but not authentication
+    // test user logon and authorizations
+
+  }
+
+
+
+}

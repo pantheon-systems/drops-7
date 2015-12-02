@@ -1,0 +1,241 @@
+
+This is a counterpart to DeriveFromEntry.notes.txt using cn, groupOfUniqueNames, and uid
+
+========================================
+Derive From Entry walk-through NOT nested:
+========================================
+
+--- configuration ------
+0. authorization.deriveFromEntry = 1
+1. authorization.deriveFromEntryEntries = array('it', 'people')
+1b. authorization.deriveFromEnryEntryAttribute' = 'cn'
+2. authorization.deriveFromEntryMembershipAttr = 'uniquemember'
+2a. authorization.deriveFromEntryAttrMatchingUserAttr = 'dn'
+4. authorization.deriveFromEntrySearchAll = 0
+5. authorization.deriveFromEntryNested = 0
+6. authorization.deriveFromEntryUseFirstAttr = 0
+7. server.groupObjectClass = 'groupOfUniqueNames'
+
+user ldap entry in question:
+  'dn' => 'uid=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu',
+  'cn' => 'joeprogrammer',
+  'uid' => 'joeprogrammer',
+  'mail' => array( 0 => 'joeprogrammer@myuniversity.edu'),
+  'uid' => array( 0 => 'joeprogrammer'),
+
+
+--- walk-through ------
+1). foreach base dn, execute the following query:
+
+(&
+(objectClass=groupOfUniqueNames)
+(|(cn=it)(cn=people))
+(uniquemember=cn=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu)
+)
+
+in psuedo code:
+(&
+(objectClass=[server.groupObjectClass])
+(|([authorization.deriveFromEnryEntryAttribute]=[authorization.deriveFromEntryEntries[i]])...([authorization.deriveFromEnryEntryAttribute]=[authorization.deriveFromEntryEntries[n]]))
+([authorization.deriveFromEntryMembershipAttr]=[user_ldap_entry[deriveFromEntryAttrMatchingUserAttr]])
+)
+
+
+2. All entries returned represent groups that user is a member of.
+Their DNs are added to the list of authorizations or the first attribute value
+if authorization.deriveFromEntryUseFirstAttr is true.
+
+
+========================================
+Derive From Entry walk-through NESTED:
+========================================
+
+--- configuration ------
+0. authorization.deriveFromEntry = 1
+1. authorization.deriveFromEntryEntries = array('it', 'people')
+1b. authorization.deriveFromEnryEntryAttribute' = 'cn'
+2. authorization.deriveFromEntryMembershipAttr = 'uniquemember'
+2b. authorization.deriveFromEntryAttrMatchingUserAttr = 'dn'
+4. authorization.deriveFromEntrySearchAll = 0
+5. authorization.deriveFromEntryNested = 1
+6. authorization.deriveFromEntryUseFirstAttr = 0
+7. server.groupObjectClass = 'groupOfUniqueNames'
+
+user ldap entry in question:
+  'dn' => 'uid=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu',
+  'mail' => array( 0 => 'joeprogrammer@myuniversity.edu'),
+  'uid' => array( 0 => 'joeprogrammer'),
+
+
+--- walk-through ------
+1). foreach base dn, execute the following query:
+
+(&
+(objectClass=groupOfUniqueNames)
+(|(cn=it)(cn=people))
+)
+
+in psuedo code:
+(&
+(objectClass=[server.groupObjectClass])
+(|([authorization.deriveFromEnryEntryAttribute]=[authorization.deriveFromEntryEntries[i]])...([authorization.deriveFromEnryEntryAttribute]=[authorization.deriveFromEntryEntries[n]]))
+)
+
+
+2. All entries returned represent groups that user MIGHT be a member of.  examples:
+
+  'dn' => 'cn=it,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+  'cn' => array( 0 => 'it'),
+  'objectclass' => array( 0 => 'groupofuniquenames'),
+  'uniquemember' => array(
+    0 => 'developers,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+    1 => 'cn=sysadmins,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+    2 => 'uid=joeprojectmanager,ou=it,dc=ad,dc=myuniversity,dc=edu',
+  ),
+
+  'dn' => 'cn=people,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+  'cn' => array( 0 => 'people'),
+  'objectclass' => array( 0 => 'groupofuniquenames'),
+  'uniquemember' => array(
+     0 => 'cn=students,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+     1 => 'cn=staff,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+  ),
+
+
+
+
+3. foreach returned entry from query 1. (authorization.deriveFromEntryEntries):
+
+  if 'uniquemember' contains a value matching 'uid=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu', add that entry's DN to authorizations
+  in psuedo code: if group[authorization.deriveFromEntryMembershipAttr] contains user[authorization.deriveFromEntryAttrMatchingUserAttr],
+  add corresponding authorization.deriveFromEntryEntries entry to authorizations
+
+
+  else recurse through uniquemembers.  if user's entry is found, add corresponding
+  authorization.deriveFromEntryEntries entry to authorizations
+
+
+4A.  recursion:
+
+In the above example the first recursion query looks like:
+(&
+  (objectClass=groupofuniquenames)
+  (|
+    (cn=developers)
+    (cn=sysadmins)
+    (cn=joeprojectmanager)
+  )
+)
+
+which might return:
+
+    'dn' => 'cn=developers,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+    'cn' => array( 0 => 'developers'),
+    'objectclass' => array( 0 => 'groupofuniquenames'),
+    'uniquemember' => array(
+      0 => 'uid=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu',
+    ),
+
+    'dn' => 'cn=sysadmins,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+    'cn' => array( 0 => 'sysadmins'),
+    'objectclass' => array( 0 => 'groupofuniquenames'),
+    'uniquemember' => array(
+      0 => 'uid=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu',
+      1 => 'cn=sysadmins,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+    ),
+
+since uid=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu is found in the first entry,
+  "it" (the ancestor group) is added to the list of authorizations.
+
+
+4B.  In the above example the second recursion query would look like:
+
+(&
+  (objectClass=groupofuniquenames)
+  (|
+    (cn=students)
+    (cn=staff)
+  )
+)
+
+which returns:
+
+    'dn' => 'cn=staff,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+    'cn' => array( 0 => 'staff'),
+    'objectclass' => array( 0 => 'groupofuniquenames'),
+    'uniquemember' => array(
+      0 => 'cn=it,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+      1 => 'uid=unkool,ou=lost,dc=ad,dc=myuniversity,dc=edu',
+    ),
+
+
+    'dn' => 'cn=students,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+    'cn' => array( 0 => 'students'),
+    'objectclass' => array( 0 => 'groupofuniquenames'),
+    'uniquemember' => array(
+      0 => 'uid=jdoe,ou=campus accounts,dc=ad,dc=myuniversity,dc=edu',
+    ),
+
+4C. leading to the queries:
+
+(&
+  (objectClass=groupofuniquenames)
+  (|
+    (cn=jdoe)
+  )
+)
+...which returns no entries
+
+and
+4D.
+(&
+  (objectClass=groupofuniquenames)
+  (|
+    (cn=it)
+    (cn=unkool)
+  )
+)
+
+which returns:
+
+  'dn' => 'cn=it,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+  'cn' => array( 0 => 'it'),
+  'objectclass' => array( 0 => 'groupofuniquenames'),
+  'uniquemember' => array(
+    0 => 'cn=developers,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+    1 => 'cn=sysadmins,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+    2 => 'uid=joeprojectmanager,ou=it,dc=ad,dc=myuniversity,dc=edu',
+  ),
+
+4E. leading to the query:
+
+  (&
+    (objectClass=groupofuniquenames)
+    (|
+      (cn=developers)
+      (cn=sysadmins)
+      (cn=joeprojectmanager)
+    )
+  )
+
+which returns:
+
+  'dn' => 'cn=developers,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+  'cn' => array( 0 => 'developers'),
+  'objectclass' => array( 0 => 'groupofuniquenames'),
+  'uniquemember' => array(
+    0 => 'uid=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu',
+  ),
+
+  'dn' => 'cn=sysadmins,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+  'cn' => array( 0 => 'sysadmins'),
+  'objectclass' => array( 0 => 'groupofuniquenames'),
+  'uniquemember' => array(
+    0 => 'uid=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu',
+    1 => 'cn=sysadmins,cn=groups,dc=ad,dc=myuniversity,dc=edu',
+  ),
+
+since uid=joeprogrammer,ou=it,dc=ad,dc=myuniversity,dc=edu is found in the first entry,
+"people" (the ancestor group) is added to the list of authorizations.
+
+==================================================================

@@ -1,0 +1,62 @@
+#sticky-menu {
+  background: rgb(0,0,0);
+  background: rgba(0,0,0,.85);
+  position: fixed;
+  width:100%;
+  top:0;
+  left:0;
+  border-bottom: 1px solid #cfb77f;
+  z-index: 20;
+  display: none;
+}
+
+#sticky-menu img { 
+  position: absolute; 
+  top: 5px; 
+  left: 5px; 
+  width: 30px; 
+  height: auto; 
+}
+
+#sticky-menu .site-name { 
+  font-size: 15px; 
+  margin: 12px 0 6px 40px; 
+  padding: 0; 
+  line-height: 110%; 
+  font-weight: normal; 
+  max-width:420px;
+  float: left;
+  display: block;
+}
+#sticky-menu  a {
+  color:#fff;
+}
+#sticky-menu #sticky-main-menu {
+  float:right;
+  margin: 0;
+  padding: 0;
+}
+#sticky-menu #sticky-main-menu li {
+  display: inline;
+  float: left;
+  margin: 0;
+  padding: 0;
+}
+#sticky-menu #sticky-main-menu li a {
+  display: block;
+  float: left;
+  padding:15px 10px;
+  font-size:12px;
+  line-height: 110%;
+}
+#sticky-menu #sticky-main-menu li a:hover,
+#sticky-menu #sticky-main-menu li a.active,
+#sticky-menu #sticky-main-menu li a.active-trail {
+  color: #cfb87c;
+}
+
+@media only screen and (max-width: 960px), only screen and (max-device-width: 960px) {
+  #sticky-menu {
+    display:none !important;  
+  }
+}

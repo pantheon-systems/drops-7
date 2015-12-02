@@ -1,0 +1,56 @@
+<?php
+/**
+ * @file
+ * Describe context plugins for Environment Context module.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function environment_context_init() {
+  // Trigger environment context condition.
+  if (module_exists('context') && function_exists('context_get_plugin')
+      && $plugin = context_get_plugin('condition', 'environment')) {
+    $plugin->execute((array) variable_get('environment', array()));
+  }
+}
+
+/**
+ * Implements hook_ctools_plugin_api().
+ */
+function environment_context_ctools_plugin_api($module, $api) {
+  if ($module == 'context' && $api == 'plugins') {
+    return array('version' => 3);
+  }
+}
+
+/**
+ * Implements hook_context_registry().
+ */
+function environment_context_context_registry() {
+  $registry = array();
+  $registry['conditions'] = array(
+    'environment' => array(
+      'title' => t('Environment'),
+      'description' => t('Set this context when viewing a page with the given environment.'),
+      'plugin' => 'environment_context_condition',
+    ),
+  );
+  return $registry;
+}
+
+/**
+ * Implements hook_context_plugins().
+ */
+function environment_context_context_plugins() {
+  $plugins = array();
+  $plugins['environment_context_condition'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'environment_context') . '/plugins',
+      'file' => 'environment_context_condition.inc',
+      'class' => 'environment_context_condition',
+      'parent' => 'context_condition',
+    ),
+  );
+  return $plugins;
+}

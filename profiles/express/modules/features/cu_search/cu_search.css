@@ -1,0 +1,53 @@
+/* Search text field - extra right padding for search submit button */
+.cu-search input.form-text{
+  width:180px;
+  max-width: 100%;
+  line-height: 100%;
+  padding:8px 28px 8px 8px;
+  background-color: #fff;
+}
+.search-form-wrapper, .cu-search {
+  position: relative;
+  display: block;
+}
+.cu-search .form-item,
+.cu-search .form-actions {
+  margin: 0;
+}
+.search-form-wrapper .form-actions {
+  position: absolute;
+  top:6px;
+  right:0;
+  z-index:3;
+}
+.cu-search .form-submit {
+  height: 21px;
+  width: 21px;
+  background: none;
+  filter: none;
+  background-image: url(search-icon.png);
+  background-repeat: no-repeat;
+  background-position: center center;
+  text-indent: -9999px;
+  display: block;
+  border: none;
+  font-size: 0;
+  color: #fff;
+  cursor: pointer;
+  
+}
+#google-appliance-block-form .culinks {
+  font-size: 11px;
+  font-family: Arial, sans-serif;
+  text-align: right;
+}
+
+#content .keymatch-results,
+#content .search-results {
+  margin-left: 0;
+  margin-right: 0;
+}
+#content .keymatch-results h3,
+#content .search-results h3 {
+  font-style: normal;
+}

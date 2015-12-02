@@ -1,0 +1,27 @@
+
+name = "ThemeKey"
+description = "Map themes to Drupal paths or object properties."
+core = 7.x
+package = ThemeKey
+configure = admin/config/user-interface/themekey/settings
+
+files[] = themekey.install
+files[] = themekey-debug-messages.tpl.php
+files[] = themekey_validators.inc
+files[] = themekey_admin.inc
+files[] = themekey_base.inc
+files[] = themekey_build.inc
+files[] = themekey_cron.inc
+files[] = modules/themekey_browser_detection.php
+files[] = tests/themekey.test
+files[] = tests/ThemekeyDrupalPropertiesTestCase.test
+files[] = tests/ThemekeyNodePropertiesTestCase.test
+files[] = tests/ThemekeyMultipleNodePropertiesTestCase.test
+files[] = tests/ThemekeySystemPropertiesTestCase.test
+
+; Information added by drupal.org packaging script on 2011-04-15
+version = "7.x-1.0-rc2"
+core = "7.x"
+project = "themekey"
+datestamp = "1302885116"
+

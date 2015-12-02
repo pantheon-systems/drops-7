@@ -1,0 +1,13 @@
+name = Video UI
+description = Administrative interface to Video. Without this module you cannot configure the video module.
+package = Media
+core = 7.x
+configure = admin/config/media/video
+dependencies[] = video
+
+; Information added by drupal.org packaging script on 2013-04-23
+version = "7.x-2.10"
+core = "7.x"
+project = "video"
+datestamp = "1366693516"
+

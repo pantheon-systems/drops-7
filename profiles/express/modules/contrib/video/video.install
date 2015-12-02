@@ -1,0 +1,550 @@
+<?php
+/**
+ * @file
+ * Provides installation schema for video.module
+ * @author Heshan Wanigasooriya <heshan@heidisoft.com>
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function video_schema() {
+  // video queue
+  $schema['video_queue'] = array(
+    'description' => 'Store video transcoding queue.',
+    'fields' => array(
+      'vid' => array(
+        'description' => t('Video id, the primary identifier'),
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'fid' => array(
+        'description' => 'The {file_managed}.fid being referenced in this field.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'entity_type' => array(
+        'description' => 'The entity_type of the video.',
+        'type' => 'varchar',
+        'length' => 128,
+        'default' => 'node',
+      ),
+      'entity_id' => array(
+        'description' => 'The entity_id being referenced in this field.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'Status of the transcoding, possible values are 1, 5, 10, 20',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'dimensions' => array(
+        'description' => 'The dimensions of the output video.',
+        'type' => 'varchar',
+        'length' => 255,
+        'default' => '',
+      ),
+      'duration' => array(
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => FALSE,
+        'description' => 'Stores the video duration in Sec.',
+      ),
+      'started' => array(
+        'description' => t('Start timestamp of transcodings'),
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'completed' => array(
+        'description' => 'Transcoding completed timestamp',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'statusupdated' => array(
+        'description' => 'Timestamp of last status update, used to track stuck videos',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+        'unsigned' => TRUE,
+      ),
+      'data' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'A serialized array of converted files.',
+      ),
+    ),
+    'indexes' => array(
+      'status' => array('status'),
+      'file' => array('fid'),
+    ),
+    'primary key' => array('vid'),
+  );
+  // video preset
+  $schema['video_preset'] = array(
+    'description' => 'The preset table.',
+    'fields' => array(
+      'pid' => array(
+        'description' => 'The primary identifier for a video preset.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'The name of this preset.',
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'A brief description of this preset.',
+        'type' => 'text',
+        'size' => 'medium',
+        'translatable' => TRUE,
+      ),
+      'settings' => array(
+        'type' => 'blob',
+        'not null' => FALSE,
+        'size' => 'big',
+        'serialize' => TRUE,
+        'description' => 'Serialized preset settings.',
+      ),
+    ),
+    'unique keys' => array(
+      'name' => array('name'),
+    ),
+    'primary key' => array('pid'),
+  );
+  // video thumbnails
+  $schema['video_thumbnails'] = array(
+    'description' => 'Table to store thumbnails associated with each video.',
+    'fields' => array(
+      'videofid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'fid of original video.',
+      ),
+      'thumbnailfid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'fid of thumbnail.',
+      ),
+    ),
+    'unique keys' => array(
+      'thumbnail' => array('thumbnailfid'),
+    ),
+    'primary key' => array('videofid', 'thumbnailfid'),
+    'foreign keys' => array(
+      'videofid' => array(
+        'table' => 'file_managed',
+        'columns' => array('videofid' => 'fid'),
+      ),
+      'thumbnailfid' => array(
+        'table' => 'file_managed',
+        'columns' => array('thumbnailfid' => 'fid'),
+      ),
+    ),
+  );
+  // video converted file reference
+  $schema['video_output'] = array(
+    'description' => 'Track file id for converted files.',
+    'fields' => array(
+      'vid' => array(
+        'description' => 'Video identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'original_fid' => array(
+        'description' => 'Original file identifier.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'output_fid' => array(
+        'description' => 'Converted file fid.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'job_id' => array(
+        'description' => 'Referenced job id if any.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'default' => NULL,
+      ),
+    ),
+    'indexes' => array(
+      'original_fid' => array('original_fid'),
+    ),
+    'primary key' => array('vid', 'original_fid', 'output_fid')
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_field_schema().
+ */
+function video_field_schema($field) {
+  return array(
+    'columns' => array(
+      'fid' => array(
+        'description' => 'The {file_managed}.fid being referenced in this field.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'unsigned' => TRUE,
+      ),
+      'thumbnail' => array(
+        'description' => 'The {file_managed}.fid being referenced for video thumbnail.',
+        'type' => 'int',
+        'not null' => FALSE,
+        'unsigned' => TRUE,
+      ),
+    ),
+    'indexes' => array(
+      'fid' => array('fid'),
+    ),
+    'foreign keys' => array(
+      'fid' => array(
+        'table' => 'file_managed',
+        'columns' => array('fid' => 'fid'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_install().
+ */
+function video_install() {
+  // Create the videos directory and ensure it's writable.
+  $directory = file_default_scheme() . '://videos';
+  file_prepare_directory($directory, FILE_CREATE_DIRECTORY | FILE_MODIFY_PERMISSIONS);
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function video_uninstall() {
+  drupal_uninstall_schema('video');
+  // remove variables
+  db_query("DELETE FROM {variable} WHERE name LIKE 'video_%'");
+  // Remove the video directory and generated images.
+  file_unmanaged_delete_recursive(file_default_scheme() . '://videos');
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function video_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    $transcoder = new Transcoder();
+    $errormsg = '';
+
+    if (!$transcoder->hasTranscoder()) {
+      $name = t('None');
+      $version = t('None');
+      $available = TRUE;
+    }
+    else {
+      $name = $transcoder->getTranscoder()->getName();
+      $version = $transcoder->getTranscoder()->getVersion();
+      $available = $transcoder->getTranscoder()->isAvailable($errormsg);
+    }
+
+    $requirements['video'] = array(
+      'title' => t('Video transcoder: @transcoder', array('@transcoder' => $name)),
+      'value' => NULL,
+    );
+
+    if (!$version) {
+      $requirements['video']['description'] = t('Missing the transcoder library. Please <a href="@url">install FFmpeg</a> in to your server if you intend to transcode or to auto create thumbnails.', array('@url' => url('http://video.heidisoft.com/documentation/ffmpeg-installtion-scripts')));
+      $requirements['video']['severity'] = REQUIREMENT_ERROR;
+    }
+    elseif (!$available) {
+      $requirements['video']['description'] = t('The selected transcoder can\'t be used: !reason. Select <a href="@transcoder-url">another transcoder</a> or resolve the problem.', array('!reason' => rtrim($errormsg, '.'), '@transcoder-url' => url('admin/config/media/video/transcoders')));
+      $requirements['video']['severity'] = REQUIREMENT_ERROR;
+    }
+    else {
+      $requirements['video']['value'] = $version;
+      $requirements['video']['severity'] = REQUIREMENT_OK;
+    }
+
+    // Check if URL wrappers are present when allow_url_fopen is off
+    // Also see http://drupal.org/node/1521224
+    if (!ini_get('allow_url_fopen')) {
+      $wrappers = module_invoke_all('stream_wrappers');
+      $remotes = array();
+      foreach ($wrappers as $wrapper) {
+        if (empty($wrapper['type']) || ($wrapper['type'] & STREAM_WRAPPERS_LOCAL) == 0) {
+          $remotes[] = $wrapper['name'];
+        }
+      }
+
+      // $remotes contains all remote stream wrappers
+      if (!empty($remotes)) {
+        $requirements['php_allow_url_fopen'] = array(
+          'title' => t('PHP remote stream wrappers'),
+          'value' => t('Not supported'),
+          'severity' => REQUIREMENT_WARNING,
+          'description' => t('Your PHP configuration disallows remote stream wrappers. Change the php.ini setting <em>allow_url_fopen</em> to <em>On</em> to use the following locations for storing files:') .
+          theme('item_list', array('items' => $remotes)),
+        );
+      }
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Update the video convertor to Zencoder.
+ */
+function video_update_7201(&$sandbox) {
+  variable_set('video_convertor', 'TranscoderAbstractionFactoryZencoder');
+  return TRUE;
+}
+
+/**
+ * Alter video_queue table to add video duration.
+ */
+function video_update_7202(&$sandbox) {
+  $ret = array();
+  // Check because D6 installs may already have added this.
+  if (!db_field_exists('video_queue', 'duration')) {
+    $new_field = array(
+      'type' => 'int',
+      'default' => 0,
+      'description' => 'Stores the video duration in Sec.',
+    );
+    db_add_field('video_queue', 'duration', $new_field);
+  }
+
+  return $ret;
+}
+
+/**
+ * Alter video_queue table to add video duration.
+ */
+function video_update_7203(&$sandbox) {
+  $ret = array();
+  // Check because D6 installs may already have added this.
+  if (db_field_exists('video_queue', 'duration')) {
+    db_change_field('video_queue', 'duration', 'duration', array(
+      'type' => 'varchar',
+      'length' => 32,
+      'not null' => FALSE,
+      'description' => 'Stores the video duration in Sec.',
+    ));
+  }
+
+  return $ret;
+}
+
+/**
+ * Alter video_queue table to rename nid to entity_id and add entity_type.
+ */
+function video_update_7204(&$sandbox) {
+  $ret = array();
+  // Check because D6 installs may already have added this.
+  if (db_field_exists('video_queue', 'nid')) {
+    db_change_field('video_queue', 'nid', 'entity_id', array(
+      'description' => 'The entity_id being referenced in this field.',
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+  }
+  if (!db_field_exists('video_queue', 'entity_type')) {
+    $new_field = array(
+      'description' => 'The entity_type of the video.',
+      'type' => 'varchar',
+      'length' => 128,
+      'default' => 'node',
+    );
+    db_add_field('video_queue', 'entity_type', $new_field);
+  }
+  return $ret;
+}
+
+/**
+ * Fix problems with Ogg and WebM videos.
+ *
+ * Change videos with file type audio/ogg to video/ogg
+ * Change *.webm videos from application/octet-stream to video/webm
+ * If using FFmpeg, update all presets to use ogv as extension instead of ogg.
+ */
+function video_update_7205(&$sandbox) {
+  $msg = array();
+
+  // Change videos with file type audio/ogg to video/ogg.
+  $result = db_select('video_output', 'o');
+  $result->join('file_managed', 'f', 'f.fid = o.output_fid');
+  $result = $result
+    ->fields('f', array('fid'))
+    ->condition('f.filemime', 'audio/ogg')->execute();
+
+  $cnt = 0;
+  while ($file = $result->fetchObject()) {
+    db_update('file_managed')
+      ->condition('fid', $file->fid)
+      ->fields(array('filemime' => 'video/ogg'))
+      ->execute();
+    $cnt++;
+  }
+
+  if ($cnt > 0) {
+    $msg[] = t('Updated @count files in the file_managed table to have mime type video/ogg instead of audio/ogg', array('@count' => $cnt));
+  }
+
+  // Change *.webm videos with file type application/octet-stream to video/webm.
+  $result = db_select('video_output', 'o');
+  $result->join('file_managed', 'f', 'f.fid = o.output_fid');
+  $result = $result
+    ->fields('f', array('fid'))
+    ->condition('f.filename', '%.webm', 'LIKE')
+    ->condition('f.filemime', 'application/octet-stream')->execute();
+
+  $cnt = 0;
+  while ($file = $result->fetchObject()) {
+    db_update('file_managed')
+      ->condition('fid', $file->fid)
+      ->fields(array('filemime' => 'video/webm'))
+      ->execute();
+    $cnt++;
+  }
+
+  if ($cnt > 0) {
+    $msg[] = t('Updated @count *.webm files in the file_managed table to have mime type video/webm instead of application/octet-stream', array('@count' => $cnt));
+  }
+
+  // If on FFmpeg, update all presets to use ogv as extension instead of ogg.
+  if (variable_get('video_convertor') == 'TranscoderAbstractionFactoryFfmpeg') {
+    $presets = db_select('video_preset', 'p')->fields('p')->execute()->fetchAll();
+    foreach ($presets as $preset) {
+      $settings = unserialize($preset->settings);
+      if ($settings['video_extension'] == 'ogg') {
+        $settings['video_extension'] = 'ogv';
+        db_update('video_preset')
+          ->fields(array('settings' => serialize($settings)))
+          ->condition('pid', $preset->pid);
+
+        $msg[] = t('Updated preset %preset to have file extension ogv instead of ogg.', array('%preset' => $preset->name));
+      }
+    }
+  }
+
+  return implode('<br />', $msg);
+}
+
+/**
+ * Remove zencoder_username and agree_terms_zencoder variables.
+ */
+function video_update_7206(&$sandbox) {
+  variable_del('zencoder_username');
+  variable_del('agree_terms_zencoder');
+}
+
+/**
+ * Remove old video_thumbnails table and create a new one.
+ */
+function video_update_7207(&$sandbox) {
+  variable_del('video_thumb_save_all');
+  db_drop_table('video_thumbnails');
+  db_create_table('video_thumbnails', array(
+    'description' => 'Table to store thumbnails associated with each video.',
+    'fields' => array(
+      'videofid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'fid of original video.',
+      ),
+      'thumbnailfid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'description' => 'fid of thumbnail.',
+      ),
+    ),
+    'unique keys' => array(
+      'thumbnail' => array('thumbnailfid'),
+    ),
+    'primary key' => array('videofid', 'thumbnailfid'),
+    'foreign keys' => array(
+      'videofid' => array(
+        'table' => 'file_managed',
+        'columns' => array('videofid' => 'fid'),
+      ),
+      'thumbnailfid' => array(
+        'table' => 'file_managed',
+        'columns' => array('thumbnailfid' => 'fid'),
+      ),
+    ),
+  ));
+}
+
+/**
+ * Add index on video_output.original_fid
+ */
+function video_update_7208(&$sandbox) {
+  db_add_index('video_output', 'original_fid', array('original_fid'));
+}
+
+/**
+ * Renames some variables.
+ *
+ * Renames variable video_metadata_path to video_ffmpeg_flvtool2_path
+ * video_metadata_dimensions to video_dimensions.
+ */
+function video_update_7209(&$sandbox) {
+  variable_set('video_ffmpeg_flvtool2_path', variable_get('video_metadata_path'));
+  variable_set('video_dimensions', variable_get('video_metadata_dimensions'));
+  variable_del('video_metadata_path');
+  variable_del('video_metadata_dimensions');
+}
+
+/**
+ * Scheduling variables and schema update.
+ *
+ * Renames variable video_queue_timeout to video_transcode_timeout,
+ * divided by 60.
+ * The minimum value of this variable is set to 5.
+ * Sets video_queue_timeout to 60 minutes.
+ *
+ * Adds a field to video_queue to save the last time the status was updated.
+ * Sets this field to the current time for all videos.
+ */
+function video_update_7210(&$sandbox) {
+  variable_set('video_transcode_timeout', max(10, ceil(variable_get('video_queue_timeout', 90) / 60)));
+  variable_set('video_queue_timeout', 60);
+
+  $new_field = array(
+    'description' => 'Timestamp of last status update, used to track stuck videos',
+    'type' => 'int',
+    'not null' => TRUE,
+    'default' => 0,
+    'unsigned' => TRUE,
+    'initial' => time(),
+  );
+  db_add_field('video_queue', 'statusupdated', $new_field);
+}

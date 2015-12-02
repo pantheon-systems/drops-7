@@ -1,0 +1,10 @@
+/* $Id: ldap_help.css,v 1.1 2011/02/07 23:12:23 johnbarclay Exp $ */
+ form#dblog-filter-form div#edit-type-wrapper,
+table#admin-dblog th img
+{ display: none;}
+code.export-summary {font-weight: normal;}
+
+table#admin-dblog th a,
+table#admin-dblog th {text-decoration: none; color: #000000;}
+th code {}
+

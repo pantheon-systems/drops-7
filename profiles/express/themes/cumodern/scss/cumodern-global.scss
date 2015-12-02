@@ -1,0 +1,239 @@
+@import "../../cu_omega/scss/modules/_colors.scss";
+
+
+body {
+  background-color: $bg_dark2;
+}
+a {
+  //transition: color 0.5s ease;
+}
+.layout-wide #backstretch {
+  display: none;
+}
+#backstretch {
+  display: none;
+}
+
+#section-header {
+  border-bottom: 5px solid $cugold;
+  background-color: #000;
+}
+.banner-white #section-header{
+  background-color: #fff;
+}
+.banner-black #section-header{
+  background-color: #000;
+}
+h2.secondary-menu-label {
+  margin-left:8px;
+}
+#zone-secondary-menu {
+  color:#fff;
+}
+#zone-secondary-menu a {
+  color:#fff;
+  display: inline-block;
+}
+#zone-secondary-menu a:hover,
+#zone-secondary-menu a:focus {
+  color:#fff;
+  background-color: #666;
+}
+#zone-secondary-menu a.active,
+#zone-secondary-menu a.active-trail {
+  color:#000;
+  background-color: $cugold;
+}
+.secondary-navigation {
+  background-color: #444;
+}
+#zone-menu-wrapper {
+  background-color: $bg_dark1;
+}
+#zone-menu ul#main-menu a {
+  font-weight: 600;
+  color: #fff;
+  //transition: background-color 0.5s ease;
+}
+#zone-menu ul#main-menu a:hover {
+  background-color:#444;
+}
+#zone-menu ul#main-menu a.active,
+#zone-menu ul#main-menu a.active-trail {
+  background-color: $cugold;
+  color:#000;
+}
+#zone-menu ul#main-menu a#home-link {
+  background-color: transparent;
+  color:#fff;
+}
+
+// mobile & tablet menu
+#tablet-menu-toggle a {
+  color:#fff;
+}
+
+#mobile-menu {
+  color:#fff;
+  ul#main-menu-mobile {
+    background-color: #333;
+    a {
+      color:#fff;
+      border-bottom: 1px solid #444;
+    }
+    a.active,
+    a.active-trail {
+      color:#000;
+      background-color: $cugold;
+      font-weight: 600;
+    }
+  }
+  ul#secondary-menu-mobile {
+    background-color: #444;
+    a {
+      color:#fff;
+      border-bottom: 1px solid #555;
+    }
+    a.active,
+    a.active-trail {
+      color:#000;
+      background-color: $cugold;
+      font-weight: 600;
+    }
+  }
+}
+
+#region-menu .navigation {
+  margin: 0 -10px;
+
+}
+
+
+#zone-intro-wrapper,
+#zone-slider-wrapper {
+  background-color: $light_gray;
+}
+.page-title-image-wrapper.container-content {
+  margin-top: 20px;
+}
+#section-content {
+  background-color: #fff;
+}
+
+#zone-after-content-2-wrapper {
+  background-color: $light_gray;
+  padding-top: 20px;
+}
+#section-footer {
+  background-color: $bg_dark2;
+  border-top: 5px solid $cugold;
+
+  color: #fff;
+}
+#section-footer a,
+#section-footer a.active,
+#section-footer a.active-trail {
+  color:$cugold;
+}
+#section-footer a:hover {
+  color:#fff;
+}
+#zone-footer-wrapper {
+  background-color: $bg_dark1;
+  padding-top: 20px;
+}
+
+.block > *:last-child,
+.block > *:last-child > *:last-child,
+.block > *:last-child > *:last-child > *:last-child {
+  //margin-bottom: 0;
+}
+
+// Subnav
+$defaultFG: #656565;
+$hoverFG: #202020;
+$activeBG: $cugold;
+$activeFG: #000;
+$border: #e7e7e7;
+
+#block-menu-block-site-navigation-menus-1,
+#block-menu-block-site-navigation-menus-2,
+#block-menu-block-site-navigation-menus-3,
+#section-navigation {
+
+  $indent: 10px;
+
+  .menu-block-wrapper {
+    font-weight: 500;
+    border-bottom: 1px solid $border;
+  }
+  ul.menu a {
+    padding:10px;
+    border:1px solid $border;
+    margin-bottom: -1px;
+    color:$defaultFG;
+    line-height: 120%;
+    &:hover,
+    &:focus {
+      background-color: $border;
+      color:$hoverFG;
+    }
+    &.active-trail {
+      border-bottom: none;
+    }
+    &.active {
+      color:$activeFG;
+      background-color: $activeBG;
+      font-weight: 500 !important;
+    }
+  }
+  li.active-trail {
+    border-left:3px solid $activeBG;
+
+    a {
+      border-left-color: $activeBG;
+    }
+  }
+  li.active-trail > a {
+
+  }
+  li.active-trail li {
+    border:none;
+  }
+  ul.menu ul.menu a {
+    padding-left: $indent * 2;
+    font-size: 90%;
+    padding-top:7px;
+    padding-bottom: 7px;
+    border-top: none;
+    border-bottom: none;
+    font-weight: normal;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 3;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 4;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 5;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 6;
+  }
+}
+
+#block-menu-block-site-navigation-menus-3 h2.block-title {
+  font-size: 100%;
+  line-height: 120%;
+  padding: 0;
+  margin: 0;
+
+  a {
+    display: block;
+    padding:10px;
+    background-color: $activeBG;
+    color:$activeFG;
+    font-weight: 600;
+  }
+}

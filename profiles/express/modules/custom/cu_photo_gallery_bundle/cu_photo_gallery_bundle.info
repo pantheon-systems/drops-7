@@ -1,0 +1,6 @@
+name = Photo Gallery
+description = NEEDS DESCRIPTION
+core = 7.x
+package = CU-Photo Gallery
+
+dependencies[] = photo_gallery

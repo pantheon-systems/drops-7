@@ -1,0 +1,299 @@
+@import "../../cu_omega/scss/modules/_global.scss";
+@import "../../cu_omega/scss/modules/_colors.scss";
+
+
+body.layout-boxed  {
+  background-color: #fafafa;
+}
+body.layout-wide {
+  background-color: #000;
+  #backstretch {
+    display: none;
+  }
+}
+.layout-boxed #page {
+  width:960px;
+  margin: 0 auto;
+  @include rgbshadow(0px, 0px, 80px, #2a2a2a);
+  overflow: hidden;
+}
+.is-responsive.layout-boxed #page {
+  width: 100%;
+  max-width: 960px;
+}
+
+
+#section-content {
+  background-color: #fff;
+  background-image: url(../images/content-shadow.png);
+  background-repeat: repeat-x;
+}
+#zone-content-wrapper {
+  padding:20px 0;
+}
+#zone-content {
+  padding:0;
+}
+.page-sidebar-second .content-sidebar-wrapper {
+  background-image: url(../images/sidebar-right.png);
+  background-repeat: repeat-y;
+}
+.page-sidebar-first .content-sidebar-wrapper {
+  background-image: url(../images/sidebar-left.png);
+  background-repeat: repeat-y;
+}
+.page-sidebar-both .content-sidebar-wrapper {
+  background-image: url(../images/sidebar-both.png);
+  background-repeat: repeat-y;
+}
+#section-footer {
+  border-top:5px solid #c7c7c7;
+  background-image: url(../images/content-shadow.png);
+  background-repeat: repeat-x;
+  color: #fff;
+  a:link, a:visited {
+    color:$cugold;
+    &:hover,
+    &:focus {
+      color:#fff;
+    }
+  }
+}
+#zone-footer-wrapper {
+  background-color: $bg_dark1;
+  padding-top: 20px;
+  background-image: url(../images/content-shadow.png);
+  background-repeat: repeat-x;
+}
+#zone-site-information-wrapper {
+  background-color: #000;
+}
+#zone-slider-wrapper {
+  background-color: $white;
+  background-image: url(../images/content-shadow.png);
+  background-repeat: repeat-x;
+  border-bottom: 1px solid #d7d7d7;
+}
+
+.banner-black {
+  #zone-branding-wrapper {
+    background-color: #000;
+  }
+  #zone-secondary-menu-wrapper {
+    background-color: #000;
+  }
+}
+
+.banner-white {
+  #zone-branding-wrapper {
+    background-color: #fff;
+  }
+  #zone-secondary-menu-wrapper {
+    background-color: #fff;
+  }
+  .secondary-navigation {
+    border:1px solid #d7d7d7;
+  }
+}
+#zone-secondary-menu-wrapper {
+  color:#757575;
+  a {
+    color:#757575;
+  }
+  a:hover,
+  a:focus,
+  a.active,
+  a.active-trail {
+    @include gradient(lighten(#333, 10%), #333);
+    color:#fff;
+    display: inline-block;
+  }
+}
+.secondary-navigation {
+  border-bottom: none;
+  background-color: #ffffff;
+  @include gradient(#ffffff, #f4f4f4);
+}
+#zone-menu-wrapper {
+  background-color:#fff;
+  border-bottom:1px solid #d7d7d7;
+  background-color: #ffffff;
+  @include gradient(#ffffff, #f4f4f4);
+}
+.banner-white #zone-menu-wrapper {
+  border-top:1px solid #e7e7e7;
+  @include gradient(#fafafa, #f1f1f1);
+}
+body.layout-boxed #region-menu {
+  width:960px;
+  margin: 0;
+}
+#zone-menu ul#main-menu a {
+  color:#656565;
+  //font-weight: bold;
+  border-left:1px solid $border_color;
+}
+ul#action-menu a {
+  color:#757575;
+  //font-weight: bold;
+  border: none;
+  &:hover,
+  &:focus {
+    color:#333;
+  }
+}
+
+#zone-menu ul#main-menu a:hover,
+#zone-menu ul#main-menu a:focus,
+#zone-menu ul#main-menu a.active,
+#zone-menu ul#main-menu a.active-trail {
+  color:#fff;
+  @include gradient(lighten(#333, 10%), #333);
+  border-bottom: 1px solid #333;
+  margin-bottom: -1px;
+  position: relative;
+  border-left-color: #333;
+}
+
+
+#zone-menu ul#main-menu a#home-link {
+  background: transparent;
+  filter:none;
+  color:#757575;
+  border:none;
+}
+#zone-menu ul#main-menu a#home-link:hover,
+#zone-menu ul#main-menu a#home-link.active {
+  color:#333;
+  background: transparent;
+}
+a#tablet-toggle {
+  color:#333;
+}
+#main-menu-mobile a,
+#secondary-menu-mobile a {
+  border-bottom: 1px solid $border_color;
+  color:#555;
+  &.active,
+  &.active-trail {
+    color:#fff;
+    border-bottom: none;
+    @include gradient(lighten(#333, 10%), #333);
+  }
+}
+#zone-intro {
+  margin-top: -1px;
+}
+.page-title-image-wrapper.container-content {
+  margin-top: 20px;
+}
+#region-lower {
+  border-top:1px solid $border_color;
+  padding-top:20px;
+}
+
+
+// Subnav
+$defaultFG: #656565;
+$hoverFG: #202020;
+$activeBG: #4c4c4c;
+$activeFG: #fff;
+$border: #e7e7e7;
+
+#block-menu-block-site-navigation-menus-1,
+#block-menu-block-site-navigation-menus-2,
+#block-menu-block-site-navigation-menus-3,
+#section-navigation {
+
+  $indent: 10px;
+
+  .menu-block-wrapper {
+    font-weight: 500;
+    border-bottom: 1px solid $border;
+  }
+  ul.menu a {
+    padding:10px;
+    border:1px solid $border;
+    margin-bottom: -1px;
+    color:$defaultFG;
+    line-height: 120%;
+    &:hover,
+    &:focus {
+      background-color: $border;
+      color:$hoverFG;
+    }
+    &.active-trail {
+      border-bottom: none;
+    }
+    &.active {
+      color:$activeFG;
+      background-color: $activeBG;
+      @include gradient(lighten(#333, 10%), #333);
+      font-weight: 500 !important;
+    }
+  }
+  li.active-trail {
+    border-left:3px solid $activeBG;
+
+    a {
+      border-left-color: $activeBG;
+    }
+  }
+  li.active-trail > a {
+
+  }
+  li.active-trail li {
+    border:none;
+  }
+  ul.menu ul.menu a {
+    padding-left: $indent * 2;
+    font-size: 90%;
+    padding-top:7px;
+    padding-bottom: 7px;
+    border-top: none;
+    border-bottom: none;
+    font-weight: normal;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 3;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 4;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 5;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 6;
+  }
+}
+
+#block-menu-block-site-navigation-menus-3 h2.block-title {
+  font-size: 100%;
+  line-height: 120%;
+  padding: 0;
+  margin: 0;
+
+  a {
+    display: block;
+    padding:10px;
+    background-color: $activeBG;
+    color:$activeFG;
+    font-weight: 600;
+  }
+}
+.hero-unit,
+.block-section,
+.page-title-image-wrapper {
+  -webkit-box-shadow: inset 0 0 50px rgba(0,0,0,0.25);
+  -moz-box-shadow: inset 0 0 50px rgba(0,0,0,0.25);
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.25);
+}
+.block-section {
+  .block-section,
+  .hero-unit {
+    -webkit-box-shadow:none;
+    -moz-box-shadow:none;
+    box-shadow: none;
+  }
+}

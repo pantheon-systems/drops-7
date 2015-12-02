@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * Implements hook_ctools_plugin_api().
+ *
+ * Notify CTools that we'll be using the plugin API with Context module.
+ */
+function cu_title_image_ctools_plugin_api($module, $api) {
+  if ($module == 'context' && $api == 'plugins') {
+    return array('version' => 3);
+  }
+}
+
+/**
+ * Implements hook_context_plugins().
+ *
+ * CTools plugin API hook for Context.
+ *
+ * @return array
+ *   Config details for each reaction.
+ *
+ * @see hook_context_plugins()
+ */
+function cu_title_image_context_plugins() {
+  $plugins = array();
+
+  $plugins['context_reaction_title_image'] = array(
+    'handler' => array(
+      'path' => drupal_get_path('module', 'cu_title_image') . '/plugins',
+      'file' => 'cu_title_image.inc',
+      'class' => 'context_reaction_title_image',
+      'parent' => 'context_reaction',
+    ),
+  );
+
+  return $plugins;
+}
+
+/**
+ * Implements hook_context_registry().
+ *
+ * Registry hook for conditions & reactions.
+ *
+ * @see hook_context_registry()
+ */
+function cu_title_image_context_registry() {
+  return array(
+    'reactions' => array(
+      'title_image' => array(
+        'title' => t('Page Title Image'),
+        'description' => t('Add an image to the page title.'),
+        'plugin' => 'context_reaction_title_image',
+      ),
+    ),
+  );
+}
+
+function cu_title_image_context_page_reaction() {
+  if ($plugin = context_get_plugin('reaction', 'title_image')) {
+   $plugin->execute();
+  }
+}
+
+function cu_title_image_preprocess_page(&$page) {
+  if ($plugin = context_get_plugin('condition', 'path')) {
+    $plugin->execute();
+  }
+  if ($plugin = context_get_plugin('condition', 'language')) {
+    global $language;
+    $plugin->execute($language->language);
+  }
+  if ($plugin = context_get_plugin('condition', 'user')) {
+    global $user;
+    $plugin->execute($user);
+  }
+  // @todo: write a module_implements hook to allow custom conditions here?
+
+  // Check for the active theme reaction.
+  if ($plugin = context_get_plugin('reaction', 'title_image')) {
+    if ($title_image = $plugin->execute()) {
+      $page['title_image'] = $title_image['title_image_file'];
+    }
+  }
+}
+function cu_title_image_preprocess_region(&$vars) {
+  if ($plugin = context_get_plugin('reaction', 'title_image')) {
+    if ($title_image = $plugin->execute()) {
+      $vars['has_title_image'] = TRUE;
+    }
+  }
+}

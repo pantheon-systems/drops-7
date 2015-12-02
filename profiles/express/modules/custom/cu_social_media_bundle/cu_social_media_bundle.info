@@ -1,0 +1,8 @@
+name = Social Media
+description = Adds Twitter and Facebook related features.
+core = 7.x
+package = CU-Social Media
+
+dependencies[] = cu_twitter_feed
+dependencies[] = cu_facebook_activity
+dependencies[] = cu_facebook_like_button

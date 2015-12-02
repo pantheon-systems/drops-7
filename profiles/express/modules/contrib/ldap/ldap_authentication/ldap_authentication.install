@@ -1,0 +1,110 @@
+<?php
+// $Id: ldap_authentication.install,v 1.1.4.2 2011/02/08 06:01:00 johnbarclay Exp $
+
+/**
+ * @file
+ * Install, update and uninstall functions for the LDAP authentication module.
+ */
+
+
+/**
+ * Implements hook_requirements().
+ */
+function ldap_authentication_requirements($phase) {
+  $requirements = array();
+  if ($phase != "install" && db_table_exists('ldapauth')) {
+
+    $requirements['ldap_authentication_ldap_integration']['title'] = t('LDAP Integration LDAP Auth Upgrade Concern');
+    $requirements['ldap_authentication_ldap_integration']['severity'] = REQUIREMENT_WARNING;
+    $requirements['ldap_authentication_ldap_integration']['value'] = NULL;
+    $requirements['ldap_authentication_ldap_integration']['description'] = t('Upgrade from Drupal 6 LDAP Auth to Drupal 7
+      LDAP Authentication is not automatic.  LDAP Authentication will need to be configured by hand.
+      Some harmless data will remain in the user.data field in the user table.  Records in
+      the authmap table will cause conflicts and should be removed or changed to ldap_authentication
+      as the module (see http://drupal.org/node/1183192).
+      See http://drupal.org/node/1023016, http://drupal.org/node/1183192.
+      This message will go away when the ldapauth database table is removed.');
+  }
+  // check that ldapauth not installed.
+  return $requirements;
+}
+
+/**
+ * Implements hook_install().
+ */
+function ldap_authentication_install() {
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function ldap_authentication_uninstall() {
+  //$result = db_query('DELETE FROM {variables} WHERE name like "ldap_authentication_%"');
+  variable_del('ldap_authentication_conf');
+}
+
+/**
+ * just notes and psuedo code for now.  need a place to keep track
+ * of what a cross grade function would do
+ */
+
+
+/**
+ * ldap_authentication and ldap_sso.  enable ldap_sso if sso was enabled in ldap_authentication previously
+ */
+function ldap_authentication_update_7100() {
+  // if sso is enabled in ldap authentication, enable module ldap_sso
+	module_load_include('inc', 'ldap_servers','ldap_servers.functions');
+  ldap_server_module_load_include('php', 'ldap_authentication', 'LdapAuthenticationConfAdmin.class');
+  $sso_enabled = LdapAuthenticationConfAdmin::getSaveableProperty('ssoEnabled');
+  if ($sso_enabled) {
+    module_enable(array('ldap_sso'));
+    return t('Enabled new LDAP SSO module if Single Sign on was previously enabled.  Code for LDAP Single Sign On was moved to new "LDAP SSO" included module.');
+  }
+}
+
+
+function ldap_authentication_ldap_integration6_to_ldap7() {
+
+ // fix authmaps
+ // UPDATE {authmap} SET module = 'ldap_authentication' WHERE module = 'ldapauth'
+
+ // load all users and setup user data array
+
+/**
+ * CREATE TABLE `ldapauth` (
+	`sid` TINYINT(4) NOT NULL AUTO_INCREMENT,
+	`name` VARCHAR(255) NOT NULL,
+	`status` TINYINT(4) NOT NULL DEFAULT '0',
+	`server` VARCHAR(255) NOT NULL,
+	`port` INT(11) NOT NULL DEFAULT '389',
+	`tls` TINYINT(4) NOT NULL DEFAULT '0',
+	`encrypted` TINYINT(4) NOT NULL DEFAULT '0',
+	`basedn` TEXT NULL,
+	`user_attr` VARCHAR(255) NULL DEFAULT NULL,
+	`mail_attr` VARCHAR(255) NULL DEFAULT NULL,
+	`binddn` VARCHAR(255) NULL DEFAULT NULL,
+	`bindpw` VARCHAR(255) NULL DEFAULT NULL,
+	`login_php` TEXT NULL,
+	`filter_php` TEXT NULL,
+	`weight` INT(11) NOT NULL DEFAULT '0',
+	`ldapgroups_in_dn` TINYINT(4) NOT NULL DEFAULT '0',
+	`ldapgroups_dn_attribute` VARCHAR(255) NULL DEFAULT NULL,
+	`ldapgroups_attr` VARCHAR(255) NULL DEFAULT NULL,
+	`ldapgroups_in_attr` TINYINT(4) NOT NULL DEFAULT '0',
+	`ldapgroups_as_entries` TINYINT(4) NOT NULL DEFAULT '0',
+	`ldapgroups_entries` TEXT NULL,
+	`ldapgroups_entries_attribute` VARCHAR(255) NULL DEFAULT NULL,
+	`ldapgroups_mappings` TEXT NULL,
+	`ldapgroups_mappings_filter` TINYINT(4) NOT NULL DEFAULT '0',
+	`ldapgroups_filter_php` TEXT NULL,
+	`ldapgroups_groups` TEXT NULL,
+	PRIMARY KEY (`name`),
+	INDEX `sid` (`sid`)
+)
+COLLATE='utf8_general_ci'
+ENGINE=InnoDB
+ROW_FORMAT=DEFAULT
+AUTO_INCREMENT=2
+ */
+}

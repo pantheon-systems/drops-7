@@ -1,0 +1,14 @@
+.page-view-mode-teaser {
+  margin-bottom:20px;
+  border-bottom:1px solid #f0f0f0;
+}
+.page-view-mode-teaser-content {
+  overflow: auto;
+}
+.page-view-mode-title a {
+  display: block;
+  padding: 5px 0;
+}
+.page-summary {
+  padding:5px 0 20px;
+}

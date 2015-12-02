@@ -1,0 +1,15 @@
+name = Focal Point
+description = Users can specify the focal point of an image for use during cropping.
+core = 7.x
+
+dependencies[] = entity
+dependencies[] = image
+
+configure = admin/config/media/focal_point
+
+; Information added by Drupal.org packaging script on 2015-03-05
+version = "7.x-1.0-beta4+1-dev"
+core = "7.x"
+project = "focal_point"
+datestamp = "1425574082"
+

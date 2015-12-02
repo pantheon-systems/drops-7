@@ -1,0 +1,75 @@
+<?php
+
+
+/**
+ * @file
+ * Implements tests for the theme switching rules.
+ */
+
+class ThemekeyNodePropertiesTestCase extends ThemekeyWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Themekey Node Properties',
+      'description' => 'Test the themekey node properties (node:).',
+      'group' => 'Themekey',
+    );
+  }
+
+  public function testPropertyNodeChanged() {
+    $node = $this->drupalCreateNode();
+    $this->simplePropertyTest('node:changed', '=', $node->changed, array('path' => 'node/' . $node->nid));
+  }
+
+  public function testPropertyNodeCreated() {
+    $node = $this->drupalCreateNode();
+    $this->simplePropertyTest('node:created', '=', $node->changed, array('path' => 'node/' . $node->nid));
+  }
+
+  public function testPropertyNodeLanguage() {
+    $node = $this->drupalCreateNode(array('language' => LANGUAGE_NONE));
+    $this->simplePropertyTest('node:language', '=', 'neutral', array('path' => 'node/' . $node->nid));
+  }
+
+//  public function testPropertyNodeLanguageEnglish() {
+//    $node = $this->drupalCreateNode(array('language' => 'en'));
+//    $this->simplePropertyTest('node:language', '=', 'en', array('path' => 'node/' . $node->nid));
+//  }
+
+  public function testPropertyNodeNid() {
+    $node = $this->drupalCreateNode();
+    $this->simplePropertyTest('node:nid', '=', $node->nid, array('path' => 'node/' . $node->nid));
+  }
+
+  public function testPropertyNodeVid() {
+    $node = $this->drupalCreateNode();
+    $node->revision = TRUE;
+    node_save($node);
+    $this->simplePropertyTest('node:vid', '=', $node->vid, array('path' => 'node/' . $node->nid . '/revision/' . $node->vid . '/view'));
+  }
+
+  public function testPropertyNodePromote() {
+    $node = $this->drupalCreateNode(array('promote' => TRUE));
+    $this->simplePropertyTest('node:promote', '=', 1, array('path' => 'node/' . $node->nid));
+  }
+
+  public function testPropertyNodeSticky() {
+    $node = $this->drupalCreateNode(array('sticky' => TRUE));
+    $this->simplePropertyTest('node:sticky', '=', 1, array('path' => 'node/' . $node->nid));
+  }
+
+  public function testPropertyNodeType() {
+    $node = $this->drupalCreateNode(array('type' => 'page'));
+    $this->simplePropertyTest('node:type', '=', 'page', array('path' => 'node/' . $node->nid));
+  }
+
+  public function testPropertyNodeUid() {
+    $node = $this->drupalCreateNode(array('uid' => '1'));
+    $this->simplePropertyTest('node:uid', '=', '1', array('path' => 'node/' . $node->nid));
+  }
+
+  public function testPropertyNodeTitle() {
+    $node = $this->drupalCreateNode(array('title' => 'Node title test'));
+    $this->simplePropertyTest('node:title', '=', 'Node title test', array('path' => 'node/' . $node->nid));
+  }
+
+}

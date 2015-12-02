@@ -1,0 +1,121 @@
+<?php
+
+/**
+ * @file
+ * Install / Uninstall file for Imagecrop.
+ *
+ * @author Zuuperman - http://drupal.org/user/361625 - http://www.menhir.be
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function imagecrop_schema() {
+
+  $schema['image_crop_settings'] = array(
+    'description' => 'Stores imagecrop settings for files.',
+    'fields' => array(
+      'fid' => array('type' => 'int', 'not null' => TRUE, 'unsigned' => TRUE),
+      'style_name' => array('type' => 'varchar', 'length' => 255, 'not null' => TRUE),
+      'xoffset' => array('type' => 'int', 'not null' => TRUE, 'unsigned' => TRUE),
+      'yoffset' => array('type' => 'int', 'not null' => TRUE, 'unsigned' => TRUE),
+      'width' => array('type' => 'int', 'not null' => TRUE, 'unsigned' => TRUE),
+      'height' => array('type' => 'int', 'not null' => TRUE, 'unsigned' => TRUE),
+      'scale' => array('type' => 'varchar', 'length' => '10', 'not null' => TRUE, 'default' => 'original'),
+    ),
+    'primary key' => array('fid', 'style_name'),
+  );
+
+  return $schema;
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function imagecrop_uninstall() {
+
+  variable_del('imagecrop_popup_height');
+  variable_del('imagecrop_popup_width');
+  variable_del('imagecrop_popup');
+
+}
+
+/**
+ * Change the used imagestyle keys from isid to style name.
+ */
+function imagecrop_update_7001() {
+
+  $styles = array();
+  $result = db_query('SELECT isid, name FROM {image_styles}');
+  foreach ($result as $row) {
+    $styles[$row->isid] = $row->name;
+  }
+
+  // Update field settings
+  $result = db_query("SELECT fci.id, fci.data FROM {field_config_instance} fci INNER JOIN {field_config} fc ON fci.field_id = fc.id WHERE type = 'image' OR type = 'media'");
+  foreach ($result as $row) {
+
+    $data = unserialize($row->data);
+    $new_data = $data;
+
+    if (isset($data['settings']['imagecrop'])) {
+
+      foreach ($data['settings']['imagecrop'] as $isid => $active) {
+        if (isset($styles[$isid])) {
+          if ($active) {
+            $active = $styles[$isid];
+          }
+          unset($data['settings']['imagecrop'][$isid]);
+          $data['settings']['imagecrop'][$styles[$isid]] = $active;
+        }
+        else {
+          $data['settings']['imagecrop'][$isid] = $active;
+        }
+      }
+
+      db_update('field_config_instance')
+      ->condition('id', $row->id)
+      ->fields(array('data' => serialize($data)))
+      ->execute();
+
+    }
+
+  }
+
+  // Update table
+  if (!db_field_exists('image_crop_settings', 'style_name')) {
+
+    db_drop_primary_key('image_crop_settings');
+
+    $field_info = array('type' => 'varchar', 'length' => 255);
+
+    // Use style name as identifier.
+    db_add_field('image_crop_settings', 'style_name', $field_info);
+
+    // Update the table with correct style name.
+    $isids = db_query('SELECT DISTINCT(isid) FROM {image_crop_settings}')->fetchCol();
+
+    foreach ($isids as $isid) {
+
+      // Make sure only not exported styles are updated.
+      if (!isset($styles[$isid])) {
+        continue;
+      }
+
+      db_update('image_crop_settings')
+        ->condition('isid', $isid)
+        ->fields(array('style_name' => $styles[$isid]))
+        ->execute();
+
+    }
+
+    // Delete the isid info from table
+    db_drop_field('image_crop_settings', 'isid');
+
+    // Add primary key
+    db_add_primary_key('image_crop_settings', array('fid', 'style_name'));
+
+  }
+
+}

@@ -1,0 +1,419 @@
+<?php
+/**
+ * @file
+ * Tests for the TranscoderAbstractionFactoryZencoder class
+ */
+
+/**
+ * Tests for TranscoderAbstractionFactoryZencoder
+ *
+ * Inherits from DrupalWebTestCase to provide a clean environment.
+ */
+class TranscoderAbstractionFactoryZencoderTestCase extends DrupalWebTestCase {
+  /**
+   * @var TranscoderAbstractionFactoryZencoder
+   */
+  private $transcoder;
+  private $user;
+  private $node;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Video Zencoder tests',
+      'description' => 'Tests for the TranscoderAbstractionFactoryZencoder class',
+      'group' => 'Video',
+    );
+  }
+
+  public function setUp() {
+    parent::setUp();
+
+    module_enable(array('video', 'node'), TRUE);
+    if (!module_enable(array('zencoderapi'), TRUE)) {
+      $this->verbose('The Zencoder API module could not be enabled.');
+    }
+
+    field_info_cache_clear();
+    $this->resetAll();
+    drupal_cron_run();
+
+    // Test subject
+    $this->transcoder = $transcoder = new TranscoderAbstractionFactoryZencoder();
+    variable_set('video_convertor', 'TranscoderAbstractionFactoryZencoder');
+
+    // Build test job
+    db_insert('file_managed')->fields(array(
+      'fid' => 1,
+      'filemime' => 'video/mp4',
+      'uri' => 'public://videos/original/file.mp4',
+      'filename' => 'file.mp4',
+      'filesize' => 134,
+      'status' => 1,
+      'timestamp' => time(),
+      'uid' => 1,
+    ))->execute();
+    db_insert('file_managed')->fields(array(
+      'fid' => 2,
+      'filemime' => 'video/mp4',
+      'uri' => 'public://videos/converted/1/file.mp4',
+      'filename' => 'file.mp4',
+      'filesize' => 0,
+      'status' => 1,
+      'timestamp' => time(),
+      'uid' => 1,
+    ))->execute();
+    db_insert('file_managed')->fields(array(
+      'fid' => 3,
+      'filemime' => 'video/flv',
+      'uri' => 'public://videos/converted/1/file.flv',
+      'filename' => 'file.flv',
+      'filesize' => 0,
+      'status' => 1,
+      'timestamp' => time(),
+      'uid' => 1,
+    ))->execute();
+    video_jobs::create(1, '320x240', 1, 'node', 'videofield', LANGUAGE_NONE, 0);
+    db_insert('video_output')->fields(array(
+      'vid' => 1,
+      'original_fid' => 1,
+      'output_fid' => 2,
+      'job_id' => 1,
+    ))->execute();
+    db_insert('video_output')->fields(array(
+      'vid' => 1,
+      'original_fid' => 1,
+      'output_fid' => 3,
+      'job_id' => 2,
+    ))->execute();
+
+    $dir = 'public://videos/converted/1';
+    file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+
+    // Build test entity type
+    field_create_field(array('field_name' => 'videofield', 'type' => 'video'));
+    field_create_instance(array('field_name' => 'videofield', 'entity_type' => 'node', 'bundle' => 'page'));
+
+    // Build test entity
+    $this->user = $user = $this->drupalCreateUser();
+    $node = new stdClass();
+    $node->uid = $user->uid;
+    $node->type = 'page';
+    $node->title = 'Test node';
+    $node->videofield['und'][0] = array('fid' => 1);
+    node_save($node);
+    $this->node = node_load($node->nid);
+  }
+
+  public function testExtractFrames() {
+    $this->transcoder->setInput(array(
+      'fid' => 1,
+      'uri' => 'public://test.mp4',
+      'filename' => 'test.mp4',
+    ));
+
+    // No job, should return FALSE
+    $out = $this->transcoder->extractFrames('public', 'png');
+    $this->assertFalse($out);
+
+    // Set state of job
+    db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_COMPLETE))->condition('vid', 1)->execute();
+
+    // No files, should return FALSE
+    // A watchdog message is expected at this point
+    $out = $this->transcoder->extractFrames('public', 'png');
+    $this->assertFalse($out);
+
+    // Make some files
+    variable_set('video_zencoder_base_url', 'public://incoming');
+    variable_set('video_thumbnail_count', 5);
+    $dir = 'public://incoming/videos/thumbnails/1/';
+    file_prepare_directory($dir, FILE_CREATE_DIRECTORY);
+
+    for ($i = 0; $i < 5; $i++) {
+      file_put_contents($dir . 'thumbnail-1_000' . $i . '.png', $i . '');
+    }
+
+    // Test generation of items array
+    $out = $this->transcoder->extractFrames('public', 'png');
+    $this->assertTrue(is_array($out), 'extractFrames should return array');
+    $this->assertEqual(5, count($out), '5 items should be returned');
+
+    // Test whether the original files have been deleted
+    for ($i = 0; $i < 5; $i++) {
+      $filename = 'thumbnail-1_000' . $i . '.png';
+
+      $this->assertEqual($filename, $out[$i]->filename);
+      $this->assertEqual('image/png', $out[$i]->filemime);
+      $this->assertEqual(0, $out[$i]->status);
+
+      $this->assertFalse(file_exists($dir . $filename), 'Thumbnail ' . $i . ' should be deleted from original directory');
+      $this->assertTrue(file_exists('public://videos/thumbnails/1/' . $filename), 'Thumbnail ' . $i . ' should exist in target directory');
+    }
+
+    // Calling the method again should return same files
+    $out = $this->transcoder->extractFrames('public', 'png');
+    $this->assertTrue(is_array($out), 'extractFrames should return array');
+    $this->assertEqual(5, count($out), '5 items should be returned');
+  }
+
+  /**
+   * Test of TranscoderAbstractionFactoryZencoder::processPostback()
+   *
+   * Run this test as the www-data / apache user.
+   */
+  public function testProcessPostback() {
+    // Only test this if the library is installed
+    if (!function_exists('libraries_load')) {
+      $this->verbose('Not starting testProcessPostback() because the Libraries API module is not available.');
+      return;
+    }
+    $load = libraries_load('zencoder');
+    if (!$load['loaded'] || !$load['installed']) {
+      $this->verbose('Not starting testProcessPostback() because Zencoder API can\'t be loaded.');
+      return;
+    }
+
+    $this->transcoder = new TranscoderAbstractionFactoryZencoder();
+
+    // Make sure the Zencoder transcoder is set.
+    variable_set('video_convertor', 'TranscoderAbstractionFactoryZencoder');
+
+    // Set state of job
+    db_update('video_queue')->fields(array('status' => VIDEO_RENDERING_PENDING))->condition('vid', 1)->execute();
+
+    // Test GET request to postback URL
+    $out = $this->curlExec(array(CURLOPT_URL => url('postback/jobs', array('absolute' => TRUE)), CURLOPT_POST => FALSE));
+    $this->assertEqual('This is the Zencoder notification handler. It seems to work fine.', $out, 'Postback with GET request output "This is the Zencoder notification handler. It seems to work fine.", got "' . $out . '"');
+
+    // Test invalid JSON in postback request
+    $out = $this->doPostback('4 d234234');
+    $this->assertEqual('Bad request', $out, 'Postback with invalid JSON should receive output "Bad request", got "' . $out . '"');
+
+    // Test invalid data in postback request
+    $out = $this->doPostback('{ "hi" : "hi" }');
+    $this->assertEqual('Invalid data', $out, 'Postback for job with no useful data should receive output "Invalid data", got "' . $out . '"');
+
+    // Test postback for non-existent job
+    $out = $this->doPostback('{
+   "output":{
+      "state":"finished"
+   },
+   "job":{
+      "state":"finished",
+      "id":3
+   }
+}');
+    $this->assertEqual('Not found', $out, 'Postback for non-existent job should receive output "Not found", got "' . $out . '"');
+
+    // Test cancelled job
+    $out = $this->doPostback('{
+       "output":{
+          "state":"cancelled"
+       },
+       "job":{
+          "state":"cancelled",
+          "id":1
+       }
+    }');
+    $this->assertEqual('Cancelled', $out);
+
+    // Check state and restore state
+    $video = db_query('SELECT * FROM {video_queue} WHERE vid = 1')->fetch();
+    $this->assertEqual(VIDEO_RENDERING_FAILED, $video->status);
+    db_query('UPDATE {video_queue} SET status = 1 WHERE vid = 1')->execute();
+
+    // Test error job
+    $out = $this->doPostback('{
+   "output":{
+      "total_bitrate_in_kbps":null,
+      "frame_rate":null,
+      "md5_checksum":null,
+      "channels":null,
+      "audio_codec":null,
+      "error_link":"https://app.zencoder.com/docs/errors/InvalidFormatCodecError",
+      "video_codec":null,
+      "state":"failed",
+      "video_bitrate_in_kbps":null,
+      "width":null,
+      "format":null,
+      "url":"http://test/test.webm",
+      "height":null,
+      "audio_sample_rate":null,
+      "label":"video-416",
+      "audio_bitrate_in_kbps":null,
+      "duration_in_ms":null,
+      "file_size_in_bytes":null,
+      "id":37300501,
+      "error_message":"The requested codec \'h264\' is not compatible with the format \'webm\'."
+   },
+   "input":{
+      "total_bitrate_in_kbps":763,
+      "frame_rate":29.97,
+      "md5_checksum":null,
+      "channels":"2",
+      "audio_codec":"aac",
+      "state":"finished",
+      "video_codec":"h264",
+      "video_bitrate_in_kbps":662,
+      "width":312,
+      "format":"mpeg4",
+      "height":240,
+      "audio_sample_rate":44100,
+      "audio_bitrate_in_kbps":101,
+      "duration_in_ms":5038,
+      "file_size_in_bytes":483248,
+      "id":21749675
+   },
+   "job":{
+      "created_at":"2012-07-07T13:19:21Z",
+      "test":true,
+      "pass_through":null,
+      "updated_at":"2012-07-07T13:19:35Z",
+      "submitted_at":"2012-07-07T13:19:21Z",
+      "state":"processing",
+      "id":1
+   }
+}');
+    $this->assertEqual('Failure', $out, 'Postback for job with output state "failure" should receive output "Failure", got "' . $out . '"');
+
+    // Check state and restore state
+    $video = db_query('SELECT * FROM {video_queue} WHERE vid = 1')->fetch();
+    $this->assertEqual(VIDEO_RENDERING_FAILED, $video->status);
+    db_query('UPDATE {video_queue} SET status = 1 WHERE vid = 1')->execute();
+
+    // Test non-finished job
+    $out = $this->doPostback('{
+       "output":{
+          "state":"test"
+       },
+       "job":{
+          "state":"test",
+          "id":1
+       }
+    }');
+    $this->assertEqual('', $out, 'Postback for job with non-finished state should receive output "", got "' . $out . '"');
+
+    // Test finished job
+    $thumb1 = 'public://thumbnail-1_0000.png';
+    $thumb2 = 'public://thumbnail-1_0001.jpg';
+    file_put_contents($thumb1, '123');
+    file_put_contents($thumb2, '456');
+
+    $outputfile = 'public://file.mp4';
+    file_put_contents($outputfile, 'abcde');
+
+    $out = $this->doPostback('{
+       "output":{
+          "state":"finished",
+          "duration_in_ms":5000,
+          "url":"' . file_create_url($outputfile) . '",
+          "file_size_in_bytes":5,
+          "thumbnails":[
+             {
+                "images":[
+                    {
+                       "dimensions":"320x240",
+                       "url":"' . file_create_url($thumb1) . '?accesskey=232432",
+                       "format":"PNG",
+                       "file_size_bytes":3
+                    },
+                    {
+                       "dimensions":"320x240",
+                       "url":"' . file_create_url($thumb2) . '?accesskey=45093232",
+                       "format":"PNG",
+                       "file_size_bytes":3
+                    }
+                ],
+                "label" : null
+             }
+          ]
+       },
+       "job":{
+          "state":"finished",
+          "id":1
+       }
+    }');
+
+    $this->assertEqual('', $out);
+
+    // Test whether the duration and status have been saved
+    $video = video_jobs::load(1);
+
+    $this->assertEqual(5, $video->duration);
+    $this->assertEqual(VIDEO_RENDERING_COMPLETE, $video->video_status);
+
+    // Check properties of the converted file
+    $fileconv = file_load(2);
+    $this->assertNotNull($fileconv, 'Converted file with fid 2 should exist');
+    $this->assertTrue(file_exists($fileconv->uri), 'Converted file must be moved to new location (' . $fileconv->uri . ')');
+    $this->assertEqual(5, $fileconv->filesize, 'Converted file must have file size 5');
+
+    // Check if a thumbnail has been downloaded
+    $node = node_load(1, NULL, TRUE);
+    $this->assertNotNull($node->videofield['und'][0]['thumbnail'], 'Thumbnail should exist for videofield for node 1');
+
+    // Check if thumbs have been registered
+    $usages = db_query('SELECT thumbnailfid FROM {video_thumbnails} WHERE videofid = 1')->fetchCol(0);
+    $files = array_values(file_load_multiple($usages));
+    $this->assertEqual(2, count($files), 'There should be two related thumbnails to fid 1');
+
+    // Check the values of the $files array
+    if (count($files) == 2) {
+      $this->assertTrue(file_exists($files[0]->uri));
+      $this->assertEqual('thumbnail-1_0000.png', $files[0]->filename);
+      $this->assertEqual('public://videos/thumbnails/1/thumbnail-1_0000.png', $files[0]->uri);
+      $this->assertEqual('image/png', $files[0]->filemime);
+      $this->assertTrue(file_exists($files[1]->uri));
+      $this->assertEqual('thumbnail-1_0001.jpg', $files[1]->filename);
+      $this->assertEqual('public://videos/thumbnails/1/thumbnail-1_0001.jpg', $files[1]->uri);
+      $this->assertEqual('image/jpeg', $files[1]->filemime);
+    }
+
+    // Simulate a reencode of the same video
+    db_query('UPDATE {video_queue} SET status = 1 WHERE vid = 1')->execute();
+
+    $out = $this->doPostback('{
+       "output":{
+          "state":"finished",
+          "duration_in_ms":5000,
+          "url":"' . file_create_url($outputfile) . '",
+          "file_size_in_bytes":5,
+          "thumbnails":[
+             {
+                "images":[
+                    {
+                       "dimensions":"320x240",
+                       "url":"' . file_create_url($thumb1) . '?accesskey=232432",
+                       "format":"PNG",
+                       "file_size_bytes":3
+                    },
+                    {
+                       "dimensions":"320x240",
+                       "url":"' . file_create_url($thumb2) . '?accesskey=45093232",
+                       "format":"PNG",
+                       "file_size_bytes":3
+                    }
+                ],
+                "label" : null
+             }
+          ]
+       },
+       "job":{
+          "state":"finished",
+          "id":2
+       }
+    }');
+
+    $this->assertEqual('', $out);
+    $video = video_jobs::load(1);
+    $this->assertEqual(VIDEO_RENDERING_COMPLETE, $video->video_status);
+  }
+
+  private function doPostback($data) {
+    $out = $this->curlExec(array(CURLOPT_URL => url('postback/jobs', array('absolute' => TRUE)), CURLOPT_POST => TRUE, CURLOPT_POSTFIELDS => $data));
+    // Ensure that any changes to variables in the other thread are picked up.
+    $this->refreshVariables();
+
+    return $out;
+  }
+}

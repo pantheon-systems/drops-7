@@ -1,0 +1,35 @@
+<?php
+/**
+ * @file
+ * Code for the Pages feature.
+ */
+
+include_once 'cu_page.features.inc';
+
+/**
+ *  Implements hook_form_FORM_ID_alter.
+ */
+function cu_page_form_page_node_form_alter(&$form, &$form_state, $form_id) {
+  $form['menu']['enabled']['#default_value'] = TRUE;
+}
+
+function cu_page_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'cu_page');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'node', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('bean');
+  foreach ($hooks as $h) {
+    if (isset($theme_registry[$h]['theme paths'])) {
+      $first_element = array_shift($theme_registry[$h]['theme paths']);
+      array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+    }
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function cu_page_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'cu_page') . '/cu-page.css');
+}

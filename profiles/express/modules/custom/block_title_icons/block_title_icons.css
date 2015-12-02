@@ -1,0 +1,35 @@
+#edit-block-title-icons-options {
+  -webkit-column-count: 8;
+  -webkit-column-gap: 20px;
+  -webkit-column-rule: 1px solid #ddd;
+
+  -moz-column-count: 8;
+  -moz-column-gap: 20px;
+  -moz-column-rule: 1px solid #ddd;
+
+  column-count: 8;
+  column-gap: 20px;
+  column-rule: 1px solid #ddd;
+}
+#edit-block-title-icons-options .form-type-radio {
+  padding:5px;
+  color:#aaa;
+  font-size: 85%;
+}
+#edit-block-title-icons-options .form-type-radio:hover {
+  color:#111;
+}
+#edit-block-title-icons-options i {
+  font-size: 175%;
+  color:#111;
+  padding:0 5px;
+}
+i.blockicon {
+  display: inline-block;
+  margin:3px 5px 0px 0;
+  float:left;
+}
+span.blockicontext {
+  overflow: hidden;
+  display: block;
+}

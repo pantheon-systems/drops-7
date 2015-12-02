@@ -1,0 +1,22 @@
+<?php
+
+/**
+ * @file
+ * Install file for smartcrop module
+ */
+
+/**
+ * Implements hook_enable().
+ */
+function smartcrop_enable() {
+  cache_clear_all('image_styles', 'cache');
+  cache_clear_all('image_effects:', 'cache', TRUE);
+}
+
+/**
+ * Implements hook_disable().
+ */
+function smartcrop_disable() {
+  cache_clear_all('image_styles', 'cache');
+  cache_clear_all('image_effects:', 'cache', TRUE);
+}

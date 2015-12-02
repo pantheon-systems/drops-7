@@ -1,0 +1,164 @@
+/** Basic layout **/
+
+body.page-imagecrop {
+  background: #fff;
+  height: 100%;
+  color: #333;
+  padding: 0 !important;
+}
+
+.page-imagecrop a {
+  color: #0074BD;  
+}
+
+.page-imagecrop .content {
+  margin-top: 0;
+}
+
+#imagecrop-selection {
+  border: 1px solid #ccc;
+  padding: 10px 0 0 12px;
+}
+
+.page-imagecrop label {
+  display: inline;
+  padding-right: 10px;
+  color: #333;
+  font-weight: bold;
+}
+
+.page-imagecrop .form-item {
+  margin-bottom: 12px; 
+}
+
+#imagecrop-style-selection-form {
+  float: left;
+}
+
+.imagecrop-form-link {
+  padding: 4px;
+  margin-left: 20px;
+  float: left;
+}
+
+#imagecrop-forms,
+#imagecrop-help {
+  padding: 8px 12px;
+}
+
+#imagecrop-preview,
+#imagecrop-crop-wrapper {
+  margin: 0 12px;
+}
+
+#cancel-crop {
+  position: absolute;
+  right: 20px;
+  top: 16px;
+}
+
+/** Normal Imagecrop crop UI **/
+#imagecrop-ui #imagecrop-crop-settings-form,
+#imagecrop-ui #imagecrop-scale-settings-form {
+  float: left;
+}
+
+#imagecrop-crop-settings-form {
+  float: left;
+  margin-right: 40px;
+}
+
+/** Advanced imagecrop UI **/
+#imagecrop-left-controls {
+  float: left;
+  width: 215px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+#imagecrop-right {
+  float: left;
+}
+
+#imagecrop-left-controls .form-text {
+  width: 40px;
+}
+
+/* Classes and divs to create the crop area */
+#imagecrop-crop-wrapper { 
+  background-color: #ccc;
+  position: absolute;
+}
+
+#image-crop-container {
+  position: relative;
+  background-color: #ccc;
+  background-repeat: no-repeat;
+  opacity:.2;
+  filter: alpha(opacity=20);-moz-opacity: 0.2;
+}
+
+
+#resizeMe{
+  position: absolute;
+  cursor: move;
+  background-position: 0 0;
+  background-repeat: no-repeat;
+  border: 1px dashed black;
+}
+
+.ui-resizable-handle {
+  width: 8px;
+  height: 8px;
+  border: 1px solid #808080;
+  background-color:#F2F2F2;
+  position: absolute;
+}
+
+.ui-resizable-n, .ui-resizable-s {
+  left: 45%;
+  cursor: n-resize;
+}
+
+.ui-resizable-e, .ui-resizable-w {
+  top: 45%;
+  cursor: e-resize;
+}
+
+.ui-resizable-n,
+.ui-resizable-ne,
+.ui-resizable-nw {
+  top: -5px;
+}
+
+.ui-resizable-ne,
+.ui-resizable-se,
+.ui-resizable-e {
+  right: -5px;
+}
+
+.ui-resizable-se,
+.ui-resizable-sw,
+.ui-resizable-s {
+  bottom: -5px;
+}
+
+.ui-resizable-nw,
+.ui-resizable-w,
+.ui-resizable-sw {
+  left: -5px;
+}
+
+.ui-resizable-se,
+.ui-resizable-nw {
+  cursor: nw-resize;
+}
+
+.ui-resizable-ne,
+.ui-resizable-sw {
+  cursor: ne-resize;
+}
+
+#imagecrop-crop-wrapper .boxwarning {
+  border: 1px solid red;
+}

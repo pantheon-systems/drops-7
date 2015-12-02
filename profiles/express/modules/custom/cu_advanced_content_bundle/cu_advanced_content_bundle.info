@@ -1,0 +1,6 @@
+name = Advanced Content
+description = This bundle includes quicktabs, content grid, content lock and other more advanced content related features.
+core = 7.x
+package = CU-Advanced Content
+
+dependencies[] = block_row

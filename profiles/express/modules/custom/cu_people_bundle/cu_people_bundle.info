@@ -1,0 +1,6 @@
+name = People
+description = NEEDS DESCRIPTION
+core = 7.x
+package = CU-People
+
+dependencies[] = people_content_type

@@ -1,0 +1,27 @@
+/**
+ * @file
+ * Basic styles for the environment module
+ */
+
+#block-environment-readonly-environment-readonly-alert {
+  margin: 2em 0;
+  font-size: 0.75em;
+  color: #666;
+  border: 1px solid #999;
+  background-color: #eee;
+}
+
+/* the seven theme does not have the .block-title class */
+#block-environment-readonly-environment-readonly-alert h2,
+#block-environment-readonly-environment-readonly-alert .block-title {
+  padding: 0em 0.5em;
+  margin-top: 0;
+  font-size: 1.1em;
+  border-bottom: 1px solid #999;
+  background-color: #ccc;
+  text-align: center;
+}
+
+#block-environment-readonly-environment-readonly-alert .content {
+  padding: 0.25em 0.75em;
+}

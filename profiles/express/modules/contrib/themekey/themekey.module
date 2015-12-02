@@ -1,0 +1,289 @@
+<?php
+
+/**
+ * @file
+ * ThemeKey is designed as a generic theme-switching module.
+ *
+ * ThemeKey allows you to define simple or sophisticated Theme Switching Rules.
+ * Using these rules you are able to use a different theme depending on current
+ * path, taxonomy terms, language, node type and many, many more properties.
+ * It can also be easily extended to support additional properties as exposed by
+ * other modules.
+ *
+ * @author Markus Kalkbrenner | Cocomore AG
+ *   @see http://drupal.org/user/124705
+ *
+ * @author profix898
+ *   @see http://drupal.org/user/35192
+ */
+
+
+/**
+ * Implements hook_theme().
+ */
+function themekey_theme() {
+  $items = array(
+    'themekey_rule_chain_form' => array(
+      'file' => 'themekey_admin.inc',
+      'render element' => 'form',
+    ),
+    'themekey_page_cache_icon' => array(
+      'file' => 'themekey_admin.inc',
+      'variables' => array('page_cache_support' => 0),
+    ),
+  );
+  return $items;
+}
+
+
+/**
+ * Implements hook_permission().
+ */
+function themekey_permission() {
+  return array(
+    'administer theme assignments' => array(
+      'title' => t('administer theme assignments'),
+      'description' => t('TODO Add a description for \'administer theme assignments\''),
+    ),
+    'administer themekey settings' => array(
+      'title' => t('administer themekey settings'),
+      'description' => t('TODO Add a description for \'administer themekey settings\''),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function themekey_menu() {
+  $items = array();
+  $items['admin/config/user-interface/themekey'] = array(
+    'title' => 'ThemeKey',
+    'description' => 'Set up rules to switch the site\'s appearance (theme) dynamically, depending on Drupal paths or different properties.',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer theme assignments'),
+    'file' => 'themekey_admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('themekey_rule_chain_form'),
+  );
+  $items['admin/config/user-interface/themekey/properties'] = array(
+    'title' => 'Theme Switching Rule Chain',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+  $items['admin/config/user-interface/themekey/properties/delete'] = array(
+    'title' => 'Delete ThemeKey Property',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('themekey_admin_delete_rule_confirm', 1),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer theme assignments'),
+    'file' => 'themekey_admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/config/user-interface/themekey/settings'] = array(
+    'title' => 'Settings',
+    'access callback' => 'user_access',
+    'access arguments' => array('administer themekey settings'),
+    'file' => 'themekey_admin.inc',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('themekey_settings_form'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+  );
+  $items['admin/config/user-interface/themekey/settings/general'] = array(
+    'title' => 'General',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => 0,
+  );
+
+  return $items;
+}
+
+
+/**
+ * Implements hook_custom_theme().
+ *
+ * This is where all of ThemeKey's magic happens.
+ * ThemeKey detects if any Theme Switching Rule matches
+ * the current request and returns a custom theme.
+ */
+function themekey_custom_theme() {
+  if (!defined('THEMEKEY_PAGECACHE_UNSUPPORTED')) {
+    define('THEMEKEY_PAGECACHE_UNSUPPORTED', 0);
+    define('THEMEKEY_PAGECACHE_SUPPORTED', 1);
+    define('THEMEKEY_PAGECACHE_TIMEBASED', 2);
+  }
+
+  $custom_theme_called = &drupal_static('themekey_custom_theme_called', FALSE);
+  $custom_theme_called = TRUE;
+
+  $custom_theme = &drupal_static('themekey_custom_theme', '');
+
+  // don't change theme when ...
+  if (!(variable_get('admin_theme', '0') && path_is_admin($_GET['q'])) // ... admin area and admin theme set
+    && strpos($_GET['q'], 'admin/structure/block') !== 0 // ... administer blocks
+    && strpos($_SERVER['SCRIPT_FILENAME'], 'cron.php') === FALSE // ... during cron run executed by cron.php
+    && strpos($_SERVER['SCRIPT_FILENAME'], 'drush.php') === FALSE // ... during cron run executed by drush
+    ) {
+
+    if (!$custom_theme) {
+      require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'themekey') . '/themekey_base.inc';
+
+      $theme_candidate = themekey_match_rules();
+
+      // If no theme has been triggered but a theme
+      // is in the user's session, use that theme.
+      if (!$theme_candidate && !empty($_SESSION['themekey_theme'])
+           && (!$custom_theme || $custom_theme == variable_get('theme_default', 'bartik'))) {
+        $theme_candidate = $_SESSION['themekey_theme'];
+        if (variable_get('themekey_debug_trace_rule_switching', FALSE)) {
+          themekey_set_debug_message('ThemeKey Debug: No rule triggered a different theme. Reusing last theme from user\'s session: %custom_theme', array('%custom_theme' => $theme_candidate));
+        }
+      }
+
+      // We have a theme, apply it
+      if (!empty($theme_candidate) && $theme_candidate != 'default') {
+        if ((user_is_logged_in() && variable_get('themekey_theme_maintain', 0)) ||
+            (!user_is_logged_in() && variable_get('themekey_theme_maintain_anonymous', 0))) {
+          $_SESSION['themekey_theme'] = $theme_candidate;
+        }
+        elseif (!empty($_SESSION['themekey_theme'])) {
+          unset($_SESSION['themekey_theme']);
+        }
+
+        $custom_theme = $theme_candidate;
+        if (variable_get('themekey_debug_trace_rule_switching', FALSE)) {
+          themekey_set_debug_message('Switching theme to %custom_theme.', array('%custom_theme' => $custom_theme));
+        }
+      }
+      elseif (variable_get('themekey_debug_trace_rule_switching', FALSE)) {
+        if ($custom_theme) {
+          // REVIEW
+          // static rules set $theme_candidate to 'default and $custom_theme directly
+          themekey_set_debug_message('$custom_theme has been set to %custom_theme during rule matching.', array('%custom_theme' => $custom_theme));
+        }
+        else {
+          themekey_set_debug_message('Using default theme.');
+        }
+      }
+    }
+  }
+  elseif (variable_get('themekey_debug_trace_rule_switching', FALSE)) {
+    if (strpos($_GET['q'], 'admin/structure/block') !== 0) {
+      themekey_set_debug_message('Rule checking disabled on block configuration.');
+    }
+  }
+
+  if (variable_get('themekey_debug_show_property_values', FALSE) && module_exists('themekey_debug')) {
+    themekey_debug_properties();
+  }
+
+  if ($custom_theme && variable_get('themekey_override_custom_theme', 0)) {
+    // TODO initialize theme right here
+  }
+
+  return $custom_theme;
+}
+
+
+/**
+ * Implements hook_help().
+ */
+function themekey_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#themekey':
+      module_load_include('inc', 'themekey', 'themekey_help');
+      $tutorials_form = drupal_get_form('themekey_help_tutorials_form', FALSE);
+    case 'admin/config/user-interface/themekey':
+      if (!function_exists('themekey_help_properties_form')) {
+        module_load_include('inc', 'themekey', 'themekey_help');
+      }
+      $examples_form = drupal_get_form('themekey_help_examples_form', TRUE);
+      $properties_form = drupal_get_form('themekey_help_properties_form', TRUE);
+      $operators_form = drupal_get_form('themekey_help_operators_form', TRUE);
+      $text_1 = t('For every page request, Drupal steps through this Theme Switching Rule Chain until an activated rule matches or it reaches the end. If a rule matches, the theme associated with this rule will be applied to render the requested page.');
+
+      switch ($path) {
+        case 'admin/help#themekey':
+          return '<p>' . t('ThemeKey allows you to define simple or sophisticated Theme Switching Rules. Using these rules, you can use a different theme depending on the current path, taxonomy terms, language, node type, and many, many other properties. It can also be easily extended to support additional properties, as exposed by other modules.') . '</p>' .
+            '<p>' . $text_1 . '</p>' .
+            drupal_render($tutorials_form) .
+            drupal_render($examples_form) .
+            drupal_render($properties_form) .
+            drupal_render($operators_form);
+
+        case 'admin/config/user-interface/themekey':
+          return '<p>' . $text_1 . '<br />' . t('To get an idea how to get started, you might have a look at the !tutorials_link.', array('!tutorials_link' => l(t('tutorials'), 'admin/help/themekey'))) . '</p> ' .
+            drupal_render($examples_form) .
+            drupal_render($properties_form) .
+            drupal_render($operators_form);
+      }
+  }
+}
+
+
+/**
+ * Replacement for drupal_set_message() during ThemeKey's initialization.
+ * drupal_set_message() might inititialize the theme engine too early,
+ * which causes ThemeKey to not switch the theme.
+ *
+ * themekey_set_debug_message() put the untranslated messages on a stack and
+ * hands them over to drupal_set_message() on demand.
+ *
+ * This function simply wraps themekey_debug_set_debug_message() to avoid the need
+ * for module_exists('themekey_debug') calls all over the code.
+ *
+ * @param $msg
+ *   the message as string. If the message is 'flush'
+ *   all messages stored on the stack will be printed using
+ *   drupal_set_message()
+ *
+ * @param $placeholder
+ *   associative array of string replacments for $msg
+ *   @see t()
+ *
+ * @param $translate
+ *   boolean, if set to TRUE $msg will be handled by t()
+ *   when handed over to drupal_set_message()
+ */
+function themekey_set_debug_message($msg, $placeholder = array(), $translate = TRUE, $unshift = FALSE) {
+  if (module_exists('themekey_debug')) {
+    return themekey_debug_set_debug_message($msg, $placeholder, $translate, $unshift);
+  }
+}
+
+
+/**
+ * Returns the content of $_GET['q'] as expected.
+ * Therefore, $_GET['q'] gets transformed if necessary.
+ * E.g., Ajax Views rewrites the q parameter.
+ *
+ * @return string
+ */
+function themekey_get_q() {
+  static $get_q = '';
+
+  if (empty($get_q)) {
+    if ('views/ajax' == $_GET['q'] && !empty($_GET['view_path'])) {
+      // required for Ajax Views. see http://drupal.org/node/567222
+      $get_q = $_GET['view_path'];
+    }
+    else {
+      $get_q = $_GET['q'];
+    }
+  }
+
+  return $get_q;
+}
+
+
+/**
+ * Implements hook_cron().
+ */
+function themekey_cron() {
+  if (variable_get('themekey_cron_page_cache', 1)) {
+    module_load_include('inc', 'themekey', 'themekey_cron');
+    themekey_cron_clear_page_cache();
+  }
+}

@@ -1,0 +1,3 @@
+.image-square, .image-square_thumbnail { float: left; width: 100px; height: 100px; margin: 0 10px 10px 0; }
+
+.grid-2 .image-square, .grid-2 .image-square_thumbnail, .grid-3 .image-square, .grid-3 .image-square_thumbnail, .grid-4 .image-square, .grid-4 .image-square_thumbnail, .grid-5 .image-square, .grid-5 .image-square_thumbnail { width: 65px; height: 65px; }

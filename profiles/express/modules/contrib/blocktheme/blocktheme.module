@@ -1,0 +1,352 @@
+<?php
+
+/**
+ * @file
+ * Provides a configuration option to select custom themes for blocks
+ *
+ * BlockTheme allows an admin to define tpl files for standard block templates
+ * and provides a select box on the block configure form so the user can select
+ * a tpl file to use as opposed to having to override the templates by block ID.
+ *
+ */
+
+/**
+ * Implements hook_theme().
+ */
+function blocktheme_theme() {
+  $return = array();
+  if (variable_get('blocktheme_show_custom_block_theme', '')) {
+    // Override the default admin display form template
+    $return['block_admin_display_form'] = array(
+      'template' => 'blocktheme-admin-display-form',
+    );
+  }
+
+  return $return;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function blocktheme_menu() {
+  $items = array();
+  $items['admin/config/user-interface/blocktheme'] = array(
+    'title' => 'Block Theme',
+    'description' => "Define re-usable block templates that can be configured from each block's configuration page.",
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('blocktheme_admin_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  
+  return $items;
+}
+
+/**
+ * Block Theme settings page.
+ */
+function blocktheme_admin_settings() {
+  $form = array();
+  $form['blocktheme_themes'] = array(
+    '#type' => 'textarea',
+    '#default_value' => variable_get('blocktheme_themes', ''),
+    '#title' => t('Custom Block Templates'),
+    '#description' => t('Enter one value per row in the form: <em>customtemplate|Friendly Name</em>, where "customtemplate" corresponds to a tpl file called <em>block--blocktheme--customtemplate.tpl.php</em> as well as to the value of an extra variable <em>$blocktheme</em> in the block template.'),
+    '#wysiwyg' => FALSE,
+  );
+  $form['blocktheme_show_custom_block_theme'] = array(
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('blocktheme_show_custom_block_theme', ''),
+    '#title' => t('Show Custom Block Theme'),
+    '#description' => t('Show the custom block theme used for a block in the <a href="@block-admin-page">block admin page</a>.', array('@block-admin-page' => url('admin/build/block'))),
+  );
+  $form['#submit'][] = 'blocktheme_admin_settings_submit';
+  
+  return system_settings_form($form);
+}
+
+/**
+ * Implements hook_help().
+ */
+function blocktheme_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#blocktheme':
+      return t('Allows the admin to define re-usable block templates that can be configured from block config screen.');
+      break;
+    case 'admin/config/user-interface/blocktheme':
+      return t('BlockTheme allows an admin to define tpl files for standard block templates and provides a select box on the block configure form so the user can select a tpl file to use as opposed to having to override the templates by block ID.');
+      break;
+  }
+}
+
+/**
+ * Handle submission of the blocktheme administrative page form.
+ */
+function blocktheme_admin_settings_submit($form, &$form_state) {
+  drupal_theme_rebuild();
+}
+
+/**
+ * Form for updating a block.
+ */
+function blocktheme_form_block_admin_configure_alter(&$form, &$form_state) {
+  $module = $form['module']['#value'];
+  $delta = $form['delta']['#value'];
+  $var_name = $module . '-' . $delta;
+
+  $options = blocktheme_get_blockthemes();
+  $blocktheme = blocktheme_get();
+  $blocktheme_vars = blocktheme_get_vars();
+
+  $form['settings']['#weight'] = -2;
+  $form['regions']['#weight'] = -1;
+  $form['custom_block_theme'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Block Theme'),
+    '#weight' => 0,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['custom_block_theme']['blocktheme'] = array(
+    '#type' => 'select',
+    '#title' => t('Custom theme'),
+    '#default_value' => isset($blocktheme[$var_name]) ? $blocktheme[$var_name] : '',
+    '#options' => $options,
+  );
+  $form['custom_block_theme']['blocktheme_vars'] = array(
+    '#type' => 'textarea',
+    '#default_value' => isset($blocktheme_vars[$var_name]) ? blocktheme_format_vars_admin($blocktheme_vars[$var_name]) : '',
+    '#title' => t('Custom block variables'),
+    '#description' => t('Enter one entry per line, in the format: <em>variable_name|variable_content</em>.'),
+    '#wysiwyg' => FALSE,
+  );
+
+  $form['#submit'][] = 'blocktheme_update';
+}
+
+/**
+ * Form for adding a new block.
+ */
+function blocktheme_form_block_add_block_form_alter(&$form, &$form_state) {
+  $options = blocktheme_get_blockthemes();
+
+  $form['settings']['#weight'] = -2;
+  $form['regions']['#weight'] = -1;
+  $form['custom_block_theme'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Block Theme'),
+    '#weight' => 0,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['custom_block_theme']['blocktheme'] = array(
+    '#type' => 'select',
+    '#title' => t('Custom theme'),
+    '#options' => $options,
+  );
+  $form['custom_block_theme']['blocktheme_vars'] = array(
+    '#type' => 'textarea',
+    '#default_value' => '',
+    '#title' => t('Custom block variables'),
+    '#description' => t('Enter one entry per line, in the format: <em>variable_name|variable_content</em>.'),
+    '#wysiwyg' => FALSE,
+  );
+
+  $form['#submit'][] = 'blocktheme_save';
+}
+
+/**
+ * Set Block Theme custom block settings.
+ */
+function blocktheme_set($blocktheme, $blocktheme_vars = NULL) {
+  variable_set('blocktheme', $blocktheme);
+  if ($blocktheme_vars) {
+    variable_set('blocktheme_vars', $blocktheme_vars);
+  }
+}
+
+/**
+ * Get Block Theme custom block settings.
+ */
+function blocktheme_get() {
+  static $blocktheme;
+  if (empty($blocktheme)) {
+    $blocktheme = variable_get('blocktheme', array());
+  }
+
+  return $blocktheme;
+}
+
+/**
+ * Get Block Theme custom block variables settings.
+ */
+function blocktheme_get_vars() {
+  static $blocktheme_vars;
+  if (empty($blocktheme_vars)) {
+    $blocktheme_vars = variable_get('blocktheme_vars', array());
+  }
+
+  return $blocktheme_vars;
+}
+
+/**
+ * Update an existing block after the block form has been submitted.
+ */
+function blocktheme_update($form_id, &$form_state) {
+  $var_name = $form_state['values']['module'] . '-' . $form_state['values']['delta'];
+
+  $blocktheme = blocktheme_get();
+  $blocktheme_vars = blocktheme_get_vars();
+
+  if (!$form_state['values']['blocktheme']) {
+    unset($blocktheme[$var_name]);
+  }
+  else {
+    $blocktheme[$var_name] = $form_state['values']['blocktheme'];
+  }
+  if (!$form_state['values']['blocktheme_vars']) {
+    unset($blocktheme_vars[$var_name]);
+  }
+  else {
+    $blocktheme_vars[$var_name] = blocktheme_format_vars($form_state['values']['blocktheme_vars']);
+  }
+  blocktheme_set($blocktheme, $blocktheme_vars);
+  drupal_theme_rebuild();
+}
+
+/**
+ * Save a new block after the block form has been submitted.
+ */
+function blocktheme_save($form_id, &$form_state) {
+  // First, get the new delta value
+  $result = db_query_range("SELECT delta FROM {block} ORDER BY bid DESC", 0, 1);
+  if ($record = $result->fetchObject()) {
+    $delta = $record->delta;
+    $var_name = $form_state['values']['module'] . '-' . $delta;
+
+    $blocktheme = blocktheme_get();
+    $blocktheme_vars = blocktheme_get_vars();
+
+    if ($form_state['values']['blocktheme']) {
+      $blocktheme[$var_name] = $form_state['values']['blocktheme'];
+    }
+    if ($form_state['values']['blocktheme_vars']) {
+      $blocktheme_vars[$var_name] = blocktheme_format_vars($form_state['values']['blocktheme_vars']);
+    }
+    blocktheme_set($blocktheme, $blocktheme_vars);
+    drupal_theme_rebuild();
+  };
+}
+
+/**
+ * Get the defined blockthemes and return an array to be used in a select list.
+ */
+function blocktheme_get_blockthemes() {
+  $options = array();
+  $blockthemes = variable_get('blocktheme_themes', '');
+
+  $options[] = t('- None -');
+
+  if ($blockthemes) {
+    $_sets = explode("\n", $blockthemes);
+
+    foreach ($_sets as $key => $value) {
+      $set = explode('|', $value);
+      $options[$set[0]] = $set[1];
+    }
+  }
+
+  return $options;
+}
+
+/**
+ * Formats custom variables as an array to be used in the block template.
+ */
+function blocktheme_format_vars($block_vars) {
+  $formatted_vars = array();
+  if ($block_vars) {
+    $_sets = explode("\n", $block_vars);
+    foreach ($_sets as $key => $value) {
+      $set = explode('|', $value);
+      $formatted_vars[$set[0]] = $set[1];
+    }
+  }
+
+  return $formatted_vars;
+}
+
+/**
+ * Formats custom variables for displaying in a block configuration form.
+ */
+function blocktheme_format_vars_admin($block_vars) {
+  $formatted_vars = '';
+  if ($block_vars) {
+    foreach ($block_vars as $key => $value) {
+      $_formatted_vars[] = $key . '|' . $value;
+    }
+    $formatted_vars = implode("\n", $_formatted_vars);
+  }
+
+  return $formatted_vars;
+}
+
+/**
+ * Get custom theme for a block.
+ */
+function blocktheme_get_theme($block) {
+  $blocktheme = blocktheme_get();
+  $var_name = $block->module . '-' . $block->delta;
+  if (isset($blocktheme[$var_name])) {
+    return $blocktheme[$var_name];
+  }
+}
+
+/**
+ * Get custom variables for a block.
+ */
+function blocktheme_get_theme_vars($block) {
+  $blocktheme_vars = blocktheme_get_vars();
+  $var_name = $block->module . '-' . $block->delta;
+  if (isset($blocktheme_vars[$var_name])) {
+    return $blocktheme_vars[$var_name];
+  }
+}
+
+/**
+ * Implements hook_preprocess_block().
+ */
+function blocktheme_preprocess_block(&$variables) {
+  if ($custom_block_theme = blocktheme_get_theme($variables['block'])) {
+    $variables['blocktheme'] = $custom_block_theme;
+    $variables['classes_array'][] = $custom_block_theme;
+    $variables['theme_hook_suggestions'][] = 'block__blocktheme__' . str_replace('-', '_', $custom_block_theme);
+  }
+
+  if ($custom_block_vars = blocktheme_get_theme_vars($variables['block'])) {
+    $variables['blocktheme_vars'] = $custom_block_vars;
+  }
+}
+
+/**
+ * Implements template_preprocess_block_admin_display_form().
+ */
+function blocktheme_preprocess_block_admin_display_form(&$variables) {
+  if (variable_get('blocktheme_show_custom_block_theme', '')) {
+    // Get blocks with custom templates.
+    $blocktheme = blocktheme_get();
+    // Get block theme names.
+    $blocktheme_themes = blocktheme_get_blockthemes();
+
+    // Add each block in the form to the appropriate place in the block listing.
+    foreach (element_children($variables['form']['blocks']) as $i) {
+      $block = &$variables['form']['blocks'][$i];
+
+      // Fetch the region for the current block.
+      $region = (isset($block['region']['#default_value']) ? $block['region']['#default_value'] : BLOCK_REGION_NONE);
+      // Set block theme key for the current module.
+      $var_name = $block['module']['#value'] . '-' . $block['delta']['#value'];
+
+      $variables['block_listing'][$region][$i]->custom_block_theme = (isset($blocktheme[$var_name])) ? $blocktheme_themes[$blocktheme[$var_name]] : '';
+    }
+  }
+}

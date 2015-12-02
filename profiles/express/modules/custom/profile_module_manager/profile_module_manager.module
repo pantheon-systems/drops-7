@@ -1,0 +1,153 @@
+<?php
+
+/**
+ * @file
+ * Alters grouping in admin/modules using hook_system_info_alter
+ */
+
+/**
+ * Implements hook_page_alter().
+ */
+function profile_module_manager_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'profile_module_manager'). '/css/profile-module-manager.css');
+  drupal_add_js(drupal_get_path('module', 'profile_module_manager'). '/js/profile-module-manager.js');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function profile_module_manager_menu() {
+// GETTING STARTED
+  $items['admin/settings/bundles'] = array(
+      'title' => 'Bundles',
+      'description' => 'Extend Fucntionality with Bundles',
+      'position' => 'left',
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('enable module bundles'),
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+      'weight' => 5,
+  );
+  $items['admin/settings/bundles/list'] = array(
+    'title' => 'Configure Bundles',
+    'description' =>  'List of bundles.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('profile_module_manager_bundle_form'),
+    'file' => 'profile_module_manager.admin.inc',
+    'access arguments' => array('enable module bundles'),
+  );
+  $items['admin/config/system/module-manager'] = array(
+    'title' => 'Profile Module Manager',
+    'description' =>  'Configure Module Manager.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('profile_module_manager_admin_settings'),
+    'file' => 'profile_module_manager.admin.inc',
+    'access arguments' => array('administer modules'),
+  );
+  $items['admin/config/system/module-manager/view'] = array(
+    'title' => 'View',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+  $items['admin/config/system/module-manager/export-full'] = array(
+    'title' => 'Export Full Module Array',
+    'description' => 'Export array of all enabled modules.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('profile_module_manager_export'),
+    'file' => 'profile_module_manager.admin.inc',
+    'access arguments' => array('administer modules'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+  );
+   $items['admin/config/system/module-manager/export-diff'] = array(
+    'title' => 'Export Module Array Diff',
+    'description' => 'Export enabled modules not already in an array.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('profile_module_manager_export'),
+    'file' => 'profile_module_manager.admin.inc',
+    'access arguments' => array('administer modules'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function profile_module_manager_permission() {
+  return array(
+    'enable module bundles' => array(
+      'title' => t('Enable Module Bundles'),
+      'description' => t('Enable modules in bundles without administer modules permission.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_system_info_alter().
+ */
+function profile_module_manager_system_info_alter(&$info, $file, $type) {
+	
+  if (!variable_get('profile_module_manager_disable_ui_lock', 0)) {
+    module_load_include('inc', 'content', 'includes/install');
+    $profile = install_profile_info(drupal_get_profile());
+
+    if($type == 'module' && in_array($file->name, $profile['dependencies'])) {
+      $info['required'] = TRUE;
+    }
+  }
+  
+}
+
+function profile_module_manager_is_config_ideal(){
+  $reality = module_list();
+  
+  // if no hooks, just compare with dependencies 
+  // in active profiles .info
+  $ideal = cu_module_manager_should_be_enabled();
+
+  //does the reality match the ideal?
+  $diff1 = array_diff_assoc($reality, $ideal);
+  $diff2 = array_diff_assoc($ideal, $reality);
+  $diff = array_merge($diff1, $diff2);
+  
+  // check themes?
+  //$enabled_themes = list_themes();
+  //dsm($enabled_themes);
+  return $diff;
+}
+
+/**
+ * Implements hook_modules_enabled().
+ *
+ * Rebuild permissions any time a module is enabled.
+ */
+function profile_module_manager_modules_enabled($modules) {
+  profile_module_manager_rebuild();
+}
+
+/**
+ * Implements hook_modules_disabled().
+ *
+ * Rebuild permissions any time a module is disabled.
+ */
+function profile_module_manager_modules_disabled($modules) {
+  profile_module_manager_rebuild();
+}
+
+/**
+ * Rebuild permissions, based on presets from the API.
+ *
+ * It is important to always call this function, instead of the individual
+ * build functions, since this rebuild call sanity-checks the module settings.
+ */
+function profile_module_manager_rebuild() {
+  // If only one module responds, it is the core module and we cannot rebuild.
+  $modules = module_implements('module_bundle');
+  if (count($modules) < 2) {
+    return;
+  }
+}
+
+
+

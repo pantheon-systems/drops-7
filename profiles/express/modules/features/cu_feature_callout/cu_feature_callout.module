@@ -1,0 +1,132 @@
+<?php
+/**
+ * @file
+ * Code for the Feature Callout feature.
+ */
+
+include_once 'cu_feature_callout.features.inc';
+
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got bean--articles.tpl.php in our module
+ * directory.
+ */
+function cu_feature_callout_theme_registry_alter(&$theme_registry) {
+
+}
+
+/**
+ * TODO: Write doco.
+ */
+function cu_feature_callout_page_alter(&$page) {
+  // Add cu slider css.
+  drupal_add_css(drupal_get_path('module', 'cu_feature_callout') . '/css/cu_feature_callout.css');
+}
+
+/**
+ * Implements preprocess_entity().
+ *
+ * Turns the social_link_collection field collection in to a item_list.
+ */
+function cu_feature_callout_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
+
+  // Only preprocess social_link beans.
+  if ($entity_type == 'bean' && $bundle == 'feature_callout') {
+
+    // Get the number of columns for formatting.
+    $columns = $vars['content']['field_callout_columns']['#items'][0]['value'];
+    $size = $vars['content']['field_callout_image_size']['#items'][0]['value'];
+    // Find all the field_collection_items.
+    $children = element_children($vars['content']['field_callouts']);
+    $i = 0;
+    $column_count = 1;
+    foreach (element_children($vars['content']['field_callouts']) as $child) {
+      $title = NULL;
+      $image = NULL;
+      $text = NULL;
+      $url = NULL;
+      $count = $i + 1;
+      // Grab the field_collection_item entity.
+      $fc_item = array_pop($vars['content']['field_callouts'][$child]['entity']['field_collection_item']);
+
+      // Get title.
+      if (!empty($fc_item['field_callout_title']['#items'])) {
+        $title = $fc_item['field_callout_title']['#items'][0]['title'];
+      }
+      // Get URL.
+      if (!empty($fc_item['field_callout_title']['#items'][0]['url'])) {
+        $url = $fc_item['field_callout_title']['#items'][0]['url'];
+      }
+      
+      // Get text content.
+      if (!empty($fc_item['field_callout_text'])) {
+        $text = $fc_item['field_callout_text'][0]['#markup'];
+      } 
+      // Build image.
+      if (isset($fc_item['field_callout_image']['#items'][0]['uri'])) {
+        // Get image uri.
+        $image_uri = $fc_item['field_callout_image']['#items'][0]['uri'];
+        $build = array(
+          '#theme' => 'image_style',
+          '#style_name' => $size,
+          '#path' => $image_uri,
+          '#alt' => $fc_item['field_callout_image']['#items'][0]['alt'],
+        );
+        $image = drupal_render($build);
+      }
+
+      // Make links if $url is set.
+      if (isset($url)) {
+        if (isset($title)) {
+          $title = '<h3 class="feature-callout-title">' . l($title, $url, array('html' => TRUE)) . '</h3>';
+        } else {
+          $title = '';
+        }
+        if (isset($image)) {
+          $image = l($image, $url, array('html' => TRUE)); 
+        } else {
+          $image = '';
+        }
+      }
+      else {
+        if (isset($title)) {
+          $title = '<h3 class="feature-callout-title">' . $title . '</h3>';
+        } else {
+          $title = '';
+        }
+      }
+      // Remove title if link url field was used but link title field was not.
+      if (isset($fc_item['field_callout_title']['#items'][0]['title']) && isset($fc_item['field_callout_title']['#items'][0]['url']) && ($fc_item['field_callout_title']['#items'][0]['title'] == $fc_item['field_callout_title']['#items'][0]['url'])) {
+        $title = '';
+      }
+      // Create an array of items.
+      $items[$i]['#markup'] = '<div class="feature-callout-item feature-callout-column-' . $column_count . ' clearfix">' . $image . '<div class="feature-callout-text clearfix">' . $title . '<div class="field-type-text-long">' . $text . '</div></div></div>';
+      
+      if ($column_count == $columns) {
+        $column_count = 0;
+      }
+      $i++;
+      $column_count++;
+    }
+
+    // Remove the current field collection from display.
+    unset($vars['content']['field_callouts']);
+    unset($vars['content']['field_callout_columns']);
+    unset($vars['content']['field_callout_image_size']);
+    $classes[] = 'feature-callout';
+    $classes[] = 'feature-callout-columns-' . $columns;
+    $classes[] = 'clearfix';
+    $classes = join(' ', $classes);
+    if (isset($items)) {
+      // Generate an item_list of our items and add to $content.
+      $vars['content']['field_callouts'] = $items;
+      $vars['content']['field_callouts']['#prefix'] = '<div class="' . $classes . '">';
+      $vars['content']['field_callouts']['#suffix'] = '</div>';
+      
+    }
+  }
+}

@@ -1,0 +1,131 @@
+<?php
+
+/**
+ * Implements hook_image_default_styles().
+ */
+
+ function grid_images_image_default_styles() {
+   $styles = array();
+
+   // Exported image style: grid-12.
+   $styles['grid-12'] = array(
+     'name' => 'grid-12',
+     'effects' => array(
+       1 => array(
+         'label' => 'Scale',
+         'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+         'effect callback' => 'image_scale_effect',
+         'dimensions callback' => 'image_scale_dimensions',
+         'form callback' => 'image_scale_form',
+         'summary theme' => 'image_scale_summary',
+         'module' => 'image',
+         'name' => 'image_scale',
+         'data' => array(
+           'width' => 960,
+           'height' => '',
+           'upscale' => 0,
+         ),
+         'weight' => 1,
+       ),
+     ),
+     'label' => 'grid-12',
+   );
+
+   // Exported image style: grid-3.
+   $styles['grid-3'] = array(
+     'name' => 'grid-3',
+     'effects' => array(
+       5 => array(
+         'label' => 'Scale',
+         'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+         'effect callback' => 'image_scale_effect',
+         'dimensions callback' => 'image_scale_dimensions',
+         'form callback' => 'image_scale_form',
+         'summary theme' => 'image_scale_summary',
+         'module' => 'image',
+         'name' => 'image_scale',
+         'data' => array(
+           'width' => 240,
+           'height' => '',
+           'upscale' => 0,
+         ),
+         'weight' => 1,
+       ),
+     ),
+     'label' => 'grid-3',
+   );
+
+   // Exported image style: grid-4.
+   $styles['grid-4'] = array(
+     'name' => 'grid-4',
+     'effects' => array(
+       4 => array(
+         'label' => 'Scale',
+         'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+         'effect callback' => 'image_scale_effect',
+         'dimensions callback' => 'image_scale_dimensions',
+         'form callback' => 'image_scale_form',
+         'summary theme' => 'image_scale_summary',
+         'module' => 'image',
+         'name' => 'image_scale',
+         'data' => array(
+           'width' => 320,
+           'height' => '',
+           'upscale' => 0,
+         ),
+         'weight' => 1,
+       ),
+     ),
+     'label' => 'grid-4',
+   );
+
+   // Exported image style: grid-6.
+   $styles['grid-6'] = array(
+     'name' => 'grid-6',
+     'effects' => array(
+       3 => array(
+         'label' => 'Scale',
+         'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+         'effect callback' => 'image_scale_effect',
+         'dimensions callback' => 'image_scale_dimensions',
+         'form callback' => 'image_scale_form',
+         'summary theme' => 'image_scale_summary',
+         'module' => 'image',
+         'name' => 'image_scale',
+         'data' => array(
+           'width' => 480,
+           'height' => '',
+           'upscale' => 0,
+         ),
+         'weight' => 1,
+       ),
+     ),
+     'label' => 'grid-6',
+   );
+
+   // Exported image style: grid-9.
+   $styles['grid-9'] = array(
+     'name' => 'grid-9',
+     'effects' => array(
+       2 => array(
+         'label' => 'Scale',
+         'help' => 'Scaling will maintain the aspect-ratio of the original image. If only a single dimension is specified, the other dimension will be calculated.',
+         'effect callback' => 'image_scale_effect',
+         'dimensions callback' => 'image_scale_dimensions',
+         'form callback' => 'image_scale_form',
+         'summary theme' => 'image_scale_summary',
+         'module' => 'image',
+         'name' => 'image_scale',
+         'data' => array(
+           'width' => 720,
+           'height' => '',
+           'upscale' => 0,
+         ),
+         'weight' => 1,
+       ),
+     ),
+     'label' => 'grid-9',
+   );
+
+   return $styles;
+ }

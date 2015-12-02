@@ -1,0 +1,25 @@
+.video-teaser {
+  margin-bottom:20px;
+  padding-bottom:20px;
+  border-bottom:1px solid #e5e5e5;
+}
+.video-thumb {
+  float:left;
+  margin-right:20px;
+}
+.video-text {
+  overflow: auto;
+}
+.grid-3 .video-thumb,
+.grid-4 .video-thumb,
+.grid-5 .video-thumb {
+  width:40px;
+  height: auto;
+  margin-right:10px;
+}
+.grid-3 .video-teaser h2,
+.grid-4 .video-teaser h2,
+.grid-5 .video-teaser h2 {
+  font-size: 100%;
+  font-weight: bold;
+}

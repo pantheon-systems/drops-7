@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Set up some things beforehand.
+ */
+
+/**
+* Implements hook_install().
+*/
+function people_content_type_install() {
+  // Set the weight to 1
+  db_update('system')
+    ->fields(array('weight' => 1))
+    ->condition('type', 'module')
+    ->condition('name', 'people_content_type')
+    ->execute();
+}
+
+/**
+ * Copy field_person_bio to body.
+ */
+function people_content_type_update_7101() {
+
+  // Start with data field.
+  $result = db_query('SELECT * FROM {field_data_field_person_bio}');
+  foreach ($result as $record) {
+    $record->body_value = $record->field_person_bio_value;
+    unset($record->field_person_bio_value);
+    $record->body_format = $record->field_person_bio_format;
+    unset($record->field_person_bio_format);
+    drupal_write_record('field_data_body', $record);
+  }
+  // Copy revision field.
+  $result = db_query('SELECT * FROM {field_revision_field_person_bio}');
+  foreach ($result as $record) {
+    $record->body_value = $record->field_person_bio_value;
+    unset($record->field_person_bio_value);
+    $record->body_format = $record->field_person_bio_format;
+    unset($record->field_person_bio_format);
+    drupal_write_record('field_revision_body', $record);
+  }
+}

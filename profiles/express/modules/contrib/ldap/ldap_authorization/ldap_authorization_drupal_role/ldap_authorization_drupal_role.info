@@ -1,0 +1,18 @@
+;$Id: ldap_authorization_drupal_role.info,v 1.4 2010/12/29 04:51:11 johnbarclay Exp $
+
+name = LDAP Authorization - Drupal Roles
+description = "Implements LDAP authorization for Drupal roles"
+package = "Lightweight Directory Access Protocol"
+dependencies[] = ldap_authorization
+core = 7.x
+configure = admin/config/people/ldap/authorization
+files[] = LdapAuthorizationConsumerRole.class.php
+files[] = ldap_authorization_drupal_role.module
+files[] = ldap_authorization_drupal_role.inc
+
+; Information added by drupal.org packaging script on 2012-08-20
+version = "7.x-1.0-beta12"
+core = "7.x"
+project = "ldap"
+datestamp = "1345503423"
+

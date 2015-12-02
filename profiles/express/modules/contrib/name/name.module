@@ -1,0 +1,1076 @@
+<?php
+
+/**
+ * @file
+ * Defines an API for displaying and inputing names.
+ *
+ * TODO: Make sure that all labels are based on the _name_translations()
+ * function and use a name:: prefix. This can be parsed out here to allow
+ * string overrides to work and to integrate with i18n too.
+ * t('!name_given', array('!name_given' => t('Given')))
+ */
+
+/**
+ * This is the main function that formats a name from an array of components.
+ *
+ * @param array $name_components
+ *        A keyed array of name components.
+ *        These are: title, given, middle, family, generational and credentials.
+ * @param string $format
+ *        The string specifying what format to use.
+ * @param array $settings
+ *        A keyed array of additional parameters to pass into the function.
+ *        Includes:
+ *          'object' - An object or array.
+ *            This entity is used for Token module subsitutions.
+ *            Currently not used.
+ *          'type' - A string.
+ *            The entity identifier: node, user, etc
+ */
+function name_format($name_components, $format, $settings = array()) {
+  module_load_include('inc', 'name', 'includes/name.parser');
+  return _name_format($name_components, $format, $settings);
+}
+
+/**
+ * Handles the initialization of the Name module settings that are stored in
+ * the {variables} table.
+ */
+function name_settings($key = NULL) {
+  $settings = variable_get('name_settings', array());
+  $settings += array(
+    'default_format' => '((((t+ig)+im)+if)+is)+jc',
+    'sep1' => ' ',
+    'sep2' => ', ',
+    'sep3' => '',
+  );
+  if ($key) {
+    return $settings[$key];
+  }
+  return $settings;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function name_menu() {
+  $items = array();
+
+  // Provides autocomplete functionality for name widgets.
+  $items['name/autocomplete/%/%'] = array(
+    'title' => 'Name autocomplete',
+    'page callback' => 'name_autocomplete',
+    'page arguments' => array(2, 3),
+    'access arguments' => array('access content'),
+    'type' => MENU_CALLBACK,
+    'file' => 'name.admin.inc',
+  );
+
+  // Admin menu items
+  $items['admin/config/regional/name'] = array(
+    'title' => 'Names',
+    'page callback' => 'name_list_custom_formats',
+    'description' => 'Configure, edit and maintain names and name custom formats.',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'name.admin.inc',
+    'type' => MENU_NORMAL_ITEM,
+  );
+  $items['admin/config/regional/name/list'] = array(
+    'title' => 'Custom formats',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+  );
+  $items['admin/config/regional/name/add'] = array(
+    'title' => 'Add custom format',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('name_custom_formats_form'),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'name.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+  );
+  $items['admin/config/regional/name/settings'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('name_admin_settings_form'),
+    'description' => 'Administer the Names module and custom name formats.',
+    'access arguments' => array('administer site configuration'),
+    'file' => 'name.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 10,
+  );
+  $items['admin/config/regional/name/%'] = array(
+    'title' => 'Edit custom format',
+    'page callback' => 'name_custom_format_edit',
+    'page arguments' => array(4),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'name.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/config/regional/name/%/delete'] = array(
+    'title' => 'Delete custom name format',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('name_custom_format_delete_form', 4),
+    'access arguments' => array('administer site configuration'),
+    'file' => 'name.admin.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function name_theme() {
+  $theme = array(
+    // Themes the FAPI element.
+    'name_element' => array(
+      'render element' => 'element',
+    ),
+    // Provides the help for the recognized characters in the name_format()
+    // format parameter.
+    'name_format_parameter_help' => array(
+      'file' => 'includes/name.parser.inc',
+    ),
+  );
+
+  return $theme;
+}
+
+/**
+ * Implements hook_username_alter().
+ */
+function name_username_alter(&$name, $account) {
+  // Don't alter anonymous users or objects that do not have any user ID.
+  if (empty($account->uid)) {
+    return;
+  }
+
+  // Real name was loaded/generated via hook_user_load(), so re-use it.
+  if (!empty($account->realname)) {
+    $name = $account->realname;
+  }
+}
+
+/**
+ * Implements hook_user_load().
+ */
+function name_user_load(array $accounts) {
+  // In the event there are a lot of user_load() calls, cache the results.
+  $names = &drupal_static(__FUNCTION__, array());
+
+  $field_name = variable_get('name_user_preferred', FALSE);
+  if ($field_name && $instance = field_info_instance('user', $field_name, 'user')) {
+    $format = name_get_format_by_machine_name($instance['settings']['override_format']);
+    if (empty($format)) {
+      $format = name_get_format_by_machine_name('default');
+    }
+    foreach ($accounts as $uid => $acccount) {
+      if (isset($names[$uid])) {
+        $accounts[$uid]->realname = $names[$uid];
+      }
+      else {
+        if ($items = field_get_items('user', $acccount, $instance['field_name'])) {
+          // We still have raw user input here.
+          $accounts[$uid]->realname = name_format($items[0], $format, array('object' => $acccount, 'type' => 'user'));
+          $names[$uid] = $accounts[$uid]->realname;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Loads a list of all user defined formats.
+ */
+function name_get_custom_formats() {
+  static $formats;
+  if (!isset($formats)) {
+    $formats = array();
+    $result = db_query("SELECT * FROM {name_custom_format} ORDER BY name ASC");
+    foreach ($result as $row) {
+      $formats[$row->ncfid] = $row;
+    }
+  }
+  return $formats;
+}
+
+/**
+ * Helper function to generate a list of all defined custom formatting options.
+ */
+function name_get_custom_format_options() {
+  $options = array();
+  foreach (name_get_custom_formats() as $wcfid => $row) {
+    $options[$row->machine_name] = $row->name;
+  }
+  natcasesort($options);
+  return $options;
+}
+
+/**
+ * Loads a format based on the machine name.
+ */
+function name_get_format_by_machine_name($machine_name) {
+  if ($machine_name == 'default') {
+    return name_settings('default_format');
+  }
+  $sql = "SELECT format FROM {name_custom_format} WHERE machine_name = '%s'";
+  return (string) db_query("SELECT format FROM {name_custom_format} WHERE machine_name = :machine_name", array(':machine_name' => $machine_name))->fetchField();
+}
+
+/**
+ * Static cache to reuse translated name components.
+ *
+ * These have double encoding to allow easy and targeted string overrides in the
+ * sites settings.php file.
+ */
+function _name_translations($intersect = NULL) {
+  static $nt = NULL;
+  if (!isset($nt)) {
+    $nt = array(
+      'title' => t('!name_title', array('!name_title' => t('Title'))),
+      'given' => t('!name_given', array('!name_given' => t('Given'))),
+      'middle' => t('!name_middle', array('!name_middle' => t('Middle name(s)'))),
+      'family' => t('!name_family', array('!name_family' => t('Family'))),
+      'generational' => t('!name_generational', array('!name_generational' => t('Generational'))),
+      'credentials' => t('!name_credentials', array('!name_credentials' => t('Credentials'))),
+    );
+  }
+  return empty($intersect) ? $nt : array_intersect_key($nt, $intersect);
+}
+
+/**
+ * Private helper function to define the formatter types that are available for
+ * the CCK and Token modules.
+ */
+function _name_formatter_output_types() {
+  static $ot = NULL;
+  if (!isset($ot)) {
+    return array(
+      'default' => t('Default'),
+      'plain' => t('Plain'),
+      'raw' => t('Raw'),
+    );
+  }
+  return $ot;
+}
+
+/* ------------------------- FAPI Element Code ------------------------------ */
+
+/**
+ * Implements hook_element_info().
+ */
+function name_element_info() {
+  $parts = _name_translations();
+  $field_info = name_field_info();
+  $field_settings = $field_info['name']['settings'];
+  $instance_settings = $field_info['name']['instance_settings'];
+
+  return array(
+    'name_element' => array(
+      '#input' => TRUE,
+      '#process' => array('name_element_expand'),
+      '#pre_render' =>  array('name_element_pre_render'),
+      '#element_validate' => array('name_element_validate'),
+      '#theme_wrappers' => array('form_element'),
+      '#theme' => 'name_element',
+      '#default_value' => array(
+        'title' => '',
+        'given' => '',
+        'middle' => '',
+        'family' => '',
+        'generational' => '',
+        'credentials' => '',
+      ),
+      '#minimum_components' => $field_settings['minimum_components'],
+      '#components' => array(
+        'title' => array(
+          'type' => $instance_settings['title_field'],
+          'title' => $parts['title'],
+          'title_display' => 'description',
+          'inline_css' => isset($instance_settings['inline_css']['title'])
+              ? $instance_settings['inline_css']['title'] : NULL,
+          'size' => isset($instance_settings['size']['title'])
+              ? $instance_settings['size']['title'] : NULL,
+          'maxlength' => $field_settings['max_length']['title'],
+          'options' => $field_settings['title_options'],
+          'autocomplete' => FALSE,
+        ),
+        'given' => array(
+          'type' => 'textfield',
+          'title' => $parts['given'],
+          'title_display' => 'description',
+          'inline_css' => isset($instance_settings['inline_css']['given'])
+              ? $instance_settings['inline_css']['given'] : NULL,
+          'size' => isset($instance_settings['size']['given'])
+              ? $instance_settings['size']['given'] : NULL,
+          'maxlength' => $field_settings['max_length']['given'],
+          'autocomplete' => FALSE,
+        ),
+        'middle' => array(
+          'type' => 'textfield',
+          'title' => $parts['middle'],
+          'title_display' => 'description',
+          'inline_css' => isset($instance_settings['inline_css']['middle'])
+              ? $instance_settings['inline_css']['middle'] : NULL,
+          'size' => isset($instance_settings['size']['middle'])
+              ? $instance_settings['size']['middle'] : NULL,
+          'maxlength' => $field_settings['max_length']['middle'],
+          'autocomplete' => FALSE,
+        ),
+        'family' => array(
+          'type' => 'textfield',
+          'title' => $parts['family'],
+          'title_display' => 'description',
+          'inline_css' => isset($instance_settings['inline_css']['family'])
+              ? $instance_settings['inline_css']['family'] : NULL,
+          'size' => isset($instance_settings['size']['family'])
+              ? $instance_settings['size']['family'] : NULL,
+          'maxlength' => $field_settings['max_length']['family'],
+          'autocomplete' => FALSE,
+        ),
+        'generational' => array(
+          'type' => $instance_settings['generational_field'],
+          'title' => $parts['generational'],
+          'title_display' => 'description',
+          'inline_css' => isset($instance_settings['inline_css']['generational'])
+              ? $instance_settings['inline_css']['generational'] : NULL,
+          'size' => isset($instance_settings['size']['generational'])
+              ? $instance_settings['size']['generational'] : NULL,
+          'maxlength' => $field_settings['max_length']['generational'],
+          'options' => $field_settings['generational_options'],
+          'autocomplete' => FALSE,
+        ),
+        'credentials' => array(
+          'type' => 'textfield',
+          'title' => $parts['credentials'],
+          'title_display' => 'description',
+          'inline_css' => isset($instance_settings['inline_css']['credentials'])
+              ? $instance_settings['inline_css']['credentials'] : NULL,
+          'size' => isset($instance_settings['size']['credentials'])
+              ? $instance_settings['size']['credentials'] : NULL,
+          'maxlength' => $field_settings['max_length']['credentials'],
+          'autocomplete' => FALSE,
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Custom theme callback for the name_element.
+ */
+function theme_name_element($variables) {
+  $element = $variables['element'];
+  return drupal_render_children($element);
+}
+
+/**
+ * The #process callback to create the element.
+ */
+function name_element_expand($element, &$form_state, $complete_form) {
+  $element['#tree'] = TRUE;
+  if (empty($element['#value'])) {
+    $element['#value'] = array();
+  }
+  $parts = _name_translations();
+  $element['#value'] += array_combine(array_keys($parts), array_fill(0, count($parts), ''));
+
+  $components = $element['#components'];
+  $min_components = (array) $element['#minimum_components'];
+  if (empty($element['#field'])) {
+    $element['#field'] = isset($form_state['field']) ? $form_state['field'] : NULL;
+  }
+
+  // Provides an override on the inline CSS.
+  $inline_css = ' style="float: left; margin-right: 1em;"';
+  if (!empty($element['#component_css'])) {
+    if ($element['#component_css'] == '<none>') {
+      $inline_css = '';
+    }
+    else {
+      $inline_css = ' style="' . check_plain($element['#component_css']) . '"';
+    }
+  }
+
+  foreach ($parts as $key => $title) {
+    if (!isset($components[$key]['exclude'])) {
+      $element[$key] = _name_render_component($components[$key], $key, $element['#value'][$key], isset($min_components[$key]));
+      $class = 'name-' . $key . '-wrapper';
+      if ($key == 'credentials' && empty($element['#credentials_inline'])) {
+        $element[$key]['#prefix'] = '<div class="' . $class . ' clearfix" style="float: left;">';
+        $element[$key]['#suffix'] = '</div>';
+      }
+      else {
+        $element[$key]['#prefix'] = '<div class="' . $class . '"' . $inline_css . '>';
+        $element[$key]['#suffix'] = '</div>';
+      }
+    }
+  }
+
+  $element['#prefix'] = '<div class="clearfix">';
+  $element['#suffix'] = '</div>';
+  return $element;
+}
+
+function _name_render_component($component, $name, $value, $core) {
+  $element = array(
+    '#attributes' => array(
+      'class' => array('name-element name-' . $name . ($core ? ' name-core-component' : '')),
+    ),
+  );
+  if (isset($component['attributes'])) {
+    foreach ($component['attributes'] as $key => $attribute) {
+      if (!isset($element['#attributes'][$key])) {
+        $element['#attributes'][$key] = $attribute;
+      }
+      else {
+        $element['#attributes'][$key] .= ' ' . $attribute;
+      }
+    }
+  }
+
+  $base_attributes = array('type', 'title', 'size', 'maxlength');
+  foreach ($base_attributes as $key) {
+    $element['#' . $key] = $component[$key];
+  }
+
+  $element['#default_value'] = $value;
+  if ($component['type'] == 'select') {
+    $element['#options'] = $component['options'];
+    $element['#size'] = 1;
+  }
+  elseif (!empty($component['autocomplete'])) {
+    $element['#autocomplete_path'] = $component['autocomplete'];
+  }
+
+  // Enable the title options.
+  $title_display = isset($component['title_display']) ? $component['title_display'] : 'description';
+  switch ($title_display) {
+    case 'title':
+      break;
+    case 'none':
+      $element['#title_display'] = 'invisible';
+      break;
+    case 'description':
+    default:
+      $element['#title_display'] = 'invisible';
+      $element['#description'] = $element['#title'];
+      break;
+  }
+
+  return $element;
+}
+
+/**
+ * A custom validator to check the components of a name_element element.
+ */
+function name_element_validate($element, &$form_state) {
+  $minimum_components = array_filter($element['#minimum_components']);
+  $labels = array();
+  foreach ($element['#components'] as $key => $component) {
+    if (!isset($component['exclude'])) {
+      $labels[$key] = $component['title'];
+    }
+  }
+  $item = $element['#value'];
+  $empty = name_field_is_empty($item, NULL);
+  $item_components = array();
+  foreach (_name_translations() as $key => $title) {
+    if (isset($labels[$key]) && !empty($item[$key])) {
+      $item_components[$key] = $item[$key];
+    }
+  }
+  if (!$empty && (count($minimum_components) != count(array_intersect_key($minimum_components, $item_components)))) {
+    $missing_labels = array_diff_key(array_intersect_key($labels, $minimum_components), $item_components);
+    $label = empty($element['#title']) ? (empty($element['#label']) ? 'Field' : $element['#label']) : $element['#title'];
+    form_error($element[key($missing_labels)], t('%name also requires the following parts: %components.',
+      array('%name' => $label, '%components' => implode(', ', $missing_labels))));
+  }
+
+  if ($empty && $element['#required']) {
+    form_error($element, t('%name is required.', array('%name' => t($element['#title']))));
+  }
+  return $element;
+}
+
+/**
+ * This function themes the element and controls the title display.
+ */
+function name_element_pre_render($element) {
+  // Add a wrapper to fields
+  $element['_name'] = array(
+    '#prefix' => '<div class="clearfix">',
+    '#suffix' => '</div>',
+  );
+  foreach (_name_translations() as $key => $title) {
+    if (isset($element[$key])) {
+      $element['_name'][$key] = $element[$key];
+      unset($element[$key]);
+    }
+  }
+  if (!empty($element['#description'])) {
+    $field = isset($element['#field']) ? $element['#field'] : NULL;
+    if (!$field || $field['cardinality'] == 1) {
+      $element['_description'] = array(
+        '#value' => '<div class="clearfix description">' . $element['#description'] . '</div>',
+      );
+      unset($element['#description']);
+    }
+  }
+  return $element;
+}
+
+/* ----------------------------- Field Code --------------------------------- */
+
+/**
+ * Implements hook_field_info().
+ */
+function name_field_info() {
+  $parts = _name_translations();
+  $keys = array_keys($parts);
+  $count = count($keys);
+
+  return array(
+    'name' => array(
+      'label' => t('Name'),
+      'description' => t('This field stores a users title, given, middle, family name, generational suffix and credentials in the database.'),
+      'default_widget' => 'name_widget',
+      'default_formatter' => 'name_default',
+      'settings' => array(
+        // Components used. At least given or family name is required.
+        'components' => drupal_map_assoc($keys),
+        // Minimal set of components before considered incomplete
+        'minimum_components' => array(
+          'given' => 'given',
+          'family' => 'family',
+        ),
+        'labels' => _name_translations(),
+        'max_length' => array(
+          'title' => 31,
+          'given' => 63,
+          'middle' => 127,
+          'family' => 63,
+          'generational' => 15,
+          'credentials' => 255,
+        ),
+        'autocomplete_source' => array(
+          'title' => array('title'),
+          'given' => array(),
+          'middle' => array(),
+          'family' => array(),
+          'generational' => array('generation'),
+          'credentials' => array(),
+        ),
+        'autocomplete_separator' => array(
+          'title' => ' ',
+          'given' => ' -',
+          'middle' => ' -',
+          'family' => ' -',
+          'generational' => ' ',
+          'credentials' => ', ',
+        ),
+        'title_options' => implode("\n", array(t('-- --'), t('Mr.'), t('Mrs.'), t('Miss'), t('Ms.'), t('Dr.'), t('Prof.'))),
+        'generational_options' => implode("\n", array(t('-- --'), t('Jr.'), t('Sr.'), t('I'), t('II'), t('III'), t('IV'), t('V'), t('VI'), t('VII'), t('VIII'), t('IX'), t('X'))),
+        'sort_options' => array(
+          'title' => 'title',
+          'generational' => 0,
+        ),
+      ),
+      'instance_settings' => array(
+        // Possible elements for either (free) text, autocomplete, select.
+        'title_field' => 'select',
+        'generational_field' => 'select',
+        'size' => array(
+          'title' => 6,
+          'given' => 20,
+          'middle' => 20,
+          'family' => 20,
+          'generational' => 5,
+          'credentials' => 35,
+        ),
+        'inline_css' => array_combine($keys, array_fill(0, $count, '')),
+        'title_display' => array_combine($keys, array_fill(0, $count, 'description')),
+        // New settings to override the user name. Only applies to user entities.
+        'override_format' => 'default',
+        // Prevents the default break between the name components and credentials
+        'credentials_inline' => 0,
+        'component_css' => '',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_settings_form().
+ */
+function name_field_settings_form($field, $instance, $has_data) {
+  module_load_include('inc', 'name', 'includes/name.content');
+  return _name_field_settings_form($field, $instance, $has_data);
+}
+
+/**
+ * Implements hook_field_settings_form_validate().
+ *
+ * Called via #element_validate from name_field_settings_form().
+ */
+function name_field_settings_form_validate($form, &$form_state) {
+  module_load_include('inc', 'name', 'includes/name.content');
+  _name_field_settings_form_validate($form, $form_state);
+}
+
+/**
+ * Implements hook_field_validate().
+ *
+ * @TODO
+ * Look at reintroducing this at some stage. Currently, this is problematic as
+ * Drupal appears to loss track of what fields are shown on the form and this
+ * results in validation errors.
+ */
+//function name_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+//  // Hack to test the default settings form.
+//  if (empty($entity) && empty($entity_type)) {
+//    return;
+//  }
+//
+//  if ($instance['required']) {
+//    if (is_array($items)) {
+//      foreach ($items as $delta => $item) {
+//        if (!name_field_is_empty($item, $field)) {
+//          return;
+//        }
+//      }
+//    }
+//    $errors[$field['field_name']][$langcode][0][] = array(
+//      'error' => 'required_components',
+//      'message' => t('%name is required.', array('%name' => t($instance['label']))),
+//    );
+//  }
+//}
+
+/**
+ * Implements hook_field_load().
+ */
+function name_field_load($entity_type, $entities, $field, $instances, $langcode, &$items) {
+  foreach ($entities as $id => $entity) {
+    foreach ($items[$id] as $delta => $item) {
+      foreach (_name_translations() as $key => $title) {
+        if (empty($field['settings']['components'][$key])) {
+          unset($items[$id][$delta][$key]);
+        }
+        else {
+          $items[$id][$delta]['safe'][$key] = _name_value_sanitize($item, $key);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function name_field_is_empty($item, $field) {
+  foreach (_name_translations() as $key => $title) {
+    // Title & generational have no meaning by themselves.
+    if ($key == 'title' || $key == 'generational') {
+      continue;
+    }
+    if (!empty($item[$key])) {
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+/* ----------------------------- Widget Code -------------------------------- */
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function name_field_widget_info() {
+  return array(
+    'name_widget' => array(
+      'label' => t('Name'),
+      'field types' => array('name'),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+        'default value' => FIELD_BEHAVIOR_DEFAULT,
+      ),
+      'settings' => array(),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_error().
+ *
+ * Validation on required is done here. The max. length is done via Drupal.
+ * Min. components is done via name_element validation callback.
+ *
+ * @todo
+ * Re-add this with name_field_validate().
+ */
+//function name_field_widget_error($element, $error, $form, &$form_state) {
+//  $error_element = NULL;
+//  switch ($error['error']) {
+//    case 'required_components':
+//      $error_element = $element[$element['#columns'][1]];
+//      break;
+//
+//  }
+//  if ($error_element) {
+//    form_error($error_element, $error['message']);
+//  }
+//}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function name_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  module_load_include('inc', 'name', 'includes/name.content');
+  return _name_field_widget_form($form, $form_state, $field, $instance, $langcode, $items, $delta, $element);
+}
+
+/**
+ * Implements hook_field_instance_settings_form().
+ */
+function name_field_instance_settings_form($field, $instance) {
+  module_load_include('inc', 'name', 'includes/name.content');
+  return _name_field_instance_settings_form($field, $instance);
+}
+
+/**
+ * Implements hook_field_instance_settings_form().
+ */
+function name_field_get_options($field, $key = 'title') {
+  module_load_include('inc', 'name', 'includes/name.content');
+  return _name_field_get_options($field, $key);
+}
+
+
+/* ---------------------------- Formatter Code ------------------------------ */
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function name_field_formatter_info() {
+  $formatters = array();
+
+  // Three formatter types are returned here: default, raw & plain.
+  foreach (_name_formatter_output_types() as $type => $title) {
+    $type_info = $type == 'default' ? '' : ' (' . $title . ')';
+    $formatters['name_' . $type] = array(
+      'label' => t('Default') . $type_info,
+      'field types' => array('name'),
+      'settings' => array(),
+    );
+
+    foreach (name_get_custom_format_options() as $machine_name => $name_title) {
+      $formatters['name_' . $type . '_' . $machine_name] = array(
+        'label' => $name_title . $type_info,
+        'field types' => array('name'),
+        'settings' => array(),
+      );
+    }
+  }
+
+  return $formatters;
+}
+
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function name_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  // TODO: Multiple formatter options.
+  // TODO: Optional preprocessing of the user data. This would administrators
+  //       to add HTML to format strings and safely use the raw format to
+  //       output the formatted user name.
+  //       This could be considered a security issue, so more thought is needed.
+  $settings = $display['settings'];
+  $formatter = $display['type'];
+  if (empty($formatter) || $formatter == 'name_default') {
+    $formatter = 'name_default_default';
+  }
+
+  list(, $type, $format) = explode('_', $formatter, 3);
+  $format = name_get_format_by_machine_name($format);
+  if (empty($format)) {
+    $format = name_get_format_by_machine_name('default');
+  }
+
+  foreach ($items as $delta => $item) {
+    // We still have raw user input here.
+    $value = name_format($item, $format, array('object' => $entity, 'type' => $entity_type));
+    $element[$delta] = array(
+      '#markup' => _name_value_sanitize($value, NULL, $type)
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Helper function to sanitize a name component or name string.
+ *
+ * @param string $langcode
+ * @param mixed $item
+ *   If this is a string, then the processing happens on this.
+ *   If this is an array, the processing happens on the column index.
+ * @param string $column
+ * @param string $type
+ *   Tells the function how to handle the text processing:
+ *     'default' runs through check_plain()
+ *     'plain' runs through strip_tags()
+ *     'raw' has no processing applied to it
+ */
+function _name_value_sanitize($item, $column = NULL, $type = 'default') {
+  $safe_key = 'safe' . ($type == 'default' ? '' : '_' . $type);
+  if (is_array($item) && isset($item[$safe_key])) {
+    return $item[$safe_key][$column];
+  }
+
+  $value = is_array($item) ? (string) $item[$column] : $item;
+
+  switch ($type) {
+    case 'plain':
+      return strip_tags($value);
+    case 'raw':
+      return $value;
+    default:
+      return check_plain($value);
+  }
+}
+
+/* -------------------------- FAPI Form Alters ------------------------------ */
+
+/**
+ * Provides a hook into the theming of the field, instance and display settings,
+ * using #pre_render callbacks.
+ */
+function name_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
+  $field = $form['#field'];
+
+  if ($field['module'] != 'name') {
+    return;
+  }
+
+  // Moves the instance settings into a nicer table.
+  if (isset($form['instance']['settings'])) {
+    if (!isset($form['instance']['#pre_render'])) {
+      $form['instance']['#pre_render'] = array();
+    }
+    $form['instance']['#pre_render'][] = 'name_field_instance_settings_pre_render';
+  }
+
+  // Moves the field settings into a nicer table.
+  if (isset($form['field']['settings'])) {
+    if (!isset($form['field']['settings']['#pre_render'])) {
+      $form['field']['settings']['#pre_render'] = array();
+    }
+    $form['field']['settings']['#pre_render'][] = 'name_field_settings_pre_render';
+  }
+}
+
+function name_form_field_ui_field_settings_form_alter(&$form) {
+  if ($form['field']['module']['#value'] != 'name') {
+    return;
+  }
+  if (isset($form['field']['settings'])) {
+    if (!isset($form['field']['settings']['#pre_render'])) {
+      $form['field']['settings']['#pre_render'] = array();
+    }
+    $form['field']['settings']['#pre_render'][] = 'name_field_settings_pre_render';
+  }
+}
+
+/**
+ * A #pre_render function callback for formatting field instance settings.
+ */
+function name_field_instance_settings_pre_render($form) {
+  module_load_include('inc', 'name', 'name.admin');
+  return _name_field_instance_settings_pre_render($form);
+}
+
+/**
+ * A #pre_render function callback for formatting field settings.
+ */
+function name_field_settings_pre_render($form) {
+  module_load_include('inc', 'name', 'name.admin');
+  return _name_field_settings_pre_render($form);
+}
+
+/**
+ * Implements hook_field_create_instance().
+ */
+function name_field_create_instance($instance) {
+  if($instance['entity_type'] == 'user' && !empty($instance['settings']['name_user_preferred'])) {
+    variable_set('name_user_preferred', $instance['field_name']);
+  }
+}
+
+/**
+ * Implements hook_field_update_instance().
+ */
+function name_field_update_instance($instance, $prior_instance) {
+  // I'm only targeting user entities here.
+  if ($instance['entity_type'] == 'user') {
+    if (!empty($instance['settings']['name_user_preferred'])) {
+      variable_set('name_user_preferred', $instance['field_name']);
+    }
+    elseif (!empty($prior_instance['settings']['name_user_preferred'])) {
+      variable_set('name_user_preferred', '');
+    }
+  }
+}
+
+/**
+ * Implements hook_field_delete_instance().
+ */
+function name_field_delete_instance($instance) {
+  if($instance['entity_type'] == 'user' && !empty($instance['settings']['name_user_preferred'])) {
+    variable_set('name_user_preferred', '');
+  }
+}
+
+/* -------------------------- namedb integration ---------------------------- */
+
+/**
+ * Implements hook_field_insert().
+ *
+ * This listens to name field insertions and updates the namedb according.
+ */
+function name_field_insert($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  if (module_exists('namedb')) {
+    $components = array_filter($field['settings']['components']);
+    foreach ($items as $item) {
+      foreach ($components as $component) {
+        if (!empty($item[$component])) {
+          namedb_update_database($component, $item[$component]);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_update().
+ *
+ * This listens to name field updates and updates the namedb according.
+ */
+function name_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
+  if (module_exists('namedb')) {
+    $components = array_filter($field['settings']['components']);
+    foreach ($items as $item) {
+      foreach ($components as $component) {
+        if (!empty($item[$component])) {
+          namedb_update_database($component, $item[$component]);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Helper function to normalise the word for sorting.
+ * TODO: Better functions in PHP?
+ *
+ * All credit goes to the PathAuto module for this!
+ */
+function name_translite_word($word) {
+  static $translations;
+  if (!isset($translations)) {
+    $file = drupal_get_path('module', 'name') . '/' . 'i18n-ascii.txt';
+    $translations = parse_ini_file($file);
+  }
+  return strtr($word, $translations);
+}
+
+/**
+ * Helper function to get all of the allowed letters in a name.
+ */
+function name_translite_letters($base = 'a-zA-Z') {
+  static $letters;
+  if (!isset($letters)) {
+    $file = drupal_get_path('module', 'name') . '/' . 'i18n-ascii.txt';
+    $letters = '';
+    $translations = parse_ini_file($file);
+    foreach ($translations as $l => $t) {
+      $letters .= $l;
+    }
+  }
+  return $base . $letters;
+}
+
+/**
+ * Checks that the name matches a reasonable format before saving it to the
+ * database.
+ *
+ * The valid list so far is:
+ *
+ * xxx > Xxx
+ * d'xxx > D'Xxx
+ * l'xxx > L'Xxx
+ * m'xxx > M'Xxx
+ * o'xxx > O'Xxx
+ * de|del|des|di|du|la|le|van|von xxx > De Xxx
+ * de la xxx > De la Xxx
+ * van|von de|den|der xxx > Van Xxx
+ * st|st.|staint xxx > Staint Xxx
+ * van der xxx > Van der Xxx
+ * mc|mac xxx > McXxx
+ *
+ * Ignored list includes:
+ *
+ * xxx xxx
+ * etc
+ *
+ * Configurable options:
+ *
+ * xxx-xxx
+ * x
+ */
+function name_process_name_component($name, $data_key = 'user_data', $letters = 'a-z') {
+  $name = trim($name);
+  $settings = namedb_settings();
+  $min = intval($settings[$data_key]['minimum_length']);
+  if ($min <= 0) {
+    $min = 1;
+  }
+
+  if (empty($name) || strpos($name, '-') || drupal_strlen($name) < $min) {
+    return FALSE;
+  }
+
+  if (preg_match('/^de la ([' . $letters . ']{'. $min .',})$/i', $name, $match)) {
+    return 'De la ' . drupal_ucfirst($match[1]);
+  }
+  elseif (preg_match('/^(van|von) (de|den|der) ([' . $letters . ']{' . $min . ',})$/i', $name, $match)) {
+    return drupal_ucfirst(strtolower($match[1])) . ' ' . strtolower($match[2]) . ' ' . drupal_ucfirst($match[3]);
+  }
+  elseif (preg_match('/^(st\.|st|staint) ([' . $letters . ']{' . $min . ',})$/i', $name, $match)) {
+    return 'Staint ' . drupal_ucfirst($match[2]);
+  }
+  elseif (preg_match('/^(d|l|m|o) *\' *([' . $letters . ']{' . $min . ',})$/i', $name, $match)) {
+    return strtoupper($match[1]) . "'" . drupal_ucfirst($match[2]);
+  }
+  elseif (preg_match('/^(de|del|des|di|du|la|le|van|von) ([' . $letters . ']{' . $min . ',})$/i', $name, $match)) {
+    return drupal_ucfirst(strtolower($match[1])) . ' ' . drupal_ucfirst($match[2]);
+  }
+  elseif (preg_match('/^(mc|mac) ([' . $letters . ']{' . $min . ',})$/i', $name, $match)) {
+    return drupal_ucfirst(strtolower($match[1])) . drupal_ucfirst($match[2]);
+  }
+  elseif (preg_match('/^([' . $letters . ']{' . $min . ',}) de ([' . $letters . ']{' . $min . ',})$/i', $name, $match)) {
+    return drupal_ucfirst(strtolower($match[1])) . ' de ' . drupal_ucfirst($match[2]);
+  }
+  elseif (preg_match('/^[' . $letters . ']{' . $min . ',}$/i', $name)) {
+    return drupal_ucfirst($name);
+  }
+  if ($settings[$data_key]['hyphenated']) {
+    if (preg_match('/^([' . $letters . ']{' . $min . ',}) *\- *([' . $letters . ']{' . $min . ',})$/i', $name)) {
+      return drupal_ucfirst($match[1]) . '-' . drupal_ucfirst($match[2]);
+    }
+  }
+  return FALSE;
+}

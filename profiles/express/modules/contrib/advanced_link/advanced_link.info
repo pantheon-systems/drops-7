@@ -1,0 +1,12 @@
+name = Advanced Link
+description = Provides autocomplete widget for Link field and additional functionality over standard field.
+core = 7.x
+package = Fields
+dependencies[] = link
+
+; Information added by drupal.org packaging script on 2012-12-26
+version = "7.x-1.3"
+core = "7.x"
+project = "advanced_link"
+datestamp = "1356548137"
+

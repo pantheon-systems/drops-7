@@ -1,0 +1,66 @@
+<?php
+/**
+ * @file
+ * This module adds the ability do disable a nodes menu item from the node add/edit page
+ */
+
+/**
+ * Implements hook_help().
+ */
+function disable_node_menu_item_help($path, $arg) {
+  if ($path == 'admin/structure/menu/dnmi') {
+    return '<p>' . t('Use this configuration form to determine which content types will allow node menu items to be disabled/enabled from the node add/edit form') . '</p>';
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function disable_node_menu_item_menu() {
+  $items['admin/structure/menu/dnmi'] = array(
+    'title' => 'Disable Node Menu Item',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('disable_node_menu_item_settings'),
+    'file' => 'disable_node_menu_item.admin.inc',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 6,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function disable_node_menu_item_form_node_form_alter(&$form, &$form_state, $form_id) {
+  $default = 0;
+  $types = array_values(variable_get('dnmi_content_types', array()));
+  // Check if we are adding a new node or editing an existing node
+  if ($form['nid']['#value']) {
+    // Since we have a node id value we are editing a node
+    // Determine if this menu item is hidden or not and make the checkboxes default reflect that
+    $default = $form_state['node']->menu['hidden'];
+  }
+  // Only add our toggle if this node can be placed in a menu
+  if (isset($form['menu']['link'])) {
+    // Only add our toggle if this node is of a content type selected in the configuration
+    $flag = in_array($form['type']['#value'], $types, $strict = TRUE);
+    if ($flag) {
+      // Add a checkbox toggle control to the node form
+      $form['menu']['link']['link_disabled'] = array(
+        '#type' => 'checkbox',
+        '#title' => t('Disable in menu'),
+        '#description' => t('Select this option to create the menu item, but hide it from the menu tree. This may be useful to keep your content structured without cluttering the menu for site visitors.'),
+        '#default_value' => $default,
+      );
+      $form['#submit'][] = 'disable_node_menu_item_submit';
+    }
+  }
+}
+
+/**
+ * Implementation of hook_submit().
+ */
+function disable_node_menu_item_submit($form, &$form_state) {
+  $form_state['values']['menu']['hidden'] = $form_state['values']['menu']['link_disabled'];
+}

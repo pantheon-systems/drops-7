@@ -1,0 +1,108 @@
+<?php
+
+
+/**
+ * @file
+ * Implements tests for the theme switching rules.
+ */
+
+class ThemekeyMultipleNodePropertiesTestCase extends ThemekeyWebTestCase {
+  public static function getInfo() {
+    return array(
+      'name' => 'Themekey Multiple Node Properties',
+      'description' => 'Test multiple themekey node properties (node:).',
+      'group' => 'Themekey',
+    );
+  }
+
+
+  public function testMultipleProperties() {
+    $node = $this->drupalCreateNode(array('title' => 'Node title test', 'uid' => 1));
+
+    $propertiesArray = array();
+
+    // NODE:TITLE
+    $propertiesArray[] = array(
+      'property' => 'node:title',
+      'operator' => '=',
+      'value' => 'Node title test',
+      'theme' => 'garland',
+      'url' => array('path' => 'node/' . $node->nid),
+    );
+
+    // node:uid
+    $propertiesArray[] = array(
+      'property' => 'node:uid',
+      'operator' => '=',
+      'value' => '1',
+      'theme' => 'garland',
+      'url' => array('path' => 'node/' . $node->nid),
+    );
+
+    // CHECK DEFAULT THEME  = BARTIK
+    // load page
+    $this->drupalGet('node/' . $node->nid, array());
+    // theme is bartik
+    $this->assertTheme('bartik');
+
+    // CREATE RULES
+    if (!empty($propertiesArray)) {
+      foreach ($propertiesArray as $key => $propertyArray) {
+        // create ThemeKey Rule
+        $this->addThemeKeyRule($propertyArray['property'], $propertyArray['operator'], $propertyArray['value'], $propertyArray['theme']);
+      }
+    }
+
+    module_load_include('inc', 'themekey', 'themekey_build');
+    $rules = themekey_load_rules();
+
+    if (!empty($rules)) {
+      $last_rule = array();
+      $cntr = 0;
+      foreach ($rules as $key => $rule) {
+        if ($key > 1) {
+          $cntr++;
+          $rule['parent'] = $last_rule['id'];
+          $rule['depth'] = $cntr;
+          debug($rule);
+          themekey_rule_set($rule);
+          debug($rule);
+        }
+
+        $last_rule = $rule;
+      }
+    }
+
+
+    // TODO RULES ARE NOT SAVED CORRECTLY - DEPTH AND PARENT ARE NOT SET FOR SECOND RULE !!
+
+    cache_clear_all('*', 'cache_page', TRUE);
+    themekey_rebuild();
+
+    $rules = themekey_load_rules();
+
+    debug($rules, 'Testing Rules');
+
+
+    // CHECK RULES
+//    if (!empty($propertiesArray)) {
+//
+//      foreach ($propertiesArray as $key => $propertyArray) {
+//        if (empty($propertyArray['url']['path'])) {
+//          $propertyArray['path'] = '<front>';
+//        }
+//        if (empty($propertyArray['url']['options'])) {
+//          $propertyArray['url']['options'] = array();
+//        }
+//
+//        // load page
+//        $this->drupalGet($propertyArray['url']['path'], $propertyArray['url']['options']);
+//        // theme is garland
+//        $this->assertTheme('garland');
+//      }
+//
+//    }
+
+
+  }
+}

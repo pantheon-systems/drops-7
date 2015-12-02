@@ -1,0 +1,825 @@
+<?php
+
+/**
+ * @file
+ * Defines a field type for referencing a view from a node.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function viewreference_menu() {
+  $items = array();
+  $items['viewreference/autocomplete/%/%'] = array(
+    'title' => 'viewreference autocomplete',
+    'page callback' => 'viewreference_autocomplete',
+    'page arguments' => array(2, 3),
+    'access callback' => 'viewreference_autocomplete_access',
+    'access arguments' => array(2, 3),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function viewreference_theme() {
+  return array(
+    'viewreference_display_title' => array(
+      'variables' => array(
+        'view' => NULL,
+        'view_name' => NULL,
+        'display_key' => NULL,
+        'append_id' => FALSE,
+      ),
+    ),
+    'viewreference_formatter_default' => array(
+      'variables' => array('element' => NULL),
+    ),
+    'viewreference_formatter_full' => array(
+      'variables' => array('element' => NULL),
+    ),
+    'viewreference_formatter_plain' => array(
+      'variables' => array('element' => NULL),
+    ),
+    'viewreference_formatter_link' => array(
+      'variables' => array('element' => NULL),
+    ),
+    'viewreference_formatter_path' => array(
+      'variables' => array('element' => NULL),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function viewreference_field_info() {
+  $field_info = array(
+    'viewreference' => array(
+      'label'             => t('View reference'),
+      'description'       => t('Reference a views display from the views module.'),
+      'settings'          => array(
+        'referenceable_views' => array(),
+        'arguments' => array(
+          'dsv_arguments' => 0,
+          'php_arguments' => 0,
+          'delimiter' => '/',
+          'rows' => 1,
+          'label' => '!field_label ' . t('arguments'),
+        ),
+        'append_id' => 0,
+      ),
+      'default_widget'    => 'viewreference_autocomplete',
+      'default_formatter' => 'viewreference_default',
+    ),
+  );
+  return $field_info;
+}
+
+/**
+ * Implements hook_field_schema().
+ */
+function viewreference_field_schema($field) {
+  $columns = array(
+    'view_id' => array(
+      'type' => 'varchar',
+      'length' => '255',
+      'default' => NULL,
+      'not null' => FALSE,
+    ),
+    'arguments' => array(
+      'type' => 'text',
+      'size' => 'big',
+    ),
+  );
+
+  return array(
+    'columns' => $columns,
+    'indexes' => array('view_id' => array('view_id')),
+  );
+}
+
+/**
+ * Implements hook_field_settings_form().
+ */
+function viewreference_field_settings_form($field, $instance, $has_data) {
+  $settings = $field['settings'];
+
+  $form = array();
+  $form['referenceable_views'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Views that can be referenced'),
+    '#description' => t('Select the views that can be referenced. If no views are selected, then all the views will be available.'),
+    '#multiple' => TRUE,
+    '#default_value' => is_array($settings['referenceable_views']) ? $settings['referenceable_views'] : array(),
+    '#options' => viewreference_get_views($settings['append_id']),
+  );
+  $form['arguments'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Contextual filter arguments'),
+    '#collapsible' => TRUE,
+    '#collapsed' => ($settings['arguments']['dsv_arguments'] || $settings['arguments']['php_arguments']) ? FALSE : TRUE,
+    '#description' => t('Enabling the following options will provide an input field for passing arguments (aka <em>contextual filters</em>) to the view.'),
+  );
+  $form['arguments']['dsv_arguments'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow delimiter seperated values.'),
+    '#default_value' => isset($settings['arguments']['dsv_arguments']) ? $settings['arguments']['dsv_arguments'] : 0,
+    '#description' => t('Users can provide a list of arguments seperated by a delimiter. e.g: <em>term_1/term_2</em>'),
+  );
+  $form['arguments']['php_arguments'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Allow PHP code.'),
+    '#default_value' => isset($settings['arguments']['php_arguments']) ? $settings['arguments']['php_arguments'] : 0,
+    '#description' => t('Users can insert PHP code to generate the list of arguments. e.g: <em>term_1/&lt;?php print "term_x/term_y"; ?&gt;/term_2</em>'),
+  );
+  $form['arguments']['delimiter'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Delimiter'),
+    '#default_value' => !empty($settings['arguments']['delimiter']) ? $settings['arguments']['delimiter'] : '/',
+    '#size' => 3,
+    '#maxlength' => 30,
+    '#required' => TRUE,
+  );
+  $row_range = range(0, 10);
+  unset($row_range[0]);
+  $form['arguments']['rows'] = array(
+    '#type' => 'select',
+    '#title' => t('Number of rows in argument field'),
+    '#default_value' => isset($settings['arguments']['rows']) ? $settings['arguments']['rows'] : 1,
+    '#options' => $row_range,
+    '#description' => t('Set as 1 for textfield, or larger values for textarea (may be easier to write PHP with a textarea)'),
+    '#required' => TRUE,
+  );
+  $form['arguments']['label'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Label for arguments field'),
+    '#default_value' => isset($settings['arguments']['label']) ? $settings['arguments']['label'] : '!field_label ' . t('arguments'),
+    '#description' => t('Use <em>!field_label</em> to insert the field label.'),
+  );
+  $form['append_id'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Append unique ID in lists.'),
+    '#default_value' => isset($settings['append_id']) ? $settings['append_id'] : 0,
+    '#description' => t('It is possible for views displays to have the same title, this option will append [view:view_display_n] in lists used by this field to disambiguate the options.'),
+  );
+  return $form;
+
+}
+
+/**
+ * Implements hook_field_validate().
+ */
+function viewreference_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
+  $views = viewreference_get_views($field['settings']['append_id'], $field['settings']['referenceable_views']);
+  foreach ($items as $delta => $item) {
+    if (is_array($item)) {
+      if (!empty($item['view_id'])) {
+        if (!in_array($item['view_id'], array_keys($views))) {
+          $errors[$field['field_name']][$langcode][$delta][] = array(
+            'error' => 'invalid_view',
+            'message' => t("%name: This view can't be referenced.",
+              array('%name' => $instance['label'])),
+          );
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function viewreference_field_is_empty($item, $field) {
+  return empty($item['view_id']);
+}
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function viewreference_field_formatter_info() {
+  $ret = array(
+    'viewreference_default' => array(
+      'label' => t('Default (view)'),
+      'description' => t('Display the referenced view.'),
+      'field types' => array('viewreference'),
+    ),
+    'viewreference_full' => array(
+      'label' => t('Full (title and view)'),
+      'description' => t('Display the referenced view with a title.'),
+      'field types' => array('viewreference'),
+    ),
+    'viewreference_plain' => array(
+      'label' => t('Title (no link)'),
+      'description' => t('Display the title of the referenced view.'),
+      'field types' => array('viewreference'),
+    ),
+    'viewreference_link' => array(
+      'label' => t('Title (link)'),
+      'description' => t('Display the title of the referenced view as a link (if possible).'),
+      'field types' => array('viewreference'),
+    ),
+    'viewreference_path' => array(
+      'label' => t('Path'),
+      'description' => t('Display the path of the referenced view (if possible).'),
+      'field types' => array('viewreference'),
+    ),
+  );
+  return $ret;
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function viewreference_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  $formatter = str_replace('viewreference_', '', $display['type']);
+  foreach ($items as $delta => $item) {
+    $element[$delta] = array(
+      '#theme' => 'viewreference_formatter_' . $formatter,
+      '#element' => array(
+        'entity_type' => &$entity_type,
+        'entity' => &$entity,
+        'field' => &$field,
+        'instance' => &$instance,
+        'langcode' => &$langcode,
+        'item' => $item,
+        'display' => &$display,
+      ),
+    );
+  }
+  return $element;
+}
+
+/**
+ * Value callback for a viewreference_autocomplete element.
+ */
+function viewreference_autocomplete_value($element, $input = FALSE, $form_state) {
+  if ($input === FALSE) {
+    $field_key = $element['#columns'][0];
+    $args_key = $element['#columns'][1];
+    if (!empty($element['#default_value'][$field_key])) {
+      $field_name = $element['#parents'][0];
+      $field = field_info_field($field_name);
+      $views = viewreference_get_views(TRUE, array($element['#default_value'][$field_key]));
+      $value = $views[$element['#default_value'][$field_key]];
+      return array($field_key => $value, $args_key => $element['#default_value'][$args_key]);
+    }
+    return array($field_key => NULL, $args_key => $element['#default_value'][$args_key]);
+  }
+}
+
+/**
+ * Validation callback for a viewreference_autocomplete element.
+ */
+function viewreference_autocomplete_validate($element, &$form_state, $form) {
+  $field = $form_state['field'][$element['#field_name']][$element['#language']]['field'];
+  $field_key = $element['#columns'][0];
+  $value = $element['#value'];
+  $new_value = NULL;
+
+  if (!empty($value)) {
+    $regex  = '/' // Start of string
+      . '(.*).*?' // Any non-greedy
+      . '(\\[)' // [
+      . '((?:[a-z][a-z0-9_]*))' // Variable 1
+      . '(:)' // :
+      . '((?:[a-z][a-z0-9_]*))' // Variable 2
+      . '(\\])' // ]
+      . '/is'; // End of string
+    preg_match($regex, $value, $matches);
+    if (!empty($matches)) {
+      $new_value = $matches[3] . ':' . $matches[5];
+      $allowed = viewreference_get_views(FALSE, $field['settings']['referenceable_views']);
+      if (!isset($allowed[$new_value])) {
+        form_error(
+          $element,
+          t(
+            '%name: View display %value cannot be referenced.',
+            array(
+              '%name' => $element['#title'],
+              '%value' => $new_value,
+            )
+          )
+        );
+      }
+    }
+    else {
+      form_error(
+        $element,
+        t(
+          '%name: The value %value is in an unexpected format.  Expecting: %format',
+          array(
+            '%name' => $element['#title'],
+            '%value' => $value,
+            '%format' => '<em>View title [view:display_n]</em>',
+          )
+        )
+      );
+    }
+  }
+
+  form_set_value($element, $new_value, $form_state);
+}
+
+/**
+ * Implements hook_field_widget_error().
+ */
+function viewreference_field_widget_error($element, $error, $form, &$form_state) {
+  form_error($element['view_id'], $error['message']);
+}
+
+/**
+ * Menu access callback for the autocomplete path.
+ *
+ * Check for both 'edit' and 'view' access in the unlikely event
+ * a user has edit but not view access.
+ */
+function viewreference_autocomplete_access($entity_type, $field_name) {
+  return user_access('access content') && ($field = field_info_field($field_name)) && field_access('view', $field, $entity_type) && field_access('edit', $field, $entity_type);
+}
+
+/**
+ * Menu callback for the autocomplete results.
+ */
+function viewreference_autocomplete($bundle_name, $field_name, $string = '') {
+  $field = field_info_field($field_name);
+  $settings = $field['settings'];
+  $matches = viewreference_get_views($settings['append_id'], $settings['referenceable_views'], FALSE, $string, FALSE, TRUE);
+  drupal_json_output($matches);
+}
+
+/**
+ * Implements hook_options_list().
+ */
+function viewreference_options_list($field) {
+  $references = viewreference_get_views($field['settings']['append_id'], $field['settings']['referenceable_views']);
+  $options = array();
+  foreach ($references as $key => $value) {
+    $options[$key] = $value['rendered'];
+  }
+  return $options;
+}
+
+/**
+ * Create a display title for a view display.
+ */
+function viewreference_views_display_title($view_name, $view, $display) {
+  // Build the display title.
+  if (isset($view->display[$display]->display_options['title'])) {
+    // This view display has a nice title, let's use that.
+    return $view->display[$display]->display_options['title'];
+  }
+  elseif (isset($view->display['default']->display_options['title'])) {
+    // This view display inherits it's title from the default display.
+    return $view->display['default']->display_options['title'];
+  }
+  else {
+    // This view display does not have a title configured, we have to construct a title.
+    return ucfirst($view_name) . ' ' . strtolower($view->display[$display]->display_title);
+  }
+}
+
+/**
+ * Get an array of data and rendered HTML items that are useful in theming the
+ * formatter output.
+ *
+ * @param $element
+ *   An array of parameters used in viewing the element.
+ * @param $params
+ *   An array of special features needed to be built:
+ *     'embed' - The $view->preview() of the view display
+ *     'title' - The display title of the view display
+ *     'link' - A link to the view display, or the title if link not available.
+ * @return
+ *   The array of useful data about the view.
+ */
+function viewreference_get_view($element, $params = array()) {
+  if (!empty($element['item']['view_id'])) {
+
+    $view_id_parts = explode(':', $element['item']['view_id']);
+    $view['name'] = $view_id_parts[0];
+    $view['display'] = $view_id_parts[1];
+    $view['view'] = views_get_view($view['name']);
+    if ($view['view'] && $view['view']->access($view['display'])) {
+      if (in_array('embed', $params)) {
+        $view['args'] = viewreference_get_element_args($element);
+        $view['embed'] = $view['view']->preview($view['display'], $view['args']);
+      }
+      if (in_array('title', $params) || in_array('link', $params)) {
+        $view['title'] = theme('viewreference_display_title', $view);
+        if (in_array('link', $params)) {
+          $disabled = isset($view['view']->disabled) ? $view['view']->disabled:  FALSE;
+          if (isset($view['view']->display[$view['display']]->display_options['path']) && !$disabled) {
+            $view['args'] = isset($view['args']) ? $view['args'] : viewreference_get_element_args($element);
+            $view['url_args'] = implode('/', $view['args']);
+            $view['path'] = $view['view']->display[$view['display']]->display_options['path'];
+            if ($view['url_args']) {
+              $view['path'] .= '/' . $view['url_args'];
+            }
+            $view['link'] = l($view['title'], $view['view']->get_url($view['args'], $view['path']));
+          }
+          else {
+            $view['link'] = $view['title'];
+          }
+        }
+      }
+      return $view;
+    }
+  }
+}
+
+/**
+ * Theme function for 'default' viewreference field formatter.
+ */
+function theme_viewreference_formatter_default($variables) {
+  $element = &$variables['element'];
+  $output = '';
+  if ($view = viewreference_get_view($element, array('embed'))) {
+    $output .= $view['embed'];
+  }
+  return $output;
+}
+
+/**
+ * Theme function for 'full' viewreference field formatter.
+ */
+function theme_viewreference_formatter_full($variables) {
+  $element = &$variables['element'];
+  $output = '';
+  if ($view = viewreference_get_view($element, array('title', 'embed'))) {
+    $output .= '<h3 class="title viewreference-title">' . $view['title'] . '</h3>';
+    $output .= $view['embed'];
+  }
+  return $output;
+}
+
+/**
+ * Theme function for 'plain' viewreference field formatter.
+ */
+function theme_viewreference_formatter_plain($variables) {
+  $element = &$variables['element'];
+  $output = '';
+  if ($view = viewreference_get_view($element, array('title'))) {
+    $output .= $view['title'];
+  }
+  return $output;
+}
+
+/**
+ * Theme function for 'link' viewreference field formatter.
+ */
+function theme_viewreference_formatter_link($variables) {
+  $element = &$variables['element'];
+  $output = '';
+  if ($view = viewreference_get_view($element, array('link'))) {
+    $output .= $view['link'];
+  }
+  return $output;
+}
+
+/**
+ * Theme function for 'path' viewreference field formatter.
+ */
+function theme_viewreference_formatter_path($variables) {
+  $element = &$variables['element'];
+  $output = '';
+  if ($view = viewreference_get_view($element, array('link'))) {
+    $output .= isset($view['path']) ? $view['path'] : $view['link'];
+  }
+  return $output;
+}
+
+/**
+ * Get an array of views.
+ *
+ * @param $append_id
+ *   Whether to append the id to the returned display names.
+ * @param $filter
+ *   A list of IDs in the format view_name:display_key to restrict results by.
+ * @param $full
+ *   If TRUE will return all the data, rather than just the title.
+ * @param $string
+ *   String to match against the title to filter results by.
+ * @param $exact_string
+ *   If TRUE the $string parameter must match exactly.
+ * @param $long_key
+ *   If TRUE will key array by the title and ID, not just the ID.
+ *
+ * @return
+ *   The array of views.
+ */
+function viewreference_get_views($append_id = FALSE, $filter = NULL, $full = FALSE, $string = '', $exact_string = FALSE, $long_key = FALSE) {
+  $views = array();
+  $loaded_views = views_get_all_views();
+  $filter = $filter ? array_filter($filter) : NULL;
+  foreach ((array)$loaded_views as $view_name => $view) {
+    foreach ((array)$view->display as $display_key => $display) {
+      // Skip this one if it's a 'default' view.
+      if ($display_key != 'default') {
+        $id = $view_name . ':' . $display_key;
+        // Skip this one if it's not 'allowed'.
+        if (empty($filter) || in_array($id, $filter)) {
+          // Get display title.
+          $theme_vars = array(
+            'view' => $view,
+            'view_name' => $view_name,
+            'display_key' => $display_key,
+            'append_id' => $append_id,
+          );
+          $display_title = theme('viewreference_display_title', $theme_vars);
+          // Determine whether and what to return.
+          $key = $long_key ? $display_title . ($append_id ? '' : ' [' . $id . ']') : $id;
+          if ($string) {
+            if (!$exact_string && (stripos($display_title, $string) !== FALSE || stripos($key, $string) !== FALSE)) {
+              $views[$key] = $full ? $display : $display_title;
+            }
+            elseif ($display_title == $string) {
+              $views[$key] = $full ? $display : $display_title;
+            }
+          }
+          else {
+            $views[$key] = $full ? $display : $display_title;
+          }
+        }
+      }
+    }
+  }
+  return $views;
+}
+
+/**
+ * Theme the display title for this view display.
+ *
+ * @param $variables
+    An array of arguments that will be extracted to the following variables:
+ *    $view - The view object.
+ *    $view_name - The name of the view.
+ *    $display_key - The name of the display to use.
+ *    $append_id - Boolean indicating whether to append a unique id.
+ * @return
+ *  The display title of this views display.
+ */
+function theme_viewreference_display_title($variables) {
+  // Get variables passed to theme function.
+  extract($variables);
+
+  $view->set_display($display_key);
+  $display_title = $view->get_title();
+
+  if (!$display_title) {
+    // No title, we have to construct a title.
+    $display_title = ucfirst($view_name) . ' ' . strtolower($view->display[$display_key]->display_title);
+  }
+
+  if ($append_id) {
+    // Append ID for disambiguation in forms (views displays can have the same title).
+    $display_title .= ' [' . $view_name . ':' . $display_key . ']';
+  }
+
+  return $display_title;
+}
+
+/**
+ * Convert arguments text field entry to an array of arguments.
+ */
+function viewreference_get_element_args($element) {
+  $string = &$element['item']['arguments'];
+  $field = &$element['field'];
+  $settings = $field['settings'];
+  $delimiter = &$settings['arguments']['delimiter'];
+  $dsv_arguments = &$settings['arguments']['dsv_arguments'];
+  $php_arguments = &$settings['arguments']['php_arguments'];
+  $arguments = '';
+  $args = array();
+  if ($php_arguments) {
+    $variables = array(
+      $element['entity_type'] => $element['entity'],
+    );
+    $arguments = viewreference_eval($string, $variables);
+  }
+  elseif ($dsv_arguments) {
+    $arguments = $string;
+  }
+  if ($arguments) {
+    $args = explode($delimiter, $arguments);
+    foreach ($args as $k => $v) {
+      $args[$k] = trim($v);
+    }
+  }
+  // Allow modules to easily supply their own views arguments.
+  drupal_alter('viewreference_args', $args, $element);
+  return $args;
+}
+
+/**
+ * A version of php_eval() that allows passing of variables.
+ */
+function viewreference_eval($code, $variables = array()) {
+  global $theme_path, $theme_info, $conf;
+
+  // Store current theme path.
+  $old_theme_path = $theme_path;
+
+  // Restore theme_path to the theme, as long as drupal_eval() executes,
+  // so code evaluted will not see the caller module as the current theme.
+  // If theme info is not initialized get the path from theme_default.
+  if (!isset($theme_info)) {
+    $theme_path = drupal_get_path('theme', $conf['theme_default']);
+  }
+  else {
+    $theme_path = dirname($theme_info->filename);
+  }
+
+  foreach ((array)$variables as $key => $value) {
+    $$key = $value;
+  }
+
+  ob_start();
+  print eval('?>' . $code);
+  $output = ob_get_contents();
+  ob_end_clean();
+
+  // Recover original theme path.
+  $theme_path = $old_theme_path;
+
+  return $output;
+}
+
+/**
+ * Implements hook_field_widget_info().
+ */
+function viewreference_field_widget_info() {
+  return array(
+    'viewreference_select' => array(
+      'label' => t('Select list'),
+      'description' => t('Display the list of referenceable views as a select list.'),
+      'field types' => array('viewreference'),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+        'default value' => FIELD_BEHAVIOR_DEFAULT,
+      ),
+    ),
+    'viewreference_autocomplete' => array(
+      'label' => t('Autocomplete text field'),
+      'description' => t('Display the list of referenceable views as a textfield with autocomplete behaviour.'),
+      'field types' => array('viewreference'),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_DEFAULT,
+        'default value' => FIELD_BEHAVIOR_DEFAULT,
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_form().
+ */
+function viewreference_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  switch ($instance['widget']['type']) {
+    case 'viewreference_select':
+      $element = array(
+        '#type' => 'viewreference_select',
+        '#default_value' => isset($items[$delta]) ? $items[$delta] : NULL,
+      );
+      break;
+    case 'viewreference_autocomplete':
+      $element = array(
+        '#type' => 'viewreference_autocomplete',
+        '#default_value' => isset($items[$delta]) ? $items[$delta] : NULL,
+        '#value_callback' => 'viewreference_autocomplete_value',
+      );
+      break;
+  }
+  return $element;
+}
+
+/**
+ * Implements hook_element_info().
+ */
+function viewreference_element_info() {
+  return array(
+    'viewreference_select' => array(
+      '#input' => TRUE,
+      '#columns' => array('view_id', 'arguments'),
+      '#delta' => 0,
+      '#process' => array('viewreference_select_process'),
+    ),
+    'viewreference_autocomplete' => array(
+      '#input' => TRUE,
+      '#columns' => array('view_id', 'arguments'),
+      '#delta' => 0,
+      '#process' => array('viewreference_autocomplete_process'),
+      '#autocomplete_path' => FALSE,
+    ),
+  );
+}
+
+/**
+ * Process callback for a viewreference_select element.
+ *
+ * @see viewreference_element_info().
+ */
+function viewreference_select_process($element, $form_state, $form) {
+  $field_name = $element['#parents'][0];
+  $language = $element['#parents'][1];
+  $field = $form_state['field'][$field_name];
+  $instance = $field[$language]['instance'];
+  $bundle = $instance['bundle'];
+  $settings = $field[$language]['field']['settings'];
+
+  $options = viewreference_get_views($settings['append_id'], $settings['referenceable_views']);
+  if (!$instance['required']) {
+    $options = array(0 => '<'. t('none') .'>') + $options;
+  }
+
+  $element[$element['#columns'][0]] = array(
+    '#type' => 'select',
+    '#multiple' => 0,
+    '#options' => $options,
+    '#default_value' => isset($element['#value'][$element['#columns'][0]]) ? $element['#value'][$element['#columns'][0]] : '',
+    '#field_name' => $field_name,
+    '#delta' => $element['#delta'],
+    '#columns' => $element['#columns'],
+    '#title' => $instance['label'],
+    '#required' => $instance['required'],
+    '#description' => isset($element['#description']) ? $element['#description'] : NULL,
+  );
+
+  if ($settings['arguments']['dsv_arguments'] || $settings['arguments']['php_arguments']) {
+    $element[$element['#columns'][1]] = array(
+      '#type' => ($settings['arguments']['rows'] == 1 ? 'textfield' : 'textarea'),
+      '#default_value' => isset($element['#value'][$element['#columns'][1]]) ? $element['#value'][$element['#columns'][1]] : '',
+      '#title' => isset($settings['arguments']['label']) ? 
+        str_replace('!field_label', $instance['label'], check_plain($settings['arguments']['label'])) : 
+        $instance['label'] . ' ' . t('arguments'),
+      '#rows' => $settings['arguments']['rows'],
+      '#language' => $language,
+      '#delta' => $element['#delta'],
+      '#columns' => $element['#columns'],
+      '#required' => $element['#required'],
+      '#description' => isset($element['#description']) ? $element['#description'] : NULL,
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Process callback for a viewreference_autocomplete element.
+ *
+ * @see viewreference_element_info().
+ */
+function viewreference_autocomplete_process($element, $form_state, $form) {
+  $field_name = $element['#parents'][0];
+  $language = $element['#parents'][1];
+  $field = $form_state['field'][$field_name];
+  $instance = $field[$language]['instance'];
+  $bundle = $instance['bundle'];
+  $settings = $field[$language]['field']['settings'];
+
+  $element[$element['#columns'][0]] = array(
+    '#type' => 'textfield',
+    '#default_value' => isset($element['#value'][$element['#columns'][0]]) ? $element['#value'][$element['#columns'][0]] : '',
+    '#autocomplete_path' => 'viewreference/autocomplete/'. $bundle . '/' . $field_name,
+    '#element_validate' => array('viewreference_autocomplete_validate'),
+    '#field_name' => $field_name,
+    '#language' => $language,
+    '#delta' => $element['#delta'],
+    '#columns' => $element['#columns'],
+    '#title' => $instance['label'],
+    '#required' => $element['#required'],
+    '#description' => isset($element['#description']) ? $element['#description'] : '',
+  );
+
+  if ($settings['arguments']['dsv_arguments'] || $settings['arguments']['php_arguments']) {
+    $element[$element['#columns'][1]] = array(
+      '#type' => ($settings['arguments']['rows'] == 1 ? 'textfield' : 'textarea'),
+      '#default_value' => isset($element['#value'][$element['#columns'][1]]) ? $element['#value'][$element['#columns'][1]] : '',
+      '#title' => $instance['label'] . ' ' . t('arguments'),
+      '#rows' => $settings['arguments']['rows'],
+      '#delta' => $element['#delta'],
+      '#columns' => $element['#columns'],
+      '#required' => $element['#required'],
+      '#description' => isset($element['#description']) ? $element['#description'] : '',
+    );
+  }
+
+  return $element;
+}
+
+/*
+
+  Views field exposure code from D6.  Don't know where to put this.'
+  Used to be in viewreference_field_settings() when $op was 'views data'.
+
+      $data = content_views_field_views_data($field);
+      $db_info = content_database_info($field);
+      $table_alias = content_views_tablename($field);
+      // Swap the filter handler to the 'in' operator.
+      $data[$table_alias][$field['field_name'] . '_view_id']['filter']['handler'] = 'views_handler_filter_many_to_one_content';
+      return $data;
+
+*/

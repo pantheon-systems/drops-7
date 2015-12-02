@@ -1,0 +1,34 @@
+<?php
+/**
+ * @file
+ *    install, update, and uninstall hooks
+ * @see google_appliance.module
+ */
+
+/**
+ * Implements hook_uninstall().
+ *   drop settings
+ */
+function google_appliance_uninstall() {
+
+  $field_keys =  array(
+    'hostname',
+    'collection',
+    'frontend',
+    'timeout',
+    'autofilter',
+    'language_filter_toggle',
+    'language_filter_options',
+    'query_inspection',
+    'search_title',
+    'results_per_page',
+    'advanced_search_reporting',
+    'spelling_suggestions',
+    'onebox_modules',
+    'block_visibility_settings',
+  );
+
+  foreach ($field_keys as $field) {
+    variable_del('google_appliance_' . $field);
+  }
+}

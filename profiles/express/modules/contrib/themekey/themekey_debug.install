@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Cleans up variables when uninstalling
+ * @see themekey_debug.module
+ *
+ * @author Markus Kalkbrenner | Cocomore AG
+ *   @see http://drupal.org/user/124705
+ */
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function themekey_debug_uninstall() {
+  // Remove variables
+  // TODO Please review the conversion of this statement to the D7 database API syntax.
+  /* db_query("DELETE FROM {variable} WHERE name LIKE 'themekey_debug_%%'") */
+  db_delete('variable')
+  ->condition('name', 'themekey_debug_%%', 'LIKE')
+  ->execute();
+  cache_clear_all('variables', 'cache');
+}

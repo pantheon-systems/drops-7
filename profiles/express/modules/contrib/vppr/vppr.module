@@ -1,0 +1,131 @@
+<?php
+/**
+ * @file
+ * Vocabulary Permissions Per Role
+ *
+ * Allows adding to/editing terms of/removing terms from vocabularies per role.
+ */
+
+/**
+ * Implements hook_menu_alter().
+ */
+function vppr_menu_alter(&$items) {
+  // Taxonomy overview page.
+  $items['admin/structure/taxonomy']['access callback'] = 'vppr_access_taxonomy';
+  $items['admin/structure/taxonomy']['page callback'] = 'vppr_taxonomy_overview_vocabularies';
+  $items['admin/structure/taxonomy']['file'] = 'vppr.admin.inc';
+  $items['admin/structure/taxonomy']['file path'] = drupal_get_path('module', 'vppr');
+  unset($items['admin/structure/taxonomy']['page arguments']);
+  // Terms list.
+  $items['admin/structure/taxonomy/%taxonomy_vocabulary_machine_name']['access callback'] = 'vppr_access_vocabulary_terms';
+  $items['admin/structure/taxonomy/%taxonomy_vocabulary_machine_name']['access arguments'] = array(3);
+  // Add terms.
+  $items['admin/structure/taxonomy/%taxonomy_vocabulary_machine_name/add']['access callback'] = 'vppr_access_vocabulary_terms';
+  $items['admin/structure/taxonomy/%taxonomy_vocabulary_machine_name/add']['access arguments'] = array(3);
+  // Term edit.
+  $items['taxonomy/term/%taxonomy_term/edit']['access callback'] = 'vppr_access_term_edit';
+  $items['taxonomy/term/%taxonomy_term/edit']['access arguments'] = array(2);
+}
+
+/**
+ * VPPR's access callback for taxonomy overview page (main entry point).
+ *
+ * Grants access to taxonomy overview page even if $user has access to any of
+ * the vocabularies.
+ */
+function vppr_access_taxonomy() {
+  if (user_access('administer taxonomy')) {
+    return TRUE;
+  }
+  $perms = array_keys(vppr_permission());
+  foreach ($perms as $perm) {
+    if (user_access($perm)) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * VPPR's access callback for terms list.
+ */
+function vppr_access_vocabulary_terms($vocabulary) {
+  if (user_access('administer taxonomy') || user_access('administer ' . $vocabulary->machine_name . ' vocabulary terms')) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Return edit access for a given term.
+ */
+function vppr_access_term_edit($term) {
+  if (taxonomy_term_edit_access($term) || user_access('administer ' . $term->vocabulary_machine_name . ' vocabulary terms')) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Return delete access for a given term.
+ */
+function vppr_access_term_delete($term) {
+  if (user_access('administer taxonomy') || user_access("delete terms in $term->vid") || user_access('administer ' . $term->vocabulary_machine_name . ' vocabulary terms')) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function vppr_form_taxonomy_form_term_alter(&$form, &$form_state) {
+  if (isset($form['tid']['#value']) && isset($form['actions']['delete']['#access']) && isset($form['#term'])) {
+    $form['actions']['delete']['#access'] = vppr_access_term_delete((object) $form['#term']);
+  }
+}
+
+/**
+ * Implements hook_permission().
+ */
+function vppr_permission() {
+  $perms = array();
+  $vocabularies = taxonomy_get_vocabularies();
+  foreach ($vocabularies as $vocabulary) {
+    $perms['administer ' . $vocabulary->machine_name . ' vocabulary terms'] = array(
+      'title' => t('Administer %name vocabulary terms', array('%name' => $vocabulary->name)),
+    );
+  }
+  return $perms;
+}
+
+/**
+ * Implements hook_taxonomy_vocabulary_update().
+ */
+function vppr_taxonomy_vocabulary_update($vocabulary) {
+  if ($vocabulary->old_machine_name != $vocabulary->machine_name) {
+    db_update('role_permission')
+      ->fields(array(
+        'permission' => 'administer ' . $vocabulary->machine_name . ' vocabulary terms',
+      ))
+      ->condition('permission', 'administer ' . $vocabulary->old_machine_name . ' vocabulary terms')
+      ->execute();
+
+    // Clear the user access cache.
+    drupal_static_reset('user_access');
+    drupal_static_reset('user_role_permissions');
+  }
+}
+
+/**
+ * Implements hook_taxonomy_vocabulary_delete().
+ */
+function vppr_taxonomy_vocabulary_delete($vocabulary) {
+  db_delete('role_permission')
+    ->condition('permission', 'administer ' . $vocabulary->machine_name . ' vocabulary terms')
+    ->execute();
+
+  // Clear the user access cache.
+  drupal_static_reset('user_access');
+  drupal_static_reset('user_role_permissions');
+}

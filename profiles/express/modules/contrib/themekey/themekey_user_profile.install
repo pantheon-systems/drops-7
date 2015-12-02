@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Database schema of
+ * @see themekey_user_profile.module
+ *
+ * @author Markus Kalkbrenner | Cocomore AG
+ *   @see http://drupal.org/user/124705
+ */
+
+
+/**
+ * implements hook_install()
+ * @return void
+ */
+function themekey_user_profile_install() {
+  // rebuild themekey properties
+  module_load_include('inc', 'themekey', 'themekey_build');
+  themekey_rebuild();
+}
+
+
+/**
+ * Implements hook_disable().
+ */
+function themekey_user_profile_disable() {
+  module_load_include('inc', 'themekey', 'themekey_build');
+  themekey_update_static_rule('user:profile_triggers_theme', FALSE);
+}
+
+
+/**
+ * Implements hook_uninstall().
+ */
+function themekey_user_profile_uninstall() {
+  // Remove variables
+  db_delete('variable')
+  ->condition('name', 'themekey_ui_user_profile')
+  ->execute();
+
+  cache_clear_all('variables', 'cache');
+}

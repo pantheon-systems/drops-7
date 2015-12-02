@@ -1,0 +1,202 @@
+<?php
+/**
+ * @file
+ * Code for the Files feature.
+ */
+
+include_once('files.features.inc');
+
+
+/**
+ * Implements hook_page_alter().
+ */
+function files_page_alter(&$page) {
+  // Add cu slider css
+  drupal_add_css(drupal_get_path('module', 'files') . '/css/files.css');
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Let Drupal know that we've got bean--cu-slider.tpl.php in our module directory.
+ */
+function files_theme_registry_alter(&$theme_registry) {
+  $module_path = drupal_get_path('module', 'files');
+  $theme_registry_copy = $theme_registry;
+  _theme_process_registry($theme_registry_copy, 'phptemplate', 'theme_engine', 'node', $module_path);
+  $theme_registry += array_diff_key($theme_registry_copy, $theme_registry);
+  $hooks = array('node');
+  foreach ($hooks as $h) {
+	  if (isset($theme_registry[$h]['theme paths'])) {
+	    $first_element = array_shift($theme_registry[$h]['theme paths']);
+	    array_unshift($theme_registry[$h]['theme paths'], array_shift($theme_registry[$h]['theme paths']), $module_path);
+  	}
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function files_menu() {
+  $items['node/%node/backstretch'] = array(
+    'title' => 'Authoritative Attachment',
+    'description' => 'The canonical or "lightest" attached file.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'files_image_style_retrieve',
+    'page arguments' => array(1, 'backstretch'),
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+  );
+  
+  $items['node/%node/large'] = array(
+    'title' => 'Authoritative Attachment',
+    'description' => 'The canonical or "lightest" attached file.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'files_image_style_retrieve',
+    'page arguments' => array(1, 'large'),
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+  );
+  
+  $items['node/%node/medium'] = array(
+    'title' => 'Authoritative Attachment',
+    'description' => 'The canonical or "lightest" attached file.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'files_image_style_retrieve',
+    'page arguments' => array(1, 'medium'),
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+  );
+  
+  $items['node/%node/small'] = array(
+    'title' => 'Authoritative Attachment',
+    'description' => 'The canonical or "lightest" attached file.',
+    'type' => MENU_CALLBACK,
+    'page callback' => 'files_image_style_retrieve',
+    'page arguments' => array(1, 'small'),
+    'access callback' => 'node_access',
+    'access arguments' => array('view', 1),
+  );
+
+  return $items;
+}
+
+function files_image_style_retrieve($node, $type) {
+  // Make sure that attachment links are enabled for a field on this node type.
+  $file_field_name = variable_get('attachment_links_selection_' . $node->type, 0);
+  if (!$file_field_name) {
+    return MENU_NOT_FOUND;
+  }
+  // Grab the files from the current node for the selected field.
+  $files = field_get_items('node', $node, $file_field_name);
+  
+  // If we have files, continue, else return 404.
+  if (!empty($files)) {
+    $file = reset($files);
+    $file_object = file_load($file['fid']);
+    $validate = file_validate_is_image($file_object);
+    if (isset($validate[0])) {
+      return MENU_NOT_FOUND;
+    } else {
+      $uri = $file['uri'];
+      // Function file_create_url will generate either the public direct path
+      // to the file, or in the case of private, will generate /system/files/{file}.
+      drupal_goto(image_style_url($type, $uri));
+    }
+  } else {
+    return MENU_NOT_FOUND;
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ * 
+ * Adds image style aliases for image files
+ */
+function files_preprocess_node(&$vars) {
+  
+  if ($vars['node']->type == 'file') {
+    global $base_root;
+    global $base_path;
+    if (!empty($vars['field_file_attachment'])) {
+      $output = '';
+      $file = $vars['field_file_attachment'][0];
+      $file_object = file_load($file['fid']);
+      $validate = file_validate_is_image($file_object);
+      if (!isset($validate[0])) {
+        $styles['backstretch'] = 'Backstretch';
+        $styles['large'] = 'Large';
+        $styles['medium'] = 'Medium';
+        $styles['small'] = 'Small';
+        ksort($styles);
+        foreach ($styles as $style_name => $style) {
+          //$url = image_style_url($style_name, $file_object->uri);
+          $url = $base_root . $base_path . 'node/' . $vars['nid'] . '/' . $style_name;
+          $url = preg_replace("/^https:/i", "http:", $url);
+          $output .= '<p>' . $style . '<br />' . l($url, $url) . '</p>';
+        }
+        $vars['content']['image_styles'][0]['#markup'] = $output;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function files_node_update($node) {
+  path_delete(array('source' => 'node/' . $node->nid . '/backstretch'));
+  path_delete(array('source' => 'node/' . $node->nid . '/large'));
+  path_delete(array('source' => 'node/' . $node->nid . '/medium'));
+  path_delete(array('source' => 'node/' . $node->nid . '/small'));
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function files_node_delete($node) {
+  // Delete all aliases associated with this node attachment.
+  path_delete(array('source' => 'node/' . $node->nid . '/backstretch'));
+  path_delete(array('source' => 'node/' . $node->nid . '/large'));
+  path_delete(array('source' => 'node/' . $node->nid . '/medium'));
+  path_delete(array('source' => 'node/' . $node->nid . '/small'));
+}
+
+/**
+ * Implements hook_node_view().
+ * Redirecting users without edit permissions to the external url,
+ * Displays message to users with permissions
+ */
+function files_node_view($node, $view_mode) {
+  switch($node->type) {
+    case 'file':	
+      if ($view_mode == 'full') { 
+        $redirect = 'node/' . $node->nid . '/attachment';     
+        if (user_access("edit any article content")) {
+          drupal_set_message(t('A user without editing permissions would have been redirected to !redirect',
+              array('!redirect' => l($redirect, $redirect))),
+            'notice');
+        }
+        else {
+          drupal_goto($redirect);
+        }
+      }
+      break;
+  }
+}
+
+/**
+ * Implements hook_node_presave().
+ *
+ * Fix the node title if the title was set by auto_entity_label.
+ * Auto_entity_label title includes the full public url to the file,
+ * all we need is the single filename
+ */
+function files_node_presave($node) {
+  if ($node->type == 'file' && isset($node->auto_entitylabel_applied) && $node->auto_entitylabel_applied == TRUE) {
+    // Since the auto_entity_label title is a full url, let's get the last part which should be the filename
+    $filename_parts = explode('/', $node->title);
+    $filename = array_pop($filename_parts);
+    $node->title = $filename;
+  }
+}
