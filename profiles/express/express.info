@@ -1,0 +1,156 @@
+; Packaging information for express
+name = "express"
+description = "University of Colorado Boulder"
+exclusive = "1"
+core = "7.x"
+version = 2.0
+
+; ----------
+; Dependencies
+; ----------
+
+;dependencies[] = express_help
+;dependencies[] = express_theme_picker
+;dependencies[] = express_settings
+;dependencies[] = express_permissions
+
+; Administration
+dependencies[] = actions_permissions
+dependencies[] = client_ui_control
+dependencies[] = module_filter
+dependencies[] = navbar
+; Bean
+dependencies[] = bean
+dependencies[] = bean_admin_ui
+; CCK
+dependencies[] = cck
+; Chaos tool suite
+dependencies[] = ctools
+; Context
+dependencies[] = context
+dependencies[] = context_accordion
+dependencies[] = context_ui
+; Core
+dependencies[] = block
+dependencies[] = color
+dependencies[] = contextual
+dependencies[] = field
+dependencies[] = field_sql_storage
+dependencies[] = field_ui
+dependencies[] = file
+dependencies[] = filter
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = node
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = shortcut
+dependencies[] = syslog
+dependencies[] = system
+dependencies[] = taxonomy
+dependencies[] = text
+dependencies[] = user
+; Date/Time
+dependencies[] = date
+dependencies[] = date_api
+dependencies[] = date_popup
+dependencies[] = date_views
+; Display Suite
+dependencies[] = ds
+; Fields
+dependencies[] = advanced_link
+dependencies[] = email
+dependencies[] = entityreference
+dependencies[] = fences
+dependencies[] = field_collection
+dependencies[] = field_group
+dependencies[] = files_undo_remove
+dependencies[] = inline_entity_form
+dependencies[] = link
+dependencies[] = smart_trim
+dependencies[] = taxonomy_formatter
+; FlexSlider
+dependencies[] = flexslider
+dependencies[] = flexslider_views
+dependencies[] = flexslider_views_slideshow
+; Frontend
+dependencies[] = modernizr
+; Google Appliance
+dependencies[] = google_appliance
+; Image
+dependencies[] = smartcrop
+; Input filters
+dependencies[] = pathologic
+dependencies[] = video_filter
+dependencies[] = wysiwyg_filter
+; Media
+dependencies[] = file_entity
+dependencies[] = video_embed_field
+; Other
+dependencies[] = administerusersbyrole
+dependencies[] = attachment_links
+dependencies[] = auto_entitylabel
+dependencies[] = backstretch
+dependencies[] = bigmenu
+dependencies[] = blocktheme
+dependencies[] = chain_menu_access
+dependencies[] = colorbox
+dependencies[] = content_lock
+dependencies[] = disable_node_menu_item
+dependencies[] = entity
+dependencies[] = entity_token
+dependencies[] = environment
+dependencies[] = environment_indicator
+dependencies[] = fitvids
+dependencies[] = focal_point
+dependencies[] = image_url_formatter
+dependencies[] = insert
+dependencies[] = libraries
+dependencies[] = menu_block
+dependencies[] = menu_firstchild
+dependencies[] = navigation404
+dependencies[] = pathauto
+dependencies[] = quicktabs
+dependencies[] = quicktabs_tabstyles
+dependencies[] = redirect
+dependencies[] = role_delegation
+dependencies[] = secure_permissions
+dependencies[] = securepages
+dependencies[] = stringoverrides
+dependencies[] = strongarm
+dependencies[] = token
+dependencies[] = transliteration
+dependencies[] = vppr
+; Path management
+dependencies[] = globalredirect
+; SEO
+dependencies[] = metatag
+; Shortcode
+dependencies[] = shortcode
+; Spam control
+dependencies[] = captcha
+dependencies[] = captcha_webform
+dependencies[] = honeypot
+dependencies[] = recaptcha
+; Statistics
+dependencies[] = googleanalytics
+; User interface
+dependencies[] = ckeditor_link
+dependencies[] = content_menu
+dependencies[] = jquery_update
+dependencies[] = wysiwyg
+; Views
+dependencies[] = eva
+dependencies[] = views
+dependencies[] = views_accordion
+dependencies[] = views_bulk_operations
+dependencies[] = views_slideshow
+dependencies[] = views_slideshow_cycle
+dependencies[] = views_ui
+; Webform
+dependencies[] = webform
+; Features
+dependencies[] = features
