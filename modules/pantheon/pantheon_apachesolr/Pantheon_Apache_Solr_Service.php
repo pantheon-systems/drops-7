@@ -493,6 +493,10 @@ class PantheonApacheSolrService implements DrupalApacheSolrServiceInterface{
       // TODO; better error handling
       $result = new stdClass();
       list($split, $result->data) = explode("\r\n\r\n", $response, 2);
+      // sometimes SOLR server jokes with 100 Continue :)
+      if (strpos($split," 100 Continue") !== false) {
+        list($split, $result->data) = explode("\r\n\r\n", $result->data, 2);
+      }
       $split = preg_split("/\r\n|\n|\r/", $split);
       list($result->protocol, $result->code, $result->status_message) = explode(' ', trim(array_shift($split)), 3);
       // Parse headers.
