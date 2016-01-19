@@ -32,7 +32,9 @@ function commerce_discount_date_rules_condition_info() {
  */
 function commerce_discount_date_condition($discount_name) {
   $wrapper = entity_metadata_wrapper('commerce_discount', $discount_name);
-  $time = time();
 
-  return $time >= $wrapper->commerce_discount_date->value->value() && $time <= $wrapper->commerce_discount_date->value2->value();
+  // Note that we add a day to the discount end date. The date field value is
+  // set for 12:00:00 AM on the end date, but we want the discount to remain
+  // valid through that day.
+  return REQUEST_TIME >= $wrapper->commerce_discount_date->value->value() && REQUEST_TIME < $wrapper->commerce_discount_date->value2->value() + 86400;
 }

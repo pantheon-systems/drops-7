@@ -24,8 +24,8 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
    * Returns a list of fields available to be mapped.
    *
    * @return array
-   *  Keys: machine names of the fields (to be passed to addFieldMapping)
-   *  Values: Human-friendly descriptions of the fields.
+   *   Keys: machine names of the fields (to be passed to addFieldMapping)
+   *   Values: Human-friendly descriptions of the fields.
    */
   public function fields() {
     $fields = array();
@@ -33,6 +33,7 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
     $fields['name'] = t('Human-readable name.');
     $fields['description'] = t('Brief description');
     $fields['help'] = t('Help text');
+    $fields['is_new'] = t('Option: Indicates a new product type with the specified machine name should be created');
 
     return $fields;
   }
@@ -40,8 +41,10 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
   /**
    * Delete a product type.
    *
-   * @param $ids
-   *  Array of fields representing the key.
+   * @param array $ids
+   *   Array of fields representing the key.
+   *
+   * @return bool
    */
   public function rollback(array $ids) {
     $id = reset($ids);
@@ -57,12 +60,15 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
   /**
    * Import a single product type.
    *
-   * @param $product_type
-   *  Generic object, refilled with any fields mapped in the Migration.
-   * @param $row
-   *  Raw source data object - passed through to prepare/complete handlers.
-   * @return array
-   *  Array of product type machine names if successful. FALSE on failure.
+   * @param stdClass $product_type
+   *   Generic object, refilled with any fields mapped in the Migration.
+   * @param stdClass $row
+   *   Raw source data object - passed through to prepare/complete handlers.
+   *
+   * @return array|bool
+   *   Array of product type machine names if successful. FALSE on failure.
+   *
+   * @throws MigrateException
    */
   public function import(stdClass $product_type, stdClass $row) {
     $migration = Migration::currentMigration();
@@ -111,7 +117,8 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
   }
 
   /**
-   * Give handlers a shot at cleaning up before a product type has been rolled back.
+   * Give handlers a shot at cleaning up before a product type has been rolled
+   * back.
    *
    * @param $product_type
    *  Machine name of the product type about to be deleted..
@@ -129,7 +136,8 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
   }
 
   /**
-   * Give handlers a shot at cleaning up after a product type has been rolled back.
+   * Give handlers a shot at cleaning up after a product type has been rolled
+   * back.
    *
    * @param $product_type
    *  Machine name of the product type which has been deleted.
@@ -146,7 +154,7 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
    * Give handlers a shot at modifying the object before saving it.
    *
    * @param $product_type
-   *  Object to build. Prefilled with any fields mapped in the Migration.
+   *   Object to build. Prefilled with any fields mapped in the Migration.
    * @param $source_row
    *  Raw source data object - passed through to prepare handlers.
    */
@@ -189,7 +197,6 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
     $field = field_info_field($field_name);
 
     // If the field type does not already exist, create it.
-
     if (empty($field)) {
       $field = array(
         'field_name' => $field_name,
@@ -245,8 +252,8 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
             'type' => 'image',
             'settings' => array('image_style' => 'large', 'image_link' => ''),
             'weight' => -1,
-        ),
-        'teaser' => array(
+          ),
+          'teaser' => array(
             'label' => 'hidden',
             'type' => 'image',
             'settings' => array('image_style' => 'medium', 'image_link' => 'content'),
@@ -257,6 +264,7 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
       field_create_instance($instance);
     }
   }
+
   /**
    * Implementation of __toString().
    *
@@ -264,6 +272,6 @@ class MigrateDestinationCommerceProductType extends MigrateDestination {
    *  Description of the destination being migrated into
    */
   public function __toString() {
-      return 'Creates commerce product types';
+    return 'Creates commerce product types';
   }
 }

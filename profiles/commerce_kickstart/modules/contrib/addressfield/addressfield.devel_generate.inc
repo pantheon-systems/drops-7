@@ -43,7 +43,6 @@ function _addressfield_sample_addresses() {
     $fields = array();
     if ($handle = @fopen("$filepath/addresses.txt",'r')) {
       if (is_resource($handle)) {
-        $addresses = array();
         while (($buffer = fgets($handle)) !== false) {
           list($country, $administrative_area, $sub_administrative_area, $locality, $dependent_locality, $postal_code, $thoroughfare, $premise, $sub_premise) = explode("\t", $buffer);
           $fields[] = array(

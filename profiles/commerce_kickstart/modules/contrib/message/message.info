@@ -22,9 +22,9 @@ files[] = includes/views/handlers/message_handler_field_message_render.inc
 files[] = includes/views/handlers/message_handler_filter_message_type.inc
 files[] = includes/views/handlers/message_handler_filter_message_type_category.inc
 
-; Information added by Drupal.org packaging script on 2015-04-19
-version = "7.x-1.10"
+; Information added by Drupal.org packaging script on 2015-12-22
+version = "7.x-1.11"
 core = "7.x"
 project = "message"
-datestamp = "1429477691"
+datestamp = "1450768746"
 

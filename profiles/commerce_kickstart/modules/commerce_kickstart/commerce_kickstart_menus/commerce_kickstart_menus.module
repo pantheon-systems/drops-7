@@ -370,8 +370,8 @@ function commerce_kickstart_menus_menu_alter(&$items) {
   }
 
   // Show the Discounts link under "Store settings".
-  if (module_exists('commerce_discount') && isset($items['admin/commerce/store/discounts'])) {
-    $items['admin/commerce/store/discounts']['parent'] = 'admin/commerce/config/promotions';
+  if (module_exists('commerce_discount') && isset($items['admin/commerce/discounts'])) {
+    $items['admin/commerce/discounts']['parent'] = 'admin/commerce/config/promotions';
   }
   $advanced_store_items = array(
     'admin/commerce/customer-profiles',

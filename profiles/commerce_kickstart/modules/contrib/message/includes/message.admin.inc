@@ -21,7 +21,7 @@ class MessageTypeUIController extends EntityDefaultUIController {
     form_state_values_clean($form_state);
     foreach ($form_state['values'] as $key => $value) {
       if ($key != 'message_type_fields') {
-        $entity->$key = $value;
+        $entity->{$key} = $value;
       }
     }
     // Invoke all specified builders for copying form values to entity

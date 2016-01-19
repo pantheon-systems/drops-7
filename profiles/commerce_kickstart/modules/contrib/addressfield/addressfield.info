@@ -6,12 +6,13 @@ package = Fields
 dependencies[] = ctools
 
 files[] = addressfield.migrate.inc
+files[] = views/addressfield_views_handler_field_administrative_area.inc
 files[] = views/addressfield_views_handler_field_country.inc
 files[] = views/addressfield_views_handler_filter_country.inc
 
-; Information added by Drupal.org packaging script on 2015-04-23
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2015-10-07
+version = "7.x-1.2"
 core = "7.x"
 project = "addressfield"
-datestamp = "1429819382"
+datestamp = "1444254070"
 

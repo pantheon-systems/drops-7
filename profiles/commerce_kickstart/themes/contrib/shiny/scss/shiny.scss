@@ -55,7 +55,7 @@ input.form-autocomplete,
 input.form-text,
 input.form-file {
   border: 1px solid #e0e0e0;
-  font: normal 500 1em/1em "Open Sans", Arial, sans-serif;
+  font: normal 500 1em/1.4em "Open Sans", Arial, sans-serif;
   margin: 1px;
   max-width: 100%;
   padding: 5px;
@@ -99,7 +99,7 @@ textarea.form-textarea:focus {
     margin-bottom: 0;
   }
 
-  #edit-delete {
+  #edit-delete, #edit-delete-translation {
     color: #ab5757;
     float: right; /* LTR */
     margin: 0;
@@ -114,7 +114,8 @@ textarea.form-textarea:focus {
 }
 
 .node-form #edit-actions,
-#commerce-product-ui-product-form #edit-actions  {
+#commerce-product-ui-product-form #edit-actions,
+.sticky-wrapper #edit-actions {
   background: #f8f8f8;
   padding: 15px;
 }
@@ -264,6 +265,14 @@ form table .fieldset-wrapper {
   .fieldset-wrapper input.form-checkbox {
     opacity: 0;
   }
+  select.form-select {
+    padding: 5px 35px 5px 5px; /* LTR */
+    background: #fff url("../images/drop-filter.png") no-repeat right center; /* LTR */
+    &[multiple="multiple"] {
+      background: #fff;
+      padding: 5px;
+    }
+  }
 }
 .exposed-filters .form-item label {
   float: none;
@@ -368,7 +377,7 @@ h1#overlay-title {
 }
 #overlay-tabs li,
 #branding ul.tabs li {
-  margin: 0;
+  margin: 0 0 -5px;
   padding: 0;
 }
 #overlay-tabs li a,
@@ -594,6 +603,7 @@ table.sticky-header {
 
   th {
     border-bottom: 0;
+    box-sizing: initial;
   }
 }
 /* Firefox fix for Sticky Table Headers */
@@ -658,11 +668,7 @@ fieldset.collapsed {
   padding-left: 0; /* LTR */
 }
 html.js input.form-autocomplete {
-  background-position: 100% 7px;
   padding: 3px 5px;
-}
-html.js input.throbbing {
-  background-position: 100% -14px;
 }
 /**
 * admin/modules

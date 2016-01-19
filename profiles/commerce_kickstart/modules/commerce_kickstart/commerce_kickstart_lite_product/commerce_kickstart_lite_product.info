@@ -55,9 +55,9 @@ features[variable][] = pathauto_taxonomy_term_pattern
 features_exclude[taxonomy][product_category] = product_category
 files[] = commerce_kickstart_lite_product.migrate.inc
 
-; Information added by Drupal.org packaging script on 2015-11-19
-version = "7.x-2.31"
+; Information added by Drupal.org packaging script on 2016-01-14
+version = "7.x-2.32"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1447944864"
+datestamp = "1452771861"
 

@@ -83,7 +83,7 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
     '#tag' => 'div',
     '#attributes' => array(
       'class' => array('dependent-locality'),
-      'autocomplete' => '"address-level3',
+      'autocomplete' => 'address-level3',
     ),
     // Most formats place this field in its own row.
     '#suffix' => $clearfix,
@@ -97,7 +97,7 @@ function addressfield_format_address_generate(&$format, $address, $context = arr
     '#prefix' => ' ',
     '#attributes' => array(
       'class' => array('locality'),
-      'autocomplete' => '"address-level2',
+      'autocomplete' => 'address-level2',
     ),
   );
   $format['locality_block']['administrative_area'] = array(

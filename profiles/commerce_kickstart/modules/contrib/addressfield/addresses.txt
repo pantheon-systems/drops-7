@@ -1,298 +1,298 @@
-AT		NULL	Feldkirch	NULL	6800	Pater Grimm Weg 20	
-AU		NULL	Melbourne	NULL			
-AU		NULL	Sydney	NULL			
-AU	04	NULL	NORMANBY	NULL	4059	30 Normanby Terrace	
-BD		NULL	Dhaka	NULL	1205	23, Subal Das Road, Chowdhury Bazar, Lalbagh	
-BD		NULL	Dhaka	NULL	1207	R-1,H-19,Kallaynpur,Mirpur,Dhaka	
-BD		NULL	Dhaka	NULL	1207	World Bank Office Dhaka, 	 Plot E 32, Agargaon, Sher-E-Bangla Nagar
-BD		NULL	Dhaka	NULL	1209	House# 66B, Flat# B2 	Zigatola
-BD		NULL	Dhaka	NULL	1219	390 West Rampura Dhaka	
-BD		NULL	Dhaka	NULL	1230	Uttara	
-BD	81	NULL	Dhaka	NULL	1000	Institute of Water and Flood Management	
-BD	81	NULL	Dhaka	NULL	1203	84/a maniknagar	
-BD	81	NULL	Dhaka	NULL	1205	Dhaka	Bangladesh
-BD	81	NULL	Dhaka	NULL	1207	BetterStories Limited	17 West Panthopath
-BD	81	NULL	Dhaka	NULL	1216	Mirpur, Dhaka	
-BD	81	NULL	Dhaka	NULL	1230	830, Prembagan, Dhakshin Khan	
-BD	82	NULL	khulna	NULL	9203		
-BD	NULL	NULL	Dhaka	NULL	1000	Institute of Water and Flood Management	
-BD	NULL	NULL	Dhaka	NULL	1207	World Bank Office Dhaka, 	 Plot E 32, Agargaon, Sher-E-Bangla Nagar
-BE		NULL	Brussels	NULL			
-BE		NULL	Watermael-Boitsfort	NULL	1170	Avenue des Staphylins	
-BH		NULL	Manama	NULL	00973	Manama Bahrain	Manama Bahrain
-BR		NULL	Porto Alegre	NULL			
-BR		NULL	Recife	NULL			
-BR	RJ	NULL	Rio de Janeiro	NULL			
-BW		NULL	Francistown	NULL	NULL		
-BW	NULL	NULL	Francistown	NULL	NULL		
-CA		NULL	Montreal	NULL			
-CA		NULL	Toronto	NULL			
-CA	BC	NULL	Vancouver	NULL			
-CA	ON	NULL	Kitchener	NULL			
-CA	ON	NULL	wterloo	NULL	n2l3g1	200 University Avenue West 	
-CH		NULL	Geneva	NULL	1202	15, chemin Louis-Dunant	
-CH	25	NULL	Zurich	NULL	8098	UBS Optimus Foundation	Augustinerhof 1
-DE		NULL	Berlin	NULL			
-DE	05	NULL	Frankfurt am Main	NULL	60386	Johanna-Tesch-Platz 7	
-DK		NULL	Aarhus	NULL			
-ES		NULL	Bilbao	NULL			
-ET	44	NULL	ADDIS ABABA	NULL	11945	ADDIS ABABA,P.O.BOX 11945	
-FI		NULL	Espoo	NULL	02130	Mahlarinne 3B	
-FI		NULL	Helsinki	NULL	00580	Hermannin rantatie 2 A	Hermannin rantatie 2 A
-FI		NULL	Tampere	NULL	33101	Tampere Univerity of Technology	
-FI	13	NULL	Espoo	NULL	02150	Aalto Venture Garage	Betonimiehenkuja 3
-GB		NULL	Exeter	NULL			
-GB		NULL	London	NULL			
-GB		NULL	London	NULL	N4 2DP	2 Myddleton Ave	
-GB		NULL	London	NULL	N7 0AH 	104 St George’s Avenue	
-GB		NULL	London	NULL	SE16 3UL	25 Blue Anchor Lane	
-GB		NULL	London	NULL	SW18 5SP	Flat 1 150 Merton road 	
-GB		NULL	London	NULL	W1T 4BQ	13 Fitzroy Street	
-GB		NULL	Oxford	NULL			
-GB		NULL	Southampton	NULL			
-GB	C3	NULL		NULL	cb244qg	32 market street 	swavesey
-GB	E7	NULL	London	NULL	SE3 7TP		
-GB	F3	NULL	Wood Green	NULL	N22 5RU	6 Cedar House	
-GB	H1	NULL	London	NULL	SE11 5JD	47-49 Durham Street	
-GB	H6	NULL	London	NULL	SE8 4DD	8 Harton St	Deptford
-GB	K2	NULL	Oxford	NULL	OX2 6QY	3 The Villas, Rutherway	
-GH	05	NULL	NSAWAM	NULL	NULL	P.O.BOX 455	
-GH	NULL	NULL	Accra	NULL	NULL		
-ID		NULL	Bandung	NULL	40134	Jalan Sadang Hegar 1 No. 12	RT04 RW13 Sadang Serang
-ID		NULL	Bekasi	NULL	17411	Jl.Binadharma 1 No.62. Jatiwaringin	
-ID		NULL	Jakarta	NULL			
-ID		NULL	Jakarta	NULL	12440	Jl. H. Niin 7	Lebak Bulus, Cilandak
-ID		NULL	Jakarta	NULL	13330	Otista	
-ID		NULL	Jakarta selatan	NULL	12000	jl. rawa jati timur 6 no. 10	
-ID		NULL	Jakarta Timur	NULL		Jl.Mulia No.15B Kel.Bidara Cina, Kec.Jatinegara, Jakarta Timur	
-ID		NULL	Pematang Siantar	NULL	51511	Jl. Durian I 30	
-ID	04	NULL	Bogor	NULL	16165		
-ID	04	NULL	jakarta	NULL		otista	
-ID	04	NULL	Jakarta	NULL	12520	Jl. Pertanian Raya III No.42 Jakarta Selatan Pasar Minggu	
-ID	04	NULL	Jakarta	NULL	13330	Jakarta	
-ID	04	NULL	Jakarta	NULL	13330	Jl Sensus IIC Bidaracina Jaktim	
-ID	04	NULL	Jakarta	NULL	13330	Jl. Bonasut 2 no.22	
-ID	04	NULL	Jakarta	NULL	13330	Otista 64c	
-ID	04	NULL	jakarta	NULL	13330	Otista jaktim	
-ID	04	NULL	Jakarta Timur	NULL	13330	Kebon Sayur I no. 1 RT 10/15	
-ID	04	NULL	Jakarta Timur	NULL	13460	Jl. Pondok Kopi Blok G4/5 RT. 005/08 Jakarta Timur	
-ID	04	NULL	Jakarta Timur	NULL	13810	Jl. Raya Pondok Gede Rt03 Rw08 no.35 , Lubang Buaya, Jakarta Timur	Jl. Raya Pondok Gede Rt03 Rw08 no.35 , Lubang Buaya, Jakarta Timur
-ID	07	NULL	Brebes	NULL	54321	Jl Kersem Blok D14 Perum Taman Indo Kaligangsa Wetan Brebes	
-ID	07	NULL	Semarang	NULL	50143	Puspowarno Tengah 2/2	
-ID	08	NULL	Lumajang	NULL	67373	Desa Tumpeng Kecamatan Candipuro	Lumajang
-ID	30	NULL	Bandung	NULL	55241	Jl Pelesiran No 55A/56	
-ID	30	NULL	Bekasi	NULL	17510	bekasi West Java Indonesia	
-ID	30	NULL	Depok	NULL	16245	Jalan juragan sinda 2 no 10	
-ID	30	NULL	Depok	NULL	16424	Jalan Margonda RayaJalan Kober Gang Mawar 	
-ID	30	NULL	Depok	NULL	16424	Jl. Haji Yahya Nuih no.24, Pondok Cina	
-ID	30	NULL	Depok	NULL	16425	Kukusan Kelurahan	
-ID	30	NULL	Depok	NULL	16518	Jl. Salak No.1/C.88 Durenseribu Bojongsari	
-ID	30	NULL	Depok	NULL	16952	Jl. Merak No.34 -36 Rt.004/014	Jl. Merak No. 34 -36 Rt. 004/014
-ID	36	NULL	biak numfor	NULL	98111	jl. s. mamberamo no 6782 biak numfor	
-IL		NULL	Tel Aviv	NULL			
-IN		NULL	Bangalore	NULL			
-IN		NULL	India	NULL			
-IN		NULL	new delhi	NULL	110003	55 lodi estate	
-IN	07	NULL	NEW DELHI	NULL	110018	15/11 A 1ST FLOOR	TILAK NAGAR
-IN	07	NULL	New Delhu	NULL	110075	B 54 Hilansh Apartments	Plot No 1, Sector 10, Dwarka
-IN	10	NULL	Gurgaon	NULL		D- 201 Ivy Apartments Sushant Lok 1 Gurgaon Haryana	
-IN	13	NULL	Trivandrum	NULL	695010	TC 9/1615, SRMH Road, 	Sasthamangalam, Trivandrum
-IN	16	NULL	Mumbai	NULL	400020	Bharat Mahal, Flat#55	Marine Drive
-IN	16	NULL	Mumbai	NULL	400028	303,Shree Parvati Co-Op Housing Society,	D.L.Vaidya Road,Dadar
-IN	16	NULL	Pune	NULL			
-IN	16	NULL	Pune	NULL		Infosys Campus	Hinjewadi Phase 2
-IN	16	NULL	Pune	NULL	400705	#22 Iris Garden	Gokhale Road
-IN	16	NULL	PUNE	NULL	411043		
-IN	16	NULL	Pune	NULL	411051		
-IN	16	NULL	Pune	NULL	411057	Infosys Ltd. Rajiv gandhi infostech park	Hinjewadi phase 2
-IN	16	NULL	Pune	NULL	412108	Pune	Maharatshtra
-IN	16	NULL	Pune	NULL	433011	502 utkarsh vihar golande state pune	
-IN	19	NULL	Bangalore	NULL	560080	Indian Institute for Human Settlements	IIHS Bangalore City Campus, Sadashivanagar,
-IN	19	NULL	Bangalore	NULL	560100	electronic city	
-IN	19	NULL	Bhalki	NULL	585411	bhalki,bidar ,karnataka	karnataka
-IN	24	NULL	Jaipur	NULL	302011	Institute of Health Management Research	1, Prabhu Dayal Marg
-IR	26	NULL	Tehran	NULL	1118844454	Baharestan sq. mostafa khomeini str., javahery Ave., no. 11, 	
-IT		NULL	Trento	NULL			
-JM	08	NULL	Kingston	NULL	Kgn 7	MOna Campus UWI	
-KE		NULL	Nairobi	NULL			
-KE	05	NULL	Nairobi	NULL	30300	212,kapsabet 	
-KH	NULL	NULL	Phnom Penh	NULL			
-LR		NULL	Monrovia	NULL	00000		
-NG	11	NULL	Abuja	NULL	930001	17 Bechar street	Wuse zone 2
-PE	15	NULL	Lima	NULL	18	Lima	Lima
-PE	15	NULL	Lima	NULL	Lima 18	123	Miraflores
-PE	NULL	NULL	Lima	NULL	03	Calle Granada 104	
-PE	NULL	NULL	Lima	NULL	18	Lima	Lima
-PH		NULL	Manila	NULL		Globe Telepark	111 Valero Street
-PH		NULL	Quezon Coty	NULL	1109	86 Harvard Street,  Cubao, Quezon City, Philippines	84 Harvard Street, Cubao, Quezon City,hilippines
-PH	20	NULL	Silang	NULL	4118	370 Bayungan Kaong Silang Cavite	
-PH	57	NULL	Kidapawan	NULL	9400	Kidapawan City	Kidapawan City
-PH	66	NULL	zamboanga	NULL	7000	29-tripplet rd san jose	29-tripplet rd san jose
-PH	D9	NULL	Pasig City	NULL		World Bank Office Manila, 20/F Taipan Place	F. Ortigas Jr. Road, Ortigas Center 
-PK		NULL	Lahore	NULL	54000	17-R Model Town Lahore	
-PK		NULL	Lahore	NULL	54000	53- chamber lane road Lahore	
-PK		NULL	Lahore	NULL	54000	85 E block Model Town 	
-PK		NULL	Lahore	NULL	54000	House no 227, street no 5, Imamia Colony Shahadra Lahore	
-PK		NULL	LAHORE	NULL	54000	room no.6 khalid bim waleed hall, near New Anarkali,  LAHORE	room no.6 khalid bim waleed hall, near New Anarkali,  LAHORE
-PK		NULL	Lahore	NULL	pk097	LUMS, Lahore, 	
-PK		NULL	Sheikhupura	NULL	03935	D.H.Q.Hospital Sheikhupura House number 08.	Room no 109 Khalid bin waleed haal, punjab University lahore old campus.
-PK	02	NULL	Quetta	NULL	87000	Postal Address 87000, Kuchlak, Quetta, Balochistan.	H#24 Peer Abul Khair road Quetta, Balochistan.
-PK	02	NULL	Quetta	NULL	87300	block no-1 falt no. 7 New Crime Branch Abbas Ali Road Cantt	
-PK	02	NULL	Quetta	NULL	87300	Flat no. 3 Shafeen Centre Jinnah Town ,Near I.T university , Quetta	
-PK	02	NULL	Quetta	NULL	87300	H-no. C-220 Zarghoonabad Phase-2 , Nawa Killi ,Quetta 	
-PK	04	NULL	burewala	NULL	60101	 Fatima Fayyaz Hazrat Sakina hall girls hostel number 9 Punjab university Lahore Pakistan	Sardar Wajid Azim Azeem abad Burewala dist Vehari Pakistan
-PK	04	NULL	Faisalabad	NULL	38000	P 101/1, Green Town, Millat Road, Faisalabad	
-PK	04	NULL	Islamabad	NULL	44000	P.O Tarlai kalan chappar Islamabad	
-PK	04	NULL	lahore	NULL			
-PK	04	NULL	Lahore	NULL	54000		
-PK	04	NULL	lahore	NULL	54000	 Street No.63 House 36/A  Al-madad Pak Colony Ravi Road, Lahore.	 Street No.63 House 36/A  Al-madad Pak Colony Ravi Road, Lahore.
-PK	04	NULL	Lahore	NULL	54000	1149-1-D2 Green Town 	Lahore
-PK	04	NULL	Lahore	NULL	54000	124, street# 2, karim block Allama Iqbal Town lahore.	124, street# 2, karim block Allama Iqbal Town lahore.
-PK	04	NULL	Lahore	NULL	54000	150 A Qila Lachman Singh Ravi Road lahore	
-PK	04	NULL	Lahore	NULL	54000	166/1L DHA Lahore	
-PK	04	NULL	Lahore	NULL	54000	172 A2 Township Lahore	
-PK	04	NULL	Lahore	NULL	54000	183,S/Block, Model Town, Lhr	
-PK	04	NULL	lahore	NULL	54000	19- A block ,Eden Lane Villas Raiwind Road ,Lahore	
-PK	04	NULL	lahore	NULL	54000	3-c kaliyar road opposite kids lyceum, rustam park near mor samnabad	
-PK	04	NULL	Lahore	NULL	54000	31 Saeed Block, Canal Bank Scheme	
-PK	04	NULL	Lahore	NULL	54000	31c DHA Lahore	
-PK	04	NULL	Lahore	NULL	54000	387 E1 wapda town, Lahore	
-PK	04	NULL	Lahore	NULL	54000	45-D dha eme sector multan road,lahore	
-PK	04	NULL	Lahore	NULL	54000	5 Zafar Ali Road	
-PK	04	NULL	Lahore	NULL	54000	54-R	PGECHS
-PK	04	NULL	lahore	NULL	54000	566 E-1 johar town lahore	566 E-1 johar town lahore
-PK	04	NULL	Lahore	NULL	54000	82/1 Z Block, Phase 3	DHA
-PK	04	NULL	Lahore	NULL	54000	A-1 VRI Zarrar shaheed road lahore cantt	A-1 VRI Zarrar shaheed road lahore cantt
-PK	04	NULL	lahore	NULL	54000	e5/39D street 6 zaman colony cavalry ground ext	
-PK	04	NULL	Lahore	NULL	54000	Ho # 61, Block G3, Johar Town Lahore	
-PK	04	NULL	LAhore	NULL	54000	House #19-A street #5 Usman nagr Ghaziabad  Lahore	
-PK	04	NULL	lahore	NULL	54000	House no 692 street no 67 sadar bazar	
-PK	04	NULL	Lahore	NULL	54000	Khosa Law Chamber	1 Turner Road
-PK	04	NULL	Lahore	NULL	54000	Lahore,Pakistan	Lahore,Pakistan
-PK	04	NULL	Lahore	NULL	54000	room no 69, khalid bin waleed hall, anarkali	
-PK	04	NULL	Lahore	NULL	54000	Suite # 8, Al-Hafeez Suites,	Gulberg II
-PK	04	NULL	Lahore	NULL	54085	199 Shadman 2	
-PK	04	NULL	Lahore	NULL	54300	Mughalpura Lahore Pakistan	
-PK	04	NULL	Lahore	NULL	54660	SD 69 falcon complex gulberg III lahore	
-PK	04	NULL	lahore	NULL	54800	764-G4 johar town ,lahore	
-PK	04	NULL	Rawalpindi	NULL	44000	House 522, F-Block Sattellite Town, Rawalpindi	
-PK	04	NULL	Rawalpindi	NULL	46000	1950/c, Indusroad 2, Tariqabad, Rawalpindi Cantt	
-PK	04	NULL	Rawalpindi	NULL	46000	House 54-E Lane 9 Sector 4, AECHS Chaklala Rawalpindi	
-PK	04	NULL	Rawalpindi	NULL	46000	House B-1343, Sattellite town Rawalpindi	
-PK	04	NULL	Rawalpindi	NULL	46000	House CB-299F, Street 1, Lane 4 Peshawar Road Rawalpindi	
-PK	04	NULL	Rawalpindi	NULL	46300	House No 1518 Umer Block phase 8 	BehriaTown
-PK	04	NULL	sialkot	NULL	51310	The National Model School, Ismaiealabad, Pacca Garah Sialkot	
-PK	08	NULL	Islamabad	NULL		CIomsats Institute of Information Technology Islamabad	
-PK	08	NULL	Islamabad	NULL	38700	COMSATS tarlai boys hostel Islamabad.	COMSATS tarlai boys hostel Islamabad (Room 30)
-PK	08	NULL	Islamabad	NULL	44000		
-PK	08	NULL	Islamabad	NULL	44000	House # 256, Street # 9, Shahzad Town, Islamabad.	
-PK	08	NULL	Islamabad	NULL	44000	Islamabad , Comsats University Islamabd ,Pakistan	
-PK	08	NULL	Islamabad	NULL	44000	World Bank Building	Sector G 5
-PK	08	NULL	lahore	NULL	54000	3c zafar ali road gulburg 5	3c zafar ali road gulburg 5
-PK	08	NULL	lahore	NULL	54000	49-a bilal park, chaburgy 	49-a bilal park, chaburgy 
-PK	NULL	NULL	Lahore	NULL	54000		
-PK	NULL	NULL	Lahore	NULL	54000	85 E block Model Town 	
-SN	01	NULL		NULL		ouakam cité comico en face 217	
-SN	01	NULL	Dakar	NULL			
-SN	01	NULL	Dakar	NULL		IDEV-ic Patte d'oie Builder's Villa B11	
-SN	01	NULL	Dakar	NULL		liberte 6/ dakar	
-SN	01	NULL	Dakar	NULL		ngor	
-SN	01	NULL	Dakar	NULL	4027	ZAC Mbao	Cité Fadia
-SN	NULL	NULL	Dakar	NULL		IDEV-ic Patte d'oie Builder's Villa B11	
-TZ		NULL	Dar es Salaam	NULL	NULL		
-TZ		NULL	Dar es salaam	NULL	NULL	76021 Dar es salaam	1507 Morogoro
-TZ		NULL	Dar es salaam	NULL	NULL	dar es salaam	nassoro.ahmedy@yahoo.com
-TZ		NULL	DAR ES SALAAM	NULL	NULL	dar es salaam	UDSM
-TZ		NULL	Dar es salaam	NULL	NULL	NA	
-TZ		NULL	DAR ES SALAAM	NULL	NULL	P O BOX 23409 	
-TZ		NULL	dar es salaam	NULL	NULL	p. o. box 104994	
-TZ		NULL	Dar es Salaam	NULL	NULL	P.o. BOX 71415 Dar es Salaam	
-TZ		NULL	Dar es Salaam	NULL	NULL	P.O.BOx 66675 DSM	
-TZ		NULL	Dar es salaam	NULL	NULL	Tz	Tz
-TZ		NULL	dsm	NULL	NULL		
-TZ	02	NULL	Bagamoyo	NULL	NULL	PO.Box 393 	
-TZ	02	NULL	Dar es salaam	NULL	NULL	22548	
-TZ	03	NULL	Dar-es-salaam	NULL	NULL	Dodoma Municipal	Kimara, Dar-es-salaa,
-TZ	23	NULL	Dar es Salaam	NULL	NULL		
-TZ	23	NULL	dar es salaam	NULL	NULL	35074 	
-TZ	23	NULL	dar es salaam	NULL	NULL	67389	
-TZ	23	NULL	Dar es Salaam	NULL	NULL	COSTECH, Dar es Salaam, Tanzania	
-TZ	23	NULL	Dar es salaam	NULL	NULL	na	
-TZ	23	NULL	dar es salaam	NULL	NULL	p o box 60164	
-TZ	23	NULL	dar es salaam	NULL	NULL	P. O. Box 77588	
-TZ	23	NULL	dar es salaam	NULL	NULL	P.O BOX 78144	
-TZ	23	NULL	Dar es Salaam	NULL	NULL	P.O.BOX 78373	
-TZ	23	NULL	Dar es salaam	NULL	NULL	UDSM	Dar es Salaam
-TZ	23	NULL	Dar es salaam	NULL	NULL	udsm	udsm
-TZ	23	NULL	Temeke	NULL	NULL	P.O. Box 50127	
-TZ	NULL	NULL	Dar es Salaam	NULL	NULL		
-TZ	NULL	NULL	Dar es Salaam	NULL	NULL	Kigoma	
-TZ	NULL	NULL	Dar es Salaam	NULL	NULL	Mwanza	
-UG		NULL	Kampala	NULL	NULL		
-UG		NULL	Kampala	NULL	NULL	Kampala Uganda East Africa	
-US		NULL	London	NULL	SE1 8RT	Capital Tower	91 Waterloo Road
-US	CA	NULL	Los Angeles	NULL			
-US	CA	NULL	Pleasanton	NULL	94588	3412 Pickens Lane	
-US	CA	NULL	Sacramento	NULL			
-US	CA	NULL	San Francisco	NULL			
-US	CA	NULL	seattle	NULL	98113	1234 1st st	
-US	CO	NULL	Denver	NULL	80235	6666 West Quincy Ave	
-US	CT	NULL	Greenwich	NULL	06830	140 Milbank	
-US	CT	NULL	Hartford	NULL	06106	Center for Urban and Global Studies at Trinity College, 	70 Vernon Street
-US	DC	NULL	Washington	NULL			
-US	DC	NULL	Washington	NULL	20007	World Bank Headquarters	1818 H Street NW
-US	DC	NULL	Washington	NULL	20010		
-US	DC	NULL	Washington	NULL	20036		
-US	DC	NULL	Washington	NULL	20405	1889 F St NW	
-US	DC	NULL	Washington	NULL	20433		
-US	DC	NULL	Washington	NULL	20433	1818 H Street NW	
-US	DC	NULL	Washington	NULL	20433	1818H St	
-US	DC	NULL	Washington 	NULL	20433	1818 H Street NW	
-US	DC	NULL	Washington DC	NULL	20005	1424, K Street, NW	Suite 600
-US	DC	NULL	Washington DC	NULL	20010	1818 H Street, NW	
-US	DC	NULL	Washington, DC	NULL	20003	1818 H Street NW	
-US	DE	NULL	Virgin Islands|Charlotte Amalie,Cruz Bay,Christiansted	NULL		Morocco|Tafraout,Rabat,Tangier,Tetouan,Casablanca,Marrakesh,Fez,Oujda,Meknes,Agadir	United Arab Emirates|Garhoud,Dubai,Bur Dubai,Ras al Khaymah,Abu Dhabi,Ajman,Al Fujayrah,Sharjah
-US	FL	NULL	Falmouth	NULL		Falmouth	Falmouth
-US	FL	NULL	Lilongwe	NULL		Lilongwe	Lilongwe
-US	GA	NULL	Atlanta	NULL			
-US	GU	NULL	Herndon	NULL	15642	Ht	USA
-US	GU	NULL	Miami	NULL		Miami	Miami
-US	MD	NULL	Gaithersburg	NULL	20877	554 N Frederick Avenue Suite 216	
-US	MD	NULL	Potomac	NULL	20854	14 Sandalfoot Court	
-US	MD	NULL	Silver Spring	NULL	20901	9202 Whitney St.	
-US	MI	NULL	Traverse City	NULL	49685	PO Box 792	
-US	ND	NULL	Pirassununga	NULL		Pirassununga	Pirassununga
-US	NJ	NULL	Princeton	NULL			
-US	NY	NULL	Brooklyn	NULL	11206-1980	25 Montrose Ave. Apt 304	
-US	NY	NULL	Brooklyn	NULL	11225	975 washington ave	2d
-US	NY	NULL	Brooklyn	NULL	11217	150 4TH AVE APT 9E	
-US	NY	NULL	New York	NULL			
-US	NY	NULL	New York	NULL	10013	148 Lafayette St. PH	
-US	NY	NULL	New York	NULL	10017	UNICEF	3 UN Plaza
-US	NY	NULL	New York	NULL	10019	25 Columbus Circle	Suite 52E
-US	NY	NULL	New York	NULL	10024	65 West 85th Street	3A
-US	NY	NULL	New York	NULL	10027	606 W. 116th Street #22	
-US	NY	NULL	New York	NULL	10037		
-US	NY	NULL	Rochester	NULL			
-US	NY	NULL	Scarsdale	NULL	10583-1423	54 Walworth Avenue	
-US	OR	NULL	Portland	NULL			
-US	PA	NULL	Philadelphia	NULL			
-US	PA	NULL	Philadelphia	NULL			
-US	PR	NULL	Colonel Hill	NULL		Colonel Hill	Colonel Hill
-US	SD	NULL	Banjul	NULL		Banjul	Banjul
-US	SD	NULL	London	NULL		London	London
-US	TX	NULL	Aledo	NULL	76008	1588 Hunterglenn Dr	
-US	TX	NULL	Keller	NULL	76248	810 Placid View Ct.	
-US	WA	NULL	Seattle	NULL			
-ZA		NULL	Cape Town	NULL			
-ZA		NULL	Cape Town	NULL	7945	Alexander Road	Muizenberg
-ZA		NULL	Pretoria	NULL			
-ZA	11	NULL	Cape Town	NULL			
-ZA	11	NULL	Cape Town	NULL	7435	PostNet Suite #57, Private Bag X18	Milnerton
-ZA	11	NULL	Cape town	NULL	7508	24 Solyet Court, Lansdowne Road	Claremont
-ZA	11	NULL	Cape Town	NULL	7701		
-ZA	11	NULL	Cape Town	NULL	7785	10 Nyamakazi Road Luzuko Park Phillipi East 	
-ZA	11	NULL	Cape Town	NULL	7915	66 Albert Rd 	
-ZA	11	NULL	Cape Town	NULL	8001	210 Long Street	
-ZM		NULL	Lusaka	NULL			
-ZM	09	NULL	LUSAKA	NULL	10101	P.O. BOX FW 174	
+AT		NULL	Feldkirch	NULL	6800	Pater Grimm Weg 20		NULL
+AU		NULL	Melbourne	NULL				NULL
+AU		NULL	Sydney	NULL				NULL
+AU	4	NULL	NORMANBY	NULL	4059	30 Normanby Terrace		NULL
+BD		NULL	Dhaka	NULL	1205	23, Subal Das Road, Chowdhury Bazar, Lalbagh		NULL
+BD		NULL	Dhaka	NULL	1207	R-1,H-19,Kallaynpur,Mirpur,Dhaka		NULL
+BD		NULL	Dhaka	NULL	1207	World Bank Office Dhaka, 	 Plot E 32, Agargaon, Sher-E-Bangla Nagar	NULL
+BD		NULL	Dhaka	NULL	1209	House# 66B, Flat# B2 	Zigatola	NULL
+BD		NULL	Dhaka	NULL	1219	390 West Rampura Dhaka		NULL
+BD		NULL	Dhaka	NULL	1230	Uttara		NULL
+BD	81	NULL	Dhaka	NULL	1000	Institute of Water and Flood Management		NULL
+BD	81	NULL	Dhaka	NULL	1203	84/a maniknagar		NULL
+BD	81	NULL	Dhaka	NULL	1205	Dhaka	Bangladesh	NULL
+BD	81	NULL	Dhaka	NULL	1207	BetterStories Limited	17 West Panthopath	NULL
+BD	81	NULL	Dhaka	NULL	1216	Mirpur, Dhaka		NULL
+BD	81	NULL	Dhaka	NULL	1230	830, Prembagan, Dhakshin Khan		NULL
+BD	82	NULL	khulna	NULL	9203			NULL
+BD	NULL	NULL	Dhaka	NULL	1000	Institute of Water and Flood Management		NULL
+BD	NULL	NULL	Dhaka	NULL	1207	World Bank Office Dhaka, 	 Plot E 32, Agargaon, Sher-E-Bangla Nagar	NULL
+BE		NULL	Brussels	NULL				NULL
+BE		NULL	Watermael-Boitsfort	NULL	1170	Avenue des Staphylins		NULL
+BH		NULL	Manama	NULL	973	Manama Bahrain	Manama Bahrain	NULL
+BR		NULL	Porto Alegre	NULL				NULL
+BR		NULL	Recife	NULL				NULL
+BR	RJ	NULL	Rio de Janeiro	NULL				NULL
+BW		NULL	Francistown	NULL	NULL			NULL
+BW	NULL	NULL	Francistown	NULL	NULL			NULL
+CA		NULL	Montreal	NULL				NULL
+CA		NULL	Toronto	NULL				NULL
+CA	BC	NULL	Vancouver	NULL				NULL
+CA	ON	NULL	Kitchener	NULL				NULL
+CA	ON	NULL	wterloo	NULL	n2l3g1	200 University Avenue West 		NULL
+CH		NULL	Geneva	NULL	1202	15, chemin Louis-Dunant		NULL
+CH	25	NULL	Zurich	NULL	8098	UBS Optimus Foundation	Augustinerhof 1	NULL
+DE		NULL	Berlin	NULL				NULL
+DE	5	NULL	Frankfurt am Main	NULL	60386	Johanna-Tesch-Platz 7		NULL
+DK		NULL	Aarhus	NULL				NULL
+ES		NULL	Bilbao	NULL				NULL
+ET	44	NULL	ADDIS ABABA	NULL	11945	ADDIS ABABA,P.O.BOX 11945		NULL
+FI		NULL	Espoo	NULL	2130	Mahlarinne 3B		NULL
+FI		NULL	Helsinki	NULL	580	Hermannin rantatie 2 A	Hermannin rantatie 2 A	NULL
+FI		NULL	Tampere	NULL	33101	Tampere University of Technology		NULL
+FI	13	NULL	Espoo	NULL	2150	Aalto Venture Garage	Betonimiehenkuja 3	NULL
+GB		NULL	Exeter	NULL				NULL
+GB		NULL	London	NULL				NULL
+GB		NULL	London	NULL	N4 2DP	2 Myddleton Ave		NULL
+GB		NULL	London	NULL	N7 0AH 	104 St George’s Avenue		NULL
+GB		NULL	London	NULL	SE16 3UL	25 Blue Anchor Lane		NULL
+GB		NULL	London	NULL	SW18 5SP	Flat 1 150 Merton road 		NULL
+GB		NULL	London	NULL	W1T 4BQ	13 Fitzroy Street		NULL
+GB		NULL	Oxford	NULL				NULL
+GB		NULL	Southampton	NULL				NULL
+GB	C3	NULL		NULL	cb244qg	32 market street 	swavesey	NULL
+GB	E7	NULL	London	NULL	SE3 7TP			NULL
+GB	F3	NULL	Wood Green	NULL	N22 5RU	6 Cedar House		NULL
+GB	H1	NULL	London	NULL	SE11 5JD	47-49 Durham Street		NULL
+GB	H6	NULL	London	NULL	SE8 4DD	8 Harton St	Deptford	NULL
+GB	K2	NULL	Oxford	NULL	OX2 6QY	3 The Villas, Rutherway		NULL
+GH	5	NULL	NSAWAM	NULL	NULL	P.O.BOX 455		NULL
+GH	NULL	NULL	Accra	NULL	NULL			NULL
+ID		NULL	Bandung	NULL	40134	Jalan Sadang Hegar 1 No. 12	RT04 RW13 Sadang Serang	NULL
+ID		NULL	Bekasi	NULL	17411	Jl.Binadharma 1 No.62. Jatiwaringin		NULL
+ID		NULL	Jakarta	NULL				NULL
+ID		NULL	Jakarta	NULL	12440	Jl. H. Niin 7	Lebak Bulus, Cilandak	NULL
+ID		NULL	Jakarta	NULL	13330	Otista		NULL
+ID		NULL	Jakarta selatan	NULL	12000	jl. rawa jati timur 6 no. 10		NULL
+ID		NULL	Jakarta Timur	NULL		Jl.Mulia No.15B Kel.Bidara Cina, Kec.Jatinegara, Jakarta Timur		NULL
+ID		NULL	Pematang Siantar	NULL	51511	Jl. Durian I 30		NULL
+ID	4	NULL	Bogor	NULL	16165			NULL
+ID	4	NULL	jakarta	NULL		otista		NULL
+ID	4	NULL	Jakarta	NULL	12520	Jl. Pertanian Raya III No.42 Jakarta Selatan Pasar Minggu		NULL
+ID	4	NULL	Jakarta	NULL	13330	Jakarta		NULL
+ID	4	NULL	Jakarta	NULL	13330	Jl Sensus IIC Bidaracina Jaktim		NULL
+ID	4	NULL	Jakarta	NULL	13330	Jl. Bonasut 2 no.22		NULL
+ID	4	NULL	Jakarta	NULL	13330	Otista 64c		NULL
+ID	4	NULL	jakarta	NULL	13330	Otista jaktim		NULL
+ID	4	NULL	Jakarta Timur	NULL	13330	Kebon Sayur I no. 1 RT 10/15		NULL
+ID	4	NULL	Jakarta Timur	NULL	13460	Jl. Pondok Kopi Blok G4/5 RT. 005/08 Jakarta Timur		NULL
+ID	4	NULL	Jakarta Timur	NULL	13810	Jl. Raya Pondok Gede Rt03 Rw08 no.35 , Lubang Buaya, Jakarta Timur	Jl. Raya Pondok Gede Rt03 Rw08 no.35 , Lubang Buaya, Jakarta Timur	NULL
+ID	7	NULL	Brebes	NULL	54321	Jl Kersem Blok D14 Perum Taman Indo Kaligangsa Wetan Brebes		NULL
+ID	7	NULL	Semarang	NULL	50143	Puspowarno Tengah 2/2		NULL
+ID	8	NULL	Lumajang	NULL	67373	Desa Tumpeng Kecamatan Candipuro	Lumajang	NULL
+ID	30	NULL	Bandung	NULL	55241	Jl Pelesiran No 55A/56		NULL
+ID	30	NULL	Bekasi	NULL	17510	bekasi West Java Indonesia		NULL
+ID	30	NULL	Depok	NULL	16245	Jalan juragan sinda 2 no 10		NULL
+ID	30	NULL	Depok	NULL	16424	Jalan Margonda RayaJalan Kober Gang Mawar 		NULL
+ID	30	NULL	Depok	NULL	16424	Jl. Haji Yahya Nuih no.24, Pondok Cina		NULL
+ID	30	NULL	Depok	NULL	16425	Kukusan Kelurahan		NULL
+ID	30	NULL	Depok	NULL	16518	Jl. Salak No.1/C.88 Durenseribu Bojongsari		NULL
+ID	30	NULL	Depok	NULL	16952	Jl. Merak No.34 -36 Rt.004/014	Jl. Merak No. 34 -36 Rt. 004/014	NULL
+ID	36	NULL	biak numfor	NULL	98111	jl. s. mamberamo no 6782 biak numfor		NULL
+IL		NULL	Tel Aviv	NULL				NULL
+IN		NULL	Bangalore	NULL				NULL
+IN		NULL	India	NULL				NULL
+IN		NULL	new delhi	NULL	110003	55 lodi estate		NULL
+IN	7	NULL	NEW DELHI	NULL	110018	15/11 A 1ST FLOOR	TILAK NAGAR	NULL
+IN	7	NULL	New Delhu	NULL	110075	B 54 Hilansh Apartments	Plot No 1, Sector 10, Dwarka	NULL
+IN	10	NULL	Gurgaon	NULL		D- 201 Ivy Apartments Sushant Lok 1 Gurgaon Haryana		NULL
+IN	13	NULL	Trivandrum	NULL	695010	TC 9/1615, SRMH Road, 	Sasthamangalam, Trivandrum	NULL
+IN	16	NULL	Mumbai	NULL	400020	Bharat Mahal, Flat#55	Marine Drive	NULL
+IN	16	NULL	Mumbai	NULL	400028	303,Shree Parvati Co-Op Housing Society,	D.L.Vaidya Road,Dadar	NULL
+IN	16	NULL	Pune	NULL				NULL
+IN	16	NULL	Pune	NULL		Infosys Campus	Hinjewadi Phase 2	NULL
+IN	16	NULL	Pune	NULL	400705	#22 Iris Garden	Gokhale Road	NULL
+IN	16	NULL	PUNE	NULL	411043			NULL
+IN	16	NULL	Pune	NULL	411051			NULL
+IN	16	NULL	Pune	NULL	411057	Infosys Ltd. Rajiv gandhi infostech park	Hinjewadi phase 2	NULL
+IN	16	NULL	Pune	NULL	412108	Pune	Maharatshtra	NULL
+IN	16	NULL	Pune	NULL	433011	502 utkarsh vihar golande state pune		NULL
+IN	19	NULL	Bangalore	NULL	560080	Indian Institute for Human Settlements	IIHS Bangalore City Campus, Sadashivanagar,	NULL
+IN	19	NULL	Bangalore	NULL	560100	electronic city		NULL
+IN	19	NULL	Bhalki	NULL	585411	bhalki,bidar ,karnataka	karnataka	NULL
+IN	24	NULL	Jaipur	NULL	302011	Institute of Health Management Research	1, Prabhu Dayal Marg	NULL
+IR	26	NULL	Tehran	NULL	1118844454	Baharestan sq. mostafa khomeini str., javahery Ave., no. 11, 		NULL
+IT		NULL	Trento	NULL				NULL
+JM	8	NULL	Kingston	NULL	Kgn 7	MOna Campus UWI		NULL
+KE		NULL	Nairobi	NULL				NULL
+KE	5	NULL	Nairobi	NULL	30300	212,kapsabet 		NULL
+KH	NULL	NULL	Phnom Penh	NULL				NULL
+LR		NULL	Monrovia	NULL	0			NULL
+NG	11	NULL	Abuja	NULL	930001	17 Bechar street	Wuse zone 2	NULL
+PE	15	NULL	Lima	NULL	18	Lima	Lima	NULL
+PE	15	NULL	Lima	NULL	Lima 18	123	Miraflores	NULL
+PE	NULL	NULL	Lima	NULL	3	Calle Granada 104		NULL
+PE	NULL	NULL	Lima	NULL	18	Lima	Lima	NULL
+PH		NULL	Manila	NULL		Globe Telepark	111 Valero Street	NULL
+PH		NULL	Quezon Coty	NULL	1109	86 Harvard Street,  Cubao, Quezon City, Philippines	84 Harvard Street, Cubao, Quezon City,hilippines	NULL
+PH	20	NULL	Silang	NULL	4118	370 Bayungan Kaong Silang Cavite		NULL
+PH	57	NULL	Kidapawan	NULL	9400	Kidapawan City	Kidapawan City	NULL
+PH	66	NULL	zamboanga	NULL	7000	29-tripplet rd san jose	29-tripplet rd san jose	NULL
+PH	D9	NULL	Pasig City	NULL		World Bank Office Manila, 20/F Taipan Place	F. Ortigas Jr. Road, Ortigas Center 	NULL
+PK		NULL	Lahore	NULL	54000	17-R Model Town Lahore		NULL
+PK		NULL	Lahore	NULL	54000	53- chamber lane road Lahore		NULL
+PK		NULL	Lahore	NULL	54000	85 E block Model Town 		NULL
+PK		NULL	Lahore	NULL	54000	House no 227, street no 5, Imamia Colony Shahadra Lahore		NULL
+PK		NULL	LAHORE	NULL	54000	room no.6 khalid bim waleed hall, near New Anarkali,  LAHORE	room no.6 khalid bim waleed hall, near New Anarkali,  LAHORE	NULL
+PK		NULL	Lahore	NULL	pk097	LUMS, Lahore, 		NULL
+PK		NULL	Sheikhupura	NULL	3935	D.H.Q.Hospital Sheikhupura House number 08.	Room no 109 Khalid bin waleed haal, punjab University lahore old campus.	NULL
+PK	2	NULL	Quetta	NULL	87000	Postal Address 87000, Kuchlak, Quetta, Balochistan.	H#24 Peer Abul Khair road Quetta, Balochistan.	NULL
+PK	2	NULL	Quetta	NULL	87300	block no-1 falt no. 7 New Crime Branch Abbas Ali Road Cantt		NULL
+PK	2	NULL	Quetta	NULL	87300	Flat no. 3 Shafeen Centre Jinnah Town ,Near I.T university , Quetta		NULL
+PK	2	NULL	Quetta	NULL	87300	H-no. C-220 Zarghoonabad Phase-2 , Nawa Killi ,Quetta 		NULL
+PK	4	NULL	burewala	NULL	60101	 Fatima Fayyaz Hazrat Sakina hall girls hostel number 9 Punjab university Lahore Pakistan	Sardar Wajid Azim Azeem abad Burewala dist Vehari Pakistan	NULL
+PK	4	NULL	Faisalabad	NULL	38000	P 101/1, Green Town, Millat Road, Faisalabad		NULL
+PK	4	NULL	Islamabad	NULL	44000	P.O Tarlai kalan chappar Islamabad		NULL
+PK	4	NULL	lahore	NULL				NULL
+PK	4	NULL	Lahore	NULL	54000			NULL
+PK	4	NULL	lahore	NULL	54000	 Street No.63 House 36/A  Al-madad Pak Colony Ravi Road, Lahore.	 Street No.63 House 36/A  Al-madad Pak Colony Ravi Road, Lahore.	NULL
+PK	4	NULL	Lahore	NULL	54000	1149-1-D2 Green Town 	Lahore	NULL
+PK	4	NULL	Lahore	NULL	54000	124, street# 2, karim block Allama Iqbal Town lahore.	124, street# 2, karim block Allama Iqbal Town lahore.	NULL
+PK	4	NULL	Lahore	NULL	54000	150 A Qila Lachman Singh Ravi Road lahore		NULL
+PK	4	NULL	Lahore	NULL	54000	166/1L DHA Lahore		NULL
+PK	4	NULL	Lahore	NULL	54000	172 A2 Township Lahore		NULL
+PK	4	NULL	Lahore	NULL	54000	183,S/Block, Model Town, Lhr		NULL
+PK	4	NULL	lahore	NULL	54000	19- A block ,Eden Lane Villas Raiwind Road ,Lahore		NULL
+PK	4	NULL	lahore	NULL	54000	3-c kaliyar road opposite kids lyceum, rustam park near mor samnabad		NULL
+PK	4	NULL	Lahore	NULL	54000	31 Saeed Block, Canal Bank Scheme		NULL
+PK	4	NULL	Lahore	NULL	54000	31c DHA Lahore		NULL
+PK	4	NULL	Lahore	NULL	54000	387 E1 wapda town, Lahore		NULL
+PK	4	NULL	Lahore	NULL	54000	45-D dha eme sector multan road,lahore		NULL
+PK	4	NULL	Lahore	NULL	54000	5 Zafar Ali Road		NULL
+PK	4	NULL	Lahore	NULL	54000	54-R	PGECHS	NULL
+PK	4	NULL	lahore	NULL	54000	566 E-1 johar town lahore	566 E-1 johar town lahore	NULL
+PK	4	NULL	Lahore	NULL	54000	82/1 Z Block, Phase 3	DHA	NULL
+PK	4	NULL	Lahore	NULL	54000	A-1 VRI Zarrar shaheed road lahore cantt	A-1 VRI Zarrar shaheed road lahore cantt	NULL
+PK	4	NULL	lahore	NULL	54000	e5/39D street 6 zaman colony cavalry ground ext		NULL
+PK	4	NULL	Lahore	NULL	54000	Ho # 61, Block G3, Johar Town Lahore		NULL
+PK	4	NULL	LAhore	NULL	54000	House #19-A street #5 Usman nagr Ghaziabad  Lahore		NULL
+PK	4	NULL	lahore	NULL	54000	House no 692 street no 67 sadar bazar		NULL
+PK	4	NULL	Lahore	NULL	54000	Khosa Law Chamber	1 Turner Road	NULL
+PK	4	NULL	Lahore	NULL	54000	Lahore,Pakistan	Lahore,Pakistan	NULL
+PK	4	NULL	Lahore	NULL	54000	room no 69, khalid bin waleed hall, anarkali		NULL
+PK	4	NULL	Lahore	NULL	54000	Suite # 8, Al-Hafeez Suites,	Gulberg II	NULL
+PK	4	NULL	Lahore	NULL	54085	199 Shadman 2		NULL
+PK	4	NULL	Lahore	NULL	54300	Mughalpura Lahore Pakistan		NULL
+PK	4	NULL	Lahore	NULL	54660	SD 69 falcon complex gulberg III lahore		NULL
+PK	4	NULL	lahore	NULL	54800	764-G4 johar town ,lahore		NULL
+PK	4	NULL	Rawalpindi	NULL	44000	House 522, F-Block Sattellite Town, Rawalpindi		NULL
+PK	4	NULL	Rawalpindi	NULL	46000	1950/c, Indusroad 2, Tariqabad, Rawalpindi Cantt		NULL
+PK	4	NULL	Rawalpindi	NULL	46000	House 54-E Lane 9 Sector 4, AECHS Chaklala Rawalpindi		NULL
+PK	4	NULL	Rawalpindi	NULL	46000	House B-1343, Sattellite town Rawalpindi		NULL
+PK	4	NULL	Rawalpindi	NULL	46000	House CB-299F, Street 1, Lane 4 Peshawar Road Rawalpindi		NULL
+PK	4	NULL	Rawalpindi	NULL	46300	House No 1518 Umer Block phase 8 	BehriaTown	NULL
+PK	4	NULL	sialkot	NULL	51310	The National Model School, Ismaiealabad, Pacca Garah Sialkot		NULL
+PK	8	NULL	Islamabad	NULL		CIomsats Institute of Information Technology Islamabad		NULL
+PK	8	NULL	Islamabad	NULL	38700	COMSATS tarlai boys hostel Islamabad.	COMSATS tarlai boys hostel Islamabad (Room 30)	NULL
+PK	8	NULL	Islamabad	NULL	44000			NULL
+PK	8	NULL	Islamabad	NULL	44000	House # 256, Street # 9, Shahzad Town, Islamabad.		NULL
+PK	8	NULL	Islamabad	NULL	44000	Islamabad , Comsats University Islamabd ,Pakistan		NULL
+PK	8	NULL	Islamabad	NULL	44000	World Bank Building	Sector G 5	NULL
+PK	8	NULL	lahore	NULL	54000	3c zafar ali road gulburg 5	3c zafar ali road gulburg 5	NULL
+PK	8	NULL	lahore	NULL	54000	49-a bilal park, chaburgy 	49-a bilal park, chaburgy 	NULL
+PK	NULL	NULL	Lahore	NULL	54000			NULL
+PK	NULL	NULL	Lahore	NULL	54000	85 E block Model Town 		NULL
+SN	1	NULL		NULL		ouakam cité comico en face 217		NULL
+SN	1	NULL	Dakar	NULL				NULL
+SN	1	NULL	Dakar	NULL		IDEV-ic Patte d'oie Builder's Villa B11		NULL
+SN	1	NULL	Dakar	NULL		liberte 6/ dakar		NULL
+SN	1	NULL	Dakar	NULL		ngor		NULL
+SN	1	NULL	Dakar	NULL	4027	ZAC Mbao	Cité Fadia	NULL
+SN	NULL	NULL	Dakar	NULL		IDEV-ic Patte d'oie Builder's Villa B11		NULL
+TZ		NULL	Dar es Salaam	NULL	NULL			NULL
+TZ		NULL	Dar es salaam	NULL	NULL	76021 Dar es salaam	1507 Morogoro	NULL
+TZ		NULL	Dar es salaam	NULL	NULL	dar es salaam	nassoro.ahmedy@yahoo.com	NULL
+TZ		NULL	DAR ES SALAAM	NULL	NULL	dar es salaam	UDSM	NULL
+TZ		NULL	Dar es salaam	NULL	NULL	NA		NULL
+TZ		NULL	DAR ES SALAAM	NULL	NULL	P O BOX 23409 		NULL
+TZ		NULL	dar es salaam	NULL	NULL	p. o. box 104994		NULL
+TZ		NULL	Dar es Salaam	NULL	NULL	P.o. BOX 71415 Dar es Salaam		NULL
+TZ		NULL	Dar es Salaam	NULL	NULL	P.O.BOx 66675 DSM		NULL
+TZ		NULL	Dar es salaam	NULL	NULL	Tz	Tz	NULL
+TZ		NULL	dsm	NULL	NULL			NULL
+TZ	2	NULL	Bagamoyo	NULL	NULL	PO.Box 393 		NULL
+TZ	2	NULL	Dar es salaam	NULL	NULL	22548		NULL
+TZ	3	NULL	Dar-es-salaam	NULL	NULL	Dodoma Municipal	Kimara, Dar-es-salaa,	NULL
+TZ	23	NULL	Dar es Salaam	NULL	NULL			NULL
+TZ	23	NULL	dar es salaam	NULL	NULL	35074		NULL
+TZ	23	NULL	dar es salaam	NULL	NULL	67389		NULL
+TZ	23	NULL	Dar es Salaam	NULL	NULL	COSTECH, Dar es Salaam, Tanzania		NULL
+TZ	23	NULL	Dar es salaam	NULL	NULL	na		NULL
+TZ	23	NULL	dar es salaam	NULL	NULL	p o box 60164		NULL
+TZ	23	NULL	dar es salaam	NULL	NULL	P. O. Box 77588		NULL
+TZ	23	NULL	dar es salaam	NULL	NULL	P.O BOX 78144		NULL
+TZ	23	NULL	Dar es Salaam	NULL	NULL	P.O.BOX 78373		NULL
+TZ	23	NULL	Dar es salaam	NULL	NULL	UDSM	Dar es Salaam	NULL
+TZ	23	NULL	Dar es salaam	NULL	NULL	udsm	udsm	NULL
+TZ	23	NULL	Temeke	NULL	NULL	P.O. Box 50127		NULL
+TZ	NULL	NULL	Dar es Salaam	NULL	NULL			NULL
+TZ	NULL	NULL	Dar es Salaam	NULL	NULL	Kigoma		NULL
+TZ	NULL	NULL	Dar es Salaam	NULL	NULL	Mwanza		NULL
+UG		NULL	Kampala	NULL	NULL			NULL
+UG		NULL	Kampala	NULL	NULL	Kampala Uganda East Africa		NULL
+US		NULL	London	NULL	SE1 8RT	Capital Tower	91 Waterloo Road	NULL
+US	CA	NULL	Los Angeles	NULL				NULL
+US	CA	NULL	Pleasanton	NULL	94588	3412 Pickens Lane		NULL
+US	CA	NULL	Sacramento	NULL				NULL
+US	CA	NULL	San Francisco	NULL				NULL
+US	CA	NULL	seattle	NULL	98113	1234 1st st		NULL
+US	CO	NULL	Denver	NULL	80235	6666 West Quincy Ave		NULL
+US	CT	NULL	Greenwich	NULL	6830	140 Milbank		NULL
+US	CT	NULL	Hartford	NULL	6106	Center for Urban and Global Studies at Trinity College, 	70 Vernon Street	NULL
+US	DC	NULL	Washington	NULL				NULL
+US	DC	NULL	Washington	NULL	20007	World Bank Headquarters	1818 H Street NW	NULL
+US	DC	NULL	Washington	NULL	20010			NULL
+US	DC	NULL	Washington	NULL	20036			NULL
+US	DC	NULL	Washington	NULL	20405	1889 F St NW		NULL
+US	DC	NULL	Washington	NULL	20433			NULL
+US	DC	NULL	Washington	NULL	20433	1818 H Street NW		NULL
+US	DC	NULL	Washington	NULL	20433	1818H St		NULL
+US	DC	NULL	Washington 	NULL	20433	1818 H Street NW		NULL
+US	DC	NULL	Washington DC	NULL	20005	1424, K Street, NW	Suite 600	NULL
+US	DC	NULL	Washington DC	NULL	20010	1818 H Street, NW		NULL
+US	DC	NULL	Washington, DC	NULL	20003	1818 H Street NW		NULL
+US	DE	NULL	Virgin Islands|Charlotte Amalie,Cruz Bay,Christiansted	NULL		Morocco|Tafraout,Rabat,Tangier,Tetouan,Casablanca,Marrakesh,Fez,Oujda,Meknes,Agadir	United Arab Emirates|Garhoud,Dubai,Bur Dubai,Ras al Khaymah,Abu Dhabi,Ajman,Al Fujayrah,Sharjah	NULL
+US	FL	NULL	Falmouth	NULL		Falmouth	Falmouth	NULL
+US	FL	NULL	Lilongwe	NULL		Lilongwe	Lilongwe	NULL
+US	GA	NULL	Atlanta	NULL				NULL
+US	GU	NULL	Herndon	NULL	15642	Ht	USA	NULL
+US	GU	NULL	Miami	NULL		Miami	Miami	NULL
+US	MD	NULL	Gaithersburg	NULL	20877	554 N Frederick Avenue Suite 216		NULL
+US	MD	NULL	Potomac	NULL	20854	14 Sandalfoot Court		NULL
+US	MD	NULL	Silver Spring	NULL	20901	9202 Whitney St.		NULL
+US	MI	NULL	Traverse City	NULL	49685	PO Box 792		NULL
+US	ND	NULL	Pirassununga	NULL		Pirassununga	Pirassununga	NULL
+US	NJ	NULL	Princeton	NULL				NULL
+US	NY	NULL	Brooklyn	NULL	11206-1980	25 Montrose Ave. Apt 304		NULL
+US	NY	NULL	Brooklyn	NULL	11225	975 washington ave	2d	NULL
+US	NY	NULL	Brooklyn	NULL	11217	150 4TH AVE APT 9E		NULL
+US	NY	NULL	New York	NULL				NULL
+US	NY	NULL	New York	NULL	10013	148 Lafayette St. PH		NULL
+US	NY	NULL	New York	NULL	10017	UNICEF	3 UN Plaza	NULL
+US	NY	NULL	New York	NULL	10019	25 Columbus Circle	Suite 52E	NULL
+US	NY	NULL	New York	NULL	10024	65 West 85th Street	3A	NULL
+US	NY	NULL	New York	NULL	10027	606 W. 116th Street #22		NULL
+US	NY	NULL	New York	NULL	10037			NULL
+US	NY	NULL	Rochester	NULL				NULL
+US	NY	NULL	Scarsdale	NULL	10583-1423	54 Walworth Avenue		NULL
+US	OR	NULL	Portland	NULL				NULL
+US	PA	NULL	Philadelphia	NULL				NULL
+US	PA	NULL	Philadelphia	NULL				NULL
+US	PR	NULL	Colonel Hill	NULL		Colonel Hill	Colonel Hill	NULL
+US	SD	NULL	Banjul	NULL		Banjul	Banjul	NULL
+US	SD	NULL	London	NULL		London	London	NULL
+US	TX	NULL	Aledo	NULL	76008	1588 Hunterglenn Dr		NULL
+US	TX	NULL	Keller	NULL	76248	810 Placid View Ct.		NULL
+US	WA	NULL	Seattle	NULL				NULL
+ZA		NULL	Cape Town	NULL				NULL
+ZA		NULL	Cape Town	NULL	7945	Alexander Road	Muizenberg	NULL
+ZA		NULL	Pretoria	NULL				NULL
+ZA	11	NULL	Cape Town	NULL				NULL
+ZA	11	NULL	Cape Town	NULL	7435	PostNet Suite #57, Private Bag X18	Milnerton	NULL
+ZA	11	NULL	Cape town	NULL	7508	24 Solyet Court, Lansdowne Road	Claremont	NULL
+ZA	11	NULL	Cape Town	NULL	7701			NULL
+ZA	11	NULL	Cape Town	NULL	7785	10 Nyamakazi Road Luzuko Park Phillipi East 		NULL
+ZA	11	NULL	Cape Town	NULL	7915	66 Albert Rd 		NULL
+ZA	11	NULL	Cape Town	NULL	8001	210 Long Street		NULL
+ZM		NULL	Lusaka	NULL				NULL
+ZM	9	NULL	LUSAKA	NULL	10101	P.O. BOX FW 174		NULL

@@ -2,7 +2,8 @@
 
 /**
  * @file
- * Support for processing commerce fields (product reference, customer profile reference, price)
+ * Support for processing commerce fields (product reference, customer profile
+ * reference, price)
  */
 
 class MigrateCommerceCustomerProfileReferenceFieldHandler extends MigrateFieldHandler {
@@ -12,7 +13,7 @@ class MigrateCommerceCustomerProfileReferenceFieldHandler extends MigrateFieldHa
 
   public function prepare($entity, array $field_info, array $instance, array $values) {
     $migration = Migration::currentMigration();
-    $arguments = (isset($values['arguments']))? $values['arguments']: array();
+    $arguments = (isset($values['arguments'])) ? $values['arguments'] : array();
     $language = $this->getFieldLanguage($entity, $field_info, $arguments);
     // Setup the standard Field API array for saving.
     $delta = 0;
@@ -34,7 +35,7 @@ class MigrateCommerceLineItemReferenceFieldHandler extends MigrateFieldHandler {
 
   public function prepare($entity, array $field_info, array $instance, array $values) {
     $migration = Migration::currentMigration();
-    $arguments = (isset($values['arguments']))? $values['arguments']: array();
+    $arguments = (isset($values['arguments'])) ? $values['arguments'] : array();
     $language = $this->getFieldLanguage($entity, $field_info, $arguments);
     // Setup the standard Field API array for saving.
     $delta = 0;
@@ -56,7 +57,7 @@ class MigrateCommerceProductReferenceFieldHandler extends MigrateFieldHandler {
 
   public function prepare($entity, array $field_info, array $instance, array $values) {
     $migration = Migration::currentMigration();
-    $arguments = (isset($values['arguments']))? $values['arguments']: array();
+    $arguments = (isset($values['arguments'])) ? $values['arguments'] : array();
     $language = $this->getFieldLanguage($entity, $field_info, $arguments);
     // Setup the standard Field API array for saving.
     $delta = 0;

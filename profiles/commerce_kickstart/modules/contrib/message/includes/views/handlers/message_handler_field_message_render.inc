@@ -72,7 +72,7 @@ class message_handler_field_message_render extends views_handler_field {
 
   function render($values) {
     $field_alias = $this->field_alias;
-    if (!empty($values->$field_alias) && $message = message_load($values->$field_alias)) {
+    if (!empty($values->{$field_alias}) && $message = message_load($values->{$field_alias})) {
       $options = array(
         'field name' => $this->options['field_name'],
         'partials' => $this->options['partials'],

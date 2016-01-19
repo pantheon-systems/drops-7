@@ -56,6 +56,15 @@ function commerce_discount_inline_conditions_info() {
         'build' => 'commerce_order_has_specific_quantity_products_build',
       ),
     );
+
+    $conditions['commerce_order_compare_address'] = array(
+      'label' => t('Address'),
+      'entity type' => 'commerce_order',
+      'callbacks' => array(
+        'configure' => 'commerce_order_compare_address_configure',
+        'build' => 'commerce_order_rules_compare_address',
+      ),
+    );
   }
 
   if (module_exists('commerce_shipping')) {
@@ -167,24 +176,32 @@ function commerce_discount_inline_conditions_build_alter(&$value) {
 function commerce_order_compare_order_amount_configure($settings) {
   $form = array();
 
-  // Ensure we've default settings set.
+  module_load_include('inc', 'commerce_discount', 'commerce_discount.rules');
+
+  // Ensure we have default values for the condition settings.
   $settings += array(
     'operator' => '>=',
     'total' => array('amount' => 0),
+    'line_item_types' => commerce_order_compare_order_amount_options_default(),
   );
 
   // Get the default website currency.
   $default_currency = commerce_currency_load(NULL);
 
+  $form['line_item_types'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Included line item types'),
+    '#title_display' => 'invisible',
+    '#options' => commerce_order_compare_order_amount_options_list(),
+    '#default_value' => $settings['line_item_types'],
+    '#multiple' => TRUE,
+  );
+
   $form['operator'] = array(
     '#type' => 'select',
     '#title' => t('Operator'),
     '#title_display' => 'invisible',
-    '#options' => array(
-      '<' => t('lower than'),
-      '==' => t('equals'),
-      '>' => t('greater than'),
-    ),
+    '#options' => _commerce_discount_operator_options(),
     '#default_value' => $settings['operator'],
   );
 
@@ -192,10 +209,7 @@ function commerce_order_compare_order_amount_configure($settings) {
     '#type' => 'container',
     '#tree' => TRUE,
     '#element_validate' => array('commerce_price_field_widget_validate'),
-    '#suffix' => '<div class="condition-instructions">' . t(
-        'The discount is active only if the order total matches the above condition.
-              <br />(the other order discounts are not taken into the comparison process)'
-    ) . '</div>',
+    '#suffix' => '<div class="condition-instructions">' . t('The discount is active only if the total of the selected line items on the order passes the comparison condition.<br />(Other order / product discount line items are not taken into account in the comparison process.)') . '</div>',
   );
 
   $form['total']['amount'] = array(
@@ -413,6 +427,65 @@ function commerce_order_has_specific_quantity_products_configure($settings) {
     '#required' => TRUE,
     '#element_validate' => array('element_validate_integer'),
     '#suffix' => '<div class="condition-instructions">' . t("The discount is active if the order's product(s) match the condition above.") . '</div>',
+  );
+
+  return $form;
+}
+
+/**
+ * Configuration callback for commerce_order_compare_address_configure.
+ *
+ * @param array $settings
+ *   An array of rules condition settings.
+ *
+ * @return array;
+ *   A form element array.
+ */
+function commerce_order_compare_address_configure($settings) {
+  $form = array();
+
+  module_load_include('inc', 'commerce_order', 'commerce_order.rules');
+
+  // Need a list of all address fields on customer profile bundles.
+  $form['address_field'] = array(
+    '#type' => 'select',
+    '#multiple' => FALSE,
+    '#options' => commerce_order_address_field_options_list(),
+    '#title' => t('Address field'),
+    '#title_display' => 'invisible',
+    '#default_value' => !empty($settings['address_field']) ? $settings['address_field'] : FALSE,
+    '#require' => TRUE,
+  );
+
+  // Need a list of address component options to compare.
+  $form['address_component'] = array(
+    '#type' => 'select',
+    '#multiple' => FALSE,
+    '#options' => commerce_order_address_component_options_list(),
+    '#title' => t('Address component'),
+    '#title_display' => 'invisible',
+    '#default_value' => !empty($settings['address_component']) ? $settings['address_component'] : FALSE,
+    '#require' => TRUE,
+  );
+
+  $form['operator'] = array(
+    '#type' => 'select',
+    '#multiple' => FALSE,
+    '#options' => commerce_order_address_comparison_operator_options_list(),
+    '#title' => t('Operator'),
+    '#title_display' => 'invisible',
+    '#default_value' => !empty($settings['operator']) ? $settings['operator'] : FALSE,
+    '#require' => TRUE,
+  );
+
+  $form['value'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Value'),
+    '#title_display' => 'invisible',
+    '#rows' => 3,
+    '#default_value' => !empty($settings['value']) ? $settings['value'] : FALSE,
+    '#require' => TRUE,
+    '#suffix' => '<div class="condition-instructions">' . t('The discount is active if the order address component selected matches the entered value. For the entered value bear in mind that addresses using select lists for various components may use a value different from the option you select. For example, countries are selected by name, but the value is the two letter abbreviation. For comparisons with multiple possible values, place separate values on new lines.') . '</div>',
   );
 
   return $form;

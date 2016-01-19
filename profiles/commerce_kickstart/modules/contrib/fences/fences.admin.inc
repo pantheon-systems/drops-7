@@ -14,36 +14,34 @@ function _fences_theme($existing, $type, $theme, $path) {
 
   $supported_hooks = array('field');
   foreach ($supported_hooks as $hook) {
-    // If there are no implementation then skip the iteration.
-    if (empty($existing[$hook])) {
-      continue;
-    }
-    foreach ($fences[$hook] as $suggestion => $data) {
-      // Manually register the suggestions for a module, but let hook_theme
-      // auto-discover theme-owned suggestions as it normally does.
-      if ($fences[$hook][$suggestion]['type'] == 'module') {
-        $hook_suggestion = $hook . '__fences_' . str_replace('-', '_', $suggestion);
-        $hook_suggestions = array($hook_suggestion);
-        // Register the "-multiple" suggestion if that template was found.
-        if ($fences[$hook][$suggestion]['multiple']) {
-          $hook_suggestions[] = $hook_suggestion . '_multiple';
-        }
-        foreach ($hook_suggestions as $name) {
-          $hooks[$name] = array(
-            'base hook'      => $hook,
-            'render element' => $existing[$hook]['render element'],
-            'type'           => $fences[$hook][$suggestion]['type'],
-            'theme path'     => $existing[$hook]['theme path'],
-            'template'       => str_replace('_', '-', $name),
-            'path'           => $fences[$hook][$suggestion]['path'],
-          );
+    if (!empty($existing[$hook])) {
+      foreach ($fences[$hook] as $suggestion => $data) {
+        // Manually register the suggestions for a module, but let hook_theme
+        // auto-discover theme-owned suggestions as it normally does.
+        if ($fences[$hook][$suggestion]['type'] == 'module') {
+          $hook_suggestion = $hook . '__fences_' . str_replace('-', '_', $suggestion);
+          $hook_suggestions = array($hook_suggestion);
+          // Register the "-multiple" suggestion if that template was found.
+          if ($fences[$hook][$suggestion]['multiple']) {
+            $hook_suggestions[] = $hook_suggestion . '_multiple';
+          }
+          foreach ($hook_suggestions as $name) {
+            $hooks[$name] = array(
+              'base hook'      => $hook,
+              'render element' => $existing[$hook]['render element'],
+              'type'           => $fences[$hook][$suggestion]['type'],
+              'theme path'     => $existing[$hook]['theme path'],
+              'template'       => str_replace('_', '-', $name),
+              'path'           => $fences[$hook][$suggestion]['path'],
+            );
+          }
         }
       }
     }
   }
 
   // Register theme hook suggestions for field_collection's entity.
-  if (module_exists('entity')) {
+  if (module_exists('entity') && !empty($existing['entity'])) {
     $hooks['entity__fences_no_wrapper'] = array(
       'base hook'      => 'entity',
       'render element' => $existing['entity']['render element'],
@@ -116,8 +114,7 @@ function _fences_get_fences_suggestion_info(&$fences) {
 
   // Create a list of the default theme and its base themes.
   $theme_default = $GLOBALS['conf']['theme_default'];
-  // We can't use list_themes() here because of #761608.
-  $theme_data = _system_rebuild_theme_data();
+  $theme_data = list_themes();
   if (isset($theme_data[$theme_default]->base_themes)) {
     foreach (array_keys($theme_data[$theme_default]->base_themes) as $base_theme) {
       $themes[$base_theme] = 'base_theme_engine';
@@ -166,7 +163,7 @@ function _fences_get_fences_suggestion_info(&$fences) {
             'label'       => $suggestion,
             'element'     => $suggestion,
             'description' => t('A <@tag> tag', array('@tag' => $suggestion)),
-            'groups'      => array(t('Provided by @theme_name', array('@theme_name', $theme))),
+            'groups'      => array(t('Provided by @theme_name', array('@theme_name' => $theme))),
             'type'        => $type,
           );
         }
@@ -212,9 +209,6 @@ function _fences_get_fences_options($theme_hook) {
     unset($options['no_wrapper']);
     $options = array('no_wrapper' => $no_wrapper) + $options;
   }
-  if (!variable_get('fences_default_markup', 0)) {
-    $options = array('' => t('Use Drupal standard markup')) + $options;
-  }
 
   return $options;
 }
@@ -225,10 +219,13 @@ function _fences_get_fences_options($theme_hook) {
 function _fences_form_field_ui_field_edit_form_alter(&$form, &$form_state) {
   $suggestion = fences_get_suggestion($form['#instance']['entity_type'], $form['#instance']['bundle'], $form['#instance']['field_name']);
 
+  // Make the default markup selection match the Fences default markup setting.
+  $default_markup = variable_get('fences_default_markup', 0) ? 'div' : 'div_div_div';
+
   $form['instance']['fences_wrapper'] = array(
     '#type' => 'select',
     '#title' => t('Wrapper markup'),
-    '#default_value' => $suggestion ? $suggestion : '',
+    '#default_value' => $suggestion ? $suggestion : $default_markup,
     '#options' => fences_get_fences_options('field'),
     '#description' => t('Choose the HTML to use to wrap the field.'),
   );

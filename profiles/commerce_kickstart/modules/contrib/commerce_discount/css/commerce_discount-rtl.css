@@ -88,6 +88,9 @@
   padding-right: 5px;
   padding-left: 0;
 }
+.field-name-commerce-discount-offer .commerce-offer-fields-wrapper {
+  float: right;
+}
 
 /**
  * Discount dates block.

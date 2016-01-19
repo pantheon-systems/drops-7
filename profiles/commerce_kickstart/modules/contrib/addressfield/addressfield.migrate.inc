@@ -152,7 +152,7 @@ class MigrateAddressFieldHandler extends MigrateFieldHandler {
 
       if ($value) {
         if (isset($field_info['columns'][$column_key])) {
-          // Store the data in a seperate column.
+          // Store the data in a separate column.
           $result[$column_key] = $value;
         }
         else {

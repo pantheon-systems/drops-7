@@ -1,6 +1,6 @@
 <?php
 
-/*
+/**
  * Implements hook_migrate_api().
  */
 function commerce_migrate_migrate_api() {

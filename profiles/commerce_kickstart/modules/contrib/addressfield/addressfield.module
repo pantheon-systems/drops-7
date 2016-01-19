@@ -534,7 +534,9 @@ function addressfield_field_widget_form(&$form, &$form_state, $field, $instance,
   // $form_state['values'] is empty because of #limit_validation_errors, so
   // $form_state['input'] needs to be used instead.
   $parents = array_merge($element['#field_parents'], array($element['#field_name'], $langcode, $delta));
-  $input_address = drupal_array_get_nested_value($form_state['input'], $parents);
+  if (!empty($form_state['input'])) {
+    $input_address = drupal_array_get_nested_value($form_state['input'], $parents);
+  }
   if (!empty($input_address)) {
     $address = $input_address;
   }
@@ -727,8 +729,6 @@ function _addressfield_field_formatter_settings_form_validate($element, &$elemen
 function addressfield_field_formatter_settings_summary($field, $instance, $view_mode) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
-
-  $summary = '';
 
   if ($settings['use_widget_handlers']) {
     return t('Use widget configuration');

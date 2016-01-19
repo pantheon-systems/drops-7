@@ -1,7 +1,7 @@
 <?php
 /**
  * @file field--fences-figcaption.tpl.php
- * Wrap each field value in the <figcaption> element.
+ * Wrap all field values in a single <figcaption> element.
  *
  * @see http://developers.whatwg.org/grouping-content.html#the-figcaption-element
  *

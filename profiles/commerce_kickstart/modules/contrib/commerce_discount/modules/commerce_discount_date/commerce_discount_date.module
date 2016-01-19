@@ -64,10 +64,13 @@ function commerce_discount_date_form_commerce_discount_form_alter(&$form, $form_
 function commerce_discount_date_after_build($element, $form_state) {
   // Reset the titles.
   $element[LANGUAGE_NONE][0]['value']['#title'] = t('Start date');
+  $element[LANGUAGE_NONE][0]['value']['#title_display'] = 'before';
   $element[LANGUAGE_NONE][0]['value2']['#title'] = t('End date');
   $element[LANGUAGE_NONE][0]['value']['date']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['value']['date']['#description'] = t('Starts at 12:00:00 AM');
   $element[LANGUAGE_NONE][0]['value']['time']['#title'] = '';
   $element[LANGUAGE_NONE][0]['value2']['date']['#title'] = '';
+  $element[LANGUAGE_NONE][0]['value2']['date']['#description'] = t('Ends after 11:59:59 PM');
   $element[LANGUAGE_NONE][0]['value2']['time']['#title'] = '';
   $element[LANGUAGE_NONE][0]['#fieldset_description'] = '';
 
@@ -96,7 +99,10 @@ function commerce_discount_date_commerce_discount_rule_build($rule, $discount) {
   $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
 
   // If the end date for the discount has already passed, disable the rule.
-  if (REQUEST_TIME > $wrapper->commerce_discount_date->value2->value()) {
+  // Note that we add a day to the discount end date. The date field value is
+  // set for 12:00:00 AM on the end date, but we want the discount to remain
+  // valid through that day.
+  if (REQUEST_TIME >= $wrapper->commerce_discount_date->value2->value() + 86400) {
     $rule->active = FALSE;
   }
 

@@ -99,6 +99,12 @@ function fences_fences_suggestion_info() {
       'description' => t('Generic container; only use as a last resort'),
       'groups'      => array(t('Block-level')),
     ),
+    'div_div_div' => array(
+      'label'       => t('division (nested)'),
+      'element'     => 'div div div',
+      'description' => t("Drupal's default field markup"),
+      'groups'      => array(t('Block-level')),
+    ),
     'em' => array(
       'label'       => t('emphasis'),
       'element'     => 'em',

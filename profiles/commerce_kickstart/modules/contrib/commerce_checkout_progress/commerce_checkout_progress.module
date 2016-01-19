@@ -13,17 +13,32 @@
  * Implements hook_block_info().
  */
 function commerce_checkout_progress_block_info() {
-  return array(
+  $block = array(
     'indication' => array(
       'info' => t('Checkout progress indication'),
       'cache' => DRUPAL_NO_CACHE,
+    )
+  );
+
+  if (module_exists('block')) {
+    $block['indication'] += array(
       'status' => 1, // If you enabled this module, you want the block
       'region' => 'content',
       'weight' => -10, // on top
       'visibility' => BLOCK_VISIBILITY_LISTED, // Show on only the listed pages
       'pages' => "checkout/*\ncart",
-    )
-  );
+    );
+  }
+
+  return $block;
+}
+
+/**
+ * Implements hook_ctools_block_info().
+ */
+function commerce_checkout_progress_ctools_block_info($module, $delta, &$info) {
+  $info['render last'] = TRUE;
+  $info['category'] = t('Miscellaneous');
 }
 
 /**
@@ -33,39 +48,29 @@ function commerce_checkout_progress_block_view($delta = 'indication') {
   if ($delta === 'indication') {
     // Get the current page that was created/stored earlier by commerce checkout.
     $page_id = commerce_checkout_progress_commerce_checkout_router();
+
+    if (is_null($page_id)) {
+      $page_id = 'cart';
+    }
     $block_pages = variable_get('commerce_checkout_progress_block_pages', array());
 
-    // on block configuration page, use select nothing, it mean, we need
-    // render the progress bar on all checkout pages.
-    $visible = empty($block_pages);
-
-    // user selected some pages
-    if (!$visible) {
-      // if current page checkout page ID in configured-pages, the progress bar
-      // is visible
-      foreach ($block_pages as $block_page) {
-        if ($block_page == $page_id) {
-          $visible = TRUE;
-          break;
-        }
-      }
+    // get the option list that is shown during block configuration, since 'no selection' means 'everything is selected'
+    if (empty($block_pages)) {
+      $block_pages_options = commerce_checkout_progress_block_pages_options();
+      $block_pages = array_keys($block_pages_options);
     }
 
-    if ($visible) {
+    // if current page checkout page ID in configured-pages, the progress bar
+    // is visible
+    if (in_array($page_id, $block_pages)) {
       // Get non-empty pages.
       $pages = commerce_checkout_progress_get_items();
-      if (empty($page_id)) {
-        if (!isset($pages['cart'])) {
-          return;
-        }
-        $page_id = 'cart';
-      }
       $content = array(
         '#theme' => 'commerce_checkout_progress_list',
         '#items' => $pages,
         '#type' => variable_get('commerce_checkout_progress_list_type', 'ol'),
         '#current_page' => $page_id,
-        '#link' => variable_get('commerce_checkout_progress_link', TRUE),
+        '#link' => variable_get('commerce_checkout_progress_link', FALSE),
       );
       return array(
         'subject' => '',
@@ -126,7 +131,7 @@ function commerce_checkout_progress_theme($existing, $type, $theme, $path) {
         'items'       => NULL,
         'type'        => NULL,
         'attributes'  => array(),
-        'link'        => TRUE,
+        'link'        => FALSE,
         'current_page' => NULL,
       ),
     ),
@@ -153,14 +158,12 @@ function theme_commerce_checkout_progress_list($variables) {
 
   // Option to display back pages as links.
   if ($link) {
-    // Load the *shopping cart* order. It gets deleted on last page.
-    if (module_exists('commerce_cart') && $order = commerce_cart_order_load($GLOBALS['user']->uid)) {
+    if ($order = menu_get_object('commerce_order')) {
       $order_id = $order->order_id;
     }
-    // If we don't have the Cart module and are on the checkout page, load the
-    // order from the arguments.
-    elseif (arg(0) == 'checkout' && $order_id = arg(1)) {
-      $order = commerce_order_load($order_id);
+    // Load the *shopping cart* order. It gets deleted on last page.
+    elseif (module_exists('commerce_cart') && $order = commerce_cart_order_load($GLOBALS['user']->uid)) {
+      $order_id = $order->order_id;
     }
   }
 
@@ -251,7 +254,8 @@ function commerce_checkout_progress_form_commerce_checkout_builder_form_alter(&$
     'commerce_checkout_progress_link' => array(
       '#type' => 'checkbox',
       '#title' => t('Render list as links'),
-      '#default_value' => variable_get('commerce_checkout_progress_link', TRUE),
+      '#description' => t('If enabled this could cause problems in the checkout process. It\'s <strong>strongly advised</strong> to leave this disabled.'),
+      '#default_value' => variable_get('commerce_checkout_progress_link', FALSE),
     ),
     'commerce_checkout_progress_cart' => array(
       '#type' => 'checkbox',
@@ -277,6 +281,27 @@ function commerce_checkout_progress_form_commerce_checkout_builder_form_submit($
 }
 
 /**
+ * Get the list of items that COULD be shown in the indicator.
+ *
+ * @return array
+ */
+function commerce_checkout_progress_block_pages_options() {
+  $options = array();
+
+  // Check if the cart module is enabled, and add it as an option if it is
+  if (module_exists('commerce_cart')) {
+    $options['cart'] = t('Cart');
+  }
+
+  // Grab possibilities from commerce.
+  $pages = commerce_checkout_pages();
+  foreach ($pages as $page_id => $page) {
+    $options[$page_id] = t($page['title']);
+  }
+  return $options;
+}
+
+/**
  * Get checkout pages that have content and do not redirect.
  * @see commerce_checkout_progress_form_commerce_checkout_builder_form_alter().
  */
@@ -290,9 +315,12 @@ function commerce_checkout_progress_get_items() {
     // hook_commerce_checkout_page_info_alter()).
     if (isset($pages[$pane['page']])) {
       // Pane has page ID, use this value to flag that the page is not empty.
-      $pages[$pane['page']]['has_item'] = TRUE;
+      $pages[$pane['page']]['has_item'] = isset($pages[$pane['page']]['has_item']) ? $pages[$pane['page']]['has_item']  : TRUE;
     }
   }
+  
+  // Allow other modules to alter the enabled checkout pages.
+  drupal_alter('commerce_checkout_progress_get_items', $pages);
 
   $items = array();
   foreach (array_keys($pages) as $page_id) {

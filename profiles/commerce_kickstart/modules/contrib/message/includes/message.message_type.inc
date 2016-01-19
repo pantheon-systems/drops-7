@@ -165,7 +165,7 @@ class MessageType extends Entity {
     }
 
     // Let the metadata wrapper deal with the language.
-    $property = $property->language($langcode)->$options['field name'];
+    $property = $property->language($langcode)->{$options['field name']};
 
     $delta = $options['partial delta'];
     $count = $field['cardinality'] == 1 ? 1 : $property->count();

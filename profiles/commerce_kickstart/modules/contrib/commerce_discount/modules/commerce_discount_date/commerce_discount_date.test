@@ -55,7 +55,7 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
     $this->drupalLogin($this->store_admin);
 
     // Access to the admin discount creation page.
-    $this->drupalGet('admin/commerce/store/discounts/add');
+    $this->drupalGet('admin/commerce/discounts/add');
 
     // Check the integrity of the add form.
     $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value][date]', NULL, 'Start date field is present');
@@ -105,7 +105,7 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
     $this->drupalLogin($this->store_admin);
 
     // Access to the admin discount edit page.
-    $this->drupalGet('admin/commerce/store/discounts/manage/' . $discount->name);
+    $this->drupalGet('admin/commerce/discounts/manage/' . $discount->name);
 
     // Check the integrity of the add form.
     $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value][date]', NULL, 'Start date field is present');
@@ -156,20 +156,16 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
 
     // Create an order.
     $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
-
     // Recalculate discounts.
-    commerce_cart_order_refresh($order);
-
+    $order_wrapper = commerce_cart_order_refresh($order);
     // Check if the discount was applied on the order total price.
-    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 700, 'Order discount is deducted when in time frame.');
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 700, 'Order discount is deducted when in time frame.');
   }
 
   /**
    * Test order discount out of timespan.
    */
   public function testDiscountDateOrderDiscountOutOfTime() {
-
     // Create a discount valid from tomorrow.
     $start_time = time() + $this->dayInSeconds;
     $end_time = time() + 2 * $this->dayInSeconds;
@@ -180,9 +176,9 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
 
     // Create an order.
     $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
     // Check if the discount was applied on the order total price.
-    $this->assertTrue($wrapper->commerce_order_total->amount->value() == 1000, 'Order discount is ignored when out of time frame.');
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 1000, 'Order discount is ignored when out of time frame.');
   }
 
   /**
@@ -197,9 +193,9 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
 
     // Create an order.
     $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
-    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
     // Invoke line item price re-calculation.
-    $line_item = $wrapper->commerce_line_items->get(0)->value();
+    $line_item = $order_wrapper->commerce_line_items->get(0)->value();
     rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
     // Check if the discount was added as a component to the line item.
     $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
@@ -251,15 +247,15 @@ class CommerceDiscountDateTest extends CommerceDiscountTestBase {
     $discount = parent::createDiscount($discount_type, $offer_type, $amount);
 
     // Populate the date fields.
-    $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-    $wrapper->commerce_discount_date = array(
+    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+    $discount_wrapper->commerce_discount_date = array(
       'value' => $start_time,
       'value2' => $end_time,
       'date_type' => 'datestamp',
     );
-    $wrapper->save();
+    $discount_wrapper->save();
 
-    return $wrapper->value();
+    return $discount_wrapper->value();
   }
 
 }

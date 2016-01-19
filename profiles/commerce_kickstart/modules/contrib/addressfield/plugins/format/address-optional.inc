@@ -7,7 +7,7 @@
  */
 
 $plugin = array(
-  'title' => t('Make all fields optional (Not recommended)'),
+  'title' => t('Make all fields optional (No validation - unsuitable for postal purposes)'),
   'format callback' => 'addressfield_format_address_optional',
   'type' => 'address',
   'weight' => 100,

@@ -20,3 +20,49 @@ function commerce_checkout_progress_update_7000() {
   drupal_theme_rebuild();
 }
 
+/**
+ * Disable the links during checkout.
+ */
+function commerce_checkout_progress_update_7001() {
+  if (variable_get('commerce_checkout_progress_link', FALSE)) {
+    $configuration_link = l(t('checkout configuration form'), 'admin/commerce/config/checkout');
+    drupal_set_message(st('Your checkout links are enabled. It is recommended that you disable them. You can do so on the !configure_link.', array('!configure_link' => $configuration_link)), 'warning');
+    return st('Commerce Progress Checkout Links are currently enabled. It is recommended to disable them.');
+  }
+  else {
+    return st('Commerce Progress Checkout links already disabled.');
+  }
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function commerce_checkout_progress_requirements($phase) {
+  $requirements = array();
+
+  if ($phase == 'runtime') {
+    // Link for checkout progress links.
+    $configuration_link = l(t('disable'), 'admin/commerce/config/checkout');
+
+    // Verify the current setup of the links in commerce_checkout_progress.
+    if (variable_get('commerce_checkout_progress_link', FALSE)) {
+      $value = t('Links enabled');
+      $description = t('Commerce Checkout Progress links are active on the checkout process. You should !configure it to avoid data integrity problems during checkout.', array('!configure' => $configuration_link));
+      $severity = REQUIREMENT_WARNING;
+    }
+    else {
+      $value = t('Links disabled');
+      $description = '';
+      $severity = REQUIREMENT_OK;
+    }
+
+    $requirements['commerce_checkout_progress'] = array(
+      'title' => st('Commerce Checkout Progress'),
+      'value' => $value,
+      'severity' => $severity,
+      'description' => $description,
+    );
+  }
+
+  return $requirements;
+}

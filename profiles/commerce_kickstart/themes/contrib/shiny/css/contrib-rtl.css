@@ -211,14 +211,14 @@ html.js .vbo-views-form #edit-select fieldset .fieldset-wrapper {
 .chzn-container-single .chzn-single div b,
 .view-commerce-backoffice-products .chzn-container-single .chzn-single div b,
 .view-commerce-backoffice-orders .chzn-container-single .chzn-single div b {
-  background: white url("../images/drop-filter-rtl.png") no-repeat left center;
+  background: white url("../images/drop-filter-rtl.png") no-repeat left center !important;
 }
 
 .chzn-container-single .chzn-single-with-drop div b,
 .view-commerce-backoffice-products .chzn-container-single .chzn-single-with-drop div b,
 .view-commerce-backoffice-orders .chzn-container-single .chzn-single-with-drop div b,
 .chzn-container-active .chzn-choices {
-  background: white url("../images/drop-filter-up-rtl.png") no-repeat left center;
+  background: white url("../images/drop-filter-up-rtl.png") no-repeat left center !important;
 }
 
 .chzn-container-single .chzn-single span {

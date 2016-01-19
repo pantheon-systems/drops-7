@@ -18,8 +18,8 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
   $cloned_line_items = array();
   // Remove all discount references from the order.
   // (If there are none, setting array() would modify the order, so test first.)
-  if ($wrapper->__isset('commerce_discounts') && $wrapper->commerce_discounts->value()) {
-    $wrapper->commerce_discounts->set(array());
+  if (isset($wrapper->commerce_discounts) && $wrapper->commerce_discounts->value()) {
+    $wrapper->commerce_discounts = array();
   }
 
   // Remove discount components from the order total price.
@@ -77,7 +77,7 @@ function commerce_discount_commerce_cart_order_refresh($wrapper) {
   commerce_line_item_delete_multiple($line_items_to_delete);
 
   // Re-add all applicable discount price components and/or line items.
-  rules_invoke_event('commerce_discount_order', $wrapper->value());
+  rules_invoke_event('commerce_discount_order', $wrapper);
 }
 
 /**
@@ -148,13 +148,16 @@ function commerce_discount_commerce_cart_order_empty($order) {
 /**
  * Implements hook_commerce_shipping_method_collect_rates().
  *
- * Invoke the commerce_discount_free_shipping event and the
- * commerce_discount_percent_off_shipping event when the shipping rates
- * are being collected.
+ * Invokes the events for the various types of shipping offers. Currently, to
+ * support ordering all discounts relative to one another, anything that reduces
+ * the price outside of a free shipping offer is evaluated as part of the
+ * "% off shipping" event. Free shipping offers run last, allowing sites to run
+ * offers that discount premium shipping rates while not reducing them to free
+ * shipping in the event the base events are free.
  */
 function commerce_discount_commerce_shipping_method_collect_rates($method, $order) {
-  rules_invoke_event('commerce_discount_free_shipping', $order);
   rules_invoke_event('commerce_discount_percent_off_shipping', $order);
+  rules_invoke_event('commerce_discount_free_shipping', $order);
 }
 
 /**
@@ -186,7 +189,7 @@ function commerce_discount_entity_info() {
     'views controller class' => 'CommerceDiscountViewsController',
     // Enable the entity API's admin UI.
     'admin ui' => array(
-      'path' => 'admin/commerce/store/discounts',
+      'path' => 'admin/commerce/discounts',
       'file' => 'includes/commerce_discount.admin.inc',
       'controller class' => 'CommerceDiscountUIController',
     ),
@@ -338,6 +341,16 @@ function commerce_discount_field_widget_form_alter(&$element, &$form_state, $con
       }
     }
   }
+
+  // If the current element is the free shipping discount strategy select list,
+  // alter it to only be visible when a free shipping service has been selected.
+  if (!empty($element['#field_name']) && $element['#field_name'] == 'commerce_free_shipping_strategy') {
+    $element['#states'] = array(
+      'invisible' => array(
+        ':input[name="commerce_discount_fields[commerce_discount_offer][' . LANGUAGE_NONE . '][form][commerce_free_shipping][' . LANGUAGE_NONE . ']"]' => array('value' => '_none'),
+      ),
+    );
+  }
 }
 
 /**
@@ -428,6 +441,12 @@ function commerce_discount_commerce_discount_offer_type_info() {
       'entity types' => array('commerce_order'),
       'event' => 'commerce_discount_percent_off_shipping',
     );
+    $types['shipping_upgrade'] = array(
+      'label' => t('Shipping service upgrade'),
+      'action' => 'commerce_discount_shipping_upgrade',
+      'entity types' => array('commerce_order'),
+      'event' => 'commerce_discount_percent_off_shipping',
+    );
   }
 
   $types['free_products'] = array(
@@ -458,9 +477,6 @@ function commerce_discount_commerce_discount_rule_build($rule, $discount) {
     foreach ($rule->actions() as $action) {
       if ($action->getElementName() == 'commerce_discount_free_shipping_service') {
         $action->settings['shipping_service'] = $shipping_service;
-      }
-      else {
-        $action->delete();
       }
     }
   }
@@ -663,4 +679,133 @@ function commerce_discount_commerce_line_item_type_info() {
  */
 function commerce_discount_line_item_title() {
   return t('Fixed amount discount');
+}
+
+/**
+ * Returns an array of discount compatibility strategies for use in a radio
+ * buttons select list.
+ */
+function commerce_discount_compatibility_strategies() {
+  return array(
+    'any' => t('This discount is compatible with any other discount.'),
+    'except' => t('This discount is compatible with any discount except the selected discounts.'),
+    'only' => t('This discount is only compatible with the selected discounts.'),
+    'none' => t('This discount is not compatible with any other discount.'),
+  );
+}
+
+/**
+ * Returns the compatibility strategy for the given discount.
+ *
+ * @param \CommerceDiscount $discount
+ *   A Commerce Discount object with a commerce_compatibility_strategy field.
+ *
+ * @return string
+ *   The discount's compatibility strategy or 'any' if none is set.
+ */
+function commerce_discount_get_compatibility_strategy($discount) {
+  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $strategy = $discount_wrapper->commerce_compatibility_strategy->value();
+
+  // If the compatibility strategy is not set, default to 'any'.
+  if (empty($strategy)) {
+    $strategy = 'any';
+  }
+
+  // Note that if the field is set to an unknown value, we still return it. The
+  // default condition for evaluating discount compatibility will pass through
+  // unknown discount strategies, so modules that set them are responsible also
+  // to evaluate them on behalf of all discounts.
+  return $strategy;
+}
+
+/**
+ * Returns the compatibility selection for the given discount.
+ *
+ * @param \CommerceDiscount $discount
+ *   A Commerce Discount object with a commerce_compatibility_selection field.
+ *
+ * @return int[]
+ *   An array of discount IDs selected for the discount's compatibility strategy
+ *   or an empty array if none are selected (or a non-array value is found).
+ */
+function commerce_discount_get_compatibility_selection($discount) {
+  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $selection = $discount_wrapper->commerce_compatibility_selection->raw();
+
+  // Ensure the selection is an array.
+  if (!is_array($selection)) {
+    $selection = array();
+  }
+
+  return $selection;
+}
+
+/**
+ * Returns a list of discounts applied to make a particular price as determined
+ * by its price components.
+ *
+ * @param array $price
+ *   A price field value array including a data array with price components.
+ *
+ * @return array
+ */
+function commerce_discount_get_discounts_applied_to_price($price) {
+  $applied_discounts = array();
+
+  // Return early if the price has no components.
+  if (empty($price['data']['components'])) {
+    return array();
+  }
+
+  // Loop over the price components looking for known discount components.
+  foreach ($price['data']['components'] as $component) {
+    if (strpos($component['name'], 'discount|') === 0) {
+      // Load the discount entity represented by this component.
+      $applied_discount_name = substr($component['name'], 9);
+      $applied_discount = entity_load_single('commerce_discount', $applied_discount_name);
+
+      // Add it to the list of applied discounts keyed by ID to prevent duplicates.
+      if (!empty($applied_discount)) {
+        $applied_discounts[$applied_discount->discount_id] = $applied_discount_name;
+      }
+    }
+  }
+
+  return $applied_discounts;
+}
+
+/**
+ * Returns a list of discount strategies for free shipping offers.
+ */
+function commerce_discount_free_shipping_strategies() {
+  return array(
+    'only_selected' => t('Only discount the selected shipping service.'),
+    'discount_all' => t('Discount all other shipping services by the same amount as the selected shipping service.'),
+  );
+}
+
+/**
+ * Returns the free shipping strategy for the given discount.
+ *
+ * @param \CommerceDiscount $discount
+ *   A Commerce Discount object with a commerce_free_shipping_strategy field.
+ *
+ * @return string
+ *   The discount's free shipping strategy or 'only_selected' if none is set.
+ */
+function commerce_discount_get_free_shipping_strategy($discount) {
+  $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+  $strategy = $discount_wrapper->commerce_discount_offer->commerce_free_shipping_strategy->value();
+
+  // If the free shipping strategy is not set, default to 'only_selected'.
+  if (empty($strategy)) {
+    $strategy = 'only_selected';
+  }
+
+  // Note that if the field is set to an unknown value, we still return it. The
+  // default action for applying a free shipping discount will pass through
+  // unknown discount strategies, so modules that set them are responsible also
+  // to evaluate them on behalf of all discounts.
+  return $strategy;
 }

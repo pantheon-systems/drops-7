@@ -349,7 +349,7 @@ form table .ief-product-details input.form-radio {
 }
 .entity-commerce-order table,
 .entity-commerce-order tr,
-tr td:last-child {
+.entity-commerce-order tr td:last-child {
   border: 0;
 }
 #panes tr td:last-child {
@@ -788,12 +788,6 @@ td.views-field-operations-dropbutton {
   outline: 0;
   padding: 4px 5px;
 }
-html.js .views-exposed-form .form-item input.form-autocomplete {
-  background-position: 100% 6px;
-}
-html.js .views-exposed-form .form-item input.throbbing {
-  background-position: 100% -14px;
-}
 .commerce-backoffice-view .views-exposed-form .date-padding .form-item {
   margin-top: 0;
   max-width: 100%;
@@ -1132,7 +1126,7 @@ html.js .vbo-views-form #edit-select fieldset .fieldset-wrapper{
 .commerce-backoffice-view .chzn-container-single .chzn-single div b,
 .chosen-container-single .chosen-single div b,
 .commerce-backoffice-view .chosen-container-single .chosen-single div b {
-  background: #fff url("../images/drop-filter.png") no-repeat right center; /* LTR */
+  background: #fff url("../images/drop-filter.png") no-repeat right center !important; /* LTR */
 }
 .chzn-container-single .chzn-single-with-drop div b,
 .commerce-backoffice-view .chzn-container-single .chzn-single-with-drop div b
@@ -1140,7 +1134,7 @@ html.js .vbo-views-form #edit-select fieldset .fieldset-wrapper{
 .chosen-container-single .chosen-single-with-drop div b,
 .commerce-backoffice-view .chosen-container-single .chosen-single-with-drop div b
 .chosen-container-active .chosen-choices {
-  background: #fff url("../images/drop-filter-up.png") no-repeat right center; /* LTR */
+  background: #fff url("../images/drop-filter-up.png") no-repeat right center !important; /* LTR */
 }
 .chzn-container-single .chzn-single span,
 .chosen-container-single .chosen-single span {
@@ -1246,8 +1240,7 @@ form table#webform-emails label::before {
   margin-top: 200px;
 }
 
-html.js #preview {
+html.js #preview.color-processed {
   clear: none !important;
   width: 49%;
-  float: right !important;
 }

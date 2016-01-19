@@ -7,13 +7,14 @@ dependencies[] = migrate_extras
 dependencies[] = commerce_product
 
 ; Destination plugins
+files[] = plugins/destinations/commerce_license.inc
 files[] = plugins/destinations/commerce_product_type.inc
 files[] = plugins/destinations/commerce_product.inc
 files[] = plugins/destinations/fields.inc
 
-; Information added by drupal.org packaging script on 2012-12-06
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2015-11-14
+version = "7.x-1.2"
 core = "7.x"
 project = "commerce_migrate"
-datestamp = "1354758712"
+datestamp = "1447468741"
 

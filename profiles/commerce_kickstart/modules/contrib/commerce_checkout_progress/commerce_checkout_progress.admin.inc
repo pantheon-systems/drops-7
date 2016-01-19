@@ -25,19 +25,7 @@ function _commerce_checkout_progress_form_block_admin_configure_alter(&$form, $f
     pages.');
   $path['pages']['#type'] = 'checkboxes';
 
-  $options = array();
-  // Check if the cart module is enabled, and add it as an option if it is
-  if (module_exists('commerce_cart')) {
-    $options['cart'] = t('Cart');
-  }
-
-  // Grab possibilities from commerce.
-  $pages = commerce_checkout_pages();
-  foreach ($pages as $page_id => $page) {
-    $options[$page_id] = t($page['title']);
-  }
-
-  $path['pages']['#options'] = $options;
+  $path['pages']['#options'] = commerce_checkout_progress_block_pages_options();
   $path['pages']['#default_value'] = variable_get('commerce_checkout_progress_block_pages', array());
   // Add our custom submit handler so that we can process the 'pages' array into text.
   array_unshift($form['#submit'], 'commerce_checkout_progress_form_block_admin_configure_submit');

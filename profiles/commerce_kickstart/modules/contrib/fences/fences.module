@@ -169,7 +169,10 @@ function fences_preprocess_field(&$variables) {
     $suggestion = 'div';
   }
 
-  if ($suggestion) {
+  // Add a theme hook suggestion for the configured suggestion, unless the
+  // suggestion is "div_div_div", in which case we should use Drupal's default
+  // field markup instead of a theme hook suggestion.
+  if ($suggestion && $suggestion !== 'div_div_div') {
     // Make fences' suggestions low priority by placing them at the front of the queue.
     $suggestion = 'field__fences_' . $suggestion;
     if (count($variables['items']) > 1) {

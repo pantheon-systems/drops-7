@@ -117,15 +117,6 @@ function search_api_sorts_index_select(array $form, array &$form_state, SearchAp
       }
     }
 
-    // Order fields according to sorts weight.
-    $new_fields = array();
-    foreach ($sorts as $key => $sort) {
-      if (!empty($fields[$key])) {
-        $new_fields[$key] = $fields[$key];
-      }
-    }
-    $fields = $new_fields;
-
     foreach ($fields as $key => $field) {
       if (!$field['indexed']) {
         continue;

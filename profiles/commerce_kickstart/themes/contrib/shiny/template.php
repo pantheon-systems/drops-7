@@ -30,6 +30,15 @@ function shiny_preprocess_html(&$vars) {
   drupal_add_css(path_to_theme() . '/css/ie6.css', array('group' => CSS_THEME, 'browsers' => array('IE' => 'lte IE 6', '!IE' => FALSE), 'weight' => 999, 'preprocess' => FALSE));
   // Add external CSS for Open Sans from Google Fonts.
   drupal_add_css('//fonts.googleapis.com/css?family=Open+Sans:300,400,600,700,800&subset=latin,latin-ext',array('type' => 'external'));
+  // Add viewport meta tag.
+  $viewport = array(
+    '#tag' => 'meta',
+    '#attributes' => array(
+      'name' => 'viewport',
+      'content' => 'width=device-width, initial-scale=1, maximum-scale=1',
+    ),
+  );
+  drupal_add_html_head($viewport, 'viewport');
 }
 
 /**

@@ -29,7 +29,7 @@ function hook_fences_suggestion_info() {
       'label' => t('paragraph'),
       // The HTML element(s) used by the suggestion. This will be added to the
       // label in the UI to provide additional context. If multiple elements are
-      // used they should be seperated by spaces, e.g. 'pre code'.
+      // used they should be separated by spaces, e.g. 'pre code'.
       'element' => 'p',
       // A short description used in the UI when selecting a suggestion.
       'description' => t('A paragraph; multiple values are each wrapped in a <p>'),

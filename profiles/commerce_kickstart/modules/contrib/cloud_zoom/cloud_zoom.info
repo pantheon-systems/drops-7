@@ -8,9 +8,9 @@ dependencies[] = image
 files[] = cloud_zoom.module
 
 
-; Information added by drush on 2015-11-19
+; Information added by drush on 2016-01-14
 version = "7.x-1.1+1-dev"
 core = "7.x"
 project = "cloud_zoom"
-datestamp = "1447944883"
+datestamp = "1452771902"
 

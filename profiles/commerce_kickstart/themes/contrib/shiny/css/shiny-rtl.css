@@ -18,7 +18,7 @@ fieldset .fieldset-legend {
   clear: right;
 }
 
-#edit-actions #edit-delete {
+#edit-actions #edit-delete, #edit-actions #edit-delete-translation {
   float: left;
 }
 

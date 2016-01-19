@@ -1282,3 +1282,10 @@ function commerce_kickstart_update_7226() {
   // Causing too much grief with security warnings about modules.
   module_disable(array('distro_update'));
 }
+
+/**
+ * Re-enable the Distribution Update Status Manager module.
+ */
+function commerce_kickstart_update_7227() {
+  module_enable(array('distro_update'));
+}

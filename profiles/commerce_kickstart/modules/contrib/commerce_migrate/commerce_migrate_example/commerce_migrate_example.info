@@ -1,0 +1,14 @@
+core = 7.x
+description = Demonstrate migration of products and product display nodes.
+name = Commerce Migrate Example
+package = Commerce (contrib)
+files[] = commerce_migrate_example.migrate.inc
+dependencies[] = migrate
+dependencies[] = commerce_migrate
+
+; Information added by Drupal.org packaging script on 2015-11-14
+version = "7.x-1.2"
+core = "7.x"
+project = "commerce_migrate"
+datestamp = "1447468741"
+

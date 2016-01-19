@@ -513,7 +513,7 @@ function _message_delete_messages($field_names, $entity_id, $last_mid = 0, $rang
         // check each entity.
         $refrences_count = 0;
         for ($i = 0; $i < $count; $i++) {
-          if ($wrapper->$field_name->get($i)->value()) {
+          if ($wrapper->{$field_name}->get($i)->value()) {
             $refrences_count++;
           }
         }
