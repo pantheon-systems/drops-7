@@ -10,32 +10,33 @@ defaults[projects][subdir] = contrib
 projects[dkan_dataset][subdir] = dkan
 projects[dkan_dataset][download][type] = git
 projects[dkan_dataset][download][url] = https://github.com/NuCivic/dkan_dataset.git
-projects[dkan_dataset][download][tag] = 7.x-1.10
+projects[dkan_dataset][download][tag] = 7.x-1.11
+
 
 projects[dkan_datastore][subdir] = dkan
 projects[dkan_datastore][download][type] = git
 projects[dkan_datastore][download][url] = https://github.com/NuCivic/dkan_datastore.git
-projects[dkan_datastore][download][tag] = 7.x-1.10
+projects[dkan_datastore][download][tag] = 7.x-1.11
 
 ; NuCivic Visualization tools
 
 projects[visualization_entity][download][type] = git
 projects[visualization_entity][download][url] = https://github.com/NuCivic/visualization_entity.git
-projects[visualization_entity][download][revision] = 2413206be446352863ee28cc6cababb76eb245ca
+projects[visualization_entity][download][revision] = 586a7fdaec075d527e3d280890f3069077a912e7
 projects[visualization_entity][type] = module
 
 projects[visualization_entity_charts][download][type] = git
 projects[visualization_entity_charts][download][url] = https://github.com/NuCivic/visualization_entity_charts.git
-projects[visualization_entity_charts][download][revision] = 934fd1d65dcd6700b43a3912b0af63319215ef31
+projects[visualization_entity_charts][download][revision] = dca6111249064f6af2d1aa3ba689c894732096e2
 projects[visualization_entity_charts][type] = module
 
 ; Includes, since we're doing non-recusive
 
-includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.10/dkan_dataset.make
-includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.10/dkan_datastore.make
+includes[dkan_dataset_make] = https://raw.githubusercontent.com/NuCivic/dkan_dataset/7.x-1.11/dkan_dataset.make
+includes[dkan_datastore_make] = https://raw.githubusercontent.com/NuCivic/dkan_datastore/7.x-1.11/dkan_datastore.make
 
-includes[visualization_entity_make] = https://raw.githubusercontent.com/NuCivic/visualization_entity/master/visualization_entity.make
-includes[visualization_entity_charts_make] = https://raw.githubusercontent.com/NuCivic/visualization_entity_charts/master/visualization_entity_charts.make
+includes[visualization_entity_make] = https://raw.githubusercontent.com/NuCivic/visualization_entity/586a7fdaec075d527e3d280890f3069077a912e7/visualization_entity.make
+includes[visualization_entity_charts_make] = https://raw.githubusercontent.com/NuCivic/visualization_entity_charts/dca6111249064f6af2d1aa3ba689c894732096e2/visualization_entity_charts.make
 
 includes[dkan_data_story_make] = modules/dkan/dkan_data_story/dkan_data_story.make
 
@@ -46,12 +47,12 @@ projects[file_entity][patch][2308737] = https://www.drupal.org/files/issues/file
 ; Contrib Modules
 projects[admin_menu][version] = 3.0-rc5
 
-projects[bueditor][version] = 1.7
+projects[bueditor][version] = 1.8
 projects[bueditor][patch][1931862] = http://drupal.org/files/dont-render-bueditor-for-plain-text-textareas.patch
 
-projects[colorizer][version] = 1.7
+projects[colorizer][version] = 1.8
 projects[colorizer][patch][2227651] = https://www.drupal.org/files/issues/colorizer-add-rgb-vars-2227651-4b.patch
-projects[colorizer][patch][2599298] = https://www.drupal.org/files/issues/colorizer-bug_system_cron_delete_current_css-2599298-2.patch
+projects[colorizer][patch][2599298] = https://www.drupal.org/files/issues/colorizer-bug_system_cron_delete_current_css-2599298-9.patch
 
 projects[conditional_styles][version] = 2.2
 
@@ -63,11 +64,17 @@ projects[draggableviews][version] = 2.1
 
 projects[entityreference_filter][version] = 1.5
 
+;; Required by dkan_permissions.
+projects[features_roles_permissions][version] = 1.2
+projects[features_roles_permissions][subdir] = contrib
+
 projects[fieldable_panels_panes][version] = 1.7
 
 projects[honeypot][version] = 1.17
 
 projects[fontyourface][version] = 2.8
+projects[fontyourface][patch][2550253] = https://www.drupal.org/files/issues/fontface_regenerate-css-after-add-rule.patch
+projects[fontyourface][patch][] = patches/fontyourface-no-ajax-browse-view.patch
 
 projects[imagecache_actions][download][type] = git
 projects[imagecache_actions][download][url] = "http://git.drupal.org/project/imagecache_actions.git"
@@ -77,20 +84,18 @@ projects[imagecache_actions][type] = module
 
 projects[markdown][version] = 1.2
 
-projects[markdowneditor][version] = 1.2
+projects[markdowneditor][version] = 1.4
 projects[markdowneditor][patch][2045225] = http://drupal.org/files/remove-dsm-from-hook-install-2045225-1.patch
 
 projects[module_filter][version] = 2.0
 
-projects[og_moderation][version] = 2.2
-projects[og_moderation][patch][2231737] = https://drupal.org/files/issues/any-user-with-view-revision-can-revert-delete-2231737-1.patch
+projects[og_moderation][version] = 2.3
 
-projects[defaultconfig][version] = 1.0-alpha9
+projects[defaultconfig][version] = 1.0-alpha11
 
 projects[panelizer][version] = 3.1
 
-projects[views_autocomplete_filters][version] = 1.1
-projects[views_autocomplete_filters][patch][2277453] = http://drupal.org/files/issues/ViewsAutocompleteFilters-no_results_on_some_environments-2277453-1.patch
+projects[views_autocomplete_filters][version] = 1.2
 projects[views_autocomplete_filters][patch][2374709] = http://www.drupal.org/files/issues/views_autocomplete_filters-cache-2374709-2.patch
 projects[views_autocomplete_filters][patch][2317351] = http://www.drupal.org/files/issues/views_autocomplete_filters-content-pane-2317351-4.patch
 
@@ -106,13 +111,16 @@ includes[panopoly_images_make] = http://cgit.drupalcode.org/panopoly_images/plai
 
 projects[panels][version] = 3.5
 
+projects[panels_style_collapsible][version] = 1.3
+projects[panels_style_collapsible][subdir] = contrib
+
 projects[path_breadcrumbs][version] = 3.3
 
 projects[pathauto][version] = 1.2
 
-projects[radix_layouts][version] = 3.3
+projects[radix_layouts][version] = 3.4
 
-projects[r4032login][version] = 1.7
+projects[r4032login][version] = 1.8
 
 projects[rules][version] = 2.3
 
@@ -121,7 +129,7 @@ projects[restws][patch][2484829] = https://www.drupal.org/files/issues/restws-fi
 
 projects[schema][version] = 1.2
 
-projects[adminrole][version] = 1.0
+projects[adminrole][version] = 1.1
 
 projects[admin_menu_source][version] = 1.0
 projects[admin_menu_source][subdir] = contrib
@@ -135,6 +143,7 @@ projects[delta][version] = 3.0-beta11
 ; Themes
 projects[omega][version] = 3.1
 projects[omega][patch][1828552] = http://drupal.org/files/1828552-omega-hook_views_mini_pager.patch
+projects[omega][type] = theme
 
 ;projects[bootstrap][download][version] = 3.x
 ;projects[bootstrap][download][type] = git
@@ -147,11 +156,16 @@ projects[omega][patch][1828552] = http://drupal.org/files/1828552-omega-hook_vie
 
 projects[nuboot_radix][download][type] = git
 projects[nuboot_radix][download][url] = https://github.com/NuCivic/nuboot_radix.git
-projects[nuboot_radix][download][tag] = 7.x-1.10
+projects[nuboot_radix][download][tag] = 7.x-1.11
 projects[nuboot_radix][type] = theme
 
 projects[radix][type] = theme
 projects[radix][version] = 3.0-rc4
+projects[radix][patch][2557385] = https://www.drupal.org/files/issues/radix-undefined-theme-2557385-9.patch
+
+projects[field_reference_delete][download][version] = 7.x-1.0-beta1
+
+projects[facetapi][patch][1] = patches/cross-site-scripting-facets-156778.patch
 
 ; Libraries
 libraries[font_awesome][type] = libraries
@@ -165,4 +179,3 @@ libraries[spyc][download][url] = "https://raw.github.com/mustangostang/spyc/79f6
 libraries[spyc][filename] = "../spyc.php"
 libraries[spyc][directory_name] = "lib"
 libraries[spyc][destination] = "modules/contrib/services/servers/rest_server"
-

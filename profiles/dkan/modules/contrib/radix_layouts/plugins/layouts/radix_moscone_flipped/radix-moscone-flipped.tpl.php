@@ -22,12 +22,12 @@
     </div>
     
     <div class="row">
-      <div class="col-md-9 radix-layouts-content panel-panel">
+      <div class="col-md-8 radix-layouts-content panel-panel">
         <div class="panel-panel-inner">
           <?php print $content['contentmain']; ?>
         </div>
       </div>
-      <div class="col-md-3 radix-layouts-sidebar panel-panel">
+      <div class="col-md-4 radix-layouts-sidebar panel-panel">
         <div class="panel-panel-inner">
           <?php print $content['sidebar']; ?>
         </div>

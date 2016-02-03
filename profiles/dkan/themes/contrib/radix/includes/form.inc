@@ -111,7 +111,7 @@ function _radix_process_input(&$element, &$form_state) {
     'select_as_checkboxes',
   );
 
-  if (!empty($element['#type']) && in_array($element['#type'], $types) && !in_array($element['#theme'], $skip_themes)) {
+  if (!empty($element['#type']) && in_array($element['#type'], $types) && (empty($element['#theme']) || !in_array($element['#theme'], $skip_themes))) {
     $element['#attributes']['class'][] = 'form-control';
   }
 

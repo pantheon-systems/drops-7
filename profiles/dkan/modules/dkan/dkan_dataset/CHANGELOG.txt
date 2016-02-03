@@ -1,3 +1,14 @@
+7.x-1.11 2016-02-02
+--------------------------
+- Fix some bugs breaking the resource links on dataset pages
+- Re-arranged group links on group landing pages; membership links now in sidebar rather than tabs
+- For long fields in the "additional info" custom metadata table on dataset pages, limit the row height for fields displaying extremely long text values
+- Add a list of related visualizations (if using the [Visualization Entity](https://github.com/NuCivic/visualization_entity) module) to resource pages
+- Move group-level permission export into new dkan_dataset_groups_perms module
+- Fixed counting of datasets, broken when a dataset belongs to more than one group
+- Hide "add resource" button on datasets from users who do not have permission to do so
+- Numerous small improvements and bug fixes
+
 7.x-1.10 2015-11-10
 --------------------------
 - NOTE: 7.x-1.10 Was re-released on 2015-11-18 to address bugs in the teaser preview links.

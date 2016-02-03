@@ -5,7 +5,7 @@ array (
     array (
       'title' => 'Make selected text into a header',
       'content' => 'js:  markdownEditor.header();',
-      'icon' => 'md-make-header.gif',
+      'icon' => 'md-make-header@2x.png',
       'accesskey' => 'H',
       'weight' => '0',
     ),
@@ -13,15 +13,15 @@ array (
     array (
       'title' => 'Italics: Make selected text emphasized',
       'content' => 'js: markdownEditor.emphasis();',
-      'icon' => 'md-make-em.gif',
+      'icon' => 'md-make-em@2x.png',
       'accesskey' => 'I',
       'weight' => '1',
     ),
     2 =>
     array (
-      'title' => 'Make selected text strong',
+      'title' => 'Bold: Make selected text strong',
       'content' => 'js: markdownEditor.strongEmphasis();',
-      'icon' => 'md-make-strong.gif',
+      'icon' => 'md-make-strong@2x.png',
       'accesskey' => 'B',
       'weight' => '2',
     ),
@@ -29,7 +29,7 @@ array (
     array (
       'title' => 'Format selected text as code',
       'content' => 'js: markdownEditor.codeInline();',
-      'icon' => 'md-make-code.gif',
+      'icon' => 'md-make-code@2x.png',
       'accesskey' => '',
       'weight' => '3',
     ),
@@ -37,7 +37,7 @@ array (
     array (
       'title' => 'Format selected text as a code block',
       'content' => 'js: markdownEditor.codeBlock();',
-      'icon' => 'md-make-code-block.gif',
+      'icon' => 'md-make-code-block@2x.png',
       'accesskey' => '',
       'weight' => '4',
     ),
@@ -45,7 +45,7 @@ array (
     array (
       'title' => 'Make selected text into a block quote',
       'content' => 'js: markdownEditor.blockQuote();',
-      'icon' => 'md-make-quote.gif',
+      'icon' => 'md-make-quote@2x.png',
       'accesskey' => 'Q',
       'weight' => '5',
     ),
@@ -53,7 +53,7 @@ array (
     array (
       'title' => 'Make selected text into an ordered list (numbered)',
       'content' => 'js: markdownEditor.orderedList();',
-      'icon' => 'md-make-ol.gif',
+      'icon' => 'md-make-ol@2x.png',
       'accesskey' => 'O',
       'weight' => '6',
     ),
@@ -61,7 +61,7 @@ array (
     array (
       'title' => 'Make selected text into an unordered list (bullets)',
       'content' => 'js: markdownEditor.unorderedList();',
-      'icon' => 'md-make-ul.gif',
+      'icon' => 'md-make-ul@2x.png',
       'accesskey' => 'N',
       'weight' => '7',
     ),
@@ -69,7 +69,7 @@ array (
     array (
       'title' => 'Insert a definition list',
       'content' => 'js:  new markdownEditor.DefinitionList();',
-      'icon' => 'md-add-dl.gif',
+      'icon' => 'md-add-dl@2x.png',
       'accesskey' => '',
       'weight' => '8',
     ),
@@ -77,15 +77,15 @@ array (
     array (
       'title' => 'Insert a table',
       'content' => 'js:  new markdownEditor.Table();',
-      'icon' => 'md-add-table.gif',
-      'accesskey' => '',
+      'icon' => 'md-add-table@2x.png',
+      'accesskey' => 'T',
       'weight' => '9',
     ),
     10 =>
     array (
       'title' => 'Insert an abbreviation (word or acronym with definition)',
       'content' => 'js:  markdownEditor.abbreviation();',
-      'icon' => 'md-add-abbreviation.gif',
+      'icon' => 'md-add-abbreviation@2x.png',
       'accesskey' => '',
       'weight' => '10',
     ),
@@ -93,7 +93,7 @@ array (
     array (
       'title' => 'Insert a footnote',
       'content' => 'js:  markdownEditor.footnote();',
-      'icon' => 'md-add-footnote.gif',
+      'icon' => 'md-add-footnote@2x.png',
       'accesskey' => 'F',
       'weight' => '11',
     ),
@@ -101,7 +101,7 @@ array (
     array (
       'title' => 'Make text into an autolink (turns URLs in links, turns words into section identifiers for navigating the document)',
       'content' => 'js:  markdownEditor.autoLink();',
-      'icon' => 'md-add-autolink.gif',
+      'icon' => 'md-add-autolink@2x.png',
       'accesskey' => 'A',
       'weight' => '12',
     ),
@@ -109,7 +109,7 @@ array (
     array (
       'title' => 'Make text into a link (turns text into a link with more options)',
       'content' => 'js:  markdownEditor.link();',
-      'icon' => 'md-make-link.gif',
+      'icon' => 'md-make-link@2x.png',
       'accesskey' => 'L',
       'weight' => '13',
     ),
@@ -117,7 +117,7 @@ array (
     array (
       'title' => 'Insert an image',
       'content' => 'js:  markdownEditor.image();',
-      'icon' => 'md-add-picture.gif',
+      'icon' => 'md-add-picture@2x.png',
       'accesskey' => 'M',
       'weight' => '14',
     ),
@@ -125,7 +125,7 @@ array (
     array (
       'title' => 'Insert a line break',
       'content' => 'js: markdownEditor.lineBreak();',
-      'icon' => 'md-add-line.gif',
+      'icon' => 'md-add-line@2x.png',
       'accesskey' => 'R',
       'weight' => '15',
     ),
@@ -133,7 +133,7 @@ array (
     array (
       'title' => 'Insert a horizontal ruler (horizontal line)',
       'content' => 'js: markdownEditor.horizontalRuler();',
-      'icon' => 'md-add-hr.gif',
+      'icon' => 'md-add-hr@2x.png',
       'accesskey' => '',
       'weight' => '16',
     ),
@@ -141,15 +141,15 @@ array (
     array (
       'title' => 'Teaser break',
       'content' => '<!--break-->',
-      'icon' => 'teaserbr.png',
-      'accesskey' => 'T',
+      'icon' => 'teaserbr@2x.png',
+      'accesskey' => '',
       'weight' => '17',
     ),
     18 =>
     array (
       'title' => 'Preview',
       'content' => 'js: E.prvAjax();',
-      'icon' => 'preview.png',
+      'icon' => 'preview@2x.png',
       'accesskey' => 'P',
       'weight' => '18',
     ),
@@ -157,7 +157,7 @@ array (
     array (
       'title' => 'Help',
       'content' => 'js: E.help(\'fadeIn\');',
-      'icon' => 'md-help.gif',
+      'icon' => 'md-help@2x.png',
       'accesskey' => '',
       'weight' => '19',
     ),

@@ -5,7 +5,6 @@ Label
 Format-label
 Node resource
 */
-
 .node-resource-form,
 #dataset-node-form {
   position: relative;
@@ -256,6 +255,56 @@ div.vertical-tabs #edit-path-alias {
 .view-dkan-datasets .view-content h2 {
   margin: 1.5em 0 .5em 0;
 }
+.view-dkan-datasets .view-content h2 a {
+  color: #000;
+  font-weight: normal;
+  font-size: 1.4em;
+}
+.view-dkan-datasets .view-header {
+  color: #c9c9c9;
+  font-size: 32px;
+  font-weight: bold;
+  margin-bottom: 15px;
+  margin-top: 15px;
+}
+.node-dataset.node-teaser .field-name-field-topic {
+  margin: 10px 0;
+}
+.node-dataset.node-teaser .field-name-field-topic .field-item {
+  display: inline-block;
+  margin: 0 10px;
+}
+.node-dataset.node-teaser .field-name-field-topic .field-item:first-child {
+  margin-left: 0;
+}
+.node-dataset.node-teaser .field-name-field-topic .field-item .field-name-field-image,
+.node-dataset.node-teaser .field-name-field-topic .field-item .name {
+  display: inline-block;
+}
+.node-dataset.node-teaser .field-name-field-topic .name {
+  margin-left: -5px;
+  color: #a3a3a3;
+}
+.node-dataset.node-teaser .field-name-field-granularity {
+  font-weight: bold;
+  font-style: italic;
+  color: #1d71c3;
+  display: inline-block;
+  margin-right: 5px;
+  float: left;
+}
+.node-dataset.node-teaser .field-name-og-group-ref {
+  display: inline-block;
+  color: #b0b0b0;
+  font-style: italic;
+}
+.pane-dkan-datasets-panel-pane-1 .pane-title {
+  display: none;
+}
+.pane-dkan-datasets-panel-pane-1 .pane-content {
+  box-shadow: none !important;
+  padding-top: 0 !important;
+}
 #url-edit-prefix {
   -webkit-border-radius: 4px 0 0 4px;
   -moz-border-radius: 4px 0 0 4px;
@@ -288,9 +337,64 @@ li .heading:hover {
   color: black;
   font-weight: bold ;
 }
+.item-list .list-group li {
+  margin:0;
+}
+.node-type-resource .item-list .list-group li {
+  margin: -1px;
+}
+.node-type-resource .list-group-item {
+  position: relative;
+  display: block;
+  padding: 10px 15px;
+  margin-bottom: -1px;
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 0px 0px 0px 0px;
+  -moz-border-radius: 0px 0px 0px 0px;
+  -webkit-border-radius: 0px 0px 0px 0px;
+}
+/* Move border-radius values from <li> to <a> */
+.node-type-resource .list-group-item:first-child,
+.node-type-resource .list-group-item:last-child {
+  border-radius: 0px 0px 0px 0px;
+  -moz-border-radius: 0px 0px 0px 0px;
+  -webkit-border-radius: 0px 0px 0px 0px;
+}
+.node-type-resource li.first a,
+.node-type-resource li.first .list-group-item:first-child,
+.node-type-resource li.first .list-group-item:last-child {
+  margin-bottom: 0;
+  border-radius: 4px 4px 0px 0px;
+  -moz-border-radius: 4px 4px 0px 0px;
+  -webkit-border-radius: 4px 4px 0px 0px;
+}
+.node-type-resource li.last a,
+.node-type-resource li.last .list-group-item:first-child,
+.node-type-resource li.last .list-group-item:last-child {
+  border-radius: 0px 0px 4px 4px;
+  -moz-border-radius: 0px 0px 4px 4px;
+  -webkit-border-radius: 0px 0px 4px 4px;
+}
+.node-type-resource li.first.last a,
+.node-type-resource li.first.last .list-group-item:first-child,
+.node-type-resource li.first.last .list-group-item:last-child {
+  border-radius: 4px;
+  -moz-border-radius: 4px;
+  -webkit-border-radius: 4px;
+}
+
+.item-list .list-group li,
+.item-list .list-group,
 .resource-list li,
 .resource-list {
   list-style-type: none;
+}
+.resource-list {
+  clear: left;
+}
+.data-and-resources .resource-list li {
+  margin: 0;
 }
 .node-dataset .form-group .resource-list li {
   margin: 4px 10px 4px 0;
@@ -567,6 +671,9 @@ body .node-dataset #data-and-resources ul.resource-list li .orig {
 }
 #data-and-resources .btn .caret {
   margin: 0 0 0 5px;
+}
+#data-and-resources .btn-group .btn .caret {
+  margin: 0;
 }
 #data-and-resources .btn .fa-share {
   padding: 0 8px 0 0;

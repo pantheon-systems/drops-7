@@ -1,0 +1,9 @@
+name = Field reference delete
+description = Immediately removes references to a deleted entity from fields stored in an SQL database.
+core = 7.x
+backdrop = 1.x
+
+; Information added by drush on 2015-01-20
+version = "unknown"
+project = "field_reference_delete"
+datestamp = "1421773031"

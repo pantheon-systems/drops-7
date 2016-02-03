@@ -1,0 +1,180 @@
+<?php
+
+/**
+ * @file
+ * Removes references to a deleted entity from fields stored in SQL.
+ */
+
+/**
+ * Implements hook_entity_delete().
+ */
+function field_reference_delete_entity_delete($entity, $entity_type) {
+  field_reference_delete_references($entity, $entity_type);
+}
+
+/**
+ * Deletes references to an entity from all fields stored in SQL.
+ *
+ * @param $entity
+ *   An object representing the entity.
+ * @param $entity_type
+ *   A string representing the type of the entity (e.g., 'node' or 'user').
+ *
+ * @return
+ *   TRUE if references were deleted, or FALSE otherwise.
+ */
+function field_reference_delete_references($entity, $entity_type) {
+  $deleted = FALSE;
+  foreach (field_reference_delete_list_entity_reference_fields($entity_type) as $field) {
+    // Delete the reference to the entity in the field, but pass FALSE so as to
+    // not clear caches; we'll do it once at the end of this function.
+    if (field_reference_delete_reference($field, $entity, $entity_type, FALSE)) {
+      $deleted = TRUE;
+    }
+  }
+  if ($deleted) {
+    field_reference_delete_clear_caches();
+  }
+  return $deleted;
+}
+
+/**
+ * Returns a list of fields that reference the given entity type.
+ *
+ * @param $entity_type
+ *   A string representing the type of entity (e.g., 'node' or 'user').
+ *
+ * @return
+ *   An array of fields, keyed by field name, representing a subset of the data
+ *   returned by field_info_fields() that corresponds to those fields which
+ *   contain a reference to the provided entity type.
+ */
+function field_reference_delete_list_entity_reference_fields($entity_type) {
+  $fields = array();
+  foreach (field_info_fields() as $field_name => $field) {
+    if (field_reference_delete_field_refers_to_entity_type($field, $entity_type)) {
+      $fields[$field_name] = $field;
+    }
+  }
+  return $fields;
+}
+
+/**
+ * Determines if a field contains a reference to a given entity type.
+ *
+ * @param $field
+ *   An array representing the field structure, e.g. as returned by
+ *   field_info_field().
+ * @param $entity_type
+ *   A string representing the type of entity (e.g., 'node' or 'user').
+ *
+ * @return
+ *   TRUE if the field contains a reference to the provided entity type, or
+ *   FALSE otherwise.
+ */
+function field_reference_delete_field_refers_to_entity_type($field, $entity_type) {
+  $columns = field_reference_delete_list_entity_reference_field_columns($field, $entity_type);
+  return !empty($columns);
+}
+
+/**
+ * Lists all columns from a field that reference a given entity type.
+ *
+ * @param $field
+ *   An array representing the field structure, e.g. as returned by
+ *   field_info_field().
+ * @param $entity_type
+ *   A string representing the type of entity (e.g., 'node' or 'user').
+ *
+ * @return
+ *   An associative array whose values equal the Field API column names for any
+ *   columns within the field that refer to entities of the given type. The
+ *   keys of the array are equal to its values.
+ */
+function field_reference_delete_list_entity_reference_field_columns($field, $entity_type) {
+  $columns = array();
+  // We only deal with fields that are stored in an SQL database. We also
+  // require that the field definitions contain a list of foreign keys (which
+  // allow us to relate the field columns to database tables in which a
+  // particular type of entity is stored). All field reference modules that we
+  // we need to support (including Taxonomy, References, and Entity Reference)
+  // define their foreign keys in this way.
+  if (!empty($field['storage']['details']['sql']) && !empty($field['foreign keys'])) {
+    $entity_info = entity_get_info($entity_type);
+    foreach ($field['foreign keys'] as $foreign_key) {
+      // Only continue if we found a foreign key that refers to the provided
+      // entity type's base table.
+      if ($foreign_key['table'] == $entity_info['base table']) {
+        // Pull out the columns in the field storage table that point to the ID
+        // column of the entity's base table.
+        foreach ($foreign_key['columns'] as $field_storage_column => $base_table_column) {
+          if ($base_table_column == $entity_info['entity keys']['id'] && isset($field['columns'][$field_storage_column])) {
+            $columns[$field_storage_column] = $field_storage_column;
+          }
+        }
+      }
+    }
+  }
+  return $columns;
+}
+
+/**
+ * Deletes references to an entity from a given field.
+ *
+ * @param $field
+ *   An array representing the field structure, e.g. as returned by
+ *   field_info_field().
+ * @param $entity
+ *   An object representing the entity.
+ * @param $entity_type
+ *   A string representing the type of the entity (e.g., 'node' or 'user').
+ * @param $clear_cache
+ *   (Optional) Whether or not to clear relevant caches after references in the
+ *   field database tables have been deleted. Defaults to TRUE. Set this to
+ *   FALSE only if you will be clearing caches yourself at the end of a longer
+ *   process and want to avoid multiple, unnecessary cache rebuilds in the
+ *   meantime. For an example, see field_reference_delete_references().
+ *
+ * @return
+ *   TRUE if references were deleted, or FALSE otherwise.
+ */
+function field_reference_delete_reference($field, $entity, $entity_type, $clear_cache = TRUE) {
+  $deleted = FALSE;
+  if ($columns = field_reference_delete_list_entity_reference_field_columns($field, $entity_type)) {
+    list($id) = entity_extract_ids($entity_type, $entity);
+    // Find the columns in each table that refer to this type of entity.
+    foreach ($field['storage']['details']['sql'] as $revision_type) {
+      foreach ($revision_type as $table => $table_columns) {
+        foreach (array_intersect_key($table_columns, $columns) as $column_name) {
+          // Delete all entries from the table where this column matches the
+          // entity's ID.
+          $number_deleted = db_delete($table)
+            ->condition($column_name, $id)
+            ->execute();
+          if ($number_deleted) {
+            $deleted = TRUE;
+          }
+        }
+      }
+    }
+  }
+  // Clear caches if requested and if anything was actually deleted.
+  if ($clear_cache && $deleted) {
+    field_reference_delete_clear_caches();
+  }
+  return $deleted;
+}
+
+/**
+ * Clears required caches when entity references are deleted from the database.
+ */
+function field_reference_delete_clear_caches() {
+  // First clear the field cache itself.
+  field_cache_clear();
+  // We do not know which entities contain fields which referred to the deleted
+  // entities (in theory we could find out, but it would be a fair amount of
+  // extra work). So we just clear all entity caches instead.
+  foreach (array_keys(entity_get_info()) as $entity_type) {
+    entity_get_controller($entity_type)->resetCache();
+  }
+}

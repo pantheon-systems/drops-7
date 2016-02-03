@@ -149,6 +149,7 @@ abstract class FacetapiUrlProcessor {
     if (!isset($this->params[$this->filterKey]) || !is_array($this->params[$this->filterKey])) {
       $this->params[$this->filterKey] = array();
     }
+    $this->params[$this->filterKey] = array_map('filter_xss', $this->params[$filter_key]);
     return $this;
   }
 

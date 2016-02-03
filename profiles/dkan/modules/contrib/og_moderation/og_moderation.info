@@ -1,12 +1,12 @@
 name = Organic groups moderation
 description = "Enable access control for publishing options and revision of group content."
-package = "Organic groups"
 core = 7.x
-version = VERSION
+package = "Organic groups"
+dependencies[] = og
 
-; Information added by Drupal.org packaging script on 2014-01-30
-version = "7.x-2.2"
+; Information added by Drupal.org packaging script on 2014-04-03
+version = "7.x-2.3"
 core = "7.x"
 project = "og_moderation"
-datestamp = "1391096008"
+datestamp = "1396518250"
 

@@ -1,0 +1,14 @@
+steps:
+  - name: Site Setup
+    plugin: Drupal
+    makeFile: 'dkan.make'
+    profileName: 'dkan'
+    runInstall: true
+  - name: Fix Files Folder Permissions
+    command: 'chmod -R 777 /var/www/html/sites/default/files && drush cc all'
+  - name: Remove Profile Installed Module
+    command: 'rm -fR /var/www/html/profiles/dkan/modules/dkan/dkan_datastore'
+  - name: Move new code in place
+    command: 'mv $SRC_DIR /var/www/html/profiles/dkan/modules/dkan/dkan_datastore'
+  - name: Deploy changes
+    command: 'drush fra -y && drush updb -y && drush cc all'

@@ -8,7 +8,7 @@
  * Implements hook_field_group_info().
  */
 function dkan_dataset_groups_field_group_info() {
-  $export = array();
+  $field_groups = array();
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -18,7 +18,7 @@ function dkan_dataset_groups_field_group_info() {
   $field_group->entity_type = 'node';
   $field_group->bundle = 'group';
   $field_group->mode = 'default';
-  $field_group->parent_name = 'group_tabs';
+  $field_group->parent_name = '';
   $field_group->data = array(
     'label' => 'About',
     'weight' => '3',
@@ -36,7 +36,7 @@ function dkan_dataset_groups_field_group_info() {
       ),
     ),
   );
-  $export['group_tab_about|node|group|default'] = $field_group;
+  $field_groups['group_tab_about|node|group|default'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -64,7 +64,7 @@ function dkan_dataset_groups_field_group_info() {
       ),
     ),
   );
-  $export['group_tab_about|node|group|form'] = $field_group;
+  $field_groups['group_tab_about|node|group|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -74,14 +74,11 @@ function dkan_dataset_groups_field_group_info() {
   $field_group->entity_type = 'node';
   $field_group->bundle = 'group';
   $field_group->mode = 'default';
-  $field_group->parent_name = 'group_tabs';
+  $field_group->parent_name = '';
   $field_group->data = array(
     'label' => 'Datasets',
     'weight' => '1',
-    'children' => array(
-      0 => 'groups_search_entity_view_1',
-      1 => 'groups_search_entity_view_1_form',
-    ),
+    'children' => array(),
     'format_type' => 'htab',
     'format_settings' => array(
       'formatter' => 'closed',
@@ -92,7 +89,7 @@ function dkan_dataset_groups_field_group_info() {
       ),
     ),
   );
-  $export['group_tab_datasets|node|group|default'] = $field_group;
+  $field_groups['group_tab_datasets|node|group|default'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -102,14 +99,14 @@ function dkan_dataset_groups_field_group_info() {
   $field_group->entity_type = 'node';
   $field_group->bundle = 'group';
   $field_group->mode = 'default';
-  $field_group->parent_name = 'group_tabs';
+  $field_group->parent_name = '';
   $field_group->data = array(
     'label' => 'Members',
     'weight' => '2',
     'children' => array(
       0 => 'dkan_group_members_entity_view_1',
     ),
-    'format_type' => 'htab',
+    'format_type' => 'hidden',
     'format_settings' => array(
       'formatter' => 'closed',
       'instance_settings' => array(
@@ -119,7 +116,7 @@ function dkan_dataset_groups_field_group_info() {
       ),
     ),
   );
-  $export['group_tab_members|node|group|default'] = $field_group;
+  $field_groups['group_tab_members|node|group|default'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -134,9 +131,8 @@ function dkan_dataset_groups_field_group_info() {
     'label' => '',
     'weight' => '0',
     'children' => array(
-      0 => 'group_tab_datasets',
-      1 => 'group_tab_about',
-      2 => 'group_tab_members',
+      0 => 'groups_search_entity_view_1',
+      1 => 'groups_search_entity_view_1_form',
     ),
     'format_type' => 'htabs',
     'format_settings' => array(
@@ -146,7 +142,7 @@ function dkan_dataset_groups_field_group_info() {
       ),
     ),
   );
-  $export['group_tabs|node|group|default'] = $field_group;
+  $field_groups['group_tabs|node|group|default'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -173,7 +169,14 @@ function dkan_dataset_groups_field_group_info() {
       ),
     ),
   );
-  $export['group_tabs|node|group|form'] = $field_group;
+  $field_groups['group_tabs|node|group|form'] = $field_group;
 
-  return $export;
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('About');
+  t('Datasets');
+  t('Members');
+  t('Tabs');
+
+  return $field_groups;
 }

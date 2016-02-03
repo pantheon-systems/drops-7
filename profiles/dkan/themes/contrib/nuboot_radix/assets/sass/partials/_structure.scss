@@ -204,8 +204,9 @@ table.group_additional {
     td:nth-of-type(2n) {
       width: auto;
       .form-control {
-        display: inline;
+        display: inline-block;
         width: auto;
+        vertical-align: top
       }
     }
   }

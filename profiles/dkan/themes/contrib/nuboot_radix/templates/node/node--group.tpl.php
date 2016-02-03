@@ -32,7 +32,7 @@
         ?>
       </p>
     </div>
-    <div class="button"><?php print render($content["og_count_entity_view_1"]); ?></div> 
+    <div class="button"><?php print render($content["og_count_entity_view_1"]); ?></div>
   </article>
 
 <?php else: ?>

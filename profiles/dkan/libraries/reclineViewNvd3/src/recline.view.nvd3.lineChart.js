@@ -16,6 +16,10 @@ this.recline.View = this.recline.View || {};
     render: function(){
       var self = this;
       recline.View.nvd3.Base.prototype.render.call(self, {});
+      var options = self.state.get('options');
+      if (options.datapoints) {
+        $('.recline-graph').addClass('recline-show-datapoints');
+      }
     },
     getDefaults: function(){
       var self = this;

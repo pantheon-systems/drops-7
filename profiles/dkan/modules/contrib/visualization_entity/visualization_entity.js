@@ -10,7 +10,7 @@
       $('.visualization-embed #embed-width').on('keyup', renderIframeCode);
 
       $('.visualization-embed .embed-code-wrapper').hide();
-      $('.visualization-embed a.embed-link').live('click', function(){
+      $('.visualization-embed').on('click', 'a.embed-link', function(){
         $(this).parents('.visualization-embed').find('.embed-code-wrapper').toggle();
         return false;
       });

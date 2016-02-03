@@ -98,7 +98,6 @@ class DkanDatasetClassWebTestCase extends DrupalWebTestCase {
     $modules[] = 'beautytips';
     $modules[] = 'jquery_update';
     $modules[] = 'uuid';
-    $modules[] = 'eva';
     $modules[] = 'views';
     $modules[] = 'views_bulk_operations';
 

@@ -4,4 +4,3 @@ core = 7.x
 
 dependencies[] = libraries
 dependencies[] = file
-dependencies[] = field_ui

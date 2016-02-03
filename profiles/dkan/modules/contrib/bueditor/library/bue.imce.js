@@ -38,7 +38,7 @@ I.open = function(opt) {
 
 //centre the IMCE popup inside the parent window
 I.setPos = function() {
-  var $p = $(I.pop), $win = $(window), winH = $.browser.opera ? window.innerHeight : $win.height();
+  var $p = $(I.pop), $win = $(window), winH = window.opera ? window.innerHeight : $win.height();
   I.pop.open(null, null, {offset: {
     left: Math.max(0, ($win.width() - $p.width())/2),
     top: $win.scrollTop() + Math.max(0, (winH - $p.height())/2)
@@ -73,7 +73,7 @@ I.readyDefault = function(win, pop) {
       I.target && I.target.focus();
     };
   }
-  !$.browser.opera && !$.browser.safari && $(imce.FLW).focus();
+  !window.opera && !('WebkitAppearance' in document.documentElement.style) && $(imce.FLW).focus();
 };
 
 //IMCE onload function. Runs after first load of IMCE.
@@ -81,7 +81,7 @@ window.bueImceLoad = function(win) {
   (I.win = win).imce.setSendTo(Drupal.t('Send to editor'), I.finish);
   I.ready(win, I.pop);
   // Fix opera and webkit focus scrolling.
-  if (($.browser.opera || $.browser.safari) && $(I.pop).is(':visible')) {
+  if ((window.opera || ('WebkitAppearance' in document.documentElement.style)) && $(I.pop).is(':visible')) {
     $(I.win.imce.FLW).one('focus', function() {I.pop.close(); I.setPos();});
   }
 };

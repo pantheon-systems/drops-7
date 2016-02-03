@@ -35,7 +35,7 @@ BUE.preprocess.tab = function(E, $) {
           }
         }
         //Opera needs suppression of keypress
-        $.browser.opera && $(this).one('keypress', function() {return false});
+        window.opera && $(this).one('keypress', function() {return false});
         return false;
       }
     }
@@ -45,7 +45,7 @@ BUE.preprocess.tab = function(E, $) {
       if (m = text.substr(text.lastIndexOf('\n') + 1).match(/^(\s+)/)) {
         E.replaceSelection('\n' + m[1], 'end');
         //Opera needs suppression of keypress
-        $.browser.opera && $(this).one('keypress', function() {return false});
+        window.opera && $(this).one('keypress', function() {return false});
         return false;
       }
     }

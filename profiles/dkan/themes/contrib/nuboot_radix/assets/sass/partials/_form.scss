@@ -126,11 +126,12 @@ div.horizontal-tabs {
 }
 
 .form-managed-file {
-  input.form-file {
+  input {
     @include border-radius($border-radius-base 0 0 $border-radius-base);
     border: 1px solid $border;
     padding: 5px;
     margin: 0 0 10px 0;
+    height: 36px;
   }
   input.form-submit {
     @extend %button-attached;

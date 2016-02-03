@@ -91,13 +91,21 @@ div[class*="pane-facetapi"],
     padding:0;
     @include border-bottom-radius(4px);
   }
+  .item-list {
+    border: 1px solid $border;
+    .facetapi-limit-link {
+      padding: 10px 22px;
+      &:before {
+        top: 10px;
+        right: 22px;
+      }
+    }
+  }
   ul {
     margin:0 0 0.5em;
     padding:0;
-    @include border-bottom-radius(4px);
   }
   ul li.leaf {
-    border-bottom:1px dotted $smoke;
     list-style-type:none;
     list-style-image:none;
     margin:0;
@@ -124,6 +132,7 @@ div[class*="pane-facetapi"],
       display:block;
       padding:4px 20px 4px 10px;
       position:relative;
+      line-height: 22px;
       &:hover {
         color:darken($gray-dark, 10%);
         background: rgba(black, 0.03);
@@ -136,6 +145,11 @@ div[class*="pane-facetapi"],
         position:absolute;
         top:4px;
         right:6px;
+      }
+      img {
+        height: 1.5em;
+        width: 1.5;
+        margin-right: 0.5em;
       }
     }
     a.facetapi-active {
@@ -150,12 +164,12 @@ div[class*="pane-facetapi"],
       content: '';
       position: absolute;
       border-style: solid;
-      border-width: 13px 0 13px 13px;
+      border-width: 15px 0 15px 15px;
       border-color: transparent $smoke;
       display: block;
       width: 0;
       z-index: 1;
-      right: -13px;
+      right: -15px;
       top: 0;
     }
     a.facetapi-active:after {

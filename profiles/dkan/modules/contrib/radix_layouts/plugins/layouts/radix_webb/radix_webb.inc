@@ -1,7 +1,7 @@
 <?php
 // Plugin definition
 $plugin = array(
-  'title' => t('Radix Webb'),
+  'title' => t('Webb'),
   'icon' => 'radix-webb.png',
   'category' => t('Radix'),
   'theme' => 'radix_webb',

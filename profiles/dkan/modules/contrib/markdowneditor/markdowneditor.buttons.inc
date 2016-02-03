@@ -39,7 +39,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Make selected text into a header"),
   "js: markdownEditor.header();",
-  "md-make-header.gif",
+  "md-make-header@2x.png",
   "H",
   -10,
 );
@@ -48,16 +48,16 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Italics: Make selected text emphasized"),
   "js: markdownEditor.emphasis();",
-  "md-make-em.gif",
+  "md-make-em@2x.png",
   "I",
   -9,
 );
 
 $mde_buttons[$i++] = array(
   $eid,
-  t("Make selected text strong"),
+  t("Bold: Make selected text strong"),
   "js: markdownEditor.strongEmphasis();",
-  "md-make-strong.gif",
+  "md-make-strong@2x.png",
   "B",
   -8,
 );
@@ -66,7 +66,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Format selected text as code"),
   "js: markdownEditor.codeInline();",
-  "md-make-code.gif",
+  "md-make-code@2x.png",
   "",
   -7,
 );
@@ -75,7 +75,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Format selected text as a code block"),
   "js: markdownEditor.codeBlock();",
-  "md-make-code-block.gif",
+  "md-make-code-block@2x.png",
   "",
   -6,
 );
@@ -84,7 +84,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Make selected text into a block quote"),
   "js: markdownEditor.blockQuote();",
-  "md-make-quote.gif",
+  "md-make-quote@2x.png",
   "Q",
   -5,
 );
@@ -93,7 +93,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Make selected text into an ordered list (numbered)"),
   "js: markdownEditor.orderedList();",
-  "md-make-ol.gif",
+  "md-make-ol@2x.png",
   "O",
   -4,
 );
@@ -102,7 +102,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Make selected text into an unordered list (bullets)"),
   "js: markdownEditor.unorderedList();",
-  "md-make-ul.gif",
+  "md-make-ul@2x.png",
   "N",
   -3,
 );
@@ -111,7 +111,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Insert a definition list"),
   "js: new markdownEditor.DefinitionList();",
-  "md-add-dl.gif",
+  "md-add-dl@2x.png",
   "",
   -2,
 );
@@ -120,7 +120,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Insert a table"),
   "js: new markdownEditor.Table();",
-  "md-add-table.gif",
+  "md-add-table@2x.png",
   "T",
   -1,
 );
@@ -129,7 +129,7 @@ $mde_buttons[$i++] = array(
   $eid,
   ("Insert an abbreviation (word or acronym with definition)"),
   "js: markdownEditor.abbreviation();",
-  "md-add-abbreviation.gif",
+  "md-add-abbreviation@2x.png",
   "",
   0,
 );
@@ -138,7 +138,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Insert a footnote"),
   "js: markdownEditor.footnote();",
-  "md-add-footnote.gif",
+  "md-add-footnote@2x.png",
   "F",
   1,
 );
@@ -147,7 +147,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Make text into an autolink (turns URLs in links, turns words into section identifiers for navigating the document)"),
   "js: markdownEditor.autoLink();",
-  "md-add-autolink.gif",
+  "md-add-autolink@2x.png",
   "A",
   2,
 );
@@ -156,7 +156,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Make text into a link (turns text into a link with more options)"),
   "js: markdownEditor.link();",
-  "md-make-link.gif",
+  "md-make-link@2x.png",
   "L",
   3,
 );
@@ -165,7 +165,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Insert an image"),
   "js: markdownEditor.image();",
-  "md-add-picture.gif",
+  "md-add-picture@2x.png",
   "M",
   4,
 );
@@ -174,7 +174,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Insert a line break"),
   "js: markdownEditor.lineBreak();",
-  "md-add-line.gif",
+  "md-add-line@2x.png",
   "R",
   5,
 );
@@ -183,7 +183,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Insert a horizontal ruler (horizontal line)"),
   "js: markdownEditor.horizontalRuler();",
-  "md-add-hr.gif",
+  "md-add-hr@2x.png",
   "",
   6,
 );
@@ -192,8 +192,8 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Teaser break"),
   "<!--break-->",
-  "teaserbr.png",
-  "T",
+  "teaserbr@2x.png",
+  "",
   7,
 );
 
@@ -202,7 +202,7 @@ if (module_exists('ajax_markup')) {
     $eid,
     t("Preview"),
     "js: E.prvAjax();",
-    "preview.png",
+    "preview@2x.png",
     "P",
     8,
   );
@@ -213,7 +213,7 @@ $mde_buttons[$i++] = array(
   $eid,
   t("Help"),
   "js: E.help('fadeIn');",
-  "md-help.gif",
+  "md-help@2x.png",
   "",
   9,
 );

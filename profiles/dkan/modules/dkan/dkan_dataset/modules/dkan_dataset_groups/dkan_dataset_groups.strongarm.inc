@@ -47,54 +47,7 @@ function dkan_dataset_groups_strongarm() {
           'weight' => '0',
         ),
       ),
-      'display' => array(
-        'og_extras_nodes_entity_view_1' => array(
-          'default' => array(
-            'weight' => '2',
-            'visible' => TRUE,
-          ),
-        ),
-        'dkan_group_members_entity_view_1' => array(
-          'teaser' => array(
-            'weight' => '5',
-            'visible' => FALSE,
-          ),
-          'default' => array(
-            'weight' => '1',
-            'visible' => TRUE,
-          ),
-        ),
-        'groups_search_entity_view_1' => array(
-          'teaser' => array(
-            'weight' => '4',
-            'visible' => FALSE,
-          ),
-          'default' => array(
-            'weight' => '10',
-            'visible' => TRUE,
-          ),
-        ),
-        'groups_search_entity_view_1_form' => array(
-          'teaser' => array(
-            'weight' => '6',
-            'visible' => FALSE,
-          ),
-          'default' => array(
-            'weight' => '9',
-            'visible' => TRUE,
-          ),
-        ),
-        'og_count_entity_view_1' => array(
-          'teaser' => array(
-            'weight' => '2',
-            'visible' => TRUE,
-          ),
-          'default' => array(
-            'weight' => '2',
-            'visible' => FALSE,
-          ),
-        ),
-      ),
+      'display' => array( ),
     ),
   );
   $export['field_bundle_settings_node__group'] = $strongarm;

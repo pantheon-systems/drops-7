@@ -78,20 +78,24 @@ function adminrole_update_permissions() {
       $permissions = array_diff($permissions, $excluded);
     } */
     
-    db_delete('role_permission')
-      ->condition('rid', $rid)
-      ->execute();
+    /** change from doing a DELETE ALL and INSERT to a MERGE which does insert/update as required
+    *     - no obvious performance hit doing this but there may be cases where we don't want to remove 
+    *     records that don't have a module assoicated with them (e.g. shared tables)
+    */
     if ($perms) {
-      $query = db_insert('role_permission')
-        ->fields(array(
-          'rid',
-          'permission',
-          'module',
-        ));
       foreach ($perms as $perm => $module) {
-        $query->values(array($rid, $perm, $module));
+        $query = db_merge('role_permission');
+        $query->key(array(
+          'rid' => $rid,
+          'permission' => $perm,
+        ));
+        $query->fields(array(
+          'rid' => $rid,
+          'permission' => $perm,
+          'module' => $module,
+        ));
+        $query->execute();
       }
-      $query->execute();
       $role = db_query("SELECT name FROM {role} WHERE rid = :rid", array(":rid" => $rid))->fetchField();
       if (!$messaged) {
         drupal_set_message(t("The <em>@role</em> role has been reset for all permissions.", array("@role" => $role)));

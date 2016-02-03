@@ -13,7 +13,6 @@ dependencies[] = date_popup
 dependencies[] = double_field
 dependencies[] = entity
 dependencies[] = entityreference
-dependencies[] = eva
 dependencies[] = features
 dependencies[] = field_group
 dependencies[] = field_group_table

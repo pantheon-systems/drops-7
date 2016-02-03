@@ -623,6 +623,9 @@ function dkan_dataset_block_info() {
   $blocks['dkan_dataset_resource_nodes'] = array(
     'info' => t('Resources'),
   );
+  $blocks['dkan_dataset_visualizations_list'] = array(
+    'info' => t('Visualizations'),
+  );
   return $blocks;
 }
 
@@ -645,8 +648,13 @@ function dkan_dataset_block_view($delta = '') {
     case 'dkan_dataset_resource_nodes':
       $block['subject'] = t('Resources');
       $block['content'] = dkan_dataset_resource_nodes();
-
       break;
+
+    case 'dkan_dataset_visualizations_list':
+      $block['subject'] = t('Visualizations');
+      $block['content'] = dkan_dataset_visualizations_list();
+      break;
+
   }
 
   return $block;
@@ -691,12 +699,43 @@ function dkan_dataset_resource_nodes() {
   }
   if ($nodes) {
     foreach ($nodes as $node) {
-      $links[] = l('<span>' . $node->title . '</span>', 'node/' . $node->nid, array('html' => TRUE));
+      $attributes = array('attributes' => array('class' => array('list-group-item')),'html' => true);
+      $links[] = l('<span>' . $node->title . '</span>', 'node/' . $node->nid, $attributes);
     }
     if (!$current_node) {
       $links[] = '';
     }
-    $output = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('nav-simple'))));
+    $output = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('list-group'))));
+  }
+  return $output;
+}
+
+/**
+ * Returns list of visualizations based on a resource.
+ */
+function dkan_dataset_visualizations_list() {
+  $output = '';
+  $current_node = menu_get_object();
+  if (isset($current_node->type) && $current_node->type == 'resource') {
+    if($current_node->uuid) {
+      // Find all visualizations created from this resource.
+      $nodes = dkan_dataset_get_visualization_entities($current_node->uuid);
+    }
+    if ($nodes) {
+      foreach ($nodes as $node) {
+        $attributes = array('attributes' => array('class' => array('list-group-item')),'html' => true);
+        // Fetch title and type.
+        $result = db_query("SELECT type, title FROM {eck_visualization} WHERE id = :id", array(':id' => $node->nid));
+        foreach ($result as $row) {
+          // Add visualization to the list.
+          $links[] = l($row->title, 'visualization/' . $row->type . '/' . $node->nid, $attributes);
+        }
+      }
+      if (!$current_node) {
+        $links[] = '';
+      }
+      $output = theme('item_list', array('items' => $links, 'attributes' => array('class' => array('list-group'))));
+    }
   }
   return $output;
 }

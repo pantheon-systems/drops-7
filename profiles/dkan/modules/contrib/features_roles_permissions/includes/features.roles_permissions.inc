@@ -26,7 +26,7 @@ function roles_permissions_features_export($data, &$export, $module_name = '') {
  * Implements hook_features_export_options().
  */
 function roles_permissions_features_export_options() {
-  return drupal_map_assoc(_user_features_get_roles(FALSE));
+  return drupal_map_assoc(_user_features_get_roles());
 }
 
 /**

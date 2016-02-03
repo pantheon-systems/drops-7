@@ -125,7 +125,7 @@ var fproc = function(f, obj, sel) {
 //tag dialog form submit
 var fsubmit = function(tag, form, opt, E) {
   //check required fields.
-  for (var el, i = 0; el = form.elements[i]; i++) if ($(el).is('.required') && !el.value) {
+  for (var el, i = 0; el = form.elements[i]; i++) if ($(el).hasClass('required') && !el.value) {
     return BUE.noticeRequired(el);
   }
   //custom validate

@@ -194,7 +194,7 @@
   position:relative;
   .icon-info-sign:before {
     color:$gray-light;
-    content:"\f05a"; 
+    content:"\f05a";
     font-family:$icon-fa;
     font-size:2.5em;
     font-style: normal;
@@ -209,13 +209,19 @@
 }
 
 .node-type-group {
-  .radix-layouts-content .pane-content {
-    padding: 0;
-  }
   .horizontal-tabs {
     margin: 0;
+    #edit-field-image-und-0-remove-button {
+      @include border-radius($border-radius-base);
+      margin-left: 5px;
+    }
   }
 }
+
+.group-owner-message {
+  margin-bottom:20px;
+}
+
 .field-type-text-with-summary {
   padding: 0;
 }

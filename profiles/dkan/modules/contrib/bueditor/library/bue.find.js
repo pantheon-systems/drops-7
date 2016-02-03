@@ -97,9 +97,13 @@ var confirmEOT = function() {
 //cookie get & set
 var K = function (name, value) {
   if (value === undefined) {//get
-    return unescape((document.cookie.match(new RegExp('(^|;) *'+ name +'=([^;]*)(;|$)')) || ['', '', ''])[2]);
+    var ret = '', str = document.cookie;
+    if (str) try {
+      val = decodeURIComponent((str.match(new RegExp('(?:^|;) *' + name + '=([^;]*)(?:;|$)')) || ['', ''])[1].replace(/\+/g, '%20'));
+    } catch (e) {}
+    return ret;
   }
-  document.cookie = name +'='+ escape(value) +'; expires='+ (new Date(new Date()*1 + 30*86400000)).toGMTString() +'; path=/';//set
+  document.cookie = name +'='+ encodeURIComponent(value) +'; expires='+ (new Date(new Date()*1 + 30*86400000)).toUTCString() +'; path=/';//set
 };
 
 //return find&replace form
@@ -115,7 +119,7 @@ var theForm = function () {
   BUE.frPop = BUE.createPopup('bue-fr-pop', null, F = BUE.frForm = $(H('form', F))[0]);
   Drupal.behaviors.textarea && Drupal.behaviors.textarea.attach(F);
   $('div.grippie', F).height(4);
-  $(window).unload(function() {
+  $(window).bind('unload', function() {
     if (!BUE.frForm) return;
     var el = BUE.frForm.elements;
     K('bfr_findtext', el.findtext.value);

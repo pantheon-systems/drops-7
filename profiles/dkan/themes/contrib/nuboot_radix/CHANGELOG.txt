@@ -1,3 +1,12 @@
+7.x-1,11 2016-02-02
+--------------------------
+- Theming improvements to support new search page design
+- Fix the Additional Info field in datasets to hide extra-long rows
+- Fix a bug that prevented sub-themes of Nuboot Radix from retrieving their own settings
+- Styling for re-arranging of group links on group pages DKAN Dataset
+- Numerous small styling and code fixes
+
+
 7.x-1.10 2015-11-10
 --------------------------
 - Style improvements for "open with" button
