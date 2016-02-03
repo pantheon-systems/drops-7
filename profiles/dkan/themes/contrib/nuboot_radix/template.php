@@ -284,7 +284,7 @@ function nuboot_radix_preprocess_node(&$variables) {
     $wrapper = entity_metadata_wrapper('node', $variables['nid']);
     $groups = og_get_entity_groups('node', $wrapper->value());
     $variables['group_list'] = NULL;
-    $variables['body'] = empty($wrapper->body->value()) ? '' : $wrapper->body->value->value();
+    $variables['body'] = is_array($wrapper->body->value()) ? $wrapper->body->value->value() : '';
     $variables['node_url'] = drupal_lookup_path('alias', "node/" . $wrapper->getIdentifier());
 
     if(!empty($groups['node'])) {
