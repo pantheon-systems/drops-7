@@ -323,7 +323,7 @@ function eck__entity__delete_form($form, &$form_state, $entity_type, $bundle, $e
   );
 
   $message = t("Are you sure that you want to delete %id",
-    array("%id" => $entity->id));
+    array("%id" => entity_id($entity_type->name, $entity)));
 
   $caption = t("This action cannot be undone.");
 
@@ -354,6 +354,12 @@ function eck__entity__form($form, &$form_state, $entity) {
     '#type' => 'value',
     '#value' => $entity,
   );
+  $form['#entity_type'] = array(
+    '#type' => 'value',
+    '#value' => $entity->type,
+  );
+
+  $form_state[$entity->entityType()] = $entity;
 
   // Property Widget Handling through property_info by entity api.
   $property_info = entity_get_property_info($entity->entityType());
@@ -392,7 +398,15 @@ function eck__entity__form($form, &$form_state, $entity) {
     '#value' => t('Save'),
   );
 
-  field_attach_form($entity->entityType(), $entity, $form, $form_state);
+  // Entity Translation module integration.
+  $langcode = LANGUAGE_NONE;
+  if (module_exists('entity_translation') &&
+    entity_translation_enabled($entity->entityType())) {
+    $handler = entity_translation_get_handler($entity->entityType(), $entity);
+    $langcode = $handler->getFormLanguage();
+  }
+
+  field_attach_form($entity->entityType(), $entity, $form, $form_state, $langcode);
 
   return $form;
 }
@@ -417,31 +431,42 @@ function eck__entity__form_submit($form, &$state) {
   $entity_type = EntityType::loadByName($entity_type);
   $properties = $entity_type->properties;
 
-  $wrapper = NULL;
-  // If we find a value set for a property lets just set it.
+  // Collect all form values for properties to be passed to pre_set behavior.
+  $values = array();
   foreach ($properties as $property => $info) {
-    $form_value = _eck_form_property_value($state, $property);
-
-    if (isset($form_value)) {
-      // @todo maybe we should do this in the form validation step.
-      // that way we can catch entity wrapper validation exceptions
-      // and set a form error message appropiately.
-
-      // Lets give the behavior a chance to manipulate the data
-      // before it is set.
-      $vars = array('data' => $form_value);
-      $data = eck_property_behavior_invoke_plugin($entity_type, 'pre_set', $vars);
-
-      if (array_key_exists($property, $data)) {
-        $form_value = $data[$property];
-      }
-
-      if (!$wrapper) {
-        $wrapper = entity_metadata_wrapper($entity_type->name, $entity);
-      }
-
-      $wrapper->{$property}->set($form_value);
+    // Pass form values "as are" because for example NULL values are valid.
+    // The isset() does not return TRUE for array keys that correspond to a NULL
+    // value, while array_key_exists() does.
+    if (array_key_exists($property, $state['values'])) {
+      $values[$property] = array('data' => $state['values'][$property]);
     }
+  }
+
+  // @TODO: maybe we should do this in the form validation step. That way we can
+  // catch entity wrapper validation exceptions and set a form error message
+  // appropriately.
+
+  // Lets give the behavior a chance to manipulate the data before it is set.
+  $data = eck_property_behavior_invoke_plugin($entity_type, 'pre_set', array('entity' => $entity), $values);
+
+  // Now that behaviors got a chance to manipulate the values given by the user,
+  // lets set them in the entity.
+  $wrapper = entity_metadata_wrapper($entity_type->name, $entity);
+  foreach ($properties as $property => $info) {
+    // Use the value added by "pre_set" behavior callback, if any.
+    if (array_key_exists($property, $data)) {
+      $value = $data[$property];
+    }
+    // Otherwise use the un-altered value.
+    elseif (isset($values[$property])) {
+      $value = $values[$property]['data'];
+    }
+    // Else exit, preventing any value to be set to this property.
+    else {
+      continue;
+    }
+
+    $wrapper->{$property}->set($value);
   }
 
   // Let the behaviors modify the entity.
@@ -454,11 +479,18 @@ function eck__entity__form_submit($form, &$state) {
 
   $entity->save();
 
-  drupal_set_message(t("Entity @entity_id - @entity_label has been saved",
-    array(
-      "@entity_id" => $entity->id,
-      "@entity_label" => entity_label($form['#entity_type'], $entity),
-    )));
+  $msg = 'Entity @entity_id - @entity_label has been saved';
+  $args = array(
+    '@entity_id' => entity_id($form['#entity_type'], $entity),
+    '@entity_label' => entity_label($form['#entity_type'], $entity),
+  );
+
+  $context = array('entity' => $entity, 'form' => $form, 'form_state' => $state);
+  drupal_alter('eck_entity_save_message', $msg, $args, $context);
+
+  if ($msg) {
+    drupal_set_message(t($msg, $args));
+  }
 
   $uri = entity_uri($entity->entityType(), $entity);
   $state['redirect'] = $uri['path'];
@@ -513,13 +545,13 @@ function eck__entity__view_callback($entities, $view_mode = 'full', $langcode = 
     foreach ($formatters as $property => $formatter) {
       $property_view[$property] = $formatter;
     }
-
-    $entity_view = array_merge($property_view, $entity_view[$entity_type_name][$entity->id]);
+    $entity_id = entity_id($entity_type_name, $entity);
+    $entity_view = array_merge($property_view, $entity_view[$entity_type_name][$entity_id]);
 
     eck_property_behavior_invoke_plugin($entity_type, 'entity_view',
       array('entity' => $entity));
 
-    $build[$entity_type_name][$entity->id] = $entity_view;
+    $build[$entity_type_name][$entity_id] = $entity_view;
   }
 
   return $build;

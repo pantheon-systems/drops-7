@@ -1,7 +1,7 @@
 <?php
 // Plugin definition
 $plugin = array(
-  'title' => t('Radix Brenham Flipped'),
+  'title' => t('Brenham Flipped'),
   'icon' => 'radix-brenham-flipped.png',
   'category' => t('Radix'),
   'theme' => 'radix_brenham_flipped',

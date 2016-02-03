@@ -95,25 +95,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
-   * @Given /^I am a "([^"]*)" of the group "([^"]*)"$/
-   */
-  public function iAmAMemberOfTheGroup($role, $group_name) {
-    $nid = db_query('SELECT nid FROM node WHERE title = :group_name', array(':group_name' =>  $group_name))->fetchField();
-
-    if ($account = $this->getCurrentUser()) {
-      og_group('node', $nid, array(
-        "entity type" => "user",
-        "entity" => $account,
-        "membership type" => OG_MEMBERSHIP_TYPE_DEFAULT,
-      ));
-    }
-    else {
-      throw new \InvalidArgumentException(sprintf('Could not find current user'));
-    }
-
-  }
-
-  /**
    * Properly inputs item in field rendered by Chosen.js.
    *
    *
@@ -144,8 +125,12 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
 
   /**
    * @Given /^I click the chosen field "([^"]*)" and enter "([^"]*)"$/
+   *
+   * DEPRECATED: DONT USE. The clicking of the chosen fields to select some values
+   * didn't work well (selenium errors about the value not being visible). Commenting
+   * this out for now in case someone wants to replace it later with something that works.
    */
-  public function iClickTheChosenFieldAndEnter($field, $value) {
+  /*public function iClickTheChosenFieldAndEnter($field, $value) {
     $session = $this->getSession();
     $page = $session->getPage();
     $field = $this->fixStepArgument($field);
@@ -167,7 +152,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
       throw new Exception(sprintf('"' . $value . '" option was not found in the chosen field.'));
     }
     $title->click();
-  }
+  }*/
 
   /**
    * Click some text.
@@ -257,10 +242,10 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /**
    * Wait for the given number of seconds. ONLY USE FOR DEBUGGING!
    *
-   * @Given /^I wait for "([^"]*)" seconds$/
+   * @Given I wait for :time second(s)
    */
-  public function iWaitForSeconds($arg1) {
-    sleep($arg1);
+  public function iWaitForSeconds($time) {
+    sleep($time);
   }
 
   /**
@@ -292,41 +277,6 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     }
   }
 
-  /**
-   * Use xpath to find 'admin-menu' top bar.
-   * @todo maybe rewrite with simpler way then xpath?
-   *
-   * @Then I should see the administration menu
-   */
-  public function iShouldSeeTheAdministrationMenu()
-  {
-    $session = $this->getSession();
-    $page = $session->getPage();
-    $xpath = "//div[@id='admin-menu']";
-    // grab the element
-    $element = $page->find('xpath', $xpath);
-    if(!isset($element)){
-      throw new Exception(sprintf("Admin menu not found in this page."));
-    }
-  }
-
-  /**
-   * Use xpath to find format option.
-   * @todo maybe rewrite with simpler way then xpath?
-   *
-   * @Then I should have an :option text format option
-   */
-  public function iShouldHaveAnTextFormatOption($option)
-  {
-    $session = $this->getSession();
-    $page = $session->getPage();
-    $xpath = "//select[@name='body[und][0][format]']//option[@value='" . $option . "']";
-    // grab the element
-    $element = $page->find('xpath', $xpath);
-    if(!isset($element)){
-      throw new Exception(sprintf("Admin menu not found in this page."));
-    }
-  }
 
   /**
    * @When I attach the drupal file :arg1 to :arg2
@@ -342,9 +292,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
     $offset = 'features/bootstrap/FeatureContext.php';
     $dir =  __file__;
     $test_dir = str_replace($offset, "", $dir);
-
-    $path = $test_dir . "files/" . $path;
-
+    $path = $this->getMinkParameter('files_path') . '/' . $path;
     $this->getSession()->getPage()->attachFileToField($field, $path);
   }
 
@@ -461,51 +409,52 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   /* Gravatar                         */
   /************************************/
 
-  /**
-   * @Then /^I should see a gravatar link in the "([^"]*)" region$/
-   */
-  public function iShouldSeeAGravatarLinkInTheRegion($region)
-  {
-    $regionObj = $this->getMainContext()->getRegion($region);
-    $elements = $regionObj->findAll('css', 'img');
-    if (!empty($elements)) {
-      foreach ($elements as $element) {
-        if ($element->hasAttribute('src')) {
-          $value = $element->getAttribute('src');
-          if (preg_match('/\/\/www\.gravatar\.com\/avatar\/.*/', $value)) {
-            return;
-          }
-        }
-      }
-    }
-    throw new \Exception(sprintf('The element gravatar link was not found in the "%s" region on the page %s', $region, $this->getSession()->getCurrentUrl()));
-  }
-
-  /**
-   * @Then /^I should not see a gravatar link in the "([^"]*)" region$/
-   */
-  public function iShouldNotSeeAGravatarLinkInTheRegion($region)
-  {
-    $regionObj = $this->getMainContext()->getRegion($region);
-    $elements = $regionObj->findAll('css', 'img');
-    $match = FALSE;
-    if (!empty($elements)) {
-      foreach ($elements as $element) {
-        if ($element->hasAttribute('src')) {
-          $value = $element->getAttribute('src');
-          if (preg_match('/\/\/www\.gravatar\.com\/avatar\/.*/', $value)) {
-            $match = TRUE;
-          }
-        }
-      }
-    }
-    if ($match) {
-      throw new \Exception(sprintf('The element gravatar link was found in the "%s" region on the page %s', $region, $this->getSession()->getCurrentUrl()));
-    }
-    else {
-      return;
-    }
-  }
+//  /**
+//   * @Then /^I should see a gravatar link in the "([^"]*)" region$/
+//   */
+//  public function iShouldSeeAGravatarLinkInTheRegion($region)
+//  {
+////   $regionObj = $this->getMainContext()->getRegion($region);
+////    $elements = $regionObj->findAll('css', 'img');
+////    if (!empty($elements)) {
+////      foreach ($elements as $element) {
+////        if ($element->hasAttribute('src')) {
+////          $value = $element->getAttribute('src');
+////          //if (preg_match('/\/\/www\.gravatar\.com\/avatar\/.*/', $value)) {
+////            return;
+////          }
+////        }
+////      }
+////    }
+////    throw new \Exception(sprintf('The element gravatar link was not found in the "%s" region on the page %s', $region, $this->getSession()->getCurrentUrl()));
+//
+//  }
+//
+//  /**
+//   * @Then /^I should not see a gravatar link in the "([^"]*)" region$/
+//   */
+//  public function iShouldNotSeeAGravatarLinkInTheRegion($region)
+//  {
+////    $regionObj = $this->getMainContext()->getRegion($region);
+////    $elements = $regionObj->findAll('css', 'img');
+////    $match = FALSE;
+////    if (!empty($elements)) {
+////      foreach ($elements as $element) {
+////        if ($element->hasAttribute('src')) {
+////          $value = $element->getAttribute('src');
+////          if (preg_match('/\/\/www\.gravatar\.com\/avatar\/.*/', $value)) {
+////            $match = TRUE;
+////          }
+////        }
+////      }
+////    }
+////    if ($match) {
+////      throw new \Exception(sprintf('The element gravatar link was found in the "%s" region on the page %s', $region, $this->getSession()->getCurrentUrl()));
+////    }
+////    else {
+////      return;
+////    }
+//  }
 
   /**
    * @Given :provider previews are :setting for :format_name resources
@@ -527,6 +476,131 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    */
   public function iShouldSeeTheLocalPreviewLink()
   {
-      $this->assertSession()->pageTextContains(variable_get('dkan_dataset_teaser_preview_label', variable_get('site_name', t('Local'))));
+      $this->assertSession()->pageTextContains(variable_get('dkan_dataset_teaser_preview_label', '') . ' ' . t('Preview'));
+  }
+
+  /**
+   * @Given I should see the first :number dataset items in :orderby :sortdirection order.
+   */
+  public function iShouldSeeTheFirstDatasetListInOrder($number, $orderby, $sortdirection){
+    $number = (int) $number;
+    // Search the list of datasets actually on the page (up to $number items)
+    $dataset_list = array();
+    $count = 0;
+    while(($count < $number ) && ($row = $this->getSession()->getPage()->find('css', '.views-row-'.($count+1))) !== null ){
+      $row = $row->find('css', 'h2');
+      $dataset_list[] = $row->getText();
+      $count++;
+    }
+
+    if ($count !== $number) {
+      throw new Exception("Couldn't find $number datasets on the page. Found $count.");
+    }
+
+    switch($orderby){
+      case 'Date changed':
+        $orderby = 'changed';
+        break;
+      case 'Title':
+        $orderby = 'title';
+        break;
+      default:
+        throw new Exception("Ordering by '$orderby' is not supported by this step.");
+    }
+
+    $index = search_api_index_load('datasets');
+    $query = new SearchApiQuery($index);
+
+    $results = $query->condition('type', 'dataset')
+      ->condition('status', '1')
+      ->sort($orderby, strtoupper($sortdirection))
+      ->range(0, $number)
+      ->execute();
+    $count = count($results['results']);
+    if (count($results['results']) !== $number) {
+      throw new Exception("Couldn't find $number datasets in the database. Found $count.");
+    }
+
+    foreach($results['results'] as $nid => $result) {
+      $dataset = node_load($nid);
+      $found_title = array_shift($dataset_list);
+      if ($found_title !== $dataset->title) {
+        throw new Exception("Does not match order of list, $found_title was next on page but expected $dataset->title");
+      }
+    }
+  }
+
+  /**
+   * @Then I should see the list of permissions for :role role
+   */
+  public function iShouldSeePermissionsForRole($role)
+  {
+
+    $role_names = og_get_user_roles_name();
+    if ($rid = array_search($role, $role_names)) {
+      $permissions = og_role_permissions(array($rid => ''));
+      foreach(reset($permissions) as $machine_name => $perm) {
+        // Currently the permissions returned by og for a role are only the machine name and its true value,
+        // need to find a way to find the checkbox of a permission and see if it is checked
+        $search = "edit-".$rid."-".strtr($machine_name, " ", "-");
+        if(!$this->getSession()->getPage()->hasCheckedField($search)){
+          throw new \Exception("Permission $machine_name is not set for $role.");
+        }
+      }
+    }
+  }
+
+  /**
+   * @Then I should get :format content from the :button button
+   */
+  public function assertButtonReturnsFormat($format, $button){
+
+    if($button === "JSON"){
+      $button = "json view of content";
+    }
+
+    $content = $this->getSession()->getPage()->findLink($button);
+    try {
+      $file = file_get_contents($content->getAttribute("href"));
+    }catch(Exception $e){
+      throw $e;
+    }
+    if($format === "JSON") {
+      json_decode($file);
+      if (!json_last_error() == JSON_ERROR_NONE) {
+        throw new Exception("Not JSON format.");
+      }
+    }
+  }
+
+  /**
+   * @Then I should see the redirect button for :site
+   */
+  public function assertRedirectButton($site){
+    $page = $this->getSession()->getPage();
+
+    switch($site){
+      case 'Google+':
+        $element = $page->find('css', '.fa-google-plus-square');
+        $link = $element->getParent()->getAttribute("href");
+        $return = preg_match("#https:\/\/plus\.google\.com\/share\?url=.*dataset\/.*#", $link);
+        break;
+      case 'Twitter':
+        $element = $page->find('css', '.fa-twitter-square');
+        $link = $element->getParent()->getAttribute("href");
+        $return = preg_match("#https:\/\/twitter\.com\/share\?url=.*dataset\/.*#", $link);
+        break;
+      case 'Facebook':
+        $element = $page->find('css', '.fa-facebook-square');
+        $link = $element->getParent()->getAttribute("href");
+        $return = preg_match("#https:\/\/www\.facebook\.com\/sharer\.php.*dataset\/.*#", $link);
+        break;
+      default:
+        throw new Exception("Not a valid site for DKAN sharing.");
+    }
+
+    if(!$return){
+      throw new Exception("The $site redirect button is not properly configured.");
+    }
   }
 }

@@ -1,11 +1,11 @@
 <?php
 /**
  * @file
- * Responsive panels layouts set to work with Panopoly and the Radix theme
+ * Responsive panels layouts for Panopoly.
  */
 
 /**
- * Implementation of hook_ctools_plugin_directory()
+ * Implements hook_ctools_plugin_directory().
  */
 function radix_layouts_ctools_plugin_directory($module, $plugin) {
   return 'plugins/' . $plugin;

@@ -27,6 +27,7 @@ function eck_title_and_formatter_property_widget($property, $vars) {
   return array(
     '#type' => 'textfield',
     '#title' => $vars['properties'][$property]['label'],
+    '#maxlength' => 255,
     '#default_value' => $title,
     '#required' => TRUE,
   );
@@ -49,7 +50,8 @@ function eck_title_and_formatter_property_entity_view($property, $vars) {
   $title = _eck_title_and_formatter_property_extract_title($entity, $property);
 
   if (empty($title)) {
-    $tile = "{$entity->entityType()} : {$entity->id}";
+    $entity_id = entity_id($entity->entityType(), $entity);
+    $title = "{$entity->entityType()} : {$entity_id}";
   }
 
   $uri = entity_uri($entity->entityType(), $entity);

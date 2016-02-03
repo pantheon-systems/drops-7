@@ -1,7 +1,7 @@
 <?php
 // Plugin definition
 $plugin = array(
-  'title' => t('Radix Boxton'),
+  'title' => t('Boxton'),
   'icon' => 'radix-boxton.png',
   'category' => t('Radix'),
   'theme' => 'radix_boxton',

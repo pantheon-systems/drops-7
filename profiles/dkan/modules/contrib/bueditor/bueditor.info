@@ -3,9 +3,9 @@ description = "A plain textarea editor aiming to facilitate code writing."
 core = "7.x"
 package = "Content authoring"
 configure = "admin/config/content/bueditor"
-; Information added by Drupal.org packaging script on 2013-12-17
-version = "7.x-1.7"
+; Information added by Drupal.org packaging script on 2014-05-16
+version = "7.x-1.8"
 core = "7.x"
 project = "bueditor"
-datestamp = "1387302426"
+datestamp = "1400276328"
 

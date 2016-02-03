@@ -131,9 +131,9 @@ function eck__entity__label($entity) {
     "eck_entity_{$entity->entityType()}_label",
     "eck_entity_{$entity->entityType()}_{$entity->bundle()}_label",
   );
-
+  $entity_id = entity_id($entity->entityType(), $entity);
   foreach ($hook_names as $hook_name) {
-    $new_label = module_invoke_all($hook_name, $entity, $entity->id);
+    $new_label = module_invoke_all($hook_name, $entity, $entity_id);
     $empty = empty($new_label);
     if (!$empty) {
       break;
@@ -144,7 +144,7 @@ function eck__entity__label($entity) {
     return $new_label[0];
   }
   else {
-    return $entity->id;
+    return $entity_id;
   }
 }
 
@@ -221,7 +221,7 @@ function entity_table($entities, $select = FALSE) {
     $info = array();
     $entity_type = $entity->entityType();
     $bundle = $entity->bundle();
-    $id = $entity->id;
+    $id = entity_id($entity_type, $entity);
 
     if ($crud_info == NULL) {
       $crud_info = get_bundle_crud_info($entity_type, $bundle);
@@ -323,6 +323,34 @@ function eck_entity_info_alter(&$info) {
 }
 
 /**
+ * Implements hook_field_extra_fields().
+ */
+function eck_field_extra_fields() {
+  $extra = array();
+
+  foreach (EntityType::loadAll() as $entity_type) {
+    foreach (Bundle::loadByEntityType($entity_type) as $bundle) {
+      foreach ($entity_type->properties as $property_name => $property_info) {
+        if (!empty($bundle->config['managed_properties'][$property_name])) {
+          $extra[$entity_type->name][$bundle->name]['form'][$property_name] = array(
+            'label' => $property_info['label'],
+            'description' => t('Entity property'),
+            'weight' => 0,
+          );
+
+          $extra[$entity_type->name][$bundle->name]['display'][$property_name] = array(
+            'label' => $property_info['label'],
+            'description' => t('Entity property'),
+            'weight' => 0,
+          );
+        }
+      }
+    }
+  }
+  return $extra;
+}
+
+/**
  * Entity type load.
  */
 function entity_type_load($entity_type_name) {
@@ -406,14 +434,6 @@ function eck_entity_property_info_alter(&$info) {
       $info[$entity_type->name] = $entity_property_info;
     }
   }
-}
-
-/**
- * Get property label.
- */
-function eck_get_property_label($name) {
-  $info = hook_eck_property_info();
-  return $info[$name]['label'];
 }
 
 /**
@@ -845,10 +865,8 @@ function eck__entity_access($op, $entity_or_bundle, $account, $entity_type_name)
 function eck_entity_view_alter(&$build, $entity_type) {
   $entity_types = EntityType::loadAll();
 
-  $this_entity_type = $build['#entity_type'];
-
   foreach ($entity_types as $et) {
-    if ($et->name == $this_entity_type) {
+    if ($et->name == $entity_type) {
       $entity = $build['#entity'];
       $this_bundle = $entity->bundle();
       // Lets add contextual links to our entities in eck you can change
@@ -857,7 +875,7 @@ function eck_entity_view_alter(&$build, $entity_type) {
       // could cause of contextual links not to work correctly.
 
       $build['#contextual_links']['eck']
-        = array("{$this_entity_type}/{$this_bundle}",array($entity->id));
+        = array("{$entity_type}/{$this_bundle}", array(entity_id($entity_type, $entity)));
     }
   }
 }
@@ -880,6 +898,24 @@ function eck_init() {
   $_eck_entity_types_cache = new ECKCache("entity_types");
   $_eck_bundles_cache = new ECKCache("bundles");
 
+  eck_clean_up_init();
+}
+
+/**
+ * Request that eck cleans up on the next request.
+ *
+ * @see eck_init()
+ */
+function eck_clean_up_request() {
+  variable_set("eck_clear_caches", TRUE);
+}
+
+/**
+ * If a clean up has been requested, perform it.
+ *
+ * @see eck_clean_up()
+ */
+function eck_clean_up_init() {
   if (variable_get("eck_clear_caches", FALSE)) {
     variable_set("eck_clear_caches", FALSE);
     eck_clean_up();
@@ -892,6 +928,11 @@ function eck_init() {
  * Actions like creating and entity type or a bundle require modifycations
  * to many parts of drupal, this function takes care of clearing those
  * caches.
+ *
+ * This is an expensive operation. Do not call this function unless this
+ * clean up is needed immediately, and it can not wait until the next request.
+ * Otherwise, look at eck_clean_up_request()
+ * and eck_clean_up_if_requested().
  */
 function eck_clean_up() {
   drupal_get_schema(NULL, TRUE);

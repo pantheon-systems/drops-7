@@ -233,7 +233,7 @@ var keyClick = function() {
 //get&set current used state for a key
 var keyUsed = function(key, state, inp) {
   var key = key.toString().toUpperCase();
-  if (state === undefined) return bue.keys[key] && $(bue.keys[key]).is('.used');
+  if (state === undefined) return bue.keys[key] && $(bue.keys[key]).hasClass('used');
   var F = state ? ['addClass', 'unbind'] : ['removeClass', 'bind'];
   var title = inp ? $(inp).parents('tr:first').find('input.input-title').val() : key;
   bue.keys[key] && $(bue.keys[key])[F[0]]('used')[F[1]]('mousedown', keyClick).attr({title: title || key});
@@ -264,10 +264,10 @@ var tableDrag = function() {
 //actions for selected buttons
 var selAction = function() {
   var $chks = $('#button-table').find('input:checkbox');
-  if ($chks.size()) {
+  if ($chks.length) {
     $('#edit-go').click(function() {
       var action = $('#edit-selaction').val();
-      if (action && $chks.filter(':checked').size()) {
+      if (action && $chks.filter(':checked').length) {
         return action != 'delete' || confirm(Drupal.t('Are you sure want to delete the selected buttons?'));
       }
       return false;

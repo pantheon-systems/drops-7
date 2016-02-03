@@ -13,7 +13,6 @@ require_once dirname(__FILE__) . '/includes/panel.inc';
 require_once dirname(__FILE__) . '/includes/user.inc';
 require_once dirname(__FILE__) . '/includes/view.inc';
 
-
 /**
  * Theme function for iframe link.
  */
@@ -45,6 +44,10 @@ function nuboot_radix_breadcrumb($variables) {
     $breadcrumb = array_filter($breadcrumb);
     $i = 1;
     foreach ($breadcrumb as $value) {
+      //Remove items with tag <none>
+      if (!strip_tags($value)) {
+        continue;
+      }
       if ($i == count($breadcrumb)) {
         $crumbs .= '<li class="active-trail">' . $value . '</li>';
       }
@@ -246,6 +249,51 @@ function nuboot_radix_user_picture(&$variables) {
         );
         $variables['user_picture'] = l($variables['user_picture'], $account->homepage, array('attributes' => $attributes, 'html' => TRUE));
       }
+    }
+  }
+}
+
+/**
+ * Theme function implementation.
+ *
+ * Implements main theme function from the facet_icons module. Depends on
+ * assets/stylesheets/dkan-dataset-search-icons.css
+ */
+function nuboot_radix_facet_icons($variables) {
+  // Icon styles variables.
+  $attributes = (isset($variables['attributes']))? $variables['attributes'] : array();
+  $classes = (isset($variables['class']))? $variables['class'] : array();
+  $classes[] = 'icon-dkan-' .  $variables['type'];
+  $classes = implode(' ', $classes);
+  return '<span class="icon-dkan ' . $classes . '" '. drupal_attributes($attributes) .'></span>';
+}
+
+/**
+ * Preprocess variables for node--search-result.tpl.php.
+ *
+ * Search results formatting for DKAN search page. Relies on facet_icons module.
+ */
+function nuboot_radix_preprocess_node(&$variables) {
+  if ($variables['view_mode'] == 'search_result') {
+    $variables['result_icon'] = array(
+      '#theme' => 'facet_icons',
+      '#type' => $variables['type'],
+      '#class' => array('search-result-icon'),
+    );
+
+    $wrapper = entity_metadata_wrapper('node', $variables['nid']);
+    $groups = og_get_entity_groups('node', $wrapper->value());
+    $variables['group_list'] = NULL;
+    $variables['body'] = empty($wrapper->body->value()) ? '' : $wrapper->body->value->value();
+    $variables['node_url'] = drupal_lookup_path('alias', "node/" . $wrapper->getIdentifier());
+
+    if(!empty($groups['node'])) {
+      $groups = array_map(function($gid){
+        $g_wrapper = entity_metadata_wrapper('node', $gid);
+        return $g_wrapper->label();
+      }, array_values($groups['node']));
+      $group_list = implode(',', $groups);
+      $variables['group_list'] = $group_list;
     }
   }
 }

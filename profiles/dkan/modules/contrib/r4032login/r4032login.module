@@ -50,6 +50,22 @@ function r4032login_form_system_site_information_settings_alter(&$form, &$form_s
       )),
     ),
   );
+  $form['error_page']['r4032login_access_denied_message_type'] = array(
+    '#type' => 'select',
+    '#options' => array(
+      'error' => t('Error'),
+      'warning' => t('Warning'),
+      'status' => t('Status'),
+    ),
+    '#weight' => 7,
+    '#title' => t("User login 'access denied' message type"),
+    '#default_value' => variable_get('r4032login_access_denied_message_type', 'error'),
+    '#states' => array(
+      'invisible' => array('input[name="r4032login_display_denied_message"]' => array(
+        'checked' => FALSE,
+      )),
+    ),
+  );
   $form['error_page']['r4032login_redirect_authenticated_users_to'] = array(
     '#type' => 'textfield',
     '#weight' => 7,
@@ -113,7 +129,8 @@ function r4032login_redirect() {
     // Show the access denied message.
     if (variable_get('r4032login_display_denied_message', TRUE) && empty($_POST)) {
       $message = variable_get('r4032login_access_denied_message', t('Access denied. You must log in to view this page.'));
-      drupal_set_message($message, 'error');
+      $message_type = variable_get('r4032login_access_denied_message_type', 'error');
+      drupal_set_message(filter_xss_admin($message), $message_type);
     }
     $page_match = FALSE;
     $pages = variable_get('r4032login_match_noredirect_pages', '');

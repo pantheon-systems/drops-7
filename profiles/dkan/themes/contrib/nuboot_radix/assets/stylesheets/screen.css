@@ -3189,7 +3189,7 @@ form .description { margin: 2px 0; color: #555555; }
 fieldset legend { float: left; line-height: 1em; margin: 0; }
 fieldset .panel-body { clear: both; }
 
-html.js input.form-autocomplete { background: url('../images/throbber.gif?1435352840') no-repeat right 8px #fff !important; }
+html.js input.form-autocomplete { background: url('../images/throbber.gif?1446755567') no-repeat right 8px #fff !important; }
 html.js input.throbbing { background-position: right -122px !important; }
 html.js fieldset.collapsed { height: auto; border-left-width: 1px; border-right-width: 1px; }
 
@@ -3268,6 +3268,9 @@ section.col-sm-9 { padding-right: 0; }
 #featured .pane-block, #featured .panel-pane, #featured .block-content, .panel-top .pane-block, .panel-top .panel-pane, .panel-top .block-content { color: #ffffff; line-height: 1.33em; margin: 0 15px; }
 #featured a, .panel-top a { color: #ffffff; }
 
+.page-admin .panel-top { background-image: none !important; background-color: none; overflow: visible; }
+.page-admin .panel-top .tint { display: none; }
+
 #top-content { margin: 20px; }
 #top-content .block { padding: 10px; text-align: center; }
 #top-content .block h2.block-title { border: none; color: #333333; font-size: 1.6em; }
@@ -3331,7 +3334,7 @@ table tr:hover, table.group_additional tr:hover { background: #FFFEEE; }
   .group_additional th:nth-of-type(2n), .group_additional td:nth-of-type(2n), .field-name-field-additional-info table th:nth-of-type(2n), .field-name-field-additional-info table td:nth-of-type(2n), .field-name-field-additional-info .table-responsive th:nth-of-type(2n), .field-name-field-additional-info .table-responsive td:nth-of-type(2n) { width: 70%; } }
 
 .node-form table.group_additional th, .node-form table.group_additional td, .node-form table.group_additional th:nth-of-type(1n), .node-form table.group_additional td:nth-of-type(1n), .node-form table.group_additional th:nth-of-type(2n), .node-form table.group_additional td:nth-of-type(2n), .node-form .field-name-field-additional-info table th, .node-form .field-name-field-additional-info table td, .node-form .field-name-field-additional-info table th:nth-of-type(1n), .node-form .field-name-field-additional-info table td:nth-of-type(1n), .node-form .field-name-field-additional-info table th:nth-of-type(2n), .node-form .field-name-field-additional-info table td:nth-of-type(2n) { width: auto; }
-.node-form table.group_additional th .form-control, .node-form table.group_additional td .form-control, .node-form table.group_additional th:nth-of-type(1n) .form-control, .node-form table.group_additional td:nth-of-type(1n) .form-control, .node-form table.group_additional th:nth-of-type(2n) .form-control, .node-form table.group_additional td:nth-of-type(2n) .form-control, .node-form .field-name-field-additional-info table th .form-control, .node-form .field-name-field-additional-info table td .form-control, .node-form .field-name-field-additional-info table th:nth-of-type(1n) .form-control, .node-form .field-name-field-additional-info table td:nth-of-type(1n) .form-control, .node-form .field-name-field-additional-info table th:nth-of-type(2n) .form-control, .node-form .field-name-field-additional-info table td:nth-of-type(2n) .form-control { display: inline; width: auto; }
+.node-form table.group_additional th .form-control, .node-form table.group_additional td .form-control, .node-form table.group_additional th:nth-of-type(1n) .form-control, .node-form table.group_additional td:nth-of-type(1n) .form-control, .node-form table.group_additional th:nth-of-type(2n) .form-control, .node-form table.group_additional td:nth-of-type(2n) .form-control, .node-form .field-name-field-additional-info table th .form-control, .node-form .field-name-field-additional-info table td .form-control, .node-form .field-name-field-additional-info table th:nth-of-type(1n) .form-control, .node-form .field-name-field-additional-info table td:nth-of-type(1n) .form-control, .node-form .field-name-field-additional-info table th:nth-of-type(2n) .form-control, .node-form .field-name-field-additional-info table td:nth-of-type(2n) .form-control { display: inline-block; width: auto; vertical-align: top; }
 
 .table > thead:first-child > tr:first-child > th, table thead:first-child tr:first-child th { border: 1px solid #ddd; }
 
@@ -3535,7 +3538,7 @@ fieldset.collapsible { padding-top: 0; }
 
 div.horizontal-tabs { border: none; }
 
-.form-managed-file input.form-file { -moz-border-radius: 4px 0 0 4px; -webkit-border-radius: 4px; border-radius: 4px 0 0 4px; border: 1px solid #ddd; padding: 5px; margin: 0 0 10px 0; }
+.form-managed-file input { -moz-border-radius: 4px 0 0 4px; -webkit-border-radius: 4px; border-radius: 4px 0 0 4px; border: 1px solid #ddd; padding: 5px; margin: 0 0 10px 0; height: 36px; }
 .form-managed-file .input-group-btn { display: inline-block; vertical-align: top; }
 .form-managed-file #edit-field-upload-und-0-remove-button { margin: 0 0 10px 10px; }
 
@@ -3590,8 +3593,10 @@ div.horizontal-tabs { border: none; }
 .field-group-table-description { color: #555555; display: block; padding: 8px 10px 8px 40px; position: relative; }
 .field-group-table-description .icon-info-sign:before { color: #999999; content: "\f05a"; font-family: "FontAwesome"; font-size: 2.5em; font-style: normal; height: 30px; left: 0; margin: 10px 15px 0 0; padding: 6px 0; position: absolute; top: -6px; width: 30px; }
 
-.node-type-group .radix-layouts-content .pane-content { padding: 0; }
 .node-type-group .horizontal-tabs { margin: 0; }
+.node-type-group .horizontal-tabs #edit-field-image-und-0-remove-button { -moz-border-radius: 4px; -webkit-border-radius: 4px; border-radius: 4px; margin-left: 5px; }
+
+.group-owner-message { margin-bottom: 20px; }
 
 .field-type-text-with-summary { padding: 0; }
 
@@ -3615,17 +3620,21 @@ div.horizontal-tabs { border: none; }
 #block-dkan-forms-dkan-forms-dataset-help h2.block-title::before { content: "\f05a"; font-family: "FontAwesome"; font-weight: normal; font-style: normal; display: inline-block; text-decoration: inherit; font-size: 1.2em; line-height: 1; position: relative; top: 1px; margin-right: 0.4em; }
 
 div[class*="pane-facetapi"] .pane-content, div[class*="pane-facetapi"] .content, .region-sidebar-first .block-facetapi .pane-content, .region-sidebar-first .block-facetapi .content, .block-facetapi .pane-content, .block-facetapi .content { padding: 0; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px; }
-div[class*="pane-facetapi"] ul, .region-sidebar-first .block-facetapi ul, .block-facetapi ul { margin: 0 0 0.5em; padding: 0; border-bottom-right-radius: 4px; border-bottom-left-radius: 4px; }
-div[class*="pane-facetapi"] ul li.leaf, .region-sidebar-first .block-facetapi ul li.leaf, .block-facetapi ul li.leaf { border-bottom: 1px dotted #ccc; list-style-type: none; list-style-image: none; margin: 0; padding: 0; }
+div[class*="pane-facetapi"] .item-list, .region-sidebar-first .block-facetapi .item-list, .block-facetapi .item-list { border: 1px solid #ddd; }
+div[class*="pane-facetapi"] .item-list .facetapi-limit-link, .region-sidebar-first .block-facetapi .item-list .facetapi-limit-link, .block-facetapi .item-list .facetapi-limit-link { padding: 10px 22px; }
+div[class*="pane-facetapi"] .item-list .facetapi-limit-link:before, .region-sidebar-first .block-facetapi .item-list .facetapi-limit-link:before, .block-facetapi .item-list .facetapi-limit-link:before { top: 10px; right: 22px; }
+div[class*="pane-facetapi"] ul, .region-sidebar-first .block-facetapi ul, .block-facetapi ul { margin: 0 0 0.5em; padding: 0; }
+div[class*="pane-facetapi"] ul li.leaf, .region-sidebar-first .block-facetapi ul li.leaf, .block-facetapi ul li.leaf { list-style-type: none; list-style-image: none; margin: 0; padding: 0; }
 div[class*="pane-facetapi"] ul li.leaf li, .region-sidebar-first .block-facetapi ul li.leaf li, .block-facetapi ul li.leaf li { position: relative; }
 div[class*="pane-facetapi"] ul li.leaf li a, .region-sidebar-first .block-facetapi ul li.leaf li a, .block-facetapi ul li.leaf li a { padding-right: 48px; }
 div[class*="pane-facetapi"] ul li.leaf.last, .region-sidebar-first .block-facetapi ul li.leaf.last, .block-facetapi ul li.leaf.last { border-bottom: none; }
 div[class*="pane-facetapi"] ul li.leaf li:before, .region-sidebar-first .block-facetapi ul li.leaf li:before, .block-facetapi ul li.leaf li:before { content: "\f178"; font-family: "FontAwesome"; position: absolute; top: 4px; right: 30px; }
-div[class*="pane-facetapi"] ul li.leaf a, .region-sidebar-first .block-facetapi ul li.leaf a, .block-facetapi ul li.leaf a { color: #333333; display: block; padding: 4px 20px 4px 10px; position: relative; }
+div[class*="pane-facetapi"] ul li.leaf a, .region-sidebar-first .block-facetapi ul li.leaf a, .block-facetapi ul li.leaf a { color: #333333; display: block; padding: 4px 20px 4px 10px; position: relative; line-height: 22px; }
 div[class*="pane-facetapi"] ul li.leaf a:hover, .region-sidebar-first .block-facetapi ul li.leaf a:hover, .block-facetapi ul li.leaf a:hover { color: #1a1a1a; background: rgba(0, 0, 0, 0.03); text-decoration: none; }
 div[class*="pane-facetapi"] ul li.leaf a:hover:after, .region-sidebar-first .block-facetapi ul li.leaf a:hover:after, .block-facetapi ul li.leaf a:hover:after { content: "\f055"; color: #5cb85c; font-family: "FontAwesome"; position: absolute; top: 4px; right: 6px; }
+div[class*="pane-facetapi"] ul li.leaf a img, .region-sidebar-first .block-facetapi ul li.leaf a img, .block-facetapi ul li.leaf a img { height: 1.5em; width: 1.5; margin-right: 0.5em; }
 div[class*="pane-facetapi"] ul li.leaf a.facetapi-active, .region-sidebar-first .block-facetapi ul li.leaf a.facetapi-active, .block-facetapi ul li.leaf a.facetapi-active { background: #ccc; border-bottom: 1px solid #fff; color: #333; z-index: 0; }
-div[class*="pane-facetapi"] ul li.leaf a.facetapi-active:before, .region-sidebar-first .block-facetapi ul li.leaf a.facetapi-active:before, .block-facetapi ul li.leaf a.facetapi-active:before { content: ''; position: absolute; border-style: solid; border-width: 13px 0 13px 13px; border-color: transparent #ccc; display: block; width: 0; z-index: 1; right: -13px; top: 0; }
+div[class*="pane-facetapi"] ul li.leaf a.facetapi-active:before, .region-sidebar-first .block-facetapi ul li.leaf a.facetapi-active:before, .block-facetapi ul li.leaf a.facetapi-active:before { content: ''; position: absolute; border-style: solid; border-width: 15px 0 15px 15px; border-color: transparent #ccc; display: block; width: 0; z-index: 1; right: -15px; top: 0; }
 div[class*="pane-facetapi"] ul li.leaf a.facetapi-active:after, .region-sidebar-first .block-facetapi ul li.leaf a.facetapi-active:after, .block-facetapi ul li.leaf a.facetapi-active:after { content: "\f00d"; font-family: "FontAwesome"; position: absolute; top: 3px; right: 6px; }
 div[class*="pane-facetapi"] ul li.leaf a.facetapi-active:hover:after, .region-sidebar-first .block-facetapi ul li.leaf a.facetapi-active:hover:after, .block-facetapi ul li.leaf a.facetapi-active:hover:after { color: red; }
 div[class*="pane-facetapi"] a.facetapi-limit-link, .region-sidebar-first .block-facetapi a.facetapi-limit-link, .block-facetapi a.facetapi-limit-link { display: block; padding: 5px 30px 5px 5px; position: relative; }
@@ -3686,10 +3695,19 @@ div[class*="pane-facetapi"] a.facetapi-limit-link.open:before, .region-sidebar-f
 
 .pane-content .field-name-body { line-height: 2em; }
 
+.radix-layouts-sidebar .panel-panel-inner div[class*="pane-facetapi"] { margin-bottom: 0; box-shadow: none; }
+.radix-layouts-sidebar .panel-panel-inner div[class*="pane-facetapi"] h2.pane-title { color: #ffffff; font-size: 16px; font-weight: normal; position: relative; border-radius: 0; padding: 9px 16px; border-bottom-color: rgba(255, 255, 255, 0.1); }
+.radix-layouts-sidebar .panel-panel-inner div[class*="pane-facetapi"] h2.pane-title:after { font-family: "fontawesome"; content: "\f077"; color: rgba(255, 255, 255, 0.7); font-size: 12px; font-weight: bold; position: absolute; right: 14px; top: 10px; }
+.radix-layouts-sidebar .panel-panel-inner div[class*="pane-facetapi"].ctools-collapsed h2.pane-title:after { content: "\f078"; }
+.radix-layouts-sidebar .panel-panel-inner div[class*="pane-facetapi"] ul { margin-bottom: 0; }
+.radix-layouts-sidebar .panel-panel-inner div[class*="pane-facetapi"] .ctools-toggle { background: none; }
+.radix-layouts-sidebar .panel-panel-inner .panels-ipe-portlet-wrapper:first-child h2.pane-title, .radix-layouts-sidebar .panel-panel-inner > div[class*="pane-facetapi"]:first-child h2.pane-title { -moz-border-radius: 5px 5px 0 0; -webkit-border-radius: 5px; border-radius: 5px 5px 0 0; }
+.radix-layouts-sidebar .panel-panel-inner .panels-ipe-portlet-wrapper:last-child .ctools-collapsed h2.pane-title, .radix-layouts-sidebar .panel-panel-inner .panels-ipe-portlet-wrapper:last-child.ctools-collapsed h2.pane-title, .radix-layouts-sidebar .panel-panel-inner > div[class*="pane-facetapi"]:last-child .ctools-collapsed h2.pane-title, .radix-layouts-sidebar .panel-panel-inner > div[class*="pane-facetapi"]:last-child.ctools-collapsed h2.pane-title { -moz-border-radius: 0 0 5px 5px; -webkit-border-radius: 0; border-radius: 0 0 5px 5px; }
+
 .search-form, #dkan-sitewide-dataset-search-form, #dkan-sitewide-dataset-search-form--2 { position: relative; }
 .search-form form, #dkan-sitewide-dataset-search-form form, #dkan-sitewide-dataset-search-form--2 form { display: block; margin: 8px 0; position: relative; width: 100%; }
 .search-form input.form-text, #dkan-sitewide-dataset-search-form input.form-text, #dkan-sitewide-dataset-search-form--2 input.form-text { padding-right: 30px; }
-.search-form button[type="submit"], .search-form input[type="submit"], #dkan-sitewide-dataset-search-form button[type="submit"], #dkan-sitewide-dataset-search-form input[type="submit"], #dkan-sitewide-dataset-search-form--2 button[type="submit"], #dkan-sitewide-dataset-search-form--2 input[type="submit"] { background: none !important; border: none; content: "\f002"; color: #555555; display: inline-block; font-size: 1.3em; font-family: "FontAwesome"; margin: 0; padding: 0; position: absolute; right: 10px; top: 3px; width: 25px; }
+.search-form button[type="submit"], .search-form input[type="submit"], #dkan-sitewide-dataset-search-form button[type="submit"], #dkan-sitewide-dataset-search-form input[type="submit"], #dkan-sitewide-dataset-search-form--2 button[type="submit"], #dkan-sitewide-dataset-search-form--2 input[type="submit"] { background: none !important; border: none; content: "\f002"; color: #555555; display: inline-block; font-size: 1.3em; font-family: "FontAwesome"; margin: 0; padding: 0; position: absolute; right: 10px; width: 25px; top: 0; }
 
 #dkan-sitewide-dataset-search-form input[type="submit"], #dkan-sitewide-dataset-search-form--2 input[type="submit"] { top: 3px; }
 
@@ -3699,9 +3717,21 @@ div[class*="pane-facetapi"] a.facetapi-limit-link.open:before, .region-sidebar-f
   #block-dkan-sitewide-dkan-sitewide-search-bar input.form-control { width: 170px; height: 36px; margin: 0; } }
 #block-dkan-sitewide-dkan-sitewide-search-bar form { display: block; margin: 8px 0; position: relative; width: 100%; }
 #block-dkan-sitewide-dkan-sitewide-search-bar input.form-text { padding-right: 30px; }
-#block-dkan-sitewide-dkan-sitewide-search-bar button[type="submit"], #block-dkan-sitewide-dkan-sitewide-search-bar input[type="submit"] { background: none !important; border: none; content: "\f002"; color: #555555; display: inline-block; font-size: 1.3em; font-family: "FontAwesome"; margin: 0; padding: 0; position: absolute; right: 10px; top: 3px; width: 25px; }
+#block-dkan-sitewide-dkan-sitewide-search-bar button[type="submit"], #block-dkan-sitewide-dkan-sitewide-search-bar input[type="submit"] { background: none !important; border: none; content: "\f002"; color: #555555; display: inline-block; font-size: 1.3em; font-family: "FontAwesome"; margin: 0; padding: 0; position: absolute; right: 10px; width: 25px; top: 0; }
 #block-dkan-sitewide-dkan-sitewide-search-bar .views-exposed-form .form-submit { margin: 22px 0 0; text-shadow: none; }
 #block-dkan-sitewide-dkan-sitewide-search-bar input[type="submit"] { top: 3px; }
+
+.facet-icon { font-size: 1.7em; padding-right: .3em; vertical-align: middle; }
+
+.search-result-icon { font-size: 2.6em; margin-top: 0.7em; display: block; }
+
+.node-search-result .icon-container { text-align: center; }
+
+.search-result-description ul.resource-list { margin-top: 0.9em; }
+.search-result-description .resource-list li:first-child { margin-left: 0px; }
+.search-result-description .resource-list li a { margin-left: 0px; }
+.search-result-description .group-membership { font-size: 0.9em; font-style: italic; color: #999; margin-bottom: 0.5em; }
+.search-result-description p { margin-bottom: 0px; }
 
 @media all and (max-width: 768px) { .node-dataset .resource-list li { padding-right: 0; }
   .node-dataset .resource-list li span.links { position: relative; top: auto; right: auto; margin: 10px 0; display: block; padding: 0; }

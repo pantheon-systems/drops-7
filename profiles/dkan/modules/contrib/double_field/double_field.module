@@ -187,16 +187,9 @@ function double_field_field_is_empty($item, $field) {
  */
 function double_field_field_validate($entity_type, $entity, $field, $instance, $langcode, $items, &$errors) {
 
-  // Validate numeric subfield types.
-  $overflow_error = array(
-    'error' => 'double_field_out_of_range',
-    'message' => t('%name field value is out of range.', array('%name' => $instance['label'])),
-    'error_element' => array('first' => FALSE, 'second' => FALSE),
-  );
-
   // This validation is performed after submit the widget configuration
   // form. Avoid validations here related to required items to be able to
-  // submit an empy field.
+  // submit an empty field.
   // We also should not validate widgets provided by other modules.
   if (!isset($entity) || $instance['widget']['module'] != 'double_field') {
     return;
@@ -213,7 +206,7 @@ function double_field_field_validate($entity_type, $entity, $field, $instance, $
   list($widget['first'], $widget['second']) = explode('_&_', $instance['widget']['type']);
   foreach ($items as $delta => $item) {
 
-    // Checkboxes get value from widget settigns.
+    // Checkboxes get value from widget settings.
     foreach (array('first', 'second') as $subfield) {
       $item[$subfield] = ($widget[$subfield] == 'checkbox' && $item[$subfield] == $settings[$subfield]['checkbox']['off_value']) ? '' : $item[$subfield];
     }
@@ -738,8 +731,14 @@ function double_field_field_formatter_settings_form($field, $instance, $view_mod
       'inline' => t('Inline'),
       'block' => t('Block'),
       'link' => t('Link'),
+      'simple' => t('Simple'),
     ),
     '#default_value' => isset($settings['style']) ? $settings['style'] : 'inline',
+    '#states' => array(
+      'invisible' => array(
+        ":input[name='fields[{$field["field_name"]}][settings_edit_form][settings][list_type]']" => array('value' => 'dl'),
+      ),
+    ),
   );
 
   switch ($instance['display'][$view_mode]['type']) {
@@ -761,13 +760,17 @@ function double_field_field_formatter_settings_form($field, $instance, $view_mod
       break;
 
     case 'double_field_html_list':
-      $element['style'] = $style_settings;
       $element['list_type'] = array(
         '#type' => 'radios',
         '#title' => t('List type'),
-        '#options' => array('ul' => t('Unordered list'), 'ol' => t('Ordered list')),
+        '#options' => array(
+          'ul' => t('Unordered list'),
+          'ol' => t('Ordered list'),
+          'dl' => t('Definition list'),
+        ),
         '#default_value' => $settings['list_type'],
       );
+      $element['style'] = $style_settings;
       break;
 
     case 'double_field_table':
@@ -877,10 +880,16 @@ function double_field_field_formatter_settings_summary($field, $instance, $view_
         'inline' => t('Inline'),
         'block' => t('Block'),
         'link' => t('Link'),
+        'simple' => t('Simple'),
       );
       $summary[] = t('Display style: %value', array('%value' => $display_styles[$settings['style']]));
       if ($type == 'double_field_html_list') {
-        $summary[] = t('List type: %value', array('%value' => $settings['list_type'] == 'ul' ? t('Unordered') : t('Ordered')));
+        $list_types = array(
+          'ul' => t('Unordered'),
+          'ol' => t('Ordered'),
+          'dl' => t('Definition'),
+        );
+        $summary[] = t('List type: %value', array('%value' => $list_types[$settings['list_type']]));
       }
       break;
 
@@ -965,7 +974,7 @@ function double_field_field_formatter_view($entity_type, $entity, $field, $insta
           '#collapsed' => $settings['collapsed'],
         );
         // theme_fieldset() doesn't handle '#collapsible'
-        // and  '#collapsed' arguments as claimed.
+        // and '#collapsed' arguments as claimed.
         // see http://drupal.org/node/1099132
         if ($settings['collapsible']) {
           $element[$delta]['#attached'] = array(
@@ -982,8 +991,8 @@ function double_field_field_formatter_view($entity_type, $entity, $field, $insta
       break;
 
     case 'double_field_unformatted_list':
-      foreach ($items as $delta => $item) {
-        $element[$delta] = array(
+      foreach ($items as $item) {
+        $element[] = array(
           '#display' => $display,
           '#item' => $item,
           '#theme' => 'double_field',
@@ -992,18 +1001,27 @@ function double_field_field_formatter_view($entity_type, $entity, $field, $insta
       break;
 
     case 'double_field_html_list':
-      foreach ($items as $item) {
-        $list_items[] = theme('double_field', array(
-          '#display' => $display,
-          '#item' => $item,
-          '#theme' => 'double_field',
-        ));
+      if ($settings['list_type'] == 'dl') {
+        $element[0] = array(
+          '#theme' => 'double_field_definition_list',
+          '#items' => $items,
+        );
       }
-      $element[0] = array(
-        '#theme' => 'item_list',
-        '#type' => $settings['list_type'],
-        '#items' => $list_items,
-      );
+      else {
+        foreach ($items as $item) {
+          $list_items[] = theme('double_field', array(
+            'element' => array(
+              '#display' => $display,
+              '#item' => $item,
+            ),
+          ));
+        }
+        $element[0] = array(
+          '#theme' => 'item_list',
+          '#type' => $settings['list_type'],
+          '#items' => $list_items,
+        );
+      }
       break;
 
     case 'double_field_table':
@@ -1052,10 +1070,11 @@ function double_field_field_formatter_view($entity_type, $entity, $field, $insta
  */
 function double_field_theme() {
   return array(
-    'double_field'           => array('render element' => 'element'),
-    'double_field_accordion' => array('render element' => 'element'),
-    'double_field_tabs'      => array('render element' => 'element'),
-    'double_field_dialog'    => array('render element' => 'element'),
+    'double_field'                 => array('render element' => 'element'),
+    'double_field_definition_list' => array('render element' => 'element'),
+    'double_field_accordion'       => array('render element' => 'element'),
+    'double_field_tabs'            => array('render element' => 'element'),
+    'double_field_dialog'          => array('render element' => 'element'),
   );
 }
 
@@ -1069,6 +1088,9 @@ function theme_double_field($vars) {
   if ($settings['style'] == 'link') {
     $output = l($element['#item']['first'], $element['#item']['second']);
   }
+  elseif ($settings['style'] == 'simple') {
+    $output = $element['#item']['first'] . $element['#item']['second'];
+  }
   else {
     $class = $settings['style'] == 'block' ? 'clearfix' : 'container-inline';
     $output = '<div class="' . $class . '">';
@@ -1076,6 +1098,19 @@ function theme_double_field($vars) {
     $output .= '<div class="double-field-second">' . $element['#item']['second'] . '</div>';
     $output .= '</div>';
   }
+  return $output;
+}
+
+/**
+ * Implements theme_double_field_definition_list().
+ */
+function theme_double_field_definition_list($vars) {
+  $output = '<div class="double-field-definition-list"><dl>';
+  foreach ($vars['element']['#items'] as $item) {
+    $output .= '<dt>' . $item['first'] . '</dt>';
+    $output .= '<dd>' . $item['second'] . '</dd>';
+  }
+  $output .= '</dl></div>';
   return $output;
 }
 

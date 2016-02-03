@@ -116,3 +116,31 @@ function hook_eck_property_type_schema_alter(&$schema, $type) {
     );
   }
 }
+
+/**
+ * Set custom title for entity save message.
+ *
+ * @param string $msg
+ *   the string to be passed on to drupal_set_message() for entity save.
+ * @param array $args
+ *   array of arguments.
+ * @param array $context
+ *   context array.
+ */
+function hook_eck_entity_save_message_alter(&$msg, $args, $context) {
+  $msg = 'set this variable to change save message.';
+}
+
+/**
+ * Set custom title for bundle save message.
+ *
+ * @param string $msg
+ *   the string to be passed on to drupal_set_message() for entity save.
+ * @param array $args
+ *   array of arguments.
+ * @param array $context
+ *   context array.
+ */
+function hook_eck_bundle_save_message_alter(&$msg, $args, $context) {
+  $msg = 'set this variable to change save message.';
+}

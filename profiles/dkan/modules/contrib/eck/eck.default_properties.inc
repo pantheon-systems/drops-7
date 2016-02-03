@@ -62,7 +62,10 @@ function eck__default_properties__form_submit($form, &$state, $entity_type) {
  *   All of the default properties info.
  */
 function eck_get_default_properties() {
-  return module_invoke_all('eck_default_properties');
+  $default_properties = module_invoke_all('eck_default_properties');
+  drupal_alter('eck_default_properties', $default_properties);
+
+  return $default_properties;
 }
 
 /**

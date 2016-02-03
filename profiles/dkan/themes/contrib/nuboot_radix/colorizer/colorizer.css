@@ -88,7 +88,7 @@ div.vertical-tabs ul.vertical-tabs-list li a:hover {
 .navbar-default .user-menu li.active > a:hover,
 .navbar-default .user-menu li.active > a:focus { background:@linkactive; color: #fff; }
 
-#block-dkan-sitewide-dkan-sitewide-user-menu .links a:hover, 
+#block-dkan-sitewide-dkan-sitewide-user-menu .links a:hover,
 #block-dkan-sitewide-dkan-sitewide-user-menu .links a:focus { background-color:@bottom; color: #fff; }
 
 
@@ -142,13 +142,13 @@ input[type="submit"]:hover {
 }
 
 
-.btn-primary:focus, 
-.btn-primary:active, 
+.btn-primary:focus,
+.btn-primary:active,
 .btn-primary.active,
 .links .btn:focus,
 .links .btn.focus,
-input.btn:focus, 
-input[type="submit"]:focus, 
+input.btn:focus,
+input[type="submit"]:focus,
 input[type="submit"]:active {
   background: @linkactive;
   border-color: @linkactive;
@@ -163,8 +163,8 @@ input[type="submit"]:active {
 a.embed-link {
   background: @top;
 }
-a.embed-link:hover, 
-a.embed-link:focus, 
+a.embed-link:hover,
+a.embed-link:focus,
 a.embed-link:active {
   background: @bottom;
 }
@@ -189,7 +189,7 @@ div.autocomplete-deluxe-multiple,
 }
 .radix-layouts-sidebar .pane-block .pane-content,
 .radix-layouts-content .pane-content,
-.view-front-page-group-grid .span6 span, 
+.view-front-page-group-grid .span6 span,
 .view-front-page-group-grid .col-lg-6 span,
 .horizontal-tabs ul.horizontal-tabs-list li.selected a {
   background-color: @bg;
@@ -198,10 +198,17 @@ div.autocomplete-deluxe-multiple,
   background: @toolbarborder;
   color: @title;
 }
+
 .radix-layouts-sidebar div[class*="pane-facetapi"] .pane-title {
-  background: #dddddd;
-  color: #333333;
+  background: @toolbarbtn;
+  color: #fff;
 }
+
+.radix-layouts-sidebar div[class*="pane-facetapi"] .facetapi-active {
+  background: @toolbarbtn;
+  color: @toolbarborder;
+}
+
 .radix-layouts-sidebar div[class*="pane-facetapi"] .pane-content {
   background: #fff;
 }
@@ -212,7 +219,7 @@ div.autocomplete-deluxe-multiple,
 
 #url-edit-prefix {
   background-color: @bg;
-  border-color: @toolbarborder; 
+  border-color: @toolbarborder;
 }
 #url-slug,
 #field-tags-wrapper .path-form .add-on {
@@ -221,7 +228,7 @@ div.autocomplete-deluxe-multiple,
   color: @bg;
 }
 
-ul.resource-list li .heading, 
+ul.resource-list li .heading,
 ul.resource-list li .heading:hover {
   color: @title;
 }
@@ -243,5 +250,9 @@ ul.resource-list li .heading:hover {
 .node-dataset #data-and-resources ul.resource-list .btn-group button:nth-of-type(2):focus {
   opacity: 1;
   background-color: @bottom;
-  border-color: @bottom;   
+  border-color: @bottom;
+}
+
+.icon-dkan {
+  color: @top;
 }

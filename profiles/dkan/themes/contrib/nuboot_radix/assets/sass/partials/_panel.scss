@@ -33,7 +33,7 @@
 	}
 }
 
-#panels-choose-layout .form-type-radio input, 
+#panels-choose-layout .form-type-radio input,
 .panels-choose-layout .form-type-radio input {
 	width: 15px;
 }
@@ -107,4 +107,58 @@
   .field-name-body {
     line-height: 2em;
   }
+}
+
+.radix-layouts-sidebar {
+	.panel-panel-inner {
+		div[class*="pane-facetapi"] {
+			margin-bottom: 0;
+			box-shadow: none;
+			h2.pane-title {
+				color: $white;
+				font-size: 16px;
+				font-weight: normal;
+				position: relative;
+				border-radius: 0;
+				padding: 9px 16px;
+				border-bottom-color: rgba(255, 255, 255, 0.1);
+				&:after {
+					font-family: "fontawesome";
+					content: "\f077";
+					color: rgba(255, 255, 255, 0.7);
+					font-size: 12px;
+					font-weight: bold;
+					position: absolute;
+					right: 14px;
+					top: 10px;
+				}
+			}
+			&.ctools-collapsed {
+				h2.pane-title:after {
+					content: "\f078";
+				}
+			}
+			ul {
+				margin-bottom: 0;
+			}
+			.ctools-toggle {
+				background: none;
+			}
+		}
+		.panels-ipe-portlet-wrapper:first-child,
+		> div[class*="pane-facetapi"]:first-child {
+			h2.pane-title {
+				@include border-radius(5px 5px 0 0);
+			}
+		}
+		.panels-ipe-portlet-wrapper:last-child,
+		> div[class*="pane-facetapi"]:last-child {
+			.ctools-collapsed,
+			&.ctools-collapsed {
+				h2.pane-title {
+					@include border-radius(0 0 5px 5px);
+				}
+			}
+		}
+	}
 }

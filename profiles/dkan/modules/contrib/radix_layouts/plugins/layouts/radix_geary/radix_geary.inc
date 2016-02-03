@@ -1,7 +1,7 @@
 <?php
 // Plugin definition
 $plugin = array(
-  'title' => t('Radix Geary'),
+  'title' => t('Geary'),
   'icon' => 'radix-geary.png',
   'category' => t('Radix'),
   'theme' => 'radix_geary',

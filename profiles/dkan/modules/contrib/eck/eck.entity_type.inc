@@ -129,6 +129,8 @@ function eck__entity_type__form($form, &$state, $entity_type_name = NULL) {
 
   $form['entity_type_name'] = array(
     '#type' => 'machine_name',
+    '#maxlength' => 32,
+    '#description' => t('A unique machine-readable name. Can only contain lowercase letters, numbers, and underscores. Maximum length 32 characters.'),
     '#default_value' => $entity_type->name,
     '#disabled' => !$entity_type->isNew,
     '#machine_name' => array(
@@ -149,6 +151,8 @@ function eck__entity_type__form($form, &$state, $entity_type_name = NULL) {
 
     $form['bundle_name'] = array(
       '#type' => 'machine_name',
+      '#maxlength' => 32,
+      '#description' => t('A unique machine-readable name. Can only contain lowercase letters, numbers, and underscores. Maximum length 32 characters.'),
       '#required' => FALSE,
       '#machine_name' => array(
         'exists' => '_eck_fake_exists',
@@ -174,12 +178,9 @@ function eck__entity_type__form($form, &$state, $entity_type_name = NULL) {
  */
 function eck__entity_type__form_validate($form, &$state) {
   if ($form['entity_type']['#value']->isNew) {
-    $info = entity_get_info();
-    $entity_types = array_keys($info);
-    $entity_type = $state['values']['entity_type_name'];
-    if (in_array($entity_type, $entity_types)) {
-      form_set_error('name', t("Entity Type '@entity_type' already exists"),
-        array('@entity_type' => $entity_type));
+    if (entity_get_info($state['values']['entity_type_name'])) {
+      form_set_error('entity_type_name', t("Entity Type '@entity_type' already exists!",
+        array('@entity_type' => $state['values']['entity_type_name'])));
     }
   }
 }
@@ -384,13 +385,54 @@ function eck__entity_type__info($entity_type) {
     ),
     // Inline entity form module integration.
     'inline entity form' => array('controller' => 'EckInlineEntityFormController'),
+    'translation' => array(
+      'entity_translation' => array(
+        'class' => 'EntityTranslationECKHandler',
+        // This will be populated based on the bundles.
+        'path schemes' => array(
+          'default' => array(
+            'base path' => "$entity_type->name/%",
+            'path wildcard' => '%',
+          ),
+        ),
+      ),
+    ),
     'view callback' => 'eck__entity__view_callback',
   );
+  // Add title replacement support for translations.
+  if (isset($entity_type->properties['title'])) {
+    $info[$entity_type->name]['field replacement'] = array(
+      'title' => array(
+        'field' => array(
+          'type' => 'text',
+          'cardinality' => 1,
+          'translatable' => TRUE,
+        ),
+        'instance' => array(
+          'label' => t('Title'),
+          'required' => TRUE,
+          'settings' => array(
+            'text_processing' => 0,
+          ),
+          'widget' => array(
+            'weight' => -5,
+          ),
+        ),
+      ),
+    );
+  }
 
   $eck_path = eck__entity_type__path();
   foreach (Bundle::loadByEntityType($entity_type) as $bundle) {
     $bundle_label = $bundle->label;
     $path = "{$eck_path}/{$entity_type->name}/{$bundle->name}";
+
+    // Provide a path scheme for the Entity Translation UI.
+    $info[$entity_type->name]['translation']['entity_translation']['path schemes'][$bundle->name] = array(
+      'base path' => "{$entity_type->name}/{$bundle->name}/%",
+      'translate path' => "{$entity_type->name}/{$bundle->name}/%/translate",
+      'path wildcard' => '%',
+    );
 
     $info[$entity_type->name]['bundles'][$bundle->name] = array(
       'label' => $bundle_label,

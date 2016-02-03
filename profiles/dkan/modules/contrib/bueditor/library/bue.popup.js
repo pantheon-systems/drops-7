@@ -69,7 +69,7 @@ BUE.createPopup = function (id, title, content) {
   P.onopen = function() {
     if ($P.css('display') != 'none') {
       var $form = $P.focus().find('form');
-      if ($form.size()) {
+      if ($form.length) {
         $($form[0].elements[0]).focus();
       }
       else {

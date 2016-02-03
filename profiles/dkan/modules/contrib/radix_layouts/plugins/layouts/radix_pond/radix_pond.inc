@@ -1,7 +1,7 @@
 <?php
 // Plugin definition
 $plugin = array(
-  'title' => t('Radix Pond'),
+  'title' => t('Pond'),
   'icon' => 'radix-pond.png',
   'category' => t('Radix'),
   'theme' => 'radix_pond',

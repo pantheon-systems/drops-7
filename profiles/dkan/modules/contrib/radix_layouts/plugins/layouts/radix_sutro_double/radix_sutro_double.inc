@@ -1,7 +1,7 @@
 <?php
 // Plugin definition
 $plugin = array(
-  'title' => t('Radix Sutro Double'),
+  'title' => t('Sutro Double'),
   'icon' => 'radix-sutro-double.png',
   'category' => t('Radix'),
   'theme' => 'radix_sutro_double',

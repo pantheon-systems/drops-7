@@ -596,7 +596,7 @@ function data_ui_edit_form($form, &$form_state, $table) {
 
   // Bulk operations.
   $options = array(
-    t('Bulk operations'),
+    t('- Select operation -'),
     'delete' => t('Delete all selected'),
   );
   $form['bulk_operation'] = array(

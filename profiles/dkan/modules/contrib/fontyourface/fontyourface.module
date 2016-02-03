@@ -408,6 +408,9 @@ function fontyourface_set_css_selector(&$font, $css_selector) {
     return $selector_function($font);
   } // if
 
+  //Regenerate css.
+  drupal_clear_css_cache();
+
 } // fontyourface_set_css_selector
 
 /**

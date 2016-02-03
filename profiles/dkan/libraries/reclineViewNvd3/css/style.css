@@ -50,4 +50,9 @@
   text-align: center;
 }
 
-
+/* Line charts with visible data points */
+.recline-show-datapoints .nvd3.nv-line .nvd3.nv-scatter .nv-groups .nv-point {
+  fill-opacity: 1;
+  stroke-opacity: 1;
+  r: 4;
+}

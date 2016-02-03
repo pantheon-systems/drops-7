@@ -26,7 +26,7 @@ function google_fonts_api_views_default_views() {
   $handler = $view->new_display('default', 'Defaults', 'default');
   $handler->display->display_options['title'] = 'Browse fonts';
   $handler->display->display_options['css_class'] = 'view-fontyourface-browse';
-  $handler->display->display_options['use_ajax'] = TRUE;
+  $handler->display->display_options['use_ajax'] = FALSE;
   $handler->display->display_options['access']['type'] = 'perm';
   $handler->display->display_options['access']['perm'] = 'administer @font-your-face';
   $handler->display->display_options['cache']['type'] = 'none';
@@ -287,7 +287,7 @@ function google_fonts_api_views_default_views() {
   $handler->display->display_options['filters']['license']['expose']['identifier'] = 'license';
   $handler->display->display_options['filters']['license']['expose']['required'] = 0;
   $handler->display->display_options['filters']['license']['expose']['multiple'] = FALSE;
-  
+
   /* Display: Google Fonts */
   $handler = $view->new_display('page', 'Google Fonts', 'page_2');
   $handler->display->display_options['defaults']['arguments'] = FALSE;

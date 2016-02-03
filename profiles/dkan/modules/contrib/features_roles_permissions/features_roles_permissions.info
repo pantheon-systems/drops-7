@@ -5,9 +5,9 @@ package = "Features"
 dependencies[] = features
 dependencies[] = user
 
-; Information added by Drupal.org packaging script on 2014-05-21
-version = "7.x-1.1"
+; Information added by Drupal.org packaging script on 2015-03-25
+version = "7.x-1.2"
 core = "7.x"
 project = "features_roles_permissions"
-datestamp = "1400665727"
+datestamp = "1427278086"
 

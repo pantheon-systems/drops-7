@@ -1,7 +1,7 @@
 core = 7.x
 api = 2
 
-projects[eck][version] = 2.0-rc7
+projects[eck][version] = 2.0-rc8
 projects[eck][subdir] = contrib
 
 projects[geo_file_entity][subdir] = contrib

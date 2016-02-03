@@ -1,7 +1,7 @@
 <?php
 // Plugin definition
 $plugin = array(
-  'title' => t('Radix Bartlett'),
+  'title' => t('Bartlett'),
   'icon' => 'radix-bartlett.png',
   'category' => t('Radix'),
   'theme' => 'radix_bartlett',

@@ -1,0 +1,15 @@
+steps:
+  - name: Site Setup
+    plugin: Drupal
+    makeFile: 'dkan.make'
+    profileName: 'dkan'
+    runInstall: true
+    clearCaches: true
+  - name: Fix Files Folder Permissions
+    command: 'chmod -R 777 /var/www/html/sites/default/files'
+  - name: Remove Profile Installed Module
+    command: 'rm -fR /var/www/html/profiles/dkan/recline'
+  - name: Move new code in place
+    command: 'mv $SRC_DIR /var/www/html/profiles/dkan/recline'
+  - name: Clear caches
+    command: 'drush cc all'

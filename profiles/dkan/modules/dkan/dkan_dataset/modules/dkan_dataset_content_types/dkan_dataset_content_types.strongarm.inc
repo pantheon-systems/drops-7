@@ -97,7 +97,7 @@ function dkan_dataset_content_types_strongarm() {
             'visible' => TRUE,
           ),
           'teaser' => array(
-            'weight' => '0',
+            'weight' => '6',
             'visible' => TRUE,
           ),
         ),
@@ -106,16 +106,28 @@ function dkan_dataset_content_types_strongarm() {
             'weight' => '7',
             'visible' => TRUE,
           ),
+          'teaser' => array(
+            'weight' => '2',
+            'visible' => TRUE,
+          ),
         ),
         'identifier' => array(
           'default' => array(
             'weight' => '9',
             'visible' => TRUE,
           ),
+          'teaser' => array(
+            'weight' => '0',
+            'visible' => TRUE,
+          ),
         ),
         'modified_date' => array(
           'default' => array(
             'weight' => '6',
+            'visible' => TRUE,
+          ),
+          'teaser' => array(
+            'weight' => '1',
             'visible' => TRUE,
           ),
         ),

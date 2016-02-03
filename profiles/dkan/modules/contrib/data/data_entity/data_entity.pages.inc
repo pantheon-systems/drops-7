@@ -98,11 +98,6 @@ function data_entity_entity_edit_form_submit($form, &$form_state) {
   $data_entity = $form['#entity'];
   $entity_type = $data_entity->entity_type;
 
-  $table = $form_state['values']['table'];
-
-  $record = $form_state['values']['data'];
-  drupal_write_record($table->name, $record, $table->table_schema['primary key']);
-
   // Build a pseudo entity for FieldAPI field attach.
   $pseudo_entity = $form_state['values'];
   unset($pseudo_entity['data'], $pseudo_entity['table']);
@@ -110,6 +105,11 @@ function data_entity_entity_edit_form_submit($form, &$form_state) {
   $pseudo_entity = (object) $pseudo_entity;
 
   field_attach_submit($entity_type, $pseudo_entity, $form, $form_state);
+
+  $table = $form_state['values']['table'];
+
+  $record = $form_state['values']['data'];
+  drupal_write_record($table->name, $record, $table->table_schema['primary key']);
 
   // Save fields.
   field_attach_update($entity_type, $pseudo_entity);

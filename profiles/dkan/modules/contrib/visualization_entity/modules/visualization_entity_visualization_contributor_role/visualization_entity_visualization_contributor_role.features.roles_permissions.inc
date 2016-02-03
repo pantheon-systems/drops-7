@@ -37,7 +37,6 @@ function visualization_entity_visualization_contributor_role_default_roles_permi
       'eck view geo_file geojson entities' => TRUE,
       'eck view visualization choropleth_visualization entities' => TRUE,
       'eck view visualization geojson_visualization entities' => TRUE,
-      'reference unpublished nodes' => TRUE,
     ),
   );
 

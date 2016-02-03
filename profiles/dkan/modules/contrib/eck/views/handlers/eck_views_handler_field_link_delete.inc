@@ -9,6 +9,7 @@ class eck_views_handler_field_link_delete extends eck_views_handler_field_link {
 
   function render_link($entity, $values) {
     $entity_type = $entity->entityType();
+    $entity_id = entity_id($entity_type, $entity);
     $bundle = $entity->bundle();
     $action = 'delete';
 
@@ -21,7 +22,7 @@ class eck_views_handler_field_link_delete extends eck_views_handler_field_link {
 
       $crud_info = get_bundle_crud_info($entity_type, $bundle);
       $this->options['alter']['make_link'] = TRUE;
-      $this->options['alter']['path'] = str_replace('%eckentity', $entity->id, $crud_info['delete']['path']);
+      $this->options['alter']['path'] = str_replace('%eckentity', $entity_id, $crud_info['delete']['path']);
       $this->options['alter']['query'] = drupal_get_destination();
 
       if (count($this->view->result) == 1 && $this->view->query->offset >= $this->view->query->limit) {

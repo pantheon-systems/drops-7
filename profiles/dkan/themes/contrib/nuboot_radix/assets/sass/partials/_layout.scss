@@ -45,6 +45,14 @@ section.col-sm-9 {
     color:$white;
   }
 }
+.page-admin .panel-top {
+  background-image: none !important;
+  background-color: none;
+  overflow: visible;
+  .tint {
+    display:none;
+  }
+}
 #top-content {
   margin:20px;
   .block {

@@ -112,8 +112,9 @@ function dkan_dataset_node_view($node, $view_mode, $langcode) {
       '#suffix' => '</div>',
       '#view_mode' => $view_mode,
     );
-    $node->content['resources']['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/css/dkan_dataset.css';
-    $node->content['resources']['#attached']['js'][] = drupal_get_path('module', 'dkan_dataset') . '/js/dkan_tooltip.js';
+    $node->content['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/css/dkan_dataset.css';
+    $node->content['#attached']['js'][] = drupal_get_path('module', 'dkan_dataset') . '/js/dkan_tooltip.js';
+    $node->content['#attached']['js'][] = array('data' => drupal_get_path('module', 'dkan_dataset') .'/js/dataset.js');
     $node->content['release_date'] = array(
       '#theme' => 'dkan_dataset_release_date_view',
       '#node' => $node,
@@ -151,7 +152,7 @@ function dkan_dataset_node_view($node, $view_mode, $langcode) {
       '#view_mode' => $view_mode,
     );
   }
-  elseif ($view_mode == 'teaser' && ($node->type == 'dataset' || $node->type == 'resource')) {
+  elseif (($view_mode == 'teaser' || $view_mode == 'search_result') && ($node->type == 'dataset' || $node->type == 'resource')) {
     if (isset($node->content['links']['node']['#links']['node-readmore'])) {
       unset($node->content['links']['node']['#links']['node-readmore']);
     }
@@ -167,10 +168,59 @@ function dkan_dataset_node_view($node, $view_mode, $langcode) {
       '#suffix' => '</div>',
       '#weight' => '20',
     );
+    if (isset($node->content['field_topic'])) {
+      $node->content['field_topic']['#weight'] = '5';
+    }
   }
   elseif ($view_mode == 'full' && $node->type == 'resource') {
     $node->content['#attached']['css'][] = drupal_get_path('module', 'dkan_dataset') . '/css/dkan_dataset.css';
     $node->content['#attached']['js'][] = drupal_get_path('module', 'dkan_dataset') . '/js/dkan_tooltip.js';
+  }
+}
+if (module_exists('dkan_featured_topics')) {
+  function dkan_dataset_field_formatter_info() {
+    return array(
+      'dkan_dataset_term_topic_icon' => array(
+        'label' => t('Topic with icon'),
+        'field types' => array('taxonomy_term_reference'),
+      ),
+    );
+  }
+
+  function dkan_dataset_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+    $element = array();
+
+    // Terms whose tid is 'autocreate' do not exist
+    // yet and $item['taxonomy_term'] is not set. Theme such terms as
+    // just their name.
+    switch ($display['type']) {
+      case 'dkan_dataset_term_topic_icon':
+        foreach ($items as $delta => $item) {
+          $term = taxonomy_term_load($item['tid']);
+          $images = field_get_items('taxonomy_term', $term, 'field_image');
+          $display = array(
+            'label' => 'hidden',
+            'settings' => array(
+              'image_style' => 'small_topics_icons',
+              ),
+            );
+          $img = field_view_field('taxonomy_term', $term, 'field_image', $display, $langcode = NULL);
+          $element[$delta] = array(
+            'image' => array(
+              '#type' => 'markup',
+              '#markup' => drupal_render($img),
+              ),
+            'name' => array(
+              '#type' => 'markup',
+              '#markup' => check_plain($term->name),
+              '#prefix' => '<div class="name">',
+              '#suffix' => '</div>',
+              ),
+          );
+        }
+      break;
+    }
+    return $element;
   }
 }
 
@@ -245,6 +295,30 @@ function dkan_dataset_get_resource_nodes($nid) {
     foreach ($results as $node) {
       foreach ($node as $nid => $obj) {
         $nids[] = $nid;
+      }
+    }
+  }
+  $nodes = isset($nids) ? node_load_multiple($nids) : array();
+  return $nodes;
+}
+
+/**
+ * Helper to get Visualization entities that are created from a Resource.
+ */
+function dkan_dataset_get_visualization_entities($uuid) {
+  $nodes = array();
+  $nids = array();
+  $query = new EntityFieldQuery();
+
+  $results = $query
+    ->entityCondition('entity_type', 'visualization')
+    ->fieldCondition('field_uuid_resource', 'target_uuid', $uuid, '=')
+    ->execute();
+
+  if ($results) {
+    foreach ($results as $node) {
+      foreach ($node as $uuid => $obj) {
+        $nids[] = $uuid;
       }
     }
   }
@@ -429,7 +503,7 @@ function dkan_dataset_add_resource_access($node) {
   if ($node->type != 'dataset') {
     return FALSE;
   }
-  elseif (node_hook($node->type, 'form') && node_access('create', $node->type)) {
+  elseif (node_hook($node->type, 'form') && node_access('update', $node)) {
     return TRUE;
   }
   else {
@@ -856,7 +930,7 @@ function dkan_dataset_teaser_external_previews_for_resource($node) {
  */
 function dkan_dataset_preview_url_local($node) {
   if ($node->type == 'resource') {
-    return url('node/' . $node->nid);
+    return 'node/' . $node->nid;
   }
 }
 
@@ -892,5 +966,24 @@ function dkan_dataset_preview_url_cartodb($node) {
   }
   if ($resource_file_url) {
     return sprintf($pattern, $resource_file_url);
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function dkan_dataset_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['search_result'] = array(
+      'label' => t('Search Result'),
+      'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function dkan_dataset_preprocess_node(&$vars) {
+  if($vars['view_mode'] == 'search_result') {
+    $vars['theme_hook_suggestions'][] = 'node__search_result';
   }
 }

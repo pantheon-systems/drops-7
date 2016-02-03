@@ -124,6 +124,11 @@ function og_features_permission_features_rebuild($module) {
   require_once dirname(__FILE__) . '/og_features_role.features.inc';
 
   if ($defaults = features_get_default('og_features_permission', $module)) {
+    // Make sure the list of available group types is up to date, especially
+    // when installing multiple features at once, for example from an install
+    // profile or via drush.
+    drupal_static_reset();
+
     $grant = array();
     $revoke = array();
 

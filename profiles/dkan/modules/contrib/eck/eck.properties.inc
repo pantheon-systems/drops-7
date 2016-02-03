@@ -328,6 +328,11 @@ function eck__properties__form_validate($form, &$state) {
         }
       }
     }
+    if (!empty($state['values']['property_name']) && in_array($state['values']['property_name'], array('id', 'type'))) {
+      form_set_error('property_name', t('Property name "@name" is already used by the module. Please choose another name.', array(
+        '@name' => $state['values']['property_name'],
+      )));
+    }
   }
 }
 

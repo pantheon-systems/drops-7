@@ -104,15 +104,12 @@ function colorizer_menu() {
 }
 
 /**
- * Implements hook_init().
+ * Implements hook_preprocess_html().
  * Add the colorized style sheet to the site
  */
-function colorizer_init() {
+function colorizer_preprocess_html(&$vars){
   global $theme_key;
-  if (variable_get('install_task') != 'done') {
-    // don't run colorizer during installer
-    return;
-  }
+
   // If update hasn't run, this won't run.
   if (!db_table_exists('colorizer_instance')) {
     return;
@@ -142,10 +139,6 @@ function colorizer_init() {
     }
   }
   if (file_exists($file)) {
-    //Add to static
-    $colorizer_file = &drupal_static('colorizer_file');
-    $colorizer_file = $file;
-
     drupal_add_css(file_create_url($file), array(
       'type' => 'external',
       'group' => CSS_THEME,
@@ -262,6 +255,8 @@ function colorizer_update_stylesheet($theme, $instance, $palette) {
     $target_styles = _colorizer_rewrite_stylesheet($palette, $source_styles);
     $target_file = $target_path . $id . '.css';
     _colorizer_save_stylesheet($target_file, $target_styles);
+    // Keep track of the CSS file that's currently being used.
+    variable_set('colorizer_current_sylesheet', $target_file);
   }
 
   if (!empty($target_file)) {
@@ -311,19 +306,38 @@ function _colorizer_save_stylesheet($file, $style) {
 }
 
 /**
- * Removes css files from colorizer files cache
- * They will get recreated in hook_init on demand
+ * Removes unused css files from colorizer files cache.
  */
 function colorizer_clearcache() {
-  $colorizer_file = &drupal_static('colorizer_file');
 
-  //Delete all files except current css.
-  $path = 'public://colorizer';
-  $files = scandir($path);
-  foreach ($files as $file) {
-    if ($file != '.' && $file != '..' && $file != basename($colorizer_file)) {
-      file_unmanaged_delete_recursive($path . '/' . $file);
+  $colorizer_path = 'public://colorizer';
+  // Get the name of the latest CSS file.
+  $current_stylesheet = variable_get('colorizer_current_sylesheet', '');
+
+  // check if the colorizer directory exists.
+  if (is_dir($colorizer_path)) {
+
+    $dir = dir($colorizer_path);
+    // Look through the directory content.
+    while (($entry = $dir->read()) !== FALSE) {
+
+      // Skip '.' and '..'.
+      if ($entry == '.' || $entry == '..') {
+        continue;
+      }
+
+      $entry_path = $colorizer_path . '/' . $entry;
+
+      // Delete all the CSS files that are not currently being used.
+      // The latest file cannot be deleted in order to avoid having issues when the Poor Man's Cron runs:
+      // - The hook_preprocess_html() is called and the CSS file is added to the page.
+      // - The Poor Man's Cron runs as part of the page requests and all unused files are deleted.
+      // - Since the latest file was not deleted then the CSS that was added before cron is still available.
+      if ($entry_path != $current_stylesheet) {
+        file_unmanaged_delete($entry_path);
+      }
     }
+    $dir->close();
   }
 }
 
