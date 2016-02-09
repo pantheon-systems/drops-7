@@ -5,7 +5,7 @@ body { background-color: #333; }
 .layout-boxed { background-color: #111; }
 .layout-boxed .page-wrapper { width: 960px; margin: 20px auto; -webkit-box-shadow: 0 0 80px rgba(0, 0, 0, 0.5); -moz-box-shadow: 0 0 80px rgba(0, 0, 0, 0.5); box-shadow: 0 0 80px rgba(0, 0, 0, 0.5); }
 
-.layout-boxed.is-responsive .page-wrapper { width: auto; max-width: 960px; }
+.layout-boxed.is-responsive #page-wrapper { width: auto; max-width: 960px; }
 
 #zone-secondary-menu { background-color: #333; color: #ccc; font-weight: 600; }
 #zone-secondary-menu a { display: inline-block; color: #ccc; }

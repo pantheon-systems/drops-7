@@ -64,7 +64,7 @@ function cu_site_info_contextual_links_view_alter(&$element, &$items) {
       case 'site_info':
         $element['#links']['site-settings'] = array(
           'title' => t('Edit Site Information'),
-          'href' => 'admin/settings',
+          'href' => 'admin/settings/site-configuration/contact',
         );
         break;
     }

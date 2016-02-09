@@ -1,12 +1,15 @@
 name = Meta Tag Test
-description = Testing module for metatag.module
+description = Helper module for testing metatag.module.
 core = 7.x
-dependencies[] = metatag
+
+; Don't show this on the modules admin page.
 hidden = TRUE
 
-; Information added by Drupal.org packaging script on 2015-07-24
-version = "7.x-1.7"
+dependencies[] = metatag
+
+; Information added by Drupal.org packaging script on 2016-01-14
+version = "7.x-1.8"
 core = "7.x"
 project = "metatag"
-datestamp = "1437763741"
+datestamp = "1452804845"
 

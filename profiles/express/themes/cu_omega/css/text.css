@@ -63,8 +63,8 @@ h5 { font-size: 113%; font-weight: 300; }
 
 h6 { font-size: 100%; font-weight: 300; }
 
-h6.site-slogan { font-family: "Neue Helvetica W01", "Helvetica Neue", Helvetica, Arial, sans-serif !important; font-weight: 500 !important; }
-h6.site-slogan strong { font-weight: 700 !important; }
+h6.site-slogan, .site-slogan { font-family: "Neue Helvetica W01", "Helvetica Neue", Helvetica, Arial, sans-serif !important; font-weight: 500 !important; }
+h6.site-slogan strong, .site-slogan strong { font-weight: 700 !important; }
 
 .block-cu-site-info h2.block-title { border: none; }
 .block-cu-site-info h2.block-title span { display: inline; border: none; position: static; bottom: auto; padding: 0; }
@@ -129,7 +129,7 @@ dt, .admin h3 { font-weight: 600; margin: 0; }
 dd { padding-left: 10px; font-style: italic; margin-bottom: 20px; }
 dd p { margin-bottom: 10px; }
 
-blockquote { margin: 0px 20px 20px; padding-left: 20px; border-left: 4px solid #e0e0e0; }
+blockquote { font-size: 110%; margin: 0px 0px 40px 20px; padding-top: 25px; padding-left: 20px; border-left: 4px solid #e0e0e0; }
 
 small, .small-text { font-size: 80%; font-family: Arial, Helvetica, sans-serif !important; }
 

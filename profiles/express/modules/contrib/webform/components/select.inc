@@ -60,6 +60,15 @@ function _webform_edit_select($component) {
     ),
   );
 
+  // Default component if nested under a grid.
+  if (!isset($component['cid']) && $component['pid'] &&
+      ($node = node_load($component['nid'])) && ($parent = $node->webform['components'][$component['pid']]) &&
+      $parent['type'] == 'grid') {
+    $component['value'] = $parent['value'];
+    $component['extra']['items'] = $parent['extra']['options'];
+    $component['required'] = $parent['required'];
+  }
+
   $other = array();
   if ($info = _webform_select_options_info()) {
     $options = array('' => t('None'));

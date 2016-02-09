@@ -15,7 +15,60 @@
   
 function cu_seo_bundle_secure_permissions($role) {
   // INSERT PERMISSIONS FOR THIS BUNDLE
+  $permissions = array(
+    'administrator' => array(
+      'edit meta tags',
+      'administer meta tags',
+    ),
+    'anonymous user' => array(
+    ),
+    'authenticated user' => array(
+    ),
+    'content_editor' => array(
+      'edit meta tags',
+    ),
+    'developer' => array(
+      'edit meta tags',
+      'administer meta tags',
+    ),
+    'edit_my_content' => array(
+    ),
+    'site_owner' => array(
+      'edit meta tags',
+      'administer meta tags',
+    ),
+  );
   if (isset($permissions[$role])) {
     return $permissions[$role];
   }
 }
+
+/**
+ * Implements hook_express_help().
+ *
+ * Add contextual help for the SEO Bundle.
+ *
+ * @param $variables
+ *   Array with information about help hooks
+ * @return $variables
+ */
+function cu_seo_bundle_express_help($variables) {
+  $variables['admin/config/search/metatags'][] = array(
+    'title' => 'Metatag Settings Help',
+    'short_title' => 'Metatag Settings Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/724',
+  );
+  $variables['admin/config/search/metatags/settings'][] = array(
+    'title' => 'Metatag Settings Help',
+    'short_title' => 'Metatag Settings Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/724',
+  );
+  $variables['admin/config/search/metatags/bulk-revert'][] = array(
+    'title' => 'Metatag Settings Help',
+    'short_title' => 'Metatag Settings Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/724',
+  );
+
+  return $variables;
+}
+

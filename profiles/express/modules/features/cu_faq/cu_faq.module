@@ -10,7 +10,10 @@ include_once 'cu_faq.features.inc';
  *  Implements hook_form_FORM_ID_alter.
  */
 function cu_faq_form_faqs_node_form_alter(&$form, &$form_state, $form_id) {
-  $form['menu']['enabled']['#default_value'] = TRUE;
+  // Only do this for new nodes
+  if ($form['nid']['#value'] == NULL) {
+    $form['menu']['enabled']['#default_value'] = TRUE;
+  }
 }
 
 /**

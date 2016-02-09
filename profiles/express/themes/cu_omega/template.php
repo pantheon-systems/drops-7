@@ -53,7 +53,7 @@ function cu_omega_preprocess_html(&$vars) {
   $vars['attributes_array']['class'][]=$icon_color;
 
   drupal_add_js(drupal_get_path('theme','cu_omega') .'/js/mobile-menu-toggle.js');
-  
+
   drupal_add_js(drupal_get_path('theme','cu_omega') .'/js/track-focus.js', array('scope' => 'footer'));
 
   $element = array(
@@ -121,6 +121,12 @@ function cu_omega_preprocess_page(&$vars) {
   }
   elseif (!empty($vars['page']['content']['content']['sidebar_second'])) {
     $vars['attributes_array']['class'][] = 'page-sidebar-second';
+  }
+
+  // Add class if page is an unpublished node
+  if ($node = menu_get_object()) {
+    $status = ($node->status == 1) ? 'published' : 'unpublished';
+    $vars['attributes_array']['class'][] = 'node-' . $status;
   }
 }
 
@@ -345,6 +351,9 @@ function cu_omega_alpha_preprocess_zone(&$vars) {
  * Implements hook_preprocess_node().
  */
 function cu_omega_preprocess_node(&$vars) {
+  // Custom display templates will be called node--[type]--[viewmode].tpl.php
+  $vars['theme_hook_suggestions'][] = 'node__' . $vars['type'] . '__' . $vars['view_mode'];
+
 
   // Making comments appear at the bottom of $content
   $vars['content']['comments']['#weight'] = 1000;
@@ -360,6 +369,12 @@ function cu_omega_preprocess_node(&$vars) {
       $vars['content_sidebar_right']['#theme_wrappers'] = array('region');
       $vars['content_sidebar_right']['#region'] = 'content_sidebar_right';
     }
+    if ($context_content_bottom_blocks = $plugin->block_get_blocks_by_region('content_bottom')) {
+      $vars['content_bottom'] = $context_content_bottom_blocks;
+      $vars['content_bottom']['#theme_wrappers'] = array('region');
+      $vars['content_bottom']['#region'] = 'content_bottom';
+      $vars['classes_array'][] = 'content-bottom';
+    }
   }
 
   if ($content_sidebar_left_blocks = block_get_blocks_by_region('content_sidebar_left')) {
@@ -372,6 +387,13 @@ function cu_omega_preprocess_node(&$vars) {
     $vars['content_sidebar_right'] = $content_sidebar_right_blocks;
     $vars['content_sidebar_right']['#theme_wrappers'] = array('region');
     $vars['content_sidebar_right']['#region'] = 'content_sidebar_right';
+  }
+
+  if ($context_content_bottom_blocks = block_get_blocks_by_region('content_bottom')) {
+    $vars['content_bottom'] = $context_content_bottom_blocks;
+    $vars['content_bottom']['#theme_wrappers'] = array('region');
+    $vars['content_bottom']['#region'] = 'content_bottom';
+    $vars['classes_array'][] = 'content-bottom';
   }
 
   if (!empty($vars['content_sidebar_left']) && !empty($vars['content_sidebar_right'])) {

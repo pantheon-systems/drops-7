@@ -16,7 +16,7 @@ body {
     @include rgbashadow(0,0,80px,#000, .5);
   }
 }
-.layout-boxed.is-responsive .page-wrapper {
+.layout-boxed.is-responsive #page-wrapper {
   width:auto;
   max-width: 960px;
 }

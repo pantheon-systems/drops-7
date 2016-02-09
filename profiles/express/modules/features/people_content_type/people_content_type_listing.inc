@@ -32,10 +32,13 @@ function _people_content_type_listing($view_mode, $type, $department, $filter_1,
     $query->join('taxonomy_term_data', 'td', 'job.field_person_job_type_tid = td.tid');
     $query->orderBy('td.weight', 'ASC');
   }
-  // then order by last name
+  // then order by last name, first name
   $query->join('field_data_field_person_last_name', 'last', 'n.nid = last.entity_id');
+  $query->join('field_data_field_person_first_name', 'first', 'n.nid = first.entity_id');
+  $query->fields('first', array('field_person_first_name_value'));
   $query->fields('last', array('field_person_last_name_value'));
   $query->orderBy('last.field_person_last_name_value', 'ASC');
+  $query->orderBy('first.field_person_first_name_value', 'ASC');
   
   
   // Filter by department

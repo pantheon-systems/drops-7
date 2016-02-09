@@ -21,15 +21,25 @@ function people_content_type_page_alter(&$page) {
  * Implements hook_menu().
  */
 function people_content_type_menu() {
-  if (!module_exists('cu_preview')) {
-    $items['admin/settings/people'] = array(
-      'title' => 'People Filter Labels',
-      'type' => MENU_LOCAL_TASK,
-      'page callback' => 'drupal_get_form',
-      'page arguments' => array('people_content_type_admin_settings_form'),
-      'access arguments' => array('administer cu settings'),
-    );
-  }
+  $items = array();
+  $items['admin/settings/people'] = array(
+    'title' => 'People',
+    'description' => 'Menu Options Related to Feedback',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 1,
+  );
+  $items['admin/settings/people/settings'] = array(
+	'title' => 'People Filter Labels',
+	'description' => 'Create text labels for People filters',
+	'type' => MENU_NORMAL_ITEM,
+	'page callback' => 'drupal_get_form',
+	'page arguments' => array('people_content_type_admin_settings_form'),
+	'access arguments' => array('administer express settings'),
+  );
   return $items;
 }
 
@@ -92,6 +102,9 @@ function people_content_type_form_person_node_form_alter(&$form, &$form_state, $
 
   // Get filter field custom labels and apply them to form fields.
   $settings = variable_get('people_content_type_label_settings');
+  if (isset($settings['person_department'])) {
+    $form['field_person_department'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_department'];
+  }
   if (isset($settings['person_type'])) {
     $form['field_person_job_type'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_type'];
   }
@@ -111,12 +124,21 @@ function people_content_type_form_person_node_form_alter(&$form, &$form_state, $
  * TODO: DOCO.
  */
 function people_content_type_form_people_list_page_node_form_alter(&$form, &$form_state, $form_id) {
-  $form['menu']['enabled']['#default_value'] = TRUE;
+  // Only do this for new nodes
+  if ($form['nid']['#value'] == NULL) {
+    $form['menu']['enabled']['#default_value'] = TRUE;
+  }
+
   // Get filter field custom labels and apply them to form fields.
   $settings = variable_get('people_content_type_label_settings');
+  if (isset($settings['person_department'])) {
+    $form['field_people_list_department'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_department'];
+    $form['field_people_dept_filter_show'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_department'];
+    $form['field_people_group_by'][LANGUAGE_NONE]['#options']['department'] .= '/' . $settings['person_department'];
+  }
   if (isset($settings['person_type'])) {
     $form['field_people_list_person_type'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_type'];
-    $form['field_people_pos_filter_show '][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_type'];
+    $form['field_people_pos_filter_show'][LANGUAGE_NONE]['#title'] .= '/' . $settings['person_type'];
     $form['field_people_group_by'][LANGUAGE_NONE]['#options']['person_type'] .= '/' . $settings['person_type'];
   }
   if (isset($settings['person_filter_one'])) {
@@ -321,8 +343,7 @@ function people_content_type_preprocess_node(&$vars) {
           $filter_3 = ($group == 'people_filter_3') ? array($tid) : $filter_3;
 
           // Get the listing for this group
-          $listing = _people_content_type_listing($view_mode, $type, $department, $filter_1, $filter_2, $filter_3);
-;
+          $listing = _people_content_type_listing($view_mode, $type, $department, $filter_1, $filter_2, $filter_3, $order);
           // If there are results, add to render array and add a heading with the term name
           if ($listing) {
             $term = taxonomy_term_load($tid);
@@ -390,7 +411,7 @@ function people_content_type_list_filter_form($form, &$form_state) {
 
   $filters['department']['name'] = 'department';
   $filters['department']['machine_name'] = 'department';
-  $filters['department']['label'] = 'Department';
+  $filters['department']['label'] = isset($settings['person_department']) ? $settings['person_department'] : 'Department';
 
   $filters['people_filter_1']['name'] = 'people_filter_1';
   $filters['people_filter_1']['machine_name'] = 'filter1';

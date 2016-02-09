@@ -6,11 +6,16 @@ core = 7.x
 dependencies[] = metatag
 dependencies[] = views
 
+files[] = metatag_views.inc
 files[] = metatag_views_plugin_display_extender_metatags.inc
 
-; Information added by Drupal.org packaging script on 2015-07-24
-version = "7.x-1.7"
+; Tests.
+files[] = tests/metatag_views.test
+files[] = tests/metatag_views.i18n.test
+
+; Information added by Drupal.org packaging script on 2016-01-14
+version = "7.x-1.8"
 core = "7.x"
 project = "metatag"
-datestamp = "1437763741"
+datestamp = "1452804845"
 

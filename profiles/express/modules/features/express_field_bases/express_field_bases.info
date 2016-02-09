@@ -1,0 +1,8 @@
+name = Express Field bases
+description = Exports of shared field bases
+core = 7.x
+package = CU-Core
+dependencies[] = features
+dependencies[] = text
+features[features_api][] = api:2
+features[field_base][] = body

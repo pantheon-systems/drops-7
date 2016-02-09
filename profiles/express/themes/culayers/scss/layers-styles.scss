@@ -1,0 +1,246 @@
+@import "../../expressbase/scss/modules/_global.scss";
+@import "../../expressbase/scss/modules/_colors.scss";
+
+body {
+  background-color: #333;
+}
+.layout-wide #backstretch {
+  display:none;
+}
+.layout-boxed {
+  background-color:#111;
+  #page-wrapper {
+    width:1200px;
+    margin: 0 auto;
+    @include rgbashadow(0,0,80px,#000, .5);
+  }
+}
+.layout-boxed.layout-responsive #page-wrapper {
+  width:auto;
+  max-width: 1200px;
+}
+#secondary-navigation nav ul li a {
+  padding: 0;
+}
+#secondary-navigation {
+  background-color: #333;
+  color:#ccc;
+  font-weight: 600;
+  a {
+    display: inline-block;
+    color:#ccc;
+    padding:0;
+    margin-left:8px;
+    &:hover,
+    &:focus,
+    &.active,
+    &.active-trail {
+      color:$cugold;
+    }
+  }
+}
+
+#navigation {
+  background-color: #272727;
+  a {
+    color:#ccc;
+    font-weight: 600;
+  }
+  a.active,
+  a.active-trail,
+  a:hover,
+  a:focus {
+    color:$cugold;
+  }
+  a#home-link {
+    background-color: transparent;
+    color: #ccc;
+  }
+}
+#slider-wrapper {
+  background-color: #171717;
+  padding: 20px;
+}
+.top-content-wrapper {
+  background-color: #f1f1f1;
+}
+#after-content2-wrapper {
+  background-color:#f1f1f1;
+}
+#after-content-2 {
+  background-color: #fff;
+}
+.top-content {
+  background-color: #fff;
+}
+.layout-fixed .top-content {
+  width: 1200px;
+  margin: 0 auto;
+}
+.layout-responsive .top-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+#footer-section {
+  background-color: #333;
+  color:#fff;
+  a {
+    color:$cugold;
+    &:hover,
+    &:focus {
+      color:#fff;
+    }
+  }
+}
+#footer-wrapper {
+  background-color: #222;
+}
+#footer {
+  background-color: #111;
+  padding-top:20px;
+}
+
+#footer-menu-wrapper,
+.footer-menu-gray,
+.footer-menu-gold {
+  background-color: transparent;
+  padding: 0;
+}
+.footer-menu-gray #footer-navigation {
+  padding:0 10px;
+  background-color: #222;
+}
+.footer-menu-gold #footer-navigation {
+  padding:0 10px;
+  background-color: $cugold;
+}
+
+// Subnav
+$defaultFG: #656565;
+$hoverFG: #202020;
+$activeBG: #262626;
+$activeFG: $cugold;
+$border: #e7e7e7;
+
+#block-menu-block-site-navigation-menus-1,
+#block-menu-block-site-navigation-menus-2,
+#block-menu-block-site-navigation-menus-3,
+#section-navigation {
+
+  $indent: 10px;
+
+  .menu-block-wrapper {
+    font-weight: 500;
+    border-bottom: 1px solid $border;
+  }
+  ul.menu a {
+    padding:10px;
+    border:1px solid $border;
+    margin-bottom: -1px;
+    color:$defaultFG;
+    line-height: 120%;
+    &:hover,
+    &:focus {
+      background-color: $border;
+      color:$hoverFG;
+    }
+    &.active-trail {
+      border-bottom: none;
+    }
+    &.active {
+      color:$activeFG;
+      background-color: $activeBG;
+      font-weight: 500 !important;
+    }
+  }
+  li.active-trail {
+    border-left:3px solid $activeBG;
+
+    a {
+      border-left-color: $activeBG;
+    }
+  }
+  li.active-trail > a {
+
+  }
+  li.active-trail li {
+    border:none;
+  }
+  ul.menu ul.menu a {
+    padding-left: $indent * 2;
+    font-size: 90%;
+    padding-top:7px;
+    padding-bottom: 7px;
+    border-top: none;
+    border-bottom: none;
+    font-weight: normal;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 3;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 4;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 5;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 6;
+  }
+}
+
+#block-menu-block-site-navigation-menus-3 h2.block-title {
+  font-size: 100%;
+  line-height: 120%;
+  padding: 0;
+  margin: 0;
+
+  a {
+    display: block;
+    padding:10px;
+    background-color: $activeBG;
+    color:$activeFG;
+    font-weight: 600;
+  }
+}
+
+// Mobile Menu
+#mobile-navigation-wrapper{
+  background-color: #272727;
+  padding-bottom: 20px;
+  color:#333;
+  ul#main-menu-mobile,
+  ul#footer-menu-mobile {
+    background-color: #272727;
+    a {
+      color:#fff;
+      border-bottom: 1px solid #444;
+    }
+    a.active,
+    a.active-trail {
+      color:$cugold;
+      background-color: #222;
+      font-weight: 600;
+      border-bottom: 1px solid #333;
+    }
+  }
+  ul#secondary-menu-mobile {
+    background-color: #171717;
+    a {
+      color:#fff;
+      border-bottom: 1px solid #272727;
+    }
+    a.active,
+    a.active-trail {
+      color:$cugold;
+      background-color: #222;
+      font-weight: 600;
+      border-bottom: 1px solid #333;
+    }
+  }
+  ul#secondary-menu-mobile,
+  ul#footer-menu-mobile {
+    border-top:3px solid #444;
+  }
+}

@@ -19,7 +19,7 @@ class FieldCollectionBasicTestCase extends DrupalWebTestCase {
   }
 
   function setUp() {
-    parent::setUp('field_collection');
+    parent::setUp('field_collection', 'entity_crud_hook_test');
 
     // Create a field_collection field to use for the tests.
     $this->field_name = 'field_test_collection';
@@ -42,6 +42,65 @@ class FieldCollectionBasicTestCase extends DrupalWebTestCase {
       ),
     );
     $this->instance = field_create_instance($this->instance);
+  }
+
+  /**
+   * Pass if the message $text was set by one of the CRUD hooks in
+   * entity_crud_hook_test.module, i.e., if the $text is an element of
+   * $_SESSION['entity_crud_hook_test'].
+   *
+   * @see EntityCrudHookTestCase::assertHookMessage()
+   * @see FieldCollectionBasicTestCase::assertNoHookMessage()
+   * @see FieldCollectionBasicTestCase::clearHookMessages()
+   *
+   * @param $text
+   *   Plain text to look for.
+   * @param $message
+   *   Message to display.
+   * @param $group
+   *   The group this message belongs to, defaults to 'Other'.
+   * @return
+   *   TRUE on pass, FALSE on fail.
+   */
+  protected function assertHookMessage($text, $message = NULL, $group = 'Other') {
+    if (!isset($message)) {
+      $message = $text;
+    }
+    return $this->assertTrue(array_search($text, $_SESSION['entity_crud_hook_test']) !== FALSE, $message, $group);
+  }
+
+  /**
+   * Fail if the message $text was set by one of the CRUD hooks in
+   * entity_crud_hook_test.module, i.e., if the $text is an element of
+   * $_SESSION['entity_crud_hook_test'].
+   *
+   * @see FieldCollectionBasicTestCase::assertHookMessage()
+   * @see FieldCollectionBasicTestCase::clearHookMessages()
+   *
+   * @param $text
+   *   Plain text to look for.
+   * @param $message
+   *   Message to display.
+   * @param $group
+   *   The group this message belongs to, defaults to 'Other'.
+   * @return
+   *   TRUE on pass, FALSE on fail.
+   */
+  protected function assertNoHookMessage($text, $message = NULL, $group = 'Other') {
+    if (!isset($message)) {
+      $message = $text;
+    }
+    return $this->assertFalse(array_search($text, $_SESSION['entity_crud_hook_test']) !== FALSE, $message, $group);
+  }
+
+  /**
+   * Clear hook messages recorded by entity_crud_hook_test.
+   *
+   * @see FieldCollectionBasicTestCase::assertHookMessage()
+   * @see FieldCollectionBasicTestCase::assertNoHookMessage()
+   */
+  protected function clearHookMessages() {
+    $_SESSION['entity_crud_hook_test'] = array();
   }
 
   /**
@@ -79,12 +138,16 @@ class FieldCollectionBasicTestCase extends DrupalWebTestCase {
     $this->assertEqual($entity2->revision_id, $node->{$this->field_name}[LANGUAGE_NONE][1]['revision_id'], 'New field_collection has been properly referenced (revision)');
 
     // Make sure deleting the field_collection removes the reference.
+    $this->clearHookMessages();
     $entity2->delete();
+    $this->assertHookMessage('entity_crud_hook_test_entity_presave called for type node');
     $node = node_load($node->nid, NULL, TRUE);
     $this->assertTrue(!isset($node->{$this->field_name}[LANGUAGE_NONE][1]), 'Reference correctly deleted.');
 
     // Make sure field_collections are removed during deletion of the host.
+    $this->clearHookMessages();
     node_delete($node->nid);
+    $this->assertNoHookMessage('entity_crud_hook_test_entity_presave called for type node');
     $this->assertTrue(entity_load('field_collection_item', FALSE) === array(), 'Field collections are deleted when the host is deleted.');
 
     // Try deleting nodes with collections without any values.

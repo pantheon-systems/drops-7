@@ -1,6 +1,7 @@
 name = People
-description = NEEDS DESCRIPTION
+description = Create individual profiles for each of your people and group by categories such as department and role (faculty, staff, etc.). People list pages can be displayed via lists, table or grid views. People lists blocks can also be placed on any page.
 core = 7.x
 package = CU-People
+project_demo_url = http://www.colorado.edu/webcentral/node/678
 
 dependencies[] = people_content_type

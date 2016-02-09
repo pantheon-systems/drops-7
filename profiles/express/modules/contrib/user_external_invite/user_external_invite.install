@@ -1,0 +1,67 @@
+<?php
+
+/**
+ * @file
+ * Set-up database schema and install tasks for user_external_invite module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function user_external_invite_schema() {
+  $schema['user_external_invite'] = array(
+    'description' => 'Stores invites',
+    'fields' => array(
+      'id' => array(
+        'description' => 'Primary key of the Invite entity',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'mail' => array(
+        'description' => 'Email address',
+        'type' => 'varchar',
+        'length' => 254,
+        'not null' => TRUE,
+      ),
+      'rid' => array(
+        'description' => 'Role ID to be granted',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'expire' => array(
+        'description' => 'Valid until unix timestamp',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'uid' => array(
+        'description' => 'User ID of who sent the invite',
+        'type' => 'int',
+        'not null' => TRUE,
+      ),
+      'message' => array(
+        'description' => 'Custom message included with invite',
+        'type' => 'text',
+        'not null' => FALSE,
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function user_external_invite_uninstall() {
+  // Delete variables related to this module.
+  variable_del('user_external_invite_roles');
+  variable_del('user_external_invite_days_valid_for');
+  variable_del('user_external_invite_confirmation_template');
+  variable_del('user_external_invite_use_universal_from_email');
+  variable_del('user_external_invite_invite_template');
+  variable_del('user_external_invite_accepted_confirmation_template');
+  variable_del('user_external_invite_accepted_template');
+  variable_del('user_external_invite_universal_from_email');
+
+}

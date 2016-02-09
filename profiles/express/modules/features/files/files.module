@@ -172,10 +172,10 @@ function files_node_view($node, $view_mode) {
     case 'file':	
       if ($view_mode == 'full') { 
         $redirect = 'node/' . $node->nid . '/attachment';     
-        if (user_access("edit any article content")) {
+        if (user_access('edit any file content')) {
           drupal_set_message(t('A user without editing permissions would have been redirected to !redirect',
               array('!redirect' => l($redirect, $redirect))),
-            'notice');
+            'warning');
         }
         else {
           drupal_goto($redirect);

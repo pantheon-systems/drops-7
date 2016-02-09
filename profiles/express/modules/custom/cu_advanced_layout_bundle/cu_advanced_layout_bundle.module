@@ -12,9 +12,43 @@
  * @return
  *   An array defining all the permissions for the site.
  */
-  
 function cu_advanced_layout_bundle_secure_permissions($role) {
-  // INSERT PERMISSIONS FOR THIS BUNDLE
+  $permissions = array(
+    'administrator' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
+    'anonymous user' => array(
+      'view any block_section bean',
+    ),
+    'authenticated user' => array(
+      'view any block_section bean',
+    ),
+    'content_editor' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
+    'developer' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
+    'edit_my_content' => array(
+      'view any block_section bean',
+    ),
+    'site_owner' => array(
+      'create any block_section bean',
+      'delete any block_section bean',
+      'edit any block_section bean',
+      'view any block_section bean',
+    ),
+  );
+
   if (isset($permissions[$role])) {
     return $permissions[$role];
   }
@@ -30,35 +64,36 @@ function cu_advanced_layout_bundle_secure_permissions($role) {
  * @return $variables
  */
 function cu_advanced_layout_bundle_express_help($variables) {
-  $variables['admin/theme'][] = array(
-    'title' => 'Add a Site Background Image',
-    'short_title' => 'Site Background Image',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-site-background-image',
-  );
-  $variables['admin/theme'][] = array(
-    'title' => 'Add Page Title Background',
-    'short_title' => 'Page Title Background',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-page-title-image-background',
+
+  $variables['admin/structure/context/list/%/edit'][] = array(
+    'title' => 'Context help',
+    'short_title' => 'Context help',
+    'url' => 'http://www.colorado.edu/webcentral/node/444',
   );
   $variables['admin/structure/context'][] = array(
-    'title' => 'Place Blocks With Context Help',
-    'short_title' => 'Blocks & Context',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/place-blocks-context',
+    'title' => 'Context Help',
+    'short_title' => 'Context Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/444',
   );
-  $variables['admin/structure/context'][] = array(
-    'title' => 'Context Overview',
-    'short_title' => 'Context',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/context',
+  $variables['block/add/block-row'][] = array(
+    'title' => 'Block row help',
+    'short_title' => 'Block row help',
+    'url' => 'http://www.colorado.edu/webcentral/node/712',
+  );
+  $variables['block/edit/block-row'][] = array(
+    'title' => 'Block row help',
+    'short_title' => 'Block row help',
+    'url' => 'http://www.colorado.edu/webcentral/node/712',
   );
   $variables['block/add/block-section'][] = array(
-    'title' => 'Block Section Help',
-    'short_title' => 'Block Section',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/block-section',
+    'title' => 'Block section help',
+    'short_title' => 'Block section help',
+    'url' => 'http://www.colorado.edu/webcentral/node/560',
   );
-  $variables['block/add/video-reveal'][] = array(
-    'title' => 'Adding Video Reveal Block Help',
-    'short_title' => 'Video Reveal Block',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/video-reveal',
+  $variables['block/edit/block-section'][] = array(
+    'title' => 'Block section help',
+    'short_title' => 'Block section help',
+    'url' => 'http://www.colorado.edu/webcentral/node/560',
   );
 
   return $variables;

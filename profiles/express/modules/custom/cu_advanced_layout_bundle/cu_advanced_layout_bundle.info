@@ -1,15 +1,13 @@
 name = Advanced Layout
-description = Adds backstretch, context, title image, video reveal and other advanced layout features.
+description = This bundle allows you to create complex and dynamic layouts of content.
+
 core = 7.x
 package = CU-Advanced Layout
-
+project_demo_url = http://www.colorado.edu/webcentral/node/670
 dependencies[] = context_ui
-dependencies[] = backstretch
 dependencies[] = cu_column_override
-dependencies[] = cu_menu_icon
-dependencies[] = cu_video_reveal
-dependencies[] = cu_font_awesome
-dependencies[] = cu_title_image
 dependencies[] = cu_block_section
-dependencies[] = block_title_icons
-dependencies[] = video_reveal
+dependencies[] = cu_block_row
+
+bundle_cache_clear = 1
+bundle_context_clear = 1

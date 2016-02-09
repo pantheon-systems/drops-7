@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Meta tag integration for the metatag_views module.
+ * Metatag integration for the metatag_views module.
  */
 
 /**
@@ -23,7 +23,7 @@ function metatag_views_metatag_config_default() {
   $config->api_version = 1;
   $config->disabled = FALSE;
   $config->config = array(
-    'title' => array('value' => '[view:title] | [site:name]'),
+    'title' => array('value' => '[view:title] | [current-page:pager][site:name]'),
     'description' => array('value' => '[view:description]'),
     'canonical' => array('value' => '[view:url]'),
   );

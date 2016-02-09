@@ -1,0 +1,123 @@
+<?php
+/**
+ * @file
+ * Unit tests for the Metatag module.
+ */
+
+/**
+ * @todo These aren't really unit tests, we might need to fix that.
+ */
+class MetatagCoreUnitTest extends MetatagTestHelper {
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag unit tests',
+      'description' => 'Test basic meta tag functionality for entities.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * Test the metatag_config_load_with_defaults() function.
+   */
+  public function testConfigLoadDefaults() {
+    // Load the global defaults, inc the fake entity.
+    $defaults = metatag_config_load_with_defaults('test:foo');
+
+    // Load the example values and verify they're the same as the globals.
+    $extra_tags = array(
+      // Fake meta tag.
+      'test:foo' => array('value' => 'foobar'),
+    );
+    $new_values = array_merge($extra_tags, $this->getTestDefaults());
+
+    // Confirm that the values are equal.
+    $this->assertEqual($defaults, $new_values);
+  }
+
+  public function testEntitySupport() {
+    $test_cases[1] = array('type' => 'node', 'bundle' => 'article', 'expected' => TRUE);
+    $test_cases[2] = array('type' => 'node', 'bundle' => 'page', 'expected' => TRUE);
+    $test_cases[3] = array('type' => 'node', 'bundle' => 'invalid-bundle', 'expected' => FALSE);
+    $test_cases[4] = array('type' => 'user', 'expected' => TRUE);
+    $test_cases[5] = array('type' => 'taxonomy_term', 'bundle' => 'tags', 'expected' => TRUE);
+    $test_cases[6] = array('type' => 'taxonomy_term', 'bundle' => 'invalid-bundle', 'expected' => FALSE);
+    foreach ($test_cases as $test_case) {
+      $test_case += array('bundle' => NULL);
+      $this->assertMetatagEntitySupportsMetatags($test_case['type'], $test_case['bundle'], $test_case['expected']);
+    }
+
+    // Enable meta tags for this new content type.
+    metatag_entity_type_disable('node', 'page');
+    metatag_entity_type_disable('user');
+
+    $test_cases[2]['expected'] = FALSE;
+    $test_cases[4]['expected'] = FALSE;
+    $test_cases[6]['expected'] = FALSE;
+    foreach ($test_cases as $test_case) {
+      $test_case += array('bundle' => NULL);
+      $this->assertMetatagEntitySupportsMetatags($test_case['type'], $test_case['bundle'], $test_case['expected']);
+    }
+  }
+
+  function assertMetatagEntitySupportsMetatags($entity_type, $bundle, $expected) {
+    $entity = entity_create_stub_entity($entity_type, array(0, NULL, $bundle));
+    return $this->assertEqual(
+      metatag_entity_supports_metatags($entity_type, $bundle),
+      $expected,
+      t("metatag_entity_supports_metatags(:type, :bundle) is :expected", array(
+        ':type' => var_export($entity_type, TRUE),
+        ':bundle' => var_export($bundle, TRUE),
+        ':expected' => var_export($expected, TRUE),
+      ))
+    );
+  }
+
+  /**
+   * Test the metatag_config_instance_label() function.
+   */
+  public function testConfigLabels() {
+    $test_cases = array(
+      'node' => 'Node',
+      'node:article' => 'Node: Article',
+      'node:article:c' => 'Node: Article: Unknown (c)',
+      'node:b' => 'Node: Unknown (b)',
+      'node:b:c' => 'Node: Unknown (b): Unknown (c)',
+      'a' => 'Unknown (a)',
+      'a:b' => 'Unknown (a): Unknown (b)',
+      'a:b:c' => 'Unknown (a): Unknown (b): Unknown (c)',
+      'a:b:c:d' => 'Unknown (a): Unknown (b): Unknown (c): Unknown (d)',
+    );
+
+    foreach ($test_cases as $input => $expected_output) {
+      drupal_static_reset('metatag_config_instance_label');
+      $actual_output = metatag_config_instance_label($input);
+      $this->assertEqual($actual_output, $expected_output);
+    }
+  }
+
+  /**
+   * Test the _metatag_config_instance_sort() function.
+   */
+  public function testConfigInstanceSort() {
+    $input = array(
+      'node:article',
+      'global:frontpage',
+      'file',
+      'node:page',
+      'global',
+      'node',
+      'global:404',
+    );
+    usort($input, '_metatag_config_instance_sort');
+    $this->assertIdentical($input, array(
+      'global',
+      'global:404',
+      'global:frontpage',
+      'file',
+      'node',
+      'node:article',
+      'node:page',
+    ));
+  }
+
+}

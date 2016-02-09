@@ -1,5 +1,5 @@
 Metatag: Google+
------------------
+----------------
 This module adds support for meta tag configuration for Google+ Snippet [1].
 
 The following Google+ tags are provided:
@@ -20,31 +20,15 @@ Page type (itemtype) provides default type options from the Google+ Snippet page
 Metatag hooks (see metatag.api.php).
 
 
-Known Issues
+Installation
 --------------------------------------------------------------------------------
-- When using Zen or its derived theme, the RDF Namespaces will be serialized
-  into an RDFa 1.1 prefix attribute, which means itemtype will be included in
-  prefix="...". To avoid this problem, this module will not add a itemtype
-  directly to $variable['rdf_namespaces'], instead, it will be necessary to add
-  code manually in the template.php or the custom theme.
+The $schemaorg variable must be appended to the <html> tag in the html.tpl.php
+file being used on the site, and it must be added after the $rdf_namespaces
+variable, e.g.:
 
-  Example code to use and adapt as needed:
-
-/**
- * Implements template_preprocess_html().
- *
- * Add itemtype code for Google+ in the 'html_attributes_array' which is only
- * available in Zen theme. Note Zen will convert rdf_namespaces to RDFa 1.1 with
- * prefix, so putting itemtype there will cause it to be added to the
- * prefix="itemtype=..." attribute.
- *
- * @see zen_preprocess_html()
- */
-function MYTHEME_preprocess_html(&$variables, $hook) {
-  if (module_exists('metatag_google_plus') && isset($variables['itemtype'])) {
-    $variables['html_attributes_array']['itemscope itemtype'] = "http://schema.org/{$variables['itemtype']}";
-  }
-}
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="<?php print
+  $language->language; ?>" version="XHTML+RDFa 1.0" dir="<?php print
+  $language->dir; ?>"<?php print $rdf_namespaces; ?><?php print $schemaorg; ?>>
 
 
 Credits / Contact

@@ -10,7 +10,7 @@
 function cu_feature_callout_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_callout_columns'
+  // Exported field_base: 'field_callout_columns'.
   $field_bases['field_callout_columns'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -39,7 +39,7 @@ function cu_feature_callout_field_default_field_bases() {
     'type' => 'list_integer',
   );
 
-  // Exported field_base: 'field_callout_image'
+  // Exported field_base: 'field_callout_image'.
   $field_bases['field_callout_image'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -61,7 +61,7 @@ function cu_feature_callout_field_default_field_bases() {
     'type' => 'image',
   );
 
-  // Exported field_base: 'field_callout_image_size'
+  // Exported field_base: 'field_callout_image_size'.
   $field_bases['field_callout_image_size'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -87,7 +87,7 @@ function cu_feature_callout_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_callout_text'
+  // Exported field_base: 'field_callout_text'.
   $field_bases['field_callout_text'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -106,7 +106,7 @@ function cu_feature_callout_field_default_field_bases() {
     'type' => 'text_long',
   );
 
-  // Exported field_base: 'field_callout_title'
+  // Exported field_base: 'field_callout_title'.
   $field_bases['field_callout_title'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -135,7 +135,7 @@ function cu_feature_callout_field_default_field_bases() {
     'type' => 'link_field',
   );
 
-  // Exported field_base: 'field_callouts'
+  // Exported field_base: 'field_callouts'.
   $field_bases['field_callouts'] = array(
     'active' => 1,
     'cardinality' => -1,

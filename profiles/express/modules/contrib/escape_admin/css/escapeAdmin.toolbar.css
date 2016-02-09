@@ -1,0 +1,84 @@
+.toolbar .toolbar-icon-escape-admin:before {
+  background-image: url("../icons/chevron-disc-left.svg");
+}
+.no-svg .toolbar .toolbar-icon-escape-admin:before {
+  background-image: url("../icons/chevron-disc-left.png");
+}
+[dir="rtl"] .toolbar .toolbar-icon-escape-admin:before {
+  background-image: url("../icons/chevron-disc-right.svg");
+}
+[dir="rtl"] .no-svg .toolbar .toolbar-icon-escape-admin:before {
+  background-image: url("../icons/chevron-disc-right.png");
+}
+
+.toolbar .toolbar-icon-escape-admin:before {
+  background-attachment: scroll;
+  background-color: transparent;
+  background-position: center center;
+  background-repeat: no-repeat;
+  background-size: 100% auto;
+  content: '';
+  display: block;
+  height: 100%;
+  left: 0.6667em; /* LTR */
+  position: absolute;
+  top: 0;
+  width: 20px;
+}
+.no-svg .toolbar .toolbar-icon-escape-admin:before {
+  background-size: auto auto;
+}
+[dir="rtl"] .toolbar .toolbar-icon-escape-admin:before {
+  left: auto;
+  right: 0.6667em;
+}
+
+@media only screen and (min-width: 16.5em) {
+  .toolbar .toolbar-icon-escape-admin {
+    margin-left: 0;
+    margin-right: 0;
+    padding-left: 0;
+    padding-right: 0;
+    text-indent: -9999px;
+    width: 4em;
+  }
+  .toolbar .toolbar-icon-escape-admin:before {
+    background-size: 42% auto;
+    left: 0; /* LTR */
+    width: 100%;
+  }
+  .no-svg .toolbar .toolbar-icon-escape-admin:before {
+    background-size: auto auto;
+  }
+  [dir="rtl"] .toolbar .toolbar-icon-escape-admin:before {
+    left: auto;
+    right: 0;
+  }
+}
+
+@media only screen and (min-width: 36em) {
+  .toolbar .toolbar-icon-escape-admin {
+    background-position: left center; /* LTR */
+    padding-left: 2em !important; /* LTR */
+    padding-right: 1em !important; /* LTR */
+    text-indent: 0;
+    width: auto;
+  }
+  [dir="rtl"] .toolbar .toolbar-icon-escape-admin {
+    background-position: right center;
+    padding-left: 1em;
+    padding-right: 2em;
+  }
+  .toolbar .toolbar-icon-escape-admin:before {
+    background-size: 100% auto;
+    left: 0.6667em; /* LTR */
+    width: 20px;
+  }
+  .no-svg .toolbar .toolbar-icon-escape-admin:before {
+    background-size: auto auto;
+  }
+  [dir="rtl"] .toolbar .toolbar-icon-escape-admin:before {
+    left: 0;
+    right: 0.6667em;
+  }
+}

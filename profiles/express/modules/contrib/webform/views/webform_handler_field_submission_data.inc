@@ -213,6 +213,13 @@ class webform_handler_field_submission_data extends views_handler_field {
         $data = isset($submission->data[$component['cid']]) ? $submission->data[$component['cid']] : NULL;
         $render = webform_component_invoke($component['type'], 'table', $component, $data);
       }
+      // Webform renders empty values as a space, which prevents views empty
+      // rewriting from being used. If empty is in use, change result to an
+      // actual empty string.
+      $render = render($render);
+      if ($render === ' ' && strlen($this->options['empty'])) {
+        $render = '';
+      }
       return $render;
     }
   }

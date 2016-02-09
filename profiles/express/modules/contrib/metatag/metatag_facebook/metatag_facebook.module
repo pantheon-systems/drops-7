@@ -17,10 +17,17 @@ function metatag_facebook_ctools_plugin_api($owner, $api) {
  * Implements hook_preprocess_html().
  */
 function metatag_facebook_preprocess_html(&$variables) {
+  // Fall back to hook_rdf_namespaces if the rdf module is enabled.
+  if (module_exists('rdf')) {
+    return;
+  }
+
   $variables['rdf_namespaces'] .= "\n  xmlns:fb=\"http://ogp.me/ns/fb#\"";
 }
 
-/*
-fb:admins
-fb:app_id
-*/
+/**
+ * Implements hook_rdf_namespaces().
+ */
+function metatag_facebook_hook_rdf_namespaces() {
+  return array('fb' => 'http://ogp.me/ns/fb#');
+}

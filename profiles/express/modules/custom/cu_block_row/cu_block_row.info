@@ -1,10 +1,11 @@
 name = Block Row
 core = 7.x
-package = CU-Active
+package = CU-Advanced Content
 version = 7.x-1.0
 project = cu_block_row
 dependencies[] = cu_block_section
 dependencies[] = entityreference
+dependencies[] = fences
 dependencies[] = field_collection
 dependencies[] = list
 features[bean_type][] = block_row

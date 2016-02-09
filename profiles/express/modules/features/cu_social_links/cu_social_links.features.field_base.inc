@@ -10,7 +10,7 @@
 function cu_social_links_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_social_link_type'
+  // Exported field_base: 'field_social_link_type'.
   $field_bases['field_social_link_type'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -47,7 +47,7 @@ function cu_social_links_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_social_link_url'
+  // Exported field_base: 'field_social_link_url'.
   $field_bases['field_social_link_url'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -77,7 +77,7 @@ function cu_social_links_field_default_field_bases() {
     'type' => 'link_field',
   );
 
-  // Exported field_base: 'field_social_links_arrangement'
+  // Exported field_base: 'field_social_links_arrangement'.
   $field_bases['field_social_links_arrangement'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -105,7 +105,7 @@ function cu_social_links_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_social_links_body'
+  // Exported field_base: 'field_social_links_body'.
   $field_bases['field_social_links_body'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -124,7 +124,7 @@ function cu_social_links_field_default_field_bases() {
     'type' => 'text_long',
   );
 
-  // Exported field_base: 'field_social_links_collection'
+  // Exported field_base: 'field_social_links_collection'.
   $field_bases['field_social_links_collection'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -147,7 +147,7 @@ function cu_social_links_field_default_field_bases() {
     'type' => 'field_collection',
   );
 
-  // Exported field_base: 'field_social_links_homepage_url'
+  // Exported field_base: 'field_social_links_homepage_url'.
   $field_bases['field_social_links_homepage_url'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -177,7 +177,7 @@ function cu_social_links_field_default_field_bases() {
     'type' => 'link_field',
   );
 
-  // Exported field_base: 'field_social_links_size'
+  // Exported field_base: 'field_social_links_size'.
   $field_bases['field_social_links_size'] = array(
     'active' => 1,
     'cardinality' => 1,

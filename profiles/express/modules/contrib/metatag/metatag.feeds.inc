@@ -51,11 +51,12 @@ function metatag_feeds_set_target($source, $entity, $target, $values) {
     if (!empty($stored_entities)) {
       $stored_entity = reset($stored_entities);
       if (!empty($stored_entity)) {
+        // Only load meta tags for the current revision.
+        list(, $revision_id) = entity_extract_ids($entity_type, $stored_entity);
+
         // This function returns all values for all revisions.
-        $metatags = metatag_metatags_load($entity_type, $entity_id);
+        $metatags = metatag_metatags_load($entity_type, $entity_id, $revision_id);
         if (!empty($metatags)) {
-          // Only load meta tags for the current revision.
-          list(, $revision_id) = entity_extract_ids($entity_type, $stored_entity);
           if (!empty($metatags[$revision_id])) {
             // Just copy all meta tags for all languages.
             $entity->metatags = $metatags[$revision_id];

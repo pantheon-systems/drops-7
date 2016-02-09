@@ -101,6 +101,24 @@ function cu_article_strongarm() {
       'promo' => array(
         'custom_settings' => FALSE,
       ),
+      'feature' => array(
+        'custom_settings' => TRUE,
+      ),
+      'embed' => array(
+        'custom_settings' => TRUE,
+      ),
+      'table' => array(
+        'custom_settings' => FALSE,
+      ),
+      'teaser_category' => array(
+        'custom_settings' => TRUE,
+      ),
+      'feature_category' => array(
+        'custom_settings' => TRUE,
+      ),
+      'sidebar_category' => array(
+        'custom_settings' => TRUE,
+      ),
     ),
     'extra_fields' => array(
       'form' => array(
@@ -108,13 +126,13 @@ function cu_article_strongarm() {
           'weight' => '0',
         ),
         'path' => array(
-          'weight' => '6',
+          'weight' => '5',
         ),
         'redirect' => array(
-          'weight' => '7',
+          'weight' => '6',
         ),
         'metatags' => array(
-          'weight' => '8',
+          'weight' => '7',
         ),
       ),
       'display' => array(),
@@ -161,23 +179,32 @@ function cu_article_strongarm() {
       'table' => array(
         'custom_settings' => FALSE,
       ),
+      'embed' => array(
+        'custom_settings' => FALSE,
+      ),
+      'feature' => array(
+        'custom_settings' => FALSE,
+      ),
     ),
     'extra_fields' => array(
       'form' => array(
         'title' => array(
-          'weight' => '-5',
+          'weight' => '0',
         ),
         'path' => array(
-          'weight' => '30',
+          'weight' => '1',
         ),
         'redirect' => array(
-          'weight' => '30',
+          'weight' => '2',
+        ),
+        'metatags' => array(
+          'weight' => '7',
         ),
       ),
       'display' => array(
         'article_page_entity_view_1' => array(
           'default' => array(
-            'weight' => '10',
+            'weight' => '3',
             'visible' => FALSE,
           ),
         ),

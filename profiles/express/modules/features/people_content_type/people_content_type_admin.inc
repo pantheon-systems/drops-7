@@ -11,13 +11,23 @@
 function people_content_type_admin_settings_form($form, &$form_state) {
   $form = array();
   $labels = variable_get('people_content_type_label_settings');
-  
+  $form['people_content_type_settings']['labels'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'People List Page filter labels',
+    '#description' => 'Customize the labels displayed on the People List Page filters.',
+  );
+  $form['people_content_type_settings']['labels']['department_label'] = array(
+    '#type' => 'textfield',
+    '#title' => 'Department Label',
+    '#default_value' => $labels['person_department'] ? $labels['person_department'] : 'Department',
+  );
+
   $form['people_content_type_settings']['labels']['type_label'] = array(
     '#type' => 'textfield',
     '#title' => 'Type Label',
     '#default_value' => $labels['person_type'] ? $labels['person_type'] : 'type',
   );
-    
+
   $form['people_content_type_settings']['labels']['filter_one_label'] = array(
     '#type' => 'textfield',
     '#title' => 'Filter One Label',
@@ -44,10 +54,11 @@ function people_content_type_admin_settings_form($form, &$form_state) {
  * TODO: Write function doco.
  */
 function people_content_type_settings_submit($form_id, &$form_state) {
+  $labels['person_department'] = $form_state['values']['department_label'];
   $labels['person_type'] = $form_state['values']['type_label'];
   $labels['person_filter_one'] = $form_state['values']['filter_one_label'];
   $labels['person_filter_two'] = $form_state['values']['filter_two_label'];
-  $labels['person_filter_three'] = $form_state['values']['filter_three_label'];  
+  $labels['person_filter_three'] = $form_state['values']['filter_three_label'];
   variable_set('people_content_type_label_settings', $labels);
   drupal_set_message('Settings have been saved.');
 }

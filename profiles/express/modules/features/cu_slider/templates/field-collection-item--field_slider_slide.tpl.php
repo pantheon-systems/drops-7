@@ -42,7 +42,7 @@
   <?php if(!empty($content['field_slider_caption']) || !empty($content['field_slider_teaser'])): ?>
   <div class="cu-slider-slide-content-wrapper">
     <div class="cu-slider-slide-content-inner">
-      <div class="cu-slider-slide-content">
+      <div class="cu-slider-slide-content element-max-width-padding">
         <?php if (isset($caption)) { print '<div class="cu-slider-caption">' . $caption . '</div>'; } ?>
         <?php
           if (!empty($content['field_slider_teaser'])) {

@@ -10,7 +10,7 @@
 function files_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_file_attachment'
+  // Exported field_base: 'field_file_attachment'.
   $field_bases['field_file_attachment'] = array(
     'active' => 1,
     'cardinality' => -1,

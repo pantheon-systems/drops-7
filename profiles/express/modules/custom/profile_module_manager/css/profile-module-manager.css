@@ -1,41 +1,51 @@
-#profile-module-manager-bundle-form .module-bundle-group .form-type-checkbox {
-  padding:20px;
+/* Bundle List Description */
+.modules-bundle-description {
+  margin-bottom: 20px;
+}
+/* Wrapper for all bundles */
+.module-bundles-wrapper {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  -webkit-flex-wrap: wrap;
+  -ms-flex-wrap: wrap;
+  flex-wrap: wrap;
+}
+/* Single bundle wrapper */
+.module-bundle-wrapper {
+  display: -webkit-flex;
+  display: -ms-flexbox;
+  display: flex;
+  float: none !important;
+}
+/* Single bundle */
+.module-bundle {
+  margin-bottom: 20px;
+  width:100%;
+}
+@media screen and (min-width:768px) {
+  .module-bundle {
+    margin-bottom: 40px;
+  }
+}
+.bundle-enabled .module-bundle {
+  background-color: #f2f2f2;
+  padding: 10px;
+}
+.bundle-disabled .module-bundle {
   border:1px solid #e7e7e7;
-  margin-bottom: 10px;
+  padding: 10px;
 }
-@media (min-width: 960px) {
-  #profile-module-manager-bundle-form .module-bundle-group {
-    display: table;
-    border-spacing: 10px 5px;
-
-  }
-  #profile-module-manager-bundle-form .module-bundle-group .form-type-checkbox {
-    display: table-cell;
-    width:20%;
-    padding:20px;
-    border:1px solid #e7e7e7;
-    margin-bottom: 0;
-
-  }
-  #profile-module-manager-bundle-form .module-bundle-group .module-bundle-group-spacer {
-    display: table-cell;
-    width:20%;
-    padding:20px;
-  }
+/* Bundle description */
+.module-bundle-description {
+  line-height: 150%;
 }
-#profile-module-manager-bundle-form .form-type-checkbox input.form-checkbox {
-  float: left;
-  margin:5px 5px 5px 0;
+/* Bundle actions */
+.bundle-actions {
+  padding-top: 10px;
+  font-size: 75%;
 }
-#profile-module-manager-bundle-form .form-type-checkbox label {
-  font-weight: bold;
-  overflow: hidden;
-  display: block;
-  line-height: 20px;
-}
-#profile-module-manager-bundle-form .form-type-checkbox .description {
-  line-height: 20px;
-  clear: both;
-  margin-top: 5px;
-  color:#757575;
+.admin-bundle-separator {
+  padding-left: 20px;
+  padding-bottom: 20px;
 }

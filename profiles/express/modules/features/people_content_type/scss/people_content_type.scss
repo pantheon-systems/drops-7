@@ -59,9 +59,18 @@ span.responsive-label {
 
 /* NODE VIEW */
 
-.person-photo img {
+.person-photo img.image-medium,
+.person-photo img.image-small {
   float: right;
   margin: 0 0 20px 20px;
+  max-width:320px;
+  height: auto;
+  @media screen and (max-width:600px) and (min-width:420px) {
+    max-width:180px;
+  }
+  @media screen and (max-width:419px) {
+    max-width:120px;
+  }
 }
 
 /**
@@ -261,6 +270,10 @@ ul.field-name-field-person-website li:before {
   color:#aaa;
   margin-right: 5px;
   text-align: center;
+}
+.person-view-mode-teaser-contact,
+.person-view-mode-embed-contact {
+  padding-top: 20px;
 }
 .people-contact .fa {
   color:#aaa;

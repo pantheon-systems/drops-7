@@ -1,6 +1,6 @@
 <?php if ($priority == 'text'): ?>
   <div id="hero-<?php print $bid; ?>" class="<?php print $hero_classes; ?>">
-    <div class="hero-unit-content-wrapper">
+    <div class="hero-unit-content-wrapper element-max-width">
       <div class="hero-unit-content">
         <div class="hero-unit-content-inner">
         <h2><?php print render($content['field_hero_unit_headline']); ?></h2>
@@ -35,7 +35,7 @@
   <div class="<?php print $hero_classes; ?>">
     <img src="<?php print $image; ?>" alt=" " />
     <div class="hero-unit-image-content-wrapper clearfix">
-      <div class="hero-unit-content-wrapper">
+      <div class="hero-unit-content-wrapper element-max-width">
         <div class="hero-unit-content">
           <div class="hero-unit-content-inner">
           <h2><?php print render($content['field_hero_unit_headline']); ?></h2>

@@ -15,6 +15,97 @@
   
 function cu_people_bundle_secure_permissions($role) {
   // INSERT PERMISSIONS FOR THIS BUNDLE
+  $permissions = array(
+    'administrator' => array(
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'anonymous user' => array(
+      'view any people_list_block bean',
+    ),
+    'authenticated user' => array(
+      'view any people_list_block bean',
+    ),
+    'content_editor' => array(
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'developer' => array(
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+    'edit_my_content' => array(
+      'view any people_list_block bean',
+    ),
+    'site_owner' => array(
+      'administer people_filter_1 vocabulary terms',
+      'administer people_filter_2 vocabulary terms',
+      'administer people_filter_3 vocabulary terms',
+      'administer person_type vocabulary terms',
+      'create any people_list_block bean',
+      'create people_list_page content',
+      'create person content',
+      'delete any people_list_block bean',
+      'delete any people_list_page content',
+      'delete any person content',
+      'delete own people_list_page content',
+      'delete own person content',
+      'edit any people_list_block bean',
+      'edit any people_list_page content',
+      'edit any person content',
+      'edit own people_list_page content',
+      'edit own person content',
+      'view any people_list_block bean',
+    ),
+  );
+
   if (isset($permissions[$role])) {
     return $permissions[$role];
   }
@@ -30,35 +121,25 @@ function cu_people_bundle_secure_permissions($role) {
  * @return $variables
  */
 function cu_people_bundle_express_help($variables) {
-  $variables['admin/settings/people'][] = array(
-    'title' => 'Create People List Categories & Filters',
-    'short_title' => 'People List Categories and Filters',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/create-people-list-categories-filters',
+  $variables['admin/settings/people/settings'][] = array(
+    'title' => 'People Filter Labels Help',
+    'short_title' => 'People Filter Labels Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/556',
   );
   $variables['block/add/people-list-block'][] = array(
-    'title' => 'Adding People List Blocks Help',
-    'short_title' => 'People List Blocks',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/people-list-block',
+    'title' => 'People List Block Help',
+    'short_title' => 'People List Block Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/586',
   );
   $variables['node/add/person'][] = array(
-    'title' => 'Add Person Help',
-    'short_title' => 'Add Person',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-person',
-  );
-  $variables['node/add/person'][] = array(
-    'title' => 'Person Job Titles and Departments',
-    'short_title' => 'Job Titles and Departments',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/person-job-titles-departments',
+    'title' => 'People Help',
+    'short_title' => 'People Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/620',
   );
   $variables['node/add/people-list-page'][] = array(
-    'title' => 'Adding People List Page Help',
-    'short_title' => 'People List Page',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/add-people-list-page',
-  );
-  $variables['node/add/people-list-page'][] = array(
-    'title' => 'Apply People List Filters',
-    'short_title' => 'People List Filters',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/apply-people-list-filters',
+    'title' => 'People Help',
+    'short_title' => 'People Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/620',
   );
 
   return $variables;

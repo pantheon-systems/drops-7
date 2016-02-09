@@ -37,7 +37,7 @@ function drush_metatag_importer_metatag_convert_nodewords() {
   }
 
   // Offload all of the logic to the code contained in the admin file.
-  include('metatag_importer.admin.inc');
+  include('metatag_importer.nodewords.inc');
 
   // Start the import.
   // @todo This isn't working.

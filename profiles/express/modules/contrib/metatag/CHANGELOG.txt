@@ -1,3 +1,120 @@
+Metatag 7.x-1.8, 2016-01-14
+---------------------------
+#2546636 by DamienMcKenna: Fixes to the custom Panels pane for editing tags.
+#2113501 by DamienMcKenna: Shortened i18n translation context to just
+  "metatag:METATAGNAME" to make translations easier.
+#2552829 by DamienMcKenna: Move the basic meta tags to a group.
+#2552827 by DamienMcKenna: Group meta tag tokens so they're less confusing.
+#2552849 by DamienMcKenna: Meta tag tokens for user entities.
+#1986032 by DamienMcKenna, izus, yang_yi_cn, Placinta, maijs, Tharna, stijndmd:
+  Improved i18n compatibility for the Views, Panels and Context submodules.
+#2518690 by manikaprasanth: Added support for editing Commerce product entities.
+#2550001 by DamienMcKenna: Renamed twitter:image:src back to twitter:image. LOL.
+#2559359 by labboy0276: Errors if the Views integration can't find the expected
+  display object.
+#2560649 by DamienMcKenna: Added optional second-stage translation for meta tag
+  output.
+#2556741 by DamienMcKenna: Fixed robots handling on Nodewords importer; moved
+  Nodewords importer into a separate file to keep the Importer module more
+  general.
+#1809652 by DamienMcKenna: Added a new [current-page:pager] token for inserting
+  a pager into meta tags.
+#1809652 by DamienMcKenna: Update default node title to insert the pager.
+#2518690 by DamienMcKenna: Improvements to Commerce Product handling.
+#2568499 by DamienMcKenna: Added new Apple-specific meta tags to the Mobile
+  submodule.
+#2568463 by DamienMcKenna: Added the android-app deeplink meta tag.
+#2569093 by DamienMcKenna: Added the ios-app deeplink meta tag.
+#2568955 by DamienMcKenna: Don't output meta tags that only contain a pager.
+#2556741 by DamienMcKenna: BatchAPI call wasn't updated after the Nodewords
+  importer file was renamed.
+#2514916 by DamienMcKenna: Split up the tests file, moved them into the tests
+  directory, added new tests for node revisions.
+#2567621 by hass: Allow the custom pager to be translated using the i18n
+  Variable module.
+#2572371 by Dave Reid: Remove support for comments.
+#2572291 by Dave Reid: Always display config items in the correct order - global
+  items first, then sorted alphabetically.
+#2567677 by Perignon, DamienMcKenna: og:video meta tag renamed.
+#2556741 by DamienMcKenna: Follow-up to fix imported robots meta tags.
+#2556741 by DamienMcKenna: Updated the final commit message to show the correct
+  count.
+#2498213 by makangus: Added the Android manifest meta tag.
+#2573869 by DamienMcKenna: Fixed variable bug in update 7040.
+#2579871 by DamienMcKenna: Added more test dependencies.
+#2579201 by lesonunique, DamienMcKenna: Missing 'secure' option on
+  og:audio:secure_url.
+#2580623 by marcvangend: Incorrect check for admin_language.
+#2580523 by DamienMcKenna: Add a note to hook_requirements if hreflang module
+  is not installed and there are multiple locales enabled on the site.
+#2587369 by DamienMcKenna: Added two placeholder files for storing tests for the
+  Views integration.
+#2587371 by DamienMcKenna: Added two placeholder files for storing tests for the
+  Panels integration.
+#2376857 by DamienMcKenna: Work around entity definitions that don't have a
+  'bundles' attribute.
+#2455777 by DamienMcKenna: Don't try to save any {metatag} records if the entity
+  or bundle is not supported.
+#2597301 by DamienMcKenna: New submodule for handling the hreflang meta tag.
+#2603058 by FluxSauce: Fixed problem loading migrate.inc file if Migrate is not
+  enabled.
+#1957358 by pjonckiere, DamienMcKenna: Add tests to ensure that the meta tag
+  string encoding works correctly.
+By DamienMcKenna: Some commit messages were in the wrong place.
+#2603458 by Frando: Fixed update 7018 for sites using Entity Translation, and
+  re-run it.
+#1355788 by DamienMcKenna: Allow use of 'public://' file scheme for images.
+#2550001 by Dave Reid: Blank out metatag_update_7024() and metatag_update_7030()
+  because the 'twitter:image:src' meta tag was renamed back to 'twitter:image'
+  so these updates don't need to ever run.
+#1957358 by DamienMcKenna: Added tests to confirm that HTML entities work
+  correctly in the page title.
+#2619438 by DamienMcKenna: Improve documentation on the mobile subtheme.
+#2597301 by DamienMcKenna: Only use the new locale-URL tokens when translations
+  modules are enabled.
+#2180031 by DamienMcKenna: Fixed double-encoding of tokens.
+#2635144 by DamienMcKenna: Added the apple-itunes-app meta tag.
+#1904542 by DamienMcKenna: Added a bunch of Windows and IE -focused meta tags.
+#2636132 by SpaghettiBolognese: Inconsistency in submodule naming.
+#2637026 by matthewordie, DamienMcKenna: Mention in the og:image meta tag how
+  Facebook will handle multiple images (It defaults to the largest one).
+#2564483 by DamienMcKenna, drupov, mas0h, das-peter, pwiniacki, sylus, webflo,
+  Gábor Hojtsy, pjonckiere, k_zoltan: Fixed i18n integration for core module and
+  all submodules; added over 1,000 new test assertions in major expansion of the
+  test suite.
+#2644156 by DamienMcKenna: Default value of image_src meta tag for user entity
+  was set incorrectly.
+#2639170 by anthonyleach: Use the correct hooks to add the RDF namespaces.
+#2628558 by marcelovani: Renamed the bundled Context definitions to avoid
+  conflicts.
+By DamienMcKenna: Fixed an accidental removal of the Token v1.6 requirement.
+#2622662 by rollsd: Adjusted logic to fix problem with entity types that only
+  have one bundle.
+#2648804 by DamienMcKenna: Removed some unfinished code from
+  metatag_metatags_delete_multiple().
+#2587725 by DamienMcKenna: Fixed display of meta tag labels in localized entity
+  & config forms.
+#2389929 by michee.lengronne, scor, DamienMcKenna, sint: Fixed Google+ HTML
+  head declaration so it validates, but a change to the site's html.tpl.php is
+  now required.
+#2184857 by DamienMcKenna, mikeytown2: Expanded metatag_metatags_load() to allow
+  meta tags to be loaded by revision ID.
+#1838554 by dimchich, jcnventura, Bao Truong, marcelovani, DamienMcKenna: Allow
+  entity tokens to be properly used on entity pages via Metatag:Context i.e.
+  'by path'.
+#2361343 by marcelovani: Allow by-path definitions to override the page title of
+  all pages.
+#2493689 by DamienMcKenna: Removed two arguments from metatag_metatags_save()
+  that weren't actually being used.
+#2613598 by DamienMcKenna: Added a copy of the Contributor Covenant in the
+  CODE_OF_CONDUCT.txt file.
+#2335015 by DamienMcKenna: Remove og:type 'blog'.
+#2649816 by DamienMcKenna: Added a copy of the GPL 2.0 license to the
+  repository.
+#2338211 by DamienMcKenna: Only output the first item of a token for image meta
+  tags that only support one value.
+
+
 Metatag 7.x-1.7, 2015-07-24
 ---------------------------
 #2537738 by deepak_zyxware: Incorrect path to fb_social settings page.
@@ -274,6 +391,8 @@ Metatag 7.x-1.0-rc2, 2014-08-05
   didn't work correctly on Panels pages.
 #2153977 by paolomainardi, DamienMcKenna: Fix for translations of base entity
   type configuration when there is no bundle configuration.
+#2572891 by DamienMcKenna: Removed most 'fine tuning' items from the README.txt
+  file, added notes again about using Imagecache_Token to improve images.
 
 
 Metatag 7.x-1.0-rc1, 2014-07-12

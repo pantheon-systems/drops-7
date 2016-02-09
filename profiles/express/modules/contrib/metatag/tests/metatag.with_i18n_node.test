@@ -1,0 +1,107 @@
+<?php
+/**
+ * @file
+ * Tests for the Metatag module to ensure i18n integration doesn't break.
+ */
+
+class MetatagCoreWithI18nNodeTest extends MetatagTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests with i18n: node',
+      'description' => 'Test Metatag node config integration with the i18n module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Need the i18n and i18n_strings modules.
+    $modules[] = 'i18n';
+    $modules[] = 'i18n_string';
+
+    // Enable all of the modules that are needed.
+    parent::setUp($modules);
+
+    // Set up the locales.
+    $perms = array(
+      'administer languages',
+      'translate interface',
+      // From i18n.
+      'translate admin strings',
+      'translate user-defined strings',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+    $this->setupLocales();
+
+    // Reload the translations.
+    drupal_flush_all_caches();
+    module_load_include('admin.inc', 'i18n_string');
+    i18n_string_refresh_group('metatag');
+  }
+
+  /**
+   * Test translations of the main node configuration.
+   */
+  public function testI18nNodeConfig() {
+    // Plan out the different translation string tests.
+    $string_en = 'It is a node page!';
+    $config_name = 'metatag_config:node:title';
+
+    // Confirm the translation page exists and has some Metatag strings.
+    $this->searchTranslationPage('', $config_name);
+
+    // Confirm the string is not present yet.
+    $this->searchTranslationPage($string_en, $config_name, FALSE);
+
+    // Load the meta tags.
+    $instance = 'node';
+    $config = metatag_config_load($instance);
+
+    // Set something specific as the homepage.
+    $config->config['title']['value'] = $string_en;
+    metatag_config_save($config);
+
+    // Confirm the string is present now.
+    $this->searchTranslationPage($string_en, $config_name);
+
+    // Get the translation string lid for the node's title.
+    $lid = $this->getTranslationLidByContext($config_name);
+    $this->assertNotEqual($lid, 0, 'Found the locales_source string for the node title tag.');
+  }
+
+  /**
+   * Test translations of the 'page' content type configuration.
+   */
+  public function testI18nNodePageConfig() {
+    // Plan out the different translation string tests.
+    $string_en = 'It is a node page page!';
+    $config_name = 'metatag_config:node:page:title';
+
+    // Confirm the translation page exists and has some Metatag strings.
+    $this->searchTranslationPage('', $config_name);
+
+    // Confirm the string is not present yet.
+    $this->searchTranslationPage($string_en, $config_name, FALSE);
+
+    // Create a new config object for the node:page structure.
+    $config = new StdClass();
+    $config->instance = 'node:page';
+
+    // Set an example tag.
+    $config->config['title']['value'] = $string_en;
+    metatag_config_save($config);
+
+    // Confirm the string is present now.
+    $this->searchTranslationPage($string_en, $config_name);
+
+    // Get the translation string lid for the node's title.
+    $lid = $this->getTranslationLidByContext($config_name);
+    $this->assertNotEqual($lid, 0, 'Found the locales_source string for the node title tag.');
+  }
+
+}

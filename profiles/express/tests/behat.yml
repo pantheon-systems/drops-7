@@ -1,0 +1,125 @@
+default:
+  formatters:
+    pretty: true
+  suites:
+    core:
+      paths: [ %paths.base%/features/Core ]
+      contexts:
+        - CoreContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    advanced_content:
+      paths: [ %paths.base%/features/AdvancedContent ]
+      contexts:
+        - AdvancedContentContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    advanced_layout:
+      paths: [ %paths.base%/features/AdvancedLayout ]
+      contexts:
+        - AdvancedLayoutContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    events:
+      paths: [%paths.base%/features/Events]
+      contexts:
+        - EventsContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    forms:
+      paths: [%paths.base%/features/Forms]
+      contexts:
+        - FormsContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    news_articles:
+      paths: [%paths.base%/features/NewsArticles]
+      contexts:
+        - NewsArticlesContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    people:
+      paths: [%paths.base%/features/People]
+      contexts:
+        - PeopleContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    photo_gallery:
+      paths: [%paths.base%/features/PhotoGallery]
+      contexts:
+        - PhotoGalleryContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    seo:
+      paths: [%paths.base%/features/SEO]
+      contexts:
+        - SEOContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+    social_media:
+      paths: [%paths.base%/features/SocialMedia]
+      contexts:
+        - SocialMediaContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+        - Drupal\DrupalExtension\Context\MessageContext
+        - Drupal\DrupalExtension\Context\DrushContext
+  extensions:
+    Behat\MinkExtension:
+      goutte: ~
+      selenium2: ~
+      javascript_session: selenium2
+      browser_name: firefox
+      base_url: http://express.local/testing
+    Drupal\DrupalExtension:
+      blackbox: ~
+      api_driver: 'drupal'
+      drupal:
+        drupal_root: '/data/web/express/testing'
+      subcontexts:
+        paths:
+          - "/data/web/express/testing/profiles/express/tests"
+      text:
+        username_field: "CU Login Name"
+        password_field: "IdentiKey Password"
+        log_out: "Log out"
+        log_in: "Log in"
+      selectors:
+        message_selector: '.messages'
+        error_message_selector: '.messages.error'
+        success_message_selector: '.messages.status'
+      region_map:
+        Content: ".region.region-content"
+        Branding: "#branding"
+        Search: ".region-search-box"
+        Secondary Menu: "#secondary-menu"
+        Menu: "#navigation"
+        Sidebar First: ".region-sidebar-first"
+        Sidebar Second: "#region-sidebar-second"
+        Wide Intro: "#intro-wide-wrapper"
+        Slider: ""
+        Help: ""
+        Wide Post: "#post-wide-wrapper"
+        After Content: ""
+        After Content 2: ""
+        Footer: "#section-footer"
+        Site Information: "#site-info-wrapper"
+        Alerts: "#messages-wrapper"

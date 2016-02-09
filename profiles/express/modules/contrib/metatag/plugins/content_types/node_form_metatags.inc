@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Displey the node form's Metatag fieldset in a pane. 
+ * Display the node form's Metatag fieldset in a pane.
  */
 
 $plugin = array(
@@ -13,11 +13,14 @@ $plugin = array(
   'category' => t('Form'),
 );
 
-function metatag_panels_node_form_metatags_content_type_render($subtype, $conf, $panel_args, &$context) {
+/**
+ * CTools content type callback to output this pane.
+ */
+function metatag_node_form_metatags_content_type_render($subtype, $conf, $panel_args, &$context) {
   $block = new stdClass();
 
   $block->title = t('Meta tags');
-  $block->module = t('metatag_panels');
+  $block->module = 'metatag';
   $block->delta = 'metatag';
 
   if (isset($context->form)) {
@@ -38,11 +41,34 @@ function metatag_panels_node_form_metatags_content_type_render($subtype, $conf, 
   return $block;
 }
 
-function metatag_panels_node_form_metatags_content_type_admin_title($subtype, $conf, $context) {
-  return t('"@s" node form meta tags', array('@s' => $context->identifier));
+/**
+ * CTools content type callback to get the title of this pane.
+ */
+function metatag_node_form_metatags_content_type_admin_title($subtype, $conf, $context) {
+  if (isset($context->identifier)) {
+    $message = t('"@s" node form meta tags', array('@s' => $context->identifier));
+  }
+  else {
+    $message = t('Node form meta tags');
+  }
+  return $message;
 }
 
-function metatag_panels_node_form_metatags_content_type_edit_form($form, &$form_state) {
+/**
+ * CTools content type callback to display an edit form for this pane.
+ */
+function metatag_node_form_metatags_content_type_edit_form($form, &$form_state) {
   // Provide a blank form so we have a place to have context setting.
   return $form;
+}
+
+/**
+ * CTools content type callback to provide extra information about this pane.
+ */
+function metatag_node_form_metatags_content_type_admin_info($type, $subtype, $conf, $context = NULL) {
+  $output = new stdClass();
+  $output->title = t('Metatag form');
+  $output->content = t('Shows the meta tag fields on this node form if the user has the appropriate permissions.');
+
+  return $output;
 }

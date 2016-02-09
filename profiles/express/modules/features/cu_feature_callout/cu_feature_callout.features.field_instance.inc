@@ -10,7 +10,7 @@
 function cu_feature_callout_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-feature_callout-field_callout_columns'
+  // Exported field_instance: 'bean-feature_callout-field_callout_columns'.
   $field_instances['bean-feature_callout-field_callout_columns'] = array(
     'bundle' => 'feature_callout',
     'default_value' => array(
@@ -48,7 +48,7 @@ function cu_feature_callout_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-feature_callout-field_callout_image_size'
+  // Exported field_instance: 'bean-feature_callout-field_callout_image_size'.
   $field_instances['bean-feature_callout-field_callout_image_size'] = array(
     'bundle' => 'feature_callout',
     'default_value' => array(
@@ -86,7 +86,7 @@ function cu_feature_callout_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-feature_callout-field_callouts'
+  // Exported field_instance: 'bean-feature_callout-field_callouts'.
   $field_instances['bean-feature_callout-field_callouts'] = array(
     'bundle' => 'feature_callout',
     'default_value' => NULL,
@@ -125,7 +125,7 @@ function cu_feature_callout_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_callouts-field_callout_image'
+  // 'field_collection_item-field_callouts-field_callout_image'.
   $field_instances['field_collection_item-field_callouts-field_callout_image'] = array(
     'bundle' => 'field_callouts',
     'deleted' => 0,
@@ -237,7 +237,7 @@ function cu_feature_callout_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_callouts-field_callout_text'
+  // 'field_collection_item-field_callouts-field_callout_text'.
   $field_instances['field_collection_item-field_callouts-field_callout_text'] = array(
     'bundle' => 'field_callouts',
     'default_value' => NULL,
@@ -285,7 +285,7 @@ function cu_feature_callout_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_callouts-field_callout_title'
+  // 'field_collection_item-field_callouts-field_callout_title'.
   $field_instances['field_collection_item-field_callouts-field_callout_title'] = array(
     'bundle' => 'field_callouts',
     'default_value' => NULL,
@@ -321,6 +321,7 @@ function cu_feature_callout_field_default_field_instances() {
       'absolute_url' => 1,
       'attributes' => array(
         'class' => '',
+        'configurable_class' => 0,
         'configurable_title' => 0,
         'rel' => '',
         'target' => 'default',
@@ -330,9 +331,14 @@ function cu_feature_callout_field_default_field_instances() {
         'url_cutoff' => 80,
       ),
       'enable_tokens' => 1,
+      'linkit' => array(
+        'button_text' => 'Search',
+        'enable' => 1,
+        'profile' => 'express_linkit_field_profile',
+      ),
       'rel_remove' => 'default',
       'title' => 'optional',
-      'title_label_use_field_label' => FALSE,
+      'title_label_use_field_label' => 0,
       'title_maxlength' => 255,
       'title_value' => '',
       'url' => 'optional',
@@ -340,15 +346,10 @@ function cu_feature_callout_field_default_field_instances() {
       'validate_url' => 0,
     ),
     'widget' => array(
-      'active' => 1,
-      'module' => 'advanced_link',
-      'settings' => array(
-        'default_titles' => '',
-        'urls_allowed' => 'both',
-        'urls_filter' => '',
-        'urls_search' => 'contains',
-      ),
-      'type' => 'advanced_link',
+      'active' => 0,
+      'module' => 'link',
+      'settings' => array(),
+      'type' => 'link_field',
       'weight' => 31,
     ),
   );

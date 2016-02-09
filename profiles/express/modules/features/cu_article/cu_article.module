@@ -7,10 +7,92 @@
 include_once 'cu_article.features.inc';
 
 /**
+ * Implements hook_menu().
+ */
+function cu_article_menu() {
+  // News BLOCK
+  $items['admin/settings/news'] = array(
+    'title' => 'News',
+    'description' => 'Configuration Options for News',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 1,
+  );
+  $items['admin/settings/news/article-settings'] = array(
+    'title' => 'Article Settings',
+    'description' => 'Global setting to show or hide the Article publication date on all articles',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_article_global_settings_form'),
+    'access arguments' => array('administer express settings'),
+    'description' => 'Global site configurations for articles.'
+  );
+  $items['admin/structure/taxonomy/%taxonomy_vocabulary_machine_name/hidden'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Hidden Terms',
+    'page callback' => 'cu_article_hidden_tags',
+    'access arguments' => array('taxonomy_form_vocabulary', 3),
+    'access callback' => 'cu_article_hidden_tags_access',
+    'description' => 'See what tags are set to be hidden',
+  );
+  $items['node/%node/articles'] = array(
+    'page callback' => 'cu_article_by_person',
+    'page arguments' => array(1),
+    'access callback' => 'cu_article_by_person_access',
+    'access arguments' => array(1),
+    'title callback' => 'cu_article_by_person_title',
+    'title arguments' => array(1),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_form().
+ */
+function cu_article_global_settings_form($form, &$form_state) {
+  $settings = variable_get('cu_article_global_settings', '');
+  $form['published_date'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Article Published Date Display',
+  );
+  $form['published_date']['date_display'] = array(
+    '#type' => 'radios',
+    '#options' => array(
+      'custom' => 'Choose on each article if publish date should be displayed',
+      'show' => 'Show publish date on all articles',
+      'hide' => 'Hide publish date on all articles',
+    ),
+    '#default_value' => $settings['date_display'] ? $settings['date_display'] : 'custom',
+  );
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Save Settings'),
+  );
+  $form['#submit'][] = 'cu_article_global_settings_form_submit';
+  return $form;
+}
+
+/**
+ * Submit function for cu_article_global_settings_form().
+ */
+function cu_article_global_settings_form_submit($form, &$form_state) {
+  if (isset($form_state['values']['date_display'])) {
+    $settings['date_display'] = $form_state['values']['date_display'];
+    variable_set('cu_article_global_settings', $settings);
+    drupal_set_message(t('Article settings have been saved.'), 'status', FALSE);
+  }
+}
+
+/**
  *  Implements hook_form_FORM_ID_alter.
  */
 function cu_article_form_article_list_page_node_form_alter(&$form, &$form_state, $form_id) {
-  $form['menu']['enabled']['#default_value'] = TRUE;
+  // Only do this for new nodes
+  if ($form['nid']['#value'] == NULL) {
+    $form['menu']['enabled']['#default_value'] = TRUE;
+  }
 }
 
 /**
@@ -19,6 +101,9 @@ function cu_article_form_article_list_page_node_form_alter(&$form, &$form_state,
 function cu_article_page_alter(&$page) {
   drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/cu-article.css');
   drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/cu-article-grid.css');
+  drupal_add_css(drupal_get_path('module', 'cu_article') . '/css/owl.carousel.css');
+  drupal_add_js(drupal_get_path('module', 'cu_article') . '/js/owl.carousel.js');
+  drupal_add_js(drupal_get_path('module', 'cu_article') . '/js/article-slider.js');
 }
 
 /**
@@ -52,6 +137,8 @@ function cu_article_theme_registry_alter(&$theme_registry) {
  * Prepare content for article list and article grid beans
  */
 function cu_article_preprocess_entity(&$vars) {
+  $entity_type = $vars['elements']['#entity_type'];
+  $bundle = $vars['elements']['#bundle'];
   if ($vars['elements']['#bundle'] == 'articles') {
     $content = $vars['content'];
     global $base_url;
@@ -74,7 +161,7 @@ function cu_article_preprocess_entity(&$vars) {
     }
     $query->condition('n.type', 'article', '=');
     $query->condition('n.status', 1, '=');
-    $query->fields('n', array('nid', 'title'));
+    $query->fields('n', array('nid', 'title', 'sticky'));
 
     // Filter by tag.
     if (isset($vars['elements']['#entity']->field_article_term[LANGUAGE_NONE])) {
@@ -87,7 +174,21 @@ function cu_article_preprocess_entity(&$vars) {
       $query->condition('tags.field_tags_tid', $terms, 'in');
     }
 
+    // Filter by category.
+    if (isset($vars['elements']['#entity']->field_article_list_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_list_category[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    $query->distinct();
+    $query->groupBy('n.nid');
     // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
     $query->orderBy('created', 'DESC');
     $nids = $query->execute()->fetchCol();
     $nodes = node_load_multiple($nids);
@@ -95,13 +196,25 @@ function cu_article_preprocess_entity(&$vars) {
 
     // Pass a tag type to use for node titles - this is used in the article node tpl
     foreach ($nodes as $key => $node) {
-      $nodes[$key]->heading_tag['#tag'] = 'strong';
+      if ($display == 'feature' || $display == 'feature_large') {
+        $nodes[$key]->heading_tag['#tag'] = 'h3';
+      } else {
+        $nodes[$key]->heading_tag['#tag'] = 'strong';
+      }
     }
     // Build output.
     if (!empty($nodes)) {
       $rows = array();
-      $output['articles'] = node_view_multiple($nodes, $display);
-
+      if ($display == 'feature_large') {
+          $output['articles'] = node_view_multiple($nodes, 'feature');
+          foreach ($output['articles']['nodes'] as $key => $node) {
+            if (!empty($output['articles']['nodes'][$key]['field_article_thumbnail'])) {
+              $output['articles']['nodes'][$key]['field_article_thumbnail'][0]['#image_style'] = 'slider-large';
+            }
+          }
+      } else {
+        $output['articles'] = node_view_multiple($nodes, $display);
+      }
       if ($pager == 1) {
         $output['pager'] = array(
           '#theme' => 'pager',
@@ -149,7 +262,7 @@ function cu_article_preprocess_entity(&$vars) {
     $query = $query->extend('PagerDefault')->limit($items);
     $query->condition('n.type', 'article', '=');
     $query->condition('n.status', 1, '=');
-    $query->fields('n', array('nid', 'title'));
+    $query->fields('n', array('nid', 'title', 'sticky'));
 
 
     // Filter by tag.
@@ -163,7 +276,21 @@ function cu_article_preprocess_entity(&$vars) {
       $query->condition('tags.field_tags_tid', $terms, 'in');
     }
 
+    // Filter by category.
+    if (isset($vars['elements']['#entity']->field_article_grid_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_grid_category[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    $query->distinct();
+    $query->groupBy('n.nid');
     // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
     $query->orderBy('created', 'DESC');
 
     $nids = $query->execute()->fetchCol();
@@ -190,6 +317,163 @@ function cu_article_preprocess_entity(&$vars) {
     }
     $vars['content'] = array_merge($vars['content'], $output);
   }
+
+  // Article Feature Bean
+  if ($entity_type == 'bean' && $bundle == 'article_feature') {
+    // Get settings
+    $display = $vars['elements']['#entity']->field_article_feature_display[LANGUAGE_NONE][0]['value'];
+    $image_style = $vars['elements']['#entity']->field_article_feature_image_size[LANGUAGE_NONE][0]['value'];
+    // Start query.
+    $query = db_select('node', 'n');
+    if ($display == 'article-feature-stacked') {
+      $query->range(0, 4);
+    } else {
+      $query->range(0, 5);
+    }
+
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title'));
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+
+    // Filter by tag.
+    if (isset($vars['elements']['#entity']->field_article_feature_filter[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_feature_filter[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Filter by category.
+    if (isset($vars['elements']['#entity']->field_article_feature_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_feature_category[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    $query->distinct();
+    $query->groupBy('n.nid');
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+    // Get the first article so we can style it differently
+    // Not using array_shift because it does not preserve keys
+    $first_key = key($nodes);
+    $top_article = $nodes[$first_key];
+    unset($nodes[$first_key]);
+    $output = array();
+
+    // Show categories option
+    $show_category = !empty($vars['elements']['#entity']->field_article_feature_show_cat) ? $vars['elements']['#entity']->field_article_feature_show_cat[LANGUAGE_NONE][0]['value'] : 'hide';
+    // View mdoes for articles in feature article bean.
+    $view_modes['feature'] = array(
+      'hide' => 'feature',
+      'show' => 'feature_category',
+    );
+    $view_modes['sidebar'] = array(
+      'hide' => 'sidebar',
+      'show' => 'sidebar_category',
+    );
+    $output['top_article'] = node_view($top_article, $view_modes['feature'][$show_category]);
+    // Change the image style of the first article
+    $output['top_article']['field_article_thumbnail'][0]['#image_style'] = $image_style;
+    $output['top_article']['#prefix'] = '<div class="article-feature-top">';
+    $output['top_article']['#suffix'] = '</div>';
+    // Do the rest of the articles
+    $remaining_nodes = node_view_multiple($nodes, $view_modes['sidebar'][$show_category]);
+    foreach($remaining_nodes as $key => $remaining_node) {
+      // Insert categories here
+    }
+    $output['articles']['remaining'] = $remaining_nodes;
+    $output['articles']['more'] = $vars['content']['field_article_link'];
+    $output['articles']['#prefix'] = '<div class="article-feature-remaining clearfix">';
+    $output['articles']['#suffix'] = '</div>';
+    $vars['content'] = $output;
+    // Add classes to set layout
+    $vars['content']['#prefix'] = '<div class="article-feature ' . $display . '">';
+    $vars['content']['#suffix'] = '</div>';
+  }
+
+  if ($vars['elements']['#bundle'] == 'article_slider') {
+    $bid = $vars['bean']->bid;
+    $content = $vars['content'];
+    global $base_url;
+
+    // Start query.
+    $query = db_select('node', 'n');
+
+    // Set number of items.
+
+    $query = $query->extend('PagerDefault')->limit(15);
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title', 'sticky'));
+
+    // Filter by tag.
+    if (isset($vars['elements']['#entity']->field_article_slider_filter[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_slider_filter[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_tags", "tags", "n.nid = tags.entity_id");
+      $query->fields('tags', array('field_tags_tid'));
+      $query->condition('tags.field_tags_tid', $terms, 'in');
+    }
+
+    // Filter by category.
+    if (isset($vars['elements']['#entity']->field_article_slider_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['elements']['#entity']->field_article_slider_category[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
+    // Make sure articles have thumbnails
+    $query->join("field_data_field_article_thumbnail", "thumbs", "n.nid = thumbs.entity_id");
+    $query->fields('thumbs', array('field_article_thumbnail_fid'));
+    $query->condition('thumbs.field_article_thumbnail_fid', 'NULL', '!=');
+
+    $query->distinct();
+    $query->groupBy('n.nid');
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+
+    // Build output.
+    if (!empty($nodes)) {
+      $output = array();
+      $rows = array();
+      $rows[1] = 'alpha';
+      $rows[2] = '';
+      $rows[3] = 'omega';
+      $i = 1;
+      $output['articles'] = node_view_multiple($nodes, 'grid');
+      unset($output['articles']['nodes']['#sorted']);
+      foreach ($output['articles']['nodes'] as $nid => $node) {
+        $output['articles']['nodes'][$nid]['#prefix'] = '<div class="article-view-mode-grid article-slider-slide">';
+        $output['articles']['nodes'][$nid]['#suffix'] = '</div>';
+        $i++;
+      }
+      $output['articles']['#prefix'] = '<div class="article-slider">';
+      $output['articles']['#suffix'] = '</div>';
+    }
+    unset($vars['content']['article_slider_entity_view_1']);
+    $vars['content']['article_slider'] = $output;
+  }
 }
 
 /**
@@ -200,18 +484,41 @@ function cu_article_preprocess_entity(&$vars) {
  */
 function cu_article_preprocess_node(&$vars) {
   if ($vars['node']->type == 'article') {
-    $vars['content']['new_tags']['#weight'] = 50;
+    // Load global article settings
+    $settings = variable_get('cu_article_global_settings', '');
+
+    // Add article metadata element. Other modules can add to this.
+    $vars['content']['article_meta']['#prefix'] = '<div class="article-meta-wrapper"><div class="article-meta">';
+    $vars['content']['article_meta']['#suffix'] = '</div></div>';
+    $vars['content']['article_meta']['#weight'] = 100;
+
+    // Add publish date to author meta element
+    $vars['author_meta']['date'] = '<i class="fa fa-clock-o"></i><span class="element-invisible">Published:</span>  ' . $vars['ap_date_cu_medium_date'];
+
+    // Show/hide publish date
+    $article_date_settings = !empty($vars['node']->field_article_date_display) ? $vars['node']->field_article_date_display[LANGUAGE_NONE][0]['value'] : NULL;
+    if (
+      ($article_date_settings == 'hide' || $settings['date_display'] == 'hide') && $settings['date_display'] != 'show'
+    ) {
+      unset($vars['author_meta']['date']);
+    }
+
+    // If there are tags, get terms to build new tag list
+    $tids = array();
     if (isset($vars['field_tags'])) {
+      $vars['content']['new_tags']['#weight'] = 50;
       foreach ($vars['field_tags'] as $tid) {
         if (isset($tid['tid'])) {
           $tids[] = $tid['tid'];
         }
       }
     }
+    // Build new tag list that links to article list pages
     if (isset ($tids)) {
       $terms = taxonomy_term_load_multiple($tids);
       foreach ($terms as $term) {
-        if (isset($term->name)) {
+        $display = isset($term->field_tag_display[LANGUAGE_NONE][0]['value']) ? $term->field_tag_display[LANGUAGE_NONE][0]['value'] : 'show';
+        if (isset($term->name) && $display == 'show') {
           $tag = $term->name;
           if (!empty($term->field_tag_term_page_link)) {
             $new_tags[] = l($tag, $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url']);
@@ -221,8 +528,78 @@ function cu_article_preprocess_node(&$vars) {
           }
         }
       }
-      $markup = implode(', ', $new_tags);
-      $vars['content']['article_tags'][0]['#markup'] = $markup;
+      // Add new tags to article_meta element
+      if (!empty($new_tags)) {
+        $markup = '<i class="fa fa-tags"></i><span class="element-invisible">Tags:</span> ' . implode(', ', $new_tags);
+        $vars['content']['article_meta']['article_tags']['#markup'] = $markup;
+        $vars['content']['article_meta']['article_tags']['#prefix'] = '<div class="article-meta-section article-meta-tags">';
+        $vars['content']['article_meta']['article_tags']['#suffix'] = '</div>';
+        $vars['content']['article_meta']['article_tags']['#weight'] = 0;
+      }
+    }
+
+    // If there are categories, get terms to build new category list
+    $tids = array();
+    if (isset($vars['field_article_categories'])) {
+      $vars['content']['new_categories']['#weight'] = 50;
+      foreach ($vars['field_article_categories'] as $tid) {
+        if (isset($tid['tid'])) {
+          $tids[] = $tid['tid'];
+        }
+      }
+    }
+    // Build new tag list that links to article list pages
+    if (isset ($tids)) {
+      $terms = taxonomy_term_load_multiple($tids);
+      foreach ($terms as $term) {
+        $display = isset($term->field_category_display[LANGUAGE_NONE][0]['value']) ? $term->field_category_display[LANGUAGE_NONE][0]['value'] : 'show';
+        if (isset($term->name) && $display == 'show') {
+          $category = $term->name;
+          if (!empty($term->field_category_term_page_link)) {
+            $new_categories[] = l($category, $term->field_category_term_page_link[LANGUAGE_NONE][0]['url']);
+          }
+          else {
+            $new_categories[] = $category;
+          }
+        }
+      }
+      // Add new tags to article_meta element
+      if (!empty($new_categories)) {
+        $markup = '<i class="fa fa-folder-open"></i><span class="element-invisible">Categories:</span> ' . implode(', ', $new_categories);
+        $vars['content']['article_meta']['article_categories']['#markup'] = $markup;
+        $vars['content']['article_meta']['article_categories']['#prefix'] = '<div class="article-meta-section article-meta-categories">';
+        $vars['content']['article_meta']['article_categories']['#suffix'] = '</div>';
+        $vars['content']['article_meta']['article_categories']['#weight'] = -10;
+
+        // Build category list for category_teaser view mode
+        $vars['category_teaser_category_links'] = implode(' ', $new_categories);
+      }
+    }
+
+    // Bylines
+    if (!empty($vars['field_article_byline'])) {
+      // For bylines at top of article
+      $bylines = array();
+      // Load bylines terms
+      foreach ($vars['field_article_byline'][LANGUAGE_NONE] as $byline) {
+        $term = taxonomy_term_load($byline['tid']);
+        // If term has a url, link to url
+        if (!empty($term->field_article_byline_url)) {
+          $url = $term->field_article_byline_url[LANGUAGE_NONE][0]['url'];
+          $bylines[] = l($term->name, $url);
+        }
+        // If term has a person id, link to person node
+        elseif (!empty($term->field_article_byline_person_id)) {
+          $person_id = $term->field_article_byline_person_id[LANGUAGE_NONE][0]['value'];
+          $bylines[] = l($term->name, 'node/' . $person_id);
+        }
+        // Otherwise just print term name
+        else {
+          $bylines[] = $term->name;
+        }
+      }
+      // Add bylines terms to author meta section
+      $vars['author_meta']['byline'] = 'By ' . join(', ', $bylines);
     }
   }
   if ($vars['node']->type == 'article_list_page') {
@@ -232,7 +609,7 @@ function cu_article_preprocess_node(&$vars) {
     $query = $query->extend('PagerDefault')->limit(10);
     $query->condition('n.type', 'article', '=');
     $query->condition('n.status', 1, '=');
-    $query->fields('n', array('nid', 'title'));
+    $query->fields('n', array('nid', 'title', 'sticky'));
 
     // Filter by tag.
     if (isset($vars['node']->field_article_page_filter[LANGUAGE_NONE])) {
@@ -245,10 +622,26 @@ function cu_article_preprocess_node(&$vars) {
       $query->condition('tags.field_tags_tid', $terms, 'in');
     }
 
+    // Filter by category.
+    if (isset($vars['node']->field_article_page_category[LANGUAGE_NONE])) {
+      $terms = array();
+      foreach ($vars['node']->field_article_page_category[LANGUAGE_NONE] as $key=>$value) {
+        $terms[$key] = $value['tid'];
+      }
+      $query->join("field_data_field_article_categories", "cats", "n.nid = cats.entity_id");
+      $query->fields('cats', array('field_article_categories_tid'));
+      $query->condition('cats.field_article_categories_tid', $terms, 'in');
+    }
+
     // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
     $query->orderBy('created', 'DESC');
+    $query->groupBy('n.nid');
     $nids = $query->execute()->fetchCol();
     $nodes = node_load_multiple($nids);
+    foreach ($nodes as $key => $node) {
+      $nodes[$key]->heading_tag['#tag'] = 'h2';
+    }
     $output['articles'] = node_view_multiple($nodes, 'teaser');
     $output['articles']['#weight'] = 99;
     $output['pager'] = array(
@@ -311,6 +704,34 @@ function cu_article_node_update($node) {
         _cu_article_create_list_page($tid);
       }
     }
+
+    // Get categories on article node.
+    if (isset ($node->field_article_categories)) {
+      $categories = $node->field_article_categories;
+
+      // Let's step through one category at a time.
+      foreach ($categories[LANGUAGE_NONE] as $category) {
+        $tid = $category['tid'];
+
+        // Build query of article list pages to see if one already exists with
+        // this term.
+        $query = db_select('node', 'n');
+        $query->condition('n.type', 'article_list_page', '=');
+        $query->fields('n', array('nid', 'title'));
+
+        // Join to see if the article_list_page node has the same tid.
+        $query->join("field_data_field_article_page_category", "cats", "n.nid = cats.entity_id");
+        $query->fields('cats', array('field_article_page_category_tid'));
+        $query->condition('cats.field_article_page_category_tid', $tid, '=');
+
+        $nids = $query->execute()->fetchCol();
+
+        // Create a article list page node if one doesn't already exist.
+        if (empty($nids)) {
+          _cu_article_create_list_page($tid);
+        }
+      }
+    }
   }
 }
 
@@ -323,6 +744,8 @@ function cu_article_node_insert($node) {
   global $base_url;
   if ($node->type == 'article_list_page') {
     $nid = $node->nid;
+
+    // Tags
     $tid = $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'];
     if ($tid) {
       $term = taxonomy_term_load($tid);
@@ -334,6 +757,23 @@ function cu_article_node_insert($node) {
       }
       else {
         $term->field_tag_term_page_link[LANGUAGE_NONE][0]['url'] = 'node/' . $nid;
+        taxonomy_term_save($term);
+        drupal_set_message('The taxonomy term has been linked to this page.');
+      }
+    }
+
+    // Categories
+    $tid = $node->field_article_page_category[LANGUAGE_NONE][0]['tid'];
+    if ($tid) {
+      $term = taxonomy_term_load($tid);
+      // Check to see if there is already a page linked to this term and let the
+      // user know.
+      if (isset($term->field_category_term_page_link[LANGUAGE_NONE][0]['url'])) {
+        $url = '<a href="' . $base_url . '/' . $term->field_category_term_page_link[LANGUAGE_NONE][0]['url'] . '">' . $base_url . '/' . $term->field_category_term_page_link[LANGUAGE_NONE][0]['url'] . '</a>';
+        drupal_set_message('There is already a article list page set for this term: ' . $url);
+      }
+      else {
+        $term->field_category_term_page_link[LANGUAGE_NONE][0]['url'] = 'node/' . $nid;
         taxonomy_term_save($term);
         drupal_set_message('The taxonomy term has been linked to this page.');
       }
@@ -367,8 +807,35 @@ function cu_article_node_insert($node) {
         }
       }
     }
-  }
 
+    // Get categories on article node.
+    if (isset ($node->field_article_categories)) {
+      $categories = $node->field_article_categories;
+
+      // Let's step through one category at a time.
+      foreach ($categories[LANGUAGE_NONE] as $category) {
+        $tid = $category['tid'];
+
+        // Build query of article list pages to see if one already exists with
+        // this term.
+        $query = db_select('node', 'n');
+        $query->condition('n.type', 'article_list_page', '=');
+        $query->fields('n', array('nid', 'title'));
+
+        // Join to see if the article_list_page node has the same tid.
+        $query->join("field_data_field_article_page_category", "cats", "n.nid = cats.entity_id");
+        $query->fields('cats', array('field_article_page_category_tid'));
+        $query->condition('cats.field_article_page_category_tid', $tid, '=');
+
+        $nids = $query->execute()->fetchCol();
+
+        // Create a article list page node if one doesn't already exist.
+        if (empty($nids)) {
+          _cu_article_create_list_page($tid);
+        }
+      }
+    }
+  }
 }
 
 /**
@@ -406,7 +873,12 @@ function _cu_article_create_list_page($tid) {
   $node->title = ucwords($term->name);
 
   // Set the term filter to the tid that was passed in.
-  $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'] = $tid;
+  if ($term->vocabulary_machine_name == 'tags') {
+    $node->field_article_page_filter[LANGUAGE_NONE][0]['tid'] = $tid;
+  }
+  elseif ($term->vocabulary_machine_name == 'category') {
+    $node->field_article_page_category[LANGUAGE_NONE][0]['tid'] = $tid;
+  }
 
   node_save($node);
   drupal_set_message('An Article List Page has been created for the tags on the article node you just created/updated.');
@@ -438,7 +910,216 @@ function cu_article_node_view($node, $view_mode) {
 function _cu_article_list_block_display_options() {
   return array(
     'teaser' => 'Teaser (Title, thumbnail & summary)',
-    'sidebar' => 'Sidebar (Title, thumbnail)',
+    'feature' => 'Feature (Wide photo, title, & summary)',
+    'feature_large' => 'Feature (Large photo, title, & summary)',
+    'sidebar' => 'Title & thumbnail',
     'title' => 'Title',
   );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ * Move date display option into vertical tabs authoring fieldset.
+ */
+function cu_article_form_article_node_form_alter(&$form, &$form_state, $form_id) {
+  if (empty($form['field_article_date_display'][LANGUAGE_NONE]['#default_value'])) {
+    $form['field_article_date_display'][LANGUAGE_NONE]['#default_value'][0] = 'show';
+  }
+  $form['author']['field_article_date_display'] = $form['field_article_date_display'];
+  unset($form['field_article_date_display']);
+}
+
+/**
+ * Access callback function for admin/structure/taxonomy/%taxonomy_vocabulary_machine_name/hidden
+ */
+function cu_article_hidden_tags_access($op, $vocab) {
+  if (user_access('administer tags vocabulary terms') && ($vocab->machine_name == 'tags')) {
+    return TRUE;
+  } else {
+    return FALSE;
+  }
+}
+/**
+ * Callback function for admin/structure/taxonomy/%taxonomy_vocabulary_machine_name/hidden
+ */
+function cu_article_hidden_tags() {
+  $output = array();
+  $output['description']['#markup'] = 'The following terms set to be hidden. These terms can still be used to organize articles, but will not be displayed to the site visitor.';
+
+  $hidden_terms = array();
+  $v = taxonomy_vocabulary_machine_name_load('tags');
+  $terms = taxonomy_get_tree($v->vid);
+
+  foreach ($terms as $tid => $term) {
+    $t = taxonomy_term_load($term->tid);
+    if ($t->field_tag_display[LANGUAGE_NONE][0]['value'] == 'hide') {
+      unset($terms[$tid]);
+      $hidden_terms[] = l($term->name, 'taxonomy/term/' . $term->tid . '/edit');
+    }
+  }
+  $output['terms'] = array(
+    'list' => array(
+      '#theme' => 'item_list',
+      '#type' => 'ul',
+      '#items' => $hidden_terms,
+    ),
+  );
+  return $output;
+}
+
+/**
+ * Implements hook_taxonomy_term_insert($term).
+ * Check to see if a person node exists and link them
+ */
+function cu_article_taxonomy_term_insert($term) {
+  // Only do this if people bundle is enabled
+  if (module_exists('people_content_type')) {
+    // Only on byline terms
+    if ($term->vocabulary_machine_name == 'byline') {
+      $name = $term->name;
+      // Check to see if a person node exists with the same name
+      $query = db_select('node', 'n');
+      $query->fields('n', array('nid', 'title'));
+      $query->condition('n.type', 'person', '=');
+      $query->condition('n.title', $name, '=');
+      $nids = $query->execute()->fetchCol();
+      // If there's a node, add the nid to the term page
+      if ($nids) {
+        foreach ($nids as $nid) {
+          $term->field_article_byline_person_id[LANGUAGE_NONE][0]['value'] = $nid;
+          taxonomy_term_save($term);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function cu_article_block_info() {
+  $blocks['articles_by_person'] = array(
+    'info' => t('Articles by Person'),
+  );
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ * A block that shows all articles that have a byline related to a person node
+ */
+function cu_article_block_view($delta = '') {
+  switch ($delta) {
+    case 'articles_by_person':
+      // Get current node id
+      if ($node = menu_get_object()) {
+        $nid = $node->nid;
+        // See if there are any byline terms that match the nid
+        $query = db_select('field_data_field_article_byline_person_id', 'byline_id');
+        $query->condition('byline_id.field_article_byline_person_id_value', $nid, '=');
+        $query->fields('byline_id', array('entity_id', 'field_article_byline_person_id_value'));
+        $tid = $query->execute()->fetchCol();
+        // If there is a term, get all articles with that term
+        if ($tid) {
+          $query = db_select('node', 'n');
+          $query->condition('n.type', 'article', '=');
+          $query->condition('n.status', 1, '=');
+          $query->fields('n', array('nid', 'title', 'sticky'));
+
+          $query->join("field_data_field_article_byline", "bylines", "n.nid = bylines.entity_id");
+          $query->fields('bylines', array('field_article_byline_tid'));
+          $query->condition('bylines.field_article_byline_tid', $tid, '=');
+          $query->distinct();
+          $query->groupBy('n.nid');
+          // Display the newest first.
+          $query->orderBy('sticky', 'DESC');
+          $query->orderBy('created', 'DESC');
+          $query->range(0, 6);
+          $nids = $query->execute()->fetchCol();
+          if (count($nids) == 6) {
+            array_pop($nids);
+            $block['content']['more']['#markup'] = l('More articles by ' .  $node->title, 'node/' . $nid . '/articles');
+            $block['content']['more']['#weight'] = 100;
+            $block['content']['more']['#prefix'] = '<div class="article-by-person-more-link more-link">';
+            $block['content']['more']['#suffix'] = '</div>';
+          }
+          $nodes = node_load_multiple($nids);
+          $block['content']['articles'] = node_view_multiple($nodes, 'sidebar');
+          // Block title by person name
+          $block['subject'] = 'Articles by ' . $node->title;
+        }
+      }
+      break;
+  }
+  return $block;
+}
+/**
+ * Access callback for node/%node/articles
+ * Check to see if node type is person
+ */
+function cu_article_by_person_access($node) {
+  if ($node->type == 'person') {
+    return TRUE;
+  }
+  else {
+    return FALSE;
+  }
+}
+/**
+ * Title callback for node/%node/articles
+ */
+function cu_article_by_person_title($node) {
+  return 'Articles by ' . $node->title;
+}
+/**
+ * Callback for node/%node/articles
+ * Ouput teaser list of articles by a person*/
+function cu_article_by_person($node) {
+  $output = array();
+  $nid = $node->nid;
+  // See if there are any byline terms that match the nid
+  $query = db_select('field_data_field_article_byline_person_id', 'byline_id');
+  $query->condition('byline_id.field_article_byline_person_id_value', $nid, '=');
+  $query->fields('byline_id', array('entity_id', 'field_article_byline_person_id_value'));
+  $tid = $query->execute()->fetchCol();
+  // If there is a term, get all articles with that term
+  if ($tid) {
+    $query = db_select('node', 'n');
+    $query->condition('n.type', 'article', '=');
+    $query->condition('n.status', 1, '=');
+    $query->fields('n', array('nid', 'title', 'sticky'));
+
+    $query->join("field_data_field_article_byline", "bylines", "n.nid = bylines.entity_id");
+    $query->fields('bylines', array('field_article_byline_tid'));
+    $query->condition('bylines.field_article_byline_tid', $tid, '=');
+    $query->distinct();
+    $query->groupBy('n.nid');
+    // Display the newest first.
+    $query->orderBy('sticky', 'DESC');
+    $query->orderBy('created', 'DESC');
+    $query = $query->extend('PagerDefault')->limit(10);
+    $nids = $query->execute()->fetchCol();
+    $nodes = node_load_multiple($nids);
+    $output['articles'] = node_view_multiple($nodes, 'teaser');
+    $output['pager'] = array(
+      '#theme' => 'pager',
+      '#tags' => array(),
+      '#weight' => 100.
+    );
+  }
+
+
+  return $output;
+}
+
+/**
+ * Implements hook_taxonomy_term_view().
+ */
+function cu_article_taxonomy_term_view($term) {
+  if (!empty($term->field_category_term_page_link)) {
+    drupal_goto($term->field_category_term_page_link[LANGUAGE_NONE][0]['url']);
+  }
+  elseif (!empty($term->field_tag_term_page_link)) {
+    drupal_goto($term->field_tag_term_page_link[LANGUAGE_NONE][0]['url']);
+  }
 }

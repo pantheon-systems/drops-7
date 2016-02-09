@@ -1,0 +1,36 @@
+<?php
+/**
+ * @file
+ * Various update scripts for Metatag:hrelang.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function metatag_hreflang_requirements($phase) {
+  $requirements = array();
+  // Ensure translations don't break during installation.
+  $t = get_t();
+
+  if ($phase == 'runtime') {
+    // Check if the Alternative Hreflang module is present.
+    if (module_exists('hreflang')) {
+      $requirements['metatag_hreflang'] = array(
+        'severity' => REQUIREMENT_ERROR,
+        'title' => 'Metatag',
+        'value' => $t('The Metatag:hreflang module should not be used at the same time as the hreflang module.'),
+        'description' => $t('If both the Metatag:hreflang module and the Alternative Hreflang (hreflang) module are used at the same time it is likely that they will output duplicate meta tags. As a result, it is recommended to only use one at a time.'),
+      );
+    }
+  }
+
+  return $requirements;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function metatag_hreflang_uninstall() {
+  // Delete any custom variables that are used.
+  variable_del('metatag_hreflang_allow_dupe');
+}

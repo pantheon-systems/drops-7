@@ -51,7 +51,7 @@ jQuery(document).ready(function($) {
       var d = data[0];
       /* See if we have a URL or not */
       if (d.alert_url.length > 0) {
-        $("#cu-alerts").append('<div class="alert js">' + d.title+"&nbsp;<a href='" + d.alert_url + "'>More&nbsp;&raquo;</a></div>\n");
+        $("#cu-alerts").append('<div class="alert js">' + d.title+"&nbsp;<a href='" + d.alert_url + "'>Read&nbsp;More&nbsp;&raquo;</a></div>\n");
       }
       else {
         $("#cu-alerts").append('<div class="alert js">' + d.title+"</div>\n");

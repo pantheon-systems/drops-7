@@ -24,7 +24,9 @@ ul.cu-person-directory img { float: left; margin: 0 20px 20px 0; }
 span.responsive-label { display: none; }
 
 /* NODE VIEW */
-.person-photo img { float: right; margin: 0 0 20px 20px; }
+.person-photo img.image-medium, .person-photo img.image-small { float: right; margin: 0 0 20px 20px; max-width: 320px; height: auto; }
+@media screen and (max-width: 600px) and (min-width: 420px) { .person-photo img.image-medium, .person-photo img.image-small { max-width: 180px; } }
+@media screen and (max-width: 419px) { .person-photo img.image-medium, .person-photo img.image-small { max-width: 120px; } }
 
 /** Responsive tables. */
 @media screen and (max-width: 960px) { /* 450px */
@@ -109,6 +111,8 @@ ul.field-name-field-person-website { list-style: none; margin: 0; padding: 0; }
 ul.field-name-field-person-website li { list-style: none; list-style-image: none; margin: 0; padding: 0; overflow: hidden; }
 
 ul.field-name-field-person-website li:before { content: '\f14c '; font-family: 'FontAwesome'; float: left; color: #aaa; margin-right: 5px; text-align: center; }
+
+.person-view-mode-teaser-contact, .person-view-mode-embed-contact { padding-top: 20px; }
 
 .people-contact .fa { color: #aaa; }
 

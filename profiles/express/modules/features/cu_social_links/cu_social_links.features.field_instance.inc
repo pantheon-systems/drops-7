@@ -10,7 +10,8 @@
 function cu_social_links_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-social_links-field_social_links_arrangement'
+  // Exported field_instance:
+  // 'bean-social_links-field_social_links_arrangement'.
   $field_instances['bean-social_links-field_social_links_arrangement'] = array(
     'bundle' => 'social_links',
     'default_value' => array(
@@ -48,7 +49,7 @@ function cu_social_links_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-social_links-field_social_links_body'
+  // Exported field_instance: 'bean-social_links-field_social_links_body'.
   $field_instances['bean-social_links-field_social_links_body'] = array(
     'bundle' => 'social_links',
     'default_value' => NULL,
@@ -83,7 +84,7 @@ function cu_social_links_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-social_links-field_social_links_collection'
+  // Exported field_instance: 'bean-social_links-field_social_links_collection'.
   $field_instances['bean-social_links-field_social_links_collection'] = array(
     'bundle' => 'social_links',
     'default_value' => NULL,
@@ -122,7 +123,7 @@ function cu_social_links_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'bean-social_links-field_social_links_homepage_url'
+  // 'bean-social_links-field_social_links_homepage_url'.
   $field_instances['bean-social_links-field_social_links_homepage_url'] = array(
     'bundle' => 'social_links',
     'default_value' => NULL,
@@ -173,7 +174,7 @@ function cu_social_links_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-social_links-field_social_links_size'
+  // Exported field_instance: 'bean-social_links-field_social_links_size'.
   $field_instances['bean-social_links-field_social_links_size'] = array(
     'bundle' => 'social_links',
     'default_value' => array(
@@ -212,7 +213,7 @@ function cu_social_links_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_social_links_collection-field_social_link_type'
+  // 'field_collection_item-field_social_links_collection-field_social_link_type'.
   $field_instances['field_collection_item-field_social_links_collection-field_social_link_type'] = array(
     'bundle' => 'field_social_links_collection',
     'default_value' => NULL,
@@ -247,7 +248,7 @@ function cu_social_links_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_social_links_collection-field_social_link_url'
+  // 'field_collection_item-field_social_links_collection-field_social_link_url'.
   $field_instances['field_collection_item-field_social_links_collection-field_social_link_url'] = array(
     'bundle' => 'field_social_links_collection',
     'default_value' => NULL,
@@ -271,6 +272,7 @@ function cu_social_links_field_default_field_instances() {
       'absolute_url' => 1,
       'attributes' => array(
         'class' => 'social-link',
+        'configurable_class' => 0,
         'configurable_title' => 0,
         'rel' => '',
         'target' => 'default',
@@ -280,8 +282,14 @@ function cu_social_links_field_default_field_instances() {
         'url_cutoff' => 80,
       ),
       'enable_tokens' => 1,
+      'linkit' => array(
+        'button_text' => 'Search',
+        'enable' => 1,
+        'profile' => 'express_linkit_field_profile',
+      ),
+      'rel_remove' => 'default',
       'title' => 'none',
-      'title_label_use_field_label' => FALSE,
+      'title_label_use_field_label' => 0,
       'title_maxlength' => 128,
       'title_value' => '',
       'url' => 0,

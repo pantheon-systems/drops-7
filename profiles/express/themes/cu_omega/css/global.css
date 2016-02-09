@@ -8,6 +8,12 @@ html { box-sizing: border-box; }
 
 body { background: #fff; }
 
+.element-max-width { margin-left: auto; margin-right: auto; max-width: 960px; clear: both; }
+
+.element-max-width-gutter { margin-left: auto; margin-right: auto; max-width: 920px; clear: both; }
+
+.element-max-width-padding { margin-left: auto; margin-right: auto; max-width: 960px; clear: both; padding: 0 20px; }
+
 /* HEADER */
 #print-header { display: none; }
 
@@ -47,7 +53,7 @@ h1.site-name, h2.site-name, h1.site-title, h2.site-title { font-size: 18px; marg
 
 .banner-black h1.site-title a, .banner-black h2.site-title a, .banner-dark h1.site-title a, .banner-dark h2.site-title a { color: #fff; }
 
-h6.site-slogan { margin: 8px 0 0 0; font-size: 10px; text-transform: uppercase; }
+h6.site-slogan, .site-slogan { margin: 8px 0 0 0; font-size: 10px; text-transform: uppercase; }
 
 .region-search-box { padding-top: 10px; }
 
@@ -264,8 +270,9 @@ img.beboulder { width: 75%; height: auto; max-width: 240px; }
 
 .node-view-mode-embed img.image-large_square_thumbnail, .node-view-mode-embed img.image-small { margin: 0 0 20px 20px; display: block; width: 25%; height: auto; float: right; }
 
-@media screen and (min-width: 480px) { .node-view-mode-sidebar img.image-square, .node-view-mode-sidebar img.image-square_thumbnail, .node-view-mode-sidebar img.image-small_thumbnail, .node-view-mode-sidebar img.image-small { width: 100px; }
-  .node-view-mode-embed img.image-large_square_thumbnail { width: 50%; max-width: 50%; height: auto; float: right; } }
+@media screen and (min-width: 480px) { .node-view-mode-embed img.image-large_square_thumbnail { width: 50%; max-width: 50%; height: auto; float: right; } }
 .node-view-mode-embed-content { overflow: hidden; }
 
 .video-view-mode-embed-summary { margin-bottom: 20px; }
+
+.node-unpublished .region-content { background-color: #f9e8e9; }

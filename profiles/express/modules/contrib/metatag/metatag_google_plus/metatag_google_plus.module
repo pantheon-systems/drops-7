@@ -51,14 +51,16 @@ function theme_metatag_google_plus($variables) {
  *
  * Add itemtype when available.
  *
- * We will not add itemtype in the rdf_namespaces when using Zen and its derived
- * themes as Zen will serialize RDF Namespaces into an RDFa 1.1 prefix
- * attribute, which means itemtype will be included in prefix="...".
- *
- * @see zen_preprocess_html()
+ * Note: The $schemaorg variable must be added to the html tag of the
+ *   html.tpl.php template after the $rdf_namespaces variable, see README.txt
+ *   for details.
  */
 function metatag_google_plus_preprocess_html(&$variables) {
+  if (!isset($variables['schemaorg'])) {
+    $variables['schemaorg'] = '';
+  }
+
   if (isset($variables['itemtype']) && !function_exists('zen_preprocess_html')) {
-    $variables['rdf_namespaces'] .= "\n  itemscope itemtype=\"http://schema.org/{$variables['itemtype']}\"";
+    $variables['schemaorg'] .= "itemscope itemtype=\"http://schema.org/{$variables['itemtype']}\"";
   }
 }

@@ -10,4 +10,5 @@ features[ctools][] = strongarm:strongarm:1
 features[features_api][] = api:2
 features[variable][] = jquery_update_compression_type
 features[variable][] = jquery_update_jquery_cdn
+features[variable][] = jquery_update_jquery_migrate_enable
 features[variable][] = jquery_update_jquery_version

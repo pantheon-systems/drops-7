@@ -6,8 +6,12 @@
  */
 function express_install() {
   // Enable some express blocks.
-  $default_theme = 'express_modern';
-  $admin_theme = 'express_admin_theme';
+  //$default_theme = 'express_modern';
+  //$admin_theme = 'express_admin_theme';
+
+  $default_theme = 'cuspirit';
+  $admin_theme = 'expressadmin';
+
   // disable all themes
   db_update('system')
     ->fields(array('status' => 0))
@@ -19,12 +23,7 @@ function express_install() {
     ->condition('type', 'theme')
     ->condition('name', $default_theme)
     ->execute();
-  // enable $admin_theme
-  db_update('system')
-    ->fields(array('status' => 1))
-    ->condition('type', 'theme')
-    ->condition('name', $admin_theme)
-    ->execute();
+
   variable_set('theme_default', $default_theme);
   variable_set('admin_theme', $admin_theme);
   // activate admin theme when editing a node
@@ -37,16 +36,6 @@ function express_install() {
       'status' => 1,
       'weight' => 0,
       'region' => 'content',
-      'pages' => '',
-      'cache' => -1,
-    ),
-    array(
-      'module' => 'user',
-      'delta' => 'login',
-      'theme' => $default_theme,
-      'status' => 1,
-      'weight' => 0,
-      'region' => 'sidebar_first',
       'pages' => '',
       'cache' => -1,
     ),
@@ -90,18 +79,40 @@ function express_install() {
     $query->values($block);
   }
   $query->execute();
-  
+
   // From shortcut.install, add shortcuts to the default set on install
   $shortcut_set = shortcut_set_load(SHORTCUT_DEFAULT_SET_NAME);
   $shortcut_set->links = NULL;
   $shortcut_set->links = array(
-    array(
-      'link_path' => 'admin/appearance/settings',
-      'link_title' => st('Theme'),
-      'weight' => -17,
-    ),
+   array(
+     'link_path' => 'admin/structure/menu/manage/main-menu',
+     'link_title' => st('Main Menu'),
+     'weight' => -12,
+   ),
   );
   shortcut_set_save($shortcut_set);
+
+  // FROM CU_FIT
+  variable_set('node_admin_theme', 1);
+
+  variable_set('quicktabs_tabstyle', 'Tabs');  // move to advanced layout bundle
+  variable_set('image_allow_insecure_derivatives', TRUE);
+  variable_set('pathauto_transliterate', 1);
+
+  // moved from bucket to admin theme.
+  variable_set('error_level', 0);
+  variable_set('site_default_country', 'US');
+  variable_set('user_register', 0);
+
+  variable_set('focal_point_default_method', 'smartcrop');
+
+  // Set menu source variables for secondary and footer menus
+  variable_set('menu_footer_links_source', 'menu-footer-menu');
+  variable_set('menu_secondary_links_source', 'menu-secondary-menu');
+
+  // Set google_appliance_error_gsa_no_results_format to wysiwyg
+  variable_set('google_appliance_error_gsa_no_results_format', 'wysiwyg');
+
   // Update the menu router information.
   menu_rebuild();
   // revert features to ensure they are all installed

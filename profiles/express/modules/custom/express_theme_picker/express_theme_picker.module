@@ -1,0 +1,208 @@
+<?php
+
+/**
+ * Implements hook_permission().
+ */
+function express_theme_picker_permission() {
+  return array(
+    'administer express theme picker' => array(
+      'title' => 'Use the Theme Picker',
+      'description' => 'Choose and configure themes',
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_age_alter().
+ */
+function express_theme_picker_page_alter(&$page) {
+  drupal_add_css(drupal_get_path('module', 'express_theme_picker').'/express_theme_picker.css');
+}
+
+
+/**
+ * Implements hook_form_alter().
+ */
+function express_theme_picker_form_system_theme_settings_alter(&$form, &$form_state) {
+  if (!user_access('administer themes')) {
+    $form['theme_settings']['#access'] = FALSE;
+    $form['logo']['#access'] = FALSE;
+    $form['favicon']['#access'] = FALSE;
+    $form['jquery_update']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Implements hook_menu().
+ */
+function express_theme_picker_menu() {
+  $items['admin/theme'] = array(
+    'title' => 'Design',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'express_theme_picker_list',
+    //'page arguments' => array('express_theme_picker_settings_form'),
+    'access arguments' => array('administer express theme picker'),
+    'weight' => 8,
+  );
+  $items['admin/theme/config/%'] = array(
+    'title' => 'Configure Theme Settings',
+    'title arguments' => array(3),
+    'title callback' => 'express_theme_picker_page_title',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'express_theme_picker_config',
+    'page arguments' => array(3),
+    'access arguments' => array('administer express theme picker'),
+    'weight' => 8,
+  );
+  $items['admin/theme/active/%'] = array(
+    'title' => 'Set active theme',
+    'page arguments' => array(3),
+    'page callback' => 'express_theme_picker_set_active',
+    'access arguments' => array('administer express theme picker'),
+  );
+
+
+  $items['admin/config/system/theme-picker'] = array(
+    'title' => 'Express Theme Picker',
+    'description' =>  'Configure Theme Picker',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('express_theme_picker_admin_settings'),
+    'file' => 'express_theme_picker.admin.inc',
+    'access arguments' => array('administer themes'),
+  );
+  return $items;
+}
+
+/**
+ * Page Title callback for admin/theme/config/%.
+ */
+function express_theme_picker_page_title($theme) {
+  // Get enabled themes so we can get a theme name
+  foreach (list_themes() as $key => $value) {
+    $options[$key] = $value->info['name'];
+  }
+  return $options[$theme];
+}
+
+/**
+ * Page callback for admin/theme/config/%.
+ */
+function express_theme_picker_config($theme) {
+  global $base_url;
+  // Get enabled themes so we can get a theme name
+  foreach (list_themes() as $key => $value) {
+    $options[$key] = $value->info['name'];
+  }
+  ctools_include('system.admin', 'system', '');
+  $output['heading']['#markup'] = '<h2>' . $options[$theme] . ' Theme Configuration</h2>';
+  $output['screenshot']['#markup'] = '<img src="' . $base_url . '/' . drupal_get_path('theme', $theme) . '/screenshot.png" class="theme-screenshot" />';
+  $output['settings'] = drupal_get_form('system_theme_settings', $theme);
+  return $output;
+}
+
+
+/**
+ * Page callback for admin/theme.
+ */
+function express_theme_picker_settings_form() {
+  global $base_url;
+
+  $header = array(
+    'title' => 'Title',
+    'preview' => 'Preview',
+    'config' => 'Configure',
+  );
+  $options = array();
+  foreach (list_themes() as $theme => $data) {
+    if ($data->status) {
+      //$themes[$key] = $data->info['name'];
+      $name = '<h4>' . $data->info['name'] . '</h4><br />' . $data->info['description'];
+      $screenshot = '<img src="' . $base_url . '/' . drupal_get_path('theme', $theme) . '/screenshot.png"/>';
+      $config = l('configure', current_path() . '/config/' . $theme);
+      $options[$theme] = array(
+        'title' => $name,
+        'preview' => $screenshot,
+        'config' => $config,
+      );
+    }
+  }
+  $active_theme = variable_get('theme_default');
+  $options = array($active_theme => $options[$active_theme]) + $options;
+
+  $form = array();
+  $form['theme_default'] = array(
+    '#type' => 'tableselect',
+    '#title' => t('Express Themes'),
+    '#header' => $header,
+    '#options' => $options,
+    '#default_value' => variable_get('theme_default', 'elegant_black'),
+    '#required' => TRUE,
+    '#multiple' => FALSE,
+  );
+
+  return system_settings_form($form);
+}
+
+function express_theme_picker_list() {
+  global $base_url;
+  $active_theme = variable_get('theme_default');
+  $hidden_themes = variable_get('express_theme_picker_theme_ignore', array());
+  $output = array();
+  $output['description']['#markup'] = '<h2>Choose a theme.</h2>';
+  foreach (list_themes() as $theme => $data) {
+    if ($data->status && !$hidden_themes[$data->name]) {
+
+      // Theme machine name
+      $machine_name = $data->name;
+      // Theme display name
+      $name = $data->info['name'];
+      // Theme screenshot
+      $screenshot = '<img src="' . $base_url . '/' . drupal_get_path('theme', $theme) . '/screenshot.png"/>';
+      //$screenshot = '<img src="' . $base_url . '/' . drupal_get_path('module', 'express_theme_picker') . '/screenshot-mockup.png"/>';
+      // Theme description
+      $description = $data->info['description'];
+      // Theme links
+      $actions = array();
+      if ($machine_name == $active_theme) {
+        $actions[] = '<span class="btn btn-disabled active-theme">Active Theme</span>';
+      }
+      else {
+        $actions[] = l('<i class="fa fa-plus-circle"></i> Set Active', current_path() . '/active/' . $theme, array('attributes' => array('class' => array('btn btn-info')), 'html' => TRUE));
+      }
+      $actions[] = l('<i class="fa fa-cog"></i> Configure', current_path() . '/config/' . $theme, array('attributes' => array('class' => array('btn btn-default')), 'html' => TRUE));
+
+      // Theme output
+      // Theme name
+      $output['themes'][$machine_name]['info']['title']['#markup'] = '<h3>' . $name . '</h3>';
+      // Theme screenshot
+      $output['themes'][$machine_name]['info']['screenshot']['#markup'] = $screenshot;
+      $output['themes'][$machine_name]['info']['#prefix'] = '<div class="theme-info"><div>';
+      $output['themes'][$machine_name]['info']['#suffix'] = '</div></div>';
+      // Theme description
+      $output['themes'][$machine_name]['description']['#markup'] = '<p>' . $description . '</p>';
+      // Theme links
+      $output['themes'][$machine_name]['actions']['#markup'] = join('  ', $actions);
+      $output['themes'][$machine_name]['actions']['#prefix'] = '<div class="theme-action-links">';
+      $output['themes'][$machine_name]['actions']['#suffix'] = '</div>';
+      // Theme wrapper markup
+      $output['themes'][$machine_name]['#prefix'] = '<div class="theme-single-wrapper col-lg-4 col-md-4 col-sm-6 col-xs-12"><div class="theme-single">';
+      $output['themes'][$machine_name]['#suffix'] = '</div></div>';
+    }
+  }
+
+
+  $output['themes'] = array($active_theme => $output['themes'][$active_theme]) + $output['themes'];
+  $output['themes'][$active_theme]['#prefix'] = '<div class="theme-single-wrapper theme-active col-lg-4 col-md-4 col-sm-6 col-xs-12"><div class="theme-single">';
+
+  $output['themes']['#prefix'] = '<div class="theme-list row block-column-container">';
+  $output['themes']['#suffix'] = '</div>';
+  return $output;
+}
+
+function express_theme_picker_set_active($theme) {
+  variable_set('theme_default', $theme);
+  drupal_set_message('Active theme has been set.');
+  drupal_goto('admin/theme');
+
+}

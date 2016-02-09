@@ -123,6 +123,13 @@ function cu_shortcodes_shortcode_info() {
     'tips callback' => 'cu_shortcodes_buttongroup_tips',
     'default settings' => array(),
   );
+  $shortcodes['callout'] = array(
+    'title' => t('Callout'),
+    'description' => t('Callout content from the main content'),
+    'process callback' => 'cu_shortcodes_callout',
+    'tips callback' => 'cu_shortcodes_callout_tips',
+    'default settings' => array(),
+  );
   $shortcodes['clear'] = array(
     'title' => t('Clear'),
     'description' => t('Clear floated elements'),
@@ -137,6 +144,13 @@ function cu_shortcodes_shortcode_info() {
     'tips callback' => 'cu_shortcodes_column_tips',
     'default settings' => array(),
     'demo callback' => 'cu_shortcodes_column_demo',
+  );
+  $shortcodes['columnlist'] = array(
+    'title' => t('Column List'),
+    'description' => t('Divide list content into columns'),
+    'process callback' => 'cu_shortcodes_columnlist',
+    'tips callback' => 'cu_shortcodes_columnlist_tips',
+    'default settings' => array(),
   );
   $shortcodes['expand'] = array(
     'title' => t('Expand'),
@@ -175,6 +189,13 @@ function cu_shortcodes_shortcode_info() {
     'tips callback' => 'cu_shortcodes_map_tips',
     'default settings' => array(),
     'demo callback' => 'cu_shortcodes_map_demo',
+  );
+  $shortcodes['masonry-images'] = array(
+    'title' => t('Masonry Images'),
+    'description' => t('Display images in a masonry layout'),
+    'process callback' => 'cu_shortcodes_masonry_images',
+    'tips callback' => 'cu_shortcodes_masonry_images_tips',
+    'default settings' => array(),
   );
   $shortcodes['print'] = array(
     'title' => t('Print'),
@@ -254,20 +275,34 @@ function cu_shortcodes_backtotop_tips($format, $long) {
  */
 function cu_shortcodes_blockquote($attrs, $content = NULL) {
   extract(shortcode_attrs(array(
-        'color' => '',
         'float' => '',
+        'icon' => NULL,
+        'style' => 'sans-serif',
       ), $attrs));
-  $classes[] = $color ? 'blockquote-' . $color : '';
+  $icon_classes = array();
+  $blockquote_icon = '';
+  if (isset($icon)) {
+    $icon_classes[] = 'fa';
+    $icon_classes[] = 'fa-fw';
+    $icon_classes[] = $icon;
+    $icon_classes[] = 'blockquote-icon';
+    $classes[] = 'blockquote-icon';
+    $icon_classes = trim(implode(' ', $icon_classes));
+    $blockquote_icon = "<i class=\"$icon_classes\"></i>";
+  } else {
+    $classes[] = 'blockquote-default';
+  }
   $classes[] = $float ? 'blockquote-' . $float : '';
+  $classes[] = 'blockquote-' . $style;
   $classes = trim(implode(' ', $classes));
-  return '<blockquote class="' . $classes . '">' . $content . '</blockquote>';
+  return '<blockquote class="' . $classes . '">' . $blockquote_icon . $content . '</blockquote>';
 }
 
 /**
  * Blockquote tips.
  */
 function cu_shortcodes_blockquote_tips($format, $long) {
-  $output = '[blockquote float=right/left color=light/dark]your content here[/blockquote]';
+  $output = '[blockquote icon="fa-quote-left , or any font awesome icon class" style="serif/sans-serif"]your content here[/blockquote]';
   return $output;
 }
 
@@ -327,7 +362,7 @@ function cu_shortcodes_button($attrs, $content = NULL) {
   if ($style == 'full') {
     $classes[] = 'button-full';
   }
-  
+
   $classes[] = $color ? 'button-' . $color : 'button-white';
 
   $content = $icon ? '<i class="fa ' . $icon . '"></i> ' . $content : $content;
@@ -370,6 +405,36 @@ function cu_shortcodes_buttongroup_tips($format, $long) {
 }
 
 /**
+ * callout shortcode function.
+ */
+function cu_shortcodes_callout($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+    'size' => 'small',
+  ), $attrs));
+  $output = '<div class="feature-layout-callout feature-layout-callout-' . $size . ' clearfix">' . $content . '</div>';
+  return $output;
+}
+/**
+ * callout shortcode tips.
+ */
+function cu_shortcodes_callout_tips($format, $long) {
+  $output = '[callout]Content[/callout]';
+  return $output;
+}
+
+/**
+ * Implements hook_filter_info_alter().
+ */
+function cu_shortcodes_filter_info_alter(&$info) {
+  // Load the wysiwyg text format
+  $format = filter_format_load('wysiwyg');
+  // Get the filters on the wysiwyg text format
+  $filters = filter_list_format($format->format);
+  // Enable countdown shortcode
+  $filters['shortcode']->settings['callout'] = 1;
+}
+
+/**
  * Clear shortcode.
  */
 function cu_shortcodes_clear($attrs, $content = NULL) {
@@ -409,6 +474,29 @@ function cu_shortcodes_column($attrs, $content = NULL) {
  */
 function cu_shortcodes_column_tips($format, $long) {
   $output = '<p>[column size=one-half]</p><p>your content here</p><p>[/column]</p><p>[column size=one-half order=last]</p><p>your content here</p><p>[/column]</p>';
+  return $output;
+}
+
+/**
+ * Columnlist shortcode.
+ */
+function cu_shortcodes_columnlist($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'columns' => '2',
+      ), $attrs));
+  $classes[] = 'column-list';
+  $classes[] = 'column-list-' . $columns;
+  $classes[] = 'clearfix';
+  $classes = trim(implode(' ', $classes));
+  $output = '<div class="' . $classes . '">' . $content . '</div>';
+  return $output;
+}
+
+/**
+ * Columnlist tips.
+ */
+function cu_shortcodes_columnlist_tips($format, $long) {
+  $output = '<p>[columnlist columns="2"]</p><ul><li>List Item</li><li>List Item</li></ul><p>[/columnlist]</p>';
   return $output;
 }
 
@@ -510,7 +598,7 @@ function cu_shortcodes_icon($attrs, $content = NULL) {
       ), $attrs));
   $classes = array();
   $tag = 'i';
-  
+
   $classes[] = 'fa';
   $classes[] = $shape;
   $classes[] = $size;
@@ -588,6 +676,16 @@ function cu_shortcodes_map_tips($format, $long) {
  */
 function cu_shortcodes_map_demo() {
   $output = '<iframe width="100%" height="325" src="https://maps.google.com/?ll=40.079122,-105.088348&spn=0.166286,0.245132&t=m&z=12&amp;ie=UTF8&amp;output=embed"></iframe><br /><a href="https://maps.google.com/?ll=40.079122,-105.088348&spn=0.166286,0.245132&t=m&z=12&amp;ie=UTF8&amp;output=embed">View Larger Map</a>';
+  return $output;
+}
+/**
+ * Masonry Images shortcode.
+ */
+function cu_shortcodes_masonry_images($attrs, $content = NULL) {
+  extract(shortcode_attrs(array(
+        'columns'       => 2,
+      ), $attrs));
+  $output = '<div class="masonry-images masonry-columns-' . $columns . '">' . $content . '</div>';
   return $output;
 }
 

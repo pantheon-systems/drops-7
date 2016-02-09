@@ -1,0 +1,50 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function cu_test_content_admin_bundle_install() {
+
+  module_enable(array('cu_test_content_pages'));
+
+  if (module_exists('cu_people_bundle')) {
+    module_enable(array('cu_test_content_people'));
+  }
+
+  if (module_exists('cu_news_bundle')) {
+    module_enable(array('cu_test_content_articles'));
+    module_enable(array('cu_test_content_blocks'));
+  }
+
+  if (module_exists('cu_advanced_layout_bundle')) {
+    module_enable(array('cu_test_content_gallery'));
+  }
+
+  if (module_exists('cu_advanced_content_bundle')) {
+    module_enable(array('cu_test_content_context'));
+  }
+
+}
+
+/**
+ * Implements hook_install().
+ */
+function cu_test_content_admin_bundle_disable() {
+
+  module_disable(array(
+    'cu_test_content_articles',
+    'cu_test_content_blocks',
+    'cu_test_content_context',
+    'cu_test_content_gallery',
+    'cu_test_content_pages',
+    'cu_test_content_people'
+  ));
+  drupal_uninstall_modules(array(
+    'cu_test_content_articles',
+    'cu_test_content_blocks',
+    'cu_test_content_context',
+    'cu_test_content_gallery',
+    'cu_test_content_pages',
+    'cu_test_content_people'
+  ));
+}

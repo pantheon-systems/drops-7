@@ -81,14 +81,10 @@ function people_content_type_field_group_info() {
     'label' => 'Other',
     'weight' => '24',
     'children' => array(
-      0 => 'field_person_bio',
+      0 => 'body',
       1 => 'field_person_filter_1',
       2 => 'field_person_filter_2',
       3 => 'field_person_filter_3',
-      4 => 'field_person_short_bio',
-      5 => 'field_extra',
-      6 => 'field_person_interests',
-      7 => 'body',
     ),
     'format_type' => 'htab',
     'format_settings' => array(

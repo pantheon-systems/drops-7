@@ -5,9 +5,9 @@ stylesheets[all][] = search_krumo.css
 package = Development
 dependencies[] = devel
 
-; Information added by drupal.org packaging script on 2013-03-11
-version = "7.x-1.5"
+; Information added by Drupal.org packaging script on 2015-04-17
+version = "7.x-1.6"
 core = "7.x"
 project = "search_krumo"
-datestamp = "1362994817"
+datestamp = "1429278782"
 

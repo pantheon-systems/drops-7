@@ -1,0 +1,434 @@
+@import "../modules/_global.scss";
+@import "../modules/_colors.scss";
+
+body {
+  font-size: 17px;
+  line-height: 1.5;
+  font-family: $base_font;
+  color:$text_black;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  font-style: normal;
+  font-variant:normal;
+  -webkit-text-size-adjust: none;
+}
+
+body.layout-responsive {
+  font-size: 17px;
+}
+@media all and (min-width: 480px) {
+  body.layout-responsive {
+    font-size: 16px;
+  }
+}
+@media all and (min-width: 1200px) {
+  body.layout-responsive {
+    font-size: 17px;
+  }
+}
+// Make the footer text smaller
+#footer-section{
+  font-size:90%;
+  line-height: 1.5;
+}
+// Paragraphs
+.content p:last-child {
+  margin-bottom: 0;
+}
+#block-system-main {
+  p {
+    margin-bottom: 20px;
+  }
+}
+// Link styles
+a:link, a:visited {
+  color: $link_blue;
+  text-decoration: none;
+  transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, -webkit-box-shadow 0.25s ease, -moz-box-shadow 0.25s ease, box-shadow 0.25s ease;
+}
+a:hover {
+  color: $red;
+  text-decoration: none;
+}
+a:active {
+  color: $red;
+  text-decoration: none;
+}
+// Focus styles
+.focus--keyboard {
+	outline: $link_blue solid 2px;
+	text-decoration: none;
+	outline-offset: -1px;
+}
+.focus--mouse {
+	outline: none;
+	text-decoration: none;
+}
+
+// Set focus styles to links, buttons, and form elements
+a,
+button,
+input,
+textarea {
+	&:focus {
+		@extend .focus--keyboard;
+	}
+
+	&:focus.focus--mouse {
+		@extend .focus--mouse;
+	}
+}
+
+// Typography
+h1, h2, h3, h4, h5, h6 {
+  line-height: 1.3;
+  margin: 0 0 10px 0;
+}
+#footer-section {
+  h1, h2, h3, h4, h5, h6 {
+    margin: 0 0 10px 0;
+  }
+}
+h1#page-title,
+h1#page-title-image-title,
+.page-title-section h1 {
+  font-size: 220%;
+  font-weight: 200;
+  font-family:$base_font;
+}
+.layout-responsive {
+  h1#page-title,
+  h1#page-title-image-title,
+  .page-title-section h1 {
+    font-size: 160%;
+  }
+}
+@media screen and (min-width: 768px) {
+  .layout-responsive {
+    h1#page-title,
+    h1#page-title-image-title,
+    .page-title-section h1 {
+      font-size: 220%;
+    }
+  }
+}
+h2 {
+  font-size: 160%;
+  font-weight: 200;
+}
+h2.block-title {
+  font-size: 160%;
+  font-weight: 200;
+}
+.headings-bold .hero-unit h2,
+ .hero-unit h2 {
+  font-weight: 900;
+}
+// Sidebar h tags are smaller
+.sidebars {
+  h2,
+  h2.block-title {
+    font-size: 125%;
+  }
+  h3 {
+    font-size:120%;
+  }
+  h4 {
+    font-size:115%;
+  }
+  h5 {
+    font-size: 110%;
+  }
+}
+// Bold headings
+.headings-bold {
+  h1#page-title,
+  h1#page-title-image-title,
+  .page-title-section h1, h2, h3, h4 {
+    font-weight:700;
+    strong {
+      font-weight: 700;
+    }
+  }
+  h5, h6 {
+    font-weight: 600;
+  }
+  h2.block-title, h2.node-title {
+    font-weight:700;
+  }
+}
+
+// Block titles in footer
+#after-content h2,
+#after-content h2.block-title,
+#after-content-2 h2,
+#after-content-2 h2.block-title {
+  font-size: 150%;
+}
+#footer-section h2.block-title {
+  font-size:110%;
+  font-weight: 500;
+}
+h2.node-title {
+  font-size: 160%;
+  font-weight: 200;
+}
+
+h3 {
+  font-size: 140%;
+  font-weight: 200;
+}
+h4 {
+  font-size: 126%;
+  font-weight: 200;
+}
+h5 {
+  font-size: 113%;
+  font-weight: 200;
+}
+h6 {
+  font-size: 100%;
+  font-weight: bold;
+  font-weight: 200;
+}
+
+// List Styles
+ol {
+  list-style: decimal;
+}
+ul {
+  list-style: disc;
+}
+.item-list,
+.field-type-text-with-summary,
+.field-type-text-long {
+  ul li {
+    list-style: disc;
+    margin-bottom:10px;
+  }
+  ul ul li,
+  ul ul ul ul li,
+  ul ul ul ul ul ul li {
+    list-style: circle;
+  }
+  ul ul ul li,
+  ul ul ul ul ul li,
+  ul ul ul ul ul ul ul li {
+    list-style: disc;
+  }
+  ul ul,
+  ol ol {
+    margin:10px 0 0 0;
+
+  }
+  ol li {
+    margin: 0 0 10px 0;
+  }
+}
+
+
+.node ol,
+.node ul,
+ul,
+ol {
+  padding-left: 1.5em;
+}
+
+.node ul.inline,
+.node ol.inline,
+ul.inline,ol.inline {
+  padding-left: 0;
+}
+
+ul.list-style-nobullet {
+  list-style: none;
+  list-style-image: none;
+  padding-left: 0;
+}
+ul.list-style-underline > li {
+  list-style: none;
+}
+
+ul.list-style-underline {
+  list-style: none;
+  list-style-image: none;
+  padding-left: 0;
+}
+ul.list-style-underline > li {
+  list-style: none;
+  border-bottom: 1px solid $border_color;
+  padding-bottom: 10px;
+}
+ul.list-style-border {
+  list-style: none;
+  list-style-image: none;
+  padding-left: 0;
+}
+ul.list-style-border > li {
+  list-style: none;
+  border: 1px solid $border_color;
+  padding: 10px;
+  margin-bottom: -1px;
+}
+ul.list-style-icon-1,
+ul.list-style-icon-2,
+ul.list-style-icon-3,
+ul.list-style-icon-4,
+ul.list-style-icon-5,
+ul.list-style-icon-6 {
+  list-style: none;
+  list-style-image: none;
+  > li {
+    list-style: none !important;
+    list-style-image: none !important;
+    position: relative;
+  }
+  li:before {
+    font-family: 'FontAwesome';
+    position: absolute;
+    top:0;
+    left:-20px;
+    color:$cugold;
+  }
+}
+// check icon
+ul.list-style-icon-1 > li:before {
+  content: '\f00c';
+
+}
+// checkbox icon
+ul.list-style-icon-2 > li:before {
+  content: '\f14a';
+}
+// angle icon
+ul.list-style-icon-3 > li:before {
+  content: '\f101';
+}
+// arrow icon
+ul.list-style-icon-4 > li:before {
+  content: '\f0a9';
+}
+// star icon
+ul.list-style-icon-5 > li:before {
+  content: '\f005';
+}
+// hand icon
+ul.list-style-icon-6 > li:before {
+  content: '\f0a4';
+}
+
+/* ORDERED LIST STYLES */
+ol.list-style-alpha-upper, ol.list-style-alpha-upper > li {
+  list-style: upper-alpha;
+}
+ol.list-style-alpha-lower, ol.list-style-alpha-lower > li {
+  list-style: lower-alpha;
+}
+ol.list-style-roman-upper, ol.list-style-roman-upper > li {
+  list-style: upper-roman;
+}
+ol.list-style-roman-lower, ol.list-style-roman-lower > li {
+  list-style: lower-roman;
+}
+
+
+
+// Add margin to bottom of some elements
+p, dl, hr, ol, ul, pre, table, address, fieldset {
+  margin: 0 0 20px 0;
+}
+.content p:last-child {
+  //margin-bottom: 0;
+}
+dt, .admin h3 {
+  font-weight: 600;
+  margin: 0;
+}
+
+dd {
+  padding-left: 10px;
+  font-style: italic;
+  margin-bottom: 20px;
+  p {
+    margin-bottom: 10px;
+  }
+}
+
+blockquote {
+  font-size: 110%;
+  margin: 0px 0px 40px 20px;
+  padding-left:20px;
+  border-left: 4px solid $border_color;
+}
+// Smaller text
+small,
+.small-text {
+  font-size:80%;
+  font-family: Arial, Helvetica, sans-serif !important;
+}
+// Subscript and superscript
+sub, sup {
+  /* Specified in % so that the sup/sup is the
+     right size relative to the surrounding text */
+  font-size: 75%;
+  /* Zero out the line-height so that it doesn't
+     interfere with the positioning that follows */
+  line-height: 0;
+  /* Where the magic happens: makes all browsers position
+     the sup/sup properly, relative to the surrounding text */
+  position: relative;
+  /* Note that if you're using Eric Meyer's reset.css, this
+     is already set and you can remove this rule */
+  vertical-align: baseline;
+}
+sup {
+  /* Move the superscripted text up */
+  top: -0.5em;
+}
+sub {
+  /* Move the subscripted text down, but only
+     half as far down as the superscript moved up */
+  bottom: -0.25em;
+}
+
+/**
+ * Font weights
+ * 600 is a good bold, 700 is extra black, 900 is extra black condensed
+ */
+strong {
+  font-weight: 600;
+}
+.lead {
+  font-size: 130%;
+  line-height: 1.4;
+  strong {
+    font-weight: 600;
+  }
+}
+.hero {
+  font-size:200%;
+  line-height: 1.3;
+  font-weight: 100;
+  strong {
+    font-weight: 900;
+  }
+}
+.supersize {
+  font-size:320%;
+  line-height: 1.3;
+  font-weight: 100;
+  strong {
+    font-weight: 900;
+  }
+}
+// Breadcumbs
+.breadcrumb {
+  font-size: 85%;
+}
+
+// Emphasis
+em {
+  font-style: italic;
+}

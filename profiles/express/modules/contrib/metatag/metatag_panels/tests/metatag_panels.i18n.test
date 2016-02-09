@@ -1,0 +1,99 @@
+<?php
+/**
+ * @file
+ * Tests for the Metatag module for the direct Panels integration, using i18n.
+ */
+
+class MetatagPanelsI18nTest extends MetatagTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag:Panels i18n tests',
+      'description' => 'Test Metatag integration via the Metatag:Panels module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'panels';
+    $modules[] = 'metatag_panels';
+
+    // Can't really do anything without Page Manager.
+    $modules[] = 'page_manager';
+
+    // Needed for translations.
+    $modules[] = 'locale';
+    $modules[] = 'i18n';
+    $modules[] = 'i18n_string';
+
+    // Enable the hidden submodule to manage some default configs.
+    $modules[] = 'metatag_panels_tests';
+
+    parent::setUp($modules);
+
+    // Set up the locales.
+    $perms = array(
+      'administer languages',
+      'translate interface',
+      // From i18n.
+      'translate admin strings',
+      'translate user-defined strings',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+    $this->setupLocales();
+
+    // Reload the translations.
+    drupal_flush_all_caches();
+    module_load_include('admin.inc', 'i18n_string');
+    i18n_string_refresh_group('metatag');
+  }
+
+  /**
+   * Test the Metatag:Panels translations.
+   */
+  public function testExportedPage() {
+    // Plan out the different translation string tests.
+    $string_en = 'Test page description.';
+    $string_fr = 'French page description';
+    $config_name = 'metatag_panels:page_metatag_panels_test__default:description';
+    $path = 'metatag-panels-test';
+
+    // Confirm the string is present as it has been grabbed by the string-
+    // refresh triggered in $this->setUp().
+    $this->searchTranslationPage($string_en, $config_name);
+
+    // Get the translation string lid for the generator tag.
+    $lid = $this->getTranslationLidByContext($config_name);
+    $this->assertNotEqual($lid, 0, 'Found the locales_source string for the description tag.');
+
+    // Save the translation string.
+    $this->saveTranslationString($lid, $config_name, 'fr', $string_en, $string_fr);
+
+    // Load the English page again.
+    $this->drupalGet($path);
+    $this->assertResponse(200, 'Loaded the default test page again.');
+
+    // Confirm the page's description is what we set it to.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one description meta tag found.');
+    $this->assertEqual($xpath[0]['content'], $string_en);
+    $this->assertNotEqual($xpath[0]['content'], $string_fr);
+
+    // Load the French page.
+    $this->drupalGet('fr/' . $path);
+    $this->assertResponse(200, 'Loaded the French test page.');
+
+    // Confirm the generator string was translated.
+    $xpath = $this->xpath("//meta[@name='description']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one description meta tag found.');
+    $this->assertEqual($xpath[0]['content'], $string_fr);
+    $this->assertNotEqual($xpath[0]['content'], $string_en);
+  }
+
+  // @todo Test translations on an in-db page.
+}

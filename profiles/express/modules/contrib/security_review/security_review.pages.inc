@@ -41,6 +41,10 @@ function security_review_reviewed($checklist, $checks, $namespace = NULL) {
   $header = t('Review results from last run !date', array('!date' => $date));
   $desc = t("Here you can review the results from the last run of the checklist. Checks are not always perfectly correct in their procedure and result. You can keep a check from running by clicking the 'Skip' link beside it. You can run the checklist again by expanding the fieldset above.");
   foreach ($checks as $check) {
+    // Skip this iteration if the result has no matching item in the checklist.
+    if (!isset($checklist[$check['namespace']][$check['reviewcheck']])) {
+      continue;
+    }
     $message = $check['result'] ? $checklist[$check['namespace']][$check['reviewcheck']]['success'] : $checklist[$check['namespace']][$check['reviewcheck']]['failure'];
     $title = $check['result'] ? t('OK') : t('Error');
     $class = $check['skip'] ? 'info' : ($check['result'] ? 'ok' : 'error');
@@ -139,6 +143,23 @@ function security_review_settings() {
     '#default_value' => variable_get('security_review_untrusted_roles', array_keys($defaults)),
   );
 
+  $inactive_namespaces = array();
+  // Report stored checks that aren't currently active.
+  $checks = security_review_get_stored_results();
+  foreach ($checks as $check) {
+    if (!isset($checklist[$check['namespace']][$check['reviewcheck']])) {
+      $inactive_namespaces[] = $check['namespace'];
+    }
+  }
+  if (!empty($inactive_namespaces)) {
+    $inactive_checks = implode(', ', $inactive_namespaces);
+    $form['inactive_checks'] = array(
+      '#prefix' => '<div class="messages warning">',
+      '#suffix' => '</div>',
+      '#markup' => t('Inactive checks are being stored under namespaces: %modules. Enabling associated modules may allow these checks to be run again. Inactive checks must be manually removed or uninstall and reinstall Security Review to clear all stored checks.', array('%modules' => $inactive_checks))
+    );
+  }
+
   $form['security_review_adv'] = array(
     '#type' => 'fieldset',
     '#title' => t('Advanced'),
@@ -157,7 +178,7 @@ function security_review_settings() {
   foreach ($checklist as $module => $checks) {
     foreach ($checks as $check_name => $check) {
       // Determine if check is being skipped.
-      if (!empty($skipped) && array_key_exists($check_name, $skipped[$module])) {
+      if (!empty($skipped) && isset($skipped[$module]) && array_key_exists($check_name, $skipped[$module])) {
         $values[] = $check_name;
         $label = t('!name <em>skipped by UID !uid on !date</em>', array('!name' => $check['title'], '!uid' => $skipped[$module][$check_name]['skipuid'], '!date' => format_date($skipped[$module][$check_name]['skiptime'])));
       }
@@ -339,11 +360,12 @@ function security_review_check_help($module = NULL, $check_name = NULL) {
     }
     elseif (isset($check['callback'])) {
       if (isset($check['file'])) {
+        $check_module = $module;
         // Handle Security Review defining checks for other modules.
         if (isset($check['module'])) {
-          $module = $check['module'];
+          $check_module = $check['module'];
         }
-        module_load_include('inc', $module, $check['file']);
+        module_load_include('inc', $check_module, $check['file']);
       }
       $function = $check['callback'] . '_help';
       if (function_exists($function)) {

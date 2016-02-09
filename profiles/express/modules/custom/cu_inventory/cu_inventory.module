@@ -23,102 +23,101 @@ function cu_inventory_menu() {
 /**
  * Page callback for admin/config/development/inventory
  */
-function cu_inventory_admin_settings() {
-  $form = array();
+ function cu_inventory_admin_settings() {
+   $form = array();
 
-  // if the inventory isn't up, you can't do any of this
-  if (!cu_inventory_is_up()) {
-	 drupal_set_message(t("Inventory must be up to configure these settings"), 'error');
-	 return;
-  }
-  
-  $form['#submit'][] = 'cu_inventory_admin_settings_submit';
+   // if the inventory isn't up, you can't do any of this
+   if (!cu_inventory_is_up()) {
+     drupal_set_message(t("Inventory must be up to configure these settings"), 'error');
+     return;
+   }
 
-  // check to see that the path is set to something other than a p1
-  // to avoid getting stuck in a loop in https://github.com/CuBoulder/inventory/blob/dev/templates/settings.php#L31
+   $form['#submit'][] = 'cu_inventory_admin_settings_submit';
 
-  $cu_sid = variable_get('cu_sid', FALSE);
-  
-  if (!$cu_sid) {
-	drupal_set_message(t("Path must be configured before launching"), 'error');
-    return;  
-  }
-	
-  $site_array = cu_inventory_get_site($cu_sid);
+   // check to see that the path is set to something other than a p1
+   // to avoid getting stuck in a loop in https://github.com/CuBoulder/inventory/blob/dev/templates/settings.php#L31
 
-  $pos = strpos($site_array['path'], 'P1');
-  if ($pos === FALSE) {
+   $cu_sid = variable_get('cu_sid', FALSE);
 
-    // options are limitted based on permissions
-    $options = array(
-	  'installed' => t('Installed'),
-	  'launching' => t('Launching'),
-	  'launched' => t('Launched'),
-	  'destroy' => t('Destroy'),
-    );
+   if (!$cu_sid) {
+     drupal_set_message(t("Path must be configured before launching"), 'error');
+     return;
+   }
 
-	// if site is still Available, add that option... you can never go back to avialable
-	if ($site_array['status'] == 'available') {
-	  $options['available'] = t('Available');
-	}
-	
-	$form['cu_inventory_status'] = array(
-	  '#type' => 'select',
-	  '#default_value' => variable_get('cu_inventory_status', FALSE),
-	  '#title' => t('Site Status'),
-	  '#options' => $options,
-	  '#default_value' => $site_array['status'],
-	  '#description' => t(''),
-	);
-	
-	$form['cu_inventory_path'] = array(
-	  '#type' => 'textfield',
-	  '#title' => t('Path'),
-	  '#default_value' => $site_array['path'],
-	  '#description' => t('Sites cannot be launched without a path.  Path cannot be changes once the site has launched.'),
-	);
-	
-	if ($site_array['status'] == 'launched' || $site_array['status'] == 'launching') {
-	  $form['cu_inventory_status']['#disabled'] = TRUE;
-	  $form['cu_inventory_path']['#disabled'] = TRUE;
-	}
-	
-	$collapsed = (variable_get('dslm_add_contrib', FALSE) || variable_get('dslm_add_custom', FALSE)) ? FALSE : TRUE;
-	
-	$form['express_plus'] = array(
-	  '#type' => 'fieldset',
-	  '#title' => t('Express+'),
-	  '#collapsible' => TRUE,
-      '#collapsed' => $collapsed,
-	);
-	
-	//@TODO: set from site_array
-	$form['express_plus']['dslm_add_custom'] = array(
-	  '#type' => 'textfield',
-	  '#title' => t('Add Custom'),
-	  '#default_value' => variable_get('dslm_add_custom', NULL),
-	  '#description' => t('Name of the custom module to add.  Comma seperated lists are also supported.'),
-	);
-	
-	$form['express_plus']['dslm_add_contrib'] = array(
-	  '#type' => 'textarea',
-	  '#cols' => 40,
-	  '#rows' => 5,
-	  '#default_value' => variable_get('dslm_add_contrib'),
-	  '#title' => t('Add Contrib'),
-	  '#description' => t('Comma seperated list of the machine names additional projects to symlink.  These must already be registed in the dslm_base/packages.'),
-	);
-  }
-  return system_settings_form($form);
-}
+   $site_array = cu_inventory_get_site($cu_sid);
+
+   // options are limitted based on permissions
+   $options = array(
+     'installed' => t('Installed'),
+     'launching' => t('Launching'),
+     'launched' => t('Launched'),
+     'take_down' => t('Take Down Site'),
+     'delete' => t('Delete'),
+     'destroy' => t('Destroy'),
+   );
+
+   // if site is still Available, add that option... you can never go back to avialable
+   if ($site_array['status'] == 'available') {
+     $options['available'] = t('Available');
+   }
+
+   $form['cu_inventory_status'] = array(
+     '#type' => 'select',
+     '#default_value' => variable_get('cu_inventory_status', FALSE),
+     '#title' => t('Site Status'),
+     '#options' => $options,
+     '#default_value' => $site_array['status'],
+     '#description' => t(''),
+   );
+
+   $form['cu_inventory_path'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Path'),
+     '#default_value' => $site_array['path'],
+     '#description' => t('Sites cannot be launched without a path.  Path cannot be changes once the site has launched.'),
+   );
+
+   if ($site_array['status'] == 'launched' || $site_array['status'] == 'launching') {
+     $form['cu_inventory_status']['#disabled'] = TRUE;
+     $form['cu_inventory_path']['#disabled'] = TRUE;
+   }
+
+   $collapsed = (variable_get('dslm_add_contrib', FALSE) || variable_get('dslm_add_custom', FALSE)) ? FALSE : TRUE;
+
+   $form['express_plus'] = array(
+     '#type' => 'fieldset',
+     '#title' => t('Express+'),
+     '#collapsible' => TRUE,
+     '#collapsed' => $collapsed,
+   );
+
+   //@TODO: set from site_array
+   $form['express_plus']['dslm_add_custom'] = array(
+     '#type' => 'textfield',
+     '#title' => t('Add Custom'),
+     '#default_value' => variable_get('dslm_add_custom', NULL),
+     '#description' => t('Name of the custom module to add.  Comma seperated lists are also supported.'),
+   );
+
+   $form['express_plus']['dslm_add_contrib'] = array(
+     '#type' => 'textarea',
+     '#cols' => 40,
+     '#rows' => 5,
+     '#default_value' => variable_get('dslm_add_contrib'),
+     '#title' => t('Add Contrib'),
+     '#description' => t('Comma seperated list of the machine names additional projects to symlink.  These must already be registed in the dslm_base/packages.'),
+   );
+
+   return system_settings_form($form);
+ }
 
 function cu_inventory_admin_settings_submit($form, &$form_state){
   $cu_sid = variable_get('cu_sid', NULL);
-  
+
   // Need to get the site's current status
   $site_array = cu_inventory_get_site($cu_sid);
   $site_data = array();
-  
+
   // sids should match... do we bother checking?
   $site_data['sid'] = $cu_sid;
   $site_data['status'] = $site_array['status'];
@@ -165,39 +164,51 @@ function cu_inventory_admin_settings_submit($form, &$form_state){
 
 function cu_inventory_cron() {
   if (cu_inventory_is_up() && !_check_site_launched()) {
-    // Get the $site_array, which may be cached.
-    $site_array = cu_inventory_get_site($cu_sid);
-    // Check if nobody has logged in recently
-    $query = db_select('users', 'u');
-    $query->fields('u', array('name', 'uid'));
-    $result = $query->execute();
-    $access_list = array(0);
-    while ($record = $result->fetchAssoc()) {
-      if (!empty($record) && $record['uid'] != 0 && $record['uid'] != 1) {
-        if (!cu_users_check_user($record['name'])){
+    $cron_last = variable_get('cron_last', NULL);
+    // Run once a day
+    if (date('ymd', $cron_last) != date('ymd', time())) {
+      // Get the $site_array, which may be cached.
+      $site_array = cu_inventory_get_site($cu_sid);
+      // Check if anybody has logged in recently.
+      $query = db_select('users', 'u');
+      $query->fields('u', array('name', 'uid'));
+      $result = $query->execute();
+      $access_list = array(0);
+      while ($record = $result->fetchAssoc()) {
+        if (!empty($record) && $record['uid'] != 0 && $record['uid'] != 1) {
           $account = user_load((integer)$record['uid']);
-          if ($account->access !== '0') {
-            $access_list[] = (integer)$account->access;
+          if (!cu_users_check_user($record['name'])) {
+            if ($account->access !== '0') {
+              $access_list[] = (integer)$account->access;
+            }
+          }
+          // Add team members who have the site_owner role.
+          // They may be the only users of a site.
+          if (cu_users_check_user($record['name']) && cu_users_user_has_role('site_owner', $account)) {
+            if ($account->access !== '0') {
+              $access_list[] = (integer)$account->access;
+            }
           }
         }
       }
-    }
-    // If no one has logged in ever then count days from creation date
-    $most_recent = max($access_list);
-    if ($most_recent == 0) {
-      $most_recent = strtotime($site_array['_created']);
-    }
-    // 86400 seconds in a day
-    $days = (time() - $most_recent) / 86400;
-    // If it has been 30 or more days and the site is not launched
-    // then think about sending notifications
-    if ($days >= 30) {
-      _notify_inactive_site_owners($days);
-    } else {
-      // someone has logged in, so reset all variables
-      variable_set("inactive_30_email", FALSE);
-      variable_set("inactive_55_email", FALSE);
-      variable_set("inactive_60_email", FALSE);
+
+      // If no one has logged in ever then count days from creation date
+      $most_recent = max($access_list);
+      if ($most_recent == 0) {
+        $most_recent = strtotime($site_array['_created']);
+      }
+      // 86400 seconds in a day
+      $days = (time() - $most_recent) / 86400;
+      // If it has been 30 or more days and the site is not launched
+      // then think about sending notifications
+      if ($days >= 30) {
+        _notify_inactive_site_owners($days);
+      } else {
+        // someone has logged in, so reset all variables
+        variable_set("inactive_30_email", FALSE);
+        variable_set("inactive_55_email", FALSE);
+        variable_set("inactive_60_email", FALSE);
+      }
     }
   }
 }
@@ -215,6 +226,7 @@ function cu_inventory_mail($key, &$message, $params) {
   $inactive_30_email_body = "<p>We've noticed it's been over 30 days since you last logged in to your Web Express website at:<br /><a href='" . $inactive_site_url . "'>" . $inactive_site_url . "</a></p><p>If you don't log in to your website within the next 30 days, your website will be permanently removed from our system so that we can provide an optimal experience for all of our active site owners.</p><p><b>What you should do to keep your website:</b><br />If you want to keep your Web Express site, you must log in to your site by " . $today_plus_30 . ". If your site becomes inactive again, you will receive another reminder email.</p><p>Access your website now <a href='" . $inactive_site_url . "/user'>" . $inactive_site_url . "/user</a> </p><p><b>What you should do to relinquish your website:</b><br />If you don't need your Web Express website anymore, don't do anything. Keeping your website inactive will let us know it is no longer needed. We remove inactive websites after 60 days. You will receive another email in 25 days from now asking if you would like to keep the site before we remove it.</p><p>If you have any questions regarding this notification or any general questions about Web Express, feel free to <a href='http://www.colorado.edu/webcentral/content/request-help-website'>contact us</a>.</p><p>~ The Web Express Team<br /><a href='mailto:websupport@colorado.edu'>websupport@colorado.edu</a><br /><a href='www.colorado.edu/webcentral'>www.colorado.edu/webcentral</a></p>";
   $inactive_55_email_body = "<p>It's been 55 days since you've logged in to your Web Express website at:<br /><a href='" . $inactive_site_url . "'>" . $inactive_site_url . "</a></p><p>If your Web Express website is inactive for another 5 days, it will be permanently removed from the system so we can provide an optimal experience for all our active site owners and websites.</p><p><b>What you should do to keep your website:</b><br />If you want to keep your Web Express site, you must log in to your site by " . $today_plus_5 . ". If your site becomes inactive again, you will receive another reminder email.</p><p>Access your website now <a href='" . $inactive_site_url . "/user'>" . $inactive_site_url . "/user</a> </p><p><b>What you should do to relinquish your website:</b><br />If you don't need your Web Express website anymore, simply do nothing. Your site will automatically be removed in 5 days if no activity is detected.</p><p>If you have any questions regarding this notification or any general questions about Web Express, feel free to <a href='http://www.colorado.edu/webcentral/content/request-help-website'>contact us</a>.</p><p>~ The Web Express Team<br /><a href='mailto:websupport@colorado.edu'>websupport@colorado.edu</a><br /><a href='www.colorado.edu/webcentral'>www.colorado.edu/webcentral</a></p>";
   $inactive_60_email_body = "<p>Unfortunately, because you haven't signed in to your Web Express website at " . $inactive_site_url . " within the past 60 days we have permanently removed your website from the system.</p><p>Please note that we sent two previous emails to this email address to encourage you to sign in to your Web Express website.</p><p>In case your website contained information that you still require, we have created an archive. If you need to access this information, please <a href='http://www.colorado.edu/webcentral/content/request-help-website'>submit a request</a>. There may be a small fee required to retrieve this information.</p><p>If you have any questions regarding this notification or any general questions about Web Express, feel free to <a href='http://www.colorado.edu/webcentral/content/request-help-website'>contact us</a>.</p><p>~ The Web Express Team<br /><a href='mailto:websupport@colorado.edu'>websupport@colorado.edu</a><br /><a href='www.colorado.edu/webcentral'>www.colorado.edu/webcentral</a></p>";
+  $site_take_down_email_body = "Took down - " . $sid;
 
   switch ($key) {
     case 'inactive_30_email':
@@ -243,6 +255,12 @@ function cu_inventory_mail($key, &$message, $params) {
       $message['headers'] = array(
         'Bcc' => 'websupport@colorado.edu',
       );
+      break;
+    case 'site_take_down_email':
+      $message['body'] = array();
+      $message['body'][] = $site_take_down_email_body;
+      $message['subject'] = "Inactive Web Express Site - Took down - " . $sid;
+      $message['from'] = "websupport@colorado.edu";
       break;
   }
 }
@@ -287,16 +305,16 @@ function _notify_inactive_site_owners($days) {
     $email_sent = variable_get("inactive_60_email", FALSE);
     if (!$email_sent) {
       drupal_mail("cu_inventory", "inactive_60_email", _get_site_owners(), language_default(), $send =  TRUE);
+      drupal_mail("cu_inventory", "site_take_down_email", "websupport@colorado.edu", language_default(), $send =  TRUE);
       variable_set("inactive_60_email", TRUE);
       $sid = variable_get('cu_sid', FALSE);
       if ($sid) {
-          cu_inventory_update_site(array(
-            'sid' => $sid,
-            'status' => 'destroy',
-          ));
+        cu_inventory_update_site(array(
+          'sid' => $sid,
+          'status' => 'take_down',
+        ));
       }
     }
-    // @TODO send patch to site to indicate deletion
   }
 }
 
@@ -320,7 +338,7 @@ function cu_inventory_validate_invite($form, &$form_state)  {
   $site_array = cu_inventory_get_site($cu_sid);
   if ($site_array && $site_array['status'] == 'available') {
     $site_data = $site_array;
-	$site_data['status'] = 'installed';
+    $site_data['status'] = 'installed';
     cu_inventory_update_site($site_data);
     drupal_set_message('Site status updated to Installed');
   }
@@ -339,7 +357,7 @@ function cu_inventory_validate_invite($form, &$form_state)  {
 function cu_inventory_update_site($site_data) {
   // Will use the cached $site_array.
   $site_array = cu_inventory_get_site($site_data['sid']);
-  
+
   if ($site_array) {
     // If either of the two required values is not present in the $site_data array,
     // update them from the local $site_array.
@@ -351,7 +369,7 @@ function cu_inventory_update_site($site_data) {
     }
     return cu_inventory_request('sites', $site_data['_id'], 'PATCH', $site_data);
   }
-  
+
   return FALSE;
 }
 
@@ -370,7 +388,7 @@ function cu_inventory_update_site($site_data) {
  *   sent along with the request. Will be encoded as JSON for you.
  */
 function cu_inventory_request($resource, $query = NULL, $method = 'GET', $data = NULL) {
-  
+
   // We want to figure out what kind of query we are running and adjust the
   // seperator.
   if (preg_match('/^where/', $query)) {
@@ -379,10 +397,10 @@ function cu_inventory_request($resource, $query = NULL, $method = 'GET', $data =
   else {
     $query = '/' . $query;
   }
-  
+
   $eve_base = getenv("CU_CENTRAL_EVE");
   $url = $eve_base . $resource . $query;
-  
+
   $options = array(
     'method' => $method,
     'timeout' => 15,
@@ -405,62 +423,62 @@ function cu_inventory_request($resource, $query = NULL, $method = 'GET', $data =
     foreach($keys as $k) {
       unset($data[$k]);
     }
-    
+
     // JSON encode the data.
     $options['data'] = drupal_json_encode($data);
   }
 
   // Make the request.
   $response = drupal_http_request($url, $options);
-  
+
   // If error code is returned
   if (in_array($response->code, array(412))) {
 
-	// In most cases the site was the last to update the data,
-	// so the cached site array should have the most recent etag
-	// If not, try updating the etag and resubmitting the data
-	$cu_sid = variable_get('cu_sid', FALSE);
-	$site_array = cu_inventory_request('sites', $cu_sid);
-	
-	// confirm path, status, sid are still in sync with the cache
-	if (isset($options['data']['path']) != $site_array['path']) {
+    // In most cases the site was the last to update the data,
+    // so the cached site array should have the most recent etag
+    // If not, try updating the etag and resubmitting the data
+    $cu_sid = variable_get('cu_sid', FALSE);
+    $site_array = cu_inventory_request('sites', $cu_sid);
+
+    // confirm path, status, sid are still in sync with the cache
+    if (isset($options['data']['path']) != $site_array['path']) {
       $sync_error = TRUE;
-    }   
+    }
     if (isset($options['data']['status']) != $site_array['status']) {
       $sync_error = TRUE;
     }
     if (isset($options['data']['sid']) != $site_array['sid']) {
       $sync_error = TRUE;
     }
-    
+
     //either in sync or not passing key data that is out of sych
     if ($sync_error) {
-	  cache_clear_all('cu_inventory_site_array', 'cache', TRUE);
+      cache_clear_all('cu_inventory_site_array', 'cache', TRUE);
       drupal_set_message(t('Key data is local site cache does not match.  Cache has been cleared.  Please try again.'), 'error');
-	} 
-	else {
-	  // update the 
-	  $options['data']['_etag'] = $site_array['_etag'];
-	  // Make the request again
+    }
+    else {
+      // update the
+      $options['data']['_etag'] = $site_array['_etag'];
+      // Make the request again
       $response = drupal_http_request($url, $options);
-      
+
       // If error code is still returned
       if (in_array($response->code, array(412))) {
         drupal_set_message($response->data, 'error');
       }
     }
   }
-    
+
   if (in_array($response->code, array(500))) {
-	//@TODO: clean up the error text
+    //@TODO: clean up the error text
     drupal_set_message('Inventory response: ' . $response->error, 'error');
   }
-  
+
   // If success code is returned.
   if (in_array($response->code, array(200, 201))) {
-	// Clear the Drupal cache for $site_array because we just updated something.
+    // Clear the Drupal cache for $site_array because we just updated something.
     cache_clear_all('cu_inventory_site_array', 'cache', TRUE);
-  
+
     if ($response->headers['content-type'] == 'application/json') {
       $json_array = drupal_json_decode($response->data);
       if ($method == 'GET') {
@@ -488,11 +506,12 @@ function cu_inventory_request($resource, $query = NULL, $method = 'GET', $data =
     $cu_sid = variable_get('cu_sid');
     watchdog(
       'cu_inventory',
-      '%method sent to %resource for %sid',
+      '%method sent to %resource for %sid - %site_data',
       array(
         '%method' => $method,
         '%resource' => $resource,
         '%sid' => $cu_sid,
+        '%site_data' => $data,
       ),
       WATCHDOG_INFO,
       NULL
@@ -516,13 +535,13 @@ function cu_inventory_get_site($cu_sid = FALSE, $use_cache = TRUE) {
   if (!$cu_sid) {
     $cu_sid = variable_get('cu_sid', FALSE);
   }
-  
+
   // if the cu_sid wasn't passed and we can't look it up, we can't do anything else
   if (!$cu_sid) {
-	drupal_set_message(t("<em>cu_sid</em> is not defined in the request"), 'error');
+    drupal_set_message(t("<em>cu_sid</em> is not defined in the request"), 'error');
     return FALSE;
   }
-  
+
 
   // If we are using the cache, check to see if we have it is in the cache.
   if ($use_cache) {
@@ -533,17 +552,17 @@ function cu_inventory_get_site($cu_sid = FALSE, $use_cache = TRUE) {
       }
     }
   }
-  
+
   // if we aren't using the cache or it hasn't been set
   // go get the site_array and set the cache if valid
   if (!$site_array) {
     $site_array = cu_inventory_request('sites', $cu_sid);
   }
-  
-  if (cu_inventory_validate_site($site_array)) { 
+
+  if (cu_inventory_validate_site($site_array)) {
     cache_set('cu_inventory_site_array', $site_array, 'cache', time() + 86400);
     return $site_array;
-  } 
+  }
 
   return FALSE;
 }
@@ -551,7 +570,7 @@ function cu_inventory_get_site($cu_sid = FALSE, $use_cache = TRUE) {
 function cu_inventory_validate_site($site_array) {
   if (!isset($site_array['_etag']) || !isset($site_array['_id'])) {
     return FALSE;
-  }  
+  }
   if (!array_key_exists('_id', $site_array)) {
     watchdog('cu_inventory', t('Inventory ID (!cu_sid) request to inventory returned more than 1 result.', array('!inventory_id' => $cu_sid)), array(), WATCHDOG_ERROR, NULL);
     return FALSE;
@@ -589,3 +608,23 @@ function cu_inventory_is_up() {
   return FALSE;
 }
 
+/**
+ * Get comma sepearetd list of site owner email addresses
+ *
+ * Returns a string
+  */
+function _get_site_owners() {
+  $role = user_role_load_by_name('site_owner');
+  if ($role) {
+    $role_rid = (integer) $role->rid;
+    $query = 'SELECT DISTINCT(ur.uid) FROM {users_roles} AS ur WHERE ur.rid IN (:rids)';
+    $result = db_query($query, array(':rids' => array($role_rid)));
+    $uids = $result->fetchCol();
+    $users = user_load_multiple($uids);
+    $emails = array();
+    foreach ($users as $u) {
+      $emails[] = $u->mail;
+    }
+    return implode(',', $emails);
+  }
+}

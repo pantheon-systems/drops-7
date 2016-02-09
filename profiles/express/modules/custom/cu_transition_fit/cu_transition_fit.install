@@ -1,0 +1,33 @@
+<?php
+
+
+/**
+ * Implements hook_install().
+ */
+function cu_transition_fit_install() {
+
+  // set new variables
+  variable_set('admin_theme', 'expressadmin');
+
+  // disable
+  module_disable(array(
+    'overlay',
+    'toolbar',
+    'advanced_help',
+    'cu_video',
+    'cu_layout',
+    'cu_theme_picker',
+    'memcache',
+    'varnish',
+    'cu_module_manager',
+  ));
+
+  //uninstall modules
+
+  // enable new modules that exist in cu_fit
+  module_enable(array(
+    'navbar',
+    'cu_help',
+    'profile_module_manager',
+  ));
+}

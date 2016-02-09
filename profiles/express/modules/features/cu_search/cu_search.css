@@ -16,13 +16,14 @@
 }
 .search-form-wrapper .form-actions {
   position: absolute;
-  top:6px;
+  top:0;
+  bottom:0;
   right:0;
   z-index:3;
 }
 .cu-search .form-submit {
-  height: 21px;
-  width: 21px;
+  height: 100%;
+  width: 28px;
   background: none;
   filter: none;
   background-image: url(search-icon.png);
@@ -34,7 +35,7 @@
   font-size: 0;
   color: #fff;
   cursor: pointer;
-  
+
 }
 #google-appliance-block-form .culinks {
   font-size: 11px;

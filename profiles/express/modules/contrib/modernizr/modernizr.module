@@ -20,8 +20,11 @@ define('MODERNIZR_SCRIPT_WEIGHT', -100);
 define('MODERNIZR_TYPE_DEFAULT', 'sync');
 define('MODERNIZR_SCOPE_DEFAULT', 'header');
 
-// Controls the display of administrative errors.
-define('MODERNIZR_QUIET_DEFAULT', FALSE);
+// Determines the severity of administrative errors.
+// As of 7.x-3.7 we switched the default to TRUE since yepnope is now included
+// automatically, so a custom build is no longer absolutely necessary in order
+// to begin using hook_modernizr_load() functionality.
+define('MODERNIZR_QUIET_DEFAULT', TRUE);
 
 // As of 7.x-3.5 we support Modernizr v3, which cannot include yepnope.js in a
 // custom build. For backward compat purposes, we will enable this flag in an

@@ -672,6 +672,7 @@ public function drupalFormSubmit($op, $values) {
           'size' => 'tiny',
           'not null' => TRUE,
           'default' => 0,
+          'boolean' => FALSE,
         ),
       ),
 

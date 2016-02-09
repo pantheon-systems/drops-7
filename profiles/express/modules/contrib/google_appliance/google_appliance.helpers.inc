@@ -15,6 +15,7 @@ define('SGA_DEFAULT_FRONTEND', 'default_frontend');
 define('SGA_DEFAULT_TIMEOUT', 10);
 define('SGA_DEFAULT_AUTOFILTER', 1);
 define('SGA_DEFAULT_LANGUAGE_FILTER_TOGGLE', FALSE);
+define('SGA_DEFAULT_LANGUAGE_FILTER_OPTIONS', '');
 define('SGA_DEFAULT_QUERY_INSPECTION', 0);
 define('SGA_DEFAULT_SEARCH_TITLE', 'Search this site');
 define('SGA_DEFAULT_RESULTS_PER_PAGE', 10);
@@ -22,23 +23,22 @@ define('SGA_DEFAULT_ADVANCED_SEARCH_REPORTING', FALSE);
 define('SGA_DEFAULT_SPELLING_SUGGESTIONS', FALSE);
 define('SGA_DEFAULT_ONEBOX_MODULES', '');
 define('SGA_DEFAULT_BLOCK_VISIBILITY_SETTINGS', '');
+define('SGA_DEFAULT_SITELINKS_SEARCH_BOX', FALSE);
+define('SGA_DEFAULT_DRUPAL_PATH', 'gsearch');
+define('SGA_DEFAULT_ERROR_GSA_NO_RESULTS', "<div class=\"item-list\">\n  <ul>\n    <li>Check if your spelling is correct.</li>\n    <li>Remove quotes around phrases: <em>bike parking</em> will often show more results than <em>\"bike parking\"</em>.</li>\n    <li>Try more general or different keywords.</li>\n  </ul>\n</div>");
+define('SGA_DEFAULT_ERROR_GSA_NO_RESULTS_FORMAT', NULL);
+define('SGA_DEFAULT_ERROR_CURL_ERROR', '<p>We cannot connect to the search service at this time. Please try your search again in a few minutes. If the problem persists, please contact us.</p>');
+define('SGA_DEFAULT_ERROR_CURL_ERROR_FORMAT', NULL);
+define('SGA_DEFAULT_ERROR_LIB_XML_PARSE_ERROR', '<p>The response from the search service was unreadable. Please try your search again. If the problem persists, please contact us.</p>');
+define('SGA_DEFAULT_ERROR_LIB_XML_PARSE_ERROR_FORMAT', NULL);
 
 /**
- * Minimize redundant trips to the db when looking for module settings.
- * Hooks that change module settings should run this function with
- * $refresh = TRUE so other hooks can just get settings without a db
- * query.
+ * Returns all module settings for the Google Appliance module.
  *
- * @arg $refresh
- *    TRUE >> query the db for the settings
- *
- * @return
- *    a keyed array of module settings keyed by $field_keys
+ * @return array
+ *    An associative array of module settings keyed by $field_keys.
  */
-function _google_appliance_get_settings($refresh = FALSE) {
-
-  static $settings;
-
+function _google_appliance_get_settings() {
   $field_keys =  array(
     'hostname',
     'collection',
@@ -46,6 +46,7 @@ function _google_appliance_get_settings($refresh = FALSE) {
     'timeout',
     'autofilter',
     'language_filter_toggle',
+    'language_filter_options',
     'query_inspection',
     'search_title',
     'results_per_page',
@@ -53,37 +54,38 @@ function _google_appliance_get_settings($refresh = FALSE) {
     'spelling_suggestions',
     'onebox_modules',
     'block_visibility_settings',
+    'sitelinks_search_box',
+    'drupal_path',
+    'error_gsa_no_results',
+    'error_gsa_no_results_format',
+    'error_curl_error',
+    'error_curl_error_format',
+    'error_lib_xml_parse_error',
+    'error_lib_xml_parse_error_format',
   );
 
-  if ($refresh || empty($settings)) {
-
-    // Settings fall back to default constants.
-    foreach ($field_keys as $field) {
-      $settings[$field] = variable_get(
-        'google_appliance_' . $field,
-        constant('SGA_DEFAULT_' . strtoupper($field))
-      );
-    }
-
-    // The default value of language_filter_options is an array, which
-    // cannot be used as a PHP constant. We set it here.
-    $settings['language_filter_options'] = variable_get(
-      'google_appliance_language_filter_options',
-      array('***CURRENT_LANGUAGE***')
+  // Settings fall back to default constants.
+  foreach ($field_keys as $field) {
+    $settings[$field] = variable_get(
+      'google_appliance_' . $field,
+      constant('SGA_DEFAULT_' . strtoupper($field))
     );
+  }
 
-    // Convert onebox_modules from string to array.
-    $settings['onebox_modules'] = explode("\n", $settings['onebox_modules']);
-    $settings['onebox_modules'] = array_map('trim', $settings['onebox_modules']);
-    $settings['onebox_modules'] = array_filter($settings['onebox_modules'], 'strlen');
+  // Convert onebox_modules from string to array.
+  $settings['onebox_modules'] = explode("\n", $settings['onebox_modules']);
+  $settings['onebox_modules'] = array_map('trim', $settings['onebox_modules']);
+  $settings['onebox_modules'] = array_filter($settings['onebox_modules'], 'strlen');
 
-    // The empty string in the define block above for block visibility
-    // settings is really just a flag that nothing has been set yet.
-    // Using an empty string is problematic, so we just set it to an
-    // empty array instead.
-    if ($settings['block_visibility_settings'] === '') {
-      $settings['block_visibility_settings'] = array();
-    }
+  // The empty string in the define block above for block visibility
+  // settings is really just a flag that nothing has been set yet.
+  // Using an empty string is problematic, so we just set it to an
+  // empty array instead.
+  if ($settings['block_visibility_settings'] === '') {
+    $settings['block_visibility_settings'] = array();
+  }
+  if ($settings['language_filter_options'] === '') {
+    $settings['language_filter_options'] = array();
   }
 
   return $settings;
@@ -156,6 +158,7 @@ function _curl_get($url, array $get = NULL, array $options = array(), $sga_timeo
  * report search errors to the log
  */
 function _google_appliance_log_search_error($search_keys = NULL, $error_string = NULL) {
+  $settings = _google_appliance_get_settings();
 
   // build log entry
   $type = 'google_appliance';
@@ -164,7 +167,7 @@ function _google_appliance_log_search_error($search_keys = NULL, $error_string =
     '%keys' => isset($search_keys) ? $search_keys : 'nothing (empty search submit)',
     '%error_string' => isset($error_string) ? $error_string : 'undefinded error',
   );
-  $link = l(t('view reproduction'), 'gsearch/' . check_plain($search_keys));
+  $link = l(t('view reproduction'), $settings['drupal_path'] . '/' . check_plain($search_keys));
 
   watchdog($type, $message, $vars, WATCHDOG_NOTICE, $link);
 }

@@ -15,7 +15,7 @@ This version of the module only works with Drupal 7.28 and newer.
 
 
 Features
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 The primary features include:
 
 * The current supported basic meta tags are ABSTRACT, DESCRIPTION, CANONICAL,
@@ -25,12 +25,18 @@ The primary features include:
 
 * Multi-lingual support using the Entity Translation module.
 
-* Translation support using the Internationalization (i18n) module.
+* Translation support using the Internationalization (i18n) module of the global
+  configurations, the values for all three submodules (Metatag:Context,
+  Metatag:Panels, Metatag:Views), and the final meta tags being output.
 
 * Full support for entity revisions and workflows based upon revision editing,
   including compatibility with the Revisioning and Workbench Moderation modules.
 
 * Automatically extracts URLs from image fields, no need for extra modules.
+
+* A custom pager string may be added to meta tags by inserting the token
+  [current-page:pager] into e.g. page titles, description tags, etc. The
+  replacement string may be customized from the settings page.
 
 * Per-path control over meta tags using the "Metatag: Context" submodule
   (requires the Context module).
@@ -73,8 +79,13 @@ The primary features include:
   engine to confirm ownership of the site; see the "Metatag: Verification"
   submodule.
 
-* The MobileOptimized, HandheldFriendly, viewport, cleartype and theme-color
-  meta tags are available via the Metatag: Mobile & UI Adjustments submodule.
+* The Metatag: Mobile & UI Adjustments submodule adds the MobileOptimized,
+  HandheldFriendly, viewport, cleartype, theme-color, format-detection,
+  apple-mobile-web-app-capable, apple-mobile-web-app-status-bar-style, the
+  android-app and ios-app alternative link meta tags, and the Android manifest
+  tag.
+
+* The hreflang meta tags are available via the Metatag:hreflang submodule.
 
 * A variety of favicon sizes and styles can be added to the global configuration
   using the Metatag: Favicons submodule.
@@ -112,7 +123,7 @@ The primary features include:
 
 
 Configuration
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
  1. On the People Permissions administration page ("Administer >> People
     >> Permissions") you need to assign:
 
@@ -148,18 +159,61 @@ Configuration
     admin/structure/types/manage/article/display/token
 
 
-Internationalization: i18n.module
-------------------------------------------------------------------------------
-All default configurations may be translated using the Internationalization
-(i18n) module. The custom strings that are assigned to e.g., the "Global: Front
-page" configuration will show up in the Translate Interface admin page
-(admin/config/regional/translate/translate) and may be customized per language.
+Internationalization with the Translation (core) and Entity Translation modules
+--------------------------------------------------------------------------------
+The module works with the core Translation module, allowing the meta tags for a
+specific entity (node, term, etc) to be tied to a specific language. It also
+supports the Entity Translation module, which may work better thank the basic
+Translation module depending upon the site's desired functionality. This
+integration means that content creators can customize an entity's meta tags for
+each language supported on the site, and that the correct meta tags should
+always be displayed for each locale.
 
 
-Fine Tuning
-------------------------------------------------------------------------------
-All of these may be controlled from the advanced settings page:
-admin/config/search/metatags/settings
+Internationalization with the i18n modules
+--------------------------------------------------------------------------------
+Using the String Translation (i18n_string) submodule of the Internationalization
+(i18n) module package it is possible to translate meta tags:
+
+* All default configurations (admin/config/search/metatag) are translatable.
+  When a configuration is created or updated it will pass the values to the
+  i18n_string system. Additionally it is possible to bulk update them via the
+  string translation page (admin/config/regional/translate/i18n_string).
+
+* Meta tags for all submodules (Metatag:Context, Metatag:Panels, Metatag:Views)
+  are translatable. Similar to the default configurations, these meta tags are
+  made available when they are created and/or update, and may also be bulk
+  updated.
+
+* Meta tags from entities (nodes, terms, etc) are not directly translatable.
+
+* The final output meta tags are passed through the translation system when the
+  page is being loaded. It is not possible to use the strings bulk updater to
+  spool all pages on the site, to do so it would be necessary to spool the page
+  using a separate script or tool.
+
+Additionally, certain variables are available for translation using the Variable
+Translation submodule of the i18n package:
+
+* metatag_pager_string - The custom pager string.
+
+
+Internationalization with the Smartling module
+--------------------------------------------------------------------------------
+The Smartling translation service may be used with the Metatag module provide an
+improved UX around the meta tag translation process. In order to do this, the
+Smartling Interface Translation (smartling_interface_translation) module must
+be enabled.
+
+For further details see the module's project page:
+  https://www.drupal.org/project/smartling
+
+
+Fine Tuning & Suggestions
+--------------------------------------------------------------------------------
+* There are many options available on the settings page to control how Metatag
+  works:
+    admin/config/search/metatags/settings
 
 * It is possible to "disable" the meta tags provided by Drupal core, i.e.
   "generator", "canonical URL" and "shortlink", though it may not be completely
@@ -168,73 +222,33 @@ admin/config/search/metatags/settings
   that is necessary is to clear the default value for that tag, e.g. on the
   global settings for nodes, which will result in the tag not being output for
   those pages.
-* By default Metatag will load the global default values for all pages that do
-  not have meta tags assigned via the normal entity display or via Metatag
-  Context. This may be disabled by setting the variable 'metatag_load_all_pages'
-  to FALSE through one of the following methods:
-  * Use Drush to set the value:
-    drush vset metatag_load_all_pages FALSE
-  * Hardcode the value in the site's settings.php file:
-    $conf['metatag_load_all_pages'] = FALSE;
-  To re-enable this option simply set the value to TRUE.
-* By default users will be able to edit meta tags on forms based on the 'Edit
-  meta tags' permission. The 'metatag_extended_permissions' variable may be set
-  to TRUE to give each individual meta tag a separate permission. This allows
-  fine-tuning of the site's editorial control, and for rarely-used fields to be
-  hidden from most users. Note: The 'Edit meta tags' permission is still
-  required otherwise none of the meta tag fields will display at all. The
-  functionality may be disabled again by either removing the variable or
-  setting it to FALSE.
-* Each entity type (nodes, terms, users, etc) & bundle (content types,
-  vocabularies, etc) may have its Metatag integration enabled & disabled from
-  the Settings page.
-  These UI options correspond to variables. To enable an entity or bundle just
-  assign a variable 'metatag_enable_{$entity_type}' or
-  'metatag_enable_{$entity_type}__{$bundle}' the value FALSE, e.g.:
-    // Disable metatags for files (file_entity module).
-    $conf['metatag_enable_file'] = FALSE;
-    // Disable metatags for carousel nodes, but leave it enabled for all other
-    // content types.
-    $conf['metatag_enable_node__carousel'] = FALSE;
-  To enable the entity and/or bundle simply set the value to TRUE or remove the
-  settings.php line. Note that the Metatag cache will need to be cleared after
-  changing these settings, specifically the 'info' records, e.g., 'info:en'; a
-  quick version of doing this is to clear the site caches using either Drush,
-  Admin Menu (flush all caches -> Metatag), or the "Clear all caches" button on
-  admin/config/development/performance. Changing these from the Settings page
-  automatically clears the cache.
-* By default Metatag will not display meta tags on admin pages. To enable meta
-  tags on admin pages simply set the 'metatag_tag_admin_pages' variable to TRUE
-  through one of the following methods:
-  * Use Drush to set the value:
-    drush vset metatag_tag_admin_pages TRUE
-  * Hardcode the value in the site's settings.php file:
-    $conf['metatag_tag_admin_pages'] = TRUE;
-  To re-enable this option simply set the value to FALSE or delete the
-  settings.php line.
-* When loading an entity with multiple languages for a specific language the
-  meta tag values saved for that language will be used if they exist, otherwise
-  values assigned to the entity's default language will be used. This
-  may be disabled using the enabling the "Don't load entity's default language
-  values if no languages match" option on the Settings page, which will cause
-  default values to be used should there not be any values assigned for the
-  current requested language.
+
 * When using Features to export Metatag configurations, it is suggested to
   override all of the default configurations and then disable the default
   configurations via the advanced settings page; doing so will avoid potential
   conflicts of the same configurations being loaded by both the Metatag module
   and the new Features-based modules.
-* By default all meta tag output for individual entities will be cached in a
-  separate cache table. This may be disabled by unchecking the "Cache meta tag
-  output" option on the Settings page, which will cause all meta tags for
-  entities to be generated uniquely for each page load. Note: the entity
-  configuration and output for other types of pages will still be cached, but
-  this can stop the {cache_metatag} table from growing out of control in some
-  scenarios.
+
+* Using fields to automatically fill in values for image meta tags is the
+  recommended way of inserting images - the module will automatically extract
+  the URL from the value. However, by default this forces social networks,
+  search engines and certain browsers to download the original version of the
+  image, which could be multiple megabytes. The alternative is to use the
+  Imagecache_Token module to instead load meta tags via a specific image style.
+  As an example, in order to load an image from a node field named
+  "field_meta_tag_image" using the "seo_thumbnail" style, the following token
+  would be used:
+    [node:field_meta_tag_image:seo_thumbnail:uri]
+  or
+    [node:field_meta_tag_image:seo_thumbnail]
+  (They give the same results)
+  Additionally, dimensions of the image may be obtained from the following:
+    [node:field_meta_tag_image:seo_thumbnail:width]
+    [node:field_meta_tag_image:seo_thumbnail:height]
 
 
 Developers
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 Full API documentation is available in metatag.api.php.
 
 It is not necessary to control Metatag via the entity API, any entity that has
@@ -248,7 +262,7 @@ via drupal_render(), or examining to identify the actual text values.
 
 
 Troubleshooting / Known Issues
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 * When using custom page template files, e.g., page--front.tpl.php, it is
   important to ensure that the following code is present in the template file:
     <?php render($page['content']); ?>
@@ -283,7 +297,7 @@ Troubleshooting / Known Issues
 
 
 Related modules
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 Some modules are available that extend Metatag with additional functionality:
 
 * Transliteration
@@ -291,10 +305,17 @@ Some modules are available that extend Metatag with additional functionality:
   Tidies up filenames for uploaded files, e.g. it can remove commas from
   filenames that could otherwise break certain meta tags.
 
+* Imagecache Token
+  https://www.drupal.org/project/imagecache_token
+  Use tokens to load images via image styles, rather than forcing meta tags to
+  use the original image.
+
 * Alternative hreflang
   https://www.drupal.org/project/hreflang
-  Output <link rel="alternate" hreflang="x" href="http://" /> meta tags for
-  each language available on the site.
+  An alternative to the Metatag:hreflang module. Automatically outputs
+  <link rel="alternate" hreflang="x" href="http://" /> meta tags on every page
+  for each language/locale available on the site. Also does not provide any way
+  of overriding the values or setting the x-default value.
 
 * Domain Meta Tags
   https://drupal.org/project/domain_meta
@@ -322,7 +343,7 @@ Some modules are available that extend Metatag with additional functionality:
 
 
 Credits / Contact
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 Currently maintained by Damien McKenna [1] and Dave Reid [2]; all initial
 development was by Dave Reid.
 
@@ -335,7 +356,7 @@ request, a feature request or a bug report, in the project issue queue:
 
 
 References
-------------------------------------------------------------------------------
+--------------------------------------------------------------------------------
 1: https://www.drupal.org/u/damienmckenna
 2: https://www.drupal.org/u/dave-reid
 3: http://www.mediacurrent.com/

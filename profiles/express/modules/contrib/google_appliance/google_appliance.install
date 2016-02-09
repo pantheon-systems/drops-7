@@ -26,9 +26,51 @@ function google_appliance_uninstall() {
     'spelling_suggestions',
     'onebox_modules',
     'block_visibility_settings',
+    'sitelinks_search_box',
+    'drupal_path',
+    'error_gsa_no_results',
+    'error_gsa_no_results_format',
+    'error_curl_error',
+    'error_curl_error_format',
+    'error_lib_xml_parse_error',
+    'error_lib_xml_parse_error_format',
   );
 
   foreach ($field_keys as $field) {
     variable_del('google_appliance_' . $field);
+  }
+}
+
+/**
+ * Clean up configurations unintentionally saved without a module namespace.
+ */
+function google_appliance_update_7100() {
+  $bad_variables = array(
+    'hostname',
+    'collection',
+    'frontend',
+    'timeout',
+    'autofilter',
+    'language_filter_toggle',
+    'language_filter_options',
+    'query_inspection',
+    'search_title',
+    'results_per_page',
+    'advanced_search_reporting',
+    'spelling_suggestions',
+    'onebox_modules',
+    'block_visibility_settings',
+    'drupal_path',
+    'error_gsa_no_results',
+    'error_gsa_no_results_format',
+    'error_curl_error',
+    'error_curl_error_format',
+    'error_lib_xml_parse_error',
+    'error_lib_xml_parse_error_format',
+  );
+
+  // Iterate through and delete all un-prefixed variables.
+  foreach ($bad_variables as $variable) {
+    variable_del($variable);
   }
 }

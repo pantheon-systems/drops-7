@@ -2,7 +2,7 @@
 @import "../../../../themes/cu_omega/scss/modules/_colors.scss";
 
 @mixin block($color) {
-  
+
   @include rounded($radius: $radius_small);
   padding:10px;
   @media screen and (min-width:960px) {
@@ -49,13 +49,16 @@
   border:1px solid $border_color;
   //color:$text_black;
 }
-.blockunderline .block-inner,
+.blockunderline > .block-inner,
 .blockunderline-example {
   border-bottom:1px solid $border_color;
   padding:0 0 20px 0;
   p:last-child {
     margin-bottom: 0;
   }
+}
+.block.block-bean-type-block-row.blockunderline {
+  margin-bottom: 20px;
 }
 
 /* Examples css */
@@ -67,4 +70,3 @@ table.block-style-examples td {
     padding: 0;
   }
 }
-

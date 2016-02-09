@@ -12,6 +12,24 @@ function cu_view_modes_ds_view_modes_info() {
 
   $ds_view_mode = new stdClass();
   $ds_view_mode->api_version = 1;
+  $ds_view_mode->view_mode = 'embed';
+  $ds_view_mode->label = 'Embed';
+  $ds_view_mode->entities = array(
+    'node' => 'node',
+  );
+  $export['embed'] = $ds_view_mode;
+
+  $ds_view_mode = new stdClass();
+  $ds_view_mode->api_version = 1;
+  $ds_view_mode->view_mode = 'feature';
+  $ds_view_mode->label = 'Feature';
+  $ds_view_mode->entities = array(
+    'node' => 'node',
+  );
+  $export['feature'] = $ds_view_mode;
+
+  $ds_view_mode = new stdClass();
+  $ds_view_mode->api_version = 1;
   $ds_view_mode->view_mode = 'promo';
   $ds_view_mode->label = 'Promo';
   $ds_view_mode->entities = array(
@@ -22,7 +40,7 @@ function cu_view_modes_ds_view_modes_info() {
   $ds_view_mode = new stdClass();
   $ds_view_mode->api_version = 1;
   $ds_view_mode->view_mode = 'sidebar';
-  $ds_view_mode->label = 'Sidebar';
+  $ds_view_mode->label = 'Title & Thumbnail';
   $ds_view_mode->entities = array(
     'node' => 'node',
   );

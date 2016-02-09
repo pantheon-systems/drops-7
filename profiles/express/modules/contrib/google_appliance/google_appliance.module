@@ -27,7 +27,7 @@ function google_appliance_help($path, $arg) {
       $output .= '<h3>' . t('Teaming up with core Search') . '</h3>';
       $output .= '<p>' . t('The Google Appliance module can act as a replacement for core <i>Search</i>, or it may operate in tandem with it. Say you want to provide search results for the public to include both drupal and non-drupal content, but you want administrative searches to only provide results for local site content. In this case you use the Google Appliance searches for public search, and core Search for admin searches.') . '</p>' . PHP_EOL;
 
-      $output .= '<p>' . t('If you will use core search along with this module, core search results will show up normally at <code>search/{search terms}</code>, while Google Appliance searches will show up at <code>gsearch/{search terms}</code>.') . '</p>' . PHP_EOL;
+      $output .= '<p>' . t('If you will use core search along with this module, core search results will show up normally at <code>search/{search terms}</code>, while Google Appliance searches will show up by default at <code>gsearch/{search terms}</code>.') . '</p>' . PHP_EOL;
 
       $output .= '<h2>' . t('Blocks') . '</h2>';
       $output .= '<p>' . t('The module provides two blocks:') . '</p>' . PHP_EOL;
@@ -39,32 +39,6 @@ function google_appliance_help($path, $arg) {
 
     case 'admin/config/google_appliance/settings':
       $output =  '<p>' . t('The Google Appliance settings specify the interface to your GSA device. The search results obtained via that interface are controlled by the Google Search Appliance configuration itself. Visit the <a href="@gsa-help">Google Appliance help section</a> for more information on setting up the integration.', array('@gsa-help' => url('admin/help/google_appliance'))) . '</p>';
-
-      return $output;
-
-    //@TODO: perhaps error messages should be configurable
-    case 'google_appliance#error_gsa_no_results':
-      $no_results_tactics = array(
-        t('Check if your spelling is correct.'),
-        t('Remove quotes around phrases: <em>bike parking</em> will often show more results than <em>&quot;bike parking&quot;</em>.'),
-        t('Try more general or different keywords.'),
-      );
-      $no_results_message = array(
-        'items' => $no_results_tactics,
-        'title' => NULL,
-        'type' => 'ul',
-        'attributes' => array(),
-      );
-      $output = theme_item_list($no_results_message);
-      return $output;
-
-    case 'google_appliance#error_curl_error':
-      $output = '<p>' . t('We cannot connect to the search service at this time. Please try your search again in a few minutes. If the problem persists, please <a href="@contact-url">contact us</a>.', array('@contact-url' => url('contact'))) . '</p>';
-
-      return $output;
-
-    case 'google_appliance#error_lib_xml_parse_error';
-      $output = '<p>' . t('The response from the search service was unreadable. Please try your search again. If the problem persists, please <a href="@contact-url">contact us</a>.', array('@contact-url' => url('contact'))) . '</p>';
 
       return $output;
   }
@@ -95,10 +69,11 @@ function google_appliance_menu() {
   $settings = _google_appliance_get_settings();
 
   // search results page
-  $items['gsearch'] = array(
+  $parts = substr_count($settings['drupal_path'], '/');
+  $items[$settings['drupal_path']] = array(
     'title' => $settings['search_title'],
     'page callback' => 'google_appliance_search_view',
-    'page arguments' => array(1, 2), // (1) search query, (2) results sort param
+    'page arguments' => array(++$parts, ++$parts), // (1) search query, (2) results sort param
     'access arguments' => array('access_google_appliance_content'),
     'type' => MENU_SUGGESTED_ITEM,
   );
@@ -137,6 +112,18 @@ function google_appliance_library() {
 }
 
 /**
+ * Implements hook_module_implements_alter().
+ */
+function google_appliance_module_implements_alter(&$implementations, $hook) {
+  // Make sure we come after search module's implementation.
+  if ($hook == 'menu') {
+    $group = $implementations['google_appliance'];
+    unset($implementations['google_appliance']);
+    $implementations['google_appliance'] = $group;
+  }
+}
+
+/**
  * Implements hook_block_info().
  */
 function google_appliance_block_info() {
@@ -166,7 +153,7 @@ function google_appliance_block_info() {
 
     // set default visibility to appear only on results pages (just a suggestion)
     'visibility' => 1,
-    'pages' => 'gsearch*',
+    'pages' => $settings['drupal_path'] . '*',
   );
 
   return $blocks;
@@ -209,6 +196,46 @@ function google_appliance_block_view($delta = '') {
 }
 
 /**
+ * Implements hook_preprocess_html().
+ */
+function google_appliance_preprocess_html(&$variables) {
+  $settings = _google_appliance_get_settings();
+
+  // If configured, add JSON-LD for Google sitelinks search box.
+  if ($settings['sitelinks_search_box'] && drupal_is_front_page()) {
+    $canonicalUrl = $GLOBALS['base_url'] . base_path();
+
+    // Google recommended practices suggest that the "url" key in the JSON-LD
+    // and the homepage canonical URL must match. This checks for the canonical
+    // metatag value and substitutes in place of the default provided above.
+    $knownElements = drupal_add_html_head();
+    if (isset($knownElements['metatag_canonical']['#value'])) {
+      $canonicalUrl = $knownElements['metatag_canonical']['#value'];
+    }
+
+    // Build the JSON-LD object.
+    $jsld = array(
+      '@context' => 'http://schema.org',
+      '@type' => 'WebSite',
+      'url' => $canonicalUrl,
+      'potentialAction' => array(
+        '@type' => 'SearchAction',
+        'target' => url($settings['drupal_path'], array('absolute' => TRUE)) . '/{search_term_string}',
+        'query-input' => 'required name=search_term_string',
+      ),
+    );
+
+    // Add the data as markup to the HTML head. If necessary, you can alter this
+    // JSON-LD via hook_html_head_alter() with the key "google_appliance_slsb."
+    drupal_add_html_head(array(
+      '#type' => 'markup',
+      '#markup' => '<script type="application/ld+json">' . drupal_json_encode($jsld) . '</script>',
+      '_json' => $jsld,
+    ), 'google_appliance_slsb');
+  }
+}
+
+/**
  * Form builder outputs the search form for the search block
  *
  * @ingroup forms
@@ -241,6 +268,7 @@ function google_appliance_block_form($form, &$form_state) {
  * based on the search query
  */
 function google_appliance_block_form_submit($form, &$form_state) {
+  $settings = _google_appliance_get_settings();
 
   // kill any dynamic destinations, as the results page is always the destination
   if (isset($_GET['destination'])) {
@@ -249,7 +277,7 @@ function google_appliance_block_form_submit($form, &$form_state) {
 
   // set the redirect
   $search_query = urlencode($form_state['values']['search_keys']);
-  $form_state['redirect'] = url('gsearch/' . $search_query, array('absolute' => TRUE));
+  $form_state['redirect'] = url($settings['drupal_path'] . '/' . $search_query, array('absolute' => TRUE));
   // search execution happens in page callback
 }
 
@@ -261,7 +289,7 @@ function google_appliance_block_form_submit($form, &$form_state) {
  * conditionally hide content from the crawler using googleon/googleoff tags.
  */
 function google_appliance_form_block_admin_configure_alter(&$form, &$form_state, $form_id) {
-  $settings = _google_appliance_get_settings(TRUE);
+  $settings = _google_appliance_get_settings();
 
   // Determine the default value for this block.
   $default = 'none';
@@ -307,7 +335,7 @@ function google_appliance_form_block_admin_configure_alter(&$form, &$form_state,
  * Submit handler to save block-specific crawler visibility settings.
  */
 function google_appliance_block_visibility_submit($form, &$form_state) {
-  $settings = _google_appliance_get_settings(TRUE);
+  $settings = _google_appliance_get_settings();
   $module = $form_state['values']['module'];
   $delta = $form_state['values']['delta'];
 
@@ -389,6 +417,7 @@ function google_appliance_block_view_alter(&$data, $block) {
  * @see google_appliance-results.tpl.php
  */
 function google_appliance_search_form($form, &$form_state, $query = '', $prompt = '') {
+  $settings = _google_appliance_get_settings();
 
   $prompt = ($prompt == '') ? t('Enter the terms you wish to search for.') : $prompt;
 
@@ -421,7 +450,7 @@ function google_appliance_search_form($form, &$form_state, $query = '', $prompt 
 
   // submit points to search page without any keys (pre-search state)
   // the redirect happens in _submit handler
-  $form_state['action'] = 'gsearch/';
+  $form_state['action'] = $settings['drupal_path'] . '/';
 
   // use core search CSS in addition to this module's css
   // (keep it general in case core search is enabled)
@@ -537,9 +566,8 @@ function google_appliance_search_view($query = '', $sort = NULL) {
     if ( $gsa_response['is_error'] == TRUE ) {  // cURL returned an error (can't connect)
       $response_data['error']['curl_error'] = $gsa_response['response'];
       // displaying useful error messages depends upon the use of the array key
-      // 'curl_error' ... the actual error code/response is replaced by hook_help messages
+      // 'curl_error' ... the actual error code/response is displayed elsewhere.
       // @see google_appliance.theme.inc
-      // @see google_appliance_help()
     }
     else {  // cURL gave us something back -> attempt to parse
       $response_data = google_appliance_parse_device_response_xml($gsa_response['response']);
@@ -584,9 +612,8 @@ function google_appliance_parse_device_response_xml($gsa_xml) {
       $errors = join(', ', $errors);
       $results['error'] =  array('lib_xml_parse_error' => $errors);
       // displaying useful error messages depends upon the use of the array key
-      // 'lib_xml_parse_error' ... the actual error code/response is replaced by hook_help messages
+      // 'lib_xml_parse_error' ... the actual error is displayed elsewhere.
       // @see google_appliance.theme.inc
-      // @see google_appliance_help()
     }
     else {
 
@@ -757,7 +784,7 @@ function google_appliance_get_clusters() {
       // build the link list
       $cluster_list_items = array();
       foreach ($clusters['clusters'][0]['clusters'] as $cluster) {
-        array_push($cluster_list_items, l($cluster['label'], 'gsearch/' . $cluster['label']));
+        array_push($cluster_list_items, l($cluster['label'], $settings['drupal_path'] . '/' . $cluster['label']));
       }
 
       // create theme-friendly list of links

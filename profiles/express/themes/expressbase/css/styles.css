@@ -1,0 +1,887 @@
+/* http://meyerweb.com/eric/tools/css/reset/ v2.0b1 | 201101 NOTE: WORK IN PROGRESS USE WITH CAUTION AND TEST WITH ABANDON */
+html, body, div, span, applet, object, iframe, h1, h2, h3, h4, h5, h6, p, blockquote, pre, a, abbr, acronym, address, big, cite, code, del, dfn, em, img, ins, kbd, q, s, samp, small, strike, strong, sub, sup, tt, var, b, u, i, center, dl, dt, dd, ol, ul, li, fieldset, form, label, legend, table, caption, tbody, tfoot, thead, tr, th, td, article, aside, canvas, details, figcaption, figure, footer, header, hgroup, menu, nav, section, summary, time, mark, audio, video { margin: 0; padding: 0; border: 0; outline: 0; font-size: 100%; font: inherit; vertical-align: baseline; }
+
+/* HTML5 display-role reset for older browsers */
+article, aside, details, figcaption, figure, footer, header, hgroup, menu, nav, section { display: block; }
+
+body { line-height: 1; }
+
+ol, ul { list-style: none; }
+
+blockquote, q { quotes: none; }
+
+blockquote:before, blockquote:after, q:before, q:after { content: ''; content: none; }
+
+/* remember to define visible focus styles!
+:focus {
+	outline: ?????;
+} */
+/* remember to highlight inserts somehow! */
+ins { text-decoration: none; }
+
+del { text-decoration: line-through; }
+
+table { border-collapse: collapse; border-spacing: 0; }
+
+#print-header { display: none; }
+
+.banner-white #header-wrapper { background: #fff; color: #363636; }
+.banner-white #header-wrapper a:link, .banner-white #header-wrapper a:visited, .banner-white #header-wrapper a:hover { color: #363636; }
+.banner-white #header-wrapper .mobile-menu-toggle a:link, .banner-white #header-wrapper .mobile-menu-toggle a:visited, .banner-white #header-wrapper .mobile-menu-toggle a:hover { color: #363636; border-color: #363636; }
+
+.banner-light #header-wrapper { background: #f2f2f2; color: #363636; }
+.banner-light #header-wrapper a:link, .banner-light #header-wrapper a:visited, .banner-light #header-wrapper a:hover { color: #363636; }
+.banner-light #header-wrapper .mobile-menu-toggle a:link, .banner-light #header-wrapper .mobile-menu-toggle a:visited, .banner-light #header-wrapper .mobile-menu-toggle a:hover { color: #363636; border-color: #363636; }
+
+.banner-dark #header-wrapper { background: #333; color: #fff; }
+.banner-dark #header-wrapper a:link, .banner-dark #header-wrapper a:visited, .banner-dark #header-wrapper a:hover { color: #fff; }
+.banner-dark #header-wrapper .mobile-menu-toggle a:link, .banner-dark #header-wrapper .mobile-menu-toggle a:visited, .banner-dark #header-wrapper .mobile-menu-toggle a:hover { color: #fff; border-color: #fff; }
+
+.banner-black #header-wrapper { background: #000; color: #fff; }
+.banner-black #header-wrapper a:link, .banner-black #header-wrapper a:visited, .banner-black #header-wrapper a:hover { color: #fff; }
+.banner-black #header-wrapper .mobile-menu-toggle a:link, .banner-black #header-wrapper .mobile-menu-toggle a:visited, .banner-black #header-wrapper .mobile-menu-toggle a:hover { color: #fff; border-color: #fff; }
+
+#header-wrapper { padding: 20px 0; }
+
+#branding { position: relative; }
+
+#search .block { margin-bottom: 0; }
+#search .block-google-appliance { float: right; }
+#search input.form-text { font-size: 12px; line-height: 100%; }
+
+.banner-white .custom-logo-white, .banner-light .custom-logo-white { display: none; }
+
+.banner-black .custom-logo-black, .banner-dark .custom-logo-black { display: none; }
+
+img.custom-logo { max-width: 100%; }
+
+#cu-footer img { max-width: 300px; width: 100%; height: auto; }
+
+.layout-responsive #search { display: none; }
+@media screen and (min-width: 960px) { .layout-responsive #search { display: block; } }
+
+img#logo { position: absolute; top: 0; left: 20px; width: 30px; height: auto; }
+
+#name-and-slogan { margin-left: 35px; margin-right: 55px; padding-top: 7px; }
+
+.two-line-title #name-and-slogan { padding-top: 0; }
+
+h1#site-name, h2#site-name { font-size: 18px; margin: 0; padding: 0; line-height: 110%; font-weight: 200 !important; font-family: "Neue Helvetica W01", "Helvetica Neue", Helvetica, Arial, sans-serif !important; }
+
+.two-line-title h1#site-name, .two-line-title h2#site-name { font-size: 16px; margin-top: 0; }
+
+.banner-white h1#site-name a, .banner-white h2#site-name a, .banner-light h1#site-name a, .banner-light h2#site-name a { color: #363636; }
+
+.banner-black h1#site-name a, .banner-black h2#site-name a, .banner-dark h1#site-name a, .banner-dark h2#site-name a { color: #fff; }
+
+#site-slogan { margin: 0; padding-top: 4px; font-size: 10px; text-transform: uppercase; font-weight: 400; line-height: 100%; }
+#site-slogan strong { font-weight: 600; }
+
+.mobile-menu-toggle { display: block; }
+
+@media all and (min-width: 480px) and (max-width: 959px) { img#logo { position: absolute; top: 0; left: 20px; width: 48px; height: auto; }
+  #name-and-slogan { margin-left: 55px; margin-right: 65px; padding-top: 10px; }
+  .two-line-title #name-and-slogan { padding-top: 0; }
+  h1#site-name, h2#site-name { font-size: 21px; margin: 0; padding: 0; line-height: 110%; }
+  .two-line-title h1#site-name, .two-line-title h2#site-name { font-size: 18px; }
+  #site-slogan { margin: 0px 0 0 0; font-size: 11px; text-transform: uppercase; } }
+@media all and (min-width: 960px) { #header-wrapper { padding: 20px 0; }
+  #search { padding-top: 13px; display: block; }
+  img#logo { position: absolute; top: 0; left: 20px; width: 65px; height: auto; }
+  #name-and-slogan { margin-left: 75px; margin-right: 65px; padding-top: 13px; }
+  .two-line-title #name-and-slogan { padding-top: 0; }
+  h1#site-name, h2#site-name { font-size: 28px; margin: 0; padding: 0; line-height: 110%; }
+  .two-line-title h1#site-name, .two-line-title h2#site-name { font-size: 25px; }
+  #site-slogan { margin: 3px 0 0 0; font-size: 12px; text-transform: uppercase; } }
+.layout-fixed #header-wrapper { padding: 20px 0; }
+.layout-fixed #search { padding-top: 13px; display: block; }
+.layout-fixed img#logo { position: absolute; top: 0; left: 20px; width: 65px; height: auto; }
+.layout-fixed #name-and-slogan { margin-left: 75px; margin-right: 0; padding-top: 13px; }
+.layout-fixed .two-line-title #name-and-slogan { padding-top: 0; }
+.layout-fixed h1#site-name, .layout-fixed h2#site-name { font-size: 28px; margin: 0; padding: 0; line-height: 110%; }
+.layout-fixed .two-line-title h1#site-name, .layout-fixed .two-line-title h2#site-name { font-size: 25px; }
+.layout-fixed #site-slogan { margin: 3px 0 0 0; font-size: 12px; text-transform: uppercase; }
+
+#mobile-navigation .cu-search input.form-text { width: 100%; }
+#mobile-navigation #google-appliance-block-form .culinks { text-align: left; }
+
+/* Menu visibility */
+.layout-responsive #secondary-menu-wrapper, .layout-responsive #main-menu-wrapper, .layout-responsive #footer-menu-wrapper { display: none; }
+@media (min-width: 960px) { .layout-responsive #secondary-menu-wrapper, .layout-responsive #main-menu-wrapper, .layout-responsive #footer-menu-wrapper { display: block; } }
+
+/* Secondary Navigation */
+#secondary-navigation { font-size: 80%; overflow: hidden; *zoom: 1; }
+#secondary-navigation nav { float: right; }
+#secondary-navigation nav ul li { display: inline; list-style: none; list-style-image: none; margin: 0; padding: 0; }
+#secondary-navigation nav ul li a { padding: 0 8px; }
+#secondary-navigation h2.secondary-menu-label { display: inline; font-size: 100%; font-weight: 600; }
+
+/* Action menu, or inline secondary menu */
+#navigation ul.action-menu { float: right; margin: 0 0 0 20px; font-size: 85%; }
+#navigation ul.action-menu a { line-height: 24px; margin: 8px 5px; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; padding: 0 5px; border: none; white-space: nowrap; font-family: Arial, Helvetica, sans-serif; }
+
+.action-blue ul#action-menu a { background-color: #007bc8; color: #fff; transition: -webkit-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: -moz-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; -webkit-box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); -moz-box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); }
+.action-blue ul#action-menu a:hover, .action-blue ul#action-menu a:focus { background-color: #0072b9; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); color: #fff; }
+.action-blue ul#action-menu a:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.action-gray ul#action-menu a { background-color: #444; color: #fff; transition: -webkit-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: -moz-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; -webkit-box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); -moz-box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); }
+.action-gray ul#action-menu a:hover, .action-gray ul#action-menu a:focus { background-color: #5e5e5e; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); color: #fff; }
+.action-gray ul#action-menu a:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.action-gold ul#action-menu a { background-color: #cfb87c; color: #000; transition: -webkit-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: -moz-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; -webkit-box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); -moz-box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); }
+.action-gold ul#action-menu a:hover, .action-gold ul#action-menu a:focus { background-color: #d3be87; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); color: #000; }
+.action-gold ul#action-menu a:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+/* Block Menu - default blocks provided by core for each menu */
+.block-menu ul.menu, .block-menu ul.menu li { list-style: none; list-style-image: none; margin: 0; padding: 0; }
+.block-menu ul.menu a { display: block; padding: 5px 0; }
+.block-menu ul.menu ul.menu a { padding-left: 10px; }
+.block-menu ul.menu ul.menu ul.menu a { padding-left: 20px; }
+.block-menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 30px; }
+.block-menu ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 40px; }
+.block-menu ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 50px; }
+
+.block-menu ul.menu a { display: block; padding: 10px 0; border-bottom: 1px solid #e0e0e0; margin-bottom: -1px; }
+.block-menu ul.menu a i.fa { color: #363636; }
+
+.block-menu.blockdarkgray ul.menu a { border-bottom: 1px solid #555; }
+.block-menu.blockdarkgray ul.menu a i.fa { color: #fff; }
+
+.region-background-dark .block-menu ul.menu a { border-bottom: 1px solid #444; }
+
+.region-background-light .block-menu ul.menu a { border-bottom: 1px solid #e0e0e0; }
+
+/* Footer Menu */
+#footer-menu { /* Main menu and secondary menu links and menu block links. */ }
+#footer-menu .links, #footer-menu .menu { margin: 0; padding-top: 10px; padding-bottom: 10px; padding: 10px 0; text-align: left; /* LTR */ }
+#footer-menu .links li, #footer-menu .menu li { /* A simple method to get navigation links to appear in one line. */ float: left; /* LTR */ padding: 0 5px 0 0; /* LTR */ list-style-type: none; list-style-image: none; }
+
+#footer-menu-wrapper { font-size: 90%; padding: 0; font-weight: bold; }
+
+.footer-menu-gray { background-color: #333; }
+
+.footer-menu-gray ul#footer-menu-links a, .footer-menu-gray ul#footer-menu-links a.active, .footer-menu-gray ul#footer-menu-links a.active-trail { color: #fff; margin-right: 20px; }
+.footer-menu-gray ul#footer-menu-links a:hover, .footer-menu-gray ul#footer-menu-links a:focus, .footer-menu-gray ul#footer-menu-links a.active:hover, .footer-menu-gray ul#footer-menu-links a.active:focus, .footer-menu-gray ul#footer-menu-links a.active-trail:hover, .footer-menu-gray ul#footer-menu-links a.active-trail:focus { color: #cfb87c; }
+
+.footer-menu-gold { background-color: #cfb87c; }
+
+.footer-menu-gold ul#footer-menu-links a, .footer-menu-gold ul#footer-menu-links a.active, .footer-menu-gold ul#footer-menu-links a.active-trail { color: #333; margin-right: 20px; }
+.footer-menu-gold ul#footer-menu-links a:hover, .footer-menu-gold ul#footer-menu-links a:focus, .footer-menu-gold ul#footer-menu-links a.active:hover, .footer-menu-gold ul#footer-menu-links a.active:focus, .footer-menu-gold ul#footer-menu-links a.active-trail:hover, .footer-menu-gold ul#footer-menu-links a.active-trail:focus { color: #000; }
+
+/* Menu Blocks - menus provided by menu block module */
+#block-menu-block-site-navigation-menus-1 ul.menu, #block-menu-block-site-navigation-menus-1 ul.menu li, #block-menu-block-site-navigation-menus-2 ul.menu, #block-menu-block-site-navigation-menus-2 ul.menu li, #block-menu-block-site-navigation-menus-3 ul.menu, #block-menu-block-site-navigation-menus-3 ul.menu li, #section-navigation ul.menu, #section-navigation ul.menu li { list-style: none; list-style-image: none; margin: 0; padding: 0; }
+#block-menu-block-site-navigation-menus-1 ul.menu a, #block-menu-block-site-navigation-menus-1 ul.menu li a, #block-menu-block-site-navigation-menus-2 ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu li a, #block-menu-block-site-navigation-menus-3 ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu li a, #section-navigation ul.menu a, #section-navigation ul.menu li a { display: block; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu a, #section-navigation ul.menu ul.menu a { padding-left: 15px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu a { padding-left: 30px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu ul.menu a { padding-left: 45px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 60px; }
+#block-menu-block-site-navigation-menus-1 ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-2 ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a, #block-menu-block-site-navigation-menus-3 ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a, #section-navigation ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a { padding-left: 75px; }
+
+/* Mobile Menu Toggle/ Hamburger Menu */
+.mobile-menu-toggle { display: none; }
+
+.layout-responsive .mobile-menu-toggle { display: block; position: absolute; top: 3px; right: 20px; text-transform: uppercase; font-size: 11px; font-family: Arial, Helvetica; }
+.layout-responsive .mobile-menu-toggle a { padding: 2px 5px; display: inline-block; border-width: 1px; border-style: solid; white-space: nowrap; -webkit-border-radius: 2px; -moz-border-radius: 2px; border-radius: 2px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; }
+@media screen and (min-width: 960px) { .layout-responsive .mobile-menu-toggle { display: none; } }
+
+/* Mobile navigation */
+#mobile-navigation-wrapper { display: none; }
+
+#mobile-navigation { margin: 0 0px; }
+#mobile-navigation .culinks { display: none; }
+
+#mobile-menu ul, #mobile-menu li { list-style: none; list-style-image: none; margin: 0; padding: 0; }
+#mobile-menu a { display: block; padding: 10px 20px; }
+
+#mobile-search { padding: 20px 20px 0; }
+#mobile-search .cu-search input.form-text { width: 100%; }
+
+#navigation .links li, #navigation .menu li { margin: 0; padding: 0; }
+#navigation .links a, #navigation .menu a { display: inline-block; padding: 0 8px; line-height: 40px; }
+
+/* Menu Icons - for block menus, not main, secondary, footer menus */
+.menu-icon-text { overflow: hidden; display: block; }
+
+a.menu__link { display: block; overflow: hidden; }
+a.menu__link i.fa { float: left; margin-right: 5px; margin-top: 3px; font-size: 120%; }
+
+/* Mobile subnavigation */
+.layout-responsive #block-menu-block-site-navigation-menus-4 { display: block; }
+@media (min-width: 768px) { .layout-responsive #block-menu-block-site-navigation-menus-4 { display: none; } }
+
+/* BUTTON */
+a.button, a.button-blue, a.button-white, a.button-gray, a.button-black, a.button-gold, .hero-link-blue a:link, .hero-link-blue a:visited, .hero-link-gold a:link, .hero-link-gold a:visited, .hero-link-white a:link, .hero-link-white a:visited, .hero-link-black a:link, .hero-link-black a:visited, .hero-link-gray a:link, .hero-link-gray a:visited, .hero-link-dark_gray a:link, .hero-link-dark_gray a:visited, a.cu-give-button-dark, a.cu-give-button-light, a.cu-give-button-gold, .button, a.button-blue, .button-blue, a.button-white, .button-white, a.button-gray, .button-gray, a.button-black, .button-black, a.button-gold, .button-gold, .hero-link-blue a:link, .hero-link-blue a:visited, .hero-link-gold a:link, .hero-link-gold a:visited, .hero-link-white a:link, .hero-link-white a:visited, .hero-link-black a:link, .hero-link-black a:visited, .hero-link-gray a:link, .hero-link-gray a:visited, .hero-link-dark_gray a:link, .hero-link-dark_gray a:visited, a.cu-give-button-dark, a.cu-give-button-light, a.cu-give-button-gold { color: #fff !important; display: inline-block; padding: 5px 10px; font-weight: 500; font-family: "Neue Helvetica W01", "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; transition: background-color 0.5s ease; transition: -webkit-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: -moz-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); margin-bottom: 5px; }
+
+a.button-blue, .button-blue { background-color: #007bc8; }
+a.button-blue:hover, a.button-blue:focus, .button-blue:hover, .button-blue:focus { background-color: #0072b9; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+a.button-blue:active, .button-blue:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+a.button-white, .button-white { color: #363636 !important; border: 1px solid #e7e7e7; background-color: white; }
+a.button-white:hover, a.button-white:focus, .button-white:hover, .button-white:focus { background-color: #f7f7f7; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+a.button-white:active, .button-white:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+a.button-gray, .button-gray { background-color: #757575; }
+a.button-gray:hover, a.button-gray:focus, .button-gray:hover, .button-gray:focus { background-color: #6d6d6d; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+a.button-gray:active, .button-gray:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+a.button-black, .button-black { background-color: #202020; }
+a.button-black:hover, a.button-black:focus, .button-black:hover, .button-black:focus { background-color: #181818; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+a.button-black:active, .button-black:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+a.button-gold, .button-gold { background-color: #cfb87c; color: #000 !important; }
+a.button-gold:hover, a.button-gold:focus, .button-gold:hover, .button-gold:focus { background-color: #cbb271; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+a.button-gold:active, .button-gold:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+a.button-full { display: block; text-align: center; }
+
+a.simple-button:link, a.button-simple:link, a.simple-button:visited, a.button-simple:visited { color: #666; display: inline-block; padding: 1px 5px; font-size: 75%; transition: background-color 0.5s ease; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; background-color: #f4f4f4; transition: -webkit-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: -moz-box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; transition: box-shadow 0.5s ease, background-color 0.5s ease, color 0.5s ease; -webkit-box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); -moz-box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); box-shadow: 0 0px 3px rgba(0, 0, 0, 0.24); }
+a.simple-button:link:hover, a.simple-button:link:focus, a.button-simple:link:hover, a.button-simple:link:focus, a.simple-button:visited:hover, a.simple-button:visited:focus, a.button-simple:visited:hover, a.button-simple:visited:focus { background-color: #ececec; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+a.simple-button:link:active, a.button-simple:link:active, a.simple-button:visited:active, a.button-simple:visited:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+a.button-large { font-size: 125%; padding: 10px; }
+
+a.button-small { font-size: 90%; padding: 1px 6px; }
+
+/* Hero Unit Buttons SASS */
+.hero-link-blue a:link, .hero-link-blue a:visited { background-color: #007bc8; color: #fff; }
+.hero-link-blue a:link:hover, .hero-link-blue a:link:focus, .hero-link-blue a:visited:hover, .hero-link-blue a:visited:focus { background-color: #0072b9; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.hero-link-blue a:link:active, .hero-link-blue a:visited:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.hero-link-gold a:link, .hero-link-gold a:visited { background-color: #cfb87c; color: #000 !important; }
+.hero-link-gold a:link:hover, .hero-link-gold a:link:focus, .hero-link-gold a:visited:hover, .hero-link-gold a:visited:focus { background-color: #cbb271; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.hero-link-gold a:link:active, .hero-link-gold a:visited:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.hero-link-white a:link, .hero-link-white a:visited { background-color: white; color: #363636 !important; }
+.hero-link-white a:link:hover, .hero-link-white a:link:focus, .hero-link-white a:visited:hover, .hero-link-white a:visited:focus { background-color: #f7f7f7; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.hero-link-white a:link:active, .hero-link-white a:visited:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.hero-link-black a:link, .hero-link-black a:visited { background-color: #111111; color: #fff; }
+.hero-link-black a:link:hover, .hero-link-black a:link:focus, .hero-link-black a:visited:hover, .hero-link-black a:visited:focus { background-color: #090909; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.hero-link-black a:link:active, .hero-link-black a:visited:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.hero-link-gray a:link, .hero-link-gray a:visited { background-color: #f4f4f4; color: #363636 !important; }
+.hero-link-gray a:link:hover, .hero-link-gray a:link:focus, .hero-link-gray a:visited:hover, .hero-link-gray a:visited:focus { background-color: #ececec; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.hero-link-gray a:link:active, .hero-link-gray a:visited:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.hero-link-dark_gray a:link, .hero-link-dark_gray a:visited { background-color: #464646; color: #fff; }
+.hero-link-dark_gray a:link:hover, .hero-link-dark_gray a:link:focus, .hero-link-dark_gray a:visited:hover, .hero-link-dark_gray a:visited:focus { background-color: #3e3e3e; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.hero-link-dark_gray a:link:active, .hero-link-dark_gray a:visited:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.buttongroup { display: table; border-collapse: separate; border-spacing: 1px; layout: fixed; -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; }
+.buttongroup a.button, .buttongroup a.button-blue, .buttongroup a.button-white, .buttongroup a.button-gray, .buttongroup a.button-black, .buttongroup a.button-gold, .buttongroup .hero-link-blue a:link, .hero-link-blue .buttongroup a:link, .buttongroup .hero-link-blue a:visited, .hero-link-blue .buttongroup a:visited, .buttongroup .hero-link-gold a:link, .hero-link-gold .buttongroup a:link, .buttongroup .hero-link-gold a:visited, .hero-link-gold .buttongroup a:visited, .buttongroup .hero-link-white a:link, .hero-link-white .buttongroup a:link, .buttongroup .hero-link-white a:visited, .hero-link-white .buttongroup a:visited, .buttongroup .hero-link-black a:link, .hero-link-black .buttongroup a:link, .buttongroup .hero-link-black a:visited, .hero-link-black .buttongroup a:visited, .buttongroup .hero-link-gray a:link, .hero-link-gray .buttongroup a:link, .buttongroup .hero-link-gray a:visited, .hero-link-gray .buttongroup a:visited, .buttongroup .hero-link-dark_gray a:link, .hero-link-dark_gray .buttongroup a:link, .buttongroup .hero-link-dark_gray a:visited, .hero-link-dark_gray .buttongroup a:visited, .buttongroup a.cu-give-button-dark, .buttongroup a.cu-give-button-light, .buttongroup a.cu-give-button-gold { display: table-cell; -webkit-border-radius: 0px; -moz-border-radius: 0px; border-radius: 0px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; text-align: center; vertical-align: middle; font-weight: 500; }
+
+.buttongroup-size-small { font-size: 85%; }
+.buttongroup-size-small a.button, .buttongroup-size-small a.button-blue, .buttongroup-size-small a.button-white, .buttongroup-size-small a.button-gray, .buttongroup-size-small a.button-black, .buttongroup-size-small a.button-gold, .buttongroup-size-small .hero-link-blue a:link, .hero-link-blue .buttongroup-size-small a:link, .buttongroup-size-small .hero-link-blue a:visited, .hero-link-blue .buttongroup-size-small a:visited, .buttongroup-size-small .hero-link-gold a:link, .hero-link-gold .buttongroup-size-small a:link, .buttongroup-size-small .hero-link-gold a:visited, .hero-link-gold .buttongroup-size-small a:visited, .buttongroup-size-small .hero-link-white a:link, .hero-link-white .buttongroup-size-small a:link, .buttongroup-size-small .hero-link-white a:visited, .hero-link-white .buttongroup-size-small a:visited, .buttongroup-size-small .hero-link-black a:link, .hero-link-black .buttongroup-size-small a:link, .buttongroup-size-small .hero-link-black a:visited, .hero-link-black .buttongroup-size-small a:visited, .buttongroup-size-small .hero-link-gray a:link, .hero-link-gray .buttongroup-size-small a:link, .buttongroup-size-small .hero-link-gray a:visited, .hero-link-gray .buttongroup-size-small a:visited, .buttongroup-size-small .hero-link-dark_gray a:link, .hero-link-dark_gray .buttongroup-size-small a:link, .buttongroup-size-small .hero-link-dark_gray a:visited, .hero-link-dark_gray .buttongroup-size-small a:visited, .buttongroup-size-small a.cu-give-button-dark, .buttongroup-size-small a.cu-give-button-light, .buttongroup-size-small a.cu-give-button-gold { padding: 2px 5px; }
+
+.buttongroup-size-large { font-size: 115%; }
+
+.buttongroup-color-blue { border: 1px solid #007bc8; }
+.buttongroup-color-blue a.button, .buttongroup-color-blue a.button-blue, .buttongroup-color-blue a.button-white, .buttongroup-color-blue a.button-gray, .buttongroup-color-blue a.button-black, .buttongroup-color-blue a.button-gold, .buttongroup-color-blue .hero-link-blue a:link, .hero-link-blue .buttongroup-color-blue a:link, .buttongroup-color-blue .hero-link-blue a:visited, .hero-link-blue .buttongroup-color-blue a:visited, .buttongroup-color-blue .hero-link-gold a:link, .hero-link-gold .buttongroup-color-blue a:link, .buttongroup-color-blue .hero-link-gold a:visited, .hero-link-gold .buttongroup-color-blue a:visited, .buttongroup-color-blue .hero-link-white a:link, .hero-link-white .buttongroup-color-blue a:link, .buttongroup-color-blue .hero-link-white a:visited, .hero-link-white .buttongroup-color-blue a:visited, .buttongroup-color-blue .hero-link-black a:link, .hero-link-black .buttongroup-color-blue a:link, .buttongroup-color-blue .hero-link-black a:visited, .hero-link-black .buttongroup-color-blue a:visited, .buttongroup-color-blue .hero-link-gray a:link, .hero-link-gray .buttongroup-color-blue a:link, .buttongroup-color-blue .hero-link-gray a:visited, .hero-link-gray .buttongroup-color-blue a:visited, .buttongroup-color-blue .hero-link-dark_gray a:link, .hero-link-dark_gray .buttongroup-color-blue a:link, .buttongroup-color-blue .hero-link-dark_gray a:visited, .hero-link-dark_gray .buttongroup-color-blue a:visited, .buttongroup-color-blue a.cu-give-button-dark, .buttongroup-color-blue a.cu-give-button-light, .buttongroup-color-blue a.cu-give-button-gold { background-color: #007bc8; }
+.buttongroup-color-blue a.button:hover, .buttongroup-color-blue a.button-blue:hover, .buttongroup-color-blue a.button-white:hover, .buttongroup-color-blue a.button-gray:hover, .buttongroup-color-blue a.button-black:hover, .buttongroup-color-blue a.button-gold:hover, .buttongroup-color-blue .hero-link-blue a:hover:link, .hero-link-blue .buttongroup-color-blue a:hover:link, .buttongroup-color-blue .hero-link-blue a:hover:visited, .hero-link-blue .buttongroup-color-blue a:hover:visited, .buttongroup-color-blue .hero-link-gold a:hover:link, .hero-link-gold .buttongroup-color-blue a:hover:link, .buttongroup-color-blue .hero-link-gold a:hover:visited, .hero-link-gold .buttongroup-color-blue a:hover:visited, .buttongroup-color-blue .hero-link-white a:hover:link, .hero-link-white .buttongroup-color-blue a:hover:link, .buttongroup-color-blue .hero-link-white a:hover:visited, .hero-link-white .buttongroup-color-blue a:hover:visited, .buttongroup-color-blue .hero-link-black a:hover:link, .hero-link-black .buttongroup-color-blue a:hover:link, .buttongroup-color-blue .hero-link-black a:hover:visited, .hero-link-black .buttongroup-color-blue a:hover:visited, .buttongroup-color-blue .hero-link-gray a:hover:link, .hero-link-gray .buttongroup-color-blue a:hover:link, .buttongroup-color-blue .hero-link-gray a:hover:visited, .hero-link-gray .buttongroup-color-blue a:hover:visited, .buttongroup-color-blue .hero-link-dark_gray a:hover:link, .hero-link-dark_gray .buttongroup-color-blue a:hover:link, .buttongroup-color-blue .hero-link-dark_gray a:hover:visited, .hero-link-dark_gray .buttongroup-color-blue a:hover:visited, .buttongroup-color-blue a.cu-give-button-dark:hover, .buttongroup-color-blue a.cu-give-button-light:hover, .buttongroup-color-blue a.cu-give-button-gold:hover, .buttongroup-color-blue a.button:focus, .buttongroup-color-blue a.button-blue:focus, .buttongroup-color-blue a.button-white:focus, .buttongroup-color-blue a.button-gray:focus, .buttongroup-color-blue a.button-black:focus, .buttongroup-color-blue a.button-gold:focus, .buttongroup-color-blue .hero-link-blue a:focus:link, .hero-link-blue .buttongroup-color-blue a:focus:link, .buttongroup-color-blue .hero-link-blue a:focus:visited, .hero-link-blue .buttongroup-color-blue a:focus:visited, .buttongroup-color-blue .hero-link-gold a:focus:link, .hero-link-gold .buttongroup-color-blue a:focus:link, .buttongroup-color-blue .hero-link-gold a:focus:visited, .hero-link-gold .buttongroup-color-blue a:focus:visited, .buttongroup-color-blue .hero-link-white a:focus:link, .hero-link-white .buttongroup-color-blue a:focus:link, .buttongroup-color-blue .hero-link-white a:focus:visited, .hero-link-white .buttongroup-color-blue a:focus:visited, .buttongroup-color-blue .hero-link-black a:focus:link, .hero-link-black .buttongroup-color-blue a:focus:link, .buttongroup-color-blue .hero-link-black a:focus:visited, .hero-link-black .buttongroup-color-blue a:focus:visited, .buttongroup-color-blue .hero-link-gray a:focus:link, .hero-link-gray .buttongroup-color-blue a:focus:link, .buttongroup-color-blue .hero-link-gray a:focus:visited, .hero-link-gray .buttongroup-color-blue a:focus:visited, .buttongroup-color-blue .hero-link-dark_gray a:focus:link, .hero-link-dark_gray .buttongroup-color-blue a:focus:link, .buttongroup-color-blue .hero-link-dark_gray a:focus:visited, .hero-link-dark_gray .buttongroup-color-blue a:focus:visited, .buttongroup-color-blue a.cu-give-button-dark:focus, .buttongroup-color-blue a.cu-give-button-light:focus, .buttongroup-color-blue a.cu-give-button-gold:focus { background-color: #0072b9; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.buttongroup-color-blue a.button:active, .buttongroup-color-blue a.button-blue:active, .buttongroup-color-blue a.button-white:active, .buttongroup-color-blue a.button-gray:active, .buttongroup-color-blue a.button-black:active, .buttongroup-color-blue a.button-gold:active, .buttongroup-color-blue .hero-link-blue a:active:link, .hero-link-blue .buttongroup-color-blue a:active:link, .buttongroup-color-blue .hero-link-blue a:active:visited, .hero-link-blue .buttongroup-color-blue a:active:visited, .buttongroup-color-blue .hero-link-gold a:active:link, .hero-link-gold .buttongroup-color-blue a:active:link, .buttongroup-color-blue .hero-link-gold a:active:visited, .hero-link-gold .buttongroup-color-blue a:active:visited, .buttongroup-color-blue .hero-link-white a:active:link, .hero-link-white .buttongroup-color-blue a:active:link, .buttongroup-color-blue .hero-link-white a:active:visited, .hero-link-white .buttongroup-color-blue a:active:visited, .buttongroup-color-blue .hero-link-black a:active:link, .hero-link-black .buttongroup-color-blue a:active:link, .buttongroup-color-blue .hero-link-black a:active:visited, .hero-link-black .buttongroup-color-blue a:active:visited, .buttongroup-color-blue .hero-link-gray a:active:link, .hero-link-gray .buttongroup-color-blue a:active:link, .buttongroup-color-blue .hero-link-gray a:active:visited, .hero-link-gray .buttongroup-color-blue a:active:visited, .buttongroup-color-blue .hero-link-dark_gray a:active:link, .hero-link-dark_gray .buttongroup-color-blue a:active:link, .buttongroup-color-blue .hero-link-dark_gray a:active:visited, .hero-link-dark_gray .buttongroup-color-blue a:active:visited, .buttongroup-color-blue a.cu-give-button-dark:active, .buttongroup-color-blue a.cu-give-button-light:active, .buttongroup-color-blue a.cu-give-button-gold:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.buttongroup-color-gold { border: 1px solid #cfb87c; }
+.buttongroup-color-gold a.button, .buttongroup-color-gold a.button-blue, .buttongroup-color-gold a.button-white, .buttongroup-color-gold a.button-gray, .buttongroup-color-gold a.button-black, .buttongroup-color-gold a.button-gold, .buttongroup-color-gold .hero-link-blue a:link, .hero-link-blue .buttongroup-color-gold a:link, .buttongroup-color-gold .hero-link-blue a:visited, .hero-link-blue .buttongroup-color-gold a:visited, .buttongroup-color-gold .hero-link-gold a:link, .hero-link-gold .buttongroup-color-gold a:link, .buttongroup-color-gold .hero-link-gold a:visited, .hero-link-gold .buttongroup-color-gold a:visited, .buttongroup-color-gold .hero-link-white a:link, .hero-link-white .buttongroup-color-gold a:link, .buttongroup-color-gold .hero-link-white a:visited, .hero-link-white .buttongroup-color-gold a:visited, .buttongroup-color-gold .hero-link-black a:link, .hero-link-black .buttongroup-color-gold a:link, .buttongroup-color-gold .hero-link-black a:visited, .hero-link-black .buttongroup-color-gold a:visited, .buttongroup-color-gold .hero-link-gray a:link, .hero-link-gray .buttongroup-color-gold a:link, .buttongroup-color-gold .hero-link-gray a:visited, .hero-link-gray .buttongroup-color-gold a:visited, .buttongroup-color-gold .hero-link-dark_gray a:link, .hero-link-dark_gray .buttongroup-color-gold a:link, .buttongroup-color-gold .hero-link-dark_gray a:visited, .hero-link-dark_gray .buttongroup-color-gold a:visited, .buttongroup-color-gold a.cu-give-button-dark, .buttongroup-color-gold a.cu-give-button-light, .buttongroup-color-gold a.cu-give-button-gold { background-color: #cfb87c; color: #363636 !important; }
+.buttongroup-color-gold a.button:hover, .buttongroup-color-gold a.button-blue:hover, .buttongroup-color-gold a.button-white:hover, .buttongroup-color-gold a.button-gray:hover, .buttongroup-color-gold a.button-black:hover, .buttongroup-color-gold a.button-gold:hover, .buttongroup-color-gold .hero-link-blue a:hover:link, .hero-link-blue .buttongroup-color-gold a:hover:link, .buttongroup-color-gold .hero-link-blue a:hover:visited, .hero-link-blue .buttongroup-color-gold a:hover:visited, .buttongroup-color-gold .hero-link-gold a:hover:link, .hero-link-gold .buttongroup-color-gold a:hover:link, .buttongroup-color-gold .hero-link-gold a:hover:visited, .hero-link-gold .buttongroup-color-gold a:hover:visited, .buttongroup-color-gold .hero-link-white a:hover:link, .hero-link-white .buttongroup-color-gold a:hover:link, .buttongroup-color-gold .hero-link-white a:hover:visited, .hero-link-white .buttongroup-color-gold a:hover:visited, .buttongroup-color-gold .hero-link-black a:hover:link, .hero-link-black .buttongroup-color-gold a:hover:link, .buttongroup-color-gold .hero-link-black a:hover:visited, .hero-link-black .buttongroup-color-gold a:hover:visited, .buttongroup-color-gold .hero-link-gray a:hover:link, .hero-link-gray .buttongroup-color-gold a:hover:link, .buttongroup-color-gold .hero-link-gray a:hover:visited, .hero-link-gray .buttongroup-color-gold a:hover:visited, .buttongroup-color-gold .hero-link-dark_gray a:hover:link, .hero-link-dark_gray .buttongroup-color-gold a:hover:link, .buttongroup-color-gold .hero-link-dark_gray a:hover:visited, .hero-link-dark_gray .buttongroup-color-gold a:hover:visited, .buttongroup-color-gold a.cu-give-button-dark:hover, .buttongroup-color-gold a.cu-give-button-light:hover, .buttongroup-color-gold a.cu-give-button-gold:hover, .buttongroup-color-gold a.button:focus, .buttongroup-color-gold a.button-blue:focus, .buttongroup-color-gold a.button-white:focus, .buttongroup-color-gold a.button-gray:focus, .buttongroup-color-gold a.button-black:focus, .buttongroup-color-gold a.button-gold:focus, .buttongroup-color-gold .hero-link-blue a:focus:link, .hero-link-blue .buttongroup-color-gold a:focus:link, .buttongroup-color-gold .hero-link-blue a:focus:visited, .hero-link-blue .buttongroup-color-gold a:focus:visited, .buttongroup-color-gold .hero-link-gold a:focus:link, .hero-link-gold .buttongroup-color-gold a:focus:link, .buttongroup-color-gold .hero-link-gold a:focus:visited, .hero-link-gold .buttongroup-color-gold a:focus:visited, .buttongroup-color-gold .hero-link-white a:focus:link, .hero-link-white .buttongroup-color-gold a:focus:link, .buttongroup-color-gold .hero-link-white a:focus:visited, .hero-link-white .buttongroup-color-gold a:focus:visited, .buttongroup-color-gold .hero-link-black a:focus:link, .hero-link-black .buttongroup-color-gold a:focus:link, .buttongroup-color-gold .hero-link-black a:focus:visited, .hero-link-black .buttongroup-color-gold a:focus:visited, .buttongroup-color-gold .hero-link-gray a:focus:link, .hero-link-gray .buttongroup-color-gold a:focus:link, .buttongroup-color-gold .hero-link-gray a:focus:visited, .hero-link-gray .buttongroup-color-gold a:focus:visited, .buttongroup-color-gold .hero-link-dark_gray a:focus:link, .hero-link-dark_gray .buttongroup-color-gold a:focus:link, .buttongroup-color-gold .hero-link-dark_gray a:focus:visited, .hero-link-dark_gray .buttongroup-color-gold a:focus:visited, .buttongroup-color-gold a.cu-give-button-dark:focus, .buttongroup-color-gold a.cu-give-button-light:focus, .buttongroup-color-gold a.cu-give-button-gold:focus { background-color: #cbb271; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.buttongroup-color-gold a.button:active, .buttongroup-color-gold a.button-blue:active, .buttongroup-color-gold a.button-white:active, .buttongroup-color-gold a.button-gray:active, .buttongroup-color-gold a.button-black:active, .buttongroup-color-gold a.button-gold:active, .buttongroup-color-gold .hero-link-blue a:active:link, .hero-link-blue .buttongroup-color-gold a:active:link, .buttongroup-color-gold .hero-link-blue a:active:visited, .hero-link-blue .buttongroup-color-gold a:active:visited, .buttongroup-color-gold .hero-link-gold a:active:link, .hero-link-gold .buttongroup-color-gold a:active:link, .buttongroup-color-gold .hero-link-gold a:active:visited, .hero-link-gold .buttongroup-color-gold a:active:visited, .buttongroup-color-gold .hero-link-white a:active:link, .hero-link-white .buttongroup-color-gold a:active:link, .buttongroup-color-gold .hero-link-white a:active:visited, .hero-link-white .buttongroup-color-gold a:active:visited, .buttongroup-color-gold .hero-link-black a:active:link, .hero-link-black .buttongroup-color-gold a:active:link, .buttongroup-color-gold .hero-link-black a:active:visited, .hero-link-black .buttongroup-color-gold a:active:visited, .buttongroup-color-gold .hero-link-gray a:active:link, .hero-link-gray .buttongroup-color-gold a:active:link, .buttongroup-color-gold .hero-link-gray a:active:visited, .hero-link-gray .buttongroup-color-gold a:active:visited, .buttongroup-color-gold .hero-link-dark_gray a:active:link, .hero-link-dark_gray .buttongroup-color-gold a:active:link, .buttongroup-color-gold .hero-link-dark_gray a:active:visited, .hero-link-dark_gray .buttongroup-color-gold a:active:visited, .buttongroup-color-gold a.cu-give-button-dark:active, .buttongroup-color-gold a.cu-give-button-light:active, .buttongroup-color-gold a.cu-give-button-gold:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.buttongroup-color-black { border: 1px solid #202020; }
+.buttongroup-color-black a.button, .buttongroup-color-black a.button-blue, .buttongroup-color-black a.button-white, .buttongroup-color-black a.button-gray, .buttongroup-color-black a.button-black, .buttongroup-color-black a.button-gold, .buttongroup-color-black .hero-link-blue a:link, .hero-link-blue .buttongroup-color-black a:link, .buttongroup-color-black .hero-link-blue a:visited, .hero-link-blue .buttongroup-color-black a:visited, .buttongroup-color-black .hero-link-gold a:link, .hero-link-gold .buttongroup-color-black a:link, .buttongroup-color-black .hero-link-gold a:visited, .hero-link-gold .buttongroup-color-black a:visited, .buttongroup-color-black .hero-link-white a:link, .hero-link-white .buttongroup-color-black a:link, .buttongroup-color-black .hero-link-white a:visited, .hero-link-white .buttongroup-color-black a:visited, .buttongroup-color-black .hero-link-black a:link, .hero-link-black .buttongroup-color-black a:link, .buttongroup-color-black .hero-link-black a:visited, .hero-link-black .buttongroup-color-black a:visited, .buttongroup-color-black .hero-link-gray a:link, .hero-link-gray .buttongroup-color-black a:link, .buttongroup-color-black .hero-link-gray a:visited, .hero-link-gray .buttongroup-color-black a:visited, .buttongroup-color-black .hero-link-dark_gray a:link, .hero-link-dark_gray .buttongroup-color-black a:link, .buttongroup-color-black .hero-link-dark_gray a:visited, .hero-link-dark_gray .buttongroup-color-black a:visited, .buttongroup-color-black a.cu-give-button-dark, .buttongroup-color-black a.cu-give-button-light, .buttongroup-color-black a.cu-give-button-gold { background-color: #202020; }
+.buttongroup-color-black a.button:hover, .buttongroup-color-black a.button-blue:hover, .buttongroup-color-black a.button-white:hover, .buttongroup-color-black a.button-gray:hover, .buttongroup-color-black a.button-black:hover, .buttongroup-color-black a.button-gold:hover, .buttongroup-color-black .hero-link-blue a:hover:link, .hero-link-blue .buttongroup-color-black a:hover:link, .buttongroup-color-black .hero-link-blue a:hover:visited, .hero-link-blue .buttongroup-color-black a:hover:visited, .buttongroup-color-black .hero-link-gold a:hover:link, .hero-link-gold .buttongroup-color-black a:hover:link, .buttongroup-color-black .hero-link-gold a:hover:visited, .hero-link-gold .buttongroup-color-black a:hover:visited, .buttongroup-color-black .hero-link-white a:hover:link, .hero-link-white .buttongroup-color-black a:hover:link, .buttongroup-color-black .hero-link-white a:hover:visited, .hero-link-white .buttongroup-color-black a:hover:visited, .buttongroup-color-black .hero-link-black a:hover:link, .hero-link-black .buttongroup-color-black a:hover:link, .buttongroup-color-black .hero-link-black a:hover:visited, .hero-link-black .buttongroup-color-black a:hover:visited, .buttongroup-color-black .hero-link-gray a:hover:link, .hero-link-gray .buttongroup-color-black a:hover:link, .buttongroup-color-black .hero-link-gray a:hover:visited, .hero-link-gray .buttongroup-color-black a:hover:visited, .buttongroup-color-black .hero-link-dark_gray a:hover:link, .hero-link-dark_gray .buttongroup-color-black a:hover:link, .buttongroup-color-black .hero-link-dark_gray a:hover:visited, .hero-link-dark_gray .buttongroup-color-black a:hover:visited, .buttongroup-color-black a.cu-give-button-dark:hover, .buttongroup-color-black a.cu-give-button-light:hover, .buttongroup-color-black a.cu-give-button-gold:hover, .buttongroup-color-black a.button:focus, .buttongroup-color-black a.button-blue:focus, .buttongroup-color-black a.button-white:focus, .buttongroup-color-black a.button-gray:focus, .buttongroup-color-black a.button-black:focus, .buttongroup-color-black a.button-gold:focus, .buttongroup-color-black .hero-link-blue a:focus:link, .hero-link-blue .buttongroup-color-black a:focus:link, .buttongroup-color-black .hero-link-blue a:focus:visited, .hero-link-blue .buttongroup-color-black a:focus:visited, .buttongroup-color-black .hero-link-gold a:focus:link, .hero-link-gold .buttongroup-color-black a:focus:link, .buttongroup-color-black .hero-link-gold a:focus:visited, .hero-link-gold .buttongroup-color-black a:focus:visited, .buttongroup-color-black .hero-link-white a:focus:link, .hero-link-white .buttongroup-color-black a:focus:link, .buttongroup-color-black .hero-link-white a:focus:visited, .hero-link-white .buttongroup-color-black a:focus:visited, .buttongroup-color-black .hero-link-black a:focus:link, .hero-link-black .buttongroup-color-black a:focus:link, .buttongroup-color-black .hero-link-black a:focus:visited, .hero-link-black .buttongroup-color-black a:focus:visited, .buttongroup-color-black .hero-link-gray a:focus:link, .hero-link-gray .buttongroup-color-black a:focus:link, .buttongroup-color-black .hero-link-gray a:focus:visited, .hero-link-gray .buttongroup-color-black a:focus:visited, .buttongroup-color-black .hero-link-dark_gray a:focus:link, .hero-link-dark_gray .buttongroup-color-black a:focus:link, .buttongroup-color-black .hero-link-dark_gray a:focus:visited, .hero-link-dark_gray .buttongroup-color-black a:focus:visited, .buttongroup-color-black a.cu-give-button-dark:focus, .buttongroup-color-black a.cu-give-button-light:focus, .buttongroup-color-black a.cu-give-button-gold:focus { background-color: #181818; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.buttongroup-color-black a.button:active, .buttongroup-color-black a.button-blue:active, .buttongroup-color-black a.button-white:active, .buttongroup-color-black a.button-gray:active, .buttongroup-color-black a.button-black:active, .buttongroup-color-black a.button-gold:active, .buttongroup-color-black .hero-link-blue a:active:link, .hero-link-blue .buttongroup-color-black a:active:link, .buttongroup-color-black .hero-link-blue a:active:visited, .hero-link-blue .buttongroup-color-black a:active:visited, .buttongroup-color-black .hero-link-gold a:active:link, .hero-link-gold .buttongroup-color-black a:active:link, .buttongroup-color-black .hero-link-gold a:active:visited, .hero-link-gold .buttongroup-color-black a:active:visited, .buttongroup-color-black .hero-link-white a:active:link, .hero-link-white .buttongroup-color-black a:active:link, .buttongroup-color-black .hero-link-white a:active:visited, .hero-link-white .buttongroup-color-black a:active:visited, .buttongroup-color-black .hero-link-black a:active:link, .hero-link-black .buttongroup-color-black a:active:link, .buttongroup-color-black .hero-link-black a:active:visited, .hero-link-black .buttongroup-color-black a:active:visited, .buttongroup-color-black .hero-link-gray a:active:link, .hero-link-gray .buttongroup-color-black a:active:link, .buttongroup-color-black .hero-link-gray a:active:visited, .hero-link-gray .buttongroup-color-black a:active:visited, .buttongroup-color-black .hero-link-dark_gray a:active:link, .hero-link-dark_gray .buttongroup-color-black a:active:link, .buttongroup-color-black .hero-link-dark_gray a:active:visited, .hero-link-dark_gray .buttongroup-color-black a:active:visited, .buttongroup-color-black a.cu-give-button-dark:active, .buttongroup-color-black a.cu-give-button-light:active, .buttongroup-color-black a.cu-give-button-gold:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.buttongroup-color-gray { border: 1px solid #757575; }
+.buttongroup-color-gray a.button, .buttongroup-color-gray a.button-blue, .buttongroup-color-gray a.button-white, .buttongroup-color-gray a.button-gray, .buttongroup-color-gray a.button-black, .buttongroup-color-gray a.button-gold, .buttongroup-color-gray .hero-link-blue a:link, .hero-link-blue .buttongroup-color-gray a:link, .buttongroup-color-gray .hero-link-blue a:visited, .hero-link-blue .buttongroup-color-gray a:visited, .buttongroup-color-gray .hero-link-gold a:link, .hero-link-gold .buttongroup-color-gray a:link, .buttongroup-color-gray .hero-link-gold a:visited, .hero-link-gold .buttongroup-color-gray a:visited, .buttongroup-color-gray .hero-link-white a:link, .hero-link-white .buttongroup-color-gray a:link, .buttongroup-color-gray .hero-link-white a:visited, .hero-link-white .buttongroup-color-gray a:visited, .buttongroup-color-gray .hero-link-black a:link, .hero-link-black .buttongroup-color-gray a:link, .buttongroup-color-gray .hero-link-black a:visited, .hero-link-black .buttongroup-color-gray a:visited, .buttongroup-color-gray .hero-link-gray a:link, .hero-link-gray .buttongroup-color-gray a:link, .buttongroup-color-gray .hero-link-gray a:visited, .hero-link-gray .buttongroup-color-gray a:visited, .buttongroup-color-gray .hero-link-dark_gray a:link, .hero-link-dark_gray .buttongroup-color-gray a:link, .buttongroup-color-gray .hero-link-dark_gray a:visited, .hero-link-dark_gray .buttongroup-color-gray a:visited, .buttongroup-color-gray a.cu-give-button-dark, .buttongroup-color-gray a.cu-give-button-light, .buttongroup-color-gray a.cu-give-button-gold { background-color: #757575; }
+.buttongroup-color-gray a.button:hover, .buttongroup-color-gray a.button-blue:hover, .buttongroup-color-gray a.button-white:hover, .buttongroup-color-gray a.button-gray:hover, .buttongroup-color-gray a.button-black:hover, .buttongroup-color-gray a.button-gold:hover, .buttongroup-color-gray .hero-link-blue a:hover:link, .hero-link-blue .buttongroup-color-gray a:hover:link, .buttongroup-color-gray .hero-link-blue a:hover:visited, .hero-link-blue .buttongroup-color-gray a:hover:visited, .buttongroup-color-gray .hero-link-gold a:hover:link, .hero-link-gold .buttongroup-color-gray a:hover:link, .buttongroup-color-gray .hero-link-gold a:hover:visited, .hero-link-gold .buttongroup-color-gray a:hover:visited, .buttongroup-color-gray .hero-link-white a:hover:link, .hero-link-white .buttongroup-color-gray a:hover:link, .buttongroup-color-gray .hero-link-white a:hover:visited, .hero-link-white .buttongroup-color-gray a:hover:visited, .buttongroup-color-gray .hero-link-black a:hover:link, .hero-link-black .buttongroup-color-gray a:hover:link, .buttongroup-color-gray .hero-link-black a:hover:visited, .hero-link-black .buttongroup-color-gray a:hover:visited, .buttongroup-color-gray .hero-link-gray a:hover:link, .hero-link-gray .buttongroup-color-gray a:hover:link, .buttongroup-color-gray .hero-link-gray a:hover:visited, .hero-link-gray .buttongroup-color-gray a:hover:visited, .buttongroup-color-gray .hero-link-dark_gray a:hover:link, .hero-link-dark_gray .buttongroup-color-gray a:hover:link, .buttongroup-color-gray .hero-link-dark_gray a:hover:visited, .hero-link-dark_gray .buttongroup-color-gray a:hover:visited, .buttongroup-color-gray a.cu-give-button-dark:hover, .buttongroup-color-gray a.cu-give-button-light:hover, .buttongroup-color-gray a.cu-give-button-gold:hover, .buttongroup-color-gray a.button:focus, .buttongroup-color-gray a.button-blue:focus, .buttongroup-color-gray a.button-white:focus, .buttongroup-color-gray a.button-gray:focus, .buttongroup-color-gray a.button-black:focus, .buttongroup-color-gray a.button-gold:focus, .buttongroup-color-gray .hero-link-blue a:focus:link, .hero-link-blue .buttongroup-color-gray a:focus:link, .buttongroup-color-gray .hero-link-blue a:focus:visited, .hero-link-blue .buttongroup-color-gray a:focus:visited, .buttongroup-color-gray .hero-link-gold a:focus:link, .hero-link-gold .buttongroup-color-gray a:focus:link, .buttongroup-color-gray .hero-link-gold a:focus:visited, .hero-link-gold .buttongroup-color-gray a:focus:visited, .buttongroup-color-gray .hero-link-white a:focus:link, .hero-link-white .buttongroup-color-gray a:focus:link, .buttongroup-color-gray .hero-link-white a:focus:visited, .hero-link-white .buttongroup-color-gray a:focus:visited, .buttongroup-color-gray .hero-link-black a:focus:link, .hero-link-black .buttongroup-color-gray a:focus:link, .buttongroup-color-gray .hero-link-black a:focus:visited, .hero-link-black .buttongroup-color-gray a:focus:visited, .buttongroup-color-gray .hero-link-gray a:focus:link, .hero-link-gray .buttongroup-color-gray a:focus:link, .buttongroup-color-gray .hero-link-gray a:focus:visited, .hero-link-gray .buttongroup-color-gray a:focus:visited, .buttongroup-color-gray .hero-link-dark_gray a:focus:link, .hero-link-dark_gray .buttongroup-color-gray a:focus:link, .buttongroup-color-gray .hero-link-dark_gray a:focus:visited, .hero-link-dark_gray .buttongroup-color-gray a:focus:visited, .buttongroup-color-gray a.cu-give-button-dark:focus, .buttongroup-color-gray a.cu-give-button-light:focus, .buttongroup-color-gray a.cu-give-button-gold:focus { background-color: #6d6d6d; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.buttongroup-color-gray a.button:active, .buttongroup-color-gray a.button-blue:active, .buttongroup-color-gray a.button-white:active, .buttongroup-color-gray a.button-gray:active, .buttongroup-color-gray a.button-black:active, .buttongroup-color-gray a.button-gold:active, .buttongroup-color-gray .hero-link-blue a:active:link, .hero-link-blue .buttongroup-color-gray a:active:link, .buttongroup-color-gray .hero-link-blue a:active:visited, .hero-link-blue .buttongroup-color-gray a:active:visited, .buttongroup-color-gray .hero-link-gold a:active:link, .hero-link-gold .buttongroup-color-gray a:active:link, .buttongroup-color-gray .hero-link-gold a:active:visited, .hero-link-gold .buttongroup-color-gray a:active:visited, .buttongroup-color-gray .hero-link-white a:active:link, .hero-link-white .buttongroup-color-gray a:active:link, .buttongroup-color-gray .hero-link-white a:active:visited, .hero-link-white .buttongroup-color-gray a:active:visited, .buttongroup-color-gray .hero-link-black a:active:link, .hero-link-black .buttongroup-color-gray a:active:link, .buttongroup-color-gray .hero-link-black a:active:visited, .hero-link-black .buttongroup-color-gray a:active:visited, .buttongroup-color-gray .hero-link-gray a:active:link, .hero-link-gray .buttongroup-color-gray a:active:link, .buttongroup-color-gray .hero-link-gray a:active:visited, .hero-link-gray .buttongroup-color-gray a:active:visited, .buttongroup-color-gray .hero-link-dark_gray a:active:link, .hero-link-dark_gray .buttongroup-color-gray a:active:link, .buttongroup-color-gray .hero-link-dark_gray a:active:visited, .hero-link-dark_gray .buttongroup-color-gray a:active:visited, .buttongroup-color-gray a.cu-give-button-dark:active, .buttongroup-color-gray a.cu-give-button-light:active, .buttongroup-color-gray a.cu-give-button-gold:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+.buttongroup-color-white { border: 1px solid #e0e0e0; }
+.buttongroup-color-white a.button, .buttongroup-color-white a.button-blue, .buttongroup-color-white a.button-white, .buttongroup-color-white a.button-gray, .buttongroup-color-white a.button-black, .buttongroup-color-white a.button-gold, .buttongroup-color-white .hero-link-blue a:link, .hero-link-blue .buttongroup-color-white a:link, .buttongroup-color-white .hero-link-blue a:visited, .hero-link-blue .buttongroup-color-white a:visited, .buttongroup-color-white .hero-link-gold a:link, .hero-link-gold .buttongroup-color-white a:link, .buttongroup-color-white .hero-link-gold a:visited, .hero-link-gold .buttongroup-color-white a:visited, .buttongroup-color-white .hero-link-white a:link, .hero-link-white .buttongroup-color-white a:link, .buttongroup-color-white .hero-link-white a:visited, .hero-link-white .buttongroup-color-white a:visited, .buttongroup-color-white .hero-link-black a:link, .hero-link-black .buttongroup-color-white a:link, .buttongroup-color-white .hero-link-black a:visited, .hero-link-black .buttongroup-color-white a:visited, .buttongroup-color-white .hero-link-gray a:link, .hero-link-gray .buttongroup-color-white a:link, .buttongroup-color-white .hero-link-gray a:visited, .hero-link-gray .buttongroup-color-white a:visited, .buttongroup-color-white .hero-link-dark_gray a:link, .hero-link-dark_gray .buttongroup-color-white a:link, .buttongroup-color-white .hero-link-dark_gray a:visited, .hero-link-dark_gray .buttongroup-color-white a:visited, .buttongroup-color-white a.cu-give-button-dark, .buttongroup-color-white a.cu-give-button-light, .buttongroup-color-white a.cu-give-button-gold { background-color: #f7f7f7; color: #363636 !important; border: 1px solid #e0e0e0; }
+.buttongroup-color-white a.button:hover, .buttongroup-color-white a.button-blue:hover, .buttongroup-color-white a.button-white:hover, .buttongroup-color-white a.button-gray:hover, .buttongroup-color-white a.button-black:hover, .buttongroup-color-white a.button-gold:hover, .buttongroup-color-white .hero-link-blue a:hover:link, .hero-link-blue .buttongroup-color-white a:hover:link, .buttongroup-color-white .hero-link-blue a:hover:visited, .hero-link-blue .buttongroup-color-white a:hover:visited, .buttongroup-color-white .hero-link-gold a:hover:link, .hero-link-gold .buttongroup-color-white a:hover:link, .buttongroup-color-white .hero-link-gold a:hover:visited, .hero-link-gold .buttongroup-color-white a:hover:visited, .buttongroup-color-white .hero-link-white a:hover:link, .hero-link-white .buttongroup-color-white a:hover:link, .buttongroup-color-white .hero-link-white a:hover:visited, .hero-link-white .buttongroup-color-white a:hover:visited, .buttongroup-color-white .hero-link-black a:hover:link, .hero-link-black .buttongroup-color-white a:hover:link, .buttongroup-color-white .hero-link-black a:hover:visited, .hero-link-black .buttongroup-color-white a:hover:visited, .buttongroup-color-white .hero-link-gray a:hover:link, .hero-link-gray .buttongroup-color-white a:hover:link, .buttongroup-color-white .hero-link-gray a:hover:visited, .hero-link-gray .buttongroup-color-white a:hover:visited, .buttongroup-color-white .hero-link-dark_gray a:hover:link, .hero-link-dark_gray .buttongroup-color-white a:hover:link, .buttongroup-color-white .hero-link-dark_gray a:hover:visited, .hero-link-dark_gray .buttongroup-color-white a:hover:visited, .buttongroup-color-white a.cu-give-button-dark:hover, .buttongroup-color-white a.cu-give-button-light:hover, .buttongroup-color-white a.cu-give-button-gold:hover, .buttongroup-color-white a.button:focus, .buttongroup-color-white a.button-blue:focus, .buttongroup-color-white a.button-white:focus, .buttongroup-color-white a.button-gray:focus, .buttongroup-color-white a.button-black:focus, .buttongroup-color-white a.button-gold:focus, .buttongroup-color-white .hero-link-blue a:focus:link, .hero-link-blue .buttongroup-color-white a:focus:link, .buttongroup-color-white .hero-link-blue a:focus:visited, .hero-link-blue .buttongroup-color-white a:focus:visited, .buttongroup-color-white .hero-link-gold a:focus:link, .hero-link-gold .buttongroup-color-white a:focus:link, .buttongroup-color-white .hero-link-gold a:focus:visited, .hero-link-gold .buttongroup-color-white a:focus:visited, .buttongroup-color-white .hero-link-white a:focus:link, .hero-link-white .buttongroup-color-white a:focus:link, .buttongroup-color-white .hero-link-white a:focus:visited, .hero-link-white .buttongroup-color-white a:focus:visited, .buttongroup-color-white .hero-link-black a:focus:link, .hero-link-black .buttongroup-color-white a:focus:link, .buttongroup-color-white .hero-link-black a:focus:visited, .hero-link-black .buttongroup-color-white a:focus:visited, .buttongroup-color-white .hero-link-gray a:focus:link, .hero-link-gray .buttongroup-color-white a:focus:link, .buttongroup-color-white .hero-link-gray a:focus:visited, .hero-link-gray .buttongroup-color-white a:focus:visited, .buttongroup-color-white .hero-link-dark_gray a:focus:link, .hero-link-dark_gray .buttongroup-color-white a:focus:link, .buttongroup-color-white .hero-link-dark_gray a:focus:visited, .hero-link-dark_gray .buttongroup-color-white a:focus:visited, .buttongroup-color-white a.cu-give-button-dark:focus, .buttongroup-color-white a.cu-give-button-light:focus, .buttongroup-color-white a.cu-give-button-gold:focus { background-color: #efefef; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+.buttongroup-color-white a.button:active, .buttongroup-color-white a.button-blue:active, .buttongroup-color-white a.button-white:active, .buttongroup-color-white a.button-gray:active, .buttongroup-color-white a.button-black:active, .buttongroup-color-white a.button-gold:active, .buttongroup-color-white .hero-link-blue a:active:link, .hero-link-blue .buttongroup-color-white a:active:link, .buttongroup-color-white .hero-link-blue a:active:visited, .hero-link-blue .buttongroup-color-white a:active:visited, .buttongroup-color-white .hero-link-gold a:active:link, .hero-link-gold .buttongroup-color-white a:active:link, .buttongroup-color-white .hero-link-gold a:active:visited, .hero-link-gold .buttongroup-color-white a:active:visited, .buttongroup-color-white .hero-link-white a:active:link, .hero-link-white .buttongroup-color-white a:active:link, .buttongroup-color-white .hero-link-white a:active:visited, .hero-link-white .buttongroup-color-white a:active:visited, .buttongroup-color-white .hero-link-black a:active:link, .hero-link-black .buttongroup-color-white a:active:link, .buttongroup-color-white .hero-link-black a:active:visited, .hero-link-black .buttongroup-color-white a:active:visited, .buttongroup-color-white .hero-link-gray a:active:link, .hero-link-gray .buttongroup-color-white a:active:link, .buttongroup-color-white .hero-link-gray a:active:visited, .hero-link-gray .buttongroup-color-white a:active:visited, .buttongroup-color-white .hero-link-dark_gray a:active:link, .hero-link-dark_gray .buttongroup-color-white a:active:link, .buttongroup-color-white .hero-link-dark_gray a:active:visited, .hero-link-dark_gray .buttongroup-color-white a:active:visited, .buttongroup-color-white a.cu-give-button-dark:active, .buttongroup-color-white a.cu-give-button-light:active, .buttongroup-color-white a.cu-give-button-gold:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+/* GIVE BUTTONS from cu_give_buttons module */
+a.cu-give-button-dark { background-color: #222222; }
+a.cu-give-button-dark:hover, a.cu-give-button-dark:focus { background-color: #1a1a1a; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+a.cu-give-button-dark:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+a.cu-give-button-light { color: #363636 !important; border: 1px solid #e7e7e7; background-color: white; }
+a.cu-give-button-light:hover, a.cu-give-button-light:focus { background-color: #f7f7f7; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+a.cu-give-button-light:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+a.cu-give-button-gold { color: #000 !important; background-color: #cfb87c; }
+a.cu-give-button-gold:hover, a.cu-give-button-gold:focus { background-color: #cbb271; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+a.cu-give-button-gold:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+/* Ghost Buttons */
+a.button-ghost { display: inline-block; padding: 5px 10px; font-weight: 500; font-family: "Neue Helvetica W01", "Helvetica Neue", Helvetica, Arial, sans-serif; color: #007bc8; border: 1px solid #007bc8; margin-bottom: 5px; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0); box-shadow: 0 2px 5px rgba(0, 0, 0, 0); }
+
+a.button-ghost:hover, a.button-ghost:focus { color: #fff; background-color: #007bc8; -webkit-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); -moz-box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3); }
+
+a.button-ghost:active { -webkit-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); -moz-box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); box-shadow: 0 3px 15px rgba(0, 0, 0, 0.35); }
+
+body { font-size: 17px; line-height: 1.5; font-family: "Neue Helvetica W01", "Helvetica Neue", Helvetica, Arial, sans-serif; color: #202020; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-smoothing: antialiased; text-rendering: optimizeLegibility; font-style: normal; font-variant: normal; -webkit-text-size-adjust: none; }
+
+body.layout-responsive { font-size: 17px; }
+
+@media all and (min-width: 480px) { body.layout-responsive { font-size: 16px; } }
+@media all and (min-width: 1200px) { body.layout-responsive { font-size: 17px; } }
+#footer-section { font-size: 90%; line-height: 1.5; }
+
+.content p:last-child { margin-bottom: 0; }
+
+#block-system-main p { margin-bottom: 20px; }
+
+a:link, a:visited { color: #007bc8; text-decoration: none; transition: background-color 0.25s ease, border-color 0.25s ease, color 0.25s ease, -webkit-box-shadow 0.25s ease, -moz-box-shadow 0.25s ease, box-shadow 0.25s ease; }
+
+a:hover { color: #e51c23; text-decoration: none; }
+
+a:active { color: #e51c23; text-decoration: none; }
+
+.focus--keyboard, a:focus, button:focus, input:focus, textarea:focus { outline: #007bc8 solid 2px; text-decoration: none; outline-offset: -1px; }
+
+.focus--mouse, a.focus--mouse:focus, button.focus--mouse:focus, input.focus--mouse:focus, textarea.focus--mouse:focus { outline: none; text-decoration: none; }
+
+h1, h2, h3, h4, h5, h6 { line-height: 1.3; margin: 0 0 10px 0; }
+
+#footer-section h1, #footer-section h2, #footer-section h3, #footer-section h4, #footer-section h5, #footer-section h6 { margin: 0 0 10px 0; }
+
+h1#page-title, h1#page-title-image-title, .page-title-section h1 { font-size: 220%; font-weight: 200; font-family: "Neue Helvetica W01", "Helvetica Neue", Helvetica, Arial, sans-serif; }
+
+.layout-responsive h1#page-title, .layout-responsive h1#page-title-image-title, .layout-responsive .page-title-section h1 { font-size: 160%; }
+
+@media screen and (min-width: 768px) { .layout-responsive h1#page-title, .layout-responsive h1#page-title-image-title, .layout-responsive .page-title-section h1 { font-size: 220%; } }
+h2 { font-size: 160%; font-weight: 200; }
+
+h2.block-title { font-size: 160%; font-weight: 200; }
+
+.headings-bold .hero-unit h2, .hero-unit h2 { font-weight: 900; }
+
+.sidebars h2, .sidebars h2.block-title { font-size: 125%; }
+.sidebars h3 { font-size: 120%; }
+.sidebars h4 { font-size: 115%; }
+.sidebars h5 { font-size: 110%; }
+
+.headings-bold h1#page-title, .headings-bold h1#page-title-image-title, .headings-bold .page-title-section h1, .headings-bold h2, .headings-bold h3, .headings-bold h4 { font-weight: 700; }
+.headings-bold h1#page-title strong, .headings-bold h1#page-title-image-title strong, .headings-bold .page-title-section h1 strong, .headings-bold h2 strong, .headings-bold h3 strong, .headings-bold h4 strong { font-weight: 700; }
+.headings-bold h5, .headings-bold h6 { font-weight: 600; }
+.headings-bold h2.block-title, .headings-bold h2.node-title { font-weight: 700; }
+
+#after-content h2, #after-content h2.block-title, #after-content-2 h2, #after-content-2 h2.block-title { font-size: 150%; }
+
+#footer-section h2.block-title { font-size: 110%; font-weight: 500; }
+
+h2.node-title { font-size: 160%; font-weight: 200; }
+
+h3 { font-size: 140%; font-weight: 200; }
+
+h4 { font-size: 126%; font-weight: 200; }
+
+h5 { font-size: 113%; font-weight: 200; }
+
+h6 { font-size: 100%; font-weight: bold; font-weight: 200; }
+
+ol { list-style: decimal; }
+
+ul { list-style: disc; }
+
+.item-list ul li, .field-type-text-with-summary ul li, .field-type-text-long ul li { list-style: disc; margin-bottom: 10px; }
+.item-list ul ul li, .item-list ul ul ul ul li, .item-list ul ul ul ul ul ul li, .field-type-text-with-summary ul ul li, .field-type-text-with-summary ul ul ul ul li, .field-type-text-with-summary ul ul ul ul ul ul li, .field-type-text-long ul ul li, .field-type-text-long ul ul ul ul li, .field-type-text-long ul ul ul ul ul ul li { list-style: circle; }
+.item-list ul ul ul li, .item-list ul ul ul ul ul li, .item-list ul ul ul ul ul ul ul li, .field-type-text-with-summary ul ul ul li, .field-type-text-with-summary ul ul ul ul ul li, .field-type-text-with-summary ul ul ul ul ul ul ul li, .field-type-text-long ul ul ul li, .field-type-text-long ul ul ul ul ul li, .field-type-text-long ul ul ul ul ul ul ul li { list-style: disc; }
+.item-list ul ul, .item-list ol ol, .field-type-text-with-summary ul ul, .field-type-text-with-summary ol ol, .field-type-text-long ul ul, .field-type-text-long ol ol { margin: 10px 0 0 0; }
+.item-list ol li, .field-type-text-with-summary ol li, .field-type-text-long ol li { margin: 0 0 10px 0; }
+
+.node ol, .node ul, ul, ol { padding-left: 1.5em; }
+
+.node ul.inline, .node ol.inline, ul.inline, ol.inline { padding-left: 0; }
+
+ul.list-style-nobullet { list-style: none; list-style-image: none; padding-left: 0; }
+
+ul.list-style-underline > li { list-style: none; }
+
+ul.list-style-underline { list-style: none; list-style-image: none; padding-left: 0; }
+
+ul.list-style-underline > li { list-style: none; border-bottom: 1px solid #e0e0e0; padding-bottom: 10px; }
+
+ul.list-style-border { list-style: none; list-style-image: none; padding-left: 0; }
+
+ul.list-style-border > li { list-style: none; border: 1px solid #e0e0e0; padding: 10px; margin-bottom: -1px; }
+
+ul.list-style-icon-1, ul.list-style-icon-2, ul.list-style-icon-3, ul.list-style-icon-4, ul.list-style-icon-5, ul.list-style-icon-6 { list-style: none; list-style-image: none; }
+ul.list-style-icon-1 > li, ul.list-style-icon-2 > li, ul.list-style-icon-3 > li, ul.list-style-icon-4 > li, ul.list-style-icon-5 > li, ul.list-style-icon-6 > li { list-style: none !important; list-style-image: none !important; position: relative; }
+ul.list-style-icon-1 li:before, ul.list-style-icon-2 li:before, ul.list-style-icon-3 li:before, ul.list-style-icon-4 li:before, ul.list-style-icon-5 li:before, ul.list-style-icon-6 li:before { font-family: 'FontAwesome'; position: absolute; top: 0; left: -20px; color: #cfb87c; }
+
+ul.list-style-icon-1 > li:before { content: '\f00c'; }
+
+ul.list-style-icon-2 > li:before { content: '\f14a'; }
+
+ul.list-style-icon-3 > li:before { content: '\f101'; }
+
+ul.list-style-icon-4 > li:before { content: '\f0a9'; }
+
+ul.list-style-icon-5 > li:before { content: '\f005'; }
+
+ul.list-style-icon-6 > li:before { content: '\f0a4'; }
+
+/* ORDERED LIST STYLES */
+ol.list-style-alpha-upper, ol.list-style-alpha-upper > li { list-style: upper-alpha; }
+
+ol.list-style-alpha-lower, ol.list-style-alpha-lower > li { list-style: lower-alpha; }
+
+ol.list-style-roman-upper, ol.list-style-roman-upper > li { list-style: upper-roman; }
+
+ol.list-style-roman-lower, ol.list-style-roman-lower > li { list-style: lower-roman; }
+
+p, dl, hr, ol, ul, pre, table, address, fieldset { margin: 0 0 20px 0; }
+
+dt, .admin h3 { font-weight: 600; margin: 0; }
+
+dd { padding-left: 10px; font-style: italic; margin-bottom: 20px; }
+dd p { margin-bottom: 10px; }
+
+blockquote { font-size: 110%; margin: 0px 0px 40px 20px; padding-left: 20px; border-left: 4px solid #e0e0e0; }
+
+small, .small-text { font-size: 80%; font-family: Arial, Helvetica, sans-serif !important; }
+
+sub, sup { /* Specified in % so that the sup/sup is the right size relative to the surrounding text */ font-size: 75%; /* Zero out the line-height so that it doesn't interfere with the positioning that follows */ line-height: 0; /* Where the magic happens: makes all browsers position the sup/sup properly, relative to the surrounding text */ position: relative; /* Note that if you're using Eric Meyer's reset.css, this is already set and you can remove this rule */ vertical-align: baseline; }
+
+sup { /* Move the superscripted text up */ top: -0.5em; }
+
+sub { /* Move the subscripted text down, but only half as far down as the superscript moved up */ bottom: -0.25em; }
+
+/** Font weights 600 is a good bold, 700 is extra black, 900 is extra black condensed */
+strong { font-weight: 600; }
+
+.lead { font-size: 130%; line-height: 1.4; }
+.lead strong { font-weight: 600; }
+
+.hero { font-size: 200%; line-height: 1.3; font-weight: 100; }
+.hero strong { font-weight: 900; }
+
+.supersize { font-size: 320%; line-height: 1.3; font-weight: 100; }
+.supersize strong { font-weight: 900; }
+
+.breadcrumb { font-size: 85%; }
+
+em { font-style: italic; }
+
+html { box-sizing: border-box; }
+
+*, *:before, *:after { box-sizing: inherit; }
+
+#skip-link { margin: 0; padding: 0; }
+
+#mobile-navigation-wrapper { display: none; }
+
+#alerts .block { margin: 0; }
+
+#site-info-wrapper { padding-top: 20px; }
+
+.layout-responsive .maxwidth { max-width: 1200px; }
+
+.layout-fixed .maxwidth { max-width: 960px; }
+
+.node-unpublished #main { background-color: #f7d2d2; }
+
+@media screen and (min-width: 720px) { .region-content-sidebar-right { width: 50%; float: right; padding-left: 20px; }
+  .region-content-sidebar-left { width: 50%; float: left; padding-right: 20px; } }
+/* EVENTS CALENDAR */
+.event-cal-event { font-size: 80%; margin-bottom: .75em; }
+
+.event-cal-event .event-title a { display: block; font-size: 125%; }
+
+/* generic view modes */
+.node-view-mode-teaser { margin-bottom: 20px; border-bottom: 1px solid #e0e0e0; padding-bottom: 20px; }
+
+.node-view-mode-teaser-content { overflow: auto; }
+
+.node-view-mode-title a { display: block; padding: 5px 0; }
+
+.node-summary { padding: 5px 0 20px; }
+
+.node-summary .more-link { white-space: nowrap; }
+
+.node-summary .more-link:before { content: " "; }
+
+.node-view-mode-sidebar { margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0; }
+
+.list-node-list li:last-child .node-view-mode-sidebar { border: none; margin-bottom: 0; padding-bottom: 0; }
+
+.node-view-mode-sidebar img.image-square, .node-view-mode-sidebar img.image-square_thumbnail, .node-view-mode-sidebar img.image-small_thumbnail, .node-view-mode-sidebar img.image-small { margin-bottom: 0; float: left; margin: 0 10px 10px 0; width: 50px; height: auto; }
+
+.node-view-mode-sidebar-content { overflow: hidden; }
+
+.node-view-mode-embed { margin-bottom: 20px; border-bottom: 1px solid #e0e0e0; padding-bottom: 20px; }
+
+.node-view-mode-embed img.image-large_square_thumbnail, .node-view-mode-embed img.image-small { margin: 0 0 20px 20px; display: block; width: 25%; height: auto; float: right; }
+
+#main { padding: 20px 0; }
+
+#feature-layout-wrapper { background-color: #fff; }
+
+#after-content-wrapper { padding-top: 20px; }
+
+.clear { clear: both; }
+
+/* TABLES */
+table { border-collapse: collapse; border: none; border: 1px solid #e0e0e0; }
+table tbody { border: none; }
+table tr.even td { background: #f9f9f9; }
+table td { padding: 8px; vertical-align: top; border: 1px solid #e0e0e0; }
+table th { background: #e0e0e0; border: 1px solid #e0e0e0; border: none; padding: 8px; font-weight: 500; }
+table th a:link, table th a:visited { color: #007bc8; }
+table caption { text-align: left; font-size: 180%; font-weight: normal; padding: 4px 0; }
+
+table.table-zebra tr:nth-child(odd) td { background: #f3f3f3; }
+
+table.table-condensed td, table.table-condensed th, div.table-condensed table td, div.table-condensed table th { padding: 4px; }
+
+table.table-small, div.table-small table { font-size: 80%; }
+table.table-small td, table.table-small th, div.table-small table td, div.table-small table th { padding: 4px; }
+
+table.table-horizontal td, div.table-horizontal table td { border-left: none; border-right: none; }
+
+table.table-vertical td, div.table-vertical table td { border-top: none; border-bottom: none; }
+
+#footer table, #site-info table { border: none; }
+
+#footer table td, #site-info table td { background: none; border: none; }
+
+table.tablesorter { font-size: 90%; }
+
+table.tablesorter thead tr th, table.tablesorter tfoot tr th { background-color: #ccc; }
+
+table.noborder, table.noborder tr, table.noborder tr.odd, table.noborder tr.even, table.noborder td, table.noborder th { border: none; }
+
+table td p:last-child { margin-bottom: 0; }
+
+.is-not-responsive .grid-3 .events-calendar-grid table, .is-not-responsive .grid-4 .events-calendar-grid table { font-size: 85%; }
+.is-not-responsive .grid-3 .events-calendar-grid table th, .is-not-responsive .grid-3 .events-calendar-grid table td, .is-not-responsive .grid-4 .events-calendar-grid table th, .is-not-responsive .grid-4 .events-calendar-grid table td { padding: 4px; }
+
+/** Tabs */
+.tabs { font-size: 70%; padding: 0; }
+.tabs ul.primary { border: 0; padding: 0; margin: 10px 0; text-transform: uppercase; font-weight: 600; display: block; border: 2px solid #007bc8; background-color: #007bc8; overflow: auto; }
+.tabs ul.primary li { margin: 0; padding: 0; display: inline; }
+.tabs ul.primary li a { margin: 0; padding: 5px 10px; color: #fff; background: #007bc8; display: block; float: left; border: none; }
+.tabs ul.primary li a:hover { background: #fff; color: #007bc8; }
+.tabs ul.primary li.active a { color: #007bc8; background: #fff; }
+.tabs ul.clearfix:after { content: none; }
+
+ul.primary li a:before { padding-right: 5px; font-family: FontAwesome; }
+
+ul.primary li a.view:before { content: "\f06e"; }
+
+ul.primary li a.edit:before { content: "\f044"; }
+
+ul.primary li a.edit-blocks:before { content: "\f009"; }
+
+ul.primary li a.edit-blocks:before { content: "\f009"; }
+
+ul.primary li a.edit-webform:before { content: "\f14a"; }
+
+ul.primary li a.webform-results:before { content: "\f1fe"; }
+
+ul.primary li a.devel:before { content: "\f002"; }
+
+hr { margin: 0 0 20px 0; padding: 0; border: none; height: 1px; background: #e0e0e0; }
+
+/* Pagers Positioning */
+.item-list .pager { overflow: visible; margin: 0; margin-bottom: 20px; padding: 0; font-size: 90%; overflow: hidden; }
+.item-list .pager li { display: block; float: left; margin: 0; margin-right: -1px; padding: 0; text-align: center; border: 1px solid #e0e0e0; white-space: nowrap; }
+.item-list .pager li a { display: inline-block; text-align: center; padding: 4px 8px; color: #007bc8; }
+.item-list .pager li a:hover, .item-list .pager li a:focus { background-color: #f4f4f4; color: #006db1; }
+.item-list .pager li.pager-ellipsis, .item-list .pager li.pager-current { padding: 4px 8px; }
+.item-list .pager li.pager-current { background-color: #007bc8; border: 1px solid #007bc8; color: #fff; }
+.item-list .pager li.first { -webkit-border-radius: 3px 0 0 3px; -moz-border-radius: 3px 0 0 3px; border-radius: 3px 0 0 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; }
+.item-list .pager li.last { -webkit-border-radius: 0 3px 3px 0; -moz-border-radius: 0 3px 3px 0; border-radius: 0 3px 3px 0; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; }
+
+table { border: 1px solid #CCC; }
+table thead th, table th { background: #f7f7f7; border-bottom: 1px solid #ccc; color: #333; }
+table thead th a, table th a { text-decoration: none; display: block; }
+table thead th a img, table th a img { margin: 0 0 0 5px; }
+table td, table th { padding: 4px 8px; vertical-align: middle; }
+table th.active { background: #DDD; border-left: 1px solid #CCC; border-right: 1px solid #CCC; }
+table tr.even td { background: #F1F5FA; }
+table tr.even td.active { background: #e5e9ed; }
+table tr.odd td { background: #fff; }
+table tr.odd tr.odd td.active { background: #f2f2f2; }
+table td ul.links { margin-bottom: 0; }
+
+.comment { border: 1px solid #e0e0e0; padding: 20px; margin-bottom: 20px; }
+
+.comment-links { margin-bottom: 0px; }
+
+.node-links ul li, .comment-links ul li { margin: 0; padding: 0; }
+
+.node-links ul li a, .comment-links ul li a { text-transform: lowercase; display: inline-block; background-color: #f7f7f7; color: #555; padding: 3px; line-height: 100%; font-size: 85%; margin: 0 5px 0 0; border: 1px solid #e0e0e0; }
+
+.tips, .description { font-size: 100%; }
+
+/* ACCORDION & Expand shortcode*/
+.ui-accordion h3.ui-accordion-header, .ui-accordion .ui-accordion-header, .expand-set { background-image: none; background-color: transparent; border-bottom: 1px solid #e5e5e5; }
+
+.expand-set { margin-bottom: 20px; overflow: auto; }
+
+.ui-accordion h3.ui-accordion-header.ui-state-active, .ui-accordion .ui-accordion-header.ui-state-active { border: none; }
+
+.ui-accordion .ui-accordion-header .ui-icon { display: none; }
+
+.ui-accordion .ui-accordion-header .ui-icon:before { content: "\f002 "; /* this is the Unicode for the icon */ font-family: FontAwesome; /* font family is included in Canvas Framework */ margin-right: .5em; }
+
+.ui-accordion h3.ui-accordion-header a, .ui-accordion .ui-accordion-header a, .expand-set a.expand-title { display: block; background-image: none; background-color: transparent; padding: 10px 10px 10px 30px; background-image: url(../images/plus-blue.png); background-repeat: no-repeat; background-position: left center; border: none; }
+
+.expand-set a.expand-title { color: #363636; font-size: 110%; }
+
+.ui-accordion h3.ui-accordion-header.ui-state-active a, .ui-accordion .ui-accordion-header.ui-state-active a, .expand-set a.expand-active { background-image: url(../images/minus-blue.png); background-repeat: no-repeat; background-position: left center; }
+
+.expand-set a.expand-active { font-weight: bold; }
+
+.ui-accordion .ui-accordion-content, .expand-set .expand-content { border: 1px solid #e5e5e5; padding: 10px 10px 10px 25px; }
+
+.expand-set .expand-content { border-bottom: none; }
+
+.anchors { -webkit-border-radius: 3px; -moz-border-radius: 3px; border-radius: 3px; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; background-color: #f4f4f4; overflow: hidden; }
+.anchors .anchors-label { font-weight: bold; background-color: #464646; color: #fff; padding: 10px; }
+.anchors .anchors-links { padding: 0 10px 10px 10px; }
+
+.anchors-color-blue .anchors-label { background-color: #007bc8; }
+
+.anchors-color-green .anchors-label { background-color: #a8bd6f; }
+
+.anchors-color-orange .anchors-label { background-color: #deb159; }
+
+.anchors-color-red .anchors-label { background-color: #e51c23; }
+
+.anchors-color-black .anchors-label { background-color: #202020; }
+
+.anchors-color-darkgray .anchors-label { background-color: #464646; }
+
+.anchors-color-lightgray .anchors-label { background-color: #dbdbdb; color: #202020; }
+
+/* Hero Unit SASS for Color Variables */
+.hero-background-gold { background-color: #cfb87c; }
+
+.hero-background-white { background-color: #f7f7f7; border: 1px solid #e0e0e0; }
+
+.hero-background-black { background-color: #000; }
+
+.hero-background-gray { background-color: #f4f4f4; }
+
+.hero-background-dark_gray { background-color: #464646; }
+
+.more-link a { font-size: 85%; }
+
+.zone-after-content-text-white, .zone-after-content-2-text-white { color: #fff; }
+.zone-after-content-text-white a:link, .zone-after-content-text-white a:visited, .zone-after-content-2-text-white a:link, .zone-after-content-2-text-white a:visited { color: #fff; text-decoration: underline; }
+
+#zone-after-content-wrapper.section-background, #zone-after-content-2-wrapper.section-background, .section-background { padding: 80px 0 40px; background-position: center center; background-repeat: no-repeat; background-size: cover; border: none; }
+
+.zone-after-content-image-fixed, .zone-after-content-2-image-fixed { background-attachment: fixed; overflow: hidden; }
+
+.block-icons-gray i.blockicon { color: #858585; }
+
+.block-icons-gold i.blockicon { color: #cfb87c; }
+
+.block-icons-blue i.blockicon { color: #007bc8; }
+
+.icon-color-blue, a .icon-color-blue { color: #007bc8; }
+
+.icon-color-green, a .icon-color-green { color: #869839; }
+
+.icon-wrapper-circle.icon-color-green { background-color: #869839; color: #fff; }
+
+.icon-color-orange, a .icon-color-orange { color: #b6542a; }
+
+.icon-wrapper-circle.icon-color-orange { background-color: #b6542a; color: #fff; }
+
+.icon-color-yellow, a .icon-color-yellow { color: #d0ab51; }
+
+.icon-wrapper-circle.icon-color-yellow { background-color: #d0ab51; color: #000; }
+
+.icon-color-red, a .icon-color-red { color: #c03d23; }
+
+.icon-wrapper-circle.icon-color-red { background-color: #c03d23; color: #fff; }
+
+.icon-color-purple, a .icon-color-purple { color: #453455; }
+
+.icon-wrapper-circle.icon-color-purple { background-color: #453455; color: #fff; }
+
+.icon-color-white, a .icon-color-white { color: #fff; }
+
+.icon-color-black, a .icon-color-black { color: #000; }
+
+.icon-color-gold, a .icon-color-gold { color: #cfb87c; }
+
+.icon-color-gray, a .icon-color-gray { color: #757575; }
+
+/* PAGE TITLE IMAGE */
+.has-title-image h1#page-title { display: none; }
+
+#page-title-image-section { background-color: #fff; }
+
+.page-title-image-boxed { padding-top: 20px; }
+
+#page-title-image-wrapper { background-position: center center; background-size: cover; background-color: #fff; }
+
+#page-title-image-overlay { padding-left: 20px; padding-right: 20px; }
+
+#page-title-image-wrapper { padding-top: 60px; background-color: #000; }
+
+#page-title-image-wrapper h1 { max-width: 60%; font-size: 220%; display: inline-block; margin: 0; }
+
+.page-title-image-background-white #page-title-image-wrapper h1 { background: #fff; padding: 10px; color: #363636; }
+
+.page-title-image-background-black #page-title-image-wrapper h1 { background: #000; padding: 10px; color: #fff; }
+
+.page-title-image-background-transparent #page-title-image-overlay { padding: 30px 20px 20px; background-color: rgba(0, 0, 0, 0); background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0, 0, 0, 0)), to(rgba(0, 0, 0, 0.75))); background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75)); background-image: -moz-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75)); background-image: -o-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75)); background-image: -ms-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75)); background-image: linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75)); filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#00000000', EndColorStr='#BF000000'); }
+.page-title-image-background-transparent #page-title-image-wrapper h1 { background: transparent; padding: 10px 0px; color: #fff; }
+.page-title-image-background-transparent .page-title-image-width-full #page-title-image h1 { padding: 10px 0; }
+
+@media all and (min-width: 720px) and (max-width: 959px) { #page-title-image-wrapper { padding-top: 100px; } }
+@media all and (min-width: 960px) and (max-width: 1199px) { #page-title-image-wrapper { padding-top: 140px; } }
+@media all and (min-width: 1200px) and (max-width: 1499px) { #page-title-image-wrapper { padding-top: 200px; }
+  .layout-boxed #page-title-image-wrapper { padding-top: 160px; } }
+@media all and (min-width: 1500px) { #page-title-image-wrapper { padding-top: 240px; }
+  .layout-boxed #page-title-image-wrapper { padding-top: 200px; } }
+.layout-fixed.layout-boxed #page-title-image-wrapper { padding-top: 140px; }
+
+.has-page-title-image h1#page-title { display: none; }
+
+/* Borders */
+.border-all { border: 1px solid #e0e0e0; }
+
+.border-top { border-top: 1px solid #e0e0e0; }
+
+.border-bottom { border-bottom: 1px solid #e0e0e0; }
+
+.border-left { border-left: 1px solid #e0e0e0; }
+
+.border-right { border-right: 1px solid #e0e0e0; }
+
+/* Shadows */
+.has-shadow { -webkit-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); -moz-box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2); }
+
+.feature-layout-title-image-overlay { background-color: rgba(0, 0, 0, 0); background-image: -webkit-gradient(linear, left top, left bottom, from(rgba(0, 0, 0, 0)), to(rgba(0, 0, 0, 0.85))); background-image: -webkit-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85)); background-image: -moz-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85)); background-image: -o-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85)); background-image: -ms-linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85)); background-image: linear-gradient(top, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.85)); filter: progid:DXImageTransform.Microsoft.gradient(GradientType=0,startColorstr='#00000000', EndColorStr='#D9000000'); }
+
+.field-type-text-with-summary img, .field-type-text-long img, img.image-large, img.image-medium, img.image-small, img.image-large_square_thumbnail, img.image-large_wide_thumbnail, img.image-square_thumbnail, img.image-square, img.image-small_square, img.image-thumbnail, img.image-grid-9, img.image-grid-12, img.image-grid-6, img.image-grid-4, img.image-grid-3, img.image-slider { max-width: 100%; height: auto; min-width: 50px; }
+
+.region-intro img.image-large, .region-intro img.image-hero, .region-intro img.image-slider, .region-intro img[class=""], .region-wide-2 img.image-large, .region-wide-2 img.image-hero, .region-wide-2 img.image-slider, .region-wide-2 img[class=""] { width: 100%; height: auto; max-width: none; display: block; }
+.region-intro img.image-medium, .region-intro img.image-small, .region-intro img.image-large_square_thumbnail, .region-intro img.image-large_wide_thumbnail, .region-intro img.image-square_thumbnail, .region-intro img.image-square, .region-intro img.image-small_square, .region-intro img.image-thumbnail, .region-wide-2 img.image-medium, .region-wide-2 img.image-small, .region-wide-2 img.image-large_square_thumbnail, .region-wide-2 img.image-large_wide_thumbnail, .region-wide-2 img.image-square_thumbnail, .region-wide-2 img.image-square, .region-wide-2 img.image-small_square, .region-wide-2 img.image-thumbnail { max-width: 100%; }
+.region-intro .field-type-text-long p:last-child, .region-wide-2 .field-type-text-long p:last-child { margin-bottom: 0; }
+.region-intro .block, .region-wide-2 .block { margin-bottom: 0; }
+
+.field-type-text-with-summary img[style*="float:right"], .field-type-text-long img[style*="float:right"] { float: right !important; margin: 0 0 20px 20px; max-width: 100%; }
+
+.field-type-text-with-summary img[style*="float:left"], .field-type-text-long img[style*="float:left"] { float: left !important; margin: 0 20px 20px 0; max-width: 100%; }
+
+img.image-medium[style*="float:right"], img.image-medium[style*="float:left"] { max-width: 50%; }
+
+img.image-small[style*="float:right"], img.image-small[style*="float:left"] { max-width: 50%; }
+
+.image-square, .image-square_thumbnail { float: left; width: 50px; height: 50px; margin: 0 10px 10px 0; }
+
+.sidebars .image-square, .sidebars .image-square_thumbnail { width: 50px; height: 50px; }
+
+@media all and (min-width: 960px) { .image-square, .image-square_thumbnail { float: left; width: 100px; height: 100px; margin: 0 10px 10px 0; }
+  .sidebars .image-square, .sidebars .image-square_thumbnail { width: 65px; height: 65px; } }
+.image-small-square-thumbnail { float: left; width: 70px; height: 70px; margin: 0 10px 10px 0; }
+
+.feature-layout-callout .image-square, .feature-layout-callout .image-small-thumbnail { width: 110px; }
+
+.square-image-circles img.image-large_square_thumbnail, .square-image-circles img.image-square_thumbnail, .square-image-circles img.image-square, .square-image-circles img.image-small_square, .square-image-circles .soc li .socicon { -webkit-border-radius: 50%; -moz-border-radius: 50%; border-radius: 50%; -webkit-background-clip: padding-box; -moz-background-clip: padding; background-clip: padding-box; }
+
+textarea, select, input[type="date"], input[type="datetime"], input[type="datetime-local"], input[type="email"], input[type="month"], input[type="number"], input[type="password"], input[type="search"], input[type="tel"], input[type="text"], input[type="time"], input[type="url"], input[type="week"] { height: auto; }
+
+button, input[type="reset"], input[type="submit"], input[type="button"] { font-size: 100%; }
+
+input.form-text, textarea.form-textarea { padding: 10px; border: 1px solid #ddd; background-color: #f0f0f0; line-height: 150%; }
+
+input.form-text { max-width: 100%; -webkit-box-sizing: border-box; /* Safari/Chrome, other WebKit */ -moz-box-sizing: border-box; /* Firefox, other Gecko */ box-sizing: border-box; }
+
+input.form-text:focus, textarea.form-textarea:focus { background-color: #f4f4f4; outline: #007bc8 solid 2px; }
+
+input[type=submit]:focus { outline: #a8bd6f solid 2px; }
+
+input[type=reset]:focus { outline: #e51c23 solid 2px; }
+
+html.js input.form-autocomplete { background-image: url(../images/autocomplete.gif); background-position: 98% 45%; background-repeat: no-repeat; }
+
+html.js input.throbbing { background-image: url(../images/throbber.gif); background-position: 98% 45%; background-repeat: no-repeat; }
+
+fieldset { padding: 10px; border: 1px solid #e5e5e5; }
+
+form label { font-weight: bold; }
+
+.block { margin-bottom: 20px; }
+
+#block-system-main, .block-express-layout { margin-bottom: 0; }
+
+.new-block-row { clear: both; }
+
+/* BOXES */
+.box-black { -webkit-border-radius: 0px; -moz-border-radius: 0px; border-radius: 0px; margin-bottom: 1.5em; overflow: hidden; background-color: black; }
+
+.box-black.box-style-filled a, .box-darkgray.box-style-filled a { color: #cfb87c; }
+
+.box-darkgray { -webkit-border-radius: 0px; -moz-border-radius: 0px; border-radius: 0px; margin-bottom: 1.5em; overflow: hidden; background-color: #454545; }
+
+.box-lightgray { background-color: #f4f4f4; -webkit-border-radius: 0px; -moz-border-radius: 0px; border-radius: 0px; margin-bottom: 1.5em; overflow: hidden; }
+
+.box-white { background-color: white; -webkit-border-radius: 0px; -moz-border-radius: 0px; border-radius: 0px; margin-bottom: 1.5em; overflow: hidden; border: 1px solid #e0e0e0; }
+
+.box-style-border { background-color: transparent; }
+
+.box-black.box-style-border { border: 1px solid black; color: #202020; }
+
+.box-darkgray.box-style-border { border: 1px solid #464646; }
+
+.box-lightgray.box-style-border { border: 1px solid #f4f4f4; color: #202020; }
+
+.box-black.box-style-filled, .box-darkgray.box-style-filled { color: #fff; }
+
+.box-title { font-weight: bold; padding: 20px; }
+
+.box-style-filled .box-title { color: #fff; }
+
+.box-black.box-style-filled .box-title { background-color: #1a1a1a; }
+
+.box-darkgray.box-style-filled .box-title { background-color: #2d2d2d; }
+
+.box-white.box-style-filled .box-title { background-color: #dedede; color: #202020; }
+
+.box-lightgray.box-style-filled .box-title { background-color: #dbdbdb; color: #202020; }
+
+.box-black.box-style-border .box-title { border-bottom: 1px solid black; }
+
+.box-darkgray.box-style-border .box-title { border-bottom: 1px solid #464646; }
+
+.box-white.box-style-border .box-title { border-bottom: 1px solid #e0e0e0; }
+
+.box-lightgray.box-style-border .box-title { border-bottom: 1px solid #f4f4f4; }
+
+.box-content { padding: 20px; }
+
+.cu-box.float-right { width: 40%; margin: 0 0 20px 20px; float: right; }
+
+.cu-box.float-left { width: 40%; margin: 0 20px 20px 0; float: left; }
+
+/* Icons for file extensions */
+/* Word/TXT/RTF */
+a.file-doc, a.file-docx, a.file-rtf { padding: 5px 20px 5px 0; background: transparent url(../images/icons/icon_doc.gif) no-repeat center right; }
+
+/* TEXT */
+a.file-txt { padding: 5px 20px 5px 0; background: transparent url(../images/icons/icon_txt.gif) no-repeat center right; }
+
+/* EXCEL */
+a.file-xls { padding: 5px 20px 5px 0; background: transparent url(../images/icons/icon_xls.gif) no-repeat center right; }
+
+/* POWERPOINT */
+a.file-pps { padding: 5px 20px 5px 0; background: transparent url(../images/icons/icon_pps.gif) no-repeat center right; }
+
+a.file-ppt, a.file-pptx { padding: 5px 20px 5px 0; background: transparent url(../images/icons/icon_pps.gif) no-repeat center right; }
+
+/* PDF */
+a.file-pdf { padding: 5px 20px 5px 0; background: transparent url(../images/icons/icon_pdf.gif) no-repeat center right; }
+
+/* email */
+a.mailto { padding: 5px 20px 5px 0; background: transparent url(../images/icons/icon_mailto.gif) no-repeat center right; }

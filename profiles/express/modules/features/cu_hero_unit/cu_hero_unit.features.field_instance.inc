@@ -10,7 +10,7 @@
 function cu_hero_unit_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_bg_color'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_bg_color'.
   $field_instances['bean-hero_unit-field_hero_unit_bg_color'] = array(
     'bundle' => 'hero_unit',
     'default_value' => array(
@@ -48,7 +48,7 @@ function cu_hero_unit_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_headline'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_headline'.
   $field_instances['bean-hero_unit-field_hero_unit_headline'] = array(
     'bundle' => 'hero_unit',
     'default_value' => NULL,
@@ -83,7 +83,7 @@ function cu_hero_unit_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_image'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_image'.
   $field_instances['bean-hero_unit-field_hero_unit_image'] = array(
     'bundle' => 'hero_unit',
     'deleted' => 0,
@@ -180,7 +180,7 @@ function cu_hero_unit_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_link'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_link'.
   $field_instances['bean-hero_unit-field_hero_unit_link'] = array(
     'bundle' => 'hero_unit',
     'default_value' => NULL,
@@ -204,6 +204,7 @@ function cu_hero_unit_field_default_field_instances() {
       'absolute_url' => 1,
       'attributes' => array(
         'class' => 'hero-unit-button',
+        'configurable_class' => 0,
         'configurable_title' => 0,
         'rel' => '',
         'target' => 'default',
@@ -213,9 +214,14 @@ function cu_hero_unit_field_default_field_instances() {
         'url_cutoff' => 80,
       ),
       'enable_tokens' => 1,
+      'linkit' => array(
+        'button_text' => 'Search',
+        'enable' => 1,
+        'profile' => 'express_linkit_field_profile',
+      ),
       'rel_remove' => 'default',
       'title' => 'optional',
-      'title_label_use_field_label' => FALSE,
+      'title_label_use_field_label' => 0,
       'title_maxlength' => 128,
       'title_value' => '',
       'url' => 0,
@@ -223,20 +229,15 @@ function cu_hero_unit_field_default_field_instances() {
       'validate_url' => 0,
     ),
     'widget' => array(
-      'active' => 1,
-      'module' => 'advanced_link',
-      'settings' => array(
-        'default_titles' => '',
-        'urls_allowed' => 'both',
-        'urls_filter' => '',
-        'urls_search' => 'contains',
-      ),
-      'type' => 'advanced_link',
+      'active' => 0,
+      'module' => 'link',
+      'settings' => array(),
+      'type' => 'link_field',
       'weight' => 8,
     ),
   );
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_link_color'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_link_color'.
   $field_instances['bean-hero_unit-field_hero_unit_link_color'] = array(
     'bundle' => 'hero_unit',
     'default_value' => array(
@@ -274,7 +275,7 @@ function cu_hero_unit_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_size'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_size'.
   $field_instances['bean-hero_unit-field_hero_unit_size'] = array(
     'bundle' => 'hero_unit',
     'default_value' => array(
@@ -312,7 +313,7 @@ function cu_hero_unit_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_size_priority'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_size_priority'.
   $field_instances['bean-hero_unit-field_hero_unit_size_priority'] = array(
     'bundle' => 'hero_unit',
     'default_value' => array(
@@ -350,7 +351,7 @@ function cu_hero_unit_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_text'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_text'.
   $field_instances['bean-hero_unit-field_hero_unit_text'] = array(
     'bundle' => 'hero_unit',
     'default_value' => NULL,
@@ -385,7 +386,7 @@ function cu_hero_unit_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_text_align'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_text_align'.
   $field_instances['bean-hero_unit-field_hero_unit_text_align'] = array(
     'bundle' => 'hero_unit',
     'default_value' => array(
@@ -423,7 +424,7 @@ function cu_hero_unit_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-hero_unit-field_hero_unit_text_color'
+  // Exported field_instance: 'bean-hero_unit-field_hero_unit_text_color'.
   $field_instances['bean-hero_unit-field_hero_unit_text_color'] = array(
     'bundle' => 'hero_unit',
     'default_value' => array(

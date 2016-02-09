@@ -1,8 +1,0 @@
-name = CU Test Content Blocks
-description = Dummy content for dev/theming
-core = 7.x
-package = CU-Boulder
-version = 7.x-1.0
-project = cu_test_content
-
-dependencies[] = cu_test_content_context

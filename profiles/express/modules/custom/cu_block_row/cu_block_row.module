@@ -68,8 +68,8 @@ function cu_block_row_preprocess_entity(&$vars) {
   }
 }
 
-/*
- * Implements hook_form_alter().
+/**
+ * Implements hook_form_FORM_ID_alter().
  *
  * Change text of add more button for columns,
  * Add visiuals for distribution options.
@@ -77,11 +77,15 @@ function cu_block_row_preprocess_entity(&$vars) {
  */
 function cu_block_row_form_bean_form_alter(&$form, &$form_state, $form_id) {
 
-  $form['field_block_row_collection'][LANGUAGE_NONE]['add_more']['#value'] = "Add another column";
+  if (isset($form['field_block_row_collection'])) {
+    $form['field_block_row_collection'][LANGUAGE_NONE]['add_more']['#value'] = "Add another column";
+  }
 
-  $form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['auto'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="50%">&nbsp;</td><td bgcolor="#ccc" width="50%">&nbsp;</td></tr></table>';
-  $form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['left'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="66%">&nbsp;</td><td bgcolor="#ccc" width="33%">&nbsp;</td></tr></table>';
-  $form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['right'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="33%">&nbsp;</td><td bgcolor="#ccc" width="66%">&nbsp;</td></tr></table>';
+  if (isset($form['field_block_row_distribution'])) {
+    $form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['auto'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="50%">&nbsp;</td><td bgcolor="#ccc" width="50%">&nbsp;</td></tr></table>';
+    $form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['left'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="66%">&nbsp;</td><td bgcolor="#ccc" width="33%">&nbsp;</td></tr></table>';
+    $form['field_block_row_distribution'][LANGUAGE_NONE]['#options']['right'] .= '<table class="cu-block-row-table-example" cellspacing="2" cellpadding="0" border="0"><tr><td bgcolor="#ccc" width="33%">&nbsp;</td><td bgcolor="#ccc" width="66%">&nbsp;</td></tr></table>';
+  }
 }
 
 /*

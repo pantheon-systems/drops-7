@@ -17,16 +17,11 @@
 function cuswatch_preprocess_html(&$vars) {
 
   // SET BANNER COLOR (banner-white, banner-light, banner-dark, banner-black)
-  $vars['attributes_array']['class'][]='banner-black';
+  $vars['classes_array'][]='banner-black';
   $layout = theme_get_setting('layout_style', 'cuswatch') ? theme_get_setting('layout_style', 'cuswatch') : 'layout-wide';
-  $vars['attributes_array']['class'][]=$layout;
+  $vars['classes_array'][]=$layout;
 }
 
-function cuswatch_alpha_process_zone(&$vars) {
-  switch ($vars['elements']['#zone']) {
-    case 'content':
-      $vars['title_image_wrapper_class'] = 'container-full';
-      $vars['title_image_title_class'] = 'container-content';
-      break;
-  }
+function cuswatch_preprocess_page(&$vars) {
+  $vars['theme_hook_suggestions'][] = 'page__title';
 }

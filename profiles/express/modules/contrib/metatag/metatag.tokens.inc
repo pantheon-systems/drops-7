@@ -18,27 +18,49 @@ function metatag_token_info() {
   $metatag_info = metatag_get_info();
 
   foreach ($metatag_info['tags'] as $value) {
+    if (isset($value['group'], $metatag_info['groups'][$value['group']], $metatag_info['groups'][$value['group']]['label'])) {
+      $label = t($metatag_info['groups'][$value['group']]['label']) . ': ' . t($value['label']);
+    }
+    else {
+      $label = t('Basic tags') . ': ' . t($value['label']);
+    }
     $info['tokens']['metatag'][$value['name']] = array(
-      'name' => $value['label'],
-      'description' => $value['description']
+      'name' => $label,
+      'description' => t($value['description']),
     );
   }
 
   if (module_exists('taxonomy')) {
     $info['tokens']['term']['metatag'] = array(
-      'name' => t('Metatag.'),
-      'description' => t('Metatag.'),
-      'type' => 'metatag'
+      'name' => t('Meta tags'),
+      'description' => t('Meta tags for this taxonomy term.'),
+      'type' => 'metatag',
     );
   }
 
   if (module_exists('node')) {
     $info['tokens']['node']['metatag'] = array(
-      'name' => t('Metatag.'),
-      'description' => t('Metatag.'),
-      'type' => 'metatag'
+      'name' => t('Meta tags'),
+      'description' => t('Meta tags for this node.'),
+      'type' => 'metatag',
     );
   }
+
+  if (module_exists('user')) {
+    $info['tokens']['user']['metatag'] = array(
+      'name' => t('Meta tags'),
+      'description' => t('Meta tags for this user.'),
+      'type' => 'metatag',
+    );
+  }
+
+  // A custom pager.
+  $pager = variable_get('metatag_pager_string', 'Page PAGER | ');
+  $page = str_replace('PAGER', 12, $pager);
+  $info['tokens']['current-page']['pager'] = array(
+    'name' => t('Custom pager'),
+    'description' => t('A custom pager (from the Metatag module). Currently set to "@pager" which would be output as e.g. "@page".', array('@pager' => $pager, '@page' => $page)),
+  );
 
   return $info;
 }
@@ -78,6 +100,30 @@ function metatag_tokens($type, $tokens, array $data = array(), array $options = 
     if ($metatag_tokens = token_find_with_prefix($tokens, 'metatag')) {
       $result = metatag_token_generate_array($node, 'node', $node->type);
       $replacements += token_generate('metatag', $metatag_tokens, array('metatag' => $result), $options);
+    }
+  }
+
+  // User tokens.
+  if ($type == 'user' && !empty($data['user'])) {
+    $account = $data['user'];
+
+    if ($metatag_tokens = token_find_with_prefix($tokens, 'metatag')) {
+      $result = metatag_token_generate_array($account, 'user', 'user');
+      $replacements += token_generate('metatag', $metatag_tokens, array('metatag' => $result), $options);
+    }
+  }
+
+  // Custom pager.
+  if ($type == 'current-page') {
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'pager':
+          $pager = metatag_get_current_pager();
+          if (!empty($pager)) {
+            $replacements[$original] = $pager;
+          }
+          break;
+      }
     }
   }
 

@@ -1,0 +1,18 @@
+name = Metatag:Panels Tests
+description = Helper module for testing metatag_panels.module.
+core = 7.x
+
+; Don't show this on the modules admin page.
+hidden = TRUE
+
+dependencies[] = ctools
+dependencies[] = page_manager
+dependencies[] = metatag
+dependencies[] = metatag_panels
+
+; Information added by Drupal.org packaging script on 2016-01-14
+version = "7.x-1.8"
+core = "7.x"
+project = "metatag"
+datestamp = "1452804845"
+

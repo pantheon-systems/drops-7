@@ -1,6 +1,12 @@
 name = Advanced Content
-description = This bundle includes quicktabs, content grid, content lock and other more advanced content related features.
+description = This bundle allows you to add tabbed content, content lists, content grids, and video reveal functionality to your site.
 core = 7.x
 package = CU-Advanced Content
+project_demo_url = http://www.colorado.edu/webcentral/node/668
+dependencies[] = cu_video_reveal
+dependencies[] = cu_feature_callout
+dependencies[] = quicktabs
+dependencies[] = quicktab_beans
+dependencies[] = cu_quicktab_styles
 
-dependencies[] = block_row
+bundle_cache_clear = 1
