@@ -1045,10 +1045,12 @@ function webform_webform_component_info() {
       'label' => t('Grid'),
       'description' => t('Allows creation of grid questions, denoted by radio buttons.'),
       'features' => array(
-        'conditional' => FALSE,
         'default_value' => FALSE,
         'title_inline' => FALSE,
+        'title_internal' => TRUE,
         'css_classes' => FALSE,
+        'conditional' => FALSE,
+        'group' => TRUE,
       ),
       'file' => 'components/grid.inc',
     ),
@@ -1091,12 +1093,10 @@ function webform_webform_component_info() {
       'label' => t('Number'),
       'description' => t('A numeric input field (either as textfield or select list).'),
       'features' => array(
+        'conditional_action_set' => TRUE,
       ),
       'file' => 'components/number.inc',
       'conditional_type' => 'numeric',
-      'features' => array(
-        'conditional_action_set' => TRUE,
-      ),
     ),
     'pagebreak' => array(
       'label' => t('Page break'),
@@ -2844,7 +2844,7 @@ function _webform_client_form_add_component($node, $component, $component_value,
       $subcomponent_value = isset($input_values[$scid]) ? $input_values[$scid] : NULL;
       // Include if always shown, or for forms, also if currently hidden but might be shown due to conditionals.
       $visibility = $sorter->componentVisibility($scid, $subcomponent['page_num']);
-      if ($visibility == WebformConditionals::componentShown || ($format == 'form' && $visibility)) {
+      if ($visibility == WebformConditionals::componentShown || ($format == 'form' && $visibility) || !$filter) {
         _webform_client_form_add_component($node, $subcomponent, $subcomponent_value, $parent_fieldset[$component['form_key']], $form, $input_values, $format, $page_num, $filter);
       }
     }
@@ -3434,6 +3434,10 @@ function _webform_client_form_submit_flatten($node, $fieldset, $parent = 0) {
           $values[$cid] = $value;
         }
       }
+      else {
+        // This $form_key must belong to the parent. For example, a grid.
+        $values[$parent][$form_key] = $value;
+      }
     }
   }
 
@@ -3604,7 +3608,6 @@ function template_preprocess_webform_element(&$variables) {
   // If #title_display is none, set it to invisible instead - none only used if
   // we have no title at all to use.
   if ($element['#title_display'] == 'none') {
-    $variables['element']['#title_display'] = 'invisible';
     $element['#title_display'] = 'invisible';
     if (empty($element['#attributes']['title']) && !empty($element['#title'])) {
       $element['#attributes']['title'] = $element['#title'];
@@ -3613,6 +3616,11 @@ function template_preprocess_webform_element(&$variables) {
 
   // If #title is not set, we don't display any label or required marker.
   if (!isset($element['#title'])) {
+    $element['#title_display'] = 'none';
+  }
+
+  // If an internal title is being used, generate no external title.
+  if ($element['#title_display'] == 'internal') {
     $element['#title_display'] = 'none';
   }
 }
@@ -3905,7 +3913,7 @@ function _webform_filter_values($string, $node = NULL, $submission = NULL, $emai
  */
 function webform_replace_tokens($string, $node = NULL, $submission = NULL, $email = NULL, $sanitize = FALSE) {
   // Don't do any filtering if the string is empty.
-  if (!strlen(trim($string))) {
+  if (!strlen(trim($string)) || !webform_variable_get('webform_token_access')) {
     return $string;
   }
 
@@ -3948,7 +3956,7 @@ function webform_replace_tokens($string, $node = NULL, $submission = NULL, $emai
  * @see token_replace()
  */
 function webform_replace_tokens_clear($text) {
-  if (empty($text)) {
+  if (empty($text) || !webform_variable_get('webform_token_access')) {
     return $text;
   }
 
@@ -4222,6 +4230,9 @@ function webform_variable_get($variable) {
     case 'webform_submission_access_control':
       $result = variable_get('webform_submission_access_control', 1);
       break;
+    case 'webform_token_access':
+      $result = variable_get('webform_token_access', 1);
+      break;
     case 'webform_update_batch_size':
       $result = variable_get('webform_update_batch_size', 100);
       break;
@@ -4240,6 +4251,9 @@ function webform_variable_get($variable) {
  * Token module is not available, a message should be displayed.
  */
 function theme_webform_token_help($variables) {
+  if (!webform_variable_get('webform_token_access')) {
+    return '';
+  }
   $groups = $variables['groups'];
   module_load_include('inc', 'token', 'token.pages');
 
@@ -4463,7 +4477,7 @@ function webform_valid_email_address(&$emails, $allow_tokens = FALSE, $format = 
   $email_array = array_filter(array_map('trim', explode(',', $emails)));
   $count = 0;
   foreach ($email_array as $email) {
-    if ($allow_tokens) {
+    if ($allow_tokens && webform_variable_get('webform_token_access')) {
       foreach (token_scan($email) as $tokens) {
         foreach ($tokens as $token) {
           $email = str_replace($token, 'admin@example.com', $email);

@@ -10,9 +10,9 @@ files[] = modernizr.admin.inc
 files[] = modernizr.args.inc
 files[] = tests/modernizr.test
 
-; Information added by Drupal.org packaging script on 2015-09-30
-version = "7.x-3.6"
+; Information added by Drupal.org packaging script on 2015-10-08
+version = "7.x-3.7"
 core = "7.x"
 project = "modernizr"
-datestamp = "1443612840"
+datestamp = "1444312740"
 

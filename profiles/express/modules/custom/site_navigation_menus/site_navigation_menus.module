@@ -92,3 +92,89 @@ function site_navigation_menus_theme_registry_alter(&$theme_registry) {
 function site_navigation_menus_preprocess_menu_block_wrapper(&$vars) {
   $vars['theme_hook_suggestions'][] = 'menu_block_wrapper__' . $vars['delta'];
 }
+
+/**
+ * Implements hook_menu_item_target_types_alter().
+ *
+ * Removing targets from menu item creation.
+ */
+function site_navigation_menus_menu_item_target_types_alter(&$target_types, &$context) {
+
+  unset($target_types['node_video']);
+  unset($target_types['existing_view']);
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ *
+ * @param array $implementations
+ *   List of modules that implement hook
+ * @param string $hook
+ *   Name of the hook being fired
+ */
+function site_navigation_menus_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'menu_item_target_types_alter') {
+    $group = $implementations['site_navigation_menus'];
+    unset($implementations['site_navigation_menus']);
+    $implementations['site_navigation_menus'] = $group;
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ *
+ * Hide admin/index tab from admin page.
+ */
+function site_navigation_menus_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if ($root_path == 'admin') {
+    unset($data['tabs'][0]['output'][1]);
+  }
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Hacky way of removing features menu if user doesn't have access to edit it.
+ *
+ * @param $page
+ *   The page render array
+ */
+function site_navigation_menus_page_alter(&$page) {
+  if($_GET['q'] == 'admin/structure/menu' && strpos($page['content']['system_main']['main']['#markup'], '<td>Features') && !user_access('manage features')) {
+    $var = '';
+    $markup = str_replace('<tr class="odd"><td>Features', '<tr class="odd" style="display:none;"><td>Features', $page['content']['system_main']['main']['#markup']);
+    $page['content']['system_main']['main']['#markup'] = $markup;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Remove menu sources that don't make sense for main or secondary links.
+ *
+ * @param $form
+ * @param $form_state
+ * @param $form_id
+ */
+function site_navigation_menus_form_menu_configure_alter(&$form, &$form_state, $form_id) {
+  unset($form['menu_main_links_source']['#options']['features']);
+  unset($form['menu_main_links_source']['#options']['management']);
+  unset($form['menu_main_links_source']['#options']['navigation']);
+  unset($form['menu_main_links_source']['#options']['user-menu']);
+
+  unset($form['menu_secondary_links_source']['#options']['features']);
+  unset($form['menu_secondary_links_source']['#options']['management']);
+  unset($form['menu_secondary_links_source']['#options']['navigation']);
+  unset($form['menu_secondary_links_source']['#options']['user-menu']);
+
+  unset($form['menu_mobile_links_source']['#options']['features']);
+  unset($form['menu_mobile_links_source']['#options']['management']);
+  unset($form['menu_mobile_links_source']['#options']['navigation']);
+  unset($form['menu_mobile_links_source']['#options']['user-menu']);
+
+  unset($form['menu_footer_links_source']['#options']['features']);
+  unset($form['menu_footer_links_source']['#options']['management']);
+  unset($form['menu_footer_links_source']['#options']['navigation']);
+  unset($form['menu_footer_links_source']['#options']['user-menu']);
+}
+

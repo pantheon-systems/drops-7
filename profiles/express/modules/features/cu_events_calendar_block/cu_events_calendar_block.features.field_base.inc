@@ -10,7 +10,7 @@
 function cu_events_calendar_block_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_event_categories'
+  // Exported field_base: 'field_event_categories'.
   $field_bases['field_event_categories'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -33,7 +33,7 @@ function cu_events_calendar_block_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_event_date_range'
+  // Exported field_base: 'field_event_date_range'.
   $field_bases['field_event_date_range'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -62,7 +62,7 @@ function cu_events_calendar_block_field_default_field_bases() {
     'type' => 'datetime',
   );
 
-  // Exported field_base: 'field_event_expire'
+  // Exported field_base: 'field_event_expire'.
   $field_bases['field_event_expire'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -89,7 +89,7 @@ function cu_events_calendar_block_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_event_link'
+  // Exported field_base: 'field_event_link'.
   $field_bases['field_event_link'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -119,7 +119,7 @@ function cu_events_calendar_block_field_default_field_bases() {
     'type' => 'link_field',
   );
 
-  // Exported field_base: 'field_event_months'
+  // Exported field_base: 'field_event_months'.
   $field_bases['field_event_months'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -155,7 +155,7 @@ function cu_events_calendar_block_field_default_field_bases() {
     'type' => 'list_integer',
   );
 
-  // Exported field_base: 'field_event_number'
+  // Exported field_base: 'field_event_number'.
   $field_bases['field_event_number'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -200,7 +200,7 @@ function cu_events_calendar_block_field_default_field_bases() {
     'type' => 'list_integer',
   );
 
-  // Exported field_base: 'field_event_show_all_grids'
+  // Exported field_base: 'field_event_show_all_grids'.
   $field_bases['field_event_show_all_grids'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -226,7 +226,7 @@ function cu_events_calendar_block_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_event_subcategories'
+  // Exported field_base: 'field_event_subcategories'.
   $field_bases['field_event_subcategories'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -252,7 +252,7 @@ function cu_events_calendar_block_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_event_template'
+  // Exported field_base: 'field_event_template'.
   $field_bases['field_event_template'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -279,7 +279,7 @@ function cu_events_calendar_block_field_default_field_bases() {
     'type' => 'list_integer',
   );
 
-  // Exported field_base: 'field_event_type'
+  // Exported field_base: 'field_event_type'.
   $field_bases['field_event_type'] = array(
     'active' => 1,
     'cardinality' => 1,

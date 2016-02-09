@@ -10,7 +10,7 @@
 function files_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'node-file-body'
+  // Exported field_instance: 'node-file-body'.
   $field_instances['node-file-body'] = array(
     'bundle' => 'file',
     'default_value' => NULL,
@@ -55,7 +55,7 @@ function files_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-file-field_file_attachment'
+  // Exported field_instance: 'node-file-field_file_attachment'.
   $field_instances['node-file-field_file_attachment'] = array(
     'bundle' => 'file',
     'deleted' => 0,

@@ -16,7 +16,7 @@ function metatag_metatag_config_default() {
   $config->api_version = 1;
   $config->disabled = FALSE;
   $config->config = array(
-    'title' => array('value' => '[current-page:title] | [site:name]'),
+    'title' => array('value' => '[current-page:title] | [current-page:pager][site:name]'),
     'generator' => array('value' => 'Drupal 7 (http://drupal.org)'),
     'canonical' => array('value' => '[current-page:url:absolute]'),
     'shortlink' => array('value' => '[current-page:url:unaliased]'),
@@ -28,7 +28,7 @@ function metatag_metatag_config_default() {
   $config->api_version = 1;
   $config->disabled = FALSE;
   $config->config = array(
-    'title' => array('value' => variable_get('site_slogan') ? '[site:name] | [site:slogan]' : '[site:name]'),
+    'title' => array('value' => variable_get('site_slogan') ? '[site:name] | [current-page:pager][site:slogan]' : '[site:name] | [current-page:pager]'),
     'canonical' => array('value' => '[site:url]'),
     'shortlink' => array('value' => '[site:url]'),
   );
@@ -59,7 +59,7 @@ function metatag_metatag_config_default() {
   $config->api_version = 1;
   $config->disabled = FALSE;
   $config->config = array(
-    'title' => array('value' => '[node:title] | [site:name]'),
+    'title' => array('value' => '[node:title] | [current-page:pager][site:name]'),
     'description' => array('value' => '[node:summary]'),
   );
   $configs[$config->instance] = $config;
@@ -70,7 +70,7 @@ function metatag_metatag_config_default() {
     $config->api_version = 1;
     $config->disabled = FALSE;
     $config->config = array(
-      'title' => array('value' => '[term:name] | [site:name]'),
+      'title' => array('value' => '[term:name] | [current-page:pager][site:name]'),
       'description' => array('value' => '[term:description]'),
     );
     $configs[$config->instance] = $config;
@@ -84,7 +84,7 @@ function metatag_metatag_config_default() {
     'title' => array('value' => '[user:name] | [site:name]'),
   );
   if (variable_get('user_pictures')) {
-    $config->config['image'] = array('value' => '[user:picture:url]');
+    $config->config['image_src'] = array('value' => '[user:picture:url]');
   }
   $configs[$config->instance] = $config;
 
@@ -130,10 +130,17 @@ function metatag_metatag_config_instance_info() {
  * Implements hook_metatag_info().
  */
 function metatag_metatag_info() {
-  $info['groups']['advanced'] = array(
-    'label' => t('Advanced'),
+  $info['groups']['basic'] = array(
+    'label' => t('Basic tags'),
     'form' => array(
-      '#weight' => 100,
+      '#weight' => 1,
+      '#collapsed' => FALSE,
+    ),
+  );
+  $info['groups']['advanced'] = array(
+    'label' => t('Advanced tags'),
+    'form' => array(
+      '#weight' => 2,
     ),
   );
 
@@ -144,6 +151,7 @@ function metatag_metatag_info() {
     'label' => t('Page title'),
     'description' => t("The text to display in the title bar of a visitor's web browser when they view this page. This meta tag may also be used as the title of the page when a visitor bookmarks or favorites this page."),
     'class' => 'DrupalTitleMetaTag',
+    'group' => 'basic',
     'weight' => ++$weight,
   );
 
@@ -151,6 +159,7 @@ function metatag_metatag_info() {
     'label' => t('Description'),
     'description' => t("A brief and concise summary of the page's content, preferably 150 characters or less. The description meta tag may be used by search engines to display a snippet about the page in search results."),
     'class' => 'DrupalTextMetaTag',
+    'group' => 'basic',
     'weight' => ++$weight,
     'form' => array(
       '#type' => 'textarea',
@@ -163,6 +172,7 @@ function metatag_metatag_info() {
     'label' => t('Abstract'),
     'description' => t("A brief and concise summary of the page's content, preferably 150 characters or less. The abstract meta tag may be used by search engines for archiving purposes."),
     'class' => 'DrupalTextMetaTag',
+    'group' => 'basic',
     'weight' => ++$weight,
     'form' => array(
       '#type' => 'textarea',
@@ -175,6 +185,7 @@ function metatag_metatag_info() {
     'label' => t('Keywords'),
     'description' => t("A comma-separated list of keywords about the page. This meta tag is <em>not</em> supported by most search engines anymore."),
     'class' => 'DrupalTextMetaTag',
+    'group' => 'basic',
     'weight' => ++$weight,
   );
 

@@ -10,7 +10,7 @@
 function cu_slider_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_slider_caption'
+  // Exported field_base: 'field_slider_caption'.
   $field_bases['field_slider_caption'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -32,7 +32,7 @@ function cu_slider_field_default_field_bases() {
     'type' => 'text',
   );
 
-  // Exported field_base: 'field_slider_design_style'
+  // Exported field_base: 'field_slider_design_style'.
   $field_bases['field_slider_design_style'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -61,7 +61,7 @@ function cu_slider_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_slider_image'
+  // Exported field_base: 'field_slider_image'.
   $field_bases['field_slider_image'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -84,7 +84,7 @@ function cu_slider_field_default_field_bases() {
     'type' => 'image',
   );
 
-  // Exported field_base: 'field_slider_link'
+  // Exported field_base: 'field_slider_link'.
   $field_bases['field_slider_link'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -113,7 +113,7 @@ function cu_slider_field_default_field_bases() {
     'type' => 'link_field',
   );
 
-  // Exported field_base: 'field_slider_size'
+  // Exported field_base: 'field_slider_size'.
   $field_bases['field_slider_size'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -140,7 +140,7 @@ function cu_slider_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_slider_slide'
+  // Exported field_base: 'field_slider_slide'.
   $field_bases['field_slider_slide'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -162,7 +162,7 @@ function cu_slider_field_default_field_bases() {
     'type' => 'field_collection',
   );
 
-  // Exported field_base: 'field_slider_teaser'
+  // Exported field_base: 'field_slider_teaser'.
   $field_bases['field_slider_teaser'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -183,7 +183,7 @@ function cu_slider_field_default_field_bases() {
     'type' => 'text_long',
   );
 
-  // Exported field_base: 'field_slider_url'
+  // Exported field_base: 'field_slider_url'.
   $field_bases['field_slider_url'] = array(
     'active' => 1,
     'cardinality' => 1,

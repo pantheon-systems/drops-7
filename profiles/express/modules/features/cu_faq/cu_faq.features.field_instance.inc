@@ -10,7 +10,7 @@
 function cu_faq_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'field_collection_item-field_qa-field_qa_answer'
+  // Exported field_instance: 'field_collection_item-field_qa-field_qa_answer'.
   $field_instances['field_collection_item-field_qa-field_qa_answer'] = array(
     'bundle' => 'field_qa',
     'default_value' => NULL,
@@ -44,7 +44,8 @@ function cu_faq_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'field_collection_item-field_qa-field_qa_question'
+  // Exported field_instance:
+  // 'field_collection_item-field_qa-field_qa_question'.
   $field_instances['field_collection_item-field_qa-field_qa_question'] = array(
     'bundle' => 'field_qa',
     'default_value' => NULL,
@@ -79,7 +80,7 @@ function cu_faq_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_qa_collection-field_qa'
+  // 'field_collection_item-field_qa_collection-field_qa'.
   $field_instances['field_collection_item-field_qa_collection-field_qa'] = array(
     'bundle' => 'field_qa_collection',
     'default_value' => NULL,
@@ -111,7 +112,7 @@ function cu_faq_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_qa_collection-field_qa_collection_title'
+  // 'field_collection_item-field_qa_collection-field_qa_collection_title'.
   $field_instances['field_collection_item-field_qa_collection-field_qa_collection_title'] = array(
     'bundle' => 'field_qa_collection',
     'default_value' => NULL,
@@ -146,7 +147,7 @@ function cu_faq_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-faqs-body'
+  // Exported field_instance: 'node-faqs-body'.
   $field_instances['node-faqs-body'] = array(
     'bundle' => 'faqs',
     'default_value' => NULL,
@@ -190,7 +191,7 @@ function cu_faq_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-faqs-field_qa_collection'
+  // Exported field_instance: 'node-faqs-field_qa_collection'.
   $field_instances['node-faqs-field_qa_collection'] = array(
     'bundle' => 'faqs',
     'default_value' => NULL,

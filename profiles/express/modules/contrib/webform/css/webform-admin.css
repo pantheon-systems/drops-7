@@ -24,6 +24,13 @@
   margin-left: 20px;
 }
 
+/* Component table */
+.webform-component-formkey,
+.webform-component-value {
+  max-width: 7em;
+  word-wrap: break-word;
+}
+
 /* Analysis pages */
 .webform-analysis-component {
   width: 33.33%;

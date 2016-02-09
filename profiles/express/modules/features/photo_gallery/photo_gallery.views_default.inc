@@ -22,6 +22,8 @@ function photo_gallery_views_default_views() {
 
   /* Display: Master */
   $handler = $view->new_display('default', 'Master', 'default');
+  $handler->display->display_options['title'] = 'Embed Gallery';
+  $handler->display->display_options['css_class'] = 'clearfix';
   $handler->display->display_options['use_more_always'] = FALSE;
   $handler->display->display_options['access']['type'] = 'perm';
   $handler->display->display_options['cache']['type'] = 'none';
@@ -31,7 +33,6 @@ function photo_gallery_views_default_views() {
   $handler->display->display_options['pager']['type'] = 'none';
   $handler->display->display_options['pager']['options']['offset'] = '0';
   $handler->display->display_options['style_plugin'] = 'default';
-  $handler->display->display_options['style_options']['row_class'] = 'grid-2';
   $handler->display->display_options['row_plugin'] = 'fields';
   /* Field: Content: Photo */
   $handler->display->display_options['fields']['field_photo']['id'] = 'field_photo';
@@ -42,11 +43,13 @@ function photo_gallery_views_default_views() {
   $handler->display->display_options['fields']['field_photo']['click_sort_column'] = 'fid';
   $handler->display->display_options['fields']['field_photo']['type'] = 'colorbox';
   $handler->display->display_options['fields']['field_photo']['settings'] = array(
-    'colorbox_node_style' => 'square_thumbnail',
-    'colorbox_image_style' => 'grid-12',
+    'colorbox_node_style' => 'large_square_thumbnail',
+    'colorbox_node_style_first' => '',
+    'colorbox_image_style' => 'large',
     'colorbox_gallery' => 'post',
     'colorbox_gallery_custom' => '',
     'colorbox_caption' => 'title',
+    'colorbox_caption_custom' => '',
   );
   $handler->display->display_options['fields']['field_photo']['group_rows'] = FALSE;
   $handler->display->display_options['fields']['field_photo']['delta_offset'] = '0';
@@ -82,6 +85,18 @@ function photo_gallery_views_default_views() {
   /* Display: Entity content */
   $handler = $view->new_display('entity_view', 'Entity content', 'entity_view_1');
   $handler->display->display_options['defaults']['hide_admin_links'] = FALSE;
+  $handler->display->display_options['entity_type'] = 'node';
+  $handler->display->display_options['bundles'] = array(
+    0 => 'photo_gallery',
+  );
+
+  /* Display: Entity content */
+  $handler = $view->new_display('entity_view', 'Entity content', 'entity_view_2');
+  $handler->display->display_options['defaults']['hide_admin_links'] = FALSE;
+  $handler->display->display_options['defaults']['pager'] = FALSE;
+  $handler->display->display_options['pager']['type'] = 'some';
+  $handler->display->display_options['pager']['options']['items_per_page'] = '6';
+  $handler->display->display_options['pager']['options']['offset'] = '0';
   $handler->display->display_options['entity_type'] = 'node';
   $handler->display->display_options['bundles'] = array(
     0 => 'photo_gallery',

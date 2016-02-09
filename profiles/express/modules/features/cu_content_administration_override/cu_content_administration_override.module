@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the CU Content Administration Override feature.
+ */
+
+include_once 'cu_content_administration_override.features.inc';

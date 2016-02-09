@@ -13,7 +13,13 @@ a:hover, a:focus { color: #e51c23; text-decoration: none; }
 
 a:focus { outline: thin dotted; outline: 5px auto -webkit-focus-ring-color; outline-offset: -2px; }
 
-#page { position: static; padding: 0px 0 40px 0; /* LTR */ margin-right: 20px; /* LTR */ margin-left: 20px; /* LTR */ background: #fff; line-height: 200%; }
+p, ul, ul.admin-list, ol { margin-bottom: 20px; }
+
+h2, h3, h4, h5, h6 { line-height: 120%; margin-bottom: 10px; }
+
+.form-wrapper { margin-bottom: 10px; }
+
+#page { position: static; padding: 0px 0 40px 0; /* LTR */ margin-right: 20px; /* LTR */ margin-left: 20px; /* LTR */ background: #fff; line-height: 150%; }
 
 #overlay #page { padding: 0; margin: 0; }
 
@@ -46,7 +52,7 @@ ul.tabs--primary li a.view:before { content: "\f06e"; }
 
 ul.tabs--primary li a.edit:before, ul.tabs--primary li a.edit-block:before { content: "\f044"; }
 
-ul.tabs--primary li a.edit-blocks:before, ul.tabs--primary li a.blocks:before, h1.page-title.icon-edit-blocks:before, h1.page-title.icon-blocks:before { content: "\f009"; }
+ul.tabs--primary li a.edit-layout:before, ul.tabs--primary li a.blocks:before, h1.page-title.icon-edit-blocks:before, h1.page-title.icon-blocks:before { content: "\f009"; }
 
 ul.tabs--primary li a.devel:before { content: "\f002"; }
 
@@ -90,7 +96,7 @@ h1.page-title.icon-people:before { content: "\f007"; }
 
 .nav-tabs > li > a:hover { border-color: #eee #eee #ddd; }
 
-.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus { color: #555; cursor: default; background-color: #fff; border: 1px solid #ddd; border-bottom-color: transparent; }
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus { color: #555; cursor: default; background-color: #fff; border: 1px solid #ddd; border-bottom-color: transparent; font-weight: bold; }
 
 /* ACTION LINKS */
 ul.action-links li { display: inline; }
@@ -166,6 +172,8 @@ tr.drag { background: #fe7; }
 tr.drag-previous { background: #ffb; }
 
 table th, table th.checkbox { text-transform: uppercase; background: #f0f0f0; font-weight: normal; border-width: 1px; border-style: solid; border-color: #e7e7e7; padding: 3px 10px; }
+
+form .field-multiple-table th.field-label { padding: 3px 10px; }
 
 /** Force browsers to calculate the width of a 'select all' TH element. */
 table th.select-all { width: 1px; }
@@ -283,9 +291,9 @@ div.messages { background-position: 8px center; }
 .express-help-links a { color: #fff; }
 .express-help-links a:before { content: "\f059"; padding-right: 5px; font-family: FontAwesome; }
 
-.fieldset-description > a.field-help-link { float: right; margin-left: 20px; font-size: 120%; }
+.form-item .description > a.field-help-link, .fieldset-description > a.field-help-link { font-size: 90%; display: inline-block; }
 
-a.field-help-link:before { content: "\f059"; padding-right: 5px; font-family: FontAwesome; }
+a.field-help-link:before { content: "\f059"; padding-right: 5px; font-family: FontAwesome; font-size: 100%; color: #e88b12; }
 
 ul.help-list { -webkit-column-count: 3; -moz-column-count: 3; column-count: 3; -webkit-column-gap: 20px; -moz-column-gap: 20px; column-gap: 20px; list-style: disc; }
 
@@ -300,6 +308,12 @@ a.help-more-link:before { content: "\f14c"; padding-right: 5px; font-family: Fon
 ul.admin-list { margin: 0; padding: 0; line-height: 125%; }
 ul.admin-list .label { font-weight: bold; }
 ul.admin-list .description { font-size: 85%; }
+
+div.admin .left { margin-left: 0; }
+
+div.admin .right { margin-right: 0; }
+
+div.admin-panel { padding: 5px 0 15px; }
 
 /* Filter */
 .filter-wrapper, .filter-help { margin: 0; padding: 0; }
@@ -317,3 +331,9 @@ ul.admin-list .description { font-size: 85%; }
 #module-filter-modules .expand .text:before { content: "\f196"; padding-right: 5px; font-family: FontAwesome; color: #007bc8; }
 
 #module-filter-modules .expand.expanded .text:before { content: "\f147"; padding-right: 5px; font-family: FontAwesome; color: #007bc8; }
+
+/* Link Fields */
+.form-type-link-field { border: 1px solid #e7e7e7; padding: 10px; }
+
+/* LinkIt */
+a.linkit-field-button:before { content: "\f002"; padding-right: 5px; font-family: FontAwesome; }

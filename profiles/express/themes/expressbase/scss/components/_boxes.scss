@@ -1,0 +1,120 @@
+@import "../modules/_global.scss";
+@import "../modules/_colors.scss";
+
+/* BOXES */
+
+
+$radius: 0px;
+
+@mixin corners {
+  -webkit-border-radius: $radius;
+  -moz-border-radius: $radius;
+  border-radius: $radius;
+  margin-bottom:1.5em;
+  overflow:hidden;
+}
+
+
+
+
+.box-black {
+  @include corners;
+  background-color: $real_black;
+}
+
+.box-black.box-style-filled a,
+.box-darkgray.box-style-filled a{
+  color:$cugold;
+}
+
+.box-darkgray {
+  //color:#ffffff;
+  @include corners;
+  background-color: $bg_dark3;
+}
+.box-lightgray {
+  background-color: $light_gray;
+  @include corners;
+}
+.box-white {
+  background-color: $real_white;
+  @include corners;
+  border:1px solid $border_color;
+}
+
+.box-style-border {
+  background-color: transparent;
+}
+
+
+.box-black.box-style-border {
+  @include border_outline($color: $real_black, $stroke: 1px);
+  color:$text_black;
+}
+.box-darkgray.box-style-border {
+  @include border_outline($color: $dark_gray, $stroke: 1px);
+}
+.box-lightgray.box-style-border {
+  @include border_outline($color: $light_gray, $stroke: 1px);
+  color:$text_black;
+}
+
+
+.box-black.box-style-filled,
+.box-darkgray.box-style-filled {
+  color:#fff;
+}
+
+.box-title {
+  font-weight:bold;
+  padding: 20px;
+}
+.box-style-filled .box-title {
+  color: #fff;
+}
+
+
+.box-black.box-style-filled .box-title {
+  background-color: lighten($real_black, 10%);
+}
+.box-darkgray.box-style-filled .box-title {
+  background-color: darken($dark_gray, 10%);
+}
+.box-white.box-style-filled .box-title {
+  background-color: darken($white, 10%);
+  color:$text_black;
+}
+.box-lightgray.box-style-filled .box-title {
+  background-color: darken($light_gray, 10%);
+  color:$text_black;
+}
+
+
+.box-black.box-style-border .box-title {
+  border-bottom: 1px solid $real_black;
+}
+.box-darkgray.box-style-border .box-title {
+  border-bottom: 1px solid $dark_gray;
+}
+.box-white.box-style-border .box-title {
+  border-bottom: 1px solid $border_color;
+}
+.box-lightgray.box-style-border .box-title {
+  border-bottom: 1px solid $light_gray;
+}
+
+
+.box-content {
+  padding:20px;
+}
+
+.cu-box.float-right {
+  width:40%;
+  margin:0 0 20px 20px;
+  float: right;
+}
+.cu-box.float-left {
+  width:40%;
+  margin:0 20px 20px 0;
+  float: left;
+}

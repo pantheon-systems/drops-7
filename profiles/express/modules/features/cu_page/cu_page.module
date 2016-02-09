@@ -10,7 +10,11 @@ include_once 'cu_page.features.inc';
  *  Implements hook_form_FORM_ID_alter.
  */
 function cu_page_form_page_node_form_alter(&$form, &$form_state, $form_id) {
-  $form['menu']['enabled']['#default_value'] = TRUE;
+  // Only do this for new nodes
+  if ($form['nid']['#value'] == NULL) {
+    $form['menu']['enabled']['#default_value'] = TRUE;
+  }
+
 }
 
 function cu_page_theme_registry_alter(&$theme_registry) {

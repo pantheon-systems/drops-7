@@ -1,0 +1,93 @@
+<?php
+/**
+ * @file
+ * Update scripts for the Metatag: Twitter Cards module.
+ */
+
+/**
+ * Implementations of hook_update_N().
+ */
+
+/**
+ * Rename the 'twitter:image:src' meta tag back to 'twitter:image'. Sorry.
+ */
+function metatag_twitter_cards_update_7100() {
+  // Find all {metatag} records that contained an entry for the old meta tag.
+  $records = db_query("SELECT entity_type, entity_id, revision_id, language, data
+    FROM {metatag}
+    WHERE data LIKE '%twitter:image:src%'");
+  // This message will be returned if nothing needed to be updated.
+  $none_message = t('No Metatag entity records needed to have the "twitter:image:src" meta tag renamed.');
+
+  if ($records->rowCount() == 0) {
+    drupal_set_message($none_message);
+  }
+  else {
+    $keys = array('entity_type', 'entity_id', 'revision_id', 'language');
+
+    // Loop over the values and correct them.
+    $counter = 0;
+    foreach ($records as $record) {
+      $record->data = unserialize($record->data);
+      if (isset($record->data['twitter:image:src'])) {
+        $record->data['twitter:image'] = $record->data['twitter:image:src'];
+        unset($record->data['twitter:image:src']);
+        drupal_write_record('metatag', $record, $keys);
+        $counter++;
+      }
+    }
+    if ($counter == 0) {
+      drupal_set_message($none_message);
+    }
+    else {
+      drupal_set_message(t('Converted the "twitter:image:src" meta tag for @count entity records to the correct "twitter:image" meta tag. Sorry.', array('@count' => $counter)));
+    }
+  }
+}
+
+/**
+ * Rename the 'twitter:image:src' meta tag back to 'twitter:image', part 2.
+ */
+function metatag_twitter_cards_update_7101() {
+  // Find all {metatag_config} records that contained an entry for the old meta
+  // tag.
+  $records = db_query("SELECT cid, config
+    FROM {metatag_config}
+    WHERE config LIKE '%twitter:image:src%'");
+  // This message will be returned if nothing needed to be updated.
+  $none_message = t('No Metatag configuration records needed to have the "twitter:imagesrc" meta tag fixed. That said, there may be other configurations elsewhere that do need updating.');
+
+  // Loop over the values and correct them.
+  if ($records->rowCount() == 0) {
+    drupal_set_message($none_message);
+  }
+  else {
+    $keys = array('cid');
+
+    // Loop over the values and correct them.
+    $counter = 0;
+    foreach ($records as $record) {
+      $record->config = unserialize($record->config);
+      if (isset($record->config['twitter:image:src'])) {
+        $record->config['twitter:image'] = $record->config['twitter:image:src'];
+        unset($record->config['twitter:image:src']);
+        drupal_write_record('metatag_config', $record, $keys);
+        $counter++;
+      }
+    }
+    if ($counter == 0) {
+      drupal_set_message($none_message);
+    }
+    else {
+      drupal_set_message(t('Converted the "twitter:image:src" meta tag for @count configurations to the correct "twitter:image" meta tag. Sorry.', array('@count' => $counter)));
+    }
+  }
+}
+
+/**
+ * Clear the Metatag cache.
+ */
+function metatag_twitter_cards_update_7102() {
+  cache_clear_all('*', 'cache_metatag', TRUE);
+  return t('All Metatag caches cleared.');
+}

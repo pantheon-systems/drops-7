@@ -34,8 +34,16 @@ a:focus {
   outline: 5px auto -webkit-focus-ring-color;
   outline-offset: -2px;
 }
-
-
+p, ul, ul.admin-list, ol {
+  margin-bottom: 20px;
+}
+h2, h3, h4, h5, h6 {
+  line-height: 120%;
+  margin-bottom: 10px;
+}
+.form-wrapper {
+  margin-bottom: 10px;
+}
 
 
 #page {
@@ -44,7 +52,7 @@ a:focus {
   margin-right: 20px; /* LTR */
   margin-left: 20px; /* LTR */
   background: #fff;
-  line-height: 200%;
+  line-height: 150%;
 }
 #overlay #page {
   padding: 0;
@@ -127,7 +135,7 @@ ul.tabs--primary li a.edit:before,
 ul.tabs--primary li a.edit-block:before {
   content: "\f044";
 }
-ul.tabs--primary li a.edit-blocks:before,
+ul.tabs--primary li a.edit-layout:before,
 ul.tabs--primary li a.blocks:before,
 h1.page-title.icon-edit-blocks:before,
 h1.page-title.icon-blocks:before {
@@ -219,6 +227,7 @@ h1.page-title.icon-people:before {
   background-color: #fff;
   border: 1px solid #ddd;
   border-bottom-color: transparent;
+  font-weight: bold;
 }
 
 
@@ -428,6 +437,9 @@ table th.checkbox {
   border-width: 1px;
   border-style: solid;
   border-color: #e7e7e7;
+  padding: 3px 10px;
+}
+form .field-multiple-table th.field-label {
   padding: 3px 10px;
 }
 /**
@@ -754,15 +766,19 @@ div.messages {
     font-family: FontAwesome;
   }
 }
+.form-item .description > a.field-help-link,
 .fieldset-description > a.field-help-link {
-  float: right;
-  margin-left: 20px;
-  font-size: 120%;
+  //float: right;
+  //margin-left: 20px;
+  font-size: 90%;
+  display: inline-block;
 }
 a.field-help-link:before {
   content: "\f059";
   padding-right:5px;
   font-family: FontAwesome;
+  font-size: 100%;
+  color: $orange;
 }
 ul.help-list {
   -webkit-column-count: 3;
@@ -800,6 +816,15 @@ ul.admin-list {
   .description {
     font-size: 85%;
   }
+}
+div.admin .left {
+  margin-left: 0;
+}
+div.admin .right {
+  margin-right: 0;
+}
+div.admin-panel {
+  padding: 5px 0 15px;
 }
 
 /* Filter */
@@ -843,4 +868,17 @@ ul.admin-list {
   padding-right:5px;
   font-family: FontAwesome;
   color:$blue;
+}
+
+/* Link Fields */
+.form-type-link-field {
+  border:1px solid #e7e7e7;
+  padding:10px;
+}
+/* LinkIt */
+
+a.linkit-field-button:before {
+  content: "\f002";
+  padding-right:5px;
+  font-family: FontAwesome;
 }

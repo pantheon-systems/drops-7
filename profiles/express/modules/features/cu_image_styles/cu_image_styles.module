@@ -23,7 +23,7 @@ function cu_image_styles_image_default_styles() {
         'data' => array(
           'width' => 1500,
           'height' => 1000,
-          'upscale' => 0,
+          'upscale' => 1,
         ),
         'weight' => 1,
       ),
@@ -33,8 +33,8 @@ function cu_image_styles_image_default_styles() {
 
   // Exported image style: large_square_thumbnail.
   $styles['large_square_thumbnail'] = array(
-    'name' => 'large_square_thumbnail',
-    'label' => 'large_square_thumbnail',
+    'name' => 'large square thumbnail',
+    'label' => 'large square thumbnail',
     'effects' => array(
       6 => array(
         'label' => 'Focal Point Scale And Crop',
@@ -46,8 +46,9 @@ function cu_image_styles_image_default_styles() {
         'module' => 'focal_point',
         'name' => 'focal_point_scale_and_crop',
         'data' => array(
-          'width' => 480,
-          'height' => 480,
+          'width' => 600,
+          'height' => 600,
+          'upscale' => 1,
         ),
         'weight' => 2,
       ),
@@ -56,8 +57,8 @@ function cu_image_styles_image_default_styles() {
 
   // Exported image style: large_wide_thumbnail.
   $styles['large_wide_thumbnail'] = array(
-    'name' => 'large_wide_thumbnail',
-    'label' => 'large_wide_thumbnail',
+    'name' => 'large wide thumbnail',
+    'label' => 'large wide thumbnail',
     'effects' => array(
       10 => array(
         'label' => 'Focal Point Scale And Crop',
@@ -69,8 +70,9 @@ function cu_image_styles_image_default_styles() {
         'module' => 'focal_point',
         'name' => 'focal_point_scale_and_crop',
         'data' => array(
-          'width' => 480,
-          'height' => 240,
+          'width' => 600,
+          'height' => 300,
+          'upscale' => 1,
         ),
         'weight' => 2,
       ),
@@ -95,6 +97,7 @@ function cu_image_styles_image_default_styles() {
           'width' => 240,
           'height' => 240,
           'upscale' => 0,
+          'upscale' => 1,
         ),
         'weight' => 1,
       ),
@@ -104,6 +107,7 @@ function cu_image_styles_image_default_styles() {
   // Exported image style: small.
   $styles['small'] = array(
     'name' => 'small',
+    'label' => 'small',
     'effects' => array(
       5 => array(
         'label' => 'Scale',
@@ -115,7 +119,7 @@ function cu_image_styles_image_default_styles() {
         'module' => 'image',
         'name' => 'image_scale',
         'data' => array(
-          'width' => 240,
+          'width' => 300,
           'height' => '',
           'upscale' => 1,
         ),
@@ -127,8 +131,8 @@ function cu_image_styles_image_default_styles() {
 
   // Exported image style: small_thumbnail.
   $styles['small_thumbnail'] = array(
-    'name' => 'small_thumbnail',
-    'label' => 'Small Thumbnail',
+    'name' => 'small thumbnail',
+    'label' => 'small thumbnail',
     'effects' => array(
       1 => array(
         'label' => 'Scale',
@@ -142,7 +146,7 @@ function cu_image_styles_image_default_styles() {
         'data' => array(
           'width' => 100,
           'height' => '',
-          'upscale' => 0,
+          'upscale' => 1,
         ),
         'weight' => 1,
       ),
@@ -166,6 +170,7 @@ function cu_image_styles_image_default_styles() {
         'data' => array(
           'width' => 180,
           'height' => 180,
+          'upscale' => 1,
         ),
         'weight' => 2,
       ),
@@ -174,8 +179,8 @@ function cu_image_styles_image_default_styles() {
 
   // Exported image style: square.
   $styles['square_thumbnail'] = array(
-    'name' => 'square',
-    'label' => 'square',
+    'name' => 'square thumbnail',
+    'label' => 'square thumbnail',
     'effects' => array(
       12 => array(
         'label' => 'Focal Point Scale And Crop',
@@ -189,6 +194,31 @@ function cu_image_styles_image_default_styles() {
         'data' => array(
           'width' => 180,
           'height' => 180,
+          'upscale' => 1,
+        ),
+        'weight' => 2,
+      ),
+    ),
+  );
+
+  // Exported image style: square.
+  $styles['small_square_thumbnail'] = array(
+    'name' => 'small square',
+    'label' => 'small square',
+    'effects' => array(
+      13 => array(
+        'label' => 'Focal Point Scale And Crop',
+        'help' => 'Scale and crop based on data provided by <em>Focal Point</em>.',
+        'effect callback' => 'focal_point_scale_and_crop_effect',
+        'dimensions callback' => 'image_resize_dimensions',
+        'form callback' => 'image_resize_form',
+        'summary theme' => 'image_resize_summary',
+        'module' => 'focal_point',
+        'name' => 'focal_point_scale_and_crop',
+        'data' => array(
+          'width' => 70,
+          'height' => 70,
+          'upscale' => 1,
         ),
         'weight' => 2,
       ),

@@ -4,6 +4,7 @@ core = 7.x
 package = CU-Boulder
 version = 7.x-1.0
 project = cu_wysiwyg
+stylesheets[all][] = cu-wysiwyg.css
 dependencies[] = ckeditor_link
 dependencies[] = features
 dependencies[] = filter

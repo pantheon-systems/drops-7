@@ -41,9 +41,9 @@ function cu_default_image_style_override_image_styles_alter(&$styles) {
         'module' => 'image',
         'name' => 'image_scale',
         'data' => array(
-          'width' => 960,
+          'width' => 1200,
           'height' => '',
-          'upscale' => 0,
+          'upscale' => 1,
         ),
         'weight' => 1,
       );
@@ -62,7 +62,7 @@ function cu_default_image_style_override_image_styles_alter(&$styles) {
         'module' => 'image',
         'name' => 'image_scale',
         'data' => array(
-          'width' => 480,
+          'width' => 600,
           'height' => '',
           'upscale' => 1,
         ),

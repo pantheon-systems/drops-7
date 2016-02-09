@@ -278,7 +278,11 @@ function features_flush_caches() {
       features_get_modules(NULL, TRUE);
     }
   }
-  return array('cache_features');
+
+  if (db_table_exists('cache_features')) {
+    return array('cache_features');
+  }
+  return array();
 }
 
 /**
@@ -515,7 +519,7 @@ function features_load_feature($name, $reset = FALSE) {
  * Return a module 'object' including .info information.
  *
  * @param $name
- *   The name of the module to retrieve information for. If ommitted,
+ *   The name of the module to retrieve information for. If omitted,
  *   an array of all available modules will be returned.
  * @param $reset
  *   Whether to reset the cache.
@@ -757,9 +761,9 @@ function features_get_info($type = 'module', $name = NULL, $reset = FALSE) {
     $cache->data = $data;
   }
   if (!empty($name)) {
-    return !empty($cache->data[$type][$name]) ? clone $cache->data[$type][$name] : array();
+    return !empty($cache->data[$type][$name]) ? clone $cache->data[$type][$name] : FALSE;
   }
-  return !empty($cache->data[$type]) ? $cache->data[$type] : array();
+  return !empty($cache->data[$type]) ? $cache->data[$type] : FALSE;
 }
 
 /**
@@ -1325,6 +1329,9 @@ function features_features_ignore($component) {
       break;
     case 'field':
       $ignores['locked'] = 1;
+      break;
+    case 'field_base':
+      $ignores['indexes'] = 0;
       break;
   }
   return $ignores;

@@ -65,6 +65,7 @@ function cu_users_install() {
   $role = user_role_load_by_name('developer');
   $role->weight = 6;
   user_role_save($role);
+
 }
 
 

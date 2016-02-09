@@ -199,7 +199,8 @@ h6 {
   font-size: 100%;
   font-weight: 300;
 }
-h6.site-slogan {
+h6.site-slogan,
+.site-slogan {
   font-family:$base_font !important;
   font-weight: 500 !important;
 
@@ -390,8 +391,9 @@ dd {
 }
 
 blockquote {
-
-  margin: 0px 20px 20px;
+  font-size: 110%;
+  margin: 0px 0px 40px 20px;
+  padding-top:25px;
   padding-left:20px;
   border-left: 4px solid $border_color;
 }

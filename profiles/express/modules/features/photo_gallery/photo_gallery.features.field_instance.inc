@@ -10,7 +10,7 @@
 function photo_gallery_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'node-photo_gallery-body'
+  // Exported field_instance: 'node-photo_gallery-body'.
   $field_instances['node-photo_gallery-body'] = array(
     'bundle' => 'photo_gallery',
     'default_value' => NULL,
@@ -24,6 +24,31 @@ function photo_gallery_field_default_field_instances() {
         'type' => 'text_default',
         'weight' => 0,
       ),
+      'embed' => array(
+        'label' => 'hidden',
+        'module' => 'smart_trim',
+        'settings' => array(
+          'more_link' => 1,
+          'more_text' => 'View all photos »',
+          'summary_handler' => 'full',
+          'trim_length' => 100,
+          'trim_link' => 0,
+          'trim_options' => array(
+            'text' => 'text',
+          ),
+          'trim_preserve_tags' => '',
+          'trim_suffix' => '...',
+          'trim_type' => 'words',
+        ),
+        'type' => 'smart_trim_format',
+        'weight' => 0,
+      ),
+      'sidebar' => array(
+        'label' => 'hidden',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 1,
+      ),
       'single_page' => array(
         'label' => 'hidden',
         'module' => 'text',
@@ -33,11 +58,27 @@ function photo_gallery_field_default_field_instances() {
       ),
       'teaser' => array(
         'label' => 'hidden',
-        'module' => 'text',
+        'module' => 'smart_trim',
         'settings' => array(
-          'trim_length' => 600,
+          'more_link' => 1,
+          'more_text' => 'View photos »',
+          'summary_handler' => 'full',
+          'trim_length' => 50,
+          'trim_link' => FALSE,
+          'trim_options' => array(
+            'text' => 'text',
+          ),
+          'trim_preserve_tags' => '',
+          'trim_suffix' => '...',
+          'trim_type' => 'words',
         ),
-        'type' => 'text_summary_or_trimmed',
+        'type' => 'smart_trim_format',
+        'weight' => 1,
+      ),
+      'title' => array(
+        'label' => 'hidden',
+        'settings' => array(),
+        'type' => 'hidden',
         'weight' => 0,
       ),
     ),
@@ -61,7 +102,7 @@ function photo_gallery_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-photo_gallery-field_photo'
+  // Exported field_instance: 'node-photo_gallery-field_photo'.
   $field_instances['node-photo_gallery-field_photo'] = array(
     'bundle' => 'photo_gallery',
     'deleted' => 0,
@@ -71,7 +112,23 @@ function photo_gallery_field_default_field_instances() {
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 1,
+        'weight' => 3,
+      ),
+      'embed' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 2,
+      ),
+      'sidebar' => array(
+        'label' => 'hidden',
+        'module' => 'image',
+        'settings' => array(
+          'image_link' => 'content',
+          'image_style' => 'square',
+        ),
+        'type' => 'image',
+        'weight' => 0,
       ),
       'single_page' => array(
         'label' => 'above',
@@ -81,9 +138,19 @@ function photo_gallery_field_default_field_instances() {
       ),
       'teaser' => array(
         'label' => 'above',
+        'module' => 'image',
+        'settings' => array(
+          'image_link' => 'content',
+          'image_style' => 'square',
+        ),
+        'type' => 'image',
+        'weight' => 0,
+      ),
+      'title' => array(
+        'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
-        'weight' => 0,
+        'weight' => 3,
       ),
     ),
     'entity_type' => 'node',

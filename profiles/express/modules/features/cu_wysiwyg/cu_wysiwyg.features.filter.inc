@@ -188,6 +188,7 @@ small,',
             28 => 'list-style-*',
             30 => 'supersize',
             32 => 'hero',
+            34 => 'colorbox',
           ),
           'rule_valid_ids' => array(),
           'rule_style_urls' => array(),
@@ -215,13 +216,16 @@ small,',
           'box' => 1,
           'button' => 1,
           'buttongroup' => 1,
+          'callout' => 1,
           'clear' => 1,
           'column' => 1,
+          'columnlist' => 1,
           'expand' => 1,
           'googlecalendar' => 1,
           'icon' => 1,
           'imagecaption' => 1,
           'map' => 1,
+          'masonry-images' => 1,
           'print' => 1,
           'sidebar' => 0,
           'tooltip' => 0,
@@ -249,7 +253,7 @@ small,',
         'weight' => 50,
         'status' => 1,
         'settings' => array(
-          'local_paths' => '',
+          'local_paths' => _create_cu_pathologic_paths(),
           'protocol_style' => 'proto-rel',
         ),
       ),
@@ -257,4 +261,29 @@ small,',
   );
 
   return $formats;
+}
+
+function _create_cu_pathologic_paths() {
+  $cu_sid = variable_get('cu_sid', FALSE);
+  $cu_path = variable_get('cu_path', FALSE);
+
+  if ($cu_sid || $cu_path) {
+
+    $paths = array();
+
+    // Build hash paths
+    if ($cu_sid) {
+        $paths[] = "/$cu_sid";
+        $paths[] = "http://www.colorado.edu/$cu_sid";
+        $paths[] = "https://www.colorado.edu/$cu_sid";
+    }
+    // Build real paths
+    if ($cu_path) {
+        $paths[] = "/$cu_path";
+        $paths[] = "http://www.colorado.edu/$cu_path";
+        $paths[] = "https://www.colorado.edu/$cu_path";
+    }
+    // Build pathologic settings on one path per line
+    return $all_paths = join("\n", $paths);
+  }
 }

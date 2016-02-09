@@ -1,0 +1,372 @@
+<?php
+
+/* @file
+ * The disable_messages module file
+ */
+
+/**
+ * Implements hook_permission().
+ */
+function disable_messages_permission() {
+  return array(
+    'view status messages' => array(
+      'title' => t('View status messages'),
+    ),
+    'view warning messages' => array(
+      'title' => t('View warning messages'),
+    ),
+    'view error messages' => array(
+      'title' => t('View error messages'),
+    ),
+    'exclude from message filtering' => array(
+      'title' => t('Exclude from message filtering'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function disable_messages_menu() {
+  $items = array();
+  $items['admin/config/development/disable-messages'] = array(
+    'title' => 'Disable messages',
+    'description' => 'Configure display of messages to end users.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('disable_messages_settings_form'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function disable_messages_theme($existing, $type, $theme, $path) {
+  $items = array();
+  // Expose a disable_messages_status_messages theme hook that can be
+  // overridden by the themer to override the message display
+  $items['disable_messages_status_messages'] = array(
+    'variables' => array('messages' => NULL),
+  );
+  return $items;
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function disable_messages_theme_registry_alter(&$theme_registry) {
+  $theme_registry['status_messages']['function'] = '_theme_disable_messages_status_messages';
+}
+
+/**
+ * Implementation of theme_status_messages() hook to override the core
+ * status message output.
+ */
+function _theme_disable_messages_status_messages($variables) {
+  $display = $variables['display'];
+
+  // Retrieve messages
+  $messages = drupal_get_messages($display);
+
+  // Filter messages if filtering is enabled.
+  if (variable_get('disable_messages_enable', '1')) {
+    $messages = disable_messages_apply_filters($messages);
+  }
+  
+  // Return themed status messages
+  return theme('disable_messages_status_messages', array('messages' => $messages));
+}
+
+/**
+ * Theme function for theming status messages
+ */
+function theme_disable_messages_status_messages($vars) {
+  $messages = $vars['messages'];
+  $output = '';
+  $status_heading = array(
+    'status' => t('Status message'),
+    'error' => t('Error message'),
+    'warning' => t('Warning message'),
+  );
+  foreach ($messages as $type => $arr_messages) {
+    $output .= "<div class=\"messages $type\">\n";
+    if (!empty($status_heading[$type])) {
+      $output .= '<h2 class="element-invisible">' . $status_heading[$type] . "</h2>\n";
+    }
+    if (count($arr_messages) > 1) {
+      $output .= " <ul>\n";
+      foreach ($arr_messages as $message) {
+        $output .= '  <li>' . $message . "</li>\n";
+      }
+      $output .= " </ul>\n";
+    }
+    else {
+      $output .= array_shift($arr_messages);
+    }
+    $output .= "</div>\n";
+  }
+  return $output;
+}
+
+/**
+ * Apply the filters to the messages
+ */
+function disable_messages_apply_filters($messages) {
+  global $user;
+  // Cache the messages for debugging.
+  $cache = $messages;
+  // Check userid level filtering
+  $is_user_excluded = in_array(
+    (string)$user->uid,
+    explode(
+      ',',
+      variable_get('disable_messages_exclude_users', '')
+    ),
+    TRUE
+  );
+  // Store flags for debug.
+  $cache['excluded']['uid'] = FALSE;
+  if ($is_user_excluded) {
+    $cache['excluded']['uid'] = TRUE;
+  }
+  // UID 1 is also not excluded as this might actually be a requirement from the client.
+  // You can exclude UID 1 specifically via the exclude users option.
+  $is_user_excluded = $is_user_excluded || ($user->uid != 1 && user_access('exclude from message filtering'));
+  if ($is_user_excluded && !$cache['excluded']['uid']) {
+    $cache['excluded']['permission'] = TRUE;
+  }
+  // Check page level filtering
+  $filter_by_page = variable_get('disable_messages_filter_by_page', 0);
+  if ($filter_by_page > 0) {
+    $filter_paths = variable_get('disable_messages_page_filter_paths', '');
+    $path = drupal_get_path_alias($_GET['q']);
+    // Compare with the internal and path alias (if any).
+    $page_match = drupal_match_path($path, $filter_paths);
+    if ($path != $_GET['q']) {
+      $page_match = $page_match || drupal_match_path($_GET['q'], $filter_paths);
+    }
+    // If $filter_by_page is 1 then listed paths are excluded from any filtering
+    // and if 2 then filtering is applied only on listed paths.
+    if ($filter_by_page == 1) {
+      $is_page_excluded = $page_match;
+    }
+    else {
+      $is_page_excluded = !$page_match;
+    }
+  }
+  else {
+    $is_page_excluded = FALSE;
+  }
+  // Store flags for debug.
+  $cache['excluded']['page'] = $is_page_excluded;
+  // If userid is excluded from filtering don't do any filtering.
+  if (!$is_user_excluded && !$is_page_excluded) {
+    $regexps = variable_get('disable_messages_ignore_regex', array());
+    foreach ($messages as $type => $arr_messages) {
+      // Check if the user has been denied access to the specific type of messages.
+      if (user_access('view ' . $type . ' messages')) {
+        foreach ($arr_messages as $key => $message) {
+          foreach ($regexps as $regex) {
+            if (preg_match($regex, $message)) {
+              // Keep track of the regular expression that matched the string.
+              $cache[$type]['regex'][$key] = $regex;
+              unset($messages[$type][$key]);
+              break;
+            }
+          }
+        }
+        if (count($messages[$type]) == 0) {
+          $cache[$type]['empty'] = TRUE;
+          unset($messages[$type]);
+        }
+      }
+      else {
+        // Keep track of the fact that it was a permission issue.
+        $cache[$type]['permission'] = FALSE;
+        unset($messages[$type]);
+      }
+    }
+  }
+  disable_messages_cache_messages($cache);
+  return $messages;
+}
+
+/**
+ * Cache messages for debug purposes.
+ */
+function disable_messages_cache_messages($messages = NULL) {
+  static $cache;
+  if ($messages) {
+    $cache = $messages;
+  }
+  return $cache;
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function disable_messages_page_alter(&$page) {
+  if (variable_get('disable_messages_enable_debug', '1')) {
+    $page['page_bottom']['disable_messages_debug'] = array(
+      '#type' => 'markup',
+      '#markup' => '',
+      '#pre_render' => array('disable_message_pre_render_debug_output'),
+    );
+  }
+}
+
+/**
+ * Pre render function to render the debug output into the page footer
+ * A separate pre-render function is required because the messages
+ * wouldn't yet be processed by the time page_alter is called.
+ */
+function disable_message_pre_render_debug_output(&$elements) {
+  $style = '';
+  if (variable_get('disable_messages_debug_visible_div', '0') == '0') {
+    $style = 'style="display:none;"';
+  }
+  $elements['#children'] = '' .
+    '<div id="disable_messages-debug-div" ' . $style . '>' .
+      '<pre>' .
+        check_plain(var_export(disable_messages_cache_messages(), TRUE)) .
+      '</pre>' .
+    '</div>';
+  return $elements;
+}
+
+/**
+ * Filter messages admin settings form
+ */
+function disable_messages_settings_form() {
+  $form = array();
+  $form['disable_messages_enable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable filtering'),
+    '#default_value' => variable_get('disable_messages_enable', '1'),
+    '#description' => t('Uncheck this checkbox to disable all message filtering. If you uncheck this, all messages will be shown to all users and no custom filtering rules will be applied.'),
+  );
+  $form['disable_messages_ignore_patterns'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Messages to be disabled'),
+    '#description' => t('Enter messages that should not be shown to end users. Regular expressions are supported. You do not have to include the opening and closing forward slashes for the regular expression. The system will automatically add /^ and $/ at the beginning and end of the pattern to ensure that the match is always a full match instead of a partial match. This will help prevent unexpected filtering of messages. So if you want to filter out a specific message ensure that you add the full message including any punctuation and additional HTML if any. Add one per line. See !PCRE documentation for details on regular expressions.', array('!PCRE' => l('PCRE', 'http://us3.php.net/manual/en/book.pcre.php', array('external' => TRUE)))),
+    '#default_value' => variable_get('disable_messages_ignore_patterns', ''),
+  );
+  $form['disable_messages_ignore_case'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Ignore case'),
+    '#default_value' => variable_get('disable_messages_ignore_case', '1'),
+    '#description' => t('Check this to ignore case while matching the patterns.'),
+  );
+  $form['disable_messages_filter_options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Page and user level filtering options'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['disable_messages_filter_options']['role_information'] = array(
+    '#type' => 'item',
+    '#title' => t('Filering by role'),
+    '#markup' => t('By default, permission to view all message types are given for all roles. You can change this in !link to limit the roles which can view a given message type.', array('!link' => l('administer permissions', 'admin/people/permissions', array('fragment' => 'module-disable_messages')))),
+  );
+  $options = array(
+    t('Apply filters on all pages.'),
+    t('Apply filters on every page except the listed pages.'),
+    t('Apply filters only on the listed pages.')
+  );
+  $description = t("Enter one page per line as Drupal paths. The '*' character is a wildcard. Example paths are %blog for the blog page and %blog-wildcard for every personal blog. %front is the front page.", array('%blog' => 'blog', '%blog-wildcard' => 'blog/*', '%front' => '<front>'));
+  $form['disable_messages_filter_options']['disable_messages_filter_by_page'] = array(
+    '#type' => 'radios',
+    '#title' => t('Apply filters by page'),
+    '#options' => $options,
+    '#default_value' => variable_get('disable_messages_filter_by_page', 0),
+  );
+  $form['disable_messages_filter_options']['disable_messages_page_filter_paths'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Pages'),
+    '#default_value' => variable_get('disable_messages_page_filter_paths', ''),
+    '#description' => $description,
+  );
+  $form['disable_messages_filter_options']['disable_messages_exclude_users'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Users excluded from filtering'),
+    '#size' => 40,
+    '#default_value' => variable_get('disable_messages_exclude_users', ''),
+    '#description' => t('Comma separated list of user ids to be excluded from any filtering. All messages will be shown to all the listed users irrespective of their permissons to view the corresponding type of message.'),
+  );
+  $form['disable_messages_debug'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Debug options'),
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['disable_messages_debug']['disable_messages_enable_debug'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable debug mode'),
+    '#default_value' => variable_get('disable_messages_enable_debug', '0'),
+    '#description' => t('Check this to enable debug information. The debug information will be shown in an explicitly hidden div sent to the page via $closure. You can use firebug or a similar tool like that to set the visibility of this div or just view source to see the debug information. Safe to use even on production sites.'),
+  );
+  $form['disable_messages_debug']['disable_messages_debug_visible_div'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Show debug div as visible'),
+    '#default_value' => variable_get('disable_messages_debug_visible_div', '0'),
+    '#description' => t('Frustrated with having to view source everytime? Don\'t worry. Enable this to show the debug messages in a visible div. <strong>Remember to disable this on the production sites if you enable debug there :)</strong>.'),
+  );
+  $form['#submit'][] = 'disable_messages_settings_form_submit';
+  return system_settings_form($form);
+}
+
+/**
+ * Validation function for disable_messages_settings_form.
+ */
+function disable_messages_settings_form_validate($form, &$form_state) {
+  global $_disable_messages_error, $_disable_messages_error_no;
+  $patterns = explode("\n", $form_state['values']['disable_messages_ignore_patterns']);
+  // Override drupal error handler to handle the preg error here
+  set_error_handler('_disable_messages_error_handler');
+  foreach ($patterns as $pattern) {
+    $pattern = preg_replace(array('/^\s*/', '/\s*$/'), '', $pattern);
+    try {
+      preg_match('/' . $pattern . '/', "This is a test string");
+    }
+    catch (Exception $e) {
+    }
+    if ($_disable_messages_error) {
+      form_set_error('disable_messages_ignore_patterns', t('"@pattern" is not a valid regular expression. Preg error (@error_no) - @error', array('@pattern' => $pattern, '@error_no' => $_disable_messages_error_no, '@error' => $_disable_messages_error)));
+      restore_error_handler();
+      return;
+    }
+  }
+}
+
+/**
+ * Custom error handler to catch the preg error while validating the regular expressions.
+ */
+function _disable_messages_error_handler($errno, $errstr, $errfile, $errline) {
+  global $_disable_messages_error, $_disable_messages_error_no;
+  $_disable_messages_error = $errstr;
+  $_disable_messages_error_no = $errno;
+  // Don't do anything other than set the error string.
+}
+
+/**
+ * Submit function for the admin settings form.
+ */
+function disable_messages_settings_form_submit($form, &$form_state) {
+  // Catch comma typos in the id text box
+  $value = $form_state['values']['disable_messages_exclude_users'];
+  $value = preg_replace(array('/[^0-9,]/', '/^,*/', '/,*$/'), '', $value);
+  $value = preg_replace('/(,+)/', ',', $value);
+  $form_state['values']['disable_messages_exclude_users'] = $value;
+  // Process and save the regular expressions in another variable.
+  $patterns = explode("\n", $form_state['values']['disable_messages_ignore_patterns']);
+  $regexps = array();
+  $ignore_case = (variable_get('disable_messages_ignore_case', '0') == '1') ? 'i' : '';
+  foreach ($patterns as $pattern) {
+    $pattern = preg_replace(array('/^\s*/', '/\s*$/'), '', $pattern);
+    $pattern = '/^' . $pattern . '$/' . $ignore_case;
+    $regexps[] = $pattern;
+  }
+  variable_set('disable_messages_ignore_regex', $regexps);
+}

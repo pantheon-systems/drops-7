@@ -1,5 +1,5 @@
 name = CU Shortcuts
-description = Shortcuts associated with cu_fit install profile.
+description = Shortcuts associated with express install profile.
 core = 7.x
 package = CU-Active
 version = 7.x-1.0

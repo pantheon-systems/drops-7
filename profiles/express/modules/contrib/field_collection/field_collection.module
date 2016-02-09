@@ -125,531 +125,6 @@ function field_collection_item_load_multiple($ids = array(), $conditions = array
 }
 
 /**
- * Class for field_collection_item entities.
- */
-class FieldCollectionItemEntity extends Entity {
-
-  /**
-   * Field collection field info.
-   *
-   * @var array
-   */
-  protected $fieldInfo;
-
-  /**
-   * The host entity object.
-   *
-   * @var object
-   */
-  protected $hostEntity;
-
-  /**
-   * The host entity ID.
-   *
-   * @var integer
-   */
-  protected $hostEntityId;
-
-  /**
-   * The host entity revision ID if this is not the default revision.
-   *
-   * @var integer
-   */
-  protected $hostEntityRevisionId;
-
-  /**
-   * The host entity type.
-   *
-   * @var string
-   */
-  protected $hostEntityType;
-
-  /**
-   * The language under which the field collection item is stored.
-   *
-   * @var string
-   */
-  protected $langcode = LANGUAGE_NONE;
-
-  /**
-   * Entity ID.
-   *
-   * @var integer
-   */
-  public $item_id;
-
-  /**
-   * Field collection revision ID.
-   *
-   * @var integer
-   */
-  public $revision_id;
-
-  /**
-   * The name of the field-collection field this item is associated with.
-   *
-   * @var string
-   */
-  public $field_name;
-
-  /**
-   * Whether this revision is the default revision.
-   *
-   * @var bool
-   */
-  public $default_revision = TRUE;
-
-  /**
-   * Whether the field collection item is archived, i.e. not in use.
-   *
-   * @see FieldCollectionItemEntity::isInUse()
-   * @var bool
-   */
-  public $archived = FALSE;
-
-  /**
-   * Constructs the entity object.
-   */
-  public function __construct(array $values = array(), $entityType = NULL) {
-    parent::__construct($values, 'field_collection_item');
-    // Workaround issues http://drupal.org/node/1084268 and
-    // http://drupal.org/node/1264440:
-    // Check if the required property is set before checking for the field's
-    // type. If the property is not set, we are hitting a PDO or a core's bug.
-    // FIXME: Remove when #1264440 is fixed and the required PHP version is
-    //  properly identified and documented in the module documentation.
-    if (isset($this->field_name)) {
-      // Ok, we have the field name property, we can proceed and check the field's type
-      $field_info = $this->fieldInfo();
-      if (!$field_info || $field_info['type'] != 'field_collection') {
-        throw new Exception("Invalid field name given: {$this->field_name} is not a Field Collection field.");
-      }
-    }
-  }
-
-  /**
-   * Provides info about the field on the host entity, which embeds this
-   * field collection item.
-   */
-  public function fieldInfo() {
-    return field_info_field($this->field_name);
-  }
-
-  /**
-   * Provides info of the field instance containing the reference to this
-   * field collection item.
-   */
-  public function instanceInfo() {
-    if ($this->fetchHostDetails()) {
-      return field_info_instance($this->hostEntityType(), $this->field_name, $this->hostEntityBundle());
-    }
-  }
-
-  /**
-   * Returns the field instance label translated to interface language.
-   */
-  public function translatedInstanceLabel($langcode = NULL) {
-    if ($info = $this->instanceInfo()) {
-      if (module_exists('i18n_field')) {
-        return i18n_string("field:{$this->field_name}:{$info['bundle']}:label", $info['label'], array('langcode' => $langcode));
-      }
-      return $info['label'];
-    }
-  }
-
-  /**
-   * Specifies the default label, which is picked up by label() by default.
-   */
-  public function defaultLabel() {
-    // @todo make configurable.
-    if ($this->fetchHostDetails()) {
-      $field = $this->fieldInfo();
-      $label = $this->translatedInstanceLabel();
-
-      if ($field['cardinality'] == 1) {
-        return $label;
-      }
-      elseif ($this->item_id) {
-        return t('!instance_label @count', array('!instance_label' => $label, '@count' => $this->delta() + 1));
-      }
-      else {
-        return t('New !instance_label', array('!instance_label' => $label));
-      }
-    }
-    return t('Unconnected field collection item');
-  }
-
-  /**
-   * Returns the path used to view the entity.
-   */
-  public function path() {
-    if ($this->item_id) {
-      return field_collection_field_get_path($this->fieldInfo()) . '/' . $this->item_id;
-    }
-  }
-
-  /**
-   * Returns the URI as returned by entity_uri().
-   */
-  public function defaultUri() {
-    return array(
-      'path' => $this->path(),
-    );
-  }
-
-  /**
-   * Sets the host entity. Only possible during creation of a item.
-   *
-   * @param $create_link
-   *   (optional) Whether a field-item linking the host entity to the field
-   *   collection item should be created.
-   */
-  public function setHostEntity($entity_type, $entity, $langcode = LANGUAGE_NONE, $create_link = TRUE) {
-    if (!empty($this->is_new)) {
-      $this->hostEntityType = $entity_type;
-      $this->hostEntity = $entity;
-      $this->langcode = $langcode;
-
-      list($this->hostEntityId, $this->hostEntityRevisionId) = entity_extract_ids($this->hostEntityType, $this->hostEntity);
-      // If the host entity is not saved yet, set the id to FALSE. So
-      // fetchHostDetails() does not try to load the host entity details.
-      if (!isset($this->hostEntityId)) {
-        $this->hostEntityId = FALSE;
-      }
-      // We are create a new field collection for a non-default entity, thus
-      // set archived to TRUE.
-      if (!entity_revision_is_default($entity_type, $entity)) {
-        $this->hostEntityId = FALSE;
-        $this->archived = TRUE;
-      }
-      if ($create_link) {
-        $entity->{$this->field_name}[$this->langcode][] = array('entity' => $this);
-      }
-    }
-    else {
-      throw new Exception('The host entity may be set only during creation of a field collection item.');
-    }
-  }
-
-  /**
-   * Updates the wrapped host entity object.
-   *
-   * @param $entity
-   */
-  public function updateHostEntity($entity) {
-    $this->fetchHostDetails();
-    list($recieved_id) = entity_extract_ids($this->hostEntityType, $entity);
-
-    if ($this->isInUse()) {
-      $current_id = $this->hostEntityId;
-    }
-    else {
-      $current_host = entity_revision_load($this->hostEntityType, $this->hostEntityRevisionId);
-      list($current_id) = entity_extract_ids($this->hostEntityType, $current_host);
-    }
-
-    if ($current_id == $recieved_id) {
-      $this->hostEntity = $entity;
-      $delta = $this->delta();
-      if (isset($entity->{$this->field_name}[$this->langcode][$delta]['entity'])) {
-        $entity->{$this->field_name}[$this->langcode][$delta]['entity'] = $entity;
-      }
-    }
-    else {
-      throw new Exception('The host entity cannot be changed.');
-    }
-  }
-
-  /**
-   * Returns the host entity, which embeds this field collection item.
-   */
-  public function hostEntity() {
-    if ($this->fetchHostDetails()) {
-      if (!isset($this->hostEntity) && $this->isInUse()) {
-        $this->hostEntity = entity_load_single($this->hostEntityType, $this->hostEntityId);
-      }
-      elseif (!isset($this->hostEntity) && $this->hostEntityRevisionId) {
-        $this->hostEntity = entity_revision_load($this->hostEntityType, $this->hostEntityRevisionId);
-      }
-      return $this->hostEntity;
-    }
-  }
-
-  /**
-   * Returns the entity type of the host entity, which embeds this
-   * field collection item.
-   */
-  public function hostEntityType() {
-    if ($this->fetchHostDetails()) {
-      return $this->hostEntityType;
-    }
-  }
-
-  /**
-   * Returns the id of the host entity, which embeds this field collection item.
-   */
-  public function hostEntityId() {
-    if ($this->fetchHostDetails()) {
-      if (!$this->hostEntityId && $this->hostEntityRevisionId) {
-        $this->hostEntityId = entity_id($this->hostEntityType, $this->hostEntity());
-      }
-      return $this->hostEntityId;
-    }
-  }
-
-  /**
-   * Returns the bundle of the host entity, which embeds this field collection
-   * item.
-   */
-  public function hostEntityBundle() {
-    if ($entity = $this->hostEntity()) {
-      list($id, $rev_id, $bundle) = entity_extract_ids($this->hostEntityType, $entity);
-      return $bundle;
-    }
-  }
-
-  protected function fetchHostDetails() {
-    if (!isset($this->hostEntityId)) {
-      if ($this->item_id) {
-        // For saved field collections, query the field data to determine the
-        // right host entity.
-        $query = new EntityFieldQuery();
-        $query->fieldCondition($this->fieldInfo(), 'revision_id', $this->revision_id);
-        if (!$this->isInUse()) {
-          $query->age(FIELD_LOAD_REVISION);
-        }
-        $result = $query->execute();
-        list($this->hostEntityType, $data) = each($result);
-
-        if ($this->isInUse()) {
-          $this->hostEntityId = $data ? key($data) : FALSE;
-          $this->hostEntityRevisionId = FALSE;
-        }
-        // If we are querying for revisions, we get the revision ID.
-        else {
-          $this->hostEntityId = FALSE;
-          $this->hostEntityRevisionId = $data ? key($data) : FALSE;
-        }
-      }
-      else {
-        // No host entity available yet.
-        $this->hostEntityId = FALSE;
-      }
-    }
-    return !empty($this->hostEntityId) || !empty($this->hostEntity) || !empty($this->hostEntityRevisionId);
-  }
-
-  /**
-   * Determines the $delta of the reference pointing to this field collection
-   * item.
-   */
-  public function delta() {
-    if (($entity = $this->hostEntity()) && isset($entity->{$this->field_name})) {
-      foreach ($entity->{$this->field_name} as $langcode => &$data) {
-        foreach ($data as $delta => $item) {
-          if (isset($item['value']) && $item['value'] == $this->item_id) {
-            $this->langcode = $langcode;
-            return $delta;
-          }
-          elseif (isset($item['entity']) && $item['entity'] === $this) {
-            $this->langcode = $langcode;
-            return $delta;
-          }
-        }
-      }
-    }
-  }
-
-  /**
-   * Determines the language code under which the item is stored.
-   */
-  public function langcode() {
-    if ($this->delta() !== NULL) {
-      return $this->langcode;
-    }
-  }
-
-  /**
-   * Determines whether this field collection item revision is in use.
-   *
-   * Field collection items may be contained in from non-default host entity
-   * revisions. If the field collection item does not appear in the default
-   * host entity revision, the item is actually not used by default and so
-   * marked as 'archived'.
-   * If the field collection item appears in the default revision of the host
-   * entity, the default revision of the field collection item is in use there
-   * and the collection is not marked as archived.
-   */
-  public function isInUse() {
-    return $this->default_revision && !$this->archived;
-  }
-
-  /**
-   * Save the field collection item.
-   *
-   * By default, always save the host entity, so modules are able to react
-   * upon changes to the content of the host and any 'last updated' dates of
-   * entities get updated.
-   *
-   * For creating an item a host entity has to be specified via setHostEntity()
-   * before this function is invoked. For the link between the entities to be
-   * fully established, the host entity object has to be updated to include a
-   * reference on this field collection item during saving. So do not skip
-   * saving the host for creating items.
-   *
-   * @param $skip_host_save
-   *   (internal) If TRUE is passed, the host entity is not saved automatically
-   *   and therefore no link is created between the host and the item or
-   *   revision updates might be skipped. Use with care.
-   */
-  public function save($skip_host_save = FALSE) {
-    // Make sure we have a host entity during creation.
-    if (!empty($this->is_new) && !(isset($this->hostEntityId) || isset($this->hostEntity) || isset($this->hostEntityRevisionId))) {
-      throw new Exception("Unable to create a field collection item without a given host entity.");
-    }
-
-    // Only save directly if we are told to skip saving the host entity. Else,
-    // we always save via the host as saving the host might trigger saving
-    // field collection items anyway (e.g. if a new revision is created).
-    if ($skip_host_save) {
-      return entity_get_controller($this->entityType)->save($this);
-    }
-    else {
-      $host_entity = $this->hostEntity();
-      if (!$host_entity) {
-        throw new Exception("Unable to save a field collection item without a valid reference to a host entity.");
-      }
-      // If this is creating a new revision, also do so for the host entity.
-      if (!empty($this->revision) || !empty($this->is_new_revision)) {
-        $host_entity->revision = TRUE;
-        if (!empty($this->default_revision)) {
-          entity_revision_set_default($this->hostEntityType, $host_entity);
-        }
-      }
-      // Set the host entity reference, so the item will be saved with the host.
-      // @see field_collection_field_presave()
-      $delta = $this->delta();
-      if (isset($delta)) {
-        $host_entity->{$this->field_name}[$this->langcode][$delta] = array('entity' => $this);
-      }
-      else {
-        $host_entity->{$this->field_name}[$this->langcode][] =  array('entity' => $this);
-      }
-      return entity_save($this->hostEntityType, $host_entity);
-    }
-  }
-
-  /**
-   * Deletes the field collection item and the reference in the host entity.
-   */
-  public function delete() {
-    parent::delete();
-    $this->deleteHostEntityReference();
-  }
-
-  /**
-   * Deletes the host entity's reference of the field collection item.
-   */
-  protected function deleteHostEntityReference() {
-    $delta = $this->delta();
-    if ($this->item_id && isset($delta)) {
-      unset($this->hostEntity->{$this->field_name}[$this->langcode][$delta]);
-      entity_save($this->hostEntityType, $this->hostEntity);
-    }
-  }
-
-  /**
-   * Intelligently delete a field collection item revision.
-   *
-   * If a host entity is revisioned with its field collection items, deleting
-   * a field collection item on the default revision of the host should not
-   * delete the collection item from archived revisions too. Instead, we delete
-   * the current default revision and archive the field collection.
-   *
-   */
-  public function deleteRevision($skip_host_update = FALSE) {
-    if (!$this->revision_id) {
-      return;
-    }
-
-    if (!$skip_host_update) {
-      // Just remove the item from the host, which cares about deleting the
-      // item (depending on whether the update creates a new revision).
-      $this->deleteHostEntityReference();
-    }
-
-    if (!$this->isDefaultRevision()) {
-      entity_revision_delete('field_collection_item', $this->revision_id);
-    }
-    // If deleting the default revision, take care!
-    else {
-      $row = db_select('field_collection_item_revision', 'r')
-        ->fields('r')
-        ->condition('item_id', $this->item_id)
-        ->condition('revision_id', $this->revision_id, '<>')
-        ->execute()
-        ->fetchAssoc();
-      // If no other revision is left, delete. Else archive the item.
-      if (!$row) {
-        $this->delete();
-      }
-      else {
-        // Make the other revision the default revision and archive the item.
-        db_update('field_collection_item')
-          ->fields(array('archived' => 1, 'revision_id' => $row['revision_id']))
-          ->condition('item_id', $this->item_id)
-          ->execute();
-        entity_get_controller('field_collection_item')->resetCache(array($this->item_id));
-        entity_revision_delete('field_collection_item', $this->revision_id);
-      }
-    }
-  }
-
-  /**
-   * Export the field collection item.
-   *
-   * Since field collection entities are not directly exportable (i.e., do not
-   * have 'exportable' set to TRUE in hook_entity_info()) and since Features
-   * calls this method when exporting the field collection as a field attached
-   * to another entity, we return the export in the format expected by
-   * Features, rather than in the normal Entity::export() format.
-   */
-  public function export($prefix = '') {
-    // Based on code in EntityDefaultFeaturesController::export_render().
-    $export = "entity_import('" . $this->entityType() . "', '";
-    $export .= addcslashes(parent::export(), '\\\'');
-    $export .= "')";
-    return $export;
-  }
-
-  /**
-   * Magic method to only serialize what's necessary.
-   */
-  public function __sleep() {
-    $vars = get_object_vars($this);
-    unset($vars['entityInfo'], $vars['idKey'], $vars['nameKey'], $vars['statusKey']);
-    unset($vars['fieldInfo']);
-    // Also do not serialize the host entity, but only if it has already an id.
-    if ($this->hostEntity && ($this->hostEntityId || $this->hostEntityRevisionId)) {
-      unset($vars['hostEntity']);
-    }
-
-    // Also key the returned array with the variable names so the method may
-    // be easily overridden and customized.
-    return drupal_map_assoc(array_keys($vars));
-  }
-
-  /**
-   * Magic method to invoke setUp() on unserialization.
-   *
-   * @todo: Remove this once it appears in a released entity API module version.
-   */
-  public function __wakeup() {
-    $this->setUp();
-  }
-}
-
-/**
  * Implements hook_menu().
  */
 function field_collection_menu() {
@@ -721,17 +196,6 @@ function field_collection_menu() {
       );
     }
   }
-
-  $items['field_collection/ajax'] = array(
-    'title' => 'Remove item callback',
-    'page callback' => 'field_collection_remove_js',
-    'delivery callback' => 'ajax_deliver',
-    'access callback' => TRUE,
-    'theme callback' => 'ajax_base_page_theme',
-    'type' => MENU_CALLBACK,
-    'file path' => 'includes',
-    'file' => 'form.inc',
-  );
 
   return $items;
 }
@@ -827,7 +291,9 @@ function field_collection_item_access($op, FieldCollectionItemEntity $item = NUL
  */
 function field_collection_item_delete($id) {
   $fci = field_collection_item_load($id);
-  $fci->delete();
+  if ($fci) {
+    $fci->delete();
+  }
 }
 
 /**
@@ -983,6 +449,9 @@ function field_collection_field_update($host_entity_type, $host_entity, $field, 
         if (!empty($entity->is_new)) {
           $entity->setHostEntity($host_entity_type, $host_entity, LANGUAGE_NONE, FALSE);
         }
+        else {
+          $entity->updateHostEntity($host_entity);
+        }
 
         // If the host entity is saved as new revision, do the same for the item.
         if (!empty($host_entity->revision)) {
@@ -1000,6 +469,9 @@ function field_collection_field_update($host_entity_type, $host_entity, $field, 
           if (!isset($is_default) || $is_default) {
             $entity->default_revision = TRUE;
             $entity->archived = FALSE;
+          }
+          else {
+            $entity->default_revision = FALSE;
           }
         }
         $entity->save(TRUE);
@@ -1061,6 +533,9 @@ function field_collection_field_delete($entity_type, $entity, $field, $instance,
         unset($ids[$id_key]);
       }
     }
+    // Set a flag to remember that the host entity is being deleted. See
+    // FieldCollectionItemEntity::deleteHostEntityReference().
+    $entity->field_collection_deleting = TRUE;
 
     entity_delete_multiple('field_collection_item', $ids);
   }
@@ -1112,9 +587,18 @@ function field_collection_item_is_empty(FieldCollectionItemEntity $item) {
   $instances = field_info_instances('field_collection_item', $item->field_name);
   $is_empty = TRUE;
 
+  // Check whether all fields are booleans.
+  $all_boolean = $instances && !(bool) array_filter('_field_collection_field_is_not_boolean');
+
   foreach ($instances as $instance) {
     $field_name = $instance['field_name'];
     $field = field_info_field($field_name);
+
+    // Boolean fields as those are always considered non-empty, thus their
+    // information is not useful and can be skipped by default.
+    if (!$all_boolean && $field['type'] == 'list_boolean') {
+      continue;
+    }
 
     // Determine the list of languages to iterate on.
     $languages = field_available_languages('field_collection_item', $field);
@@ -1135,6 +619,14 @@ function field_collection_item_is_empty(FieldCollectionItemEntity $item) {
   // Allow other modules a chance to alter the value before returning.
   drupal_alter('field_collection_is_empty', $is_empty, $item);
   return $is_empty;
+}
+
+/**
+ * Callback used by array_filter in field_collection_is_empty.
+ */
+function _field_collection_field_is_not_boolean($instance) {
+  $field = field_info_field($instance['field_name']);
+  return $field['type'] != 'list_boolean';
 }
 
 /**
@@ -1481,7 +973,7 @@ function field_collection_field_widget_form(&$form, &$form_state, $field, $insta
         $element['#after_build'][] = 'field_collection_field_widget_embed_delay_required_validation';
       }
 
-      if ($field['cardinality'] == FIELD_CARDINALITY_UNLIMITED) {
+      if ($field['cardinality'] == FIELD_CARDINALITY_UNLIMITED && empty($form_state['programmed'])) {
         $element['remove_button'] = array(
           '#delta' => $delta,
           '#name' => implode('_', $parents) . '_remove_button',
@@ -1491,7 +983,8 @@ function field_collection_field_widget_form(&$form, &$form_state, $field, $insta
           '#submit' => array('field_collection_remove_submit'),
           '#limit_validation_errors' => array(),
           '#ajax' => array(
-            'path' => 'field_collection/ajax',
+            // 'wrapper' is filled in field_collection_field_attach_form().
+            'callback' => 'field_collection_remove_js',
             'effect' => 'fade',
           ),
           '#weight' => 1000,
@@ -1524,48 +1017,49 @@ function field_collection_field_attach_form($entity_type, $entity, &$form, &$for
         $form[$field_name][$element_langcode]['#max_delta']--;
       }
     }
+
+    if ($field['type'] == 'field_collection'
+        && $field['cardinality'] == FIELD_CARDINALITY_UNLIMITED
+        && empty($form_state['programmed'])
+        && field_access('edit', $field, $entity_type)
+        && $instance['widget']['type'] == 'field_collection_embed') {
+
+      $element_langcode = $form[$field_name]['#language'];
+      $element_wrapper = $form[$field_name][$element_langcode]['add_more']['#ajax']['wrapper'];
+      for ($i = 0; $i <= $form[$field_name][$element_langcode]['#max_delta']; $i++) {
+        if (isset($form[$field_name][$element_langcode][$i]['remove_button'])) {
+          $form[$field_name][$element_langcode][$i]['remove_button']['#ajax']['wrapper'] = $element_wrapper;
+        }
+      }
+    }
   }
 }
 
 /**
- * Page callback to handle AJAX for removing a field collection item.
+ * AJAX callback for removing a field collection item.
  *
- * This is a direct page callback. The actual job of deleting the item is
- * done in the submit handler for the button, so all we really need to
- * do is process the form and then generate output. We generate this
- * output by doing a replace command on the id of the entire form element.
+ * This returns the new page content to replace the page content made obsolete
+ * by the form submission.
+ *
+ * @see field_collection_remove_submit()
  */
-function field_collection_remove_js() {
-  // drupal_html_id() very helpfully ensures that all html IDS are unique
-  // on a page. Unfortunately what it doesn't realize is that the IDs
-  // we are generating are going to replace IDs that already exist, so
-  // this actually works against us.
-  if (isset($_POST['ajax_html_ids'])) {
-    unset($_POST['ajax_html_ids']);
-  }
-
-  list($form, $form_state, $form_id, $form_build_id, $commands) = ajax_get_form();
-  drupal_process_form($form['#form_id'], $form, $form_state);
-
-  // Get the information on what we're removing.
+function field_collection_remove_js($form, $form_state) {
   $button = $form_state['triggering_element'];
-  // Go two levels up in the form, to the whole widget.
-  $element = drupal_array_get_nested_value($form, array_slice($button['#array_parents'], 0, -3));
-  // Now send back the proper AJAX command to replace it.
-  $commands[] = ajax_command_replace('#' . $element['#id'], drupal_render($element));
-  $return = array(
-    '#type' => 'ajax',
-    '#commands' => $commands,
-  );
 
-  // Because we're doing this ourselves, messages aren't automatic. We have
-  // to add them.
-  $messages = theme('status_messages');
-  if ($messages) {
-    $return['#commands'][] = ajax_command_prepend('#' . $element['#id'], $messages);
+  // Go one level up in the form, to the widgets container.
+  $element = drupal_array_get_nested_value($form, array_slice($button['#array_parents'], 0, -2));
+  $field_name = $element['#field_name'];
+  $langcode = $element['#language'];
+  $parents = $element['#field_parents'];
+
+  $field_state = field_form_get_state($parents, $field_name, $langcode, $form_state);
+
+  $field = $field_state['field'];
+  if ($field['cardinality'] != FIELD_CARDINALITY_UNLIMITED) {
+    return;
   }
 
-  return $return;
+  return $element;
 }
 
 /**
@@ -1995,4 +1489,19 @@ function field_collection_devel_generate($object, $field, $instance, $bundle) {
  */
 function field_collection_hide_blank_items($field) {
   return !empty($field['settings']['hide_blank_items']) && $field['cardinality'] == FIELD_CARDINALITY_UNLIMITED;
+}
+
+/**
+ * Implements hook_admin_menu_map().
+ */
+function field_collection_admin_menu_map() {
+  if (user_access('administer field collections')) {
+    $map['admin/structure/field-collections/%field_collection_field_name'] = array(
+      'parent' => 'admin/structure/field-collections',
+      'arguments' => array(
+        array('%field_collection_field_name' => array_keys(field_read_fields(array('type' => 'field_collection')))),
+      ),
+    );
+    return $map;
+  }
 }

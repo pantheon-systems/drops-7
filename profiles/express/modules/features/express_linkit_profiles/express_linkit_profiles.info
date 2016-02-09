@@ -1,0 +1,8 @@
+name = express_linkit_profiles
+core = 7.x
+package = Features
+dependencies[] = ctools
+dependencies[] = linkit
+features[ctools][] = linkit:linkit_profiles:1
+features[features_api][] = api:2
+features[linkit_profiles][] = express_linkit_field_profile

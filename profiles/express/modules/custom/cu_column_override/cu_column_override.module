@@ -77,16 +77,15 @@ function cu_column_override_preprocess_page(&$page) {
   // Check for the active theme reaction.
   if ($plugin = context_get_plugin('reaction', 'column_override')) {
     if ($column_override = $plugin->execute()) {
-    
-      
+
+
     }
   }
 }
 function cu_column_override_preprocess_block(&$vars) {
-  
+
   if ($plugin = context_get_plugin('reaction', 'column_override')) {
     if ($column_override = $plugin->execute()) {
-    
       $block_counter = &drupal_static(__FUNCTION__, array());
       $vars['block'] = $vars['elements']['#block'];
       // All blocks get an independent counter for each region.
@@ -95,54 +94,27 @@ function cu_column_override_preprocess_block(&$vars) {
       }
       // Same with zebra striping.
       $vars['block_id'] = $block_counter[$vars['block']->region]++;
-    
+
       switch ($vars['block']->region) {
-        
+
         case 'after_content':
           if ($column_override['column_override_after_content_columns'] != 'no-change') {
             $columns = $column_override['column_override_after_content_columns'];
-            $vars['grid_size_blocks'] = 'grid-' . 12/$columns;
-             
-            $vars['classes_array'][] = 'grid-' . 12/$columns;
-            if (($block_counter[$vars['block']->region]) == 0) {
-              $vars['classes_array'][] = 'new-block-row alpha';
-            }
-            if (($block_counter[$vars['block']->region]+1) == $columns) {
-              $vars['classes_array'][] = 'omega';
-              $block_counter[$vars['block']->region] = -1;
-            }
+            $vars['column_override'] = $columns;
           }
           break;
-          
+
         case 'lower':
           if ($column_override['column_override_after_content_2_columns'] != 'no-change') {
             $columns = $column_override['column_override_after_content_2_columns'];
-            $vars['grid_size_blocks'] = 'grid-' . 12/$columns;
-             
-            $vars['classes_array'][] = 'grid-' . 12/$columns;
-            if (($block_counter[$vars['block']->region]) == 0) {
-              $vars['classes_array'][] = 'new-block-row alpha';
-            }
-            if (($block_counter[$vars['block']->region]+1) == $columns) {
-              $vars['classes_array'][] = 'omega';
-              $block_counter[$vars['block']->region] = -1;
-            }
+            $vars['column_override'] = $columns;
           }
           break;
-          
+
         case 'footer':
           if ($column_override['column_override_footer_columns'] != 'no-change') {
             $columns = $column_override['column_override_footer_columns'];
-            $vars['grid_size_blocks'] = 'grid-' . 12/$columns;
-             
-            $vars['classes_array'][] = 'grid-' . 12/$columns;
-            if (($block_counter[$vars['block']->region]) == 0) {
-              $vars['classes_array'][] = 'new-block-row alpha';
-            }
-            if (($block_counter[$vars['block']->region]+1) == $columns) {
-              $vars['classes_array'][] = 'omega';
-              $block_counter[$vars['block']->region] = -1;
-            }
+            $vars['column_override'] = $columns;
           }
           break;
       }

@@ -1,10 +1,9 @@
 <?php
-/*
+
+/**
  * Implements hook_enable()
  */
-
 function cu_photo_gallery_bundle_enable() {
-  //module_enable(FROM .INFO?);
 
 }
 

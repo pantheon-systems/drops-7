@@ -10,7 +10,7 @@
 function cu_faq_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_qa'
+  // Exported field_base: 'field_qa'.
   $field_bases['field_qa'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -33,7 +33,7 @@ function cu_faq_field_default_field_bases() {
     'type' => 'field_collection',
   );
 
-  // Exported field_base: 'field_qa_answer'
+  // Exported field_base: 'field_qa_answer'.
   $field_bases['field_qa_answer'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -54,7 +54,7 @@ function cu_faq_field_default_field_bases() {
     'type' => 'text_long',
   );
 
-  // Exported field_base: 'field_qa_collection'
+  // Exported field_base: 'field_qa_collection'.
   $field_bases['field_qa_collection'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -76,7 +76,7 @@ function cu_faq_field_default_field_bases() {
     'type' => 'field_collection',
   );
 
-  // Exported field_base: 'field_qa_collection_title'
+  // Exported field_base: 'field_qa_collection_title'.
   $field_bases['field_qa_collection_title'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -97,7 +97,7 @@ function cu_faq_field_default_field_bases() {
     'type' => 'text',
   );
 
-  // Exported field_base: 'field_qa_question'
+  // Exported field_base: 'field_qa_question'.
   $field_bases['field_qa_question'] = array(
     'active' => 1,
     'cardinality' => 1,

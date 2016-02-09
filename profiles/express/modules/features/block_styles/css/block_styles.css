@@ -14,8 +14,10 @@
 @media screen and (min-width: 960px) { .blockoutline .block-inner, .blockoutline-example { padding: 20px; } }
 .blockoutline .block-inner p:last-child, .blockoutline-example p:last-child { margin-bottom: 0; }
 
-.blockunderline .block-inner, .blockunderline-example { border-bottom: 1px solid #e0e0e0; padding: 0 0 20px 0; }
-.blockunderline .block-inner p:last-child, .blockunderline-example p:last-child { margin-bottom: 0; }
+.blockunderline > .block-inner, .blockunderline-example { border-bottom: 1px solid #e0e0e0; padding: 0 0 20px 0; }
+.blockunderline > .block-inner p:last-child, .blockunderline-example p:last-child { margin-bottom: 0; }
+
+.block.block-bean-type-block-row.blockunderline { margin-bottom: 20px; }
 
 /* Examples css */
 table.block-style-examples td { width: 25%; }

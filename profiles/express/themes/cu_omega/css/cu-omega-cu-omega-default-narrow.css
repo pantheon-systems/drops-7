@@ -58,7 +58,8 @@ h2.site-title {
   margin-top: 0;
 }
 
-h6.site-slogan {
+h6.site-slogan,
+.site-slogan {
   margin:8px 0 0 0;
   font-size: 11px;
   text-transform: uppercase;

@@ -1,0 +1,247 @@
+<?php
+
+/**
+ * Function to return content type bundles.
+ * Store as variable(express_add_content_node_bundles), or edit array.
+ * $bundles['bundle_name']['title'] = 'Bundle Title';
+ * $bundles['bundle_name']['weight'] = -99 (optional);
+ * $bundles['bundle_name']['types'][] = 'Content Type Name';
+ */
+function express_add_content_node_bundles() {
+  $bundles['express_core']['title'] = 'Express Core';
+  $bundles['express_core']['weight'] = -99;
+  $bundles['express_core']['types'][] = 'Basic page';
+  $bundles['express_core']['types'][] = 'File';
+  $bundles['express_core']['types'][] = 'Frequently Asked Questions';
+
+  $bundles['news']['title'] = 'News and Articles';
+  $bundles['news']['types'][] = 'Article';
+  $bundles['news']['types'][] = 'Article List Page';
+
+  $bundles['people']['title'] = 'People';
+  $bundles['people']['types'][] = 'Person';
+  $bundles['people']['types'][] = 'People List Page';
+
+  $bundles['photo']['title'] = 'Photo Gallery';
+  $bundles['photo']['types'][] = 'Photo Gallery';
+
+  $bundles['forms']['title'] = 'Forms';
+  $bundles['forms']['types'][] = 'Webform';
+  return $bundles;
+}
+
+/**
+ * Function to return block type bundles.
+ * Store as variable(express_add_content_bean_bundles), or edit array.
+ * $bundles['bundle_name']['title'] = 'Bundle Title';
+ * $bundles['bundle_name']['weight'] = -99 (optional);
+ * $bundles['bundle_name']['types'][] = 'Content Type Name';
+ */
+function express_add_content_bean_bundles() {
+  $bundles['express_core']['title'] = 'Express Core';
+  $bundles['express_core']['weight'] = -99;
+  $bundles['express_core']['types'][] = 'Hero Unit';
+  $bundles['express_core']['types'][] = 'Slider';
+  $bundles['express_core']['types'][] = 'Text Block';
+
+  $bundles['news']['title'] = 'News and Articles';
+  $bundles['news']['types'][] = 'Article List';
+  $bundles['news']['types'][] = 'Article Feature';
+  $bundles['news']['types'][] = 'Article Grid';
+  $bundles['news']['types'][] = 'Article Slider';
+
+  $bundles['people']['title'] = 'People';
+  $bundles['people']['types'][] = 'People List Block';
+
+  $bundles['events']['title'] = 'Events';
+  $bundles['events']['types'][] = 'Events Calendar Block';
+  $bundles['events']['types'][] = 'Events Calendar Grid';
+
+  $bundles['social']['title'] = 'Social Media';
+  $bundles['social']['types'][] = 'Social Links';
+  $bundles['social']['types'][] = 'Facebook Activity';
+  $bundles['social']['types'][] = 'Facebook Like Button';
+  $bundles['social']['types'][] = 'Twitter Block';
+
+  $bundles['advanced_content']['title'] = 'Advanced Content';
+  $bundles['advanced_content']['types'][] = 'Content Grid';
+  $bundles['advanced_content']['types'][] = 'Quicktab';
+  $bundles['advanced_content']['types'][] = 'Video Reveal';
+
+  $bundles['advanced_layout']['title'] = 'Advanced Layout';
+  $bundles['advanced_layout']['types'][] = 'Block Row';
+  $bundles['advanced_layout']['types'][] = 'Block Section';
+
+
+  return $bundles;
+}
+
+function express_add_content_node_add($vars) {
+  // Check to see if any content types exist yet
+  if ($vars['content']) {
+    $output = array();
+    // Get node bundles
+    $bundles = variable_get('express_add_content_node_bundles', express_add_content_node_bundles());
+    uasort($bundles, '_express_add_content_sort_types');
+    // Links fromt node_add_list().
+    $content = $vars['content'];
+    // Build new links list with title as key
+    $links = array();
+    foreach($content as $link) {
+      $key = $link['title'];
+      $links[$key] = $link;
+    }
+    // Step through bundles
+    foreach ($bundles as $key => $bundle) {
+      $output[$key]['title']['#markup'] = '<h2>' . $bundle['title'] . '</h2>';
+      $bundle_class = 'bundle-type-' . _express_add_content_string_to_machine($bundle['title']);
+      $output[$key]['#prefix'] = '<div class="admin-panel express-add-group ' . $bundle_class . '">';
+      $output[$key]['#suffix'] = '</div>';
+      // Add content types for each bundle
+      $types = '';
+      foreach ($bundle['types'] as $type) {
+        if (!empty($links[$type])) {
+          $types .= '<li class="clearfix">';
+          $types .= '<span class="label">' . l($links[$type]['title'], $links[$type]['href'], $links[$type]['localized_options']) . '</span>';
+          $types .= '<div class="description">' . filter_xss_admin($links[$type]['description']) . '</div>';
+          $types .= '</li>';
+          // Remove from $links array so we can check for leftovers that are not included in bundles
+          unset($links[$type]);
+        }
+      }
+      // Add markup for types, otherwise unset so empty set is not rendered
+      if (!empty($types)) {
+        $output[$key]['types']['#markup'] = $types;
+        $output[$key]['types']['#prefix'] = '<ul class="admin-list">';
+        $output[$key]['types']['#suffix'] = '</ul>';
+      } else {
+        unset($output[$key]);
+      }
+    }
+    // Output leftover links that were not assigned to a bundle
+    if (!empty($links)) {
+      $output['other']['title']['#markup'] = '<h2>Other</h2>';
+      $output['other']['#prefix'] = '<div class="express-add-group">';
+      $output['other']['#suffix'] = '</div>';
+      $types = '<ul class="admin-list">';
+      foreach ($links as $link) {
+        $types .= '<li class="clearfix">';
+        $types .= '<span class="label">' . l($link['title'], $link['href']) . '</span>';
+        $types .= '<div class="description">' . filter_xss_admin($link['description']) . '</div>';
+        $types .= '</li>';
+      }
+      $types .= '</ul>';
+      $output['other']['types']['#markup'] = $types;
+    }
+    return $output;
+  } else {
+    $output = '<p>' . t('You have not created any content types yet. Go to the <a href="@create-content">content type creation page</a> to add a new content type.', array('@create-content' => url('admin/structure/types/add'))) . '</p>';
+    return $output;
+  }
+}
+
+function express_add_content_bean_add($vars) {
+  // Check to see if any content types exist yet
+  if ($vars['content']) {
+    $output = array();
+    // Get node bundles
+    $bundles = variable_get('express_add_content_bean_bundles', express_add_content_bean_bundles());
+    uasort($bundles, '_express_add_content_sort_types');
+    // Links fromt node_add_list().
+    $content = $vars['content'];
+    // Build new links list with title as key
+    $links = array();
+    // $vars['content'] for beans is different than nodes, so build a $links array in the same structure
+    foreach($content as $bean) {
+      $key = $bean->getLabel();
+      // build bean add path and check access
+      $path = 'block/add/' . $bean->buildURL();
+      $item = menu_get_item($path);
+      if (drupal_valid_path($item)) {
+        $links[$key] = array(
+          'title' => $key,
+          'href' => $path,
+          'description' => $bean->getDescription(),
+        );
+      }
+    }
+    // Step through bundles
+    foreach ($bundles as $key => $bundle) {
+      $output[$key]['title']['#markup'] = '<h2>' . $bundle['title'] . '</h2>';
+      $bundle_class = 'bundle-type-' . _express_add_content_string_to_machine($bundle['title']);
+      $output[$key]['#prefix'] = '<div class="express-add-group ' . $bundle_class . '">';
+      $output[$key]['#suffix'] = '</div>';
+      // Add content types for each bundle
+      $types = '';
+      foreach ($bundle['types'] as $type) {
+        if (!empty($links[$type])) {
+          $types .= '<li class="clearfix">';
+          $types .= '<span class="label">' . l($links[$type]['title'], $links[$type]['href']) . '</span>';
+          $types .= '<div class="description">' . filter_xss_admin($links[$type]['description']) . '</div>';
+          $types .= '</li>';
+          // Remove from $links array so we can check for leftovers that are not included in bundles
+          unset($links[$type]);
+        }
+      }
+      // Add markup for types, otherwise unset so empty set is not rendered
+      if (!empty($types)) {
+        $output[$key]['types']['#markup'] = $types;
+        $output[$key]['types']['#prefix'] = '<ul class="admin-list">';
+        $output[$key]['types']['#suffix'] = '</ul>';
+      } else {
+        unset($output[$key]);
+      }
+    }
+    // Output leftover links that were not assigned to a bundle
+    if (!empty($links)) {
+      $output['other']['title']['#markup'] = '<h2>Other</h2>';
+      $output['other']['#prefix'] = '<div class="express-add-group">';
+      $output['other']['#suffix'] = '</div>';
+      $types = '<ul class="admin-list">';
+      foreach ($links as $link) {
+        $types .= '<li class="clearfix">';
+        $types .= '<span class="label">' . l($link['title'], $link['href']) . '</span>';
+        $types .= '<div class="description">' . filter_xss_admin($link['description']) . '</div>';
+        $types .= '</li>';
+      }
+      $types .= '</ul>';
+      $output['other']['types']['#markup'] = $types;
+    }
+    return $output;
+  } else {
+    $output = '<p>' . t('You have not created any content types yet. Go to the <a href="@create-content">content type creation page</a> to add a new content type.', array('@create-content' => url('admin/structure/types/add'))) . '</p>';
+    return $output;
+  }
+}
+
+function express_add_content_theme_registry_alter(&$theme_registry) {
+  $theme_registry['node_add_list']['function'] = 'express_add_content_node_add';
+  $theme_registry['bean_add_list']['function'] = 'express_add_content_bean_add';
+}
+
+/**
+ * Sort bundle arrays by weight/title.
+ */
+function _express_add_content_sort_types($a, $b) {
+  // Assign weights, even if empty
+  $a['weight'] = isset($a['weight']) ? $a['weight'] : 0;
+  $b['weight'] = isset($b['weight']) ? $b['weight'] : 0;
+  // Sort by title
+  if ($a['weight'] == $b['weight']) {
+    return strcmp($a['title'], $b['title']);
+  }
+  // Sort by weight
+  return $a['weight'] - $b['weight'];
+}
+
+/**
+ * Convert string to machine name.
+ */
+ function _express_add_content_string_to_machine($string) {
+  return strtolower(preg_replace(array(
+    '/[^a-zA-Z0-9]+/',
+    '/-+/',
+    '/^-+/',
+    '/-+$/',
+  ), array('-', '-', '', ''), $string));
+}

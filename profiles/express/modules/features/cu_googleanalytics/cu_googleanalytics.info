@@ -1,0 +1,35 @@
+name = CU Google Analytics
+description = Random bits of functionality associated with Google Analytics.
+core = 7.x
+package = CU-Boulder
+version = 7.x-1.0
+project = cu_bucket
+dependencies[] = features
+dependencies[] = strongarm
+dependencies[] = googleanalytics
+
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[variable][] = googleanalytics_account
+features[variable][] = googleanalytics_cache
+features[variable][] = googleanalytics_codesnippet_after
+features[variable][] = googleanalytics_codesnippet_before
+features[variable][] = googleanalytics_cross_domains
+features[variable][] = googleanalytics_custom
+features[variable][] = googleanalytics_custom_var
+features[variable][] = googleanalytics_domain_mode
+features[variable][] = googleanalytics_js_scope
+features[variable][] = googleanalytics_pages
+features[variable][] = googleanalytics_privacy_donottrack
+features[variable][] = googleanalytics_roles
+features[variable][] = googleanalytics_site_search
+features[variable][] = googleanalytics_trackadsense
+features[variable][] = googleanalytics_tracker_anonymizeip
+features[variable][] = googleanalytics_trackfiles
+features[variable][] = googleanalytics_trackfiles_extensions
+features[variable][] = googleanalytics_trackmailto
+features[variable][] = googleanalytics_trackoutbound
+features[variable][] = googleanalytics_trackoutboundaspageview
+features[variable][] = googleanalytics_visibility_pages
+features[variable][] = googleanalytics_visibility_roles
+

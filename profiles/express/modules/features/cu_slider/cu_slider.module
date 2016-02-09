@@ -143,8 +143,9 @@ function cu_slider_image_default_styles() {
         'module' => 'focal_point',
         'name' => 'focal_point_scale_and_crop',
         'data' => array(
-          'width' => 960,
-          'height' => 360,
+          'width' => 1500,
+          'height' => 563,
+          'upscale' => 1,
         ),
         'weight' => 2,
       ),
@@ -165,8 +166,9 @@ function cu_slider_image_default_styles() {
         'module' => 'focal_point',
         'name' => 'focal_point_scale_and_crop',
         'data' => array(
-          'width' => 960,
-          'height' => 640,
+          'width' => 1500,
+          'height' => 1000,
+          'upscale' => 1,
         ),
         'weight' => 2,
       ),

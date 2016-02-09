@@ -1,7 +1,7 @@
 /* This file will hold styles that are loaded using the same media query as the normal grid. */
 /* If you are using the default media queries provided by Omega, these styles will also
  *  apply to the widescreen layout unless they are overridden by the widescreen styles. */
- 
+
 .field-type-text-with-summary img,
 .field-type-text-long img {
   max-width:100%;
@@ -57,7 +57,8 @@ h2.site-title {
   margin-top:0;
 }
 
-h6.site-slogan {
+h6.site-slogan,
+.site-slogan {
   margin:8px 0 0 0;
   font-size: 12px;
   text-transform: uppercase;
@@ -141,7 +142,7 @@ img.beboulder {
   padding:40px 20px;
   padding: 80px 20px 0 20px;
 }
-  
+
 #page-title-image h1 {
   max-width:60%;
   font-size:220%;

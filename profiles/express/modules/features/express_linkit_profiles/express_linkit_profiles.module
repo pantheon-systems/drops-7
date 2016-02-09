@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the express_linkit_profiles feature.
+ */
+
+include_once 'express_linkit_profiles.features.inc';

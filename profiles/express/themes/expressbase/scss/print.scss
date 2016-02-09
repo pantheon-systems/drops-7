@@ -1,0 +1,252 @@
+* { height: auto; }
+body {
+  font-family: "Helvetica-Neue", Helvetica, Arial, sans-serif;
+  font-size: 12pt;
+  margin: 1em;
+  background-color: #fff;
+  line-height: 130%;
+}
+
+
+
+.print-breadcrumb {
+  text-align: right;
+  font-size: 10pt;
+}
+
+.print-hr {
+  border: 0;
+  height: 1px;
+  width: 100%;
+  color: #9E9E9E;
+  background-color: #9E9E9E;
+}
+
+th {
+  text-align: left; /* LTR */
+  color: #006;
+  border-bottom: 1px solid #ccc;
+}
+tr.odd {background-color: #ddd;}
+tr.even {background-color: #fff;}
+td {padding: 5px;}
+#menu {visibility: hidden;}
+#main {margin: 1em;}
+a:link {color: #000;}
+a:visited {color: #000;}
+a:hover {color: #00f;}
+a:link img, a:visited img {border: 0;}
+.print-footnote {font-size: xx-small;}
+img.print-logo {border: 0;}
+.print-message {
+  border: medium dotted blue;
+  padding: 1em;
+}
+.print-source_url {font-size: small;}
+.print-links {font-size: small;}
+.print-footer {text-align: center;}
+
+
+.clearfix:before,
+.clearfix:after {
+    content: " ";
+    display: table;
+}
+
+.clearfix:after {
+    clear: both;
+}
+#mobile-menu-toggle,
+#toggle,
+#alerts-wide-wrapper,
+#search,
+#secondary-menu-wrapper,
+#main-menu-wrapper,
+#mobile-navigation-wrapper,
+.sidebar,
+#after-content-wrapper,
+#after-content2-wrapper,
+#footer-wrapper,
+#backstretch,
+#breadcrumb,
+#logo,
+#site-slogan,
+#skip-link,
+.element-invisible,
+#slider-wrapper,
+#intro-wide-wrapper,
+#post-wide-wrapper
+iframe,
+img.beboulder,
+.cu-boulder-block .required-links,
+#cu_back_to_top,
+a.print-link {
+  display: none !important;
+}
+
+#print-header {
+  border-bottom: 1px solid #aaa;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+.print-site-name {
+  float: right;
+  padding-top: 8px;
+  font-weight: bold;
+  margin-left: 40px;
+  max-width: 50%;
+}
+
+#site-information-wrapper {
+  padding-top: 20px;
+  border-top: 1px solid #aaa;
+  font-size: 80%;
+  a {
+    text-decoration: none;
+  }
+  h2 {
+    margin: 0;
+    font-size: 100%;
+  }
+  p {
+    margin-top: 0;
+  }
+}
+
+#footer-section .block {
+  display: none;
+}
+#footer-section .cu-boulder-block {
+  display: block;
+}
+
+#content-wrapper {
+  h1 {
+    font-size: 24pt;
+    margin: 0;
+    padding: 0;
+  }
+  h2 {
+    font-size: 21pt;
+  }
+  h3 {
+    font-size: 18pt;
+  }
+  h4 {
+    font-size: 17pt;
+  }
+  h5 {
+    font-size: 16pt;
+  }
+  h6 {
+    font-size: 15pt;
+    margin: 0;
+    padding: 0;
+  }
+}
+
+
+.ui-accordion-content,
+.expand-content,
+.small-expand-content {
+  display: block !important;
+}
+#footer-section h2 {
+  font-size: 100%;
+  font-weight: bold;
+  margin: 0;
+}
+
+
+/* IMAGES */
+
+.field-type-text-with-summary img,
+.field-type-text-long img {
+  max-width:100%;
+}
+
+.field-type-text-with-summary img[style="float:left"],
+.field-type-text-long img[style="float:left"] {
+  float:left !important;
+  margin:0 20px 20px 0;
+}
+.field-type-text-with-summary img[style="float:right"],
+.field-type-text-long img[style="float:right"] {
+  float:right !important;
+  margin:0 0 20px 20px;
+}
+
+/* CONTENT SIDEBARS */
+
+.region-content-sidebar-right,
+.region-content-sidebar-left {
+  width:33%;
+  border:1px solid #aaa;
+  padding: 20px;
+  float: right;
+  margin: 0 0 20px 20px;
+}
+
+#content-wrapper {
+  a[href]:after {
+     content:" ("attr(href)")";
+     color:#868686;
+     background-color:inherit;
+     font-style:italic;
+     font-size:80%;
+  }
+}
+
+.image-caption {
+  font-size: 80%;
+  line-height: 120%;
+  display: table;
+  margin-bottom: 20px;
+}
+.image-caption-right {
+  float: right;
+  margin-left: 20px;
+}
+.image-caption-left {
+  float: left;
+  margin-right: 20px;
+}
+.image-caption p {
+  display: table-caption;
+  caption-side: bottom;
+  padding: 5px 10px;
+  background: #f0f0f0;
+  margin: 0;
+}
+div.image-caption  p:first-child {
+  display: block;
+  margin: 0;
+  padding: 0;
+}
+.image-caption p:last-child {
+  margin-bottom: 0;
+}
+.image-caption img {
+  display: block;
+  float: none;
+  width: 100%;
+  height: auto;
+  max-width: 100%;
+  margin-bottom: 0px;
+}
+
+/* DRUPAL STUFF IF YOU"RE LOGGED IN */
+#navbar-administration,
+#toolbar,
+#environment-indicator,
+ul.primary,
+.contextual-links-wrapper,
+ul.contextual-links {
+  display: none !important;
+}
+
+/* LIVECHAT */
+
+#livechat-compact-container {
+  display: none !important;
+}

@@ -1,10 +1,9 @@
 <?php
-/*
- * Implements hook_enable()
- */
 
+/**
+ * Implements hook_enable().
+ */
 function cu_news_bundle_enable() {
-  //module_enable(FROM .INFO?);
 
 }
 

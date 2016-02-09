@@ -1,8 +1,0 @@
-name = CU Module Manager
-description = Manages Module Life Cycle and Groupings in Express Releases 
-package = CU-Active
-core = 7.x
-version = 7.x-1.6
-dependencies[] = module_filter
-
-configure = admin/config/development/module-manager

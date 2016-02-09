@@ -1,4 +1,8 @@
 <?php
+/**
+ * @file
+ * Metatag primary classes.
+ */
 
 interface DrupalMetaTagInterface {
 
@@ -23,6 +27,7 @@ interface DrupalMetaTagInterface {
   function getElement();
 
   function tidyValue($value);
+
 }
 
 class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
@@ -39,7 +44,7 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
   }
 
   /**
-   * Calculate the weight or this meta tag.
+   * Calculate the weight of this meta tag.
    *
    * @return integer
    */
@@ -55,14 +60,39 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
     return $weight + ($counter++ * 0.1);
   }
 
+  /**
+   * Build the form for this meta tag.
+   *
+   * @return array
+   *   A standard FormAPI array.
+   */
   public function getForm(array $options = array()) {
     return array();
   }
 
+  /**
+   * Get the string value of this meta tag.
+   *
+   * @return string
+   *   The value of this meta tag.
+   */
   public function getValue(array $options = array()) {
-    return $this->tidyValue($this->data['value']);
+    $value = $this->tidyValue($this->data['value']);
+
+    // Translate the final output string prior to output. Use the
+    // 'metatag_output' i18n_string object type, and pass along the meta tag's
+    // options as the context so it can be handled appropriately.
+    $value = metatag_translate_metatag($value, $this->info['name'], $options, NULL, TRUE);
+
+    return $value;
   }
 
+  /**
+   * Get the HTML tag for this meta tag.
+   *
+   * @return array
+   *   A render array for this meta tag.
+   */
   public function getElement(array $options = array()) {
     $value = $this->getValue($options);
     if (strlen($value) === 0) {
@@ -136,9 +166,6 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
     // doesn't end up with a bunch of a-circumflex characters.
     $value = str_replace('&nbsp;', ' ', $value);
 
-    // Convert any HTML entities into regular characters.
-    $value = decode_entities($value);
-
     // Remove any HTML code that might have been included.
     $value = strip_tags($value);
 
@@ -150,6 +177,7 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
 
     return $value;
   }
+
 }
 
 /**
@@ -157,6 +185,9 @@ class DrupalDefaultMetaTag implements DrupalMetaTagInterface {
  */
 class DrupalTextMetaTag extends DrupalDefaultMetaTag {
 
+  /**
+   * {@inheritdoc}
+   */
   public function getForm(array $options = array()) {
     $options += array(
       'token types' => array(),
@@ -166,8 +197,8 @@ class DrupalTextMetaTag extends DrupalDefaultMetaTag {
 
     $form['value'] += array(
       '#type' => 'textfield',
-      '#title' => $this->info['label'],
-      '#description' => !empty($this->info['description']) ? $this->info['description'] : '',
+      '#title' => t($this->info['label']),
+      '#description' => !empty($this->info['description']) ? t($this->info['description']) : '',
       '#default_value' => isset($this->data['value']) ? $this->data['value'] : '',
       '#element_validate' => array('token_element_validate'),
       '#token_types' => $options['token types'],
@@ -210,18 +241,23 @@ class DrupalTextMetaTag extends DrupalDefaultMetaTag {
     return $form;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getValue(array $options = array()) {
     $options += array(
       'instance' => '',
       'token data' => array(),
+      // Remove any remaining token after the string is parsed.
       'clear' => TRUE,
-      'sanitize' => TRUE,
+      // This is safe to do because the strings will be processed by the normal
+      // theming system prior to output as an actual HTML tag.
+      'sanitize' => FALSE,
       'raw' => FALSE,
     );
 
-    $name = "metatag:" . $options["instance"] . ":" . $this->info["name"];
+    $value = $this->data['value'];
 
-    $value = metatag_translate($name, $this->data['value']);
     if (empty($options['raw'])) {
       // Give other modules the opportunity to use hook_metatag_pattern_alter()
       // to modify defined token patterns and values before replacement.
@@ -231,27 +267,45 @@ class DrupalTextMetaTag extends DrupalDefaultMetaTag {
 
     // Special handling for images.
     if (!empty($this->info['image'])) {
-      // If this contains embedded image tags, extract the image URLs.
-      if (strip_tags($value) != $value) {
-        if (!empty($this->info['multiple'])) {
-          $values = explode(',', $value);
-        }
-        else {
-          $values = array($value);
-        }
-        foreach ($values as $key => $val) {
+      // Support multiple items, whether it's needed or not. Also remove the
+      // empty values.
+      $values = array_filter(explode(',', $value));
+
+      // If this meta tag does *not* allow multiple items, only keep the first
+      // one.
+      if (empty($this->info['multiple']) && !empty($values[0])) {
+        $values = array($values[0]);
+      }
+
+      foreach ($values as $key => &$image_value) {
+        // If this contains embedded image tags, extract the image URLs.
+        if (strip_tags($image_value) != $image_value) {
           $matches = array();
           preg_match('/src="([^"]*)"/', $val, $matches);
           if (!empty($matches[1])) {
-            $values[$key] = $matches[1];
+            $image_value = $matches[1];
           }
         }
-        $value = implode(',', $values);
+
+        // File paths that contain "public://" are relative to the public file
+        // directory, so convert them to a publicly accessible URL.
+        if (strpos($image_value, 'public://') === 0) {
+          $image_value = file_create_url($image_value);
+        }
       }
+      $value = implode(',', $values);
     }
 
-    return $this->tidyValue($value);
+    $value = $this->tidyValue($value);
+
+    // Translate the final output string prior to output. Use the
+    // 'metatag_output' i18n_string object type, and pass along the meta tag's
+    // options as the context so it can be handled appropriately.
+    $value = metatag_translate_metatag($value, $this->info['name'], $options, NULL, TRUE);
+
+    return $value;
   }
+
 }
 
 /**
@@ -259,6 +313,9 @@ class DrupalTextMetaTag extends DrupalDefaultMetaTag {
  */
 class DrupalLinkMetaTag extends DrupalTextMetaTag {
 
+  /**
+   * {@inheritdoc}
+   */
   public function getElement(array $options = array()) {
     $element = isset($this->info['element']) ? $this->info['element'] : array();
 
@@ -286,6 +343,7 @@ class DrupalLinkMetaTag extends DrupalTextMetaTag {
       '#attached' => array('drupal_add_html_head' => array(array($element, $element['#id']))),
     );
   }
+
 }
 
 /**
@@ -296,13 +354,18 @@ class DrupalLinkMetaTag extends DrupalTextMetaTag {
  */
 class DrupalTitleMetaTag extends DrupalTextMetaTag {
 
+  /**
+   * {@inheritdoc}
+   */
   public function getElement(array $options = array()) {
     $element = array();
-    $value = $this->getValue($options);
-    $element['#attached']['metatag_set_preprocess_variable'][] = array('html', 'head_title', $value);
-    $element['#attached']['metatag_set_preprocess_variable'][] = array('html', 'head_array', array('title' => $value));
+    if ($value = $this->getValue($options)) {
+      $element['#attached']['metatag_set_preprocess_variable'][] = array('html', 'head_title', $value);
+      $element['#attached']['metatag_set_preprocess_variable'][] = array('html', 'head_array', array('title' => $value));
+    }
     return $element;
   }
+
 }
 
 /**
@@ -310,6 +373,9 @@ class DrupalTitleMetaTag extends DrupalTextMetaTag {
  */
 class DrupalListMetaTag extends DrupalDefaultMetaTag {
 
+  /**
+   * {@inheritdoc}
+   */
   function __construct(array $info, array $data = NULL) {
     // Ensure that the $data['value] argument is an array.
     if (empty($data['value'])) {
@@ -320,6 +386,9 @@ class DrupalListMetaTag extends DrupalDefaultMetaTag {
     parent::__construct($info, $data);
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getForm(array $options = array()) {
     $form['value'] = isset($this->info['form']) ? $this->info['form'] : array();
 
@@ -333,12 +402,23 @@ class DrupalListMetaTag extends DrupalDefaultMetaTag {
     return $form;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getValue(array $options = array()) {
     $values = array_keys(array_filter($this->data['value']));
     sort($values);
     $value = implode(', ', $values);
-    return $this->tidyValue($value);
+    $value = $this->tidyValue($value);
+
+    // Translate the final output string prior to output. Use the
+    // 'metatag_output' i18n_string object type, and pass along the meta tag's
+    // options as the context so it can be handled appropriately.
+    $value = metatag_translate_metatag($value, $this->info['name'], $options, NULL, TRUE);
+
+    return $value;
   }
+
 }
 
 /**
@@ -346,6 +426,9 @@ class DrupalListMetaTag extends DrupalDefaultMetaTag {
  */
 class DrupalDateIntervalMetaTag extends DrupalDefaultMetaTag {
 
+  /**
+   * {@inheritdoc}
+   */
   public function getForm(array $options = array()) {
     $form['value'] = array(
       '#type' => 'textfield',
@@ -371,6 +454,9 @@ class DrupalDateIntervalMetaTag extends DrupalDefaultMetaTag {
     return $form;
   }
 
+  /**
+   * {@inheritdoc}
+   */
   public function getValue(array $options = array()) {
     $value = '';
     if (!empty($this->data['value'])) {
@@ -380,6 +466,13 @@ class DrupalDateIntervalMetaTag extends DrupalDefaultMetaTag {
         $value = format_plural($interval, '@count ' . $period, '@count ' . $period . 's');
       }
     }
+
+    // Translate the final output string prior to output. Use the
+    // 'metatag_output' i18n_string object type, and pass along the meta tag's
+    // options as the context so it can be handled appropriately.
+    $value = metatag_translate_metatag($value, $this->info['name'], $options, NULL, TRUE);
+
     return $value;
   }
+
 }

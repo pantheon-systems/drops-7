@@ -12,9 +12,73 @@
  * @return
  *   An array defining all the permissions for the site.
  */
-  
+
 function cu_forms_bundle_secure_permissions($role) {
-  // INSERT PERMISSIONS FOR THIS BUNDLE
+   $permissions = array(
+    'administrator' => array(
+      'access all webform results',
+      'access own webform results',
+      'access own webform submissions',
+      'administer cu feedback module',
+      'create webform content',
+      'delete all webform submissions',
+      'delete any webform content',
+      'delete own webform content',
+      'delete own webform submissions',
+      'edit all webform submissions',
+      'edit any webform content',
+      'edit own webform content',
+      'edit own webform submissions',
+      'edit webform components',
+    ),
+    'anonymous user' => array(),
+    'authenticated user' => array(
+      'delete own webform submissions',
+      'edit own webform submissions',
+    ),
+    'content_editor' => array(
+      'access own webform results',
+      'create webform content',
+      'delete any webform content',
+      'delete own webform content',
+      'edit any webform content',
+      'edit own webform content',
+      'edit webform components',
+    ),
+    'developer' => array(
+      'access all webform results',
+      'access own webform results',
+      'access own webform submissions',
+      'administer cu feedback module',
+      'create webform content',
+      'delete all webform submissions',
+      'delete any webform content',
+      'delete own webform content',
+      'delete own webform submissions',
+      'edit all webform submissions',
+      'edit any webform content',
+      'edit own webform content',
+      'edit own webform submissions',
+      'edit webform components',
+    ),
+    'edit_my_content' => array(),
+    'site_owner' => array(
+      'access all webform results',
+      'access own webform results',
+      'access own webform submissions',
+      'administer cu feedback module',
+      'create webform content',
+      'delete all webform submissions',
+      'delete any webform content',
+      'delete own webform content',
+      'delete own webform submissions',
+      'edit all webform submissions',
+      'edit any webform content',
+      'edit own webform content',
+      'edit own webform submissions',
+      'edit webform components',
+    ),
+  );
   if (isset($permissions[$role])) {
     return $permissions[$role];
   }
@@ -31,9 +95,9 @@ function cu_forms_bundle_secure_permissions($role) {
  */
 function cu_forms_bundle_express_help($variables) {
   $variables['node/add/webform'][] = array(
-    'title' => 'Create Webform Help',
-    'short_title' => 'Create Webform',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/create-webform',
+    'title' => 'Webform Help',
+    'short_title' => 'Webform Help',
+    'url' => 'http://www.colorado.edu/node/610',
   );
   $variables['node/add/webform'][] = array(
     'title' => 'Webform Overview Help',
@@ -75,6 +139,10 @@ function cu_forms_bundle_express_help($variables) {
     'short_title' => 'Webform Results',
     'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/check-webform-results',
   );
-
+  $variables['admin/settings/feedback/settings'][] = array(
+    'title' => 'Feedback Form Help',
+    'short_title' => 'Feedback Form Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/16',
+  );
   return $variables;
 }

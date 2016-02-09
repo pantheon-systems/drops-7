@@ -637,11 +637,15 @@ function security_review_check_executable_php($last_check = NULL) {
     $result = FALSE;
     $check_result_value[] = 'missing_htaccess';
   }
+  elseif (!function_exists('file_htaccess_lines')) {
+    $result = FALSE;
+    $check_result_value[] = 'outdated_core';
+  }
   else {
     $contents = file_get_contents($directory . '/.htaccess');
     // Text from includes/file.inc.
-    $expected = "SetHandler Drupal_Security_Do_Not_Remove_See_SA_2006_006\nOptions None\nOptions +FollowSymLinks";
-    if ($contents !== $expected) {
+    $expected = file_htaccess_lines(FALSE);
+    if (trim($contents) !== trim($expected)) {
       $result = FALSE;
       $check_result_value[] = 'incorrect_htaccess';
     }

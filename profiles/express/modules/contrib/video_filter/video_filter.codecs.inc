@@ -34,15 +34,6 @@ function video_filter_codec_info() {
     'control_bar_height' => 30,
   );
 
-  $codecs['candidcareer'] = array(
-    'name' => t('Candid Career'),
-    'sample_url' => 'https://www.candidcareer.com/embed.php?vkey=ed5fdd900a274930252f&shared=CandidCareer&uid=30',
-    'callback' => 'video_filter_candidcareer',
-    'regexp' => '/candidcareer\.com\/embed\.php\?vkey=([a-zA-Z0-9\-_&;]+)shared=([a-zA-Z0-9\-_&;]+)uid=([a-zA-Z0-9\-_&;]+)/',
-    'ratio' => 16 / 9,
-    'control_bar_height' => 20,
-  );
-
   $codecs['capped'] = array(
     'name' => t('Capped'),
     'sample_url' => 'http://capped.tv/playeralt.php?vid=some-title',
@@ -205,7 +196,7 @@ function video_filter_codec_info() {
     'sample_url' => 'http://wistia.com/medias/9pj9n6ftlk',
     'callback' => 'video_filter_wistia_html5',
     'html5_callback' => 'video_filter_wistia_html5',
-    'regexp' => '@https?://(.+\.)?(wistia\.(com|net)|wi\.st)/((m|medias|projects)|embed/(iframe|playlists))/([a-zA-Z0-9]+)@',
+    'regexp' => '@https?://(.+\.)?(wistia\.com|wi\.st)/((m|medias|projects)|embed/(iframe|playlists))/([a-zA-Z0-9]+)@',
   );
 
   $codecs['youtube'] = array(
@@ -305,20 +296,6 @@ function video_filter_bliptv($video) {
   );
 
   return video_filter_flash($video, $params);
-}
-
-/**
- * Callback for Candid Career codec.
- *
- * @see video_filter_codec_info()
- */
-function video_filter_candidcareer($video) {
-  // Their urls contain & symbols which Drupal is encoding, so decode those.
-  $decoded = decode_entities($video['codec']['matches'][0]);
-  $video['source'] = '//' . $decoded;
-  $video['attributes']['marginwidth'] = 0;
-  $video['attributes']['marginheight'] = 0;
-  return video_filter_iframe($video);
 }
 
 /**
@@ -607,9 +584,9 @@ function video_filter_youtube_playlist_html5($video) {
  * @see video_filter_codec_info()
  */
 function video_filter_wistia_html5($video) {
-  $video_code = $video['codec']['matches'][7];
+  $video_code = $video['codec']['matches'][6];
   $matches = $video['codec']['matches'];
-  $embed_type = ($matches[4] == 'projects' || $matches[6] == 'playlists') ? 'playlists' : 'iframe';
+  $embed_type = ($matches[3] == 'projects' || $matches[5] == 'playlists') ? 'playlists' : 'iframe';
 
   // Get embed code via oEmbed.
   $endpoint = 'http://fast.wistia.com/oembed';
@@ -622,12 +599,12 @@ function video_filter_wistia_html5($video) {
   $html = $data['html'];
 
   // See if the video source is already an iframe src.
-  $pattern = '@https?://fast.wistia.(com|net)/embed/(iframe|playlists)/[a-zA-Z0-9]+\?+.+@';
+  $pattern = '@https?://fast.wistia.com/embed/(iframe|playlists)/[a-zA-Z0-9]+\?+.+@';
   $matches = array();
   if (preg_match($pattern, $video['source'], $matches)) {
     // Replace the oEmbed iframe src with that provided in the token, in order
     // to support embed builder URLs.
-    $pattern = '@https?://fast.wistia.(com|net)/embed/(iframe|playlists)/[a-zA-Z0-9]+\?[^"]+@';
+    $pattern = '@https?://fast.wistia.com/embed/(iframe|playlists)/[a-zA-Z0-9]+\?[^"]+@';
     $replacement = $matches[0];
     $html = preg_replace($pattern, $replacement, $html);
   }

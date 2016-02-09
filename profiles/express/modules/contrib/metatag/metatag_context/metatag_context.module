@@ -82,27 +82,30 @@ function metatag_context_context_page_reaction() {
 }
 
 /**
- * Implements hook_page_build().
+ * Implements hook_entity_prepare_view().
  */
-function metatag_context_page_build(&$page) {
+function metatag_context_entity_prepare_view($entities, $entity_type, $langcode = NULL) {
+  // Store the current entities.
+  drupal_static('metatag_context_entities', array($entity_type, $entities));
+}
+
+/**
+ * Implements hook_page_alter().
+ */
+function metatag_context_page_alter(&$page) {
+  // By default do not add meta tags to admin pages. To enable meta tags on
+  // admin pages set the 'metatag_tag_admin_pages' variable to TRUE.
+  if (path_is_admin(current_path()) && !variable_get('metatag_tag_admin_pages', FALSE)) {
+    return;
+  }
+
   // Load the meta tags that have been generated for this page.
   $metatags = drupal_static('metatag_context', array());
 
   if (!empty($metatags)) {
     // The page region can be changed.
     $region = variable_get('metatag_page_region', 'content');
-    $page[$region]['metatags']['global'] = $metatags;
-  }
-}
-
-/**
- * Implements hook_preprocess_html().
- */
-function metatag_context_preprocess_html(&$variables) {
-  $metadata = drupal_static('metatag_context');
-
-  if (isset($metadata['metadata_title'])) {
-    $variables['head_title'] = token_replace($metadata['metadata_title']);
+    $page[$region]['metatags']['context'] = $metatags;
   }
 }
 
@@ -113,5 +116,17 @@ function metatag_context_ctools_plugin_api() {
   list($module, $api) = func_get_args();
   if ($module == "context" && $api == "context") {
     return array("version" => "3");
+  }
+}
+
+/**
+ * Implements hook_module_implements_alter().
+ */
+function metatag_context_module_implements_alter(&$implementations, $hook) {
+  if ($hook == 'page_alter') {
+    // Run metatag_context_page_alter() last.
+    $group = $implementations['metatag_context'];
+    unset($implementations['metatag_context']);
+    $implementations['metatag_context'] = $group;
   }
 }

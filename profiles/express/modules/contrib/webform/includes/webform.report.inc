@@ -322,13 +322,20 @@ function theme_webform_results_table($variables) {
  *
  * @param $nid
  *   The node id whose submissions will be deleted.
+ * @param $batch_size
+ *   The number of submissions to be processed. NULL means all submissions.
+ * @return
+ *   The number of submissions processed.
  */
-function webform_results_clear($nid) {
+function webform_results_clear($nid, $batch_size = NULL) {
   $node = node_load($nid);
-  $submissions = webform_get_submissions($nid);
+  $submissions = webform_get_submissions($nid, NULL, $batch_size);
+  $count = 0;
   foreach ($submissions as $submission) {
     webform_submission_delete($node, $submission);
+    $count++;
   }
+  return $count;
 }
 
 /**
@@ -348,12 +355,61 @@ function webform_results_clear_form($form, $form_state, $node) {
 }
 
 function webform_results_clear_form_submit($form, &$form_state) {
-  webform_results_clear($form_state['values']['nid']);
-  $node = node_load($form_state['values']['nid']);
-  $title = $node->title;
-  drupal_set_message(t('Webform %title entries cleared.', array('%title' => $title)));
-  watchdog('webform', 'Webform %title entries cleared.', array('%title' => $title));
-  $form_state['redirect'] = 'node/' . $form_state['values']['nid'] . '/webform-results';
+  $nid = $form_state['values']['nid'];
+  $node = node_load($nid);
+  // Set a modest batch size, due to the inefficiency of the hooks invoked when
+  // submissions are deleted.
+  $batch_size = min(webform_export_batch_size($node), 500);
+
+  // Set up a batch to clear the results.
+  $batch = array(
+    'operations' => array(
+      array('webform_clear_batch_rows', array($node, $batch_size)),
+    ),
+    'finished' => 'webform_clear_batch_finished',
+    'title' => t('Clear submissions'),
+    'init_message' => t('Clearing submission data'),
+    'error_message' => t('The submissions could not be cleared because an error occurred.'),
+    'file' => drupal_get_path('module', 'webform') . '/includes/webform.report.inc',
+  );
+  batch_set($batch);
+  $form_state['redirect'] = 'node/' . $nid . '/webform-results';
+}
+
+/**
+ * Batch API callback; Write the rows of the export to the export file.
+ */
+function webform_clear_batch_rows($node, $batch_size, &$context) {
+  // Initialize the results if this is the first execution of the batch
+  // operation.
+  if (!isset($context['results']['count'])) {
+    $context['results'] = array(
+      'count' => 0,
+      'total' => webform_get_submission_count($node->nid),
+      'node' => $node,
+    );
+  }
+
+  // Clear a batch of submissions.
+  $count = webform_results_clear($node->nid, $batch_size);
+  $context['results']['count'] += $count;
+
+  // Display status message
+  $context['message'] = t('Cleared @count of @total submissions...', array('@count' => $context['results']['count'], '@total' => $context['results']['total']));
+  $context['finished'] = $count > 0
+                            ? $context['results']['count'] / $context['results']['total']
+                            : 1.0;
+}
+
+/**
+ * Batch API completion callback; Finish clearing submissions.
+ */
+function webform_clear_batch_finished($success, $results, $operations) {
+  if ($success) {
+    $title = $results['node']->title;
+    drupal_set_message(t('Webform %title entries cleared.', array('%title' => $title)));
+    watchdog('webform', 'Webform %title entries cleared.', array('%title' => $title));
+  }
 }
 
 /**
@@ -771,24 +827,7 @@ function webform_results_download_form_submit(&$form, &$form_state) {
 
   // Determine an appropriate batch size based on the form and server specs.
   if (!isset($options['range']['batch_size'])) {
-    // Start the batch size at 50,000 per batch, but divide by number of
-    // components in the form. e.g. If a form had 10 components, it would
-    // export 5,000 submissions at a time.
-    $batch_size = ceil(50000 / max(1, count($form_state['values']['node']->webform['components'])));
-
-    // Every 32MB of additional memory after 64MB adds a multiplier in size.
-    $memory_limit = parse_size(ini_get('memory_limit'));
-    $mb = 1048576;
-    $memory_modifier = max(1, ($memory_limit - (64 * $mb)) / (32 * $mb));
-    $batch_size = ceil($batch_size * $memory_modifier);
-
-    // For time reasons, limit the batch size to 5,000.
-    $batch_size = min($batch_size, 5000);
-
-    // Allow a non-UI configuration to override the batch size.
-    $batch_size = variable_get('webform_export_batch_size', $batch_size);
-
-    $options['range']['batch_size'] = $batch_size;
+    $options['range']['batch_size'] = webform_export_batch_size($node);
   }
 
   $options['file_name'] = _webform_export_tempname();
@@ -796,6 +835,35 @@ function webform_results_download_form_submit(&$form, &$form_state) {
   // Set up a batch to export the results.
   $batch = webform_results_export_batch($node, $format, $options);
   batch_set($batch);
+}
+
+/**
+ * Calculate an appropriate batch size for bulk submission operations.
+ *
+ * @param object $node
+ *   The webform node.
+ * @return integer
+ *   The number of submissions to be processed at once.
+ */
+function webform_export_batch_size($node) {
+  // Start the batch size at 50,000 per batch, but divide by number of
+  // components in the form. e.g. If a form had 10 components, it would
+  // export 5,000 submissions at a time.
+  $batch_size = ceil(50000 / max(1, count($node->webform['components'])));
+
+  // Every 32MB of additional memory after 64MB adds a multiplier in size.
+  $memory_limit = parse_size(ini_get('memory_limit'));
+  $mb = 1048576;
+  $memory_modifier = max(1, ($memory_limit - (64 * $mb)) / (32 * $mb));
+  $batch_size = ceil($batch_size * $memory_modifier);
+
+  // For time reasons, limit the batch size to 5,000.
+  $batch_size = min($batch_size, 5000);
+
+  // Allow a non-UI configuration to override the batch size.
+  $batch_size = variable_get('webform_export_batch_size', $batch_size);
+
+  return $batch_size;
 }
 
 /**
@@ -820,7 +888,6 @@ function _webform_export_tempname() {
  *   The array of export info or null if the file could not be opened.
  */
 function webform_results_export($node, $format = 'delimited', $options = array()) {
-  global $user;
   module_load_include('inc', 'webform', 'includes/webform.export');
   module_load_include('inc', 'webform', 'includes/webform.components');
 
@@ -1213,8 +1280,6 @@ function webform_results_download_default_options($node, $format) {
  *   Export information array retrieved from webform_results_export().
  */
 function webform_results_download($node, $export_info) {
-  global $user;
-
   // If the exporter provides a custom download method, use that.
   if (method_exists($export_info['exporter'], 'download')) {
     $export_info['exporter']->download($node);
@@ -1231,13 +1296,27 @@ function webform_results_download($node, $export_info) {
     @unlink($export_info['file_name']);  // Clean up, the @ makes it silent.
   }
 
-  // Update user last downloaded sid if required.
+  // Save the last exported sid for new-only exports.
+  webform_results_export_success($node, $export_info);
+
+  exit();
+}
+
+/**
+ * Save the last-exported sid for new-only exports.
+ *
+ * @param $node
+ *   The webform node.
+ * @param $export_info
+ *   Export information array retrieved from webform_results_export().
+ */
+function webform_results_export_success($node, $export_info) {
   if (!in_array($export_info['options']['range']['range_type'], array('range', 'range_serial', 'range_date')) && !empty($export_info['last_sid'])) {
     // Insert a new record or update an existing record.
     db_merge('webform_last_download')
       ->key(array(
         'nid' => $node->nid,
-        'uid' => $user->uid,
+        'uid' => $GLOBALS['user']->uid,
       ))
       ->fields(array(
         'sid' => $export_info['last_sid'],
@@ -1245,8 +1324,6 @@ function webform_results_download($node, $export_info) {
       ))
       ->execute();
   }
-
-  exit();
 }
 
 /**
@@ -1433,12 +1510,20 @@ function webform_results_batch_results($node, $format, $options, &$context) {
     'last_sid' => $context['results']['last_sid'],
   );
 
-  // Set a session variable containing the information referencing the exported
-  // file. A cookie is also set to allow the browser to ensure the redirect
-  // to the file only happens one time.
-  $_SESSION['webform_export_info'] = $export_info;
-  $params = session_get_cookie_params();
-  setcookie('webform_export_info', '1', REQUEST_TIME + 120, $params['path'], $params['domain'], $params['secure'], FALSE);
+  if (isset($_SESSION)) {
+    // UI exection. Defer resetting last-downloaded sid until download page.
+    // Set a session variable containing the information referencing the exported
+    // file. A cookie is also set to allow the browser to ensure the redirect
+    // to the file only happens one time.
+    $_SESSION['webform_export_info'] = $export_info;
+    $params = session_get_cookie_params();
+    setcookie('webform_export_info', '1', REQUEST_TIME + 120, $params['path'], $params['domain'], $params['secure'], FALSE);
+  }
+  else {
+    // Drush execution of wfx command. Reset last-downloaded sid now. $_SESSION
+    // is not supported for command line execution.
+    webform_results_export_success($node, $export_info);
+  }
 }
 
 /**

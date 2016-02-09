@@ -21,7 +21,7 @@
 
 #zone-intro .block-section-content .block,
 .block-section-content .block {
-  margin-bottom: 20px; 
+  margin-bottom: 20px;
 }
 #zone-intro .block-section-content .block:last-child,
 .block-section-content .block:last-child {
@@ -67,7 +67,7 @@
 .block-section-text-black .block-section-content-bg-visible {
   padding: 20px;
   background: rgba(255,255,255,.85);
-  
+
 }
 
 .block-section-text-black .block-section-content-bg-solid {
@@ -88,67 +88,67 @@
 #zone-intro .block-section-content,
 .container-12 .block-section-content,
 .block-section-content {
-  
+
   .grid-1 {
   	width:6.333%;
   	@include grid();
   }
-  
+
   .grid-2 {
   	width:14.667%;
   	@include grid();
   }
-  
+
   .grid-3 {
   	width:23.0%;
   	@include grid();
   }
-  
+
   .grid-4 {
   	width:31.333%;
   	@include grid();
   }
-  
+
   .grid-5 {
   	width:39.667%;
   	@include grid();
   }
-  
+
    .grid-6 {
   	width:48.0%;
   	@include grid();
   }
-  
+
    .grid-7 {
   	width:56.333%;
   	@include grid();
   }
-  
+
    .grid-8 {
   	width:64.667%;
   	@include grid();
   }
-  
+
    .grid-9 {
   	width:73.0%;
   	@include grid();
   }
-  
+
    .grid-10 {
   	width:81.333%;
   	@include grid();
   }
-  
+
    .grid-11 {
   	width:89.667%;
   	@include grid();
   }
-  
+
    .grid-12 {
   	width:98.0%;
   	@include grid();
   }
-  
+
   .alpha {
     //margin-left:0;
   }
@@ -184,13 +184,13 @@
 
 @media screen and (min-width:740px) {
   .block-section-content-wrapper {
-    max-width: 680px;
+    //max-width: 680px;
     margin: 0 auto;
   }
 }
 @media screen and (min-width:980px) {
   .block-section-content-wrapper {
-    max-width: 920px;
+    //max-width: 920px;
     margin: 0 auto;
   }
 }

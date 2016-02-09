@@ -1,4 +1,0 @@
-name = Local Development
-description = Enables/disables modules for local development
-core = 7.x
-package = CU-Boulder

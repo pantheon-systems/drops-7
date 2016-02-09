@@ -56,6 +56,7 @@ function webform_conditionals_form($form, &$form_state, $node) {
 
   $source_list = webform_component_list($node, 'conditional', 'path', TRUE);
   $target_list = webform_component_list($node, TRUE, 'path', TRUE);
+  $components = $node->webform['components'];
   $delta = $form_state['conditional_count'];
   $weight = -$delta - 1;
   $index = 0;
@@ -79,6 +80,15 @@ function webform_conditionals_form($form, &$form_state, $node) {
       '#targets' => $target_list,
       '#parents' => array('conditionals', $rgid),
     );
+    foreach ($conditional_group['actions'] as $action) {
+      $cid = $action['target'];
+      if ($action['action'] == 'require' && !$components[$cid]['required']) {
+        drupal_set_message(t('Component %title must be configured as Required for Webform to conditionally change its required status. <a href="!url">Configure %title.</a>',
+                             array('%title' => $components[$cid]['name'],
+                                   '!url' => url("node/{$node->nid}/webform/components/$cid", array('query' => array('destination' => "node/{$node->nid}/webform/conditionals"))))
+                             ), 'error');
+      }
+    }
     $form['conditionals'][$rgid]['weight'] = array(
       '#type' => 'weight',
       '#title' => t('Weight for rule group !rgid', array('!rgid' => $rgid)),
@@ -180,12 +190,14 @@ function webform_conditionals_form_validate($form, &$form_state) {
       $conditional = $element['conditional'];
       $targets = array();
       foreach ($conditional['actions'] as $action_key => $action) {
-        if (substr($action_key, 0, 1) !== '#') {
+        if (is_numeric($action_key)) {
+          $operation = $action['action']['#value'];
           $target_id = $action['target']['#value'];
-          if (isset($targets[$target_id])) {
+          if (isset($targets[$target_id][$operation])) {
             form_set_error('conditionals][' . $conditional_key . '][actions][' . $action_key . '][target',
-                           t('A conditional cannot show or hide a component more than once. (%target).',
-                             array('%target' => $components[$action['target']['#value']]['name'])));
+                           t('A operation %op cannot be made for a component more than once. (%target).',
+                             array('%op' => $action['action']['#options'][$operation],
+                                   '%target' => $components[$action['target']['#value']]['name'])));
           }
           $component_type = $node->webform['components'][$action['target']['#value']]['type'];
           if (!webform_conditional_action_able($component_type, $action['action']['#value'])) {
@@ -196,13 +208,13 @@ function webform_conditionals_form_validate($form, &$form_state) {
                                 '%type' => $component_options[$component_type],
                                 '%target' => $components[$action['target']['#value']]['name'])));
           }
-          $targets[$target_id] = $target_id;
+          $targets[$target_id][$operation] = $target_id;
         }
       }
       foreach ($conditional['rules'] as $rule_key => $rule) {
-        if (substr($rule_key, 0, 1) !== '#' && in_array($rule['source']['#value'], $targets)) {
+        if (is_numeric($rule_key) && isset($targets[$rule['source']['#value']])) {
           form_set_error('conditionals][' . $conditional_key . '][rules][' . $rule_key . '][source',
-                         t('The subject of the conditional cannot be the same as the component that is shown or hidden (%target).',
+                         t('The subject of the conditional cannot be the same as the component that is changed (%target).',
                          array('%target' => $components[$rule['source']['#value']]['name'])));
         }
       }
@@ -211,7 +223,7 @@ function webform_conditionals_form_validate($form, &$form_state) {
 
   // Form validation will not rebuild the form, so we need to ensure
   // necessary JavaScript will still exist.
-  _webform_conditional_expand_value_forms($form['#node']);
+  _webform_conditional_expand_value_forms($node);
 }
 
 /**
@@ -422,6 +434,7 @@ function _webform_conditional_expand($element) {
       '#type' => 'textfield',
       '#title' => t('Argument'),
       '#size' => 20,
+      '#maxlength' => NULL,
       '#default_value' => $element['#default_value']['actions'][$aid]['argument'],
     );
     $element['actions'][$aid]['remove'] = array(
@@ -464,11 +477,9 @@ function _webform_conditional_expand($element) {
  * could have been done via AJAX, but having all forms available makes for a
  * faster user experience.
  *
- * @param $node
- *   The Webform node for which these forms are being generated.
- * @return
- *   An array settings suitable for adding to the page via JavaScript. This
- *   array contains the following keys:
+ * Added to the JavaScript settings is conditionalValues which contains
+ * an array settings suitable for adding to the page via JavaScript. This
+ * array contains the following keys:
  *   - operators: An array containing a map of data types, operators, and form
  *     keys. This array is structured as follows:
  *     @code
@@ -483,10 +494,11 @@ function _webform_conditional_expand($element) {
  *   - forms[$form_key][$source]: Or instead of a single form for all components,
  *     if each component requires its own form, key each component by its source
  *     value (currently always the component ID).
+ *
+ * @param $node
+ *   The Webform node for which these forms are being generated.
  */
-function _webform_conditional_expand_value_forms($node, $add_to_page = TRUE) {
-  static $value_forms_added;
-
+function _webform_conditional_expand_value_forms($node) {
   $operators = webform_conditional_operators();
   $data = array();
   foreach ($operators as $data_type => $operator_info) {
@@ -495,7 +507,7 @@ function _webform_conditional_expand_value_forms($node, $add_to_page = TRUE) {
       if (isset($data_operator_info['form callback'])) {
         $form_callback = $data_operator_info['form callback'];
         $data['operators'][$data_type][$operator]['form'] = $form_callback;
-        if ($form_callback !== FALSE && !isset($value_forms_added[$form_callback])) {
+        if ($form_callback !== FALSE && !isset($data['forms'][$form_callback])) {
           $data['forms'][$form_callback] = $form_callback($node);
         }
       }
@@ -508,12 +520,7 @@ function _webform_conditional_expand_value_forms($node, $add_to_page = TRUE) {
     }
   }
 
-  if (!isset($value_forms_added) && $add_to_page) {
-    $value_forms_added = TRUE;
-    drupal_add_js(array('webform' => array('conditionalValues' => $data)), 'setting');
-  }
-
-  return $data;
+  drupal_add_js(array('webform' => array('conditionalValues' => $data)), 'setting');
 }
 
 /**

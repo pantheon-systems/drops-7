@@ -1,0 +1,132 @@
+html {
+  box-sizing: border-box;
+}
+*, *:before, *:after {
+  box-sizing: inherit;
+}
+
+#skip-link {
+  margin: 0;
+  padding: 0;
+}
+#mobile-navigation-wrapper {
+  display: none;
+}
+#alerts .block {
+  margin: 0;
+}
+#site-info-wrapper {
+  padding-top: 20px;
+}
+
+.layout-responsive .maxwidth {
+  max-width: 1200px;
+}
+.layout-fixed .maxwidth {
+  max-width: 960px;
+}
+
+.node-unpublished #main {
+  background-color: #f7d2d2;
+}
+
+@media screen and (min-width: 720px) {
+  .block-inner-wrapper {
+    //overflow: hidden;
+  }
+  .region-content-sidebar-right {
+    width:50%;
+    float: right;
+    padding-left: 20px;
+  }
+  .region-content-sidebar-left {
+    width:50%;
+    float: left;
+    padding-right: 20px;
+  }
+}
+
+/* EVENTS CALENDAR */
+.event-cal-event {
+  font-size: 80%;
+  margin-bottom:.75em;
+}
+.event-cal-event .event-title a {
+  display: block;
+  font-size: 125%;
+}
+
+/* generic view modes */
+
+
+.node-view-mode-teaser {
+  margin-bottom:20px;
+  border-bottom:1px solid $border_color;
+  padding-bottom: 20px;
+}
+.node-view-mode-teaser-content {
+  overflow: auto;
+}
+.node-view-mode-title a {
+  display: block;
+  padding: 5px 0;
+}
+.node-summary {
+  padding:5px 0 20px;
+}
+.node-summary .more-link {
+  white-space: nowrap;
+}
+.node-summary .more-link:before {
+  content: " ";
+}
+
+.node-view-mode-sidebar {
+  margin-bottom: 10px;
+  padding-bottom:10px;
+  border-bottom:1px solid $border_color;
+}
+.list-node-list li:last-child .node-view-mode-sidebar {
+  border: none;
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.node-view-mode-sidebar img.image-square,
+.node-view-mode-sidebar img.image-square_thumbnail,
+.node-view-mode-sidebar img.image-small_thumbnail,
+.node-view-mode-sidebar img.image-small {
+  margin-bottom: 0;
+  float: left;
+  margin: 0 10px 10px 0;
+  width:50px;
+  height: auto;
+}
+.node-view-mode-sidebar-content {
+  overflow: hidden;
+}
+.node-view-mode-embed {
+  margin-bottom:20px;
+  border-bottom:1px solid $border_color;
+  padding-bottom: 20px;
+}
+.node-view-mode-embed img.image-large_square_thumbnail,
+.node-view-mode-embed img.image-small {
+  margin: 0 0 20px 20px;
+  display: block;
+  width:25%;
+  height: auto;
+  float: right;
+}
+
+#main {
+  padding:20px 0;
+}
+#feature-layout-wrapper {
+  background-color: #fff;
+}
+#after-content-wrapper {
+  padding-top: 20px;
+}
+.clear {
+  clear:both;
+}

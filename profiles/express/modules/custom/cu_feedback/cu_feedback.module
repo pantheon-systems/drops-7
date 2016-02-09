@@ -57,7 +57,9 @@ function cu_feedback_permission() {
  * Implements hook_menu().
  */
 function cu_feedback_menu() {
-  // Set path for admin config.
+  // Why is this the same form callback as below?
+  // Historical reason?
+  /*
   $items['admin/config/user-interface/feedback'] = array(
     'title' => 'Feedback settings',
     'description' => 'Configure Feedback settings.',
@@ -65,17 +67,28 @@ function cu_feedback_menu() {
     'page arguments' => array('cu_feedback_admin_settings_form'),
     'access arguments' => array('administer cu feedback module'),
   );
-  
-  if (!module_exists('cu_preview')) {
-		$items['admin/settings/feedback'] = array(
-			'title' => 'Feedback Form',
-			'type' => MENU_LOCAL_TASK,
-			'page callback' => 'drupal_get_form',
-			'page arguments' => array('cu_feedback_admin_settings_form'),
-			'access arguments' => array('administer cu feedback module'),
-		);
-  }
-  
+  */
+
+  $items['admin/settings/forms'] = array(
+    'title' => 'Forms',
+    'description' => '',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => -2,
+  );
+
+  $items['admin/settings/forms/feedback'] = array(
+    'title' => 'Feedback Form',
+    'description' => 'Set a Feedback Form button for your site',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_feedback_admin_settings_form'),
+    'access arguments' => array('administer express settings'),
+  );
+
   $items['node/ajax/%'] = array(
     'page callback' => 'cu_feedback_get_webform',
     'page arguments' => array(2),
@@ -183,7 +196,7 @@ function cu_feedback_preprocess_html(&$variables) {
       drupal_add_js('misc/ajax.js');
       $path = 'node/' . $nid;
       $button_path = $base_url . '/' . drupal_get_path('module', 'cu_feedback') . '/images/' . $text . '.png';
-      
+
       $link_class[] = 'cu-feedback-link';
       $link_class[] = 'cu-feedback-link-' . $color;
       $link_class[] = $embed == 'embed' ? 'cu-feedback-link-embed' : '';

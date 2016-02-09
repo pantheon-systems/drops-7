@@ -11,7 +11,7 @@ function cu_events_calendar_block_field_default_field_instances() {
   $field_instances = array();
 
   // Exported field_instance:
-  // 'bean-cu_events_calendar_block-field_event_categories'
+  // 'bean-cu_events_calendar_block-field_event_categories'.
   $field_instances['bean-cu_events_calendar_block-field_event_categories'] = array(
     'bundle' => 'cu_events_calendar_block',
     'default_value' => array(
@@ -50,7 +50,7 @@ function cu_events_calendar_block_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'bean-cu_events_calendar_block-field_event_date_range'
+  // 'bean-cu_events_calendar_block-field_event_date_range'.
   $field_instances['bean-cu_events_calendar_block-field_event_date_range'] = array(
     'bundle' => 'cu_events_calendar_block',
     'deleted' => 0,
@@ -99,7 +99,8 @@ function cu_events_calendar_block_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-cu_events_calendar_block-field_event_expire'
+  // Exported field_instance:
+  // 'bean-cu_events_calendar_block-field_event_expire'.
   $field_instances['bean-cu_events_calendar_block-field_event_expire'] = array(
     'bundle' => 'cu_events_calendar_block',
     'default_value' => array(
@@ -137,7 +138,7 @@ function cu_events_calendar_block_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-cu_events_calendar_block-field_event_link'
+  // Exported field_instance: 'bean-cu_events_calendar_block-field_event_link'.
   $field_instances['bean-cu_events_calendar_block-field_event_link'] = array(
     'bundle' => 'cu_events_calendar_block',
     'default_value' => NULL,
@@ -161,6 +162,7 @@ function cu_events_calendar_block_field_default_field_instances() {
       'absolute_url' => 1,
       'attributes' => array(
         'class' => '',
+        'configurable_class' => 0,
         'configurable_title' => 0,
         'rel' => '',
         'target' => 'default',
@@ -170,9 +172,14 @@ function cu_events_calendar_block_field_default_field_instances() {
         'url_cutoff' => 80,
       ),
       'enable_tokens' => 1,
+      'linkit' => array(
+        'button_text' => 'Search',
+        'enable' => 1,
+        'profile' => 'express_linkit_field_profile',
+      ),
       'rel_remove' => 'default',
       'title' => 'optional',
-      'title_label_use_field_label' => FALSE,
+      'title_label_use_field_label' => 0,
       'title_maxlength' => 128,
       'title_value' => '',
       'url' => 0,
@@ -180,20 +187,16 @@ function cu_events_calendar_block_field_default_field_instances() {
       'validate_url' => 1,
     ),
     'widget' => array(
-      'active' => 1,
-      'module' => 'advanced_link',
-      'settings' => array(
-        'default_titles' => '',
-        'urls_allowed' => 'both',
-        'urls_filter' => '',
-        'urls_search' => 'contains',
-      ),
-      'type' => 'advanced_link',
+      'active' => 0,
+      'module' => 'link',
+      'settings' => array(),
+      'type' => 'link_field',
       'weight' => 4,
     ),
   );
 
-  // Exported field_instance: 'bean-cu_events_calendar_block-field_event_number'
+  // Exported field_instance:
+  // 'bean-cu_events_calendar_block-field_event_number'.
   $field_instances['bean-cu_events_calendar_block-field_event_number'] = array(
     'bundle' => 'cu_events_calendar_block',
     'default_value' => array(
@@ -232,7 +235,7 @@ function cu_events_calendar_block_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'bean-cu_events_calendar_block-field_event_subcategories'
+  // 'bean-cu_events_calendar_block-field_event_subcategories'.
   $field_instances['bean-cu_events_calendar_block-field_event_subcategories'] = array(
     'bundle' => 'cu_events_calendar_block',
     'default_value' => array(
@@ -271,7 +274,7 @@ function cu_events_calendar_block_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'bean-cu_events_calendar_block-field_event_template'
+  // 'bean-cu_events_calendar_block-field_event_template'.
   $field_instances['bean-cu_events_calendar_block-field_event_template'] = array(
     'bundle' => 'cu_events_calendar_block',
     'default_value' => array(
@@ -309,7 +312,7 @@ function cu_events_calendar_block_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-cu_events_calendar_block-field_event_type'
+  // Exported field_instance: 'bean-cu_events_calendar_block-field_event_type'.
   $field_instances['bean-cu_events_calendar_block-field_event_type'] = array(
     'bundle' => 'cu_events_calendar_block',
     'default_value' => array(
@@ -347,7 +350,8 @@ function cu_events_calendar_block_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-events_calendar_grid-field_event_categories'
+  // Exported field_instance:
+  // 'bean-events_calendar_grid-field_event_categories'.
   $field_instances['bean-events_calendar_grid-field_event_categories'] = array(
     'bundle' => 'events_calendar_grid',
     'default_value' => array(
@@ -385,7 +389,7 @@ function cu_events_calendar_block_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-events_calendar_grid-field_event_months'
+  // Exported field_instance: 'bean-events_calendar_grid-field_event_months'.
   $field_instances['bean-events_calendar_grid-field_event_months'] = array(
     'bundle' => 'events_calendar_grid',
     'default_value' => array(
@@ -424,7 +428,7 @@ function cu_events_calendar_block_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'bean-events_calendar_grid-field_event_show_all_grids'
+  // 'bean-events_calendar_grid-field_event_show_all_grids'.
   $field_instances['bean-events_calendar_grid-field_event_show_all_grids'] = array(
     'bundle' => 'events_calendar_grid',
     'default_value' => array(
@@ -463,7 +467,7 @@ function cu_events_calendar_block_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'bean-events_calendar_grid-field_event_subcategories'
+  // 'bean-events_calendar_grid-field_event_subcategories'.
   $field_instances['bean-events_calendar_grid-field_event_subcategories'] = array(
     'bundle' => 'events_calendar_grid',
     'default_value' => array(
@@ -501,7 +505,7 @@ function cu_events_calendar_block_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-events_calendar_grid-field_event_type'
+  // Exported field_instance: 'bean-events_calendar_grid-field_event_type'.
   $field_instances['bean-events_calendar_grid-field_event_type'] = array(
     'bundle' => 'events_calendar_grid',
     'default_value' => array(

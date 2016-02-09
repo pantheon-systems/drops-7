@@ -99,7 +99,7 @@
 }
 .flexslider .views-field-field-slider-caption {
   position: absolute;
-  background-image:url(../images/black50.png);
+  background: rgba(0,0,0,.5);
   color:#fff;
   bottom:0;
   left:0;
@@ -299,7 +299,6 @@ body .view-cu-slider-wide-teaser .flexslider .views-field-field-slider-caption {
   position: relative;
 }
 .cu-slider-slide-content {
-  max-width: 920px;
   margin: 0 auto;
 }
 .cu-slider-caption a:link,
@@ -324,7 +323,7 @@ body .view-cu-slider-wide-teaser .flexslider .views-field-field-slider-caption {
   z-index: 1;
 }
 .cu-content-slider-style1 .cu-slider-slide-content-inner {
-  padding:10px;
+  padding:20px;
   color:#fff;
 }
 .cu-content-slider-style1 .cu-slider-caption {
@@ -360,7 +359,7 @@ body .view-cu-slider-wide-teaser .flexslider .views-field-field-slider-caption {
   height: 100%;
   display: table;
   width: 50%;
-  max-width:480px;
+  max-width:50%;
 }
 .cu-content-slider-style2 .cu-slider-slide-content {
   padding:0 20px;

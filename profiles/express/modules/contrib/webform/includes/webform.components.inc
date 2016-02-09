@@ -82,7 +82,7 @@ function webform_components_form($form, $form_state, $node) {
 
   $form['add']['name'] = array(
     '#type' => 'textfield',
-    '#size' => 24,
+    '#size' => 30,
     '#maxlength' => NULL,
   );
 
@@ -166,7 +166,7 @@ function template_preprocess_webform_components_form(&$variables) {
 
   $node = $form['#node'];
 
-  $header = array(t('Label'), t('Type'), t('Value'), t('Required'), t('Weight'), array('data' => t('Operations'), 'colspan' => 3));
+  $header = array(t('Label'), t('Form key'), t('Type'), t('Value'), t('Required'), t('Weight'), array('data' => t('Operations'), 'colspan' => 3));
   $rows = array();
 
   // Add a row containing form elements for a new item.
@@ -176,7 +176,7 @@ function template_preprocess_webform_components_form(&$variables) {
   $form['add']['pid']['#attributes']['class'][] = 'webform-pid';
   $form['add']['weight']['#attributes']['class'][] = 'webform-weight';
   $row_data = array(
-    array('data' => drupal_render($form['add']['name']), 'class' => array('webform-component-name')),
+    array('data' => drupal_render($form['add']['name']), 'class' => array('webform-component-name'), 'colspan' => 2),
     array('data' => drupal_render($form['add']['type']), 'class' => array('webform-component-type')),
     array('data' => '', 'class' => array('webform-component-value')),
     array('data' => drupal_render($form['add']['required']), 'class' => array('webform-component-required', 'checkbox')),
@@ -216,11 +216,8 @@ function template_preprocess_webform_components_form(&$variables) {
  */
 function _webform_components_form_rows($node, $cid, $component, $level, &$form, &$rows, &$add_form) {
   // Create presentable values.
-  if (drupal_strlen($component['value']) > 30) {
-    $component['value'] = drupal_substr($component['value'], 0, 30);
-    $component['value'] .= '...';
-  }
-  $component['value'] = check_plain($component['value']);
+  $form_key = truncate_utf8($component['form_key'], 30, FALSE, TRUE);
+  $value = truncate_utf8($component['value'], 30, TRUE, TRUE, 20);
 
   // Remove individual titles from the required and weight fields.
   unset($form['components'][$cid]['required']['#title']);
@@ -241,8 +238,11 @@ function _webform_components_form_rows($node, $cid, $component, $level, &$form, 
   // Add each component to a table row.
   $row_data = array(
     array('data' => $indents . filter_xss($component['name']), 'class' => array('webform-component-name')),
+    array('data' => check_plain($form_key), 'class' => array('webform-component-formkey')) +
+          ($component['form_key'] == $form_key ? array() : array('title' => $component['form_key'])),
     array('data' => $form['add']['type']['#options'][$component['type']], 'class' => array('webform-component-type')),
-    array('data' => ($component['value'] == '') ? '-' : $component['value'], 'class' => array('webform-component-value')),
+    array('data' => ($value == '') ? '-' : check_plain($value), 'class' => array('webform-component-value')) +
+          ($component['value'] == $value ? array() : array('title' => $component['value'])),
     array('data' => drupal_render($form['components'][$cid]['required']), 'class' => array('webform-component-required', 'checkbox')),
     array('data' => drupal_render($form['components'][$cid]['cid']) . drupal_render($form['components'][$cid]['pid']) . drupal_render($form['components'][$cid]['weight'])),
     array('data' => l(t('Edit'), 'node/' . $node->nid . '/webform/components/' . $cid, array('query' => drupal_get_destination())), 'class' => array('webform-component-edit')),
@@ -711,9 +711,13 @@ function webform_component_delete_form($form, $form_state, $node, $component) {
     '#value' => $component,
   );
 
-  if (webform_component_feature($node->webform['components'][$cid]['type'], 'group')) {
+  $component_type = $node->webform['components'][$cid]['type'];
+  if (webform_component_feature($component_type, 'group')) {
     $question = t('Delete the %name fieldset?', array('%name' => $node->webform['components'][$cid]['name']));
-    $description = t('This will immediately delete the %name fieldset and all children elements within %name from the %webform webform. This cannot be undone.', array('%name' => $node->webform['components'][$cid]['name'], '%webform' => $node->title));
+    $description = t('This will immediately delete the %name @type component and all nested components within %name from the %webform webform. This cannot be undone.',
+                     array('%name' => $node->webform['components'][$cid]['name'],
+                           '@type' => webform_component_property($component_type, 'label'),
+                           '%webform' => $node->title));
   }
   else {
     $question = t('Delete the %name component?', array('%name' => $node->webform['components'][$cid]['name']));

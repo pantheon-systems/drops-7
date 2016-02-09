@@ -1,0 +1,31 @@
+/* NAVBAR */
+#navbar-administration .navbar-bar {
+  background-color: #007BC8;
+  color:#fff;
+}
+.navbar-icon-settings:before {
+  background-image: url("../icons/787878/cog.svg");
+}
+.navbar-icon-design:before {
+  background-image: url("../icons/787878/paintbrush.svg");
+}
+.navbar-icon-web-express-help:before {
+  background-image: url("../icons/787878/questionmark-disc.svg");
+}
+.navbar-icon-logout:before {
+  background-image: url("../icons/bebebe/logout-small.png");
+}
+.navbar-icon-users:before {
+  background-image: url("../icons/787878/people.svg");
+}
+#navbar-administration .navbar-tab a {
+  border-left: none;
+}
+#navbar-administration .navbar-tray-horizontal a, #navbar-administration .navbar-box a {
+  border-left: none;
+}
+#navbar-administration .navbar-tab a:hover,
+#navbar-administration .navbar-tab a:focus {
+  border-left: none;
+  background-color: #185e8a;
+}

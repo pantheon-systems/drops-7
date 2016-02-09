@@ -147,24 +147,21 @@ function jquery_update_library_alter(&$javascript, $module) {
     // Noting the version based on git commit as no version number is available.
     $javascript['cookie']['version'] = '67fb34f6a866c40d0570';
 
-    // Replace jQuery Form plugin.
-    $javascript['jquery.form']['js']['misc/jquery.form.js']['data'] = $path . '/replace/misc/jquery.form' . $min . '.js';
-    $javascript['jquery.form']['version'] = '2.69';
-
-    // Replace files for Jquery 1.9 and up
-    // @todo Figure out if this is needed if jQuery Migrate is enabled.
-    if (version_compare($version, '1.9', '>=')) {
-      $javascript['jquery.bbq']['js']['misc/jquery.ba-bbq.js']['data'] = $path . '/replace/misc/1.9/jquery.ba-bbq' . $min . '.js';
+    // Replace jQuery Form Plugin.
+    // jQuery >= 1.5 requires jQuery Form Plugin 3.x.
+    if (version_compare($version, '1.5', '>=')) {
+      $javascript['jquery.form']['js']['misc/jquery.form.js']['data'] = $path . '/replace/jquery.form/3/jquery.form' . $min . '.js';
+      $javascript['jquery.form']['version'] = '3.51.0';
+    }
+    else {
+      $javascript['jquery.form']['js']['misc/jquery.form.js']['data'] = $path . '/replace/jquery.form/2/jquery.form' . $min . '.js';
+      $javascript['jquery.form']['version'] = '2.69';
     }
   }
 
   if (version_compare($version, '1.9', '>=')) {
     if ($module === 'jquery_update') {
       jquery_update_jquery_migrate_replace($javascript, $path, $min);
-    }
-    // @todo Figure out if this is needed if jQuery Migrate is enabled.
-    if ($module == 'overlay') {
-      $javascript['parent']['js']['modules/overlay/overlay-parent.js']['data'] = $path . '/replace/misc/1.9/overlay-parent.js';
     }
   }
 }
@@ -193,19 +190,17 @@ function jquery_update_form_system_theme_settings_alter(&$form, $form_state) {
   if (empty($form_state['build_info']['args'][0])) {
     return;
   }
-  if(user_access('administer site configuration') && user_access('access administration pages')) {
-    $form['jquery_update'] = array(
-      '#type' => 'fieldset',
-      '#title' => t('jQuery Update'),
-      '#description' => t('You can optionally select a different version of jQuery to use for pages that are rendered using this theme. This is useful for administrative based themes.'),
-    );
-    $form['jquery_update']['jquery_update_jquery_version'] = array(
-      '#type' => 'select',
-      '#title' => t('Theme specific jQuery version'),
-      '#options' => jquery_update_get_version_options(),
-      '#default_value' => theme_get_setting('jquery_update_jquery_version', $form_state['build_info']['args'][0]),
-    );
-  }
+  $form['jquery_update'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('jQuery Update'),
+    '#description' => t('You can optionally select a different version of jQuery to use for pages that are rendered using this theme. This is useful for administrative based themes.'),
+  );
+  $form['jquery_update']['jquery_update_jquery_version'] = array(
+    '#type' => 'select',
+    '#title' => t('Theme specific jQuery version'),
+    '#options' => jquery_update_get_version_options(),
+    '#default_value' => theme_get_setting('jquery_update_jquery_version', $form_state['build_info']['args'][0]),
+  );
 }
 
 /**

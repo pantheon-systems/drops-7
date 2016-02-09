@@ -1,4 +1,0 @@
-name = Development Preview 
-description = Enables/disables modules for preview of development
-core = 7.x
-package = CU-Boulder

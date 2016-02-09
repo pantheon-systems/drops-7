@@ -1,0 +1,236 @@
+@import "../../expressbase/scss/modules/_global.scss";
+@import "../../expressbase/scss/modules/_colors.scss";
+
+body {
+  background: none;
+  background-color: $bg_dark2;
+  background-color: #f2f2f2;
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
+}
+@media screen and (min-width:960px) {
+  #page-wrapper {
+    padding:20px 0;
+  }
+}
+#page {
+  @include rgbashadow(0,0,80px,#000,.25);
+}
+.layout-fixed #page {
+  width:1200px;
+  margin: 0 auto;
+}
+.layout-responsive #page {
+  width:auto;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+#secondary-menu-wrapper {
+  background-color: #000;
+}
+#main-menu-wrapper {
+  background-color: #444;
+}
+#navigation {
+  a {
+    color:#fff;
+    font-size: 90%;
+    font-weight: 600;
+  }
+  a:hover,
+  a:focus,
+  a.active,
+  a.active-trail {
+    background-color: #fff;
+    color:#363839;
+
+  }
+  a#home-link {
+    background-color: transparent;
+    color:#fff;
+  }
+}
+#secondary-navigation {
+  color:#fff;
+  a {
+    color:#fff;
+    display: inline-block;
+    &:hover,
+    &.active,
+    &.active-trail {
+      background-color: #444;
+      color:#fff;
+    }
+  }
+}
+.top-content {
+  background-color: $bg_dark2;
+}
+#slider {
+  padding:20px 0;
+}
+#content-wrapper,
+#after-content-wrapper {
+  background-color: #fff;
+}
+#after-content-2 {
+  background-color: #f5f5f5;
+  padding:40px 0 20px;
+}
+#footer {
+  padding: 40px 0 20px;
+}
+#footer-section {
+  background-color: $bg_dark1;
+  color:#fff;
+  a {
+    color:$cugold;
+  }
+  a:hover {
+    color:#fff;
+  }
+}
+
+// Subnav
+$defaultFG: #656565;
+$hoverFG: #202020;
+$activeBG: #444;
+$activeFG: #fff;
+$border: #e7e7e7;
+
+#block-menu-block-site-navigation-menus-1,
+#block-menu-block-site-navigation-menus-2,
+#block-menu-block-site-navigation-menus-3,
+#section-navigation {
+
+  $indent: 10px;
+
+  .menu-block-wrapper {
+    font-weight: 500;
+    border-bottom: 1px solid $border;
+  }
+  ul.menu a {
+    padding:10px;
+    border:1px solid $border;
+    margin-bottom: -1px;
+    color:$defaultFG;
+    line-height: 120%;
+    &:hover,
+    &:focus {
+      background-color: $border;
+      color:$hoverFG;
+    }
+    &.active-trail {
+      border-bottom: none;
+    }
+    &.active {
+      color:$activeFG;
+      background-color: $activeBG;
+      font-weight: 500 !important;
+    }
+  }
+  li.active-trail {
+    border-left:3px solid $activeBG;
+
+    a {
+      border-left-color: $activeBG;
+    }
+  }
+  li.active-trail > a {
+
+  }
+  li.active-trail li {
+    border:none;
+  }
+  ul.menu ul.menu a {
+    padding-left: $indent * 2;
+    font-size: 90%;
+    padding-top:7px;
+    padding-bottom: 7px;
+    border-top: none;
+    border-bottom: none;
+    font-weight: normal;
+  }
+  ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 3;
+  }
+  ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 4;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 5;
+  }
+  ul.menu ul.menu ul.menu ul.menu ul.menu ul.menu a {
+    padding-left: $indent * 6;
+  }
+}
+
+#block-menu-block-site-navigation-menus-3 h2.block-title {
+  font-size: 100%;
+  line-height: 120%;
+  padding: 0;
+  margin: 0;
+
+  a {
+    display: block;
+    padding:10px;
+    background-color: $activeBG;
+    color:$activeFG;
+    font-weight: 600;
+  }
+}
+.hero-unit,
+.block-section {
+  -webkit-box-shadow: inset 0 0 50px rgba(0,0,0,0.25);
+  -moz-box-shadow: inset 0 0 50px rgba(0,0,0,0.25);
+  box-shadow: inset 0 0 50px rgba(0,0,0,0.25);
+}
+.block-section {
+  .block-section,
+  .hero-unit {
+    -webkit-box-shadow:none;
+    -moz-box-shadow:none;
+    box-shadow: none;
+  }
+}
+
+// Mobile Menu
+#mobile-navigation-wrapper{
+  background-color: #444;
+  padding-bottom: 20px;
+  color:#fff;
+  ul#main-menu-mobile,
+  ul#footer-menu-mobile {
+    background-color: #444;
+    a {
+      color:#fff;
+      border-bottom: 1px solid #555;
+    }
+    a.active,
+    a.active-trail {
+      color:#fff;
+      background-color: #222;
+      font-weight: 600;
+      border-bottom: 1px solid #222;
+    }
+  }
+  ul#secondary-menu-mobile {
+    background-color: #111;
+    a {
+      color:#fff;
+      border-bottom: 1px solid #222;
+    }
+    a.active,
+    a.active-trail {
+      color:#fff;
+      background-color: #222;
+      font-weight: 600;
+      border-bottom: 1px solid #222;
+    }
+  }
+  ul#secondary-menu-mobile,
+  ul#footer-menu-mobile {
+    border-top:3px solid #555;
+  }
+}

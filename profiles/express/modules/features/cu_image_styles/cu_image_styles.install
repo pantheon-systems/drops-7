@@ -18,3 +18,29 @@ function cu_image_styles_update_7001() {
   image_style_flush('large_square_thumbnail');
   image_style_flush('large_wide_thumbnail');
 }
+
+/*
+ * Flush small_square_thumbnail image styles
+ */
+function cu_image_styles_update_7002() {
+  image_style_flush('small_square_thumbnail');
+}
+
+/*
+ * Flush small_square_thumbnail image styles
+ */
+function cu_image_styles_update_7003() {
+  $styles = array(
+    'backstretch',
+    'large_square_thumbnail',
+    'large_wide_thumbnail',
+    'small',
+    'small_thumbnail',
+    'square',
+    'square_thumbnail',
+    'small_square_thumbnail',
+  );
+  foreach ($styles as $style) {
+    image_style_flush($style);
+  }
+}

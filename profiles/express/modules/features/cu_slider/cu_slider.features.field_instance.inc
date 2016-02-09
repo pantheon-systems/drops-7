@@ -10,7 +10,7 @@
 function cu_slider_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'bean-slider-field_slider_design_style'
+  // Exported field_instance: 'bean-slider-field_slider_design_style'.
   $field_instances['bean-slider-field_slider_design_style'] = array(
     'bundle' => 'slider',
     'default_value' => array(
@@ -48,7 +48,7 @@ function cu_slider_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-slider-field_slider_size'
+  // Exported field_instance: 'bean-slider-field_slider_size'.
   $field_instances['bean-slider-field_slider_size'] = array(
     'bundle' => 'slider',
     'default_value' => array(
@@ -86,7 +86,7 @@ function cu_slider_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'bean-slider-field_slider_slide'
+  // Exported field_instance: 'bean-slider-field_slider_slide'.
   $field_instances['bean-slider-field_slider_slide'] = array(
     'bundle' => 'slider',
     'default_value' => NULL,
@@ -121,7 +121,7 @@ function cu_slider_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_slider_slide-field_slider_caption'
+  // 'field_collection_item-field_slider_slide-field_slider_caption'.
   $field_instances['field_collection_item-field_slider_slide-field_slider_caption'] = array(
     'bundle' => 'field_slider_slide',
     'default_value' => NULL,
@@ -157,7 +157,7 @@ function cu_slider_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_slider_slide-field_slider_image'
+  // 'field_collection_item-field_slider_slide-field_slider_image'.
   $field_instances['field_collection_item-field_slider_slide-field_slider_image'] = array(
     'bundle' => 'field_slider_slide',
     'deleted' => 0,
@@ -258,7 +258,7 @@ function cu_slider_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_slider_slide-field_slider_link'
+  // 'field_collection_item-field_slider_slide-field_slider_link'.
   $field_instances['field_collection_item-field_slider_slide-field_slider_link'] = array(
     'bundle' => 'field_slider_slide',
     'default_value' => NULL,
@@ -282,6 +282,7 @@ function cu_slider_field_default_field_instances() {
       'absolute_url' => 1,
       'attributes' => array(
         'class' => '',
+        'configurable_class' => 0,
         'configurable_title' => 0,
         'rel' => '',
         'target' => 'default',
@@ -291,9 +292,14 @@ function cu_slider_field_default_field_instances() {
         'url_cutoff' => '',
       ),
       'enable_tokens' => 1,
+      'linkit' => array(
+        'button_text' => 'Search',
+        'enable' => 1,
+        'profile' => 'express_linkit_field_profile',
+      ),
       'rel_remove' => 'default',
       'title' => 'none',
-      'title_label_use_field_label' => FALSE,
+      'title_label_use_field_label' => 0,
       'title_maxlength' => 128,
       'title_value' => '',
       'url' => 0,
@@ -301,21 +307,16 @@ function cu_slider_field_default_field_instances() {
       'validate_url' => 0,
     ),
     'widget' => array(
-      'active' => 1,
-      'module' => 'advanced_link',
-      'settings' => array(
-        'default_titles' => '',
-        'urls_allowed' => 'both',
-        'urls_filter' => '',
-        'urls_search' => 'contains',
-      ),
-      'type' => 'advanced_link',
+      'active' => 0,
+      'module' => 'link',
+      'settings' => array(),
+      'type' => 'link_field',
       'weight' => 31,
     ),
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_slider_slide-field_slider_teaser'
+  // 'field_collection_item-field_slider_slide-field_slider_teaser'.
   $field_instances['field_collection_item-field_slider_slide-field_slider_teaser'] = array(
     'bundle' => 'field_slider_slide',
     'default_value' => NULL,
@@ -351,7 +352,7 @@ function cu_slider_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'field_collection_item-field_slider_slide-field_slider_url'
+  // 'field_collection_item-field_slider_slide-field_slider_url'.
   $field_instances['field_collection_item-field_slider_slide-field_slider_url'] = array(
     'bundle' => 'field_slider_slide',
     'default_value' => NULL,

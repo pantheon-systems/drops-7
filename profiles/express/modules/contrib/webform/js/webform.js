@@ -175,6 +175,9 @@
                 // Record that the target was hidden.
                 targetLocked[action['target']] = 'hide';
               }
+              if ($target.is('tr')) {
+                Drupal.webform.restripeTable($target.closest('table').first());
+              }
             }
             break;
           case 'require':
@@ -627,6 +630,21 @@
       }
     });
     return this;
+  };
+
+  /**
+   * Given a table's DOM element, restripe the odd/even classes.
+   */
+  Drupal.webform.restripeTable = function (table) {
+    // :even and :odd are reversed because jQuery counts from 0 and
+    // we count from 1, so we're out of sync.
+    // Match immediate children of the parent element to allow nesting.
+    $('> tbody > tr, > tr', table)
+      .filter(':visible:odd').filter('.odd')
+        .removeClass('odd').addClass('even')
+      .end().end()
+      .filter(':visible:even').filter('.even')
+        .removeClass('even').addClass('odd');
   };
 
 })(jQuery);

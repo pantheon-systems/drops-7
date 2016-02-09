@@ -200,12 +200,8 @@ function template_preprocess_google_appliance_results(&$vars) {
 
     // Build hook_help-based error messages for display.
     foreach ($vars['response_data']['error'] as $error_key => $error_response) {
-      // Replace error responses with hook_help messages that exist,
-      // if they don't exist, just relay the error response.
-      $help_message = google_appliance_help(
-        'google_appliance#error_' . $error_key,
-        drupal_help_arg()
-      );
+      // Replace error responses with those configured.
+      $help_message = check_markup($settings['error_' . $error_key], $settings['error_' . $error_key . '_format']);
       $vars['error_reason'] .= ($help_message != '') ? $help_message : $error_response;
 
       // Build error message for the log (ignore 'no results' condition).
@@ -354,9 +350,10 @@ function template_preprocess_google_appliance_result(&$vars) {
   if ( $vars['mime']['type'] != '' ) {
     $file = new stdClass;
     $file->filemime = $vars['mime']['type'];
-    $vars['mime']['icon'] = theme_file_icon( array(
+    $vars['mime']['icon'] = theme('file_icon', array(
       'file' => $file,
-      'icon_directory' => variable_get('file_icon_directory', drupal_get_path('module', 'file') . '/icons')
+      'icon_directory' => variable_get('file_icon_directory', drupal_get_path('module', 'file') . '/icons'),
+      'alt' => $vars['mime']['type']
     ));
   }
 
@@ -392,8 +389,9 @@ function template_preprocess_google_appliance_keymatch(&$vars) {
  * Preprocess a single synonym.
  */
 function template_preprocess_google_appliance_synonym(&$vars) {
+  $settings = _google_appliance_get_settings();
   $description = filter_xss($vars['description'], array('b', 'strong'));
-  $url = check_url('gsearch/' . $vars['url']);
+  $url = check_url($settings['drupal_path'] . '/' . $vars['url']);
   $vars['link'] = l($description, $url, array('attributes' => array('class' => array('synonym-description'))));
 }
 
@@ -494,6 +492,7 @@ function theme_google_appliance_pager(&$vars) {
  * Preprocess google-appliance-sort-headers.tpl.php.
  */
 function template_preprocess_google_appliance_sort_headers(&$vars) {
+  $settings = _google_appliance_get_settings();
 
   // Possible sort options.
   $vars['sort_options'] = array(
@@ -562,7 +561,7 @@ function template_preprocess_google_appliance_sort_headers(&$vars) {
       );
 
       // Append the query to the base url of the serach page.
-      $link_path = 'gsearch/' . $vars['gsa_query_params']['q'];
+      $link_path = $settings['drupal_path'] . '/' . $vars['gsa_query_params']['q'];
 
       // Append the sort param if any.
       $link_path .= '/' . $sort_opt['sort'];

@@ -5,7 +5,7 @@
  * Defines the inline entity form controller for Nodes.
  */
 
-class BeanInlineEntityFormController extends EntityInlineEntityFormController {
+class BeanInlineEntityFormController2 extends EntityInlineEntityFormController {
 
   /**
   * Overrides EntityInlineEntityFormController::labels().

@@ -19,14 +19,13 @@
  */
 function cu_sticky_menu_preprocess_html(&$variables) {
   $use_sticky_menu = variable_get('use_sticky_menu') ? variable_get('use_sticky_menu') : '0';
-  if (function_exists('alpha_get_theme') && $use_sticky_menu) {
+  if (!path_is_admin(current_path()) && $use_sticky_menu) {
     global $base_url;
     drupal_add_css(drupal_get_path('module', 'cu_sticky_menu') . '/css/cu_sticky_menu.css');
     drupal_add_js(drupal_get_path('module', 'cu_sticky_menu') . '/js/cu_sticky_menu.js', array(
         'type' => 'file',
         'scope' => 'footer',
         'weight' => 50));
-    $theme = alpha_get_theme();
     $menu = menu_navigation_links(variable_get('menu_main_links_source', 'main-menu'));
     foreach ($menu as $key => $value) {
       if ($menu[$key]['href'] == '<front>') {
@@ -37,11 +36,9 @@ function cu_sticky_menu_preprocess_html(&$variables) {
     }
     $variables['page']['page_top']['sticky_menu']['#weight'] = -99;
     $variables['page']['page_top']['sticky_menu']['#access'] = TRUE;
-    if (isset($theme->page)) {
-      $logo = $theme->page['logo'];
+      $logo = theme_get_setting('logo');
       $site_name = variable_get('site_name', '');
-      $variables['page']['page_top']['sticky_menu']['#markup'] = '<div id="sticky-menu" class="clearfix"><a href="' . $base_url . '"><img src="' . $logo . '" alt=" " /><span class="site-name clearfix">' . strip_tags($site_name) . '</span></a>' . _cu_sticky_menu_build($menu) . '</div>';
-    }
+      $variables['page']['page_top']['sticky_menu']['#markup'] = '<div id="sticky-menu" class="clearfix has-shadow"><a href="' . $base_url . '"><img src="' . $logo . '" alt=" " /><span class="site-name clearfix">' . strip_tags($site_name) . '</span></a>' . _cu_sticky_menu_build($menu) . '</div>';
   }
 }
 

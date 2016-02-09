@@ -128,10 +128,12 @@ class QuickSet {
   public function __construct($name, $contents, $settings) {
     $this->name = $name;
     $this->contents = array();
-    foreach ($contents as $key => $item) {
-      // Instantiate a content renderer object and add it to the contents array.
-      if ($renderer = self::getContentRenderer($item)) {
-        $this->contents[$key] = $renderer;
+    if (is_array($contents)) {
+      foreach ($contents as $key => $item) {
+        // Instantiate a content renderer object and add it to the contents array.
+        if ($renderer = self::getContentRenderer($item)) {
+          $this->contents[$key] = $renderer;
+        }
       }
     }
     $default_settings = self::getDefaultSettings();

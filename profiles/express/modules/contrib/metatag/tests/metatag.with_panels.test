@@ -1,0 +1,176 @@
+<?php
+/**
+ * @file
+ * Tests for the Metatag module for Panels integration, outside of
+ * Metatag:Panels.
+ */
+
+class MetatagCoreWithPanelsTest extends MetatagTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Metatag core tests with Panels',
+      'description' => 'Test Metatag integration with the Panels module.',
+      'group' => 'Metatag',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // We'll be using Panels but most of the work is actually in Page Manager.
+    $modules[] = 'page_manager';
+    $modules[] = 'panels';
+
+    parent::setUp($modules);
+  }
+
+  /**
+   * Test out a node_view Panels display with Metatag.
+   */
+  public function testPanelsNodeView() {
+    $content_type = 'metatag_test';
+    $content_type_path = str_replace('_', '-', $content_type);
+    $label = 'Test';
+
+    // Create a content type.
+    $this->createContentType($content_type, $label);
+
+    // Create an admin user and log them in.
+    $perms = array(
+      // Needed for the content type.
+      'create ' . $content_type . ' content',
+      'delete any ' . $content_type . ' content',
+      'edit any ' . $content_type . ' content',
+
+      // Needed for Panels et al.
+      'use page manager',
+      'administer page manager',
+    );
+    $this->adminUser = $this->createAdminUser($perms);
+    $this->drupalLogin($this->adminUser);
+
+    // Create a test node.
+
+    // Load the node form.
+    $this->drupalGet('node/add/' . $content_type_path);
+    $this->assertResponse(200);
+
+    // Verify the page loaded correctly.
+    // @todo Update this to extract the page title.
+    $this->assertText(strip_tags(t('Create @name', array('@name' => $label))));
+
+    // Verify that it's possible to submit values to the form.
+    $this->drupalPost(NULL, array(
+      'metatags[und][dcterms.subject][value]' => '[node:title] ponies',
+      'title' => 'Who likes magic',
+    ), t('Save'));
+    $this->assertResponse(200);
+
+    // Verify that the node saved correctly.
+    // $xpath = $this->xpath("//h1");
+    $t_args = array('@type' => 'Test', '%title' => 'Who likes magic');
+    // This doesn't work for some reason, it seems the HTML is stripped off
+    // during output so the %title's standard Drupal wrappers don't match.
+    // $this->assertText(t('@type %title has been created.', $t_args));
+    // .. so this has to be done instead.
+    $this->assertText(strip_tags(t('@type %title has been created.', $t_args)));
+
+    // Save the node URL for later.
+    $node_url = $this->getUrl();
+
+    // Confirm the tags load correctly.
+    $this->confirmNodeTags();
+
+    // Enable the Page Manager display for nodes.
+    variable_set('page_manager_node_view_disabled', FALSE);
+
+    // Confirm that the main Panels page loads correctly.
+    $this->drupalGet('admin/structure/pages');
+    $this->assertResponse(200);
+
+    // Confirm that the Panels node_view page loads.
+    $this->drupalGet('admin/structure/pages/edit/node_view');
+    $this->assertResponse(200);
+
+    // Confirm that a new variant can be added.
+    $this->drupalGet('admin/structure/pages/nojs/operation/node_view/actions/add');
+    $this->assertResponse(200);
+
+    // Create a variant. This is done as a series of form submissions.
+    $args = array(
+      'title' => 'Test',
+      'name' => 'test',
+      'handler' => 'panel_context',
+    );
+    $this->drupalPost('admin/structure/pages/nojs/operation/node_view/actions/add', $args, t('Create variant'));
+    $this->assertResponse(200);
+    $args = array(
+      'layout' => 'flexible',
+    );
+    $this->drupalPost(NULL, $args, t('Continue'));
+    $this->assertResponse(200);
+    $args = array();
+    $this->drupalPost(NULL, $args, t('Continue'));
+    $this->assertResponse(200);
+    $args = array();
+    $this->drupalPost(NULL, $args, t('Create variant'));
+    $this->assertResponse(200);
+    $this->assertText(t('The page has been updated. Changes will not be permanent until you save.'));
+    $args = array();
+    $this->drupalPost(NULL, $args, t('Save'));
+    $this->assertResponse(200);
+
+    // Confirm the process completed successfully.
+    $this->assertEqual($this->getUrl(), url('admin/structure/pages/edit/node_view', array('absolute' => TRUE)));
+    $this->assertText(t('Panel') . ': Test');
+
+    // Clear all caches, so we can start off properly.
+    drupal_flush_all_caches();
+
+    // Load the node page again.
+    $this->confirmNodeTags($node_url);
+  }
+
+  /**
+   * Confirm that the meta tags for the requested node load properly.
+   *
+   * @param string $path
+   *   Optional path to load, if not present the current path will be used.
+   */
+  function confirmNodeTags($path = NULL) {
+    if (!empty($path)) {
+      $this->drupalGet($path);
+      $this->assertResponse(200);
+    }
+
+    // Verify the title is using the custom default for this content type.
+    $xpath = $this->xpath("//meta[@name='dcterms.subject']");
+    $this->assertEqual(count($xpath), 1, 'Exactly one dcterms.subject meta tag found.');
+    $this->assertEqual($xpath[0]['content'], 'Who likes magic ponies');
+  }
+
+  /**
+   * Test out a term_view Panels display with Metatag.
+   *
+   * @todo Write this.
+   */
+  // public function testPanelsTermView() {
+  //   // Enable the Page Manager display for terms.
+  //   variable_set('page_manager_term_view_disabled', FALSE);
+  // }
+
+  /**
+   * Test out a user_view Panels display with Metatag.
+   *
+   * @todo Write this.
+   */
+  // public function testPanelsUserView() {
+  //   // Enable the Page Manager display for users.
+  //   variable_set('page_manager_user_view_disabled', FALSE);
+  // }
+
+}

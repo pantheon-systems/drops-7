@@ -708,10 +708,24 @@ function webform_requirements($phase) {
   // users from upgrading from 3.x if their PHP version is too old.
   if (version_compare(phpversion(), '5.3') < 0) {
     $requirements['webform_php'] = array(
-      'title' => $t('Webform PHP requirements'),
+      'title' => $t('Webform PHP requirement'),
       'value' => phpversion(),
       'severity' => REQUIREMENT_ERROR,
       'description' => $t('Webform requires PHP 5.3 or higher.'),
+    );
+  }
+  // Ensure that views is enabled as it is a new .info requirement starting
+  // with version 7.x-4.0rc1. On installation, the .info file is sufficient to
+  // cause the dependencies to be installed. On update, update.php will
+  // respect this hook_requirements implementation, but as of drush 6.3.0 and
+  // drush 7.0.0, drush updatedb will not. See:
+  // https://github.com/drush-ops/drush/issues/1427
+  if ($phase != 'install' && !module_exists('views')) {
+    $requirements['webform_views'] = array(
+      'title' => $t('Webform Views requirement'),
+      'value' => $t('Missing'),
+      'severity' => REQUIREMENT_ERROR,
+      'description' => $t('Webform requires Views, which is not installed and enabled.'),
     );
   }
 
@@ -795,6 +809,7 @@ function webform_uninstall() {
   variable_del('webform_progressbar_label_confirmation');
   variable_del('webform_table');
   variable_del('webform_submission_access_control');
+  variable_del('webform_token_access');
   variable_del('webform_update_batch_size');
   variable_del('webform_disabled_components');
 
@@ -1986,7 +2001,23 @@ function webform_update_7416() {
  * Change webform_component.name to text to allow for longer labels.
  */
 function webform_update_7417() {
+  // This update function was introduced in 7.x-4.0rc1, which was the first
+  // release to require views. While the views requirement was added to the
+  // .info file, and while subsequently hook_requirements() added a check for
+  // views, it is possible to arrive at this update function via drush updatedb
+  // without views enabled.
+  $result = NULL;
+  if (!module_exists('views')) {
+    if (module_enable(array('views'))) {
+      $result = t('The Views module was automatically enabled.');
+    }
+    else {
+      throw new DrupalUpdateException(t('UPDATE ERROR: The Views module must be downloaded and enabled before Webform updates can proceed.'));
+    }
+  }
+
   db_change_field('webform_component', 'name', 'name', array('type' => 'text', 'not null' => TRUE));
+  return $result;
 }
 
 /**

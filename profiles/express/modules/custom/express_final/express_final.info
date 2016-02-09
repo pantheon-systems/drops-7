@@ -1,0 +1,6 @@
+name = Express Final
+description = Module to enable  custom variables, themes, and other things for Express install.
+core = 7.x
+version = 7.x-1.0
+package = Express
+

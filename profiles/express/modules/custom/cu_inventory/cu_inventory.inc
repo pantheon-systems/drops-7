@@ -12,11 +12,11 @@ function cu_inventory_process_profile_version($version) {
   $site_data['sid'] = variable_get('cu_sid', NULL);
 
   if (!$version) {
-	// drupal_get_installed_schema_version doesn't appear at the 
+	// drupal_get_installed_schema_version doesn't appear at the
 	// bootstrap level of an updated so query the value
-    $version = drupal_get_installed_schema_version('cu_fit');
+    $version = drupal_get_installed_schema_version('express');
   }
-  $site_data['statistics']['cu_fit_schema_version'] = (int)$version;
+  $site_data['statistics']['express_schema_version'] = (int)$version;
 
   // Ready to patch.
   cu_inventory_update_site($site_data);

@@ -1,9 +1,8 @@
-name = cu_ldap
+name = CU LDAP
 description = LDAP Server and Configurations
 core = 7.x
+package = CU-Core
 version = 7.x-1.0
-package = CU Features Required
-php = 5.2.4
 dependencies[] = ctools
 dependencies[] = features
 dependencies[] = ldap_authentication
@@ -25,3 +24,4 @@ features[variable][] = securepages_pages
 features[variable][] = securepages_roles
 features[variable][] = securepages_secure
 features[variable][] = securepages_switch
+required = 1

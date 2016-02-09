@@ -8,7 +8,7 @@
 </div>
 
 <?php if (variable_get('custom_white_logo') && variable_get('custom_black_logo')): ?>
-  <?php 
+  <?php
     // Load logo files
     $custom_logo = array(
       'white' => file_load(variable_get('custom_white_logo')),
@@ -22,12 +22,12 @@
   <div<?php print $attributes; ?>>
     <div<?php print $content_attributes; ?>>
       <div class="branding-data clearfix">
-        <?php 
-          
+        <?php
+
           // Link images to <front> and add site name
           print l($custom_logo['white']->markup, '<front>', array('attributes' => array('rel' => 'home', 'title' => check_plain($vars['site_name'])), 'html' => TRUE));
-          
-          print l($custom_logo['black']->markup, '<front>', array('attributes' => array('rel' => 'home', 'title' => check_plain($vars['site_name'])), 'html' => TRUE)); 
+
+          print l($custom_logo['black']->markup, '<front>', array('attributes' => array('rel' => 'home', 'title' => check_plain($vars['site_name'])), 'html' => TRUE));
         ?>
         <div class="element-invisible">
           <?php if ($is_front): ?>
@@ -36,7 +36,7 @@
             <h2 class="site-title<?php print $class; ?>"><?php print $linked_site_name; ?></h2>
           <?php endif; ?>
           <?php if ($site_slogan): ?>
-          <h6 class="site-slogan<?php print $class; ?>"><?php print $site_slogan; ?></h6>
+          <div class="site-slogan<?php print $class; ?>"><?php print $site_slogan; ?></div>
           <?php endif; ?>
         </div>
       </div>
@@ -64,7 +64,7 @@
         <?php endif; ?>
         <?php $class = ($site_slogan_hidden && !$site_name_hidden ? ' element-invisible' : ''); ?>
         <?php if ($site_slogan): ?>
-        <h6 class="site-slogan<?php print $class; ?>"><?php print $site_slogan; ?></h6>
+        <div class="site-slogan<?php print $class; ?>"><?php print $site_slogan; ?></div>
         <?php endif; ?>
       </div>
       <?php endif; ?>

@@ -6,33 +6,40 @@
  */
 
 function webform_drush_command() {
-  $items = array();
-
-  $items['webform-export'] = array(
-    'description' => 'Exports webform data to a file.',
-    'arguments' => array(
-      'nid' => 'The node ID of the webform you want to export (required)',
+  return array(
+    'webform-export' => array(
+      'description' => 'Exports webform data to a file.',
+      'arguments' => array(
+        'nid' => 'The node ID of the webform you want to export (required)',
+      ),
+      'options' => array(
+        'file' => 'The file path to export to (defaults to print to stdout)',
+        'format' => 'The exporter format to use. Out-of-the-box this may be "delimited" or "excel".',
+        'delimiter' => 'Delimiter between columns (defaults to site-wide setting). This option may need to be wrapped in quotes. i.e. --delimter="\t".',
+        'components' => 'Comma-separated list of component IDs or form keys to include.' . "\n" .
+                        'May also include "webform_serial", "webform_sid", "webform_time", "webform_complete_time", "webform_modified_time", "webform_draft", "webform_ip_address", "webform_uid", and "webform_username".',
+        'header-keys' => 'Integer -1 for none, 0 for label (default) or 1 for field key.',
+        'select-keys' => 'Integer 0 or 1 value. Set to 1 to print select list values by their field keys instead of labels.',
+        'select-format' => 'Set to "separate" (default) or "compact" to determine how select list values are exported.',
+        'range-type' => 'Range of submissions to export: "all", "new", "latest", "range" (by sid, default if start is supplied), "range-serial", or "range-date".',
+        'range-latest' => 'Integer specifying the latest X submissions will be downloaded. Used if "range-type" is "latest" or no other range options are provided.',
+        'range-start' => 'The submission ID, serial number, or start date at which to start exporting.',
+        'range-end' => 'The submission ID, serial number, or end date at which to end exporting.',
+        'completion-type' => 'Submissions to be included: "finished", "draft" or "all" (default).',
+        'batch-size' => 'The size of batches in rows (default 10000). If encountering out of memory errors, set this number lower to export fewer submissions per batch.',
+      ),
+      'aliases' => array('wfx'),
     ),
-    'options' => array(
-      'file' => 'The file path to export to (defaults to print to stdout)',
-      'format' => 'The exporter format to use. Out-of-the-box this may be "delimited" or "excel".',
-      'delimiter' => 'Delimiter between columns (defaults to site-wide setting). This option may need to be wrapped in quotes. i.e. --delimter="\t".',
-      'components' => 'Comma-separated list of component IDs or form keys to include.' . "\n" .
-                      'May also include "webform_serial", "webform_sid", "webform_time", "webform_complete_time", "webform_modified_time", "webform_draft", "webform_ip_address", "webform_uid", and "webform_username".',
-      'header-keys' => 'Integer -1 for none, 0 for label (default) or 1 for field key.',
-      'select-keys' => 'Integer 0 or 1 value. Set to 1 to print select list values by their field keys instead of labels.',
-      'select-format' => 'Set to "separate" (default) or "compact" to determine how select list values are exported.',
-      'range-type' => 'Range of submissions to export: "all", "new", "latest", "range" (by sid, default if start is supplied), "range-serial", or "range-date".',
-      'range-latest' => 'Integer specifying the latest X submissions will be downloaded. Used if "range-type" is "latest" or no other range options are provided.',
-      'range-start' => 'The submission ID, serial number, or start date at which to start exporting.',
-      'range-end' => 'The submission ID, serial number, or end date at which to end exporting.',
-      'completion-type' => 'Submissions to be included: "finished", "draft" or "all" (default).', 
-      'batch-size' => 'The size of batches in rows (default 10000). If encountering out of memory errors, set this number lower to export fewer submissions per batch.',
+    'webform-clear' => array(
+      'description' => 'Clear a webform by deleting all its submissions.',
+      'arguments' => array(
+        'nid' => 'The node ID of the webform you want to clear (required)',
+      ),
+      'options' => array(
+        'batch-size' => 'The size of batches in rows (default 10000). If encountering out of memory errors, set this number lower to export fewer submissions per batch.',
+      ),
     ),
-    'aliases' => array('wfx'),
   );
-
-  return $items;
 }
 
 /**
@@ -145,4 +152,47 @@ function drush_webform_export($nid = FALSE) {
     drush_print(file_get_contents($options['file_name']));  // The @ makes it silent.
     @unlink($options['file_name']);  // Clean up, the @ makes it silent.
   }
+}
+
+/**
+ * Clears a webform via drush, useful for webforms with many submissions that
+ * would otherwise fail due to time out due or memory consumption.
+ *
+ * @param int $nid
+ *   Node ID of the webform to clear.
+ */
+function drush_webform_clear($nid = FALSE) {
+  if (!$nid) {
+    return drush_set_error('The node ID of the webform to be cleared is required.');
+  }
+  $node = node_load($nid);
+  if (!$node) {
+    return drush_set_error(dt('Node !nid was not found.', array('!nid' => $nid)));
+  }
+  if (!drush_confirm(dt('Clear submissions from webform "@title"?', array('@title' => $node->title)))) {
+    return drush_set_error('webform-clear cancelled.');
+  }
+
+  //module_load_include('inc', 'webform', 'includes/webform.submissions');
+  //module_load_include('inc', 'webform', 'includes/webform.components');
+  module_load_include('inc', 'webform', 'includes/webform.report');
+
+
+  // Pull in option from drush to override the default.
+  $batch_size = drush_get_option('batch-size', 10000);
+  $count = 0;
+  while ($deleted = webform_results_clear($nid, $batch_size)) {
+    $count += $deleted;
+  }
+  // Alas, there is no drush version of format_plural, so use the ugly "(s)".
+  drush_log(dt('@count submission(s) in webform "@title" cleared.', array('@count' => $count, '@title' => $node->title)), 'ok');
+}
+
+/**
+ * Implements hook_drush_sql_sync_sanitize.
+ */
+function webform_drush_sql_sync_sanitize($source) {
+  drush_sql_register_post_sync_op('webform_submitted_data',
+    dt('Delete all data submitted to webforms (depending on the site config, may contain sensitive data).'),
+    "TRUNCATE webform_submitted_data; TRUNCATE webform_submissions;");
 }

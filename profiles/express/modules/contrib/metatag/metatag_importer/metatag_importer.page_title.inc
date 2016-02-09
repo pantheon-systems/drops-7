@@ -5,6 +5,18 @@
  */  
 
 /**
+ * FormAPI callback for the Page Title importer.
+ */
+function metatag_importer_page_title_form($form, &$form_state) {
+  $form['help'] = array(
+    '#markup' => t('To migrate data from Page Title it is necessary to use Drush. See "drush metatag-convert-page-title" for details.'),
+    '#prefix' => '<p>',
+    '#suffix' => '</p>',
+  );
+  return $form;
+}
+
+/**
  * Migrate data from the page_title table, if available.
  *
  * @return int
@@ -103,7 +115,7 @@ function metatag_importer_for_page_title() {
     }
     $data[$langcode]['title']['value'] = $metatag_title;
 
-    metatag_metatags_save($entity_type, $entity_id, $revision_id, $data, $langcode);
+    metatag_metatags_save($entity_type, $entity_id, $revision_id, $data);
     $converted += db_delete('page_title')
       ->condition('type', $entity_type)
       ->condition('id', $entity_id)

@@ -10,7 +10,7 @@
 function cu_page_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'node-page-body'
+  // Exported field_instance: 'node-page-body'.
   $field_instances['node-page-body'] = array(
     'bundle' => 'page',
     'default_value' => NULL,
@@ -24,6 +24,31 @@ function cu_page_field_default_field_instances() {
         'type' => 'text_default',
         'weight' => 0,
       ),
+      'embed' => array(
+        'label' => 'hidden',
+        'module' => 'smart_trim',
+        'settings' => array(
+          'more_link' => 1,
+          'more_text' => 'Read more',
+          'summary_handler' => 'full',
+          'trim_length' => 100,
+          'trim_link' => 0,
+          'trim_options' => array(
+            'text' => 'text',
+          ),
+          'trim_preserve_tags' => '',
+          'trim_suffix' => '...',
+          'trim_type' => 'words',
+        ),
+        'type' => 'smart_trim_format',
+        'weight' => 1,
+      ),
+      'sidebar' => array(
+        'label' => 'hidden',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 1,
+      ),
       'teaser' => array(
         'label' => 'hidden',
         'module' => 'smart_trim',
@@ -31,15 +56,23 @@ function cu_page_field_default_field_instances() {
           'more_link' => 0,
           'more_text' => 'Read more',
           'summary_handler' => 'full',
-          'trim_length' => 100,
+          'trim_length' => 50,
+          'trim_link' => FALSE,
           'trim_options' => array(
             'text' => 'text',
           ),
+          'trim_preserve_tags' => '',
           'trim_suffix' => '...',
           'trim_type' => 'words',
         ),
         'type' => 'smart_trim_format',
         'weight' => 1,
+      ),
+      'title' => array(
+        'label' => 'hidden',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
       ),
     ),
     'entity_type' => 'node',
@@ -62,7 +95,7 @@ function cu_page_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-page-field_photo'
+  // Exported field_instance: 'node-page-field_photo'.
   $field_instances['node-page-field_photo'] = array(
     'bundle' => 'page',
     'deleted' => 0,
@@ -74,6 +107,26 @@ function cu_page_field_default_field_instances() {
         'type' => 'hidden',
         'weight' => 1,
       ),
+      'embed' => array(
+        'label' => 'hidden',
+        'module' => 'image',
+        'settings' => array(
+          'image_link' => 'content',
+          'image_style' => 'large_square_thumbnail',
+        ),
+        'type' => 'image',
+        'weight' => 0,
+      ),
+      'sidebar' => array(
+        'label' => 'hidden',
+        'module' => 'image',
+        'settings' => array(
+          'image_link' => 'content',
+          'image_style' => 'square',
+        ),
+        'type' => 'image',
+        'weight' => 0,
+      ),
       'teaser' => array(
         'label' => 'hidden',
         'module' => 'image',
@@ -83,6 +136,12 @@ function cu_page_field_default_field_instances() {
         ),
         'type' => 'image',
         'weight' => 0,
+      ),
+      'title' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 1,
       ),
     ),
     'entity_type' => 'node',
@@ -128,9 +187,10 @@ function cu_page_field_default_field_instances() {
           'colorbox__preview' => 0,
           'colorbox__slider' => 0,
           'colorbox__slider-large' => 0,
-          'colorbox__small' => 0,
-          'colorbox__small_thumbnail' => 0,
-          'colorbox__square' => 0,
+          'colorbox__small' => 'colorbox__small',
+          'colorbox__small_square_thumbnail' => 'colorbox__small_square_thumbnail',
+          'colorbox__small_thumbnail' => 'colorbox__small_thumbnail',
+          'colorbox__square' => 'colorbox__square',
           'colorbox__square_thumbnail' => 0,
           'colorbox__thumbnail' => 0,
           'icon_link' => 0,
@@ -144,7 +204,7 @@ function cu_page_field_default_field_instances() {
           'image_grid-6' => 0,
           'image_grid-9' => 0,
           'image_grid-12' => 0,
-          'image_hero' => 0,
+          'image_hero' => 'image_hero',
           'image_large' => 'image_large',
           'image_large_square_thumbnail' => 'image_large_square_thumbnail',
           'image_large_wide_thumbnail' => 'image_large_wide_thumbnail',
@@ -153,6 +213,7 @@ function cu_page_field_default_field_instances() {
           'image_slider' => 'image_slider',
           'image_slider-large' => 0,
           'image_small' => 'image_small',
+          'image_small_square_thumbnail' => 'image_small_square_thumbnail',
           'image_small_thumbnail' => 0,
           'image_square' => 0,
           'image_square_thumbnail' => 'image_square_thumbnail',

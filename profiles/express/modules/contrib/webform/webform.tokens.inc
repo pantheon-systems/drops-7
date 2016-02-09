@@ -86,7 +86,7 @@ function webform_tokens($type, $tokens, array $data = array(), array $options = 
   static $recursion_level = 0;
 
   // Return early unless submission tokens are needed and there is a submission.
-  if ($type != 'submission' || empty($data['webform-submission'])) {
+  if ($type != 'submission' || empty($data['webform-submission']) || !webform_variable_get('webform_token_access')) {
     return array();
   }
 

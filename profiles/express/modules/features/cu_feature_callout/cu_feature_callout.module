@@ -57,15 +57,18 @@ function cu_feature_callout_preprocess_entity(&$vars) {
       if (!empty($fc_item['field_callout_title']['#items'])) {
         $title = $fc_item['field_callout_title']['#items'][0]['title'];
       }
+      else {
+          $title = NULL;
+      }
       // Get URL.
       if (!empty($fc_item['field_callout_title']['#items'][0]['url'])) {
         $url = $fc_item['field_callout_title']['#items'][0]['url'];
       }
-      
+
       // Get text content.
       if (!empty($fc_item['field_callout_text'])) {
         $text = $fc_item['field_callout_text'][0]['#markup'];
-      } 
+      }
       // Build image.
       if (isset($fc_item['field_callout_image']['#items'][0]['uri'])) {
         // Get image uri.
@@ -79,6 +82,17 @@ function cu_feature_callout_preprocess_entity(&$vars) {
         $image = drupal_render($build);
       }
 
+      // Remove title if link url field was used but link title field was not.
+      // Leaving title field blank results in url being inserted as the title.
+      // Check to see if title is a url BEFORE making the link, not after.
+      // Checking after would have all titles include a url.
+      if (isset($fc_item['field_callout_title']['#items'][0]['title']) && isset($fc_item['field_callout_title']['#items'][0]['url']) && ($fc_item['field_callout_title']['#items'][0]['title'] == $fc_item['field_callout_title']['#items'][0]['url'])) {
+        $title = '';
+      }
+      if (strpos($title,'http') !== false) {
+        $title = '';
+      }
+
       // Make links if $url is set.
       if (isset($url)) {
         if (isset($title)) {
@@ -87,7 +101,7 @@ function cu_feature_callout_preprocess_entity(&$vars) {
           $title = '';
         }
         if (isset($image)) {
-          $image = l($image, $url, array('html' => TRUE)); 
+          $image = l($image, $url, array('html' => TRUE));
         } else {
           $image = '';
         }
@@ -99,13 +113,10 @@ function cu_feature_callout_preprocess_entity(&$vars) {
           $title = '';
         }
       }
-      // Remove title if link url field was used but link title field was not.
-      if (isset($fc_item['field_callout_title']['#items'][0]['title']) && isset($fc_item['field_callout_title']['#items'][0]['url']) && ($fc_item['field_callout_title']['#items'][0]['title'] == $fc_item['field_callout_title']['#items'][0]['url'])) {
-        $title = '';
-      }
+
       // Create an array of items.
       $items[$i]['#markup'] = '<div class="feature-callout-item feature-callout-column-' . $column_count . ' clearfix">' . $image . '<div class="feature-callout-text clearfix">' . $title . '<div class="field-type-text-long">' . $text . '</div></div></div>';
-      
+
       if ($column_count == $columns) {
         $column_count = 0;
       }
@@ -126,7 +137,7 @@ function cu_feature_callout_preprocess_entity(&$vars) {
       $vars['content']['field_callouts'] = $items;
       $vars['content']['field_callouts']['#prefix'] = '<div class="' . $classes . '">';
       $vars['content']['field_callouts']['#suffix'] = '</div>';
-      
+
     }
   }
 }

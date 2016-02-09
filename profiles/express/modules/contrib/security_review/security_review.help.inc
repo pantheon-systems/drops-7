@@ -377,6 +377,9 @@ function security_review_check_executable_php_help($check = NULL, $skipped_messa
         case 'incorrect_htaccess':
             $element['findings']['descriptions'][] = t("The .htaccess file exists but does not contain the correct content. It is possible it's been maliciously altered.");
             break;
+        case 'outdated_core':
+            $element['findings']['descriptions'][] = t("You are running a out-of-date Drupal installation that is vulnerable to arbitrary code execution via weak htaccess protection. Upgrade to the latest version of Drupal. See <a href='https://drupal.org/SA-CORE-2013-003'>SA-CORE-2013-003 - Drupal core - Multiple vulnerabilities</a> for the full report.");
+            break;
         case 'writable_htaccess':
           $element['findings']['descriptions'][] = t("The .htaccess file is writeable which poses a risk should a malious user find a way to execute PHP code they could alter the htaccess file to allow further PHP code execution.");
           break;

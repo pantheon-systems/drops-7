@@ -644,9 +644,14 @@ function webform_submission_render($node, $submission, $email, $format, $exclude
     }
     if ($email && $email['exclude_empty']) {
       foreach ($submission->data as $cid => $data) {
-        if (!isset($data[0]) || $data[0] == '') {
-          unset($components[$cid]);
+        // Caution. Grids store their data in an array index by question key.
+        foreach ($data as $value) {
+          if ($value != '') {
+            // This component has a non-empty value. Continue the outer loop.
+            continue 2;
+          }
         }
+        unset($components[$cid]);
       }
     }
   }

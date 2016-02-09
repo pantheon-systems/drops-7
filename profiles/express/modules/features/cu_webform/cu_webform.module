@@ -7,12 +7,31 @@
 include_once 'cu_webform.features.inc';
 
 /**
+ * Implements hook_menu().
+ */
+function cu_webform_menu() {
+  $items = array();
+  $items['admin/content/webform/add'] = array(
+    'title' => 'Add Webform',
+    'page callback' => 'drupal_goto',
+    'page arguments' => array('node/add/webform'),
+    'access callback' => '_node_add_access',
+    //'access arguments' => array('create webform content'),
+    'type' => MENU_LOCAL_ACTION,
+  );
+  return $items;
+}
+
+/**
  *  Implements hook_form_FORM_ID_alter.
  */
 function cu_webform_form_webform_node_form_alter(&$form, &$form_state, $form_id) {
-  $form['menu']['enabled']['#default_value'] = TRUE;
+  // Only do this for new nodes
+  if ($form['nid']['#value'] == NULL) {
+    $form['menu']['enabled']['#default_value'] = TRUE;
+  }
 }
- 
+
 /**
  * Implements hook_menu_alter.
  * Alter titles of webform links
@@ -24,4 +43,3 @@ function cu_webform_menu_alter(&$items) {
   $items['node/%webform_menu/webform']['title'] = 'Edit Webform';
   $items['node/%webform_menu/webform-results']['title'] = 'Webform Results';
 }
-

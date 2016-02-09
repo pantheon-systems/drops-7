@@ -10,7 +10,7 @@
 function cu_hero_unit_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_hero_unit_bg_color'
+  // Exported field_base: 'field_hero_unit_bg_color'.
   $field_bases['field_hero_unit_bg_color'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -39,7 +39,7 @@ function cu_hero_unit_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_hero_unit_headline'
+  // Exported field_base: 'field_hero_unit_headline'.
   $field_bases['field_hero_unit_headline'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -60,7 +60,7 @@ function cu_hero_unit_field_default_field_bases() {
     'type' => 'text',
   );
 
-  // Exported field_base: 'field_hero_unit_image'
+  // Exported field_base: 'field_hero_unit_image'.
   $field_bases['field_hero_unit_image'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -82,7 +82,7 @@ function cu_hero_unit_field_default_field_bases() {
     'type' => 'image',
   );
 
-  // Exported field_base: 'field_hero_unit_link'
+  // Exported field_base: 'field_hero_unit_link'.
   $field_bases['field_hero_unit_link'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -111,7 +111,7 @@ function cu_hero_unit_field_default_field_bases() {
     'type' => 'link_field',
   );
 
-  // Exported field_base: 'field_hero_unit_link_color'
+  // Exported field_base: 'field_hero_unit_link_color'.
   $field_bases['field_hero_unit_link_color'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -143,7 +143,7 @@ function cu_hero_unit_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_hero_unit_size'
+  // Exported field_base: 'field_hero_unit_size'.
   $field_bases['field_hero_unit_size'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -169,7 +169,7 @@ function cu_hero_unit_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_hero_unit_size_priority'
+  // Exported field_base: 'field_hero_unit_size_priority'.
   $field_bases['field_hero_unit_size_priority'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -195,7 +195,7 @@ function cu_hero_unit_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_hero_unit_text'
+  // Exported field_base: 'field_hero_unit_text'.
   $field_bases['field_hero_unit_text'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -214,7 +214,7 @@ function cu_hero_unit_field_default_field_bases() {
     'type' => 'text_long',
   );
 
-  // Exported field_base: 'field_hero_unit_text_align'
+  // Exported field_base: 'field_hero_unit_text_align'.
   $field_bases['field_hero_unit_text_align'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -243,7 +243,7 @@ function cu_hero_unit_field_default_field_bases() {
     'type' => 'list_text',
   );
 
-  // Exported field_base: 'field_hero_unit_text_color'
+  // Exported field_base: 'field_hero_unit_text_color'.
   $field_bases['field_hero_unit_text_color'] = array(
     'active' => 1,
     'cardinality' => 1,

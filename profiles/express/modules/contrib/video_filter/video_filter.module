@@ -284,14 +284,9 @@ function theme_video_filter_flash($variables) {
 
   $classes = video_filter_get_classes($video);
 
-  $attributes = '';
-  if ($video['attributes']) {
-    $attributes = drupal_attributes($video['attributes']);
-  }
-
   $output .= '<object class="' . implode(' ', $classes) . '" type="application/x-shockwave-flash" ';
 
-  $output .= 'width="' . $video['width'] . '" height="' . $video['height'] . '" data="' . $video['source'] . '" ' . $attributes . '>' . "\n";
+  $output .= 'width="' . $video['width'] . '" height="' . $video['height'] . '" data="' . $video['source'] . '">' . "\n";
 
   $defaults = array(
     'movie' => $video['source'],
@@ -317,13 +312,10 @@ function theme_video_filter_flash($variables) {
  */
 function theme_video_filter_iframe($variables) {
   $video = $variables['video'];
-  $classes = video_filter_get_classes($video);
-  $attributes = '';
-  if ($video['attributes']) {
-    $attributes = drupal_attributes($video['attributes']);
-  }
 
-  $output = '<iframe src="' . $video['source'] . '" width="' . $video['width'] . '" height="' . $video['height'] . '" class="' . implode(' ', $classes) . '" frameborder="0"' . $attributes . '></iframe>';
+  $classes = video_filter_get_classes($video);
+
+  $output = '<iframe src="' . $video['source'] . '" width="' . $video['width'] . '" height="' . $video['height'] . '" class="' . implode(' ', $classes) . '" frameborder="0" allowfullscreen="true"></iframe>';
 
   return $output;
 }
@@ -440,8 +432,7 @@ function video_filter_dashboard_page($editor) {
       break;
   }
 
-  $form = drupal_get_form('_video_filter_form');
-  print theme('video_filter_dashboard', array('form' => render($form)));
+  print theme('video_filter_dashboard', array('form' => render(drupal_get_form('_video_filter_form'))));
   exit();
 }
 

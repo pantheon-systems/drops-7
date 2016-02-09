@@ -10,21 +10,13 @@
 function cu_block_row_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_block_row_block'
+  // Exported field_base: 'field_block_row_block'.
   $field_bases['field_block_row_block'] = array(
     'active' => 1,
     'cardinality' => -1,
     'deleted' => 0,
     'entity_types' => array(),
     'field_name' => 'field_block_row_block',
-    'foreign keys' => array(
-      'bean' => array(
-        'columns' => array(
-          'target_id' => 'bid',
-        ),
-        'table' => 'bean',
-      ),
-    ),
     'indexes' => array(
       'target_id' => array(
         0 => 'target_id',
@@ -43,7 +35,7 @@ function cu_block_row_field_default_field_bases() {
         'view' => array(
           'args' => array(),
           'display_name' => 'entityreference_1',
-          'view_name' => 'cu_block_selector_beans',
+          'view_name' => 'express_layout_beans',
         ),
       ),
       'target_type' => 'bean',
@@ -52,15 +44,18 @@ function cu_block_row_field_default_field_bases() {
     'type' => 'entityreference',
   );
 
-  // Exported field_base: 'field_block_row_collection'
+  // Exported field_base: 'field_block_row_collection'.
   $field_bases['field_block_row_collection'] = array(
     'active' => 1,
     'cardinality' => -1,
     'deleted' => 0,
     'entity_types' => array(),
     'field_name' => 'field_block_row_collection',
-    'foreign keys' => array(),
-    'indexes' => array(),
+    'indexes' => array(
+      'revision_id' => array(
+        0 => 'revision_id',
+      ),
+    ),
     'locked' => 0,
     'module' => 'field_collection',
     'settings' => array(
@@ -71,14 +66,13 @@ function cu_block_row_field_default_field_bases() {
     'type' => 'field_collection',
   );
 
-  // Exported field_base: 'field_block_row_distribution'
+  // Exported field_base: 'field_block_row_distribution'.
   $field_bases['field_block_row_distribution'] = array(
     'active' => 1,
     'cardinality' => 1,
     'deleted' => 0,
     'entity_types' => array(),
     'field_name' => 'field_block_row_distribution',
-    'foreign keys' => array(),
     'indexes' => array(
       'value' => array(
         0 => 'value',

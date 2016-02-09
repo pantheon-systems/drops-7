@@ -1,24 +1,27 @@
 <?php
-
 /**
  * @file
  * Metatag support for Migrate.
  */
 
+if (!class_exists('MigrateDestinationHandler')) {
+  return;
+}
+
 /**
  * Basic usage of the Migrate integration.
  *
  * This example assumes the custom module's name is "example_migrate".
- * 
+ *
  * example_migrate.inc:
- * 
+ *
  * class MetatagTestMigration extends DynamicMigration {
- * 
+ *
  *   public function __construct() {
  *     parent::__construct();
- * 
+ *
  *     $this->description = t('Migrate test.');
- * 
+ *
  *     $this->map = new MigrateSQLMap(
  *       $this->machineName,
  *       array(
@@ -31,22 +34,22 @@
  *       ),
  *       MigrateDestinationNode::getKeySchema()
  *     );
- * 
+ *
  *     $this->source = new MigrateSourceCSV(
  *       drupal_get_path('module', 'example_migrate') . '/sample.csv',
  *       array(),
  *       array('header_rows' => TRUE)
  *     );
- * 
+ *
  *     $this->destination = new MigrateDestinationNode('article');
- * 
+ *
  *     $this->addFieldMapping('metatag_description', 'description');
  *     $this->addFieldMapping('metatag_keywords', 'keywords');
  *   }
  * }
- * 
+ *
  * example_migrate.migrate.inc:
- * 
+ *
  * /**
  *  * Implements hook_migrate_api().
  *  * /
@@ -57,7 +60,7 @@
  *       'MetatagTest' => array('class_name' => 'MetatagTestMigration'),
  *     ),
  *   );
- * 
+ *
  *   return $api;
  * }
  */

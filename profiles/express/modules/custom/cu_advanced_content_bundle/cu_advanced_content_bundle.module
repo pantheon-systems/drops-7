@@ -1,4 +1,118 @@
 <?php
+/**
+ * Implements hook_menu().
+ */
+function cu_advanced_content_bundle_menu() {
+  $items['admin/settings/adv-content'] = array(
+    'title' => 'Advanced Content',
+    'position' => 'right',
+    'page callback' => 'system_admin_menu_block_page',
+    'access arguments' => array('administer express settings'),
+    'file' => 'system.admin.inc',
+    'file path' => drupal_get_path('module', 'system'),
+    'weight' => 5,
+  );
+  $items['admin/settings/adv-content/error'] = array(
+    'title' => 'Error Pages',
+    'description' => 'Create your own \'404 Not Found\' or \'Access Denied\' page',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_advanced_content_bundle_error_form'),
+    'access arguments' => array('administer express settings'),
+    'weight' => 25,
+  );
+  $items['admin/settings/adv-content/frontpage'] = array(
+    'title' => 'Set Homepage',
+    'description' => 'Change the default homepage',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cu_advanced_content_bundle_frontpage_form'),
+    'access arguments' => array('administer express settings'),
+    'weight' => 50,
+  );
+  return $items;
+}
+
+/**
+ * Page callback for admin/settings/error.
+ */
+function cu_advanced_content_bundle_error_form($form, &$form_state) {
+  global $base_url;
+  $form['errors'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Error Pages',
+  );
+  $form['errors']['site_404'] = array(
+    '#title' => t('Default 404 page'),
+    '#description' => t('Allows you to set the default "Not Found" page.'),
+    '#type' => 'textfield',
+    '#field_prefix' => $base_url . '/',
+    '#size' => 20,
+    '#required' => TRUE,
+    '#default_value' => drupal_get_path_alias(variable_get('site_404', 'navigation404')),
+  );
+  $form['errors']['site_403'] = array(
+    '#title' => t('Default 403 page'),
+    '#description' => t('Allows you to set the default "Access Denied" page.'),
+    '#type' => 'textfield',
+    '#field_prefix' => $base_url . '/',
+    '#size' => 20,
+    '#required' => FALSE,
+    '#default_value' => (variable_get('site_403') ? drupal_get_path_alias(variable_get('site_403', '')) : ''),
+  );
+  $form['#validate'][] = 'express_settings_404_validate';
+
+  return system_settings_form($form);
+}
+
+
+function cu_advanced_content_bundle_404_validate($form, &$form_state) {
+  // Check for empty 404 submission.
+  // Since it's required, this should never be hit...but just in case?
+  if (empty($form_state['values']['site_404'])) {
+    // Set default value to navigation404, just in case.
+    // I think a 404 value always MUST be set...right?
+    form_set_value($form['errors']['site_404'], 'naviagtion404', $form_state);
+  }
+}
+
+/**
+ * Page callback for admin/site-configuration/frontpage.
+ */
+function cu_advanced_content_bundle_frontpage_form($form, &$form_state) {
+  global $base_url;
+  $form = array();
+
+  $form['site_frontpage'] = array(
+    '#title' => t('Default front page'),
+    '#type' => 'textfield',
+    '#default_value' => (variable_get('site_frontpage') != 'node' ? drupal_get_path_alias(variable_get('site_frontpage', 'node')) : ''),
+    '#field_prefix' => $base_url . '/',
+    '#size' => 20,
+    '#required' => TRUE,
+  );
+
+  $form['#validate'][] = 'cu_advanced_content_bundle_frontpage_validate';
+  // Let system_settings_form_submit run first to variable_set vars.
+  $form = system_settings_form($form);
+  return $form;
+}
+
+/**
+ * Validation handler for express_settings form.
+ */
+function cu_advanced_content_bundle_frontpage_validate($form, &$form_state) {
+  // Taken from system_site_information_settings_validate.
+  // Check for empty front page path.
+  if (empty($form_state['values']['site_frontpage'])) {
+    // Set to default "node".
+    form_set_value($form['home']['site_frontpage'], 'node', $form_state);
+  }
+  else {
+    // Get the normal path of the front page.
+    form_set_value($form['home']['site_frontpage'], drupal_get_normal_path($form_state['values']['site_frontpage']), $form_state);
+  }
+}
 
 /**
  * Define site permissions in code.
@@ -12,9 +126,67 @@
  * @return
  *   An array defining all the permissions for the site.
  */
-  
+
 function cu_advanced_content_bundle_secure_permissions($role) {
-  // INSERT PERMISSIONS FOR THIS BUNDLE
+
+  $permissions = array(
+    'administrator' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'view any video_reveal bean',
+      'create any feature_callout bean',
+      'edit any feature_callout bean',
+      'delete any feature_callout bean',
+      'view any feature_callout bean',
+      'administer quicktabs',
+    ),
+    'anonymous user' => array(
+      'view any video_reveal bean',
+      'view any feature_callout bean',
+    ),
+    'authenticated user' => array(
+      'view any video_reveal bean',
+      'view any feature_callout bean',
+    ),
+    'content_editor' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'view any video_reveal bean',
+      'create any feature_callout bean',
+      'delete any feature_callout bean',
+      'edit any feature_callout bean',
+      'view any feature_callout bean',
+      'administer quicktabs',
+    ),
+    'developer' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'create any feature_callout bean',
+      'delete any feature_callout bean',
+      'edit any feature_callout bean',
+      'view any feature_callout bean',
+      'administer quicktabs',
+    ),
+    'edit_my_content' => array(
+      'view any video_reveal bean',
+      'view any feature_callout bean',
+    ),
+    'site_owner' => array(
+      'create any video_reveal bean',
+      'delete any video_reveal bean',
+      'edit any video_reveal bean',
+      'view any video_reveal bean',
+      'create any feature_callout bean',
+      'delete any feature_callout bean',
+      'edit any feature_callout bean',
+      'view any feature_callout bean',
+      'administer quicktabs',
+    ),
+  );
+
   if (isset($permissions[$role])) {
     return $permissions[$role];
   }
@@ -31,14 +203,41 @@ function cu_advanced_content_bundle_secure_permissions($role) {
  */
 function cu_advanced_content_bundle_express_help($variables) {
   $variables['admin/structure/quicktabs/%'][] = array(
-    'title' => 'Quicktabs Help',
-    'short_title' => 'Quicktabs',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/quicktabs',
+    'title' => 'Quicktabs help',
+    'short_title' => 'Quicktabs help',
+    'url' => 'http://www.colorado.edu/webcentral/node/430',
   );
   $variables['block/add/feature-callout'][] = array(
-    'title' => 'Content Grid Block Help',
-    'short_title' => 'Content Grid',
-    'url' => 'http://www.colorado.edu/webcentral/tutorial/v2/content-grid-block',
+    'title' => 'Content grid block help',
+    'short_title' => 'Content grid block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/428',
+  );
+  $variables['block/edit/feature-callout'][] = array(
+    'title' => 'Content grid block help',
+    'short_title' => 'Content grid block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/428',
+  );
+  $variables['block/add/video-reveal'][] = array(
+    'title' => 'Video reveal block help',
+    'short_title' => 'Video reveal block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/582',
+  );
+  $variables['block/edit/video-reveal'][] = array(
+    'title' => 'Video reveal block help',
+    'short_title' => 'Video reveal block help',
+    'url' => 'http://www.colorado.edu/webcentral/node/582',
+  );
+
+  $variables['admin/structure/quicktabs/add'][] = array(
+    'title' => 'Quicktabs Help',
+    'short_title' => 'Quicktabs Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/430',
+  );
+
+  $variables['admin/structure/quicktabs'][] = array(
+    'title' => 'Quicktabs Help',
+    'short_title' => 'Quicktabs Help',
+    'url' => 'http://www.colorado.edu/webcentral/node/430',
   );
 
   return $variables;

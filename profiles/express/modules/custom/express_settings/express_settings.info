@@ -1,0 +1,4 @@
+name = Express Settings
+description = Allows Site Owner to update specific configurations without 'administer site configuration' permission.
+core = 7.x
+package = Express

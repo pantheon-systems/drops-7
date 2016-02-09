@@ -1,0 +1,51 @@
+name = Express Base
+description = Base theme for Web Express.
+screenshot = screenshot.png
+engine = phptemplate
+core = 7.x
+
+; Stylesheets
+;stylesheets[screen][] = css/layout/grid.css
+;stylesheets[screen][] = css/layout/fixed.css
+;stylesheets[screen][] = css/branding.css
+stylesheets[screen][] = css/expressbase-grid.css
+stylesheets[screen][] = css/styles.css
+stylesheets[print][] = css/print.css
+
+scripts[] = js/expressbase.js
+
+; Regions
+regions[content] = 'Content'
+regions[branding] = 'Branding'
+regions[search_box] = 'Search'
+regions[secondary_menu] = 'Secondary Menu'
+regions[menu] = 'Menu'
+regions[sidebar_first] = 'Sidebar First'
+regions[sidebar_second] = 'Sidebar Second'
+regions[intro] = 'Wide Intro'
+regions[slider] = 'Slider'
+regions[help] = 'Help'
+regions[wide_2] = 'Wide Post'
+regions[after_content] = 'After Content'
+regions[lower] = 'After Content 2'
+regions[footer] = 'Footer'
+regions[site_info] = 'Site Information'
+regions[alerts] = 'Alerts'
+regions[content_sidebar_right] = 'Content Sidebar Right'
+regions[content_sidebar_left] = 'Content Sidebar Left'
+regions[content_bottom] = 'Content Bottom'
+
+; Default Settings
+settings[alpha_responsive] = '0'
+settings[primary_sidebar] = 'primary-sidebar-second'
+settings[headings] = 'headings-bold'
+settings[page_title_image_background] = 'page-title-image-background-transparent'
+settings[page_title_image_width] = 'page-title-image-width-full'
+settings[after_content_columns] = '3'
+settings[lower_columns] = '2'
+settings[footer_columns] = '4'
+settings[use_breadcrumbs] = '1'
+settings[use_action_menu] = '0'
+settings[action_menu_color] = 'action-none'
+settings[footer_menu_color] = 'footer-menu-gray'
+settings[block_icons_color] = 'block-icons-inherit'

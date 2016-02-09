@@ -1,9 +1,12 @@
 <?php
-
 /**
  * @file
  * Provides native meta tag integration with Views.
  */
+
+// This is used to join the view name and the display name when building the
+// context string.
+define('METATAG_VIEWS_CONTEXT_SEPARATOR', '__');
 
 /**
  * Implements hook_views_api().
@@ -65,10 +68,18 @@ function metatag_views_views_preview_info_alter(&$rows, $view) {
  * Implements hook_page_alter().
  */
 function metatag_views_page_alter(&$page) {
+  // By default do not add meta tags to admin pages. To enable meta tags on
+  // admin pages set the 'metatag_tag_admin_pages' variable to TRUE.
+  if (path_is_admin(current_path()) && !variable_get('metatag_tag_admin_pages', FALSE)) {
+    return;
+  }
+
   $view = views_get_page_view();
 
   // Check if Views metatags are enabled.
   if (!empty($view) && metatag_config_is_enabled('view')) {
+    global $language;
+
     // The following is taken from views_get_page_view().
     // If a module is still putting in the display like we used to, catch that.
     if (is_subclass_of($view, 'views_plugin_display')) {
@@ -80,27 +91,39 @@ function metatag_views_page_alter(&$page) {
       return;
     }
 
+    // Include only view name by default.
+    $instance = 'view:' . $view->name;
+
+    // Include display name if option is overridden.
+    if (!$view->display_handler->is_defaulted('metatags')) {
+      $instance = 'view:' . $view->name . ':' . $view->current_display;
+    }
+
     // Load the meta tags for this view.
     $metatags = $view->display_handler->get_option('metatags');
-    if (!is_array($metatags) || empty($metatags)) {
-      $metatags = array();
+
+    // Only proceed if there's something to work with.
+    if (!empty($metatags) && is_array($metatags)) {
+      // If meta tags were found but they're not nested for the language, fix
+      // it. This leaves some possibility for future versions to support
+      // translation.
+      if (!isset($metatags[LANGUAGE_NONE])) {
+        $metatags = array(LANGUAGE_NONE => $metatags);
+      }
+
+      // Translate all of the meta tags using i18n.
+      metatag_translate_metatags($metatags[LANGUAGE_NONE], 'metatag_views:' . $view->name . METATAG_VIEWS_CONTEXT_SEPARATOR . $view->current_display);
+
+      // Build options for meta tag rendering.
+      $options = array();
+      $options['token data']['view'] = $view;
+      $options['language'] = $language->language;
+
+      // The page region can be changed.
+      $region = variable_get('metatag_page_region', 'content');
+
+      // Add the metatags.
+      $page[$region]['metatags'][$instance] = metatag_metatags_view($instance, $metatags, $options);
     }
-
-    // If meta tags were found but they're not nested for the language, fix it.
-    // This leaves some possibility for future versions to support translation.
-    if (!empty($metatags) && !isset($metatags[LANGUAGE_NONE])) {
-      $metatags = array(LANGUAGE_NONE => $metatags);
-    }
-
-    // Build options for meta tag rendering.
-    $instance = 'view:' . $view->name;
-    $options = array();
-    $options['token data']['view'] = $view;
-
-    // The page region can be changed.
-    $region = variable_get('metatag_page_region', 'content');
-
-    // Add the metatags.
-    $page[$region]['metatags'][$instance] = metatag_metatags_view($instance, $metatags, $options);
   }
 }

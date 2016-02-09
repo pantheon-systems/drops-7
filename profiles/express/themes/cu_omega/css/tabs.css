@@ -13,7 +13,7 @@ ul.primary li a.view:before { content: "\f06e"; }
 
 ul.primary li a.edit:before { content: "\f044"; }
 
-ul.primary li a.edit-blocks:before { content: "\f009"; }
+ul.primary li a.edit-layout:before { content: "\f009"; }
 
 ul.primary li a.edit-webform:before { content: "\f14a"; }
 
