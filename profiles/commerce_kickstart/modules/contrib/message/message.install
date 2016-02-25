@@ -192,6 +192,7 @@ function message_schema() {
     'fields' => array(
       'mid' => array(
         'type' => 'serial',
+        'not null' => TRUE,
         'unsigned' => TRUE,
         'description' => 'The Unique ID of the message.',
       ),

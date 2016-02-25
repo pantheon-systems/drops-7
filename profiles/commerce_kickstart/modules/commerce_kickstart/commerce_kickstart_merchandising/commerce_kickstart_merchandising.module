@@ -19,6 +19,10 @@ function commerce_kickstart_merchandising_migrate_api() {
       ),
     );
   }
+
+  // Return a near empty array to avoid API warning.
+  // @link https://www.drupal.org/node/2544320
+  return array('api' => 2);
 }
 
 /**

@@ -96,6 +96,7 @@ projects[token][version] = 1.6
 projects[token][patch][] = "http://drupal.org/files/token-token_asort_tokens-1712336_0.patch"
 projects[eva][version] = 1.2
 projects[message][version] = 1.11
+projects[message][patch][2629474] = https://www.drupal.org/files/issues/message-mysql57_compatibility-2629474-4.patch
 projects[message_notify][version] = 2.5
 projects[migrate][version] = 2.8
 projects[migrate_extras][version] = 2.5

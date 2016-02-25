@@ -6,9 +6,9 @@ dependencies[] = service_links
 dependencies[] = ds
 
 
-; Information added by drush on 2016-01-14
+; Information added by drush on 2016-02-25
 version = "7.x-2.3+0-dev"
 core = "7.x"
 project = "service_links"
-datestamp = "1452771910"
+datestamp = "1456416465"
 
