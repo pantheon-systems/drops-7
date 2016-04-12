@@ -86,12 +86,12 @@ class SearchApiHighlight extends SearchApiAbstractProcessor {
         ),
       ),
     );
-    // Exclude certain fulltextfields
+    // Exclude certain fulltext fields.
     $fields = $this->index->getFields();
     $fulltext_fields = array();
     foreach ($this->index->getFulltextFields() as $field) {
       if (isset($fields[$field])) {
-        $fulltext_fields[$field] = $fields[$field]['name'] . ' (' . $field . ')';
+        $fulltext_fields[$field] = check_plain($fields[$field]['name'] . ' (' . $field . ')');
       }
     }
     $form['exclude_fields'] = array(

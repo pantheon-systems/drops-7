@@ -1,0 +1,277 @@
+<?php
+
+abstract class CommerceMessageTestBase extends CommerceBaseTestCase {
+
+  /**
+   * Don't need most of default core modules.
+   */
+  protected $profile = 'minimal';
+  protected $store_admin;
+
+  /**
+   * Overrides CommerceBaseTestCase::permissionBuilder().
+   */
+  protected function permissionBuilder($set) {
+    $permissions = parent::permissionBuilder($set);
+
+    switch ($set) {
+      case 'store admin':
+      case 'site admin':
+        $permissions[] = 'administer message types';
+        $permissions[] = 'create messages';
+        break;
+    }
+
+    return $permissions;
+  }
+
+  /**
+   * Overrides DrupalWebTestCase::setUp().
+   */
+  public function setUp() {
+    $modules   = parent::setUpHelper('all');
+    $modules[] = 'rules';
+    $modules[] = 'entityreference';
+    $modules[] = 'entity_token';
+    $modules[] = 'message';
+    $modules[] = 'message_notify';
+    $modules[] = 'commerce_message';
+    parent::setUp($modules);
+    $this->resetAll();
+
+    $this->store_admin = $this->createStoreAdmin();
+
+    if (!$this->store_admin) {
+      $this->fail(t('Failed to create Store Admin user for test.'));
+    }
+
+    // Set the default country to US.
+    variable_set('site_default_country', 'US');
+  }
+
+  /**
+   * Loads message entities referencing an order.
+   *
+   * @param object $order
+   *   The commerce_order entity.
+   *
+   * @return Message[]
+   *   Array of entities.
+   */
+  protected function loadMessagesForOrder($order) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'message')
+      ->fieldCondition('message_commerce_order', 'target_id', $order->order_id)
+      ->propertyOrderBy('timestamp', 'ASC');
+    $results = $query->execute();
+
+    if (!empty($results)) {
+      return entity_load('message', array_keys($results['message']));
+    }
+
+    return array();
+  }
+
+  /**
+   * Asserts if a Message entity's bundle matches.
+   *
+   * @param \Message $message
+   *   The Message entity.
+   * @param string $bundle
+   *   The bundle.
+   */
+  protected function assertBundle(Message $message, $bundle) {
+    $this->assertEqual($bundle, $message->bundle(), t('Message type @expected expected, got: @actual', array(
+        '@expected' => $bundle,
+        '@actual' => $message->bundle(),
+      )
+    ));
+  }
+}
+
+
+class CommerceMessageOrderHistoryTest extends CommerceMessageTestBase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Commerce Message order history',
+      'description' => 'Tests messages as order history',
+      'group' => 'Commerce Message',
+      'dependencies' => array('rules'),
+    );
+  }
+
+  /**
+   * Test order history programmatically.
+   */
+  public function testOrderHistory() {
+    $order = $this->createDummyOrder();
+    commerce_order_status_update($order, 'pending');
+    commerce_order_status_update($order, 'completed');
+    RulesLog::logger()->checkLog();
+
+    $messages = $this->loadMessagesForOrder($order);
+
+    $this->assertEqual(4, count($messages));
+
+    // Assert order created.
+    $message = reset($messages);
+    array_shift($messages);
+    $this->assertBundle($message, 'commerce_order_created');
+    $this->assertEqual('Order has been created.', $message->getText(LANGUAGE_NONE));
+
+    // Assert product added to cart.
+    $message = reset($messages);
+    array_shift($messages);
+    $this->assertBundle($message, 'commerce_order_cart_add');
+    $this->assertEqual('Product PROD-01 added to the cart.', $message->getText(LANGUAGE_NONE));
+
+    // Assert status updates.
+    $message = reset($messages);
+    array_shift($messages);
+    $this->assertBundle($message, 'commerce_order_state');
+    $this->assertEqual('Status has been set to Pending (previously: Shopping cart).', $message->getText(LANGUAGE_NONE));
+
+    $message = reset($messages);
+    array_shift($messages);
+    $this->assertBundle($message, 'commerce_order_state');
+    $this->assertEqual('Status has been set to Completed (previously: Pending).', $message->getText(LANGUAGE_NONE));
+  }
+
+  /**
+   * Test order history UI.
+   */
+  public function testOrderHistoryUi() {
+    $order = $this->createDummyOrder();
+    commerce_order_status_update($order, 'pending');
+    commerce_order_status_update($order, 'completed');
+    RulesLog::logger()->checkLog();
+
+    $this->drupalLogin($this->store_admin);
+
+    $this->drupalGet('admin/commerce/orders/' . $order->order_id . '/history');
+    $this->assertText('Order has been created.');
+    $this->assertText('Product PROD-01 added to the cart.');
+    $this->assertText('Status has been set to Pending (previously: Shopping cart).');
+    $this->assertText('Status has been set to Completed (previously: Pending).');
+
+    $this->drupalLogout();
+    $this->drupalGet('admin/commerce/orders/' . $order->order_id . '/history');
+    $this->assertResponse(403, 'Anonymoous users cannot view order history.');
+  }
+}
+
+/**
+ * Class CommerceMessageOrderNotificationTest
+ *
+ * @see MailTestCase
+ */
+class CommerceMessageOrderNotificationTest extends CommerceMessageTestBase implements MailSystemInterface {
+  /**
+   * The most recent message that was sent through the test case.
+   */
+  private static $sent_message;
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Commerce Message order notification',
+      'description' => 'Tests messages as order history',
+      'group' => 'Commerce Message',
+      'dependencies' => array('rules'),
+    );
+  }
+
+  public function setUp() {
+    parent::setUp();
+    // Set MailTestCase (i.e. this class) as the SMTP library.
+    variable_set('mail_system', array('default-system' => 'CommerceMessageOrderNotificationTest'));
+  }
+
+  /**
+   * Concatenate and wrap the e-mail body for plain-text mails.
+   *
+   * @see DefaultMailSystem
+   */
+  public function format(array $message) {
+    // Join the body array into one string.
+    $message['body'] = implode("\n\n", $message['body']);
+    // Convert any HTML to plain-text.
+    $message['body'] = drupal_html_to_text($message['body']);
+    // Wrap the mail body for sending.
+    $message['body'] = drupal_wrap_mail($message['body']);
+    return $message;
+  }
+
+  /**
+   * Send function that is called through the mail system.
+   */
+  public function mail(array $message) {
+    self::$sent_message = $message;
+  }
+
+
+  /**
+   * Test the order message's content.
+   */
+  public function testOrderNotificationMessageContent() {
+    $order = $this->createDummyOrder();
+    $message = message_create('commerce_order_order_confirmation', array(), $this->store_admin);
+    $message->wrapper()->message_commerce_order = $order;
+    $message->save();
+    $mid = $message->mid;
+
+    // Reload the message to see it was saved.
+    $message = message_load($mid);
+    $this->assertTrue(!empty($message->mid), t('Message was saved to the database.'));
+
+    $message = $message->buildContent();
+
+    global $language;
+    $url_options = array(
+      'absolute' => TRUE,
+      'language' => $language,
+    );
+
+    $this->assertEqual(
+      t('Order @order_id at @site', array(
+        '@order_id' => $order->order_id,
+        '@site' => variable_get('site_name', 'Drupal'),
+        )),
+      $message['message__message_text__0']['#markup']);
+
+    $body = t('Thanks for your order @order_id at @site.
+
+If this is your first order with us, you will receive a separate e-mail with login instructions. You can view your order history with us at any time by logging into our website at:
+
+@login-url
+
+You can find the status of your current order at:
+
+@order-view
+
+Please contact us if you have any questions about your order.', array(
+      '@order_id' => $order->order_id,
+      '@site' => variable_get('site_name', 'Drupal'),
+      '@login-url' => url('user', $url_options),
+      '@order-view' => url('user/' . $order->uid . '/orders/' . $order->order_id, $url_options),
+      ));
+    $this->assertEqual($body, $message['message__message_text__1']['#markup']);
+  }
+
+  /**
+   * Tests that the notification is generated on checkout complete.
+   */
+  public function testOrderNotificationMessageCreation() {
+    $order = $this->createDummyOrder();
+    commerce_checkout_complete($order);
+
+    $messages = $this->loadMessagesForOrder($order);
+    foreach ($messages as $message) {
+      if ($message->bundle() == 'commerce_order_order_confirmation') {
+        $this->pass('Order that completed checkout had an order notification generated.');
+      }
+    }
+
+    $this->assertNotNull(self::$sent_message);
+  }
+}

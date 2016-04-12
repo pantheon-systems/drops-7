@@ -20,6 +20,5 @@ function commerce_kickstart_user_menu_default_menu_custom() {
   // Included for use with string extractors like potx.
   t('Kickstart User menu');
 
-
   return $menus;
 }

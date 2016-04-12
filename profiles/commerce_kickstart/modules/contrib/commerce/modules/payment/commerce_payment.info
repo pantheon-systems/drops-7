@@ -30,9 +30,9 @@ files[] = includes/views/handlers/commerce_payment_handler_field_balance.inc
 files[] = tests/commerce_payment.rules.test
 ;files[] = tests/commerce_payment.test
 
-; Information added by Drupal.org packaging script on 2015-01-16
-version = "7.x-1.11"
+; Information added by Drupal.org packaging script on 2016-04-06
+version = "7.x-1.13"
 core = "7.x"
 project = "commerce"
-datestamp = "1421426596"
+datestamp = "1459956613"
 

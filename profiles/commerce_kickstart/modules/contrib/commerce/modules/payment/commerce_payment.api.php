@@ -142,6 +142,8 @@ function hook_commerce_payment_totals_row_info_alter(&$rows, $totals, $order) {
  *        of the payment method.
  *      - redirect_form: the name of the CALLBACK_commerce_payment_method_redirect_form()
  *        of the payment method.
+ *      - redirect_form_back: the name of the CALLBACK_commerce_payment_method_redirect_form_back()
+ *        of the payment method.
  *      - redirect_form_validate: the name of the CALLBACK_commerce_payment_method_redirect_form_validate()
  *        of the payment method.
  *      - redirect_form_submit: the name of the CALLBACK_commerce_payment_method_redirect_form_submit()
@@ -457,4 +459,51 @@ function hook_commerce_payment_transaction_status_info() {
   );
 
   return $statuses;
+}
+
+/**
+ * Allows you to act when a transaction is updated.
+ *
+ * If you want to perform an action when a transaction changes states, you can
+ * use this hook to do so. You can load the original transaction here and
+ * compare.
+ *
+ * @param $transaction
+ *   The transaction being updated.
+ */
+function hook_commerce_payment_transaction_update($transaction) {
+  // No example.
+}
+
+/**
+ * Allows you to act when a transaction is created.
+ *
+ * @param $transaction
+ *   The transaction being created.
+ */
+function hook_commerce_payment_transaction_insert($transaction) {
+  // No example.
+}
+
+/**
+ * Allows you to act when a transaction is being deleted.
+ *
+ * @param $transaction
+ *   The transaction being deleted.
+ */
+function hook_commerce_payment_transaction_delete($transaction) {
+  // No example.
+}
+
+/**
+ * Allows you to act when transactions are being loaded.
+ *
+ * @param $transactions
+ *   An array of transactions indexed by transaction_id.
+ */
+function hook_commerce_payment_transaction_load($transactions) {
+  $result = db_query('SELECT transaction_id, foo FROM {mytable} WHERE transaction_ids IN (:transaction_ids)', array(':transaction_ids' => array_keys($transactions)));
+  foreach ($result as $record) {
+    $transactions[$record->transaction_id]->foo = $record->foo;
+  }
 }

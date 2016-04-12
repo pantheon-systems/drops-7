@@ -6,73 +6,37 @@
  * reference, price)
  */
 
-class MigrateCommerceCustomerProfileReferenceFieldHandler extends MigrateFieldHandler {
+class MigrateCommerceCustomerProfileReferenceFieldHandler extends MigrateSimpleFieldHandler {
   public function __construct() {
+    parent::__construct(array(
+      'value_key' => 'profile_id',
+      'skip_empty' => TRUE,
+    ));
     $this->registerTypes(array('commerce_customer_profile_reference'));
   }
 
-  public function prepare($entity, array $field_info, array $instance, array $values) {
-    $migration = Migration::currentMigration();
-    $arguments = (isset($values['arguments'])) ? $values['arguments'] : array();
-    $language = $this->getFieldLanguage($entity, $field_info, $arguments);
-    // Setup the standard Field API array for saving.
-    $delta = 0;
-    foreach (array_filter($values) as $value) {
-      $return[$language][$delta]['profile_id'] = $value;
-      $delta++;
-    }
-    if (!isset($return)) {
-      $return = NULL;
-    }
-    return $return;
-  }
 }
 
-class MigrateCommerceLineItemReferenceFieldHandler extends MigrateFieldHandler {
+class MigrateCommerceLineItemReferenceFieldHandler extends MigrateSimpleFieldHandler {
   public function __construct() {
+    parent::__construct(array(
+      'value_key' => 'line_item_id',
+      'skip_empty' => TRUE,
+    ));
     $this->registerTypes(array('commerce_line_item_reference'));
   }
 
-  public function prepare($entity, array $field_info, array $instance, array $values) {
-    $migration = Migration::currentMigration();
-    $arguments = (isset($values['arguments'])) ? $values['arguments'] : array();
-    $language = $this->getFieldLanguage($entity, $field_info, $arguments);
-    // Setup the standard Field API array for saving.
-    $delta = 0;
-    foreach (array_filter($values) as $value) {
-      $return[$language][$delta]['line_item_id'] = $value;
-      $delta++;
-    }
-    if (!isset($return)) {
-      $return = NULL;
-    }
-    return $return;
-  }
 }
 
-class MigrateCommerceProductReferenceFieldHandler extends MigrateFieldHandler {
+class MigrateCommerceProductReferenceFieldHandler extends MigrateSimpleFieldHandler {
   public function __construct() {
+    parent::__construct(array(
+      'value_key' => 'product_id',
+      'skip_empty' => TRUE,
+    ));
     $this->registerTypes(array('commerce_product_reference'));
   }
 
-  public function prepare($entity, array $field_info, array $instance, array $values) {
-    $migration = Migration::currentMigration();
-    $arguments = (isset($values['arguments'])) ? $values['arguments'] : array();
-    $language = $this->getFieldLanguage($entity, $field_info, $arguments);
-    // Setup the standard Field API array for saving.
-    $delta = 0;
-    if(!is_array(reset($values))) {
-      $values = array($values);
-    }
-    foreach (array_filter($values) as $value) {
-      $return[$language][$delta]['product_id'] = reset($value);
-      $delta++;
-    }
-    if (!isset($return)) {
-      $return = NULL;
-    }
-    return $return;
-  }
 }
 
 class MigrateCommercePriceFieldHandler extends MigrateFieldHandler {

@@ -1,0 +1,19 @@
+default:
+  suites:
+    default:
+      paths:
+        features: 'features'
+      contexts:
+        - FeatureContext
+        - Drupal\DrupalExtension\Context\DrupalContext
+        - Drupal\DrupalExtension\Context\MinkContext
+  extensions:
+    Behat\MinkExtension:
+      goutte: ~
+      selenium2: ~
+      files_path: ../../
+    Drupal\DrupalExtension:
+      blackbox: ~
+      region_map:
+        Tabs: ".tabs.primary"
+        Navbar: "#toolbar"

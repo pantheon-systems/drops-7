@@ -10,7 +10,7 @@
 function commerce_kickstart_product_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'commerce_price'
+  // Exported field_base: 'commerce_price'.
   $field_bases['commerce_price'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -32,7 +32,7 @@ function commerce_kickstart_product_field_default_field_bases() {
     'type' => 'commerce_price',
   );
 
-  // Exported field_base: 'field_bag_size'
+  // Exported field_base: 'field_bag_size'.
   $field_bases['field_bag_size'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -53,12 +53,13 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_brand'
+  // Exported field_base: 'field_brand'.
   $field_bases['field_brand'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -79,12 +80,13 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_category'
+  // Exported field_base: 'field_category'.
   $field_bases['field_category'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -105,12 +107,13 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_category_color'
+  // Exported field_base: 'field_category_color'.
   $field_bases['field_category_color'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -131,7 +134,7 @@ function commerce_kickstart_product_field_default_field_bases() {
     'type' => 'text',
   );
 
-  // Exported field_base: 'field_collection'
+  // Exported field_base: 'field_collection'.
   $field_bases['field_collection'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -152,12 +155,13 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_color'
+  // Exported field_base: 'field_color'.
   $field_bases['field_color'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -178,12 +182,13 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_gender'
+  // Exported field_base: 'field_gender'.
   $field_bases['field_gender'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -204,12 +209,13 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_hat_size'
+  // Exported field_base: 'field_hat_size'.
   $field_bases['field_hat_size'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -230,12 +236,13 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_images'
+  // Exported field_base: 'field_images'.
   $field_bases['field_images'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -257,7 +264,7 @@ function commerce_kickstart_product_field_default_field_bases() {
     'type' => 'image',
   );
 
-  // Exported field_base: 'field_product'
+  // Exported field_base: 'field_product'.
   $field_bases['field_product'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -278,7 +285,7 @@ function commerce_kickstart_product_field_default_field_bases() {
     'type' => 'commerce_product_reference',
   );
 
-  // Exported field_base: 'field_shoe_size'
+  // Exported field_base: 'field_shoe_size'.
   $field_bases['field_shoe_size'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -299,12 +306,13 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_storage_capacity'
+  // Exported field_base: 'field_storage_capacity'.
   $field_bases['field_storage_capacity'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -325,12 +333,13 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_top_size'
+  // Exported field_base: 'field_top_size'.
   $field_bases['field_top_size'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -351,6 +360,7 @@ function commerce_kickstart_product_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',

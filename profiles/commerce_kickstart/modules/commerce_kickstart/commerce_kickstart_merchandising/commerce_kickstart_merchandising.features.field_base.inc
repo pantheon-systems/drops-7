@@ -10,7 +10,7 @@
 function commerce_kickstart_merchandising_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_link'
+  // Exported field_base: 'field_link'.
   $field_bases['field_link'] = array(
     'active' => 1,
     'cardinality' => 1,
@@ -37,7 +37,7 @@ function commerce_kickstart_merchandising_field_default_field_bases() {
     'type' => 'link_field',
   );
 
-  // Exported field_base: 'field_tagline'
+  // Exported field_base: 'field_tagline'.
   $field_bases['field_tagline'] = array(
     'active' => 1,
     'cardinality' => 1,

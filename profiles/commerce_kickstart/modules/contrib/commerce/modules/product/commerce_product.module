@@ -510,10 +510,20 @@ function commerce_product_load($product_id) {
 
 /**
  * Loads a product by SKU.
+ *
+ * @param string $sku
+ *    The SKU to load.
+ * @param bool $reset
+ *    Boolean to reset static cache.
  */
-function commerce_product_load_by_sku($sku) {
-  $products = commerce_product_load_multiple(array(), array('sku' => $sku));
-  return $products ? reset($products) : FALSE;
+function commerce_product_load_by_sku($sku, $reset = FALSE) {
+  $cache = &drupal_static(__FUNCTION__, array());
+  if (!isset($cache[$sku]) || $reset) {
+    $products = commerce_product_load_multiple(array(), array('sku' => $sku));
+    $cache[$sku] = $products ? reset($products) : FALSE;
+  }
+
+  return $cache[$sku];
 }
 
 /**
@@ -691,7 +701,7 @@ function commerce_product_validate_sku_unique($sku, $product_id) {
  */
 function commerce_product_validate_sku($sku) {
   // Do not allow commas in a SKU.
-  if (strpos($sku, ',')) {
+  if (strpos($sku, ',') !== FALSE) {
     return FALSE;
   }
 
@@ -727,10 +737,7 @@ function commerce_product_set_properties($product, $name, $value) {
  * The values returned will be keyed by SKU and appear as such in the textfield,
  * even though the preview in the autocomplete list shows "SKU: Title".
  */
-function commerce_product_autocomplete($entity_type, $field_name, $bundle, $string = '') {
-  $field = field_info_field($field_name);
-  $instance = field_info_instance($entity_type, $field_name, $bundle);
-
+function commerce_product_autocomplete($entity_type = 'commerce_product', $field_name = NULL, $bundle = NULL, $string = '') {
   $matches = array();
 
   // Extract the SKU string from the URL while preserving support for SKUs that
@@ -757,11 +764,14 @@ function commerce_product_autocomplete($entity_type, $field_name, $bundle, $stri
   if (!empty($tag_last)) {
     $prefix = count($tags_typed) ? implode(', ', $tags_typed) . ', ' : '';
 
+    $field = field_info_field($field_name);
+    $instance = field_info_instance($entity_type, $field_name, $bundle);
+
     // Determine the type of autocomplete match to use when searching for products.
     $match = isset($field['widget']['autocomplete_match']) ? $field['widget']['autocomplete_match'] : 'contains';
 
     // Get an array of matching products.
-    $products = commerce_product_match_products($field, $instance, $tag_last, $match, array(), 10);
+    $products = commerce_product_match_products($field, $instance, $tag_last, $match, array(), 10, TRUE);
 
     // Loop through the products and convert them into autocomplete output.
     foreach ($products as $product_id => $data) {

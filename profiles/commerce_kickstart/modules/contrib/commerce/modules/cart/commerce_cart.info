@@ -15,15 +15,16 @@ core = 7.x
 
 ; Views handlers
 files[] = includes/views/handlers/commerce_cart_handler_field_add_to_cart_form.inc
+files[] = includes/views/handlers/commerce_cart_handler_field_edit_attributes.inc
 files[] = includes/views/handlers/commerce_cart_plugin_argument_default_current_cart_order_id.inc
 files[] = includes/views/handlers/commerce_cart_handler_area_empty_text.inc
 
 ; Simple tests
 files[] = tests/commerce_cart.test
 
-; Information added by Drupal.org packaging script on 2015-01-16
-version = "7.x-1.11"
+; Information added by Drupal.org packaging script on 2016-04-06
+version = "7.x-1.13"
 core = "7.x"
 project = "commerce"
-datestamp = "1421426596"
+datestamp = "1459956613"
 

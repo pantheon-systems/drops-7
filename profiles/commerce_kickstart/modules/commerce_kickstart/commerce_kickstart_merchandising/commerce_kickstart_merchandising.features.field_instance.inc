@@ -10,7 +10,7 @@
 function commerce_kickstart_merchandising_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'comment-comment_node_ad_push-comment_body'
+  // Exported field_instance: 'comment-comment_node_ad_push-comment_body'.
   $field_instances['comment-comment_node_ad_push-comment_body'] = array(
     'bundle' => 'comment_node_ad_push',
     'default_value' => NULL,
@@ -43,7 +43,7 @@ function commerce_kickstart_merchandising_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-ad_push-field_image'
+  // Exported field_instance: 'node-ad_push-field_image'.
   $field_instances['node-ad_push-field_image'] = array(
     'bundle' => 'ad_push',
     'deleted' => 0,
@@ -109,7 +109,7 @@ function commerce_kickstart_merchandising_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-ad_push-field_link'
+  // Exported field_instance: 'node-ad_push-field_link'.
   $field_instances['node-ad_push-field_link'] = array(
     'bundle' => 'ad_push',
     'default_value' => NULL,
@@ -176,7 +176,7 @@ function commerce_kickstart_merchandising_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-ad_push-field_tagline'
+  // Exported field_instance: 'node-ad_push-field_tagline'.
   $field_instances['node-ad_push-field_tagline'] = array(
     'bundle' => 'ad_push',
     'default_value' => NULL,
@@ -228,7 +228,7 @@ function commerce_kickstart_merchandising_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-ad_push-title_field'
+  // Exported field_instance: 'node-ad_push-title_field'.
   $field_instances['node-ad_push-title_field'] = array(
     'bundle' => 'ad_push',
     'default_value' => NULL,

@@ -10,7 +10,7 @@
 function commerce_kickstart_slideshow_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'comment-comment_node_slideshow-comment_body'
+  // Exported field_instance: 'comment-comment_node_slideshow-comment_body'.
   $field_instances['comment-comment_node_slideshow-comment_body'] = array(
     'bundle' => 'comment_node_slideshow',
     'default_value' => NULL,
@@ -43,7 +43,7 @@ function commerce_kickstart_slideshow_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-slideshow-field_headline'
+  // Exported field_instance: 'node-slideshow-field_headline'.
   $field_instances['node-slideshow-field_headline'] = array(
     'bundle' => 'slideshow',
     'default_value' => NULL,
@@ -95,7 +95,7 @@ function commerce_kickstart_slideshow_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-slideshow-field_image'
+  // Exported field_instance: 'node-slideshow-field_image'.
   $field_instances['node-slideshow-field_image'] = array(
     'bundle' => 'slideshow',
     'deleted' => 0,
@@ -161,7 +161,7 @@ function commerce_kickstart_slideshow_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-slideshow-field_link'
+  // Exported field_instance: 'node-slideshow-field_link'.
   $field_instances['node-slideshow-field_link'] = array(
     'bundle' => 'slideshow',
     'default_value' => NULL,
@@ -228,7 +228,7 @@ function commerce_kickstart_slideshow_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-slideshow-field_tagline'
+  // Exported field_instance: 'node-slideshow-field_tagline'.
   $field_instances['node-slideshow-field_tagline'] = array(
     'bundle' => 'slideshow',
     'default_value' => NULL,
@@ -280,7 +280,7 @@ function commerce_kickstart_slideshow_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-slideshow-title_field'
+  // Exported field_instance: 'node-slideshow-title_field'.
   $field_instances['node-slideshow-title_field'] = array(
     'bundle' => 'slideshow',
     'default_value' => NULL,

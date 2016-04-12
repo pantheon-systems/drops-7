@@ -2,7 +2,7 @@ language: php
 sudo: false
 
 php:
-  - 5.4
+  - 5.6
 
 branches:
   except:
@@ -15,6 +15,9 @@ mysql:
 
 env:
   - UPGRADE=none
+  - UPGRADE=7.x-2.34
+  - UPGRADE=7.x-2.33
+  - UPGRADE=7.x-2.32
   - UPGRADE=7.x-2.31
   - UPGRADE=7.x-2.30
   - UPGRADE=7.x-2.29
@@ -38,16 +41,19 @@ matrix:
       env: UPGRADE=none
     - php: 5.5
       env: UPGRADE=7.x-2.23 TEST_FEATURES_OVERRIDES=1
-    - php: 5.6
-      env: UPGRADE=none
 
 # Cache Composer & Drush directories.
 cache:
   directories:
     - $HOME/.composer/cache
     - $HOME/.drush/cache
+    - tests/behat/vendor
 
 install:
+  # Remove xdebug for the moment. We aren't generating code coverage, and it slows us down.
+  - rm /home/travis/.phpenv/versions/$(phpenv version-name)/etc/conf.d/xdebug.ini
+
+  # Create database.
   - "mysql -e 'create database drupal;'"
 
   # Install latest Drush 6.
@@ -112,6 +118,10 @@ install:
   - echo "mysql.connect_timeout=3000" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
   - echo "default_socket_timeout=3000" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
 
+  # Multibyte string input conversion in PHP is active and must be disabled for Drupal on PHP 5.6.
+  - echo "mbstring.http_input = pass" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+  - echo "mbstring.http_output = pass" >> ~/.phpenv/versions/$(phpenv version-name)/etc/php.ini
+
   # Increase the MySQL server timetout and packet size.
   - mysql -e "SET GLOBAL wait_timeout = 36000;"
   - mysql -e "SET GLOBAL max_allowed_packet = 33554432;"
@@ -154,6 +164,9 @@ script:
 
   # If this isn't an upgrade, we test if any features are overridden.
   - if [[ "$UPGRADE" == none ]]; then ../../scripts/check-overridden.sh; fi
+
+  # Fix bad Commerce Migrate release for testing the demo.
+  - if [[ "$UPGRADE" == "7.x-2.34" || "$UPGRADE" == "7.x-2.33" || "$UPGRADE" == "7.x-2.32" || "$UPGRADE" == "7.x-2.31" || "$UPGRADE" == "7.x-2.30" || "$UPGRADE" == "7.x-2.29" || "$UPGRADE" == "7.x-2.28" || "$UPGRADE" == "7.x-2.27" ]]; then drush mi --all --update; fi
 
   # Run Behat tests.
   - if [[ "$TEST_FEATURES_OVERRIDES" != 1 ]]; then ./bin/behat --config behat.travis.yml --tags ~@overrides; fi

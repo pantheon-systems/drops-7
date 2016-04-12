@@ -109,7 +109,7 @@ function features_export_form($form, $form_state, $feature = NULL) {
 
   $feature_name = !empty($feature->name) ? $feature->name : '';
   $form = array(
-    '#attributes' => array('class' => array('features-export-form')),
+    '#attributes' => array('class' => array('features-export-form', 'clearfix')),
     '#feature' => isset($feature) ? $feature : NULL,
   );
   $form['info'] = array(
@@ -756,7 +756,7 @@ function features_export_form_rebuild($form, &$form_state) {
 
 function features_export_components_json($feature_name) {
   module_load_include('inc', 'features', 'features.export');
-  $export = array();
+  $export = array('features' => array());
   if (!empty($_POST['items'])) {
     $excluded = (!empty($_POST['excluded'])) ? $_POST['excluded'] : array();
     $stub = array();
@@ -1143,7 +1143,7 @@ function features_admin_form($form, $form_state) {
   // As of 7.0 beta 2 it matters where the "vertical_tabs" element lives on the
   // the array. We add it late, but at the beginning of the array because that
   // keeps us away from trouble.
-  $form = array('packages' => array('#type' => 'vertical_tabs')) + $form;
+  $form = array_merge(array('packages' => array('#type' => 'vertical_tabs')), $form);
 
   $form['buttons'] = array(
     '#theme' => 'features_form_buttons',

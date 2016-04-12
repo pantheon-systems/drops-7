@@ -118,9 +118,9 @@ dependencies[] = commerce_kickstart_migrate
 ; System Requirements.
 php_memory_limit = 128M
 
-; Information added by Drupal.org packaging script on 2016-02-25
-version = "7.x-2.34"
+; Information added by Drupal.org packaging script on 2016-04-08
+version = "7.x-2.35"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1456416419"
+datestamp = "1460152751"
 

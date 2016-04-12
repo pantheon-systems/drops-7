@@ -538,7 +538,7 @@ class SearchApiViewsQuery extends views_plugin_query {
    * query backend.
    */
   public function get_result_wrappers($results, $relationship = NULL, $field = NULL) {
-    $type = $this->index->item_type;
+    $type = $this->index->getEntityType() ? $this->index->getEntityType() : $this->index->item_type;
     $wrappers = array();
     $load_items = array();
     foreach ($results as $row_index => $row) {

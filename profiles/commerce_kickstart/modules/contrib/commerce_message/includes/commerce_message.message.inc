@@ -212,9 +212,10 @@ function commerce_message_default_message_type() {
 function commerce_message_default_message_type_alter(&$items) {
   if (module_exists('locale')) {
     $languages = locale_language_list();
+    $default_messages = array_keys(commerce_message_default_message_type());
     foreach ($languages as $langcode => $langname) {
       foreach ($items as $message_type => $item) {
-        if ($item->module != 'commerce_message') {
+        if (!in_array($message_type, $default_messages)) {
           continue;
         }
         if (isset($items[$message_type]->message_text[LANGUAGE_NONE])) {

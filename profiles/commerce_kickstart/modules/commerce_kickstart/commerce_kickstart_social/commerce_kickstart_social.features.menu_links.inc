@@ -10,7 +10,7 @@
 function commerce_kickstart_social_menu_default_menu_links() {
   $menu_links = array();
 
-  // Exported menu link: menu-social-connection_follow-us-on-twitter:https://twitter.com/commerceguys
+  // Exported menu link: menu-social-connection_follow-us-on-twitter:https://twitter.com/commerceguys.
   $menu_links['menu-social-connection_follow-us-on-twitter:https://twitter.com/commerceguys'] = array(
     'menu_name' => 'menu-social-connection',
     'link_path' => 'https://twitter.com/commerceguys',
@@ -34,7 +34,7 @@ function commerce_kickstart_social_menu_default_menu_links() {
     'weight' => -49,
     'customized' => 1,
   );
-  // Exported menu link: menu-social-connection_like-us-on-facebook:https://www.facebook.com/commerceguys
+  // Exported menu link: menu-social-connection_like-us-on-facebook:https://www.facebook.com/commerceguys.
   $menu_links['menu-social-connection_like-us-on-facebook:https://www.facebook.com/commerceguys'] = array(
     'menu_name' => 'menu-social-connection',
     'link_path' => 'https://www.facebook.com/commerceguys',
@@ -58,7 +58,7 @@ function commerce_kickstart_social_menu_default_menu_links() {
     'weight' => -50,
     'customized' => 1,
   );
-  // Exported menu link: menu-social-connection_what-we-like-on-pinterest:http://pinterest.com/
+  // Exported menu link: menu-social-connection_what-we-like-on-pinterest:http://pinterest.com/.
   $menu_links['menu-social-connection_what-we-like-on-pinterest:http://pinterest.com/'] = array(
     'menu_name' => 'menu-social-connection',
     'link_path' => 'http://pinterest.com/',
@@ -82,12 +82,12 @@ function commerce_kickstart_social_menu_default_menu_links() {
     'weight' => -48,
     'customized' => 1,
   );
+
   // Translatables
   // Included for use with string extractors like potx.
   t('Follow Us on Twitter');
   t('Like us on Facebook');
   t('What We Like on Pinterest');
-
 
   return $menu_links;
 }

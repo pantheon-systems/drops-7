@@ -238,11 +238,19 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
   }
 
   /**
+   * @When I select :arg1 from collection dropdown
+   */
+  public function iSelectFromCollectionDropdown($arg1) {
+    $this->getSession()->wait(5000, 'jQuery("#selectnav3").length > 0');
+    $this->getSession()->getPage()->selectFieldOption("selectnav3", $arg1);
+  }
+
+  /**
    * @BeforeScenario
    */
   public function beforeScenario()
   {
-    if (!$this->running_javascript()) {
+    if (!$this->runningJavascript()) {
       return;
     }
     $this->getSession()->resizeWindow(1440, 900, 'current');
@@ -253,7 +261,7 @@ class FeatureContext extends RawDrupalContext implements SnippetAcceptingContext
    *
    * @return boolean
    */
-  protected function running_javascript() {
+  protected function runningJavascript() {
     return get_class($this->getSession()->getDriver()) !== 'Behat\Mink\Driver\GoutteDriver';
   }
 }

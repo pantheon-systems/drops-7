@@ -58,16 +58,18 @@ function commerce_kickstart_install_tasks_alter(&$tasks, $install_state) {
   $tasks['install_select_locale']['run'] = INSTALL_TASK_SKIP;
   $tasks['install_profile_modules']['display_name'] = st('Install Commerce Kickstart 2');
 
-  // The "Welcome" screen needs to come after the first two steps
-  // (profile and language selection), despite the fact that they are disabled.
-  $new_task['install_welcome'] = array(
-    'display' => TRUE,
-    'display_name' => st('Welcome'),
-    'type' => 'form',
-    'run' => isset($install_state['parameters']['welcome']) ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_REACHED,
-  );
-  $old_tasks = $tasks;
-  $tasks = array_slice($old_tasks, 0, 2) + $new_task + array_slice($old_tasks, 2);
+  if (PHP_SAPI !== 'cli') {
+    // The "Welcome" screen needs to come after the first two steps
+    // (profile and language selection), despite the fact that they are disabled.
+    $new_task['install_welcome'] = array(
+      'display' => TRUE,
+      'display_name' => st('Welcome'),
+      'type' => 'form',
+      'run' => isset($install_state['parameters']['welcome']) ? INSTALL_TASK_SKIP : INSTALL_TASK_RUN_IF_REACHED,
+    );
+    $old_tasks = $tasks;
+    $tasks = array_slice($old_tasks, 0, 2) + $new_task + array_slice($old_tasks, 2);
+  }
 
   // Set the installation theme.
   _commerce_kickstart_set_theme('commerce_kickstart_admin');

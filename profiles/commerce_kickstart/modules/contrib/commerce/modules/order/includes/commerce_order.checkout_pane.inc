@@ -67,6 +67,10 @@ function commerce_order_account_pane_checkout_form($form, &$form_state, $checkou
       '#title' => t('E-mail address'),
       '#default_value' => $order->mail,
       '#required' => TRUE,
+      '#element_validate' => array('commerce_order_mail_validate'),
+      '#attributes' => array(
+        'autocomplete' => 'email',
+      ),
     );
 
     if (variable_get('commerce_order_account_pane_mail_double_entry', FALSE)) {
@@ -76,6 +80,7 @@ function commerce_order_account_pane_checkout_form($form, &$form_state, $checkou
         '#description' => t('Provide your e-mail address in both fields.'),
         '#default_value' => $order->mail,
         '#required' => TRUE,
+        '#element_validate' => array('commerce_order_mail_validate'),
       );
     }
   }

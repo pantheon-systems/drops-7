@@ -34,6 +34,5 @@ function commerce_kickstart_block_menu_default_menu_custom() {
   t('Payment methods');
   t('Secondary navigation');
 
-
   return $menus;
 }

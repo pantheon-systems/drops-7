@@ -10,7 +10,7 @@
 function commerce_kickstart_blog_field_default_field_bases() {
   $field_bases = array();
 
-  // Exported field_base: 'field_blog_category'
+  // Exported field_base: 'field_blog_category'.
   $field_bases['field_blog_category'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -31,12 +31,13 @@ function commerce_kickstart_blog_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',
   );
 
-  // Exported field_base: 'field_tags'
+  // Exported field_base: 'field_tags'.
   $field_bases['field_tags'] = array(
     'active' => 1,
     'cardinality' => -1,
@@ -57,6 +58,7 @@ function commerce_kickstart_blog_field_default_field_bases() {
           'parent' => 0,
         ),
       ),
+      'options_list_callback' => 'title_taxonomy_allowed_values',
     ),
     'translatable' => 0,
     'type' => 'taxonomy_term_reference',

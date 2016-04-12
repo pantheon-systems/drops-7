@@ -836,18 +836,20 @@ function _commerce_nosto_tagging_get_commerce_product_image_url($commerce_produc
  */
 function _commerce_nosto_tagging_get_commerce_product_availability($commerce_product) {
   if (module_exists('commerce_stock') && isset($commerce_product->commerce_stock)) {
-    $remaining_stock = 0;
     $out_of_stock = FALSE;
     // Commerce Stock 1.x-branch
     if (function_exists('commerce_stock_product_check_out_of_stock')) {
+      $remaining_stock = 0;
       $out_of_stock = commerce_stock_product_check_out_of_stock($commerce_product->product_id, 1, $remaining_stock);
     }
     // Commerce Stock 2.x-branch
     elseif (function_exists('commerce_stock_check_product_checkout_rule')) {
-      $stock_state = TRUE;
+      $stock_state = 0;
       $message = NULL;
-      $out_of_stock_status = commerce_stock_check_product_checkout_rule($commerce_product, 1, $stock_state, $message);
-      $out_of_stock = $stock_state;
+      commerce_stock_check_product_checkout_rule($commerce_product, 1, $stock_state, $message);
+      if ($stock_state == 1 || $stock_state == 2) {
+        $out_of_stock = TRUE;
+      }
     }
     if ($out_of_stock) {
       return COMMERCE_NOSTO_TAGGING_PRODUCT_OUT_OF_STOCK;

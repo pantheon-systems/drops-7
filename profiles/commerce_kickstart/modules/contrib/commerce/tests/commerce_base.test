@@ -30,7 +30,7 @@ abstract class CommerceBaseTestCase extends DrupalWebTestCase {
     $dependencies = array(
       // API
       'entity',
-    	'entity_token',
+      'entity_token',
       'rules',
       'addressfield',
       //'rules_admin',
@@ -283,7 +283,7 @@ abstract class CommerceBaseTestCase extends DrupalWebTestCase {
       $new_product->uid = $uid;
 
       $new_product->commerce_price[LANGUAGE_NONE][0]['amount'] = ($amount < 0) ? rand(2, 500) : $amount;
-      $new_product->commerce_price[LANGUAGE_NONE][0]['currency_code'] = 'USD';
+      $new_product->commerce_price[LANGUAGE_NONE][0]['currency_code'] = $currency_code;
 
       commerce_product_save($new_product);
 
@@ -582,33 +582,24 @@ abstract class CommerceBaseTestCase extends DrupalWebTestCase {
    *  	Type of the customer profile, default billing.
    *  @param $uid
    *  	User id that will own the profile, by default anonymous.
-   *  @param $address_info
-   *  	Address information, associative array keyed by the field name.
-   *  	i.e. 'commerce_customer_address'.
    *
    *  @return
    *  	The customer profile created or FALSE if the profile wasn't created.
    */
-  public function createDummyCustomerProfile($type = 'billing', $uid = 0, $address_info = array()) {
-    variable_set('site_default_country', 'US');
+  public function createDummyCustomerProfile($type = 'billing', $uid = 0) {
     // Initialize the profile.
     $profile = commerce_customer_profile_new($type, $uid);
-
-    // Set the defaults.
+    // Initialize the address.
+    $defaults = array();
     $defaults['name_line'] = $this->randomName();
-    $defaults = array_merge($defaults, addressfield_default_values(), $this->generateAddressInformation());
-
-    // Get all the fields for the given type, by default billing.
-    $instances = field_info_instances('commerce_customer_profile', $type);
-    foreach ($instances as $name => $instance) {
-      $info_field = field_info_field($name);
-      if ($info_field['type'] == 'addressfield') {
-        $values = !empty($address_info[$name]) ? array_merge($defaults, $address_info[$name]) : $defaults;
-        $values['data'] = serialize($values['data']);
-        $profile->{$name}[LANGUAGE_NONE][] = $values;
-      }
-    }
+    $field = field_info_field('commerce_customer_address');
+    $instance = field_info_instance('commerce_customer_profile', 'commerce_customer_address', $type);
+    $values = array_merge($defaults, addressfield_default_values($field, $instance), $this->generateAddressInformation());
+    $values['data'] = serialize($values['data']);
+    $profile->commerce_customer_address[LANGUAGE_NONE][] = $values;
+    // Save the dummy profile.
     commerce_customer_profile_save($profile);
+
     return $profile;
   }
 
@@ -695,7 +686,7 @@ abstract class CommerceBaseTestCase extends DrupalWebTestCase {
     // Loop through the line items looking for products.
     foreach (entity_metadata_wrapper('commerce_order', $order)->commerce_line_items as $delta => $line_item_wrapper) {
       // If this line item matches the product checked...
-      if ($line_item_wrapper->type->value() == 'product' &&
+      if ($line_item_wrapper->getBundle() == 'product' &&
           $line_item_wrapper->commerce_product->product_id->value() == $product->product_id) {
             $product_is_in_cart = TRUE;
       }
@@ -735,68 +726,6 @@ abstract class CommerceBaseTestCase extends DrupalWebTestCase {
     $this->drupalGet('admin/commerce/products/' . $product->product_id);
     $this->assertFieldById('edit-sku', $product->sku, t('When editing the product in the administration interface, the SKU is informed correctly'));
     $this->assertFieldById('edit-title', $product->title, t('When editing the product in the administration interface, the Title is informed correctly'));
-  }
-
-}
-
-
-/**
- * Sandbox for trying new things with tests. Eases development so only one test
- * has to run at a time. Move everything to CommerceBaseTesterTestCase after it
- * is functioning here.
- */
-class CommerceSandboxTestCase extends CommerceBaseTestCase {
-  protected $site_admin;
-
-  /**
-   * getInfo() returns properties that are displayed in the test selection form.
-   */
-  public static function getInfo() {
-    return array(
-      'name' => t('Commerce sandbox'),
-      'description' => t('Sandbox for trying new things with tests. Eases development so only one test has to run at a time.'),
-      'group' => t('Drupal Commerce'),
-    );
-  }
-
-  /**
-   * setUp() performs any pre-requisite tasks that need to happen.
-   */
-  public function setUp() {
-    $modules = parent::setUpHelper('all');
-    parent::setUp($modules);
-
-    $this->site_admin = $this->createSiteAdmin();
-    cache_clear_all(); // Just in case
-  }
-
-  /**
-   * Sandbox for test development
-   */
-  public function testTestTest() {
-
-  }
-
-  /**
-   * Test the createDummyCustomerProfile function.
-   */
-  public function testTestCreateDummyCustomerProfile() {
-    $store_admin = $this->createStoreAdmin();
-    // Create a new customer profile for the store admin.
-    $profile = $this->createDummyCustomerProfile('billing', $store_admin->uid);
-
-    // Load profile reseting cache.
-    $profile = reset(commerce_customer_profile_load_multiple(array($profile->profile_id), array(), TRUE));
-
-    $this->assertFalse(empty($profile), t('Profile can be loaded from database'));
-
-    // Login with store admin user and navigate to the profile listing page.
-    $this->drupalLogin($store_admin);
-    $this->drupalGet('admin/commerce/customer-profiles');
-
-    $this->assertText($profile->commerce_customer_address[LANGUAGE_NONE][0]['name_line'], t('\'Name line\' field for the profile created is present in the customer profile listing'));
-    $type = commerce_customer_profile_type_load($profile->type);
-    $this->assertText($type['name'], t('The type of the profile is informed in the profile listing page'));
   }
 
 }

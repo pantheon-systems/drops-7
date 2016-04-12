@@ -21,6 +21,5 @@ function commerce_kickstart_social_menu_default_menu_custom() {
   t('Connect with us');
   t('The "Connect with us" menu.');
 
-
   return $menus;
 }

@@ -10,7 +10,7 @@
 function commerce_kickstart_blog_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'node-blog_post-body'
+  // Exported field_instance: 'node-blog_post-body'.
   $field_instances['node-blog_post-body'] = array(
     'bundle' => 'blog_post',
     'default_value' => NULL,
@@ -68,7 +68,7 @@ function commerce_kickstart_blog_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-blog_post-field_blog_category'
+  // Exported field_instance: 'node-blog_post-field_blog_category'.
   $field_instances['node-blog_post-field_blog_category'] = array(
     'bundle' => 'blog_post',
     'default_value' => NULL,
@@ -115,7 +115,7 @@ function commerce_kickstart_blog_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-blog_post-field_image'
+  // Exported field_instance: 'node-blog_post-field_image'.
   $field_instances['node-blog_post-field_image'] = array(
     'bundle' => 'blog_post',
     'deleted' => 0,
@@ -181,7 +181,7 @@ function commerce_kickstart_blog_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-blog_post-field_tags'
+  // Exported field_instance: 'node-blog_post-field_tags'.
   $field_instances['node-blog_post-field_tags'] = array(
     'bundle' => 'blog_post',
     'default_value' => NULL,
@@ -233,7 +233,7 @@ function commerce_kickstart_blog_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-blog_post-title_field'
+  // Exported field_instance: 'node-blog_post-title_field'.
   $field_instances['node-blog_post-title_field'] = array(
     'bundle' => 'blog_post',
     'default_value' => NULL,

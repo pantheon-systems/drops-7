@@ -12,10 +12,11 @@ dependencies[] = message
 dependencies[] = message_notify
 
 files[] = includes/views/handlers/commerce_message_handler_area_add_message.inc
+files[] = commerce_message.test
 
-; Information added by Drupal.org packaging script on 2014-06-11
-version = "7.x-1.0-rc3"
+; Information added by Drupal.org packaging script on 2016-01-08
+version = "7.x-1.0-rc4"
 core = "7.x"
 project = "commerce_message"
-datestamp = "1402495128"
+datestamp = "1452293199"
 

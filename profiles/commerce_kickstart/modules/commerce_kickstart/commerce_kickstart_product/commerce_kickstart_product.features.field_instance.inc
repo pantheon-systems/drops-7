@@ -10,7 +10,7 @@
 function commerce_kickstart_product_field_default_field_instances() {
   $field_instances = array();
 
-  // Exported field_instance: 'commerce_product-bags_cases-commerce_price'
+  // Exported field_instance: 'commerce_product-bags_cases-commerce_price'.
   $field_instances['commerce_product-bags_cases-commerce_price'] = array(
     'bundle' => 'bags_cases',
     'default_value' => NULL,
@@ -142,7 +142,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-bags_cases-field_bag_size'
+  // Exported field_instance: 'commerce_product-bags_cases-field_bag_size'.
   $field_instances['commerce_product-bags_cases-field_bag_size'] = array(
     'bundle' => 'bags_cases',
     'commerce_cart_settings' => array(
@@ -218,7 +218,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-bags_cases-field_color'
+  // Exported field_instance: 'commerce_product-bags_cases-field_color'.
   $field_instances['commerce_product-bags_cases-field_color'] = array(
     'bundle' => 'bags_cases',
     'commerce_cart_settings' => array(
@@ -294,7 +294,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-bags_cases-field_images'
+  // Exported field_instance: 'commerce_product-bags_cases-field_images'.
   $field_instances['commerce_product-bags_cases-field_images'] = array(
     'bundle' => 'bags_cases',
     'deleted' => 0,
@@ -417,7 +417,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-bags_cases-title_field'
+  // Exported field_instance: 'commerce_product-bags_cases-title_field'.
   $field_instances['commerce_product-bags_cases-title_field'] = array(
     'bundle' => 'bags_cases',
     'default_value' => NULL,
@@ -486,7 +486,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-drinks-commerce_price'
+  // Exported field_instance: 'commerce_product-drinks-commerce_price'.
   $field_instances['commerce_product-drinks-commerce_price'] = array(
     'bundle' => 'drinks',
     'default_value' => NULL,
@@ -618,7 +618,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-drinks-field_color'
+  // Exported field_instance: 'commerce_product-drinks-field_color'.
   $field_instances['commerce_product-drinks-field_color'] = array(
     'bundle' => 'drinks',
     'commerce_cart_settings' => array(
@@ -695,7 +695,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-drinks-field_images'
+  // Exported field_instance: 'commerce_product-drinks-field_images'.
   $field_instances['commerce_product-drinks-field_images'] = array(
     'bundle' => 'drinks',
     'deleted' => 0,
@@ -818,7 +818,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-drinks-title_field'
+  // Exported field_instance: 'commerce_product-drinks-title_field'.
   $field_instances['commerce_product-drinks-title_field'] = array(
     'bundle' => 'drinks',
     'default_value' => NULL,
@@ -887,7 +887,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-hats-commerce_price'
+  // Exported field_instance: 'commerce_product-hats-commerce_price'.
   $field_instances['commerce_product-hats-commerce_price'] = array(
     'bundle' => 'hats',
     'default_value' => NULL,
@@ -1019,7 +1019,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-hats-field_color'
+  // Exported field_instance: 'commerce_product-hats-field_color'.
   $field_instances['commerce_product-hats-field_color'] = array(
     'bundle' => 'hats',
     'commerce_cart_settings' => array(
@@ -1100,7 +1100,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-hats-field_hat_size'
+  // Exported field_instance: 'commerce_product-hats-field_hat_size'.
   $field_instances['commerce_product-hats-field_hat_size'] = array(
     'bundle' => 'hats',
     'commerce_cart_settings' => array(
@@ -1180,7 +1180,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-hats-field_images'
+  // Exported field_instance: 'commerce_product-hats-field_images'.
   $field_instances['commerce_product-hats-field_images'] = array(
     'bundle' => 'hats',
     'deleted' => 0,
@@ -1303,7 +1303,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-hats-title_field'
+  // Exported field_instance: 'commerce_product-hats-title_field'.
   $field_instances['commerce_product-hats-title_field'] = array(
     'bundle' => 'hats',
     'default_value' => NULL,
@@ -1372,7 +1372,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-shoes-commerce_price'
+  // Exported field_instance: 'commerce_product-shoes-commerce_price'.
   $field_instances['commerce_product-shoes-commerce_price'] = array(
     'bundle' => 'shoes',
     'default_value' => NULL,
@@ -1504,7 +1504,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-shoes-field_color'
+  // Exported field_instance: 'commerce_product-shoes-field_color'.
   $field_instances['commerce_product-shoes-field_color'] = array(
     'bundle' => 'shoes',
     'commerce_cart_settings' => array(
@@ -1581,7 +1581,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-shoes-field_images'
+  // Exported field_instance: 'commerce_product-shoes-field_images'.
   $field_instances['commerce_product-shoes-field_images'] = array(
     'bundle' => 'shoes',
     'deleted' => 0,
@@ -1704,7 +1704,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-shoes-field_shoe_size'
+  // Exported field_instance: 'commerce_product-shoes-field_shoe_size'.
   $field_instances['commerce_product-shoes-field_shoe_size'] = array(
     'bundle' => 'shoes',
     'commerce_cart_settings' => array(
@@ -1780,7 +1780,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-shoes-title_field'
+  // Exported field_instance: 'commerce_product-shoes-title_field'.
   $field_instances['commerce_product-shoes-title_field'] = array(
     'bundle' => 'shoes',
     'default_value' => NULL,
@@ -1849,7 +1849,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-storage_devices-commerce_price'
+  // Exported field_instance: 'commerce_product-storage_devices-commerce_price'.
   $field_instances['commerce_product-storage_devices-commerce_price'] = array(
     'bundle' => 'storage_devices',
     'default_value' => NULL,
@@ -1981,7 +1981,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-storage_devices-field_images'
+  // Exported field_instance: 'commerce_product-storage_devices-field_images'.
   $field_instances['commerce_product-storage_devices-field_images'] = array(
     'bundle' => 'storage_devices',
     'deleted' => 0,
@@ -2105,7 +2105,7 @@ function commerce_kickstart_product_field_default_field_instances() {
   );
 
   // Exported field_instance:
-  // 'commerce_product-storage_devices-field_storage_capacity'
+  // 'commerce_product-storage_devices-field_storage_capacity'.
   $field_instances['commerce_product-storage_devices-field_storage_capacity'] = array(
     'bundle' => 'storage_devices',
     'commerce_cart_settings' => array(
@@ -2180,7 +2180,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-storage_devices-title_field'
+  // Exported field_instance: 'commerce_product-storage_devices-title_field'.
   $field_instances['commerce_product-storage_devices-title_field'] = array(
     'bundle' => 'storage_devices',
     'default_value' => NULL,
@@ -2249,7 +2249,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-tops-commerce_price'
+  // Exported field_instance: 'commerce_product-tops-commerce_price'.
   $field_instances['commerce_product-tops-commerce_price'] = array(
     'bundle' => 'tops',
     'default_value' => NULL,
@@ -2381,7 +2381,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-tops-field_color'
+  // Exported field_instance: 'commerce_product-tops-field_color'.
   $field_instances['commerce_product-tops-field_color'] = array(
     'bundle' => 'tops',
     'commerce_cart_settings' => array(
@@ -2457,7 +2457,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-tops-field_images'
+  // Exported field_instance: 'commerce_product-tops-field_images'.
   $field_instances['commerce_product-tops-field_images'] = array(
     'bundle' => 'tops',
     'deleted' => 0,
@@ -2580,7 +2580,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-tops-field_top_size'
+  // Exported field_instance: 'commerce_product-tops-field_top_size'.
   $field_instances['commerce_product-tops-field_top_size'] = array(
     'bundle' => 'tops',
     'commerce_cart_settings' => array(
@@ -2656,7 +2656,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'commerce_product-tops-title_field'
+  // Exported field_instance: 'commerce_product-tops-title_field'.
   $field_instances['commerce_product-tops-title_field'] = array(
     'bundle' => 'tops',
     'default_value' => NULL,
@@ -2725,7 +2725,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-bags_cases-body'
+  // Exported field_instance: 'node-bags_cases-body'.
   $field_instances['node-bags_cases-body'] = array(
     'bundle' => 'bags_cases',
     'default_value' => NULL,
@@ -2790,7 +2790,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-bags_cases-field_brand'
+  // Exported field_instance: 'node-bags_cases-field_brand'.
   $field_instances['node-bags_cases-field_brand'] = array(
     'bundle' => 'bags_cases',
     'default_value' => NULL,
@@ -2848,7 +2848,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-bags_cases-field_category'
+  // Exported field_instance: 'node-bags_cases-field_category'.
   $field_instances['node-bags_cases-field_category'] = array(
     'bundle' => 'bags_cases',
     'default_value' => NULL,
@@ -2905,7 +2905,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-bags_cases-field_collection'
+  // Exported field_instance: 'node-bags_cases-field_collection'.
   $field_instances['node-bags_cases-field_collection'] = array(
     'bundle' => 'bags_cases',
     'default_value' => NULL,
@@ -2962,7 +2962,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-bags_cases-field_gender'
+  // Exported field_instance: 'node-bags_cases-field_gender'.
   $field_instances['node-bags_cases-field_gender'] = array(
     'bundle' => 'bags_cases',
     'default_value' => NULL,
@@ -3019,7 +3019,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-bags_cases-field_product'
+  // Exported field_instance: 'node-bags_cases-field_product'.
   $field_instances['node-bags_cases-field_product'] = array(
     'bundle' => 'bags_cases',
     'deleted' => 0,
@@ -3114,7 +3114,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-bags_cases-title_field'
+  // Exported field_instance: 'node-bags_cases-title_field'.
   $field_instances['node-bags_cases-title_field'] = array(
     'bundle' => 'bags_cases',
     'default_value' => NULL,
@@ -3176,7 +3176,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-drinks-body'
+  // Exported field_instance: 'node-drinks-body'.
   $field_instances['node-drinks-body'] = array(
     'bundle' => 'drinks',
     'default_value' => NULL,
@@ -3241,7 +3241,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-drinks-field_brand'
+  // Exported field_instance: 'node-drinks-field_brand'.
   $field_instances['node-drinks-field_brand'] = array(
     'bundle' => 'drinks',
     'default_value' => NULL,
@@ -3299,7 +3299,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-drinks-field_category'
+  // Exported field_instance: 'node-drinks-field_category'.
   $field_instances['node-drinks-field_category'] = array(
     'bundle' => 'drinks',
     'default_value' => NULL,
@@ -3356,7 +3356,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-drinks-field_collection'
+  // Exported field_instance: 'node-drinks-field_collection'.
   $field_instances['node-drinks-field_collection'] = array(
     'bundle' => 'drinks',
     'default_value' => NULL,
@@ -3413,7 +3413,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-drinks-field_gender'
+  // Exported field_instance: 'node-drinks-field_gender'.
   $field_instances['node-drinks-field_gender'] = array(
     'bundle' => 'drinks',
     'default_value' => NULL,
@@ -3469,7 +3469,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-drinks-field_product'
+  // Exported field_instance: 'node-drinks-field_product'.
   $field_instances['node-drinks-field_product'] = array(
     'bundle' => 'drinks',
     'deleted' => 0,
@@ -3563,7 +3563,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-drinks-title_field'
+  // Exported field_instance: 'node-drinks-title_field'.
   $field_instances['node-drinks-title_field'] = array(
     'bundle' => 'drinks',
     'default_value' => NULL,
@@ -3626,7 +3626,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-hats-body'
+  // Exported field_instance: 'node-hats-body'.
   $field_instances['node-hats-body'] = array(
     'bundle' => 'hats',
     'default_value' => NULL,
@@ -3691,7 +3691,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-hats-field_brand'
+  // Exported field_instance: 'node-hats-field_brand'.
   $field_instances['node-hats-field_brand'] = array(
     'bundle' => 'hats',
     'default_value' => NULL,
@@ -3749,7 +3749,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-hats-field_category'
+  // Exported field_instance: 'node-hats-field_category'.
   $field_instances['node-hats-field_category'] = array(
     'bundle' => 'hats',
     'default_value' => NULL,
@@ -3806,7 +3806,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-hats-field_collection'
+  // Exported field_instance: 'node-hats-field_collection'.
   $field_instances['node-hats-field_collection'] = array(
     'bundle' => 'hats',
     'default_value' => NULL,
@@ -3863,7 +3863,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-hats-field_gender'
+  // Exported field_instance: 'node-hats-field_gender'.
   $field_instances['node-hats-field_gender'] = array(
     'bundle' => 'hats',
     'default_value' => NULL,
@@ -3920,7 +3920,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-hats-field_product'
+  // Exported field_instance: 'node-hats-field_product'.
   $field_instances['node-hats-field_product'] = array(
     'bundle' => 'hats',
     'deleted' => 0,
@@ -4015,7 +4015,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-hats-title_field'
+  // Exported field_instance: 'node-hats-title_field'.
   $field_instances['node-hats-title_field'] = array(
     'bundle' => 'hats',
     'default_value' => NULL,
@@ -4077,7 +4077,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-shoes-body'
+  // Exported field_instance: 'node-shoes-body'.
   $field_instances['node-shoes-body'] = array(
     'bundle' => 'shoes',
     'default_value' => NULL,
@@ -4142,7 +4142,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-shoes-field_brand'
+  // Exported field_instance: 'node-shoes-field_brand'.
   $field_instances['node-shoes-field_brand'] = array(
     'bundle' => 'shoes',
     'default_value' => NULL,
@@ -4200,7 +4200,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-shoes-field_category'
+  // Exported field_instance: 'node-shoes-field_category'.
   $field_instances['node-shoes-field_category'] = array(
     'bundle' => 'shoes',
     'default_value' => NULL,
@@ -4257,7 +4257,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-shoes-field_collection'
+  // Exported field_instance: 'node-shoes-field_collection'.
   $field_instances['node-shoes-field_collection'] = array(
     'bundle' => 'shoes',
     'default_value' => NULL,
@@ -4314,7 +4314,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-shoes-field_gender'
+  // Exported field_instance: 'node-shoes-field_gender'.
   $field_instances['node-shoes-field_gender'] = array(
     'bundle' => 'shoes',
     'default_value' => NULL,
@@ -4371,7 +4371,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-shoes-field_product'
+  // Exported field_instance: 'node-shoes-field_product'.
   $field_instances['node-shoes-field_product'] = array(
     'bundle' => 'shoes',
     'deleted' => 0,
@@ -4466,7 +4466,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-shoes-title_field'
+  // Exported field_instance: 'node-shoes-title_field'.
   $field_instances['node-shoes-title_field'] = array(
     'bundle' => 'shoes',
     'default_value' => NULL,
@@ -4528,7 +4528,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-storage_devices-body'
+  // Exported field_instance: 'node-storage_devices-body'.
   $field_instances['node-storage_devices-body'] = array(
     'bundle' => 'storage_devices',
     'default_value' => NULL,
@@ -4593,7 +4593,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-storage_devices-field_brand'
+  // Exported field_instance: 'node-storage_devices-field_brand'.
   $field_instances['node-storage_devices-field_brand'] = array(
     'bundle' => 'storage_devices',
     'default_value' => NULL,
@@ -4651,7 +4651,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-storage_devices-field_category'
+  // Exported field_instance: 'node-storage_devices-field_category'.
   $field_instances['node-storage_devices-field_category'] = array(
     'bundle' => 'storage_devices',
     'default_value' => NULL,
@@ -4708,7 +4708,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-storage_devices-field_collection'
+  // Exported field_instance: 'node-storage_devices-field_collection'.
   $field_instances['node-storage_devices-field_collection'] = array(
     'bundle' => 'storage_devices',
     'default_value' => NULL,
@@ -4765,7 +4765,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-storage_devices-field_gender'
+  // Exported field_instance: 'node-storage_devices-field_gender'.
   $field_instances['node-storage_devices-field_gender'] = array(
     'bundle' => 'storage_devices',
     'default_value' => NULL,
@@ -4822,7 +4822,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-storage_devices-field_product'
+  // Exported field_instance: 'node-storage_devices-field_product'.
   $field_instances['node-storage_devices-field_product'] = array(
     'bundle' => 'storage_devices',
     'deleted' => 0,
@@ -4909,7 +4909,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-storage_devices-title_field'
+  // Exported field_instance: 'node-storage_devices-title_field'.
   $field_instances['node-storage_devices-title_field'] = array(
     'bundle' => 'storage_devices',
     'default_value' => NULL,
@@ -4971,7 +4971,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-tops-body'
+  // Exported field_instance: 'node-tops-body'.
   $field_instances['node-tops-body'] = array(
     'bundle' => 'tops',
     'default_value' => NULL,
@@ -5034,7 +5034,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-tops-field_brand'
+  // Exported field_instance: 'node-tops-field_brand'.
   $field_instances['node-tops-field_brand'] = array(
     'bundle' => 'tops',
     'default_value' => NULL,
@@ -5092,7 +5092,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-tops-field_category'
+  // Exported field_instance: 'node-tops-field_category'.
   $field_instances['node-tops-field_category'] = array(
     'bundle' => 'tops',
     'default_value' => NULL,
@@ -5149,7 +5149,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-tops-field_collection'
+  // Exported field_instance: 'node-tops-field_collection'.
   $field_instances['node-tops-field_collection'] = array(
     'bundle' => 'tops',
     'default_value' => NULL,
@@ -5206,7 +5206,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-tops-field_gender'
+  // Exported field_instance: 'node-tops-field_gender'.
   $field_instances['node-tops-field_gender'] = array(
     'bundle' => 'tops',
     'default_value' => NULL,
@@ -5263,7 +5263,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-tops-field_product'
+  // Exported field_instance: 'node-tops-field_product'.
   $field_instances['node-tops-field_product'] = array(
     'bundle' => 'tops',
     'deleted' => 0,
@@ -5358,7 +5358,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'node-tops-title_field'
+  // Exported field_instance: 'node-tops-title_field'.
   $field_instances['node-tops-title_field'] = array(
     'bundle' => 'tops',
     'default_value' => NULL,
@@ -5420,7 +5420,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'taxonomy_term-category-field_category_color'
+  // Exported field_instance: 'taxonomy_term-category-field_category_color'.
   $field_instances['taxonomy_term-category-field_category_color'] = array(
     'bundle' => 'category',
     'default_value' => array(
@@ -5464,7 +5464,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'taxonomy_term-collection-field_image'
+  // Exported field_instance: 'taxonomy_term-collection-field_image'.
   $field_instances['taxonomy_term-collection-field_image'] = array(
     'bundle' => 'collection',
     'deleted' => 0,
@@ -5523,7 +5523,7 @@ function commerce_kickstart_product_field_default_field_instances() {
     ),
   );
 
-  // Exported field_instance: 'taxonomy_term-color-field_category_color'
+  // Exported field_instance: 'taxonomy_term-color-field_category_color'.
   $field_instances['taxonomy_term-color-field_category_color'] = array(
     'bundle' => 'color',
     'default_value' => NULL,

@@ -105,9 +105,11 @@ function commerce_line_item_hook_info() {
  */
 function commerce_line_item_form_alter(&$form, &$form_state, $form_id) {
   $line_item_form = FALSE;
+
   // Is this a views form?
   if (strpos($form_id, 'views_form_') === 0) {
     $view = $form_state['build_info']['args'][0];
+
     // Does the view contain one of the line item edit fields?
     foreach ($view->field as $field_name => $field) {
       if ($field instanceof commerce_line_item_handler_field_edit_delete || $field instanceof commerce_line_item_handler_field_edit_quantity) {
@@ -115,10 +117,12 @@ function commerce_line_item_form_alter(&$form, &$form_state, $form_id) {
       }
     }
   }
+
   // This is not the form we are looking for.
   if (!$line_item_form) {
     return;
   }
+
   // Require the existence of an order_id argument (and its value).
   if (empty($view->argument['order_id']) || empty($view->argument['order_id']->value)) {
     return;
@@ -202,7 +206,7 @@ function commerce_line_item_theme() {
       'render element' => 'form',
     ),
     'commerce_line_item_summary' => array(
-      'variables' => array('quantity_raw' => NULL, 'quantity_label' => NULL, 'quantity' => NULL, 'total_raw' => NULL, 'total' => NULL, 'links' => NULL, 'view' => NULL),
+      'variables' => array('quantity_raw' => NULL, 'quantity_label' => NULL, 'quantity' => NULL, 'total_raw' => NULL, 'total_label' => NULL, 'total' => NULL, 'links' => NULL, 'view' => NULL),
       'path' => drupal_get_path('module', 'commerce_line_item') . '/theme',
       'template' => 'commerce-line-item-summary',
     ),
@@ -374,11 +378,21 @@ function commerce_line_item_field_attach_delete($entity_type, $entity) {
 
       if ($wrapper->{$field_name} instanceof EntityListWrapper) {
         foreach ($wrapper->{$field_name} as $delta => $line_item_wrapper) {
-          $referenced_line_item_ids[] = $line_item_wrapper->line_item_id->value();
+          try {
+            $referenced_line_item_ids[] = $line_item_wrapper->line_item_id->value();
+          }
+          catch (EntityMetadataWrapperException $e) {
+            // Do nothing, this was a bad reference value.
+          }
         }
       }
       elseif (!is_null($wrapper->{$field_name}->value())) {
-        $referenced_line_item_ids[] = $wrapper->{$field_name}->line_item_id->value();
+        try {
+          $referenced_line_item_ids[] = $wrapper->{$field_name}->line_item_id->value();
+        }
+        catch (EntityMetadataWrapperException $e) {
+          // Do nothing, this was a bad reference value.
+        }
       }
 
       // Loop over each line item referenced on this field...
@@ -541,9 +555,9 @@ function commerce_line_item_type_to_arg($type) {
  *   - add_form_validate
  *   - add_form_submit
  *
- * @return
+ * @return string
  *   A string containing the name of the callback function or FALSE if it could
- *     not be found.
+ *   not be found.
  */
 function commerce_line_item_type_callback($line_item_type, $callback) {
   // If the specified callback function exists, return it.
@@ -995,7 +1009,12 @@ function commerce_line_item_field_widget_form(&$form, &$form_state, $field, $ins
     }
 
     // Load the line items for temporary storage in the form array.
-    $line_items = commerce_line_item_load_multiple($line_item_ids);
+    if(!empty($line_item_ids)) {
+      $line_items = commerce_line_item_load_multiple($line_item_ids);
+    }
+    else {
+      $line_items = array();
+    }
 
     // Update the base form element array to use the proper theme and validate
     // functions and to include header information for the line item table.
@@ -1038,8 +1057,7 @@ function commerce_line_item_field_widget_form(&$form, &$form_state, $field, $ins
 
       // Unset the title and description and add it to the line item form.
       $language = $widget_form['commerce_unit_price']['#language'];
-      unset($widget_form['commerce_unit_price'][$language][0]['amount']['#title']);
-      unset($widget_form['commerce_unit_price'][$language][0]['amount']['#description']);
+      $widget_form['commerce_unit_price'][$language][0]['amount']['#title_display'] = 'invisible';
 
       $element['line_items'][$line_item_id]['commerce_unit_price'] = $widget_form['commerce_unit_price'];
       $quantity = round($line_item->quantity);
@@ -1245,7 +1263,7 @@ function commerce_line_item_manager_validate($element, &$form_state, $form) {
   // If the "Add line item" button was clicked, store the line item type in the
   // $form_state for the rebuild of the $form array.
   if (!empty($form_state['triggering_element'])) {
-    if ($form_state['triggering_element']['#value'] == t('Add line item')) {
+    if ($form_state['triggering_element']['#value'] === t('Add line item')) {
       $form_state['line_item_add'] = $element['actions']['line_item_type']['#value'];
       $form_state['rebuild'] = TRUE;
     }
@@ -1431,7 +1449,7 @@ function commerce_line_items_quantity($line_items, $types = array()) {
       $line_item = entity_metadata_wrapper('commerce_line_item', $line_item);
     }
 
-    if (empty($types) || in_array($line_item->type->value(), $types)) {
+    if (empty($types) || in_array($line_item->getBundle(), $types)) {
       $quantity += $line_item->quantity->value();
     }
   }
@@ -1503,7 +1521,7 @@ function commerce_line_items_total($line_items, $types = array()) {
       $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item_wrapper);
     }
 
-    if (empty($types) || in_array($line_item_wrapper->type->value(), $types)) {
+    if (empty($types) || in_array($line_item_wrapper->getBundle(), $types)) {
       $total += commerce_currency_convert(
         $line_item_wrapper->commerce_total->amount->value(),
         $line_item_wrapper->commerce_total->currency_code->value(),

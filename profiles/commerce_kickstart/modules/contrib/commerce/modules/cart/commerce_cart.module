@@ -334,7 +334,7 @@ function commerce_cart_line_item_delete_form_submit($form, &$form_state) {
   $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $form_state['line_items'][$line_item_id]);
 
   // If the deleted line item is a product...
-  if (in_array($line_item_wrapper->type->value(), commerce_product_line_item_types())) {
+  if (in_array($line_item_wrapper->getBundle(), commerce_product_line_item_types())) {
     $title = $line_item_wrapper->commerce_product->title->value();
   }
   else {
@@ -1065,6 +1065,9 @@ function commerce_cart_order_convert($order, $account) {
 function commerce_cart_order_refresh($order) {
   $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
 
+  // Allow other modules to act on the order prior to the refresh logic.
+  module_invoke_all('commerce_cart_order_pre_refresh', $order);
+
   // Loop over every line item on the order...
   $line_item_changed = FALSE;
 
@@ -1130,9 +1133,8 @@ function commerce_cart_order_refresh($order) {
         $data['components'] = $current_data['components'];
         $line_item_wrapper->commerce_unit_price->data = $data;
 
-        // Save the updated line item and clear the entity cache.
+        // Save the updated line item.
         commerce_line_item_save($line_item_wrapper->value());
-        entity_get_controller('commerce_line_item')->resetCache(array($line_item_wrapper->line_item_id->value()));
 
         $line_item_changed = TRUE;
       }
@@ -1317,7 +1319,7 @@ function commerce_cart_product_add($uid, $line_item, $combine = TRUE) {
   $quantity = $line_item->quantity;
 
   // Invoke the product prepare event with the shopping cart order.
-  rules_invoke_all('commerce_cart_product_prepare', $order, $product, $line_item->quantity);
+  rules_invoke_all('commerce_cart_product_prepare', $order, $product, $quantity);
 
   // Determine if the product already exists on the order and increment its
   // quantity instead of adding a new line if it does.
@@ -1381,10 +1383,6 @@ function commerce_cart_product_add($uid, $line_item, $combine = TRUE) {
     $matching_line_item->data = array_merge($line_item->data, $matching_line_item->data);
 
     commerce_line_item_save($matching_line_item);
-
-    // Clear the line item cache so the updated quantity will be available to
-    // the ensuing load instead of the original quantity as loaded above.
-    entity_get_controller('commerce_line_item')->resetCache(array($matching_line_item->line_item_id));
 
     // Update the line item variable for use in the invocation and return value.
     $line_item = $matching_line_item;
@@ -2336,15 +2334,12 @@ function commerce_cart_add_to_cart_form_attributes_refresh($form, $form_state) {
           $replacement_class,
         );
 
-        // Theme the product extra field to $element.
-        $variables = array(
-          $product_extra_field_name => $product->{$product_extra_field_name},
-          'label' => $product_extra_field['label'] . ':',
-          'product' => $product,
-        );
-
+        // Build the product extra field to $element.
         $element = array(
-          '#markup' => theme($product_extra_field['theme'], $variables),
+          '#theme' => $product_extra_field['theme'],
+          '#' . $product_extra_field_name => $product->{$product_extra_field_name},
+          '#label' => $product_extra_field['label'] . ':',
+          '#product' => $product,
           '#attached' => array(
             'css' => array(drupal_get_path('module', 'commerce_product') . '/theme/commerce_product.theme.css'),
           ),
@@ -2364,6 +2359,31 @@ function commerce_cart_add_to_cart_form_attributes_refresh($form, $form_state) {
 
   // Allow other modules to add arbitrary AJAX commands on the refresh.
   drupal_alter('commerce_cart_attributes_refresh', $commands, $form, $form_state);
+
+  return array('#type' => 'ajax', '#commands' => $commands);
+}
+
+/**
+ * Ajax callback: returns AJAX commands when an attribute widget is changed on
+ * the Views powered shopping cart form.
+ */
+function commerce_cart_add_to_cart_views_form_refresh($form, $form_state) {
+  $commands[] = array();
+
+  // Extract the View from the form's arguments and derive its DOM ID class.
+  $view = $form_state['build_info']['args'][0];
+  $dom_id_class = drupal_html_class('view-dom-id-' . $view->dom_id);
+
+  // Unset the form related variables from the $_POST array. Otherwise, when we
+  // rebuild the View, the Views form will fetch these values to rebuild the
+  // form state and resubmit the form.
+  foreach (array('form_build_id', 'form_token', 'form_id') as $key) {
+    unset($_POST[$key]);
+  }
+
+  // Render afresh the the output of the View and return it for replacement.
+  $output = commerce_embed_view($view->name, $view->current_display, $view->args, $view->override_url);
+  $commands[] = ajax_command_replace('.' . $dom_id_class, $output);
 
   return array('#type' => 'ajax', '#commands' => $commands);
 }
@@ -2553,7 +2573,8 @@ function commerce_cart_field_formatter_settings_summary($field, $instance, $view
     );
 
     if (count(commerce_product_line_item_types()) > 1) {
-      $summary[] = t('Add to Cart line item type: @type', array('@type' => commerce_line_item_type_get_name($settings['line_item_type'])));
+      $type = !empty($settings['line_item_type']) ? $settings['line_item_type'] : 'product';
+      $summary[] = t('Add to Cart line item type: @type', array('@type' => commerce_line_item_type_get_name($type)));
     }
   }
 

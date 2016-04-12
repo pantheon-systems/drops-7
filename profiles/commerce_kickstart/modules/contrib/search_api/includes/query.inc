@@ -155,7 +155,7 @@ interface SearchApiQueryInterface {
    *   The field to sort by. The special fields 'search_api_relevance' (sort by
    *   relevance) and 'search_api_id' (sort by item id) may be used. Also, if
    *   the search server supports the "search_api_random_sort" feature, the
-   *   "search_api_random_sort" special field can be used to sort randomly.
+   *   "search_api_random" special field can be used to sort randomly.
    * @param string $order
    *   The order to sort items in - either 'ASC' or 'DESC'.
    *
@@ -219,7 +219,10 @@ interface SearchApiQueryInterface {
    *     - execution: The actual query to the search server, in whatever form.
    *     - postprocessing: Preparing the results for returning.
    *   Additional metadata may be returned in other keys. Only 'result count'
-   *   and 'result' always have to be set, all other entries are optional.
+   *   and 'results' always have to be set, all other entries are optional.
+   *
+   * @throws SearchApiException
+   *   If an error prevented the search from completing.
    */
   public function execute();
 
@@ -468,8 +471,8 @@ class SearchApiQuery implements SearchApiQueryInterface {
     );
     $modes['terms'] = array(
       'name' => t('Multiple terms'),
-      'description' => t('The query is interpreted as multiple keywords seperated by spaces. ' .
-          'Keywords containing spaces may be "quoted". Quoted keywords must still be seperated by spaces.'),
+      'description' => t('The query is interpreted as multiple keywords separated by spaces. ' .
+          'Keywords containing spaces may be "quoted". Quoted keywords must still be separated by spaces.'),
     );
     // @todo Add fourth mode for complicated expressions, e.g.: »"vanilla ice" OR (love NOT hate)«
     return $modes;

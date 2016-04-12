@@ -128,6 +128,9 @@ function commerce_checkout_hook_info() {
     'commerce_checkout_pane_info_alter' => array(
       'group' => 'commerce',
     ),
+    'commerce_checkout_first_checkout_page' => array(
+      'group' => 'commerce',
+    ),
     'commerce_checkout_router' => array(
       'group' => 'commerce',
     ),
@@ -279,7 +282,7 @@ function commerce_checkout_line_item_views_form_submit($form, &$form_state) {
   commerce_order_save($form_state['order']);
 
   // Redirect to the checkout page if specified.
-  if ($form_state['triggering_element']['#value'] == $form['actions']['checkout']['#value']) {
+  if ($form_state['triggering_element']['#value'] === $form['actions']['checkout']['#value']) {
     $form_state['redirect'] = 'checkout/' . $order->order_id;
   }
 }
@@ -475,10 +478,22 @@ function commerce_checkout_pages() {
 }
 
 /**
- * Returns the page ID of the first checkout page sorted by weight.
+ * Returns the page ID of the first checkout page to be used.
  */
 function commerce_checkout_first_checkout_page() {
-  return key(commerce_checkout_pages());
+  // See if any modules return a page ID first.
+  $page_id = module_invoke_all('commerce_checkout_first_checkout_page');
+
+  // If we received a return value from the hook, use the first item in the
+  // return array as the page ID.
+  if (!empty($page_id)) {
+    return reset($page_id);
+  }
+
+  // Otherwise fallback to the first page defined in checkout form.
+  $keys = commerce_checkout_pages();
+  reset($keys);
+  return key($keys);
 }
 
 /**
@@ -993,7 +1008,7 @@ function commerce_checkout_completion_message_default() {
     $format = 'filtered_html';
   }
   else {
-    // Otherwise select a fallback format and use a plaint text default value.
+    // Otherwise select a fallback format and use a plain text default value.
     $value = 'Your order number is [commerce-order:order-number]. You can view your order on your account page when logged in.';
     $format = filter_fallback_format();
   }

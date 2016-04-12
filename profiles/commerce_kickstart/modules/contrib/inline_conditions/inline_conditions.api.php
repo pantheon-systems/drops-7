@@ -31,7 +31,15 @@
  *   operate on the same entity type -> commerce_order).
  * - callbacks: An array of callbacks:
  *   - configure: (Optional) Returns a configuration form embedded into the
- *     field widget, and used to configure the inline condition.
+ *     field widget, and used to configure the inline condition. The following
+ *     list of parameters will be passed to the configure callback function:
+ *     - condition_settings (Array): an array containing all configured
+ *       settings; typically this will match the values of the form elements
+ *       defined in the 'configure' callback. It should be transformed into
+ *       an array of parameter values as the rules condition needs them.
+ *     - instance (Array): The field instance array (which includes the entity
+ *       information that is related to the condition, such as the ID).
+ *     - delta (Int): The current field delta defined as an integer.
  *   - build: [Do not use if rule condition name is set] Gets the rule and any
  *     settings added by the configure callback, then builds and adds an actual
  *     rules condition to the rule. Also, if the rule condition name key is set,
