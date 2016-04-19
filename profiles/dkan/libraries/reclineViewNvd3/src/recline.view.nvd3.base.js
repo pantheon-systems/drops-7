@@ -3,7 +3,7 @@
 this.recline = this.recline || {};
 this.recline.View = this.recline.View || {};
 this.recline.View.nvd3 = this.recline.View.nvd3 || {};
-
+var globalchart;
 ;(function ($, my) {
   'use strict';
 
@@ -38,21 +38,20 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
         var stateData = _.merge({
             width: 640,
             height: 480,
-            group: false,
+            group: false
           },
           self.getDefaults(),
           self.options.state.toJSON()
         );
-        console.log(options);
         self.graphType = self.graphType || 'multiBarChart';
         self.uuid = makeId('nvd3chart_');
         self.state = self.options.state;
         self.model = self.options.model;
         self.state.set(stateData);
         self.chartMap = d3.map();
-        self.render();
         self.listenTo(self.state, 'change', self.render.bind(self));
         self.listenTo(self.model.records, 'add remove reset change', self.lightUpdate.bind(self));
+        globalchart = self;
       },
       getLayoutParams: function(){
         var self = this;
@@ -68,6 +67,8 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
         var tmplData;
         var htmls;
         var layout;
+        var xFormat;
+        var yFormat;
 
         layout = self.getLayoutParams();
         tmplData = self.model.toTemplateJSON();
@@ -86,24 +87,52 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
 
         // If number of rows is too big then try to group by x.
         self.state.set('group', self.model.records.length > MAX_ROW_NUM || self.state.get('group', {silent:true}));
-
         self.series = self.createSeries(self.model.records);
+
         nv.addGraph(function() {
           self.chart = self.createGraph(self.graphType);
+
           // Give a chance to alter the chart before it is rendered.
           self.alterChart && self.alterChart(self.chart);
 
-          if(self.chart.xAxis && self.chart.xAxis.tickFormat)
+          if(self.chart.xAxis){
+            self.calcTickValues(
+              'x',
+              self.chart.xAxis,
+              self.state.get('xValues'),
+              self.state.get('xValuesStep')
+            );
+          }
+          if(self.chart.yAxis){
+            self.calcTickValues(
+              'y',
+              self.chart.yAxis,
+              self.state.get('yValues'),
+              self.state.get('yValuesStep')
+            );
+          }
+
+          // Format axis
+          xFormat = self.state.get('xFormat') || {type: 'String', format: ''};
+          yFormat = self.state.get('yFormat') || {type: 'String', format: ''};
+
+          self.xFormatter = self.getFormatter(xFormat.type, xFormat.format, 'x');
+          self.yFormatter = self.getFormatter(yFormat.type, yFormat.format, 'y');
+
+          if(self.xFormatter && self.chart.xAxis && self.chart.xAxis.tickFormat)
             self.chart.xAxis.tickFormat(self.xFormatter);
-          if(self.chart.x2Axis)
+          if(self.yFormatter && self.chart.yAxis && self.chart.yAxis.tickFormat)
+            self.chart.yAxis.tickFormat(self.yFormatter);
+          if(self.xFormatter && self.chart.x2Axis)
             self.chart.x2Axis.tickFormat(self.xFormatter);
+
 
           d3.select('#' + self.uuid + ' svg')
             .datum(self.series)
             .transition()
             .duration(self.state.get('transitionTime') || 500)
             .call(self.chart);
-
+          self.renderGoals();
           // Hack to reduce ticks even if the chart has not that option.
           if(self.graphType === 'discreteBarChart' && self.state.get('options') && self.state.get('options').reduceXTicks){
             self.reduceXTicks();
@@ -113,6 +142,64 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
           return self.chart;
         });
         return self;
+      },
+      calcTickValues: function(axisName, axis, range, step){
+        var self = this;
+        var ordinalScaled = ['multiBarChart', 'discreteBarChart'];
+        var tickValues;
+
+        step = step || 1;
+        
+        // check for old formatted range values
+        if (this.isOldRangeType(range)) {
+          range = this.convertRange(range);
+        } 
+        
+        if (range && self.rangesValid(range)) {
+          range[0] = parseInt(range[0]);
+          range[1] = parseInt(range[1]);
+          tickValues = d3.range(range[0], range[1], step);
+          if(!_.inArray(ordinalScaled, self.graphType) || axisName === 'y') {
+            self.chart[axisName + 'Domain']([range[0], range[1]]);
+          } else {
+            self.chart[axisName + 'Domain'](d3.range(range[0], range[1], step));
+          }
+        }
+        axis.tickValues(tickValues);
+      },
+      // check for old range format
+      isOldRangeType: function (range) {
+        return (range && range.indexOf('-') !== -1);
+      },
+      // convert old range format to new array type
+      convertRange: function (range) {
+       var temp = range.replace(' ', '').split('-');
+       for (var i = 0; i < range.length; i++) {
+         if (temp[i] === '' && i < temp.length) {
+           temp[i + 1] = '-' + temp[i + 1];
+         }
+       }
+       var newRange = [];
+       for (i = 0; i < temp.length; i++) {
+         if (temp[i] !== '') {
+           newRange.push(parseFloat(temp[i]));
+         }
+       }
+       newRange = newRange.sort(function(a, b){return a-b;});
+       return newRange;
+      },
+      rangesValid: function (range){
+        var valid = true;
+        if (!range || range.length !== 2) valid = false;
+        _.each(range, function (bound) {
+          if (!bound || isNaN(parseInt(bound))) valid = false;
+        });
+        if (valid) {
+          if (parseInt(range[0]) >= parseInt(range[1])) {
+            valid = false;
+          }
+        }
+        return valid;
       },
       lightUpdate: function(){
         var self = this;
@@ -125,7 +212,55 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
             .duration(500)
             .call(self.chart);
         }, 0);
+      },
+      canRenderGoal: function(goal){
+        return !d3.select('svg').empty() &&
+          d3.select('svg .goal').empty() && goal &&
+          goal.value && !isNaN(goal.value) && this.chart.yAxis;
+      },
+      renderGoals: function(){
+        var self = this;
+        var goal = self.state.get('goal');
+        nv.dispatch.on('render_end', null);
+        if(this.canRenderGoal(goal)){
+          nv.dispatch.on('render_end', function(){
+            var yScale = self.chart.yAxis.scale();
+            var margin = self.chart.margin();
+            var y = yScale(goal.value) + margin.top;
+            var x = margin.left;
+            var xWidth = (d3.select('svg').size())? parseInt(d3.select('svg').style('width')) - 10 : 0;
+            var g = d3.select('svg').append('g');
+            var labelX, labelY;
 
+            if(goal.label) {
+              if (goal.outside) {
+                labelX =  x - 50;
+                labelY = y + 3;
+              } else {
+                labelX =  x + 5;
+                labelY = y - 6;
+              }
+              g.append('text')
+                .text('TARGET')
+                .attr('x', labelX)
+                .attr('y', labelY)
+                .attr('fill', goal.color || 'red' )
+                .style('font-size','10px')
+                .style('font-weight','bold')
+                .style('font-style','italic');
+            }
+
+            g.append('line')
+              .attr('class', 'goal')
+              .attr('x1', x)
+              .attr('y1', y)
+              .attr('x2', xWidth)
+              .attr('y2', y)
+              .attr('stroke-width', 1)
+              .attr('stroke', goal.color || 'red')
+              .style('stroke-dasharray', ('3, 3'));
+          });
+        }
       },
       updateChart: function(){
         var self = this;
@@ -154,7 +289,6 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
         if(!self.state.get('xfield') || !self.getSeries()) return [];
 
         records = records.toJSON();
-
         fieldType = _.compose(_.inferType,_.iteratee(self.state.get('xfield')));
 
         if(!self.state.get('xDataType') || self.state.get('xDataType') === 'Auto'){
@@ -163,23 +297,32 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
           xDataType = self.state.get('xDataType');
         }
 
-        self.xFormatter = self.getFormatter(xDataType, self.state.get('xFormat'));
-
         series = _.map(self.getSeries(), function(serie){
           var data = {};
           data.key = serie;
 
           // Group by xfield and acum all the series fields.
-          records = (self.state.get('group'))?
+          var rc = (self.state.get('group'))?
             _.reportBy(records, self.state.get('xfield'), self.state.get('seriesFields'))
             : records;
 
           // Sorting
-          records = _.sortBy(records, self.getSort(self.state.get('sort')));
-          data.values = _.map(records, function(record, index){
+          rc = _.sortBy(rc, self.getSort(self.state.get('sort')));
+
+          rc = _.reduce(rc, function(memo, record){
+            var y = self.cleanupY(self.y(record, serie));
+            if(y || self.graphType === 'stackedAreaChart') {
+              memo.push(record);
+            } else if(self.state.get('options').stacked) {
+              record[serie] = 0;
+              memo.push(record);
+            }
+            return memo;
+          }, []);
+
+          data.values = _.map(rc, function(record, index){
             var y = self.cleanupY(self.y(record, serie));
             y = _.cast(y, _.inferType(y));
-
             if(self.state.get('computeXLabels')){
               self.chartMap.set(index, self.x(record, self.state.get('xfield')));
               return {y: y, x: index, label: self.x(record, self.state.get('xfield'))};
@@ -213,17 +356,25 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
          return _.inferType(record[xfield]) === 'String';
        }) && graphType !== 'discreteBarChart' && graphType !== 'multiBarChart';
       },
-      getFormatter: function(type, format){
+      getFormatter: function(type, format, axisName){
         var self = this;
-        if(self.state.get('computeXLabels')) return self.chartMap.get.bind(self.chartMap);
+        axisName = axisName || 'x';
+
+        if(self.state.get('computeXLabels') && axisName === 'x')
+          return self.chartMap.get.bind(self.chartMap);
 
         var formatter = {
           'String': _.identity,
           'Date': _.compose(d3.time.format(format || '%x'),_.instantiate(Date)),
-          'Number': d3.format(format || '.02f')
+          'Number': d3.format(format || '.02f'),
+          'Percentage': self.formatPercentage(format || '.02f'),
         };
-
         return formatter[type];
+      },
+      formatPercentage: function(format) {
+        return function(d){
+          return d3.format(format)(d) + '%';
+        };
       },
       setOptions: function (chart, options) {
         var self = this;
@@ -239,6 +390,7 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
             chart[optionName](optionValue);
           }
         }
+
       },
       createGraph: function(graphType){
         var self = this;
@@ -263,6 +415,9 @@ this.recline.View.nvd3 = this.recline.View.nvd3 || {};
       },
       y: function(record, serie){
         return record[serie];
+      },
+      destroy: function(){
+        this.stopListening();
       }
   });
 

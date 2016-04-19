@@ -1,0 +1,103 @@
+<?php
+/**
+ * @file
+ * A base class for the Fieldable Panels Panes tests, provides shared methods.
+ */
+
+class FppTestHelper extends DrupalWebTestCase {
+  /**
+   * Admin user.
+   *
+   * @var \StdClass
+   */
+  protected $adminUser;
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'fieldable_panels_panes';
+    parent::setUp($modules);
+  }
+
+  /**
+   * Create an admin-level user.
+   *
+   * @return object
+   *   A standard Drupal user object.
+   */
+  function createAdminUser() {
+    // Create a user with the admin permission.
+    $permissions = array(
+      'administer fieldable panels panes',
+    );
+
+    // Reset the static variable used to identify permissions, otherwise it's
+    // possible the permissions check in drupalCreateUser will fail.
+    $this->checkPermissions(array(), TRUE);
+    cache_clear_all();
+
+    return $this->drupalCreateUser($permissions);
+  }
+
+  /**
+   * Create an image of a specific size & type.
+   *
+   * @param string
+   *   The size of the requested image in 'XxY' format; defaults to '200x200'.
+   * @param string
+   *   The image format to use, defaults to 'png'.
+   *
+   * @return string
+   *   The URL to a public file.
+   */
+  function generateImage($image_size = '200x200', $format = 'png', $scheme = 'public') {
+    // Only proceed if the Devel Generate module is installed.
+    if (module_exists('devel_generate')) {
+      // Load the Devel Generate image generator logic.
+      module_load_include('inc', 'devel_generate', 'image.devel_generate');
+
+      $image_format = 'png';
+      $image_size = '200x200';
+      $temp_image = devel_generate_image($image_format, $image_size, $image_size);
+
+      return file_unmanaged_move($temp_image, $scheme . '://');
+    }
+    else {
+      $this->error('The Devel Generate module is not enabled, it must be added to the $modules array in the setUp() method for this test class.');
+    }
+  }
+
+  /**
+   * Create an image file object of a specific size & type.
+   *
+   * @param string $image_size
+   *   The size of the requested image in 'XxY' format; defaults to '200x200'.
+   * @param string $format
+   *   The image format to use, defaults to 'png'.
+   * @param string $scheme
+   *   The file storage scheme, should be either 'private' or 'public'; defaults
+   *   to 'public'.
+   *
+   * @return object
+   *   The file object for the generated image.
+   */
+  function generateImageFile($image_size = '200x200', $format = 'png', $scheme = 'public') {
+    // Generate a test image.
+    $image_uri = $this->generateImage($image_size, $format, $scheme);
+
+    // Create a file object for this image.
+    $file = new StdClass();
+    $file->fid = NULL;
+    $file->uid = 1;
+    $file->uri = $image_uri;
+    $file->filemime = file_get_mimetype($image_uri);
+    $file->filesize = filesize($image_uri);
+    $file->status = 1;
+    $file->timestamp = filemtime($image_uri);
+    $saved_file = file_save($file);
+
+    return $saved_file;
+  }
+
+}

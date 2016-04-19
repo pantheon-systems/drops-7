@@ -25,7 +25,7 @@ this.recline.View = this.recline.View || {};
       var self = this;
       return {
         options: {
-          useInteractiveGuideline: true,
+          useInteractiveGuideline: false,
           tooltips: true,
           xAxis:{
             tickFormat: function(id) {

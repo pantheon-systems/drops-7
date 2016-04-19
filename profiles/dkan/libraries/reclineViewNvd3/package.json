@@ -1,6 +1,6 @@
 {
   "name": "recline.view.nvd3",
-  "version": "0.1.0",
+  "version": "0.3.0",
   "devDependencies": {
     "expect.js": "^0.3.1",
     "grunt": "~0.4.5",

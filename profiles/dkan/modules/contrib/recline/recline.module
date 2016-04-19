@@ -420,7 +420,6 @@ function recline_delimiters() {
   );
 }
 
-
 /**
  * Implements hook_file_download().
  */
@@ -428,3 +427,9 @@ function recline_file_download($uri, $field_type = 'file') {
   return file_file_download($uri, 'recline_field');
 }
 
+/**
+ * Implements hook_file_resup_supported_field_widget_types().
+ */
+function recline_file_resup_supported_field_widget_types() {
+  return 'recline_widget';
+}

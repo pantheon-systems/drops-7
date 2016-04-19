@@ -1,15 +1,7 @@
 # Radix
-Radix is a base theme Drupal and BackdropCMS. It has Sass and Compass support, and makes it easy to build responsive themes.
+Radix is a base theme for Drupal and BackdropCMS. It has Bootstrap, Sass, Gulp, Bower, BrowserSync and Font Awesome built-in.
 
-##Features
-1. Works with Panels, Panopoly and Blocks.
-2. Components and plugins from Bootstrap.
-3. Fixed, fluid and responsive grid system.
-4. Responsive Panels with [Radix Layouts](http://drupal.org/project/radix_layouts).
-5. Sass awesomeness.
-6. Drush intergration: drush radix "My Subtheme".
-7. Icons with Font Awesome.
-8. Works with Bootswatch themes: drush radix "My Subtheme" --bootswatch=cerulean".
+![alt tag](https://www.drupal.org/files/drupal-radix.png)
 
 ## Distributions using Radix
 ##### [Open Atrium](http://openatrium.com/)
@@ -18,16 +10,21 @@ Open Atrium is an intranet in a box that has group spaces to allow different tea
 ##### [Open Academy](http://drupal.org/project/openacademy)
 Open Academy is a Drupal distribution that brings the best in web publishing for higher education on a customizable Drupal platform.
 
-##### [Restaurant](http://drupal.org/project/restaurant)
-The Restaurant Distribution has everything you need to kickstart your restaurant website. It comes with a menu management system, a reservation system, a customizable blog and events management.
+##### [Open Berkeley](http://open.berkeley.edu)
+Open Berkeley is a turnkey web platform solution for UC Berkeley campus websites.
 
-## Support
-* Project Page:   http://github.com/radixtheme
-* Documentation:  http://radixtheme.github.io/documentation
+##### [Open Restaurant](http://drupal.org/project/restaurant)
+The Open Restaurant distribution has everything you need to kickstart your restaurant website. It comes with a menu management system, a reservation system, a customizable blog and events management.
+
+##Features
+1. Components and plugins from Bootstrap.
+2. Responsive Panels with [Radix Layouts](http://drupal.org/project/radix_layouts).
+5. Sass, Gulp, BrowserSync and Font Awesome built-in.
+6. Drush intergration: drush radix "My Subtheme".
+8. Works with Bootswatch themes: drush radix "My Subtheme" --bootswatch=cerulean".
+
+## Links
+* Project Page:   http://www.radixtheme.org
+* Documentation:  http://docs.radixtheme.org
 * Demo:           http://dev-radix.chapterthree.com
-* Issue Queue:    https://github.com/radixtheme/radix/issues
-
-## Roadmap
-https://github.com/radixtheme/radix/wiki/Roadmap
-
-
+* Support:        https://www.drupal.org/project/issues/radix

@@ -1,10 +1,28 @@
 ;(function(){
   'use strict';
-
+  // cartodb backend usage example
   $(document).on('ready', function(){
     var datasetWithLabels = demoFieldAsSeries();
     var datasetWithValues = demoValuesAsSeries();
+    var cartoData = demoCartoDB();
+    console.log('aa1', cartoData);
+    cartoData.fetch().done(function () {
+      // default population for carto dataset here:
+      console.log('carto fetch complete', cartoData, query);
 
+      // now get a subset via query
+      var query = new recline.Model.Query();
+      query.set('filters', 
+        [
+          {term : {'statename' : 'Texas'}}
+        ]
+      );
+
+      cartoData.query(query, cartoData).done(function (data) {
+        console.log('queried dataset', cartoData, data);
+      });
+    });
+    
     var oneDimensionWithLabels = new recline.Model.ObjectState({
       xfield: 'state',
       seriesFields: ['total'],

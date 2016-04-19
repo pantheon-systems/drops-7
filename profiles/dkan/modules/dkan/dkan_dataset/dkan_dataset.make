@@ -13,10 +13,10 @@ includes[leaflet_draw_widget_make] = https://raw.githubusercontent.com/NuCivic/l
 ; Recline specific
 projects[recline][download][type] = git
 projects[recline][download][url] = https://github.com/NuCivic/recline.git
-projects[recline][download][tag] = 7.x-1.11
+projects[recline][download][tag] = 7.x-1.12
 projects[recline][subdir] = contrib
 
-includes[recline_make] = https://raw.githubusercontent.com/NuCivic/recline/7.x-1.11/recline.make
+includes[recline_make] = https://raw.githubusercontent.com/NuCivic/recline/7.x-1.12/recline.make
 
 ; Contrib Modules
 projects[autocomplete_deluxe][subdir] = contrib
@@ -71,7 +71,7 @@ projects[facetapi_pretty_paths][version] = 1.1
 projects[facetapi_bonus][version] = 1.1
 projects[facetapi_bonus][subdir] = contrib
 
-projects[features][version] = 2.6
+projects[features][version] = 2.9
 projects[features][subdir] = contrib
 
 projects[field_group][version] = 1.5
@@ -85,6 +85,9 @@ projects[field_group_table][type] = module
 
 projects[filefield_sources][version] = 1.10
 projects[filefield_sources][subdir] = contrib
+
+projects[file_resup][version] = 1.x-dev
+projects[file_resup][subdir] = contrib
 
 projects[gravatar][download][type] = git
 projects[gravatar][download][url] = "http://git.drupal.org/project/gravatar.git"
@@ -137,7 +140,7 @@ projects[og_extras][type] = module
 projects[open_data_schema_map][type] = module
 projects[open_data_schema_map][download][type] = git
 projects[open_data_schema_map][download][url] = https://github.com/NuCivic/open_data_schema_map.git
-projects[open_data_schema_map][download][revision] = fd6181fe9529a610de7304cae7647487bc1f77d6
+projects[open_data_schema_map][download][revision] = b7f6d255855a1c950d5a7dadd8a33860ccf66d35
 projects[open_data_schema_map][subdir] = contrib
 
 projects[open_data_schema_map_dkan][type] = module
@@ -158,8 +161,8 @@ projects[rdfx][subdir] = contrib
 
 projects[ref_field][download][type] = git
 projects[ref_field][download][url] = "http://git.drupal.org/project/ref_field.git"
-projects[ref_field][patch][1670356] = http://drupal.org/files/removed_notice-1670356-1.patch
-projects[ref_field][patch][2360019] = https://www.drupal.org/files/issues/ref_field-delete-insert-warning-2360019-0.patch
+; Updated Patch to fix the ton of notices this module throws. Hasn't been maintained since 2012!
+projects[ref_field][patch][2360019] = https://www.drupal.org/files/issues/ref_field-delete-insert-warning-2360019-5.patch
 projects[ref_field][download][revision] = 9dbf7cf
 projects[ref_field][subdir] = contrib
 projects[ref_field][type] = module

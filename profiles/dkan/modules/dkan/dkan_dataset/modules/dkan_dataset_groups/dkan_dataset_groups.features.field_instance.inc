@@ -26,6 +26,12 @@ function dkan_dataset_groups_field_default_field_instances() {
         'type' => 'entityreference_label',
         'weight' => 5,
       ),
+      'search_result' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
       'teaser' => array(
         'label' => 'above',
         'settings' => array(),
@@ -150,6 +156,9 @@ function dkan_dataset_groups_field_default_field_instances() {
       'max_filesize' => '',
       'max_resolution' => '',
       'min_resolution' => '',
+      'resup' => 0,
+      'resup_autostart' => 0,
+      'resup_max_filesize' => '',
       'title_field' => 0,
       'user_register_form' => FALSE,
     ),

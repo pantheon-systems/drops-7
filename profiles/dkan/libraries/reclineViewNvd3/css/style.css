@@ -56,3 +56,38 @@
   stroke-opacity: 1;
   r: 4;
 }
+
+#base-controls fieldset ,
+#extended-controls fieldset {
+  display: block;
+  border: 1px solid #ddd;
+  padding: 10px;
+  margin-top: 25px;
+  border-radius: 5px;
+  padding-top: 30px;
+}
+#base-controls fieldset > legend,
+#extended-controls fieldset > legend {
+  border-bottom: none;
+  margin-top: -44px;
+  background-color: white;
+  width: auto;
+  padding-left: 7px;
+  padding-right: 7px;
+}
+
+#chart-with-controls .checkbox-without-margin {
+  margin-top: 0px;
+  margin-bottom: 0px;
+}
+/* Colorpicker */
+label[for=control-chart-color-picker] {margin-right:10px; margin-bottom:20px;}
+
+label[for="control-chart-x-values"] {width:100%}
+#control-chart-x-values-from {width:60px; float:left; margin-right:1em}
+#control-chart-x-values-to {width:60px;} 
+
+label[for="control-chart-y-values"] {width:100%}
+#control-chart-y-values-from {width:60px; float:left; margin-right:1em}
+#control-chart-y-values-to {width:60px;} 
+

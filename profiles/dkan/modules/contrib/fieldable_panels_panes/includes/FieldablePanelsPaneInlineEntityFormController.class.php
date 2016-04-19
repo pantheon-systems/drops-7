@@ -143,8 +143,7 @@ class FieldablePanelsPaneInlineEntityFormController extends EntityInlineEntityFo
       '#default_value' => '',
     );
 
-    $langcode = entity_language('fieldable_panels_pane', $entity);
-    field_attach_form('fieldable_panels_pane', $entity, $entity_form, $form_state, $langcode);
+    $entity_form = parent::entityForm($entity_form, $form_state);
 
     // _field_extra_fields_pre_render() doesn't execute properly, so manually
     // set the weights.

@@ -2,14 +2,15 @@ default:
   suites:
      default:
         contexts:
-          - FeatureContext
+          - FeatureContext #Temporary overrides only!
           - Drupal\DrupalExtension\Context\MinkContext
+          - Drupal\DrupalExtension\Context\DrupalContext
           - Drupal\DrupalExtension\Context\MessageContext
           - Drupal\DKANExtension\Context\DKANContext
-          - Drupal\DKANExtension\Context\EntityStore
           - Drupal\DKANExtension\Context\MailContext
           - Drupal\DKANExtension\Context\PageContext
           - Drupal\DKANExtension\Context\GroupContext
+          - Drupal\DKANExtension\Context\WorkflowContext
           - Drupal\DKANExtension\Context\DatasetContext
           - Drupal\DKANExtension\Context\DataDashboardContext
           - Drupal\DKANExtension\Context\SearchAPIContext:
@@ -21,6 +22,7 @@ default:
                   results_css: '.view-dkan-datasets'
                   result_item_css: '.views-row'
           - Drupal\DKANExtension\Context\ResourceContext
+          - Drupal\DKANExtension\Context\DatastoreContext
           - Devinci\DevinciExtension\Context\DebugContext:
               asset_dump_path: %paths.base%/assets
           - Devinci\DevinciExtension\Context\JavascriptContext:
@@ -60,6 +62,10 @@ default:
         navigation: '.navigation-wrapper'
         breadcrumb: '.breadcrumb'
         left_sidebar: '.panel-col-first'
+        dataset title: '.pane-node .pane-title'
+        dataset resource list: '#data-and-resources'
+        resource title: '.pane-node .pane-title'
+        resource groups: '#edit-groups'
         search_area: '.panel-col-last'
         dropdown_links: '.comment-main .links.inline.dropdown-menu'
         comment: '.comment-main'
@@ -72,6 +78,7 @@ default:
         filter by resource format: '.facetapi-facet-field-resourcesfield-format'
         filter by author: '.facetapi-facet-author'
         filter by tag: '.facetapi-facet-field-tags'
+        filter by date changed: '.facetapi-facet-changed'
         social: '.pane-dkan-sitewide-dkan-sitewide-social'
         other access: '.pane-dkan-sitewide-dkan-sitewide-other-access'
         datasets: '.view-dkan-datasets'
@@ -92,3 +99,5 @@ default:
         message_selector: '.alert'
         error_message_selector: '.alert.alert-error'
         success_message_selector: '.alert.alert-success'
+    Drupal\DKANExtension:
+      some_param: test

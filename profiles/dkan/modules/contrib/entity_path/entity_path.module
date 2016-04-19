@@ -1,0 +1,345 @@
+<?php
+
+/**
+ * @file
+ *  Entity Path module provides a way to alter internal paths for entities by
+ *  modifiying the 'uri callback'.
+ *
+ * Originally implemented the idea of http://drupal.org/node/975688#comment-4063184
+ *  to change the taxonomy term path via using token replacement.
+ *
+ * @see http://drupal.org/node/975688#comment-4063184
+ */
+
+define('ENTITY_PATH_CALLBACK_PREFIX', '_entity_path_uri_alter_');
+
+/**
+ * Implements hook_init().
+ *
+ * Sets up the wrapper callbacks for uri alteration.
+ */
+function entity_path_init() {
+
+  // Run through each defined entity, and search for entity_path-prefixed callbacks,
+  // so we can generate the function on the fly.
+  // This method is necessary, as long as the 'uri callback' only accepts the
+  // entity, but not entity type as input.
+  // @see entity_uri()
+  $info = entity_get_info();
+
+  $callback_types = array();
+  foreach ($info as $entity_type => $entity_info) {
+    // Prepare callback for entity.
+    if (!empty($entity_info['uri callback']) && strpos($entity_info['uri callback'], ENTITY_PATH_CALLBACK_PREFIX) === 0) {
+      _entity_path_dynamic_callback_definitions($entity_type, '');
+    }
+    foreach ($entity_info['bundles'] as $bundle => $bundle_info) {
+      if (!empty($bundle_info['uri callback']) && strpos($bundle_info['uri callback'], ENTITY_PATH_CALLBACK_PREFIX) === 0) {
+        _entity_path_dynamic_callback_definitions($entity_type, $bundle);
+      }
+    }
+  }
+  module_load_include('inc', 'entity_path', 'entity_path.callback.wrapper');
+}
+
+/**
+ * Implements hook_ctools_plugin_directory().
+ */
+function entity_path_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'ctools' && $plugin == 'export_ui') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ */
+function entity_path_entity_info_alter(&$entity_info) {
+
+  // Provide callback and definition, for defined entity_path configurations.
+  $configs = entity_path_configs_load_all();
+
+  foreach ($configs as $config) {
+    $entity_type = _entity_path_get_entity_type($config->instance);
+    $bundle = _entity_path_get_bundle($config->instance);
+
+    // Bundle specific callback.
+    if ($bundle) {
+      $entity_info[$entity_type]['bundles'][$bundle]['uri callback'] = _entity_path_dynamic_callback($entity_type, $bundle);
+    }
+    // Or general one.
+    else {
+      $entity_info[$entity_type]['uri callback'] = _entity_path_dynamic_callback($entity_type, $bundle);
+    }
+    $entity_info[$entity_type]['entity path config'][$bundle] = $config;
+  }
+}
+
+/**
+ * Load all configurations via ctools.
+ */
+function entity_path_configs_load_all() {
+  ctools_include('export');
+  $result = ctools_export_crud_load_all('entity_path_config');
+  return $result;
+}
+
+/**
+ * Delete a single entity path configuration.
+ *
+ * @param $object
+ *   The fully populated object to delete, or the export key.
+ *
+ * @see ctools_export_crud_delete()
+ */
+function entity_path_config_delete($object) {
+  // Remove entry from the database.
+  $value = is_object($object) ? $object->instance : $object;
+  db_delete('entity_path_config')
+    ->condition('instance', $value)
+    ->execute();
+  // Clear entity info cache, so definitions are up to date.
+  entity_info_cache_clear();
+}
+
+/**
+ * The wrapper function to build the entity uri.
+ */
+function entity_path_uri_callback_wrapper($entity_type, $bundle, $entity) {
+
+  $entity_info = entity_get_info($entity_type);
+  $config = $entity_info['entity path config'][$bundle];
+
+  $pattern = $config->path_pattern;
+  // A pattern is defined, so we can run it through the processing.
+  if (drupal_strlen($pattern)) {
+    $token_type = _entity_path_get_token_type($entity_type);
+
+    // We do not sanitize, as entity uri will be passed to l() or url().
+    $token_replace_options = array(
+      'sanitize' => FALSE,
+      'clear' => TRUE,
+      'callback' => 'entity_path_clean_token_values',
+      'entity_path_config' => $config,
+    );
+    $token_data = array($token_type => $entity);
+
+    // Clean up the provided tokens.
+    $path = token_replace($pattern, $token_data, $token_replace_options);
+
+    $options = array();
+    // Add query to path options if specified.
+    if (drupal_strlen($config->query_pattern)) {
+      $query = array();
+      // parse_str will not allow any tokens in keys.
+      parse_str($config->query_pattern, $query);
+      $options['query'] = _entity_path_token_replace_walk($query, $token_data, $token_replace_options);
+    }
+    // Add fragment to path options if specified.
+    if (drupal_strlen($config->fragment_pattern)) {
+      $options['fragment'] = token_replace($config->fragment_pattern, $token_data, $token_replace_options);
+    }
+
+    // @TODO: maybe add a hook for additional replacement methods.
+
+    return array(
+      'path' => $path,
+      'options' => $options,
+    );
+  }
+}
+
+/**
+ * Helper function to replace all values in an array with tokens.
+ */
+function _entity_path_token_replace_walk($arr, $token_data, $token_options) {
+  $return = array();
+  foreach ($arr as $key => $value) {
+    // As parse_str does not allow tokens in keys, we skip replacment processing for keys.
+    //$key = token_replace($key, $token_data, $token_options);
+
+    if (is_array($value)) {
+      $return[$key] = _entity_path_token_replace_walk($value, $token_data, $token_options);
+    }
+    else {
+      $return[$key]  = token_replace($value, $token_data, $token_options);
+    }
+  }
+  return $return;
+}
+
+/**
+ * Clean token values and additional handling for the entity_path.
+ *
+ * @param $replacements
+ *   An array of token replacements that need to be "cleaned" for use in the URL.
+ * @param $data
+ *   An array of objects used to generate the replacements.
+ * @param $options
+ *   An array of options used to generate the replacements.
+ */
+function entity_path_clean_token_values(&$replacements, $data = array(), $options = array()) {
+
+  $config = !empty($options['entity_path_config']) ? $options['entity_path_config'] : FALSE;
+
+  // Only process, if we got an entity path config.
+  if ($config) {
+
+    // Clean token values with pathauto settings.
+    if (!empty($config->config['pathauto_cleanstring']) && module_exists('pathauto')) {
+      module_load_include('inc', 'pathauto');
+      $pathauto_options = array(
+        'sanitize' => FALSE,
+        'clear' => TRUE,
+        'callback' => 'pathauto_clean_token_values',
+        'pathauto' => TRUE,
+      );
+      pathauto_clean_token_values($replacements, $data, $pathauto_options);
+    }
+
+    // Replace spaces with the defined separator.
+    if (!empty($config->config['space_separator'])) {
+      $char = (isset($config->config['space_separator_char'])) ? $config->config['space_separator_char'] : '_';
+      foreach ($replacements as $token => $value) {
+        $replacements[$token] = str_replace(array(' ', '+'), $char, $value);
+      }
+    }
+
+    // Convert the case of the path.
+    if (!empty($config->config['path_case'])) {
+      switch ($config->config['path_case']) {
+        case 'lowercase':
+          $func = 'drupal_strtolower';
+          break;
+        case 'uppercase':
+          $func = 'drupal_strtoupper';
+          break;
+      }
+      if (!empty($func)) {
+        foreach ($replacements as $token => $value) {
+          $replacements[$token] = $func($value);
+        }
+      }
+    }
+
+  }
+}
+
+/**
+ * Helper function to build the instance machine name.
+ *
+ * @param string $entity_type
+ *   machine name of entity type.
+ * @param string $bundle
+ *   machine nacme of bundle.
+ * @return string
+ *   machine name for instance.
+ */
+function _entity_path_get_instance($entity_type, $bundle = '') {
+  return ($bundle) ? $entity_type . ':' . $bundle : $entity_type;
+}
+
+/**
+ * Helper function to retrieve entity type from instance string.
+ * @param string $instance
+ *   instance name
+ * @return string
+ *   entity_type
+ */
+function _entity_path_get_entity_type($instance) {
+  if (strpos($instance, ':')) {
+    list($return) = explode(':', $instance);
+    return $return;
+  }
+  else {
+    return $instance;
+  }
+}
+
+/**
+ * Helper function to retrieve bundle from instance string.
+ * @param string $instance
+ *   instance name
+ * @return string
+ *   bundle name or '' if no bundle is defined.
+ */
+function _entity_path_get_bundle($instance) {
+  if (strpos($instance, ':')) {
+    list( , $bundle) = explode(':', $instance);
+    return $bundle;
+  }
+  else {
+    return '';
+  }
+}
+
+/**
+ * Helper function to set and read callback defintions in and from a queue.
+ *
+ * @param $entity_type
+ *  entity type to queue
+ * @param $bundle
+ *   bundle to queue with entity type
+ * @return
+ *  If entity type is specified callbacks are set, so nothing is returned.
+ *  Else the next former defined callback is returned from queue.
+ */
+function _entity_path_dynamic_callback_definitions($entity_type = NULL, $bundle = NULL) {
+  static $static_queue = array();
+
+  if (!isset($entity_type)) {
+    return array_shift($static_queue);
+  }
+  else {
+    $static_queue[_entity_path_get_instance($entity_type, $bundle)] = array($entity_type, $bundle);
+  }
+}
+
+/**
+ * Helper function to build the callback function name.
+ *
+ * @param string $entity_type
+ * @param string $bundle
+ * @return string
+ *   callback name for entity type/bundle wrapper function.
+ */
+function _entity_path_dynamic_callback($entity_type, $bundle) {
+  if ($bundle) {
+    return ENTITY_PATH_CALLBACK_PREFIX . '__' . $entity_type . '__' . $bundle;
+  }
+  else {
+    return ENTITY_PATH_CALLBACK_PREFIX . '__' . $entity_type;
+  }
+}
+
+/**
+ * Helper to get token type for an entity.
+ *
+ * @param string $instance
+ *  a string representing the entity_type, may be separated from the bundle by ':'
+ *  e.g. node:article
+ */
+function _entity_path_get_token_type($instance) {
+  static $token_types = array();
+  $entity_type = _entity_path_get_entity_type($instance);
+
+  // We allready got a static cache.
+  if (!empty($token_types)) {
+    // nothing.
+  }
+  // Entity Token module holds this definition, so use it.
+  elseif (module_exists('entity_token')) {
+    module_load_include('tokens.inc', 'entity_token');
+    $token_types = array_flip(entity_token_types());
+  }
+  // Else, we know at least of taxonomy tokens.
+  else {
+    $token_types = array(
+      'taxonomy_term' => 'term',
+      'taxonomy_vocabulary' => 'vocabulary',
+    );
+  }
+
+  // Fall back on entity type, if no token type was found.
+  return isset($token_types[$entity_type]) ? $token_types[$entity_type] : $entity_type;
+}

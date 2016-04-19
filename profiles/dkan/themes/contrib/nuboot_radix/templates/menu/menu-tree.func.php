@@ -5,7 +5,7 @@
  */
 
 /**
- * NuBoot theme wrapper function for the primary menu links.
+ * Nuboot Radix theme wrapper function for the primary menu links.
  */
 function nuboot_radix_menu_tree__primary(&$variables) {
   return '<ul class="menu nav navbar-nav">' . $variables['tree'] . '</ul>';

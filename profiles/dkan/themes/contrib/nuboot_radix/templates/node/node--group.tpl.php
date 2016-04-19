@@ -7,6 +7,7 @@
 <?php if ($teaser): ?>
   <?php
     $node = node_load($nid);
+    $datasets = dkan_dataset_groups_datasets($node);
     // Group image.
     $image = field_get_items('node', $node, 'field_image');
     if ($image):
@@ -32,7 +33,7 @@
         ?>
       </p>
     </div>
-    <div class="button"><?php print render($content["og_count_entity_view_1"]); ?></div>
+    <a href="<?php print $node_url ?>" class="btn btn-primary"><?php print count($datasets) ?> datasets</a>
   </article>
 
 <?php else: ?>

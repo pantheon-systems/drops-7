@@ -12,13 +12,17 @@
         <img src="<?php print $logo; ?>" alt="<?php print t('Home'); ?>" />
       </a>
     <?php endif; ?>
-    <?php if ($site_name): ?>
-      <div class="site-name">
-        <?php print $site_name; ?>
+    <?php if ($site_name || $site_slogan): ?>
+      <div class="site-name-wrapper">
+        <?php if ($site_name): ?>
+          <a class="site-name" href="<?php print $front_page; ?>" title="<?php print t('Home'); ?>">
+            <?php print $site_name; ?>
+          </a>
+        <?php endif; ?>
+        <?php if (!empty($site_slogan)): ?>
+          <div class="site-slogan"><?php print $site_slogan; ?></div>
+        <?php endif; ?>
       </div>
-    <?php endif; ?>
-    <?php if (!empty($site_slogan)): ?>
-      <div class="site-slogan"><?php print $site_slogan; ?></div>
     <?php endif; ?>
     <!-- views exposed search -->
     <?php

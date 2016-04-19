@@ -63,7 +63,7 @@ function dkan_dataset_content_types_strongarm() {
         'custom_settings' => FALSE,
       ),
       'search_result' => array(
-        'custom_settings' => FALSE,
+        'custom_settings' => TRUE,
       ),
       'diff_standard' => array(
         'custom_settings' => FALSE,
@@ -93,11 +93,15 @@ function dkan_dataset_content_types_strongarm() {
       'display' => array(
         'resources' => array(
           'default' => array(
-            'weight' => '1',
+            'weight' => '2',
             'visible' => TRUE,
           ),
           'teaser' => array(
             'weight' => '6',
+            'visible' => TRUE,
+          ),
+          'search_result' => array(
+            'weight' => '1',
             'visible' => TRUE,
           ),
         ),
@@ -110,6 +114,10 @@ function dkan_dataset_content_types_strongarm() {
             'weight' => '2',
             'visible' => TRUE,
           ),
+          'search_result' => array(
+            'weight' => '7',
+            'visible' => TRUE,
+          ),
         ),
         'identifier' => array(
           'default' => array(
@@ -120,6 +128,10 @@ function dkan_dataset_content_types_strongarm() {
             'weight' => '0',
             'visible' => TRUE,
           ),
+          'search_result' => array(
+            'weight' => '9',
+            'visible' => TRUE,
+          ),
         ),
         'modified_date' => array(
           'default' => array(
@@ -128,6 +140,10 @@ function dkan_dataset_content_types_strongarm() {
           ),
           'teaser' => array(
             'weight' => '1',
+            'visible' => TRUE,
+          ),
+          'search_result' => array(
+            'weight' => '6',
             'visible' => TRUE,
           ),
         ),

@@ -36,7 +36,10 @@ function fieldable_panels_panes_fieldable_panels_pane_ctools_export_ui() {
   $prefix_count = count(explode('/', $plugin['menu']['menu prefix']));
 
   $plugin['menu']['items'] = array(
-    'list callback' => array('type' => MENU_NORMAL_ITEM),
+    'list callback' => array(
+      'type' => MENU_NORMAL_ITEM,
+      'access callback' => 'fieldable_panels_panes_access_callback',
+    ),
     'edit callback' => array(
       'path' => '%ctools_export_ui',
       'title callback' => 'fieldable_panels_pane_type_title',
@@ -64,17 +67,17 @@ function fieldable_panels_panes_fieldable_panels_pane_ctools_export_ui() {
       'type' => MENU_LOCAL_TASK,
       'weight' => -9,
     ),
+    'export' => array(
+      'path' => '%ctools_export_ui/export',
+      'page arguments' => array($plugin['name'], 'export', $prefix_count + 1),
+      'access arguments' => array($plugin['name'], 'export', $prefix_count + 1),
+    ),
     'edit' => array(
       'path' => '%ctools_export_ui/edit',
       'page arguments' => array($plugin['name'], 'edit', $prefix_count + 1),
       'access arguments' => array($plugin['name'], 'edit', $prefix_count + 1),
       'type' => MENU_LOCAL_TASK,
       'weight' => -8,
-    ),
-    'export' => array(
-      'path' => '%ctools_export_ui/export',
-      'page arguments' => array($plugin['name'], 'export', $prefix_count + 1),
-      'access arguments' => array($plugin['name'], 'export', $prefix_count + 1),
     ),
     'revert' => array(
       'path' => '%ctools_export_ui/revert',
@@ -85,6 +88,7 @@ function fieldable_panels_panes_fieldable_panels_pane_ctools_export_ui() {
       'path' => '%ctools_export_ui/delete',
       'page arguments' => array($plugin['name'], 'delete', $prefix_count + 1),
       'access arguments' => array($plugin['name'], 'delete', $prefix_count + 1),
+      'type' => MENU_LOCAL_TASK,
     ),
     'enable' => array(
       'path' => '%ctools_export_ui/enable',

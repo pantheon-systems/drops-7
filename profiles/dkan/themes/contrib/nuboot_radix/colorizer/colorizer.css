@@ -4,8 +4,7 @@ body.overlay {
   color: @text;
 }
 #header,
-#main-wrapper,
-.panel {
+#main-wrapper {
   background-color: @bg;
 }
 .site-name,
@@ -135,24 +134,29 @@ input.btn {
 .btn-primary:hover,
 .links .btn:hover,
 input.btn:hover,
+input.btn-default:active:hover,
 input[type="submit"]:hover {
   background:@bottom;
   border:1px solid @bottom;
   color:#ffffff;
 }
 
-
 .btn-primary:focus,
 .btn-primary:active,
 .btn-primary.active,
 .links .btn:focus,
 .links .btn.focus,
+input.btn:active,
+input.btn:active:focus,
 input.btn:focus,
 input[type="submit"]:focus,
 input[type="submit"]:active {
   background: @linkactive;
   border-color: @linkactive;
   color: #ffffff;
+}
+input.form-submit.features-refresh-button {
+  background: @top;
 }
 
 .region-sidebar-first .block-facetapi ul li.leaf a:hover,
@@ -187,30 +191,20 @@ div.autocomplete-deluxe-multiple,
 .panel-full-width .panel-top {
   background:@bottom;
 }
-.radix-layouts-sidebar .pane-block .pane-content,
-.radix-layouts-content .pane-content,
-.view-front-page-group-grid .span6 span,
-.view-front-page-group-grid .col-lg-6 span,
-.horizontal-tabs ul.horizontal-tabs-list li.selected a {
-  background-color: @bg;
-}
+
 .radix-layouts-sidebar .pane-title {
   background: @toolbarborder;
   color: @title;
 }
 
-.radix-layouts-sidebar div[class*="pane-facetapi"] .pane-title {
+.radix-layouts-sidebar div[class*="pane-facetapi"] .pane-title,
+.radix-layouts-sidebar .pane-title.ctools-collapsible-handle {
   background: @toolbarbtn;
-  color: #fff;
 }
 
 .radix-layouts-sidebar div[class*="pane-facetapi"] .facetapi-active {
   background: @toolbarbtn;
   color: @toolbarborder;
-}
-
-.radix-layouts-sidebar div[class*="pane-facetapi"] .pane-content {
-  background: #fff;
 }
 
 .horizontal-tabs ul.horizontal-tabs-list .selected strong {
@@ -252,7 +246,31 @@ ul.resource-list li .heading:hover {
   background-color: @bottom;
   border-color: @bottom;
 }
+.pagination > li > a {
+  color: @top;
+}
+.pagination > li > a:hover {
+  color: @linkactive;
+}
+.pagination > .active > span {
+  background-color: @top;
+  border-color: @top;
+}
+.pagination > .active > span:hover {
+  background-color: @bottom;
+  border-color: @bottom;
+}
 
+.facetapi-terms a span,
 .icon-dkan {
+  color: @top;
+}
+
+.link-badge {
+  background-color: @top;
+  border-color: @top;
+}
+li.active .link-badge {
+  background-color: #fff;
   color: @top;
 }

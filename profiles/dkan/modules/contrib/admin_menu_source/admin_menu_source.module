@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Use a different menu as the Administration Menu.
@@ -20,12 +19,12 @@ function admin_menu_source_help($path, $arg) {
  */
 function admin_menu_source_menu() {
   $items = array();
-  
+
   $items['admin/config/administration/admin_menu/settings'] = array(
     'title' => 'Settings',
     'type' => MENU_DEFAULT_LOCAL_TASK,
   );
-  
+
   $items['admin/config/administration/admin_menu/source'] = array(
     'title' => 'Source',
     'description' => 'Configure the source for the administration menu.',
@@ -35,7 +34,7 @@ function admin_menu_source_menu() {
     'type' => MENU_LOCAL_TASK,
     'file' => 'admin_menu_source.inc',
   );
-  
+
   return $items;
 }
 
@@ -55,15 +54,30 @@ function admin_menu_source_theme() {
  */
 function admin_menu_source_admin_menu_output_alter(&$content) {
   global $user;
-  
-  $rid = key(array_reverse($user->roles, TRUE));
-  $source_menu = _admin_menu_source_get_role_menu($rid);
-  
-  if (!empty($source_menu)) {
-    $content['menu'] = admin_menu_links_menu(admin_menu_tree($source_menu));
-    $content['menu']['#theme'] = 'admin_menu_links';
-    $content['menu']['#weight'] = 0;
-    $content['menu']['#sorted'] = TRUE;
+
+  // $rid = key(array_reverse($user->roles, TRUE));
+
+  // Find the user role rid.
+  $roles_ids = array_keys(user_roles(TRUE, 'access administration menu'));
+  $user_roles_ids = array_keys($user->roles);
+  $user_roles = array_intersect($roles_ids, $user_roles_ids);
+
+  if (count($user_roles)) {
+    $settings = _admin_menu_source_get_settings();
+
+    $source_menu = '';
+    foreach ($settings as $source) {
+      if (in_array($source['rid'], $user_roles, TRUE)) {
+        $source_menu = $source['source'];
+      }
+    }
+
+    if (!empty($source_menu)) {
+      $content['menu'] = admin_menu_links_menu(admin_menu_tree($source_menu));
+      $content['menu']['#theme'] = 'admin_menu_links';
+      $content['menu']['#weight'] = 0;
+      $content['menu']['#sorted'] = TRUE;
+    }
   }
 }
 
@@ -77,41 +91,62 @@ function admin_menu_source_admin_menu_output_alter(&$content) {
  * @ingroup themeable
  */
 function theme_admin_menu_source_settings_form($variables) {
-  $output = '';
   $form = $variables['form'];
-  
+  $output = drupal_render($form['admin_menu_source_description']);
+
   $rows = array();
   if (!empty($form['admin_menu_source_settings'])) {
     foreach (element_children($form['admin_menu_source_settings']) as $key) {
+      // Identifier for drupal_add_tabledrag call
+      $form['admin_menu_source_settings'][$key]['weight']['#attributes']['class'] = array('role-weight');
+
       $rows[] = array(
-        drupal_render($form['admin_menu_source_settings'][$key]['role']),
-        drupal_render($form['admin_menu_source_settings'][$key]['source']),
+        'data' => array(
+          drupal_render($form['admin_menu_source_settings'][$key]['role']),
+          drupal_render($form['admin_menu_source_settings'][$key]['source']),
+          drupal_render($form['admin_menu_source_settings'][$key]['weight']),
+        ),
+        'class' => array(
+          'draggable',
+        ),
       );
     }
   }
-  $output .= theme('table', array('header' => array(t('Role'), t('Menu')), 'rows' => $rows));
+  $headers = array(t('Role'), t('Menu'), t('Weight'));
+  $table_id = drupal_html_id('admin-menu-source-settings');
+  $output .= theme('table', array(
+    'header' => $headers,
+    'rows' => $rows,
+    'attributes' => array('id' => $table_id),
+  ));
   $output .= drupal_render($form['submit']);
   $output .= drupal_render_children($form);
-  
+
+  // The javascript magic that makes dragging work!
+  drupal_add_tabledrag($table_id, 'order', 'sibling', 'role-weight');
+
   return $output;
 }
 
 /**
- * Helper function to get settings for admin_menu_source
+ * Helper function to get settings for admin_menu_source.
+ * It assumes the settings are already sorted
+ * It appends new roles to the bottom (lowest priority)
  */
 function _admin_menu_source_get_settings() {
-  return variable_get('admin_menu_source_settings', array());
-}
+  $settings = variable_get('admin_menu_source_settings', array());
 
-/**
- * Helper function to get source menu per role
- *
- * @param $rid
- *  the user role id
- */
-function _admin_menu_source_get_role_menu($rid) {
-  //load the settings
-  $settings = _admin_menu_source_get_settings();
-  
-  return isset($settings[$rid]['source']) ? $settings[$rid]['source'] : '';
+  // make sure all roles are in
+  $roles_ids = array_keys(user_roles(TRUE, 'access administration menu'));
+  foreach ($roles_ids as $rid) {
+    if (empty($settings[$rid])) {
+      $settings[$rid] = array(
+        'rid' => $rid,
+        'source' => '',
+        'weight' => 10000, // new roles go to the bottom
+      );
+    }
+  }
+
+  return $settings;
 }

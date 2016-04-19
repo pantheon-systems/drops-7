@@ -645,7 +645,7 @@ function entity_ui_operation_form($form, &$form_state, $entity_type, $entity, $o
  */
 function entity_ui_main_form_defaults($form, &$form_state, $entity = NULL, $op = NULL) {
   // Now equals entity_ui_form_defaults() but is still here to keep backward
-  // compatability.
+  // compatibility.
   return entity_ui_form_defaults($form, $form_state, $form_state['entity_type'], $entity, $op);
 }
 
@@ -760,7 +760,7 @@ function entity_ui_validate_machine_name($element, &$form_state) {
 function theme_entity_ui_overview_item($variables) {
   $output = $variables['url'] ? l($variables['label'], $variables['url']['path'], $variables['url']['options']) : check_plain($variables['label']);
   if ($variables['name']) {
-    $output .= ' <small> (' . t('Machine name') . ': ' . check_plain($variables['name']) . ')</small>';
+    $output .= ' <small>(' . t('Machine name') . ': ' . check_plain($variables['name']) . ')</small>';
   }
   return $output;
 }

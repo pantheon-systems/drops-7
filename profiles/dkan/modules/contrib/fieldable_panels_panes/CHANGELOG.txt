@@ -1,6 +1,28 @@
+Fieldable Panels Panes 7.x-1.8, 2016-03-02
+------------------------------------------
+#2534200 by bwood, cboyden: Disable support for the Redirect module.
+#2207625 by Chris Burge, casaran, Peacog, AndersNielsen: Added permission for
+  listing FPPs.
+#2416065 by DamienMcKenna: Added a bunch of tests to confirm permissions work
+  correctly.
+#2678696 by DamienMcKenna: Devel added as a test dependency.
+#2531038 by DamienMcKenna: Noted related modules in the README.txt.
+#2618904 by milodesc: Fixed URLs to field/display pages in the README.txt.
+#2233363 by DamienMcKenna: Added more test assertions to show that the admin
+  paths are correct.
+#2562717 by dsnopek, cboyden: Resuable FPPs with no admin title did not have a
+  label in the CTools 'Add Content' dialog.
+#2614888/#2653510 by joelstein, muschpusch: Use bundle description as plugin
+  description.
+#2571981 by dgtlmoon: hook_fieldable_panels_pane_insert() was missing the
+  entity argument.
+#2550809 by fago: Fixed integration with inline_entity_form.
+By DamienMcKenna, gmercer: File access not working correctly for FPP objects.
+
+
 Fieldable Panels Panes 7.x-1.7, 2015-09-02
 ------------------------------------------
-By Chris Burges, dsnopek, DamienMcKenna: Added "check editable" callback for
+By Chris Burge, dsnopek, DamienMcKenna: Added "check editable" callback for
   CTools pane definition, refactored FPP object loading.
 
 

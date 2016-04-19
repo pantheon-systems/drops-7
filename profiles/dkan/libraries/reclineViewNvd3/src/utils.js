@@ -20,6 +20,6 @@ jQuery(function(){
 			return _.map(options, function(option){
 				return {name:option, value:option, selected: false};
 			});
-		},
+		}
 	});
 });

@@ -17,51 +17,6 @@ function dkan_dataset_content_types_ctools_plugin_api($module = NULL, $api = NUL
 }
 
 /**
- * Implements hook_field_default_field_bases_alter().
- */
-function dkan_dataset_content_types_field_default_field_bases_alter(&$data) {
-  if (isset($data['field_topic'])) {
-    unset($data['field_topic']['foreign keys']);
-  }
-}
-
-/**
- * Implements hook_field_default_field_instances_alter().
- */
-function dkan_dataset_content_types_field_default_field_instances_alter(&$data) {
-  if (isset($data['node-dataset-field_topic'])) {
-    $data['node-dataset-field_topic']['display']['teaser']['label'] = 'hidden'; /* WAS: 'above' */
-    $data['node-dataset-field_topic']['display']['teaser']['module'] = 'dkan_dataset'; /* WAS: '' */
-    $data['node-dataset-field_topic']['display']['teaser']['type'] = 'dkan_dataset_term_topic_icon'; /* WAS: 'hidden' */
-    $data['node-dataset-field_topic']['display']['teaser']['weight'] = 5; /* WAS: 0 */
-  }
-}
-
-/**
- * Implements hook_image_default_styles().
- */
-function dkan_dataset_content_types_image_default_styles() {
-  $styles = array();
-
-  // Exported image style: small_topics_icons.
-  $styles['small_topics_icons'] = array(
-    'label' => 'Small topics icons',
-    'effects' => array(
-      2 => array(
-        'name' => 'image_scale_and_crop',
-        'data' => array(
-          'width' => 25,
-          'height' => 25,
-        ),
-        'weight' => 2,
-      ),
-    ),
-  );
-
-  return $styles;
-}
-
-/**
  * Implements hook_node_info().
  */
 function dkan_dataset_content_types_node_info() {

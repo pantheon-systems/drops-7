@@ -8,33 +8,8 @@
  * Implements hook_css_alter().
  */
 function nuboot_radix_css_alter(&$css) {
-  $radix_path = drupal_get_path('theme', 'radix');
-
-  // Radix now includes compiled stylesheets for demo purposes.
-  // We remove these from our subtheme since they are already included
-  // in compass_radix.
-  unset($css[$radix_path . '/assets/stylesheets/radix-style.css']);
-  unset($css[$radix_path . '/assets/stylesheets/radix-print.css']);
   // Remove dkan button styles so we can use our own.
   unset($css[drupal_get_path('module', 'dkan_dataset') . '/css/dkan_dataset_btn.css']);
-}
-
-/**
- * Implements hook_js_alter().
- */
-function nuboot_radix_js_alter(&$javascript) {
-  $radix_path = drupal_get_path('theme', 'radix');
-  // Remove radix-script.js - using patched version in scripts directory.
-  // Hash usage in radix-script.js breaks with use of a hash map in URL. https://www.drupal.org/node/2426513.
-  unset($javascript[$radix_path . '/assets/javascripts/radix-script.js']);
-}
-
-/**
- * Implements hook_preprocess().
- */
-function nuboot_radix_preprocess(&$variables, $hook) {
-  // Panel heading tag.
-  $variables['title_heading'] = 'h2';
 }
 
 /**
@@ -67,7 +42,7 @@ function nuboot_radix_preprocess_page(&$variables) {
   }
   // Add copyright to theme.
   if ($copyright = theme_get_setting('copyright')) {
-    $variables['copyright'] = isset($copyright['value']) ? check_markup($copyright['value'], $copyright['format']) : '';
+    $variables['copyright'] = isset($copyright['value']) ? check_markup($copyright['value'], $copyright['format']) : t('Powered by <a href="http://nucivic.com/dkan">DKAN</a>, a project of <a href="http://nucivic.com">NuCivic</a>'); 
   }
   if (drupal_is_front_page()) {
     $variables['title'] = '';
@@ -81,7 +56,7 @@ function nuboot_radix_preprocess_page(&$variables) {
   $external_css = array(
     '#attached' => array(
       'css' => array(
-        '//fonts.googleapis.com/css?family=Droid+Sans:400,700|Open+Sans:300italic,400italic,600italic,700italic,800italic,400,300,600,700,800' => array(
+        '//fonts.googleapis.com/css?family=Open+Sans:400,400italic,700,700italic,600,600italic' => array(
           'type' => 'external'),
       ),
     ),

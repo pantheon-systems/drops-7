@@ -1,0 +1,240 @@
+<?php
+/**
+ * @file
+ * Tests for the Fieldable Panels Panes module to ensure file access works.
+ */
+
+class FppFileAccessTest extends FppTestHelper {
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'FPP tests for file access',
+      'description' => 'Confirm that file access logic work correctly.',
+      'group' => 'FPP',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    $modules[] = 'fieldable_panels_panes';
+
+    // Needed for the image generation logic below.
+    $modules[] = 'devel_generate';
+
+    parent::setUp($modules);
+
+    // Some default values to work with.
+    $this->bundle = 'fieldable_panels_pane';
+    $this->title = t('Test FPP');
+  }
+
+  /**
+   * Confirm that the private file access works when no auth is defined.
+   */
+  function testFileAccessWithoutAuth() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    $this->addPrivateImageField();
+
+    // Create the FPP object.
+    $fpp = $this->createTestFppObject();
+
+    // Get the file object.
+    $file = file_load($fpp->field_fpp_image[LANGUAGE_NONE][0]['fid']);
+    $this->assertNotEqual($file, NULL);
+    $url = file_create_url($file->uri);
+    $this->assertNotEqual($url, NULL);
+    $this->assertTrue(strpos($url, 'system/files'), 'File is stored in the private file system.');
+
+    // Confirm the FPP page is accessible.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/' . $fpp->fpid);
+    $this->assertResponse(200);
+
+    // Confirm the file is accessible.
+    $this->drupalGet($url);
+    $this->assertResponse(200);
+  }
+
+  /**
+   * Confirm that the private file access works when the visitor has the correct
+   * correct access.
+   */
+  function testFileAccessWithCorrectAuth() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    $this->addPrivateImageField();
+
+    // Create the FPP object.
+    $fpp = $this->createTestFppObject();
+
+    // Make the FPP only accessible by the admin private.
+    $fpp = $this->makeFppObjectPrivate($fpp);
+
+    // Get the file object.
+    $file = file_load($fpp->field_fpp_image[LANGUAGE_NONE][0]['fid']);
+    $this->assertNotEqual($file, NULL);
+    $url = file_create_url($file->uri);
+    $this->assertNotEqual($url, NULL);
+    $this->assertTrue(strpos($url, 'system/files'), 'File is stored in the private file system.');
+
+    // Confirm the FPP page is accessible.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/' . $fpp->fpid);
+    $this->assertResponse(200);
+
+    // Confirm the file is accessible.
+    $this->drupalGet($url);
+    $this->assertResponse(200);
+  }
+
+  /**
+   * Confirm that the private file access works when the visitor does NOT have
+   * the correct access.
+   */
+  function testFileAccessWithIncorrectAuth() {
+    // Create a user with the admin permission.
+    $this->adminUser = $this->createAdminUser();
+
+    $this->drupalLogin($this->adminUser);
+
+    $this->addPrivateImageField();
+
+    // Create the FPP object.
+    $fpp = $this->createTestFppObject();
+
+    // Make the FPP only accessible by the admin private.
+    $fpp = $this->makeFppObjectPrivate($fpp);
+    $this->assertNotEqual($fpp, NULL);
+
+    // Get the file object.
+    $file = file_load($fpp->field_fpp_image[LANGUAGE_NONE][0]['fid']);
+    $this->assertNotEqual($file, NULL);
+    $url = file_create_url($file->uri);
+    $this->assertNotEqual($url, NULL);
+    $this->assertTrue(strpos($url, 'system/files'), 'File is stored in the private file system.');
+
+    // Logout so all future requests will be by an anonymous visitor.
+    $this->drupalLogout();
+
+    // Confirm the FPP page is not accessible.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/view/' . $fpp->fpid);
+    $this->assertResponse(403);
+
+    // Confirm the file is not accessible.
+    $this->drupalGet($url);
+    $this->assertResponse(403);
+  }
+
+  /**
+   * Add an image field to the FPP type that uses the private storage mechanism.
+   */
+  function addPrivateImageField() {
+    $this->enablePrivateFileSupport();
+
+    // Add a file field to the default FPP type.
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle . '/fields');
+    $edit = array(
+      'fields[_add_new_field][label]' => t('Image'),
+      'fields[_add_new_field][field_name]' => 'fpp_image',
+      'fields[_add_new_field][type]' => 'image',
+      'fields[_add_new_field][widget_type]' => 'image_image',
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertResponse(200);
+    $this->assertText(t('Upload destination'));
+
+    $edit = array(
+      'field[settings][uri_scheme]' => 'private',
+    );
+    $this->drupalPost(NULL, $edit, t('Save field settings'));
+    $this->assertResponse(200);
+    $this->assertText(t('Updated field @file field settings.', array('@file' => t('Image'))));
+  }
+
+  /**
+   * Enable the private file storage scheme.
+   */
+  function enablePrivateFileSupport() {
+    // Turn on private file access.
+    $path = variable_get('file_public_path', conf_path() . '/files') . '/private';
+    variable_set('file_private_path', $path);
+    $element = array(
+      '#value' => $path,
+      '#name' => 'file_private_path',
+    );
+    system_check_directory($element);
+  }
+
+  /**
+   * Create a test FPP object that contains a generated image.
+   *
+   * @return object
+   *   An FPP object.
+   */
+  function createTestFppObject() {
+    // Generate a suitable private image file.
+    $image = $this->generateImageFile(NULL, NULL, 'private');
+
+    $fpp = new StdClass();
+    $fpp->bundle = $this->bundle;
+    $fpp->title = $this->title;
+    $fpp->field_fpp_image[LANGUAGE_NONE][0]['fid'] = $image->fid;
+    $saved_fpp = fieldable_panels_panes_save($fpp);
+
+    // Force a reload of this object, just to be sure.
+    $saved_fpp = fieldable_panels_panes_load($saved_fpp->fpid);
+
+    $this->assertEqual($saved_fpp->title, $this->title, 'The FPP object was saved.');
+    $this->assertEqual($saved_fpp->field_fpp_image[LANGUAGE_NONE][0]['fid'], $image->fid, 'The FPP object contains the image.');
+
+    $this->drupalGet('admin/structure/fieldable-panels-panes/' . $this->bundle);
+    $this->assertResponse(200);
+    $this->assertText($this->title);
+
+    return $saved_fpp;
+  }
+
+  /**
+   * Update an FPP object so that it is make only accessible by visitors with
+   * the admin role.
+   *
+   * @param object $fpp
+   *   An FPP object to be made private.
+   * @param int $rid
+   *   The role to be added to the object; defaults to 2 (authenticated user).
+   *
+   * @return object
+   *   The FPP object with updated access rules.
+   */
+  function makeFppObjectPrivate($fpp, $rid = 2) {
+    $fpp->view_access = array(
+      'plugins' => array(
+        array(
+          'name' => 'role',
+          'settings' => array(
+            'rids' => array(
+              $rid,
+            ),
+          ),
+          'context' => 'logged-in-user',
+          'not' => FALSE,
+        ),
+      ),
+      'logic' => 'and',
+    );
+    fieldable_panels_panes_save($fpp);
+
+    $saved_fpp = fieldable_panels_panes_load($fpp->fpid);
+    return $saved_fpp;
+  }
+
+}

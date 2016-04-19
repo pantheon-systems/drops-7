@@ -19,3 +19,11 @@ function dkan_datastore_install() {
     ->execute();
 
 }
+
+
+/**
+ * Implements hook_update_N().
+ */
+function dkan_datastore_update_7001() {
+  module_enable(array('field_hidden'));
+}

@@ -26,4 +26,15 @@ function demoValuesAsSeries(){
   });
   return dataset;
 }
+
+function demoCartoDB(){
+  console.log('cdb0');
+  var dataset = new recline.Model.Dataset({
+    backend: 'cartodb',
+    user: 'starsinmypockets',
+    table: 'public.congressional_districts_2015'
+  });
+  console.log('cdb1', dataset);
+  return dataset;
+}
 /* jshint ignore:end */

@@ -96,20 +96,8 @@ class DkanDatastore extends Datastore implements DatastoreForm {
    * Retrieves current Datastore status.
    */
   public function status() {
-    if ($file = dkan_datastore_file_field($this->node)) {
-      if ((is_object($file) && $file->filemime == 'text/csv') || (is_array($file) && $file['filemime'] == 'text/csv')) {
-        if ($this->records()) {
-          return DKAN_DATASTORE_EXISTS;
-        }
-        else {
-          return DKAN_DATASTORE_FILE_EXISTS;
-        }
-      }
-      else {
-        return DKAN_DATASTORE_WRONG_TYPE;
-      }
-    }
-    return FALSE;
+   module_load_include('module', 'dkan_datastore', 'dkan_datastore');
+   return dkan_datastore_status($this->node);
   }
 
   /**
@@ -226,6 +214,7 @@ class DkanDatastore extends Datastore implements DatastoreForm {
     $this->save();
     $this->import();
   }
+
 
   /**
    * Adds configuration to feeds source.
@@ -348,16 +337,29 @@ class DkanDatastore extends Datastore implements DatastoreForm {
    */
   public function dropFormSubmit(&$form_state) {
     module_load_include('module', 'data', 'data');
+    module_load_include('module', 'dkan_datastore', 'dkan_datastore');
     foreach ($form_state['#tables_to_drop'] as $table_name) {
-      $table = data_get_table($table_name);
-      if ($table) {
-        $table->drop();
-      }
-      elseif (db_table_exists($table_name)) {
-        db_drop_table($table_name);
-      }
+      $node = node_load($form_state['build_info']['args']['0']->nid);
+      $has_file = dkan_datastore_file_field($node);
+      $node = entity_metadata_wrapper('node', $node);
+      $status = ($has_file) ? DKAN_DATASTORE_FILE_EXISTS : DKAN_DATASTORE_EMPTY;
+      $node->field_datastore_status->set($status);
+      $node->save();
+      $this->dropTable($table_name);
     }
     drupal_set_message(t('Datastore dropped!'));
+  }
+
+  /**
+   * Drop a datastore table
+   */
+  private function dropTable($table_name){
+    $table = data_get_table($table_name);
+    if($table) {
+      $table->drop();
+    } elseif (db_table_exists($table_name)) {
+      db_drop_table($table_name);
+    }
   }
 
   /**
@@ -389,8 +391,7 @@ class DkanDatastore extends Datastore implements DatastoreForm {
             $output .= '<p>' . l($url, $url) . '</p>';
             $output .= '<p>' . t('Query this datastore and return first five results') . '</p>';
             $output .= '<h3>' . t('Documentation') . '</h3>';
-            $doc_link = l(t('DKAN Datastore API'), 'http://docs.getdkan.com/docs/dkan-documentation/dkan-api/datastore-api');
-            $output .= '<p>' . t('See DKAN API documentation for more details: %link', array('%link' => $doc_link)) . '</p>';
+            $output .= '<p>' . t('See DKAN API documentation for more details: <a href="http://docs.getdkan.com/docs/dkan-documentation/dkan-api/datastore-api">DKAN Datastore API</a>') . '</p>';
           }
         }
         return $output;

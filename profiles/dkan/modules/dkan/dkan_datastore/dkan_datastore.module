@@ -5,6 +5,8 @@
  */
 
 // Datastore is created for a given resource.
+define('DKAN_DATASTORE_EMPTY', 0);
+// Datastore is created for a given resource.
 define('DKAN_DATASTORE_EXISTS', 1);
 // File is attached to a resource, but not added to the datastore.
 define('DKAN_DATASTORE_FILE_EXISTS', 2);
@@ -296,6 +298,9 @@ function dkan_datastore_permission() {
     'manage datastore' => array(
       'title' => t('Manage Datastore'),
     ),
+    'manage datastore settings' => array(
+      'title' => t('Manage Datastore Settings')
+    )
   );
 }
 
@@ -303,14 +308,15 @@ function dkan_datastore_permission() {
  * Implements hook_node_view().
  */
 function dkan_datastore_node_view($node, $view_mode, $langcode) {
+
   $type = dkan_datastore_node_type();
   if ($node->type == $type) {
     $status = dkan_datastore_status($node);
-    if (user_access('manage datastore') && $status = dkan_datastore_status($node)) {
-      if ($status === DKAN_DATASTORE_FILE_EXISTS) {
+    if (user_access('manage datastore') && $status && $view_mode == 'full') {
+      if ($status == DKAN_DATASTORE_FILE_EXISTS) {
         drupal_set_message(t('Your file for this resource is not added to the datastore. Click "Manage Datastore" to import file into the datastore.'));
       }
-      elseif ($status === DKAN_DATASTORE_EXISTS) {
+      elseif ($status == DKAN_DATASTORE_EXISTS) {
         drupal_set_message(t('Your file for this resource has been added to the datastore.'));
       }
     }
@@ -321,20 +327,27 @@ function dkan_datastore_node_view($node, $view_mode, $langcode) {
  * Determines status of datastore attached to resource node.
  */
 function dkan_datastore_status($node) {
-  if ($file = dkan_datastore_file_field($node)) {
-    if ((is_object($file) && $file->filemime == 'text/csv') || (is_array($file) && $file['filemime'] == 'text/csv')) {
-      if (dkan_datastore_records($node->nid)) {
-        return DKAN_DATASTORE_EXISTS;
-      }
-      else {
+  if($file = dkan_datastore_file_field($node)) {
+    if(dkan_datastore_is_importable($file)){
+      $node = entity_metadata_wrapper('node', $node);
+      if($status = $node->field_datastore_status->value()) {
+        return $status;
+      } else {
         return DKAN_DATASTORE_FILE_EXISTS;
       }
-    }
-    else {
+    } else {
       return DKAN_DATASTORE_WRONG_TYPE;
     }
+  } else {
+    return DKAN_DATASTORE_EMPTY;
   }
-  return FALSE;
+}
+
+/**
+ * Determines if a resource can be imported
+ */
+function dkan_datastore_is_importable($file) {
+  return (is_object($file) && $file->filemime == 'text/csv') || (is_array($file) && $file['filemime'] == 'text/csv');
 }
 
 /**
@@ -495,4 +508,28 @@ function dkan_datastore_node_type() {
     drupal_alter('dkan_datastore_node_type', $node_type);
   }
   return $node_type;
+}
+
+/**
+ * Implements hook_feeds_after_import().
+ */
+function dkan_datastore_feeds_after_import(FeedsSource $source) {
+  $importer_id = $source->importer->id;
+  $importers = array('dkan_file', 'dkan_link');
+  if(empty($source->exception) && in_array($importer_id, $importers)) {
+    $node = node_load($source->feed_nid);
+    $node = entity_metadata_wrapper('node', $node);
+    $node->field_datastore_status->set(DKAN_DATASTORE_EXISTS);
+    $node->save();
+  }
+}
+
+/**
+ * Implements hook_node_presave().
+ */
+function dkan_datastore_node_presave($node) {
+  if(is_object($node) && $node->type == 'resource') {
+    $wrap = entity_metadata_wrapper('node', $node);
+    $wrap->field_datastore_status->set(dkan_datastore_status($node));
+  }
 }

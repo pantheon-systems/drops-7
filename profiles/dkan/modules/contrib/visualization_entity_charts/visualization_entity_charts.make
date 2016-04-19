@@ -28,8 +28,14 @@ libraries[lodash_data][download][type] = git
 libraries[lodash_data][download][url] = "https://github.com/NuCivic/lodash.data.git"
 libraries[lodash_data][download][revision] = "0dbe0701003b8a45037ab5fada630db2dbf75d9d"
 
+# SPECTRUM COLORPICKER
+libraries[spectrum][type] = libraries
+libraries[spectrum][download][type] = git
+libraries[spectrum][download][url] = "https://github.com/bgrins/spectrum.git"
+libraries[spectrum][download][revision] = "98454b55521cfb495f628db28af01100c029ef76"
+
 # RECLINE NVD3 VIEW
 libraries[reclineViewNvd3][type] = libraries
 libraries[reclineViewNvd3][download][type] = git
 libraries[reclineViewNvd3][download][url] = "https://github.com/NuCivic/recline.view.nvd3.js.git"
-libraries[reclineViewNvd3][download][revision] = "56666586338e69b18bb9414773869b412391186b"
+libraries[reclineViewNvd3][download][branch] = master

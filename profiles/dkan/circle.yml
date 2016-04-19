@@ -45,17 +45,17 @@ dependencies:
   override:
     - printenv
     - mkdir $CIRCLE_ARTIFACTS/junit
-    - 'bash dkan-init.sh dkan --deps --build=$DATABASE_URL'
+    - 'PATH=/home/ubuntu/.config/composer/vendor/bin:$PATH bash dkan-init.sh dkan --deps --build=$DATABASE_URL'
     # Run a webserver using drush.
-    - 'ahoy drush --yes runserver :8888':
+    - 'PATH=/home/ubuntu/.config/composer/vendor/bin:$PATH ahoy drush --yes runserver :8888':
         background: true
 
     # Setup display for selenium
     #- sh -e /etc/init.d/xvfb start
     #- sleep 3
 
-    - wget http://selenium-release.storage.googleapis.com/2.48/selenium-server-standalone-2.48.2.jar
-    - java -jar selenium-server-standalone-2.48.2.jar -quiet -p 4444 -log shut_up_selenium :
+    - wget http://selenium-release.storage.googleapis.com/2.49/selenium-server-standalone-2.49.1.jar
+    - java -jar selenium-server-standalone-2.49.1.jar -p 4444 :
         background: true
   post:
      - sudo apt-get install -y x11vnc

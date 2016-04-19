@@ -165,18 +165,18 @@ function dkan_dataset_groups_default_search_api_index() {
       "index_directly" : 1,
       "cron_limit" : "50",
       "fields" : {
-        "type" : { "type" : "string" },
-        "title" : { "type" : "string" },
-        "status" : { "type" : "boolean" },
-        "changed" : { "type" : "date" },
         "author" : { "type" : "integer", "entity_type" : "user" },
+        "changed" : { "type" : "date" },
+        "field_resources:body:value" : { "type" : "list\\u003Ctext\\u003E" },
+        "field_resources:field_format" : { "type" : "list\\u003Cinteger\\u003E", "entity_type" : "taxonomy_term" },
         "field_tags" : { "type" : "list\\u003Cinteger\\u003E", "entity_type" : "taxonomy_term" },
         "og_group_ref" : { "type" : "list\\u003Cinteger\\u003E", "entity_type" : "node" },
+        "search_api_access_node" : { "type" : "list\\u003Cstring\\u003E" },
         "search_api_language" : { "type" : "string" },
         "search_api_viewed" : { "type" : "text" },
-        "search_api_access_node" : { "type" : "list\\u003Cstring\\u003E" },
-        "field_resources:field_format" : { "type" : "list\\u003Cinteger\\u003E", "entity_type" : "taxonomy_term" },
-        "field_resources:body:value" : { "type" : "list\\u003Ctext\\u003E" }
+        "status" : { "type" : "boolean" },
+        "title" : { "type" : "string" },
+        "type" : { "type" : "string" }
       },
       "data_alter_callbacks" : {
         "search_api_alter_bundle_filter" : {

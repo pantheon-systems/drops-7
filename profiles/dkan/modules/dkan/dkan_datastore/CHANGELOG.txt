@@ -1,3 +1,7 @@
+7.x-1.12 2015-04-01
+--------------------------
+- Add update function enable field_hidden module
+
 7.x-1.10 2015-11-10
 --------------------------
 - Upgrade Feeds module to latest dev version

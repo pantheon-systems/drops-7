@@ -1,0 +1,65 @@
+Workbench Email 7.x-3.2, 2014-09-25
+by teknic: Issue 2279273: Fixed error where if no one is selected from drop down
+by teknic: Issue 2268703: Added token for name of user who is being emailed
+by teknic: Issue 2280193: Fixed error on install or update
+by teknic: Issue 2334583: Fixed "author" role breaking admin page
+by teknic: Issue 2306745: Fixed issue, was same as 2334583
+by teknic: Issue 2275245: Fixed issue with supporting workbench access functionality
+
+Workbench Email 7.x-3.2, 2014-05-07
+-----------------------------------
+by teknic: Issue 2260279: Fixed issue with non array being passed into sql
+
+Workbench Email 7.x-3.1, 2014-04-29
+-----------------------------------
+by teknic: Issue 2253911: Queue Mail value not being loaded on Config Form
+by teknic: Issue 2253907: Email notification reports failure despite being added to queue
+by teknic: Spelling issue with admin form.
+
+Workbench Email 7.x-3.0, 2014-04-28
+-----------------------------------
+by teknic: Implemented hook_requirements().
+by teknic: Integrate with Workbench Access.
+by teknic: Fix error messages on sending.
+by teknic: Update features export to export new variables.
+by teknic: Add auto notify setting to fire email when state
+           transition occurs.
+by teknic: Add setting for author based notification.
+by teknic: Rework admin pages, create one section called email,
+           define email transitions, ajax submit, inject emails section
+           (ajax form).
+by teknic: Remove rid from being exported in feature.
+by teknic: Added a drupal_alter to gain access to the element
+by teknic: Added an all users option inside the select list, allowing
+           for mass email within the role.
+by teknic: Implemented batch emailing
+
+Workbench Email 7.x-2.1, 2013-01-05
+-----------------------------------
+by teknic: Issue #1880238: fixed issue with null constraint on
+           subject / message db fields
+
+Workbench Email 7.x-2.0, 2012-12-21
+-----------------------------------
+by teknic: removed workbench_email_transitions table from code and db
+by frosev: Issue #1852334: fixed an issue where the `wid`
+           field was not being added to the schema through
+           hook_update_N implementation.
+by frosev: Issue #1868902: fix an issue where role id's were not being
+           imported from exported features.
+
+Workbench Email 7.x-1.0, 2012-11-09
+-----------------------------------
+by teknic: added t(), added module_implements_alter, removed hook_install
+           and uninstall
+by teknic: fixed issue with #tree in form, removed  in submit
+by teknic: changed the way we determine valid permissions (ie: roles
+           that have access to moderate content)
+by teknic: corrected function call and parameters to valid_roles()
+by teknic: replaced submit handler with hook_node_submit, giving access
+           to the node created, for token replacement
+by teknic: removed #submit handler, added form[actions][submit][#submit][]
+           submit handler so that the node was available, this resolves
+           the issue of no NID in emails when first saved.
+by teknic: renamed workbench_email.features.inc function names, fixed
+           issue with role being loaded by name instead of rid

@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/NuCivic/dkan_dataset.png?branch=7.x-1.x)](https://travis-ci.org/NuCivic/dkan_dataset)
+[![Circle CI](https://circleci.com/gh/NuCivic/dkan_dataset.svg?style=svg)](https://circleci.com/gh/NuCivic/dkan_dataset)
 
 # DKAN Dataset
 
