@@ -1,5 +1,5 @@
 name        = NuBoot Radix
-description = A theme based on Radix.
+description = A Radix based subtheme built for DKAN.
 screenshot  = screenshot.png
 core        = 7.x
 
@@ -7,10 +7,7 @@ core        = 7.x
 base theme  = radix
 
 
-;;;;;;;;;;;;;;;;;;;;;
-;; Regions
-;;;;;;;;;;;;;;;;;;;;;
-
+; Regions
 regions[header]         = 'Header'
 regions[highlighted]    = 'Highlighted'
 regions[preface_first]  = 'Preface First'
@@ -34,22 +31,20 @@ plugins[panels][layouts] = panels/layouts
 plugins[panels][styles] = panels/styles
 
 ; CSS - General
-stylesheets[all][]     = assets/stylesheets/screen.css
-stylesheets[print][]   = assets/stylesheets/print.css
-stylesheets[all][]     = assets/stylesheets/font-awesome.min.css
-stylesheets[all][]		 = assets/stylesheets/dkan-flaticon.css
-stylesheets[all][]		 = assets/stylesheets/dkan-dataset-search-icons.css
+stylesheets[all][]     = assets/css/nuboot_radix.style.css
+stylesheets[all][]		 = assets/css/dkan-flaticon.css
+stylesheets[all][]		 = assets/css/dkan-topics.css
+stylesheets[print][]   = assets/css/print.css
 
 ; CSS - Conditional
-stylesheets-conditional[lte IE 9][all][] = assets/stylesheets/ie.css
-stylesheets-conditional[IE 9][all][] = assets/stylesheets/ie9.css
-stylesheets-conditional[IE 8][all][] = assets/stylesheets/ie8.css
+stylesheets-conditional[lte IE 9][all][] = assets/css/ie.css
+stylesheets-conditional[IE 9][all][] = assets/css/ie9.css
+stylesheets-conditional[IE 8][all][] = assets/css/ie8.css
 
-;;;;;;;;;;;;;;;;;;;;;
-;; Default Theme Settings
-;;;;;;;;;;;;;;;;;;;;;
+; Javascript
+scripts[] = assets/js/nuboot_radix.script.js
 
-settings[site_name] = Welcome to Dkan
+; Default Theme Settings
 settings[toggle_logo] = 1
 settings[toggle_name] = 0
 settings[toggle_slogan] = 0
@@ -59,61 +54,4 @@ settings[toggle_comment_user_verification] = 1
 settings[toggle_favicon] = 1
 settings[toggle_main_menu] = 1
 settings[toggle_secondary_menu] = 1
-settings[logo_path] = 'profiles/dkan/themes/contrib/nuboot_radix/logo.svg'
-settings[hero_path] = 'profiles/dkan/themes/contrib/nuboot_radix/assets/images/hero.jpg'
-settings[copyright][value] = 'Powered by <a href="http://nucivic.com/dkan">DKAN</a>, a project of <a href="http://nucivic.com">NuCivic</a>'
 settings[copyright][format] = 'html'
-
-; Breadcrumbs
-; --------------
-settings[bootstrap_breadcrumb] = 1
-settings[bootstrap_breadcrumb_home] = 0
-settings[bootstrap_breadcrumb_title] = 0
-
-; Navbar
-; --------------
-settings[bootstrap_navbar_position] = ''
-settings[bootstrap_navbar_inverse] = 0
-
-; Region Wells
-; --------------
-settings[bootstrap_region_well-navigation] = ''
-settings[bootstrap_region_well-header] = ''
-settings[bootstrap_region_well-highlighted] = ''
-settings[bootstrap_region_well-help] = ''
-settings[bootstrap_region_well-content] = ''
-settings[bootstrap_region_well-sidebar_first] = ''
-settings[bootstrap_region_well-sidebar_second] = ''
-settings[bootstrap_region_well-footer] = ''
-
-; For information on choosing the desired method, please read the Drupal
-; Bootstrap sub-theme "how-to" documentation:
-; https://drupal.org/node/1978010
-
-; ;----------------------------------
-; ; METHOD 1: Bootstrap Source Files
-; ;----------------------------------
-;
-; ;;;;;;;;;;;;;;;;;;;;;
-; ;; Scripts
-; ;;;;;;;;;;;;;;;;;;;;;
-;
-;scripts[] = 'bootstrap/js/bootstrap.min.js'
-scripts[] = assets/javascripts/radix-script.js
-scripts[] = assets/javascripts/sitewide.js
-scripts[] = assets/javascripts/svgeezy.min.js
-scripts[] = assets/javascripts/respond.min.js
-
-; ; Disable BootstrapCDN if using Bootstrap source files in your sub-theme.
-settings[cdn_bootstrap] = 0
-
-
-; ;-------------------------
-; ; METHOD 2: Bootstrap CDN
-; ;-------------------------
-;
-; Method 2 uses BootstrapCDN, the only thing you might need to provide here
-; is overrides to Bootstrap theme settings. Copy them here from the base theme
-; to override.
-
-

@@ -1,0 +1,29 @@
+.colorBox {
+  border: 1px solid #ffffff;
+  cursor: pointer;
+  font-family: monospace;
+  font-size: 12px;
+  margin: 0 3px;
+  padding: 1px 8px;
+}
+.colorBox.active,
+.colorBox:hover {
+  padding: 9px 16px;
+}
+.transparentBox {
+  background-image: url("../images/transparentBox16.gif");
+  background-position: 0 3px;
+  background-repeat: no-repeat;
+  margin: 0 3px;
+  padding: 2px 8px;
+}
+.transparentBox.active,
+.transparentBox:hover {
+  background-image: url(../images/transparentBox32.gif);
+  background-position: 0 3px;
+  background-repeat: no-repeat;
+  padding: 10px 16px;
+}
+.hide_input {
+  display: none;
+}

@@ -22,6 +22,13 @@ function dkan_dataset_content_types_field_default_field_instances() {
         'module' => 'text',
         'settings' => array(),
         'type' => 'text_default',
+        'weight' => 1,
+      ),
+      'search_result' => array(
+        'label' => 'hidden',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
         'weight' => 0,
       ),
       'teaser' => array(
@@ -48,7 +55,7 @@ function dkan_dataset_content_types_field_default_field_instances() {
         'summary_rows' => 5,
       ),
       'type' => 'text_textarea_with_summary',
-      'weight' => 1,
+      'weight' => 2,
     ),
   );
 
@@ -60,6 +67,36 @@ function dkan_dataset_content_types_field_default_field_instances() {
     'description' => '',
     'display' => array(
       'default' => array(
+        'label' => 'above',
+        'module' => 'double_field',
+        'settings' => array(
+          'first' => array(
+            'format' => '_none',
+            'hidden' => 0,
+            'prefix' => '',
+            'suffix' => ':&nbsp;',
+          ),
+          'second' => array(
+            'format' => '_none',
+            'hidden' => 0,
+            'prefix' => '',
+            'suffix' => '',
+          ),
+          'table' => array(
+            'first' => array(
+              'column_label' => 'Field',
+            ),
+            'number_column' => 0,
+            'number_column_label' => '№',
+            'second' => array(
+              'column_label' => 'Value',
+            ),
+          ),
+        ),
+        'type' => 'double_field_table',
+        'weight' => 5,
+      ),
+      'search_result' => array(
         'label' => 'above',
         'module' => 'double_field',
         'settings' => array(
@@ -150,6 +187,13 @@ function dkan_dataset_content_types_field_default_field_instances() {
         'type' => 'text_default',
         'weight' => 15,
       ),
+      'search_result' => array(
+        'label' => 'hidden',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 15,
+      ),
       'teaser' => array(
         'label' => 'above',
         'settings' => array(),
@@ -184,6 +228,13 @@ function dkan_dataset_content_types_field_default_field_instances() {
     'description' => 'Contact person’s email address. See <a href="http://project-open-data.github.io/schema/#common-core-required-fields">Project Open Data</a> for more info.',
     'display' => array(
       'default' => array(
+        'label' => 'hidden',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 18,
+      ),
+      'search_result' => array(
         'label' => 'hidden',
         'module' => 'text',
         'settings' => array(),
@@ -230,6 +281,13 @@ function dkan_dataset_content_types_field_default_field_instances() {
         'type' => 'text_default',
         'weight' => 17,
       ),
+      'search_result' => array(
+        'label' => 'hidden',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 17,
+      ),
       'teaser' => array(
         'label' => 'above',
         'settings' => array(),
@@ -264,6 +322,13 @@ function dkan_dataset_content_types_field_default_field_instances() {
     'description' => 'Provides some sort of description that helps understanding the data. This usually consists of a table providing explanation of columns meaning, values interpretation and acronyms/codes used in the data. Can be a URL to such a resource. See Project Open Data <a href="http://project-open-data.github.io/schema/#common-core-required-if-applicable-fields">data dictionary</a> for more info.',
     'display' => array(
       'default' => array(
+        'label' => 'hidden',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 16,
+      ),
+      'search_result' => array(
         'label' => 'hidden',
         'module' => 'text',
         'settings' => array(),
@@ -310,6 +375,13 @@ function dkan_dataset_content_types_field_default_field_instances() {
         'type' => 'list_default',
         'weight' => 8,
       ),
+      'search_result' => array(
+        'label' => 'hidden',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 8,
+      ),
       'teaser' => array(
         'label' => 'above',
         'settings' => array(),
@@ -343,6 +415,13 @@ function dkan_dataset_content_types_field_default_field_instances() {
     'description' => 'This is usually geographical or temporal but can also be other dimension e.g. Person can be used to describe granularity of a dataset about average income. See <a href="http://project-open-data.github.io/schema/#expanded-fields">DCAT Granularity</a> for more info.',
     'display' => array(
       'default' => array(
+        'label' => 'hidden',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 14,
+      ),
+      'search_result' => array(
         'label' => 'hidden',
         'module' => 'text',
         'settings' => array(),
@@ -394,6 +473,13 @@ function dkan_dataset_content_types_field_default_field_instances() {
         'type' => 'render_license',
         'weight' => 13,
       ),
+      'search_result' => array(
+        'label' => 'hidden',
+        'module' => 'dkan_dataset_content_types',
+        'settings' => array(),
+        'type' => 'render_license',
+        'weight' => 13,
+      ),
       'teaser' => array(
         'label' => 'above',
         'settings' => array(),
@@ -438,7 +524,7 @@ uk-ogl|UK Open Government Licence (OGL)',
         'sort_options' => 0,
       ),
       'type' => 'select_or_other',
-      'weight' => 3,
+      'weight' => 5,
     ),
   );
 
@@ -450,6 +536,13 @@ uk-ogl|UK Open Government Licence (OGL)',
     'description' => 'The degree to which this dataset <em>could</em> be made publicly-available, regardless of whether it has been made available. See <a href="http://project-open-data.github.io/schema/#common-core-required-fields">Project Open Data</a> for more info.',
     'display' => array(
       'default' => array(
+        'label' => 'hidden',
+        'module' => 'list',
+        'settings' => array(),
+        'type' => 'list_default',
+        'weight' => 19,
+      ),
+      'search_result' => array(
         'label' => 'hidden',
         'module' => 'list',
         'settings' => array(),
@@ -489,6 +582,13 @@ uk-ogl|UK Open Government Licence (OGL)',
     'description' => 'An internal link or link to an outside resource that provides additional context to the dataset.',
     'display' => array(
       'default' => array(
+        'label' => 'above',
+        'module' => 'link',
+        'settings' => array(),
+        'type' => 'link_default',
+        'weight' => 6,
+      ),
+      'search_result' => array(
         'label' => 'above',
         'module' => 'link',
         'settings' => array(),
@@ -546,6 +646,12 @@ uk-ogl|UK Open Government Licence (OGL)',
         'label' => 'above',
         'settings' => array(),
         'type' => 'hidden',
+        'weight' => 7,
+      ),
+      'search_result' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
         'weight' => 5,
       ),
       'teaser' => array(
@@ -583,6 +689,15 @@ uk-ogl|UK Open Government Licence (OGL)',
     'description' => 'Spatial coverage of the dataset. Will be rendered as GeoJSON. See DCAT <a href="http://www.w3.org/TR/vocab-dcat/#Property:dataset_spatial">spatial/geographical coverage</a> for more info.',
     'display' => array(
       'default' => array(
+        'label' => 'hidden',
+        'module' => 'geofield',
+        'settings' => array(
+          'data' => 'full',
+        ),
+        'type' => 'geofield_wkt',
+        'weight' => 10,
+      ),
+      'search_result' => array(
         'label' => 'hidden',
         'module' => 'geofield',
         'settings' => array(
@@ -653,6 +768,13 @@ uk-ogl|UK Open Government Licence (OGL)',
         'type' => 'text_default',
         'weight' => 11,
       ),
+      'search_result' => array(
+        'label' => 'hidden',
+        'module' => 'text',
+        'settings' => array(),
+        'type' => 'text_default',
+        'weight' => 11,
+      ),
       'teaser' => array(
         'label' => 'above',
         'settings' => array(),
@@ -691,6 +813,13 @@ uk-ogl|UK Open Government Licence (OGL)',
         'module' => 'taxonomy',
         'settings' => array(),
         'type' => 'taxonomy_term_reference_link',
+        'weight' => 3,
+      ),
+      'search_result' => array(
+        'label' => 'hidden',
+        'module' => 'taxonomy',
+        'settings' => array(),
+        'type' => 'taxonomy_term_reference_link',
         'weight' => 2,
       ),
       'teaser' => array(
@@ -717,7 +846,7 @@ uk-ogl|UK Open Government Licence (OGL)',
         'size' => 60,
       ),
       'type' => 'autocomplete_deluxe_taxonomy',
-      'weight' => 2,
+      'weight' => 4,
     ),
   );
 
@@ -728,6 +857,19 @@ uk-ogl|UK Open Government Licence (OGL)',
     'description' => 'The temporal period that the dataset covers. See DCAT <a href="http://www.w3.org/TR/vocab-dcat/#Property:dataset_temporal">temporal coverage</a> for more info.',
     'display' => array(
       'default' => array(
+        'label' => 'hidden',
+        'module' => 'date',
+        'settings' => array(
+          'format_type' => 'long',
+          'fromto' => 'both',
+          'multiple_from' => '',
+          'multiple_number' => '',
+          'multiple_to' => '',
+        ),
+        'type' => 'date_default',
+        'weight' => 12,
+      ),
+      'search_result' => array(
         'label' => 'hidden',
         'module' => 'date',
         'settings' => array(
@@ -788,6 +930,12 @@ uk-ogl|UK Open Government Licence (OGL)',
         'type' => 'text_default',
         'weight' => 0,
       ),
+      'search_result' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
       'teaser' => array(
         'label' => 'hidden',
         'module' => 'text',
@@ -832,6 +980,12 @@ uk-ogl|UK Open Government Licence (OGL)',
         'type' => 'hidden',
         'weight' => 6,
       ),
+      'search_result' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
       'teaser' => array(
         'label' => 'above',
         'settings' => array(),
@@ -869,6 +1023,12 @@ uk-ogl|UK Open Government Licence (OGL)',
         'settings' => array(),
         'type' => 'hidden',
         'weight' => 4,
+      ),
+      'search_result' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
       ),
       'teaser' => array(
         'label' => 'above',
@@ -918,6 +1078,12 @@ uk-ogl|UK Open Government Licence (OGL)',
         ),
         'type' => 'link_iframe_formatter_iframe',
         'weight' => 3,
+      ),
+      'search_result' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
       ),
       'teaser' => array(
         'label' => 'above',
@@ -971,6 +1137,12 @@ uk-ogl|UK Open Government Licence (OGL)',
         'type' => 'recline_default_formatter',
         'weight' => 1,
       ),
+      'search_result' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
       'teaser' => array(
         'label' => 'above',
         'settings' => array(),
@@ -987,6 +1159,9 @@ uk-ogl|UK Open Government Licence (OGL)',
       'file_directory' => '',
       'file_extensions' => 'csv html xls json xlsx doc docx rdf txt jpg png gif tiff pdf odf ods odt tsv geojson xml zip',
       'max_filesize' => '',
+      'resup' => 0,
+      'resup_autostart' => 0,
+      'resup_max_filesize' => '',
       'user_register_form' => FALSE,
     ),
     'widget' => array(
@@ -1034,6 +1209,12 @@ uk-ogl|UK Open Government Licence (OGL)',
         'type' => 'recline_default_formatter',
         'weight' => 1,
       ),
+      'search_result' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
+      ),
       'teaser' => array(
         'label' => 'above',
         'settings' => array(),
@@ -1051,6 +1232,9 @@ uk-ogl|UK Open Government Licence (OGL)',
       'file_directory' => '',
       'file_extensions' => 'csv html xls json xlsx doc docx rdf txt jpg png gif tiff pdf odf ods odt tsv geojson xml zip',
       'max_filesize' => '',
+      'resup' => 1,
+      'resup_autostart' => 1,
+      'resup_max_filesize' => '10GB',
       'title_field' => 0,
       'user_register_form' => FALSE,
     ),
@@ -1077,6 +1261,12 @@ uk-ogl|UK Open Government Licence (OGL)',
         'settings' => array(),
         'type' => 'hidden',
         'weight' => 5,
+      ),
+      'search_result' => array(
+        'label' => 'above',
+        'settings' => array(),
+        'type' => 'hidden',
+        'weight' => 0,
       ),
       'teaser' => array(
         'label' => 'above',

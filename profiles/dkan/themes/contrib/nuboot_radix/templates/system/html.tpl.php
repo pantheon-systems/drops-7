@@ -1,7 +1,7 @@
 <?php
 /**
  * @file
- * Nuboot's html template.
+ * Nuboot Radix html template.
  */
 ?>
 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML+RDFa 1.0//EN"

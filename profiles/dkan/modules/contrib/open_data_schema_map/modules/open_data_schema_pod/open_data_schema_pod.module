@@ -140,10 +140,6 @@ function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $mach
         if (isset($dataset['temporal']) && $dataset['temporal'] == "/") {
           unset($dataset['temporal']);
         }
-        if (isset($dataset['contactPoint']['hasEmail']) &&
-          !filter_var($dataset['contactPoint']['hasEmail'], FILTER_VALIDATE_EMAIL)) {
-          $dataset['contactPoint']['hasEmail'] = '';
-        }
         // License must be a URL.
         if (isset($dataset['license']) && !filter_var($dataset['license'], FILTER_VALIDATE_URL)) {
           // This function was introduced within the last year.
@@ -201,8 +197,20 @@ function open_data_schema_pod_open_data_schema_map_results_alter(&$result, $mach
         if (variable_get('odsm_data_json_defaults', TRUE)) {
           odsm_add_data_JSON_defaults($dataset);
         }
-        if (isset($dataset['contactPoint']) && $dataset['contactPoint']['hasEmail'] == 'mailto:') {
-          $dataset['contactPoint']['hasEmail'] = 'mailto:' . variable_get('site_mail', ini_get('sendmail_from'));
+        // Remove mailto: if included so we can validate the email address.
+        if (isset($dataset['contactPoint']['hasEmail']) && substr($dataset['contactPoint']['hasEmail'], 0, 7) === "mailto:") {
+          $dataset['contactPoint']['hasEmail'] = substr($dataset['contactPoint']['hasEmail'], 7);
+        }
+        if (isset($dataset['contactPoint']['hasEmail'])) {
+          // Add required mailto: if email address is valid.
+          if (filter_var($dataset['contactPoint']['hasEmail'], FILTER_VALIDATE_EMAIL)) {
+            $dataset['contactPoint']['hasEmail'] = 'mailto:' . $dataset['contactPoint']['hasEmail'];
+          }
+          // Remove completely if invalid. An empy hasEmail validates while a poorly formed or invalid email does not.
+          else {
+            watchdog('open_data_schema_map_od', 'Dataset %dataset contact point email: %email is not valid. Added default value for empty emails.', array('%dataset' => $dataset['title'], '%email' => $dataset['contactPoint']['hasEmail']), WATCHDOG_NOTICE, $link = NULL);
+            $dataset['contactPoint']['hasEmail'] = 'mailto:' . variable_get('pod_default_email', 'noemailprovided@usa.gov');
+          }
         }
         if (isset($dataset['publisher']) && !isset($dataset['publisher']['name'])) {
           global $base_url;
@@ -251,7 +259,7 @@ function odsm_add_data_JSON_defaults(&$dataset) {
     $dataset['keyword'] = array(t("No keyword provided"));
   }
   if ((isset($dataset['contactPoint']['hasEmail']) && !$dataset['contactPoint']['hasEmail']) || !isset($dataset['contactPoint']['hasEmail'])) {
-    $dataset['contactPoint']['hasEmail'] = 'mailto:' . variable_get('pod_default_email', 'noemailprovided@usa.gov');
+    $dataset['contactPoint']['hasEmail'] = variable_get('pod_default_email', 'noemailprovided@usa.gov');
   }
   if ((isset($dataset['contactPoint']['fn']) && !$dataset['contactPoint']['fn']) || !isset($dataset['contactPoint']['fn'])) {
     $dataset['contactPoint']['fn'] = t('unknown');

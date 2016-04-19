@@ -1,0 +1,82 @@
+<?php
+
+/**
+ * @file
+ * Permissions-related tests for workbench_moderation.module.
+ */
+
+class WorkbenchModerationPermsTestCase extends DrupalWebTestCase {
+  protected $content_type;
+  protected $editor_user;
+  protected $author_user;
+
+  function setUp($modules = array()) {
+    $modules = array_merge($modules, array('workbench_moderation'));
+    parent::setUp($modules);
+
+    // Create a new content type and enable moderation on it.
+    $type = $this->drupalCreateContentType();
+    $this->content_type = $type->name;
+    variable_set('node_options_' . $this->content_type, array('revision', 'moderation'));
+// The editor should be able to view all unpublished content, even without authoring perms.
+    $editor_permissions = array(
+      0 => 'view all unpublished content',
+    );
+    $this->editor_user = $this->drupalCreateUser($editor_permissions);
+// The Author will create the content.
+    $author_permissions = array(
+      0 => 'create ' . $type->name . ' content',
+    );
+    $this->author_user = $this->drupalCreateUser($author_permissions);
+  }
+}
+
+class WorkbenchModerationViewUnpublishedTestCase extends WorkbenchModerationPermsTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'View all unpublished content',
+      'description' => 'Create a user who can view unpublished content. Create a node and leave it unpublished. Try to view it.',
+      'group' => 'Workbench Moderation',
+    );
+  }
+
+  function setUp($modules = array()) {
+    parent::setUp($modules);
+    $this->drupalLogin($this->author_user);
+  }
+
+  function testViewUnpublished() {
+    $is_moderated = workbench_moderation_node_type_moderated($this->content_type);
+    $this->assertTrue($is_moderated, t('The content type is moderated.'));
+
+    // Create a new node and make sure it is unpublished.
+    $body_name = 'body[' . LANGUAGE_NONE . '][0]';
+    $edit = array(
+      'title' => $this->randomName(),
+      "{$body_name}[value]" => $this->randomString(128),
+      "{$body_name}[format]" => filter_default_format(),
+    );
+    $this->drupalPost("node/add/{$this->content_type}", $edit, t('Save'));
+
+    // Get the new node.
+    $node = $this->drupalGetNodeByTitle($edit['title']);
+
+    $this->assertFalse($node->status, t('New node is unpublished'));
+    $this->assertTrue(isset($node->workbench_moderation), t('Workbench moderation information is present on the node object'));
+    $this->assertFalse(isset($node->workbench_moderation['published']), t('Workbench moderation has no published revision'));
+    $this->assertEqual($node->uid, $this->author_user->uid, 'This node was authored by the author user.');
+    $this->verbose(print_r($this->loggedInUser, TRUE));
+
+    $this->drupalLogin($this->editor_user);
+    global $user;
+    $user = user_load($this->loggedInUser->uid);
+    $this->drupalGet($node->path['source']);
+    $this->assertFalse($node->status, t('This node is unpublished.'));
+    $this->assertResponse(200);
+    $this->assertFalse($node->uid == $this->loggedInUser->uid, t('The current user is not the author of this node.'));
+    $this->assertEqual($user->uid, $this->loggedInUser->uid, 'The current global user is the same as the logged in user.');
+    $this->assertEqual($user->uid, $this->editor_user->uid, 'The current user is the editor user.');
+    $this->assertTrue(user_access('view all unpublished content'), 'Current user has permission to view all unpublished content');
+  }
+}

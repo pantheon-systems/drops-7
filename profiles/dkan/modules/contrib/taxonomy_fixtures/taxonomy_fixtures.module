@@ -1,0 +1,145 @@
+<?php
+/**
+ * @file
+ * Code for the Taxonomy fixtures module.
+ */
+define(
+  "TAXONOMY_FIXTURES_VOCABULARY_HOOK_IMPLEMENTS",
+  serialize(
+    array(
+      'export_path',
+      'map',
+    )
+  )
+);
+
+include_once 'includes/TermFixtureExport.inc';
+include_once 'includes/TermFixtureImport.inc';
+
+/**
+ * Importe exported terms.
+ */
+
+/**
+ * Imports default ltar terms.
+ */
+function taxonomy_fixtures_import_terms($vocabularies = array()) {
+  if (count($vocabularies) == 0) {
+    $vocabularies = taxonomy_fixtures_get_vocabularies();
+  }
+  $imports = array();
+  foreach ($vocabularies as $machine_name => $config) {
+    // Set json file name.
+    $data_file = array(DRUPAL_ROOT, $config['export_path'], $machine_name . '.json');
+    $data_file = implode('/', $data_file);
+    $data_file = file_get_contents($data_file);
+    $terms = drupal_json_decode($data_file);
+    // Load Vocabulary.
+    $vocabulary = taxonomy_vocabulary_machine_name_load($machine_name);
+    foreach ($terms as $key => $term) {
+      $import = new TermFixtureImport(
+        $term,
+        $vocabulary,
+        $config['map'],
+        $config['export_path']
+      );
+      $imports[] = $import;
+    }
+  }
+
+  while(count($imports)) {
+    foreach ($imports as $key => $import) {
+      if ($import->safeToSave()) {
+        //print_r('Saving ' . $import->term->name . ' for ');
+        $import->save();
+        unset($imports[$key]);
+      }
+    }
+  }
+}
+
+
+/**
+ * Exports updated terms.
+ */
+function taxonomy_fixtures_export_terms($vocabularies = array()) {
+  if (count($vocabularies) == 0) {
+    $vocabularies = taxonomy_fixtures_get_vocabularies();
+  }
+  // Do all the exporting.
+  foreach ($vocabularies as $machine_name => $config) {
+    $export = array();
+    taxonomy_fixtures_delete_files($config['export_path']);
+    // Set json file name.
+    $data_file = array(DRUPAL_ROOT, $config['export_path'], $machine_name . '.json');
+    $data_file = implode('/', $data_file);
+    // Loads vocabulary.
+    $vocabulary = taxonomy_vocabulary_machine_name_load($machine_name);
+    if ($vocabulary && isset($vocabulary->vid)) {
+      $fixture = array();
+      $terms = taxonomy_get_tree($vocabulary->vid);
+      foreach ($terms as $term) {
+        $term = new TermFixtureExport(
+          $term->tid,
+          $config['map'],
+          $config['export_path']
+        );
+        $fixture[] = $term->export;
+      }
+      $fixture = drupal_json_encode($fixture);
+      file_put_contents($data_file, $fixture);
+    }
+  }
+}
+
+/**
+ * DANGEROUS!!! Deletes all taxonomy terms present in subscribed vocabularies.
+ */
+function taxonomy_fixtures_delete_terms($vocabularies = array()) {
+  if (count($vocabularies) == 0) {
+    $vocabularies = taxonomy_fixtures_get_vocabularies();
+  }
+  foreach ($vocabularies as $vocabulary => $instance) {
+    $vocabulary = taxonomy_vocabulary_machine_name_load($vocabulary);
+    $terms = taxonomy_get_tree($vocabulary->vid);
+    foreach ($terms as $term) {
+      taxonomy_term_delete($term->tid);
+    }  
+  }
+}
+
+/**
+ * Helper that gets and validates implementations taxonomy_fixtures_vocabulary.
+ */
+function taxonomy_fixtures_get_vocabularies() {
+  // Every module that taxonomy_fixtures_vocabulary can subscribe a
+  // vocabulary for import/export.
+  $vocabularies = array();
+  foreach (module_implements('taxonomy_fixtures_vocabulary') as $module) {
+    $function = $module . '_taxonomy_fixtures_vocabulary';
+    $modules = $function();
+    $vocabularies = array_merge($vocabularies, $modules);
+  }
+  // Make sure all vocabularies are properly configured.
+  foreach ($vocabularies as $key => $value) {
+    foreach(unserialize(TAXONOMY_FIXTURES_VOCABULARY_HOOK_IMPLEMENTS) as $argument) {
+      if (!array_key_exists($argument, $value)) {
+        unset($vocabularies[$key]);
+        break;
+      }
+    }
+  }
+  return $vocabularies;
+}
+
+/**
+ * Helper that deletes files at a specific path.
+ */
+function taxonomy_fixtures_delete_files($path) {
+  $files = glob($path . '/*');
+  foreach($files as $file) {
+    if(is_file($file)) {
+      unlink($file);
+    }    
+  }
+}

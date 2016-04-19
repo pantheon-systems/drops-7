@@ -14,11 +14,15 @@ module.exports = function(grunt) {
       controls: {
         src: ['src/controls/*.js'],
         dest: 'dist/<%= pkg.name %>.controls.min.js'
+      },
+      backends: {
+        src: ['src/backends/*.js'],
+        dest: 'dist/recline.backends.min.js'
       }
     },
     uglify: {
       options: {
-        banner: '/*! <%= pkg.name %> v0.1 */\n'
+        banner: '/*! <%= pkg.name %> v0.3.0 */\n'
       },
       core: {
         src: ['src/*.js'],
@@ -27,6 +31,10 @@ module.exports = function(grunt) {
       controls: {
         src: ['src/controls/*.js'],
         dest: 'dist/<%= pkg.name %>.controls.min.js'
+      },
+      backends: {
+        src: ['src/backends/*.js'],
+        dest: 'dist/recline.backends.min.js'
       }
     },
     express: {
@@ -69,14 +77,12 @@ module.exports = function(grunt) {
   // Default task(s).
   grunt.registerTask('default', [
     'express',
-    'open',
     'watch',
   ]);
 
   grunt.registerTask('build', [
     'jshint',
-    'concat',
-    'uglify'
+    'concat'
   ]);
 
   grunt.registerTask('lint', ['jshint']);

@@ -30,6 +30,7 @@ function visualization_entity_charts_attach_libraries(&$element) {
     'recline',
     'd3',
     'nvd3',
+    'spectrum',
     'reclineViewNvd3',
     'gdocs',
     'csv',
@@ -85,7 +86,6 @@ function visualization_entity_charts_theme($existing, $type, $theme, $path) {
  */
 function visualization_entity_charts_libraries_info() {
   $libraries = array();
-
   $libraries['nvd3'] = array(
     'name' => 'NVD3',
     'vendor url' => 'https://github.com/novus/nvd3',
@@ -198,6 +198,20 @@ function visualization_entity_charts_libraries_info() {
       ),
     ),
   );
+  
+  $libraries['spectrum'] = array(
+    'name' => 'spectrum',
+    'vendor url' => 'https://github.com/bgrins/spectrum',
+    'version' => '0.0.1',
+    'files' => array(
+      'js' => array(
+        'spectrum.js'
+      ),
+      'css' => array(
+        'spectrum.css'
+      )
+    )
+  );
 
   return $libraries;
 }
@@ -255,6 +269,7 @@ function visualization_entity_load_required_libraries(){
   libraries_load('recline');
   libraries_load('d3');
   libraries_load('nvd3');
+  libraries_load('spectrum');
   libraries_load('reclineViewNvd3');
   libraries_load('gdocs');
   libraries_load('csv');

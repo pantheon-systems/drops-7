@@ -7,16 +7,19 @@ this.recline.View = this.recline.View || {};
 'use strict';
 
   my.discreteBarChartControls = recline.View.nvd3.BaseControl.extend({
-    template: '<div class="form-group checkbox">' +
-                '<label for="control-chart-stagger-labels">' +
-                  '<input type="checkbox" id="control-chart-stagger-labels" {{#options.staggerLabels}}checked{{/options.staggerLabels}}/> Stagger Labels' +
-                '</label>' +
-              '</div>' +
-              '<div class="form-group checkbox">' +
-                '<label for="control-chart-show-values">' +
-                  '<input type="checkbox" id="control-chart-show-values" {{#options.showValues}}checked{{/options.showValues}}/> Show Values' +
-                '</label>' +
-              '</div>',
+    template: '<fieldset>' +
+                '<legend>Extra</legend>' +
+                '<div class="form-group checkbox">' +
+                  '<label for="control-chart-stagger-labels">' +
+                    '<input type="checkbox" id="control-chart-stagger-labels" {{#options.staggerLabels}}checked{{/options.staggerLabels}}/> Stagger Labels' +
+                  '</label>' +
+                '</div>' +
+                '<div class="form-group checkbox">' +
+                  '<label for="control-chart-show-values">' +
+                    '<input type="checkbox" id="control-chart-show-values" {{#options.showValues}}checked{{/options.showValues}}/> Show Values' +
+                  '</label>' +
+                '</div>' +
+              '</fieldset>',
     events: {
       'change input[type="checkbox"]': 'update',
     },

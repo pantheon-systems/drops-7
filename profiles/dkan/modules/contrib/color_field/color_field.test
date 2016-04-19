@@ -1,0 +1,150 @@
+<?php
+/**
+ * @file
+ * Tests for Color Field.
+ */
+
+/**
+ * Defines a class for testing color field module (Plain Text).
+ */
+class ColodFieldPlainTextTest extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Color Field (Plain Text)',
+      'description' => 'Check Color Field Main features for Plain Text Widget.',
+      'group' => 'Color Field',
+    );
+  }
+
+  function setUp() {
+    // Enable the color_field module.
+    parent::setUp(array('field_ui', 'color_field'));
+  }
+
+  /**
+   * Test basic functionality of the color field.
+   *
+   * - Creates a content type.
+   * - Adds a single-valued to it.
+   * - Adds a multivalued to it.
+   * - Creates a node of the new type.
+   * - Populates the single-valued field.
+   * - Populates the multivalued field with two items.
+   * - Tests the result.
+   */
+  function testColorFieldDefault() {
+    $content_type_friendly = $this->randomName(20);
+    $content_type_machine = strtolower($this->randomName(10));
+    $title = $this->randomName(20);
+
+    // Create and login user.
+    $account = $this->drupalCreateUser(array('administer content types'));
+    $this->drupalLogin($account);
+
+    $this->drupalGet('admin/structure/types');
+
+    // Create the content type.
+    $this->clickLink(t('Add content type'));
+
+    $edit = array (
+      'name' => $content_type_friendly,
+      'type' => $content_type_machine,
+    );
+    $this->drupalPost(NULL, $edit, t('Save and add fields'));
+    $this->assertText(t('The content type @name has been added.', array('@name' => $content_type_friendly)));
+    
+    $single_field_name_friendly = $this->randomName(20);
+    $single_field_name_machine = strtolower($this->randomName(10));
+    $multivalue_field_name_friendly = $this->randomName(20);
+    $multivalue_field_name_machine = strtolower($this->randomName(10));
+
+    // Description of fields to be created;
+    $fields[$single_field_name_machine] = array(
+      'widget_type' => 'color_field_default_widget',
+      'cardinality' => '1',
+      'label' => $single_field_name_friendly,
+    );
+
+    $fields[$multivalue_field_name_machine] = array(
+      'widget_type' => 'color_field_default_widget',
+      'cardinality' => -1,
+      'label' => $multivalue_field_name_friendly,
+    );
+
+    foreach ($fields as $fieldname => $details) {
+      $this->create_field($fieldname, $details);
+    }
+
+    // Somehow clicking "save" isn't enough, and we have to do a
+    // node_types_rebuild().
+    node_types_rebuild();
+    menu_rebuild();
+    $type_exists = db_query('SELECT 1 FROM {node_type} WHERE type = :type', array(':type' => $content_type_machine))->fetchField();
+    $this->assertTrue($type_exists, 'The new content type has been created in the database.');
+
+    $permission = 'create ' . $content_type_machine . ' content';
+    $permission_edit = 'edit ' . $content_type_machine . ' content';
+    // Reset the permissions cache.
+    $this->checkPermissions(array($permission), TRUE);
+
+    // Now that we have a new content type, create a user that has privileges
+    // on the content type.
+    $account = $this->drupalCreateUser(array($permission));
+    $this->drupalLogin($account);
+
+    $this->drupalGet('node/add/' . $content_type_machine);
+
+    // Add a node.
+    $edit = array(
+      'title' => $title,
+      'field_' . $single_field_name_machine . '[und][0][rgb]' => '#000001',
+      'field_' . $multivalue_field_name_machine . '[und][0][rgb]' => '#000002',
+    );
+    // We want to add a 2nd item to the multivalue field, so hit "add another".
+    $this->drupalPost(NULL, $edit, t('Add another item'));
+
+    $edit = array(
+      'field_' . $multivalue_field_name_machine . '[und][1][rgb]' => '#000003',
+    );
+    // Now we can fill in the second item in the multivalue field and save.
+    $this->drupalPost(NULL, $edit, t('Save'));
+    $this->assertText(t('@content_type_friendly @title has been created', array('@content_type_friendly' => $content_type_friendly, '@title' => $title)));
+
+    $output_strings = $this->xpath("//div[contains(@class,'field-type-color-field-rgb')]/div/div/text()");
+
+    $this->assertEqual((string)$output_strings[0], "#000001");
+    $this->assertEqual((string)$output_strings[1], "#000002");
+    $this->assertEqual((string)$output_strings[2], "#000003");
+  }
+
+  /**
+   * Utility function to create fields on a content type.
+   * @param $field_name
+   *   Name of the field, like field_something
+   * @param $widget_type
+   *   Widget type, like field_example_3text
+   * @param $cardinality
+   *   Cardinality
+   */
+  protected function create_field($field_name, $details) {
+    $edit = array(
+      'fields[_add_new_field][label]' => $details['label'],
+      'fields[_add_new_field][field_name]' => $field_name,
+      'fields[_add_new_field][type]' => 'color_field_rgb',
+      'fields[_add_new_field][widget_type]' => $details['widget_type'],
+
+    );
+    $this->drupalPost(NULL, $edit, t('Save'));
+
+    // There are no settings for this, so just press the button.
+    $this->drupalPost(NULL, array(), t('Save field settings'));
+
+    $edit = array('field[cardinality]' => (string)$details['cardinality']);
+
+    // Using all the default settings, so press the button.
+    $this->drupalPost(NULL, $edit, t('Save settings'));
+    debug(t('Saved settings for field %field_name with widget %widget_type and cardinality %cardinality', array('%field_name' => $field_name, '%widget_type' => $details['widget_type'], '%cardinality' => $details['cardinality'])));
+    $this->assertText(t('Saved @name configuration.', array('@name' => $details['label'])));
+  }
+}

@@ -1,7 +1,7 @@
 name = DKAN Dataset Groups
 description = Custom elements for groups.
 core = 7.x
-package = DKAN Features
+package = DKAN
 version = 7.x-1.x
 project = dkan_dataset_groups
 dependencies[] = ctools
@@ -32,6 +32,7 @@ features[ctools][] = facetapi:facetapi_defaults:1
 features[ctools][] = field_group:field_group:1
 features[ctools][] = strongarm:strongarm:1
 features[ctools][] = views:views_default:3.0
+features[facetapi][] = search_api@groups_di::changed
 features[facetapi][] = search_api@groups_di:block:author
 features[facetapi][] = search_api@groups_di:block:changed
 features[facetapi][] = search_api@groups_di:block:field_license

@@ -1,0 +1,70 @@
+<?php
+
+/**
+ * Updates existing badges to new specification format.
+ */
+function menu_badges_update_7102(&$sandbox = NULL) {
+  // Update menu tab definitions to new format.
+  $tab_badges = variable_get('menu_badges_tab_callbacks', array());
+  foreach ($tab_badges as $path => $info) {
+    if (is_string($info)) {
+      $tab_badges[$path] = _menu_badges_7102_fix_deprecated_callback($info);
+    }
+  }
+  variable_set('menu_badges_tab_callbacks', $tab_badges);
+  
+  // Update normal menu links to the new format.
+  $results = db_select('menu_links', 'ml')
+              ->fields('ml', array('mlid', 'options'))
+              ->condition('options', '%menu_badges%', 'LIKE')
+              ->execute();
+  foreach ($results as $record) {
+    $item = menu_link_load($record->mlid);
+    $arguments = !empty($item['options']['link_badge']['arguments']) ? $item['options']['link_badge']['arguments'] : array();
+    $item['options']['link_badge'] = _menu_badges_7102_fix_deprecated_callback($item['options']['link_badge']['callback'], $arguments);
+    menu_link_save($item);
+  }
+  cache_clear_all(NULL, 'cache_menu');
+  cache_clear_all('variables', 'cache_bootstrap');
+  menu_rebuild();
+  return $ret;
+}
+
+/**
+ * Update to array-based format for version 7.x-1.2
+ * @param $callback
+ * @param $arguments
+ */
+function _menu_badges_7102_fix_deprecated_callback($callback, $arguments = array()) {
+  $key = $callback;
+  if (is_null($arguments)) {
+    $arguments = array();
+  }
+  switch ($callback) {
+    case 'menu_badges_ur_pending_incoming_current':
+      $callback = 'menu_badges_ur_pending';
+      $arguments += array('role' => 'requestee');
+      break;
+    case 'menu_badges_ur_pending_incoming_uid':
+      $callback = 'menu_badges_ur_pending';
+      $arguments += array('role' => 'requestee', 'menu_arg' => 1);
+      break;
+    case 'menu_badges_ur_pending_outgoing_current':
+      $callback = 'menu_badges_ur_pending';
+      $arguments += array('role' => 'requester');
+      break;
+    case 'menu_badges_ur_pending_outgoing_uid':
+      $callback = 'menu_badges_ur_pending';
+      $arguments += array('role' => 'requester', 'menu_arg' => 1);
+      break;
+    case 'menu_badges_privatemsg_unread_count_uid':
+      $callback = 'menu_badges_privatemsg_unread_count';
+      $arguments += array('menu_arg' => 1);
+      break;
+  }
+  return array(
+    'key' => $key,
+    'callback' => $callback,
+    'arguments' => $arguments,
+  );
+}

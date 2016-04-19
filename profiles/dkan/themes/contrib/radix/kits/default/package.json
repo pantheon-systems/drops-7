@@ -1,27 +1,26 @@
 {
-  "name": "Radix",
-  "version": "3.0.0",
-  "description": "Base theme for Drupal",
+  "name": "{{Name}}",
+  "description": "{{Description}}",
+  "private": true,
   "scripts": {
+    "setup": "npm install && bower install",
     "postinstall": "find node_modules/ -name '*.info' -type f -delete"
   },
-  "keywords": [
-    "radix",
-    "drupal",
-    "theme"
-  ],
-  "author": "Arshad Chummun <arshad@chummun.com> (http://arshad.github.io/)",
   "dependencies": {
-    "gulp-rename": "~1.2.2",
-    "gulp-compass": "~2.1.0",
-    "gulp-shell": "~0.4.1",
-    "gulp-livereload": "~3.8.0",
-    "imagemin-pngcrush": "~4.1.0",
-    "gulp-imagemin": "~2.2.1",
-    "gulp-sass": "~2.0.1",
-    "gulp": "~3.8.11",
     "browser-sync": "~2.7.4",
-    "gulp-util": "~3.0.5",
-    "gulp-plumber": "~1.0.1"
+    "imagemin-pngcrush": "~4.1.0",
+    "node-sass": "^3.4.1",
+    "gulp": "~3.9.0",
+    "gulp-autoprefixer": "^3.1.0",
+    "gulp-concat": "^2.6.0",
+    "gulp-imagemin": "~2.2.1",
+    "gulp-notify": "^2.2.0",
+    "gulp-plumber": "~1.0.1",
+    "gulp-rename": "^1.2.2",
+    "gulp-sass": "~2.0.1",
+    "gulp-sass-glob": "0.0.2",
+    "gulp-shell": "~0.4.1",
+    "gulp-sourcemaps": "^1.6.0",
+    "gulp-uglify": "^1.5.1"
   }
 }

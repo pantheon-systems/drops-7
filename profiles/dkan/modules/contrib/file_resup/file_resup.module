@@ -1,0 +1,479 @@
+<?php
+
+/**
+ * @file
+ * Written by Henri MEDOT <henri.medot[AT]absyx[DOT]fr>
+ * http://www.absyx.fr
+ */
+
+require_once dirname(__FILE__) . '/file_resup.field.inc';
+
+define('FILE_RESUP_DEFAULT_CHUNKSIZE', 2 * 1024 * 1024);
+define('FILE_RESUP_TEMPORARY', 'file_resup_temporary');
+
+/**
+ * Implements hook_permission().
+ */
+function file_resup_permission() {
+  return array(
+    'upload via file_resup' => array('title' => t('Upload via <em>File Resumable Upload</em>')),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function file_resup_menu() {
+  $items['file_resup/upload'] = array(
+    'page callback' => 'file_resup_upload',
+    'access arguments' => array('upload via file_resup'),
+    'type' => MENU_CALLBACK,
+  );
+  return $items;
+}
+
+/**
+ * Menu callback to upload a file chunk.
+ */
+function file_resup_upload() {
+  // Get the form build ID.
+  $form_parents = func_get_args();
+  $form_build_id = (string) array_pop($form_parents);
+  if (empty($_REQUEST['form_build_id']) || $form_build_id != $_REQUEST['form_build_id']) {
+    drupal_exit();
+  }
+
+  // Get a valid upload ID.
+  if (empty($_REQUEST['resup_file_id']) || !($upload_id = file_resup_upload_id($_REQUEST['resup_file_id']))) {
+    drupal_exit();
+  }
+
+  // On method GET...
+  if ($_SERVER['REQUEST_METHOD'] == 'GET') {
+    // Attempt to find a record for the upload.
+    $upload = file_resup_upload_load($upload_id);
+
+    // If found, return how many chunks were uploaded so far.
+    if ($upload) {
+      return file_resup_plain_output($upload->uploaded_chunks);
+    }
+
+    // If not, prepare a new upload.
+    // Get the form.
+    $_POST['form_build_id'] = $form_build_id;
+    list($form) = ajax_get_form();
+
+    // Get the form element.
+    $element = drupal_array_get_nested_value($form, $form_parents);
+    if (!$element) {
+      drupal_exit();
+    }
+
+    // Retrieve the file name and size.
+    if (empty($_GET['resup_file_name']) || empty($_GET['resup_file_size'])) {
+      drupal_exit();
+    }
+    $filename = $_GET['resup_file_name'];
+    $filesize = $_GET['resup_file_size'];
+
+    // Validate the file name length.
+    if (strlen($filename) > 240) {
+      drupal_exit();
+    }
+
+    // Validate the file extension.
+    if (isset($element['#file_resup_upload_validators']['file_validate_extensions'][0])) {
+      $regex = '/\.(?:' . preg_replace('/ +/', '|', preg_quote($element['#file_resup_upload_validators']['file_validate_extensions'][0])) . ')$/i';
+      if (!preg_match($regex, $filename)) {
+        drupal_exit();
+      }
+    }
+
+    // Validate the file size.
+    if (!preg_match('`^[1-9]\d*$`', $filesize) || $filesize > $element['#file_resup_upload_validators']['file_validate_size'][0]) {
+      drupal_exit();
+    }
+
+    // Retrieve the upload location scheme from the form element.
+    $scheme = file_uri_scheme($element['#upload_location']);
+    if (!$scheme || !file_stream_wrapper_valid_scheme($scheme)) {
+      drupal_exit();
+    }
+
+    // Prepare the file_resup_temporary private directory.
+    $directory = $scheme . '://' . FILE_RESUP_TEMPORARY;
+    if (!file_prepare_directory($directory, FILE_CREATE_DIRECTORY)) {
+      drupal_exit();
+    }
+    file_create_htaccess($directory, TRUE);
+
+    // Insert a new upload record.
+    $upload = new stdClass();
+    $upload->upload_id = $upload_id;
+    $upload->filename = $filename;
+    $upload->filesize = $filesize;
+    $upload->scheme = $scheme;
+    $upload->timestamp = time();
+    try {
+      if (!drupal_write_record('file_resup', $upload)) {
+        drupal_exit();
+      }
+    }
+    catch (Exception $e) {
+      drupal_exit();
+    }
+
+    // No upload file should exist at this point.
+    file_resup_upload_delete_file($upload);
+
+    // Return 0 as the number of uploaded chunks.
+    return file_resup_plain_output('0');
+  }
+
+  // On method POST...
+  // Ensure we have a valid uploaded file.
+  if (empty($_FILES['resup_chunk'])) {
+    drupal_exit();
+  }
+  $file = $_FILES['resup_chunk'];
+  if ($file['error'] != UPLOAD_ERR_OK || !is_uploaded_file($file['tmp_name']) || !$file['size'] || $file['size'] > file_resup_chunksize()) {
+    drupal_exit();
+  }
+
+  // Validate the format of the chunk number.
+  if (empty($_POST['resup_chunk_number']) || !preg_match('`^[1-9]\d*$`', $_POST['resup_chunk_number'])) {
+    drupal_exit();
+  }
+  $chunk_number = (int) $_POST['resup_chunk_number'];
+
+  // Get the upload record.
+  $upload = file_resup_upload_load($upload_id);
+
+  // If no record was found, return nothing.
+  if (!$upload) {
+    drupal_exit();
+  }
+
+  // Validate the chunk number.
+  if ($chunk_number > ceil($upload->filesize / file_resup_chunksize())) {
+    drupal_exit();
+  }
+
+  // If we were given an unexpected chunk number, return what we expected.
+  if ($chunk_number != $upload->uploaded_chunks + 1) {
+    return file_resup_plain_output($upload->uploaded_chunks);
+  }
+
+  // Open the upload file.
+  $fp = @fopen(file_resup_upload_uri($upload), 'ab');
+  if (!$fp) {
+    drupal_exit();
+  }
+
+  // Acquire an exclusive lock.
+  if (!flock($fp, LOCK_EX)) {
+    fclose($fp);
+    drupal_exit();
+  }
+
+  // Update the record and append the chunk.
+  $transaction = db_transaction();
+  try {
+    $affected = db_update('file_resup')
+      ->fields(array(
+        'uploaded_chunks' => $chunk_number,
+        'timestamp' => time(),
+      ))
+      ->condition('upload_id', $upload_id)
+      ->condition('uploaded_chunks', $chunk_number - 1)
+      ->execute();
+    if (!$affected || ($contents = file_get_contents($file['tmp_name'])) === FALSE || !fwrite($fp, $contents)) {
+      throw new Exception();
+    }
+  }
+  catch (Exception $e) {
+    $transaction->rollback();
+    flock($fp, LOCK_UN);
+    fclose($fp);
+    drupal_exit();
+  }
+
+  // Commit the transaction.
+  unset($transaction);
+
+  // Flush the output then unlock and close the file.
+  fflush($fp);
+  flock($fp, LOCK_UN);
+  fclose($fp);
+
+  // Return the updated number of uploaded chunks.
+  file_resup_plain_output($chunk_number);
+}
+
+/**
+ * Returns data as plain text.
+ */
+function file_resup_plain_output($text = '') {
+  drupal_page_is_cacheable(FALSE);
+  drupal_add_http_header('Content-Type', 'text/plain');
+  echo $text;
+}
+
+/**
+ * Save a completed upload.
+ */
+function file_resup_save_upload($element, $resup_file_id) {
+  global $user;
+
+  // Get a valid upload ID.
+  $upload_id = file_resup_upload_id($resup_file_id);
+  if (!$upload_id) {
+    return FALSE;
+  }
+
+  // Get the upload record.
+  $upload = file_resup_upload_load($upload_id);
+  if (!$upload) {
+    return FALSE;
+  }
+
+  // The file may have already been uploaded before.
+  if ($upload->fid) {
+    return file_load($upload->fid);
+  }
+
+  // Ensure the upload is complete.
+  if ($upload->uploaded_chunks != ceil($upload->filesize / file_resup_chunksize())) {
+    return FALSE;
+  }
+
+  // Ensure the destination is still valid.
+  $destination = $element['#upload_location'];
+  $destination_scheme = file_uri_scheme($destination);
+  if (!$destination_scheme || $destination_scheme != $upload->scheme) {
+    return FALSE;
+  }
+
+  // Ensure the uploaded file is present.
+  $upload_uri = file_resup_upload_uri($upload);
+  if (!file_exists($upload_uri)) {
+    return FALSE;
+  }
+
+  // Begin building the file object.
+  $file = new stdClass();
+  $file->uid = $user->uid;
+  $file->status = 0;
+  $file->filename = trim(drupal_basename($upload->filename), '.');
+  $file->uri = $upload_uri;
+  $file->filemime = file_get_mimetype($file->filename);
+  $file->filesize = $upload->filesize;
+
+  // Support Transliteration.
+  if (module_exists('transliteration') && variable_get('transliteration_file_uploads', TRUE)) {
+    $orig_filename = $file->filename;
+    $file->filename = transliteration_clean_filename($file->filename);
+  }
+
+  // Munge the filename.
+  $validators = $element['#file_resup_upload_validators'];
+  $extensions = '';
+  if (isset($validators['file_validate_extensions'])) {
+    if (isset($validators['file_validate_extensions'][0])) {
+      $extensions = $validators['file_validate_extensions'][0];
+    }
+    else {
+      unset($validators['file_validate_extensions']);
+    }
+  }
+  else {
+    $extensions = 'jpg jpeg gif png txt doc xls pdf ppt pps odt ods odp';
+    $validators['file_validate_extensions'][] = $extensions;
+  }
+  if (!empty($extensions)) {
+    $file->filename = file_munge_filename($file->filename, $extensions);
+  }
+
+  // Rename potentially executable files.
+  if (!variable_get('allow_insecure_uploads', 0) && preg_match('/\.(php|pl|py|cgi|asp|js)(\.|$)/i', $file->filename) && (substr($file->filename, -4) != '.txt')) {
+    $file->filemime = 'text/plain';
+    $file->uri .= '.txt';
+    $file->filename .= '.txt';
+    if (!empty($extensions)) {
+      $validators['file_validate_extensions'][0] .= ' txt';
+      drupal_set_message(t('For security reasons, your upload has been renamed to %filename.', array('%filename' => $file->filename)));
+    }
+  }
+
+  // Get the upload element name.
+  $element_parents = $element['#parents'];
+  if (end($element_parents) == 'resup') {
+    unset($element_parents[key($element_parents)]);
+  }
+  $form_field_name = implode('_', $element_parents);
+
+  // Run validators.
+  $validators['file_validate_name_length'] = array();
+  $errors = file_validate($file, $validators);
+  if ($errors) {
+    $message = t('The specified file %name could not be uploaded.', array('%name' => $file->filename));
+    if (count($errors) > 1) {
+      $message .= theme('item_list', array('items' => $errors));
+    }
+    else {
+      $message .= ' ' . array_pop($errors);
+    }
+    form_set_error($form_field_name, $message);
+    return FALSE;
+  }
+
+  // Prepare the destination directory.
+  if (!file_prepare_directory($destination, FILE_CREATE_DIRECTORY)) {
+    watchdog('file_resup', 'The upload directory %directory for the file field !name could not be created or is not accessible. A newly uploaded file could not be saved in this directory as a consequence, and the upload was canceled.', array('%directory' => $destination, '!name' => $element['#field_name']));
+    form_set_error($form_field_name, t('The file could not be uploaded.'));
+    return FALSE;
+  }
+
+  // Complete the destination.
+  if (substr($destination, -1) != '/') {
+    $destination .= '/';
+  }
+  $destination = file_destination($destination . $file->filename, FILE_EXISTS_RENAME);
+
+  // Move the uploaded file.
+  $file->uri = $destination;
+  if (!rename($upload_uri, $file->uri)) {
+    form_set_error($form_field_name, t('File upload error. Could not move uploaded file.'));
+    watchdog('file_resup', 'Upload error. Could not move uploaded file %file to destination %destination.', array('%file' => $file->filename, '%destination' => $file->uri));
+    return FALSE;
+  }
+
+  // Set the permissions on the new file.
+  drupal_chmod($file->uri);
+
+  // Transliteration support: restore the original filename if configured so.
+  if (isset($orig_filename) && !variable_get('transliteration_file_uploads_display_name', TRUE)) {
+    $file->filename = $orig_filename;
+  }
+
+  // Save the file object to the database.
+  $file->file_resup_filesize = $upload->filesize;
+  $file = file_save($file);
+  if (!$file) {
+    return FALSE;
+  }
+
+  // Update the upload record.
+  $upload->fid = $file->fid;
+  drupal_write_record('file_resup', $upload, 'upload_id');
+
+  return $file;
+}
+
+/**
+ * Implements hook_file_presave().
+ */
+function file_resup_file_presave($file) {
+  // On 32bit platforms, filesize() may return unexpected results for files
+  // larger than 2 GB and make drupal_write_record() crash.
+  if (isset($file->file_resup_filesize)) {
+    $file->filesize = $file->file_resup_filesize;
+  }
+  elseif (isset($file->original) && $file->original->filesize > PHP_INT_MAX) {
+    // @todo We should not rely on $file->original because file might have been
+    // replaced, but could not figure out a better solution so far...
+    $file->filesize = $file->original->filesize;
+  }
+}
+
+/**
+ * Implements hook_file_insert().
+ */
+function file_resup_file_insert($file) {
+  // drupal_write_record() cannot write a file size greater than 2 GB on 32bit
+  // platforms.
+  if ($file->filesize > PHP_INT_MAX) {
+    db_query('UPDATE {file_managed} SET filesize = :filesize WHERE fid = :fid', array(':filesize' => $file->filesize, ':fid' => $file->fid));
+  }
+}
+
+/**
+ * Implements hook_file_update().
+ */
+function file_resup_file_update($file) {
+  file_resup_file_insert($file);
+}
+
+/**
+ * Load an upload record.
+ */
+function file_resup_upload_load($upload_id) {
+  $upload = db_query('SELECT * FROM {file_resup} WHERE upload_id = :upload_id', array(':upload_id' => $upload_id))->fetchObject();
+
+  // If the upload has a fid, ensure it is still valid.
+  if (!empty($upload->fid)) {
+    $file = file_load($upload->fid);
+    if (!$file || !in_array(file_uri_scheme($file->uri), variable_get('file_public_schema', array('public'))) && !file_download_access($file->uri)) {
+      file_resup_upload_delete_record($upload);
+      return;
+    }
+  }
+
+  return $upload;
+}
+
+/**
+ * Delete an upload record.
+ */
+function file_resup_upload_delete_record($upload) {
+  db_query('DELETE FROM {file_resup} WHERE upload_id = :upload_id', array(':upload_id' => $upload->upload_id));
+}
+
+/**
+ * Delete an upload file.
+ */
+function file_resup_upload_delete_file($upload) {
+  $uri = file_resup_upload_uri($upload);
+  if (file_exists($uri)) {
+    file_unmanaged_delete($uri);
+  }
+}
+
+/**
+ * Returns an upload uri.
+ */
+function file_resup_upload_uri($upload) {
+  return $upload->scheme . '://' . FILE_RESUP_TEMPORARY . '/' . $upload->upload_id;
+}
+
+/**
+ * Get a valid upload ID from a resup file ID.
+ */
+function file_resup_upload_id($resup_file_id) {
+  global $user;
+
+  if (preg_match('`^[1-9]\d*-\d+-[\w%]+$`', $resup_file_id)) {
+    $prefix = $user->uid ? $user->uid : str_replace('.', '_', $user->hostname);
+    return substr($prefix . '-' . $resup_file_id, 0, 240);
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function file_resup_cron() {
+  // Delete old uploads.
+  $result = db_query('SELECT * FROM {file_resup} WHERE timestamp < :timestamp', array(':timestamp' => REQUEST_TIME - DRUPAL_MAXIMUM_TEMP_FILE_AGE));
+  foreach ($result as $upload) {
+    file_resup_upload_delete_record($upload);
+    file_resup_upload_delete_file($upload);
+  }
+}
+
+/**
+ * Returns the configured size of a file chunk.
+ */
+function file_resup_chunksize() {
+  return variable_get('file_resup_chunksize', FILE_RESUP_DEFAULT_CHUNKSIZE);
+}

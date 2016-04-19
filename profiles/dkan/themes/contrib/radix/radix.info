@@ -4,27 +4,27 @@ screenshot  = screenshot.png
 core        = 7.x
 
 ; CSS - General
-stylesheets[all][]     = assets/stylesheets/radix-style.css
-stylesheets[print][]   = assets/stylesheets/radix-print.css
-
-; CSS - Conditional
-stylesheets-conditional[lte IE 9][all][] = assets/stylesheets/ie.css
+stylesheets[all][] = assets/css/radix.style.css
 
 ; Javascript
-scripts[] = assets/javascripts/radix-script.js
+scripts[] = assets/js/radix.script.js
 
 ; Regions
 regions[sidebar_first] = Sidebar
 regions[content] = Content
+
+; Hide the sidebar region.
+; Used only for installation.
+regions_hidden[] = sidebar_first
 
 ; Features
 features[] = logo
 features[] = name
 features[] = favicon
 
-; Information added by Drupal.org packaging script on 2015-07-27
-version = "7.x-3.0-rc4"
+; Information added by Drupal.org packaging script on 2016-02-01
+version = "7.x-3.3"
 core = "7.x"
 project = "radix"
-datestamp = "1438012143"
+datestamp = "1454337570"
 

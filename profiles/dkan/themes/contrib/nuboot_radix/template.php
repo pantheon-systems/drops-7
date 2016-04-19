@@ -257,7 +257,7 @@ function nuboot_radix_user_picture(&$variables) {
  * Theme function implementation.
  *
  * Implements main theme function from the facet_icons module. Depends on
- * assets/stylesheets/dkan-dataset-search-icons.css
+ * assets/stylesheets/dkan-topics.css
  */
 function nuboot_radix_facet_icons($variables) {
   // Icon styles variables.
@@ -278,15 +278,21 @@ function nuboot_radix_preprocess_node(&$variables) {
     $variables['result_icon'] = array(
       '#theme' => 'facet_icons',
       '#type' => $variables['type'],
-      '#class' => array('search-result-icon'),
+      '#class' => array('facet-icon'),
     );
-
     $wrapper = entity_metadata_wrapper('node', $variables['nid']);
-    $groups = og_get_entity_groups('node', $wrapper->value());
-    $variables['group_list'] = NULL;
-    $variables['body'] = is_array($wrapper->body->value()) ? $wrapper->body->value->value() : '';
-    $variables['node_url'] = drupal_lookup_path('alias', "node/" . $wrapper->getIdentifier());
 
+    $variables['dataset_list'] = '';
+    $variables['group_list'] = NULL;
+    $variables['body'] = empty($wrapper->body->value()) ? '' : $wrapper->body->value->value();
+    $variables['node_url'] = drupal_lookup_path('alias', "node/" . $wrapper->getIdentifier());
+    if ($variables['type'] == 'resource' && $wrapper->field_dataset_ref->count() > 0) { 
+      foreach ($wrapper->field_dataset_ref as $dataset) { 
+        $variables['dataset_list'] .= '<li>' . $dataset->label() . '</li>';
+      }
+    }
+
+    $groups = og_get_entity_groups('node', $wrapper->value());
     if(!empty($groups['node'])) {
       $groups = array_map(function($gid){
         $g_wrapper = entity_metadata_wrapper('node', $gid);

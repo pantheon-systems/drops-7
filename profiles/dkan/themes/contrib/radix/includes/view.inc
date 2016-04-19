@@ -17,18 +17,6 @@ function radix_preprocess_views_view_table(&$variables) {
 }
 
 /**
- * Implements template_preprocess_views_view_unformatted().
- */
-//function radix_preprocess_views_view_unformatted(&$variables) {
-//  // Add col-md-12 class to views-row is a col class is not provided.
-//  foreach ($variables['classes_array'] as &$classes) {
-//    if (!preg_match("/col\-[xs|sm|md|lg]*\-[0-9]{1,2}/", $classes)) {
-//      $classes .= ' col-md-12';
-//    }
-//  }
-//}
-
-/**
  * Implements theme_views_mini_pager().
  */
 function radix_views_mini_pager($vars) {

@@ -48,7 +48,7 @@ function ref_field_sync_form_field_ui_field_edit_form_alter(&$form, &$form_state
 
     // Entity must support entity_save().
     if (!entity_type_supports($entity, 'save')) {
-      continue;
+      return;
     }
     $entity_info = entity_get_info($entity);
 
@@ -202,7 +202,7 @@ function ref_field_sync_entity_insert($entity, $type) {
 
         // Save values from new entity.
         $fields_name = field_get_items($type, $entity, $field_name);
-        if ($fields_name) {
+        if (is_array($fields_name)) {
           foreach ($fields_name as $value) {
             $new[] = $value['target_id'];
           }
@@ -245,7 +245,7 @@ function ref_field_sync_entity_update($entity, $type) {
 
         // Save values from new entity.
         $items = field_get_items($type, $entity, $field_name);
-        if ($items) {
+        if (is_array($items)) {
           foreach ($items as $value) {
             // Do not modify calling entity.
             if (!isset($entity->ref_field_caller) || $entity->ref_field_caller != $value['target_id']) {
@@ -255,7 +255,8 @@ function ref_field_sync_entity_update($entity, $type) {
         }
 
         // Save values from original entity.
-        if ($items = field_get_items($type, $original, $field_name)) {
+        $items = field_get_items($type, $original, $field_name);
+        if (is_array($items)) {
           foreach ($items as $value) {
             // Do not modify calling entity.
             if (!isset($entity->ref_field_caller) || $entity->ref_field_caller != $value['target_id']) {
@@ -313,15 +314,18 @@ function ref_field_sync_entity_delete($entity, $type) {
 
       // Get values from deleted entity.
       $items = field_get_items($type, $entity, $field_name);
-      if ($items) {
+      if (is_array($items)) {
         foreach ($items as $item) {
           $delete[] = $item['target_id'];
         }
       }
       foreach ($delete as $target_id) {
         $entities = entity_load($field['settings']['target_type'], array($target_id));
-        // Remove reference from synced field.
-        ref_field_sync_remove_reference($field['settings']['target_type'], $entities[$target_id], $entity->{$info['entity keys']['id']}, $field['settings']['sync']);
+        // $entities may be an empty array if it was already deleted.
+        if (isset($entities[$target_id])) {
+          // Remove reference from synced field.
+          ref_field_sync_remove_reference($field['settings']['target_type'], $entities[$target_id], $entity->{$info['entity keys']['id']}, $field['settings']['sync']);
+        }
       }
     }
   }
@@ -342,12 +346,14 @@ function ref_field_sync_entity_delete($entity, $type) {
 function ref_field_sync_remove_reference($type, $entity, $target_id, $field_name) {
   $lng = field_language($type, $entity, $field_name);
   if ($items = field_get_items($type, $entity, $field_name)) {
-    foreach ($items as $key => $value) {
-      if ($value['target_id'] == $target_id) {
-        unset($entity->{$field_name}[$lng][$key]);
-        // Set flag to not process the calling entity again.
-        $entity->ref_field_caller = $target_id;
-        entity_save($type, $entity);
+    if (is_array($items)) {
+      foreach ($items as $key => $value) {
+        if ($value['target_id'] == $target_id) {
+          unset($entity->{$field_name}[$lng][$key]);
+          // Set flag to not process the calling entity again.
+          $entity->ref_field_caller = $target_id;
+          entity_save($type, $entity);
+        }
       }
     }
   }
@@ -375,7 +381,8 @@ function ref_field_sync_add_reference($type, $entity, $target_id, $field_name) {
   }
 
   // Do not reference if already referenced.
-  if ($items = field_get_items($type, $entity, $field_name)) {
+  $items = field_get_items($type, $entity, $field_name);
+  if (is_array($items)) {
     foreach ($items as $key => $value) {
       if ($value['target_id'] == $target_id) {
         return;

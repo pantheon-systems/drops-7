@@ -31,7 +31,12 @@ function dkan_dataset_groups_views_default_views() {
   $handler->display->display_options['pager']['options']['items_per_page'] = '10';
   $handler->display->display_options['style_plugin'] = 'default';
   $handler->display->display_options['row_plugin'] = 'entity';
-  $handler->display->display_options['row_options']['view_mode'] = 'teaser';
+  $handler->display->display_options['row_options']['view_mode'] = 'search_result';
+  /* Header: Global: Result summary */
+  $handler->display->display_options['header']['result']['id'] = 'result';
+  $handler->display->display_options['header']['result']['table'] = 'views';
+  $handler->display->display_options['header']['result']['field'] = 'result';
+  $handler->display->display_options['header']['result']['content'] = 'Displaying @start - @end of @total datasets';
   /* No results behavior: Global: Text area */
   $handler->display->display_options['empty']['area']['id'] = 'area';
   $handler->display->display_options['empty']['area']['table'] = 'views';
@@ -39,7 +44,7 @@ function dkan_dataset_groups_views_default_views() {
   $handler->display->display_options['empty']['area']['empty'] = TRUE;
   $handler->display->display_options['empty']['area']['content'] = 'No datasets were found.';
   $handler->display->display_options['empty']['area']['format'] = 'html';
-  /* Relationship: Indexed Node: Publisher */
+  /* Relationship: Indexed Node: Groups audience */
   $handler->display->display_options['relationships']['og_group_ref']['id'] = 'og_group_ref';
   $handler->display->display_options['relationships']['og_group_ref']['table'] = 'search_api_index_groups_di';
   $handler->display->display_options['relationships']['og_group_ref']['field'] = 'og_group_ref';
@@ -61,7 +66,7 @@ function dkan_dataset_groups_views_default_views() {
   $handler->display->display_options['sorts']['title']['order'] = 'DESC';
   $handler->display->display_options['sorts']['title']['exposed'] = TRUE;
   $handler->display->display_options['sorts']['title']['expose']['label'] = 'Title';
-  /* Contextual filter: Indexed Node: Publisher */
+  /* Contextual filter: Indexed Node: Groups audience */
   $handler->display->display_options['arguments']['og_group_ref']['id'] = 'og_group_ref';
   $handler->display->display_options['arguments']['og_group_ref']['table'] = 'search_api_index_groups_di';
   $handler->display->display_options['arguments']['og_group_ref']['field'] = 'og_group_ref';
@@ -86,6 +91,13 @@ function dkan_dataset_groups_views_default_views() {
     3 => 0,
     6 => 0,
     4 => 0,
+  );
+  /* Filter criterion: Indexed Node: Status */
+  $handler->display->display_options['filters']['status']['id'] = 'status';
+  $handler->display->display_options['filters']['status']['table'] = 'search_api_index_groups_di';
+  $handler->display->display_options['filters']['status']['field'] = 'status';
+  $handler->display->display_options['filters']['status']['value'] = array(
+    1 => '1',
   );
 
   /* Display: Master */
@@ -129,7 +141,7 @@ function dkan_dataset_groups_views_default_views() {
   $handler->display->display_options['fields']['nid']['label'] = '';
   $handler->display->display_options['fields']['nid']['exclude'] = TRUE;
   $handler->display->display_options['fields']['nid']['element_label_colon'] = FALSE;
-  /* Field: Content: Image */
+  /* Field: Field: Image */
   $handler->display->display_options['fields']['field_image']['id'] = 'field_image';
   $handler->display->display_options['fields']['field_image']['table'] = 'field_data_field_image';
   $handler->display->display_options['fields']['field_image']['field'] = 'field_image';
@@ -489,7 +501,7 @@ function dkan_dataset_groups_views_default_views() {
   $handler->display->display_options['relationships']['og_membership_rel_group']['id'] = 'og_membership_rel_group';
   $handler->display->display_options['relationships']['og_membership_rel_group']['table'] = 'node';
   $handler->display->display_options['relationships']['og_membership_rel_group']['field'] = 'og_membership_rel_group';
-  /* Field: Content: Image */
+  /* Field: Field: Image */
   $handler->display->display_options['fields']['field_image']['id'] = 'field_image';
   $handler->display->display_options['fields']['field_image']['table'] = 'field_data_field_image';
   $handler->display->display_options['fields']['field_image']['field'] = 'field_image';
@@ -572,7 +584,7 @@ function dkan_dataset_groups_views_default_views() {
   $handler->display->display_options['style_options']['row_classes'] = 'row container-12';
   $handler->display->display_options['row_plugin'] = 'node';
   $handler->display->display_options['row_options']['links'] = FALSE;
-  /* Field: Content: Image */
+  /* Field: Field: Image */
   $handler->display->display_options['fields']['field_image']['id'] = 'field_image';
   $handler->display->display_options['fields']['field_image']['table'] = 'field_data_field_image';
   $handler->display->display_options['fields']['field_image']['field'] = 'field_image';

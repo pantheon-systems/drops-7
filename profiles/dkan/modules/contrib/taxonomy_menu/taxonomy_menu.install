@@ -1,0 +1,104 @@
+<?php
+
+/**
+ * @file
+ * Install and uninstall all required databases. Also do incremental database updates.
+ */
+
+/**
+ * Implements hook_uninstall().
+ */
+function taxonomy_menu_uninstall() {
+
+  //remove menu items
+  db_delete('menu_links')->condition('module', 'taxonomy_menu', '=')->execute();
+
+  //rebuild the menus
+  variable_set('menu_rebuild_needed', TRUE);
+
+  // Delete variables
+  $query = db_select('variable', 'v')->fields('v')->execute();
+  $variables = $query->fetchAll();
+  foreach ($variables as $variable) {
+    if (strpos($variable->name, 'taxonomy_menu') !== FALSE) {
+      variable_del($variable->name);
+    }
+  }
+}
+
+/**
+ * Implements hook_install().
+ */
+function taxonomy_menu_install() {
+}
+
+/**
+ * Implements hook_schema().
+ */
+function taxonomy_menu_schema() {
+
+  $schema['taxonomy_menu'] = array(
+    'description' => 'Links a taxonomy term to a menu item.',
+    'fields' => array(
+      'mlid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'The taxonomy terms {menu_link}.mlid.',
+      ),
+      'tid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Tid that is linked to the mlid.',
+      ),
+      'vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+        'description' => 'Vid for the tid.',
+      ),
+    ),
+    'primary key' => array('mlid', 'tid'),
+    'indexes' => array(
+      'vid' => array('vid'),
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Convert vocabulary ids into vocabulary machine names.
+ */
+function taxonomy_menu_update_7000() {
+  $variable_prefixes = array(
+    'vocab_menu',
+    'vocab_parent',
+    'voc_item',
+    'display_num',
+    'hide_empty_terms',
+    'expanded',
+    'rebuild',
+    'path',
+    'menu_end_all',
+    'display_descendants',
+    'voc_name',
+    'sync',
+  );
+
+  $vocabularies = taxonomy_get_vocabularies();
+  foreach ($vocabularies as $vocabulary) {
+    foreach ($variable_prefixes as $prefix) {
+      $old_name = 'taxonomy_menu_' . $prefix . '_' . $vocabulary->vid;
+      $new_name = 'taxonomy_menu_' . $prefix . '_' . $vocabulary->machine_name;
+      if (($value = variable_get($old_name)) !== NULL) {
+        variable_set($new_name, $value);
+        variable_del($old_name);
+      }
+    }
+  }
+}

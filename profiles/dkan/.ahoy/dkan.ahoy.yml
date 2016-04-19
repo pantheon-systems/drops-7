@@ -61,11 +61,12 @@ commands:
   module-link:
     usage: Link a module folder into dkan/modules/dkan/.
     cmd: |
-      if [[ "{{args}}" != * ]]; then
+      MODULE="{{args}}"
+      if [[ "$MODULE" != * ]]; then
           echo "Please specify the name of the module you want to link."
           exit 1
       fi
-      if [ ! -d {{args}} ]; then
+      if [ ! -d "$MODULE" ]; then
           echo "No module exists at ./$1. Make sure you fetch or create it first."
           exit 1
       fi
@@ -73,7 +74,12 @@ commands:
         echo "No dkan folder found at ./docroot/profiles/dkan/modules/dkan. Consider running 'ahoy dkan drupal-rebuild'."
         exit 1
       fi
-      ln -s ../../../{{args}} docroot/profiles/dkan/modules/dkan && echo "Symlink created for {{args}}.. "
+      if [ -d "docroot/profiles/dkan/modules/dkan/$MODULE" ]; then
+        echo "Module already exists at 'docroot/profiles/dkan/modules/dkan/$MODULE', removing it to make room..."
+        rm -rf "docroot/profiles/dkan/modules/dkan/$MODULE";
+      fi
+      ln -s ../../../$MODULE docroot/profiles/dkan/modules/dkan && echo "Symlink created for $MODULE.. "
+
   module-make:
     usage: Run drush make for a module in dkan/modules/dkan/.
     cmd: |
@@ -90,31 +96,65 @@ commands:
         exit 1
       fi
       ahoy drush -y make --no-core --contrib-destination=dkan dkan/modules/dkan/{{args}}/{{args}}.make --no-recursion --no-cache --verbose --working-copy
+
   test:
     usage: Run the tests for dkan.
     cmd: |
+      # Store the arguments as a bash array.
+      ARGS=( "{{args}}" )
       BEHAT_FOLDER=docroot/profiles/dkan/test
       ALT_CONFIG_FILE="behat.local.yml"
-      # Crazy bash to get rid of the carriage return. Where does that come from?
-      BEHAT_ENV=$(echo ahoy cmd-proxy printenv HOSTNAME < /dev/null)
-      echo "Installing behat dependencies.."
-      ahoy cmd-proxy "cd $BEHAT_FOLDER && composer install --prefer-source --no-interaction"
+      # Crazy bash to get rid of the carriage return. (docker issue)
+      BEHAT_ENV=$(echo $(ahoy cmd-proxy printenv HOSTNAME) | tr -d "\r" )
+      SKIP_COMPOSER_FLAG="--skip-composer"
+      if [[ ! "${ARGS[@]}" == *"$SKIP_COMPOSER_FLAG"* ]]; then
+        echo "Installing behat dependencies.."
+        ahoy cmd-proxy "cd $BEHAT_FOLDER && composer install --prefer-source --no-interaction"
+      else
+        echo "Skipping composer install.."
+        ARGS=( "${ARGS[@]/$SKIP_COMPOSER_FLAG}" )
+      fi
       if [ -f "$BEHAT_FOLDER/$ALT_CONFIG_FILE" ]; then
         echo "Using $BEHAT_FOLDER/$ALT_CONFIG_FILE .."
         CONFIG=" -c $ALT_CONFIG_FILE"
-      elif [ "$BEHAT_ENV" = "cli" ]; then
+      elif [ "$BEHAT_ENV" == "cli" ]; then
         echo "Using behat.docker.yml config .."
         CONFIG=" -c behat.docker.yml"
-      elif [ "$CI" = "true" ]; then
+      elif [ "$CI" == "true" ]; then
         echo "Using behat.circleci.yml config .."
         CONFIG=" -c behat.circleci.yml"
       else
+        echo "$BEHAT_ENV"
         echo "Using behat.yml .."
       fi
-      ahoy cmd-proxy "cd $BEHAT_FOLDER && bin/behat $CONFIG {{args}}"
+      ahoy cmd-proxy "cd $BEHAT_FOLDER && bin/behat $CONFIG ${ARGS[@]}"
+
+  dkanextension-update:
+    usage: Update the nucivic/dkanextension composer package.
+    cmd: ahoy cmd-proxy 'cd dkan/test && composer update nucivic/dkanextension'
+
   sqlc:
     usage: Abstracted way to connect to the mysql database.
     cmd: |
       # Grab the sql string and ignore stdin so it can be used later.
       ahoy cmd-proxy "$(ahoy drush sql-connect < /dev/null)"
 
+  self-update:
+    usage: Update dkan-ahoy
+    cmd: |
+      set -e
+      rm -fR dkan-ahoy
+      rm -fR dkan/.ahoy
+      rm dkan/dkan-init.sh
+      git clone 'git@github.com:nucivic/dkan' --depth=1 dkan-ahoy
+      cp -r dkan-ahoy/.ahoy dkan/
+      cp dkan-ahoy/dkan-init.sh  dkan/
+      cp dkan-ahoy/test/behat.docker.yml dkan/test/
+      cp dkan-ahoy/test/behat.circleci.yml dkan/test/
+      rm -fR dkan-ahoy
+    hide: true
+
+  theme:
+    usage: A series of commands for dkan theme development
+    import: dkan/.ahoy/theme.ahoy.yml
+    hide: true

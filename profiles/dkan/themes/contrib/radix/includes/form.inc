@@ -214,7 +214,7 @@ function radix_form_element($variables) {
         $output .= ' ' . $prefix . theme('form_element_label', $variables) . $suffix . "\n";
       }
       else {
-        $variables['#children'] = ' ' . $prefix . $element['#children'] . $suffix;
+        $output .= ' ' . $prefix . $element['#children'] . $suffix . "\n";
         $output .= ' ' . theme('form_element_label', $variables) . "\n";
       }
       break;

@@ -8,7 +8,7 @@
  * Implements hook_field_group_info().
  */
 function dkan_dataset_content_types_field_group_info() {
-  $export = array();
+  $field_groups = array();
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -21,7 +21,7 @@ function dkan_dataset_content_types_field_group_info() {
   $field_group->parent_name = '';
   $field_group->data = array(
     'label' => 'Dataset Info',
-    'weight' => '3',
+    'weight' => '4',
     'children' => array(
       0 => 'field_author',
       1 => 'field_contact_email',
@@ -52,7 +52,7 @@ function dkan_dataset_content_types_field_group_info() {
       ),
     ),
   );
-  $export['group_additional|node|dataset|default'] = $field_group;
+  $field_groups['group_additional|node|dataset|default'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -93,7 +93,7 @@ function dkan_dataset_content_types_field_group_info() {
       'formatter' => 'open',
     ),
   );
-  $export['group_additional|node|dataset|form'] = $field_group;
+  $field_groups['group_additional|node|dataset|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -120,7 +120,7 @@ function dkan_dataset_content_types_field_group_info() {
       ),
     ),
   );
-  $export['group_data|node|resource|form'] = $field_group;
+  $field_groups['group_data|node|resource|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -148,7 +148,7 @@ function dkan_dataset_content_types_field_group_info() {
       'formatter' => 'closed',
     ),
   );
-  $export['group_link_api|node|resource|form'] = $field_group;
+  $field_groups['group_link_api|node|resource|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -176,7 +176,7 @@ function dkan_dataset_content_types_field_group_info() {
       'formatter' => 'closed',
     ),
   );
-  $export['group_link_file|node|resource|form'] = $field_group;
+  $field_groups['group_link_file|node|resource|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -194,7 +194,8 @@ function dkan_dataset_content_types_field_group_info() {
       0 => 'body',
       1 => 'field_license',
       2 => 'field_tags',
-      3 => 'title',
+      3 => 'field_topic',
+      4 => 'title',
     ),
     'format_type' => 'fieldset',
     'format_settings' => array(
@@ -207,7 +208,7 @@ function dkan_dataset_content_types_field_group_info() {
       'formatter' => 'open',
     ),
   );
-  $export['group_primary|node|dataset|form'] = $field_group;
+  $field_groups['group_primary|node|dataset|form'] = $field_group;
 
   $field_group = new stdClass();
   $field_group->disabled = FALSE; /* Edit this to true to make a default field_group disabled initially */
@@ -235,7 +236,17 @@ function dkan_dataset_content_types_field_group_info() {
       'formatter' => 'closed',
     ),
   );
-  $export['group_upload|node|resource|form'] = $field_group;
+  $field_groups['group_upload|node|resource|form'] = $field_group;
 
-  return $export;
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Dataset Info');
+  t('Dataset Information');
+  t('Link to a file');
+  t('Link to an API');
+  t('Primary');
+  t('Resource');
+  t('Upload a file');
+
+  return $field_groups;
 }

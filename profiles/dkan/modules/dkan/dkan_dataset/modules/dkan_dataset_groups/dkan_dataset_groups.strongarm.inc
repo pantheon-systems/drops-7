@@ -47,7 +47,7 @@ function dkan_dataset_groups_strongarm() {
           'weight' => '0',
         ),
       ),
-      'display' => array( ),
+      'display' => array(),
     ),
   );
   $export['field_bundle_settings_node__group'] = $strongarm;

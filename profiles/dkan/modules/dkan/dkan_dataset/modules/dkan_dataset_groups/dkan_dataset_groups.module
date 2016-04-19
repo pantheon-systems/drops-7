@@ -197,7 +197,35 @@ function dkan_dataset_groups_menu_breadcrumb_alter(&$active_trail, $item) {
   }
 }
 
+/**
+ * Implements hook_node_update().
+ */
 function dkan_dataset_groups_node_update($node) {
   path_breadcrumbs_object_cache_clear("group");
   cache_clear_all('*', PATH_BREADCRUMBS_CACHE_STORAGE, TRUE);
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function dkan_dataset_groups_form_alter(&$form, $form_state, $form_id) {
+  switch ($form_id) {
+    case 'views_exposed_form':
+      // Fixes pager bug.
+      if (isset($form['sort_order']) && isset($form['sort_by']['#options']['changed'])) {
+        $sort_by = 'changed';
+        if(isset($_GET['sort_by'])){
+          $sort_by = $_GET['sort_by'];
+        }
+        else {
+          $_GET['sort_by'] = $sort_by;
+        }
+        $form_state['view']->set_exposed_input($_GET);
+        $form_state['input']['sort_by'] = $sort_by;
+
+        $form['sort_order']['#options']['ASC'] = t('Ascending');
+        $form['sort_order']['#options']['DESC'] = t('Descending');
+      }
+      break;
+  }
 }

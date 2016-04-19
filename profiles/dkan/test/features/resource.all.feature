@@ -92,7 +92,7 @@ Feature: Resource
     Then I should see "The Resource ID for this resource is"
     And I should see "Example Query"
 
-  @api
+  @api @noworkflow
   Scenario: View previous revisions of published resource
     Given I am logged in as a user with the "administrator" role
     And I am on "Resource 01" page
@@ -104,7 +104,7 @@ Feature: Resource
     When I click "Revisions"
     Then I should see "current revision"
 
-  @api
+  @api @noworkflow
   Scenario: Compare revisions of published resource
     Given I am logged in as a user with the "administrator" role
     And I am on "Resource 01" page
@@ -122,3 +122,9 @@ Feature: Resource
     #       Does this get tested with the visualization tests for maps?
   Scenario: View resource data on map automatically if lat and long info is present
     Given I am on the homepage
+
+  @api
+  Scenario: View dataset reference on Resource teaser
+    Given I am on "/search"
+    And I click "Resource"
+    Then I should see "Dataset 01"

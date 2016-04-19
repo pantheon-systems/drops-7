@@ -1,0 +1,61 @@
+<?php
+/**
+ * @file
+ * Install, update, and uninstall functions.
+ */
+
+/**
+ * Implements hook_field_schema().
+ *
+ * Defines the database schema of the field, using the format used by the
+ * Schema API.
+ *
+ * The data we will store here is just one 7-character element.
+ */
+function color_field_field_schema($field) {
+  $columns = array(
+    'rgb' => array('type' => 'varchar', 'length' => 7, 'not null' => FALSE),
+  );
+  $indexes = array(
+    'rgb' => array('rgb'),
+  );
+  return array(
+    'columns' => $columns,
+    'indexes' => $indexes,
+  );
+}
+
+
+/**
+ * Implements hook_requirements().
+ */
+function color_field_requirements($phase) {
+  $requirements = array();
+  if ($phase == 'runtime') {
+    $t = get_t();
+    $color_field_library = drupal_get_library('color_field', 'jquery-simple-color');
+    foreach ($color_field_library['js'] as $path => $js) {
+      if (!file_exists($path)) {
+        $requirements['jquery-simple-color'] = array(
+          'severity' => REQUIREMENT_WARNING,
+          'title' => $t('Color Field (jquery simple color)'),
+          'value' => $t('Missing'),
+          'description' => $t('The jquery simple color library isn\'t available so this Color Field Module will not support the jQuery Simple Color widget. Please download the plugin (%version) from !website.', array(
+            '!website' => l($color_field_library['website'], $color_field_library['website']),
+            '%version' => $color_field_library['version'],
+            )
+          ),
+        );
+        break;
+      }
+    }
+    if (!isset($requirements['jquery-simple-color'])) {
+      $requirements['jquery-simple-color'] = array(
+        'severity' => REQUIREMENT_OK,
+        'title' => $color_field_library['title'],
+        'value' => $color_field_library['version'],
+      );
+    }
+  }
+  return $requirements;
+}

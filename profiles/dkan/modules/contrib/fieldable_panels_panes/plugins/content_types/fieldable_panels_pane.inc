@@ -312,7 +312,7 @@ function _fieldable_panels_panes_default_content_type() {
  */
 function _fieldable_panels_panes_custom_content_type($entity) {
   $info = array(
-    'title' => check_plain($entity->admin_title),
+    'title' => check_plain(entity_label('fieldable_panels_pane', $entity)),
     'description' => check_plain($entity->admin_description),
     'category' => $entity->category ? check_plain($entity->category) : t('Miscellaneous'),
     'all contexts' => TRUE,

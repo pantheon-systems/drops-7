@@ -1,0 +1,110 @@
+<?php
+
+/**
+ * @file
+ *  Install and schema defition for the entity_path module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function entity_path_schema() {
+  $schema['entity_path_config'] = array(
+    'description' => 'Storage of entity path configuration.',
+    'export' => array(
+      'key' => 'instance',
+      'key name' => 'Instance',
+      'primary key' => 'cid',
+      'identifier' => 'entity_path_config',
+      'default hook' => 'entity_path_config_default',
+      'delete callback' => 'entity_path_config_delete',
+      'api' => array(
+        'owner' => 'entity_path',
+        'api' => 'entity_path',
+        'minimum_version' => 1,
+        'current_version' => 1,
+      ),
+    ),
+    'fields' => array(
+      'cid' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => FALSE,
+        'description' => 'The primary identifier for a entity_path configuration set.',
+      ),
+      'instance' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The machine-name of the configuration, typically entity-type:bundle.',
+      ),
+      'path_pattern' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Path pattern for uri replacement, typically with token patterns.',
+      ),
+      'query_pattern' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Query pattern for uri replacement.',
+      ),
+      'fragment_pattern' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'Fragment pattern for uri replacement.',
+      ),
+      'config' => array(
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+        'serialize' => TRUE,
+        'description' => 'Additional configuration settings for entity path.'
+      ),
+    ),
+    'primary key' => array('cid'),
+    'unique keys' => array(
+      'instance' => array('instance'),
+    ),
+  );
+  return $schema;
+}
+
+/**
+ * Add additional parameters 'query' and 'fragement' for entity path configuration.
+ */
+function entity_path_update_7101() {
+  db_add_field('entity_path_config', 'query_pattern', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Query pattern for uri replacement.',
+  ));
+  db_add_field('entity_path_config', 'fragment_pattern', array(
+    'type' => 'varchar',
+    'length' => 255,
+    'not null' => TRUE,
+    'default' => '',
+    'description' => 'Fragment pattern for uri replacement.',
+  ));
+
+  // Reset the ctools load object cache for the given config table.
+  ctools_include('export');
+  ctools_export_load_object_reset('entity_path_config');
+
+  // Show a message on drush updb to make him clear the cache.
+  // @see http://drupal.org/node/602182
+  if (function_exists('drush_log')) {
+    drush_log(dt('You should clear cache via \'drush cc all\', so schema cache for entity path is updated.'), 'warning');
+    drush_log(dt('You now can specify query and fragment in your entity path configurations.'), 'ok');
+  }
+
+  return t('You now can specify query and fragment in your entity path configurations.');
+}

@@ -1,0 +1,9 @@
+#menu-badges-tabs-admin-form .form-item-search-path,
+#menu-badges-tabs-admin-form .form-item-search-type,
+#menu-badges-tabs-admin-form .form-item-search-title {
+  float: left;
+  margin-right: 15px;
+}
+#menu-badges-tabs-admin-form #edit-search-search {
+  margin-top: 24px;
+}

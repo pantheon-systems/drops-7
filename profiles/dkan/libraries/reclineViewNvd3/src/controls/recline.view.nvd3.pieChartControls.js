@@ -7,11 +7,14 @@ this.recline.View = this.recline.View || {};
 'use strict';
 
   my.pieChartControls = recline.View.nvd3.BaseControl.extend({
-    template:'<div class="form-group checkbox">' +
-                '<label for="control-chart-donut">' +
-                '<input type="checkbox" id="control-chart-donut" {{#options.donut}}checked{{/options.donut}}/> Donut' +
-                '</label>' +
-              '</div>',
+    template: '<fieldset>' +
+                '<legend>Extra</legend>' +
+                '<div class="form-group checkbox">' +
+                  '<label for="control-chart-donut">' +
+                  '<input type="checkbox" id="control-chart-donut" {{#options.donut}}checked{{/options.donut}}/> Donut' +
+                  '</label>' +
+                '</div>' +
+              '</fieldset>',
     events: {
       'change input[type="checkbox"]': 'update',
     },

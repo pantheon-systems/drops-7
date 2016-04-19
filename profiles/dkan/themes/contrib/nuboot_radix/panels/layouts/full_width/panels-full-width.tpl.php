@@ -3,27 +3,6 @@
  * @file
  * Template for a 4 row panel layout.
  */
-$fid = theme_get_setting('hero_file');
-$file = !empty($fid) ? file_load($fid) : FALSE;
-if($file):
-  $uri = $file->uri;
-  $tint = 'tint';
-  $bg_color = 'transparent';
-  $path = file_create_url($uri);
-else :
-  $background_option = theme_get_setting('background_option');
-  if(empty($background_option)):
-    $uri = 'profiles/dkan/themes/contrib/nuboot_radix/assets/images/hero.jpg';
-    $tint = 'tint';
-    $bg_color = 'transparent';
-    $path = file_create_url($uri);
-  else :
-    $uri = '';
-    $tint = 'no-tint';
-    $bg_color = '#' . ltrim($background_option, '#');
-    $path = '';
-  endif;
-endif;
 ?>
 <div class="panel-display panel-full-width clearfix" <?php if (!empty($css_id)) { print "id=\"$css_id\""; } ?>>
 

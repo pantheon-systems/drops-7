@@ -10,24 +10,25 @@ hidden = true
 ; Regions
 regions[content] = Content
 
+; Breakpoints
+breakpoints[xs] = (max-width: 767px)
+breakpoints[sm] = (min-width: 768px) and (max-width: 991px)
+breakpoints[md] = (min-width: 992px) and (max-width: 1199px)
+breakpoints[lg] = (min-width: 1200px)
+
 ; Panels
 plugins[panels][layouts] = panels/layouts
 plugins[panels][styles] = panels/styles
 
 ; CSS - General
-stylesheets[all][]     = assets/stylesheets/screen.css
-stylesheets[print][]   = assets/stylesheets/print.css
-
-; CSS - Conditional
-stylesheets-conditional[lte IE 9][all][] = assets/stylesheets/ie.css
-stylesheets-conditional[IE 8][all][] = assets/stylesheets/ie8.css
+stylesheets[all][]     = assets/css/{{machine_name}}.style.css
 
 ; Javascript
-scripts[] = assets/javascripts/script.js
+scripts[] = assets/js/{{machine_name}}.script.js
 
-; Information added by Drupal.org packaging script on 2015-07-27
-version = "7.x-3.0-rc4"
+; Information added by Drupal.org packaging script on 2016-02-01
+version = "7.x-3.3"
 core = "7.x"
 project = "radix"
-datestamp = "1438012143"
+datestamp = "1454337570"
 
