@@ -11,9 +11,9 @@ core = 7.x
 
 files[] = commerce_autosku.test
 
-; Information added by drush on 2016-04-08
+; Information added by drush on 2016-04-20
 version = "7.x-1.1+12-dev"
 core = "7.x"
 project = "commerce_autosku"
-datestamp = "1460152820"
+datestamp = "1461175787"
 

@@ -444,7 +444,7 @@ class SearchApiViewsQuery extends views_plugin_query {
 
       // Gather any fields from the search results.
       if (!empty($result['fields'])) {
-        $row['_entity_properties'] += $result['fields'];
+        $row['_entity_properties'] += search_api_get_sanitized_field_values($result['fields']);
       }
 
       // Check whether we need to extract any properties from the result item.

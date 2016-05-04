@@ -201,7 +201,16 @@ interface SearchApiQueryInterface {
    *       already ready-to-use. This allows search engines (or postprocessors)
    *       to store extracted fields so other modules don't have to extract them
    *       again. This fields should always be checked by modules that want to
-   *       use field contents of the result items.
+   *       use field contents of the result items. The format of the array is
+   *       field IDs (as used by the Search API internally) mapped to either the
+   *       raw value of the field (scalar or array value), or an associative
+   *       array with the following keys:
+   *       - #value: The raw field value.
+   *       - #sanitize_callback: The callback to use for sanitizing the field
+   *         value for HTML output, or FALSE to state that the field value is
+   *         already sanitized.
+   *       In the simple form, it's assumed the field value should be sanitized
+   *       with check_plain().
    *     - entity: (optional) If set, the fully loaded result item. This field
    *       should always be used by modules using search results, to avoid
    *       duplicate item loads.

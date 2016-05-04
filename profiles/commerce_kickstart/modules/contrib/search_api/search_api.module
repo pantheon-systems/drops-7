@@ -216,10 +216,13 @@ function search_api_hook_info() {
     'search_api_data_type_info' => $hook_info,
     'search_api_data_type_info_alter' => $hook_info,
     'search_api_alter_callback_info' => $hook_info,
+    'search_api_alter_callback_info_alter' => $hook_info,
     'search_api_processor_info' => $hook_info,
+    'search_api_processor_info_alter' => $hook_info,
     'search_api_index_items_alter' => $hook_info,
     'search_api_items_indexed' => $hook_info,
     'search_api_query_alter' => $hook_info,
+    'search_api_results_alter' => $hook_info,
     'search_api_server_load' => $hook_info,
     'search_api_server_insert' => $hook_info,
     'search_api_server_update' => $hook_info,
@@ -921,6 +924,36 @@ function search_api_entity_delete($entity, $type) {
 }
 
 /**
+ * Implements hook_node_access_records_alter().
+ *
+ * Marks the node as "changed" in indexes that use the "Node access" data
+ * alteration. Also marks the node's comments as changed in indexes that use the
+ * "Comment access" data alteration.
+ */
+function search_api_node_access_records_alter(&$grants, $node) {
+  foreach (search_api_index_load_multiple(FALSE) as $index) {
+    $item_ids = array();
+    if (!empty($index->options['data_alter_callbacks']['search_api_alter_node_access']['status'])) {
+      $item_id = $index->datasource()->getItemId($node);
+      $item_ids = array($item_id);
+    }
+    elseif (!empty($index->options['data_alter_callbacks']['search_api_alter_comment_access']['status'])) {
+      if (!isset($comments)) {
+        $comments = comment_load_multiple(FALSE, array('nid' => $node->nid));
+      }
+      foreach ($comments as $comment) {
+        $item_ids[] = $index->datasource()->getItemId($comment);
+      }
+    }
+
+    if ($item_ids) {
+      $indexes = array($index->machine_name => $index);
+      search_api_track_item_change_for_indexes($index->item_type, $item_ids, $indexes);
+    }
+  }
+}
+
+/**
  * Implements hook_field_attach_rename_bundle().
  *
  * This is implemented on behalf of the SearchApiEntityDataSourceController
@@ -1186,6 +1219,20 @@ function search_api_track_item_change($type, array $item_ids) {
   if (!$indexes) {
     return;
   }
+  search_api_track_item_change_for_indexes($type, $item_ids, $indexes);
+}
+
+/**
+ * Marks the items with the specified IDs as "dirty" for the given indexes.
+ *
+ * @param string $type
+ *   The item type of the items.
+ * @param array $item_ids
+ *   The item IDs.
+ * @param SearchApiIndex[] $indexes
+ *   The indexes for which to mark the items as "dirty".
+ */
+function search_api_track_item_change_for_indexes($type, array $item_ids, $indexes) {
   try {
     $returned_indexes = search_api_get_datasource_controller($type)->trackItemChange($item_ids, $indexes);
     if (isset($returned_indexes)) {
@@ -1207,7 +1254,6 @@ function search_api_track_item_change($type, array $item_ids) {
   catch (SearchApiException $e) {
     $vars['%item_type'] = $type;
     watchdog_exception('search_api', $e, '%type while updating items of type %item_type: !message in %function (line %line of %file).', $vars);
-    return;
   }
 }
 
@@ -2058,7 +2104,7 @@ function _search_api_query_add_node_access($account, SearchApiQueryInterface $qu
   }
 
   // If the user cannot access content/comments at all, return no results.
-  if (!user_access('access content', $account) || ($is_comment && !user_access('access content', $account))) {
+  if (!user_access('access content', $account) || ($is_comment && !user_access('access comments', $account))) {
     // Simple hack for returning no results.
     $query->condition('status', 0);
     $query->condition('status', 1);
@@ -2827,6 +2873,62 @@ function search_api_index_delete($id) {
   }
   $index->delete();
   return TRUE;
+}
+
+/**
+ * Sanitizes field values returned from the server.
+ *
+ * @param array $values
+ *   The field values, as returned from the server. See
+ *   SearchApiQueryInterface::execute() for documentation on the structure.
+ *
+ * @return array
+ *   An associative array of field IDs mapped to their sanitized values (scalar
+ *   or array-valued).
+ */
+function search_api_get_sanitized_field_values(array $values) {
+  // Sanitize the field values returned from the server. Usually we use
+  // check_plain(), but this can be overridden by setting the field value to
+  // an array with "#value" and "#sanitize_callback" keys.
+  foreach ($values as $field_id => $field_value) {
+    if (is_array($field_value)
+      && isset($field_value['#sanitize_callback'])
+      && ($field_value['#sanitize_callback'] === FALSE || is_callable($field_value['#sanitize_callback']))
+      && array_key_exists('#value', $field_value)
+    ) {
+      $sanitize_callback = $field_value['#sanitize_callback'];
+      $field_value = $field_value['#value'];
+    }
+    else {
+      $sanitize_callback = 'check_plain';
+    }
+    if ($sanitize_callback !== FALSE) {
+      $field_value = search_api_sanitize_field_value($field_value, $sanitize_callback);
+    }
+    $values[$field_id] = $field_value;
+  }
+  return $values;
+}
+
+/**
+ * Sanitizes the given field value(s).
+ *
+ * @param mixed $field_value
+ *   A scalar field value, or an array of field values.
+ * @param callable $sanitize_callback
+ *   (optional) The callback to use for sanitizing a scalar value.
+ *
+ * @return mixed
+ *   The sanitized field value(s).
+ */
+function search_api_sanitize_field_value($field_value, $sanitize_callback = 'check_plain') {
+  if (is_scalar($field_value)) {
+    return call_user_func($sanitize_callback, $field_value);
+  }
+  foreach ($field_value as &$nested_value) {
+    $nested_value = search_api_sanitize_field_value($nested_value, $sanitize_callback);
+  }
+  return $field_value;
 }
 
 /**

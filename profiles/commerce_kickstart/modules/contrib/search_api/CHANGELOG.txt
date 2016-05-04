@@ -1,5 +1,9 @@
 Search API 1.x, dev (xxxx-xx-xx):
 ---------------------------------
+- #2693425 by jojyja: Fixed a typo in search_api.info.
+
+Search API 1.17 (2016-03-14):
+-----------------------------
 - #2665586 by recrit, drunken monkey: Fixed parsing of invalid date facet
   filters.
 - #2677900 by stefan.r, drunken monkey: Added the possibility to change date

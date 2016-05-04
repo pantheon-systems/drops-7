@@ -15,9 +15,9 @@ dependencies[] = search_api_views
 dependencies[] = views
 scripts[] = commerce_kickstart_search.js
 
-; Information added by Drupal.org packaging script on 2016-04-08
-version = "7.x-2.35"
+; Information added by Drupal.org packaging script on 2016-04-20
+version = "7.x-2.36"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1460152751"
+datestamp = "1461175706"
 

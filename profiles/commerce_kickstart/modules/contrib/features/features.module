@@ -84,8 +84,7 @@ function features_menu() {
   $items['admin/structure/features/cleanup'] = array(
     'title' => 'Cleanup',
     'description' => 'Clear cache after enabling/disabling a feature.',
-    'page callback' => 'drupal_get_form',
-    'page arguments' => array('features_cleanup_form', 4),
+    'page callback' => 'features_cleanup',
     'type' => MENU_CALLBACK,
     'file' => 'features.admin.inc',
     'weight' => 1,
@@ -925,7 +924,9 @@ function features_access_override_actions($feature) {
  * Implements hook_form_alter() for system_modules form().
  */
 function features_form_system_modules_alter(&$form) {
-  features_rebuild();
+  if (variable_get('features_rebuild_modules_page', FALSE)) {
+    features_rebuild();
+  }
 }
 
 /**
