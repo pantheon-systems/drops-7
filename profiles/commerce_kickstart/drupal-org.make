@@ -20,7 +20,7 @@ projects[features_override][version] = 2.0-rc3
 projects[strongarm][version] = 2.0
 projects[taxonomy_menu][version] = 1.5
 projects[libraries][version] = 2.2
-projects[views_megarow][version] = 1.5
+projects[views_megarow][version] = 1.6
 
 ; Drupal Commerce and Commerce contribs.
 projects[commerce][version] = 1.13

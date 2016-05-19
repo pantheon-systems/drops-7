@@ -199,6 +199,10 @@ function commerce_kickstart_taxonomy_views_default_views() {
  * Add specific overrides for the no demo store.
  */
 function commerce_kickstart_taxonomy_views_default_views_alter(&$views) {
+  if (!isset($views['collection_products'])) {
+    return;
+  }
+
   $install_demo_store = variable_get('commerce_kickstart_demo_store', FALSE);
   if (empty($install_demo_store)) {
     $view = &$views['collection_products'];

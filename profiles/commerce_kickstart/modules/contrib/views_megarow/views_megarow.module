@@ -10,7 +10,8 @@ function views_megarow_menu() {
   $items['views_megarow/refresh/%/%/%'] = array(
     'page callback' => 'views_megarow_get_row',
     'page arguments' => array(2, 3, 4),
-    'access arguments' => array('access content'),
+    'access callback' => 'views_megarow_access',
+    'access arguments' => array(2, 3),
     'type' => MENU_CALLBACK,
   );
 
@@ -32,6 +33,23 @@ function views_megarow_menu() {
     'file' => 'views_megarow.admin.inc',
   );
   return $items;
+}
+
+/**
+ * Access callback. Verify that the user can access the request view.
+ *
+ * @param $view_name
+ *   Name of the view to check the access to.
+ * @param $display_id
+ *   ID of the display to serve.
+ *
+ * @return bool
+ *   Returns TRUE is the user can access the page, FALSE otherwise.
+ */
+function views_megarow_access($view_name, $display_id) {
+  $view = views_get_view($view_name);
+  $view->set_display($display_id);
+  return $view->access(array($display_id));
 }
 
 /**

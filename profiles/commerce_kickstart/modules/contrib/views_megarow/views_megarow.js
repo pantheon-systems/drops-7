@@ -149,14 +149,13 @@
    * Handler to prepare the megarow for the response
    */
   Drupal.ViewsMegarow.clickAjaxLink = function () {
-    var target = $(this);
     var classes  = $(this).parents('tr').attr('class');
 
     // Extract the entity idem from a custom class storing it
     // to ease the manipulation of the rows.
     var entityId = /item\-([0-9]+)/.exec(classes)[1];
 
-    Drupal.ViewsMegarow.open(entityId, target);
+    Drupal.ViewsMegarow.open(entityId, $(this));
 
     return false;
   };
