@@ -81,7 +81,7 @@ function theme_facetapi_count($variables) {
 }
 
 /**
- * Returns HTML for an inactive facet item.
+ * Returns HTML for an active facet item.
  *
  * @param $variables
  *   An associative array containing the keys 'text', 'path', and 'options'. See

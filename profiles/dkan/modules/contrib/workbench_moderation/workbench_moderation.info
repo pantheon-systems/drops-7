@@ -17,9 +17,10 @@ files[] = tests/external_node_update.test
 files[] = tests/workbench_moderation.test
 files[] = tests/workbench_moderation.files.test
 
-; Information added by Drupal.org packaging script on 2015-02-17
-version = "7.x-1.4"
-core = "7.x"
-project = "workbench_moderation"
-datestamp = "1424191727"
+; Dependencies that are only required for the testbot.
+test_dependencies[] = drafty
 
+; Information added by drush on 2016-03-16
+version = "7.x-1.4+9-dev"
+project = "workbench_moderation"
+datestamp = "1458161940"

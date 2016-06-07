@@ -93,7 +93,7 @@ function uuid_entities_features_export_render($module_name, $components, $export
       // Let other modules alter exported entities.
       drupal_alter('uuid_entities_features_export_entity', $entity, $entity_type);
       // Field handling.
-      list(,, $bundle_name) = entity_extract_ids($entity_type, $entity);
+      list(, , $bundle_name) = entity_extract_ids($entity_type, $entity);
       $instances = field_info_instances($entity_type, $bundle_name);
       foreach ($instances as $field_name => $instance) {
         $field = field_info_field($field_name);
@@ -134,14 +134,14 @@ function uuid_entities_features_export_render($module_name, $components, $export
 }
 
 /**
- * Implements [component]_features_export_rebuild().
+ * Implements [component]_features_rebuild().
  */
 function uuid_entities_features_rebuild($module_name) {
   uuid_entities_rebuild($module_name, 'rebuild');
 }
 
 /**
- * Implements [component]_features_export_revert().
+ * Implements [component]_features_revert().
  */
 function uuid_entities_features_revert($module_name) {
   uuid_entities_rebuild($module_name, 'revert');

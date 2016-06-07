@@ -12,7 +12,8 @@ projects[feeds][type] = module
 
 projects[feeds_field_fetcher][download][type] = git
 projects[feeds_field_fetcher][download][url] = "http://git.drupal.org/project/feeds_field_fetcher.git"
-projects[feeds_field_fetcher][download][branch] = master
+projects[feeds_field_fetcher][download][branch] = 7.x-1.x
+projects[feeds_field_fetcher][download][revision] = 6725b86
 projects[feeds_field_fetcher][subdir] = contrib
 projects[feeds_field_fetcher][type] = module
 
@@ -26,7 +27,7 @@ projects[schema][subdir] = contrib
 projects[schema][download][revision] = "08b02458694d186f8ab3bd0b24fbc738f9271108"
 
 projects[services][subdir] = contrib
-projects[services][version] = 3.12
+projects[services][version] = 3.14
 
 projects[data][subdir] = contrib
 projects[data][version] = 1.x

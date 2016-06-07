@@ -14,6 +14,13 @@
 class FacetapiUrlProcessorStandard extends FacetapiUrlProcessor {
 
   /**
+   * Stores the "limit_active_items" settings for each facet.
+   *
+   * @var array
+   */
+  protected $limitActiveItems = array();
+
+  /**
    * Implements FacetapiUrlProcessor::fetchParams().
    *
    * Use $_GET as the source for facet data.
@@ -45,6 +52,17 @@ class FacetapiUrlProcessorStandard extends FacetapiUrlProcessor {
       }
       elseif (!$active) {
         $field_alias = rawurlencode($facet['field alias']);
+
+        // Strips all other filters for this facet if limit option is set.
+        if ($this->limitActiveItems($facet)) {
+          foreach ($qstring[$this->filterKey] as $pos => $filter) {
+            if (0 === strpos($filter, $field_alias)) {
+              unset($qstring[$this->filterKey][$pos]);
+            }
+          }
+        }
+
+        // Adds the filter to the query string.
         $qstring[$this->filterKey][] = $field_alias . ':' . $value;
       }
     }
@@ -53,6 +71,20 @@ class FacetapiUrlProcessorStandard extends FacetapiUrlProcessor {
     // @see http://drupal.org/node/1340528
     $qstring[$this->filterKey] = array_values(array_unique($qstring[$this->filterKey]));
     return array_filter($qstring);
+  }
+
+  /**
+   * Checks the facet's global "limit_active_items" settings.
+   *
+   * @return int
+   *   Whether or not to limit active items to one per facet.
+   */
+  public function limitActiveItems(array $facet) {
+    if (!isset($this->limitActiveItems[$facet['name']])) {
+      $settings = $this->adapter->getFacetSettingsGlobal($facet);
+      $this->limitActiveItems[$facet['name']] = $settings->settings['limit_active_items'];
+    }
+    return $this->limitActiveItems[$facet['name']];
   }
 
   /**
@@ -97,5 +129,33 @@ class FacetapiUrlProcessorStandard extends FacetapiUrlProcessor {
 
     // Sets the breadcrumb trail with the keys and filters.
     drupal_set_breadcrumb($breadcrumb);
+  }
+  /**
+   * Allows for processor specific overrides to the settings form.
+   */
+  public function settingsForm(&$form, &$form_state) {
+    $facet = $form['#facetapi']['facet'];
+    $settings = $this->adapter->getFacetSettingsGlobal($facet);
+
+    $form['global']['limit_active_items'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Limit to one active item'),
+      '#prefix' => '<div class="facetapi-global-setting">',
+      '#suffix' => '</div>',
+      '#default_value' => !empty($settings->settings['limit_active_items']),
+      '#description' => t('Enabling this option allows only one item to be active at a time.'),
+    );
+  }
+
+  /**
+   * Provides default values for the backend specific settings.
+   *
+   * @return array
+   *   The defaults keyed by setting name to value.
+   */
+  public function getDefaultSettings() {
+    return array(
+      'limit_active_items' => 0
+    );
   }
 }

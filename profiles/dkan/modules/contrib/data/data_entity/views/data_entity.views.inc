@@ -18,6 +18,11 @@ function data_entity_views_data_alter(&$data) {
         'handler' => 'data_entity_views_handler_field_edit_link',
       ),
     );
+
+    // Support for Editable Views module.
+    if ($table->meta['is_entity_type']){
+      $data[$table_name]['table']['entity type'] = 'data_' . $table_name;
+    }
   }
 }
 

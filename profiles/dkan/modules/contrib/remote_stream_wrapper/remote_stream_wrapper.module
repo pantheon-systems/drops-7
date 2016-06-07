@@ -104,18 +104,13 @@ function file_is_scheme_remote($scheme) {
 }
 
 /**
- * Implements hook_preprocess_image().
+ * Implements hook_file_url_alter().
  */
-function remote_stream_wrapper_preprocess_image(&$variables) {
-  static $regex;
-
-  if (!empty($variables['style_name'])) {
-    if (!isset($regex)) {
-      $wrappers = file_get_remote_stream_wrappers();
-      $schemes = implode('|', array_keys($wrappers));
-      $regex = "#^($schemes)://styles/#";
-    }
-    $variables['path'] = preg_replace($regex, file_default_scheme() . '://styles/', $variables['path'], 1);
+function remote_stream_wrapper_file_url_alter(&$uri) {
+  $scheme = file_uri_scheme($uri);
+  $wrappers = file_get_remote_stream_wrappers();
+  if ($scheme && isset($wrappers[$scheme]) && strpos($uri, "$scheme://styles/") === 0) {
+    $uri = file_default_scheme() . '://' . file_uri_target($uri);
   }
 }
 

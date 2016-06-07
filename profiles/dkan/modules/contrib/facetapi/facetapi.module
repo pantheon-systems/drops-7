@@ -66,7 +66,7 @@ define('FACETAPI_REGEX_DATE', '/^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2}):(\d{2})
 define('FACETAPI_REGEX_DATE_RANGE', '/^\[(' . trim(FACETAPI_REGEX_DATE, '/^$') . ') TO (' . trim(FACETAPI_REGEX_DATE, '/^$') . ')\]$/');
 
 // Calls block specific hooks and overrides.
-require_once dirname(__FILE__) . '/facetapi.block.inc';
+module_load_include('inc', 'facetapi', 'facetapi.block');
 
 /**
  * Implements hook_facetapi_hook_info().
@@ -251,31 +251,31 @@ function facetapi_ctools_plugin_type() {
 function facetapi_theme() {
   return array(
     'facetapi_title' => array(
-      'arguments' => array('title' => NULL, 'facet' => array()),
+      'variables' => array('title' => NULL, 'facet' => array()),
       'file' => 'facetapi.theme.inc',
     ),
     'facetapi_facet_missing' => array(
-      'arguments' => array('field_name' => NULL),
+      'variables' => array('field_name' => NULL),
       'file' => 'facetapi.theme.inc',
     ),
     'facetapi_count' => array(
-      'arguments' => array('count' => NULL),
+      'variables' => array('count' => NULL),
       'file' => 'facetapi.theme.inc',
     ),
     'facetapi_link_inactive' => array(
-      'arguments' => array('text' => NULL, 'path' => NULL, 'options' => array(), 'count' => 0),
+      'variables' => array('text' => NULL, 'path' => NULL, 'options' => array(), 'count' => 0),
       'file' => 'facetapi.theme.inc',
     ),
     'facetapi_link_active' => array(
-      'arguments' => array('text' => NULL, 'path' => NULL, 'options' => array()),
+      'variables' => array('text' => NULL, 'path' => NULL, 'options' => array()),
       'file' => 'facetapi.theme.inc',
     ),
     'facetapi_deactivate_widget' => array(
-      'arguments' => array('text' => NULL),
+      'variables' => array('text' => NULL),
       'file' => 'facetapi.theme.inc',
     ),
     'facetapi_accessible_markup' => array(
-      'arguments' => array('text' => NULL, 'active' => NULL),
+      'variables' => array('text' => NULL, 'active' => NULL),
       'file' => 'facetapi.theme.inc',
     ),
     'facetapi_realm_settings_table' => array(
@@ -855,6 +855,8 @@ function facetapi_get_enabled_facets($searcher, $realm_name = NULL) {
     // Gets facet definitions for all enabled facets.
     $facet_info = facetapi_get_facet_info($searcher);
     $enabled_facets[$cid] = array_intersect_key($facet_info, $facets);
+    // Alter enabled facets on the fly.
+    drupal_alter('facetapi_enabled_facets', $enabled_facets[$cid], $searcher, $realm_name);
   }
   return $enabled_facets[$cid];
 }
@@ -971,11 +973,11 @@ function facetapi_build_realm($searcher, $realm_name) {
  * @return
  *   A boolean flagging whether all requirements were passed.
  */
-function facetapi_check_requirements(array $requirements, array $realm, array $facet) {
+function facetapi_check_requirements(array $requirements, array $realm, array $facet, $operator = 'AND') {
   $return = TRUE;
   module_load_include('inc', 'facetapi', 'facetapi.requirements');
   foreach ($requirements as $callback => $options) {
-    if (!call_user_func($callback, $realm, $facet, $options)) {
+    if (!call_user_func($callback, $realm, $facet, $options, $operator)) {
       $return = FALSE;
       break;
     }

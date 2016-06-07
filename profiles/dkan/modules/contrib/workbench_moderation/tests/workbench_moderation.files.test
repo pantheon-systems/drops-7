@@ -9,6 +9,8 @@ class WorkbenchModerationFilesTestCase extends FileFieldTestCase {
   protected $content_type;
   protected $moderator_user;
 
+  protected $field_name;
+
   function setUp() {
     parent::setUp();
 

@@ -101,15 +101,59 @@ function fieldable_panels_panes_fieldable_panels_pane_content_type_content_type(
 function fieldable_panels_panes_fieldable_panels_pane_content_type_content_types() {
   $types = _fieldable_panels_panes_default_content_type();
 
-  $ids = db_query('SELECT fpid FROM {fieldable_panels_panes} WHERE reusable = 1')->fetchCol();
-  if (!empty($ids)) {
-    $entities = fieldable_panels_panes_load_multiple($ids);
-    if (!empty($entities)) {
-      foreach ($entities as $entity) {
-        $subtype = _fieldable_panels_panes_custom_content_type($entity);
-        $types[$subtype['name']] = $subtype;
+  // The current function is called as part of the standard panel pane rendering
+  // pipeline. To prevent a full list of FPP entities from being generated every
+  // time that a panel is rendered, generate the list only when a request is
+  // made from an administrative URL.
+  // @see https://www.drupal.org/node/2374577
+  if (path_is_admin(current_path()) || preg_match('/panels/i', current_path())) {
+    $fpp_info = entity_get_info('fieldable_panels_pane');
+    foreach ($fpp_info['bundles'] as $bundle_name => $bundle) {
+      $ids = db_query('SELECT fpid FROM {fieldable_panels_panes} WHERE reusable = 1 AND bundle = :bundle', array(':bundle' => $bundle_name))->fetchCol();
+      if (!empty($ids)) {
+        $types = array_merge($types, fieldable_panels_panes_build_content_type_info($bundle_name, $ids));
       }
     }
+  }
+
+  return $types;
+}
+
+/**
+ * Returns a list of all reusable FPP entities of a given bundle.
+ *
+ * @param $bundle
+ *   Fieldable panel pane bundle machine name.
+ * @param $ids
+ *   An array of fieldable panel pane entity ids.
+ *
+ * @return array
+ *   An array of content type information for each fpp entity.
+ */
+function fieldable_panels_panes_build_content_type_info($bundle, $ids) {
+  $types = array();
+  $cid = "fieldable_panels_panes_{$bundle}_content_type";
+
+  if (($cache = cache_get($cid, 'cache_panels')) && !empty($cache->data)) {
+    $types = $cache->data;
+  }
+  else {
+    $entities = fieldable_panels_panes_load_multiple($ids);
+    if (!empty($entities)) {
+      foreach ($entities as $entity_id => $entity) {
+        $subtype = _fieldable_panels_panes_custom_content_type($entity);
+        $types[$subtype['name']] = $subtype;
+
+        // Re-key $entities such that $types and $entities are keyed
+        // identically.
+        $entities[$subtype['name']] = $entity;
+        unset($entities[$entity_id]);
+      }
+    }
+
+    // Trigger hook_fieldable_panels_panes_content_types_alter().
+    drupal_alter('fieldable_panels_panes_content_types', $types, $bundle, $entities);
+    cache_set($cid, $types, 'cache_panels');
   }
 
   return $types;
@@ -152,19 +196,40 @@ function fieldable_panels_panes_fieldable_panels_pane_content_type_render($subty
 }
 
 /**
- * Callback to provide the administrative title of the custom content.
+ * Gets the admin title from the entity.
  */
-function fieldable_panels_panes_fieldable_panels_pane_content_type_admin_title($subtype, $conf) {
-  $entity = fieldable_panels_panes_load_from_subtype($subtype);
-
+function _fieldable_panels_panes_admin_title_from_entity($entity) {
   if (!empty($entity) && is_object($entity)) {
-    $output = !empty($entity->admin_title) ? $entity->admin_title : (!empty($entity->title) ? $entity->title : t('No title'));
+    if (!empty($entity->admin_title)) {
+      $output = $entity->admin_title;
+    }
+    elseif (!empty($entity->title)) {
+      $output = $entity->title;
+    }
+    else {
+      $output = entity_label('fieldable_panels_pane', $entity);
+    }
+    // Make sure no XSS strings go through the title.
+    $output = filter_xss($output);
   }
   else {
     $output = t('Deleted/removed entity pane');
   }
 
+  // Indicate when the FPP is reusable.
+  if (!empty($entity->reusable)) {
+    $output .= ' (' . t('reusable') . ')';
+  }
+
   return $output;
+}
+
+/**
+ * Callback to provide the administrative title of the custom content.
+ */
+function fieldable_panels_panes_fieldable_panels_pane_content_type_admin_title($subtype, $conf) {
+  $entity = fieldable_panels_panes_load_from_subtype($subtype);
+  return _fieldable_panels_panes_admin_title_from_entity($entity);
 }
 
 /**
@@ -197,7 +262,8 @@ function fieldable_panels_panes_fieldable_panels_pane_content_type_edit_form($fo
   ctools_form_include_file($form_state, $form_state['plugin']['path'] . '/' . $form_state['plugin']['file']);
 
   $entity_info = entity_get_info('fieldable_panels_pane');
-  $view_mode_options = array();
+
+  // Show all of the available view modes.
   foreach ($entity_info['view modes'] as $mode => $option) {
     $view_mode_options[$mode] = $option['label'];
   }
@@ -255,18 +321,45 @@ function fieldable_panels_panes_fieldable_panels_pane_content_type_edit_form_sub
 
   fieldable_panels_panes_entity_edit_form_submit($form, $form_state);
 
-  // Sub type is not explicitly set, define it here.
-  if (module_exists('uuid') && isset($entity->uuid)) {
-    $entity_id = 'uuid:' . $entity->uuid;
+  // Determine how to handle revision locking.
+  $revision_context_aware = fieldable_panels_panes_revision_is_lockable($entity);
+
+  // If this is a new entity entity, or revision locking is enabled, look for a
+  // specific ID to use.
+  if (!empty($entity->is_new) || $revision_context_aware) {
+    // If UUID is available, use it.
+    if (module_exists('uuid') && isset($entity->uuid)) {
+      if ($revision_context_aware) {
+        $subtype = 'vuuid:' . $entity->vuuid;
+      }
+      else {
+        $subtype = 'uuid:' . $entity->uuid;
+      }
+    }
+
+    // Otherwise use the native ID values.
+    else {
+      if ($revision_context_aware) {
+        $subtype = 'vid:' . $entity->vid;
+      }
+      else {
+        $subtype = 'fpid:' . $entity->fpid;
+      }
+    }
   }
+
+  // The 'current' key will tell FPP to load up the current revision. This
+  // bypasses the entity cache on the FPP entity class and loads the revision
+  // that was just saved instead of the previous revision. This is only really
+  // relevant in Panels IPE administration or similar circumstances.
   else {
-    $entity_id = 'fpid:' . $entity->fpid;
+    $subtype = 'current:' . $entity->fpid;
   }
 
   // @todo: This won't work if $form_state does not contain 'pane' which could
   // theoretically happen in a non-Panels use case. Not that anybody uses this
   // outside of Panels.
-  $form_state['pane']->subtype = $entity_id;
+  $form_state['pane']->subtype = $subtype;
 }
 
 /**
@@ -312,18 +405,34 @@ function _fieldable_panels_panes_default_content_type() {
  */
 function _fieldable_panels_panes_custom_content_type($entity) {
   $info = array(
-    'title' => check_plain(entity_label('fieldable_panels_pane', $entity)),
+    'title' => _fieldable_panels_panes_admin_title_from_entity($entity),
     'description' => check_plain($entity->admin_description),
     'category' => $entity->category ? check_plain($entity->category) : t('Miscellaneous'),
     'all contexts' => TRUE,
     'icon' => 'icon_block_custom.png',
   );
 
+  // Determine how to handle revision locking.
+  $revision_context_aware = fieldable_panels_panes_revision_is_lockable($entity);
+
+  // If UUID is available, use it.
   if (module_exists('uuid') && isset($entity->uuid)) {
-    $info['name'] = 'uuid:' . $entity->uuid;
+    if ($revision_context_aware) {
+      $info['name'] = 'vuuid:' . $entity->vuuid;
+    }
+    else {
+      $info['name'] = 'uuid:' . $entity->uuid;
+    }
   }
+
+  // Otherwise use the native ID values.
   else {
-    $info['name'] = 'fpid:' . $entity->fpid;
+    if ($revision_context_aware) {
+      $info['name'] = 'vid:' . $entity->vid;
+    }
+    else {
+      $info['name'] = 'fpid:' . $entity->fpid;
+    }
   }
 
   $info['entity_id'] = $info['name'];

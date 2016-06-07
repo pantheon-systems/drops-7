@@ -26,7 +26,7 @@ function visualization_entity_validate_file($entity, $field_name, $validator) {
   if (!property_exists($entity, $field_name)) {
       return FALSE;
     }
-    $entity_file_field = $entity->{$field_name}[LANGUAGE_NONE][0];
+    $entity_file_field = isset($entity->{$field_name}[LANGUAGE_NONE][0]) ? $entity->{$field_name}[LANGUAGE_NONE][0] : $entity->{$field_name}[$entity->language][0];
     if (empty($entity_file_field)) {
       return FALSE;
     }

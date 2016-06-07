@@ -1,3 +1,54 @@
+Panopoly Widgets 7.x-1.35, 2016-05-04
+------------------------------
+- No changes since last release.
+
+Panopoly Widgets 7.x-1.34, 2016-04-20
+------------------------------
+- No changes since last release.
+
+Panopoly Widgets 7.x-1.33, 2016-04-14
+------------------------------
+- No changes since last release.
+
+Panopoly Widgets 7.x-1.32, 2016-03-03
+------------------------------
+- No changes since last release.
+
+Panopoly Widgets 7.x-1.31, 2016-02-25
+------------------------------
+- Panopoly_widgets Schema Update 7016 Integrity constraint violation.
+- Pass entity to 'panopoly_spotlight_wrapper' and 'panopoly_spotlight_view'
+  theme functions.
+
+Panopoly Widgets 7.x-1.30, 2016-01-06
+------------------------------
+- Access denied when adding Media in WYSIWYG.
+- Don't set default image for image widget.
+
+Panopoly Widgets 7.x-1.29, 2015-11-18
+------------------------------
+- Patching media for opening multiple media browser popups.
+- Update to Media 2.0-beta1 and File Entity 2.0-beta2.
+
+Panopoly Widgets 7.x-1.28, 2015-10-21
+------------------------------
+- Text on tabs on Media Browser is lower than it is on other interfaces.
+
+Panopoly Widgets 7.x-1.27, 2015-09-02
+------------------------------
+- No changes since last release.
+
+Panopoly Widgets 7.x-1.26, 2015-08-19
+------------------------------
+- Panopoly Widgets - support the Title module.
+- Counting Spotlight clicks.
+- Update media_vimeo to version 2.1.
+- Update Vimeo configuration export.
+- Spotlight accessibility regressions.
+- Panopoly Widgets overridden after upgrade to -dev.
+- Move rendering of Spotlight formatter into theme template.
+- Update tablefield to version 2.4.
+
 Panopoly Widgets 7.x-1.25, 2015-07-08
 ------------------------------
 - Split spotlight JS into it's own file.

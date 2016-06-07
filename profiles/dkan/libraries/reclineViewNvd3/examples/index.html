@@ -14,19 +14,19 @@
   <link rel="stylesheet" href="../css/style.css">
 
   <!-- 3rd party JS libraries -->
+  <script type="text/javascript" src="../vendor/lodash/dist/lodash.compat.min.js"></script>
   <script type="text/javascript" src="../vendor/slickgrid/lib/jquery-1.7.min.js"></script>
   <script type="text/javascript" src="../vendor/spectrum/spectrum.js"></script>
   <script type="text/javascript" src="../vendor/csv.js/csv.js"></script>
   <script type="text/javascript" src="../vendor/recline.backend.gdocs/backend.gdocs.js"></script>
-  <script type="text/javascript" src="../vendor/lodash/dist/lodash.compat.min.js"></script>
-  <script type="text/javascript" src="../vendor/lodash.data/dist/lodash.data.min.js"></script>
   <script type="text/javascript" src="../vendor/backbone/backbone.js"></script>
   <script type="text/javascript" src="../vendor/mustache/mustache.js"></script>
   <script type="text/javascript" src="../vendor/bootstrap-css/js/bootstrap.js"></script>
   <script type="text/javascript" src="../vendor/moment/moment.js"></script>
   <script src="http://libs.cartocdn.com/cartodb.js/v3/3.15/cartodb.js"></script>
   <script type="text/javascript" src="../vendor/es2sql/dist/bundle.js"></script>
-  <script type="text/javascript" src="../vendor/recline.backend.cartodb/dist/recline.backend.papaparse.min.js"></script>
+  <script type="text/javascript" src="../vendor/lodash.data/dist/lodash.data.min.js"></script>
+  <script type="text/javascript" src="../vendor/recline.backend.cartodb/index.js"></script>
   <!--[if lte IE 7]>
   <script language="javascript" type="text/javascript" src="../vendor/json/json2.js"></script>
   <![endif]-->
@@ -70,6 +70,12 @@
 
       <h3>Stacked Chart</h3>
       <div id="stackedAreaChart"></div>
+      
+      <h3>Line Plus Bar Chart Static</h3>
+      <div id="linePlusBarChartStatic"><svg></svg></div>
+
+      <h3>Line Plus Bar Chart </h3>
+      <div id="linePlusBarChart"></div>
 
     </div>
   </div>

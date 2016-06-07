@@ -150,6 +150,10 @@ function workbench_moderation_admin_states_form_submit($form, &$form_state) {
         'weight' => $info['weight'],
       );
       workbench_moderation_state_save($state);
+      if (module_exists('i18n_string')) {
+        i18n_string_update(array('workbench_moderation', 'moderation_state', $info['name'], 'label'), $info['label']);
+        i18n_string_update(array('workbench_moderation', 'moderation_state', $info['name'], 'description'), $info['description']);
+      }
     }
   }
 

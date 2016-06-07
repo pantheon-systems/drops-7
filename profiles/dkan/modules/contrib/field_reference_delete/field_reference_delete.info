@@ -4,6 +4,6 @@ core = 7.x
 backdrop = 1.x
 
 ; Information added by drush on 2015-01-20
-version = "unknown"
+version = "7.x-1.0-beta1"
 project = "field_reference_delete"
 datestamp = "1421773031"

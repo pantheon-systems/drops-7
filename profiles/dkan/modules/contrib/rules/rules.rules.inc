@@ -10,7 +10,6 @@
  */
 foreach (rules_core_modules() as $module) {
   module_load_include('inc', 'rules', "modules/$module.rules");
-  module_load_include('inc', 'rules', 'modules/events');
 }
 
 /**
@@ -56,6 +55,13 @@ function rules_rules_file_info() {
     }
   }
   return $items;
+}
+
+/**
+ * Implements hook_rules_category_info().
+ */
+function rules_rules_category_info() {
+  return _rules_rules_collect_items('category_info');
 }
 
 /**

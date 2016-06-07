@@ -1,3 +1,35 @@
+Panopoly Images 7.x-1.35, 2016-05-04
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.34, 2016-04-20
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.33, 2016-04-14
+-----------------------------
+- Missing comma in panopoly-images.css.
+
+Panopoly Images 7.x-1.32, 2016-03-03
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.31, 2016-02-25
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.30, 2016-01-06
+-----------------------------
+- No changes since last release.
+
+Panopoly Images 7.x-1.29, 2015-11-18
+-----------------------------
+- Tighten up media browser thumbnails.
+
+Panopoly Images 7.x-1.28, 2015-10-21
+-----------------------------
+- Type-o findthe in watchdog() text panopoly_images module.
+
 Panopoly Images 7.x-1.27, 2015-09-02
 -----------------------------
 - No changes since last release.

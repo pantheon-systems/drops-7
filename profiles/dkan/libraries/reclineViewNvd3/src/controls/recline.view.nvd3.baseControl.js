@@ -6,9 +6,11 @@ this.recline.View = this.recline.View || {};
 'use strict';
 
 my.BaseControl = Backbone.View.extend({
-  template: '<div id="control-chart-container">' +
+  templateTop:
+            '<div id="control-chart-container">' +
               '<div class="recline-nvd3-query-editor"></div>' +
-              '<div class="recline-nvd3-filter-editor"></div>' +
+              '<div class="recline-nvd3-filter-editor"></div>' ,
+  templateXFormat:
               '<fieldset>' +
                 '<legend>X Axis</legend>' +
               '<div class="form-group">' +
@@ -34,9 +36,10 @@ my.BaseControl = Backbone.View.extend({
                       '<option data-type="Number" value="$,">$100,000</option>' +
                     '</optgroup>' +
                     '<optgroup label="Percentage">' +
-                      '<option data-type="Number" value="%d">100,000%</option>' +
-                      '<option data-type="Number" value="%,.1f">100,000.0%</option>' +
-                      '<option data-type="Number" value="%,.2f">100,000.00%</option>' +
+                      '<option data-type="Percentage" value="%">.97 -> 97%</option>' +
+                      '<option data-type="Percentage" value="p,.2f">.97 -> 97.00%</option>' +
+                      '<option data-type="PercentageA" value="d">97 -> 97%</option>' +
+                      '<option data-type="PercentageA" value="">97 -> 97.00%</option>' +
                     '</optgroup>' +
                 '</select>' +
               '</div>' +
@@ -81,8 +84,8 @@ my.BaseControl = Backbone.View.extend({
                     '</div>' +
                   '</div>' +
                 '</div>' +
-              '</fieldset>' +
-
+              '</fieldset>',
+  templateYFormat:
               //////// Y AXIS
               '<fieldset>' +
                 '<legend>Y Axis</legend>' +
@@ -111,9 +114,10 @@ my.BaseControl = Backbone.View.extend({
                       '<option data-type="Number" value="$,">$100,000</option>' +
                     '</optgroup>' +
                     '<optgroup label="Percentage">' +
-                      '<option data-type="Percentage" value="d">100,000%</option>' +
-                      '<option data-type="Percentage" value=",.1f">100,000.0%</option>' +
-                      '<option data-type="Percentage" value=",.2f">100,000.00%</option>' +
+                      '<option data-type="Percentage" value="%">.97 -> 97%</option>' +
+                      '<option data-type="PercentageB" value=".2f">.97 -> 97.00%</option>' +
+                      '<option data-type="PercentageA" value=".0f">97 -> 97%</option>' +
+                      '<option data-type="PercentageA" value=".2f">97 -> 97.00%</option>' +
                     '</optgroup>' +
                   '</select>' +
                 '</div>' +
@@ -146,8 +150,139 @@ my.BaseControl = Backbone.View.extend({
                     '</div>' +
                   '</div>' +
                 '</div>' +
-              '</fieldset>' +
+              '</fieldset>',
+  templateY1Format:
+              //////// Y1 AXIS
+              '<fieldset>' +
+                '<legend>Y-1 Axis</legend>' +
 
+                /// Format
+                '<div class="form-group">' +
+                  '<label for="control-chart-y1-format">Format</label>' +
+                  '<select class="form-control" id="control-chart-y1-format">' +
+                    '<optgroup label="Text">' +
+                      '<option data-type="String" value="">Text</option>' +
+                    '</optgroup>' +
+                    '<optgroup label="Numbers">' +
+                      '<option data-type="Number" value="d">100,000</option>' +
+                      '<option data-type="Number" value=",.1f">100,000.0</option>' +
+                      '<option data-type="Number" value=",.2f">100,000.00</option>' +
+                      '<option data-type="Number" value="s">100K</option>' +
+                    '</optgroup>' +
+                    '<optgroup label="Date">' +
+                      '<option data-type="Date" value="%m/%d/%Y">mm/dd/yyyy</option>' +
+                      '<option data-type="Date" value=""%m-%d-%Y">mm-dd-yyyy</option>' +
+                      '<option data-type="Date" value="%Y">Year</option>' +
+                    '</optgroup>' +
+                    '<optgroup label="Currency">' +
+                      '<option data-type="Number" value="$,.2f">$100,000.00</option>' +
+                      '<option data-type="Number" value="$,.1f">$100,000.0</option>' +
+                      '<option data-type="Number" value="$,">$100,000</option>' +
+                    '</optgroup>' +
+                    '<optgroup label="Percentage">' +
+                      '<option data-type="Percentage" value="%">.97 -> 97%</option>' +
+                      '<option data-type="Percentage" value="p,.2f">.97 -> 97.00%</option>' +
+                      '<option data-type="PercentageA" value="">97 -> 97.00%</option>' +
+                    '</optgroup>' +
+                  '</select>' +
+                '</div>' +
+
+                /// Axis label
+                '<div class="form-group">' +
+                  '<div class="row">' +
+                    '<div class="col-md-9 col-sm-9">' +
+                      '<label for="control-chart-y1-axis-label">Y Axis Label</label>' +
+                      '<input class="form-control" type="text" id="control-chart-y1-axis-label" value="{{options.y1Axis.axisLabel}}"/>' +
+                    '</div>' +
+                    '<div class="col-md-3 col-sm-3">' +
+                      '<label for="control-chart-y1-axis-label-distance">Distance</label>' +
+                      '<input class="form-control" type="number" id="control-chart-y1-axis-label-distance" value="{{options.y1Axis.axisLabelDistance}}"/>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+
+                /// Axis ticks
+                '<div class="form-group">' +
+                  '<div class="row">' +
+                    '<div class="col-md-9 col-sm-9">' +
+                      '<label for="control-chart-y1-values">Tick Values</label>' +
+                      '<input class="form-control" placeholder="From.." type="text" id="control-chart-y1-values-from" value="{{y1ValuesFrom}}"/>' +
+                      '<input class="form-control" placeholder="To.." type="text" id="control-chart-y1-values-to" value="{{y1ValuesTo}}"/>' +
+                    '</div>' +
+                    '<div class="col-md-3 col-sm-3">' +
+                      '<label for="control-chart-y1-values-step">Step</label>' +
+                      '<input class="form-control" type="number" id="control-chart-y1-values-step" value="{{y1ValuesStep}}"/>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+              '</fieldset>',
+  templateY2Format: 
+              //////// Y2 AXIS
+              '<fieldset>' +
+                '<legend>Y-2 Axis</legend>' +
+
+                /// Format
+                '<div class="form-group">' +
+                  '<label for="control-chart-y2-format">Format</label>' +
+                  '<select class="form-control" id="control-chart-y2-format">' +
+                    '<optgroup label="Text">' +
+                      '<option data-type="String" value="">Text</option>' +
+                    '</optgroup>' +
+                    '<optgroup label="Numbers">' +
+                      '<option data-type="Number" value="d">100,000</option>' +
+                      '<option data-type="Number" value=",.1f">100,000.0</option>' +
+                      '<option data-type="Number" value=",.2f">100,000.00</option>' +
+                      '<option data-type="Number" value="s">100K</option>' +
+                    '</optgroup>' +
+                    '<optgroup label="Date">' +
+                      '<option data-type="Date" value="%m/%d/%Y">mm/dd/yyyy</option>' +
+                      '<option data-type="Date" value=""%m-%d-%Y">mm-dd-yyyy</option>' +
+                      '<option data-type="Date" value="%Y">Year</option>' +
+                    '</optgroup>' +
+                    '<optgroup label="Currency">' +
+                      '<option data-type="Number" value="$,.2f">$100,000.00</option>' +
+                      '<option data-type="Number" value="$,.1f">$100,000.0</option>' +
+                      '<option data-type="Number" value="$,">$100,000</option>' +
+                    '</optgroup>' +
+                    '<optgroup label="Percentage">' +
+                      '<option data-type="Percentage" value="%">.97 -> 97%</option>' +
+                      '<option data-type="Percentage" value="p,.2f">.97 -> 97.00%</option>' +
+                      '<option data-type="PercentageA" value="d">97 -> 97%</option>' +
+                      '<option data-type="PercentageA" value="">97 -> 97.00%</option>' +
+                    '</optgroup>' +
+                  '</select>' +
+                '</div>' +
+
+                /// Axis label
+                '<div class="form-group">' +
+                  '<div class="row">' +
+                    '<div class="col-md-9 col-sm-9">' +
+                      '<label for="control-chart-y2-axis-label">Y Axis Label</label>' +
+                      '<input class="form-control" type="text" id="control-chart-y2-axis-label" value="{{options.y2Axis.axisLabel}}"/>' +
+                    '</div>' +
+                    '<div class="col-md-3 col-sm-3">' +
+                      '<label for="control-chart-y2-axis-label-distance">Distance</label>' +
+                      '<input class="form-control" type="number" id="control-chart-y2-axis-label-distance" value="{{options.y2Axis.axisLabelDistance}}"/>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+
+                /// Axis ticks
+                '<div class="form-group">' +
+                  '<div class="row">' +
+                    '<div class="col-md-9 col-sm-9">' +
+                      '<label for="control-chart-y2-values">Tick Values</label>' +
+                      '<input class="form-control" placeholder="From.." type="text" id="control-chart-y2-values-from" value="{{y2ValuesFrom}}"/>' +
+                      '<input class="form-control" placeholder="To.." type="text" id="control-chart-y2-values-to" value="{{y2ValuesTo}}"/>' +
+                    '</div>' +
+                    '<div class="col-md-3 col-sm-3">' +
+                      '<label for="control-chart-y2-values-step">Step</label>' +
+                      '<input class="form-control" type="number" id="control-chart-y2-values-step" value="{{y2ValuesStep}}"/>' +
+                    '</div>' +
+                  '</div>' +
+                '</div>' +
+              '</fieldset>',
+  templateGeneral: 
               //////// GENERAL
               '<fieldset>' +
                 '<legend>General</legend>' +
@@ -269,14 +404,39 @@ my.BaseControl = Backbone.View.extend({
                 '</div>' +
               '</div>' +
             '</fieldset>',
-
-  initialize: function(options){
+  
+  linePlusBarXSelect: function () {
     var self = this;
-    self.state = options.state;
-    self.model = options.model;
-    self.renderQueryEditor = options.renderQueryEditor;
-    self.renderFilterEditor = options.renderFilterEditor;
-    self.parent = options.parent;
+    var markup = '<fieldset><legend>Bar Chart Series</legend>' +
+                 '<p>Select which series should be represented as a bar chart</p>' +
+                 '<select id="control-lpb-barchart-field">';
+    this.state.get('seriesFields').forEach(function (field) {
+                  markup += '<option value="' + field + '">' + field + '</option>';
+    });
+                 markup += '</select></fieldset>';
+    return markup;
+  },
+
+  composeTemplate: function() {
+    var template = '';
+    
+    template += this.templateTop;
+    template += this.templateXFormat;
+
+    if (this.state.get('graphType') === 'linePlusBarChart') {
+      template += this.templateY1Format
+      template += this.templateY2Format;
+      template += this.linePlusBarXSelect();
+    } else {
+      template += this.templateYFormat;
+    }
+
+    template += this.templateGeneral;
+    
+    return template;
+  },
+  initialize: function(options){
+    _.extend(this, options);
   },
   events: {
     'change input[type="checkbox"]': 'update',
@@ -288,15 +448,27 @@ my.BaseControl = Backbone.View.extend({
     'submit #control-chart': 'update'
   },
   render: function(){
+    var controlsRendered = false;
     var self = this;
     var sortFields = _.arrayToOptions(_.getFields(self.state.get('model')));
     sortFields.unshift({name:'default', label:'Default', selected: false});
     self.state.set('sortFields', _.applyOption(sortFields, [self.state.get('sort')]));
 
-    var options = self.state.get('options');
+    var options = self.state.get('options') || {};
     options.margin = options.margin || {top: 15, right: 10, bottom: 50, left: 60};
     self.state.set('options', options, {silent : true});
-    self.$el.html(Mustache.render(self.template, self.state.toJSON()));
+    
+    // subclasses define a template with extra controls
+    // otherwise we're rendering the base controls using our compose method
+    if (self.template) {
+      $('#extended-controls').html(Mustache.render(self.template), self.state.toJSON());
+    } 
+    
+    if (!self.controlsRendered){
+      self.controlsRendered = true;
+      $('#base-controls').html(Mustache.render(self.composeTemplate(), self.state.toJSON()));
+    }
+
     self.$('.chosen-select').chosen({width: '95%'});
 
     if(self.state.get('xFormat') && self.state.get('xFormat').format) {
@@ -360,21 +532,40 @@ my.BaseControl = Backbone.View.extend({
         type: self.$('#control-chart-y-format option:selected').data('type'),
         format: self.$('#control-chart-y-format option:selected').val()
       },
+      y1Format:{
+        type: self.$('#control-chart-y1-format option:selected').data('type'),
+        format: self.$('#control-chart-y1-format option:selected').val()
+      },
+      y2Format:{
+        type: self.$('#control-chart-y2-format option:selected').data('type'),
+        format: self.$('#control-chart-y2-format option:selected').val()
+      },
       sort: self.$('#control-chart-sort').val(),
       showTitle: self.$('#control-chart-show-title').is(':checked'),
       xValues: [self.$('#control-chart-x-values-from').val(), self.$('#control-chart-x-values-to').val()],
       xValuesFrom: self.$('#control-chart-x-values-from').val(),
       xValuesTo: self.$('#control-chart-x-values-to').val(),
+      xValuesStep: parseInt(self.$('#control-chart-x-values-step').val() || 1),
       yValues: [self.$('#control-chart-y-values-from').val(), self.$('#control-chart-y-values-to').val()],
       yValuesFrom: self.$('#control-chart-y-values-from').val(),
       yValuesTo: self.$('#control-chart-y-values-to').val(),
-      xValuesStep: parseInt(self.$('#control-chart-x-values-step').val() || 1),
       yValuesStep: parseInt(self.$('#control-chart-y-values-step').val() || 1),
+      y1Values: [self.$('#control-chart-y1-values-from').val(), self.$('#control-chart-y1-values-to').val()],
+      y1ValuesFrom: self.$('#control-chart-y1-values-from').val(),
+      y1ValuesTo: self.$('#control-chart-y1-values-to').val(),
+      y1ValuesStep: parseInt(self.$('#control-chart-y1-values-step').val() || 1),
+      y2Values: [self.$('#control-chart-y2-values-from').val(), self.$('#control-chart-y2-values-to').val()],
+      y2ValuesFrom: self.$('#control-chart-y2-values-from').val(),
+      y2ValuesTo: self.$('#control-chart-y2-values-to').val(),
+      y2ValuesStep: parseInt(self.$('#control-chart-y2-values-step').val() || 1),
+      lpbBarChartField: self.$('#control-lpb-barchart-field').val(),
     };
 
     computedState.options = computedState.options || {};
     computedState.options.xAxis = computedState.options.xAxis || {};
     computedState.options.yAxis = computedState.options.yAxis || {};
+    computedState.options.y1Axis = computedState.options.y1Axis || {};
+    computedState.options.y2Axis = computedState.options.y2Axis || {};
     computedState.options.tooltips = self.$('#control-chart-show-tooltips').is(':checked');
     computedState.options.showControls = self.$('#control-chart-show-controls').is(':checked');
     computedState.options.showLegend = self.$('#control-chart-show-legend').is(':checked');
@@ -384,6 +575,10 @@ my.BaseControl = Backbone.View.extend({
     computedState.options.xAxis.axisLabel = self.$('#control-chart-x-axis-label').val();
     computedState.options.yAxis.axisLabel = self.$('#control-chart-y-axis-label').val();
     computedState.options.yAxis.axisLabelDistance = parseInt(self.$('#control-chart-y-axis-label-distance').val()) || 0;
+    computedState.options.y1Axis.axisLabel = self.$('#control-chart-y1-axis-label').val();
+    computedState.options.y1Axis.axisLabelDistance = parseInt(self.$('#control-chart-y1-axis-label-distance').val()) || 0;
+    computedState.options.y2Axis.axisLabel = self.$('#control-chart-y2-axis-label').val();
+    computedState.options.y2Axis.axisLabelDistance = parseInt(self.$('#control-chart-y2-axis-label-distance').val()) || 0;
     if(self.$('#control-chart-color').val()){
       computedState.options.color = color;
     } else {
@@ -543,10 +738,11 @@ my.QueryEditor = Backbone.View.extend({
       'click .js-edit button': 'onTermFiltersUpdate',
       'click #add-filter-btn': 'onAddFilter'
     },
-    initialize: function() {
+    initialize: function(opts) {
       _.bindAll(this, 'render');
       this.listenTo(this.model.fields, 'all', this.render);
       this.listenTo(this.model.queryState, 'change change:filters:new-blank', this.render);
+      _.extend(this, opts);
       this.render();
     },
     render: function() {

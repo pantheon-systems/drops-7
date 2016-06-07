@@ -1,0 +1,180 @@
+/**
+ * @file
+ * CSS styles for Spotlight widget.
+ */
+
+/**
+ * Spotlight Widget - General Components
+ */
+.pane-bundle-spotlight {
+    font-size: 1em;
+}
+.pane-bundle-spotlight {
+    font-size: 1em;
+}
+.pane-bundle-spotlight input,
+.pane-bundle-spotlight select,
+.pane-bundle-spotlight textarea,
+.pane-bundle-spotlight button {
+    font-size: 1em;
+}
+.pane-bundle-spotlight .panopoly-spotlight-widget-wrapper {
+    border: 0px solid #aaaaaa;
+    background: transparent 50% 50% repeat-x;
+    color: #222222;
+}
+.pane-bundle-spotlight .panopoly-spotlight-widget-wrapper a {
+    color: #222222;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper ul {
+    border: 0px solid #aaaaaa;
+    background: transparent 50% 50% repeat-x;
+    color: #222222;
+    font-weight: bold;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper a {
+    color: #222222;
+}
+
+/**
+ * Spotlight Widget - Function Buttons
+ */
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper {
+    display: none;
+    z-index: 1;
+    position: absolute;
+    top: 0.7em;
+    right: 0.7em;
+}
+.pane-bundle-spotlight .panopoly-spotlight-function-buttons {
+    display: inline-block;
+    padding: 0;
+    vertical-align: top;
+}
+.pane-bundle-spotlight .panopoly-spotlight-function-buttons a {
+    display: inline-block;
+    line-height: 25px;
+    color: #FFFFFF;
+    padding: 0px 10px;
+    background: none;
+    background-color: #000;
+    opacity: .75;
+    border: 1px solid #000000 !important;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+
+/**
+ * Spotlight Widget - Tabs Styles.
+ */
+.pane-bundle-spotlight .panopoly-spotlight-widget-wrapper {
+    position: relative;
+    padding: 0em;
+    zoom: 1;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper ul {
+    display: inline-block;
+    margin: 0;
+    padding: 0;
+    vertical-align: top;
+    font: bold 13px/25px 'Open Sans', 'Lucida Sans', 'Lucida Grande', verdana sans-serif;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li {
+    list-style: none;
+    float: left;
+    position: relative;
+    top: 0px;
+    margin: 0 .2em 1px 0;
+    border-bottom: 1px solid #AAAAAA !important;
+    padding: 0;
+    white-space: nowrap;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li a {
+    float: left;
+    padding: 0px 10px;
+    text-decoration: none;
+    font-weight: normal;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li.active {
+    margin-bottom: 0;
+    padding-bottom: 0px;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li.active a {
+    cursor: text;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li a {
+    cursor: pointer;
+}
+.pane-bundle-spotlight .panopoly-spotlight {
+    display: block;
+    border-width: 0;
+    padding: 0em;
+    background: none;
+}
+
+/**
+ * Spotlight Widget - Specific Overrides and Styles
+ */
+.pane-bundle-spotlight .panopoly-spotlight-wrapper ul {
+    /*position: absolute; right: .7em; top: .7em;*/
+}
+.pane-bundle-spotlight .panopoly-spotlight-wrapper {
+    position: absolute;
+    left: 0px;
+    bottom: 0px;
+    display: inline-block;
+    max-width: 85%;
+}
+.pane-bundle-spotlight .panopoly-spotlight-wrapper h2 {
+    margin: 0;
+}
+.pane-bundle-spotlight .panopoly-spotlight-wrapper h2 a {
+    text-decoration: none;
+    color: #FFFFFF;
+}
+.pane-bundle-spotlight .panopoly-spotlight-wrapper p {
+    font-size: .8em;
+    margin: 0;
+    line-height: 1.2em;
+    margin-top: 5px;
+}
+.pane-bundle-spotlight .panopoly-spotlight-label {
+    display: inline-block;
+    background-color: #FFF;
+    opacity: .75;
+}
+.pane-bundle-spotlight .panopoly-spotlight-label {
+    padding: .3em .7em;
+    margin: 0 50px 0 0;
+}
+.pane-bundle-spotlight .panopoly-spotlight-info {
+    padding: .7em;
+    background-color: #000000;
+    color: #FFFFFF;
+    opacity: .75;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li {
+    background: none;
+    background-color: #000;
+    opacity: .75;
+    border: 1px solid #000000 !important;
+    border-top-left-radius: 0px;
+    border-top-right-radius: 0px;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li a {
+    color: #FFFFFF;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li.active {
+    background-color: #FFFFFF;
+}
+.pane-bundle-spotlight .panopoly-spotlight-buttons-wrapper li.active a {
+    color: #000000;
+}
+.pane-bundle-spotlight .panopoly-spotlight {
+    position: relative;
+}
+.pane-bundle-spotlight .panopoly-spotlight .panopoly-image-full {
+    border: 0;
+}
+
+

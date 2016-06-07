@@ -165,39 +165,54 @@ function _uuid_generate_pecl() {
 }
 
 /**
- * Generates a UUID v4 using PHP code.
- * 
- * Based on code from @see http://php.net/uniqid#65879 , but corrected.
+ * Generates a UUID v4 (RFC 4122 section 4.4) using PHP code.
+ *
+ * @see http://www.rfc-editor.org/rfc/rfc4122.txt
+ *
+ * The UUID layout and fields are defined in section 4.1.2.
+ *
+ * Note that there are inconsistencies in the RFC with respect to
+ * bit numbering. Network Order is correct, so the most significant bit
+ * always appears first (in left-to-right sequence). See errata 3546:
+ * http://www.rfc-editor.org/errata_search.php?rfc=4122&eid=3546
+ *
+ * Based on code from http://php.net/uniqid
  */
 function _uuid_generate_php() {
-  // The field names refer to RFC 4122 section 4.1.2.
+  // We limit each generated number to 16 bits (maximum value 0xffff)
+  // because mt_rand() returns a *signed* integer, and hence a 32-bit
+  // value can only have a 31-bit magnitude. Constructing a 32-bit
+  // number from two 16-bit random numbers guarantees that all 32 bits
+  // are random.
   return sprintf('%04x%04x-%04x-4%03x-%04x-%04x%04x%04x',
     // 32 bits for "time_low".
-    mt_rand(0, 65535), mt_rand(0, 65535),
+    mt_rand(0, 0xffff), mt_rand(0, 0xffff),
     // 16 bits for "time_mid".
-    mt_rand(0, 65535),
-    // 12 bits after the 0100 of (version) 4 for "time_hi_and_version".
-    mt_rand(0, 4095),
-    bindec(substr_replace(sprintf('%016b', mt_rand(0, 65535)), '10', 0, 2)),
-    // 8 bits, the last two of which (positions 6 and 7) are 01, for "clk_seq_hi_res"
-    // (hence, the 2nd hex digit after the 3rd hyphen can only be 1, 5, 9 or d)
-    // 8 bits for "clk_seq_low" 48 bits for "node".
-    mt_rand(0, 65535), mt_rand(0, 65535), mt_rand(0, 65535)
+    mt_rand(0, 0xffff),
+    // 12 bits after the initial 0100 (version 4) for "time_hi_and_version".
+    mt_rand(0, 0x0fff),
+    // 16 bits in total for "clk_seq_hi_res" and "clk_seq_low", with the
+    // most significant 2 bits of clk_seq_hi_res set to '10'. We do a
+    // bitwise OR of a random 14-bit value (maximum 0x3fff) with 0x8000
+    // (a 16-bit integer with only the most significant bit set).
+    mt_rand(0, 0x3fff) | 0x8000,
+    // 48 bits for "node".
+    mt_rand(0, 0xffff), mt_rand(0, 0xffff), mt_rand(0, 0xffff)
   );
 }
 
 
 // This is wrapped in an if block to avoid conflicts with PECL's uuid_is_valid().
-/**
- * Check that a string appears to be in the format of a UUID.
- *
- * @param $uuid
- *  The string to test.
- *
- * @return
- *   TRUE if the string is well formed.
- */
 if (!function_exists('uuid_is_valid')) {
+  /**
+   * Check that a string appears to be in the format of a UUID.
+   *
+   * @param $uuid
+   *  The string to test.
+   *
+   * @return
+   *   TRUE if the string is well formed.
+   */
   function uuid_is_valid($uuid) {
     return preg_match('/^' . UUID_PATTERN . '$/', $uuid);
   }

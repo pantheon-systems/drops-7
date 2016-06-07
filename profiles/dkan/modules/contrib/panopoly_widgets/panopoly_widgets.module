@@ -93,14 +93,6 @@ function panopoly_widgets_page_build(&$page) {
   drupal_add_js(drupal_get_path('module', 'panopoly_widgets') . '/panopoly-widgets.js', array('scope' => 'footer'));
   drupal_add_library('system', 'ui.tabs');
   drupal_add_js(drupal_get_path('module', 'panopoly_widgets') . '/panopoly-widgets-spotlight.js', array('scope' => 'footer'));
-
-  // If jquery_update was used to update jQuery UI to version 1.9 or higher
-  // than we need to load a plugin to add the '.rotate' function to the tabs
-  // widget.
-  $jquery_ui = drupal_get_library('system', 'ui');
-  if (version_compare($jquery_ui['version'], '1.9', '>=')) {
-    drupal_add_js(drupal_get_path('module', 'panopoly_widgets') . '/jquery-ui-tabs-rotate.js', array('scope' => 'footer'));
-  }
 }
     
 /**
@@ -196,7 +188,12 @@ function panopoly_widgets_form_alter(&$form, &$form_state, $form_id) {
     $form['title']['#attributes']['placeholder'] = $form['title']['#title'];
     $form['title']['#title_display'] = 'invisible';
     $form['widget_settings']['title'] = $form['title'];
-    unset($form['title']);
+
+    // If the title hasn't been replaced by the title module then it's safe to
+    // unset it. Otherwise it's already been hidden by the title module.
+    if(!(module_exists('title') && isset($form['title']['#field_replacement']) && $form['title']['#field_replacement'])){
+      unset($form['title']);
+    }
 
     // Move the link field into the general settings tab.
     $form['widget_settings']['link'] = $form['link'];
@@ -389,12 +386,11 @@ function panopoly_widgets_entity_info_alter(&$entity_info) {
  */
 function panopoly_widgets_theme($existing, $type, $theme, $path) {
   return array(
+    'panopoly_spotlight_wrapper' => array(
+      'render element' => 'element',
+    ),
     'panopoly_spotlight_view' => array(
-      'variables' => array(
-        'items' => NULL,
-        'delta' => NULL,
-        'settings' => NULL,
-      ),
+      'render element' => 'element',
     ),
   );
 }
@@ -425,7 +421,8 @@ function panopoly_widgets_file_default_displays_alter(&$default_displays) {
 
   // Set the default video configuration for videos
   if (!empty($default_displays['video__default__media_vimeo_video'])) {
-    $default_displays['video__default__media_vimeo_video']->settings['protocol'] = '//';
+    $default_displays['video__default__media_vimeo_video']->weight = 0;
+    $default_displays['video__default__media_vimeo_video']->settings['protocol_specify'] = FALSE;
   }
 
   // Set the default image style for videos to be our custom video image style

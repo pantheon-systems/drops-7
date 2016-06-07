@@ -115,17 +115,17 @@ function colorizer_preprocess_html(&$vars){
     return;
   }
 
+  $instance = $theme_key;
+  // allow other modules to change the instance we are updating
+  // allows for group-specific color instances rather than tying to theme
+  drupal_alter('colorizer_instance', $instance);
+
   // check to see if colorizer css file exists on site
   $source_path = drupal_get_path('theme', $theme_key) . '/';
   $source_file = $source_path . variable_get('colorizer_cssfile', '');
   if (!file_exists($source_file)) {
     return;
   }
-
-  $instance = $theme_key;
-  // allow other modules to change the instance we are updating
-  // allows for group-specific color instances rather than tying to theme
-  drupal_alter('colorizer_instance', $instance);
 
   $file = colorizer_load($instance, 'stylesheet');
 

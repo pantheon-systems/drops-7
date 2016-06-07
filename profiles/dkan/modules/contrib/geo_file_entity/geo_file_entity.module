@@ -14,7 +14,7 @@ function geo_file_entity_libraries_info() {
   $libraries['leaflet_zoomtogeometries'] = array(
     'name' => 'Leaflet Map zoomToGeometries',
     'vendor url' => 'http://github.com/NuCivic/',
-    'download url' => 'https://github.com/NuCivic/leaflet.map.zoomToGeometries.js/zipball/master',
+    'download url' => 'https://github.com/NuCivic/leaflet.map.zoomToGeometries.js/archive/master.zip',
     'path' => '',
     'version arguments' => array(
       'file' => 'bower.json',

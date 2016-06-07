@@ -186,14 +186,15 @@ function workbench_moderation_menu_alter(&$items) {
   $items['node/%node/revisions']['page arguments'] = array(1);
 
   // Override the node revision view callback.
- $items['node/%node/revisions/%/view']['page callback'] = 'workbench_moderation_node_view_revision';
- $items['node/%node/revisions/%/view']['file path'] = drupal_get_path('module', 'workbench_moderation');
- $items['node/%node/revisions/%/view']['file'] = 'workbench_moderation.node.inc';
-
+  $items['node/%node/revisions/%/view']['page callback'] = 'workbench_moderation_node_view_revision';
+  $items['node/%node/revisions/%/view']['file path'] = drupal_get_path('module', 'workbench_moderation');
+  $items['node/%node/revisions/%/view']['file'] = 'workbench_moderation.node.inc';
 
   // For revert and delete operations, use our own access check.
   $items['node/%node/revisions/%/revert']['access callback'] = '_workbench_moderation_revision_access';
+  $items['node/%node/revisions/%/revert']['access arguments'] = array(1, 'update');
   $items['node/%node/revisions/%/delete']['access callback'] = '_workbench_moderation_revision_access';
+  $items['node/%node/revisions/%/delete']['access arguments'] = array(1, 'delete');
 
   // Provide a container administration menu item, if one doesn't already exist.
   if (!isset($items['admin/config/workbench'])) {
@@ -447,45 +448,6 @@ function workbench_moderation_node_access($node, $op, $account) {
 }
 
 /**
- * Implements hook_node_grants().
- *
- * We associated role IDs with the 'view all unpublished content' permission with
- * the workbench_moderation realm in the node_access table. Here, we return the
- * role ID values associated with the user.
- */
-function workbench_moderation_node_grants($user, $op) {
-  $grants['workbench_moderation'] = array_keys($user->roles);
-  return $grants;
-}
-
-/**
- * Implements hook_node_access_records().
- *
- * This function supplies the workbench moderation grants for unpublished
- * content. workbench_moderation adds the 'view all unpublished content'
- * permission so it captures and returns the role IDs which include that
- * permission.
- */
-function workbench_moderation_node_access_records($node) {
-  if ($node->status) {
-    // It's published, default handling is okay.
-    return;
-  }
-  $result = db_query("SELECT rid FROM {role_permission} WHERE permission = 'view all unpublished content'");
-  foreach ($result as $grant) {
-    $grants[] = array(
-      'realm' => 'workbench_moderation',
-      'gid' => $grant->rid,
-      'grant_view' => 1,
-      'grant_update' => 0,
-      'grant_delete' => 0,
-      'priority' => 0,
-    );
-  }
-  return !empty($grants) ? $grants : array();
-}
-
-/**
  * Custom access handler for node operations.
  *
  * @param $op
@@ -566,27 +528,8 @@ function _workbench_moderation_revision_access($node, $op) {
     }
   }
 
-  // Temporarily give the node an impossible revision.
-  // _node_revision_access() keeps access check results in a static variable
-  // indexed by revision only, not by op. Thus, subsequent checks on the same
-  // vid for different ops yield the same result, regardless of permissions.
-  // Setting a fake vid here allows us to store different static results per op.
-  $tmp = $node->vid;
-  switch ($op) {
-    case 'update':
-      $node->vid = -1;
-      break;
-    case 'delete':
-      $node->vid = -2;
-      break;
-  }
-
   // Check access.
-  $access = _node_revision_access($node, $op);
-
-  // Restore the original revision id.
-  $node->vid = $tmp;
-  return $access;
+  return _node_revision_access($node, $op);
 }
 
 /**
@@ -760,7 +703,7 @@ function workbench_moderation_node_update($node) {
 
   // Don't proceed if moderation is not enabled on this content, or if
   // we're replacing an already-published revision.
-  if (!workbench_moderation_node_moderated($node) ||
+  if (!workbench_moderation_node_moderated($node) || 
       !empty($node->workbench_moderation['updating_live_revision'])) {
     return;
   }
@@ -1393,11 +1336,47 @@ function workbench_moderation_state_labels() {
   if (!isset($labels)) {
     $labels = array();
     foreach (workbench_moderation_states() as $machine_name => $state) {
-      $labels[$machine_name] = $state->label;
+      if (module_exists('i18n_string')) {
+        $labels[$machine_name] = i18n_string_translate(array('workbench_moderation', 'moderation_state', $machine_name, 'label'), $state->label);
+      }
+      else {
+        $labels[$machine_name] = $state->label;
+      }
     }
   }
 
   return $labels;
+}
+
+/**
+ * Implements hook_i18n_string_info().
+ */
+function workbench_moderation_i18n_string_info() {
+  $groups['workbench_moderation'] = array(
+    'title' => t('Workbench moderation'),
+    'description' => t('Translatable workbench moderation states: label.'),
+    // This group doesn't have strings with format.
+    'format' => FALSE,
+    // This group can list all strings.
+    'list' => TRUE,
+  );
+  return $groups;
+}
+
+/**
+ * Implements hook_i18n_string_list().
+ */
+function workbench_moderation_i18n_string_list($group) {
+  $strings = array();
+
+  if ($group == 'workbench_moderation') {
+    foreach (workbench_moderation_states() as $state) {
+      $strings['workbench_moderation']['moderation_state'][$state->name]['label'] = $state->label;
+      $strings['workbench_moderation']['moderation_state'][$state->name]['description'] = $state->description;
+    }
+  }
+
+  return $strings;
 }
 
 /**
@@ -1807,9 +1786,17 @@ function workbench_moderation_store($node) {
   $taxonomy_index_flag = &drupal_static('taxonomy_field_update', array());
   unset($taxonomy_index_flag[$node->nid]);
 
+  // Ensure we do not have field translations belonging to a draft revision in
+  // the field data tables.
+  $empty_values = array_fill_keys(array_keys(language_list()), array());
+  foreach (field_info_instances('node', $live_revision->type) as $field_name => $instance) {
+    $field = field_info_field($field_name);
+    if (!empty($live_revision->{$field_name}) && field_is_translatable('node', $field)) {
+      $live_revision->{$field_name} += $empty_values;
+    }
+  }
+
   // Save the node.
-  $live_revision->revision = 0;
-  $live_revision->path['pathauto'] = 0;
   node_save($live_revision);
 }
 

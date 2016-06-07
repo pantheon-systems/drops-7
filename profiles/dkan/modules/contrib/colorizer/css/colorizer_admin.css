@@ -31,7 +31,7 @@
 .colorizer-form .form-text,
 .colorizer-form .form-select {
   float: left; /* LTR */
-  width: 40%;
+  width: 10em;
   margin-left: 1em;
 }
 .colorizer-form .form-text {
@@ -54,7 +54,7 @@
   background-position: 50% -22px;
 }
 #palette .form-item {
-  width: 50%;
+  width: 100%;
 }
 #palette .item-selected {
   background: #eee;

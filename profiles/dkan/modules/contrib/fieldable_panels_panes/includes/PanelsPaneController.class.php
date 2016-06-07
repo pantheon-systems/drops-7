@@ -168,6 +168,9 @@ class PanelsPaneController extends DrupalDefaultEntityController {
         module_invoke_all('entity_insert', $entity, 'fieldable_panels_pane');
       }
 
+      // Clear the appropriate caches for this object.
+      entity_get_controller('fieldable_panels_pane')->resetCache(array($entity->fpid));
+
       return $entity;
     }
     catch (Exception $e) {
@@ -197,7 +200,12 @@ class PanelsPaneController extends DrupalDefaultEntityController {
     $entity->uid = $uid;
     // Update the existing revision if specified.
     if (!empty($entity->vid)) {
-      drupal_write_record('fieldable_panels_panes_revision', $entity, 'vid');
+      if (module_exists('uuid')) {
+        drupal_write_record('fieldable_panels_panes_revision', $entity, 'vuuid');
+      }
+      else {
+        drupal_write_record('fieldable_panels_panes_revision', $entity, 'vid');
+      }
     }
     else {
       // Otherwise insert a new revision. This will automatically update $entity
@@ -231,7 +239,10 @@ class PanelsPaneController extends DrupalDefaultEntityController {
     // behavior (for example, to restrict contextual links to certain view
     // modes) by implementing hook_fieldable_panels_pane_view_alter().
     if (!empty($entity->fpid) && !($view_mode == 'full' && fieldable_panels_pane_is_page($entity))) {
-      $build['#contextual_links']['fieldable_panels_panes'] = array('admin/structure/fieldable-panels-panes/view', array($entity->fpid));
+      // Allow the contextual links to be controlled from the settings page.
+      if (!variable_get('fpp_hide_contextual_links', FALSE)) {
+        $build['#contextual_links']['fieldable_panels_panes'] = array('admin/structure/fieldable-panels-panes/view', array($entity->fpid));
+      }
     }
 
     // Allow modules to modify the structured pane.

@@ -309,6 +309,7 @@ abstract class FacetapiAdapter {
       // Perform basic parsing of the filter.
       $parts = explode(':', $filter, 2);
       $field_alias = rawurldecode($parts[0]);
+      $filter = $field_alias . ':' . $parts[1]; // @see https://www.drupal.org/node/1884152
       if (isset($parts[1]) && isset($enabled_aliases[$field_alias])) {
 
         // Store basic information about the active item. For details on how
@@ -778,6 +779,8 @@ abstract class FacetapiAdapter {
         'sort_weight' => array(),
         'sort_order' => array(),
         'empty_behavior' => 'none',
+        'facet_more_text' => 'Show more',
+        'facet_fewer_text' => 'Show fewer',
       );
 
       // Apply default sort info only if the configuration is "new".
@@ -848,11 +851,15 @@ abstract class FacetapiAdapter {
         'facet_mincount' => 1,
         'facet_missing' => 0,
         'flatten' => 0,
+        'individual_parent' => 0,
         'query_type' => $default_query_type,
       );
 
       // Apply the adapter's default settings.
       $this->settings[$name]->settings += $this->getDefaultSettings();
+
+      // Apply the URL processor's default settings.
+      $this->settings[$name]->settings += $this->getUrlProcessor()->getDefaultSettings();
 
       // Applies each dependency plugin's default settings.
       foreach ($facet['dependency plugins'] as $id) {
@@ -1480,7 +1487,9 @@ class FacetapiFacetProcessor {
     }
 
     // Iterates over the render array and merges in defaults.
-    foreach (element_children($build) as $value) {
+    // @see https://www.drupal.org/node/1398036 for why array_keys() is used
+    // instead of element_children().
+    foreach (array_keys($build) as $value) {
       $item_defaults = array(
         '#markup' => $value,
         '#indexed_value' => $value,
@@ -1556,20 +1565,24 @@ class FacetapiFacetProcessor {
 
     // Tests whether parents have an active child.
     // @todo: Can we make this more efficient?
-    do {
-      $active = 0;
-      foreach ($build as $value => $item) {
-        if ($item['#active'] && !empty($item['#item_parents'])) {
-          // @todo Can we build facets with multiple parents? Core taxonomy
-          // form cannot, so we will need a check here.
-          foreach ($item['#item_parents'] as $parent) {
-            if (!$build[$parent]['#active']) {
-              $active = $build[$parent]['#active'] = 1;
+    $settings = $this->facet->getSettings();
+    if (!$settings->settings['individual_parent']) {
+      do {
+        $active = 0;
+        foreach ($build as $value => $item) {
+          if ($item['#active'] && !empty($item['#item_parents'])) {
+            // @todo Can we build facets with multiple parents? Core taxonomy
+            // form cannot, so we will need a check here.
+            foreach ($item['#item_parents'] as $parent) {
+              if (!$build[$parent]['#active']) {
+                $active = $build[$parent]['#active'] = 1;
+              }
             }
           }
         }
       }
-    } while ($active);
+      while ($active);
+    }
 
     // Since the children are copied to their parent's "#item_parents" property
     // during processing, we have to filter the original child items from the
@@ -1591,8 +1604,11 @@ class FacetapiFacetProcessor {
         $this->processQueryStrings($item['#item_children']);
         // Merges the childrens' values if the item is active so the children
         // are deactivated along with the parent.
-        if ($item['#active']) {
-          $values = array_merge(facetapi_get_child_values($item['#item_children']), $values);
+        $settings = $this->facet->getSettings();
+        if (!$settings->settings['individual_parent']) {
+          if ($item['#active']) {
+            $values = array_merge(facetapi_get_child_values($item['#item_children']), $values);
+          }
         }
       }
       // Stores this item's active children so we can deactivate them in the

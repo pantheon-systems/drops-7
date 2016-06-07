@@ -5,6 +5,7 @@
  */
 
 class FppTestHelper extends DrupalWebTestCase {
+
   /**
    * Admin user.
    *

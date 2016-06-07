@@ -18,8 +18,8 @@ class FacetapiFilterShowIfMinimumItems extends FacetapiFilter {
     $this->active = FALSE;
     $this->calculateItemsNumber($build);
 
-    // If there is only X elements available we hide the facet.
-    if (!$this->active && $this->count = $this->settings->settings['show_minimum_items']) {
+    // If there is less than X elements available, hide the facet.
+    if (!$this->active && $this->count < $this->settings->settings['show_minimum_items']) {
       return array();
     }
 

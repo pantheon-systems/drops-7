@@ -12,7 +12,7 @@ function panopoly_images_init() {
 
   $images_loaded = libraries_load('jquery.imagesloaded');
   if(empty($images_loaded['loaded'])) {
-    watchdog('panopoly-images', 'Panopoly Images could not findthe jquery.imagesloaded library. This should get loaded by the Manual Crop module', array(), WATCHDOG_ERROR);
+    watchdog('panopoly-images', 'Panopoly Images could not find the jquery.imagesloaded library. This should get loaded by the Manual Crop module', array(), WATCHDOG_ERROR);
   }
   else {
     drupal_add_js(drupal_get_path('module', 'panopoly_images') . '/panopoly-images.js', array('type' => 'file', 'group' => JS_DEFAULT, 'every_page' => TRUE));

@@ -55,7 +55,7 @@ test( "Per-element Options Are Read From Data Attributes", function() {
     showAlpha: true
   });
 
-  equal ( changeDefault.spectrum("option", "showAlpha"), false, "Took showAlpha value from data attribute");
+  equal ( changeDefault.spectrum("option", "showAlpha"), true, "Took showAlpha value from options arg");
 
   changeDefault.spectrum("destroy");
 
@@ -69,12 +69,11 @@ test( "Per-element Options Are Read From Data Attributes", function() {
 });
 
 test( "Events Fire", function() {
-  var el = $("<input id='spec' />").spectrum();
+  expect(4);
   var count = 0;
-  expect(5);
+  var el = $("<input id='spec' />").spectrum();
 
   el.on("beforeShow.spectrum", function(e) {
-
     // Cancel the event the first time
     if (count === 0) {
       ok(true, "Cancel beforeShow");
@@ -82,24 +81,23 @@ test( "Events Fire", function() {
       return false;
     }
 
-    ok (count === 1, "Allow beforeShow");
+    equal(count, 1, "Allow beforeShow");
     count++;
   });
 
 
   el.on("show.spectrum", function(e) {
-    ok(count === 2, "Show");
+    equal(count, 2, "Show");
     count++;
   });
 
   el.on("hide.spectrum", function(e) {
-    ok(count === 3, "Hide");
-
+    equal(count, 3, "Hide");
     count++;
   });
 
   el.on("move.spectrum", function(e) {
-
+    ok(false, "Change should not fire from `move` call");
   });
 
   el.on("change", function(e, color) {
@@ -111,17 +109,31 @@ test( "Events Fire", function() {
   el.spectrum("hide");
 
   el.spectrum("set", "red");
-
   el.spectrum("destroy");
+});
 
-  var el2 = $("<input />").spectrum({
+test( "Events Fire (text input change)", function() {
+  expect(3);
+  var count = 0;
+  var el = $("<input id='spec' />").spectrum({
     showInput: true
   });
-  el2.on("change.spectrum", function(e, color) {
-    ok(true, "Change should fire input changing");
+  el.on("move.spectrum", function(e, color) {
+    equal(count, 0, "Move fires when input changes");
+    count++;
   });
-  el2.spectrum("container").find(".sp-input").val("blue").trigger("change");
-  el2.spectrum("destroy");
+
+  el.on("change.spectrum", function(e, color) {
+    equal(count, 2, "Change should not fire when input changes, only when chosen");
+    count++;
+  });
+
+  el.spectrum("container").find(".sp-input").val("blue").trigger("change");
+  count++;
+  el.spectrum("container").find(".sp-choose").click();
+  el.spectrum("destroy");
+
+  equal(count, 3, "All events fired");
 });
 
 test( "Escape hides the colorpicker", function() {
@@ -190,7 +202,7 @@ test( "Default Color Is Set By Input Value", function() {
 module("Palettes");
 
 test( "Palette Events Fire In Correct Order ", function() {
-  expect(2);
+  expect(4);
   var el = $("<input id='spec' value='red' />").spectrum({
     showPalette: true,
     palette: [
@@ -203,41 +215,93 @@ test( "Palette Events Fire In Correct Order ", function() {
 
   var count = 0;
   el.on("move.spectrum", function(e) {
-    ok(count === 0, "move fires before change");
+    equal(count, 0, "move fires before change");
     count++;
   });
 
   el.on("change.spectrum", function(e) {
-    ok(count === 1, "change fires after move");
+    equal(count, 1, "change fires after move");
+    count++;
   });
 
   el.spectrum("container").find(".sp-thumb-el:last-child").click();
+  equal(count, 1, "Change event hasn't fired after palette click");
+
+  el.spectrum("container").find(".sp-choose").click();
+  equal(count, 2, "Change event has fired after choose button click");
+
   el.spectrum("destroy");
 });
 
-test( "Palette click events work ", function() {
-  var el = $("<input id='spec' value='red' />").spectrum({
+test( "Palette click events work", function() {
+  expect(7);
+
+  var moveCount = 0;
+  var moves = ["blue", "green", "red"];
+  var changeCount = 0;
+
+  var el = $("<input id='spec' value='orange' />").spectrum({
     showPalette: true,
+    preferredFormat: "name",
     palette: [
       ["red", "green", "blue"]
     ],
-    move: function() {
-
+    show: function(c) {
+      equal(c.toName(), "orange", "correct shown color");
+    },
+    move: function(c) {
+      equal(c.toName(), moves[moveCount], "Move # " + moveCount + " is correct");
+      moveCount++;
+    },
+    change: function(c) {
+      equal(changeCount, 0, "Only one change happens");
+      equal(c.toName(), "red");
+      changeCount++;
     }
-  });
+  }).spectrum("show");
 
   el.spectrum("container").find(".sp-thumb-el:nth-child(3)").click();
-  equal (el.spectrum("get").toName(), "blue", "First click worked");
   el.spectrum("container").find(".sp-thumb-el:nth-child(2) .sp-thumb-inner").click();
-  equal (el.spectrum("get").toName(), "green", "Second click worked (on child element)");
   el.spectrum("container").find(".sp-thumb-el:nth-child(1) .sp-thumb-inner").click();
-  equal (el.spectrum("get").toName(), "red", "Third click worked (on child element)");
-  el.spectrum("destroy");
+  el.spectrum("container").find(".sp-choose").click();
 
+  equal(el.val(), "red", "Element's value is set");
+  el.spectrum("destroy");
 });
 
-test( "hideAfterPaletteSelect: Palette stays open after color select", function() {
-  var el = $("<input id='spec' value='red' />").spectrum({
+test( "Palette doesn't changes don't stick if cancelled", function() {
+  expect(4);
+
+  var moveCount = 0;
+  var moves = ["blue", "green", "red", "orange"];
+  var changeCount = 0;
+
+  var el = $("<input id='spec' value='orange' />").spectrum({
+    showPalette: true,
+    preferredFormat: "name",
+    palette: [
+      ["red", "green", "blue"]
+    ],
+    move: function(c) {
+      equal(c.toName(), moves[moveCount], "Move # " + moveCount + " is correct");
+      moveCount++;
+    },
+    change: function(c) {
+      ok(false, "No change fires");
+    }
+  }).spectrum("show");
+
+  el.spectrum("container").find(".sp-thumb-el:nth-child(3)").click();
+  el.spectrum("container").find(".sp-thumb-el:nth-child(2)").click();
+  el.spectrum("container").find(".sp-thumb-el:nth-child(1)").click();
+  el.spectrum("container").find(".sp-cancel").click();
+
+  equal(el.val(), "orange", "Element's value is the same");
+  el.spectrum("destroy");
+});
+
+test( "hideAfterPaletteSelect: Palette stays open after color select when false", function() {
+  var el = $("<input id='spec' value='orange' />").spectrum({
     showPalette: true,
     hideAfterPaletteSelect: false,
     palette: [
@@ -252,10 +316,14 @@ test( "hideAfterPaletteSelect: Palette stays open after color select", function(
   el.spectrum("destroy");
 });
 
-test( "hideAfterPaletteSelect: Palette closes after color select", function() {
-  var el = $("<input id='spec' value='red' />").spectrum({
+test( "hideAfterPaletteSelect: Palette closes after color select when true", function() {
+  expect(2);
+  var el = $("<input id='spec' value='orange' />").spectrum({
     showPalette: true,
     hideAfterPaletteSelect: true,
+    change: function(c) {
+      equal(c.toName(), "red", "change fires");
+    },
     palette: [
       ["red", "green", "blue"]
     ]
@@ -575,6 +643,22 @@ test( "Methods work as described", function() {
   ok (color.toHsvString() == "hsv(39, 100%, 100%)", "Color has been set and gotten as hsv");
   ok (color.toRgbString() == "rgb(255, 165, 0)", "Color has been set and gotten as rgb");
   ok (color.toHslString() == "hsl(39, 100%, 50%)", "Color has been set and gotten as hsl");
+  ok (
+    (function() {
+      var i, argb, a;
+      for (i = 0; i < 16; i++) {
+        argb = ('0' + i.toString(16) + '000000');
+        a = Math.round(
+          el.spectrum('set', argb).spectrum('get').getAlpha() * 255
+        );
+        if (a != i) {
+          return false;
+        }
+      }
+      return true;
+    })(),
+    'Set and get has preserved alpha resolution'
+  );
 
   // Method - container
   ok (el.spectrum("container").hasClass("sp-container"), "Container can be retrieved");

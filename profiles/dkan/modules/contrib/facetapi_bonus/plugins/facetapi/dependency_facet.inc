@@ -37,31 +37,31 @@ class FacetapiDependencyFacet extends FacetapiDependency {
         // Check if any configured facet dependency is met.
         foreach ($facets as $facet_name) {
           if ($this->activeItems[$facet_name]) {
-            // Show if dependency is met without specific dependency items.
+            // Show/hide if dependency is met without specific dependency items.
             if (empty($this->settings['facet_items_' . $facet_name])) {
-              return;
+              return !$this->settings['reverse_dependency'];
             }
             else {
               $items_string = trim($this->settings['facet_items_' . $facet_name]);
               $facet_items = drupal_explode_tags($items_string);
-              // Show if dependency is met without specific dependency items.
+              // Show/hide if dependency is met without specific dependency items.
               if (empty($items_string) || !count($facet_items)) {
-                return;
+                return !$this->settings['reverse_dependency'];
               }
-              // Show if dependency is met with specific dependency items.
+              // Show/hide if dependency is met with specific dependency items.
               else {
                 foreach ($facet_items as $facet_item) {
                   foreach ($this->activeItems[$facet_name] as $active_facet_item_key => $active_facet_item_data) {
                     if (!empty($facet_item)) {
                       if (!$this->settings['regex']) {
                         if ($facet_item == $active_facet_item_key) {
-                          return;
+                          return !$this->settings['reverse_dependency'];
                         }
                       }
                       else {
                         $facet_item = '/' . trim(str_replace('/', '\\/', $facet_item)) . '/';
                         if (preg_match($facet_item, $active_facet_item_key)) {
-                          return;
+                          return !$this->settings['reverse_dependency'];
                         }
                       }
                     }
@@ -72,8 +72,8 @@ class FacetapiDependencyFacet extends FacetapiDependency {
           }
         }
 
-        // Otherwise hide this facet.
-        return FALSE;
+        // Otherwise show/hide this facet.
+        return $this->settings['reverse_dependency'];
       }
     }
   }
@@ -91,6 +91,13 @@ class FacetapiDependencyFacet extends FacetapiDependency {
       '#default_value' => $this->settings['facets'],
       '#options' => array_map('check_plain', $facets),
       '#description' => t('Show this facet only if another one of these selected facet(s) is actively in use. If you select no other facets, the facet will be visible not depend on other facets.'),
+    );
+
+    $form[$this->id]['reverse_dependency'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Reverse dependency.'),
+      '#default_value' => $this->settings['reverse_dependency'],
+      '#description' => t('Reverse dependency logic: the facet will be deactivated in the dependency is met.'),
     );
 
     $form[$this->id]['force_deactivation'] = array(
@@ -132,6 +139,7 @@ class FacetapiDependencyFacet extends FacetapiDependency {
     if (!count($this->defaultSettings)) {
       $this->defaultSettings = array(
                                      'facets' => array(),
+                                     'reverse_dependency' => FALSE,
                                      'force_deactivation' => TRUE,
                                      'regex' => FALSE,
                                     );
