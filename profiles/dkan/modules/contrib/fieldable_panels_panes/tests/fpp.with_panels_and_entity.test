@@ -1,0 +1,31 @@
+<?php
+/**
+ * @file
+ * Tests for the Fieldable Panels Panes module with Panels and Entity API.
+ */
+
+class FppWithPanelsAndEntityTest extends FppWithPanelsTest {
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'FPP tests for Panels and Entity API',
+      'description' => 'Confirm that FPP+Panes continues working when Entity API is enabled.',
+      'group' => 'FPP',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  function setUp(array $modules = array()) {
+    // Entity API.
+    $modules[] = 'entity';
+
+    // The parent setup method will do all of the rest.
+    parent::setUp($modules);
+  }
+
+}

@@ -912,7 +912,7 @@ function features_get_component_states($features = array(), $rebuild_only = TRUE
 
   // Retrieve only rebuildable components if requested.
   features_include();
-  $components = array_keys(features_get_components());
+  $components = array_keys(features_get_components(NULL, NULL, $reset));
   if ($rebuild_only) {
     foreach ($components as $k => $component) {
       if (!features_hook($component, 'features_rebuild')) {

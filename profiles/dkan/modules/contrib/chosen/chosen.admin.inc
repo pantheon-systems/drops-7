@@ -61,7 +61,7 @@ function chosen_admin_settings($form, &$form_state) {
 
   $form['options'] = array(
     '#type' => 'fieldset',
-    '#title' => t('Chosen options'),
+    '#title' => t('Chosen general options'),
   );
   $form['options']['chosen_search_contains'] = array(
     '#type' => 'checkbox',
@@ -76,11 +76,18 @@ function chosen_admin_settings($form, &$form_state) {
     '#default_value' => variable_get('chosen_disable_search', FALSE),
     '#description' => t('Enable or disable the search box in the results list to filter out possible options.'),
   );
-  $form['options']['chosen_use_theme'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Use the default chosen theme'),
-    '#default_value' => variable_get('chosen_use_theme', TRUE),
-    '#description' => t('Enable or disable the default chosen CSS file. Disable this option if your theme contains custom styles for Chosen replacements.'),
+
+  $form['theme_options'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Chosen per theme options'),
+  );
+
+  $form['theme_options']['chosen_disabled_themes'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Disable the default Chosen theme for the following themes'),
+    '#options' => _chosen_enabled_themes_options(),
+    '#default_value' => variable_get('chosen_disabled_themes', array()),
+    '#description' => t('Enable or disable the default Chosen CSS file. Select a theme if it contains custom styles for Chosen replacements.'),
   );
 
   $form['strings'] = array(
@@ -107,4 +114,23 @@ function chosen_admin_settings($form, &$form_state) {
   );
 
   return system_settings_form($form);
+}
+
+/**
+ * Helper function to get options for enabled themes
+ */
+function _chosen_enabled_themes_options() {
+  $options = array();
+
+  // Get the list of themes.
+  $themes = list_themes();
+
+  foreach ($themes as $theme) {
+    // Only create options for enabled themes
+    if ($theme->status) {
+      $options[$theme->name] = $theme->info['name'];
+    }
+  }
+
+  return $options;
 }

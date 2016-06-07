@@ -83,14 +83,15 @@ function workbench_moderation_node_history_view($node) {
   drupal_set_title(t('History of %title', array('%title' => $node->title)), PASS_THROUGH);
 
   // Get all of the node revisions, each with its most recent moderation.
-  $query = db_select('node', 'n');
+  $query = db_select('node', 'n')->extend('PagerDefault');
   $query->leftJoin('node_revision', 'r', 'n.nid = r.nid');
   $query->leftJoin('users', 'u', 'r.uid = u.uid');
   $query->addField('n', 'vid', 'live_revision');
   $query->condition('n.nid', $node->nid)
     ->orderBy('r.vid', 'DESC')
     ->fields('r', array('nid', 'vid', 'title', 'log', 'uid', 'timestamp'))
-    ->fields('u', array('name'));
+    ->fields('u', array('name'))
+    ->limit(30);
 
   $revisions = $query->execute()
     ->fetchAllAssoc('vid');
@@ -129,14 +130,36 @@ function workbench_moderation_node_history_view($node) {
 
     // Revision operations.
     $revision_operations = array();
-    if (isset($node->workbench_moderation['published']) && $revision->vid == $node->workbench_moderation['published']->vid) {
-      $revision_operations['view'] = workbench_moderation_access_link(t('View'), "node/{$revision->nid}");
+
+    // Loading the node at the specific revision using node_load() is too slow
+    // when there are many revisions, thus we fake it by cloning the original
+    // node and changing the 'vid' and the 'my_revision' elements required for
+    // granting access to the revision operations (view, update/revert, delete).
+    $node_revision = clone $node;
+    $node_revision->vid = $revision->vid;
+    $node_revision->workbench_moderation['my_revision'] = $revision;
+
+    // View operation.
+    if (_workbench_moderation_revision_access($node_revision, 'view')) {
+      // Link to the node page if this is the published revision.
+      if (isset($node->workbench_moderation['published']) && $revision->vid == $node->workbench_moderation['published']->vid) {
+        $url = "node/{$revision->nid}";
+      }
+      // The special case "current-revision" link handles routing for the
+      // current unpublished revision.
+      elseif ($revision->vid == $node->workbench_moderation['current']->vid) {
+        $url = "node/{$revision->nid}/current-revision";
+      }
+      // Otherwise, link to the normal revision view page.
+      else {
+        $url = "node/{$revision->nid}/revisions/{$revision->vid}/view";
+      }
+      $revision_operations['view'] = l(t('View'), $url);
     }
-    elseif ($revision->vid == $node->workbench_moderation['current']->vid) {
-      $revision_operations['view'] = workbench_moderation_access_link(t('View'), "node/{$revision->nid}/current-revision");
-    }
-    else {
-      $revision_operations['view'] = workbench_moderation_access_link(t('View'), "node/{$revision->nid}/revisions/{$revision->vid}/view");
+
+    // Revert operation.
+    if (_workbench_moderation_revision_access($node_revision, 'update')) {
+      $revision_operations['revert'] = l(t('Revert'), "node/{$revision->nid}/revisions/{$revision->vid}/revert");
     }
 
     // Provide a courtesy edit operation if this is the current revision.
@@ -154,8 +177,10 @@ function workbench_moderation_node_history_view($node) {
       $revision_operations['edit'] = l($edit_operation_title, "node/{$revision->nid}/edit", array('query' => array('destination' => "node/{$revision->nid}/moderation")));
     }
 
-    $revision_operations['revert'] = workbench_moderation_access_link(t('Revert'), "node/{$revision->nid}/revisions/{$revision->vid}/revert");
-    $revision_operations['delete'] = workbench_moderation_access_link(t('Delete'), "node/{$revision->nid}/revisions/{$revision->vid}/delete");
+    // Delete operation.
+    if (_workbench_moderation_revision_access($node_revision, 'delete')) {
+      $revision_operations['delete'] = l(t('Delete'), "node/{$revision->nid}/revisions/{$revision->vid}/delete");
+    }
 
     $row['data']['revision'] = implode(' | ', array_filter($revision_operations));
 
@@ -236,7 +261,7 @@ function workbench_moderation_node_history_view($node) {
   $header = array(t('Revision'), t('Title'), t('Date'), t('Revision actions'), t('Moderation actions'));
 
   // Return properly styled output.
-  return array(
+  $build['pager_table'] = array(
     '#attached' => array(
       'css' => array(
         drupal_get_path('module', 'workbench_moderation') . '/css/workbench_moderation.css',
@@ -246,6 +271,11 @@ function workbench_moderation_node_history_view($node) {
     '#header' => $header,
     '#rows' => $rows,
   );
+
+  // Attach the pager theme.
+  $build['pager_pager'] = array('#theme' => 'pager');
+
+  return $build;
 }
 
 /**

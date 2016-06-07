@@ -22,7 +22,7 @@
 interface SearchApiDataSourceControllerInterface {
 
   /**
-   * Constructs a new data source controller.
+   * Constructs an SearchApiDataSourceControllerInterface object.
    *
    * @param string $type
    *   The item type for which this controller is created.
@@ -47,7 +47,7 @@ interface SearchApiDataSourceControllerInterface {
    * Loads items of the type of this data source controller.
    *
    * @param array $ids
-   *   The IDs of the items to laod.
+   *   The IDs of the items to load.
    *
    * @return array
    *   The loaded items, keyed by ID.
@@ -183,6 +183,10 @@ interface SearchApiDataSourceControllerInterface {
    *   The concept of queued items will be removed in the Drupal 8 version of
    *   this module.
    *
+   * @return SearchApiIndex[]|null
+   *   All indexes for which any items were updated; or NULL if items were
+   *   updated for all of them.
+   *
    * @throws SearchApiDataSourceException
    *   If any error state was encountered.
    */
@@ -230,6 +234,10 @@ interface SearchApiDataSourceControllerInterface {
    *   The IDs of the removed items.
    * @param SearchApiIndex[] $indexes
    *   The indexes for which the deletions should be tracked.
+   *
+   * @return SearchApiIndex[]|null
+   *   All indexes for which any items were deleted; or NULL if items were
+   *   deleted for all of them.
    *
    * @throws SearchApiDataSourceException
    *   If any error state was encountered.
@@ -584,7 +592,7 @@ abstract class SearchApiAbstractDataSourceController implements SearchApiDataSou
    * {@inheritdoc}
    */
   public function trackItemInsert(array $item_ids, array $indexes) {
-    if (!$this->table) {
+    if (!$this->table || $item_ids === array()) {
       return;
     }
 
@@ -614,24 +622,29 @@ abstract class SearchApiAbstractDataSourceController implements SearchApiDataSou
    * {@inheritdoc}
    */
   public function trackItemChange($item_ids, array $indexes, $dequeue = FALSE) {
-    if (!$this->table) {
-      return;
+    if (!$this->table || $item_ids === array()) {
+      return NULL;
     }
-    $index_ids = array();
+
+    $ret = array();
+
     foreach ($indexes as $index) {
       $this->checkIndex($index);
-      $index_ids[] = $index->id;
+      $update = db_update($this->table)
+        ->fields(array(
+          $this->changedColumn => REQUEST_TIME,
+        ))
+        ->condition($this->indexIdColumn, $index->id)
+        ->condition($this->changedColumn, 0, $dequeue ? '<=' : '=');
+      if ($item_ids !== FALSE) {
+        $update->condition($this->itemIdColumn, $item_ids, 'IN');
+      }
+      if ($update->execute()) {
+        $ret[] = $index;
+      }
     }
-    $update = db_update($this->table)
-      ->fields(array(
-        $this->changedColumn => REQUEST_TIME,
-      ))
-      ->condition($this->indexIdColumn, $index_ids, 'IN')
-      ->condition($this->changedColumn, 0, $dequeue ? '<=' : '=');
-    if ($item_ids !== FALSE) {
-      $update->condition($this->itemIdColumn, $item_ids, 'IN');
-    }
-    $update->execute();
+
+    return $ret;
   }
 
   /**
@@ -639,7 +652,7 @@ abstract class SearchApiAbstractDataSourceController implements SearchApiDataSou
    */
   public function trackItemQueued($item_ids, SearchApiIndex $index) {
     $this->checkIndex($index);
-    if (!$this->table) {
+    if (!$this->table || $item_ids === array()) {
       return;
     }
     $update = db_update($this->table)
@@ -657,7 +670,7 @@ abstract class SearchApiAbstractDataSourceController implements SearchApiDataSou
    * {@inheritdoc}
    */
   public function trackItemIndexed(array $item_ids, SearchApiIndex $index) {
-    if (!$this->table) {
+    if (!$this->table || $item_ids === array()) {
       return;
     }
     $this->checkIndex($index);
@@ -674,18 +687,23 @@ abstract class SearchApiAbstractDataSourceController implements SearchApiDataSou
    * {@inheritdoc}
    */
   public function trackItemDelete(array $item_ids, array $indexes) {
-    if (!$this->table) {
-      return;
+    if (!$this->table || $item_ids === array()) {
+      return NULL;
     }
-    $index_ids = array();
+
+    $ret = array();
+
     foreach ($indexes as $index) {
       $this->checkIndex($index);
-      $index_ids[] = $index->id;
+      $delete = db_delete($this->table)
+        ->condition($this->indexIdColumn, $index->id)
+        ->condition($this->itemIdColumn, $item_ids, 'IN');
+      if ($delete->execute()) {
+        $ret[] = $index;
+      }
     }
-    db_delete($this->table)
-      ->condition($this->itemIdColumn, $item_ids, 'IN')
-      ->condition($this->indexIdColumn, $index_ids, 'IN')
-      ->execute();
+
+    return $ret;
   }
 
   /**

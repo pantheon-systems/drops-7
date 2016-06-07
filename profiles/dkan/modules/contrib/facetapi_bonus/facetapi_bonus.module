@@ -87,6 +87,21 @@ function facetapi_bonus_facetapi_sort_info() {
 }
 
 /**
+ * Implements hook_facetapi_widgets().
+ */
+function facetapi_bonus_facetapi_widgets() {
+  return array(
+    'facetapi_bonus' => array(
+      'handler' => array(
+        'label' => t('Select'),
+        'class' => 'FacetapiBonusSelect',
+        'query types' => array('term', 'date'),
+      ),
+    ),
+  );
+}
+
+/**
  * Implements hook_current_search_items().
  */
 function facetapi_bonus_current_search_items() {
@@ -94,7 +109,7 @@ function facetapi_bonus_current_search_items() {
     'reset_filters' => array(
       'handler' => array(
         'label' => t('Reset filters link'),
-        'class' => 'FacetapibonusCurrentSearchResetFiltersLink',
+        'class' => 'FacetapiBonusCurrentSearchResetFiltersLink',
       ),
     ),
   );
@@ -107,4 +122,38 @@ function facetapi_sort_natural(array $a, array $b) {
   $a_value = (isset($a['#markup'])) ? $a['#markup'] : '';
   $b_value = (isset($b['#markup'])) ? $b['#markup'] : '';
   return strnatcmp($a_value, $b_value);
+}
+
+/**
+ * Implements hook_forms().
+ *
+ * Set callbacks for select facet forms.
+ */
+function facetapi_bonus_forms() {
+  $forms = array();
+  foreach (facetapi_get_searcher_info() as $searcher => $searcher_info) {
+    foreach (facetapi_get_facet_info($searcher) as $facet) {
+      $forms['facetapi_bonus_select_' .  $facet['name']]['callback'] = 'facetapi_bonus_select';
+    }
+  }
+  return $forms;
+}
+
+/**
+ * Implements hook_theme().
+ */
+function facetapi_bonus_theme() {
+  return array(
+    'facetapi_bonus_select_option' => array(
+      'title' => NULL,
+      'count' => NULL,
+    ),
+  );
+}
+
+/**
+ * Theme function for selectbox widget option.
+ */
+function theme_facetapi_bonus_select_option($element) {
+  return $element['title'] . ' (' . $element['count'] . ')';
 }

@@ -1,3 +1,43 @@
+Fieldable Panels Panes 7.x-1.10, 2016-05-04
+-------------------------------------------
+By cboyden, DamienMcKenna, dsnopek: Admin title formatting.
+
+
+Fieldable Panels Panes 7.x-1.9, 2016-05-03
+------------------------------------------
+#2487888 by coenvanvliet, DamienMcKenna, joelstein: Clear an object's cache
+  after it is saved or updated.
+#1910934 by jlapp, thrnio, Chris Burge, MiroslavBanov: Allow all FPP objects to
+  be used as blocks, controllable from the new settings page.
+#1986334 by David_Rothstein, grndlvl, EclipseGc, ruloweb, vilepickle, heddn,
+  MiroslavBanov, brantwynn, mairi, danieltome, azinck, DamienMcKenna, slucero:
+  Optionally allow each FPP pane to be referenced by revision ID, allowing for
+  editorial workflows when used with Panelizer.
+#2691577 by DamienMcKenna: Added placeholders for more tests.
+#2713699 by joelstein: Add pane-fpid-[FPID] class when FPPs referenced by
+  revision ID.
+#2695499 by DamienMcKenna, ttamniwdoog, azinck, heddn: On new sites,
+  non-reusable FPPs must now be referenced by revision ID, includes update
+  scripts to update sites as needed. FPPs may not have their reusability
+  changed after the initial creation. Non-reusable FPPs are always saved as a
+  new revision.
+#2493899 by Upchuk, DamienMcKenna: Language selector on FPP entity form.
+#2688577 by rigoucr, DamienMcKenna: Recover the default FPP type if it was
+  deleted in update 7108.
+#2541184 by DamienMcKenna, Andrew Edwards, solipsist: Make the admin title
+  always available so it can always be used. Also, make the FPP category
+  editable for saved objects and the revision field available when editing
+  non-reusable FPPs.
+#2717609 by dsnopek: Use the standard entity_label() function to get the FPP's
+  title if no admin title is provided for the admin UI.
+#1724394 by DamienMcKenna: Hide some links if Field UI is not installed.
+#2374577 by grasmash, DamienMcKenna, walangitan: Cache the FPPs list for CTools.
+#2508629 by malik.kotob, DamienMcKenna: Properly handle HTML entities in titles
+  when the field is a link.
+#2718091 by DamienMcKenna: Reverted #2622808 and #2718035, added test for
+  Entity API and for title links.
+
+
 Fieldable Panels Panes 7.x-1.8, 2016-03-02
 ------------------------------------------
 #2534200 by bwood, cboyden: Disable support for the Redirect module.

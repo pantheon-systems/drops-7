@@ -31,6 +31,5 @@ features[field_instance][] = visualization-choropleth_visualization-field_uuid_r
 features[field_instance][] = visualization-choropleth_visualization-field_ve_geojson_key
 features[field_instance][] = visualization-choropleth_visualization-field_ve_geojson_label
 features[field_instance][] = visualization-choropleth_visualization-field_ve_map_column
-features[user_permission][] = eck view visualization choropleth_visualization entities
 mtime = 1420866437
 project path = sites/all/modules/nucivic/visualization_entity/modules

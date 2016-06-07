@@ -89,6 +89,8 @@ function chosen_field_widget_form_alter(&$element, &$form_state, $context) {
  * Implements hook_library().
  */
 function chosen_library() {
+  global $theme;
+
   $library_path = chosen_get_chosen_path();
 
   $info['chosen'] = array(
@@ -99,7 +101,11 @@ function chosen_library() {
       $library_path . '/chosen.jquery.min.js' => array('group' => 'JS_LIBRARY'),
     ),
   );
-  if (variable_get('chosen_use_theme', TRUE)) {
+
+  $css_disabled_themes = variable_get('chosen_disabled_themes', array());
+
+  // Only add the Chosen CSS if it is not disabled for the active theme
+  if (!in_array($theme, $css_disabled_themes, TRUE)) {
     $info['chosen']['css'] = array($library_path . '/chosen.css' => array());
   }
 
@@ -197,6 +203,9 @@ function chosen_pre_render_select($element) {
   }
 
   if (isset($element['#field_name']) && !empty($element['#multiple'])) {
+    // Remove '_none' from multi-select options.
+    unset($element['#options']['_none']);
+
     $field = field_info_field($element['#field_name']);
     if ($field['cardinality'] != FIELD_CARDINALITY_UNLIMITED && $field['cardinality'] > 1) {
       $element['#attributes']['data-cardinality'] = $field['cardinality'];

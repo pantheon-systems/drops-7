@@ -30,7 +30,7 @@ function visualization_entity_charts_attach_libraries(&$element) {
     'recline',
     'd3',
     'nvd3',
-    'spectrum',
+    'bgrins-spectrum',
     'reclineViewNvd3',
     'gdocs',
     'csv',
@@ -198,9 +198,9 @@ function visualization_entity_charts_libraries_info() {
       ),
     ),
   );
-  
-  $libraries['spectrum'] = array(
-    'name' => 'spectrum',
+
+  $libraries['bgrins-spectrum'] = array(
+    'name' => 'bgrins-spectrum',
     'vendor url' => 'https://github.com/bgrins/spectrum',
     'version' => '0.0.1',
     'files' => array(

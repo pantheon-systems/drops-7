@@ -6,26 +6,6 @@
  */
 
 /**
- * Defines one or more UUID generators exposed by a module.
- *
- * @return
- *   An associative array with the key being the machine name for the
- *   implementation and the values being an array with the following keys:
- *     - title: The human readable name for the generator.
- *     - callback: The function to be called for generating the UUID.
- *
- * @see uuid_get_info()
- */
-function hook_uuid_info() {
-  $generators = array();
-  $generators['my_module'] = array(
-    'title' => t('My module UUID generator'),
-    'callback' => 'my_module_generate_uuid',
-  );
-  return $generators;
-}
-
-/**
  * Ensures all records have a UUID assigned to them.
  *
  * When called this hook should ensure all records it is responsible for
@@ -121,14 +101,14 @@ function hook_uuid_entities_post_rebuild($plan_name) {
 /**
  * Let other modules do things before default entities are created on revert.
  */
-function hook_uuid_entities_pre_rebuild($plan_name) {
+function hook_uuid_entities_pre_revert($plan_name) {
 
 }
 
 /**
  * Let other modules do things after default entities are created on revert.
  */
-function hook_uuid_entities_post_rebuild($plan_name) {
+function hook_uuid_entities_post_revert($plan_name) {
 
 }
 
@@ -144,12 +124,6 @@ function hook_uuid_entities_features_export_entity_alter(&$entity, $entity_type)
  */
 function hook_uuid_entities_features_export_field_alter($entity_type, &$entity, $field, $instance, $langcode, &$items) {
 
-}
-
-/**
- * Alter UUID URI data after processing.
- */
-function hook_uuid_uri_data($data) {
 }
 
 /**

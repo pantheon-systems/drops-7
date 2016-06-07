@@ -132,48 +132,56 @@ function workbench_email_form_node_callback($form, $form_state) {
  */
 function workbench_email_notification_validate($form, &$form_state) {
   if (module_exists('workbench_access') && isset($form_state['values']['workbench_email'])) {
-      // Get selected section(s)/selected user(s) and verify that
-      // its a valid selection.
-      $selected_wb_email = $form_state['values']['workbench_email'];
-      $rid = key($selected_wb_email);
-      $valid_sections = workbench_email_get_workbench_access_sections('form', array(
-        'data' => array(
-          'form' => $form,
-          'form_state' => $form_state,
-        ),
-      ));
-      $editors = workbench_email_get_workbench_access_editors($rid, $valid_sections);
-      if ($selected_wb_email && $editors) {
-        $error_messages = array();
-        foreach ($selected_wb_email as $role_id => $wb_email) {
-          $mail = current($wb_email);
-          // Handle the situation where "All Users" was selected or
-          // no option was selected.
-          if ($mail == '0') {
-            break;
-          }
-          $not_found = TRUE;
-          foreach ($editors as $uid => $possible_editor) {
-            if ($mail == $possible_editor['mail']) {
-              $not_found = FALSE;
-            }
-          }
-          if ($not_found) {
-            $error_messages[$mail] = t('The combination of section and email
-              (@email) are not valid. Please try again or chose another
-              combination of sections and users.', array('@email' => $mail));
-          }
-        }
-        if ($error_messages) {
-          $list_items = theme('item_list', array(
-            'items' => $error_messages,
-            'title' => 'Error with email selection',
-            'type' => 'ul',
-          ));
-          form_set_error('workbench_email', $list_items);
-        }
+    // Get selected section(s)/selected user(s) and verify that
+    // its a valid selection.
+    $selected_wb_emails = $form_state['values']['workbench_email'];
+    $rids = array_filter(array_keys($selected_wb_emails));
+    $valid_sections = workbench_email_get_workbench_access_sections('form', array(
+      'data' => array(
+        'form' => $form,
+        'form_state' => $form_state,
+      ),
+    ));
+    if ($valid_sections) {
+      $editors = array();
+      foreach ($rids as $rid) {
+        $editors = array_merge(workbench_email_get_workbench_access_editors($rid, $valid_sections), $editors);
       }
     }
+    else {
+      $editors = FALSE;
+    }
+    if ($selected_wb_emails && $editors) {
+      $error_messages = array();
+      foreach ($selected_wb_emails as $role_id => $wb_email) {
+        $mail = current($wb_email);
+        // Handle the situation where "All Users" was selected or
+        // no option was selected.
+        if ($mail == '0') {
+          break;
+        }
+        $not_found = TRUE;
+        foreach ($editors as $uid => $possible_editor) {
+          if ($mail == $possible_editor['mail']) {
+            $not_found = FALSE;
+          }
+        }
+        if ($not_found) {
+          $error_messages[$mail] = t('The combination of section and email
+            (@email) are not valid. Please try again or chose another
+            combination of sections and users.', array('@email' => $mail));
+        }
+      }
+      if ($error_messages) {
+        $list_items = theme('item_list', array(
+          'items' => $error_messages,
+          'title' => 'Error with email selection',
+          'type' => 'ul',
+        ));
+        form_set_error('workbench_email', $list_items);
+      }
+    }
+  }
 }
 
 /**

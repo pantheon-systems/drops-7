@@ -386,7 +386,7 @@ function visualization_entity_choropleth_bundle_field_default_field_instances() 
     'bundle' => 'choropleth_visualization',
     'default_value' => NULL,
     'deleted' => 0,
-    'description' => 'Column in the data which maps to a property in the geojon.  If there is a column in the data "State Name" with values like California and Pennsylvania it should map to a property in the geojson like "State" with the same values. ',
+    'description' => 'Column in the data which maps to a property in the GeoJSON.  If there is a column in the data "State Name" with values like California and Pennsylvania it should map to a property in the GeoJSON like "State" with the same values. ',
     'display' => array(
       'default' => array(
         'label' => 'hidden',
@@ -423,7 +423,7 @@ function visualization_entity_choropleth_bundle_field_default_field_instances() 
 
   // Translatables
   // Included for use with string extractors like potx.
-  t('Column in the data which maps to a property in the geojon.  If there is a column in the data "State Name" with values like California and Pennsylvania it should map to a property in the geojson like "State" with the same values. ');
+  t('Column in the data which maps to a property in the geojon.  If there is a column in the data "State Name" with values like California and Pennsylvania it should map to a property in the GeoJSON like "State" with the same values. ');
   t('GeoJSON Key');
   t('GeoJSON Label');
   t('Map Column');

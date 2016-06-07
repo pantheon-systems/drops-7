@@ -44,7 +44,14 @@ class FacetapiUrlProcessorPrettyPaths extends FacetapiUrlProcessorStandard {
   /**
    * The base path for constructing pretty facet paths.
    */
-  protected $basePath = NULL;
+  protected $pathWithoutSegments = NULL;
+
+  /**
+   * The base path for constructing pretty facet paths.
+   *
+   * @var FacetApiPrettyPathsBasePathProvider
+   */
+  protected $basePathProvider;
 
   /**
    * Constructor, sets adapter.
@@ -55,6 +62,9 @@ class FacetapiUrlProcessorPrettyPaths extends FacetapiUrlProcessorStandard {
   function __construct(FacetapiAdapter $adapter) {
     $this->adapter = $adapter;
     $this->options = variable_get('facetapi_pretty_paths_searcher_' . $this->adapter->getSearcher() . '_options');
+    $base_path_provider = isset($this->options['base_path_provider']) ? $this->options['base_path_provider'] : 'default';
+    $class = ctools_plugin_load_class('facetapi_pretty_paths', 'base_path_provider', $base_path_provider, 'handler');
+    $this->basePathProvider = new $class;
   }
 
   /**
@@ -105,16 +115,16 @@ class FacetapiUrlProcessorPrettyPaths extends FacetapiUrlProcessorStandard {
           $this->pathSegments[$segment['key']] = $segment;
         }
       }
-      // When no more facet path segments have been found,
-      // we assume the rest of the url as the search basePath.
+      // When no more facet path segments have been found, we assume the rest of the url as the
+      // path without segments which might be used as base path.
       if (!$found) {
         array_push($args, $alias, $value);
         break;
       }
     }
 
-    // Set the rest of the url as the search basePath.
-    $this->basePath = implode('/', $args);
+    // Set the rest of the url as the search path without segments.
+    $this->pathWithoutSegments = implode('/', $args);
 
     // Since we traversed all segments from right to left we need to reverse
     // them here. Reason is because the order matters for some facets.
@@ -123,7 +133,7 @@ class FacetapiUrlProcessorPrettyPaths extends FacetapiUrlProcessorStandard {
 
     // Return params as expected.
     $params = $_GET;
-    $params['q'] = $this->basePath;
+    $params['q'] = $this->pathWithoutSegments;
     $params[$this->filterKey] = $this->filterParams;
     return $params;
   }
@@ -150,6 +160,7 @@ class FacetapiUrlProcessorPrettyPaths extends FacetapiUrlProcessorStandard {
   public function getFacetPath(array $facet, array $values, $active) {
     $segments = $this->pathSegments;
     $active_items = $this->adapter->getActiveItems($facet);
+    $settings = $this->adapter->getFacetSettingsGlobal($facet);
 
     // Adds to segments if inactive, removes if active.
     foreach ($values as $value) {
@@ -159,6 +170,14 @@ class FacetapiUrlProcessorPrettyPaths extends FacetapiUrlProcessorStandard {
       }
       elseif (!$active) {
         $segments[$segment['key']] = $segment;
+      }
+    }
+
+    // If Facet API supports limiting active items, remove path segments. See http://drupal.org/node/1393928
+    if (count($active_items) && isset($settings->settings['limit_active_items']) && $settings->settings['limit_active_items']) {
+      foreach ($active_items as $active_item) {
+        $segment = $this->getPathSegment($facet, $active_item['value']);
+        unset($segments[$segment['key']]);
       }
     }
 
@@ -304,21 +323,35 @@ class FacetapiUrlProcessorPrettyPaths extends FacetapiUrlProcessorStandard {
     drupal_set_breadcrumb($breadcrumb);
   }
 
+  /**
+   * @return FacetapiAdapter
+   */
+  public function getAdapter()
+  {
+    return $this->adapter;
+  }
+
+  /**
+   * @return null
+   */
   public function getFullPath() {
     return $this->fullPath;
   }
 
+  /**
+   * @return null
+   */
+  public function getPathWithoutSegments() {
+    return $this->pathWithoutSegments;
+  }
+
+  /**
+   * Calculated the base path using the base path provider.
+   *
+   * @return null
+   */
   public function getBasePath() {
-    $basePath = $this->basePath;
-    // Mimic search api base path logic which allows to set a custom base path.
-    // @see SearchApiFacetapiAdapter::getSearchPath().
-    if (module_exists('search_api_facetapi') && $this->adapter instanceof SearchApiFacetapiAdapter) {
-      $search = $this->adapter->getCurrentSearch();
-      if ($search && $search[0]->getOption('search_api_base_path')) {
-        $basePath = $search[0]->getOption('search_api_base_path');
-      }
-    }
-    return $basePath;
+    return $this->basePathProvider->getBasePath($this);
   }
 
 }

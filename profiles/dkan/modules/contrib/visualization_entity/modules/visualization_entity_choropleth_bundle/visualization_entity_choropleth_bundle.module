@@ -63,10 +63,7 @@ function visualization_entity_choropleth_bundle_libraries_info() {
     'vendor url' => 'http://driven-by-data.net/about/chromajs/#/0',
     'download url' => 'https://github.com/gka/chroma.js/zipball/master',
     'path' => '',
-    'version arguments' => array(
-      'file' => 'bower.json',
-      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
-    ),
+    'version' => "1.1.1",
     'files' => array(
       'js' => array(
         'chroma.min.js',
@@ -104,6 +101,21 @@ function visualization_entity_choropleth_bundle_libraries_info() {
       ),
       'css' => array(
         'choropleth.css',
+      ),
+    ),
+  );
+  $libraries['leaflet_zoomtogeometries'] = array(
+    'name' => 'Leaflet Map zoomToGeometries',
+    'vendor url' => 'http://github.com/NuCivic/',
+    'download url' => 'https://github.com/NuCivic/leaflet.map.zoomToGeometries.js/archive/master.zip',
+    'path' => '',
+    'version arguments' => array(
+      'file' => 'bower.json',
+      'pattern' => '/"version": "(\d+\.\d+\.\d+)"/',
+    ),
+    'files' => array(
+      'js' => array(
+        'dist/leaflet.map.zoomToGeometries.min.js',
       ),
     ),
   );
@@ -275,13 +287,13 @@ function visualization_entity_choropleth_bundle_entity_view_alter(&$build, $type
       $resource_settings = array(
         'title' => $title,
         'avg' => $average,
-        'datastoreStatus' => dkan_datastore_status($resource),
+        'datastoreStatus' => intval(dkan_datastore_status($resource)),
         'unitOfMeasure' => $unit_of_measure,
         'map' => FALSE,
       );
       $file_field = $resource->recline_file_field;
 
-      if (dkan_datastore_status($resource) === 2 || count($resources) > 1) {
+      if (dkan_datastore_status($resource) == 2 || count($resources) > 1) {
         $delimiter = $file_field[LANGUAGE_NONE][0]['delimiter'];
         $delimiter = $delimiter !== NULL ? $delimiter : DEFAULT_CSV_DELIMITER;
         $resource_path = $file_field[LANGUAGE_NONE][0]['uri'];
@@ -293,7 +305,7 @@ function visualization_entity_choropleth_bundle_entity_view_alter(&$build, $type
           'avg' => $average,
         );
       }
-      elseif (dkan_datastore_status($resource) === 1 && count($resources) === 1) {
+      elseif (dkan_datastore_status($resource) == 1 && count($resources) === 1) {
         $resource_settings += array(
           'resource_id' => $resource->uuid,
         );
@@ -301,16 +313,6 @@ function visualization_entity_choropleth_bundle_entity_view_alter(&$build, $type
       $settings['resources'][] = $resource_settings;
     }
 
-    // Build label column and geojson file.
-    $geojson = entity_load_single(
-      'geo_file',
-      $build['field_geojson']['#items'][0]['target_id']
-    );
-    $settings['label_column'] = $geojson->field_name_attribute[LANGUAGE_NONE][0]['value'];
-
-    $geojson = $geojson->field_file[LANGUAGE_NONE][0]['uri'];
-    $geojson = drupal_realpath($geojson);
-    $geojson = json_decode(file_get_contents($geojson));
     $settings['geojson'] = $geojson;
 
     $settings = array(

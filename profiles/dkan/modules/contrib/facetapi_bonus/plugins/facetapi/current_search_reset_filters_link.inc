@@ -5,7 +5,7 @@
  * Current Search plugin to provide Reset filters link.
  */
 
-class FacetapiExtraCurrentSearchResetFiltersLink extends CurrentSearchItemText {
+class FacetapiBonusCurrentSearchResetFiltersLink extends CurrentSearchItemText {
   /**
    * Implements CurrentSearchItem::execute().
    */
@@ -38,7 +38,9 @@ class FacetapiExtraCurrentSearchResetFiltersLink extends CurrentSearchItemText {
       }
       else {
         $facet_query = $this->getQueryString($item, $adapter);
-        $query['f'] = array_intersect($query['f'], $facet_query['f']);
+        if (isset($query['f'])) {
+          $query['f'] = array_intersect($query['f'], $facet_query['f']);
+        }
       }
       // Save the path.
       if (empty($path)) {
@@ -57,7 +59,7 @@ class FacetapiExtraCurrentSearchResetFiltersLink extends CurrentSearchItemText {
       'element' => $this->settings['element'],
       'css' => $this->settings['css'],
       'class' => current_search_get_classes($this->settings['classes'], $data),
-      'options' => array('html' => FALSE),
+      'options' => array('html' => TRUE),
     );
     return array('#markup' => theme('current_search_text', $variables));
   }

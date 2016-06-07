@@ -168,6 +168,8 @@ function facetapi_pretty_paths_permission() {
  * Administration form.
  */
 function facetapi_pretty_paths_admin_form($form, &$form_state) {
+  // Include necessary ctools inc files.
+  ctools_include('plugins');
   // Allow to enable / disable pretty paths per searcher.
   $searcher_info = facetapi_get_searcher_info();
   $form['searcher'] = array(
@@ -202,6 +204,20 @@ function facetapi_pretty_paths_admin_form($form, &$form_state) {
       '#default_value' => isset($options['sort_path_segments']) ? $options['sort_path_segments'] : FALSE,
       '#description' => t("Sorted paths lead to unique, canonical urls. Keep in mind that this will replace the order in which user clicked the facets."),
     );
+    // Allow to select a base path provider plugin.
+    $base_path_providers = ctools_get_plugins('facetapi_pretty_paths', 'base_path_provider');
+    $base_path_providers_form_item = array(
+      '#type' => 'radios',
+      '#title' => t('Base path provider'),
+      '#options' => array(),
+      '#default_value' => isset($options['base_path_provider']) ? $options['base_path_provider'] : 'default',
+      '#description' => t("Select a base path provider or implement your own using <em>hook_facetapi_pretty_paths_base_path_provider</em>."),
+    );
+    foreach ($base_path_providers as $key => $base_path_provider) {
+      $base_path_providers_form_item['#options'][$key]= $base_path_provider['handler']['label'];
+      $base_path_providers_form_item[$key]['#description'] = $base_path_provider['handler']['description'];
+    }
+    $form['searcher'][$id . '_options']['base_path_provider'] = $base_path_providers_form_item;
   }
   return system_settings_form($form);
 }
@@ -210,10 +226,38 @@ function facetapi_pretty_paths_admin_form($form, &$form_state) {
  * Implements hook_ctools_plugin_type().
  */
 function facetapi_pretty_paths_ctools_plugin_type() {
+  $plugins['base_path_provider'] = array(
+    'use hooks' => TRUE,
+  );
   $plugins['coders'] = array(
     'use hooks' => TRUE,
   );
   return $plugins;
+}
+
+/**
+ * Implements hook_facetapi_pretty_paths_base_path_provider().
+ */
+function facetapi_pretty_paths_facetapi_pretty_paths_base_path_provider() {
+  $base_path_providers = array(
+    'default' => array(
+      'handler' => array(
+        'label' => t('Default base path provider'),
+        'class' => 'FacetApiPrettyPathsDefaultBasePathProvider',
+        'description' => 'Calculates the base path by subtracting facet path segments from the current url.',
+      ),
+    ),
+    'adapter' => array(
+      'handler' => array(
+        'label' => t('Adapter base path provider'),
+        'class' => 'FacetApiPrettyPathsAdapterBasePathProvider',
+        'description' => 'Relies on the FacetapiAdapter::getSearchPath() method to generate the base path. This one is likely overridden by SearchApiFacetapiAdapter::getSearchPath() or ApacheSolrFacetapiAdapter::getSearchPath().',
+      ),
+    ),
+  );
+  // Allow other modules to alter the base path provider definitions.
+  drupal_alter('facetapi_pretty_paths_base_path_provider', $base_path_providers);
+  return $base_path_providers;
 }
 
 /**
@@ -251,18 +295,33 @@ function facetapi_pretty_paths_facetapi_pretty_paths_coders() {
  * Implements hook_facetapi_facet_info_alter().
  */
 function facetapi_pretty_paths_facetapi_facet_info_alter(array &$facet_info, array $searcher_info) {
-  // Loading the adapter within hook_facetapi_facet_info_alter() is evil as it
-  // already builds the facet settings and statically caches them, without
-  // including our alterations. Thus we have to clear the static cache of
-  // facetapi_get_enabled_facets() at the end.
-  $adapter = facetapi_adapter_load($searcher_info['name']);
+  /*
+   * In order to get settings for a facet normally we would need to
+   * load the adapter for a given searcher. However doing so with
+   * facetapi_adapter_load() causes the adapter class in context
+   * to be instantiated which in the case of this module results
+   * in the fetchParams method of the FacetapiUrlProcessorPrettyPaths
+   * class being called which results in active facets in the URL
+   * being processed before the logic below can alter the facet
+   * settings.
+   *
+   * The normal way to get facet settings would be via the adapter
+   * class using getFacetSettings() and/or getFacetSettingsGlobal().
+   * Instead we have to use the raw settings getter function below.
+   */
+  $searcher_settings = facetapi_get_searcher_settings($searcher_info['name']);
 
   foreach ($facet_info as &$facet) {
     $taxonomy_coder = 'taxonomy';
-    $facet_settings = $adapter->getFacetSettingsGlobal($facet);
-    if (module_exists('pathauto') && !empty($facet_settings->settings['pretty_paths_taxonomy_pathauto'])) {
-      $taxonomy_coder = 'taxonomy_pathauto';
+
+    $facet_settings_key = $searcher_info['name'] . '::' . $facet['field'];
+    if (isset($searcher_settings[$facet_settings_key]) && isset($searcher_settings[$facet_settings_key]->settings)) {
+      $facet_settings = $searcher_settings[$facet_settings_key];
+      if (module_exists('pathauto') && !empty($facet_settings->settings['pretty_paths_taxonomy_pathauto'])) {
+        $taxonomy_coder = 'taxonomy_pathauto';
+      }
     }
+
     // Check for Apache Solr Taxonomy Term fields.
     if (!empty($facet['map options']['module_name']) && $facet['map options']['module_name'] == 'Taxonomy') {
       $facet['facetapi pretty paths coder'] = $taxonomy_coder;

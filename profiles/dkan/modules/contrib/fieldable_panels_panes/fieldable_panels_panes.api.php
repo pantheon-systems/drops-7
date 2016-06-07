@@ -90,5 +90,22 @@ function hook_fieldable_panels_pane_view($panels_pane, $view_mode, $langcode) {
 }
 
 /**
+ * All the list of CTools plugin specs for FPP objects to be modified.
+ *
+ * @param array $types
+ *   All of the CTools plugin specifications for these FPP objects.
+ * @param string $bundle
+ *   The FPP bundle.
+ * @param array $entities
+ *   All of the FPP entities for this bundle indexed by their CTools subtype,
+ *   e.g. fpid:123, vid:123, uuid:123.
+ */
+function hook_fieldable_panels_panes_content_types_alter(&$types, $bundle, $entities) {
+  foreach ($types as $name => &$type) {
+    $type['icon'] = 'icon_funnyface.png';
+  }
+}
+
+/**
  * @} End of "addtogroup hooks".
  */

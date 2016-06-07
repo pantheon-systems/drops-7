@@ -7,13 +7,21 @@ $ drush en -y visualization_entity_choropleth_bundle
 $ drush cc all
 ```
 
+## Examples Files
+
+Two example files are provided in the **examples** folder:
+```bash
+africa.geojson
+africa-data.csv
+```
+
 ## Create Visualization
 
 + Look for **Content -> Add Content -> Resource** in the admin menu and click on it.
 
 ![](images/geojson-step-00.png)
 
-+ Upload a **csv** file for the resource.
++ Upload a **africa-data.csv** file from the examples folder for the resource.
 
 ![](images/choropleth-step-00.png)
 

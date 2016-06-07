@@ -9,7 +9,7 @@ class RemoteStreamWrapperTestCase extends DrupalWebTestCase {
     return array(
       'name' => 'Remote stream wrapper',
       'description' => 'Tests functionality for remote stream wrappers.',
-      'group' => 'Remote steam wrapper',
+      'group' => 'Remote stream wrapper',
     );
   }
 

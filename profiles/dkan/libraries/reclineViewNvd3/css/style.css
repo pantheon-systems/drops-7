@@ -87,7 +87,13 @@ label[for="control-chart-x-values"] {width:100%}
 #control-chart-x-values-from {width:60px; float:left; margin-right:1em}
 #control-chart-x-values-to {width:60px;} 
 
+label[for="control-chart-y1-values"],
+label[for="control-chart-y2-values"],
 label[for="control-chart-y-values"] {width:100%}
+#control-chart-y1-values-from,
+#control-chart-y2-values-from,
 #control-chart-y-values-from {width:60px; float:left; margin-right:1em}
+#control-chart-y1-values-to,
+#control-chart-y2-values-to,
 #control-chart-y-values-to {width:60px;} 
 

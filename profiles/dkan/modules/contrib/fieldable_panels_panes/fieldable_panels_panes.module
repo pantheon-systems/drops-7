@@ -436,6 +436,14 @@ function fieldable_panels_panes_menu() {
     'context' => MENU_CONTEXT_PAGE | MENU_CONTEXT_INLINE,
   ) + $base;
 
+  // Settings.
+  $items['admin/structure/fieldable-panels-panes/settings'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('fieldable_panels_panes_settings'),
+    'type' => MENU_LOCAL_TASK,
+  ) + $base;
+
   return $items;
 }
 
@@ -576,14 +584,17 @@ function fieldable_panels_panes_panels_dashboard_blocks(&$vars) {
   $rows = array();
 
   foreach (ctools_export_crud_load_all('fieldable_panels_pane_type') as $type) {
-    $rows[] = array(
+    $items = array(
       $type->title,
       l(t('List'), 'admin/structure/fieldable-panels-panes/' . $type->name),
       l(t('Edit'), 'admin/structure/fieldable-panels-panes/' . $type->name . '/edit'),
       l(t('Add'), 'admin/structure/fieldable-panels-panes/' . $type->name . '/add'),
-      l(t('Manage Fields'), 'admin/structure/fieldable-panels-panes/' . $type->name . '/fields'),
-      l(t('Manage Display'), 'admin/structure/fieldable-panels-panes/' . $type->name . '/display'),
     );
+    if (module_exists('field_ui')) {
+      $items[] = l(t('Manage Fields'), 'admin/structure/fieldable-panels-panes/' . $type->name . '/fields');
+      $items[] = l(t('Manage Display'), 'admin/structure/fieldable-panels-panes/' . $type->name . '/display');
+    }
+    $rows[] = $items;
 
     // Only display 10.
     if (++$count >= 10) {
@@ -823,6 +834,81 @@ function fieldable_panels_panes_views_api() {
 }
 
 // -------------------------------------------------------------------------
+// Block hooks.
+
+/**
+ * Implements hook_block_info().
+ */
+function fieldable_panels_panes_block_info() {
+  $blocks = array();
+  // Get array of exposed FPP bundles.
+  $bundles = fieldable_panels_panes_exposed_bundles();
+
+  if (variable_get('fpp_blocks_expose', FALSE) == TRUE) {
+    // Get all reusable entities if $bundles array is empty.
+    if (empty($bundles)) {
+      $ids = db_query('SELECT fpid FROM {fieldable_panels_panes} WHERE reusable = 1')->fetchCol();
+    }
+    // Get reusable entities of selected FPP bundles if $bundles array is not
+    // empty.
+    else {
+      $ids = array();
+      foreach ($bundles as $bundle => $info) {
+        $bundle_ids = db_query('SELECT fpid FROM {fieldable_panels_panes} WHERE reusable = 1 AND bundle = :bundle', array(':bundle' => $bundle))->fetchCol();
+        $ids = array_merge($ids, $bundle_ids);
+      }
+    }
+    $entities = fieldable_panels_panes_load_multiple($ids);
+    foreach ($entities as $entity) {
+      $blocks[$entity->fpid]['info'] = 'FPP (' . $entity->bundle . '): ' . entity_label('fieldable_panels_pane', $entity);
+    }
+  }
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function fieldable_panels_panes_block_view($delta = '') {
+  $block = array();
+  // Get array of exposed FPP bundles.
+  $bundles = fieldable_panels_panes_exposed_bundles();
+
+  if (variable_get('fpp_blocks_expose', FALSE) == TRUE) {
+    $entity = fieldable_panels_panes_load($delta);
+    $bundle = $entity->bundle;
+
+    $block['subject'] = '';
+    $block['content'] = '';
+
+    // Render block if its FPP bundle is exposed and block is reusable.
+    if ((array_key_exists($bundle, $bundles) || empty($bundles)) && $entity->reusable == TRUE) {
+      $content = fieldable_panels_panes_view($entity);
+      $block['subject'] = check_plain($entity->title);
+      $block['content'] = $content;
+    }
+  }
+  return $block;
+}
+
+/**
+ * Return array of FPP bundles exposed as blocks.
+ */
+function fieldable_panels_panes_exposed_bundles() {
+  // Get array of all FPP bundles and unset bundles not exposed as blocks.
+  $bundles = fieldable_panels_panes_get_bundle_labels();
+
+  foreach ($bundles as $bundle => $info) {
+    $expose = variable_get('fpp_expose_' . $bundle, FALSE);
+    if ($expose == FALSE) {
+      unset($bundles[$bundle]);
+    }
+  }
+  return $bundles;
+}
+
+// -------------------------------------------------------------------------
 // Theming
 
 /**
@@ -848,10 +934,15 @@ function fieldable_panels_panes_preprocess_panels_pane(&$vars) {
     if (!empty($vars['content']['#fieldable_panels_pane']) && is_object($vars['content']['#fieldable_panels_pane'])) {
       $entity = $vars['content']['#fieldable_panels_pane'];
       if (!empty($entity->link) && !empty($vars['title'])) {
-        $vars['title'] = l($vars['title'], $entity->path);
+        $vars['title'] = l($vars['title'], $entity->path, array('html' => TRUE));
       }
       ctools_include('cleanstring');
       $vars['classes_array'][] = 'pane-bundle-' . ctools_cleanstring($entity->bundle, array('lower case' => TRUE));
+
+      // Add pane-fpid-[fpid] class when referenced by revision ID.
+      if (strpos($vars['pane']->subtype, 'vid') === 0) {
+        $vars['classes_array'][] = 'pane-fpid-' . $vars['content']['#fieldable_panels_pane']->fpid;
+      }
     }
   }
 }
@@ -919,8 +1010,12 @@ function fieldable_panels_panes_load_from_subtype($subtype_name) {
  * Properly load the entity via $subtype_name.
  *
  * @param string $subtype_name
- *   A string combining an indicator of the type of ID, e.g. 'fpid', 'vid' or
- *   'vuuid', and an integer ID, separated by a colon; e.g. "fpid:123".
+ *   A string combining an indicator of the type of ID, e.g. 'fpid', 'vid',
+ *   'uuid', 'vuuid' or 'current, and an integer ID, separated by a colon; e.g.
+ *   "fpid:123". If the type is 'current' the newest revision will be loaded,
+ *   'fpid' and 'uuid' will load the revision considered best, 'vid' and 'vuuid'
+ *   will load a specific revision. Both 'uuid' and 'vuuid' require the UUID
+ *   module to be present.
  *
  * @return object
  *   The requested FPP object.
@@ -939,10 +1034,23 @@ function fieldable_panels_panes_load_from_subtype_force($subtype_name) {
     }
   }
 
+  // UUID integration for revisions.
+  elseif ($type == 'vuuid' && module_exists('uuid')) {
+   $vids = entity_get_id_by_uuid('fieldable_panels_pane', array($id), TRUE);
+    if ($vids && $content = entity_load('fieldable_panels_pane', FALSE, array('vid' => reset($vids)))) {
+      $object = reset($content);
+    }
+  }
   // If the type is 'vid' then a specific FPP revision is being requested.
   elseif ($type == 'vid') {
     $fpid = db_query('SELECT fpid FROM {fieldable_panels_panes_revision} WHERE vid = :vid', array(':vid' => $id))->fetchField();
     $object = fieldable_panels_panes_load($fpid, $id);
+  }
+
+  // Load up the current revision.
+  elseif ($type == 'current') {
+    $vid = db_query('SELECT MAX(vid) FROM {fieldable_panels_panes_revision} WHERE fpid = :fpid', array(':fpid' => $id))->fetchField();
+   $object = fieldable_panels_panes_load($id, $vid);
   }
 
   // The remaining scenario is that it's a regular FPP id, i.e. an "fpid", so
@@ -1138,10 +1246,20 @@ function fieldable_panels_panes_entity_edit_form($form, &$form_state) {
     '#weight' => -10,
   );
 
-  $form['language'] = array(
-    '#type' => 'value',
-    '#value' => $entity->language,
-  );
+  if (module_exists('locale')) {
+    $form['language'] = array(
+      '#type' => 'select',
+      '#title' => t('Language'),
+      '#default_value' => $entity->language,
+      '#options' => array(LANGUAGE_NONE => t('Language neutral')) + locale_language_list('name'),
+    );
+  }
+  else {
+    $form['language'] = array(
+      '#type' => 'value',
+      '#value' => $entity->language,
+    );
+  }
 
   $form['link'] = array(
     '#type' => 'container',
@@ -1176,6 +1294,23 @@ function fieldable_panels_panes_entity_edit_form($form, &$form_state) {
     '#weight' => 99,
   );
 
+  $form['admin'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Admin'),
+    '#collapsible' => TRUE,
+    '#collapsed' => empty($entity->admin),
+    '#group' => 'additional_settings',
+    '#attributes' => array(
+      'class' => array('fieldable-pane-pane-form-admin-information'),
+    ),
+    '#attached' => array(
+      'js' => array(
+        'vertical-tabs' => drupal_get_path('module', 'fieldable_panels_panes') . '/fieldable_panels_panes.vertical-tabs.js',
+      ),
+    ),
+    '#weight' => 10,
+  );
+
   $form['reusable'] = array(
     '#type' => 'fieldset',
     '#title' => t('Reusability'),
@@ -1191,6 +1326,45 @@ function fieldable_panels_panes_entity_edit_form($form, &$form_state) {
       ),
     ),
     '#weight' => 10,
+    // Cannot change this after the initial creation, but reusable FPPs can be
+    // have their category changed.
+    '#access' => empty($entity->fpid) || (!empty($entity->fpid) && !empty($entity->reusable)),
+  );
+
+  $form['reusable']['reusable'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Make this entity reusable'),
+    '#default_value' => $entity->reusable,
+    '#description' => t('A reusable pane may be used multiple times on the same page or on other pages. A non-reusable pane may not be added to another page once it is created and added to this page. This option may not be changed after the pane is created.'),
+    // It's dangerous to change an FPP's reusability after it is created, so
+    // this is disabled when editing existing FPPs.
+    '#disabled' => !empty($entity->fpid),
+  );
+
+  $form['reusable']['category'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Category'),
+    '#description' => t('The category this content will appear in the "Add content" modal. If left blank the category will be "Miscellaneous".'),
+    '#default_value' => $entity->category,
+    '#states' => array(
+      'visible' => array(
+        ':input[name="reusable"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  $form['admin']['admin_title'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Administrative title'),
+    '#description' => t("Title used for administrative purposes. Used to identify panes within admin pages."),
+    '#default_value' => $entity->admin_title,
+  );
+
+  $form['admin']['admin_description'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Administrative description'),
+    '#description' => t('A description of what this content is, does or is for, for administrative use.'),
+    '#default_value' => $entity->admin_description,
   );
 
   $form['revision'] = array(
@@ -1208,52 +1382,8 @@ function fieldable_panels_panes_entity_edit_form($form, &$form_state) {
       ),
     ),
     '#weight' => 30,
-  );
-
-  if (empty($entity->fpid)) {
-    $form['revision']['#access'] = FALSE;
-  }
-
-  $form['reusable']['reusable'] = array(
-    '#type' => 'checkbox',
-    '#title' => t('Make this entity reusable'),
-    '#default_value' => $entity->reusable,
-  );
-
-  $form['reusable']['category'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Category'),
-    '#description' => t('The category this content will appear in the "Add content" modal. If left blank the category will be "Miscellaneous".'),
-    '#default_value' => $entity->category,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="reusable"]' => array('checked' => TRUE),
-      ),
-    ),
-  );
-
-  $form['reusable']['admin_title'] = array(
-    '#type' => 'textfield',
-    '#title' => t('Administrative title'),
-    '#description' => t('The name this content will appear in the "Add content" modal.'),
-    '#default_value' => $entity->admin_title,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="reusable"]' => array('checked' => TRUE),
-      ),
-    ),
-  );
-
-  $form['reusable']['admin_description'] = array(
-    '#type' => 'textarea',
-    '#title' => t('Administrative description'),
-    '#description' => t('A description of what this content is, does or is for, for administrative use.'),
-    '#default_value' => $entity->admin_description,
-    '#states' => array(
-      'visible' => array(
-        ':input[name="reusable"]' => array('checked' => TRUE),
-      ),
-    ),
+    // Don't show the revision options if this is a new FPP.
+    '#access' => !empty($entity->fpid),
   );
 
   $form['revision']['revision'] = array(
@@ -1262,15 +1392,26 @@ function fieldable_panels_panes_entity_edit_form($form, &$form_state) {
     '#default_value' => 1,
   );
 
-  if (!user_access('administer fieldable panels panes') || $entity->vid != $entity->current_vid) {
+  // Force a new revision to be created if the user does not have 'admin FPP'
+  // access, or the 'lock' mode was enabled and this is not a reusable FPP.
+  if (!user_access('administer fieldable panels panes')
+      || $entity->vid != $entity->current_vid
+      || (!empty($entity->fpid) && empty($entity->reusable)
+        && variable_get('fpp_revision_locking', 'lock') == 'lock')) {
     $form['revision']['revision']['#disabled'] = TRUE;
     $form['revision']['revision']['#value'] = TRUE;
+
+    // Inform the user that the pane will be locked.
+    if (!empty($entity->fpid) && empty($entity->reusable)
+        && variable_get('fpp_revision_locking', 'lock') == 'lock') {
+      $form['revision']['revision']['#description'] = t('A new revision will be created because this pane is non-reusable and the locking mode has been enabled.');
+    }
   }
 
   $form['revision']['log'] = array(
     '#type' => 'textarea',
     '#title' => t('Log message'),
-    '#description' => t('Provide an explanation of the changes you are making. This will help other authors understand your motivations.'),
+    '#description' => t('Provide an explanation of the changes being made.'),
     '#default_value' => '',
     '#states' => array(
       'visible' => array(
@@ -1441,5 +1582,59 @@ function fieldable_panels_panes_file_download_access($field, $entity_type, $enti
     // Use the CTools API to check access.
     ctools_include('context');
     return ctools_access($entity->view_access, fieldable_panels_panes_get_base_context($entity));
+  }
+}
+
+/**
+ * Determine if an FPP's revision should be locked.
+ *
+ * @param object $entity
+ *   The FPP object being examined.
+ *
+ * @return bool
+ */
+function fieldable_panels_panes_revision_is_lockable($entity) {
+  $lock = variable_get('fpp_revision_locking', 'lock');
+
+  // Only non-reusable FPPs will be lockable.
+  if ($lock == 'lock') {
+    $revision_context_aware = empty($entity->reusable);
+  }
+
+  // Legacy mode, no revisions handling.
+  else {
+    $revision_context_aware = FALSE;
+  }
+
+  return $revision_context_aware;
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function fieldable_panels_panes_entity_insert($entity, $type) {
+  if ($type == 'fieldable_panels_pane') {
+    $cid = "fieldable_panels_panes_{$entity->bundle}_content_type";
+    cache_clear_all($cid, 'cache_panels');
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ */
+function fieldable_panels_panes_entity_update($entity, $type) {
+  if ($type == 'fieldable_panels_pane') {
+    $cid = "fieldable_panels_panes_{$entity->bundle}_content_type";
+    cache_clear_all($cid, 'cache_panels');
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function fieldable_panels_panes_entity_delete($entity, $type) {
+  if ($type == 'fieldable_panels_pane') {
+    $cid = "fieldable_panels_panes_{$entity->bundle}_content_type";
+    cache_clear_all($cid, 'cache_panels');
   }
 }

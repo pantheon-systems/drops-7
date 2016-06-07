@@ -26,8 +26,9 @@ function geo_file_entity_geojson_bundle_theme($existing, $type, $theme, $path) {
 function geo_file_entity_geojson_bundle_entity_view_alter(&$build, $type) {
   if ($type === 'geo_file' && $build['#entity']->type === 'geojson') {
     // Load libraries.
-    libraries_load('recline');
-
+    libraries_load('leaflet');
+    libraries_load('leaflet_zoomtogeometries');
+    
     // Build settings.
     $settings = array();
 

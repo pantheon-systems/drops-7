@@ -23,3 +23,6 @@ libraries[numeral][download][url] = "https://github.com/adamwdraper/Numeral-js/z
 
 libraries[recline_choropleth][download][type] = "file"
 libraries[recline_choropleth][download][url] = "https://github.com/NuCivic/recline.view.choroplethmap.js/archive/master.zip"
+
+libraries[leaflet_zoomtogeometries][download][type] = "file"
+libraries[leaflet_zoomtogeometries][download][url] = "https://github.com/NuCivic/leaflet.map.zoomToGeometries.js/zipball/master"

@@ -5,7 +5,7 @@ img.panopoly-image-full,
 img.panopoly-image-half,
 img.panopoly-image-quarter,
 img.panopoly-image-featured,
-img.panopoly-image-thumbnail
+img.panopoly-image-thumbnail,
 img.panopoly-image-square,
 img.panopoly-image-original,
 img.panopoly-image-spotlight,
@@ -16,19 +16,16 @@ img.panopoly-image-video {
 }
 
 /**
- * Image styling 
+ * Image styling
  */
 img.panopoly-image-full {
-  max-width: 100%;
   width: 100% !important;
-  height: auto;
   margin-bottom: .5em;
 }
 
 img.panopoly-image-half {
   max-width: 50%;
   width: 50%;
-  height: auto;
   float: left;
   margin-right: .75em;
   margin-bottom: .5em;
@@ -38,7 +35,6 @@ img.panopoly-image-half {
 img.panopoly-image-quarter {
   max-width: 25%;
   width: 25%;
-  height: auto;
   float: left;
   margin-right: .5em;
   margin-bottom: .25em;
@@ -74,20 +70,6 @@ img.panopoly-image-quarter {
   width: auto;
 }
 
-img.panopoly-image-featured {
-  max-width: 100%;
-  height: auto;
-}
-
-img.panopoly-image-thumbnail {
-  max-width: 100%;
-  height: auto;
-}
-
-img.panopoly-image-square {
-  max-width: 100%;
-  height: auto;
-}
 
 /**
  * Media image preview.
@@ -99,4 +81,11 @@ img.panopoly-image-square {
 .media-thumbnail img.panopoly-image-thumbnail{
   margin-left: auto;
   margin-right: auto;
+}
+/**
+ * Ensure all images don't bust out of the container in the media browser.
+ */
+.media-thumbnail img {
+  max-width: 100%;
+  height: auto;
 }

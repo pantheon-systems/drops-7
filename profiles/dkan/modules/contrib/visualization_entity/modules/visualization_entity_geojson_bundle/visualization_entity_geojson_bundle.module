@@ -26,7 +26,7 @@ function visualization_entity_geojson_bundle_theme($existing, $type, $theme, $pa
 function visualization_entity_geojson_bundle_entity_view_alter(&$build, $type) {
   if ($type === 'visualization' && $build['#entity']->type === 'geojson_visualization') {
     // Load libraries.
-    libraries_load('recline');
+    libraries_load('leaflet');
     libraries_load('leaflet_zoomtogeometries');
 
     // Build settings.
@@ -73,13 +73,24 @@ function visualization_entity_geojson_bundle_form_alter(&$form, &$form_state, $f
     else {
       $options_uuid_resources = &$form['field_uuid_resource'][LANGUAGE_NONE][0]['target_uuid'];
     }
-
-    $field = field_read_field('field_uuid_resource');
-    $target_type = $field['settings']['target_type'];
-    $options_uuid_resources['#options'] = visualization_entity_recline_field_reference_filter_compatible_instances(
-      $options_uuid_resources['#options'],
-      $target_type,
-      'visualization_entity_is_geojson'
-    );
+    if (isset($options_uuid_resources['#options'])) {
+      $field = field_read_field('field_uuid_resource');
+      $target_type = $field['settings']['target_type'];
+      $options_uuid_resources['#options'] = visualization_entity_recline_field_reference_filter_compatible_instances(
+        $options_uuid_resources['#options'],
+        $target_type,
+        'visualization_entity_is_geojson'
+      );
+      if (!$options_uuid_resources['#options']) {
+        drupal_set_message(t("No Resources with GeoJSON files found. To create a GeoJSON Visualization you must first !create with a GeoJSON file uploaded.", array("!create" => l('create a Resource', "node/add/resource"))));
+      }
+    }
+    else {
+      $options_uuid_resources['#options'] = visualization_entity_recline_field_reference_filter_compatible_instances(
+        $options_uuid_resources['#options'],
+        $target_type,
+        'visualization_entity_is_geojson'
+      );
+    }
   }
 }

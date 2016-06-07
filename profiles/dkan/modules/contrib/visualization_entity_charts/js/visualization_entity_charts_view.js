@@ -37,24 +37,24 @@
           state.set('width', $('.field-name-field-ve-settings').width());
         }
 
-        var model = state.get('source');
+        var source = state.get('source');
         var graph = null;
-        model.url = cleanURL(model.url);
-        $.get(model.url).done(function(data){
-          data = data.replace(/(?:\r|\n)/g, '\r\n');
-          data = CSV.parse(data);
-          state.set('model', new recline.Model.Dataset({records: data}));
-          model = state.get('model');
-          model.queryState.set(state.get('queryState'));
-          graph = new recline.View.nvd3[state.get('graphType')]({
-            model: model,
-            state: state,
-            el: $el
-          });
-          graph.render();
+        source.url = cleanURL(source.url);
+        var model = new recline.Model.Dataset(source);
+        state.set('model', model);
+        model.queryState.set(state.get('queryState'));
+
+        graph = new recline.View.nvd3[state.get('graphType')]({
+          model: model,
+          state: state,
+          el: $el
         });
-        
+        model.fetch().done(graph.render.bind(graph)).fail(function (err) {
+          console.log(err);
+          alert('Failed to fetch the resource');
+        });
       }
+
       function cleanURL(url){
         var haveProtocol = new RegExp('^(?:[a-z]+:)?//', 'i');
         if(haveProtocol.test(url)){

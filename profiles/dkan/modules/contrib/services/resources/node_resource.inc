@@ -116,6 +116,19 @@ function _node_resource_definition() {
               'default value' => variable_get('services_node_index_page_size', 20),
               'source' => array('param' => 'pagesize'),
             ),
+            array(
+              'name' => 'options',
+              'optional' => TRUE,
+              'type' => 'array',
+              'description' => 'Additional query options.',
+              'default value' => array(
+                'orderby' => array(
+                  'sticky' => 'DESC',
+                  'created' => 'DESC'
+                )
+              ),
+              'source' => array('param' => 'options'),
+            ),
           ),
           'access arguments' => array('access content'),
         ),
@@ -462,6 +475,8 @@ function _node_resource_delete($nid) {
  *   indicating items to retrieve.
  * @param $page_size
  *   Integer number of items to be returned.
+ * @param $options
+ *   Additional query options.
  * @return
  *   An array of node objects.
  *
@@ -471,13 +486,11 @@ function _node_resource_delete($nid) {
  *     - Is there an easier syntax we can define which can make the urls
  *       for index requests more straightforward?
  */
-function _node_resource_index($page, $fields, $parameters, $page_size) {
+function _node_resource_index($page, $fields, $parameters, $page_size, $options = array()) {
   $node_select = db_select('node', 't')
-    ->addTag('node_access')
-    ->orderBy('sticky', 'DESC')
-    ->orderBy('created', 'DESC');
+    ->addTag('node_access');
 
-  services_resource_build_index_query($node_select, $page, $fields, $parameters, $page_size, 'node');
+  services_resource_build_index_query($node_select, $page, $fields, $parameters, $page_size, 'node', $options);
 
   if (!user_access('administer nodes')) {
     $node_select->condition('status', 1);
@@ -611,7 +624,7 @@ function _node_resource_load_node_comments($nid, $count = 0, $start = 0) {
   $return_comments = array();
 
   foreach ($comments as $comment) {
-    $return_comments[] = services_field_permissions_comment_clean('view', 'comment', $comment);
+    $return_comments[] = services_field_permissions_clean('view', 'comment', $comment);
   }
 
   return $return_comments;

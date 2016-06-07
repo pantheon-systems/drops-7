@@ -9,14 +9,17 @@ Drupal.behaviors.fieldablePanelPaneFieldsetSummaries = {
         summary.push(Drupal.t('Reusable: Yes'));
         var category = $('input[name="category"]', context).val() || Drupal.t('None');
         summary.push(Drupal.t('Category: @value', { '@value': category }));
-        var admin_title = $('input[name="admin_title"]', context).val() || Drupal.t('None');
-        summary.push(Drupal.t('Admin title: @value', { '@value': admin_title }));
       }
       else {
         summary.push(Drupal.t('Reusable: No'));
       }
 
       return summary.join('<br />');
+    });
+
+    $('fieldset.vertical-tabs-pane.fieldable-pane-pane-form-admin-information', context).drupalSetSummary(function (context) {
+      var admin_title = $('input[name="admin_title"]', context).val() || Drupal.t('None');
+      return Drupal.t('Admin title: @value', { '@value': admin_title });
     });
 
     $('fieldset.vertical-tabs-pane.fieldable-pane-pane-form-revision-information', context).drupalSetSummary(function (context) {

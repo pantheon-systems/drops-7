@@ -119,6 +119,18 @@ function _user_resource_definition() {
               'default value' => variable_get('services_user_index_page_size', 20),
               'source' => array('param' => 'pagesize'),
             ),
+            array(
+              'name' => 'options',
+              'optional' => TRUE,
+              'type' => 'array',
+              'description' => 'Additional query options.',
+              'default value' => array(
+                'orderby' => array(
+                  'created' => 'DESC'
+                )
+              ),
+              'source' => array('param' => 'options'),
+            ),
           ),
           'access arguments' => array('access user profiles'),
           'access arguments append' => FALSE,
@@ -320,8 +332,9 @@ function _user_resource_create($account) {
   // Set the form state op.
   $form_state['values']['op'] = variable_get('services_user_create_button_resource_create', t('Create new account'));
 
-  // execute the register form
+  // Execute the register form.
   $form_state['programmed_bypass_access_check'] = FALSE;
+
   drupal_form_submit('user_register_form', $form_state);
   // find and store the new user into the form_state
   if(isset($form_state['values']['uid'])) {
@@ -374,6 +387,28 @@ function _user_resource_update($uid, $account) {
   if (isset($account['category'])) {
     $category = $account['category'];
     unset($account['category']);
+  }
+
+  // Prepare values for the user profile image.
+  if (array_key_exists('picture_upload', $account)) {
+    if (is_array($account['picture_upload'])) {
+      // Check if it's an array and convert to object.
+      $account['picture_upload'] = (object) $account['picture_upload'];
+    }
+    elseif (is_int($account['picture_upload'])) {
+      // Check if it's an integer and get the file object.
+      $file_validate = file_validate_is_image($file = file_load($account['picture_upload']));
+      if (empty($file_validate)) {
+        $account['picture_upload'] = $file;
+      }
+    }
+    elseif (is_string($account['picture_upload'])) {
+      // Check if it's an string and get the file object.
+      $file_validate = file_validate_is_image($file = file_load((int) $account['picture_upload']));
+      if (empty($file_validate)) {
+        $account['picture_upload'] = $file;
+      }
+    }
   }
 
   // Drop any passed in values into the $account var. Anything
@@ -754,11 +789,10 @@ function _user_resource_resend_welcome_email($uid) {
  *
  * @see _node_resource_index() for more notes
  */
-function _user_resource_index($page, $fields, $parameters, $page_size) {
-  $user_select = db_select('users', 't')
-    ->orderBy('created', 'DESC');
+function _user_resource_index($page, $fields, $parameters, $page_size, $options = array()) {
+  $user_select = db_select('users', 't');
 
-  services_resource_build_index_query($user_select, $page, $fields, $parameters, $page_size, 'user');
+  services_resource_build_index_query($user_select, $page, $fields, $parameters, $page_size, 'user', $options);
 
   $results = services_resource_execute_index_query($user_select);
 

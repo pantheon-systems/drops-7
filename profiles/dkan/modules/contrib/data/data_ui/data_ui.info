@@ -5,9 +5,9 @@ dependencies[] = data
 dependencies[] = schema
 core = 7.x
 
-; Information added by Drupal.org packaging script on 2016-01-06
-version = "7.x-1.0-alpha7+4-dev"
+; Information added by Drupal.org packaging script on 2016-05-26
+version = "7.x-1.0-alpha8+0-dev"
 core = "7.x"
 project = "data"
-datestamp = "1452114242"
+datestamp = "1464294497"
 

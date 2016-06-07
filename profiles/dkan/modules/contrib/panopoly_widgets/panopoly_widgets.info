@@ -26,8 +26,10 @@ dependencies[] = views
 dependencies[] = views_autocomplete_filters
 dependencies[] = views_content
 stylesheets[all][] = panopoly-widgets.css
+stylesheets[all][] = panopoly-widgets-spotlight.css
 features[ctools][] = file_entity:file_default_displays:1
 features[ctools][] = views:views_default:3.0
+features[defaultconfig][] = strongarm:media_wysiwyg_default_render
 features[defaultconfig][] = user_default_permissions:access media browser
 features[defaultconfig][] = user_default_permissions:add media from remote sources
 features[defaultconfig][] = user_default_permissions:create fieldable basic_file
@@ -108,6 +110,7 @@ features[field_instance][] = fieldable_panels_pane-spotlight-field_basic_spotlig
 features[field_instance][] = fieldable_panels_pane-table-field_basic_table_table
 features[field_instance][] = fieldable_panels_pane-text-field_basic_text_text
 features[field_instance][] = fieldable_panels_pane-video-field_video_file
+features[file_display][] = video__default__media_vimeo_image
 features[file_display][] = video__default__media_youtube_image
 features[file_display][] = video__default__media_youtube_video
 features[file_display][] = video__link__file_field_file_default
@@ -116,9 +119,9 @@ features[file_display][] = video__teaser__media_youtube_image
 features[file_display][] = video__teaser__media_youtube_video
 features[views_view][] = panopoly_widgets_general_content
 
-; Information added by Drupal.org packaging script on 2015-07-09
-version = "7.x-1.25"
+; Information added by Drupal.org packaging script on 2016-05-04
+version = "7.x-1.35"
 core = "7.x"
 project = "panopoly_widgets"
-datestamp = "1436406380"
+datestamp = "1462395937"
 

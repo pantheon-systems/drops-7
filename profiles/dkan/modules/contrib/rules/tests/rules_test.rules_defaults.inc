@@ -77,9 +77,10 @@ function _rules_export_get_test_export() {
     "PLUGIN" : "reaction rule",
     "WEIGHT" : "-1",
     "ACTIVE" : false,
+    "OWNER" : "rules",
     "TAGS" : [ "bar", "baz", "foo" ],
     "REQUIRES" : [ "rules", "comment" ],
-    "ON" : [ "comment_insert" ],
+    "ON" : { "comment_insert" : [] },
     "IF" : [
       { "OR" : [
           { "NOT node_is_sticky" : { "node" : [ "comment:node" ] } },

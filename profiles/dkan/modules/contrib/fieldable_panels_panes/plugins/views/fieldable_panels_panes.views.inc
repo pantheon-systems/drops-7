@@ -207,6 +207,17 @@ function fieldable_panels_panes_views_data() {
         'handler' => 'views_handler_filter_date',
       ),
     ),
+    'language' => array(
+      'title' => t('Language'),
+      'help' => t('The language of the entity.'),
+      'field' => array(
+        'handler' => 'fieldable_panels_panes_handler_field_language',
+        'click sortable' => TRUE,
+      ),
+      'filter' => array(
+        'handler' => 'fieldable_panels_panes_handler_filter_language',
+      ),
+    ),
     'view_entity' => array(
       'field' => array(
         'title' => t('Administrative link'),

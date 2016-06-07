@@ -125,7 +125,7 @@ function panopoly_widgets_field_formatter_settings_form($field, $instance, $view
 
   if ($display['type'] == 'panopoly_spotlight_default') {
     $element['image_style'] = array(
-      '#title' => t('Image style'), 
+      '#title' => t('Image style'),
       '#type' => 'select',
       '#options' => image_style_options(),
       '#default_value' => $settings['image_style'],
@@ -142,7 +142,7 @@ function panopoly_widgets_field_formatter_settings_form($field, $instance, $view
 function panopoly_widgets_field_formatter_settings_summary($field, $instance, $view_mode) {
   $display = $instance['display'][$view_mode];
   $settings = $display['settings'];
-  
+
   $summary = t('Image Style: @style', array('@style' => $settings['image_style']));
   return $summary;
 }
@@ -172,7 +172,6 @@ function panopoly_widgets_field_formatter_view($entity_type, $entity, $field, $i
   $element = array();
   $settings = $display['settings'];
   $formatter = $display['type'];
-  drupal_add_library('system', 'ui.tabs');
 
   // Load the images and filter out slides with missing images.
   foreach ($items as $delta => $item_data) {
@@ -191,45 +190,34 @@ function panopoly_widgets_field_formatter_view($entity_type, $entity, $field, $i
     }
   }
 
-  // Assemble the tabs header
-  $header = '<div class="panopoly-spotlight-buttons-wrapper" data-rotation-time="' . $duration * 1000 . '">';
-  if (count($items) > 1) {
-    if ($pager_style == 'full') {
-      $header .= '<ul>';
-    }
-    else {
-      // We're not displaying a full pager but we still want to render the full pager, and just hide it
-      // in an accessible way, instead of not rendering it at all.
-      $header .= '<ul class="element-invisible">';
-    }
-    foreach ($items as $delta => $item_data) {
-      $header .= '<li>' . '<a href="#panopoly-spotlight-' . $delta . '">' . ($delta+1) . '</a></li>';
-    }
-    $header .= '</ul>';
+  // Assemble the spotlight wrapper
+  // $element[0] rather than $element because hook_field_formatter_view()
+  // expects a renderable array for the $items, as an array of child elements
+  // keyed by numeric indexes starting from 0.
+  $element[0] = array(
+    '#theme' => 'panopoly_spotlight_wrapper',
+    '#items' => $items,
+    '#settings' => $settings,
+    '#formatter' => $formatter,
+    '#duration' => $duration,
+    '#pager_style' => $pager_style,
+    '#entity_type' => $entity_type,
+    '#entity' => $entity,
+    'slides' => array(),
+  );
 
-    if (variable_get('panopoly_widgets_spotlight_pause_play_buttons', 1) || $pager_style == 'mini') {
-      $header .= '<div class="panopoly-spotlight-function-buttons">';
-
-      // Have to split up previous and next so that we can squeeze pause between them if needed.
-      if ($pager_style == 'mini') {
-        $header .= '<a href="#panopoly-spotlight" class="panopoly-spotlight-previous">' . t('Prev') . '</a>';
-      }
-      if (variable_get('panopoly_widgets_spotlight_pause_play_buttons', 1)) {
-        $header .= '<a href="#" class="panopoly-spotlight-pause-play">' . t('Pause') . '</a>';
-      }
-      if ($pager_style == 'mini') {
-        $header .= '<a href="#panopoly-spotlight" class="panopoly-spotlight-next">' . t('Next') . '</a>';
-      }
-
-      $header .= '</div>';
-    }
-  }
-  $header .= '</div>';  // class="panopoly-spotlight-buttons-wrapper"
-
-  // Assemble the tabs content
+  // Assemble the spotlight items (rendered in panopoly_spotlight_wrapper())
   foreach ($items as $delta => $item_data) {
-    $element[$delta]['#markup'] = (($delta == 0) ? $header : '') . theme('panopoly_spotlight_view', array('items' => $item_data, 'delta' => $delta, 'settings' => $settings));
+    $element[0]['slides'][] = array(
+      '#theme' => 'panopoly_spotlight_view',
+      '#items' => $item_data,
+      '#delta' => $delta,
+      '#settings' => $settings,
+      '#entity_type' => $entity_type,
+      '#entity' => $entity,
+    );
   }
+
   return $element;
 }
 
@@ -239,8 +227,8 @@ function panopoly_widgets_field_formatter_view($entity_type, $entity, $field, $i
 function panopoly_widgets_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
 
   if ($instance['widget']['type'] == 'panopoly_spotlight_form') {
-   
-    // Make it a multipart form  
+
+    // Make it a multipart form
     $form['#attributes']['enctype'] = 'multipart/form-data';
 
     // Define the element
@@ -305,7 +293,7 @@ function panopoly_widgets_field_presave($entity_type, $entity, $field, $instance
     foreach ($items as &$item) {
       if (empty($item['fid'])) {
         $fid = variable_get('panopoly_widgets_default_' . $entity->bundle . '_fid', NULL);
-        
+
         if (!empty($fid)) {
           $item['fid'] = $fid;
         }
@@ -343,7 +331,7 @@ function panopoly_widgets_field_insert($entity_type, $entity, $field, $instance,
 function panopoly_widgets_field_update($entity_type, $entity, $field, $instance, $langcode, &$items) {
 
   // Load the original entity, if $entity->original is not already set.
-  // This is done as per http://drupal.org/node/985642 and can be removed when that patch is committed. 
+  // This is done as per http://drupal.org/node/985642 and can be removed when that patch is committed.
   if (empty($entity->original)) {
     $entity->original = entity_load_unchanged($entity_type, $field['id']);
   }
@@ -370,7 +358,7 @@ function panopoly_widgets_field_delete_revision($entity_type, $entity, $field, $
  */
 function panopoly_widgets_field_prepare_view($entity_type, $entities, $field, $instances, $langcode, &$items) {
   // If there are no files specified at all, use the default.
-  // TODO - make sure this works 
+  // TODO - make sure this works
   foreach ($entities as $id => $entity) {
     if (empty($items[$id]) && $field['settings']['default_image']) {
       if ($file = file_load($field['settings']['default_image'])) {
@@ -385,19 +373,77 @@ function panopoly_widgets_field_prepare_view($entity_type, $entities, $field, $i
 }
 
 /**
- * Theme function for table view
+ * Theme function for the spotlight wrapper
+ */
+function theme_panopoly_spotlight_wrapper($variables){
+  $output = '';
+  $items = $variables['element']['#items'];
+  $duration = $variables['element']['#duration'];
+  $pager_style = $variables['element']['#pager_style'];
+  $element = array();
+
+  $output .= '<div class="panopoly-spotlight-widget-wrapper">';
+
+  // Assemble the tabs header
+  $output .= '<div class="panopoly-spotlight-buttons-wrapper" data-rotation-time="' . $duration * 1000 . '">';
+  if (count($items) > 1) {
+    if ($pager_style == 'full') {
+      $output .= '<ul>';
+    }
+    else {
+      // We're not displaying a full pager but we still want to render the full pager, and just hide it
+      // in an accessible way, instead of not rendering it at all.
+      $output .= '<ul class="element-invisible">';
+    }
+    foreach ($items as $delta => $item_data) {
+      $output .= '<li>' . '<a href="#panopoly-spotlight-' . $delta . '">' . ($delta+1) . '</a></li>';
+    }
+    $output .= '</ul>';
+
+    if (variable_get('panopoly_widgets_spotlight_pause_play_buttons', 1) || $pager_style == 'mini') {
+      $output .= '<div class="panopoly-spotlight-function-buttons">';
+
+      // Have to split up previous and next so that we can squeeze pause between them if needed.
+      if ($pager_style == 'mini') {
+        $output .= '<a href="#panopoly-spotlight" class="panopoly-spotlight-previous">' . t('Prev') . '</a>';
+      }
+      if (variable_get('panopoly_widgets_spotlight_pause_play_buttons', 1)) {
+        $output .= '<a href="#" class="panopoly-spotlight-pause-play">' . t('Pause') . '</a>';
+      }
+      if ($pager_style == 'mini') {
+        $output .= '<a href="#panopoly-spotlight" class="panopoly-spotlight-next">' . t('Next') . '</a>';
+      }
+
+      $output .= '</div>';
+    }
+  }
+
+  $output .= '</div>';  // class="panopoly-spotlight-buttons-wrapper"
+
+  $output .= render($variables['element']['slides']);
+
+  $output .= '</div>';  // class="panopoly-spotlight-widget-wrapper"
+
+  return $output;
+}
+
+/**
+ * Theme function for spotlight items
  */
 function theme_panopoly_spotlight_view($variables) {
-  $title = $variables['items']['title'];
-  $description = $variables['items']['description'];
-  $link = $variables['items']['link'];
-  $alt = $variables['items']['alt'];
-  $settings = $variables['settings'];
+  $output = '';
 
-  $image = $variables['items']['image'];
+  $title = $variables['element']['#items']['title'];
+  $description = $variables['element']['#items']['description'];
+  $link = $variables['element']['#items']['link'];
+  $alt = $variables['element']['#items']['alt'];
+  $settings = $variables['element']['#settings'];
+  $delta = $variables['element']['#delta'];
+
+  $image = $variables['element']['#items']['image'];
   $image_markup = theme('image_style', array('style_name' => $settings['image_style'], 'path' => $image->uri, 'alt' => $alt));
 
-  $output = '<div id="' . 'panopoly-spotlight-' . $variables['delta'] . '" class="' . 'panopoly-spotlight' . '">';
+  $output = '<div id="' . 'panopoly-spotlight-' . $delta . '" class="' . 'panopoly-spotlight' . '">';
 
   if ($link) {
     $output .= l($image_markup, $link, array('html' => TRUE));

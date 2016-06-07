@@ -352,8 +352,7 @@ function theme_dkan_workflow_tree_node(stdClass $node, $vbo) {
     foreach ($node->og_group_ref as $og_group_ref) {
       $group_nid = $og_group_ref[0]['target_id'];
       $variables = array(
-        'text' => views_dkan_workflow_tree_get_node_title
-        ($group_nid),
+        'text' => views_dkan_workflow_tree_get_node_title($group_nid),
         'path' => 'node/' . $group_nid,
       );
       $groups[] = theme('link', $variables);
@@ -377,8 +376,9 @@ function theme_dkan_workflow_tree_node(stdClass $node, $vbo) {
   $output .=
       '<span class="views-dkan-workflow-tree-title ' . $node->type . '">' .
       $vbo .
+      // Since the 'html' option is set to TRUE we need to sanitize the title with check_plain().
       theme('link' , array(
-          'text' => theme('facet_icons', $icon) . ' ' . $node->title,
+          'text' => theme('facet_icons', $icon) . ' ' . check_plain($node->title),
           'path' => 'node/' . $node->nid,
           'options' => array(
             'html' => true

@@ -8,7 +8,7 @@
  * Implements hook_drush_command().
  */
 function taxonomy_fixtures_drush_command() {
-  $correct_args = array('import', 'export', 'delete');
+  $correct_args = array('list', 'import', 'export', 'delete');
   $correct_args = implode(', ', $correct_args);
   return array(
     'taxonomy-fixtures' => array(
@@ -27,7 +27,7 @@ function taxonomy_fixtures_drush_command() {
  * Implements drush_command().
  */
 function drush_taxonomy_fixtures($operation = 'import') {
-  $correct_args = array('import', 'export', 'delete');
+  $correct_args = array('list', 'import', 'export', 'delete');
   // Validate operation.
   if (!in_array($operation, $correct_args)) {
     $correct_args = implode(', ', $correct_args);
@@ -40,11 +40,32 @@ function drush_taxonomy_fixtures($operation = 'import') {
     );
     return drush_set_error($error_message);
   }
+
   // Validate vocabularies to be exported (if any).
   $op_vocabularies = drush_get_arguments();
   array_shift($op_vocabularies);
   array_shift($op_vocabularies);
   $subscribed_vocabularies = taxonomy_fixtures_get_vocabularies();
+
+  // Output List of subscribed vocabularies
+  if ($operation == "list") {
+    if (!count($subscribed_vocabularies)) {
+      return drush_print('There are no subscribed vocabularies.');
+    }
+    $output = array(
+      array('Vocabulary', 'Export Path', 'Mappings'),
+    );
+    foreach ($subscribed_vocabularies as $k => $v) {
+      $map = array();
+      foreach ($v['map'] as $drupal => $json) {
+        array_push($map, $drupal . '->' . $json);
+      }
+      $map = implode(' ', $map);
+      array_push($output, array($k, $v['export_path'], $map));
+    }
+    return drush_print_table($output, TRUE);
+  }
+
   $vocabularies = array();
   if (count($op_vocabularies) > 0) {
     foreach ($op_vocabularies as $vocabulary) {

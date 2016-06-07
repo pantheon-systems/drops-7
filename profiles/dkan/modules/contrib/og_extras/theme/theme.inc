@@ -38,14 +38,14 @@ function og_extras_preprocess_og_extras_group_info(&$variables) {
   $variables['subscriber_link'] = l(format_plural($variables['subscriber_count'], '@count member', '@count members'), 'node/' . $variables['gid'] . '/members');
 
   // @TODO Add a configuration form to select the 'manager' roles for the group.
-  $roles = og_extras_get_roles($variables['gid']);
+  $roles = og_extras_get_roles($variables['gid'], $variables['group_type']);
   $role_rids = array();
   foreach ($roles as $role) {
     $role_rids[] = $role->rid;
   }
 
   $variables['manager_uids'] = array($variables['group_node']->uid);
-  foreach (og_extras_get_users_by_roles($variables['gid'], $role_rids) as $item) {
+  foreach (og_extras_get_users_by_roles($variables['gid'], $role_rids, $variables['group_type']) as $item) {
     $variables['manager_uids'][] = $item->uid;
   }
   $variables['manager_uids'] = array_unique($variables['manager_uids']);

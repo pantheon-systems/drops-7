@@ -62,6 +62,9 @@
   border: 0;
   background: transparent;
 }
+#media-tabs-wrapper .ui-tabs-nav .ui-tabs-anchor {
+  padding: 0 18px 8px 18px;
+}
 #media-tabs-wrapper .ui-tabs-nav li.ui-state-active a:link,
 #media-tabs-wrapper .ui-tabs-nav li.ui-state-active a:visited {
   background: white;

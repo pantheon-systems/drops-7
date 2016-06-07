@@ -8,6 +8,5 @@ dependencies[] = visualization_entity
 features[eck_bundle][] = visualization_geojson_visualization
 features[features_api][] = api:2
 features[field_instance][] = visualization-geojson_visualization-field_uuid_resource
-features[user_permission][] = eck view visualization geojson_visualization entities
 mtime = 1421033934
 project path = sites/all/modules/nucivic/visualization_entity/modules

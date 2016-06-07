@@ -538,9 +538,12 @@ function workbench_email_delete_all() {
  */
 function workbench_email_get_users($rid) {
   $uids = array();
-  $query = db_select('users_roles', 'ur')
-    ->fields('ur', array('uid'))
-    ->condition('ur.rid', $rid);
+  $query = db_select('users_roles', 'ur');
+  $query->join('users', 'u', 'u.uid = ur.uid');
+  $query->fields('ur', array('uid'))
+    ->fields('u', array('status'))
+    ->condition('ur.rid', $rid)
+    ->condition('u.status', 1);
   $query->distinct();
   $result = $query->execute();
   foreach ($result as $row) {
@@ -793,7 +796,7 @@ function _workbench_email_filter_users($accounts, $author) {
     // If the current user is a member of a separate role they
     // probably wouldn't want to be notified they just made
     // a transition. Possible setting in the future.
-    if ($user->mail != $account->mail) {
+    if (isset($user->mail) && isset($account->mail) && $user->mail != $account->mail) {
       $emails[$account->mail] = $account->name;
     }
   }
@@ -899,6 +902,9 @@ function workbench_email_scheme_menu_get_parents($sections) {
     $query->condition('mlid', array_keys($sections), 'IN');
   }
   else {
+    if (!is_array($sections)) {
+      $sections = array($sections => $sections);
+    }
     $query->condition('mlid', $sections, 'IN');
   }
   $result = $query->execute();
@@ -944,6 +950,13 @@ function workbench_email_scheme_menu_get_parents($sections) {
 function workbench_email_get_editors($role, $sections) {
   $editors = array();
 
+  $section_rids = workbench_email_get_rid_for_section_id($sections);
+
+  // Short circuit if the selected sections aren't within the current role.
+  if (!empty($section_rids) && !in_array($role->rid, $section_rids)) {
+    return $editors;
+  }
+
   // Get the editors individually specified in workbench access
   // editoral assignments by editor. Filter by the roles specified
   // in workbench notify settings.
@@ -953,6 +966,7 @@ function workbench_email_get_editors($role, $sections) {
   $query->join('users_roles', 'r', 'u.uid = r.uid');
   $query->condition('r.rid', $role->rid);
   $query->condition('access_id', $sections, 'IN');
+  $query->condition('u.status', 1);
   $result = $query->execute();
 
   foreach ($result as $record) {
@@ -968,6 +982,7 @@ function workbench_email_get_editors($role, $sections) {
   $query->join('users_roles', 'r', 'u.uid = r.uid');
   $query->join('workbench_access_role', 'w', 'r.rid = w.rid');
   $query->condition('access_id', $sections, 'IN');
+  $query->condition('u.status', 1);
   $result = $query->execute();
 
   foreach ($result as $record) {
@@ -978,6 +993,30 @@ function workbench_email_get_editors($role, $sections) {
   }
 
   return $editors;
+}
+
+/**
+ * Returns the corresponding rids for the given section ids.
+ *
+ * @param array $sections
+ *   An array of section ids.
+ *
+ * @return array
+ *   An array of rids.
+ */
+function workbench_email_get_rid_for_section_id($sections) {
+  $section_rids = array();
+
+  // Fetch the corresponding rids for each of the sections.
+  $section_rid_query = db_select('workbench_access_role', 'war');
+  $section_rid_query->fields('war', array('rid'));
+  $section_rid_query->condition('war.access_id', $sections, 'IN');
+  $section_id_result = $section_rid_query->execute();
+  foreach ($section_id_result as $section) {
+    $section_rids[] = $section->rid;
+  }
+
+  return $section_rids;
 }
 
 /**
@@ -1036,7 +1075,9 @@ function workbench_email_get_workbench_access_sections($op = 'node', $data = arr
             foreach ($values['workbench_access_fields'] as $field) {
               if (!empty($values[$field][$lang])) {
                 foreach ($values[$field][$lang] as $term) {
-                  $sections[$term['tid']] = $term['tid'];
+                  if (!empty($term['tid'])) {
+                    $sections[$term['tid']] = $term['tid'];
+                  }
                 }
               }
             }

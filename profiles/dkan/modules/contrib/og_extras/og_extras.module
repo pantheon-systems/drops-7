@@ -67,13 +67,16 @@ function og_extras_subscriber_count($gid) {
  *
  * @param $gid
  *   The group unique ID.
- * @param $roles
+ * @param $rids
  *   Array with the role IDs to query.
+ * @param $group_type
+ *   The group entity type.
  */
-function og_extras_get_users_by_roles($gid, $rids = array()) {
+function og_extras_get_users_by_roles($gid, $rids = array(), $group_type = 'node') {
   $query = db_select('og_users_roles', 'og_users_roles');
   $query->fields('og_users_roles', array('uid'))
-    ->condition('gid', $gid);
+    ->condition('gid', $gid)
+    ->condition('group_type', $group_type);
   if (!empty($rids)) {
     $query->condition('rid', $rids, 'IN');
   }
@@ -86,24 +89,30 @@ function og_extras_get_users_by_roles($gid, $rids = array()) {
  *
  * @param $gid
  *   The group unique ID.
+ * @param $group_type
+ *   The group entity type.
  */
-function og_extras_get_roles($gid = NULL) {
+function og_extras_get_roles($gid, $group_type = 'node') {
   $query = db_select('og_users_roles', 'ur');
   $query->join('og_role', 'r', 'r.rid = ur.rid');
   $query->fields('r', array('rid', 'name'));
-  if (!empty($gid)) {
-    $query->condition('ur.gid', $gid, '=');
-  }
+  $query->condition('ur.gid', $gid, '=');
+  $query->condition('ur.group_type', $group_type, '=');
   $query->distinct();
   return $query->execute()->fetchAll();
 }
 
 /**
  * Helper function to get a list of the member uids in a group.
+ *
+ * @param $gid
+ *   The group unique ID.
+ * @param $group_type
+ *   The group entity type.
  */
-function og_extras_member_ids($gid, $max = 10) {
+function og_extras_member_ids($gid, $group_type = 'node') {
   $uids = array();
-  $memberships = og_membership_load_multiple(FALSE, array('gid' => $gid, 'entity_type' => 'user'));
+  $memberships = og_membership_load_multiple(FALSE, array('gid' => $gid, 'group_type' => $group_type, 'entity_type' => 'user'));
   foreach ($memberships as $membership) {
     $uids[] = $membership->etid;
   }
@@ -112,10 +121,19 @@ function og_extras_member_ids($gid, $max = 10) {
 
 /**
  * Helper function to get pictures or names of members.
+ *
+ * @param $gid
+ *   The group unique ID.
+ * @param $type
+ *   Type of information to retrieve, either 'picture', or 'name'.
+ * @param $max
+ *   Max number of items to retrieve.
+ * @param $group_type
+ *   The group entity type.
  */
-function og_extras_members($gid, $type = 'picture', $max = 10) {
+function og_extras_members($gid, $type = 'picture', $max = 10, $group_type = 'node') {
   $members = array();
-  $uids = og_extras_member_ids($gid, $max);
+  $uids = og_extras_member_ids($gid, $group_type, $max);
   $accounts = user_load_multiple($uids);
   foreach ($accounts as $account) {
     $members[$account->uid] = $type == 'picture' ?  theme('user_picture', array('account' => $account)) : theme('username', array('account' => $account));
