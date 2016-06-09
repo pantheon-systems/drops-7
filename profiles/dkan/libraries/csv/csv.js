@@ -22,7 +22,7 @@ var CSV = {};
         dfd.resolve(out);
       };
       reader.onerror = function (e) {
-        alert('Failed to load file. Code: ' + e.target.error.code);
+        dfd.reject({error: {message: 'Failed to load file. Code: ' + e.target.error.code }});
       };
       reader.readAsText(dataset.file, encoding);
     } else if (dataset.data) {
@@ -34,6 +34,8 @@ var CSV = {};
         var out = my.extractFields(my.parse(data, dataset), dataset);
         out.useMemoryStore = true;
         dfd.resolve(out);
+      }).fail(function(req, status){
+        dfd.reject({error: {message: 'Failed to load file. ' + req.statusText + '. Code: ' + req.status, request: req}});
       });
     }
     return dfd.promise();
@@ -81,10 +83,16 @@ var CSV = {};
   // Heavily based on uselesscode's JS CSV parser (MIT Licensed):
   // http://www.uselesscode.org/javascript/csv/
   my.parse= function(s, dialect) {
-    // Get rid of any trailing \n
-    s = chomp(s);
 
+    // When line terminator is not provided then we try to guess it
+    // and normalize it across the file.
+    if(!dialect || (dialect && !dialect.lineterminator)) {
+      s = my.normalizeLineTerminator(s, dialect);
+    }
+
+    // Get rid of any trailing \n
     var options = my.normalizeDialectOptions(dialect);
+    s = chomp(s, options.lineterminator);
 
     var cur = '', // The character we are currently processing.
       inQuote = false,
@@ -119,12 +127,12 @@ var CSV = {};
       cur = s.charAt(i);
 
       // If we are at a EOF or EOR
-      if (inQuote === false && (cur === options.delimiter || cur === "\n")) {
+      if (inQuote === false && (cur === options.delimiter || cur === options.lineterminator)) {
         field = processField(field);
         // Add the current field to the current row
         row.push(field);
         // If this is EOR append row to output and flush row
-        if (cur === "\n") {
+        if (cur === options.lineterminator) {
           out.push(row);
           row = [];
         }
@@ -164,6 +172,17 @@ var CSV = {};
     if (options.skipinitialrows) out = out.slice(options.skipinitialrows);
 
     return out;
+  };
+
+  my.normalizeLineTerminator = function(csvString, dialect){
+    dialect = dialect || {};
+
+    // Try to guess line terminator if it's not provided.
+    if (!dialect.lineterminator) {
+      return csvString.replace(/(\r\n|\n|\r)/gm, '\n');
+    }
+    // if not return the string untouched.
+    return csvString;
   };
 
   my.objectToArray = function(dataToSerialize) {
@@ -233,7 +252,7 @@ var CSV = {};
         // If this is EOR append row to output and flush row
         if (j === (cur.length - 1)) {
           row += field;
-          out += row + "\n";
+          out += row + options.lineterminator;
           row = '';
         } else {
           // Add the current field to the current row
@@ -266,13 +285,13 @@ var CSV = {};
       }
     }());
 
-  function chomp(s) {
-    if (s.charAt(s.length - 1) !== "\n") {
+  function chomp(s, lineterminator) {
+    if (s.charAt(s.length - lineterminator.length) !== lineterminator) {
       // Does not end with \n, just return string
       return s;
     } else {
       // Remove the \n
-      return s.substring(0, s.length - 1);
+      return s.substring(0, s.length - lineterminator.length);
     }
   }
 }(CSV));
