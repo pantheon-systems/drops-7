@@ -1,6 +1,7 @@
 name = Recline.js Field
 description = Creates file field for visualizing data using Recline.js
 core = 7.x
+version = 7.x-1.12.2
 
 dependencies[] = libraries
 dependencies[] = file
