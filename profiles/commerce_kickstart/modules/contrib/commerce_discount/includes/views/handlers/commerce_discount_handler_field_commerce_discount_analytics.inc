@@ -8,7 +8,7 @@
 /**
  * Field handler to show commerce discount operations in dropbutton.
  */
-class commerce_discount_usage_handler_field_commerce_discount_analytics extends views_handler_field {
+class commerce_discount_handler_field_commerce_discount_analytics extends views_handler_field {
 
   /**
    * {@inheritdoc}

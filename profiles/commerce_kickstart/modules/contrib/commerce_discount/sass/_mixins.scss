@@ -1,0 +1,85 @@
+$gray: #f0f0f0;
+$gray2: #ccc;
+$gray3: #e7e8e3;
+$gray4: #4d4e49;
+$grayLight: #f6f6f6;
+$grayDark: #6d6d6d;
+$blue: #0089c9;
+$green: #7cae20;
+$azure: #d2eeff;
+
+@mixin gradient {
+  // http://caniuse.com/#search=linear-gradient
+  background-image: -webkit-linear-gradient(top, rgb(252, 253, 252) 36%, rgb(240, 240, 240) 68%);
+  background-image: linear-gradient(top, rgb(252, 253, 252) 36%, rgb(240, 240, 240) 68%);
+}
+
+@mixin box {
+  padding: 0;
+}
+
+// https://css-tricks.com/snippets/css/clear-fix/
+@mixin clearfix {
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+}
+
+@mixin btn {
+  color: black;
+  border-radius: 5px;
+  [dir="ltr"] & {
+    margin-right: 20px;
+  }
+  [dir="rtl"] & {
+    margin-left: 20px;
+  }
+
+  margin-bottom: 5px;
+  padding: 5px;
+  &:hover {
+    background-color: $grayLight;
+    cursor: pointer;
+    label {
+      cursor: pointer;
+    }
+  }
+}
+
+@mixin radio-buttons {
+  clear: both;
+
+  .form-item {
+    @include btn;
+
+    input {
+      display: inline;
+    }
+  }
+}
+
+@mixin fieldset-title {
+  fieldset.form-wrapper {
+    border: none;
+
+    legend {
+      width: 100%;
+    }
+    .fieldset-legend {
+      border-bottom: 1px solid $gray2;
+      display: block;
+      margin-top: 0;
+      [dir="ltr"] & {
+        padding-left: 0;
+      }
+      [dir="rtl"] & {
+        padding-right: 0;
+      }
+
+      text-transform: none;
+      width: 100%;
+    }
+  }
+}

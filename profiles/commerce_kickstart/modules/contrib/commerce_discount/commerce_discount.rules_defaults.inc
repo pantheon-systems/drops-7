@@ -64,7 +64,7 @@ function commerce_discount_default_rules_configuration() {
       // Let inline_conditions fields add their own conditions.
       foreach ($wrapper_properties as $field_name => $property) {
         if (stripos($property['type'], 'inline_conditions') !== FALSE) {
-          inline_conditions_build($rule, $wrapper->$field_name->value());
+          inline_conditions_build($rule, $wrapper->{$field_name}->value());
         }
       }
 

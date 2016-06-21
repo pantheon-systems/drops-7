@@ -7,15 +7,6 @@
   // Position the discount status block on top right region.
   position: relative;
 
-  .form-item-status {
-    background-color: #eee;
-    padding: 10px 10px 20px 10px;
-    position: absolute;
-    top: 0;
-    right: 0; // LTR
-    width: 180px;
-  }
-
   // Reset.
   .form-item-label {
     clear: both;
@@ -40,8 +31,13 @@
 
   // General block margins.
   #commerce-discount-fields-wrapper {
-    & > .form-wrapper {
+    .form-wrapper {
       margin-bottom: 15px;
+    }
+
+    .field-name-discount-usage-limit, .field-name-discount-usage-per-person {
+      float: none;
+      clear: both;
     }
   }
 
@@ -59,7 +55,14 @@
 
     .form-item {
       @include btn;
-      float: left;
+
+      [dir="ltr"] & {
+        float: left;
+      }
+
+      [dir="rtl"] & {
+        float: right;
+      }
 
       &.selected {
         background-color: #eee;
@@ -68,18 +71,27 @@
       .ajax-progress {
         display: none;
       }
+    }
+  }
+}
 
-      #edit-commerce-discount-type {
-        padding: 0;
-        @include radio-buttons;
-        margin-top: 10px;
-        clear: none;
+#edit-commerce-discount-type {
+  padding: 0;
 
-        .form-item {
-          float: left; // LTR
+  @include radio-buttons;
 
-        }
-      }
+  margin-top: 10px;
+  clear: none;
+
+  .form-item {
+    [dir="ltr"] & {
+      float: left;
+      margin-right: 20px;
+    }
+
+    [dir="rtl"] & {
+      float: right;
+      margin-left: 20px;
     }
   }
 }
@@ -99,23 +111,36 @@
  * Choose offer type block.
  */
 .field-name-commerce-discount-offer {
-  border: none;
+  // Help with floaties inside.
+  @include clearfix;
+
+  border: 0;
   margin: 0;
   padding: 0;
 
-  .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type {
-    label {
-      border-bottom: 1px solid $gray2;
-      padding-left: 5px; // LTR
+  // Offer type options.
+  .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios {
+    padding-left: 0;
+    padding-right: 0;
+    [dir="ltr"] & {
+      float: left;
+      margin-right: 20px;
+      padding-right: 20px;
+      border-right: 1px dotted $gray2;
+    }
+
+    [dir="rtl"] & {
+      float: right;
+      margin-left: 20px;
+      padding-left: 20px;
+      border-left: 1px dotted $gray2;
     }
 
     .form-radios {
       @include radio-buttons;
-      background-color: transparent;
-      border-right: 1px dotted $gray2; // LTR
-      float: left; // LTR
-      margin: 10px 20px 10px 10px; // LTR
-      padding: 4px 20px 4px 0; // LTR
+      margin: 10px;
+      padding: 0;
+
       .form-item {
         &.selected {
           background-color: #eee;
@@ -128,13 +153,33 @@
 
       label {
         border-bottom: 0;
-        padding-left: 0;
+
+        [dir="ltr"] & {
+          padding-left: 0;
+        }
+
+        [dir="rtl"] & {
+          padding-right: 0;
+        }
       }
     }
   }
 
+  // Avoid collision with fields below.
+  .commerce-offer-type-wrapper > .fieldset-wrapper {
+    @include clearfix;
+  }
+
+  // The two columns for the offer type.
   .commerce-offer-fields-wrapper {
-    float: left;
+    padding: 0;
+    [dir="ltr"] & {
+      float: left;
+    }
+
+    [dir="rtl"] & {
+      float: right;
+    }
   }
 
   .form-wrapper .form-wrapper {
@@ -145,7 +190,14 @@
     .form-wrapper {
       label {
         border-bottom: 0;
-        padding-left: 0;
+
+        [dir="ltr"] & {
+          padding-left: 0;
+        }
+
+        [dir="rtl"] & {
+          padding-right: 0;
+        }
       }
     }
   }
@@ -156,20 +208,55 @@
  */
 .field-name-commerce-discount-date {
   clear: both;
-  @include fieldset-title;
 
   .form-wrapper fieldset.form-wrapper {
     margin: 0;
   }
 
   .fieldset-wrapper {
-    @include fieldset-content;
-
     background-color: transparent;
     display: inline-block;
     margin: 10px;
     padding: 4px;
     width: auto;
+  }
+
+  .container-inline-date {
+    clear: none;
+
+    [dir="ltr"] & {
+      float: left;
+    }
+
+    [dir="rtl"] & {
+      float: right;
+    }
+
+    .date-padding {
+      [dir="ltr"] & {
+        float: left;
+      }
+
+      [dir="rtl"] & {
+        float: right;
+      }
+    }
+
+    .form-text {
+      background-image: url(../images/calendar.svg);
+      background-repeat: no-repeat;
+      background-position: calc(100% - 0.25em) center;
+      background-size: 1.25em;
+    }
+  }
+
+  // Date.css override.
+  fieldset.date-combo .container-inline-date .date-padding {
+    padding: 0;
+  }
+  // Vertical tab fix.
+  fieldset.date-combo .fieldset-wrapper > .container-inline-date {
+    padding-top: 0;
   }
 }
 
@@ -188,7 +275,14 @@
   }
 
   .form-item .form-select {
-    float: left; // LTR
+    [dir="ltr"] & {
+      float: left;
+    }
+
+    [dir="rtl"] & {
+      float: right;
+    }
+
     margin: 10px;
   }
 
@@ -196,10 +290,22 @@
     @include box;
 
     & > div {
-      float: left; // LTR
-      margin-left: 30px; // LTR
-      &:first-child {
-        margin-left: 0;
+      [dir="ltr"] & {
+        float: left;
+        margin-left: 30px;
+
+        &:first-child {
+          margin-left: 0;
+        }
+      }
+
+      [dir="rtl"] & {
+        float: right;
+        margin-right: 30px;
+
+        &:first-child {
+          margin-right: 0;
+        }
       }
 
       input[disabled] {
@@ -209,7 +315,14 @@
   }
 
   .field-type-number-integer {
-    float: left; // LTR
+    [dir="ltr"] & {
+      float: left;
+    }
+
+    [dir="rtl"] & {
+      float: right;
+    }
+
     .form-item {
       padding: 0;
     }
@@ -217,13 +330,19 @@
     label {
       display: inline;
       font-weight: normal;
-      margin-left: 10px; // LTR
 
+      [dir="ltr"] & {
+        margin-left: 10px;
+      }
+
+      [dir="rtl"] & {
+        margin-right: 10px;
+      }
     }
 
     .form-disabled input {
-      border: none;
-      background: none;
+      border: 0;
+      background-color: transparent;
     }
   }
 }
@@ -233,16 +352,14 @@
  */
 .view-commerce-discount-overview {
   .views-table {
-    border: none;
+    border: 0;
 
     tr, td {
-      border: none;
+      border: 0;
     }
 
     th {
       text-transform: none;
-      .views-field-enable-disable {}
-
       .views-field-operations-dropbutton {
         width: 70px;
       }
@@ -271,7 +388,15 @@
         li {
           display: block;
           width: 50%;
-          float: left; // LTR
+
+          [dir="ltr"] & {
+            float: left;
+          }
+
+          [dir="rtl"] & {
+            float: right;
+          }
+
           text-transform: uppercase;
           padding: 5px 0;
           font-weight: bold;
@@ -300,6 +425,7 @@
         .ctools-dropbutton {
           border: 1px solid $gray2;
           border-radius: 10px;
+
           @include gradient;
 
           .ctools-content {

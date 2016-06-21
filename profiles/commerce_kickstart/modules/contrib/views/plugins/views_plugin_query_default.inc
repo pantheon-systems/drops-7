@@ -1592,7 +1592,7 @@ class views_plugin_query_default extends views_plugin_query {
           'sort' => 'views_handler_sort_group_by_numeric',
         ),
       )
-    );
+    ) + views_fetch_plugin_data('query_aggregate');
   }
 
   /**

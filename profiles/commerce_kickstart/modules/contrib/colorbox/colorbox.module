@@ -6,9 +6,9 @@
  */
 
 /**
- * The default path to the Colorbox directory.
+ * The minimum required version of the Colorbox plugin.
  */
-define('COLORBOX_MIN_PLUGIN_VERSION', '1.3.21.1');
+define('COLORBOX_MIN_PLUGIN_VERSION', '1.6.1');
 
 
 /**
@@ -56,8 +56,8 @@ function colorbox_theme() {
  */
 function colorbox_init() {
   // Do not load colorbox during the Drupal installation process, e.g. if part
-  // of installation profiles.
-  if (!drupal_installation_attempted()) {
+  // of installation profiles. Only add the JavaScript and CSS on specified paths.
+  if (!drupal_installation_attempted() && _colorbox_active()) {
     _colorbox_doheader();
   }
 }
@@ -132,7 +132,7 @@ function colorbox_menu() {
 /**
  * Check if Colorbox should be active for the current URL.
  *
- * @return
+ * @return bool
  *   TRUE if Colorbox should be active for the current page.
  */
 function _colorbox_active() {
@@ -142,7 +142,7 @@ function _colorbox_active() {
     return FALSE;
   }
 
-  // Code from the block_list funtion in block.module.
+  // Code from the block_list function in block.module.
   $path = drupal_get_path_alias($_GET['q']);
   $colorbox_pages = variable_get('colorbox_pages', "admin*\nimagebrowser*\nimg_assist*\nimce*\nnode/add/*\nnode/*/edit\nprint/*\nprintpdf/*\nsystem/ajax\nsystem/ajax/*");
   // Compare with the internal and path alias (if any).
@@ -151,6 +151,9 @@ function _colorbox_active() {
     $page_match = $page_match || drupal_match_path($_GET['q'], $colorbox_pages);
   }
   $page_match = variable_get('colorbox_visibility', 0) == 0 ? !$page_match : $page_match;
+
+  // Allow other modules to change the state of colorbox for the current URL.
+  drupal_alter('colorbox_active', $page_match);
 
   return $page_match;
 }
@@ -162,9 +165,6 @@ function _colorbox_doheader() {
   static $already_added = FALSE;
   if ($already_added) {
     return; // Don't add the JavaScript and CSS multiple times.
-  }
-  if (!_colorbox_active()) {
-    return; // Don't add the JavaScript and CSS on specified paths.
   }
 
   // Insert options and translated strings as javascript settings.
@@ -178,10 +178,10 @@ function _colorbox_doheader() {
       'slideshowSpeed' => variable_get('colorbox_slideshowspeed', 2500),
       'slideshowStart' => variable_get('colorbox_text_start', 'start slideshow'),
       'slideshowStop' => variable_get('colorbox_text_stop', 'stop slideshow'),
-      'current' => variable_get('colorbox_text_current', '{current} of {total}'),
-      'previous' => variable_get('colorbox_text_previous', '« Prev'),
-      'next' => variable_get('colorbox_text_next', 'Next »'),
-      'close' => variable_get('colorbox_text_close', 'Close'),
+      'current' => strip_tags(variable_get('colorbox_text_current', '{current} of {total}')),
+      'previous' => strip_tags(variable_get('colorbox_text_previous', '« Prev')),
+      'next' => strip_tags(variable_get('colorbox_text_next', 'Next »')),
+      'close' => strip_tags(variable_get('colorbox_text_close', 'Close')),
       'overlayClose' => variable_get('colorbox_overlayclose', 1) ? TRUE : FALSE,
       'maxWidth' => variable_get('colorbox_maxwidth', '98%'),
       'maxHeight' => variable_get('colorbox_maxheight', '98%'),
@@ -219,7 +219,9 @@ function _colorbox_doheader() {
 
   // Add and initialise the Colorbox plugin.
   $variant = variable_get('colorbox_compression_type', 'minified');
-  libraries_load('colorbox', $variant);
+  if (module_exists('libraries')) {
+    libraries_load('colorbox', $variant);
+  }
   drupal_add_js($path . '/js/colorbox.js');
 
   // Add JS and CSS based on selected style.
@@ -347,7 +349,7 @@ function colorbox_field_formatter_settings_form($field, $instance, $view_mode, $
     '#type' => 'select',
     '#default_value' => $settings['colorbox_caption'],
     '#options' => $caption,
-    '#description' => t('Automatic will use the first none empty value of the title, the alt text and the content title.'),
+    '#description' => t('Automatic will use the first non-empty value of the title, the alt text and the content title.'),
   );
   $element['colorbox_caption_custom'] = array(
     '#title' => t('Custom caption'),
@@ -366,7 +368,7 @@ function colorbox_field_formatter_settings_form($field, $instance, $view_mode, $
       '#type' => 'fieldset',
       '#title' => t('Replacement patterns'),
       '#theme' => 'token_tree',
-      '#token_types' => array($instance['entity_type'], 'file'),
+      '#token_types' => array_merge(array_keys($field['bundles']),array('file')),
       '#recursion_limit' => $recursion_limit,
       '#dialog' => TRUE,
       '#states' => array(
@@ -490,6 +492,8 @@ function colorbox_field_formatter_view($entity_type, $entity, $field, $instance,
 
 /**
  * Implements hook_insert_styles().
+ *
+ * @return array
  */
 function colorbox_insert_styles() {
   $insert_styles = array();
@@ -512,7 +516,7 @@ function colorbox_insert_content($item, $style, $widget) {
 /**
  * Machine names normally need to be unique but that does not apply to galleries.
  *
- * @return
+ * @return false
  *   Always FALSE
  */
 function colorbox_gallery_exists() {

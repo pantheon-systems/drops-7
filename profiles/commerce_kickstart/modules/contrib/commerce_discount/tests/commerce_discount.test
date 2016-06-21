@@ -6,166 +6,7 @@
  */
 
 /**
- * Base class for commerce discount tests.
- */
-class CommerceDiscountTestBase extends CommerceBaseTestCase {
-
-  /**
-   * Don't need most of default core modules.
-   */
-  protected $profile = 'minimal';
-
-  /**
-   * Dummy commerce_product and related product node.
-   */
-  protected $product;
-  protected $product_node;
-
-  /**
-   * User accounts for testing.
-   */
-  protected $store_admin;
-  protected $store_customer;
-
-  /**
-   * Allows submodules to define themselves for setup.
-   *
-   * @var string
-   */
-  protected $sub_module;
-
-  /**
-   * Overrides CommerceBaseTestCase::permissionBuilder().
-   */
-  protected function permissionBuilder($set) {
-    $permissions = parent::permissionBuilder($set);
-
-    switch ($set) {
-      case 'store admin':
-      case 'site admin':
-        $permissions[] = 'administer commerce discounts';
-        break;
-    }
-
-    return $permissions;
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function setUp() {
-    // Enable all commerce modules + commerce_discount.
-    $modules = parent::setUpHelper('all');
-
-    $modules[] = 'commerce_discount';
-    if ($this->sub_module) {
-      $modules[] = $this->sub_module;
-    }
-    parent::setUp($modules);
-
-    // User creation for different operations.
-    $this->store_admin = $this->createStoreAdmin();
-    $this->store_customer = $this->createStoreCustomer();
-
-    // Create a dummy product.
-    $this->product = $this->createDummyProduct('PROD-01', 'Product One', 1000);
-
-    // Create a dummy product display content type.
-    $this->createDummyProductDisplayContentType();
-
-    // Create a product display node.
-    $this->product_node = $this->createDummyProductNode(array($this->product->product_id), 'Product One node');
-
-    // Set the default country to US.
-    variable_set('site_default_country', 'US');
-  }
-
-  /**
-   * Create a discount.
-   *
-   * @param string $discount_type
-   *   The discount type; Either 'order_discount' or 'product_discount'.
-   * @param string $offer_type
-   *   The discount offer type; Either 'fixed_amount' or 'percentage'.
-   * @param int|array $amount
-   *   The discount offer amount, percentage or product ids array.
-   * @param string $name
-   *   Discount name - Optional. If given, CANNOT start with a number.
-   * @param string $component_title
-   *   Component title - Optional.
-   *
-   * @return object
-   *   The newly created commerce_discount entity.
-   */
-  protected function createDiscount($discount_type, $offer_type, $amount, $name = '', $component_title = '', $sort_order = 10) {
-    // Create the discount offer.
-    $commerce_discount_offer = entity_create('commerce_discount_offer', array('type' => $offer_type));
-    $offer_wrapper = entity_metadata_wrapper('commerce_discount_offer', $commerce_discount_offer);
-    switch ($offer_type) {
-      case 'fixed_amount':
-        $offer_wrapper->commerce_fixed_amount->amount = $amount;
-        $offer_wrapper->commerce_fixed_amount->currency_code = 'USD';
-        break;
-
-      case 'percentage':
-        $offer_wrapper->commerce_percentage = $amount;
-        break;
-
-      case 'free_products':
-        // Product ids array should be provided for $amount.
-        $offer_wrapper->commerce_free_products = $amount;
-        break;
-    }
-
-    $offer_wrapper->save();
-
-    // Provide default name.
-    $name = $name ? $name : $discount_type . '_' . $offer_type;
-    $component_title = $component_title ? $component_title : $name;
-
-    // Create the discount.
-    $values = array(
-      'name' => $name,
-      'label' => $name,
-      'type' => $discount_type,
-      'sort_order' => $sort_order,
-      'component_title' => $component_title,
-      'status' => TRUE,
-      'export_status' => TRUE,
-    );
-    $commerce_discount = entity_create('commerce_discount', $values);
-    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $commerce_discount);
-    $discount_wrapper->commerce_discount_offer = $commerce_discount_offer;
-    $discount_wrapper->save();
-
-    return $discount_wrapper->value();
-  }
-
-  /**
-   * Determines whether or not a discount has been applied to an order.
-   *
-   * @param $discount_name
-   *   The machine-name of the discount to look for.
-   * @param $order
-   *   The order object to inspect for the discount.
-   *
-   * @return bool
-   *   Boolean indicating whether or not the discount is applied to the order.
-   */
-  public function discountAppliedToOrder($discount_name, $order) {
-    // Fetch the list of discounts applied to the order based on the price
-    // components in its order total array.
-    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
-    $order_total = $order_wrapper->commerce_order_total->value();
-    $applied_discounts = commerce_discount_get_discounts_applied_to_price($order_total);
-
-    // Look for the given discount in the list of applied discounts.
-    return in_array($discount_name, $applied_discounts);
-  }
-}
-
-/**
- * Testing commerce discounts UI and functionality.
+ * Testing commerce discounts functionality.
  */
 class CommerceDiscountTest extends CommerceDiscountTestBase {
   /**
@@ -174,226 +15,15 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
   public static function getInfo() {
     return array(
       'name' => 'Discounts',
-      'description' => 'Test discounts UI and functionality',
+      'description' => 'Test discounts functionality',
       'group' => 'Commerce Discount',
     );
-  }
-
-  /**
-   * Access to commerce discounts admin.
-   */
-  public function testCommerceDiscountUIAccessDiscountsListing() {
-    // Login with customer.
-    $this->drupalLogin($this->store_customer);
-    // Check the access to the profiles listing.
-    $this->drupalGet('admin/commerce/discounts');
-    $this->assertResponse(403, 'The store customer has no access to discounts administration.');
-
-    // Login with store admin.
-    $this->drupalLogin($this->store_admin);
-    // Check the access to the profiles listing.
-    $this->drupalGet('admin/commerce/discounts');
-    $this->assertResponse(200, 'The store admin has access to discounts administration.');
-
-    // Check the message of no discounts available.
-    $this->assertText(t('No discounts found.'), "'No discounts found.' message is displayed");
-    // Check the add customer profile link.
-    $this->assertRaw(l(t('Add discount'), 'admin/commerce/discounts/add'), "'Add discount' link is present in the page");
-  }
-
-  /**
-   * Test the add discount UI.
-   */
-  public function testCommerceDiscountUIAddDiscount() {
-    // Login with normal user.
-    $this->drupalLogin($this->store_customer);
-
-    // Access to the admin discount creation page.
-    $this->drupalGet('admin/commerce/discounts/add');
-
-    $this->assertResponse(403, 'Normal user is not able to add a discount using the admin interface');
-
-    // Login with store admin.
-    $this->drupalLogin($this->store_admin);
-
-    // Access to the admin discount creation page.
-    $this->drupalGet('admin/commerce/discounts/add');
-
-    $this->assertResponse(200, 'Store admin user is allowed to add a discount using the admin interface');
-
-    // Check the integrity of the add form.
-    $this->assertFieldByName('commerce_discount_type', NULL, 'Discount type field is present');
-    $this->assertFieldByName('label', NULL, 'Label field is present');
-    $this->assertFieldByName('component_title', NULL, 'Name field is present');
-    $this->assertFieldByName('commerce_discount_fields[commerce_discount_offer][und][form][type]', NULL, 'Offer type field is present');
-    $this->assertFieldByName('commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]', NULL, 'Amount field is present');
-    $this->assertFieldByName('status', NULL, 'Status field is present');
-    $this->assertFieldById('edit-submit', t('Save discount'), 'Save discount button is present');
-
-    // Try to save the product and check validation messages.
-    $this->drupalPost(NULL, array(), t('Save discount'));
-
-    $this->assertText(t('Admin title field is required.'), 'Validation message for missing label.');
-    $this->assertText(t('Machine-readable name field is required.'), 'Validation message for missing machine-name.');
-    $this->assertText(t('Fixed amount field is required.'), 'Validation message for missing amount.');
-
-    // Load a clean discount add form.
-    $this->drupalGet('admin/commerce/discounts/add');
-    // Create a discount.
-    $values = array(
-      'label' => 'Order discount - fixed',
-      'name' => 'order_discount_fixed',
-      'component_title' => 'Order discount',
-      'commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]' => 12.77,
-    );
-    $this->drupalPost(NULL, $values, t('Save discount'));
-
-    // Load the discount and wrap it.
-    $discount = entity_load_single('commerce_discount', 1);
-    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-
-    // Check the stored discount.
-    $this->assertEqual($discount->label, $values['label'], 'Label stored correctly.');
-    $this->assertEqual($discount->name, 'discount_' . $values['name'], 'Name stored correctly.');
-    $this->assertEqual($discount->export_status, 1, 'Active stored correctly.');
-    $this->assertEqual($discount->component_title, $values['component_title'], 'Name for customer stored correctly.');
-    $this->assertEqual($discount->status, 1, 'Enabled stored correctly.');
-
-    $this->assertEqual($discount_wrapper->commerce_discount_offer->getBundle(), 'fixed_amount', 'Offer type stored correctly.');
-    $this->assertEqual($discount_wrapper->commerce_discount_offer->commerce_fixed_amount->amount->value(), 1277, 'Amount stored correctly.');
-
-    // Check the discounts listing.
-    $this->assertUrl('admin/commerce/discounts', array(), 'Landing page after save is the discounts list.');
-    $this->assertText($values['label'], 'Label of the discount is present.');
-    $this->assertText($values['component_title'], 'Name of the discount is present.');
-  }
-
-  /**
-   * Test the Edit discount UI.
-   */
-  public function testCommerceDiscountUIEditDiscount() {
-    // Create a discount.
-    $discount = $this->createDiscount('order_discount', 'fixed_amount', 300);
-
-    // Login with normal user.
-    $this->drupalLogin($this->store_customer);
-
-    // Access to the admin discount edit page.
-    $this->drupalGet('admin/commerce/discounts/manage/' . $discount->name);
-    $this->assertResponse(403, 'Normal user is not able to edit a discount using the admin interface');
-
-    // Login with store admin.
-    $this->drupalLogin($this->store_admin);
-
-    // Access to the admin discount edit page.
-    $this->drupalGet('admin/commerce/discounts/manage/' . $discount->name);
-    $this->assertResponse(200, 'Store admin user is allowed to edit a discount using the admin interface');
-
-    // Check the integrity of the add form.
-    $this->assertFieldByName('commerce_discount_type', NULL, 'Discount type field is present');
-    $this->assertFieldByName('label', NULL, 'Label field is present');
-    $this->assertFieldByName('component_title', NULL, 'Name field is present');
-    $this->assertFieldByName('commerce_discount_fields[commerce_discount_offer][und][form][type]', NULL, 'Offer type field is present');
-    $this->assertFieldByName('commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]', NULL, 'Amount field is present');
-    $this->assertFieldByName('status', NULL, 'Status field is present');
-    $this->assertFieldById('edit-submit', t('Save discount'), 'Save discount button is present');
-    $this->assertFieldById('edit-delete', t('Delete discount'), 'Delete discount button is present');
-
-    // Empty values for validation assertions.
-    $values = array(
-      'label' => '',
-      'name' => '',
-      'component_title' => '',
-      'commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]' => '',
-    );
-
-    // Try to save the product and check validation messages.
-    $this->drupalPost(NULL, $values, t('Save discount'));
-
-    $this->assertText(t('Admin title field is required.'), 'Validation message for missing label.');
-    $this->assertText(t('Machine-readable name field is required.'), 'Validation message for missing machine-name.');
-    $this->assertText(t('Fixed amount field is required.'), 'Validation message for missing amount.');
-
-    // Discount new values.
-    $values = array(
-      'label' => 'Order discount - fixed',
-      'name' => 'order_discount_fixed',
-      'component_title' => 'Order discount',
-      'commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]' => 12.77,
-    );
-    $this->drupalPost(NULL, $values, t('Save discount'));
-
-    // Load the discount and wrap it.
-    $discounts = entity_load('commerce_discount', array($discount->discount_id), $conditions = array(), $reset = TRUE);
-    $discount = reset($discounts);
-    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
-
-    // Check the stored discount.
-    $this->assertEqual($discount->label, $values['label'], 'Label stored correctly.');
-    $this->assertEqual($discount->name, 'discount_' . $values['name'], 'Name stored correctly.');
-    $this->assertEqual($discount->component_title, $values['component_title'], 'Name for customer stored correctly.');
-    $this->assertEqual($discount->status, 1, 'Enabled stored correctly.');
-
-    $this->assertEqual($discount_wrapper->commerce_discount_offer->getBundle(), 'fixed_amount', 'Offer type stored correctly.');
-    $this->assertEqual($discount_wrapper->commerce_discount_offer->commerce_fixed_amount->amount->value(), 1277, 'Amount stored correctly.');
-
-    // Check the discounts listing.
-    $this->assertUrl('admin/commerce/discounts', array(), 'Landing page after save is the discounts list.');
-    $this->assertText($values['label'], 'Label of the discount is present.');
-    $this->assertText($values['component_title'], 'Name of the discount is present.');
-  }
-
-  /**
-   * Test the delete discount UI.
-   */
-  public function testCommerceDiscountUIDeleteDiscount() {
-    // Create a discount.
-    $discount = $this->createDiscount('order_discount', 'fixed_amount', 300);
-
-    // Login with normal user.
-    $this->drupalLogin($this->store_customer);
-
-    // Access to the admin discount edit page.
-    $this->drupalGet('admin/commerce/discounts/manage/' . $discount->name . '/delete');
-
-    $this->assertResponse(403, 'Normal user is not able to delete a discount using the admin interface');
-
-    // Login with store admin.
-    $this->drupalLogin($this->store_admin);
-
-    // Access to the admin discount edit page.
-    $this->drupalGet('admin/commerce/discounts/manage/' . $discount->name . '/delete');
-
-    $this->assertResponse(200, 'Store admin user is allowed to delete a discount using the admin interface');
-
-    // Check the integrity of the add form.
-    $this->pass('Test the discount delete confirmation form:');
-    $this->assertTitle(t('Are you sure you want to delete the Commerce Discount !label?', array('!label' => $discount->label)) . ' | Drupal', 'The confirmation message is displayed');
-    $this->assertText(t('This action cannot be undone'), "A warning notifying the user about the action can't be undone is displayed.");
-    $this->assertFieldById('edit-submit', t('Confirm'), 'Delete button is present');
-    $this->assertText(t('Cancel'), 'Cancel is present');
-
-    // Try to save the product and check validation messages.
-    $this->drupalPost(NULL, array(), t('Confirm'));
-
-    // Check the url after deleting and if the discount has been deleted in
-    // database.
-    $this->assertUrl('admin/commerce/discounts', array(), 'Landing page after deleting a discount is the discounts listing page');
-    $this->assertRaw(t('Deleted %type %label.', array('%type' => 'Commerce Discount', '%label' => $discount->label)), "'Discount has been deleted' message is displayed");
-    $this->assertRaw(t('No discounts found.', array('@link' => url('admin/commerce/discounts/add'))), 'Empty discount listing message is displayed');
   }
 
   /**
    * Test the importing of commerce discounts.
    */
   public function testCommerceDiscountImport() {
-    // Login store admin.
-    $this->drupalLogin($this->store_admin);
-
-    // Access to the admin discount creation page.
-    $this->drupalGet('admin/commerce/discounts/import');
-    $this->assertResponse(200, 'Store admin is allowed in the discounts import page');
-
     $exported_discount = '{
   "name" : "pf",
   "label" : "PF",
@@ -414,7 +44,10 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
   },
   "commerce_compatibility_strategy" : { "und" : [ { "value" : "any" } ] },
   "commerce_compatibility_selection" : [],
-  "inline_conditions" : []
+  "commerce_discount_date" : [],
+  "inline_conditions" : [],
+  "discount_usage_per_person" : [],
+  "discount_usage_limit" : []
 }';
 
     // Import the discount.
@@ -432,7 +65,7 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
    * Test order wrapper cache from order refresh.
    */
   public function testCommerceDiscountOrderRefreshWrapper() {
-    // Create a 'free products' product discount.
+    // Create a 'free bonus products' product discount.
     $discount = $this->createDiscount('order_discount', 'free_products', array($this->product->product_id));
     // Create a completed order.
     $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
@@ -510,10 +143,49 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
   }
 
   /**
-   * Test Free products order discounts.
+   * Test a 100% off product percentage discount.
+   *
+   * A 100% off product-level discount differs from the "Free product" discount
+   * offer type since those are normally used as an "add-on" that is added
+   * without the user's interaction (maybe as part of a package, or bonus);
+   * whereas a 100% off discount should be used for any product purposely added
+   * to a cart order.
+   */
+  public function testCommerceDiscountOneHundredPercentOff() {
+    // Login as the store admin.
+    $this->drupalLogin($this->store_admin);
+
+    // Create a 100% off discount and create a test product.
+    $this->createDiscount('product_discount', 'percentage', 100, 'freebie');
+
+    $product = $this->createDummyProduct('TEST-PRODUCT', 'Test Product', 999);
+
+    // Create the order and apply the freebie discount.
+    $order = $this->createDummyOrder($this->store_admin->uid, array($product->product_id => 1));
+    $order_wrapper = commerce_cart_order_refresh($order);
+
+    $properly_applied = $this->discountAppliedToOrder('freebie', $order);
+    $this->assertTrue($properly_applied, t('100% off discount applied to a product.'));
+
+    // Invoke line item price re-calculation.
+    $line_item = $order_wrapper->commerce_line_items->get(0)->value();
+    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
+
+    $order_wrapper = commerce_cart_order_refresh($order);
+
+    // Verify that the product is now free.
+    $line_item_wrapper = $order_wrapper->commerce_line_items->get(0);
+    $unit_price = $line_item_wrapper->commerce_unit_price->value();
+
+    $this->assertEqual($unit_price['amount'], 0, 'Product line item unit price amount is properly set to 0.');
+    $this->assertEqual($unit_price['data']['components'][1]['price']['amount'], -999, 'Product line item unit price discount component properly set to 100% of the product price.');
+  }
+
+  /**
+   * Test free bonus products order discounts.
    */
   public function testCommerceDiscountFreeProductsOrderDiscount() {
-    // Create a 'free products' product discount.
+    // Create 'free bonus products' product discount.
     $discount = $this->createDiscount('order_discount', 'free_products', array($this->product->product_id));
     // Create a completed order.
     $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
@@ -521,8 +193,8 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $order_wrapper = commerce_cart_order_refresh($order);
 
     // Check if the discount was applied on the order total price.
-    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), 1000, 'Free Products order discount has the price of only one product.');
-    $this->assertEqual($order_wrapper->commerce_line_items->count(), 2, 'Free Products order discount is added as a line item.');
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), 1000, 'Free Bonus Products order discount has the price of only one product.');
+    $this->assertEqual($order_wrapper->commerce_line_items->count(), 2, 'Free Bonus Products order discount is added as a line item.');
 
     // Disable the discount.
     $discount->status = FALSE;
@@ -531,8 +203,8 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     // Re-save the order.
     // Check if the discount was applied on the order total price.
     $order_wrapper = commerce_cart_order_refresh($order);
-    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), 1000, "Free Products order discount is removed when it's not applicable and price is the same.");
-    $this->assertEqual($order_wrapper->commerce_line_items->count(), 1, "Free Products order discount is removed when it's not applicable and line item count is only 1");
+    $this->assertEqual($order_wrapper->commerce_order_total->amount->value(), 1000, "Free Bonus Products order discount is removed when it's not applicable and price is the same.");
+    $this->assertEqual($order_wrapper->commerce_line_items->count(), 1, "Free Bonus Products order discount is removed when it's not applicable and line item count is only 1");
   }
 
   /**
@@ -749,4 +421,32 @@ class CommerceDiscountTest extends CommerceDiscountTestBase {
     $properly_applied = $this->discountAppliedToOrder('of1', $order) && $this->discountAppliedToOrder('of2', $order);
     $this->assertTrue($properly_applied, t('Both discounts applied when discount one is only compatible with discount two and discount two is compatible with any discount.'));
   }
+
+  /**
+   * Test that delete discounts do not cause fatal errors on cart refresh
+   *
+   * @link https://www.drupal.org/node/2538812
+   */
+  public function testCartWithDiscountsDeleted() {
+    // Testing fixed discount.
+    // Create a fixed order discount of $3.
+    /** @var CommerceDiscount $discount */
+    $discount = $this->createDiscount('order_discount', 'fixed_amount', 300);
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
+    // Recalculate discounts.
+    $order_wrapper = commerce_cart_order_refresh($order);
+
+    // Check if the discount was applied on the order total price.
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 700, 'Fixed order discount is deducted correctly.');
+
+    // Delete the discount.
+    $discount->delete();
+
+    // Recalculate discounts.
+    $order_wrapper = commerce_cart_order_refresh($order);
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 1000, "Fixed order discount is removed when it's not applicable.");
+  }
+
 }

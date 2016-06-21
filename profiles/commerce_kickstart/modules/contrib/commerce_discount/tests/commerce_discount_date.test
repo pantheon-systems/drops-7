@@ -1,0 +1,120 @@
+<?php
+
+/**
+ * @file
+ * Commerce Discounts date tests.
+ */
+
+/**
+ * Testing commerce discount date functionality.
+ */
+class CommerceDiscountDateTest extends CommerceDiscountTestBase {
+
+  /**
+   * The number of seconds in a day (60 * 60 * 24).
+   *
+   * @var int
+   */
+  protected $dayInSeconds = 86400;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Discounts date',
+      'description' => 'Test discounts date functionality',
+      'group' => 'Commerce Discount',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp();
+  }
+
+  /**
+   * Test order discount in timespan.
+   */
+  public function testDiscountDateOrderDiscountInTime() {
+    // Create a discount valid from yesterday until tomorrow.
+    $start_time = time() - $this->dayInSeconds;
+    $end_time = time() + $this->dayInSeconds;
+
+    // Testing fixed discount.
+    $this->createDateDiscount('order_discount', 'fixed_amount', 300, $start_time, $end_time);
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
+    // Recalculate discounts.
+    $order_wrapper = commerce_cart_order_refresh($order);
+    // Check if the discount was applied on the order total price.
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 700, 'Order discount is deducted when in time frame.');
+  }
+
+  /**
+   * Test order discount out of timespan.
+   */
+  public function testDiscountDateOrderDiscountOutOfTime() {
+    // Create a discount valid from tomorrow.
+    $start_time = time() + $this->dayInSeconds;
+    $end_time = time() + 2 * $this->dayInSeconds;
+
+    // Testing fixed discount.
+    // Create a fixed order discount of $3 limited to one use.
+    $this->createDateDiscount('order_discount', 'fixed_amount', 300, $start_time, $end_time);
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    // Check if the discount was applied on the order total price.
+    $this->assertTrue($order_wrapper->commerce_order_total->amount->value() == 1000, 'Order discount is ignored when out of time frame.');
+  }
+
+  /**
+   * Test product discount in timespan.
+   */
+  public function testDiscountDateProductDiscountInTime() {
+    // Create a discount valid from yesterday until tomorrow.
+    $start_time = time() - $this->dayInSeconds;
+    $end_time = time() + $this->dayInSeconds;
+
+    $this->createDateDiscount('product_discount', 'fixed_amount', 300, $start_time, $end_time);
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    // Invoke line item price re-calculation.
+    $line_item = $order_wrapper->commerce_line_items->get(0)->value();
+    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
+    // Check if the discount was added as a component to the line item.
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $price_data = $line_item_wrapper->commerce_unit_price->data->value();
+    $this->assertEqual($price_data['components'][1]['price']['amount'], -300, 'Product discount is applied when discount is in time frame.');
+  }
+
+  /**
+   * Test product discount out of timespan.
+   */
+  public function testDiscountDateProductDiscountOutOfTime() {
+    // Create a discount valid from tomorrow.
+    $start_time = time() + $this->dayInSeconds;
+    $end_time = time() + (2 * $this->dayInSeconds);
+
+    $this->createDateDiscount('product_discount', 'fixed_amount', 300, $start_time, $end_time);
+
+    // Create an order.
+    $order = $this->createDummyOrder($this->store_customer->uid, array($this->product->product_id => 1), 'completed');
+    $wrapper = entity_metadata_wrapper('commerce_order', $order);
+    // Invoke line item price re-calculation.
+    $line_item = $wrapper->commerce_line_items->get(0)->value();
+    rules_invoke_event('commerce_product_calculate_sell_price', $line_item);
+    // Check if the discount was added as a component to the line item.
+    $line_item_wrapper = entity_metadata_wrapper('commerce_line_item', $line_item);
+    $price_data = $line_item_wrapper->commerce_unit_price->data->value();
+    $this->assertTrue(count($price_data['components']) == 1, 'Product discount is ignored when discount is out of time frame.');
+  }
+
+}

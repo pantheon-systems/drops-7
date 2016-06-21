@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg width="30px" height="30px" viewBox="0 0 30 30" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:sketch="http://www.bohemiancoding.com/sketch/ns">
+    <!-- Generator: Sketch 3.4.3 (16044) - http://www.bohemiancoding.com/sketch -->
+    <title>Icon_Calendar</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd" sketch:type="MSPage">
+        <g id="evil-icons" sketch:type="MSLayerGroup" transform="translate(-2.000000, -461.000000)" fill="#000000">
+            <g id="Icon_Calendar" transform="translate(2.000000, 461.000000)" sketch:type="MSShapeGroup">
+                <path d="M27,30 L3,30 C1.3,30 0,28.7 0,27 L0,5 C0,3.3 1.1,2 2.5,2 L4,2 L4,4 L2.5,4 C2.3,4 2,4.4 2,5 L2,27 C2,27.6 2.4,28 3,28 L27,28 C27.6,28 28,27.6 28,27 L28,5 C28,4.4 27.7,4 27.5,4 L26,4 L26,2 L27.5,2 C28.9,2 30,3.3 30,5 L30,27 C30,28.7 28.7,30 27,30 L27,30 Z" id="Shape"></path>
+                <path d="M7,6 C6.4,6 6,5.6 6,5 L6,1 C6,0.4 6.4,0 7,0 C7.6,0 8,0.4 8,1 L8,5 C8,5.6 7.6,6 7,6 L7,6 Z" id="Shape"></path>
+                <path d="M23,6 C22.4,6 22,5.6 22,5 L22,1 C22,0.4 22.4,0 23,0 C23.6,0 24,0.4 24,1 L24,5 C24,5.6 23.6,6 23,6 L23,6 Z" id="Shape"></path>
+                <rect id="Rectangle-path" x="10" y="2" width="10" height="2"></rect>
+                <rect id="Rectangle-path" x="2" y="8" width="26" height="2"></rect>
+                <rect id="Rectangle-path" x="24" y="12" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="20" y="12" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="16" y="12" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="12" y="12" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="8" y="12" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="24" y="16" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="20" y="16" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="16" y="16" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="12" y="16" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="8" y="16" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="4" y="16" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="24" y="20" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="20" y="20" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="16" y="20" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="12" y="20" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="8" y="20" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="4" y="20" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="20" y="24" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="16" y="24" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="12" y="24" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="8" y="24" width="2" height="2"></rect>
+                <rect id="Rectangle-path" x="4" y="24" width="2" height="2"></rect>
+            </g>
+        </g>
+    </g>
+</svg>

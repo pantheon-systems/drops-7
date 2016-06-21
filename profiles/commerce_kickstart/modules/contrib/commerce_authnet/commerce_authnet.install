@@ -34,7 +34,7 @@ function commerce_authnet_requirements($phase) {
   if (module_exists('commerce_cardonfile')) {
     $path = drupal_get_path('module', 'commerce_cardonfile') . '/commerce_cardonfile.info';
     $info = drupal_parse_info_file($path);
-    if (isset($info['version']) && version_compare($info['version'], '7.x-2', '>=')) {
+    if (isset($info['version']) && version_compare($info['version'], '7.x-2', '<')) {
       $requirements['commerce_authnet_cardonfile'] = array(
         'title' => $t('Card on File'),
         'value' => $t('Less than 2.x'),

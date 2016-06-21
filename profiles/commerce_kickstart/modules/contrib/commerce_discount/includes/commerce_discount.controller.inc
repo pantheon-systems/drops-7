@@ -77,7 +77,8 @@ class CommerceDiscountControllerExportable extends EntityAPIControllerExportable
    */
   public function delete($ids, DatabaseTransaction $transaction = NULL) {
     parent::delete($ids, $transaction);
-    // Rebuild entities.
+
+    // Rebuild rules config.
     entity_defaults_rebuild(array('rules_config'));
   }
 

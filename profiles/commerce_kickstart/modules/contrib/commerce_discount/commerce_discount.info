@@ -16,6 +16,8 @@ dependencies[] = commerce_price
 dependencies[] = commerce_line_item
 dependencies[] = commerce_product_reference
 dependencies[] = inline_conditions (>1.0-alpha4)
+dependencies[] = date
+dependencies[] = date_popup
 
 files[] = commerce_discount.info.inc
 files[] = includes/commerce_discount.admin.inc
@@ -27,16 +29,24 @@ files[] = includes/commerce_discount.controller.inc
 ; Views files
 files[] = includes/views/commerce_discount.views.inc
 files[] = includes/views/handlers/commerce_discount_handler_field_operations_dropbutton.inc
+files[] = includes/views/handlers/commerce_discount_handler_field_commerce_discount_analytics.inc
 
 ; Simple tests
-files[] = commerce_discount.test
+files[] = tests/commerce_discount.test
+files[] = tests/commerce_discount_base.test
+files[] = tests/commerce_discount_conditions.test
+files[] = tests/commerce_discount_date.test
+files[] = tests/commerce_discount_date_ui.test
+files[] = tests/commerce_discount_ui.test
+files[] = tests/commerce_discount_usage.test
+files[] = tests/commerce_discount_usage_ui.test
 
 test_dependencies[] = addressfield
 test_dependencies[] = commerce_shipping
 
-; Information added by Drupal.org packaging script on 2015-10-23
-version = "7.x-1.0-alpha7"
+; Information added by Drupal.org packaging script on 2016-05-11
+version = "7.x-1.0-alpha8"
 core = "7.x"
 project = "commerce_discount"
-datestamp = "1445639056"
+datestamp = "1462991040"
 

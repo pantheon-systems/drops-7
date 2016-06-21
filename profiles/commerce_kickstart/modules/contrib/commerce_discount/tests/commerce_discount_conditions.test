@@ -1,0 +1,159 @@
+<?php
+
+/**
+ * @file
+ * Commerce Discounts inline conditions tests.
+ */
+
+/**
+ * Test inline conditions.
+ */
+class CommerceDiscountConditionsTest extends CommerceDiscountTestBase {
+
+  public $products;
+
+  /**
+   * Implementation of getInfo().
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Discounts inline conditions',
+      'description' => 'Test discounts inline conditions',
+      'group' => 'Commerce Discount',
+    );
+  }
+
+  /**
+   * Set up our tests by adding some additional products.
+   */
+  public function setUp() {
+    parent::setUp();
+
+    // We need a bunch of products.
+    $this->products['b'] = $this->createDummyProduct('PROD-B', 'Product B', 1000);
+    $this->products['c'] = $this->createDummyProduct('PROD-C', 'Product C', 1000);
+    $this->products['d'] = $this->createDummyProduct('PROD-D', 'Product D', 1000);
+    $this->products['e'] = $this->createDummyProduct('PROD-E', 'Product E', 1000);
+    $this->products['f'] = $this->createDummyProduct('PROD-F', 'Product F', 1000);
+  }
+
+  /**
+   * Tests the 'commerce_order_contains_products' rule.
+   */
+  public function testOrderContainsProductsCondition() {
+    // Build a test matrix.
+    // @see https://www.drupal.org/node/2398113
+    $test_matrix = array(
+      // All of the products, including other products.
+      'all inclusive' => array(
+        'products_in_order' => array('b', 'c', 'd', 'e', 'f'),
+        'results' => array('any' => TRUE, 'all' => TRUE, 'exactly' => FALSE, 'only' => FALSE),
+      ),
+      // All of the products, exclusive of other products.
+      'all exclusive' => array(
+        'products_in_order' => array('c', 'e', 'f'),
+        'results' => array('any' => TRUE, 'all' => TRUE, 'exactly' => TRUE, 'only' => TRUE),
+      ),
+      // Some of the products, including one other product.
+      'some inclusive' => array(
+        'products_in_order' => array('b', 'c'),
+        'results' => array('any' => TRUE, 'all' => FALSE, 'exactly' => FALSE, 'only' => FALSE),
+      ),
+      // Some of the products, exclusively.
+      'some exclusive' => array(
+        'products_in_order' => array('e', 'f'),
+        'results' => array('any' => TRUE, 'all' => FALSE, 'exactly' => FALSE, 'only' => TRUE),
+      ),
+      // None of the products.
+      'none' => array(
+        'products_in_order' => array('b', 'd'),
+        'results' => array('any' => FALSE, 'all' => FALSE, 'exactly' => FALSE, 'only' => FALSE),
+      ),
+    );
+
+    // Set up all of the discount rules.
+    foreach ($test_matrix['none']['results'] as $operator => $result) {
+      $discount = $this->createDiscount('order_discount', 'fixed_amount', 100, 'ic_' . $operator, 1);
+      $discount->inline_conditions[LANGUAGE_NONE][0] = array(
+        'condition_name' => 'commerce_order_contains_products',
+        'condition_settings' => array(
+          'operator' => $operator,
+          'products' => array(
+            array('product_id' => $this->products['c']->product_id),
+            array('product_id' => $this->products['e']->product_id),
+            array('product_id' => $this->products['f']->product_id),
+          ),
+        ),
+      );
+      entity_save('commerce_discount', $discount);
+    }
+
+    // Loop through each element of the test matrix and run the tests.
+    foreach ($test_matrix as $set => $test_details) {
+      $order_products = array();
+
+      // Only add products we want for our test.
+      foreach ($test_details['products_in_order'] as $product_letter) {
+        $order_products[$this->products[$product_letter]->product_id] = 1;
+      }
+
+      // Create a discount with our dummy products.
+      $order = $this->createDummyOrder($this->store_customer->uid, $order_products);
+
+      // Refresh the order to apply the discounts.
+      commerce_cart_order_refresh($order);
+
+      // Check if the discount was applied on the order total price.
+      foreach ($test_details['results'] as $operator => $result) {
+        $this->assertTrue(($this->discountAppliedToOrder('ic_' . $operator, $order) === $result), 'Order discount properly applies with "' . $operator . '" operator to product set: ' . $set . '.', 'Discount');
+      }
+
+      // Delete the order.
+      commerce_order_delete($order->order_id);
+    }
+  }
+
+  /**
+   * Test commerce_product_contains_products() condition.
+   */
+  public function testCommerceProductContainsProducts() {
+    $discount = $this->createDiscount('product_discount', 'fixed_amount', 100, 'product_sku_discount');
+    $discount->inline_conditions[LANGUAGE_NONE][0] = array(
+      'condition_name' => 'commerce_product_contains_products',
+      'condition_settings' => array(
+        'sku' => array(
+          array('product_id' => $this->products['c']->product_id),
+        ),
+      ),
+    );
+    entity_save('commerce_discount', $discount);
+
+    // Calculated price has discount.
+    $calculated_data = commerce_product_calculate_sell_price($this->products['c']);
+    $discounts = commerce_discount_get_discounts_applied_to_price($calculated_data);
+    $this->assertTrue(!empty($discounts));
+
+    $calculated_data = commerce_product_calculate_sell_price($this->products['b']);
+    $discounts = commerce_discount_get_discounts_applied_to_price($calculated_data);
+    $this->assertTrue(empty($discounts));
+
+    // Orders have discount.
+    $order = $this->createDummyOrder($this->store_customer->uid, array(
+      $this->products['c']->product_id => 1,
+    ));
+    // Refresh the order to apply the discounts.
+    commerce_cart_order_refresh($order);
+    $this->assertTrue($this->discountAppliedToOrder('product_sku_discount', $order));
+
+    // Delete order createDummyOrder method uses commerce_cart_order_load.
+    commerce_order_delete($order->order_id);
+
+    $order2 = $this->createDummyOrder($this->store_customer->uid, array(
+      $this->products['b']->product_id => 1,
+    ));
+    // Refresh the order to apply the discounts.
+    commerce_cart_order_refresh($order2);
+    $this->assertFalse($this->discountAppliedToOrder('product_sku_discount', $order2));
+  }
+
+}

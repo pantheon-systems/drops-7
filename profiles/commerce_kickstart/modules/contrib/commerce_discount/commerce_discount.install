@@ -106,6 +106,51 @@ function commerce_discount_schema() {
     'primary key' => array('discount_offer_id'),
   );
 
+  $schema['commerce_discount_usage'] = array(
+    'fields' => array(
+      'discount' => array(
+        'type' => 'varchar',
+        'length' => 64,
+        'not null' => TRUE,
+        'description' => 'Discount name.',
+      ),
+      'mail' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+        'description' => 'The email of the customer that used this discount.',
+      ),
+      'order_id' => array(
+        'type' => 'int',
+        'not null' => TRUE,
+        'description' => 'The order id that this discount was used with.',
+      ),
+    ),
+    'unique keys' => array(
+      'discount_mail_order_id' => array('discount', 'mail', 'order_id'),
+    ),
+    'foreign keys' => array(
+      'discount' => array(
+        'table' => 'commerce_discount',
+        'column' => array('discount' => 'name'),
+      ),
+      'order_id' => array(
+        'table' => 'commerce_order',
+        'column' => array('order_id' => 'order_id'),
+      ),
+      'mail' => array(
+        'table' => 'users',
+        'column' => array('mail' => 'mail'),
+      ),
+    ),
+    'indexes' => array(
+      'mail' => array('mail'),
+      'discount' => array('discount'),
+      'order_id' => array('order_id'),
+    ),
+  );
+
   return $schema;
 }
 
@@ -255,6 +300,51 @@ function commerce_discount_install_helper() {
     );
     field_create_field($field);
   }
+  if (empty($fields['commerce_discount_date'])) {
+    $field = array(
+      'entity_types' => array('commerce_discount'),
+      'settings' => array(
+        'granularity' => array(
+          'month' => 'month',
+          'day' => 'day',
+          'year' => 'year',
+        ),
+        'tz_handling' => 'none',
+        'timezone_db' => '',
+        'todate' => 'optional',
+        'handler' => 'base',
+        'target_type' => 'commerce_discount',
+        'handler_settings' => array(
+          'target_bundles' => array(),
+        ),
+      ),
+      'field_name' => 'commerce_discount_date',
+      'type' => 'datestamp',
+      'locked' => TRUE,
+    );
+    field_create_field($field);
+  }
+  if (empty($fields['discount_usage_per_person'])) {
+    // Create entity reference field.
+    $field = array(
+      'entity_types' => array('commerce_discount'),
+      'field_name' => 'discount_usage_per_person',
+      'type' => 'number_integer',
+      'locked' => TRUE,
+    );
+    field_create_field($field);
+  }
+  // Discount usage.
+  if (empty($fields['discount_usage_limit'])) {
+    // Create entity reference field.
+    $field = array(
+      'entity_types' => array('commerce_discount'),
+      'field_name' => 'discount_usage_limit',
+      'type' => 'number_integer',
+      'locked' => TRUE,
+    );
+    field_create_field($field);
+  }
 
   // Create fields for the shipping related offer types.
   if (module_exists('commerce_shipping')) {
@@ -333,7 +423,7 @@ function commerce_discount_install_helper() {
     }
   }
 
-  // Creating field for free products offer type.
+  // Creating field for free bonus products offer type.
   if (empty($fields['commerce_free_products']) && isset($field_types['commerce_product_reference'])) {
     $field = array(
       'entity_types' => array('commerce_discount_offer'),
@@ -402,6 +492,27 @@ function commerce_discount_install_helper() {
       );
       field_create_instance($instance);
     }
+    if (empty($instances['commerce_discount'][$type]['commerce_discount_date'])) {
+      $instance = array(
+        'field_name' => 'commerce_discount_date',
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'label' => t('Discount dates'),
+        'widget' => array(
+          'module' => 'date',
+          'type' => 'date_popup',
+          'weight' => -11,
+          'settings' => array(
+            'no_fieldset' => TRUE,
+          ),
+        ),
+        'settings' => array(
+          'default_value' => 'blank',
+          'default_value2' => 'blank',
+        ),
+      );
+      field_create_instance($instance);
+    }
   }
 
   if (empty($instances['commerce_discount_offer']['fixed_amount']['commerce_fixed_amount'])) {
@@ -450,6 +561,43 @@ function commerce_discount_install_helper() {
         'widget'      => array(
           'type' => 'inline_conditions',
           'weight' => -13,
+        ),
+      );
+      field_create_instance($instance);
+    }
+  }
+
+  foreach (commerce_discount_types() as $type => $info) {
+    if (empty($instances['commerce_discount'][$type]['discount_usage_per_person'])) {
+      $instance = array(
+        'field_name' => 'discount_usage_per_person',
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'label' => t('Maximum usage per customer'),
+        'description' => t('Enter the maximum number of times a specific person (as identified by email) may use this discount. Leave blank for unlimited.'),
+        'required' => FALSE,
+        'widget' => array(
+          'weight' => 100,
+        ),
+        'settings' => array(
+          'min' => 0,
+        ),
+      );
+      field_create_instance($instance);
+    }
+    if (empty($instances['commerce_discount'][$type]['discount_usage_limit'])) {
+      $instance = array(
+        'field_name' => 'discount_usage_limit',
+        'entity_type' => 'commerce_discount',
+        'bundle' => $type,
+        'label' => t('Maximum overall usage'),
+        'description' => t('Enter the maximum number of times this discount may be used on the site, by anyone. Leave blank for unlimited.'),
+        'required' => FALSE,
+        'widget' => array(
+          'weight' => 100,
+        ),
+        'settings' => array(
+          'min' => 0,
         ),
       );
       field_create_instance($instance);
@@ -553,7 +701,7 @@ function commerce_discount_install_helper() {
       'field_name' => 'commerce_free_products',
       'entity_type' => 'commerce_discount_offer',
       'bundle' => 'free_products',
-      'label' => t('Select free products'),
+      'label' => t('Select bonus products'),
       'description' => t('Enter a comma-separated list of SKUs. Each product is added to customer order with a quantity of 1.'),
       'required' => TRUE,
       'widget' => array(
@@ -600,6 +748,9 @@ function commerce_discount_uninstall() {
   commerce_delete_field('commerce_percent_off_shipping');
   commerce_delete_field('commerce_percent_off_ship_serv');
   commerce_delete_field('commerce_free_products');
+  commerce_delete_field('commerce_discount_date');
+  commerce_delete_field('discount_usage_per_person');
+  commerce_delete_field('discount_usage_limit');
 
   // Delete all rules added by commerce_discount module.
   $query = new EntityFieldQuery();
@@ -636,7 +787,7 @@ function commerce_discount_update_7101() {
 /**
  * Discount component price names.
  *
- * @see https://drupal.org/node/2034685
+ * @link https://drupal.org/node/2034685
  *
  * Add a new column in commerce_discount table in order to display customized
  * component price title for a discount.
@@ -897,4 +1048,70 @@ function commerce_discount_update_7108() {
   }
 
   return t('Field added to support the concept of "Free or reduced shipping" offers.');
+}
+
+/**
+ * Check for wrong discount values, before form validation was introduced.
+ *
+ * @see https://www.drupal.org/node/2468159#comment-10100064
+ */
+function commerce_discount_update_7109() {
+  // Every value below and including '1' should be recalculated.
+  $query = db_select('field_data_commerce_percentage', 'percent');
+  $query->condition('percent.commerce_percentage_value', 1, '<=')
+    ->fields('percent', array('commerce_percentage_value', 'entity_id'));
+  $result = $query->execute();
+
+  if ($result) {
+    foreach ($result as $record) {
+      // We got results, perform the updates.
+      db_update('field_data_commerce_percentage')
+        ->fields(array('commerce_percentage_value' => abs($record->commerce_percentage_value * 100)))
+        ->condition('entity_id', $record->entity_id, '=')
+        ->execute();
+    }
+  }
+
+  $text = t('Update 7109 finished. Please check all your percentage based discount settings for correct values after this update!');
+  $text .= t('Number of percentage values in table "field_data_commerce_percentage" who were updated as a result: @count', array(
+    '@count' => $result->rowCount(),
+  ));
+
+  return $text;
+}
+
+/**
+ * Enable and update usage and date sub-modules into discount core.
+ */
+function commerce_discount_update_7110() {
+  commerce_discount_install_helper();
+  $fields = field_read_fields(array(), array('include_inactive' => TRUE));
+
+  if (!db_table_exists('commerce_discount_usage')) {
+    db_create_table('commerce_discount_usage', drupal_get_schema_unprocessed('commerce_discount', 'commerce_discount_usage'));
+  }
+
+  // Migrate from commerce_discount_max_uses to discount_usage_limit.
+  foreach (entity_load('commerce_discount') as $discount) {
+    $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+    if (!isset($wrapper->discount_usage_limit) || $wrapper->discount_usage_limit->value() == FALSE
+      && isset($wrapper->commerce_discount_max_uses) && $wrapper->commerce_discount_max_uses->value()) {
+      $wrapper->discount_usage_limit = $wrapper->commerce_discount_max_uses->value();
+      entity_save('commerce_discount', $discount);
+    }
+  }
+  if (!empty($fields['commerce_discount_max_uses'])) {
+    field_delete_field('commerce_discount_max_uses');
+  }
+
+  $disable_modules = array('commerce_discount_usage', 'commerce_discount_date');
+  db_update('system')
+    ->fields(array('status' => 0))
+    ->condition('name', $disable_modules)
+    ->condition('type', 'module')
+    ->execute();
+
+  field_info_cache_clear();
+
+  return t('Discount date and usage sub-modules are now in core.');
 }

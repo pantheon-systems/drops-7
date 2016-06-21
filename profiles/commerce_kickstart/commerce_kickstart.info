@@ -78,7 +78,6 @@ dependencies[] = entityreference
 dependencies[] = views_megarow
 dependencies[] = commerce_addressbook
 dependencies[] = commerce_discount
-dependencies[] = commerce_discount_date
 dependencies[] = commerce_add_to_cart_confirmation
 dependencies[] = commerce_message
 dependencies[] = commerce_backoffice
@@ -118,9 +117,9 @@ dependencies[] = commerce_kickstart_migrate
 ; System Requirements.
 php_memory_limit = 128M
 
-; Information added by Drupal.org packaging script on 2016-05-19
-version = "7.x-2.37"
+; Information added by Drupal.org packaging script on 2016-06-17
+version = "7.x-2.38"
 core = "7.x"
 project = "commerce_kickstart"
-datestamp = "1463671892"
+datestamp = "1466186369"
 

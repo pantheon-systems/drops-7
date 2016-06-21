@@ -4,14 +4,6 @@
 .commerce-discount-form {
   position: relative;
 }
-.commerce-discount-form .form-item-status {
-  background-color: #eee;
-  padding: 10px 10px 20px 10px;
-  position: absolute;
-  top: 0;
-  right: 0;
-  width: 180px;
-}
 .commerce-discount-form .form-item-label {
   clear: both;
 }
@@ -28,8 +20,12 @@
 .commerce-discount-form .form-item.form-type-radio .ajax-progress-throbber .message {
   display: none;
 }
-.commerce-discount-form #commerce-discount-fields-wrapper > .form-wrapper {
+.commerce-discount-form #commerce-discount-fields-wrapper .form-wrapper {
   margin-bottom: 15px;
+}
+.commerce-discount-form #commerce-discount-fields-wrapper .field-name-discount-usage-limit, .commerce-discount-form #commerce-discount-fields-wrapper .field-name-discount-usage-per-person {
+  float: none;
+  clear: both;
 }
 .commerce-discount-form #edit-actions {
   clear: both;
@@ -44,10 +40,14 @@
 .form-item-commerce-discount-type .form-radios .form-item {
   color: black;
   border-radius: 5px;
-  margin-right: 20px;
   margin-bottom: 5px;
   padding: 5px;
-  float: left;
+}
+[dir="ltr"] .form-item-commerce-discount-type .form-radios .form-item {
+  margin-right: 20px;
+}
+[dir="rtl"] .form-item-commerce-discount-type .form-radios .form-item {
+  margin-left: 20px;
 }
 .form-item-commerce-discount-type .form-radios .form-item:hover {
   background-color: #f6f6f6;
@@ -56,37 +56,54 @@
 .form-item-commerce-discount-type .form-radios .form-item:hover label {
   cursor: pointer;
 }
+[dir="ltr"] .form-item-commerce-discount-type .form-radios .form-item {
+  float: left;
+}
+[dir="rtl"] .form-item-commerce-discount-type .form-radios .form-item {
+  float: right;
+}
 .form-item-commerce-discount-type .form-radios .form-item.selected {
   background-color: #eee;
 }
 .form-item-commerce-discount-type .form-radios .form-item .ajax-progress {
   display: none;
 }
-.form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type {
+
+#edit-commerce-discount-type {
   padding: 0;
   clear: both;
   margin-top: 10px;
   clear: none;
 }
-.form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type .form-item {
+#edit-commerce-discount-type .form-item {
   color: black;
   border-radius: 5px;
-  margin-right: 20px;
   margin-bottom: 5px;
   padding: 5px;
 }
-.form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type .form-item:hover {
+[dir="ltr"] #edit-commerce-discount-type .form-item {
+  margin-right: 20px;
+}
+[dir="rtl"] #edit-commerce-discount-type .form-item {
+  margin-left: 20px;
+}
+#edit-commerce-discount-type .form-item:hover {
   background-color: #f6f6f6;
   cursor: pointer;
 }
-.form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type .form-item:hover label {
+#edit-commerce-discount-type .form-item:hover label {
   cursor: pointer;
 }
-.form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type .form-item input {
+#edit-commerce-discount-type .form-item input {
   display: inline;
 }
-.form-item-commerce-discount-type .form-radios .form-item #edit-commerce-discount-type .form-item {
+[dir="ltr"] #edit-commerce-discount-type .form-item {
   float: left;
+  margin-right: 20px;
+}
+[dir="rtl"] #edit-commerce-discount-type .form-item {
+  float: right;
+  margin-left: 20px;
 }
 
 /**
@@ -102,58 +119,98 @@
  * Choose offer type block.
  */
 .field-name-commerce-discount-offer {
-  border: none;
+  border: 0;
   margin: 0;
   padding: 0;
 }
-.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type label {
-  border-bottom: 1px solid #ccc;
-  padding-left: 5px;
-}
-.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios {
+.field-name-commerce-discount-offer:after {
+  content: "";
+  display: table;
   clear: both;
-  background-color: transparent;
-  border-right: 1px dotted #ccc;
-  float: left;
-  margin: 10px 20px 10px 10px;
-  padding: 4px 20px 4px 0;
 }
-.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios {
+  padding-left: 0;
+  padding-right: 0;
+}
+[dir="ltr"] .field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios {
+  float: left;
+  margin-right: 20px;
+  padding-right: 20px;
+  border-right: 1px dotted #ccc;
+}
+[dir="rtl"] .field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios {
+  float: right;
+  margin-left: 20px;
+  padding-left: 20px;
+  border-left: 1px dotted #ccc;
+}
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios {
+  clear: both;
+  margin: 10px;
+  padding: 0;
+}
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios .form-item {
   color: black;
   border-radius: 5px;
-  margin-right: 20px;
   margin-bottom: 5px;
   padding: 5px;
 }
-.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item:hover {
+[dir="ltr"] .field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios .form-item {
+  margin-right: 20px;
+}
+[dir="rtl"] .field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios .form-item {
+  margin-left: 20px;
+}
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios .form-item:hover {
   background-color: #f6f6f6;
   cursor: pointer;
 }
-.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item:hover label {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios .form-item:hover label {
   cursor: pointer;
 }
-.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item input {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios .form-item input {
   display: inline;
 }
-.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item.selected {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios .form-item.selected {
   background-color: #eee;
 }
-.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios .form-item .ajax-progress {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios .form-item .ajax-progress {
   display: none;
 }
-.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type .form-radios label {
+.field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios label {
   border-bottom: 0;
+}
+[dir="ltr"] .field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios label {
   padding-left: 0;
 }
+[dir="rtl"] .field-name-commerce-discount-offer .form-item-commerce-discount-fields-commerce-discount-offer-und-form-type.form-type-radios .form-radios label {
+  padding-right: 0;
+}
+.field-name-commerce-discount-offer .commerce-offer-type-wrapper > .fieldset-wrapper:after {
+  content: "";
+  display: table;
+  clear: both;
+}
 .field-name-commerce-discount-offer .commerce-offer-fields-wrapper {
+  padding: 0;
+}
+[dir="ltr"] .field-name-commerce-discount-offer .commerce-offer-fields-wrapper {
   float: left;
+}
+[dir="rtl"] .field-name-commerce-discount-offer .commerce-offer-fields-wrapper {
+  float: right;
 }
 .field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-item {
   margin-bottom: 2px;
 }
 .field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-wrapper label {
   border-bottom: 0;
+}
+[dir="ltr"] .field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-wrapper label {
   padding-left: 0;
+}
+[dir="rtl"] .field-name-commerce-discount-offer .form-wrapper .form-wrapper .form-wrapper label {
+  padding-right: 0;
 }
 
 /**
@@ -162,63 +219,42 @@
 .field-name-commerce-discount-date {
   clear: both;
 }
-.field-name-commerce-discount-date fieldset.form-wrapper {
-  border: none;
-}
-.field-name-commerce-discount-date fieldset.form-wrapper legend {
-  width: 100%;
-}
-.field-name-commerce-discount-date fieldset.form-wrapper .fieldset-legend {
-  border-bottom: 1px solid #ccc;
-  display: block;
-  margin-top: 0;
-  padding-left: 0;
-  text-transform: none;
-  width: 100%;
-}
 .field-name-commerce-discount-date .form-wrapper fieldset.form-wrapper {
   margin: 0;
 }
 .field-name-commerce-discount-date .fieldset-wrapper {
-  padding: 0;
   background-color: transparent;
   display: inline-block;
   margin: 10px;
   padding: 4px;
   width: auto;
 }
-.field-name-commerce-discount-date .fieldset-wrapper .form-type-checkbox {
-  display: none;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date {
+.field-name-commerce-discount-date .container-inline-date {
   clear: none;
-  float: left;
-  width: auto;
 }
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .form-item {
+[dir="ltr"] .field-name-commerce-discount-date .container-inline-date {
+  float: left;
+}
+[dir="rtl"] .field-name-commerce-discount-date .container-inline-date {
+  float: right;
+}
+[dir="ltr"] .field-name-commerce-discount-date .container-inline-date .date-padding {
+  float: left;
+}
+[dir="rtl"] .field-name-commerce-discount-date .container-inline-date .date-padding {
+  float: right;
+}
+.field-name-commerce-discount-date .container-inline-date .form-text {
+  background-image: url(../images/calendar.svg);
+  background-repeat: no-repeat;
+  background-position: calc(100% - 0.25em) center;
+  background-size: 1.25em;
+}
+.field-name-commerce-discount-date fieldset.date-combo .container-inline-date .date-padding {
   padding: 0;
 }
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding {
-  float: left;
-  padding: 0;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding input.form-text {
-  width: 55px;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date .date-padding > .form-item:first-child input.form-text {
-  background: white url("../images/calendar.png") no-repeat 86px 0;
-  width: 100px;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date > .form-item {
-  border: none;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date label {
-  display: block;
-  float: left;
-  padding-right: 10px;
-}
-.field-name-commerce-discount-date .fieldset-wrapper .container-inline-date.end-date-wrapper {
-  margin-left: 20px;
+.field-name-commerce-discount-date fieldset.date-combo .fieldset-wrapper > .container-inline-date {
+  padding-top: 0;
 }
 
 /**
@@ -234,24 +270,39 @@
   border-bottom: 1px solid #ccc;
 }
 .commerce-discount-usage .form-item .form-select {
-  float: left;
   margin: 10px;
+}
+[dir="ltr"] .commerce-discount-usage .form-item .form-select {
+  float: left;
+}
+[dir="rtl"] .commerce-discount-usage .form-item .form-select {
+  float: right;
 }
 .commerce-discount-usage .field-name-commerce-discount-max-uses {
   padding: 0;
 }
-.commerce-discount-usage .field-name-commerce-discount-max-uses > div {
+[dir="ltr"] .commerce-discount-usage .field-name-commerce-discount-max-uses > div {
   float: left;
   margin-left: 30px;
 }
-.commerce-discount-usage .field-name-commerce-discount-max-uses > div:first-child {
+[dir="ltr"] .commerce-discount-usage .field-name-commerce-discount-max-uses > div:first-child {
   margin-left: 0;
+}
+[dir="rtl"] .commerce-discount-usage .field-name-commerce-discount-max-uses > div {
+  float: right;
+  margin-right: 30px;
+}
+[dir="rtl"] .commerce-discount-usage .field-name-commerce-discount-max-uses > div:first-child {
+  margin-right: 0;
 }
 .commerce-discount-usage .field-name-commerce-discount-max-uses > div input[disabled] {
   background: #eee;
 }
-.commerce-discount-usage .field-type-number-integer {
+[dir="ltr"] .commerce-discount-usage .field-type-number-integer {
   float: left;
+}
+[dir="rtl"] .commerce-discount-usage .field-type-number-integer {
+  float: right;
 }
 .commerce-discount-usage .field-type-number-integer .form-item {
   padding: 0;
@@ -259,21 +310,26 @@
 .commerce-discount-usage .field-type-number-integer label {
   display: inline;
   font-weight: normal;
+}
+[dir="ltr"] .commerce-discount-usage .field-type-number-integer label {
   margin-left: 10px;
 }
+[dir="rtl"] .commerce-discount-usage .field-type-number-integer label {
+  margin-right: 10px;
+}
 .commerce-discount-usage .field-type-number-integer .form-disabled input {
-  border: none;
-  background: none;
+  border: 0;
+  background-color: transparent;
 }
 
 /**
  * Overview table.
  */
 .view-commerce-discount-overview .views-table {
-  border: none;
+  border: 0;
 }
 .view-commerce-discount-overview .views-table tr, .view-commerce-discount-overview .views-table td {
-  border: none;
+  border: 0;
 }
 .view-commerce-discount-overview .views-table th {
   text-transform: none;
@@ -300,7 +356,6 @@
 .view-commerce-discount-overview .views-table td .views-field-enable-disable .item-list ul li {
   display: block;
   width: 50%;
-  float: left;
   text-transform: uppercase;
   padding: 5px 0;
   font-weight: bold;
@@ -308,6 +363,12 @@
   font-size: 12px;
   color: white;
   line-height: 20px;
+}
+[dir="ltr"] .view-commerce-discount-overview .views-table td .views-field-enable-disable .item-list ul li {
+  float: left;
+}
+[dir="rtl"] .view-commerce-discount-overview .views-table td .views-field-enable-disable .item-list ul li {
+  float: right;
 }
 .view-commerce-discount-overview .views-table td .views-field-enable-disable .item-list ul li.enabled {
   background-color: #7cae20;
@@ -324,12 +385,8 @@
 .view-commerce-discount-overview .views-table td .views-field-operations-dropbutton .ctools-dropbutton {
   border: 1px solid #ccc;
   border-radius: 10px;
-  background-image: linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
-  background-image: -o-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
-  background-image: -moz-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
   background-image: -webkit-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
-  background-image: -ms-linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
-  background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0.36, #fcfdfc), color-stop(0.68, #f0f0f0));
+  background-image: linear-gradient(top, #fcfdfc 36%, #f0f0f0 68%);
 }
 .view-commerce-discount-overview .views-table td .views-field-operations-dropbutton .ctools-dropbutton .ctools-content {
   border-right: 1px solid #ccc;

@@ -349,6 +349,19 @@ function commerce_order_contains_products_configure($settings) {
 
   $form = array();
 
+  $form['operator'] = array(
+    '#type' => 'select',
+    '#title' => t('Operator'),
+    '#title_display' => 'invisible',
+    '#options' => array(
+      'any' => t('any of'),
+      'all' => t('all of'),
+      'exactly' => t('exactly'),
+      'only' => t('only any of'),
+    ),
+    '#default_value' => !empty($settings['operator']) ? $settings['operator'] : 'only',
+  );
+
   $form['products'] = array(
     '#type' => 'textfield',
     '#title' => t('SKUs'),
@@ -358,7 +371,7 @@ function commerce_order_contains_products_configure($settings) {
     '#maxlength' => 4096,
     '#autocomplete_path' => 'commerce_product/autocomplete/commerce_product/0/0',
     '#element_validate' => array('commerce_product_reference_autocomplete_validate'),
-    '#suffix' => '<div class="condition-instructions">' . t('Select products when ordered make discount active.') . '</div>',
+    '#suffix' => '<div class="condition-instructions">' . t('Select products when ordered make discount active. Conditions:<br><strong>Any of</strong> the products are in the order (can include other products).<br><strong>All of</strong> the products listed are in the order (can include other products).<br><strong>Exactly</strong> the products listed are in the order (cannot contain other products).<br><strong>Only any of</strong> the products are in the order (cannot include other products).') . '</div>',
     '#attributes' => array('placeholder' => array(t('enter product name'))),
   );
 
@@ -392,8 +405,6 @@ function commerce_order_has_specific_quantity_products_configure($settings) {
     }
   }
 
-  $form = array();
-
   $form['products'] = array(
     '#type' => 'textfield',
     '#title' => t('Products'),
@@ -406,15 +417,12 @@ function commerce_order_has_specific_quantity_products_configure($settings) {
     '#attributes' => array('placeholder' => array(t('enter product name'))),
   );
 
+  module_load_include('inc', 'commerce_discount', 'commerce_discount.rules');
   $form['operator'] = array(
     '#type' => 'select',
-    '#title' => t('Operator'),
-    '#title_display' => 'invisible',
-    '#options' => array(
-      '<' => t('quantity lower than'),
-      '==' => t('quantity equals'),
-      '>' => t('quantity greater than'),
-    ),
+    '#title' => t('Quantity'),
+    '#title_display' => 'before',
+    '#options' => _commerce_discount_operator_options(),
     '#default_value' => !empty($settings['operator']) ? $settings['operator'] : '==',
   );
 
@@ -422,7 +430,7 @@ function commerce_order_has_specific_quantity_products_configure($settings) {
     '#type' => 'textfield',
     '#title' => t('Quantity'),
     '#title_display' => 'invisible',
-    '#default_value' => !empty($settings['quantity']) ? $settings['quantity'] : '',
+    '#default_value' => !empty($settings['quantity']) ? $settings['quantity'] : '1',
     '#size' => 5,
     '#required' => TRUE,
     '#element_validate' => array('element_validate_integer'),
@@ -442,8 +450,6 @@ function commerce_order_has_specific_quantity_products_configure($settings) {
  *   A form element array.
  */
 function commerce_order_compare_address_configure($settings) {
-  $form = array();
-
   module_load_include('inc', 'commerce_order', 'commerce_order.rules');
 
   // Need a list of all address fields on customer profile bundles.

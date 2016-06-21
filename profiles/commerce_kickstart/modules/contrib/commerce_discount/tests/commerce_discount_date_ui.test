@@ -1,0 +1,141 @@
+<?php
+
+/**
+ * @file
+ * Commerce Discounts date UI tests.
+ */
+
+/**
+ * Testing commerce discount date UI.
+ */
+class CommerceDiscountDateUITest extends CommerceDiscountTestBase {
+
+  /**
+   * The date format used by the date fields.
+   *
+   * @var string
+   */
+  protected $dateFormat = 'm/d/Y';
+
+  /**
+   * The number of seconds in a day (60 * 60 * 24).
+   *
+   * @var int
+   */
+  protected $dayInSeconds = 86400;
+
+  /**
+   * {@inheritdoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Discounts date UI',
+      'description' => 'Test discounts date UI',
+      'group' => 'Commerce Discount UI',
+    );
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    parent::setUp();
+  }
+
+  /**
+   * Test date specific elements in the add discount UI.
+   */
+  public function testDiscountDateUIAddDiscount() {
+    // Login with store admin.
+    $this->drupalLogin($this->store_admin);
+
+    // Access to the admin discount creation page.
+    $this->drupalGet('admin/commerce/discounts/add');
+
+    // Check the integrity of the add form.
+    $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value][date]', NULL, 'Start date field is present');
+    $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value2][date]', NULL, 'End date field is present');
+
+    // Create a discount valid from yesterday until tomorrow.
+    $start_time = time() - $this->dayInSeconds;
+    $start_date = date($this->dateFormat, $start_time);
+    $end_time = time() + $this->dayInSeconds;
+    $end_date = date($this->dateFormat, $end_time);
+
+    $values = array(
+      'label' => 'Order discount - fixed',
+      'name' => 'order_discount_fixed',
+      'component_title' => 'Order discount',
+      'commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]' => 12.77,
+      'commerce_discount_fields[commerce_discount_date][und][0][value][date]' => $start_date,
+      'commerce_discount_fields[commerce_discount_date][und][0][value2][date]' => $end_date,
+    );
+    $this->drupalPost(NULL, $values, t('Save discount'));
+
+    // Load the discount and wrap it.
+    $discount = entity_load_single('commerce_discount', 1);
+    $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+
+    // Check the usage fields of the stored discount.
+    $result_start_date = date($this->dateFormat, $wrapper->commerce_discount_date->value->value());
+    $result_end_date = date($this->dateFormat, $wrapper->commerce_discount_date->value2->value());
+    $this->assertEqual($result_start_date, $start_date, 'Start date is stored correctly.');
+    $this->assertEqual($result_end_date, $end_date, 'End date is stored correctly.');
+
+    // Check the discounts listing.
+    $this->assertText($start_date, 'Start date is shown');
+    $this->assertText($end_date, 'End date is shown');
+  }
+
+  /**
+   * Test the Edit discount UI.
+   */
+  public function testDiscountDateUIEditDiscount() {
+    // Create a discount valid from yesterday until tomorrow.
+    $start_time = time() - $this->dayInSeconds;
+    $end_time = time() + $this->dayInSeconds;
+    $discount = $this->createDateDiscount('order_discount', 'fixed_amount', 300, $start_time, $end_time);
+
+    // Login with store admin.
+    $this->drupalLogin($this->store_admin);
+
+    // Access to the admin discount edit page.
+    $this->drupalGet('admin/commerce/discounts/manage/' . $discount->name);
+
+    // Check the integrity of the add form.
+    $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value][date]', NULL, 'Start date field is present');
+    $this->assertFieldByName('commerce_discount_fields[commerce_discount_date][und][0][value2][date]', NULL, 'End date field is present');
+
+    // Change the discount date, to be valid from tomorrow.
+    $start_time = time() + $this->dayInSeconds;
+    $end_time = time() + (2 * $this->dayInSeconds);
+    $start_date = date($this->dateFormat, $start_time);
+    $end_date = date($this->dateFormat, $end_time);
+
+    $values = array(
+      'label' => 'Order discount - fixed',
+      'name' => 'order_discount_fixed',
+      'component_title' => 'Order discount',
+      'commerce_discount_fields[commerce_discount_offer][und][form][commerce_fixed_amount][und][0][amount]' => 12.77,
+      'commerce_discount_fields[commerce_discount_date][und][0][value][date]' => $start_date,
+      'commerce_discount_fields[commerce_discount_date][und][0][value2][date]' => $end_date,
+    );
+
+    $this->drupalPost(NULL, $values, t('Save discount'));
+
+    // Load the discount from the database and wrap it.
+    $discounts = entity_load('commerce_discount', array($discount->discount_id), $conditions = array(), $reset = TRUE);
+    $wrapper = entity_metadata_wrapper('commerce_discount', reset($discounts));
+
+    // Check the usage fields of the stored discount.
+    $result_start_date = date($this->dateFormat, $wrapper->commerce_discount_date->value->value());
+    $result_end_date = date($this->dateFormat, $wrapper->commerce_discount_date->value2->value());
+    $this->assertEqual($result_start_date, $start_date, 'Start date is stored correctly.');
+    $this->assertEqual($result_end_date, $end_date, 'End date is stored correctly.');
+
+    // Check the discounts listing.
+    $this->assertText($start_date, 'Start date is shown');
+    $this->assertText($end_date, 'End date is shown');
+  }
+
+}

@@ -31,6 +31,7 @@ class CommerceDiscountMetadataController extends EntityDefaultMetadataController
 
     $properties['status']['type'] = 'boolean';
     $properties['status']['description'] = t('The status of the discount (i.e. Active vs. Disabled).');
+    $properties['status']['setter callback'] = 'entity_property_verbatim_set';
 
     $properties['export_status']['label'] = t('Export status');
     $properties['export_status']['description'] = t('The exportable status of the discount.');

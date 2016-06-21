@@ -1,0 +1,226 @@
+<?php
+
+/**
+ * @file
+ * Commerce Discounts test base.
+ */
+
+/**
+ * Base class for commerce discount tests.
+ */
+class CommerceDiscountTestBase extends CommerceBaseTestCase {
+
+  /**
+   * Don't need most of default core modules.
+   */
+  protected $profile = 'minimal';
+
+  /**
+   * Dummy commerce_product and related product node.
+   */
+  protected $product;
+  protected $product_node;
+
+  /**
+   * User accounts for testing.
+   */
+  protected $store_admin;
+  protected $store_customer;
+
+  /**
+   * Allows submodules to define themselves for setup.
+   *
+   * @var string
+   */
+  protected $sub_module;
+
+  /**
+   * Overrides CommerceBaseTestCase::permissionBuilder().
+   */
+  protected function permissionBuilder($set) {
+    $permissions = parent::permissionBuilder($set);
+
+    switch ($set) {
+      case 'store admin':
+      case 'site admin':
+        $permissions[] = 'administer commerce discounts';
+        break;
+    }
+
+    return $permissions;
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function setUp() {
+    // Enable all commerce modules + commerce_discount.
+    $modules = parent::setUpHelper('all');
+
+    $modules[] = 'commerce_discount';
+    if ($this->sub_module) {
+      $modules[] = $this->sub_module;
+    }
+    parent::setUp($modules);
+
+    // User creation for different operations.
+    $this->store_admin = $this->createStoreAdmin();
+    $this->store_customer = $this->createStoreCustomer();
+
+    // Create a dummy product.
+    $this->product = $this->createDummyProduct('PROD-01', 'Product One', 1000);
+
+    // Create a dummy product display content type.
+    $this->createDummyProductDisplayContentType();
+
+    // Create a product display node.
+    $this->product_node = $this->createDummyProductNode(array($this->product->product_id), 'Product One node');
+
+    // Set the default country to US.
+    variable_set('site_default_country', 'US');
+  }
+
+  /**
+   * Create a discount.
+   *
+   * @param string $discount_type
+   *   The discount type; Either 'order_discount' or 'product_discount'.
+   * @param string $offer_type
+   *   The discount offer type; Either 'fixed_amount' or 'percentage'.
+   * @param int|array $amount
+   *   The discount offer amount, percentage or product ids array.
+   * @param string $name
+   *   Discount name - Optional. If given, CANNOT start with a number.
+   * @param string $component_title
+   *   Component title - Optional.
+   *
+   * @return object
+   *   The newly created commerce_discount entity.
+   */
+  protected function createDiscount($discount_type, $offer_type, $amount, $name = '', $component_title = '', $sort_order = 10) {
+    // Create the discount offer.
+    $commerce_discount_offer = entity_create('commerce_discount_offer', array('type' => $offer_type));
+    $offer_wrapper = entity_metadata_wrapper('commerce_discount_offer', $commerce_discount_offer);
+    switch ($offer_type) {
+      case 'fixed_amount':
+        $offer_wrapper->commerce_fixed_amount->amount = $amount;
+        $offer_wrapper->commerce_fixed_amount->currency_code = 'USD';
+        break;
+
+      case 'percentage':
+        $offer_wrapper->commerce_percentage = $amount;
+        break;
+
+      case 'free_products':
+        // Product ids array should be provided for $amount.
+        $offer_wrapper->commerce_free_products = $amount;
+        break;
+    }
+
+    $offer_wrapper->save();
+
+    // Provide default name.
+    $name = $name ? $name : $discount_type . '_' . $offer_type;
+    $component_title = $component_title ? $component_title : $name;
+
+    // Create the discount.
+    $values = array(
+      'name' => $name,
+      'label' => $name,
+      'type' => $discount_type,
+      'sort_order' => $sort_order,
+      'component_title' => $component_title,
+      'status' => TRUE,
+      'export_status' => TRUE,
+    );
+    $commerce_discount = entity_create('commerce_discount', $values);
+    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $commerce_discount);
+    $discount_wrapper->commerce_discount_offer = $commerce_discount_offer;
+    $discount_wrapper->save();
+
+    return $discount_wrapper->value();
+  }
+
+  /**
+   * Determines whether or not a discount has been applied to an order.
+   *
+   * @param $discount_name
+   *   The machine-name of the discount to look for.
+   * @param $order
+   *   The order object to inspect for the discount.
+   *
+   * @return bool
+   *   Boolean indicating whether or not the discount is applied to the order.
+   */
+  public function discountAppliedToOrder($discount_name, $order) {
+    // Fetch the list of discounts applied to the order based on the price
+    // components in its order total array.
+    $order_wrapper = entity_metadata_wrapper('commerce_order', $order);
+    $order_total = $order_wrapper->commerce_order_total->value();
+    $applied_discounts = commerce_discount_get_discounts_applied_to_price($order_total);
+
+    // Look for the given discount in the list of applied discounts.
+    return in_array($discount_name, $applied_discounts);
+  }
+
+  /**
+   * Create a discount.
+   *
+   * @param string $discount_type
+   *   The discount type; Either 'order_discount' or 'product_discount'.
+   * @param string $offer_type
+   *   The discount offer type; Either 'fixed_amount' or 'percentage'.
+   * @param int $amount
+   *   The discount offer amount.
+   * @param int $max_usage
+   *   Maximal uses for the discount.
+   *
+   * @return object
+   *   The newly created commerce_discount entity.
+   */
+  protected function createUsageDiscount($discount_type, $offer_type, $amount, $max_usage) {
+    // Use the base class to create a discount.
+    $discount = $this->createDiscount($discount_type, $offer_type, $amount);
+
+    // Populate the max usage field.
+    $wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+    $wrapper->discount_usage_limit = $max_usage;
+    $wrapper->save();
+
+    return $wrapper->value();
+  }
+
+  /**
+   * Create a date discount.
+   *
+   * @param string $discount_type
+   *   The discount type; Either 'order_discount' or 'product_discount'.
+   * @param string $offer_type
+   *   The discount offer type; Either 'fixed_amount' or 'percentage'.
+   * @param int $amount
+   *   The discount offer amount.
+   * @param int $start_time
+   *   Discount valid from.
+   * @param int $end_time
+   *   Discount valid until.
+   *
+   * @return object
+   *   The newly created commerce_discount entity.
+   */
+  protected function createDateDiscount($discount_type, $offer_type, $amount, $start_time, $end_time) {
+    // Use the base class to create a discount.
+    $discount = $this->createDiscount($discount_type, $offer_type, $amount);
+
+    // Populate the date fields.
+    $discount_wrapper = entity_metadata_wrapper('commerce_discount', $discount);
+    $discount_wrapper->commerce_discount_date = array(
+      'value' => $start_time,
+      'value2' => $end_time,
+      'date_type' => 'datestamp',
+    );
+    $discount_wrapper->save();
+
+    return $discount_wrapper->value();
+  }
+
+}

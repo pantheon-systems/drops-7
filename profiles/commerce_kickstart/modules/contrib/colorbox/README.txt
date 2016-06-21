@@ -89,7 +89,7 @@ Make any CSS adjustments to your "colorbox_mycolorbox.css" file.
 Load images from custom links in a Colorbox:
 --------------------------------------------
 
-Add the class "colorbox" to the link and point the src to the image
+Add the class "colorbox" to the link and point its href attribute to the image
 you want to display in the Colorbox.
 
 

@@ -11,7 +11,7 @@
 class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntityFormController {
 
   /**
-   * Overrides EntityInlineEntityFormController::entityForm().
+   * {@inheritdoc}
    */
   public function entityForm($entity_form, &$form_state) {
     // If we're cloning, we want to clone the offer entity too.
@@ -39,48 +39,58 @@ class CommerceDiscountOfferInlineEntityFormController extends EntityInlineEntity
     // Get discount type.
     $discount_type = commerce_discount_type($form_state['commerce_discount']->type);
 
-    $options = array();
+    $offer_types = array();
     foreach (commerce_discount_offer_types() as $type => $info) {
       if (in_array($discount_type['entity type'], $info['entity types'])) {
-        $options[$type] = $info['label'];
+        $offer_types[$type] = $info['label'];
       }
     }
 
     // Ensures the discount type includes the passed offer type. If not, set the
     // offer type to the first found valid offer.
-    if (!in_array($offer->type, array_keys($options))) {
-      $offer->type = reset(array_keys($options));
+    if (!in_array($offer->type, array_keys($offer_types))) {
+      $offer->type = reset(array_keys($offer_types));
     }
 
+    $ief_id = $entity_form['#ief_id'];
+    field_attach_form('commerce_discount_offer', $offer, $entity_form, $form_state, LANGUAGE_NONE);
+
+    $fields_wrapper = array(
+      '#type' => 'container',
+      '#attributes' => array(
+        'class' => array('commerce-offer-fields-wrapper'),
+      ),
+      '#weight' => 2,
+      '#parents' => array('commerce_discount_fields', 'commerce_discount_offer', LANGUAGE_NONE, 'form'),
+    );
+
+    // Transfer field elements onto fields container.
+    foreach (element_children($entity_form) as $key) {
+      $fields_wrapper[$key] = $entity_form[$key];
+      unset($entity_form[$key]);
+    }
+    // Set the fields container back on the form.
+    $entity_form['commerce_discount_offer_fields'] = $fields_wrapper;
+
+    // Add offer type options.
     $entity_form['type'] = array(
-      '#title' => t('Choose offer type'),
       '#type' => 'radios',
-      '#options' => $options,
+      '#title' => t('Choose offer type'),
+      '#title_display' => 'invisible',
+      '#options' => $offer_types,
       '#required' => FALSE,
       '#default_value' => $offer->type,
       '#ajax' => array(
         'callback' => 'inline_entity_form_get_element',
-        'wrapper' => 'inline-entity-form-' . $entity_form['#ief_id'],
+        'wrapper' => 'inline-entity-form-' . $ief_id,
       ),
-      '#weight' => -101,
+      '#weight' => 1,
     );
 
-    // To ensure form fields float properly, we need to wrap them all in a div.
-    // However, the IEF module currently expects fields to be attached to the
-    // top level of the $entity_form element. This means a container cannot be
-    // used to supply that div, leading us to use static markup HTML with
-    // weights set to ensure they are placed correctly.
-    // @todo Remove this necessity by better form handling in the IEF module.
-    $entity_form['commerce_offer_fields_wrapper_open'] = array(
-      '#markup' => '<div class="commerce-offer-fields-wrapper">',
-      '#weight' => -100,
-    );
-    $entity_form['commerce_offer_fields_wrapper_close'] = array(
-      '#markup' => '</div>',
-      '#weight' => 100,
-    );
-
-    field_attach_form('commerce_discount_offer', $offer, $entity_form, $form_state, LANGUAGE_NONE);
+    // Add wrapper class for CSS to avoid form item collisions.
+    $entity_form['#attributes']['class'][] = 'commerce-offer-type-wrapper';
+    $entity_form['#type'] = 'fieldset';
+    $entity_form['#title'] = t('Choose offer type');
 
     return $entity_form;
   }

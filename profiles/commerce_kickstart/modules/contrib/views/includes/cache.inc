@@ -141,7 +141,7 @@ function _views_fetch_plugin_data($type = NULL, $plugin = NULL, $reset = FALSE) 
       }
     }
     // If not available in the cache, build it and cache it.
-    if (!$cache) {
+    if (!$cache || $reset) {
       $cache = views_discover_plugins();
       cache_set($cache_key, $cache);
     }
