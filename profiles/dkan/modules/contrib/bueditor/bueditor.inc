@@ -81,17 +81,6 @@ function _bueditor_textarea($element, $form_state) {
   }
   $textareas[$element['#id']] = TRUE;
 
-  // Check if this field instance has text processing enabled (filtered text
-  // with text format selection).
-  if (isset($element['#entity_type']) && isset($element['#field_name']) && $element['#bundle']) {
-    $instance = field_info_instance($element['#entity_type'], $element['#field_name'], $element['#bundle']);
-    // If text processing is 0 (plain text), don't show the editor for this
-    // textarea (plain text format doesn't allow any html).
-    if (!empty($instance) && empty($instance['settings']['text_processing'])) {
-      return $element;
-    }
-  }
-
   // Get editors
   if (!isset($editors)) {
     $editors = bueditor_user_eids($GLOBALS['user']);

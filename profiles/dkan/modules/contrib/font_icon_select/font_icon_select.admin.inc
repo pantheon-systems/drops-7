@@ -305,6 +305,7 @@ function font_icon_select_font_global_blacklist_settings_form($form, &$form_stat
     '#attributes' => array(
       'class' => array(
         'font_icon_select_options',
+        'hideLabels',
         'restrict_list',
         'blacklist',
         'icon_option_list_selection',

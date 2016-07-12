@@ -41,9 +41,9 @@ commands:
     usage: Destroy all the docker compose containers. (use before deleting folder)
   exec:
     cmd: |
-      all_args=$(echo {{args}})
-      first_arg=$(echo {{args}} | sed  's/\([[:alnum:]]*\ \).*/\1/')
-      rest_args=$(echo {{args}} | sed  's/\([[:alnum:]]*\ \)//')
+      all_args=$(echo "{{args}}")
+      first_arg=$(echo "{{args}}" | sed  's/\([[:alnum:]]*\ \).*/\1/')
+      rest_args=$(echo "{{args}}" | sed  's/\([[:alnum:]]*\ \)//')
       case $first_arg in
         *web*|*db*|*memcached*|*cli*|*browser*|*solr*)
           container=$first_arg
@@ -58,10 +58,10 @@ commands:
       id=$(ahoy docker compose ps -q $container)
       if [ -t 0 ]; then
         # if the input is empty, then use a tty session
-        docker exec -it $id bash -c $command "$args"
+        docker exec -it $id bash -c "$command $args"
       else
         # if the input is not empty, then don't use tty
-        docker exec -i $id bash -c $command "$args"
+        docker exec -i $id bash -c "$command $args"
       fi
     usage: run a command in the docker-compose cli or in any other docker service container.
 
@@ -97,7 +97,7 @@ commands:
       DANGLING=`docker images -f "dangling=true" -q`
       if [ ! -z "$EXITED" ]
       then
-        docker rm -v $EXITED  
+        docker rm -v $EXITED
       fi
       if [ ! -z "$DANGLING" ]
       then

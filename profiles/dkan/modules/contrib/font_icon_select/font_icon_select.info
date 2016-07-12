@@ -5,7 +5,7 @@ configure = admin/config/content/font_icon_select_options
 
 dependencies[] = file
 
-; Information added by drush on 2015-11-06
+; Information added by drush on 2016-06-20
 version = "7.x-1.x-dev"
 project = "font_icon_select"
-datestamp = "1446825334"
+datestamp = "1466446234"

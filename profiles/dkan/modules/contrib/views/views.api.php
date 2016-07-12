@@ -1172,6 +1172,32 @@ function hook_views_invalidate_cache() {
 }
 
 /**
+ * Allow modules to alter a view prior to being saved.
+ */
+function hook_views_view_presave($view) {
+  // Do some adjustments to the view. Handle with care.
+  if (mymodule_check_view($view)) {
+    mymodule_do_some_voodoo($view);
+  }
+}
+
+/**
+ * Allow modules to respond to a view being saved.
+ */
+function hook_views_view_save($view) {
+  // Make a watchdog entry.
+  watchdog('views', 'The view @name was deleted by @user at @time', array('@name' => $view->name, '@user' => $GLOBALS['user']->name, '@time' => format_date(time())));
+}
+
+/**
+ * Allow modules to respond to a view being deleted or reverted.
+ */
+function hook_views_view_delete($view) {
+  // Make a watchdog entry.
+  watchdog('views', 'The view @name was deleted by @user at @time', array('@name' => $view->name, '@user' => $GLOBALS['user']->name, '@time' => format_date(time())));
+}
+
+/**
  * @}
  */
 

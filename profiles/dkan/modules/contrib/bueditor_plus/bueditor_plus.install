@@ -1,0 +1,59 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the bueditor_plus module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function bueditor_plus_schema() {
+  $schema['bueditor_plus_profiles'] = array(
+    'description' => 'ID of the Profile',
+    'fields' => array(
+      'pid' => array(
+        'description' => 'Profile ID',
+        'type' => 'serial',
+        'not null' => TRUE,
+      ),
+      'name' => array(
+        'description' => 'Profile Name',
+        'type' => 'varchar',
+        'length' => '64',
+        'not null' => TRUE,
+      ),
+      'data' => array(
+        'description' => 'Profile Data',
+        'type' => 'blob',
+        'size' => 'big',
+        'not null' => TRUE,
+      ),
+      'global' => array(
+        'description' => 'Boolean indicating if this is the global profile',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('pid'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Create the global field.
+ */
+function bueditor_plus_update_7001() {
+
+  // Check if the global field exists and if not go ahead and add it.
+  if (!db_field_exists('bueditor_plus_profiles', 'global')) {
+    db_add_field('bueditor_plus_profiles', 'global', array(
+      'type' => 'int',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
+    ));
+  }
+}

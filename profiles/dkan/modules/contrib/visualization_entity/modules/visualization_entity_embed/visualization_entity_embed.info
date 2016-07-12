@@ -1,5 +1,7 @@
 name = Visualization Entity Embed
-description = Allow users embed visualizations using panels and ctools content types
+description = Create visualization panes for panels
+package = Data Visualization
 core = 7.x
+version = 7.x-1.0-beta1
 
 dependencies[] = visualization_entity

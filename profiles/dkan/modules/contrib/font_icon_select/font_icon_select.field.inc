@@ -123,6 +123,7 @@ function font_icon_select_field_instance_settings_form($field, $instance) {
     '#attributes' => array(
       'class' => array(
         'font_icon_select_options',
+        'hideLabels',
         $extra_class,
       ),
     ),
@@ -222,10 +223,12 @@ function font_icon_select_field_widget_form(&$form, &$form_state, $field, $insta
       // There has to be a better way to do this...
       $options = (array) module_invoke($field['module'], 'options_list', $field, $instance, $element['#entity_type'], $element['#entity']);
       $field_cardinality = $field['cardinality'] == FIELD_CARDINALITY_UNLIMITED ? 0 : $field['cardinality'];
+      $field_id = isset($instance['field_id']) ? $instance['field_id'] : 0;
       $element += array(
         '#attributes' => array(
           'class' => array(
             'font_icon_select_options',
+            'hideLabels',
             ($instance['settings']['blacklist_fieldset']['blacklist'] == 0 ? 'whitelist' : 'blacklist'),
             'font_icon_select_instance_options',
           ),
@@ -273,6 +276,7 @@ function font_icon_select_field_widget_form(&$form, &$form_state, $field, $insta
           'optgroups' => '',
         ),
         '#theme' => 'font_icon_select_checkboxes',
+        '#suffix' => '<div class="fontIconLabelVisibilityToggleWrapper"><input type="checkbox" id="fontIconLabelToggleVisibility' . $field_id . '" name="fontIconLabelToggleVisibility' . $field_id . '" value="1"><label for="fontIconLabelToggleVisibility' . $field_id . '">Show Icon Labels</label></div>',
       );
 
       if ($element['#entity'] == NULL || (is_string($element['#entity']) && trim($element['#entity']) == '')) {

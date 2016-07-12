@@ -1,6 +1,8 @@
 name = Visualization Entity Visualization Contributor Role
 core = 7.x
-package = NUCIVIC
+package = Data Visualization
+version = 7.x-1.0-beta1
+
 dependencies[] = entity
 dependencies[] = features
 dependencies[] = features_roles_permissions
